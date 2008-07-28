@@ -137,16 +137,13 @@ print BYTERUN_C <<'EOT';
 
     BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit on PLJC magic header */
     if (isjit) {
+	Perl_croak(aTHX_ "No PLJC-magic JIT support yet\n");
         return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
         Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
         bstate->bs_obj_list_fill = 31;
         bstate->bs_obj_list[0] = NULL; /* first is always Null */
         bstate->bs_ix = 1;
-#if 0 && (PERL_VERSION > 8)
-        Newx(bstate->bs_sv, sizeof(SV), SV*); /* set sv */
-	bstate->bs_sv->sv_any = &(bstate->bs_pv);
-#endif
 	CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.idx %d)\n", bstate->bs_fdata->idx));
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.next_out %d)\n", bstate->bs_fdata->next_out));
@@ -306,7 +303,6 @@ struct byteloader_state {
 int bl_getc(struct byteloader_fdata *);
 int bl_read(struct byteloader_fdata *, char *, size_t, size_t);
 extern int byterun(pTHX_ register struct byteloader_state *);
-/*extern int jitrun(pTHX_ register struct byteloader_state *);*/
 
 enum {
 EOT
@@ -424,7 +420,7 @@ Since Perl version 5.10 defined in L<B>.
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban added the version logic, 5.10 and jit support.
+Reini Urban added the version logic and 5.10 support.
 
 =cut
 

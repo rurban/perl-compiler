@@ -49,7 +49,6 @@ struct byteloader_state {
 int bl_getc(struct byteloader_fdata *);
 int bl_read(struct byteloader_fdata *, char *, size_t, size_t);
 extern int byterun(pTHX_ register struct byteloader_state *);
-/*extern int jitrun(pTHX_ register struct byteloader_state *);*/
 
 enum {
     INSN_RET,			/* 0 */

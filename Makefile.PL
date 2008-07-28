@@ -15,8 +15,7 @@ WriteMakefile(
 	'B' => '1.17',
     },
     clean => { FILES => "bytecode[1-9]* ccode[1-9]* *.core *.stackdump ".
-	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise"},	      
-    # PMLIBDIRS => [ 'lib/B' ],
+	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise"},
 );
 
 sub headerpath {
@@ -45,8 +44,6 @@ sub depend {
     my @headers = map { File::Spec->catfile($headerpath, $_) } qw(op.h cop.h sv.h);
     my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
-    my $jitrun_c  = File::Spec->catfile('ByteLoader', 'jitrun.c');
-    my $jitrun_h  = File::Spec->catfile('ByteLoader', 'jitrun.h');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
     my $perlcc_inst = File::Spec->catfile('$(INST_BIN)', 'perlcc');
     my $perlcc_exp = File::Spec->catfile('script', 'perlcc');
@@ -64,12 +61,6 @@ $byterun_c : bytecode.pl @headers Makefile
 
 $byterun_h : bytecode.pl @headers Makefile
 	\$(PERL) bytecode.pl
-
-$jitrun_h : jitcompiler.pl @headers Makefile
-	\$(PERL) jitcompiler.pl
-
-$jitrun_c : jitcompiler.pl @headers Makefile
-	\$(PERL) jitcompiler.pl
 "
 }
 

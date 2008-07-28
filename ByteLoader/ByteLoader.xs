@@ -8,7 +8,6 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-#include "jitrun.h"
 #include "byterun.h"
 
 /* Something arbitary for a buffer size */

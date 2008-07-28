@@ -1,5 +1,14 @@
-Started with B-C-1.04_01. The perl compiler was previously in CORE.
-TODO: Try to get info about earlier versions.
+Started on CPAN with B-C-1.04_01. The perl compiler was in CORE until Perl 5.9.4.
+
+1.04_11 2008-03-09 rurban
+	* removed Jit and Asm stuff. Maybe as seperate packages somewhen. 
+	  But targeting PIR makes more sense.
+	* added STATUS
+	* added old Changes from the new git clone repo by Sam Vilain
+	* fix C cop
+        * fix C savepvn apparently
+        * work on HV init - crashes at invalid entry
+	* use run_cc_test
 
 1.04_10 2008-02-26 rurban
 	* change bc pvx access
@@ -7,6 +16,7 @@ TODO: Try to get info about earlier versions.
 	  seperated from the sv. The sv is seperated from the pv.
 	  TODO: different strategy for B::C, must link xpv to sv
 	* add and parse Assembler comments
+	* add Bytecode comments to -S output unless -q
 	* change op_reflags from U16 to U32
 	* guarantee ByteLoader backwards compatibility: Accept lower versions also.
 
@@ -86,3 +96,272 @@ TODO: Try to get info about earlier versions.
 
 1.04_01 2008-01-15 rurban (never uploaded)
 	* first package layout for all now non-CORE packages.
+
+===================================================================
+B::C was 1.03 when exterminated.
+
+Nicholas Clark <nwc10+p5p4@colon.colondot.net>  2007-05-07 15:35:56
+    bytecode.pl:        Exterminate!
+    ext/B/B/Asmdata.pm: Exterminate!
+
+Nicholas Clark <nwc10+p5p4@colon.colondot.net>  2007-05-07 14:53:05
+    Given that @optype and @specialsv_name are hard coded tables, it seems
+    more logical for them to be in B.pm, rather than in the "boilerplate"
+    for the machine generated B/Asmdata.pm
+
+Marcus Holland-Moritz <mhx-perl@gmx.net>  2004-08-29 13:22:48
+    Fix typo in B::Assembler.
+
+Marcus Holland-Moritz <mhx-perl@gmx.net>  2004-08-29 13:21:50
+    Skip ext/B/t/assembler.t when configured without B.
+
+Rafael Garcia-Suarez <rgarciasuarez@gmail.com>  2003-08-09 21:13:27
+    Remove ByteLoader from the list of modules whose compilability should
+    be tested : it's loaded (at runtime) by ext/B/t/bytecode.t (as Enache
+    pointed out.)
+
+chromatic <chromatic@rmci.net>  2002-05-10 07:43:25
+	added ext/B/t/o.t
+
+Gurusamy Sarathy <gsar@cpan.org>  2001-03-19 08:07:09
+    Subject: Re: sync sync sync: have I missed any patches?
+    Replace djSP with dSP.
+
+Mark-Jason Dominus <mjd@plover.com>  2001-01-16 14:43:18
+    Subject: [PATCH @8436] Eliminate op_children
+    
+    (Replaced by #8448)  Traces of op_children (cleanup of #8442)
+    
+    (Replaced by #8448)  More op_children traces (cleanup of #8442).
+    
+    Subject: [PATCH #3 @8436] Re: Eliminate op_children
+    Replace #8444 and #8445.
+
+Gurusamy Sarathy <gsar@cpan.org>  2001-01-30 14:20:24
+    integrate changes#7984,7987,8010 from mainline (gets rid of
+    dTHR which has been a noop for a while now, except for the
+    compatibility definition in thread.h)
+	@8010 remove dTHR;
+
+Gurusamy Sarathy <gsar@cpan.org>  2000-12-18 03:37:02
+	@7518 UNIVERSAL::can
+
+Gurusamy Sarathy <gsar@cpan.org>  2000-12-18 00:03:38
+    Fix a couple of compiler-noted nits in #7235.
+
+    Fix of sorts for bug id 20000901.092.  There seems to be no trace
+    of a 'pmshort' anywhere in the B, so the offending line was simply
+    removed.
+
+Gurusamy Sarathy <gsar@cpan.org>  2000-12-17 22:49:13
+    Subject: [ID 20000928.002] perlcc & ByteCode.pm option mismatch
+    Did not apply cleanly, manual intervention was needed.
+
+    Subject: [ID 20001003.006] B::Debug not -w clean
+    
+    Test harness update to sync with the new perlcc,
+    from Simon Cozens.
+
+Gurusamy Sarathy <gsar@cpan.org>  2000-11-27 18:11:21
+    Bytecompiler patches from Benjamin Stuhl.
+    More bytecompiler.
+    Subject: [PATCH blead] B:: missing dependency
+    Byteloader 0.04
+
+Gurusamy Sarathy <gsar@cpan.org>  2000-11-27 13:53:18
+	U8->U16 CvFLAGS(cv)
+
+Jarkko Hietaniemi <jhi@iki.fi>  2001-10-25 18:07:58
+   * make re, Opcode, File::Glob and B threadsafe
+   * include XS_VERSION in MY_CXT_KEY (tweak for change#12652)
+
+Jarkko Hietaniemi <jhi@iki.fi>  2001-04-05 04:00:33
+    Integrate changes #9544,9547,9549(perlio),9550,9551 from
+    maintperl into mainline.
+    "double" should be "NV"; standard typemap is missing entry
+    for NV
+
+Author: bailey <bailey@bailey_vms>  2000-02-09 09:09:45
+    Resync with mainline
+
+bailey <bailey@bailey_vms>  2000-01-20 00:25:30
+           Quick integration of mainline changes to date
+
+Nathan Torkington <gnat@frii.com>  1999-08-01 11:23:35
+    ext/B/B/Disassembler.pm patch
+    Message-ID: <14244.33431.739419.806927@localhost.frii.com>
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1999-01-02 14:06:30
+    Export constant subs from B.xs for op.h, cop.h and a few others.
+    Use them in various B::* rather than have local defs.
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1999-01-02 10:04:02
+    Integrate ext/B changes from //depot/cfgperl
+    'copy in' ext/B/B.xs
+    	(@2460..) 'merge in' ext/B/B/C.pm ext/B/B/CC.pm
+    	ext/B/B/Stackobj.pm (@2524..)
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1999-01-02 10:04:02
+    @2491 Integrate ext/B changes from //depot/cfgperl
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-09-23 09:52:46
+    B::Asmdata define PUT_svindex(), PUT_opindex()
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1998-12-20 14:21:29
+    Save _all_ GV's which have SV, AV or HV set.
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-08-02 07:09:35
+    fixes for pod noises
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-22 02:08:00
+    fix up B modules for PL_* changes
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-07-21 18:13:16
+    Compiler docs for 5.005
+    Message-Id: <199807211713.SAA20735@sable.ox.ac.uk>
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-22 01:29:09
+    s/PL_sv/PL_bytecode_sv/ etc., so we have unique, case-insensitive
+    names
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-21 07:12:00
+    fix bytecode.pl with moved var names
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-21 05:31:13
+    part 2 of PERL_OBJECT fixes (globals in bytecode.h moved to intrpvar.h)
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-21 05:29:10
+    part 1 of PERL_OBJECT fixes for new var names
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-20 09:38:39
+    complete s/foo/PL_foo/ changes (all escaped cases identified with
+    brute force search script).  Result builds and passes all tests on
+    Solaris.  win32 and PERL_OBJECT are still untested.
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1998-07-18 13:53:03
+    PL_ prefix to all perlvars, part1
+       Builds and passes all tests at one limit i.e. -DPERL_GLOBAL_STRUCT
+
+Ilya Zakharevich <ilya@math.ohio-state.edu>  1998-07-15 06:10:36
+    Minor improvements to perlcc
+    Message-Id: <199807151010.GAA11270@monk.mps.ohio-state.edu>
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-15 10:01:41
+    add stub docs for ext/B, other minor tweaks
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-09 05:37:48
+    get it building again on win32
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-07-04 05:02:01
+	fix perlcc to not rm output file, and other -w(arts)
+
+Stephen McCamant <alias@mcs.com>  1998-06-22 21:19:43
+    Inheritance of B:: classes
+    Message-Id: <m0yoIgR-000EP2C@alias-2.pr.mcs.net>
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-06-19 17:22:23
+    update repository copy of Asmdata.pm after `perl bytecode.pl`
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-06-11 02:59:23
+    fix outdated bytecode.pl
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1998-05-14 18:09:01
+    Changes to allow compiler with gcc-2.8.1 in C++ mode,
+    Remove K&R style functions, avoid struct/typedef clash.
+    
+Ed Peschko <epeschko@den-mdev1>  1998-04-29 21:02:36
+    [ PATCH 5.004_64 ] Integrated regression tests for compiler
+    added perlcc.PL
+
+Ilya Zakharevich <ilya@math.ohio-state.edu>  1998-04-08 03:21:03
+    Subject: [PATCH 5.004_64] Cryptic error from B::CC
+    Date: Sat, 11 Apr 1998 19:52:25 -0400 (EDT)
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-04-14 16:22:51
+    [compiler] CC did "<<" instead of ">>" for right-shift on ints.
+
+Charles Bailey <bailey@newman.upenn.edu>  1998-03-02 01:48:27
+	Miscellaneous minor fixes
+
+Spider Boardman <spider@orb.nashua.nh.us>  1998-03-01 02:02:47
+	Almost OK: 5.004_61 (threads, perlio)
+
+Andrew Cohen <cohen@andy.bu.edu>  1998-02-27 20:03:29
+    Change getc/fread to PerlIO_getc/fread in bytecode.h:
+    Subject: [PATCH 5.004_61] bunch of small patches
+
+Nick Ing-Simmons <nick@ing-simmons.net>  1998-02-28 11:31:15
+    Missed FREAD in bytecode.h
+    Cannot export svref_mutex in non-threaded perl
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-27 18:35:27
+    Change FREAD/FGETC to BGET_FREAD/BGET_FGETC to avoid clash with
+    preprocessor symbol on Digital UNIX.
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-02-26 03:56:19
+    [win32] various cleanups so that B can be built as "just another extension"
+     - export symbols needed for building B
+     - bset_obj_store() is needed by byterun(), so define it there instead
+       of at B.xs, and export it
+     - freadpv() is only used in B.xs, so move it there
+     - byte*.h are now included by perl.h
+     - regenerate embed*.h
+
+Gurusamy Sarathy <gsar@cpan.org>  1998-02-22 02:40:56
+    [win32] get compiler building under win32 (needed Makefile.PL
+    hacks that could be applicable to other platforms)
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-25 17:44:34
+	More compiler tweaks.
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-20 18:23:47
+    Remove compiler files from their old lib/B locations. The compiler
+    now builds by default (without the byteperl executable so far) and
+    seems to work at least minimally.
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-20 18:05:33
+    Move lib/B/... and lib/[BO].pm over to where they should be,
+    under ext/B.
+    
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-20 17:54:58
+    Start getting compiler to work when built with the core.
+    [Still won't work as of this change.]
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-20 16:42:13
+
+	* Merge perlext/Compiler/... into mainline. Some files move to
+    ext/B/..., some to lib/B/..., O.pm and B.pm go in lib and some
+    move to the base perl directory (e.g. headers). Will need some
+    cleaning up before it builds properly, I would guess.
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-20 16:39:38
+	* [compiler] Win32 changes from Sarathy, tweaked slightly by me.
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-17 17:50:50
+	* Assorted changes to the compiler
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-12-17 10:59:40
+	* Fix typo in compiler B/C.pm.
+
+Alpha5 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-12-10 18:33:53
+	* Start overhauling compiler. It was working at least minimally
+    right up until the final tweak of B.xs to add threadsv_names
+    at which point building it provokes a seg fault in perl while
+    doing the xsubpp :-(.
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-09-03 12:31:48
+	* Make compiler build/work with devel 5.005
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-07-05 11:58:05  
+	* Change %lx to %x in B::CV::save to prevent some CV
+    fields becoming 0 in the init section. Add missing
+    write_back in B::Stackobj::Padsv::load_double to fix
+    test 22 of op/my.t.
+
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-07-05 11:58:05 
+	* B::CC::pp_padsv must cope with vivify_ref (5.004)
+	  as well as provide_ref (5.003)
+
+a4 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-05-03 14:47:06  
+	* initial check in of compiler
+	from version Alpha a3 to a4

@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_10';
+our $VERSION = '1.04_11';
 
 package B::C::Section;
 
@@ -271,7 +271,7 @@ sub savere {
     if ($perl511) {
       $sym = sprintf("re_list[%d]", $re_index++);
       $resect->add(sprintf("0,0,0,%s", cstring($re)));
-    } elsif ($perl510) {
+    } elsif (0 and $perl510) {
       $sym = sprintf("re_list[%d]", $re_index++);
       my $pv = $re;
       my $len = length $pv;
@@ -279,7 +279,7 @@ sub savere {
       # $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
       # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
       # $init->add(savepvn(sprintf("((SV)xpv_list[%d]).sv_u.svu_pv", $xpvsect->index), $pv));
-      $init->add(savepvn("SvPVX($sym)", $pv));
+      $init->add(savepvn("$sym.sv_u.svu_pv)", $pv));
     } else {
       $sym = sprintf("re%d", $re_index++);
       $decl->add(sprintf("static char *$sym = %s;\n", cstring($re)));
@@ -344,11 +344,10 @@ sub save_pv_or_rv {
 sub save_hek {
   my $str = shift;
   my $len = length $str;
-  my $hash = 0; # let hv compute it
   return ("NULL",0) unless $len;
   my $sym = sprintf("hek%d", $hek_index++);
   # (HEK*)ptr_table_fetch(PL_ptr_table, source);
-  # $heksect->add("hv_store(PL_strtab, \"$str\", $len, NULL, $hash);");
+  # $heksect->add("hv_store(PL_strtab, \"$str\", $len, NULL, hash($str));");
   return ("$sym", length(pack "a*", $str));
 }
 
@@ -582,10 +581,18 @@ sub B::COP::save {
         $warn_sv = $warnings->save;
     }
 
-    $copsect->add(sprintf("%s, %s, NULL, NULL, %u, %d, %u, %s",
-			  $op->_save_common, cstring($op->label), $op->cop_seq,
-			  $op->arybase, $op->line,
-                          ( $optimize_warn_sv ? $warn_sv : 'NULL' )));
+    if ($perl511) { # TODO 510?
+      $copsect->add(sprintf("%s, %u, %s, ".
+			    "NULL, NULL, 0, ".
+			    "%u, %s, NULL",
+			    $op->_save_common, $op->line, cstring($op->label),
+			    $op->cop_seq, ( $optimize_warn_sv ? $warn_sv : 'NULL' )));
+    } else {
+      $copsect->add(sprintf("%s, %s, NULL, NULL, %u, %d, %u, %s",
+			    $op->_save_common, cstring($op->label), $op->cop_seq,
+			    $op->arybase, $op->line,
+			    ( $optimize_warn_sv ? $warn_sv : 'NULL' )));
+    }
     my $ix = $copsect->index;
     $init->add(sprintf("cop_list[$ix].op_ppaddr = %s;", $op->ppaddr))
         unless $optimize_ppaddr;
@@ -756,8 +763,11 @@ sub B::PVLV::save {
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
 			 $xpvlvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (!$pv_copy_on_grow) {
-      my $pvx = $] < 5.009 ? "xpvlv_list[%d].xpv_pv" : "SvPVX(xpv_list[%d])";
-      $init->add(savepvn(sprintf($pvx, $xpvlvsect->index), $pv));
+      if ($perl510) {
+	$init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
+      } else {
+	$init->add(savepvn(sprintf("xpvlv_list[%d].xpv_pv", $xpvlvsect->index), $pv));
+      }
     }
     $sv->save_magic;
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
@@ -772,8 +782,11 @@ sub B::PVIV::save {
     $svsect->add(sprintf("&xpviv_list[%d], %u, 0x%x",
 			 $xpvivsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-      my $pvx = $] < 5.009 ? "xpviv_list[%d].xpv_pv" : "((SV)xpviv_list[%d]).sv_u.svu_pv";
-      $init->add(savepvn(sprintf($pvx, $xpvivsect->index), $pv));
+      if ($perl510) {
+	$init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
+      } else {
+	$init->add(savepvn(sprintf("xpviv_list[%d].xpv_pv", $xpvivsect->index), $pv));
+      }
     }
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
@@ -795,8 +808,11 @@ sub B::PVNV::save {
     $svsect->add(sprintf("&xpvnv_list[%d], %lu, 0x%x",
 			 $xpvnvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-      my $pvx = $] < 5.009 ? "xpvnv_list[%d].xpv_pv" : "(char *)xpvnv_list[%d].xiv_u.xivu_p1";
-      $init->add(savepvn(sprintf($pvx, $xpvnvsect->index), $pv));
+      if ($perl510) {
+	$init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
+      } else {
+	$init->add(savepvn(sprintf("xpvnv_list[%d].xpv_pv", $xpvnvsect->index), $pv));
+      }
     }
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
@@ -813,10 +829,13 @@ sub B::BM::save {
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
 			 $xpvbmsect->index, $sv->REFCNT , $sv->FLAGS));
     $sv->save_magic;
-    my $pvx = $] < 5.009 ? "xpvbm_list[%d].xpv_pv" : "((SV)xpvbm_list[%d]).sv_u.svu_pv";
-    $init->add(savepvn(sprintf($pvx, $xpvbmsect->index), $pv),
-	       sprintf("xpvbm_list[%d].xpv_cur = %u;",
-		       $xpvbmsect->index, $len - 257));
+    if ($perl510) {
+      $init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
+    } else {
+      $init->add(savepvn(sprintf("xpvbm_list[%d].xpv_pv", $xpvbmsect->index), $pv));
+    }
+    $init->add(sprintf("xpvbm_list[%d].xpv_cur = %u;",
+		      $xpvbmsect->index, $len - 257));
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
 
@@ -825,20 +844,21 @@ sub B::PV::save {
     my $sym = objsym($sv);
     return $sym if defined $sym;
     my( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv( $sv );
-    if ($] < 5.009) {
+    if ($perl510) {
+      # Before 5.10 in the PV SvANY was pv,len,pvmax. In 5.10 the pv is below in the SV.sv_u
+      $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
+      $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, $sv->REFCNT , $sv->FLAGS));
+      if (defined($pv) && !$pv_copy_on_grow) {
+	$init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $xpvsect->index), $pv));
+      }
+      return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
+    } else {
       $xpvsect->add(sprintf("%s, %u, %u", $savesym, $len, $pvmax));
       $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
 			   $xpvsect->index, $sv->REFCNT , $sv->FLAGS));
       if (defined($pv) && !$pv_copy_on_grow) {
 	$init->add(savepvn(sprintf("xpv_list[%d].xpv_pv", $xpvsect->index), $pv));
       }
-      return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
-    } else {
-      # What is in the PV SvANY? In 5.8.8 it was pv,len,pvmax. In 5.10 pv is below in the SV.sv_u
-      # xpv_allocated
-      $xpvsect->add(sprintf("%s, %u, %u", $savesym, $len, $pvmax));
-      $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, $sv->REFCNT , $sv->FLAGS));
-      $init->add(sprintf("sv_setpvn(&sv_list[%d],%s,%d);", $svsect->index, cstring($pv), $len));
       return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
     }
 }
@@ -1409,17 +1429,22 @@ sub B::HV::save {
 	return $sym;
     }
     # It's just an ordinary HV
-    if ($] < 5.009) {
+    if ($perl510) {
+      # 5.9: nvu fill max ivu mg stash.
+      $xpvhvsect->add(sprintf("0.0, 0, %d, 0, 0, Nullhv",
+			      $hv->MAX));
+      $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x",
+			   $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
+      # riter went to a private _aux struct
+      $init->add(sprintf("HvRITER_set(&sv_list[%d], %d);", $svsect->index, $hv->RITER));
+      # $init->add(sprintf("HvEITER_set(&sv_list[%d], 0x%x);", $svsect->index, $hv->EITER));
+    } else {
       # 5.8: array fill max keys nv mg stash riter eiter pmroot name
       $xpvhvsect->add(sprintf("0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
 			      $hv->MAX, $hv->RITER));
-    } else {
-      # 5.9: nvu fill max ivu mg stash
-      $xpvhvsect->add(sprintf("0.0, 0, %d, 0, 0, Nullhv",
-			      $hv->MAX));
+      $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x",
+			   $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
     }
-    $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x",
-			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
     my $sv_list_index = $svsect->index;
     my @contents = $hv->ARRAY;
     if (@contents) {
@@ -1432,10 +1457,8 @@ sub B::HV::save {
 	while (@contents) {
 	    my ($key, $value) = splice(@contents, 0, 2);
 	    $init->add(sprintf("\thv_store(hv, %s, %u, %s, %s);",
-			       cstring($key),length(pack "a*",$key),
+			       cstring($key), length(pack "a*",$key),
                                $value, hash($key)));
-#	    $init->add(sprintf("\thv_store(hv, %s, %u, %s, %s);",
-#			       cstring($key),length($key),$value, 0));
 	}
 	$init->add("}");
         $init->split;

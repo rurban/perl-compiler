@@ -2,13 +2,13 @@ package ByteLoader;
 
 use XSLoader ();
 
-our $VERSION = '0.06_01';
+our $VERSION = '0.06_02';
 # XSLoader problem:
 # ByteLoader version 0.0601 required--this is only version 0.06_01 at ./bytecode2.plc line 2.
 # on use ByteLoader $ByteLoader::VERSION;
 # Fixed with use ByteLoader '$ByteLoader::VERSION';
 
-if ($] < 5.009 and $VERSION eq '0.06_01') {
+if ($] < 5.009 and $VERSION eq '0.06_02') {
   XSLoader::load 'ByteLoader'; # fake the old backwards compatible version
 } else {
   XSLoader::load 'ByteLoader', $VERSION;
@@ -26,9 +26,10 @@ ByteLoader - load byte compiled perl code
   use ByteLoader 0.07;
   <byte code>
 
-  or just
-
   perl -MByteLoader bytecode_file
+
+  perl -MO=Bytecode,-H,-ofile.plc file.pl
+  ./file.plc
 
 =head1 DESCRIPTION
 

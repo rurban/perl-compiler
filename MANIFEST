@@ -1,18 +1,9 @@
 lib/B/Asmdata.pm
-lib/B/Asm.pm
-lib/B/Asm/arm.pm
-lib/B/Asm/i386.pm
-lib/B/Asm/i64.pm
-lib/B/Asm/ppc.pm
-lib/B/Asm/sparc.pm
-lib/B/Asm/x86-64.pm
-lib/B/Asm/test.pl
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
 lib/B/C.pm
 lib/B/CC.pm
-lib/B/Jit.pm
 lib/B/Debug.pm
 lib/B/Disassembler.pm
 lib/B/Stackobj.pm
@@ -21,8 +12,6 @@ bytecode.pl
 ByteLoader/bytecode.h
 ByteLoader/ByteLoader.pm
 ByteLoader/ByteLoader.xs
-ByteLoader/jitrun.c
-ByteLoader/jitrun.h
 ByteLoader/byterun.c
 ByteLoader/byterun.h
 ByteLoader/hints/sunos.pl
@@ -31,9 +20,6 @@ C.xs
 Changes
 hints/darwin.pl
 hints/openbsd.pl
-i386.xs
-jitcompiler.pl
-Jit.xs
 Makefile.PL
 MANIFEST
 META.yml
@@ -53,6 +39,7 @@ script/cc_harness
 script/disassemble
 script/perlcc.PL
 script/pl2exe.pl
+STATUS
 t/asmdata.t
 t/assembler.t
 t/b.t

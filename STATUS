@@ -1,0 +1,32 @@
+Byteloader segfaults on all versions, even 5.8 (!).
+B::C produces no compilable code yet.
+
+5.10, 5.11 status
+-----------------
+pvx: seems to be fixed in B::C
+  With the move of the pvx field from xpv to the sv, we have to solve 
+  that differently for the Bytecode and C backend.
+  Bytecode can simply mimic the old XPV behaviour of a 3 field struct 
+  (pvx, cur, len) to simplify pv handling.
+hv: crash at invalid entry in hv_store in B::HV::save
+
+5.8 status
+----------
+I've restored 5.8 backwards compatibility, mainly for test comparison.
+CPAN installations will still abort, but that can be easily overridden.
+ByteLoader is now backwards compatible: Accepts lower versions also.
+
+JIT
+---
+B-C-1.04_10:
+playing with the idea to target against parrot pir instead of lightning
+and use the parrot jit, with pbc_to_exe or exec_save.
+Then we need no jit support in the ByteLoader and get rid of all the Jit 
+stuff for now. => B::PIR
+
+B-C-1.04_03:
+added Jit and Asm layout, with the idea of using either 
+lightning as jit backend (Jit), or creating our own assembler (Asm) 
+to be able to use a high-level language.
+
+2008-03-02 12:35:27 rurban
