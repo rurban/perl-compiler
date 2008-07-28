@@ -1,7 +1,6 @@
 package ByteLoader;
 
 use XSLoader ();
-
 our $VERSION = '0.06_05';
 # XSLoader problem:
 # ByteLoader version 0.0601 required--this is only version 0.06_01 at ./bytecode2.plc line 2.
@@ -9,9 +8,21 @@ our $VERSION = '0.06_05';
 # Fixed with use ByteLoader '$ByteLoader::VERSION';
 # Next problem on perl-5.8.3: invalid floating constant suffix _03"
 
-if ($] < 5.009) {
-  # need to check if ByteLoader is not already linked statically
-  XSLoader::load 'ByteLoader'; # fake the old backwards compatible version
+if ($] < 5.009004) {
+  # Need to check if ByteLoader is not already linked statically. 
+  # Before 5.6 byterun was in CORE, so we have no name clash. 
+  require Config; Config->import();
+  if ($Config{static_ext} =~ /\bByteLoader\b/) {
+    # We overrode the static module with our site_perl version. Which version? 
+    # We can only check the perl version and guess from that. From Module::CoreList
+    $VERSION = '0.03' if $] >= 5.006;
+    $VERSION = '0.04' if $] >= 5.006001;
+    $VERSION = '0.05' if $] >= 5.008001;
+    $VERSION = '0.06' if $] >= 5.009003;
+    $VERSION = '0.06' if $] >= 5.008008 and $] < 5.009;
+  } else {
+    XSLoader::load 'ByteLoader'; # fake the old backwards compatible version
+  }
 } else {
   XSLoader::load 'ByteLoader', $VERSION;
 }

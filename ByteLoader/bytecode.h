@@ -6,7 +6,7 @@ typedef int comment_t;
 typedef SV *svindex;
 typedef OP *opindex;
 typedef char *pvindex;
-typedef HEK *hekindex;
+/*typedef HEK *hekindex;*/
 typedef IV IV64;
 
 /* need to swab bytes to the target byteorder */
@@ -161,7 +161,7 @@ static int bget_swab = 0;
     } STMT_END
 #define BGET_svindex(arg) BGET_objindex(arg, svindex)
 #define BGET_opindex(arg) BGET_objindex(arg, opindex)
-#define BGET_hekindex(arg) BGET_objindex(arg, hekindex)
+/*#define BGET_hekindex(arg) BGET_objindex(arg, hekindex)*/
 #define BGET_pvindex(arg) STMT_START {			\
 	BGET_objindex(arg, pvindex);			\
 	arg = arg ? savepv(arg) : arg;			\
@@ -286,9 +286,8 @@ static int bget_swab = 0;
 /* | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr */
 #define BSET_pregcomp(o, arg)				  \
     STMT_START {					  \
-        SV* repointer;					  \
 	REGEXP* rx = arg ?				  \
-	    CALLREGCOMP(aTHX_ newSVpvn(arg, strlen(arg)), \
+	    CALLREGCOMP(newSVpvn(arg, strlen(arg)), \
 			cPMOPx(o)->op_pmflags)		  \
 	    : Null(REGEXP*);				  \
 	PM_SETRE(((PMOP*)o), rx);			  \
@@ -524,6 +523,18 @@ static int bget_swab = 0;
 	    }								\
 	} STMT_END
 #endif
+
+#if PERL_VERSION < 10
+#define BSET_gp_sv(gv, arg)		GvSV((GV*)gv) = arg
+#else
+#define BSET_gp_sv(gv, arg)		\
+    isGV_with_GP_on((GV*)gv);		\
+    GvSVn((GV*)gv) = arg
+#endif
+
+#if PERL_VERSION < 10
+#define BSET_gp_file(gv, file)	GvFILE((GV*)gv) = file
+#else
 #define BSET_gp_file(gv, file) \
 	STMT_START {							\
 	    STRLEN len = strlen(file);					\
@@ -532,9 +543,10 @@ static int bget_swab = 0;
 	    if(GvFILE_HEK(gv)) {					\
 		Perl_unshare_hek(aTHX_ GvFILE_HEK(gv));			\
 	    }								\
-	    GvGP(gv)->gp_file_hek = share_hek(file, len, hash);		\
+	    GvFILE_HEK(gv) = share_hek(file, len, hash);		\
 	    Safefree(file);						\
 	} STMT_END
+#endif
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or

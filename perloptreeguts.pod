@@ -334,8 +334,8 @@ may not check number of children).
 This flag is normally used to hold op specific context hints, such as
 C<HINT_INTEGER>. This flag is directly attached to each relevant op in the subtree
 of the context. Note that there's no general context or class pointer for each
-op, as in a functional language. So we are limited to max 32 lexical pragma hints 
-or less. See L</Lexical Pragmas>.
+op, a typical functional language usually holds this in the ops arguments.
+So we are limited to max 32 lexical pragma hints or less. See L</Lexical Pragmas>.
 
 =back
 
@@ -677,13 +677,13 @@ dependent on the utf8 settings in the L</op_private> hints.
 Character translations (C<tr///>) are usually a L<PVOP>, keeping a pointer
 to a table of shorts used to look up translations.  Under utf8,
 however, a simple table isn't practical; instead, the OP is an L</SVOP>,
-and the SV is a reference to a swash (i.e., an RV pointing to an HV).
+and the SV is a reference to a B<swash>, i.e. a RV pointing to an HV.
 
 =head2 PADOP
 
 The PADOP class signifier is B<$> for temp. scalars.
 
-A new C<PADOP> creates a new temporary scratchpad, an PADLIST areay.
+A new C<PADOP> creates a new temporary scratchpad, an PADLIST array.
   C<padop->op_padix = pad_alloc(type, SVs_PADTMP);>
 C<SVs_PADTMP> are targets/GVs/constants with undef names.
 
@@ -758,8 +758,9 @@ We have a global C<PL_curcop> and then we have threads. So it cannot be global
 anymore. A COP can be said as helper context for debugging and error information
 to store away file and line information. But since perl is a file-based
 compiler, not block-based, also file based pragmata and hints are stored in the
-COP. So we have for every source file a seperate COP. COP's are not really block
-level contexts, just file information.
+COP. So we have for every source file a seperate COP. COP's are mostly not 
+really block level contexts, just file and line information. The block level 
+contexts are not controlled via COP's, but global C<Cx> structs.
 
 F<cop.h> says:
 
@@ -804,12 +805,16 @@ The COP class signifier is B<;> and there are only two:
         nextstate       next statement          ck_null         s;
         dbstate         debug next statement    ck_null         s;
 
-There uses to be three. C<SETSTATE> seems to be optimized away, I cannot find it in
-the source anymore neither. 
+C<NEXTSTATE> is replaced by C<DBSTATE> when you call perl with -d, the
+debugger.  You can even patch the C<NEXTSTATE> ops at runtime to
+C<DBSTATE> as done in the module C<Enbugger>.
+
+There uses to be three. C<SETSTATE> seems to be optimized away, I
+cannot find it in the source anymore neither.
 
 This requires a patch to remove wrong info from the cop.h header.
-Read L<perlhack.pod> and submit the patch after investigating where it has gone to.
-Sam Vilain's GIT history might help.
+Read L<perlhack.pod> and submit the patch after investigating where it
+has gone to. Sam Vilain's GIT history might help.
 
 =head2 BASEOP_OR_UNOP
 
@@ -958,7 +963,7 @@ What is left is the C<T> flag, "target can be a pad". This is a useful optimizat
 
 This is checked in the macro C<dATARGET>
   C<SV *targ = (PL_op->op_flags & OPf_STACKED ? sp[-1] : PAD_SV(PL_op->op_targ));>
-C<OPf_STACKED> means "Some arg is arriving on the stack." (see op.h)
+C<OPf_STACKED> means "Some arg is arriving on the stack." (see F<op.h>)
 So this reads, if the op contains C<OPf_STACKED>, the magic C<targ> ("target argument") 
 is simply on the stack, but if not, the C<op_targ> points to a SV on a private scratchpad. 
 "target can be a pad", voila.
@@ -966,10 +971,10 @@ For reference see L<perlguts/"Putting a C value on Perl stack">.
 
 =head2 Check Functions
 
-They are defined in op.c and not in pp.c, because the belong tightly to the 
+They are defined in F<op.c> and not in F<pp.c>, because they belong tightly to the 
 ops and newOP definition, and not to the actual pp_ opcode. That's why 
-the actual op.c file is bigger than pp.c where the real gore for each op begins.
-The name of each op's check function is defined in opcodes.pl, as shown above.
+the actual F<op.c> file is bigger than F<pp.c> where the real gore for each op begins.
+The name of each op's check function is defined in F<opcodes.pl>, as shown above.
 
 The C<ck_null> check function is the most common.
 
@@ -1123,10 +1128,11 @@ objects.
 The idea is that all the information needed to recreate the original source is
 stored in the optree. To do this the tokens for the ops are associated with ops,
 these madprops are a list of key-value pairs, where the key is a character as
-listed at the end of op.h, the value normally is a string, but it might also be
+listed at the end of F<op.h>, the value normally is a string, but it might also be
 a op, as in the case of a optimized op ('O'). Special for the whitespace key '_'
 (whitespace before) and '#' (whitespace after), which indicate the whitespace or
 comment before/after the previous key-value pair.
+
 Also when things normally compiled out, like a BEGIN block, which normally do
 not results in any ops, instead create a NULLOP with madprops used to recreate
 the object.
@@ -1134,6 +1140,7 @@ the object.
 I<Is there any documentation on this?>
 
 Why this awful XML and not the rich tree of perl objects?
+
 Well there's an advantage.
 The MAD XML can be seen as some kind of XML Storable/Freeze of the B
 optree, and can be therefore converted outside of the CHECK block,
@@ -1159,8 +1166,8 @@ related to the optree at all, could also have been used for that.
 
 =head2 Pluggable runops
 
-The compile tree is executed by one of two existing runops functions, in run.c
-or in dump.c. C<Perl_runops_debug> is used with DEBUGGING and
+The compile tree is executed by one of two existing runops functions, in F<run.c>
+or in F<dump.c>. C<Perl_runops_debug> is used with DEBUGGING and the faster
 C<Perl_runops_standard> is used otherwise (See below in L</"Walkers">). For fine
 control over the execution of the compile tree it is possible to provide your
 own runops function.
@@ -1195,8 +1202,8 @@ linear through the tree.
 To inspect the optree within a perl program, you can also hook C<PL_runops> (see
 above at L</"Pluggable runops">) to your own perl walker (see e.g. L<B::Utils>
 for various useful walkers), but you cannot modify the tree from within the B
-accessors, only via XS. Or via L<B::Generate> as explained in Simon Cozen's "Hacking the Optree for Fun..." 
-L<http://www.perl.com/pub/a/2002/05/07/optree.html>.
+accessors, only via XS. Or via L<B::Generate> as explained in Simon Cozen's 
+"Hacking the Optree for Fun..." L<http://www.perl.com/pub/a/2002/05/07/optree.html>.
 
 I<Todo: Show the other runloops, and esp. the B:Utils ones.>
 I<Todo: Describe the dumper, the debugging and more extended walkers.>
@@ -1226,7 +1233,7 @@ UNITCHECK, INIT blocks.
 
 L<Devel::TypeCheck> tries to verify possible static typing for
 expressions and variables, a pretty hard problem for compilers,
-esp. with such a dynamic and untyped variables as Perl 5.
+esp. with such dynamic and untyped variables as Perl 5.
 
 Reini Urban is working on an interactive optree debugger,
 L<B::Debugger>.
@@ -1267,6 +1274,6 @@ backends. And write the wonderful new dump functionality (which actually worked
 in the early years on Solaris), output PIR (parrot code), emit LLVM or another
 JIT optimized code or even write assemblers. I have a simple one at home. :)
 
-Written 2008 on the perl5 wiki with socialtext and pod in parallel by Reini
-Urban, CPAN ID rurban.
+Written 2008 on the perl5 wiki with socialtext and pod in parallel 
+by Reini Urban, CPAN ID rurban.
 

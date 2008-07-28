@@ -108,7 +108,7 @@ $insn_data{gp_refcnt_add} = [80, \&PUT_I32, "GET_I32"];
 $insn_data{gp_av} = [81, \&PUT_svindex, "GET_svindex"];
 $insn_data{gp_hv} = [82, \&PUT_svindex, "GET_svindex"];
 $insn_data{gp_cv} = [83, \&PUT_svindex, "GET_svindex"];
-$insn_data{gp_file} = [84, \&PUT_hekindex, "GET_hekindex"];
+$insn_data{gp_file} = [84, \&PUT_pvindex, "GET_pvindex"];
 $insn_data{gp_io} = [85, \&PUT_svindex, "GET_svindex"];
 $insn_data{gp_form} = [86, \&PUT_svindex, "GET_svindex"];
 $insn_data{gp_cvgen} = [87, \&PUT_U32, "GET_U32"];
@@ -246,27 +246,24 @@ Since Perl version 5.10 defined in L<B>.
 
 =back
 
-=head1 PORTABILITY  (TODO)
+=head1 PORTABILITY
 
 All bytecode values are already portable.
-Cross-platform and cross-version portability is just not implemented yet.
-Cross-version portability will be very limited, cross-platform will
-do with the same threading model.
+Cross-platform portability is implemented, cross-version not yet.
+Cross-version portability will be very limited, cross-platform only
+for the same threading model.
 
-=head2 CROSS-PLATFORM PORTABILITY (TODO)
+=head2 CROSS-PLATFORM PORTABILITY
 
-For different endian-ness there are ByteLoader converters planned.
+For different endian-ness there are ByteLoader converters in effect.
 Header entry: byteorder.
 
 64int - 64all - 32int is portable. Header entry: ivsize
 
-Threading: unsolvable. Header entry: archname has "-thread"
+ITHREADS are unportable.
+Header entry: archflag - bitflag 1.
 
-Cross-platform portability will be available only if threading
-is on or off on both perls (compiler and runner). TODO: Check in
-bytecode_header_check().
-
-=head2 CROSS-VERSION PORTABILITY (TODO)
+=head2 CROSS-VERSION PORTABILITY (TODO - HARD)
 
 Bytecode ops:
 We can only reliably load bytecode from previous versions and promise

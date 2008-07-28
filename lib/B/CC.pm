@@ -66,9 +66,7 @@ BEGIN {
     }
 }
 
-my ($module_name);
-my ($debug_op, $debug_stack, $debug_cxstack, $debug_pad, $debug_runtime,
-    $debug_shadow, $debug_queue, $debug_lineno, $debug_timings);
+my ($module_name, %debug);
 
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
@@ -129,7 +127,7 @@ sub init_hash { map { $_ => 1 } @_ }
 			    pp_enter pp_method);
 
 sub debug {
-    if ($debug_runtime) {
+    if ($debug{runtime}) {
 	warn(@_);
     } else {
 	my @tmp=@_;
@@ -144,7 +142,7 @@ sub declare {
 
 sub push_runtime {
     push(@$runtime_list_ref, @_);
-    warn join("\n", @_) . "\n" if $debug_runtime;
+    warn join("\n", @_) . "\n" if $debug{runtime};
 }
 
 sub save_runtime {
@@ -216,7 +214,7 @@ sub init_pp {
     map { declare("SV", "*$_") } qw(sv src dst left right);
     declare("MAGIC", "*mg");
     $decl->add("static OP * $ppname (pTHX);");
-    debug "init_pp: $ppname\n" if $debug_queue;
+    debug "init_pp: $ppname\n" if $debug{queue};
 }
 
 # Initialise runtime_callback function for Stackobj class
@@ -226,7 +224,7 @@ BEGIN { B::Stackobj::set_callback(\&runtime) }
 sub cc_queue {
     my ($name, $root, $start, @pl) = @_;
     debug "cc_queue: name $name, root $root, start $start, padlist (@pl)\n"
-	if $debug_queue;
+	if $debug{queue};
     if ($name eq "*ignore*") {
 	$name = 0;
     } else {
@@ -234,7 +232,7 @@ sub cc_queue {
     }
     my $fakeop = new B::FAKEOP ("next" => 0, sibling => 0, ppaddr => $name);
     $start = $fakeop->save;
-    debug "cc_queue: name $name returns $start\n" if $debug_queue;
+    debug "cc_queue: name $name returns $start\n" if $debug{queue};
     return $start;
 }
 BEGIN { B::C::set_callback(\&cc_queue) }
@@ -268,7 +266,7 @@ sub pop_bool {
 sub write_back_lexicals {
     my $avoid = shift || 0;
     debug "write_back_lexicals($avoid) called from @{[(caller(1))[3]]}\n"
-	if $debug_shadow;
+	if $debug{shadow};
     my $lex;
     foreach $lex (@pad) {
 	next unless ref($lex);
@@ -315,7 +313,7 @@ sub write_back_stack {
 sub invalidate_lexicals {
     my $avoid = shift || 0;
     debug "invalidate_lexicals($avoid) called from @{[(caller(1))[3]]}\n"
-	if $debug_shadow;
+	if $debug{shadow};
     my $lex;
     foreach $lex (@pad) {
 	next unless ref($lex);
@@ -417,7 +415,7 @@ sub dopoptoloop {
     while ($cxix >= 0 && CxTYPE_no_LOOP($cxstack[$cxix])) {
 	$cxix--;
     }
-    debug "dopoptoloop: returning $cxix" if $debug_cxstack;
+    debug "dopoptoloop: returning $cxix" if $debug{cxstack};
     return $cxix;
 }
 
@@ -429,7 +427,7 @@ sub dopoptolabel {
 	    $cxstack[$cxix]->{label} ne $label)) {
 	$cxix--;
     }
-    debug "dopoptolabel: returning $cxix" if $debug_cxstack;
+    debug "dopoptolabel: returning $cxix" if $debug{cxstack};
     return $cxix;
 }
 
@@ -460,7 +458,7 @@ sub load_pad {
     my @valuelist = $valuelistav->ARRAY;
     my $ix;
     @pad = ();
-    debug "load_pad: $#namelist names, $#valuelist values\n" if $debug_pad;
+    debug "load_pad: $#namelist names, $#valuelist values\n" if $debug{pad};
     # Temporary lexicals don't get named so it's possible for @valuelist
     # to be strictly longer than @namelist. We count $ix up to the end of
     # @valuelist but index into @namelist for the name. Any temporaries which
@@ -492,7 +490,7 @@ sub load_pad {
 	$pad[$ix] = new B::Stackobj::Padsv ($type, $flags, $ix,
 					    "i_$name", "d_$name");
 
-	debug sprintf("PL_curpad[$ix] = %s\n", $pad[$ix]->peek) if $debug_pad;
+	debug sprintf("PL_curpad[$ix] = %s\n", $pad[$ix]->peek) if $debug{pad};
     }
 }
 
@@ -667,7 +665,7 @@ sub pp_nextstate {
     my $op = shift;
     $curcop->load($op);
     @stack = ();
-    debug(sprintf("%s:%d\n", $op->file, $op->line)) if $debug_lineno;
+    debug(sprintf("%s:%d\n", $op->file, $op->line)) if $debug{lineno};
     runtime("TAINT_NOT;") unless $omit_taint;
     runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;");
     if ($freetmps_each_bblock || $freetmps_each_loop) {
@@ -695,7 +693,7 @@ sub pp_dbstate {
 sub pp_rv2gv{
     my $op =shift;
     $curcop->write_back;
-    write_back_lexicals() unless $skip_lexicals{$ppname};
+    write_back_lexicals()unless $skip_lexicals{$ppname};
     write_back_stack() unless $skip_stack{$ppname};
     my $sym=doop($op);
     if ($op->private & OPpDEREF) {
@@ -745,7 +743,10 @@ sub pp_gvsv {
     my $op = shift;
     my $gvsym;
     if ($ITHREADS) {
+        #debug(sprintf("OP name=%s, class=%s",$op->name,class($op))) if $debug{pad};
+        debug(sprintf("GVSV->padix = %d",$op->padix)) if $debug{pad};
 	$gvsym = $pad[$op->padix]->as_sv;
+        debug(sprintf("GVSV->private = 0x%x",$op->private)) if $debug{pad};
     }
     else {
 	$gvsym = $op->gv->save;
@@ -754,7 +755,7 @@ sub pp_gvsv {
     if ($op->private & OPpLVAL_INTRO) {
 	runtime("XPUSHs(save_scalar($gvsym));");
     } else {
-	runtime("XPUSHs(GvSV($gvsym));");
+      $PERL510 ? runtime("XPUSHs(GvSVn($gvsym));") : runtime("XPUSHs(GvSV($gvsym));");
     }
     return $op->next;
 }
@@ -1058,6 +1059,7 @@ BEGIN {
 sub pp_sassign {
     my $op = shift;
     my $backwards = $op->private & OPpASSIGN_BACKWARDS;
+    debug(sprintf("sassign->private=0x%x",$op->private)) if $debug{op};
     my ($dst, $src);
     if (@stack >= 2) {
 	$dst = pop @stack;
@@ -1104,6 +1106,7 @@ sub pp_sassign {
 	    }
 	}
     } else {
+        # empty perl stack, both at run-time
 	if ($backwards) {
 	    runtime("src = POPs; dst = TOPs;");
 	} else {
@@ -1418,7 +1421,7 @@ sub enterloop {
     my $lastop = $op->lastop;
     my $redoop = $op->redoop;
     $curcop->write_back;
-    debug "enterloop: pushing on cxstack" if $debug_cxstack;
+    debug "enterloop: pushing on cxstack" if $debug{cxstack};
     push(@cxstack, {
 	type => $PERL511 ? CXt_LOOP_PLAIN : CXt_LOOP,
 	op => $op,
@@ -1441,7 +1444,7 @@ sub pp_leaveloop {
     if (!@cxstack) {
 	die "panic: leaveloop";
     }
-    debug "leaveloop: popping from cxstack" if $debug_cxstack;
+    debug "leaveloop: popping from cxstack" if $debug{cxstack};
     pop(@cxstack);
     return default_pp($op);
 }
@@ -1585,8 +1588,8 @@ sub compile_op {
     if (exists $ignore_op{$ppname}) {
 	return $op->next;
     }
-    debug peek_stack() if $debug_stack;
-    if ($debug_op) {
+    debug peek_stack() if $debug{stack};
+    if ($debug{op}) {
 	debug sprintf("%s [%s]\n",
 		     peekop($op),
 		     $op->flags & OPf_STACKED ? "OPf_STACKED" : $op->targ);
@@ -1627,7 +1630,7 @@ sub cc {
     %lexstate=();
     B::Pseudoreg->new_scope;
     @cxstack = ();
-    if ($debug_timings) {
+    if ($debug{timings}) {
 	warn sprintf("Basic block analysis at %s\n", timing_info);
     }
     $leaders = find_leaders($root, $start);
@@ -1637,7 +1640,7 @@ sub cc {
     } else{
 	runtime("return PL_op?PL_op->op_next:0;");
     }
-    if ($debug_timings) {
+    if ($debug{timings}) {
 	warn sprintf("Compilation at %s\n", timing_info);
     }
     while (@bblock_todo) {
@@ -1664,7 +1667,7 @@ sub cc {
 	    runtime(sprintf("goto %s;", label($op)));
 	}
     }
-    if ($debug_timings) {
+    if ($debug{timings}) {
 	warn sprintf("Saving runtime at %s\n", timing_info);
     }
     declare_pad(@padlist) ;
@@ -1749,7 +1752,7 @@ XS(boot_$cmodule)
 }
 EOT
     }
-    if ($debug_timings) {
+    if ($debug{timings}) {
 	warn sprintf("Done at %s\n", timing_info);
     }
 }
@@ -1774,6 +1777,7 @@ sub compile {
 	    open(STDOUT, ">$arg") or return "open '>$arg': $!\n";
 	} elsif ($opt eq "v") {
 	    $verbose = 1;
+	    $B::C::verbose = 1;
 	} elsif ($opt eq "n") {
 	    $arg ||= shift @options;
 	    $module_name = $arg;
@@ -1815,23 +1819,23 @@ sub compile {
 		if ($arg eq "o") {
 		    B->debug(1);
 		} elsif ($arg eq "O") {
-		    $debug_op = 1;
+		    $debug{op}++;
 		} elsif ($arg eq "s") {
-		    $debug_stack = 1;
+		    $debug{stack}++;
 		} elsif ($arg eq "c") {
-		    $debug_cxstack = 1;
+		    $debug{cxstack}++;
 		} elsif ($arg eq "p") {
-		    $debug_pad = 1;
+		    $debug{pad}++;
 		} elsif ($arg eq "r") {
-		    $debug_runtime = 1;
+		    $debug{runtime}++;
 		} elsif ($arg eq "S") {
-		    $debug_shadow = 1;
+		    $debug{shadow}++;
 		} elsif ($arg eq "q") {
-		    $debug_queue = 1;
+		    $debug{queue}++;
 		} elsif ($arg eq "l") {
-		    $debug_lineno = 1;
+		    $debug{lineno}++;
 		} elsif ($arg eq "t") {
-		    $debug_timings = 1;
+		    $debug{timings}++;
 		}
 	    }
 	}

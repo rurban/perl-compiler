@@ -1,7 +1,8 @@
 #!./perl
 my $keep_c      = 0;	# set it to keep the pl, c and exe files
-my $keep_c_fail = 0;	# set it to keep the pl, c and exe files on failures
+my $keep_c_fail = 1;	# set it to keep the pl, c and exe files on failures
 # better use testc.sh for debugging
+use Config;
 
 BEGIN {
     if ($^O eq 'VMS') {
@@ -13,9 +14,8 @@ BEGIN {
 	@INC = ('.', '../lib');
     } else {
 	unshift @INC, 't';
-	push @INC, "blib/arch", "blib/lib";
+	#push @INC, "blib/arch", "blib/lib";
     }
-    use Config;
     if (($Config{'extensions'} !~ /\bB\b/) ){
         print "1..0 # Skip -- Perl configured without B module\n";
         exit 0;
@@ -28,24 +28,20 @@ BEGIN {
 }
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-my $ITHREADS  = ($Config{'useithreads'});
+my $ITHREADS  = ($Config{useithreads});
 
-undef $/;
-open TEST, "< t/TESTS" or open TEST, "< TESTS";
-my @tests = split /\n###+\n/, <TEST>;
-close TEST;
-my @todo;
+my @tests = tests();
+my @todo = (14..16); # fails also on 5.00505, old core failures 
 if ($DEBUGGING) {
   #@todo = (8..10, 14..16);
-  @todo = (5, 7, 11..12, 17..19) if $] < 5.009;
-  @todo = (2..5, 7, 11, 15) if $] >= 5.009;
-  @todo = (2..7, 11..12, 17..19) if ($] > 5.009 and !$ITHREADS);
+  #@todo = (5, 7, 11..12, 17..19) if $] < 5.009;
+  #@todo = (2..5, 7, 11, 15) if $] >= 5.009;
+  #@todo = (2..7, 11..12, 17..19) if ($] > 5.009 and !$ITHREADS);
   #@todo = (2..12, 14..19) if $] > 5.009; #let it fail
 } else {
-  @todo = (2..5, 7, 11);
-  @todo = (2..7, 11) if $] > 5.009;
-  @todo = (2..11, 14..16) if ($] > 5.009 and !$ITHREADS);
-  #@todo = (2..12, 14..19) if $] > 5.009; #let it fail
+  #@todo = (8..10, 14..16);
+  #@todo = (2..7, 11) if $] > 5.009;
+  #@todo = (2..11, 15..16) if ($] > 5.009 and !$ITHREADS);
 }
 my %todo = map { $_ => 1 } @todo;
 

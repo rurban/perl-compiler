@@ -1,10 +1,10 @@
+Artistic
 lib/B/Asmdata.pm
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
 lib/B/C.pm
 lib/B/CC.pm
-lib/B/Debug.pm
 lib/B/Disassembler.pm
 lib/B/Stackobj.pm
 lib/B/Stash.pm
@@ -19,6 +19,7 @@ ByteLoader/Makefile.PL
 ByteLoader/ppport.h
 C.xs
 Changes
+Copying
 hints/darwin.pl
 hints/openbsd.pl
 Makefile.PL

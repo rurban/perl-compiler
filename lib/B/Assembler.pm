@@ -17,7 +17,7 @@ no warnings;			# XXX
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION = '0.07_04';
+$VERSION = '0.07_05';
 
 use strict;
 my %opnumber;
@@ -197,7 +197,7 @@ sub strip_comments {
 	\s*(.*)$
     }sx;	# Keep only the instruction and optional argument.
     my ($line, $comment) = ($1, $2);
-    # $line ~= s/\t$//; if $comment;
+    # $line =~ s/\t$// if $comment;
     return ($line, $comment);
 }
 
@@ -217,9 +217,11 @@ sub gen_header {
     $header .= B::Asmdata::PUT_strconst(qq["$version"]);
     $header .= B::Asmdata::PUT_U32($Config{ivsize});
     $header .= B::Asmdata::PUT_U32($Config{ptrsize});
-    $header .= B::Asmdata::PUT_U32($Config{longsize});
+    if ($version ge "0.06_03") {
+      $header .= B::Asmdata::PUT_U32($Config{longsize});
+    }
     $header .= B::Asmdata::PUT_strconst('"'.$Config{byteorder}.'"');
-    if ($version gt "0.06_04") {
+    if ($version ge "0.06_05") {
       my $archflag = 0;
       $archflag += 1 if $Config{useithreads};
       $header .= B::Asmdata::PUT_U16($archflag);
@@ -308,6 +310,7 @@ sub assemble {
     my ($insn, $arg, $comment);
     $linenum++;
     chomp $line;
+    $line =~ s/\cM$//;
     if ($debug) {
 	my $quotedline = $line;
 	$quotedline =~ s/\\/\\\\/g;

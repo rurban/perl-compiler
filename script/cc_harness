@@ -2,21 +2,19 @@ use Config;
 
 $libdir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
 
-# force dynamic linking if possible
-if (grep(/^-Bdynamic$/, @ARGV)) {
-    use ExtUtils::Embed;
-    @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
-    $linkargs = ldopts;
-} elsif (!grep(/^-[cES]$/, @ARGV)) { # compile-only
-    # force static linkage if static libperl exists
-    if ( -e "$libdir/$Config{libperl}" ) {
-	$linkargs = sprintf("%s $libdir/$Config{libperl} %s",
-			    @Config{qw(ldflags libs)});
-    } else { # try dynamic lib
-    	use ExtUtils::Embed;
-	@ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
-	$linkargs = ldopts;
-    }
+if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
+  ;
+} elsif (grep(/^-Bdynamic$/, @ARGV)) { # force dynamic linking with -Bdynamic
+  use ExtUtils::Embed;
+  @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
+  $linkargs = ldopts;
+} elsif ( -e "$libdir/$Config{libperl}" ) { # prefer static linkage
+  $linkargs = sprintf("%s $libdir/$Config{libperl} %s",
+		      @Config{qw(ldflags libs)});
+} else { # try dynamic lib if no statib lib exists
+  use ExtUtils::Embed;
+  @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
+  $linkargs = ldopts;
 }
 
 $cccmd = "$Config{cc} $Config{ccflags} -I$libdir @ARGV $linkargs";

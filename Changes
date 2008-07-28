@@ -2,6 +2,23 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
 until Perl 5.9.4.
 
+1.04_20 2008-06-25 rurban
+	* t/TESTS: numbered.
+	* t/TESTS: added sub FETCHSIZE to test 16. required now
+	* C.pm, CC.pm: change debug globals to hash.
+	* C.pm: Fix B::RV::save for 5.10
+	* CC.pm: 5.10 fixed GvSV to GvSVn (PERL_DONT_CREATE_GVSV), fix cc test 3+4 crash
+	* Artistic, Copying: added. Clarified perl license.
+	* Bytecode.pm: fixed IO=>PVNV problem in test 15.
+	* bytecode.pl, bytecode.h: rewrote gp_sv and gp_file setters 
+	with x (special setters). Fixes unshare hek assert in test 15, and force 
+	creation of GVSV.
+	* Assembler.pm 0.07_05: cygwin text-mount fixes with \r\n
+	* t/testplc.sh, t/testc.sh: require bash, accept testnumber args
+	* Asmdata.pm: fix PORTABILITY docs
+	* t/testc.sh: -Bdynamic: link to shared libperl
+	* cc_harness: simplify. fixed for -Bdynamic -E
+
 1.04_19 2008-06-08 rurban
 	* CC.pm: CXt_LOOP check rewrite, use now CxTYPE_no_LOOP()
 	* CC.pm, t/*.t: useithreads, not usethreads

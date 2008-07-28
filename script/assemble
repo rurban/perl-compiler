@@ -50,7 +50,7 @@ if (@ARGV == 0) {
     $fh = new FileHandle "<$filename";
     $out = new FileHandle ">$ARGV[1]";
 } else {
-    die "Usage: assemble [-d] [filename] [outfilename]\n";
+    die "Usage: assemble [-d] [filename | -] [outfilename]\n";
 }
 
 binmode $out;

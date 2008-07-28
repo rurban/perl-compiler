@@ -147,7 +147,7 @@ sub B::GV::ix {
 	  eval "require B::Debug;";
 	  $gv->B::GV::debug;
         }
-	if (($PERL510 and $gv->isGV_with_GP) or 
+	if (($PERL510 and $gv->isGV_with_GP) or
 	    (!$PERL510 and $gv->GP))
 	{ # only gv with gp
 	    my ($svix, $avix, $hvix, $cvix, $ioix, $formix);
@@ -202,6 +202,7 @@ sub B::GV::ix {
 	    $svtab{$$gv} = $varix = $ix = $tix++;
 	    $gv->B::PVMG::bsave($ix);
 	    if (!$PERL510) {
+	      #GV_without_GP has no flags?
 	      asm "xgv_flags", $gv->GvFLAGS;
 	    }
 	    if (!$PERL510 and $gv->STASH) {
@@ -331,6 +332,7 @@ sub B::PVNV::bsave {
 	return if $sv->isa('B::CV');
 	return if $sv->isa('B::FM');
 	return if $sv->isa('B::GV');
+	return if $sv->isa('B::IO');
     }
     asm "xnv", sprintf "%.40g", $sv->NVX;
 }
@@ -464,7 +466,7 @@ sub B::GV::desired {
     my ($cv, $form);
     if ($debug{G} and !$PERL510) {
       eval "require B::Debug;";
-      $gv->B::GV::debug;
+      $gv->debug;
     }
     $files{$gv->FILE} && $gv->LINE
     || ${$cv = $gv->CV} && $files{$cv->FILE}
@@ -497,6 +499,7 @@ sub B::HV::bwalk {
 
 sub B::OP::bsave_thin {
     my ($op, $ix) = @_;
+    bwarn(B::peekop($op), ", ix: $ix") if $debug{o};
     my $next = $op->next;
     my $nextix = $optab{$$next};
     $nextix = 0, push @cloop, $op unless defined $nextix;
@@ -560,6 +563,7 @@ sub B::BINOP::bsave {
 
 sub B::LISTOP::bsave {
     my ($op, $ix) = @_;
+    bwarn($op->peekop, ", ix: $ix") if $debug{o};
     my $name = $op->name;
     sub blocksort() { OPf_SPECIAL|OPf_STACKED }
     if ($name eq 'sort' && ($op->flags & blocksort) == blocksort) {
@@ -614,6 +618,7 @@ sub B::BINOP::bsave_fat {
     my ($op,$ix) = @_;
     my $last = $op->last;
     my $lastix = $op->last->ix;
+    bwarn(B::peekop($op), ", ix: $ix $last: $last, lastix: $lastix") if $debug{o};
     if (!$PERL510 && $op->name eq 'aassign' && $last->name eq 'null') {
 	asm "ldop", $lastix unless $lastix == $opix;
 	asm "op_targ", $last->targ;
@@ -626,6 +631,7 @@ sub B::BINOP::bsave_fat {
 sub B::LOGOP::bsave {
     my ($op,$ix) = @_;
     my $otherix = $op->other->ix;
+    bwarn(B::peekop($op), ", ix: $ix") if $debug{o};
 
     $op->B::UNOP::bsave($ix);
     asm "op_other", $otherix;
@@ -637,7 +643,7 @@ sub B::PMOP::bsave {
 
     # my $pmnextix = $op->pmnext->ix;	# XXX
 
-    bwarn(B::peekop($op), ", ix: $ix") if $debug{M};
+    bwarn(B::peekop($op), ", ix: $ix") if $debug{M} or $debug{o};
     if (ITHREADS) {
 	if ($op->name eq 'subst') {
 	    $rrop = "op_pmreplroot";
@@ -709,7 +715,7 @@ sub B::PADOP::bsave {
     $op->B::OP::bsave($ix);
     # crashed in 5.11
     #if ($PERL511) {
-      asm "op_padix", $op->padix;
+    asm "op_padix", $op->padix;
     #}
 }
 
@@ -849,7 +855,7 @@ sub compile {
 	  *nice = sub ($) { print "\n# @_\n" unless $quiet;};
 	} elsif (/^-v/) {
 	  warn "conflicting -q ignored" if $quiet;
-	  *nice = sub ($) { print STDERR "@_\n" };
+	  *nice = sub ($) { print "\n# @_\n"; print STDERR "@_\n" };
 	} elsif (/^-H/) {
 	  require ByteLoader;
 	  my $version = $ByteLoader::VERSION;
@@ -869,7 +875,7 @@ use ByteLoader '$ByteLoader::VERSION';
 	  $scan = length($1) ? $1 : $0;
 	} elsif (/^-b/) {
 	  $savebegins = 1;
-    # this is here for the testsuite
+	# this is here for the testsuite
 	} elsif (/^-TI/) {
 	  $T_inhinc = 1;
 	} elsif (/^-TF(.*)/) {
@@ -986,6 +992,14 @@ Without -q the assembler source is commented.
 =item B<-q>
 
 Be quiet.
+
+=item B<-v>
+
+Be verbose.
+
+=item B<-Do>
+
+OPs, prints each OP as it's processed
 
 =item B<-D>I<M>
 

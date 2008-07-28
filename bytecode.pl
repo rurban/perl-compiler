@@ -147,7 +147,7 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
         }
     }
     BGET_strconst(str,80);	/* archname */
-    /* relaxed strictness, only check for ithread in archflag */
+    /* just warn. relaxed strictness, only check for ithread in archflag */
     if (strNE(str, ARCHNAME)) {
 	HEADER_WARN2("wrong architecture (want %s, you have %s)", str, ARCHNAME);
     }
@@ -266,9 +266,6 @@ print BYTERUN_C <<'EOT';
 
         while ((insn = BGET_FGETC()) != EOF) {
 	  CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
-#ifdef DEBUG_t_TEST_
-          if (PL_op && DEBUG_t_TEST_) debop(PL_op);
-#endif
 	  switch (insn) {
 EOT
 
@@ -370,9 +367,12 @@ EOT
 #
 print BYTERUN_C <<'EOT';
 	    default:
-	      Perl_croak(aTHX_ "Illegal bytecode instruction %d\n", insn);
+	      Perl_croak(aTHX_ "Illegal bytecode instruction %d. Version incompatibility.\n", insn);
 	      /* NOTREACHED */
 	  }
+#ifdef DEBUG_t_TEST_
+          if (PL_op && DEBUG_t_TEST_) debop(PL_op);
+#endif
         }
     }
     return 0;
@@ -609,27 +609,24 @@ Since Perl version 5.10 defined in L<B>.
 
 =back
 
-=head1 PORTABILITY  (TODO)
+=head1 PORTABILITY
 
 All bytecode values are already portable.
-Cross-platform and cross-version portability is just not implemented yet.
-Cross-version portability will be very limited, cross-platform will
-do with the same threading model.
+Cross-platform portability is implemented, cross-version not yet.
+Cross-version portability will be very limited, cross-platform only
+for the same threading model.
 
-=head2 CROSS-PLATFORM PORTABILITY (TODO)
+=head2 CROSS-PLATFORM PORTABILITY
 
-For different endian-ness there are ByteLoader converters planned.
+For different endian-ness there are ByteLoader converters in effect.
 Header entry: byteorder.
 
 64int - 64all - 32int is portable. Header entry: ivsize
 
-Threading: unsolvable. Header entry: archname has "-thread"
+ITHREADS are unportable.
+Header entry: archflag - bitflag 1.
 
-Cross-platform portability will be available only if threading
-is on or off on both perls (compiler and runner). TODO: Check in
-bytecode_header_check().
-
-=head2 CROSS-VERSION PORTABILITY (TODO)
+=head2 CROSS-VERSION PORTABILITY (TODO - HARD)
 
 Bytecode ops:
 We can only reliably load bytecode from previous versions and promise
@@ -665,8 +662,8 @@ close BYTERUN_H or die "Error closing $targets[2]: $!";
 chmod 0444, @targets;
 
 # TODO 5.10:
-#   stpv
-#   pv_free: free the bs_pv and the SvPVX?
+#   stpv (?)
+#   pv_free: free the bs_pv and the SvPVX? (?)
 
 __END__
 # First set instruction ord("#") to read comment to end-of-line (sneaky)
@@ -770,14 +767,14 @@ __END__
 0 gv_fetchpvx	bstate->bs_sv				strconst	128x
 0 gv_stashpv	bstate->bs_sv				strconst	128x
 0 gv_stashpvx	bstate->bs_sv				strconst	128x
-0 gp_sv		GvSV(bstate->bs_sv)			svindex
+0 gp_sv		bstate->bs_sv				svindex		x
 0 gp_refcnt	GvREFCNT(bstate->bs_sv)			U32
 0 gp_refcnt_add	GvREFCNT(bstate->bs_sv)			I32		x
 0 gp_av		*(SV**)&GvAV(bstate->bs_sv)		svindex
 0 gp_hv		*(SV**)&GvHV(bstate->bs_sv)		svindex
 0 gp_cv		*(SV**)&GvCV(bstate->bs_sv)		svindex
 <9 gp_file	GvFILE(bstate->bs_sv)			pvindex
-9 gp_file	GvFILE_HEK(bstate->bs_sv)		hekindex
+9 gp_file	bstate->bs_sv				pvindex		x
 0 gp_io		*(SV**)&GvIOp(bstate->bs_sv)		svindex
 0 gp_form	*(SV**)&GvFORM(bstate->bs_sv)		svindex
 0 gp_cvgen	GvCVGEN(bstate->bs_sv)			U32

@@ -14,6 +14,30 @@ B:C Problems:
   Modification of a read-only value attempted - save_context ?
 5.11 regex pad wrong
 
+5.00505 i686-linux
+t/bytecode.t	all ok
+t/c.t	Fail 14-16
+Can't call method "our" on an undefined value at ccode14.pl line 1.
+not ok 14 # wanted: "ok", $? = 65280, got: ""
+not ok 15 # wanted: "a
+b", got: ""
+not ok 16 # wanted: "1", $? = 65280, got: "ccode16.pl syntax OK
+Walking tree
+Can't locate object method "FETCHSIZE" via package "main" at
+/usr/local/lib/perl5/5.00505/i686-linux/B/C.pm line 728.
+END failed--cleanup aborted."
+t/cc.t	Fail 14-16 18-19
+Can't call method "our" on an undefined value.
+not ok 14 # wanted: "ok", $? = 65280, got: ""
+not ok 15 # wanted: "a
+b", got: ""
+not ok 16 # wanted: "1", $? = 65280, got: "cccode16.pl syntax OK
+Can't locate object method "FETCHSIZE" via package "main" at /usr/local/lib/perl5/5.00505/i686-linux/B/C.pm line 728.
+END failed--cleanup aborted.
+"
+not ok 18 # wanted: "ba", $? = 11, got: ""
+not ok 19 # wanted: "431", $? = 11, got: ""
+
 5.6.2 i386-linux-thread-multi:
 t/b.t           0    11    57  106 185.96%  5-57
 t/bytecode.t               19   19 100.00%  1-19
@@ -38,32 +62,24 @@ t/testplc.sh: line 66:  5975 Segmentation fault
 
 5.8.8:
 t/bytecode.t
-cygwin only (caused by some vendor patch):
-  not ok 2 #TODO  wanted: 123, $? = 65280, got: Can't coerce ARRAY to integer in pattern match (m//) at bytecode2.plc line 125.
-  not ok 3 #TODO  wanted: zzz2y2y2, $? = 65280, got: Can't coerce ARRAY to integer in substitution (s///) at bytecode3.plc line 281.
-  not ok 4 #TODO  wanted: z2y2y2, $? = 65280, got: Can't coerce ARRAY to integer in substitution (s///) at bytecode4.plc line 253.
-  not ok 5 #TODO  wanted: bnnrm, $? = 65280, got: Can't coerce ARRAY to integer in push regexp at bytecode5.plc line 266.
-  not ok 7 #TODO  wanted: brnfg, $? = 65280, got: Can't coerce ARRAY to integer in push regexp at bytecode7.plc line 322.
-linux: all pass (no MYMALLOC PERL_DONT_CREATE_GVSV USE_64_BIT_INT, 
-		 no vendor patches: debian 40r0)
-
+  cygwin: ok
+  linux: ok (no MYMALLOC PERL_DONT_CREATE_GVSV USE_64_BIT_INT)
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 8-10, 14-16
   Undefined subroutine &main::a called at ccode8.pl line 1.
   Modification of a read-only value attempted at ccode10.pl line 2.
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
-  Failed tests:  8-10 12 14-16 18-19
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 12)
+  Failed tests:  8-10 14-16 18-19
   In function `pp_main': cccode12.c:276: error: too few arguments to function 
   (Bug#55302, fixed with B-C-1.04_18)
 
 5.8.8d:
-  TODO failed:   20 (bc op coverage)
-t/bytecode.t: All ok
-t/c.t        (Wstat: 0 Tests: 19 Failed: 5)
-  FAILED tests 11-12 17-19
+t/bytecode.t: ok
+t/c.t        (Wstat: 0 Tests: 19 Failed: 13)
+  FAILED tests 5, 7-12, 14-19 (was: 11-12 17-19)
   panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 5)
-  Failed tests:  11-12 17-19
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
+  FAILED tests 5, 7-12, 14-19 (was: 11-12 17-19)
 
 5.8.9d:
 t/bytecode.t: all ok
@@ -81,7 +97,7 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
                  8-10 12 14-16 18-19
 
 5.10.0d:
-t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
+t/bytecode   (Wstat: 0 Tests: 19 Failed: 9)
   FAILED tests 2-5, 7, 11, 15 (was: 2-5, 7, 9-12, 15)
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
@@ -92,23 +108,21 @@ t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
   Failed tests:  2-4, 6, 11-12, 17-19 (was: 8-10, 12, 14-16, 18-19)
 
-5.10.0-nt (not threaded): 
-t/bytecode   (Wstat: 0 Tests: 19 Failed: 9)
-  FAILED tests: 9-10, 12
+5.10.0-nt (not threaded):
+t/bytecode.t (Wstat: 0 Tests: 19 Failed: 5)
+  Failed tests:  7, 9-12
+t/c.t        (Wstat: 0 Tests: 19 Failed: 17)
+  Failed tests:  2-12, 14-19
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 17)
+  Failed tests:  2-12, 14-19
+
+5.11d@34005
+t/bytecode.t (Wstat: 0 Tests: 19 Failed: 6)
+  Failed tests:  4, 9-12, 16
 t/c.t        (Wstat: 0 Tests: 19 Failed: 10)
-  FAILED tests: 8-10, 14-16 (was: 2-4, 6, 11-12, 17-19)
-  invalid pad in pad_sv, pad_new, save_clearsv - writing to PL_curpad at save_context
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 8)
-  Failed tests: 2-4 6 11-12 17-19 (was: 2-4 6 11-12 17-19)
-
-
-5.11 @33673 -D
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 7)
-  Failed tests:  4, 9-12, 15-16 (all segfaulting in REGEX)
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  8-10, 14-16
+  Failed tests:  6, 8-10, 12, 14, 16-19 (was: 8-10, 14-16)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
-  Failed tests:  1-4, 6, 11-13, 17-19
+  Failed tests: 2-19 (was 1-4, 6, 11-13, 17-19)
 
 5.11 @33704 i386-linux-thread-multi
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 10)
@@ -120,25 +134,39 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
 
 5.10, 5.11 status
 -----------------
-With DEBUGGING
-  panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8]
+panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] with DEBUGGING only
          CvPADLIST: curpad<=>comppad
+
 pvx: seems to be fixed now in bc, and c
   With the move of the pvx field from xpv to the sv, we have to solve 
   that differently for the Bytecode and C backend.
   Bytecode can simply mimic the old XPV behaviour of a 3 field struct 
   (pvx, cur, len) to simplify pv handling.
+
 hv: crash at invalid entry in hv_store in B::HV::save fixed
+
 hek: new implementation
+
 regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
-bc 10: padv+sassign => Modification of a read-only value attempted at bytecode10.pl line 1.
+
+bc 10: padv+sassign => Modification of a read-only value attempted at 
+bytecode10.pl line 1. Only on cygwin, not on linux!
+The bytecode is exactly the same, it must be pp_entersub() with &$cv()
+Is FAKE flag of the padsv is missing or should we check for readonly pads?
+  g  <1> entersub[t4] vKS/TARG,1
+  => Perl_sv_force_normal_flags()
+	if (SvREADONLY(sv) && (!SvFAKE(sv)) && (IN_PERL_RUNTIME)) => die
+	SV = NULL(0x0) at 0x12207c0
+	  REFCNT = 2147483129
+	  FLAGS = (READONLY)
+-Dt crash fixed by core patch pl-dump-const.patch
 
 5.8 status
 ----------
 I've restored 5.8 backwards compatibility, mainly for test comparison.
 CPAN installations will still abort, but that can be easily overridden.
-ByteLoader is now backwards compatible: Accepts lower versions also, 
-but opcode compat version table missing for loading older bc.
+ByteLoader is now platform compatible, backwards compatible not yet.
+opcode compat version table missing for loading older bc.
 
 Details:
 
@@ -157,6 +185,13 @@ $2 = {sv_any = 0x14d1d48, sv_refcnt = 3, sv_flags = 32777 (0x8009), sv_u = {
     svu_rv = 0x14db2c8, svu_pv = 0x14db2c8 "ðúE\001", svu_array = 0x14db2c8,
     svu_hash = 0x14db2c8, svu_gp = 0x14db2c8}}
 
+cccode3.c - 5.11 dstr assert
+	XPUSHs(GvSV(PL_curpad[1])); /* oops, this GV is empty */
+	/* stack =  */
+	/* BINOP (0x15ec140) sassign [OPf_STACKED] */
+	dst = POPs; src = TOPs; /* empty var dst at stack ! */
+	MAYBE_TAINT_SASSIGN_SRC(src);
+	SvSetSV(dst, src);
 
 ccode3 - 5.10
 -------------

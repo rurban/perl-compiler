@@ -49,7 +49,7 @@ single file applications.
 The simpliest windows I<"compiler"> would be then F<pl2exe.pl> 
 in L<C::DynaLib>.
 
-Several years ago the undump functionality used to work on several 
+Several years ago the C<undump> functionality used to work on several 
 platforms. See L<perlrun> for C<-u>.
 
 =head2 Layout
@@ -120,7 +120,7 @@ ends.  They're presented roughly in order of maturity, so that the
 most stable and proven backends are described first, and the most
 experimental and incomplete backends are described last.
 
-The O module automatically enabled the B<-c> flag to Perl, which
+The C<O> module automatically enabled the B<-c> flag to Perl, which
 prevents Perl from executing your code once it has been compiled.
 This is why all the backends print:
 
@@ -130,7 +130,7 @@ before producing any other output.
 
 =head2 The Cross Referencing Backend
 
-The cross referencing backend (B::Xref) produces a report on your program,
+The cross referencing backend (C<B::Xref>) produces a report on your program,
 breaking down declarations and uses of subroutines and variables (and
 formats) by file and subroutine.  For instance, here's part of the
 report from the I<pod2man> program that comes with Perl:
@@ -227,7 +227,7 @@ See L<B::Deparse> for more information on the formatting options.
 
 =head2 The Lint Backend
 
-The lint backend (B::Lint) inspects programs for poor style.  One
+The lint backend C<B::Lint> inspects programs for poor style.  One
 programmer's bad style is another programmer's useful tool, so options
 let you select what is complained about.
 
@@ -248,7 +248,7 @@ to a C source file, which can be turned into a native executable
 for that particular platform using a C compiler.  The resulting
 program links against the Perl interpreter library, so it
 will not save you disk space (unless you build Perl with a shared
-library) or program size.  It may, however, save you startup time.
+library) or program size. It may, however, save you startup time.
 
 The C<perlcc> tool generates such executables by default.
 
@@ -263,7 +263,7 @@ Without extra arguments, it saves the main program.
         -q 		Be quiet. STDOUT goes to $O::BEGIN_output
         -qq		Be very quiet. Also suppress "Syntax OK"
 	-ofilename	Output to filename instead of STDOUT
-	-v		Verbose (currently gives a few compilation statistics)
+	-v		Be verbose. Currently gives a few compilation statistics.
 	--		Force end of options
 	-uPackname	Force apparently unused subs from package Packname to
 			be compiled. This allows programs to use eval "foo()"
@@ -299,7 +299,7 @@ For more information, see L<perlcc> and L<B::C>.
 =head2 The Bytecode Backend
 
 This backend is only useful if you also have a way to load and
-execute the bytecode that it produces.  The ByteLoader module provides
+execute the bytecode that it produces. The L</ByteLoader> module provides
 this functionality.
 
 To turn a Perl program into executable byte code, you can use C<perlcc>
@@ -385,9 +385,8 @@ the Perl data structures directly.  The program will still link against
 the Perl interpreter library, to allow for eval(), C<s///e>,
 C<require>, etc.
 
-The C<perlcc> tool generates such executables when using the -O
-switch.  To compile a Perl program (ending in C<.pl>
-or C<.p>):
+The C<perlcc> tool generates such executables when using the C<-O>
+switch.  To compile a Perl program (ending in C<.pl> or C<.p>):
 
   perlcc -O myperlprogram.pl
 
@@ -403,7 +402,7 @@ subs to be saved. Without extra arguments, it saves the main program.
         -q 		Be quiet. STDOUT goes to $O::BEGIN_output
         -qq		Be very quiet. Also suppress "Syntax OK"
 	-ofilename	Output to filename instead of STDOUT
-NYI	-v              Be verbose.
+	-v              Be verbose.
 	--		Force end of options
 	-uPackname	Force apparently unused subs from package Packname to
 			be compiled. This allows programs to use eval "foo()"
@@ -425,8 +424,8 @@ NYI	-v              Be verbose.
 			running the perl compiler.
 	-D		Debug options (concat or separate flags like perl -D)
 		r	Writes debugging output to STDERR just as it's about
-			to write to the program's runtime (otherwise writes
-			debugging info as comments in its C output).
+			to write to the program's runtime. Otherwise writes
+			debugging info as comments in its C output.
 		O	Outputs each OP as it's compiled
 		s	Outputs the contents of the shadow stack at each OP
 		p	Outputs the contents of the shadow pad of lexicals as
@@ -517,7 +516,7 @@ This run-time module parses and executes the binary bytecode
 produced by L</"B::Bytecode">. These are normally C<.plc> for 
 scripts and C<.pmc> files for modules. 
 
-Note that CORE favors C<.pmc> over C<.pm> files, so it would 
+Note that Perl CORE favors C<.pmc> over C<.pm> files, so it would 
 be wise to add the ByteLoader module in advance.
 Either statically linked into your perl (see C<Config{static_ext}>)
 or with C<-MByteLoader> on the command line.
@@ -555,7 +554,7 @@ Backend"> for details about usage.
 With the -M switch you can also produce bytecode compiled modules as 
 C<.pmc> files, which if pesent in the @INC patch are favored over 
 normal C<.pm> files. You need to load the L</ByteLoader> module then also, 
-which is a problem because it is not in CORE anymore.
+which is a problem, because it is not in CORE anymore.
 
 =item B::C
 
@@ -647,7 +646,7 @@ usage.
 
 =head1 KNOWN PROBLEMS
 
-BEGIN{} blocks are executed while compiling your code.  Any external
+BEGIN{} blocks are executed before compiling your code.  Any external
 state that is initialized in BEGIN{}, such as opening files, initiating
 database connections etc., do not behave properly.  To work around
 this, Perl has an INIT{} block that corresponds to code being executed
@@ -659,7 +658,7 @@ CC backend: goto, sort with non-default comparison. last for non-loop blocks.
 
 improve XSUB handling (both static and dynamic)
 
-sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
+sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts.
 
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
   them, whereas the compiler expects them to be linked to a xpv[inahc]v_root
@@ -684,7 +683,7 @@ DATA filehandle for multiple bytecode-compiled modules (harder)
 
 DATA filehandle for C-compiled program (yet harder)
 
-B::IO::SUBPROCESS
+pad panics since 5.10
 
 =head1 AUTHOR
 
@@ -709,7 +708,7 @@ Joshua ben Jore wrote a 50 minute presentation on
 "Perl 5 VM" guts at L<http://diotalevi.isa-geek.net/~josh/Presentations/Perl%205%20VM/> 
 focusing on the optree for SPUG, the Seattle Perl User's Group.
 
-The attempt for a new perloptreeguts.pod manual:
+The attempt for a new L<perloptreeguts>.pod manual:
 L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
 
 =cut
