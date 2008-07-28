@@ -1,6 +1,20 @@
 Started with B-C-1.04_01. The perl compiler was previously in CORE.
 TODO: Try to get info about earlier versions.
 
+1.04_08 2008-02-22 rurban
+	* fixed t/b.t tests for 5.11 (REGEXP, ref RV => IV)
+	* fixed Makefile.PL deps to ignore the interim .pl files
+	* added PMOP reflags
+	* added madprop to B-1.18_01 and B::C (if provided by B)
+	* enhanced B::Debug 1.05_02
+	* fixed B::C PL_cshlen (already initialized since 5.10)
+	* fixed B::C GvFILE
+	* fixed various (SV)xpv list casts and inits, 
+	* fixed B::C xpvnv_list for 5.10
+	* fixed B::C xpvio_list for 5.10
+	* fixed B::C pmopsect for 5.11
+	* bootstrap also all $Config{static_ext}, not only dynamic stashes
+
 1.04_07 2008-02-20 rurban
 	* moved bstate->bs_pv.xpv_pv slot to bs_pv.xiv_u.xivu_p1
 	* fixed pv_free
@@ -13,7 +27,7 @@ TODO: Try to get info about earlier versions.
 1.04_06 2008-02-19 rurban
 	* no crashes anymore for 5.10, just op_pmflags & PMf_ONCE assertions.
 	* blead@32980 crashes in tests 11,16,17,18
-	* enhanced B::Debug
+	* enhanced B::Debug (no version bump)
 	* fixed general op_list inits, and specials for av, hv
 	* almost fixed pv within sv handling
 	* added -O=C,-DS for SV debugging

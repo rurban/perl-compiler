@@ -28,9 +28,11 @@ sub headerpath {
 
 package MY;
 
-#sub libscan {
-#  return 0 unless $_[1] =~ /(ByteLoader|\.pm)$/;
-#}
+sub libscan {
+  # ignore temp testing files
+  return 0 if $_[1] =~ /(bytecode\d+\.pl|ccode\d+\..*|-588\.pod)$/;
+  return $_[1];
+}
 
 sub post_constants {
     "\nLIBS = $Config::Config{libs}\n"

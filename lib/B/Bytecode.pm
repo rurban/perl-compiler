@@ -572,8 +572,11 @@ sub B::PMOP::bsave {
 	  # 5.9 $op->pmtargetoff?
 	}
 	$op->B::BINOP::bsave($ix);
-	if (1 or $op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
+	if ($op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
 	  asm "op_pmstashpv", pvix $op->pmstashpv;
+	} else {
+	  bwarn("op_pmstashpv main") if $debug{M};
+	  asm "op_pmstashpv", pvix "main";
 	}
     } else {
 	$rrop = "op_pmreplrootgv";
@@ -595,23 +598,34 @@ sub B::PMOP::bsave {
       # asm "op_pmnext", $pmnextix;	# XXX
       asm "newpv", pvstring $op->precomp;
       asm "pregcomp";
-    } elsif ( VERSION >= 5.011 ) { 	# full REGEX type
-      $ix = pvix $op->precomp; # fixme
-      bwarn("PMOP full REGEX type not yet supported");
-      asm "pregcomp", $ix;
+    } elsif ( VERSION >= 5.011 ) { 	# full REGEXP type
+      bwarn("PMOP full REGEXP type not yet supported");
+      #my $re;
+      if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
+	bwarn("PMOP existing regex_pad not yet supported");
+	asm "op_pmflags",  $op->pmflags | 2;
+      } else {
+	asm "op_pmflags",  $op->pmflags;
+      }
+      asm "op_pmflags",  $op->pmflags | 2;
+      asm "newpv", pvstring $op->precomp;
+      asm "op_reflags",  $op->reflags;
+      asm "pregcomp";
     } elsif ( VERSION >= 5.009 ) {
-      # TODO: not just a pv, use a full sv as pattern (2nd arg)
       # asm "newsvx", $sv->FLAGS;
       # asm "newsv", pvstring $op->precomp;
-      #my $svix = $op->B::SV::ix();
-      #$op->B::OP::bsave($ix);
-      $ix = pvix $op->precomp; # fixme
-      # asm "op_reflags", 2;
-      # add flag PMf_ONCE to this pv or to the op?
-      bwarn("PMOP sv REGEX not yet supported");
-      asm "op_pmflags", $op->pmflags | 2;
-      bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
-      asm "pregcomp", $ix;
+      bwarn("PMOP not yet supported");
+      if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
+	bwarn("PMOP existing regex_pad not yet supported");
+	asm "op_pmflags",  $op->pmflags | 2;
+      } else {
+	asm "op_pmflags",  $op->pmflags;
+      }
+      asm "newpv", pvstring $op->precomp;
+      asm "op_reflags",  $op->reflags;
+      # bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
+      #asm "pregcomp", $ix;
+      asm "pregcomp";
     }
 }
 

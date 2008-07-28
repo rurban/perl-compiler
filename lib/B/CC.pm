@@ -290,9 +290,9 @@ sub reload_lexicals {
     my %alloc;		# Keyed by variable name. A value of 1 means the
 			# variable has been declared. A value of 2 means
 			# it's in use.
-    
+
     sub new_scope { %alloc = () }
-    
+
     sub new ($$$) {
 	my ($class, $type, $prefix) = @_;
 	my ($ptr, $i, $varname, $status, $obj);
@@ -539,7 +539,7 @@ sub pp_and {
     }
     return $op->other;
 }
-	    
+
 sub pp_or {
     my $op = shift;
     my $next = $op->next;
@@ -558,7 +558,7 @@ sub pp_or {
     }
     return $op->other;
 }
-	    
+
 sub pp_cond_expr {
     my $op = shift;
     my $false = $op->next;
@@ -643,7 +643,7 @@ sub pp_rv2gv{
     my $sym=doop($op);
     if ($op->private & OPpDEREF) {
         $init->add(sprintf("((UNOP *)$sym)->op_first = $sym;"));	
-        $init->add(sprintf("((UNOP *)$sym)->op_type = %d;", 
+        $init->add(sprintf("((UNOP *)$sym)->op_type = %d;",
 		$op->first->type));	
     }
     return $op->next;
@@ -651,7 +651,7 @@ sub pp_rv2gv{
 sub pp_sort {
     my $op = shift;
     my $ppname = $op->ppaddr;
-    if ( $op->flags & OPf_SPECIAL && $op->flags  & OPf_STACKED){   
+    if ( $op->flags & OPf_SPECIAL && $op->flags  & OPf_STACKED) {
         #this indicates the sort BLOCK Array case
         #ugly surgery required.
         my $root=$op->first->sibling->first;
@@ -1117,7 +1117,7 @@ sub pp_formline {
     write_back_stack() unless $skip_stack{$ppname};
     my $sym=doop($op);
     # See comment in pp_grepwhile to see why!
-    $init->add("((LISTOP*)$sym)->op_first = $sym;");    
+    $init->add("((LISTOP*)$sym)->op_first = $sym;");
     runtime("if (PL_op == ((LISTOP*)($sym))->op_first){");
     save_or_restore_lexical_state(${$op->first});
     runtime( sprintf("goto %s;",label($op->first)));
@@ -1144,7 +1144,7 @@ sub pp_leavesub{
     my $op = shift;
     write_back_lexicals() unless $skip_lexicals{$ppname};
     write_back_stack() unless $skip_stack{$ppname};
-    runtime("if (PL_curstackinfo->si_type == PERLSI_SORT){");   
+    runtime("if (PL_curstackinfo->si_type == PERLSI_SORT){");
     runtime("\tPUTBACK;return 0;");
     runtime("}");
     doop($op);
@@ -1619,7 +1619,7 @@ sub cc_recurse {
 	cc(@$ccinfo);
     }
     return $start;
-}    
+}
 
 sub cc_obj {
     my ($name, $cvref) = @_;
@@ -1654,7 +1654,7 @@ sub cc_main {
 		   "av_store(CvPADLIST(PL_main_cv),1,SvREFCNT_inc($curpad_sym));",
 		   "PL_amagic_generation= $amagic_generate;",
 		     );
-                 
+
     }
     seek(STDOUT,0,0); #prevent print statements from BEGIN{} into the output
     output_boilerplate();
