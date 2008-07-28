@@ -43,6 +43,8 @@ my $tix = 1;
 my %ops = (0,0);
 # sub asm ($;$$) { }
 sub nice ($) { }
+my $perl510 = ($] >= 5.009005);
+my $perl511 = ($] >= 5.011);
 
 BEGIN {
     my $ithreads = $Config{'useithreads'} eq 'define';
@@ -55,7 +57,7 @@ BEGIN {
 #################################################
 
 sub op_flags {
-  return '' if $quiet; 
+  return '' if $quiet;
   # B::Concise::op_flags($_[0]); # too terse
   # common flags (see BASOP.op_flags in op.h)
   my($x) = @_;
@@ -73,7 +75,7 @@ sub op_flags {
 }
 
 sub sv_flags {
-  return '' if $quiet or ($] == 5.010); 
+  return '' if $quiet or ($] == 5.010);
   my ($sv) = @_;
   my %h;
   # TODO: check with which Concise and B versions this works. 5.10.0 fails
@@ -144,7 +146,7 @@ sub B::GV::ix {
 	    my ($svix, $avix, $hvix, $cvix, $ioix, $formix);
 	    nice "[GV]";
 	    # 510 without debugging misses B::SPECIAL::NAME
-	    my $name = $gv->STASH->NAME . "::" 
+	    my $name = $gv->STASH->NAME . "::"
 	      . class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME;
 	    asm "gv_fetchpvx", cstring $name;
 	    $svtab{$$gv} = $varix = $ix = $tix++;
@@ -286,7 +288,7 @@ sub B::PVIV::bsave {
     $sv->ROK ?
 	$sv->B::RV::bsave($ix):
 	$sv->B::NULL::bsave($ix);
-    if (VERSION >= 5.009) {
+    if ($perl510) { # was VERSION >= 5.009
 	# See note below in B::PVNV::bsave
 	return if $sv->isa('B::AV');
 	return if $sv->isa('B::HV');
@@ -299,7 +301,7 @@ sub B::PVIV::bsave {
 sub B::PVNV::bsave {
     my ($sv,$ix) = @_;
     $sv->B::PVIV::bsave($ix);
-    if (VERSION >= 5.009) {
+    if ($perl510) { # VERSION >= 5.009
 	# Magical AVs end up here, but AVs now don't have an NV slot actually
 	# allocated. Hence don't write out assembly to store the NV slot if
 	# we're actually an array.
@@ -431,7 +433,7 @@ sub B::AV::bsave {
     # asm "av_pushx", $_->ix, sv_flags($_) for @array;
     asm "av_pushx", $_ for @array;
     asm "sv_refcnt", $av->REFCNT;
-    if (VERSION < 5.009) {
+    if (!$perl510) { # VERSION < 5.009
 	asm "xav_flags", $av->AvFLAGS;
     }
     asm "xmg_stash", $stashix;
@@ -454,7 +456,7 @@ sub B::HV::bwalk {
 	    my $hash = $v->HV;
 	    if ($$hash && $hash->NAME) {
 		$hash->bwalk;
-	    } 
+	    }
 	    $v->ix(1) if desired $v;
 	} else {
 	    nice "[prototype]";
@@ -528,7 +530,7 @@ sub B::BINOP::bsave {
 
 # not needed if no pseudohashes
 
-*B::BINOP::bsave = *B::OP::bsave if VERSION >= 5.009;
+*B::BINOP::bsave = *B::OP::bsave if $perl510; #VERSION >= 5.009;
 
 # deal with sort / formline
 
@@ -588,7 +590,7 @@ sub B::BINOP::bsave_fat {
     my ($op,$ix) = @_;
     my $last = $op->last;
     my $lastix = $op->last->ix;
-    if (VERSION < 5.009 && $op->name eq 'aassign' && $last->name eq 'null') {
+    if (!$perl510 && $op->name eq 'aassign' && $last->name eq 'null') {
 	asm "ldop", $lastix unless $lastix == $opix;
 	asm "op_targ", $last->targ;
     }
@@ -624,15 +626,15 @@ sub B::PMOP::bsave {
 	}
 	$op->B::BINOP::bsave($ix);
 	if ($op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
-	  if (VERSION > 5.011) {
+	  if (!$perl510) {
 	    asm "op_pmstashpv", pvix $op->pmstashpv;
 	  } else {
-	    # crash in 5.11
+	    # crash in 5.10, 5.11
 	    bwarn("op_pmstashpv ignored") if $debug{M};
 	  }
 	} else {
 	  bwarn("op_pmstashpv main") if $debug{M};
-	  asm "op_pmstashpv", pvix "main" if (VERSION < 10.011);
+	  asm "op_pmstashpv", pvix "main" unless $perl510;
 	}
     } else {
       $rrop = "op_pmreplrootgv";
@@ -646,7 +648,7 @@ sub B::PMOP::bsave {
     asm $rrop, $rrarg if $rrop;
     asm "op_pmreplstart", $rstart if $rstart;
 
-    if ( VERSION < 5.009 ) {
+    if ( !$perl510 ) {
       bwarn("PMOP op_pmflags: ",$op->pmflags) if $debug{M};
       asm "op_pmflags", $op->pmflags;
       asm "op_pmpermflags", $op->pmpermflags;
@@ -654,7 +656,7 @@ sub B::PMOP::bsave {
       # asm "op_pmnext", $pmnextix;	# XXX
       asm "newpv", pvstring $op->precomp;
       asm "pregcomp"; # how is this supposed to work? needs arg pvcontants
-    } elsif ( VERSION >= 5.011 ) { 	# full REGEXP type
+    } elsif ( $perl511 ) { 	# full REGEXP type
       #bwarn("PMOP full REGEXP type not yet supported");
       #my $re;
       if ($op->pmoffset) { # regex_pad is regenerated within pregcomp !?!
@@ -666,10 +668,10 @@ sub B::PMOP::bsave {
       asm "newpv", pvstring $op->precomp;
       #asm "op_reflags",  $op->reflags; # does not pregcomp set the extflags?
       asm "pregcomp";
-    } elsif ( VERSION >= 5.009 ) {
+    } elsif ( $perl510 ) {
       # asm "newsvx", $sv->FLAGS;
       # asm "newsv", pvstring $op->precomp;
-      bwarn("PMOP not yet supported");
+      #bwarn("PMOP not yet supported");
       if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
 	# bwarn("PMOP existing regex_pad not yet supported");
 	asm "op_pmflags",  $op->pmflags | 2;
@@ -678,7 +680,7 @@ sub B::PMOP::bsave {
       }
       asm "op_reflags",  $op->reflags;
       asm "newpv", pvstring $op->precomp;
-      # bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
+      bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
       #asm "pregcomp", $ix;
       asm "pregcomp";
     }
@@ -696,8 +698,8 @@ sub B::PADOP::bsave {
     my ($op,$ix) = @_;
 
     $op->B::OP::bsave($ix);
-    # crash in 5.11
-    #if (VERSION < 5.011) {
+    # crashed in 5.11
+    #if ($perl511) {
       asm "op_padix", $op->padix;
     #}
 }
@@ -743,10 +745,10 @@ sub B::COP::bsave {
     }
     asm "cop_label", pvix $cop->label, $cop->label if $cop->label;	# XXX AD
     asm "cop_seq", $cop->cop_seq;
-    asm "cop_arybase", $cop->arybase if VERSION < 5.009;
+    asm "cop_arybase", $cop->arybase unless $perl510;
     asm "cop_line", $cop->line;
     asm "cop_warnings", $warnix;
-    if (VERSION < 5.009) {
+    if (!$perl510) {
       asm "cop_io", $cop->io->ix;
     }
 }
@@ -782,7 +784,7 @@ sub save_cq {
 		next unless $_->FILE eq $0;
 		# XXX BEGIN { goto A while 1; A: }
 		for (my $op = $_->START; $$op; $op = $op->next) {
-		    next unless $op->name eq 'require' || 
+		    next unless $op->name eq 'require' ||
 			# this kludge needed for tests
 			$op->name eq 'gv' && do {
 			    my $gv = class($op) eq 'SVOP' ?
@@ -945,7 +947,7 @@ later by the ByteLoader module and executed as a regular Perl script.
 
 =item B<-H>
 
-prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
+Prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
 
 =item B<-b>
 
@@ -954,21 +956,21 @@ other files (ex. C<use Foo;>) are saved.
 
 =item B<-k>
 
-keep the syntax tree - it is stripped by default.
+Keep the syntax tree - it is stripped by default.
 
 =item B<-o>I<outfile>
 
-put the bytecode in <outfile> instead of dumping it to STDOUT.
+Put the bytecode in <outfile> instead of dumping it to STDOUT.
 
 =item B<-s>
 
-scan the script for C<# line ..> directives and for <goto LABEL>
+Scan the script for C<# line ..> directives and for <goto LABEL>
 expressions. When gotos are found keep the syntax tree.
 
 =item B<-S>
 
-Output assembler source rather than piping it
-through the assembler and outputting bytecode.
+Output assembler source rather than piping it through the assembler
+and outputting bytecode.
 Without -q the assembler source is commented.
 
 =item B<-q>
@@ -978,6 +980,8 @@ Be quiet.
 =item B<-D>I<M>
 
 Set debugging flag for more verbose STDERR output.
+Verbose debugging options are crucial, because we have no interactive
+debugger at the early CHECK step, where the compilation happens.
 
 M for Magic and Matches.
 
@@ -1001,7 +1005,7 @@ variables in C<(?{ ... })> constructs are not properly scoped.
 
 =item *
 
-scripts that use source filters will fail miserably.
+Scripts that use source filters will fail miserably.
 
 =item *
 

@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_12';
+our $VERSION = '1.04_13';
 
 package B::C::Section;
 
@@ -218,13 +218,13 @@ BEGIN {
 # Code sections
 my ($init, $decl, $symsect, $binopsect, $condopsect, $copsect,
     $padopsect, $listopsect, $logopsect, $loopsect, $opsect, $pmopsect,
-    $pvopsect, $svopsect, $unopsect, $svsect, $xpvsect, $xpvavsect,
+    $pvopsect, $svopsect, $unopsect, $svsect, $resect, $xpvsect, $xpvavsect,
     $xpvhvsect, $xpvcvsect, $xpvivsect, $xpvnvsect, $xpvmgsect, $xpvlvsect,
-    $xrvsect, $xpvbmsect, $xpviosect, $heksect, $resect );
+    $xrvsect, $xpvbmsect, $xpviosect, $heksect, $orangesect );
 my @op_sections = \( $binopsect, $condopsect, $copsect, $padopsect, $listopsect,
                      $logopsect, $loopsect, $opsect, $pmopsect, $pvopsect, $svopsect,
                      $unopsect );
-
+push @op_sections, ( $resect ) if $perl511;
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
@@ -267,18 +267,23 @@ sub getsym {
 
 sub savere {
     my $re = shift;
+    my $flags = shift || 0;
     my $sym;
+    my $pv = $re;
+    my $len = length $pv;
+    my $pvmax = length(pack "a*",$pv) + 1;
     if ($perl511) {
-      $sym = sprintf("re_list[%d]", $re_index++);
-      $resect->add(sprintf("0,0,0,%s", cstring($re)));
+      # fill in at least the engine pointer?
+      $orangesect->add(sprintf("0,%u,%u, 0,0,NULL, NULL,NULL,".
+			       "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0", $len, $pvmax));
+      $resect->add(sprintf("&orange_list[%d], 1, %d, %s", $orangesect->index, $flags, cstring($re)));
+      $sym = sprintf("re_list[%d]", $resect->index);
+      warn sprintf("Saving RE $sym->orangesect[%d] $re\n", $orangesect->index) if $debug_sv;
     } elsif ($perl510) {
       #$sym = sprintf("re_list[%d]", $re_index++);
       #$resect->add(sprintf("0,0,0,%s", cstring($re)));
-      my $pv = $re;
-      my $len = length $pv;
-      my $pvmax = length(pack "a*",$pv) + 1;
       $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
-      $svsect->add(sprintf("&xpv_list[%d], 0, 0", $xpvsect->index));
+      $svsect->add(sprintf("&xpv_list[%d], 1, %x", $xpvsect->index, 0x4405));
       $init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
@@ -381,14 +386,17 @@ sub B::OP::fake_ppaddr {
   # uncast -1 (the printf format is %d so we can't tweak it), we have
   # to "know" that op_seq is a U16 and use 65535. Ugh.
 
+  # For 5.10 op_seq = -1 is gone, the temp. op_static also, but we
+  # have something better, we can set op_latefree.
+
   # 5.8: U16 op_seq;
   # 5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
   # 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
   # 5.11: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
   my $static;
   if ($] < 5.009004) { $static = sprintf "%u", 65535; } # seq
-  elsif ($] < 5.010) { $static = '0, 1, 0';} 	     # opt static spare
-  else               {  $static = '0, 0, 0, 0, 0'; } # opt latefree latefreed attached spare
+  elsif ($] < 5.010) { $static = '0, 1, 0';} 	        # opt static spare
+  else               { $static = '0, 1, 0, 0, 0'; }     # opt latefree latefreed attached spare
   sub B::OP::_save_common_middle {
     my $op = shift;
     my $madprop = $mad ? (" ".($B::VERSION < 1.1801 ? 0 : $op->madprop) . ",") : "";
@@ -658,10 +666,10 @@ sub B::PMOP::save {
         unless $optimize_ppaddr;
     my $re = $op->precomp;
     if (defined($re)) {
-	my( $resym, $relen ) = savere( $re );
+	my( $resym, $relen ) = savere( $re, 0 );
 	if ($perl511) {
 	  $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP(%s, %u));",
-			     $resym, $op->reflags));
+			     $resym, 1 ? $op->pmflags : $op->reflags)); # which of those?
 	} elsif ($perl510) {
 	  $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP($resym, %u));", $op->reflags));
 	} else {
@@ -709,7 +717,7 @@ sub B::IV::save {
     $xpvivsect->add(sprintf("0, 0, 0, %d", $sv->IVX));
     $svsect->add(sprintf("&xpviv_list[%d], %lu, 0x%x",
 			 $xpvivsect->index, $sv->REFCNT , $sv->FLAGS));
-    warn sprintf("Saving IV %d to xpviv_list[%d], sv_list[%d]", $sv->IVX,
+    warn sprintf("Saving IV %d to xpviv_list[%d], sv_list[%d]\n", $sv->IVX,
 		 $xpvivsect->index, $svsect->index) if $debug_sv;
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
@@ -747,10 +755,10 @@ sub savepvn {
 	    $offset += length $str;
 	}
 	push @res, sprintf("%s[%u] = '\\0';", $dest, $offset);
-	warn sprintf("Copying overlong PV %s to %s", cstring($pv), $dest) if $debug_sv;
+	warn sprintf("Copying overlong PV %s to %s\n", cstring($pv), $dest) if $debug_sv;
     }
     else {
-      warn sprintf("Saving PV %s to %s", cstring($pv), $dest) if $debug_sv;
+      warn sprintf("Saving PV %s to %s\n", cstring($pv), $dest) if $debug_sv;
       push @res, sprintf("%s = savepvn(%s, %u);", $dest,
 			 cstring($pv), length($pv));
     }
@@ -931,7 +939,7 @@ sub B::PVMG::save_magic {
 
             confess "PMOP not found for REGEXP $rx" unless $pmop;
 
-            my( $resym, $relen ) = savere( $mg->precomp );
+            my( $resym, $relen ) = savere( $mg->precomp ); # string that generated the regexp
             my $pmsym = $pmop->save;
 	    if ($perl510) {
 	      $init->add( split /\n/, sprintf <<CODE, $mg->pmflags,$$sv,cchar($type),cstring($ptr),$len);
@@ -1564,7 +1572,7 @@ sub output_all {
 		    $listopsect, $pmopsect, $svopsect, $padopsect, $pvopsect,
 		    $loopsect, $copsect, $svsect, $xpvsect, $resect,
 		    $xpvavsect, $xpvhvsect, $xpvcvsect, $xpvivsect, $xpvnvsect,
-		    $xpvmgsect, $xpvlvsect, $xrvsect, $xpvbmsect, $xpviosect);
+		    $xpvmgsect, $xpvlvsect, $xrvsect, $xpvbmsect, $xpviosect, $orangesect);
     $symsect->output(\*STDOUT, "#define %s\n");
     print "\n";
     output_declarations();
@@ -2174,14 +2182,14 @@ sub init_sections {
 		    cop => \$copsect, padop => \$padopsect,
 		    listop => \$listopsect, logop => \$logopsect,
 		    loop => \$loopsect, op => \$opsect, pmop => \$pmopsect,
-		    re => \$resect,
 		    pvop => \$pvopsect, svop => \$svopsect, unop => \$unopsect,
-		    sv => \$svsect, xpv => \$xpvsect, xpvav => \$xpvavsect,
+		    sv => \$svsect, re => \$resect,
+		    xpv => \$xpvsect, xpvav => \$xpvavsect,
 		    xpvhv => \$xpvhvsect, xpvcv => \$xpvcvsect,
 		    xpviv => \$xpvivsect, xpvnv => \$xpvnvsect,
 		    xpvmg => \$xpvmgsect, xpvlv => \$xpvlvsect,
 		    xrv => \$xrvsect, xpvbm => \$xpvbmsect,
-		    xpvio => \$xpviosect);
+		    xpvio => \$xpviosect, 'orange' => \$orangesect);
     my ($name, $sectref);
     while (($name, $sectref) = splice(@sections, 0, 2)) {
 	$$sectref = new B::C::Section $name, \%symtable, 0;
@@ -2356,6 +2364,8 @@ of the form C<A::B>) where package C<A> does not contain any subs.
 =item B<-D>
 
 Debug options (concatenated or separate flags like C<perl -D>).
+Verbose debugging options are crucial, because we have no interactive
+debugger at the early CHECK step, where the compilation happens.
 
 =item B<-Do>
 
@@ -2363,7 +2373,7 @@ OPs, prints each OP as it's processed
 
 =item B<-DS>
 
-prints SV information on saving
+prints SV/RE information on saving
 
 =item B<-Dc>
 
@@ -2467,6 +2477,7 @@ Plenty. Current status: experimental.
 ccode1 crashes at print empty PVX,
 pregcomp changes
 re_list[] inits for 5.11
+hang at final op_free destruction.
 
 =head1 AUTHOR
 

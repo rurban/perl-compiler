@@ -6,6 +6,7 @@ Same ok and failures as with 5.8 and 5.9.4
 bc PV and PM assertions.
 c regex and blead fails.
 DEBUGGING: op_free(PL_main_root) endless recursion
+Since 1.04_13 and >=5.10 it hangs in op_free(PL_main_root), without or without DEBUGGING.
 Minor B::CC bugs fixed.
 
 5.8.8:
@@ -47,7 +48,6 @@ t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
   Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
-  Can't locate object method "SUBPROCESS" via package "B::IO"
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
   Failed tests:  8-10, 14-16 (some segfaulting, some hanging at op_free)
@@ -84,13 +84,34 @@ pvx: seems to be fixed now in bc, and c
 hv: crash at invalid entry in hv_store in B::HV::save
 hek: new implementation
 regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
-bc: op_pmflags assertion, B::IO::SUBPROCESS missing
+bc: B::IO::SUBPROCESS missing
 
 5.8 status
 ----------
 I've restored 5.8 backwards compatibility, mainly for test comparison.
 CPAN installations will still abort, but that can be easily overridden.
 ByteLoader is now backwards compatible: Accepts lower versions also.
+
+Details:
+
+ccode3 - 5.10
+-------------
+SEGV     $_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_ 
+empty data. cause: no pv flag and refcnt in the sv
+#0  0x004a38c3 in Perl_fbm_instr (my_perl=0x18926d0, big=0x18d4bc8 "xyxyx",
+    bigend=0x18d4bcd "", littlestr=0x0, flags=0) at util.c:577
+#1  0x006481d4 in Perl_re_intuit_start (my_perl=0x18926d0, prog=0x18d2088,
+    sv=0x18d3fb8, strpos=0x18d4bc8 "xyxyx", strend=0x18d4bcd "", flags=0,
+    data=0x0) at regexec.c:561
+#2  0x005a13f3 in Perl_pp_subst (my_perl=0x18926d0) at pp_hot.c:2105
+(gdb) p *rx
+$7 = {engine = 0x6a06a0, mother_re = 0x0, extflags = 1126170624, minlen = 0,
+  minlenret = 0, gofs = 0, substrs = 0x18c0908, nparens = 0, intflags = 0,
+  pprivate = 0x18d1588, lastparen = 0, lastcloseparen = 0, swap = 0x0,
+  offs = 0x18cf748, subbeg = 0x0, sublen = 0, prelen = 0,
+  precomp = 0x18ab870 ")", wrapped = 0x18ab868 "(?-xism:)", wraplen = 9,
+  seen_evals = 0, paren_names = 0x0, refcnt = 1}
+
 
 TEST COVERAGE
 -------------

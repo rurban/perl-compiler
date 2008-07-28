@@ -1,12 +1,25 @@
-Started on CPAN with B-C-1.04_01. The perl compiler was in CORE until Perl 5.9.4.
+Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 until Perl 5.9.4.
 
-1.04_12 2008-03-16 rurban
+1.04_13 2008-03-24 rurban
+	* Fixed B::C pv init in 5.10. Forgot refcnt and flags.
+	* Added "Other perl to exe compilers" section to perlcompile.pod. 
+  	  This is even a FAQ.
+	* Added the NOTES to perlcompile.pod
+	* Added temp. perloptreeguts.pod. In work, also at the wiki.
+	* Fixed Bytecode op_pmflags assertions.
+        * Added orangesect for enough regexp space in RE's sv_any. Engine not initialized though.
+	* Hangs in C/CC executables at an op_free(PL_main_root) trying to free 
+          the static op structsm because the earlier op_seq -1 hack is gone now, 
+	  and opt_static was replaced by opt_latefree. Set now opt_latefree = 1.
+          This fixed tests 1 and 13. Slowly making progress step by step.
+
+1.04_12 2008-03-16 rurban (first upload)
 	* Fixed bug #40435 CC: Can't locate object method "_save_common_middle" 
 	  via package "B::FAKEOP"
 	* move tests from [bc]*.t into shared TESTS file.
 	* fixed remaining ugly Bytecode bug in B::AV::bsave 
 		$_ = $_->ix for @array.
-	  No we are at the same state as with 5.9.4
+	  Now we are at the same state as with 5.9.4
 	* fixed wrong bc cop_warning cast for 5.8
 	* fixed CC pmreplroot and pmreplstart fields
 	* make C and CC less verbose, honor -v, -q ignored.

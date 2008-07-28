@@ -98,7 +98,7 @@ sub B::LISTOP::debug {
 sub B::PMOP::debug {
     my ($op) = @_;
     $op->B::LISTOP::debug();
-    printf "\top_pmreplroot\t0x%x\n", ${$op->pmreplroot};
+    printf "\top_pmreplroot\t0x%x\n", $] < 5.008 ? ${$op->pmreplroot} : $op->pmreplroot;
     printf "\top_pmreplstart\t0x%x\n", ${$op->pmreplstart};
     printf "\top_pmnext\t0x%x\n", ${$op->pmnext} if $] < 5.009005;
     if (ITHREADS) {
@@ -112,7 +112,7 @@ sub B::PMOP::debug {
     printf "\top_reflags\t0x%x\n", $op->reflags if $] >= 5.009;
     printf "\top_pmpermflags\t0x%x\n", $op->pmpermflags if $] < 5.009;
     printf "\top_pmdynflags\t0x%x\n", $op->pmdynflags if $] < 5.009;
-    $op->pmreplroot->debug;
+    $op->pmreplroot->debug if $] < 5.008;
 }
 
 sub B::COP::debug {

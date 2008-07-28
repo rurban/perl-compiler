@@ -33,6 +33,25 @@ This document covers the use of the Perl compiler: which modules
 it comprises, how to use the most important of the backend modules,
 what problems there are, and how to work around them.
 
+=head2 Other perl to exe compilers
+
+Maybe you want to look for the free L<PAR> module or some commercial 
+products, like C<perl2exe> at L<http://www.indigostar.com/perl2exe.htm> 
+and C<perlapp> as C<PerlDevKit> from ActiveState at 
+L<http://www.activestate.com/Products/perl_dev_kit/>
+
+These are technically no compilers, just source packagers with a
+simple native code unpacker. Run-time behaviour is actually slower
+than with a normal perl source or real compiler, because of the
+additional unpacking and check steps. It's just convenient to have
+single file applications.
+
+The simpliest windows I<"compiler"> would be then F<pl2exe.pl> 
+in L<C::DynaLib>.
+
+Several years ago the undump functionality used to work on several 
+platforms. See L<perlrun> for C<-u>.
+
 =head2 Layout
 
 The compiler backends are in the C<B::> hierarchy, and the front-end
@@ -40,25 +59,31 @@ The compiler backends are in the C<B::> hierarchy, and the front-end
 interact with) is the O module.  Some backends (e.g., C<B::C>) have
 programs (e.g., I<perlcc>) to hide the modules' complexity.
 
+Since Perl 5.10 the three code-producing backends (C<B::C>, C<B::CC> 
+and C<B::Bytecode>), aka the compiler, have been removed from 
+CORE Perl and are available as seperate CPAN module 
+L<http://search.cpan.org/dist/B-C/>.
+
 Here are the important backends to know about, with their status
 expressed as a number from 0 (outline for later implementation) to
-10 (if there's a bug in it, we're very surprised):
+10:
 
 =over 4
 
-=item B::Bytecode
+=item The B::Bytecode backend
 
 Stores the parse tree in a machine-independent format, suitable
-for later reloading through the ByteLoader module.  Status: 5 (some
-things work, some things don't, some things are untested).
+for later reloading through the L</"ByteLoader"> module.  
+Status: 5 (some things work until 5.8.x, some things don't, 
+some things are untested).
 
-=item B::C
+=item The B::C backend
 
 Creates a C source file containing code to rebuild the parse tree
-and resume the interpreter.  Status: 6 (many things work adequately,
-including programs using Tk).
+and resume the interpreter.  Status: 6 (many things work adequately 
+until 5.8.x, including programs using Tk).
 
-=item B::CC
+=item The B::CC backend
 
 Creates a C source file corresponding to the run time code path in
 the parse tree.  This is the closest to a Perl-to-C translator there
@@ -67,8 +92,8 @@ translates the parse tree into a giant switch structure that
 manipulates Perl structures.  Eventual goal is to reduce (given
 sufficient type information in the Perl program) some of the
 Perl data structure manipulations into manipulations of C-level
-ints, floats, etc.  Status: 5 (some things work, including
-uncomplicated Tk examples).
+ints, floats, etc.  Status: 5 (some things work until 5.8.x, 
+including uncomplicated Tk examples).
 
 =item B::Lint
 
@@ -218,7 +243,7 @@ See L<B::Lint> for information on the options.
 
 =head2 The Simple C Backend
 
-This module saves the internal compiled state of your Perl program
+The C<B::C> module saves the internal compiled state of your Perl program
 to a C source file, which can be turned into a native executable
 for that particular platform using a C compiler.  The resulting
 program links against the Perl interpreter library, so it
@@ -228,6 +253,46 @@ library) or program size.  It may, however, save you startup time.
 The C<perlcc> tool generates such executables by default.
 
   perlcc myperlprogram.pl
+
+=head3 C Backend Invocation
+
+If there are any non-option arguments, they are taken to be
+names of objects to be saved (probably doesn't work properly yet).
+Without extra arguments, it saves the main program.
+
+        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
+        -qq		Be very quiet. Also suppress "Syntax OK"
+	-ofilename	Output to filename instead of STDOUT
+	-v		Verbose (currently gives a few compilation statistics)
+	--		Force end of options
+	-uPackname	Force apparently unused subs from package Packname to
+			be compiled. This allows programs to use eval "foo()"
+			even when sub foo is never seen to be used at compile
+			time. The down side is that any subs which really are
+			never used also have code generated. This option is
+			necessary, for example, if you have a signal handler
+			foo which you initialise with $SIG{BAR} = "foo".
+			A better fix, though, is just to change it to
+			$SIG{BAR} = \&foo. You can have multiple -u options.
+	-D		Debug options (concat or separate flags like perl -D)
+		o	OPs, prints each OP as it's processed
+		c	COPs, prints COPs as processed (incl. file & line num)
+		S	prints SV information on saving
+		A	prints AV information on saving
+		C	prints CV information on saving
+		M	prints MAGIC information on saving
+		G	prints GV information on saving
+	-f		Force optimisations on or off one at a time.
+		cog	Copy-on-grow: PVs declared and initialised statically
+		no-cog	No copy-on-grow
+	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
+			Currently, -O1 and higher set -fcog.
+
+=head3 C Examples
+	perl -MO=C foo.pl > foo.c
+	perl cc_harness -o foo foo.c
+
+	perl -MO=C,-v,-DcA bar.pl > /dev/null
 
 For more information, see L<perlcc> and L<B::C>.
 
@@ -247,12 +312,74 @@ module or program, it is as portable as Perl source (assuming that
 the user of the module or program has a modern-enough Perl interpreter
 to decode the byte code).
 
-See B<B::Bytecode> for information on options to control the
-optimization and nature of the code generated by the Bytecode module.
+=head3 Bytecode Backend Invocation
+
+If there are any non-option arguments, they are taken to be
+names of objects to be saved (probably doesn't work properly yet).
+Without extra arguments, it saves the main program.
+
+        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
+        -qq		Be very quiet. Also suppress "Syntax OK"
+	-ofilename	Output to filename instead of STDOUT.
+NYI	-v              Be verbose.
+	--		Force end of options.
+	-f		Force optimisations on or off one at a time.
+			Each can be preceded by no- to turn the option off.
+		compress-nullops
+			Only fills in the necessary fields of ops which have
+			been optimised away by perl's internal compiler.
+		omit-sequence-numbers
+			Leaves out code to fill in the op_seq field of all ops
+			which is only used by perl's internal compiler.
+		bypass-nullops
+			If op->op_next ever points to a NULLOP, replaces the
+			op_next field with the first non-NULLOP in the path
+			of execution.
+		strip-syntax-tree
+			Leaves out code to fill in the pointers which link the
+			internal syntax tree together. They're not needed at
+			run-time but leaving them out will make it impossible
+			to recompile or disassemble the resulting program.
+			It will also stop "goto label" statements from working.
+NYI	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
+			-O1 sets -fcompress-nullops -fomit-sequence numbers.
+			-O6 adds -fstrip-syntax-tree.
+NYI	-D		Debug options (concat or separate flags like perl -D)
+		o	OPs, prints each OP as it's processed.
+		b	print debugging information about bytecompiler progress
+		a	tells the assembler to include source assembler lines
+			in its output as bytecode comments.
+		C	prints each CV taken from the final symbol tree walk.
+	-S		Output assembler source rather than piping it
+			through the assembler and outputting bytecode.
+	-H		add #! perl shebang header
+	-s		scan and keep keep syntax tree if goto op found.
+			scan the script for C<# line ..> directives and for <goto LABEL>
+			expressions. When gotos are found keep the syntax tree.
+	-b		Save all the BEGIN blocks. Normally only BEGIN blocks that require
+			other files (ex. use Foo;) are saved.
+	-k		keep syntax tree to disassemble the plc.
+			it is stripped by default.
+	-TI		testing, dump the @INC av
+	-TF     file	testing, sets COP::file	
+   	-m		Compile as a module rather than a standalone program.
+			Currently this just means that the bytecodes for
+			initialising main_start, main_root and curpad are
+			omitted.
+
+=head3 Bytecode Invocation Examples
+
+	perl -MO=Bytecode,-O6,-H,-ofoo.plc foo.pl
+
+	perl -MO=Bytecode,-S foo.pl > foo.S
+	assemble foo.S > foo.plc
+	byteperl foo.plc
+
+	perl -MO=Bytecode,-m,-oFoo.pmc Foo.pm
 
 =head2 The Optimized C Backend
 
-The optimized C backend will turn your Perl program's run time
+The C<B::CC> optimized C backend will turn your Perl program's run time
 code-path into an equivalent (but optimized) C program that manipulates
 the Perl data structures directly.  The program will still link against
 the Perl interpreter library, to allow for eval(), C<s///e>,
@@ -268,7 +395,84 @@ To produce a shared library from a Perl module (ending in C<.pm>):
 
   perlcc -O Myperlmodule.pm
 
-For more information, see L<perlcc> and L<B::CC>.
+=head3 CC Backend Invocation
+
+If there are any non-option arguments, they are taken to be names of
+subs to be saved. Without extra arguments, it saves the main program.
+
+        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
+        -qq		Be very quiet. Also suppress "Syntax OK"
+	-ofilename	Output to filename instead of STDOUT
+NYI	-v              Be verbose.
+	--		Force end of options
+	-uPackname	Force apparently unused subs from package Packname to
+			be compiled. This allows programs to use eval "foo()"
+			even when sub foo is never seen to be used at compile
+			time. The down side is that any subs which really are
+			never used also have code generated. This option is
+			necessary, for example, if you have a signal handler
+			foo which you initialise with $SIG{BAR} = "foo".
+			A better fix, though, is just to change it to
+			$SIG{BAR} = \&foo. You can have multiple -u options.
+	-mModulename	Instead of generating source for a runnable executable,
+			generate source for an XSUB module. The
+			boot_Modulename function (which DynaLoader can look
+			for) does the appropriate initialisation and runs the
+			main part of the Perl source that is being compiled.
+	-pn		Generate code for perl patchlevel n (e.g. 3 or 4).
+			The default is to generate C code which will link
+			with the currently executing version of perl.
+			running the perl compiler.
+	-D		Debug options (concat or separate flags like perl -D)
+		r	Writes debugging output to STDERR just as it's about
+			to write to the program's runtime (otherwise writes
+			debugging info as comments in its C output).
+		O	Outputs each OP as it's compiled
+		s	Outputs the contents of the shadow stack at each OP
+		p	Outputs the contents of the shadow pad of lexicals as
+			it's loaded for each sub or the main program.
+		q	Outputs the name of each fake PP function in the queue
+			as it's about to processes.
+		l	Output the filename and line number of each original
+			line of Perl code as it's processed (pp_nextstate).
+		t	Outputs timing information of compilation stages
+	-f		Force optimisations on or off one at a time.
+		[
+		cog	Copy-on-grow: PVs declared and initialised statically
+		no-cog	No copy-on-grow
+		These two not in CC yet.
+		]
+		freetmps-each-bblock	Delays FREETMPS from the end of each
+					statement to the end of the each basic
+					block.
+		freetmps-each-loop	Delays FREETMPS from the end of each
+					statement to the end of the group of
+					basic blocks forming a loop. At most
+					one of the freetmps-each-* options can
+					be used.
+		omit-taint		Omits generating code for handling
+					perl's tainting mechanism.
+	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
+			Currently, -O1 sets -ffreetmps-each-bblock and -O2
+			sets -ffreetmps-each-loop.
+
+=head3 CC Invocation Example
+
+	perl -MO=CC,-O2,-ofoo.c foo.pl
+	perl cc_harness -o foo foo.c
+
+	perl -MO=CC,-mFoo,-oFoo.c Foo.pm
+	perl cc_harness -shared -c -o Foo.so Foo.c
+
+	perlcc -O myperlprogram.pl
+	perlcc -O MyperlModule.pm
+
+See also L<perlcc> and L<B::CC>.
+
+=head2 Backends For Debugging
+
+	perl -MO=Terse,exec foo.pl
+	perl -MO=Debug bar.pl
 
 =head1 Module List for the Compiler Suite
 
@@ -287,9 +491,36 @@ interact with B.
 This module is the front-end to the compiler's backends.  Normally
 called something like this:
 
-  $ perl -MO=Deparse myperlprogram
+  $ perl -MO=Deparse,-q myperlprogram
 
-This is like saying C<use O 'Deparse'> in your Perl program.
+This is like saying C<use O 'Deparse' qw(-q)> in your Perl program.
+
+Used with "perl -MO=Backend,-foo,-obar prog.pl" to invoke the backend
+B::Backend with options -foo and -obar. O invokes the sub
+B::Backend::compile() with arguments -foo and -obar at BEGIN time.
+That compile() sub must do any inital argument processing replied.
+If unsuccessful, it should return a string which O arranges to be
+printed as an error message followed by a clean error exit. In the
+normal case where any option processing in compile() is successful,
+it should return a sub ref (usually a closure) to perform the
+actual compilation. When O regains control, it ensures that the
+"-c" option is forced (so that the program being compiled doesn't
+end up running) and registers a CHECK block to call back the sub ref
+returned from the backend's compile(). Perl then continues by
+parsing prog.pl (just as it would with "perl -c prog.pl") and after
+doing so, assuming there are no parse-time errors, the CHECK block
+of O gets called and the actual backend compilation happens. Phew.
+
+=item ByteLoader
+
+This run-time module parses and executes the binary bytecode 
+produced by L</"B::Bytecode">. These are normally C<.plc> for 
+scripts and C<.pmc> files for modules. 
+
+Note that CORE favors C<.pmc> over C<.pm> files, so it would 
+be wise to add the ByteLoader module in advance.
+Either statically linked into your perl (see C<Config{static_ext}>)
+or with C<-MByteLoader> on the command line.
 
 =item B::Asmdata
 
@@ -320,6 +551,11 @@ reconstructed back into a parse tree.  The goal is to do the expensive program
 compilation once, save the interpreter's state into a file, and then restore the
 state from the file when the program is to be executed.  See L</"The Bytecode
 Backend"> for details about usage.
+
+With the -M switch you can also produce bytecode compiled modules as 
+C<.pmc> files, which if pesent in the @INC patch are favored over 
+normal C<.pm> files. You need to load the L</ByteLoader> module then also, 
+which is a problem because it is not in CORE anymore.
 
 =item B::C
 
@@ -456,7 +692,7 @@ This document was originally written by Nathan Torkington, and was
 maintained by the perl5-porters mailing list I<perl5-porters@perl.org> 
 up to Perl version 5.8.
 
-This version with all the compiler options is now part of the L<B::C> 
+This version with all the compiler options is now part of the C<B::C> 
 compiler module, maintained by Reini Urban I<rurban@cpan.org>.
 
 =head1 SEE ALSO
@@ -465,5 +701,15 @@ L<perlguts>
 
 L<http://books.simon-cozens.org/index.php/Perl_5_Internals> 
 with a simplier version at L<http://www.faqs.org/docs/perl5int/>.
+
+"Hacking the Optree for Fun..." at L<http://www.perl.com/pub/a/2002/05/07/optree.html>, 
+the next step by Simon Cozens.
+
+Joshua ben Jore wrote a 50 minute presentation on 
+"Perl 5 VM" guts at L<http://diotalevi.isa-geek.net/~josh/Presentations/Perl%205%20VM/> 
+focusing on the optree for SPUG, the Seattle Perl User's Group.
+
+The attempt for a new perloptreeguts.pod manual:
+L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
 
 =cut

@@ -12,10 +12,10 @@ our $VERSION = '1.00_02';
 use Config;
 use strict;
 use B qw(main_start main_root class comppadlist peekop svref_2object
-	timing_info init_av sv_undef amagic_generation 
+	timing_info init_av sv_undef amagic_generation
 	OPf_WANT_LIST OPf_WANT OPf_MOD OPf_STACKED OPf_SPECIAL
 	OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
-	OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR    
+	OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR
 	CXt_NULL CXt_SUB CXt_EVAL CXt_LOOP CXt_SUBST CXt_BLOCK
 	);
 use B::C qw(save_unused_subs objsym init_sections mark_unused
@@ -446,7 +446,7 @@ sub declare_pad {
     my $ix;
     for ($ix = 1; $ix <= $#pad; $ix++) {
 	my $type = $pad[$ix]->{type};
-	declare("IV", $type == T_INT ? 
+	declare("IV", $type == T_INT ?
 		sprintf("%s=0",$pad[$ix]->{iv}):$pad[$ix]->{iv}) if $pad[$ix]->save_int;
 	declare("double", $type == T_DOUBLE ?
 		 sprintf("%s = 0",$pad[$ix]->{nv}):$pad[$ix]->{nv} )if $pad[$ix]->save_double;
@@ -811,7 +811,7 @@ sub pp_ncmp {
 	    runtime sprintf("}else if (%s == %s) {",$left,$right);
 		$stack[-1]->set_int(0);
 	    $stack[-1]->write_back();
-	    runtime sprintf("}else {"); 
+	    runtime sprintf("}else {");
 		$stack[-1]->set_sv("&PL_sv_undef");
 	    runtime "}";
 	} else {
@@ -823,7 +823,7 @@ sub pp_ncmp {
 	    runtime sprintf("sv_setiv(TOPs,-1);");
 	    runtime sprintf(qq/} else if ("TOPn" == %s) {/,$$rightruntime);
 	    runtime sprintf("sv_setiv(TOPs,0);");
-	    runtime sprintf(qq/}else {/); 
+	    runtime sprintf(qq/}else {/);
 	    runtime sprintf("sv_setiv(TOPs,&PL_sv_undef;");
 	    runtime "}";
 	}
@@ -842,7 +842,7 @@ sub pp_ncmp {
 	runtime sprintf("}else if (%s == %s) {",$$left,$$right);
 		$targ->set_int(0);
 		$targ->write_back();
-	runtime sprintf("}else {"); 
+	runtime sprintf("}else {");
 		$targ->set_sv("&PL_sv_undef");
 	runtime "}";
 	push(@stack, $targ);
@@ -894,7 +894,7 @@ sub sv_binop {
     }
     return $op->next;
 }
-    
+
 sub bool_int_binop {
     my ($op, $operator) = @_;
     my $right = new B::Pseudoreg ("IV", "riv");
@@ -1024,7 +1024,7 @@ sub pp_sassign {
 	    my $type = $src->{type};
 	    runtime("if (PL_tainting && PL_tainted) TAINT_NOT;");
 	    if ($type == T_INT) {
-                if ($src->{flags} & VALID_UNSIGNED){ 
+                if ($src->{flags} & VALID_UNSIGNED){
                      runtime sprintf("sv_setuv(TOPs, %s);", $src->as_int);
                 }else{
                     runtime sprintf("sv_setiv(TOPs, %s);", $src->as_int);
@@ -1246,7 +1246,7 @@ sub pp_mapstart {
     }
     write_back_stack();
     # pp_mapstart can return either op_next->op_next or op_next->op_other and
-    # we need to be able to distinguish the two at runtime. 
+    # we need to be able to distinguish the two at runtime.
     my $sym= doop($op);
     my $next=$op->next;
     $next->save;
@@ -1479,8 +1479,8 @@ sub pp_subst {
     if ($$replroot) {
         save_or_restore_lexical_state($$replroot);
 	runtime sprintf("if (PL_op == ((PMOP*)(%s))%s) goto %s;",
-			$sym, 
-			$perl510 ? "->op_pmreplrootu.op_pmreplroot" : "->op_pmreplroot", 
+			$sym,
+			$perl510 ? "->op_pmreplrootu.op_pmreplroot" : "->op_pmreplroot",
 			label($replroot));
 	$op->pmreplstart->save;
 	push(@bblock_todo, $replroot);
@@ -1503,7 +1503,7 @@ sub pp_substcont {
     save_or_restore_lexical_state(${$pmop->pmreplstart});
     runtime sprintf("if (PL_op == ((PMOP*)(%s))%s) goto %s;",
 		    $pmopsym,
-		    $perl510 ? "->op_pmstashstartu.op_pmreplstart" : "->op_pmreplstart", 
+		    $perl510 ? "->op_pmstashstartu.op_pmreplstart" : "->op_pmreplstart",
 		    label($pmop->pmreplstart));
     invalidate_lexicals();
     return $pmop->next;
@@ -1578,8 +1578,8 @@ sub cc {
 	warn sprintf("Basic block analysis at %s\n", timing_info);
     }
     $leaders = find_leaders($root, $start);
-    my @leaders= keys %$leaders; 
-    if ($#leaders > -1) { 
+    my @leaders= keys %$leaders;
+    if ($#leaders > -1) {
     	@bblock_todo = ($start, values %$leaders) ;
     } else{
 	runtime("return PL_op?PL_op->op_next:0;");
@@ -1640,7 +1640,7 @@ sub cc_main {
     my @comppadlist = comppadlist->ARRAY;
     my $curpad_nam  = $comppadlist[0]->save;
     my $curpad_sym  = $comppadlist[1]->save;
-    my $init_av     = init_av->save; 
+    my $init_av     = init_av->save;
     my $start = cc_recurse("pp_main", main_root, main_start, @comppadlist);
     # Do save_unused_subs before saving inc_hv
     save_unused_subs();
@@ -1876,6 +1876,8 @@ the main part of the Perl source that is being compiled.
 =item B<-D>
 
 Debug options (concatenated or separate flags like C<perl -D>).
+Verbose debugging options are crucial, because we have no interactive
+debugger at the early CHECK step, where the compilation happens.
 
 =item B<-Dr>
 

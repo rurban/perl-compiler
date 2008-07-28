@@ -36,27 +36,32 @@ make
 
 # 58,510 c:  8-10 14-16
 # 58,510 cc: 8-10, 12, 14-16, 18-19
-# Only with DEBUGGING: hangs at op_free(PL_main_root). cycle in ops?
-# panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] at destruct?
-#ctest 1 "print 'hi'"
-#ctest 2 'for (1,2,3) { print if /\d/ }'
+# op_free(PL_main_root) hang fixed with opt_latefree.
+# Still panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] at destruct
+
+ctest 1 "print 'hi'"
+ctest 2 'for (1,2,3) { print if /\d/ }'
+# fixed SEGV at Perl_fbm_instr util.c:572 <= pp_subst
 ctest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
-#ctest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-#ctest 5 'split /a/,"bananarama"; print @_'
-#ctest 6 "{package P; sub x {print 'ya'} x}"
-#ctest 7 '@z = split /:/,"b:r:n:f:g"; print @z'
+ctest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
+ctest 5 'split /a/,"bananarama"; print @_'
+ctest 6 "{package P; sub x {print 'ya'} x}"
+ctest 7 '@z = split /:/,"b:r:n:f:g"; print @z'
 
 #All: Undefined subroutine &main::a called at ccode8.pl line 1.
-#-D: panic: illegal pad in pad_new: 0x18c4368[0x18cf728] at op_free
 ctest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
-exit
-#ctest 9 'my $l = 3; $x = sub { print $l }; &$x'
-#ctest 10 'my $i = 1; my $foo = sub {$i = shift if @_}; &$foo(3); print "ok";'
-#ctest 11 '$x="Cannot use"; print index $x, "Can"'
-#ctest 12 'my $i=6; eval "print \$i\n"'
-#ctest 13 'BEGIN { %h=(1=>2,3=>4) } print $h{3}'
+#exit
+ctest 9 'my $l = 3; $x = sub { print $l }; &$x'
+ctest 10 'my $i = 1; my $foo = sub {$i = shift if @_}; &$foo(3); print "ok";'
+ctest 11 '$x="Cannot use"; print index $x, "Can"'
+ctest 12 'my $i=6; eval "print \$i\n"'
+ctest 13 'BEGIN { %h=(1=>2,3=>4) } print $h{3}'
 ctest 14 'open our $T,"a"; print "ok";'
+ctest 15 'print <DATA>
+__DATA__
+a
+b'
 ctest 16 'BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
-#ctest 17 'my $i=3; print 1 .. $i'
+ctest 17 'my $i=3; print 1 .. $i'
 ctest 18 'my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
 ctest 19 'print sort { my $p; $b <=> $a } 1,4,3'
