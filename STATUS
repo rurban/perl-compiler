@@ -161,6 +161,9 @@ Is FAKE flag of the padsv is missing or should we check for readonly pads?
 	  FLAGS = (READONLY)
 -Dt crash fixed by core patch pl-dump-const.patch
 
+cop_io status?
+http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2006-05/msg00770.html
+
 5.8 status
 ----------
 I've restored 5.8 backwards compatibility, mainly for test comparison.

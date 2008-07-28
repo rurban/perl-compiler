@@ -147,8 +147,12 @@ final exec order is guaranteed by the next and flags fields.
 The highly recursive Yacc parser generates the initial optree in B<basic>
 order.  To save memory and run-time the final execution order of the
 ops in sequential order is not copied around, just the next pointers
-are rehooked to the so-called B<exec> order. So the exec walk through 
-the linked-list of ops is not too cache-friendly.
+are rehooked in C<Perl_linklist()> to the so-called B<exec> order. 
+So the exec walk through the linked-list of ops is not too cache-friendly.
+
+In detail C<Perl_linklist()> traverses the optree, and sets op-next pointers
+to give the execution order for that optree. op-sibling pointers are
+rarely unneeded after that.
 
 Walkers can run in "basic" or "exec" order.
 "basic" is useful for the memory layout, it contains the history, 
@@ -260,6 +264,9 @@ explained in L<"Compile pass 1: check routines and constant folding"> the
 L</op_next> pointers are not enough, so op_sibling's are required. The final and
 fast execution order by just following the op_next chain is expensive to
 calculate.
+
+See http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2006-09/msg00082.html
+for a 20% space-reduction patch to get rid of it at run-time.
 
 =item op_ppaddr	
 

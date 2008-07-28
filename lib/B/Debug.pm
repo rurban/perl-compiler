@@ -1,32 +1,21 @@
 package B::Debug;
 
-our $VERSION = '1.05_03';
+our $VERSION = '1.08';
 
 use strict;
 use B qw(peekop class walkoptree walkoptree_exec
          main_start main_root cstring sv_undef);
+use Config;
 our (@optype, @specialsv_name);
 require B;
 if ($] < 5.009) {
-  # <=5.008 had @specialsv_name exported from B::Asmdata
   require B::Asmdata;
-  @optype = @{*B::Asmdata::optype{ARRAY}};
-  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
-  # import B::Asmdata qw(@optype @specialsv_name);
+  B::Asmdata->import qw(@optype @specialsv_name);
 } else {
-  @optype = @{*B::optype{ARRAY}};
-  @specialsv_name = @{*B::specialsv_name{ARRAY}};
-  # import B qw(@optype @specialsv_name);
+  B->import qw(@optype @specialsv_name);
 }
-BEGIN {
-    use Config;
-    my $ithreads = $Config{'useithreads'} eq 'define';
-    eval qq{
-	sub ITHREADS() { $ithreads }
-	sub VERSION() { $] }
-    }; die $@ if $@;
-}
-
+my $have_B_Flags;
+eval { require B::Flags and $have_B_Flags++ };
 my %done_gv;
 
 sub _printop {
@@ -55,10 +44,17 @@ EOT
 	op_seq		%d
 EOT
     }
-    printf <<'EOT', $op->flags, $op->private;
+    if ($have_B_Flags) {
+        printf <<'EOT', $op->flags, $op->flagspv, $op->private, $op->privatepv;
+	op_flags	%d	%s
+	op_private	%d	%s
+EOT
+    } else {
+        printf <<'EOT', $op->flags, $op->private;
 	op_flags	%d
 	op_private	%d
 EOT
+    }
 }
 
 sub B::UNOP::debug {
@@ -101,7 +97,7 @@ sub B::PMOP::debug {
     printf "\top_pmreplroot\t0x%x\n", $] < 5.008 ? ${$op->pmreplroot} : $op->pmreplroot;
     printf "\top_pmreplstart\t0x%x\n", ${$op->pmreplstart};
     printf "\top_pmnext\t0x%x\n", ${$op->pmnext} if $] < 5.009005;
-    if (ITHREADS) {
+    if ($Config{'useithreads'}) {
       printf "\top_pmstashpv\t%s\n", cstring($op->pmstashpv);
       printf "\top_pmoffset\t%d\n", $op->pmoffset;
     } else {
@@ -260,16 +256,18 @@ EOT
 sub B::AV::debug {
     my ($av) = @_;
     $av->B::SV::debug;
-    my(@array) = $av->ARRAY;
+    # tied arrays may leave out FETCHSIZE
+    my (@array) = eval { $av->ARRAY; };
     print "\tARRAY\t\t(", join(", ", map("0x" . $$_, @array)), ")\n";
-    if (ITHREADS) {
-      printf <<'EOT', scalar(@array), $av->MAX, $av->OFF;
+    my $fill = eval { scalar(@array) };
+    if ($Config{'useithreads'}) {
+      printf <<'EOT', $fill, $av->MAX, $av->OFF;
 	FILL		%d
 	MAX		%d
 	OFF		%d
 EOT
     } else {
-      printf <<'EOT', scalar(@array), $av->MAX;
+      printf <<'EOT', $fill, $av->MAX;
 	FILL		%d
 	MAX		%d
 EOT
@@ -345,8 +343,57 @@ See F<ext/B/README> and the newer L<B::Concise>, L<B::Terse>.
 With option -exec, walks tree in execute order,
 otherwise in basic order.
 
+=head1 Changes
+
+  1.06  2008-06-11 rurban
+	added B::Flags output
+	dual-life CPAN as B-Debug-1.06 and CORE
+	protect scalar(@array) if tied arrays leave out FETCHSIZE
+
+  1.05_03 2008-04-16 rurban
+	ithread fixes in B::AV
+	B-C-1.04_??
+
+  B-C-1.04_09 2008-02-24 rurban
+	support 5.8 (import Asmdata)
+
+  1.05_02 2008-02-21 rurban
+	added _printop
+	B-C-1.04_08 and CORE
+
+  1.05_01 2008-02-05 rurban
+	5.10 fix for op->seq
+	B-C-1.04_04
+
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
+Reini Urban C<rurban@cpan.org>
+
+=head1 LICENSE
+
+Copyright (c) 1996, 1997 Malcolm Beattie
+Copyright (c) 2008 Reini Urban
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of either:
+
+	a) the GNU General Public License as published by the Free
+	Software Foundation; either version 1, or (at your option) any
+	later version, or
+
+	b) the "Artistic License" which comes with this kit.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See either
+    the GNU General Public License or the Artistic License for more details.
+
+    You should have received a copy of the Artistic License with this kit,
+    in the file named "Artistic".  If not, you can get one from the Perl
+    distribution. You should also have received a copy of the GNU General
+    Public License, in the file named "Copying". If not, you can get one
+    from the Perl distribution or else write to the Free Software Foundation,
+    Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 =cut

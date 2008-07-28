@@ -37,7 +37,8 @@ function ctest {
     echo $CCMD $o.c $LCMD -o $o
     $CCMD $o.c $LCMD -o $o
     test -x $o || exit
-    ./$o || exit
+    res=$(./$o) || exit
+    test "X$res" = "X${result[$n]}" || echo "$o failed. Got: '$res', expected: '${result[$n]}'"
 }
 
 declare -a tests[19]
@@ -47,11 +48,11 @@ result[1]='hi';
 tests[2]="for (1,2,3) { print if /\d/ }"
 result[2]='123';
 tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
-result[3]='hi';
+result[3]='zzz2y2y2';
 tests[4]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-result[4]='zzz2y2y2';
+result[4]='z2y2y2';
 tests[5]='split /a/,"bananarama"; print @_'
-result[5]='z2y2y2';
+result[5]='bnnrm';
 tests[6]="{package P; sub x {print 'ya'} x}"
 result[6]='ya';
 tests[7]='@z = split /:/,"b:r:n:f:g"; print @z'
