@@ -16,7 +16,6 @@ CvOUTSIDE for ordinary subs
 DATA filehandle for standalone Bytecode program (easy)
 DATA filehandle for multiple bytecode-compiled modules (harder)
 DATA filehandle for C-compiled program (yet harder)
-parse -H Bytecode header
 
 * Features
 
@@ -31,6 +30,7 @@ module dependencies
 new Asm and JIT backend, PLJC ByteLoader magic
 
 * Optimisations
+
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.

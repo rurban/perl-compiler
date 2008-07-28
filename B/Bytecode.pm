@@ -738,13 +738,15 @@ sub compile {
 	    *newasm = *endasm = sub { };
 	    *asm = sub { print "    @_\n" };
 	    *nice = sub ($) { print "\n@_\n" };
+	} elsif (/^-v/) {
+	    *nice = sub ($) { print STDERR "@_\n" };
 	} elsif (/^-H/) {
 	    require ByteLoader;
 	    $head = "#! $^X
 use ByteLoader $ByteLoader::VERSION;
 ";
 	    #FIXME!
-	    undef $head;
+	    #undef $head;
 	} elsif (/^-k/) {
 	    keep_syn;
 	} elsif (/^-o(.*)$/) {
@@ -841,15 +843,14 @@ later by the ByteLoader module and executed as a regular Perl script.
 
 =over 4
 
+=item B<-H>
+
+prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
+
 =item B<-b>
 
 Save all the BEGIN blocks. Normally only BEGIN blocks that C<require>
 other files (ex. C<use Foo;>) are saved.
-
-=item B<-H>
-
-prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
-Does not work currently.
 
 =item B<-k>
 
@@ -863,6 +864,11 @@ put the bytecode in <outfile> instead of dumping it to STDOUT.
 
 scan the script for C<# line ..> directives and for <goto LABEL>
 expressions. When gotos are found keep the syntax tree.
+
+=item B<-S>
+
+Output assembler source rather than piping it
+through the assembler and outputting bytecode.
 
 =back
 

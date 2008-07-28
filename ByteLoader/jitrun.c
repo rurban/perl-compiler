@@ -94,7 +94,7 @@ jitrun(pTHX_ struct byteloader_state *bstate)
 
     jit_func bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
 #ifdef DEBUGGING
-    disassemble(stderr, codeBuffer, jit_get_ip().ptr);
+    //disassemble(stderr, codeBuffer, jit_get_ip().ptr);
 #endif
     jit_flush_code(codeBuffer, jit_get_ip().ptr);
 

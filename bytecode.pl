@@ -110,7 +110,9 @@ byterun(pTHX_ struct byteloader_state *bstate)
     register int insn;
     U32 isjit = 0;
     U32 ix;
-    SV *specialsv_list[6];
+EOT
+printf BYTERUN_C "    SV *specialsv_list[%d];\n", scalar @specialsv_name;
+print BYTERUN_C <<'EOT';
 
     BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit if PLJC magic header */
     if (isjit) {
@@ -120,6 +122,10 @@ byterun(pTHX_ struct byteloader_state *bstate)
         bstate->bs_obj_list_fill = 31;
         bstate->bs_obj_list[0] = NULL; /* first is always Null */
         bstate->bs_ix = 1;
+	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.idx %d)\n", bstate->bs_fdata->idx));
+	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.next_out %d)\n", bstate->bs_fdata->next_out));
+	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.datasv %p:\"%s\")\n", bstate->bs_fdata->datasv,
+				 SvPV_nolen(bstate->bs_fdata->datasv)));
 
 EOT
 
@@ -130,7 +136,8 @@ for my $i ( 0 .. $#specialsv_name ) {
 print BYTERUN_C <<'EOT';
 
         while ((insn = BGET_FGETC()) != EOF) {
-	    switch (insn) {
+	  DEBUG_l( Perl_deb(aTHX_ "(insn %d)\n", insn));
+	  switch (insn) {
 EOT
 
 

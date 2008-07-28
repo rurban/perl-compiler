@@ -58,6 +58,9 @@ t/c.t
 t/cc.t
 t/o.t
 t/stash.t
+t/test.pl
+t/testplc.sh
+t/testc.sh
 TESTS
 Todo
 META.yml                                 Module meta-data (added by MakeMaker)

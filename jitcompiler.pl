@@ -4,24 +4,31 @@
 
 =head1 JIT or ASM?
 
-Two possible native code attempts:
+Possible native code attempts:
 
-1. Use B<GNU lightning> to compile to jit at eval-time, and
-   jitrun the whole codebuffer, the appended insns instead
-   of looping through the opcode tree.
-   Possibly dump the jitted codebuffer as PLJC .plc files, to save
-   next startup parse time.
+1. Use some jit library, such  as B<GNU lightning>,  to compile to jit
+   at  eval-time, and jitrun the  whole codebuffer, the appended insns
+   instead  of  looping through  the  opcode tree.  Possibly  dump the
+   jitted codebuffer  as PLJC .plc files, to  save next  startup parse
+   time.
 
    This must be done with jit macro trickery on the C level.
 
-2. Use a self-written B<B::Asm> library to dump architectur specific
+   LLVM has some nice SSA optimizations.
+   See L<http://llvm.org/ProjectsWithLLVM/2002-Spring-CS497CZ-Jello.pdf>
+
+2. Use perl6 jit.
+   http://www.parrotcode.org/docs/jit.html#EXAMPLE
+   This already has optimizations for immediate and strict integer ops.
+
+3. Use a self-written B<B::Asm> library to dump architectur specific
    asm insns directly.
    Either dump the jitted codebuffer as PLJC .plc files, or construct
    the necessary OS headers directly. For writing the PE/COFF format
    see e.g. my L<C::DynaLib> pl2exe or Audreys L<Win32::Exe>, for writing
    Elf see e.g. L<GNU libjit>.
 
-   This could be done on a higher Perl level, and avoids the lightning
+   This could be done on a higher Perl level, and avoids the C-level
    macro abstraction.
 
 =head1 OPTIMIZATIONS
@@ -166,7 +173,7 @@ print JITRUN_C <<'EOT';
 
     jit_func bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
 #ifdef DEBUGGING
-    disassemble(stderr, codeBuffer, jit_get_ip().ptr);
+    //disassemble(stderr, codeBuffer, jit_get_ip().ptr);
 #endif
     jit_flush_code(codeBuffer, jit_get_ip().ptr);
 
@@ -235,8 +242,9 @@ print JITRUN_H $c_header, <<'EOT';
 */
 
 /* DATA handle reader */
-int jit_getc(struct byteloader_fdata *);
-int jit_read(struct byteloader_fdata *, char *, size_t, size_t);
+/* int bl_getc(struct byteloader_fdata *);
+   int bl_read(struct byteloader_fdata *, char *, size_t, size_t);
+*/
 
 #include <lightning.h>
 

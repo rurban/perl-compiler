@@ -59,8 +59,9 @@
 */
 
 /* DATA handle reader */
-int jit_getc(struct byteloader_fdata *);
-int jit_read(struct byteloader_fdata *, char *, size_t, size_t);
+/* int bl_getc(struct byteloader_fdata *);
+   int bl_read(struct byteloader_fdata *, char *, size_t, size_t);
+*/
 
 #include <lightning.h>
 

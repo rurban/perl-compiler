@@ -2,6 +2,8 @@ C backend invocation
 	If there are any non-option arguments, they are taken to be
 	names of objects to be saved (probably doesn't work properly yet).
 	Without extra arguments, it saves the main program.
+        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
+        -qq		Be very quiet. Also suppress "Syntax OK"
 	-ofilename	Output to filename instead of STDOUT
 	-v		Verbose (currently gives a few compilation statistics)
 	--		Force end of options
@@ -35,7 +37,10 @@ Examples
 CC backend invocation
 	If there are any non-option arguments, they are taken to be names of
 	subs to be saved. Without extra arguments, it saves the main program.
+        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
+        -qq		Be very quiet. Also suppress "Syntax OK"
 	-ofilename	Output to filename instead of STDOUT
+NYI	-v              Be verbose.
 	--		Force end of options
 	-uPackname	Force apparently unused subs from package Packname to
 			be compiled. This allows programs to use eval "foo()"
@@ -101,7 +106,10 @@ Bytecode backend invocation
 	If there are any non-option arguments, they are taken to be
 	names of objects to be saved (probably doesn't work properly yet).
 	Without extra arguments, it saves the main program.
+        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
+        -qq		Be very quiet. Also suppress "Syntax OK"
 	-ofilename	Output to filename instead of STDOUT.
+NYI	-v              Be verbose.
 	--		Force end of options.
 	-f		Force optimisations on or off one at a time.
 			Each can be preceded by no- to turn the option off.
@@ -121,10 +129,10 @@ Bytecode backend invocation
 			run-time but leaving them out will make it impossible
 			to recompile or disassemble the resulting program.
 			It will also stop "goto label" statements from working.
-	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
+NYI	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
 			-O1 sets -fcompress-nullops -fomit-sequence numbers.
 			-O6 adds -fstrip-syntax-tree.
-	-D		Debug options (concat or separate flags like perl -D)
+NYI	-D		Debug options (concat or separate flags like perl -D)
 		o	OPs, prints each OP as it's processed.
 		b	print debugging information about bytecompiler progress
 		a	tells the assembler to include source assembler lines
@@ -132,13 +140,23 @@ Bytecode backend invocation
 		C	prints each CV taken from the final symbol tree walk.
 	-S		Output assembler source rather than piping it
 			through the assembler and outputting bytecode.
-	-m		Compile as a module rather than a standalone program.
+	-H		add #! perl shebang header
+	-s		scan and keep keep syntax tree if goto op found.
+			scan the script for C<# line ..> directives and for <goto LABEL>
+			expressions. When gotos are found keep the syntax tree.
+	-b		Save all the BEGIN blocks. Normally only BEGIN blocks that require
+			other files (ex. use Foo;) are saved.
+	-k		keep syntax tree to disassemble the plc.
+			it is stripped by default.
+	-TI		testing, dump the @INC av
+	-TF     file	testing, sets COP::file	
+   	-m		Compile as a module rather than a standalone program.
 			Currently this just means that the bytecodes for
 			initialising main_start, main_root and curpad are
 			omitted.
 
 Example
-	perl -MO=Bytecode,-O6,-o,foo.plc foo.pl
+	perl -MO=Bytecode,-O6,-H,-ofoo.plc foo.pl
 
 	perl -MO=Bytecode,-S foo.pl > foo.S
 	assemble foo.S > foo.plc

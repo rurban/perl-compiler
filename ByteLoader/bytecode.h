@@ -201,7 +201,6 @@ typedef HEK *hekindex;
         if(av_len((AV*) PL_regex_pad[0]) > -1) { \
             repointer = av_pop((AV*)PL_regex_pad[0]); \
             cPMOPx(o)->op_pmoffset = SvIV(repointer); \
-            SvREPADTMP_off(repointer); \
             sv_setiv(repointer,PTR2IV(rx)); \
         } else { \
             repointer = newSViv(PTR2IV(rx)); \
@@ -291,6 +290,10 @@ typedef HEK *hekindex;
 #define set_clonex(fp)
 #endif
 
+#ifndef PL_preprocess
+#define PL_preprocess 0
+#endif
+
 #define BSET_data(dummy,arg)						\
     STMT_START {							\
 	GV *gv;								\
@@ -305,7 +308,7 @@ typedef HEK *hekindex;
 	set_clonex(PL_RSFP);						\
 	/* Mark this internal pseudo-handle as clean */			\
 	IoFLAGS(GvIOp(gv)) |= IOf_UNTAINT;				\
-	if (PL_preprocess)						\
+	if ((PERL_VERSION < 11) && PL_preprocess)			\
 	    IoTYPE(GvIOp(gv)) = IoTYPE_PIPE;				\
 	else if ((PerlIO*)PL_RSFP == PerlIO_stdin())			\
 	    IoTYPE(GvIOp(gv)) = IoTYPE_STD;				\
@@ -478,5 +481,10 @@ typedef HEK *hekindex;
 	    BGET_U32(sz); /* ptrsize */				\
 	    if (sz != PTRSIZE) {				\
 		HEADER_FAIL("different PTRSIZE");		\
+	    }							\
+	    BGET_strconst(str); /* 12345678 */	      		\
+	    if (strNE(str, "12345678")) {			\
+		HEADER_FAIL2("cannot yet convert different byteorders (want %s, you have %s)",	\
+			"12345678", str);			\
 	    }							\
 	} STMT_END

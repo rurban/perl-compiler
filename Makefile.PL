@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use File::Spec;
-use 5.009005;
+#use 5.009005;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
@@ -9,7 +9,7 @@ WriteMakefile(
     NAME	    => "B::C",
     VERSION_FROM    => "B/C.pm",
 	         # 'scripts/assemble','scripts/disassemble',
-    PL_FILES => {'script/perlcc.PL'  => 'bin/perlcc' },
+    PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
     PREREQ_PM 	    => {
 	'B::Concise' => '0.74',
 	'B' => '1.17',
@@ -27,6 +27,10 @@ sub headerpath {
 }
 
 package MY;
+
+sub x_libscan {
+  return 0 unless $_[1] =~ /\.pm$/;
+}
 
 sub post_constants {
     "\nLIBS = $Config::Config{libs}\n"

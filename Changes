@@ -1,6 +1,17 @@
 Started with B-C-1.04_01. The perl compiler was previously in CORE.
 TODO: Try to get info about earlier versions.
 
+1.04_05 2008-02-18 rurban
+	* added t/test.pl and t/test*.sh to MANIFEST. 
+	* fixed ByteLoader reading from the <DATA> filter.
+	* fixed -H .plc header parsing
+	* updated Bytecode options in NOTES and pod
+	* added -O=Bytecode,-v option
+	* fixed PL_preprocess and SvREPADTMP_off for 5.11
+
+1.04_04 2008-02-08 rurban
+	* added jitcompiler macros
+
 1.04_03 2008-02-05 rurban
 	* added Jit and Asm layout, fixed Makefile deps
 
