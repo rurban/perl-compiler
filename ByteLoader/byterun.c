@@ -57,14 +57,19 @@ byterun(pTHX_ struct byteloader_state *bstate)
     U32 ix;
     SV *specialsv_list[7];
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit if PLJC magic header */
+    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit on PLJC magic header */
     if (isjit) {
-        return jitrun(aTHX_ &bstate);
+        return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
         Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
         bstate->bs_obj_list_fill = 31;
         bstate->bs_obj_list[0] = NULL; /* first is always Null */
         bstate->bs_ix = 1;
+#if 0 && (PERL_VERSION > 8)
+        Newx(bstate->bs_sv, sizeof(SV), SV*); /* set sv */
+	bstate->bs_sv->sv_any = &(bstate->bs_pv);
+#endif
+	CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.idx %d)\n", bstate->bs_fdata->idx));
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.next_out %d)\n", bstate->bs_fdata->next_out));
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.datasv %p:\"%s\")\n", bstate->bs_fdata->datasv,
@@ -79,768 +84,987 @@ byterun(pTHX_ struct byteloader_state *bstate)
         specialsv_list[6] = (SV*)pWARN_STD;
 
         while ((insn = BGET_FGETC()) != EOF) {
-	  DEBUG_l( Perl_deb(aTHX_ "(insn %d)\n", insn));
+	  CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
+          if (PL_op && DEBUG_t_TEST_) debop(PL_op);
 	  switch (insn) {
 	  case INSN_COMMENT:		/* 35 */
 	    {
 		comment_t arg;
 		BGET_comment_t(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) comment comment_t:0x%x\n", insn, arg));
 		arg = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   arg = arg;\n"));
 		break;
 	    }
 	  case INSN_NOP:		/* 10 */
 	    {
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) nop\n", insn));
 		break;
 	    }
 	  case INSN_RET:		/* 0 */
 	    {
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ret\n", insn));
 		BSET_ret(none);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_ret(none)\n"));
 		break;
 	    }
 	  case INSN_LDSV:		/* 1 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldsv svindex:0x%x\n", insn, arg));
 		bstate->bs_sv = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   bstate->bs_sv = arg;\n"));
 		break;
 	    }
 	  case INSN_LDOP:		/* 2 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldop opindex:0x%x\n", insn, arg));
 		PL_op = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op = arg;\n"));
 		break;
 	    }
 	  case INSN_STSV:		/* 3 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) stsv U32:0x%x\n", insn, arg));
 		BSET_OBJ_STORE(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_OBJ_STORE(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_STOP:		/* 4 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) stop U32:0x%x\n", insn, arg));
 		BSET_OBJ_STORE(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_OBJ_STORE(PL_op, arg)\n"));
 		break;
 	    }
 	  case INSN_STPV:		/* 5 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
-		BSET_stpv(BSTATE_xpv_pv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) stpv U32:0x%x\n", insn, arg));
+		BSET_stpv(bstate->bs_pv.xpv_pv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_stpv(bstate->bs_pv.xpv_pv, arg)\n"));
 		break;
 	    }
 	  case INSN_LDSPECSV:		/* 6 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldspecsv U8:0x%x\n", insn, arg));
 		BSET_ldspecsv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_ldspecsv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_LDSPECSVX:		/* 7 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldspecsvx U8:0x%x\n", insn, arg));
 		BSET_ldspecsvx(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_ldspecsvx(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_NEWSV:		/* 8 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newsv U8:0x%x\n", insn, arg));
 		BSET_newsv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_newsv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_NEWSVX:		/* 9 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newsvx U32:0x%x\n", insn, arg));
 		BSET_newsvx(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_newsvx(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_NEWOP:		/* 11 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newop U8:0x%x\n", insn, arg));
 		BSET_newop(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_newop(PL_op, arg)\n"));
 		break;
 	    }
 	  case INSN_NEWOPX:		/* 12 */
 	    {
 		U16 arg;
 		BGET_U16(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newopx U16:0x%x\n", insn, arg));
 		BSET_newopx(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_newopx(PL_op, arg)\n"));
 		break;
 	    }
 	  case INSN_NEWOPN:		/* 13 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newopn U8:0x%x\n", insn, arg));
 		BSET_newopn(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_newopn(PL_op, arg)\n"));
 		break;
 	    }
 	  case INSN_NEWPV:		/* 14 */
 	    {
 		PV arg;
 		BGET_PV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newpv PV:0x%x\n", insn, arg));
 		break;
 	    }
 	  case INSN_PV_CUR:		/* 15 */
 	    {
 		STRLEN arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pv_cur STRLEN:0x%x\n", insn, arg));
 		bstate->bs_pv.xpv_cur = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   bstate->bs_pv.xpv_cur = arg;\n"));
 		break;
 	    }
 	  case INSN_PV_FREE:		/* 16 */
 	    {
-		BSET_pv_free(BSTATE_xpv_pv);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pv_free\n", insn));
+		BSET_pv_free(bstate->bs_pv.xpv_pv);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_pv_free(bstate->bs_pv.xpv_pv)\n"));
 		break;
 	    }
 	  case INSN_SV_UPGRADE:		/* 17 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) sv_upgrade U8:0x%x\n", insn, arg));
 		BSET_sv_upgrade(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_sv_upgrade(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_SV_REFCNT:		/* 18 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) sv_refcnt U32:0x%x\n", insn, arg));
 		SvREFCNT(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   SvREFCNT(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_SV_REFCNT_ADD:		/* 19 */
 	    {
 		I32 arg;
 		BGET_I32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) sv_refcnt_add I32:0x%x\n", insn, arg));
 		BSET_sv_refcnt_add(SvREFCNT(bstate->bs_sv), arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_sv_refcnt_add(SvREFCNT(bstate->bs_sv), arg)\n"));
 		break;
 	    }
 	  case INSN_SV_FLAGS:		/* 20 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) sv_flags U32:0x%x\n", insn, arg));
 		SvFLAGS(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   SvFLAGS(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XRV:		/* 21 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xrv svindex:0x%x\n", insn, arg));
 		BSET_xrv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xrv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XPV:		/* 22 */
 	    {
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xpv\n", insn));
 		BSET_xpv(bstate->bs_sv);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xpv(bstate->bs_sv)\n"));
 		break;
 	    }
 	  case INSN_XPV_CUR:		/* 23 */
 	    {
 		STRLEN arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xpv_cur STRLEN:0x%x\n", insn, arg));
 		BSET_xpv_cur(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xpv_cur(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XPV_LEN:		/* 24 */
 	    {
 		STRLEN arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xpv_len STRLEN:0x%x\n", insn, arg));
 		BSET_xpv_len(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xpv_len(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XIV:		/* 25 */
 	    {
 		IV arg;
 		BGET_IV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xiv IV:0x%x\n", insn, arg));
 		BSET_xiv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xiv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XNV:		/* 26 */
 	    {
 		NV arg;
 		BGET_NV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xnv NV:0x%x\n", insn, arg));
 		BSET_xnv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xnv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XLV_TARGOFF:		/* 27 */
 	    {
 		STRLEN arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xlv_targoff STRLEN:0x%x\n", insn, arg));
 		LvTARGOFF(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   LvTARGOFF(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XLV_TARGLEN:		/* 28 */
 	    {
 		STRLEN arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xlv_targlen STRLEN:0x%x\n", insn, arg));
 		LvTARGLEN(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   LvTARGLEN(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XLV_TARG:		/* 29 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xlv_targ svindex:0x%x\n", insn, arg));
 		LvTARG(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   LvTARG(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XLV_TYPE:		/* 30 */
 	    {
 		char arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xlv_type char:0x%x\n", insn, arg));
 		LvTYPE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   LvTYPE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XBM_USEFUL:		/* 31 */
 	    {
 		I32 arg;
 		BGET_I32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xbm_useful I32:0x%x\n", insn, arg));
 		BmUSEFUL(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   BmUSEFUL(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XBM_PREVIOUS:		/* 32 */
 	    {
 		U16 arg;
 		BGET_U16(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xbm_previous U16:0x%x\n", insn, arg));
 		BmPREVIOUS(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   BmPREVIOUS(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XBM_RARE:		/* 33 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xbm_rare U8:0x%x\n", insn, arg));
 		BmRARE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   BmRARE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XFM_LINES:		/* 34 */
 	    {
 		IV arg;
 		BGET_IV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xfm_lines IV:0x%x\n", insn, arg));
 		FmLINES(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   FmLINES(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_LINES:		/* 36 */
 	    {
 		IV arg;
 		BGET_IV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_lines IV:0x%x\n", insn, arg));
 		IoLINES(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoLINES(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_PAGE:		/* 37 */
 	    {
 		IV arg;
 		BGET_IV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_page IV:0x%x\n", insn, arg));
 		IoPAGE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoPAGE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_PAGE_LEN:		/* 38 */
 	    {
 		IV arg;
 		BGET_IV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_page_len IV:0x%x\n", insn, arg));
 		IoPAGE_LEN(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoPAGE_LEN(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_LINES_LEFT:		/* 39 */
 	    {
 		IV arg;
 		BGET_IV(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_lines_left IV:0x%x\n", insn, arg));
 		IoLINES_LEFT(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoLINES_LEFT(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_TOP_NAME:		/* 40 */
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_top_name pvindex:0x%x\n", insn, arg));
 		IoTOP_NAME(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoTOP_NAME(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_TOP_GV:		/* 41 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_top_gv svindex:0x%x\n", insn, arg));
 		*(SV**)&IoTOP_GV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&IoTOP_GV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_FMT_NAME:		/* 42 */
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_fmt_name pvindex:0x%x\n", insn, arg));
 		IoFMT_NAME(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoFMT_NAME(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_FMT_GV:		/* 43 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_fmt_gv svindex:0x%x\n", insn, arg));
 		*(SV**)&IoFMT_GV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&IoFMT_GV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_BOTTOM_NAME:		/* 44 */
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_bottom_name pvindex:0x%x\n", insn, arg));
 		IoBOTTOM_NAME(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoBOTTOM_NAME(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_BOTTOM_GV:		/* 45 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_bottom_gv svindex:0x%x\n", insn, arg));
 		*(SV**)&IoBOTTOM_GV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&IoBOTTOM_GV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_TYPE:		/* 46 */
 	    {
 		char arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_type char:0x%x\n", insn, arg));
 		IoTYPE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoTYPE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XIO_FLAGS:		/* 47 */
 	    {
 		char arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_flags char:0x%x\n", insn, arg));
 		IoFLAGS(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   IoFLAGS(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_XSUBANY:		/* 48 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_xsubany svindex:0x%x\n", insn, arg));
 		*(SV**)&CvXSUBANY(bstate->bs_sv).any_ptr = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvXSUBANY(bstate->bs_sv).any_ptr = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_STASH:		/* 49 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_stash svindex:0x%x\n", insn, arg));
 		*(SV**)&CvSTASH(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvSTASH(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_START:		/* 50 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_start opindex:0x%x\n", insn, arg));
 		CvSTART(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   CvSTART(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_ROOT:		/* 51 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_root opindex:0x%x\n", insn, arg));
 		CvROOT(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   CvROOT(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_GV:		/* 52 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_gv svindex:0x%x\n", insn, arg));
 		*(SV**)&CvGV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvGV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_FILE:		/* 53 */
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_file pvindex:0x%x\n", insn, arg));
 		CvFILE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   CvFILE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_DEPTH:		/* 54 */
 	    {
 		long arg;
 		BGET_long(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_depth long:0x%x\n", insn, arg));
 		CvDEPTH(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   CvDEPTH(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_PADLIST:		/* 55 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_padlist svindex:0x%x\n", insn, arg));
 		*(SV**)&CvPADLIST(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvPADLIST(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_OUTSIDE:		/* 56 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_outside svindex:0x%x\n", insn, arg));
 		*(SV**)&CvOUTSIDE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvOUTSIDE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_OUTSIDE_SEQ:		/* 57 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_outside_seq U32:0x%x\n", insn, arg));
 		CvOUTSIDE_SEQ(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   CvOUTSIDE_SEQ(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XCV_FLAGS:		/* 58 */
 	    {
 		U16 arg;
 		BGET_U16(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_flags U16:0x%x\n", insn, arg));
 		CvFLAGS(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   CvFLAGS(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_AV_EXTEND:		/* 59 */
 	    {
 		SSize_t arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_extend SSize_t:0x%x\n", insn, arg));
 		BSET_av_extend(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_av_extend(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_AV_PUSHX:		/* 60 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_pushx svindex:0x%x\n", insn, arg));
 		BSET_av_pushx(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_av_pushx(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_AV_PUSH:		/* 61 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_push svindex:0x%x\n", insn, arg));
 		BSET_av_push(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_av_push(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XAV_FILL:		/* 62 */
 	    {
 		SSize_t arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xav_fill SSize_t:0x%x\n", insn, arg));
 		AvFILLp(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   AvFILLp(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XAV_MAX:		/* 63 */
 	    {
 		SSize_t arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xav_max SSize_t:0x%x\n", insn, arg));
 		AvMAX(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   AvMAX(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_XAV_FLAGS:		/* 64 */
 	    {
 		I32 arg;
 		BGET_I32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xav_flags I32:0x%x\n", insn, arg));
 		((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   ((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 = arg;\n"));
 		break;
 	    }
 	  case INSN_XHV_NAME:		/* 65 */
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xhv_name pvindex:0x%x\n", insn, arg));
 		BSET_xhv_name(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xhv_name(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_HV_STORE:		/* 66 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) hv_store svindex:0x%x\n", insn, arg));
 		BSET_hv_store(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_hv_store(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_SV_MAGIC:		/* 67 */
 	    {
 		char arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) sv_magic char:0x%x\n", insn, arg));
 		BSET_sv_magic(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_sv_magic(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_MG_OBJ:		/* 68 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_obj svindex:0x%x\n", insn, arg));
 		SvMAGIC(bstate->bs_sv)->mg_obj = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   SvMAGIC(bstate->bs_sv)->mg_obj = arg;\n"));
 		break;
 	    }
 	  case INSN_MG_PRIVATE:		/* 69 */
 	    {
 		U16 arg;
 		BGET_U16(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_private U16:0x%x\n", insn, arg));
 		SvMAGIC(bstate->bs_sv)->mg_private = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   SvMAGIC(bstate->bs_sv)->mg_private = arg;\n"));
 		break;
 	    }
 	  case INSN_MG_FLAGS:		/* 70 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_flags U8:0x%x\n", insn, arg));
 		SvMAGIC(bstate->bs_sv)->mg_flags = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   SvMAGIC(bstate->bs_sv)->mg_flags = arg;\n"));
 		break;
 	    }
 	  case INSN_MG_NAME:		/* 71 */
 	    {
 		pvcontents arg;
 		BGET_pvcontents(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_name pvcontents:0x%x\n", insn, arg));
 		BSET_mg_name(SvMAGIC(bstate->bs_sv), arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_mg_name(SvMAGIC(bstate->bs_sv), arg)\n"));
 		break;
 	    }
 	  case INSN_MG_NAMEX:		/* 72 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_namex svindex:0x%x\n", insn, arg));
 		BSET_mg_namex(SvMAGIC(bstate->bs_sv), arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_mg_namex(SvMAGIC(bstate->bs_sv), arg)\n"));
 		break;
 	    }
 	  case INSN_XMG_STASH:		/* 73 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xmg_stash svindex:0x%x\n", insn, arg));
 		BSET_xmg_stash(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xmg_stash(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_GV_FETCHPV:		/* 74 */
 	    {
 		strconst arg;
 		BGET_strconst(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_fetchpv strconst:0x%x\n", insn, arg));
 		BSET_gv_fetchpv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_fetchpv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_GV_FETCHPVX:		/* 75 */
 	    {
 		strconst arg;
 		BGET_strconst(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_fetchpvx strconst:0x%x\n", insn, arg));
 		BSET_gv_fetchpvx(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_fetchpvx(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_GV_STASHPV:		/* 76 */
 	    {
 		strconst arg;
 		BGET_strconst(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_stashpv strconst:0x%x\n", insn, arg));
 		BSET_gv_stashpv(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_stashpv(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_GV_STASHPVX:		/* 77 */
 	    {
 		strconst arg;
 		BGET_strconst(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_stashpvx strconst:0x%x\n", insn, arg));
 		BSET_gv_stashpvx(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_stashpvx(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_GP_SV:		/* 78 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_sv svindex:0x%x\n", insn, arg));
 		GvSV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   GvSV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_REFCNT:		/* 79 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_refcnt U32:0x%x\n", insn, arg));
 		GvREFCNT(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   GvREFCNT(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_REFCNT_ADD:		/* 80 */
 	    {
 		I32 arg;
 		BGET_I32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_refcnt_add I32:0x%x\n", insn, arg));
 		BSET_gp_refcnt_add(GvREFCNT(bstate->bs_sv), arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gp_refcnt_add(GvREFCNT(bstate->bs_sv), arg)\n"));
 		break;
 	    }
 	  case INSN_GP_AV:		/* 81 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_av svindex:0x%x\n", insn, arg));
 		*(SV**)&GvAV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvAV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_HV:		/* 82 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_hv svindex:0x%x\n", insn, arg));
 		*(SV**)&GvHV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvHV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_CV:		/* 83 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_cv svindex:0x%x\n", insn, arg));
 		*(SV**)&GvCV(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvCV(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_FILE:		/* 84 */
 	    {
 		hekindex arg;
 		BGET_hekindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_file hekindex:0x%x\n", insn, arg));
 		GvFILE_HEK(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   GvFILE_HEK(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_IO:		/* 85 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_io svindex:0x%x\n", insn, arg));
 		*(SV**)&GvIOp(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvIOp(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_FORM:		/* 86 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_form svindex:0x%x\n", insn, arg));
 		*(SV**)&GvFORM(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvFORM(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_CVGEN:		/* 87 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_cvgen U32:0x%x\n", insn, arg));
 		GvCVGEN(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   GvCVGEN(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_LINE:		/* 88 */
 	    {
 		line_t arg;
 		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_line line_t:0x%x\n", insn, arg));
 		GvLINE(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   GvLINE(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_GP_SHARE:		/* 89 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_share svindex:0x%x\n", insn, arg));
 		BSET_gp_share(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gp_share(bstate->bs_sv, arg)\n"));
 		break;
 	    }
 	  case INSN_XGV_FLAGS:		/* 90 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xgv_flags U8:0x%x\n", insn, arg));
 		GvFLAGS(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   GvFLAGS(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_NEXT:		/* 91 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_next opindex:0x%x\n", insn, arg));
 		PL_op->op_next = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_next = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_SIBLING:		/* 92 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_sibling opindex:0x%x\n", insn, arg));
 		PL_op->op_sibling = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_sibling = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_PPADDR:		/* 93 */
 	    {
 		strconst arg;
 		BGET_strconst(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_ppaddr strconst:0x%x\n", insn, arg));
 		BSET_op_ppaddr(PL_op->op_ppaddr, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_op_ppaddr(PL_op->op_ppaddr, arg)\n"));
 		break;
 	    }
 	  case INSN_OP_TARG:		/* 94 */
 	    {
 		PADOFFSET arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_targ PADOFFSET:0x%x\n", insn, arg));
 		PL_op->op_targ = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_targ = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_TYPE:		/* 95 */
 	    {
 		OPCODE arg;
 		BGET_U16(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_type OPCODE:0x%x\n", insn, arg));
 		BSET_op_type(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_op_type(PL_op, arg)\n"));
 		break;
 	    }
 	  case INSN_OP_OPT:		/* 96 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_opt U8:0x%x\n", insn, arg));
 		PL_op->op_opt = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_opt = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_LATEFREE:		/* 97 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_latefree U8:0x%x\n", insn, arg));
 		PL_op->op_latefree = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_latefree = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_LATEFREED:		/* 98 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_latefreed U8:0x%x\n", insn, arg));
 		PL_op->op_latefreed = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_latefreed = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_ATTACHED:		/* 99 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_attached U8:0x%x\n", insn, arg));
 		PL_op->op_attached = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_attached = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_FLAGS:		/* 100 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_flags U8:0x%x\n", insn, arg));
 		PL_op->op_flags = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_flags = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_PRIVATE:		/* 101 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_private U8:0x%x\n", insn, arg));
 		PL_op->op_private = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_private = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_FIRST:		/* 102 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_first opindex:0x%x\n", insn, arg));
 		cUNOP->op_first = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cUNOP->op_first = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_LAST:		/* 103 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_last opindex:0x%x\n", insn, arg));
 		cBINOP->op_last = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cBINOP->op_last = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_OTHER:		/* 104 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_other opindex:0x%x\n", insn, arg));
 		cLOGOP->op_other = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cLOGOP->op_other = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_PMREPLROOT:		/* 105 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplroot opindex:0x%x\n", insn, arg));
 		(cPMOP->op_pmreplrootu).op_pmreplroot = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   (cPMOP->op_pmreplrootu).op_pmreplroot = arg;\n"));
 		break;
 	    }
 	  case INSN_OP_PMREPLSTART:		/* 106 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplstart opindex:0x%x\n", insn, arg));
 		(cPMOP->op_pmstashstartu).op_pmreplstart = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   (cPMOP->op_pmstashstartu).op_pmreplstart = arg;\n"));
 		break;
 	    }
 #ifdef USE_ITHREADS
-	  case INSN_OP_PMSTASHPV:		/* 107 */
-	    {
-		pvindex arg;
-		BGET_pvindex(arg);
-		BSET_op_pmstashpv(cPMOP, arg);
-		break;
-	    }
-	  case INSN_OP_PMREPLROOTPO:		/* 108 */
+	  case INSN_OP_PMREPLROOTPO:		/* 107 */
 	    {
 		PADOFFSET arg;
 		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplrootpo PADOFFSET:0x%x\n", insn, arg));
 		(cPMOP->op_pmreplrootu).op_pmreplroot = (OP*)arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   (cPMOP->op_pmreplrootu).op_pmreplroot = (OP*)arg;\n"));
 		break;
 	    }
 #else
+	  case INSN_OP_PMSTASH:		/* 108 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmstash svindex:0x%x\n", insn, arg));
+		*(SV**)&cPMOP->op_pmstash = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&cPMOP->op_pmstash = arg;\n"));
+		break;
+	    }
 	  case INSN_OP_PMREPLROOTGV:		/* 109 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplrootgv svindex:0x%x\n", insn, arg));
 		*(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot) = arg;\n"));
 		break;
 	    }
 #endif
@@ -848,233 +1072,313 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pregcomp svindex:0x%x\n", insn, arg));
 		BSET_pregcomp(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_pregcomp(PL_op, arg)\n"));
 		break;
 	    }
 	  case INSN_OP_PMFLAGS:		/* 111 */
 	    {
 		U16 arg;
 		BGET_U16(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmflags U16:0x%x\n", insn, arg));
 		cPMOP->op_pmflags = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cPMOP->op_pmflags = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_SV:		/* 112 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		cSVOP->op_sv = arg;
-		break;
-	    }
-	  case INSN_OP_PADIX:		/* 113 */
-	    {
-		PADOFFSET arg;
-		BGET_PADOFFSET(arg);
-		cPADOP->op_padix = arg;
-		break;
-	    }
-	  case INSN_OP_PV:		/* 114 */
-	    {
-		pvcontents arg;
-		BGET_pvcontents(arg);
-		cPVOP->op_pv = arg;
-		break;
-	    }
-	  case INSN_OP_PV_TR:		/* 115 */
-	    {
-		op_tr_array arg;
-		BGET_op_tr_array(arg);
-		cPVOP->op_pv = arg;
-		break;
-	    }
-	  case INSN_OP_REDOOP:		/* 116 */
-	    {
-		opindex arg;
-		BGET_opindex(arg);
-		cLOOP->op_redoop = arg;
-		break;
-	    }
-	  case INSN_OP_NEXTOP:		/* 117 */
-	    {
-		opindex arg;
-		BGET_opindex(arg);
-		cLOOP->op_nextop = arg;
-		break;
-	    }
-	  case INSN_OP_LASTOP:		/* 118 */
-	    {
-		opindex arg;
-		BGET_opindex(arg);
-		cLOOP->op_lastop = arg;
-		break;
-	    }
-	  case INSN_COP_LABEL:		/* 119 */
-	    {
-		pvindex arg;
-		BGET_pvindex(arg);
-		cCOP->cop_label = arg;
-		break;
-	    }
-	  case INSN_COP_STASHPV:		/* 120 */
-	    {
-		pvindex arg;
-		BGET_pvindex(arg);
-		BSET_cop_stashpv(cCOP, arg);
-		break;
-	    }
-	  case INSN_COP_FILE:		/* 121 */
-	    {
-		pvindex arg;
-		BGET_pvindex(arg);
-		BSET_cop_file(cCOP, arg);
-		break;
-	    }
-	  case INSN_COP_SEQ:		/* 122 */
+#if PERL_VERSION < 11
+	  case INSN_OP_REFLAGS:		/* 112 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
-		cCOP->cop_seq = arg;
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_reflags U32:0x%x\n", insn, arg));
+		PM_GETRE(cPMOP)->extflags = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PM_GETRE(cPMOP)->extflags = arg;\n"));
 		break;
 	    }
-	  case INSN_COP_LINE:		/* 123 */
+#else
+	  case INSN_OP_REFLAGS:		/* 113 */
 	    {
-		line_t arg;
+		U32 arg;
 		BGET_U32(arg);
-		cCOP->cop_line = arg;
-		break;
-	    }
-	  case INSN_COP_WARNINGS:		/* 124 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		BSET_cop_warnings(cCOP, arg);
-		break;
-	    }
-	  case INSN_MAIN_START:		/* 125 */
-	    {
-		opindex arg;
-		BGET_opindex(arg);
-		PL_main_start = arg;
-		break;
-	    }
-	  case INSN_MAIN_ROOT:		/* 126 */
-	    {
-		opindex arg;
-		BGET_opindex(arg);
-		PL_main_root = arg;
-		break;
-	    }
-	  case INSN_MAIN_CV:		/* 127 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		*(SV**)&PL_main_cv = arg;
-		break;
-	    }
-	  case INSN_CURPAD:		/* 128 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		BSET_curpad(PL_curpad, arg);
-		break;
-	    }
-	  case INSN_PUSH_BEGIN:		/* 129 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		BSET_push_begin(PL_beginav, arg);
-		break;
-	    }
-	  case INSN_PUSH_INIT:		/* 130 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		BSET_push_init(PL_initav, arg);
-		break;
-	    }
-	  case INSN_PUSH_END:		/* 131 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		BSET_push_end(PL_endav, arg);
-		break;
-	    }
-	  case INSN_CURSTASH:		/* 132 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		*(SV**)&PL_curstash = arg;
-		break;
-	    }
-	  case INSN_DEFSTASH:		/* 133 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		*(SV**)&PL_defstash = arg;
-		break;
-	    }
-	  case INSN_DATA:		/* 134 */
-	    {
-		U8 arg;
-		BGET_U8(arg);
-		BSET_data(none, arg);
-		break;
-	    }
-	  case INSN_INCAV:		/* 135 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		*(SV**)&GvAV(PL_incgv) = arg;
-		break;
-	    }
-	  case INSN_LOAD_GLOB:		/* 136 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		BSET_load_glob(none, arg);
-		break;
-	    }
-#ifdef USE_ITHREADS
-	  case INSN_REGEX_PADAV:		/* 137 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		*(SV**)&PL_regex_padav = arg;
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_reflags U32:0x%x\n", insn, arg));
+		((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   ((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags = arg;\n"));
 		break;
 	    }
 #endif
-	  case INSN_DOWARN:		/* 138 */
+	  case INSN_OP_SV:		/* 114 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_sv svindex:0x%x\n", insn, arg));
+		cSVOP->op_sv = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cSVOP->op_sv = arg;\n"));
+		break;
+	    }
+	  case INSN_OP_PADIX:		/* 115 */
+	    {
+		PADOFFSET arg;
+		BGET_PADOFFSET(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_padix PADOFFSET:0x%x\n", insn, arg));
+		cPADOP->op_padix = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cPADOP->op_padix = arg;\n"));
+		break;
+	    }
+	  case INSN_OP_PV:		/* 116 */
+	    {
+		pvcontents arg;
+		BGET_pvcontents(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pv pvcontents:0x%x\n", insn, arg));
+		cPVOP->op_pv = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cPVOP->op_pv = arg;\n"));
+		break;
+	    }
+	  case INSN_OP_PV_TR:		/* 117 */
+	    {
+		op_tr_array arg;
+		BGET_op_tr_array(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pv_tr op_tr_array:0x%x\n", insn, arg));
+		cPVOP->op_pv = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cPVOP->op_pv = arg;\n"));
+		break;
+	    }
+	  case INSN_OP_REDOOP:		/* 118 */
+	    {
+		opindex arg;
+		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_redoop opindex:0x%x\n", insn, arg));
+		cLOOP->op_redoop = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_redoop = arg;\n"));
+		break;
+	    }
+	  case INSN_OP_NEXTOP:		/* 119 */
+	    {
+		opindex arg;
+		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_nextop opindex:0x%x\n", insn, arg));
+		cLOOP->op_nextop = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_nextop = arg;\n"));
+		break;
+	    }
+	  case INSN_OP_LASTOP:		/* 120 */
+	    {
+		opindex arg;
+		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_lastop opindex:0x%x\n", insn, arg));
+		cLOOP->op_lastop = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_lastop = arg;\n"));
+		break;
+	    }
+	  case INSN_COP_LABEL:		/* 121 */
+	    {
+		pvindex arg;
+		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_label pvindex:0x%x\n", insn, arg));
+		cCOP->cop_label = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_label = arg;\n"));
+		break;
+	    }
+#ifndef USE_ITHREADS
+	  case INSN_COP_STASH:		/* 122 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_stash svindex:0x%x\n", insn, arg));
+		BSET_cop_stash(cCOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_stash(cCOP, arg)\n"));
+		break;
+	    }
+	  case INSN_COP_FILEGV:		/* 123 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_filegv svindex:0x%x\n", insn, arg));
+		BSET_cop_filegv(cCOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_filegv(cCOP, arg)\n"));
+		break;
+	    }
+#endif
+	  case INSN_COP_SEQ:		/* 124 */
+	    {
+		U32 arg;
+		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_seq U32:0x%x\n", insn, arg));
+		cCOP->cop_seq = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_seq = arg;\n"));
+		break;
+	    }
+	  case INSN_COP_LINE:		/* 125 */
+	    {
+		line_t arg;
+		BGET_U32(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_line line_t:0x%x\n", insn, arg));
+		cCOP->cop_line = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_line = arg;\n"));
+		break;
+	    }
+	  case INSN_COP_WARNINGS:		/* 126 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_warnings svindex:0x%x\n", insn, arg));
+		BSET_cop_warnings(cCOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_warnings(cCOP, arg)\n"));
+		break;
+	    }
+	  case INSN_MAIN_START:		/* 127 */
+	    {
+		opindex arg;
+		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_start opindex:0x%x\n", insn, arg));
+		PL_main_start = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_main_start = arg;\n"));
+		break;
+	    }
+	  case INSN_MAIN_ROOT:		/* 128 */
+	    {
+		opindex arg;
+		BGET_opindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_root opindex:0x%x\n", insn, arg));
+		PL_main_root = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_main_root = arg;\n"));
+		break;
+	    }
+	  case INSN_MAIN_CV:		/* 129 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_cv svindex:0x%x\n", insn, arg));
+		*(SV**)&PL_main_cv = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_main_cv = arg;\n"));
+		break;
+	    }
+	  case INSN_CURPAD:		/* 130 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) curpad svindex:0x%x\n", insn, arg));
+		BSET_curpad(PL_curpad, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_curpad(PL_curpad, arg)\n"));
+		break;
+	    }
+	  case INSN_PUSH_BEGIN:		/* 131 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_begin svindex:0x%x\n", insn, arg));
+		BSET_push_begin(PL_beginav, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_begin(PL_beginav, arg)\n"));
+		break;
+	    }
+	  case INSN_PUSH_INIT:		/* 132 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_init svindex:0x%x\n", insn, arg));
+		BSET_push_init(PL_initav, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_init(PL_initav, arg)\n"));
+		break;
+	    }
+	  case INSN_PUSH_END:		/* 133 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_end svindex:0x%x\n", insn, arg));
+		BSET_push_end(PL_endav, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_end(PL_endav, arg)\n"));
+		break;
+	    }
+	  case INSN_CURSTASH:		/* 134 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) curstash svindex:0x%x\n", insn, arg));
+		*(SV**)&PL_curstash = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_curstash = arg;\n"));
+		break;
+	    }
+	  case INSN_DEFSTASH:		/* 135 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) defstash svindex:0x%x\n", insn, arg));
+		*(SV**)&PL_defstash = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_defstash = arg;\n"));
+		break;
+	    }
+	  case INSN_DATA:		/* 136 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) data U8:0x%x\n", insn, arg));
+		BSET_data(none, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_data(none, arg)\n"));
+		break;
+	    }
+	  case INSN_INCAV:		/* 137 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) incav svindex:0x%x\n", insn, arg));
+		*(SV**)&GvAV(PL_incgv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvAV(PL_incgv) = arg;\n"));
+		break;
+	    }
+	  case INSN_LOAD_GLOB:		/* 138 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) load_glob svindex:0x%x\n", insn, arg));
+		BSET_load_glob(none, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_load_glob(none, arg)\n"));
+		break;
+	    }
+#ifdef USE_ITHREADS
+#endif
+	  case INSN_DOWARN:		/* 139 */
+	    {
+		U8 arg;
+		BGET_U8(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) dowarn U8:0x%x\n", insn, arg));
 		PL_dowarn = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_dowarn = arg;\n"));
 		break;
 	    }
-	  case INSN_COMPPAD_NAME:		/* 139 */
+	  case INSN_COMPPAD_NAME:		/* 140 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) comppad_name svindex:0x%x\n", insn, arg));
 		*(SV**)&PL_comppad_name = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_comppad_name = arg;\n"));
 		break;
 	    }
-	  case INSN_XGV_STASH:		/* 140 */
+	  case INSN_XGV_STASH:		/* 141 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xgv_stash svindex:0x%x\n", insn, arg));
 		*(SV**)&GvSTASH(bstate->bs_sv) = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvSTASH(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
-	  case INSN_SIGNAL:		/* 141 */
+	  case INSN_SIGNAL:		/* 142 */
 	    {
 		strconst arg;
 		BGET_strconst(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) signal strconst:0x%x\n", insn, arg));
 		BSET_signal(bstate->bs_sv, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_signal(bstate->bs_sv, arg)\n"));
 		break;
 	    }
-	  case INSN_FORMFEED:		/* 142 */
+	  case INSN_FORMFEED:		/* 143 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) formfeed svindex:0x%x\n", insn, arg));
 		PL_formfeed = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   PL_formfeed = arg;\n"));
 		break;
 	    }
 	    default:

@@ -22,16 +22,26 @@ struct byteloader_fdata {
     int	idx;
 };
 
+#if PERL_VERSION > 8
+
+struct byteloader_xpv {
+    char *xpv_pv;
+    int xpv_cur;
+    int	xpv_len;
+};
+
+#endif
+
 struct byteloader_state {
     struct byteloader_fdata	*bs_fdata;
     SV				*bs_sv;
     void			**bs_obj_list;
     int				bs_obj_list_fill;
     int				bs_ix;
-#if PERL_VERSION < 9
-    XPV				bs_pv;
+#if PERL_VERSION > 8
+    struct byteloader_xpv	bs_pv;
 #else
-    XPVIV			bs_pv;
+    XPV				bs_pv;
 #endif
     int				bs_iv_overflows;
 };
@@ -149,43 +159,44 @@ enum {
     INSN_OP_OTHER,			/* 104 */
     INSN_OP_PMREPLROOT,			/* 105 */
     INSN_OP_PMREPLSTART,			/* 106 */
-    INSN_OP_PMSTASHPV,			/* 107 */
-    INSN_OP_PMREPLROOTPO,			/* 108 */
+    INSN_OP_PMREPLROOTPO,			/* 107 */
+    INSN_OP_PMSTASH,			/* 108 */
     INSN_OP_PMREPLROOTGV,			/* 109 */
     INSN_PREGCOMP,			/* 110 */
     INSN_OP_PMFLAGS,			/* 111 */
-    INSN_OP_SV,			/* 112 */
-    INSN_OP_PADIX,			/* 113 */
-    INSN_OP_PV,			/* 114 */
-    INSN_OP_PV_TR,			/* 115 */
-    INSN_OP_REDOOP,			/* 116 */
-    INSN_OP_NEXTOP,			/* 117 */
-    INSN_OP_LASTOP,			/* 118 */
-    INSN_COP_LABEL,			/* 119 */
-    INSN_COP_STASHPV,			/* 120 */
-    INSN_COP_FILE,			/* 121 */
-    INSN_COP_SEQ,			/* 122 */
-    INSN_COP_LINE,			/* 123 */
-    INSN_COP_WARNINGS,			/* 124 */
-    INSN_MAIN_START,			/* 125 */
-    INSN_MAIN_ROOT,			/* 126 */
-    INSN_MAIN_CV,			/* 127 */
-    INSN_CURPAD,			/* 128 */
-    INSN_PUSH_BEGIN,			/* 129 */
-    INSN_PUSH_INIT,			/* 130 */
-    INSN_PUSH_END,			/* 131 */
-    INSN_CURSTASH,			/* 132 */
-    INSN_DEFSTASH,			/* 133 */
-    INSN_DATA,			/* 134 */
-    INSN_INCAV,			/* 135 */
-    INSN_LOAD_GLOB,			/* 136 */
-    INSN_REGEX_PADAV,			/* 137 */
-    INSN_DOWARN,			/* 138 */
-    INSN_COMPPAD_NAME,			/* 139 */
-    INSN_XGV_STASH,			/* 140 */
-    INSN_SIGNAL,			/* 141 */
-    INSN_FORMFEED,			/* 142 */
-    MAX_INSN = 142
+    INSN_OP_REFLAGS,			/* 112 */
+    INSN_OP_REFLAGS,			/* 113 */
+    INSN_OP_SV,			/* 114 */
+    INSN_OP_PADIX,			/* 115 */
+    INSN_OP_PV,			/* 116 */
+    INSN_OP_PV_TR,			/* 117 */
+    INSN_OP_REDOOP,			/* 118 */
+    INSN_OP_NEXTOP,			/* 119 */
+    INSN_OP_LASTOP,			/* 120 */
+    INSN_COP_LABEL,			/* 121 */
+    INSN_COP_STASH,			/* 122 */
+    INSN_COP_FILEGV,			/* 123 */
+    INSN_COP_SEQ,			/* 124 */
+    INSN_COP_LINE,			/* 125 */
+    INSN_COP_WARNINGS,			/* 126 */
+    INSN_MAIN_START,			/* 127 */
+    INSN_MAIN_ROOT,			/* 128 */
+    INSN_MAIN_CV,			/* 129 */
+    INSN_CURPAD,			/* 130 */
+    INSN_PUSH_BEGIN,			/* 131 */
+    INSN_PUSH_INIT,			/* 132 */
+    INSN_PUSH_END,			/* 133 */
+    INSN_CURSTASH,			/* 134 */
+    INSN_DEFSTASH,			/* 135 */
+    INSN_DATA,			/* 136 */
+    INSN_INCAV,			/* 137 */
+    INSN_LOAD_GLOB,			/* 138 */
+    INSN_DOWARN,			/* 139 */
+    INSN_COMPPAD_NAME,			/* 140 */
+    INSN_XGV_STASH,			/* 141 */
+    INSN_SIGNAL,			/* 142 */
+    INSN_FORMFEED,			/* 143 */
+    MAX_INSN = 143
 };
 
 enum {

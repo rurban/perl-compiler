@@ -1,6 +1,7 @@
 #      Assembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
+#      Copyright (c) 2008 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -35,6 +36,8 @@ sub error {
 
 my $debug = 0;
 sub debug { $debug = shift }
+my $quiet = 0;
+sub quiet { $quiet = shift }
 
 sub limcheck($$$$){
     my( $val, $lo, $hi, $loc ) = @_;
@@ -81,7 +84,7 @@ sub B::Asmdata::PUT_NV  { sprintf("%s\0", $_[0]) } # "%lf" looses precision and 
 sub B::Asmdata::PUT_objindex { # could allow names here
     my $arg = limcheck( $_[0], 0, 0xffffffff, '*index' );
     pack("L", $arg);
-} 
+}
 sub B::Asmdata::PUT_svindex { &B::Asmdata::PUT_objindex }
 sub B::Asmdata::PUT_opindex { &B::Asmdata::PUT_objindex }
 sub B::Asmdata::PUT_pvindex { &B::Asmdata::PUT_objindex }
@@ -169,32 +172,50 @@ sub strip_comments {
     my $stmt = shift;
     # Comments only allowed in instructions which don't take string arguments
     # Treat string as a single line so .* eats \n characters.
+    my $line = $stmt;
     $stmt =~ s{
 	^\s*	# Ignore leading whitespace
 	(
-	  [^"]*	# A double quote '"' indicates a string argument. If we
-		# find a double quote, the match fails and we strip nothing.
+	  [^"]*  # A double quote '"' indicates a string argument. If we
+		 # find a double quote, the match fails and we strip nothing.
 	)
 	\s*\#	# Any amount of whitespace plus the comment marker...
-	.*$	# ...which carries on to end-of-string.
+	\s*(.*)$ # ...which carries on to end-of-string.
     }{$1}sx;	# Keep only the instruction and optional argument.
-    return $stmt;
+    return ($stmt) if $line eq $stmt;
+
+    $stmt =~ m{
+	^\s*
+	(
+	  [^"]*
+	)
+	\s*\#
+	\s*(.*)$
+    }sx;	# Keep only the instruction and optional argument.
+    my ($line, $comment) = ($1, $2);
+    # $line ~= s/\t$//; if $comment;
+    return ($line, $comment);
 }
 
 # create the ByteCode header: magic, archname, ByteLoader $VERSION, ivsize,
 # 	ptrsize, byteorder
 # nvtype is irrelevant (floats are stored as strings)
-# byteorder is strconst not U32 because of varying size issues
+# byteorder is strconst, not U32 because of varying size issues (?)
 
 sub gen_header {
     my $header = "";
-
+    my $version = "$ByteLoader::VERSION";
+    #if ($] < 5.009 and $version eq '0.06_01') {
+    #  $version = '0.06';# fake the old backwards compatible version
+    #}
     $header .= B::Asmdata::PUT_U32(0x43424c50);	# 'PLBC'
     $header .= B::Asmdata::PUT_strconst('"' . $Config{archname}. '"');
-    $header .= B::Asmdata::PUT_strconst(qq["$ByteLoader::VERSION"]);
+    $header .= B::Asmdata::PUT_strconst(qq["$version"]);
     $header .= B::Asmdata::PUT_U32($Config{ivsize});
     $header .= B::Asmdata::PUT_U32($Config{ptrsize});
+    #if ($] > 5.008008) {
     $header .= B::Asmdata::PUT_strconst('"'.$Config{byteorder}.'"');
+    #}
     $header;
 }
 
@@ -202,7 +223,7 @@ sub parse_statement {
     my $stmt = shift;
     my ($insn, $arg) = $stmt =~ m{
 	^\s*	# allow (but ignore) leading whitespace
-	(.*?)	# Instruction continues up until...
+	(.*?) # Ignore -S op groups. Instruction continues up until...
 	(?:	# ...an optional whitespace+argument group
 	    \s+		# first whitespace.
 	    (.*)	# The argument is all the rest (newlines included).
@@ -217,10 +238,11 @@ sub parse_statement {
 	    $arg =~ s/\s*$//; # strip trailing whitespace
 	    my $opnum = $opnumber{$arg};
 	    if (defined($opnum)) {
-		$arg = $opnum;
+	      $arg = $opnum;
 	    } else {
-		error qq(No such op type "$arg");
-		$arg = 0;
+	      # TODO: ignore [op] from O=Bytecode,-S
+	      error qq(No such op type "$arg");
+	      $arg = 0;
 	    }
 	}
     }
@@ -272,9 +294,10 @@ sub endasm {
     $linenum = $errors = $out = 0;
 }
 
+### interface via whole line, and optional comments
 sub assemble {
     my($line) = @_;
-    my ($insn, $arg);
+    my ($insn, $arg, $comment);
     $linenum++;
     chomp $line;
     if ($debug) {
@@ -283,25 +306,32 @@ sub assemble {
 	$quotedline =~ s/"/\\"/g;
 	$out->(assemble_insn("comment", qq("$quotedline")));
     }
-    if( $line = strip_comments($line) ){
-        ($insn, $arg) = parse_statement($line);
-        $out->(assemble_insn($insn, $arg));
-        if ($debug) {
-	    $out->(assemble_insn("nop", undef));
-        }
+    ($line, $comment) = strip_comments($line);
+    if ($line) {
+      ($insn, $arg) = parse_statement($line);
+      $out->(assemble_insn($insn, $arg, $comment));
+      if ($debug) {
+	$out->(assemble_insn("nop", undef));
+      }
+    } elsif ($debug and $comment) {
+      $out->(assemble_insn("nop", undef, $comment));
     }
 }
 
 ### temporary workaround
+### interface via 2-3 args
 
-sub asm {
+sub asm ($;$$) {
     return if $_[0] =~ /\s*\W/;
     if (defined $_[1]) {
 	return if $_[1] eq "0" and
 	    $_[0] !~ /^(?:newsvx?|av_pushx?|av_extend|xav_flags)$/;
 	return if $_[1] eq "1" and $_[0] =~ /^(?:sv_refcnt)$/;
     }
-    assemble "@_";
+    my ($insn, $arg, $comment) = @_;
+    $out->(assemble_insn($insn, $arg, $comment));
+    $linenum++;
+    # assemble "@_";
 }
 
 1;
@@ -330,5 +360,6 @@ See F<ext/B/B/Assembler.pm>.
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
 Per-statement interface by Benjamin Stuhl, C<sho_pi@hotmail.com>
+Comments: Reini Urban
 
 =cut

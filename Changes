@@ -1,9 +1,31 @@
 Started with B-C-1.04_01. The perl compiler was previously in CORE.
 TODO: Try to get info about earlier versions.
 
-1.04_09 2008-02-23 rurban
+1.04_10 2008-02-26 rurban
+	* change bc pvx access
+	  dummy struct bytestate_xpv, so pv has the same fields as with 5.8, 
+	  seperated from the sv. The sv is seperated from the pv.
+	  TODO: different strategy for B::C, must link xpv to sv
+	* add and parse Assembler comments
+	* change op_reflags from U16 to U32
+	* guarantee ByteLoader backwards compatibility: Accept lower versions also.
+
+1.04_09 2008-02-25 rurban
+	* restored 5.8 backwards compatibility, mainly for test comparison.
+	  CPAN installation will abort.
 	* make t/test*.sh PERL independent
 	* fixed B::C GV init crashes (SvPOK assertion)
+	* added B::C RE section
+	* fixed B::C xpvcv and xpvnv section
+	* comment Bytecode -S nice ops to re-assemble them without errors
+	* added new asm opcode op_reflags
+	* removed Bytecode cop_arybase for 5.10
+	* 5.8 compatibility: fixed bytecode.pl versioning, Asmdata creation 
+	  (exact same for 5.8.8), asmdata.t, b.t tests
+	* improved make clean
+	* add ByteLoader -Dt and -Dv debugging
+	* don't link against jit code against possible sideeffects
+	* fixed c.t and cc.t tests
 
 1.04_08 2008-02-22 rurban
 	* fixed t/b.t tests for 5.11 (REGEXP, ref RV => IV)

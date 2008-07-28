@@ -11,10 +11,17 @@ if (@ARGV == 0) {
 }
 
 sub print_insn {
-    my ($insn, $arg) = @_;
+    my ($insn, $arg, $comment) = @_;
     if (defined($arg)) {
+	if ($insn eq 'newopx') {
+	  my $type = $arg >> 7;
+	  my $size = $arg - ($type << 7);
+	  $arg = sprintf("%s \t# size:%d, type:%d", $arg, $size, $type);
+	}
+	$arg .= "\t# ".$comment if $comment;
 	printf "%s %s\n", $insn, $arg;
     } else {
+	$insn .= "\t# ".$comment if $comment;
 	print $insn, "\n";
     }
 }

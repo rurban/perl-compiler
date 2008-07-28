@@ -1,18 +1,12 @@
 typedef char *pvcontents;
 typedef char *strconst;
-typedef U32 PV;
+typedef U32 PV; /* hack */
 typedef char *op_tr_array;
 typedef int comment_t;
 typedef SV *svindex;
 typedef OP *opindex;
 typedef char *pvindex;
 typedef HEK *hekindex;
-
-#if PERL_VERSION > 8
-#define BSTATE_xpv_pv bstate->bs_pv.xiv_u.xivu_p1
-#else
-#define BSTATE_xpv_pv bstate->bs_pv.xpv_pv
-#endif
 
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
@@ -48,12 +42,12 @@ typedef HEK *hekindex;
 #define BGET_PV(arg)	STMT_START {					\
 	BGET_U32(arg);							\
 	if (arg) {							\
-	    Newx(BSTATE_xpv_pv, arg, char);		\
-	    bl_read(bstate->bs_fdata, BSTATE_xpv_pv, arg, 1);	\
-	    bstate->bs_pv.xpv_len = arg;				\
-	    bstate->bs_pv.xpv_cur = arg - 1;				\
+	    Newx(bstate->bs_pv.xpv_pv, (U32)arg, char);			\
+	    bl_read(bstate->bs_fdata, bstate->bs_pv.xpv_pv, (U32)arg, 1);	\
+	    bstate->bs_pv.xpv_len = (U32)arg;				\
+	    bstate->bs_pv.xpv_cur = (U32)arg - 1;			\
 	} else {							\
-	    BSTATE_xpv_pv = 0;				\
+	    bstate->bs_pv.xpv_pv = 0;						\
 	    bstate->bs_pv.xpv_len = 0;					\
 	    bstate->bs_pv.xpv_cur = 0;					\
 	}								\
@@ -85,7 +79,7 @@ typedef HEK *hekindex;
 	arg = (char *) ary;				\
     } while (0)
 
-#define BGET_pvcontents(arg)	arg = BSTATE_xpv_pv
+#define BGET_pvcontents(arg)	arg = bstate->bs_pv.xpv_pv
 #define BGET_strconst(arg) STMT_START {	\
 	for (arg = PL_tokenbuf; (*arg = BGET_FGETC()); arg++) /* nothing */; \
 	arg = PL_tokenbuf;			\
@@ -200,11 +194,13 @@ typedef HEK *hekindex;
 
 // see op.c:newPMOP
 // arg + bstate->bs_pv.xpv.xpv_cur
+// TODO: use op_pmflags or re->extflags?
+// op_pmflags is just a small subset of re->extflags
 #define BSET_pregcomp(o, re) \
     STMT_START { \
         SV* repointer; \
 	REGEXP* rx = re ? \
-	    CALLREGCOMP(aTHX_ re, cPMOP->op_pmflags) : \
+	    CALLREGCOMP(aTHX_ re, cPMOPx(o)->op_pmflags) : \
 	    Null(REGEXP*); \
         if(av_len((AV*) PL_regex_pad[0]) > -1) { \
             repointer = av_pop((AV*)PL_regex_pad[0]); \
@@ -212,7 +208,7 @@ typedef HEK *hekindex;
             sv_setiv(repointer,PTR2IV(rx)); \
         } else { \
             repointer = newSViv(PTR2IV(rx)); \
-            av_push(PL_regex_padav,SvREFCNT_inc_simple_NN(repointer)); \
+            av_push(PL_regex_padav, SvREFCNT_inc_simple_NN(repointer)); \
             cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav); \
             PL_regex_pad = AvARRAY(PL_regex_padav); \
         } \
@@ -233,7 +229,7 @@ typedef HEK *hekindex;
 #define BSET_pregcomp(o, re) \
     STMT_START { \
 	PM_SETRE(((PMOP*)o), (re ? \
-	     CALLREGCOMP(aTHX_ re, cPMOP->op_pmflags) : \
+	     CALLREGCOMP(aTHX_ re, cPMOPx(o)->op_pmflags) : \
 	     Null(REGEXP*))); \
     } STMT_END
 #endif
@@ -258,11 +254,12 @@ typedef HEK *hekindex;
 	    BSET_OBJ_STOREX(sv);			\
 	} STMT_END
 
-#define BSET_newop(o, arg)	NewOpSz(666, o, arg)
+#define BSET_newop(o, size)	NewOpSz(666, o, size)
+/* arg is encoded as type <<7 and size */
 #define BSET_newopx(o, arg) STMT_START {	\
-	register int sz = arg & 0x7f;		\
+	register int size = arg & 0x7f;		\
 	register OP* newop;			\
-	BSET_newop(newop, sz);			\
+	BSET_newop(newop, size);		\
 	/* newop->op_next = o; XXX */		\
 	o = newop;				\
 	arg >>=7;				\
@@ -367,7 +364,7 @@ typedef HEK *hekindex;
 #define BSET_cop_stash(cop,arg)		CopSTASH_set(cop,(HV*)arg)
 #endif
 
-/* this is simply stolen from the code in newATTRSUB() */
+/* This is stolen from the code in newATTRSUB() */
 #if PERL_VERSION < 10
 #define PL_HINTS_PRIVATE (PL_hints & HINT_PRIVATE_MASK)
 #else
@@ -375,6 +372,23 @@ typedef HEK *hekindex;
    special and there is no need for HINT_PRIVATE_MASK for COPs. */
 #define PL_HINTS_PRIVATE (PL_hints)
 #endif
+#if PERL_VERSION < 10
+#define BSET_push_begin(ary,cv)				\
+	STMT_START {					\
+            I32 oldscope = PL_scopestack_ix;		\
+            ENTER;					\
+            SAVECOPFILE(&PL_compiling);			\
+            SAVECOPLINE(&PL_compiling);			\
+            if (!PL_beginav)				\
+                PL_beginav = newAV();			\
+            av_push(PL_beginav, (SV*)cv);		\
+	    GvCV(CvGV(cv)) = 0;               /* cv has been hijacked */\
+            call_list(oldscope, PL_beginav);		\
+            PL_curcop = &PL_compiling;			\
+            PL_compiling.op_private = (U8)(PL_hints & HINT_PRIVATE_MASK);\
+            LEAVE;					\
+	} STMT_END
+#else
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\
@@ -390,6 +404,7 @@ typedef HEK *hekindex;
             CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
             LEAVE;					\
 	} STMT_END
+#endif
 #define BSET_push_init(ary,cv)				\
 	STMT_START {					\
 	    av_unshift((PL_initav ? PL_initav : 	\
@@ -419,6 +434,9 @@ typedef HEK *hekindex;
 
 #define BSET_xhv_name(hv, name)	hv_name_set((HV*)hv, name, strlen(name), 0)
 #define BSET_cop_arybase(c, b) CopARYBASE_set(c, b)
+#if PERL_VERSION < 10
+#define BSET_cop_warnings(c, w) c->cop_warnings = (STRLEN *)w;
+#else
 #define BSET_cop_warnings(c, w) \
 	STMT_START {							\
 	    if (specialWARN((STRLEN *)w)) {				\
@@ -431,6 +449,7 @@ typedef HEK *hekindex;
 		SvREFCNT_dec(w);					\
 	    }								\
 	} STMT_END
+#endif
 #define BSET_gp_file(gv, file) \
 	STMT_START {							\
 	    STRLEN len = strlen(file);					\
@@ -445,13 +464,14 @@ typedef HEK *hekindex;
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
- * equivalent. However, since the header includes checks requiring an exact match in
+ * equivalent. However, since the header includes checks required an exact match in
  * ByteLoader versions (we can't guarantee forward compatibility), you don't 
- * need to specify one:
+ * need to specify one.
  * 	use ByteLoader;
  * is all you need.
  *	-- BKS, June 2000
-*/
+ * Changed to guarantee backwards compatibility. -- rurban 2008-02
+ */
 
 #define HEADER_FAIL(f)	\
 	Perl_croak(aTHX_ "Invalid bytecode for this architecture: " f)
@@ -477,8 +497,8 @@ typedef HEK *hekindex;
 	    if (strNE(str, ARCHNAME)) {				\
 		HEADER_FAIL2("wrong architecture (want %s, you have %s)",str,ARCHNAME);	\
 	    }							\
-	    BGET_strconst(str); /* ByteLoader version */	\
-	    if (strNE(str, VERSION)) {				\
+	    BGET_strconst(str); /* fail if lower ByteLoader version */ \
+	    if (strLT(str, VERSION)) {				\
 		HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",	\
 			str, VERSION);				\
 	    }							\
@@ -496,3 +516,4 @@ typedef HEK *hekindex;
 			"12345678", str);			\
 	    }							\
 	} STMT_END
+

@@ -65,7 +65,7 @@
 
 #include <lightning.h>
 
-int jitrun(pTHX_ register struct byteloader_state *);
+/* int jitrun(pTHX_ register struct byteloader_state *); */
 
 /* Pointer to a JIT-Compiled function */
 /* Takes the closure and the distance to the starting bytecode as arguments */

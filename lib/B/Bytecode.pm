@@ -1,5 +1,6 @@
 # B::Bytecode.pm
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
+# Copyright (c) 2008 Reini Urban <rurban@cpan.org>.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -15,8 +16,21 @@ use B qw(class main_cv main_root main_start cstring comppadlist
 	defstash curstash begin_av init_av end_av inc_gv warnhook diehook
 	dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
 	OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
-use B::Asmdata qw(@specialsv_name);
+our (@optype, @specialsv_name);
+require B;
+if ($] < 5.009) {
+  # <=5.008 had @specialsv_name exported from B::Asmdata
+  require B::Asmdata;
+  @optype = @{*B::Asmdata::optype{ARRAY}};
+  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
+  # import B::Asmdata qw(@optype @specialsv_name);
+} else {
+  @optype = @{*B::optype{ARRAY}};
+  @specialsv_name = @{*B::specialsv_name{ARRAY}};
+  # import B qw(@optype @specialsv_name);
+}
 use B::Assembler qw(asm newasm endasm);
+use B::Concise;
 
 #################################################
 
@@ -26,7 +40,8 @@ my %svtab = (0,0);
 my %optab = (0,0);
 my %spectab = (0,0);
 my $tix = 1;
-sub asm;
+my %ops = (0,0);
+# sub asm ($;$$) { }
 sub nice ($) { }
 
 BEGIN {
@@ -38,6 +53,31 @@ BEGIN {
 }
 
 #################################################
+
+sub op_flags {
+  # B::Concise::op_flags($_[0]); # too terse
+  # common flags (see BASOP.op_flags in op.h)
+  my($x) = @_;
+  my(@v);
+  push @v, "WANT_VOID" if ($x & 3) == 1;
+  push @v, "WANT_SCALAR" if ($x & 3) == 2;
+  push @v, "WANT_LIST" if ($x & 3) == 3;
+  push @v, "KIDS" if $x & 4;
+  push @v, "PARENS" if $x & 8;
+  push @v, "REF" if $x & 16;
+  push @v, "MOD" if $x & 32;
+  push @v, "STACKED" if $x & 64;
+  push @v, "SPECIAL" if $x & 128;
+  return join(",", @v);
+}
+
+sub sv_flags {
+  my ($sv) = @_;
+  my %h;
+  sub B::Concise::fmt_line { return shift; }
+  %h = B::Concise::concise_op($ops{$tix-1}) if ref $ops{$tix-1};
+  B::Concise::concise_sv($_[0], \%h, 0);
+}
 
 sub pvstring {
     my $pv = shift;
@@ -59,7 +99,11 @@ sub B::OP::ix {
     my $ix = $optab{$$op};
     defined($ix) ? $ix : do {
 	nice "[".$op->name." $tix]";
-	asm "newopx", $op->size | $op->type <<7;
+	$ops{$tix} = $op;
+	my $arg = $op->size | $op->type <<7;
+	asm "newopx", $arg,
+	    sprintf("%s, $arg=size:%d,type:%d",
+		    op_flags($op->flags), $op->size, $op->type);
 	$optab{$$op} = $opix = $ix = $tix++;
 	$op->bsave($ix);
 	$ix;
@@ -70,8 +114,8 @@ sub B::SPECIAL::ix {
     my $spec = shift;
     my $ix = $spectab{$$spec};
     defined($ix) ? $ix : do {
-	nice '['.$specialsv_name[$$spec].']';
-	asm "ldspecsvx", $$spec;
+	# nice '['.$specialsv_name[$$spec].']';
+	asm "ldspecsvx", $$spec, $specialsv_name[$$spec];
 	$spectab{$$spec} = $varix = $tix++;
     }
 }
@@ -81,7 +125,7 @@ sub B::SV::ix {
     my $ix = $svtab{$$sv};
     defined($ix) ? $ix : do {
 	nice '['.class($sv).']';
-	asm "newsvx", $sv->FLAGS;
+	asm "newsvx", $sv->FLAGS, sv_flags($sv);
 	$svtab{$$sv} = $varix = $ix = $tix++;
 	$sv->bsave($ix);
 	$ix;
@@ -120,11 +164,11 @@ sub B::GV::ix {
 							    # }}}} XXX
 
 	    nice "-GV-",
-	    asm "ldsv", $varix = $ix unless $ix == $varix;
-	    asm "gp_sv", $svix;
-	    asm "gp_av", $avix;
-	    asm "gp_hv", $hvix;
-	    asm "gp_cv", $cvix;
+	    asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
+	    asm "gp_sv", $svix, sv_flags($gv->SV);
+	    asm "gp_av", $avix, sv_flags($gv->AV);
+	    asm "gp_hv", $hvix, sv_flags($gv->HV);
+	    asm "gp_cv", $cvix, sv_flags($gv->CV);
 	    asm "gp_io", $ioix;
 	    asm "gp_cvgen", $gv->CVGEN;
 	    asm "gp_form", $formix;
@@ -133,7 +177,7 @@ sub B::GV::ix {
 	    asm "formfeed", $svix if $name eq "main::\cL";
 	} else {
 	    nice "[GV]";
-	    asm "newsvx", $gv->FLAGS;
+	    asm "newsvx", $gv->FLAGS, sv_flags($gv);
 	    $svtab{$$gv} = $varix = $ix = $tix++;
 	    my $stashix = $gv->STASH->ix;
 	    $gv->B::PVMG::bsave($ix);
@@ -161,7 +205,7 @@ sub B::HV::ix {
 	    # asm "xhv_pmroot", $pmrootix;	# XXX
 	} else {
 	    nice "[HV]";
-	    asm "newsvx", $hv->FLAGS;
+	    asm "newsvx", $hv->FLAGS, sv_flags($hv);
 	    $svtab{$$hv} = $varix = $ix = $tix++;
 	    my $stashix = $hv->SvSTASH->ix;
 	    for (@array = $hv->ARRAY) {
@@ -196,7 +240,7 @@ sub B::NULL::bsave {
     my ($sv,$ix) = @_;
 
     nice '-'.class($sv).'-',
-    asm "ldsv", $varix = $ix unless $ix == $varix;
+    asm "ldsv", $varix = $ix, sv_flags($sv) unless $ix == $varix;
     asm "sv_refcnt", $sv->REFCNT;
 }
 
@@ -243,7 +287,7 @@ sub B::PVIV::bsave {
 	return if $sv->isa('B::CV');
     }
     asm "xiv", !ITHREADS && $sv->FLAGS & (SVf_FAKE|SVf_READONLY) ?
-	"0 but true" : $sv->IVX;
+	"0 # but true" : $sv->IVX;
 }
 
 sub B::PVNV::bsave {
@@ -372,13 +416,13 @@ sub B::AV::bsave {
     my ($av,$ix) = @_;
     return $av->B::PVMG::bsave($ix) if $av->MAGICAL;
     my @array = $av->ARRAY;
-    $_ = $_->ix for @array;
+    # $_ = $_->ix for @array;
     my $stashix = $av->SvSTASH->ix;
 
     nice "-AV-",
-    asm "ldsv", $varix = $ix unless $ix == $varix;
+    asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
     asm "av_extend", $av->MAX if $av->MAX >= 0;
-    asm "av_pushx", $_ for @array;
+    asm "av_pushx", $_->ix, sv_flags($_) for @array;
     asm "sv_refcnt", $av->REFCNT;
     if (VERSION < 5.009) {
 	asm "xav_flags", $av->AvFLAGS;
@@ -441,7 +485,7 @@ sub B::UNOP::bsave {
     my $name = $op->name;
     my $flags = $op->flags;
     my $first = $op->first;
-    my $firstix = 
+    my $firstix =
 	$name =~ /fl[io]p/
 			# that's just neat
     ||	(!ITHREADS && $name eq 'regcomp')
@@ -567,9 +611,9 @@ sub B::PMOP::bsave {
 	    $rrarg = $op->pmreplroot->ix;
 	    $rstart = $op->pmreplstart->ix;
 	} elsif ($op->name eq 'pushre') {
-	  $rrop = "op_pmreplrootpo";
-	  $rrarg = $op->pmreplroot;
-	  # 5.9 $op->pmtargetoff?
+	    $rrop = "op_pmreplrootpo";
+	    $rrarg = $op->pmreplroot;
+	    # 5.9 $op->pmtargetoff?
 	}
 	$op->B::BINOP::bsave($ix);
 	if ($op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
@@ -599,7 +643,7 @@ sub B::PMOP::bsave {
       asm "newpv", pvstring $op->precomp;
       asm "pregcomp";
     } elsif ( VERSION >= 5.011 ) { 	# full REGEXP type
-      bwarn("PMOP full REGEXP type not yet supported");
+      #bwarn("PMOP full REGEXP type not yet supported");
       #my $re;
       if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
 	bwarn("PMOP existing regex_pad not yet supported");
@@ -607,9 +651,8 @@ sub B::PMOP::bsave {
       } else {
 	asm "op_pmflags",  $op->pmflags;
       }
-      asm "op_pmflags",  $op->pmflags | 2;
       asm "newpv", pvstring $op->precomp;
-      asm "op_reflags",  $op->reflags;
+      asm "op_reflags",  $op->reflags; # does not pregcomp set the extflags?
       asm "pregcomp";
     } elsif ( VERSION >= 5.009 ) {
       # asm "newsvx", $sv->FLAGS;
@@ -674,8 +717,8 @@ sub B::COP::bsave {
     my $warnix = $cop->warnings->ix;
     if (ITHREADS) {
 	$cop->B::OP::bsave($ix);
-	asm "cop_stashpv", pvix $cop->stashpv;
-	asm "cop_file", pvix $cop->file;
+	asm "cop_stashpv", pvix $cop->stashpv, $cop->stashpv;
+	asm "cop_file", pvix $cop->file, $cop->file;
     } else {
     	my $stashix = $cop->stash->ix;
     	my $fileix = $cop->filegv->ix(1);
@@ -683,14 +726,13 @@ sub B::COP::bsave {
 	asm "cop_stash", $stashix;
 	asm "cop_filegv", $fileix;
     }
-    asm "cop_label", pvix $cop->label if $cop->label;	# XXX AD
+    asm "cop_label", pvix $cop->label, $cop->label if $cop->label;	# XXX AD
     asm "cop_seq", $cop->cop_seq;
-    asm "cop_arybase", $cop->arybase;
+    asm "cop_arybase", $cop->arybase if VERSION < 5.009;
     asm "cop_line", $cop->line;
     asm "cop_warnings", $warnix;
     if (VERSION < 5.009) {
-      my $ioix = $cop->io->ix;
-      asm "cop_io", $ioix;
+      asm "cop_io", $cop->io->ix;
     }
 }
 
@@ -754,7 +796,7 @@ sub save_cq {
 }
 
 sub compile {
-    my ($head, $scan, $T_inhinc, $keep_syn);
+    my ($head, $scan, $T_inhinc, $keep_syn, $quiet);
     my $cwd = '';
     $files{$0} = 1;
     sub keep_syn {
@@ -764,42 +806,50 @@ sub compile {
 	*B::BINOP::bsave = *B::BINOP::bsave_fat;
 	*B::LISTOP::bsave = *B::LISTOP::bsave_fat;
     }
-    sub bwarn { print STDERR "Bytecode.pm: @_\n" }
+    sub bwarn { print STDERR "Bytecode.pm: @_\n" unless $quiet; }
 
     for (@_) {
-	if (/^-S/) {
-	    *newasm = *endasm = sub { };
-	    *asm = sub { print "    @_\n" };
-	    *nice = sub ($) { print "\n@_\n" };
+	if (/^-q(q?)/) {
+	  $quiet = 1;
+	} elsif (/^-S/) {
+	  *newasm = *endasm = sub { };
+	  *asm = sub($;$$) {
+	    undef $_[2] if defined $_[2] and $quiet;
+	    (defined $_[2])
+	      ? print $_[0]," ",$_[1],"\t# ",$_[2],"\n"
+	      : print "@_\n"
+	   };
+	  *nice = sub ($) { print "\n# @_\n" unless $quiet;};
 	} elsif (/^-v/) {
-	    *nice = sub ($) { print STDERR "@_\n" };
+	  warn "conflicting -q ignored" if $quiet;
+	  *nice = sub ($) { print STDERR "@_\n" };
 	} elsif (/^-H/) {
-	    require ByteLoader;
-	    my $version = $ByteLoader::VERSION;
-	    $head = "#! $^X
+	  require ByteLoader;
+	  my $version = $ByteLoader::VERSION;
+	  $head = "#! $^X
 use ByteLoader '$ByteLoader::VERSION';
 ";
-	    # Maybe: Fix the plc reader, if 'perl -MByteLoader <.plc>' is called
+	  # Maybe: Fix the plc reader, if 'perl -MByteLoader <.plc>' is called
 	} elsif (/^-k/) {
-	    keep_syn;
+	  keep_syn;
 	} elsif (/^-o(.*)$/) {
-	    open STDOUT, ">$1" or die "open $1: $!";
+	  open STDOUT, ">$1" or die "open $1: $!";
 	} elsif (/^-f(.*)$/) {
-	    $files{$1} = 1;
+	  $files{$1} = 1;
 	} elsif (/^-D(.*)$/) {
-	    $debug{$1}++;
+	  $debug{$1}++;
 	} elsif (/^-s(.*)$/) {
-	    $scan = length($1) ? $1 : $0;
+	  $scan = length($1) ? $1 : $0;
 	} elsif (/^-b/) {
-	    $savebegins = 1;
+	  $savebegins = 1;
     # this is here for the testsuite
 	} elsif (/^-TI/) {
-	    $T_inhinc = 1;
+	  $T_inhinc = 1;
 	} elsif (/^-TF(.*)/) {
-	    my $thatfile = $1;
-	    *B::COP::file = sub { $thatfile };
+	  my $thatfile = $1;
+	  *B::COP::file = sub { $thatfile };
 	} else {
-	    bwarn "Ignoring '$_' option";
+	  bwarn "Ignoring '$_' option";
 	}
     }
     if ($scan) {
@@ -904,6 +954,11 @@ expressions. When gotos are found keep the syntax tree.
 
 Output assembler source rather than piping it
 through the assembler and outputting bytecode.
+Without -q the assembler source is commented.
+
+=item B<-q>
+
+Be quiet.
 
 =item B<-D>I<M>
 
@@ -931,7 +986,11 @@ variables in C<(?{ ... })> constructs are not properly scoped.
 
 =item *
 
-scripts that use source filters will fail miserably. 
+scripts that use source filters will fail miserably.
+
+=item *
+
+5.10 PMOP and REGEXP ops do not yet work. Various 5.10 and 5.11 crashes.
 
 =back
 

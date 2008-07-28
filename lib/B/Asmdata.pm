@@ -21,7 +21,6 @@ our(%insn_data, @insn_name);
 
 use B qw(@optype @specialsv_name);
 
-
 # XXX insn_data is initialised this way because with a large
 # %insn_data = (foo => [...], bar => [...], ...) initialiser
 # I get a hard-to-track-down stack underflow and segfault.
@@ -132,42 +131,43 @@ $insn_data{op_last} = [103, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_other} = [104, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_pmreplroot} = [105, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_pmreplstart} = [106, \&PUT_opindex, "GET_opindex"];
-$insn_data{op_pmstashpv} = [107, \&PUT_pvindex, "GET_pvindex"];
-$insn_data{op_pmreplrootpo} = [108, \&PUT_PADOFFSET, "GET_PADOFFSET"];
+$insn_data{op_pmreplrootpo} = [107, \&PUT_PADOFFSET, "GET_PADOFFSET"];
+$insn_data{op_pmstash} = [108, \&PUT_svindex, "GET_svindex"];
 $insn_data{op_pmreplrootgv} = [109, \&PUT_svindex, "GET_svindex"];
 $insn_data{pregcomp} = [110, \&PUT_svindex, "GET_svindex"];
 $insn_data{op_pmflags} = [111, \&PUT_U16, "GET_U16"];
-$insn_data{op_sv} = [112, \&PUT_svindex, "GET_svindex"];
-$insn_data{op_padix} = [113, \&PUT_PADOFFSET, "GET_PADOFFSET"];
-$insn_data{op_pv} = [114, \&PUT_pvcontents, "GET_pvcontents"];
-$insn_data{op_pv_tr} = [115, \&PUT_op_tr_array, "GET_op_tr_array"];
-$insn_data{op_redoop} = [116, \&PUT_opindex, "GET_opindex"];
-$insn_data{op_nextop} = [117, \&PUT_opindex, "GET_opindex"];
-$insn_data{op_lastop} = [118, \&PUT_opindex, "GET_opindex"];
-$insn_data{cop_label} = [119, \&PUT_pvindex, "GET_pvindex"];
-$insn_data{cop_stashpv} = [120, \&PUT_pvindex, "GET_pvindex"];
-$insn_data{cop_file} = [121, \&PUT_pvindex, "GET_pvindex"];
-$insn_data{cop_seq} = [122, \&PUT_U32, "GET_U32"];
-$insn_data{cop_line} = [123, \&PUT_U32, "GET_U32"];
-$insn_data{cop_warnings} = [124, \&PUT_svindex, "GET_svindex"];
-$insn_data{main_start} = [125, \&PUT_opindex, "GET_opindex"];
-$insn_data{main_root} = [126, \&PUT_opindex, "GET_opindex"];
-$insn_data{main_cv} = [127, \&PUT_svindex, "GET_svindex"];
-$insn_data{curpad} = [128, \&PUT_svindex, "GET_svindex"];
-$insn_data{push_begin} = [129, \&PUT_svindex, "GET_svindex"];
-$insn_data{push_init} = [130, \&PUT_svindex, "GET_svindex"];
-$insn_data{push_end} = [131, \&PUT_svindex, "GET_svindex"];
-$insn_data{curstash} = [132, \&PUT_svindex, "GET_svindex"];
-$insn_data{defstash} = [133, \&PUT_svindex, "GET_svindex"];
-$insn_data{data} = [134, \&PUT_U8, "GET_U8"];
-$insn_data{incav} = [135, \&PUT_svindex, "GET_svindex"];
-$insn_data{load_glob} = [136, \&PUT_svindex, "GET_svindex"];
-$insn_data{regex_padav} = [137, \&PUT_svindex, "GET_svindex"];
-$insn_data{dowarn} = [138, \&PUT_U8, "GET_U8"];
-$insn_data{comppad_name} = [139, \&PUT_svindex, "GET_svindex"];
-$insn_data{xgv_stash} = [140, \&PUT_svindex, "GET_svindex"];
-$insn_data{signal} = [141, \&PUT_strconst, "GET_strconst"];
-$insn_data{formfeed} = [142, \&PUT_svindex, "GET_svindex"];
+$insn_data{op_reflags} = [112, \&PUT_U32, "GET_U32"];
+$insn_data{op_reflags} = [113, \&PUT_U32, "GET_U32"];
+$insn_data{op_sv} = [114, \&PUT_svindex, "GET_svindex"];
+$insn_data{op_padix} = [115, \&PUT_PADOFFSET, "GET_PADOFFSET"];
+$insn_data{op_pv} = [116, \&PUT_pvcontents, "GET_pvcontents"];
+$insn_data{op_pv_tr} = [117, \&PUT_op_tr_array, "GET_op_tr_array"];
+$insn_data{op_redoop} = [118, \&PUT_opindex, "GET_opindex"];
+$insn_data{op_nextop} = [119, \&PUT_opindex, "GET_opindex"];
+$insn_data{op_lastop} = [120, \&PUT_opindex, "GET_opindex"];
+$insn_data{cop_label} = [121, \&PUT_pvindex, "GET_pvindex"];
+$insn_data{cop_stash} = [122, \&PUT_svindex, "GET_svindex"];
+$insn_data{cop_filegv} = [123, \&PUT_svindex, "GET_svindex"];
+$insn_data{cop_seq} = [124, \&PUT_U32, "GET_U32"];
+$insn_data{cop_line} = [125, \&PUT_U32, "GET_U32"];
+$insn_data{cop_warnings} = [126, \&PUT_svindex, "GET_svindex"];
+$insn_data{main_start} = [127, \&PUT_opindex, "GET_opindex"];
+$insn_data{main_root} = [128, \&PUT_opindex, "GET_opindex"];
+$insn_data{main_cv} = [129, \&PUT_svindex, "GET_svindex"];
+$insn_data{curpad} = [130, \&PUT_svindex, "GET_svindex"];
+$insn_data{push_begin} = [131, \&PUT_svindex, "GET_svindex"];
+$insn_data{push_init} = [132, \&PUT_svindex, "GET_svindex"];
+$insn_data{push_end} = [133, \&PUT_svindex, "GET_svindex"];
+$insn_data{curstash} = [134, \&PUT_svindex, "GET_svindex"];
+$insn_data{defstash} = [135, \&PUT_svindex, "GET_svindex"];
+$insn_data{data} = [136, \&PUT_U8, "GET_U8"];
+$insn_data{incav} = [137, \&PUT_svindex, "GET_svindex"];
+$insn_data{load_glob} = [138, \&PUT_svindex, "GET_svindex"];
+$insn_data{dowarn} = [139, \&PUT_U8, "GET_U8"];
+$insn_data{comppad_name} = [140, \&PUT_svindex, "GET_svindex"];
+$insn_data{xgv_stash} = [141, \&PUT_svindex, "GET_svindex"];
+$insn_data{signal} = [142, \&PUT_strconst, "GET_strconst"];
+$insn_data{formfeed} = [143, \&PUT_svindex, "GET_svindex"];
 
 my ($insn_name, $insn_data);
 while (($insn_name, $insn_data) = each %insn_data) {
@@ -200,13 +200,22 @@ B::Disassembler.
 
   my($bytecode_num, $put_sub, $get_meth) = @$insn_data{$op_name};
 
-For a given $op_name (for example, 'cop_label', 'sv_flags', etc...) 
+For a given $op_name (for example, 'cop_label', 'sv_flags', etc...)
 you get an array ref containing the bytecode number of the op, a
-reference to the subroutine used to 'PUT', and the name of the method
-used to 'GET'.
+reference to the subroutine used to 'PUT' the op argument to the bytecode stream,
+and the name of the method used to 'GET' op argument from the bytecode stream.
 
-=for _private
-Add more detail about what $put_sub and $get_meth are and how to use them.
+Most ops require one arg, in fact all ops without the PUT/GET_none methods,
+and the GET and PUT methods are used to en-/decode the arg to binary bytecode.
+The names are constructed from the GET/PUT prefix and the argument type,
+such as U8, U16, U32, svindex, opindex, pvindex, ...
+
+The PUT method is used in the L<B::Bytecode> compiler within L<B::Assembler>,
+the GET method just for the L<B::Disassembler>.
+The GET method is not used by the binary L<ByteLoader> module.
+
+A full C<insn> table with version, opcode, name, lvalue, argtype and flags
+is located as DATA in F<bytecode.pl>.
 
 =item @insn_name
 

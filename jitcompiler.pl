@@ -50,7 +50,7 @@ such as the CMUCL/SBCL "python" compiler.
 =cut
 
 BEGIN {
-  push @INC, '.';
+  push @INC, '.', 'lib';
   require 'regen_lib.pl';
 }
 use strict;
@@ -66,8 +66,18 @@ my (%alias_from, $from, $tos);
 while (($from, $tos) = each %alias_to) {
     map { $alias_from{$_} = $from } @$tos;
 }
-
-use B qw(@optype @specialsv_name);
+my (@optype, @specialsv_name);
+require B;
+if ($] < 5.009) {
+  require B::Asmdata;
+  @optype = @{*B::Asmdata::optype{ARRAY}};
+  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
+  # import B::Asmdata qw(@optype @specialsv_name);
+} else {
+  @optype = @{*B::optype{ARRAY}};
+  @specialsv_name = @{*B::specialsv_name{ARRAY}};
+  # import B qw(@optype @specialsv_name);
+}
 use B::Asmdata qw(%insn_data @insn_name);
 
 my $c_header = <<'EOT';
@@ -141,6 +151,14 @@ jitrun(pTHX_ struct byteloader_state *bstate)
     U32 ix;
     SV *specialsv_list[6];
 
+    int byteptr_max = 1000; /* size of DATA */
+    /* codebuffer: contains the JITed code (Temp allocation scheme) */
+    jit_insn *codeBuffer;
+    /* bcIndex: Address of the beginning of each BC in codeBuffer */
+    /* Only needed by (JMPHASH) and the unwind protect BCs */
+    jit_insn **bcIndex;
+    jit_func bc_func;
+
     BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, */
     if (!isjit) {		/* set isjit if PLJC magic header */
       Perl_croak(aTHX_ "No perl jitcode header PLJC\n");
@@ -161,17 +179,15 @@ for my $i ( 0 .. $#specialsv_name ) {
 print JITRUN_C <<'EOT';
 #endif
 
-    int byteptr_max = 1000; /* size of DATA */
-
     /* codebuffer: contains the JITed code (Temp allocation scheme) */
-    jit_insn *codeBuffer = malloc(sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE);
+    codeBuffer = (jit_insn *)malloc(sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE);
     /* bcIndex: Address of the beginning of each BC in codeBuffer */
     /* Only needed by (JMPHASH) and the unwind protect BCs */
-    jit_insn **bcIndex = calloc(byteptr_max+1,sizeof(jit_insn*));
+    bcIndex = (jit_insn **)calloc(byteptr_max+1,sizeof(jit_insn*));
 
     /* TODO: setup the bcIndex jumps and copy codeBuffer */
 
-    jit_func bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
+    bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
 #ifdef DEBUGGING
     //disassemble(stderr, codeBuffer, jit_get_ip().ptr);
 #endif
@@ -248,7 +264,7 @@ print JITRUN_H $c_header, <<'EOT';
 
 #include <lightning.h>
 
-int jitrun(pTHX_ register struct byteloader_state *);
+/* int jitrun(pTHX_ register struct byteloader_state *); */
 
 /* Pointer to a JIT-Compiled function */
 /* Takes the closure and the distance to the starting bytecode as arguments */

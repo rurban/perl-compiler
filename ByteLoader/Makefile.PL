@@ -5,8 +5,9 @@ WriteMakefile(
     NAME		=> 'ByteLoader',
     VERSION_FROM	=> 'ByteLoader.pm',
     XSPROTOARG		=> '-noprototypes',
-    OBJECT		=> 'byterun$(OBJ_EXT) jitrun$(OBJ_EXT) ByteLoader$(OBJ_EXT)',
+    OBJECT		=> 'byterun$(OBJ_EXT) ByteLoader$(OBJ_EXT)',
 );
+#    OBJECT		=> 'byterun$(OBJ_EXT) jitrun$(OBJ_EXT) ByteLoader$(OBJ_EXT)',
 
 sub MY::depend {
   my $up = File::Spec->updir;
@@ -19,19 +20,21 @@ sub MY::depend {
     $jitcompiler_pl = File::Spec->catdir( '..', 'jitcompiler.pl' );
   }
   return "
-byterun.c : $bytecode_pl
+byterun.c : $bytecode_pl Makefile
 	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
 
-byterun.h : $bytecode_pl
+byterun.h : $bytecode_pl Makefile
 	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
 
-jitrun.c : $jitcompiler_pl
+jitrun.c : $jitcompiler_pl Makefile
 	cd $up && \$(PERL) jitcompiler.pl && cd ByteLoader
 
-jitrun.h : $jitcompiler_pl
+jitrun.h : $jitcompiler_pl Makefile
 	cd $up && \$(PERL) jitcompiler.pl && cd ByteLoader
 
-ByteLoader\$(OBJ_EXT) : byterun.h byterun.c jitrun.c bytecode.h
+ByteLoader.c: byterun.h jitrun.h Makefile
+
+ByteLoader\$(OBJ_EXT) : byterun.h byterun.c jitrun.c bytecode.h Makefile
 
 "
 }

@@ -62,6 +62,14 @@ jitrun(pTHX_ struct byteloader_state *bstate)
     U32 ix;
     SV *specialsv_list[6];
 
+    int byteptr_max = 1000; /* size of DATA */
+    /* codebuffer: contains the JITed code (Temp allocation scheme) */
+    jit_insn *codeBuffer;
+    /* bcIndex: Address of the beginning of each BC in codeBuffer */
+    /* Only needed by (JMPHASH) and the unwind protect BCs */
+    jit_insn **bcIndex;
+    jit_func bc_func;
+
     BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, */
     if (!isjit) {		/* set isjit if PLJC magic header */
       Perl_croak(aTHX_ "No perl jitcode header PLJC\n");
@@ -82,17 +90,15 @@ jitrun(pTHX_ struct byteloader_state *bstate)
     specialsv_list[6] = (SV*)pWARN_STD;
 #endif
 
-    int byteptr_max = 1000; /* size of DATA */
-
     /* codebuffer: contains the JITed code (Temp allocation scheme) */
-    jit_insn *codeBuffer = malloc(sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE);
+    codeBuffer = (jit_insn *)malloc(sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE);
     /* bcIndex: Address of the beginning of each BC in codeBuffer */
     /* Only needed by (JMPHASH) and the unwind protect BCs */
-    jit_insn **bcIndex = calloc(byteptr_max+1,sizeof(jit_insn*));
+    bcIndex = (jit_insn **)calloc(byteptr_max+1,sizeof(jit_insn*));
 
     /* TODO: setup the bcIndex jumps and copy codeBuffer */
 
-    jit_func bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
+    bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
 #ifdef DEBUGGING
     //disassemble(stderr, codeBuffer, jit_get_ip().ptr);
 #endif

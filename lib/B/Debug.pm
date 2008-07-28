@@ -4,8 +4,20 @@ our $VERSION = '1.05_02';
 
 use strict;
 use B qw(peekop class walkoptree walkoptree_exec
-         main_start main_root cstring sv_undef @specialsv_name);
-# <=5.008 had @specialsv_name exported from B::Asmdata
+         main_start main_root cstring sv_undef);
+our (@optype, @specialsv_name);
+require B;
+if ($] < 5.009) {
+  # <=5.008 had @specialsv_name exported from B::Asmdata
+  require B::Asmdata;
+  @optype = @{*B::Asmdata::optype{ARRAY}};
+  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
+  # import B::Asmdata qw(@optype @specialsv_name);
+} else {
+  @optype = @{*B::optype{ARRAY}};
+  @specialsv_name = @{*B::specialsv_name{ARRAY}};
+  # import B qw(@optype @specialsv_name);
+}
 BEGIN {
     use Config;
     my $ithreads = $Config{'useithreads'} eq 'define';

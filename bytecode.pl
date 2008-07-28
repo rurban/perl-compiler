@@ -1,5 +1,5 @@
 BEGIN {
-  push @INC, '.';
+  push @INC, '.', 'lib';
   require 'regen_lib.pl';
 }
 use strict;
@@ -15,8 +15,18 @@ my (%alias_from, $from, $tos);
 while (($from, $tos) = each %alias_to) {
     map { $alias_from{$_} = $from } @$tos;
 }
-
-use B qw(@optype @specialsv_name);
+my (@optype, @specialsv_name);
+require B;
+if ($] < 5.009) {
+  require B::Asmdata;
+  @optype = @{*B::Asmdata::optype{ARRAY}};
+  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
+  # import B::Asmdata qw(@optype @specialsv_name);
+} else {
+  @optype = @{*B::optype{ARRAY}};
+  @specialsv_name = @{*B::specialsv_name{ARRAY}};
+  # import B qw(@optype @specialsv_name);
+}
 
 my $c_header = <<'EOT';
 /* -*- buffer-read-only: t -*-
@@ -35,13 +45,14 @@ EOT
 
 my $perl_header;
 ($perl_header = $c_header) =~ s{[/ ]?\*/?}{#}g;
+my @targets = ("lib/B/Asmdata.pm", "ByteLoader/byterun.c", "ByteLoader/byterun.h");
 
-safer_unlink "ByteLoader/byterun.c", "ByteLoader/byterun.h", "lib/B/Asmdata.pm";
+safer_unlink @targets;
 
 #
 # Start with boilerplate for Asmdata.pm
 #
-open(ASMDATA_PM, ">lib/B/Asmdata.pm") or die "lib/B/Asmdata.pm: $!";
+open(ASMDATA_PM, "> $targets[0]") or die "$targets[0]: $!";
 binmode ASMDATA_PM;
 print ASMDATA_PM $perl_header, <<'EOT';
 package B::Asmdata;
@@ -51,11 +62,21 @@ our $VERSION = '1.02_01';
 use Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(%insn_data @insn_name @optype @specialsv_name);
-our(%insn_data, @insn_name);
+EOT
+
+if ($] > 5.009) {
+  print ASMDATA_PM 'our(%insn_data, @insn_name);
 
 use B qw(@optype @specialsv_name);
+';
+} else {
+    print ASMDATA_PM 'our(%insn_data, @insn_name, @optype, @specialsv_name);
 
-EOT
+@optype = qw(OP UNOP BINOP LOGOP LISTOP PMOP SVOP PADOP PVOP LOOP COP);
+@specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE);
+';
+}
+
 print ASMDATA_PM <<"EOT";
 
 # XXX insn_data is initialised this way because with a large
@@ -66,7 +87,7 @@ EOT
 #
 # Boilerplate for byterun.c
 #
-open(BYTERUN_C, ">ByteLoader/byterun.c") or die "ByteLoader/byterun.c: $!";
+open(BYTERUN_C, "> $targets[1]") or die "$targets[1]: $!";
 binmode BYTERUN_C;
 print BYTERUN_C $c_header, <<'EOT';
 
@@ -114,14 +135,19 @@ EOT
 printf BYTERUN_C "    SV *specialsv_list[%d];\n", scalar @specialsv_name;
 print BYTERUN_C <<'EOT';
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit if PLJC magic header */
+    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit on PLJC magic header */
     if (isjit) {
-        return jitrun(aTHX_ &bstate);
+        return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
         Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
         bstate->bs_obj_list_fill = 31;
         bstate->bs_obj_list[0] = NULL; /* first is always Null */
         bstate->bs_ix = 1;
+#if 0 && (PERL_VERSION > 8)
+        Newx(bstate->bs_sv, sizeof(SV), SV*); /* set sv */
+	bstate->bs_sv->sv_any = &(bstate->bs_pv);
+#endif
+	CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.idx %d)\n", bstate->bs_fdata->idx));
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.next_out %d)\n", bstate->bs_fdata->next_out));
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.datasv %p:\"%s\")\n", bstate->bs_fdata->datasv,
@@ -136,7 +162,8 @@ for my $i ( 0 .. $#specialsv_name ) {
 print BYTERUN_C <<'EOT';
 
         while ((insn = BGET_FGETC()) != EOF) {
-	  DEBUG_l( Perl_deb(aTHX_ "(insn %d)\n", insn));
+	  CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
+          if (PL_op && DEBUG_t_TEST_) debop(PL_op);
 	  switch (insn) {
 EOT
 
@@ -162,16 +189,19 @@ while (<DATA>) {
     if ($argtype =~ m:(.+)/(.+):) {
 	($rvalcast, $argtype) = ("($1)", $2);
     }
-    if ($ver) { 
+    if ($ver) {
       if ($ver =~ /^\!?i$/) {
 	my $thisthreads = $Config{useithreads} eq 'define';
 	next if ($ver eq 'i' and  !$thisthreads) or ($ver eq '!i' and $thisthreads);
-      } else { # 5.010
-	my $thisver = sprintf("%d", ($[ - 5) * 1000);
-	if ($ver =~ /^\>?\d*$/) {
-	  next if $ver < $thisver; # 10: skip if lower than 10
+      } else { # perl version 5.010 >= 10, 5.009 > 9
+	# Have to round the float: 5.010 - 5 = 0.00999999999999979
+	my $pver = sprintf("%d", (sprintf("%f",$] - 5) * 1000));
+	if ($ver =~ /^\>\d+$/) {
+	  next if $pver < substr($ver,1); # ver >10: skip if pvar lowereq 10
         } elsif ($ver =~ /^\<\d*$/) {
-	  next if $ver > $thisver; # <10: skip if higher than 10;
+	  next if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
+        } elsif ($ver =~ /^\d*$/) {
+	  next if $pver < $ver; # ver 10: skip if pvar lower than 10;
 	}
       }
     }
@@ -186,15 +216,21 @@ while (<DATA>) {
     my $optarg = $argtype eq "none" ? "" : ", arg";
     if ($optarg) {
 	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg);\n", $fundtype;
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn $argtype:0x%x\\n\", insn, arg));\n";
+    } else {
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
     }
     if ($flags =~ /x/) {
 	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue$optarg)\\n\"));\n";
     } elsif ($flags =~ /s/) {
 	# Store instructions store to bytecode_obj_list[arg]. "lvalue" field is rvalue.
 	print BYTERUN_C "\t\tBSET_OBJ_STORE($lvalue$optarg);\n";
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
     }
     elsif ($optarg && $lvalue ne "none") {
 	print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}arg;\\n\"));\n";
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
@@ -228,7 +264,7 @@ EOT
 #
 # Write the instruction and optype enum constants into byterun.h
 #
-open(BYTERUN_H, ">ByteLoader/byterun.h") or die "ByteLoader/byterun.h: $!";
+open(BYTERUN_H, "> $targets[2]") or die "$targets[2]: $!";
 binmode BYTERUN_H;
 print BYTERUN_H $c_header, <<'EOT';
 #if PERL_VERSION < 10
@@ -243,16 +279,26 @@ struct byteloader_fdata {
     int	idx;
 };
 
+#if PERL_VERSION > 8
+
+struct byteloader_xpv {
+    char *xpv_pv;
+    int xpv_cur;
+    int	xpv_len;
+};
+
+#endif
+
 struct byteloader_state {
     struct byteloader_fdata	*bs_fdata;
     SV				*bs_sv;
     void			**bs_obj_list;
     int				bs_obj_list_fill;
     int				bs_ix;
-#if PERL_VERSION < 9
-    XPV				bs_pv;
+#if PERL_VERSION > 8
+    struct byteloader_xpv	bs_pv;
 #else
-    XPVIV			bs_pv;
+    XPV				bs_pv;
 #endif
     int				bs_iv_overflows;
 };
@@ -328,13 +374,22 @@ B::Disassembler.
 
   my($bytecode_num, $put_sub, $get_meth) = @$insn_data{$op_name};
 
-For a given $op_name (for example, 'cop_label', 'sv_flags', etc...) 
+For a given $op_name (for example, 'cop_label', 'sv_flags', etc...)
 you get an array ref containing the bytecode number of the op, a
-reference to the subroutine used to 'PUT', and the name of the method
-used to 'GET'.
+reference to the subroutine used to 'PUT' the op argument to the bytecode stream,
+and the name of the method used to 'GET' op argument from the bytecode stream.
 
-=for _private
-Add more detail about what $put_sub and $get_meth are and how to use them.
+Most ops require one arg, in fact all ops without the PUT/GET_none methods,
+and the GET and PUT methods are used to en-/decode the arg to binary bytecode.
+The names are constructed from the GET/PUT prefix and the argument type,
+such as U8, U16, U32, svindex, opindex, pvindex, ...
+
+The PUT method is used in the L<B::Bytecode> compiler within L<B::Assembler>,
+the GET method just for the L<B::Disassembler>.
+The GET method is not used by the binary L<ByteLoader> module.
+
+A full C<insn> table with version, opcode, name, lvalue, argtype and flags
+is located as DATA in F<bytecode.pl>.
 
 =item @insn_name
 
@@ -376,10 +431,14 @@ Reini Urban added the version logic, 5.10 and jit support.
 # ex: set ro:
 EOT
 
+close ASMDATA_PM or die "Error closing $targets[0]: $!";
+close BYTERUN_C or die "Error closing $targets[1]: $!";
+close BYTERUN_H or die "Error closing $targets[2]: $!";
+chmod 0444, @targets;
 
-close ASMDATA_PM or die "Error closing ASMDATA_PM: $!";
-close BYTERUN_H or die "Error closing BYTERUN_H: $!";
-close BYTERUN_C or die "Error closing BYTERUN_C: $!";
+# TODO 5.10:
+#   stpv
+#   pv_free: free the bs_pv and the SvPVX?
 
 __END__
 # First set instruction ord("#") to read comment to end-of-line (sneaky)
@@ -398,14 +457,14 @@ __END__
 # "0" is for all, "<10" requires PERL_VERSION<10, "10" or ">10" requires
 # PERL_VERSION>10
 #
-#version opcode	lvalue					argtype		flags	
+#version opcode	lvalue					argtype		flags
 #
 0 ret		none					none		x
 0 ldsv		bstate->bs_sv				svindex
 0 ldop		PL_op					opindex
 0 stsv		bstate->bs_sv				U32		s
 0 stop		PL_op					U32		s
-0 stpv		BSTATE_xpv_pv				U32		x
+0 stpv		bstate->bs_pv.xpv_pv			U32		x
 0 ldspecsv	bstate->bs_sv				U8		x
 0 ldspecsvx	bstate->bs_sv				U8		x
 0 newsv		bstate->bs_sv				U8		x
@@ -413,9 +472,9 @@ __END__
 0 newop		PL_op					U8		x
 0 newopx	PL_op					U16		x
 0 newopn	PL_op					U8		x
-0 newpv		none					PV
+0 newpv		none					U32/PV
 0 pv_cur	bstate->bs_pv.xpv_cur			STRLEN
-0 pv_free	BSTATE_xpv_pv				none		x
+0 pv_free	bstate->bs_pv.xpv_pv			none		x
 0 sv_upgrade	bstate->bs_sv				U8		x
 0 sv_refcnt	SvREFCNT(bstate->bs_sv)			U32
 0 sv_refcnt_add	SvREFCNT(bstate->bs_sv)			I32		x
@@ -489,12 +548,12 @@ __END__
 <9 gp_file	GvFILE(bstate->bs_sv)			pvindex
 9 gp_file	GvFILE_HEK(bstate->bs_sv)		hekindex
 0 gp_io		*(SV**)&GvIOp(bstate->bs_sv)		svindex
-0 gp_form		*(SV**)&GvFORM(bstate->bs_sv)		svindex
+0 gp_form	*(SV**)&GvFORM(bstate->bs_sv)		svindex
 0 gp_cvgen	GvCVGEN(bstate->bs_sv)			U32
-0 gp_line		GvLINE(bstate->bs_sv)			line_t
+0 gp_line	GvLINE(bstate->bs_sv)			line_t
 0 gp_share	bstate->bs_sv				svindex		x
 0 xgv_flags	GvFLAGS(bstate->bs_sv)			U8
-0 op_next		PL_op->op_next				opindex
+0 op_next	PL_op->op_next				opindex
 0 op_sibling	PL_op->op_sibling			opindex
 0 op_ppaddr	PL_op->op_ppaddr			strconst	x
 0 op_targ	PL_op->op_targ				PADOFFSET
@@ -515,17 +574,22 @@ __END__
 10 op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot	opindex
 10 op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
 #ifdef USE_ITHREADS
-i op_pmstashpv	cPMOP					pvindex		x
+i op_pmstashpv		cPMOP				pvindex		x
 <10 op_pmreplrootpo	cPMOP->op_pmreplroot		OP*/PADOFFSET
 10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 #else
-!i op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
+0 op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
 <10 op_pmreplrootgv	*(SV**)&cPMOP->op_pmreplroot		svindex
 10 op_pmreplrootgv	*(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot)	svindex
 #endif
-<10 pregcomp	PL_op					pvindex		x
+<10 pregcomp	PL_op					pvcontents	x
 10 pregcomp	PL_op					svindex		x
 0 op_pmflags	cPMOP->op_pmflags			U16
+#if PERL_VERSION < 11
+10 op_reflags	PM_GETRE(cPMOP)->extflags		U32
+#else
+11 op_reflags	((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags	U32
+#endif
 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
 <10 op_pmdynflags  cPMOP->op_pmdynflags			U8
 0 op_sv		cSVOP->op_sv				svindex
@@ -538,8 +602,11 @@ i op_pmstashpv	cPMOP					pvindex		x
 0 cop_label	cCOP->cop_label				pvindex
 i cop_stashpv	cCOP					pvindex		x
 i cop_file	cCOP					pvindex		x
-!i cop_stash	cCOP					svindex		x
-!i cop_filegv	cCOP					svindex		x
+# /* those two are ignored, but keep .plc compat for 5.8 only? */
+#ifndef USE_ITHREADS
+0 cop_stash	cCOP					svindex		x
+0 cop_filegv	cCOP					svindex		x
+#endif
 0 cop_seq	cCOP->cop_seq				U32
 <10 cop_arybase	cCOP->cop_arybase			I32
 0 cop_line	cCOP->cop_line				line_t

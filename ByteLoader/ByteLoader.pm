@@ -8,7 +8,11 @@ our $VERSION = '0.06_01';
 # on use ByteLoader $ByteLoader::VERSION;
 # Fixed with use ByteLoader '$ByteLoader::VERSION';
 
-XSLoader::load 'ByteLoader', $VERSION;
+if ($] < 5.009 and $VERSION eq '0.06_01') {
+  XSLoader::load 'ByteLoader'; # fake the old backwards compatible version
+} else {
+  XSLoader::load 'ByteLoader', $VERSION;
+}
 
 1;
 __END__

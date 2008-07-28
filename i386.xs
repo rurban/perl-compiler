@@ -41,8 +41,8 @@ static char end_regs[0] __attribute__ ((unused));
 /* Declare these vars extern to fool the compiler. */
 extern char in, out, jmp;
 extern unsigned int insz, outsz, jmpsz;
-asm ("
-start_esp = etc
+asm (
+"start_esp = etc
 stop_esp = etc + 4
 
 in:

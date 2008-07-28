@@ -14,6 +14,8 @@ WriteMakefile(
 	'B::Concise' => '0.74',
 	'B' => '1.17',
     },
+    clean => { FILES => "bytecode[1-9]* ccode[1-9]* *.core *.stackdump ".
+	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise"},	      
     # PMLIBDIRS => [ 'lib/B' ],
 );
 
@@ -52,19 +54,21 @@ sub depend {
 $perlcc_inst :: $perlcc_exp
 	\$(CP) $perlcc_exp $perlcc_inst
 
-$asmdata : bytecode.pl @headers
+C.c : C.xs Makefile
+
+$asmdata : bytecode.pl @headers Makefile
 	\$(PERL) bytecode.pl
 
-$byterun_c : bytecode.pl @headers
+$byterun_c : bytecode.pl @headers Makefile
 	\$(PERL) bytecode.pl
 
-$byterun_h : bytecode.pl @headers
+$byterun_h : bytecode.pl @headers Makefile
 	\$(PERL) bytecode.pl
 
-$jitrun_h : jitcompiler.pl @headers
+$jitrun_h : jitcompiler.pl @headers Makefile
 	\$(PERL) jitcompiler.pl
 
-$jitrun_c : jitcompiler.pl @headers
+$jitrun_c : jitcompiler.pl @headers Makefile
 	\$(PERL) jitcompiler.pl
 "
 }
