@@ -50,9 +50,7 @@ sub depend {
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
     my $perlcc_inst = File::Spec->catfile('$(INST_BIN)', 'perlcc');
     my $perlcc_exp = File::Spec->catfile('script', 'perlcc.PL');
-    "
-test :: subdirs-test
-
+    my $result = "
 $perlcc_inst :: $perlcc_exp
 	\$(CP) $perlcc_exp $perlcc_inst
 
@@ -66,7 +64,9 @@ $byterun_c : bytecode.pl @headers Makefile
 
 $byterun_h : bytecode.pl @headers Makefile
 	\$(PERL) bytecode.pl
-"
+";
+    $result = "test :: subdirs-test\n\n" if $] > 5.009;
+    $result;
 }
 
 =pod

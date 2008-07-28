@@ -98,8 +98,9 @@ print BYTERUN_C $c_header, <<'EOT';
 #define NO_XSLOCKS
 #include "XSUB.h"
 
-#ifndef PL_tokenbuf /* Change 31252: move PL_tokenbuf into the PL_parser struct */
-#define PL_tokenbuf		(PL_parser->tokenbuf)
+/* Change 31252: move PL_tokenbuf into the PL_parser struct */
+#if (PERL_VERSION > 8) && (!defined(PL_tokenbuf))
+  #define PL_tokenbuf		(PL_parser->tokenbuf)
 #endif
 
 #include "byterun.h"
@@ -286,7 +287,7 @@ while (<DATA>) {
 	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg);\n", $fundtype;
       }
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, arg%s));\n",
-	$fundtype =~ /(strconst|pvindex)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
+	$fundtype =~ /(strconst|pvindex|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
 	($argtype =~ /index$/ ? ', ix' : '');
       if ($fundtype eq 'PV') {
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
@@ -688,7 +689,7 @@ i op_pmstashpv		cPMOP				pvindex		x
 0 op_redoop	cLOOP->op_redoop			opindex
 0 op_nextop	cLOOP->op_nextop			opindex
 0 op_lastop	cLOOP->op_lastop			opindex
-0 cop_label	cCOP->cop_label				pvindex
+0 cop_label	cCOP					pvindex		x
 i cop_stashpv	cCOP					pvindex		x
 i cop_file	cCOP					pvindex		x
 # /* those two are ignored, but keep .plc compat for 5.8 only? */

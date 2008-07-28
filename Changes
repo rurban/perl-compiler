@@ -2,6 +2,17 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
 until Perl 5.9.4.
 
+1.04_16 2008-04-14 rurban
+	* ByteLoader: Fix PL_tokenbuf for older perls without PL_parser
+	* B::C: walkoptree_slow for verbose statistics op_count.
+	  * Consistent in -v verbose and not verbose.
+	  * Workaround for invalid pad in save_context.
+	  * Added -Dp for verbose package cache printing.
+	  * -v verbose adds more generated comments: op struct fields
+	* Fixed cop_label for 5.11 (Change #33656)
+	* Fixed make subdirs-test error in 5.8.8
+	* Fixed RT#52920 "invalid cop_free of nullified cop" for B::C
+
 1.04_15 2008-04-11 rurban
 	Highlights: bytecode and ByteLoader portability preparation and 
 	commented disassembler output. PVGV and new REGEX still broken.
@@ -14,7 +25,8 @@ until Perl 5.9.4.
 	  Fixes for no threads.
 	* bytecode.h: pregcomp fix for 5.10 w/o threads
 	  (Thanks to david@cantrell.org.uk for his cpantest for netbsd).
-	  use xpv_cur and not xpv_len for the rx length (len - 1) to strip off the ending nul byte. 
+	  use xpv_cur and not xpv_len for the rx length (len - 1) to strip off 
+	  the ending nul byte. 
 	  5.10: new minlen check aborts
 	* ByteLoader security: added strconst maxsize flag to bytecode.pl for buffer 
 	  overflow checks.

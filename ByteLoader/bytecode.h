@@ -226,23 +226,31 @@ typedef HEK *hekindex;
 // must use a SV now. build it on the fly from the given pv. 
 // TODO: use op_pmflags or re->extflags?
 // op_pmflags is just a small subset of re->extflags
-// copy from the current pv to a new sv
-#define BSET_pregcomp(o, arg)			\
-    STMT_START { \
-        SV* repointer; \
-	REGEXP* rx = bstate->bs_pv.xpv_pv ?				\
-	    CALLREGCOMP(aTHX_ newSVpvn(bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
-	    Null(REGEXP*); \
-        if(av_len((AV*) PL_regex_pad[0]) > -1) {	\
-            repointer = av_pop((AV*)PL_regex_pad[0]); \
-            cPMOPx(o)->op_pmoffset = SvIV(repointer); \
-            sv_setiv(repointer, PTR2IV(rx)); \
-        } else { \
-            repointer = newSViv(PTR2IV(rx)); \
-            av_push(PL_regex_padav, SvREFCNT_inc_simple_NN(repointer)); \
-            cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav); \
-            PL_regex_pad = AvARRAY(PL_regex_padav); \
-        } \
+// need to copy from the current pv to a new sv
+#define BSET_pregcomp(o, arg)						\
+    STMT_START {							\
+	REGEXP* rx = arg ?						\
+	    CALLREGCOMP(aTHX_ newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
+	    Null(REGEXP*);						\
+	assert(SvPOK(PL_regex_pad[0]));					\
+	if (SvCUR(PL_regex_pad[0])) {					\
+	    /* Pop off the "packed" IV from the end.  */		\
+	    SV *const repointer_list = PL_regex_pad[0];			\
+	    const char *p = SvEND(repointer_list) - sizeof(IV);		\
+	    const IV offset = *((IV*)p);				\
+	    assert(SvCUR(repointer_list) % sizeof(IV) == 0);		\
+									\
+	    SvEND_set(repointer_list, p);				\
+									\
+	    cPMOPx(o)->op_pmoffset = offset;				\
+	    /* This slot should be free, so assert this:  */		\
+	    assert(PL_regex_pad[offset] == &PL_sv_undef);		\
+	} else {							\
+	    SV * const repointer = &PL_sv_undef;			\
+	    av_push(PL_regex_padav, repointer);				\
+	    cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);		\
+	    PL_regex_pad = AvARRAY(PL_regex_padav);			\
+	}								\
     } STMT_END
 
 #endif
@@ -260,8 +268,8 @@ typedef HEK *hekindex;
 #define BSET_pregcomp(o, arg) \
     STMT_START { \
         SV* repointer; \
-	REGEXP* rx = bstate->bs_pv.xpv_pv ? \
-	    CALLREGCOMP(aTHX_ newSVpvn(bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
+	REGEXP* rx = arg ? \
+	    CALLREGCOMP(aTHX_ newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
 	    Null(REGEXP*); \
 	PM_SETRE(((PMOP*)o), rx); \
     } STMT_END
@@ -282,7 +290,7 @@ typedef HEK *hekindex;
 		SvUPGRADE(sv, (arg));			\
 	    }
 #define BSET_newsvx(sv, arg) STMT_START {		\
-	    BSET_newsv(sv, arg &  SVTYPEMASK);		\
+	    BSET_newsv(sv, arg & SVTYPEMASK);		\
 	    SvFLAGS(sv) = arg;				\
 	    BSET_OBJ_STOREX(sv);			\
 	} STMT_END
@@ -395,6 +403,11 @@ typedef HEK *hekindex;
 /* that really meant the actual CopFILEGV_set */
 #define BSET_cop_filegv(cop, arg)	CopFILEGV_set(cop,arg)
 #define BSET_cop_stash(cop,arg)		CopSTASH_set(cop,(HV*)arg)
+#endif
+#if PERL_VERSION < 11
+#define BSET_cop_label(cop, arg)	(cop)->cop_label = arg
+#else
+#define BSET_cop_label(cop, arg)	Perl_store_cop_label(aTHX_ (cop)->cop_hints_hash, arg)
 #endif
 
 /* This is stolen from the code in newATTRSUB() */

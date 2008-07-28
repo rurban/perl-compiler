@@ -1653,12 +1653,14 @@ sub cc_main {
     if (!defined($module)) {
 	$init->add(sprintf("PL_main_root = s\\_%x;", ${main_root()}),
 		   "PL_main_start = $start;",
+		   "#if (PERL_VERSION < 8)",
 		   "PL_curpad = AvARRAY($curpad_sym);",
+		   "av_store(CvPADLIST(PL_main_cv),0,SvREFCNT_inc($curpad_nam));",
+		   "av_store(CvPADLIST(PL_main_cv),1,SvREFCNT_inc($curpad_sym));",
+		   "#endif",
 		   "PL_initav = (AV *) $init_av;",
 		   "GvHV(PL_incgv) = $inc_hv;",
 		   "GvAV(PL_incgv) = $inc_av;",
-		   "av_store(CvPADLIST(PL_main_cv),0,SvREFCNT_inc($curpad_nam));",
-		   "av_store(CvPADLIST(PL_main_cv),1,SvREFCNT_inc($curpad_sym));",
 		   "PL_amagic_generation= $amagic_generate;",
 		     );
 

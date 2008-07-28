@@ -8,9 +8,9 @@ PERL=${PERL:-perl}
 Mblib="-Mblib" # B::C is now 5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=-q,C,-DcACMSG," 
+OCMD="$PERL $Mblib -MO=C,-DcACMSG,-v," 
 if [ $BASE = "testcc.sh" ]; then 
-  OCMD="$PERL $Mblib -MO=-q,CC,-DcACMSG,"
+  OCMD="$PERL $Mblib -MO=CC,-DcACMSG,-v,"
 fi
 CCMD="$PERL script/cc_harness -g"
 LCMD=
@@ -39,8 +39,8 @@ make
 # op_free(PL_main_root) hang fixed with opt_latefree.
 # Still panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] at destruct
 
-ctest 1 "print 'hi'"
-ctest 2 'for (1,2,3) { print if /\d/ }'
+#ctest 1 "print 'hi'"
+#ctest 2 'for (1,2,3) { print if /\d/ }'
 # fixed SEGV at Perl_fbm_instr util.c:572 <= pp_subst
 ctest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 ctest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'

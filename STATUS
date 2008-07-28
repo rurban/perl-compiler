@@ -1,12 +1,16 @@
 Abbrevations: bc B::ByteCode, c B::C, cc B::CC, 
               -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
+              -nt not threaded perl.
 
 Testsuite added, coverage TODO.
 Same ok and failures as with 5.8 and 5.9.4
-bc PV and PM assertions.
-c regex and blead fails.
-DEBUGGING: op_free(PL_main_root) hang seems to be fixed by opt_latefree=1
 Minor B::CC bugs fixed.
+REGEX pregcomp broken (in bc and c, see ccode2)
+B:C Problems:
+  pregcomp()
+  SIGSEGV in Perl_fbm_instr() <= Perl_re_intuit_start() <= Perl_pp_subst()
+  invalid pad in pad_sv, pad_new, save_clearsv - cause: setting PL_curpad at save_context, PL_comppad?
+  Modification of a read-only value attempted - save_context ?
 
 5.8.8:
 t/asmdata........ok
@@ -33,7 +37,6 @@ t/bytecode.t.....ok
   TODO failed:   20 (bc op coverage)
 t/c.t        (Wstat: 0 Tests: 19 Failed: 5)
   FAILED tests 11-12 17-19
-  op_free destruct fixed
   panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 5)
   Failed tests:  11-12 17-19
@@ -47,63 +50,60 @@ t/b..............ok
 t/bblock.........ok
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 2-5, 7, 11, 15, with -D 9-12 fail also.
-         _15:  2..11, 13..16, 18..19
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
   Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-  Failed tests:  8-10, 14-16 (segfaulting, op_free fixed)
+  Failed tests:  2-4 6 8-10 14-16 (was: 2-7 11 18)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  8-10, 12, 14-16, 18-19 (segfaulting, op_free fixed)
+  Failed tests:  1-4 6 11-13 17-19 (was: 2-7 11, was: 8-10, 12, 14-16, 18-19)
 t/o..............ok
 t/stash..........ok
 
-5.10 unthreaded: 
+5.10.0-nt (not threaded): 
 t/asmdata........ok
 t/assembler......ok
 t/b..............ok
 t/bblock.........ok
-t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
-  FAILED tests 3-5, 7, 9-12, 15
+t/bytecode   (Wstat: 0 Tests: 19 Failed: 9)
+  FAILED tests: 3-5, 7, 9-12, 15
   SIGSEGV in Perl_fbm_instr() <= Perl_re_intuit_start() <= Perl_pp_subst()
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  FAILED tests 2-4, 6, 11-12, 17-19
-  Bad free() ignored (RMAGIC, PERL_CORE)
-  invalid pad in pad_sv, pad_new, save_clearsv
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  2-4 6 11-12 17-19
+t/c.t        (Wstat: 0 Tests: 19 Failed: 10)
+  FAILED tests: 2-4, 6, 8-10, 14-16 (was: 2-4, 6, 11-12, 17-19)
+  invalid pad in pad_sv, pad_new, save_clearsv - writing to PL_curpad at save_context
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 8)
+  Failed tests: 2-4 6 11-12 18-19 (was: 2-4 6 11-12 17-19)
 t/o..............ok
 t/stash..........ok
 
 
-5.11 @33408 -D
+5.11 @33673 -D
 t/asmdata........ok
 t/assembler......ok
 t/b..............ok
 t/bblock.........ok
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 11)
   Failed tests:  2-5, 7, 9-12, 15-16 (all segfaulting in REGEX)
-  TODO failed:   20
-  with 1.04_15 it got worse: 2..16, 18..19
-t/c.t        (Wstat: 0 Tests: 19 Failed: 19)
-  Failed tests:  2-19
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 18)
-  Failed tests:  1-19
+t/c.t        (Wstat: 0 Tests: 19 Failed: 10)
+  Failed tests:  2-4, 6, 8-10, 14-16
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
+  Failed tests:  1-4, 6, 11-13, 17-19
 t/o..............ok
 t/stash..........ok
 
 
 5.10, 5.11 status
 -----------------
-With DEBUGGING in perl_destruct: op_free root fails.
+With DEBUGGING
+  static op_free in Perl_destruct fixed
   panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8]
 pvx: seems to be fixed now in bc, and c
   With the move of the pvx field from xpv to the sv, we have to solve 
   that differently for the Bytecode and C backend.
   Bytecode can simply mimic the old XPV behaviour of a 3 field struct 
   (pvx, cur, len) to simplify pv handling.
-hv: crash at invalid entry in hv_store in B::HV::save
+hv: crash at invalid entry in hv_store in B::HV::save fixed
 hek: new implementation
 regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
 bc: B::IO::SUBPROCESS missing
@@ -135,6 +135,21 @@ $7 = {engine = 0x6a06a0, mother_re = 0x0, extflags = 1126170624, minlen = 0,
   precomp = 0x18ab870 ")", wrapped = 0x18ab868 "(?-xism:)", wraplen = 9,
   seen_evals = 0, paren_names = 0x0, refcnt = 1}
 
+ccode2 - 5.11
+-------------
+match with /\d/
+(gdb) p *pm
+$1 = {op_next = 0x66513c, op_sibling = 0x665198, op_ppaddr = 0x59a6e9 <Perl_pp_match>, op_targ = 0, op_type = 31,
+  op_opt = 0, op_latefree = 1, op_latefreed = 0, op_attached = 0, op_spare = 0, op_flags = 2 '\002',
+  op_private = 64 '@', op_first = 0x0, op_last = 0x0, op_pmoffset = 46, op_pmflags = 0, op_pmreplrootu = {
+    op_pmreplroot = 0x0, op_pmtargetoff = 0}, op_pmstashstartu = {op_pmreplstart = 0x0, op_pmstashpv = 0x0}}
+(gdb) n
+1216        register REGEXP *rx = PM_GETRE(pm);
+(gdb) p *rx
+$2 = {engine = 0x69f690, mother_re = 0x0, extflags = 52428800, minlen = 1, minlenret = 1, gofs = 0,
+  substrs = 0x1920188, nparens = 0, intflags = 0, pprivate = 0x1915448, lastparen = 0, lastcloseparen = 0,
+  swap = 0x0, offs = 0x191f6c8, subbeg = 0x0, sublen = 0, prelen = 1, precomp = 0x18fb870 "0)",
+  wrapped = 0x18fb868 "(?-xism:0)", wraplen = 10, seen_evals = 0, paren_names = 0x0, refcnt = 1}
 
 TEST COVERAGE
 -------------
@@ -177,4 +192,4 @@ added Jit and Asm layout, with the idea of using either
 lightning as jit backend (Jit), or creating our own assembler (Asm) 
 to be able to use a high-level language.
 
-2008-03-14 16:29:55 rurban
+2008-04-13 11:31:45 URBANR
