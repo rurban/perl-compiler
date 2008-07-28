@@ -8,12 +8,16 @@ typedef OP *opindex;
 typedef char *pvindex;
 typedef HEK *hekindex;
 
-/* Portability TODO: check byteorder */
+#if (PERL_VERSION <= 8) && (PERL_SUBVERSION < 8)
+#include "ppport.h"
+#endif
+
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
 #define BGET_FGETC() bl_getc(bstate->bs_fdata)
 
-/* all this should be made endianness-agnostic */
+/* Portability TODO: check byteorder */
+/* All this should be made endianness-agnostic + 32-64bit */
 
 #define BGET_U8(arg) STMT_START {					\
 	const int _arg = BGET_FGETC();					\
@@ -67,7 +71,7 @@ typedef HEK *hekindex;
 #define BGET_PV(arg)	STMT_START {					\
 	BGET_U32(arg);							\
 	if (arg) {							\
-	    Newx(bstate->bs_pv.xpv_pv, (U32)arg, char);			\
+	    New(0, bstate->bs_pv.xpv_pv, (U32)arg, char);		\
 	    bl_read(bstate->bs_fdata, bstate->bs_pv.xpv_pv, (U32)arg, 1);	\
 	    bstate->bs_pv.xpv_len = (U32)arg;				\
 	    bstate->bs_pv.xpv_cur = (U32)arg - 1;			\
@@ -99,7 +103,7 @@ typedef HEK *hekindex;
 #define BGET_op_tr_array(arg) do {			\
 	unsigned short *ary, len;			\
 	BGET_U16(len);					\
-	Newx(ary, len, unsigned short);			\
+	New(0, ary, len, unsigned short);		\
 	BGET_FREAD(ary, sizeof(unsigned short), len);	\
 	arg = (char *) ary;				\
     } while (0)
@@ -169,7 +173,7 @@ typedef HEK *hekindex;
 	BSET_OBJ_STOREX(sv);			\
     } STMT_END
 
-#define BSET_sv_magic(sv, arg)		sv_magic(sv, Nullsv, arg, 0, 0)
+#define BSET_sv_magic(sv, arg)	sv_magic(sv, Nullsv, arg, 0, 0)
 #define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.xpv_cur
 #define BSET_mg_namex(mg, arg)			\
 	(mg->mg_ptr = (char*)SvREFCNT_inc((SV*)arg),	\
@@ -477,7 +481,11 @@ typedef HEK *hekindex;
 #define BSET_signal(cv, name)						\
 	mg_set(*hv_store(GvHV(gv_fetchpv("SIG", TRUE, SVt_PVHV)),	\
 		name, strlen(name), cv, 0))
-
+/* 5.008? */
+#ifndef hv_name_set
+#define hv_name_set(hv,name,length,flags) \
+    (HvNAME((hv)) = (name) ? savepvn(name, length) : 0)
+#endif
 #define BSET_xhv_name(hv, name)	hv_name_set((HV*)hv, name, strlen(name), 0)
 #define BSET_cop_arybase(c, b) CopARYBASE_set(c, b)
 #if PERL_VERSION < 10
@@ -517,6 +525,8 @@ typedef HEK *hekindex;
  * is all you need.
  *	-- BKS, June 2000
  * Changed to guarantee backwards compatibility. -- rurban 2008-02
+ * TODO: Just need to verify the valid opcode version table (syntax enhancement 8-10 ?), 
+ *       the perl opnum table and to define the converters.
  */
 
 #define HEADER_FAIL(f)	\
@@ -531,50 +541,3 @@ typedef HEK *hekindex;
 	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f, arg1)
 #define HEADER_WARN2(f, arg1, arg2)	\
 	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f, arg1, arg2)
-
-#define BYTECODE_HEADER_CHECK					\
-	STMT_START {						\
-	    U32 sz = 0;						\
-	    strconst str;					\
-	    char *version[36];					\
-								\
-	    BGET_U32(sz); /* Magic: 'PLBC' or 'PLJC' */		\
-	    if (sz != 0x43424c50) {				\
-	        if (sz != 0x434a4c50) {				\
-		    HEADER_FAIL1("bad magic (want 0x43424c50 PLBC or 0x434a4c50 PLJC, got %#x)", (int)sz);   \
-		} else {					\
-		    isjit = 1;                                  \
-                }						\
-	    }							\
-	    BGET_strconst(str,80);	/* archname, should go away */	\
-	    if (strNE(str, ARCHNAME)) {				\
-		HEADER_WARN2("wrong architecture (want %s, you have %s)",str,ARCHNAME);	\
-	    }							\
-	    BGET_strconst(str,16); /* fail if lower ByteLoader version */ \
-	    if (strLT(str, VERSION)) {				\
-		HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",	\
-			str, VERSION);				\
-	    }							\
-	    strcpy(version, (char *)str);			\
-	    BGET_U32(sz); /* ivsize */				\
-	    if (sz != IVSIZE) {					\
-		HEADER_WARN("different IVSIZE");		\
-	    }							\
-	    BGET_U32(sz); /* ptrsize */				\
-	    if (sz != PTRSIZE) {				\
-		HEADER_WARN("different PTRSIZE");		\
-	    }							\
-	    /* new since 0.06_03 */				\
-	    if (strGE(version, "0.06_03")) {			\
-	      BGET_U32(sz); /* longsize */			\
-	      if (sz != LONGSIZE) {				\
-		HEADER_WARN("different LONGSIZE");		\
-	      }						        \
-	    }							\
-	    BGET_strconst(str,16); /* 12345678 */	        \
-	    if (strNE(str, "12345678")) {			\
-		HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",	\
-			"12345678", str);			\
-	    }							\
-	} STMT_END
-

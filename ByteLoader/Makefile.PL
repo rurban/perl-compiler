@@ -17,9 +17,9 @@ sub MY::depend {
     $bytecode_pl = File::Spec->catdir( '..', 'bytecode.pl' );
   }
   return "
-$(INST_LIB)/ByteLoader.pm : ByteLoader.pm
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', '\''$(PM_FILTER)'\'')' -- \
-	  ByteLoader.pm $(INST_LIB)/ByteLoader.pm
+\$(INST_LIB)/ByteLoader.pm : ByteLoader.pm
+	\$(NOECHO) \$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', '\''$(PM_FILTER)'\'')' -- \
+	  ByteLoader.pm \$(INST_LIB)/ByteLoader.pm
 
 byterun.c : $bytecode_pl Makefile
 	cd $up && \$(PERL) bytecode.pl && cd ByteLoader

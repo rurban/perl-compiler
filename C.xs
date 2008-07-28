@@ -16,7 +16,7 @@ my_runops(pTHX)
             REGEXP* rx = PM_GETRE( (PMOP*)PL_op );
             SV* rv = newSViv( 0 );
 
-            Newx( op, 1, PMOP );
+            New(0, op, 1, PMOP );
             Copy( PL_op, op, 1, PMOP );
             /* we need just the flags */
             op->op_next = NULL;

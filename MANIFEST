@@ -16,6 +16,7 @@ ByteLoader/byterun.c
 ByteLoader/byterun.h
 ByteLoader/hints/sunos.pl
 ByteLoader/Makefile.PL
+ByteLoader/ppport.h
 C.xs
 Changes
 hints/darwin.pl

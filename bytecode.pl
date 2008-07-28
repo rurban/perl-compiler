@@ -97,10 +97,17 @@ print BYTERUN_C $c_header, <<'EOT';
 #include "perl.h"
 #define NO_XSLOCKS
 #include "XSUB.h"
+#if PERL_VERSION < 8
+  #define NEED_sv_2pv_flags
+  #include "ppport.h"
+#endif
 
 /* Change 31252: move PL_tokenbuf into the PL_parser struct */
 #if (PERL_VERSION > 8) && (!defined(PL_tokenbuf))
   #define PL_tokenbuf		(PL_parser->tokenbuf)
+#endif
+#if (PERL_VERSION < 8) && (!defined(DEBUG_v))
+  #define DEBUG_v(a) DEBUG_l(a)
 #endif
 
 #include "byterun.h"
@@ -141,12 +148,12 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
     }
     BGET_strconst(str,80);	/* archname */
     if (strNE(str, ARCHNAME)) {
-	HEADER_WARN2("wrong architecture (want %s, you have %s)",str,ARCHNAME);
+	HEADER_WARN2("wrong architecture (want %s, you have %s)", str, ARCHNAME);
     }
     strcpy(bl_header.archname, str);
 
     BGET_strconst(str,16); /* fail if lower ByteLoader version */
-    if (strLT(str, VERSION)) {
+    if (strNE(str, VERSION)) { /* when we support lower => strLT */
 	HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",
 		str, VERSION);
     }
@@ -181,15 +188,16 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
       bl_header.longsize = 8;
     }
 
-    BGET_strconst(str,16); /* 12345678 */	
-    if (strNE(str, "12345678")) {
+    {
+      char supported[8]; /* config.h BYTEORDER: 0x1234 */
+      sprintf(supported, "%x", BYTEORDER);
+      BGET_strconst(str, 16); /* 12345678 or 1234 */
+      if (strNE(str, supported)) {
 	HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",
-		"12345678", str);
-        if (strNE(str, "56781234")) {
-	    HEADER_WARN1("invalid byteorder %s)", str);
-        }
+		     supported, str);
+      }
+      strcpy(bl_header.byteorder, str);
     }
-    strcpy(bl_header.byteorder, str);
     return 1;
 }
 
@@ -203,14 +211,15 @@ EOT
 printf BYTERUN_C "    SV *specialsv_list[%d];\n", scalar @specialsv_name;
 print BYTERUN_C <<'EOT';
 
-    bytecode_header_check(aTHX_ bstate, &isjit);	/* croak if incorrect platform, set isjit on PLJC magic header */
+    bytecode_header_check(aTHX_ bstate, &isjit); /* croak if incorrect platform,
+						    set isjit on PLJC magic header */
     if (isjit) {
 	Perl_croak(aTHX_ "PLJC-magic: No JIT support yet\n");
         return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
-        Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
+        New(0, bstate->bs_obj_list, 32, void*); /* set op objlist */
         bstate->bs_obj_list_fill = 31;
-        bstate->bs_obj_list[0] = NULL; /* first is always Null */
+        bstate->bs_obj_list[0] = NULL;          /* first is always Null */
         bstate->bs_ix = 1;
 	CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.idx %d)\n", bstate->bs_fdata->idx));
@@ -228,7 +237,9 @@ print BYTERUN_C <<'EOT';
 
         while ((insn = BGET_FGETC()) != EOF) {
 	  CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
+#ifdef DEBUG_t_TEST_
           if (PL_op && DEBUG_t_TEST_) debop(PL_op);
+#endif
 	  switch (insn) {
 EOT
 
@@ -263,8 +274,12 @@ while (<DATA>) {
 	my $pver = sprintf("%d", (sprintf("%f",$] - 5) * 1000));
 	if ($ver =~ /^\>\d+$/) {
 	  next if $pver < substr($ver,1); # ver >10: skip if pvar lowereq 10
-        } elsif ($ver =~ /^\<\d*$/) {
+        } elsif ($ver =~ /^\<\d+$/) {
 	  next if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
+        } elsif ($ver =~ /^(\d+)-(\d+)$/) {
+	  next if $pver >= $2; # ver 8-10: skip if pvar lower than 8 or 
+	  		       # higher than 10;
+	  next if $pver < $1;
         } elsif ($ver =~ /^\d*$/) {
 	  next if $pver < $ver; # ver 10: skip if pvar lower than 10;
 	}
@@ -343,23 +358,28 @@ open(BYTERUN_H, "> $targets[2]") or die "$targets[2]: $!";
 binmode BYTERUN_H;
 print BYTERUN_H $c_header, <<'EOT';
 #if PERL_VERSION < 10
-#define PL_RSFP PL_rsfp
+  #define PL_RSFP PL_rsfp
 #else
-#define PL_RSFP PL_parser->rsfp
+  #define PL_RSFP PL_parser->rsfp
+#endif
+
+#if (PERL_VERSION <= 8) && (PERL_SUBVERSION < 8)
+  #define NEED_sv_2pv_flags
+  #include "ppport.h"
 #endif
 
 struct byteloader_fdata {
     SV	*datasv;
-    int next_out;
-    int	idx;
+    int  next_out;
+    int	 idx;
 };
 
 #if PERL_VERSION > 8
 
 struct byteloader_xpv {
     char *xpv_pv;
-    int xpv_cur;
-    int	xpv_len;
+    int   xpv_cur;
+    int	  xpv_len;
 };
 
 #endif
@@ -541,7 +561,8 @@ __END__
 %number 0
 #
 # The argtype is either a single type or "rightvaluecast/argtype".
-# The version is either "i" or "!i" for ithreads or not, or num, >num or <num.
+# The version is either "i" or "!i" for ithreads or not, 
+# or num, num-num, >num or <num.
 # "0" is for all, "<10" requires PERL_VERSION<10, "10" or ">10" requires
 # PERL_VERSION>10
 #
@@ -603,7 +624,7 @@ __END__
 0 xcv_depth	CvDEPTH(bstate->bs_sv)			long
 0 xcv_padlist	*(SV**)&CvPADLIST(bstate->bs_sv)	svindex
 0 xcv_outside	*(SV**)&CvOUTSIDE(bstate->bs_sv)	svindex
-0 xcv_outside_seq CvOUTSIDE_SEQ(bstate->bs_sv)		U32
+8 xcv_outside_seq CvOUTSIDE_SEQ(bstate->bs_sv)		U32
 0 xcv_flags	CvFLAGS(bstate->bs_sv)			U16
 0 av_extend	bstate->bs_sv				SSize_t		x
 0 av_pushx	bstate->bs_sv				svindex		x
@@ -662,11 +683,11 @@ __END__
 10 op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot	opindex
 10 op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
 #ifdef USE_ITHREADS
-i op_pmstashpv		cPMOP				pvindex		x
+8 op_pmstashpv		cPMOP				pvindex		x
 <10 op_pmreplrootpo	cPMOP->op_pmreplroot		OP*/PADOFFSET
 10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 #else
-<10 op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
+8-10 op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
 10 op_pmstash		*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
 <10 op_pmreplrootgv	*(SV**)&cPMOP->op_pmreplroot		svindex
 10 op_pmreplrootgv	*(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot	svindex
@@ -675,8 +696,8 @@ i op_pmstashpv		cPMOP				pvindex		x
 0 pregcomp	PL_op					pvcontents	x
 #10 pregcomp	PL_op					none	x
 0 op_pmflags	cPMOP->op_pmflags			U16
-#if PERL_VERSION < 11
-10 op_reflags	PM_GETRE(cPMOP)->extflags		U32
+#if (PERL_VERSION >= 10)&&(PERL_VERSION < 11)
+<11 op_reflags	PM_GETRE(cPMOP)->extflags		U32
 #else
 11 op_reflags	((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags	U32
 #endif
@@ -700,7 +721,7 @@ i cop_file	cCOP					pvindex		x
 0 cop_seq	cCOP->cop_seq				U32
 <10 cop_arybase	cCOP->cop_arybase			I32
 0 cop_line	cCOP->cop_line				line_t
-<10 cop_io	cCOP->cop_io				svindex
+8-10 cop_io	cCOP->cop_io				svindex
 0 cop_warnings	cCOP					svindex		x
 0 main_start	PL_main_start				opindex
 0 main_root	PL_main_root				opindex

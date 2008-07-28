@@ -61,11 +61,11 @@ make
 # 5.8: all PASS
 # 5.10: FAIL: 2-5, 7, 11, 15. With -D 9-12 fail also.
 # 5.11: FAIL: 2-5, 7, 11, 15-16 (all segfaulting in REGEX). With -D 9-12 fail also.
-#btest 1 "print 'hi'"
+btest 1 "print 'hi'"
 btest 2 "for (1,2,3) { print if /\d/ }"
 btest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 btest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-exit
+#exit
 btest 5 'split /a/,"bananarama"; print @_'
 btest 6 "{package P; sub x {print 'ya'} x}"
 btest 7 '@z = split /:/,"b:r:n:f:g"; print @z'

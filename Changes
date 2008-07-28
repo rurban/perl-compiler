@@ -2,6 +2,20 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
 until Perl 5.9.4.
 
+1.04_17 2008-04-20 rurban
+	Added Fedora Core 1 as test system (5.6.2,5.8.3,5.11.0@33704, valgrind)
+	* ByteLoader: Fixed broken BYTEORDER check (for 32int)
+	* ByteLoader: Remove allowing older versions until we have 
+	  an opcode table for older versions.
+	* ByteLoader: Fixed SIGSEGV with older gcc (3.3.2) at 
+	  bstate->bs_obj_list[0] = NULL
+	* ByteLoader, C.xs: Newx() support and more for older perl's. Tested with 5.8.3
+	* bytecode.pl: Fixed <11 op_reflags (double definition)
+	* bytecode.pl: Support 8-10 version syntax (op_pmstash, cop_io)
+	* Makefile.PL: added MKPATH blib/bin
+	* added ByteLoader/ppport.h
+	* fixed t/stash.t for 5.11
+
 1.04_16 2008-04-14 rurban
 	* ByteLoader: Fix PL_tokenbuf for older perls without PL_parser
 	* B::C: walkoptree_slow for verbose statistics op_count.

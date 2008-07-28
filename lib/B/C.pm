@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_16';
+our $VERSION = '1.04_17';
 
 package B::C::Section;
 
@@ -283,7 +283,7 @@ sub savere {
     my $len = length $pv;
     my $pvmax = length(pack "a*",$pv) + 1;
     if ($PERL511) {
-      # fill in at least the engine pointer?
+      # Fill in at least the engine pointer? Or let CALLREGCOMP do that?
       $orangesect->add(sprintf("0,%u,%u, 0,0,NULL, NULL,NULL,".
 			       "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0", $len, $pvmax));
       $resect->add(sprintf("&orange_list[%d], 1, %d, %s", $orangesect->index, $flags, cstring($re)));
@@ -805,7 +805,7 @@ sub savepvn {
     # work with byte offsets/lengths
     my $pv = pack "a*", $pv;
     if (defined $max_string_len && length($pv) > $max_string_len) {
-	push @res, sprintf("Newx(%s,%u,char);", $dest, length($pv)+1);
+	push @res, sprintf("New(0,%s,%u,char);", $dest, length($pv)+1);
 	my $offset = 0;
 	while (length $pv) {
 	    my $str = substr $pv, 0, $max_string_len, '';
@@ -1817,7 +1817,7 @@ EOT
 #else
 #define EXTRA_OPTIONS 4
 #endif /* ALLOW_PERL_OPTIONS */
-    Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
+    New(0,fakeargv, argc + EXTRA_OPTIONS + 1, char *);
 
     fakeargv[0] = argv[0];
     fakeargv[1] = "-e";
@@ -2527,7 +2527,7 @@ B<-llimit> options tells the C backend not to generate string literals
 exceeding that limit.
 
 =back
- inits
+
 =head1 EXAMPLES
 
     perl -MO=C,-ofoo.c foo.pl
@@ -2545,10 +2545,9 @@ help make use of this compiler.
 
 Plenty. Current status: experimental.
 
-  5.10+5.11: unresolved dynamic boot_ syms
+  5.10+5.11: unresolved dynamic boot_ syms (cygwin only!)
     failing pregcomp()
     pad panics
-    nullified cop free
 
 =head1 AUTHOR
 

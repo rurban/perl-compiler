@@ -10,10 +10,8 @@ WriteMakefile(
     VERSION_FROM    => "lib/B/C.pm",
 	         # 'scripts/assemble','scripts/disassemble',
     PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
-    PREREQ_PM 	    => {
-	'B::Concise' => '0.66', # 0.74
-	'B' => '1.0901',        # 1.17
-    },
+    PREREQ_PM => {'B::Concise' => '0.66',
+	          'B'          => '1.0901'},
     ($] >= 5.005 ?
      ('AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>',
       'ABSTRACT' => 'perl compiler') : ()),
@@ -52,6 +50,7 @@ sub depend {
     my $perlcc_exp = File::Spec->catfile('script', 'perlcc.PL');
     my $result = "
 $perlcc_inst :: $perlcc_exp
+	\$(MKPATH) \$(INST_BIN)
 	\$(CP) $perlcc_exp $perlcc_inst
 
 C.c : C.xs Makefile
