@@ -44,8 +44,8 @@ function btest {
     echo $PERL $Mblib -MO=Debug ${o}.pl -o ${o}_${VERS}.dbg
     $PERL $Mblib -MO=Debug ${o}.pl > ${o}_${VERS}.dbg
     # 5.8 has a bad concise
-    echo $PERL $Mblib -MO=Concise ${o}.pl -o ${o}_${VERS}.concise
-    $PERL $Mblib -MO=Concise ${o}.pl > ${o}_${VERS}.concise
+    echo $PERL $Mblib -MO=Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
+    $PERL $Mblib -MO=Concise,-exec ${o}.pl > ${o}_${VERS}.concise
     #bcall ${o} TI
     bcall ${o} H
 
@@ -61,25 +61,27 @@ make
 # 5.8: all PASS
 # 5.10: FAIL: 2-5, 7, 11, 15. With -D 9-12 fail also.
 # 5.11: FAIL: 2-5, 7, 11, 15-16 (all segfaulting in REGEX). With -D 9-12 fail also.
+if false; then
 btest 1 "print 'hi'"
 btest 2 "for (1,2,3) { print if /\d/ }"
 btest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 btest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-#exit
 btest 5 'split /a/,"bananarama"; print @_'
 btest 6 "{package P; sub x {print 'ya'} x}"
+fi
 btest 7 '@z = split /:/,"b:r:n:f:g"; print @z'
-btest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
+#btest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
 btest 9 'my $l = 3; $x = sub { print $l }; &$x'
 btest 10 'my $i = 1; my $foo = sub {$i = shift if @_}; &$foo(3); print "ok";'
 btest 11 '$x="Cannot use"; print index $x, "Can"'
 btest 12 'my $i=6; eval "print \$i\n"'
-btest 13 'BEGIN { %h=(1=>2,3=>4) } print $h{3}'
-btest 14 'open our $T,"a"; print "ok";'
+#btest 13 'BEGIN { %h=(1=>2,3=>4) } print $h{3}'
+#btest 14 'open our $T,"a"; print "ok";'
 btest 15 'print <DATA>
 __DATA__
 a
 b'
+exit
 btest 16 'BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
 btest 17 'my $i=3; print 1 .. $i'
 btest 18 'my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'

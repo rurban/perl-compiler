@@ -9,17 +9,16 @@ REGEX pregcomp broken (in bc and c, see ccode2)
 B:C Problems:
   pregcomp()
   SIGSEGV in Perl_fbm_instr() <= Perl_re_intuit_start() <= Perl_pp_subst()
-  invalid pad in pad_sv, pad_new, save_clearsv - cause: setting PL_curpad at save_context, PL_comppad?
+  invalid pad in pad_sv, pad_new, save_clearsv - cause: setting PL_curpad at save_context
   Modification of a read-only value attempted - save_context ?
 
 5.6.2 i386-linux-thread-multi:
-t/assembler.t  255 65280    ??   ??       %  ?? (PM_SETRE)
-t/b.t            0    11    57  106 185.96%  5-57
-t/bytecode.t                19   19 100.00%  1-19
-t/c.t                       19   13  68.42%  1-7 11-13 17-19
-t/cc.t                      19   10  52.63%  1-7 11 13 17
-t/o.t                        9    1  11.11%  9
-t/stash.t      255 65280    ??   ??       %  ??
+t/b.t           0    11    57  106 185.96%  5-57
+t/bytecode.t               19   19 100.00%  1-19
+t/c.t                      19   13  68.42%  1-7 11-13 17-19
+t/cc.t                     19   10  52.63%  1-7 11 13 17
+t/o.t                       9    1  11.11%  9
+t/stash.t     255 65280    ??   ??       %  ??
   Can't declare another package's variables at t/stash.t line 91
 
 5.8.3 i386-linux-thread-multi:
@@ -35,7 +34,6 @@ bytecode15S_.asm: There were 2 assembly errors
 /usr/bin/perl -Mblib -MO=Debug bytecode7.pl -o bytecode7_.dbg
 t/testplc.sh: line 66:  5975 Segmentation fault      
 
-
 5.8.8:
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 8-10, 14-16
@@ -43,7 +41,8 @@ t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Modification of a read-only value attempted at ccode10.pl line 2.
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
   Failed tests:  8-10 12 14-16 18-19
-  In function `pp_main': cccode12.c:276: error: too few arguments to function
+  In function `pp_main': cccode12.c:276: error: too few arguments to function 
+  (Bug#55302, fixed with B-C-1.04_18)
 
 5.8.8d:
   TODO failed:   20 (bc op coverage)
@@ -58,8 +57,10 @@ t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 2-5, 7, 11, 15
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Failed tests:  8-10 14-16
+  2008-04-27 17:44:52 URBANR: 2-7 11
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
   Failed tests:  1-7 11 13 17 (was: 2-7 11, was: 8-10, 12, 14-16, 18-19)
+                 8-10 12 14-16 18-19
 
 5.10.0d:
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
@@ -69,9 +70,9 @@ t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
   Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-  Failed tests:  2-4 6 8-10 14-16 (was: 2-7 11 18)
+  Failed tests:  2-7, 11-12, 17-19 (was: 2-4 6 8-10 14-16; 2-7 11 18)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  1-4 6 11-13 17-19 (was: 2-7 11, was: 8-10, 12, 14-16, 18-19)
+  Failed tests:  2-4, 6, 11-12, 17-19 (was: 8-10, 12, 14-16, 18-19)
 
 5.10.0-nt (not threaded): 
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 9)
@@ -85,10 +86,10 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 8)
 
 
 5.11 @33673 -D
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 11)
-  Failed tests:  2-5, 7, 9-12, 15-16 (all segfaulting in REGEX)
-t/c.t        (Wstat: 0 Tests: 19 Failed: 10)
-  Failed tests:  2-4, 6, 8-10, 14-16
+t/bytecode.t (Wstat: 0 Tests: 20 Failed: 7)
+  Failed tests:  4, 9-12, 15-16 (all segfaulting in REGEX)
+t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+  Failed tests:  8-10, 14-16
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
   Failed tests:  1-4, 6, 11-13, 17-19
 
@@ -99,14 +100,12 @@ t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Failed tests:  8-10, 14-16
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
   Failed tests:  1-4, 6, 11-13, 17-19
-t/stash.t    (Wstat: 0 Tests: 1 Failed: 1)
-  Failed tests:  1
 
 5.10, 5.11 status
 -----------------
 With DEBUGGING
-  static op_free in Perl_destruct fixed
   panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8]
+         CvPADLIST: curpad<=>comppad
 pvx: seems to be fixed now in bc, and c
   With the move of the pvx field from xpv to the sv, we have to solve 
   that differently for the Bytecode and C backend.
@@ -116,6 +115,7 @@ hv: crash at invalid entry in hv_store in B::HV::save fixed
 hek: new implementation
 regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
 bc: B::IO::SUBPROCESS missing
+bc 10: padv+sassign => Modification of a read-only value attempted at bytecode10.pl line 1.
 
 5.8 status
 ----------
@@ -201,4 +201,4 @@ added Jit and Asm layout, with the idea of using either
 lightning as jit backend (Jit), or creating our own assembler (Asm) 
 to be able to use a high-level language.
 
-2008-04-13 11:31:45 URBANR
+2008-04-20 21:08:36 URBANR

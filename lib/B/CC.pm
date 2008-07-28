@@ -51,7 +51,7 @@ my $need_freetmps = 0;	# We may postpone FREETMPS to the end of each basic
 my $know_op = 0;	# Set when C variable op already holds the right op
 			# (from an immediately preceding DOOP(ppname)).
 my $errors = 0;		# Number of errors encountered
-my %skip_stack;		# Hash of PP names which don't need write_back_stack
+my %skip_stack;	# Hash of PP names which don't need write_back_stack
 my %skip_lexicals;	# Hash of PP names which don't need write_back_lexicals
 my %skip_invalidate;	# Hash of PP names which don't need invalidate_lexicals
 my %ignore_op;		# Hash of ops which do nothing except returning op_next
@@ -59,6 +59,7 @@ my %need_curcop;	# Hash of ops which need PL_curcop
 
 my %lexstate;		#state of padsvs at the start of a bblock
 my $verbose = 0;
+my $THREADS = $Config{useithreads} eq 'define' or $Config{usethreads} eq 'define';
 
 BEGIN {
     foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
@@ -79,7 +80,7 @@ my %optimise = (freetmps_each_bblock	=> \$freetmps_each_bblock,
 		omit_taint		=> \$omit_taint);
 # perl patchlevel to generate code for (defaults to current patchlevel)
 my $patchlevel = int(0.5 + 1000 * ($]  - 5));
-my $perl510 = ($] >= 5.009005);
+my $PERL510 = ($] >= 5.009005);
 
 # Could rewrite push_runtime() and output_runtime() to use a
 # temporary file if memory is at a premium.
@@ -102,8 +103,8 @@ sub init_hash { map { $_ => 1 } @_ }
 %skip_invalidate = init_hash qw(pp_enter pp_enterloop);
 %need_curcop = init_hash qw(pp_rv2gv  pp_bless pp_repeat pp_sort pp_caller
 			    pp_reset pp_rv2cv pp_entereval pp_require pp_dofile
-			pp_entertry pp_enterloop pp_enteriter pp_entersub
-			pp_enter pp_method);
+			    pp_entertry pp_enterloop pp_enteriter pp_entersub
+			    pp_enter pp_method);
 
 sub debug {
     if ($debug_runtime) {
@@ -131,6 +132,36 @@ sub save_runtime {
 sub output_runtime {
     my $ppdata;
     print qq(#include "cc_runtime.h"\n);
+    if ($THREADS) {
+      # Threads error Bug#55302: too few arguments to function
+      # CALLRUNOPS()=>CALLRUNOPS(aTHX)
+      print '
+#define PP_EVAL_thr(ppaddr, nxt) do {		\
+	dJMPENV;				\
+	int ret;				\
+	PUTBACK;				\
+	JMPENV_PUSH(ret);			\
+	switch (ret) {				\
+	case 0:					\
+	    PL_op = ppaddr(ARGS);		\
+';
+      print 'PL_retstack[PL_retstack_ix - 1] = Nullop;	\ 
+' if $] < 5.009005;
+      print '	    if (PL_op != nxt) CALLRUNOPS(aTHX);	\
+	    JMPENV_POP;				\
+	    break;				\
+	case 1: JMPENV_POP; JMPENV_JUMP(1);	\
+	case 2: JMPENV_POP; JMPENV_JUMP(2);	\
+	case 3:					\
+	    JMPENV_POP;				\
+	    if (PL_restartop != nxt)		\
+		JMPENV_JUMP(3);			\
+	}					\
+	PL_op = nxt;				\
+	SPAGAIN;				\
+    } while (0)
+';
+    }
     foreach $ppdata (@pp_list) {
 	my ($name, $runtime, $declare) = @$ppdata;
 	print "\nstatic\nCCPP($name)\n{\n";
@@ -1174,7 +1205,6 @@ sub doeval {
     write_back_stack();
     my $sym = loadop($op);
     my $ppaddr = $op->ppaddr;
-    #runtime(qq/printf("$ppaddr type eval\n");/);
     runtime("PP_EVAL($ppaddr, ($sym)->op_next);");
     $know_op = 1;
     invalidate_lexicals(REGISTER|TEMPORARY);
@@ -1480,7 +1510,7 @@ sub pp_subst {
         save_or_restore_lexical_state($$replroot);
 	runtime sprintf("if (PL_op == ((PMOP*)(%s))%s) goto %s;",
 			$sym,
-			$perl510 ? "->op_pmreplrootu.op_pmreplroot" : "->op_pmreplroot",
+			$PERL510 ? "->op_pmreplrootu.op_pmreplroot" : "->op_pmreplroot",
 			label($replroot));
 	$op->pmreplstart->save;
 	push(@bblock_todo, $replroot);
@@ -1503,7 +1533,7 @@ sub pp_substcont {
     save_or_restore_lexical_state(${$pmop->pmreplstart});
     runtime sprintf("if (PL_op == ((PMOP*)(%s))%s) goto %s;",
 		    $pmopsym,
-		    $perl510 ? "->op_pmstashstartu.op_pmreplstart" : "->op_pmreplstart",
+		    $PERL510 ? "->op_pmstashstartu.op_pmreplstart" : "->op_pmreplstart",
 		    label($pmop->pmreplstart));
     invalidate_lexicals();
     return $pmop->next;
@@ -1653,15 +1683,15 @@ sub cc_main {
     if (!defined($module)) {
 	$init->add(sprintf("PL_main_root = s\\_%x;", ${main_root()}),
 		   "PL_main_start = $start;",
-		   "#if (PERL_VERSION < 8)",
+		   "/* save context */",
+		   # panic: illegal pad
 		   "PL_curpad = AvARRAY($curpad_sym);",
-		   "av_store(CvPADLIST(PL_main_cv),0,SvREFCNT_inc($curpad_nam));",
-		   "av_store(CvPADLIST(PL_main_cv),1,SvREFCNT_inc($curpad_sym));",
-		   "#endif",
+		   "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
+		   "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
 		   "PL_initav = (AV *) $init_av;",
 		   "GvHV(PL_incgv) = $inc_hv;",
 		   "GvAV(PL_incgv) = $inc_av;",
-		   "PL_amagic_generation= $amagic_generate;",
+		   "PL_amagic_generation = $amagic_generate;",
 		     );
 
     }

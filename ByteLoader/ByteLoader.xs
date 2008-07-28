@@ -144,3 +144,8 @@ import(package="ByteLoader", ...)
     if (!sv)
       croak ("Could not allocate ByteLoader buffers");
     filter_add(byteloader_filter, sv);
+
+void
+unimport(...)
+  PPCODE:
+    filter_del(byteloader_filter);

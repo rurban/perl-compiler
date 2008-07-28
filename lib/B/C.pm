@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_17';
+our $VERSION = '1.04_18';
 
 package B::C::Section;
 
@@ -282,7 +282,7 @@ sub savere {
     my $pv = $re;
     my $len = length $pv;
     my $pvmax = length(pack "a*",$pv) + 1;
-    if ($PERL511) {
+    if (0 and $PERL511) {
       # Fill in at least the engine pointer? Or let CALLREGCOMP do that?
       $orangesect->add(sprintf("0,%u,%u, 0,0,NULL, NULL,NULL,".
 			       "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0", $len, $pvmax));
@@ -438,20 +438,19 @@ sub B::OP::save {
     if ($PERL510 and !$type and $OP_COP{$op->targ}) {
       warn sprintf("Null COP: %d\n", $op->targ) if $verbose or $debug_cops;
       if ($PERL511) {
-	$copsect->comment("$opsect_common, line, seq, warn_sv");
-	$copsect->add(sprintf("%s, %u, %s, ".
-			      "NULL, NULL, 0, ".
-			      "%u, %s, NULL",
-			      $op->_save_common, 0, 0, 'NULL' ));
+	$copsect->comment("$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
+	$copsect->add(sprintf("%s, 0, NULL, ".
+			      "NULL, 0, 0, ".
+			      "%u, NULL",
+			      $op->_save_common, 0, 'NULL' ));
       } elsif ($PERL510) {
-	$copsect->comment("$opsect_common, line, label, seq, warn_sv");
+	$copsect->comment("$opsect_common, line, label, seq, warnings, hints_hash");
 	$copsect->add(sprintf("%s, %u, NULL, ".
 			      "NULL, NULL, 0, ".
 			      "%u, %s, NULL",
-			      $op->_save_common, 0,
-			      0, 'NULL' ));
+			      $op->_save_common, 0, 0, 'NULL' ));
       } else {
-	$copsect->comment("$opsect_common, label, seq, arybase, line, warn_sv");
+	$copsect->comment("$opsect_common, label, seq, arybase, line, warnings, hints_hash");
 	$copsect->add(sprintf("%s, NULL, NULL, NULL, 0, 0, 0, NULL", $op->_save_common));
       }
       my $ix = $copsect->index;
@@ -646,12 +645,11 @@ sub B::COP::save {
 
     if ($PERL511) {
       # cop_label now in hints_hash (Change #33656)
-      $copsect->comment("$opsect_common, line, seq, warn_sv");
-      $copsect->add(sprintf("%s, %u, %s, ".
-			    "NULL, NULL, 0, ".
-			    "%u, %s, NULL",
-			    $op->_save_common, $op->line,
-			    $op->cop_seq, ( $optimize_warn_sv ? $warn_sv : 'NULL' )));
+      $copsect->comment("$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
+      $copsect->add(sprintf("%s, %u, NULL, ".
+			    "NULL, 0, %u, ".
+			    "NULL, NULL",
+			    $op->_save_common, $op->line, $op->cop_seq, ( $optimize_warn_sv ? $warn_sv : 'NULL' ) ));
       if ($op->label) {
 	$init->add(sprintf("CopLABEL_alloc(&cop_list[%d], %s);", $copsect->index, cstring($op->label)));
       }
@@ -731,7 +729,7 @@ sub B::PMOP::save {
     if (defined($re)) {
 	my( $resym, $relen ) = savere( $re, 0 );
 	if ($PERL510) {
-	  $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP($resym, %u));", $op->reflags));
+	  $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP(aTHX_ $resym, %u));", $op->pmflags));
 	} else {
 	  $init->add(sprintf("PM_SETRE(&$pm, pregcomp($resym, $resym + %u, &$pm));", $relen));
 	}
@@ -1629,9 +1627,9 @@ sub output_all {
     my $section;
     my @sections = ($opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
 		    $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
-		    $loopsect,   $copsect,   $svsect,    $xpvsect,   $resect,
+		    $loopsect,   $copsect,   $svsect,    $xpvsect,   $orangesect, $resect,
 		    $xpvavsect,  $xpvhvsect, $xpvcvsect, $xpvivsect, $xpvnvsect,
-		    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect, $orangesect);
+		    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect);
     $symsect->output(\*STDOUT, "#define %s\n");
     print "\n";
     output_declarations();
@@ -1894,8 +1892,11 @@ EOT
     dl_init(aTHX);
 
     exitstatus = perl_run( my_perl );
-
-    perl_destruct( my_perl );
+EOT
+    if ($] >= 5.007003) {
+      print "    perl_destruct( my_perl );"
+    }
+    print <<'EOT';
     perl_free( my_perl );
 
     PERL_SYS_TERM();
@@ -1908,12 +1909,13 @@ static void
 xs_init(pTHX)
 {
     char *file = __FILE__;
+    /* dXSUB_SYS; */
     dTARG;
     dSP;
 EOT
-    if ($^O eq 'cygwin') { #FIXME!
-      print "\n#undef USE_DYNAMIC_LOADING /* temp. HACK! */"; # REMOVEME! boot_ symbols not linked!
-    }
+    #if ($^O eq 'cygwin') { #FIXME!
+    #  print "\n#undef USE_DYNAMIC_LOADING /* temp. HACK! */";
+    #}
     print "\n#ifdef USE_DYNAMIC_LOADING";
     print qq/\n\tnewXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);/;
     print "\n#endif\n" ;
@@ -1921,16 +1923,17 @@ EOT
     delete $xsub{'UNIVERSAL'};
     print("/* bootstrapping code*/\n\tSAVETMPS;\n");
     print("\ttarg=sv_newmortal();\n");
-    print "#ifdef USE_DYNAMIC_LOADING\n"; # REMOVEME! boot_ symbols not linked!
+    print "#ifdef USE_DYNAMIC_LOADING\n";
     foreach my $stashname (keys %static_ext) {
       my $stashxsub = $stashname;
       $stashxsub  =~ s/::/__/g;
+      # cygwin has Win32CORE
       print "\tnewXS(\"${stashname}::bootstrap\", boot_$stashxsub, file);\n";
     }
-    print "#endif\n"; # REMOVEME! boot_ symbols not linked!
+    print "#endif\n";
     print "#ifdef USE_DYNAMIC_LOADING\n";
     print "\tPUSHMARK(sp);\n";
-    print qq/\tXPUSHp("DynaLoader",strlen("DynaLoader"));\n/;
+    print qq/\tXPUSHp("DynaLoader", strlen("DynaLoader"));\n/;
     print qq/\tPUTBACK;\n/;
     print "\tboot_DynaLoader(aTHX_ NULL);\n";
     print qq/\tSPAGAIN;\n/;
@@ -2145,16 +2148,15 @@ sub save_context
  my $curpad_sym = (comppadlist->ARRAY)[1]->save;
  my $inc_hv     = svref_2object(\%INC)->save;
  my $inc_av     = svref_2object(\@INC)->save;
- my $amagic_generate= amagic_generation;
+ my $amagic_generate = amagic_generation;
  # causes PL_curpad assertions
  $init->add("/* save context */",
 	    "GvHV(PL_incgv) = $inc_hv;",
 	    "GvAV(PL_incgv) = $inc_av;",
-	    "#if (PERL_VERSION > 1)",
+	    # panic: illegal pad
 	    "PL_curpad = AvARRAY($curpad_sym);",
-	    "av_store(CvPADLIST(PL_main_cv),0,SvREFCNT_inc($curpad_nam));",
-	    "av_store(CvPADLIST(PL_main_cv),1,SvREFCNT_inc($curpad_sym));",
-	    "#endif",
+	    "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
+	    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
 	    "PL_amagic_generation = $amagic_generate;" );
 }
 
@@ -2247,13 +2249,13 @@ sub init_sections {
 		    listop => \$listopsect, logop => \$logopsect,
 		    loop   => \$loopsect,   op    => \$opsect,   pmop => \$pmopsect,
 		    pvop   => \$pvopsect,   svop  => \$svopsect, unop => \$unopsect,
-		    sv     => \$svsect,     re    => \$resect,
+		    sv     => \$svsect,     orange => \$orangesect, re => \$resect,
 		    xpv    => \$xpvsect,    xpvav => \$xpvavsect,
 		    xpvhv  => \$xpvhvsect,  xpvcv => \$xpvcvsect,
 		    xpviv  => \$xpvivsect,  xpvnv => \$xpvnvsect,
 		    xpvmg  => \$xpvmgsect,  xpvlv => \$xpvlvsect,
 		    xrv    => \$xrvsect,    xpvbm => \$xpvbmsect,
-		    xpvio  => \$xpviosect,  orange => \$orangesect);
+		    xpvio  => \$xpviosect);
     my ($name, $sectref);
     while (($name, $sectref) = splice(@sections, 0, 2)) {
 	$$sectref = new B::C::Section $name, \%symtable, 0;

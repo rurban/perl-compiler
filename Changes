@@ -2,14 +2,28 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
 until Perl 5.9.4.
 
+1.04_18 2008-06-05 rurban
+	* Fixed t/assembler.t on 5.6.2
+	* Added ByteLoader::unimport (from 5.6.2)
+	* ByteLoader: Fixed bytecode crashes for 5.10+5.11 in 2-5, 7 by 
+	  removing PMf_COMPILETIME from op_pmflags. Reason: empty 
+	  check_substr in INTUIT. (6 still failing)
+	* ByteLoader: Fixes for 5.11 by using PM_SETRE (test 7 still failing)
+	* Bytecode: removed op_reflags. pregcomp with op_pmflags alone 
+	  is enough to reconstruct it.
+	* C,CC: enabled static_ext + DynaLoader boot section again. Fixed in cygperl.
+	* CC: fixed Bug#55302 PP_EVAL by adding PP_EVAL_thr for threaded perl. 
+	  cc_runtime.h was always wrong on this!
+
 1.04_17 2008-04-20 rurban
-	Added Fedora Core 1 as test system (5.6.2,5.8.3,5.11.0@33704, valgrind)
+	Added Fedora Core 1 as test system (5.6.2, 5.8.3, 5.11.0@33708 + valgrind)
 	* ByteLoader: Fixed broken BYTEORDER check (for 32int)
 	* ByteLoader: Remove allowing older versions until we have 
 	  an opcode table for older versions.
 	* ByteLoader: Fixed SIGSEGV with older gcc (3.3.2) at 
 	  bstate->bs_obj_list[0] = NULL
-	* ByteLoader, C.xs: Newx() support and more for older perl's. Tested with 5.8.3
+	* ByteLoader, C.xs: Newx() support and more for older perl's. 
+	  Tested with 5.8.3
 	* bytecode.pl: Fixed <11 op_reflags (double definition)
 	* bytecode.pl: Support 8-10 version syntax (op_pmstash, cop_io)
 	* Makefile.PL: added MKPATH blib/bin
@@ -32,7 +46,8 @@ until Perl 5.9.4.
 	commented disassembler output. PVGV and new REGEX still broken.
 	Fixes for no ithreads.
 	
-        * Fixed verbose Bytecode for old B::Concise (5.8.8). t/testplc.sh failed before.
+        * Fixed verbose Bytecode for old B::Concise (5.8.8). t/testplc.sh 
+	  failed before.
 	* ByteLoader: Work on portability (different arch, version and sizes). 
 	  Added bl_header.
 	  Changed macro BYTECODE_HEADER_CHECK to function bytecode_header_check().
@@ -42,8 +57,8 @@ until Perl 5.9.4.
 	  use xpv_cur and not xpv_len for the rx length (len - 1) to strip off 
 	  the ending nul byte. 
 	  5.10: new minlen check aborts
-	* ByteLoader security: added strconst maxsize flag to bytecode.pl for buffer 
-	  overflow checks.
+	* ByteLoader security: added strconst maxsize flag to bytecode.pl 
+	  for buffer overflow checks.
 	* Bytecode -DA for devel assertions of absolute or probably wrong opindex 
 	  pointers (nyi)
 	* disassemble, B::Assembler: commented output, similar to -MO=Bytecode,-S
@@ -57,7 +72,8 @@ until Perl 5.9.4.
 	  Added longsize to the bytecode header, just for xcv_depth.
 	* B::Debug 1.05_03: Fixes for no threads.
 	* Makefile.PL: Fixed script/perlcc.PL dependency
-	  make: *** No rule to make target `script/perlcc', needed by `blib/bin/perlcc'.
+	  make: *** No rule to make target `script/perlcc', needed by 
+	  `blib/bin/perlcc'.
 	  (Thanks to david@cantrell.org.uk for his cpantest for solaris)
 	* Added test TODO's, Added perloptreeguts.pod
 
@@ -193,6 +209,7 @@ until Perl 5.9.4.
 
 ===================================================================
 B::C was 1.03 when exterminated.
+Oops, Module::Corelist says 1.05 for 5.9.4, Right so.	
 
 Nicholas Clark <nwc10+p5p4@colon.colondot.net>  2007-05-07 15:35:56
     bytecode.pl:        Exterminate!

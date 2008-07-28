@@ -7,6 +7,7 @@ typedef SV *svindex;
 typedef OP *opindex;
 typedef char *pvindex;
 typedef HEK *hekindex;
+typedef IV IV64;
 
 #if (PERL_VERSION <= 8) && (PERL_SUBVERSION < 8)
 #include "ppport.h"
@@ -43,7 +44,27 @@ typedef HEK *hekindex;
 		       "Different IVSIZE %d for IV", 			\
 		       bl_header.ivsize);				\
 	}								\
-    } STMT_END 
+    } STMT_END
+/*
+ * In the following, sizeof(IV)*4 is just a way of encoding 32 on 64-bit-IV
+ * machines such that 32-bit machine compilers don't whine about the shift
+ * count being too high even though the code is never reached there.
+ */
+#define BGET_IV64(arg) STMT_START {			\
+	U32 hi, lo;					\
+	BGET_U32(hi);					\
+	BGET_U32(lo);					\
+	if (sizeof(IV) == 8)				\
+	    arg = ((IV)hi << (sizeof(IV)*4) | (IV)lo);	\
+	else if (((I32)hi == -1 && (I32)lo < 0)		\
+		 || ((I32)hi == 0 && (I32)lo >= 0)) {	\
+	    arg = (I32)lo;				\
+	}						\
+	else {						\
+	    bstate->bs_iv_overflows++;			\
+	    arg = 0;					\
+	}						\
+    } STMT_END
 
 #define BGET_PADOFFSET(arg)	BGET_OR_CROAK(arg, PADOFFSET)
 #define BGET_long(arg) STMT_START {				        \
@@ -71,7 +92,7 @@ typedef HEK *hekindex;
 #define BGET_PV(arg)	STMT_START {					\
 	BGET_U32(arg);							\
 	if (arg) {							\
-	    New(0, bstate->bs_pv.xpv_pv, (U32)arg, char);		\
+	    New(666, bstate->bs_pv.xpv_pv, (U32)arg, char);		\
 	    bl_read(bstate->bs_fdata, bstate->bs_pv.xpv_pv, (U32)arg, 1);	\
 	    bstate->bs_pv.xpv_len = (U32)arg;				\
 	    bstate->bs_pv.xpv_cur = (U32)arg - 1;			\
@@ -99,11 +120,10 @@ typedef HEK *hekindex;
 	do { arg = BGET_FGETC(); } while (arg != '\n' && arg != EOF)
 #endif
 
-
 #define BGET_op_tr_array(arg) do {			\
 	unsigned short *ary, len;			\
 	BGET_U16(len);					\
-	New(0, ary, len, unsigned short);		\
+	New(666, ary, len, unsigned short);		\
 	BGET_FREAD(ary, sizeof(unsigned short), len);	\
 	arg = (char *) ary;				\
     } while (0)
@@ -226,35 +246,18 @@ typedef HEK *hekindex;
 
 #else /* >= 5.10 */
 
-// see op.c:newPMOP
-// must use a SV now. build it on the fly from the given pv. 
-// TODO: use op_pmflags or re->extflags?
-// op_pmflags is just a small subset of re->extflags
-// need to copy from the current pv to a new sv
+/* see op.c:newPMOP
+ * Must use a SV now. build it on the fly from the given pv. 
+ * rx->extflags is constructed from op_pmflags in pregcomp
+ * | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr
+ * TODO: 5.11 could use newSVpvn_flags with SVf_TEMP
+ */
 #define BSET_pregcomp(o, arg)						\
     STMT_START {							\
-	REGEXP* rx = arg ?						\
-	    CALLREGCOMP(aTHX_ newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
-	    Null(REGEXP*);						\
 	assert(SvPOK(PL_regex_pad[0]));					\
-	if (SvCUR(PL_regex_pad[0])) {					\
-	    /* Pop off the "packed" IV from the end.  */		\
-	    SV *const repointer_list = PL_regex_pad[0];			\
-	    const char *p = SvEND(repointer_list) - sizeof(IV);		\
-	    const IV offset = *((IV*)p);				\
-	    assert(SvCUR(repointer_list) % sizeof(IV) == 0);		\
-									\
-	    SvEND_set(repointer_list, p);				\
-									\
-	    cPMOPx(o)->op_pmoffset = offset;				\
-	    /* This slot should be free, so assert this:  */		\
-	    assert(PL_regex_pad[offset] == &PL_sv_undef);		\
-	} else {							\
-	    SV * const repointer = &PL_sv_undef;			\
-	    av_push(PL_regex_padav, repointer);				\
-	    cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);		\
-	    PL_regex_pad = AvARRAY(PL_regex_padav);			\
-	}								\
+        PM_SETRE(cPMOPx(o), arg						\
+	  ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
+	  : Null(REGEXP*));						\
     } STMT_END
 
 #endif
@@ -262,20 +265,23 @@ typedef HEK *hekindex;
 #else /* ! USE_ITHREADS */
 
 #if PERL_VERSION < 10
+/* PM_SETRE only since 5.8 */
 #define BSET_pregcomp(o, arg) \
     STMT_START { \
-	PM_SETRE(((PMOP*)o), (arg ? \
+	(((PMOP*)o)->op_pmregexp = (arg ? \
 	     CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)): \
 	     Null(REGEXP*))); \
     } STMT_END
 #else
-#define BSET_pregcomp(o, arg) \
-    STMT_START { \
-        SV* repointer; \
-	REGEXP* rx = arg ? \
-	    CALLREGCOMP(aTHX_ newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
-	    Null(REGEXP*); \
-	PM_SETRE(((PMOP*)o), rx); \
+/* | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr */
+#define BSET_pregcomp(o, arg)				  \
+    STMT_START {					  \
+        SV* repointer;					  \
+	REGEXP* rx = arg ?				  \
+	    CALLREGCOMP(aTHX_ newSVpvn(arg, strlen(arg)), \
+			cPMOPx(o)->op_pmflags)		  \
+	    : Null(REGEXP*);				  \
+	PM_SETRE(((PMOP*)o), rx);			  \
     } STMT_END
 #endif
 
@@ -299,7 +305,11 @@ typedef HEK *hekindex;
 	    BSET_OBJ_STOREX(sv);			\
 	} STMT_END
 
+#if (PERL_VERSION > 6)
 #define BSET_newop(o, size)	NewOpSz(666, o, size)
+#else
+#define BSET_newop(o, size)	(o=(OP*)safemalloc(size), memzero(o, size))
+#endif
 /* arg is encoded as type <<7 and size */
 #define BSET_newopx(o, arg) STMT_START {	\
 	register int size = arg & 0x7f;		\

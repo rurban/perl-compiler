@@ -20,7 +20,11 @@ LCMD=
 function ctest {
     n=$1
     str=$2
-    o="ccode$n"
+    if [ $BASE = "testcc.sh" ]; then 
+      o="cccode$n"
+    else
+      o="ccode$n"
+    fi
     echo "$str" > $o.pl
     echo ${OCMD}-o$o.c $o.pl
     ${OCMD}-o$o.c $o.pl
@@ -39,8 +43,8 @@ make
 # op_free(PL_main_root) hang fixed with opt_latefree.
 # Still panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] at destruct
 
-#ctest 1 "print 'hi'"
-#ctest 2 'for (1,2,3) { print if /\d/ }'
+ctest 1 "print 'hi'"
+ctest 2 'for (1,2,3) { print if /\d/ }'
 # fixed SEGV at Perl_fbm_instr util.c:572 <= pp_subst
 ctest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 ctest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'

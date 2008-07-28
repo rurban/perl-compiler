@@ -677,30 +677,23 @@ __END__
 0 op_first	cUNOP->op_first				opindex
 0 op_last	cBINOP->op_last				opindex
 0 op_other	cLOGOP->op_other			opindex
-<10 op_pmreplroot  cPMOP->op_pmreplroot			opindex
-<10 op_pmreplstart cPMOP->op_pmreplstart		opindex
-<10 op_pmnext	*(OP**)&cPMOP->op_pmnext		opindex
-10 op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot	opindex
-10 op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
+<10 op_pmreplroot   cPMOP->op_pmreplroot		opindex
+<10 op_pmreplstart  cPMOP->op_pmreplstart		opindex
+<10 op_pmnext	    *(OP**)&cPMOP->op_pmnext		opindex
+10  op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot	opindex
+10  op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
 #ifdef USE_ITHREADS
 8 op_pmstashpv		cPMOP				pvindex		x
 <10 op_pmreplrootpo	cPMOP->op_pmreplroot		OP*/PADOFFSET
 10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 #else
 8-10 op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
-10 op_pmstash		*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
-<10 op_pmreplrootgv	*(SV**)&cPMOP->op_pmreplroot		svindex
-10 op_pmreplrootgv	*(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot	svindex
+10   op_pmstash		*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
+<10  op_pmreplrootgv	*(SV**)&cPMOP->op_pmreplroot		svindex
+10   op_pmreplrootgv	*(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot	svindex
 #endif
-#<10 pregcomp	PL_op					pvcontents	x
-0 pregcomp	PL_op					pvcontents	x
-#10 pregcomp	PL_op					none	x
-0 op_pmflags	cPMOP->op_pmflags			U16
-#if (PERL_VERSION >= 10)&&(PERL_VERSION < 11)
-<11 op_reflags	PM_GETRE(cPMOP)->extflags		U32
-#else
-11 op_reflags	((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags	U32
-#endif
+0   pregcomp	PL_op					pvcontents	x
+0   op_pmflags	cPMOP->op_pmflags			U16
 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
 <10 op_pmdynflags  cPMOP->op_pmdynflags			U8
 0 op_sv		cSVOP->op_sv				svindex

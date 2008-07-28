@@ -38,9 +38,8 @@ my $Is_MacOS = $^O eq 'MacOS';
 my $path = join " ", map { qq["-I$_"] } @INC;
 $path = '"-I../lib" "-Iperl_root:[lib]"' if $Is_VMS;   # gets too long otherwise
 my $redir = $Is_MacOS ? "" : "2>&1";
-my $cover = $ENV{HARNESS_PERL_SWITCHES} || "";
 
-chomp($got = `$^X $path "-MB::Stash" $cover "-Mwarnings" -e1`);
+chomp($got = `$^X $path "-MB::Stash" "-Mwarnings" -e1`);
 
 $got =~ s/-u//g;
 
@@ -63,7 +62,6 @@ print "# got = @got\n";
 @got = grep { ! /^NetWare$/                   } @got  if $^O eq 'NetWare';
 @got = grep { ! /^(Cwd|File|File::Copy|OS2)$/ } @got  if $^O eq 'os2';
 @got = grep { ! /^(Cwd|Cygwin)$/              } @got  if $^O eq 'cygwin';
-@got = grep { ! /^(Devel::Cover)$/            } @got  if $cover =~ /-MDevel::Cover/;
 
 if ($Is_VMS) {
     @got = grep { ! /^File(?:::Copy)?$/    } @got;
@@ -79,11 +77,12 @@ print "# got = @got\n";
 $got = "@got";
 
 my $expected = "attributes Carp Carp::Heavy DB Internals main Regexp utf8 version warnings";
+
 if ($] < 5.009) {
     $expected =~ s/version //;
-    $expected =~ s/DB /DB Exporter Exporter::Heavy /;
+    $expected =~ s/DB/DB Exporter Exporter::Heavy/;
 }
-if ($] >= 5.010) {
+if ($] >= 5.011) {
     $expected = "attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
 }
 

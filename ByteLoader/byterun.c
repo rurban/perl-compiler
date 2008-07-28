@@ -16,9 +16,17 @@
 #include "perl.h"
 #define NO_XSLOCKS
 #include "XSUB.h"
+#if PERL_VERSION < 8
+  #define NEED_sv_2pv_flags
+  #include "ppport.h"
+#endif
 
-#ifndef PL_tokenbuf /* Change 31252: move PL_tokenbuf into the PL_parser struct */
-#define PL_tokenbuf		(PL_parser->tokenbuf)
+/* Change 31252: move PL_tokenbuf into the PL_parser struct */
+#if (PERL_VERSION > 8) && (!defined(PL_tokenbuf))
+  #define PL_tokenbuf		(PL_parser->tokenbuf)
+#endif
+#if (PERL_VERSION < 8) && (!defined(DEBUG_v))
+  #define DEBUG_v(a) DEBUG_l(a)
 #endif
 
 #include "byterun.h"
@@ -63,12 +71,12 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
     }
     BGET_strconst(str,80);	/* archname */
     if (strNE(str, ARCHNAME)) {
-	HEADER_WARN2("wrong architecture (want %s, you have %s)",str,ARCHNAME);
+	HEADER_WARN2("wrong architecture (want %s, you have %s)", str, ARCHNAME);
     }
     strcpy(bl_header.archname, str);
 
     BGET_strconst(str,16); /* fail if lower ByteLoader version */
-    if (strLT(str, VERSION)) {
+    if (strNE(str, VERSION)) { /* when we support lower => strLT */
 	HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",
 		str, VERSION);
     }
@@ -103,15 +111,16 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
       bl_header.longsize = 8;
     }
 
-    BGET_strconst(str,16); /* 12345678 */	
-    if (strNE(str, "12345678")) {
+    {
+      char supported[8]; /* config.h BYTEORDER: 0x1234 */
+      sprintf(supported, "%x", BYTEORDER);
+      BGET_strconst(str, 16); /* 12345678 or 1234 */
+      if (strNE(str, supported)) {
 	HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",
-		"12345678", str);
-        if (strNE(str, "56781234")) {
-	    HEADER_WARN1("invalid byteorder %s)", str);
-        }
+		     supported, str);
+      }
+      strcpy(bl_header.byteorder, str);
     }
-    strcpy(bl_header.byteorder, str);
     return 1;
 }
 
@@ -123,14 +132,15 @@ byterun(pTHX_ struct byteloader_state *bstate)
     U32 ix;
     SV *specialsv_list[7];
 
-    bytecode_header_check(aTHX_ bstate, &isjit);	/* croak if incorrect platform, set isjit on PLJC magic header */
+    bytecode_header_check(aTHX_ bstate, &isjit); /* croak if incorrect platform,
+						    set isjit on PLJC magic header */
     if (isjit) {
 	Perl_croak(aTHX_ "PLJC-magic: No JIT support yet\n");
         return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
-        Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
+        New(0, bstate->bs_obj_list, 32, void*); /* set op objlist */
         bstate->bs_obj_list_fill = 31;
-        bstate->bs_obj_list[0] = NULL; /* first is always Null */
+        bstate->bs_obj_list[0] = NULL;          /* first is always Null */
         bstate->bs_ix = 1;
 	CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
 	DEBUG_l( Perl_deb(aTHX_ "(bstate.bs_fdata.idx %d)\n", bstate->bs_fdata->idx));
@@ -148,7 +158,9 @@ byterun(pTHX_ struct byteloader_state *bstate)
 
         while ((insn = BGET_FGETC()) != EOF) {
 	  CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
+#ifdef DEBUG_t_TEST_
           if (PL_op && DEBUG_t_TEST_) debop(PL_op);
+#endif
 	  switch (insn) {
 	  case INSN_COMMENT:		/* 35 */
 	    {
@@ -782,7 +794,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvcontents arg;
 		BGET_pvcontents(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_name pvcontents:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_name pvcontents:\"%s\"\n", insn, arg));
 		BSET_mg_name(SvMAGIC(bstate->bs_sv), arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_mg_name(SvMAGIC(bstate->bs_sv), arg)\n"));
 		break;
@@ -1145,7 +1157,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvcontents arg;
 		BGET_pvcontents(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pregcomp pvcontents:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pregcomp pvcontents:\"%s\"\n", insn, arg));
 		BSET_pregcomp(PL_op, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_pregcomp(PL_op, arg)\n"));
 		break;
@@ -1159,19 +1171,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cPMOP->op_pmflags = arg;\n"));
 		break;
 	    }
-#if PERL_VERSION < 11
-	  case INSN_OP_REFLAGS:		/* 113 */
-	    {
-		U32 arg;
-		BGET_U32(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_reflags U32:%d\n", insn, arg));
-		PM_GETRE(cPMOP)->extflags = arg;
-		DEBUG_v(Perl_deb(aTHX_ "	   PM_GETRE(cPMOP)->extflags = arg;\n"));
-		break;
-	    }
-#else
-#endif
-	  case INSN_OP_SV:		/* 114 */
+	  case INSN_OP_SV:		/* 113 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1180,7 +1180,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cSVOP->op_sv = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_PADIX:		/* 115 */
+	  case INSN_OP_PADIX:		/* 114 */
 	    {
 		PADOFFSET arg;
 		BGET_PADOFFSET(arg);
@@ -1189,16 +1189,16 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cPADOP->op_padix = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_PV:		/* 116 */
+	  case INSN_OP_PV:		/* 115 */
 	    {
 		pvcontents arg;
 		BGET_pvcontents(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pv pvcontents:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pv pvcontents:\"%s\"\n", insn, arg));
 		cPVOP->op_pv = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cPVOP->op_pv = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_PV_TR:		/* 117 */
+	  case INSN_OP_PV_TR:		/* 116 */
 	    {
 		op_tr_array arg;
 		BGET_op_tr_array(arg);
@@ -1207,7 +1207,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cPVOP->op_pv = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_REDOOP:		/* 118 */
+	  case INSN_OP_REDOOP:		/* 117 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
@@ -1216,7 +1216,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_redoop = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_NEXTOP:		/* 119 */
+	  case INSN_OP_NEXTOP:		/* 118 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
@@ -1225,7 +1225,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_nextop = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_LASTOP:		/* 120 */
+	  case INSN_OP_LASTOP:		/* 119 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
@@ -1234,35 +1234,17 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_lastop = arg;\n"));
 		break;
 	    }
-	  case INSN_COP_LABEL:		/* 121 */
+	  case INSN_COP_LABEL:		/* 120 */
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
 		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_label pvindex:\"%s\"\n", insn, arg, ix));
-		cCOP->cop_label = arg;
-		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_label = arg;\n"));
-		break;
-	    }
-	  case INSN_COP_STASHPV:		/* 122 */
-	    {
-		pvindex arg;
-		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_stashpv pvindex:\"%s\"\n", insn, arg, ix));
-		BSET_cop_stashpv(cCOP, arg);
-		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_stashpv(cCOP, arg)\n"));
-		break;
-	    }
-	  case INSN_COP_FILE:		/* 123 */
-	    {
-		pvindex arg;
-		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_file pvindex:\"%s\"\n", insn, arg, ix));
-		BSET_cop_file(cCOP, arg);
-		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_file(cCOP, arg)\n"));
+		BSET_cop_label(cCOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_label(cCOP, arg)\n"));
 		break;
 	    }
 #ifndef USE_ITHREADS
-	  case INSN_COP_STASH:		/* 124 */
+	  case INSN_COP_STASH:		/* 121 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1271,7 +1253,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_stash(cCOP, arg)\n"));
 		break;
 	    }
-	  case INSN_COP_FILEGV:		/* 125 */
+	  case INSN_COP_FILEGV:		/* 122 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1281,7 +1263,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		break;
 	    }
 #endif
-	  case INSN_COP_SEQ:		/* 126 */
+	  case INSN_COP_SEQ:		/* 123 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
@@ -1290,7 +1272,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_seq = arg;\n"));
 		break;
 	    }
-	  case INSN_COP_LINE:		/* 127 */
+	  case INSN_COP_LINE:		/* 124 */
 	    {
 		line_t arg;
 		BGET_U32(arg);
@@ -1299,7 +1281,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_line = arg;\n"));
 		break;
 	    }
-	  case INSN_COP_WARNINGS:		/* 128 */
+	  case INSN_COP_WARNINGS:		/* 125 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1308,7 +1290,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_warnings(cCOP, arg)\n"));
 		break;
 	    }
-	  case INSN_MAIN_START:		/* 129 */
+	  case INSN_MAIN_START:		/* 126 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
@@ -1317,7 +1299,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_main_start = arg;\n"));
 		break;
 	    }
-	  case INSN_MAIN_ROOT:		/* 130 */
+	  case INSN_MAIN_ROOT:		/* 127 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
@@ -1326,7 +1308,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_main_root = arg;\n"));
 		break;
 	    }
-	  case INSN_MAIN_CV:		/* 131 */
+	  case INSN_MAIN_CV:		/* 128 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1335,7 +1317,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_main_cv = arg;\n"));
 		break;
 	    }
-	  case INSN_CURPAD:		/* 132 */
+	  case INSN_CURPAD:		/* 129 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1344,7 +1326,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_curpad(PL_curpad, arg)\n"));
 		break;
 	    }
-	  case INSN_PUSH_BEGIN:		/* 133 */
+	  case INSN_PUSH_BEGIN:		/* 130 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1353,7 +1335,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_begin(PL_beginav, arg)\n"));
 		break;
 	    }
-	  case INSN_PUSH_INIT:		/* 134 */
+	  case INSN_PUSH_INIT:		/* 131 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1362,7 +1344,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_init(PL_initav, arg)\n"));
 		break;
 	    }
-	  case INSN_PUSH_END:		/* 135 */
+	  case INSN_PUSH_END:		/* 132 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1371,7 +1353,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_end(PL_endav, arg)\n"));
 		break;
 	    }
-	  case INSN_CURSTASH:		/* 136 */
+	  case INSN_CURSTASH:		/* 133 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1380,7 +1362,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_curstash = arg;\n"));
 		break;
 	    }
-	  case INSN_DEFSTASH:		/* 137 */
+	  case INSN_DEFSTASH:		/* 134 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1389,7 +1371,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_defstash = arg;\n"));
 		break;
 	    }
-	  case INSN_DATA:		/* 138 */
+	  case INSN_DATA:		/* 135 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
@@ -1398,7 +1380,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_data(none, arg)\n"));
 		break;
 	    }
-	  case INSN_INCAV:		/* 139 */
+	  case INSN_INCAV:		/* 136 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1407,7 +1389,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvAV(PL_incgv) = arg;\n"));
 		break;
 	    }
-	  case INSN_LOAD_GLOB:		/* 140 */
+	  case INSN_LOAD_GLOB:		/* 137 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1417,17 +1399,8 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		break;
 	    }
 #ifdef USE_ITHREADS
-	  case INSN_REGEX_PADAV:		/* 141 */
-	    {
-		svindex arg;
-		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) regex_padav svindex:0x%x, ix:%d\n", insn, arg, ix));
-		*(SV**)&PL_regex_padav = arg;
-		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_regex_padav = arg;\n"));
-		break;
-	    }
 #endif
-	  case INSN_DOWARN:		/* 142 */
+	  case INSN_DOWARN:		/* 138 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
@@ -1436,7 +1409,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_dowarn = arg;\n"));
 		break;
 	    }
-	  case INSN_COMPPAD_NAME:		/* 143 */
+	  case INSN_COMPPAD_NAME:		/* 139 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1445,7 +1418,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_comppad_name = arg;\n"));
 		break;
 	    }
-	  case INSN_XGV_STASH:		/* 144 */
+	  case INSN_XGV_STASH:		/* 140 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
@@ -1454,7 +1427,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvSTASH(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
-	  case INSN_SIGNAL:		/* 145 */
+	  case INSN_SIGNAL:		/* 141 */
 	    {
 		strconst arg;
 		BGET_strconst(arg, 0);
@@ -1463,7 +1436,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_signal(bstate->bs_sv, arg)\n"));
 		break;
 	    }
-	  case INSN_FORMFEED:		/* 146 */
+	  case INSN_FORMFEED:		/* 142 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);

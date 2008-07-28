@@ -222,7 +222,7 @@ sub print_insn {
     my ($insn, $arg, $comment) = @_;
     undef $comment unless $comment;
     if (defined($arg)) {
-	if ($insn eq 'newopx') {
+	if ($insn eq 'newopx' or $insn eq 'ldop') { # threaded or unthreaded
 	  my $type = $arg >> 7;
 	  my $size = $arg - ($type << 7);
 	  $arg .= sprintf(" \t# size:%d, type:%d %s", $size, $type) if $comment;

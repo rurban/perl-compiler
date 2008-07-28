@@ -1,10 +1,10 @@
 #! perl
- 
+
 use Config;
 use File::Basename qw(&basename &dirname);
 use File::Spec;
 use Cwd;
- 
+
 # List explicitly here the variables you want Configure to
 # generate.  Metaconfig only looks for shell variables, so you
 # have to mention them as if they were shell variables, not
@@ -12,33 +12,33 @@ use Cwd;
 #  $startperl
 # to ensure Configure will look for $Config{startperl}.
 # Wanted:  $archlibexp
- 
+
 # This forces PL files to create target in same directory as PL file.
 # This is so that make depend always knows where to find PL derivatives.
 $origdir = cwd;
 chdir dirname($0);
 $file = basename($0, '.PL');
 $file .= '.com' if $^O eq 'VMS';
- 
+
 open OUT,">$file" or die "Can't create $file: $!";
- 
+
 print "Extracting $file (with variable substitutions)\n";
- 
+
 # In this section, perl variables will be expanded during extraction.
 # You can use $Config{...} to use Configure variables.
- 
+
 print OUT <<"!GROK!THIS!";
 $Config{startperl}
     eval 'exec $Config{perlpath} -S \$0 \${1+"\$@"}'
     if \$running_under_some_shell;
 --\$running_under_some_shell;
 !GROK!THIS!
- 
+
 # In the following, perl variables are not expanded during extraction.
- 
+
 print OUT <<'!NO!SUBS!';
 
-# Version 2.0, Simon Cozens, Thu Mar 30 17:52:45 JST 2000 
+# Version 2.0, Simon Cozens, Thu Mar 30 17:52:45 JST 2000
 # Version 2.01, Tom Christiansen, Thu Mar 30 08:25:14 MST 2000
 # Version 2.02, Simon Cozens, Sun Apr 16 01:53:36 JST 2000
 # Version 2.03, Edward Peschko, Mon Feb 26 12:04:17 PST 2001
@@ -103,7 +103,7 @@ sub choose_backend {
 }
 
 
-sub generate_code { 
+sub generate_code {
 
     vprint 0, "Compiling $Input";
 
@@ -137,7 +137,7 @@ sub vprint {
     } else {
         # well, they forgot to use a number; means >0
         $level = 0;
-    } 
+    }
     my $msg = "@_";
     $msg .= "\n" unless substr($msg, -1) eq "\n";
     if (opt(v) > $level)
@@ -149,7 +149,7 @@ sub vprint {
 
 sub parse_argv {
 
-    use Getopt::Long; 
+    use Getopt::Long;
 
     # disallows using long arguments
     # Getopt::Long::Configure("bundling");
@@ -218,9 +218,9 @@ sub parse_argv {
 sub opt(*) {
     my $opt = shift;
     return exists($Options->{$opt}) && ($Options->{$opt} || 0);
-} 
+}
 
-sub compile_module { 
+sub compile_module {
     die "$0: Compiling to shared libraries is currently disabled\n";
 }
 
@@ -283,7 +283,7 @@ sub compile_cstyle {
     } else {
         # Don't need to keep it, be safe with a tempfile.
         $lose = 1;
-        ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c"); 
+        ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below
     }
     vprint 1, "Writing C on $cfile";
@@ -313,7 +313,7 @@ sub compile_cstyle {
 
     if ($lose) {
         vprint 2, "unlinking $cfile";
-        unlink $cfile or _die("can't unlink $cfile: $!"); 
+        unlink $cfile or _die("can't unlink $cfile: $!");
     }
 }
 
@@ -361,7 +361,7 @@ sub yclept {
             }
         }
     }
-            
+
     $command .= "-I$_ " for @INC;
     return $command;
 }
@@ -413,8 +413,8 @@ sub checkopts_byte {
         delete $Options->{shared};
     }
 
-    for my $o ( qw[c S] ) { 
-        if (opt($o)) { 
+    for my $o ( qw[c S] ) {
+        if (opt($o)) {
             warn "$0: Compiling to bytecode is a one-pass process--",
                   "-$o ignored\n";
             delete $Options->{$o};
@@ -437,7 +437,7 @@ sub sanity_check {
     }
 }
 
-sub check_read { 
+sub check_read {
     my $file = shift;
     unless (-r $file) {
         _die("$0: Input file $file is a directory, not a file\n") if -d _;
@@ -450,7 +450,7 @@ sub check_read {
     unless (-f _) {
         # XXX: die?  don't try this on /dev/tty
         warn "$0: WARNING: input $file is not a plain file\n";
-    } 
+    }
 }
 
 sub check_write {
@@ -460,8 +460,8 @@ sub check_write {
     }
     if (-e _) {
         _die("$0: Cannot write on $file: $!\n") unless -w _;
-    } 
-    unless (-w cwd()) { 
+    }
+    unless (-w cwd()) {
         _die("$0: Cannot write in this directory: $!\n");
     }
 }
@@ -471,17 +471,17 @@ sub check_perl {
     unless (-T $file) {
         warn "$0: Binary `$file' sure doesn't smell like perl source!\n";
         print "Checking file type... ";
-        system("file", $file);  
+        system("file", $file);
         _die("Please try a perlier file!\n");
-    } 
+    }
 
     open(my $handle, "<", $file)    or _die("XXX: can't open $file: $!");
     local $_ = <$handle>;
     if (/^#!/ && !/perl/) {
         _die("$0: $file is a ", /^#!\s*(\S+)/, " script, not perl\n");
-    } 
+    }
 
-} 
+}
 
 # File spawning and error collecting
 sub spawnit {
@@ -489,7 +489,7 @@ sub spawnit {
 	my (@error,@output);
 	my $errname;
 	(undef, $errname) = tempfile("pccXXXXX");
-	{ 
+	{
 	open (S_OUT, "$command 2>$errname |")
 		or _die("$0: Couldn't spawn the compiler.\n");
 	@output = <S_OUT>;
@@ -547,16 +547,16 @@ sub interruptrun
     local(*FD);
     my $pid = open(FD, "$command |");
     my $text;
-    
+
     local($SIG{HUP}) = sub { kill 9, $pid; exit };
     local($SIG{INT}) = sub { kill 9, $pid; exit };
 
-    my $needalarm = 
-          ($ENV{PERLCC_TIMEOUT} && 
-	  $Config{'osname'} ne 'MSWin32' && 
+    my $needalarm =
+          ($ENV{PERLCC_TIMEOUT} &&
+	  $Config{'osname'} ne 'MSWin32' &&
 	  $command =~ m"(^|\s)perlcc\s");
 
-    eval 
+    eval
     {
          local($SIG{ALRM}) = sub { die "INFINITE LOOP"; };
          alarm($ENV{PERLCC_TIMEOUT}) if ($needalarm);
@@ -608,16 +608,16 @@ perlcc - generate executables from Perl programs
 
     $ perlcc -r hello           # compiles 'hello' into 'a.out', runs 'a.out'.
     $ perlcc -r hello a b c     # compiles 'hello' into 'a.out', runs 'a.out'.
-                                # with arguments 'a b c' 
+                                # with arguments 'a b c'
 
     $ perlcc hello -log c       # compiles 'hello' into 'a.out' logs compile
-                                # log into 'c'. 
+                                # log into 'c'.
 
 =head1 DESCRIPTION
 
 F<perlcc> creates standalone executables from Perl programs, using the
 code generators provided by the L<B> module. At present, you may
-either create executable Perl bytecode, using the C<-B> option, or 
+either create executable Perl bytecode, using the C<-B> option, or
 generate and compile C files using the standard and 'optimised' C
 backends.
 
@@ -670,7 +670,7 @@ compile in finite time and memory, or indeed, at all.
 
 Increase verbosity of output; can be repeated for more verbose output.
 
-=item -r 
+=item -r
 
 Run the resulting compiled script after compiling it.
 

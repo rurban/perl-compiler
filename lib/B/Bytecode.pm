@@ -1,6 +1,7 @@
 # B::Bytecode.pm
+# Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
-# Copyright (c) 2008 Reini Urban <rurban@cpan.org>.
+# Copyright (c) 2008 Reini Urban <rurban@cpan.org>. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -12,28 +13,33 @@ our $VERSION = '1.02_03';
 
 use strict;
 use Config;
+#require 5.008;
+#use B qw(class main_cv main_root main_start cstring comppadlist
+#	defstash curstash begin_av init_av end_av inc_gv warnhook diehook
+#	dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
+#	OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
+# for 5.6.2: B exports no defstash curstash inc_gv warnhook diehook dowarn SVt_PVGV SVt_PVHV SVf_FAKE
 use B qw(class main_cv main_root main_start cstring comppadlist
-	defstash curstash begin_av init_av end_av inc_gv warnhook diehook
-	dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
-	OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
-our (@optype, @specialsv_name, $quiet);
-require B;
-if ($] < 5.009) {
-  # <=5.008 had @specialsv_name exported from B::Asmdata
-  require B::Asmdata;
-  @optype = @{*B::Asmdata::optype{ARRAY}};
-  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
-  # import B::Asmdata qw(@optype @specialsv_name);
-} else {
-  @optype = @{*B::optype{ARRAY}};
-  @specialsv_name = @{*B::specialsv_name{ARRAY}};
-  # import B qw(@optype @specialsv_name);
-}
+	 begin_av init_av end_av
+	 OPf_SPECIAL OPf_STACKED OPf_MOD OPpLVAL_INTRO SVf_READONLY
+	 SVt_PVGV SVt_PVHV SVf_FAKE
+	);
 use B::Assembler qw(asm newasm endasm);
+BEGIN {
+  if ($] > 5.006) {
+    B->import(qw(defstash curstash inc_gv warnhook diehook dowarn SVt_PVGV SVt_PVHV SVf_FAKE));
+  }
+  if ($] < 5.009) {
+    B::Asmdata->import(qw(@specialsv_name));
+  } else {
+    B->import(qw(@specialsv_name));
+  }
+}
 use B::Concise;
 
 #################################################
 
+our ($quiet);
 my ($varix, $opix, $savebegins, %walked, %files, @cloop, %debug);
 my %strtab = (0,0);
 my %svtab = (0,0);
@@ -43,8 +49,8 @@ my $tix = 1;
 my %ops = (0,0);
 # sub asm ($;$$) { }
 sub nice ($) { }
-my $perl510 = ($] >= 5.009005);
-my $perl511 = ($] >= 5.011);
+my $PERL510 = ($] >= 5.009005);
+my $PERL511 = ($] >= 5.011);
 
 BEGIN {
     my $ithreads = $Config{'useithreads'} eq 'define';
@@ -146,12 +152,22 @@ sub B::GV::ix {
     my ($gv,$desired) = @_;
     my $ix = $svtab{$$gv};
     defined($ix) ? $ix : do {
-	if ($gv->GP) { # FIXME gv with gp # if (!$perl510 and ...)
+        if ($debug{G}) {
+	  eval "require B::Debug;";
+	  $gv->B::GV::debug;
+        }
+	if ($gv->GP) { # FIXME gv with gp # if (!$PERL510 and ...)
 	    my ($svix, $avix, $hvix, $cvix, $ioix, $formix);
 	    nice "[GV]";
 	    # 510 without debugging misses B::SPECIAL::NAME
-	    my $name = $gv->STASH->NAME . "::"
-	      . (class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME);
+	    my $name;
+	    if ($PERL510 and ($gv->STASH->isa('B::SPECIAL') or $gv->isa('B::SPECIAL'))) {
+	      $name = '_';
+	      return 0;
+	    } else {
+	      $name = $gv->STASH->NAME . "::"
+		. (class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME);
+	    }
 	    asm "gv_fetchpvx", cstring $name;
 	    $svtab{$$gv} = $varix = $ix = $tix++;
 	    asm "sv_flags", $gv->FLAGS;
@@ -292,7 +308,7 @@ sub B::PVIV::bsave {
     $sv->ROK ?
 	$sv->B::RV::bsave($ix):
 	$sv->B::NULL::bsave($ix);
-    if ($perl510) { # was VERSION >= 5.009
+    if ($PERL510) { # was VERSION >= 5.009
 	# See note below in B::PVNV::bsave
 	return if $sv->isa('B::AV');
 	return if $sv->isa('B::HV');
@@ -307,7 +323,7 @@ sub B::PVIV::bsave {
 sub B::PVNV::bsave {
     my ($sv,$ix) = @_;
     $sv->B::PVIV::bsave($ix);
-    if ($perl510) { # VERSION >= 5.009
+    if ($PERL510) { # VERSION >= 5.009
 	# Magical AVs end up here, but AVs now don't have an NV slot actually
 	# allocated. Hence don't write out assembly to store the NV slot if
 	# we're actually an array.
@@ -440,7 +456,7 @@ sub B::AV::bsave {
     # asm "av_pushx", $_->ix, sv_flags($_) for @array;
     asm "av_pushx", $_ for @array;
     asm "sv_refcnt", $av->REFCNT;
-    if (!$perl510) { # VERSION < 5.009
+    if (!$PERL510) { # VERSION < 5.009
 	asm "xav_flags", $av->AvFLAGS;
     }
     asm "xmg_stash", $stashix;
@@ -449,6 +465,10 @@ sub B::AV::bsave {
 sub B::GV::desired {
     my $gv = shift;
     my ($cv, $form);
+    if ($debug{G}) {
+      eval "require B::Debug;";
+      $gv->B::GV::debug;
+    }
     $files{$gv->FILE} && $gv->LINE
     || ${$cv = $gv->CV} && $files{$cv->FILE}
     || ${$form = $gv->FORM} && $files{$form->FILE}
@@ -459,7 +479,7 @@ sub B::HV::bwalk {
     return if $walked{$$hv}++;
     my %stash = $hv->ARRAY;
     while (my($k,$v) = each %stash) {
-	if ($v->SvTYPE == SVt_PVGV) {
+	if ($] > 5.006 and $v->SvTYPE == SVt_PVGV) {
 	    my $hash = $v->HV;
 	    if ($$hash && $hash->NAME) {
 		$hash->bwalk;
@@ -537,7 +557,7 @@ sub B::BINOP::bsave {
 
 # not needed if no pseudohashes
 
-*B::BINOP::bsave = *B::OP::bsave if $perl510; #VERSION >= 5.009;
+*B::BINOP::bsave = *B::OP::bsave if $PERL510; #VERSION >= 5.009;
 
 # deal with sort / formline
 
@@ -597,7 +617,7 @@ sub B::BINOP::bsave_fat {
     my ($op,$ix) = @_;
     my $last = $op->last;
     my $lastix = $op->last->ix;
-    if (!$perl510 && $op->name eq 'aassign' && $last->name eq 'null') {
+    if (!$PERL510 && $op->name eq 'aassign' && $last->name eq 'null') {
 	asm "ldop", $lastix unless $lastix == $opix;
 	asm "op_targ", $last->targ;
     }
@@ -633,7 +653,7 @@ sub B::PMOP::bsave {
 	}
 	$op->B::BINOP::bsave($ix);
 	if ($op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
-	  if (!$perl510) {
+	  if (!$PERL510) {
 	    asm "op_pmstashpv", pvix $op->pmstashpv;
 	  } else {
 	    # crash in 5.10, 5.11
@@ -641,7 +661,7 @@ sub B::PMOP::bsave {
 	  }
 	} else {
 	  bwarn("op_pmstashpv main") if $debug{M};
-	  asm "op_pmstashpv", pvix "main" unless $perl510;
+	  asm "op_pmstashpv", pvix "main" unless $PERL510;
 	}
     } else {
       $rrop = "op_pmreplrootgv";
@@ -655,32 +675,16 @@ sub B::PMOP::bsave {
     asm $rrop, $rrarg if $rrop;
     asm "op_pmreplstart", $rstart if $rstart;
 
-    if ( !$perl510 ) {
+    if ( !$PERL510 ) {
       bwarn("PMOP op_pmflags: ",$op->pmflags) if $debug{M};
       asm "op_pmflags", $op->pmflags;
       asm "op_pmpermflags", $op->pmpermflags;
       asm "op_pmdynflags", $op->pmdynflags;
-      # asm "op_pmnext", $pmnextix;	# XXX
+      # asm "op_pmnext", $pmnextix;	# XXX broken
       asm "newpv", pvstring $op->precomp; # Special sequence: This is the arg for the next pregcomp
       asm "pregcomp";
-    } elsif ( $perl511 ) { 	# full REGEXP type
-      #bwarn("PMOP full REGEXP type not yet supported");
-      #my $re;
-      if (ITHREADS and $op->pmoffset) { # regex_pad is regenerated within pregcomp !?!
-	#bwarn("PMOP existing regex_pad not yet supported");
-	asm "op_pmflags",  $op->pmflags | 2;
-      } else {
-	asm "op_pmflags",  $op->pmflags;
-      }
-      asm "newpv", pvstring $op->precomp;
-      asm "pregcomp";
-      asm "op_reflags",  $op->reflags; # pregcomp does not set the extflags, just the pmflags
-    } elsif ( $perl510 ) {
-      # asm "newsvx", $sv->FLAGS;
-      # asm "newsv", pvstring $op->precomp;
-      #bwarn("PMOP not yet supported");
-      if (ITHREADS and $op->pmoffset) { # regex_pad is regenerated within pregcomp?
-	# bwarn("PMOP existing regex_pad not yet supported");
+    } elsif ( $PERL510 ) {
+      if (ITHREADS and $op->pmoffset) {
 	asm "op_pmflags",  $op->pmflags | 2;
 	bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
       } else {
@@ -689,7 +693,8 @@ sub B::PMOP::bsave {
       }
       asm "newpv", pvstring $op->precomp;
       asm "pregcomp";
-      asm "op_reflags",  $op->reflags; # pregcomp does not set the extflags, just the pmflags
+      #asm "op_reflags",  $op->reflags; # pregcomp does not set the extflags, just the pmflags
+      #asm "op_reflags",  $op->reflags; # overwrite the extflags from pregcomp?
     }
 }
 
@@ -706,7 +711,7 @@ sub B::PADOP::bsave {
 
     $op->B::OP::bsave($ix);
     # crashed in 5.11
-    #if ($perl511) {
+    #if ($PERL511) {
       asm "op_padix", $op->padix;
     #}
 }
@@ -752,10 +757,10 @@ sub B::COP::bsave {
     }
     asm "cop_label", pvix $cop->label, $cop->label if $cop->label;	# XXX AD
     asm "cop_seq", $cop->cop_seq;
-    asm "cop_arybase", $cop->arybase unless $perl510;
+    asm "cop_arybase", $cop->arybase unless $PERL510;
     asm "cop_line", $cop->line;
     asm "cop_warnings", $warnix;
-    if (!$perl510) {
+    if (!$PERL510) {
       asm "cop_io", $cop->io->ix;
     }
 }
@@ -993,6 +998,10 @@ debugger at the early CHECK step, where the compilation happens.
 
 B<M> for Magic and Matches.
 
+=item B<-D>I<G>
+
+Debug GV's
+
 =item B<-D>I<A>
 
 Set developer B<A>ssertions, to help find possible obj-indices out of range.
@@ -1022,6 +1031,10 @@ Scripts that use source filters will fail miserably.
 =item *
 
 5.10 PMOP and REGEXP ops do not yet work. Various 5.10 and 5.11 crashes.
+
+B::IO::SUBPROCESS is missing.
+
+Special GV's fail.
 
 =back
 

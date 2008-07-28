@@ -1,6 +1,6 @@
 #!./perl
 my $keep_c      = 0;	# set it to keep the c and exe files
-my $keep_c_fail = 1;	# set it to keep the c and exe files on failures. 
+my $keep_c_fail = 0;	# set it to keep the c and exe files on failures. 
 # better use testcc.sh for debugging
 use Config;
 
@@ -16,6 +16,7 @@ BEGIN {
 	unshift @INC, 't';
 	push @INC, "blib/arch", "blib/lib";
     }
+    use Config;
     if (($Config{'extensions'} !~ /\bB\b/) ){
         print "1..0 # Skip -- Perl configured without B module\n";
         exit 0;
@@ -27,20 +28,20 @@ BEGIN {
     require 'test.pl'; # for run_perl()
 }
 use strict;
-my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-my $ITHREADS  = ($Config{useithreads});
 
-my @tests = tests();
-my @todo = (14..16, 18..19); # fails also on 5.00505, old core failures
-if ($DEBUGGING) {
-  #@todo = (5, 7..10, 14..16);
-  #@todo = (2..12, 14..19) if $] >= 5.011;
-  #@todo = (5, 7..10, 14..16) if ($] > 5.009 and !$ITHREADS);
+undef $/;
+open TEST, "< t/TESTS" or open TEST, "< TESTS";
+my @tests = split /\n###+\n/, <TEST>;
+close TEST;
+my @todo;
+if ($Config{ccflags} =~ /-DDEBUGGING/) {
+  @todo = (5, 7..10, 14..16);
+  @todo = (1..4, 6, 11..13, 17..19) if $] >= 5.011;
+  @todo = (2..4, 6, 11..12, 17..19) if ($] > 5.009 and $Config{usethreads} eq 'undef');
   # @todo = (2..12, 14..19) if $] > 5.009;  #let it fail
 } else {
-  #@todo = (8..10, 14..16, 18..19); # 5.8.8
-  #@todo = (2..7, 11) if $] >= 5.010;
-  #@todo = (8..10, 14..16, 18..19) if (($] > 5.009) and !$ITHREADS);
+  @todo = (8..10, 12, 14..16, 18..19); # 5.8.8
+  @todo = (2..7, 11) if $] >= 5.010;
   # @todo = (1..7, 11, 13, 17) if $] > 5.009;  #let it fail;
   # @todo = (2..12, 14..19) if $] > 5.009;  #let it fail
 }
@@ -50,7 +51,7 @@ print "1..".($#tests+1)."\n";
 
 my $cnt = 1;
 for (@tests) {
-  my $todo = $todo{$cnt} ? "#TODO" : "#";
+  my $todo = $todo{$cnt} ? " TODO " : "";
   my ($script, $expect) = split />>>+\n/;
   run_cc_test($cnt++, "CC", $script, $expect, $keep_c, $keep_c_fail, $todo);
 }
