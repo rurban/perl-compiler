@@ -24,6 +24,10 @@
     from the Perl distribution or else write to the Free Software Foundation,
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+Releases are at http://search.cpan.org/dist/B-C/
+Code is now at http://code.google.com/p/perl-compiler/
+  svn checkout http://perl-compiler.googlecode.com/svn/trunk/ perl-compiler-read-only
+
 CHANGES
 
 Since alpha5 see Changes
