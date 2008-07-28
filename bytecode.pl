@@ -213,7 +213,7 @@ while (<DATA>) {
     my $optarg = $argtype eq "none" ? "" : ", arg";
     if ($optarg) {
 	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg);\n", $fundtype;
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn $argtype:0x%x\\n\", insn, arg));\n";
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn $argtype:%d\\n\", insn, arg));\n";
     } else {
 	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
     }
@@ -470,7 +470,7 @@ __END__
 0 newopn	PL_op					U8		x
 0 newpv		none					U32/PV
 0 pv_cur	bstate->bs_pv.xpv_cur			STRLEN
-0 pv_free	bstate->bs_pv.xpv_pv			none		x
+0 pv_free	bstate->bs_pv				none		x
 0 sv_upgrade	bstate->bs_sv				U8		x
 0 sv_refcnt	SvREFCNT(bstate->bs_sv)			U32
 0 sv_refcnt_add	SvREFCNT(bstate->bs_sv)			I32		x
@@ -579,7 +579,7 @@ i op_pmstashpv		cPMOP				pvindex		x
 10 op_pmreplrootgv	*(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot)	svindex
 #endif
 <10 pregcomp	PL_op					pvcontents	x
-10 pregcomp	PL_op					svindex		x
+10 pregcomp	PL_op					none	x
 0 op_pmflags	cPMOP->op_pmflags			U16
 #if PERL_VERSION < 11
 10 op_reflags	PM_GETRE(cPMOP)->extflags		U32

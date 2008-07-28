@@ -4,7 +4,6 @@ lib/B/Bblock.pm
 lib/B/Bytecode.pm
 lib/B/C.pm
 lib/B/CC.pm
-lib/B/Debug.pm
 lib/B/Disassembler.pm
 lib/B/Stackobj.pm
 lib/B/Stash.pm
@@ -25,6 +24,7 @@ MANIFEST
 META.yml
 NOTES
 perlcompile.pod
+perl_guts_tour.pdf
 Perl_5_Internals.htm
 ramblings/cc.notes
 ramblings/curcop.runtime
@@ -49,6 +49,7 @@ t/c.t
 t/cc.t
 t/o.t
 t/stash.t
+t/TESTS
 t/test.pl
 t/testplc.sh
 t/testc.sh

@@ -1,14 +1,90 @@
-Byteloader segfaults on all versions, even 5.8 (!).
-B::C produces no compilable code yet.
+Abbrevations: bc B::ByteCode, c B::C, cc B::CC, 
+              -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
+
+Testsuite added, coverage TODO.
+Same ok and failures as with 5.8 and 5.9.4
+bc PV and PM assertions.
+c regex and blead fails.
+DEBUGGING: op_free(PL_main_root) endless recursion
+Minor B::CC bugs fixed.
+
+5.8.8:
+t/asmdata........ok
+t/assembler......ok
+t/b..............ok
+t/bblock.........ok
+t/bytecode.t.....ok
+t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+  FAILED tests 8-10, 14-16
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
+  Failed tests:  8-10 12 14-16 18-19
+t/o..............ok
+t/stash..........ok
+
+5.8.8d:
+t/asmdata........ok
+t/assembler......ok
+t/b..............ok
+t/bblock.........ok
+t/bytecode.t.....ok
+  TODO failed:   20 (bc op coverage)
+t/c.t        (Wstat: 0 Tests: 19 Failed: 13)
+  FAILED tests 5 7-12 14-19
+  5,7,11-12,17-19 DEBUGGING only: at op_free destruct
+    panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
+  Failed tests:  5 7-12 14-19
+t/o..............ok
+t/stash..........ok
+
+5.10.0:
+t/asmdata........ok
+t/assembler......ok
+t/b..............ok
+t/bblock.........ok
+t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
+  FAILED tests 2-5, 7, 11, 15, with -D 9-12 fail also.
+  Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
+  Modification of a read-only value attempted
+  Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
+  Can't locate object method "SUBPROCESS" via package "B::IO"
+t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+  Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
+  Failed tests:  8-10, 14-16 (some segfaulting, some hanging at op_free)
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
+  Failed tests:  8-10, 12, 14-16, 18-19 (some segfaulting, some hanging at op_free)
+t/o..............ok
+t/stash..........ok
+
+5.11 @33408 -D
+t/asmdata........ok
+t/assembler......ok
+t/b..............ok
+t/bblock.........ok
+t/bytecode.t (Wstat: 0 Tests: 20 Failed: 11)
+  Failed tests:  2-5, 7, 9-12, 15-16 (all segfaulting in REGEX)
+  TODO failed:   20
+t/c.t        (Wstat: 0 Tests: 19 Failed: 19)
+  Failed tests:  1-19
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 19)
+  Failed tests:  1-19
+t/o..............ok
+t/stash..........ok
+
 
 5.10, 5.11 status
 -----------------
-pvx: seems to be fixed in B::C
+With DEBUGGING in perl_destruct: op_free root fails.
+  panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8]
+pvx: seems to be fixed now in bc, and c
   With the move of the pvx field from xpv to the sv, we have to solve 
   that differently for the Bytecode and C backend.
   Bytecode can simply mimic the old XPV behaviour of a 3 field struct 
   (pvx, cur, len) to simplify pv handling.
 hv: crash at invalid entry in hv_store in B::HV::save
+hek: new implementation
+regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
+bc: op_pmflags assertion, B::IO::SUBPROCESS missing
 
 5.8 status
 ----------
@@ -16,17 +92,45 @@ I've restored 5.8 backwards compatibility, mainly for test comparison.
 CPAN installations will still abort, but that can be easily overridden.
 ByteLoader is now backwards compatible: Accepts lower versions also.
 
-JIT
----
+TEST COVERAGE
+-------------
+Bytecode:
+no coverage for ret(0) ldsv(1) ldop(2) stsv(3) stop(4) stpv(5) ldspecsv(6) 
+ldspecsvx(7) newsv(8) newsvx(9) nop(10) newop(11) newopx(12) newopn(13) 
+newpv(14) pv_cur(15) pv_free(16) sv_upgrade(17) sv_refcnt(18) sv_refcnt_add(19) 
+sv_flags(20) xrv(21) xpv(22) xpv_cur(23) xpv_len(24) xiv(25) xnv(26) 
+xlv_targoff(27) xlv_targlen(28) xlv_targ(29) xlv_type(30) xbm_useful(31) 
+xbm_previous(32) xbm_rare(33) xfm_lines(34) comment(35) xio_lines(36) xio_page(37) 
+xio_page_len(38) xio_lines_left(39) xio_top_name(40) xio_top_gv(41) xio_fmt_name(42) 
+xio_fmt_gv(43) xio_bottom_name(44) xio_bottom_gv(45) xio_type(46) xio_flags(47) 
+xcv_xsubany(48) xcv_stash(49) xcv_start(50) xcv_root(51) xcv_gv(52) xcv_file(53) 
+xcv_depth(54) xcv_padlist(55) xcv_outside(56) xcv_outside_seq(57) xcv_flags(58) 
+av_extend(59) av_pushx(60) av_push(61) xav_fill(62) xav_max(63) xav_flags(64) 
+xhv_name(65) hv_store(66) sv_magic(67) mg_obj(68) mg_private(69) mg_flags(70) 
+mg_name(71) mg_namex(72) xmg_stash(73) gv_fetchpv(74) gv_fetchpvx(75) gv_stashpv(76) 
+gv_stashpvx(77) gp_sv(78) gp_refcnt(79) gp_refcnt_add(80) gp_av(81) gp_hv(82) 
+gp_cv(83) gp_file(84) gp_io(85) gp_form(86) gp_cvgen(87) gp_line(88) gp_share(89) 
+xgv_flags(90) op_next(91) op_sibling(92) op_ppaddr(93) op_targ(94) op_type(95) 
+op_opt(96) op_latefree(97) op_latefreed(98) op_attached(99) op_first(102) op_last(103) 
+op_pmreplroot(105) op_pmreplstart(106) op_pmreplrootpo(108) op_pmstash(109) 
+op_pmreplrootgv(110) pregcomp(111) op_pmflags(112) unused(113) op_reflags(114) 
+op_sv(115) op_pv(117) op_pv_tr(118) op_redoop(119) op_nextop(120) op_lastop(121) 
+cop_label(122) cop_stash(125) cop_filegv(126) push_begin(134) push_init(135) 
+push_end(136) curstash(137) defstash(138) data(139) incav(140) load_glob(141) 
+regex_padav(142) comppad_name(144) xgv_stash(145) signal(146) formfeed(147)
+
+JIT PLANS
+---------
 B-C-1.04_10:
-playing with the idea to target against parrot pir instead of lightning
+Playing with the idea to target against parrot pir instead of lightning
 and use the parrot jit, with pbc_to_exe or exec_save.
 Then we need no jit support in the ByteLoader and get rid of all the Jit 
-stuff for now. => B::PIR
+stuff for now. 
+=> B::PIR, Doing mentoring for Google Soc 2008
 
 B-C-1.04_03:
 added Jit and Asm layout, with the idea of using either 
 lightning as jit backend (Jit), or creating our own assembler (Asm) 
 to be able to use a high-level language.
 
-2008-03-02 12:35:27 rurban
+2008-03-14 16:29:55 rurban

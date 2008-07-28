@@ -23,7 +23,7 @@ typedef HEK *hekindex;
 	arg = (U8) _arg;						\
     } STMT_END
 
-#define BGET_U16(arg)		BGET_OR_CROAK(arg, U16)
+#define BGET_U16(arg)		BGET_OR_CROAK(arg, U16) 
 #define BGET_I32(arg)		BGET_OR_CROAK(arg, U32)
 #define BGET_U32(arg)		BGET_OR_CROAK(arg, U32)
 #define BGET_IV(arg)		BGET_OR_CROAK(arg, IV)
@@ -148,9 +148,9 @@ typedef HEK *hekindex;
 #define BSET_sv_upgrade(sv, arg)	(void)SvUPGRADE(sv, arg)
 #define BSET_xrv(sv, arg) SvRV_set(sv, arg)
 #define BSET_xpv(sv)	do {	\
-	SvPV_set(sv, SvPVX(bstate->bs_sv));	\
-	SvCUR_set(sv, SvCUR(bstate->bs_sv));	\
-	SvLEN_set(sv, SvCUR(bstate->bs_sv));	\
+	SvPV_set(sv, bstate->bs_pv.xpv_pv);	\
+	SvCUR_set(sv, bstate->bs_pv.xpv_cur);	\
+	SvLEN_set(sv, bstate->bs_pv.xpv_len);	\
     } while (0)
 #define BSET_xpv_cur(sv, arg) SvCUR_set(sv, arg)
 #define BSET_xpv_len(sv, arg) SvLEN_set(sv, arg)
@@ -162,8 +162,8 @@ typedef HEK *hekindex;
 #define BSET_av_push(sv, arg)	av_push((AV*)sv, arg)
 #define BSET_av_pushx(sv, arg)	(AvARRAY(sv)[++AvFILLp(sv)] = arg)
 #define BSET_hv_store(sv, arg)	\
-    hv_store((HV*)sv, SvPVX(bstate->bs_sv), SvCUR(bstate->bs_sv), arg, 0)
-#define BSET_pv_free(sv)	Safefree(sv)
+	hv_store((HV*)sv, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur, arg, 0)
+#define BSET_pv_free(pv)	Safefree(pv.xpv_pv)
 
 
 #ifdef USE_ITHREADS
@@ -175,7 +175,7 @@ typedef HEK *hekindex;
     STMT_START { \
         SV* repointer; \
 	REGEXP* rx = arg ? \
-	    CALLREGCOMP(aTHX_ arg, arg + SvCUR(bstate->bs_sv), cPMOPx(o)) : \
+	    CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)) : \
 	    Null(REGEXP*); \
         if(av_len((AV*) PL_regex_pad[0]) > -1) { \
             repointer = av_pop((AV*)PL_regex_pad[0]); \
@@ -193,16 +193,17 @@ typedef HEK *hekindex;
 #else /* >= 5.10 */
 
 // see op.c:newPMOP
-// arg + bstate->bs_pv.xpv.xpv_cur
+// must use a SV now. build it on the fly from the given pv. 
 // TODO: use op_pmflags or re->extflags?
 // op_pmflags is just a small subset of re->extflags
-#define BSET_pregcomp(o, re) \
+// copy from the current pv to a new sv
+#define BSET_pregcomp(o) \
     STMT_START { \
         SV* repointer; \
-	REGEXP* rx = re ? \
-	    CALLREGCOMP(aTHX_ re, cPMOPx(o)->op_pmflags) : \
+	REGEXP* rx = bstate->bs_pv.xpv_pv ? \
+	    CALLREGCOMP(aTHX_ newSVpvn(bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_len), cPMOPx(o)->op_pmflags) : \
 	    Null(REGEXP*); \
-        if(av_len((AV*) PL_regex_pad[0]) > -1) { \
+        if(0 && (av_len((AV*) PL_regex_pad[0]) > -1)) {	\
             repointer = av_pop((AV*)PL_regex_pad[0]); \
             cPMOPx(o)->op_pmoffset = SvIV(repointer); \
             sv_setiv(repointer,PTR2IV(rx)); \
@@ -222,7 +223,7 @@ typedef HEK *hekindex;
 #define BSET_pregcomp(o, arg) \
     STMT_START { \
 	PM_SETRE(((PMOP*)o), (arg ? \
-	     CALLREGCOMP(aTHX_ arg, arg + SvCUR(bstate->bs_sv), cPMOPx(o)): \
+	     CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)): \
 	     Null(REGEXP*))); \
     } STMT_END
 #else
@@ -435,7 +436,7 @@ typedef HEK *hekindex;
 #define BSET_xhv_name(hv, name)	hv_name_set((HV*)hv, name, strlen(name), 0)
 #define BSET_cop_arybase(c, b) CopARYBASE_set(c, b)
 #if PERL_VERSION < 10
-#define BSET_cop_warnings(c, w) c->cop_warnings = (STRLEN *)w;
+#define BSET_cop_warnings(c, sv) c->cop_warnings = sv;
 #else
 #define BSET_cop_warnings(c, w) \
 	STMT_START {							\

@@ -134,7 +134,7 @@ $insn_data{op_pmreplstart} = [106, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_pmreplrootpo} = [107, \&PUT_PADOFFSET, "GET_PADOFFSET"];
 $insn_data{op_pmstash} = [108, \&PUT_svindex, "GET_svindex"];
 $insn_data{op_pmreplrootgv} = [109, \&PUT_svindex, "GET_svindex"];
-$insn_data{pregcomp} = [110, \&PUT_svindex, "GET_svindex"];
+$insn_data{pregcomp} = [110, \&PUT_none, "GET_none"];
 $insn_data{op_pmflags} = [111, \&PUT_U16, "GET_U16"];
 $insn_data{op_reflags} = [112, \&PUT_U32, "GET_U32"];
 $insn_data{op_reflags} = [113, \&PUT_U32, "GET_U32"];
@@ -250,7 +250,7 @@ Since Perl version 5.10 defined in L<B>.
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban added the version logic, 5.10 and jit support.
+Reini Urban added the version logic and 5.10 support.
 
 =cut
 

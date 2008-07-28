@@ -60,35 +60,35 @@ sub GET_I32 {
     return unpack("l", $str);
 }
 
-sub GET_objindex { 
+sub GET_objindex {
     my $fh = shift;
     my $str = $fh->readn(4);
     croak "reached EOF while reading objindex" unless length($str) == 4;
     return unpack("L", $str);
 }
 
-sub GET_opindex { 
+sub GET_opindex {
     my $fh = shift;
     my $str = $fh->readn(4);
     croak "reached EOF while reading opindex" unless length($str) == 4;
     return unpack("L", $str);
 }
 
-sub GET_svindex { 
+sub GET_svindex {
     my $fh = shift;
     my $str = $fh->readn(4);
     croak "reached EOF while reading svindex" unless length($str) == 4;
     return unpack("L", $str);
 }
 
-sub GET_pvindex { 
+sub GET_pvindex {
     my $fh = shift;
     my $str = $fh->readn(4);
     croak "reached EOF while reading pvindex" unless length($str) == 4;
     return unpack("L", $str);
 }
 
-sub GET_hekindex { 
+sub GET_hekindex {
     my $fh = shift;
     my $str = $fh->readn(4);
     croak "reached EOF while reading hekindex" unless length($str) == 4;

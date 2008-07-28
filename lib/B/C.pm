@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_11';
+our $VERSION = '1.04_12';
 
 package B::C::Section;
 
@@ -190,7 +190,7 @@ my $initsub_index = 0;
 my %symtable;
 my %xsub;
 my $warn_undefined_syms;
-my $verbose;
+my $verbose = 0;
 my %unused_sub_packages;
 my %static_ext;
 my $use_xsloader;
@@ -271,15 +271,17 @@ sub savere {
     if ($perl511) {
       $sym = sprintf("re_list[%d]", $re_index++);
       $resect->add(sprintf("0,0,0,%s", cstring($re)));
-    } elsif (0 and $perl510) {
-      $sym = sprintf("re_list[%d]", $re_index++);
+    } elsif ($perl510) {
+      #$sym = sprintf("re_list[%d]", $re_index++);
+      #$resect->add(sprintf("0,0,0,%s", cstring($re)));
       my $pv = $re;
       my $len = length $pv;
       my $pvmax = length(pack "a*",$pv) + 1;
-      # $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
+      $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
+      $svsect->add(sprintf("&xpv_list[%d], 0, 0", $xpvsect->index));
+      $init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
+      $sym = sprintf("&sv_list[%d]", $svsect->index);
       # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
-      # $init->add(savepvn(sprintf("((SV)xpv_list[%d]).sv_u.svu_pv", $xpvsect->index), $pv));
-      $init->add(savepvn("$sym.sv_u.svu_pv)", $pv));
     } else {
       $sym = sprintf("re%d", $re_index++);
       $decl->add(sprintf("static char *$sym = %s;\n", cstring($re)));
@@ -420,6 +422,10 @@ sub B::OP::save {
     savesym($op, "&op_list[$ix]");
 }
 
+package B::FAKEOP;
+
+our @ISA = qw(B::OP);
+
 sub B::FAKEOP::new {
     my ($class, %objdata) = @_;
     bless \%objdata, $class;
@@ -442,6 +448,8 @@ sub B::FAKEOP::ppaddr { $_[0]->{ppaddr} || 0 }
 sub B::FAKEOP::targ { $_[0]->{targ} || 0 }
 sub B::FAKEOP::flags { $_[0]->{flags} || 0 }
 sub B::FAKEOP::private { $_[0]->{private} || 0 }
+
+package B::C;
 
 sub B::UNOP::save {
     my ($op, $level) = @_;
@@ -581,7 +589,7 @@ sub B::COP::save {
         $warn_sv = $warnings->save;
     }
 
-    if ($perl511) { # TODO 510?
+    if ($perl510) {
       $copsect->add(sprintf("%s, %u, %s, ".
 			    "NULL, NULL, 0, ".
 			    "%u, %s, NULL",
@@ -616,7 +624,7 @@ sub B::PMOP::save {
     my $ppaddr = $op->ppaddr;
     # under ithreads, OP_PUSHRE.op_replroot is an integer
     $replrootfield = sprintf("s\\_%x", $$replroot) if ref $replroot;
-    if($ithreads && $op->name eq "pushre") {
+    if ($ithreads && $op->name eq "pushre") {
         $replrootfield = "INT2PTR(OP*,${replroot})";
     } elsif ($$replroot) {
 	# OP_PUSHRE (a mutated version of OP_MATCH for the regexp
@@ -661,7 +669,7 @@ sub B::PMOP::save {
 			     $relen));
 	}
     }
-    if ($gvsym) {
+    if ($gvsym and !$perl510) {
 	$init->add("$pm.op_pmreplroot = (OP*)$gvsym;");
     }
     savesym($op, "(OP*)&$pm");
@@ -687,7 +695,7 @@ sub B::NULL::save {
     warn "Saving SVt_NULL SV\n" if $debug_sv;
     # debug
     if ($$sv == 0) {
-    	warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n";
+    	warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n" if $verbose;
 	return savesym($sv, "(void*)Nullsv /* XXX */");
     }
     $svsect->add(sprintf("0, %u, 0x%x", $sv->REFCNT , $sv->FLAGS));
@@ -845,11 +853,12 @@ sub B::PV::save {
     return $sym if defined $sym;
     my( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv( $sv );
     if ($perl510) {
-      # Before 5.10 in the PV SvANY was pv,len,pvmax. In 5.10 the pv is below in the SV.sv_u
+      # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
+      # Oh my!
       $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
       $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, $sv->REFCNT , $sv->FLAGS));
       if (defined($pv) && !$pv_copy_on_grow) {
-	$init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $xpvsect->index), $pv));
+	$init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
       }
       return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
     } else {
@@ -875,7 +884,7 @@ sub B::PVMG::save {
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
                          $xpvmgsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-      my $pvx = $] < 5.009 ? "xpvmg_list[%d].xpv_pv" : "((SV)xpvmg_list[%d]).sv_u.svu_pv";
+      my $pvx = $] < 5.009 ? "xpvmg_list[%d].xpv_pv" : "xpvmg_list[%d].xiv_u.xivu_p1";
       $init->add(savepvn(sprintf($pvx, $xpvmgsect->index), $pv));
     }
     $sym = savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
@@ -978,7 +987,7 @@ sub try_autoload {
     no strict 'refs';
     my $isa = \@{"$cvstashname\::ISA"};
     if (grep($_ eq "AutoLoader", @$isa)) {
-	warn "Forcing immediate load of sub derived from AutoLoader\n";
+	warn "Forcing immediate load of sub derived from AutoLoader\n" if $verbose;
 	# Tweaked version of AutoLoader::AUTOLOAD
 	my $dir = $cvstashname;
 	$dir =~ s(::)(/)g;
@@ -1031,7 +1040,7 @@ sub B::CV::save {
           {
            my $file = $gv->FILE;
            $decl->add("/* bootstrap $file */");
-           warn "Bootstrap $stashname $file\n";
+           warn "Bootstrap $stashname $file\n" if $verbose;
            # if it not isa('DynaLoader'), it should hopefully be XSLoaded
            # ( attributes being an exception, of course )
            if( $stashname ne 'attributes' &&
@@ -1074,7 +1083,7 @@ sub B::CV::save {
 	    $root = $cv->ROOT;
 	    $cvxsub = $cv->XSUB;
 	    if ($$root || $cvxsub) {
-		warn "Successful forced autoload\n";
+		warn "Successful forced autoload\n" if $verbose;
 	    }
 	}
     }
@@ -1132,9 +1141,9 @@ sub B::CV::save {
       }
       #                              nv_u cur len iv_u mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags
       $symsect->add(sprintf("XPVCVIX%d\t%s, %u, 0, %s,  0,   Nullhv, Nullhv,   %s, s\\_%x, Nullgv, \"\", s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-			    $xpvcv_ix, $cv->NVX, length($pv), $pvsym,
+			    $xpvcv_ix, 0, length($pv), $pvsym,
 			    $startfield, ${$cv->ROOT}, $cv->DEPTH,
-			    $$padlist, ${$cv->OUTSIDE}, $cv->OUTSIDE_SEQ, $cv->CvFLAGS,));
+			    $$padlist, ${$cv->OUTSIDE}, $cv->OUTSIDE_SEQ, $cv->CvFLAGS));
     } else {
       #                                 pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq
       $symsect->add(sprintf("XPVCVIX%d\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
@@ -1145,28 +1154,28 @@ sub B::CV::save {
     }
 
     if (${$cv->OUTSIDE} == ${main_cv()}){
-	$init->add(sprintf("CvOUTSIDE(s\\_%x)=PL_main_cv;",$$cv));
-	$init->add(sprintf("SvREFCNT_inc(PL_main_cv);"));
+      $init->add(sprintf("CvOUTSIDE(s\\_%x)=PL_main_cv;",$$cv));
+      $init->add(sprintf("SvREFCNT_inc(PL_main_cv);"));
     }
 
     if ($$gv) {
-	$gv->save;
-	$init->add(sprintf("CvGV(s\\_%x) = s\\_%x;",$$cv,$$gv));
-	warn sprintf("done saving GV 0x%x for CV 0x%x\n",
-		     $$gv, $$cv) if $debug_cv;
+      $gv->save;
+      $init->add(sprintf("CvGV(s\\_%x) = s\\_%x;",$$cv,$$gv));
+      warn sprintf("done saving GV 0x%x for CV 0x%x\n",
+		   $$gv, $$cv) if $debug_cv;
     }
     if( $ithreads ) {
-        $init->add( savepvn( "CvFILE($sym)", $cv->FILE) );
+      $init->add( savepvn( "CvFILE($sym)", $cv->FILE) );
     }
     else {
-        $init->add(sprintf("CvFILE($sym) = %s;", cstring($cv->FILE)));
+      $init->add(sprintf("CvFILE($sym) = %s;", cstring($cv->FILE)));
     }
     my $stash = $cv->STASH;
     if ($$stash) {
-	$stash->save;
-	$init->add(sprintf("CvSTASH(s\\_%x) = s\\_%x;", $$cv, $$stash));
-	warn sprintf("done saving STASH 0x%x for CV 0x%x\n",
-		     $$stash, $$cv) if $debug_cv;
+      $stash->save;
+      $init->add(sprintf("CvSTASH(s\\_%x) = s\\_%x;", $$cv, $$stash));
+      warn sprintf("done saving STASH 0x%x for CV 0x%x\n",
+		   $$stash, $$cv) if $debug_cv;
     }
     $symsect->add(sprintf("SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x",
 			  $sv_ix, $xpvcv_ix, $cv->REFCNT +1*0 , $cv->FLAGS));
@@ -1885,7 +1894,7 @@ EOT
     print("/* Dynamicboot strapping code*/\n\tSAVETMPS;\n");
     print("\ttarg=sv_newmortal();\n");
     foreach my $stashname (@DynaLoader::dl_modules) {
-	warn "Loaded $stashname\n";
+	warn "Loaded $stashname\n" if $verbose;
 	if (exists($xsub{$stashname}) && $xsub{$stashname} =~ m/Dynamic/) {
   	   my $stashxsub=$stashname;
 	   $stashxsub  =~ s/::/__/g;
@@ -1988,7 +1997,7 @@ sub should_save
  my $package = shift;
  $package =~ s/::$//;
  return $unused_sub_packages{$package} = 0 if ($package =~ /::::/);  # skip ::::ISA::CACHE etc.
- warn "Considering $package\n";#debug
+ warn "Considering $package\n" if $verbose;#debug
  foreach my $u (grep($unused_sub_packages{$_},keys %unused_sub_packages))
   {
    # If this package is a prefix to something we are saving, traverse it
@@ -2017,7 +2026,7 @@ sub should_save
   {
    if (UNIVERSAL::can($package, $m))
     {
-     warn "$package has method $m: saving package\n";#debug
+     warn "$package has method $m: saving package\n" if $verbose;#debug
      return mark_package($package);
     }
   }
@@ -2058,9 +2067,9 @@ sub save_unused_subs
 {
  no strict qw(refs);
  &descend_marked_unused;
- warn "Prescan\n";
+ warn "Prescan\n" if $verbose;
  walkpackages(\%{"main::"}, sub { should_save($_[0]); return 1 });
- warn "Saving methods\n";
+ warn "Saving methods\n" if $verbose;
  walksymtable(\%{"main::"}, "savecv", \&should_save);
 }
 

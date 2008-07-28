@@ -11,10 +11,13 @@ WriteMakefile(
 	         # 'scripts/assemble','scripts/disassemble',
     PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
     PREREQ_PM 	    => {
-	'B::Concise' => '0.74',
-	'B' => '1.17',
+	'B::Concise' => '0.66', # 0.74
+	'B' => '1.0901',        # 1.17
     },
-    clean => { FILES => "bytecode[1-9]* ccode[1-9]* *.core *.stackdump ".
+    ($] >= 5.005 ?
+     ('AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>',
+      'ABSTRACT' => 'perl compiler') : ()),
+    clean => { FILES => "bytecode[1-9]* cccode[1-9]* ccode[1-9]* *.core *.stackdump ".
 	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise"},
 );
 

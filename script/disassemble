@@ -16,9 +16,10 @@ sub print_insn {
 	if ($insn eq 'newopx') {
 	  my $type = $arg >> 7;
 	  my $size = $arg - ($type << 7);
-	  $arg = sprintf("%s \t# size:%d, type:%d", $arg, $size, $type);
+	  $arg = sprintf("%s \t# size:%d, type:%d %s", $arg, $size, $type, $comment);
+	} else {
+ 	  $arg .= "\t# ".$comment if $comment;
 	}
-	$arg .= "\t# ".$comment if $comment;
 	printf "%s %s\n", $insn, $arg;
     } else {
 	$insn .= "\t# ".$comment if $comment;

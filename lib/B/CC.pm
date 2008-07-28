@@ -58,6 +58,7 @@ my %ignore_op;		# Hash of ops which do nothing except returning op_next
 my %need_curcop;	# Hash of ops which need PL_curcop
 
 my %lexstate;		#state of padsvs at the start of a bblock
+my $verbose = 0;
 
 BEGIN {
     foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
@@ -78,6 +79,7 @@ my %optimise = (freetmps_each_bblock	=> \$freetmps_each_bblock,
 		omit_taint		=> \$omit_taint);
 # perl patchlevel to generate code for (defaults to current patchlevel)
 my $patchlevel = int(0.5 + 1000 * ($]  - 5));
+my $perl510 = ($] >= 5.009005);
 
 # Could rewrite push_runtime() and output_runtime() to use a
 # temporary file if memory is at a premium.
@@ -99,7 +101,7 @@ sub init_hash { map { $_ => 1 } @_ }
 %skip_lexicals = init_hash qw(pp_enter pp_enterloop);
 %skip_invalidate = init_hash qw(pp_enter pp_enterloop);
 %need_curcop = init_hash qw(pp_rv2gv  pp_bless pp_repeat pp_sort pp_caller
-			pp_reset pp_rv2cv pp_entereval pp_require pp_dofile
+			    pp_reset pp_rv2cv pp_entereval pp_require pp_dofile
 			pp_entertry pp_enterloop pp_enteriter pp_entersub
 			pp_enter pp_method);
 
@@ -576,14 +578,15 @@ sub pp_padsv {
     my $ix = $op->targ;
     push(@stack, $pad[$ix]);
     if ($op->flags & OPf_MOD) {
-	my $private = $op->private;
-	if ($private & OPpLVAL_INTRO) {
-	    runtime("SAVECLEARSV(PL_curpad[$ix]);");
-	} elsif ($private & OPpDEREF) {
-	    runtime(sprintf("vivify_ref(PL_curpad[%d], %d);",
-			    $ix, $private & OPpDEREF));
-	    $pad[$ix]->invalidate;
-	}
+      my $private = $op->private;
+      if ($private & OPpLVAL_INTRO) {
+	runtime("SAVECLEARSV(PL_curpad[$ix]);");
+      } elsif (($private & OPpDEREF) and $] < 5.008) {
+	# FIXME!
+	runtime(sprintf("vivify_ref(PL_curpad[%d], %d);",
+			$ix, $private & OPpDEREF));
+	$pad[$ix]->invalidate;
+      }
     }
     return $op->next;
 }
@@ -1475,8 +1478,10 @@ sub pp_subst {
     my $replroot = $op->pmreplroot;
     if ($$replroot) {
         save_or_restore_lexical_state($$replroot);
-	runtime sprintf("if (PL_op == ((PMOP*)(%s))->op_pmreplroot) goto %s;",
-			$sym, label($replroot));
+	runtime sprintf("if (PL_op == ((PMOP*)(%s))%s) goto %s;",
+			$sym, 
+			$perl510 ? "->op_pmreplrootu.op_pmreplroot" : "->op_pmreplroot", 
+			label($replroot));
 	$op->pmreplstart->save;
 	push(@bblock_todo, $replroot);
     }
@@ -1490,14 +1495,16 @@ sub pp_substcont {
     write_back_stack();
     doop($op);
     my $pmop = $op->other;
-    # warn sprintf("substcont: op = %s, pmop = %s\n",
-    # 		 peekop($op), peekop($pmop));#debug
+    warn sprintf("substcont: op = %s, pmop = %s\n",
+     		 peekop($op), peekop($pmop)) if $verbose;
 #   my $pmopsym = objsym($pmop);
     my $pmopsym = $pmop->save; # XXX can this recurse?
-#   warn "pmopsym = $pmopsym\n";#debug
+    warn "pmopsym = $pmopsym\n" if $verbose;
     save_or_restore_lexical_state(${$pmop->pmreplstart});
-    runtime sprintf("if (PL_op == ((PMOP*)(%s))->op_pmreplstart) goto %s;",
-		    $pmopsym, label($pmop->pmreplstart));
+    runtime sprintf("if (PL_op == ((PMOP*)(%s))%s) goto %s;",
+		    $pmopsym,
+		    $perl510 ? "->op_pmstashstartu.op_pmreplstart" : "->op_pmreplstart", 
+		    label($pmop->pmreplstart));
     invalidate_lexicals();
     return $pmop->next;
 }
@@ -1542,7 +1549,7 @@ sub compile_op {
 
 sub compile_bblock {
     my $op = shift;
-    #warn "compile_bblock: ", peekop($op), "\n"; # debug
+    warn "compile_bblock: ", peekop($op), "\n" if $verbose;
     save_or_restore_lexical_state($$op);
     write_label($op);
     $know_op = 0;
@@ -1557,10 +1564,10 @@ sub compile_bblock {
 sub cc {
     my ($name, $root, $start, @padlist) = @_;
     my $op;
-    if($done{$$start}){ 
-    	#warn "repeat=>".ref($start)."$name,\n";#debug
-	$decl->add(sprintf("#define $name  %s",$done{$$start}));
-	return;
+    if($done{$$start}){
+      warn "repeat=>".ref($start)."$name,\n" if $verbose;
+      $decl->add(sprintf("#define $name  %s",$done{$$start}));
+      return;
     }
     init_pp($name);
     load_pad(@padlist);
@@ -1582,9 +1589,9 @@ sub cc {
     }
     while (@bblock_todo) {
 	$op = shift @bblock_todo;
-	#warn sprintf("Considering basic block %s\n", peekop($op)); # debug
+	warn sprintf("Considering basic block %s\n", peekop($op)) if $verbose;
 	next if !defined($op) || !$$op || $done{$$op};
-	#warn "...compiling it\n"; # debug
+	warn "...compiling it\n" if $verbose;
 	do {
 	    $done{$$op} = $name;
 	    $op = compile_bblock($op);
@@ -1710,6 +1717,8 @@ sub compile {
 	} elsif ($opt eq "o") {
 	    $arg ||= shift @options;
 	    open(STDOUT, ">$arg") or return "open '>$arg': $!\n";
+	} elsif ($opt eq "v") {
+	    $verbose = 1;
 	} elsif ($opt eq "n") {
 	    $arg ||= shift @options;
 	    $module_name = $arg;
@@ -1836,7 +1845,7 @@ Output to filename instead of STDOUT
 
 =item B<-v>
 
-Verbose compilation (currently gives a few compilation statistics).
+Verbose compilation (prints a few compilation stages).
 
 =item B<-->
 

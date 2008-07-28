@@ -1,5 +1,16 @@
 Started on CPAN with B-C-1.04_01. The perl compiler was in CORE until Perl 5.9.4.
 
+1.04_12 2008-03-16 rurban
+	* Fixed bug #40435 CC: Can't locate object method "_save_common_middle" 
+	  via package "B::FAKEOP"
+	* move tests from [bc]*.t into shared TESTS file.
+	* fixed remaining ugly Bytecode bug in B::AV::bsave 
+		$_ = $_->ix for @array.
+	  No we are at the same state as with 5.9.4
+	* fixed wrong bc cop_warning cast for 5.8
+	* fixed CC pmreplroot and pmreplstart fields
+	* make C and CC less verbose, honor -v, -q ignored.
+
 1.04_11 2008-03-09 rurban
 	* removed Jit and Asm stuff. Maybe as seperate packages somewhen. 
 	  But targeting PIR makes more sense.

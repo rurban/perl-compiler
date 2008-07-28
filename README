@@ -1,6 +1,7 @@
-		  Perl Compiler Kit, Version alpha4
+		        B::C Perl Compiler Kit, alpha 6
 
 		 Copyright (c) 1996, 1997, Malcolm Beattie
+		 Copyright (c) 2008, Reini Urban
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of either:
@@ -25,6 +26,14 @@
 
 CHANGES
 
+Since alpha5 see Changes
+
+New since alpha5
+    Todo
+
+New since alpha4
+    Todo
+
 New since alpha3
     Anonymous subs work properly with C and CC.
     Heuristics for forcing compilation of apparently unused subs/methods.
@@ -44,7 +53,7 @@ New since alpha1
     Some XSUB support
     Assorted bug fixes
 
-INSTALLATION
+INSTALLATION for alpha4 (outdated)
 
 (1) You need perl5.002 or later.
 
@@ -138,12 +147,12 @@ buggy). You currently do that by naming lexical variables ending in
 "_dr" for double "register" variables. Here "register" is a promise
 that you won't pass a reference to the variable into a sub which then
 modifies the variable. The compiler ought to catch attempts to use
-"\$i" just as C compilers catch attempts to do "&i" for a register int
-i but it doesn't at the moment. Bugs in the CC backend may make your
-program fail in mysterious ways and give wrong answers rather than just
-crash in boring ways. But, hey, this is an alpha release so you knew
-that anyway. See the XSUB section lower down for information about
-compiling programs which use XSUBs.
+"\$i" just as C compilers catch attempts to do "&i" for a 
+register int i but it doesn't at the moment. Bugs in the CC backend 
+may make your program fail in mysterious ways and give wrong answers 
+rather than just crash in boring ways. But, hey, this is an alpha release 
+so you knew that anyway. See the XSUB section lower down for information 
+about compiling programs which use XSUBs.
 
 If your program uses classes which define methods (or other subs which
 are not exported and not apparently used until runtime) then you'll

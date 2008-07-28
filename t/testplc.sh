@@ -1,9 +1,10 @@
 #!/bin/sh
 # use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
-VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
+PERL=${PERL:-perl}
 #PERL=perl5.11.0
-Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
+VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
+#Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
 Mblib="-Mblib" # it is now 5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 OCMD="$PERL $Mblib -MO=Bytecode,"
@@ -46,16 +47,29 @@ function btest {
     echo ${OCMD}-s,-o${o}.plc ${o}.pl
     ${OCMD}-s,-o${o}.plc ${o}.pl || exit
     echo ${ICMD} ${o}.plc
-    ${ICMD} ${o}.plc || ( ${ICMD} -Dtv ${o}.plc || exit )
+    ${ICMD} ${o}.plc || ( ${ICMD} -Dv ${o}.plc || exit )
 }
 
 make
+
 btest 1 "print 'hi'"
-#btest 2 "for (1,2,3) { print if /\d/ }"
-#btest 5 'split /a/,"bananarama"; print @_'
-#btest 6 "{ package P; sub x { print 'ya' } x }"
-#btest 10 'my $i = 1; my $foo = sub {$i = shift if @_}; &$foo(3); print "ok";'
-#btest 16 'BEGIN { tie @a, __PACKAGE__; sub TIEARRAY { bless{} } sub FETCH { 1 } }; print $a[1]'
+btest 2 "for (1,2,3) { print if /\d/ }"
+btest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
+btest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
+btest 5 'split /a/,"bananarama"; print @_'
+#btest 6 "{package P; sub x {print 'ya'} x}"
+btest 7 '@z = split /:/,"b:r:n:f:g"; print @z'
+#btest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
+btest 9 'my $l = 3; $x = sub { print $l }; &$x'
+btest 10 'my $i = 1; my $foo = sub {$i = shift if @_}; &$foo(3); print "ok";'
+btest 11 '$x="Cannot use"; print index $x, "Can"'
+betst 12 'my $i=6; eval "print \$i\n"'
+#btest 13 'BEGIN { %h=(1=>2,3=>4) } print $h{3}'
+#btest 14 'open our $T,"a"; print "ok";'
+btest 16 'BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
+btest 17 'my $i=3; print 1 .. $i'
+btest 18 'my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
+btest 19 'print sort { my $p; $b <=> $a } 1,4,3'
 
 #PMOP
 if false; then

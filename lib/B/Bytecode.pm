@@ -16,7 +16,7 @@ use B qw(class main_cv main_root main_start cstring comppadlist
 	defstash curstash begin_av init_av end_av inc_gv warnhook diehook
 	dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
 	OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
-our (@optype, @specialsv_name);
+our (@optype, @specialsv_name, $quiet);
 require B;
 if ($] < 5.009) {
   # <=5.008 had @specialsv_name exported from B::Asmdata
@@ -55,6 +55,7 @@ BEGIN {
 #################################################
 
 sub op_flags {
+  return '' if $quiet; 
   # B::Concise::op_flags($_[0]); # too terse
   # common flags (see BASOP.op_flags in op.h)
   my($x) = @_;
@@ -72,8 +73,10 @@ sub op_flags {
 }
 
 sub sv_flags {
+  return '' if $quiet or ($] == 5.010); 
   my ($sv) = @_;
   my %h;
+  # TODO: check with which Concise and B versions this works. 5.10.0 fails
   sub B::Concise::fmt_line { return shift; }
   %h = B::Concise::concise_op($ops{$tix-1}) if ref $ops{$tix-1};
   B::Concise::concise_sv($_[0], \%h, 0);
@@ -127,6 +130,7 @@ sub B::SV::ix {
 	nice '['.class($sv).']';
 	asm "newsvx", $sv->FLAGS, sv_flags($sv);
 	$svtab{$$sv} = $varix = $ix = $tix++;
+	#nice "\tsvtab ".$$sv." => bsave(".$ix.");
 	$sv->bsave($ix);
 	$ix;
     }
@@ -139,7 +143,9 @@ sub B::GV::ix {
 	if ($gv->GP) {
 	    my ($svix, $avix, $hvix, $cvix, $ioix, $formix);
 	    nice "[GV]";
-	    my $name = $gv->STASH->NAME . "::" . $gv->NAME;
+	    # 510 without debugging misses B::SPECIAL::NAME
+	    my $name = $gv->STASH->NAME . "::" 
+	      . class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME;
 	    asm "gv_fetchpvx", cstring $name;
 	    $svtab{$$gv} = $varix = $ix = $tix++;
 	    asm "sv_flags", $gv->FLAGS;
@@ -416,13 +422,14 @@ sub B::AV::bsave {
     my ($av,$ix) = @_;
     return $av->B::PVMG::bsave($ix) if $av->MAGICAL;
     my @array = $av->ARRAY;
-    # $_ = $_->ix for @array;
+    $_ = $_->ix for @array; # FIXME!
     my $stashix = $av->SvSTASH->ix;
 
     nice "-AV-",
     asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
     asm "av_extend", $av->MAX if $av->MAX >= 0;
-    asm "av_pushx", $_->ix, sv_flags($_) for @array;
+    # asm "av_pushx", $_->ix, sv_flags($_) for @array;
+    asm "av_pushx", $_ for @array;
     asm "sv_refcnt", $av->REFCNT;
     if (VERSION < 5.009) {
 	asm "xav_flags", $av->AvFLAGS;
@@ -617,18 +624,23 @@ sub B::PMOP::bsave {
 	}
 	$op->B::BINOP::bsave($ix);
 	if ($op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
-	  asm "op_pmstashpv", pvix $op->pmstashpv;
+	  if (VERSION > 5.011) {
+	    asm "op_pmstashpv", pvix $op->pmstashpv;
+	  } else {
+	    # crash in 5.11
+	    bwarn("op_pmstashpv ignored") if $debug{M};
+	  }
 	} else {
 	  bwarn("op_pmstashpv main") if $debug{M};
-	  asm "op_pmstashpv", pvix "main";
+	  asm "op_pmstashpv", pvix "main" if (VERSION < 10.011);
 	}
     } else {
-	$rrop = "op_pmreplrootgv";
-	$rrarg = $op->pmreplroot->ix;
-	$rstart = $op->pmreplstart->ix if $op->name eq 'subst';
-	my $stashix = $op->pmstash->ix;
-	$op->B::BINOP::bsave($ix);
-	asm "op_pmstash", $stashix;
+      $rrop = "op_pmreplrootgv";
+      $rrarg = $op->pmreplroot->ix;
+      $rstart = $op->pmreplstart->ix if $op->name eq 'subst';
+      my $stashix = $op->pmstash->ix;
+      $op->B::BINOP::bsave($ix);
+      asm "op_pmstash", $stashix;
     }
 
     asm $rrop, $rrarg if $rrop;
@@ -641,31 +653,31 @@ sub B::PMOP::bsave {
       asm "op_pmdynflags", $op->pmdynflags;
       # asm "op_pmnext", $pmnextix;	# XXX
       asm "newpv", pvstring $op->precomp;
-      asm "pregcomp";
+      asm "pregcomp"; # how is this supposed to work? needs arg pvcontants
     } elsif ( VERSION >= 5.011 ) { 	# full REGEXP type
       #bwarn("PMOP full REGEXP type not yet supported");
       #my $re;
-      if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
-	bwarn("PMOP existing regex_pad not yet supported");
+      if ($op->pmoffset) { # regex_pad is regenerated within pregcomp !?!
+	#bwarn("PMOP existing regex_pad not yet supported");
 	asm "op_pmflags",  $op->pmflags | 2;
       } else {
 	asm "op_pmflags",  $op->pmflags;
       }
       asm "newpv", pvstring $op->precomp;
-      asm "op_reflags",  $op->reflags; # does not pregcomp set the extflags?
+      #asm "op_reflags",  $op->reflags; # does not pregcomp set the extflags?
       asm "pregcomp";
     } elsif ( VERSION >= 5.009 ) {
       # asm "newsvx", $sv->FLAGS;
       # asm "newsv", pvstring $op->precomp;
       bwarn("PMOP not yet supported");
       if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
-	bwarn("PMOP existing regex_pad not yet supported");
+	# bwarn("PMOP existing regex_pad not yet supported");
 	asm "op_pmflags",  $op->pmflags | 2;
       } else {
 	asm "op_pmflags",  $op->pmflags;
       }
-      asm "newpv", pvstring $op->precomp;
       asm "op_reflags",  $op->reflags;
+      asm "newpv", pvstring $op->precomp;
       # bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
       #asm "pregcomp", $ix;
       asm "pregcomp";
@@ -684,7 +696,10 @@ sub B::PADOP::bsave {
     my ($op,$ix) = @_;
 
     $op->B::OP::bsave($ix);
-    asm "op_padix", $op->padix;
+    # crash in 5.11
+    #if (VERSION < 5.011) {
+      asm "op_padix", $op->padix;
+    #}
 }
 
 sub B::PVOP::bsave {
@@ -796,7 +811,7 @@ sub save_cq {
 }
 
 sub compile {
-    my ($head, $scan, $T_inhinc, $keep_syn, $quiet);
+    my ($head, $scan, $T_inhinc, $keep_syn);
     my $cwd = '';
     $files{$0} = 1;
     sub keep_syn {
@@ -1006,6 +1021,7 @@ Originally written by Malcolm Beattie <mbeattie@sable.ox.ac.uk> and
 modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
+
 Enhanced by Reini Urban <rurban@cpan.org>, 2008
 
 =cut

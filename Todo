@@ -19,7 +19,7 @@ DATA filehandle for C-compiled program (yet harder)
 
 * Features
 
-type checking
+type checking: Devel::TypeCheck
 compile time v. runtime initialisation
 save PMOPs in compiled form
 selection of what to dump
@@ -27,8 +27,8 @@ options for cutting out line info etc.
 comment output
 shared constants
 module dependencies
-new Asm and JIT backend, PLJC ByteLoader magic
-check op coverage in the tests, should cover all ops 0-142
+new Asm, JIT or PIR backend, PLJC ByteLoader magic
+check Bytecode op coverage in the tests, should cover all ops 0-142
 B::IO::SUBPROCESS
 
 * Optimisations
@@ -36,8 +36,9 @@ B::IO::SUBPROCESS
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.
+  Devel::TypeCheck instead of magic variable _ir, ... suffices
   e.g. mark IVonly SV's and magic/flags change functions and 
-  optimize all op subtrees for the Asm and JIT backend to use direct ints
+  optimize all op subtrees for the compiled backends to use direct ints
 demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
