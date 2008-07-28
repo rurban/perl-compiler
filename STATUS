@@ -2,15 +2,17 @@ Abbrevations: bc B::ByteCode, c B::C, cc B::CC,
               -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
               -nt not threaded perl.
 
-Testsuite added, coverage TODO.
+Only support 5.8 and newer. 5.6 and earlier had a good core perl compiler.
+
+Basic testsuite added, coverage TODO.
 Same ok and failures as with 5.8 and 5.9.4
+  In 5.8.8 and 5.8.9 we have the exact same errors in the testsuite for the new 
+  CPAN compiler and the CORE compiler.
 Minor B::CC bugs fixed.
-REGEX pregcomp broken (in bc and c, see ccode2)
 B:C Problems:
-  pregcomp()
-  SIGSEGV in Perl_fbm_instr() <= Perl_re_intuit_start() <= Perl_pp_subst()
   invalid pad in pad_sv, pad_new, save_clearsv - cause: setting PL_curpad at save_context
   Modification of a read-only value attempted - save_context ?
+5.11 regex pad wrong
 
 5.6.2 i386-linux-thread-multi:
 t/b.t           0    11    57  106 185.96%  5-57
@@ -35,6 +37,16 @@ bytecode15S_.asm: There were 2 assembly errors
 t/testplc.sh: line 66:  5975 Segmentation fault      
 
 5.8.8:
+t/bytecode.t
+cygwin only (caused by some vendor patch):
+  not ok 2 #TODO  wanted: 123, $? = 65280, got: Can't coerce ARRAY to integer in pattern match (m//) at bytecode2.plc line 125.
+  not ok 3 #TODO  wanted: zzz2y2y2, $? = 65280, got: Can't coerce ARRAY to integer in substitution (s///) at bytecode3.plc line 281.
+  not ok 4 #TODO  wanted: z2y2y2, $? = 65280, got: Can't coerce ARRAY to integer in substitution (s///) at bytecode4.plc line 253.
+  not ok 5 #TODO  wanted: bnnrm, $? = 65280, got: Can't coerce ARRAY to integer in push regexp at bytecode5.plc line 266.
+  not ok 7 #TODO  wanted: brnfg, $? = 65280, got: Can't coerce ARRAY to integer in push regexp at bytecode7.plc line 322.
+linux: all pass (no MYMALLOC PERL_DONT_CREATE_GVSV USE_64_BIT_INT, 
+		 no vendor patches: debian 40r0)
+
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 8-10, 14-16
   Undefined subroutine &main::a called at ccode8.pl line 1.
@@ -46,11 +58,17 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
 
 5.8.8d:
   TODO failed:   20 (bc op coverage)
+t/bytecode.t: All ok
 t/c.t        (Wstat: 0 Tests: 19 Failed: 5)
   FAILED tests 11-12 17-19
   panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 5)
   Failed tests:  11-12 17-19
+
+5.8.9d:
+t/bytecode.t: all ok
+t/c.t         8-10 14-16
+t/cc.t        11-12 17-19
 
 5.10.0:
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
@@ -64,25 +82,24 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
 
 5.10.0d:
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
-  FAILED tests 2-5, 7, 9-12, 15
+  FAILED tests 2-5, 7, 11, 15 (was: 2-5, 7, 9-12, 15)
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
-  Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
+  11 Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-  Failed tests:  2-7, 11-12, 17-19 (was: 2-4 6 8-10 14-16; 2-7 11 18)
+  Failed tests:   2-7, 11-12, 17-19 (was: 2-4 6 8-10 14-16; 2-7 11 18)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
   Failed tests:  2-4, 6, 11-12, 17-19 (was: 8-10, 12, 14-16, 18-19)
 
 5.10.0-nt (not threaded): 
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 9)
-  FAILED tests: 3-5, 7, 9-12, 15
-  SIGSEGV in Perl_fbm_instr() <= Perl_re_intuit_start() <= Perl_pp_subst()
+  FAILED tests: 9-10, 12
 t/c.t        (Wstat: 0 Tests: 19 Failed: 10)
-  FAILED tests: 2-4, 6, 8-10, 14-16 (was: 2-4, 6, 11-12, 17-19)
+  FAILED tests: 8-10, 14-16 (was: 2-4, 6, 11-12, 17-19)
   invalid pad in pad_sv, pad_new, save_clearsv - writing to PL_curpad at save_context
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 8)
-  Failed tests: 2-4 6 11-12 18-19 (was: 2-4 6 11-12 17-19)
+  Failed tests: 2-4 6 11-12 17-19 (was: 2-4 6 11-12 17-19)
 
 
 5.11 @33673 -D
@@ -114,7 +131,6 @@ pvx: seems to be fixed now in bc, and c
 hv: crash at invalid entry in hv_store in B::HV::save fixed
 hek: new implementation
 regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
-bc: B::IO::SUBPROCESS missing
 bc 10: padv+sassign => Modification of a read-only value attempted at bytecode10.pl line 1.
 
 5.8 status
@@ -125,6 +141,22 @@ ByteLoader is now backwards compatible: Accepts lower versions also,
 but opcode compat version table missing for loading older bc.
 
 Details:
+
+bytecode11 - 5.11d
+assertion "isGV_with_GP(shplep)" failed: file "B.c", line 4961
+#0  XS_B__GV_GP (my_perl=0x14222d0, cv=0x152a750) at B.c:15887
+#1  0x521ca568 in Perl_pp_entersub () from /usr/local/bin/cygperl5_11d.dll
+#2  0x52165d4c in Perl_runops_debug () from /usr/local/bin/cygperl5_11d.dll
+#3  0x521a9730 in Perl_call_sv () from /usr/local/bin/cygperl5_11d.dll
+#4  0x521b1640 in Perl_call_list () from /usr/local/bin/cygperl5_11d.dll
+#5  0x521a596f in perl_parse () from /usr/local/bin/cygperl5_11d.dll
+#6  0x00401136 in main (argc=4, argv=0x14221a0, env=0x1420090)
+(gdb) p *gv
+$2 = {sv_any = 0x14d1d48, sv_refcnt = 3, sv_flags = 32777 (0x8009), sv_u = {
+    svu_iv = -5931823458977729848, svu_uv = 12514920614731821768,
+    svu_rv = 0x14db2c8, svu_pv = 0x14db2c8 "ðúE\001", svu_array = 0x14db2c8,
+    svu_hash = 0x14db2c8, svu_gp = 0x14db2c8}}
+
 
 ccode3 - 5.10
 -------------
@@ -163,7 +195,7 @@ $2 = {engine = 0x69f690, mother_re = 0x0, extflags = 52428800, minlen = 1, minle
 TEST COVERAGE
 -------------
 Bytecode:
-no coverage for ret(0) ldsv(1) ldop(2) stsv(3) stop(4) stpv(5) ldspecsv(6) 
+coverage for ret(0) ldsv(1) ldop(2) stsv(3) stop(4) stpv(5) ldspecsv(6) 
 ldspecsvx(7) newsv(8) newsvx(9) nop(10) newop(11) newopx(12) newopn(13) 
 newpv(14) pv_cur(15) pv_free(16) sv_upgrade(17) sv_refcnt(18) sv_refcnt_add(19) 
 sv_flags(20) xrv(21) xpv(22) xpv_cur(23) xpv_len(24) xiv(25) xnv(26) 
@@ -201,4 +233,4 @@ added Jit and Asm layout, with the idea of using either
 lightning as jit backend (Jit), or creating our own assembler (Asm) 
 to be able to use a high-level language.
 
-2008-04-20 21:08:36 URBANR
+2008-06-05 11:18:49 urbanr

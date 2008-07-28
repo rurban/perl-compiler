@@ -205,7 +205,10 @@ sub putdis(@){
     my $line = defined($arg) ? "$insn $arg" : $insn;
     ++$lineno;
     print DIS "$line\n";
-    printf ("# %5d %s verbose:%d\n", $lineno, $line, $verbose) if $dbg;
+    if ($dbg) {
+      $verbose = 0 unless $verbose; 
+      printf ("# %5d %s verbose:%d\n", $lineno, $line, $verbose);
+    }
 }
 
 # Generate assembler instructions from a hash of operand types: each
@@ -369,7 +372,7 @@ close( DIS );
 # get header (for debugging only)
 #
 if( $dbg ){
-    my( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize ) =
+    my( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag ) =
         get_header();
     printf "# Magic:        0x%08x\n", $magic;
     print  "# Architecture: $archname\n";
@@ -377,7 +380,8 @@ if( $dbg ){
     print  "# ivsize:       $ivsize\n";
     print  "# ptrsize:      $ptrsize\n";
     print  "# longsize:     $longsize\n";
-    print  "# Byteorder:    $byteorder\n";
+    printf "# Byteorder:    $byteorder\n";
+    print  "# archflag:     $archflag\n";
 }
 
 # check by comparing files line by line

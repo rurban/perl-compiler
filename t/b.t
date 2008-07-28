@@ -175,17 +175,13 @@ is(B::cast_I32(3.14), 3, "Testing B::cast_I32()");
 is(B::opnumber("chop"), 38, "Testing opnumber with opname (chop)");
 
 SKIP: {
-  skip "B::sub_generation requires 5.9.4", 1 if $[ < 5.009004;
+  skip "B::sub_generation and B::amagic_generation require 5.9.4", 2 if $] < 5.009004;
 
   no warnings 'once';
   no strict 'subs';
   my $sg = B::sub_generation();
   *UNIVERSAL::hand_waving = sub { };
   ok( $sg < B::sub_generation, "sub_generation increments" );
-}
-
-SKIP: {
-  skip "B::amagic_generation requires 5.9.4", 1 if $[ < 5.009004;
 
   my $ag = B::amagic_generation();
   {

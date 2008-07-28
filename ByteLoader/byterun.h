@@ -21,6 +21,60 @@
   #include "ppport.h"
 #endif
 
+/* macros for correct constant construction */
+# if INTSIZE >= 2
+#  define U16_CONST(x) ((U16)x##U)
+# else
+#  define U16_CONST(x) ((U16)x##UL)
+# endif
+
+# if INTSIZE >= 4
+#  define U32_CONST(x) ((U32)x##U)
+# else
+#  define U32_CONST(x) ((U32)x##UL)
+# endif
+
+# ifdef HAS_QUAD
+typedef I64TYPE I64;
+typedef U64TYPE U64;
+#  if INTSIZE >= 8
+#   define U64_CONST(x) ((U64)x##U)
+#  elif LONGSIZE >= 8
+#   define U64_CONST(x) ((U64)x##UL)
+#  elif QUADKIND == QUAD_IS_LONG_LONG
+#   define U64_CONST(x) ((U64)x##ULL)
+#  else /* best guess we can make */
+#   define U64_CONST(x) ((U64)x##UL)
+#  endif
+# endif
+
+/* byte-swapping functions for big-/little-endian conversion */
+# define _swab_16_(x) ((U16)( \
+         (((U16)(x) & U16_CONST(0x00ff)) << 8) | \
+         (((U16)(x) & U16_CONST(0xff00)) >> 8) ))
+
+# define _swab_32_(x) ((U32)( \
+         (((U32)(x) & U32_CONST(0x000000ff)) << 24) | \
+         (((U32)(x) & U32_CONST(0x0000ff00)) <<  8) | \
+         (((U32)(x) & U32_CONST(0x00ff0000)) >>  8) | \
+         (((U32)(x) & U32_CONST(0xff000000)) >> 24) ))
+
+# ifdef HAS_QUAD
+#  define _swab_64_(x) ((U64)( \
+          (((U64)(x) & U64_CONST(0x00000000000000ff)) << 56) | \
+          (((U64)(x) & U64_CONST(0x000000000000ff00)) << 40) | \
+          (((U64)(x) & U64_CONST(0x0000000000ff0000)) << 24) | \
+          (((U64)(x) & U64_CONST(0x00000000ff000000)) <<  8) | \
+          (((U64)(x) & U64_CONST(0x000000ff00000000)) >>  8) | \
+          (((U64)(x) & U64_CONST(0x0000ff0000000000)) >> 24) | \
+          (((U64)(x) & U64_CONST(0x00ff000000000000)) >> 40) | \
+          (((U64)(x) & U64_CONST(0xff00000000000000)) >> 56) ))
+# else
+#  define _swab_64_(x) _swab_32_((U32)(x) & U32_CONST(0xffffffff))
+# endif
+
+#  define _swab_iv_(x,size) ((size==4) ? _swab_32_(x) : ((size==8) ? _swab_64_(x) : _swab_16_(x)))
+
 struct byteloader_fdata {
     SV	*datasv;
     int  next_out;
@@ -44,6 +98,7 @@ struct byteloader_header {
     int 	ptrsize;
     int 	longsize;
     char 	byteorder[16];
+    int 	archflag;
 } bl_header;
 
 struct byteloader_state {

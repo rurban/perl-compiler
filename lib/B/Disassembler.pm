@@ -6,7 +6,7 @@
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.05_02';
+$B::Disassembler::VERSION = '1.05_03';
 
 package B::Disassembler::BytecodeStream;
 
@@ -27,7 +27,6 @@ sub GET_U8 {
     my $fh = shift;
     my $c = $fh->getc;
     croak "reached EOF while reading U8" unless defined($c);
-    # Todo: check byteorder
     return ord($c);
 }
 
@@ -199,7 +198,7 @@ use Config qw(%Config);
 
 my $opix;
 our @opname = opset_to_ops(full_opset);
-our( $magic, $archname, $blversion, $ivsize, $ptrsize, $longsize, $byteorder );
+our( $magic, $archname, $blversion, $ivsize, $ptrsize, $longsize, $byteorder, $archflag );
 
 sub dis_header($){
     my( $fh ) = @_;
@@ -209,13 +208,32 @@ sub dis_header($){
     $blversion = $fh->GET_strconst();
     $ivsize    = $fh->GET_U32();
     $ptrsize   = $fh->GET_U32();
-    $longsize  = $fh->GET_U32();
-    # $longsize  = $Config{longsize};
+    if ($blversion ge '"0.06_03"') {
+      $longsize  = $fh->GET_U32();
+    } else {
+      $longsize  = $Config{longsize};
+    }
     $byteorder = $fh->GET_strconst();
+    if ($blversion ge '"0.06_05"') {
+      $archflag  = $fh->GET_U16();
+    } else {
+      $archflag = -1;
+    }
 }
 
 sub get_header(){
-    return( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize);
+  if (wantarray) {
+    return( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag);
+  } else {
+    return { magic     => $magic,
+	     archname  => $archname, 
+	     blversion => $blversion, 
+	     ivsize    => $ivsize, 
+	     ptrsize   => $ptrsize, 
+	     byteorder => $byteorder, 
+	     longsize  => $longsize, 
+	     archflag  => $archflag };
+  }
 }
 
 sub print_insn {

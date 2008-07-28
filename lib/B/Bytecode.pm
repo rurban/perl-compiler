@@ -13,22 +13,13 @@ our $VERSION = '1.02_03';
 
 use strict;
 use Config;
-#require 5.008;
-#use B qw(class main_cv main_root main_start cstring comppadlist
-#	defstash curstash begin_av init_av end_av inc_gv warnhook diehook
-#	dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
-#	OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
-# for 5.6.2: B exports no defstash curstash inc_gv warnhook diehook dowarn SVt_PVGV SVt_PVHV SVf_FAKE
+use 5.008;
 use B qw(class main_cv main_root main_start cstring comppadlist
-	 begin_av init_av end_av
-	 OPf_SPECIAL OPf_STACKED OPf_MOD OPpLVAL_INTRO SVf_READONLY
-	 SVt_PVGV SVt_PVHV SVf_FAKE
-	);
+	defstash curstash begin_av init_av end_av inc_gv warnhook diehook
+	dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
+	OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
 use B::Assembler qw(asm newasm endasm);
 BEGIN {
-  if ($] > 5.006) {
-    B->import(qw(defstash curstash inc_gv warnhook diehook dowarn SVt_PVGV SVt_PVHV SVf_FAKE));
-  }
   if ($] < 5.009) {
     B::Asmdata->import(qw(@specialsv_name));
   } else {
@@ -152,11 +143,13 @@ sub B::GV::ix {
     my ($gv,$desired) = @_;
     my $ix = $svtab{$$gv};
     defined($ix) ? $ix : do {
-        if ($debug{G}) {
+        if ($debug{G} and !$PERL510) {
 	  eval "require B::Debug;";
 	  $gv->B::GV::debug;
         }
-	if ($gv->GP) { # FIXME gv with gp # if (!$PERL510 and ...)
+	if (($PERL510 and $gv->isGV_with_GP) or 
+	    (!$PERL510 and $gv->GP))
+	{ # only gv with gp
 	    my ($svix, $avix, $hvix, $cvix, $ioix, $formix);
 	    nice "[GV]";
 	    # 510 without debugging misses B::SPECIAL::NAME
@@ -207,10 +200,14 @@ sub B::GV::ix {
 	    nice "[GV]";
 	    asm "newsvx", $gv->FLAGS, $debug{Comment} ? sv_flags($gv) : '';
 	    $svtab{$$gv} = $varix = $ix = $tix++;
-	    my $stashix = $gv->STASH->ix;
 	    $gv->B::PVMG::bsave($ix);
-	    asm "xgv_flags", $gv->GvFLAGS;
-	    asm "xgv_stash", $stashix;
+	    if (!$PERL510) {
+	      asm "xgv_flags", $gv->GvFLAGS;
+	    }
+	    if (!$PERL510 and $gv->STASH) {
+	      my $stashix = $gv->STASH->ix;
+	      asm "xgv_stash", $stashix;
+	    }
 	}
 	$ix;
     }
@@ -407,7 +404,7 @@ sub B::IO::bsave {
     asm "xio_fmt_gv", $fmtix;
     asm "xio_bottom_name", pvix $io->BOTTOM_NAME;
     asm "xio_bottom_gv", $bottomix;
-    asm "xio_subprocess", $io->SUBPROCESS;
+    asm "xio_subprocess", $io->SUBPROCESS unless $PERL510;
     asm "xio_type", ord $io->IoTYPE;
     # asm "xio_flags", ord($io->IoFLAGS) & ~32;		# XXX XXX
 }
@@ -465,7 +462,7 @@ sub B::AV::bsave {
 sub B::GV::desired {
     my $gv = shift;
     my ($cv, $form);
-    if ($debug{G}) {
+    if ($debug{G} and !$PERL510) {
       eval "require B::Debug;";
       $gv->B::GV::debug;
     }
@@ -1029,10 +1026,6 @@ variables in C<(?{ ... })> constructs are not properly scoped.
 Scripts that use source filters will fail miserably.
 
 =item *
-
-5.10 PMOP and REGEXP ops do not yet work. Various 5.10 and 5.11 crashes.
-
-B::IO::SUBPROCESS is missing.
 
 Special GV's fail.
 

@@ -11,12 +11,12 @@ our $VERSION = '1.00_02';
 
 use Config;
 use strict;
+use 5.008;
 use B qw(main_start main_root class comppadlist peekop svref_2object
 	timing_info init_av sv_undef amagic_generation
 	OPf_WANT_LIST OPf_WANT OPf_MOD OPf_STACKED OPf_SPECIAL
 	OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
 	OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR
-	CXt_NULL CXt_SUB CXt_EVAL CXt_LOOP CXt_SUBST CXt_BLOCK
 	);
 use B::C qw(save_unused_subs objsym init_sections mark_unused
 	    output_all output_boilerplate output_main);
@@ -59,7 +59,6 @@ my %need_curcop;	# Hash of ops which need PL_curcop
 
 my %lexstate;		#state of padsvs at the start of a bblock
 my $verbose = 0;
-my $THREADS = $Config{useithreads} eq 'define' or $Config{usethreads} eq 'define';
 
 BEGIN {
     foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
@@ -79,8 +78,31 @@ my %optimise = (freetmps_each_bblock	=> \$freetmps_each_bblock,
 		freetmps_each_loop	=> \$freetmps_each_loop,
 		omit_taint		=> \$omit_taint);
 # perl patchlevel to generate code for (defaults to current patchlevel)
-my $patchlevel = int(0.5 + 1000 * ($]  - 5));
-my $PERL510 = ($] >= 5.009005);
+my $patchlevel = int(0.5 + 1000 * ($]  - 5)); # unused?
+my $ITHREADS   = $Config{useithreads};
+my $PERL510    = ($] >= 5.009005);
+my $PERL511    = ($] >= 5.010);
+
+if ($PERL511) {
+  sub CXt_NULL  	{ 0 }
+  sub CXt_SUB   	{ 8 }
+  sub CXt_EVAL  	{ 10 }
+  sub CXt_SUBST 	{ 11 }
+  sub CXt_BLOCK 	{ 2 }
+  sub CXt_LOOP_FOR 	{ 4 }
+  sub CXt_LOOP_PLAIN 	{ 5 }
+  sub CXt_LOOP_LAZYSV 	{ 6 }
+  sub CXt_LOOP_LAZYIV 	{ 7 }
+  sub CxTYPE_no_LOOP    { ($_[0]->{type} < 4 or $_[0]->{type} > 7) }
+} else {
+  sub CXt_NULL  { 0 }
+  sub CXt_SUB   { 1 }
+  sub CXt_EVAL  { 2 }
+  sub CXt_LOOP  { 3 }
+  sub CXt_SUBST { 4 }
+  sub CXt_BLOCK { 5 }
+  sub CxTYPE_no_LOOP  { $_[0]->{type} != 3 }
+}
 
 # Could rewrite push_runtime() and output_runtime() to use a
 # temporary file if memory is at a premium.
@@ -132,20 +154,21 @@ sub save_runtime {
 sub output_runtime {
     my $ppdata;
     print qq(#include "cc_runtime.h"\n);
-    if ($THREADS) {
+    if ($ITHREADS) {
       # Threads error Bug#55302: too few arguments to function
       # CALLRUNOPS()=>CALLRUNOPS(aTHX)
       print '
-#define PP_EVAL_thr(ppaddr, nxt) do {		\
+#undef  PP_EVAL
+#define PP_EVAL(ppaddr, nxt) do {		\
 	dJMPENV;				\
 	int ret;				\
 	PUTBACK;				\
 	JMPENV_PUSH(ret);			\
 	switch (ret) {				\
 	case 0:					\
-	    PL_op = ppaddr(ARGS);		\
+	    PL_op = ppaddr(aTHX);		\
 ';
-      print 'PL_retstack[PL_retstack_ix - 1] = Nullop;	\ 
+      print 'PL_retstack[PL_retstack_ix - 1] = Nullop;	\
 ' if $] < 5.009005;
       print '	    if (PL_op != nxt) CALLRUNOPS(aTHX);	\
 	    JMPENV_POP;				\
@@ -391,7 +414,7 @@ my $curcop = new B::Shadow (sub {
 #
 sub dopoptoloop {
     my $cxix = $#cxstack;
-    while ($cxix >= 0 && $cxstack[$cxix]->{type} != CXt_LOOP) {
+    while ($cxix >= 0 && CxTYPE_no_LOOP($cxstack[$cxix])) {
 	$cxix--;
     }
     debug "dopoptoloop: returning $cxix" if $debug_cxstack;
@@ -402,7 +425,7 @@ sub dopoptolabel {
     my $label = shift;
     my $cxix = $#cxstack;
     while ($cxix >= 0 &&
-	   ($cxstack[$cxix]->{type} != CXt_LOOP ||
+	   (CxTYPE_no_LOOP($cxstack[$cxix]) ||
 	    $cxstack[$cxix]->{label} ne $label)) {
 	$cxix--;
     }
@@ -707,7 +730,7 @@ sub pp_sort {
 sub pp_gv {
     my $op = shift;
     my $gvsym;
-    if ($Config{useithreads}) {
+    if ($ITHREADS) {
 	$gvsym = $pad[$op->padix]->as_sv;
     }
     else {
@@ -721,7 +744,7 @@ sub pp_gv {
 sub pp_gvsv {
     my $op = shift;
     my $gvsym;
-    if ($Config{useithreads}) {
+    if ($ITHREADS) {
 	$gvsym = $pad[$op->padix]->as_sv;
     }
     else {
@@ -739,7 +762,7 @@ sub pp_gvsv {
 sub pp_aelemfast {
     my $op = shift;
     my $gvsym;
-    if ($Config{useithreads}) {
+    if ($ITHREADS) {
 	$gvsym = $pad[$op->padix]->as_sv;
     }
     else {
@@ -1397,7 +1420,7 @@ sub enterloop {
     $curcop->write_back;
     debug "enterloop: pushing on cxstack" if $debug_cxstack;
     push(@cxstack, {
-	type => CXt_LOOP,
+	type => $PERL511 ? CXt_LOOP_PLAIN : CXt_LOOP,
 	op => $op,
 	"label" => $curcop->[0]->label,
 	nextop => $nextop,
@@ -1487,7 +1510,7 @@ sub pp_last {
 	    return $op->next; # ignore the op
 	}
 	# XXX Add support for "last" to leave non-loop blocks
-	if ($cxstack[$cxix]->{type} != CXt_LOOP) {
+	if (CxTYPE_no_LOOP($cxstack[$cxix])) {
 	    error('Use of "last" for non-loop blocks is not yet implemented');
 	    return $op->next; # ignore the op
 	}

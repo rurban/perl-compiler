@@ -5,12 +5,16 @@ our $VERSION = '1.02_01';
 use Exporter ();
 @ISA = "Exporter";
 @EXPORT_OK = qw(find_leaders);
+my $have_B_Concise;
 
 use B qw(peekop walkoptree walkoptree_exec
 	 main_root main_start svref_2object
          OPf_SPECIAL OPf_STACKED );
+BEGIN {
+  eval { require B::Concise; 1} and $have_B_Concise = 1;
+  B::Concise->import(qw(concise_cv concise_main set_style_standard)) if $have_B_Concise;
+}
 
-use B::Concise qw(concise_cv concise_main set_style_standard);
 use strict;
 
 my $bblock;
@@ -26,7 +30,7 @@ sub mark_leader {
 sub remove_sortblock{
     foreach (keys %$bblock){
         my $leader=$$bblock{$_};	
-	delete $$bblock{$_} if( $leader == 0);   
+	delete $$bblock{$_} if( $leader == 0);
     }
 }
 sub find_leaders {
@@ -131,7 +135,7 @@ sub B::PMOP::mark_if_leader {
 sub compile {
     my @options = @_;
     B::clearsym();
-    if (@options) {
+    if (@options and $have_B_Concise) {
 	return sub {
 	    my $objname;
 	    foreach $objname (@options) {
@@ -148,8 +152,10 @@ sub compile {
 	return sub {
 	    walk_bblocks(main_root, main_start);
 	    print "-------\n";
-	    set_style_standard("terse");
-	    concise_main("exec");
+	    if ($have_B_Concise) {
+	      set_style_standard("terse");
+	      concise_main("exec");
+	    }
 	};
     }
 }

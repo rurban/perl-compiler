@@ -77,12 +77,11 @@ print "# got = @got\n";
 $got = "@got";
 
 my $expected = "attributes Carp Carp::Heavy DB Internals main Regexp utf8 version warnings";
-
 if ($] < 5.009) {
     $expected =~ s/version //;
-    $expected =~ s/DB/DB Exporter Exporter::Heavy/;
+    $expected =~ s/DB /DB Exporter Exporter::Heavy /;
 }
-if ($] >= 5.011) {
+if ($] >= 5.010) {
     $expected = "attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
 }
 

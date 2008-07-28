@@ -70,45 +70,31 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
         }
     }
     BGET_strconst(str,80);	/* archname */
+    /* relaxed strictness, only check for ithread in archflag */
     if (strNE(str, ARCHNAME)) {
 	HEADER_WARN2("wrong architecture (want %s, you have %s)", str, ARCHNAME);
     }
     strcpy(bl_header.archname, str);
 
-    BGET_strconst(str,16); /* fail if lower ByteLoader version */
-    if (strNE(str, VERSION)) { /* when we support lower => strLT */
+    BGET_strconst(str,16); /* fail if different ByteLoader version */
+    if (strNE(str, VERSION)) {
 	HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",
 		str, VERSION);
     }
     strcpy(bl_header.version, str);
 
     BGET_U32(sz); /* ivsize */
-    if (sz != IVSIZE) {
-	HEADER_WARN("different IVSIZE");
-        if ((sz != 4) && (sz != 8))
-	    HEADER_FAIL1("unsupported IVSIZE %d", sz);
-    }
     bl_header.ivsize = sz;
 
     BGET_U32(sz); /* ptrsize */
-    if (sz != PTRSIZE) {
-	HEADER_WARN("different PTRSIZE");
-        if ((sz != 4) && (sz != 8))
-	    HEADER_FAIL1("unsupported PTRSIZE %d", sz);
-    }
     bl_header.ptrsize = sz;
 
     /* new since 0.06_03 */
     if (strGE(bl_header.version, "0.06_03")) {
       BGET_U32(sz); /* longsize */
-      if (sz != LONGSIZE) {
-	HEADER_WARN("different LONGSIZE");
-        if ((sz != 4) && (sz != 8))
-	    HEADER_FAIL1("unsupported LONGSIZE %d", sz);
-      }
       bl_header.longsize = sz;
     } else {
-      bl_header.longsize = 8;
+      bl_header.longsize = LONGSIZE;
     }
 
     {
@@ -116,11 +102,54 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
       sprintf(supported, "%x", BYTEORDER);
       BGET_strconst(str, 16); /* 12345678 or 1234 */
       if (strNE(str, supported)) {
-	HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",
-		     supported, str);
+        bget_swab = 1;
+	HEADER_WARN2("EXPERIMENTAL: Convert byteorder.  Bytecode: %s, System: %s",
+		     str, supported);
       }
       strcpy(bl_header.byteorder, str);
     }
+
+    /* check byteorder */
+    if (bget_swab) {
+	bl_header.ivsize = _swab_32_(bl_header.ivsize);
+	bl_header.ptrsize = _swab_32_(bl_header.ptrsize);
+        if (bl_header.longsize != LONGSIZE) {
+	    bl_header.longsize = _swab_32_(bl_header.longsize);
+        }
+    }
+
+#ifdef USE_ITHREADS
+# define HAVE_ITHREADS_I 1
+#else
+# define HAVE_ITHREADS_I 0
+#endif
+    if (strGE(bl_header.version, "0.06_05")) {
+      BGET_U16(sz); /* archflag */
+      bl_header.archflag = sz;
+      if ((sz & 1) != HAVE_ITHREADS_I) {
+	HEADER_FAIL2("Wrong USE_ITHREADS. Bytecode: %s, System: %s)",
+		     bl_header.archflag & 1 ? "yes" : "no", HAVE_ITHREADS_I ? "yes" : "no");
+      }
+    }
+
+    if (bl_header.ivsize != IVSIZE) {
+	HEADER_WARN("different IVSIZE");
+        if ((bl_header.ivsize != 4) && (bl_header.ivsize != 8))
+	    HEADER_FAIL1("unsupported IVSIZE %d", bl_header.ivsize);
+    }
+    if (bl_header.ptrsize != PTRSIZE) {
+	HEADER_WARN("different PTRSIZE");
+        if ((bl_header.ptrsize != 4) && (bl_header.ptrsize != 8))
+	    HEADER_FAIL1("unsupported PTRSIZE %d", bl_header.ptrsize);
+    }
+    if (strGE(bl_header.version, "0.06_03")) {
+      if (bl_header.longsize != LONGSIZE) {
+	HEADER_WARN("different LONGSIZE");
+        if ((bl_header.longsize != 4) && (bl_header.longsize != 8))
+	    HEADER_FAIL1("unsupported LONGSIZE %d", bl_header.longsize);
+      }
+    }
+
     return 1;
 }
 

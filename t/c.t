@@ -27,21 +27,24 @@ BEGIN {
     require 'test.pl'; # for run_perl()
 }
 use strict;
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $ITHREADS  = ($Config{'useithreads'});
 
 undef $/;
 open TEST, "< t/TESTS" or open TEST, "< TESTS";
 my @tests = split /\n###+\n/, <TEST>;
 close TEST;
 my @todo;
-if ($Config{ccflags} =~ /-DDEBUGGING/) {
-  @todo = (8..10, 14..16);
-  @todo = (2..7, 11..12, 17..19) if ($] > 5.009 and $Config{usethreads} eq 'undef');
-  #@todo = (5, 7, 11..12, 17..19);
+if ($DEBUGGING) {
+  #@todo = (8..10, 14..16);
+  @todo = (5, 7, 11..12, 17..19) if $] < 5.009;
+  @todo = (2..5, 7, 11, 15) if $] >= 5.009;
+  @todo = (2..7, 11..12, 17..19) if ($] > 5.009 and !$ITHREADS);
   #@todo = (2..12, 14..19) if $] > 5.009; #let it fail
 } else {
-  #@todo = (1..7, 11..13, 17..19);
-  @todo = (8..10, 14..16);
+  @todo = (2..5, 7, 11);
   @todo = (2..7, 11) if $] > 5.009;
+  @todo = (2..11, 14..16) if ($] > 5.009 and !$ITHREADS);
   #@todo = (2..12, 14..19) if $] > 5.009; #let it fail
 }
 my %todo = map { $_ => 1 } @todo;
@@ -50,7 +53,7 @@ print "1..".($#tests+1)."\n";
 
 my $cnt = 1;
 for (@tests) {
-  my $todo = $todo{$cnt} ? " TODO " : "";
+  my $todo = $todo{$cnt} ? "#TODO" : "#";
   my ($script, $expect) = split />>>+\n/;
   run_cc_test($cnt++, "C", $script, $expect, $keep_c, $keep_c_fail, $todo);
 }

@@ -9,6 +9,9 @@ typedef char *pvindex;
 typedef HEK *hekindex;
 typedef IV IV64;
 
+/* need to swab bytes to the target byteorder */
+static int bget_swab = 0;
+
 #if (PERL_VERSION <= 8) && (PERL_SUBVERSION < 8)
 #include "ppport.h"
 #endif
@@ -16,9 +19,6 @@ typedef IV IV64;
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
 #define BGET_FGETC() bl_getc(bstate->bs_fdata)
-
-/* Portability TODO: check byteorder */
-/* All this should be made endianness-agnostic + 32-64bit */
 
 #define BGET_U8(arg) STMT_START {					\
 	const int _arg = BGET_FGETC();					\
@@ -29,10 +29,10 @@ typedef IV IV64;
 	arg = (U8) _arg;						\
     } STMT_END
 
-/* TODO: platform conversion from bl_header. byteorder swapping. */
-#define BGET_U16(arg)		BGET_OR_CROAK(arg, U16) 
-#define BGET_I32(arg)		BGET_OR_CROAK(arg, U32)
-#define BGET_U32(arg)		BGET_OR_CROAK(arg, U32)
+/* with platform conversion from bl_header. */
+#define BGET_U16(arg)	BGET_OR_CROAK(arg, U16); if (bget_swab) arg=_swab_16_(arg)
+#define BGET_I32(arg)	BGET_OR_CROAK(arg, U32); if (bget_swab) arg=_swab_32_(arg)
+#define BGET_U32(arg)	BGET_OR_CROAK(arg, U32); if (bget_swab) arg=_swab_32_(arg)
 #define BGET_IV(arg) STMT_START {				        \
 	if (BGET_FREAD(&arg, bl_header.ivsize, 1) < 1) {		\
 	    Perl_croak(aTHX_						\
@@ -44,6 +44,7 @@ typedef IV IV64;
 		       "Different IVSIZE %d for IV", 			\
 		       bl_header.ivsize);				\
 	}								\
+	if (bget_swab) {arg = _swab_iv_(arg,IVSIZE);}			\
     } STMT_END
 /*
  * In the following, sizeof(IV)*4 is just a way of encoding 32 on 64-bit-IV
@@ -54,9 +55,10 @@ typedef IV IV64;
 	U32 hi, lo;					\
 	BGET_U32(hi);					\
 	BGET_U32(lo);					\
-	if (sizeof(IV) == 8)				\
+	if (bget_swab) { U32 tmp=hi; hi=lo; lo=tmp; }	\
+	if (sizeof(IV) == 8) {				\
 	    arg = ((IV)hi << (sizeof(IV)*4) | (IV)lo);	\
-	else if (((I32)hi == -1 && (I32)lo < 0)		\
+	} else if (((I32)hi == -1 && (I32)lo < 0)	\
 		 || ((I32)hi == 0 && (I32)lo >= 0)) {	\
 	    arg = (I32)lo;				\
 	}						\
@@ -66,20 +68,28 @@ typedef IV IV64;
 	}						\
     } STMT_END
 
-#define BGET_PADOFFSET(arg)	BGET_OR_CROAK(arg, PADOFFSET)
+#define BGET_PADOFFSET(arg)				\
+    BGET_OR_CROAK(arg, PADOFFSET);			\
+    if (bget_swab) { arg=(sizeof(PADOFFSET)==4)?_swab_32_(arg):_swab_64_(arg); }
+
 #define BGET_long(arg) STMT_START {				        \
 	if (BGET_FREAD(&arg, bl_header.longsize, 1) < 1) {		\
 	    Perl_croak(aTHX_						\
 		       "EOF or error while trying to read %d bytes for %s", \
 		       bl_header.ivsize, "IV");				\
 	}								\
-	if (bl_header.longsize != 8) {					\
+	if (bget_swab) { arg = _swab_iv_(arg,bl_header.longsize); }	\
+	if (bl_header.longsize != LONGSIZE) {				\
 	    Perl_warn(aTHX_						\
 		       "Different LONGSIZE %d for long",		\
 		       bl_header.ivsize);				\
 	}								\
     } STMT_END
-#define BGET_svtype(arg)	BGET_OR_CROAK(arg, svtype)
+
+/* svtype is an enum of 16 values. 32bit or 16bit? */
+#define BGET_svtype(arg)						\
+    BGET_OR_CROAK(arg, svtype);						\
+    if (bget_swab) {arg = _swab_iv_(arg,sizeof(svtype))}
 
 #define BGET_OR_CROAK(arg, type) STMT_START {				\
 	if (BGET_FREAD(&arg, sizeof(type), 1) < 1) {			\
@@ -93,11 +103,11 @@ typedef IV IV64;
 	BGET_U32(arg);							\
 	if (arg) {							\
 	    New(666, bstate->bs_pv.xpv_pv, (U32)arg, char);		\
-	    bl_read(bstate->bs_fdata, bstate->bs_pv.xpv_pv, (U32)arg, 1);	\
+	    bl_read(bstate->bs_fdata, bstate->bs_pv.xpv_pv, (U32)arg, 1); \
 	    bstate->bs_pv.xpv_len = (U32)arg;				\
 	    bstate->bs_pv.xpv_cur = (U32)arg - 1;			\
 	} else {							\
-	    bstate->bs_pv.xpv_pv = 0;						\
+	    bstate->bs_pv.xpv_pv = 0;					\
 	    bstate->bs_pv.xpv_len = 0;					\
 	    bstate->bs_pv.xpv_cur = 0;					\
 	}								\

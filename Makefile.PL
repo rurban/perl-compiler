@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use File::Spec;
-#use 5.009005;
+#use 5.008;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
@@ -12,9 +12,8 @@ WriteMakefile(
     PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
     PREREQ_PM => {'B::Concise' => '0.66',
 	          'B'          => '1.0901'},
-    ($] >= 5.005 ?
-     ('AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>',
-      'ABSTRACT' => 'perl compiler') : ()),
+    'AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>',
+    'ABSTRACT' => 'perl compiler',
     clean => { FILES => "bytecode[1-9]* cccode[1-9]* ccode[1-9]* *.core *.stackdump ".
 	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise *~"},
 );
@@ -32,7 +31,7 @@ package MY;
 
 sub libscan {
   # ignore temp testing files
-  return 0 if $_[1] =~ /(bytecode.*\.pl|ccode\d+\..*|regen_lib\.pl|-588\.pod)$/;
+  return 0 if $_[1] =~ /(bytecode.*\.pl|ccode\d+\..*|regen_lib\.pl)$/;
   return $_[1];
 }
 

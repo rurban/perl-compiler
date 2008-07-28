@@ -22,11 +22,11 @@ if ($] < 5.009) {
   require B::Asmdata;
   @optype = @{*B::Asmdata::optype{ARRAY}};
   @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
-  # import B::Asmdata qw(@optype @specialsv_name);
+  # B::Asmdata->import qw(@optype @specialsv_name);
 } else {
   @optype = @{*B::optype{ARRAY}};
   @specialsv_name = @{*B::specialsv_name{ARRAY}};
-  # import B qw(@optype @specialsv_name);
+  # B->import qw(@optype @specialsv_name);
 }
 
 my $c_header = <<'EOT';
@@ -147,45 +147,31 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
         }
     }
     BGET_strconst(str,80);	/* archname */
+    /* relaxed strictness, only check for ithread in archflag */
     if (strNE(str, ARCHNAME)) {
 	HEADER_WARN2("wrong architecture (want %s, you have %s)", str, ARCHNAME);
     }
     strcpy(bl_header.archname, str);
 
-    BGET_strconst(str,16); /* fail if lower ByteLoader version */
-    if (strNE(str, VERSION)) { /* when we support lower => strLT */
+    BGET_strconst(str,16); /* fail if different ByteLoader version */
+    if (strNE(str, VERSION)) {
 	HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",
 		str, VERSION);
     }
     strcpy(bl_header.version, str);
 
     BGET_U32(sz); /* ivsize */
-    if (sz != IVSIZE) {
-	HEADER_WARN("different IVSIZE");
-        if ((sz != 4) && (sz != 8))
-	    HEADER_FAIL1("unsupported IVSIZE %d", sz);
-    }
     bl_header.ivsize = sz;
 
     BGET_U32(sz); /* ptrsize */
-    if (sz != PTRSIZE) {
-	HEADER_WARN("different PTRSIZE");
-        if ((sz != 4) && (sz != 8))
-	    HEADER_FAIL1("unsupported PTRSIZE %d", sz);
-    }
     bl_header.ptrsize = sz;
 
     /* new since 0.06_03 */
     if (strGE(bl_header.version, "0.06_03")) {
       BGET_U32(sz); /* longsize */
-      if (sz != LONGSIZE) {
-	HEADER_WARN("different LONGSIZE");
-        if ((sz != 4) && (sz != 8))
-	    HEADER_FAIL1("unsupported LONGSIZE %d", sz);
-      }
       bl_header.longsize = sz;
     } else {
-      bl_header.longsize = 8;
+      bl_header.longsize = LONGSIZE;
     }
 
     {
@@ -193,11 +179,54 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
       sprintf(supported, "%x", BYTEORDER);
       BGET_strconst(str, 16); /* 12345678 or 1234 */
       if (strNE(str, supported)) {
-	HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",
-		     supported, str);
+        bget_swab = 1;
+	HEADER_WARN2("EXPERIMENTAL: Convert byteorder.  Bytecode: %s, System: %s",
+		     str, supported);
       }
       strcpy(bl_header.byteorder, str);
     }
+
+    /* check byteorder */
+    if (bget_swab) {
+	bl_header.ivsize = _swab_32_(bl_header.ivsize);
+	bl_header.ptrsize = _swab_32_(bl_header.ptrsize);
+        if (bl_header.longsize != LONGSIZE) {
+	    bl_header.longsize = _swab_32_(bl_header.longsize);
+        }
+    }
+
+#ifdef USE_ITHREADS
+# define HAVE_ITHREADS_I 1
+#else
+# define HAVE_ITHREADS_I 0
+#endif
+    if (strGE(bl_header.version, "0.06_05")) {
+      BGET_U16(sz); /* archflag */
+      bl_header.archflag = sz;
+      if ((sz & 1) != HAVE_ITHREADS_I) {
+	HEADER_FAIL2("Wrong USE_ITHREADS. Bytecode: %s, System: %s)",
+		     bl_header.archflag & 1 ? "yes" : "no", HAVE_ITHREADS_I ? "yes" : "no");
+      }
+    }
+
+    if (bl_header.ivsize != IVSIZE) {
+	HEADER_WARN("different IVSIZE");
+        if ((bl_header.ivsize != 4) && (bl_header.ivsize != 8))
+	    HEADER_FAIL1("unsupported IVSIZE %d", bl_header.ivsize);
+    }
+    if (bl_header.ptrsize != PTRSIZE) {
+	HEADER_WARN("different PTRSIZE");
+        if ((bl_header.ptrsize != 4) && (bl_header.ptrsize != 8))
+	    HEADER_FAIL1("unsupported PTRSIZE %d", bl_header.ptrsize);
+    }
+    if (strGE(bl_header.version, "0.06_03")) {
+      if (bl_header.longsize != LONGSIZE) {
+	HEADER_WARN("different LONGSIZE");
+        if ((bl_header.longsize != 4) && (bl_header.longsize != 8))
+	    HEADER_FAIL1("unsupported LONGSIZE %d", bl_header.longsize);
+      }
+    }
+
     return 1;
 }
 
@@ -266,23 +295,24 @@ while (<DATA>) {
 	($rvalcast, $argtype) = ("($1)", $2);
     }
     if ($ver) {
-      if ($ver =~ /^\!?i$/) {
-	my $thisthreads = $Config{useithreads} eq 'define';
-	next if ($ver eq 'i' and  !$thisthreads) or ($ver eq '!i' and $thisthreads);
-      } else { # perl version 5.010 >= 10, 5.009 > 9
-	# Have to round the float: 5.010 - 5 = 0.00999999999999979
-	my $pver = sprintf("%d", (sprintf("%f",$] - 5) * 1000));
-	if ($ver =~ /^\>\d+$/) {
-	  next if $pver < substr($ver,1); # ver >10: skip if pvar lowereq 10
-        } elsif ($ver =~ /^\<\d+$/) {
-	  next if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
-        } elsif ($ver =~ /^(\d+)-(\d+)$/) {
-	  next if $pver >= $2; # ver 8-10: skip if pvar lower than 8 or 
-	  		       # higher than 10;
-	  next if $pver < $1;
-        } elsif ($ver =~ /^\d*$/) {
-	  next if $pver < $ver; # ver 10: skip if pvar lower than 10;
-	}
+      if ($ver =~ /^\!?i/) {
+	my $ithreads = $Config{useithreads} eq 'define';
+	next if ($ver =~ /^i/ and !$ithreads) or ($ver =~ /\!i/ and $ithreads);
+	$ver =~ s/^\!?i//;
+      }
+      # perl version 5.010 >= 10, 5.009 > 9
+      # Have to round the float: 5.010 - 5 = 0.00999999999999979
+      my $pver = sprintf("%d", (sprintf("%f",$] - 5) * 1000));
+      if ($ver =~ /^\>\d+$/) {
+	next if $pver < substr($ver,1); # ver >10: skip if pvar lowereq 10
+      } elsif ($ver =~ /^\<\d+$/) {
+	next if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
+      } elsif ($ver =~ /^(\d+)-(\d+)$/) {
+	next if $pver >= $2; # ver 8-10 (both inclusive): skip if pvar
+	# lower than 8 or higher than 10;
+	next if $pver < $1;
+      } elsif ($ver =~ /^\d*$/) {
+	next if $pver < $ver; # ver 10: skip if pvar lower than 10;
       }
     }
     $insn_name[$insn_num] = $insn;
@@ -368,6 +398,60 @@ print BYTERUN_H $c_header, <<'EOT';
   #include "ppport.h"
 #endif
 
+/* macros for correct constant construction */
+# if INTSIZE >= 2
+#  define U16_CONST(x) ((U16)x##U)
+# else
+#  define U16_CONST(x) ((U16)x##UL)
+# endif
+
+# if INTSIZE >= 4
+#  define U32_CONST(x) ((U32)x##U)
+# else
+#  define U32_CONST(x) ((U32)x##UL)
+# endif
+
+# ifdef HAS_QUAD
+typedef I64TYPE I64;
+typedef U64TYPE U64;
+#  if INTSIZE >= 8
+#   define U64_CONST(x) ((U64)x##U)
+#  elif LONGSIZE >= 8
+#   define U64_CONST(x) ((U64)x##UL)
+#  elif QUADKIND == QUAD_IS_LONG_LONG
+#   define U64_CONST(x) ((U64)x##ULL)
+#  else /* best guess we can make */
+#   define U64_CONST(x) ((U64)x##UL)
+#  endif
+# endif
+
+/* byte-swapping functions for big-/little-endian conversion */
+# define _swab_16_(x) ((U16)( \
+         (((U16)(x) & U16_CONST(0x00ff)) << 8) | \
+         (((U16)(x) & U16_CONST(0xff00)) >> 8) ))
+
+# define _swab_32_(x) ((U32)( \
+         (((U32)(x) & U32_CONST(0x000000ff)) << 24) | \
+         (((U32)(x) & U32_CONST(0x0000ff00)) <<  8) | \
+         (((U32)(x) & U32_CONST(0x00ff0000)) >>  8) | \
+         (((U32)(x) & U32_CONST(0xff000000)) >> 24) ))
+
+# ifdef HAS_QUAD
+#  define _swab_64_(x) ((U64)( \
+          (((U64)(x) & U64_CONST(0x00000000000000ff)) << 56) | \
+          (((U64)(x) & U64_CONST(0x000000000000ff00)) << 40) | \
+          (((U64)(x) & U64_CONST(0x0000000000ff0000)) << 24) | \
+          (((U64)(x) & U64_CONST(0x00000000ff000000)) <<  8) | \
+          (((U64)(x) & U64_CONST(0x000000ff00000000)) >>  8) | \
+          (((U64)(x) & U64_CONST(0x0000ff0000000000)) >> 24) | \
+          (((U64)(x) & U64_CONST(0x00ff000000000000)) >> 40) | \
+          (((U64)(x) & U64_CONST(0xff00000000000000)) >> 56) ))
+# else
+#  define _swab_64_(x) _swab_32_((U32)(x) & U32_CONST(0xffffffff))
+# endif
+
+#  define _swab_iv_(x,size) ((size==4) ? _swab_32_(x) : ((size==8) ? _swab_64_(x) : _swab_16_(x)))
+
 struct byteloader_fdata {
     SV	*datasv;
     int  next_out;
@@ -391,6 +475,7 @@ struct byteloader_header {
     int 	ptrsize;
     int 	longsize;
     char 	byteorder[16];
+    int 	archflag;
 } bl_header;
 
 struct byteloader_state {
@@ -524,14 +609,49 @@ Since Perl version 5.10 defined in L<B>.
 
 =back
 
-=head1 PORTABILITY
+=head1 PORTABILITY  (TODO)
 
-All bytecode values are portable. Cross-platform and cross-version
-portability is just not implemented yet.
+All bytecode values are already portable.
+Cross-platform and cross-version portability is just not implemented yet.
+Cross-version portability will be very limited, cross-platform will
+do with the same threading model.
+
+=head2 CROSS-PLATFORM PORTABILITY (TODO)
+
+For different endian-ness there are ByteLoader converters planned.
+Header entry: byteorder.
+
+64int - 64all - 32int is portable. Header entry: ivsize
+
+Threading: unsolvable. Header entry: archname has "-thread"
+
+Cross-platform portability will be available only if threading
+is on or off on both perls (compiler and runner). TODO: Check in
+bytecode_header_check().
+
+=head2 CROSS-VERSION PORTABILITY (TODO)
+
+Bytecode ops:
+We can only reliably load bytecode from previous versions and promise
+that from 5.10.0 on future versions will only add new op numbers at
+the end, but will never replace old opcodes with incompatible arguments.
+On the first unknown bytecode op from a future version we will die.
+
+TODO: Bytecode opcode op-matrix
+
+We will need a table of all bytecode ops for all previous perl
+versions. And replacements in the byteloader for all the unsupported
+ops, like xiv64, cop_arybase.
+
+TODO: Perl opcode op-matrix
+
+The ByteLoader will need a op matrix of all previous perl versions
+to be able to map the old bytecode op to the new perl pp function.
 
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
+
 Reini Urban added the version logic, 5.10 support, portability.
 
 =cut
@@ -592,7 +712,9 @@ __END__
 0 xpv		bstate->bs_sv				none		x
 0 xpv_cur	bstate->bs_sv	 			STRLEN		x
 0 xpv_len	bstate->bs_sv				STRLEN		x
-0 xiv		bstate->bs_sv				IV		x
+8 xiv		bstate->bs_sv				IV		x
+<8 xiv32	bstate->bs_sv				I32
+<8 xiv64	bstate->bs_sv				IV64
 0 xnv		bstate->bs_sv				NV		x
 0 xlv_targoff	LvTARGOFF(bstate->bs_sv)		STRLEN
 0 xlv_targlen	LvTARGLEN(bstate->bs_sv)		STRLEN
@@ -635,7 +757,7 @@ __END__
 10 xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32	I32
 <10 xhv_riter	HvRITER(bstate->bs_sv)			I32
 0 xhv_name	bstate->bs_sv				pvindex		x
-<10 xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
+8-9 xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
 0 hv_store	bstate->bs_sv				svindex		x
 0 sv_magic	bstate->bs_sv				char		x
 0 mg_obj	SvMAGIC(bstate->bs_sv)->mg_obj		svindex
@@ -723,17 +845,17 @@ i cop_file	cCOP					pvindex		x
 0 push_begin	PL_beginav				svindex		x
 0 push_init	PL_initav				svindex		x
 0 push_end	PL_endav				svindex		x
-0 curstash	*(SV**)&PL_curstash			svindex
-0 defstash	*(SV**)&PL_defstash			svindex
-0 data		none					U8		x
-0 incav		*(SV**)&GvAV(PL_incgv)			svindex
-0 load_glob	none					svindex		x
+8 curstash	*(SV**)&PL_curstash			svindex
+8 defstash	*(SV**)&PL_defstash			svindex
+8 data		none					U8		x
+8 incav		*(SV**)&GvAV(PL_incgv)			svindex
+8 load_glob	none					svindex		x
 #ifdef USE_ITHREADS
-i regex_padav	*(SV**)&PL_regex_padav			svindex
+i8 regex_padav	*(SV**)&PL_regex_padav			svindex
 #endif
-0 dowarn	PL_dowarn				U8
-0 comppad_name	*(SV**)&PL_comppad_name			svindex
-0 xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)		svindex
-0 signal	bstate->bs_sv				strconst	24x
+8 dowarn	PL_dowarn				U8
+8 comppad_name	*(SV**)&PL_comppad_name			svindex
+8 xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)		svindex
+8 signal	bstate->bs_sv				strconst	24x
 # to be removed
-0 formfeed	PL_formfeed				svindex
+8 formfeed	PL_formfeed				svindex

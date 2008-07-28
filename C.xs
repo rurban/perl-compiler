@@ -2,6 +2,14 @@
 #include <perl.h>
 #include <XSUB.h>
 
+#ifndef PM_GETRE
+# ifdef USE_ITHREADS
+#  define PM_GETRE(o)     (INT2PTR(REGEXP*,SvIVX(PL_regex_pad[(o)->op_pmoffset])))
+# else
+#  define PM_GETRE(o)     ((o)->op_pmregexp)
+# endif
+#endif
+
 static int
 my_runops(pTHX)
 {

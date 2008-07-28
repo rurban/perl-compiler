@@ -2,7 +2,24 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
 until Perl 5.9.4.
 
-1.04_18 2008-06-05 rurban
+1.04_19 2008-06-08 rurban
+	* CC.pm: CXt_LOOP check rewrite, use now CxTYPE_no_LOOP()
+	* CC.pm, t/*.t: useithreads, not usethreads
+	* bytecode.t, test.pl: TODO handling: do not print "ok 1 #"
+	* b.t: fixed skip logic, better skip message
+	* Bblock: fixed to work without B::Concise (5.6.2)
+	* C.xs: add PM_GETRE for 5.6.2 and earlier
+	* CC.pm: Fix PP_EVAL hack from 1.04_18
+	* Bytecode: fixed IO::SUBPROCESS error (test 15)
+	* cc_harness: check static libperl.a, else try dynamic. Support -E
+	* ByteLoader: support different byteorders (Disassembler not yet)
+	* ByteLoader, Assembler, bytecode.pl: add archflags to header, relax 
+	  platform strictness.
+	* t/stash.t fixed for 5.10
+	* Disassembler: added hashref return for get_header in scalar context.
+	* Bytecode: fixed compiler crash/assertions for GV without GP (test 11) 
+
+1.04_18 2008-06-04 rurban
 	* Fixed t/assembler.t on 5.6.2
 	* Added ByteLoader::unimport (from 5.6.2)
 	* ByteLoader: Fixed bytecode crashes for 5.10+5.11 in 2-5, 7 by 

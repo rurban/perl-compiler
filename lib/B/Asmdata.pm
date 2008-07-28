@@ -246,14 +246,49 @@ Since Perl version 5.10 defined in L<B>.
 
 =back
 
-=head1 PORTABILITY
+=head1 PORTABILITY  (TODO)
 
-All bytecode values are portable. Cross-platform and cross-version
-portability is just not implemented yet.
+All bytecode values are already portable.
+Cross-platform and cross-version portability is just not implemented yet.
+Cross-version portability will be very limited, cross-platform will
+do with the same threading model.
+
+=head2 CROSS-PLATFORM PORTABILITY (TODO)
+
+For different endian-ness there are ByteLoader converters planned.
+Header entry: byteorder.
+
+64int - 64all - 32int is portable. Header entry: ivsize
+
+Threading: unsolvable. Header entry: archname has "-thread"
+
+Cross-platform portability will be available only if threading
+is on or off on both perls (compiler and runner). TODO: Check in
+bytecode_header_check().
+
+=head2 CROSS-VERSION PORTABILITY (TODO)
+
+Bytecode ops:
+We can only reliably load bytecode from previous versions and promise
+that from 5.10.0 on future versions will only add new op numbers at
+the end, but will never replace old opcodes with incompatible arguments.
+On the first unknown bytecode op from a future version we will die.
+
+TODO: Bytecode opcode op-matrix
+
+We will need a table of all bytecode ops for all previous perl
+versions. And replacements in the byteloader for all the unsupported
+ops, like xiv64, cop_arybase.
+
+TODO: Perl opcode op-matrix
+
+The ByteLoader will need a op matrix of all previous perl versions
+to be able to map the old bytecode op to the new perl pp function.
 
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
+
 Reini Urban added the version logic, 5.10 support, portability.
 
 =cut

@@ -28,14 +28,15 @@ BEGIN {
     require 'test.pl'; # for run_perl()
 }
 use strict;
-my $debugging = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $ITHREADS = ($Config{useithreads});
 
 undef $/;
 open TEST, "< t/TESTS" or open TEST, "< TESTS";
 my @tests = split /\n###+\n/, <TEST>;
 close TEST;
 my $numtests = $#tests+1;
-# $numtests++ if $debugging;
+# $numtests++ if $DEBUGGING;
 
 print "1..$numtests\n";
 
@@ -43,25 +44,22 @@ my $cnt = 1;
 my $test;
 my %insncov; # insn coverage
 my @todo = ();
-if ($debugging) {
+if ($DEBUGGING) {
   # either via Assembler debug, or via ByteLoader -Dl on a -DDEBUGGING perl
   #use B::Asmdata q(@insn_name);
   #for (0..@insn_name) { $insncov{$_} = 0; }
-  #@todo = (20);
-
-  #@todo = (2..5, 7, 11, 15) if $] > 5.009;
   @todo = (9..10, 12) if $] > 5.009;
-  @todo = (7, 11, 15) if ($] >= 5.010 and $] < 5.011 and $Config{usethreads} eq 'undef');
+  @todo = (7, 11, 15) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
   @todo = (4, 9..12, 15..16) if $] >= 5.011;
 } else {
   #@todo = (2..11, 13..16, 18..19) if $] > 5.009;
-  @todo = (2..5, 7, 11, 15) if $] > 5.009;
-  # 5.11 without debugging not tested
+  @todo = (2..5, 7, 11) if $] > 5.009;
+  @todo = (4,11,15..16) if ($] >= 5.011 and !$ITHREADS);
 }
 my %todo = map { $_ => 1 } @todo;
 
 for (@tests) {
-  my $todo = $todo{$cnt} ? " TODO " : "";
+  my $todo = $todo{$cnt} ? "#TODO " : "#";
   my $got;
   my @insn;
   my ($script, $expect) = split />>>+\n/;
@@ -69,14 +67,15 @@ for (@tests) {
   $test = "bytecode$cnt.pl";
   open T, ">$test"; print T $script; close T;
   unlink "${test}c" if -e "${test}c";
-  $got = run_perl(switches => [ "-Mblib -MO=Bytecode,-o${test}c" ],
-		  verbose  => 0, # for debugging
+  my $Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
+  $got = run_perl(switches => [ "-Mblib -MO=$Bytecode,-o${test}c" ],
+		  verbose  => 0, # for DEBUGGING
 		  nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-		  stderr   => 1, # to capture the "bytecode.pl syntax ok"
+		  stderr   => 1, # to capture the "bytecode.pl syntax ok"	
 		  progfile => $test);
   unless ($?) {
     # test coverage if -Dv is allowed
-    if ($debugging) {
+    if ($DEBUGGING) {
       my $cov = run_perl(progfile => "${test}c", # run the .plc
 			 nolib    => $ENV{PERL_CORE} ? 0 : 1,
 			 stderr   => 1,
@@ -92,16 +91,16 @@ for (@tests) {
 		    switches => [ "-Mblib -MByteLoader" ]);
     unless ($?) {
       if ($got =~ /^$expect$/) {
-	print "ok $cnt #$todo\n";
+	print "ok $cnt", $todo eq '#' ? "\n" : "$todo\n";
 	next;
       } else {
 	$keep_plc = $keep_plc_fail unless $keep_plc;
-	print "not ok $cnt #$todo wanted: $expect, got: $got\n";
+	print "not ok $cnt $todo wanted: $expect, got: $got\n";
 	next;
       }
     }
   }
-  print "not ok $cnt #$todo wanted: $expect, \$\? = $?, got: $got\n";
+  print "not ok $cnt $todo wanted: $expect, \$\? = $?, got: $got\n";
 } continue {
   1 while unlink($keep_pl ? () : $test, $keep_plc ? () : "${test}c");
   $cnt++;
@@ -109,7 +108,7 @@ for (@tests) {
 
 # DEBUGGING coverage test, see STATUS for the missing test ops.
 # The real coverage tests are in asmdata.t
-if (0 and $debugging) {
+if (0 and $DEBUGGING) {
   my $zeros = '';
   use B::Asmdata q(@insn_name);
   for (0..$#insn_name) { $zeros .= ($insn_name[$_]."($_) ") unless $insncov{$_} };

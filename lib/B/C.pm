@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_18';
+our $VERSION = '1.04_19';
 
 package B::C::Section;
 
@@ -172,7 +172,7 @@ our %REGEXP;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(output_all output_boilerplate output_main mark_unused
 		init_sections set_callback save_unused_subs objsym save_context);
-
+use 5.008;
 use B qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
 	 class cstring cchar svref_2object compile_stats comppadlist hash
 	 threadsv_names main_cv init_av end_av regex_padav opnumber amagic_generation
@@ -211,10 +211,10 @@ my $save_sig = 0;
 my ($debug_cops, $debug_av, $debug_cv, $debug_mg, $debug_sv, $debug_gv, $debug_pkg);
 my $max_string_len;
 
-my $ITHREADS = $Config{useithreads} eq 'define';
-my $PERL510 = ($] >= 5.009005);
-my $PERL511 = ($] >= 5.011);
-my $MAD = $Config{mad} eq 'define';
+my $ITHREADS = $Config{useithreads};
+my $PERL510  = ($] >= 5.009005);
+my $PERL511  = ($] >= 5.011);
+my $MAD      = $Config{mad};
 
 my @threadsv_names;
 BEGIN {
