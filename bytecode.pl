@@ -401,7 +401,7 @@ __END__
 0 ldop		PL_op					opindex
 0 stsv		bstate->bs_sv				U32		s
 0 stop		PL_op					U32		s
-0 stpv		(bstate->bs_sv)->sv_u.svu_pv		U32		x
+0 stpv		bstate->bs_pv.pvx			U32		x
 0 ldspecsv	bstate->bs_sv				U8		x
 0 ldspecsvx	bstate->bs_sv				U8		x
 0 newsv		bstate->bs_sv				U8		x
@@ -411,7 +411,7 @@ __END__
 0 newopn	PL_op					U8		x
 0 newpv		none					PV
 0 pv_cur	bstate->bs_pv.xpv.xpv_cur		STRLEN
-0 pv_free	bstate->bs_sv				none		x
+0 pv_free	bstate->bs_pv.pvx			none		x
 0 sv_upgrade	bstate->bs_sv				U8		x
 0 sv_refcnt	SvREFCNT(bstate->bs_sv)			U32
 0 sv_refcnt_add	SvREFCNT(bstate->bs_sv)			I32		x
@@ -461,13 +461,9 @@ __END__
 0 xav_max	AvMAX(bstate->bs_sv)			SSize_t
 <10 xav_flags	AvFLAGS(bstate->bs_sv)			U8
 10 xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32	I32
-#if PERL_VERSION < 10
 <10 xhv_riter	HvRITER(bstate->bs_sv)			I32
-#endif
 0 xhv_name	bstate->bs_sv				pvindex		x
-#if PERL_VERSION < 10
 <10 xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
-#endif
 0 hv_store	bstate->bs_sv				svindex		x
 0 sv_magic	bstate->bs_sv				char		x
 0 mg_obj	SvMAGIC(bstate->bs_sv)->mg_obj		svindex
@@ -486,8 +482,8 @@ __END__
 0 gp_av		*(SV**)&GvAV(bstate->bs_sv)		svindex
 0 gp_hv		*(SV**)&GvHV(bstate->bs_sv)		svindex
 0 gp_cv		*(SV**)&GvCV(bstate->bs_sv)		svindex
-#if PERL_VERSION < 10
-<10 gp_file	GvFILE(bstate->bs_sv)			pvindex
+#if PERL_VERSION < 9
+<9 gp_file	GvFILE(bstate->bs_sv)			pvindex
 #else
 9 gp_file	GvFILE_HEK(bstate->bs_sv)		hekindex
 #endif
@@ -564,13 +560,9 @@ i cop_file	cCOP					pvindex		x
 !i cop_filegv	cCOP					svindex		x
 #endif
 0 cop_seq	cCOP->cop_seq				U32
-#if PERL_VERSION < 10
 <10 cop_arybase	cCOP->cop_arybase			I32
-#endif
 0 cop_line	cCOP->cop_line				line_t
-#if PERL_VERSION < 10
 <10 cop_io	cCOP->cop_io				svindex
-#endif
 0 cop_warnings	cCOP					svindex		x
 0 main_start	PL_main_start				opindex
 0 main_root	PL_main_root				opindex

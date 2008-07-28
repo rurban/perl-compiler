@@ -102,8 +102,8 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
     bstate.bs_iv_overflows = 0;
 
 /* KLUDGE */
-    /* byterun loads incrementally from DATA, jitrun might require the whole buffer at once.
-       best via mmap */
+    /*  byterun loads incrementally from DATA, jitrun might require the whole 
+	buffer at once. best via mmap */
     if (byterun(aTHX_ &bstate)
 	    && (len = SvCUR(data.datasv) - (STRLEN)data.next_out))
     {

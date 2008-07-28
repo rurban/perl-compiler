@@ -8,7 +8,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_05';
+our $VERSION = '1.04_06';
 
 package B::C::Section;
 
@@ -198,7 +198,8 @@ my $optimize_warn_sv = 0;
 my $use_perl_script_name = 0;
 my $save_data_fh = 0;
 my $save_sig = 0;
-my ($debug_cops, $debug_av, $debug_cv, $debug_mg);
+#   -Dc          -DA        -DC        -DM        -DS
+my ($debug_cops, $debug_av, $debug_cv, $debug_mg, $debug_sv);
 my $max_string_len;
 
 my $ithreads = $Config{useithreads} eq 'define';
@@ -348,11 +349,19 @@ sub B::OP::fake_ppaddr {
   # uncast -1 (the printf format is %d so we can't tweak it), we have
   # to "know" that op_seq is a U16 and use 65535. Ugh.
 
-  my $static = $] > 5.009 ? '0, 1, 0' : sprintf "%u", 65535;
+  # 5.8: U16 op_seq;
+  # 5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
+  # 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
+  # 5.11: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
+  my $static;
+  if ($] < 5.009004) { $static = sprintf "%u", 65535; } # seq
+  elsif ($] < 5.010) { $static = '0, 1, 0';} 	# opt static spare
+  else { $static = '0, 0, 0, 0, 0';}     	# opt latefree latefreed attached spare
   sub B::OP::_save_common_middle {
     my $op = shift;
     sprintf ("%s, %u, %u, $static, 0x%x, 0x%x",
-	     $op->fake_ppaddr, $op->targ, $op->type, $op->flags, $op->private);
+	     $op->fake_ppaddr, $op->targ, $op->type, 
+	     $op->flags, $op->private);
   }
 }
 
@@ -630,7 +639,7 @@ sub B::NULL::save {
     my ($sv) = @_;
     my $sym = objsym($sv);
     return $sym if defined $sym;
-#   warn "Saving SVt_NULL SV\n"; # debug
+    warn "Saving SVt_NULL SV\n" if $debug_sv;
     # debug
     if ($$sv == 0) {
     	warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n";
@@ -647,6 +656,8 @@ sub B::IV::save {
     $xpvivsect->add(sprintf("0, 0, 0, %d", $sv->IVX));
     $svsect->add(sprintf("&xpviv_list[%d], %lu, 0x%x",
 			 $xpvivsect->index, $sv->REFCNT , $sv->FLAGS));
+    warn sprintf("Saving IV %d to xpviv_list[%d], sv_list[%d]", $sv->IVX, $xpvivsect->index, $svsect->index)
+	  if $debug_sv;
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
 
@@ -659,6 +670,8 @@ sub B::NV::save {
     $xpvnvsect->add(sprintf("0, 0, 0, %d, %s", $sv->IVX, $val));
     $svsect->add(sprintf("&xpvnv_list[%d], %lu, 0x%x",
 			 $xpvnvsect->index, $sv->REFCNT , $sv->FLAGS));
+    warn sprintf("Saving NV %d %s to xpvnv_list[%d], sv_list[%d]", $sv->IVX, $val,
+		 $xpvnvsect->index, $svsect->index) if $debug_sv;
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
 
@@ -677,10 +690,12 @@ sub savepvn {
 	    $offset += length $str;
 	}
 	push @res, sprintf("%s[%u] = '\\0';", $dest, $offset);
+	warn sprintf("Copying overlong PV %s to %s", cstring($pv), $dest) if $debug_sv;
     }
     else {
-	push @res, sprintf("%s = savepvn(%s, %u);", $dest,
-			   cstring($pv), length($pv));
+      warn sprintf("Saving PV %s to %s", cstring($pv), $dest) if $debug_sv;
+      push @res, sprintf("%s = savepvn(%s, %u);", $dest,
+			 cstring($pv), length($pv));
     }
     return @res;
 }
@@ -699,7 +714,7 @@ sub B::PVLV::save {
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
 			 $xpvlvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (!$pv_copy_on_grow) {
-      my $pvx = $] < 5.009 ? "xpvlv_list[%d].xpv_pv" : "xpv_list[%d]->sv_u.svu_pv";
+      my $pvx = $] < 5.009 ? "xpvlv_list[%d].xpv_pv" : "((SV)xpv_list[%d]).sv_u.svu_pv";
       $init->add(savepvn(sprintf($pvx, $xpvlvsect->index), $pv));
     }
     $sv->save_magic;
@@ -767,7 +782,7 @@ sub B::PV::save {
     $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
 			 $xpvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-      my $pvx = $] < 5.009 ? "xpv_list[%d].xpv_pv" : "((sv)xpv_list[%d])->sv_u.svu_pv";
+      my $pvx = $] < 5.009 ? "xpv_list[%d].xpv_pv" : "((SV)xpv_list[%d]).sv_u.svu_pv";
       $init->add(savepvn(sprintf($pvx, $xpvsect->index), $pv));
     }
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
@@ -1163,7 +1178,11 @@ sub B::GV::save {
 #              warn "GV::save &$name\n"; # debug
 	    } 
         }     
-	$init->add(sprintf("GvFILE($sym) = %s;", cstring($gv->FILE)));
+	if ($[ < 5.009) {
+	  $init->add(sprintf("GvFILE($sym) = %s;", cstring($gv->FILE)));
+	} else {
+	  $init->add(sprintf("GvFILE_HEK($sym) = %s;", cstring($gv->FILE)));
+	}
 #	warn "GV::save GvFILE(*$name)\n"; # debug
 	my $gvform = $gv->FORM;
 	if ($$gvform && $savefields&Save_FORM) {
@@ -1191,11 +1210,18 @@ sub B::AV::save {
     my ($av) = @_;
     my $sym = objsym($av);
     return $sym if defined $sym;
-    my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
-    $line .= sprintf(", 0x%x", $av->AvFLAGS) if $] < 5.009;
+    my $line;
+    if ($] < 5.009) {
+      # 5.8: array fill max off nv mg stash alloc arylen flags
+      $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
+      $line .= sprintf(", 0x%x", $av->AvFLAGS) if $] < 5.009;
+    } else {
+      # 5.9.4+: nv fill max iv mg stash
+      $line = "0.0, -1, -1, 0, 0, Nullhv";
+    }
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
-			 $xpvavsect->index, $av->REFCNT  , $av->FLAGS));
+			 $xpvavsect->index, $av->REFCNT, $av->FLAGS));
     my $sv_list_index = $svsect->index;
     my $fill = $av->FILL;
     $av->save_magic;
@@ -1281,10 +1307,17 @@ sub B::HV::save {
 	return $sym;
     }
     # It's just an ordinary HV
-    $xpvhvsect->add(sprintf("0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
-			    $hv->MAX, $hv->RITER));
+    if ($] < 5.009) {
+      # 5.8: array fill max keys nv mg stash riter eiter pmroot name
+      $xpvhvsect->add(sprintf("0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
+			      $hv->MAX, $hv->RITER));
+    } else {
+      # 5.9: nvu fill max ivu mg stash
+      $xpvhvsect->add(sprintf("0.0, 0, %d, 0, 0, Nullhv",
+			      $hv->MAX));
+    }
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x",
-			 $xpvhvsect->index, $hv->REFCNT  , $hv->FLAGS));
+			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
     my $sv_list_index = $svsect->index;
     my @contents = $hv->ARRAY;
     if (@contents) {
@@ -1325,6 +1358,11 @@ CODE
     # for PerlIO::scalar
     $use_xsloader = 1;
     $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
+}
+
+# TODO
+sub B::IO::SUBPROCESS { 
+  warn "B::IO::SUBPROCESS missing\n";
 }
 
 sub B::IO::save {
@@ -1800,7 +1838,7 @@ sub should_save
  my $package = shift;
  $package =~ s/::$//;
  return $unused_sub_packages{$package} = 0 if ($package =~ /::::/);  # skip ::::ISA::CACHE etc.
- # warn "Considering $package\n";#debug
+ warn "Considering $package\n";#debug
  foreach my $u (grep($unused_sub_packages{$_},keys %unused_sub_packages)) 
   {  
    # If this package is a prefix to something we are saving, traverse it 
@@ -2031,6 +2069,8 @@ sub compile {
 		    $debug_cv = 1;
 		} elsif ($arg eq "M") {
 		    $debug_mg = 1;
+		} elsif ($arg eq "S") {
+		    $debug_sv = 1;
 		} else {
 		    warn "ignoring unknown debug option: $arg\n";
 		}
@@ -2150,6 +2190,10 @@ Debug options (concatenated or separate flags like C<perl -D>).
 
 OPs, prints each OP as it's processed
 
+=item B<-DS>
+
+prints SV information on saving
+
 =item B<-Dc>
 
 COPs, prints COPs as processed (incl. file & line num)
@@ -2247,5 +2291,7 @@ Plenty. Current status: experimental.
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
+
+Reini Urban, C<rurban@cpan.org>
 
 =cut

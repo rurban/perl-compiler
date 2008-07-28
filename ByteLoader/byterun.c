@@ -129,7 +129,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		U32 arg;
 		BGET_U32(arg);
-		BSET_stpv((bstate->bs_sv)->sv_u.svu_pv, arg);
+		BSET_stpv(bstate->bs_pv.pvx, arg);
 		break;
 	    }
 	  case INSN_LDSPECSV:		/* 6 */
@@ -196,7 +196,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    }
 	  case INSN_PV_FREE:		/* 16 */
 	    {
-		BSET_pv_free(bstate->bs_sv);
+		BSET_pv_free(bstate->bs_pv.pvx);
 		break;
 	    }
 	  case INSN_SV_UPGRADE:		/* 17 */
@@ -526,8 +526,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#endif
 	  case INSN_XHV_NAME:		/* 65 */
 	    {
 		pvindex arg;
@@ -535,8 +533,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		BSET_xhv_name(bstate->bs_sv, arg);
 		break;
 	    }
-#if PERL_VERSION < 10
-#endif
 	  case INSN_HV_STORE:		/* 66 */
 	    {
 		svindex arg;
@@ -663,7 +659,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		*(SV**)&GvCV(bstate->bs_sv) = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
+#if PERL_VERSION < 9
 #else
 	  case INSN_GP_FILE:		/* 84 */
 	    {
@@ -962,8 +958,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		cCOP->cop_seq = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#endif
 	  case INSN_COP_LINE:		/* 123 */
 	    {
 		line_t arg;
@@ -971,8 +965,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		cCOP->cop_line = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#endif
 	  case INSN_COP_WARNINGS:		/* 124 */
 	    {
 		svindex arg;

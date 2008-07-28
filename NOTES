@@ -19,6 +19,7 @@ C backend invocation
 	-D		Debug options (concat or separate flags like perl -D)
 		o	OPs, prints each OP as it's processed
 		c	COPs, prints COPs as processed (incl. file & line num)
+		S	prints SV information on saving
 		A	prints AV information on saving
 		C	prints CV information on saving
 		M	prints MAGIC information on saving

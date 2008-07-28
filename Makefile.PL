@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use File::Spec;
-#use 5.009005;
+use 5.009005;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
@@ -42,11 +42,13 @@ sub depend {
     my $asmdata = File::Spec->catfile('B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $jitrun_c  = File::Spec->catfile('ByteLoader', 'jitrun.c');
+    my $jitrun_h  = File::Spec->catfile('ByteLoader', 'jitrun.h');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
-    my $perlcc = File::Spec->catfile('script', 'perlcc');
+    my $perlcc_inst = File::Spec->catfile('$(INST_BIN)', 'perlcc');
+    my $perlcc_exp = File::Spec->catfile('script', 'perlcc');
     "
-$perlcc : $perlcc.PL
-	\$(PERL) $perlcc.PL
+$perlcc_inst :: $perlcc_exp
+	\$(CP) $perlcc_exp $perlcc_inst
 
 $asmdata : bytecode.pl @headers
 	\$(PERL) bytecode.pl

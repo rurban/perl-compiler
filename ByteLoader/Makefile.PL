@@ -1,4 +1,5 @@
 use ExtUtils::MakeMaker;
+my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 WriteMakefile(
     NAME		=> 'ByteLoader',
@@ -9,17 +10,26 @@ WriteMakefile(
 
 sub MY::depend {
   my $up = File::Spec->updir;
-  my $bytecode_pl = File::Spec->catdir( '..', 'bytecode.pl' );
-  my $jitcompiler_pl = File::Spec->catdir( '..', 'jitcompiler.pl' );
-  "
+  my ($bytecode_pl, $jitcompiler_pl);
+  if ($core) {
+    $bytecode_pl = File::Spec->catdir( 'ByteLoader', 'bytecode.pl' );
+    $jitcompiler_pl = File::Spec->catdir( 'ByteLoader', 'jitcompiler.pl' );
+  } else {
+    $bytecode_pl = File::Spec->catdir( '..', 'bytecode.pl' );
+    $jitcompiler_pl = File::Spec->catdir( '..', 'jitcompiler.pl' );
+  }
+  return "
 byterun.c : $bytecode_pl
-	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
-
-jitrun.c : $bytecode_pl $jitcompiler_pl
-	cd $up && \$(PERL) jitcompiler.pl && cd ByteLoader
+	cd $up && \$(PERL) $bytecode_pl && cd ByteLoader
 
 byterun.h : $bytecode_pl
-	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
+	cd $up && \$(PERL) $bytecode_pl && cd ByteLoader
+
+jitrun.c : $jitcompiler_pl
+	cd $up && \$(PERL) $jitcompiler_pl && cd ByteLoader
+
+jitrun.h : $jitcompiler_pl
+	cd $up && \$(PERL) $jitcompiler_pl && cd ByteLoader
 
 ByteLoader\$(OBJ_EXT) : byterun.h byterun.c jitrun.c bytecode.h
 
