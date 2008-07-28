@@ -131,12 +131,12 @@ $insn_data{op_last} = [103, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_other} = [104, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_pmreplroot} = [105, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_pmreplstart} = [106, \&PUT_opindex, "GET_opindex"];
-$insn_data{op_pmreplrootpo} = [107, \&PUT_PADOFFSET, "GET_PADOFFSET"];
-$insn_data{op_pmstash} = [108, \&PUT_svindex, "GET_svindex"];
-$insn_data{op_pmreplrootgv} = [109, \&PUT_svindex, "GET_svindex"];
-$insn_data{pregcomp} = [110, \&PUT_none, "GET_none"];
-$insn_data{op_pmflags} = [111, \&PUT_U16, "GET_U16"];
-$insn_data{op_reflags} = [112, \&PUT_U32, "GET_U32"];
+$insn_data{op_pmstashpv} = [107, \&PUT_pvindex, "GET_pvindex"];
+$insn_data{op_pmreplrootpo} = [108, \&PUT_PADOFFSET, "GET_PADOFFSET"];
+$insn_data{op_pmstash} = [109, \&PUT_svindex, "GET_svindex"];
+$insn_data{op_pmreplrootgv} = [110, \&PUT_svindex, "GET_svindex"];
+$insn_data{pregcomp} = [111, \&PUT_pvcontents, "GET_pvcontents"];
+$insn_data{op_pmflags} = [112, \&PUT_U16, "GET_U16"];
 $insn_data{op_reflags} = [113, \&PUT_U32, "GET_U32"];
 $insn_data{op_sv} = [114, \&PUT_svindex, "GET_svindex"];
 $insn_data{op_padix} = [115, \&PUT_PADOFFSET, "GET_PADOFFSET"];
@@ -146,28 +146,31 @@ $insn_data{op_redoop} = [118, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_nextop} = [119, \&PUT_opindex, "GET_opindex"];
 $insn_data{op_lastop} = [120, \&PUT_opindex, "GET_opindex"];
 $insn_data{cop_label} = [121, \&PUT_pvindex, "GET_pvindex"];
-$insn_data{cop_stash} = [122, \&PUT_svindex, "GET_svindex"];
-$insn_data{cop_filegv} = [123, \&PUT_svindex, "GET_svindex"];
-$insn_data{cop_seq} = [124, \&PUT_U32, "GET_U32"];
-$insn_data{cop_line} = [125, \&PUT_U32, "GET_U32"];
-$insn_data{cop_warnings} = [126, \&PUT_svindex, "GET_svindex"];
-$insn_data{main_start} = [127, \&PUT_opindex, "GET_opindex"];
-$insn_data{main_root} = [128, \&PUT_opindex, "GET_opindex"];
-$insn_data{main_cv} = [129, \&PUT_svindex, "GET_svindex"];
-$insn_data{curpad} = [130, \&PUT_svindex, "GET_svindex"];
-$insn_data{push_begin} = [131, \&PUT_svindex, "GET_svindex"];
-$insn_data{push_init} = [132, \&PUT_svindex, "GET_svindex"];
-$insn_data{push_end} = [133, \&PUT_svindex, "GET_svindex"];
-$insn_data{curstash} = [134, \&PUT_svindex, "GET_svindex"];
-$insn_data{defstash} = [135, \&PUT_svindex, "GET_svindex"];
-$insn_data{data} = [136, \&PUT_U8, "GET_U8"];
-$insn_data{incav} = [137, \&PUT_svindex, "GET_svindex"];
-$insn_data{load_glob} = [138, \&PUT_svindex, "GET_svindex"];
-$insn_data{dowarn} = [139, \&PUT_U8, "GET_U8"];
-$insn_data{comppad_name} = [140, \&PUT_svindex, "GET_svindex"];
-$insn_data{xgv_stash} = [141, \&PUT_svindex, "GET_svindex"];
-$insn_data{signal} = [142, \&PUT_strconst, "GET_strconst"];
-$insn_data{formfeed} = [143, \&PUT_svindex, "GET_svindex"];
+$insn_data{cop_stashpv} = [122, \&PUT_pvindex, "GET_pvindex"];
+$insn_data{cop_file} = [123, \&PUT_pvindex, "GET_pvindex"];
+$insn_data{cop_stash} = [124, \&PUT_svindex, "GET_svindex"];
+$insn_data{cop_filegv} = [125, \&PUT_svindex, "GET_svindex"];
+$insn_data{cop_seq} = [126, \&PUT_U32, "GET_U32"];
+$insn_data{cop_line} = [127, \&PUT_U32, "GET_U32"];
+$insn_data{cop_warnings} = [128, \&PUT_svindex, "GET_svindex"];
+$insn_data{main_start} = [129, \&PUT_opindex, "GET_opindex"];
+$insn_data{main_root} = [130, \&PUT_opindex, "GET_opindex"];
+$insn_data{main_cv} = [131, \&PUT_svindex, "GET_svindex"];
+$insn_data{curpad} = [132, \&PUT_svindex, "GET_svindex"];
+$insn_data{push_begin} = [133, \&PUT_svindex, "GET_svindex"];
+$insn_data{push_init} = [134, \&PUT_svindex, "GET_svindex"];
+$insn_data{push_end} = [135, \&PUT_svindex, "GET_svindex"];
+$insn_data{curstash} = [136, \&PUT_svindex, "GET_svindex"];
+$insn_data{defstash} = [137, \&PUT_svindex, "GET_svindex"];
+$insn_data{data} = [138, \&PUT_U8, "GET_U8"];
+$insn_data{incav} = [139, \&PUT_svindex, "GET_svindex"];
+$insn_data{load_glob} = [140, \&PUT_svindex, "GET_svindex"];
+$insn_data{regex_padav} = [141, \&PUT_svindex, "GET_svindex"];
+$insn_data{dowarn} = [142, \&PUT_U8, "GET_U8"];
+$insn_data{comppad_name} = [143, \&PUT_svindex, "GET_svindex"];
+$insn_data{xgv_stash} = [144, \&PUT_svindex, "GET_svindex"];
+$insn_data{signal} = [145, \&PUT_strconst, "GET_strconst"];
+$insn_data{formfeed} = [146, \&PUT_svindex, "GET_svindex"];
 
 my ($insn_name, $insn_data);
 while (($insn_name, $insn_data) = each %insn_data) {
@@ -247,10 +250,15 @@ Since Perl version 5.10 defined in L<B>.
 
 =back
 
+=head1 PORTABILITY
+
+All bytecode values are portable. Cross-platform and cross-version
+portability is just not implemented yet.
+
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban added the version logic and 5.10 support.
+Reini Urban added the version logic, 5.10 support, portability.
 
 =cut
 

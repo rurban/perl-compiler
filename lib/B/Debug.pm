@@ -1,6 +1,6 @@
 package B::Debug;
 
-our $VERSION = '1.05_02';
+our $VERSION = '1.05_03';
 
 use strict;
 use B qw(peekop class walkoptree walkoptree_exec
@@ -262,11 +262,18 @@ sub B::AV::debug {
     $av->B::SV::debug;
     my(@array) = $av->ARRAY;
     print "\tARRAY\t\t(", join(", ", map("0x" . $$_, @array)), ")\n";
-    printf <<'EOT', scalar(@array), $av->MAX, $av->OFF;
+    if (ITHREADS) {
+      printf <<'EOT', scalar(@array), $av->MAX, $av->OFF;
 	FILL		%d
 	MAX		%d
 	OFF		%d
 EOT
+    } else {
+      printf <<'EOT', scalar(@array), $av->MAX;
+	FILL		%d
+	MAX		%d
+EOT
+    }
     printf <<'EOT', $av->AvFLAGS if $] < 5.009;
 	AvFLAGS		%d
 EOT

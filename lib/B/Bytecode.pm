@@ -8,7 +8,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.02_02';
+our $VERSION = '1.02_03';
 
 use strict;
 use Config;
@@ -75,10 +75,13 @@ sub op_flags {
 }
 
 sub sv_flags {
-  return '' if $quiet or ($] == 5.010);
+  return '' if $quiet or $B::Concise::VERSION < 0.74; # or ($] == 5.010);
+  return '' unless $debug{Comment};
+  return 'B::SPECIAL' if $_[0]->isa('B::SPECIAL');
   my ($sv) = @_;
   my %h;
-  # TODO: check with which Concise and B versions this works. 5.10.0 fails
+  # TODO: Check with which Concise and B versions this works. 5.10.0 fails.
+  # B::Concise 0.66 fails also
   sub B::Concise::fmt_line { return shift; }
   %h = B::Concise::concise_op($ops{$tix-1}) if ref $ops{$tix-1};
   B::Concise::concise_sv($_[0], \%h, 0);
@@ -106,9 +109,9 @@ sub B::OP::ix {
 	nice "[".$op->name." $tix]";
 	$ops{$tix} = $op;
 	my $arg = $op->size | $op->type <<7;
-	asm "newopx", $arg,
-	    sprintf("%s, $arg=size:%d,type:%d",
-		    op_flags($op->flags), $op->size, $op->type);
+	B::Assembler::maxopix($tix) if $debug{A};
+	asm "newopx", $arg, sprintf("$arg=size:%d,type:%d",
+				    $op->size, $op->type);
 	$optab{$$op} = $opix = $ix = $tix++;
 	$op->bsave($ix);
 	$ix;
@@ -130,7 +133,8 @@ sub B::SV::ix {
     my $ix = $svtab{$$sv};
     defined($ix) ? $ix : do {
 	nice '['.class($sv).']';
-	asm "newsvx", $sv->FLAGS, sv_flags($sv);
+	B::Assembler::maxsvix($tix) if $debug{A};
+	asm "newsvx", $sv->FLAGS, $debug{Comment} ? sv_flags($sv) : '';
 	$svtab{$$sv} = $varix = $ix = $tix++;
 	#nice "\tsvtab ".$$sv." => bsave(".$ix.");
 	$sv->bsave($ix);
@@ -142,12 +146,12 @@ sub B::GV::ix {
     my ($gv,$desired) = @_;
     my $ix = $svtab{$$gv};
     defined($ix) ? $ix : do {
-	if ($gv->GP) {
+	if ($gv->GP) { # FIXME gv with gp # if (!$perl510 and ...)
 	    my ($svix, $avix, $hvix, $cvix, $ioix, $formix);
 	    nice "[GV]";
 	    # 510 without debugging misses B::SPECIAL::NAME
 	    my $name = $gv->STASH->NAME . "::"
-	      . class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME;
+	      . (class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME);
 	    asm "gv_fetchpvx", cstring $name;
 	    $svtab{$$gv} = $varix = $ix = $tix++;
 	    asm "sv_flags", $gv->FLAGS;
@@ -162,14 +166,14 @@ sub B::GV::ix {
 	    $avix = $gv->AV->ix;
 	    $hvix = $gv->HV->ix;
 
-    # XXX {{{{
+	    # XXX {{{{
 	    my $cv = $gv->CV;
 	    $cvix = $$cv && defined $files{$cv->FILE} ? $cv->ix : 0;
 	    my $form = $gv->FORM;
 	    $formix = $$form && defined $files{$form->FILE} ? $form->ix : 0;
 
 	    $ioix = $name !~ /STDOUT$/ ? $gv->IO->ix : 0;	
-							    # }}}} XXX
+	    # }}}} XXX
 
 	    nice "-GV-",
 	    asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
@@ -185,7 +189,7 @@ sub B::GV::ix {
 	    asm "formfeed", $svix if $name eq "main::\cL";
 	} else {
 	    nice "[GV]";
-	    asm "newsvx", $gv->FLAGS, sv_flags($gv);
+	    asm "newsvx", $gv->FLAGS, $debug{Comment} ? sv_flags($gv) : '';
 	    $svtab{$$gv} = $varix = $ix = $tix++;
 	    my $stashix = $gv->STASH->ix;
 	    $gv->B::PVMG::bsave($ix);
@@ -213,7 +217,7 @@ sub B::HV::ix {
 	    # asm "xhv_pmroot", $pmrootix;	# XXX
 	} else {
 	    nice "[HV]";
-	    asm "newsvx", $hv->FLAGS, sv_flags($hv);
+	    asm "newsvx", $hv->FLAGS, $debug{Comment} ? sv_flags($hv) : '';
 	    $svtab{$$hv} = $varix = $ix = $tix++;
 	    my $stashix = $hv->SvSTASH->ix;
 	    for (@array = $hv->ARRAY) {
@@ -293,9 +297,11 @@ sub B::PVIV::bsave {
 	return if $sv->isa('B::AV');
 	return if $sv->isa('B::HV');
 	return if $sv->isa('B::CV');
-    }
+	return if $sv->isa('B::GV');}
+    bwarn(sprintf("PVIV sv:%s flags:0x%x",class($sv),$sv->FLAGS)) if $debug{M};
+    # PVIV GV 8009, GV flags & (4000|8000) illegal (SVp_SCREAM|SVp_POK)
     asm "xiv", !ITHREADS && $sv->FLAGS & (SVf_FAKE|SVf_READONLY) ?
-	"0 # but true" : $sv->IVX;
+      "0 # but true" : $sv->IVX;
 }
 
 sub B::PVNV::bsave {
@@ -311,7 +317,8 @@ sub B::PVNV::bsave {
 	return if $sv->isa('B::HV');
 	return if $sv->isa('B::CV');
 	return if $sv->isa('B::FM');
-     }
+	return if $sv->isa('B::GV');
+    }
     asm "xnv", sprintf "%.40g", $sv->NVX;
 }
 
@@ -424,7 +431,7 @@ sub B::AV::bsave {
     my ($av,$ix) = @_;
     return $av->B::PVMG::bsave($ix) if $av->MAGICAL;
     my @array = $av->ARRAY;
-    $_ = $_->ix for @array; # FIXME!
+    $_ = $_->ix for @array; # hack. who in the world understands this? hands up!
     my $stashix = $av->SvSTASH->ix;
 
     nice "-AV-",
@@ -481,9 +488,9 @@ sub B::OP::bsave_thin {
 	asm "ldop", $opix = $ix;
     }
     asm "op_next", $nextix;
-    asm "op_targ", $op->targ if $op->type;		# tricky
-    asm "op_flags", $op->flags;
-    asm "op_private", $op->private;
+    asm "op_targ", $op->targ if $op->type;	# tricky
+    asm "op_flags", $op->flags, op_flags($op->flags);
+    asm "op_private", $op->private; # private concise flags?
 }
 
 sub B::OP::bsave;
@@ -654,35 +661,35 @@ sub B::PMOP::bsave {
       asm "op_pmpermflags", $op->pmpermflags;
       asm "op_pmdynflags", $op->pmdynflags;
       # asm "op_pmnext", $pmnextix;	# XXX
-      asm "newpv", pvstring $op->precomp;
-      asm "pregcomp"; # how is this supposed to work? needs arg pvcontants
+      asm "newpv", pvstring $op->precomp; # Special sequence: This is the arg for the next pregcomp
+      asm "pregcomp";
     } elsif ( $perl511 ) { 	# full REGEXP type
       #bwarn("PMOP full REGEXP type not yet supported");
       #my $re;
-      if ($op->pmoffset) { # regex_pad is regenerated within pregcomp !?!
+      if (ITHREADS and $op->pmoffset) { # regex_pad is regenerated within pregcomp !?!
 	#bwarn("PMOP existing regex_pad not yet supported");
 	asm "op_pmflags",  $op->pmflags | 2;
       } else {
 	asm "op_pmflags",  $op->pmflags;
       }
       asm "newpv", pvstring $op->precomp;
-      #asm "op_reflags",  $op->reflags; # does not pregcomp set the extflags?
       asm "pregcomp";
+      asm "op_reflags",  $op->reflags; # pregcomp does not set the extflags, just the pmflags
     } elsif ( $perl510 ) {
       # asm "newsvx", $sv->FLAGS;
       # asm "newsv", pvstring $op->precomp;
       #bwarn("PMOP not yet supported");
-      if ($op->pmoffset) { # regex_pad is regenerated within pregcomp
+      if (ITHREADS and $op->pmoffset) { # regex_pad is regenerated within pregcomp?
 	# bwarn("PMOP existing regex_pad not yet supported");
 	asm "op_pmflags",  $op->pmflags | 2;
+	bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
       } else {
 	asm "op_pmflags",  $op->pmflags;
+	bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags) if $debug{M};
       }
-      asm "op_reflags",  $op->reflags;
       asm "newpv", pvstring $op->precomp;
-      bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
-      #asm "pregcomp", $ix;
       asm "pregcomp";
+      asm "op_reflags",  $op->reflags; # pregcomp does not set the extflags, just the pmflags
     }
 }
 
@@ -829,6 +836,7 @@ sub compile {
 	if (/^-q(q?)/) {
 	  $quiet = 1;
 	} elsif (/^-S/) {
+	  $debug{Comment} = 1;
 	  *newasm = *endasm = sub { };
 	  *asm = sub($;$$) {
 	    undef $_[2] if defined $_[2] and $quiet;
@@ -983,7 +991,11 @@ Set debugging flag for more verbose STDERR output.
 Verbose debugging options are crucial, because we have no interactive
 debugger at the early CHECK step, where the compilation happens.
 
-M for Magic and Matches.
+B<M> for Magic and Matches.
+
+=item B<-D>I<A>
+
+Set developer B<A>ssertions, to help find possible obj-indices out of range.
 
 =back
 

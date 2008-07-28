@@ -16,8 +16,8 @@ require ByteLoader;		# we just need its $VERSION
 no warnings;			# XXX
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(assemble_fh newasm endasm assemble asm);
-$VERSION = '0.07_01';
+@EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
+$VERSION = '0.07_03';
 
 use strict;
 my %opnumber;
@@ -38,6 +38,9 @@ my $debug = 0;
 sub debug { $debug = shift }
 my $quiet = 0;
 sub quiet { $quiet = shift }
+my ($maxopix, $maxsvix) = (0xffffffff, 0xffffffff);
+sub maxopix { $maxopix = shift }
+sub maxsvix { $maxsvix = shift }
 
 sub limcheck($$$$){
     my( $val, $lo, $hi, $loc ) = @_;
@@ -82,11 +85,12 @@ sub B::Asmdata::PUT_I32 {
 sub B::Asmdata::PUT_NV  { sprintf("%s\0", $_[0]) } # "%lf" looses precision and pack('d',...)
 						   # may not even be portable between compilers
 sub B::Asmdata::PUT_objindex { # could allow names here
-    my $arg = limcheck( $_[0], 0, 0xffffffff, '*index' );
-    pack("L", $arg);
+  my $maxidx = $_[1] || 0xffffffff;
+  my $arg = limcheck( $_[0], 0, $maxidx, '*index' );
+  pack("L", $arg);
 }
-sub B::Asmdata::PUT_svindex { &B::Asmdata::PUT_objindex }
-sub B::Asmdata::PUT_opindex { &B::Asmdata::PUT_objindex }
+sub B::Asmdata::PUT_svindex { B::Asmdata::PUT_objindex(@_, $maxsvix) }
+sub B::Asmdata::PUT_opindex { &B::Asmdata::PUT_objindex(@_, $maxopix) }
 sub B::Asmdata::PUT_pvindex { &B::Asmdata::PUT_objindex }
 sub B::Asmdata::PUT_hekindex { &B::Asmdata::PUT_objindex }
 
@@ -197,8 +201,8 @@ sub strip_comments {
     return ($line, $comment);
 }
 
-# create the ByteCode header: magic, archname, ByteLoader $VERSION, ivsize,
-# 	ptrsize, byteorder
+# create the ByteCode header:
+#   magic, archname, ByteLoader $VERSION, ivsize, ptrsize, longsize, byteorder
 # nvtype is irrelevant (floats are stored as strings)
 # byteorder is strconst, not U32 because of varying size issues (?)
 
@@ -213,9 +217,8 @@ sub gen_header {
     $header .= B::Asmdata::PUT_strconst(qq["$version"]);
     $header .= B::Asmdata::PUT_U32($Config{ivsize});
     $header .= B::Asmdata::PUT_U32($Config{ptrsize});
-    #if ($] > 5.008008) {
+    $header .= B::Asmdata::PUT_U32($Config{longsize});
     $header .= B::Asmdata::PUT_strconst('"'.$Config{byteorder}.'"');
-    #}
     $header;
 }
 

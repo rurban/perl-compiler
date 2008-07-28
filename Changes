@@ -1,22 +1,61 @@
-Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 until Perl 5.9.4.
+-*- change-log -*-
+Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
+until Perl 5.9.4.
+
+1.04_15 2008-04-11 rurban
+	Highlights: bytecode and ByteLoader portability preparation and 
+	commented disassembler output. PVGV and new REGEX still broken.
+	Fixes for no ithreads.
+	
+        * Fixed verbose Bytecode for old B::Concise (5.8.8). t/testplc.sh failed before.
+	* ByteLoader: Work on portability (different arch, version and sizes). 
+	  Added bl_header.
+	  Changed macro BYTECODE_HEADER_CHECK to function bytecode_header_check().
+	  Fixes for no threads.
+	* bytecode.h: pregcomp fix for 5.10 w/o threads
+	  (Thanks to david@cantrell.org.uk for his cpantest for netbsd).
+	  use xpv_cur and not xpv_len for the rx length (len - 1) to strip off the ending nul byte. 
+	  5.10: new minlen check aborts
+	* ByteLoader security: added strconst maxsize flag to bytecode.pl for buffer 
+	  overflow checks.
+	* Bytecode -DA for devel assertions of absolute or probably wrong opindex 
+	  pointers (nyi)
+	* disassemble, B::Assembler: commented output, similar to -MO=Bytecode,-S
+	  Added backwards option --bare for older assemblers.
+	* assemble, disassemble: added pod
+	* B::Disassembler:
+	  Provide default printers print_insn (commented) and print_insn_bare.
+	  Portability: Use the header settings from the .plc and not the current 
+	  perl settings.
+	* B::Assembler 0.07_03, B::Disassembler 1.05_02, ByteLoader 0.06_03:
+	  Added longsize to the bytecode header, just for xcv_depth.
+	* B::Debug 1.05_03: Fixes for no threads.
+	* Makefile.PL: Fixed script/perlcc.PL dependency
+	  make: *** No rule to make target `script/perlcc', needed by `blib/bin/perlcc'.
+	  (Thanks to david@cantrell.org.uk for his cpantest for solaris)
+	* Added test TODO's, Added perloptreeguts.pod
 
 1.04_14 2008-03-24 rurban
-        * Fixes some 1.04_13 +x executable permissions in docs. Windows habits.
+	
+        * Fixed some 1.04_13 +x executable permissions in docs. Windows habits.
 
 1.04_13 2008-03-24 rurban
+	
 	* Fixed B::C pv init in 5.10. Forgot refcnt and flags.
 	* Added "Other perl to exe compilers" section to perlcompile.pod. 
   	  This is even a FAQ.
 	* Added the NOTES to perlcompile.pod
 	* Added temp. perloptreeguts.pod. In work, also at the wiki.
 	* Fixed Bytecode op_pmflags assertions.
-        * Added orangesect for enough regexp space in RE's sv_any. Engine not initialized though.
+        * Added orangesect for enough regexp space in RE's sv_any. 
+	  Engine not initialized though.
 	* Hangs in C/CC executables at an op_free(PL_main_root) trying to free 
           the static op structsm because the earlier op_seq -1 hack is gone now, 
 	  and opt_static was replaced by opt_latefree. Set now opt_latefree = 1.
           This fixed tests 1 and 13. Slowly making progress step by step.
 
 1.04_12 2008-03-16 rurban (first upload)
+	
 	* Fixed bug #40435 CC: Can't locate object method "_save_common_middle" 
 	  via package "B::FAKEOP"
 	* move tests from [bc]*.t into shared TESTS file.
@@ -28,6 +67,7 @@ Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 unti
 	* make C and CC less verbose, honor -v, -q ignored.
 
 1.04_11 2008-03-09 rurban
+	
 	* removed Jit and Asm stuff. Maybe as seperate packages somewhen. 
 	  But targeting PIR makes more sense.
 	* added STATUS
@@ -38,6 +78,7 @@ Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 unti
 	* use run_cc_test
 
 1.04_10 2008-02-26 rurban
+	
 	* change bc pvx access
 	  dummy struct bytestate_xpv, so pv has the same fields as with 5.8, 
 	  seperated from the sv. The sv is seperated from the pv.

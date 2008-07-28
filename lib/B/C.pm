@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_14';
+our $VERSION = '1.04_15';
 
 package B::C::Section;
 
@@ -372,11 +372,6 @@ sub B::OP::fake_ppaddr {
 # $op->next and $op->sibling
 
 {
-  # For 5.9 the hard coded text is the values for op_opt and op_static in each
-  # op.  The value of op_opt is irrelevant, and the value of op_static needs to
-  # be 1 to tell op_free that this is a statically defined op and that is
-  # shouldn't be freed.
-
   # For 5.8:
   # Current workaround/fix for op_free() trying to free statically
   # defined OPs is to set op_seq = -1 and check for that in op_free().
@@ -386,13 +381,18 @@ sub B::OP::fake_ppaddr {
   # uncast -1 (the printf format is %d so we can't tweak it), we have
   # to "know" that op_seq is a U16 and use 65535. Ugh.
 
+  # For 5.9 the hard coded text is the values for op_opt and op_static in each
+  # op.  The value of op_opt is irrelevant, and the value of op_static needs to
+  # be 1 to tell op_free that this is a statically defined op and that is
+  # shouldn't be freed.
+
   # For 5.10 op_seq = -1 is gone, the temp. op_static also, but we
-  # have something better, we can set op_latefree.
+  # have something better, we can set op_latefree to 1, which frees the children
+  # (e.g. savepvn), but not the static op.
 
   # 5.8: U16 op_seq;
   # 5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
   # 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
-  # 5.11: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
   my $static;
   if ($] < 5.009004) { $static = sprintf "%u", 65535; } # seq
   elsif ($] < 5.010) { $static = '0, 1, 0';} 	        # opt static spare
@@ -646,7 +646,7 @@ sub B::PMOP::save {
 	    $replstartfield = saveoptree("*ignore*", $replroot, $replstart);
 	}
     }
-    # pmnext handling is broken in perl itself, I think. Bad op_pmnext
+    # pmnext handling is broken in perl itself, we think. Bad op_pmnext
     # fields aren't noticed in perl's runtime (unless you try reset) but we
     # segfault when trying to dereference it to find op->op_pmnext->op_type
     if ($perl510) {

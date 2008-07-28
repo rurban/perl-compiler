@@ -49,6 +49,72 @@ bset_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
     return obj;
 }
 
+int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
+    U32 sz = 0;
+    strconst str;
+
+    BGET_U32(sz); /* Magic: 'PLBC' or 'PLJC' */
+    if (sz != 0x43424c50) {
+        if (sz != 0x434a4c50) {
+	    HEADER_FAIL1("bad magic (want 0x43424c50 PLBC or 0x434a4c50 PLJC, got %#x)", (int)sz);
+	} else {
+	    *isjit = 1;
+        }
+    }
+    BGET_strconst(str,80);	/* archname */
+    if (strNE(str, ARCHNAME)) {
+	HEADER_WARN2("wrong architecture (want %s, you have %s)",str,ARCHNAME);
+    }
+    strcpy(bl_header.archname, str);
+
+    BGET_strconst(str,16); /* fail if lower ByteLoader version */
+    if (strLT(str, VERSION)) {
+	HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",
+		str, VERSION);
+    }
+    strcpy(bl_header.version, str);
+
+    BGET_U32(sz); /* ivsize */
+    if (sz != IVSIZE) {
+	HEADER_WARN("different IVSIZE");
+        if ((sz != 4) && (sz != 8))
+	    HEADER_FAIL1("unsupported IVSIZE %d", sz);
+    }
+    bl_header.ivsize = sz;
+
+    BGET_U32(sz); /* ptrsize */
+    if (sz != PTRSIZE) {
+	HEADER_WARN("different PTRSIZE");
+        if ((sz != 4) && (sz != 8))
+	    HEADER_FAIL1("unsupported PTRSIZE %d", sz);
+    }
+    bl_header.ptrsize = sz;
+
+    /* new since 0.06_03 */
+    if (strGE(bl_header.version, "0.06_03")) {
+      BGET_U32(sz); /* longsize */
+      if (sz != LONGSIZE) {
+	HEADER_WARN("different LONGSIZE");
+        if ((sz != 4) && (sz != 8))
+	    HEADER_FAIL1("unsupported LONGSIZE %d", sz);
+      }
+      bl_header.longsize = sz;
+    } else {
+      bl_header.longsize = 8;
+    }
+
+    BGET_strconst(str,16); /* 12345678 */	
+    if (strNE(str, "12345678")) {
+	HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",
+		"12345678", str);
+        if (strNE(str, "56781234")) {
+	    HEADER_WARN1("invalid byteorder %s)", str);
+        }
+    }
+    strcpy(bl_header.byteorder, str);
+    return 1;
+}
+
 int
 byterun(pTHX_ struct byteloader_state *bstate)
 {
@@ -57,9 +123,9 @@ byterun(pTHX_ struct byteloader_state *bstate)
     U32 ix;
     SV *specialsv_list[7];
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit on PLJC magic header */
+    bytecode_header_check(aTHX_ bstate, &isjit);	/* croak if incorrect platform, set isjit on PLJC magic header */
     if (isjit) {
-	Perl_croak(aTHX_ "No PLJC-magic JIT support yet\n");
+	Perl_croak(aTHX_ "PLJC-magic: No JIT support yet\n");
         return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
         Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
@@ -109,7 +175,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldsv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldsv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		bstate->bs_sv = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   bstate->bs_sv = arg;\n"));
 		break;
@@ -118,7 +184,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldop opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) ldop opindex:0x%x, ix:%d\n", insn, arg, ix));
 		PL_op = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_op = arg;\n"));
 		break;
@@ -218,6 +284,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		PV arg;
 		BGET_PV(arg);
 		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) newpv PV:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "	   BGET_PV(arg) => \"%s\"\n", bstate->bs_pv.xpv_pv));
 		break;
 	    }
 	  case INSN_PV_CUR:		/* 15 */
@@ -276,7 +343,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xrv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xrv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_xrv(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xrv(bstate->bs_sv, arg)\n"));
 		break;
@@ -346,7 +413,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xlv_targ svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xlv_targ svindex:0x%x, ix:%d\n", insn, arg, ix));
 		LvTARG(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   LvTARG(bstate->bs_sv) = arg;\n"));
 		break;
@@ -436,7 +503,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_top_name pvindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_top_name pvindex:\"%s\"\n", insn, arg, ix));
 		IoTOP_NAME(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   IoTOP_NAME(bstate->bs_sv) = arg;\n"));
 		break;
@@ -445,7 +512,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_top_gv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_top_gv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&IoTOP_GV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&IoTOP_GV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -454,7 +521,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_fmt_name pvindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_fmt_name pvindex:\"%s\"\n", insn, arg, ix));
 		IoFMT_NAME(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   IoFMT_NAME(bstate->bs_sv) = arg;\n"));
 		break;
@@ -463,7 +530,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_fmt_gv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_fmt_gv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&IoFMT_GV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&IoFMT_GV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -472,7 +539,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_bottom_name pvindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_bottom_name pvindex:\"%s\"\n", insn, arg, ix));
 		IoBOTTOM_NAME(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   IoBOTTOM_NAME(bstate->bs_sv) = arg;\n"));
 		break;
@@ -481,7 +548,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_bottom_gv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xio_bottom_gv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&IoBOTTOM_GV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&IoBOTTOM_GV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -508,7 +575,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_xsubany svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_xsubany svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&CvXSUBANY(bstate->bs_sv).any_ptr = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvXSUBANY(bstate->bs_sv).any_ptr = arg;\n"));
 		break;
@@ -517,7 +584,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_stash svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_stash svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&CvSTASH(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvSTASH(bstate->bs_sv) = arg;\n"));
 		break;
@@ -526,7 +593,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_start opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_start opindex:0x%x, ix:%d\n", insn, arg, ix));
 		CvSTART(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   CvSTART(bstate->bs_sv) = arg;\n"));
 		break;
@@ -535,7 +602,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_root opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_root opindex:0x%x, ix:%d\n", insn, arg, ix));
 		CvROOT(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   CvROOT(bstate->bs_sv) = arg;\n"));
 		break;
@@ -544,7 +611,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_gv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_gv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&CvGV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvGV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -553,7 +620,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_file pvindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_file pvindex:\"%s\"\n", insn, arg, ix));
 		CvFILE(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   CvFILE(bstate->bs_sv) = arg;\n"));
 		break;
@@ -571,7 +638,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_padlist svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_padlist svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&CvPADLIST(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvPADLIST(bstate->bs_sv) = arg;\n"));
 		break;
@@ -580,7 +647,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_outside svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xcv_outside svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&CvOUTSIDE(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&CvOUTSIDE(bstate->bs_sv) = arg;\n"));
 		break;
@@ -616,7 +683,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_pushx svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_pushx svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_av_pushx(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_av_pushx(bstate->bs_sv, arg)\n"));
 		break;
@@ -625,7 +692,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_push svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) av_push svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_av_push(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_av_push(bstate->bs_sv, arg)\n"));
 		break;
@@ -661,7 +728,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xhv_name pvindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xhv_name pvindex:\"%s\"\n", insn, arg, ix));
 		BSET_xhv_name(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xhv_name(bstate->bs_sv, arg)\n"));
 		break;
@@ -670,7 +737,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) hv_store svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) hv_store svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_hv_store(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_hv_store(bstate->bs_sv, arg)\n"));
 		break;
@@ -688,7 +755,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_obj svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_obj svindex:0x%x, ix:%d\n", insn, arg, ix));
 		SvMAGIC(bstate->bs_sv)->mg_obj = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   SvMAGIC(bstate->bs_sv)->mg_obj = arg;\n"));
 		break;
@@ -724,7 +791,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_namex svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) mg_namex svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_mg_namex(SvMAGIC(bstate->bs_sv), arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_mg_namex(SvMAGIC(bstate->bs_sv), arg)\n"));
 		break;
@@ -733,7 +800,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xmg_stash svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xmg_stash svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_xmg_stash(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_xmg_stash(bstate->bs_sv, arg)\n"));
 		break;
@@ -741,8 +808,8 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	  case INSN_GV_FETCHPV:		/* 74 */
 	    {
 		strconst arg;
-		BGET_strconst(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_fetchpv strconst:%d\n", insn, arg));
+		BGET_strconst(arg, 0);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_fetchpv strconst:\"%s\"\n", insn, arg));
 		BSET_gv_fetchpv(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_fetchpv(bstate->bs_sv, arg)\n"));
 		break;
@@ -750,8 +817,8 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	  case INSN_GV_FETCHPVX:		/* 75 */
 	    {
 		strconst arg;
-		BGET_strconst(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_fetchpvx strconst:%d\n", insn, arg));
+		BGET_strconst(arg, 0);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_fetchpvx strconst:\"%s\"\n", insn, arg));
 		BSET_gv_fetchpvx(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_fetchpvx(bstate->bs_sv, arg)\n"));
 		break;
@@ -759,8 +826,8 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	  case INSN_GV_STASHPV:		/* 76 */
 	    {
 		strconst arg;
-		BGET_strconst(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_stashpv strconst:%d\n", insn, arg));
+		BGET_strconst(arg, 0);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_stashpv strconst:\"%s\"\n", insn, arg));
 		BSET_gv_stashpv(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_stashpv(bstate->bs_sv, arg)\n"));
 		break;
@@ -768,8 +835,8 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	  case INSN_GV_STASHPVX:		/* 77 */
 	    {
 		strconst arg;
-		BGET_strconst(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_stashpvx strconst:%d\n", insn, arg));
+		BGET_strconst(arg, 0);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gv_stashpvx strconst:\"%s\"\n", insn, arg));
 		BSET_gv_stashpvx(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gv_stashpvx(bstate->bs_sv, arg)\n"));
 		break;
@@ -778,7 +845,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_sv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_sv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		GvSV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   GvSV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -805,7 +872,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_av svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_av svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvAV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvAV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -814,7 +881,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_hv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_hv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvHV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvHV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -823,7 +890,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_cv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_cv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvCV(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvCV(bstate->bs_sv) = arg;\n"));
 		break;
@@ -832,7 +899,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		hekindex arg;
 		BGET_hekindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_file hekindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_file hekindex:0x%x, ix:%d\n", insn, arg, ix));
 		GvFILE_HEK(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   GvFILE_HEK(bstate->bs_sv) = arg;\n"));
 		break;
@@ -841,7 +908,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_io svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_io svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvIOp(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvIOp(bstate->bs_sv) = arg;\n"));
 		break;
@@ -850,7 +917,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_form svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_form svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvFORM(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvFORM(bstate->bs_sv) = arg;\n"));
 		break;
@@ -877,7 +944,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_share svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) gp_share svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_gp_share(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_gp_share(bstate->bs_sv, arg)\n"));
 		break;
@@ -895,7 +962,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_next opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_next opindex:0x%x, ix:%d\n", insn, arg, ix));
 		PL_op->op_next = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_next = arg;\n"));
 		break;
@@ -904,7 +971,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_sibling opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_sibling opindex:0x%x, ix:%d\n", insn, arg, ix));
 		PL_op->op_sibling = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_op->op_sibling = arg;\n"));
 		break;
@@ -912,8 +979,8 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	  case INSN_OP_PPADDR:		/* 93 */
 	    {
 		strconst arg;
-		BGET_strconst(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_ppaddr strconst:%d\n", insn, arg));
+		BGET_strconst(arg, 0);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_ppaddr strconst:\"%s\"\n", insn, arg));
 		BSET_op_ppaddr(PL_op->op_ppaddr, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_op_ppaddr(PL_op->op_ppaddr, arg)\n"));
 		break;
@@ -994,7 +1061,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_first opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_first opindex:0x%x, ix:%d\n", insn, arg, ix));
 		cUNOP->op_first = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cUNOP->op_first = arg;\n"));
 		break;
@@ -1003,7 +1070,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_last opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_last opindex:0x%x, ix:%d\n", insn, arg, ix));
 		cBINOP->op_last = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cBINOP->op_last = arg;\n"));
 		break;
@@ -1012,7 +1079,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_other opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_other opindex:0x%x, ix:%d\n", insn, arg, ix));
 		cLOGOP->op_other = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOGOP->op_other = arg;\n"));
 		break;
@@ -1021,7 +1088,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplroot opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplroot opindex:0x%x, ix:%d\n", insn, arg, ix));
 		(cPMOP->op_pmreplrootu).op_pmreplroot = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   (cPMOP->op_pmreplrootu).op_pmreplroot = arg;\n"));
 		break;
@@ -1030,13 +1097,22 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplstart opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplstart opindex:0x%x, ix:%d\n", insn, arg, ix));
 		(cPMOP->op_pmstashstartu).op_pmreplstart = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   (cPMOP->op_pmstashstartu).op_pmreplstart = arg;\n"));
 		break;
 	    }
 #ifdef USE_ITHREADS
-	  case INSN_OP_PMREPLROOTPO:		/* 107 */
+	  case INSN_OP_PMSTASHPV:		/* 107 */
+	    {
+		pvindex arg;
+		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmstashpv pvindex:\"%s\"\n", insn, arg, ix));
+		BSET_op_pmstashpv(cPMOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_op_pmstashpv(cPMOP, arg)\n"));
+		break;
+	    }
+	  case INSN_OP_PMREPLROOTPO:		/* 108 */
 	    {
 		PADOFFSET arg;
 		BGET_PADOFFSET(arg);
@@ -1046,33 +1122,35 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		break;
 	    }
 #else
-	  case INSN_OP_PMSTASH:		/* 108 */
+	  case INSN_OP_PMSTASH:		/* 109 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmstash svindex:%d\n", insn, arg));
-		*(SV**)&cPMOP->op_pmstash = arg;
-		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&cPMOP->op_pmstash = arg;\n"));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmstash svindex:0x%x, ix:%d\n", insn, arg, ix));
+		*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart = arg;\n"));
 		break;
 	    }
-	  case INSN_OP_PMREPLROOTGV:		/* 109 */
+	  case INSN_OP_PMREPLROOTGV:		/* 110 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplrootgv svindex:%d\n", insn, arg));
-		*(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot) = arg;
-		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot) = arg;\n"));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_pmreplrootgv svindex:0x%x, ix:%d\n", insn, arg, ix));
+		*(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot = arg;\n"));
 		break;
 	    }
 #endif
-	  case INSN_PREGCOMP:		/* 110 */
+	  case INSN_PREGCOMP:		/* 111 */
 	    {
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pregcomp\n", insn));
-		BSET_pregcomp(PL_op);
-		DEBUG_v(Perl_deb(aTHX_ "	   BSET_pregcomp(PL_op)\n"));
+		pvcontents arg;
+		BGET_pvcontents(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) pregcomp pvcontents:%d\n", insn, arg));
+		BSET_pregcomp(PL_op, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_pregcomp(PL_op, arg)\n"));
 		break;
 	    }
-	  case INSN_OP_PMFLAGS:		/* 111 */
+	  case INSN_OP_PMFLAGS:		/* 112 */
 	    {
 		U16 arg;
 		BGET_U16(arg);
@@ -1082,7 +1160,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		break;
 	    }
 #if PERL_VERSION < 11
-	  case INSN_OP_REFLAGS:		/* 112 */
+	  case INSN_OP_REFLAGS:		/* 113 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
@@ -1092,21 +1170,12 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		break;
 	    }
 #else
-	  case INSN_OP_REFLAGS:		/* 113 */
-	    {
-		U32 arg;
-		BGET_U32(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_reflags U32:%d\n", insn, arg));
-		((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags = arg;
-		DEBUG_v(Perl_deb(aTHX_ "	   ((ORANGE*)SvANY(PM_GETRE(cPMOP)))->extflags = arg;\n"));
-		break;
-	    }
 #endif
 	  case INSN_OP_SV:		/* 114 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_sv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_sv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		cSVOP->op_sv = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cSVOP->op_sv = arg;\n"));
 		break;
@@ -1142,7 +1211,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_redoop opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_redoop opindex:0x%x, ix:%d\n", insn, arg, ix));
 		cLOOP->op_redoop = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_redoop = arg;\n"));
 		break;
@@ -1151,7 +1220,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_nextop opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_nextop opindex:0x%x, ix:%d\n", insn, arg, ix));
 		cLOOP->op_nextop = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_nextop = arg;\n"));
 		break;
@@ -1160,7 +1229,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_lastop opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) op_lastop opindex:0x%x, ix:%d\n", insn, arg, ix));
 		cLOOP->op_lastop = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cLOOP->op_lastop = arg;\n"));
 		break;
@@ -1169,32 +1238,50 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		pvindex arg;
 		BGET_pvindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_label pvindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_label pvindex:\"%s\"\n", insn, arg, ix));
 		cCOP->cop_label = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_label = arg;\n"));
 		break;
 	    }
+	  case INSN_COP_STASHPV:		/* 122 */
+	    {
+		pvindex arg;
+		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_stashpv pvindex:\"%s\"\n", insn, arg, ix));
+		BSET_cop_stashpv(cCOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_stashpv(cCOP, arg)\n"));
+		break;
+	    }
+	  case INSN_COP_FILE:		/* 123 */
+	    {
+		pvindex arg;
+		BGET_pvindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_file pvindex:\"%s\"\n", insn, arg, ix));
+		BSET_cop_file(cCOP, arg);
+		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_file(cCOP, arg)\n"));
+		break;
+	    }
 #ifndef USE_ITHREADS
-	  case INSN_COP_STASH:		/* 122 */
+	  case INSN_COP_STASH:		/* 124 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_stash svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_stash svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_cop_stash(cCOP, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_stash(cCOP, arg)\n"));
 		break;
 	    }
-	  case INSN_COP_FILEGV:		/* 123 */
+	  case INSN_COP_FILEGV:		/* 125 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_filegv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_filegv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_cop_filegv(cCOP, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_filegv(cCOP, arg)\n"));
 		break;
 	    }
 #endif
-	  case INSN_COP_SEQ:		/* 124 */
+	  case INSN_COP_SEQ:		/* 126 */
 	    {
 		U32 arg;
 		BGET_U32(arg);
@@ -1203,7 +1290,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_seq = arg;\n"));
 		break;
 	    }
-	  case INSN_COP_LINE:		/* 125 */
+	  case INSN_COP_LINE:		/* 127 */
 	    {
 		line_t arg;
 		BGET_U32(arg);
@@ -1212,97 +1299,97 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   cCOP->cop_line = arg;\n"));
 		break;
 	    }
-	  case INSN_COP_WARNINGS:		/* 126 */
+	  case INSN_COP_WARNINGS:		/* 128 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_warnings svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) cop_warnings svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_cop_warnings(cCOP, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_cop_warnings(cCOP, arg)\n"));
 		break;
 	    }
-	  case INSN_MAIN_START:		/* 127 */
+	  case INSN_MAIN_START:		/* 129 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_start opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_start opindex:0x%x, ix:%d\n", insn, arg, ix));
 		PL_main_start = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_main_start = arg;\n"));
 		break;
 	    }
-	  case INSN_MAIN_ROOT:		/* 128 */
+	  case INSN_MAIN_ROOT:		/* 130 */
 	    {
 		opindex arg;
 		BGET_opindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_root opindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_root opindex:0x%x, ix:%d\n", insn, arg, ix));
 		PL_main_root = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_main_root = arg;\n"));
 		break;
 	    }
-	  case INSN_MAIN_CV:		/* 129 */
+	  case INSN_MAIN_CV:		/* 131 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_cv svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) main_cv svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&PL_main_cv = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_main_cv = arg;\n"));
 		break;
 	    }
-	  case INSN_CURPAD:		/* 130 */
+	  case INSN_CURPAD:		/* 132 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) curpad svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) curpad svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_curpad(PL_curpad, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_curpad(PL_curpad, arg)\n"));
 		break;
 	    }
-	  case INSN_PUSH_BEGIN:		/* 131 */
+	  case INSN_PUSH_BEGIN:		/* 133 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_begin svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_begin svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_push_begin(PL_beginav, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_begin(PL_beginav, arg)\n"));
 		break;
 	    }
-	  case INSN_PUSH_INIT:		/* 132 */
+	  case INSN_PUSH_INIT:		/* 134 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_init svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_init svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_push_init(PL_initav, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_init(PL_initav, arg)\n"));
 		break;
 	    }
-	  case INSN_PUSH_END:		/* 133 */
+	  case INSN_PUSH_END:		/* 135 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_end svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) push_end svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_push_end(PL_endav, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_push_end(PL_endav, arg)\n"));
 		break;
 	    }
-	  case INSN_CURSTASH:		/* 134 */
+	  case INSN_CURSTASH:		/* 136 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) curstash svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) curstash svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&PL_curstash = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_curstash = arg;\n"));
 		break;
 	    }
-	  case INSN_DEFSTASH:		/* 135 */
+	  case INSN_DEFSTASH:		/* 137 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) defstash svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) defstash svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&PL_defstash = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_defstash = arg;\n"));
 		break;
 	    }
-	  case INSN_DATA:		/* 136 */
+	  case INSN_DATA:		/* 138 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
@@ -1311,27 +1398,36 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_data(none, arg)\n"));
 		break;
 	    }
-	  case INSN_INCAV:		/* 137 */
+	  case INSN_INCAV:		/* 139 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) incav svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) incav svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvAV(PL_incgv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvAV(PL_incgv) = arg;\n"));
 		break;
 	    }
-	  case INSN_LOAD_GLOB:		/* 138 */
+	  case INSN_LOAD_GLOB:		/* 140 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) load_glob svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) load_glob svindex:0x%x, ix:%d\n", insn, arg, ix));
 		BSET_load_glob(none, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_load_glob(none, arg)\n"));
 		break;
 	    }
 #ifdef USE_ITHREADS
+	  case INSN_REGEX_PADAV:		/* 141 */
+	    {
+		svindex arg;
+		BGET_svindex(arg);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) regex_padav svindex:0x%x, ix:%d\n", insn, arg, ix));
+		*(SV**)&PL_regex_padav = arg;
+		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_regex_padav = arg;\n"));
+		break;
+	    }
 #endif
-	  case INSN_DOWARN:		/* 139 */
+	  case INSN_DOWARN:		/* 142 */
 	    {
 		U8 arg;
 		BGET_U8(arg);
@@ -1340,38 +1436,38 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_dowarn = arg;\n"));
 		break;
 	    }
-	  case INSN_COMPPAD_NAME:		/* 140 */
+	  case INSN_COMPPAD_NAME:		/* 143 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) comppad_name svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) comppad_name svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&PL_comppad_name = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&PL_comppad_name = arg;\n"));
 		break;
 	    }
-	  case INSN_XGV_STASH:		/* 141 */
+	  case INSN_XGV_STASH:		/* 144 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xgv_stash svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) xgv_stash svindex:0x%x, ix:%d\n", insn, arg, ix));
 		*(SV**)&GvSTASH(bstate->bs_sv) = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   *(SV**)&GvSTASH(bstate->bs_sv) = arg;\n"));
 		break;
 	    }
-	  case INSN_SIGNAL:		/* 142 */
+	  case INSN_SIGNAL:		/* 145 */
 	    {
 		strconst arg;
-		BGET_strconst(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) signal strconst:%d\n", insn, arg));
+		BGET_strconst(arg, 0);
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) signal strconst:\"%s\"\n", insn, arg));
 		BSET_signal(bstate->bs_sv, arg);
 		DEBUG_v(Perl_deb(aTHX_ "	   BSET_signal(bstate->bs_sv, arg)\n"));
 		break;
 	    }
-	  case INSN_FORMFEED:		/* 143 */
+	  case INSN_FORMFEED:		/* 146 */
 	    {
 		svindex arg;
 		BGET_svindex(arg);
-		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) formfeed svindex:%d\n", insn, arg));
+		DEBUG_v(Perl_deb(aTHX_ "(insn %3d) formfeed svindex:0x%x, ix:%d\n", insn, arg, ix));
 		PL_formfeed = arg;
 		DEBUG_v(Perl_deb(aTHX_ "	   PL_formfeed = arg;\n"));
 		break;

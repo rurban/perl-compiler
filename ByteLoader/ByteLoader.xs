@@ -1,8 +1,10 @@
 /* This loads bytecode in .plc files starting with PLBC.
    Produce by the B::Bytecode compiler.
+
    It might also be useful to use it for JIT or Asm compiled
    PLJC .plc files where a full PE/COFF or elf format is not
-   supported nor wanted, or a full executable dump is not possible.
+   supported nor wanted, jumps are not patched,
+   or a full executable dump is not possible.
 */
 
 #include "EXTERN.h"

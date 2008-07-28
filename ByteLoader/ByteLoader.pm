@@ -2,13 +2,14 @@ package ByteLoader;
 
 use XSLoader ();
 
-our $VERSION = '0.06_02';
+our $VERSION = '0.06_03';
 # XSLoader problem:
 # ByteLoader version 0.0601 required--this is only version 0.06_01 at ./bytecode2.plc line 2.
 # on use ByteLoader $ByteLoader::VERSION;
 # Fixed with use ByteLoader '$ByteLoader::VERSION';
 
-if ($] < 5.009 and $VERSION eq '0.06_02') {
+if ($] < 5.009) {
+  # need to check if ByteLoader is not already linked statically
   XSLoader::load 'ByteLoader'; # fake the old backwards compatible version
 } else {
   XSLoader::load 'ByteLoader', $VERSION;

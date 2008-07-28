@@ -1,12 +1,15 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         B-C
-version:      1.04_14
-version_from: lib/B/C.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                B-C
+version:             1.04_15
+abstract:            perl compiler
+license:             ~
+author:              
+    - Malcolm Beattie <mbeattie@sable.ox.ac.uk>
+generated_by:        ExtUtils::MakeMaker version 6.44
+distribution_type:   module
+requires:     
     B:                             1.0901
     B::Concise:                    0.66
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

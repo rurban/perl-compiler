@@ -17,6 +17,7 @@ while (($from, $tos) = each %alias_to) {
 }
 my (@optype, @specialsv_name);
 require B;
+# @optype was in B::Asmdata, and is since 5.10 in B
 if ($] < 5.009) {
   require B::Asmdata;
   @optype = @{*B::Asmdata::optype{ARRAY}};
@@ -125,6 +126,72 @@ bset_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
     return obj;
 }
 
+int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
+    U32 sz = 0;
+    strconst str;
+
+    BGET_U32(sz); /* Magic: 'PLBC' or 'PLJC' */
+    if (sz != 0x43424c50) {
+        if (sz != 0x434a4c50) {
+	    HEADER_FAIL1("bad magic (want 0x43424c50 PLBC or 0x434a4c50 PLJC, got %#x)", (int)sz);
+	} else {
+	    *isjit = 1;
+        }
+    }
+    BGET_strconst(str,80);	/* archname */
+    if (strNE(str, ARCHNAME)) {
+	HEADER_WARN2("wrong architecture (want %s, you have %s)",str,ARCHNAME);
+    }
+    strcpy(bl_header.archname, str);
+
+    BGET_strconst(str,16); /* fail if lower ByteLoader version */
+    if (strLT(str, VERSION)) {
+	HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",
+		str, VERSION);
+    }
+    strcpy(bl_header.version, str);
+
+    BGET_U32(sz); /* ivsize */
+    if (sz != IVSIZE) {
+	HEADER_WARN("different IVSIZE");
+        if ((sz != 4) && (sz != 8))
+	    HEADER_FAIL1("unsupported IVSIZE %d", sz);
+    }
+    bl_header.ivsize = sz;
+
+    BGET_U32(sz); /* ptrsize */
+    if (sz != PTRSIZE) {
+	HEADER_WARN("different PTRSIZE");
+        if ((sz != 4) && (sz != 8))
+	    HEADER_FAIL1("unsupported PTRSIZE %d", sz);
+    }
+    bl_header.ptrsize = sz;
+
+    /* new since 0.06_03 */
+    if (strGE(bl_header.version, "0.06_03")) {
+      BGET_U32(sz); /* longsize */
+      if (sz != LONGSIZE) {
+	HEADER_WARN("different LONGSIZE");
+        if ((sz != 4) && (sz != 8))
+	    HEADER_FAIL1("unsupported LONGSIZE %d", sz);
+      }
+      bl_header.longsize = sz;
+    } else {
+      bl_header.longsize = 8;
+    }
+
+    BGET_strconst(str,16); /* 12345678 */	
+    if (strNE(str, "12345678")) {
+	HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",
+		"12345678", str);
+        if (strNE(str, "56781234")) {
+	    HEADER_WARN1("invalid byteorder %s)", str);
+        }
+    }
+    strcpy(bl_header.byteorder, str);
+    return 1;
+}
+
 int
 byterun(pTHX_ struct byteloader_state *bstate)
 {
@@ -135,9 +202,9 @@ EOT
 printf BYTERUN_C "    SV *specialsv_list[%d];\n", scalar @specialsv_name;
 print BYTERUN_C <<'EOT';
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit on PLJC magic header */
+    bytecode_header_check(aTHX_ bstate, &isjit);	/* croak if incorrect platform, set isjit on PLJC magic header */
     if (isjit) {
-	Perl_croak(aTHX_ "No PLJC-magic JIT support yet\n");
+	Perl_croak(aTHX_ "PLJC-magic: No JIT support yet\n");
         return 0; /*jitrun(aTHX_ &bstate);*/
     } else {
         Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
@@ -212,22 +279,32 @@ while (<DATA>) {
 	uc($insn), $insn_num;
     my $optarg = $argtype eq "none" ? "" : ", arg";
     if ($optarg) {
+      if ($fundtype eq 'strconst') {
+	my $maxsize = ($flags =~ /(\d+$)/) ? $1 : 0;
+	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg, %d);\n", $fundtype, $maxsize;
+      } else {
 	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg);\n", $fundtype;
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn $argtype:%d\\n\", insn, arg));\n";
+      }
+      printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, arg%s));\n",
+	$fundtype =~ /(strconst|pvindex)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
+	($argtype =~ /index$/ ? ', ix' : '');
+      if ($fundtype eq 'PV') {
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
+      }
     } else {
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
+      print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
     }
     if ($flags =~ /x/) {
-	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue$optarg)\\n\"));\n";
+      print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
+      print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue$optarg)\\n\"));\n";
     } elsif ($flags =~ /s/) {
-	# Store instructions store to bytecode_obj_list[arg]. "lvalue" field is rvalue.
-	print BYTERUN_C "\t\tBSET_OBJ_STORE($lvalue$optarg);\n";
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
+      # Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
+      print BYTERUN_C "\t\tBSET_OBJ_STORE($lvalue$optarg);\n";
+      print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
     }
     elsif ($optarg && $lvalue ne "none") {
-	print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}arg;\\n\"));\n";
+      print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
+      print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}arg;\\n\"));\n";
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
@@ -285,6 +362,15 @@ struct byteloader_xpv {
 };
 
 #endif
+
+struct byteloader_header {
+    char 	archname[80];
+    char 	version[16];
+    int 	ivsize;
+    int 	ptrsize;
+    int 	longsize;
+    char 	byteorder[16];
+} bl_header;
 
 struct byteloader_state {
     struct byteloader_fdata	*bs_fdata;
@@ -417,10 +503,15 @@ Since Perl version 5.10 defined in L<B>.
 
 =back
 
+=head1 PORTABILITY
+
+All bytecode values are portable. Cross-platform and cross-version
+portability is just not implemented yet.
+
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban added the version logic and 5.10 support.
+Reini Urban added the version logic, 5.10 support, portability.
 
 =cut
 
@@ -531,10 +622,10 @@ __END__
 0 mg_name	SvMAGIC(bstate->bs_sv)			pvcontents	x
 0 mg_namex	SvMAGIC(bstate->bs_sv)			svindex		x
 0 xmg_stash	bstate->bs_sv				svindex		x
-0 gv_fetchpv	bstate->bs_sv				strconst	x
-0 gv_fetchpvx	bstate->bs_sv				strconst	x
-0 gv_stashpv	bstate->bs_sv				strconst	x
-0 gv_stashpvx	bstate->bs_sv				strconst	x
+0 gv_fetchpv	bstate->bs_sv				strconst	128x
+0 gv_fetchpvx	bstate->bs_sv				strconst	128x
+0 gv_stashpv	bstate->bs_sv				strconst	128x
+0 gv_stashpvx	bstate->bs_sv				strconst	128x
 0 gp_sv		GvSV(bstate->bs_sv)			svindex
 0 gp_refcnt	GvREFCNT(bstate->bs_sv)			U32
 0 gp_refcnt_add	GvREFCNT(bstate->bs_sv)			I32		x
@@ -551,7 +642,7 @@ __END__
 0 xgv_flags	GvFLAGS(bstate->bs_sv)			U8
 0 op_next	PL_op->op_next				opindex
 0 op_sibling	PL_op->op_sibling			opindex
-0 op_ppaddr	PL_op->op_ppaddr			strconst	x
+0 op_ppaddr	PL_op->op_ppaddr			strconst	24x
 0 op_targ	PL_op->op_targ				PADOFFSET
 0 op_type	PL_op					OPCODE		x
 <9 op_seq	PL_op->op_seq				U16
@@ -574,12 +665,14 @@ i op_pmstashpv		cPMOP				pvindex		x
 <10 op_pmreplrootpo	cPMOP->op_pmreplroot		OP*/PADOFFSET
 10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 #else
-0 op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
+<10 op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
+10 op_pmstash		*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
 <10 op_pmreplrootgv	*(SV**)&cPMOP->op_pmreplroot		svindex
-10 op_pmreplrootgv	*(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot)	svindex
+10 op_pmreplrootgv	*(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot	svindex
 #endif
-<10 pregcomp	PL_op					pvcontents	x
-10 pregcomp	PL_op					none	x
+#<10 pregcomp	PL_op					pvcontents	x
+0 pregcomp	PL_op					pvcontents	x
+#10 pregcomp	PL_op					none	x
 0 op_pmflags	cPMOP->op_pmflags			U16
 #if PERL_VERSION < 11
 10 op_reflags	PM_GETRE(cPMOP)->extflags		U32
@@ -626,6 +719,6 @@ i regex_padav	*(SV**)&PL_regex_padav			svindex
 0 dowarn	PL_dowarn				U8
 0 comppad_name	*(SV**)&PL_comppad_name			svindex
 0 xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)		svindex
-0 signal	bstate->bs_sv				strconst	x
+0 signal	bstate->bs_sv				strconst	24x
 # to be removed
 0 formfeed	PL_formfeed				svindex

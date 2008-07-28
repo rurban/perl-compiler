@@ -18,7 +18,7 @@ WriteMakefile(
      ('AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>',
       'ABSTRACT' => 'perl compiler') : ()),
     clean => { FILES => "bytecode[1-9]* cccode[1-9]* ccode[1-9]* *.core *.stackdump ".
-	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise"},
+	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise *~"},
 );
 
 sub headerpath {
@@ -34,7 +34,7 @@ package MY;
 
 sub libscan {
   # ignore temp testing files
-  return 0 if $_[1] =~ /(bytecode\d+\.pl|ccode\d+\..*|-588\.pod)$/;
+  return 0 if $_[1] =~ /(bytecode.*\.pl|ccode\d+\..*|regen_lib\.pl|-588\.pod)$/;
   return $_[1];
 }
 
@@ -49,8 +49,10 @@ sub depend {
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
     my $perlcc_inst = File::Spec->catfile('$(INST_BIN)', 'perlcc');
-    my $perlcc_exp = File::Spec->catfile('script', 'perlcc');
+    my $perlcc_exp = File::Spec->catfile('script', 'perlcc.PL');
     "
+test :: subdirs-test
+
 $perlcc_inst :: $perlcc_exp
 	\$(CP) $perlcc_exp $perlcc_inst
 

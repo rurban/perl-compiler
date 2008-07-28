@@ -1,5 +1,34 @@
+#! perl
 use B::Assembler qw(assemble_fh);
 use FileHandle;
+
+=pod
+
+=head1 NAME
+
+assemble - Assemble Perl bytecode
+
+=head1 SYNOPSIS
+
+  assemble [-d] [filename] [outfilename]
+
+=head1 DESCRIPTION
+
+Compiles a perl script to binary bytecode assembler.
+
+bytecode is a binary file wih either the magic 4 bytes 'PLBC'
+at the start, or something like "#! /usr/bin/perl\n
+use ByteLoader '0.07'"
+
+If filename is -, the input is read from STDIN and
+you can still provide an outfilename.
+
+=head1 OPTION -d
+
+Prints some debugging information.
+
+=cut
+
 
 my ($filename, $fh, $out);
 
@@ -21,7 +50,7 @@ if (@ARGV == 0) {
     $fh = new FileHandle "<$filename";
     $out = new FileHandle ">$ARGV[1]";
 } else {
-    die "Usage: assemble [filename] [outfilename]\n";
+    die "Usage: assemble [-d] [filename] [outfilename]\n";
 }
 
 binmode $out;

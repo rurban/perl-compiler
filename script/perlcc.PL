@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#! perl
  
 use Config;
 use File::Basename qw(&basename &dirname);
@@ -335,16 +335,16 @@ sub cc_harness_msvc {
 }
 
 sub cc_harness {
-	my ($cfile,$stash)=@_;
-	use ExtUtils::Embed ();
-	my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
-	$command .= " -I".$_ for split /\s+/, opt(I);
-	$command .= " -L".$_ for split /\s+/, opt(L);
-	my @mods = split /-?u /, $stash;
-	$command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
-        $command .= " -lperl";
-	vprint 3, "running $Config{cc} $command";
-	system("$Config{cc} $command");
+    my ($cfile,$stash)=@_;
+    use ExtUtils::Embed ();
+    my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
+    $command .= " -I".$_ for split /\s+/, opt(I);
+    $command .= " -L".$_ for split /\s+/, opt(L);
+    my @mods = split /-?u /, $stash;
+    $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+    $command .= " -lperl";
+    vprint 3, "running $Config{cc} $command";
+    system("$Config{cc} $command");
 }
 
 # Where Perl is, and which include path to give it.

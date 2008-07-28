@@ -5,8 +5,7 @@ Testsuite added, coverage TODO.
 Same ok and failures as with 5.8 and 5.9.4
 bc PV and PM assertions.
 c regex and blead fails.
-DEBUGGING: op_free(PL_main_root) endless recursion
-Since 1.04_13 and >=5.10 it hangs in op_free(PL_main_root), without or without DEBUGGING.
+DEBUGGING: op_free(PL_main_root) hang seems to be fixed by opt_latefree=1
 Minor B::CC bugs fixed.
 
 5.8.8:
@@ -17,8 +16,11 @@ t/bblock.........ok
 t/bytecode.t.....ok
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 8-10, 14-16
+  Undefined subroutine &main::a called at ccode8.pl line 1.
+  Modification of a read-only value attempted at ccode10.pl line 2.
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
   Failed tests:  8-10 12 14-16 18-19
+  In function `pp_main': cccode12.c:276: error: too few arguments to function
 t/o..............ok
 t/stash..........ok
 
@@ -29,12 +31,12 @@ t/b..............ok
 t/bblock.........ok
 t/bytecode.t.....ok
   TODO failed:   20 (bc op coverage)
-t/c.t        (Wstat: 0 Tests: 19 Failed: 13)
-  FAILED tests 5 7-12 14-19
-  5,7,11-12,17-19 DEBUGGING only: at op_free destruct
-    panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
-  Failed tests:  5 7-12 14-19
+t/c.t        (Wstat: 0 Tests: 19 Failed: 5)
+  FAILED tests 11-12 17-19
+  op_free destruct fixed
+  panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 5)
+  Failed tests:  11-12 17-19
 t/o..............ok
 t/stash..........ok
 
@@ -45,16 +47,35 @@ t/b..............ok
 t/bblock.........ok
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
   FAILED tests 2-5, 7, 11, 15, with -D 9-12 fail also.
+         _15:  2..11, 13..16, 18..19
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
   Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-  Failed tests:  8-10, 14-16 (some segfaulting, some hanging at op_free)
+  Failed tests:  8-10, 14-16 (segfaulting, op_free fixed)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  8-10, 12, 14-16, 18-19 (some segfaulting, some hanging at op_free)
+  Failed tests:  8-10, 12, 14-16, 18-19 (segfaulting, op_free fixed)
 t/o..............ok
 t/stash..........ok
+
+5.10 unthreaded: 
+t/asmdata........ok
+t/assembler......ok
+t/b..............ok
+t/bblock.........ok
+t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
+  FAILED tests 3-5, 7, 9-12, 15
+  SIGSEGV in Perl_fbm_instr() <= Perl_re_intuit_start() <= Perl_pp_subst()
+t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+  FAILED tests 2-4, 6, 11-12, 17-19
+  Bad free() ignored (RMAGIC, PERL_CORE)
+  invalid pad in pad_sv, pad_new, save_clearsv
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
+  Failed tests:  2-4 6 11-12 17-19
+t/o..............ok
+t/stash..........ok
+
 
 5.11 @33408 -D
 t/asmdata........ok
@@ -64,9 +85,10 @@ t/bblock.........ok
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 11)
   Failed tests:  2-5, 7, 9-12, 15-16 (all segfaulting in REGEX)
   TODO failed:   20
+  with 1.04_15 it got worse: 2..16, 18..19
 t/c.t        (Wstat: 0 Tests: 19 Failed: 19)
-  Failed tests:  1-19
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 19)
+  Failed tests:  2-19
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 18)
   Failed tests:  1-19
 t/o..............ok
 t/stash..........ok
@@ -90,7 +112,8 @@ bc: B::IO::SUBPROCESS missing
 ----------
 I've restored 5.8 backwards compatibility, mainly for test comparison.
 CPAN installations will still abort, but that can be easily overridden.
-ByteLoader is now backwards compatible: Accepts lower versions also.
+ByteLoader is now backwards compatible: Accepts lower versions also, 
+but opcode compat version table missing for loading older bc.
 
 Details:
 

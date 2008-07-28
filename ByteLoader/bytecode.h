@@ -8,6 +8,7 @@ typedef OP *opindex;
 typedef char *pvindex;
 typedef HEK *hekindex;
 
+/* Portability TODO: check byteorder */
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
 #define BGET_FGETC() bl_getc(bstate->bs_fdata)
@@ -23,12 +24,36 @@ typedef HEK *hekindex;
 	arg = (U8) _arg;						\
     } STMT_END
 
+/* TODO: platform conversion from bl_header. byteorder swapping. */
 #define BGET_U16(arg)		BGET_OR_CROAK(arg, U16) 
 #define BGET_I32(arg)		BGET_OR_CROAK(arg, U32)
 #define BGET_U32(arg)		BGET_OR_CROAK(arg, U32)
-#define BGET_IV(arg)		BGET_OR_CROAK(arg, IV)
+#define BGET_IV(arg) STMT_START {				        \
+	if (BGET_FREAD(&arg, bl_header.ivsize, 1) < 1) {		\
+	    Perl_croak(aTHX_						\
+		       "EOF or error while trying to read %d bytes for %s", \
+		       bl_header.ivsize, "IV");				\
+	}								\
+	if (bl_header.ivsize != IVSIZE) {				\
+	    Perl_warn(aTHX_						\
+		       "Different IVSIZE %d for IV", 			\
+		       bl_header.ivsize);				\
+	}								\
+    } STMT_END 
+
 #define BGET_PADOFFSET(arg)	BGET_OR_CROAK(arg, PADOFFSET)
-#define BGET_long(arg)		BGET_OR_CROAK(arg, long)
+#define BGET_long(arg) STMT_START {				        \
+	if (BGET_FREAD(&arg, bl_header.longsize, 1) < 1) {		\
+	    Perl_croak(aTHX_						\
+		       "EOF or error while trying to read %d bytes for %s", \
+		       bl_header.ivsize, "IV");				\
+	}								\
+	if (bl_header.longsize != 8) {					\
+	    Perl_warn(aTHX_						\
+		       "Different LONGSIZE %d for long",		\
+		       bl_header.ivsize);				\
+	}								\
+    } STMT_END
 #define BGET_svtype(arg)	BGET_OR_CROAK(arg, svtype)
 
 #define BGET_OR_CROAK(arg, type) STMT_START {				\
@@ -80,14 +105,19 @@ typedef HEK *hekindex;
     } while (0)
 
 #define BGET_pvcontents(arg)	arg = bstate->bs_pv.xpv_pv
-#define BGET_strconst(arg) STMT_START {	\
-	for (arg = PL_tokenbuf; (*arg = BGET_FGETC()); arg++) /* nothing */; \
-	arg = PL_tokenbuf;			\
+/* read until \0. optionally limit the max stringsize for buffer overflow attempts */
+#define BGET_strconst(arg, maxsize) STMT_START {	\
+	char *end = NULL; 				\
+        if (maxsize) { end = PL_tokenbuf+maxsize; }	\
+	for (arg = PL_tokenbuf;				\
+	     (*arg = BGET_FGETC()) && (maxsize ? arg<end : 1);	\
+	    arg++) /* nothing */;			\
+	arg = PL_tokenbuf;				\
     } STMT_END
 
 #define BGET_NV(arg) STMT_START {	\
 	char *str;			\
-	BGET_strconst(str);		\
+	BGET_strconst(str,80);		\
 	arg = Atof(str);		\
     } STMT_END
 
@@ -181,10 +211,10 @@ typedef HEK *hekindex;
             repointer = av_pop((AV*)PL_regex_pad[0]); \
             cPMOPx(o)->op_pmoffset = SvIV(repointer); \
             SvREPADTMP_off(repointer); \
-            sv_setiv(repointer,PTR2IV(rx)); \
+            sv_setiv(repointer, PTR2IV(rx)); \
         } else { \
             repointer = newSViv(PTR2IV(rx)); \
-            av_push(PL_regex_padav,SvREFCNT_inc(repointer)); \
+            av_push(PL_regex_padav, SvREFCNT_inc(repointer)); \
             cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav); \
             PL_regex_pad = AvARRAY(PL_regex_padav); \
         } \
@@ -197,16 +227,16 @@ typedef HEK *hekindex;
 // TODO: use op_pmflags or re->extflags?
 // op_pmflags is just a small subset of re->extflags
 // copy from the current pv to a new sv
-#define BSET_pregcomp(o) \
+#define BSET_pregcomp(o, arg)			\
     STMT_START { \
         SV* repointer; \
-	REGEXP* rx = bstate->bs_pv.xpv_pv ? \
-	    CALLREGCOMP(aTHX_ newSVpvn(bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_len), cPMOPx(o)->op_pmflags) : \
+	REGEXP* rx = bstate->bs_pv.xpv_pv ?				\
+	    CALLREGCOMP(aTHX_ newSVpvn(bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
 	    Null(REGEXP*); \
-        if(0 && (av_len((AV*) PL_regex_pad[0]) > -1)) {	\
+        if(av_len((AV*) PL_regex_pad[0]) > -1) {	\
             repointer = av_pop((AV*)PL_regex_pad[0]); \
             cPMOPx(o)->op_pmoffset = SvIV(repointer); \
-            sv_setiv(repointer,PTR2IV(rx)); \
+            sv_setiv(repointer, PTR2IV(rx)); \
         } else { \
             repointer = newSViv(PTR2IV(rx)); \
             av_push(PL_regex_padav, SvREFCNT_inc_simple_NN(repointer)); \
@@ -227,11 +257,13 @@ typedef HEK *hekindex;
 	     Null(REGEXP*))); \
     } STMT_END
 #else
-#define BSET_pregcomp(o, re) \
+#define BSET_pregcomp(o, arg) \
     STMT_START { \
-	PM_SETRE(((PMOP*)o), (re ? \
-	     CALLREGCOMP(aTHX_ re, cPMOPx(o)->op_pmflags) : \
-	     Null(REGEXP*))); \
+        SV* repointer; \
+	REGEXP* rx = bstate->bs_pv.xpv_pv ? \
+	    CALLREGCOMP(aTHX_ newSVpvn(bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur), cPMOPx(o)->op_pmflags | PMf_COMPILETIME) : \
+	    Null(REGEXP*); \
+	PM_SETRE(((PMOP*)o), rx); \
     } STMT_END
 #endif
 
@@ -480,11 +512,18 @@ typedef HEK *hekindex;
 	Perl_croak(aTHX_ "Invalid bytecode for this architecture: " f, arg1)
 #define HEADER_FAIL2(f, arg1, arg2)	\
 	Perl_croak(aTHX_ "Invalid bytecode for this architecture: " f, arg1, arg2)
+#define HEADER_WARN(f)	\
+	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f)
+#define HEADER_WARN1(f, arg1)	\
+	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f, arg1)
+#define HEADER_WARN2(f, arg1, arg2)	\
+	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f, arg1, arg2)
 
 #define BYTECODE_HEADER_CHECK					\
 	STMT_START {						\
 	    U32 sz = 0;						\
 	    strconst str;					\
+	    char *version[36];					\
 								\
 	    BGET_U32(sz); /* Magic: 'PLBC' or 'PLJC' */		\
 	    if (sz != 0x43424c50) {				\
@@ -494,26 +533,34 @@ typedef HEK *hekindex;
 		    isjit = 1;                                  \
                 }						\
 	    }							\
-	    BGET_strconst(str);	/* archname */			\
+	    BGET_strconst(str,80);	/* archname, should go away */	\
 	    if (strNE(str, ARCHNAME)) {				\
-		HEADER_FAIL2("wrong architecture (want %s, you have %s)",str,ARCHNAME);	\
+		HEADER_WARN2("wrong architecture (want %s, you have %s)",str,ARCHNAME);	\
 	    }							\
-	    BGET_strconst(str); /* fail if lower ByteLoader version */ \
+	    BGET_strconst(str,16); /* fail if lower ByteLoader version */ \
 	    if (strLT(str, VERSION)) {				\
 		HEADER_FAIL2("mismatched ByteLoader versions (want %s, you have %s)",	\
 			str, VERSION);				\
 	    }							\
+	    strcpy(version, (char *)str);			\
 	    BGET_U32(sz); /* ivsize */				\
 	    if (sz != IVSIZE) {					\
-		HEADER_FAIL("different IVSIZE");		\
+		HEADER_WARN("different IVSIZE");		\
 	    }							\
 	    BGET_U32(sz); /* ptrsize */				\
 	    if (sz != PTRSIZE) {				\
-		HEADER_FAIL("different PTRSIZE");		\
+		HEADER_WARN("different PTRSIZE");		\
 	    }							\
-	    BGET_strconst(str); /* 12345678 */	      		\
+	    /* new since 0.06_03 */				\
+	    if (strGE(version, "0.06_03")) {			\
+	      BGET_U32(sz); /* longsize */			\
+	      if (sz != LONGSIZE) {				\
+		HEADER_WARN("different LONGSIZE");		\
+	      }						        \
+	    }							\
+	    BGET_strconst(str,16); /* 12345678 */	        \
 	    if (strNE(str, "12345678")) {			\
-		HEADER_FAIL2("cannot yet convert different byteorders (want %s, you have %s)",	\
+		HEADER_WARN2("cannot yet convert different byteorders (want %s, you have %s)",	\
 			"12345678", str);			\
 	    }							\
 	} STMT_END

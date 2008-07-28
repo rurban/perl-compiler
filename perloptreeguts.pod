@@ -8,36 +8,56 @@ Various material about the internal Perl compilation representation
 during parsing and optimization, before the actual execution
 begins. The B<"B" optree>.
 
-L<perlguts.pod> focuses more on the internal representation of the
-variables, but not so on the structure, the sequence and the
-optimization of the basic operations, the ops.
+The well-known L<perlguts.pod> focuses more on the internal representation of
+the variables, but not so on the structure, the sequence and the optimization of
+the basic operations, the ops.
+
+And we have L<perlhack.pod>, which shows e.g. ways to hack into the op tree
+structure within the debugger. It focuses on getting people to start patching
+and hacking on the CORE, not understanding or writing compiler backends or
+optimizations, which the optree mainly is used for.
+Btw., this here is merely prose around the source comments. But who reads source?
 
 =head1 Brief Summary
 
 The brief summary is very well described in the
-L<"Compiled-code"/perlguts#Compiled-code> section of L<perlguts>.
+L<"Compiled-code"/perlguts#Compiled-code> section of L<perlguts> and 
+at the top of F<op.c>.
 
 When Perl parses the source code (via Yacc C<perly.y>), the so-called
-optree, a tree of basic perl OP structs pointing to simple C<pp_>
+optree, a tree of basic perl OP structs pointing to simple C<pp_>I<opname>
 functions, is generated bottom-up.
-Those C<pp_> functions – "PP Code" (for "Push / Pop Code") – have the 
+Those C<pp_> functions - "PP Code" (for "Push / Pop Code") - have the 
 same uniform API as the XS functions, all arguments and return values 
 are transported on the stack.
+For example, an C<OP_CONST> op points to the C<pp_const()> function and to an C<SV>
+containing the constant value. When C<pp_const()> is executed, its job is to push
+that C<SV> onto the stack.
 
-The simplest type of op structure is OP: this has no children. Unary
-operators, UNOP s, have one child, and this is pointed to by the
-C<op_first> field. Binary operators (BINOP s) have not only an C<op_first>
-field but also an C<op_last> field. The most complex type of op is a
-LISTOP, which has any number of children. In this case, the first
-child is pointed to by C<op_first> and the last child by C<op_last>. The
-children in between can be found by iteratively following the
-C<op_sibling> pointer from the first child to the last.
+OPs are created by the C<newFOO()> functions, which are called from the 
+parser (in F<perly.y>) as the code is parsed. For example the Perl code 
+C<$a + $b * $c> would cause the equivalent of the following to be called 
+(oversimplifying a bit):
 
-There are also two other op types: a PMOP holds a regular expression,
-and has no children, and a LOOP may or may not have children. If the
-C<op_sibling> field is non-zero, it behaves like a LISTOP . To
-complicate matters, if a UNOP is actually a null op after optimization
-(see "Compile pass 2: context propagation") it will still have
+  newBINOP(OP_ADD, flags,
+     newSVREF($a),
+     newBINOP(OP_MULTIPLY, flags, newSVREF($b), newSVREF($c))
+  )
+
+The simplest type of an op structure is C<OP>, a L</BASEOP>: this has no
+children. Unary operators, L</UNOP>s, have one child, and this is pointed to by the
+C<op_first> field. Binary operators (L</BINOP>s) have not only an C<op_first> field
+but also an C<op_last> field. The most complex type of op is a L</LISTOP>, which has
+any number of children. In this case, the first child is pointed to by
+C<op_first> and the last child by C<op_last>. The children in between can be
+found by iteratively following the C<op_sibling> pointer from the first child to
+the last.
+
+There are also two other op types: a L</"PMOP"> holds a regular expression,
+and has no children, and a L</"LOOP"> may or may not have children. If the
+C<op_sibling> field is non-zero, it behaves like a C<LISTOP>. To
+complicate matters, if an C<UNOP> is actually a null op after optimization
+(see L</"Compile pass 2: context propagation"> below) it will still have
 children in accordance with its former type.
 
 The beautiful thing about the optree representation is that it is a
@@ -45,36 +65,70 @@ strict 1:1 mapping to the actual source code, which is proven by the
 L<B::Deparse> module, which generates readable source for the current
 optree. Well, almost.
 
+=head1 The Compiler
+
+Perl's compiler is essentially a 3-pass compiler with interleaved phases:
+
+  1. A bottom-up pass
+  2. A top-down pass
+  3. An execution-order pass
+
 =head2 Compile pass 1: check routines and constant folding
 
-When creating the ops in the first step, still bottom-up, for each op
-a check function (C<ck_ ()>) is called, which may destructively modify the
-whole tree. See L</"Check Functions"> for more.
+The bottom-up pass is represented by all the C<"newOP"> routines and
+the C<ck_> routines. The bottom-upness is actually driven by F<yacc>.
+So at the point that a C<ck_> routine fires, we have no idea what the
+context is, either upward in the syntax tree, or either forward or
+backward in the execution order. The bottom-up parser builds that
+part of the execution order it knows about, but if you follow the "next"
+links around, you'll find it's actually a closed loop through the
+top level node.
 
-Also, the constant folding routine C<fold_constants()> may nullify certain
-ops, which are skipped during final execution. See L</"Constant Folding"> 
-for more.
+So when creating the ops in the first step, still bottom-up, for each op a check
+function (C<ck_ ()>) is called, which which theroretically may destructively
+modify the whole tree, but because it knows almost nothing, it mostly just
+nullifies the current op. Or it might set the L</op_next> pointer.  See 
+L</"Check Functions"> for more.
+
+Also, the subsequent constant folding routine C<fold_constants()> may nullify
+certain ops, which are skipped during final execution. See 
+L</"Constant Folding"> for more.
 
 =head2 Compile pass 2: context propagation
 
 The context determines the type of the return value.
 When a context for a part of compile tree is known, it is propagated
 down through the tree. At this time the context can have 5 values
-(instead of 2 for runtime context): void, boolean, scalar, list, and
-lvalue. In contrast with the pass 1 this pass is processed from top to
+(instead of 2 for runtime context): C<void>, C<boolean>, C<scalar>, C<list>, and
+C<lvalue>. In contrast with the pass 1 this pass is processed from top to
 bottom: a node's context determines the context for its children.
 
-I<Todo: sample where this op flag is stored>
+Whenever the bottom-up parser gets to a node that supplies context to
+its components, it invokes that portion of the top-down pass that applies
+to that part of the subtree (and marks the top node as processed, so
+if a node further up supplies context, it doesn't have to take the
+plunge again).  As a particular subcase of this, as the new node is
+built, it takes all the closed execution loops of its subcomponents
+and links them into a new closed loop for the higher level node.  But
+it's still not the real execution order.
+
+I<Todo: Sample where this context flag is stored>
 
 Additional context-dependent optimizations are performed at this
 time. Since at this moment the compile tree contains back-references
 (via "thread" pointers), nodes cannot be C<free()>d now. To allow
 optimized-away nodes at this stage, such nodes are C<null()>ified
-instead of C<free()>`ing (i.e. their type is changed to C<OP_NULL>).
+instead of C<free()>'ing (i.e. their type is changed to C<OP_NULL>).
 
 =head2 Compile pass 3: peephole optimization
 
-Finally, when the full parse tree is generated, the peephole optimizer
+The actual execution order is not known till we get a grammar reduction
+to a top-level unit like a subroutine or file that will be called by
+"name" rather than via a "next" pointer.  At that point, we can call
+into peep() to do that code's portion of the 3rd pass.  It has to be
+recursive, but it's recursive on basic blocks, not on tree nodes.
+
+So finally, when the full parse tree is generated, the "peephole optimizer"
 C<peep()> is running.  This pass is neither top-down or bottom-up, but in
 the execution order (with additional complications for conditionals).
 
@@ -83,17 +137,23 @@ optimizations by "thinking ahead" one or two ops and seeing if
 multiple operations can be combined into one (by nullifying and
 re-ordering the next pointers).
 
-It also checks for lexical issues such as the effect of use strict on
+It also checks for lexical issues such as the effect of C<use strict> on
 bareword constants.  Note that since the last walk the early sibling
 pointers for recursive (bottom-up) meta-inspection are useless, the
 final exec order is guaranteed by the next and flags fields.
 
 =head1 basic vs exec order
 
-The highly recursive Yacc parser generates the initial optree in basic
+The highly recursive Yacc parser generates the initial optree in B<basic>
 order.  To save memory and run-time the final execution order of the
 ops in sequential order is not copied around, just the next pointers
-are rehooked to the so-called exec order.
+are rehooked to the so-called B<exec> order. So the exec walk through 
+the linked-list of ops is not too cache-friendly.
+
+Walkers can run in "basic" or "exec" order.
+"basic" is useful for the memory layout, it contains the history, 
+"exec" is more useful to understand the logic and program flow.
+The L</B::Bytecode> section has an extensive example about the order.
 
 =head1 OP Structure and Inheritance
 
@@ -104,7 +164,10 @@ See L</BASEOP> below.
 Each op is defined in size, arguments, return values, class and more
 in the F<opcode.pl> table. (See L</"OP Class Declarations in opcode.pl"> below.)
 
-The class of an OP determines its size and the number of children.
+The class of an OP determines its size and the number of children. But the 
+number and type of arguments is not so easy to declare as in C. F<opcode.pl>
+tries to declare some XS-prototype like arguments, but in lisp we would say 
+most ops are "special" functions, context-dependent, hard to parse.
 
 F<B.pm> L<http://search.cpan.org/perldoc?B> contains these classes and
 inheritance:
@@ -123,14 +186,16 @@ inheritance:
     @B::SPECIAL::ISA = 'B::OBJECT';
     @B::optype = qw(OP UNOP BINOP LOGOP LISTOP PMOP SVOP PADOP PVOP LOOP COP);
 
+I<TODO: ascii graph from perlguts>
+
 F<op.h> L<http://search.cpan.org/src/RGARCIA/perl-5.10.0/op.h>
 contains all the gory details. Let's check it out.
 
 =head2 OP Class Declarations in opcode.pl
 
-The full list of op declarations is defined as DATA in opcode.pl.
+The full list of op declarations is defined as C<DATA> in F<opcode.pl>.
 It defines the class, the name, some flags, and the argument types, 
-the so-called operands.
+the so-called "operands".
 C<make regen> (via F<regen.pl>) recreates out of this DATA table 
 the files F<opcode.h>, F<opnames.h>, F<pp_proto.h> and F<pp.sym>.
 
@@ -163,62 +228,126 @@ Values for the operands are:
 
 =head2 BASEOP
 
-All op classes have a single character signifier for easier definition in opcode.pl.
-The BASEOP class signifier is C<0> for no children.
+All op classes have a single character signifier for easier definition in F<opcode.pl>.
+The BASEOP class signifier is B<0>, for no children.
 
-Below are the BASEOP fields, which reflect the object B::OP, since Perl 5.10.
+Below are the BASEOP fields, which reflect the object C<B::OP>, since Perl 5.10.
 These are shared for all op classes.
 The parts after C<op_type> and before C<op_flags> changed during history.
 
-	op_next		Pointer to next op to execute after this one.
-			(Top level pre-grafted op points to first op,
-			but this is replaced when op is grafted in, when
-			this op will point to the real next op, and the new
-			parent takes over role of remembering starting op.)
-	op_sibling      Early used pointer to connect the children's list.
-	op_ppaddr	Pointer to current ppcode's function.
+=over
 
-	op_madprop 	pointer to the MADPROP struct, only with -DMAD, 
-			and since 5.10
+=item op_next	
 
-	op_targ		PADOFFSET
-	op_type		The type of the operation.
+Pointer to next op to execute after this one.
 
-Since 5.10 we have the next five fields added, which replace U16 op_seq;
+Top level pre-grafted op points to first op, but this is replaced when op is
+grafted in, when this op will point to the real next op, and the new parent
+takes over role of remembering the starting op. 
+I<Now, who wrote this prose? Anyway, that is why it is called guts.>
 
-	op_opt		Whether or not the op has been optimised by the
-			peephole optimiser.
+=item op_sibling      
 
-See the comments in S_clear_yystack() in F<perly.c> for more details on the 
-following three flags. They are just for freeing temporary ops on the stack, 
-are even not used currently, because it's too fragile.
+Pointer to connect the children's list.
 
-	op_latefree	tell op_free() to clear this op (and free any kids)
-			but not yet deallocate the struct. This means that
-			the op may be safely op_free()d multiple times.
-	op_latefreed	an op_latefree op has been op_free()d
-	op_attached	this op (sub)tree has been attached to the CV PL_compcv
-			so it doesn't need to be free'd
-	op_spare	three spare bits, at least within 5.10.
+The first child is L</op_first>, the last is L</op_last>, and the children in between 
+are interconnected by op_sibling. This is at run-time only used for L</LISTOP>s.
 
-Those last two have been in all perls:
+So why is it in the BASEOP struct carried around for every op?
 
-	op_flags	Flags common to all operations.
-                        See OPf_* in F<op.h>, or more verbose in L<B::Flags> 
-			or F<dump.c>
-  	op_private	Flags peculiar to a particular operation (BUT,
-  			by default, set to the number of children until
-  			the operation is privatized by a check routine,
-  			which may or may not check number of children).
+Because of the complicated Yacc parsing and later optimization order as
+explained in L<"Compile pass 1: check routines and constant folding"> the
+L</op_next> pointers are not enough, so op_sibling's are required. The final and
+fast execution order by just following the op_next chain is expensive to
+calculate.
 
-The exact op.h BASEOP history for the parts after C<op_type> and
+=item op_ppaddr	
+
+Pointer to current ppcode's function.
+The so called "opcode".
+
+=item op_madprop 	
+
+Pointer to the MADPROP struct. Only with -DMAD, and since 5.10. See L</MAD> (Misc Attribute Decoration) below.
+
+=item op_targ		
+
+PADOFFSET to "unnamed" op targets/GVs/constants, wasting no SV. Has for some op's also a different meaning.
+
+=item op_type		
+
+The type of the operation.
+
+Since 5.10 we have the next five fields added, which replace C<U16 op_seq>.
+
+=item op_opt		
+
+"optimized"
+
+Whether or not the op has been optimised by the	peephole optimiser.
+
+See the comments in C<S_clear_yystack()> in F<perly.c> for more details on the 
+following three flags. They are just for freeing temporary ops on the stack.
+But we might have statically allocated op in the data segment, esp. with the 
+perl compiler's L<B::C> module. Then we are not allowed to free those static 
+ops. For a short time, from 5.9.0 until 5.9.4, until the B::C module was 
+removed from CORE, we had another field here for this reason: B<op_static>. 
+On 1 it didn't free the static op. Before 5.9.0 the L</op_seq> field was used 
+with the magic value B<-1> to indicate a static op, not to be freed.
+Note: Trying to free a static struct is considered harmful.
+
+=item op_latefree	
+
+Tell C<op_free()> to clear this op (and free any kids) but not yet deallocate the
+struct. This means that the op may be safely C<op_free()>d multiple times.
+
+On static ops you just set this to B<1> and after the first C<op_free()> the
+op_latefreed is automatically set and further C<op_free()> called are just ignored.
+
+=item op_latefreed	
+
+If 1, an op_latefree op has been C<op_free()>d.
+
+=item op_attached	
+
+This op (sub)tree has been attached to the CV C<PL_compcv> so it doesn't need to be
+free'd.
+
+=item op_spare	
+
+Three spare bits in this bitfield above. At least they survived 5.10.
+
+
+Those last two fields have been in all perls:
+
+=item op_flags	
+
+Flags common to all operations.
+See C<OPf_*> in F<op.h>, or more verbose in L<B::Flags> or F<dump.c>
+
+=item op_private	
+
+Flags peculiar to a particular operation (BUT, by default, set to the number 
+of children until the operation is privatized by a check routine, which may or 
+may not check number of children).
+
+This flag is normally used to hold op specific context hints, such as
+C<HINT_INTEGER>. This flag is directly attached to each relevant op in the subtree
+of the context. Note that there's no general context or class pointer for each
+op, as in a functional language. So we are limited to max 32 lexical pragma hints 
+or less. See L</Lexical Pragmas>.
+
+=back
+
+The exact op.h L</BASEOP> history for the parts after C<op_type> and
 before C<op_flags> is:
 
   <=5.8:   U16 op_seq;
-    5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
+    5.9.4: unsigned op_opt:1; unsigned op_static:1;   unsigned op_spare:5;
   >=5.10:  unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; 
            unsigned op_attached:1; unsigned op_spare:3;
 
+The L</BASEOP> class signifier is B<0>, for no children.
 The full list of all BASEOP's is:
 
         $ perl -F"/\cI+/" -ane 'print if $F[3] =~ /0$/' opcode.pl
@@ -260,7 +389,7 @@ The full list of all BASEOP's is:
 
 =head2 UNOP
 
-The unary op class signifier is C<1>, for one child, pointed to by C<op_first>.
+The unary op class signifier is B<1>, for one child, pointed to by C<op_first>.
 
 	struct unop {
 		BASEOP
@@ -305,7 +434,7 @@ The unary op class signifier is C<1>, for one child, pointed to by C<op_first>.
 
 =head2 BINOP
 
-The BINOP class signifier is C<2>, for two children, pointed to by
+The BINOP class signifier is B<2>, for two children, pointed to by
 C<op_first> and C<op_last>.
 
 	struct binop {
@@ -365,9 +494,9 @@ C<op_first> and C<op_last>.
   
 =head2 LOGOP
 
-The LOGOP class signifier is C<|>.
+The LOGOP class signifier is B<|>.
 
-A LOGOP has the same structure as a BINOP, two children, just the
+A LOGOP has the same structure as a L</BINOP>, two children, just the
 second field has another name C<op_other> instead of C<op_last>.
 But as you see on the list below, the two arguments as above are optional and 
 not strictly required.
@@ -398,7 +527,7 @@ not strictly required.
 
 =head2 LISTOP
 
-The LISTOP class signifier is C<@>.
+The LISTOP class signifier is B<@>.
 
 	struct listop {
 		BASEOP
@@ -441,12 +570,12 @@ that's why.
 
 =head2 PMOP
 
-The PMOP "pattern matching" class signifier is C</> for matching.
-It inherits from the LISTOP.
+The PMOP "pattern matching" class signifier is B</> for matching.
+It inherits from the L</LISTOP>.
 
 The internal struct changed completely with 5.10, as the underlying engine.
-Starting with 5.11 the PMOP can even hold native REGEX objects, not just SV's.
-So you have to use the PM macros to stay compatible.
+Starting with 5.11 the PMOP can even hold native L<"REGEX"/perlguts#REGEX> objects, not just SV's.
+So you have to use the C<PM> macros to stay compatible.
 
 Below is the current C<struct pmop>. You will not like it.
 
@@ -480,6 +609,7 @@ Below is the current C<struct pmop>. You will not like it.
 
 Before we had no union, but a C<op_pmnext>, which never worked. 
 Maybe because of the typo in the comment.
+
 The old struct (up to 5.8.x) was as simple as:
 
 	struct pmop {
@@ -495,9 +625,11 @@ The old struct (up to 5.8.x) was as simple as:
 	    U16		op_pmpermflags;
 	    U8		op_pmdynflags;
 	}
+
 So C<op_pmnext>, C<op_pmpermflags> and C<op_pmdynflags> are gone. 
-The C<op_pmflags> are not the whole deal, there's also 
-C<op_pmregexp->extflags> or C<B::PMOP->reflags> for the new features.
+The C<op_pmflags> are not the whole deal, there's also C<op_pmregexp.extflags> 
+- interestingly called C<B::PMOP::reflags> in B - for the new features.
+This is btw. the only inconsistency in the B mapping.
 
 	$ perl -F"/\cI+/" -ane 'print if $F[3] =~ /\/$/' opcode.pl
         pushre          push regexp             ck_null         d/
@@ -510,10 +642,10 @@ C<op_pmregexp->extflags> or C<B::PMOP->reflags> for the new features.
 The SVOP class is very special, and can even change dynamically.
 Whole SV's are costly and are now just used as GV or RV.
 The SVOP has no special signifier, as there are different subclasses.
-See L</SVOP_OR_PADOP>, L</PVOP_OR_SVOP> and L</FILESTATOP>.
+See L</"SVOP_OR_PADOP">, L</"PVOP_OR_SVOP"> and L</"FILESTATOP">.
 
 A SVOP holds a SV and is in case of an FILESTATOP the GV for the 
-filehandle argument, and in case of trans (a PVOP) with utf8 a 
+filehandle argument, and in case of C<trans> (a L</PVOP>) with utf8 a 
 reference to a swash (i.e., an RV pointing to an HV).
 
 	struct svop {
@@ -521,12 +653,12 @@ reference to a swash (i.e., an RV pointing to an HV).
 		SV *	op_sv;
 	};
 
-Most old SVOP's were changed to PADOP's when threading was introduced, to
+Most old SVOP's were changed to L</PADOP>'s when threading was introduced, to
 privatize the global SV area to thread-local scratchpads.
 
 =head3 SVOP_OR_PADOP
 
-The op C<aelemfast> is a PADOP with threading and a simple SVOP without. 
+The op C<aelemfast> is either a L<PADOP> with threading and a simple L<SVOP> without. 
 This is thanksfully known at compile-time.
 
     aelemfast	constant array element	ck_null		s$	A S
@@ -534,7 +666,7 @@ This is thanksfully known at compile-time.
 =head3 PVOP_OR_SVOP
 
 The only op here is C<trans>, where the class is dynamically defined, 
-dependent on the utf8 settings in the op_private hints.
+dependent on the utf8 settings in the L</op_private> hints.
 
     case OA_PVOP_OR_SVOP:
 	return (o->op_private & (OPpTRANS_TO_UTF|OPpTRANS_FROM_UTF))
@@ -542,14 +674,14 @@ dependent on the utf8 settings in the op_private hints.
 
     trans		transliteration (tr///)	ck_null		is"	S
 
-Character translations (C<tr///>) are usually a PVOP, keeping a pointer
+Character translations (C<tr///>) are usually a L<PVOP>, keeping a pointer
 to a table of shorts used to look up translations.  Under utf8,
-however, a simple table isn't practical; instead, the OP is an SVOP,
+however, a simple table isn't practical; instead, the OP is an L</SVOP>,
 and the SV is a reference to a swash (i.e., an RV pointing to an HV).
 
 =head2 PADOP
 
-The PADOP class signifier is C<$> for temp. scalars.
+The PADOP class signifier is B<$> for temp. scalars.
 
 A new C<PADOP> creates a new temporary scratchpad, an PADLIST areay.
   C<padop->op_padix = pad_alloc(type, SVs_PADTMP);>
@@ -600,8 +732,8 @@ The PVOP class signifier is C<"> for strings.
 
 =head2 LOOP
 
-The LOOP class signifier is C<{>.
-It inherits from the LISTOP.
+The LOOP class signifier is B<{>.
+It inherits from the L</LISTOP>.
 
         struct loop {
 	    BASEOP
@@ -618,7 +750,33 @@ It inherits from the LISTOP.
 
 =head2 COP
 
-C<struct cop> changed recently a lot, as the C<BASEOP>.
+The C<struct cop>, the "Control OP", changed recently a lot, as the L</BASEOP>.
+Remember from perlguts what a COP is? Got you. A COP is nowhere described.
+
+I would have naively called it "Context OP", but not "Control OP". So why?
+We have a global C<PL_curcop> and then we have threads. So it cannot be global
+anymore. A COP can be said as helper context for debugging and error information
+to store away file and line information. But since perl is a file-based
+compiler, not block-based, also file based pragmata and hints are stored in the
+COP. So we have for every source file a seperate COP. COP's are not really block
+level contexts, just file information.
+
+F<cop.h> says:
+
+Control ops (cops) are one of the three ops OP_NEXTSTATE, OP_DBSTATE, and
+OP_SETSTATE that (loosely speaking) are separate statements. They hold
+information for lexical state and error reporting. At run time, C<PL_curcop> is set
+to point to the most recently executed cop, and thus can be used to determine
+our file-level current state.
+
+But we need block context, eval context, subroutine context, loop context, and
+even format context. All these are seperate structs defined in F<cop.h>.
+
+So the COPs are not really that important, as the actual C<Cx> context structs
+are. Just the C<CopSTASH> is, the current package symbol table hash ("stash").
+
+Another famous COP is C<PL_compiling>, which sets the temporary compilation
+environment.
 
 	struct cop {
 	    BASEOP
@@ -640,18 +798,25 @@ C<struct cop> changed recently a lot, as the C<BASEOP>.
 	    struct refcounted_he * cop_hints_hash;
 	};
 
-The COP class signifier is C<;> and there are only two:
+The COP class signifier is B<;> and there are only two:
 
 	$ perl -F"/\cI+/" -ane 'print if $F[3] =~ /;$/' opcode.pl
         nextstate       next statement          ck_null         s;
         dbstate         debug next statement    ck_null         s;
 
+There uses to be three. C<SETSTATE> seems to be optimized away, I cannot find it in
+the source anymore neither. 
+
+This requires a patch to remove wrong info from the cop.h header.
+Read L<perlhack.pod> and submit the patch after investigating where it has gone to.
+Sam Vilain's GIT history might help.
+
 =head2 BASEOP_OR_UNOP
 
-BASEOP_OR_UNOP has the class signifier C<%>. As the name says, it may 
-be a BASEOP or UNOP, it may have an optional C<op_first> field.
+BASEOP_OR_UNOP has the class signifier B<%>. As the name says, it may 
+be a L</BASEOP> or L</UNOP>, it may have an optional L</op_first> field.
 
-The list of C<%> ops is quite large, it has 84 ops.
+The list of B<%> ops is quite large, it has 84 ops.
 Some of them are e.g.
 
 	$ perl -F"/\cI+/" -ane 'print if $F[3] =~ /%$/' opcode.pl
@@ -674,16 +839,16 @@ Some of them are e.g.
 
 =head2 FILESTATOP
 
-A FILESTATOP may be a UNOP, PADOP, BASEOP or SVOP.
+A FILESTATOP may be a L</UNOP>, L</PADOP>, L</BASEOP> or L</SVOP>.
 
-It has the class signifier C<->.
+It has the class signifier B<->.
 
 The file stat OPs are created via UNI(OP_foo) in toke.c but use the
-OPf_REF flag to distinguish between OP types instead of the usual
-OPf_SPECIAL flag. As usual, if OPf_KIDS is set, then we return
-OPc_UNOP so that walkoptree can find our children. If OPf_KIDS is not
-set then we check OPf_REF. Without OPf_REF set (no argument to the
-operator) it's an OP; with OPf_REF set it's an SVOP (and op_sv is the
+C<OPf_REF> flag to distinguish between OP types instead of the usual
+C<OPf_SPECIAL> flag. As usual, if C<OPf_KIDS> is set, then we return
+C<OPc_UNOP> so that walkoptree can find our children. If C<OPf_KIDS> is not
+set then we check C<OPf_REF>. Without C<OPf_REF> set (no argument to the
+operator) it's an OP; with C<OPf_REF> set it's an SVOP (and the field C<op_sv> is the
 GV for the filehandle argument).
 
   case OA_FILESTATOP:
@@ -727,15 +892,15 @@ GV for the filehandle argument).
 
 =head2 LOOPEXOP
 
-A LOOPEXOP is almost a L<BASEOP_OR_UNOP>. It may be a UNOP if stacked or 
-BASEOP if special or PVOP else.
+A LOOPEXOP is almost a L<BASEOP_OR_UNOP>. It may be a L</UNOP> if stacked or 
+L</BASEOP> if special or L</PVOP> else.
 
-next, last, redo, dump and goto use OPf_SPECIAL to indicate that a
-label was omitted (in which case it's a BASEOP) or else a term was
-seen. In this last case, all except goto are definitely PVOP but
-goto is either a PVOP (with an ordinary constant label), an UNOP
-with OPf_STACKED (with a non-constant non-sub) or an UNOP for
-OP_REFGEN (with goto &sub) in which case OPf_STACKED also seems to
+C<next>, C<last>, C<redo>, C<dump> and C<goto> use C<OPf_SPECIAL> to indicate that a
+label was omitted (in which case it's a L</BASEOP>) or else a term was
+seen. In this last case, all except goto are definitely L</PVOP> but
+goto is either a PVOP (with an ordinary constant label), an L</UNOP>
+with C<OPf_STACKED> (with a non-constant non-sub) or an L</UNOP> for
+C<OP_REFGEN> (with C<goto &sub>) in which case C<OPf_STACKED> also seems to
 get set.
 
 ...
@@ -746,7 +911,8 @@ Let's take a simple example for a opcode definition in `opcode.pl`:
 
   left_shift	left bitshift (<<)	ck_bitop	fsT2	S S
 
-The op C<left_shift> has a check function C<ck_bitop> (normally most ops have no check function, just ck_null), and the options C<fsT2>.
+The op C<left_shift> has a check function C<ck_bitop> (normally most ops 
+have no check function, just C<ck_null>), and the options C<fsT2>.
 The last two C<S S> describe the type of the two required operands: 
 SV or scalar. This is similar to XS protoypes.
 The last C<2> in the options C<fsT2> denotes the class BINOP, with 
@@ -800,15 +966,79 @@ For reference see L<perlguts/"Putting a C value on Perl stack">.
 
 =head2 Check Functions
 
-...
+They are defined in op.c and not in pp.c, because the belong tightly to the 
+ops and newOP definition, and not to the actual pp_ opcode. That's why 
+the actual op.c file is bigger than pp.c where the real gore for each op begins.
+The name of each op's check function is defined in opcodes.pl, as shown above.
+
+The C<ck_null> check function is the most common.
+
+  $ perl -F"/\cI+/" -ane 'print $F[2],"\n" if $F[2] =~ /ck_null/' opcode.pl|wc -l
+  128
+
+But we do have a lot of those check functions.
+
+  $ perl -F"/\cI+/" -ane 'print $F[2],"\n" if $F[2] =~ /ck_/' opcode.pl|sort -u|wc -l
+  43
+
+B<When are they called, how do they look like, what do they do.>
+
+The macro CHECKOP(type,o) used to call the ck_ function has a little bit of 
+common logic.
+
+  #define CHECKOP(type,o) \
+    ((PL_op_mask && PL_op_mask[type])				\
+     ? ( op_free((OP*)o),					\
+	 Perl_croak(aTHX_ "'%s' trapped by operation mask", PL_op_desc[type]),	\
+	 (OP*)0 )						\
+     : CALL_FPTR(PL_check[type])(aTHX_ (OP*)o))
+
+So when a global B<PL_op_mask> is fitting to the type the OP is nullified at once.
+If not the type specific check function, with the help of F<opcodes.pl> generating 
+the C<PL_check> array in F<opnames.h> is called.
+
 
 =head2 Constant Folding
 
-...
+In theory pretty easy. If all op's arguments are constant and the op is
+sideffect free ("purely functional"), replace the op with an constant op as
+result.
 
-=head2 Constant Folding
+We do it like this: We define the C<f> flag in F<opcodes.pl>, which tells the
+compiler in the first pass to call C<fold_constants()> on this op. See 
+L<"Compile pass 1: check routines and constant folding"> above.  
+If all args are constant, the result is constant also and the op will be nullified.
 
-...
+But take care, every C<f> op must be sideeffect free!
+
+E.g. our C<newUNOP()> calls at the end:
+
+    return fold_constants((OP *) unop);
+
+OA_FOLDCONST
+
+=head2 Lexical Pragmas
+
+To implement user lexical pragmas, there needs to be a way at run time to get
+the compile time state of `%^H` for that block.  Storing `%^H` in every
+block (or even COP) would be very expensive, so a different approach is
+taken.  The (running) state of C<%^H> is serialised into a tree of HE-like
+structs.  Stores into C<%^H> are chained onto the current leaf as a struct
+refcounted_he * with the key and the value.  Deletes from C<%^H> are saved
+with a value of C<PL_sv_placeholder>.  The state of C<%^H> at any point can be
+turned back into a regular HV by walking back up the tree from that point's
+leaf, ignoring any key you've already seen (placeholder or not), storing
+the rest into the HV structure, then removing the placeholders. Hence
+memory is only used to store the C<%^H> deltas from the enclosing COP, rather
+than the entire C<%^H> on each COP.
+
+To cause actions on C<%^H> to write out the serialisation records, it has
+magic type 'H'. This magic (itself) does nothing, but its presence causes
+the values to gain magic type 'h', which has entries for set and clear.
+C<Perl_magic_sethint> updates C<PL_compiling.cop_hints_hash> with a store
+record, with deletes written by C<Perl_magic_clearhint>. C<SAVEHINTS>
+saves the current C<PL_compiling.cop_hints_hash> on the save stack, so that
+it will be correctly restored when any inner compiling scope is exited.
 
 =head1 Hooks
 
@@ -873,10 +1103,10 @@ manipulate these values array.
 
 Malcom Beattie's B modules hooked into the early optree stages to
 represent the internal ops as perl objects and added the perl compiler
-backends.  See L<B> and L<perlcompile.pod>
+backends.  See L<B> and L<perlcompile.pod>.
 
 The three main compiler backends are still B<Bytecode>, B<C> and B<CC>,
-and these do not work for current perl's (_yet_).
+and these do not work for current perl's (I<yet>).
 
 I<Todo: Describe B's object representation a little bit deeper, its
 CHECK hook, its internal transformers for Bytecode (asm and vars) and
@@ -884,14 +1114,27 @@ C (the sections).>
 
 =head2 MAD
 
-Larry Wall is working together with Nicholas Clark on a new MAD
-compiler backend outside of the B approach, dumping the internal
-optree representation as B<XML>, not as tree of perl B objects.
+MAD stands for "Misc Attributed Data".
+
+Larry Wall worked on a new MAD compiler backend outside of the B approach,
+dumping the internal optree representation as B<XML>, not as tree of perl B
+objects.
+
+The idea is that all the information needed to recreate the original source is
+stored in the optree. To do this the tokens for the ops are associated with ops,
+these madprops are a list of key-value pairs, where the key is a character as
+listed at the end of op.h, the value normally is a string, but it might also be
+a op, as in the case of a optimized op ('O'). Special for the whitespace key '_'
+(whitespace before) and '#' (whitespace after), which indicate the whitespace or
+comment before/after the previous key-value pair.
+Also when things normally compiled out, like a BEGIN block, which normally do
+not results in any ops, instead create a NULLOP with madprops used to recreate
+the object.
 
 I<Is there any documentation on this?>
 
-Advantage:
-
+Why this awful XML and not the rich tree of perl objects?
+Well there's an advantage.
 The MAD XML can be seen as some kind of XML Storable/Freeze of the B
 optree, and can be therefore converted outside of the CHECK block,
 which means you can actually debug the conversion (= compilation)
@@ -901,16 +1144,26 @@ backends.
 B<kurila> L<http://search.cpan.org/dist/kurila/> uses this to convert
 Perl 5 source to the kurila dialect. 
 
-B<PPI> L<http://search.cpan.org/dist/PPI/>, a Perl 5 source parser not
+To convert a file 'source.pm' from Perl 5.10 to Kurila you need to do:
+
+  kurilapath=/usr/src/perl/kurila-1.9
+  bleadpath=/usr/src/perl/blead
+  cd $kurilapath
+  madfrom='perl-5.10' madto='kurila-1.9' \
+    madconvert="/usr/bin/perl $kurilapath/mad/p5kurila.pl" \
+    madpath="$bleadpath/mad" \
+    mad/convert /path/to/source.pm
+
+B<PPI> L<http://search.cpan.org/dist/PPI/>, a Perl 5 source level parser not
 related to the optree at all, could also have been used for that.
 
 =head2 Pluggable runops
 
-The compile tree is executed by one of two existing runops functions,
-in run.c or in dump.c. C<Perl_runops_debug> is used with DEBUGGING and
-C<Perl_runops_standard> is used otherwise. For fine control over the
-execution of the compile tree it is possible to provide your own
-runops function.
+The compile tree is executed by one of two existing runops functions, in run.c
+or in dump.c. C<Perl_runops_debug> is used with DEBUGGING and
+C<Perl_runops_standard> is used otherwise (See below in L</"Walkers">). For fine
+control over the execution of the compile tree it is possible to provide your
+own runops function.
 
 It's probably best to copy one of the existing runops functions and
 change it to suit your needs. Then, in the C<BOOT> section of your XS
@@ -921,10 +1174,12 @@ file, add the line:
 This function should be as efficient as possible to keep your programs
 running as fast as possible.
 
-=head3 Walkers
+=head3 Walkers or runops
 
-The standard optree walker as simple as this (F<run.c>). It starts with
-C<main_start> and walks the C<op_next> chain until the end.
+The standard optree B<walker> or B<runops> is as simple as this ultrafast
+C<Perl_runops_standard()> in (F<run.c>). It starts with C<main_start> and walks
+the C<op_next> chain until the end. No need to check other fields, strictly
+linear through the tree.
 
   int
   Perl_runops_standard(pTHX)
@@ -937,11 +1192,13 @@ C<main_start> and walks the C<op_next> chain until the end.
 	return 0;
   }
 
-To inspect the optree within a perl program, you can also hook
-C<PL_runops> to your own perl walker (see e.g. L<B::Utils> for various
-useful walkers), but you cannot modify the tree from within the B
-accessors, only via XS.
+To inspect the optree within a perl program, you can also hook C<PL_runops> (see
+above at L</"Pluggable runops">) to your own perl walker (see e.g. L<B::Utils>
+for various useful walkers), but you cannot modify the tree from within the B
+accessors, only via XS. Or via L<B::Generate> as explained in Simon Cozen's "Hacking the Optree for Fun..." 
+L<http://www.perl.com/pub/a/2002/05/07/optree.html>.
 
+I<Todo: Show the other runloops, and esp. the B:Utils ones.>
 I<Todo: Describe the dumper, the debugging and more extended walkers.>
 
 =head1 Internal and external modifications
@@ -999,3 +1256,17 @@ pdf L<http://scratchcomputing.com/developers/perl_guts_tour.pdf>
 This text was created in this wiki article:
 L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
 The wiki article should be more actual.
+
+=head1 Conclusion
+
+So this is about 30% of the basic optree information so far. Not speaking about
+the guts. Simon has more 30%, in the source are more 10% to copy&paste, and in
+the compilers and run-time information is the rest. I hope with the help of some
+hackers we'll get it done, so that some people will begin poking around in the B
+backends. And write the wonderful new dump functionality (which actually worked
+in the early years on Solaris), output PIR (parrot code), emit LLVM or another
+JIT optimized code or even write assemblers. I have a simple one at home. :)
+
+Written 2008 on the perl5 wiki with socialtext and pod in parallel by Reini
+Urban, CPAN ID rurban.
+

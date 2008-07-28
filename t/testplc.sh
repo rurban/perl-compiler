@@ -29,15 +29,21 @@ function btest {
     # understand annotations
     echo $PERL $Mblib script/assemble ${o}S_${VERS}.asm ${o}S_${VERS}.plc
     $PERL $Mblib script/assemble ${o}S_${VERS}.asm ${o}S_${VERS}.plc
-    echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}s_${VERS}.disasm
+    echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}s_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}s_${VERS}.disasm
-    # assembler roundtrip
+    # full assembler roundtrips
+    echo $PERL $Mblib script/disassemble ${o}S_${VERS}.plc \> ${o}S_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}S_${VERS}.plc > ${o}S_${VERS}.disasm
-    $PERL $Mblib script/assemble ${o}S_${VERS}.disasm ${o}S_${VERS}.plc
+    echo $PERL $Mblib script/assemble ${o}S_${VERS}.disasm ${o}SD_${VERS}.plc
+    $PERL $Mblib script/assemble ${o}S_${VERS}.disasm ${o}SD_${VERS}.plc
+    echo $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc \> ${o}SDS_${VERS}.disasm
+    $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc > ${o}SDS_${VERS}.disasm
 
     bcall ${o} k
+    $PERL $Mblib script/disassemble ${o}k_${VERS}.plc > ${o}k_${VERS}.disasm
     echo $PERL $Mblib -MO=Debug ${o}.pl -o ${o}_${VERS}.dbg
     $PERL $Mblib -MO=Debug ${o}.pl > ${o}_${VERS}.dbg
+    # 5.8 has a bad concise
     echo $PERL $Mblib -MO=Concise ${o}.pl -o ${o}_${VERS}.concise
     $PERL $Mblib -MO=Concise ${o}.pl > ${o}_${VERS}.concise
     #bcall ${o} TI
@@ -55,10 +61,11 @@ make
 # 5.8: all PASS
 # 5.10: FAIL: 2-5, 7, 11, 15. With -D 9-12 fail also.
 # 5.11: FAIL: 2-5, 7, 11, 15-16 (all segfaulting in REGEX). With -D 9-12 fail also.
-btest 1 "print 'hi'"
+#btest 1 "print 'hi'"
 btest 2 "for (1,2,3) { print if /\d/ }"
 btest 3 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 btest 4 '$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
+exit
 btest 5 'split /a/,"bananarama"; print @_'
 btest 6 "{package P; sub x {print 'ya'} x}"
 btest 7 '@z = split /:/,"b:r:n:f:g"; print @z'
@@ -66,7 +73,7 @@ btest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
 btest 9 'my $l = 3; $x = sub { print $l }; &$x'
 btest 10 'my $i = 1; my $foo = sub {$i = shift if @_}; &$foo(3); print "ok";'
 btest 11 '$x="Cannot use"; print index $x, "Can"'
-betst 12 'my $i=6; eval "print \$i\n"'
+btest 12 'my $i=6; eval "print \$i\n"'
 btest 13 'BEGIN { %h=(1=>2,3=>4) } print $h{3}'
 btest 14 'open our $T,"a"; print "ok";'
 btest 15 'print <DATA>
