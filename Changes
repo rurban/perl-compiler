@@ -1,5 +1,8 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 until Perl 5.9.4.
 
+1.04_14 2008-03-24 rurban
+        * Fixes some 1.04_13 +x executable permissions in docs. Windows habits.
+
 1.04_13 2008-03-24 rurban
 	* Fixed B::C pv init in 5.10. Forgot refcnt and flags.
 	* Added "Other perl to exe compilers" section to perlcompile.pod. 
