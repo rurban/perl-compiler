@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use File::Spec;
-use 5.009005;
+#use 5.009005;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 

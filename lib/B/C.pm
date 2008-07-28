@@ -1,6 +1,7 @@
 #      C.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
+#      Copyright (c) 2008 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -8,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_08';
+our $VERSION = '1.04_09';
 
 package B::C::Section;
 
@@ -218,7 +219,7 @@ my ($init, $decl, $symsect, $binopsect, $condopsect, $copsect,
     $padopsect, $listopsect, $logopsect, $loopsect, $opsect, $pmopsect,
     $pvopsect, $svopsect, $unopsect, $svsect, $xpvsect, $xpvavsect,
     $xpvhvsect, $xpvcvsect, $xpvivsect, $xpvnvsect, $xpvmgsect, $xpvlvsect,
-    $xrvsect, $xpvbmsect, $xpviosect );
+    $xrvsect, $xpvbmsect, $xpviosect, $heksect );
 my @op_sections = \( $binopsect, $condopsect, $copsect, $padopsect, $listopsect,
                      $logopsect, $loopsect, $opsect, $pmopsect, $pvopsect, $svopsect,
                      $unopsect );
@@ -324,6 +325,16 @@ sub save_pv_or_rv {
     return ( $savesym, $pvmax, $len, $pv );
 }
 
+# FIXME! global string table
+sub save_hek {
+  my $str = shift;
+  my $len = length $str;
+  my $hash = 0; # let hv compute it
+  # (HEK*)ptr_table_fetch(PL_ptr_table, source);
+  # FIXME!
+  $heksect->add("hv_store(PL_strtab, \"$str\", $len, NULL, $hash);");
+}
+
 # see also init_op_ppaddr below; initializes the ppaddt to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignmente
@@ -362,7 +373,7 @@ sub B::OP::fake_ppaddr {
   else               {  $static = '0, 0, 0, 0, 0'; } # opt latefree latefreed attached spare
   sub B::OP::_save_common_middle {
     my $op = shift;
-    my $madprop = $mad ? (" ".($B::VERSION < 1.1801 ? 0:$op->madprop) . ",") : "";
+    my $madprop = $mad ? (" ".($B::VERSION < 1.1801 ? 0 : $op->madprop) . ",") : "";
     sprintf ("%s,%s %u, %u, $static, 0x%x, 0x%x",
 	     $op->fake_ppaddr, $madprop, $op->targ, $op->type,
 	     $op->flags, $op->private);
@@ -1129,12 +1140,28 @@ sub B::GV::save {
 	    $egvsym = $egv->save;
 	}
     }
-    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);],
-	       sprintf("SvFLAGS($sym) = 0x%x;", $gv->FLAGS ),
+    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
+    # XXX hack Remove SVpgv_GP (GV has a valid GP) SvFLAGS(sv) &= ~SVpgv_GP
+    # 5.8 had SvFLAGS 0x600d, 5.11 has 0x8009
+    my $svflags = $gv->FLAGS;
+    if ($gv->isGV_with_GP and $is_empty) {
+      warn(sprintf("gv[$name]_with_GP: 0x%x %s %s %s\n", $gv->FLAGS,
+		   $gv->FILE, $gv->FILEGV, $gv->GP)) if $debug_gv;
+      $svflags = $gv->FLAGS && 0x8000 ? $gv->FLAGS - 0x8000 : $gv->FLAGS;
+      warn("Removing empty GP from $name\n") if $debug_gv;
+    } elsif (!$is_empty) {
+      $init->add(sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym); /* 0x%x */", $gv->GP));
+      # $svflags = $gv->FLAGS && 0x400 ? $gv->FLAGS : $gv->FLAGS + 0x400;
+      warn(sprintf("Setting GvGP of $name: 0x%x %s %s %s\n", $svflags,
+		   $gv->FILE, $gv->FILEGV, $gv->GP)) if $debug_gv;
+    }
+    $init->add(sprintf("SvFLAGS($sym) = 0x%x;", $svflags ),
 	       sprintf("GvFLAGS($sym) = 0x%x;", $gv->GvFLAGS));
     $init->add(sprintf("GvLINE($sym) = %u;", $gv->LINE)) unless $is_empty;
-    # XXX hack for when Perl accesses PVX of GVs
-    $init->add("SvPVX($sym) = emptystring;\n");
+    # XXX hack for when Perl accesses PVX of GVs, only if SvPOK
+    #if (!($svflags && 0x400)) {
+    $init->add("if (SvPOK($sym)) SvPVX($sym) = emptystring;\n") unless $is_empty;
+    #}
     # Shouldn't need to do save_magic since gv_fetchpv handles that
     #$gv->save_magic;
     # XXX will always be > 1!!!
@@ -1148,7 +1175,7 @@ sub B::GV::save {
     if ($gvrefcnt > 1) {
 	$init->add(sprintf("GvREFCNT($sym) += %u;", $gvrefcnt - 1));
     }
-    # some non-alphavetic globs require some parts to be saved
+    # some non-alphabetic globs require some parts to be saved
     # ( ex. %!, but not $! )
     sub Save_HV() { 1 }
     sub Save_AV() { 2 }
@@ -1205,18 +1232,22 @@ sub B::GV::save {
                 $init->add("\tcv=perl_get_cv($origname,TRUE);");
                 $init->add("\tGvCV($sym)=cv;");
                 $init->add("\tSvREFCNT_inc((SV *)cv);");
-                $init->add("}");    
+                $init->add("}");
 	    } else {
                $init->add(sprintf("GvCV($sym) = (CV*)(%s);", $gvcv->save));
 	       warn "GV::save &$name\n" if $debug_gv;
 	    }
         }
-	if ($] < 5.009) {
+	if ($] > 5.009) {
+	  my $file = cstring($gv->FILE);
+	  $heksect->add($file);
+	  $init->add(sprintf("GvFILE_HEK($sym) = share_hek(%s,%u,0);",
+			     $file, length($file)));
+	  warn "GV::save GvFILE_HEK(*$name) = share_hek($file)\n" if $debug_gv;
+	}  else {
 	  $init->add(sprintf("GvFILE($sym) = %s;", cstring($gv->FILE)));
-	} else {
-	  $init->add(sprintf("GvFILE_HEK($sym) = %s;", cstring($gv->FILE)));
+	  warn "GV::save GvFILE(*$name) = ".cstring($gv->FILE)."\n" if $debug_gv;
 	}
-	warn "GV::save GvFILE".($[ < 5.009 ? "" : "_HEK")."(*$name)\n" if $debug_gv;
 	my $gvform = $gv->FORM;
 	if ($$gvform && $savefields&Save_FORM) {
 	    $gvform->save;
@@ -1740,7 +1771,7 @@ xs_init(pTHX)
     dTARG;
     dSP;
 EOT
-    print "\n#undef USE_DYNAMIC_LOADING"; # REMOVEME! boot_ symbols not linked!
+    print "\n#undef USE_DYNAMIC_LOADING /* temp. HACK! */"; # REMOVEME! boot_ symbols not linked!
     print "\n#ifdef USE_DYNAMIC_LOADING";
     print qq/\n\tnewXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);/;
     print "\n#endif\n" ;
@@ -2062,6 +2093,7 @@ sub save_main {
 
 sub init_sections {
     my @sections = (decl => \$decl, sym => \$symsect,
+		    hek => \$heksect,
 		    binop => \$binopsect, condop => \$condopsect,
 		    cop => \$copsect, padop => \$padopsect,
 		    listop => \$listopsect, logop => \$logopsect,

@@ -1,5 +1,7 @@
 #!/bin/sh
-PERL=perl5.11.0
+# use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
+PERL=`grep "^PERL =" Makefile|cut -c8-`
+#PERL=perl5.11.0
 OCMD="$PERL -Mblib -MO=Bytecode,"
 ICMD="$PERL -Mblib -MByteLoader"
 
@@ -36,7 +38,7 @@ $PERL -Mblib -MO=Concise bytecode2.pl > bytecode2.concise
 echo ${ICMD} bytecode2.plc
 ${ICMD} bytecode2.plc
 fi
-#only if ByteLoader installed
+#only if ByteLoader installed in @INC
 if false; then
 echo ${OCMD}-H,-obytecode2.plc bytecode2.pl
 ${OCMD}-H,-obytecode2.plc bytecode2.pl

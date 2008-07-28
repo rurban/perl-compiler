@@ -23,6 +23,7 @@ C backend invocation
 		A	prints AV information on saving
 		C	prints CV information on saving
 		M	prints MAGIC information on saving
+		G	prints GV information on saving
 	-f		Force optimisations on or off one at a time.
 		cog	Copy-on-grow: PVs declared and initialised statically
 		no-cog	No copy-on-grow

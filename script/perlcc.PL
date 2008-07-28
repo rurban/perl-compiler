@@ -173,7 +173,6 @@ sub parse_argv {
         'c',            # Compile only
         'h',            # Help me
         'S',            # Dump C files
-	'r',            # run the resulting executable
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
         'static',       # Dirty hack to enable -shared/-static
@@ -300,9 +299,9 @@ sub compile_cstyle {
     vprint 1, "Compiling...";
     vprint 1, "Calling $command";
 
-	my ($output_r, $error_r) = spawnit($command);
-	my @output = @$output_r;
-	my @error = @$error_r;
+    my ($output_r, $error_r) = spawnit($command);
+    my @output = @$output_r;
+    my @error = @$error_r;
 
     if (@error && $? != 0) {
         _die("$0: $Input did not compile, which can't happen:\n@error\n");

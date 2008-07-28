@@ -351,6 +351,8 @@ Suitable for using with %insn_data like so:
 
 A simple mapping of the op type number to its type (like 'COP' or 'BINOP').
 
+Since Perl version 5.10 defined in L<B>.
+
 =item @specialsv_name
 
   my $sv_name = $specialsv_name[$sv_index];
@@ -359,6 +361,8 @@ Certain SV types are considered 'special'.  They're represented by
 B::SPECIAL and are referred to by a number from the specialsv_list.
 This array maps that number back to the name of the SV (like 'Nullsv'
 or '&PL_sv_undef').
+
+Since Perl version 5.10 defined in L<B>.
 
 =back
 
