@@ -1,0 +1,13 @@
+Started with B-C-1.04_02. The perl compiler was previously in CORE.
+Try to get info about versions later.
+
+1.04_02 2008-01-22 rurban
+	* removed from CORE, now on CPAN. 
+	* added byteorder to bytecode header.
+	* added support for 5.10, 5.9.5 not tested, up to 5.8.x already in CORE. 
+	maybe add backwards support later, when C/CC is improved or more features 
+	are added.
+	* added type hekindex
+	* added c.t and cc.t tests
+	* extended bytecode.pl format: added version logic 
+	to have strictly consecutive indices

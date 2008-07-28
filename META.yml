@@ -1,0 +1,14 @@
+--- #YAML:1.0
+name:                B-C
+version:             1.04_02
+abstract:            ~
+license:             ~
+author:              ~
+generated_by:        ExtUtils::MakeMaker version 6.42
+distribution_type:   module
+requires:     
+    B:                             1.17
+    B::Concise:                    0.74
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3
