@@ -20,7 +20,7 @@ use B::Assembler qw(asm newasm endasm);
 
 #################################################
 
-my ($varix, $opix, $savebegins, %walked, %files, @cloop);
+my ($varix, $opix, $savebegins, %walked, %files, @cloop, %debug);
 my %strtab = (0,0);
 my %svtab = (0,0);
 my %optab = (0,0);
@@ -479,7 +479,7 @@ sub B::BINOP::bsave {
 
 *B::BINOP::bsave = *B::OP::bsave if VERSION >= 5.009;
 
-# deal with sort / formline 
+# deal with sort / formline
 
 sub B::LISTOP::bsave {
     my ($op, $ix) = @_;
@@ -560,17 +560,21 @@ sub B::PMOP::bsave {
 
     # my $pmnextix = $op->pmnext->ix;	# XXX
 
+    bwarn(B::peekop($op), ", ix: $ix") if $debug{M};
     if (ITHREADS) {
 	if ($op->name eq 'subst') {
 	    $rrop = "op_pmreplroot";
 	    $rrarg = $op->pmreplroot->ix;
 	    $rstart = $op->pmreplstart->ix;
 	} elsif ($op->name eq 'pushre') {
-	    $rrop = "op_pmreplrootpo";
-	    $rrarg = $op->pmreplroot;
+	  $rrop = "op_pmreplrootpo";
+	  $rrarg = $op->pmreplroot;
+	  # 5.9 $op->pmtargetoff?
 	}
 	$op->B::BINOP::bsave($ix);
-	asm "op_pmstashpv", pvix $op->pmstashpv;
+	if (1 or $op->pmstashpv) { # avoid empty stash? if (table) pre-compiled else re-compile
+	  asm "op_pmstashpv", pvix $op->pmstashpv;
+	}
     } else {
 	$rrop = "op_pmreplrootgv";
 	$rrarg = $op->pmreplroot->ix;
@@ -583,16 +587,31 @@ sub B::PMOP::bsave {
     asm $rrop, $rrarg if $rrop;
     asm "op_pmreplstart", $rstart if $rstart;
 
-    asm "op_pmflags", $op->pmflags;
     if ( VERSION < 5.009 ) {
+      bwarn("PMOP op_pmflags: ",$op->pmflags) if $debug{M};
+      asm "op_pmflags", $op->pmflags;
       asm "op_pmpermflags", $op->pmpermflags;
       asm "op_pmdynflags", $op->pmdynflags;
       # asm "op_pmnext", $pmnextix;	# XXX
       asm "newpv", pvstring $op->precomp;
       asm "pregcomp";
-    } else {
-      # FIXME: add flags to sv
-      asm "pregcomp", pvix $op->precomp;
+    } elsif ( VERSION >= 5.011 ) { 	# full REGEX type
+      $ix = pvix $op->precomp; # fixme
+      bwarn("PMOP full REGEX type not yet supported");
+      asm "pregcomp", $ix;
+    } elsif ( VERSION >= 5.009 ) {
+      # TODO: not just a pv, use a full sv as pattern (2nd arg)
+      # asm "newsvx", $sv->FLAGS;
+      # asm "newsv", pvstring $op->precomp;
+      #my $svix = $op->B::SV::ix();
+      #$op->B::OP::bsave($ix);
+      $ix = pvix $op->precomp; # fixme
+      # asm "op_reflags", 2;
+      # add flag PMf_ONCE to this pv or to the op?
+      bwarn("PMOP sv REGEX not yet supported");
+      asm "op_pmflags", $op->pmflags | 2;
+      bwarn("PMOP pmstashpv: ",$op->pmstashpv, ", pmflags: ",$op->pmflags | 2) if $debug{M};
+      asm "pregcomp", $ix;
     }
 }
 
@@ -742,17 +761,19 @@ sub compile {
 	    *nice = sub ($) { print STDERR "@_\n" };
 	} elsif (/^-H/) {
 	    require ByteLoader;
+	    my $version = $ByteLoader::VERSION;
 	    $head = "#! $^X
-use ByteLoader $ByteLoader::VERSION;
+use ByteLoader '$ByteLoader::VERSION';
 ";
-	    #FIXME!
-	    #undef $head;
+	    # Maybe: Fix the plc reader, if 'perl -MByteLoader <.plc>' is called
 	} elsif (/^-k/) {
 	    keep_syn;
 	} elsif (/^-o(.*)$/) {
 	    open STDOUT, ">$1" or die "open $1: $!";
 	} elsif (/^-f(.*)$/) {
 	    $files{$1} = 1;
+	} elsif (/^-D(.*)$/) {
+	    $debug{$1}++;
 	} elsif (/^-s(.*)$/) {
 	    $scan = length($1) ? $1 : $0;
 	} elsif (/^-b/) {
@@ -870,6 +891,12 @@ expressions. When gotos are found keep the syntax tree.
 Output assembler source rather than piping it
 through the assembler and outputting bytecode.
 
+=item B<-D>I<M>
+
+Set debugging flag for more verbose STDERR output.
+
+M for Magic and Matches.
+
 =back
 
 =head1 KNOWN BUGS
@@ -906,5 +933,6 @@ Originally written by Malcolm Beattie <mbeattie@sable.ox.ac.uk> and
 modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
+Enhanced by Reini Urban <rurban@cpan.org>, 2008
 
 =cut

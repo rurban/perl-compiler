@@ -8,6 +8,12 @@ typedef OP *opindex;
 typedef char *pvindex;
 typedef HEK *hekindex;
 
+#if PERL_VERSION > 8
+#define BSTATE_xpv_pv bstate->bs_pv.xiv_u.xivu_p1
+#else
+#define BSTATE_xpv_pv bstate->bs_pv.xpv_pv
+#endif
+
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
 #define BGET_FGETC() bl_getc(bstate->bs_fdata)
@@ -42,14 +48,14 @@ typedef HEK *hekindex;
 #define BGET_PV(arg)	STMT_START {					\
 	BGET_U32(arg);							\
 	if (arg) {							\
-	    Newx(bstate->bs_pv.pvx, arg, char);			\
-	    bl_read(bstate->bs_fdata, bstate->bs_pv.pvx, arg, 1);	\
-	    bstate->bs_pv.xpv.xpv_len = arg;				\
-	    bstate->bs_pv.xpv.xpv_cur = arg - 1;			\
+	    Newx(BSTATE_xpv_pv, arg, char);		\
+	    bl_read(bstate->bs_fdata, BSTATE_xpv_pv, arg, 1);	\
+	    bstate->bs_pv.xpv_len = arg;				\
+	    bstate->bs_pv.xpv_cur = arg - 1;				\
 	} else {							\
-	    bstate->bs_pv.pvx = 0;					\
-	    bstate->bs_pv.xpv.xpv_len = 0;				\
-	    bstate->bs_pv.xpv.xpv_cur = 0;				\
+	    BSTATE_xpv_pv = 0;				\
+	    bstate->bs_pv.xpv_len = 0;					\
+	    bstate->bs_pv.xpv_cur = 0;					\
 	}								\
     } STMT_END
 
@@ -79,7 +85,7 @@ typedef HEK *hekindex;
 	arg = (char *) ary;				\
     } while (0)
 
-#define BGET_pvcontents(arg)	arg = bstate->bs_pv.pvx
+#define BGET_pvcontents(arg)	arg = BSTATE_xpv_pv
 #define BGET_strconst(arg) STMT_START {	\
 	for (arg = PL_tokenbuf; (*arg = BGET_FGETC()); arg++) /* nothing */; \
 	arg = PL_tokenbuf;			\
@@ -140,7 +146,7 @@ typedef HEK *hekindex;
     } STMT_END
 
 #define BSET_sv_magic(sv, arg)		sv_magic(sv, Nullsv, arg, 0, 0)
-#define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.xpv.xpv_cur
+#define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.xpv_cur
 #define BSET_mg_namex(mg, arg)			\
 	(mg->mg_ptr = (char*)SvREFCNT_inc((SV*)arg),	\
 	 mg->mg_len = HEf_SVKEY)
@@ -163,7 +169,7 @@ typedef HEK *hekindex;
 #define BSET_av_pushx(sv, arg)	(AvARRAY(sv)[++AvFILLp(sv)] = arg)
 #define BSET_hv_store(sv, arg)	\
     hv_store((HV*)sv, SvPVX(bstate->bs_sv), SvCUR(bstate->bs_sv), arg, 0)
-#define BSET_pv_free(sv)	Safefree(SvPVX(sv))
+#define BSET_pv_free(sv)	Safefree(sv)
 
 
 #ifdef USE_ITHREADS
@@ -192,11 +198,13 @@ typedef HEK *hekindex;
 
 #else /* >= 5.10 */
 
-#define BSET_pregcomp(o, arg) \
+// see op.c:newPMOP
+// arg + bstate->bs_pv.xpv.xpv_cur
+#define BSET_pregcomp(o, re) \
     STMT_START { \
         SV* repointer; \
-	REGEXP* rx = arg ? \
-	    CALLREGCOMP(aTHX_ arg, cPMOP->op_pmflags) : \
+	REGEXP* rx = re ? \
+	    CALLREGCOMP(aTHX_ re, cPMOP->op_pmflags) : \
 	    Null(REGEXP*); \
         if(av_len((AV*) PL_regex_pad[0]) > -1) { \
             repointer = av_pop((AV*)PL_regex_pad[0]); \
@@ -222,10 +230,10 @@ typedef HEK *hekindex;
 	     Null(REGEXP*))); \
     } STMT_END
 #else
-#define BSET_pregcomp(o, arg) \
+#define BSET_pregcomp(o, re) \
     STMT_START { \
-	PM_SETRE(((PMOP*)o), (arg ? \
-	     CALLREGCOMP(aTHX_ arg, cPMOP->op_pmflags) : \
+	PM_SETRE(((PMOP*)o), (re ? \
+	     CALLREGCOMP(aTHX_ re, cPMOP->op_pmflags) : \
 	     Null(REGEXP*))); \
     } STMT_END
 #endif

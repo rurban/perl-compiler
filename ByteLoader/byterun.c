@@ -129,7 +129,7 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		U32 arg;
 		BGET_U32(arg);
-		BSET_stpv(bstate->bs_pv.pvx, arg);
+		BSET_stpv(BSTATE_xpv_pv, arg);
 		break;
 	    }
 	  case INSN_LDSPECSV:		/* 6 */
@@ -191,12 +191,12 @@ byterun(pTHX_ struct byteloader_state *bstate)
 	    {
 		STRLEN arg;
 		BGET_PADOFFSET(arg);
-		bstate->bs_pv.xpv.xpv_cur = arg;
+		bstate->bs_pv.xpv_cur = arg;
 		break;
 	    }
 	  case INSN_PV_FREE:		/* 16 */
 	    {
-		BSET_pv_free(bstate->bs_pv.pvx);
+		BSET_pv_free(BSTATE_xpv_pv);
 		break;
 	    }
 	  case INSN_SV_UPGRADE:		/* 17 */
@@ -659,8 +659,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		*(SV**)&GvCV(bstate->bs_sv) = arg;
 		break;
 	    }
-#if PERL_VERSION < 9
-#else
 	  case INSN_GP_FILE:		/* 84 */
 	    {
 		hekindex arg;
@@ -668,7 +666,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		GvFILE_HEK(bstate->bs_sv) = arg;
 		break;
 	    }
-#endif
 	  case INSN_GP_IO:		/* 85 */
 	    {
 		svindex arg;
@@ -746,8 +743,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		BSET_op_type(PL_op, arg);
 		break;
 	    }
-#if PERL_VERSION < 9
-#else
 	  case INSN_OP_OPT:		/* 96 */
 	    {
 		U8 arg;
@@ -776,7 +771,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		PL_op->op_attached = arg;
 		break;
 	    }
-#endif
 	  case INSN_OP_FLAGS:		/* 100 */
 	    {
 		U8 arg;
@@ -812,8 +806,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		cLOGOP->op_other = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#else
 	  case INSN_OP_PMREPLROOT:		/* 105 */
 	    {
 		opindex arg;
@@ -828,7 +820,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		(cPMOP->op_pmstashstartu).op_pmreplstart = arg;
 		break;
 	    }
-#endif
 #ifdef USE_ITHREADS
 	  case INSN_OP_PMSTASHPV:		/* 107 */
 	    {
@@ -837,8 +828,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		BSET_op_pmstashpv(cPMOP, arg);
 		break;
 	    }
-#if PERL_VERSION < 10
-#else
 	  case INSN_OP_PMREPLROOTPO:		/* 108 */
 	    {
 		PADOFFSET arg;
@@ -846,9 +835,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		(cPMOP->op_pmreplrootu).op_pmreplroot = (OP*)arg;
 		break;
 	    }
-#endif
-#else
-#if PERL_VERSION < 10
 #else
 	  case INSN_OP_PMREPLROOTGV:		/* 109 */
 	    {
@@ -858,9 +844,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		break;
 	    }
 #endif
-#endif
-#if PERL_VERSION < 10
-#else
 	  case INSN_PREGCOMP:		/* 110 */
 	    {
 		svindex arg;
@@ -868,7 +851,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		BSET_pregcomp(PL_op, arg);
 		break;
 	    }
-#endif
 	  case INSN_OP_PMFLAGS:		/* 111 */
 	    {
 		U16 arg;
@@ -876,8 +858,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		cPMOP->op_pmflags = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#endif
 	  case INSN_OP_SV:		/* 112 */
 	    {
 		svindex arg;
@@ -934,7 +914,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		cCOP->cop_label = arg;
 		break;
 	    }
-#ifdef USE_ITHREADS
 	  case INSN_COP_STASHPV:		/* 120 */
 	    {
 		pvindex arg;
@@ -949,8 +928,6 @@ byterun(pTHX_ struct byteloader_state *bstate)
 		BSET_cop_file(cCOP, arg);
 		break;
 	    }
-#else
-#endif
 	  case INSN_COP_SEQ:		/* 122 */
 	    {
 		U32 arg;

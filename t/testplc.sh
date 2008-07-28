@@ -21,6 +21,11 @@ echo ${OCMD}-obytecode2.plc bytecode2.pl
 ${OCMD}-obytecode2.plc bytecode2.pl
 echo ${ICMD} bytecode2.plc
 ${ICMD} bytecode2.plc
+echo ${OCMD}-H,-obytecode2.plc bytecode2.pl
+${OCMD}-H,-obytecode2.plc bytecode2.pl
+chmod +x bytecode2.plc
+echo ./bytecode2.plc
+./bytecode2.plc
 
 echo "package MY::Test;" > bytecode1.pm
 echo "print 'hi'" >> bytecode1.pm

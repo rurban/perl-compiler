@@ -1,11 +1,11 @@
 * Fixes
 
 CC backend: goto, sort with non-default comparison. last for non-loop blocks.
-Version checking
+Version checking (done)
 improve XSUB handling (both static and dynamic)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
-  them whereas the compiler expects them to be linked to a xpv[inahc]v_root
+  them, whereas the compiler expects them to be linked to a xpv[inahc]v_root
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
@@ -28,6 +28,8 @@ comment output
 shared constants
 module dependencies
 new Asm and JIT backend, PLJC ByteLoader magic
+check op coverage in the tests, should cover all ops 0-142
+B::IO::SUBPROCESS
 
 * Optimisations
 

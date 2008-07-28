@@ -5,15 +5,23 @@ our $VERSION = '1.05_01';
 use strict;
 use B qw(peekop class walkoptree walkoptree_exec
          main_start main_root cstring sv_undef @specialsv_name);
+# <=5.008 had @specialsv_name exported from B::Asmdata
 
 my %done_gv;
 
+sub _printop {
+  my $op = shift;
+  my $addr = ${$op} ? $op->ppaddr : '';
+  $addr =~ s/^PL_ppaddr// if $addr;
+  return sprintf "0x%x %s %s", ${$op}, ${$op} ? class($op) : '', $addr;
+}
+
 sub B::OP::debug {
     my ($op) = @_;
-    printf <<'EOT', class($op), $$op, ${$op->next}, class(${$op->next}), ${$op->next} ? $op->next->ppaddr : '', ${$op->sibling}, ${$op->sibling} ? class($op->sibling) : '', ${$op->sibling} ? $op->sibling->ppaddr : '', $op->ppaddr, $op->targ, $op->type;
+    printf <<'EOT', class($op), $$op, _printop($op->next), _printop($op->sibling), $op->ppaddr, $op->targ, $op->type;
 %s (0x%lx)
-	op_next		0x%x %s %s
-	op_sibling	0x%x %s %s
+	op_next		%s
+	op_sibling	%s
 	op_ppaddr	%s
 	op_targ		%d
 	op_type		%d
@@ -36,29 +44,29 @@ EOT
 sub B::UNOP::debug {
     my ($op) = @_;
     $op->B::OP::debug();
-    printf "\top_first\t0x%x\n", ${$op->first};
+    printf "\top_first\t%s\n", _printop($op->first);
 }
 
 sub B::BINOP::debug {
     my ($op) = @_;
     $op->B::UNOP::debug();
-    printf "\top_last\t\t0x%x\n", ${$op->last};
+    printf "\top_last \t%s\n", _printop($op->last);
 }
 
 sub B::LOOP::debug {
     my ($op) = @_;
     $op->B::BINOP::debug();
-    printf <<'EOT', ${$op->redoop}, ${$op->nextop}, ${$op->lastop};
-	op_redoop	0x%x
-	op_nextop	0x%x
-	op_lastop	0x%x
+    printf <<'EOT', _printop($op->redoop), _printop($op->nextop), _printop($op->lastop);
+	op_redoop	%s
+	op_nextop	%s
+	op_lastop	%s
 EOT
 }
 
 sub B::LOGOP::debug {
     my ($op) = @_;
     $op->B::UNOP::debug();
-    printf "\top_other\t0x%x\n", ${$op->other};
+    printf "\top_other\t%s\n", _printop($op->other);
 }
 
 sub B::LISTOP::debug {
@@ -83,9 +91,9 @@ sub B::COP::debug {
     $op->B::OP::debug();
     my $cop_io = class($op->io) eq 'SPECIAL' ? '' : $op->io->as_string;
     printf <<'EOT', $op->label, $op->stashpv, $op->file, $op->cop_seq, $op->arybase, $op->line, ${$op->warnings}, cstring($cop_io);
-	cop_label	%s
-	cop_stashpv	%s
-	cop_file	%s
+	cop_label	"%s"
+	cop_stashpv	"%s"
+	cop_file	"%s"
 	cop_seq		%d
 	cop_arybase	%d
 	cop_line	%d
@@ -104,13 +112,13 @@ sub B::SVOP::debug {
 sub B::PVOP::debug {
     my ($op) = @_;
     $op->B::OP::debug();
-    printf "\top_pv\t\t%s\n", cstring($op->pv);
+    printf "\top_pv\t\t\"%s\"\n", cstring($op->pv);
 }
 
 sub B::PADOP::debug {
     my ($op) = @_;
     $op->B::OP::debug();
-    printf "\top_padix\t\t%ld\n", $op->padix;
+    printf "\top_padix\t%ld\n", $op->padix;
 }
 
 sub B::NULL::debug {
@@ -149,7 +157,7 @@ sub B::PV::debug {
     $sv->B::SV::debug();
     my $pv = $sv->PV();
     printf <<'EOT', cstring($pv), length($pv);
-	xpv_pv		%s
+	xpv_pv		"%s"
 	xpv_cur		%d
 EOT
 }
@@ -183,7 +191,7 @@ sub B::PVLV::debug {
     $sv->B::PVNV::debug();
     printf "\txlv_targoff\t%d\n", $sv->TARGOFF;
     printf "\txlv_targlen\t%u\n", $sv->TARGLEN;
-    printf "\txlv_type\t%s\n", cstring(chr($sv->TYPE));
+    printf "\txlv_type\t\"%s\"\n", cstring(chr($sv->TYPE));
 }
 
 sub B::BM::debug {
@@ -191,7 +199,7 @@ sub B::BM::debug {
     $sv->B::PVNV::debug();
     printf "\txbm_useful\t%d\n", $sv->USEFUL;
     printf "\txbm_previous\t%u\n", $sv->PREVIOUS;
-    printf "\txbm_rare\t%s\n", cstring(chr($sv->RARE));
+    printf "\txbm_rare\t\"%s\"\n", cstring(chr($sv->RARE));
 }
 
 sub B::CV::debug {

@@ -1,9 +1,21 @@
 Started with B-C-1.04_01. The perl compiler was previously in CORE.
 TODO: Try to get info about earlier versions.
 
+1.04_07 2008-02-20 rurban
+	* moved bstate->bs_pv.xpv_pv slot to bs_pv.xiv_u.xivu_p1
+	* fixed pv_free
+	* added op_pmflags 2 to match PMOP
+	* moved B into lib/B
+	* fixed ByteLoader Makefile deps
+	* added -DM flag to Bytecode backend
+	* added perlcompile.pod and Perl_5_Internals.htm
+
 1.04_06 2008-02-19 rurban
+	* no crashes anymore for 5.10, just op_pmflags & PMf_ONCE assertions.
+	* blead@32980 crashes in tests 11,16,17,18
+	* enhanced B::Debug
 	* fixed general op_list inits, and specials for av, hv
-	* fixed pv within sv handling, no crashes anymore
+	* almost fixed pv within sv handling
 	* added -O=C,-DS for SV debugging
 
 1.04_05 2008-02-18 rurban

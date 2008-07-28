@@ -36,12 +36,12 @@ EOT
 my $perl_header;
 ($perl_header = $c_header) =~ s{[/ ]?\*/?}{#}g;
 
-safer_unlink "ByteLoader/byterun.c", "ByteLoader/byterun.h", "B/Asmdata.pm";
+safer_unlink "ByteLoader/byterun.c", "ByteLoader/byterun.h", "lib/B/Asmdata.pm";
 
 #
 # Start with boilerplate for Asmdata.pm
 #
-open(ASMDATA_PM, ">B/Asmdata.pm") or die "B/Asmdata.pm: $!";
+open(ASMDATA_PM, ">lib/B/Asmdata.pm") or die "lib/B/Asmdata.pm: $!";
 binmode ASMDATA_PM;
 print ASMDATA_PM $perl_header, <<'EOT';
 package B::Asmdata;
@@ -243,18 +243,17 @@ struct byteloader_fdata {
     int	idx;
 };
 
-struct byteloader_pv_state {
-    char			*pvx;
-    XPV				xpv;
-};
-
 struct byteloader_state {
     struct byteloader_fdata	*bs_fdata;
     SV				*bs_sv;
     void			**bs_obj_list;
     int				bs_obj_list_fill;
     int				bs_ix;
-    struct byteloader_pv_state	bs_pv;
+#if PERL_VERSION < 9
+    XPV				bs_pv;
+#else
+    XPVIV			bs_pv;
+#endif
     int				bs_iv_overflows;
 };
 
@@ -391,8 +390,9 @@ __END__
 %number 0
 #
 # The argtype is either a single type or "rightvaluecast/argtype".
-# The version is either i/!i for ithreads or not, or num, >num or <num.
-# 0 is for all, <10 requires PERL_VERSION<10, 10 or > requires PERL_VERSION>10
+# The version is either "i" or "!i" for ithreads or not, or num, >num or <num.
+# "0" is for all, "<10" requires PERL_VERSION<10, "10" or ">10" requires
+# PERL_VERSION>10
 #
 #version opcode	lvalue					argtype		flags	
 #
@@ -401,7 +401,7 @@ __END__
 0 ldop		PL_op					opindex
 0 stsv		bstate->bs_sv				U32		s
 0 stop		PL_op					U32		s
-0 stpv		bstate->bs_pv.pvx			U32		x
+0 stpv		BSTATE_xpv_pv				U32		x
 0 ldspecsv	bstate->bs_sv				U8		x
 0 ldspecsvx	bstate->bs_sv				U8		x
 0 newsv		bstate->bs_sv				U8		x
@@ -410,8 +410,8 @@ __END__
 0 newopx	PL_op					U16		x
 0 newopn	PL_op					U8		x
 0 newpv		none					PV
-0 pv_cur	bstate->bs_pv.xpv.xpv_cur		STRLEN
-0 pv_free	bstate->bs_pv.pvx			none		x
+0 pv_cur	bstate->bs_pv.xpv_cur			STRLEN
+0 pv_free	BSTATE_xpv_pv				none		x
 0 sv_upgrade	bstate->bs_sv				U8		x
 0 sv_refcnt	SvREFCNT(bstate->bs_sv)			U32
 0 sv_refcnt_add	SvREFCNT(bstate->bs_sv)			I32		x
@@ -482,11 +482,8 @@ __END__
 0 gp_av		*(SV**)&GvAV(bstate->bs_sv)		svindex
 0 gp_hv		*(SV**)&GvHV(bstate->bs_sv)		svindex
 0 gp_cv		*(SV**)&GvCV(bstate->bs_sv)		svindex
-#if PERL_VERSION < 9
 <9 gp_file	GvFILE(bstate->bs_sv)			pvindex
-#else
 9 gp_file	GvFILE_HEK(bstate->bs_sv)		hekindex
-#endif
 0 gp_io		*(SV**)&GvIOp(bstate->bs_sv)		svindex
 0 gp_form		*(SV**)&GvFORM(bstate->bs_sv)		svindex
 0 gp_cvgen	GvCVGEN(bstate->bs_sv)			U32
@@ -498,52 +495,35 @@ __END__
 0 op_ppaddr	PL_op->op_ppaddr			strconst	x
 0 op_targ	PL_op->op_targ				PADOFFSET
 0 op_type	PL_op					OPCODE		x
-#if PERL_VERSION < 9
 <9 op_seq	PL_op->op_seq				U16
-#else
-0 op_opt	PL_op->op_opt				U8
-0 op_latefree	PL_op->op_latefree			U8
-0 op_latefreed	PL_op->op_latefreed			U8
-0 op_attached	PL_op->op_attached			U8
-#endif
+9 op_opt	PL_op->op_opt				U8
+9 op_latefree	PL_op->op_latefree			U8
+9 op_latefreed	PL_op->op_latefreed			U8
+9 op_attached	PL_op->op_attached			U8
 0 op_flags	PL_op->op_flags				U8
 0 op_private	PL_op->op_private			U8
 0 op_first	cUNOP->op_first				opindex
 0 op_last	cBINOP->op_last				opindex
 0 op_other	cLOGOP->op_other			opindex
-#if PERL_VERSION < 10
 <10 op_pmreplroot  cPMOP->op_pmreplroot			opindex
 <10 op_pmreplstart cPMOP->op_pmreplstart		opindex
 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext		opindex
-#else
 10 op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot	opindex
 10 op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
-#endif
 #ifdef USE_ITHREADS
 i op_pmstashpv	cPMOP					pvindex		x
-#if PERL_VERSION < 10
 <10 op_pmreplrootpo	cPMOP->op_pmreplroot		OP*/PADOFFSET
-#else
 10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
-#endif
 #else
 !i op_pmstash		*(SV**)&cPMOP->op_pmstash		svindex
-#if PERL_VERSION < 10
 <10 op_pmreplrootgv	*(SV**)&cPMOP->op_pmreplroot		svindex
-#else
 10 op_pmreplrootgv	*(SV**)&((cPMOP->op_pmreplrootu).op_pmreplroot)	svindex
 #endif
-#endif
-#if PERL_VERSION < 10
 <10 pregcomp	PL_op					pvindex		x
-#else
 10 pregcomp	PL_op					svindex		x
-#endif
 0 op_pmflags	cPMOP->op_pmflags			U16
-#if PERL_VERSION < 10
 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
 <10 op_pmdynflags  cPMOP->op_pmdynflags			U8
-#endif
 0 op_sv		cSVOP->op_sv				svindex
 0 op_padix	cPADOP->op_padix			PADOFFSET
 0 op_pv		cPVOP->op_pv				pvcontents
@@ -552,13 +532,10 @@ i op_pmstashpv	cPMOP					pvindex		x
 0 op_nextop	cLOOP->op_nextop			opindex
 0 op_lastop	cLOOP->op_lastop			opindex
 0 cop_label	cCOP->cop_label				pvindex
-#ifdef USE_ITHREADS
 i cop_stashpv	cCOP					pvindex		x
 i cop_file	cCOP					pvindex		x
-#else
 !i cop_stash	cCOP					svindex		x
 !i cop_filegv	cCOP					svindex		x
-#endif
 0 cop_seq	cCOP->cop_seq				U32
 <10 cop_arybase	cCOP->cop_arybase			I32
 0 cop_line	cCOP->cop_line				line_t

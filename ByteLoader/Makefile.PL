@@ -20,16 +20,16 @@ sub MY::depend {
   }
   return "
 byterun.c : $bytecode_pl
-	cd $up && \$(PERL) $bytecode_pl && cd ByteLoader
+	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
 
 byterun.h : $bytecode_pl
-	cd $up && \$(PERL) $bytecode_pl && cd ByteLoader
+	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
 
 jitrun.c : $jitcompiler_pl
-	cd $up && \$(PERL) $jitcompiler_pl && cd ByteLoader
+	cd $up && \$(PERL) jitcompiler.pl && cd ByteLoader
 
 jitrun.h : $jitcompiler_pl
-	cd $up && \$(PERL) $jitcompiler_pl && cd ByteLoader
+	cd $up && \$(PERL) jitcompiler.pl && cd ByteLoader
 
 ByteLoader\$(OBJ_EXT) : byterun.h byterun.c jitrun.c bytecode.h
 

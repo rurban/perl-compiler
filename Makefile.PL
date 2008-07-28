@@ -7,14 +7,14 @@ my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 WriteMakefile(
     NAME	    => "B::C",
-    VERSION_FROM    => "B/C.pm",
+    VERSION_FROM    => "lib/B/C.pm",
 	         # 'scripts/assemble','scripts/disassemble',
     PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
     PREREQ_PM 	    => {
 	'B::Concise' => '0.74',
 	'B' => '1.17',
     },
-    PMLIBDIRS => [ 'B' ],
+    # PMLIBDIRS => [ 'lib/B' ],
 );
 
 sub headerpath {
@@ -28,9 +28,9 @@ sub headerpath {
 
 package MY;
 
-sub x_libscan {
-  return 0 unless $_[1] =~ /\.pm$/;
-}
+#sub libscan {
+#  return 0 unless $_[1] =~ /(ByteLoader|\.pm)$/;
+#}
 
 sub post_constants {
     "\nLIBS = $Config::Config{libs}\n"
@@ -39,7 +39,7 @@ sub post_constants {
 sub depend {
     my $headerpath = main::headerpath();
     my @headers = map { File::Spec->catfile($headerpath, $_) } qw(op.h cop.h sv.h);
-    my $asmdata = File::Spec->catfile('B', 'Asmdata.pm');
+    my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $jitrun_c  = File::Spec->catfile('ByteLoader', 'jitrun.c');
     my $jitrun_h  = File::Spec->catfile('ByteLoader', 'jitrun.h');

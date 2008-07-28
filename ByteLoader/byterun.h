@@ -22,18 +22,17 @@ struct byteloader_fdata {
     int	idx;
 };
 
-struct byteloader_pv_state {
-    char			*pvx;
-    XPV				xpv;
-};
-
 struct byteloader_state {
     struct byteloader_fdata	*bs_fdata;
     SV				*bs_sv;
     void			**bs_obj_list;
     int				bs_obj_list_fill;
     int				bs_ix;
-    struct byteloader_pv_state	bs_pv;
+#if PERL_VERSION < 9
+    XPV				bs_pv;
+#else
+    XPVIV			bs_pv;
+#endif
     int				bs_iv_overflows;
 };
 
