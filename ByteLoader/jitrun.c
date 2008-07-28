@@ -1,7 +1,7 @@
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2007 Yann Nicolas Dauphin (no code yet from clisp)
+ *      Copyright (c) 2007 Yann Nicolas Dauphin (clisp: jit.d)
  *      Copyright (c) 2008 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
@@ -18,15 +18,15 @@
 #define NO_XSLOCKS
 #include "XSUB.h"
 
-#include <lightning/lightning.h>
-
 #ifndef PL_tokenbuf /* Change 31252: move PL_tokenbuf into the PL_parser struct */
 #define PL_tokenbuf		(PL_parser->tokenbuf)
 #endif
 
-#include "jitrun.h"
 #include "byterun.h"
 #include "bytecode.h"
+#include "jitrun.h"
+
+typedef int (*pifi)(int);    /* Pointer to Int Function of Int */
 
 static const int optype_size[] = {
     sizeof(OP),
@@ -56,17 +56,18 @@ jit_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
 int
 jitrun(pTHX_ struct byteloader_state *bstate)
 {
-    register int insn;
+    // register int insn;
+    pifi insn;
     U32 isjit = 0;
     U32 ix;
     SV *specialsv_list[6];
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform,
-    if (!isjit) {		   set isjit if PLJC magic header */
+    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, */
+    if (!isjit) {		/* set isjit if PLJC magic header */
       Perl_croak(aTHX_ "No perl jitcode header PLJC\n");
       return 0;
     }
-
+#if 0
     Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
     bstate->bs_obj_list_fill = 31;
     bstate->bs_obj_list[0] = NULL; /* first is always Null */
@@ -79,10 +80,30 @@ jitrun(pTHX_ struct byteloader_state *bstate)
     specialsv_list[4] = (SV*)pWARN_ALL;
     specialsv_list[5] = (SV*)pWARN_NONE;
     specialsv_list[6] = (SV*)pWARN_STD;
+#endif
 
-    Perl_croak(aTHX_ "TODO! jit_run the code\n"); /* jit_run the codebuffer */
+    int byteptr_max = 1000; /* size of DATA */
 
-    return 0;
+    /* codebuffer: contains the JITed code (Temp allocation scheme) */
+    jit_insn *codeBuffer = malloc(sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE);
+    /* bcIndex: Address of the beginning of each BC in codeBuffer */
+    /* Only needed by (JMPHASH) and the unwind protect BCs */
+    jit_insn **bcIndex = calloc(byteptr_max+1,sizeof(jit_insn*));
+
+    /* TODO: setup the bcIndex jumps and copy codeBuffer */
+
+    jit_func bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
+#ifdef DEBUGGING
+    disassemble(stderr, codeBuffer, jit_get_ip().ptr);
+#endif
+    jit_flush_code(codeBuffer, jit_get_ip().ptr);
+
+    //Perl_croak(aTHX_ "TODO! jit_run the code\n"); /* jit_run the codebuffer */
+    /* Call the JITed function */
+    bc_func(codeBuffer, 0);
+
+    free(codeBuffer);
+    free(bcIndex);
+    return;
 }
-
 /* ex: set ro: */

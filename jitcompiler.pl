@@ -67,7 +67,7 @@ my $c_header = <<'EOT';
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2007 Yann Nicolas Dauphin (no code yet from clisp)
+ *      Copyright (c) 2007 Yann Nicolas Dauphin (clisp: jit.d)
  *      Copyright (c) 2008 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
@@ -94,15 +94,15 @@ print JITRUN_C $c_header, <<'EOT';
 #define NO_XSLOCKS
 #include "XSUB.h"
 
-#include <lightning/lightning.h>
-
 #ifndef PL_tokenbuf /* Change 31252: move PL_tokenbuf into the PL_parser struct */
 #define PL_tokenbuf		(PL_parser->tokenbuf)
 #endif
 
-#include "jitrun.h"
 #include "byterun.h"
 #include "bytecode.h"
+#include "jitrun.h"
+
+typedef int (*pifi)(int);    /* Pointer to Int Function of Int */
 
 static const int optype_size[] = {
 EOT
@@ -128,17 +128,18 @@ jit_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
 int
 jitrun(pTHX_ struct byteloader_state *bstate)
 {
-    register int insn;
+    // register int insn;
+    pifi insn;
     U32 isjit = 0;
     U32 ix;
     SV *specialsv_list[6];
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform,
-    if (!isjit) {		   set isjit if PLJC magic header */
+    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, */
+    if (!isjit) {		/* set isjit if PLJC magic header */
       Perl_croak(aTHX_ "No perl jitcode header PLJC\n");
       return 0;
     }
-
+#if 0
     Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
     bstate->bs_obj_list_fill = 31;
     bstate->bs_obj_list[0] = NULL; /* first is always Null */
@@ -150,20 +151,33 @@ for my $i ( 0 .. $#specialsv_name ) {
     print JITRUN_C "    specialsv_list[$i] = $specialsv_name[$i];\n";
 }
 
-# TODO: Portably mmap the file and jump into it.
 print JITRUN_C <<'EOT';
+#endif
 
-    Perl_croak(aTHX_ "TODO! jit_run the code\n"); /* jit_run the codebuffer */
+    int byteptr_max = 1000; /* size of DATA */
 
-EOT
+    /* codebuffer: contains the JITed code (Temp allocation scheme) */
+    jit_insn *codeBuffer = malloc(sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE);
+    /* bcIndex: Address of the beginning of each BC in codeBuffer */
+    /* Only needed by (JMPHASH) and the unwind protect BCs */
+    jit_insn **bcIndex = calloc(byteptr_max+1,sizeof(jit_insn*));
 
-#
-# Finish off jitrun.c
-#
-print JITRUN_C <<'EOT';
-    return 0;
+    /* TODO: setup the bcIndex jumps and copy codeBuffer */
+
+    jit_func bc_func = (jit_func) (jit_set_ip(codeBuffer).iptr); /* Function ptr */
+#ifdef DEBUGGING
+    disassemble(stderr, codeBuffer, jit_get_ip().ptr);
+#endif
+    jit_flush_code(codeBuffer, jit_get_ip().ptr);
+
+    //Perl_croak(aTHX_ "TODO! jit_run the code\n"); /* jit_run the codebuffer */
+    /* Call the JITed function */
+    bc_func(codeBuffer, 0);
+
+    free(codeBuffer);
+    free(bcIndex);
+    return;
 }
-
 /* ex: set ro: */
 EOT
 
@@ -173,9 +187,777 @@ EOT
 open(JITRUN_H, ">ByteLoader/jitrun.h") or die "ByteLoader/jitrun.h: $!";
 binmode JITRUN_H;
 print JITRUN_H $c_header, <<'EOT';
+/*
+* Copyright 2007- Yann Nicolas Dauphin
+* Taken from clisp jit.h
+* These are the set of macros built on top of GNU Lightning to build 
+* the JIT compiler. Simplicity and predictability is enforced.
+*
+* To understand GNU Lightning, have a quick look at the examples in:
+* http://www.gnu.org/software/lightning/manual/html_node/GNU-lightning-macros.html
+*
+* - The macros behave like functions. They may modify JIT_R0 and
+*   JIT_R1 only (exceptions are identified by the 'x' postfix)
+*
+* - Macros ending in 'i' take an immediate value as parameter, a macro
+*   ending with 'r' takes JIT_R2 as parameter. 
+*   Macros that take an immediate value and register R2 as parameters
+*   end in 'ir', etc...
+*
+*   Macros ending in 'x' are SPECIAL macros. READ THEIR DOCUMENTATION
+*   before using or code next to them.
+*
+* - MACROS can return values in one of two ways:
+*   - It puts the value in one of it's parameters
+*   - It stores it in JIT_R0
+*
+* Map of the registers:
+* JIT_R0, JIT_R1, JIT_R2: free usage
+* JIT_V0: 
+* JIT_V1: Pointer to the closure on the stack(closureptr)
+* JIT_V2:
+* Example of use:
+*
+* General comments:
+* If you plan to extend the JIT, you will probably run into GNU lightning's weakness.
+* It has no integrated debugger.
+* But it is not a problem if you know and apply the following:
+*  - Always work in small chunks
+*  - Always use jit_debug() to check the generated code
+*
+*  - If the code doesn't compile because of 'Cannot apply unary & etc', it's because
+*    you are passing an immediate value in place of a register.
+*  - Most weird runtime errors are due to passing a immediate value in place of a register.
+*
+* BUG in jit_eq*: Always use JIT_R0 as destination value.
+* TODO:
+* - Make a smarter algorithm to allocate space for the JITed function.
+*/
+
+/* DATA handle reader */
 int jit_getc(struct byteloader_fdata *);
 int jit_read(struct byteloader_fdata *, char *, size_t, size_t);
+
+#include <lightning.h>
+
 int jitrun(pTHX_ register struct byteloader_state *);
+
+/* Pointer to a JIT-Compiled function */
+/* Takes the closure and the distance to the starting bytecode as arguments */
+typedef int (*jit_func)(jit_insn *, int);
+
+/* This is for x86 (Quite imprecise for now) */
+#define JIT_AVG_BCSIZE 130
+
+/* ------------------- (*) JIT Internals ----------------------- */
+#define jit_begin()\
+    if((jit_insn*)jit_get_ip().ptr > (codeBuffer + (sizeof(jit_insn)*byteptr_max*JIT_AVG_BCSIZE))){\
+        fprintf(stderr,"\nFATAL ERROR: JIT codeBuffer overflow\n");\
+        exit(0);\
+    }\
+    if(bcIndex[bcPos]){\
+        /* Need to patch the FWD JMPs */\
+        Cons list = (Cons)bcIndex[bcPos];\
+        while(list != (Cons)NIL){\
+            jit_insn *ref = (jit_insn*)list->car;\
+            jit_patch(ref);\
+            Cons old_cell = list;\
+            list = (Cons)list->cdr;\
+            free(old_cell);\
+        }\
+    }\
+    bcIndex[bcPos] = (jit_insn*)jit_get_ip().ptr;
+#define jit_end()
+#define jit_safe_end()
+#define jit_return() jit_ret();
+
+/* jit_bcjmpi(bc): */
+/* Puts a jump to bytecode bc. */
+/* If it's a back jump, just patch it. */
+/* If it's a forward jump, put a list in the bcIndex[bc] with the address */
+/* to be patched. */
+#define jit_bcjmpi(bc)\
+{   jit_insn* rf1;\
+    rf1 = jit_jmpi(jit_forward());\
+    if((bc) < (byteptr - CODEPTR)){\
+        /* BACK JMP */\
+        jit_insn *rf2 = bcIndex[bc];\
+        jit_patch_at ((rf1), (rf2));\
+    }\
+    else if(bcIndex[bc] == 0){\
+        /* FWD JMP: no list for this BC */\
+        Cons list = malloc(sizeof(Cons));\
+        list->car = (gcv_object_t)rf1;\
+        list->cdr = (gcv_object_t)NIL;\
+        bcIndex[bc] = (jit_insn*)list;\
+    }\
+    else{\
+        /* FWD JMP: add to list */\
+        Cons list = (Cons)bcIndex[bc];\
+        Cons new_cell = malloc(sizeof(Cons));\
+        new_cell->car = (gcv_object_t)rf1;\
+        new_cell->cdr = (gcv_object_t)list;\
+        bcIndex[bc] = (jit_insn*)new_cell;\
+    }\
+}
+/* Uses addresses in bcIndex to jmp */
+#define jit_bcjmpr();\
+    jit_muli_ul(JIT_R1,JIT_R2,sizeof(jit_insn*));\
+    jit_movi_p(JIT_R0,bcIndex);\
+    jit_ldxr_p(JIT_R0,JIT_R0,JIT_R1);\
+    jit_jmpr(JIT_R0);
+
+/* ------------------- (0) Debugging utilities and other things ----------------------- */
+#define jit_debug()\
+    disassemble(stderr, codeBuffer, jit_get_ip().ptr);
+/* Prints to STDOUT */
+/* Carefull, since a C function is called, JIT_R* might get modified */
+#define jit_printm(mes)\
+    jit_movi_p(JIT_R0, mes);\
+    jit_prepare(3);\
+    jit_pusharg_p(JIT_R2);\
+    jit_pusharg_p(JIT_R2);\
+    jit_pusharg_p(JIT_R0);\
+    jit_finish(printf);
+#define jit_printr()\
+    jit_movi_p(JIT_R0, "The register equals: I=%d, P=%p\n");\
+    jit_prepare(3);\
+    jit_pusharg_p(JIT_R2);\
+    jit_pusharg_p(JIT_R2);\
+    jit_pusharg_p(JIT_R0);\
+    jit_finish(printf);
+#define jit_printi(val)\
+    jit_movi_p(JIT_R0, "The variable equals: I=%d, P=%p\n");\
+    jit_movi_p(JIT_R1, val);\
+    jit_prepare(3);\
+    jit_pusharg_p(JIT_R1);\
+    jit_pusharg_p(JIT_R1);\
+    jit_pusharg_p(JIT_R0);\
+    jit_finish(printf);
+
+#define jit_errori(type, message)\
+    jit_movi_p(JIT_R0, type);\
+    jit_movi_p(JIT_R1, message);\
+    jit_prepare(2);\
+    jit_pusharg_p(JIT_R1);\
+    jit_pusharg_p(JIT_R0);\
+    jit_finish(error); 
+#define jit_notreached()\
+    jit_prepare(2);\
+    jit_movi_p(JIT_R0,__LINE__);\
+    jit_pusharg_p(JIT_R0);\
+    jit_movi_p(JIT_R0,__FILE__);\
+    jit_pusharg_p(JIT_R0);\
+    jit_finish(error_notreached);
+
+/* Gives access to slots in structures */
+#define jit_get_fieldr(type, field)\
+    jit_ldxi_p(JIT_R0, JIT_R2, The##type(jit_ptr_field(type, field)));
+#define jit_getptr_fieldr(type, field)\
+    jit_addi_p(JIT_R0, JIT_R2, The##type(jit_ptr_field(type, field)));
+
+/* Length of a srecord */
+#define jit_getlenr(type)\
+    jit_get_fieldr(type,tfl);\
+    jit_rshi_ul(JIT_R0,JIT_R0,16);
+
+/* Gives access to a closure's constants */
+#define jit_get_cconsti(n)\
+    jit_ldr_p(JIT_R0,JIT_V1);\
+    jit_addi_p(JIT_R0, JIT_R0, TheCclosure(jit_ptr_field(Cclosure, clos_consts)));\
+    jit_ldxi_p(JIT_R0,JIT_R0,(n)*sizeof(gcv_object_t));
+#define jit_getptr_cconsti(n)\
+    jit_ldr_p(JIT_R0,JIT_V1);\
+    jit_addi_p(JIT_R0, JIT_R0, TheCclosure(jit_ptr_field(Cclosure, clos_consts)));\
+    jit_addi_p(JIT_R0,JIT_R0,(n)*sizeof(gcv_object_t));
+
+/* jit_repeat(): */
+/* > reg: counter */
+/* > STATEMENT:  */
+/* Checks if (reg == 0) before looping */
+#define jit_repeat(reg, STATEMENT)\
+{           jit_insn *rf166,*rf266;\
+	rf166 = jit_beqi_p(jit_forward(),reg,0);\
+	rf266 = jit_get_label();\
+            \
+            STATEMENT;\
+            \
+            jit_subi_p(reg,reg,1);\
+	jit_bnei_p(rf266,reg,0);\
+	jit_patch(rf166);\
+}
+/* jit_repeatp(): */
+/* > reg: counter */
+/* > STATEMENT:  */
+/* Does not check (if reg == 0) before looping */
+#define jit_repeatp(reg, STATEMENT)\
+{           jit_insn *ref66;\
+	ref66 = jit_get_label();\
+            \
+            STATEMENT;\
+            \
+            jit_subi_p(reg,reg,1);\
+	jit_bnei_p(ref66,reg,0);\
+}
+/* ------------------- (1) Stack operations ----------------------- */
+#ifdef STANDARD_HEAPCODES
+    /* jit_getsize_framer(): */
+    /* > &bottomword: Address of bottomword */
+    #define jit_getsize_framer()\
+        jit_ldr_ui(JIT_R1,JIT_R2);\
+        jit_andi_ui(JIT_R0,JIT_R1,(wbit(FB1)-1));
+    #define jit_get_framecoder()\
+        jit_andi_ui(JIT_R0,JIT_R2,minus_wbit(FB1));
+#endif
+#ifdef LINUX_NOEXEC_HEAPCODES
+    /* jit_getsize_framer(): */
+    /* > &bottomword: Address of bottomword */
+    #define jit_getsize_framer()\
+        jit_ldr_ui(JIT_R1,JIT_R2);\
+        jit_rshi_ul(JIT_R0,JIT_R1,6);
+    #define jit_get_framecoder()\
+        jit_andi_ui(JIT_R0,JIT_R2,0x3F);
+#endif
+#ifdef STACK_DOWN
+    #define jit_bnov_stacki jit_blti_p
+    #define jit_getptbl_stackr() 
+  #define jit_skip_stack_opir jit_addi_p
+    #define jit_skip_stack_opr jit_addr_p
+    #define jit_get_stacki(n)\
+        jit_ldi_p(JIT_R1, &STACK);\
+        jit_ldxi_i(JIT_R0, JIT_R1,(n)*sizeof(gcv_object_t));
+    #define jit_getptr_stacki(n)\
+        jit_ldi_p(JIT_R1, &STACK);\
+        jit_addi_i(JIT_R0, JIT_R1,(n)*sizeof(gcv_object_t));
+    #define jit_get_framei(n)\
+        jit_ldxi_p(JIT_R0,JIT_R2,(n)*sizeof(gcv_object_t));
+    #define jit_getptr_framei(n)\
+        jit_addi_p(JIT_R0,JIT_R2,(n)*sizeof(gcv_object_t));
+    /* jit_gettop_framer(): */
+    /* > &bottomword: Address of bottomword */
+    #define jit_gettop_framer()\
+        jit_getsize_framer();\
+        jit_addr_ui(JIT_R1,JIT_R2,JIT_R0);\
+        jit_movr_p(JIT_R0,JIT_R1);
+    /* reg is modified */
+    #define jit_frame_nextx(reg)\
+        jit_subi_p(reg,reg,sizeof(gcv_object_t));\
+        jit_ldr_p(JIT_R0,reg);
+    #define jit_get_scountr(res,new,old)\
+        jit_subr_p(res,old,new);\
+        jit_divi_ul(res,res,sizeof(void*));
+#endif
+#ifdef STACK_UP
+    #define jit_bnov_stacki jit_bgti_p
+    #define jit_getptbl_stackr()  jit_subi_i(JIT_R0,JIT_R2,sizeof(gcv_object_t))
+  #define jit_skip_stack_opir jit_subi_p
+    #define jit_skip_stack_opr jit_subr_p
+    #define jit_get_stacki(n)\
+        jit_ldi_p(JIT_R1, &STACK);\
+        jit_ldxi_i(JIT_R0, JIT_R1,-sizeof(gcv_object_t) - ((n)*sizeof(gcv_object_t)));
+    #define jit_get_stackr()\
+        jit_ldi_p(JIT_R1, &STACK);\
+        jit_subi_p(JIT_R1,JIT_R1,sizeof(gcv_object_t));\
+        jit_muli_ul(JIT_R0,JIT_R2,sizeof(gcv_object_t));\
+        jit_subr_p(JIT_R1,JIT_R1,JIT_R0);\
+        jit_ldr_p(JIT_R0, JIT_R1);
+    #define jit_getptr_stacki(n)\
+        jit_ldi_p(JIT_R1, &STACK);\
+        jit_addi_i(JIT_R0, JIT_R1,-sizeof(gcv_object_t) - ((n)*sizeof(gcv_object_t)));
+    #define jit_get_framei(n)\
+        jit_ldxi_i(JIT_R0, JIT_R2,-sizeof(gcv_object_t) - ((n)*sizeof(gcv_object_t)));
+    #define jit_getptr_framei(n)\
+        jit_addi_i(JIT_R0, JIT_R2,-sizeof(gcv_object_t) - ((n)*sizeof(gcv_object_t)));
+    /* jit_gettop_framer(): */
+    /* > &bottomword: Address of bottomword */
+    #define jit_gettop_framer()\
+        jit_getsize_framer();\
+        jit_subr_ui(JIT_R1,JIT_R2,JIT_R0);\
+        jit_addi_ui(JIT_R0,JIT_R1,sizeof(gcv_object_t));
+    /* reg is modified */
+    #define jit_frame_nextx(reg)\
+        jit_ldr_p(JIT_R0,reg);\
+        jit_addi_p(reg,reg,sizeof(gcv_object_t));
+    #define jit_get_scountr(res,new,old)\
+        jit_subr_p(res,new,old);\
+        jit_divi_ul(res,res,sizeof(void*));
+#endif
+
+#define jit_skip_stacki(n)\
+    jit_ldi_p(JIT_R0, &STACK);\
+    jit_skip_stack_opir(JIT_R0, JIT_R0,(n)*sizeof(gcv_object_t));\
+    jit_sti_p(&STACK, JIT_R0);
+#define jit_skip_stackr()\
+    jit_ldi_p(JIT_R0, &STACK);\
+    jit_muli_i(JIT_R1,JIT_R2,sizeof(void*));\
+    jit_skip_stack_opr(JIT_R0, JIT_R0,JIT_R1);\
+    jit_sti_p(&STACK, JIT_R0);
+
+#define jit_push_stacki(obj)\
+    jit_getptr_stacki(-1);\
+    jit_movi_p(JIT_R1, obj);\
+    jit_str_p(JIT_R0, JIT_R1);\
+    jit_skip_stacki(-1);
+#define jit_push_stackr()\
+    jit_getptr_stacki(-1);\
+    jit_str_p(JIT_R0, JIT_R2);\
+    jit_skip_stacki(-1);
+/* Loads the argument before pushing */
+#define jit_ldpush_stackr()\
+    jit_getptr_stacki(-1);\
+    jit_ldr_p(JIT_R1,JIT_R2);\
+    jit_str_p(JIT_R0, JIT_R1);\
+    jit_skip_stacki(-1);
+
+#define jit_pop_stack()\
+    jit_skip_stacki(1);\
+    jit_get_stacki(-1);
+
+/*  Make the 'Frame Info' word of a frame on the lisp stack */
+#define jit_finish_framer(TYPE, SIZE)\
+    jit_getptr_stacki(-1);\
+    jit_movi_p(JIT_R1,makebottomword(TYPE##_frame_info,SIZE*sizeof(gcv_object_t)));\
+    jit_str_p(JIT_R0, JIT_R1);\
+    jit_skip_stacki(-1);
+
+/* Check if the stack has overflowed */
+#define jit_check_stack()\
+    { jit_insn* ref;\
+        jit_ldi_p(JIT_R0,&(STACK));\
+        jit_ldi_p(JIT_R1,&(STACK_bound));\
+    ref = jit_bnov_stacki(jit_forward(), JIT_R0,JIT_R1);\
+        jit_calli(STACK_ueber);\
+    jit_patch(ref);\
+    }
+/* jit_check_stack i-r(): */
+/* Check if the stack will overflow given the parameter */
+/* Equivalent to macro get_space_on_STACK */
+#define jit_check_stackr()\
+    { jit_insn* ref;\
+        jit_ldi_p(JIT_R0,&(STACK));\
+        jit_ldi_p(JIT_R1,&(STACK_bound));\
+        jit_addr_p(JIT_R1,JIT_R1,JIT_R2);\
+    ref = jit_bnov_stacki(jit_forward(), JIT_R0,JIT_R1);\
+        jit_calli(STACK_ueber);\
+    jit_patch(ref);\
+    }
+#define jit_check_stacki(n)\
+    { jit_insn* ref;\
+        jit_ldi_p(JIT_R0,&(STACK));\
+        jit_ldi_p(JIT_R1,&(STACK_bound));\
+        jit_addi_p(JIT_R1,JIT_R1,(n));\
+    ref = jit_bnov_stacki(jit_forward(), JIT_R0,JIT_R1);\
+        jit_calli(STACK_ueber);\
+    jit_patch(ref);\
+    }
+/* ------------------- (2) Multiple Values ----------------------- */
+/* jit_rawset_valuesi_1: */
+/* Doesn't modify mvcount */
+#define jit_rawset_valuesi_1(value)\
+    jit_movi_p(JIT_R0, value);\
+    jit_sti_p (mv_space,JIT_R0);
+
+#define jit_set_valuesi_1(value)\
+    jit_movi_p(JIT_R0, value);\
+    jit_sti_p(mv_space,JIT_R0);\
+    jit_movi_ui(JIT_R0, 1);\
+    jit_sti_ui(&mv_count, JIT_R0);
+#define jit_set_valuesr_1()\
+    jit_sti_p (mv_space,JIT_R2);\
+    jit_movi_ui(JIT_R0, 1);\
+    jit_sti_ui(&mv_count, JIT_R0);
+#define  jit_set_valuesi(N,value) \
+    jit_movi_ui(JIT_R0,N);\
+    stxi_p(mv_space,N,value); \
+    jit_movi_ui(JIT_R0, N);\
+    jit_sti_ui(&mv_count, JIT_R0);
+
+#define jit_get_valuesr_1()\
+    jit_ldi_p(JIT_R0, mv_space);
+#define jit_getptr_valuesr_1()\
+    jit_movi_p(JIT_R0, mv_space);
+
+#define jit_getptr_valuesi(n)\
+    jit_movi_p(JIT_R0, mv_space);\
+    jit_addi_p(JIT_R0,JIT_R0,(n)*sizeof(gcv_object_t));
+#define jit_getptr_valuesr()\
+    jit_movi_p(JIT_R0, mv_space);\
+    jit_muli_ul(JIT_R1,JIT_R2,sizeof(gcv_object_t));\
+    jit_addr_p(JIT_R0,JIT_R0,JIT_R1);
+
+#define jit_get_mvcountr()\
+    jit_ldi_p(JIT_R0, &mv_count);
+#define jit_set_mvcounti(n)\
+    jit_movi_ui(JIT_R0,n);\
+    jit_sti_p(&mv_count,JIT_R0);
+#define jit_set_mvcountr()\
+    jit_sti_p(&mv_count,JIT_R2);
+/* Modifies All registers except JIT_V0 */
+#define jit_mv2stackx()\
+    {       jit_insn *rf1,*rf2;\
+            jit_get_mvcountr();\
+	rf1 = jit_beqi_p(jit_forward(),JIT_R0,0);\
+\
+            jit_movr_p(JIT_V2,JIT_R0);\
+            jit_movr_p(JIT_R2,JIT_R0);\
+            jit_check_stackr();\
+            jit_getptr_valuesi(0);\
+            jit_movr_p(JIT_V1,JIT_R0);\
+	jit_repeatp(JIT_V2,\
+            jit_ldr_p(JIT_R2,JIT_V1);\
+            jit_push_stackr();\
+            jit_addi_p(JIT_V1,JIT_V1,sizeof(gcv_object_t));\
+);\
+\
+	jit_patch(rf1);\
+    }
+/* ------------------- (3) SP operations ----------------------- */
+/* Operations on a down-growing stack */
+#define jit_set_spr()\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R2);
+#define jit_get_spi(n)\
+    jit_ldxi_p(JIT_R1,JIT_FP,jit_sp_ptr);\
+    jit_ldxi_p(JIT_R0, JIT_R1, (n)*sizeof(SPint));
+#define jit_getptr_spi(n)\
+    jit_ldxi_p(JIT_R1,JIT_FP,jit_sp_ptr);\
+    jit_addi_p(JIT_R0, JIT_R1, (n)*sizeof(SPint));
+
+#define jit_skip_spi(n)\
+    jit_ldxi_p(JIT_R1,JIT_FP,jit_sp_ptr);\
+    jit_addi_p(JIT_R0,JIT_R1,(n)*sizeof(SPint));\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R0);
+
+#define jit_push_spi(item)\
+    jit_getptr_spi(-1);\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R0);\
+    jit_movi_p(JIT_R1, (item));\
+    jit_str_p(JIT_R0,JIT_R1);
+#define jit_push_spr()\
+    jit_getptr_spi(-1);\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R0);\
+    jit_str_p(JIT_R0,JIT_R2);
+/* Loads the parameter before pushing */
+#define jit_ldpush_spr()\
+    jit_getptr_spi(-1);\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R0);\
+    jit_ldr_p(JIT_R1,JIT_R2);\
+    jit_str_p(JIT_R0,JIT_R1);
+
+#define jit_pop_sp()\
+    jit_getptr_spi(0);\
+    jit_addi_p(JIT_R1,JIT_R0,sizeof(SPint));\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R1);\
+    jit_ldr_p(JIT_R0, JIT_R0);
+#define jit_alloc_jmpbuf()\
+    jit_ldxi_p(JIT_R0,JIT_FP,jit_sp_ptr);\
+    jit_subi_i(JIT_R0,JIT_R0,(jmpbufsize)*sizeof(SPint));\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R0);
+#define jit_free_jmpbuf()\
+    jit_ldxi_p(JIT_R0,JIT_FP,jit_sp_ptr);\
+    jit_addi_i(JIT_R0,JIT_R0,(jmpbufsize)*sizeof(SPint));\
+    jit_stxi_p(jit_sp_ptr,JIT_FP, JIT_R0);
+#define jit_finish_eframex(TYPE, SIZE, ON_REENTRY, ON_FINISH)\
+{\
+        jit_insn *rf1;\
+        jit_push_stackr();\
+        jit_push_stacki(nullobj);\
+        \
+        jit_prepare(1);\
+        jit_pusharg_p(JIT_R2);\
+        jit_finish(setjmp);\
+        jit_retval(JIT_R2);\
+        \
+    rf1 = jit_beqi_p(jit_forward(),JIT_R2,0);\
+        jit_set_spr();\
+        \
+        ON_REENTRY;\
+        \
+    jit_patch(rf1);\
+        jit_getptr_stacki(0);\
+        jit_movi_p(JIT_R1,makebottomword(TYPE##_frame_info,SIZE*sizeof(gcv_object_t)));\
+        jit_str_p(JIT_R0,JIT_R1);\
+        \
+        ON_FINISH;\
+}
+
+
+/* ------------------- (4) Symbols ----------------------- */
+#define jit_get_symvali(symbol)\
+    jit_movi_p(JIT_R1,symbol);\
+    jit_ldxi_p(JIT_R0,JIT_R1, TheSymbol(jit_ptr_field(Symbol, symvalue)));
+#define jit_get_symvalr()\
+    jit_ldxi_p(JIT_R0,JIT_R2, TheSymbol(jit_ptr_field(Symbol, symvalue)));
+#define jit_getptr_symvali(symbol)\
+    jit_movi_p(JIT_R1,symbol);\
+    jit_addi_p(JIT_R0,JIT_R1, TheSymbol(jit_ptr_field(Symbol, symvalue)));
+#define jit_getptr_symvalr()\
+    jit_addi_p(JIT_R0,JIT_R2, TheSymbol(jit_ptr_field(Symbol, symvalue)));
+#define jit_sym_constpr(sym)\
+    jit_ldxi_p(JIT_R0, JIT_R2, TheSymbol(jit_ptr_field(Symbol, header_flags)));\
+    jit_notr_ul(JIT_R0,JIT_R0);\
+    jit_andi_ul(JIT_R0,JIT_R0,bit(var_bit0_hf)|bit(var_bit1_hf));\
+    jit_eqi_ul(JIT_R0,JIT_R0,0UL);
+
+#define jit_sympr()\
+    jit_andi_ul(JIT_R1, JIT_R2,nonimmediate_heapcode_mask);\
+    jit_eqi_p(JIT_R0,JIT_R1,(varobject_bias+varobjects_misaligned));\
+    jit_movr_p(JIT_R1,JIT_R0);\
+    jit_ldxi_p(JIT_R0,JIT_R2, TheRecord(jit_ptr_field(Record, tfl)));\
+    jit_andi_ul(JIT_R0, JIT_R0,0xFF);\
+    jit_eqi_p(JIT_R0,JIT_R0,Rectype_Symbol);\
+    jit_andr_ul(JIT_R0,JIT_R0,JIT_R1);
+
+/* Modifies JIT_R2 */
+#define jit_check_fdefx()\
+    {\
+            jit_insn *rf1,*rf2;\
+            jit_sympr();\
+	rf1 = jit_beqi_p(jit_forward(),JIT_R0,1);\
+            jit_save_backtrace3(L(symbol_function), STACK, -1, -1,\
+                {\
+                    jit_prepare(1);\
+                    jit_pusharg_p(JIT_R2);\
+                    jit_finish(check_symbol);\
+                    jit_retval(JIT_R2);\
+                }\
+            );\
+	jit_patch(rf1);\
+            jit_get_fieldr(Symbol,symfunction);\
+	rf2 = jit_bnei_p(jit_forward(),JIT_R0,unbound);\
+            jit_prepare(2);\
+            jit_movi_p(JIT_R0,S(symbol_function));\
+            jit_pusharg_p(JIT_R0);\
+            jit_pusharg_p(JIT_R2);\
+            jit_finish(check_fdefinition);\
+            jit_retval(JIT_R0);\
+	jit_patch(rf2);\
+    }
+
+#define jit_sym_atompr()\
+    jit_andi_ul(JIT_R0,JIT_R2,7);\
+    jit_nei_p(JIT_R0,JIT_R0,(cons_bias+conses_misaligned));
+#define jit_sym_conspr()\
+    jit_andi_ul(JIT_R0,JIT_R2,7);\
+    jit_eqi_p(JIT_R0,JIT_R0,(cons_bias+conses_misaligned));
+/* ------------------- (5) Svectors ----------------------- */
+#define jit_svecpr()\
+    jit_andi_ul(JIT_R1, JIT_R2,nonimmediate_heapcode_mask);\
+    jit_eqi_p(JIT_R0,JIT_R1,(varobject_bias+varobjects_misaligned));\
+    jit_movr_p(JIT_R1,JIT_R0);\
+    jit_ldxi_p(JIT_R0,JIT_R2, TheRecord(jit_ptr_field(Record, tfl)));\
+    jit_andi_ul(JIT_R0, JIT_R0,0xFF);\
+    jit_eqi_p(JIT_R0,JIT_R0,Rectype_Svector);\
+    jit_andr_ul(JIT_R0,JIT_R0,JIT_R1);
+#define jit_getlen_svecr()\
+    jit_get_fieldr(Svector,tfl);\
+    jit_rshi_i(JIT_R0,JIT_R0,8);
+#define jit_get_svecdatair(n)\
+    jit_addi_p(JIT_R1, JIT_R2, TheSvector(jit_ptr_field(Svector, data)));\
+    jit_ldxi_p(JIT_R0, JIT_R1, (n)*sizeof(gcv_object_t));
+#define jit_getptr_svecdatair(n)\
+    jit_addi_p(JIT_R1, JIT_R2, TheSvector(jit_ptr_field(Svector, data)));\
+    jit_addi_p(JIT_R0, JIT_R1, (n)*sizeof(gcv_object_t));
+/* jit_get_svecdatax(): */
+/* > JIT_R2: Address of svec */
+/*   JIT_R1: Element position */
+/* Modifies JIT_R1 */
+#define jit_get_svecdatax()\
+    jit_addi_p(JIT_R0, JIT_R2, TheSvector(jit_ptr_field(Svector, data)));\
+    jit_muli_ul(JIT_R1,JIT_R1,sizeof(gcv_object_t));\
+    jit_ldxr_p(JIT_R0, JIT_R0, JIT_R1);
+#define jit_getptr_svecdatax()\
+    jit_addi_p(JIT_R0, JIT_R2, TheSvector(jit_ptr_field(Svector, data)));\
+    jit_muli_ul(JIT_R1,JIT_R1,sizeof(gcv_object_t));\
+    jit_addr_p(JIT_R0, JIT_R0, JIT_R1);
+/* ------------------- (6) Calls ----------------------- */ 
+#define jit_funcall()\
+  { jit_prepare(2);\
+        jit_movi_p(JIT_R0,k);\
+        jit_pusharg_p(JIT_R0);\
+        jit_get_cconsti(n);\
+        jit_pusharg_p(JIT_R0);\
+        jit_finish(funcall);\
+  }
+#define jit_funcall0()\
+  { jit_prepare(2);\
+        jit_movi_p(JIT_R0,0);\
+        jit_pusharg_p(JIT_R0);\
+        jit_get_cconsti(n);\
+        jit_pusharg_p(JIT_R0);\
+        jit_finish(funcall);\
+  }
+#define jit_funcall1()\
+  { jit_prepare(2);\
+        jit_movi_p(JIT_R0,1);\
+        jit_pusharg_p(JIT_R0);\
+        jit_ldr_p(JIT_R0,JIT_V1);\
+        jit_get_cconsti(n);\
+        jit_pusharg_p(JIT_R0);\
+        jit_finish(funcall);\
+  }
+#define jit_funcall2()\
+  { jit_prepare(2);\
+        jit_movi_p(JIT_R0,2);\
+        jit_pusharg_p(JIT_R0);\
+        jit_get_cconsti(n);\
+        jit_pusharg_p(JIT_R0);\
+        jit_finish(funcall);\
+  }
+/* !!! DO NOT NEST jit_save_backtrace*s */
+/* jit_save_backtrace1(fun,stack,num_arg,statement): */
+/* This one does not dynamically load the 'fun' argument */
+#define jit_save_backtrace1(fun,stack,num_arg,statement)\
+    {\
+        jit_addi_p(JIT_R0,JIT_FP,bt_here);\
+        jit_ldi_p(JIT_R1,&back_trace);\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_next), JIT_R0, JIT_R1);\
+        jit_movi_p(JIT_R1,(fun));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_function), JIT_R0, JIT_R1);\
+        jit_ldi_p(JIT_R1,&(stack));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_stack), JIT_R0, JIT_R1);\
+        jit_movi_p(JIT_R1,(num_arg));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_num_arg), JIT_R0, JIT_R1);\
+        jit_sti_p(&back_trace, JIT_R0);\
+        statement;\
+        jit_ldi_p(JIT_R0,&back_trace);\
+        jit_ldxi_p(JIT_R1, JIT_R0, jit_field(struct backtrace_t, bt_next));\
+        jit_sti_p(&back_trace, JIT_R1);\
+    }
+/* jit_save_backtrace2(fun,stack,num_arg,statement): */
+/* This one dynamically loads the 'fun' argument */
+#define jit_save_backtrace2(fun,stack,num_arg,statement)\
+    {\
+        jit_addi_p(JIT_R0,JIT_FP,bt_here);\
+        jit_ldi_p(JIT_R1,&back_trace);\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_next), JIT_R0, JIT_R1);\
+        jit_ldi_p(JIT_R1,&(fun));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_function), JIT_R0, JIT_R1);\
+        jit_ldi_p(JIT_R1,&(stack));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_stack), JIT_R0, JIT_R1);\
+        jit_movi_p(JIT_R1,(num_arg));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_num_arg), JIT_R0, JIT_R1);\
+        jit_sti_p(&back_trace, JIT_R0);\
+        statement;\
+        jit_ldi_p(JIT_R0,&back_trace);\
+        jit_ldxi_p(JIT_R1, JIT_R0, jit_field(struct backtrace_t, bt_next));\
+        jit_sti_p(&back_trace, JIT_R1);\
+    }
+/* jit_save_backtrace3(): */
+/* Saves 'STACK STACKop n' instead of just STACK */
+#define jit_save_backtrace3(fun,stack,n,num_arg,statement)\
+    {\
+        jit_addi_p(JIT_R0,JIT_FP,bt_here);\
+        jit_ldi_p(JIT_R1,&back_trace);\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_next), JIT_R0, JIT_R1);\
+        jit_movi_p(JIT_R1,(fun));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_function), JIT_R0, JIT_R1);\
+        jit_ldi_p(JIT_R1,&(stack));\
+        jit_skip_stack_opir(JIT_R1,JIT_R1,(n)*sizeof(gcv_object_t));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_stack), JIT_R0, JIT_R1);\
+        jit_movi_p(JIT_R1,(num_arg));\
+        jit_stxi_i (jit_field(struct backtrace_t, bt_num_arg), JIT_R0, JIT_R1);\
+        jit_sti_p(&back_trace, JIT_R0);\
+        statement;\
+        jit_ldi_p(JIT_R0,&back_trace);\
+        jit_ldxi_p(JIT_R1, JIT_R0, jit_field(struct backtrace_t, bt_next));\
+        jit_sti_p(&back_trace, JIT_R1);\
+    }
+#define jit_funcalls1();\
+    { { var Subr fun = FUNTAB1[n];\
+            jit_save_backtrace1(subr_tab_ptr_as_object(fun),STACK,-1,\
+                jit_movi_p(JIT_R0,(fun->function));\
+                jit_callr(JIT_R0););\
+    }\
+    }
+#define jit_funcalls2();\
+    { { var Subr fun = FUNTAB2[n];\
+            jit_save_backtrace1(subr_tab_ptr_as_object(fun),STACK,-1,\
+                jit_movi_p(JIT_R0,(fun->function));\
+                jit_callr(JIT_R0););\
+    }\
+    }
+#define jit_funcallsr();\
+    { { var Subr fun = FUNTABR[n];\
+            jit_save_backtrace1(subr_tab_ptr_as_object(fun),STACK,-1,\
+                jit_prepare(2);\
+                jit_ldi_p(JIT_R1,&(args_end_pointer));\
+                jit_skip_stack_opir(JIT_R0,JIT_R1,m*sizeof(gcv_object_t));\
+                jit_pusharg_p(JIT_R0);\
+                jit_movi_p(JIT_R0,m);\
+                jit_pusharg_p(JIT_R0);\
+                jit_movi_p(JIT_R0,(fun->function));\
+                jit_finishr(JIT_R0);)\
+    }\
+    }
+#define jit_funcallc()\
+    jit_check_stack();\
+    jit_save_backtrace2(value1, STACK,-1,\
+        jit_prepare(3);\
+        jit_get_valuesr_1();\
+        jit_ldxi_p(JIT_R0, JIT_R0, TheCclosure(jit_ptr_field(Cclosure, clos_codevec)));\
+        jit_addi_p(JIT_R0, JIT_R0, TheSbvector(jit_ptr_field(Sbvector, data)));\
+        jit_addi_p(JIT_R0, JIT_R0, CCV_START_NONKEY*sizeof(uint8));\
+        jit_pusharg_p(JIT_R0);\
+        jit_get_valuesr_1();\
+        jit_ldxi_p(JIT_R1, JIT_R0, TheCclosure(jit_ptr_field(Cclosure, clos_codevec)));\
+        jit_addi_p(JIT_R1,JIT_R1,TheSbvector(0));\
+        jit_pusharg_p(JIT_R1);\
+        jit_pusharg_p(JIT_R0);\
+        jit_finish(interpret_bytecode_););
+#define jit_funcallckey()\
+    jit_check_stack();\
+    jit_save_backtrace2(value1, STACK,-1,\
+        jit_prepare(3);\
+        jit_get_valuesr_1();\
+        jit_ldxi_p(JIT_R0, JIT_R0, TheCclosure(jit_ptr_field(Cclosure, clos_codevec)));\
+        jit_addi_p(JIT_R0, JIT_R0, TheSbvector(jit_ptr_field(Sbvector, data)));\
+        jit_addi_p(JIT_R0, JIT_R0, CCV_START_KEY*sizeof(uint8));\
+        jit_pusharg_p(JIT_R0);\
+        jit_get_valuesr_1();\
+        jit_ldxi_p(JIT_R1, JIT_R0, TheCclosure(jit_ptr_field(Cclosure, clos_codevec)));\
+        jit_addi_p(JIT_R1,JIT_R1,TheSbvector(0));\
+        jit_pusharg_p(JIT_R1);\
+        jit_pusharg_p(JIT_R0);\
+        jit_finish(interpret_bytecode_););
+/* ------------------- (6) Fixnum ----------------------- */
+#define jit_val2fixnumr()\
+    jit_lshi_ul(JIT_R0,JIT_R2,oint_data_shift);\
+    jit_movi_p(JIT_R1,fixnum_type);\
+    jit_lshi_ul(JIT_R1,JIT_R1,oint_type_shift);\
+    jit_addr_p(JIT_R0,JIT_R0,JIT_R1);
+#define jit_posfixnum2valr()\
+    jit_andi_ui(JIT_R0,JIT_R2,((oint)wbitm(oint_data_len+oint_data_shift)-1));\
+    jit_rshi_ul(JIT_R0,JIT_R0,oint_data_shift);
+#define jit_posfixnumpr()\
+    jit_movi_p(JIT_R0,7);\
+    jit_lshi_ul(JIT_R0,JIT_R0,imm_type_shift);\
+    jit_ori_ul(JIT_R0,JIT_R0,immediate_bias);\
+    jit_andr_ul(JIT_R0,JIT_R0,JIT_R2);\
+    jit_eqi_p(JIT_R0,JIT_R0,fixnum_type);
+
+#define jit_inc_posfixnumir(n)\
+    jit_movi_p(JIT_R0,n);\
+    jit_lshi_ul(JIT_R0,JIT_R0,oint_data_shift);\
+    jit_addr_p(JIT_R0,JIT_R0,JIT_R2);
+
+/* Might need to reassign this to a function hence the 'x' */
+#define jit_ul2ix() jit_val2fixnumr()
+
+#if (oint_data_len>=intVsize)
+    #define jit_fixnum2valr()  jit_posfixnum2valr();
+#elif (sign_bit_o == oint_data_len+oint_data_shift)
+  #define jit_fixnum2valr()\
+        jit_lshi_ul(JIT_R0,JIT_R2,(intVsize-1-sign_bit_o));\
+        jit_rshi_ul(JIT_R0,JIT_R0,(intVsize-1-sign_bit_o+oint_data_shift));
+#else
+  #define jit_fixnum2valr()\
+        jit_rshi_l(JIT_R1,JIT_R2,sign_bit_o);\
+        jit_lshi_l(JIT_R1,JIT_R1,(intVsize-1));\
+        jit_rshi_l(JIT_R1,JIT_R1,(intVsize-1-oint_data_len));\
+        jit_andi_ul(JIT_R0,JIT_R2,((oint)wbitm(oint_data_len+oint_data_shift)-1));\
+        jit_rshi_ul(JIT_R0,JIT_R0,oint_data_shift);\
+        jit_orr_ul(JIT_R0,JIT_R0,JIT_R1);
+#endif
 EOT
 
 print JITRUN_H "/* ex: set ro: */\n";

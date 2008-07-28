@@ -105,28 +105,32 @@ bset_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
 }
 
 int
-byterun(pTHX_ register struct byteloader_state *bstate)
+byterun(pTHX_ struct byteloader_state *bstate)
 {
     register int insn;
+    U32 isjit = 0;
     U32 ix;
     SV *specialsv_list[6];
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform */
-    Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
-    bstate->bs_obj_list_fill = 31;
-    bstate->bs_obj_list[0] = NULL; /* first is always Null */
-    bstate->bs_ix = 1;
+    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit if PLJC magic header */
+    if (isjit) {
+        return jitrun(aTHX_ &bstate);
+    } else {
+        Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
+        bstate->bs_obj_list_fill = 31;
+        bstate->bs_obj_list[0] = NULL; /* first is always Null */
+        bstate->bs_ix = 1;
 
 EOT
 
 for my $i ( 0 .. $#specialsv_name ) {
-    print BYTERUN_C "    specialsv_list[$i] = $specialsv_name[$i];\n";
+    print BYTERUN_C "        specialsv_list[$i] = $specialsv_name[$i];\n";
 }
 
 print BYTERUN_C <<'EOT';
 
-    while ((insn = BGET_FGETC()) != EOF) {
-	switch (insn) {
+        while ((insn = BGET_FGETC()) != EOF) {
+	    switch (insn) {
 EOT
 
 
@@ -202,10 +206,11 @@ EOT
 # Finish off byterun.c
 #
 print BYTERUN_C <<'EOT';
-	  default:
-	    Perl_croak(aTHX_ "Illegal bytecode instruction %d\n", insn);
-	    /* NOTREACHED */
-	}
+	    default:
+	      Perl_croak(aTHX_ "Illegal bytecode instruction %d\n", insn);
+	      /* NOTREACHED */
+	  }
+        }
     }
     return 0;
 }
@@ -248,7 +253,8 @@ struct byteloader_state {
 
 int bl_getc(struct byteloader_fdata *);
 int bl_read(struct byteloader_fdata *, char *, size_t, size_t);
-extern int byterun(pTHX_ struct byteloader_state *);
+extern int byterun(pTHX_ register struct byteloader_state *);
+/*extern int jitrun(pTHX_ register struct byteloader_state *);*/
 
 enum {
 EOT
@@ -353,7 +359,7 @@ or '&PL_sv_undef').
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban added the version logic and 5.10 support.
+Reini Urban added the version logic, 5.10 and jit support.
 
 =cut
 
@@ -427,9 +433,7 @@ __END__
 0 xio_fmt_gv	*(SV**)&IoFMT_GV(bstate->bs_sv)		svindex
 0 xio_bottom_name IoBOTTOM_NAME(bstate->bs_sv)		pvindex
 0 xio_bottom_gv	*(SV**)&IoBOTTOM_GV(bstate->bs_sv)	svindex
-#if PERL_VERSION < 10
 <10 xio_subprocess IoSUBPROCESS(bstate->bs_sv)		short
-#endif
 0 xio_type	IoTYPE(bstate->bs_sv)			char
 0 xio_flags	IoFLAGS(bstate->bs_sv)			char
 0 xcv_xsubany	*(SV**)&CvXSUBANY(bstate->bs_sv).any_ptr	svindex
@@ -448,11 +452,8 @@ __END__
 0 av_push	bstate->bs_sv				svindex		x
 0 xav_fill	AvFILLp(bstate->bs_sv)			SSize_t
 0 xav_max	AvMAX(bstate->bs_sv)			SSize_t
-#if PERL_VERSION < 10
 <10 xav_flags	AvFLAGS(bstate->bs_sv)			U8
-#else
-9 xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32	I32
-#endif
+10 xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32	I32
 #if PERL_VERSION < 10
 <10 xhv_riter	HvRITER(bstate->bs_sv)			I32
 #endif

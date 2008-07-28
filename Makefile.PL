@@ -1,18 +1,20 @@
 use ExtUtils::MakeMaker;
 use Config;
 use File::Spec;
+use 5.009005;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 WriteMakefile(
     NAME	    => "B::C",
     VERSION_FROM    => "B/C.pm",
-	      # 'scripts/assemble','scripts/disassemble',
-    EXE_FILES => [ 'scripts/cc_harness','scripts/perlcc' ],
+	         # 'scripts/assemble','scripts/disassemble',
+    PL_FILES => {'script/perlcc.PL'  => 'bin/perlcc' },
     PREREQ_PM 	    => {
 	'B::Concise' => '0.74',
 	'B' => '1.17',
     },
+    PMLIBDIRS => [ 'B' ],
 );
 
 sub headerpath {
@@ -35,8 +37,9 @@ sub depend {
     my @headers = map { File::Spec->catfile($headerpath, $_) } qw(op.h cop.h sv.h);
     my $asmdata = File::Spec->catfile('B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
+    my $jitrun_c  = File::Spec->catfile('ByteLoader', 'jitrun.c');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
-    my $perlcc = File::Spec->catfile('scripts', 'perlcc');
+    my $perlcc = File::Spec->catfile('script', 'perlcc');
     "
 $perlcc : $perlcc.PL
 	\$(PERL) $perlcc.PL
@@ -49,6 +52,12 @@ $byterun_c : bytecode.pl @headers
 
 $byterun_h : bytecode.pl @headers
 	\$(PERL) bytecode.pl
+
+$jitrun_h : jitcompiler.pl @headers
+	\$(PERL) jitcompiler.pl
+
+$jitrun_c : jitcompiler.pl @headers
+	\$(PERL) jitcompiler.pl
 "
 }
 

@@ -1,3 +1,4 @@
+# Author: John Tobey, 2000 <jtobey@john-edwin-tobey.org>
 package B::Asm::i386;
 
 use Carp ();

@@ -5,7 +5,7 @@ Version checking
 improve XSUB handling (both static and dynamic)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
-them whereas the compiler expects them to be linked to a xpv[inahc]v_root
+  them whereas the compiler expects them to be linked to a xpv[inahc]v_root
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
@@ -28,11 +28,14 @@ options for cutting out line info etc.
 comment output
 shared constants
 module dependencies
+new Asm and JIT backend, PLJC ByteLoader magic
 
 * Optimisations
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.
+  e.g. mark IVonly SV's and magic/flags change functions and 
+  optimize all op subtrees for the Asm and JIT backend to use direct ints
 demand-loaded bytecode (leader of each basic block replaced by an op
-which loads in bytecode for its block)
+  which loads in bytecode for its block)
 fast sub calls for CC backend

@@ -237,7 +237,7 @@ or '&PL_sv_undef').
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban added the version logic and 5.10 support.
+Reini Urban added the version logic, 5.10 and jit support.
 
 =cut
 

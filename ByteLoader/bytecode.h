@@ -454,9 +454,13 @@ typedef HEK *hekindex;
 	    U32 sz = 0;						\
 	    strconst str;					\
 								\
-	    BGET_U32(sz); /* Magic: 'PLBC' */			\
+	    BGET_U32(sz); /* Magic: 'PLBC' or 'PLJC' */		\
 	    if (sz != 0x43424c50) {				\
-		HEADER_FAIL1("bad magic (want 0x43424c50, got %#x)", (int)sz);		\
+	        if (sz != 0x434a4c50) {				\
+		    HEADER_FAIL1("bad magic (want 0x43424c50 PLBC or 0x434a4c50 PLJC, got %#x)", (int)sz);   \
+		} else {					\
+		    isjit = 1;                                  \
+                }						\
 	    }							\
 	    BGET_strconst(str);	/* archname */			\
 	    if (strNE(str, ARCHNAME)) {				\

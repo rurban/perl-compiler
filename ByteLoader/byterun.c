@@ -50,28 +50,32 @@ bset_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
 }
 
 int
-byterun(pTHX_ register struct byteloader_state *bstate)
+byterun(pTHX_ struct byteloader_state *bstate)
 {
     register int insn;
+    U32 isjit = 0;
     U32 ix;
     SV *specialsv_list[6];
 
-    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform */
-    Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
-    bstate->bs_obj_list_fill = 31;
-    bstate->bs_obj_list[0] = NULL; /* first is always Null */
-    bstate->bs_ix = 1;
+    BYTECODE_HEADER_CHECK;	/* croak if incorrect platform, set isjit if PLJC magic header */
+    if (isjit) {
+        return jitrun(aTHX_ &bstate);
+    } else {
+        Newx(bstate->bs_obj_list, 32, void*); /* set op objlist */
+        bstate->bs_obj_list_fill = 31;
+        bstate->bs_obj_list[0] = NULL; /* first is always Null */
+        bstate->bs_ix = 1;
 
-    specialsv_list[0] = Nullsv;
-    specialsv_list[1] = &PL_sv_undef;
-    specialsv_list[2] = &PL_sv_yes;
-    specialsv_list[3] = &PL_sv_no;
-    specialsv_list[4] = (SV*)pWARN_ALL;
-    specialsv_list[5] = (SV*)pWARN_NONE;
-    specialsv_list[6] = (SV*)pWARN_STD;
+        specialsv_list[0] = Nullsv;
+        specialsv_list[1] = &PL_sv_undef;
+        specialsv_list[2] = &PL_sv_yes;
+        specialsv_list[3] = &PL_sv_no;
+        specialsv_list[4] = (SV*)pWARN_ALL;
+        specialsv_list[5] = (SV*)pWARN_NONE;
+        specialsv_list[6] = (SV*)pWARN_STD;
 
-    while ((insn = BGET_FGETC()) != EOF) {
-	switch (insn) {
+        while ((insn = BGET_FGETC()) != EOF) {
+	    switch (insn) {
 	  case INSN_COMMENT:		/* 35 */
 	    {
 		comment_t arg;
@@ -384,8 +388,6 @@ byterun(pTHX_ register struct byteloader_state *bstate)
 		*(SV**)&IoBOTTOM_GV(bstate->bs_sv) = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#endif
 	  case INSN_XIO_TYPE:		/* 46 */
 	    {
 		char arg;
@@ -512,8 +514,6 @@ byterun(pTHX_ register struct byteloader_state *bstate)
 		AvMAX(bstate->bs_sv) = arg;
 		break;
 	    }
-#if PERL_VERSION < 10
-#else
 	  case INSN_XAV_FLAGS:		/* 64 */
 	    {
 		I32 arg;
@@ -521,7 +521,6 @@ byterun(pTHX_ register struct byteloader_state *bstate)
 		((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 = arg;
 		break;
 	    }
-#endif
 #if PERL_VERSION < 10
 #endif
 	  case INSN_XHV_NAME:		/* 65 */
@@ -1104,10 +1103,11 @@ byterun(pTHX_ register struct byteloader_state *bstate)
 		PL_formfeed = arg;
 		break;
 	    }
-	  default:
-	    Perl_croak(aTHX_ "Illegal bytecode instruction %d\n", insn);
-	    /* NOTREACHED */
-	}
+	    default:
+	      Perl_croak(aTHX_ "Illegal bytecode instruction %d\n", insn);
+	      /* NOTREACHED */
+	  }
+        }
     }
     return 0;
 }

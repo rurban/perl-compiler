@@ -8,7 +8,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_02';
+our $VERSION = '1.04_04';
 
 package B::C::Section;
 
@@ -202,6 +202,7 @@ my ($debug_cops, $debug_av, $debug_cv, $debug_mg);
 my $max_string_len;
 
 my $ithreads = $Config{useithreads} eq 'define';
+my $perl510 = ($] >= 5.009005);
 
 my @threadsv_names;
 BEGIN {
@@ -584,11 +585,19 @@ sub B::PMOP::save {
     # pmnext handling is broken in perl itself, I think. Bad op_pmnext
     # fields aren't noticed in perl's runtime (unless you try reset) but we
     # segfault when trying to dereference it to find op->op_pmnext->op_type
-    $pmopsect->add(sprintf("%s, s\\_%x, s\\_%x, %s, %s, 0, %u, 0x%x, 0x%x, 0x%x",
-			   $op->_save_common, ${$op->first}, ${$op->last},
-			   $replrootfield, $replstartfield,
-                           ( $ithreads ? $op->pmoffset : 0 ),
-			   $op->pmflags, $op->pmpermflags, $op->pmdynflags ));
+    if ($perl510) {
+      $pmopsect->add(sprintf("%s, s\\_%x, s\\_%x, %s, %s, 0, %u, 0x%x",
+			     $op->_save_common, ${$op->first}, ${$op->last},
+			     $replrootfield, $replstartfield,
+			     ( $ithreads ? $op->pmoffset : 0 ),
+			     $op->pmflags ));
+    } else {
+      $pmopsect->add(sprintf("%s, s\\_%x, s\\_%x, %s, %s, 0, %u, 0x%x, 0x%x, 0x%x",
+			     $op->_save_common, ${$op->first}, ${$op->last},
+			     $replrootfield, $replstartfield,
+			     ( $ithreads ? $op->pmoffset : 0 ),
+			     $op->pmflags, $op->pmpermflags, $op->pmdynflags ));
+    }
     my $pm = sprintf("pmop_list[%d]", $pmopsect->index);
     $init->add(sprintf("$pm.op_ppaddr = %s;", $ppaddr))
         unless $optimize_ppaddr;
@@ -690,8 +699,8 @@ sub B::PVLV::save {
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
 			 $xpvlvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (!$pv_copy_on_grow) {
-	$init->add(savepvn(sprintf("xpvlv_list[%d].xpv_pv",
-				   $xpvlvsect->index), $pv));
+      my $pvx = $] < 5.009 ? "xpvlv_list[%d].xpv_pv" : "xpv_list[%d]->sv_u.svu_pv";
+      $init->add(savepvn(sprintf($pvx, $xpvlvsect->index), $pv));
     }
     $sv->save_magic;
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
@@ -706,8 +715,8 @@ sub B::PVIV::save {
     $svsect->add(sprintf("&xpviv_list[%d], %u, 0x%x",
 			 $xpvivsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-	$init->add(savepvn(sprintf("xpviv_list[%d].xpv_pv",
-				   $xpvivsect->index), $pv));
+      my $pvx = $] < 5.009 ? "xpviv_list[%d].xpv_pv" : "((sv)xpviv_list[%d])->sv_u.svu_pv";
+      $init->add(savepvn(sprintf($pvx, $xpvivsect->index), $pv));
     }
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
@@ -724,8 +733,8 @@ sub B::PVNV::save {
     $svsect->add(sprintf("&xpvnv_list[%d], %lu, 0x%x",
 			 $xpvnvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-	$init->add(savepvn(sprintf("xpvnv_list[%d].xpv_pv",
-				   $xpvnvsect->index), $pv));
+      my $pvx = $] < 5.009 ? "xpvnv_list[%d].xpv_pv" : "((sv)xpvnv_list[%d])->sv_u.svu_pv";
+      $init->add(savepvn(sprintf($pvx, $xpvnvsect->index), $pv));
     }
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
@@ -742,8 +751,8 @@ sub B::BM::save {
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
 			 $xpvbmsect->index, $sv->REFCNT , $sv->FLAGS));
     $sv->save_magic;
-    $init->add(savepvn(sprintf("xpvbm_list[%d].xpv_pv",
-			       $xpvbmsect->index), $pv),
+    my $pvx = $] < 5.009 ? "xpvbm_list[%d].xpv_pv" : "((sv)xpvbm_list[%d])->sv_u.svu_pv";
+    $init->add(savepvn(sprintf($pvx, $xpvbmsect->index), $pv),
 	       sprintf("xpvbm_list[%d].xpv_cur = %u;",
 		       $xpvbmsect->index, $len - 257));
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
@@ -758,8 +767,8 @@ sub B::PV::save {
     $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
 			 $xpvsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-	$init->add(savepvn(sprintf("xpv_list[%d].xpv_pv",
-				   $xpvsect->index), $pv));
+      my $pvx = $] < 5.009 ? "xpv_list[%d].xpv_pv" : "((sv)xpv_list[%d])->sv_u.svu_pv";
+      $init->add(savepvn(sprintf($pvx, $xpvsect->index), $pv));
     }
     return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
 }
@@ -776,8 +785,8 @@ sub B::PVMG::save {
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
                          $xpvmgsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
-        $init->add(savepvn(sprintf("xpvmg_list[%d].xpv_pv",
-                                   $xpvmgsect->index), $pv));
+      my $pvx = $] < 5.009 ? "xpvmg_list[%d].xpv_pv" : "((sv)xpvmg_list[%d])->sv_u.svu_pv";
+      $init->add(savepvn(sprintf($pvx, $xpvmgsect->index), $pv));
     }
     $sym = savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
     $sv->save_magic;
@@ -943,7 +952,7 @@ sub B::CV::save {
            # are defined in IO.xs, so let's bootstrap it
            svref_2object( \&IO::bootstrap )->save
             if grep { $stashname eq $_ } qw(IO::File IO::Handle IO::Socket
-                                              IO::Seekable IO::Poll);
+					    IO::Seekable IO::Poll);
           }
         warn sprintf("stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv) if $debug_cv;
 	return qq/(perl_get_cv("$stashname\:\:$cvname",TRUE))/;
@@ -1010,7 +1019,7 @@ sub B::CV::save {
     else {
 	warn sprintf("No definition for sub %s::%s (unable to autoload)\n",
 		     $cvstashname, $cvname); # debug
-    }              
+    }
     $pv = '' unless defined $pv; # Avoid use of undef warnings
     $symsect->add(sprintf("xpvcvix%d\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
 			  $xpvcv_ix, cstring($pv), length($pv), $cv->IVX,
@@ -1381,6 +1390,9 @@ sub output_all {
 	if ($lines) {
 	    my $name = $section->name;
 	    my $typename = ($name eq "xpvcv") ? "XPVCV_or_similar" : uc($name);
+	    if ($typename eq 'XPV' and $] >= 5.009) {
+	      $typename = "SV";
+	    }
 	    print "Static $typename ${name}_list[$lines];\n";
 	}
     }
@@ -1394,6 +1406,9 @@ sub output_all {
 	if ($lines) {
 	    my $name = $section->name;
 	    my $typename = ($name eq "xpvcv") ? "XPVCV_or_similar" : uc($name);
+	    if ($typename eq 'XPV' and $] >= 5.009) {
+	      $typename = "SV";
+	    }
 	    printf "static %s %s_list[%u] = {\n", $typename, $name, $lines;
 	    $section->output(\*STDOUT, "\t{ %s }, /* %d */\n");
 	    print "};\n\n";

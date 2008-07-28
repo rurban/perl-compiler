@@ -1,13 +1,20 @@
-Started with B-C-1.04_02. The perl compiler was previously in CORE.
-Try to get info about versions later.
+Started with B-C-1.04_01. The perl compiler was previously in CORE.
+TODO: Try to get info about earlier versions.
 
-1.04_02 2008-01-22 rurban
+1.04_03 2008-02-05 rurban
+	* added Jit and Asm layout, fixed Makefile deps
+
+1.04_02 2008-01-22 rurban (never uploaded)
 	* removed from CORE, now on CPAN. 
 	* added byteorder to bytecode header.
-	* added support for 5.10, 5.9.5 not tested, up to 5.8.x already in CORE. 
-	maybe add backwards support later, when C/CC is improved or more features 
-	are added.
+	* added support for 5.10 (NOT WORKING!), 5.9.5 not tested.
+	  up to 5.8.x already in CORE, so disabled. 
+	  add back support later, when C/CC is improved or more features 
+	  are added.
 	* added type hekindex
 	* added c.t and cc.t tests
 	* extended bytecode.pl format: added version logic 
-	to have strictly consecutive indices
+	  to have strictly consecutive indices
+
+1.04_01 2008-01-15 rurban (never uploaded)
+	* first package layout for all now non-CORE packages.

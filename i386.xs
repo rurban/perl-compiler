@@ -1,4 +1,6 @@
 /* -*- c -*- */
+/* Author: John Tobey, 2000 <jtobey@john-edwin-tobey.org> */
+
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>

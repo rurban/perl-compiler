@@ -1,6 +1,14 @@
+/* This loads bytecode in .plc files starting with PLBC.
+   Produce by the B::Bytecode compiler.
+   It might also be useful to use it for JIT or Asm compiled
+   PLJC .plc files where a full PE/COFF or elf format is not
+   supported nor wanted, or a full executable dump is not possible.
+*/
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "jitrun.h"
 #include "byterun.h"
 
 /* Something arbitary for a buffer size */
@@ -94,6 +102,8 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
     bstate.bs_iv_overflows = 0;
 
 /* KLUDGE */
+    /* byterun loads incrementally from DATA, jitrun might require the whole buffer at once.
+       best via mmap */
     if (byterun(aTHX_ &bstate)
 	    && (len = SvCUR(data.datasv) - (STRLEN)data.next_out))
     {
@@ -112,7 +122,7 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
         PL_main_root->op_next = o;
         PL_eval_root = newUNOP(OP_LEAVEEVAL, 0, PL_eval_root);
         o->op_next = PL_eval_root;
-    
+
         PL_main_root = saveroot;
         PL_main_start = savestart;
     }

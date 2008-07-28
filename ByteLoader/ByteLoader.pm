@@ -2,7 +2,7 @@ package ByteLoader;
 
 use XSLoader ();
 
-our $VERSION = '0.07';
+our $VERSION = '0.06_01';
 
 XSLoader::load 'ByteLoader', $VERSION;
 
