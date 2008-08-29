@@ -110,3 +110,14 @@ fi
 
 #All: Undefined subroutine &main::a called at ccode8.pl line 1.
 #ctest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
+
+=pod
+
+  for $k (sort { length $ENV{$b} <=> length $ENV{$a} } keys %ENV) {
+ 	print "$k=$ENV{$k}\n";
+  }
+
+  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
+  fail for B::CC should be covered by test 18
+
+=cut
