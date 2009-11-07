@@ -1,7 +1,7 @@
 #      C.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
-#      Copyright (c) 2008 Reini Urban
+#      Copyright (c) 2008, 2009 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -2568,7 +2568,6 @@ help make use of this compiler.
 Plenty. Current status: experimental.
 
   5.10+5.11:
-    failing pregcomp()
     pad panics and assertions
     tie FETCH error
 

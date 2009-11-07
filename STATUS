@@ -78,46 +78,50 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 12)
 
 5.8.8d:
 t/bytecode.t: ok
-t/c.t        (Wstat: 0 Tests: 19 Failed: 13)
-  FAILED tests 5, 7-12, 14-19 (was: 11-12 17-19)
-  panic: invalid pad in pad_sv: 0x8c1760[0x8de3b8]
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 13)
-  FAILED tests 5, 7-12, 14-19 (was: 11-12 17-19)
+t/c.t         Failed tests: 8-11
+t/cc.t        Failed tests: 8-11
 
 5.8.9d:
-t/bytecode.t: all ok
-t/c.t         8-10 14-16
-t/cc.t        11-12 17-19
+t/bytecode.t: ok
+t/c.t         Failed tests: 8-11
+t/cc.t        Failed tests: 8-11
 
 5.10.0:
 t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
-  FAILED tests 2-5, 7, 11, 15
+  Failed tests: 2-5, 7, 11, 15
 t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  4, 6, 8-11
+  Failed tests:  6-11
   2008-04-27 17:44:52 URBANR: 2-7 11
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
   Failed tests:  1-7 11 13 17 (was: 2-7 11, was: 8-10, 12, 14-16, 18-19)
-                 8-10 12 14-16 18-19
 
 5.10.0d:
-t/bytecode   (Wstat: 0 Tests: 19 Failed: 9)
-  FAILED tests 2-5, 7, 11, 15 (was: 2-5, 7, 9-12, 15)
+t/bytecode.t (Wstat: 0 Tests: 19 Failed: 9)
+  Failed tests:  2-5, 7, 9-12
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
   11 Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+t/c.t        (Wstat: 0 Tests: 19 Failed: 11)
+  Failed tests:  5-12, 17-19
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-  Failed tests:   2-7, 11-12, 17-19 (was: 2-4 6 8-10 14-16; 2-7 11 18)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  2-4, 6, 11-12, 17-19 (was: 8-10, 12, 14-16, 18-19)
+  Failed tests:  5-12, 17 (was: 2-4, 6, 11-12, 17-19)
 
 5.10.0-nt (not threaded):
+t/bytecode.t (Wstat: 0 Tests: 19 Failed: 2)
+  Failed tests:  7, 11
+t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+  Failed tests:  6-11
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 6)
+  Failed tests:  6-11
+
+5.10.0d-nt (debugging, not threaded):
 t/bytecode.t (Wstat: 0 Tests: 19 Failed: 5)
   Failed tests:  7, 9-12
-t/c.t        (Wstat: 0 Tests: 19 Failed: 17)
-  Failed tests:  2-12, 14-19
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 17)
-  Failed tests:  2-12, 14-19
+t/c.t        (Wstat: 0 Tests: 19 Failed: 11)
+  Failed tests:  5-12, 17-19
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
+  Failed tests:  5-12, 17
 
 5.11d@34005
 t/bytecode.t (Wstat: 0 Tests: 19 Failed: 6)
@@ -274,4 +278,4 @@ added Jit and Asm layout, with the idea of using either
 lightning as jit backend (Jit), or creating our own assembler (Asm) 
 to be able to use a high-level language.
 
-2008-06-05 11:18:49 urbanr
+2009-11-07 14:34:56 rurban
