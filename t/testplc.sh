@@ -21,8 +21,11 @@ function bcall {
 function btest {
     n=$1
     o="bytecode$n"
-    if [ -z "$2" ]; then 
+    if [ -z "$2" ]; then
+        if [ "$n" = "08" ]; then n=8; fi 
+        if [ "$n" = "09" ]; then n=9; fi
 	echo "${tests[${n}]}" > ${o}.pl
+        str="${tests[${n}]}"
     else 
 	echo "$2" > ${o}.pl
     fi
@@ -120,7 +123,7 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq 19); do
+  for b in $(seq -f"%02.0f" 19); do
     btest $b
   done
 fi

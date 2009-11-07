@@ -1,22 +1,23 @@
 =head1 NAME
 
-perloptreeguts - optree internals
+perloptreeguts - op tree internals
 
 =head1 DESCRIPTION
 
 Various material about the internal Perl compilation representation
 during parsing and optimization, before the actual execution
-begins. The B<"B" optree>.
+begins. The B<"B" op tree>.
 
-The well-known L<perlguts.pod> focuses more on the internal representation of
-the variables, but not so on the structure, the sequence and the optimization of
-the basic operations, the ops.
+The well-known L<perlguts.pod> focuses more on the internal
+representation of the variables, but not so on the structure, the
+sequence and the optimization of the basic operations, the ops.
 
-And we have L<perlhack.pod>, which shows e.g. ways to hack into the op tree
-structure within the debugger. It focuses on getting people to start patching
-and hacking on the CORE, not understanding or writing compiler backends or
-optimizations, which the optree mainly is used for.
-Btw., this here is merely prose around the source comments. But who reads source?
+And we have L<perlhack.pod>, which shows e.g. ways to hack into
+the op tree structure within the debugger. It focuses on getting
+people to start patching and hacking on the CORE, not
+understanding or writing compiler backends or optimizations,
+which the op tree mainly is used for.  Btw., this here is merely
+prose around the source comments. But who reads source?
 
 =head1 Brief Summary
 
@@ -25,49 +26,55 @@ L<"Compiled-code"/perlguts#Compiled-code> section of L<perlguts> and
 at the top of F<op.c>.
 
 When Perl parses the source code (via Yacc C<perly.y>), the so-called
-optree, a tree of basic perl OP structs pointing to simple C<pp_>I<opname>
-functions, is generated bottom-up.
-Those C<pp_> functions - "PP Code" (for "Push / Pop Code") - have the 
-same uniform API as the XS functions, all arguments and return values 
-are transported on the stack.
-For example, an C<OP_CONST> op points to the C<pp_const()> function and to an C<SV>
-containing the constant value. When C<pp_const()> is executed, its job is to push
-that C<SV> onto the stack.
+op tree, a tree of basic perl OP structs pointing to simple
+C<pp_>I<opname> functions, is generated bottom-up.  Those C<pp_>
+functions - "PP Code" (for "Push / Pop Code") - have the same uniform
+API as the XS functions, all arguments and return values are
+transported on the stack.  For example, an C<OP_CONST> op points to
+the C<pp_const()> function and to an C<SV> containing the constant
+value. When C<pp_const()> is executed, its job is to push that C<SV>
+onto the stack.
 
-OPs are created by the C<newFOO()> functions, which are called from the 
-parser (in F<perly.y>) as the code is parsed. For example the Perl code 
-C<$a + $b * $c> would cause the equivalent of the following to be called 
-(oversimplifying a bit):
+OPs are created by the C<newFOO()> functions, which are called
+from the parser (in F<perly.y>) as the code is parsed. For
+example the Perl code C<$a + $b * $c> would cause the equivalent
+of the following to be called (oversimplifying a bit):
 
   newBINOP(OP_ADD, flags,
      newSVREF($a),
      newBINOP(OP_MULTIPLY, flags, newSVREF($b), newSVREF($c))
   )
 
-The simplest type of an op structure is C<OP>, a L</BASEOP>: this has no
-children. Unary operators, L</UNOP>s, have one child, and this is pointed to by the
-C<op_first> field. Binary operators (L</BINOP>s) have not only an C<op_first> field
-but also an C<op_last> field. The most complex type of op is a L</LISTOP>, which has
-any number of children. In this case, the first child is pointed to by
-C<op_first> and the last child by C<op_last>. The children in between can be
-found by iteratively following the C<op_sibling> pointer from the first child to
-the last.
+See also L<perlhack.pod#Op Trees>
 
-There are also two other op types: a L</"PMOP"> holds a regular expression,
-and has no children, and a L</"LOOP"> may or may not have children. If the
-C<op_sibling> field is non-zero, it behaves like a C<LISTOP>. To
-complicate matters, if an C<UNOP> is actually a null op after optimization
-(see L</"Compile pass 2: context propagation"> below) it will still have
-children in accordance with its former type.
+The simplest type of an op structure is C<OP>, a L</BASEOP>: this
+has no children. Unary operators, L</UNOP>s, have one child, and
+this is pointed to by the C<op_first> field. Binary operators
+(L</BINOP>s) have not only an C<op_first> field but also an
+C<op_last> field. The most complex type of op is a L</LISTOP>,
+which has any number of children. In this case, the first child
+is pointed to by C<op_first> and the last child by
+C<op_last>. The children in between can be found by iteratively
+following the C<op_sibling> pointer from the first child to the
+last.
 
-The beautiful thing about the optree representation is that it is a
-strict 1:1 mapping to the actual source code, which is proven by the
-L<B::Deparse> module, which generates readable source for the current
-optree. Well, almost.
+There are also two other op types: a L</"PMOP"> holds a regular
+expression, and has no children, and a L</"LOOP"> may or may not
+have children. If the C<op_sibling> field is non-zero, it behaves
+like a C<LISTOP>. To complicate matters, if an C<UNOP> is
+actually a null op after optimization (see L</"Compile pass 2:
+context propagation"> below) it will still have children in
+accordance with its former type.
+
+The beautiful thing about the op tree representation is that it
+is a strict 1:1 mapping to the actual source code, which is
+proven by the L<B::Deparse> module, which generates readable
+source for the current op tree. Well, almost.
 
 =head1 The Compiler
 
-Perl's compiler is essentially a 3-pass compiler with interleaved phases:
+Perl's compiler is essentially a 3-pass compiler with interleaved
+phases:
 
   1. A bottom-up pass
   2. A top-down pass
@@ -75,42 +82,45 @@ Perl's compiler is essentially a 3-pass compiler with interleaved phases:
 
 =head2 Compile pass 1: check routines and constant folding
 
-The bottom-up pass is represented by all the C<"newOP"> routines and
-the C<ck_> routines. The bottom-upness is actually driven by F<yacc>.
-So at the point that a C<ck_> routine fires, we have no idea what the
-context is, either upward in the syntax tree, or either forward or
-backward in the execution order. The bottom-up parser builds that
-part of the execution order it knows about, but if you follow the "next"
-links around, you'll find it's actually a closed loop through the
-top level node.
+The bottom-up pass is represented by all the C<"newOP"> routines
+and the C<ck_> routines. The bottom-upness is actually driven by
+F<yacc>.  So at the point that a C<ck_> routine fires, we have no
+idea what the context is, either upward in the syntax tree, or
+either forward or backward in the execution order. The bottom-up
+parser builds that part of the execution order it knows about,
+but if you follow the "next" links around, you'll find it's
+actually a closed loop through the top level node.
 
-So when creating the ops in the first step, still bottom-up, for each op a check
-function (C<ck_ ()>) is called, which which theroretically may destructively
-modify the whole tree, but because it knows almost nothing, it mostly just
-nullifies the current op. Or it might set the L</op_next> pointer.  See 
+So when creating the ops in the first step, still bottom-up, for
+each op a check function (C<ck_ ()>) is called, which which
+theroretically may destructively modify the whole tree, but
+because it knows almost nothing, it mostly just nullifies the
+current op. Or it might set the L</op_next> pointer.  See
 L</"Check Functions"> for more.
 
-Also, the subsequent constant folding routine C<fold_constants()> may nullify
-certain ops, which are skipped during final execution. See 
-L</"Constant Folding"> for more.
+Also, the subsequent constant folding routine C<fold_constants()>
+may nullify certain ops, which are skipped during final
+execution. See L</"Constant Folding"> for more.
 
 =head2 Compile pass 2: context propagation
 
-The context determines the type of the return value.
-When a context for a part of compile tree is known, it is propagated
+The context determines the type of the return value.  When a
+context for a part of compile tree is known, it is propagated
 down through the tree. At this time the context can have 5 values
-(instead of 2 for runtime context): C<void>, C<boolean>, C<scalar>, C<list>, and
-C<lvalue>. In contrast with the pass 1 this pass is processed from top to
-bottom: a node's context determines the context for its children.
+(instead of 2 for runtime context): C<void>, C<boolean>,
+C<scalar>, C<list>, and C<lvalue>. In contrast with the pass 1
+this pass is processed from top to bottom: a node's context
+determines the context for its children.
 
-Whenever the bottom-up parser gets to a node that supplies context to
-its components, it invokes that portion of the top-down pass that applies
-to that part of the subtree (and marks the top node as processed, so
-if a node further up supplies context, it doesn't have to take the
-plunge again).  As a particular subcase of this, as the new node is
-built, it takes all the closed execution loops of its subcomponents
-and links them into a new closed loop for the higher level node.  But
-it's still not the real execution order.
+Whenever the bottom-up parser gets to a node that supplies
+context to its components, it invokes that portion of the
+top-down pass that applies to that part of the subtree (and marks
+the top node as processed, so if a node further up supplies
+context, it doesn't have to take the plunge again).  As a
+particular subcase of this, as the new node is built, it takes
+all the closed execution loops of its subcomponents and links
+them into a new closed loop for the higher level node.  But it's
+still not the real execution order.
 
 I<Todo: Sample where this context flag is stored>
 
@@ -122,59 +132,67 @@ instead of C<free()>'ing (i.e. their type is changed to C<OP_NULL>).
 
 =head2 Compile pass 3: peephole optimization
 
-The actual execution order is not known till we get a grammar reduction
-to a top-level unit like a subroutine or file that will be called by
-"name" rather than via a "next" pointer.  At that point, we can call
-into peep() to do that code's portion of the 3rd pass.  It has to be
-recursive, but it's recursive on basic blocks, not on tree nodes.
+The actual execution order is not known till we get a grammar
+reduction to a top-level unit like a subroutine or file that will
+be called by "name" rather than via a "next" pointer.  At that
+point, we can call into peep() to do that code's portion of the
+3rd pass.  It has to be recursive, but it's recursive on basic
+blocks, not on tree nodes.
 
-So finally, when the full parse tree is generated, the "peephole optimizer"
-C<peep()> is running.  This pass is neither top-down or bottom-up, but in
-the execution order (with additional complications for conditionals).
+So finally, when the full parse tree is generated, the "peephole
+optimizer" C<peep()> is running.  This pass is neither top-down
+or bottom-up, but in the execution order (with additional
+complications for conditionals).
 
 This examines each op in the tree and attempts to determine "local"
 optimizations by "thinking ahead" one or two ops and seeing if
 multiple operations can be combined into one (by nullifying and
 re-ordering the next pointers).
 
-It also checks for lexical issues such as the effect of C<use strict> on
-bareword constants.  Note that since the last walk the early sibling
-pointers for recursive (bottom-up) meta-inspection are useless, the
-final exec order is guaranteed by the next and flags fields.
+It also checks for lexical issues such as the effect of C<use
+strict> on bareword constants.  Note that since the last walk the
+early sibling pointers for recursive (bottom-up) meta-inspection
+are useless, the final exec order is guaranteed by the next and
+flags fields.
 
 =head1 basic vs exec order
 
-The highly recursive Yacc parser generates the initial optree in B<basic>
-order.  To save memory and run-time the final execution order of the
-ops in sequential order is not copied around, just the next pointers
-are rehooked in C<Perl_linklist()> to the so-called B<exec> order. 
-So the exec walk through the linked-list of ops is not too cache-friendly.
+The highly recursive Yacc parser generates the initial op tree in
+B<basic> order.  To save memory and run-time the final execution
+order of the ops in sequential order is not copied around, just
+the next pointers are rehooked in C<Perl_linklist()> to the
+so-called B<exec> order.  So the exec walk through the
+linked-list of ops is not too cache-friendly.
 
-In detail C<Perl_linklist()> traverses the optree, and sets op-next pointers
-to give the execution order for that optree. op-sibling pointers are
-rarely unneeded after that.
+In detail C<Perl_linklist()> traverses the op tree, and sets
+op-next pointers to give the execution order for that op
+tree. op-sibling pointers are rarely unneeded after that.
 
-Walkers can run in "basic" or "exec" order.
-"basic" is useful for the memory layout, it contains the history, 
-"exec" is more useful to understand the logic and program flow.
-The L</B::Bytecode> section has an extensive example about the order.
+Walkers can run in "basic" or "exec" order.  "basic" is useful
+for the memory layout, it contains the history, "exec" is more
+useful to understand the logic and program flow.  The
+L</B::Bytecode> section has an extensive example about the order.
 
 =head1 OP Structure and Inheritance
 
 The basic C<struct op> looks basically like 
+
   C<{ OP* op_next, OP* op_sibling, OP* op_ppaddr, ..., int op_flags, int op_private } OP;> 
+
 See L</BASEOP> below.
 
-Each op is defined in size, arguments, return values, class and more
-in the F<opcode.pl> table. (See L</"OP Class Declarations in opcode.pl"> below.)
+Each op is defined in size, arguments, return values, class and
+more in the F<opcode.pl> table. (See L</"OP Class Declarations in
+opcode.pl"> below.)
 
-The class of an OP determines its size and the number of children. But the 
-number and type of arguments is not so easy to declare as in C. F<opcode.pl>
-tries to declare some XS-prototype like arguments, but in lisp we would say 
-most ops are "special" functions, context-dependent, hard to parse.
+The class of an OP determines its size and the number of
+children. But the number and type of arguments is not so easy to
+declare as in C. F<opcode.pl> tries to declare some XS-prototype
+like arguments, but in lisp we would say most ops are "special"
+functions, context-dependent, hard to parse.
 
-F<B.pm> L<http://search.cpan.org/perldoc?B> contains these classes and
-inheritance:
+F<B.pm> L<http://search.cpan.org/perldoc?B> contains these
+classes and inheritance:
 
     @B::OP::ISA = 'B::OBJECT';
     @B::UNOP::ISA = 'B::OP';
@@ -197,11 +215,11 @@ contains all the gory details. Let's check it out.
 
 =head2 OP Class Declarations in opcode.pl
 
-The full list of op declarations is defined as C<DATA> in F<opcode.pl>.
-It defines the class, the name, some flags, and the argument types, 
-the so-called "operands".
-C<make regen> (via F<regen.pl>) recreates out of this DATA table 
-the files F<opcode.h>, F<opnames.h>, F<pp_proto.h> and F<pp.sym>.
+The full list of op declarations is defined as C<DATA> in
+F<opcode.pl>.  It defines the class, the name, some flags, and
+the argument types, the so-called "operands".  C<make regen> (via
+F<regen.pl>) recreates out of this DATA table the files
+F<opcode.h>, F<opnames.h>, F<pp_proto.h> and F<pp.sym>.
 
 The class signifiers in F<opcode.pl> are:
 
@@ -232,12 +250,13 @@ Values for the operands are:
 
 =head2 BASEOP
 
-All op classes have a single character signifier for easier definition in F<opcode.pl>.
-The BASEOP class signifier is B<0>, for no children.
+All op classes have a single character signifier for easier
+definition in F<opcode.pl>.  The BASEOP class signifier is B<0>,
+for no children.
 
-Below are the BASEOP fields, which reflect the object C<B::OP>, since Perl 5.10.
-These are shared for all op classes.
-The parts after C<op_type> and before C<op_flags> changed during history.
+Below are the BASEOP fields, which reflect the object C<B::OP>,
+since Perl 5.10.  These are shared for all op classes.  The parts
+after C<op_type> and before C<op_flags> changed during history.
 
 =over
 
@@ -245,27 +264,30 @@ The parts after C<op_type> and before C<op_flags> changed during history.
 
 Pointer to next op to execute after this one.
 
-Top level pre-grafted op points to first op, but this is replaced when op is
-grafted in, when this op will point to the real next op, and the new parent
-takes over role of remembering the starting op. 
-I<Now, who wrote this prose? Anyway, that is why it is called guts.>
+Top level pre-grafted op points to first op, but this is replaced
+when op is grafted in, when this op will point to the real next
+op, and the new parent takes over role of remembering the
+starting op.  I<Now, who wrote this prose? Anyway, that is why it
+is called guts.>
 
 =item op_sibling      
 
 Pointer to connect the children's list.
 
-The first child is L</op_first>, the last is L</op_last>, and the children in between 
-are interconnected by op_sibling. This is at run-time only used for L</LISTOP>s.
+The first child is L</op_first>, the last is L</op_last>, and the
+children in between are interconnected by op_sibling. This is at
+run-time only used for L</LISTOP>s.
 
 So why is it in the BASEOP struct carried around for every op?
 
-Because of the complicated Yacc parsing and later optimization order as
-explained in L<"Compile pass 1: check routines and constant folding"> the
-L</op_next> pointers are not enough, so op_sibling's are required. The final and
-fast execution order by just following the op_next chain is expensive to
-calculate.
+Because of the complicated Yacc parsing and later optimization
+order as explained in L<"Compile pass 1: check routines and
+constant folding"> the L</op_next> pointers are not enough, so
+op_sibling's are required. The final and fast execution order by
+just following the op_next chain is expensive to calculate.
 
-See http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2006-09/msg00082.html
+See
+http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2006-09/msg00082.html
 for a 20% space-reduction patch to get rid of it at run-time.
 
 =item op_ppaddr	
@@ -275,17 +297,20 @@ The so called "opcode".
 
 =item op_madprop 	
 
-Pointer to the MADPROP struct. Only with -DMAD, and since 5.10. See L</MAD> (Misc Attribute Decoration) below.
+Pointer to the MADPROP struct. Only with -DMAD, and since
+5.10. See L</MAD> (Misc Attribute Decoration) below.
 
 =item op_targ		
 
-PADOFFSET to "unnamed" op targets/GVs/constants, wasting no SV. Has for some op's also a different meaning.
+PADOFFSET to "unnamed" op targets/GVs/constants, wasting no
+SV. Has for some op's also a different meaning.
 
 =item op_type		
 
 The type of the operation.
 
-Since 5.10 we have the next five fields added, which replace C<U16 op_seq>.
+Since 5.10 we have the next five fields added, which replace
+C<U16 op_seq>.
 
 =item op_opt		
 
@@ -293,32 +318,36 @@ Since 5.10 we have the next five fields added, which replace C<U16 op_seq>.
 
 Whether or not the op has been optimised by the	peephole optimiser.
 
-See the comments in C<S_clear_yystack()> in F<perly.c> for more details on the 
-following three flags. They are just for freeing temporary ops on the stack.
-But we might have statically allocated op in the data segment, esp. with the 
-perl compiler's L<B::C> module. Then we are not allowed to free those static 
-ops. For a short time, from 5.9.0 until 5.9.4, until the B::C module was 
-removed from CORE, we had another field here for this reason: B<op_static>. 
-On 1 it didn't free the static op. Before 5.9.0 the L</op_seq> field was used 
-with the magic value B<-1> to indicate a static op, not to be freed.
-Note: Trying to free a static struct is considered harmful.
+See the comments in C<S_clear_yystack()> in F<perly.c> for more
+details on the following three flags. They are just for freeing
+temporary ops on the stack.  But we might have statically
+allocated op in the data segment, esp. with the perl compiler's
+L<B::C> module. Then we are not allowed to free those static
+ops. For a short time, from 5.9.0 until 5.9.4, until the B::C
+module was removed from CORE, we had another field here for this
+reason: B<op_static>.  On 1 it didn't free the static op. Before
+5.9.0 the L</op_seq> field was used with the magic value B<-1> to
+indicate a static op, not to be freed.  Note: Trying to free a
+static struct is considered harmful.
 
 =item op_latefree	
 
-Tell C<op_free()> to clear this op (and free any kids) but not yet deallocate the
-struct. This means that the op may be safely C<op_free()>d multiple times.
+Tell C<op_free()> to clear this op (and free any kids) but not
+yet deallocate the struct. This means that the op may be safely
+C<op_free()>d multiple times.
 
-On static ops you just set this to B<1> and after the first C<op_free()> the
-op_latefreed is automatically set and further C<op_free()> called are just ignored.
+On static ops you just set this to B<1> and after the first
+C<op_free()> the C<op_latefreed> is automatically set and further
+C<op_free()> called are just ignored.
 
 =item op_latefreed	
 
-If 1, an op_latefree op has been C<op_free()>d.
+If 1, an C<op_latefree> op has been C<op_free()>d.
 
 =item op_attached	
 
-This op (sub)tree has been attached to the CV C<PL_compcv> so it doesn't need to be
-free'd.
+This op (sub)tree has been attached to the CV C<PL_compcv> so it
+doesn't need to be free'd.
 
 =item op_spare	
 
@@ -334,15 +363,17 @@ See C<OPf_*> in F<op.h>, or more verbose in L<B::Flags> or F<dump.c>
 
 =item op_private	
 
-Flags peculiar to a particular operation (BUT, by default, set to the number 
-of children until the operation is privatized by a check routine, which may or 
-may not check number of children).
+Flags peculiar to a particular operation (BUT, by default, set to
+the number of children until the operation is privatized by a
+check routine, which may or may not check number of children).
 
-This flag is normally used to hold op specific context hints, such as
-C<HINT_INTEGER>. This flag is directly attached to each relevant op in the subtree
-of the context. Note that there's no general context or class pointer for each
-op, a typical functional language usually holds this in the ops arguments.
-So we are limited to max 32 lexical pragma hints or less. See L</Lexical Pragmas>.
+This flag is normally used to hold op specific context hints,
+such as C<HINT_INTEGER>. This flag is directly attached to each
+relevant op in the subtree of the context. Note that there's no
+general context or class pointer for each op, a typical
+functional language usually holds this in the ops arguments.  So
+we are limited to max 32 lexical pragma hints or less. See
+L</Lexical Pragmas>.
 
 =back
 
@@ -396,7 +427,8 @@ The full list of all BASEOP's is:
 
 =head2 UNOP
 
-The unary op class signifier is B<1>, for one child, pointed to by C<op_first>.
+The unary op class signifier is B<1>, for one child, pointed to
+by C<op_first>.
 
 	struct unop {
 		BASEOP
@@ -547,8 +579,8 @@ first child is pointed to by C<op_first> and the last child by
 C<op_last>. The children in between can be found by iteratively
 following the C<op_sibling> pointer from the first child to the last.
 
-At all 99 ops from 366 are LISTOP's. This is the least restrictive format, 
-that's why.
+At all 99 ops from 366 are LISTOP's. This is the least
+restrictive format, that's why.
 
 	$ perl -F"/\cI+/" -ane 'print if $F[3] =~ /\@$/' opcode.pl
         bless           bless                   ck_fun          s@      S S?
@@ -580,9 +612,10 @@ that's why.
 The PMOP "pattern matching" class signifier is B</> for matching.
 It inherits from the L</LISTOP>.
 
-The internal struct changed completely with 5.10, as the underlying engine.
-Starting with 5.11 the PMOP can even hold native L<"REGEX"/perlguts#REGEX> objects, not just SV's.
-So you have to use the C<PM> macros to stay compatible.
+The internal struct changed completely with 5.10, as the
+underlying engine.  Starting with 5.11 the PMOP can even hold
+native L<"REGEX"/perlguts#REGEX> objects, not just SV's.  So you
+have to use the C<PM> macros to stay compatible.
 
 Below is the current C<struct pmop>. You will not like it.
 
@@ -695,7 +728,7 @@ A new C<PADOP> creates a new temporary scratchpad, an PADLIST array.
 C<SVs_PADTMP> are targets/GVs/constants with undef names.
 
 A C<PADLIST> scratchpad is a special context stack, a array-of-array data structure 
-attached to a CV (ie a sub), to store lexical variables and opcode temporary and 
+attached to a CV (i.e. a sub), to store lexical variables and opcode temporary and 
 per-thread values. See L<perlguts/Scratchpads>.
 
 Only my/our variable (C<SVs_PADMY>/C<SVs_PADOUR>) slots get valid names.
@@ -819,7 +852,7 @@ C<DBSTATE> as done in the module C<Enbugger>.
 There uses to be three. C<SETSTATE> seems to be optimized away, I
 cannot find it in the source anymore neither.
 
-This requires a patch to remove wrong info from the cop.h header.
+This requires a patch to remove wrong info from the F<cop.h> header.
 Read L<perlhack.pod> and submit the patch after investigating where it
 has gone to. Sam Vilain's GIT history might help.
 
@@ -858,7 +891,7 @@ It has the class signifier B<->.
 The file stat OPs are created via UNI(OP_foo) in toke.c but use the
 C<OPf_REF> flag to distinguish between OP types instead of the usual
 C<OPf_SPECIAL> flag. As usual, if C<OPf_KIDS> is set, then we return
-C<OPc_UNOP> so that walkoptree can find our children. If C<OPf_KIDS> is not
+C<OPc_UNOP> so that C<walkoptree> can find our children. If C<OPf_KIDS> is not
 set then we check C<OPf_REF>. Without C<OPf_REF> set (no argument to the
 operator) it's an OP; with C<OPf_REF> set it's an SVOP (and the field C<op_sv> is the
 GV for the filehandle argument).
@@ -1106,16 +1139,16 @@ L<Manip::END> started to mess around with this block.
 
 The array contains an C<undef> for each block that has been
 encountered. It's not really an C<undef> though, it's a kind of raw
-coderef that's not wrapped in a scalar ref. This leads to fun error
+coderef that's not wrapped in a scalar ref. This leads to funky error
 messages like C<Bizarre copy of CODE in sassign> when you try to assign
 one of these values to another variable. See L<Manip::END> how to
 manipulate these values array.
 
 =head2 B and O module. The perl compiler.
 
-Malcom Beattie's B modules hooked into the early optree stages to
+Malcom Beattie's B modules hooked into the early op tree stages to
 represent the internal ops as perl objects and added the perl compiler
-backends.  See L<B> and L<perlcompile.pod>.
+backends. See L<B> and L<perlcompile.pod>.
 
 The three main compiler backends are still B<Bytecode>, B<C> and B<CC>,
 and these do not work for current perl's (I<yet>).
@@ -1129,11 +1162,11 @@ C (the sections).>
 MAD stands for "Misc Attributed Data".
 
 Larry Wall worked on a new MAD compiler backend outside of the B approach,
-dumping the internal optree representation as B<XML>, not as tree of perl B
+dumping the internal op tree representation as B<XML>, not as tree of perl B
 objects.
 
 The idea is that all the information needed to recreate the original source is
-stored in the optree. To do this the tokens for the ops are associated with ops,
+stored in the op tree. To do this the tokens for the ops are associated with ops,
 these madprops are a list of key-value pairs, where the key is a character as
 listed at the end of F<op.h>, the value normally is a string, but it might also be
 a op, as in the case of a optimized op ('O'). Special for the whitespace key '_'
@@ -1150,7 +1183,7 @@ Why this awful XML and not the rich tree of perl objects?
 
 Well there's an advantage.
 The MAD XML can be seen as some kind of XML Storable/Freeze of the B
-optree, and can be therefore converted outside of the CHECK block,
+op tree, and can be therefore converted outside of the CHECK block,
 which means you can actually debug the conversion (= compilation)
 process. This is not possible within the CHECK block in the B
 backends.
@@ -1169,12 +1202,12 @@ To convert a file 'source.pm' from Perl 5.10 to Kurila you need to do:
     mad/convert /path/to/source.pm
 
 B<PPI> L<http://search.cpan.org/dist/PPI/>, a Perl 5 source level parser not
-related to the optree at all, could also have been used for that.
+related to the op tree at all, could also have been used for that.
 
 =head2 Pluggable runops
 
 The compile tree is executed by one of two existing runops functions, in F<run.c>
-or in F<dump.c>. C<Perl_runops_debug> is used with DEBUGGING and the faster
+or in F<dump.c>. C<Perl_runops_debug> is used with C<DEBUGGING> and the faster
 C<Perl_runops_standard> is used otherwise (See below in L</"Walkers">). For fine
 control over the execution of the compile tree it is possible to provide your
 own runops function.
@@ -1190,7 +1223,7 @@ running as fast as possible.
 
 =head3 Walkers or runops
 
-The standard optree B<walker> or B<runops> is as simple as this ultrafast
+The standard op tree B<walker> or B<runops> is as simple as this ultrafast
 C<Perl_runops_standard()> in (F<run.c>). It starts with C<main_start> and walks
 the C<op_next> chain until the end. No need to check other fields, strictly
 linear through the tree.
@@ -1206,7 +1239,7 @@ linear through the tree.
 	return 0;
   }
 
-To inspect the optree within a perl program, you can also hook C<PL_runops> (see
+To inspect the op tree within a perl program, you can also hook C<PL_runops> (see
 above at L</"Pluggable runops">) to your own perl walker (see e.g. L<B::Utils>
 for various useful walkers), but you cannot modify the tree from within the B
 accessors, only via XS. Or via L<B::Generate> as explained in Simon Cozen's 
@@ -1230,9 +1263,9 @@ compile-time) via L<B::Generate>.
 
 =head1 Modules
 
-The most important optree module is L<B::Concise> by Stephen McCamant.
+The most important op tree module is L<B::Concise> by Stephen McCamant.
 
-L<B::Utils> provides abstract-enough optree grep's and walkers with
+L<B::Utils> provides abstract-enough op tree grep's and walkers with
 callbacks from the perl level.
 
 L<Devel::Hook> allows adding perl hooks into the BEGIN, CHECK,
@@ -1242,7 +1275,7 @@ L<Devel::TypeCheck> tries to verify possible static typing for
 expressions and variables, a pretty hard problem for compilers,
 esp. with such dynamic and untyped variables as Perl 5.
 
-Reini Urban is working on an interactive optree debugger,
+Reini Urban is working on an interactive op tree debugger,
 L<B::Debugger>.
 
 =head1 Various Articles
@@ -1260,7 +1293,7 @@ Simon Cozens.
 
 Joshua ben Jore wrote a 50 minute presentation on "Perl 5
 VM guts" at L<http://diotalevi.isa-geek.net/~josh/Presentations/Perl%205%20VM/>
-focusing on the optree for SPUG, the Seattle Perl User's Group.
+focusing on the op tree for SPUG, the Seattle Perl User's Group.
 
 Eric Wilhelm wrote a brief tour through the perl compiler backends for
 the impatient refactorerer. The perl_guts_tour as mp3
@@ -1273,14 +1306,14 @@ The wiki article should be more actual.
 
 =head1 Conclusion
 
-So this is about 30% of the basic optree information so far. Not speaking about
+So this is about 30% of the basic op tree information so far. Not speaking about
 the guts. Simon has more 30%, in the source are more 10% to copy&paste, and in
 the compilers and run-time information is the rest. I hope with the help of some
 hackers we'll get it done, so that some people will begin poking around in the B
-backends. And write the wonderful new dump functionality (which actually worked
-in the early years on Solaris), output PIR (parrot code), emit LLVM or another
-JIT optimized code or even write assemblers. I have a simple one at home. :)
+backends. And write the wonderful new dump/undump functionality (which actually
+worked in the early years on Solaris), analyse and optimize the output, output
+PIR (parrot code), emit LLVM or another JIT optimized code or even write
+assemblers. I have a simple one at home. :)
 
 Written 2008 on the perl5 wiki with socialtext and pod in parallel 
 by Reini Urban, CPAN ID rurban.
-

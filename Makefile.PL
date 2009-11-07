@@ -12,7 +12,7 @@ WriteMakefile(
     PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
     PREREQ_PM => {'B::Concise' => '0.66',
 	          'B'          => '1.0901'},
-    'AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>',
+    'AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>',
     'ABSTRACT' => 'perl compiler',
    ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
     ('EXTRA_META'  => "recommends:\n" .

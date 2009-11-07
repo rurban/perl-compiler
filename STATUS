@@ -1,16 +1,19 @@
 Abbrevations: bc B::ByteCode, c B::C, cc B::CC, 
-              -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
+              -D -DDEBUGGING perl, also used as d version suffix, 
+              eg 5.8.8d
               -nt not threaded perl.
 
-Only support 5.8 and newer. 5.6 and earlier had a good core perl compiler.
+Only support 5.8 and newer. 5.6 and earlier had a good core perl
+compiler.
 
 Basic testsuite added, coverage TODO.
 Same ok and failures as with 5.8 and 5.9.4
-  In 5.8.8 and 5.8.9 we have the exact same errors in the testsuite for the new 
-  CPAN compiler and the CORE compiler.
+  In 5.8.8 and 5.8.9 we have the exact same errors in the 
+  testsuite for the new CPAN compiler and the CORE compiler.
 Minor B::CC bugs fixed.
 B:C Problems:
-  invalid pad in pad_sv, pad_new, save_clearsv - cause: setting PL_curpad at save_context
+  invalid pad in pad_sv, pad_new, save_clearsv - 
+    cause: setting PL_curpad at save_context
   Modification of a read-only value attempted - save_context ?
 5.11 regex pad wrong
 

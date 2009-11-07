@@ -1,5 +1,6 @@
 #!/bin/bash
-# use the actual perl from the Makefile (perld, perl5.11.0, ...)
+# use the actual perl from the Makefile (perl5.8.8, 
+# perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 # if $] < 5.9 you may want to remove -Mblib
@@ -25,9 +26,12 @@ function ctest {
     else
       o="ccode$n"
     fi
-    if [ -z "$str" ]; then 
+    if [ -z "$str" ]; then
+        if [ "$n" = "08" ]; then n=8; fi 
+        if [ "$n" = "09" ]; then n=9; fi
 	echo "${tests[${n}]}" > ${o}.pl
-    else 
+        str="${tests[${n}]}"
+    else
 	echo "$str" > ${o}.pl
     fi
     echo ${OCMD}-o$o.c $o.pl
@@ -37,8 +41,11 @@ function ctest {
     echo $CCMD $o.c $LCMD -o $o
     $CCMD $o.c $LCMD -o $o
     test -x $o || exit
+    #echo "./$o"
     res=$(./$o) || exit
-    test "X$res" = "X${result[$n]}" || echo "$o failed. Got: '$res', expected: '${result[$n]}'"
+    #echo "$res"
+    test "X$res" = "X${result[$n]}" || echo "./$o failed. Got: '$res', expected: '${result[$n]}'"
+    test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'"
 }
 
 declare -a tests[19]
@@ -98,7 +105,8 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq 19); do
+  for b in $(seq -f"%02.0f" 19); do
+  #for b in $(seq 19); do
     ctest $b
   done
 fi
@@ -111,13 +119,9 @@ fi
 #All: Undefined subroutine &main::a called at ccode8.pl line 1.
 #ctest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
 
-=pod
+#  for $k (sort { length $ENV{$b} <=> length $ENV{$a} } keys %ENV) {
+# 	print "$k=$ENV{$k}\n";
+#  }
 
-  for $k (sort { length $ENV{$b} <=> length $ENV{$a} } keys %ENV) {
- 	print "$k=$ENV{$k}\n";
-  }
-
-  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
-  fail for B::CC should be covered by test 18
-
-=cut
+#  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
+#  fail for B::CC should be covered by test 18
