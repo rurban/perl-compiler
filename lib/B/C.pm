@@ -282,23 +282,24 @@ sub savere {
     my $len = length $pv;
     my $pvmax = length(pack "a*",$pv) + 1;
     if (0 and $PERL511) {
-      # Fill in at least the engine pointer? Or let CALLREGCOMP do that?
-      $orangesect->add(sprintf("0,%u,%u, 0,0,NULL, NULL,NULL,".
-			       "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0", $len, $pvmax));
-      $resect->add(sprintf("&orange_list[%d], 1, %d, %s", $orangesect->index, $flags, cstring($re)));
-      $sym = sprintf("re_list[%d]", $resect->index);
-      warn sprintf("Saving RE $sym->orangesect[%d] $re\n", $orangesect->index) if $debug{sv};
+        # Fill in at least the engine pointer? Or let CALLREGCOMP do that?
+        $orangesect->add(sprintf("0,%u,%u, 0,0,NULL, NULL,NULL,".
+                                 "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0", $len, $pvmax));
+        $resect->add(sprintf("&orange_list[%d], 1, %d, %s", $orangesect->index, $flags, cstring($re)));
+        $sym = sprintf("re_list[%d]", $resect->index);
+        warn sprintf("Saving RE $sym->orangesect[%d] $re\n", $orangesect->index) if $debug{sv};
     } elsif ($PERL510) {
-      #$sym = sprintf("re_list[%d]", $re_index++);
-      #$resect->add(sprintf("0,0,0,%s", cstring($re)));
-      $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
-      $svsect->add(sprintf("&xpv_list[%d], 1, %x", $xpvsect->index, 0x4405));
-      $init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
-      $sym = sprintf("&sv_list[%d]", $svsect->index);
-      # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
+        # BUG! Should be the same as newSVpvn($resym, $relen) but is not
+        #$sym = sprintf("re_list[%d]", $re_index++);
+        #$resect->add(sprintf("0,0,0,%s", cstring($re)));
+        $xpvsect->add(sprintf("0, %u, %u", $len, $pvmax));
+        $svsect->add(sprintf("&xpv_list[%d], 1, %x", $xpvsect->index, 0x4405));
+        $init->add(savepvn(sprintf("sv_list[%d].sv_u.svu_pv", $svsect->index), $pv));
+        $sym = sprintf("&sv_list[%d]", $svsect->index);
+        # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
     } else {
-      $sym = sprintf("re%d", $re_index++);
-      $decl->add(sprintf("static char *$sym = %s;\n", cstring($re)));
+        $sym = sprintf("re%d", $re_index++);
+        $decl->add(sprintf("static char *$sym = %s;\n", cstring($re)));
     }
     return ($sym, length(pack "a*", $re));
 }
@@ -729,13 +730,16 @@ sub B::PMOP::save {
         unless $optimize_ppaddr;
     my $re = $op->precomp;
     if (defined($re)) {
-	my( $resym, $relen ) = savere( $re, 0 );
 	if ($PERL510) {
-	  $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP($resym, %u));", $op->pmflags));
+            # TODO: fix savere( $re ) to avoid newSVpvn;
+            my $resym = cstring($re);
+            my $relen = length($re);
+            $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));", $op->pmflags));
 	} else {
-	  $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP(aTHX_ $resym, $resym + %u, &$pm));",
+            my( $resym, $relen ) = savere( $re, 0 );
+            $init->add(sprintf("PM_SETRE(&$pm, CALLREGCOMP(aTHX_ $resym, $resym + %u, &$pm));",
 			     $relen));
-	  # $init->add(sprintf("PM_SETRE(&$pm, pregcomp($resym, $resym + %u, &$pm));", $relen));
+            # $init->add(sprintf("PM_SETRE(&$pm, pregcomp($resym, $resym + %u, &$pm));", $relen));
 	}
     }
     if ($gvsym and !$PERL510) {
@@ -1036,7 +1040,6 @@ sub B::RV::save {
 			   $sv->REFCNT , $sv->FLAGS));
       $init->add(sprintf("sv_list[%d].sv_u.svu_rv = (SV*)%s;\n", $svsect->index, $rv));
       return savesym($sv, sprintf("&sv_list[%d]", $svsect->index));
-     
     } else {
       # GVs need to be handled at runtime
       if( ref( $sv->RV ) eq 'B::GV' ) {
