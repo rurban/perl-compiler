@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_21';
+our $VERSION = '1.04_22';
 
 package B::C::Section;
 
@@ -457,7 +457,7 @@ sub B::OP::save {
       my $ix = $copsect->index;
       $init->add(sprintf("cop_list[$ix].op_ppaddr = %s;", $op->ppaddr))
         unless $optimize_ppaddr;
-      savesym($op, "&cop_list[$ix]");
+      savesym($op, "(OP*)&cop_list[$ix]");
     } else {
       $opsect->comment($opsect_common);
       $opsect->add($op->_save_common);
