@@ -951,9 +951,16 @@ sub B::PVMG::save {
     return $sym if defined $sym;
     my( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv( $sv );
 
-    $xpvmgsect->add(sprintf("%s, %u, %u, %d, %s, 0, 0",
-                            $savesym, $len, $pvmax,
-                            $sv->IVX, $sv->NVX));
+    if ($PERL510) {
+      # xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash
+      $xpvmgsect->add(sprintf("%s, %s, %u, %u, %d, 0, 0",
+                              $savesym, $sv->NVX, $len, $pvmax,
+                              $sv->IVX));
+    } else {
+      $xpvmgsect->add(sprintf("%s, %u, %u, %d, %s, 0, 0",
+                              $savesym, $len, $pvmax,
+                              $sv->IVX, $sv->NVX));
+    }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
                          $xpvmgsect->index, $sv->REFCNT , $sv->FLAGS));
     if (defined($pv) && !$pv_copy_on_grow) {
@@ -1199,7 +1206,7 @@ sub B::CV::save {
 	warn sprintf("done saving op tree for CV 0x%x, name %s, root 0x%x\n",
 		     $$cv, $ppname, $$root) if $debug{cv};
 	if ($$padlist) {
-	    warn sprintf("saving PADLIST 0x%x for CV 0x%x\n",
+	    warn sprintf("saving PADLIST 0x%x for CV 0x%x",
 			 $$padlist, $$cv) if $debug{cv};
 	    $padlist->save;
 	    warn sprintf("done saving PADLIST 0x%x for CV 0x%x\n",
