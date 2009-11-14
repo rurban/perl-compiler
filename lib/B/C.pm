@@ -1225,13 +1225,16 @@ sub B::CV::save {
 	$pvsym = "(HEK *)$pvsym";
 	# $pvsym = $heksect->add(cstring($pv));
       } else {
-	$pvsym = "NULL";
+	$pvsym = "0";
       }
-      #                              nv_u cur len iv_u mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags
-      $symsect->add(sprintf("XPVCVIX%d\t%s, %u, 0, %s,  0,   Nullhv, Nullhv,   %s, s\\_%x, Nullgv, \"\", s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-			    $xpvcv_ix, 0, length($pv), $pvsym,
+      # TODO:
+      my $ourstash = "0"; #Nullhv";
+      #                              nv_u cur len iv_u    mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags
+      $symsect->add(sprintf("XPVCVIX%d\t0, %u, 0, %s,    %s,  Nullhv,  Nullhv,   %s, s\\_%x,  Nullgv, \"\", (PADLIST *)s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
+			    $xpvcv_ix, length($pv), $pvsym, $ourstash,
 			    $startfield, ${$cv->ROOT}, $cv->DEPTH,
-			    $$padlist, ${$cv->OUTSIDE}, $cv->OUTSIDE_SEQ, $cv->CvFLAGS));
+			    $$padlist ? sprintf("s\\_%x",$$padlist) : "NULL",
+                            ${$cv->OUTSIDE}, $cv->OUTSIDE_SEQ, $cv->CvFLAGS));
     } else {
       #                                 pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq
       $symsect->add(sprintf("XPVCVIX%d\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
