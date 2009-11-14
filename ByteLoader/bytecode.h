@@ -30,9 +30,15 @@ static int bget_swab = 0;
     } STMT_END
 
 /* with platform conversion from bl_header. */
-#define BGET_U16(arg)	BGET_OR_CROAK(arg, U16); if (bget_swab) arg=_swab_16_(arg)
-#define BGET_I32(arg)	BGET_OR_CROAK(arg, U32); if (bget_swab) arg=_swab_32_(arg)
-#define BGET_U32(arg)	BGET_OR_CROAK(arg, U32); if (bget_swab) arg=_swab_32_(arg)
+#define BGET_U16(arg)	STMT_START { BGET_OR_CROAK(arg, U16);           \
+                            if (bget_swab) {arg=_swab_16_(arg);}        \
+    } STMT_END
+#define BGET_I32(arg)	STMT_START { BGET_OR_CROAK(arg, U32);           \
+                            if (bget_swab) {arg=_swab_32_(arg);}        \
+    } STMT_END
+#define BGET_U32(arg)	STMT_START { BGET_OR_CROAK(arg, U32);           \
+                            if (bget_swab) {arg=_swab_32_(arg);}        \
+    } STMT_END
 #define BGET_IV(arg) STMT_START {				        \
 	if (BGET_FREAD(&arg, bl_header.ivsize, 1) < 1) {		\
 	    Perl_croak(aTHX_						\
@@ -68,9 +74,11 @@ static int bget_swab = 0;
 	}						\
     } STMT_END
 
-#define BGET_PADOFFSET(arg)				\
-    BGET_OR_CROAK(arg, PADOFFSET);			\
-    if (bget_swab) { arg=(sizeof(PADOFFSET)==4)?_swab_32_(arg):_swab_64_(arg); }
+#define BGET_PADOFFSET(arg)	STMT_START {                            \
+        BGET_OR_CROAK(arg, PADOFFSET);                                  \
+        if (bget_swab) {                                                \
+            arg=(sizeof(PADOFFSET)==4)?_swab_32_(arg):_swab_64_(arg); }	\
+    } STMT_END
 
 #define BGET_long(arg) STMT_START {				        \
 	if (BGET_FREAD(&arg, bl_header.longsize, 1) < 1) {		\
@@ -87,9 +95,10 @@ static int bget_swab = 0;
     } STMT_END
 
 /* svtype is an enum of 16 values. 32bit or 16bit? */
-#define BGET_svtype(arg)						\
+#define BGET_svtype(arg)	STMT_START {	       			\
     BGET_OR_CROAK(arg, svtype);						\
-    if (bget_swab) {arg = _swab_iv_(arg,sizeof(svtype))}
+    if (bget_swab) {arg = _swab_iv_(arg,sizeof(svtype))}                \
+    } STMT_END
 
 #define BGET_OR_CROAK(arg, type) STMT_START {				\
 	if (BGET_FREAD(&arg, sizeof(type), 1) < 1) {			\

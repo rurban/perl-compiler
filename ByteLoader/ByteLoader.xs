@@ -75,7 +75,7 @@ bl_read(struct byteloader_fdata *data, char *buf, size_t size, size_t n)
 
     if (wanted > 0) {
       memcpy (buf, start + data->next_out, wanted);
-	data->next_out += wanted;
+      data->next_out += wanted;
       wanted /= size;
     }
     return (int) wanted;
@@ -106,7 +106,7 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
     /*  byterun loads incrementally from DATA, jitrun might require the whole 
 	buffer at once. best via mmap */
     if (byterun(aTHX_ &bstate)
-	    && (len = SvCUR(data.datasv) - (STRLEN)data.next_out))
+        && (len = SvCUR(data.datasv) - (STRLEN)data.next_out))
     {
 	PerlIO_seek(PL_RSFP, -len, SEEK_CUR);
 	PL_RSFP = NULL;

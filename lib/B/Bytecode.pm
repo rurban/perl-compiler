@@ -1,7 +1,7 @@
 # B::Bytecode.pm
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
-# Copyright (c) 2008 Reini Urban <rurban@cpan.org>. All rights reserved.
+# Copyright (c) 2008,2009 Reini Urban <rurban@cpan.org>. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -748,13 +748,13 @@ sub B::COP::bsave {
     my ($cop,$ix) = @_;
     my $warnix = $cop->warnings->ix;
     if (ITHREADS) {
-	$cop->B::OP::bsave($ix);
-	asm "cop_stashpv", pvix $cop->stashpv, $cop->stashpv;
-	asm "cop_file", pvix $cop->file, $cop->file;
+        $cop->B::OP::bsave($ix);
+        asm "cop_stashpv", pvix $cop->stashpv, $cop->stashpv;
+        asm "cop_file", pvix $cop->file, $cop->file;
     } else {
-    	my $stashix = $cop->stash->ix;
-    	my $fileix = $cop->filegv->ix(1);
-	$cop->B::OP::bsave($ix);
+        my $stashix = $cop->stash->ix;
+        my $fileix = $cop->filegv->ix(1);
+        $cop->B::OP::bsave($ix);
 	asm "cop_stash", $stashix;
 	asm "cop_filegv", $fileix;
     }
@@ -764,7 +764,7 @@ sub B::COP::bsave {
     asm "cop_line", $cop->line;
     asm "cop_warnings", $warnix;
     if (!$PERL510) {
-      asm "cop_io", $cop->io->ix;
+        asm "cop_io", $cop->io->ix;
     }
 }
 
@@ -842,47 +842,47 @@ sub compile {
 
     for (@_) {
 	if (/^-q(q?)/) {
-	  $quiet = 1;
+            $quiet = 1;
 	} elsif (/^-S/) {
-	  $debug{Comment} = 1;
-	  *newasm = *endasm = sub { };
-	  *asm = sub($;$$) {
-	    undef $_[2] if defined $_[2] and $quiet;
-	    (defined $_[2])
-	      ? print $_[0]," ",$_[1],"\t# ",$_[2],"\n"
-	      : print "@_\n"
-	   };
-	  *nice = sub ($) { print "\n# @_\n" unless $quiet;};
+            $debug{Comment} = 1;
+            *newasm = *endasm = sub { };
+            *asm = sub($;$$) {
+                undef $_[2] if defined $_[2] and $quiet;
+                (defined $_[2])
+                  ? print $_[0]," ",$_[1],"\t# ",$_[2],"\n"
+                    : print "@_\n"
+                };
+            *nice = sub ($) { print "\n# @_\n" unless $quiet;};
 	} elsif (/^-v/) {
-	  warn "conflicting -q ignored" if $quiet;
-	  *nice = sub ($) { print "\n# @_\n"; print STDERR "@_\n" };
+            warn "conflicting -q ignored" if $quiet;
+            *nice = sub ($) { print "\n# @_\n"; print STDERR "@_\n" };
 	} elsif (/^-H/) {
-	  require ByteLoader;
-	  my $version = $ByteLoader::VERSION;
-	  $head = "#! $^X
+            require ByteLoader;
+            my $version = $ByteLoader::VERSION;
+            $head = "#! $^X
 use ByteLoader '$ByteLoader::VERSION';
 ";
 	  # Maybe: Fix the plc reader, if 'perl -MByteLoader <.plc>' is called
 	} elsif (/^-k/) {
-	  keep_syn;
+            keep_syn;
 	} elsif (/^-o(.*)$/) {
-	  open STDOUT, ">$1" or die "open $1: $!";
+            open STDOUT, ">$1" or die "open $1: $!";
 	} elsif (/^-f(.*)$/) {
-	  $files{$1} = 1;
+            $files{$1} = 1;
 	} elsif (/^-D(.*)$/) {
-	  $debug{$1}++;
+            $debug{$1}++;
 	} elsif (/^-s(.*)$/) {
-	  $scan = length($1) ? $1 : $0;
+            $scan = length($1) ? $1 : $0;
 	} elsif (/^-b/) {
-	  $savebegins = 1;
+            $savebegins = 1;
 	# this is here for the testsuite
 	} elsif (/^-TI/) {
-	  $T_inhinc = 1;
+            $T_inhinc = 1;
 	} elsif (/^-TF(.*)/) {
-	  my $thatfile = $1;
-	  *B::COP::file = sub { $thatfile };
+            my $thatfile = $1;
+            *B::COP::file = sub { $thatfile };
 	} else {
-	  bwarn "Ignoring '$_' option";
+            bwarn "Ignoring '$_' option";
 	}
     }
     if ($scan) {
@@ -950,6 +950,8 @@ B<perl -MO=Bytecode>[B<,-H>][B<,-o>I<script.plc>] I<script.pl>
 
 Compiles a Perl script into a bytecode format that could be loaded
 later by the ByteLoader module and executed as a regular Perl script.
+This saves time for the optree parsing and compilation and space for
+the sourcecode in memory.
 
 =head1 EXAMPLE
 
@@ -1058,6 +1060,6 @@ modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
 
-Enhanced by Reini Urban <rurban@cpan.org>, 2008
+Enhanced by Reini Urban <rurban@cpan.org>, 2008, 2009
 
 =cut
