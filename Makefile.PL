@@ -14,10 +14,10 @@ WriteMakefile(
 	          'B'          => '1.0901'},
     'AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>',
     'ABSTRACT' => 'perl compiler',
-   ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
-    ('EXTRA_META'  => "recommends:\n" .
-     "    B::Debug:    1.06\n"
-    ) : ()),
+#   ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
+#    ('EXTRA_META'  => "recommends:\n" .
+#     "    B::Debug:    1.06\n"
+#    ) : ()),
     clean => { FILES => "bytecode[1-9]* cccode[1-9]* ccode[1-9]* *.core *.stackdump ".
 	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise *~"},
 );
