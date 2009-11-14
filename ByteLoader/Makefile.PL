@@ -1,11 +1,22 @@
 use ExtUtils::MakeMaker;
+use Config;
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
+my $ccflags   = $Config{ccflags};
+my $lddlflags = $Config{lddlflags};
+if ($^O eq 'cygwin'
+    and $Config{gccversion} eq '4.3.4 20090804 (release) 1') # possible bug
+{
+    $ccflags   =~ s/ -fstack-protector//;
+    $lddlflags =~ s/ -fstack-protector//;
+}
 
 WriteMakefile(
     NAME		=> 'ByteLoader',
     VERSION_FROM	=> 'ByteLoader.pm',
     XSPROTOARG		=> '-noprototypes',
     OBJECT		=> 'byterun$(OBJ_EXT) ByteLoader$(OBJ_EXT)',
+    LDDLFLAGS           => $lddlflags,
+    CCFLAGS             => $ccflags,
 );
 
 sub MY::depend {
