@@ -18,6 +18,11 @@ LCMD=
 #CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g"
 #LCMD=" -Wl,--enable-auto-import -Wl,--export-all-symbols -L/usr/lib/perl5/5.11/i686-cygwin/CORE -lperl -ldl -lcrypt -lgdbm_compat"
 
+function vcmd {
+	echo $*
+	$*
+}
+
 function ctest {
     n=$1
     str=$2
@@ -34,12 +39,9 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
-    echo ${OCMD}-o$o.c $o.pl
-    ${OCMD}-o$o.c $o.pl
-    echo $CCMD $o.c -c -E -o $o.cee
-    $CCMD $o.c -c -E -o $o.cee
-    echo $CCMD $o.c $LCMD -o $o
-    $CCMD $o.c $LCMD -o $o
+    vcmd ${OCMD}-o$o.c $o.pl
+    vcmd $CCMD $o.c -c -E -o ${o}_E.c
+    vcmd $CCMD $o.c $LCMD -o $o
     test -x $o || exit
     #echo "./$o"
     res=$(./$o) || exit
@@ -106,7 +108,6 @@ if [ -n "$1" ]; then
   done
 else
   for b in $(seq -f"%02.0f" 19); do
-  #for b in $(seq 19); do
     ctest $b
   done
 fi

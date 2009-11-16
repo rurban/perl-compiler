@@ -2,6 +2,10 @@
 Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
 until Perl 5.9.4.
 
+1.04_22 2009-11-16 rurban
+	* C.pm, CC.pm: fixed illegal pad in ASSERT_CURPAD_ACTIVE("pad_sv") with DEBUGGING.
+	Simply forgot to set PL_comppad
+	
 1.04_21 2009-11-07 rurban
 	* yapc_bratislava08.pod: added 
 	* C.pm: fixed CALLREGCOMP >=5.10 by using dynamic newSVpvn as in ByteLoader

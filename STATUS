@@ -11,9 +11,9 @@ Same ok and failures as with 5.8 and 5.9.4
   In 5.8.8 and 5.8.9 we have the exact same errors in the 
   testsuite for the new CPAN compiler and the CORE compiler.
 Minor B::CC bugs fixed.
+Invalid pad in pad_sv, pad_new, save_clearsv - fixed with 1.04_22
+  forgot resetting PL_comppad
 B:C Problems:
-  invalid pad in pad_sv, pad_new, save_clearsv - 
-    cause: setting PL_curpad at save_context
   Modification of a read-only value attempted - save_context ?
 5.11 regex pad fixed
 
@@ -101,11 +101,11 @@ t/bytecode.t (Wstat: 0 Tests: 19 Failed: 9)
   Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
   Modification of a read-only value attempted
   11 Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
-t/c.t        (Wstat: 0 Tests: 19 Failed: 11)
-  Failed tests:  5-12, 17-19
+t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
+  Failed tests:  6-11
   Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  5-12, 17 (was: 2-4, 6, 11-12, 17-19)
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 7)
+  Failed tests:  6-12 (was: 5-12, 17)
 
 5.10.0-nt (not threaded):
 t/bytecode.t (Wstat: 0 Tests: 19 Failed: 2)
@@ -142,7 +142,8 @@ t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
 5.10, 5.11 status
 -----------------
 panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] with DEBUGGING only
-         CvPADLIST: curpad<=>comppad
+        CvPADLIST: curpad<=>comppad
+        fixed with 1.04_22
 
 pvx: seems to be fixed now in bc, and c
   With the move of the pvx field from xpv to the sv, we have to solve 

@@ -1710,8 +1710,8 @@ sub cc_main {
 	$init->add(sprintf("PL_main_root = s\\_%x;", ${main_root()}),
 		   "PL_main_start = $start;",
 		   "/* save context */",
-		   # panic: illegal pad
 		   "PL_curpad = AvARRAY($curpad_sym);",
+                   "PL_comppad = $curpad_sym;",  # fixed "panic: illegal pad"
 		   "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
 		   "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
 		   "PL_initav = (AV *) $init_av;",

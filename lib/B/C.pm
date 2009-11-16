@@ -2179,12 +2179,11 @@ sub save_context
  my $inc_hv     = svref_2object(\%INC)->save;
  my $inc_av     = svref_2object(\@INC)->save;
  my $amagic_generate = amagic_generation;
- # causes PL_curpad assertions
  $init->add("/* save context */",
 	    "GvHV(PL_incgv) = $inc_hv;",
 	    "GvAV(PL_incgv) = $inc_av;",
-	    # panic: illegal pad
 	    "PL_curpad = AvARRAY($curpad_sym);",
+	    "PL_comppad = $curpad_sym;",  # fixed "panic: illegal pad"
 	    "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
 	    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
 	    "PL_amagic_generation = $amagic_generate;" );

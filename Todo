@@ -1,6 +1,5 @@
 * Fixes
 
-pad panics
 ByteLoader compatibility: version, platform. eventually Bytecode version portability
 CC backend: goto, sort with non-default comparison. last for non-loop blocks.
 improve XSUB handling (both static and dynamic)
@@ -34,6 +33,7 @@ Disassembler should print the header
 
 * Optimisations
 
+proper static init of PMOP SV's (only works dynamic >= 5.10)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.
