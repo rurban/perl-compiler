@@ -15,180 +15,195 @@ use Carp;
 use Config qw(%Config);
 use B qw(cstring cast_I32);
 @ISA = qw(FileHandle);
+
 sub readn {
-    my ($fh, $len) = @_;
-    my $data;
-    read($fh, $data, $len);
-    croak "reached EOF while reading $len bytes" unless length($data) == $len;
-    return $data;
+  my ( $fh, $len ) = @_;
+  my $data;
+  read( $fh, $data, $len );
+  croak "reached EOF while reading $len bytes" unless length($data) == $len;
+  return $data;
 }
 
 sub GET_U8 {
-    my $fh = shift;
-    my $c = $fh->getc;
-    croak "reached EOF while reading U8" unless defined($c);
-    return ord($c);
+  my $fh = shift;
+  my $c  = $fh->getc;
+  croak "reached EOF while reading U8" unless defined($c);
+  return ord($c);
 }
 
 sub GET_U16 {
-    my $fh = shift;
-    my $str = $fh->readn(2);
-    croak "reached EOF while reading U16" unless length($str) == 2;
-    # Todo: check byteorder
-    return unpack("S", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(2);
+  croak "reached EOF while reading U16" unless length($str) == 2;
+
+  # Todo: check byteorder
+  return unpack( "S", $str );
 }
 
 sub GET_NV {
-    my $fh = shift;
-    my ($str, $c);
-    while (defined($c = $fh->getc) && $c ne "\0") {
-        $str .= $c;
-    }
-    croak "reached EOF while reading double" unless defined($c);
-    return $str;
+  my $fh = shift;
+  my ( $str, $c );
+  while ( defined( $c = $fh->getc ) && $c ne "\0" ) {
+    $str .= $c;
+  }
+  croak "reached EOF while reading double" unless defined($c);
+  return $str;
 }
 
 sub GET_U32 {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading U32" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("L", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading U32" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "L", $str );
 }
 
 sub GET_I32 {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading I32" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("l", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading I32" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "l", $str );
 }
 
 sub GET_objindex {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading objindex" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("L", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading objindex" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "L", $str );
 }
 
 sub GET_opindex {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading opindex" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("L", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading opindex" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "L", $str );
 }
 
 sub GET_svindex {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading svindex" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("L", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading svindex" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "L", $str );
 }
 
 sub GET_pvindex {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading pvindex" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("L", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading pvindex" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "L", $str );
 }
 
 sub GET_hekindex {
-    my $fh = shift;
-    my $str = $fh->readn(4);
-    croak "reached EOF while reading hekindex" unless length($str) == 4;
-    # Todo: check byteorder
-    return unpack("L", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(4);
+  croak "reached EOF while reading hekindex" unless length($str) == 4;
+
+  # Todo: check byteorder
+  return unpack( "L", $str );
 }
 
 sub GET_strconst {
-    my $fh = shift;
-    my ($str, $c);
-    $str = '';
-    while (defined($c = $fh->getc) && $c ne "\0") {
-	$str .= $c;
-    }
-    croak "reached EOF while reading strconst" unless defined($c);
-    return cstring($str);
+  my $fh = shift;
+  my ( $str, $c );
+  $str = '';
+  while ( defined( $c = $fh->getc ) && $c ne "\0" ) {
+    $str .= $c;
+  }
+  croak "reached EOF while reading strconst" unless defined($c);
+  return cstring($str);
 }
 
-sub GET_pvcontents {}
+sub GET_pvcontents { }
 
 sub GET_PV {
-    my $fh = shift;
-    my $str;
-    my $len = $fh->GET_U32;
-    if ($len) {
-	read($fh, $str, $len);
-	croak "reached EOF while reading PV" unless length($str) == $len;
-	return cstring($str);
-    } else {
-	return '""';
-    }
+  my $fh = shift;
+  my $str;
+  my $len = $fh->GET_U32;
+  if ($len) {
+    read( $fh, $str, $len );
+    croak "reached EOF while reading PV" unless length($str) == $len;
+    return cstring($str);
+  }
+  else {
+    return '""';
+  }
 }
 
 sub GET_comment_t {
-    my $fh = shift;
-    my ($str, $c);
-    while (defined($c = $fh->getc) && $c ne "\n") {
-	$str .= $c;
-    }
-    croak "reached EOF while reading comment" unless defined($c);
-    return cstring($str);
+  my $fh = shift;
+  my ( $str, $c );
+  while ( defined( $c = $fh->getc ) && $c ne "\n" ) {
+    $str .= $c;
+  }
+  croak "reached EOF while reading comment" unless defined($c);
+  return cstring($str);
 }
 
 sub GET_double {
-    my $fh = shift;
-    my ($str, $c);
-    while (defined($c = $fh->getc) && $c ne "\0") {
-	$str .= $c;
-    }
-    croak "reached EOF while reading double" unless defined($c);
-    return $str;
+  my $fh = shift;
+  my ( $str, $c );
+  while ( defined( $c = $fh->getc ) && $c ne "\0" ) {
+    $str .= $c;
+  }
+  croak "reached EOF while reading double" unless defined($c);
+  return $str;
 }
 
-sub GET_none {}
+sub GET_none { }
 
 sub GET_op_tr_array {
-    my $fh = shift;
-    my $len = unpack "S", $fh->readn(2);
-    my @ary = unpack "S*", $fh->readn($len*2);
-    return join(",", $len, @ary);
+  my $fh  = shift;
+  my $len = unpack "S", $fh->readn(2);
+  my @ary = unpack "S*", $fh->readn( $len * 2 );
+  return join( ",", $len, @ary );
 }
 
 sub GET_IV64 {
-    my $fh = shift;
-    my $str = $fh->readn(8);
-    croak "reached EOF while reading I32" unless length($str) == 8;
-    # Todo: check byteorder
-    return sprintf "0x%09llx", unpack("q", $str);
+  my $fh  = shift;
+  my $str = $fh->readn(8);
+  croak "reached EOF while reading I32" unless length($str) == 8;
+
+  # Todo: check byteorder
+  return sprintf "0x%09llx", unpack( "q", $str );
 }
 
 sub GET_IV {
+
   # Check the header settings, not the current settings.
   $B::Disassembler::ivsize == 4 ? &GET_I32 : &GET_IV64;
+
   #$Config{ivsize} == 4 ? &GET_I32 : &GET_IV64;
 }
 
 sub GET_PADOFFSET {
+
   # Check the header settings, not the current settings.
   $B::Disassembler::ptrsize == 8 ? &GET_IV64 : &GET_U32;
+
   # $Config{ptrsize} == 8 ? &GET_IV64 : &GET_U32;
 }
 
 sub GET_long {
+
   # FIXME: this should check the header settings, not the current settings.
   # B::Disassembler::ivsize ?
   $Config{longsize} == 8 ? &GET_IV64 : &GET_U32;
 }
 
-
 package B::Disassembler;
 use Exporter;
-@ISA = qw(Exporter);
+@ISA       = qw(Exporter);
 @EXPORT_OK = qw(disassemble_fh get_header print_insn print_insn_bare @opname);
 use Carp;
 use strict;
@@ -198,111 +213,133 @@ use Config qw(%Config);
 
 my $opix;
 our @opname = opset_to_ops(full_opset);
-our( $magic, $archname, $blversion, $ivsize, $ptrsize, $longsize, $byteorder, $archflag );
+our (
+  $magic,   $archname, $blversion, $ivsize,
+  $ptrsize, $longsize, $byteorder, $archflag
+);
 
-sub dis_header($){
-    my( $fh ) = @_;
-    $magic = $fh->GET_U32();
-    warn( "bad magic" ) if $magic != 0x43424c50;
-    $archname  = $fh->GET_strconst();
-    $blversion = $fh->GET_strconst();
-    $ivsize    = $fh->GET_U32();
-    $ptrsize   = $fh->GET_U32();
-    if ($blversion ge '"0.06_03"') {
-      $longsize  = $fh->GET_U32();
-    } else {
-      $longsize  = $Config{longsize};
-    }
-    $byteorder = $fh->GET_strconst();
-    if ($blversion ge '"0.06_05"') {
-      $archflag  = $fh->GET_U16();
-    } else {
-      $archflag = -1;
-    }
+sub dis_header($) {
+  my ($fh) = @_;
+  $magic = $fh->GET_U32();
+  warn("bad magic") if $magic != 0x43424c50;
+  $archname  = $fh->GET_strconst();
+  $blversion = $fh->GET_strconst();
+  $ivsize    = $fh->GET_U32();
+  $ptrsize   = $fh->GET_U32();
+  if ( $blversion ge '"0.06_03"' ) {
+    $longsize = $fh->GET_U32();
+  }
+  else {
+    $longsize = $Config{longsize};
+  }
+  $byteorder = $fh->GET_strconst();
+  if ( $blversion ge '"0.06_05"' ) {
+    $archflag = $fh->GET_U16();
+  }
+  else {
+    $archflag = -1;
+  }
 }
 
-sub get_header(){
+sub get_header() {
   if (wantarray) {
-    return( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag);
-  } else {
-    return { magic     => $magic,
-	     archname  => $archname, 
-	     blversion => $blversion, 
-	     ivsize    => $ivsize, 
-	     ptrsize   => $ptrsize, 
-	     byteorder => $byteorder, 
-	     longsize  => $longsize, 
-	     archflag  => $archflag };
+    return (
+      $magic,   $archname,  $blversion, $ivsize,
+      $ptrsize, $byteorder, $longsize,  $archflag
+    );
+  }
+  else {
+    return {
+      magic     => $magic,
+      archname  => $archname,
+      blversion => $blversion,
+      ivsize    => $ivsize,
+      ptrsize   => $ptrsize,
+      byteorder => $byteorder,
+      longsize  => $longsize,
+      archflag  => $archflag
+    };
   }
 }
 
 sub print_insn {
-    my ($insn, $arg, $comment) = @_;
-    undef $comment unless $comment;
-    if (defined($arg)) {
-	if ($insn eq 'newopx' or $insn eq 'ldop') { # threaded or unthreaded
-	  my $type = $arg >> 7;
-	  my $size = $arg - ($type << 7);
-	  $arg .= sprintf(" \t# size:%d, type:%d %s", $size, $type) if $comment;
-	  printf "\n# [%s %d]\n", $opname[$type], $opix++ if $comment;
-	} elsif (!$comment) {
-	  ;
-	} elsif ($insn eq 'newsvx') {
-	  # TODO which type? SV, AV or GV. check arg
-	  $arg .= "\t# ".$comment if $comment ne '1';
-	  printf "\n# [%s]\n", 'SV';
-	} elsif ($insn eq 'gv_stashpvx') {
-	  $arg .= "\t# ".$comment if $comment ne '1';
-	  printf "\n# [%s]\n", "STASH";
-	} elsif ($insn eq 'ldsv') {
-	  # TODO which type? SV, AV or GV. check arg
-	  $arg .= "\t# ".$comment if $comment ne '1';
-	  printf "\n# -%s-\n", 'SV';
-	} elsif ($insn eq 'gv_fetchpvx') {
-	  $arg .= "\t# ".$comment if $comment ne '1';
-	  printf "\n# [%s]\n", 'prototype';
-	} else {
- 	  $arg .= "\t# ".$comment if $comment ne '1';
-	}
-	printf "%s %s\n", $insn, $arg;
-    } else {
-	$insn .= "\t# ".$comment if $comment ne '1';
-	print $insn, "\n";
+  my ( $insn, $arg, $comment ) = @_;
+  undef $comment unless $comment;
+  if ( defined($arg) ) {
+    if ( $insn eq 'newopx' or $insn eq 'ldop' ) {    # threaded or unthreaded
+      my $type = $arg >> 7;
+      my $size = $arg - ( $type << 7 );
+      $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type ) if $comment;
+      printf "\n# [%s %d]\n", $opname[$type], $opix++ if $comment;
     }
+    elsif ( !$comment ) {
+      ;
+    }
+    elsif ( $insn eq 'newsvx' ) {
+
+      # TODO which type? SV, AV or GV. check arg
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s]\n", 'SV';
+    }
+    elsif ( $insn eq 'gv_stashpvx' ) {
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s]\n", "STASH";
+    }
+    elsif ( $insn eq 'ldsv' ) {
+
+      # TODO which type? SV, AV or GV. check arg
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# -%s-\n", 'SV';
+    }
+    elsif ( $insn eq 'gv_fetchpvx' ) {
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s]\n", 'prototype';
+    }
+    else {
+      $arg .= "\t# " . $comment if $comment ne '1';
+    }
+    printf "%s %s\n", $insn, $arg;
+  }
+  else {
+    $insn .= "\t# " . $comment if $comment ne '1';
+    print $insn, "\n";
+  }
 }
 
 sub print_insn_bare {
-    my ($insn, $arg) = @_;
-    if (defined($arg)) {
-	printf "%s %s\n", $insn, $arg;
-    } else {
-	print $insn, "\n";
-    }
+  my ( $insn, $arg ) = @_;
+  if ( defined($arg) ) {
+    printf "%s %s\n", $insn, $arg;
+  }
+  else {
+    print $insn, "\n";
+  }
 }
 
 sub disassemble_fh {
-    my $fh = shift;
-    my $out  = shift;
-    my $verbose = shift;
-    my ($c, $getmeth, $insn, $arg);
-    $opix = 1;
-    bless $fh, "B::Disassembler::BytecodeStream";
-    dis_header( $fh );
-    while (defined($c = $fh->getc)) {
-      $c = ord($c);
-      $insn = $insn_name[$c];
-      if (!defined($insn) || $insn eq "unused") {
-	my $pos = $fh->tell - 1;
-	die "Illegal instruction code $c at stream offset $pos\n";
-      }
-      $getmeth = $insn_data{$insn}->[2];
-      $arg = $fh->$getmeth();
-      if (defined($arg)) {
-	&$out($insn, $arg, $verbose);
-      } else {
-	&$out($insn, undef, $verbose);
-      }
+  my $fh      = shift;
+  my $out     = shift;
+  my $verbose = shift;
+  my ( $c, $getmeth, $insn, $arg );
+  $opix = 1;
+  bless $fh, "B::Disassembler::BytecodeStream";
+  dis_header($fh);
+  while ( defined( $c = $fh->getc ) ) {
+    $c    = ord($c);
+    $insn = $insn_name[$c];
+    if ( !defined($insn) || $insn eq "unused" ) {
+      my $pos = $fh->tell - 1;
+      die "Illegal instruction code $c at stream offset $pos\n";
     }
+    $getmeth = $insn_data{$insn}->[2];
+    $arg     = $fh->$getmeth();
+    if ( defined($arg) ) {
+      &$out( $insn, $arg, $verbose );
+    }
+    else {
+      &$out( $insn, undef, $verbose );
+    }
+  }
 }
 
 1;

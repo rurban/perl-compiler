@@ -9,13 +9,13 @@ PERL=${PERL:-perl}
 Mblib="-Mblib" # B::C is now 5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=C,-DcACMSG,-v," 
+OCMD="$PERL $Mblib -MO=C,-DcACMSGu,-v," 
 if [ $BASE = "testcc.sh" ]; then 
   OCMD="$PERL $Mblib -MO=CC,-DspqOlt,-v,"
 fi
-CCMD="$PERL script/cc_harness -g -Bdynamic"
+CCMD="$PERL script/cc_harness -g3 -Bdynamic"
 LCMD=
-#CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g"
+#CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g3"
 #LCMD=" -Wl,--enable-auto-import -Wl,--export-all-symbols -L/usr/lib/perl5/5.11/i686-cygwin/CORE -lperl -ldl -lcrypt -lgdbm_compat"
 
 function vcmd {
@@ -43,10 +43,9 @@ function ctest {
     vcmd $CCMD $o.c -c -E -o ${o}_E.c
     vcmd $CCMD $o.c $LCMD -o $o
     test -x $o || exit
-    #echo "./$o"
-    res=$(./$o) || exit
-    #echo "$res"
-    test "X$res" = "X${result[$n]}" || echo "./$o failed. Got: '$res', expected: '${result[$n]}'"
+    echo "./$o"
+    res=$(./$o)
+    test "X$res" = "X${result[$n]}" || echo "./$o failed. '$str' => '$res' Expected: '${result[$n]}'"
     test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'"
 }
 

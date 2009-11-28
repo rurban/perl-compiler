@@ -62,7 +62,7 @@ print "# got = @got\n";
 @got = grep { ! /^Win32$/                     } @got  if $^O eq 'MSWin32';
 @got = grep { ! /^NetWare$/                   } @got  if $^O eq 'NetWare';
 @got = grep { ! /^(Cwd|File|File::Copy|OS2)$/ } @got  if $^O eq 'os2';
-@got = grep { ! /^(Cwd|Cygwin)$/              } @got  if $^O eq 'cygwin';
+@got = grep { ! /^(Win32|Win32CORE|Cwd|Cygwin)$/} @got if $^O eq 'cygwin';
 @got = grep { ! /^(Devel::Cover)$/            } @got  if $cover =~ /-MDevel::Cover/;
 
 if ($Is_VMS) {
@@ -86,15 +86,20 @@ if ($] < 5.009) {
 if ($] >= 5.010) {
     $expected = "attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
 }
+if ($] >= 5.011001) {
+    $expected .= " XS::APItest::KeywordRPN";
+}
 
 {
     no strict 'vars';
     use vars '$OS2::is_aout';
 }
 
-if ((($Config{static_ext} eq ' ') || ($Config{static_ext} eq ''))
+if ((($Config{static_ext} eq ' ') 
+     || ($Config{static_ext} eq '')
+     || ($Config{static_ext} eq 'Win23CORE' and $^O eq 'cygwin'))
     && !($^O eq 'os2' and $OS2::is_aout)
-	) {
+   ) {
     print "# got [$got]\n# vs.\n# expected [$expected]\nnot " if $got ne $expected;
     ok;
 } else {

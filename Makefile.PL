@@ -35,7 +35,7 @@ package MY;
 
 sub libscan {
   # ignore temp testing files
-  return 0 if $_[1] =~ /(.svn|bytecode.*\.pl|c?ccode\d+\..*|regen_lib\.pl)$/;
+  return 0 if $_[1] =~ /^(.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode\d+\..*|regen_lib\.pl)$/;
   return $_[1];
 }
 

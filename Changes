@@ -1,10 +1,19 @@
 -*- change-log -*-
-Started on CPAN with B-C-1.04_12. The perl compiler was in CORE from alpha4 
-until Perl 5.9.4.
+    Started on CPAN with B-C-1.04_12.
+    The perl compiler was in CORE from alpha4 until Perl 5.9.4.
+
+1.04_23 2009-11-22 rurban
+	* yapc_bratislava08.pod: title fix
+	* SIGNATURE: added
+	* C.pm: GvGP handling improved. added more sect comments.
+	added -u option "unused" not to print verbose debugging info 
+	for unused subs.
+	Fixed CV XPVCVIX initialisation - off-by-one error, wrong CvFLAGS. Fixes test 6.
+	* run perltidy -i=2
 
 1.04_22 2009-11-16 rurban
-	* C.pm, CC.pm: fixed illegal pad in ASSERT_CURPAD_ACTIVE("pad_sv") with DEBUGGING.
-	Simply forgot to set PL_comppad
+	* C.pm, CC.pm: fixed illegal pad in ASSERT_CURPAD_ACTIVE("pad_sv")
+	with DEBUGGING.	Simply forgot to set PL_comppad
 	
 1.04_21 2009-11-07 rurban
 	* yapc_bratislava08.pod: added 
