@@ -127,7 +127,7 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq -f"%02.0f" 21); do
+  for b in $(seq -f"%02.0f" 22); do
     ctest $b
   done
 fi
