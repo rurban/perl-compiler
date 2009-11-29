@@ -31,7 +31,7 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
-my @todo = (14..16); # fails also on 5.00505, old core failures 
+my @todo = (); #(14..16); # 14-16 fail also on 5.00505, old core failures
 if ($DEBUGGING) {
   #@todo = (8..10, 14..16);
   #@todo = (5, 7, 11..12, 17..19) if $] < 5.009;

@@ -1,23 +1,10 @@
---- #YAML:1.0
-name:               B-C
-version:            1.04_23
-abstract:           perl compiler
-author:
-    - Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>
-license:            unknown
-distribution_type:  module
-configure_requires:
-    ExtUtils::MakeMaker:  0
-build_requires:
-    ExtUtils::MakeMaker:  0
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         B-C
+version:      1.04_24
+version_from: lib/B/C.pm
+installdirs:  site
 requires:
-    B:           1.0901
-    B::Concise:  0.66
-no_index:
-    directory:
-        - t
-        - inc
-generated_by:       ExtUtils::MakeMaker version 6.55_02
-meta-spec:
-    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
-    version:  1.4
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.17

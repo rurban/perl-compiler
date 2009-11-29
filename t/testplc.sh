@@ -114,6 +114,8 @@ tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
 result[18]='ba';
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
+tests[20]='$a="abcd123";$r=qr/\d/;print $a=~$r;'
+result[20]='1';
 
 make
 
@@ -123,7 +125,7 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq -f"%02.0f" 19); do
+  for b in $(seq -f"%02.0f" 20); do
     btest $b
   done
 fi

@@ -1,6 +1,17 @@
 -*- change-log -*-
     Started on CPAN with B-C-1.04_12.
-    The perl compiler was in CORE from alpha4 until Perl 5.9.4.
+    The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
+
+1.04_24 2009-11-28 rurban
+	* C.pm: fixed more CV basics (test 9), just stash for autoload missing (test 8).
+	PVLV adjusted, but no testcase yet.
+	IO adjusted. Fixes test 4.
+	re-enabled Perl 5.6, all tests pass with t/testc.sh. make test not.
+	added option -DO, more OP info than with -Do.
+	added saving "main::" CVs. Fixes test 16.
+	Fixed PMOP op_pmreplroot for >= 5.10 (for SUBST). No test
+	* t/TESTS, t/testc.sh: added 20 for qr// bug in 5.10
+	* t/c.t: remove TODO status from tests 14-16
 
 1.04_23 2009-11-22 rurban
 	* yapc_bratislava08.pod: title fix

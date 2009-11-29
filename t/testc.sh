@@ -9,10 +9,17 @@ PERL=${PERL:-perl}
 Mblib="-Mblib" # B::C is now 5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=C,-DcACMSGu,-v," 
+OCMD="$PERL $Mblib -MO=C,-DcACMSGp,-v," 
 if [ $BASE = "testcc.sh" ]; then 
   OCMD="$PERL $Mblib -MO=CC,-DspqOlt,-v,"
 fi
+OCMD2="$PERL $Mblib -MO=C,-O2," 
+if [ $BASE = "testcc.sh" ]; then 
+  OCMD2="$PERL $Mblib -MO=CC,-O2,"
+fi
+# 5.6
+#CCMD="$PERL script/cc_harness -g3"
+# rest
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
 LCMD=
 #CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g3"
@@ -46,7 +53,15 @@ function ctest {
     echo "./$o"
     res=$(./$o)
     test "X$res" = "X${result[$n]}" || echo "./$o failed. '$str' => '$res' Expected: '${result[$n]}'"
-    test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'"
+    test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'" && (
+	vcmd ${OCMD2}-o${o}_o.c $o.pl
+	$CCMD ${o}_o.c $LCMD -o ${o}_o
+	test -x ${o}_o || exit
+	echo "./${o}_o"
+	res=$(./${o}_o)
+	test "X$res" = "X${result[$n]}" || echo "./${o}_o -O2 failed. '$str' => '$res' Expected: '${result[$n]}'"
+	test "X$res" = "X${result[$n]}" && echo "./${o}_o -O2 ok. '$str' => '$res'"
+    )
 }
 
 declare -a tests[19]
@@ -97,6 +112,12 @@ tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
 result[18]='ba';
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
+tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
+result[20]='1';
+tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
+result[21]='024';
+#tests[21]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}}}; sub FETCH{1}; print $a[1]'
+#result[21]='1';
 
 make
 
@@ -106,18 +127,17 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq -f"%02.0f" 19); do
+  for b in $(seq -f"%02.0f" 21); do
     ctest $b
   done
 fi
 
-# 58,510 c:  8-10 14-16
-# 58,510 cc: 8-10, 12, 14-16, 18-19
-# op_free(PL_main_root) hang fixed with opt_latefree.
-# Still panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] at destruct
+# 58 c+xx:   6,8-11
+# 58,510 c:  7-8,11
+# 58,510 cc: 7-8,11,12
 
 #All: Undefined subroutine &main::a called at ccode8.pl line 1.
-#ctest 8 'sub AUTOLOAD { print 1 } &{"a"}()'
+#t/testc.sh 08 'sub AUTOLOAD { print 1 } &{"a"}()'
 
 #  for $k (sort { length $ENV{$b} <=> length $ENV{$a} } keys %ENV) {
 # 	print "$k=$ENV{$k}\n";

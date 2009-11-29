@@ -1,22 +1,22 @@
-Abbrevations: bc B::ByteCode, c B::C, cc B::CC, 
-              -D -DDEBUGGING perl, also used as d version suffix, 
-              eg 5.8.8d
-              -nt not threaded perl.
-
-Only support 5.8 and newer. 5.6 and earlier had a good core perl
-compiler.
+Only support 5.8 and newer. 5.6 and earlier had a very good core perl compiler.
 
 Basic testsuite added, coverage TODO.
 Same ok and failures as with 5.8 and 5.9.4
   In 5.8.8 and 5.8.9 we have the exact same errors in the 
-  testsuite for the new CPAN compiler and the CORE compiler.
+  testsuite for the new CPAN compiler and the CORE compiler, tests 14-16.
 Minor B::CC bugs fixed.
-Invalid pad in pad_sv, pad_new, save_clearsv - fixed with 1.04_22
-  forgot resetting PL_comppad
-B:C Problems:
-  Modification of a read-only value attempted - save_context ?
-5.11 regex pad fixed
+Open B::C Problems for 5.8 and 5.10: 
+	autoload subs  (test 8), 
+	CvSTASH  (test 8), 
+	PVLV tests
+	IO magic (test 11).
+        open our $t (test 14)
+	__DATA__ IO (test 15)
+	AV BEGIN magic: tie @a FETCH defined within BEGIN (test 16)
+  See below at 5.10, 5.11 status
 
+TEST STATUS
+-----------
 5.00505 i686-linux
 t/bytecode.t	all ok
 t/c.t	Fail 14-16
@@ -42,13 +42,15 @@ not ok 18 # wanted: "ba", $? = 11, got: ""
 not ok 19 # wanted: "431", $? = 11, got: ""
 
 5.6.2 i386-linux-thread-multi:
-t/b.t           0    11    57  106 185.96%  5-57
-t/bytecode.t               19   19 100.00%  1-19
-t/c.t                      19   13  68.42%  1-7 11-13 17-19
-t/cc.t                     19   10  52.63%  1-7 11 13 17
-t/o.t                       9    1  11.11%  9
-t/stash.t     255 65280    ??   ??       %  ??
+t/assembler.t  171 43776   175  194 110.86%  5-175
+t/b.t            0    11    57  106 185.96%  5-57
+t/bytecode.t                20   20 100.00%  1-20
+t/c.t                       20    2  10.00%  8 15
+t/cc.t                      20   13  65.00%  1-7 9-10 12-13 17 20
+t/o.t                        9    1  11.11%  9
+t/stash.t      255 65280    ??   ??       %  ??
   Can't declare another package's variables at t/stash.t line 91
+2 subtests skipped.
 
 5.8.3 i386-linux-thread-multi:
 added ByteLoader/ppport.h
@@ -63,84 +65,73 @@ bytecode15S_.asm: There were 2 assembly errors
 /usr/bin/perl -Mblib -MO=Debug bytecode7.pl -o bytecode7_.dbg
 t/testplc.sh: line 66:  5975 Segmentation fault      
 
-5.8.8:
-t/bytecode.t
-  cygwin: ok
-  linux: ok (no MYMALLOC PERL_DONT_CREATE_GVSV USE_64_BIT_INT)
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  FAILED tests 8-10, 14-16
-  Undefined subroutine &main::a called at ccode8.pl line 1.
-  Modification of a read-only value attempted at ccode10.pl line 2.
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 12)
-  Failed tests:  8-10 14-16 18-19
-  In function `pp_main': cccode12.c:276: error: too few arguments to function 
-  (Bug#55302, fixed with B-C-1.04_18)
+5.8.8 debian:
+t/c        (Wstat: 0 Tests: 20 Failed: 3)
+  Failed tests:  8, 14-15
+t/cc       (Wstat: 0 Tests: 20 Failed: 0)
+  TODO passed:   11, 16
 
 5.8.8d:
 t/bytecode.t: ok
-t/c.t         Failed tests: 8-11
-t/cc.t        Failed tests: 8-11
+t/c.t         Failed tests: 8,11
+t/cc.t        Failed tests: 8,11
 
 5.8.9d:
 t/bytecode.t: ok
-t/c.t         Failed tests: 8-11
-t/cc.t        Failed tests: 8-11
-
-5.10.0:
-t/bytecode   (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests: 2-5, 7, 11, 15
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  6-11
-  2008-04-27 17:44:52 URBANR: 2-7 11
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  1-7 11 13 17 (was: 2-7 11, was: 8-10, 12, 14-16, 18-19)
+t/c.t         Failed tests: 8,11
+t/cc.t        Failed tests: 8,11
 
 5.10.0d:
 t/bytecode.t (Wstat: 0 Tests: 19 Failed: 9)
   Failed tests:  2-5, 7, 9-12
-  Assertion (((PMOP*)(*Perl_Iop_ptr(my_perl))))->op_pmflags & 0x0002
-  Modification of a read-only value attempted
-  11 Assertion ((((shplep)->sv_flags & (0x00004000|0x00008000)) == 0x00008000) && (((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVGV || ((svtype)((shplep)->sv_flags & 0xff)) == SVt_PVLV)) failed
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  6-11
-  Assertion ((svtype)((_svi)->sv_flags & 0xff)) != SVt_PVCV failed
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 7)
-  Failed tests:  6-12 (was: 5-12, 17)
+t/c.t        (Wstat: 0 Tests: 19 Failed: 3)
+  Failed tests:  7-8, 11
+t/cc.t       (Wstat: 0 Tests: 19 Failed: 4)
+  Failed tests:  7-8, 11-12
 
 5.10.0-nt (not threaded):
-t/bytecode.t (Wstat: 0 Tests: 19 Failed: 2)
+t/bytecode.t (Wstat: 0 Tests: 20 Failed: 2)
   Failed tests:  7, 11
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  6-11
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  6-11
+t/c.t        (Wstat: 0 Tests: 20 Failed: 5)
+  Failed tests:  7-8, 11, 14-15
+t/cc.t       (Wstat: 0 Tests: 20 Failed: 1)
+  Failed test:  7
+  TODO passed:   16
 
 5.10.0d-nt (debugging, not threaded):
-t/bytecode.t (Wstat: 0 Tests: 19 Failed: 5)
+t/bytecode.t (Wstat: 0 Tests: 20 Failed: 5)
   Failed tests:  7, 9-12
-t/c.t        (Wstat: 0 Tests: 19 Failed: 11)
-  Failed tests:  5-12, 17-19
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  5-12, 17
+t/c.t        (Wstat: 0 Tests: 20 Failed: 6)
+  Failed tests:  7-8, 11, 14-15, 20
+t/cc.t       (Wstat: 0 Tests: 20 Failed: 3)
+  Failed tests:  7, 12, 20
+  TODO passed:   16
 
-5.11d@34005
-t/bytecode.t (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  4, 9-12, 16
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  4, 6, 8-11
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  4, 6, 8-11
+5.10.1
+t/bytecode.t (Wstat: 0 Tests: 20 Failed: 7)
+  Failed tests:  2-5, 7, 11, 20
+t/c.t        (Wstat: 0 Tests: 20 Failed: 6)
+  Failed tests:  7-8, 11, 14-15, 20
+t/cc.t       (Wstat: 0 Tests: 20 Failed: 2)
+  Failed tests:  7, 20
+  TODO passed:   16
 
-5.11 @33704 i386-linux-thread-multi
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 10)
-  Failed tests:  3-5, 7, 9-12, 15-16
-t/c.t        (Wstat: 0 Tests: 19 Failed: 6)
-  Failed tests:  8-10, 14-16
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 11)
-  Failed tests:  1-4, 6, 11-13, 17-19
+5.11.2
+t/bytecode.t (Wstat: 0 Tests: 20 Failed: 4)
+  Failed tests:  4-5, 11, 16
+t/c.t        (Wstat: 0 Tests: 20 Failed: 7)
+  Failed tests:  4-5, 8, 11, 14-16
+t/cc.t       (Wstat: 0 Tests: 20 Failed: 2)
+  Failed tests:  4-5
 
 5.10, 5.11 status
 -----------------
+TODO: 
+  CvSTASH for autoloading (test 7)
+  missing main::a and main::b subs for sort (CvSTASH)
+  main stash destruction on empty names
+
+DONE:
 panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] with DEBUGGING only
         CvPADLIST: curpad<=>comppad
         fixed with 1.04_22
@@ -155,7 +146,7 @@ hv: crash at invalid entry in hv_store in B::HV::save fixed
 
 hek: new implementation
 
-regexp: new and still broken for 5.11, regex_pad wrong and ignored on 5.11
+regexp: match works, split still broken
 
 bc 10: padv+sassign => Modification of a read-only value attempted at 
 bytecode10.pl line 1. Only on cygwin, not on linux!
@@ -204,7 +195,7 @@ cccode3.c - 5.11 dstr assert
 	MAYBE_TAINT_SASSIGN_SRC(src);
 	SvSetSV(dst, src);
 
-ccode3 - 5.10
+ccode3 - 5.10 (fixed via workaround, dynamic init)
 -------------
 SEGV     $_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_ 
 empty data. cause: no pv flag and refcnt in the sv
@@ -222,7 +213,7 @@ $7 = {engine = 0x6a06a0, mother_re = 0x0, extflags = 1126170624, minlen = 0,
   precomp = 0x18ab870 ")", wrapped = 0x18ab868 "(?-xism:)", wraplen = 9,
   seen_evals = 0, paren_names = 0x0, refcnt = 1}
 
-ccode2 - 5.11
+ccode2 - 5.11 (fixed via workaround, dynamic init)
 -------------
 match with /\d/
 (gdb) p *pm
@@ -279,4 +270,12 @@ added Jit and Asm layout, with the idea of using either
 lightning as jit backend (Jit), or creating our own assembler (Asm) 
 to be able to use a high-level language.
 
-2009-11-07 14:34:56 rurban
+Abbrevations
+------------
+bc B::ByteCode 
+c  B::C
+cc B::CC, 
+-D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
+-nt not threaded perl.
+
+2009-11-28 18:01:07 rurban

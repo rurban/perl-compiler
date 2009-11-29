@@ -1,6 +1,5 @@
 * Fixes
 
-ByteLoader compatibility: version, platform. eventually Bytecode version portability
 CC backend: goto, sort with non-default comparison. last for non-loop blocks.
 improve XSUB handling (both static and dynamic)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
@@ -9,7 +8,6 @@ allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
-fix cstring for long strings
 compile-time initialisation of AvARRAYs
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 CvOUTSIDE for ordinary subs
@@ -23,16 +21,19 @@ type checking: Devel::TypeCheck
 compile time v. runtime initialisation
 save PMOPs in compiled form
 selection of what to dump
-options for cutting out line info etc.
+options for cutting out line info (COP elimination) etc.
 comment output
 shared constants
-module dependencies
+check module dependencies, vs. link libs static, not via DynaLoader
 new Asm, JIT or PIR backend, PLJC ByteLoader magic
 check Bytecode op coverage in the tests, should cover all ops 0-142
 Disassembler should print the header
+ByteLoader compatibility: version, platform. eventually Bytecode version portability
 
 * Optimisations
 
+collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
+  and GV method names package::name.
 proper static init of PMOP SV's (only works dynamic >= 5.10)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs

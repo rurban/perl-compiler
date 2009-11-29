@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.55.
+signed via the Module::Signature module, version 0.61.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -19,35 +19,35 @@ SHA1 7a099cd818258df42c684c5b42b758d5400a77df ByteLoader/ByteLoader.pm
 SHA1 c19d6f6f055bb01828d33a75c8bab4c05903cc70 ByteLoader/ByteLoader.xs
 SHA1 f31811547a55d99eac3552359f65aee460f9769b ByteLoader/Makefile.PL
 SHA1 e24d4fecd8f764e1f166972c3cae8a546b54e086 ByteLoader/bytecode.h
-SHA1 16778eada89cd6daaa54a88941d2431d0b0fce74 ByteLoader/byterun.c
-SHA1 82b68f132bd3c37893e2f3a5360b1cd1ba33331f ByteLoader/byterun.h
+SHA1 da67645552ef089bf4fca5f9725539d8af4b8ac2 ByteLoader/byterun.c
+SHA1 6c90a57b84013c4b387c530e568cd74d8d413a49 ByteLoader/byterun.h
 SHA1 18658ac717115e094abec65cdc2a82ccd8be2a86 ByteLoader/hints/sunos.pl
 SHA1 6f942a3aa4b7201650bbc0cc2a3b3b6ca3b6a14c ByteLoader/ppport.h
 SHA1 bbc4c83dae7e704ab2564262cc6707864bf1b54c C.xs
-SHA1 8be0580beccd1c68bd10ed1d1cea66dbe2055c2e Changes
+SHA1 72d68ad842d70d20f2be1d1371450e109d73620d Changes
 SHA1 c0bf1a619a3a61a05da7ec8a9845e48fa4511c97 Copying
 SHA1 ebd0da9fb35ebb8a10476c2c97624d3e7c0c392c MANIFEST
-SHA1 ed5a6a0a09f8e0a9f77cdf2b8e920e15cdb67d60 META.yml
-SHA1 4600085b0648e0110a10c244818dce0b872c94a2 Makefile.PL
+SHA1 225d861abde24ac270164fd28dd9e66c650678b3 META.yml
+SHA1 3b97ba7b65b50e61483e72f7011c8497f038ef2e Makefile.PL
 SHA1 56cd68cba7ea1776dc0d29e912a796936f15f57b NOTES
 SHA1 c6b48f47e3b0921fb8b65c6aab724af36340b07d README
-SHA1 86c138ca5148a3c09427773f7f2c6f7b0c4e2f1f STATUS
+SHA1 c7f3f1fb2bac54711b8600bd827d9a5f65f5fb52 STATUS
 SHA1 c6637e2925de3476ecadc253b0ea5b66676ff187 TESTS
-SHA1 cb79ae7e118b0d5dd2e9b4ae8e44dd7d1a408ce0 Todo
+SHA1 3da12610300222b08aafc0c3f1620eb752c191e4 Todo
 SHA1 cad210fdf7c9635dc9655b75070ba22beb93eb85 bytecode.pl
 SHA1 8b45f5bc1a0cd175734a4e3a812da933e4a9bede hints/darwin.pl
 SHA1 ab21a62f3244f5cb5ae02262175c6ef5bbdcd2d7 hints/openbsd.pl
-SHA1 9105c2583649c4f0f7bf2b7cdad5884b6acc96f6 lib/B/Asmdata.pm
+SHA1 54b89aedf15dcf5bd5a70a7bbf40ab302fd2f61c lib/B/Asmdata.pm
 SHA1 42920ab3b73233b53548c50d29d00bc48e665756 lib/B/Assembler.pm
 SHA1 c1e8c86d6f48d310abf3be741573654256b561b7 lib/B/Bblock.pm
 SHA1 264ccb871e6e9013329ba63af2dba55e81984917 lib/B/Bytecode.pm
 SHA1 b4b8ee5c8eb2c3ff079e07f3aa45a6286ff28a55 lib/B/Bytecode56.pm
-SHA1 76af27241366106b9123d2592e3427a80d24868e lib/B/C.pm
+SHA1 7446288a99868d35816f8713fc6b2f30b4fee0a0 lib/B/C.pm
 SHA1 d5b5c087629eb72f648f01b60921d20c94c666dd lib/B/CC.pm
 SHA1 d68ef81ef94917b18aa8b2b988527384fba6e8b5 lib/B/Disassembler.pm
 SHA1 022d5bce7072ae274d6395fe092ed05d0b4b0c77 lib/B/Stackobj.pm
 SHA1 94ffdd92c695176a6101358a34803e3b6862ea95 lib/B/Stash.pm
-SHA1 511abebff739ed721b3eceb22ee306df9080f342 perlcompile.pod
+SHA1 fa4de644930a1482b9f220ce563b84715e80e48c perlcompile.pod
 SHA1 6eb8850feafb208706f7aa8a151b28ca2136e172 perloptreeguts.pod
 SHA1 fb0730717499c685ac5a71e71c96962673cb00ff ramblings/cc.notes
 SHA1 5fc4e2ce51a7f0f4a79e779bd30c650f8617010c ramblings/curcop.runtime
@@ -57,29 +57,29 @@ SHA1 aad4e00e8a30af69ba397df95fbf4b56c1f563ac ramblings/reg.alloc
 SHA1 6ed746556d9c5b9b58ecbb4fc1e1848b0e4b5eab ramblings/runtime.porting
 SHA1 f87069db552c9ad91fea8affc02537b4779d7ab7 regen_lib.pl
 SHA1 2fca73479193ada36e606c293c27e875fc66890d script/assemble
-SHA1 5eec1b9589f7ab89ab207efa3942013a53bdacdc script/cc_harness
+SHA1 580418d431a453e2506547ee7bca9b905accba27 script/cc_harness
 SHA1 186f5d9bf89a113b2e04bc75b21b530e9c48c750 script/disassemble
 SHA1 35ccbb9978f1add5aef5299e84cd2a50da28c6b2 script/perlcc.PL
 SHA1 a407185203950e77e1af590988b7080e68cc5552 script/pl2exe.pl
-SHA1 314de3721797dcce62689f0463a41d30ea4cd5e2 t/TESTS
+SHA1 84d66afe61b229f5a434f99952a17604b68f0fe3 t/TESTS
 SHA1 18d27d15ee9607357b8c75aa7af5284b80adf8af t/asmdata.t
 SHA1 795509166dddf317604a90d6d3810d673b2ae14c t/assembler.t
 SHA1 0d26e4326e67efcefce170927a9bfbad615a2006 t/b.t
 SHA1 6a694244b37129e38dd7bdfc4134192fcf3e22d0 t/bblock.t
 SHA1 3526bc678fac70f1ce76eb47066416ed0f81c471 t/bytecode.t
-SHA1 212f4843903191bf660879af87551018999cf7de t/c.t
-SHA1 349aff5f814328b0189f69aa27eecba7d4f38367 t/cc.t
+SHA1 9e24a660665ed8a8fdca5e7b8852709a2617406e t/c.t
+SHA1 cc6a71067ca4ecdc89ca1edcf86818d1ffcff47b t/cc.t
 SHA1 0f599fd49f3219e3fbc4a5a111398bdae9188223 t/o.t
 SHA1 21fff575e2565529bfe33074e17d8cadce33570e t/stash.t
 SHA1 6310d05a3bd6f49a7ccc1c5a917bae3c80419e5e t/test.pl
-SHA1 68b2fb48902d9e4c21202ba238256ef1ed3c3648 t/testc.sh
-SHA1 68b2fb48902d9e4c21202ba238256ef1ed3c3648 t/testcc.sh
-SHA1 1773a0f5eb40bdeb55b3920756ac42797ebb17ef t/testplc.sh
+SHA1 ca2ec46b1c64d0e57ca1af1a6f383da57bbb7e33 t/testc.sh
+SHA1 ca2ec46b1c64d0e57ca1af1a6f383da57bbb7e33 t/testcc.sh
+SHA1 1c320819e00e67a168031c64f681b79b4c4836c7 t/testplc.sh
 SHA1 c16985512afcf5e1972e0c5d53afdd27bcc64fa4 yapc_bratislava08.pod
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (Cygwin)
 
-iEYEARECAAYFAksJwsUACgkQ7YMwHlv2uor8BwCfdxlcolxAGncsNzgz/frs8CNC
-9egAoIGUgmWGujwSMwig24BC5A5G5rsj
-=fXi/
+iEYEARECAAYFAksS9zsACgkQmm2SYo/9yULgWQCdHvJl9cmQasc5ikRWgYFSVlFs
+tyEAnAqTSzFQriq08X+tEn2bOi5mloGn
+=crip
 -----END PGP SIGNATURE-----

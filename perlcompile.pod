@@ -80,8 +80,14 @@ some things are untested).
 =item The B::C backend
 
 Creates a C source file containing code to rebuild the parse tree
-and resume the interpreter.  Status: 6 (many things work adequately 
-until 5.8.x, including programs using Tk).
+and resume the interpreter.  
+
+Status: 6 (many things work adequately until 5.8.x, including programs using Tk).
+
+5.6: works perfectly
+5.8: minor bugs (qr//)
+5.10: two major bugs: autoloaded subs, magic GVs (sort $a, tie FETCH)
+5.11: order of evaluation in regex replacements, split
 
 =item The B::CC backend
 
@@ -92,8 +98,14 @@ translates the parse tree into a giant switch structure that
 manipulates Perl structures.  Eventual goal is to reduce (given
 sufficient type information in the Perl program) some of the
 Perl data structure manipulations into manipulations of C-level
-ints, floats, etc.  Status: 5 (some things work until 5.8.x, 
-including uncomplicated Tk examples).
+ints, floats, etc.  
+
+Status: 5 (some things work until 5.8.x, including uncomplicated Tk examples).
+
+Same bugs as in B::C, plus
+5.6: none
+5.8: none
+5.10 and higher: eval (test 12)
 
 =item B::Lint
 
@@ -274,19 +286,34 @@ Without extra arguments, it saves the main program.
 			foo which you initialise with $SIG{BAR} = "foo".
 			A better fix, though, is just to change it to
 			$SIG{BAR} = \&foo. You can have multiple -u options.
+	-e ARG		Eval ARG at startup
+	-w		Warn on undefined SYMs
+	-l LIMIT	Force max linelength to LIMIT (e.g. MSVC to 2048)
 	-D		Debug options (concat or separate flags like perl -D)
-		o	OPs, prints each OP as it's processed
+		o	Print walkoptree OPs
+		O	Prints more OP information
 		c	COPs, prints COPs as processed (incl. file & line num)
-		S	prints SV information on saving
+		S	prints SV/RE information on saving
 		A	prints AV information on saving
 		C	prints CV information on saving
 		M	prints MAGIC information on saving
 		G	prints GV information on saving
+		u       Do not print -D information when parsing unused subs.
 	-f		Force optimisations on or off one at a time.
-		cog	Copy-on-grow: PVs declared and initialised statically
-		no-cog	No copy-on-grow
+		cog		Copy-on-grow: PVs declared and initialised statically
+		no-cog		No copy-on-grow
+		save-data	Save package::DATA filehandles 
+				( only available with PerlIO )
+		ppaddr		Optimize the initialization of op_ppaddr.
+		warn-sv		Optimize the initialization of cop_warnings.
+		use-script-name	Use the script name instead of the program name as $0.
+		save-sig-hash	Save compile-time modifications to the %SIG hash.
+		skip-unused	Skip apparently unused subs. fails with eval "".
 	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
-			Currently, -O1 and higher set -fcog.
+	  	-O1	-fcog
+		-O2	-O1 -fcog -fppaddr -fwarn-sv
+		-O3     -O2 -fsave-sig-hash -fsave-data 
+		-O4     -O3 -fskip-unused
 
 =head3 C Examples
 	perl -MO=C foo.pl > foo.c
@@ -345,7 +372,7 @@ NYI	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
 			-O1 sets -fcompress-nullops -fomit-sequence numbers.
 			-O6 adds -fstrip-syntax-tree.
 NYI	-D		Debug options (concat or separate flags like perl -D)
-		o	OPs, prints each OP as it's processed.
+		O	OPs, prints each OP as it's processed.
 		b	print debugging information about bytecompiler progress
 		a	tells the assembler to include source assembler lines
 			in its output as bytecode comments.
@@ -404,6 +431,15 @@ subs to be saved. Without extra arguments, it saves the main program.
 	-ofilename	Output to filename instead of STDOUT
 	-v              Be verbose.
 	--		Force end of options
+	-pn		Generate code for perl patchlevel n (e.g. 3 or 4).
+			The default is to generate C code which will link
+			with the currently executing version of perl.
+			running the perl compiler.
+	-mModulename	Instead of generating source for a runnable executable,
+			generate source for an XSUB module. The
+			boot_Modulename function (which DynaLoader can look
+			for) does the appropriate initialisation and runs the
+			main part of the Perl source that is being compiled.
 	-uPackname	Force apparently unused subs from package Packname to
 			be compiled. This allows programs to use eval "foo()"
 			even when sub foo is never seen to be used at compile
@@ -413,16 +449,11 @@ subs to be saved. Without extra arguments, it saves the main program.
 			foo which you initialise with $SIG{BAR} = "foo".
 			A better fix, though, is just to change it to
 			$SIG{BAR} = \&foo. You can have multiple -u options.
-	-mModulename	Instead of generating source for a runnable executable,
-			generate source for an XSUB module. The
-			boot_Modulename function (which DynaLoader can look
-			for) does the appropriate initialisation and runs the
-			main part of the Perl source that is being compiled.
-	-pn		Generate code for perl patchlevel n (e.g. 3 or 4).
-			The default is to generate C code which will link
-			with the currently executing version of perl.
-			running the perl compiler.
+	-e ARG		Eval ARG at startup
+	-w		Warn on undefined SYMs
+	-l LIMIT	Force max linelength to LIMIT (e.g. MSVC to 2048)
 	-D		Debug options (concat or separate flags like perl -D)
+		o	Enable B debugging
 		r	Writes debugging output to STDERR just as it's about
 			to write to the program's runtime. Otherwise writes
 			debugging info as comments in its C output.
@@ -441,19 +472,22 @@ subs to be saved. Without extra arguments, it saves the main program.
 		no-cog	No copy-on-grow
 		These two not in CC yet.
 		]
-		freetmps-each-bblock	Delays FREETMPS from the end of each
-					statement to the end of the each basic
-					block.
-		freetmps-each-loop	Delays FREETMPS from the end of each
-					statement to the end of the group of
-					basic blocks forming a loop. At most
-					one of the freetmps-each-* options can
-					be used.
-		omit-taint		Omits generating code for handling
-					perl's tainting mechanism.
+                freetmps-each-bblock   Delays FREETMPS from the end of each
+                                       statement to the end of the each basic
+                                       block.
+               freetmps-each-loop      Delays FREETMPS from the end of each
+                                       statement to the end of the group of
+                                       basic blocks forming a loop. At most
+                                       one of the freetmps-each-* options can
+                                       be used.
+               omit-taint              Omits generating code for handling
+                                       perl's tainting mechanism.
 	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
-			Currently, -O1 sets -ffreetmps-each-bblock and -O2
-			sets -ffreetmps-each-loop.
+	  	-O1	-fcog
+		-O2	-O1 -fcog -fppaddr -fwarn-sv
+		-O3     -O2 -fsave-sig-hash -fsave-data 
+		-O4     -O3 -fskip-unused
+
 
 =head3 CC Invocation Example
 
@@ -708,7 +742,7 @@ Joshua ben Jore wrote a 50 minute presentation on
 "Perl 5 VM" guts at L<http://diotalevi.isa-geek.net/~josh/Presentations/Perl%205%20VM/> 
 focusing on the optree for SPUG, the Seattle Perl User's Group.
 
-The attempt for a new L<perloptreeguts>.pod manual:
+The attempt for a new L<perloptreeguts> manual at
 L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
 
 =cut

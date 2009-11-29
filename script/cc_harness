@@ -1,3 +1,4 @@
+#!perl
 use Config;
 
 $libdir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
@@ -11,7 +12,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
 } elsif ( -e "$libdir/$Config{libperl}" ) { # prefer static linkage
   $linkargs = sprintf("%s $libdir/$Config{libperl} %s",
 		      @Config{qw(ldflags libs)});
-} else { # try dynamic lib if no statib lib exists
+} else { # try dynamic lib if no static lib exists
   use ExtUtils::Embed;
   @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
   $linkargs = ldopts;
