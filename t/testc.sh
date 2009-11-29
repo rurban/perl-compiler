@@ -116,8 +116,8 @@ tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
 result[20]='1';
 tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
 result[21]='024';
-#tests[21]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}}}; sub FETCH{1}; print $a[1]'
-#result[21]='1';
+tests[22]='my $fh; BEGIN { open($fh,"<","/dev/null"); } print "ok";';
+result[22]='ok';
 
 make
 
