@@ -1,15 +1,13 @@
 Only support 5.8 and newer. 5.6 and earlier had a very good core perl compiler.
 
 Basic testsuite added, coverage TODO.
-Same ok and failures as with 5.8 and 5.9.4
+Same ok and less failures as with 5.6, 5.8 and 5.9.4
   In 5.8.8 and 5.8.9 we have the exact same errors in the 
   testsuite for the new CPAN compiler and the CORE compiler, tests 14-16.
 Minor B::CC bugs fixed.
 Open B::C Problems for 5.8 and 5.10: 
-	autoload subs  (test 8), 
-	CvSTASH  (test 8), 
 	PVLV tests
-	IO magic (test 11).
+	IO magic (test 11)
         open our $t (test 14)
 	__DATA__ IO (test 15)
 	AV BEGIN magic: tie @a FETCH defined within BEGIN (test 16)
@@ -17,71 +15,38 @@ Open B::C Problems for 5.8 and 5.10:
 
 TEST STATUS
 -----------
-5.00505 i686-linux
-t/bytecode.t	all ok
-t/c.t	Fail 14-16
-Can't call method "our" on an undefined value at ccode14.pl line 1.
-not ok 14 # wanted: "ok", $? = 65280, got: ""
-not ok 15 # wanted: "a
-b", got: ""
-not ok 16 # wanted: "1", $? = 65280, got: "ccode16.pl syntax OK
-Walking tree
-Can't locate object method "FETCHSIZE" via package "main" at
-/usr/local/lib/perl5/5.00505/i686-linux/B/C.pm line 728.
-END failed--cleanup aborted."
-t/cc.t	Fail 14-16 18-19
-Can't call method "our" on an undefined value.
-not ok 14 # wanted: "ok", $? = 65280, got: ""
-not ok 15 # wanted: "a
-b", got: ""
-not ok 16 # wanted: "1", $? = 65280, got: "cccode16.pl syntax OK
-Can't locate object method "FETCHSIZE" via package "main" at /usr/local/lib/perl5/5.00505/i686-linux/B/C.pm line 728.
-END failed--cleanup aborted.
-"
-not ok 18 # wanted: "ba", $? = 11, got: ""
-not ok 19 # wanted: "431", $? = 11, got: ""
-
 5.6.2 i386-linux-thread-multi:
 t/assembler.t  171 43776   175  194 110.86%  5-175
 t/b.t            0    11    57  106 185.96%  5-57
 t/bytecode.t                20   20 100.00%  1-20
-t/c.t                       20    2  10.00%  8 15
-t/cc.t                      20   13  65.00%  1-7 9-10 12-13 17 20
 t/o.t                        9    1  11.11%  9
 t/stash.t      255 65280    ??   ??       %  ??
+  2 subtests skipped.
   Can't declare another package's variables at t/stash.t line 91
-2 subtests skipped.
-
-5.8.3 i386-linux-thread-multi:
-added ByteLoader/ppport.h
-t/c.t                       19   12  63.16%  1-4 6 8-10 13-16
-t/cc.t                      19   11  57.89%  1-4 6 11-13 17-19
-/usr/bin/perl -Mblib script/assemble bytecode15S_.asm bytecode15S_.plc
-bytecode15S_.asm:182: no such instruction "a"
-bytecode15S_.asm:183: no such instruction "b"
-bytecode15S_.asm: There were 2 assembly errors
-
-/usr/bin/perl -Mblib -MO=Debug bytecode3.pl -o bytecode3_.dbg
-/usr/bin/perl -Mblib -MO=Debug bytecode7.pl -o bytecode7_.dbg
-t/testplc.sh: line 66:  5975 Segmentation fault      
 
 5.8.8 debian:
-t/c        (Wstat: 0 Tests: 20 Failed: 3)
-  Failed tests:  8, 14-15
+t/c        (Wstat: 0 Tests: 20 Failed: 2)
+  Failed tests:  14-15
 t/cc       (Wstat: 0 Tests: 20 Failed: 0)
-  TODO passed:   11, 16
+  TODO passed:   11
 
 5.8.8d:
 t/bytecode.t: ok
-t/c.t         Failed tests: 8,11
-t/cc.t        Failed tests: 8,11
+t/c.t         Failed tests: 11, 14-15 (14-15 new)
 
 5.8.9d:
 t/bytecode.t: ok
-t/c.t         Failed tests: 8,11
-t/cc.t        Failed tests: 8,11
+t/c.t         Failed tests: 11, 14-15 (14-15 new)
 
-5.10.0d:
+5.10.0d debian:
+t/bytecode (Wstat: 0 Tests: 20 Failed: 20)
+  Failed tests:  1-20
+t/c        (Wstat: 0 Tests: 20 Failed: 4)
+  Failed tests:  7, 11, 14-15
+t/cc       (Wstat: 0 Tests: 20 Failed: 1)
+  Failed test:  7
+
+5.10.0d cygwin:
 t/bytecode.t (Wstat: 0 Tests: 19 Failed: 9)
   Failed tests:  2-5, 7, 9-12
 t/c.t        (Wstat: 0 Tests: 19 Failed: 3)
@@ -89,49 +54,50 @@ t/c.t        (Wstat: 0 Tests: 19 Failed: 3)
 t/cc.t       (Wstat: 0 Tests: 19 Failed: 4)
   Failed tests:  7-8, 11-12
 
-5.10.0-nt (not threaded):
+5.10.0-nt  cygwin not threaded:
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 2)
   Failed tests:  7, 11
-t/c.t        (Wstat: 0 Tests: 20 Failed: 5)
-  Failed tests:  7-8, 11, 14-15
+t/c.t        (Wstat: 0 Tests: 20 Failed: 4)
+  Failed tests:  7, 11, 14-15
 t/cc.t       (Wstat: 0 Tests: 20 Failed: 1)
   Failed test:  7
-  TODO passed:   16
+  TODO passed:   12
 
-5.10.0d-nt (debugging, not threaded):
+5.10.1d-nt (cygwin debugging, not threaded):
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 5)
   Failed tests:  7, 9-12
-t/c.t        (Wstat: 0 Tests: 20 Failed: 6)
-  Failed tests:  7-8, 11, 14-15, 20
+t/c.t        (Wstat: 0 Tests: 20 Failed: 5)
+  Failed tests:  7, 11, 14-15, 20
 t/cc.t       (Wstat: 0 Tests: 20 Failed: 3)
   Failed tests:  7, 12, 20
-  TODO passed:   16
 
-5.10.1
+5.10.1 cygwin
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 7)
   Failed tests:  2-5, 7, 11, 20
-t/c.t        (Wstat: 0 Tests: 20 Failed: 6)
-  Failed tests:  7-8, 11, 14-15, 20
+t/c.t        (Wstat: 0 Tests: 20 Failed: 5)
+  Failed tests:  7, 11, 14-15, 20
 t/cc.t       (Wstat: 0 Tests: 20 Failed: 2)
   Failed tests:  7, 20
-  TODO passed:   16
+  TODO passed:   12
 
-5.11.2
+5.11.2 cygwin
 t/bytecode.t (Wstat: 0 Tests: 20 Failed: 4)
   Failed tests:  4-5, 11, 16
-t/c.t        (Wstat: 0 Tests: 20 Failed: 7)
-  Failed tests:  4-5, 8, 11, 14-16
-t/cc.t       (Wstat: 0 Tests: 20 Failed: 2)
-  Failed tests:  4-5
+t/c.t        (Wstat: 0 Tests: 20 Failed: 6)
+  Failed tests:  4-5, 11, 14-16
+t/cc.t       (Wstat: 0 Tests: 20 Failed: 0)
+  TODO passed:   12
 
 5.10, 5.11 status
 -----------------
 TODO: 
-  CvSTASH for autoloading (test 7)
-  missing main::a and main::b subs for sort (CvSTASH)
+  missing main::a and main::b subs for sort
   main stash destruction on empty names
 
 DONE:
+autoload subs from main::, from packages it works ok (test 8)
+	fixed with 1.04_25
+
 panic: illegal pad in pad_new: 0x18c4368[0x18cf6e8] with DEBUGGING only
         CvPADLIST: curpad<=>comppad
         fixed with 1.04_22
@@ -144,7 +110,7 @@ pvx: seems to be fixed now in bc, and c
 
 hv: crash at invalid entry in hv_store in B::HV::save fixed
 
-hek: new implementation
+hek: new implementation, needs static optimization via heksect
 
 regexp: match works, split still broken
 
@@ -161,7 +127,7 @@ Is FAKE flag of the padsv is missing or should we check for readonly pads?
 -Dt crash fixed by core patch pl-dump-const.patch
 
 cop_io status?
-http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2006-05/msg00770.html
+  http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2006-05/msg00770.html
 
 5.8 status
 ----------
@@ -278,4 +244,4 @@ cc B::CC,
 -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
 -nt not threaded perl.
 
-2009-11-28 18:01:07 rurban
+2009-11-30 23:09:44 rurban

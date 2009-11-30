@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_24';
+our $VERSION = '1.04_25';
 
 package B::C::Section;
 
@@ -238,12 +238,13 @@ my @op_sections = \(
   $listopsect, $logopsect,  $loopsect, $opsect,
   $pmopsect,   $pvopsect,   $svopsect, $unopsect
 );
-push @op_sections, ($resect) if $PERL511;
+# push @op_sections, ($resect) if $PERL511;
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
 sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
+sub save_main_rest2;
 
 # fixup PVBM names which contain garbage after the ending \000
 sub cstring_wrong {
@@ -971,7 +972,7 @@ sub B::IV::save {
       $xpvivsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
-  warn sprintf( "Saving IV %d to xpviv_list[%d], sv_list[%d]\n",
+  warn sprintf( "Saving IV 0x%x to xpviv_list[%d], sv_list[%d]\n",
     $sv->IVX, $xpvivsect->index, $svsect->index )
     if $debug{sv};
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1656,14 +1657,14 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  # B::SV::SvTYPE not with 5.6
-  # warn sprintf( "  GV type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), B::SV::FLAGS($gv) ) if $debug{gv};
-  # only PVGV or PVLV have names. crash in test 11
+  warn sprintf( "  GV type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), B::SV::FLAGS($gv) )
+    if $debug{gv} and !$PERL56; # B::SV::SvTYPE not with 5.6
+  # only PVGV or PVLV have names. crash in test 11: 2nd GV "x" is a (CV*) but of type 9 (GV)
+  my $is_empty = $gv->is_empty;
   my $gvname   = $gv->NAME;
   my $fullname = $gv->STASH->NAME . "::" . $gvname;
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
-  my $is_empty = $gv->is_empty;
   my $egvsym;
   my $is_special = $gv->isa("B::SPECIAL");
 
@@ -1708,11 +1709,17 @@ sub B::GV::save {
       $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
     }
   }
+  my $gvflags = $gv->GvFLAGS;
+  if ($gvflags > 256) { $gvflags = $gvflags && 256 }; # $gv->GvFLAGS as U8
   $init->add(
     sprintf( "SvFLAGS($sym) = 0x%x;", $svflags ),
-    sprintf( "GvFLAGS($sym) = 0x%x;", $gv->GvFLAGS )
+    sprintf( "GvFLAGS($sym) = %d;",   $gvflags )
   );
-  $init->add( sprintf( "GvLINE($sym) = %d;", $gv->LINE ) ) unless $is_empty;
+  $init->add( sprintf( "GvLINE($sym) = %d;",
+		       ($gv->LINE > 2147483647  # S32 INT_MAX
+			? 4294967294 - $gv->LINE
+			: $gv->LINE )))
+	      unless $is_empty;
 
 # XXX hack for when Perl accesses PVX of GVs, only if SvPOK
 #if (!($svflags && 0x400)) { # defer to run-time (0x400 -> SvPOK) for convenience
@@ -1790,13 +1797,13 @@ sub B::GV::save {
         $init->add("}");
       }
       else {
+        warn "GV::save &$name..\n" if $debug{gv};
         $init->add( sprintf( "GvCV($sym) = (CV*)(%s);", $gvcv->save ) );
         warn "GV::save &$name\n" if $debug{gv};
       }
     }
     if ( $] > 5.009 ) {
       my $file = cstring( $gv->FILE );
-
       #my $heksym = $heksect->add($file);
       $init->add(
                  sprintf(
@@ -1831,12 +1838,14 @@ sub B::GV::save {
     }
     my $gvform = $gv->FORM;
     if ( $$gvform && $savefields & Save_FORM ) {
+      warn "GV::save gvform->save ...\n" if $debug{gv};
       $gvform->save;
       $init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
       warn "GV::save GvFORM(*$name)\n" if $debug{gv};
     }
     my $gvio = $gv->IO;
     if ( $$gvio && $savefields & Save_IO ) {
+      warn "GV::save gvio->save ...\n" if $debug{gv};
       $gvio->save;
       $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
       if ( $fullname =~ m/::DATA$/ && $save_data_fh ) {
@@ -1849,6 +1858,7 @@ sub B::GV::save {
     }
     $init->add("");
   }
+  warn "GV::save $name done\n" if $debug{gv};
   return $sym;
 }
 
@@ -1885,7 +1895,7 @@ sub B::AV::save {
   if ( $debug{av} ) {
     $line = sprintf( "saving AV 0x%x FILL=$fill", $$av );
     $line .= sprintf( " AvFLAGS=0x%x", $av->AvFLAGS ) if $] < 5.009;
-    warn $line;
+    warn "$line\n";
   }
 
   # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
@@ -2045,7 +2055,7 @@ CODE
   $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
 }
 
-# TODO in B
+# TODO in B. But apparently not needed
 sub B::IO::SUBPROCESS {
   warn "B::IO::SUBPROCESS missing\n";
 }
@@ -2057,13 +2067,29 @@ sub B::IO::save {
   my $pv = $io->PV;
   $pv = '' unless defined $pv;
   my $len = length($pv);
-  if ($PERL510) {
+  if ($PERL511) {
+    warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
+    $xpviosect->comment("xnv_u, cur, len, lines, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
+    $xpviosect->add(
+      sprintf(
+"0, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t%d, /*LINES*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/",
+        $len,                     $len + 1,
+	$io->LINES, # moved to IVX
+        $io->PAGE,                $io->PAGE_LEN,
+        $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
+        cstring( $io->FMT_NAME ), cstring( $io->BOTTOM_NAME ),
+        cchar( $io->IoTYPE ),     $io->IoFLAGS
+      )
+    );
+  }
+  elsif ($PERL510) {
+    warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
     $xpviosect->add(
       sprintf(
-"0, /*xnv_u*/\n\t0, /*cur*/\n\t%u, /*len*/\n\t%u, /*IVX*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/",
+"0, /*xnv_u*/\n\t0, /*cur*/\n\t%u, /*len*/\n\t%d, /*IVX*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/",
         $len,                     $len + 1,
-        $io->IVX, # ...
+        $io->IVX,
 	$io->LINES,
         $io->PAGE,                $io->PAGE_LEN,
         $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
@@ -2565,7 +2591,7 @@ sub B::GV::savecv {
   #return unless ( $unused_sub_packages{$package} );
   return if ( $package ne 'main' and !$unused_sub_packages{$package} );
   return if ( $package eq 'main' and
-  	      $name =~ /^([^A-Za-z].*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|AUTOLOAD|main::)$/i );
+  	      $name =~ /^([^A-Za-z].*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::)$/i );
   warn sprintf( "Used GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
   warn sprintf( "Saving GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
@@ -2662,12 +2688,10 @@ sub walkpackages {
     *glob = $ref;
     if ($sym =~ /^main::/ and $debug{p}) {
       warn("walkpackages $sym");
-      #use Data::Dumper;
-      #warn Data::Dumper->Dump([%main::], [qw(%main::)]);
     }
     if ( $sym =~ /::$/ ) {
       $sym = $prefix . $sym;
-      # XXX FIXME the walker is missing main subs to avoid recursion into O compiler subs again
+      # XXX The walker was missing main subs to avoid recursion into O compiler subs again
       if ( $sym ne "main::" && $sym ne "<none>::" && &$recurse($sym) ) {
         walkpackages( \%glob, $recurse, $sym );
       }
@@ -2690,7 +2714,6 @@ sub save_unused_subs {
   if ($verbose) {
     warn "Saving unused subs" . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
-  # XXX FIXME we are missing the main:: subs here
   walksymtable( \%{"main::"}, "savecv", \&should_save );
   if ( $debug{unused} ) {
     %debug = %sav_debug;
@@ -2746,6 +2769,13 @@ sub save_main_rest {
       or $debug{cv};
   save_unused_subs();
 
+  save_main_rest2();
+}
+
+sub save_main_rest2 {
+  # this is mainly for the test suite
+  my $warner = $SIG{__WARN__};
+  local $SIG{__WARN__} = sub { print STDERR @_ };
   # XSLoader was used, force saving of XSLoader::load
   if ($use_xsloader) {
     my $cv = svref_2object( \&XSLoader::load );
@@ -2791,7 +2821,7 @@ sub save_main_rest {
   );
   save_context();
 
-  # init op addrs ( must be the last action, otherwise
+  # init op addrs must be the last action, otherwise
   # some ops might not be initialized
   if ($optimize_ppaddr) {
     foreach my $i (@op_sections) {

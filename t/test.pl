@@ -791,6 +791,7 @@ sub run_cc_test {
   unlink ($test, $cfile, $exe);
   open T, ">$test"; print T $script; close T;
   my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test older perls
+  #my $Mblib = "-Mblib"; # test all
   unless ($Mblib) {
     if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
       $Mblib = "-Mblib"; # forced via cmdline
@@ -805,7 +806,7 @@ sub run_cc_test {
     use ExtUtils::Embed ();
     my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
     $command .= " ".ExtUtils::Embed::ldopts("-std");
-    $command .= " -lperl" unless $command =~ /-lperl/;
+    $command .= " -lperl" unless $command =~ /(-lperl|CORE\/libperl5)/;
     my $NULL = $^O eq 'MSWin32' ? '>nul' : '2>/dev/null';
     my $cmdline = "$Config{cc} $command $NULL";
     system($cmdline);

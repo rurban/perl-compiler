@@ -2,11 +2,22 @@
     Started on CPAN with B-C-1.04_12.
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
-1.04_24 2009-11-28 rurban
+1.04_25 2009-11-30 rurban
+	* C.pm: fixed IO for 5.11: LINES => IVX.
+	specialize GvLINES = -1 and protect against U32 signed-ness.
+	fixed test 8 main::AUTOLOAD (unoptimized only)
+	* t/test.pl: enable -Mblib for all Perl versions.
+	fix 5.6.2 ldopts by explicit checking of (-lperl|CORE\/libperl5).
+	make test works now for 5.6.2
+	* t/cc.t: adapt TODOs
+	* t/c.t: add TODOs 15 for 5.6
+	* script/perlcc: a.exe for cygwin also
+	
+1.04_24 2009-11-29 rurban
 	* C.pm: fixed more CV basics (test 9), just stash for autoload missing (test 8).
 	PVLV adjusted, but no testcase yet.
 	IO adjusted. Fixes test 4.
-	re-enabled Perl 5.6, all tests pass with t/testc.sh. make test not.
+	re-enabled Perl 5.6, all tests but 8,15 pass with t/testc.sh. make test not.
 	added option -DO, more OP info than with -Do.
 	added saving "main::" CVs. Fixes test 16.
 	Fixed PMOP op_pmreplroot for >= 5.10 (for SUBST). No test

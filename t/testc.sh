@@ -51,17 +51,24 @@ function ctest {
     vcmd $CCMD $o.c $LCMD -o $o
     test -x $o || exit
     echo "./$o"
-    res=$(./$o)
-    test "X$res" = "X${result[$n]}" || echo "./$o failed. '$str' => '$res' Expected: '${result[$n]}'"
-    test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'" && (
+    res=$(./$o) || exit
+    if [ "X$res" = "X${result[$n]}" ]; then
+	test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'"
 	vcmd ${OCMD2}-o${o}_o.c $o.pl
 	$CCMD ${o}_o.c $LCMD -o ${o}_o
 	test -x ${o}_o || exit
 	echo "./${o}_o"
 	res=$(./${o}_o)
-	test "X$res" = "X${result[$n]}" || echo "./${o}_o -O2 failed. '$str' => '$res' Expected: '${result[$n]}'"
-	test "X$res" = "X${result[$n]}" && echo "./${o}_o -O2 ok. '$str' => '$res'"
-    )
+	if [ "X$res" = "X${result[$n]}" ]; then
+	    test "X$res" = "X${result[$n]}" && echo "./${o}_o -O2 ok. '$str' => '$res'"
+	else
+	    echo "./${o}_o -O2 failed. '$str' => '$res' Expected: '${result[$n]}'"
+	fi
+	true
+    else
+	echo "./$o failed. '$str' => '$res' Expected: '${result[$n]}'"
+	exit
+    fi
 }
 
 declare -a tests[19]

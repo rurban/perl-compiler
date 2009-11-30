@@ -11,7 +11,7 @@ our $VERSION = '1.00_02';
 
 use Config;
 use strict;
-use 5.008;
+#use 5.008;
 use B qw(main_start main_root class comppadlist peekop svref_2object
   timing_info init_av sv_undef amagic_generation
   OPf_WANT_LIST OPf_WANT OPf_MOD OPf_STACKED OPf_SPECIAL

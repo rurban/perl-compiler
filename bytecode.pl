@@ -33,7 +33,7 @@ my $c_header = <<'EOT';
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2008 Reini Urban
+ *      Copyright (c) 2008,2009 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
  *      License or the Artistic License, as specified in the README file.

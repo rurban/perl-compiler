@@ -31,18 +31,11 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
-my @todo = (); #(14..16); # 14-16 fail also on 5.00505, old core failures
-if ($DEBUGGING) {
-  #@todo = (8..10, 14..16);
-  #@todo = (5, 7, 11..12, 17..19) if $] < 5.009;
-  #@todo = (2..5, 7, 11, 15) if $] >= 5.009;
-  #@todo = (2..7, 11..12, 17..19) if ($] > 5.009 and !$ITHREADS);
-  #@todo = (2..12, 14..19) if $] > 5.009; #let it fail
-} else {
-  #@todo = (8..10, 14..16);
-  #@todo = (2..7, 11) if $] > 5.009;
-  #@todo = (2..11, 15..16) if ($] > 5.009 and !$ITHREADS);
-}
+my @todo = (); #(8,11,14..15); # 8,14-16 fail on 5.00505
+#5.6.2 native failures: 8,15,16.
+# 16 fixed with 1.04_24, 8 with 1.04_25
+@todo = (15) if $] < 5.007;
+
 my %todo = map { $_ => 1 } @todo;
 
 print "1..".($#tests+1)."\n";
