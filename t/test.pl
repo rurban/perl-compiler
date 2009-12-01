@@ -776,7 +776,7 @@ sub tests {
   $in = "TESTS" unless -f $in;
   undef $/;
   open TEST, "< $in" or die "Cannot open $in";
-  my @tests = split /\n####+.*####\n/, <TEST>;
+  my @tests = split /\n####+.*##\n/, <TEST>;
   close TEST;
   @tests;
 }
