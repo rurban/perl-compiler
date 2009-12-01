@@ -9,7 +9,7 @@ PERL=${PERL:-perl}
 # if $] < 5.9 you may want to remove -Mblib
 # OCMD="$PERL -Mblib -MO=C,-DcACMSG,"
 #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-Mblib="-Mblib" # B::C is now 5.8 backwards compatible
+Mblib="-Mblib" # B::C is now 5.6+5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
 OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v," 
@@ -21,12 +21,12 @@ if [ $BASE = "testcc.sh" ]; then
   OCMD2="$PERL $Mblib -MO=CC,-O2,"
 fi
 CONT=
-# 5.6
+# 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
 # rest
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
 LCMD=
-# on some perls I had to add $archlib/DynaLoader/DynaLoader.a to libs
+# On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 #CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g3"
 #LCMD=" -Wl,--enable-auto-import -Wl,--export-all-symbols -L/usr/lib/perl5/5.11/i686-cygwin/CORE -lperl -ldl -lcrypt -lgdbm_compat"
 
@@ -142,7 +142,7 @@ result[19]='431';
 # not repro: something like this is broken in original 5.6 (Net::DNS::ZoneFile::Fast)
 tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
 result[20]='1';
-# broken on early alpha
+# broken on early alpha and 5.10
 tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
 result[21]='024';
 # broken in original perl 5.6
@@ -151,8 +151,7 @@ result[22]='ok';
 # broken in perl 5.8
 tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
 result[23]='ok'
-# works in original perl 5.6
-# broken with latest B::C in 5.6, 5.8
+# works in original perl 5.6, broken with latest B::C in 5.6, 5.8
 tests[24]='sub level1 { return (level2() ? "fail" : "ok") }  sub level2 {0}  print level1();'
 result[24]='ok'
 

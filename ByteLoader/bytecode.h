@@ -293,13 +293,11 @@ static int bget_swab = 0;
     } STMT_END
 #else
 /* | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr */
-#define BSET_pregcomp(o, arg)				  \
-    STMT_START {					  \
-	REGEXP* rx = arg ?				  \
-	    CALLREGCOMP(newSVpvn(arg, strlen(arg)), \
-			cPMOPx(o)->op_pmflags)		  \
-	    : Null(REGEXP*);				  \
-	PM_SETRE(((PMOP*)o), rx);			  \
+#define BSET_pregcomp(o, arg)				\
+    STMT_START {					\
+        PM_SETRE((PMOP*)(o), arg			\
+	  ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
+	  : Null(REGEXP*));				\
     } STMT_END
 #endif
 

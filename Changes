@@ -5,8 +5,11 @@
 1.04_26 2009-12-?? rurban
 	* C.pm: remove nv->IVX for 5.10 (Can't locate object method "IVX" via package "B::NV").
 	protect mg->OBJ when SCALAR (Can't call method "save" on unblessed reference).
-	fix NV isa IV, to fix test 23 (Nick Koston)
+	fix NV isa IV, to fix test 23 (Nick Koston).
+	fix CopLABEL for 5.11 (test 21)
+	fix PMOP extflags, esp. for split on >= 5.10 (test 5 + 7)
 	* t/c.t, t/testc.sh: added tests 23, 24 (Nick Koston)
+	* Bytecode.pm (1.02_04), bytecode.h: store and set PMOP reflags as U32. Fixes tests 2-4,7
 
 1.04_25 2009-11-30 rurban
 	* C.pm: fixed IO for 5.11: LINES => IVX.

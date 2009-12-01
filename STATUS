@@ -24,19 +24,25 @@ t/stash.t      255 65280    ??   ??       %  ??
   2 subtests skipped.
   Can't declare another package's variables at t/stash.t line 91
 
+5.6.2 cygwin:
+t/b.t           0   139    57  106 185.96%  5-57
+t/bytecode.t               24   24 100.00%  1-24
+t/cc.t                     24    1   4.17%  21
+t/o.t                       9    1  11.11%  9
+t/stash.t     255 65280    ??   ??       %  ??
+1 test and 2 subtests skipped.
+
 5.8.8 debian:
-t/c        (Wstat: 0 Tests: 20 Failed: 2)
-  Failed tests:  14-15
-t/cc       (Wstat: 0 Tests: 20 Failed: 0)
-  TODO passed:   11
+t/bytecode.t: ok
+t/c.t         Failed tests:  11 14-15 23
 
 5.8.8d:
 t/bytecode.t: ok
-t/c.t         Failed tests: 11, 14-15 (14-15 new)
+t/c.t         Failed tests: 11 14-15 23 (14-15 new)
 
 5.8.9d:
 t/bytecode.t: ok
-t/c.t         Failed tests: 11, 14-15 (14-15 new)
+t/c.t         Failed tests: 11 14-15 23 (14-15 new)
 
 5.10.0d debian:
 t/bytecode (Wstat: 0 Tests: 20 Failed: 20)
@@ -81,12 +87,32 @@ t/cc.t       (Wstat: 0 Tests: 20 Failed: 2)
   TODO passed:   12
 
 5.11.2 cygwin
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 4)
-  Failed tests:  4-5, 11, 16
-t/c.t        (Wstat: 0 Tests: 20 Failed: 6)
-  Failed tests:  4-5, 11, 14-16
-t/cc.t       (Wstat: 0 Tests: 20 Failed: 0)
-  TODO passed:   12
+t/bytecode.t (Wstat: 0 Tests: 24 Failed: 5)
+  Failed tests:  5, 11, 16, 20-21
+t/c.t        (Wstat: 0 Tests: 24 Failed: 6)
+  Failed tests:  5, 11, 14-16, 23
+t/cc.t       (Wstat: 0 Tests: 24 Failed: 4)
+  Failed tests:  5, 21, 23-24
+  TODO passed:   4, 12 
+
+5.11.2d cygwin
+t/bytecode.t (Wstat: 0 Tests: 24 Failed: 8)
+  Failed tests:  5, 9-12, 16, 20-21
+t/c.t        (Wstat: 0 Tests: 24 Failed: 6)
+  Failed tests:  5, 11, 14-16, 23
+t/cc.t       (Wstat: 0 Tests: 24 Failed: 4)
+  Failed tests:  5, 21, 23-24
+  TODO passed:   4, 12
+
+5.11.2d-nt cygwin
+t/bytecode.t (Wstat: 0 Tests: 24 Failed: 9)
+  Failed tests:  5, 9-12, 15-16, 20-21
+t/c.t        (Wstat: 0 Tests: 24 Failed: 7)
+  Failed tests:  5, 11, 14-16, 23-24
+t/cc.t       (Wstat: 0 Tests: 24 Failed: 3)
+  Failed tests:  5, 21, 23
+  TODO passed:   4
+
 
 5.10, 5.11 status
 -----------------

@@ -9,7 +9,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.02_03';
+our $VERSION = '1.02_04';
 
 use strict;
 use Config;
@@ -735,11 +735,11 @@ sub B::PMOP::bsave {
       bwarn( "PMOP pmstashpv: ", $op->pmstashpv, ", pmflags: ", $op->pmflags )
         if $debug{M};
     }
+    #asm "op_reflags", $op->reflags;
     asm "newpv", pvstring $op->precomp;
     asm "pregcomp";
-
-#asm "op_reflags",  $op->reflags; # pregcomp does not set the extflags, just the pmflags
-#asm "op_reflags",  $op->reflags; # overwrite the extflags from pregcomp?
+    # pregcomp does not set the extflags correctly, just the pmflags
+    asm "op_reflags",  $op->reflags; # so overwrite the extflags
   }
 }
 

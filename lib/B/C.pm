@@ -772,8 +772,8 @@ sub B::COP::save {
     if ( $op->label ) {
       $init->add(
         sprintf(
-          "CopLABEL_alloc(&cop_list[%d], %s);",
-          $copsect->index, cstring( $op->label )
+          "cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ cop_list[%d].cop_hints_hash, %s);",
+          $copsect->index, $copsect->index, cstring( $op->label )
         )
       );
     }
@@ -903,7 +903,8 @@ sub B::PMOP::save {
       my $relen = length($re);
       $init->add(
         sprintf( "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));",
-		 $op->pmflags )
+		 $op->pmflags ),
+        sprintf("RXp_EXTFLAGS(SvANY(PM_GETRE(&$pm))) = 0x%x;", $op->reflags )
       );
     }
     elsif ($PERL56) {
@@ -1281,7 +1282,7 @@ sub B::PVMG::save_magic {
       };
     }
 
-    unless ( $type eq 'r' ) {
+    unless ( $type eq 'r' ) { # FIXME test 23
       $obj = $mg->OBJ;
       # 5.10: Can't call method "save" on unblessed reference: perl -Mblib script/perlcc t/c.t
       #warn "Save MG ". $obj . "\n" if $PERL510;
@@ -1290,7 +1291,6 @@ sub B::PVMG::save_magic {
     }
 
     if ( $len == HEf_SVKEY ) {
-
       #The pointer is an SV*
       $ptrsv = svref_2object($ptr)->save;
       $init->add(
@@ -2676,7 +2676,7 @@ sub delete_unsaved_hashINC {
   my $packname = shift;
   $packname =~ s/\:\:/\//g;
   $packname .= '.pm';
-  warn "deleting $packname\n" if $INC{$packname} and $debug{pkg};
+  warn "Deleting $packname\n" if $INC{$packname} and $debug{pkg};
   delete $INC{$packname};
 }
 
@@ -2689,9 +2689,7 @@ sub walkpackages {
   while ( ( $sym, $ref ) = each %$symref ) {
     local (*glob);
     *glob = $ref;
-    if ($sym =~ /^main::/ and $debug{p}) {
-      warn("walkpackages $sym");
-    }
+    warn("Walkpackages $sym") if $debug{p};
     if ( $sym =~ /::$/ ) {
       $sym = $prefix . $sym;
       # XXX The walker was missing main subs to avoid recursion into O compiler subs again
@@ -3213,7 +3211,7 @@ help make use of this compiler.
 
 =head1 BUGS
 
-2 or 3. Current status: experimental.
+3-4. Current status: experimental.
 
 5.6:
     reading from __DATA__ handles (15)
@@ -3222,17 +3220,18 @@ help make use of this compiler.
 
 5.8:
     +
-    sort $a (19)
-    qr// in main (20)
-    loop in sub (21)
-    our NV (23)
-
-5.10+5.11:
-    +
-    split (7)
     index - fbm_compile (11)
     open our (14)
+    $VERSION magic (23)
+
+5.10:
+    +
     sort by key (18)
+    qr// in main (20)
+    loop in sub (21)
+
+5.11:
+    4-5, 11, 14-16, 21, 23
 
 =head1 AUTHOR
 
