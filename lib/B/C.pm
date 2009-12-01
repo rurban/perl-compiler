@@ -985,12 +985,12 @@ sub B::NV::save {
   return $sym if defined $sym;
   my $val = $sv->NVX;
   $val .= '.00' if $val =~ /^-?\d+$/;
-  #if ($PERL510) { # fixed by NV isa IV >= 5.8
-  #  $xpvnvsect->add( sprintf( "%s, 0, 0, 0", $val ) );
-  #}
-  #else {
-  $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
-  #}
+  if ($PERL510) { # not fixed by NV isa IV >= 5.8
+    $xpvnvsect->add( sprintf( "%s, 0, 0, 0", $val ) );
+  }
+  else {
+    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
+  }
   $svsect->add(
     sprintf(
       "&xpvnv_list[%d], %lu, 0x%x",
