@@ -915,7 +915,6 @@ sub B::PMOP::save {
     }
     else { # 5.8
       my ( $resym, $relen ) = savere( $re, 0 );
-      # $init->add(sprintf("PM_SETRE(&$pm, pregcomp($resym, $resym + %u, &$pm));", $relen));
       $init->add(
         sprintf(
           "PM_SETRE(&$pm, CALLREGCOMP(aTHX_ $resym, $resym + %u, &$pm));",
@@ -3094,7 +3093,11 @@ debugger at the early CHECK step, where the compilation happens.
 
 =item B<-Do>
 
-OPs, prints each OP as it's processed
+All Walkop'ed OPs
+
+=item B<-DO>
+
+OP Type,Flags,Private
 
 =item B<-DS>
 
@@ -3128,7 +3131,7 @@ prints cached package information, if used or not.
 
 do not print -D information when parsing for the unused subs.
 
-=item B<-f>
+=item B<-f>I<OPTIM>
 
 Force options/optimisations on or off one at a time. You can explicitly
 disable an option using B<-fno-option>. All options default to
@@ -3212,15 +3215,24 @@ help make use of this compiler.
 
 2 or 3. Current status: experimental.
 
-  5.6:
-    none
-  5.8:
-    XSUB load order via B::Stash
-    qr// in main fails, within subs ok
-  5.10+5.11:
-    calling subs via GvGP fails (sort $a)
-    autoload subs
-    tie FETCH error
+5.6:
+    reading from __DATA__ handles (15)
+    calling nested subs (24)
+    XSUB load order via B::Stash (?)
+
+5.8:
+    +
+    sort $a (19)
+    qr// in main (20)
+    loop in sub (21)
+    our NV (23)
+
+5.10+5.11:
+    +
+    split (7)
+    index - fbm_compile (11)
+    open our (14)
+    sort by key (18)
 
 =head1 AUTHOR
 

@@ -12,9 +12,9 @@ PERL=${PERL:-perl}
 Mblib="-Mblib" # B::C is now 5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=C,-DcACMSGp,-v," 
+OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v," 
 if [ $BASE = "testcc.sh" ]; then 
-  OCMD="$PERL $Mblib -MO=CC,-DspqOlt,-v,"
+  OCMD="$PERL $Mblib -MO=CC,-DspqOl,-v,"
 fi
 OCMD2="$PERL $Mblib -MO=C,-O2," 
 if [ $BASE = "testcc.sh" ]; then 
@@ -186,9 +186,10 @@ else
 fi
 
 # 562  c:  15,24
-# 58   c:  15,24
+# 58   c:  15,24 (resp. 14,15,23)
+# 58  cc:  10_o,15,16_o,18-19,21,24
 # 510  c:  7,11,14-15,20-21,23
-# 510 cc:  +18,19,24
+# 510 cc:  +10_o,12,16_o,18,19
 
 #  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
 #  FAIL for B::CC should be covered by test 18
