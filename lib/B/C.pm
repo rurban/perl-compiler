@@ -904,7 +904,7 @@ sub B::PMOP::save {
       $init->add(
         sprintf( "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));",
 		 $op->pmflags ),
-        sprintf("RXp_EXTFLAGS(SvANY(PM_GETRE(&$pm))) = 0x%x;", $op->reflags )
+        sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
     }
     elsif ($PERL56) {
