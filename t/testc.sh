@@ -1,4 +1,7 @@
 #!/bin/bash
+# Beware that now the order of args -c -D -B is hardcoded
+# t/testc.sh -c -D u,-q -B static 2>&1 |tee c.log|grep FAIL
+#
 # use the actual perl from the Makefile (perl5.8.8, 
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
@@ -23,6 +26,7 @@ CONT=
 # rest
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
 LCMD=
+# on some perls I had to add $archlib/DynaLoader/DynaLoader.a to libs
 #CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g3"
 #LCMD=" -Wl,--enable-auto-import -Wl,--export-all-symbols -L/usr/lib/perl5/5.11/i686-cygwin/CORE -lperl -ldl -lcrypt -lgdbm_compat"
 
@@ -33,14 +37,14 @@ function vcmd {
 
 function pass {
     echo -n "$1 PASS "
-    #echo -n "\e[1;39m$1 PASS\e[0;0m"
+    #echo -n "^[[32m$1 PASS^[[0m"
     shift
     echo $*
     echo
 }
 function fail {
     echo -n "$1 FAIL "
-    #echo -n "\e[1;31m$1 FAIL\e[0;0m"
+    #echo -n "^[[31m$1 FAIL^[[0m"
     shift
     echo $*
     echo
@@ -76,15 +80,13 @@ function ctest {
 	echo "./${o}_o"
 	res=$(./${o}_o)
 	if [ "X$res" = "X${result[$n]}" ]; then
-	    test "X$res" = "X${result[$n]}" && pass "./$o_o -O2" "'$str' => '$res'"
+	    test "X$res" = "X${result[$n]}" && pass "./{o}_o -O2" "'$str' => '$res'"
 	else
-            fail "./$o_o -O2" "'$str' => '$res' Expected: '${result[$n]}'"
-	    #echo "\e[1;31m./${o}_o -O2 FAIL\e[0;0m '$str' => '$res' Expected: '${result[$n]}'"
+            fail "./${o}_o -O2" "'$str' => '$res' Expected: '${result[$n]}'"
 	fi
 	true
     else
         fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
-	#echo "\e[1;31m./$o FAIL\e[0;0m '$str' => '$res' Expected: '${result[$n]}'"
 	test -z $CONT && exit
     fi
 }
@@ -156,7 +158,22 @@ result[24]='ok'
 
 make
 
+# 
+# TODO: getopts for -Du,-q -w -v
 if [ "$1" = "-c" ]; then CONT=1; shift; fi
+# -D options: u,-q for quiet, no -D for verbose
+if [ "$1" = "-D" ]; then 
+    OCMD="$PERL $Mblib -MO=C,-D${2},"
+    if [ $BASE = "testcc.sh" ]; then 
+        OCMD="$PERL $Mblib -MO=CC,-D${2},"
+    fi
+    shift; shift
+fi
+# -B dynamic or -B static
+if [ "$1" = "-B" ]; then 
+    CCMD="$PERL script/cc_harness -g3 -B${2}"
+    shift; shift
+fi
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do
     ctest $1
@@ -168,16 +185,10 @@ else
   done
 fi
 
-# 58 c+xx:   6,8-11
-# 58,510 c:  7-8,11
-# 58,510 cc: 7-8,11,12
-
-#All: Undefined subroutine &main::a called at ccode8.pl line 1.
-#t/testc.sh 08 'sub AUTOLOAD { print 1 } &{"a"}()'
-
-#  for $k (sort { length $ENV{$b} <=> length $ENV{$a} } keys %ENV) {
-# 	print "$k=$ENV{$k}\n";
-#  }
+# 562  c:  15,24
+# 58   c:  15,24
+# 510  c:  7,11,14-15,20-21,23
+# 510 cc:  +18,19,24
 
 #  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
-#  fail for B::CC should be covered by test 18
+#  FAIL for B::CC should be covered by test 18
