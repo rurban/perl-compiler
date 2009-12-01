@@ -17,6 +17,7 @@ OCMD2="$PERL $Mblib -MO=C,-O2,"
 if [ $BASE = "testcc.sh" ]; then 
   OCMD2="$PERL $Mblib -MO=CC,-O2,"
 fi
+CONT=
 # 5.6
 #CCMD="$PERL script/cc_harness -g3"
 # rest
@@ -26,8 +27,23 @@ LCMD=
 #LCMD=" -Wl,--enable-auto-import -Wl,--export-all-symbols -L/usr/lib/perl5/5.11/i686-cygwin/CORE -lperl -ldl -lcrypt -lgdbm_compat"
 
 function vcmd {
-	echo $*
-	$*
+    echo $*
+    $*
+}
+
+function pass {
+    echo -n "$1 PASS "
+    #echo -n "\e[1;39m$1 PASS\e[0;0m"
+    shift
+    echo $*
+    echo
+}
+function fail {
+    echo -n "$1 FAIL "
+    #echo -n "\e[1;31m$1 FAIL\e[0;0m"
+    shift
+    echo $*
+    echo
 }
 
 function ctest {
@@ -49,30 +65,32 @@ function ctest {
     vcmd ${OCMD}-o$o.c $o.pl
     vcmd $CCMD $o.c -c -E -o ${o}_E.c
     vcmd $CCMD $o.c $LCMD -o $o
-    test -x $o || exit
+    test -x $o || (test -z $CONT && exit)
     echo "./$o"
-    res=$(./$o) || exit
+    res=$(./$o) || (test -z $CONT && exit)
     if [ "X$res" = "X${result[$n]}" ]; then
-	test "X$res" = "X${result[$n]}" && echo "./$o ok. '$str' => '$res'"
+	test "X$res" = "X${result[$n]}" && pass "./$o" "'$str' => '$res'"
 	vcmd ${OCMD2}-o${o}_o.c $o.pl
 	$CCMD ${o}_o.c $LCMD -o ${o}_o
-	test -x ${o}_o || exit
+	test -x ${o}_o || (test -z $CONT && exit)
 	echo "./${o}_o"
 	res=$(./${o}_o)
 	if [ "X$res" = "X${result[$n]}" ]; then
-	    test "X$res" = "X${result[$n]}" && echo "./${o}_o -O2 ok. '$str' => '$res'"
+	    test "X$res" = "X${result[$n]}" && pass "./$o_o -O2" "'$str' => '$res'"
 	else
-	    echo "./${o}_o -O2 failed. '$str' => '$res' Expected: '${result[$n]}'"
+            fail "./$o_o -O2" "'$str' => '$res' Expected: '${result[$n]}'"
+	    #echo "\e[1;31m./${o}_o -O2 FAIL\e[0;0m '$str' => '$res' Expected: '${result[$n]}'"
 	fi
 	true
     else
-	echo "./$o failed. '$str' => '$res' Expected: '${result[$n]}'"
-	exit
+        fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
+	#echo "\e[1;31m./$o FAIL\e[0;0m '$str' => '$res' Expected: '${result[$n]}'"
+	test -z $CONT && exit
     fi
 }
 
-declare -a tests[19]
-declare -a result[19]
+declare -a tests[24]
+declare -a result[24]
 tests[1]="print 'hi'"
 result[1]='hi';
 tests[2]="for (1,2,3) { print if /\d/ }"
@@ -119,22 +137,33 @@ tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
 result[18]='ba';
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
+# not repro: something like this is broken in original 5.6 (Net::DNS::ZoneFile::Fast)
 tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
 result[20]='1';
+# broken on early alpha
 tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
 result[21]='024';
+# broken in original perl 5.6
 tests[22]='my $fh; BEGIN { open($fh,"<","/dev/null"); } print "ok";';
 result[22]='ok';
+# broken in perl 5.8
+tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
+result[23]='ok'
+# works in original perl 5.6
+# broken with latest B::C in 5.6, 5.8
+tests[24]='sub level1 { return (level2() ? "fail" : "ok") }  sub level2 {0}  print level1();'
+result[24]='ok'
 
 make
 
+if [ "$1" = "-c" ]; then CONT=1; shift; fi
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do
     ctest $1
     shift
   done
 else
-  for b in $(seq -f"%02.0f" 22); do
+  for b in $(seq -f"%02.0f" 24); do
     ctest $b
   done
 fi

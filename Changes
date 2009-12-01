@@ -2,6 +2,12 @@
     Started on CPAN with B-C-1.04_12.
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
+1.04_26 2009-12-?? rurban
+	* C.pm: remove nv->IVX for 5.10 (Can't locate object method "IVX" via package "B::NV").
+	protect mg->OBJ when SCALAR (Can't call method "save" on unblessed reference).
+	fix NV isa IV, to fix test 23 (Nick Koston)
+	* t/c.t, t/testc.sh: added tests 23, 24 (Nick Koston)
+
 1.04_25 2009-11-30 rurban
 	* C.pm: fixed IO for 5.11: LINES => IVX.
 	specialize GvLINES = -1 and protect against U32 signed-ness.

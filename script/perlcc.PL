@@ -42,7 +42,8 @@ print OUT <<'!NO!SUBS!';
 # Version 2.01, Tom Christiansen, Thu Mar 30 08:25:14 MST 2000
 # Version 2.02, Simon Cozens, Sun Apr 16 01:53:36 JST 2000
 # Version 2.03, Edward Peschko, Mon Feb 26 12:04:17 PST 2001
-# Version 2.04, Enache Adrian,Fri, 18 Jul 2003 23:15:37 +0300
+# Version 2.04, Enache Adrian, Fri, 18 Jul 2003 23:15:37 +0300
+# Version 2.05, Reini Urban, 2009-12-01 00:00:13
 
 use strict;
 use warnings;
@@ -53,7 +54,7 @@ use Config;
 use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use Cwd;
-our $VERSION = 2.04;
+our $VERSION = 2.05;
 $| = 1;
 
 $SIG{INT} = sub { exit(); }; # exit gracefully and clean up after ourselves.
@@ -191,7 +192,7 @@ sub parse_argv {
 
     helpme() if opt(h); # And exit
 
-    $Output = opt(o) || ( is_win32 ? 'a.exe' : 'a.out' );
+    $Output = opt(o) || ( is_win32 or $^O eq 'cygwin' ? 'a.exe' : 'a.out' );
     $Output = is_win32() ? $Output : relativize($Output);
     $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
 
@@ -592,7 +593,8 @@ perlcc - generate executables from Perl programs
     $ perlcc hello              # Compiles into executable 'a.out'
     $ perlcc -o hello hello.pl  # Compiles into executable 'hello'
 
-    $ perlcc -O file            # Compiles using the optimised C backend
+    $ perlcc -O file            # Compiles using the optimised CC backend
+    $ perlcc -Wb=-O2 file       # Compiles with C, using -O2 optimizations
     $ perlcc -B file            # Compiles using the bytecode backend
 
     $ perlcc -c file            # Creates a C file, 'file.c'
@@ -666,7 +668,7 @@ Use the 'optimised' C code generator. This is more experimental than
 everything else put together, and the code created is not guaranteed to
 compile in finite time and memory, or indeed, at all.
 
-=item -v
+=item -v I<num>
 
 Increase verbosity of output; can be repeated for more verbose output.
 
@@ -677,6 +679,14 @@ Run the resulting compiled script after compiling it.
 =item -log
 
 Log the output of compiling to a file rather than to stdout.
+
+=item -Wb I<options>
+
+Pass the options to the compiler backend, such as -Wb=-O2,-v
+
+=item -testsuite
+
+  perlcc -r -testsuite t/harness
 
 =back
 

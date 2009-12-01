@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_25';
+our $VERSION = '1.04_26';
 
 package B::C::Section;
 
@@ -176,7 +176,8 @@ use B
   HEf_SVKEY SVf_POK SVf_ROK);
 BEGIN {
   if ($] >=  5.008) {
-    B->import(qw(regex_padav CVf_CONST)); #both unsupported for 5.6
+    @B::NV::ISA = 'B::IV';		  # this fixes test 23
+    B->import(qw(regex_padav CVf_CONST)); # both unsupported for 5.6
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -469,7 +470,7 @@ my $opsect_common =
 
   sub B::OP::_save_common_middle {
     my $op = shift;
-    my $madprop = $MAD ? "/*madprop*/0," : "";
+    my $madprop = $MAD ? "0," : "";
     sprintf( "%s,%s %u, %u, $static, 0x%x, 0x%x",
       $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags,
       $op->private );
@@ -984,20 +985,20 @@ sub B::NV::save {
   return $sym if defined $sym;
   my $val = $sv->NVX;
   $val .= '.00' if $val =~ /^-?\d+$/;
-  if ($PERL510) {
-    $xpvnvsect->add( sprintf( "%s, 0, 0, %d", $val, $sv->IVX ) );
-  }
-  else {
-    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
-  }
+  #if ($PERL510) { # fixed by NV isa IV >= 5.8
+  #  $xpvnvsect->add( sprintf( "%s, 0, 0, 0", $val ) );
+  #}
+  #else {
+  $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
+  #}
   $svsect->add(
     sprintf(
       "&xpvnv_list[%d], %lu, 0x%x",
       $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
-  warn sprintf( "Saving NV %d %s to xpvnv_list[%d], sv_list[%d]",
-    $sv->IVX, $val, $xpvnvsect->index, $svsect->index )
+  warn sprintf( "Saving NV %s to xpvnv_list[%d], sv_list[%d]",
+    $val, $xpvnvsect->index, $svsect->index )
     if $debug{sv};
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
@@ -1283,7 +1284,10 @@ sub B::PVMG::save_magic {
 
     unless ( $type eq 'r' ) {
       $obj = $mg->OBJ;
-      $obj->save;
+      # 5.10: Can't call method "save" on unblessed reference: perl -Mblib script/perlcc t/c.t
+      #warn "Save MG ". $obj . "\n" if $PERL510;
+      $obj->save
+        unless $PERL510 and ref $obj eq 'SCALAR';
     }
 
     if ( $len == HEf_SVKEY ) {
