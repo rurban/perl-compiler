@@ -176,7 +176,7 @@ use B
   HEf_SVKEY SVf_POK SVf_ROK);
 BEGIN {
   if ($] >=  5.008) {
-    @B::NV::ISA = 'B::IV';		  # this fixes test 23
+    @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
     B->import(qw(regex_padav CVf_CONST)); # both unsupported for 5.6
   }
 }
