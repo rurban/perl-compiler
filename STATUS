@@ -15,104 +15,49 @@ Open B::C Problems for 5.8 and 5.10:
 
 TEST STATUS
 -----------
-5.6.2 i386-linux-thread-multi:
-t/assembler.t  171 43776   175  194 110.86%  5-175
-t/b.t            0    11    57  106 185.96%  5-57
-t/bytecode.t                20   20 100.00%  1-20
-t/o.t                        9    1  11.11%  9
-t/stash.t      255 65280    ??   ??       %  ??
-  2 subtests skipped.
-  Can't declare another package's variables at t/stash.t line 91
+cygwin-5.10.1:
+t/reports       Failed tests:  2-5, 7, 11, 20
+t/reports       Failed tests:  11, 14-15, 20-21, 23
+t/reports       Failed tests:  20-21, 23-24
 
-5.6.2 cygwin:
-t/b.t           0   139    57  106 185.96%  5-57
-t/bytecode.t               24   24 100.00%  1-24
-t/cc.t                     24    1   4.17%  21
-t/o.t                       9    1  11.11%  9
-t/stash.t     255 65280    ??   ??       %  ??
-1 test and 2 subtests skipped.
+cygwin-5.10.1d:
+t/reports       Failed tests:  2-5, 7, 9-12, 20
+t/reports       Failed tests:  11, 14-15, 20-21, 23
+t/reports       Failed tests:  12, 20-21, 23-24
 
-5.8.8 debian:
-t/bytecode.t: ok
-t/c.t         Failed tests:  11 14-15 23
+cygwin-5.10.1d-nt:
+t/reports       Failed tests:  9-12, 20
+t/reports       Failed tests:  11, 14-15, 20, 23-24
+t/reports       Failed tests:  12, 20-21, 23
 
-5.8.8d:
-t/bytecode.t: ok
-t/c.t         Failed tests: 11 14-15 23 (14-15 new)
+cygwin-5.11.2:
+t/reports       Failed tests:  5, 11, 16, 20-21
+t/reports       Failed tests:  5, 11, 14-16, 23
+t/reports       Failed tests:  5, 21, 23-24
 
-5.8.9d:
-t/bytecode.t: ok
-t/c.t         Failed tests: 11 14-15 23 (14-15 new)
+cygwin-5.11.2d:
+t/reports       Failed tests:  5, 9-12, 16, 20-21
+t/reports       Failed tests:  5, 11, 14-16, 23
+t/reports       Failed tests:  5, 21, 23-24
 
-5.10.0d debian:
-t/bytecode (Wstat: 0 Tests: 20 Failed: 20)
-  Failed tests:  1-20
-t/c        (Wstat: 0 Tests: 20 Failed: 4)
-  Failed tests:  7, 11, 14-15
-t/cc       (Wstat: 0 Tests: 20 Failed: 1)
-  Failed test:  7
+cygwin-5.11.2d-nt:
+t/reports       Failed tests:  5, 9-12, 15-16, 20-21
+t/reports       Failed tests:  5, 11, 14-16, 23-24
+t/reports       Failed tests:  5, 21, 23
 
-5.10.0d cygwin:
-t/bytecode.t (Wstat: 0 Tests: 19 Failed: 9)
-  Failed tests:  2-5, 7, 9-12
-t/c.t        (Wstat: 0 Tests: 19 Failed: 3)
-  Failed tests:  7-8, 11
-t/cc.t       (Wstat: 0 Tests: 19 Failed: 4)
-  Failed tests:  7-8, 11-12
+debian-5.10.1:
+t/reports       Failed tests:  2-5, 7, 11, 20
+t/reports       Failed tests:  11, 14-15, 20-21, 23
+t/reports       Failed tests:  20-21, 23-24
 
-5.10.0-nt  cygwin not threaded:
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 2)
-  Failed tests:  7, 11
-t/c.t        (Wstat: 0 Tests: 20 Failed: 4)
-  Failed tests:  7, 11, 14-15
-t/cc.t       (Wstat: 0 Tests: 20 Failed: 1)
-  Failed test:  7
-  TODO passed:   12
+debian-5.11.0d:
+t/reports       Failed tests:  9-12, 16, 20-21
+t/reports       Failed tests:  11, 14-16, 23
+t/reports       Failed tests:  21, 23-24
 
-5.10.1d-nt (cygwin debugging, not threaded):
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 5)
-  Failed tests:  7, 9-12
-t/c.t        (Wstat: 0 Tests: 20 Failed: 5)
-  Failed tests:  7, 11, 14-15, 20
-t/cc.t       (Wstat: 0 Tests: 20 Failed: 3)
-  Failed tests:  7, 12, 20
-
-5.10.1 cygwin
-t/bytecode.t (Wstat: 0 Tests: 20 Failed: 7)
-  Failed tests:  2-5, 7, 11, 20
-t/c.t        (Wstat: 0 Tests: 20 Failed: 5)
-  Failed tests:  7, 11, 14-15, 20
-t/cc.t       (Wstat: 0 Tests: 20 Failed: 2)
-  Failed tests:  7, 20
-  TODO passed:   12
-
-5.11.2 cygwin
-t/bytecode.t (Wstat: 0 Tests: 24 Failed: 5)
-  Failed tests:  5, 11, 16, 20-21
-t/c.t        (Wstat: 0 Tests: 24 Failed: 6)
-  Failed tests:  5, 11, 14-16, 23
-t/cc.t       (Wstat: 0 Tests: 24 Failed: 4)
-  Failed tests:  5, 21, 23-24
-  TODO passed:   4, 12 
-
-5.11.2d cygwin
-t/bytecode.t (Wstat: 0 Tests: 24 Failed: 8)
-  Failed tests:  5, 9-12, 16, 20-21
-t/c.t        (Wstat: 0 Tests: 24 Failed: 6)
-  Failed tests:  5, 11, 14-16, 23
-t/cc.t       (Wstat: 0 Tests: 24 Failed: 4)
-  Failed tests:  5, 21, 23-24
-  TODO passed:   4, 12
-
-5.11.2d-nt cygwin
-t/bytecode.t (Wstat: 0 Tests: 24 Failed: 9)
-  Failed tests:  5, 9-12, 15-16, 20-21
-t/c.t        (Wstat: 0 Tests: 24 Failed: 7)
-  Failed tests:  5, 11, 14-16, 23-24
-t/cc.t       (Wstat: 0 Tests: 24 Failed: 3)
-  Failed tests:  5, 21, 23
-  TODO passed:   4
-
+debian-5.8.8:
+t/reports       Failed tests:  14-15, 23
+t/reports       Failed tests:  21, 23-24
 
 5.10, 5.11 status
 -----------------
