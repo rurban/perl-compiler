@@ -902,8 +902,8 @@ sub B::PMOP::save {
       my $resym = cstring($re);
       my $relen = length($re);
       $init->add(
-        sprintf( "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));",
-		 $op->pmflags ),
+        sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));",
+		$op->pmflags ),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
     }
