@@ -1177,6 +1177,9 @@ sub B::BM::save {
   }
   $init->add(
     sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len - 257 ) );
+  # TODO fbm_compile since 5.8 is doing something we haven't caught yet
+  $init->add(
+    sprintf( "fbm_compile(&sv_list[%d], 0);", $svsect->index) ) unless $PERL56;
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
