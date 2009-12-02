@@ -239,7 +239,7 @@ sub B::GV::ix {
         #GV_without_GP has no flags?
         asm "xgv_flags", $gv->GvFLAGS;
       }
-      if ( !$PERL510 and $gv->STASH ) {
+      if ( !$PERL510 and !$PERL56 and $gv->STASH ) {
         my $stashix = $gv->STASH->ix;
         asm "xgv_stash", $stashix;
       }
@@ -743,9 +743,9 @@ sub B::PMOP::bsave {
     $rrop   = "op_pmreplrootgv";
     $rrarg  = $op->pmreplroot->ix;
     $rstart = $op->pmreplstart->ix if $op->name eq 'subst';
-    my $stashix = $op->pmstash->ix;
+    my $stashix = $op->pmstash->ix unless $PERL56;
     $op->B::BINOP::bsave($ix);
-    asm "op_pmstash", $stashix;
+    asm "op_pmstash", $stashix unless $PERL56;
   }
 
   asm $rrop, $rrarg if $rrop;
@@ -755,7 +755,7 @@ sub B::PMOP::bsave {
     bwarn( "PMOP op_pmflags: ", $op->pmflags ) if $debug{M};
     asm "op_pmflags",     $op->pmflags;
     asm "op_pmpermflags", $op->pmpermflags;
-    asm "op_pmdynflags",  $op->pmdynflags;
+    asm "op_pmdynflags",  $op->pmdynflags unless $PERL56;
 
     # asm "op_pmnext", $pmnextix;	# XXX broken
     asm "newpv", pvstring $op->precomp
@@ -861,7 +861,7 @@ sub B::OP::opwalk {
   my $ix = $optab{$$op};
   defined($ix) ? $ix : do {
     my $ix;
-    my @oplist = $op->oplist;
+    my @oplist = $op->oplist; # FIXME for 5.6
     push @cloop, undef;
     $ix = $_->ix while $_ = pop @oplist;
     while ( $_ = pop @cloop ) {
@@ -922,7 +922,7 @@ sub save_cq {
 sub B::GV::bytecodecv {
   my $gv = shift;
   my $cv = $gv->CV;
-  if ( $$cv && !saved($cv) && !( $gv->FLAGS & 0x80 ) ) { # GVf_IMPORTED_CV
+  if ( $$cv && !( $gv->FLAGS & 0x80 ) ) { # GVf_IMPORTED_CV / && !saved($cv)
     if ($debug{cv}) {
       warn sprintf( "saving extra CV &%s::%s (0x%x) from GV 0x%x\n",
         $gv->STASH->NAME, $gv->NAME, $$cv, $$gv );
