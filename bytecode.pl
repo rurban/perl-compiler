@@ -711,8 +711,8 @@ __END__
 0 xpv_cur	bstate->bs_sv	 			STRLEN		x
 0 xpv_len	bstate->bs_sv				STRLEN		x
 8 xiv		bstate->bs_sv				IV		x
-<8 xiv32	bstate->bs_sv				I32
-<8 xiv64	bstate->bs_sv				IV64
+<8 xiv32	SvIVX(bstate->bs_sv)			I32
+<8 xiv64	SvIVX(bstate->bs_sv)			IV64
 0 xnv		bstate->bs_sv				NV		x
 0 xlv_targoff	LvTARGOFF(bstate->bs_sv)		STRLEN
 0 xlv_targlen	LvTARGLEN(bstate->bs_sv)		STRLEN

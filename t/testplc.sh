@@ -9,6 +9,7 @@ Mblib="-Mblib" # it is now 5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
+if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; fi
 ICMD="$PERL $Mblib -MByteLoader"
 
 function bcall {

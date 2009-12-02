@@ -143,7 +143,6 @@ sub pvstring {
 }
 
 sub nv {
-
   # print full precision
   my $str = sprintf "%.40f", $_[0];
   $str =~ s/0+$//;     # remove trailing zeros

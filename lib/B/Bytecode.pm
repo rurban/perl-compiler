@@ -13,19 +13,22 @@ our $VERSION = '1.02_04';
 
 use strict;
 use Config;
-use 5.008;
-use B qw(class main_cv main_root main_start cstring comppadlist
-  defstash curstash begin_av init_av end_av inc_gv warnhook diehook
-  dowarn SVt_PVGV SVt_PVHV OPf_SPECIAL OPf_STACKED OPf_MOD
-  OPpLVAL_INTRO SVf_FAKE SVf_READONLY);
+#use 5.008;
+use B qw(class main_cv main_root main_start
+	 begin_av init_av end_av cstring comppadlist
+	 OPf_SPECIAL OPf_STACKED OPf_MOD
+	 OPpLVAL_INTRO SVf_READONLY);
 use B::Assembler qw(asm newasm endasm);
 
 BEGIN {
-  if ( $] < 5.009 ) {
-    B::Asmdata->import(qw(@specialsv_name));
-  }
-  else {
-    B->import(qw(@specialsv_name));
+  if ( $] < 5.009 ) { B::Asmdata->import(qw(@specialsv_name @optype)); }
+  else { B->import(qw(@specialsv_name @optype)); }
+  if ( $] > 5.007 ) {
+    B->import(qw(defstash curstash inc_gv dowarn
+		 warnhook diehook SVt_PVGV
+		 SVf_FAKE ));
+  } else {
+    B->import(qw(walkoptree walksymtable));
   }
 }
 use B::Concise;
@@ -38,13 +41,31 @@ my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
 my %optab   = ( 0, 0 );
 my %spectab = ( 0, 0 );
-my $tix     = 1;
+my $tix      = 1;
 my %ops     = ( 0, 0 );
+my @packages;    # list of packages to compile. 5.6 only
 
 # sub asm ($;$$) { }
 sub nice ($) { }
 my $PERL510 = ( $] >= 5.009005 );
 my $PERL511 = ( $] >= 5.011 );
+my $PERL56  = ( $] <  5.008 );
+
+my %optype_enum;
+my ($SVt_PVGV, $SVf_FAKE, $POK);
+if ($PERL56) {
+  sub dowarn {};
+  $SVt_PVGV = 13;
+  $SVf_FAKE = 0x00100000;
+  $POK = 0x00040000 | 0x04000000;
+  for ( my $i = 0 ; $i < @optype ; $i++ ) {
+    $optype_enum{ $optype[$i] } = $i;
+  }
+} else {
+  no strict 'subs';
+  $SVt_PVGV = SVt_PVGV;
+  $SVf_FAKE = SVf_FAKE;
+}
 
 BEGIN {
   my $ithreads = $Config{'useithreads'} eq 'define';
@@ -59,7 +80,6 @@ BEGIN {
 
 sub op_flags {
   return '' if $quiet;
-
   # B::Concise::op_flags($_[0]); # too terse
   # common flags (see BASOP.op_flags in op.h)
   my ($x) = @_;
@@ -111,9 +131,10 @@ sub B::OP::ix {
   defined($ix) ? $ix : do {
     nice "[" . $op->name . " $tix]";
     $ops{$tix} = $op;
-    my $arg = $op->size | $op->type << 7;
+    my $arg = $PERL56 ? $optype_enum{class($op)} : $op->size | $op->type << 7;
+    my $opsize = $PERL56 ? '?' : $op->size;
     B::Assembler::maxopix($tix) if $debug{A};
-    asm "newopx", $arg, sprintf( "$arg=size:%d,type:%d", $op->size, $op->type );
+    asm "newopx", $arg, sprintf( "$arg=size:%s,type:%d", $opsize, $op->type );
     $optab{$$op} = $opix = $ix = $tix++;
     $op->bsave($ix);
     $ix;
@@ -155,7 +176,7 @@ sub B::GV::ix {
       $gv->B::GV::debug;
     }
     if ( ( $PERL510 and $gv->isGV_with_GP )
-      or ( !$PERL510 and $gv->GP ) )
+      or ( !$PERL510 and !$PERL56 and $gv->GP ) )
     {    # only gv with gp
       my ( $svix, $avix, $hvix, $cvix, $ioix, $formix );
       nice "[GV]";
@@ -298,14 +319,26 @@ sub B::RV::bsave {
 sub B::PV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::NULL::bsave($ix);
-  asm "newpv", pvstring $sv->PVBM;
-  asm "xpv";
+  if ($PERL56) {
+    #$sv->B::SV::bsave;
+    if ($sv->FLAGS & $POK) {
+      asm  "newpv", pvstring $sv->PV ;
+      asm  "xpv";
+    }
+  } else {
+    asm "newpv", pvstring $sv->PVBM;
+    asm "xpv";
+  }
 }
 
 sub B::IV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::NULL::bsave($ix);
-  asm "xiv", $sv->IVX;
+  if ($PERL56) {
+    asm $sv->needs64bits ? "xiv64" : "xiv32", $sv->IVX;
+  } else {
+    asm "xiv", $sv->IVX;
+  }
 }
 
 sub B::NV::bsave {
@@ -316,11 +349,14 @@ sub B::NV::bsave {
 
 sub B::PVIV::bsave {
   my ( $sv, $ix ) = @_;
+  if ($PERL56) {
+    $sv->B::PV::bsave($ix);
+  } else {
       $sv->POK ? $sv->B::PV::bsave($ix)
     : $sv->ROK ? $sv->B::RV::bsave($ix)
     :            $sv->B::NULL::bsave($ix);
-  if ($PERL510) {    # was VERSION >= 5.009
-                     # See note below in B::PVNV::bsave
+  }
+  if ($PERL510) { # See note below in B::PVNV::bsave
     return if $sv->isa('B::AV');
     return if $sv->isa('B::HV');
     return if $sv->isa('B::CV');
@@ -329,15 +365,20 @@ sub B::PVIV::bsave {
   bwarn( sprintf( "PVIV sv:%s flags:0x%x", class($sv), $sv->FLAGS ) )
     if $debug{M};
 
-  # PVIV GV 8009, GV flags & (4000|8000) illegal (SVp_SCREAM|SVp_POK)
-  asm "xiv", !ITHREADS
-    && $sv->FLAGS & ( SVf_FAKE | SVf_READONLY ) ? "0 # but true" : $sv->IVX;
+  if ($PERL56) {
+    my $iv = $sv->IVX;
+    asm $sv->needs64bits ? "xiv64" : "xiv32", $iv;
+  } else {
+    # PVIV GV 8009, GV flags & (4000|8000) illegal (SVp_SCREAM|SVp_POK)
+    asm "xiv", !ITHREADS
+      && $sv->FLAGS & ( $SVf_FAKE | SVf_READONLY ) ? "0 # but true" : $sv->IVX;
+  }
 }
 
 sub B::PVNV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::PVIV::bsave($ix);
-  if ($PERL510) {    # VERSION >= 5.009
+  if ($PERL510) {
         # Magical AVs end up here, but AVs now don't have an NV slot actually
         # allocated. Hence don't write out assembly to store the NV slot if
         # we're actually an array.
@@ -384,7 +425,7 @@ sub B::PVMG::bsave {
   my $stashix = $sv->SvSTASH->ix;
   $sv->B::PVNV::bsave($ix);
   asm "xmg_stash", $stashix;
-  $sv->domagic($ix) if $sv->MAGICAL;
+  $sv->domagic($ix) if !$PERL56 and $sv->MAGICAL;
 }
 
 sub B::PVLV::bsave {
@@ -435,7 +476,6 @@ sub B::CV::bsave {
   my $gvix      = $cv->GV->ix;
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
-  my $constix   = $cv->CONST ? $cv->XSUBANY->ix : 0;
   my $startix   = $cv->START->opwalk;
   my $rootix    = $cv->ROOT->ix;
 
@@ -443,13 +483,15 @@ sub B::CV::bsave {
   asm "xcv_stash",       $stashix;
   asm "xcv_start",       $startix;
   asm "xcv_root",        $rootix;
-  asm "xcv_xsubany",     $constix;
+  unless ($PERL56) {
+    asm "xcv_xsubany",   $cv->CONST ? $cv->XSUBANY->ix : 0;
+  }
   asm "xcv_gv",          $gvix;
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
   asm "xcv_padlist",     $padlistix;
   asm "xcv_outside",     $outsideix;
   asm "xcv_flags",       $cv->CvFLAGS;
-  asm "xcv_outside_seq", $cv->OUTSIDE_SEQ;
+  asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
   asm "xcv_depth",       $cv->DEPTH;
 }
 
@@ -462,7 +504,7 @@ sub B::FM::bsave {
 
 sub B::AV::bsave {
   my ( $av, $ix ) = @_;
-  return $av->B::PVMG::bsave($ix) if $av->MAGICAL;
+  return $av->B::PVMG::bsave($ix) if !$PERL56 and $av->MAGICAL;
   my @array = $av->ARRAY;
   $_ = $_->ix for @array;   # hack. who in the world understands this? hands up!
   my $stashix = $av->SvSTASH->ix;
@@ -496,7 +538,7 @@ sub B::HV::bwalk {
   return if $walked{$$hv}++;
   my %stash = $hv->ARRAY;
   while ( my ( $k, $v ) = each %stash ) {
-    if ( $] > 5.006 and $v->SvTYPE == SVt_PVGV ) {
+    if ( !$PERL56 and $v->SvTYPE == $SVt_PVGV ) {
       my $hash = $v->HV;
       if ( $$hash && $hash->NAME ) {
         $hash->bwalk;
@@ -799,7 +841,7 @@ sub B::COP::bsave {
   }
   else {
     my $stashix = $cop->stash->ix;
-    my $fileix  = $cop->filegv->ix(1);
+    my $fileix  = $PERL56 ? pvix($cop->file) : $cop->filegv->ix(1);
     $cop->B::OP::bsave($ix);
     asm "cop_stash",  $stashix;
     asm "cop_filegv", $fileix;
@@ -809,7 +851,7 @@ sub B::COP::bsave {
   asm "cop_arybase", $cop->arybase unless $PERL510;
   asm "cop_line", $cop->line;
   asm "cop_warnings", $warnix;
-  if ( !$PERL510 ) {
+  if ( !$PERL510 and !$PERL56 ) {
     asm "cop_io", $cop->io->ix;
   }
 }
@@ -829,8 +871,6 @@ sub B::OP::opwalk {
     $ix;
     }
 }
-
-#################################################
 
 sub save_cq {
   my $av;
@@ -876,6 +916,34 @@ sub save_cq {
     }
   }
 }
+
+################### perl 5.6 backport only ###################################
+
+sub B::GV::bytecodecv {
+  my $gv = shift;
+  my $cv = $gv->CV;
+  if ( $$cv && !saved($cv) && !( $gv->FLAGS & 0x80 ) ) { # GVf_IMPORTED_CV
+    if ($debug{cv}) {
+      warn sprintf( "saving extra CV &%s::%s (0x%x) from GV 0x%x\n",
+        $gv->STASH->NAME, $gv->NAME, $$cv, $$gv );
+    }
+    $gv->bsave;
+  }
+}
+
+sub symwalk {
+  no strict 'refs';
+  my $ok = 1
+    if grep { ( my $name = $_[0] ) =~ s/::$//; $_ eq $name; } @packages;
+  if ( grep { /^$_[0]/; } @packages ) {
+    walksymtable( \%{"$_[0]"}, "desired", \&symwalk, $_[0] );
+  }
+  warn "considering $_[0] ... " . ( $ok ? "accepted\n" : "rejected\n" )
+    if $debug{bc};
+  $ok;
+}
+
+################### end perl 5.6 backport ###################################
 
 sub compile {
   my ( $head, $scan, $T_inhinc, $keep_syn );
@@ -936,15 +1004,17 @@ use ByteLoader '$ByteLoader::VERSION';
     }
     elsif (/^-b/) {
       $savebegins = 1;
-
-      # this is here for the testsuite
-    }
+    } # this is here for the testsuite
     elsif (/^-TI/) {
       $T_inhinc = 1;
     }
     elsif (/^-TF(.*)/) {
       my $thatfile = $1;
       *B::COP::file = sub { $thatfile };
+    }
+    elsif (/^-u(.*)/ and $PERL56) {
+      my $arg ||= $1;
+      push @packages, $arg;
     }
     else {
       bwarn "Ignoring '$_' option";
@@ -972,23 +1042,43 @@ use ByteLoader '$ByteLoader::VERSION';
     print $head if $head;
     newasm sub { print @_ };
 
-    defstash->bwalk;
-    asm "main_start", main_start->opwalk;
+    if (!$PERL56) {
+      defstash->bwalk;
+    } else {
+      if ( !@packages ) {
+	warn "No package specified for compilation, assuming main::\n";
+	@packages = qw(main);
+      }
+      my $curpad   = ( comppadlist->ARRAY )[1];
+      my $curpadix = $curpad->ix;
+      $curpad->bsave;
+      save_cq;
+      walkoptree( main_root, "bsave" ) unless ref(main_root) eq "B::NULL";
+      warn "done main program, now walking symbol table\n" if $debug{bc};
+      if (@packages) {
+	no strict qw(refs);
+	walksymtable( \%{"main::"}, "bytecodecv", \&symwalk );
+      }
+      else {
+	die "No packages requested for compilation!\n";
+      }
+    }
+    asm "main_start", $PERL56 ? main_start->ix : main_start->opwalk;
     asm "main_root",  main_root->ix;
     asm "main_cv",    main_cv->ix;
     asm "curpad", ( comppadlist->ARRAY )[1]->ix;
 
     asm "signal", cstring "__WARN__"    # XXX
-      if warnhook->ix;
+      if !$PERL56 and warnhook->ix;
     asm "incav", inc_gv->AV->ix if $T_inhinc;
     save_cq;
     asm "incav", inc_gv->AV->ix if $T_inhinc;
-    asm "dowarn", dowarn;
+    asm "dowarn", dowarn unless $PERL56;
 
     {
       no strict 'refs';
       nice "<DATA>";
-      my $dh = *{ defstash->NAME . "::DATA" };
+      my $dh = $PERL56 ? *main::DATA : *{ defstash->NAME . "::DATA" };
       unless ( eof $dh ) {
         local undef $/;
         asm "data", ord 'D';

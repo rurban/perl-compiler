@@ -63,8 +63,7 @@ unless ($Mblib) {
     $Mblib = "-Mblib"; # forced -Mblib via cmdline
   }
 }
-my $Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
-
+# my $Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO " : "#";
   my $got;
@@ -74,7 +73,7 @@ for (@tests) {
   $test = "bytecode$cnt.pl";
   open T, ">$test"; print T $script; close T;
   unlink "${test}c" if -e "${test}c";
-  $got = run_perl(switches => [ "$Mblib -MO=$Bytecode,-o${test}c" ],
+  $got = run_perl(switches => [ "$Mblib -MO=Bytecode,-o${test}c" ],
 		  verbose  => 0, # for DEBUGGING
 		  nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
 		  stderr   => 1, # to capture the "bytecode.pl syntax ok"	

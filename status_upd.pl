@@ -20,7 +20,7 @@ if (@ARGV and -d $ARGV[0]) {
 die "$STATUS not found\n" unless -f $STATUS;
 
 # update the TEST STATUS section in "./STATUS"
-my $cmd = 'grep -B1 "Failed tests" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
+my $cmd = 'grep -B1 -i "Failed tests" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
 print STDERR "$cmd\n";
 my @g = `$cmd` or die $@;
 my $s = "";
@@ -39,7 +39,7 @@ while (@g) {
     $s .= "\n$prefix:\n";
     print STDERR "\n$prefix:\n";
   }
-  ($file) = $file =~ m{(t/[\w\.]+\s?)};
+  ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
   chomp $file if $file;
   $failed =~ s{^.+Failed tests:}{Failed tests:};
   chomp $failed;

@@ -10,6 +10,7 @@
 	fix PMOP extflags, esp. for split on >= 5.10 (test 5 + 7)
 	* t/c.t, t/testc.sh: added tests 23, 24 (Nick Koston)
 	* Bytecode.pm (1.02_04), bytecode.h: store and set PMOP reflags as U32. Fixes tests 2-4,7
+	  Start of backporting Perl 5.6
 
 1.04_25 2009-11-30 rurban
 	* C.pm: fixed IO for 5.11: LINES => IVX.
