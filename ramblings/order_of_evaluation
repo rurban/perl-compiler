@@ -1,0 +1,106 @@
+I wonder if this strange behaviour is known:
+
+$ perl -e'my $i = 1;
+my $foo = sub {
+  $i = shift if @_
+};
+print $i,&$foo(3),$i;'
+333
+
+$ perl -e'my $i = 1;
+my $foo = sub {
+  $i = shift if @_
+};
+print $i; print &$foo(3),$i;'
+133
+
+The first seems very wrong to me. The 2nd arg $foo, a cv - even a
+closure, but this is not relevant in general - must not be evaluated
+before the 1st arg of print.
+
+There's something wrong with the argument handling in the compiler
+and/or run-time, affecting side-effects only - such as the evaluation
+here.  I'll scratching my head now how to fix this, if wanted. IMO it
+should be fixed.  To which ops this really should be compiled to, if
+it can be detected on the compiler level.  e.g. "not-special ops" with
+list args with cv's, which are not the 1st arg. Such as our print
+here.  Or if it needs a fix in some of the LISTOP pp_ functions, like
+pp_print().
+
+http://groups.google.com/group/perl.perl6.language/tree/browse_frm/thread/508f65ac12195a59/0f35e622211975bd?rnum=61&_done=%2Fgroup%2Fperl.perl6.language%2Fbrowse_frm%2Fthread%2F508f65ac12195a59%3F#doc_617344f05578681a
+
+Rafael once wrote:
+The implicit assumption is that C<,> guarantees
+evaluation order. Like the comma operator in C IIRC.
+ -- This would be nice, but is wrong.
+
+Mark Overmeer then wrote:
+In the C language, the comma does not define the order of evaluation,
+which is cause of many conversion problems. 
+  -- Well, in lisp special arrangements are made for faster register passing - 
+  a bogus argument, but I heard it for parrot - and possible parallel evaluation, 
+  so left-to-right in special functions is not always guaranteed -- Reini
+In Perl, the comma is strictly evaluated from left to right in scalar context (explicitly
+described perlop).
+
+In LIST context, the comma is not an operator at all, but an expression
+separator like ';'   And therefore, the comma is not in for re-ordering
+in an argument list.
+ -- Now this is true, but only half of the truth.
+
+And I know that Larry wrote, that perl5 is mistaken here, and perl6 should get 
+it right. This was in 2003.
+But since it's quite easy to fix, it should be fixed in perl5, as everyone 
+expects such args to be evaluated left-to-right.
+
+http://groups.google.com/groups?selm=bhok6j%2470f%241%40plover.com
+
+first, wrong:
+1  <0> enter 
+2  <;> nextstate(main 1 -e:1) v:{
+3  <$> const[IV 1] s
+4  <0> padsv[$i:1,4] sRM*/LVINTRO
+5  <2> sassign vKS/2
+6  <;> nextstate(main 3 -e:4) v:{
+7  <0> pushmark sRM
+8  <$> anoncode[CV ] lRM
+9  <1> refgen sK/1
+a  <0> padsv[$foo:3,4] sRM*/LVINTRO
+b  <2> sassign vKS/2
+c  <;> nextstate(main 4 -e:5) v:{
+d  <0> pushmark s
+e  <0> padsv[$i:1,4] l
+f  <0> pushmark s
+g  <$> const[IV 3] sM
+h  <0> padsv[$foo:3,4] s
+i  <1> entersub[t4] lKS/TARG,1
+j  <0> padsv[$i:1,4] l
+k  <@> print vK
+l  <@> leave[1 ref] vKP/REFC 
+
+second ok:
+1  <0> enter 
+2  <;> nextstate(main 1 -e:1) v:{
+3  <$> const[IV 1] s
+4  <0> padsv[$i:1,4] sRM*/LVINTRO
+5  <2> sassign vKS/2
+6  <;> nextstate(main 3 -e:4) v:{
+7  <0> pushmark sRM
+8  <$> anoncode[CV ] lRM
+9  <1> refgen sK/1
+a  <0> padsv[$foo:3,4] sRM*/LVINTRO
+b  <2> sassign vKS/2
+c  <;> nextstate(main 4 -e:5) v:{
+d  <0> pushmark s
+e  <0> padsv[$i:1,4] l
+f  <@> print vK
+g  <;> nextstate(main 4 -e:5) v:{
+h  <0> pushmark s
+i  <0> pushmark s
+j  <$> const[IV 3] sM
+k  <0> padsv[$foo:3,4] s
+l  <1> entersub[t4] lKS/TARG,1
+m  <0> padsv[$i:1,4] l
+n  <@> print vK
+o  <@> leave[1 ref] vKP/REFC 
+
