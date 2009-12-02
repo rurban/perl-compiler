@@ -44,6 +44,7 @@ script/perlcc.PL
 script/pl2exe.pl			# "compiles" script to Windows exe
 SIGNATURE
 STATUS
+status_upd
 t/asmdata.t
 t/assembler.t
 t/b.t

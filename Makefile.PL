@@ -18,7 +18,7 @@ WriteMakefile(
 #    ('EXTRA_META'  => "recommends:\n" .
 #     "    B::Debug:    1.06\n"
 #    ) : ()),
-    clean => { FILES => "bytecode[1-9]* cccode[1-9]* ccode[1-9]* *.core *.stackdump ".
+    clean => { FILES => "bytecode[0-9]* cccode[0-9]* ccode[0-9]* *.core *.stackdump ".
 	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise *~"},
 );
 

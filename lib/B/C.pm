@@ -3223,7 +3223,6 @@ help make use of this compiler.
 
 5.8:
     +
-    index - fbm_compile (11)
     open our (14)
     $VERSION magic (23)
 
@@ -3234,7 +3233,7 @@ help make use of this compiler.
     loop in sub (21)
 
 5.11:
-    4-5, 11, 14-16, 21, 23
+    4-5, 14-16, 21, 23
 
 =head1 AUTHOR
 
