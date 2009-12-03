@@ -32,9 +32,9 @@ my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
 # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures
-my @todo = (14..15,18..19); #5.8.9
-@todo = (15,18..19) if $] < 5.007;
-@todo = (4,11,12,14..16,18..19) if $] >= 5.011;
+my @todo = (14..15); #5.8.9
+@todo = (15) if $] < 5.007;
+@todo = (4,11,12,14..16) if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;
 
