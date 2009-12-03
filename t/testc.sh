@@ -14,7 +14,7 @@ if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
 OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v," 
 if [ $BASE = "testcc.sh" ]; then 
-  OCMD="$PERL $Mblib -MO=CC,-DspqOl,-v,"
+  OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
 fi
 OCMD2="$PERL $Mblib -MO=C,-O2," 
 if [ $BASE = "testcc.sh" ]; then 
@@ -27,8 +27,6 @@ CONT=
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
-#CCMD="gcc -pipe -DDEBUGGING -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -fno-strict-aliasing -I/usr/lib/perl5/5.11/i686-cygwin/CORE -O0 -g3"
-#LCMD=" -Wl,--enable-auto-import -Wl,--export-all-symbols -L/usr/lib/perl5/5.11/i686-cygwin/CORE -lperl -ldl -lcrypt -lgdbm_compat"
 
 function vcmd {
     echo $*
@@ -80,7 +78,7 @@ function ctest {
 	echo "./${o}_o"
 	res=$(./${o}_o)
 	if [ "X$res" = "X${result[$n]}" ]; then
-	    test "X$res" = "X${result[$n]}" && pass "./{o}_o -O2" "'$str' => '$res'"
+	    test "X$res" = "X${result[$n]}" && pass "./${o}_o -O2" "'$str' => '$res'"
 	else
             fail "./${o}_o -O2" "'$str' => '$res' Expected: '${result[$n]}'"
 	fi
@@ -135,8 +133,10 @@ tests[16]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print
 result[16]='1';
 tests[17]='my $i=3; print 1 .. $i'
 result[17]='123';
+# custom key sort
 tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
 result[18]='ba';
+# fool the sort optimizer by $p, pp_sort works ok on CC
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
 # not repro: something like this is broken in original 5.6 (Net::DNS::ZoneFile::Fast)
