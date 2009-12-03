@@ -16,10 +16,11 @@ WriteMakefile(
     'ABSTRACT' => 'perl compiler',
 #   ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
 #    ('EXTRA_META'  => "recommends:\n" .
-#     "    B::Debug:    1.06\n"
+#     "    B::Debug:    1.11\n"
 #    ) : ()),
+    SIGN  => 1,
     clean => { FILES => "bytecode[0-9]* cccode[0-9]* ccode[0-9]* *.core *.stackdump ".
-	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise *~"},
+	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise log.test* *~"},
 );
 
 sub headerpath {
