@@ -170,7 +170,7 @@ sub parse_argv {
         'e:s',          # One-liner
 	'r',            # run resulting executable
         'B',            # Byte compiler backend
-        'O',            # Optimised C backend
+        'O',            # Optimised C backend B::CC
         'c',            # Compile only
         'h',            # Help me
         'S',            # Dump C files
@@ -664,7 +664,7 @@ Use the Perl bytecode code generator.
 
 =item -O
 
-Use the 'optimised' C code generator. This is more experimental than
+Use the 'optimised' C code generator B::CC. This is more experimental than
 everything else put together, and the code created is not guaranteed to
 compile in finite time and memory, or indeed, at all.
 
@@ -680,7 +680,7 @@ Run the resulting compiled script after compiling it.
 
 Log the output of compiling to a file rather than to stdout.
 
-=item -Wb I<options>
+=item -Wb=I<options>
 
 Pass the options to the compiler backend, such as -Wb=-O2,-v
 
