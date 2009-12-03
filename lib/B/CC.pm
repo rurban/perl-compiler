@@ -1,13 +1,14 @@
 #      CC.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
+#      Copyright (c) 2009 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 #
 package B::CC;
 
-our $VERSION = '1.00_02';
+our $VERSION = '1.00_03';
 
 use Config;
 use strict;
@@ -772,7 +773,8 @@ sub pp_sort {
     $root->save;
     my $sym = $start->save;
     my $fakeop = cc_queue( "pp_sort" . $$op, $root, $start );
-    $init->add( sprintf( "(%s)->op_next=%s;", $sym, $fakeop ) );
+    # fixed endless loop in test 19. It was reverse: op->next = op;
+    $init->add( sprintf( "(%s)->op_next = %s;", $fakeop, $sym ) );
   }
   $curcop->write_back;
   write_back_lexicals();

@@ -7,11 +7,13 @@ Same ok and less failures as with 5.6, 5.8 and 5.9.4
 Minor B::CC bugs fixed.
 Open B::C Problems for 5.8 and 5.10: 
 	PVLV tests
-	IO magic (test 11)
         open our $t (test 14)
 	__DATA__ IO (test 15)
-	AV BEGIN magic: tie @a FETCH defined within BEGIN (test 16)
-  See below at 5.10, 5.11 status
+        (test 23)
+        (test 24)
+        test 11 for 5.10
+        test 5 for 5.11
+  See below at detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
 -----------
@@ -96,10 +98,13 @@ t/cc.t 		Failed tests:  21, 23-24
 5.10, 5.11 status
 -----------------
 TODO: 
-  missing main::a and main::b subs for sort
+  missing main::a and main::b gv's for sort (which sort?)
   main stash destruction on empty names
+  cccode19: reverse custom sort.
 
 DONE:
+cccode19 sort failure at sense=cmp fixed with B::CC 1.02_03. endless loop
+
 autoload subs from main::, from packages it works ok (test 8)
 	fixed with 1.04_25
 
