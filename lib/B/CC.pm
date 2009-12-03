@@ -24,6 +24,9 @@ use B::C qw(save_unused_subs objsym init_sections mark_unused
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 
+@B::OP::ISA = qw(B::NULLOP B);           # support -Do
+@B::LISTOP::ISA = qw(B::BINOP B);       # support -Do
+
 # These should probably be elsewhere
 # Flags for $op->flags
 
@@ -268,7 +271,6 @@ sub pop_bool {
     return ( ( pop @stack )->as_bool );
   }
   else {
-
     # Careful: POPs has an auto-decrement and SvTRUE evaluates
     # its argument more than once.
     runtime("sv = POPs;");
@@ -763,18 +765,33 @@ sub pp_sort {
   my $op     = shift;
   my $ppname = $op->ppaddr;
   if ( $op->flags & OPf_SPECIAL && $op->flags & OPf_STACKED ) {
-
-    #this indicates the sort BLOCK Array case
-    #ugly surgery required.
-    my $root  = $op->first->sibling->first;
-    my $start = $root->first;
-    $op->first->save;
-    $op->first->sibling->save;
-    $root->save;
-    my $sym = $start->save;
+    # This indicates the sort BLOCK Array case
+    # Ugly surgery required. sort expects as block: pushmark rv2gv leave => enter
+    # pp_sort() OP *kid = cLISTOP->op_first->op_sibling;/* skip over pushmark 4 to null */
+    #	    kid = cUNOPx(kid)->op_first;		/* pass rv2gv (null'ed) */
+    #	    kid = cUNOPx(kid)->op_first;		/* pass leave */
+    #
+    #3        <0> pushmark s ->4
+    #8        <@> sort lKS* ->9
+    #4           <0> pushmark s ->5
+    #-           <1> null sK/1 ->5
+    #-              <1> ex-leave sKP ->-
+    #-                 <0> enter s ->-
+    #                      some code doing cmp or ncmp
+    #            Example with 3 const args: print sort { bla; $b <=> $a } 1,4,3
+    #5           <$> const[IV 1] s ->6
+    #6           <$> const[IV 4] s ->7
+    #7           <$> const[IV 3] s ->8 => sort
+    #
+    my $root  = $op->first->sibling->first; #leave or null
+    my $start = $root->first;  #enter
+    warn "sort BLOCK Array: root=",$root->name,", start=",$start->name,"\n" if $debug{op};
+    my $pushmark = $op->first->save; #pushmark sibling to null
+    $op->first->sibling->save; #null->first to leave
+    $root->save;               #ex-leave
+    my $sym = $start->save;    #enter
     my $fakeop = cc_queue( "pp_sort" . $$op, $root, $start );
-    # fixed endless loop in test 19. It was reverse: op->next = op;
-    $init->add( sprintf( "(%s)->op_next = %s;", $fakeop, $sym ) );
+    $init->add( sprintf( "(%s)->op_next = %s;", $sym, $fakeop ) );
   }
   $curcop->write_back;
   write_back_lexicals();
@@ -969,7 +986,7 @@ sub pp_ncmp {
     my $left  = new B::Pseudoreg( "double", "lnv" );
     runtime(
       sprintf( "$$right = %s; $$left = %s;", pop_numeric(), pop_numeric ) );
-    runtime sprintf( "if (%s > %s){", $$left, $$right );
+    runtime sprintf( "if (%s > %s){ /*targ*/", $$left, $$right );
     $targ->set_int(1);
     $targ->write_back();
     runtime sprintf( "}else if (%s < %s ) {", $$left, $$right );
@@ -983,6 +1000,7 @@ sub pp_ncmp {
     runtime "}";
     push( @stack, $targ );
   }
+  #runtime "return NULL;";
   return $op->next;
 }
 
@@ -999,7 +1017,6 @@ sub sv_binop {
         $stack[-1]->set_numeric( &$operator( $left, $right ) );
       }
       else {
-
         # XXX Does this work?
         runtime(
           sprintf( "sv_setsv($left, %s);", &$operator( $left, $right ) ) );
@@ -1030,7 +1047,6 @@ sub sv_binop {
       $targ->set_numeric( &$operator( "left", "right" ) );
     }
     else {
-
       # XXX Does this work?
       runtime(
         sprintf(
@@ -1296,7 +1312,6 @@ sub pp_formline {
 }
 
 sub pp_goto {
-
   my $op     = shift;
   my $ppname = $op->ppaddr;
   write_back_lexicals() unless $skip_lexicals{$ppname};
@@ -1796,7 +1811,7 @@ sub cc {
       $need_freetmps = 0;
     }
     if ( !$$op ) {
-      runtime( "PUTBACK;", "return PL_op;" );
+      runtime( "PUTBACK;", "return NULL;" );
     }
     elsif ( $done{$$op} ) {
       save_or_restore_lexical_state($$op);
@@ -1849,7 +1864,7 @@ sub cc_main {
       "PL_main_start = $start;",
       "/* save context */",
       "PL_curpad = AvARRAY($curpad_sym);",
-      "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
+      "PL_comppad = $curpad_sym;",
       "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
       "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
       "PL_initav = (AV *) $init_av;",
@@ -2231,5 +2246,6 @@ in the compiler.
 =head1 AUTHOR
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
+Reini Urban, C<rurban@cpan.org>
 
 =cut
