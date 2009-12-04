@@ -13,23 +13,28 @@ Mblib="-Mblib" # B::C is now 5.6+5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
 OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v," 
+OQCMD="$PERL $Mblib -MO=-qq,C,-q,"
 if [ $BASE = "testcc.sh" ]; then 
   OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
+  OQCMD="$PERL $Mblib -MO=-qq,C,-q,"
 fi
 OCMD2="$PERL $Mblib -MO=C,-O2," 
+OQCMD2="$PERL $Mblib -MO=-qq,C,-O2," 
 if [ $BASE = "testcc.sh" ]; then 
   OCMD2="$PERL $Mblib -MO=CC,-O2,"
+  OQCMD2="$PERL $Mblib -MO=-qq,CC,-O2,"
 fi
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
 # rest
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
+CQCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 
 function vcmd {
-    echo $*
+    test -n "$QUIET" || echo $*
     $*
 }
 
@@ -89,8 +94,9 @@ function ctest {
     fi
 }
 
-declare -a tests[24]
-declare -a result[24]
+ntests=25
+declare -a tests[$ntests]
+declare -a result[$ntests]
 tests[1]="print 'hi'"
 result[1]='hi';
 tests[2]="for (1,2,3) { print if /\d/ }"
@@ -154,11 +160,19 @@ result[23]='ok'
 # works in original perl 5.6, broken with latest B::C in 5.6, 5.8
 tests[24]='sub level1 { return (level2() ? "fail" : "ok") }  sub level2 {0}  print level1();'
 result[24]='ok'
-
-make
+# enforce custom ncmp sort and count it. fails as CC in all. How to enforce icmp?
+tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
+result[25]='0 1 2 3 4321';
 
 # 
-# TODO: getopts for -Du,-q -w -v
+# TODO: getopts for -q -Du,-q -w -v
+if [ "$1" = "-q" ]; then 
+    QUIET=1;
+    OCMD="$OQCMD" 
+    OCMD2="$OQCMD2"
+    CCMD="$CQCMD"
+    shift; 
+fi
 if [ "$1" = "-c" ]; then CONT=1; shift; fi
 # -D options: u,-q for quiet, no -D for verbose
 if [ "$1" = "-D" ]; then 
@@ -173,13 +187,18 @@ if [ "$1" = "-B" ]; then
     CCMD="$PERL script/cc_harness -g3 -B${2}"
     shift; shift
 fi
+if [ -z "$QUIET" ]; then
+    make
+else
+    make >/dev/null
+fi
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do
     ctest $1
     shift
   done
 else
-  for b in $(seq -f"%02.0f" 24); do
+  for b in $(seq -f"%02.0f" $ntests); do
     ctest $b
   done
 fi

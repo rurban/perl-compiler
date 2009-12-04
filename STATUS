@@ -13,6 +13,7 @@ Open B::C Problems for 5.8 and 5.10:
         (test 24)
         test 11 for 5.10
         test 5 for 5.11
+        C,-O2 fails often
   See below at detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
@@ -97,13 +98,11 @@ t/cc.t 		Failed tests:  21, 23-24
 
 5.10, 5.11 status
 -----------------
-TODO: 
-  missing main::a and main::b gv's for sort (which sort?)
+TODO:
   main stash destruction on empty names
-  cccode19: reverse custom sort.
 
 DONE:
-cccode19 sort failure at sense=cmp fixed with B::CC 1.02_03. endless loop
+cccode19 sort failure via custom sortcv fixed with B::CC 1.02_03. endless loop
 
 autoload subs from main::, from packages it works ok (test 8)
 	fixed with 1.04_25

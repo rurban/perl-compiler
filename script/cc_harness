@@ -3,6 +3,9 @@ use Config;
 
 $libdir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
 
+my $quiet++ if $ARGV[0] eq '-q';
+shift if $quiet;
+
 if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
   ;
 } elsif (grep(/^-Bdynamic$/, @ARGV)) { # force dynamic linking with -Bdynamic
@@ -19,5 +22,5 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
 }
 
 $cccmd = "$Config{cc} $Config{ccflags} -I$libdir @ARGV $linkargs";
-print "$cccmd\n";
+print "$cccmd\n" unless $quiet;
 exec $cccmd;
