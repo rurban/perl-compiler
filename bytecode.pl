@@ -180,14 +180,17 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
       sprintf(supported, "%x", BYTEORDER);
       BGET_strconst(str, 16); /* 12345678 or 1234 */
       if (strNE(str, supported)) {
-        bget_swab = 1;
+        /* swab only if same length. 1234 => 4321, 12345678 => 87654321 */
+        if (strlen(str) == strlen(supported)) {
+          bget_swab = 1;
+        }
 	HEADER_WARN2("EXPERIMENTAL: Convert byteorder.  Bytecode: %s, System: %s",
 		     str, supported);
       }
       strcpy(bl_header.byteorder, str);
     }
 
-    /* check byteorder */
+    /* swab byteorder */
     if (bget_swab) {
 	bl_header.ivsize = _swab_32_(bl_header.ivsize);
 	bl_header.ptrsize = _swab_32_(bl_header.ptrsize);
