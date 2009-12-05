@@ -1,7 +1,7 @@
 #      Assembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008 Reini Urban
+#      Copyright (c) 2008,2009 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -17,7 +17,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '0.07_05';
+$VERSION   = '0.07_06';
 
 use strict;
 my %opnumber;
