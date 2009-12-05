@@ -30,14 +30,17 @@ static int bget_swab = 0;
     } STMT_END
 
 /* with platform conversion from bl_header. */
-#define BGET_U16(arg)	STMT_START { BGET_OR_CROAK(arg, U16);           \
-                            if (bget_swab) {arg=_swab_16_(arg);}        \
+#define BGET_U16(arg)	STMT_START {					\
+	BGET_OR_CROAK(arg, U16);					\
+        if (bget_swab) {arg=_swab_16_(arg);}				\
     } STMT_END
-#define BGET_I32(arg)	STMT_START { BGET_OR_CROAK(arg, U32);           \
-                            if (bget_swab) {arg=_swab_32_(arg);}        \
+#define BGET_I32(arg)	STMT_START {					\
+	BGET_OR_CROAK(arg, U32);					\
+	if (bget_swab) {arg=_swab_32_(arg);}				\
     } STMT_END
-#define BGET_U32(arg)	STMT_START { BGET_OR_CROAK(arg, U32);           \
-                            if (bget_swab) {arg=_swab_32_(arg);}        \
+#define BGET_U32(arg)	STMT_START {					\
+	BGET_OR_CROAK(arg, U32);					\
+	if (bget_swab) {arg=_swab_32_(arg);}				\
     } STMT_END
 #define BGET_IV(arg) STMT_START {				        \
 	if (BGET_FREAD(&arg, bl_header.ivsize, 1) < 1) {		\
@@ -563,8 +566,8 @@ static int bget_swab = 0;
  * 	use ByteLoader;
  * is all you need.
  *	-- BKS, June 2000
- * Changed to guarantee backwards compatibility. -- rurban 2008-02
- * TODO: Just need to verify the valid opcode version table (syntax enhancement 8-10 ?), 
+ * TODO: Want to guarantee backwards compatibility. -- rurban 2008-02
+ *       Just need to verify the valid opcode version table (syntax enhancement 8-10 ?), 
  *       the perl opnum table and to define the converters.
  */
 
