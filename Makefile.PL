@@ -20,7 +20,7 @@ WriteMakefile(
 #    ) : ()),
     SIGN  => 1,
     clean => { FILES => "bytecode[0-9]* cccode[0-9]* ccode[0-9]* *.core *.stackdump ".
-	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise log.test* *~"},
+	                "a.out *.cee *.c *.asm *.dbg *.plc *.concise *~"},
 );
 
 sub headerpath {
