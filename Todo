@@ -28,7 +28,7 @@ check module dependencies, vs. link libs static, not via DynaLoader
 new Asm, JIT or PIR backend, PLJC ByteLoader magic
 check Bytecode op coverage in the tests, should cover all ops 0-142
 Disassembler should print the header
-ByteLoader compatibility: version, platform. eventually Bytecode version portability
+ByteLoader compatibility: version, platform. eventually Bytecode version portability (test with 5.6 on cygwin)
 
 * Optimisations
 

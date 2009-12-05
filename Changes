@@ -2,6 +2,10 @@
     Started on CPAN with B-C-1.04_12.
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
+1.04_28 2009-12-?? rurban
+	* t/b.t, t/o.t, t/stash.t: fix tests for 5.6.2
+	* bytecode.c: byteorder swab swab only if same length. 1234 => 4321, 12345678 => 87654321
+
 1.04_27 2009-12-04 rurban
 	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv cmp needed 
 	a return NULL (test 19).
