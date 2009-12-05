@@ -17,6 +17,10 @@ BEGIN {
         print "1..0 # Skip -- Perl configured without B module\n";
         exit 0;
     }
+    if ($] < 5.007 ){
+        print "1..0 # Skip -- stash tests disabled for 5.6\n";
+        exit 0;
+    }
 }
 
 $|  = 1;

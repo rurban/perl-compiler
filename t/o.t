@@ -58,10 +58,14 @@ SKIP: {
 	is( scalar @lines, 3, '-qq should suppress even the syntax OK message' );
 }
 
-$args[1] = '-MO=success,fail';
-@lines = get_lines( @args );
-like( $lines[1], qr/fail at .eval/,
-	'O.pm should die if backend compile() does not return a subref' );
+SKIP: {
+	skip( 'Wrong O.pm die eval message with 5.6', 1) if $] < 5.007;
+
+	$args[1] = '-MO=success,fail';
+	@lines = get_lines( @args );
+	like( $lines[1], qr/fail at .eval/,
+	      'O.pm should die if backend compile() does not return a subref' );
+}
 
 sub get_lines {
 	split(/[\r\n]+/, runperl( args => [ @_ ], stderr => 1 ));

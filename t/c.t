@@ -34,7 +34,7 @@ my @tests = tests();
 my @todo = (14,15,23); # 8,14-16 fail on 5.00505
 #5.6.2 native failures: 8,15,16.
 # 16 fixed with 1.04_24, 8 with 1.04_25
-@todo = (15,24) if $] < 5.007;
+@todo = (15,24,25) if $] < 5.007;
 
 my %todo = map { $_ => 1 } @todo;
 

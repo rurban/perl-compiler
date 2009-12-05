@@ -57,7 +57,7 @@ if ($DEBUGGING) {
   #@todo = (4,11,16) if ($] >= 5.011 and !$ITHREADS);
 }
 my %todo = map { $_ => 1 } @todo;
-my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # to test older perls
+my $Mblib = "-Mblib"; # TODO some switch to test older perls (core tests disabled since 1.04_27)
 unless ($Mblib) {
   if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
     $Mblib = "-Mblib"; # forced -Mblib via cmdline

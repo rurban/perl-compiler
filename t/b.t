@@ -65,29 +65,38 @@ ok( (!grep $_ != 1, values %Subs), '...and found once' );
 
 # Tests for MAGIC / MOREMAGIC
 ok( B::svref_2object(\$.)->MAGIC->TYPE eq "\0", '$. has \0 magic' );
-{
-    my $e = '';
-    local $SIG{__DIE__} = sub { $e = $_[0] };
-    # Used to dump core, bug #16828
-    eval { B::svref_2object(\$.)->MAGIC->MOREMAGIC->TYPE; };
-    like( $e, qr/Can't call method "TYPE" on an undefined value/, 
+SKIP: {
+  skip( 'skip old 5.6.2 bug #16828', 1) if $[ < 5.007;
+
+  my $e = '';
+  local $SIG{__DIE__} = sub { $e = $_[0] };
+  # Used to dump core, bug #16828
+  eval { B::svref_2object(\$.)->MAGIC->MOREMAGIC->TYPE; };
+  like( $e, qr/Can't call method "TYPE" on an undefined value/,
 	'$. has no more magic' );
 }
 
-my $r = qr/foo/;
-my $obj = B::svref_2object($r);
-my $regexp =  ($] < 5.011) ? $obj->MAGIC : $obj;
-ok($regexp->precomp() eq 'foo', 'Get string from qr//');
-like($regexp->REGEX(), qr/\d+/, "REGEX() returns numeric value");
+SKIP: {
+  skip( 'In 5.6 regex are PMOP, qr// makes a PVMG', 2) if $[ < 5.007;
+  my $r = qr/foo/;
+  my $obj = B::svref_2object($r); # a PVMG in 5.6
+  my $regexp =  ($] < 5.011 and $] > 5.007) ? $obj->MAGIC : $obj;
+
+  ok($regexp->precomp() eq 'foo', 'Get string from qr//'); # a PMOP method in 5.6
+  like($regexp->REGEX(), qr/\d+/, "REGEX() returns numeric value");
+}
 my $iv = 1;
 my $iv_ref = B::svref_2object(\$iv);
 is(ref $iv_ref, "B::IV", "Test B:IV return from svref_2object");
 is($iv_ref->REFCNT, 1, "Test B::IV->REFCNT");
 # Flag tests are needed still
 #diag $iv_ref->FLAGS();
-my $iv_ret = $iv_ref->object_2svref();
-is(ref $iv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
-is($$iv_ret, $iv, "Test object_2svref()");
+SKIP: {
+  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  my $iv_ret = $iv_ref->object_2svref();
+  is(ref $iv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
+  is($$iv_ret, $iv, "Test object_2svref()");
+}
 is($iv_ref->int_value, $iv, "Test int_value()");
 is($iv_ref->IV, $iv, "Test IV()");
 is($iv_ref->IVX(), $iv, "Test IVX()");
@@ -99,9 +108,12 @@ is(ref $pv_ref, "B::PV", "Test B::PV return from svref_2object");
 is($pv_ref->REFCNT, 1, "Test B::PV->REFCNT");
 # Flag tests are needed still
 #diag $pv_ref->FLAGS();
-my $pv_ret = $pv_ref->object_2svref();
-is(ref $pv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
-is($$pv_ret, $pv, "Test object_2svref()");
+SKIP: {
+  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  my $pv_ret = $pv_ref->object_2svref();
+  is(ref $pv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
+  is($$pv_ret, $pv, "Test object_2svref()");
+}
 is($pv_ref->PV(), $pv, "Test PV()");
 eval { is($pv_ref->RV(), $pv, "Test RV()"); };
 ok($@, "Test RV()");
@@ -113,9 +125,12 @@ is(ref $nv_ref, "B::NV", "Test B::NV return from svref_2object");
 is($nv_ref->REFCNT, 1, "Test B::NV->REFCNT");
 # Flag tests are needed still
 #diag $nv_ref->FLAGS();
-my $nv_ret = $nv_ref->object_2svref();
-is(ref $nv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
-is($$nv_ret, $nv, "Test object_2svref()");
+SKIP: {
+  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  my $nv_ret = $nv_ref->object_2svref();
+  is(ref $nv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
+  is($$nv_ret, $nv, "Test object_2svref()");
+}
 is($nv_ref->NV, $nv, "Test NV()");
 is($nv_ref->NVX(), $nv, "Test NVX()");
 
@@ -125,9 +140,12 @@ is(ref $null_ref, "B::NULL", "Test B::NULL return from svref_2object");
 is($null_ref->REFCNT, 1, "Test B::NULL->REFCNT");
 # Flag tests are needed still
 #diag $null_ref->FLAGS();
-my $null_ret = $nv_ref->object_2svref();
-is(ref $null_ret, "SCALAR", "Test object_2svref() return is SCALAR");
-is($$null_ret, $nv, "Test object_2svref()");
+SKIP: {
+  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  my $null_ret = $nv_ref->object_2svref();
+  is(ref $null_ret, "SCALAR", "Test object_2svref() return is SCALAR");
+  is($$null_ret, $nv, "Test object_2svref()");
+}
 
 # RV is eliminated with 5.11.0, but effectively is a specialisation of IV now.
 my $RV_class = $] >= 5.011 ? 'B::IV' : 'B::RV';
@@ -136,9 +154,12 @@ my $cv_ref = B::svref_2object(\$cv);
 is($cv_ref->REFCNT, 1, "Test $RV_class->REFCNT");
 is(ref $cv_ref, "$RV_class",
    "Test $RV_class return from svref_2object - code");
-my $cv_ret = $cv_ref->object_2svref();
-is(ref $cv_ret, "REF", "Test object_2svref() return is REF");
-is($$cv_ret, $cv, "Test object_2svref()");
+SKIP: {
+  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  my $cv_ret = $cv_ref->object_2svref();
+  is(ref $cv_ret, "REF", "Test object_2svref() return is REF");
+  is($$cv_ret, $cv, "Test object_2svref()");
+}
 
 my $av = [];
 my $av_ref = B::svref_2object(\$av);
@@ -169,7 +190,10 @@ is(B::opnumber("null"), 0, "Testing opnumber with opname (null)");
 is(B::opnumber("pp_null"), 0, "Testing opnumber with opname (pp_null)");
 like(B::hash("wibble"), qr/0x[0-9a-f]*/, "Testing B::hash()");
 is(B::cstring("wibble"), '"wibble"', "Testing B::cstring()");
-is(B::perlstring("wibble"), '"wibble"', "Testing B::perlstring()");
+SKIP: {
+  skip( '5.6 had no perlstring', 1) if $[ < 5.007;
+  is(B::perlstring("wibble"), '"wibble"', "Testing B::perlstring()");
+}
 is(B::class(bless {}, "Wibble::Bibble"), "Bibble", "Testing B::class()");
 is(B::cast_I32(3.14), 3, "Testing B::cast_I32()");
 is(B::opnumber("chop"), 38, "Testing opnumber with opname (chop)");

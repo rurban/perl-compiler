@@ -17,4 +17,5 @@ use Test::More tests => 1;
 
 use_ok('B::Bblock', qw(find_leaders));
 
-# Someone who understands what this module does, please fill this out.
+# For now only test loading Bblock works.
+# We could add tests to split op groups by Basic Blocks for CC.
