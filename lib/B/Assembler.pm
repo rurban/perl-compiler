@@ -256,7 +256,7 @@ sub gen_header {
       $byteorder = '?'x$s;
     }
   }
-  $header .= B::Asmdata::PUT_strconst( '"' . $byteorder . '"' );
+  $header .= B::Asmdata::PUT_strconst( sprintf(qq["0x%s"], $byteorder ));
   if ( $version ge "0.06_05" ) {
     my $archflag = 0;
     $archflag += 1 if $Config{useithreads};

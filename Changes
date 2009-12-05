@@ -4,9 +4,11 @@
 
 1.04_28 2009-12-?? rurban
 	* t/b.t, t/o.t, t/stash.t: fix tests for 5.6.2
-	* bytecode.c: byteorder swab only if same length. 1234 => 4321, 12345678 => 87654321
-	* Assembler.pm (0.07_06): 5.6 byteorder fix:
-	  until 5.6 the $Config{byteorder} was falsely dependent on ivsize, we need longsize.
+	* bytecode.c: byteorder swab only if same length. 1234 => 4321, 12345678 => 87654321.
+	Skip a 0x prefix for byteorder in the header. Perl 5.6 had this. 
+	* Assembler.pm (0.07_06): 5.6 byteorder fix: until 5.6 the $Config{byteorder} was 
+	  falsely dependent on ivsize, we need longsize.
+	Add 0x to byteorder in header again, as with 5.6.
 
 1.04_27 2009-12-04 rurban
 	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv cmp needed 

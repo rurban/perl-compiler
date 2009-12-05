@@ -177,12 +177,15 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 
     {
       /* config.h BYTEORDER: 0x1234 of length longsize, not ivsize */
-      char supported[8];
+      char supported[16];
       /* Note: perl's $Config{byteorder} is wrong with 64int.
          Bug in Config.pm:921 my $s = $Config{ivsize}; => my $s = $Config{longsize};
        */
       sprintf(supported, "%x", BYTEORDER);
-      BGET_strconst(str, 16); /* 12345678 or 1234 */
+      BGET_strconst(str, 16); /* optional 0x prefix, 12345678 or 1234 */
+      if (str[0] == 0x30 && str[1] == 0x78) { /* skip '0x' */
+        strcpy(str, &str[2]);
+      }
       if (strNE(str, supported)) {
         /* swab only if same length. 1234 => 4321, 12345678 => 87654321 */
         if (strlen(str) == strlen(supported)) {
