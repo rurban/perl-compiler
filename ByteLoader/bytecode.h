@@ -50,8 +50,8 @@ static int bget_swab = 0;
 	}								\
 	if (bl_header.ivsize != IVSIZE) {				\
 	    Perl_warn(aTHX_						\
-		       "Different IVSIZE %d for IV", 			\
-		       bl_header.ivsize);				\
+		       "Different IVSIZE: .plc %d, perl %d", 		\
+		      bl_header.ivsize, IVSIZE);			\
 	}								\
 	if (bget_swab) {arg = _swab_iv_(arg,IVSIZE);}			\
     } STMT_END
@@ -92,8 +92,8 @@ static int bget_swab = 0;
 	if (bget_swab) { arg = _swab_iv_(arg,bl_header.longsize); }	\
 	if (bl_header.longsize != LONGSIZE) {				\
 	    Perl_warn(aTHX_						\
-		       "Different LONGSIZE %d for long",		\
-		       bl_header.ivsize);				\
+		       "Different LONGSIZE .plc %d, perl %d",		\
+		      bl_header.ivsize, IVSIZE);			\
 	}								\
     } STMT_END
 
@@ -167,10 +167,20 @@ static int bget_swab = 0;
 	arg = Atof(str);		\
     } STMT_END
 
-#define BGET_objindex(arg, type) STMT_START {	\
+#ifdef DEBUGGING
+# define BGET_objindex(arg, type) STMT_START {	\
+	BGET_U32(ix);				\
+	arg = (type)bstate->bs_obj_list[ix];	\
+	if (!arg) {				\
+	    Perl_croak(aTHX_ "ByteLoader ERROR: Empty bs_obj_list[%d]", ix); \
+	}					\
+    } STMT_END
+#else
+# define BGET_objindex(arg, type) STMT_START {	\
 	BGET_U32(ix);				\
 	arg = (type)bstate->bs_obj_list[ix];	\
     } STMT_END
+#endif
 #define BGET_svindex(arg) BGET_objindex(arg, svindex)
 #define BGET_opindex(arg) BGET_objindex(arg, opindex)
 /*#define BGET_hekindex(arg) BGET_objindex(arg, hekindex)*/

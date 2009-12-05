@@ -176,7 +176,11 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
     }
 
     {
-      char supported[8]; /* config.h BYTEORDER: 0x1234 */
+      /* config.h BYTEORDER: 0x1234 of length longsize, not ivsize */
+      char supported[8];
+      /* Note: perl's $Config{byteorder} is wrong with 64int.
+         Bug in Config.pm:921 my $s = $Config{ivsize}; => my $s = $Config{longsize};
+       */
       sprintf(supported, "%x", BYTEORDER);
       BGET_strconst(str, 16); /* 12345678 or 1234 */
       if (strNE(str, supported)) {
@@ -184,7 +188,7 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
         if (strlen(str) == strlen(supported)) {
           bget_swab = 1;
         }
-	HEADER_WARN2("EXPERIMENTAL: Convert byteorder.  Bytecode: %s, System: %s",
+	HEADER_WARN2("EXPERIMENTAL: .plc=%s, perl=%s",
 		     str, supported);
       }
       strcpy(bl_header.byteorder, str);

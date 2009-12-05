@@ -4,7 +4,9 @@
 
 1.04_28 2009-12-?? rurban
 	* t/b.t, t/o.t, t/stash.t: fix tests for 5.6.2
-	* bytecode.c: byteorder swab swab only if same length. 1234 => 4321, 12345678 => 87654321
+	* bytecode.c: byteorder swab only if same length. 1234 => 4321, 12345678 => 87654321
+	* Assembler.pm: 5.6 byteorder fix:
+	  until 5.6 the $Config{byteorder} was falsely dependent on ivsize, we need longsize.
 
 1.04_27 2009-12-04 rurban
 	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv cmp needed 

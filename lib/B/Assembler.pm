@@ -241,7 +241,22 @@ sub gen_header {
   if ( $version ge "0.06_03" ) {
     $header .= B::Asmdata::PUT_U32( $Config{longsize} );
   }
-  $header .= B::Asmdata::PUT_strconst( '"' . $Config{byteorder} . '"' );
+  my $byteorder = $Config{byteorder};
+  if ($] < 5.007) {
+    # until 5.6 the $Config{byteorder} was dependent on ivsize, which was wrong. we need longsize.
+    my $t = $Config{ivtype};
+    my $s = $Config{longsize};
+    my $f = $t eq 'long' ? 'L!' : $s == 8 ? 'Q': 'I';
+    if ($s == 4 || $s == 8) {
+      my $i = 0;
+      foreach my $c (reverse(2..$s)) { $i |= ord($c); $i <<= 8 }
+      $i |= ord(1);
+      $byteorder = join('', unpack('a'x$s, pack($f, $i)));
+    } else {
+      $byteorder = '?'x$s;
+    }
+  }
+  $header .= B::Asmdata::PUT_strconst( '"' . $byteorder . '"' );
   if ( $version ge "0.06_05" ) {
     my $archflag = 0;
     $archflag += 1 if $Config{useithreads};
