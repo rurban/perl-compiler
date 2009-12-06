@@ -516,12 +516,11 @@ sub B::OP::save {
       );
     }
     elsif ($PERL510) {
-      $copsect->comment(
-        "$opsect_common, line, label, seq, warnings, hints_hash");
+      $copsect->comment("$opsect_common, line, label, seq, warn_int, hints_hash");
       $copsect->add(
         sprintf(
-          "%s, %u, NULL, " . "NULL, NULL, 0, " . "%u, %s, NULL",
-          $op->_save_common, 0, 0, 'NULL'
+          "%s, %u, NULL, " . "NULL, NULL, 0, " . "%u, %d, NULL",
+          $op->_save_common, 0, 0, 0
         )
       );
     }
@@ -733,25 +732,29 @@ sub B::COP::save {
   my $warn_sv;
   my $warnings   = $op->warnings;
   my $is_special = $warnings->isa("B::SPECIAL");
+  my $warnsvcast;
+  if ($is_special and $optimize_warn_sv) {
+    $warnsvcast = ($PERL510 and !$PERL511) ? "STRLEN*" : "SV*";
+  }
   if ( $is_special && $$warnings == 4 ) {
     # use warnings 'all';
     $warn_sv =
       $optimize_warn_sv
-      ? 'INT2PTR(SV*,1)'.($verbose ?' /*pWARN_ALL*/':'')
+      ? "INT2PTR($warnsvcast,1)".($verbose ?' /*pWARN_ALL*/':'')
       : 'pWARN_ALL';
   }
   elsif ( $is_special && $$warnings == 5 ) {
     # no warnings 'all';
     $warn_sv =
       $optimize_warn_sv
-      ? 'INT2PTR(SV*,2)'.($verbose ?' /*pWARN_NONE*/':'')
+      ? "INT2PTR($warnsvcast,2)".($verbose ?' /*pWARN_NONE*/':'')
       : 'pWARN_NONE';
   }
   elsif ($is_special) {
     # use warnings;
     $warn_sv =
       $optimize_warn_sv
-      ? 'INT2PTR(SV*,3)'.($verbose ?' /*pWARN_STD*/':'')
+      ? "INT2PTR($warnsvcast,3)".($verbose ?' /*pWARN_STD*/':'')
       : 'pWARN_STD';
   }
   else {
@@ -765,9 +768,10 @@ sub B::COP::save {
       "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
     $copsect->add(
       sprintf(
-        "%s, %u, Nullhv, " . "NULL, 0, %u, " . "NULL, NULL",
-        $op->_save_common, $op->line,
-        $op->cop_seq, ( $optimize_warn_sv ? $warn_sv : 'NULL' )
+              "%s, %u, Nullhv, " . "NULL, 0, %u, " . "NULL, NULL",
+              $op->_save_common, $op->line,
+              $op->cop_seq,
+              ( $optimize_warn_sv ? $warn_sv : 'NULL' )
       )
     );
     if ( $op->label ) {
@@ -780,13 +784,13 @@ sub B::COP::save {
     }
   }
   elsif ($PERL510) {
-    $copsect->comment("$opsect_common, line, label, seq, warn_sv");
+    $copsect->comment("$opsect_common, line, label, seq, warnings, hints_hash");
     $copsect->add(
       sprintf(
-        "%s, %u, %s, " . "NULL, NULL, 0, " . "%u, %s, NULL",
-        $op->_save_common,     $op->line,
-        cstring( $op->label ), $op->cop_seq,
-        ( $optimize_warn_sv ? $warn_sv : 'NULL' )
+              "%s, %u, %s, " . "NULL, NULL, 0, " . "%u, %s, NULL",
+              $op->_save_common,     $op->line,
+              cstring( $op->label ), $op->cop_seq,
+              ( $optimize_warn_sv ? $warn_sv : 'NULL' )
       )
     );
   }
