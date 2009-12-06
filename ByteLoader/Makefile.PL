@@ -17,6 +17,9 @@ WriteMakefile(
     OBJECT		=> 'byterun$(OBJ_EXT) ByteLoader$(OBJ_EXT)',
     LDDLFLAGS           => $lddlflags,
     CCFLAGS             => $ccflags,
+    clean => { FILES =>
+               "byterun.* *.core *.stackdump a.out *.c *.o *~"},
+
 );
 
 sub MY::depend {
