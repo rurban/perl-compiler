@@ -13,8 +13,6 @@ bytecode.pl
 ByteLoader/bytecode.h
 ByteLoader/ByteLoader.pm
 ByteLoader/ByteLoader.xs
-ByteLoader/byterun.c
-ByteLoader/byterun.h
 ByteLoader/hints/sunos.pl
 ByteLoader/Makefile.PL
 ByteLoader/ppport.h
@@ -51,7 +49,11 @@ t/b.t
 t/bblock.t
 t/bytecode.t
 t/c.t
+t/c_o1.t
+t/c_o2.t
 t/cc.t
+t/cc_o1.t
+t/cc_o2.t
 t/o.t
 t/stash.t
 t/TESTS
