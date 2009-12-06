@@ -783,16 +783,20 @@ sub tests {
 
 sub run_cc_test {
   my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
-  my $got;
+  my ($opt, $got);
   $expect =~ s/\n$//;
-  my $test = lc($backend)."code".$cnt.".pl";
-  my $cfile = lc($backend)."code".$cnt.".c";
-  my $exe = lc($backend)."code".$cnt.$Config{exe_ext};
+  my $fnbackend = lc($backend); #C,-O2
+  ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
+  $opt =~ s/,-/_/ if $opt;
+  $opt = '' unless $opt;
+  my $test = $fnbackend."code".$cnt.".pl";
+  my $cfile = $fnbackend."code".$cnt.$opt.".c";
+  my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
   unlink ($test, $cfile, $exe);
   open T, ">$test"; print T $script; close T;
   my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test older perls
   #my $Mblib = "-Mblib"; # test all
-  unless ($Mblib) {
+  unless ($Mblib) { # check -Mblib from the testsuite
     if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
       $Mblib = "-Mblib"; # forced via cmdline
     }
