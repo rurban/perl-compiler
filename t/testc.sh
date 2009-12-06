@@ -163,7 +163,7 @@ tests[24]='sub level1 { return (level2() ? "fail" : "ok") }  sub level2 {0}  pri
 result[24]='ok'
 # enforce custom ncmp sort and count it. fails as CC in all. How to enforce icmp?
 tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
-result[25]='0 1 2 3 4321';
+result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 
 # 
 # TODO: getopts for -q -Du,-q -w -v
