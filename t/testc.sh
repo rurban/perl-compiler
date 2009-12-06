@@ -11,26 +11,23 @@ PERL=${PERL:-perl}
 Mblib="-Mblib" # B::C is now fully 5.6+5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v,"
-# O from 5.6 does not support -qq
-qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
-OQCMD="$PERL $Mblib -MO=${qq}C,-q,"
+OCMD="$PERL $Mblib -MO=C,-DcOACMSGpu,-v,"
 if [ $BASE = "testcc.sh" ]; then 
   OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
-  OQCMD="$PERL $Mblib -MO=${qq}C,-q,"
 fi
-OCMD2="$PERL $Mblib -MO=C,-O2," 
-OQCMD2="$PERL $Mblib -MO=${qq}C,-O2," 
+OCMDO1="$PERL $Mblib -MO=C,-O1," 
 if [ $BASE = "testcc.sh" ]; then 
-  OCMD2="$PERL $Mblib -MO=CC,-O2,"
-  OQCMD2="$PERL $Mblib -MO=${qq}CC,-O2,"
+  OCMDO1="$PERL $Mblib -MO=CC,-O1,"
+fi
+OCMDO2="$PERL $Mblib -MO=C,-O2," 
+if [ $BASE = "testcc.sh" ]; then 
+  OCMDO2="$PERL $Mblib -MO=CC,-O2,"
 fi
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
 # rest
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
-CQCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 
@@ -78,16 +75,26 @@ function ctest {
     echo "./$o"
     res=$(./$o) || (test -z $CONT && exit)
     if [ "X$res" = "X${result[$n]}" ]; then
-	test "X$res" = "X${result[$n]}" && pass "./$o" "'$str' => '$res'"
-	vcmd ${OCMD2}-o${o}_o.c $o.pl
-	$CCMD ${o}_o.c $LCMD -o ${o}_o
-	test -x ${o}_o || (test -z $CONT && exit)
-	echo "./${o}_o"
-	res=$(./${o}_o)
+	pass "./$o" "'$str' => '$res'"
+	vcmd ${OCMDO1}-o${o}_o1.c $o.pl
+	$CCMD ${o}_o1.c $LCMD -o ${o}_o1
+	test -x ${o}_o1 || (test -z $CONT && exit)
+	echo "./${o}_o1"
+	res=$(./${o}_o1)
 	if [ "X$res" = "X${result[$n]}" ]; then
-	    test "X$res" = "X${result[$n]}" && pass "./${o}_o -O2" "'$str' => '$res'"
+	    test "X$res" = "X${result[$n]}" && pass "./${o}_o1" "=> '$res'"
 	else
-            fail "./${o}_o -O2" "'$str' => '$res' Expected: '${result[$n]}'"
+            fail "./${o}_o1" "=> '$res' Expected: '${result[$n]}'"
+	fi
+	vcmd ${OCMDO2}-o${o}_o2.c $o.pl
+	$CCMD ${o}_o2.c $LCMD -o ${o}_o2
+	test -x ${o}_o2 || (test -z $CONT && exit)
+	echo "./${o}_o2"
+	res=$(./${o}_o2)
+	if [ "X$res" = "X${result[$n]}" ]; then
+	    test "X$res" = "X${result[$n]}" && pass "./${o}_o2" "=> '$res'"
+	else
+            fail "./${o}_o2" "=> '$res' Expected: '${result[$n]}'"
 	fi
 	true
     else
@@ -96,7 +103,7 @@ function ctest {
     fi
 }
 
-ntests=25
+ntests=26
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -166,14 +173,21 @@ result[24]='ok'
 # <=5.6 qsort needs two more passes here than >=5.8 merge_sort
 tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
 result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
+# lvalue
+tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
+result[26]="26";
 
 # 
 # TODO: getopts for -q -Du,-q -w -v
 if [ "$1" = "-q" ]; then 
     QUIET=1;
-    OCMD="$OQCMD" 
-    OCMD2="$OQCMD2"
-    CCMD="$CQCMD"
+    # O from 5.6 does not support -qq
+    qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
+    # replace -D*,-v by -q 
+    OCMD="$(echo $OCMD|sed -e 's/-D.*,-v,/-q,/' -e s/-MO=/-MO=$qq/)" 
+    OCMDO1="$(echo $OCMDO1|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
+    OCMDO2="$(echo $OCMDO2|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
+    CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
     shift; 
 fi
 if [ "$1" = "-c" ]; then CONT=1; shift; fi

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Usage: 
+# for p in 5.6.2 5.8.9d 5.10.1 5.11.2; do make -q clean >/dev/null; perl$p Makefile.PL; t/testc.sh -q 26; t/testcc.sh -q 26; done
 # use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
@@ -67,8 +69,9 @@ function btest {
     ${ICMD} ${o}.plc || ( echo ${ICMD} -Dv ${o}.plc; ${ICMD} -Dv ${o}.plc || exit )
 }
 
-declare -a tests[19]
-declare -a result[19]
+ntests=26
+declare -a tests[$ntests]
+declare -a result[$ntests]
 tests[1]="print 'hi'"
 result[1]='hi';
 tests[2]="for (1,2,3) { print if /\d/ }"
@@ -117,6 +120,25 @@ tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
 tests[20]='$a="abcd123";$r=qr/\d/;print $a=~$r;'
 result[20]='1';
+# broken on early alpha and 5.10
+tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
+result[21]='024';
+# broken in original perl 5.6
+tests[22]='my $fh; BEGIN { open($fh,"<","/dev/null"); } print "ok";';
+result[22]='ok';
+# broken in perl 5.8
+tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
+result[23]='ok'
+# works in original perl 5.6, broken with latest B::C in 5.6, 5.8
+tests[24]='sub level1{return(level2()?"fail":"ok")} sub level2{0} print level1();'
+result[24]='ok'
+# enforce custom ncmp sort and count it. fails as CC in all. How to enforce icmp?
+# <=5.6 qsort needs two more passes here than >=5.8 merge_sort
+tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
+result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
+# lvalue fails with CC -O1, and with -O2 differently
+tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
+result[26]="26";
 
 make
 
@@ -126,7 +148,7 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq -f"%02.0f" 20); do
+  for b in $(seq -f"%02.0f" $ntests); do
     btest $b
   done
 fi
