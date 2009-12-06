@@ -9,20 +9,22 @@ PERL=${PERL:-perl}
 # if $] < 5.9 you may want to remove -Mblib
 # OCMD="$PERL -Mblib -MO=C,-DcACMSG,"
 #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-Mblib="-Mblib" # B::C is now 5.6+5.8 backwards compatible
+Mblib="-Mblib" # B::C is now fully 5.6+5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v," 
-OQCMD="$PERL $Mblib -MO=-qq,C,-q,"
+OCMD="$PERL $Mblib -MO=C,-DcOACMSGp,-v,"
+# O from 5.6 does not support -qq
+qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
+OQCMD="$PERL $Mblib -MO=${qq}C,-q,"
 if [ $BASE = "testcc.sh" ]; then 
   OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
-  OQCMD="$PERL $Mblib -MO=-qq,C,-q,"
+  OQCMD="$PERL $Mblib -MO=${qq}C,-q,"
 fi
 OCMD2="$PERL $Mblib -MO=C,-O2," 
-OQCMD2="$PERL $Mblib -MO=-qq,C,-O2," 
+OQCMD2="$PERL $Mblib -MO=${qq}C,-O2," 
 if [ $BASE = "testcc.sh" ]; then 
   OCMD2="$PERL $Mblib -MO=CC,-O2,"
-  OQCMD2="$PERL $Mblib -MO=-qq,CC,-O2,"
+  OQCMD2="$PERL $Mblib -MO=${qq}CC,-O2,"
 fi
 CONT=
 # 5.6: rather use -B static
