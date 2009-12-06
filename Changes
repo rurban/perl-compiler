@@ -2,7 +2,10 @@
     Started on CPAN with B-C-1.04_12.
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
-1.04_28 2009-12-?? rurban
+1.04_28 2009-12-06 rurban
+	* C.pm: fix -fcog (Copy on Grow with -O1 and -O2) for >= 5.10 by a new SVPV.
+	Statically initialize PVs with a union layout trick. Use char* as first union member. 
+	Revert xpvcv+svsect changes to pre-initialize those structs against gvcv recursion. 
 	* t/b.t, t/o.t, t/stash.t: fix tests for 5.6.2
 	* bytecode.c: byteorder swab only if same length. 1234 => 4321, 12345678 => 87654321.
 	Skip a 0x prefix for byteorder in the header. Perl 5.6 had this. 
@@ -10,6 +13,8 @@
 	  falsely dependent on ivsize, we need longsize.
 	Add 0x to byteorder in header again, as with 5.6.
 	* t/testc.sh: do not run old leftovers. some 5.6 optimizations
+	* t/c_o1.t, t/c_o2.t, t/cc_o2.t, t/cc_o2.t: added
+	* t/test.pl: support -O1 and -O2
 
 1.04_27 2009-12-04 rurban
 	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv cmp needed 

@@ -861,7 +861,7 @@ sub B::OP::opwalk {
   my $ix = $optab{$$op};
   defined($ix) ? $ix : do {
     my $ix;
-    my @oplist = $op->oplist; # FIXME for 5.6
+    my @oplist = $op->oplist; # FIXME for 5.6. called by a COP there
     push @cloop, undef;
     $ix = $_->ix while $_ = pop @oplist;
     while ( $_ = pop @cloop ) {

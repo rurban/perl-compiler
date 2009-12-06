@@ -338,9 +338,8 @@ sub savere {
     #$sym = sprintf("re_list[%d]", $re_index++);
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
     $xpvsect->add( sprintf( "0, %u, %u", $len, $pvmax ) );
-    $svsect->add( sprintf( "&xpv_list[%d], 1, %x", $xpvsect->index, 0x4405 ) );
-    $init->add(
-      savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, %s", $xpvsect->index, 0x4405, $pv ) );
+    #$init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
     # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
@@ -360,6 +359,7 @@ sub savepv {
 
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
       my $chars = join ', ', map { cchar $_ } split //, $pv;
+      # >=5.10: A union's data members can NOT be declared static
       $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
     }
     else {
@@ -963,7 +963,7 @@ sub B::NULL::save {
     warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n" if $verbose;
     return savesym( $sv, "(void*)Nullsv /* XXX */" );
   }
-  $svsect->add( sprintf( "0, %lu, 0x%x", $sv->REFCNT, $sv->FLAGS ) );
+  $svsect->add( sprintf( "0, %lu, 0x%x".($PERL510?', 0':''), $sv->REFCNT, $sv->FLAGS ) );
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
@@ -974,7 +974,7 @@ sub B::IV::save {
   $xpvivsect->add( sprintf( "0, 0, 0, %d", $sv->IVX ) );
   $svsect->add(
     sprintf(
-      "&xpviv_list[%d], %lu, 0x%x",
+      "&xpviv_list[%d], %lu, 0x%x".($PERL510?', 0':''),
       $xpvivsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
@@ -998,7 +998,7 @@ sub B::NV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpvnv_list[%d], %lu, 0x%x",
+      "&xpvnv_list[%d], %lu, 0x%x".($PERL510?', 0':''),
       $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
@@ -1054,6 +1054,8 @@ sub B::PVLV::save {
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE )
 	      )
       );
+    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, %s",
+                         $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TYPE');
     $xpvlvsect->add
@@ -1064,13 +1066,9 @@ sub B::PVLV::save {
 	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE )
 	      )
       );
+    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
+                         $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
   }
-  $svsect->add(
-    sprintf(
-      "&xpvlv_list[%d], %lu, 0x%x",
-      $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS
-    )
-  );
 
   if ( !$pv_copy_on_grow ) {
     if ($PERL510) {
@@ -1156,29 +1154,32 @@ sub B::BM::save {
   my $pv = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
   my $len = length($pv);
   $xpvbmsect->comment(
-    '0,len,len+258,sv->IVX,sv->NVX,0,0,sv->USEFUL,sv->PREVIOUS,sv->RARE');
+    'pv,len,len+258,IVX,NVX,0,0,USEFUL,PREVIOUS,RARE');
   $xpvbmsect->add(
     sprintf(
-      "0, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
-      $len,        $len + 258,    $sv->IVX, $sv->NVX,
-      $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
-    )
+            "%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
+            $PERL510 ? '0' : (defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"),
+            $len,        $len + 258,    $sv->IVX, $sv->NVX,
+            $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
+           )
   );
-  $svsect->add(
-    sprintf(
-      "&xpvbm_list[%d], %lu, 0x%x",
-      $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS
-    )
-  );
+  if ($PERL510) {
+    $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x, %s",
+                         $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS,
+                         defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"));
+  } else {
+    $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
+                         $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
+  }
   $sv->save_magic;
 
-  if ($PERL510) {
-    $init->add(
-      savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
-  }
-  else {
-    $init->add(
-      savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
+  if (!$pv_copy_on_grow) {
+    if ($PERL510) {
+      $init->add(savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+    }
+    else {
+      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
+    }
   }
   $init->add(
     sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len - 257 ) );
@@ -1194,19 +1195,13 @@ sub B::PV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   if ($PERL510) {
-
-# Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
-# Oh my!
+    # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
     $xpvsect->add( sprintf( "0, %u, %u", $len, $pvmax ) );
-    $svsect->add(
-      sprintf(
-        "&xpv_list[%d], %lu, 0x%x",
-        $xpvsect->index, $sv->REFCNT, $sv->FLAGS
-      )
-    );
+    $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, %s",
+                           $xpvsect->index, $sv->REFCNT, $sv->FLAGS,
+                           defined($pv) && $pv_copy_on_grow ? $savesym : "0"));
     if ( defined($pv) && !$pv_copy_on_grow ) {
-      $init->add(
-        savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
     }
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
@@ -1240,6 +1235,8 @@ sub B::PVMG::save {
         $sv->NVX, $len, $pvmax, $sv->IVX
       ) # $savesym
     );
+    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, %s",
+                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
   else {
     $xpvmgsect->add(
@@ -1248,13 +1245,13 @@ sub B::PVMG::save {
         $savesym, $len, $pvmax, $sv->IVX, $sv->NVX
       )
     );
+    $svsect->add(
+      sprintf(
+              "&xpvmg_list[%d], %lu, 0x%x",
+              $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS
+             )
+    );
   }
-  $svsect->add(
-    sprintf(
-      "&xpvmg_list[%d], %lu, 0x%x",
-      $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS
-    )
-  );
   if ( defined($pv) && !$pv_copy_on_grow ) {
     my $pvx =
       $] < 5.009 ? "xpvmg_list[%d].xpv_pv" : "xpvmg_list[%d].xiv_u.xivu_p1";
@@ -1355,15 +1352,13 @@ sub B::RV::save {
   return $sym if defined $sym;
   my $rv = save_rv($sv);
   if ($PERL510) {
-
-    # 5.10 has no struct xrv anymore, just sv_u.svu_rv. Set all at runtime.
-    $svsect->add( sprintf( "0, %lu, 0x%x", $sv->REFCNT, $sv->FLAGS ) );
-    $init->add(
-      sprintf( "sv_list[%d].sv_u.svu_rv = (SV*)%s;\n", $svsect->index, $rv ) );
+    # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
+    # initializer element is not computable at load time
+    # $svsect->add( sprintf( "0,\n\t%lu, 0x%x,\n\t(char*)%s", $sv->REFCNT, $sv->FLAGS, $rv ) );
+    $init->add( sprintf( "sv_list[%d].sv_u.svu_rv = (SV*)%s;\n", $svsect->index, $rv ) );
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
   else {
-
     # GVs need to be handled at runtime
     if ( ref( $sv->RV ) eq 'B::GV' ) {
       $xrvsect->add("(SV*)Nullgv");
@@ -1423,8 +1418,6 @@ sub B::CV::save {
     warn sprintf( "CV 0x%x already saved as $sym\n", $$cv ) if $debug{cv};
     return $sym;
   }
-
-  # Reserve a place in svsect and xpvcvsect and record indices
   my $gv = $cv->GV;
   my ( $cvname, $cvstashname );
   if ($$gv) {
@@ -1497,13 +1490,15 @@ sub B::CV::save {
     no strict 'refs';
     return svref_2object( \&Dummy_initxs )->save;
   }
+
+  # Reserve a place in svsect and xpvcvsect and record indices
   my $sv_ix = $svsect->index + 1;
   $svsect->add("SVIX$sv_ix");
   my $xpvcv_ix = $xpvcvsect->index + 1;
-  # $xpvcvsect->add("XPVCVIX$xpvcv_ix");
-
-  # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
+  $xpvcvsect->add("XPVCVIX$xpvcv_ix");
+  # Save symbols now so that GvCV() doesn't recurse back to us via CvGV()
   $sym = savesym( $cv, "(CV*)&sv_list[$sv_ix]" );
+
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   if ( !$$root && !$cvxsub ) {
@@ -1577,11 +1572,11 @@ sub B::CV::save {
     }
     # TODO:
     my $ourstash = "0";  #Nullhv"
-    $xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
-    $xpvcvsect->add
-      (sprintf("s\\_%x, /*GvSTASH*/\n\t %u, /*cur*/\n\t %u, /*len*/\n\t %s, /*DEPTH*/\n\t %s, /*MAGIC later*/\n\t %s, /*STASH later*/\n\t"
-	       ." %s, /*CvSTASH later*/\n\t %s, /*START*/\n\t s\\_%x, /*ROOT*/\n\t %s, /*GV later*/\n\t %s, /*FILE*/\n\t (PADLIST *)%s,\n\t"
-	       ." (CV*)s\\_%x,\n\t %s, /*OUTSIDE_SEQ later*/\n\t 0x%x/*CvFLAGS*/",
+    #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
+    $symsect->add
+      (sprintf("XPVCVIX$xpvcv_ix\ts\\_%x, %u, %u, %s, %s, %s,"
+	       ." %s, %s, s\\_%x, %s, %s, (PADLIST *)%s,"
+	       ." (CV*)s\\_%x, %s, 0x%x",
 	       $gv->STASH, # TODO!
 	       length($pv), length($pv),
 	       $cv->DEPTH,
@@ -1593,7 +1588,7 @@ sub B::CV::save {
 	       "NULL", #cv_file later (now a HEK)
 	       $padlistsym,
 	       ${ $cv->OUTSIDE }, #if main_cv set later
-	       $cv->OUTSIDE_SEQ,  #later
+	       $cv->OUTSIDE_SEQ,
 	       $cv->CvFLAGS
 	      )
       );
@@ -1603,9 +1598,9 @@ sub B::CV::save {
     }
   }
   elsif ($PERL56) {
-    $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
-    $xpvcvsect->add(
-      sprintf("%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
+    #$xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
+    $symsect->add(
+      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
         cstring($pv),      length($pv),    $cv->IVX,
         $cv->NVX,  $startfield,       ${ $cv->ROOT }, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
@@ -1613,9 +1608,9 @@ sub B::CV::save {
     );
   }
   else {
-    $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
-    $xpvcvsect->add(
-      sprintf("%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
+    #$xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
+    $symsect->add(
+      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
         cstring($pv),      length($pv),    $cv->IVX,
         $cv->NVX,  $startfield,       ${ $cv->ROOT }, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
@@ -1647,9 +1642,8 @@ sub B::CV::save {
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv};
   }
-  $symsect->add(
-    sprintf(
-      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x",
+  $symsect->add(sprintf(
+      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?', 0':''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
     )
   );
@@ -1779,7 +1773,7 @@ sub B::GV::save {
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save gvsv $sym\n" if $debug{gv};
       $gvsv->save; #mostly NULL. $gvsv->isa("B::NULL");
-      $init->add( sprintf( "GvSVn($sym) = s\\_%x;", $$gvsv ) );
+      $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       warn "GV::save \$$name\n" if $debug{gv};
 #save_main_rest();exit; # test 11 crashes around here
     }
@@ -1878,24 +1872,22 @@ sub B::AV::save {
   my $sym = objsym($av);
   return $sym if defined $sym;
   my $line;
+  # TODO: statically initialize the array as the initial av_extend() is very expensive
   if ($PERL510) {
-
     # 5.9.4+: nv fill max iv mg stash
     $line = "0.0, -1, -1, 0, 0, Nullhv";
+    $xpvavsect->add($line);
+    $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, %s",
+                         $xpvavsect->index, $av->REFCNT, $av->FLAGS, '0'));
   }
   else {
-
     # 5.8: array fill max off nv mg stash alloc arylen flags
     $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
+    $xpvavsect->add($line);
+    $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
+                         $xpvavsect->index, $av->REFCNT, $av->FLAGS));
   }
-  $xpvavsect->add($line);
-  $svsect->add(
-    sprintf(
-      "&xpvav_list[%d], %lu, 0x%x",
-      $xpvavsect->index, $av->REFCNT, $av->FLAGS
-    )
-  );
   my $sv_list_index = $svsect->index;
   $av->save_magic;
 
@@ -1990,21 +1982,18 @@ sub B::HV::save {
 
   # It's just an ordinary HV
   if ($PERL510) {
-
     # 5.9: nvu fill max ivu mg stash.
     $xpvhvsect->add( sprintf( "0.0, 0, %d, 0, 0, Nullhv", $hv->MAX ) );
     $svsect->add(
       sprintf(
-        "&xpvhv_list[%d], %lu, 0x%x",
-        $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS
+        "&xpvhv_list[%d], %lu, 0x%x, %s", # $hv->ARRAY
+        $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS, '0'
       )
     );
-
     # riter went to a private _aux struct
     $init->add(
       sprintf( "HvRITER_set(&sv_list[%d], %d);", $svsect->index, $hv->RITER ) );
-
-# $init->add(sprintf("HvEITER_set(&sv_list[%d], 0x%x);", $svsect->index, $hv->EITER));
+    # $init->add(sprintf("HvEITER_set(&sv_list[%d], 0x%x);", $svsect->index, $hv->EITER));
   }
   else {
     # 5.8: array fill max keys nv mg stash riter eiter pmroot name
@@ -2036,7 +2025,7 @@ sub B::HV::save {
         sprintf(
           "\thv_store(hv, %s, %u, %s, %s);",
           cstring($key), length( pack "a*", $key ),
-          $value, hash($key)
+          "(SV*)$value", hash($key)
         )
       );
     }
@@ -2077,6 +2066,12 @@ sub B::IO::save {
   return $sym if defined $sym;
   my $pv = $io->PV;
   $pv = '' unless defined $pv;
+  my ( $pvsym, $len );
+  if ($pv) {
+    ( $pvsym, $len ) = savepv($pv);
+  } else {
+    $pvsym = 'NULL';
+  }
   my $len = length($pv);
   if ($PERL511) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
@@ -2092,6 +2087,8 @@ sub B::IO::save {
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
+    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, %s",
+                         $xpviosect->index, $io->REFCNT, $io->FLAGS, $pvsym));
   }
   elsif ($PERL510) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
@@ -2108,28 +2105,25 @@ sub B::IO::save {
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
+    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, %s",
+                         $xpviosect->index, $io->REFCNT, $io->FLAGS, $pvsym));
   }
-  else {
+  else { #PERL58
     $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp, xio_dirpu, ..., subprocess, type, flags");
     $xpviosect->add(
-      sprintf(
-"0, %u, %u, %d, %s, 0, 0, 0, 0, 0, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
-        $len,                        $len + 1,
-        $io->IVX,                    $io->NVX,
-        $io->LINES,                  $io->PAGE,
-        $io->PAGE_LEN,               $io->LINES_LEFT,
-        cstring( $io->TOP_NAME ),    cstring( $io->FMT_NAME ),
-        cstring( $io->BOTTOM_NAME ), $io->SUBPROCESS,
-        cchar( $io->IoTYPE ),        $io->IoFLAGS
+      sprintf("%s, %u, %u, %d, %s, 0, 0, 0, 0, 0, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
+              $pvsym, 			   $len, $len + 1,
+              $io->IVX,                    $io->NVX,
+              $io->LINES,                  $io->PAGE,
+              $io->PAGE_LEN,               $io->LINES_LEFT,
+              cstring( $io->TOP_NAME ),    cstring( $io->FMT_NAME ),
+              cstring( $io->BOTTOM_NAME ), $io->SUBPROCESS,
+              cchar( $io->IoTYPE ),        $io->IoFLAGS
       )
     );
+    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x",
+                         $xpviosect->index, $io->REFCNT, $io->FLAGS));
   }
-  $svsect->add(
-    sprintf(
-      "&xpvio_list[%d], %lu, 0x%x",
-      $xpviosect->index, $io->REFCNT, $io->FLAGS
-    )
-  );
   $sym = savesym( $io, sprintf( "(IO*)&sv_list[%d]", $svsect->index ) );
 
   if (!$PERL56) { # PerlIO
@@ -2195,8 +2189,8 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-
-      # if ($typename eq 'XPV' and $] >= 5.009) { $typename = "SV"; }
+      # -fcog hack to statically initialize PVs
+      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $pv_copy_on_grow;
       print "Static $typename ${name}_list[$lines];\n";
     }
   }
@@ -2213,8 +2207,7 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-
-      #if ($typename eq 'XPV' and $] >= 5.009) {$typename = "SV";}
+      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $pv_copy_on_grow;
       printf "static %s %s_list[%u] = {\n", $typename, $name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
@@ -2250,6 +2243,38 @@ sub output_declarations {
 #define UNUSED 0
 #define sym_0 0
 EOT
+  # Tricky hack for -fcog since 5.10 required. We need a char* as
+  # *first* sv_u element to be able to statically initialize it. A int does not allow it.
+  # gcc error: initializer element is not computable at load time
+  # We introduce a SVPV as SV.
+  if ($PERL510 and $pv_copy_on_grow) {
+    print <<'EOT';
+typedef struct svpv {
+    void *	sv_any;
+    U32		sv_refcnt;
+    U32		sv_flags;
+    union {
+	char*   svu_pv;
+	IV      svu_iv;
+	UV      svu_uv;
+	SV*     svu_rv;
+	SV**    svu_array;
+	HE**	svu_hash;
+	GP*	svu_gp;
+    } sv_u;
+#ifdef DEBUG_LEAKING_SCALARS
+    PERL_BITFIELD32 sv_debug_optype:9;
+    PERL_BITFIELD32 sv_debug_inpad:1;
+    PERL_BITFIELD32 sv_debug_cloned:1;
+    PERL_BITFIELD32 sv_debug_line:16;
+# if (PERL_VERSION < 11)
+    U32		sv_debug_serial;	/* 5.10 only */
+# endif
+    char *	sv_debug_file;
+#endif
+} SVPV;
+EOT
+  }
   if ($PERL511) {
     print "typedef struct p5rx RE;\n";
   }
@@ -2358,7 +2383,6 @@ main(int argc, char **argv, char **env)
     }
 EOT
   if ($ITHREADS and $] > 5.006) {
-
     # XXX init free elems!
     my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
 
@@ -2774,10 +2798,13 @@ sub save_main_rest {
   local $SIG{__WARN__} = sub { print STDERR @_ };
 
   warn "done main optree, walking symtable for extras\n"
-    if $verbose
-      or $debug{cv};
+    if $verbose or $debug{cv};
+  $init->add("");
+  $init->add("/* done main optree, extra subs which might be unused */");
+
   save_unused_subs();
 
+  $init->add("/* done extras */");
   save_main_rest2();
 }
 

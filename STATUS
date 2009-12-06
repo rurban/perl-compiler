@@ -1,100 +1,59 @@
-Only support 5.8 and newer. 5.6 and earlier had a very good core perl compiler.
+5.8, 5.6, and earlier had a very good core perl compiler, but we try to be better.
 
 Basic testsuite added, coverage TODO.
 Same ok and less failures as with 5.6, 5.8 and 5.9.4
   In 5.8.8 and 5.8.9 we have the exact same errors in the 
   testsuite for the new CPAN compiler and the CORE compiler, tests 14-16.
-Minor B::CC bugs fixed.
+Some B::CC bugs fixed.
 Open B::C Problems for 5.8 and 5.10: 
-	PVLV tests
         open our $t (test 14)
 	__DATA__ IO (test 15)
         (test 23)
         (test 24)
         test 11 for 5.10
         test 5 for 5.11
-        C,-O2 fails often
+        More static pv initializations for -O1
   See below at detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
 -----------
-centos5-5.6.2 + debian 5.6.2:
-t/bytecode      Failed tests:  1-24
-t/c             ok
-t/cc            Failed tests:  21
+Tested on centos5, debian3, cygwin 1.7
 
-centos5-5.8.8:
+5.6.2:
 t/bytecode      ok
-t/c.t           Failed tests:  14-15 23
-t/cc.t          Failed tests:  21 23-24
+t/c             15,24,25
+t/c_o1          15,24,25
+t/c-o2          15,24,25
+t/cc            15,18,21,25
+t/cc_o1         15,18,21,25
+t/cc-o2         10,15,16,18,21,25,26
 
-centos5-5.10.1:
-t/bytecode.t 	Failed tests:  1-24
-t/c.t 		Failed tests:  11, 14-15, 20-21, 23-24
-t/cc.t 		Failed tests:  20-21, 23
-
-cygwin-5.6.2:
-t/b.t           Failed tests:  5-57
-t/bytecode.t    Failed tests:  1-24 (TODO: byteorder conversion 12345678 => 1234)
-t/c.t           ok
-t/cc.t          Failed tests:  21
-t/o.t           Failed tests:  9
-t/stash.t       Failed test
-
-cygwin-5.8.9:
+5.8:
 t/bytecode      ok
-t/c.t           Failed tests:  14-15 23
-t/cc.t          Failed tests:  21 23-24
+t/c             14,15,23
+t/c_o1          14,15,23
+t/c-o2          14,15,23
+t/cc            14,15,18,21,23,25
+t/cc_o1         14,15,18,21,23,25,26
+t/cc-o2         10,14..16,18,21,23,25,26
 
-cygwin-5.8.9d:
-t/bytecode      ok
-t/c.t           Failed tests:  14-15 23
-t/cc.t          Failed tests:  21 23-24
+5.10.1:
+t/bytecode 	2..5,7,11,20
+t/c 		11,14..16,20-21,23
+t/c_o1          10..12,14..23
+t/c-o2          10..12,14..23
+t/cc 		11,12,14..16,18,20,21,23,25
+t/cc_o1         11,12,14..16,18,20..23,25,26
+t/cc-o2         11,12,14..16,18,20..23,25,26
 
-cygwin-5.10.1:
-t/bytecode.t 	Failed tests:  2-5, 7, 11, 20
-t/c.t 		Failed tests:  11, 14-15, 20-21, 23
-t/cc.t 		Failed tests:  20-21, 23-24
-
-cygwin-5.10.1d:
-t/bytecode.t 	Failed tests:  2-5, 7, 9-12, 20
-t/c.t 		Failed tests:  11, 14-15, 20-21, 23
-t/cc.t 		Failed tests:  12, 20-21, 23-24
-
-cygwin-5.10.1d-nt:
-t/bytecode.t 	Failed tests:  9-12, 20
-t/c.t 		Failed tests:  11, 14-15, 20, 23-24
-t/cc.t 		Failed tests:  12, 20-21, 23
-
-cygwin-5.11.2:
-t/bytecode.t 	Failed tests:  5, 11, 16, 20-21
-t/c.t 		Failed tests:  5, 11, 14-16, 23
-t/cc.t 		Failed tests:  5, 21, 23-24
-
-cygwin-5.11.2d:
-t/bytecode.t 	Failed tests:  5, 9-12, 16, 20-21
-t/c.t 		Failed tests:  5, 11, 14-16, 23
-t/cc.t 		Failed tests:  5, 21, 23-24
-
-cygwin-5.11.2d-nt:
-t/bytecode.t 	Failed tests:  5, 9-12, 15-16, 20-21
-t/c.t 		Failed tests:  5, 11, 14-16, 23-24
-t/cc.t 		Failed tests:  5, 21, 23
-
-debian-5.8.8:
-t/bytecode      ok
-t/c 		Failed tests:  14-15, 23
-t/cc 		Failed tests:  21, 23-24
-
-debian-5.10.1:
-t/bytecode.t 	Failed tests:  2-5, 7, 11, 20
-t/c.t 		Failed tests:  11, 14-15, 20-21, 23
-t/cc.t 		Failed tests:  20-21, 23-24
-
-debian-5.11.0d:
-t/bytecode.t 	Failed tests:  9-12, 16, 20-21
-t/c.t 		Failed tests:  11, 14-16, 23
-t/cc.t 		Failed tests:  21, 23-24
+5.11.2:
+t/bytecode 	5,11,16,20-21
+t/c 		5,11,14..16,23
+t/c_o1          5,10..20,22..23
+t/c-o2          5,10..20,22..23
+t/cc 		5,10..12,14..16,18,21,23,25
+t/cc_o1         5,11,12,14..16,18,21,23,25,26
+t/cc-o2         5,11,12,14..16,18,21,23,25,26
 
 5.10, 5.11 status
 -----------------
@@ -253,4 +212,4 @@ cc B::CC,
 -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
 -nt not threaded perl.
 
-2009-11-30 23:09:44 rurban
+2009-12-06 20:02:20 rurban
