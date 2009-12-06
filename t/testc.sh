@@ -70,6 +70,7 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
+    rm $o.c $o ${o}_o.c ${o}_o 2> /dev/nul
     vcmd ${OCMD}-o$o.c $o.pl
     vcmd $CCMD $o.c -c -E -o ${o}_E.c
     vcmd $CCMD $o.c $LCMD -o $o
@@ -159,9 +160,10 @@ result[22]='ok';
 tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
 result[23]='ok'
 # works in original perl 5.6, broken with latest B::C in 5.6, 5.8
-tests[24]='sub level1 { return (level2() ? "fail" : "ok") }  sub level2 {0}  print level1();'
+tests[24]='sub level1{return(level2()?"fail":"ok")} sub level2{0} print level1();'
 result[24]='ok'
 # enforce custom ncmp sort and count it. fails as CC in all. How to enforce icmp?
+# <=5.6 qsort needs two more passes here than >=5.8 merge_sort
 tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
 result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 

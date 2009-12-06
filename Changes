@@ -9,6 +9,7 @@
 	* Assembler.pm (0.07_06): 5.6 byteorder fix: until 5.6 the $Config{byteorder} was 
 	  falsely dependent on ivsize, we need longsize.
 	Add 0x to byteorder in header again, as with 5.6.
+	* t/testc.sh: do not run old leftovers. some 5.6 optimizations
 
 1.04_27 2009-12-04 rurban
 	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv cmp needed 
