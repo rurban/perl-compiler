@@ -59,6 +59,8 @@ if ($DEBUGGING) {
   #@todo = (2..5, 7, 11) if $] > 5.009;
   #@todo = (4,11,16) if ($] >= 5.011 and !$ITHREADS);
 }
+@todo = (3,6,9..10,12,15..16,18,25..26) if $] < 5.007; # CORE failures (ours not yet enabled)
+
 my %todo = map { $_ => 1 } @todo;
 my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
 $Mblib = "-Mblib";
@@ -67,7 +69,8 @@ unless ($Mblib) { # check for -Mblib from the testsuite
     $Mblib = "-Mblib"; # forced -Mblib via cmdline
   }
 }
-# my $Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
+#$Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
+$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO " : "#";
   my ($got, @insn);
