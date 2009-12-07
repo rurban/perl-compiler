@@ -31,10 +31,10 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
-my @todo = (14,15,23); #5.8
+my @todo = (15); #5.8
 @todo = (15,24,25) if $] < 5.007;
-@todo = (10..20,22..23) if $] >= 5.010;
-@todo = (5,10..23) if $] >= 5.011;
+@todo = (10..20,22,23) if $] >= 5.010;
+@todo = (5,10..20,22,23) if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;
 
