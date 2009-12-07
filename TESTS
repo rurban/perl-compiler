@@ -1,3 +1,21 @@
+Sample Usage
+
+Note: The core testsuite must be run from CORE/t, and forces INC to ../lib
+
+p=5.6.2
+perl$p Makefile.PL && make
+mkdir -p t/CORE/op
+cp /usr/src/perl/perl-$p/t/op/* t/CORE/op/
+# try CORE compiler
+perl$p script/perlcc -r --testsuite t/CORE/op/*.t
+# try new compiler
+perl$p -Mblib script/perlcc -r --testsuite t/CORE/op/*.t
+perl$p script/perlcc -B -r --testsuite t/CORE/op/*.t
+perl$p -Mblib script/perlcc -B -r --testsuite t/CORE/op/*.t
+perl$p script/perlcc -O -r --testsuite t/CORE/op/*.t
+perl$p -Mblib script/perlcc -O -r --testsuite t/CORE/op/*.t
+
+
 Test results from compiling t/*/*.t
 		C		Bytecode	CC
 

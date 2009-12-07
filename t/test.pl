@@ -794,11 +794,10 @@ sub run_cc_test {
   my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
   unlink ($test, $cfile, $exe);
   open T, ">$test"; print T $script; close T;
-  my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test older perls
-  #my $Mblib = "-Mblib"; # test all
-  unless ($Mblib) { # check -Mblib from the testsuite
+  my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
+  unless ($Mblib) { # check for -Mblib from the testsuite
     if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
-      $Mblib = "-Mblib"; # forced via cmdline
+      $Mblib = "-Mblib"; # forced -Mblib via cmdline
     }
   }
   $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],

@@ -6,13 +6,29 @@ PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 #PERL=perl5.11.0
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
-#Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-Mblib="-Mblib" # it is now 5.8 backwards compatible
-if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
+D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
+Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
+#Mblib="-Mblib" # it is now 5.8 backwards compatible
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
-if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; fi
 ICMD="$PERL $Mblib -MByteLoader"
+if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; fi
+if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
+
+function pass {
+    #echo -n "$1 PASS "
+    echo -e -n "\e[1;32mPASS \e[0;0m"
+    shift
+    echo $*
+    echo
+}
+function fail {
+    #echo -n "$1 FAIL "
+    echo -e -n "\e[1;31mFAIL \e[0;0m"
+    shift
+    echo $*
+    echo
+}
 
 function bcall {
     o=$1
@@ -22,51 +38,67 @@ function bcall {
     ${QOCMD}-$opt,-o${o}${opt}_${VERS}.${ext} ${o}.pl
 }
 function btest {
-    n=$1
-    o="bytecode$n"
-    if [ -z "$2" ]; then
-        if [ "$n" = "08" ]; then n=8; fi 
-        if [ "$n" = "09" ]; then n=9; fi
-	echo "${tests[${n}]}" > ${o}.pl
-        str="${tests[${n}]}"
-    else 
-	echo "$2" > ${o}.pl
-    fi
-    #bcall ${o} O6
-    rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.plc 2>/dev/null
+  n=$1
+  o="bytecode$n"
+  if [ -z "$2" ]; then
+      if [ "$n" = "08" ]; then n=8; fi 
+      if [ "$n" = "09" ]; then n=9; fi
+      echo "${tests[${n}]}" > ${o}.pl
+      str="${tests[${n}]}"
+  else 
+      echo "$2" > ${o}.pl
+  fi
+  #bcall ${o} O6
+  rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.plc 2>/dev/null
+  
+  if [ -n "$Mblib" ]; then 
     bcall ${o} s
-    echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}s_${VERS}.disasm
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}s_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}s_${VERS}.disasm
     mv ${o}s_${VERS}.disasm ${o}_s_${VERS}.disasm
 
     # annotated assembler
     bcall ${o} S asm 1
     # understand annotations
-    echo $PERL $Mblib script/assemble ${o}S_${VERS}.asm \> ${o}S_${VERS}.plc
+    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}S_${VERS}.asm \> ${o}S_${VERS}.plc
     $PERL $Mblib script/assemble ${o}S_${VERS}.asm > ${o}S_${VERS}.plc
     # full assembler roundtrips
-    echo $PERL $Mblib script/disassemble ${o}S_${VERS}.plc \> ${o}S_${VERS}.disasm
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}S_${VERS}.plc \> ${o}S_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}S_${VERS}.plc > ${o}S_${VERS}.disasm
-    echo $PERL $Mblib script/assemble ${o}S_${VERS}.disasm \> ${o}SD_${VERS}.plc
+    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}S_${VERS}.disasm \> ${o}SD_${VERS}.plc
     $PERL $Mblib script/assemble ${o}S_${VERS}.disasm > ${o}SD_${VERS}.plc
-    echo $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc \> ${o}SDS_${VERS}.disasm
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc \> ${o}SDS_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc > ${o}SDS_${VERS}.disasm
 
     bcall ${o} k
     $PERL $Mblib script/disassemble ${o}k_${VERS}.plc > ${o}k_${VERS}.disasm
-    echo $PERL $Mblib -MO=Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
+    [ -n "$Q" ] || echo $PERL $Mblib -MO=Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
     $PERL $Mblib -MO=Debug,-exec ${o}.pl > ${o}_${VERS}.dbg
-    # 5.8 has a bad concise
-    echo $PERL $Mblib -MO=Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
-    $PERL $Mblib -MO=Concise,-exec ${o}.pl > ${o}_${VERS}.concise
+  fi
+  # 5.8 has a bad concise
+  [ -n "$Q" ] || echo $PERL $Mblib -MO=Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
+  $PERL $Mblib -MO=Concise,-exec ${o}.pl > ${o}_${VERS}.concise
+  if [ -n "$Mblib" ]; then 
     #bcall ${o} TI
     bcall ${o} H
-
+  fi
+  if [ -n "$Mblib" ]; then
     # -s ("scan") should be the new default
-    echo ${OCMD}-s,-o${o}.plc ${o}.pl
-    ${OCMD}-s,-o${o}.plc ${o}.pl || exit
-    echo ${ICMD} ${o}.plc
-    ${ICMD} ${o}.plc || ( echo ${ICMD} -Dv ${o}.plc; ${ICMD} -Dv ${o}.plc || exit )
+    [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
+    ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
+  else
+    # No -s with 5.6
+    [ -n "$Q" ] || echo ${OCMD}-o${o}.plc ${o}.pl
+    ${OCMD}-o${o}.plc ${o}.pl || (test -z $CONT && exit)
+  fi
+  [ -n "$Q" ] || echo ${ICMD} ${o}.plc
+  res=$(${ICMD} ${o}.plc)
+  if [ "X$res" = "X${result[$n]}" ]; then
+      test "X$res" = "X${result[$n]}" && pass "./${o}_o1" "=> '$res'"
+  else
+      fail "./${o}_o1" "=> '$res' Expected: '${result[$n]}'"
+      ( [ -n "$Q" ] || echo ${ICMD} -D$D ${o}.plc; ${ICMD} -D$D ${o}.plc || exit )
+  fi
 }
 
 ntests=26
@@ -140,7 +172,14 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
 
-make
+if [ "$1" = "-q" ]; then Q=1; shift; fi
+if [ "$1" = "-c" ]; then CONT=1; shift; fi
+
+if [ -z "$QUIET" ]; then
+    make
+else
+    make -q >/dev/null
+fi
 
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do

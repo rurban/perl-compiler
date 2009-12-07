@@ -37,15 +37,15 @@ function vcmd {
 }
 
 function pass {
-    echo -n "$1 PASS "
-    #echo -n "^[[32m$1 PASS^[[0m"
+    #echo -n "$1 PASS "
+    echo -e -n "\e[1;32mPASS \e[0;0m"
     shift
     echo $*
     echo
 }
 function fail {
-    echo -n "$1 FAIL "
-    #echo -n "^[[31m$1 FAIL^[[0m"
+    #echo -n "$1 FAIL "
+    echo -e -n "\e[1;31mFAIL \e[0;0m"
     shift
     echo $*
     echo
@@ -180,7 +180,7 @@ result[26]="26";
 # 
 # TODO: getopts for -q -Du,-q -w -v
 if [ "$1" = "-q" ]; then 
-    QUIET=1;
+    QUIET=1
     # O from 5.6 does not support -qq
     qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
     # replace -D*,-v by -q 
@@ -188,7 +188,7 @@ if [ "$1" = "-q" ]; then
     OCMDO1="$(echo $OCMDO1|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
     OCMDO2="$(echo $OCMDO2|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
     CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
-    shift; 
+    shift
 fi
 if [ "$1" = "-c" ]; then CONT=1; shift; fi
 # -D options: u,-q for quiet, no -D for verbose
@@ -207,7 +207,7 @@ fi
 if [ -z "$QUIET" ]; then
     make
 else
-    make >/dev/null
+    make -q >/dev/null
 fi
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do

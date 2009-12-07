@@ -20,10 +20,10 @@ BEGIN {
         print "1..0 # Skip -- Perl configured without B module\n";
         exit 0;
     }
-    if ($Config{ccflags} =~ /-DPERL_COPY_ON_WRITE/) {
-	print "1..0 # skip - no COW for now\n";
-	exit 0;
-    }
+    #if ($Config{ccflags} =~ /-DPERL_COPY_ON_WRITE/) {
+    #	print "1..0 # skip - no COW for now\n";
+    #	exit 0;
+    #}
     require 'test.pl'; # for run_perl()
 }
 use strict;
@@ -31,11 +31,11 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
-my @todo = (14,15,23); # 8,14-16 fail on 5.00505
-#5.6.2 native failures: 8,15,16.
-# 16 fixed with 1.04_24, 8 with 1.04_25
-@todo = (15,24,25) if $] < 5.007;
-@todo = (11,14..16,20-21,23) if $] >= 5.010;
+my @todo = $ITHREADS ? (15) : (14,15,23); # 8,14-16 fail on 5.00505
+# 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
+# 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
+# @todo = $ITHREADS ? (15) : (14,15,23) if $] < 5.007;
+@todo = (11,14..16,20..21,23) if $] >= 5.010;
 @todo = (5,11,14..16,23) if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;

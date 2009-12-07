@@ -179,7 +179,7 @@ sub parse_argv {
         'static',       # Dirty hack to enable -shared/-static
         'shared',       # Create a shared library (--shared for compat.)
 	'log:s',        # where to log compilation process information
-        'Wb:s',         # pass (comma-sepearated) options to backend
+        'Wb:s',         # pass (comma-seperated) options to backend
         'testsuite',    # try to be nice to testsuite
     );
 

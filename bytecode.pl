@@ -107,7 +107,7 @@ print BYTERUN_C $c_header, <<'EOT';
   #define PL_tokenbuf		(PL_parser->tokenbuf)
 #endif
 #if (PERL_VERSION < 8) && (!defined(DEBUG_v))
-  #define DEBUG_v(a) DEBUG_l(a)
+  #define DEBUG_v(a) DEBUG_f(a)
 #endif
 
 #include "byterun.h"
@@ -362,6 +362,9 @@ while (<DATA>) {
     elsif ($optarg && $lvalue ne "none") {
       print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}arg;\\n\"));\n";
+    }
+    if ($lvalue =~ /bstate->bs_sv/) {
+      print BYTERUN_C "\t\t/*assert(bstate->bs_sv);*/\n";
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
