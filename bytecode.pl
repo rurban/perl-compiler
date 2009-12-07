@@ -343,10 +343,10 @@ while (<DATA>) {
 	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg);\n", $fundtype;
       }
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, arg%s));\n",
-	$fundtype =~ /(strconst|pvindex|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
+	$fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
 	($argtype =~ /index$/ ? ', ix' : '');
       if ($fundtype eq 'PV') {
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
       }
     } else {
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
@@ -355,23 +355,24 @@ while (<DATA>) {
       print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optarg));\n",
 	$optarg eq ", arg"
-	  ? ($fundtype =~ /(strconst|pvindex|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %d'))
+	  ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %d'))
 	  : '';
     } elsif ($flags =~ /s/) {
       # Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
       print BYTERUN_C "\t\tBSET_OBJ_STORE($lvalue$optarg);\n";
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
-      if ($lvalue =~ /bstate->bs_sv/) {
-	print BYTERUN_C "\t\tassert(bstate->bs_sv);\n";
-      }
+      #if ($lvalue =~ /bstate->bs_sv/) {
+      #  print BYTERUN_C "\t\tassert(bstate->bs_sv);\n";
+      #}
     }
     elsif ($optarg && $lvalue ne "none") {
       print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", arg%s));\n",
-	$fundtype =~ /(strconst|pvindex|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
-      if ($argtype =~ /index$/ and $lvalue =~ /bstate->bs_sv/) {
-	print BYTERUN_C "\t\tassert(bstate->bs_sv);\n";
-      }
+	$fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
+      #Null_sv
+      #if ($argtype =~ /index$/ and $lvalue =~ /bstate->bs_sv/) {
+      #	print BYTERUN_C "\t\tassert(bstate->bs_sv);\n";
+      #}
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
@@ -391,7 +392,7 @@ EOT
 #
 print BYTERUN_C <<'EOT';
 	    default:
-	      Perl_croak(aTHX_ "Illegal bytecode instruction %d. Version incompatibility.\n", insn);
+	      Perl_croak(aTHX_ "Illegal bytecode instruction %d. Version or platform incompatibility. Threading?\n", insn);
 	      /* NOTREACHED */
 	  }
 #ifdef DEBUG_t_TEST_

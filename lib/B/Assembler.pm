@@ -105,7 +105,8 @@ sub B::Asmdata::PUT_strconst {
   my $arg = shift;
   my $str = uncstring($arg);
   if ( !defined($str) ) {
-    error "bad string constant: $arg";
+    my @callstack = caller(1);
+    error "bad string constant: '$arg', called from ".$callstack[3]." line:".$callstack[2];
     $str = '';
   }
   if ( $str =~ s/\0//g ) {
@@ -227,19 +228,36 @@ sub strip_comments {
 # byteorder is strconst, not U32 because of varying size issues (?)
 
 sub gen_header {
-  my $header  = "";
-  my $version = "$ByteLoader::VERSION";
+  my $header = gen_header_hash();
+  my $string  = "";
+  $string .= B::Asmdata::PUT_U32(0x43424c50); # FIXME 'PLBC'
+  $string .= B::Asmdata::PUT_strconst( '"' . $header->{archname} . '"' );
+  $string .= B::Asmdata::PUT_strconst( '"' . $header->{blversion} . '"' );
+  $string .= B::Asmdata::PUT_U32( $header->{ivsize} );
+  $string .= B::Asmdata::PUT_U32( $header->{ptrsize} );
+  if ( exists $header->{longsize} ) {
+    $string .= B::Asmdata::PUT_U32( $header->{longsize} );
+  }
+  $string .= B::Asmdata::PUT_strconst(  sprintf(qq["0x%s"], $header->{byteorder} ));
+  if ( exists $header->{archflag} ) {
+    $string .= B::Asmdata::PUT_U16( $header->{archflag} );
+  }
+  $string;
+}
 
+sub gen_header_hash {
+  my $header  = {};
+  my $version = "$ByteLoader::VERSION";
   #if ($] < 5.009 and $version eq '0.06_01') {
   #  $version = '0.06';# fake the old backwards compatible version
   #}
-  $header .= B::Asmdata::PUT_U32(0x43424c50);                           # 'PLBC'
-  $header .= B::Asmdata::PUT_strconst( '"' . $Config{archname} . '"' );
-  $header .= B::Asmdata::PUT_strconst(qq["$version"]);
-  $header .= B::Asmdata::PUT_U32( $Config{ivsize} );
-  $header .= B::Asmdata::PUT_U32( $Config{ptrsize} );
+  $header->{magic}     = 'PLBC';
+  $header->{archname}  = $Config{archname};
+  $header->{blversion} = $version;
+  $header->{ivsize}    = $Config{ivsize};
+  $header->{ptrsize}   = $Config{ptrsize};
   if ( $version ge "0.06_03" ) {
-    $header .= B::Asmdata::PUT_U32( $Config{longsize} );
+    $header->{longsize} = $Config{longsize};
   }
   my $byteorder = $Config{byteorder};
   if ($] < 5.007) {
@@ -256,11 +274,11 @@ sub gen_header {
       $byteorder = '?'x$s;
     }
   }
-  $header .= B::Asmdata::PUT_strconst( sprintf(qq["0x%s"], $byteorder ));
+  $header->{byteorder}   = $byteorder;
   if ( $version ge "0.06_05" ) {
     my $archflag = 0;
     $archflag += 1 if $Config{useithreads};
-    $header .= B::Asmdata::PUT_U16($archflag);
+    $header->{archflag} = $archflag;
   }
   $header;
 }
@@ -289,7 +307,6 @@ sub parse_statement {
         $arg = $opnum;
       }
       else {
-
         # TODO: ignore [op] from O=Bytecode,-S
         error qq(No such op type "$arg");
         $arg = 0;
@@ -403,6 +420,7 @@ B::Assembler - Assemble Perl bytecode
 	use B::Assembler qw(newasm endasm assemble);
 	newasm(\&printsub);	# sets up for assembly
 	assemble($buf); 	# assembles one line
+	asm(opcode, arg, [comment]);
 	endasm();		# closes down
 
 	use B::Assembler qw(assemble_fh);
@@ -410,7 +428,7 @@ B::Assembler - Assemble Perl bytecode
 
 =head1 DESCRIPTION
 
-See F<ext/B/B/Assembler.pm>.
+B::Bytecode helper module.
 
 =head1 AUTHORS
 

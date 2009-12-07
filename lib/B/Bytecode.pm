@@ -965,6 +965,7 @@ sub compile {
     }
     elsif (/^-S/) {
       $debug{Comment} = 1;
+      $debug{-S} = 1;
       *newasm = *endasm = sub { };
       *asm = sub($;$$) {
         undef $_[2] if defined $_[2] and $quiet;
@@ -1039,6 +1040,12 @@ use ByteLoader '$ByteLoader::VERSION';
   }
   binmode STDOUT;
   return sub {
+    if ($debug{-S}) {
+      my $header = B::Assembler::gen_header_hash;
+      for (qw(magic archname blversion ivsize ptrsize byteorder longsize archflag)) {
+	asm sprintf("#%-10s\t",$_).$header->{$_};
+      }
+    }
     print $head if $head;
     newasm sub { print @_ };
 

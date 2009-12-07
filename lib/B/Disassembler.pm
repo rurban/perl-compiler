@@ -324,6 +324,16 @@ sub disassemble_fh {
   $opix = 1;
   bless $fh, "B::Disassembler::BytecodeStream";
   dis_header($fh);
+  if ($verbose) {
+    printf "#magic     0x%x\n", $magic; #0x43424c50
+    printf "#archname  %s\n", $archname;
+    printf "#blversion %s\n", $blversion;
+    printf "#ivsize    %d\n", $ivsize;
+    printf "#ptrsize   %d\n", $ptrsize;
+    printf "#byteorder %s\n", $byteorder;
+    printf "#longsize  %d\n", $longsize;
+    printf "#archflag  %d\n\n", $archflag;
+  }
   while ( defined( $c = $fh->getc ) ) {
     $c    = ord($c);
     $insn = $insn_name[$c];
@@ -392,12 +402,16 @@ It prints each insn and optional argument without any comments. Line per line.
 =head1 get_header
 
 Returns the .plc header as array of
-  ( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize )
+  ( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag )
+in ARRAY context, or in SCALAR context the array from above as named hash.
 
 $magic is always "PLBC"
 
-$archname is the archname string and is in the ByteLoader up to 0.06 checked strictly.
-No platform compatibility yet implemented.
+$archname is the archname string and is in the ByteLoader up to 0.06
+checked strictly. Starting with ByteLoader 0.06_05 platform
+compatibility is implemented by checking the $archflag, and doing
+byteorder swapping for same length longsize, and adjusting the ivsize
+and ptrsize.
 
 $blversion is the matching ByteLoader version as string.
 Up to ByteLoader 0.06 this version must have matched exactly, since 0.07
@@ -409,8 +423,12 @@ $ptrsize matches $Config{ptrsize} of the assembling perl. A number, 4 or 8 only 
 
 $longsize is $Config{longsize} of the assembling perl. A number, 4 or 8.
 
-$byteorder is a string of "12345678" on big-endian or "56781234" (?)
-on little-endian machines.
+$byteorder is a string of "0x12345678" on big-endian or "0x56781234" (?)
+on little-endian machines. The beginning "0x" is stripped for compatibility
+with intermediate ByteLoader versions, i.e. 5.8.
+
+$archflag is a bitmask of opcode platform-dependencies.
+Currently used is only bit 1 for USE_ITHREADS.
 
 =head1 AUTHORS
 
