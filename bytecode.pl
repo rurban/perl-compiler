@@ -363,9 +363,9 @@ while (<DATA>) {
       print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}arg;\\n\"));\n";
     }
-    if ($lvalue =~ /bstate->bs_sv/) {
-      print BYTERUN_C "\t\t/*assert(bstate->bs_sv);*/\n";
-    }
+    #if ($lvalue =~ /bstate->bs_sv/) {
+    #  print BYTERUN_C "\t\t/*assert(bstate->bs_sv);*/\n";
+    #}
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
     #

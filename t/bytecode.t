@@ -32,7 +32,7 @@ BEGIN {
 }
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-#my $ITHREADS  = ($Config{useithreads});
+my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
 my $numtests = $#tests+1;
@@ -52,7 +52,8 @@ if ($DEBUGGING) {
   }
   #@todo = (9..10, 12) if $] > 5.009;
   #@todo = (7, 11, 15) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
-  #@todo = (4, 9..12, 15..16) if $] >= 5.011;
+  @todo = (9..12,20) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
+  @todo = (5,9..12,16,20-21) if $] >= 5.011;
 } else {
   #@todo = (2..11, 13..16, 18..19) if $] > 5.009;
   #@todo = (2..5, 7, 11) if $] > 5.009;

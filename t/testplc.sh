@@ -7,8 +7,9 @@ PERL=${PERL:-perl}
 #PERL=perl5.11.0
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
-Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-#Mblib="-Mblib" # it is now 5.8 backwards compatible
+# test what? core or our module?
+#Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
+Mblib="-Mblib" # test this module
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
 ICMD="$PERL $Mblib -MByteLoader"
