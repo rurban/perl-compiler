@@ -24,10 +24,11 @@ my $cmd = 'grep -B1 -i "Failed tests" ' . ($dir eq '.' ? "$logs" : "$dir/$logs")
 print STDERR "$cmd\n";
 my @g = `$cmd` or die $@;
 my $s = "";
-my $prefix = '';
+my ($prefix,$oldprefix) = ('','');
 
 while (@g) {
   if ($g[0] =~ /^--/) {
+    $oldprefix = $prefix;
     $prefix = '';
     shift @g;
     next;
@@ -36,8 +37,10 @@ while (@g) {
   my $failed = shift @g;
   unless ($prefix) {
     ($prefix) = $file =~ m{log.test-(.*?)-t/};
-    $s .= "\n$prefix:\n";
-    print STDERR "\n$prefix:\n";
+    if ($oldprefix ne $prefix) {
+      $s .= "\n$prefix:\n";
+      print STDERR "\n$prefix:\n";
+    }
   }
   ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
   chomp $file if $file;
