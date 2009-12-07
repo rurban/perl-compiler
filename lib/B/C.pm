@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_28';
+our $VERSION = '1.04_29';
 
 package B::C::Section;
 
@@ -1726,10 +1726,11 @@ sub B::GV::save {
 			: $gv->LINE )))
 	      unless $is_empty;
 
-# XXX hack for when Perl accesses PVX of GVs, only if SvPOK
-#if (!($svflags && 0x400)) { # defer to run-time (0x400 -> SvPOK) for convenience
+  # XXX hack for when Perl accesses PVX of GVs, only if SvPOK
+  #if (!($svflags && 0x400)) { # defer to run-time (0x400 -> SvPOK) for convenience
+  # XXX also empty "main::" destruction accesses a PVX, so do not check if_empty
   if ( !$PERL510 ) {
-    $init->add("if (SvPOK($sym)) SvPVX($sym) = emptystring;") unless $is_empty;
+    $init->add("if (SvPOK($sym)) SvPVX($sym) = emptystring;"); # unless $is_empty;
   }
 
   # Shouldn't need to do save_magic since gv_fetchpv handles that
