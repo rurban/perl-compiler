@@ -38,6 +38,8 @@ package MY;
 sub libscan {
   # ignore temp testing files
   return 0 if $_[1] =~ /^(.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode\d+\..*|regen_lib\.pl)$/;
+  # Ignore Bytecode on 5.6 for now. It might be only a byteorder problem though
+  return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Bytecode\.pm/;
   return $_[1];
 }
 
