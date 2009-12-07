@@ -104,6 +104,8 @@ TODO:
   
 
 DONE:
+test14+23 destruction of GvPVX of the empty main:: stash fixed by adding a dummy.
+
 cccode19 sort failure via custom sortcv fixed with B::CC 1.02_03. endless loop
 
 autoload subs from main::, from packages it works ok (test 8)
