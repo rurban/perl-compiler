@@ -67,7 +67,7 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
-    rm $o.c $o ${o}_o.c ${o}_o 2> /dev/nul
+    rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
     vcmd ${OCMD}-o$o.c $o.pl
     vcmd $CCMD $o.c -c -E -o ${o}_E.c
     vcmd $CCMD $o.c $LCMD -o $o
