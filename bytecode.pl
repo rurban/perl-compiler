@@ -353,19 +353,26 @@ while (<DATA>) {
     }
     if ($flags =~ /x/) {
       print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
-      print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue$optarg)\\n\"));\n";
+      printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optarg));\n",
+	$optarg eq ", arg"
+	  ? ($fundtype =~ /(strconst|pvindex|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %d'))
+	  : '';
     } elsif ($flags =~ /s/) {
       # Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
       print BYTERUN_C "\t\tBSET_OBJ_STORE($lvalue$optarg);\n";
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
+      if ($lvalue =~ /bstate->bs_sv/) {
+	print BYTERUN_C "\t\tassert(bstate->bs_sv);\n";
+      }
     }
     elsif ($optarg && $lvalue ne "none") {
       print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
-      print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}arg;\\n\"));\n";
+      printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", arg%s));\n",
+	$fundtype =~ /(strconst|pvindex|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
+      if ($argtype =~ /index$/ and $lvalue =~ /bstate->bs_sv/) {
+	print BYTERUN_C "\t\tassert(bstate->bs_sv);\n";
+      }
     }
-    #if ($lvalue =~ /bstate->bs_sv/) {
-    #  print BYTERUN_C "\t\t/*assert(bstate->bs_sv);*/\n";
-    #}
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
     #
