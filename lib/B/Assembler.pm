@@ -230,7 +230,7 @@ sub strip_comments {
 sub gen_header {
   my $header = gen_header_hash();
   my $string  = "";
-  $string .= B::Asmdata::PUT_U32(0x43424c50); # FIXME 'PLBC'
+  $string .= B::Asmdata::PUT_U32( $header->{magic} );
   $string .= B::Asmdata::PUT_strconst( '"' . $header->{archname} . '"' );
   $string .= B::Asmdata::PUT_strconst( '"' . $header->{blversion} . '"' );
   $string .= B::Asmdata::PUT_U32( $header->{ivsize} );
@@ -251,7 +251,7 @@ sub gen_header_hash {
   #if ($] < 5.009 and $version eq '0.06_01') {
   #  $version = '0.06';# fake the old backwards compatible version
   #}
-  $header->{magic}     = 'PLBC';
+  $header->{magic}     = 0x43424c50;
   $header->{archname}  = $Config{archname};
   $header->{blversion} = $version;
   $header->{ivsize}    = $Config{ivsize};

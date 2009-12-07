@@ -1042,7 +1042,8 @@ use ByteLoader '$ByteLoader::VERSION';
   return sub {
     if ($debug{-S}) {
       my $header = B::Assembler::gen_header_hash;
-      for (qw(magic archname blversion ivsize ptrsize byteorder longsize archflag)) {
+      asm sprintf("#%-10s\t","magic").sprintf("0x%x",$header->{magic});
+      for (qw(archname blversion ivsize ptrsize byteorder longsize archflag)) {
 	asm sprintf("#%-10s\t",$_).$header->{$_};
       }
     }

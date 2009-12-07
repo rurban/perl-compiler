@@ -3,7 +3,6 @@ lib/B/Asmdata.pm
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
-lib/B/Bytecode56.pm
 lib/B/C.pm
 lib/B/CC.pm
 lib/B/Disassembler.pm
