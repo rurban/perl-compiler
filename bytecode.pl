@@ -838,7 +838,8 @@ __END__
 #endif
 0   pregcomp	PL_op					pvcontents	x
 0   op_pmflags	cPMOP->op_pmflags			U16
-10  op_reflags  RX_EXTFLAGS(PM_GETRE(cPMOP))		U32
+10-10 op_reflags  PM_GETRE(cPMOP)->extflags		U32
+11  op_reflags  RX_EXTFLAGS(PM_GETRE(cPMOP))		U32
 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
 <10 op_pmdynflags  cPMOP->op_pmdynflags			U8
 0 op_sv		cSVOP->op_sv				svindex
