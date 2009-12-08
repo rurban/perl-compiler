@@ -395,7 +395,8 @@ print BYTERUN_C <<'EOT';
 	      Perl_croak(aTHX_ "Illegal bytecode instruction %d. Version or platform incompatibility. Threading?\n", insn);
 	      /* NOTREACHED */
 	  }
-#ifdef DEBUG_t_TEST_
+	  /* debop is not public in 5.10.0. only tested with mingw, cygwin is fine. msvc todo */
+#if defined(DEBUG_t_TEST_) && !defined(__MINGW32__)
           if (PL_op && DEBUG_t_TEST_) debop(PL_op);
 #endif
         }

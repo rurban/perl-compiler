@@ -545,6 +545,8 @@ static int bget_swab = 0;
 #if PERL_VERSION < 10
 #define BSET_gp_file(gv, file)	GvFILE((GV*)gv) = file
 #else
+/* unshare_hek not public */
+# if !defined(__MINGW32__)
 #define BSET_gp_file(gv, file) \
 	STMT_START {							\
 	    STRLEN len = strlen(file);					\
@@ -556,6 +558,16 @@ static int bget_swab = 0;
 	    GvFILE_HEK(gv) = share_hek(file, len, hash);		\
 	    Safefree(file);						\
 	} STMT_END
+# else
+#define BSET_gp_file(gv, file) \
+	STMT_START {							\
+	    STRLEN len = strlen(file);					\
+	    U32 hash;							\
+	    PERL_HASH(hash, file, len);					\
+	    GvFILE_HEK(gv) = share_hek(file, len, hash);		\
+	    Safefree(file);						\
+	} STMT_END
+# endif
 #endif
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
