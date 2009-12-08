@@ -1,12 +1,12 @@
 #      Disassembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008 Reini Urban
+#      Copyright (c) 2008,2009 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.05_03';
+$B::Disassembler::VERSION = '1.05_04';
 
 package B::Disassembler::BytecodeStream;
 
@@ -183,7 +183,7 @@ sub GET_IV {
   # Check the header settings, not the current settings.
   $B::Disassembler::ivsize == 4 ? &GET_I32 : &GET_IV64;
 
-  #$Config{ivsize} == 4 ? &GET_I32 : &GET_IV64;
+  # $Config{ivsize} == 4 ? &GET_I32 : &GET_IV64;
 }
 
 sub GET_PADOFFSET {
@@ -215,7 +215,7 @@ my $opix;
 our @opname = opset_to_ops(full_opset);
 our (
   $magic,   $archname, $blversion, $ivsize,
-  $ptrsize, $longsize, $byteorder, $archflag
+  $ptrsize, $longsize, $byteorder, $archflag, $perlversion
 );
 
 sub dis_header($) {
@@ -229,36 +229,40 @@ sub dis_header($) {
   if ( $blversion ge '"0.06_03"' ) {
     $longsize = $fh->GET_U32();
   }
-  else {
-    $longsize = $Config{longsize};
+  if ( $blversion gt '"0.06"' or $blversion eq '"0.04"' ) {
+    $byteorder = $fh->GET_strconst();
   }
-  $byteorder = $fh->GET_strconst();
   if ( $blversion ge '"0.06_05"' ) {
     $archflag = $fh->GET_U16();
   }
-  else {
-    $archflag = -1;
+  if ( $blversion ge '"0.06_06"' ) {
+    $perlversion = $fh->GET_strconst();
   }
 }
 
 sub get_header() {
+  my @result = (
+		$magic,   $archname,  $blversion, $ivsize,
+		$ptrsize, $byteorder, $longsize,  $archflag,
+		$perlversion
+	       );
   if (wantarray) {
-    return (
-      $magic,   $archname,  $blversion, $ivsize,
-      $ptrsize, $byteorder, $longsize,  $archflag
-    );
+    return @result;
   }
   else {
-    return {
-      magic     => $magic,
-      archname  => $archname,
-      blversion => $blversion,
-      ivsize    => $ivsize,
-      ptrsize   => $ptrsize,
-      byteorder => $byteorder,
-      longsize  => $longsize,
-      archflag  => $archflag
-    };
+    my $hash = {
+		magic       => $magic,
+		archname    => $archname,
+		blversion   => $blversion,
+		ivsize      => $ivsize,
+		ptrsize     => $ptrsize,
+	       };
+    for (qw(magic archname blversion ivsize ptrsize byteorder
+	    longsize archflag perlversion))
+    {
+	$hash->{$_} = $$_ if defined $$_;
+    }
+    return $hash;
   }
 }
 
@@ -325,21 +329,23 @@ sub disassemble_fh {
   bless $fh, "B::Disassembler::BytecodeStream";
   dis_header($fh);
   if ($verbose) {
-    printf "#magic     0x%x\n", $magic; #0x43424c50
-    printf "#archname  %s\n", $archname;
-    printf "#blversion %s\n", $blversion;
-    printf "#ivsize    %d\n", $ivsize;
-    printf "#ptrsize   %d\n", $ptrsize;
-    printf "#byteorder %s\n", $byteorder;
-    printf "#longsize  %d\n", $longsize;
-    printf "#archflag  %d\n\n", $archflag;
+    printf "#magic       0x%x\n", $magic; #0x43424c50
+    printf "#archname    %s\n", $archname;
+    printf "#blversion   %s\n", $blversion;
+    printf "#ivsize      %d\n", $ivsize;
+    printf "#ptrsize     %d\n", $ptrsize;
+    printf "#byteorder   %s\n", $byteorder if $byteorder;
+    printf "#longsize    %d\n", $longsize  if $longsize;
+    printf "#archflag    %d\n", $archflag  if defined $archflag;
+    printf "#perlversion %s\n", $perlversion if $perlversion;
+    print "\n";
   }
   while ( defined( $c = $fh->getc ) ) {
     $c    = ord($c);
     $insn = $insn_name[$c];
     if ( !defined($insn) || $insn eq "unused" ) {
       my $pos = $fh->tell - 1;
-      die "Illegal instruction code $c at stream offset $pos\n";
+      die "Illegal instruction code $c at stream offset $pos. Version or platform incompatibility. Threading?\n";
     }
     $getmeth = $insn_data{$insn}->[2];
     $arg     = $fh->$getmeth();
@@ -371,9 +377,6 @@ B::Disassembler - Disassemble Perl bytecode
 disassemble_fh takes an filehandle with bytecode and a printer function.
 The printer function gets three arguments: insn, arg (optional) and the comment.
 
-Two default printer functions are provided:
-  print_insn print_insn_bare
-
 See F<lib/B/Disassembler.pm> and F<scripts/disassemble>.
 
 =head1 disassemble_fh (filehandle, printer_coderef, [ verbose ])
@@ -382,53 +385,68 @@ disassemble_fh takes an filehandle with bytecode and a printer coderef.
 
 Two default printer functions are provided:
 
-  print_insn 
-  print_insn_bare
+  print_insn print_insn_bare
 
 =head1 print_insn
 
-Callback function for disassemble_fh, which gets three arguments from the disassembler.
-insn (a string), arg (a string or number or undef) and the comment (an optional string).
+Callback function for disassemble_fh, which gets three arguments from
+the disassembler.  insn (a string), arg (a string or number or undef)
+and the comment (an optional string).
 
-This supports the new behaviour in F<scripts/disassemble>.
-It prints each insn and optional argument with some additional comments,
-which looks similar to B::Assembler with option -S (commented source).
+This supports the new behaviour in F<scripts/disassemble>.  It prints
+each insn and optional argument with some additional comments, which
+looks similar to B::Assembler with option -S (commented source).
 
 =head1 print_insn_bare
 
-This is the same as the old behaviour of scripts/disassemble.
-It prints each insn and optional argument without any comments. Line per line.
+This is the same as the old behaviour of scripts/disassemble.  It
+prints each insn and optional argument without any comments. Line per
+line.
 
 =head1 get_header
 
 Returns the .plc header as array of
-  ( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag )
+
+  ( magic, archname, blversion, ivsize, ptrsize,
+    byteorder, longsize, archflag, perlversion )
+
 in ARRAY context, or in SCALAR context the array from above as named hash.
 
-$magic is always "PLBC"
+B<magic> is always "PLBC". "PLJC" is reserved for JIT'ted code also
+loaded via ByteLoader.
 
-$archname is the archname string and is in the ByteLoader up to 0.06
+B<archname> is the archname string and is in the ByteLoader up to 0.06
 checked strictly. Starting with ByteLoader 0.06_05 platform
 compatibility is implemented by checking the $archflag, and doing
 byteorder swapping for same length longsize, and adjusting the ivsize
 and ptrsize.
 
-$blversion is the matching ByteLoader version as string.
+B<blversion> is the ByteLoader version from the header as string.
 Up to ByteLoader 0.06 this version must have matched exactly, since 0.07
 earlier ByteLoader versions are also accepted in the ByteLoader.
 
-$ivsize matches $Config{ivsize} of the assembling perl. A number, 4 or 8 only supported.
+B<ivsize> matches $Config{ivsize} of the assembling perl.
+A number, 4 or 8 only supported.
 
-$ptrsize matches $Config{ptrsize} of the assembling perl. A number, 4 or 8 only supported.
+B<ptrsize> matches $Config{ptrsize} of the assembling perl.
+A number, 4 or 8 only supported.
 
-$longsize is $Config{longsize} of the assembling perl. A number, 4 or 8.
+B<longsize> is $Config{longsize} of the assembling perl.
+A number, 4 or 8.
+Only since blversion 0.06_03.
 
-$byteorder is a string of "0x12345678" on big-endian or "0x56781234" (?)
+B<byteorder> is a string of "0x12345678" on big-endian or "0x56781234" (?)
 on little-endian machines. The beginning "0x" is stripped for compatibility
-with intermediate ByteLoader versions, i.e. 5.8.
+with intermediate ByteLoader versions, i.e. 5.6.1 to 5.8.0,
+Added with blversion 0.06_03, and also with blversion 0.04.
+See L<BcVersions>
 
-$archflag is a bitmask of opcode platform-dependencies.
+B<archflag> is a bitmask of opcode platform-dependencies.
 Currently used is only bit 1 for USE_ITHREADS.
+Added with  blversion 0.06_05.
+
+B<perlversion> $] of the perl, which produced this bytecode, as string.
+Added with blversion 0.06_06.
 
 =head1 AUTHORS
 

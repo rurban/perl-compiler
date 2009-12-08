@@ -1,5 +1,5 @@
 #! perl
-use B::Disassembler qw(disassemble_fh print_insn print_insn_bare);
+use B::Disassembler qw(disassemble_fh);
 use FileHandle;
 
 =pod
@@ -38,11 +38,27 @@ binary bytecode readable, and not necessarily recompilable with
 older assemblers.
 
 =cut
+
+BEGIN {
+  if ($B::Disassembler::VERSION > '1.05') {
+    B::Disassembler->import('print_insn');
+  } else {
+    sub print_insn {
+      my ($insn, $arg) = @_;
+      if (defined($arg)) {
+	printf "%s %s\n", $insn, $arg;
+      } else {
+	print $insn, "\n";
+      }
+    }
+  }
+}
+
 my $verbose = '1';
 if ($ARGV[0] eq "--bare") {
   shift;
   $verbose = 0;
-  *print_insn = *print_insn_bare;
+  *print_insn = *B::Disassembler::print_insn_bare;
 }
 
 my $fh;

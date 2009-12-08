@@ -1,5 +1,4 @@
 Artistic
-lib/B/Asmdata.pm
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
@@ -10,6 +9,21 @@ lib/B/Stackobj.pm
 lib/B/Stash.pm
 bytecode.pl
 ByteLoader/bytecode.h
+ByteLoader/BcVersions.pod
+ByteLoader/BcVersions/Asm5.005008.pm
+ByteLoader/BcVersions/Asm5.006000.pm
+ByteLoader/BcVersions/Asm5.006001.pm
+ByteLoader/BcVersions/Asm5.006002.pm
+ByteLoader/BcVersions/Asm5.008000.pm
+ByteLoader/BcVersions/Asm5.008001.pm
+ByteLoader/BcVersions/Asm5.008002.pm
+ByteLoader/BcVersions/Asm5.008003.pm
+ByteLoader/BcVersions/Asm5.008004.pm
+ByteLoader/BcVersions/Asm5.008005.pm
+ByteLoader/BcVersions/Asm5.008006.pm
+ByteLoader/BcVersions/Asm5.008007.pm
+ByteLoader/BcVersions/Asm5.008008.pm
+ByteLoader/BcVersions/Asm5.008009.pm
 ByteLoader/ByteLoader.pm
 ByteLoader/ByteLoader.xs
 ByteLoader/hints/sunos.pl

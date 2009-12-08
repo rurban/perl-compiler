@@ -584,14 +584,14 @@ static int bget_swab = 0;
  */
 
 #define HEADER_FAIL(f)	\
-	Perl_croak(aTHX_ "Invalid bytecode for this architecture: " f)
+	Perl_croak(aTHX_ "ERROR Invalid bytecode: " f)
 #define HEADER_FAIL1(f, arg1)	\
-	Perl_croak(aTHX_ "Invalid bytecode for this architecture: " f, arg1)
+	Perl_croak(aTHX_ "ERROR Invalid bytecode: " f, arg1)
 #define HEADER_FAIL2(f, arg1, arg2)	\
-	Perl_croak(aTHX_ "Invalid bytecode for this architecture: " f, arg1, arg2)
+	Perl_croak(aTHX_ "ERROR Invalid bytecode: " f, arg1, arg2)
 #define HEADER_WARN(f)	\
-	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f)
+	Perl_warn(aTHX_ "WARNING Convert bytecode: " f)
 #define HEADER_WARN1(f, arg1)	\
-	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f, arg1)
+	Perl_warn(aTHX_ "WARNING Convert bytecode: " f, arg1)
 #define HEADER_WARN2(f, arg1, arg2)	\
-	Perl_warn(aTHX_ "Convert bytecode to this architecture: " f, arg1, arg2)
+	Perl_warn(aTHX_ "WARNING Convert bytecode: " f, arg1, arg2)

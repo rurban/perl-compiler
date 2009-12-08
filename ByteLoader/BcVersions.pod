@@ -1,0 +1,82 @@
+=head1 NAME
+
+BcVersions - ByteLoader bytecode versions
+
+=head1 DESCRIPTION
+
+Reference of tables of Asmdata files per perl - ByteLoader version.
+
+5.005 had no ByteLoader VERSION. 
+5.005008 had 118 bytecodes, but no ByteLoader module and no header.
+
+5.6 removed and added some opcodes.
+
+With 5.8 several bytecodes were changed in the middle, and the number
+changed from 120 (5.008000) to 150 (5.008009).
+
+With 5.10 it is not in CORE anymore, bytecode numbering juggled in
+development releases, while stable releases follow the static bytecode
+policy. New bytecodes are only added to the end, discontinued ops are
+nop'ed.
+
+  perl     number blversion
+  5.005008 118    -    no header!
+  5.006000 117    0.03 no header!
+  5.006001 121    0.04 magic:32 "archname" "blversion" ivsize:32 ptrsize:32 "byteorder"
+  5.006002 120    0.04
+  5.008000 120    0.04
+  5.008001 150    0.05 magic:32 "archname" "blversion" ivsize:32 ptrsize:32
+  5.008002 150    0.05
+  5.008003 150    0.05
+  5.008004 150    0.05
+  5.008005 150    0.05
+  5.008006 150    0.05
+  5.008007 150    0.05
+  5.008008 150    0.06
+  5.008009 150    0.06
+  5.010000 150    0.07 magic:32 "archname" "blversion" ivsize:32 ptrsize:32 longsize:32 "byteorder" archflag:16 "perlversion"
+  5.010001 150    0.07
+  5.010002 150    0.07
+  5.011000 150    0.07
+  5.011001 150    0.07
+  5.011002 150    0.07
+
+ByteLoader:
+
+  0.06_01: added byteorder 
+	magic:32 "archname" "blversion" ivsize:32 ptrsize:32 "byteorder"
+  0.06_03: added longsize  
+	magic:32 "archname" "blversion" ivsize:32 ptrsize:32 longsize:32 "byteorder"
+  0.06_05: added archflag  
+	magic:32 "archname" "blversion" ivsize:32 ptrsize:32 longsize:32 "byteorder" archflag:16
+  0.06_06: added perlversion
+	magic:32 "archname" "blversion" ivsize:32 ptrsize:32 longsize:32 "byteorder" archflag:16 "perlversion"
+
+
+=head1 HOW TO
+
+Create new versions:
+
+  perlall=${perlall:-"5.6.0 5.6.1 5.6.2 5.6.0 5.6.1 5.6.2 5.8.0 5.8.0-nt 5.8.1 5.8.1-nt 5.8.2 5.8.3 5.8.4 5.8.5 5.8.6 5.8.8-nt 5.8.8 5.8.9-nt 5.8.9 5.10.0 5.10.0-nt 5.10.1 5.10.1d-nt 5.11.0 5.11.0-nt 5.11.1 5.11.2d 5.11.2d-nt"}
+
+  for p in $perlall
+  do 
+    make -q clean
+    perl$p Makefile.PL
+    v=`perl$p -MConfig -e'printf "%1.6f%s", $], $Config{useithreads} ? q() : q(-nt)'`
+    echo "$p-$v"
+    make lib/B/Asmdata.pm && sed -e"s,package B::Asmdata,package B::Asm$v," \
+	<lib/B/Asmdata.pm >ByteLoader/BcVersions/Asm$v.pm
+  done
+
+In F<BcVersions/Asm5.0*.pm> are all original Asmdata files from all previous releases, regardless of ITHREADs.
+
+=head1 AUTHOR
+
+Reini Urban <rurban@cpan.org> 2009.
+
+=head1 SEE ALSO
+
+L<B::Asmdata>, L<ByteLoader>, L<B::Bytecode>, L<B::Assembler>, L<B::Disassembler>
+
+=cut
