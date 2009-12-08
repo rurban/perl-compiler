@@ -16,7 +16,8 @@
 	* Disassembler.pm (1.05_04): Add perlversion to header.
 	Print header only for existing.
 	* BcVersions/Asm*.pm, BcVersions.pod: added
-	* disassemble: make it work with the older Disassembler
+	* disassemble: make it work with the older Disassembler.
+	make it work with older bytecode >= 5.8 via Asmdata unsupported ops.
 	* i386.xs, jitcompiler.pl: removed (seperate module)
 
 1.04_29 2009-12-07 rurban
