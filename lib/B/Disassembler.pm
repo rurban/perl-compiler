@@ -345,7 +345,7 @@ sub disassemble_fh {
     $insn = $insn_name[$c];
     if ( !defined($insn) || $insn eq "unused" ) {
       my $pos = $fh->tell - 1;
-      die "Illegal instruction code $c at stream offset $pos. Version or platform incompatibility. Threading?\n";
+      warn "Illegal instruction code $c at stream offset $pos.\n";
     }
     $getmeth = $insn_data{$insn}->[2];
     $arg     = $fh->$getmeth();

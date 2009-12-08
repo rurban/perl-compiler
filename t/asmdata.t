@@ -32,6 +32,8 @@ isnt( @specialsv_name, 0,  '   @specialsv_name' );
 my @data = values %insn_data;
 is( (grep { ref eq 'ARRAY' } @data),  @data,   '%insn_data contains arrays' );
 
+# sort out unsupport ones, with no PUT method
+@data = grep {$_[2]} @data;
 # pick one at random to test with.
 my $opname = (keys %insn_data)[rand @data];
 my $data = $insn_data{$opname};

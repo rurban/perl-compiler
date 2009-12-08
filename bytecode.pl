@@ -315,37 +315,69 @@ while (<DATA>) {
       $insn_num = 0 if !$idx and $insn eq 'ret';
     } #else ignore the idx and count through
     my $rvalcast = '';
+    my $unsupp = 0;
     if ($argtype =~ m:(.+)/(.+):) {
 	($rvalcast, $argtype) = ("($1)", $2);
     }
     if ($ver) {
       if ($ver =~ /^\!?i/) {
-	next if ($ver =~ /^i/ and !$ithreads) or ($ver =~ /\!i/ and $ithreads);
+	$unsupp++ if ($ver =~ /^i/ and !$ithreads) or ($ver =~ /\!i/ and $ithreads);
 	$ver =~ s/^\!?i//;
       }
       # perl version 5.010000 => 10.000, 5.009003 => 9.003
       # Have to round the float: 5.010 - 5 = 0.00999999999999979
       my $pver = 0.0+(substr($],2,3).".".substr($],5));
+      # Add these misses to ASMDATA. TODO: To BYTERUN maybe with a translator, as the
+      # perl fields to write to are gone. Reading for the disassembler should be possible.
       if ($ver =~ /^\>[\d\.]+$/) {
-	next if $pver < substr($ver,1);# ver >10: skip if pvar lowereq 10
+	$unsupp++ if $pver < substr($ver,1);# ver >10: skip if pvar lowereq 10
       } elsif ($ver =~ /^\<[\d\.]+$/) {
-	next if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
+	$unsupp++ if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
       } elsif ($ver =~ /^([\d\.]+)-([\d\.]+)$/) {
-	next if $pver >= $2 or $pver < $1; # ver 8-10 (both inclusive): skip if pvar
+	$unsupp++ if $pver >= $2 or $pver < $1; # ver 8-10 (both inclusive): skip if pvar
 	  				# lower than 8 or higher than 10;
       } elsif ($ver =~ /^[\d\.]*$/) {
-	next if $pver < $ver; # ver 10: skip if pvar lower than 10;
+	$unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
       }
     }
 
-    $insn_name[$insn_num] = $insn;
+    if ($unsupp and !$insn_name[$insn_num]) {
+      $insn_name[$insn_num] = undef;
+    } else {
+      $insn_name[$insn_num] = $insn;
+    }
     $fundtype = $alias_from{$argtype} || $argtype;
+
+    #
+    # Add the initialiser line for %insn_data in Asmdata.pm
+    #
+    if ($unsupp) {
+      print ASMDATA_PM <<"EOT" if !$insn_name[$insn_num];
+\$insn_data{$insn} = [$insn_num, 0, "GET_$fundtype"];
+EOT
+    } else {
+      print ASMDATA_PM <<"EOT";
+\$insn_data{$insn} = [$insn_num, \\&PUT_$fundtype, "GET_$fundtype"];
+EOT
+    }
 
     #
     # Add the case statement and code for the bytecode interpreter in byterun.c
     #
-    printf BYTERUN_C "\t  case INSN_%s:\t\t/* %d */\n\t    {\n",
-	uc($insn), $insn_num;
+    # On unsupported codes add to BYTERUN CASE only for certain nums: holes.
+    my %holes;
+    %holes = (46=>1,66,=>1,68=>1,107=>1,108=>1,115=>1,126=>1,127=>1,129=>1,131=>1) if $] > 5.007;
+
+    if (!$unsupp or $holes{$insn_num}) {
+      printf BYTERUN_C "\t  case %s:\t\t/* %d */\n\t    {\n",
+	$unsupp ? $insn_num : "INSN_".uc($insn), $insn_num;
+      if ($unsupp and $holes{$insn_num}) {
+	printf BYTERUN_C "\t\tPerlIO_printf(Perl_error_log, \"Unsupported bytecode instruction %%d (%s) at stream offset %%d.\\n\",
+	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
+      }
+    } else {
+      goto unsupported;
+    }
     my $optarg = $argtype eq "none" ? "" : ", arg";
     if ($optarg) {
       if ($fundtype eq 'strconst') {
@@ -376,18 +408,14 @@ while (<DATA>) {
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
     }
     elsif ($optarg && $lvalue ne "none") {
-      print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
+      print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n" unless $unsupp;
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", arg%s));\n",
 	$fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
-    #
-    # Add the initialiser line for %insn_data in Asmdata.pm
-    #
-    print ASMDATA_PM <<"EOT";
-\$insn_data{$insn} = [$insn_num, \\&PUT_$fundtype, "GET_$fundtype"];
-EOT
+unsupported:
+    $insn_name[$insn_num] = '' if $unsupp and !$holes{$insn_num}; # dont fill ENUM without a hole
 
     # Find the next unused instruction number
     do { $insn_num++ } while $insn_name[$insn_num];
@@ -398,7 +426,8 @@ EOT
 #
 print BYTERUN_C <<'EOT';
 	    default:
-	      Perl_croak(aTHX_ "Illegal bytecode instruction %d at offset %d. Version or platform incompatibility. Threading?\n", insn, bstate->bs_fdata->next_out);
+	      Perl_croak(aTHX_ "Illegal bytecode instruction %d at stream offset %d.\n",
+                         insn, bstate->bs_fdata->next_out);
 	      /* NOTREACHED */
 	  }
 	  /* debop is not public in 5.10.0. only tested with mingw, cygwin is fine. msvc todo */
@@ -535,7 +564,7 @@ EOT
 my $add_enum_value = 0;
 my $max_insn;
 for $i ( 0 .. $#insn_name ) {
-    if ($insn_name[$i]) {
+    if ($insn_name[$i]) { # detect unsupp
 	$insn = uc($insn_name[$i]);
 	$max_insn = $i;
 	if ($add_enum_value) {
@@ -612,6 +641,9 @@ The GET method is not used by the binary L<ByteLoader> module.
 A full C<insn> table with version, opcode, name, lvalue, argtype and flags
 is located as DATA in F<bytecode.pl>.
 
+An empty PUT method, the number 0, denotes an unsupported bytecode for this perl.
+It is there to support disassembling older perl bytecode. This was added with 1.02_02.
+
 =item @insn_name
 
   my $op_name = $insn_name[$bytecode_num];
@@ -662,6 +694,7 @@ Header entry: archflag - bitflag 1.
 
 TODO For cross-version portability we will try to translate older
 bytecode ops to the current perl op via L<ByteLoader::Translate>.
+Asmdata already contains the old ops, all with the PUT method 0.
 Header entry: perlversion
 
 =head2 CROSS-VERSION PORTABILITY (TODO - HARD)
@@ -670,7 +703,8 @@ Bytecode ops:
 We can only reliably load bytecode from previous versions and promise
 that from 5.10.0 on future versions will only add new op numbers at
 the end, but will never replace old opcodes with incompatible arguments.
-Unsupported insn's must be changed to nop.
+Unsupported insn's are supported by disassemble, and tried by the ByteLoader
+without guarantee to work.
 On the first unknown bytecode op from a future version - added to the end
 - we will die.
 
@@ -849,22 +883,19 @@ __END__
 106 10  op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
 # nop >=5.10
 107 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext	opindex
-#ifdef USE_ITHREADS
 108 i8 	op_pmstashpv	cPMOP				pvindex		x
 109 i<10 op_pmreplrootpo cPMOP->op_pmreplroot		OP*/PADOFFSET
-109 10 	op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
-#else
+109 i10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 110 !i8-10 op_pmstash	*(SV**)&cPMOP->op_pmstash				svindex
 110 !i10   op_pmstash	*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
 111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot				svindex
 111 !i10   op_pmreplrootgv *(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot	svindex
-#endif
 112 0   pregcomp	PL_op				pvcontents	x
 113 0   op_pmflags	cPMOP->op_pmflags		U16
 # 5.10.0 misses the RX_EXTFLAGS macro
+114 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
 114 10-10 op_reflags  	PM_GETRE(cPMOP)->extflags	U32
 114 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
-114 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
 115 <10 op_pmdynflags  cPMOP->op_pmdynflags		U8
 116 0 	op_sv		cSVOP->op_sv			svindex
 117 0 	op_padix	cPADOP->op_padix		PADOFFSET
@@ -874,15 +905,11 @@ __END__
 121 0 	op_nextop	cLOOP->op_nextop		opindex
 122 0 	op_lastop	cLOOP->op_lastop		opindex
 123 0 	cop_label	cCOP				pvindex		x
-#ifdef USE_ITHREADS
 124 i0 	cop_stashpv	cCOP				pvindex		x
 125 i0 	cop_file	cCOP				pvindex		x
-#endif
 # /* those two are ignored, but keep .plc compat for 5.8 only? */
-#ifndef USE_ITHREADS
 126 !i0 cop_stash	cCOP				svindex		x
 127 !i0 cop_filegv	cCOP				svindex		x
-#endif
 128 0 	cop_seq		cCOP->cop_seq			U32
 129 <10 cop_arybase	cCOP->cop_arybase		I32
 130 0 	cop_line	cCOP->cop_line			line_t
@@ -900,9 +927,7 @@ __END__
 142 8 data		none				U8		x
 143 8 incav		*(SV**)&GvAV(PL_incgv)		svindex
 144 8 load_glob	none					svindex		x
-#ifdef USE_ITHREADS
 145 i8 regex_padav	*(SV**)&PL_regex_padav		svindex
-#endif
 146 8 dowarn	PL_dowarn				U8
 147 8 comppad_name	*(SV**)&PL_comppad_name		svindex
 148 8 xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)		svindex

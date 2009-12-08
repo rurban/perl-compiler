@@ -8,8 +8,10 @@
 	Allow float versions, such as 10.001 for subreleases.
 	Add perlversion to header.
 	Add byteorder check logic.
+	Added logic to include all possible unsupported ops, all holes.
 	* ByteLoader.pm (1.06_06): better bytecode numbering
-	* Asmdata.pm (1.02_02): strict numbering along 5.8
+	* Asmdata.pm (1.02_02): strict numbering along 5.8.
+	Unsupported ops are now also included, with PUT method 0.
 	* Assembler.pm (0.07_07): Add perlversion to header
 	* Disassembler.pm (1.05_04): Add perlversion to header.
 	Print header only for existing.

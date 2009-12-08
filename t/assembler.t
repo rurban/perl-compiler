@@ -296,8 +296,8 @@ long	     => undef,
 #
 for my $opname ( keys( %insn_data ) ){
     my ( $opcode, $put, $getname ) = @{$insn_data{$opname}};
-    push( @{$opsByType{$getname}}, $opcode );
-    $code2name[$opcode] = $opname;
+    push( @{$opsByType{$getname}}, $opcode ) if $put;
+    $code2name[$opcode] = $opname  if $put;
 }
 
 
