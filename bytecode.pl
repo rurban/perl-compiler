@@ -343,7 +343,7 @@ while (<DATA>) {
 
     if ($unsupp and !$insn_name[$insn_num]) {
       $insn_name[$insn_num] = undef;
-    } else {
+    } elsif (!$unsupp) {
       $insn_name[$insn_num] = $insn;
     }
     $fundtype = $alias_from{$argtype} || $argtype;
@@ -366,7 +366,7 @@ EOT
     #
     # On unsupported codes add to BYTERUN CASE only for certain nums: holes.
     my %holes;
-    %holes = (46=>1,66,=>1,68=>1,107=>1,108=>1,115=>1,126=>1,127=>1,129=>1,131=>1) if $] > 5.007;
+    %holes = (46=>1,66=>1,68=>1,107=>1,108=>1,115=>1,126=>1,127=>1,129=>1,131=>1) if $] > 5.007;
 
     if (!$unsupp or $holes{$insn_num}) {
       printf BYTERUN_C "\t  case %s:\t\t/* %d */\n\t    {\n",
@@ -415,7 +415,10 @@ EOT
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
 unsupported:
-    $insn_name[$insn_num] = '' if $unsupp and !$holes{$insn_num}; # dont fill ENUM without a hole
+    $insn_name[$insn_num] = ''
+      if $unsupp
+	 and !$insn_name[$insn_num] # another alternative available
+	 and !$holes{$insn_num};     # dont fill ENUM without a hole
 
     # Find the next unused instruction number
     do { $insn_num++ } while $insn_name[$insn_num];
@@ -574,6 +577,7 @@ for $i ( 0 .. $#insn_name ) {
 	    print BYTERUN_H "    INSN_$insn,\t\t\t/* $i */\n";
 	}
     } else {
+        #warn "hole $i\n" if $opt_debug;
 	$add_enum_value = 1;
     }
 }
@@ -836,13 +840,13 @@ __END__
 64 0 	xav_max	AvMAX(bstate->bs_sv)			SSize_t
 65 <10 	xav_flags	AvFLAGS(bstate->bs_sv)		U8
 65 10 	xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 I32
-66 <10 	xhv_riter	HvRITER(bstate->bs_sv)		I32
-67 0 	xhv_name	bstate->bs_sv			pvindex		x
-68 8-9 	xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)	opindex
-69 0 	hv_store	bstate->bs_sv			svindex		x
-70 0 	sv_magic	bstate->bs_sv			char		x
-71 0 	mg_obj		SvMAGIC(bstate->bs_sv)->mg_obj	svindex
-72 0 	mg_private	SvMAGIC(bstate->bs_sv)->mg_private U16
+66 <10 	xhv_riter	HvRITER(bstate->bs_sv)			I32
+67 0 	xhv_name	bstate->bs_sv				pvindex		x
+68 8-9 	xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
+69 0 	hv_store	bstate->bs_sv				svindex		x
+70 0 	sv_magic	bstate->bs_sv				char		x
+71 0 	mg_obj		SvMAGIC(bstate->bs_sv)->mg_obj		svindex
+72 0 	mg_private	SvMAGIC(bstate->bs_sv)->mg_private 	U16
 73 0 	mg_flags	SvMAGIC(bstate->bs_sv)->mg_flags	U8
 74 0 	mg_name		SvMAGIC(bstate->bs_sv)			pvcontents	x
 75 0 	mg_namex	SvMAGIC(bstate->bs_sv)			svindex		x
@@ -857,21 +861,21 @@ __END__
 84 0 	gp_av		*(SV**)&GvAV(bstate->bs_sv)		svindex
 85 0 	gp_hv		*(SV**)&GvHV(bstate->bs_sv)		svindex
 86 0 	gp_cv		*(SV**)&GvCV(bstate->bs_sv)		svindex
-87 <9 	gp_file	GvFILE(bstate->bs_sv)			pvindex
-87 9 	gp_file	bstate->bs_sv				pvindex		x
+87 <9 	gp_file		GvFILE(bstate->bs_sv)			pvindex
+87 9 	gp_file		bstate->bs_sv				pvindex		x
 88 0 	gp_io		*(SV**)&GvIOp(bstate->bs_sv)		svindex
-89 0 	gp_form	*(SV**)&GvFORM(bstate->bs_sv)		svindex
+89 0 	gp_form		*(SV**)&GvFORM(bstate->bs_sv)		svindex
 90 0 	gp_cvgen	GvCVGEN(bstate->bs_sv)			U32
-91 0 	gp_line	GvLINE(bstate->bs_sv)			line_t
+91 0 	gp_line		GvLINE(bstate->bs_sv)			line_t
 92 0 	gp_share	bstate->bs_sv				svindex		x
 93 0 	xgv_flags	GvFLAGS(bstate->bs_sv)			U8
-94 0 	op_next	PL_op->op_next				opindex
+94 0 	op_next		PL_op->op_next				opindex
 95 0 	op_sibling	PL_op->op_sibling			opindex
 96 0 	op_ppaddr	PL_op->op_ppaddr			strconst	24x
-97 0 	op_targ	PL_op->op_targ				PADOFFSET
-98 0 	op_type	PL_op					OPCODE		x
-99 <9 	op_seq	PL_op->op_seq				U16
-99 9 	op_opt	PL_op->op_opt				U8
+97 0 	op_targ		PL_op->op_targ				PADOFFSET
+98 0 	op_type		PL_op					OPCODE		x
+99 <9 	op_seq		PL_op->op_seq				U16
+99 9 	op_opt		PL_op->op_opt				U8
 100 0 	op_flags	PL_op->op_flags				U8
 101 0 	op_private	PL_op->op_private			U8
 102 0 	op_first	cUNOP->op_first				opindex
@@ -884,8 +888,8 @@ __END__
 # nop >=5.10
 107 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext	opindex
 108 i8 	op_pmstashpv	cPMOP				pvindex		x
-109 i<10 op_pmreplrootpo cPMOP->op_pmreplroot		OP*/PADOFFSET
-109 i10 op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
+109 i<10   op_pmreplrootpo cPMOP->op_pmreplroot		OP*/PADOFFSET
+109 i10    op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 110 !i8-10 op_pmstash	*(SV**)&cPMOP->op_pmstash				svindex
 110 !i10   op_pmstash	*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
 111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot				svindex
@@ -893,10 +897,10 @@ __END__
 112 0   pregcomp	PL_op				pvcontents	x
 113 0   op_pmflags	cPMOP->op_pmflags		U16
 # 5.10.0 misses the RX_EXTFLAGS macro
-114 <10 op_pmpermflags cPMOP->op_pmpermflags		U16
+114 <10 op_pmpermflags  cPMOP->op_pmpermflags		U16
 114 10-10 op_reflags  	PM_GETRE(cPMOP)->extflags	U32
 114 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
-115 <10 op_pmdynflags  cPMOP->op_pmdynflags		U8
+115 <10 op_pmdynflags   cPMOP->op_pmdynflags		U8
 116 0 	op_sv		cSVOP->op_sv			svindex
 117 0 	op_padix	cPADOP->op_padix		PADOFFSET
 118 0 	op_pv		cPVOP->op_pv			pvcontents
@@ -932,7 +936,7 @@ __END__
 147 8 comppad_name	*(SV**)&PL_comppad_name		svindex
 148 8 xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)		svindex
 149 8 	signal	bstate->bs_sv				strconst	24x
-# to be removed
+# formfeed deprecated
 150 8 	formfeed	PL_formfeed			svindex
 151 9 	op_latefree	PL_op->op_latefree		U8
 152 9 	op_latefreed	PL_op->op_latefreed		U8
