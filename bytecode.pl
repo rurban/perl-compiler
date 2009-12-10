@@ -401,8 +401,11 @@ EOT
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, arg%s));\n",
 	$fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
 	($argtype =~ /index$/ ? ', ix' : '');
+      if ($insn eq 'newopx') {
+        printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%%s]\\n\", PL_op_name[arg>>7]));\n",
+      }
       if ($fundtype eq 'PV') {
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
+	 print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
       }
     } else {
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
