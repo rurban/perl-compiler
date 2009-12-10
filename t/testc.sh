@@ -1,6 +1,14 @@
 #!/bin/bash
 # Beware that the order of OPTIONS -q -c -D -B is hardcoded.
 # t/testc.sh -c -D u,-q -B static 2>&1 |tee c.log|grep FAIL
+function help {
+  echo "t/testc.sh [OPTIONS] [1-26]"
+  echo "-D debugflag       For O=C or O=CC. default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
+  echo "-O 1|2             Optimization only"
+  echo "-B static|dynamic  pass to cc_harness"
+  echo "-q                 quiet"
+  echo "-h                 help"
+}
 #
 # use the actual perl from the Makefile (perl5.8.8, 
 # perl5.10.0d-nt, perl5.11.0, ...)
@@ -51,6 +59,25 @@ function fail {
     echo
 }
 
+function runopt {
+    o=$1
+    optim=$2
+    rm ${o}_o${optim} ${o}_o${optim}.c 2> /dev/null
+    if [ $optim == 1 ]; then CMD=$OCMDO1
+    else CMD=$OCMDO2
+    fi
+    vcmd ${CMD}-o${o}_o${optim}.c $o.pl
+    $CCMD ${o}_o${optim}.c $LCMD -o ${o}_o${optim}
+    test -x ${o}_o${optim} || (test -z $CONT && exit)
+    echo "./${o}_o${optim}"
+    res=$(./${o}_o${optim})
+    if [ "X$res" = "X${result[$n]}" ]; then
+	test "X$res" = "X${result[$n]}" && pass "./${o}_o${optim}" "=> '$res'"
+    else
+	fail "./${o}_o${optim}" "=> '$res' Expected: '${result[$n]}'"
+    fi
+}
+
 function ctest {
     n=$1
     str=$2
@@ -67,39 +94,25 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
-    rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
-    vcmd ${OCMD}-o$o.c $o.pl
-    vcmd $CCMD $o.c -c -E -o ${o}_E.c
-    vcmd $CCMD $o.c $LCMD -o $o
-    test -x $o || (test -z $CONT && exit)
-    echo "./$o"
-    res=$(./$o) || (test -z $CONT && exit)
-    if [ "X$res" = "X${result[$n]}" ]; then
-	pass "./$o" "'$str' => '$res'"
-	vcmd ${OCMDO1}-o${o}_o1.c $o.pl
-	$CCMD ${o}_o1.c $LCMD -o ${o}_o1
-	test -x ${o}_o1 || (test -z $CONT && exit)
-	echo "./${o}_o1"
-	res=$(./${o}_o1)
-	if [ "X$res" = "X${result[$n]}" ]; then
-	    test "X$res" = "X${result[$n]}" && pass "./${o}_o1" "=> '$res'"
-	else
-            fail "./${o}_o1" "=> '$res' Expected: '${result[$n]}'"
-	fi
-	vcmd ${OCMDO2}-o${o}_o2.c $o.pl
-	$CCMD ${o}_o2.c $LCMD -o ${o}_o2
-	test -x ${o}_o2 || (test -z $CONT && exit)
-	echo "./${o}_o2"
-	res=$(./${o}_o2)
-	if [ "X$res" = "X${result[$n]}" ]; then
-	    test "X$res" = "X${result[$n]}" && pass "./${o}_o2" "=> '$res'"
-	else
-            fail "./${o}_o2" "=> '$res' Expected: '${result[$n]}'"
-	fi
-	true
+    if [ -n "$OPTIM" ]; then
+	runopt "$o" "$OPTIM"
     else
-        fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
-	test -z $CONT && exit
+	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
+	vcmd ${OCMD}-o$o.c $o.pl
+	vcmd $CCMD $o.c -c -E -o ${o}_E.c
+	vcmd $CCMD $o.c $LCMD -o $o
+	test -x $o || (test -z $CONT && exit)
+	echo "./$o"
+	res=$(./$o) || (test -z $CONT && exit)
+	if [ "X$res" = "X${result[$n]}" ]; then
+	    pass "./$o" "'$str' => '$res'"
+	    runopt $o 1
+	    runopt $o 2
+	    true
+	else
+	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
+	    test -z $CONT && exit
+	fi
     fi
 }
 
@@ -178,8 +191,10 @@ tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print
 result[26]="26";
 
 # 
-# TODO: getopts for -q -Du,-q -w -v
-if [ "$1" = "-q" ]; then 
+# getopts for -q -Du,-q -v -O2
+while getopts "hqcDB:O:" opt
+do
+  if [ "$opt" = "q" ]; then 
     QUIET=1
     # O from 5.6 does not support -qq
     qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
@@ -188,27 +203,30 @@ if [ "$1" = "-q" ]; then
     OCMDO1="$(echo $OCMDO1|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
     OCMDO2="$(echo $OCMDO2|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
     CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
-    shift
-fi
-if [ "$1" = "-c" ]; then CONT=1; shift; fi
-# -D options: u,-q for quiet, no -D for verbose
-if [ "$1" = "-D" ]; then 
-    OCMD="$PERL $Mblib -MO=C,-D${2},"
+  fi
+  if [ "$opt" = "c" ]; then CONT=1; shift; fi
+  if [ "$opt" = "h" ]; then help; exit; fi
+  # -D options: u,-q for quiet, no -D for verbose
+  if [ "$opt" = "D" ]; then
+    OCMD="$PERL $Mblib -MO=C,-D${OPTARG},"
     if [ $BASE = "testcc.sh" ]; then 
-        OCMD="$PERL $Mblib -MO=CC,-D${2},"
+        OCMD="$PERL $Mblib -MO=CC,-D${OPTARG},"
     fi
-    shift; shift
-fi
-# -B dynamic or -B static
-if [ "$1" = "-B" ]; then 
-    CCMD="$PERL script/cc_harness -g3 -B${2}"
-    shift; shift
-fi
+  fi
+  # -B dynamic or -B static
+  if [ "$opt" = "B" ]; then 
+    CCMD="$PERL script/cc_harness -g3 -B${OPTARG}"
+  fi
+  if [ "$opt" = "O" ]; then OPTIM=$OPTARG; fi
+  if [ "$opt" = "O1" ]; then OPTIM=1; fi
+  if [ "$opt" = "O2" ]; then OPTIM=2; fi
+done
 if [ -z "$QUIET" ]; then
     make
 else
     make -q >/dev/null
 fi
+while [ -n "$1" -a "${1:0:1}" = "-" ]; do shift; done
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do
     ctest $1
