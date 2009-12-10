@@ -10,9 +10,14 @@ lib/B/Stash.pm
 bytecode.pl
 ByteLoader/bytecode.h
 ByteLoader/BcVersions.pod
+ByteLoader/BcVersions/Asm5.005002.pm
+ByteLoader/BcVersions/Asm5.005003.pm
+ByteLoader/BcVersions/Asm5.005004.pm
+ByteLoader/BcVersions/Asm5.005005.pm
 ByteLoader/BcVersions/Asm5.005008.pm
 ByteLoader/BcVersions/Asm5.006000.pm
 ByteLoader/BcVersions/Asm5.006001.pm
+ByteLoader/BcVersions/Asm5.006001RC1.pm
 ByteLoader/BcVersions/Asm5.006002.pm
 ByteLoader/BcVersions/Asm5.008000.pm
 ByteLoader/BcVersions/Asm5.008001.pm

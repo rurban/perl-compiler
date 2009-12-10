@@ -247,7 +247,6 @@ static int bget_swab = 0;
 
 /* copied after the code in newPMOP() */
 #if PERL_VERSION >= 10
-
 /* see op.c:newPMOP
  * Must use a SV now. build it on the fly from the given pv. 
  * rx->extflags is constructed from op_pmflags in pregcomp
@@ -264,7 +263,6 @@ static int bget_swab = 0;
 
 #endif
 #if (PERL_VERSION > 7) && (PERL_VERSION < 10)
-
 #define BSET_pregcomp(o, arg) \
     STMT_START { \
         SV* repointer; \
