@@ -298,24 +298,29 @@ print BYTERUN_C <<'EOT';
 EOT
 
 
-my ($idx, @insn_name, $insn_num, $ver, $insn, $lvalue, $argtype, $flags, $fundtype);
+my ($idx, @insn_name, $insn_num, $ver, $insn, $lvalue, $argtype, $flags, $fundtype, $unsupp);
 my $ithreads = $Config{useithreads} eq 'define';
 
-while (<DATA>) {
-    if (/^\s*#/) {
-	print BYTERUN_C if /^\s*#\s*(?:if|endif|el)/;
-	next;
+my @data = <DATA>;
+my @insndata = ();
+for (@data) {
+  if (/^\s*#/) {
+    print BYTERUN_C if /^\s*#\s*(?:if|endif|el)/;
+    next;
+  }
+  chop;
+  next unless length;
+  ($idx, $ver, $insn, $lvalue, $argtype, $flags) = split;
+  # bc numbering policy: <=5.6: leave out (squeeze), >=5.8 leave holes
+  if ($] > 5.007) {
+    $insn_num = $idx ? $idx : $insn_num;
+    $insn_num = 0 if !$idx and $insn eq 'ret';
+  } else { # ignore the idx and count through. just fixup comment and nop
+    $insn_num = 35 if $idx == 35;
+    $insn_num = 10 if $idx == 10;
     }
-    chop;
-    next unless length;
-    ($idx, $ver, $insn, $lvalue, $argtype, $flags) = split;
-    # bc numbering policy: <=5.6: leave out (squeeze), >=5.8 leave holes
-    if ($] > 5.007) {
-      $insn_num = $idx ? $idx : $insn_num;
-      $insn_num = 0 if !$idx and $insn eq 'ret';
-    } #else ignore the idx and count through
     my $rvalcast = '';
-    my $unsupp = 0;
+    $unsupp = 0;
     if ($argtype =~ m:(.+)/(.+):) {
 	($rvalcast, $argtype) = ("($1)", $2);
     }
@@ -340,19 +345,29 @@ while (<DATA>) {
 	$unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
       }
     }
+    push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
+}
 
-    if ($unsupp and !$insn_name[$insn_num]) {
-      $insn_name[$insn_num] = undef;
-    } elsif (!$unsupp) {
-      $insn_name[$insn_num] = $insn;
-    }
+# calculate holes and insn_nums (number of instructions per bytecode)
+my %holes = ();
+my $insn_max = $insndata[$#insndata]->[0];
+# %holes = (46=>1,66=>1,68=>1,107=>1,108=>1,115=>1,126=>1,127=>1,129=>1,131=>1) if $] > 5.007;
+my %insn_nums;
+if ($] > 5.007) {
+  my %unsupps;
+  for (@insndata) { $insn_nums{$_->[0]}++; } # all
+  for (@insndata) { $holes{$_->[0]}++ if $_->[1] and $insn_nums{$_->[0]} == 1; }
+}
+
+for (@insndata) {
+    my ($unsupp, $rvalcast);
+    ($insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags) = @$_;
     $fundtype = $alias_from{$argtype} || $argtype;
-
     #
     # Add the initialiser line for %insn_data in Asmdata.pm
     #
     if ($unsupp) {
-      print ASMDATA_PM <<"EOT" if !$insn_name[$insn_num];
+      print ASMDATA_PM <<"EOT" if $insn_nums{$insn_num} == 1; # singletons only
 \$insn_data{$insn} = [$insn_num, 0, "GET_$fundtype"];
 EOT
     } else {
@@ -365,9 +380,6 @@ EOT
     # Add the case statement and code for the bytecode interpreter in byterun.c
     #
     # On unsupported codes add to BYTERUN CASE only for certain nums: holes.
-    my %holes;
-    %holes = (46=>1,66=>1,68=>1,107=>1,108=>1,115=>1,126=>1,127=>1,129=>1,131=>1) if $] > 5.007;
-
     if (!$unsupp or $holes{$insn_num}) {
       printf BYTERUN_C "\t  case %s:\t\t/* %d */\n\t    {\n",
 	$unsupp ? $insn_num : "INSN_".uc($insn), $insn_num;
@@ -414,12 +426,7 @@ EOT
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 
-unsupported:
-    $insn_name[$insn_num] = ''
-      if $unsupp
-	 and !$insn_name[$insn_num] # another alternative available
-	 and !$holes{$insn_num};     # dont fill ENUM without a hole
-
+  unsupported:
     # Find the next unused instruction number
     do { $insn_num++ } while $insn_name[$insn_num];
 }
@@ -566,20 +573,26 @@ EOT
 
 my $add_enum_value = 0;
 my $max_insn;
-for $i ( 0 .. $#insn_name ) {
-    if ($insn_name[$i]) { # detect unsupp
-	$insn = uc($insn_name[$i]);
-	$max_insn = $i;
-	if ($add_enum_value) {
-	    print BYTERUN_H "    INSN_$insn = $i,\t\t\t/* $i */\n";
-	    $add_enum_value = 0;
-	} else {
-	    print BYTERUN_H "    INSN_$insn,\t\t\t/* $i */\n";
-	}
+enum:
+for (sort {$a->[0] <=> $b->[0] } @insndata) {
+  ($i, $unsupp, $insn) = @$_;
+  #
+  # Add ENUMS to the header
+  #
+  if (!$unsupp) {
+    $insn = uc($insn);
+    $max_insn = $insn_num;
+    if ($add_enum_value) {
+      my $tabs = "\t" x (4-((9+length($insn)))/8);
+      printf BYTERUN_H "    INSN_$insn = %3d,$tabs/* $i */\n", $i;
+      $add_enum_value = 0;
     } else {
-        #warn "hole $i\n" if $opt_debug;
-	$add_enum_value = 1;
+      my $tabs = "\t" x (4-((3+length($insn))/8));
+      print BYTERUN_H "    INSN_$insn,$tabs/* $i */\n";
     }
+  } else {
+    $add_enum_value = 1;
+  }
 }
 
 print BYTERUN_H "    MAX_INSN = $max_insn\n};\n";
@@ -797,7 +810,7 @@ __END__
 23 8 	xpv_cur		bstate->bs_sv	 		STRLEN		x
 24 8	xpv_len		bstate->bs_sv			STRLEN		x
 25 8 	xiv		bstate->bs_sv			IV		x
-0  <8 	xiv32		SvIVX(bstate->bs_sv)		I32
+25 <8 	xiv32		SvIVX(bstate->bs_sv)		I32
 0  <8 	xiv64		SvIVX(bstate->bs_sv)		IV64
 26 0	xnv		bstate->bs_sv			NV		x
 27 0 	xlv_targoff	LvTARGOFF(bstate->bs_sv)	STRLEN
@@ -826,7 +839,7 @@ __END__
 50 0 	xcv_stash	*(SV**)&CvSTASH(bstate->bs_sv)	svindex
 51 0 	xcv_start	CvSTART(bstate->bs_sv)		opindex
 52 0 	xcv_root	CvROOT(bstate->bs_sv)		opindex
-53 0 	xcv_gv	*(SV**)&CvGV(bstate->bs_sv)		svindex
+53 0 	xcv_gv		*(SV**)&CvGV(bstate->bs_sv)	svindex
 54 0 	xcv_file	CvFILE(bstate->bs_sv)		pvindex
 55 0 	xcv_depth	CvDEPTH(bstate->bs_sv)		long
 56 0 	xcv_padlist	*(SV**)&CvPADLIST(bstate->bs_sv) svindex
@@ -835,9 +848,9 @@ __END__
 59 0 	xcv_flags	CvFLAGS(bstate->bs_sv)		U16
 60 0 	av_extend	bstate->bs_sv			SSize_t		x
 61 0 	av_pushx	bstate->bs_sv			svindex		x
-62 0 	av_push	bstate->bs_sv				svindex		x
+62 0 	av_push		bstate->bs_sv			svindex		x
 63 0 	xav_fill	AvFILLp(bstate->bs_sv)		SSize_t
-64 0 	xav_max	AvMAX(bstate->bs_sv)			SSize_t
+64 0 	xav_max		AvMAX(bstate->bs_sv)		SSize_t
 65 <10 	xav_flags	AvFLAGS(bstate->bs_sv)		U8
 65 10 	xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 I32
 66 <10 	xhv_riter	HvRITER(bstate->bs_sv)			I32
@@ -879,27 +892,23 @@ __END__
 100 0 	op_flags	PL_op->op_flags				U8
 101 0 	op_private	PL_op->op_private			U8
 102 0 	op_first	cUNOP->op_first				opindex
-103 0 	op_last	cBINOP->op_last				opindex
+103 0 	op_last		cBINOP->op_last				opindex
 104 0 	op_other	cLOGOP->op_other			opindex
-105 <10 op_pmreplroot   cPMOP->op_pmreplroot		opindex
-106 <10 op_pmreplstart  cPMOP->op_pmreplstart		opindex
+105 <10 op_pmreplroot   cPMOP->op_pmreplroot			opindex
+106 <10 op_pmreplstart  cPMOP->op_pmreplstart			opindex
 105 10  op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot		opindex
 106 10  op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
-# nop >=5.10
-107 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext	opindex
-108 i8 	op_pmstashpv	cPMOP				pvindex		x
-109 i<10   op_pmreplrootpo cPMOP->op_pmreplroot		OP*/PADOFFSET
-109 i10    op_pmreplrootpo	(cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
-110 !i8-10 op_pmstash	*(SV**)&cPMOP->op_pmstash				svindex
-110 !i10   op_pmstash	*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart	svindex
-111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot				svindex
-111 !i10   op_pmreplrootgv *(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot	svindex
+107 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext			opindex
+108 i8 	op_pmstashpv	   cPMOP					pvindex		x
+109 i<10   op_pmreplrootpo cPMOP->op_pmreplroot				OP*/PADOFFSET
+109 i10    op_pmreplrootpo (cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
+110 !i8-10 op_pmstash	*(SV**)&cPMOP->op_pmstash			svindex
+110 !i10   op_pmstash	*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart svindex
+111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot			svindex
+111 !i10   op_pmreplrootgv *(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot svindex
 112 0   pregcomp	PL_op				pvcontents	x
 113 0   op_pmflags	cPMOP->op_pmflags		U16
-# 5.10.0 misses the RX_EXTFLAGS macro
 114 <10 op_pmpermflags  cPMOP->op_pmpermflags		U16
-114 10-10 op_reflags  	PM_GETRE(cPMOP)->extflags	U32
-114 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
 115 <10 op_pmdynflags   cPMOP->op_pmdynflags		U8
 116 0 	op_sv		cSVOP->op_sv			svindex
 117 0 	op_padix	cPADOP->op_padix		PADOFFSET
@@ -911,7 +920,6 @@ __END__
 123 0 	cop_label	cCOP				pvindex		x
 124 i0 	cop_stashpv	cCOP				pvindex		x
 125 i0 	cop_file	cCOP				pvindex		x
-# /* those two are ignored, but keep .plc compat for 5.8 only? */
 126 !i0 cop_stash	cCOP				svindex		x
 127 !i0 cop_filegv	cCOP				svindex		x
 128 0 	cop_seq		cCOP->cop_seq			U32
@@ -923,21 +931,24 @@ __END__
 134 0 	main_root	PL_main_root			opindex
 135 0 	main_cv		*(SV**)&PL_main_cv		svindex
 136 0 	curpad		PL_curpad			svindex		x
-137 0 push_begin	PL_beginav			svindex		x
-138 0 push_init	PL_initav				svindex		x
-139 0 push_end	PL_endav				svindex		x
-140 8 curstash	*(SV**)&PL_curstash			svindex
-141 8 defstash	*(SV**)&PL_defstash			svindex
-142 8 data		none				U8		x
-143 8 incav		*(SV**)&GvAV(PL_incgv)		svindex
-144 8 load_glob	none					svindex		x
-145 i8 regex_padav	*(SV**)&PL_regex_padav		svindex
-146 8 dowarn	PL_dowarn				U8
-147 8 comppad_name	*(SV**)&PL_comppad_name		svindex
-148 8 xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)		svindex
-149 8 	signal	bstate->bs_sv				strconst	24x
-# formfeed deprecated
+137 0 	push_begin	PL_beginav			svindex		x
+138 0 	push_init	PL_initav			svindex		x
+139 0 	push_end	PL_endav			svindex		x
+140 8 	curstash	*(SV**)&PL_curstash		svindex
+141 8 	defstash	*(SV**)&PL_defstash		svindex
+142 8 	data		none				U8		x
+143 8 	incav		*(SV**)&GvAV(PL_incgv)		svindex
+144 8 	load_glob	none				svindex		x
+145 i8 	regex_padav	*(SV**)&PL_regex_padav		svindex
+146 8 	dowarn		PL_dowarn			U8
+147 8 	comppad_name	*(SV**)&PL_comppad_name		svindex
+148 8 	xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)	svindex
+149 8 	signal		bstate->bs_sv			strconst	24x
+# formfeed is deprecated
 150 8 	formfeed	PL_formfeed			svindex
 151 9 	op_latefree	PL_op->op_latefree		U8
 152 9 	op_latefreed	PL_op->op_latefreed		U8
 153 9 	op_attached	PL_op->op_attached		U8
+# 5.10.0 misses the RX_EXTFLAGS macro
+154 10-10.5 op_reflags  PM_GETRE(cPMOP)->extflags	U32
+154 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32

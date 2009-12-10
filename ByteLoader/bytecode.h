@@ -430,12 +430,16 @@ static int bget_swab = 0;
 #ifdef USE_ITHREADS
 #define BSET_cop_file(cop, arg)		CopFILE_set(cop,arg)
 #define BSET_cop_stashpv(cop, arg)	CopSTASHPV_set(cop,arg)
+#define BSET_cop_filegv(cop, arg)	Perl_warn(aTHX_ "cop_filegv with ITHREADS not yet implemented")
+#define BSET_cop_stash(cop,arg)		Perl_warn(aTHX_ "cop_stash with ITHREADS not yet implemented")
 #else
 /* this works now that Sarathy's changed the CopFILE_set macro to do the SvREFCNT_inc()
 	-- BKS 6-2-2000 */
 /* that really meant the actual CopFILEGV_set */
 #define BSET_cop_filegv(cop, arg)	CopFILEGV_set(cop,arg)
 #define BSET_cop_stash(cop,arg)		CopSTASH_set(cop,(HV*)arg)
+#define BSET_cop_file(cop, arg)		Perl_warn(aTHX_ "cop_file without ITHREADS not yet implemented")
+#define BSET_cop_stashpv(cop, arg)	Perl_warn(aTHX_ "cop_stashpv without ITHREADS not yet implemented")
 #endif
 #if PERL_VERSION < 11
 #define BSET_cop_label(cop, arg)	(cop)->cop_label = arg

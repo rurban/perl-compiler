@@ -252,7 +252,7 @@ sub gen_header {
 #   magic, archname, ByteLoader $VERSION, ivsize, ptrsize, longsize, byteorder
 # nvtype is irrelevant (floats are stored as strings)
 # byteorder is strconst, not U32 because of varying size issues (?)
-# TODO: perl version for the opcode indices.
+# perl version for the bytecode translation.
 
 sub gen_header_hash {
   my $header  = {};
@@ -333,6 +333,8 @@ sub assemble_insn {
   my $data = $insn_data{$insn};
   if ( defined($data) ) {
     my ( $bytecode, $putsub ) = @{$data}[ 0, 1 ];
+    error qq(unsupported instruction "$insn") unless $putsub;
+    return "" unless $putsub;
     my $argcode = &$putsub($arg);
     return chr($bytecode) . $argcode;
   }

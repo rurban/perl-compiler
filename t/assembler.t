@@ -168,6 +168,10 @@ BEGIN {
     print "1..0 # Skip -- Perl configured without ByteLoader module\n";
     exit 0;
   }
+  if ($] < 5.007 ){
+    print "1..0 # Skip -- use the CORE Perl assembler instead, which cannot be tested like this.\n";
+    exit 0;
+  }
 }
 
 use B::Asmdata      qw( %insn_data );
