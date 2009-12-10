@@ -717,10 +717,8 @@ sub B::PMOP::bsave {
       $rstart = $op->pmreplstart->ix;
     }
     elsif ( $op->name eq 'pushre' ) {
+      $rrarg = $op->op_pmreplroot;
       $rrop  = "op_pmreplrootpo";
-      $rrarg = $op->pmreplroot;
-
-      # 5.9 $op->pmtargetoff?
     }
     $op->B::BINOP::bsave($ix);
     if ( $op->pmstashpv )
@@ -729,7 +727,6 @@ sub B::PMOP::bsave {
         asm "op_pmstashpv", pvix $op->pmstashpv;
       }
       else {
-
         # crash in 5.10, 5.11
         bwarn("op_pmstashpv ignored") if $debug{M};
       }
@@ -740,9 +737,11 @@ sub B::PMOP::bsave {
     }
   }
   else {
-    $rrop   = "op_pmreplrootgv";
+    $rrop  = "op_pmreplrootgv";
     $rrarg  = $op->pmreplroot->ix;
     $rstart = $op->pmreplstart->ix if $op->name eq 'subst';
+    # 5.6 walks down the pmreplrootgv here
+    # $op->pmreplroot->save($rrarg) unless $op->name eq 'pushre';
     my $stashix = $op->pmstash->ix unless $PERL56;
     $op->B::BINOP::bsave($ix);
     asm "op_pmstash", $stashix unless $PERL56;
@@ -777,7 +776,6 @@ sub B::PMOP::bsave {
       bwarn( "PMOP pmstashpv: ", $op->pmstashpv, ", pmflags: ", $op->pmflags )
         if $debug{M};
     }
-    #asm "op_reflags", $op->reflags;
     asm "newpv", pvstring $op->precomp;
     asm "pregcomp";
     # pregcomp does not set the extflags correctly, just the pmflags

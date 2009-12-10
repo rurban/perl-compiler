@@ -53,7 +53,7 @@ static int bget_swab = 0;
 		       "Different IVSIZE: .plc %d, perl %d", 		\
 		      bl_header.ivsize, IVSIZE);			\
 	}								\
-	if (bget_swab) {arg = _swab_iv_(arg,IVSIZE);}			\
+	if (bget_swab) {arg = _swab_iv_(arg, IVSIZE);}			\
     } STMT_END
 /*
  * In the following, sizeof(IV)*4 is just a way of encoding 32 on 64-bit-IV
@@ -89,7 +89,7 @@ static int bget_swab = 0;
 		       "EOF or error while trying to read %d bytes for %s", \
 		       bl_header.ivsize, "IV");				\
 	}								\
-	if (bget_swab) { arg = _swab_iv_(arg,bl_header.longsize); }	\
+	if (bget_swab) { arg = _swab_iv_(arg, bl_header.longsize); }	\
 	if (bl_header.longsize != LONGSIZE) {				\
 	    Perl_warn(aTHX_						\
 		       "Different LONGSIZE .plc %d, perl %d",		\
@@ -100,7 +100,7 @@ static int bget_swab = 0;
 /* svtype is an enum of 16 values. 32bit or 16bit? */
 #define BGET_svtype(arg)	STMT_START {	       			\
     BGET_OR_CROAK(arg, svtype);						\
-    if (bget_swab) {arg = _swab_iv_(arg,sizeof(svtype))}                \
+    if (bget_swab) {arg = _swab_iv_(arg, sizeof(svtype))}               \
     } STMT_END
 
 #define BGET_OR_CROAK(arg, type) STMT_START {				\
