@@ -245,7 +245,24 @@ static int bget_swab = 0;
 #ifdef USE_ITHREADS
 
 /* copied after the code in newPMOP() */
-#if PERL_VERSION < 10
+#if PERL_VERSION >= 10
+
+/* see op.c:newPMOP
+ * Must use a SV now. build it on the fly from the given pv. 
+ * rx->extflags is constructed from op_pmflags in pregcomp
+ * | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr
+ * TODO: 5.11 could use newSVpvn_flags with SVf_TEMP
+ */
+#define BSET_pregcomp(o, arg)						\
+    STMT_START {							\
+	assert(SvPOK(PL_regex_pad[0]));					\
+        PM_SETRE(cPMOPx(o), arg						\
+	  ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
+	  : Null(REGEXP*));						\
+    } STMT_END
+
+#endif
+#if (PERL_VERSION > 7) && (PERL_VERSION < 10)
 
 #define BSET_pregcomp(o, arg) \
     STMT_START { \
@@ -266,27 +283,11 @@ static int bget_swab = 0;
         } \
     } STMT_END
 
-#else /* >= 5.10 */
-
-/* see op.c:newPMOP
- * Must use a SV now. build it on the fly from the given pv. 
- * rx->extflags is constructed from op_pmflags in pregcomp
- * | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr
- * TODO: 5.11 could use newSVpvn_flags with SVf_TEMP
- */
-#define BSET_pregcomp(o, arg)						\
-    STMT_START {							\
-	assert(SvPOK(PL_regex_pad[0]));					\
-        PM_SETRE(cPMOPx(o), arg						\
-	  ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
-	  : Null(REGEXP*));						\
-    } STMT_END
-
 #endif
 
 #else /* ! USE_ITHREADS */
 
-#if PERL_VERSION < 10
+#if (PERL_VERSION >= 8) && (PERL_VERSION < 10)
 /* PM_SETRE only since 5.8 */
 #define BSET_pregcomp(o, arg) \
     STMT_START { \
@@ -305,6 +306,13 @@ static int bget_swab = 0;
 #endif
 
 #endif /* USE_ITHREADS */
+
+#if PERL_VERSION < 8
+#define BSET_pregcomp(o, arg)	    \
+    ((PMOP*)o)->op_pmregexp = arg ? \
+		CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, ((PMOP*)o)) : 0
+#endif
+
 
 #define BSET_newsv(sv, arg)				\
 	    switch(arg) {				\
@@ -455,7 +463,27 @@ static int bget_swab = 0;
    special and there is no need for HINT_PRIVATE_MASK for COPs. */
 #define PL_HINTS_PRIVATE (PL_hints)
 #endif
-#if PERL_VERSION < 10
+
+#if (PERL_VERSION < 8)
+/* this is simply stolen from the code in newATTRSUB() */
+#define BSET_push_begin(ary,cv)				\
+	STMT_START {					\
+	    I32 oldscope = PL_scopestack_ix;		\
+	    ENTER;					\
+	    SAVECOPFILE(&PL_compiling);			\
+	    SAVECOPLINE(&PL_compiling);			\
+	    save_svref(&PL_rs);				\
+	    sv_setsv(PL_rs, PL_nrs);			\
+	    if (!PL_beginav)				\
+		PL_beginav = newAV();			\
+	    av_push(PL_beginav, cv);			\
+	    call_list(oldscope, PL_beginav);		\
+	    PL_curcop = &PL_compiling;			\
+	    PL_compiling.op_private = PL_hints;		\
+	    LEAVE;					\
+	} STMT_END
+#endif
+#if (PERL_VERSION >= 8) && (PERL_VERSION < 10)
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\
@@ -471,7 +499,8 @@ static int bget_swab = 0;
             PL_compiling.op_private = (U8)(PL_hints & HINT_PRIVATE_MASK);\
             LEAVE;					\
 	} STMT_END
-#else
+#endif
+#if (PERL_VERSION >= 10)
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\

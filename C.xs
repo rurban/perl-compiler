@@ -3,7 +3,7 @@
 #include <XSUB.h>
 
 #ifndef PM_GETRE
-# ifdef USE_ITHREADS
+# if defined(USE_ITHREADS) && (PERL_VERSION > 8)
 #  define PM_GETRE(o)     (INT2PTR(REGEXP*,SvIVX(PL_regex_pad[(o)->op_pmoffset])))
 # else
 #  define PM_GETRE(o)     ((o)->op_pmregexp)
@@ -37,7 +37,7 @@ my_runops(pTHX)
             op->op_pmreplstart = NULL;
             op->op_pmnext = NULL;
 #endif
-#ifdef USE_ITHREADS
+#if defined(USE_ITHREADS) && (PERL_VERSION > 8)
             op->op_pmoffset = 0;
 #else
             op->op_pmregexp = 0;

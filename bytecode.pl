@@ -301,6 +301,7 @@ EOT
 my ($idx, @insn_name, $insn_num, $ver, $insn, $lvalue, $argtype, $flags, $fundtype, $unsupp);
 my $ithreads = $Config{useithreads} eq 'define';
 
+$insn_num = 0;
 my @data = <DATA>;
 my @insndata = ();
 for (@data) {
@@ -316,36 +317,45 @@ for (@data) {
     $insn_num = $idx ? $idx : $insn_num;
     $insn_num = 0 if !$idx and $insn eq 'ret';
   } else { # ignore the idx and count through. just fixup comment and nop
-    $insn_num = 35 if $idx == 35;
-    $insn_num = 10 if $idx == 10;
+    $insn_num = 35 if $insn eq "comment";
+    $insn_num = 10 if $insn eq "nop";
+    $insn_num = 0  if $insn eq "ret"; # start from 0
+  }
+  my $rvalcast = '';
+  $unsupp = 0;
+  if ($argtype =~ m:(.+)/(.+):) {
+    ($rvalcast, $argtype) = ("($1)", $2);
+  }
+  if ($ver) {
+    if ($ver =~ /^\!?i/) {
+      $unsupp++ if ($ver =~ /^i/ and !$ithreads) or ($ver =~ /\!i/ and $ithreads);
+      $ver =~ s/^\!?i//;
     }
-    my $rvalcast = '';
-    $unsupp = 0;
-    if ($argtype =~ m:(.+)/(.+):) {
-	($rvalcast, $argtype) = ("($1)", $2);
+    # perl version 5.010000 => 10.000, 5.009003 => 9.003
+    # Have to round the float: 5.010 - 5 = 0.00999999999999979
+    my $pver = 0.0+(substr($],2,3).".".substr($],5));
+    if ($ver =~ /8(\-)?/) {
+      $ver =~ s/8/8.001/; # as convenience for a shorter table.
     }
-    if ($ver) {
-      if ($ver =~ /^\!?i/) {
-	$unsupp++ if ($ver =~ /^i/ and !$ithreads) or ($ver =~ /\!i/ and $ithreads);
-	$ver =~ s/^\!?i//;
-      }
-      # perl version 5.010000 => 10.000, 5.009003 => 9.003
-      # Have to round the float: 5.010 - 5 = 0.00999999999999979
-      my $pver = 0.0+(substr($],2,3).".".substr($],5));
-      # Add these misses to ASMDATA. TODO: To BYTERUN maybe with a translator, as the
-      # perl fields to write to are gone. Reading for the disassembler should be possible.
-      if ($ver =~ /^\>[\d\.]+$/) {
-	$unsupp++ if $pver < substr($ver,1);# ver >10: skip if pvar lowereq 10
-      } elsif ($ver =~ /^\<[\d\.]+$/) {
-	$unsupp++ if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
-      } elsif ($ver =~ /^([\d\.]+)-([\d\.]+)$/) {
-	$unsupp++ if $pver >= $2 or $pver < $1; # ver 8-10 (both inclusive): skip if pvar
-	  				# lower than 8 or higher than 10;
-      } elsif ($ver =~ /^[\d\.]*$/) {
-	$unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
-      }
+    # Add these misses to ASMDATA. TODO: To BYTERUN maybe with a translator, as the
+    # perl fields to write to are gone. Reading for the disassembler should be possible.
+    if ($ver =~ /^\>[\d\.]+$/) {
+      $unsupp++ if $pver < substr($ver,1);# ver >10: skip if pvar lowereq 10
+    } elsif ($ver =~ /^\<[\d\.]+$/) {
+      $unsupp++ if $pver >= substr($ver,1); # ver <10: skip if pvar higher than 10;
+    } elsif ($ver =~ /^([\d\.]+)-([\d\.]+)$/) {
+      $unsupp++ if $pver >= $2 or $pver < $1; # ver 8-10 (both inclusive): skip if pvar
+      # lower than 8 or higher than 10;
+    } elsif ($ver =~ /^[\d\.]*$/) {
+      $unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
     }
+  }
+  if (!$unsupp or $] >= 5.007) {
+    $insn_name[$insn_num] = $insn;
     push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
+    # Find the next unused instruction number
+    do { $insn_num++ } while $insn_name[$insn_num];
+  }
 }
 
 # calculate holes and insn_nums (number of instructions per bytecode)
@@ -584,7 +594,7 @@ for (sort {$a->[0] <=> $b->[0] } @insndata) {
   #
   if (!$unsupp) {
     $insn = uc($insn);
-    $max_insn = $insn_num;
+    $max_insn = $i;
     if ($add_enum_value) {
       my $tabs = "\t" x (4-((9+length($insn)))/8);
       printf BYTERUN_H "    INSN_$insn = %3d,$tabs/* $i */\n", $i;
@@ -723,8 +733,9 @@ Bytecode ops:
 We can only reliably load bytecode from previous versions and promise
 that from 5.10.0 on future versions will only add new op numbers at
 the end, but will never replace old opcodes with incompatible arguments.
-Unsupported insn's are supported by disassemble, and tried by the ByteLoader
-without guarantee to work.
+Unsupported insn's are supported by disassemble, and if C<force> in the
+ByteLoader is set, it is tried to load/set them also, with probably fatal
+consequences.
 On the first unknown bytecode op from a future version - added to the end
 - we will die.
 
@@ -784,6 +795,7 @@ __END__
 # flags \d+ specifies the maximal length.
 #
 # bc numbering policy: <=5.6: leave out, >=5.8 leave holes
+# Note: ver 8 is really 8.001. 5.008000 had the same bytecodes as 5.006002.
 
 #idx version opcode	lvalue				argtype		flags
 #
@@ -792,14 +804,14 @@ __END__
 2  0 	ldop		PL_op				opindex
 3  0 	stsv		bstate->bs_sv			U32		s
 4  0 	stop		PL_op				U32		s
-5  0 	stpv		bstate->bs_pv.xpv_pv		U32		x
+5  6.001 stpv		bstate->bs_pv.xpv_pv		U32		x
 6  0 	ldspecsv	bstate->bs_sv			U8		x
 7  8 	ldspecsvx	bstate->bs_sv			U8		x
 8  0 	newsv		bstate->bs_sv			U8		x
 9  8 	newsvx		bstate->bs_sv			U32		x
 #10 0 	nop		none				none
 11 0 	newop		PL_op				U8		x
-12 8 	newopx		PL_op				U16		x
+12 8	newopx		PL_op				U16		x
 13 0 	newopn		PL_op				U8		x
 14 0 	newpv		none				U32/PV
 15 0 	pv_cur		bstate->bs_pv.xpv_cur		STRLEN
@@ -810,9 +822,9 @@ __END__
 20 0 	sv_flags	SvFLAGS(bstate->bs_sv)		U32
 21 0 	xrv		bstate->bs_sv			svindex		x
 22 0 	xpv		bstate->bs_sv			none		x
-23 8 	xpv_cur		bstate->bs_sv	 		STRLEN		x
+23 8	xpv_cur		bstate->bs_sv	 		STRLEN		x
 24 8	xpv_len		bstate->bs_sv			STRLEN		x
-25 8 	xiv		bstate->bs_sv			IV		x
+25 8	xiv		bstate->bs_sv			IV		x
 25 <8 	xiv32		SvIVX(bstate->bs_sv)		I32
 0  <8 	xiv64		SvIVX(bstate->bs_sv)		IV64
 26 0	xnv		bstate->bs_sv			NV		x
@@ -850,7 +862,7 @@ __END__
 58 8 	xcv_outside_seq CvOUTSIDE_SEQ(bstate->bs_sv)	U32
 59 0 	xcv_flags	CvFLAGS(bstate->bs_sv)		U16
 60 0 	av_extend	bstate->bs_sv			SSize_t		x
-61 0 	av_pushx	bstate->bs_sv			svindex		x
+61 8	av_pushx	bstate->bs_sv			svindex		x
 62 0 	av_push		bstate->bs_sv			svindex		x
 63 0 	xav_fill	AvFILLp(bstate->bs_sv)		SSize_t
 64 0 	xav_max		AvMAX(bstate->bs_sv)		SSize_t
@@ -858,19 +870,20 @@ __END__
 65 10 	xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 I32
 66 <10 	xhv_riter	HvRITER(bstate->bs_sv)			I32
 67 0 	xhv_name	bstate->bs_sv				pvindex		x
-68 8-9 	xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
+68 8-9  xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
 69 0 	hv_store	bstate->bs_sv				svindex		x
 70 0 	sv_magic	bstate->bs_sv				char		x
 71 0 	mg_obj		SvMAGIC(bstate->bs_sv)->mg_obj		svindex
 72 0 	mg_private	SvMAGIC(bstate->bs_sv)->mg_private 	U16
 73 0 	mg_flags	SvMAGIC(bstate->bs_sv)->mg_flags	U8
+# mg_name <5.8001 called mg_pv
 74 0 	mg_name		SvMAGIC(bstate->bs_sv)			pvcontents	x
-75 0 	mg_namex	SvMAGIC(bstate->bs_sv)			svindex		x
+75 8 	mg_namex	SvMAGIC(bstate->bs_sv)			svindex		x
 76 0 	xmg_stash	bstate->bs_sv				svindex		x
 77 0 	gv_fetchpv	bstate->bs_sv				strconst	128x
-78 0 	gv_fetchpvx	bstate->bs_sv				strconst	128x
+78 8	gv_fetchpvx	bstate->bs_sv				strconst	128x
 79 0 	gv_stashpv	bstate->bs_sv				strconst	128x
-80 0 	gv_stashpvx	bstate->bs_sv				strconst	128x
+80 8 	gv_stashpvx	bstate->bs_sv				strconst	128x
 81 0 	gp_sv		bstate->bs_sv				svindex		x
 82 0 	gp_refcnt	GvREFCNT(bstate->bs_sv)			U32
 83 0 	gp_refcnt_add	GvREFCNT(bstate->bs_sv)			I32		x
@@ -897,8 +910,13 @@ __END__
 102 0 	op_first	cUNOP->op_first				opindex
 103 0 	op_last		cBINOP->op_last				opindex
 104 0 	op_other	cLOGOP->op_other			opindex
+# found in 5.5.5, not on 5.5.8. I found 5.5.6 and 5.5.7 nowhere
+0   <5.008 op_true	cCONDOP->op_true			opindex
+0   <5.008 op_false	cCONDOP->op_false			opindex
+0   <6.001 op_children	cLISTOP->op_children			U32
 105 <10 op_pmreplroot   cPMOP->op_pmreplroot			opindex
-106 <10 op_pmreplstart  cPMOP->op_pmreplstart			opindex
+111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot			svindex
+106 <10 op_pmreplstart  cPMOP->op_pmreplstart				opindex
 105 10  op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot		opindex
 106 10  op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
 107 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext			opindex
@@ -907,12 +925,11 @@ __END__
 109 i10    op_pmreplrootpo (cPMOP->op_pmreplrootu).op_pmreplroot	OP*/PADOFFSET
 110 !i8-10 op_pmstash	*(SV**)&cPMOP->op_pmstash			svindex
 110 !i10   op_pmstash	*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart svindex
-111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot			svindex
 111 !i10   op_pmreplrootgv *(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot svindex
 112 0   pregcomp	PL_op				pvcontents	x
 113 0   op_pmflags	cPMOP->op_pmflags		U16
 114 <10 op_pmpermflags  cPMOP->op_pmpermflags		U16
-115 <10 op_pmdynflags   cPMOP->op_pmdynflags		U8
+115 8-10 op_pmdynflags   cPMOP->op_pmdynflags		U8
 116 0 	op_sv		cSVOP->op_sv			svindex
 117 0 	op_padix	cPADOP->op_padix		PADOFFSET
 118 0 	op_pv		cPVOP->op_pv			pvcontents
@@ -932,7 +949,7 @@ __END__
 132 0 	cop_warnings	cCOP				svindex		x
 133 0 	main_start	PL_main_start			opindex
 134 0 	main_root	PL_main_root			opindex
-135 0 	main_cv		*(SV**)&PL_main_cv		svindex
+135 8 	main_cv		*(SV**)&PL_main_cv		svindex
 136 0 	curpad		PL_curpad			svindex		x
 137 0 	push_begin	PL_beginav			svindex		x
 138 0 	push_init	PL_initav			svindex		x

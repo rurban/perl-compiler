@@ -2383,7 +2383,7 @@ main(int argc, char **argv, char **env)
 	PL_perl_destruct_level = 0;
     }
 EOT
-  if ($ITHREADS and $] > 5.006) {
+  if ($ITHREADS and $] > 5.007) {
     # XXX init free elems!
     my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
 

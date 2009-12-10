@@ -6,19 +6,27 @@
 	* bytecode.pl: renumbering policy: <= 5.6 squeeze, >= 5.8 fixed
 	to force exact bytecode numbering as with 5.8.
 	Allow float versions, such as 10.001 for subreleases.
+
 	Add perlversion to header.
 	Add byteorder check logic.
+	
 	Added logic to include all possible unsupported ops, all holes.
+	bytecode table checked for 5.6.1, 5.6.2, 5.8.0, 5.8.1-5.11
+	Note, that I found official and contradicting 5.6.1 releases. 
+	ActiveState 5.6.1.626 had no op_children, the unix release tarball with 5.6.1 
+	(called Trial 1) still has it.
+	
 	* ByteLoader.pm (1.06_06): better bytecode numbering
 	* Asmdata.pm (1.02_02): strict numbering along 5.8.
 	Unsupported ops are now also included, with PUT method 0.
 	* Assembler.pm (0.07_07): Add perlversion to header
 	* Disassembler.pm (1.05_04): Add perlversion to header.
 	Print header only for existing.
-	* BcVersions/Asm*.pm, BcVersions.pod: added
+	* BcVersions/Asm*.pm, BcVersions.pod: added for most versions with the CORE compiler.
 	* disassemble: make it work with the older Disassembler.
 	make it work with older bytecode >= 5.8 via Asmdata unsupported ops.
 	* i386.xs, jitcompiler.pl: removed (seperate module)
+	* bytecode.h, C.xs: Fixed for 5.6, tested with 5.6.1 with MSVC.
 
 1.04_29 2009-12-07 rurban
 	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle (test 15) 
