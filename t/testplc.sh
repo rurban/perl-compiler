@@ -8,7 +8,7 @@ PERL=${PERL:-perl}
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
 # test what? core or our module?
-#Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
+#Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Mblib))'`"
 Mblib="-Mblib" # test this module
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"

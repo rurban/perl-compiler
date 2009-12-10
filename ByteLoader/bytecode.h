@@ -9,6 +9,7 @@ typedef char *pvindex;
 /*typedef HEK *hekindex;*/
 typedef IV IV64;
 
+static int force = 0;
 /* need to swab bytes to the target byteorder */
 static int bget_swab = 0;
 
@@ -295,7 +296,8 @@ static int bget_swab = 0;
 	     CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)): \
 	     Null(REGEXP*))); \
     } STMT_END
-#else
+#endif
+#if (PERL_VERSION >= 10)
 /* | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr */
 #define BSET_pregcomp(o, arg)				\
     STMT_START {					\

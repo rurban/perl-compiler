@@ -49,7 +49,7 @@ my @packages;    # list of packages to compile. 5.6 only
 sub nice ($) { }
 my $PERL510 = ( $] >= 5.009005 );
 my $PERL511 = ( $] >= 5.011 );
-my $PERL56  = ( $] <  5.008 );
+my $PERL56  = ( $] <  5.008001 );
 
 my %optype_enum;
 my ($SVt_PVGV, $SVf_FAKE, $POK);
@@ -164,7 +164,7 @@ sub B::SV::ix {
     #nice "\tsvtab ".$$sv." => bsave(".$ix.");
     $sv->bsave($ix);
     $ix;
-    }
+  }
 }
 
 sub B::GV::ix {
@@ -303,7 +303,11 @@ sub B::NULL::bsave {
 
   nice '-' . class($sv) . '-', asm "ldsv", $varix = $ix, sv_flags($sv)
     unless $ix == $varix;
-  asm "sv_refcnt", $sv->REFCNT;
+  if ($PERL56) {
+    asm "stsv", $ix;
+  } else {
+    asm "sv_refcnt", $sv->REFCNT;
+  }
 }
 
 sub B::SV::bsave;
@@ -442,7 +446,7 @@ sub B::PVLV::bsave {
 sub B::BM::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::PVMG::bsave($ix);
-  asm "xpv_cur",      $sv->CUR;
+  asm "xpv_cur",      $sv->CUR if $] > 5.008;
   asm "xbm_useful",   $sv->USEFUL;
   asm "xbm_previous", $sv->PREVIOUS;
   asm "xbm_rare",     $sv->RARE;
@@ -511,8 +515,6 @@ sub B::AV::bsave {
 
   nice "-AV-", asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
   asm "av_extend", $av->MAX if $av->MAX >= 0;
-
-  # asm "av_pushx", $_->ix, sv_flags($_) for @array;
   asm "av_pushx", $_ for @array;
   asm "sv_refcnt", $av->REFCNT;
   if ( !$PERL510 ) {        # VERSION < 5.009
@@ -859,7 +861,7 @@ sub B::OP::opwalk {
   my $ix = $optab{$$op};
   defined($ix) ? $ix : do {
     my $ix;
-    my @oplist = $op->oplist; # FIXME for 5.6. called by a COP there
+    my @oplist = ($PERL56 and $op->isa("B::COP")) ? () : $op->oplist; # 5.6 may be called by a COP
     push @cloop, undef;
     $ix = $_->ix while $_ = pop @oplist;
     while ( $_ = pop @cloop ) {
@@ -867,7 +869,7 @@ sub B::OP::opwalk {
       asm "op_next", $optab{ ${ $_->next } };
     }
     $ix;
-    }
+  }
 }
 
 sub save_cq {
@@ -1087,7 +1089,7 @@ use ByteLoader '$ByteLoader::VERSION';
       my $dh = $PERL56 ? *main::DATA : *{ defstash->NAME . "::DATA" };
       unless ( eof $dh ) {
         local undef $/;
-        asm "data", ord 'D';
+        asm "data", ord 'D' if !$PERL56;
         print <$dh>;
       }
       else {

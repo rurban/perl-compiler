@@ -3,6 +3,10 @@
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
 1.04_30 2009-12-?? rurban
+	Better 5.6 support, but Bytecode compiler still disabled.
+	Not even the Byteloader works for 5.6 assembled code. The Disassembler 
+	does not stop at ret.
+
 	* bytecode.pl: renumbering policy: <= 5.6 squeeze, >= 5.8 fixed
 	to force exact bytecode numbering as with 5.8.
 	Allow float versions, such as 10.001 for subreleases.
@@ -16,17 +20,20 @@
 	ActiveState 5.6.1.626 had no op_children, the unix release tarball with 5.6.1 
 	(called Trial 1) still has it.
 	
-	* ByteLoader.pm (1.06_06): better bytecode numbering
+	* ByteLoader.pm (1.06_06): better bytecode numbering.
 	* Asmdata.pm (1.02_02): strict numbering along 5.8.
 	Unsupported ops are now also included, with PUT method 0.
 	* Assembler.pm (0.07_07): Add perlversion to header
 	* Disassembler.pm (1.05_04): Add perlversion to header.
 	Print header only for existing.
-	* BcVersions/Asm*.pm, BcVersions.pod: added for most versions with the CORE compiler.
-	* disassemble: make it work with the older Disassembler.
-	make it work with older bytecode >= 5.8 via Asmdata unsupported ops.
+	* BcVersions/Asm*.pm, BcVersions.pod: added for most versions with the
+	CORE compiler.
+	* disassemble: Make it work with the older Disassembler.
+	Make it work with older bytecode >= 5.8 via Asmdata unsupported ops.
 	* i386.xs, jitcompiler.pl: removed (seperate module)
 	* bytecode.h, C.xs: Fixed for 5.6, tested with 5.6.1 with MSVC.
+	* bytecode.h, byterun.c: add static int force = 0. Override it to 1 to try 
+	out executing older bytecodes.
 
 1.04_29 2009-12-07 rurban
 	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle (test 15) 

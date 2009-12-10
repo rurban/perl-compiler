@@ -162,8 +162,8 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
     BGET_strconst(str,16);
     strcpy(bl_header.version, str);
     if (strNE(str, VERSION)) {
-        if ((strGT(str, "0.06") && strLT(str, "0.06_06")) || strLT(str, "0.05")) {
-	    HEADER_FAIL2("Incompatible ByteLoader version %s, you have %s",
+        if ((strGT(str, "0.06") && strLT(str, "0.06_06")) /*|| strLT(str, "0.05")*/) {
+	    HEADER_FAIL2("Incompatible bytecode version %s, you have %s",
 		         str, VERSION);
         }
     }
@@ -398,20 +398,22 @@ EOT
 	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
       }
     } else {
-      goto unsupported;
+      next;
     }
     my $optarg = $argtype eq "none" ? "" : ", arg";
     if ($optarg) {
+      print BYTERUN_C "\t\t$argtype arg;\n";
+      print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
       if ($fundtype eq 'strconst') {
 	my $maxsize = ($flags =~ /(\d+$)/) ? $1 : 0;
-	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg, %d);\n", $fundtype, $maxsize;
+	printf BYTERUN_C "\t\tBGET_%s(arg, %d);\n", $fundtype, $maxsize;
       } else {
-	printf BYTERUN_C "\t\t$argtype arg;\n\t\tBGET_%s(arg);\n", $fundtype;
+	printf BYTERUN_C "\t\tBGET_%s(arg);\n", $fundtype;
       }
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, arg%s));\n",
 	$fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
 	($argtype =~ /index$/ ? ', ix' : '');
-      if ($insn eq 'newopx') {
+      if ($insn eq 'newopx' or $insn eq 'newop') {
         printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%%s]\\n\", PL_op_name[arg>>7]));\n",
       }
       if ($fundtype eq 'PV') {
@@ -422,6 +424,7 @@ EOT
     }
     if ($flags =~ /x/) {
       # Special setter method named after insn
+      print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
       print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optarg));\n",
 	$optarg eq ", arg"
@@ -429,19 +432,17 @@ EOT
 	  : '';
     } elsif ($flags =~ /s/) {
       # Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
+      print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
       print BYTERUN_C "\t\tBSET_OBJ_STORE($lvalue$optarg);\n";
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_OBJ_STORE($lvalue$optarg)\\n\"));\n";
     }
     elsif ($optarg && $lvalue ne "none") {
-      print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n" unless $unsupp;
+      print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
+      print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n";
       printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", arg%s));\n",
 	$fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
-
-  unsupported:
-    # Find the next unused instruction number
-    do { $insn_num++ } while $insn_name[$insn_num];
 }
 
 #

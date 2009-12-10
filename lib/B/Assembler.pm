@@ -415,6 +415,22 @@ sub asm ($;$$) {
     return if $_[1] eq "1" and $_[0] =~ /^(?:sv_refcnt)$/;
   }
   my ( $insn, $arg, $comment ) = @_;
+  if ($] < 5.007) {
+    if ($insn eq "newsvx") {
+      $arg = $arg & 0xff; # sv not SVt_NULL
+      $insn = "newsv";
+    } elsif ($insn eq "newopx") {
+      $insn = "newop";
+    } elsif ($insn eq "av_pushx") {
+      $insn = "av_push";
+    } elsif ($insn eq "ldspecsvx") {
+      $insn = "ldspecsv";
+    } elsif ($insn eq "gv_stashpvx") {
+      $insn = "gv_stashpv";
+    } elsif ($insn eq "main_cv") {
+      return;
+    }
+  }
   $out->( assemble_insn( $insn, $arg, $comment ) );
   $linenum++;
 

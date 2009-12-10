@@ -53,7 +53,7 @@ B::C (new)
 t/testc.sh -q -c; t/testcc.sh -q -c or make test TEST_VERBOSE=1
 
 5.6.2:					| non-threaded
-t/bytecode      1..26 (broken+disabled)
+t/bytecode      broken
 t/c             15,25             	| 15
 t/c_o1          15,24,25		| 15
 t/c_o2          15,24,25		| 15
