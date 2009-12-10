@@ -69,7 +69,9 @@ function runopt {
     vcmd ${CMD}-o${o}_o${optim}.c $o.pl
     $CCMD ${o}_o${optim}.c $LCMD -o ${o}_o${optim}
     test -x ${o}_o${optim} || (test -z $CONT && exit)
-    echo "./${o}_o${optim}"
+    if [ -z "$QUIET" ]; then echo "./${o}_o${optim}"
+    else echo -n "./${o}_o${optim} "
+    fi
     res=$(./${o}_o${optim})
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}_o${optim}" "=> '$res'"
@@ -102,7 +104,9 @@ function ctest {
 	vcmd $CCMD $o.c -c -E -o ${o}_E.c
 	vcmd $CCMD $o.c $LCMD -o $o
 	test -x $o || (test -z $CONT && exit)
-	echo "./$o"
+	if [ -z "$QUIET" ]; then echo "./$o"
+	else echo -n "./$o "
+        fi
 	res=$(./$o) || (test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
