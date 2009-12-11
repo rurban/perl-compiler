@@ -339,7 +339,6 @@ sub savere {
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
     $xpvsect->add( sprintf( "0, %u, %u", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, %s", $xpvsect->index, 0x4405, $pv ) );
-    #$init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
     # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
@@ -1264,7 +1263,7 @@ sub B::PVMG::save {
 
 sub B::PVMG::save_magic {
   my ($sv) = @_;
-  warn sprintf( "saving magic for %s (0x%x)\n", class($sv), $$sv )
+  warn sprintf( "saving magic for %s (%s, 0x%x)\n", class($sv), objsym($sv), $$sv )
     if $debug{mg};
   my $stash = $sv->SvSTASH;
   $stash->save;
@@ -1354,7 +1353,7 @@ sub B::RV::save {
   if ($PERL510) {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is not computable at load time
-    # $svsect->add( sprintf( "0,\n\t%lu, 0x%x,\n\t(char*)%s", $sv->REFCNT, $sv->FLAGS, $rv ) );
+    $svsect->add( sprintf( "0,\n\t%lu, 0x%x,\n\t0", $sv->REFCNT, $sv->FLAGS ) );
     $init->add( sprintf( "sv_list[%d].sv_u.svu_rv = (SV*)%s;\n", $svsect->index, $rv ) );
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
@@ -1495,10 +1494,10 @@ sub B::CV::save {
   my $sv_ix = $svsect->index + 1;
   $svsect->add("SVIX$sv_ix");
   my $xpvcv_ix = $xpvcvsect->index + 1;
-  $xpvcvsect->add("XPVCVIX$xpvcv_ix");
-  # Save symbols now so that GvCV() doesn't recurse back to us via CvGV()
-  $sym = savesym( $cv, "(CV*)&sv_list[$sv_ix]" );
+  # $xpvcvsect->add("XPVCVIX$xpvcv_ix");
 
+  # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
+  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   if ( !$$root && !$cvxsub ) {
@@ -1543,7 +1542,7 @@ sub B::CV::save {
       $$cv, $ppname, $$root, $startfield )
       if $debug{cv};
     if ($$padlist) {
-      warn sprintf( "saving PADLIST 0x%x for CV 0x%x", $$padlist, $$cv )
+      warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
       $padlistsym = $padlist->save;
       warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
@@ -1557,6 +1556,7 @@ sub B::CV::save {
       $cvstashname, $cvname );    # debug
   }
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
+  $xpvcvsect->add("XPVCVIX$xpvcv_ix");
   if ($PERL510) {
     my ( $pvsym, $len ) = save_hek($pv);
     if ($len) {
@@ -1571,7 +1571,7 @@ sub B::CV::save {
       $pvsym = "0";
     }
     # TODO:
-    my $ourstash = "0";  #Nullhv"
+    my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
     $symsect->add
       (sprintf("XPVCVIX$xpvcv_ix\ts\\_%x, %u, %u, %s, %s, %s,"
@@ -1623,11 +1623,12 @@ sub B::CV::save {
     $init->add( sprintf("SvREFCNT_inc(PL_main_cv);") );
   }
   if ($$gv) {
+    #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
     $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
-    #warn sprintf("done saving GV 0x%x for CV 0x%x\n",
-    #		   $$gv, $$cv) if $debug{cv};
+    warn sprintf("done saving GV 0x%x for CV 0x%x\n",
+    		  $$gv, $$cv) if $debug{cv};
   }
   if ($ITHREADS) {
     $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
@@ -1734,7 +1735,7 @@ sub B::GV::save {
   }
 
   # Shouldn't need to do save_magic since gv_fetchpv handles that
-  #$gv->save_magic;
+  #$gv->save_magic if $PERL510; # re-enabled for 5.10
   # XXX will always be > 1!!!
   my $refcnt = $gv->REFCNT + 1;
   $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt - 1 ) ) if $refcnt > 1;
@@ -1747,6 +1748,7 @@ sub B::GV::save {
     $init->add( sprintf( "GvREFCNT($sym) += %u;", $gvrefcnt - 1 ) );
   }
 
+  warn "check which savefields for \"$gvname\"\n" if $debug{gv};
   # some non-alphabetic globs require some parts to be saved
   # ( ex. %!, but not $! )
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
@@ -1769,7 +1771,7 @@ sub B::GV::save {
   }
   elsif ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
-    warn "GV::save saving subfields\n" if $debug{gv};
+    warn "GV::save saving subfields $savefields\n" if $debug{gv};
     my $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save gvsv $sym\n" if $debug{gv};
@@ -1803,7 +1805,9 @@ sub B::GV::save {
         $init->add("}");
       }
       else {
-        warn "GV::save &$name..\n" if $debug{gv};
+        # TODO: may need fix CvGEN if >0 to re-validate the CV methods
+        # on PERL510 (>0 + <subgeneration)
+        warn "GV::save &$name ($origname)...\n" if $debug{gv};
         $init->add( sprintf( "GvCV($sym) = (CV*)(%s);", $gvcv->save ) );
         warn "GV::save &$name\n" if $debug{gv};
       }
@@ -1872,18 +1876,17 @@ sub B::AV::save {
   my ($av) = @_;
   my $sym = objsym($av);
   return $sym if defined $sym;
-  my $line;
   # TODO: statically initialize the array as the initial av_extend() is very expensive
   if ($PERL510) {
     # 5.9.4+: nv fill max iv mg stash
-    $line = "0.0, -1, -1, 0, 0, Nullhv";
+    my $line = "0.0, -1, -1, 0, 0, Nullhv";
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, %s",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS, '0'));
   }
   else {
     # 5.8: array fill max off nv mg stash alloc arylen flags
-    $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
+    my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
@@ -1897,7 +1900,7 @@ sub B::AV::save {
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
   if ( $debug{av} ) {
-    $line = sprintf( "saving AV 0x%x FILL=$fill", $$av );
+    my $line = sprintf( "saving AV 0x%x FILL=$fill", $$av );
     $line .= sprintf( " AvFLAGS=0x%x", $av->AvFLAGS ) if $] < 5.009;
     warn "$line\n";
   }
@@ -3251,13 +3254,10 @@ help make use of this compiler.
 
 5.6:
     reading from __DATA__ handles (15)
-    calling nested subs (24)
-    XSUB load order via B::Stash (?)
+    XSUB load order via B::Stash (?). Usually fixed via perlcc.
 
 5.8:
-    +
-    open our (14)
-    $VERSION magic (23)
+    none else
 
 5.10:
     +

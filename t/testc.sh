@@ -1,17 +1,18 @@
 #!/bin/bash
-# Beware that the order of OPTIONS -q -c -D -B is hardcoded.
-#   t/testc.sh -c -D u,-q -B static 2>&1 |tee c.log|grep FAIL
+# t/testc.sh -c -Du,-q -B static 2>&1 |tee c.log|grep FAIL
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-26]"
-  echo "-D debugflag       for O=C or O=CC. default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
-  echo "-O 0|1|2           optimization"
-  echo "-B static|dynamic  pass to cc_harness"
-  echo "-q                 quiet"
-  echo "-h                 help"
+  echo " -D debugflags      for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
+  echo " -O 0|1|2           optimization"
+  echo " -B static|dynamic  pass to cc_harness"
+  echo " -c                 continue on errors"
+  echo " -a                 all. undo -Du. Unsilence scanning unused sub"
+  echo " -q                 quiet"
+  echo " -h                 help"
   echo "Without arguments try all 26 tests. Without Option -Ox try all three optimizations."
 }
-#
+
 # use the actual perl from the Makefile (perl5.8.8, 
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
@@ -64,21 +65,23 @@ function fail {
 function runopt {
     o=$1
     optim=$2
-    rm ${o}_o${optim} ${o}_o${optim}.c 2> /dev/null
+    suff="_o${optim}"
+    if [ "$optim" == "0" ]; then suff=""; fi
+    rm ${o}${suff} ${o}${suff}.c 2> /dev/null
     if [ $optim == 1 ]; then CMD=$OCMDO1
     else CMD=$OCMDO2
     fi
-    vcmd ${CMD}-o${o}_o${optim}.c $o.pl
-    $CCMD ${o}_o${optim}.c $LCMD -o ${o}_o${optim}
-    test -x ${o}_o${optim} || (test -z $CONT && exit)
-    if [ -z "$QUIET" ]; then echo "./${o}_o${optim}"
-    else echo -n "./${o}_o${optim} "
+    vcmd ${CMD}-o${o}${suff}.c $o.pl
+    $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
+    test -x ${o}${suff} || (test -z $CONT && exit)
+    if [ -z "$QUIET" ]; then echo "./${o}${suff}"
+    else echo -n "./${o}${suff} "
     fi
-    res=$(./${o}_o${optim})
+    res=$(./${o}${suff})
     if [ "X$res" = "X${result[$n]}" ]; then
-	test "X$res" = "X${result[$n]}" && pass "./${o}_o${optim}" "=> '$res'"
+	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
     else
-	fail "./${o}_o${optim}" "=> '$res' Expected: '${result[$n]}'"
+	fail "./${o}${suff}" "=> '$res' Expected: '${result[$n]}'"
     fi
 }
 
@@ -98,11 +101,12 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
-    if [ -n "$OPTIM" -a $OPTIM -gt 1 ]; then
+    if [ $OPTIM -ge 0 ]; then
 	runopt "$o" "$OPTIM"
-    else
+    else # -1
 	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
 	vcmd ${OCMD}-o$o.c $o.pl
+        test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit)
 	vcmd $CCMD $o.c -c -E -o ${o}_E.c
 	vcmd $CCMD $o.c $LCMD -o $o
 	test -x $o || (test -z $CONT && exit)
@@ -112,10 +116,8 @@ function ctest {
 	res=$(./$o) || (test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
-            if [ $OPTIM -gt 1 ]; then
-                runopt $o 1
-                runopt $o 2
-            fi
+	    runopt $o 1
+	    runopt $o 2
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
@@ -199,8 +201,8 @@ tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print
 result[26]="26";
 
 # 
-# getopts for -q -Du,-q -v -O2
-while getopts "hqcDB:O:" opt
+# getopts for -q -Du,-q -v -O2, -a -c
+while getopts "hqacDB:O:" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
@@ -226,7 +228,11 @@ do
     CCMD="$PERL script/cc_harness -g3 -B${OPTARG}"
   fi
   if [ "$opt" = "O" ]; then OPTIM=$OPTARG; fi
+  if [ "$opt" = "a" ]; then # replace -Du, by -D
+    OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,-v/\1,-v/')" 
+  fi
 done
+if [ -z "$OPTIM" ]; then OPTIM=-1; fi # all
 if [ -z "$QUIET" ]; then
     make
 else
@@ -249,6 +255,7 @@ fi
 # 58  cc:  10_o,15,16_o,18-19,21,24
 # 510  c:  7,11,14-15,20-21,23
 # 510 cc:  +10_o,12,16_o,18,19
+# 511  c:  5,11,14-16,23
 
 #  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
 #  FAIL for B::CC should be covered by test 18

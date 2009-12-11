@@ -32,30 +32,41 @@
 	Make it work with older bytecode >= 5.8 via Asmdata unsupported ops.
 	* i386.xs, jitcompiler.pl: removed (seperate module)
 	* bytecode.h, C.xs: Fixed for 5.6, tested with 5.6.1 with MSVC.
-	* bytecode.h, byterun.c: add static int force = 0. Override it to 1 to try 
-	out executing older bytecodes.
+	* bytecode.h, byterun.c: add static int force = 0. Override it to 1 to 
+	try out executing older bytecodes.
+
+	* C.pm: fix test 16 on 5.10 again (GVAV magic). 
+	  first fix in 1.04_24, broken in 1.04_28.
+	  On 5.11 I have a broken RV handling here.
+	* t/testc.sh: support proper cmdline arguments
 
 1.04_29 2009-12-07 rurban
-	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle (test 15) 
-	all remaining 5.8 C bugs.
-	* C.pm: assign the PVX of GV also for empty stashes (main::) to avoid destruction 
-	  failures at Perl_pad_undef() SvPVX_const(namesv) == '&'. Fixes tests 14 and 23
+	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle 
+	  (test 15) all remaining 5.8 C bugs.
+	* C.pm: assign the PVX of GV also for empty stashes (main::) to avoid 
+	  destruction failures at Perl_pad_undef() SvPVX_const(namesv) == '&'. 
+	Fixes tests 14 and 23
 	* byterun.c: No assert on empty bs_sv, it is &PL_sv_undef.
 	Map missing -Dv on 5.6 to -Df i.e. -D256
 	Added better debugging output: setter values.
 	* STATUS: re-run CORE tests, list cmdlines, update status
-	* Disassembler.pm: added gen_header_hash() for gen_header output. add to documentation.
+	* Disassembler.pm: added gen_header_hash() for gen_header output. 
+	  add to documentation.
 	* Bytecode.pm: -S uses gen_header_hash for gen_header output.
 
 1.04_28 2009-12-06 rurban
-	* C.pm: fix -fcog (Copy on Grow with -O1 and -O2) for >= 5.10 by a new SVPV.
-	Statically initialize PVs with a union layout trick. Use char* as first union member. 
-	Revert xpvcv+svsect changes to pre-initialize those structs against gvcv recursion. 
+	* C.pm: fix -fcog (Copy on Grow with -O1 and -O2) for >= 5.10 by a new 
+	  SVPV. 
+	Statically initialize PVs with a union layout trick. Use char* as first 
+	  union member. 
+	Revert xpvcv+svsect changes to pre-initialize those structs against 
+	  gvcv recursion. 
 	* t/b.t, t/o.t, t/stash.t: fix tests for 5.6.2
-	* bytecode.c: byteorder swab only if same length. 1234 => 4321, 12345678 => 87654321.
+	* bytecode.c: byteorder swab only if same length. 
+	1234 => 4321, 12345678 => 87654321.
 	Skip a 0x prefix for byteorder in the header. Perl 5.6 had this. 
-	* Assembler.pm (0.07_06): 5.6 byteorder fix: until 5.6 the $Config{byteorder} was 
-	  falsely dependent on ivsize, we need longsize.
+	* Assembler.pm (0.07_06): 5.6 byteorder fix: until 5.6 the 
+	  $Config{byteorder} was falsely dependent on ivsize, we need longsize.
 	Add 0x to byteorder in header again, as with 5.6.
 	* t/testc.sh: do not run old leftovers. some 5.6 optimizations
 	* t/c_o1.t, t/c_o2.t, t/cc_o2.t, t/cc_o2.t: added
@@ -63,13 +74,15 @@
 	* broke ByteLoader
 
 1.04_27 2009-12-04 rurban
-	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv cmp needed 
-	a return NULL (test 19).
+	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv 
+	  cmp needed a return NULL (test 19).
 	* c.t, cc.t: add failing tests as TODOs
 	
 1.04_26 2009-12-02 rurban
-	* C.pm: remove nv->IVX for 5.10 (Can't locate object method "IVX" via package "B::NV").
-	protect mg->OBJ when SCALAR (Can't call method "save" on unblessed reference).
+	* C.pm: remove nv->IVX for 5.10 (Can't locate object method "IVX" via 
+	  package "B::NV").
+	protect mg->OBJ when SCALAR (Can't call method "save" on unblessed 
+	  reference).
 	fix NV isa IV, to fix test 23 (Nick Koston).
 	fix CopLABEL for 5.11 (test 21)
 	fix PMOP extflags, esp. for split on >= 5.10 (test 5 + 7)
