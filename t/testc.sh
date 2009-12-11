@@ -1,13 +1,15 @@
 #!/bin/bash
 # Beware that the order of OPTIONS -q -c -D -B is hardcoded.
-# t/testc.sh -c -D u,-q -B static 2>&1 |tee c.log|grep FAIL
+#   t/testc.sh -c -D u,-q -B static 2>&1 |tee c.log|grep FAIL
+# quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-26]"
-  echo "-D debugflag       For O=C or O=CC. default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
-  echo "-O 1|2             Optimization only"
+  echo "-D debugflag       for O=C or O=CC. default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
+  echo "-O 0|1|2           optimization"
   echo "-B static|dynamic  pass to cc_harness"
   echo "-q                 quiet"
   echo "-h                 help"
+  echo "Without arguments try all 26 tests. Without Option -Ox try all three optimizations."
 }
 #
 # use the actual perl from the Makefile (perl5.8.8, 
@@ -96,7 +98,7 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
-    if [ -n "$OPTIM" ]; then
+    if [ -n "$OPTIM" -a $OPTIM -gt 1 ]; then
 	runopt "$o" "$OPTIM"
     else
 	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
@@ -110,8 +112,10 @@ function ctest {
 	res=$(./$o) || (test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
-	    runopt $o 1
-	    runopt $o 2
+            if [ $OPTIM -gt 1 ]; then
+                runopt $o 1
+                runopt $o 2
+            fi
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
@@ -222,8 +226,6 @@ do
     CCMD="$PERL script/cc_harness -g3 -B${OPTARG}"
   fi
   if [ "$opt" = "O" ]; then OPTIM=$OPTARG; fi
-  if [ "$opt" = "O1" ]; then OPTIM=1; fi
-  if [ "$opt" = "O2" ]; then OPTIM=2; fi
 done
 if [ -z "$QUIET" ]; then
     make
@@ -243,7 +245,7 @@ else
 fi
 
 # 562  c:  15,24
-# 58   c:  15,24 (resp. 14,15,23)
+# 58   c:  15
 # 58  cc:  10_o,15,16_o,18-19,21,24
 # 510  c:  7,11,14-15,20-21,23
 # 510 cc:  +10_o,12,16_o,18,19
