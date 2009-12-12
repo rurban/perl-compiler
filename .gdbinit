@@ -54,6 +54,23 @@ end
 # break Perl_pp_match
 # break Perl_pad_new
 
+# threaded
 define stack_dump
   call Perl_sv_dump(my_perl, *sp)
+end
+# non-threaded
+define stack_dump_nt
+  call Perl_sv_dump(*sp)
+end
+define op_dump
+  call Perl_op_dump(my_perl, PL_op)
+end
+define op_dump_nt
+  call Perl_op_dump(PL_op)
+end
+define sv_dump
+  call Perl_sv_dump(my_perl, sv)
+end
+define sv_dump_nt
+  call Perl_sv_dump(sv)
 end
