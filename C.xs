@@ -37,7 +37,7 @@ my_runops(pTHX)
             op->op_pmreplstart = NULL;
             op->op_pmnext = NULL;
 #endif
-#if defined(USE_ITHREADS) && (PERL_VERSION > 8)
+#if defined(USE_ITHREADS) && (PERL_VERSION > 7)
             op->op_pmoffset = 0;
 #else
             op->op_pmregexp = 0;
