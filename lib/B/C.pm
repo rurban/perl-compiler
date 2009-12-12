@@ -1702,14 +1702,21 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  warn sprintf( "  GV type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), B::SV::FLAGS($gv) )
+  warn sprintf( "  GV type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), $gv->FLAGS )
     if $debug{gv} and !$PERL56; # B::SV::SvTYPE not with 5.6
   # only PVGV or PVLV have names. crash in test 11: 2nd GV "x" is a (CV*) but of type 9 (GV)
-  my $is_empty = $gv->is_empty;
-  my $gvname   = $gv->NAME;
-  my $fullname = $gv->STASH->NAME . "::" . $gvname;
-  my $name     = cstring($fullname);
-  warn "  GV name is $name\n" if $debug{gv};
+  my ($is_empty, $gvname, $fullname, $name) = (1,'','','');
+  #warn sprintf ("0x%x 0x%x 0x%x", 0x4000|0x8000, $gv->FLAGS && 0x4000, $gv->FLAGS && 0x8000);
+  if ($PERL510 and ($gv->FLAGS && 0xc000) != 0x8000) {
+    warn "  invalid GV $sym\n";
+    return $sym;
+  } else {
+    $is_empty = $gv->is_empty;
+    $gvname   = $gv->NAME;
+    $fullname = $gv->STASH->NAME . "::" . $gvname;
+    $name     = cstring($fullname);
+    warn "  GV name is $name\n" if $debug{gv};
+  }
   my $egvsym;
   my $is_special = $gv->isa("B::SPECIAL");
 
