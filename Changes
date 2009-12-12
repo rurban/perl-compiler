@@ -35,9 +35,10 @@
 	* bytecode.h, byterun.c: add static int force = 0. Override it to 1 to 
 	try out executing older bytecodes.
 
-	* C.pm: fix test 16 on 5.10 again (GVAV magic). 
-	  first fix in 1.04_24, broken in 1.04_28.
-	  On 5.11 I have a broken RV handling here.
+	* C.pm: fix test 16 on 5.10 again, non-threaded only (GVAV magic). 
+	  first fix in 1.04_24, broken in 1.04_28. On 5.11 I have a broken 
+	  RV handling here.
+	Remove version and Regexp::DESTROY from the automatic methods (experimental).
 	* t/testc.sh, t/testplc.sh: support proper cmdline arguments, add -h for help
 
 1.04_29 2009-12-07 rurban

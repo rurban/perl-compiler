@@ -2697,9 +2697,10 @@ sub should_save {
     return $unused_sub_packages{$package} = 0;
   }
 
-# Now see if current package looks like an OO class this is probably too strong.
+  # Now see if current package looks like an OO class. This is probably too strong.
   foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
-    if ( UNIVERSAL::can( $package, $m ) ) {
+    # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically
+    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp)$/ ) {
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
