@@ -30,14 +30,14 @@ if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 function pass {
     #echo -n "$1 PASS "
     echo -e -n "\e[1;32mPASS \e[0;0m"
-    shift
+    #shift
     echo $*
     echo
 }
 function fail {
     #echo -n "$1 FAIL "
     echo -e -n "\e[1;31mFAIL \e[0;0m"
-    shift
+    #shift
     echo $*
     echo
 }
@@ -85,33 +85,33 @@ function btest {
 
     bcall ${o} k
     $PERL $Mblib script/disassemble ${o}k_${VERS}.plc > ${o}k_${VERS}.disasm
-    [ -n "$Q" ] || echo $PERL $Mblib -MO=Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
-    $PERL $Mblib -MO=Debug,-exec ${o}.pl > ${o}_${VERS}.dbg
+    [ -n "$Q" ] || echo $PERL $Mblib -MO=${qq}Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
+    $PERL $Mblib -MO=${qq}Debug,-exec ${o}.pl > ${o}_${VERS}.dbg
   fi
   if [ -z "$SKIP" ]; then
     # 5.8 has a bad concise
-    [ -n "$Q" ] || echo $PERL $Mblib -MO=Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
-    $PERL $Mblib -MO=Concise,-exec ${o}.pl > ${o}_${VERS}.concise
+    [ -n "$Q" ] || echo $PERL $Mblib -MO=${qq}Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
+    $PERL $Mblib -MO=${qq}Concise,-exec ${o}.pl > ${o}_${VERS}.concise
     if [ -n "$Mblib" ]; then 
       #bcall ${o} TI
       bcall ${o} H
     fi
-    if [ -n "$Mblib" ]; then
-      # -s ("scan") should be the new default
-      [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
-      ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
-    else
-      # No -s with 5.6
-      [ -n "$Q" ] || echo ${OCMD}-o${o}.plc ${o}.pl
-      ${OCMD}-o${o}.plc ${o}.pl || (test -z $CONT && exit)
-    fi
+  fi
+  if [ -n "$Mblib" ]; then
+    # -s ("scan") should be the new default
+    [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
+    ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
+  else
+    # No -s with 5.6
+    [ -n "$Q" ] || echo ${OCMD}-o${o}.plc ${o}.pl
+    ${OCMD}-o${o}.plc ${o}.pl || (test -z $CONT && exit)
   fi
   [ -n "$Q" ] || echo ${ICMD} ${o}.plc
   res=$(${ICMD} ${o}.plc)
   if [ "X$res" = "X${result[$n]}" ]; then
-      test "X$res" = "X${result[$n]}" && pass "./${o}_o1" "=> '$res'"
+      test "X$res" = "X${result[$n]}" && pass "./${o}.plc" "=> '$res'"
   else
-      fail "./${o}_o1" "'$str' => '$res' Expected: '${result[$n]}'"
+      fail "./${o}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
       [ -n "$Q" ] || (echo ${ICMD} -D$D ${o}.plc; ${ICMD} -D$D ${o}.plc)
       test -z $CONT && exit
   fi
@@ -191,7 +191,12 @@ result[26]="26";
 
 while getopts "qscCh" opt
 do
-  if [ "$opt" = "q" ]; then Q=1; fi
+  if [ "$opt" = "q" ]; then
+      Q=1
+      OCMD="$QOCMD"
+      qq="-qq,"
+      if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; qq=""; fi
+  fi
   if [ "$opt" = "s" ]; then SKIP=1; fi
   if [ "$opt" = "c" ]; then CONT=1; shift; fi
   if [ "$opt" = "C" ]; then CORE=1; shift; fi
