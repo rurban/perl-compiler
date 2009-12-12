@@ -2,7 +2,7 @@
 my $keep_pl       = 0;	# set it to keep the src pl files
 my $keep_plc      = 0;	# set it to keep the bytecode files
 my $keep_plc_fail = 1;	# set it to keep the bytecode files on failures
-my $do_coverage = undef;# do bytecode insn coverage
+my $do_coverage   = undef; # do bytecode insn coverage
 my $verbose       = $ENV{TEST_VERBOSE}; # better use t/testplc.sh for debugging
 use Config;
 
@@ -62,8 +62,8 @@ if ($DEBUGGING) {
 #@todo = (3,6,8..10,12,15..16,18,25..26) if $] < 5.007; # CORE failures (ours not yet enabled)
 
 my %todo = map { $_ => 1 } @todo;
-my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
-$Mblib = "-Mblib";
+my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls
+# $Mblib = "-Mblib";
 unless ($Mblib) { # check for -Mblib from the testsuite
   if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
     $Mblib = "-Mblib"; # forced -Mblib via cmdline

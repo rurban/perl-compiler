@@ -1,6 +1,6 @@
 #!/bin/bash
 # t/testc.sh -c -Du,-q -B static 2>&1 |tee c.log|grep FAIL
-# for p in 5.6.2 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -q clean; perl$p Makefile.PL; t/testc.sh -O0 16; done
+# for p in 5.6.2 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; perl$p Makefile.PL; t/testc.sh -O0 16; done
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-26]"
@@ -78,9 +78,9 @@ function runopt {
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
     else echo -n "./${o}${suff} "
     fi
-    res=$(./${o}${suff}) || fail "./${o}${suff}"
+    res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
     if [ "X$res" = "X${result[$n]}" ]; then
-	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "'$str' => '$res'"
+	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
     else
 	fail "./${o}${suff}" "=> '$str' => '$res'. Expected: '${result[$n]}'"
     fi
@@ -114,7 +114,7 @@ function ctest {
 	if [ -z "$QUIET" ]; then echo "./$o"
 	else echo -n "./$o "
         fi
-	res=$(./$o) || (fail "./${o}${suff}"; test -z $CONT && exit)
+	res=$(./$o) || (fail "./${o}${suff}" "errcode $?"; test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
 	    runopt $o 1
@@ -138,7 +138,7 @@ tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 result[3]='zzz2y2y2';
 tests[4]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
 result[4]='z2y2y2';
-tests[5]='split /a/,"bananarama"; print @_'
+tests[5]='print split /a/,"bananarama"'
 result[5]='bnnrm';
 tests[6]="{package P; sub x {print 'ya'} x}"
 result[6]='ya';
@@ -236,9 +236,9 @@ done
 if [ -z $OPTIM ]; then OPTIM=-1; fi # all
 
 if [ -z "$QUIET" ]; then
-    make
+    make 
 else
-    make -q >/dev/null
+    make --silent >/dev/null
 fi
 
 # need to shift the options

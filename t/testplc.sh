@@ -128,7 +128,7 @@ tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 result[3]='zzz2y2y2';
 tests[4]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
 result[4]='z2y2y2';
-tests[5]='split /a/,"bananarama"; print @_'
+tests[5]='print split /a/,"bananarama"'
 result[5]='bnnrm';
 tests[6]="{package P; sub x {print 'ya'} x}"
 result[6]='ya';
@@ -206,7 +206,7 @@ done
 if [ -z "$Q" ]; then
     make
 else
-    make -q >/dev/null
+    make --silent >/dev/null
 fi
 
 # need to shift the options
