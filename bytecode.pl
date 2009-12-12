@@ -917,7 +917,7 @@ __END__
 105 <10 op_pmreplroot   cPMOP->op_pmreplroot			opindex
 111 !i<10  op_pmreplrootgv *(SV**)&cPMOP->op_pmreplroot			svindex
 106 <10 op_pmreplstart  cPMOP->op_pmreplstart				opindex
-105 10  op_pmreplroot   (cPMOP->op_pmreplrootu).op_pmreplroot		opindex
+105 10  op_pmreplroot  (cPMOP->op_pmreplrootu).op_pmreplroot		opindex
 106 10  op_pmreplstart  (cPMOP->op_pmstashstartu).op_pmreplstart	opindex
 107 <10 op_pmnext	*(OP**)&cPMOP->op_pmnext			opindex
 108 i8 	op_pmstashpv	   cPMOP					pvindex		x
