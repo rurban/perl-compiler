@@ -197,7 +197,7 @@ my $anonsub_index = 0;
 my $initsub_index = 0;
 
 my %symtable;
-my %strtable;
+my (%strtable, %hektable);
 my %xsub;
 my $warn_undefined_syms;
 my $verbose = 0;
@@ -350,6 +350,25 @@ sub savere {
   return ( $sym, length( pack "a*", $re ) );
 }
 
+sub constpv {
+  my $pv    = pack "a*", shift;
+  if (defined $strtable{$pv}) {
+    return $strtable{$pv};
+  }
+  my $pvsym = sprintf( "pv%d", $pv_index++ );
+  $strtable{$pv} = "$pvsym";
+  if ( defined $max_string_len && length($pv) > $max_string_len ) {
+    my $chars = join ', ', map { cchar $_ } split //, $pv;
+    $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
+  } else {
+    my $cstring = cstring($pv);
+    if ( $cstring ne "0" ) {    # sic
+      $decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
+    }
+  }
+  return $pvsym;
+}
+
 sub savepv {
   my $pv    = pack "a*", shift;
   my $pvsym = 0;
@@ -410,11 +429,11 @@ sub save_hek {
   my $str = shift; # not cstring'ed
   my $len = length $str;
   unless ($len) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
-  if (defined $strtable{$str}) {
-    return $strtable{$str};
+  if (defined $hektable{$str}) {
+    return $hektable{$str};
   }
   my $sym = sprintf( "hek%d", $hek_index++ );
-  $strtable{$str} = "(HEK *)$sym";
+  $hektable{$str} = "(HEK *)$sym";
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
   $init->add(sprintf("%s = share_hek(%s, %u, %s);",
@@ -822,8 +841,8 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$//;
   $init->add(
-    sprintf( "CopFILE_set(&cop_list[$ix], %s);",    cstring($file) ),
-    sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring( $op->stashpv ) )
+    sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
+    sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
   );
 
   savesym( $op, "(OP*)&cop_list[$ix]" );
@@ -1516,7 +1535,7 @@ sub B::CV::save {
   my $sv_ix = $svsect->index + 1;
   $svsect->add("SVIX$sv_ix");
   my $xpvcv_ix = $xpvcvsect->index + 1;
-  # $xpvcvsect->add("XPVCVIX$xpvcv_ix");
+  $xpvcvsect->add("XPVCVIX$xpvcv_ix");
 
   # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
   $sym = savesym( $cv, "&sv_list[$sv_ix]" );
@@ -1578,7 +1597,6 @@ sub B::CV::save {
       $cvstashname, $cvname );    # debug
   }
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
-  $xpvcvsect->add("XPVCVIX$xpvcv_ix");
   if ($PERL510) {
     my ( $pvsym, $len ) = save_hek($pv);
     #if ($len) {
@@ -1640,7 +1658,7 @@ sub B::CV::save {
   }
 
   if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
-    $init->add( sprintf( "CvOUTSIDE(s\\_%x)=PL_main_cv;", $$cv ) );
+    $init->add( sprintf( "CvOUTSIDE(s\\_%x) = PL_main_cv;", $$cv ) );
     $init->add( sprintf("SvREFCNT_inc(PL_main_cv);") );
   }
   if ($$gv) {
