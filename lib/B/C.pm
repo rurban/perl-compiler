@@ -197,6 +197,7 @@ my $anonsub_index = 0;
 my $initsub_index = 0;
 
 my %symtable;
+my %strtable;
 my %xsub;
 my $warn_undefined_syms;
 my $verbose = 0;
@@ -247,23 +248,23 @@ sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
 sub save_main_rest2;
 
-# fixup PVBM names which contain garbage after the ending \000
-sub cstring_wrong {
-  my $s = B::cstring($_[0]);
-  if ($s !~ /^\"/ || $s !~ /\\000/ ) { return $s; }	
-  $s =~ s/\\000.*\"$/\"/;
-  return $s;	 #now clean
-}
-
-sub cstring_try1 {
-  my $sv = shift or return "";
-  my $s = B::cstring($sv);
-  if ($sv->LEN > $sv->CUR and substr($sv->PVX,$sv->CUR,1) eq '\000') {
-    return substr($s, 0, $sv->CUR);
-  } else {
-    return $s;
-  }
-}
+# strip indexed PVBM names
+#sub cstring_wrong {
+#  my $s = B::cstring($_[0]);
+#  if ($s !~ /^\"/ || $s !~ /\\000/ ) { return $s; }	
+#  $s =~ s/\\000.*\"$/\"/;
+#  return $s;	 #now clean
+#}
+#
+#sub cstring_try1 {
+#  my $sv = shift or return "";
+#  my $s = B::cstring($sv);
+#  if ($sv->LEN > $sv->CUR and substr($sv->PVX,$sv->CUR,1) eq '\000') {
+#    return substr($s, 0, $sv->CUR);
+#  } else {
+#    return $s;
+#  }
+#}
 
 sub walk_and_save_optree {
   my ( $name, $root, $start ) = @_;
@@ -404,16 +405,23 @@ sub save_pv_or_rv {
   return ( $savesym, $pvmax, $len, $pv );
 }
 
-# global string table
+# shared global string
 sub save_hek {
-  my $str = shift;
+  my $str = shift; # not cstring'ed
   my $len = length $str;
-  return ( "NULL", 0 ) unless $len;
+  unless ($len) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
+  if (defined $strtable{$str}) {
+    return $strtable{$str};
+  }
   my $sym = sprintf( "hek%d", $hek_index++ );
-
+  $strtable{$str} = "(HEK *)$sym";
+  my $cstr = cstring($str);
+  $decl->add(sprintf("Static HEK *%s;",$sym));
+  $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+		     $sym, $cstr, length($cstr)-2, B::hash($str)));
   # (HEK*)ptr_table_fetch(PL_ptr_table, source);
   # $heksect->add("hv_store(PL_strtab, \"$str\", $len, NULL, hash($str));");
-  return ( "$sym", length( pack "a*", $str ) );
+  wantarray ? ( "(HEK *)$sym", length( pack "a*", $str ) ) : "(HEK *)$sym";
 }
 
 # See also init_op_ppaddr below; initializes the ppaddr to the
@@ -940,6 +948,14 @@ sub B::PMOP::save {
 
 sub B::SPECIAL::save {
   my ($sv) = @_;
+  # 5.11 often misses RVs as SPECIAL, because there's no real RV anymore
+  if ($PERL511 and 0) {
+    my $rv = bless $sv, "B::IV";
+    if ($rv->FLAGS & SVf_ROK) {
+      warn sprintf( "0x%x SPECIAL is really a RV\n", $$sv ) if $debug{sv};
+      return $rv->save_rv;
+    }
+  }
   # special case: $$sv is not the address but an index into specialsv_list
   #   warn "SPECIAL::save specialsv $$sv\n"; # debug
   my $sym = $specialsv_name[$$sv];
@@ -977,8 +993,8 @@ sub B::IV::save {
       $xpvivsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
-  warn sprintf( "Saving IV 0x%x to xpviv_list[%d], sv_list[%d]\n",
-    $sv->IVX, $xpvivsect->index, $svsect->index )
+  warn sprintf( "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s\n",
+    $sv->IVX, $xpvivsect->index, $svsect->index, @{[(caller(1))[3]]} )
     if $debug{sv};
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
@@ -1263,9 +1279,14 @@ sub B::PVMG::save {
 
 sub B::PVMG::save_magic {
   my ($sv) = @_;
-  warn sprintf( "saving magic for %s (%s, 0x%x)\n", class($sv), objsym($sv), $$sv )
+  warn sprintf( "saving magic for %s (0x%x) - called from %s:%s\n",
+		class($sv), $$sv, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{mg};
   my $stash = $sv->SvSTASH;
+  # test 16: On 5.10 the stash is a RV to a HV. On 5.11 a SPECIAL (RV) to a HV
+  if ($$stash) {
+    warn "stash isa class($stash) $$stash\n" if $debug{mg} or $debug{gv};
+  }
   $stash->save;
   if ($$stash) {
     warn sprintf( "xmg_stash = %s (0x%x)\n", $stash->NAME, $$stash )
@@ -1297,6 +1318,7 @@ sub B::PVMG::save_magic {
     if ( $len == HEf_SVKEY ) {
       #The pointer is an SV*
       $ptrsv = svref_2object($ptr)->save;
+      warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(
         sprintf(
           "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s,(char *) %s, %d);",
@@ -1559,17 +1581,16 @@ sub B::CV::save {
   $xpvcvsect->add("XPVCVIX$xpvcv_ix");
   if ($PERL510) {
     my ( $pvsym, $len ) = save_hek($pv);
-    if ($len) {
-      $init->add(
-        sprintf( "HEK *%s = share_hek(%s,%u,0);", $pvsym, cstring($pv), $len )
-      );
-      $pvsym = "(HEK *)$pvsym";
-
-      # $pvsym = $heksect->add(cstring($pv));
-    }
-    else {
-      $pvsym = "0";
-    }
+    #if ($len) {
+    #  $init->add(
+    #    sprintf( "HEK *%s = share_hek(%s,%u,0);", $pvsym, cstring($pv), $len )
+    #  );
+    #  $pvsym = "(HEK *)$pvsym";
+    # $pvsym = $heksect->add(cstring($pv));
+    #}
+    #else {
+    #  $pvsym = "0";
+    #}
     # TODO:
     my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
@@ -1578,7 +1599,7 @@ sub B::CV::save {
 	       ." %s, %s, s\\_%x, %s, %s, (PADLIST *)%s,"
 	       ." (CV*)s\\_%x, %s, 0x%x",
 	       $gv->STASH, # TODO!
-	       length($pv), length($pv),
+	       $len, $len,
 	       $cv->DEPTH,
 	       "NULL", "Nullhv", #MAGIC + STASH later
 	       "Nullhv",#CvSTASH later
@@ -1813,33 +1834,11 @@ sub B::GV::save {
       }
     }
     if ( $] > 5.009 ) {
-      my $file = cstring( $gv->FILE );
-      #my $heksym = $heksect->add($file);
-      $init->add(
-                 sprintf(
-                         "{ U32 hash1; PERL_HASH(hash1,%s,%u);",
-                         $file, length($file) - 2
-                        ),
-                 sprintf(
-                         " GvFILE_HEK($sym) = share_hek(%s,%u,hash1);}",
-                         $file, length($file) - 2
-                        )
-                );
-      warn "GV::save GvFILE_HEK(*$name) $file\n" if $debug{gv};
-      if ($gv->NAME) {
-        my $name = cstring( $gv->NAME );
-        $init->add(
-                   sprintf(
-                           "{ U32 hash2; PERL_HASH(hash2,%s,%u);",
-                           $name, length($name) - 2
-                          ),
-                   sprintf(
-                           " GvNAME_HEK($sym) = share_hek(%s,%u,hash2);}",
-                           $name, length($name) - 2
-                          )
-                  );
-        warn "GV::save GvNAME_HEK(*$name) $name\n" if $debug{gv};
-      }
+      # TODO implement heksect to place all heks at the beginning
+      #$heksect->add($gv->FILE);
+      #$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
+      $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)));
+      $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
     }
     else {
       $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ) );
