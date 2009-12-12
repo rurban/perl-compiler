@@ -1,7 +1,18 @@
 #!/bin/bash
 # Usage: 
-# for p in 5.6.2 5.8.9d 5.10.1 5.11.2; do make -q clean >/dev/null; perl$p Makefile.PL; t/testc.sh -q 26; t/testcc.sh -q 26; done
+# for p in 5.6.2 5.8.9d 5.10.1 5.11.2; do make -q clean >/dev/null; perl$p Makefile.PL; t/testplc.sh -q -c; done
 # use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
+
+function help {
+  echo "t/testplc.sh [OPTIONS] [1-26]"
+  echo " -s                 skip B:Debug, roundtrips and options"
+  echo " -c                 continue on errors"
+  echo " -q                 quiet"
+  echo " -h                 help"
+  echo "t/testplc.sh -q -s -c <=> perl -Mblib t/bytecode.t"
+  echo "Without arguments try all 26 tests. Without Option -Ox try all three optimizations."
+}
+
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 #PERL=perl5.11.0
@@ -9,7 +20,7 @@ VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
 # test what? core or our module?
 #Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Mblib))'`"
-Mblib="-Mblib" # test this module
+test -z "$CORE" && Mblib="-Mblib" # test this module
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
 ICMD="$PERL $Mblib -MByteLoader"
@@ -35,7 +46,7 @@ function bcall {
     o=$1
     opt=${2:-s}
     ext=${3:-plc}
-    echo ${QOCMD}-$opt,-o${o}${opt}_${VERS}.${ext} ${o}.pl
+    [ -n "$Q" ] || echo ${QOCMD}-$opt,-o${o}${opt}_${VERS}.${ext} ${o}.pl
     ${QOCMD}-$opt,-o${o}${opt}_${VERS}.${ext} ${o}.pl
 }
 function btest {
@@ -50,9 +61,10 @@ function btest {
       echo "$2" > ${o}.pl
   fi
   #bcall ${o} O6
-  rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.plc 2>/dev/null
+  rm ${o}_s_${VERS}.plc 2>/dev/null
   
-  if [ -n "$Mblib" ]; then 
+  if [ -n "$Mblib" -a -z "$SKIP" ]; then 
+    rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.concise ${o}_s_${VERS}.dbg 2>/dev/null
     bcall ${o} s
     [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}s_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}s_${VERS}.disasm
@@ -76,29 +88,32 @@ function btest {
     [ -n "$Q" ] || echo $PERL $Mblib -MO=Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
     $PERL $Mblib -MO=Debug,-exec ${o}.pl > ${o}_${VERS}.dbg
   fi
-  # 5.8 has a bad concise
-  [ -n "$Q" ] || echo $PERL $Mblib -MO=Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
-  $PERL $Mblib -MO=Concise,-exec ${o}.pl > ${o}_${VERS}.concise
-  if [ -n "$Mblib" ]; then 
-    #bcall ${o} TI
-    bcall ${o} H
-  fi
-  if [ -n "$Mblib" ]; then
-    # -s ("scan") should be the new default
-    [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
-    ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
-  else
-    # No -s with 5.6
-    [ -n "$Q" ] || echo ${OCMD}-o${o}.plc ${o}.pl
-    ${OCMD}-o${o}.plc ${o}.pl || (test -z $CONT && exit)
+  if [ -z "$SKIP" ]; then
+    # 5.8 has a bad concise
+    [ -n "$Q" ] || echo $PERL $Mblib -MO=Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
+    $PERL $Mblib -MO=Concise,-exec ${o}.pl > ${o}_${VERS}.concise
+    if [ -n "$Mblib" ]; then 
+      #bcall ${o} TI
+      bcall ${o} H
+    fi
+    if [ -n "$Mblib" ]; then
+      # -s ("scan") should be the new default
+      [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
+      ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
+    else
+      # No -s with 5.6
+      [ -n "$Q" ] || echo ${OCMD}-o${o}.plc ${o}.pl
+      ${OCMD}-o${o}.plc ${o}.pl || (test -z $CONT && exit)
+    fi
   fi
   [ -n "$Q" ] || echo ${ICMD} ${o}.plc
   res=$(${ICMD} ${o}.plc)
   if [ "X$res" = "X${result[$n]}" ]; then
       test "X$res" = "X${result[$n]}" && pass "./${o}_o1" "=> '$res'"
   else
-      fail "./${o}_o1" "=> '$res' Expected: '${result[$n]}'"
-      ( [ -n "$Q" ] || echo ${ICMD} -D$D ${o}.plc; ${ICMD} -D$D ${o}.plc || exit )
+      fail "./${o}_o1" "'$str' => '$res' Expected: '${result[$n]}'"
+      [ -n "$Q" ] || (echo ${ICMD} -D$D ${o}.plc; ${ICMD} -D$D ${o}.plc)
+      test -z $CONT && exit
   fi
 }
 
@@ -173,14 +188,24 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
 
-if [ "$1" = "-q" ]; then Q=1; shift; fi
-if [ "$1" = "-c" ]; then CONT=1; shift; fi
 
-if [ -z "$QUIET" ]; then
+while getopts "qscCh" opt
+do
+  if [ "$opt" = "q" ]; then Q=1; fi
+  if [ "$opt" = "s" ]; then SKIP=1; fi
+  if [ "$opt" = "c" ]; then CONT=1; shift; fi
+  if [ "$opt" = "C" ]; then CORE=1; shift; fi
+  if [ "$opt" = "h" ]; then help; exit; fi
+done
+
+if [ -z "$Q" ]; then
     make
 else
     make -q >/dev/null
 fi
+
+# need to shift the options
+while [ -n "$1" -a "${1:0:1}" = "-" ]; do shift; done
 
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do

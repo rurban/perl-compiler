@@ -233,12 +233,16 @@ do
   fi
 done
 if [ -z "$OPTIM" ]; then OPTIM=-1; fi # all
+
 if [ -z "$QUIET" ]; then
     make
 else
     make -q >/dev/null
 fi
+
+# need to shift the options
 while [ -n "$1" -a "${1:0:1}" = "-" ]; do shift; done
+
 if [ -n "$1" ]; then
   while [ -n "$1" ]; do
     ctest $1

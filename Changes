@@ -38,7 +38,7 @@
 	* C.pm: fix test 16 on 5.10 again (GVAV magic). 
 	  first fix in 1.04_24, broken in 1.04_28.
 	  On 5.11 I have a broken RV handling here.
-	* t/testc.sh: support proper cmdline arguments
+	* t/testc.sh, t/testplc.sh: support proper cmdline arguments, add -h for help
 
 1.04_29 2009-12-07 rurban
 	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle 
