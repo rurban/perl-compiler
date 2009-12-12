@@ -719,7 +719,7 @@ sub B::PMOP::bsave {
       $rstart = $op->pmreplstart->ix;
     }
     elsif ( $op->name eq 'pushre' ) {
-      $rrarg = $op->op_pmreplroot;
+      $rrarg = $op->pmreplroot;
       $rrop  = "op_pmreplrootpo";
     }
     $op->B::BINOP::bsave($ix);
