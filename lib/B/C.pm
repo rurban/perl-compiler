@@ -350,21 +350,29 @@ sub savere {
   return ( $sym, length( pack "a*", $re ) );
 }
 
+# be sure to add the op_latefree flag
 sub constpv {
   my $pv    = pack "a*", shift;
   if (defined $strtable{$pv}) {
     return $strtable{$pv};
   }
-  my $pvsym = sprintf( "pv%d", $pv_index++ );
-  $strtable{$pv} = "$pvsym";
-  if ( defined $max_string_len && length($pv) > $max_string_len ) {
-    my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
-  } else {
-    my $cstring = cstring($pv);
-    if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
+  my $pvsym;
+  if ( $pv_copy_on_grow ) {
+    $pvsym = sprintf( "pv%d", $pv_index++ );
+    $strtable{$pv} = "$pvsym";
+    if ( defined $max_string_len && length($pv) > $max_string_len ) {
+      my $chars = join ', ', map { cchar $_ } split //, $pv;
+      $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
+    } else {
+      my $cstring = cstring($pv);
+      if ( $cstring ne "0" ) {    # sic
+	$decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
+      }
     }
+  } else {
+    $pvsym = cstring($pv);
+    $strtable{$pv} = "$pvsym";
+    #$decl->add( sprintf( "#define %s %s", $pvsym, $cstring ) );
   }
   return $pvsym;
 }
@@ -1707,10 +1715,11 @@ sub B::GV::save {
   # only PVGV or PVLV have names. crash in test 11: 2nd GV "x" is a (CV*) but of type 9 (GV)
   my ($is_empty, $gvname, $fullname, $name) = (1,'','','');
   #warn sprintf ("0x%x 0x%x 0x%x", 0x4000|0x8000, $gv->FLAGS && 0x4000, $gv->FLAGS && 0x8000);
-  if ($PERL510 and ($gv->FLAGS && 0xc000) != 0x8000) {
-    warn "  invalid GV $sym\n";
-    return $sym;
-  } else {
+  #if ($PERL510 and ($gv->FLAGS && 0xc000) != 0x8000) {
+  #  warn "  invalid GV $sym\n";
+    #return $sym;
+  #}# else
+  {
     $is_empty = $gv->is_empty;
     $gvname   = $gv->NAME;
     $fullname = $gv->STASH->NAME . "::" . $gvname;
