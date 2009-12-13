@@ -542,21 +542,13 @@ sub B::OP::save {
     if ($PERL511) {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
-      $copsect->add(
-        sprintf(
-          "%s, 0, Nullhv, " . "NULL, 0, 0, " . "%u, NULL",
-          $op->_save_common, 0, 'NULL'
-        )
-      );
+      $copsect->add(sprintf("%s, 0, %s, NULL, 0, 0, NULL, NULL",
+			    $op->_save_common, $ITHREADS ? "(char *)NULL" : "Nullhv"));
     }
     elsif ($PERL510) {
       $copsect->comment("$opsect_common, line, label, seq, warn_int, hints_hash");
-      $copsect->add(
-        sprintf(
-          "%s, %u, NULL, " . "NULL, NULL, 0, " . "%u, %d, NULL",
-          $op->_save_common, 0, 0, 0
-        )
-      );
+      $copsect->add(sprintf("%s, %u, NULL, " . "NULL, NULL, 0, " . "%u, %d, NULL",
+			    $op->_save_common, 0, 0, 0));
     }
     else {
       $copsect->comment(
@@ -802,8 +794,9 @@ sub B::COP::save {
       "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
     $copsect->add(
       sprintf(
-              "%s, %u, Nullhv, " . "NULL, 0, %u, " . "NULL, NULL",
+              "%s, %u, %s, " . "NULL, 0, %u, " . "NULL, NULL",
               $op->_save_common, $op->line,
+	      $ITHREADS ? "(char *)NULL" : "Nullhv",
               $op->cop_seq,
               ( $optimize_warn_sv ? $warn_sv : 'NULL' )
       )
@@ -2125,7 +2118,8 @@ sub B::IO::save {
       )
     );
     $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, %s",
-                         $xpviosect->index, $io->REFCNT, $io->FLAGS, $pvsym));
+                         $xpviosect->index, $io->REFCNT, $io->FLAGS,
+			 $pv_copy_on_grow ? $pvsym : 0));
   }
   elsif ($PERL510) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
@@ -2143,7 +2137,8 @@ sub B::IO::save {
       )
     );
     $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, %s",
-                         $xpviosect->index, $io->REFCNT, $io->FLAGS, $pvsym));
+                         $xpviosect->index, $io->REFCNT, $io->FLAGS,
+			 $pv_copy_on_grow ? $pvsym : 0));
   }
   else { #PERL58
     $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp, xio_dirpu, ..., subprocess, type, flags");
@@ -2163,6 +2158,9 @@ sub B::IO::save {
   }
   $sym = savesym( $io, sprintf( "(IO*)&sv_list[%d]", $svsect->index ) );
 
+  if ($PERL510 and !$pv_copy_on_grow and $len) {
+    $init->add(sprintf("SvPVX(sv_list[%d]) = $pvsym;", $svsect->index));
+  }
   if (!$PERL56) { # PerlIO
     # deal with $x = *STDIN/STDOUT/STDERR{IO}
     my $perlio_func;
