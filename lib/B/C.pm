@@ -2341,7 +2341,7 @@ static void xs_init (pTHX);
 static void dl_init (pTHX);
 static PerlInterpreter *my_perl;
 EOT
-  if ($PERL56) {
+  if ($] < 5.008008) {
     print "#define GvSVn(s) GvSV(s)\n";
   }
 }
