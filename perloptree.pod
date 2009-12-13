@@ -1,6 +1,6 @@
 =head1 NAME
 
-perloptreeguts - op tree internals
+perloptree - The Perl op tree
 
 =head1 DESCRIPTION
 
@@ -849,8 +849,10 @@ C<NEXTSTATE> is replaced by C<DBSTATE> when you call perl with -d, the
 debugger.  You can even patch the C<NEXTSTATE> ops at runtime to
 C<DBSTATE> as done in the module C<Enbugger>.
 
-There uses to be three. C<SETSTATE> seems to be optimized away, I
-cannot find it in the source anymore neither.
+For a short time there used to be three. C<SETSTATE> was
+added 1999 (pre Perl 5.6.0) to track linenumbers correctly
+in optimized blocks, disabled 1999 with change 4309 for Perl
+5.6.0, and removed with 5edb5b2abb at Perl 5.10.1.
 
 This requires a patch to remove wrong info from the F<cop.h> header.
 Read L<perlhack.pod> and submit the patch after investigating where it
@@ -952,7 +954,7 @@ get set.
 
 =head2 OP Definition Example
 
-Let's take a simple example for a opcode definition in `opcode.pl`:
+Let's take a simple example for a opcode definition in F<opcode.pl>:
 
   left_shift	left bitshift (<<)	ck_bitop	fsT2	S S
 
@@ -971,7 +973,7 @@ If both args are constant, the result is constant also and the op will
 be nullified.
 
 Now let's inspect the simple definition of this op in F<pp.c>.
-pp_left_shift is the C<op_ppaddr>, the function pointer, for every 
+C<pp_left_shift> is the C<op_ppaddr>, the function pointer, for every 
 left_shift op.
 
   PP(pp_left_shift)
