@@ -2,10 +2,13 @@
     Started on CPAN with B-C-1.04_12.
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
-1.04_30 2009-12-?? rurban
+1.04_31	2009-12-13 rurban
+	* C.pm: fix test 21 on 5.10 "Bad free() ignored". Dynamically allocate CopLABEL
+
+1.04_30 2009-12-13 rurban
 	Better 5.6 support, but Bytecode compiler still disabled.
 	Not even the Byteloader works for 5.6 assembled code. The Disassembler 
-	does not stop at ret.
+	does not stop at ret. Fixed several C tests.
 
 	* bytecode.pl: renumbering policy: <= 5.6 squeeze, >= 5.8 fixed
 	to force exact bytecode numbering as with 5.8.
@@ -39,8 +42,10 @@
 	  first fix in 1.04_24, broken in 1.04_28. On 5.11 I have a broken 
 	  RV handling here.
 	Remove version and Regexp::DESTROY from the automatic methods (experimental).
+	First attempts with pv and hek consting failed.
 	* t/testc.sh, t/testplc.sh: support proper cmdline arguments, add -h for help
 	Fixed test 5 by fixing the wrong test.
+	* perloptree.pod: renamed from perloptreeguts.pod. Added links.
 
 1.04_29 2009-12-07 rurban
 	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle 

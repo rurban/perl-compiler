@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_30';
+our $VERSION = '1.04_31';
 
 package B::C::Section;
 
@@ -812,23 +812,20 @@ sub B::COP::save {
     );
     if ( $op->label ) {
       $init->add(
-        sprintf(
-          "cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ cop_list[%d].cop_hints_hash, %s);",
-          $copsect->index, $copsect->index, cstring( $op->label )
-        )
-      );
+        sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
+		$copsect->index, cstring( $op->label )));
     }
   }
   elsif ($PERL510) {
     $copsect->comment("$opsect_common, line, label, seq, warnings, hints_hash");
-    $copsect->add(
-      sprintf(
-              "%s, %u, %s, " . "NULL, NULL, 0, " . "%u, %s, NULL",
-              $op->_save_common,     $op->line,
-              cstring( $op->label ), $op->cop_seq,
-              ( $optimize_warn_sv ? $warn_sv : 'NULL' )
-      )
-    );
+    $copsect->add(sprintf("%s, %u, %s, " . "NULL, NULL, 0, " . "%u, %s, NULL",
+			  $op->_save_common,     $op->line,
+			  'NULL', $op->cop_seq,
+			  ( $optimize_warn_sv ? $warn_sv : 'NULL' )));
+    if ($op->label) {
+      $init->add(sprintf( "CopLABEL_set(&cop_list[%d], CopLABEL_alloc(%s));",
+			  $copsect->index, cstring( $op->label ) ));
+    }
   }
   else {
     $copsect->comment("$opsect_common, label, seq, arybase, line, warn_sv");
