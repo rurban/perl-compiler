@@ -44,7 +44,7 @@ MANIFEST
 META.yml
 NOTES
 perlcompile.pod
-perloptreeguts.pod
+perloptree.pod
 ramblings/cc.notes
 ramblings/curcop.runtime
 ramblings/flip-flop

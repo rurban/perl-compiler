@@ -7,6 +7,8 @@
 #
 package B::Bytecode56;
 
+# The original 5.6 Bytecode compiler. Unused, not installed. Just for reference.
+
 use strict;
 use Carp;
 use B qw(main_cv main_root main_start comppadlist
@@ -932,7 +934,7 @@ __END__
 
 =head1 NAME
 
-B::Bytecode - Perl compiler's bytecode backend
+B::Bytecode56 - Perl 5.6 compiler's bytecode backend
 
 =head1 SYNOPSIS
 
