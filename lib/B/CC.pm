@@ -62,7 +62,7 @@ my %ignore_op;          # Hash of ops which do nothing except returning op_next
 my %need_curcop;        # Hash of ops which need PL_curcop
 
 my %lexstate;           #state of padsvs at the start of a bblock
-my $verbose = 0;
+my $verbose = 1;
 
 BEGIN {
   foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
@@ -560,9 +560,12 @@ sub peek_stack {
 
 sub label {
   my $op = shift;
-
-  # XXX Preserve original label name for "real" labels?
-  return sprintf( "lab_%x", $$op );
+  # Preserve original label name for "real" labels
+  if ($op->can("label") and $op->label) {
+    return sprintf( "label_%s_%x", $op->label, $$op );
+  } else {
+    return sprintf( "lab_%x", $$op );
+  }
 }
 
 sub write_label {
@@ -723,6 +726,7 @@ sub pp_nextstate {
   $curcop->load($op);
   @stack = ();
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
+  debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
   runtime("TAINT_NOT;") unless $omit_taint;
   runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;");
   if ( $freetmps_each_bblock || $freetmps_each_loop ) {
@@ -1570,6 +1574,7 @@ sub enterloop {
       redoop  => $redoop
     }
   );
+  debug sprintf("enterloop: cxstack label %s", $curcop->[0]->label) if $debug{cxstack};
   $nextop->save;
   $lastop->save;
   $redoop->save;
