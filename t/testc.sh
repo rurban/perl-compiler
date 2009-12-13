@@ -70,7 +70,9 @@ function runopt {
     if [ "$optim" == "0" ]; then suff=""; fi
     rm ${o}${suff} ${o}${suff}.c 2> /dev/null
     if [ $optim == 1 ]; then CMD=$OCMDO1
-    else CMD=$OCMDO2
+    else if [ $optim == 2 ]; then CMD=$OCMDO2
+         else CMD=$OCMD
+         fi
     fi
     vcmd ${CMD}-o${o}${suff}.c $o.pl
     $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
@@ -114,7 +116,7 @@ function ctest {
 	if [ -z "$QUIET" ]; then echo "./$o"
 	else echo -n "./$o "
         fi
-	res=$(./$o) || (fail "./${o}${suff}" "errcode $?"; test -z $CONT && exit)
+	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
 	    runopt $o 1
