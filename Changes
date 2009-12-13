@@ -40,6 +40,7 @@
 	  RV handling here.
 	Remove version and Regexp::DESTROY from the automatic methods (experimental).
 	* t/testc.sh, t/testplc.sh: support proper cmdline arguments, add -h for help
+	Fixed test 5 by fixing the wrong test.
 
 1.04_29 2009-12-07 rurban
 	Disable the Bytecode compiler for 5.6. Fixed besides the __DATA__ handle 
