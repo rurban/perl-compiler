@@ -1,11 +1,11 @@
 #!/bin/bash
 # t/testc.sh -c -Du,-q -B static 2>&1 |tee c.log|grep FAIL
-# for p in 5.6.2 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; perl$p Makefile.PL; t/testc.sh -O0 16; done
+# for p in 5.6.2 5.8.6 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; perl$p Makefile.PL; t/testc.sh -O0 16; done
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-26]"
   echo " -D debugflags      for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
-  echo " -O 0|1|2           optimization"
+  echo " -O 0|1|2|3         optimization level"
   echo " -B static|dynamic  pass to cc_harness"
   echo " -c                 continue on errors"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
@@ -27,14 +27,9 @@ OCMD="$PERL $Mblib -MO=C,-DcOACMSGpu,-v,"
 if [ $BASE = "testcc.sh" ]; then 
   OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
 fi
-OCMDO1="$PERL $Mblib -MO=C,-O1," 
-if [ $BASE = "testcc.sh" ]; then 
-  OCMDO1="$PERL $Mblib -MO=CC,-O1,"
-fi
-OCMDO2="$PERL $Mblib -MO=C,-O2," 
-if [ $BASE = "testcc.sh" ]; then 
-  OCMDO2="$PERL $Mblib -MO=CC,-O2,"
-fi
+OCMDO1="$(echo $OCMD|sed -e s/C,-D/C,-O1,-D/)"
+OCMDO2="$(echo $OCMD|sed -e s/C,-D/C,-O2,-D/)"
+OCMDO3="$(echo $OCMD|sed -e s/C,-D/C,-O3,-D/)"
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
@@ -71,11 +66,14 @@ function runopt {
     rm ${o}${suff} ${o}${suff}.c 2> /dev/null
     if [ $optim == 1 ]; then CMD=$OCMDO1
     else if [ $optim == 2 ]; then CMD=$OCMDO2
-         else CMD=$OCMD
+         else if [ $optim == 3 ]; then CMD=$OCMDO3
+    	      else CMD=$OCMD
+    	      fi
          fi
     fi
     vcmd ${CMD}-o${o}${suff}.c $o.pl
-    $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
+    vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
+    vcmd $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
     test -x ${o}${suff} || (test -z $CONT && exit)
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
     else echo -n "./${o}${suff} "
@@ -121,6 +119,7 @@ function ctest {
 	    pass "./$o" "'$str' => '$res'"
 	    runopt $o 1
 	    runopt $o 2
+	    #runopt $o 3
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
@@ -212,9 +211,10 @@ do
     # O from 5.6 does not support -qq
     qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
     # replace -D*,-v by -q 
-    OCMD="$(echo $OCMD|sed -e 's/-D.*,-v,/-q,/' -e s/-MO=/-MO=$qq/)" 
-    OCMDO1="$(echo $OCMDO1|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
-    OCMDO2="$(echo $OCMDO2|sed -e s/-v,/-q,/ -e s/-MO=/-MO=$qq/)"
+    OCMD="$(echo $OCMD    |sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)" 
+    OCMDO1="$(echo $OCMDO1|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
+    OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
+    OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
     CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
   fi
   if [ "$opt" = "c" ]; then CONT=1; shift; fi
@@ -262,7 +262,7 @@ fi
 # 58  cc:  10_o,15,16_o,18-19,21,24
 # 510  c:  7,11,14-15,20-21,23
 # 510 cc:  +10_o,12,16_o,18,19
-# 511  c:  5,11,14-16,23
+# 511  c:  11,14-16,23
 
 #  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
 #  FAIL for B::CC should be covered by test 18
