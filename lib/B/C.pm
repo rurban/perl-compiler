@@ -357,7 +357,7 @@ sub constpv {
     return $strtable{$pv};
   }
   my $pvsym;
-  if ( $pv_copy_on_grow ) {
+  if ( 0 and $pv_copy_on_grow ) { # fails
     $pvsym = sprintf( "pv%d", $pv_index++ );
     $strtable{$pv} = "$pvsym";
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
@@ -383,7 +383,6 @@ sub savepv {
   my $pvmax = 0;
   if ($pv_copy_on_grow) {
     $pvsym = sprintf( "pv%d", $pv_index++ );
-
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
       my $chars = join ', ', map { cchar $_ } split //, $pv;
       # >=5.10: A union's data members can NOT be declared static
@@ -426,7 +425,11 @@ sub save_pv_or_rv {
   else {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
     $len = $pok ? length($pv) : 0;
-    ( $savesym, $pvmax ) = $pok ? savepv($pv) : ( 'NULL', 0 );
+    if ($pok) {
+      ( $savesym, $pvmax ) = savepv($pv);
+    } else {
+      ( $savesym, $pvmax ) = ( '0', 0 );
+    }
   }
 
   return ( $savesym, $pvmax, $len, $pv );
@@ -443,12 +446,18 @@ sub save_hek {
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = "(HEK *)$sym";
   my $cstr = cstring($str);
-  $decl->add(sprintf("Static HEK *%s;",$sym));
-  $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		     $sym, $cstr, length($cstr)-2, B::hash($str)));
+  if ($pv_copy_on_grow) {
+    $decl->add(sprintf("Static HEK *%s;",$sym));
+    $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+		       $sym, $cstr, length($cstr)-2, B::hash($str)));
+  } else {
+    $decl->add(sprintf("HEK *%s;",$sym));
+    $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+		       $sym, $cstr, length($cstr)-2, B::hash($str)));
+  }
   # (HEK*)ptr_table_fetch(PL_ptr_table, source);
   # $heksect->add("hv_store(PL_strtab, \"$str\", $len, NULL, hash($str));");
-  wantarray ? ( "(HEK *)$sym", length( pack "a*", $str ) ) : "(HEK *)$sym";
+  wantarray ? ( "$sym", length( pack "a*", $str ) ) : "$sym";
 }
 
 # See also init_op_ppaddr below; initializes the ppaddr to the
@@ -1229,11 +1238,16 @@ sub B::PV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  my $refcnt = $sv->REFCNT;
+  #$refcnt-- if $pv_copy_on_grow; 		# static pv, do not destruct
+  my $flags = $sv->FLAGS;
+  # $flags ||= 0x04000000 if $pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
+  # $flags = $flags || ($PERL510 ? 0x09000000 : 0x00900000) if $pv_copy_on_grow; # SvIsCOW = SVf_FAKE+SVf_READONLY
   if ($PERL510) {
     # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
     $xpvsect->add( sprintf( "0, %u, %u", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, %s",
-                           $xpvsect->index, $sv->REFCNT, $sv->FLAGS,
+                           $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $pv_copy_on_grow ? $savesym : "0"));
     if ( defined($pv) && !$pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
@@ -1242,12 +1256,8 @@ sub B::PV::save {
   }
   else {
     $xpvsect->add( sprintf( "%s, %u, %u", $savesym, $len, $pvmax ) );
-    $svsect->add(
-      sprintf(
-        "&xpv_list[%d], %lu, 0x%x",
-        $xpvsect->index, $sv->REFCNT, $sv->FLAGS
-      )
-    );
+    $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
+			 $xpvsect->index, $refcnt, $flags));
     if ( defined($pv) && !$pv_copy_on_grow ) {
       $init->add(
         savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
@@ -1264,28 +1274,16 @@ sub B::PVMG::save {
 
   if ($PERL510) {
     $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
-    $xpvmgsect->add(
-      sprintf(
-        "%s, %u, %u, %d, 0, 0",
-        $sv->NVX, $len, $pvmax, $sv->IVX
-      ) # $savesym
-    );
+    $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
+			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $savesym
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, %s",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
   else {
-    $xpvmgsect->add(
-      sprintf(
-        "%s, %u, %u, %d, %s, 0, 0",
-        $savesym, $len, $pvmax, $sv->IVX, $sv->NVX
-      )
-    );
-    $svsect->add(
-      sprintf(
-              "&xpvmg_list[%d], %lu, 0x%x",
-              $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS
-             )
-    );
+    $xpvmgsect->add(sprintf("%s, %u, %u, %d, %s, 0, 0",
+			    $savesym, $len, $pvmax, $sv->IVX, $sv->NVX));
+    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
+			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   if ( defined($pv) && !$pv_copy_on_grow ) {
     my $pvx =
@@ -1395,7 +1393,7 @@ sub B::RV::save {
   if ($PERL510) {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is not computable at load time
-    $svsect->add( sprintf( "0,\n\t%lu, 0x%x,\n\t0", $sv->REFCNT, $sv->FLAGS ) );
+    $svsect->add( sprintf( "0, %lu, 0x%x, 0", $sv->REFCNT, $sv->FLAGS ) );
     $init->add( sprintf( "sv_list[%d].sv_u.svu_rv = (SV*)%s;\n", $svsect->index, $rv ) );
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
@@ -3282,7 +3280,8 @@ help make use of this compiler.
 
 =head1 BUGS
 
-3-4. Current status: experimental.
+A few.
+Current status: experimental.
 
 5.6:
     reading from __DATA__ handles (15)
@@ -3296,6 +3295,7 @@ help make use of this compiler.
     sort by key (18)
     qr// in main (20)
     loop in sub (21)
+    destruction of static pvs for -O1
 
 5.11:
     4-5, 14-16, 21, 23
