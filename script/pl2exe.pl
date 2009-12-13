@@ -1,7 +1,7 @@
 #! perl
 # Fake a PE/COFF header, forcing Windows to load and interpret a perl script.
 
-open IN, (my $name = shift) or die "Syntax: pl2exe file.pl\n";
+open IN, (my $name = shift) or die "Syntax: pl2exe.pl file.pl\n";
 
 $name =~ s/\.pl$//;
 $name .= '.exe';
@@ -25,11 +25,11 @@ $headers .= pack ('SSLLLSS',	# the IMAGE_FILE_HEADER substructure
 		  0x14c,	# for Intel I386
 		  1,		# number of sections
 		  874806772,	# time-date stamp (whatever)
-		  0,0,		# uniteresting fields
+		  0,0,		# uninteresting fields
 		  224,		# size of the IMAGE_OPTIONAL_HEADER
 		  0x010f	# random flags: 0xa18e(?) for a DLL
 		  );
-$headers .= pack ('SCCL9S6L4SSL6',	# IMAGE_OPTIONAL_HEADERS substruct
+$headers .= pack ('SCCL9S6L4SSL6',# IMAGE_OPTIONAL_HEADERS substruct
 		  0x010b,	# 0x0107 would be a ROM image
 		  1,0,		# linker version maj.min (I guess that's us)
 		  $code_size,
