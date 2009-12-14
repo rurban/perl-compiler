@@ -1,4 +1,4 @@
-5.8, 5.6 and earlier had a good core perl compiler, but we try to be better.
+5.8, 5.6 and earlier had a good core perl compiler, but we are better.
 
 Basic testsuite added, coverage TODO.
 Bytecode compiler disabled for 5.6. 
