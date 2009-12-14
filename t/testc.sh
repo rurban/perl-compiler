@@ -3,7 +3,7 @@
 # for p in 5.6.2 5.8.6 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; perl$p Makefile.PL; t/testc.sh -O0 16; done
 # quiet c only: t/testc.sh -q -O0
 function help {
-  echo "t/testc.sh [OPTIONS] [1-26]"
+  echo "t/testc.sh [OPTIONS] [1-29]"
   echo " -D debugflags      for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
   echo " -O 0|1|2|3         optimization level"
   echo " -B static|dynamic  pass to cc_harness"
@@ -11,7 +11,7 @@ function help {
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
-  echo "Without arguments try all 26 tests. Without Option -Ox try all three optimizations."
+  echo "Without arguments try all 29 tests. Without Option -Ox try all three optimizations."
 }
 
 # use the actual perl from the Makefile (perl5.8.8, 
@@ -128,7 +128,7 @@ function ctest {
     fi
 }
 
-ntests=26
+ntests=29
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -201,6 +201,17 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 # lvalue
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
+# import test
+tests[27]='use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );'
+result[27]='ok'
+# require test -- 193 = Fcntl::O_WRONLY | &Fcntl::O_CREAT | &Fcntl::O_EXCL
+tests[28]='my $tmpdir = $ENV{TMPDIR} || "/tmp"; my $tmp_fh;my $fname;while(! sysopen($tmp_fh,($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)),193, 0600) ) { $bail++; die "Failed to create a tmp file after 500 tries" if ($bail > 500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
+result[28]='ok'
+# use test
+tests[29]='use IO;print "ok"'
+result[29]='ok'
+
+
 
 # 
 # getopts for -q -Du,-q -v -O2, -a -c

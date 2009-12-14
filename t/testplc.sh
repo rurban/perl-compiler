@@ -4,13 +4,13 @@
 # use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
 
 function help {
-  echo "t/testplc.sh [OPTIONS] [1-26]"
+  echo "t/testplc.sh [OPTIONS] [1-29]"
   echo " -s                 skip B:Debug, roundtrips and options"
   echo " -c                 continue on errors"
   echo " -q                 quiet"
   echo " -h                 help"
   echo "t/testplc.sh -q -s -c <=> perl -Mblib t/bytecode.t"
-  echo "Without arguments try all 26 tests. Without Option -Ox try all three optimizations."
+  echo "Without arguments try all 29 tests. Without Option -Ox try all three optimizations."
 }
 
 PERL=`grep "^PERL =" Makefile|cut -c8-`
@@ -117,7 +117,7 @@ function btest {
   fi
 }
 
-ntests=26
+ntests=29
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -187,6 +187,15 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 # lvalue fails with CC -O1, and with -O2 differently
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
+# import test
+tests[27]='use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );'
+result[27]='ok'
+# require test -- 193 = Fcntl::O_WRONLY | &Fcntl::O_CREAT | &Fcntl::O_EXCL
+tests[28]='my $tmpdir = $ENV{TMPDIR} || "/tmp"; my $tmp_fh;my $fname;while(! sysopen($tmp_fh,($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)),193, 0600) ) { $bail++; die "Failed to create a tmp file after 500 tries" if ($bail > 500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
+result[28]='ok'
+# use test
+tests[29]='use IO;print "ok"'
+result[29]='ok'
 
 
 while getopts "qscCh" opt
