@@ -72,7 +72,7 @@ $byterun_c : bytecode.pl @headers Makefile
 $byterun_h : bytecode.pl @headers Makefile
 	\$(PERL) bytecode.pl
 ";
-    $result = "test :: subdirs-test\n\n" if $] > 5.009;
+    $result .= "\ntest :: subdirs-test\n\n" if $] > 5.009;
     $result;
 }
 
