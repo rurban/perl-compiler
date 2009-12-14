@@ -2,8 +2,9 @@
     Started on CPAN with B-C-1.04_12.
     The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
 
-1.04_31	2009-12-13 rurban
+1.04_31	2009-12-14 rurban
 	* C.pm: fix test 21 on 5.10 "Bad free() ignored". Dynamically allocate CopLABEL
+	* Makefile.PL: fix the make depend section > 5.9
 
 1.04_30 2009-12-13 rurban
 	Better 5.6 support, but Bytecode compiler still disabled.

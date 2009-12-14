@@ -32,6 +32,7 @@ my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
 my @todo = (11,15); #5.8.9
+@todo = (15) if !$ITHREADS; # On 5.8-nt only 15 fails
 @todo = (15,25) if $] < 5.007;
 @todo = (10..15,17..22,23) if $] >= 5.010;
 #@todo = (10..15,17..20,22,23) if $] >= 5.011;

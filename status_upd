@@ -37,13 +37,16 @@ while (@g) {
   my $failed = shift @g;
   unless ($prefix) {
     ($prefix) = $file =~ m{log.test-(.*?)-t/};
-    if ($oldprefix ne $prefix) {
+    if ($prefix and $oldprefix ne $prefix) {
+      $prefix = 'cygwin' if $prefix eq 'ATGRZWN502840';
       $s .= "\n$prefix:\n";
       print STDERR "\n$prefix:\n";
     }
   }
+  next unless $prefix;
   ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
   chomp $file if $file;
+  next unless $file;
   $failed =~ s{^.+Failed tests:}{Failed tests:};
   chomp $failed;
   my $c = "$file\t";
