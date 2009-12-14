@@ -204,7 +204,7 @@ result[26]="26";
 
 # 
 # getopts for -q -Du,-q -v -O2, -a -c
-while getopts "hqacDB:O:" opt
+while getopts "hqacD:B:O:" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
