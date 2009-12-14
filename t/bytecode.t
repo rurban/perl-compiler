@@ -50,16 +50,10 @@ if ($DEBUGGING) {
     use B::Asmdata q(@insn_name);
     for (0..@insn_name) { $insncov{$_} = 0; }
   }
-  #@todo = (9..10, 12) if $] > 5.009;
-  #@todo = (7, 11, 15) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
-  @todo = (3..5,7,9..12,20) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
-  @todo = (5,9..12,16,20..21) if $] >= 5.011;
-} else {
-  #@todo = (2..11, 13..16, 18..19) if $] > 5.009;
-  #@todo = (2..5, 7, 11) if $] > 5.009;
-  #@todo = (4,11,16) if ($] >= 5.011 and !$ITHREADS);
 }
-#@todo = (3,6,8..10,12,15..16,18,25..26) if $] < 5.007; # CORE failures (ours not yet enabled)
+@todo = (9..12,20) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
+@todo = (9..12,16,20,21) if $] >= 5.011;
+@todo = (3,6,8..10,12,15,16,18,25,26) if $] < 5.007; # CORE failures (ours not yet enabled)
 
 my %todo = map { $_ => 1 } @todo;
 my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls

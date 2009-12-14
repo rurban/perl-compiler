@@ -32,12 +32,12 @@ my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
 my @todo = (15); # 8,14-16 fail on 5.00505
-# 14+23 fixed with 1.04_29
+# 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
 # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
 # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
 @todo = (15,25) if $] < 5.007;
-@todo = (11,14,15,23) if $] >= 5.010;
-@todo = (11,14..16,23) if $] >= 5.011;
+@todo = (15,16) if $] >= 5.010;
+@todo = (14..16,23) if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;
 

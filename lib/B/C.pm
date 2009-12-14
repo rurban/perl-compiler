@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_31';
+our $VERSION = '1.04_32';
 
 package B::C::Section;
 
@@ -1191,43 +1191,53 @@ sub B::PVNV::save {
 sub B::BM::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if defined $sym;
-  my $pv = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
-  my $len = length($pv);
-  $xpvbmsect->comment(
-    'pv,len,len+258,IVX,NVX,0,0,USEFUL,PREVIOUS,RARE');
-  $xpvbmsect->add(
-    sprintf(
-            "%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
-            $PERL510 ? '0' : (defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"),
-            $len,        $len + 258,    $sv->IVX, $sv->NVX,
-            $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
-           )
-  );
+  return $sym if  !$PERL510 and defined $sym;
+  my $pv;
   if ($PERL510) {
-    $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x, %s",
-                         $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS,
-                         defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"));
+    $pv = $sv->PV;
   } else {
+    $pv = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
+  }
+  my $len = length($pv);
+  if ($PERL510) {
+    $init->add( sprintf( "$sym = (GV*)newSV(%d);", $len ),
+		sprintf( "SvFLAGS($sym) = 0x%x;", $sv->FLAGS ),
+		sprintf( "SvREFCNT($sym) = %u;", $sv->REFCNT ),
+		sprintf( "SvPVX($sym) = %s;", cstring($pv) ) );
+  } else {
+    $xpvbmsect->comment('pv,len,len+258,IVX,NVX,0,0,USEFUL,PREVIOUS,RARE');
+    $xpvbmsect->add
+      (
+       sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
+	       $PERL510 ? '0' : (defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"),
+	       $len,        $len + 258,    $sv->IVX, $sv->NVX,
+	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
+	      ));
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
                          $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
+    $sv->save_magic;
   }
-  $sv->save_magic;
 
   if (!$pv_copy_on_grow) {
     if ($PERL510) {
-      $init->add(savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      $init->add(savepvn("$sym->sv_u.svu_pv", $pv ) );
     }
     else {
       $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
     }
   }
-  $init->add(
-    sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len - 257 ) );
-  # TODO fbm_compile since 5.8 is doing something we haven't caught yet
-  $init->add(
-    sprintf( "fbm_compile(&sv_list[%d], 0);", $svsect->index) ) unless $PERL56;
-  savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  if ($PERL510) {
+    # Since 5.10 we don't care for saving the table. fbm_compile will do.
+    warn "Saving FBM for GV $sym\n" if $debug{gv};
+    $init->add("fbm_compile((SV*)&$sym, 0);");
+    $sv->save_magic;
+    return $sym;
+  } else {
+    $init->add(sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len - 257 ) );
+    # XXX fbm_compile since 5.8 is doing something we haven't caught yet
+    $init->add(sprintf( "fbm_compile(&sv_list[%d], 0);", $svsect->index) ) unless $PERL56;
+    return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  }
 }
 
 sub B::PV::save {
@@ -1268,11 +1278,12 @@ sub B::PVMG::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  warn sprintf( "PVMG %s (0x%x)\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
     $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
     $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
-			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $savesym
+			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $pvsym?
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, %s",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
@@ -1282,10 +1293,13 @@ sub B::PVMG::save {
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
-  if ( defined($pv) && !$pv_copy_on_grow ) {
-    my $pvx =
-      $] < 5.009 ? "xpvmg_list[%d].xpv_pv" : "xpvmg_list[%d].xiv_u.xivu_p1";
-    $init->add( savepvn( sprintf( $pvx, $xpvmgsect->index ), $pv ) );
+  if ( !$pv_copy_on_grow ) {
+    $pv = (!$savesym or $savesym eq 'NULL') ? '(SV*)&PL_sv_undef' : $pv;
+    if ($PERL510) {
+      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+    } else {
+      $init->add(savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
+    }
   }
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   $sv->save_magic;
@@ -1309,6 +1323,8 @@ sub B::PVMG::save_magic {
     # XXX Hope stash is already going to be saved.
     $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$stash ) );
   }
+  # protect our SVs
+  return $sv if $PERL510 and $sv->FLAGS & 0x40040000;
   my @mgchain = $sv->MAGIC;
   my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
   foreach $mg (@mgchain) {
@@ -1698,22 +1714,20 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  warn sprintf( "  GV type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), $gv->FLAGS )
+  warn sprintf( "  GV $sym type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), $gv->FLAGS )
     if $debug{gv} and !$PERL56; # B::SV::SvTYPE not with 5.6
-  # only PVGV or PVLV have names. crash in test 11: 2nd GV "x" is a (CV*) but of type 9 (GV)
-  my ($is_empty, $gvname, $fullname, $name) = (1,'','','');
-  #warn sprintf ("0x%x 0x%x 0x%x", 0x4000|0x8000, $gv->FLAGS && 0x4000, $gv->FLAGS && 0x8000);
-  #if ($PERL510 and ($gv->FLAGS && 0xc000) != 0x8000) {
-  #  warn "  invalid GV $sym\n";
-    #return $sym;
-  #}# else
-  {
-    $is_empty = $gv->is_empty;
-    $gvname   = $gv->NAME;
-    $fullname = $gv->STASH->NAME . "::" . $gvname;
-    $name     = cstring($fullname);
-    warn "  GV name is $name\n" if $debug{gv};
+  if ($PERL510 and $gv->FLAGS & 0x40000000) { # SVpbm_VALID
+    warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
+    return B::BM::save($gv);
   }
+  # Only PVGV or PVLV have names. crash in test 11: 2nd GV "x" is a (CV*) but of type 9 (GV)
+  # Also fails for test 11 at GV (PVBM) "Can" >=5.10
+  my ($is_empty, $gvname, $fullname, $name) = (1,'','','');
+  $is_empty = $gv->is_empty;
+  $gvname   = $gv->NAME;
+  $fullname = $gv->STASH->NAME . "::" . $gvname;
+  $name     = cstring($fullname);
+  warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
   my $is_special = $gv->isa("B::SPECIAL");
 
@@ -1758,12 +1772,10 @@ sub B::GV::save {
       $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
     }
   }
+  $init->add(sprintf( "SvFLAGS($sym) = 0x%x;", $svflags ));
   my $gvflags = $gv->GvFLAGS;
   if ($gvflags > 256) { $gvflags = $gvflags && 256 }; # $gv->GvFLAGS as U8
-  $init->add(
-    sprintf( "SvFLAGS($sym) = 0x%x;", $svflags ),
-    sprintf( "GvFLAGS($sym) = %d;",   $gvflags )
-  );
+  $init->add(sprintf( "GvFLAGS($sym) = %d;",   $gvflags ));
   $init->add( sprintf( "GvLINE($sym) = %d;",
 		       ($gv->LINE > 2147483647  # S32 INT_MAX
 			? 4294967294 - $gv->LINE
@@ -1821,7 +1833,6 @@ sub B::GV::save {
       $gvsv->save; #mostly NULL. $gvsv->isa("B::NULL");
       $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       warn "GV::save \$$name\n" if $debug{gv};
-#save_main_rest();exit; # test 11 crashes around here
     }
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
@@ -3289,13 +3300,12 @@ Current status: experimental.
 
 5.10:
     +
-    sort by key (18)
-    qr// in main (20)
-    loop in sub (21)
+    special our handling: (tests 14 + 23)
     destruction of static pvs for -O1
 
 5.11:
-    4-5, 14-16, 21, 23
+    +
+    test 16
 
 =head1 AUTHOR
 
