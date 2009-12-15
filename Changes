@@ -1,6 +1,11 @@
 -*- change-log -*-
-    Started on CPAN with B-C-1.04_12.
-    The perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked fine with 5.6
+	Started on CPAN with B-C-1.04_12
+	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
+	quite fine with Perl 5.6
+
+1.04_33	2009-12-?? rurban
+	* t/cc*.t: skip some tests
+	* MANIFEST: dummy lib/B/Asmdata.pm added (cpan smokes). Thanks Slaven!
 
 1.04_32	2009-12-14 rurban
 	Only two 5.10 B::C bugs remaining!
@@ -10,7 +15,8 @@
 	Special PVMG PL_sv_undef string. (namesv problem on 10,14,23)
 
 1.04_31	2009-12-14 rurban
-	* C.pm: fix test 21 on 5.10 "Bad free() ignored". Dynamically allocate CopLABEL
+	* C.pm: fix test 21 on 5.10 "Bad free() ignored". Dynamically
+	allocate CopLABEL.
 	* Makefile.PL: fix the make depend section > 5.9
 	* t/testc.sh: fix -D option
 
@@ -29,8 +35,8 @@
 	Added logic to include all possible unsupported ops, all holes.
 	bytecode table checked for 5.6.1, 5.6.2, 5.8.0, 5.8.1-5.11
 	Note, that I found official and contradicting 5.6.1 releases. 
-	ActiveState 5.6.1.626 had no op_children, the unix release tarball with 5.6.1 
-	(called Trial 1) still has it.
+	ActiveState 5.6.1.626 had no op_children, the unix release tarball 
+	with 5.6.1 (called Trial 1) still has it.
 	
 	* ByteLoader.pm (1.06_06): better bytecode numbering.
 	* Asmdata.pm (1.02_02): strict numbering along 5.8.
@@ -50,9 +56,11 @@
 	* C.pm: fix test 16 on 5.10 again, non-threaded only (GVAV magic). 
 	  first fix in 1.04_24, broken in 1.04_28. On 5.11 I have a broken 
 	  RV handling here.
-	Remove version and Regexp::DESTROY from the automatic methods (experimental).
+	Remove version and Regexp::DESTROY from the automatic methods 
+	(experimental).
 	First attempts with pv and hek consting failed.
-	* t/testc.sh, t/testplc.sh: support proper cmdline arguments, add -h for help
+	* t/testc.sh, t/testplc.sh: support proper cmdline arguments, add -h for 
+	help
 	Fixed test 5 by fixing the wrong test.
 	* perloptree.pod: renamed from perloptreeguts.pod. Added links.
 
@@ -120,7 +128,8 @@
 	* script/perlcc: a.exe for cygwin also
 	
 1.04_24 2009-11-29 rurban
-	* C.pm: fixed more CV basics (test 9), just stash for autoload missing (test 8).
+	* C.pm: fixed more CV basics (test 9), just stash for autoload missing
+	(test 8).
 	PVLV adjusted, but no testcase yet.
 	IO adjusted. Fixes test 4.
 	re-enabled Perl 5.6, all tests but 8,15 pass with t/testc.sh. make test not.
@@ -136,7 +145,8 @@
 	* C.pm: GvGP handling improved. added more sect comments.
 	added -u option "unused" not to print verbose debugging info 
 	for unused subs.
-	Fixed CV XPVCVIX initialisation - off-by-one error, wrong CvFLAGS. Fixes test 6.
+	Fixed CV XPVCVIX initialisation - off-by-one error, wrong CvFLAGS. 
+	Fixes test 6.
 	* run perltidy -i=2
 
 1.04_22 2009-11-16 rurban
@@ -190,7 +200,8 @@
 	* ByteLoader: Fixes for 5.11 by using PM_SETRE (test 7 still failing)
 	* Bytecode: removed op_reflags. pregcomp with op_pmflags alone 
 	  is enough to reconstruct it.
-	* C,CC: enabled static_ext + DynaLoader boot section again. Fixed in cygperl.
+	* C,CC: enabled static_ext + DynaLoader boot section again. Fixed in 
+	cygperl.
 	* CC: fixed Bug#55302 PP_EVAL by adding PP_EVAL_thr for threaded perl. 
 	  cc_runtime.h was always wrong on this!
 
@@ -387,8 +398,8 @@
 	* first package layout for all now non-CORE packages.
 
 ===================================================================
-B::C was 1.03 when exterminated.
-Oops, Module::Corelist says 1.05 for 5.9.4, Right so.	
+
+B::C was at 1.05 when removed from core with 5.9.4.
 
 Nicholas Clark <nwc10+p5p4@colon.colondot.net>  2007-05-07 15:35:56
     bytecode.pl:        Exterminate!
@@ -633,7 +644,8 @@ Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-17 17:50:50
 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-12-17 10:59:40
 	* Fix typo in compiler B/C.pm.
 
-Alpha5 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-12-10 18:33:53
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-12-10 18:33:53
+	Alpha5
 	* Start overhauling compiler. It was working at least minimally
     right up until the final tweak of B.xs to add threadsv_names
     at which point building it provokes a seg fault in perl while
@@ -652,6 +664,7 @@ Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-07-05 11:58:05
 	* B::CC::pp_padsv must cope with vivify_ref (5.004)
 	  as well as provide_ref (5.003)
 
-a4 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-05-03 14:47:06  
+Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1997-05-03 14:47:06  
+	Alpha 4
 	* initial check in of compiler
 	from version Alpha a3 to a4

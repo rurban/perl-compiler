@@ -1,4 +1,5 @@
 Artistic
+lib/B/Asmdata.pm
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
@@ -52,6 +53,7 @@ ramblings/magic
 ramblings/reg.alloc
 ramblings/runtime.porting
 README
+README.alpha
 regen_lib.pl
 script/assemble
 script/cc_harness
