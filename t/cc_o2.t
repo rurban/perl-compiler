@@ -36,7 +36,11 @@ my @todo = (10,15..16,18,21,25,26); # 5.8
 @todo = (10,12,15,16,18,21,25,26) if $] >= 5.010;
 @todo = (10,15,16,18,21,25,26) if $] >= 5.011;
 
+# skip known limitations, like custom sort or runtime labels
+my @skip = $AUTHOR ? () : (18,21,25);
+
 my %todo = map { $_ => 1 } @todo;
+my %skip = map { $_ => 1 } @skip;
 
 print "1..".($#tests+1)."\n";
 
@@ -44,5 +48,10 @@ my $cnt = 1;
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO" : "#";
   my ($script, $expect) = split />>>+\n/;
-  run_cc_test($cnt++, "CC,-O2", $script, $expect, $keep_c, $keep_c_fail, $todo);
+  if ($skip{$cnt}) {
+    print sprintf("ok %d # skip\n", $cnt);
+  } else {
+    run_cc_test($cnt, "CC,-O2", $script, $expect, $keep_c, $keep_c_fail, $todo);
+  }
+  $cnt++;
 }
