@@ -211,8 +211,6 @@ result[28]='ok'
 tests[29]='use IO;print "ok"'
 result[29]='ok'
 
-
-
 # 
 # getopts for -q -Du,-q -v -O2, -a -c
 while getopts "hqacD:B:O:" opt
@@ -228,7 +226,7 @@ do
     OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
     CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
   fi
-  if [ "$opt" = "c" ]; then CONT=1; shift; fi
+  if [ "$opt" = "c" ]; then CONT=1; fi
   if [ "$opt" = "h" ]; then help; exit; fi
   # -D options: u,-q for quiet, no -D for verbose
   if [ "$opt" = "D" ]; then
