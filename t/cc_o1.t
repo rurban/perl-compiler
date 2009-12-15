@@ -34,7 +34,7 @@ my @tests = tests();
 my @todo = (15,18,21,25..26); # 5.8
 @todo = (15,18,21,25,26) if $] < 5.007;
 @todo = (12,15,16,18,21,25,26) if $] >= 5.010;
-@todo = (15,16,18,21,23,25,26) if $] >= 5.011;
+@todo = (15,16,18,21,25,26) if $] >= 5.011;
 
 # skip known limitations, like custom sort or runtime labels
 my @skip = $AUTHOR ? () : (18,21,25);

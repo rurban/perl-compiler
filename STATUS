@@ -117,6 +117,8 @@ TODO for B::C:
   Compiler errors: GvCV RV of stash (test 16)
   namesv: test 10 -O1, 14, 23
 
+test 16: main::a is missing the HV magic (again). worked in _30
+
 DONE:
 index (fbm_compile) for GVs fixed with 1.04_31
 

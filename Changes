@@ -6,6 +6,10 @@
 1.04_33	2009-12-?? rurban
 	* t/cc*.t: skip some tests
 	* MANIFEST: dummy lib/B/Asmdata.pm added (cpan smokes). Thanks Slaven!
+	* C.pm: fix tests 14,16,23 on >=5.10, missing AV magic for CV main::a,
+	protect PVMG from SvPAD_OUR.
+	* t/testc.sh: Added test 27 (import), test 28 (require), test 29 (use)
+	[Nick Koston]
 
 1.04_32	2009-12-14 rurban
 	Only two 5.10 B::C bugs remaining!

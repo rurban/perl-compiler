@@ -1230,7 +1230,7 @@ sub B::BM::save {
     # Since 5.10 we don't care for saving the table. fbm_compile will do.
     warn "Saving FBM for GV $sym\n" if $debug{gv};
     $init->add("fbm_compile((SV*)&$sym, 0);");
-    $sv->save_magic;
+    $sv->save_magic; # possible additional magic. fbm_compile adds 'B'
     return $sym;
   } else {
     $init->add(sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len - 257 ) );
@@ -1308,8 +1308,9 @@ sub B::PVMG::save {
 
 sub B::PVMG::save_magic {
   my ($sv) = @_;
-  warn sprintf( "saving magic for %s (0x%x) - called from %s:%s\n",
-		class($sv), $$sv, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
+  my $sv_flags = $sv->FLAGS;
+  warn sprintf( "saving magic for %s (0x%x) flags=0x%x  - called from %s:%s\n",
+		class($sv), $$sv, $sv_flags, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{mg};
   my $stash = $sv->SvSTASH;
   # test 16: On 5.10 the stash is a RV to a HV. On 5.11 a SPECIAL (RV) to a HV
@@ -1323,8 +1324,13 @@ sub B::PVMG::save_magic {
     # XXX Hope stash is already going to be saved.
     $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$stash ) );
   }
-  # protect our SVs
-  return $sv if $PERL510 and $sv->FLAGS & 0x40040000;
+  # Protect our SVs against non-magic or SvPAD_OUR. fixes tests 16 and 14 + 23
+  my $sv_type = $sv_flags & 0xff;
+  if ($PERL510 and ($sv_type < 8 or (($sv_flags & 0x40040000) == 0x40040000))) {
+    warn sprintf("Skipping invalid PVMG type=%d, flags=0x%x (PAD_OUR?)\n", $sv_type, $sv_flags)
+      if $debug{mg};
+    return $sv;
+  }
   my @mgchain = $sv->MAGIC;
   my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
   foreach $mg (@mgchain) {
@@ -1720,13 +1726,10 @@ sub B::GV::save {
     warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
     return B::BM::save($gv);
   }
-  # Only PVGV or PVLV have names. crash in test 11: 2nd GV "x" is a (CV*) but of type 9 (GV)
-  # Also fails for test 11 at GV (PVBM) "Can" >=5.10
-  my ($is_empty, $gvname, $fullname, $name) = (1,'','','');
-  $is_empty = $gv->is_empty;
-  $gvname   = $gv->NAME;
-  $fullname = $gv->STASH->NAME . "::" . $gvname;
-  $name     = cstring($fullname);
+  my $is_empty = $gv->is_empty;
+  my $gvname   = $gv->NAME;
+  my $fullname = $gv->STASH->NAME . "::" . $gvname;
+  my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
   my $is_special = $gv->isa("B::SPECIAL");
@@ -3301,11 +3304,11 @@ Current status: experimental.
 5.10:
     +
     special our handling: (tests 14 + 23)
+    main::a missing AV magic (test 16)
     destruction of static pvs for -O1
 
 5.11:
-    +
-    test 16
+
 
 =head1 AUTHOR
 
