@@ -31,13 +31,13 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
-my @todo = (11,15); # 8,14-16 fail on 5.00505
-@todo = (15) if !$ITHREADS; # On 5.8-nt only 15 fails
+my @todo = (15,28,29); # 8,14-16 fail on 5.00505
+#  @todo = (15) if !$ITHREADS; # On 5.8-nt only 15 fails
 # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
 # 5.8.8 CORE: 1,3-8,10-12,14,15,17-24 / non-threaded: 5,7-12,14-20,22-23,25
-@todo = (15,25) if $] < 5.007;
-@todo = (10,12,13,15..20,22) if $] >= 5.010;
-@todo = (10,12,13,15..20,22) if $] >= 5.011;
+@todo = (15,25,28,29) if $] < 5.007;
+@todo = (10,12,13,15..20,22,28,29) if $] >= 5.010;
+@todo = (10,12,13,15..20,22,28,29) if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;
 

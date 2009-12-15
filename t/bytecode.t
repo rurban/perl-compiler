@@ -53,7 +53,7 @@ if ($DEBUGGING) {
 }
 @todo = (9..12,20) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
 @todo = (9..12,16,20,21) if $] >= 5.011;
-@todo = (3,6,8..10,12,15,16,18,25,26) if $] < 5.007; # CORE failures (ours not yet enabled)
+@todo = (3,6,8..10,12,15,16,18,25,26,28) if $] < 5.007; # CORE failures (ours not yet enabled)
 
 my %todo = map { $_ => 1 } @todo;
 my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls

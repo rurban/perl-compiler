@@ -202,10 +202,10 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
 # import test
-tests[27]='use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );'
+tests[27]='use Fcntl; print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
-# require test -- 193 = Fcntl::O_WRONLY | &Fcntl::O_CREAT | &Fcntl::O_EXCL
-tests[28]='my $tmpdir = $ENV{TMPDIR} || "/tmp"; my $tmp_fh;my $fname;while(! sysopen($tmp_fh,($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)),193, 0600) ) { $bail++; die "Failed to create a tmp file after 500 tries" if ($bail > 500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
+# require test
+tests[28]='my $tmpdir = $ENV{TMPDIR} || "/tmp"; my $fname;while(! open(my $tmp_fh,">", ($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999))) ) { $bail++; die "Failed to create a tmp file after 500 tries" if ($bail > 500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
 result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
