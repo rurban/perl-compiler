@@ -420,7 +420,7 @@ sub save_pv_or_rv {
   my $pok = $sv->FLAGS & SVf_POK;
   my ( $len, $pvmax, $savesym, $pv ) = ( 0, 0 );
   if ($rok) {
-    $savesym = '(char*)' . save_rv($sv);
+    $savesym = save_rv($sv); # was "(char*)" test 29 on 5.11
   }
   else {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
@@ -1280,7 +1280,19 @@ sub B::PVMG::save {
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   warn sprintf( "PVMG %s (0x%x)\n", $sym, $$sv ) if $debug{mg};
 
-  if ($PERL510) {
+  if ($PERL511) {
+    $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
+    # how to optimize RV? sv => sv->RV cannot be initialized static.
+    if ($sv->FLAGS & SVf_ROK) {
+      $init->add(sprintf("SvRV_set(&sv_list[%d], %s);", $svsect->index+1, $savesym));
+      $savesym = '0';
+    }
+    $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
+			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $pvsym?
+    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, %s",
+                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
+  }
+  elsif ($PERL510) {
     $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
     $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
 			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $pvsym?
@@ -1445,7 +1457,8 @@ sub B::RV::save {
 
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
-  warn sprintf( "No definition for sub %s::%s\n", $cvstashname, $cvname );
+  warn sprintf( "No definition for sub %s::%s. Try autoload\n", $cvstashname, $cvname )
+    if $verbose;
 
   # Handle AutoLoader classes explicitly. Any more general AUTOLOAD
   # use should be handled by the class itself.
@@ -1612,7 +1625,7 @@ sub B::CV::save {
   }
   else {
     warn sprintf( "No definition for sub %s::%s (unable to autoload)\n",
-      $cvstashname, $cvname );    # debug
+      $cvstashname, $cvname ) if $verbose;
   }
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
   if ($PERL510) {

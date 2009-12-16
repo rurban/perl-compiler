@@ -62,7 +62,7 @@ my %ignore_op;          # Hash of ops which do nothing except returning op_next
 my %need_curcop;        # Hash of ops which need PL_curcop
 
 my %lexstate;           #state of padsvs at the start of a bblock
-my $verbose = 1;
+my $verbose;
 
 BEGIN {
   foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
@@ -138,7 +138,8 @@ sub init_hash {
 
 sub debug {
   if ( $debug{runtime} ) {
-    warn(@_);
+    # TODO: fix COP to callers line number
+    warn(@_) if $verbose;
   }
   else {
     my @tmp = @_;
@@ -822,10 +823,10 @@ sub pp_gvsv {
   my $op = shift;
   my $gvsym;
   if ($ITHREADS) {
-    #debug(sprintf("OP name=%s, class=%s",$op->name,class($op))) if $debug{pad};
-    debug( sprintf( "GVSV->padix = %d", $op->padix ) ) if $debug{pad};
+    #debug(sprintf("OP name=%s, class=%s\n",$op->name,class($op))) if $debug{pad};
+    debug( sprintf( "GVSV->padix = %d\n", $op->padix ) ) if $debug{pad};
     $gvsym = $pad[ $op->padix ]->as_sv;
-    debug( sprintf( "GVSV->private = 0x%x", $op->private ) ) if $debug{pad};
+    debug( sprintf( "GVSV->private = 0x%x\n", $op->private ) ) if $debug{pad};
   }
   else {
     $gvsym = $op->gv->save;
@@ -1173,7 +1174,7 @@ BEGIN {
 sub pp_sassign {
   my $op        = shift;
   my $backwards = $op->private & OPpASSIGN_BACKWARDS;
-  debug( sprintf( "sassign->private=0x%x", $op->private ) ) if $debug{op};
+  debug( sprintf( "sassign->private=0x%x\n", $op->private ) ) if $debug{op};
   my ( $dst, $src );
   if ( @stack >= 2 ) {
     $dst = pop @stack;
@@ -1381,7 +1382,12 @@ sub pp_require {
   write_back_stack();
   my $sym = doop($op);
   runtime("while (PL_op != ($sym)->op_next && PL_op != (OP*)0 ){");
-  runtime("PL_op = (*PL_op->op_ppaddr)(ARGS);");
+  if ($Config{use5005threads}) {
+    # macro ARGS (pp.h) not in >= 5.10 (test 28).
+    runtime("PL_op = (*PL_op->op_ppaddr)(ARGS);");
+  } else {
+    runtime("PL_op = (*PL_op->op_ppaddr)(aTHX);");
+  }
   runtime("SPAGAIN;}");
   $know_op = 1;
   invalidate_lexicals( REGISTER | TEMPORARY );
@@ -1562,7 +1568,7 @@ sub enterloop {
   my $lastop = $op->lastop;
   my $redoop = $op->redoop;
   $curcop->write_back;
-  debug "enterloop: pushing on cxstack" if $debug{cxstack};
+  debug "enterloop: pushing on cxstack\n" if $debug{cxstack};
   push(
     @cxstack,
     {
@@ -1574,7 +1580,7 @@ sub enterloop {
       redoop  => $redoop
     }
   );
-  debug sprintf("enterloop: cxstack label %s", $curcop->[0]->label) if $debug{cxstack};
+  debug sprintf("enterloop: cxstack label %s\n", $curcop->[0]->label) if $debug{cxstack};
   $nextop->save;
   $lastop->save;
   $redoop->save;
@@ -1589,7 +1595,7 @@ sub pp_leaveloop {
   if ( !@cxstack ) {
     die "panic: leaveloop";
   }
-  debug "leaveloop: popping from cxstack" if $debug{cxstack};
+  debug "leaveloop: popping from cxstack\n" if $debug{cxstack};
   pop(@cxstack);
   return default_pp($op);
 }
@@ -1985,6 +1991,7 @@ OPTION:
     }
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
+      $verbose++;
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
           B->debug(1);

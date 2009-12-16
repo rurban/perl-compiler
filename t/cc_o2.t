@@ -29,14 +29,15 @@ BEGIN {
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
+my $AUTHOR    = -d ".svn";
 
 my @tests = tests();
 my @todo = (10,15..16,18,21,25,26); # 5.8
-@todo = (10,15,16,18,21,25,26) if $] < 5.007;
-@todo = (10,12,15,16,18,21,25,26) if $] >= 5.010;
-@todo = (10,15,16,18,21,25,26) if $] >= 5.011;
+@todo = (10,15,16,18,21,25..29) if $] < 5.007;
+@todo = (10,12,15,16,18,21,25,26,28,29) if $] >= 5.010;
+#@todo = (10,12,15,16,18,21,25,26,28,29) if $] >= 5.011;
 
-# skip known limitations, like custom sort or runtime labels
+# skip core dump causing known limitations, like custom sort or runtime labels
 my @skip = $AUTHOR ? () : (18,21,25);
 
 my %todo = map { $_ => 1 } @todo;

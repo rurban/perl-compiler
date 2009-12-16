@@ -14,17 +14,18 @@ Several B::C and B::CC bugs fixed. 5.10 compatibility added.
 Open Problems:
 5.6:
     reading from __DATA__ handles (15)
-    test 25
+    test 25, 27
     XSUB load order via B::Stash (?). Usually fixed via perlcc.
 5.8:
     none else
 5.10:
     +
-    test 16
+    require $scalar
+    use IO: wrong static sv_u.svu_iv init (29)
     destruction of static pvs for -O1
 5.11:
     +
-    special our handling: (tests 14 + 23)
+    S_unshare_hek_or_pvn (16)
 See below at detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
@@ -36,29 +37,29 @@ CORE (old)
 ----
 p=perl5.6.2
 t/testc.sh -q -c
-for t in $(seq -f"%02.0f" 26); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
+for t in $(seq -f"%02.0f" 29); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
 p=perl5.8.8
-for t in $(seq -f"%02.0f" 26); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bstatic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
+for t in $(seq -f"%02.0f" 29); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bstatic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
 p=perl5.8.8-nt
-for t in $(seq -f"%02.0f" 26); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bdynamic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
+for t in $(seq -f"%02.0f" 29); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bdynamic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
 
 5.6.2:
-t/bytecode      3,6,8..10,12,15,16,18,25,26
-t/c             8,15,16,22
-t/c_o1          8,15,16,22
-t/c_o2          8,15,16,22
-t/cc            15,18,21,25
-t/cc_o1         15,18,21,25
-t/cc_o2         10,15,16,18,21,25,26
+t/bytecode      3,6,8..10,12,15,16,18,25,26,27,28
+t/c             8,15,16,22,27,28
+t/c_o1          8,15,16,22,27,28
+t/c_o2          8,15,16,22,27,28
+t/cc            15,18,21,25,27,28
+t/cc_o1         15,18,21,25,27,28
+t/cc_o2         10,15,16,18,21,25,26,27,28
 
-5.8:                                    | non-threaded
+5.8:                                            | non-threaded
 t/bytecode      ok
-t/c             11,14,15,20,23          | 5,7-12,14-20,22-23,25
-t/c_o1          1,3-8,10-12,14,15,17-24 | 5,7-12,14-20,22-23,25
-t/c_o2          1,3-12,14,15,17-25      | 5,7-12,14-20,22-23,25
-t/cc            7,11,14,15,18-21,23-25
-t/cc_o1         7,11,14,15,18-21,23-26
-t/cc_o2         7,10,11,14-16,18-21,23-26
+t/c             11,14,15,20,23,27..29      	| 5,7-12,14-20,22-23,25,27,28
+t/c_o1          1,3-8,10..12,14,15,17..25,27..29| 7-12,14-20,22-23,25,27,28
+t/c_o2          1,3-12,14,15,17..25,27..29     	| 7-12,14-20,22-23,25,27,28
+t/cc            7,11,14,15,18..21,23..25,28,29
+t/cc_o1         7,11,14,15,18..21,23..29
+t/cc_o2         7,10,11,14..16,18-21,23..29
 
 B::C (new)
 ----
@@ -66,60 +67,60 @@ t/testc.sh -q -c; t/testcc.sh -q -c or make test TEST_VERBOSE=1
 
 5.6.2:					| non-threaded
 t/bytecode      broken
-t/c             15,25             	| 15
-t/c_o1          15,22			| 15
-t/c_o2          15,24			| 15
-t/cc            15,18,21
-t/cc_o1         15,18,21
-t/cc_o2         10,15,16,18,21,26
+t/c             15,25,27,28            	| 15
+t/c_o1          15,25,27..29		| 15
+t/c_o2          15,25,27,28		| 15
+t/cc            15,18,21,25,27..29
+t/cc_o1         15,18,21,25..28
+t/cc_o2         10,15,16,18,21,25..29
 
 5.8.8: (5.8.8 + 5.8.8-nt)		| non-threaded
 t/bytecode      ok
-t/c             15		     	| 15
-t/c_o1          11,15  			| 15
-t/c_o2          11,15	 		| 15
-t/cc            15,18,21,25		| 15,18,21,25
-t/cc_o1         15,18,21,25,26		| 15,18,21,25,26
-t/cc_o2         10,15..16,18,21,25,26	| 10,15,16,18,21,25,26
+t/c             15,27,28	     	| 15,27,28
+t/c_o1          15,28,29		| 15,28,29
+t/c_o2          15,27,28 		| 15,27,28
+t/cc            15,18,21,25,27..29	| 15,18,21,25,27..28
+t/cc_o1         15,18,21,25..28		| 15,18,21,25..28
+t/cc_o2         10,15..16,18,21,25..28	| 10,15,16,18,21,25..28
 
 5.8.9:
 t/bytecode      ok
-t/c             15
-t/c_o1          15
-t/c_o2          15
-t/cc            15,18,21,25	 
-t/cc_o1         15,18,21,25,26	 
-t/cc_o2         10,15..16,18,21,25,26
+t/c             15,27,28
+t/c_o1          15,27,28
+t/c_o2          15,27,28
+t/cc            15,18,21,25,27..29	 
+t/cc_o1         15,18,21,25..29	 
+t/cc_o2         10,15..16,18,21,25..29
 
 5.10.1: (same results as non-threaded)
-t/bytecode 	9..12,20
-t/c 		15,16
-t/c_o1          10,12,13,15..20,22
-t/c_o2          10,12,13,15..20,22
-t/cc 		12,15,16,18,21,25
-t/cc_o1         12,15,16,18,21,25,26
-t/cc_o2         10,12,15,16,18,21,25,26
+t/bytecode 	2..5,7,11,20,28			| 9..12,20,27..29
+t/c 		15,28,29
+t/c_o1          10,12,13,15,17..20,22,28
+t/c_o2          10,12,13,15,17..20,22,28
+t/cc 		12,15,18,21,25,28,29
+t/cc_o1         12,15,18,21,25,26,28,29
+t/cc_o2         10,12,15,16,18,21,25..29
 
 5.11.2: (same results as non-threaded)
-t/bytecode 	9..12,16,20,21
-t/c 		14..16,23
-t/c_o1          10,12,13,15..20,22
-t/c_o2          10,12,13,15..20,22
-t/cc 		12,15,16,18,21,25
-t/cc_o1         15,16,18,21,25,26
-t/cc_o2         10,15,16,18,21,25,26
+t/bytecode 	9..12,16,20,21,27..29
+t/c 		15,16,28
+t/c_o1          10,12,13,15..20,22,28
+t/c_o2          10,12,13,15..20,22,28
+t/cc 		12,15,16,18,21,25,28,29
+t/cc_o1         12,15,16,18,21,25,26,28,29
+t/cc_o2         10,12,15,16,18,21,25,26,28,29
 
 5.10, 5.11 status
 -----------------
 TODO for B::C:
-  __DATA__ IO (test 15)
-  destruction: undef comppad_name, -O1 static PVs and HEKs
-  Compiler errors: GvCV RV of stash (test 16)
-  namesv: test 10 -O1, 14, 23
-
-test 16: main::a is missing the HV magic (again). worked in _30
+  __DATA__ IO (15)
+  destruction: undef comppad_name, -O1 static PVs and HEKs (mult.)
+  GVCV for 5.11 (27)
+  runtime require $scalar (28)
 
 DONE:
+RVs for 5.11 (29)
+
 index (fbm_compile) for GVs fixed with 1.04_31
 
 test 14+23 destruction of GvPVX of the empty main:: stash fixed by adding a dummy.

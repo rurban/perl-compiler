@@ -1,7 +1,9 @@
 * Fixes
 
-CC backend: goto, sort with non-default comparison. last for non-loop blocks.
-improve XSUB handling (both static and dynamic)
+CC backend: goto (needs test), 
+sort with non-default comparison. 
+last for non-loop blocks (needs simplier test, test 29).
+improve XSUB handling (both static and dynamic, needs tests)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
   them, whereas the compiler expects them to be linked to a xpv[inahc]v_root
@@ -11,9 +13,7 @@ perl_parse replacement
 compile-time initialisation of AvARRAYs
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 CvOUTSIDE for ordinary subs
-DATA filehandle for standalone Bytecode program (easy)
-DATA filehandle for multiple bytecode-compiled modules (harder)
-DATA filehandle for C-compiled program (yet harder)
+DATA filehandle for C-compiled program (hard)
 
 * Features
 
@@ -27,15 +27,15 @@ shared constants
 check module dependencies, vs. link libs static, not via DynaLoader
 new Asm, JIT or PIR backend, PLJC ByteLoader magic
 check Bytecode op coverage in the tests, should cover all ops 0-142
-Disassembler should print the header
 ByteLoader compatibility: version, platform. eventually Bytecode version 
-  portability (test with 5.6 on cygwin)
+  portability (test with 5.6 on cygwin, partially done)
 
 * Optimisations
 
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
-  and GV method names package::name.
+  and GV method names package::name. (partially done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
+proper static init of PVBM/FBM
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.
