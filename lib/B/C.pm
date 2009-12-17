@@ -2341,6 +2341,11 @@ EOT
   else {
     print "typedef char * RE;\n";
   }
+  if ($] == 5.010000) {
+    print "#ifndef RX_EXTFLAGS\n";
+    print "# define RX_EXTFLAGS(prog) ((prog)->extflags)\n";
+    print "#endif\n";
+  }
   print "static GV *gv_list[$gv_index];\n" if $gv_index;
   print "\n";
 }
