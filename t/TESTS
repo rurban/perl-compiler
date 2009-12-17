@@ -114,7 +114,7 @@ use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );
 >>>>
 ok
 ######################### 27 ################################
-my $tmpdir = $ENV{TMPDIR} || "/tmp"; my $fname;while(! open(my $tmp_fh,">", ($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999))) ) { $bail++; die "Failed to create a tmp file after 500 tries" if ($bail > 500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;
+my $tmpdir=$ENV{TMPDIR}||"/tmp";my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if ($bail>500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;
 >>>>
 ok
 ######################### 28 ################################
