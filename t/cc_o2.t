@@ -32,9 +32,9 @@ my $ITHREADS  = ($Config{useithreads});
 my $AUTHOR    = -d ".svn";
 
 my @tests = tests();
-my @todo = (10,15..16,18,21,25,26); # 5.8
+my @todo = (10,15..16,18,21,25..28); # 5.8
 @todo = (10,15,16,18,21,25..29) if $] < 5.007;
-@todo = (10,12,15,16,18,21,25,26,28,29) if $] >= 5.010;
+@todo = (10,15,16,18,21,25,26,28,29) if $] >= 5.010;
 #@todo = (10,12,15,16,18,21,25,26,28,29) if $] >= 5.011;
 
 # skip core dump causing known limitations, like custom sort or runtime labels

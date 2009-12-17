@@ -204,7 +204,7 @@ result[26]="26";
 # import test
 tests[27]='use Fcntl; print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
-# require test
+# require $fname
 tests[28]='my $tmpdir = $ENV{TMPDIR} || "/tmp"; my $fname;while(! open(my $tmp_fh,">", ($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999))) ) { $bail++; die "Failed to create a tmp file after 500 tries" if ($bail > 500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
 result[28]='ok'
 # use test
