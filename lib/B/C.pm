@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.04_33';
+our $VERSION = '1.04_34';
 
 package B::C::Section;
 
@@ -1246,12 +1246,12 @@ sub B::PV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $refcnt = $sv->REFCNT;
-  #$refcnt-- if $pv_copy_on_grow; 		# static pv, do not destruct
+  # $refcnt-- if $pv_copy_on_grow; 		# static pv, do not destruct. test 13 with pv0 "3"
   my $flags = $sv->FLAGS;
-  # $flags ||= 0x04000000 if $pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
-  # $flags = $flags || ($PERL510 ? 0x09000000 : 0x00900000) if $pv_copy_on_grow; # SvIsCOW = SVf_FAKE+SVf_READONLY
   if ($PERL510) {
     # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
+    # $flags ||= 0x04000000 if $pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
+    # => Attempt to free unreferenced scalar: SV 0x4044e8.
     $xpvsect->add( sprintf( "0, %u, %u", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, %s",
                            $xpvsect->index, $refcnt, $flags,
@@ -1259,18 +1259,16 @@ sub B::PV::save {
     if ( defined($pv) && !$pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
     }
-    return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
   else {
     $xpvsect->add( sprintf( "%s, %u, %u", $savesym, $len, $pvmax ) );
     $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
 			 $xpvsect->index, $refcnt, $flags));
     if ( defined($pv) && !$pv_copy_on_grow ) {
-      $init->add(
-        savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
+      $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
     }
-    return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
+  return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
 sub B::PVMG::save {
@@ -1293,6 +1291,11 @@ sub B::PVMG::save {
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
   elsif ($PERL510) {
+    # sv => sv->RV cannot be initialized static.
+    if ($sv->FLAGS & SVf_ROK) {
+      $init->add(sprintf("SvRV_set(&sv_list[%d], %s);", $svsect->index+1, $savesym));
+      $savesym = '0';
+    }
     $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
     $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
 			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $pvsym?
@@ -3105,6 +3108,7 @@ OPTION:
       $max_string_len = $arg;
     }
   }
+  undef $pv_copy_on_grow if $PERL510;
   init_sections();
   foreach my $i (@eval_at_startup) {
     $init->add_eval($i);

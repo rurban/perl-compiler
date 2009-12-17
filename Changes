@@ -3,16 +3,23 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+
+1.04_34	2009-12-17 rurban
+	* C.pm: Had to disable -O1 -fcog (pv_copy_on_grow) on 5.10 and higher
+	  until I find out how to fool S_unshare_hek_or_pvn, fixes all C
+	  -O1 and -O2 tests.
+	Fix wrong RV init on 5.10 for test 29 also.
+	
 1.04_33	2009-12-17 rurban
 	* t/cc*.t: skip some memory eating failing tests.
 	* MANIFEST: dummy lib/B/Asmdata.pm added to fix cpan smokes.
 	Thanks to Slaven Rezic.
 	* C.pm: fix tests 14,16,23 on >=5.10, missing AV magic for
-	CV main::a, protect PVMG from SvPAD_OUR.
+	  CV main::a, protect PVMG from SvPAD_OUR.
 	fix wrong RV init on 5.11 for test 29
 	* CC.pm: fix ARGS >=5.10 (in require, test 28).
 	Enable quiet. No -q for quiet, just -v (verbose) or any -D switch turns
-	on verbose.
+	  on verbose.
 	* t/testc.sh: Added test 27 (import), test 28 (require), test 29 (use)
 	[Nick Koston]
 
