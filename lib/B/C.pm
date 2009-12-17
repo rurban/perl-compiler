@@ -404,7 +404,9 @@ sub savepv {
 sub save_rv {
   my $sv = shift;
 
-  #    confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
+  # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
+
+  # 5.6: Can't locate object method "RV" via package "B::PVMG"
   my $rv = $sv->RV->save;
 
   $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
@@ -420,7 +422,8 @@ sub save_pv_or_rv {
   my $pok = $sv->FLAGS & SVf_POK;
   my ( $len, $pvmax, $savesym, $pv ) = ( 0, 0 );
   if ($rok) {
-    $savesym = save_rv($sv); # was "(char*)" test 29 on 5.11
+    # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
+    $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv);
   }
   else {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
@@ -447,11 +450,12 @@ sub save_hek {
   $hektable{$str} = "(HEK *)$sym";
   my $cstr = cstring($str);
   if ($pv_copy_on_grow) {
-    $decl->add(sprintf("Static HEK *%s;",$sym));
+    $decl->add(sprintf("HEK *%s;",$sym));
+    # XXX we can optimize this call also to static
     $init->add(sprintf("%s = share_hek(%s, %u, %s);",
 		       $sym, $cstr, length($cstr)-2, B::hash($str)));
   } else {
-    $decl->add(sprintf("HEK *%s;",$sym));
+    $decl->add(sprintf("Static HEK *%s;",$sym));
     $init->add(sprintf("%s = share_hek(%s, %u, %s);",
 		       $sym, $cstr, length($cstr)-2, B::hash($str)));
   }
@@ -1039,8 +1043,8 @@ sub B::NV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpvnv_list[%d], %lu, 0x%x".($PERL510?', 0':''),
-      $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS
+      "&xpvnv_list[%d], %lu, 0x%x %s",
+      $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', 0' : ''
     )
   );
   warn sprintf( "Saving NV %s to xpvnv_list[%d], sv_list[%d]",
@@ -1171,8 +1175,8 @@ sub B::PVNV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpvnv_list[%d], %lu, 0x%x",
-      $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS
+      "&xpvnv_list[%d], %lu, 0x%x %s",
+      $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', 0' : ''
     )
   );
   if ( defined($pv) && !$pv_copy_on_grow ) {
@@ -1276,29 +1280,21 @@ sub B::PVMG::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
-  warn sprintf( "PVMG %s (0x%x)\n", $sym, $$sv ) if $debug{mg};
+  warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
 
-  if ($PERL511) {
-    $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
-    # how to optimize RV? sv => sv->RV cannot be initialized static.
-    if ($sv->FLAGS & SVf_ROK) {
-      $init->add(sprintf("SvRV_set(&sv_list[%d], %s);", $svsect->index+1, $savesym));
+  if ($PERL510) {
+    if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
+      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym));
       $savesym = '0';
-    }
-    $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
-			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $pvsym?
-    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, %s",
-                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
-  }
-  elsif ($PERL510) {
-    # sv => sv->RV cannot be initialized static.
-    if ($sv->FLAGS & SVf_ROK) {
-      $init->add(sprintf("SvRV_set(&sv_list[%d], %s);", $svsect->index+1, $savesym));
-      $savesym = '0';
+    } else {
+      if ( $pv_copy_on_grow ) {
+        # comppadnames needs &PL_sv_undef instead of 0
+        $savesym = (!$savesym or $savesym eq 'NULL') ? '(char*)&PL_sv_undef' : $savesym;
+      }
     }
     $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
     $xpvmgsect->add(sprintf("%s, %u, %u, %d, 0, 0",
-			    $sv->NVX, $len, $pvmax, $sv->IVX)); # $pvsym?
+			    $sv->NVX, $len, $pvmax, $sv->IVX));
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, %s",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
@@ -1309,6 +1305,7 @@ sub B::PVMG::save {
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   if ( !$pv_copy_on_grow ) {
+    # comppadnames needs &PL_sv_undef instead of 0
     $pv = (!$savesym or $savesym eq 'NULL') ? '(SV*)&PL_sv_undef' : $pv;
     if ($PERL510) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
@@ -1339,7 +1336,7 @@ sub B::PVMG::save_magic {
     # XXX Hope stash is already going to be saved.
     $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$stash ) );
   }
-  # Protect our SVs against non-magic or SvPAD_OUR. fixes tests 16 and 14 + 23
+  # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   my $sv_type = $sv_flags & 0xff;
   if ($PERL510 and ($sv_type < 8 or (($sv_flags & 0x40040000) == 0x40040000))) {
     warn sprintf("Skipping invalid PVMG type=%d, flags=0x%x (PAD_OUR?)\n", $sv_type, $sv_flags)
@@ -1514,7 +1511,7 @@ sub B::CV::save {
       my $stsym = $stash->save;
       my $name  = cstring($cvname);
       $decl->add("static CV* cv$cv_index;");
-      $init->add("cv$cv_index = newCONSTSUB( $stsym, NULL, $vsym );");
+      $init->add("cv$cv_index = newCONSTSUB( $stsym, NULL, (SV*)$vsym );");
       my $sym = savesym( $cv, "cv$cv_index" );
       $cv_index++;
       return $sym;
@@ -1906,14 +1903,18 @@ sub B::GV::save {
     }
     my $gvio = $gv->IO;
     if ( $$gvio && $savefields & Save_IO ) {
-      warn "GV::save gvio->save ...\n" if $debug{gv};
+      warn "GV::save gvio->save $fullname...\n" if $debug{gv};
       $gvio->save;
       $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
-      if ( $fullname =~ m/::DATA$/ && $save_data_fh ) {
+      if ( $fullname =~ m/::DATA$/ && $save_data_fh ) { # -O3 or 5.8
         no strict 'refs';
         my $fh = *{$fullname}{IO};
         use strict 'refs';
-        $gvio->save_data( $fullname, <$fh> ) if $fh->opened;
+        warn "GV::save_data $sym, $fullname ...\n" if $debug{gv};
+        $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
+      }
+      elsif ( $fullname =~ m/::DATA$/ && !$save_data_fh ) {
+        warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsava-data.\n";
       }
       warn "GV::save GvIO(*$name)\n" if $debug{gv};
     }
@@ -2092,18 +2093,13 @@ sub B::HV::save {
 }
 
 sub B::IO::save_data {
-  my ( $io, $globname, @data ) = @_;
+  my ( $io, $sym, $globname, @data ) = @_;
   my $data = join '', @data;
 
   # XXX using $DATA might clobber it!
-  my $sym = svref_2object( \\$data )->save;
-  $init->add( split /\n/, <<CODE );
-    {
-        GV* gv = (GV*)gv_fetchpv( "$globname", TRUE, SVt_PV );
-        SV* sv = $sym;
-        GvSVn( gv ) = sv;
-    }
-CODE
+  my $ref = svref_2object( \\$data )->save;
+  $init->add("/* save $globname in RV ($ref) */") if $verbose;
+  $init->add( "GvSVn( $sym ) = (SV*)$ref;");
 
   # for PerlIO::scalar
   $use_xsloader = 1;
@@ -2421,6 +2417,31 @@ EOT
 }
 
 sub output_main {
+
+  # special COW handling for 5.10 because of 
+  if ( $PERL510 and $pv_copy_on_grow) {
+    print <<'EOT';
+int my_perl_destruct( PerlInterpreter *my_perl );
+int my_perl_destruct( PerlInterpreter *my_perl ) {
+    /* set all our static pv and hek to NULL so perl_destruct() will not cry */
+EOT
+    for (0 .. $svsect->index) {
+      # XXX set the sv/xpv to NULL, not the pv itself
+      my $sv = sprintf( "&sv_list[%d]", $_ );
+      printf ("    if (SvPOK(%s)) SvPV_set(%s, NULL);\n", $sv, $sv);
+      #my $pv = sprintf( "pv%d", $_ );
+      #printf ("    %s = NULL;\n", $pv);
+      #printf ("    memset(&%s, 0, sizeof(char *));\n", $pv);
+    }
+    for (0 .. $hek_index-1) {
+      # XXX who stores this hek? GvNAME and GvFILE most likely
+      my $hek = sprintf( "hek%d", $_ );
+      #printf ("    memset(%s, 0, sizeof(HEK *));\n", $hek);
+      printf ("    %s = NULL;\n", $hek);
+    }
+    print "    perl_destruct( my_perl );\n}\n\n";
+  }
+
   print <<'EOT';
 /* if USE_IMPLICIT_SYS, we need a 'real' exit */
 #if defined(exit)
@@ -2553,7 +2574,9 @@ EOT
 
     exitstatus = perl_run( my_perl );
 EOT
-  if ( $] >= 5.007003 ) {
+  if ( $PERL510 and $pv_copy_on_grow) {
+    print "    my_perl_destruct( my_perl );";
+  } elsif ( $] >= 5.007003 ) {
     print "    perl_destruct( my_perl );";
   }
   print <<'EOT';
@@ -3009,7 +3032,7 @@ sub compile {
     'save-sig-hash'   => \$save_sig,
   );
   my %optimization_map = (
-    0 => [qw()],                     # special case
+    0 => [qw()],                # special case
     1 => [qw(-fcog)],
     2 => [qw(-fwarn-sv -fppaddr)],
     3 => [qw(-fsave-sig-hash -fsave-data)],
@@ -3108,7 +3131,12 @@ OPTION:
       $max_string_len = $arg;
     }
   }
-  undef $pv_copy_on_grow if $PERL510;
+  $save_data_fh = 1 if $] >= 5.008 and ($] < 5.009004) or ($] < 5.011 and $ITHREADS);
+  if ($pv_copy_on_grow and $PERL510) {
+    warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
+    undef $pv_copy_on_grow if $PERL510; # XXX Still trying custom destructor.
+  }
+
   init_sections();
   foreach my $i (@eval_at_startup) {
     $init->add_eval($i);

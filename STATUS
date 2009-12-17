@@ -13,19 +13,15 @@ Several B::C and B::CC bugs fixed. 5.10 compatibility added.
 
 Open Problems:
 5.6:
-    reading from __DATA__ handles (15)
     test 25, 27
     XSUB load order via B::Stash (?). Usually fixed via perlcc.
 5.8:
     none else
-5.10:
+5.10 + 5.11:
     +
-    require $scalar
-    use IO: wrong static sv_u.svu_iv init (29)
-    destruction of static pvs for -O1
-5.11:
-    +
-    S_unshare_hek_or_pvn (16)
+    reading from __DATA__ handles (15) -fsave-data fails on non-threaded builds.
+    destruction of static pvs for -O1 (-fcog temp. disabled)
+
 See below at detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
@@ -114,11 +110,14 @@ t/cc_o2         12,15,16,18,21,25,26,28,29
 -----------------
 TODO for B::C:
   __DATA__ IO (15)
-  destruction: undef comppad_name, -O1 static PVs and HEKs (mult.)
-  GVCV for 5.11 (27)
-  runtime require $scalar (28)
+  destruction: -O1 static PVs and HEKs (mult.)
+  ccode17_o1 namepad[1] to PL_sv_undef 
 
 DONE:
+GVCV for 5.11 (27)
+
+runtime require $scalar (28)
+
 RVs for 5.11 (29)
 
 index (fbm_compile) for GVs fixed with 1.04_31
@@ -163,11 +162,27 @@ cop_io status?
 
 5.8 status
 ----------
-I've restored 5.8 backwards compatibility, mainly for test comparison.
-But since the new B::C compiler is better than the CORE compiler,
-it is installed.
+I've restored full 5.8 backwards compatibility, mainly for test comparison.
+But since the new B::C compiler is better than the CORE compiler, it is installed.
 
 Details:
+--------
+-fcog: (13) unshare_hek tricky assertion fails
+        he: "Find the shared he which is just before us in memory"
+        ./ccode13_o1 Assertion he->shared_he_he.hent_hek == hek failed: file "hv.c", line 2327.
+        Maybe call our own destruct handler on >=510, which resets all such pv's to NULL beforehand.
+
+cccode12_o2: 5.10.1d-nt
+        Program received signal SIGSEGV, Segmentation fault.
+        0x521ab445 in Perl_pop_scope () at scope.c:103
+        103         const I32 oldsave = PL_scopestack[--PL_scopestack_ix];
+        (gdb) p PL_scopestack_ix
+        $1 = -272716323
+        (gdb) bt
+        #0  0x521ab445 in Perl_pop_scope () at scope.c:103
+        #1  0x52121784 in Perl_pp_leave () at pp_hot.c:1904
+        #2  0x00401ca5 in _fu23__PL_ppaddr () at cccode12_o2.c:246
+        #3  0x520d95d1 in Perl_runops_debug () at dump.c:1968
 
 bytecode11 - 5.11d
 assertion "isGV_with_GP(shplep)" failed: file "B.c", line 4961
