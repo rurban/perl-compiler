@@ -4,7 +4,10 @@
 	quite fine with Perl 5.6 and 5.8
 
 
-1.04_34	2009-12-19 rurban
+1.05	2009-12-18 rurban
+	Going public on the Perl birthday
+	The first public compiler re-release since it was removed from CORE.
+
 	* C.pm: Had to disable -O1 -fcog (pv_copy_on_grow) on 5.10 and higher
 	  until I find out how to fool S_unshare_hek_or_pvn. This fixes all C
 	  -O1 and -O2 tests. Warn about this.
@@ -14,6 +17,15 @@
 	Fix 5.8/5.10 PVMG pv = &PL_sv_undef for empty comppadnames
 	* t/testc.sh: -k keep added. Delete temporaries on PASS as new default.
 	-E added. Dump preprocessed source file with cc -E as _E.c (was default before)
+	* Version bump to official:
+	  B::C 1.06
+	  B::CC 1.01
+	  B::Bytecode 1.03
+	  B::Asmdata 1.03
+	  B::Assembler 0.09
+	  B::Disassembler 1.06
+	  B::Bblock 1.03 
+	  ByteLoader 0.07
 	
 1.04_33	2009-12-17 rurban
 	* t/cc*.t: skip some memory eating failing tests.

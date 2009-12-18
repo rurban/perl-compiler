@@ -8,7 +8,7 @@
 #
 package B::CC;
 
-our $VERSION = '1.00_03';
+our $VERSION = '1.01';
 
 use Config;
 use strict;

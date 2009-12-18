@@ -17,7 +17,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '0.07_07';
+$VERSION   = '0.08';
 
 use strict;
 my %opnumber;

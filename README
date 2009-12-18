@@ -6,16 +6,7 @@
 Releases are at http://search.cpan.org/dist/B-C/
 
 Code is at http://code.google.com/p/perl-compiler/
-
   svn checkout http://perl-compiler.googlecode.com/svn/trunk/ perl-compiler
-
-STATUS
-
-See STATUS
-
-CHANGES
-
-See Changes
 
 USAGE
 
@@ -252,17 +243,26 @@ Deprecated features
     in standard perl since version 5 was released have not been
     implemented in the compiler.
 
+STATUS
+
+See STATUS
+
+CHANGES
+
+See Changes
+
 BUGS
 
 Here are some things which may cause the compiler problems.
 
 The following render the compiler useless (without serious hacking):
 
-* Use of the DATA filehandle (via __END__ or __DATA__ tokens)
+* Use of the DATA filehandle (via __END__ or __DATA__ tokens) on certain 
+  Perl versions.
 * Operator overloading with %OVERLOAD
 * The (deprecated) magic array-offset variable $[ does not work
-* -O1 and -O2 may not work yet with static pvs and heks since 5.10. 
-  Fixes the destruction failures there is work in progress.
+* For -O1 and -O2 copy-on-grow of static pvs and heks since 5.10 is disabled. 
+  Fixes thof e destruction failures there is work in progress.
 * The following operators are not yet implemented for CC
     goto
     sort with a non-default comparison (i.e. a named sub or inline block)
@@ -316,11 +316,11 @@ LICENSE
     from the Perl distribution or else write to the Free Software Foundation,
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+Reini Urban
+Fri 18 December 2009
+
 Malcolm Beattie
 2 September 1996
-
-Reini Urban
-2009-12-15
 
 
 

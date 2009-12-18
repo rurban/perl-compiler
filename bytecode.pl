@@ -61,7 +61,7 @@ binmode ASMDATA_PM;
 print ASMDATA_PM $perl_header, <<'EOT';
 package B::Asmdata;
 
-our $VERSION = '1.02_02';
+our $VERSION = '1.03';
 
 use Exporter;
 @ISA = qw(Exporter);

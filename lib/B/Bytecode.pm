@@ -9,7 +9,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.02_04';
+our $VERSION = '1.03';
 
 use strict;
 use Config;
