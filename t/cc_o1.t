@@ -32,13 +32,13 @@ my $ITHREADS  = ($Config{useithreads});
 my $AUTHOR    = -d ".svn";
 
 my @tests = tests();
-my @todo = (15,18,21,25..29); # 5.8
-@todo = (15,18,21,25..28) if $] < 5.007;
-@todo = (15,18,21,25,26,28,29) if $] >= 5.010;
-@todo = (12,15,16,18,21,25,26,28,29) if $] >= 5.011;
+my @todo = (15,18,21,25..27,29); # 5.8
+#  @todo = (15,18,21,25..27,29) if $] < 5.007;
+@todo = (11,12,15,18,21,25,26,29) if $] >= 5.010;
+@todo = (11,15,26,29) if $] >= 5.011;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
-my @skip = $AUTHOR ? () : (18,21,25);
+my @skip = $AUTHOR ? () : (29);
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
@@ -49,7 +49,7 @@ my $cnt = 1;
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO" : "#";
   my ($script, $expect) = split />>>+\n/;
-  if ($skip{$cnt}) {
+  if ($todo{$cnt} and $skip{$cnt}) {
     print sprintf("ok %d # skip\n", $cnt);
   } else {
     run_cc_test($cnt, "CC,-O1", $script, $expect, $keep_c, $keep_c_fail, $todo);

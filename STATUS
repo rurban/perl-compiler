@@ -1,15 +1,14 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are better.
 
 Basic testsuite added, coverage TODO.
-Bytecode compiler disabled for 5.6. 
-The core compiler fails 50% but in mine is a blocker.
+Bytecode compiler disabled for 5.6. The core compiler fails 50% but
+in mine is a blocker.
 
 Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
-new CPAN compiler and the CORE compiler, just __DATA__ is still 
-unsupported. See below.
+new CPAN compiler and the CORE compiler. See below.
 
-Several B::C and B::CC bugs fixed. 5.10 compatibility added.
+Several B::C and B::CC bugs fixed. 5.10 + 5.11 compatibility added.
 
 Open Problems:
 5.6:
@@ -20,9 +19,9 @@ Open Problems:
 5.10 + 5.11:
     +
     reading from __DATA__ handles (15) -fsave-data fails on non-threaded builds.
-    destruction of static pvs for -O1 (-fcog temp. disabled)
+    Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
 
-See below at detailed 5.6, 5.8, 5.10, 5.11 status
+See below at the detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
 -----------
@@ -63,57 +62,58 @@ t/testc.sh -q -c; t/testcc.sh -q -c or make test TEST_VERBOSE=1
 
 5.6.2:					| non-threaded
 t/bytecode      broken
-t/c             15,25,27,28            	| 15
-t/c_o1          15,25,27..29		| 15
-t/c_o2          15,25,27,28		| 15
-t/cc            15,18,21,25,27..29
-t/cc_o1         15,18,21,25..28
-t/cc_o2         10,15,16,18,21,25..29
+t/c             15,25,27            	| 15
+t/c_o1          15,25,27		| 15
+t/c_o2          27,29			| 15
+t/cc            15,18,21,25,27,29
+t/cc_o1         15,18,21,25..27,29
+t/cc_o2         10,15,16,18,21,25..27,29
 
 5.8.8: (5.8.8 + 5.8.8-nt)		| non-threaded
 t/bytecode      ok
-t/c             15,27,28	     	| 15,27,28
-t/c_o1          15,28,29		| 15,28,29
-t/c_o2          15,27,28 		| 15,27,28
-t/cc            15,18,21,25,27..29	| 15,18,21,25,27..28
-t/cc_o1         15,18,21,25..28		| 15,18,21,25..28
-t/cc_o2         10,15..16,18,21,25..28	| 10,15,16,18,21,25..28
+t/c             27	     		| 27,29
+t/c_o1          27	 		| 27,29
+t/c_o2          27 			| 27,29
+t/cc            15,18,21,25,27,29	| 15,18,21,25,27,29
+t/cc_o1         15,18,21,25..27,29	| 15,18,21,25..27,29
+t/cc_o2         10,15,16,18,21,25..27,29| 10,15,16,18,21,25..27,29
 
 5.8.9:
 t/bytecode      ok
-t/c             15,27,28
-t/c_o1          15,27,28
+t/c             27
+t/c_o1          27,29
 t/c_o2          15,27,28
-t/cc            15,18,21,25,27..29	 
-t/cc_o1         15,18,21,25..29	 
-t/cc_o2         10,15..16,18,21,25..29
+t/cc            15,18,21,25,27,29
+t/cc_o1         15,18,21,25..27,29
+t/cc_o2         10,15,16,18,21,25..27,29
 
 5.10.1: (same results as non-threaded)
-t/bytecode 	2..5,7,11,20,28			| 9..12,20,27..29
-t/c 		15,28,29
-t/c_o1          10,12,13,15,17..20,22,28
+t/bytecode 	2..5,7,11,20,28			| 9..12,20,27,29
+t/c 		ok				| 15
+t/c_o1          29
 t/c_o2          10,12,13,15,17..20,22,28
-t/cc 		15,18,21,25,28,29
-t/cc_o1         15,18,21,25,26,28,29
-t/cc_o2         15,18,21,25,26,28,29
+t/cc 		15,29
+t/cc_o1         12,15,18,21,25,26,29
+t/cc_o2         10,12,15,16,18,21,25,26,29
 
 5.11.2: (same results as non-threaded)
-t/bytecode 	9..12,16,20,21,27..29
-t/c 		15,16,28
-t/c_o1          10,12,13,15..20,22,28
+t/bytecode 	9..12,16,20,21,27,29
+t/c 		11,15,16
+t/c_o1          15,16
 t/c_o2          10,12,13,15..20,22,28
-t/cc 		12,15,16,18,21,25,28,29
-t/cc_o1         12,15,16,18,21,25,26,28,29
-t/cc_o2         12,15,16,18,21,25,26,28,29
+t/cc 		11,15,16,29
+t/cc_o1         11,15,26,29
+t/cc_o2         10,11,15,16,26,29
 
 5.10, 5.11 status
 -----------------
 TODO for B::C:
-  __DATA__ IO (15)
+  __DATA__ IO (15) partially broken
   destruction: -O1 static PVs and HEKs (mult.)
-  ccode17_o1 namepad[1] to PL_sv_undef 
 
 DONE:
+ccode17_o1 namepad[1] to PL_sv_undef 
+
 GVCV for 5.11 (27)
 
 runtime require $scalar (28)

@@ -4,14 +4,16 @@
 	quite fine with Perl 5.6 and 5.8
 
 
-1.04_34	2009-12-17 rurban
+1.04_34	2009-12-19 rurban
 	* C.pm: Had to disable -O1 -fcog (pv_copy_on_grow) on 5.10 and higher
 	  until I find out how to fool S_unshare_hek_or_pvn. This fixes all C
 	  -O1 and -O2 tests. Warn about this.
 	Fix wrong RV init on *5.10* for test 29 also, as with 5.11.
 	Simplify __DATA__ handling. Warn when -O3 or -fsava-data is missing.
 	  Enable working -fsava-data on 5.8 and 5.10 threaded. Fixes couple of tests 15.
-	Silence 5.8/5.10 PVMG RV cast warning to xpvmg.xpv_pv. char* vs. SV*
+	Fix 5.8/5.10 PVMG pv = &PL_sv_undef for empty comppadnames
+	* t/testc.sh: -k keep added. Delete temporaries on PASS as new default.
+	-E added. Dump preprocessed source file with cc -E as _E.c (was default before)
 	
 1.04_33	2009-12-17 rurban
 	* t/cc*.t: skip some memory eating failing tests.
