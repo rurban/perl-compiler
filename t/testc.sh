@@ -8,6 +8,7 @@ function help {
   echo " -O 0|1|2|3         optimization level"
   echo " -B static|dynamic  pass to cc_harness"
   echo " -c                 continue on errors"
+  echo " -k                 keep temp. files on PASS"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
@@ -81,6 +82,7 @@ function runopt {
     res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
+        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}.pl {o}${suff}; fi
     else
 	fail "./${o}${suff}" "=> '$str' => '$res'. Expected: '${result[$n]}'"
     fi
@@ -117,6 +119,7 @@ function ctest {
 	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
+            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o}.pl {o}; fi
 	    runopt $o 1
 	    runopt $o 2
 	    #runopt $o 3
@@ -212,8 +215,8 @@ tests[29]='use IO;print "ok"'
 result[29]='ok'
 
 # 
-# getopts for -q -Du,-q -v -O2, -a -c
-while getopts "hqacD:B:O:" opt
+# getopts for -q -k -Du,-q -v -O2, -a -c
+while getopts "hqackD:B:O:" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
@@ -227,6 +230,7 @@ do
     CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
   fi
   if [ "$opt" = "c" ]; then CONT=1; fi
+  if [ "$opt" = "k" ]; then KEEP=1; fi
   if [ "$opt" = "h" ]; then help; exit; fi
   # -D options: u,-q for quiet, no -D for verbose
   if [ "$opt" = "D" ]; then
