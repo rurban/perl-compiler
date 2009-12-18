@@ -1305,12 +1305,19 @@ sub B::PVMG::save {
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   if ( !$pv_copy_on_grow ) {
-    # comppadnames needs &PL_sv_undef instead of 0
-    $pv = (!$savesym or $savesym eq 'NULL') ? '(SV*)&PL_sv_undef' : $pv;
+    # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
-      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      if (!$savesym or $savesym eq 'NULL') {
+        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;", $svsect->index ) );
+      } else {
+        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      }
     } else {
-      $init->add(savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
+      if (!$savesym or $savesym eq 'NULL') {
+        $init->add( sprintf( "xpv_list[%d].xpv_pv = (char*)&PL_sv_undef;", $xpvsect->index ) );
+      } else {
+        $init->add(savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
+      }
     }
   }
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -2101,14 +2108,17 @@ sub B::IO::save_data {
   $init->add("/* save $globname in RV ($ref) */") if $verbose;
   $init->add( "GvSVn( $sym ) = (SV*)$ref;");
 
-  # for PerlIO::scalar
-  $use_xsloader = 1;
-  $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
+  # XXX 5.10 non-threaded crashes at this eval_pv. 5.11 crashes threaded.
+  if (!$PERL510 or $ITHREADS or ($PERL510 and !$PERL511)) {
+    # for PerlIO::scalar
+    $use_xsloader = 1;
+    $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
+  }
 }
 
 # TODO in B. But apparently not needed
 sub B::IO::SUBPROCESS {
-  warn "B::IO::SUBPROCESS missing\n";
+  warn "B::IO::SUBPROCESS missing (harmless)\n" if $verbose;
 }
 
 sub B::IO::save {
@@ -3131,7 +3141,7 @@ OPTION:
       $max_string_len = $arg;
     }
   }
-  $save_data_fh = 1 if $] >= 5.008 and ($] < 5.009004) or ($] < 5.011 and $ITHREADS);
+  $save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or ($] < 5.011 and $ITHREADS));
   if ($pv_copy_on_grow and $PERL510) {
     warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
     undef $pv_copy_on_grow if $PERL510; # XXX Still trying custom destructor.
