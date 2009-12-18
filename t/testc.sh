@@ -9,6 +9,7 @@ function help {
   echo " -B static|dynamic  pass to cc_harness"
   echo " -c                 continue on errors"
   echo " -k                 keep temp. files on PASS"
+  echo " -E                 dump preprocessed source file with cc -E as _E.c"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
@@ -73,7 +74,7 @@ function runopt {
          fi
     fi
     vcmd ${CMD}-o${o}${suff}.c $o.pl
-    vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
+    test -n $CPP && vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
     vcmd $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
     test -x ${o}${suff} || (test -z $CONT && exit)
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
@@ -82,7 +83,7 @@ function runopt {
     res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
-        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}.pl {o}${suff}; fi
+        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}.pl ${o}${suff}; fi
     else
 	fail "./${o}${suff}" "=> '$str' => '$res'. Expected: '${result[$n]}'"
     fi
@@ -110,7 +111,7 @@ function ctest {
 	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
 	vcmd ${OCMD}-o$o.c $o.pl
         test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit)
-	vcmd $CCMD $o.c -c -E -o ${o}_E.c
+	test -n $CPP && vcmd $CCMD $o.c -c -E -o ${o}_E.c
 	vcmd $CCMD $o.c $LCMD -o $o
 	test -x $o || (test -z $CONT && exit)
 	if [ -z "$QUIET" ]; then echo "./$o"
@@ -119,7 +120,7 @@ function ctest {
 	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
-            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o}.pl {o}; fi
+            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o}.pl ${o}; fi
 	    runopt $o 1
 	    runopt $o 2
 	    #runopt $o 3
@@ -215,8 +216,8 @@ tests[29]='use IO;print "ok"'
 result[29]='ok'
 
 # 
-# getopts for -q -k -Du,-q -v -O2, -a -c
-while getopts "hqackD:B:O:" opt
+# getopts for -q -k -E -Du,-q -v -O2, -a -c
+while getopts "hqackED:B:O:" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
@@ -231,6 +232,7 @@ do
   fi
   if [ "$opt" = "c" ]; then CONT=1; fi
   if [ "$opt" = "k" ]; then KEEP=1; fi
+  if [ "$opt" = "E" ]; then CPP=1; fi
   if [ "$opt" = "h" ]; then help; exit; fi
   # -D options: u,-q for quiet, no -D for verbose
   if [ "$opt" = "D" ]; then
@@ -270,12 +272,12 @@ else
   done
 fi
 
-# 562  c:  15,24
-# 58   c:  15
-# 58  cc:  10_o,15,16_o,18-19,21,24
-# 510  c:  7,11,14-15,20-21,23
-# 510 cc:  +10_o,12,16_o,18,19
-# 511  c:  11,14-16,23
+# 562  c:  15,25,27
+# 58   c:  27,29_i
+# 58  cc:  15,18,21,25,26_o,27,29
+# 510  c:  15
+# 510 cc:  11,15,29
+# 511  c:  11,15,16,29
 
 #  http://www.nntp.perl.org/group/perl.perl5.porters/2005/07/msg103315.html
 #  FAIL for B::CC should be covered by test 18
