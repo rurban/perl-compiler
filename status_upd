@@ -3,7 +3,7 @@
 # process perlall-maketest logfiles: `perl$ver Makefile.PL && make test > log.test-$platform-$ver; make clean`
 use strict;
 
-my $logs = "log.test-*";
+my $logs = "log.test-*-5.*";
 my $dir = ".";
 my $STATUS = "./STATUS";
 
@@ -19,42 +19,56 @@ if (@ARGV and -d $ARGV[0]) {
 
 die "$STATUS not found\n" unless -f $STATUS;
 
+sub status {
+  my @g = @_;
+  my $s = "";
+  my $prefix = '';
+  my $oldprefix = '';
+  while (@g) {
+    if ($g[0] =~ /^--/) {
+      $oldprefix = $prefix if $prefix;
+      $prefix = '';
+      shift @g;
+      next;
+    }
+    my $file = shift @g;
+    my $failed = shift @g;
+    unless ($prefix) {
+      ($prefix) = $file =~ m{log.test-(.*?)-t/};
+      if ($prefix and $oldprefix ne $prefix) {
+	$prefix = 'cygwin' if $prefix eq 'ATGRZWN502840';
+	$s .= "\n$prefix:\n";
+	print STDERR "\n$prefix:\n";
+      }
+    }
+    next unless $prefix;
+    ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
+    chomp $file if $file;
+    next unless $file;
+    $failed =~ s{^.+Failed tests:}{Failed tests:};
+    $failed =~ s{^.+TODO passed:}{TODO passed:};
+    chomp $failed;
+    my $c = "$file\t";
+    $c .= "\t" if length($file) < 8;
+    $c .= "$failed\n";
+    print STDERR "$c";
+    $s .= $c;
+  }
+}
+
 # update the TEST STATUS section in "./STATUS"
-my $cmd = 'grep -B1 -i "Failed tests" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
+# TODO grep -a -B1 -i "TODO passed" ' . ($dir eq '.' ? "$logs" : "$dir/$logs"
+my $cmd = 'grep -a -B1 -i "Failed tests" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
 print STDERR "$cmd\n";
 my @g = `$cmd` or die $@;
-my $s = "";
-my ($prefix,$oldprefix) = ('','');
 
-while (@g) {
-  if ($g[0] =~ /^--/) {
-    $oldprefix = $prefix;
-    $prefix = '';
-    shift @g;
-    next;
-  }
-  my $file = shift @g;
-  my $failed = shift @g;
-  unless ($prefix) {
-    ($prefix) = $file =~ m{log.test-(.*?)-t/};
-    if ($prefix and $oldprefix ne $prefix) {
-      $prefix = 'cygwin' if $prefix eq 'ATGRZWN502840';
-      $s .= "\n$prefix:\n";
-      print STDERR "\n$prefix:\n";
-    }
-  }
-  next unless $prefix;
-  ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
-  chomp $file if $file;
-  next unless $file;
-  $failed =~ s{^.+Failed tests:}{Failed tests:};
-  chomp $failed;
-  my $c = "$file\t";
-  $c .= "\t" if length($file) < 8;
-  $c .= "$failed\n";
-  print STDERR "$c";
-  $s .= $c;
-}
+status(@g);
+
+$cmd = 'grep -a -B1 -i "TODO passed" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
+print STDERR "\n$cmd\n";
+@g = `$cmd` or die $@;
+
+status(@g);
 
 #print $s;
 exit;
