@@ -4,6 +4,14 @@
 	quite fine with Perl 5.6 and 5.8
 
 
+1.07	2009-12-19 rurban
+	* C.pm: fix fbm_compile (INDEX) for >= 5.10. gv_list is already a pointer.
+	rewrite PVGV (ie PVBM) init for >= 5.10. (test 11)
+	* README: Clarify DIFFERENCES section for CC only. Esp. the 
+	Context of ".." section. New test 30
+	* t/TESTS, t/testc.sh, t/testplc.sh: test 30 added for Context of ".."
+	* t/testc.sh: fix -k logic, keep .pl for -O tests
+
 1.06	2009-12-18 rurban
 	Going public on the Perl birthday
 	The first public compiler re-release since it was removed from CORE.

@@ -83,7 +83,7 @@ function runopt {
     res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
-        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}.pl ${o}${suff}; fi
+        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}${suff}; fi
     else
 	fail "./${o}${suff}" "=> '$str' => '$res'. Expected: '${result[$n]}'"
     fi
@@ -120,7 +120,7 @@ function ctest {
 	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
-            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o}.pl ${o}; fi
+            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o}; fi
 	    runopt $o 1
 	    runopt $o 2
 	    #runopt $o 3
@@ -132,7 +132,7 @@ function ctest {
     fi
 }
 
-ntests=29
+ntests=30
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -214,6 +214,9 @@ result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
 result[29]='ok'
+# run-time context of ..
+tests[30]='@a=(4,6,1,0,0,1);sub range{(shift @a)..(shift @a)}print range();while(@a){print scalar(range())}'
+result[30]='456123E0'
 
 # 
 # getopts for -q -k -E -Du,-q -v -O2, -a -c

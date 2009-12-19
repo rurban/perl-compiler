@@ -187,7 +187,7 @@ to ensure that linked-against .so files are found at runtime too.
 
 DIFFERENCES
 
-The result of running a compiled Perl program can sometimes be different
+The result of running a CC compiled Perl program can sometimes be different
 from running the same program with standard perl. Think of the compiler
 as having a slightly different implementation of the language Perl.
 Unfortunately, since Perl has had a single implementation until now,
@@ -216,6 +216,7 @@ Loops
     produces the output
         024
     with standard perl but gives a compile-time error with the compiler.
+    See test 21.
 
 Context of ".."
 
@@ -230,6 +231,7 @@ Context of ".."
     generates the output
         456123E0
     with standard Perl but gives a compile-time error with compiled Perl.
+    See test 30.
 
 Arithmetic
 
@@ -258,11 +260,11 @@ Here are some things which may cause the compiler problems.
 The following render the compiler useless (without serious hacking):
 
 * Use of the DATA filehandle (via __END__ or __DATA__ tokens) on certain 
-  Perl versions.
+  Perl versions. See test 15.
 * Operator overloading with %OVERLOAD
 * The (deprecated) magic array-offset variable $[ does not work
 * For -O1 and -O2 copy-on-grow of static pvs and heks since 5.10 is disabled. 
-  Fixes thof e destruction failures there is work in progress.
+  Fixes of the destruction failures there is work in progress.
 * The following operators are not yet implemented for CC
     goto
     sort with a non-default comparison (i.e. a named sub or inline block)

@@ -38,7 +38,8 @@ my @todo = (27); # 8,14-16 fail on 5.00505 (max 20 then)
 # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
 # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
 @todo = (15,25,27) if $] < 5.007;
-@todo = ()         if $] >= 5.010; # 11 is instable
+@todo = (29)       if $] >= 5.010; # 11 is instable
+# on freebsd 5.10 only 29 is failing
 @todo = (15)       if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
 @todo = (15,16)    if $] >= 5.011;
 
