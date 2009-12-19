@@ -1647,7 +1647,7 @@ sub B::CV::save {
     #  $pvsym = "0";
     #}
     # TODO:
-    my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
+    # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
     $symsect->add
       (sprintf("XPVCVIX$xpvcv_ix\ts\\_%x, %u, %u, %s, %s, %s,"
@@ -1718,6 +1718,10 @@ sub B::CV::save {
     $init->add( sprintf( "CvSTASH(s\\_%x) = s\\_%x;", $$cv, $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv};
+  }
+  my $magic = $cv->MAGIC;
+  if ($magic and $$magic) {
+    $cv->save_magic; # XXX will this work?
   }
   $symsect->add(sprintf(
       "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?', 0':''),

@@ -40,7 +40,7 @@ my @todo = (27); # 8,14-16 fail on 5.00505 (max 20 then)
 @todo = (15,25,27) if $] < 5.007;
 @todo = (29)       if $] >= 5.010; # 11 is instable
 # on freebsd 5.10 only 29 is failing
-@todo = (15)       if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
+@todo = (15,29)    if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
 @todo = (15,16)    if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;

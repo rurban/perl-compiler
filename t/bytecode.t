@@ -43,7 +43,7 @@ print "1..$numtests\n";
 my $cnt = 1;
 my $test;
 my %insncov; # insn coverage
-my @todo = ();
+my @todo = (29);
 if ($DEBUGGING) {
   # op coverage either via Assembler debug, or via ByteLoader -Dv on a -DDEBUGGING perl
   if ($do_coverage) {
@@ -52,8 +52,8 @@ if ($DEBUGGING) {
   }
 }
 @todo = (3,6,8..10,12,15,16,18,25,26,28) if $] < 5.007; # CORE failures, ours not yet enabled
-@todo = (2..5,7,11,20,28) if $] >= 5.010;
-@todo = (9..12,20,27,29) if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
+@todo = (2..5,7,11,20,27,29) if $] >= 5.010;
+@todo = (9..12,20,27,29)     if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
 @todo = (9..12,16,20,21,27,29) if $] >= 5.011;
 
 my %todo = map { $_ => 1 } @todo;

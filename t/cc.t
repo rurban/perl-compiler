@@ -34,9 +34,9 @@ my $AUTHOR    = -d ".svn";
 my @tests = tests();
 # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 my @todo = (15,18,21,25,27,29,30); #5.8.9
-#  @todo = (15,18,21,25,27,29,30)    if $] < 5.007;
-@todo = (11,15,18,21,25,29,30)       if $] >= 5.010;
-@todo = (11,12,15,16,18,21,25,29,30) if $] >= 5.011;
+#  @todo = (15,18,21,25,27,29,30) if $] < 5.007;
+@todo = (15,18,21,25,29,30)       if $] >= 5.010;
+@todo = (15,16,18,21,25,29,30)    if $] >= 5.011;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
 my @skip = $AUTHOR ? () : (29);

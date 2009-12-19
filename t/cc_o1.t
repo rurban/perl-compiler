@@ -34,11 +34,11 @@ my $AUTHOR    = -d ".svn";
 my @tests = tests();
 my @todo = (15,18,21,25..27,29,30); # 5.8
 #  @todo = (15,18,21,25..27,29,30) if $] < 5.007;
-@todo = (11,12,15,18,21,25,26,29,30) if $] >= 5.010;
-@todo = (11,15,26,29,30) if $] >= 5.011;
+@todo = (15,18,21,25,26,29,30)     if $] >= 5.010;
+@todo = (15,16,18,21,25,26,29,30)  if $] >= 5.011;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
-my @skip = $AUTHOR ? () : (29);
+my @skip = $AUTHOR ? () : (25,29,30);
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
