@@ -1058,7 +1058,7 @@ sub savepvn {
   my @res;
 
   # work with byte offsets/lengths
-  my $pv = pack "a*", $pv;
+  $pv = pack "a*", $pv;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     push @res, sprintf( "New(0,%s,%u,char);", $dest, length($pv) + 1 );
     my $offset = 0;
@@ -2131,8 +2131,8 @@ sub B::IO::save {
     ( $pvsym, $len ) = savepv($pv);
   } else {
     $pvsym = 'NULL';
+    $len = 0;
   }
-  my $len = length($pv);
   if ($PERL511) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, lines, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
