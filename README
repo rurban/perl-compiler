@@ -247,6 +247,10 @@ Deprecated features
 
 STATUS
 
+C works fine
+Bytecode fails on >= 5.10 (unfinished)
+CC fails on some tests (see Todo)
+
 See STATUS
 
 CHANGES
