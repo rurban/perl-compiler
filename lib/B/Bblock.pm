@@ -236,3 +236,10 @@ A: See http://books.simon-cozens.org/index.php/Perl_5_Internals#Using_B_for_Simp
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:

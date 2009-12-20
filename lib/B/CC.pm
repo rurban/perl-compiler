@@ -2261,3 +2261,10 @@ Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
 Reini Urban, C<rurban@cpan.org>
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:

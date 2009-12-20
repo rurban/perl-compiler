@@ -61,3 +61,10 @@ and Reini Urban <rurban@cpan.org> 2008-2009.
 perl(1).
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:

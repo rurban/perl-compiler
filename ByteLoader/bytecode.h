@@ -628,3 +628,10 @@ static int bget_swab = 0;
 	Perl_warn(aTHX_ "WARNING Convert bytecode: " f, arg1)
 #define HEADER_WARN2(f, arg1, arg2)	\
 	Perl_warn(aTHX_ "WARNING Convert bytecode: " f, arg1, arg2)
+
+/*
+ * Local variables:
+ *   c-indent-level: 4
+ * End:
+ * vim: expandtab shiftwidth=4:
+ */

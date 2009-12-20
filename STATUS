@@ -15,7 +15,7 @@ Open Problems:
     test 25, 27
     XSUB load order via B::Stash (?). Usually fixed via perlcc.
 5.8:
-    none else
+    27 (AUTOLOAD)
 5.10 + 5.11:
     +
     reading from __DATA__ handles (15) -fsave-data fails on non-threaded builds.
@@ -111,8 +111,11 @@ t/cc_o2         10..30
 5.10, 5.11 status
 -----------------
 TODO for B::C
-  __DATA__ IO (15) partially broken
-  destruction: -O1 static PVs and HEKs (mult.)
+  Support AUTOLOAD and SelfLoader. use AutoLoader works okay. (test 27)
+  __DATA__ IO (test 15) partially broken
+  test 29 non-threaded 5.8 (require $fname)
+  test 16 on blead
+  destruction: -O1 static PVs and HEKs (mult.) since 5.10
 
 DONE:
 ccode17_o1 namepad[1] to PL_sv_undef 
@@ -170,6 +173,12 @@ But since the new B::C compiler is better than the CORE compiler, it is installe
 
 Details:
 --------
+5.8.9d-nt test 27 AUTOLOAD:
+gdb --args ccode27
+  start
+  b Perl_gv_autoload4
+  => The Fcntl stash misses AUTOLOAD
+
 -fcog: (13) unshare_hek tricky assertion fails
         he: "Find the shared he which is just before us in memory"
         ./ccode13_o1 Assertion he->shared_he_he.hent_hek == hek failed: file "hv.c", line 2327.

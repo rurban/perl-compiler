@@ -54,6 +54,7 @@ use Config;
 use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use Cwd;
+use Pod::Usage;
 our $VERSION = 2.05;
 $| = 1;
 
@@ -141,7 +142,7 @@ sub vprint {
     }
     my $msg = "@_";
     $msg .= "\n" unless substr($msg, -1) eq "\n";
-    if (opt(v) > $level)
+    if (opt('v') > $level)
     {
          print        "$0: $msg" if !opt('log');
 	 print $logfh "$0: $msg" if  opt('log');
@@ -374,17 +375,17 @@ sub yclept {
 
         warn "already called get_stash once" if $_stash;
 
-        my $taint = opt(T) ? '-T' :
-                    opt(t) ? '-t' : '';
+        my $taint = opt('T') ? '-T' :
+                    opt('t') ? '-t' : '';
         my $command = "$BinPerl $taint -MB::Stash -c $Input";
         # Filename here is perfectly sanitised.
         vprint 3, "Calling $command\n";
 
-		my ($stash_r, $error_r) = spawnit($command);
-		my @stash = @$stash_r;
-		my @error = @$error_r;
+        my ($stash_r, $error_r) = spawnit($command);
+        my @stash = @$stash_r;
+        my @error = @$error_r;
 
-    	if (@error && $? != 0) {
+        if (@error && $? != 0) {
             _die("$0: $Input did not compile:\n@error\n");
         }
 
@@ -400,7 +401,6 @@ sub yclept {
         chomp $stash[0];
         return $_stash = $stash[0];
     }
-
 }
 
 # Check the consistency of options if -B is selected.
@@ -486,37 +486,37 @@ sub check_perl {
 
 # File spawning and error collecting
 sub spawnit {
-	my ($command) = shift;
-	my (@error,@output);
-	my $errname;
-	(undef, $errname) = tempfile("pccXXXXX");
-	{
+    my ($command) = shift;
+    my (@error,@output);
+    my $errname;
+    (undef, $errname) = tempfile("pccXXXXX");
+    {
 	open (S_OUT, "$command 2>$errname |")
-		or _die("$0: Couldn't spawn the compiler.\n");
+	  or _die("$0: Couldn't spawn the compiler.\n");
 	@output = <S_OUT>;
-	}
-	open (S_ERROR, $errname) or _die("$0: Couldn't read the error file.\n");
-	@error = <S_ERROR>;
-	close S_ERROR;
-	close S_OUT;
-	unlink $errname or _die("$0: Can't unlink error file $errname");
-	return (\@output, \@error);
+    }
+    open (S_ERROR, $errname) or _die("$0: Couldn't read the error file.\n");
+    @error = <S_ERROR>;
+    close S_ERROR;
+    close S_OUT;
+    unlink $errname or _die("$0: Can't unlink error file $errname");
+    return (\@output, \@error);
 }
 
 sub helpme {
-       print "perlcc compiler frontend, version $VERSION\n\n";
-       { no warnings;
-       exec "pod2usage $0";
-       exec "perldoc $0";
-       exec "pod2text $0";
-       }
+    print "perlcc compiler frontend, version $VERSION\n\n";
+    if (opt('v')) {
+	pod2usage( -verbose => opt('v') );
+    } else {
+	pod2usage( -verbose => 0 );
+    }
 }
 
 sub relativize {
-	my ($args) = @_;
+    my ($args) = @_;
 
-	return() if ($args =~ m"^[/\\]");
-	return("./$args");
+    return() if ($args =~ m"^[/\\]");
+    return("./$args");
 }
 
 sub _die {
@@ -529,7 +529,7 @@ sub _die {
 sub _usage_and_die {
     _die(<<EOU);
 $0: Usage:
-$0 [-o executable] [-r] [-O|-B|-c|-S] [-I /foo] [-L /foo] [-log log] [source[.pl] | -e oneliner]
+$0 [-o executable] [-h][-r] [-O|-B|-c|-S] [-I /foo] [-L /foo] [-log log] [source[.pl] | -e oneliner]
 EOU
 }
 
@@ -590,30 +590,33 @@ perlcc - generate executables from Perl programs
 
 =head1 SYNOPSIS
 
-    $ perlcc hello              # Compiles into executable 'a.out'
-    $ perlcc -o hello hello.pl  # Compiles into executable 'hello'
+    perlcc hello              # Compiles into executable 'a.out'
+    perlcc -o hello hello.pl  # Compiles into executable 'hello'
 
-    $ perlcc -O file            # Compiles using the optimised CC backend
-    $ perlcc -Wb=-O2 file       # Compiles with C, using -O2 optimizations
-    $ perlcc -B file            # Compiles using the bytecode backend
+    perlcc -O file            # Compiles using the optimised CC backend
+    perlcc -Wb=-O2 file       # Compiles with C, using -O2 optimizations
+    perlcc -B file            # Compiles using the bytecode backend
 
-    $ perlcc -c file            # Creates a C file, 'file.c'
-    $ perlcc -S -o hello file   # Creates a C file, 'file.c',
-                                # then compiles it to executable 'hello'
-    $ perlcc -c out.c file      # Creates a C file, 'out.c' from 'file'
+    perlcc -c file            # Creates a C file, 'file.c'
+    perlcc -S -o hello file   # Creates a C file, 'file.c',
+                              # then compiles it to executable 'hello'
+    perlcc -c out.c file      # Creates a C file, 'out.c' from 'file'
 
-    $ perlcc -e 'print q//'     # Compiles a one-liner into 'a.out'
-    $ perlcc -c -e 'print q//'  # Creates a C file 'a.out.c'
+    perlcc -e 'print q//'     # Compiles a one-liner into 'a.out'
+    perlcc -c -e 'print q//'  # Creates a C file 'a.out.c'
 
-    $ perlcc -I /foo hello	# extra headers (notice the space after -I)
-    $ perlcc -L /foo hello	# extra libraries (notice the space after -L)
+    perlcc -I /foo hello      # extra headers (notice the space after -I)
+    perlcc -L /foo hello      # extra libraries (notice the space after -L)
 
-    $ perlcc -r hello           # compiles 'hello' into 'a.out', runs 'a.out'.
-    $ perlcc -r hello a b c     # compiles 'hello' into 'a.out', runs 'a.out'.
-                                # with arguments 'a b c'
+    perlcc -r hello           # compiles 'hello' into 'a.out', runs 'a.out'.
+    perlcc -r hello a b c     # compiles 'hello' into 'a.out', runs 'a.out'.
+                              # with arguments 'a b c'
 
-    $ perlcc hello -log c       # compiles 'hello' into 'a.out' logs compile
-                                # log into 'c'.
+    perlcc hello -log c       # compiles 'hello' into 'a.out' logs compile
+                              # log into 'c'.
+
+    perlcc -h       	      # help, only SYNOPSIS
+    perlcc -v 2 -h  	      # verbose help, also DESCRIPTION and OPTIONS
 
 =head1 DESCRIPTION
 
@@ -631,12 +634,12 @@ experimental. Use for production purposes is strongly discouraged.
 
 =over 4
 
-=item -LI<library directories>
+=item -LI<C library directories>
 
 Adds the given directories to the library search path when C code is
 passed to your C compiler.
 
-=item -II<include directories>
+=item -II<C include directories>
 
 Adds the given directories to the include file search path when C code is
 passed to your C compiler; when using the Perl bytecode option, adds the
@@ -668,9 +671,9 @@ Use the 'optimised' C code generator B::CC. This is more experimental than
 everything else put together, and the code created is not guaranteed to
 compile in finite time and memory, or indeed, at all.
 
-=item -v I<num>
+=item -v I<1-3>
 
-Increase verbosity of output; can be repeated for more verbose output.
+Increase verbosity of output from 1 to 3.
 
 =item -r
 
@@ -684,6 +687,18 @@ Log the output of compiling to a file rather than to stdout.
 
 Pass the options to the compiler backend, such as -Wb=-O2,-v
 
+=item -T or -t
+
+run the backend using perl -T or -t
+
+=item -static
+
+Dirty hack to enable -shared/-static
+
+=item -shared
+
+Create a shared library (--shared for compat.)
+
 =item -testsuite
 
   perlcc -r -testsuite t/harness
@@ -691,6 +706,13 @@ Pass the options to the compiler backend, such as -Wb=-O2,-v
 =back
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:
 
 !NO!SUBS!
 

@@ -1463,12 +1463,33 @@ sub B::RV::save {
 
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
-  warn sprintf( "No definition for sub %s::%s. Try autoload\n", $cvstashname, $cvname )
+  warn sprintf( "No definition for sub %s::%s. Try Autoload\n", $cvstashname, $cvname )
     if $verbose;
+
+  # XXX Todo Search and call ::AUTOLOAD (test 27, 5.8)
+  no strict 'refs';
+  my $auto = \&{"$cvstashname\::AUTOLOAD"};
+  if (0 and defined $auto and ref $auto eq 'CODE' and !$PERL510) {
+    ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
+    svref_2object( \*{"$cvstashname\::AUTOLOAD"} )->save;
+    return 1;
+
+    # Tweaked version of __PACKAGE__::AUTOLOAD
+    ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
+    eval { &$auto() };
+    unless ($@) {
+      # now we have to set cv->ROOT and cv->XSUB somehow
+      #my $goto = \&{"$cvstashname\::$cvname"};
+      #my $cv = bless $goto, "B::CV";
+      #$cv->save;
+      return $auto;
+    }
+  }
+
+  # XXX TODO Selfloader
 
   # Handle AutoLoader classes explicitly. Any more general AUTOLOAD
   # use should be handled by the class itself.
-  no strict 'refs';
   my $isa = \@{"$cvstashname\::ISA"};
   if ( grep( $_ eq "AutoLoader", @$isa ) ) {
     warn "Forcing immediate load of sub derived from AutoLoader\n" if $verbose;
@@ -1573,13 +1594,16 @@ sub B::CV::save {
   $svsect->add("SVIX$sv_ix");
   my $xpvcv_ix = $xpvcvsect->index + 1;
   $xpvcvsect->add("XPVCVIX$xpvcv_ix");
-
   # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
   $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   if ( !$$root && !$cvxsub ) {
-    if ( try_autoload( $cvstashname, $cvname ) ) {
+    if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
+      if (ref $auto eq 'B::CV') { # XXX this does not work yet
+	$cv = $auto;
+      }
       # Recalculate root and xsub
       $root   = $cv->ROOT;
       $cvxsub = $cv->XSUB;
@@ -1790,11 +1814,6 @@ sub B::GV::save {
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
     }
     else {
-      # Remove SVpgv_GP (GV has a valid GP) SvFLAGS(sv) &= ~SVpgv_GP
-      # 5.8 had SvFLAGS 0x600d, 5.11 has 0x8009
-      #$svflags = $gv->FLAGS && 0x8000 ? $gv->FLAGS - 0x8000 : $gv->FLAGS; #SVpgv_GP
-      #$init->add(sprintf("GvGP($sym) = 0;"));
-      #warn("Removing empty GP from $name\n") if $debug{gv};
       $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
     }
   }
@@ -1816,7 +1835,7 @@ sub B::GV::save {
   }
 
   # Shouldn't need to do save_magic since gv_fetchpv handles that
-  #$gv->save_magic if $PERL510; # re-enabled for 5.10
+  #$gv->save_magic if $PERL510;
   # XXX will always be > 1!!!
   my $refcnt = $gv->REFCNT + 1;
   $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt - 1 ) ) if $refcnt > 1;
@@ -2588,9 +2607,9 @@ EOT
     exitstatus = perl_run( my_perl );
 EOT
   if ( $PERL510 and $pv_copy_on_grow) {
-    print "    my_perl_destruct( my_perl );";
+    print "    my_perl_destruct( my_perl );\n";
   } elsif ( $] >= 5.007003 ) {
-    print "    perl_destruct( my_perl );";
+    print "    perl_destruct( my_perl );\n";
   }
   print <<'EOT';
     perl_free( my_perl );
@@ -2856,13 +2875,23 @@ sub save_unused_subs {
 }
 
 sub save_context {
+  warn "save context:\n" if $verbose;
+  $init->add("/* save context */",
+	     "/* curpad names */");
+  warn "curpad names:\n" if $verbose;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save;
+  warn "curpad syms:\n" if $verbose;
+  $init->add("/* curpad syms */");
   my $curpad_sym      = ( comppadlist->ARRAY )[1]->save;
+  warn "\%INC and \@INC:\n" if $verbose;
+  $init->add('/* %INC */');
   my $inc_hv          = svref_2object( \%INC )->save;
+  $init->add('/* @INC */');
   my $inc_av          = svref_2object( \@INC )->save;
+  warn "amagic_generation:\n" if $verbose;
+  $init->add("/* amagic_generation */");
   my $amagic_generate = amagic_generation;
   $init->add(
-    "/* save context */",
     "GvHV(PL_incgv) = $inc_hv;",
     "GvAV(PL_incgv) = $inc_av;",
     "PL_curpad = AvARRAY($curpad_sym);",
@@ -3379,3 +3408,10 @@ Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>,
 Reini Urban, C<rurban@cpan.org>
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 2
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=2:

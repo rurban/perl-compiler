@@ -18,7 +18,7 @@ WriteMakefile(
     LDDLFLAGS           => $lddlflags,
     CCFLAGS             => $ccflags,
     clean => { FILES =>
-               "byterun.* *.core *.stackdump a.out *.c *.o *~"},
+               "byterun.* *.core *.stackdump a.out *.c *.o *~ dll.base dll.exp"},
 
 );
 

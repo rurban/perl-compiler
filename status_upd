@@ -112,3 +112,10 @@ sub safer_rename {
   my ($from, $to) = @_;
   safer_rename_silent($from, $to) or die "renaming $from to $to: $!";
 }
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 2
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=2:

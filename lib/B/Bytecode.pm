@@ -1228,3 +1228,10 @@ Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
 Enhanced by Reini Urban <rurban@cpan.org>, 2008, 2009
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:

@@ -1,6 +1,7 @@
-BEGIN {
-  push @INC, '.', 'lib';
-  require 'regen_lib.pl';
+# -*- cperl-indent-level:4 -*-
+BEGIN {		
+    push @INC, '.', 'lib';
+    require 'regen_lib.pl';
 }
 use strict;
 use Config;
@@ -19,14 +20,14 @@ my (@optype, @specialsv_name);
 require B;
 # @optype was in B::Asmdata, and is since 5.10 in B
 if ($] < 5.009) {
-  require B::Asmdata;
-  @optype = @{*B::Asmdata::optype{ARRAY}};
-  @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
-  # B::Asmdata->import qw(@optype @specialsv_name);
+    require B::Asmdata;
+    @optype = @{*B::Asmdata::optype{ARRAY}};
+    @specialsv_name = @{*B::Asmdata::specialsv_name{ARRAY}};
+    # B::Asmdata->import qw(@optype @specialsv_name);
 } else {
-  @optype = @{*B::optype{ARRAY}};
-  @specialsv_name = @{*B::specialsv_name{ARRAY}};
-  # B->import qw(@optype @specialsv_name);
+    @optype = @{*B::optype{ARRAY}};
+    @specialsv_name = @{*B::specialsv_name{ARRAY}};
+    # B->import qw(@optype @specialsv_name);
 }
 
 
@@ -69,7 +70,7 @@ use Exporter;
 EOT
 
 if ($] > 5.009) {
-  print ASMDATA_PM 'our(%insn_data, @insn_name);
+    print ASMDATA_PM 'our(%insn_data, @insn_name);
 
 use B qw(@optype @specialsv_name);
 ';
@@ -176,36 +177,36 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 
     /* new since 0.06_03 */
     if (strGE(bl_header.version, "0.06_03")) {
-      BGET_U32(sz); /* longsize */
-      bl_header.longsize = sz;
+        BGET_U32(sz); /* longsize */
+        bl_header.longsize = sz;
     } else {
-      bl_header.longsize = LONGSIZE;
+        bl_header.longsize = LONGSIZE;
     }
 
     if (strGT(bl_header.version, "0.06") || strEQ(bl_header.version, "0.04"))
-    { /* added again with 0.06_01 */
-      /* config.h BYTEORDER: 0x1234 of length longsize, not ivsize */
-      char supported[16];
-      /* Note: perl's $Config{byteorder} is wrong with 64int.
-         Bug in Config.pm:921 my $s = $Config{ivsize}; => my $s = $Config{longsize};
-       */
-      sprintf(supported, "%x", BYTEORDER);
-      BGET_strconst(str, 16); /* optional 0x prefix, 12345678 or 1234 */
-      if (str[0] == 0x30 && str[1] == 0x78) { /* skip '0x' */
-        strcpy(str, &str[2]);
-      }
-      strcpy(bl_header.byteorder, str);
-      if (strNE(str, supported)) {
-        /* swab only if same length. 1234 => 4321, 12345678 => 87654321 */
-        if (strlen(str) == strlen(supported)) {
-          bget_swab = 1;
-	  HEADER_WARN2("EXPERIMENTAL byteorder conversion: .plc=%s, perl=%s",
-		       str, supported);
-        } else {
-	  HEADER_FAIL2("Unsupported byteorder conversion: .plc=%s, perl=%s",
-		       str, supported);
-        }
-      }
+    {   /* added again with 0.06_01 */
+	/* config.h BYTEORDER: 0x1234 of length longsize, not ivsize */
+	char supported[16];
+	/* Note: perl's $Config{byteorder} is wrong with 64int.
+	   Bug in Config.pm:921 my $s = $Config{ivsize}; => my $s = $Config{longsize};
+	*/
+	sprintf(supported, "%x", BYTEORDER);
+	BGET_strconst(str, 16); /* optional 0x prefix, 12345678 or 1234 */
+	if (str[0] == 0x30 && str[1] == 0x78) { /* skip '0x' */
+	    strcpy(str, &str[2]);
+	}
+	strcpy(bl_header.byteorder, str);
+	if (strNE(str, supported)) {
+	    /* swab only if same length. 1234 => 4321, 12345678 => 87654321 */
+	    if (strlen(str) == strlen(supported)) {
+		bget_swab = 1;
+		HEADER_WARN2("EXPERIMENTAL byteorder conversion: .plc=%s, perl=%s",
+			     str, supported);
+	    } else {
+		HEADER_FAIL2("Unsupported byteorder conversion: .plc=%s, perl=%s",
+			     str, supported);
+	    }
+	}
     }
 
     /* swab byteorder */
@@ -223,11 +224,12 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 # define HAVE_ITHREADS_I 0
 #endif
     if (strGE(bl_header.version, "0.06_05")) {
-      BGET_U16(sz); /* archflag */
-      bl_header.archflag = sz;
-      if ((sz & 1) != HAVE_ITHREADS_I) {
-	HEADER_FAIL2("Wrong USE_ITHREADS. Bytecode: %s, System: %s)",
-		     bl_header.archflag & 1 ? "yes" : "no", HAVE_ITHREADS_I ? "yes" : "no");
+        BGET_U16(sz); /* archflag */
+        bl_header.archflag = sz;
+        if ((sz & 1) != HAVE_ITHREADS_I) {
+	    HEADER_FAIL2("Wrong USE_ITHREADS. Bytecode: %s, System: %s)",
+		         bl_header.archflag & 1 ? "yes" : "no",
+			 HAVE_ITHREADS_I ? "yes" : "no");
       }
     }
 
@@ -242,17 +244,17 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 	    HEADER_FAIL1("unsupported PTRSIZE %d", bl_header.ptrsize);
     }
     if (strGE(bl_header.version, "0.06_03")) {
-      if (bl_header.longsize != LONGSIZE) {
-	HEADER_WARN("different LONGSIZE");
-        if ((bl_header.longsize != 4) && (bl_header.longsize != 8))
-	    HEADER_FAIL1("unsupported LONGSIZE %d", bl_header.longsize);
+        if (bl_header.longsize != LONGSIZE) {
+	    HEADER_WARN("different LONGSIZE");
+            if ((bl_header.longsize != 4) && (bl_header.longsize != 8))
+	        HEADER_FAIL1("unsupported LONGSIZE %d", bl_header.longsize);
       }
     }
     if (strGE(bl_header.version, "0.06_06")) {
-      BGET_strconst(str, 16);
-      strcpy(bl_header.perlversion, str);
+        BGET_strconst(str, 16);
+        strcpy(bl_header.perlversion, str);
     } else {
-      *bl_header.perlversion = 0;
+        *bl_header.perlversion = 0;
     }
 
     return 1;
@@ -293,8 +295,8 @@ for my $i ( 0 .. $#specialsv_name ) {
 print BYTERUN_C <<'EOT';
 
         while ((insn = BGET_FGETC()) != EOF) {
-	  CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
-	  switch (insn) {
+	    CopLINE(PL_curcop) = bstate->bs_fdata->next_out;
+	    switch (insn) {
 EOT
 
 
@@ -472,14 +474,14 @@ open(BYTERUN_H, "> $targets[2]") or die "$targets[2]: $!";
 binmode BYTERUN_H;
 print BYTERUN_H $c_header, <<'EOT';
 #if PERL_VERSION < 10
-  #define PL_RSFP PL_rsfp
+# define PL_RSFP PL_rsfp
 #else
-  #define PL_RSFP PL_parser->rsfp
+# define PL_RSFP PL_parser->rsfp
 #endif
 
 #if (PERL_VERSION <= 8) && (PERL_SUBVERSION < 8)
-  #define NEED_sv_2pv_flags
-  #include "ppport.h"
+# define NEED_sv_2pv_flags
+# include "ppport.h"
 #endif
 
 /* macros for correct constant construction */

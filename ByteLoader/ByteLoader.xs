@@ -149,3 +149,9 @@ void
 unimport(...)
   PPCODE:
     filter_del(byteloader_filter);
+
+
+# Local variables:
+#   c-indent-level: 4
+# End:
+# vim: expandtab shiftwidth=4:

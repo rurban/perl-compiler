@@ -4,6 +4,11 @@
 	quite fine with Perl 5.6 and 5.8
 
 
+1.08	?? rurban
+	Adapt coding guidelines, add C and cperl coda. Reformat sources.
+	* C.pm: Try AUTOLOAD for 5.8
+	* perlcc: improve help. use Pod::Usage as module, not via cmdline
+
 1.07	2009-12-19 rurban
 	* C.pm: fix fbm_compile (INDEX) for >= 5.10. gv_list is already a pointer.
 	  rewrite PVGV (ie PVBM) init for >= 5.10. (test 11)
