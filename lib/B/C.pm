@@ -1466,23 +1466,16 @@ sub try_autoload {
   warn sprintf( "No definition for sub %s::%s. Try Autoload\n", $cvstashname, $cvname )
     if $verbose;
 
-  # XXX Todo Search and call ::AUTOLOAD (test 27, 5.8)
+  # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   no strict 'refs';
   my $auto = \&{"$cvstashname\::AUTOLOAD"};
-  if (0 and defined $auto and ref $auto eq 'CODE' and !$PERL510) {
-    ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
-    svref_2object( \*{"$cvstashname\::AUTOLOAD"} )->save;
-    return 1;
-
+  if (defined $auto and ref $auto eq 'CODE' and !$PERL510) {
     # Tweaked version of __PACKAGE__::AUTOLOAD
     ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
     eval { &$auto() };
     unless ($@) {
-      # now we have to set cv->ROOT and cv->XSUB somehow
-      #my $goto = \&{"$cvstashname\::$cvname"};
-      #my $cv = bless $goto, "B::CV";
-      #$cv->save;
-      return $auto;
+      my $cv = svref_2object( $auto );
+      return $cv;
     }
   }
 
@@ -1601,12 +1594,14 @@ sub B::CV::save {
     if $debug{cv};
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
-      if (ref $auto eq 'B::CV') { # XXX this does not work yet
-	$cv = $auto;
+      if (ref $auto eq 'B::CV') { # explicit goto
+        $root   = $auto->ROOT;
+        $cvxsub = $auto->XSUB;
+      } else {
+        # Recalculated root and xsub
+        $root   = $cv->ROOT;
+        $cvxsub = $cv->XSUB;
       }
-      # Recalculate root and xsub
-      $root   = $cv->ROOT;
-      $cvxsub = $cv->XSUB;
       if ( $$root || $cvxsub ) {
         warn "Successful forced autoload\n" if $verbose;
       }
@@ -1643,6 +1638,9 @@ sub B::CV::save {
     warn sprintf( "done saving op tree for CV 0x%x, name %s, root 0x%x => start=%s\n",
       $$cv, $ppname, $$root, $startfield )
       if $debug{cv};
+    # XXX missing cv_start for AUTOLOAD
+    $startfield = objsym($root->next) unless $startfield; # autoload has only root
+    $startfield = "(OP*)Nullany" unless $startfield;
     if ($$padlist) {
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
@@ -1702,7 +1700,7 @@ sub B::CV::save {
     $symsect->add(
       sprintf("XPVCVIX$xpvcv_ix\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
         cstring($pv),      length($pv),    $cv->IVX,
-        $cv->NVX,  $startfield,       ${ $cv->ROOT }, $cv->DEPTH,
+        $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
       )
     );
@@ -1712,7 +1710,7 @@ sub B::CV::save {
     $symsect->add(
       sprintf("XPVCVIX$xpvcv_ix\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
         cstring($pv),      length($pv),    $cv->IVX,
-        $cv->NVX,  $startfield,       ${ $cv->ROOT }, $cv->DEPTH,
+        $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
       )
     );

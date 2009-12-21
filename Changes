@@ -6,8 +6,13 @@
 
 1.08	?? rurban
 	Adapt coding guidelines, add C and cperl coda. Reformat sources.
-	* C.pm: Try AUTOLOAD for 5.8
-	* perlcc: improve help. use Pod::Usage as module, not via cmdline
+	* C.pm: Try AUTOLOAD for 5.8. Not yet ready. (test 27)
+	* perlcc: improve help. use Pod::Usage as module, not via cmdline. 
+	fix previous installation quirks.
+	* assemble: improve pod. make it installable.
+	* disassemble: make it installable.
+	* cc_harness: ditto
+	* Makefile.PL: added script/* as EXE_FILES to install them
 
 1.07	2009-12-19 rurban
 	* C.pm: fix fbm_compile (INDEX) for >= 5.10. gv_list is already a pointer.

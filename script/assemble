@@ -10,18 +10,18 @@ assemble - Assemble Perl bytecode
 
 =head1 SYNOPSIS
 
-  assemble [-d] [filename] [outfilename]
+  assemble [-d] [bytecode.asm | -] [bytecode.plc]
 
 =head1 DESCRIPTION
 
-Compiles a perl script to binary bytecode assembler.
+Compiles an ascii bytecode as produced by L<disassemble> to binary bytecode assembler.
 
-bytecode is a binary file wih either the magic 4 bytes 'PLBC'
+C<bytecode> is a binary file wih either the magic 4 bytes 'PLBC'
 at the start, or something like "#! /usr/bin/perl\n
-use ByteLoader '0.07'"
+use ByteLoader '0.07'", typically with the F<.plc> or F<.pmc> extension.
 
 If filename is -, the input is read from STDIN and
-you can still provide an outfilename.
+you can still provide an output filename.
 
 =head1 OPTION -d
 

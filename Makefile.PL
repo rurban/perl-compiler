@@ -1,27 +1,28 @@
 use ExtUtils::MakeMaker;
 use Config;
 use File::Spec;
-#use 5.008;
+use 5.006;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 WriteMakefile(
-    NAME	    => "B::C",
-    VERSION_FROM    => "lib/B/C.pm",
-	         # 'scripts/assemble','scripts/disassemble',
-    PL_FILES => {'script/perlcc.PL'  => '$(INST_BIN)/perlcc' },
+    NAME	 => "B::C",
+    VERSION_FROM => "lib/B/C.pm",
+    PL_FILES   => { 'script/perlcc.PL'    => 'script/perlcc' },
+    EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
     #PREREQ_PM => {'B::Concise' => '0.66',
-    #	          'B'          => '1.0901'},
-    'AUTHOR' => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>',
-    'ABSTRACT' => 'perl compiler',
-#   ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
-#    ('EXTRA_META'  => "recommends:\n" .
-#     "    B::Debug:    1.11\n"
-#    ) : ()),
+    #	           'B'          => '1.0901'},
+    'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>',
+    'ABSTRACT' => 'Perl compiler',
+    # ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
+    #    ('EXTRA_META'  => "recommends:\n" .
+    #     "    B::Debug:    1.11\n"
+    #    ) : ()),
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
- 	       "*.core *.stackdump a.out *.cee *.c *.asm *.dbg *.plc *.concise *~ dll.base dll.exp"},
+ 	       "*.core *.stackdump a.out *.cee *.c *.asm *.dbg *.plc ".
+               "*.concise *~ dll.base dll.exp"},
 );
 
 sub headerpath {
@@ -36,7 +37,7 @@ sub headerpath {
 package MY;
 
 sub libscan {
-  # ignore temp testing files
+  # Ignore temp testing files
   return 0 if $_[1] =~ /^(.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode\d+\..*|regen_lib\.pl)$/;
   # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
   # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
@@ -54,13 +55,7 @@ sub depend {
     my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
-    my $perlcc_inst = File::Spec->catfile('$(INST_BIN)', 'perlcc');
-    my $perlcc_exp = File::Spec->catfile('script', 'perlcc.PL');
     my $result = "
-$perlcc_inst :: $perlcc_exp
-	\$(MKPATH) \$(INST_BIN)
-	\$(CP) $perlcc_exp $perlcc_inst
-
 C.c : C.xs Makefile
 
 $asmdata : bytecode.pl @headers Makefile

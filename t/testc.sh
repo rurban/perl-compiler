@@ -202,10 +202,10 @@ result[24]='ok'
 # <=5.6 qsort needs two more passes here than >=5.8 merge_sort
 tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
 result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
-# lvalue
+# lvalue sub
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
-# import test. AUTOLOAD
+# import test, AUTOLOAD
 tests[27]='use Fcntl; print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
 # require $fname
@@ -214,7 +214,7 @@ result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
 result[29]='ok'
-# run-time context of ..
+# run-time context of .., fails in CC
 tests[30]='@a=(4,6,1,0,0,1);sub range{(shift @a)..(shift @a)}print range();while(@a){print scalar(range())}'
 result[30]='456123E0'
 
