@@ -117,7 +117,7 @@ function btest {
   fi
 }
 
-ntests=30
+ntests=31
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -199,6 +199,9 @@ result[29]='ok'
 # run-time context of ..
 tests[30]='@a=(4,6,1,0,0,1);sub range{(shift @a)..(shift @a)}print range();while(@a){print scalar(range())}'
 result[30]='456123E0'
+# AUTOLOAD w/o goto
+tests[31]='package DummyShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} date();who("am","i");ls("-l");'
+result[31]='date;who am i;ls -l;'
 
 
 while getopts "qscCh" opt

@@ -3,16 +3,16 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-
-1.08	?? rurban
+1.08	2009-12-22 rurban
 	Adapt coding guidelines, add C and cperl coda. Reformat sources.
-	* C.pm: Try AUTOLOAD for 5.8. Not yet ready. (test 27)
+	* C.pm: Improved AUTOLOAD a bit (test 27 and 31)
 	* perlcc: improve help. use Pod::Usage as module, not via cmdline. 
 	fix previous installation quirks.
 	* assemble: improve pod. make it installable.
 	* disassemble: make it installable.
 	* cc_harness: ditto
 	* Makefile.PL: added script/* as EXE_FILES to install them
+	* t/TESTS, t/testc.sh, t/testplc.sh: test 31 non-xs AUTOLOAD added
 
 1.07	2009-12-19 rurban
 	* C.pm: fix fbm_compile (INDEX) for >= 5.10. gv_list is already a pointer.

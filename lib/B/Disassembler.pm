@@ -457,7 +457,7 @@ Reini Urban <rurban@cpan.org> since 2008.
 
 # Local Variables:
 #   mode: cperl
-#   cperl-indent-level: 4
+#   cperl-indent-level: 2
 #   fill-column: 100
 # End:
-# vim: expandtab shiftwidth=4:
+# vim: expandtab shiftwidth=2:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # t/testc.sh -c -Du,-q -B static 2>&1 |tee c.log|grep FAIL
-# for p in 5.6.2 5.8.8-nt 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; perl$p Makefile.PL; t/testc.sh -O0 16; done
+# for p in 5.6.2 5.8.8-nt 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; echo perl$p; perl$p Makefile.PL; t/testc.sh -q -O0 31; done
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-29]"
@@ -132,7 +132,7 @@ function ctest {
     fi
 }
 
-ntests=30
+ntests=31
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -205,7 +205,7 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 # lvalue sub
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
-# import test, AUTOLOAD
+# import test, AUTOLOAD goto xsub
 tests[27]='use Fcntl; print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
 # require $fname
@@ -217,6 +217,9 @@ result[29]='ok'
 # run-time context of .., fails in CC
 tests[30]='@a=(4,6,1,0,0,1);sub range{(shift @a)..(shift @a)}print range();while(@a){print scalar(range())}'
 result[30]='456123E0'
+# AUTOLOAD w/o goto xsub
+tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
+result[31]='date;who am i;ls -l;'
 
 # 
 # getopts for -q -k -E -Du,-q -v -O2, -a -c

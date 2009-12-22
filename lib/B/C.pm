@@ -1091,26 +1091,18 @@ sub B::PVLV::save {
   my ( $lvtarg, $lvtarg_sym );
   if ($PERL510) {
     $xpvlvsect->comment('xnv_u, CUR, LEN, GvNAME, MAGIC, STASH, TARGOFF, TARGLEN, TYPE');
-    $xpvlvsect->add
-      (
-       sprintf(
-	       "%u, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, 0, %s",
+    $xpvlvsect->add(
+       sprintf("%u, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, 0, %s",
 	       $sv->NVX, $len, $pvmax, 
-	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE )
-	      )
-      );
+	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, %s",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TYPE');
-    $xpvlvsect->add
-      (
-       sprintf(
-	       "%s, %u, %u, %d, %g, 0, 0, %u, %u, 0, %s",
+    $xpvlvsect->add(
+       sprintf("%s, %u, %u, %d, %g, 0, 0, %u, %u, 0, %s",
 	       $pvsym,   $len,         $pvmax,       $sv->IVX,
-	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE )
-	      )
-      );
+	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
   }
@@ -1138,11 +1130,8 @@ sub B::PVIV::save {
   $xpvivsect->add(
     sprintf( "%s, %u, %u, %d", $savesym, $len, $pvmax, $sv->IVX ) );
   $svsect->add(
-    sprintf(
-      "&xpviv_list[%d], %u, 0x%x",
-      $xpvivsect->index, $sv->REFCNT, $sv->FLAGS
-    )
-  );
+    sprintf("&xpviv_list[%d], %u, 0x%x",
+            $xpvivsect->index, $sv->REFCNT, $sv->FLAGS ) );
   if ( defined($pv) && !$pv_copy_on_grow ) {
     if ($PERL510) {
       $init->add(
@@ -1174,11 +1163,8 @@ sub B::PVNV::save {
       sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $sv->IVX, $val ) );
   }
   $svsect->add(
-    sprintf(
-      "&xpvnv_list[%d], %lu, 0x%x %s",
-      $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', 0' : ''
-    )
-  );
+    sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
+            $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', 0' : '' ) );
   if ( defined($pv) && !$pv_copy_on_grow ) {
     if ($PERL510) {
       $init->add(
@@ -1212,8 +1198,7 @@ sub B::BM::save {
 		sprintf( "SvLEN_set($sym, %d);", $len ) );
   } else {
     $xpvbmsect->comment('pv,len,len+258,IVX,NVX,0,0,USEFUL,PREVIOUS,RARE');
-    $xpvbmsect->add
-      (
+    $xpvbmsect->add(
        sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
 	       $PERL510 ? '0' : (defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"),
 	       $len,        $len + 258,    $sv->IVX, $sv->NVX,
@@ -1345,8 +1330,8 @@ sub B::PVMG::save_magic {
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   my $sv_type = $sv_flags & 0xff;
   if ($PERL510 and ($sv_type < 8 or (($sv_flags & 0x40040000) == 0x40040000))) {
-    warn sprintf("Skipping invalid PVMG type=%d, flags=0x%x (PAD_OUR?)\n", $sv_type, $sv_flags)
-      if $debug{mg};
+    warn sprintf("Skipping invalid PVMG type=%d, flags=0x%x (PAD_OUR?)\n",
+                 $sv_type, $sv_flags) if $debug{mg};
     return $sv;
   }
   my @mgchain = $sv->MAGIC;
@@ -1364,7 +1349,7 @@ sub B::PVMG::save_magic {
 
     unless ( $type eq 'r' ) { # test 23
       $obj = $mg->OBJ;
-      # 5.10: Can't call method "save" on unblessed reference: perl -Mblib script/perlcc t/c.t
+      # 5.10: Can't call method "save" on unblessed reference
       #warn "Save MG ". $obj . "\n" if $PERL510;
       $obj->save
         unless $PERL510 and ref $obj eq 'SCALAR';
@@ -1441,7 +1426,6 @@ sub B::RV::save {
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;\n", $xrvsect->index, $rv ) );
     }
-
     # and stashes, too
     elsif ( $sv->RV->isa('B::HV') && $sv->RV->NAME ) {
       $xrvsect->add("(SV*)Nullhv");
@@ -1468,12 +1452,16 @@ sub try_autoload {
 
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   no strict 'refs';
-  my $auto = \&{"$cvstashname\::AUTOLOAD"};
-  if (defined $auto and ref $auto eq 'CODE' and !$PERL510) {
+  # Since 5.10 AUTOLOAD xsubs are already resolved
+  if ($cvstashname->can("AUTOLOAD")) {
+    my $auto = \&{"$cvstashname\::AUTOLOAD"};
     # Tweaked version of __PACKAGE__::AUTOLOAD
     ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
     eval { &$auto() };
     unless ($@) {
+      # we need just the empty auto GV, $auto->ROOT and $auto->XSUB,
+      # but not the whole CV optree.
+      #B::make_sv_object($auto, B::sv_undef)->save;
       my $cv = svref_2object( $auto );
       return $cv;
     }
@@ -1517,6 +1505,7 @@ sub B::CV::save {
     warn sprintf( "CV as PVGV 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
   }
+  # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
   my $cvxsub  = $cv->XSUB;
   my $isconst;
@@ -1619,7 +1608,7 @@ sub B::CV::save {
     my $ppname = "";
     if ($$gv) {
       my $stashname = $gv->STASH->NAME;
-      my $gvname    = $gv->NAME;
+       my $gvname    = $gv->NAME;
       if ( $gvname ne "__ANON__" ) {
         $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
         $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
@@ -1639,7 +1628,7 @@ sub B::CV::save {
       $$cv, $ppname, $$root, $startfield )
       if $debug{cv};
     # XXX missing cv_start for AUTOLOAD
-    $startfield = objsym($root->next) unless $startfield; # autoload has only root
+    $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
     $startfield = "(OP*)Nullany" unless $startfield;
     if ($$padlist) {
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
@@ -1773,7 +1762,8 @@ sub B::GV::save {
   }
   my $is_empty = $gv->is_empty;
   my $gvname   = $gv->NAME;
-  my $fullname = $gv->STASH->NAME . "::" . $gvname;
+  my $package  = $gv->STASH->NAME;
+  my $fullname = $package . "::" . $gvname;
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
@@ -1781,13 +1771,18 @@ sub B::GV::save {
 
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
-    if ( $$gv != $$egv ) {
-      warn(
-        sprintf( "EGV name is %s, saving it now\n",
-          $egv->STASH->NAME . "::" . $egv->NAME )
-      ) if $debug{gv} and !$egv->isa("B::SPECIAL");
-      $egvsym = $egv->save;
+    unless ($egv->isa("B::SPECIAL")) {
+      my $estash = $egv->STASH->NAME;
+      if ( $$gv != $$egv ) {
+        warn(sprintf( "EGV name is %s, saving it now\n",
+                      $estash . "::" . $egv->NAME )
+            ) if $debug{gv};
+        $egvsym = $egv->save;
+        mark_package($estash); # catch imported AUTOLOAD (unused)
+      }
     }
+    # XXX should be improved to check for AUTOLOAD only
+    mark_package($package); # fix test 31, catch unreferenced AUTOLOAD
   }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
@@ -1947,6 +1942,8 @@ sub B::GV::save {
     }
     $init->add("");
   }
+  # XXX TODO need to save the gv stash::AUTOLOAD also if exists
+
   warn "GV::save $name done\n" if $debug{gv};
   return $sym;
 }
@@ -2840,10 +2837,14 @@ sub walkpackages {
   while ( ( $sym, $ref ) = each %$symref ) {
     local (*glob);
     *glob = $ref;
-    warn("Walkpackages $sym") if $debug{p};
+    warn("Walkpackages $prefix$sym\n") if $debug{pkg};
+    #if ( $sym eq 'AUTOLOAD' or $sym =~ /::AUTOLOAD$/ ) {
+    #  warn("TODO saving PVCV $sym\n") if $debug{gv};
+    #  ;
+    #}
     if ( $sym =~ /::$/ ) {
       $sym = $prefix . $sym;
-      # XXX The walker was missing main subs to avoid recursion into O compiler subs again
+      # The walker was missing main subs to avoid recursion into O compiler subs again
       if ( $sym ne "main::" && $sym ne "<none>::" && &$recurse($sym) ) {
         walkpackages( \%glob, $recurse, $sym );
       }

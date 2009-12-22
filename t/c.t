@@ -31,17 +31,17 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 my @tests = tests();
-my @todo = (27); # 8,14-16 fail on 5.00505 (max 20 then)
-@todo = (27,29) if !$ITHREADS; # On 5.8-nt only 15 fails
+my @todo  = (27,31); # 8,14-16 fail on 5.00505 (max 20 then)
+@todo     = (27,29) if !$ITHREADS;
 # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
 # 15+28 fixed with 1.04_34
 # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
 # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
 @todo = (15,25,27) if $] < 5.007;
-@todo = (29)       if $] >= 5.010; # 11 is instable
-# on freebsd 5.10 only 29 is failing
+@todo = (29,31)    if $] >= 5.010; # 11 is instable
 @todo = (15,29)    if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
-@todo = (15,16)    if $] >= 5.011;
+@todo = (15,16,31) if $] >= 5.011;
+@todo = (15,16)    if $] >= 5.011 and !$ITHREADS;
 
 my %todo = map { $_ => 1 } @todo;
 

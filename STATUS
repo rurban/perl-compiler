@@ -1,21 +1,24 @@
-5.8, 5.6 and earlier had a good core perl compiler, but we are better.
+5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
-Basic testsuite added, coverage TODO.
 Bytecode compiler disabled for 5.6. The core compiler fails 50% but
-in mine is a blocker.
+in mine is a blocker. Bytecode is only stable for 5.8.
 
-Same ok and less failures as with 5.6, 5.8 and 5.9.4.
+C is stable, minor bugs left.
+
+CC is unstable, work in progress.
+
+C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
 Several B::C and B::CC bugs fixed. 5.10 + 5.11 compatibility added.
 
-Open Problems:
+Open Problems for B::C:
 5.6:
     test 25, 27
     XSUB load order via B::Stash (?). Usually fixed via perlcc.
 5.8:
-    27 (AUTOLOAD)
+    AUTOLOAD (test 27 + 31)
 5.10 + 5.11:
     +
     reading from __DATA__ handles (15) -fsave-data fails on non-threaded builds.
@@ -111,7 +114,7 @@ t/cc_o2         10..30
 5.10, 5.11 status
 -----------------
 TODO for B::C
-  Support AUTOLOAD and SelfLoader. use AutoLoader works okay. (test 27)
+  Support AUTOLOAD and SelfLoader esp on 5.8. use AutoLoader works okay. (test 27, 31)
   __DATA__ IO (test 15) partially broken
   test 29 non-threaded 5.8 (require $fname)
   test 16 on blead
@@ -302,4 +305,4 @@ cc B::CC,
 -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
 -nt not threaded perl.
 
-2009-12-18 rurban
+2009-12-22 rurban
