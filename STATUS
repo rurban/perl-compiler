@@ -88,7 +88,7 @@ t/cc_o2         10,15,16,18,21,25..27,29,30
 
 
 5.10.1: 					| non-threaded
-t/bytecode 	9,10,12,27,29
+t/bytecode 	27,29				| 9,10,12,27,29
 t/c 		ok				| 15
 t/c_o1          ok				| 15
 t/c_o2          ok				| 15

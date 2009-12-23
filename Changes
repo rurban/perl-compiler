@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.09	2009-12-?? rurban
+	* t/test.pl, t/c*.t: Simplify C/CC testsuite.
+	* t/c_o3.t: added
+
 1.08	2009-12-23 rurban
 	Adapt coding guidelines, add C and cperl coda. Reformat sources.
 
@@ -13,7 +17,6 @@
 	* Bytecode.pm (1.04): Add missing BM logic to GV >= 5.10. Fixes test 11.
 	Fixed op_pmflags logic for 5.10 threaded only, no += 2. Fixes test 2.
 	Protect empty match from setting op_reflags. Fixes test 20.
-	  Now >=5.10 threaded has the same errors as non-threaded.
 	Add perlversion to the -S generated header.
 	Document more options -TI, -TF, -u<package>
 	* perlcc: improve help. use Pod::Usage as module, not via cmdline. 

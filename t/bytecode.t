@@ -5,30 +5,29 @@ my $keep_plc_fail = 1;	# set it to keep the bytecode files on failures
 my $do_coverage   = undef; # do bytecode insn coverage
 my $verbose       = $ENV{TEST_VERBOSE}; # better use t/testplc.sh for debugging
 use Config;
-
 # Debugging Note: perl5.6.2 has no -Dvl, use -D260 (256+4) instead. v mapped to f
 
 BEGIN {
-    if ($^O eq 'VMS') {
-       print "1..0 # skip - Bytecode/ByteLoader doesn't work on VMS\n";
-       exit 0;
-    }
-    if ($ENV{PERL_CORE}){
-	chdir('t') if -d 't';
-	@INC = ('.', '../lib');
-    } else {
-	unshift @INC, 't';
-	push @INC, "blib/arch", "blib/lib";
-    }
-    if (($Config{'extensions'} !~ /\bB\b/) ){
-        print "1..0 # Skip -- Perl configured without B module\n";
-        exit 0;
-    }
-    #if ($Config{ccflags} =~ /-DPERL_COPY_ON_WRITE/) {
-    #	print "1..0 # skip - no COW for now\n";
-    #	exit 0;
-    #}
-    require 'test.pl'; # for run_perl()
+  if ($^O eq 'VMS') {
+    print "1..0 # skip - Bytecode/ByteLoader doesn't work on VMS\n";
+    exit 0;
+  }
+  if ($ENV{PERL_CORE}){
+    chdir('t') if -d 't';
+    @INC = ('.', '../lib');
+  } else {
+    unshift @INC, 't';
+    push @INC, "blib/arch", "blib/lib";
+  }
+  if (($Config{'extensions'} !~ /\bB\b/) ){
+    print "1..0 # Skip -- Perl configured without B module\n";
+    exit 0;
+  }
+  #if ($Config{ccflags} =~ /-DPERL_COPY_ON_WRITE/) {
+  #  print "1..0 # skip - no COW for now\n";
+  #  exit 0;
+  #}
+  require 'test.pl'; # for run_perl()
 }
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
@@ -53,7 +52,8 @@ if ($DEBUGGING) {
 }
 my @todo = ();
 @todo = (3,6,8..10,12,15,16,18,25..28,31) if $] < 5.007; # CORE failures, ours not yet enabled
-@todo = (9,10,12,27,29)  	if $] >= 5.010;
+@todo = (27,29)  		if $] >= 5.010;
+@todo = (9,10,12,27,29)  	if $] >= 5.010 and !$ITHREADS;
 @todo = (9,10,12,16,21,27,29) 	if $] >= 5.011;
 
 my @skip = (20,21,27,29) if $] >= 5.010;

@@ -1,37 +1,21 @@
 #!./perl
-my $keep_c      = 0;	# set it to keep the pl, c and exe files
-my $keep_c_fail = 1;	# set it to keep the pl, c and exe files on failures
 # better use testc.sh for debugging
-use Config;
-
 BEGIN {
-    if ($^O eq 'VMS') {
-       print "1..0 # skip - B::C doesn't work on VMS\n";
-       exit 0;
-    }
-    if ($ENV{PERL_CORE}){
-	chdir('t') if -d 't';
-	@INC = ('.', '../lib');
-    } else {
-	unshift @INC, 't';
-	#push @INC, "blib/arch", "blib/lib";
-    }
-    if (($Config{'extensions'} !~ /\bB\b/) ){
-        print "1..0 # Skip -- Perl configured without B module\n";
-        exit 0;
-    }
-    #if ($Config{ccflags} =~ /-DPERL_COPY_ON_WRITE/) {
-    #	print "1..0 # skip - no COW for now\n";
-    #	exit 0;
-    #}
-    require 'test.pl'; # for run_perl()
+  if ($ENV{PERL_CORE}){
+    chdir('t') if -d 't';
+    @INC = ('.', '../lib');
+  } else {
+    unshift @INC, 't';
+    #push @INC, "blib/arch", "blib/lib";
+  }
+  require 'test.pl'; # for run_perl()
 }
 use strict;
-my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+#my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
-my $AUTHOR    = -d ".svn";
 
-my @tests = tests();
+prepare_c_tests();
+
 my @todo  = (27);   # 8,14-16 fail on 5.00505 (max 20 then)
 #@todo    = (27) if !$ITHREADS;
 # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
@@ -45,19 +29,4 @@ my @todo  = (27);   # 8,14-16 fail on 5.00505 (max 20 then)
 
 my @skip = (27); # out of memory
 
-my %todo = map { $_ => 1 } @todo;
-my %skip = map { $_ => 1 } @skip;
-
-print "1..".($#tests+1)."\n";
-
-my $cnt = 1;
-for (@tests) {
-  my $todo = $todo{$cnt} ? "#TODO" : "#";
-  if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
-    print sprintf("ok %d # skip\n", $cnt);
-  } else {
-    my ($script, $expect) = split />>>+\n/;
-    run_cc_test($cnt, "C", $script, $expect, $keep_c, $keep_c_fail, $todo);
-  }
-  $cnt++;
-}
+run_c_tests("C", \@todo, \@skip);

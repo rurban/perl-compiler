@@ -35,7 +35,7 @@ ByteLoader compatibility: version, platform. eventually Bytecode version
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
   and GV method names package::name. (partially done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
-proper static init of PVBM/FBM
+proper static init of PVBM/FBM (partially finished)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.
