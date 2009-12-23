@@ -223,9 +223,11 @@ sub strip_comments {
 }
 
 # create the ByteCode header:
-#   magic, archname, ByteLoader $VERSION, ivsize, ptrsize, longsize, byteorder
-# TODO: perl version for the opcode indices.
+#   magic, archname, ByteLoader $VERSION, ivsize, ptrsize, longsize, byteorder,
+#   archflag, perlversion
 # byteorder is strconst, not U32 because of varying size issues (?)
+# archflag currently only bit 1 for use_ithreads
+# perlversion for the bytecode translation.
 
 sub gen_header {
   my $header = gen_header_hash();
@@ -250,9 +252,11 @@ sub gen_header {
 
 # Calculate the ByteCode header values:
 #   magic, archname, ByteLoader $VERSION, ivsize, ptrsize, longsize, byteorder
+#   archflag, perlversion
 # nvtype is irrelevant (floats are stored as strings)
 # byteorder is strconst, not U32 because of varying size issues (?)
-# perl version for the bytecode translation.
+# archflag currently only bit 1 for use_ithreads
+# perlversion for the bytecode translation.
 
 sub gen_header_hash {
   my $header  = {};

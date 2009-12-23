@@ -6,10 +6,14 @@
 # it under the same terms as Perl itself.
 
 # Based on the original Bytecode.pm module written by Malcolm Beattie.
+#
+# Reviving 5.6 support here is work in progress:
+#   So far the original is used instead, even if the list of failed tests
+#   is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
 
 package B::Bytecode;
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 use strict;
 use Config;
@@ -233,19 +237,23 @@ sub B::GV::ix {
       nice "[GV]";
       asm "newsvx", $gv->FLAGS, $debug{Comment} ? sv_flags($gv) : '';
       $svtab{$$gv} = $varix = $ix = $tix++;
-      $gv->B::PVMG::bsave($ix);
       if ( !$PERL510 ) {
-
-        #GV_without_GP has no flags?
+        #GV_without_GP has no GvFlags
         asm "xgv_flags", $gv->GvFLAGS;
       }
       if ( !$PERL510 and !$PERL56 and $gv->STASH ) {
         my $stashix = $gv->STASH->ix;
         asm "xgv_stash", $stashix;
       }
+      if ($PERL510 and $gv->FLAGS & 0x40000000) { # SVpbm_VALID
+        my $bm = bless $gv, "B::BM";
+        $bm->bsave($ix); # also saves magic
+      } else {
+        $gv->B::PVMG::bsave($ix);
+      }
     }
     $ix;
-    }
+  }
 }
 
 sub B::HV::ix {
@@ -401,7 +409,7 @@ sub B::PVNV::bsave {
 
 sub B::PVMG::domagic {
   my ( $sv, $ix ) = @_;
-  nice '-MAGICAL-';
+  nice '-MAGICAL-'; # XXX TODO no empty line before
   my @mglist = $sv->MAGIC;
   my ( @mgix, @namix );
   for (@mglist) {
@@ -710,7 +718,6 @@ sub B::PMOP::bsave {
   my ( $rrop, $rrarg, $rstart );
 
   # my $pmnextix = $op->pmnext->ix;	# XXX
-
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{M} or $debug{o};
   if (ITHREADS) {
     if ( $op->name eq 'subst' ) {
@@ -757,31 +764,21 @@ sub B::PMOP::bsave {
     asm "op_pmflags",     $op->pmflags;
     asm "op_pmpermflags", $op->pmpermflags;
     asm "op_pmdynflags",  $op->pmdynflags unless $PERL56;
-
     # asm "op_pmnext", $pmnextix;	# XXX broken
-    asm "newpv", pvstring $op->precomp
-      ;    # Special sequence: This is the arg for the next pregcomp
+    # Special sequence: This is the arg for the next pregcomp
+    asm "newpv", pvstring $op->precomp;
     asm "pregcomp";
   }
   elsif ($PERL510) {
-    if ( ITHREADS and $op->pmoffset ) {
-      asm "op_pmflags", $op->pmflags | 2;
-      bwarn(
-        "PMOP pmstashpv: ",
-        $op->pmstashpv,
-        ", pmflags: ",
-        $op->pmflags | 2
-      ) if $debug{M};
-    }
-    else {
-      asm "op_pmflags", $op->pmflags;
-      bwarn( "PMOP pmstashpv: ", $op->pmstashpv, ", pmflags: ", $op->pmflags )
-        if $debug{M};
-    }
-    asm "newpv", pvstring $op->precomp;
+    asm "op_pmflags", $op->pmflags;
+    bwarn("PMOP pmstashpv: ", $op->pmstashpv,
+          ", op_pmflags: ", $op->pmflags
+         ) if $debug{M};
+    my $pv = $op->precomp;
+    asm "newpv", pvstring $pv;
     asm "pregcomp";
     # pregcomp does not set the extflags correctly, just the pmflags
-    asm "op_reflags",  $op->reflags; # so overwrite the extflags
+    asm "op_reflags", $op->reflags if $pv; # so overwrite the extflags
   }
 }
 
@@ -798,10 +795,9 @@ sub B::PADOP::bsave {
 
   $op->B::OP::bsave($ix);
 
-  # crashed in 5.11
+  # XXX crashed in 5.11 (where, why?)
   #if ($PERL511) {
   asm "op_padix", $op->padix;
-
   #}
 }
 
@@ -1043,7 +1039,7 @@ use ByteLoader '$ByteLoader::VERSION';
     if ($debug{-S}) {
       my $header = B::Assembler::gen_header_hash;
       asm sprintf("#%-10s\t","magic").sprintf("0x%x",$header->{magic});
-      for (qw(archname blversion ivsize ptrsize byteorder longsize archflag)) {
+      for (qw(archname blversion ivsize ptrsize byteorder longsize archflag perlversion)) {
 	asm sprintf("#%-10s\t",$_).$header->{$_};
       }
     }
@@ -1156,6 +1152,10 @@ Output assembler source rather than piping it through the assembler
 and outputting bytecode.
 Without -q the assembler source is commented.
 
+=item B<-u>I<package>
+
+use package. Might be needed of the package is not automatically detected.
+
 =item B<-q>
 
 Be quiet.
@@ -1163,6 +1163,14 @@ Be quiet.
 =item B<-v>
 
 Be verbose.
+
+=item B<-TI>
+
+Restore @INC for running within the CORE testsuite.
+
+=item B<-TF> I<cop file>
+
+Set the COP file - for running within the CORE testsuite.
 
 =item B<-Do>
 
@@ -1189,6 +1197,11 @@ Set developer B<A>ssertions, to help find possible obj-indices out of range.
 =head1 KNOWN BUGS
 
 =over 4
+
+=item *
+
+5.10 threaded fails with setting the wrong MATCH op_pmflags
+5.10 non-threaded fails calling anoncode, ...
 
 =item *
 

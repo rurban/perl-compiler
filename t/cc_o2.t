@@ -35,8 +35,7 @@ my @tests = tests();
 my @todo = (10,15,16,18,21,25..27,29,30); # 5.8
 #  @todo = (10,15,16,18,21,25..27,29) if $] < 5.007;
 @todo = (10,15,16,18,21,25,26,29,30)  if $] >= 5.010;
-#@todo = (10,15,16,18,21,25,26,29,30) if $] >= 5.011;
-push @todo, (12)                      if $] >= 5.011 and !$ITHREADS;
+push @todo, (12)                      if $] >= 5.010 and !$ITHREADS;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
 my @skip = $AUTHOR ? () : (29);

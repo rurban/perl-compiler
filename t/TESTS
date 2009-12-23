@@ -126,3 +126,8 @@ ok
 >>>>
 456123E0
 ######################### 30 ################################
+package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} 
+package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");
+>>>>
+date;who am i;ls -l;
+######################### 31 ################################

@@ -35,7 +35,7 @@ sub MY::depend {
 	\$(NOECHO) \$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', '\''$(PM_FILTER)'\'')' -- \
 	  ByteLoader.pm \$(INST_LIB)/ByteLoader.pm
 
-byterun.c : $bytecode_pl Makefile
+byterun.c : $bytecode_pl Makefile bytecode.h
 	cd $up && \$(PERL) bytecode.pl && cd ByteLoader
 
 byterun.h : $bytecode_pl Makefile

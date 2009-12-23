@@ -33,6 +33,7 @@ BEGIN {
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
+my $AUTHOR    = -d ".svn";
 
 my @tests = tests();
 my $numtests = $#tests+1;
@@ -43,7 +44,6 @@ print "1..$numtests\n";
 my $cnt = 1;
 my $test;
 my %insncov; # insn coverage
-my @todo = (29);
 if ($DEBUGGING) {
   # op coverage either via Assembler debug, or via ByteLoader -Dv on a -DDEBUGGING perl
   if ($do_coverage) {
@@ -51,14 +51,16 @@ if ($DEBUGGING) {
     for (0..@insn_name) { $insncov{$_} = 0; }
   }
 }
-@todo = (3,6,8..10,12,15,16,18,25,26,28) if $] < 5.007; # CORE failures, ours not yet enabled
-@todo = (2..5,7,11,20,27,29) if $] >= 5.010;
-@todo = (9..12,20,27,29)     if ($] >= 5.010 and $] < 5.011 and !$ITHREADS);
-@todo = (9..12,16,20,21,27,29) if $] >= 5.011;
+my @todo = ();
+@todo = (3,6,8..10,12,15,16,18,25..28,31) if $] < 5.007; # CORE failures, ours not yet enabled
+@todo = (9,10,12,27,29)  	if $] >= 5.010;
+@todo = (9,10,12,16,21,27,29) 	if $] >= 5.011;
+
+my @skip = (20,21,27,29) if $] >= 5.010;
 
 my %todo = map { $_ => 1 } @todo;
+my %skip = map { $_ => 1 } @skip;
 my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls
-# $Mblib = "-Mblib";
 unless ($Mblib) { # check for -Mblib from the testsuite
   if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
     $Mblib = "-Mblib"; # forced -Mblib via cmdline
@@ -69,6 +71,10 @@ unless ($Mblib) { # check for -Mblib from the testsuite
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO " : "#";
   my ($got, @insn);
+  if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
+    print sprintf("ok %d # skip\n", $cnt);
+    next;
+  }
   my ($script, $expect) = split />>>+\n/;
   $expect =~ s/\n$//;
   $test = "bytecode$cnt.pl";
@@ -96,6 +102,9 @@ for (@tests) {
 		    stderr   => 1,
 		    switches => [ "$Mblib -MByteLoader" ]);
     unless ($?) {
+      if ($cnt == 25 and $expect eq '0 1 2 3 4321' and $] < 5.008) {
+        $expect = '0 1 2 3 4 5 4321';
+      }
       if ($got =~ /^$expect$/) {
 	print "ok $cnt", $todo eq '#' ? "\n" : "$todo\n";
 	next;

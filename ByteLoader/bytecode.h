@@ -246,40 +246,58 @@ static int bget_swab = 0;
 #ifdef USE_ITHREADS
 
 /* copied after the code in newPMOP() */
-#if PERL_VERSION >= 10
+#if (PERL_VERSION >= 11)
+#define BSET_pregcomp(o, arg)						\
+    STMT_START {                                                        \
+	PM_SETRE(cPMOPx(o), arg                                         \
+                 ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
+                 : Null(REGEXP*));                                      \
+    } STMT_END
+#endif
+#if (PERL_VERSION >= 10) && (PERL_VERSION < 11)
 /* see op.c:newPMOP
  * Must use a SV now. build it on the fly from the given pv. 
- * rx->extflags is constructed from op_pmflags in pregcomp
- * | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr
  * TODO: 5.11 could use newSVpvn_flags with SVf_TEMP
+ * PM_SETRE adjust no PL_regex_pad, so repoint manually.
  */
 #define BSET_pregcomp(o, arg)						\
-    STMT_START {							\
-	assert(SvPOK(PL_regex_pad[0]));					\
-        PM_SETRE(cPMOPx(o), arg						\
-	  ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
-	  : Null(REGEXP*));						\
+    STMT_START {                                                        \
+        SV* repointer;                                                  \
+	REGEXP* rx = arg                                                \
+            ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
+            : Null(REGEXP*);                                            \
+        if(av_len((AV*)PL_regex_pad[0]) > -1) {                         \
+            repointer = av_pop((AV*)PL_regex_pad[0]);                   \
+            cPMOPx(o)->op_pmoffset = SvIV(repointer);                   \
+            SvREPADTMP_off(repointer);                                  \
+            sv_setiv(repointer, PTR2IV(rx));                            \
+        } else {                                                        \
+            repointer = newSViv(PTR2IV(rx));                            \
+            av_push(PL_regex_padav, SvREFCNT_inc(repointer));           \
+            cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);            \
+            PL_regex_pad = AvARRAY(PL_regex_padav);                     \
+        }                                                               \
     } STMT_END
-
 #endif
+/* 5.8 and earlier had no PM_SETRE, so repoint manually */
 #if (PERL_VERSION > 7) && (PERL_VERSION < 10)
-#define BSET_pregcomp(o, arg) \
-    STMT_START { \
-        SV* repointer; \
-	REGEXP* rx = arg ? \
-	    CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)) : \
-	    Null(REGEXP*); \
-        if(av_len((AV*) PL_regex_pad[0]) > -1) { \
-            repointer = av_pop((AV*)PL_regex_pad[0]); \
-            cPMOPx(o)->op_pmoffset = SvIV(repointer); \
-            SvREPADTMP_off(repointer); \
-            sv_setiv(repointer, PTR2IV(rx)); \
-        } else { \
-            repointer = newSViv(PTR2IV(rx)); \
-            av_push(PL_regex_padav, SvREFCNT_inc(repointer)); \
-            cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav); \
-            PL_regex_pad = AvARRAY(PL_regex_padav); \
-        } \
+#define BSET_pregcomp(o, arg)                   \
+    STMT_START {                                \
+        SV* repointer;                          \
+	REGEXP* rx = arg                                                \
+	    ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)) \
+	    : Null(REGEXP*);                                            \
+        if(av_len((AV*)PL_regex_pad[0]) > -1) {                         \
+            repointer = av_pop((AV*)PL_regex_pad[0]);                   \
+            cPMOPx(o)->op_pmoffset = SvIV(repointer);                   \
+            SvREPADTMP_off(repointer);                                  \
+            sv_setiv(repointer, PTR2IV(rx));                            \
+        } else {                                                        \
+            repointer = newSViv(PTR2IV(rx));                            \
+            av_push(PL_regex_padav, SvREFCNT_inc(repointer));           \
+            cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);            \
+            PL_regex_pad = AvARRAY(PL_regex_padav);                     \
+        }                                                               \
     } STMT_END
 
 #endif
@@ -289,14 +307,13 @@ static int bget_swab = 0;
 #if (PERL_VERSION >= 8) && (PERL_VERSION < 10)
 /* PM_SETRE only since 5.8 */
 #define BSET_pregcomp(o, arg) \
-    STMT_START { \
-	(((PMOP*)o)->op_pmregexp = (arg ? \
-	     CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)): \
-	     Null(REGEXP*))); \
+    STMT_START {                        \
+	(((PMOP*)o)->op_pmregexp = (arg \
+            ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)) \
+            : Null(REGEXP*)));          \
     } STMT_END
 #endif
 #if (PERL_VERSION >= 10)
-/* | PMf_COMPILETIME removed from op_pmflags to fix substr crashes with empty check_substr */
 #define BSET_pregcomp(o, arg)				\
     STMT_START {					\
         PM_SETRE((PMOP*)(o), arg			\
@@ -309,8 +326,8 @@ static int bget_swab = 0;
 
 #if PERL_VERSION < 8
 #define BSET_pregcomp(o, arg)	    \
-    ((PMOP*)o)->op_pmregexp = arg ? \
-		CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, ((PMOP*)o)) : 0
+    ((PMOP*)o)->op_pmregexp = arg   \
+        ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, ((PMOP*)o)) : 0
 #endif
 
 

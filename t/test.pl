@@ -772,74 +772,129 @@ WHOA
 }
 
 sub tests {
-  my $in = shift || "t/TESTS";
-  $in = "TESTS" unless -f $in;
-  undef $/;
-  open TEST, "< $in" or die "Cannot open $in";
-  my @tests = split /\n####+.*##\n/, <TEST>;
-  close TEST;
-  @tests;
+    my $in = shift || "t/TESTS";
+    $in = "TESTS" unless -f $in;
+    undef $/;
+    open TEST, "< $in" or die "Cannot open $in";
+    my @tests = split /\n####+.*##\n/, <TEST>;
+    close TEST;
+    @tests;
 }
 
 sub run_cc_test {
-  my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
-  my ($opt, $got);
-  $expect =~ s/\n$//;
-  my $fnbackend = lc($backend); #C,-O2
-  ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
-  $opt =~ s/,-/_/ if $opt;
-  $opt = '' unless $opt;
-  my $test = $fnbackend."code".$cnt.".pl";
-  my $cfile = $fnbackend."code".$cnt.$opt.".c";
-  my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
-  unlink ($test, $cfile, $exe);
-  open T, ">$test"; print T $script; close T;
-  my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
-  unless ($Mblib) { # check for -Mblib from the testsuite
-    if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
-      $Mblib = "-Mblib"; # forced -Mblib via cmdline
+    my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
+    my ($opt, $got);
+    $expect =~ s/\n$//;
+    my $fnbackend = lc($backend); #C,-O2
+    ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
+    $opt =~ s/,-/_/ if $opt;
+    $opt = '' unless $opt;
+    my $test = $fnbackend."code".$cnt.".pl";
+    my $cfile = $fnbackend."code".$cnt.$opt.".c";
+    my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
+    unlink ($test, $cfile, $exe);
+    open T, ">$test"; print T $script; close T;
+    my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
+    unless ($Mblib) {           # check for -Mblib from the testsuite
+        if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
+            $Mblib = "-Mblib";  # forced -Mblib via cmdline
+        }
     }
-  }
-  $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],
-		  verbose  => 0, # for debugging
-		  nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-		  stderr   => 1, # to capture the "ccode.pl syntax ok"
-		  progfile => $test);
-  unless ($?) {
-    use ExtUtils::Embed ();
-    my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
-    $command .= " ".ExtUtils::Embed::ldopts("-std");
-    $command .= " -lperl" unless $command =~ /(-lperl|CORE\/libperl5)/;
-    my $NULL = $^O eq 'MSWin32' ? '>nul' : '2>/dev/null';
-    my $cmdline = "$Config{cc} $command $NULL";
-    system($cmdline);
-    unless (-e $exe) {
-      print "not ok $cnt $todo failed $cmdline\n";
-      print STDERR "# ",system("$Config{cc} $command");
-      return 0;
+    $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],
+                    verbose  => 0, # for debugging
+                    nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
+                    stderr   => 1, # to capture the "ccode.pl syntax ok"
+                    progfile => $test);
+    if (! $? and -s $cfile) {
+        use ExtUtils::Embed ();
+        my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
+        $command .= " ".ExtUtils::Embed::ldopts("-std");
+        $command .= " -lperl" unless $command =~ /(-lperl|CORE\/libperl5)/;
+        my $NULL = $^O eq 'MSWin32' ? '>nul' : '2>/dev/null';
+        my $cmdline = "$Config{cc} $command $NULL";
+        system($cmdline);
+        unless (-e $exe) {
+            print "not ok $cnt $todo failed $cmdline\n";
+            print STDERR "# ",system("$Config{cc} $command");
+            return 0;
+        }
+        my $exe = "./".$exe unless $^O eq 'MSWin32';
+        $got = `$exe`;
+        if (defined($got) and ! $?) {
+            if ($cnt == 25 and $expect eq '0 1 2 3 4321' and $] < 5.008) {
+                $expect = '0 1 2 3 4 5 4321';
+            }
+            if ($got =~ /^$expect$/) {
+                print "ok $cnt", $todo eq '#' ? "\n" : " $todo\n";
+                unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
+                return 1;
+            } else {
+                $keep_c = $keep_c_fail unless $keep_c;
+                print "not ok $cnt $todo wanted: \"$expect\", got: \"$got\"\n";
+                unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
+                return 0;
+            }
+        } else {
+            $got = '';
+        }
     }
-    my $exe = "./".$exe unless $^O eq 'MSWin32';
-    $got = `$exe`;
-    if (defined($got) and ! $?) {
-      if ($got =~ /^$expect$/) {
-	print "ok $cnt", $todo eq '#' ? "\n" : " $todo\n";
-	unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
-	return 1;
-      } else {
-	$keep_c = $keep_c_fail unless $keep_c;
-	print "not ok $cnt $todo wanted: \"$expect\", got: \"$got\"\n";
-	unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
-	return 0;
-      }
-    } else {
-      $got = '';
-    }
-  }
-  print "not ok $cnt $todo wanted: \"$expect\", \$\? = $?, got: \"$got\"\n";
+    print "not ok $cnt $todo wanted: \"$expect\", \$\? = $?, got: \"$got\"\n";
   $keep_c = $keep_c_fail unless $keep_c;
-  #unlink($test, $cfile, $exe) unless $keep_c;
   unlink ($test, $cfile, $exe) if !$keep_c;
   return 0;
 }
 
+sub prepare_c_tests {
+    use Config;
+    BEGIN {
+        if ($^O eq 'VMS') {
+            print "1..0 # skip - B::C doesn't work on VMS\n";
+            exit 0;
+        }
+        if (($Config{'extensions'} !~ /\bB\b/) ) {
+            print "1..0 # Skip -- Perl configured without B module\n";
+            exit 0;
+        }
+        # with 5.10 and 5.8.9 PERL_COPY_ON_WRITE was renamed to PERL_OLD_COPY_ON_WRITE
+        if ($Config{ccflags} =~ /-DPERL_OLD_COPY_ON_WRITE/) {
+            print "1..0 # skip - no OLD COW for now\n";
+            exit 0;
+        }
+    }
+}
+
+sub run_c_tests {
+    my $backend = $_[0];
+    my @todo = @{$_[1]};
+    my @skip = @{$_[2]};
+
+    my $AUTHOR    = -d ".svn";
+    my $keep_c      = 0;	# set it to keep the pl, c and exe files
+    my $keep_c_fail = 1;	# set it to keep the pl, c and exe files on failures
+
+    my %todo = map { $_ => 1 } @todo;
+    my %skip = map { $_ => 1 } @skip;
+    my @tests = tests();
+
+    print "1..".($#tests+1)."\n";
+
+    my $cnt = 1;
+    for (@tests) {
+        my $todo = $todo{$cnt} ? "#TODO" : "#";
+        if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
+            print sprintf("ok %d # skip\n", $cnt);
+        } else {
+            my ($script, $expect) = split />>>+\n/;
+            run_cc_test($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo);
+        }
+        $cnt++;
+    }
+}
 1;
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:

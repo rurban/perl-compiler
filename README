@@ -12,7 +12,8 @@ USAGE
 
 The Bytecode, C and CC backends are now all functional
 enough to compile almost the whole of the main perl test
-suite. In the case of the CC backend, any failures are all
+suite for 5.8 and partially for 5.10. 
+In the case of the CC backend, any failures are all
 due to differences and/or known bugs documented below. See
 the file TESTS.  In the following examples, you'll need to
 replace "perl" by
@@ -247,8 +248,8 @@ Deprecated features
 
 STATUS
 
-C works fine
-Bytecode fails on >= 5.10 (unfinished)
+C works fine, best with 5.10 threaded.
+Bytecode fails on >= 5.10 (in work)
 CC fails on some tests (see Todo)
 
 See STATUS

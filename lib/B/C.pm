@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 
 package B::C::Section;
 
@@ -1047,7 +1047,7 @@ sub B::NV::save {
       $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', 0' : ''
     )
   );
-  warn sprintf( "Saving NV %s to xpvnv_list[%d], sv_list[%d]",
+  warn sprintf( "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",
     $val, $xpvnvsect->index, $svsect->index )
     if $debug{sv};
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1328,10 +1328,9 @@ sub B::PVMG::save_magic {
     $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$stash ) );
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-  my $sv_type = $sv_flags & 0xff;
-  if ($PERL510 and ($sv_type < 8 or (($sv_flags & 0x40040000) == 0x40040000))) {
-    warn sprintf("Skipping invalid PVMG type=%d, flags=0x%x (PAD_OUR?)\n",
-                 $sv_type, $sv_flags) if $debug{mg};
+  if ($PERL510 and !$sv->MAGICAL) {
+    warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x\n",
+                 $sv_flags && 0xff, $sv_flags) if $debug{mg};
     return $sv;
   }
   my @mgchain = $sv->MAGIC;
@@ -1453,21 +1452,21 @@ sub try_autoload {
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   no strict 'refs';
   # Since 5.10 AUTOLOAD xsubs are already resolved
-  if ($cvstashname->can("AUTOLOAD")) {
+  if (exists ${"$cvstashname::"}{AUTOLOAD}) {
     my $auto = \&{"$cvstashname\::AUTOLOAD"};
     # Tweaked version of __PACKAGE__::AUTOLOAD
     ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
     eval { &$auto() };
     unless ($@) {
       # we need just the empty auto GV, $auto->ROOT and $auto->XSUB,
-      # but not the whole CV optree.
+      # but not the whole CV optree. XXX This still fails with 5.8
       #B::make_sv_object($auto, B::sv_undef)->save;
       my $cv = svref_2object( $auto );
       return $cv;
     }
   }
 
-  # XXX TODO Selfloader
+  # XXX TODO Check Selfloader (test 31?)
 
   # Handle AutoLoader classes explicitly. Any more general AUTOLOAD
   # use should be handled by the class itself.
@@ -1627,7 +1626,7 @@ sub B::CV::save {
     warn sprintf( "done saving op tree for CV 0x%x, name %s, root 0x%x => start=%s\n",
       $$cv, $ppname, $$root, $startfield )
       if $debug{cv};
-    # XXX missing cv_start for AUTOLOAD
+    # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
     $startfield = "(OP*)Nullany" unless $startfield;
     if ($$padlist) {
@@ -1664,7 +1663,7 @@ sub B::CV::save {
       (sprintf("XPVCVIX$xpvcv_ix\ts\\_%x, %u, %u, %s, %s, %s,"
 	       ." %s, %s, s\\_%x, %s, %s, (PADLIST *)%s,"
 	       ." (CV*)s\\_%x, %s, 0x%x",
-	       $gv->STASH, # TODO!
+	       $gv->STASH, # TODO! fails with 29
 	       $len, $len,
 	       $cv->DEPTH,
 	       "NULL", "Nullhv", #MAGIC + STASH later
@@ -1778,11 +1777,24 @@ sub B::GV::save {
                       $estash . "::" . $egv->NAME )
             ) if $debug{gv};
         $egvsym = $egv->save;
-        mark_package($estash); # catch imported AUTOLOAD (unused)
+        {
+          no strict 'refs';
+          # catch imported AUTOLOAD (unused)
+          svref_2object( \*{$estash."::AUTOLOAD"} )->save 
+            if $estash and defined ${$estash."::"}{AUTOLOAD};
+          svref_2object( \*{$estash."::CLONE"} )->save 
+            if $estash and defined ${$estash."::"}{CLONE};
+        }
       }
     }
-    # XXX should be improved to check for AUTOLOAD only
-    mark_package($package); # fix test 31, catch unreferenced AUTOLOAD
+    {
+      no strict 'refs';
+      # fix test 31, catch unreferenced AUTOLOAD
+      svref_2object( \*{$package."::AUTOLOAD"} )->save
+        if $package and exists ${$package."::"}{AUTOLOAD};
+      svref_2object( \*{$package."::CLONE"} )->save
+        if $package and exists ${$package."::"}{CLONE};
+    }
   }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
@@ -1942,8 +1954,6 @@ sub B::GV::save {
     }
     $init->add("");
   }
-  # XXX TODO need to save the gv stash::AUTOLOAD also if exists
-
   warn "GV::save $name done\n" if $debug{gv};
   return $sym;
 }
@@ -2838,10 +2848,6 @@ sub walkpackages {
     local (*glob);
     *glob = $ref;
     warn("Walkpackages $prefix$sym\n") if $debug{pkg};
-    #if ( $sym eq 'AUTOLOAD' or $sym =~ /::AUTOLOAD$/ ) {
-    #  warn("TODO saving PVCV $sym\n") if $debug{gv};
-    #  ;
-    #}
     if ( $sym =~ /::$/ ) {
       $sym = $prefix . $sym;
       # The walker was missing main subs to avoid recursion into O compiler subs again
@@ -3387,19 +3393,18 @@ Current status: experimental.
 
 5.6:
     reading from __DATA__ handles (15)
-    XSUB load order via B::Stash (?). Usually fixed via perlcc.
+    AUTOLOAD xsubs (27)
 
 5.8:
-    none else
+    AUTOLOAD xsubs (27)
 
 5.10:
-    +
-    special our handling: (tests 14 + 23)
-    main::a missing AV magic (test 16)
+    reading from __DATA__ handles (15) non-threaded
     destruction of static pvs for -O1
 
 5.11:
-
+    reading from __DATA__ handles (15)
+    (16)
 
 =head1 AUTHOR
 

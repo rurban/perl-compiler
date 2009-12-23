@@ -22,7 +22,7 @@ PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 # if $] < 5.9 you may want to remove -Mblib for testing the core lib
 #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-Mblib="-Mblib" # B::C is now fully 5.6+5.8 backwards compatible
+#Mblib="-Mblib" # B::C is now fully 5.6+5.8 backwards compatible
 if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
 BASE=`basename $0`
 OCMD="$PERL $Mblib -MO=C,-DcOACMSGpu,-v,"

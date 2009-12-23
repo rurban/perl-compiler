@@ -2179,9 +2179,13 @@ Omits generating code for handling perl's tainting mechanism.
 
 =item B<-On>
 
-Optimisation level (n = 0, 1, 2, ...). B<-O> means B<-O1>.
-Currently, B<-O1> sets B<-ffreetmps-each-bblock> and B<-O2>
-sets B<-ffreetmps-each-loop>.
+Optimisation level (n = 0, 1, 2). B<-O> means B<-O1>.
+
+B<-O1> sets B<-ffreetmps-each-bblock>.
+
+B<-O2> sets B<-ffreetmps-each-loop>.
+
+B<-fomit-taint> must be set explicitly.
 
 =back
 
