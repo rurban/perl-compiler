@@ -15,7 +15,7 @@ my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
 
-my @todo = (27); # 8,14-16 fail on 5.00505
+my @todo = (); # 8,14-16 fail on 5.00505
 # 11,15,28,29 fixed with 1.04_34
 @todo = (27)       if !$ITHREADS;
 # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25

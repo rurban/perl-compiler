@@ -42,7 +42,7 @@ CC backend invocation
         -q 		Be quiet. STDOUT goes to $O::BEGIN_output
         -qq		Be very quiet. Also suppress "Syntax OK"
 	-ofilename	Output to filename instead of STDOUT
-NYI	-v              Be verbose.
+   	-v              Be verbose.
 	--		Force end of options
 	-uPackname	Force apparently unused subs from package Packname to
 			be compiled. This allows programs to use eval "foo()"
@@ -113,19 +113,19 @@ Bytecode backend invocation
 	-ofilename	Output to filename instead of STDOUT.
 NYI	-v              Be verbose.
 	--		Force end of options.
-	-f		Force optimisations on or off one at a time.
+NYI	-f		Force optimisations on or off one at a time.
 			Each can be preceded by no- to turn the option off.
-		compress-nullops
+NYI		compress-nullops
 			Only fills in the necessary fields of ops which have
 			been optimised away by perl's internal compiler.
-		omit-sequence-numbers
+NYI		omit-sequence-numbers
 			Leaves out code to fill in the op_seq field of all ops
 			which is only used by perl's internal compiler.
-		bypass-nullops
+NYI		bypass-nullops
 			If op->op_next ever points to a NULLOP, replaces the
 			op_next field with the first non-NULLOP in the path
 			of execution.
-		strip-syntax-tree
+NYI		strip-syntax-tree
 			Leaves out code to fill in the pointers which link the
 			internal syntax tree together. They're not needed at
 			run-time but leaving them out will make it impossible
@@ -186,3 +186,9 @@ O module
 	parsing prog.pl (just as it would with "perl -c prog.pl") and after
 	doing so, assuming there are no parse-time errors, the CHECK block
 	of O gets called and the actual backend compilation happens. Phew.
+
+Od debugging module. See L<B::Debugger>
+	Used with "perl -d -MOd=Backend,foo,bar prog.pl" to invoke the backend
+	B::Backend with options foo and bar. Od delays the invocation of the sub
+	B::Backend::compile() with arguments foo and bar to the INIT block, so that 
+        you can step through the backend with the perl source debugger.

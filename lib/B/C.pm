@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 
 package B::C::Section;
 
@@ -178,6 +178,8 @@ BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
     B->import(qw(regex_padav CVf_CONST)); # both unsupported for 5.6
+  } else {
+    @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -211,6 +213,8 @@ my $optimize_warn_sv     = 0;
 my $use_perl_script_name = 0;
 my $save_data_fh         = 0;
 my $save_sig             = 0;
+my $optimize_cop	 = 0;
+my $av_init	 = 0;
 my %debug;
 my $max_string_len;
 
@@ -248,22 +252,12 @@ sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
 sub save_main_rest2;
 
-# strip indexed PVBM names
+# do not strip indexed PVBM names
 #sub cstring_wrong {
 #  my $s = B::cstring($_[0]);
 #  if ($s !~ /^\"/ || $s !~ /\\000/ ) { return $s; }	
 #  $s =~ s/\\000.*\"$/\"/;
 #  return $s;	 #now clean
-#}
-#
-#sub cstring_try1 {
-#  my $sv = shift or return "";
-#  my $s = B::cstring($sv);
-#  if ($sv->LEN > $sv->CUR and substr($sv->PVX,$sv->CUR,1) eq '\000') {
-#    return substr($s, 0, $sv->CUR);
-#  } else {
-#    return $s;
-#  }
 #}
 
 sub walk_and_save_optree {
@@ -277,8 +271,9 @@ sub walk_and_save_optree {
 my $OP_THREADSV = opnumber('threadsv');
 
 # special handling for nullified COP's.
-my %OP_COP = ( opnumber('nextstate') => 1, opnumber('setstate') => 1 );
-$OP_COP{ opnumber('dbstate') } = 1 unless $PERL511;
+my %OP_COP = ( opnumber('nextstate') => 1 );
+$OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
+$OP_COP{ opnumber('dbstate') }  = 1 unless $PERL511;
 warn %OP_COP if $debug{cops};
 
 sub savesym {
@@ -551,7 +546,17 @@ sub B::OP::save {
 
   # since 5.10 nullified cops free their additional fields
   if ( $PERL510 and !$type and $OP_COP{ $op->targ } ) {
-    warn sprintf( "Null COP: %d\n", $op->targ ) if $verbose or $debug{cops};
+    warn sprintf( "Null COP: %d\n", $op->targ ) if $debug{cops};
+    if (0 and $optimize_cop) {
+      # XXX when is the NULL COP save to skip?
+      # unsafe after entersub, entereval, anoncode, sort block (pushmark pushmark)
+      # Rather skip this with CC not with C because we need the context.
+      # XXX we dont have the prevop, it can be any op type.
+      my $prevop = getsym(sprintf("&op_list[%d]", $opsect->index));
+      warn sprintf( "Skip Null COP: %d, prev=\\s%x\n",
+                    $op->targ, $prevop) if $verbose or $debug{cops};
+      return savesym( $op, $op->next->save );
+    }
     if ($PERL511) {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
@@ -580,7 +585,7 @@ sub B::OP::save {
     my $ix = $opsect->index;
     $init->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $optimize_ppaddr;
-    warn( sprintf( "  OP=%s targ=%d flags=0x%x private=0x%x\n", 
+    warn( sprintf( "  OP=%s targ=%d flags=0x%x private=0x%x\n",
 		   peekop($op), $op->targ, $op->flags, $op->private ) ) if $debug{op};
     savesym( $op, "&op_list[$ix]" );
   }
@@ -693,7 +698,7 @@ sub B::LOOP::save {
 
   #warn sprintf("LOOP: redoop %s, nextop %s, lastop %s\n",
   #		 peekop($op->redoop), peekop($op->nextop),
-  #		 peekop($op->lastop)); # debug
+  #		 peekop($op->lastop)) if $debug{op};
   $loopsect->comment("$opsect_common, first, last, redoop, nextop, lastop");
   $loopsect->add(
     sprintf(
@@ -762,6 +767,13 @@ sub B::COP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+
+  if ($optimize_cop and !$op->label) { # XXX very unsafe!
+    my $sym = savesym( $op, $op->next->save );
+    warn sprintf( "Skip COP (0x%x) => %s (0x%x), line %d file %s\n",
+                  $$op, $sym, $op->next, $op->line, $op->file ) if $debug{cops};
+    return $sym;
+  }
 
   # TODO: if it is a nullified COP we must save it with all cop fields!
   warn sprintf( "COP: line %d file %s\n", $op->line, $op->file )
@@ -853,6 +865,8 @@ sub B::COP::save {
   $file =~ s/\.pl$//;
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
+  ) unless $optimize_cop;
+  $init->add(
     sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
   );
 
@@ -1181,49 +1195,45 @@ sub B::PVNV::save {
 sub B::BM::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if  !$PERL510 and defined $sym;
-  my $pv;
+  return $sym if !$PERL510 and defined $sym;
+  $sv = bless $sv, "B::BM" if $PERL510;
+  my $pv  = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
+  my $len = length($sv->PV);
   if ($PERL510) {
-    $pv = $sv->PV;
-  } else {
-    $pv = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
-  }
-  my $len = length($pv);
-  if ($PERL510) {
-    # XXX TODO if READONLY and FAKE use newSVpvn_share instead
+    warn "Saving FBM for GV $sym\n" if $debug{gv};
     $init->add( sprintf( "$sym = (GV*)newSV_type(SVt_PVGV);" ),
 		sprintf( "SvFLAGS($sym) = 0x%x;", $sv->FLAGS ),
 		sprintf( "SvREFCNT($sym) = %u;", $sv->REFCNT + 1 ),
 		sprintf( "SvPVX($sym) = %s;", cstring($pv) ),
-		sprintf( "SvLEN_set($sym, %d);", $len ) );
+		sprintf( "SvLEN_set($sym, %d);", $len ),
+                sprintf( "BmRARE($sym) = %d;", $sv->RARE ),
+                sprintf( "BmPREVIOUS($sym) = %d;", $sv->PREVIOUS ),
+                sprintf( "BmUSEFUL($sym) = %d;", $sv->USEFUL )
+              );
   } else {
-    $xpvbmsect->comment('pv,len,len+258,IVX,NVX,0,0,USEFUL,PREVIOUS,RARE');
+    $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
-	       $PERL510 ? '0' : (defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0"),
+	       defined($pv) && $pv_copy_on_grow ? cstring($pv) : "0",
 	       $len,        $len + 258,    $sv->IVX, $sv->NVX,
 	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
 	      ));
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
                          $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
-    $sv->save_magic;
+    $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) )
+      unless $pv_copy_on_grow;
   }
+  # Restore possible additional magic. fbm_compile adds just 'B'.
+  $sv->save_magic;
 
-  if (!$pv_copy_on_grow) {
-    if (!$PERL510) {
-      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
-    }
-  }
   if ($PERL510) {
-    # Since 5.10 we don't care for saving the table. fbm_compile will do.
-    warn "Saving FBM for GV $sym\n" if $debug{gv};
-    $init->add("fbm_compile((SV*)$sym, 0);");
-    $sv->save_magic; # restore possible additional magic. fbm_compile adds just 'B'
     return $sym;
   } else {
-    $init->add(sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len - 257 ) );
-    # XXX OPTIM fbm_compile on 5.8 is doing something we haven't caught yet
-    $init->add(sprintf( "fbm_compile(&sv_list[%d], 0);", $svsect->index) ) unless $PERL56;
+    if ($] == 5.008009) { # XXX 5.8.9 needs more. TODO test 5.8.0 - 5.8.7
+      $init->add( sprintf( "fbm_compile(&sv_list[%d], 0);", $svsect->index ) );
+    }
+    # cur+len was broken on all B::C versions
+    #$init->add(sprintf( "xpvbm_list[%d].xpv_cur = %u;", $xpvbmsect->index, $len ) );
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
 }
@@ -1237,6 +1247,10 @@ sub B::PV::save {
   # $refcnt-- if $pv_copy_on_grow; 		# static pv, do not destruct. test 13 with pv0 "3"
   my $flags = $sv->FLAGS;
   if ($PERL510) {
+    # XXX If READONLY and FAKE use newSVpvn_share instead
+    #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
+    #  $init->add( sprintf( "$sym = (GV*)newSVpvn_share();" ));
+    #}
     # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
     # $flags ||= 0x04000000 if $pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
     # => Attempt to free unreferenced scalar: SV 0x4044e8.
@@ -1444,6 +1458,7 @@ sub B::RV::save {
   }
 }
 
+# compile-time expansion of AUTOLOAD to get the goto &sub addresses
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
   warn sprintf( "No definition for sub %s::%s. Try Autoload\n", $cvstashname, $cvname )
@@ -1452,16 +1467,16 @@ sub try_autoload {
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   no strict 'refs';
   # Since 5.10 AUTOLOAD xsubs are already resolved
-  if (exists ${"$cvstashname::"}{AUTOLOAD}) {
+  if (exists ${"$cvstashname\::"}{AUTOLOAD}) {
     my $auto = \&{"$cvstashname\::AUTOLOAD"};
     # Tweaked version of __PACKAGE__::AUTOLOAD
     ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
-    eval { &$auto() };
+    eval { &$auto };
+    # eval { &{"$cvstashname\::$cvname"} };
     unless ($@) {
-      # we need just the empty auto GV, $auto->ROOT and $auto->XSUB,
+      # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
       # but not the whole CV optree. XXX This still fails with 5.8
-      #B::make_sv_object($auto, B::sv_undef)->save;
-      my $cv = svref_2object( $auto );
+      my $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
       return $cv;
     }
   }
@@ -1486,6 +1501,11 @@ sub try_autoload {
       return 1;
     }
   }
+
+  svref_2object( \*{"$cvstashname\::AUTOLOAD"} )->save
+    if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
+  svref_2object( \*{"$cvstashname\::CLONE"} )->save
+    if $cvstashname and exists ${"$cvstashname\::"}{CLONE};
 }
 sub Dummy_initxs { }
 
@@ -1716,11 +1736,13 @@ sub B::CV::save {
     warn sprintf("done saving GV 0x%x for CV 0x%x\n",
     		  $$gv, $$cv) if $debug{cv};
   }
-  if ($ITHREADS) {
-    $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
-  }
-  else {
-    $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
+  unless ($optimize_cop) {
+    if ($ITHREADS) {
+      $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
+    }
+    else {
+      $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
+    }
   }
   my $stash = $cv->STASH;
   if ($$stash) {
@@ -1777,23 +1799,15 @@ sub B::GV::save {
                       $estash . "::" . $egv->NAME )
             ) if $debug{gv};
         $egvsym = $egv->save;
-        {
-          no strict 'refs';
+        #{
+          #no strict 'refs';
           # catch imported AUTOLOAD (unused)
-          svref_2object( \*{$estash."::AUTOLOAD"} )->save 
-            if $estash and defined ${$estash."::"}{AUTOLOAD};
-          svref_2object( \*{$estash."::CLONE"} )->save 
-            if $estash and defined ${$estash."::"}{CLONE};
-        }
+          #svref_2object( \*{"$estash\::AUTOLOAD"} )->save
+          #  if $estash and defined ${"$estash\::"}{AUTOLOAD};
+          #svref_2object( \*{"$estash\::CLONE"} )->save
+          #  if $estash and defined ${"$estash\::"}{CLONE};
+        #}
       }
-    }
-    {
-      no strict 'refs';
-      # fix test 31, catch unreferenced AUTOLOAD
-      svref_2object( \*{$package."::AUTOLOAD"} )->save
-        if $package and exists ${$package."::"}{AUTOLOAD};
-      svref_2object( \*{$package."::CLONE"} )->save
-        if $package and exists ${$package."::"}{CLONE};
     }
   }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
@@ -1901,7 +1915,7 @@ sub B::GV::save {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB && $name ne $origname ) {    #XSUB alias
-            # must save as a 'stub' so newXS() has a CV to populate
+        # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{ CV *cv;");
         $init->add("\tcv=perl_get_cv($origname,TRUE);");
         $init->add("\tGvCV($sym)=cv;");
@@ -1916,15 +1930,26 @@ sub B::GV::save {
         warn "GV::save &$name\n" if $debug{gv};
       }
     }
+    if ( !$$gvcv && $savefields & Save_CV ) {
+      no strict 'refs';
+      # Fix test 31, catch unreferenced AUTOLOAD. The downside:
+      # It stores the whole optree and all its children.
+      svref_2object( \*{"$package\::AUTOLOAD"} )->save
+        if $package and exists ${"$package\::"}{AUTOLOAD};
+      svref_2object( \*{"$package\::CLONE"} )->save
+        if $package and exists ${"$package\::"}{CLONE};
+    }
     if ( $] > 5.009 ) {
       # TODO implement heksect to place all heks at the beginning
       #$heksect->add($gv->FILE);
       #$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
-      $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)));
+      $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
+        unless $optimize_cop;
       $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
     }
     else {
-      $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ) );
+      $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
+        unless $optimize_cop;
       warn "GV::save GvFILE(*$name) " . cstring( $gv->FILE ) . "\n"
         if $debug{gv};
     }
@@ -1962,17 +1987,27 @@ sub B::AV::save {
   my ($av) = @_;
   my $sym = objsym($av);
   return $sym if defined $sym;
+
+  # cornercase: tied array without FETCHSIZE
+  my $fill;
+  eval { $fill = $av->FILL; };
+  $fill = -1 if $@;    # catch error in tie magic
+
   # TODO: statically initialize the array as the initial av_extend() is very expensive
+  my $alloc;
   if ($PERL510) {
     # 5.9.4+: nv fill max iv mg stash
     my $line = "0.0, -1, -1, 0, 0, Nullhv";
+    $line = "0.0, $fill, $fill, 0, 0, Nullhv" if $av_init;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, %s",
-                         $xpvavsect->index, $av->REFCNT, $av->FLAGS, '0'));
+                         $xpvavsect->index, $av->REFCNT, $av->FLAGS,
+                         '0'));
   }
   else {
     # 5.8: array fill max off nv mg stash alloc arylen flags
     my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
+    $line = "0, $fill, $fill, 0, 0.0, 0, Nullhv, 0, 0" if $av_init;
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
@@ -1981,10 +2016,6 @@ sub B::AV::save {
   my $sv_list_index = $svsect->index;
   $av->save_magic;
 
-  # cornercase: tied array without FETCHSIZE
-  my $fill;
-  eval { $fill = $av->FILL; };
-  $fill = -1 if $@;    # catch error in tie magic
   if ( $debug{av} ) {
     my $line = sprintf( "saving AV 0x%x FILL=$fill", $$av );
     $line .= sprintf( " AvFLAGS=0x%x", $av->AvFLAGS ) if $] < 5.009;
@@ -2020,14 +2051,34 @@ sub B::AV::save {
       $acc .= "\t*svp++ = (SV*)" . $array[$i]->save . ";\n\t";
     }
     $init->no_split;
-    $init->add(
-      "{", "\tSV **svp;",
-      "\tAV *av = (AV*)&sv_list[$sv_list_index];",
-      "\tav_extend(av, $fill);",
-      "\tsvp = AvARRAY(av);"
-    );
-    $init->add( substr( $acc, 0, -2 ) );
-    $init->add( "\tAvFILLp(av) = $fill;", "}" );
+    if ($av_init) {
+      $init->add(
+                 "{", "\tSV **svp;",
+                 "\tAV *av = (AV*)&sv_list[$sv_list_index];");
+      if ($fill > -1) {
+        if ($PERL510) {
+          $init->add(sprintf("\tNewx(svp, %d, SV*);", $fill < 3 ? 3 : $fill+1),
+                     "\tAvALLOC(av) = svp;",
+                     "\tAvARRAY(av) = svp;");
+        } else { # read-only AvARRAY macro
+          $init->add(sprintf("\tNewz(0, svp, %d, SV*);", $fill < 3 ? 3 : $fill+1),
+                     "\tAvALLOC(av) = svp;",
+                     # XXX Dirty hack from av.c:Perl_av_extend()
+                     "\tSvPVX(av) = (char*)svp;");
+        }
+      }
+      $init->add( substr( $acc, 0, -2 ) );
+      $init->add( "}" );
+    } else {
+      $init->add(
+                 "{", "\tSV **svp;",
+                 "\tAV *av = (AV*)&sv_list[$sv_list_index];",
+                 "\tav_extend(av, $fill);",
+                 "\tsvp = AvARRAY(av);"
+                );
+      $init->add( substr( $acc, 0, -2 ) );
+      $init->add( "\tAvFILLp(av) = $fill;", "}" );
+    }
     $init->split;
 
     # we really added a lot of lines ( B::C::InitSection->add
@@ -3075,14 +3126,18 @@ sub compile {
     'save-data'       => \$save_data_fh,
     'ppaddr'          => \$optimize_ppaddr,
     'warn-sv'         => \$optimize_warn_sv,
+    'av-init'         => \$av_init,
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$save_sig,
+    'cop'             => \$optimize_cop, # XXX very unsafe!
+					 # Better do it in CC, but get rid of NULL cops also there
   );
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog)],
-    2 => [qw(-fwarn-sv -fppaddr)],
+    2 => [qw(-fwarn-sv -fppaddr -fav-init)],
     3 => [qw(-fsave-sig-hash -fsave-data)],
+    4 => [qw(-fcop)],
   );
 OPTION:
   while ( $option = shift @options ) {
@@ -3170,6 +3225,7 @@ OPTION:
           if exists $optimization_map{$i};
       }
       unshift @options, @opt;
+      warn "options : ".(join " ",@opt)."\n" if $verbose;
     }
     elsif ( $opt eq "e" ) {
       push @eval_at_startup, $arg;
@@ -3338,11 +3394,20 @@ Use the script name instead of the program name as $0.
 
 Save compile-time modifications to the %SIG hash.
 
+=item B<-fcop>
+
+Omit COP info for faster execution, but warnings have almost
+no any file and line infos.
+
+=item B<-fav-init>
+
+Faster pre-initialization of AVs (arrays)
+
 =back
 
 =item B<-On>
 
-Optimisation level (n = 0, 1, 2, ...). B<-O> means B<-O1>.
+Optimisation level (n = 0, 1, 2, 3, 4). B<-O> means B<-O1>.
 
 =over 4
 
@@ -3356,7 +3421,15 @@ Enable B<-fcog>.
 
 =item B<-O2>
 
-Enable B<-fppaddr>, B<-fwarn-sv>.
+Enable -O1 plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init>.
+
+=item B<-O3>
+
+Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>.
+
+=item B<-O4>
+
+Enable -O3 plus B<-fcop>.
 
 =back
 

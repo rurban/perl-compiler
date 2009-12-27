@@ -8,7 +8,7 @@
 #
 package B::CC;
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 use Config;
 use strict;
@@ -63,6 +63,7 @@ my %need_curcop;        # Hash of ops which need PL_curcop
 
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
+my $entertry_defined;
 
 BEGIN {
   foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
@@ -164,8 +165,24 @@ sub save_runtime {
 sub output_runtime {
   my $ppdata;
   print qq(#include "cc_runtime.h"\n);
-  if ($ITHREADS) {
 
+  # Perls >=5.8.9 have a broken PP_ENTERTRY. See PERL_FLEXIBLE_EXCEPTIONS in cop.h
+  print'
+#undef PP_ENTERTRY
+#define PP_ENTERTRY(label)  	\
+	STMT_START {                    \
+	    dJMPENV;			\
+	    int ret;			\
+	    JMPENV_PUSH(ret);		\
+	    switch (ret) {		\
+		case 1: JMPENV_POP; JMPENV_JUMP(1);\
+		case 2: JMPENV_POP; JMPENV_JUMP(2);\
+		case 3: JMPENV_POP; SPAGAIN; goto label;\
+	    }                                      \
+	} STMT_END' if $] >= 5.008009 and $entertry_defined;
+
+  # XXX FIXME on 5.10,11-nt (test 12)
+  if ($ITHREADS) {
     # Threads error Bug#55302: too few arguments to function
     # CALLRUNOPS()=>CALLRUNOPS(aTHX)
     print '
@@ -173,22 +190,25 @@ sub output_runtime {
 #define PP_EVAL(ppaddr, nxt) do {		\
 	dJMPENV;				\
 	int ret;				\
+        I32 oldscope = PL_scopestack_ix;	\
 	PUTBACK;				\
 	JMPENV_PUSH(ret);			\
 	switch (ret) {				\
 	case 0:					\
 	    PL_op = ppaddr(aTHX);		\
 ';
-    print 'PL_retstack[PL_retstack_ix - 1] = Nullop;	\
+    print '	    PL_retstack[PL_retstack_ix - 1] = Nullop;	\
 ' if $] < 5.009005;
     print '	    if (PL_op != nxt) CALLRUNOPS(aTHX);	\
+	    while (PL_scopestack_ix > oldscope) \
+	        LEAVE;				\
 	    JMPENV_POP;				\
 	    break;				\
 	case 1: JMPENV_POP; JMPENV_JUMP(1);	\
 	case 2: JMPENV_POP; JMPENV_JUMP(2);	\
 	case 3:					\
 	    JMPENV_POP;				\
-	    if (PL_restartop != nxt)		\
+	    if (PL_restartop && PL_restartop != nxt) \
 		JMPENV_JUMP(3);			\
 	}					\
 	PL_op = nxt;				\
@@ -196,6 +216,7 @@ sub output_runtime {
     } while (0)
 ';
   }
+
   foreach $ppdata (@pp_list) {
     my ( $name, $runtime, $declare ) = @$ppdata;
     print "\nstatic\nCCPP($name)\n{\n";
@@ -1400,10 +1421,15 @@ sub pp_entertry {
   write_back_lexicals( REGISTER | TEMPORARY );
   write_back_stack();
   my $sym = doop($op);
-  my $jmpbuf = sprintf( "jmpbuf%d", $jmpbuf_ix++ );
-  declare( "JMPENV", $jmpbuf );
+  my $jmpbuf;
+  if ($] < 5.008009) {
+    $jmpbuf = sprintf( "jmpbuf%d", $jmpbuf_ix++ );
+    declare( "JMPENV", $jmpbuf );
+  }
+  $entertry_defined = 1;
   runtime(
-    sprintf( "PP_ENTERTRY(%s,%s);", $jmpbuf, label( $op->other->next ) ) );
+          sprintf( "PP_ENTERTRY(%s%s);",
+                   $] < 5.008009 ? "$jmpbuf," : "", label( $op->other->next ) ) );
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
 }

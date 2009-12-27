@@ -71,6 +71,8 @@ t/bytecode.t
 t/c.t
 t/c_o1.t
 t/c_o2.t
+t/c_o3.t
+t/c_o4.t
 t/cc.t
 t/cc_o1.t
 t/cc_o2.t

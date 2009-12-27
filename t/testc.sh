@@ -10,6 +10,7 @@ function help {
   echo " -c                 continue on errors"
   echo " -k                 keep temp. files on PASS"
   echo " -E                 dump preprocessed source file with cc -E as _E.c"
+  echo " -o                 orig. no -Mblib. only for 5.6 and 5.8"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
@@ -20,18 +21,28 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
-# if $] < 5.9 you may want to remove -Mblib for testing the core lib
-#Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-#Mblib="-Mblib" # B::C is now fully 5.6+5.8 backwards compatible
-if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
+
+function init {
 BASE=`basename $0`
-OCMD="$PERL $Mblib -MO=C,-DcOACMSGpu,-v,"
-if [ $BASE = "testcc.sh" ]; then 
-  OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
+# if $] < 5.9 you may want to remove -Mblib for testing the core lib. -o
+#Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
+Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
+if [ -z $Mblib ]; then 
+    VERS="${VERS}_global"; 
+    OCMD="$PERL $Mblib -MO=C,-DcAC,"
+    if [ $BASE = "testcc.sh" ]; then 
+        OCMD="$PERL $Mblib -MO=CC,-DrOsplt,"
+    fi
+else
+    OCMD="$PERL $Mblib -MO=C,-DcOACMSGpu,-v,"
+    if [ $BASE = "testcc.sh" ]; then 
+        OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
+    fi
 fi
 OCMDO1="$(echo $OCMD|sed -e s/C,-D/C,-O1,-D/)"
 OCMDO2="$(echo $OCMD|sed -e s/C,-D/C,-O2,-D/)"
 OCMDO3="$(echo $OCMD|sed -e s/C,-D/C,-O3,-D/)"
+OCMDO4="$(echo $OCMD|sed -e s/C,-D/C,-O4,-D/)"
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
@@ -39,6 +50,7 @@ CONT=
 CCMD="$PERL script/cc_harness -g3 -Bdynamic"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
+}
 
 function vcmd {
     test -n "$QUIET" || echo $*
@@ -67,14 +79,16 @@ function runopt {
     if [ "$optim" == "0" ]; then suff=""; fi
     rm ${o}${suff} ${o}${suff}.c 2> /dev/null
     if [ $optim == 1 ]; then CMD=$OCMDO1
-    else if [ $optim == 2 ]; then CMD=$OCMDO2
-         else if [ $optim == 3 ]; then CMD=$OCMDO3
-    	      else CMD=$OCMD
-    	      fi
-         fi
+     else if [ $optim == 2 ]; then CMD=$OCMDO2
+      else if [ $optim == 3 ]; then CMD=$OCMDO3
+       else if [ $optim == 4 ]; then CMD=$OCMDO4
+        else CMD=$OCMD
+       fi
+      fi
+     fi
     fi
     vcmd ${CMD}-o${o}${suff}.c $o.pl
-    test -n $CPP && vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
+    test -z $CPP || vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
     vcmd $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
     test -x ${o}${suff} || (test -z $CONT && exit)
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
@@ -83,9 +97,11 @@ function runopt {
     res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
-        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}${suff}; fi
+        if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}${suff} 2>/dev/null; fi
+        true
     else
 	fail "./${o}${suff}" "=> '$str' => '$res'. Expected: '${result[$n]}'"
+        false
     fi
 }
 
@@ -111,7 +127,7 @@ function ctest {
 	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
 	vcmd ${OCMD}-o$o.c $o.pl
         test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit)
-	test -n $CPP && vcmd $CCMD $o.c -c -E -o ${o}_E.c
+	test -z $CPP || vcmd $CCMD $o.c -c -E -o ${o}_E.c
 	vcmd $CCMD $o.c $LCMD -o $o
 	test -x $o || (test -z $CONT && exit)
 	if [ -z "$QUIET" ]; then echo "./$o"
@@ -120,10 +136,11 @@ function ctest {
 	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
-            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o}; fi
-	    runopt $o 1
-	    runopt $o 2
-	    #runopt $o 3
+            if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
+	    runopt $o 1 && \
+	    runopt $o 2 && \
+	    runopt $o 3 && \
+	    runopt $o 4 && \
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
@@ -221,21 +238,25 @@ result[30]='456123E0'
 tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
 result[31]='date;who am i;ls -l;'
 
+init
+
 # 
 # getopts for -q -k -E -Du,-q -v -O2, -a -c
-while getopts "hqackED:B:O:" opt
+while getopts "hqackoED:B:O:" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
     # O from 5.6 does not support -qq
     qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
     # replace -D*,-v by -q 
-    OCMD="$(echo $OCMD    |sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)" 
-    OCMDO1="$(echo $OCMDO1|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
-    OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
-    OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,-v,//' -e s/-MO=/-MO=$qq/)"
+    OCMD="$(echo $OCMD    |sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)" 
+    OCMDO1="$(echo $OCMDO1|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
+    OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
+    OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
+    OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
   fi
+  if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "c" ]; then CONT=1; fi
   if [ "$opt" = "k" ]; then KEEP=1; fi
   if [ "$opt" = "E" ]; then CPP=1; fi
@@ -252,8 +273,8 @@ do
     CCMD="$PERL script/cc_harness -g3 -B${OPTARG}"
   fi
   if [ "$opt" = "O" ]; then OPTIM="$OPTARG"; fi
-  if [ "$opt" = "a" ]; then # replace -Du, by -D
-    OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,-v/\1,-v/')" 
+  if [ "$opt" = "a" ]; then # replace -Du, by -Do
+    OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')" 
   fi
 done
 if [ -z $OPTIM ]; then OPTIM=-1; fi # all

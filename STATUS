@@ -73,34 +73,57 @@ t/bytecode      broken/not used
 t/c             15,27            		| 15
 t/c_o1          15,27				| 15
 t/c_o2          15,27				| 15
+t/c_o3          15,27				| 15
+t/c_o3		10,12,15,19,25,27,29
 t/cc            15,18,21,25,27,29,30
 t/cc_o1         15,18,21,25..27,29,30
 t/cc_o2         10,15,16,18,21,25..27,29,30
 
+5.8.0
+redhat perl http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576363.html:
+byterun.c:678: duplicate case value
+byterun.c:669: previously used here
+
+5.8.3 + 5.8.5 threaded
+cpantesters http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576377.html
+http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576274.html
+c 	 	7
+c_o1-2:  	7,11
+cc: 	 	3,7,29
+cc_o1-2: 	3,7 
+
+freebsd 5.10.1  c+cc fails on 28 generally, cc passed 12 
+freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
+
 5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)		
 t/bytecode      ok
-t/c             27	     			
-t/c_o1          27	 			
-t/c_o2          27 				
-t/cc            15,18,21,25,27,30		
-t/cc_o1         15,18,21,25..27,29,30		
-t/cc_o2         10,15,16,18,21,25..27,29,30	
-
+t/c             27
+t/c_o1          27
+t/c_o2          27
+t/c_o3          27
+t/c_o4          10,12,15,19,25			| 10,12,19,25,27
+t/cc            15,18,21,25,27,30
+t/cc_o1         15,18,21,25..27,30
+t/cc_o2         10,15,16,18,21,25..27,30
 
 5.10.1: 					| non-threaded
-t/bytecode 	27,29				| 9,10,12,27,29
+t/bytecode 	ok				| 9,10,12,27,29
 t/c 		ok				| 15
 t/c_o1          ok				| 15
 t/c_o2          ok				| 15
+t/c_o3          ok				| 15
+t/c_o4          10,12,19,25
 t/cc 		15,18,21,25,29,30		| +12
 t/cc_o1         15,18,21,25,26,29,30		| +12
 t/cc_o2         10,15,16,18,21,25,26,29,30	| +12
 
 5.11.2: 					| non-threaded
-t/bytecode 	9,10,12,16,21,27,29
+t/bytecode 	9,10,12,16,21,27,29,31
 t/c 		15,16
 t/c_o1          15,16
 t/c_o2          15,16
+t/c_o3          15,16
+t/c_o4          10,12,15,16,19,25
 t/cc 		15,16,18,21,25,29,30		| +12
 t/cc_o1         15,16,18,21,25,26,29,30		| +12
 t/cc_o2         10,15,16,18,21,25,26,29,30	| +12
@@ -116,8 +139,7 @@ TODO for B::C
   destruction: -O1 static PVs and HEKs (mult.) since 5.10
 
 DONE:
-fixed GV -> BM magic (index) >= 5.10 in Bytecode without needing fbm_compile. Need that 
-for B::C also.
+fixed GV -> BM magic (index) without needing fbm_compile. Just 5.8.9 not.
 
 fixed non-xsub AUTOLOAD (31) with 1.08
 

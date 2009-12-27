@@ -52,15 +52,15 @@ if ($DEBUGGING) {
 }
 my @todo = ();
 @todo = (3,6,8..10,12,15,16,18,25..28,31) if $] < 5.007; # CORE failures, ours not yet enabled
-@todo = (27,29)  		if $] >= 5.010;
+@todo = ()  			if $] >= 5.010;
 @todo = (9,10,12,27,29)  	if $] >= 5.010 and !$ITHREADS;
-@todo = (9,10,12,16,21,27,29) 	if $] >= 5.011;
+@todo = (9,10,12,16,21,27,29,31) if $] >= 5.011;
 
 my @skip = (20,21,27,29) if $] >= 5.010;
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
-my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls
+my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls?
 unless ($Mblib) { # check for -Mblib from the testsuite
   if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
     $Mblib = "-Mblib"; # forced -Mblib via cmdline

@@ -3,9 +3,18 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.09	2009-12-?? rurban
+1.09	2009-12-27 rurban
+	* C.pm: Cut down the number of AUTOLOAD'ed optrees, search only on 
+	  empty gv->cv (31).
+	Added very unsafe -O4/-fcop to eliminate most cops and file + line numbers.
+	Added faster -fav-init to -O2, less unneeded av_extend().
+	Get rid of fbm_compile (11). Only 5.8.9 is broken.
+	* CC.pm (1.02): partially fix eval "" for >=5.8.9, wrong CORE cc_runtime.h 
+	  definition. (test 29 - eval "")
 	* t/test.pl, t/c*.t: Simplify C/CC testsuite.
-	* t/c_o3.t: added
+	* t/testc.sh: fixed -E
+	Added -o for orig, no -Mblib
+	* t/c_o3.t, t/c_o4.t: added
 
 1.08	2009-12-23 rurban
 	Adapt coding guidelines, add C and cperl coda. Reformat sources.

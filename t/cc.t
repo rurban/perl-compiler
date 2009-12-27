@@ -21,9 +21,10 @@ my @todo = (15,18,21,25,27,30); #5.8.9
 @todo    = (15,18,21,25,27,29,30) if $] < 5.007;
 @todo    = (15,18,21,25,29,30)    if $] >= 5.010;
 push @todo, (16) if $] >= 5.011;
+# broken PP_EVAL in cc_runtime.h
 push @todo, (12) if $] >= 5.010 and !$ITHREADS;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
-my @skip = (25,29,30);
+my @skip = (25,30);
 
 run_c_tests("CC", \@todo, \@skip);
