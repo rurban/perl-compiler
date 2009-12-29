@@ -1,4 +1,4 @@
-#!./perl -w
+#!/usr/bin/env perl -w
 # blead cannot run -T
 
 BEGIN {

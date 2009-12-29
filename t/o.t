@@ -1,4 +1,4 @@
-#!./perl -w
+#! /usr/bin/env perl -w
 
 BEGIN {
         if ($ENV{PERL_CORE}){

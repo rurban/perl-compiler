@@ -21,7 +21,7 @@ WriteMakefile(
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
- 	       "*.core *.stackdump a.out *.cee *.c *.asm *.dbg *.plc ".
+ 	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc ".
                "*.concise *~ dll.base dll.exp"},
 );
 

@@ -3,6 +3,23 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.10	2009-12-29 rurban
+	Fixed @ARGV
+	* C.pm: fixed couple of minor bugs detected with new t/testcore.t:
+	  t/CORE/comp/retainedlines.t => Use of uninitialized value $len, save_hek
+	  Use of uninitialized value $i in printf at C.pm line 49
+	  Undefined value assigned to typeglob at C.pm line 2901
+	Do not overwrite run-time @ARGV on >= 5.10 (GP and AV). Fixes test c_argv.t
+	* t/testcore.t: added
+	* t/c_argv.t: added. test @ARGV and perlcc
+	* perlcc (2.06): grab_stash only via new -stash, not automatically;
+	  B::C is better.
+	ldopts -std only when modules are given.
+	fix for empty options.
+	add -sharedxs, -sharedlib; -shared is now for shared linkage, 
+	  -sharedlib to create a shared lib (was -shared before but never worked),
+	  -sharedxs to also link shared xsubs, no run-time DynaLoader/XSLoader needed.
+
 1.09	2009-12-27 rurban
 	* C.pm: Cut down the number of AUTOLOAD'ed optrees, search only on 
 	  empty gv->cv (31).

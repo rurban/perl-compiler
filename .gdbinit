@@ -1,3 +1,5 @@
+#directory /usr/src/perl/perl-5.10.1/perl-5.10.1
+
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc
 end

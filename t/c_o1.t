@@ -1,4 +1,4 @@
-#!./perl
+#! /usr/bin/env perl
 # better use testc.sh for debugging
 BEGIN {
   if ($ENV{PERL_CORE}){

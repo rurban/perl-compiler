@@ -338,31 +338,31 @@ sub eq_array {
 }
 
 sub eq_hash {
-  my ($orig, $suspect) = @_;
-  my $fail;
-  while (my ($key, $value) = each %$suspect) {
-    # Force a hash recompute if this perl's internals can cache the hash key.
-    $key = "" . $key;
-    if (exists $orig->{$key}) {
-      if ($orig->{$key} ne $value) {
-        print STDOUT "# key ", _qq($key), " was ", _qq($orig->{$key}),
-                     " now ", _qq($value), "\n";
-        $fail = 1;
-      }
-    } else {
-      print STDOUT "# key ", _qq($key), " is ", _qq($value),
-                   ", not in original.\n";
-      $fail = 1;
+    my ($orig, $suspect) = @_;
+    my $fail;
+    while (my ($key, $value) = each %$suspect) {
+        # Force a hash recompute if this perl's internals can cache the hash key.
+        $key = "" . $key;
+        if (exists $orig->{$key}) {
+            if ($orig->{$key} ne $value) {
+                print STDOUT "# key ", _qq($key), " was ", _qq($orig->{$key}),
+                  " now ", _qq($value), "\n";
+                $fail = 1;
+            }
+        } else {
+            print STDOUT "# key ", _qq($key), " is ", _qq($value),
+              ", not in original.\n";
+            $fail = 1;
+        }
     }
-  }
-  foreach (keys %$orig) {
-    # Force a hash recompute if this perl's internals can cache the hash key.
-    $_ = "" . $_;
-    next if (exists $suspect->{$_});
-    print STDOUT "# key ", _qq($_), " was ", _qq($orig->{$_}), " now missing.\n";
-    $fail = 1;
-  }
-  !$fail;
+    foreach (keys %$orig) {
+        # Force a hash recompute if this perl's internals can cache the hash key.
+        $_ = "" . $_;
+        next if (exists $suspect->{$_});
+        print STDOUT "# key ", _qq($_), " was ", _qq($orig->{$_}), " now missing.\n";
+        $fail = 1;
+    }
+    !$fail;
 }
 
 sub require_ok ($) {
@@ -839,9 +839,9 @@ sub run_cc_test {
         }
     }
     print "not ok $cnt $todo wanted: \"$expect\", \$\? = $?, got: \"$got\"\n";
-  $keep_c = $keep_c_fail unless $keep_c;
-  unlink ($test, $cfile, $exe) if !$keep_c;
-  return 0;
+    $keep_c = $keep_c_fail unless $keep_c;
+    unlink ($test, $cfile, $exe) if !$keep_c;
+    return 0;
 }
 
 sub prepare_c_tests {
