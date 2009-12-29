@@ -44,6 +44,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.03, Edward Peschko, Mon Feb 26 12:04:17 PST 2001
 # Version 2.04, Enache Adrian, Fri, 18 Jul 2003 23:15:37 +0300
 # Version 2.05, Reini Urban, 2009-12-01 00:00:13
+# Version 2.06, Reini Urban, 2009-12-28 21:56:15
 
 use strict;
 use warnings;
@@ -55,7 +56,7 @@ use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use Cwd;
 use Pod::Usage;
-our $VERSION = 2.05;
+our $VERSION = 2.06;
 $| = 1;
 
 $SIG{INT} = sub { exit(); }; # exit gracefully and clean up after ourselves.
@@ -124,7 +125,7 @@ sub generate_code {
 }
 
 sub run_code {
-    vprint 0, "Running code";
+    vprint 0, "Running code $Output @ARGV";
     run("$Output @ARGV");
     exit(0);
 }
@@ -177,8 +178,11 @@ sub parse_argv {
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
-        'static',       # Dirty hack to enable -shared/-static
-        'shared',       # Create a shared library (--shared for compat.)
+        'static',       # Link to static libperl
+        'shared',       # Link to shared libperl
+        'sharedxs',     # Link shared XSUBs
+        'sharedlib',    # Create a shared library module
+        'stash',        # Detect external packages via B::Stash
 	'log:s',        # where to log compilation process information
         'Wb:s',         # pass (comma-seperated) options to backend
         'testsuite',    # try to be nice to testsuite
@@ -208,8 +212,8 @@ sub parse_argv {
         $Input = shift @ARGV;  # XXX: more files?
         _usage_and_die("$0: No input file specified\n") unless $Input;
         # DWIM modules. This is bad but necessary.
-        $Options->{shared}++ if $Input =~ /\.pm\z/;
-        warn "$0: using $Input as input file, ignoring @ARGV\n" if @ARGV;
+        $Options->{sharedlib}++ if $Input =~ /\.pm\z/;
+        vprint 1, "$0: using $Input as input file, ignoring @ARGV\n" if @ARGV;
         check_read($Input);
         check_perl($Input);
         sanity_check();
@@ -227,7 +231,8 @@ sub compile_module {
 }
 
 sub compile_byte {
-    my $command = "$BinPerl -MO=Bytecode,-H,-o$Output $Input";
+    my $opts = $] < 5.007 ? "" : "-H,-s,";
+    my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
 
     my ($output_r, $error_r) = spawnit($command);
@@ -244,7 +249,7 @@ sub compile_byte {
 }
 
 sub compile_cstyle {
-    my $stash = grab_stash();
+    my $stash = opt(stash) ? grab_stash() : "";
     my $taint = opt(T) ? '-T' :
                 opt(t) ? '-t' : '';
 
@@ -295,9 +300,11 @@ sub compile_cstyle {
         $max_line_len = '-l2000,';
     }
 
+    my $options = "$addoptions$testsuite$max_line_len$stash";
+    $options .= "," if $options and $options !~ m/,$/; #stash can be empty
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
-    my $command = "$BinPerl $taint -MO=$Backend,$addoptions$testsuite$max_line_len$stash,-o$cfile $Input";
+    my $command = "$BinPerl $taint -MO=$Backend,$options"."-o$cfile $Input";
     vprint 1, "Compiling...";
     vprint 1, "Calling $command";
 
@@ -342,9 +349,13 @@ sub cc_harness {
     my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
-    my @mods = split /-?u /, $stash;
-    $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
-    $command .= " -lperl";
+    if ($stash) {
+        my @mods = split /-?u /, $stash;
+        $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+    } else {
+        $command .= " ".ExtUtils::Embed::ldopts;
+    }
+    # $command .= " -lperl" unless $command =~ / -lperl\b/;
     vprint 3, "running $Config{cc} $command";
     system("$Config{cc} $command");
 }
@@ -433,7 +444,7 @@ sub sanity_check {
         } else {
             warn "$0: Will not write output on top of input file, ",
                 "compiling to a.out instead\n";
-            $Output = "a.out";
+            $Output = ( is_win32 or $^O eq 'cygwin' ? 'a.exe' : 'a.out' );
         }
     }
 }
@@ -505,7 +516,7 @@ sub spawnit {
 
 sub helpme {
     print "perlcc compiler frontend, version $VERSION\n\n";
-    if (opt('v')) {
+    if (opt(v)) {
 	pod2usage( -verbose => opt('v') );
     } else {
 	pod2usage( -verbose => 0 );
@@ -612,8 +623,8 @@ perlcc - generate executables from Perl programs
     perlcc -r hello a b c     # compiles 'hello' into 'a.out', runs 'a.out'.
                               # with arguments 'a b c'
 
-    perlcc hello -log c       # compiles 'hello' into 'a.out' logs compile
-                              # log into 'c'.
+    perlcc hello -log c.log   # compiles 'hello' into 'a.out' logs compile
+                              # log into 'c.log'.
 
     perlcc -h       	      # help, only SYNOPSIS
     perlcc -v 2 -h  	      # verbose help, also DESCRIPTION and OPTIONS
@@ -671,15 +682,15 @@ Use the 'optimised' C code generator B::CC. This is more experimental than
 everything else put together, and the code created is not guaranteed to
 compile in finite time and memory, or indeed, at all.
 
-=item -v I<1-3>
+=item -v I<0-4>
 
-Increase verbosity of output from 1 to 3.
+Set verbosity of output from 0 to max. 4.
 
 =item -r
 
 Run the resulting compiled script after compiling it.
 
-=item -log
+=item -log I<logfile>
 
 Log the output of compiling to a file rather than to stdout.
 
@@ -691,13 +702,25 @@ Pass the options to the compiler backend, such as -Wb=-O2,-v
 
 run the backend using perl -T or -t
 
+=item -stash
+
+Detect external packages automatically via B::Stash
+
 =item -static
 
-Dirty hack to enable -shared/-static
+Link to static libperl
 
 =item -shared
 
-Create a shared library (--shared for compat.)
+Link to shared libperl
+
+=item -sharedxs
+
+Link shared XSUBs if the linker supports it. No DynaLoader needed
+
+=item -sharedlib
+
+Create a shared library (--shared for compat.). Currently disabled.
 
 =item -testsuite
 
