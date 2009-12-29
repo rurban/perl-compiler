@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 
 package B::C::Section;
 
@@ -43,7 +43,7 @@ sub output {
   my ( $section, $fh, $format ) = @_;
   my $sym = $section->symtable || {};
   my $default = $section->default;
-  my $i;
+  my $i = 0;
   foreach ( @{ $section->[-1]{values} } ) {
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     printf $fh $format, $_, $i;
@@ -250,7 +250,6 @@ my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
 sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
-sub save_main_rest2;
 
 # do not strip indexed PVBM names
 #sub cstring_wrong {
@@ -439,7 +438,8 @@ sub save_hek {
   my $len = length $str;
   unless ($len) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
   if (defined $hektable{$str}) {
-    return $hektable{$str};
+    return wantarray ? ($hektable{$str}, length( pack "a*", $hektable{$str} ))
+      : $hektable{$str};
   }
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = "(HEK *)$sym";
@@ -1821,19 +1821,23 @@ sub B::GV::save {
   sub Save_IO()   { 32 }
 
   if ( $PERL510 and $gv->isGV_with_GP ) {
-    my $gp = $gv->GP;    # B limitation
-    if ( $gp and !$is_empty ) {
-      warn(
-        sprintf(
-          "New GvGP for $name: 0x%x %s 0x%x 0x%x\n",
-          $svflags, $gv->FILE, ${ $gv->FILEGV }, $gp
-        )
-      ) if $debug{gv};
-      $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
-      $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
-    }
-    else {
-      $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
+    if ($fullname eq 'main::ARGV') {
+      warn "Skip overwriting main::ARGV GP\n" if $debug{gv};
+    } else {
+      my $gp = $gv->GP;    # B limitation
+      if ( $gp and !$is_empty ) {
+        warn(
+             sprintf(
+                     "New GvGP for $name: 0x%x %s 0x%x 0x%x\n",
+                     $svflags, $gv->FILE, ${ $gv->FILEGV }, $gp
+                    )
+            ) if $debug{gv};
+        $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
+        $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
+      }
+      else {
+        $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
+      }
     }
   }
   $init->add(sprintf( "SvFLAGS($sym) = 0x%x;", $svflags ));
@@ -1900,9 +1904,14 @@ sub B::GV::save {
     }
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
-      $gvav->save;
-      $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
-      warn "GV::save \@$name\n" if $debug{gv};
+      if ($PERL510 and $fullname eq 'main::ARGV') {
+        $init->add( '/* Skip overwriting @main::ARGV */' );
+        warn "Skipping GV::save \@$name\n" if $debug{gv};
+      } else {
+        $gvav->save;
+        $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
+        warn "GV::save \@$name\n" if $debug{gv};
+      }
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
@@ -2215,9 +2224,11 @@ sub B::IO::save {
   if ($PERL511) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, lines, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
+    my $tmpl = "0, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t%d, /*LINES*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
+    $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
-      sprintf(
-"0, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t%d, /*LINES*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/",
+      sprintf($tmpl,
         $len,                     $len + 1,
 	$io->LINES, # moved to IVX
         $io->PAGE,                $io->PAGE_LEN,
@@ -2233,9 +2244,11 @@ sub B::IO::save {
   elsif ($PERL510) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
+    my $tmpl = "0, /*xnv_u*/\n\t0, /*cur*/\n\t%u, /*len*/\n\t%d, /*IVX*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
+    $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
-      sprintf(
-"0, /*xnv_u*/\n\t0, /*cur*/\n\t%u, /*len*/\n\t%d, /*IVX*/\n\t0, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t0, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/",
+      sprintf($tmpl,
         $len,                     $len + 1,
         $io->IVX,
 	$io->LINES,
@@ -2249,7 +2262,7 @@ sub B::IO::save {
                          $xpviosect->index, $io->REFCNT, $io->FLAGS,
 			 $pv_copy_on_grow ? $pvsym : 0));
   }
-  else { #PERL58
+  else { # 5.6 and 5.8
     $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp, xio_dirpu, ..., subprocess, type, flags");
     $xpviosect->add(
       sprintf("%s, %u, %u, %d, %s, 0, 0, 0, 0, 0, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
@@ -2290,7 +2303,7 @@ sub B::IO::save {
       $fsym->save;
     }
   }
-  $io->save_magic; # TODO: does this handle the stash also?
+  $io->save_magic; # XXX TODO: does this handle the stash also?
 
   #my $stash = $io->STASH;
   #if ($$stash) {
@@ -2339,7 +2352,7 @@ sub output_all {
     }
   }
 
-  # XXX hack for when Perl accesses PVX of GVs
+  # hack for when Perl accesses PVX of GVs
   print 'Static char emptystring[] = "\0";';
   print "\n";
 
@@ -2506,7 +2519,7 @@ EOT
 
 sub output_main {
 
-  # special COW handling for 5.10 because of 
+  # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   if ( $PERL510 and $pv_copy_on_grow) {
     print <<'EOT';
 int my_perl_destruct( PerlInterpreter *my_perl );
@@ -2559,7 +2572,6 @@ EOT
   if ($ITHREADS and $] > 5.007) {
     # XXX init free elems!
     my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
-
     print <<EOT;
 #ifdef USE_ITHREADS
     for( i = 0; i < $pad_len; ++i ) {
@@ -2570,19 +2582,23 @@ EOT
 EOT
   }
 
-  print <<'EOT';
-#if defined(CSH) && (PERL_VERSION < 10)
+  if (!$PERL510) {
+    print <<'EOT';
+#if defined(CSH)
     if (!PL_cshlen)
       PL_cshlen = strlen(PL_cshname);
 #endif
+EOT
+  }
 
+  # XXX With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
+  print <<'EOT';
 #ifdef ALLOW_PERL_OPTIONS
 #define EXTRA_OPTIONS 3
 #else
 #define EXTRA_OPTIONS 4
 #endif /* ALLOW_PERL_OPTIONS */
     New(0,fakeargv, argc + EXTRA_OPTIONS + 1, char *);
-
     fakeargv[0] = argv[0];
     fakeargv[1] = "-e";
     fakeargv[2] = "";
@@ -2590,12 +2606,10 @@ EOT
 EOT
 
   # honour -T
-  if (!$PERL56) {
-   print <<EOT;
-    if( ${^TAINT} ) {
-        fakeargv[options_count] = "-T";
-        ++options_count;
-    }
+  if (!$PERL56 and ${^TAINT}) {
+   print <<'EOT';
+    fakeargv[options_count] = "-T";
+    ++options_count;
 EOT
   }
   print <<'EOT';
@@ -2685,8 +2699,8 @@ xs_init(pTHX)
     dSP;
 EOT
 
-  #if ($^O eq 'cygwin') { #FIXME!
-  #  print "\n#undef USE_DYNAMIC_LOADING /* temp. HACK! */";
+  #if ($staticxs) { #FIXME!
+  #  print "\n#undef USE_DYNAMIC_LOADING
   #}
   print "\n#ifdef USE_DYNAMIC_LOADING";
   print qq/\n\tnewXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);/;
@@ -2897,6 +2911,7 @@ sub walkpackages {
   $prefix = '' unless defined $prefix;
   while ( ( $sym, $ref ) = each %$symref ) {
     local (*glob);
+    next unless $ref;
     *glob = $ref;
     warn("Walkpackages $prefix$sym\n") if $debug{pkg};
     if ( $sym =~ /::$/ ) {
@@ -2992,13 +3007,6 @@ sub save_main_rest {
   save_unused_subs();
 
   $init->add("/* done extras */");
-  save_main_rest2();
-}
-
-sub save_main_rest2 {
-  # this is mainly for the test suite
-  my $warner = $SIG{__WARN__};
-  local $SIG{__WARN__} = sub { print STDERR @_ };
   # XSLoader was used, force saving of XSLoader::load
   if ($use_xsloader) {
     my $cv = svref_2object( \&XSLoader::load );
@@ -3373,10 +3381,13 @@ B<disabled>.
 =item B<-fcog>
 
 Copy-on-grow: PVs declared and initialised statically.
+Does not work yet with Perl 5.10 and higher.
 
 =item B<-fsave-data>
 
 Save package::DATA filehandles ( only available with PerlIO ).
+Does not work yet on Perl 5.6, 5.11 and non-threaded 5.10, and is
+enabled automatically where it is known to work.
 
 =item B<-fppaddr>
 
@@ -3396,8 +3407,10 @@ Save compile-time modifications to the %SIG hash.
 
 =item B<-fcop>
 
-Omit COP info for faster execution, but warnings have almost
-no any file and line infos.
+Omit COP info (nextstate without labels, unneeded NULL ops,
+files, linenumbers) for ~10% faster execution
+and less space, but warnings have almost no any file and line infos.
+It will most likely not work yet. I<(was -fbypass-nullops in earlier compilers)>
 
 =item B<-fav-init>
 
@@ -3429,7 +3442,7 @@ Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>.
 
 =item B<-O4>
 
-Enable -O3 plus B<-fcop>.
+Enable -O3 plus B<-fcop>. Very unsafe.
 
 =back
 
@@ -3483,6 +3496,15 @@ Current status: experimental.
 
 Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>,
 Reini Urban, C<rurban@cpan.org>
+
+=head1 SEE ALSO
+
+L<perlcompiler> for a general overview,
+L<B::CC> for the optimising C compiler,
+L<B::Bytecode> + L<ByteLoader> for the bytecode compiler,
+L<Od> for source level debugging in the L<B::Debugger>,
+L<illguts> for the illustrated Perl guts,
+L<perloptree> for the Perl optree.
 
 =cut
 
