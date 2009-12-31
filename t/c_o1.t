@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# better use testc.sh for debugging
+# better use testc.sh -O1 for debugging
 BEGIN {
   if ($ENV{PERL_CORE}){
     chdir('t') if -d 't';
@@ -23,7 +23,6 @@ my @todo = (); # 8,14-16 fail on 5.00505
 @todo = (15,27)    if $] < 5.007;
 @todo = ()         if $] >= 5.010;
 @todo = (15)       if $] >= 5.010 and !$ITHREADS;
-@todo = (15,16)    if $] >= 5.011;
 
 my @skip = (27); # out of memory
 

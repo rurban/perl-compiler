@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# better use testcc.sh for debugging
+# better use testcc.sh -O1 for debugging
 BEGIN {
   if ($ENV{PERL_CORE}){
     chdir('t') if -d 't';
@@ -14,10 +14,9 @@ use strict;
 #my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
-my @todo = (15,18,21,25..27,30); # 5.8
+my @todo = (18,21,25..27,30); # 5.8
 @todo =    (15,18,21,25..27,29,30) if $] < 5.007;
-@todo =    (15,18,21,25,26,29,30)  if $] >= 5.010;
-push @todo, (16) if $] >= 5.011;
+@todo =    (18,21,25,26,29,30)  if $] >= 5.010;
 push @todo, (12) if $] >= 5.010 and !$ITHREADS;
 
 # skip core dump causing known limitations, like custom sort or runtime labels

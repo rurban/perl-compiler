@@ -1,5 +1,5 @@
 # -*- cperl -*-
-# t/testcore.t - run the core testsuite with the compilers, C, CC or ByteCode
+# t/testcore.t - run the core testsuite with the compilers C, CC and ByteCode
 #
 # Copy your matching CORE t dirs into t/CORE.
 # For now we test qw(base comp lib op run)
@@ -23,7 +23,17 @@ sub vcmd {
 }
 
 my $dir = getcwd();
-`ln -sf $^X t/perl`;
+
+unlink ("t/perl", "t/CORE/perl");
+symlink "t/perl", $^X;
+symlink "t/CORE/perl", $^X;
+symlink "t/CORE/test.pl", "t/test.pl" unless -e "t/CORE/test.pl";
+symlink "t/CORE/harness", "t/test.pl" unless -e "t/CORE/harness";
+#`ln -sf $^X t/perl`;
+#`ln -sf $^X t/CORE/perl`;
+#`ln -sf t/test.pl t/CORE/test.pl`;
+#`ln -sf t/test.pl t/CORE/harness`;
+
 for my $t (@ARGV ? @ARGV : <t/CORE/*/*.t>) {
 
   chdir $dir;
@@ -56,5 +66,6 @@ for my $t (@ARGV ? @ARGV : <t/CORE/*/*.t>) {
 }
 
 END {
-  unlink ("a", "a.c", "t/a.c", "aa.c", "aa", "b.plc", "b.result");
+  unlink ( "a", "a.c", "t/a.c", "aa.c", "aa", "t/aa.c", "b.plc", "b.result",
+           "t/perl", "t/CORE/perl" );
 }

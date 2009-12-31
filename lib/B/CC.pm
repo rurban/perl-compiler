@@ -8,7 +8,7 @@
 #
 package B::CC;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 use Config;
 use strict;
@@ -20,7 +20,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
   OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR
 );
 use B::C qw(save_unused_subs objsym init_sections mark_unused
-  output_all output_boilerplate output_main);
+  output_all output_boilerplate output_main fixup_ppaddr save_sig);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 
@@ -115,10 +115,10 @@ else {
 # temporary file if memory is at a premium.
 my $ppname;    # name of current fake PP function
 my $runtime_list_ref;
-my $declare_ref;    # Hash ref keyed by C variable type of declarations.
+my $declare_ref;     # Hash ref keyed by C variable type of declarations.
 
 my @pp_list;        # list of [$ppname, $runtime_list_ref, $declare_ref]
-                    # tuples to be written out.
+		     # tuples to be written out.
 
 my ( $init, $decl );
 
@@ -857,6 +857,9 @@ sub pp_gvsv {
     runtime("XPUSHs(save_scalar($gvsym));");
   }
   else {
+    # SVn passing argument 2 of 'Perl_gv_SVadd' from incompatible pointer type
+    # expects GV*, not SV* PL_curpad
+    $gvsym = "(GV*)$gvsym" if $gvsym =~ /PL_curpad/;
     $PERL510
       ? runtime("XPUSHs(GvSVn($gvsym));")
       : runtime("XPUSHs(GvSV($gvsym));");
@@ -1891,6 +1894,9 @@ sub cc_main {
   save_unused_subs();
   cc_recurse();
 
+  my $warner = $SIG{__WARN__};
+  save_sig($warner);
+
   my $inc_hv          = svref_2object( \%INC )->save;
   my $inc_av          = svref_2object( \@INC )->save;
   my $amagic_generate = amagic_generation;
@@ -1909,9 +1915,10 @@ sub cc_main {
       "GvAV(PL_incgv) = $inc_av;",
       "PL_amagic_generation = $amagic_generate;",
     );
-
   }
+
   seek( STDOUT, 0, 0 );   #prevent print statements from BEGIN{} into the output
+  fixup_ppaddr();
   output_boilerplate();
   print "\n";
   output_all("perl_init");
@@ -2052,6 +2059,14 @@ OPTION:
       }
     }
   }
+  # set some B::C optimizations
+  for (qw(optimize_warn_sv save_data_fh av_init save_sig),
+       $PERL510 ? () : "pv_copy_on_grow")
+  {
+    # XXX optimize_ppaddr crashes
+    no strict 'refs';
+    ${"B::C::$_"} = 1;
+  }
   init_sections();
   $init = B::Section->get("init");
   $decl = B::Section->get("decl");
@@ -2066,11 +2081,14 @@ OPTION:
         die "cc_obj(qq(pp_sub_$ppname, \\&$objname) failed: $@" if $@;
         return if $errors;
       }
+      my $warner = $SIG{__WARN__};
+      save_sig($warner);
+      fixup_ppaddr();
       output_boilerplate();
       print "\n";
       output_all( $module_name || "init_module" );
       output_runtime();
-      }
+    }
   }
   else {
     return sub { cc_main() };

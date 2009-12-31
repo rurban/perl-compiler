@@ -217,6 +217,7 @@ static int bget_swab = 0;
     } STMT_END
 
 #define BSET_sv_magic(sv, arg)	sv_magic(sv, Nullsv, arg, 0, 0)
+/* mg_name was previously called mg_pv. we keep the new name and the old index */
 #define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.xpv_cur
 #define BSET_mg_namex(mg, arg)			\
 	(mg->mg_ptr = (char*)SvREFCNT_inc((SV*)arg),	\
@@ -455,6 +456,7 @@ static int bget_swab = 0;
 #ifdef USE_ITHREADS
 #define BSET_cop_file(cop, arg)		CopFILE_set(cop,arg)
 #define BSET_cop_stashpv(cop, arg)	CopSTASHPV_set(cop,arg)
+/* only warn, not croak, because those are not really important. stash could be. */
 #define BSET_cop_filegv(cop, arg)	Perl_warn(aTHX_ "cop_filegv with ITHREADS not yet implemented")
 #define BSET_cop_stash(cop,arg)		Perl_warn(aTHX_ "cop_stash with ITHREADS not yet implemented")
 #else
@@ -469,7 +471,9 @@ static int bget_swab = 0;
 #if PERL_VERSION < 11
 #define BSET_cop_label(cop, arg)	(cop)->cop_label = arg
 #else
-#define BSET_cop_label(cop, arg)	Perl_store_cop_label(aTHX_ (cop)->cop_hints_hash, arg)
+/* See op.c:Perl_newSTATEOP. Test 21 */
+#define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
+        Perl_store_cop_label(aTHX_ (cop)->cop_hints_hash, arg)
 #endif
 
 /* This is stolen from the code in newATTRSUB() */

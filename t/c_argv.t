@@ -29,5 +29,9 @@ system "$^X -Mblib script/perlcc -B -o $plc $pl";
 my $cmd = "$^X -Mblib " . ($] < 5.007 ? "-MByteLoader " : "") . "$plc ok 3";
 system "$cmd";
 
+END {
+  unlink("a", "a.out", $pl, $plc);
+}
+
 __DATA__
 print @ARGV?join(" ",@ARGV):"nok 1 # empty \@ARGV","\n";

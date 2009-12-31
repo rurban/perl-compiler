@@ -14,17 +14,17 @@ compile-time initialisation of AvARRAYs (improved with -fav-init)
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 CvOUTSIDE for ordinary subs
 DATA filehandle for C-compiled program (almost done)
+pv_copy_on_grow no &PL_SV_undef in static inits
 
 * Features
 
 type checking: Devel::TypeCheck
-compile time v. runtime initialisation
+compile time v. runtime initialisation:
   execute run-time BEGIN blocks for side-effects such as print or chdir, 
   use and require not.
 save PMOPs in compiled form
 selection of what to dump
 options for cutting out line info (COP elimination) etc. (-fcop)
-comment output (-v verbose)
 shared constants (share_hek, constpv)
 check module dependencies, vs. link libs static, not via DynaLoader
 new Asm, JIT or PIR backend, PLJC ByteLoader magic
@@ -34,6 +34,7 @@ ByteLoader compatibility: version, platform. eventually Bytecode version
 
 * Optimisations
 
+fix optimize_ppaddr for B::CC 
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
   and GV method names package::name. (partially done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
@@ -47,3 +48,4 @@ global analysis of variables, type hints etc.
 demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
+tailcall optimization (entersub->leavesub => goto)

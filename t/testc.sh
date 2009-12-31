@@ -138,9 +138,9 @@ function ctest {
 	    pass "./$o" "'$str' => '$res'"
             if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
 	    runopt $o 1 && \
-	    runopt $o 2 && \
-	    runopt $o 3 && \
-	    runopt $o 4 && \
+	    runopt $o 2
+	    #runopt $o 3 && \
+	    #runopt $o 4 && \
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"

@@ -41,7 +41,7 @@ sub libscan {
   return 0 if $_[1] =~ /^(.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode\d+\..*|regen_lib\.pl)$/;
   # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
   # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
-  return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
+  #return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
   return $_[1];
 }
 

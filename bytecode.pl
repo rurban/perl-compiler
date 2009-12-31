@@ -6,11 +6,17 @@ BEGIN {
 use strict;
 use Config;
 my %alias_to = (
-    U32 => [qw(line_t)],
-    PADOFFSET => [qw(STRLEN SSize_t)],
-    U16 => [qw(OPCODE short)],
-    U8  => [qw(char)],
-);
+                U32 => [qw(line_t)],
+                PADOFFSET => [qw(STRLEN SSize_t)],
+                U16 => [qw(OPCODE short)],
+                U8  => [qw(char)],
+               );
+%alias_to = (
+             U32 => [qw(PADOFFSET STRLEN)],
+             I32 => [qw(SSize_t long)],
+             U16 => [qw(OPCODE line_t short)],
+             U8  => [qw(char)],
+            ) if $] < 5.008001;
 
 my (%alias_from, $from, $tos);
 while (($from, $tos) = each %alias_to) {
@@ -857,6 +863,7 @@ __END__
 51 0 	xcv_start	CvSTART(bstate->bs_sv)		opindex
 52 0 	xcv_root	CvROOT(bstate->bs_sv)		opindex
 53 0 	xcv_gv		*(SV**)&CvGV(bstate->bs_sv)	svindex
+#  <8   xcv_filegv	*(SV**)&CvFILEGV(bstate->bs_sv)	svindex
 54 0 	xcv_file	CvFILE(bstate->bs_sv)		pvindex
 55 0 	xcv_depth	CvDEPTH(bstate->bs_sv)		long
 56 0 	xcv_padlist	*(SV**)&CvPADLIST(bstate->bs_sv) svindex
@@ -865,9 +872,9 @@ __END__
 59 0 	xcv_flags	CvFLAGS(bstate->bs_sv)		U16
 60 0 	av_extend	bstate->bs_sv			SSize_t		x
 61 8	av_pushx	bstate->bs_sv			svindex		x
-62 0 	av_push		bstate->bs_sv			svindex		x
-63 0 	xav_fill	AvFILLp(bstate->bs_sv)		SSize_t
-64 0 	xav_max		AvMAX(bstate->bs_sv)		SSize_t
+62 <8 	av_push		bstate->bs_sv			svindex		x
+63 <8 	xav_fill	AvFILLp(bstate->bs_sv)		SSize_t
+64 <8 	xav_max		AvMAX(bstate->bs_sv)		SSize_t
 65 <10 	xav_flags	AvFLAGS(bstate->bs_sv)		U8
 65 10 	xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 I32
 66 <10 	xhv_riter	HvRITER(bstate->bs_sv)			I32
@@ -933,6 +940,7 @@ __END__
 114 <10 op_pmpermflags  cPMOP->op_pmpermflags		U16
 115 8-10 op_pmdynflags   cPMOP->op_pmdynflags		U8
 116 0 	op_sv		cSVOP->op_sv			svindex
+0   <6  op_gv		*(SV**)&cGVOP->op_gv		svindex
 117 0 	op_padix	cPADOP->op_padix		PADOFFSET
 118 0 	op_pv		cPVOP->op_pv			pvcontents
 119 0 	op_pv_tr	cPVOP->op_pv			op_tr_array

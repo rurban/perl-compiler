@@ -415,14 +415,15 @@ sub asm ($;$$) {
   if ( defined $_[1] ) {
     return
       if $_[1] eq "0"
-        and $_[0] !~ /^(?:newsvx?|av_pushx?|av_extend|xav_flags)$/;
-    return if $_[1] eq "1" and $_[0] =~ /^(?:sv_refcnt)$/;
+        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|av_pushx?|av_extend|xav_flags)$/;
+    return if $_[1] eq "1" and $]>5.007 and $_[0] =~ /^(?:sv_refcnt)$/;
   }
   my ( $insn, $arg, $comment ) = @_;
   if ($] < 5.007) {
     if ($insn eq "newsvx") {
       $arg = $arg & 0xff; # sv not SVt_NULL
       $insn = "newsv";
+      # XXX but this needs stsv tix-1 also
     } elsif ($insn eq "newopx") {
       $insn = "newop";
     } elsif ($insn eq "av_pushx") {
@@ -431,6 +432,8 @@ sub asm ($;$$) {
       $insn = "ldspecsv";
     } elsif ($insn eq "gv_stashpvx") {
       $insn = "gv_stashpv";
+    } elsif ($insn eq "gv_fetchpvx") {
+      $insn = "gv_fetchpv";
     } elsif ($insn eq "main_cv") {
       return;
     }

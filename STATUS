@@ -1,7 +1,8 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
-Bytecode compiler disabled for 5.6. The core compiler fails 50% but
-in mine is a blocker. Bytecode is only stable for 5.8 and 5.10 threaded.
+Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
+fails 50% but in mine is a blocker.
+Bytecode is only stable for >=5.8, non-debugging, threaded.
 
 C is stable, minor bugs left.
 
@@ -16,15 +17,13 @@ Several B::C and B::CC bugs fixed. 5.10 + 5.11 compatibility added.
 Open Problems for B::C:
 5.6:
     test 25, 27
-    XSUB load order via B::Stash. Usually fixed via perlcc.
 5.8:
     xsub AUTOLOAD (test 27)
 5.10:
     reading from __DATA__ handles (15) -fsave-data fails on non-threaded builds.
     Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
 5.11:
-    +
-    test 16
+    None. Completely same results as 5.10
 
 See below at the detailed 5.6, 5.8, 5.10, 5.11 status
 
@@ -37,7 +36,7 @@ CORE (old)
 ----
 
 5.6.2:
-t/bytecode      3,6,8..10,12,15,16,18,25..28
+t/bytecode      3,6,8..10,12,15,16,18,26,28,31
 t/c             8,15,16,22,27,28,31
 t/c_o1          8,15,16,22,27,28,31
 t/c_o2          8,15,16,22,27,28,31
@@ -74,17 +73,17 @@ t/c             15,27            		| 15
 t/c_o1          15,27				| 15
 t/c_o2          15,27				| 15
 t/c_o3          15,27				| 15
-t/c_o3		10,12,15,19,25,27,29
-t/cc            15,18,21,25,27,29,30
-t/cc_o1         15,18,21,25..27,29,30
-t/cc_o2         10,15,16,18,21,25..27,29,30
+t/c_o4		10,12,15,19,25,27
+t/cc            15,18,21,25,27,30
+t/cc_o1         15,18,21,25..27,30
+t/cc_o2         10,15,16,18,21,25..27,30
 
 5.8.0
 redhat perl http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576363.html:
 byterun.c:678: duplicate case value
 byterun.c:669: previously used here
 
-5.8.3 + 5.8.5 threaded
+5.8.3 + 5.8.5 threaded 1.09
 cpantesters http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576377.html
 http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576274.html
 c 	 	7
@@ -92,54 +91,49 @@ c_o1-2:  	7,11
 cc: 	 	3,7,29
 cc_o1-2: 	3,7 
 
+1.09:
 freebsd 5.10.1  c+cc fails on 28 generally, cc passed 12 
 freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
 
-5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)		
+5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)		| non-threaded
 t/bytecode      ok
-t/c             27
-t/c_o1          27
-t/c_o2          27
-t/c_o3          27
-t/c_o4          10,12,15,19,25			| 10,12,19,25,27
-t/cc            15,18,21,25,27,30
-t/cc_o1         15,18,21,25..27,30
-t/cc_o2         10,15,16,18,21,25..27,30
+t/c             ok				| 27
+t/c_o1          ok				| 27
+t/c_o2          ok				| 27
+t/c_o3          ok				| 27
+t/c_o4          10,12,15,19,25  		| 10,12,19,25,27
+t/cc            18,21,25,27,30
+t/cc_o1         18,21,25..27,30
+t/cc_o2         10,16,18,21,25..27,30
 
 5.10.1: 					| non-threaded
-t/bytecode 	ok				| 9,10,12,27,29
-t/c 		ok				| 15
-t/c_o1          ok				| 15
-t/c_o2          ok				| 15
-t/c_o3          ok				| 15
+t/bytecode 	ok				| 9,10,12 (or debug)
+t/c 		ok				| ok
+t/c_o1          ok				| ok
+t/c_o2          ok				| ok
+t/c_o3          ok				| ok
 t/c_o4          10,12,19,25
-t/cc 		15,18,21,25,29,30		| +12
-t/cc_o1         15,18,21,25,26,29,30		| +12
-t/cc_o2         10,15,16,18,21,25,26,29,30	| +12
+t/cc 		18,21,25,29,30			| +12
+t/cc_o1         18,21,25,26,29,30		| +12
+t/cc_o2         10,16,18,21,25,26,29,30		| +12
 
-5.11.2: 					| non-threaded
-t/bytecode 	9,10,12,16,21,27,29,31
-t/c 		15,16
-t/c_o1          15,16
-t/c_o2          15,16
-t/c_o3          15,16
-t/c_o4          10,12,15,16,19,25
-t/cc 		15,16,18,21,25,29,30		| +12
-t/cc_o1         15,16,18,21,25,26,29,30		| +12
-t/cc_o2         10,15,16,18,21,25,26,29,30	| +12
+5.11.2: same as 5.10.1
 
 5.10, 5.11 status
 -----------------
 TODO for B::C
-  AUTOLOAD goto xsub and SelfLoader esp on 5.8. 
+  AUTOLOAD goto xsub and SelfLoader esp on 5.8 (27). 
     use AutoLoader works okay. (test 27, 31)
-  __DATA__ IO (test 15) partially broken
   test 29 non-threaded 5.8 (require $fname)
-  test 16 on blead
-  destruction: -O1 static PVs and HEKs (mult.) since 5.10
+  destruction: -O1 static PVs and HEKs (mult.) >=5.10
 
 DONE:
-fixed GV -> BM magic (index) without needing fbm_compile. Just 5.8.9 not.
+fixed __DATA__ IO (test 15) on 5.10 and 5.11 with 1.12. 
+  On 5.6 it is hard to fix (re-implement PerlIO::scalar).
+
+fixed RV => IV on blead (test 16 tiearray magic obj HVref) with 1.11
+
+fixed GV -> BM magic (index) without needing fbm_compile with 1.09. Just 5.8.9 not.
 
 fixed non-xsub AUTOLOAD (31) with 1.08
 
@@ -327,4 +321,4 @@ cc B::CC,
 -D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
 -nt not threaded perl.
 
-2009-12-22 rurban
+2009-12-29 rurban

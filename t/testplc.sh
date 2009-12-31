@@ -2,15 +2,17 @@
 # Usage: 
 # for p in 5.6.2 5.8.9d 5.10.1 5.11.2; do make -q clean >/dev/null; perl$p Makefile.PL; t/testplc.sh -q -c; done
 # use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
+ntests=31
 
 function help {
-  echo "t/testplc.sh [OPTIONS] [1-29]"
-  echo " -s                 skip B:Debug, roundtrips and options"
+  echo "t/testplc.sh [OPTIONS] [1-$ntests]"
+  echo " -s                 skip all B:Debug, roundtrips and options"
+  echo " -S                 skip all roundtrips and options but -S and Concise"
   echo " -c                 continue on errors"
   echo " -q                 quiet"
   echo " -h                 help"
   echo "t/testplc.sh -q -s -c <=> perl -Mblib t/bytecode.t"
-  echo "Without arguments try all 29 tests. Without Option -Ox try all three optimizations."
+  echo "Without arguments try all $ntests tests. Else the given test numbers."
 }
 
 PERL=`grep "^PERL =" Makefile|cut -c8-`
@@ -46,8 +48,9 @@ function bcall {
     o=$1
     opt=${2:-s}
     ext=${3:-plc}
-    [ -n "$Q" ] || echo ${QOCMD}-$opt,-o${o}${opt}_${VERS}.${ext} ${o}.pl
-    ${QOCMD}-$opt,-o${o}${opt}_${VERS}.${ext} ${o}.pl
+    optf=$(echo $opt|sed 's/,-//')
+    [ -n "$Q" ] || echo ${QOCMD}-$opt,-o${o}${optf}_${VERS}.${ext} ${o}.pl
+    ${QOCMD}-$opt,-o${o}${optf}_${VERS}.${ext} ${o}.pl
 }
 function btest {
   n=$1
@@ -63,6 +66,10 @@ function btest {
   #bcall ${o} O6
   rm ${o}_s_${VERS}.plc 2>/dev/null
   
+  # annotated assembler
+  if [ -z "$SKIP" -o -n "$SKI" ]; then
+    bcall ${o} S,-s asm 1
+  fi
   if [ -n "$Mblib" -a -z "$SKIP" ]; then 
     rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.concise ${o}_s_${VERS}.dbg 2>/dev/null
     bcall ${o} s
@@ -70,8 +77,6 @@ function btest {
     $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}s_${VERS}.disasm
     mv ${o}s_${VERS}.disasm ${o}_s_${VERS}.disasm
 
-    # annotated assembler
-    bcall ${o} S asm 1
     # understand annotations
     [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}S_${VERS}.asm \> ${o}S_${VERS}.plc
     $PERL $Mblib script/assemble ${o}S_${VERS}.asm > ${o}S_${VERS}.plc
@@ -88,10 +93,12 @@ function btest {
     [ -n "$Q" ] || echo $PERL $Mblib -MO=${qq}Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
     [ -n "$Q" ] || $PERL $Mblib -MO=${qq}Debug,-exec ${o}.pl > ${o}_${VERS}.dbg
   fi
-  if [ -z "$SKIP" ]; then
+  if [ -z "$SKIP" -o -n "$SKI" ]; then
     # 5.8 has a bad concise
     [ -n "$Q" ] || echo $PERL $Mblib -MO=${qq}Concise,-exec ${o}.pl -o ${o}_${VERS}.concise
     $PERL $Mblib -MO=${qq}Concise,-exec ${o}.pl > ${o}_${VERS}.concise
+  fi
+  if [ -z "$SKIP" ]; then
     if [ -n "$Mblib" ]; then 
       #bcall ${o} TI
       bcall ${o} H
@@ -117,7 +124,6 @@ function btest {
   fi
 }
 
-ntests=31
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -177,7 +183,7 @@ result[22]='ok';
 # broken in perl 5.8
 tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
 result[23]='ok'
-# works in original perl 5.6, broken with latest B::C in 5.6, 5.8
+# works in original perl 5.6, broken with B::C in 5.6, 5.8
 tests[24]='sub level1{return(level2()?"fail":"ok")} sub level2{0} print level1();'
 result[24]='ok'
 # enforce custom ncmp sort and count it. fails as CC in all. How to enforce icmp?
@@ -191,7 +197,7 @@ result[26]="26";
 tests[27]='use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
 # require test
-tests[28]='my $tmpdir=$ENV{TMPDIR}||"/tmp";my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if ($bail>500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
+tests[28]='my $tmpdir=$ENV{TMPDIR}||$ENV{TMP}||"/tmp";my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if ($bail>500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
 result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
@@ -204,7 +210,7 @@ tests[31]='package DummyShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(jo
 result[31]='date;who am i;ls -l;'
 
 
-while getopts "qscCh" opt
+while getopts "qsScCh" opt
 do
   if [ "$opt" = "q" ]; then
       Q=1
@@ -213,6 +219,7 @@ do
       if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; qq=""; fi
   fi
   if [ "$opt" = "s" ]; then SKIP=1; fi
+  if [ "$opt" = "S" ]; then SKIP=1; SKI=1; fi
   if [ "$opt" = "c" ]; then CONT=1; shift; fi
   if [ "$opt" = "C" ]; then CORE=1; shift; fi
   if [ "$opt" = "h" ]; then help; exit; fi

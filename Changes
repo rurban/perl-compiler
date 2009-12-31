@@ -3,6 +3,42 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.12	2009-12-31 rurban
+	__DATA__ handles work now. Also more Bytecode fixes.
+	* t/testplc.sh: Added -S: skip all but -S and Concise
+	* Bytecode.pm (1.05): Adapt RV 5.11 change from SV to IV, detect ROK at
+	  B::IV::bsave analog to C.pm. Fixes test 16.
+	Set prototype sv_flags at first, so it cannot assert. Fixes tests 27 and 29.
+	More work on 5.6 compat.
+	* bytecode.pl: Fixed 5.6 %alias_to sizes.
+	* bytecode.h: Fix BSET_cop_label for 5.11. Fixes test 21.
+	* t/bytecode.t: Added DEBUGGING to the mix. 5.11 is now completely the
+	  same as 5.10. Remaining failures are now 9,10,12 for DEBUGGING (or
+	  non-threaded?).
+	* C.pm: Added xpvuv (coverage in 5.6.2 test 21).
+	Added PMOP->pmstash/pmstashpv (no coverage yet).
+	Checked against -Wall -Wextra:
+	  Added missing pmop->stash for 5.8.
+	  Added missing cop->cop_io for 5.8.
+	  Added braces to union inits (MSVC Todo).
+	  Remove unused dTARG and dSP.
+	Fixed CC test 29 on 5.6.2, not checked why.
+	Fixed __DATA__ test 15 on 5.10 and 5.11.
+	* TESTS: Updated with 5.10.1 CORE results
+
+1.11	2009-12-29 rurban
+	Fixed 5.11 RVs, added C optimizations to CC
+	* C.pm: Adapt RV 5.11 change from SV to IV, detect ROK at B::IV::save.
+	  Fixes test 16.
+	Added -DW for walk, together with -Dp only.
+	Forced fullname optimization scalars for B::CC.
+	Export save_sig and fixup_ppaddr for CC.
+	* CC.pm (1.03): Fixed Perl_gv_SVadd cast warning.
+	Added most B::C optimizations. This fixes all threaded tests 15 >= 5.10.
+	Call save_sig, fixup_ppaddr not yet.
+	* t/test.pl: simplified (and fixed) keep logic
+	* t/c_argv.t: cleanup
+
 1.10	2009-12-29 rurban
 	Fixed @ARGV
 	* C.pm: fixed couple of minor bugs detected with new t/testcore.t:
@@ -196,7 +232,7 @@
 	* CC.pm (1.02_03): fixed endless loop in optimized sort. The sortcv 
 	  cmp needed a return NULL (test 19).
 	* c.t, cc.t: add failing tests as TODOs
-	
+
 1.04_26 2009-12-02 rurban
 	* C.pm: remove nv->IVX for 5.10 (Can't locate object method "IVX" via 
 	  package "B::NV").
@@ -221,7 +257,7 @@
 	* t/cc.t: adapt TODOs
 	* t/c.t: add TODOs 15 for 5.6
 	* script/perlcc: a.exe for cygwin also
-	
+
 1.04_24 2009-11-29 rurban
 	* C.pm: fixed more CV basics (test 9), just stash for autoload missing
 	(test 8).
@@ -247,7 +283,7 @@
 1.04_22 2009-11-16 rurban
 	* C.pm, CC.pm: fixed illegal pad in ASSERT_CURPAD_ACTIVE("pad_sv")
 	with DEBUGGING.	Simply forgot to set PL_comppad
-	
+
 1.04_21 2009-11-07 rurban
 	* yapc_bratislava08.pod: added 
 	* C.pm: fixed CALLREGCOMP >=5.10 by using dynamic newSVpvn as in ByteLoader
@@ -289,7 +325,7 @@
 1.04_18 2008-06-04 rurban
 	* Fixed t/assembler.t on 5.6.2
 	* Added ByteLoader::unimport (from 5.6.2)
-	* ByteLoader: Fixed bytecode crashes for 5.10+5.11 in 2-5, 7 by 
+	* ByteLoader: Fixed bytecode crashes for 5.10+5.11 in 2-5,7 by 
 	  removing PMf_COMPILETIME from op_pmflags. Reason: empty 
 	  check_substr in INTUIT. (6 still failing)
 	* ByteLoader: Fixes for 5.11 by using PM_SETRE (test 7 still failing)
@@ -377,7 +413,7 @@
         * Added orangesect for enough regexp space in RE's sv_any. 
 	  Engine not initialized though.
 	* Hangs in C/CC executables at an op_free(PL_main_root) trying to free 
-          the static op structsm because the earlier op_seq -1 hack is gone now, 
+          the static op structs because the earlier op_seq -1 hack is gone now, 
 	  and opt_static was replaced by opt_latefree. Set now opt_latefree = 1.
           This fixed tests 1 and 13. Slowly making progress step by step.
 
@@ -517,7 +553,7 @@ Rafael Garcia-Suarez <rgarciasuarez@gmail.com>  2003-08-09 21:13:27
     pointed out.)
 
 chromatic <chromatic@rmci.net>  2002-05-10 07:43:25
-	added ext/B/t/o.t
+    added ext/B/t/o.t
 
 Gurusamy Sarathy <gsar@cpan.org>  2001-03-19 08:07:09
     Subject: Re: sync sync sync: have I missed any patches?
@@ -581,7 +617,7 @@ Author: bailey <bailey@bailey_vms>  2000-02-09 09:09:45
     Resync with mainline
 
 bailey <bailey@bailey_vms>  2000-01-20 00:25:30
-           Quick integration of mainline changes to date
+    Quick integration of mainline changes to date
 
 Nathan Torkington <gnat@frii.com>  1999-08-01 11:23:35
     ext/B/B/Disassembler.pm patch
@@ -649,7 +685,7 @@ Gurusamy Sarathy <gsar@cpan.org>  1998-07-09 05:37:48
     get it building again on win32
 
 Gurusamy Sarathy <gsar@cpan.org>  1998-07-04 05:02:01
-	fix perlcc to not rm output file, and other -w(arts)
+    fix perlcc to not rm output file, and other -w(arts)
 
 Stephen McCamant <alias@mcs.com>  1998-06-22 21:19:43
     Inheritance of B:: classes
@@ -677,10 +713,10 @@ Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-04-14 16:22:51
     [compiler] CC did "<<" instead of ">>" for right-shift on ints.
 
 Charles Bailey <bailey@newman.upenn.edu>  1998-03-02 01:48:27
-	Miscellaneous minor fixes
+    Miscellaneous minor fixes
 
 Spider Boardman <spider@orb.nashua.nh.us>  1998-03-01 02:02:47
-	Almost OK: 5.004_61 (threads, perlio)
+    Almost OK: 5.004_61 (threads, perlio)
 
 Andrew Cohen <cohen@andy.bu.edu>  1998-02-27 20:03:29
     Change getc/fread to PerlIO_getc/fread in bytecode.h:
@@ -708,7 +744,7 @@ Gurusamy Sarathy <gsar@cpan.org>  1998-02-22 02:40:56
     hacks that could be applicable to other platforms)
 
 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-25 17:44:34
-	More compiler tweaks.
+    More compiler tweaks.
 
 Malcolm Beattie <mbeattie@sable.ox.ac.uk>  1998-02-20 18:23:47
     Remove compiler files from their old lib/B locations. The compiler

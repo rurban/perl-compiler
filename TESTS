@@ -27,16 +27,38 @@ Test results from compiling t/*/*.t
 
 base/cond.t	OK		ok		OK
 base/if.t	OK		ok		OK
-base/lex.t	OK		ok		OK
+base/lex.t	OK		nok		OK
 base/pat.t	OK		ok		OK
+base/rs.t	see CC		ok		bad realloc ignored
 base/term.t	OK		ok		OK
 cmd/elsif.t	OK		ok		OK
-cmd/for.t	OK		ok		ok 1, 2, 3, panic: pp_iter
+cmd/for.t	OK		ok		ok 1, 2, 3, "last" used outside loop
 cmd/mod.t	OK		ok		ok
-cmd/subval.t	OK		ok		1..34, not ok 27,28 (simply
-						because filename changes).
-cmd/switch.t	OK		ok		ok
-cmd/while.t	OK		ok		ok
+cmd/subval.t	OK		ok		ok
+cmd/switch.t	OK		ok		"next" used outside loop
+cmd/while.t	OK		ok		"last" used outside loop, ... panic: leaveloop
+comp/bproto.t   OK		ok		ok
+comp/cmdopt.t	OK		ok		ok
+comp/colon.t	eval warnings	ok		see C
+comp/cpp.t      Config::FETCH missing
+comp/decl.t	OK		ok		ok
+comp/fold.t	fail		ok		fail B::OP::padix missing
+comp/hints.t	OK		ok		ok
+comp/multiline.t main::tempfile missing		fail B::OP::padix missing
+comp/opsubs.t   todo
+comp/our.t	Tieall::TIESCALAR missing
+				ok		fail B::OP::padix missing
+comp/package.t	OK		ok		ok
+comp/parser.t	todo
+comp/proto.t	OK		ok		ok
+comp/redef.t	fail            ok              fail pp_anonsub_0 undeclared
+comp/require.t  Wide character in print fail    ok
+comp/retainedlines.t todo	ok		todo
+comp/script.t   todo
+comp/term.t	OK		ok		ok
+comp/uproto.t   fail		ok		fail B::OP::padix missing
+comp/use.t	fail		ok		fail Bad free() ignored
+comp/utf.t	fail		ok		fail B::OP::padix missing
 io/argv.t	OK		ok		ok
 io/dup.t	OK		ok		ok
 io/fs.t		OK		ok		ok
@@ -44,10 +66,16 @@ io/inplace.t	OK		ok		ok
 io/pipe.t	OK		ok		ok with -umain
 io/print.t	OK		ok		ok
 io/tell.t	OK		ok		ok
+op/anonsub.t	nok		nok		nok
 op/append.t	OK		ok		OK
-op/array.t	OK		ok		1..36, not ok 7,10 (no $[)
+op/args.t	OK		ok		OK
+op/arith.t	OK		ok		OK
+op/array.t	OK		ok		OK
+op/assignwarn.t nok
 op/auto.t	OK		ok		OK
-op/chop.t	OK		ok		OK
+op/avhv.t	??
+op/bop.t					hangs
+op/chop.t	OK		ok		OK Bad realloc() ignored
 op/cond.t	OK		ok		OK
 op/delete.t	OK		ok		OK
 op/do.t		OK		ok		OK

@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 use strict;
 use Config;
@@ -21,7 +21,7 @@ use Config;
 use B qw(class main_cv main_root main_start
 	 begin_av init_av end_av cstring comppadlist
 	 OPf_SPECIAL OPf_STACKED OPf_MOD
-	 OPpLVAL_INTRO SVf_READONLY);
+	 OPpLVAL_INTRO SVf_READONLY SVf_ROK);
 use B::Assembler qw(asm newasm endasm);
 
 BEGIN {
@@ -39,21 +39,21 @@ use B::Concise;
 
 #################################################
 
+my $PERL510 = ( $] >= 5.009005 );
+my $PERL511 = ( $] >= 5.011 );
+my $PERL56  = ( $] <  5.008001 );
 our ($quiet);
 my ( $varix, $opix, $savebegins, %walked, %files, @cloop, %debug );
 my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
 my %optab   = ( 0, 0 );
-my %spectab = ( 0, 0 );
-my $tix      = 1;
+my %spectab = $PERL56 ? () : ( 0, 0 ); # we need the special Nullsv on 5.6 (?)
+my $tix      = $PERL56 ? 0 : 1;
 my %ops     = ( 0, 0 );
 my @packages;    # list of packages to compile. 5.6 only
 
 # sub asm ($;$$) { }
 sub nice ($) { }
-my $PERL510 = ( $] >= 5.009005 );
-my $PERL511 = ( $] >= 5.011 );
-my $PERL56  = ( $] <  5.008001 );
 
 my %optype_enum;
 my ($SVt_PVGV, $SVf_FAKE, $POK);
@@ -65,6 +65,7 @@ if ($PERL56) {
   for ( my $i = 0 ; $i < @optype ; $i++ ) {
     $optype_enum{ $optype[$i] } = $i;
   }
+  sub MAGICAL56 { $_[0]->FLAGS & 0x000E000 } #(SVs_GMG|SVs_SMG|SVs_RMG)
 } else {
   no strict 'subs';
   $SVt_PVGV = SVt_PVGV;
@@ -80,8 +81,10 @@ BEGIN {
   die $@ if $@;
 }
 
+
 #################################################
 
+# This is for -S commented assembler output
 sub op_flags {
   return '' if $quiet;
   # B::Concise::op_flags($_[0]); # too terse
@@ -100,6 +103,7 @@ sub op_flags {
   return join( ",", @v );
 }
 
+# This is also for -S commented assembler output
 sub sv_flags {
   return '' if $quiet or $B::Concise::VERSION < 0.74;    # or ($] == 5.010);
   return '' unless $debug{Comment};
@@ -126,7 +130,7 @@ sub pvix {
     asm "newpv", $str;
     asm "stpv", $strtab{$str} = $tix;
     $tix++;
-    }
+  }
 }
 
 sub B::OP::ix {
@@ -139,21 +143,21 @@ sub B::OP::ix {
     my $opsize = $PERL56 ? '?' : $op->size;
     B::Assembler::maxopix($tix) if $debug{A};
     asm "newopx", $arg, sprintf( "$arg=size:%s,type:%d", $opsize, $op->type );
+    asm "stop", $tix if $PERL56;
     $optab{$$op} = $opix = $ix = $tix++;
     $op->bsave($ix);
     $ix;
-    }
+  }
 }
 
 sub B::SPECIAL::ix {
   my $spec = shift;
   my $ix   = $spectab{$$spec};
   defined($ix) ? $ix : do {
-
-    # nice '['.$specialsv_name[$$spec].']';
     asm "ldspecsvx", $$spec, $specialsv_name[$$spec];
+    asm "stsv", $tix if $PERL56;
     $spectab{$$spec} = $varix = $tix++;
-    }
+  }
 }
 
 sub B::SV::ix {
@@ -163,6 +167,7 @@ sub B::SV::ix {
     nice '[' . class($sv) . ']';
     B::Assembler::maxsvix($tix) if $debug{A};
     asm "newsvx", $sv->FLAGS, $debug{Comment} ? sv_flags($sv) : '';
+    asm "stsv", $tix if $PERL56;
     $svtab{$$sv} = $varix = $ix = $tix++;
 
     #nice "\tsvtab ".$$sv." => bsave(".$ix.");
@@ -198,6 +203,7 @@ sub B::GV::ix {
           . ( class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME );
       }
       asm "gv_fetchpvx", cstring $name;
+      asm "stsv", $tix if $PERL56;
       $svtab{$$gv} = $varix = $ix = $tix++;
       asm "sv_flags",  $gv->FLAGS;
       asm "sv_refcnt", $gv->REFCNT;
@@ -221,7 +227,7 @@ sub B::GV::ix {
 
       # }}}} XXX
 
-      nice "-GV-", asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
+      nice "-GP-", asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
       asm "gp_sv", $svix, sv_flags( $gv->SV );
       asm "gp_av", $avix, sv_flags( $gv->AV );
       asm "gp_hv", $hvix, sv_flags( $gv->HV );
@@ -236,6 +242,7 @@ sub B::GV::ix {
     else {
       nice "[GV]";
       asm "newsvx", $gv->FLAGS, $debug{Comment} ? sv_flags($gv) : '';
+      asm "stsv", $tix if $PERL56;
       $svtab{$$gv} = $varix = $ix = $tix++;
       if ( !$PERL510 ) {
         #GV_without_GP has no GvFlags
@@ -265,6 +272,7 @@ sub B::HV::ix {
     if ($name) {
       nice "[STASH]";
       asm "gv_stashpvx", cstring $name;
+      asm "ldsv", $tix if $PERL56;
       asm "sv_flags",    $hv->FLAGS;
       $svtab{$$hv} = $varix = $ix = $tix++;
       asm "xhv_name", pvix $name;
@@ -277,6 +285,7 @@ sub B::HV::ix {
     else {
       nice "[HV]";
       asm "newsvx", $hv->FLAGS, $debug{Comment} ? sv_flags($hv) : '';
+      asm "stsv", $tix if $PERL56;
       $svtab{$$hv} = $varix = $ix = $tix++;
       my $stashix = $hv->SvSTASH->ix;
       for ( @array = $hv->ARRAY ) {
@@ -294,7 +303,7 @@ sub B::HV::ix {
     }
     asm "sv_refcnt", $hv->REFCNT;
     $ix;
-    }
+  }
 }
 
 sub B::NULL::ix {
@@ -325,6 +334,8 @@ sub B::RV::bsave {
   my ( $sv, $ix ) = @_;
   my $rvix = $sv->RV->ix;
   $sv->B::NULL::bsave($ix);
+  # RV with DEBUGGING already requires sv_flags before SvRV_set
+  asm "sv_flags", $sv->FLAGS;
   asm "xrv", $rvix;
 }
 
@@ -345,6 +356,8 @@ sub B::PV::bsave {
 
 sub B::IV::bsave {
   my ( $sv, $ix ) = @_;
+  return $sv->B::RV::bsave($ix)
+    if $PERL511 and $sv->FLAGS & B::SVf_ROK;
   $sv->B::NULL::bsave($ix);
   if ($PERL56) {
     asm $sv->needs64bits ? "xiv64" : "xiv32", $sv->IVX;
@@ -373,6 +386,8 @@ sub B::PVIV::bsave {
     return if $sv->isa('B::HV');
     return if $sv->isa('B::CV');
     return if $sv->isa('B::GV');
+    return if $sv->isa('B::IO');
+    return if $sv->isa('B::FM');
   }
   bwarn( sprintf( "PVIV sv:%s flags:0x%x", class($sv), $sv->FLAGS ) )
     if $debug{M};
@@ -381,7 +396,7 @@ sub B::PVIV::bsave {
     my $iv = $sv->IVX;
     asm $sv->needs64bits ? "xiv64" : "xiv32", $iv;
   } else {
-    # PVIV GV 8009, GV flags & (4000|8000) illegal (SVp_SCREAM|SVp_POK)
+    # PVIV GV 8009, GV flags & (4000|8000) illegal (SVpgv_GP|SVp_POK)
     asm "xiv", !ITHREADS
       && $sv->FLAGS & ( $SVf_FAKE | SVf_READONLY ) ? "0 # but true" : $sv->IVX;
   }
@@ -391,9 +406,9 @@ sub B::PVNV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::PVIV::bsave($ix);
   if ($PERL510) {
-        # Magical AVs end up here, but AVs now don't have an NV slot actually
-        # allocated. Hence don't write out assembly to store the NV slot if
-        # we're actually an array.
+    # Magical AVs end up here, but AVs now don't have an NV slot actually
+    # allocated. Hence don't write out assembly to store the NV slot if
+    # we're actually an array.
     return if $sv->isa('B::AV');
 
     # Likewise HVs have no NV slot actually allocated.
@@ -422,12 +437,14 @@ sub B::PVMG::domagic {
     asm "sv_magic", cstring $_->TYPE;
     asm "mg_obj",   shift @mgix;
     my $length = $_->LENGTH;
-    if ( $length == B::HEf_SVKEY ) {
+    if ( $length == B::HEf_SVKEY and !$PERL56) {
       asm "mg_namex", shift @namix;
     }
     elsif ($length) {
       asm "newpv", pvstring $_->PTR;
-      asm "mg_name";
+      $PERL56
+        ? asm "mg_pv"
+        : asm "mg_name";
     }
   }
 }
@@ -437,18 +454,18 @@ sub B::PVMG::bsave {
   my $stashix = $sv->SvSTASH->ix;
   $sv->B::PVNV::bsave($ix);
   asm "xmg_stash", $stashix;
-  $sv->domagic($ix) if !$PERL56 and $sv->MAGICAL;
+  # XXX added SV->MAGICAL to 5.6 for compat
+  $sv->domagic($ix) if $PERL56 ? MAGICAL56($sv) : $sv->MAGICAL;
 }
 
 sub B::PVLV::bsave {
   my ( $sv, $ix ) = @_;
   my $targix = $sv->TARG->ix;
   $sv->B::PVMG::bsave($ix);
-  asm "xlv_targ",    $targix;
+  asm "xlv_targ",    $targix unless $PERL56; # XXX really? xlv_targ IS defined there
   asm "xlv_targoff", $sv->TARGOFF;
   asm "xlv_targlen", $sv->TARGLEN;
   asm "xlv_type",    $sv->TYPE;
-
 }
 
 sub B::BM::bsave {
@@ -478,8 +495,11 @@ sub B::IO::bsave {
   asm "xio_bottom_gv",   $bottomix;
   asm "xio_subprocess",  $io->SUBPROCESS unless $PERL510;
   asm "xio_type",        ord $io->IoTYPE;
-
-  # asm "xio_flags", ord($io->IoFLAGS) & ~32;		# XXX XXX
+  if ($PERL56) {
+    asm "xio_flags",     $io->IoFLAGS;
+  }
+  # XXX IOf_NOLINE off was added with 5.8, but not used (?)
+  # asm "xio_flags", ord($io->IoFLAGS) & ~32;		# XXX IOf_NOLINE 32
 }
 
 sub B::CV::bsave {
@@ -518,16 +538,32 @@ sub B::AV::bsave {
   my ( $av, $ix ) = @_;
   return $av->B::PVMG::bsave($ix) if !$PERL56 and $av->MAGICAL;
   my @array = $av->ARRAY;
-  $_ = $_->ix for @array;   # hack. who in the world understands this? hands up!
+  $_ = $_->ix for @array; # hack. walks the ->ix methods to save the elements
   my $stashix = $av->SvSTASH->ix;
+  nice "-AV-",
+    asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
 
-  nice "-AV-", asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
-  asm "av_extend", $av->MAX if $av->MAX >= 0;
-  asm "av_pushx", $_ for @array;
-  asm "sv_refcnt", $av->REFCNT;
-  if ( !$PERL510 ) {        # VERSION < 5.009
+  if ($PERL56) {
+    asm "sv_flags", $av->FLAGS & ~SVf_READONLY; # SvREADONLY_off($av) in case PADCONST
+    $av->domagic($ix) if MAGICAL56($av);
     asm "xav_flags", $av->AvFLAGS;
+    asm "xav_max", -1;
+    asm "xav_fill", -1;
+    if ($av->FILL > -1) {
+      asm "av_push", $_ for @array;
+    } else {
+      asm "av_extend", $av->MAX if $av->MAX >= 0;
+    }
+    asm "sv_flags", $av->FLAGS if $av->FLAGS & SVf_READONLY; # restore flags
+  } else {
+    #$av->domagic($ix) if $av->MAGICAL;
+    asm "av_extend", $av->MAX if $av->MAX >= 0;
+    asm "av_pushx", $_ for @array;
+    if ( !$PERL510 ) {        # VERSION < 5.009
+      asm "xav_flags", $av->AvFLAGS;
+    }
   }
+  asm "sv_refcnt", $av->REFCNT;
   asm "xmg_stash", $stashix;
 }
 
@@ -559,8 +595,9 @@ sub B::HV::bwalk {
       nice "[prototype]";
       asm "gv_fetchpvx", cstring $hv->NAME . "::$k";
       $svtab{$$v} = $varix = $tix;
+      # we need the sv_flags before, esp. for DEBUGGING asserts
+      asm "sv_flags",  $v->FLAGS;
       $v->bsave( $tix++ );
-      asm "sv_flags", $v->FLAGS;
     }
   }
 }
@@ -730,15 +767,22 @@ sub B::PMOP::bsave {
       $rrop  = "op_pmreplrootpo";
     }
     $op->B::BINOP::bsave($ix);
-    if ( $op->pmstashpv )
+    if ( !$PERL56 and $op->pmstashpv )
     {    # avoid empty stash? if (table) pre-compiled else re-compile
       if ( !$PERL510 ) {
         asm "op_pmstashpv", pvix $op->pmstashpv;
       }
       else {
-        # crash in 5.10, 5.11
-        bwarn("op_pmstashpv ignored") if $debug{M};
+        # XXX crash in 5.10, 5.11. Only used in OP_MATCH, with PMf_ONCE set
+        if ( $op->name eq 'match' and $op->op_pmflags & 2) {
+          asm "op_pmstashpv", pvix $op->pmstashpv;
+        } else {
+          bwarn("op_pmstashpv ignored") if $debug{M};
+        }
       }
+    }
+    elsif ($PERL56) { # ignored
+      ;
     }
     else {
       bwarn("op_pmstashpv main") if $debug{M};
@@ -857,7 +901,8 @@ sub B::OP::opwalk {
   my $ix = $optab{$$op};
   defined($ix) ? $ix : do {
     my $ix;
-    my @oplist = ($PERL56 and $op->isa("B::COP")) ? () : $op->oplist; # 5.6 may be called by a COP
+    my @oplist = ($PERL56 and $op->isa("B::COP"))
+      ? () : $op->oplist; # 5.6 may be called by a COP
     push @cloop, undef;
     $ix = $_->ix while $_ = pop @oplist;
     while ( $_ = pop @cloop ) {
@@ -1050,27 +1095,21 @@ use ByteLoader '$ByteLoader::VERSION';
       defstash->bwalk;
     } else {
       if ( !@packages ) {
-	warn "No package specified for compilation, assuming main::\n";
+        # support modules?
 	@packages = qw(main);
       }
-      my $curpad   = ( comppadlist->ARRAY )[1];
-      my $curpadix = $curpad->ix;
-      $curpad->bsave;
-      save_cq;
-      walkoptree( main_root, "bsave" ) unless ref(main_root) eq "B::NULL";
-      warn "done main program, now walking symbol table\n" if $debug{bc};
-      if (@packages) {
+      for (@packages) {
 	no strict qw(refs);
-	walksymtable( \%{"main::"}, "bytecodecv", \&symwalk );
+        #B::svref_2object( \%{"$_\::"} )->bwalk;
+	walksymtable( \%{"$_\::"}, "bytecodecv", \&symwalk );
       }
-      else {
-	die "No packages requested for compilation!\n";
-      }
+      walkoptree( main_root, "bsave" ) unless ref(main_root) eq "B::NULL";
     }
     asm "main_start", $PERL56 ? main_start->ix : main_start->opwalk;
+    asm "main_start", main_start->opwalk;
     asm "main_root",  main_root->ix;
     asm "main_cv",    main_cv->ix;
-    asm "curpad", ( comppadlist->ARRAY )[1]->ix;
+    asm "curpad",     ( comppadlist->ARRAY )[1]->ix;
 
     asm "signal", cstring "__WARN__"    # XXX
       if !$PERL56 and warnhook->ix;

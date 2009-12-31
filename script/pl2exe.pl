@@ -1,5 +1,6 @@
 #! perl
 # Fake a PE/COFF header, forcing Windows to load and interpret a perl script.
+# Copyright 2005 John Tobey <jtobey@john-edwin-tobey.org>
 
 open IN, (my $name = shift) or die "Syntax: pl2exe.pl file.pl\n";
 

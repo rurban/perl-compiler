@@ -816,6 +816,7 @@ sub run_cc_test {
         unless (-e $exe) {
             print "not ok $cnt $todo failed $cmdline\n";
             print STDERR "# ",system("$Config{cc} $command");
+            unlink ($test, $cfile, $exe) if !$keep_c;
             return 0;
         }
         my $exe = "./".$exe unless $^O eq 'MSWin32';
@@ -826,12 +827,12 @@ sub run_cc_test {
             }
             if ($got =~ /^$expect$/) {
                 print "ok $cnt", $todo eq '#' ? "\n" : " $todo\n";
-                unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
+                unlink ($test, $cfile, $exe) if !$keep_c;
                 return 1;
             } else {
                 $keep_c = $keep_c_fail unless $keep_c;
                 print "not ok $cnt $todo wanted: \"$expect\", got: \"$got\"\n";
-                unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
+                unlink ($test, $cfile, $exe) if !$keep_c;
                 return 0;
             }
         } else {
@@ -870,7 +871,7 @@ sub run_c_tests {
 
     my $AUTHOR    = -d ".svn";
     my $keep_c      = 0;	# set it to keep the pl, c and exe files
-    my $keep_c_fail = 1;	# set it to keep the pl, c and exe files on failures
+    my $keep_c_fail = $AUTHOR;	# set it to keep the pl, c and exe files on failures
 
     my %todo = map { $_ => 1 } @todo;
     my %skip = map { $_ => 1 } @skip;
