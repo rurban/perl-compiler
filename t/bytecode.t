@@ -60,10 +60,14 @@ my @skip = (27,29) if $] >= 5.010;
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
 my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls?
+my $backend = "Bytecode";
 unless ($Mblib) { # check for -Mblib from the testsuite
-  if ($INC[1] =~ m|blib/arch$| and $INC[2] =~ m|blib/lib|) {
-    $Mblib = "-Mblib"; # forced -Mblib via cmdline
+  if (grep { m{blib(/|\\)arch$} } @INC) {
+    $Mblib = "-Mblib";  # forced -Mblib via cmdline
+    $backend = "-qq,Bytecode,-q" unless $ENV{TEST_VERBOSE};
   }
+} else {
+  $backend = "-qq,Bytecode,-q" unless $ENV{TEST_VERBOSE};
 }
 #$Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
 #$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
@@ -79,7 +83,7 @@ for (@tests) {
   $test = "bytecode$cnt.pl";
   open T, ">$test"; print T $script; close T;
   unlink "${test}c" if -e "${test}c";
-  $got = run_perl(switches => [ "$Mblib -MO=Bytecode,-o${test}c" ],
+  $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${test}c" ],
 		  verbose  => $verbose, # for DEBUGGING
 		  nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
 		  stderr   => 1, # to capture the "bytecode.pl syntax ok"	
@@ -97,6 +101,7 @@ for (@tests) {
       }
     }
     $got = run_perl(progfile => "${test}c", # run the .plc
+                    verbose  => $ENV{TEST_VERBOSE}, # for debugging
 		    nolib    => $ENV{PERL_CORE} ? 0 : 1,
 		    stderr   => 1,
 		    switches => [ "$Mblib -MByteLoader" ]);

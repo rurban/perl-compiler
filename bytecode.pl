@@ -401,16 +401,16 @@ EOT
     if (!$unsupp or $holes{$insn_num}) {
       printf BYTERUN_C "\t  case %s:\t\t/* %d */\n\t    {\n",
 	$unsupp ? $insn_num : "INSN_".uc($insn), $insn_num;
-      if ($unsupp and $holes{$insn_num}) {
-	printf BYTERUN_C "\t\tPerlIO_printf(Perl_error_log, \"Unsupported bytecode instruction %%d (%s) at stream offset %%d.\\n\",
-	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
-      }
     } else {
       next;
     }
     my $optarg = $argtype eq "none" ? "" : ", arg";
     if ($optarg) {
       print BYTERUN_C "\t\t$argtype arg;\n";
+      if ($unsupp and $holes{$insn_num}) {
+          printf BYTERUN_C "\t\tPerlIO_printf(Perl_error_log, \"Unsupported bytecode instruction %%d (%s) at stream offset %%d.\\n\",
+	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
+      }
       print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
       if ($fundtype eq 'strconst') {
 	my $maxsize = ($flags =~ /(\d+$)/) ? $1 : 0;
@@ -428,6 +428,10 @@ EOT
 	 print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
       }
     } else {
+      if ($unsupp and $holes{$insn_num}) {
+          printf BYTERUN_C "\t\tPerlIO_printf(Perl_error_log, \"Unsupported bytecode instruction %%d (%s) at stream offset %%d.\\n\",
+	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
+      }
       print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
     }
     if ($flags =~ /x/) {
@@ -461,8 +465,8 @@ print BYTERUN_C <<'EOT';
                          insn, bstate->bs_fdata->next_out);
 	      /* NOTREACHED */
 	  }
-	  /* debop is not public in 5.10.0. only tested with mingw, cygwin is fine. msvc todo */
-#if defined(DEBUG_t_TEST_) && !defined(__MINGW32__)
+	  /* debop is not public in 5.10.0 on strict platforms like mingw and MSVC, cygwin is fine. */
+#if defined(DEBUG_t_TEST_) && !defined(_MSC_VER) && !defined(__MINGW32__)
           if (PL_op && DEBUG_t_TEST_) debop(PL_op);
 #endif
         }

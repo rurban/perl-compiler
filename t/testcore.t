@@ -25,14 +25,14 @@ sub vcmd {
 my $dir = getcwd();
 
 unlink ("t/perl", "t/CORE/perl");
-symlink "t/perl", $^X;
-symlink "t/CORE/perl", $^X;
-symlink "t/CORE/test.pl", "t/test.pl" unless -e "t/CORE/test.pl";
-symlink "t/CORE/harness", "t/test.pl" unless -e "t/CORE/harness";
-#`ln -sf $^X t/perl`;
-#`ln -sf $^X t/CORE/perl`;
-#`ln -sf t/test.pl t/CORE/test.pl`;
-#`ln -sf t/test.pl t/CORE/harness`;
+#symlink "t/perl", $^X;
+#symlink "t/CORE/perl", $^X;
+#symlink "t/CORE/test.pl", "t/test.pl" unless -e "t/CORE/test.pl";
+#symlink "t/CORE/harness", "t/test.pl" unless -e "t/CORE/harness";
+`ln -s $^X t/perl`;
+`ln -s $^X t/CORE/perl`;
+`ln -s t/test.pl t/CORE/test.pl`; # CORE t/test.pl would be better, but this fails only on 2 tests
+`ln -s t/test.pl t/CORE/harness`; # better than nothing
 
 for my $t (@ARGV ? @ARGV : <t/CORE/*/*.t>) {
 

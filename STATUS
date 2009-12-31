@@ -18,9 +18,8 @@ Open Problems for B::C:
 5.6:
     test 25, 27
 5.8:
-    xsub AUTOLOAD (test 27)
+    const xsubcv via AUTOLOAD (test 27)
 5.10:
-    reading from __DATA__ handles (15) -fsave-data fails on non-threaded builds.
     Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
 5.11:
     None. Completely same results as 5.10
@@ -94,6 +93,11 @@ cc_o1-2: 	3,7
 1.09:
 freebsd 5.10.1  c+cc fails on 28 generally, cc passed 12 
 freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
+
+AS 5.8 MSVC6:
+t/cc*   12 (similar to 5.10 nt?) (skipped)
+t/o     5,9 (skipped)
+t/stash 1   (skipped)
 
 5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)		| non-threaded
 t/bytecode      ok

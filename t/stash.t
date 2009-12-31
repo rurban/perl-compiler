@@ -12,13 +12,17 @@ BEGIN {
     } else {
 	unshift @INC, 't';
     }
-    require Config;
-    if (($Config::Config{'extensions'} !~ /\bB\b/) ){
+    use Config;
+    if (($Config{'extensions'} !~ /\bB\b/) ){
         print "1..0 # Skip -- Perl configured without B module\n";
         exit 0;
     }
     if ($] < 5.007 ){
         print "1..0 # Skip -- stash tests disabled for 5.6\n";
+        exit 0;
+    }
+    if ($^O eq 'MSWin32' and $Config{cc} =~ /^cl/i) {
+        print "1..0 # Skip -- stash tests skipped on MSVC for now\n";
         exit 0;
     }
 }

@@ -3,11 +3,15 @@ use Config;
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 my $ccflags   = $Config{ccflags};
 my $lddlflags = $Config{lddlflags};
+
 if ($^O eq 'cygwin'
     and $Config{gccversion} eq '4.3.4 20090804 (release) 1') # possible bug
 {
     $ccflags   =~ s/ -fstack-protector//;
     $lddlflags =~ s/ -fstack-protector//;
+}
+if ( -d ".svn" ) {
+  $ccflags .= " -ansi -Wall -Wextra -pedantic" if $Config{cc} =~ /gcc/;
 }
 
 WriteMakefile(

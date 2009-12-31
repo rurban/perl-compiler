@@ -3,6 +3,23 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.13	2009-12-31 rurban
+	Tested with MSVC (MSVC compiles test29 and bigger examples awfully slow! 
+	7:30min, 30MB mem, 98% CPU, 2GHz)
+
+	* C.pm: MSVC fix for "(OP*)Nullany" i.e "(OP*){0}" => "{0}". Fixes 
+	  test 27 on MSVC. CC test 12 broken on MSVC AS 5.8
+	* bytecode.pl: Restore C strictness, printf before declaration.
+	Undefine debop for MSVC also. Fixed [cpan #53228].
+	* t/test.pl: Cleanup intermediate MSVC .obj. Skip too slow tests 29 
+	  on MSVC, only c.t
+	Remove >nul for test results on Win32.
+	More run_cc_perl fixes for Win32.
+	Be more quiet on MSWin32 also (no 2>/dev/null)
+	Skip stderr redirection to stdout on cmd.exe tests, t/o.t 5,9.
+	* t/bytecode.pl: ditto.
+	* t/TESTS: Fixed 28 for MSWin32 MSVC
+
 1.12	2009-12-31 rurban
 	__DATA__ handles work now. Also more Bytecode fixes.
 	* t/testplc.sh: Added -S: skip all but -S and Concise

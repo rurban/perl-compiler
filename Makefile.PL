@@ -21,7 +21,7 @@ WriteMakefile(
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
- 	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc ".
+ 	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj".
                "*.concise *~ dll.base dll.exp"},
 );
 
@@ -47,6 +47,12 @@ sub libscan {
 
 sub post_constants {
     "\nLIBS = $Config::Config{libs}\n"
+}
+
+sub ccflags {
+  my $ccflags = shift->SUPER::ccflags(@_);
+  return $ccflags unless -d ".svn";
+  $ccflags .= " -ansi -Wall -Wextra -pedantic" if $Config{cc} =~ /gcc/;
 }
 
 sub depend {
@@ -96,3 +102,10 @@ sub processPL {
 }
 
 =cut
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 100
+# End:
+# vim: expandtab shiftwidth=4:

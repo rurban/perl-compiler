@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 package B::C::Section;
 
@@ -1671,7 +1671,7 @@ sub B::CV::save {
       if $debug{cv};
     # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
-    $startfield = "(OP*)Nullany" unless $startfield;
+    $startfield = "Nullany" unless $startfield;
     if ($$padlist) {
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
