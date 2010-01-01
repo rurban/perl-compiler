@@ -1,14 +1,14 @@
 #      CC.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
-#      Copyright (c) 2009 Reini Urban
+#      Copyright (c) 2009, 2010 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 #
 package B::CC;
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 use Config;
 use strict;
@@ -76,11 +76,12 @@ my ( $module_name, %debug );
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
-my ( $freetmps_each_bblock, $freetmps_each_loop, $omit_taint );
+my ( $freetmps_each_bblock, $freetmps_each_loop, $omit_taint, $bind_ppaddr );
 my %optimise = (
-  freetmps_each_bblock => \$freetmps_each_bblock,
-  freetmps_each_loop   => \$freetmps_each_loop,
-  omit_taint           => \$omit_taint
+  freetmps_each_bblock => \$freetmps_each_bblock, #-O1
+  bind_ppaddr          => \$bind_ppaddr,	  #-O2
+  freetmps_each_loop   => \$freetmps_each_loop,	  #-O3
+  omit_taint           => \$omit_taint,
 );
 
 # perl patchlevel to generate code for (defaults to current patchlevel)
@@ -606,7 +607,12 @@ sub doop {
   my $op     = shift;
   my $ppname = $op->ppaddr;
   my $sym    = loadop($op);
-  runtime("DOOP($ppname);");
+  if ($bind_ppaddr) { # early binding: PL_ppaddr[OP_PRINT] => pp_print
+    $ppname =~ s/PL_ppaddr\[OP_(\w+)\]/$1/e;
+    runtime("PUTBACK;PL_op=pp_".lc($ppname)."();SPAGAIN;");
+  } else {
+    runtime("DOOP($ppname);");
+  }
   $know_op = 1;
   return $sym;
 }
@@ -2006,9 +2012,8 @@ OPTION:
       foreach $ref ( values %optimise ) {
         $$ref = 0;
       }
-      if ( $arg >= 2 ) {
-        $freetmps_each_loop = 1;
-      }
+      $bind_ppaddr = 1 if $arg >= 2;
+      $freetmps_each_loop = 1 if $arg >= 3;
       if ( $arg >= 1 ) {
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
@@ -2217,17 +2222,25 @@ Delays FREETMPS from the end of each statement to the end of the group
 of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
 
+=item B<-fbind-ppaddr>
+
+Binds pp_ op addresses at link-time.
+
+  PL_op = PL_ppaddr[OP_CONST]() => PL_op = pp_const()
+
 =item B<-fomit-taint>
 
 Omits generating code for handling perl's tainting mechanism.
 
 =item B<-On>
 
-Optimisation level (n = 0, 1, 2). B<-O> means B<-O1>.
+Optimisation level (n = 0, 1, 2, 3). B<-O> means B<-O1>.
 
 B<-O1> sets B<-ffreetmps-each-bblock>.
 
-B<-O2> sets B<-ffreetmps-each-loop>.
+B<-O2> adds B<-fbind-ppaddr>.
+
+B<-O3> adds B<-ffreetmps-each-loop>.
 
 B<-fomit-taint> must be set explicitly.
 
