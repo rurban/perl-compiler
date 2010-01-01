@@ -1024,7 +1024,7 @@ sub B::UV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  $xpvuvsect->add( sprintf( "0, 0, 0, %u", $sv->UVX ) );
+  $xpvuvsect->add( sprintf( $PERL510 ? "{0}, 0, 0, {%u}" : "0, 0, 0, %u", $sv->UVX ) );
   $svsect->add(
     sprintf(
       "&xpvuv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
@@ -1048,7 +1048,8 @@ sub B::IV::save {
   if ($sv->FLAGS & SVf_IVisUV) {
     return $sv->B::UV::save;
   }
-  $xpvivsect->add( sprintf( "0, 0, 0, %ld", $sv->IVX ) );
+  $xpvivsect->add( sprintf( $PERL510 ? "{0}, 0, 0, {%ld}" : "0, 0, 0, %ld",
+                            $sv->IVX ) );
   $svsect->add(
     sprintf(
       "&xpviv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
@@ -1068,7 +1069,7 @@ sub B::NV::save {
   my $val = $sv->NVX;
   $val .= '.00' if $val =~ /^-?\d+$/;
   if ($PERL510) { # not fixed by NV isa IV >= 5.8
-    $xpvnvsect->add( sprintf( "%s, 0, 0, 0", $val ) );
+    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {0}", $val ) );
   }
   else {
     $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
@@ -2221,8 +2222,8 @@ sub B::IO::save_data {
 
   # XXX 5.10 non-threaded crashes at this eval_pv. 5.11 crashes threaded. test 15
   #if (!$PERL510 or $ITHREADS) {   # or ($PERL510 and !$PERL511)
-    $use_xsloader = 1; # for PerlIO::scalar
-    $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
+  $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
+  $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
   #}
 }
 
@@ -2245,7 +2246,7 @@ sub B::IO::save {
     $pvsym = 'NULL';
     $len = 0;
   }
-  if ($PERL511) {
+  if ($] > 5.011000) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, lines, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
     my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
@@ -2254,7 +2255,7 @@ sub B::IO::save {
     $xpviosect->add(
       sprintf($tmpl,
         $len,                     $len + 1,
-	$io->LINES, # moved to IVX
+	$io->LINES, 		  # moved to IVX with 5.11.1
         $io->PAGE,                $io->PAGE_LEN,
         $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
         cstring( $io->FMT_NAME ), cstring( $io->BOTTOM_NAME ),
@@ -2267,7 +2268,7 @@ sub B::IO::save {
   }
   elsif ($PERL510) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
-    $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
+    $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, lines, ..., type, flags");
     my $tmpl = "{0}, /*xnv_u*/\n\t0, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*IVX*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
