@@ -3,6 +3,19 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.14	2010-01-01 rurban
+	* C.pm: more 5.10 union braces.
+	* CC.pm (1.04): New optimisation -fbind-ppaddr/-O2
+	  Binds the pp_ op address at link-time. 
+	  PL_op = PL_ppaddr[OP_CONST]() => PL_op = pp_const()
+	  Testsuite -O2 vs -O1: 31.441s vs 31.587s/31.190s vs 31.867s
+	  (Could be useful for B::C also)
+	Moved -ffreetmps-each-loop from -O2 to -O3.
+	* t/testcore.t: improved. added -fail and a list of failing tests.
+	  C now always with -O3.
+	* t/c_allow_opts.t Added for -DALLOW_PERL_OPTIONS.
+	* t/cc_o3.t Added.
+
 1.13	2009-12-31 rurban
 	Tested with MSVC (MSVC compiles test29 and bigger examples awfully slow! 
 	7:30min, 30MB mem, 98% CPU, 2GHz)

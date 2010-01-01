@@ -5,6 +5,9 @@
 # For now we test qw(base comp lib op run)
 # Then fixup the @INC setters.
 #   perl -pi -e 's/^(\s*\@INC = )/# $1/' t/CORE/*/*.t
+#   perl -pi -e "s|^(\s*)chdir 't' if -d|\$1chdir 't/CORE' if -d|" t/CORE/*/*.t
+#   perl -pi -e "s|require './|use lib "CORE"; require '|" `grep -l "require './" t/CORE/*/*.t`
+# and various require ./test.pl calls.
 
 use Cwd;
 use File::Copy;
@@ -31,41 +34,126 @@ unlink ("t/perl", "t/CORE/perl");
 #symlink "t/CORE/harness", "t/test.pl" unless -e "t/CORE/harness";
 `ln -s $^X t/perl`;
 `ln -s $^X t/CORE/perl`;
-`ln -s t/test.pl t/CORE/test.pl`; # CORE t/test.pl would be better, but this fails only on 2 tests
-`ln -s t/test.pl t/CORE/harness`; # better than nothing
+# CORE t/test.pl would be better, but this fails only on 2 tests
+-e "t/CORE/test.pl" or `ln -s t/test.pl t/CORE/test.pl`;
+-e "t/CORE/harness" or `ln -s t/test.pl t/CORE/harness`; # better than nothing
 
-for my $t (@ARGV ? @ARGV : <t/CORE/*/*.t>) {
+my %ALLOW_PERL_OPTIONS;
+for (qw(
+        comp/cpp.t
+        run/runenv.t
+       )) {
+  $ALLOW_PERL_OPTIONS{"t/CORE/$_"} = 1;
+}
+my $SKIP = { "CC" =>
+             { "t/CORE/op/bop.t" => "hangs",
+               "t/CORE/op/die.t" => "hangs",
+             }
+           };
 
+my @fail = map { "t/CORE/$_" }
+  qw{
+     base/lex.t
+     base/rs.t
+     base/term.t
+     cmd/for.t
+     cmd/mod.t
+     comp/bproto.t
+     comp/cpp.t
+     comp/fold.t
+     comp/multiline.t
+     comp/our.t
+     comp/parser.t
+     comp/redef.t
+     comp/require.t
+     comp/retainedlines.t
+     comp/script.t
+     comp/uproto.t
+     comp/use.t
+     op/anonsub.t
+     op/avhv.t
+     op/bop.t
+     op/chop.t
+     op/eval.t
+     op/goto.t
+     op/overload.t
+     op/pat.t
+     op/ref.t
+     op/sort.t
+     op/substr.t
+     op/undef.t
+     op/write.t
+   };
+
+my @tests = $ARGV[0] eq '-fail' ? @fail :
+  (@ARGV ? @ARGV : <t/CORE/*/*.t>);
+
+sub run_c {
+  my ($t, $backend) = @_;
   chdir $dir;
-  unlink ("a", "a.c", "t/a.c");
+  my $result = $t; $result =~ s/\.t$/-c.result/;
+  my $a = $backend eq 'C' ? 'a' : 'aa';
+  unlink ($a, "$a.c", "t/$a.c", "t/CORE/$a.c", $result);
   # perlcc 2.06 should now work also: omit unneeded B::Stash -u<> and fixed linking
   # see t/c_argv.t
-  vcmd "$^X -Mblib -MO=-qq,C,-oa.c $t";
-  # core often does BEGIN { chdir "t" }
+  my $backopts = $backend eq 'C' ? "-qq,C,-O3" : "-qq,CC";
+  vcmd "$^X -Mblib -MO=$backopts,-o$a.c $t";
+  # CORE often does BEGIN chdir "t" or patched to chdir "t/CORE"
   chdir $dir;
-  move ("t/a.c", "a.c") if -e "t/a.c";
-  vcmd "$^X -Mblib script/cc_harness -q a.c -o a" if -e "a.c";
-  `prove --exec ./a` if -e "a";
+  move ("t/$a.c", "$a.c") if -e "t/$a.c";
+  move ("t/CORE/$a.c", "$a.c") if -e "t/CORE/$a.c";
+  my $d = "";
+  $d = "-DALLOW_PERL_OPTIONS" if $ALLOW_PERL_OPTIONS{$t};
+  vcmd "$^X -Mblib script/cc_harness -q $d $a.c -o $a" if -e "$a.c";
+  `./$a | tee $result` if -e "$a";
+  prove ($a, $result, $i, $t, $backend);
+  $i++;
+}
 
-  chdir $dir;
-  unlink ("aa", "aa.c", "t/aa.c");
-  vcmd "$^X -Mblib -MO=-qq,CC,-oaa.c $t";
-  chdir $dir;
-  move ("t/aa.c", "aa.c") if -e "t/aa.c";
-  vcmd "$^X -Mblib script/cc_harness -q aa.c -o aa" if -e "aa.c";
-  `prove --exec ./aa` if -e "aa";
+sub prove {
+  my ($a, $result, $i, $t, $backend) = @_;
+  if ( -e "$a" and -s $result) {
+    system(qq[prove -Q --exec cat $result || echo -n "n";echo "ok $i - $backend $t"]);
+  } else {
+    print "not ok $i - $backend $t\n";
+  }
+}
 
-  chdir $dir;
-  unlink ("b.plc", "t/b.plc", "b.result");
-  vcmd "$^X -Mblib -MO=-qq,Bytecode,-ob.plc $t";
-  chdir $dir;
-  move ("t/b.plc", "b.plc") if -e "t/b.plc";
-  vcmd "$^X -Mblib -MByteLoader b.plc > b.result" if -e "b.plc";
-  `prove --exec cat b.result` if -s "b.result";
+print "1..", @tests * 3, "\n";
+my $i = 1;
+for my $t (@tests) {
+ C: {
+    (print "ok $i #skip $SKIP->{C}->{$t}\n" and goto CC)
+      if exists $SKIP->{C}->{$t};
+    run_c($t, "C");
+  }
+
+ CC: {
+    (print "ok $i #skip $SKIP->{CC}->{$t}\n" and goto BC)
+      if exists $SKIP->{CC}->{$t};
+    run_c($t, "CC");
+  }
+
+ BC: {
+    (print "ok $i #skip $SKIP->{BC}->{$t}\n" and next)
+      if exists $SKIP->{BC}->{$t};
+
+    my $backend = 'Bytecode';
+    chdir $dir;
+    $result = $t; $result =~ s/\.t$/-bc.result/;
+    unlink ("b.plc", "t/b.plc", "t/CORE/b.plc", $result);
+    vcmd "$^X -Mblib -MO=-qq,Bytecode,-H,-s,-ob.plc $t";
+    chdir $dir;
+    move ("t/b.plc", "b.plc") if -e "t/b.plc";
+    move ("t/CORE/b.plc", "b.plc") if -e "t/CORE/b.plc";
+    vcmd "$^X -Mblib b.plc > $result" if -e "b.plc";
+    prove ("b.plc", $result, $i, $t, $backend);
+    $i++;
+  }
 
 }
 
 END {
-  unlink ( "a", "a.c", "t/a.c", "aa.c", "aa", "t/aa.c", "b.plc", "b.result",
-           "t/perl", "t/CORE/perl" );
+  unlink ( "t/perl", "t/CORE/perl" );
+  #unlink ( "a", "a.c", "t/a.c", "t/CORE/a.c", "aa.c", "aa", "t/aa.c", "t/CORE/aa.c", "b.plc" );
 }

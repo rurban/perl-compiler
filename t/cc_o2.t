@@ -16,10 +16,10 @@ my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
 
-my @todo = (10,16,18,21,25..27,30); # 5.8
-push @todo, (15)                     if $] < 5.007;
-@todo    = (10,16,18,21,25,26,29,30) if $] >= 5.010;
-push @todo, (12)                     if $] >= 5.010 and !$ITHREADS;
+my @todo = (18,21,25..27,30); # 5.8
+push @todo, (15)               if $] < 5.007;
+@todo    = (18,21,25,26,29,30) if $] >= 5.010;
+push @todo, (12)               if $] >= 5.010 and !$ITHREADS;
 push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 
 # skip core dump causing known limitations, like custom sort or runtime labels

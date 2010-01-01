@@ -42,6 +42,8 @@ proper static init of PVBM/FBM (almost done, just 5.8.9 not)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 global analysis of variables, type hints etc.
+  understand type attrs 
+    my $i : Ci32;
   Devel::TypeCheck instead of magic variable _ir, ... suffices
   e.g. mark IVonly SV's and magic/flags change functions and 
   optimize all op subtrees for the compiled backends to use direct ints
@@ -49,3 +51,43 @@ demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
 tailcall optimization (entersub->leavesub => goto)
+
+bind runops with leaner PERL_ASYNC_CHECK only when meaningful.
+  Hmm, B::CC already unrolls the ops and does no PERL_ASYNC_CHECK at all.
+
+  /* B::C */ 
+  while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) {
+	PERL_ASYNC_CHECK();
+  } 
+  =>
+  /* B::CC */
+  EXTEND(sp, 1);
+  PUSHs((SV*)&sv_list[2]);
+  PL_op = (OP*)&listop_list[0];
+  DOOP(PL_ppaddr[OP_PRINT]);
+
+  cSVOP_sv = &sv_list[0];
+  PUSHs((SV*)&sv_list[2]);
+  PL_stack_sp = sp; PL_op = PL_ppaddr[OP_CONST](); PL_stack_sp = sp;
+  PL_op = (OP*)&listop_list[0]; /*PRINT*/
+  ..
+
+  =>
+  /* -MO=CC,-O3,-fbind-ppaddr */
+  EXTEND(sp, 1);
+  PUSHs((SV*)&sv_list[2]);
+  PL_op = (OP*)&listop_list[0];
+  PL_stack_sp=sp; PL_op = pp_print(); PL_stack_sp=sp;;
+
+  =>
+  /* -fdynamic-runops. patch PL_op members at run-time.
+     same data and stack handling, but no optree structure in memory */
+  cSVOP_sv = &sv_list[0];
+  PL_op = pp_const();
+  PL_op->op_private = OPpLVAL_INTRO;
+  cGVOP_gv = &gv_list[0];
+  PL_op = pp_gvsv();
+  EXTEND(sp, 1);
+  PUSHs((SV*)&sv_list[2]);
+  PL_stack_sp = sp; PL_op = pp_print(); PL_stack_sp = sp;
+  PERL_ASYNC_CHECK;

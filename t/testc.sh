@@ -3,9 +3,9 @@
 # for p in 5.6.2 5.8.8-nt 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; echo perl$p; perl$p Makefile.PL; t/testc.sh -q -O0 31; done
 # quiet c only: t/testc.sh -q -O0
 function help {
-  echo "t/testc.sh [OPTIONS] [1-29]"
+  echo "t/testc.sh [OPTIONS] [1-$ntests]"
   echo " -D debugflags      for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
-  echo " -O 0|1|2|3         optimization level"
+  echo " -O 0-4             optimization level"
   echo " -B static|dynamic  pass to cc_harness"
   echo " -c                 continue on errors"
   echo " -k                 keep temp. files on PASS"
@@ -14,7 +14,7 @@ function help {
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
-  echo "Without arguments try all 29 tests. Without Option -Ox try all three optimizations."
+  echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O3 optimizations."
 }
 
 # use the actual perl from the Makefile (perl5.8.8, 
@@ -138,8 +138,8 @@ function ctest {
 	    pass "./$o" "'$str' => '$res'"
             if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
 	    runopt $o 1 && \
-	    runopt $o 2
-	    #runopt $o 3 && \
+	    runopt $o 2 && \
+	    runopt $o 3
 	    #runopt $o 4 && \
 	    true
 	else
@@ -176,6 +176,7 @@ my $foo = sub {
 }; print $i; 
 print &$foo(3),$i;'
 result[10]='133';
+# index: do fbm_compile or not
 tests[11]='$x="Cannot use"; print index $x, "Can"'
 result[11]='0';
 tests[12]='my $i=6; eval "print \$i\n"'
@@ -184,6 +185,7 @@ tests[13]='BEGIN { %h=(1=>2,3=>4) } print $h{3}'
 result[13]='4';
 tests[14]='open our $T,"a"; print "ok";'
 result[14]='ok';
+# __DATA__ handles still broken non-threaded 5.10
 tests[15]='print <DATA>
 __DATA__
 a
@@ -197,13 +199,13 @@ result[17]='123';
 # custom key sort
 tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
 result[18]='ba';
-# fool the sort optimizer by $p, pp_sort works ok on CC
+# fool the sort optimizer by my $p, pp_sort works ok on CC
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
 # not repro: something like this is broken in original 5.6 (Net::DNS::ZoneFile::Fast)
 tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
 result[20]='1';
-# broken on early alpha and 5.10
+# broken on early alpha and 5.10: run-time labels.
 tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
 result[21]='024';
 # broken in original perl 5.6
@@ -222,7 +224,7 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 # lvalue sub
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
-# import test, AUTOLOAD goto xsub
+# xsub constants
 tests[27]='use Fcntl; print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
 # require $fname

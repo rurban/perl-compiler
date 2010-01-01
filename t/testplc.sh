@@ -2,8 +2,6 @@
 # Usage: 
 # for p in 5.6.2 5.8.9d 5.10.1 5.11.2; do make -q clean >/dev/null; perl$p Makefile.PL; t/testplc.sh -q -c; done
 # use the actual perl from the Makefile (perld, perl5.10.0, perl5.8.8, perl5.11.0, ...)
-ntests=31
-
 function help {
   echo "t/testplc.sh [OPTIONS] [1-$ntests]"
   echo " -s                 skip all B:Debug, roundtrips and options"
@@ -124,6 +122,7 @@ function btest {
   fi
 }
 
+ntests=31
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -260,7 +259,7 @@ echo ./bytecode2.plc
 ./bytecode2.plc
 fi
 
-# package
+# package pmc
 if false; then
 echo "package MY::Test;" > bytecode1.pm
 echo "print 'hi'" >> bytecode1.pm
