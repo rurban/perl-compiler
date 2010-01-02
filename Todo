@@ -50,15 +50,14 @@ global analysis of variables, type hints etc.
 demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
-tailcall optimization (entersub->leavesub => goto)
-
+tailcall optimization (entersub -> leavesub => goto)
 bind runops with leaner PERL_ASYNC_CHECK only when meaningful.
   Hmm, B::CC already unrolls the ops and does no PERL_ASYNC_CHECK at all.
 
   /* B::C */ 
   while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) {
-	PERL_ASYNC_CHECK();
-  } 
+    PERL_ASYNC_CHECK();
+  }
   =>
   /* B::CC */
   EXTEND(sp, 1);
@@ -71,14 +70,12 @@ bind runops with leaner PERL_ASYNC_CHECK only when meaningful.
   PL_stack_sp = sp; PL_op = PL_ppaddr[OP_CONST](); PL_stack_sp = sp;
   PL_op = (OP*)&listop_list[0]; /*PRINT*/
   ..
-
   =>
   /* -MO=CC,-O3,-fbind-ppaddr */
   EXTEND(sp, 1);
   PUSHs((SV*)&sv_list[2]);
   PL_op = (OP*)&listop_list[0];
   PL_stack_sp=sp; PL_op = pp_print(); PL_stack_sp=sp;;
-
   =>
   /* -fdynamic-runops. patch PL_op members at run-time.
      same data and stack handling, but no optree structure in memory */
