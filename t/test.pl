@@ -489,7 +489,7 @@ sub _create_runperl { # Create the string to qx in runperl().
     if (defined $args{args}) {
 	_quote_args(\$runperl, $args{args});
     }
-    $runperl .= ' 2>stderr' 	 if  $args{stderr} && $is_mswin;
+    $runperl .= ' >nul'          if  $args{stderr} && $is_mswin;
     $runperl .= ' 2>&1'          if  $args{stderr} && !$is_mswin && !$is_macos;
     $runperl .= " \xB3 Dev:Null" if !$args{stderr} && $is_macos;
     if ($args{verbose}) {
@@ -541,14 +541,6 @@ sub runperl {
 	$result = `$runperl`;
     } else {
 	$result = `$runperl`;
-    }
-    if ($is_mswin and $args{stderr}) {
-        open E, "<", "stderr";
-        my $stderr = <E>;
-        close E;
-        unlink "stderr";
-        # $result = $stderr . $result;  # This should work on the O tests, but does not.
-        				# Those errors are printed before.
     }
     $result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
     return $result;
@@ -799,21 +791,17 @@ sub run_cc_test {
     $opt = '' unless $opt;
     my $test = $fnbackend."code".$cnt.".pl";
     my $cfile = $fnbackend."code".$cnt.$opt.".c";
-    my $obj = $fnbackend."code".$cnt.$opt.".obj"; # MSVC does no cleanup
     my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
-    unlink ($test, $cfile, $exe, $obj);
+    unlink ($test, $cfile, $exe);
     open T, ">$test"; print T $script; close T;
     my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
     unless ($Mblib) {           # check for -Mblib from the testsuite
         if (grep { m{blib(/|\\)arch$} } @INC) {
-            $Mblib = "-Mblib";  # forced -Mblib via cmdline
-            $backend = "-qq,$backend,-q" unless $ENV{TEST_VERBOSE};
+            $Mblib = "-Iblib/arch -Iblib/lib";  # forced -Mblib via cmdline without printing to stderr
         }
-    } else {
-        $backend = "-qq,$backend,-q" unless $ENV{TEST_VERBOSE};
     }
     $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],
-                    verbose  => $ENV{TEST_VERBOSE}, # for debugging
+                    verbose  => 0, # for debugging
                     nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
                     stderr   => 1, # to capture the "ccode.pl syntax ok"
                     progfile => $test);
@@ -821,17 +809,16 @@ sub run_cc_test {
         use ExtUtils::Embed ();
         my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
         $command .= " ".ExtUtils::Embed::ldopts("-std");
-        $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
+        $command .= " -lperl" unless $command =~ /(-lperl|CORE\/libperl5)/;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
         my $cmdline = "$Config{cc} $command $NULL";
         system($cmdline);
         unless (-e $exe) {
             print "not ok $cnt $todo failed $cmdline\n";
             print STDERR "# ",system("$Config{cc} $command");
-            unlink ($test, $cfile, $exe, $obj) if !$keep_c;
             return 0;
         }
-        $exe = "./".$exe unless $^O eq 'MSWin32';
+        my $exe = "./".$exe unless $^O eq 'MSWin32';
         $got = `$exe`;
         if (defined($got) and ! $?) {
             if ($cnt == 25 and $expect eq '0 1 2 3 4321' and $] < 5.008) {
@@ -839,12 +826,12 @@ sub run_cc_test {
             }
             if ($got =~ /^$expect$/) {
                 print "ok $cnt", $todo eq '#' ? "\n" : " $todo\n";
-                unlink ($test, $cfile, $exe) if !$keep_c;
+                unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
                 return 1;
             } else {
                 $keep_c = $keep_c_fail unless $keep_c;
                 print "not ok $cnt $todo wanted: \"$expect\", got: \"$got\"\n";
-                unlink ($test, $cfile, $exe, $obj) if !$keep_c;
+                unlink ($test, $cfile, $exe) if !$keep_c and ! -s $cfile;
                 return 0;
             }
         } else {
@@ -853,7 +840,7 @@ sub run_cc_test {
     }
     print "not ok $cnt $todo wanted: \"$expect\", \$\? = $?, got: \"$got\"\n";
     $keep_c = $keep_c_fail unless $keep_c;
-    unlink ($test, $cfile, $exe, $obj) if !$keep_c;
+    unlink ($test, $cfile, $exe) if !$keep_c;
     return 0;
 }
 
@@ -877,14 +864,13 @@ sub prepare_c_tests {
 }
 
 sub run_c_tests {
-    use Config;
     my $backend = $_[0];
     my @todo = @{$_[1]};
     my @skip = @{$_[2]};
 
     my $AUTHOR    = -d ".svn";
     my $keep_c      = 0;	# set it to keep the pl, c and exe files
-    my $keep_c_fail = $AUTHOR;	# set it to keep the pl, c and exe files on failures
+    my $keep_c_fail = 1;	# set it to keep the pl, c and exe files on failures
 
     my %todo = map { $_ => 1 } @todo;
     my %skip = map { $_ => 1 } @skip;
@@ -895,15 +881,11 @@ sub run_c_tests {
     my $cnt = 1;
     for (@tests) {
         my $todo = $todo{$cnt} ? "#TODO" : "#";
-        # skip subsequent tests 29 on MSVC. 7:30min!
-        if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
-            $todo{$cnt} = $skip{$cnt} = 1;
-        }
         if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
             print sprintf("ok %d # skip\n", $cnt);
         } else {
             my ($script, $expect) = split />>>+\n/;
-            run_cc_test($cnt, "$backend", $script, $expect, $keep_c, $keep_c_fail, $todo);
+            run_cc_test($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo);
         }
         $cnt++;
     }
