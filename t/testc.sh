@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=31
+ntests=32
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -168,9 +168,9 @@ tests[7]='@z = split /:/,"b:r:n:f:g"; print @z'
 result[7]='brnfg';
 tests[8]='sub AUTOLOAD { print 1 } &{"a"}()'
 result[8]='1';
-tests[9]='my $l = 3; $x = sub { print $l }; &$x'
+tests[9]='my $l_i = 3; $x = sub { print $l }; &$x'
 result[9]='3';
-tests[10]='my $i = 1; 
+tests[10]='my $i_i = 1; 
 my $foo = sub {
   $i = shift if @_
 }; print $i; 
@@ -179,7 +179,7 @@ result[10]='133';
 # index: do fbm_compile or not
 tests[11]='$x="Cannot use"; print index $x, "Can"'
 result[11]='0';
-tests[12]='my $i=6; eval "print \$i\n"'
+tests[12]='my $i_i=6; eval "print \$i\n"'
 result[12]='6';
 tests[13]='BEGIN { %h=(1=>2,3=>4) } print $h{3}'
 result[13]='4';
@@ -194,7 +194,7 @@ result[15]='a
 b';
 tests[16]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
 result[16]='1';
-tests[17]='my $i=3; print 1 .. $i'
+tests[17]='my $i_ir=3; print 1 .. $i'
 result[17]='123';
 # custom key sort
 tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
@@ -228,7 +228,7 @@ result[26]="26";
 tests[27]='use Fcntl; print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
 # require $fname
-tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if ($bail>500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
+tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
 result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
@@ -239,6 +239,9 @@ result[30]='456123E0'
 # AUTOLOAD w/o goto xsub
 tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
 result[31]='date;who am i;ls -l;'
+# CC types and arith
+tests[32]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
+result[32]='12'
 
 init
 

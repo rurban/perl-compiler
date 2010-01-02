@@ -122,7 +122,7 @@ function btest {
   fi
 }
 
-ntests=31
+ntests=32
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -196,7 +196,7 @@ result[26]="26";
 tests[27]='use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );'
 result[27]='ok'
 # require test
-tests[28]='my $tmpdir=$ENV{TMPDIR}||$ENV{TMP}||"/tmp";my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname= $tmpdir . q{/perlcctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if ($bail>500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
+tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
 result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
@@ -207,7 +207,9 @@ result[30]='456123E0'
 # AUTOLOAD w/o goto
 tests[31]='package DummyShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} date();who("am","i");ls("-l");'
 result[31]='date;who am i;ls -l;'
-
+# CC types and arith
+tests[32]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
+result[32]='12'
 
 while getopts "qsScCh" opt
 do

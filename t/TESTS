@@ -30,11 +30,11 @@ sub AUTOLOAD { print 1 } &{"a"}()
 >>>>
 1
 #########################  8 ################################
-my $l = 3; $x = sub { print $l }; &$x
+my $l_i = 3; $x = sub { print $l }; &$x
 >>>>
 3
 #########################  9 ################################
-my $i = 1;
+my $i_i = 1;
 my $foo = sub {$i = shift if @_};
 print $i;
 print &$foo(3),$i;
@@ -45,7 +45,7 @@ $x="Cannot use"; print index $x, "Can"
 >>>>
 0
 ######################### 11 ################################
-my $i=6; eval "print \$i\n"
+my $i_i=6; eval "print \$i\n"
 >>>>
 6
 ######################### 12 ################################
@@ -70,7 +70,7 @@ print $a[1]
 >>>>
 1
 ######################### 16 ################################
-my $i=3; print 1 .. $i
+my $i_ir=3; print 1 .. $i
 >>>>
 123
 ######################### 17 ################################
@@ -114,7 +114,7 @@ use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );
 >>>>
 ok
 ######################### 27 ################################
-my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if ($bail>500);}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;
+my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;
 >>>>
 ok
 ######################### 28 ################################
@@ -131,3 +131,7 @@ package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");
 >>>>
 date;who am i;ls -l;
 ######################### 31 ################################
+my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;
+>>>>
+12
+######################### 32 ################################
