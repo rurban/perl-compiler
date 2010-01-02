@@ -150,10 +150,9 @@ for my $t (@tests) {
     prove ("b.plc", $result, $i, $t, $backend);
     $i++;
   }
-
 }
 
 END {
   unlink ( "t/perl", "t/CORE/perl" );
-  #unlink ( "a", "a.c", "t/a.c", "t/CORE/a.c", "aa.c", "aa", "t/aa.c", "t/CORE/aa.c", "b.plc" );
+  #unlink ("a","a.c","t/a.c","t/CORE/a.c","aa.c","aa","t/aa.c","t/CORE/aa.c","b.plc");
 }
