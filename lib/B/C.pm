@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 package B::C::Section;
 
@@ -3547,6 +3547,6 @@ L<perloptree> for the Perl optree.
 # Local Variables:
 #   mode: cperl
 #   cperl-indent-level: 2
-#   fill-column: 100
+#   fill-column: 78
 # End:
 # vim: expandtab shiftwidth=2:

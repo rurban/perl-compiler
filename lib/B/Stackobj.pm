@@ -1,6 +1,7 @@
 #      Stackobj.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
+#      Copyright (c) 2010 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -366,7 +367,24 @@ B::Stackobj - Helper module for CC backend
 
 =head1 DESCRIPTION
 
-See F<ext/B/README>.
+A representation of pp stacks and lexical pads for the B::CC compiler.
+
+For lexical pads (i.e. my variables) we even assume the type of variables
+according a magic naming scheme.
+
+  my $<name>_i;  IV integer
+  my $<name>_ir; IV integer in a pseudo register
+  my $<name>_d;  NV double
+
+Future ideas are type qualifiers such as
+
+	my (int $foo, double $foo_d);
+
+or attributes such as:
+
+	my ($foo:Cint, $foo:Cintr, $foo:Cdouble);
+
+See L<B::CC>.
 
 =head1 AUTHOR
 
@@ -377,6 +395,6 @@ Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
 # Local Variables:
 #   mode: cperl
 #   cperl-indent-level: 2
-#   fill-column: 100
+#   fill-column: 78
 # End:
 # vim: expandtab shiftwidth=2:

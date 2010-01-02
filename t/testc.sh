@@ -4,9 +4,9 @@
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-$ntests]"
-  echo " -D debugflags      for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
-  echo " -O 0-4             optimization level"
-  echo " -B static|dynamic  pass to cc_harness"
+  echo " -D<debugflags>     for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
+  echo " -O<0-4>            optimization level"
+  echo " -B<static|dynamic> pass to cc_harness"
   echo " -c                 continue on errors"
   echo " -k                 keep temp. files on PASS"
   echo " -E                 dump preprocessed source file with cc -E as _E.c"
@@ -14,7 +14,7 @@ function help {
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
-  echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O3 optimizations."
+  echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O2 optimizations."
 }
 
 # use the actual perl from the Makefile (perl5.8.8, 
@@ -46,8 +46,8 @@ OCMDO4="$(echo $OCMD|sed -e s/C,-D/C,-O4,-D/)"
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
-# rest
-CCMD="$PERL script/cc_harness -g3 -Bdynamic"
+# rest. -DALLOW_PERL_OPTIONS for -Dtlv
+CCMD="$PERL script/cc_harness -g3 -Bdynamic -DALLOW_PERL_OPTIONS"  
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
@@ -138,8 +138,8 @@ function ctest {
 	    pass "./$o" "'$str' => '$res'"
             if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
 	    runopt $o 1 && \
-	    runopt $o 2 && \
-	    runopt $o 3
+	    runopt $o 2 
+	    #runopt $o 3 && \
 	    #runopt $o 4 && \
 	    true
 	else
@@ -168,18 +168,18 @@ tests[7]='@z = split /:/,"b:r:n:f:g"; print @z'
 result[7]='brnfg';
 tests[8]='sub AUTOLOAD { print 1 } &{"a"}()'
 result[8]='1';
-tests[9]='my $l_i = 3; $x = sub { print $l }; &$x'
+tests[9]='my $l_i = 3; $x = sub { print $l_i }; &$x'
 result[9]='3';
 tests[10]='my $i_i = 1; 
 my $foo = sub {
-  $i = shift if @_
-}; print $i; 
-print &$foo(3),$i;'
+  $i_i = shift if @_
+}; print $i_i; 
+print &$foo(3),$i_i;'
 result[10]='133';
 # index: do fbm_compile or not
 tests[11]='$x="Cannot use"; print index $x, "Can"'
 result[11]='0';
-tests[12]='my $i_i=6; eval "print \$i\n"'
+tests[12]='my $i_i=6; eval "print \$i_i\n"'
 result[12]='6';
 tests[13]='BEGIN { %h=(1=>2,3=>4) } print $h{3}'
 result[13]='4';
@@ -194,7 +194,7 @@ result[15]='a
 b';
 tests[16]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
 result[16]='1';
-tests[17]='my $i_ir=3; print 1 .. $i'
+tests[17]='my $i_ir=3; print 1 .. $i_ir'
 result[17]='123';
 # custom key sort
 tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
@@ -259,7 +259,7 @@ do
     OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
-    CCMD="$PERL script/cc_harness -q -g3 -Bdynamic"
+    CCMD="$PERL script/cc_harness -q -g3 -Bdynamic -DALLOW_PERL_OPTIONS"
   fi
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "c" ]; then CONT=1; fi

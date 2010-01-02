@@ -1,6 +1,7 @@
+# Maintained now in B::C by Reini Urban <rurban@x-ray.at>
 package B::Bblock;
 
-our $VERSION = '1.03';
+our $VERSION = '1.03_01';
 
 use Exporter ();
 @ISA       = "Exporter";
@@ -146,6 +147,7 @@ sub compile {
       my $objname;
       foreach $objname (@options) {
         $objname = "main::$objname" unless $objname =~ /::/;
+        print "walk_bblocks $objname\n";
         eval "walk_bblocks_obj(\\&$objname)";
         die "walk_bblocks_obj(\\&$objname) failed: $@" if $@;
         print "-------\n";
@@ -167,17 +169,6 @@ sub compile {
   }
 }
 
-# Basic block leaders:
-#     Any COP (pp_nextstate) with a non-NULL label
-#     [The op after a pp_enter] Omit
-#     [The op after a pp_entersub. Don't count this one.]
-#     The ops pointed at by nextop, redoop and lastop->op_next of a LOOP
-#     The ops pointed at by op_next and op_other of a LOGOP, except
-#     for pp_entertry which has op_next and op_other->op_next
-#     The op pointed at by op_pmreplstart of a PMOP
-#     The op pointed at by op_other->op_pmreplstart of pp_substcont?
-#     [The op after a pp_return] Omit
-
 1;
 
 __END__
@@ -191,20 +182,43 @@ B::Bblock - Walk basic blocks
   # External interface
   perl -MO=Bblock[,OPTIONS] foo.pl
 
+    perl -MO=Bblock foo.pl     prints the basic block for main_root
+    perl -MO=Bblock,foo::mysub foo.pm prints the basic block for &pkg::mysub
+    perl -MO=Bblock,mysub foo.pm prints the basic block for &main::mysub
+
   # Programmatic API
   use B::Bblock qw(find_leaders);
   my $leaders = find_leaders($root_op, $start_op);
 
 =head1 DESCRIPTION
 
-This module is used by the B::CC back end.  It walks "basic blocks".
+This module is used by the L<B::CC> backend.  It walks "basic blocks".
 A basic block is a series of operations which is known to execute from
 start to finish, with no possibility of branching or halting.
 
-It can be used either stand alone or from inside another program.
+The block is the list of ops from the every leader up to the next.
+The leaders are the seperator of each basic block.
 
-=for _private
-Somebody who understands the stand-alone options document them, please.
+The module can be used either stand alone or from inside another program.
+Standalone it just prints the basic blocks ops in L<B::Concise>.
+terse format to STDOUT.
+Without options it starts at the main_root.
+
+Basic block leaders are:
+
+     Any COP (pp_nextstate) with a non-NULL label.
+       [The op after a pp_enter] Omit
+       [The op after a pp_entersub. Don't count this one.]
+     The ops pointed at by nextop, redoop and lastop->op_next of a LOOP.
+     The ops pointed at by op_next and op_other of a LOGOP, except
+       for pp_entertry which has op_next and op_other->op_next
+     The op pointed at by op_pmreplstart of a PMOP.
+     The op pointed at by op_other->op_pmreplstart of pp_substcont?
+       [The op after a pp_return] Omit
+
+=head1 OPTIONS
+
+A comma-seperated list of sub names to walk.
 
 =head2 Functions
 
@@ -218,18 +232,10 @@ Given the root of the op tree and an op from which to start
 processing, it will return a hash ref representing all the ops which
 start a block.
 
-=for _private
-The above description may be somewhat wrong.
-
 The values of %$leaders are the op objects themselves.  Keys are $$op
 addresses.
 
-=for _private
-Above cribbed from B::CC's comments.  What's a $$op address?
-A: See http://books.simon-cozens.org/index.php/Perl_5_Internals#Using_B_for_Simple_Things
-
 =back
-
 
 =head1 AUTHOR
 
@@ -240,6 +246,6 @@ Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
 # Local Variables:
 #   mode: cperl
 #   cperl-indent-level: 2
-#   fill-column: 100
+#   fill-column: 78
 # End:
 # vim: expandtab shiftwidth=2:

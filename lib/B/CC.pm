@@ -49,39 +49,31 @@ my @cxstack;       # Shadows the (compile-time) cxstack for next,last,redo
 my $jmpbuf_ix = 0;  # Next free index for dynamically allocated jmpbufs
 my %constobj;      # OP_CONST constants as Stackobj-derived objects
                     # keyed by $$sv.
-my $need_freetmps = 0;    # We may postpone FREETMPS to the end of each basic
-                          # block or even to the end of each loop of blocks,
-                          # depending on optimisation options.
-my $know_op       = 0;    # Set when C variable op already holds the right op
-                          # (from an immediately preceding DOOP(ppname)).
-my $errors        = 0;    # Number of errors encountered
-my %no_stack;           # PP names which don't need save pp restore stack (enter)
-my %skip_stack;         # PP names which don't need write_back_stack (empty)
-my %skip_lexicals;      # PP names which don't need write_back_lexicals
-my %skip_invalidate;    # Hash of PP names which don't need invalidate_lexicals
-my %ignore_op;          # Hash of ops which do nothing except returning op_next
-my %need_curcop;        # Hash of ops which need PL_curcop
+my $need_freetmps = 0;	# We may postpone FREETMPS to the end of each basic
+			# block or even to the end of each loop of blocks,
+			# depending on optimisation options.
+my $know_op       = 0;	# Set when C variable op already holds the right op
+			# (from an immediately preceding DOOP(ppname)).
+my $errors        = 0;	# Number of errors encountered
+my %no_stack;		# PP names which don't need save pp restore stack
+my %skip_stack;	# PP names which don't need write_back_stack (empty)
+my %skip_lexicals;	# PP names which don't need write_back_lexicals
+my %skip_invalidate;	# PP names which don't need invalidate_lexicals
+my %ignore_op;		# ops which do nothing except returning op_next
+my %need_curcop;	# ops which need PL_curcop
 
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
 my $entertry_defined;
-
-BEGIN {
-  foreach (qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null)) {
-    $ignore_op{$_} = 1;
-  }
-}
-
 my ( $module_name, %debug );
 
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
-my ( $freetmps_each_bblock, $freetmps_each_loop, $omit_taint, $bind_ppaddr );
+my ( $freetmps_each_bblock, $freetmps_each_loop, $omit_taint );
 my %optimise = (
   freetmps_each_bblock => \$freetmps_each_bblock, #-O1
-  bind_ppaddr          => \$bind_ppaddr,	  #-O2
-  freetmps_each_loop   => \$freetmps_each_loop,	  #-O3
+  freetmps_each_loop   => \$freetmps_each_loop,	  #-O2
   omit_taint           => \$omit_taint,
 );
 
@@ -131,6 +123,7 @@ sub init_hash {
 #
 # Initialise the hashes for the default PP functions where we can avoid
 # either stack save/restore,write_back_stack, write_back_lexicals or invalidate_lexicals.
+# XXX We should really take some of this info from CORE opcode.pl.
 #
 %no_stack         = init_hash qw(pp_enter pp_unstack pp_leave);
 %skip_stack       = init_hash qw(pp_enter);
@@ -138,8 +131,9 @@ sub init_hash {
 %skip_invalidate = init_hash qw(pp_enter pp_enterloop);
 %need_curcop     = init_hash qw(pp_rv2gv  pp_bless pp_repeat pp_sort pp_caller
   pp_reset pp_rv2cv pp_entereval pp_require pp_dofile
-  pp_entertry pp_enterloop pp_enteriter pp_entersub
+  pp_entertry pp_enterloop pp_enteriter pp_entersub pp_entergiven
   pp_enter pp_method);
+%ignore_op = init_hash qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null);
 
 sub debug {
   if ( $debug{runtime} ) {
@@ -185,8 +179,8 @@ sub output_runtime {
 	    }                                      \
 	} STMT_END' if $] >= 5.008009 and $entertry_defined;
 
-  # XXX FIXME on 5.10,11-nt (test 12)
-  if ($ITHREADS) {
+  # FIXED on 5.10,11 for test 12. entereval + dofile
+  if ($PERL510 or $ITHREADS) {
     # Threads error Bug#55302: too few arguments to function
     # CALLRUNOPS()=>CALLRUNOPS(aTHX)
     print '
@@ -194,29 +188,35 @@ sub output_runtime {
 #define PP_EVAL(ppaddr, nxt) do {		\
 	dJMPENV;				\
 	int ret;				\
-        I32 oldscope = PL_scopestack_ix;	\
-	PUTBACK;				\
+        PUTBACK;				\
 	JMPENV_PUSH(ret);			\
 	switch (ret) {				\
 	case 0:					\
-	    PL_op = ppaddr(aTHX);		\
-';
-    print '	    PL_retstack[PL_retstack_ix - 1] = Nullop;	\
-' if $] < 5.009005;
-    print '	    if (PL_op != nxt) CALLRUNOPS(aTHX);	\
-	    while (PL_scopestack_ix > oldscope) \
-	        LEAVE;				\
+	    PL_op = ppaddr(aTHX);		\\';
+    if ($PERL510) {
+      # pp_leaveeval sets: retop = cx->blk_eval.retop
+      print '
+	    cxstack[cxstack_ix].blk_eval.retop = Nullop; \\';
+    } else {
+      # up to 5.8 pp_entereval did set the retstack to next.
+      # nullify that so that we can now exec the rest of this bblock.
+      # (nextstate .. leaveeval)
+      print '
+	    PL_retstack[PL_retstack_ix - 1] = Nullop;  \\';
+    }
+    print '
+	    if (PL_op != nxt) CALLRUNOPS(aTHX);	\
 	    JMPENV_POP;				\
 	    break;				\
 	case 1: JMPENV_POP; JMPENV_JUMP(1);	\
 	case 2: JMPENV_POP; JMPENV_JUMP(2);	\
 	case 3:					\
-	    JMPENV_POP;				\
+            JMPENV_POP; 			\
 	    if (PL_restartop && PL_restartop != nxt) \
 		JMPENV_JUMP(3);			\
-	}					\
-	PL_op = nxt;				\
-	SPAGAIN;				\
+        }                                       \
+	PL_op = nxt;                            \
+	SPAGAIN;                                \
     } while (0)
 ';
   }
@@ -537,7 +537,8 @@ sub load_pad {
     else {
       my ($nametry) = $namesv->PV =~ /^\$(.+)$/ if $namesv->PV;
       $name = $nametry if $nametry;
-      # XXX magic names: my $i_ir, my $d_d. No cmdline switch?
+      # XXX magic names: my $i_ir, my $d_d. No cmdline switch? We should accept attrs also
+      # XXX We should also try Devel::TypeCheck here
       if ( $name =~ /^(.*)_([di])(r?)$/ ) {
         $name = $1;
         if ( $2 eq "i" ) {
@@ -609,16 +610,12 @@ sub loadop {
 
 sub doop {
   my $op     = shift;
-  my $ppname = $op->ppaddr;
+  my $ppaddr = $op->ppaddr;
   my $sym    = loadop($op);
-  if ($bind_ppaddr) { # early binding: PL_ppaddr[OP_PRINT] => pp_print
-    $ppname = "pp_" . $op->name;
-    $no_stack{$ppname}
-      ? runtime("PL_op=$ppname"."();")
-      : runtime("PUTBACK;PL_op=$ppname"."();SPAGAIN;");
-  } else {
-    runtime("DOOP($ppname);");
-  }
+  my $ppname = "pp_" . $op->name;
+  $no_stack{$ppname}
+    ? runtime("PL_op = $ppaddr(aTHX);")
+    : runtime("DOOP($ppaddr);");
   $know_op = 1;
   return $sym;
 }
@@ -1329,8 +1326,8 @@ sub pp_entersub {
   write_back_stack();
   my $sym = doop($op);
   runtime("while (PL_op != ($sym)->op_next && PL_op != (OP*)0 ){");
-  runtime("PL_op = (*PL_op->op_ppaddr)(aTHX);");
-  runtime("SPAGAIN;}");
+  runtime("\tPL_op = (*PL_op->op_ppaddr)(aTHX);");
+  runtime("\tSPAGAIN;}");
   $know_op = 0;
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
@@ -1363,10 +1360,7 @@ sub pp_goto {
   return $op->next;
 }
 
-sub pp_enterwrite {
-  my $op = shift;
-  pp_entersub($op);
-}
+sub pp_enterwrite { pp_entersub(@_) }
 
 sub pp_leavesub {
   my $op = shift;
@@ -1394,6 +1388,9 @@ sub pp_leavewrite {
   return $op->next;
 }
 
+sub pp_entergiven { pp_enterwrite(@_) }
+sub pp_leavegiven { pp_leavewrite(@_) }
+
 sub doeval {
   my $op = shift;
   $curcop->write_back;
@@ -1401,7 +1398,6 @@ sub doeval {
   write_back_stack();
   my $sym    = loadop($op);
   my $ppaddr = $op->ppaddr;
-  #$ppaddr = "&pp_" . $op->name if $bind_ppaddr; # XXX pp_entereval is a MACRO!
   runtime("PP_EVAL($ppaddr, ($sym)->op_next);");
   $know_op = 1;
   invalidate_lexicals( REGISTER | TEMPORARY );
@@ -1445,7 +1441,8 @@ sub pp_entertry {
   $entertry_defined = 1;
   runtime(
           sprintf( "PP_ENTERTRY(%s%s);",
-                   $] < 5.008009 ? "$jmpbuf," : "", label( $op->other->next ) ) );
+                   $] < 5.008009 ? "$jmpbuf," : "",
+                   label( $op->other->next ) ) );
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
 }
@@ -1520,9 +1517,7 @@ sub pp_grepwhile {
   return $op->other;
 }
 
-sub pp_mapwhile {
-  pp_grepwhile(@_);
-}
+sub pp_mapwhile { pp_grepwhile(@_) }
 
 sub pp_return {
   my $op = shift;
@@ -1856,6 +1851,7 @@ sub cc {
       $op = compile_bblock($op);
       if ( $need_freetmps && $freetmps_each_bblock ) {
         runtime("FREETMPS;");
+        runtime("PERL_ASYNC_CHECK();");
         $need_freetmps = 0;
       }
     } while defined($op) && $$op && !$done{$$op};
@@ -1863,8 +1859,11 @@ sub cc {
       runtime("FREETMPS;");
       $need_freetmps = 0;
     }
+    runtime("PERL_ASYNC_CHECK();") if $$op;
     if ( !$$op ) {
-      runtime( "PUTBACK;", "return NULL;" );
+      runtime( "PUTBACK;",
+               "PERL_ASYNC_CHECK();",
+               "return NULL;" );
     }
     elsif ( $done{$$op} ) {
       save_or_restore_lexical_state($$op);
@@ -1991,7 +1990,7 @@ OPTION:
     }
     elsif ( $opt eq "v" ) {
       $verbose       = 1;
-      $B::C::verbose = 1;
+      *B::C::verbose = *verbose;
     }
     elsif ( $opt eq "n" ) {
       $arg ||= shift @options;
@@ -2019,8 +2018,7 @@ OPTION:
       foreach $ref ( values %optimise ) {
         $$ref = 0;
       }
-      $bind_ppaddr = 1 if $arg >= 2;
-      $freetmps_each_loop = 1 if $arg >= 3;
+      $freetmps_each_loop = 1 if $arg >= 2;
       if ( $arg >= 1 ) {
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
@@ -2071,11 +2069,11 @@ OPTION:
       }
     }
   }
-  # set some B::C optimizations
+  # Set some B::C optimizations.
+  # optimize_ppaddr is not needed with B::CC as CC does it even better.
   for (qw(optimize_warn_sv save_data_fh av_init save_sig),
        $PERL510 ? () : "pv_copy_on_grow")
   {
-    # XXX optimize_ppaddr crashes
     no strict 'refs';
     ${"B::C::$_"} = 1;
   }
@@ -2122,15 +2120,15 @@ B::CC - Perl compiler's optimized C translation backend
 =head1 DESCRIPTION
 
 This compiler backend takes Perl source and generates C source code
-corresponding to the flow of your program. In other words, this
-backend is somewhat a "real" compiler in the sense that many people
-think about compilers. Note however that, currently, it is a very
-poor compiler in that although it generates (mostly, or at least
-sometimes) correct code, it performs relatively few optimisations.
-This will change as the compiler develops. The result is that
-running an executable compiled with this backend may start up more
-quickly than running the original Perl program (a feature shared
-by the B<C> compiler backend--see F<B::C>) and may also execute
+corresponding to the flow of your program with unrolled ops and optimised
+stack handling and lexicals variable types. In other words, this backend is
+somewhat a "real" compiler in the sense that many people think about
+compilers. Note however that, currently, it is a very poor compiler in that
+although it generates (mostly, or at least sometimes) correct code, it
+performs relatively few optimisations.  This will change as the compiler
+develops. The result is that running an executable compiled with this backend
+may start up more quickly than running the original Perl program (a feature
+shared by the B<C> compiler backend--see L<B::C>) and may also execute
 slightly faster. This is by no means a good optimising compiler--yet.
 
 =head1 OPTIONS
@@ -2229,25 +2227,17 @@ Delays FREETMPS from the end of each statement to the end of the group
 of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
 
-=item B<-fbind-ppaddr>
-
-Binds pp_ op addresses at link-time.
-
-  PL_op = PL_ppaddr[OP_CONST]() => PL_op = pp_const()
-
 =item B<-fomit-taint>
 
 Omits generating code for handling perl's tainting mechanism.
 
 =item B<-On>
 
-Optimisation level (n = 0, 1, 2, 3). B<-O> means B<-O1>.
+Optimisation level (n = 0, 1, 2). B<-O> means B<-O1>.
 
 B<-O1> sets B<-ffreetmps-each-bblock>.
 
-B<-O2> adds B<-fbind-ppaddr>.
-
-B<-O3> adds B<-ffreetmps-each-loop>.
+B<-O2> adds B<-ffreetmps-each-loop>.
 
 B<-fomit-taint> must be set explicitly.
 

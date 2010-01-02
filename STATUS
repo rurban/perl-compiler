@@ -119,10 +119,10 @@ t/c_o1          ok				| ok
 t/c_o2          ok				| ok
 t/c_o3          ok				| ok
 t/c_o4          10,12,19,25
-t/cc 		18,21,25,29,30			| +12
-t/cc_o1         18,21,25,26,29,30		| +12
-t/cc_o2         18,21,25,26,29,30		| +12
-t/cc_o3         10,16,18,21,25,26,29,30		| +12
+t/cc 		18,21,25,29,30
+t/cc_o1         18,21,25,26,29,30		 
+t/cc_o2         18,21,25,26,29,30		 
+t/cc_o3         10,16,18,21,25,26,29,30		 
 
 5.11.2: same as 5.10.1
 
@@ -132,10 +132,12 @@ TODO for B::C
   AUTOLOAD goto xsub and SelfLoader esp on 5.8 (27). 
     use AutoLoader works okay. (test 27, 31)
   test 29 non-threaded 5.8 (require $fname)
-  -fbind-ppaddr from CC
   destruction: -O1 static PVs and HEKs (mult.) >=5.10
 
 DONE:
+fixed PP_ENTEREVAL (CC test 12) for 5.10 with 1.14.
+  Nullify ending retop for the string CALLRUNOPS.
+
 fixed __DATA__ IO (test 15) on 5.10 and 5.11 with 1.12. 
   On 5.6 it is hard to fix (re-implement PerlIO::scalar).
 

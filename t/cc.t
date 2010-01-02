@@ -20,8 +20,6 @@ prepare_c_tests();
 my @todo = (18,21,25,27,30); #5.8.9
 @todo    = (15,18,21,25,27,30) if $] < 5.007;
 @todo    = (18,21,25,29,30)    if $] >= 5.010;
-# 12: broken PP_EVAL in cc_runtime.h
-push @todo, (12) if $] >= 5.010 and !$ITHREADS;
 push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 
 # skip core dumps, like custom sort or runtime labels
