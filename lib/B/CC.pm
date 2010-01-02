@@ -55,8 +55,9 @@ my $need_freetmps = 0;    # We may postpone FREETMPS to the end of each basic
 my $know_op       = 0;    # Set when C variable op already holds the right op
                           # (from an immediately preceding DOOP(ppname)).
 my $errors        = 0;    # Number of errors encountered
-my %skip_stack;         # Hash of PP names which don't need write_back_stack
-my %skip_lexicals;      # Hash of PP names which don't need write_back_lexicals
+my %no_stack;           # PP names which don't need save pp restore stack (enter)
+my %skip_stack;         # PP names which don't need write_back_stack (empty)
+my %skip_lexicals;      # PP names which don't need write_back_lexicals
 my %skip_invalidate;    # Hash of PP names which don't need invalidate_lexicals
 my %ignore_op;          # Hash of ops which do nothing except returning op_next
 my %need_curcop;        # Hash of ops which need PL_curcop
@@ -114,7 +115,7 @@ else {
 
 # Could rewrite push_runtime() and output_runtime() to use a
 # temporary file if memory is at a premium.
-my $ppname;    # name of current fake PP function
+my $ppname;    	     # name of current fake PP function
 my $runtime_list_ref;
 my $declare_ref;     # Hash ref keyed by C variable type of declarations.
 
@@ -129,8 +130,10 @@ sub init_hash {
 
 #
 # Initialise the hashes for the default PP functions where we can avoid
-# either write_back_stack, write_back_lexicals or invalidate_lexicals.
+# either stack save/restore,write_back_stack, write_back_lexicals or invalidate_lexicals.
 #
+%no_stack         = init_hash qw(pp_enter pp_unstack pp_leave);
+%skip_stack       = init_hash qw(pp_enter);
 %skip_lexicals   = init_hash qw(pp_enter pp_enterloop);
 %skip_invalidate = init_hash qw(pp_enter pp_enterloop);
 %need_curcop     = init_hash qw(pp_rv2gv  pp_bless pp_repeat pp_sort pp_caller
@@ -500,12 +503,11 @@ sub error {
 }
 
 #
-# Load pad takes (the elements of) a PADLIST as arguments and loads
-# up @pad with Stackobj-derived objects which represent those lexicals.
-# If/when perl itself can generate type information (my int $foo) then
-# we'll take advantage of that here. Until then, we'll use various hacks
-# to tell the compiler when we want a lexical to be a particular type
-# or to be a register.
+# Load pad takes (the elements of) a PADLIST as arguments and loads up @pad
+# with Stackobj-derived objects which represent those lexicals.  If/when perl
+# itself can generate type information (my int $foo; my $foo:Cint) then we'll
+# take advantage of that here. Until then, we'll use various hacks to tell the
+# compiler when we want a lexical to be a particular type or to be a register.
 #
 sub load_pad {
   my ( $namelistav, $valuelistav ) = @_;
@@ -529,12 +531,14 @@ sub load_pad {
     my $name   = "tmp$ix";
     my $class  = class($namesv);
     if ( !defined($namesv) || $class eq "SPECIAL" ) {
-
       # temporaries have &PL_sv_undef instead of a PVNV for a name
       $flags = VALID_SV | TEMPORARY | REGISTER;
     }
     else {
-      if ( $namesv->PV =~ /^\$(.*)_([di])(r?)$/ ) {
+      my ($nametry) = $namesv->PV =~ /^\$(.+)$/ if $namesv->PV;
+      $name = $nametry if $nametry;
+      # XXX magic names: my $i_ir, my $d_d. No cmdline switch?
+      if ( $name =~ /^(.*)_([di])(r?)$/ ) {
         $name = $1;
         if ( $2 eq "i" ) {
           $type  = T_INT;
@@ -608,8 +612,10 @@ sub doop {
   my $ppname = $op->ppaddr;
   my $sym    = loadop($op);
   if ($bind_ppaddr) { # early binding: PL_ppaddr[OP_PRINT] => pp_print
-    $ppname =~ s/PL_ppaddr\[OP_(\w+)\]/$1/e;
-    runtime("PUTBACK;PL_op=pp_".lc($ppname)."();SPAGAIN;");
+    $ppname = "pp_" . $op->name;
+    $no_stack{$ppname}
+      ? runtime("PL_op=$ppname"."();")
+      : runtime("PUTBACK;PL_op=$ppname"."();SPAGAIN;");
   } else {
     runtime("DOOP($ppname);");
   }
@@ -795,7 +801,7 @@ sub pp_rv2gv {
 
 sub pp_sort {
   my $op     = shift;
-  my $ppname = $op->ppaddr;
+  #my $ppname = $op->ppaddr;
   if ( $op->flags & OPf_SPECIAL && $op->flags & OPf_STACKED ) {
     # This indicates the sort BLOCK Array case
     # Ugly surgery required. sort expects as block: pushmark rv2gv leave => enter
@@ -1395,6 +1401,7 @@ sub doeval {
   write_back_stack();
   my $sym    = loadop($op);
   my $ppaddr = $op->ppaddr;
+  #$ppaddr = "&pp_" . $op->name if $bind_ppaddr; # XXX pp_entereval is a MACRO!
   runtime("PP_EVAL($ppaddr, ($sym)->op_next);");
   $know_op = 1;
   invalidate_lexicals( REGISTER | TEMPORARY );
@@ -2326,6 +2333,6 @@ Reini Urban, C<rurban@cpan.org>
 # Local Variables:
 #   mode: cperl
 #   cperl-indent-level: 2
-#   fill-column: 100
+#   fill-column: 78
 # End:
 # vim: expandtab shiftwidth=2:

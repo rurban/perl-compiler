@@ -7,7 +7,7 @@
 #
 package B::Stackobj;
 
-our $VERSION = '1.00';
+our $VERSION = '1.00_01';
 
 use Exporter ();
 @ISA       = qw(Exporter);
@@ -127,7 +127,7 @@ sub peek {
   push( @flags, "REGISTER" )     if $flags & REGISTER;
   push( @flags, "TEMPORARY" )    if $flags & TEMPORARY;
   @flags = ("none") unless @flags;
-  return sprintf( "%s type=$type flags=%s sv=$obj->{sv}",
+  return sprintf( "%s type=$type flags=%s sv=$obj->{sv} iv=$obj->{iv} nv=$obj->{nv}",
     class($obj), join( "|", @flags ) );
 }
 
