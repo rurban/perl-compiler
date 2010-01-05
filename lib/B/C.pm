@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.15';
+our $VERSION = '1.16';
 
 package B::C::Section;
 
@@ -1672,7 +1672,7 @@ sub B::CV::save {
       if $debug{cv};
     # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
-    $startfield = "Nullany" unless $startfield;
+    $startfield = "0" unless $startfield;
     if ($$padlist) {
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
@@ -1730,18 +1730,18 @@ sub B::CV::save {
   elsif ($PERL56) {
     #$xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
     $symsect->add(
-      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
-        cstring($pv),      length($pv),    $cv->IVX,
+      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
+        cstring($pv), length($pv),length($pv),$cv->IVX,
         $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
       )
     );
   }
   else {
-    #$xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
+    #$xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
     $symsect->add(
-      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, 0, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-        cstring($pv),      length($pv),    $cv->IVX,
+      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
+        cstring($pv),      length($pv), length($pv), $cv->IVX,
         $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
       )
