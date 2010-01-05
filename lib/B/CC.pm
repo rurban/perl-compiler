@@ -183,7 +183,9 @@ sub output_runtime {
 		case 2: JMPENV_POP; JMPENV_JUMP(2);\
 		case 3: JMPENV_POP; SPAGAIN; goto label;\
 	    }                                      \
-	} STMT_END' if ($] >= 5.008009 or $PERL56) and $entertry_defined;
+	} STMT_END' 
+    if $entertry_defined;
+  # XXX need to find out when PERL_FLEXIBLE_EXCEPTIONS were actually active
 
   # test 12. Used by entereval + dofile
   if ($PERL510 or $ITHREADS) {
