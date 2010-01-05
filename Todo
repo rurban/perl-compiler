@@ -1,6 +1,5 @@
 * Fixes
 
-5.10 CC PP_EVAL scopestack_idx (12)
 CC backend: goto (needs test), 
 sort with non-default comparison. 
 last for non-loop blocks (needs simplier test, test 29).
@@ -32,6 +31,7 @@ new Asm, JIT or PIR backend, PLJC ByteLoader magic
 check Bytecode op coverage in the tests, should cover all ops 0-142
 ByteLoader compatibility: version, platform. eventually Bytecode version 
   portability (test with 5.6 on cygwin, partially done)
+check CC op coverage, add tests
 
 * Optimisations
 
@@ -51,3 +51,4 @@ demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
 tailcall optimization (entersub -> leavesub => goto)
+inline small pp ops: enter, reset, stringify, ... (CC -finline-ops/-O3)

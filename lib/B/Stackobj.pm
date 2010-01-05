@@ -8,7 +8,7 @@
 #
 package B::Stackobj;
 
-our $VERSION = '1.00_01';
+our $VERSION = '1.00_02';
 
 use Exporter ();
 @ISA       = qw(Exporter);
@@ -24,7 +24,7 @@ use Exporter ();
 
 use Carp qw(confess);
 use strict;
-use B qw(class SVf_IOK SVf_NOK SVf_IVisUV);
+use B qw(class SVf_IOK SVf_NOK SVf_IVisUV SVf_ROK);
 
 # Types
 sub T_UNKNOWN () { 0 }
@@ -302,7 +302,7 @@ sub B::Stackobj::Const::write_back {
 
 sub B::Stackobj::Const::load_int {
   my $obj = shift;
-  if ( ref( $obj->{sv} ) eq "B::RV" ) {
+  if ( ref( $obj->{sv} ) eq "B::RV" or ($] >= 5.011 and $obj->{sv}->FLAGS & SVf_ROK)) {
     $obj->{iv} = int( $obj->{sv}->RV->PV );
   }
   else {
@@ -367,7 +367,7 @@ B::Stackobj - Helper module for CC backend
 
 =head1 DESCRIPTION
 
-A representation of pp stacks and lexical pads for the B::CC compiler.
+A simple representation of pp stacks and lexical pads for the B::CC compiler.
 
 For lexical pads (i.e. my variables) we even assume the type of variables
 according a magic naming scheme.
@@ -385,6 +385,9 @@ or attributes such as:
 	my ($foo:Cint, $foo:Cintr, $foo:Cdouble);
 
 See L<B::CC>.
+
+Note: To represent on this stack not only PADs,SV,IV,PV,NV,BOOL,Special and a SV
+const, but also GV,CV,RV,AV,HV use B::Stackobj::Const.
 
 =head1 AUTHOR
 
