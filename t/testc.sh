@@ -14,7 +14,7 @@ function help {
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
-  echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O2 optimizations."
+  echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O3 optimizations."
 }
 
 # use the actual perl from the Makefile (perl5.8.8, 
@@ -138,8 +138,8 @@ function ctest {
 	    pass "./$o" "'$str' => '$res'"
             if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
 	    runopt $o 1 && \
-	    runopt $o 2 
-	    #runopt $o 3 && \
+	    runopt $o 2  && \
+	    runopt $o 3
 	    #runopt $o 4 && \
 	    true
 	else
@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=32
+ntests=35
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -239,9 +239,19 @@ result[30]='456123E0'
 # AUTOLOAD w/o goto xsub
 tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
 result[31]='date;who am i;ls -l;'
+
 # CC types and arith
 tests[32]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
 result[32]='12'
+# CC entertry/jmpenv_jump/leavetry
+tests[33]='eval{print "1"};eval{die 0};print "2\n";'
+result[33]='12'
+# CC cond_expr, stub, scope
+tests[34]='if ($x eq "2"){}else{print "ok"}'
+result[34]='ok'
+# CC stringify, srefgen. TODO: use B; fails
+tests[35]='require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
+result[35]='B::PV'
 
 init
 
