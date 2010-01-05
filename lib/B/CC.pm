@@ -170,7 +170,7 @@ sub output_runtime {
   print qq(#include "cc_runtime.h"\n);
 
   # Perls >=5.8.9 have a broken PP_ENTERTRY. See PERL_FLEXIBLE_EXCEPTIONS in cop.h
-  # fixed with 5.11.4
+  # fixed in CORE with 5.11.4
   print'
 #undef PP_ENTERTRY
 #define PP_ENTERTRY(label)  	\
@@ -184,7 +184,7 @@ sub output_runtime {
 		case 3: JMPENV_POP; SPAGAIN; goto label;\
 	    }                                      \
 	} STMT_END' 
-    if $entertry_defined;
+    if $entertry_defined and $] < 5.011004;
   # XXX need to find out when PERL_FLEXIBLE_EXCEPTIONS were actually active
 
   # test 12. Used by entereval + dofile
@@ -987,16 +987,16 @@ sub pp_gv {
   my $gvsym;
   if ($ITHREADS) {
     $gvsym = $pad[ $op->padix ]->as_sv;
-    push @stack, ($pad[$op->padix]);
+    #push @stack, ($pad[$op->padix]);
   }
   else {
     $gvsym = $op->gv->save;
     # XXX
-    #runtime("XPUSHs((SV*)$gvsym);");
-    my $obj = new B::Stackobj::Const($op->gv);
-    push( @stack, $obj );
+    runtime("XPUSHs((SV*)$gvsym);");
+    #my $obj = new B::Stackobj::Const($op->gv);
+    #push( @stack, $obj );
   }
-  #write_back_stack();
+  write_back_stack();
   return $op->next;
 }
 
@@ -1244,12 +1244,8 @@ sub sv_binop {
     }
     else {
       # XXX Does this work?
-      runtime(
-        sprintf(
-          "sv_setsv(%s, %s);",
-          $targ->as_sv, &$operator( "left", "right" )
-        )
-      );
+      runtime(sprintf("sv_setsv(%s, %s);",
+                      $targ->as_sv, &$operator( "left", "right" ) ));
       $targ->invalidate;
     }
     push( @stack, $targ );
