@@ -271,6 +271,7 @@ sub init_pp {
 # Initialise runtime_callback function for Stackobj class
 BEGIN { B::Stackobj::set_callback( \&runtime ) }
 
+# new ccpp optree (XXX fixme test 18)
 # Initialise saveoptree_callback for B::C class
 sub cc_queue {
   my ( $name, $root, $start, @pl ) = @_;
@@ -499,7 +500,12 @@ sub dopoptolabel {
   {
     $cxix--;
   }
-  debug "dopoptolabel: returning $cxix" if $debug{cxstack};
+  debug "dopoptolabel: returning $cxix\n" if $debug{cxstack};
+  if ($cxix < 0 and $debug{cxstack}) {
+    for my $cx (0 .. $#cxstack) {
+      print $cx,$cxstack[$cx],"\n";
+    }
+  }
   return $cxix;
 }
 
@@ -992,11 +998,11 @@ sub pp_gv {
   else {
     $gvsym = $op->gv->save;
     # XXX
-    runtime("XPUSHs((SV*)$gvsym);");
     #my $obj = new B::Stackobj::Const($op->gv);
     #push( @stack, $obj );
   }
   write_back_stack();
+  runtime("XPUSHs((SV*)$gvsym);");
   return $op->next;
 }
 
@@ -1141,7 +1147,7 @@ sub numeric_binop {
   return $op->next;
 }
 
-# coverage: ny
+# coverage: 18
 sub pp_ncmp {
   my ($op) = @_;
   if ( $op->flags & OPf_STACKED ) {
@@ -1165,13 +1171,13 @@ sub pp_ncmp {
       my $rightruntime = new B::Pseudoreg( "double", "rnv" );
       runtime( sprintf( "$$rightruntime = %s;", $right ) );
       runtime sprintf( qq/if ("TOPn" > %s){/, $rightruntime );
-      runtime sprintf("sv_setiv(TOPs,1);");
+      runtime sprintf("  sv_setiv(TOPs,1);");
       runtime sprintf( qq/}else if ( "TOPn" < %s ) {/, $$rightruntime );
-      runtime sprintf("sv_setiv(TOPs,-1);");
+      runtime sprintf("  sv_setiv(TOPs,-1);");
       runtime sprintf( qq/} else if ("TOPn" == %s) {/, $$rightruntime );
-      runtime sprintf("sv_setiv(TOPs,0);");
+      runtime sprintf("  sv_setiv(TOPs,0);");
       runtime sprintf(qq/}else {/);
-      runtime sprintf("sv_setiv(TOPs,&PL_sv_undef;");
+      runtime sprintf("  sv_setiv(TOPs,&PL_sv_undef;");
       runtime "}";
     }
   }
@@ -1749,12 +1755,12 @@ sub pp_range {
   my $op    = shift;
   my $flags = $op->flags;
   if ( !( $flags & OPf_WANT ) ) {
-    error("context of range unknown at compile-time");
+    warn("context of range unknown at compile-time\n");
+    return default_pp($op);
   }
   write_back_lexicals();
   write_back_stack();
   unless ( ( $flags & OPf_WANT ) == OPf_WANT_LIST ) {
-
     # We need to save our UNOP structure since pp_flop uses
     # it to find and adjust out targ. We don't need it ourselves.
     $op->save;
@@ -1778,7 +1784,6 @@ sub pp_flip {
   }
   write_back_lexicals();
   write_back_stack();
-
   # We need to save our UNOP structure since pp_flop uses
   # it to find and adjust out targ. We don't need it ourselves.
   $op->save;
@@ -1878,15 +1883,15 @@ sub pp_next {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      error('"next" used outside loop');
-      return $op->next;    # ignore the op
+      warn "\"next\" used outside loop\n";
+      return default_pp($op); # no optimization
     }
   }
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
-      error( 'Label not found at compile time for "next %s"', $op->pv );
-      return $op->next;    # ignore the op
+      warn(sprintf("Label not found at compile time for \"next %s\"\n", $op->pv ));
+      return default_pp($op); # no optimization
     }
   }
   default_pp($op);
@@ -1904,15 +1909,15 @@ sub pp_redo {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      error('"redo" used outside loop');
-      return $op->next;    # ignore the op
+      warn("\"redo\" used outside loop\n");
+      return default_pp($op); # no optimization
     }
   }
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
-      error( 'Label not found at compile time for "redo %s"', $op->pv );
-      return $op->next;    # ignore the op
+      warn(sprintf("Label not found at compile time for \"redo %s\"\n", $op->pv ));
+      return default_pp($op); # no optimization
     }
   }
   default_pp($op);
@@ -1930,21 +1935,21 @@ sub pp_last {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      error('"last" used outside loop');
-      return $op->next;    # ignore the op
+      warn("\"last\" used outside loop\n");
+      return default_pp($op); # no optimization
     }
   }
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
-      error( 'Label not found at compile time for "last %s"', $op->pv );
-      return $op->next;    # ignore the op
+      warn( sprintf("Label not found at compile time for \"last %s\"\n", $op->pv ));
+      return default_pp($op); # no optimization
     }
 
     # XXX Add support for "last" to leave non-loop blocks
     if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
-      error('Use of "last" for non-loop blocks is not yet implemented');
-      return $op->next;    # ignore the op
+      warn("Use of \"last\" for non-loop blocks is not yet implemented\n");
+      return default_pp($op); # no optimization
     }
   }
   default_pp($op);
@@ -2057,7 +2062,7 @@ sub cc {
   my ( $name, $root, $start, @padlist ) = @_;
   my $op;
   if ( $done{$$start} ) {
-    warn "repeat=>" . ref($start) . "$name,\n" if $verbose;
+    warn "repeat=>" . ref($start) . " $name,\n" if $verbose;
     $decl->add( sprintf( "#define $name  %s", $done{$$start} ) );
     return;
   }
@@ -2121,7 +2126,9 @@ sub cc_recurse {
   my $ccinfo;
   my $start;
   $start = cc_queue(@_) if @_;
+
   while ( $ccinfo = shift @cc_todo ) {
+    debug "cc(ccinfo): @$ccinfo\n" if $debug{queue};
     cc(@$ccinfo);
   }
   return $start;

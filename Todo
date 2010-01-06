@@ -3,6 +3,8 @@
 CC backend: goto (needs test), 
 sort with non-default comparison. 
 last for non-loop blocks (needs simplier test, test 29).
+cc_queue error with the non-seperate sort optree, test 18
+
 improve XSUB handling (both static and dynamic, needs tests)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
