@@ -13,6 +13,8 @@
 	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany)
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage.
+	* ByteLoader/Makefile.PL: removed cygwin gcc specific stack-protector removal. 
+	  It was a bug of mine.
 
 1.15	2010-01-03 rurban
 	* t/test.pl: Fixed MSWin32 tests again. Lost the 1.13 patches with 1.14.
