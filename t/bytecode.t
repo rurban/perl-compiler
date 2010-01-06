@@ -63,7 +63,7 @@ my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls?
 my $backend = "Bytecode";
 unless ($Mblib) { # check for -Mblib from the testsuite
   if (grep { m{blib(/|\\)arch$} } @INC) {
-    $Mblib = "-Iblib/arch -Iblib/lib";  # forced -Mblib via cmdline
+    $Mblib = "-Iblib/arch -Iblib/lib";  # force -Mblib via cmdline, but silent!
   }
 }
 else {

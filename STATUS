@@ -16,7 +16,7 @@ Several B::C and B::CC bugs fixed. 5.10 + 5.11 compatibility added.
 
 Open Problems for B::C:
 5.6:
-    test 25, 27
+    test 15,27
 5.8:
     const xsubcv via AUTOLOAD (test 27)
 5.10:
@@ -133,6 +133,8 @@ TODO for B::C
     use AutoLoader works okay. (test 27, 31)
   test 29 non-threaded 5.8 (require $fname)
   destruction: -O1 static PVs and HEKs (mult.) >=5.10
+
+Fix CC cc_queue sort 18 ccpp
 
 DONE:
 fixed PP_ENTEREVAL (CC test 12) for 5.10 with 1.14.

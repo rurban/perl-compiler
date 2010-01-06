@@ -15,7 +15,7 @@ my $ITHREADS  = ($Config{useithreads});
 
 my @todo = (18,21,25..27,30); # 5.8
 @todo =    (15,18,21,25..27,30) if $] < 5.007;
-@todo =    (18,21,25,26,29,30)  if $] >= 5.010;
+@todo =    (18,21,25,26,30)  if $] >= 5.010;
 push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
