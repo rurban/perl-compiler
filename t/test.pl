@@ -899,11 +899,7 @@ sub run_c_tests {
 my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;
 >>>>
 12
-######### 32 - CC types and arith ###############
-eval{print "1"};eval{die 0};print "2\n";
->>>>
-12
-######### 33 - CC entertry/leavetry ###############
+######### 33 - CC types and arith ###############
 if ($x eq "2"){}else{print "ok"}
 >>>>
 ok
@@ -921,7 +917,7 @@ CCTESTS
     my $cnt = 1;
     for (@tests) {
         my $todo = $todo{$cnt} ? "#TODO" : "#";
-        # skip subsequent tests 29 on MSVC. 7:30min!
+        # only once. skip subsequent tests 29 on MSVC. 7:30min!
         if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
             $todo{$cnt} = $skip{$cnt} = 1;
         }

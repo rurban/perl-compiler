@@ -6,15 +6,20 @@
 1.16	2010-01-?? rurban
 	* CC.pm (1.05): added experimental -O3/-finline-ops. Can be removed if 
 	  it works okay for the new inlined versions.
-	inlined pp_enter, pp_reset, pp_regcreset, pp_stringify if -O3
-	fixed pp_padsv DEREF for 5.10
-	documented test coverage for each op
-	Fixed wrong $PERL511 definition
-	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany)
+	inlined pp_enter, pp_reset, pp_regcreset, pp_stringify if -O3.
+	fixed pp_padsv DEREF for 5.10.
+	documented test coverage for each op.
+	Fixed wrong $PERL511 definition.
+	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany).
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage.
+	Switched test 32 (arith) with 33 (evaltry catch die) as it fails with 5.11.3.
+	* TESTS: added test 32 (evaltry catch die): Fails on 5.11.3 C/CC only,
+	  <5.11.3 it works okay.
 	* ByteLoader/Makefile.PL: removed cygwin gcc specific stack-protector removal. 
 	  It was a bug of mine.
+	Added more AUTHOR gcc -ansi warnings, just -pedantic not.
+	* Makefile.PL: Added more AUTHOR gcc warnings, also -pedantic.
 
 1.15	2010-01-03 rurban
 	* t/test.pl: Fixed MSWin32 tests again. Lost the 1.13 patches with 1.14.

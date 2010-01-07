@@ -125,6 +125,8 @@ t/cc_o2         18,21,25,26,29,30
 t/cc_o3         10,16,18,21,25,26,29,30		 
 
 5.11.2: same as 5.10.1
+ 
+5.11.3: as 5.10.1, just c and cc fails with 32 (catch evaltry die)
 
 5.10, 5.11 status
 -----------------
@@ -132,6 +134,7 @@ TODO for B::C
   AUTOLOAD goto xsub and SelfLoader esp on 5.8 (27). 
     use AutoLoader works okay. (test 27, 31)
   test 29 non-threaded 5.8 (require $fname)
+  5.11.3 test 32 catch evaltry die
   destruction: -O1 static PVs and HEKs (mult.) >=5.10
 
 Fix CC cc_queue sort 18 ccpp

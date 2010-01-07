@@ -55,7 +55,7 @@ my @todo = ();
 @todo = (9,10,12)          if $] >= 5.010;
 @todo = ()  		    if $] >= 5.010 and $ITHREADS and !$DEBUGGING;
 
-my @skip = (27,29) if $] >= 5.010;
+my @skip = (20,27,29) if $] >= 5.010;
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;

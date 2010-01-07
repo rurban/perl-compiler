@@ -131,3 +131,7 @@ package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");
 >>>>
 date;who am i;ls -l;
 ######################### 31 ################################
+# CC entertry/jmpenv_jump/leavetry
+eval{print "1"};eval{die 0};print "2\n";
+>>>>
+12

@@ -239,12 +239,12 @@ result[30]='456123E0'
 # AUTOLOAD w/o goto xsub
 tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
 result[31]='date;who am i;ls -l;'
+# CC entertry/jmpenv_jump/leavetry
+tests[32]='eval{print "1"};eval{die 0};print "2\n";'
+result[32]='12'
 
 # CC types and arith
-tests[32]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
-result[32]='12'
-# CC entertry/jmpenv_jump/leavetry
-tests[33]='eval{print "1"};eval{die 0};print "2\n";'
+tests[33]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
 result[33]='12'
 # CC cond_expr, stub, scope
 tests[34]='if ($x eq "2"){}else{print "ok"}'

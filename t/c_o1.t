@@ -23,6 +23,7 @@ my @todo = (); # 8,14-16 fail on 5.00505
 @todo = (15,27)    if $] < 5.007;
 @todo = ()         if $] >= 5.010;
 @todo = (15)       if $] >= 5.010 and !$ITHREADS;
+push @todo, (32)   if $] >= 5.011003;
 
 my @skip = (27); # out of memory
 
