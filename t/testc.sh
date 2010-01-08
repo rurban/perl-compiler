@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=35
+ntests=36
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -252,6 +252,11 @@ result[34]='ok'
 # CC stringify, srefgen. TODO: use B; fails
 tests[35]='require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
 result[35]='B::PV'
+# C qr test was broken in 5.6 -- needs to load an actual file to test
+# used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
+tests[36]='BEGIN { unshift @INC,"t"; }use qr_loaded_module; print "ok";'
+result[36]='ok'
+
 
 init
 
