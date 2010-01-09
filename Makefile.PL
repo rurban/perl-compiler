@@ -21,6 +21,7 @@ WriteMakefile(
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
+               "lib/B/Asmdata.pm".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj".
                "*.concise *~ dll.base dll.exp"},
 );
@@ -64,13 +65,13 @@ sub depend {
     my $result = "
 C.c : C.xs Makefile
 
-$asmdata : bytecode.pl @headers Makefile
+$asmdata : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 
-$byterun_c : bytecode.pl @headers Makefile
+$byterun_c : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 
-$byterun_h : bytecode.pl @headers Makefile
+$byterun_h : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 ";
     $result .= "\ntest :: subdirs-test\n\n" if $] > 5.009;

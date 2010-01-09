@@ -64,7 +64,7 @@ b
 >>>>
 a
 b
-######################### 15 ################################
+######################### 15 __DATA__ #######################
 BEGIN { tie @a, __PACKAGE__; sub TIEARRAY { bless{} } sub FETCH{1} }
 print $a[1]
 >>>>
@@ -73,7 +73,7 @@ print $a[1]
 my $i_ir=3; print 1 .. $i_ir
 >>>>
 123
-######################### 17 ################################
+######################### 17 custom sortcv ##################
 my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h
 >>>>
 ba
@@ -131,7 +131,11 @@ package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");
 >>>>
 date;who am i;ls -l;
 ######################### 31 ################################
-# CC entertry/jmpenv_jump/leavetry
-eval{print "1"};eval{die 0};print "2\n";
+eval{print "1"};eval{die 1};print "2\n";
 >>>>
 12
+######################### 32 CC entertry/jmpenv_jump/leavetry ####
+BEGIN{unshift @INC,"t";}use qr_loaded_module;print "ok";
+>>>>
+ok
+######################### 33 the real qr bug from 5.6.2, see 20 #####

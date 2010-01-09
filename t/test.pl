@@ -777,6 +777,7 @@ sub tests {
     open TEST, "< $in" or die "Cannot open $in";
     my @tests = split /\n####+.*##\n/, <TEST>;
     close TEST;
+    delete $tests[$#tests] unless $tests[$#tests];
     @tests;
 }
 
@@ -885,7 +886,8 @@ sub run_c_tests {
     my %todo = map { $_ => 1 } @todo;
     my %skip = map { $_ => 1 } @skip;
     my @tests = tests();
-    # add some CC specific tests
+
+    # add some CC specific tests after 100
     # perl -lne "/^\s*sub pp_(\w+)/ && print \$1" lib/B/CC.pm > ccpp
     # for p in `cat ccpp`; do echo -n "$p "; grep -m1 " $p[(\[ ]" *.concise; done
     # 
@@ -899,24 +901,35 @@ sub run_c_tests {
 my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;
 >>>>
 12
-######### 33 - CC types and arith ###############
-if ($x eq "2"){}else{print "ok"}
->>>>
-ok
-######### 34 - CC cond_expr,stub,scope ############
+######### 101 - CC types and arith ###############
 require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)
 >>>>
 B::PV
+######### 102 - CC 103 stringify srefgen ############
+if ($x eq "2"){}else{print "ok"}
+>>>>
+ok
+######### 103 - CC cond_expr,stub,scope ############
 CCTESTS
-        # 35 stringify srefgen
-        push @tests, split /\n####+.*##\n/, $cctests;
+        my $i = 100;
+        for (split /\n####+.*##\n/, $cctests) {
+            next unless $_;
+            $tests[$i] = $_;
+            $i++;
+        }
     }
 
-    print "1..".($#tests+1)."\n";
+    print "1..".(scalar @tests)."\n";
 
     my $cnt = 1;
     for (@tests) {
         my $todo = $todo{$cnt} ? "#TODO" : "#";
+        # skip empty CC holes to have the same test indices in STATUS and t/testcc.sh
+        unless ($_) {
+            print sprintf("ok %d # skip hole for CC\n", $cnt);
+            $cnt++;
+            next;
+        }
         # only once. skip subsequent tests 29 on MSVC. 7:30min!
         if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
             $todo{$cnt} = $skip{$cnt} = 1;

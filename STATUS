@@ -23,6 +23,8 @@ Open Problems for B::C:
     Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
 5.11:
     None. Completely same results as 5.10
+5.11.3: 
+    Test 32 with CC (catch evaltry die)
 
 See below at the detailed 5.6, 5.8, 5.10, 5.11 status
 
@@ -35,31 +37,31 @@ CORE (old)
 ----
 
 5.6.2:
-t/bytecode      3,6,8..10,12,15,16,18,26,28,31
+t/bytecode      3,6,8..10,12,15,16,18,26,28,31,32
 t/c             8,15,16,22,27,28,31
 t/c_o1          8,15,16,22,27,28,31
 t/c_o2          8,15,16,22,27,28,31
-t/cc            15,18,21,25,27,28,30,31
-t/cc_o1         15,18,21,25,27,28,30,31
-t/cc_o2         10,15,16,18,21,25,26,27,28,30,31
+t/cc            15,18,21,25,27,28,30..32
+t/cc_o1         15,18,21,25,27,28,30..32
+t/cc_o2         10,15,16,18,21,25,26,27,28,30..32
 
 5.8:  			                          	| non-threaded
 t/bytecode      ok
-t/c             11,14,15,20,23,27..29,31      		| 5,7-12,14-20,22-23,25,27,28,30,31
-t/c_o1          1,3-8,10..12,14,15,17..25,27..29,31	| 7-12,14-20,22-23,25,27,28,30,31
-t/c_o2          1,3-12,14,15,17..25,27..29,31     	| 7-12,14-20,22-23,25,27,28,30,31
-t/cc            7,11,14,15,18..21,23..25,28..31		
-t/cc_o1         7,11,14,15,18..21,23..31		
-t/cc_o2         7,10,11,14..16,18-21,23..31
+t/c             11,14,15,20,23,27..29,31,101,102 	| 5,7-12,14-20,22-23,25,27,28,30,31
+t/c_o1          1,3-8,10..12,14,15,17..25,27..29,31,101,102| 7-12,14-20,22-23,25,27,28,30,31
+t/c_o2          1,3-12,14,15,17..25,27..29,31,101,102    | 7-12,14-20,22-23,25,27,28,30,31
+t/cc            7,11,14,15,18..21,23..25,28..32,101..103	
+t/cc_o1         7,11,14,15,18..21,23..32,101..103		
+t/cc_o2         7,10,11,14..16,18-21,23..32,101..103
 
 Recipe:
   p=perl5.6.2
   t/testc.sh -q -c
-  for t in $(seq -f"%02.0f" 31); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
-  p=perl5.8.8
-  for t in $(seq -f"%02.0f" 31); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bstatic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
-  p=perl5.8.8-nt
-  for t in $(seq -f"%02.0f" 31); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bdynamic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
+  for t in $(seq -f"%02.0f" 32); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
+  p=perl5.8.9
+  for t in $(seq -f"%02.0f" 35); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bstatic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
+  p=perl5.8.9d-nt
+  for t in $(seq -f"%02.0f" 35); do rm ccode 2>/dev/null; $p -MO=C,-occode.c ccode$t.pl 2>/dev/null && $p script/cc_harness -Bdynamic ccode.c -o ccode >/dev/null; echo -n "$t: "; $p ccode$t.pl; echo -n " => "; ./ccode; echo; done
 
 
 B::C (new)
@@ -131,7 +133,7 @@ t/cc_o3         10,16,18,21,25,26,29,30
 5.10, 5.11 status
 -----------------
 TODO for B::C
-  AUTOLOAD goto xsub and SelfLoader esp on 5.8 (27). 
+  AUTOLOAD goto xsub and SelfLoader esp. on 5.8 (27). 
     use AutoLoader works okay. (test 27, 31)
   test 29 non-threaded 5.8 (require $fname)
   5.11.3 test 32 catch evaltry die
@@ -141,7 +143,7 @@ Fix CC cc_queue sort 18 ccpp
 
 DONE:
 fixed PP_ENTEREVAL (CC test 12) for 5.10 with 1.14.
-  Nullify ending retop for the string CALLRUNOPS.
+  Nullify ending retop for the string to CALLRUNOPS.
 
 fixed __DATA__ IO (test 15) on 5.10 and 5.11 with 1.12. 
   On 5.6 it is hard to fix (re-implement PerlIO::scalar).

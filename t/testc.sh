@@ -149,9 +149,12 @@ function ctest {
     fi
 }
 
-ntests=36
+ntests=33
 declare -a tests[$ntests]
 declare -a result[$ntests]
+ncctests=3
+declare -a cctests[$((100+$ncctests))]
+declare -a ccresult[$((100+$ncctests))]
 tests[1]="print 'hi'"
 result[1]='hi';
 tests[2]="for (1,2,3) { print if /\d/ }"
@@ -240,22 +243,35 @@ result[30]='456123E0'
 tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
 result[31]='date;who am i;ls -l;'
 # CC entertry/jmpenv_jump/leavetry
-tests[32]='eval{print "1"};eval{die 0};print "2\n";'
+tests[32]='eval{print "1"};eval{die 1};print "2\n";'
 result[32]='12'
+# C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
+# used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
+tests[33]='BEGIN{unshift @INC,"t";}use qr_loaded_module;print "ok";'
+result[33]='ok'
+# unconfirmed, might be the same as just. or not
+#tests[34]='package qr;
+#my $var = 1;
+#my $qr_with_var = qr/^_?[^\W_0-9]\w*$var/;
+#sub qr_called_in_sub {
+#	$name =~ $qr_with_var;
+#}
+#package main;
+#print "ok";'
+#result[34]='ok'
+
+
+# from here on we test CC specifics only
 
 # CC types and arith
-tests[33]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
-result[33]='12'
+tests[101]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
+result[101]='12'
 # CC cond_expr, stub, scope
-tests[34]='if ($x eq "2"){}else{print "ok"}'
-result[34]='ok'
+tests[102]='if ($x eq "2"){}else{print "ok"}'
+result[102]='ok'
 # CC stringify, srefgen. TODO: use B; fails
-tests[35]='require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
-result[35]='B::PV'
-# C qr test was broken in 5.6 -- needs to load an actual file to test
-# used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
-tests[36]='BEGIN { unshift @INC,"t"; }use qr_loaded_module; print "ok";'
-result[36]='ok'
+tests[103]='require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
+result[103]='B::PV'
 
 
 init
@@ -317,6 +333,11 @@ else
   for b in $(seq -f"%02.0f" $ntests); do
     ctest $b
   done
+  if [ $BASE = "testcc.sh" ]; then 
+    for b in $(seq -f"%02.0f" 101 $(($ncctests+100))); do
+      ctest $b
+    done
+  fi
 fi
 
 # 562  c:  15,25,27

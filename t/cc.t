@@ -17,10 +17,11 @@ my $ITHREADS  = ($Config{useithreads});
 prepare_c_tests();
 
 # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
-my @todo = (18,21,25,27,30,33); #5.8.9
-@todo    = (15,18,21,25,27,30,33) if $] < 5.007;
-@todo    = (18,21,25,30,33)       if $] >= 5.010;
+my @todo = (18,21,25,27,30); #5.8.9
+@todo    = (15,18,21,25,27,30) if $] < 5.007;
+@todo    = (18,21,25,30)       if $] >= 5.010;
 push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
+# 33 tested okay
 push @todo, (32)   if $] >= 5.011003;
 
 # skip core dumps, like custom sort or runtime labels

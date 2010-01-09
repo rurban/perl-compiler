@@ -23,6 +23,7 @@ use B::C qw(save_unused_subs objsym init_sections mark_unused
   output_all output_boilerplate output_main fixup_ppaddr save_sig);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
+use Opcode;
 
 @B::OP::ISA = qw(B::NULLOP B);           # support -Do
 @B::LISTOP::ISA = qw(B::BINOP B);       # support -Do
@@ -72,10 +73,11 @@ my ( $module_name, %debug );
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint );
+$inline_ops = 1; # now always on
 my %optimise = (
   freetmps_each_bblock => \$freetmps_each_bblock, #-O1
   freetmps_each_loop   => \$freetmps_each_loop,	  #-O2
-  inline_ops 	       => \$inline_ops,	  	  #-O3
+  inline_ops 	       => \$inline_ops,	  	  #always
   omit_taint           => \$omit_taint,
 );
 
@@ -84,6 +86,7 @@ my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # unused?
 my $ITHREADS   = $Config{useithreads};
 my $PERL510    = ( $] >= 5.009005 );
 my $PERL511    = ( $] >= 5.011 );
+my $have_opcodes = $Opcode::VERSION > "1.16";
 
 my $SVt_PVLV = $PERL510 ? 10 : 9;
 my $SVt_PVAV = $PERL510 ? 11 : 10;
@@ -130,7 +133,10 @@ sub init_hash {
 # either stack save/restore,write_back_stack, write_back_lexicals or invalidate_lexicals.
 # XXX We should really take some of this info from CORE opcode.pl.
 #
-%no_stack         = init_hash qw(pp_enter pp_unstack pp_leave);
+# no args and no return value = Opcode::argnum 0
+%no_stack         = init_hash qw(pp_enter pp_unstack pp_leave
+  pp_break pp_continue pp_dbstate);
+#skip write_back_stack (no args)
 %skip_stack       = init_hash qw(pp_enter);
 %skip_lexicals   = init_hash qw(pp_enter pp_enterloop);
 %skip_invalidate = init_hash qw(pp_enter pp_enterloop);
@@ -170,7 +176,7 @@ sub output_runtime {
   print qq(#include "cc_runtime.h"\n);
 
   # Perls >=5.8.9 have a broken PP_ENTERTRY. See PERL_FLEXIBLE_EXCEPTIONS in cop.h
-  # fixed in CORE with 5.11.4
+  # Fixed in CORE with 5.11.4
   print'
 #undef PP_ENTERTRY
 #define PP_ENTERTRY(label)  	\
@@ -185,7 +191,8 @@ sub output_runtime {
 	    }                                      \
 	} STMT_END' 
     if $entertry_defined and $] < 5.011004;
-  # XXX need to find out when PERL_FLEXIBLE_EXCEPTIONS were actually active
+  # XXX need to find out when PERL_FLEXIBLE_EXCEPTIONS were actually active.
+  # 5.6.2 not, 5.8.9 not. coverage 32
 
   # test 12. Used by entereval + dofile
   if ($PERL510 or $ITHREADS) {
@@ -260,7 +267,7 @@ sub init_pp {
   declare( "SV",  "**svp" );
   map { declare( "SV", "*$_" ) } qw(sv src dst left right);
   declare( "MAGIC", "*mg" );
-  $decl->add( "#define cxinc() Perl_cxinc(aTHX)")
+  $decl->add( "#undef cxinc", "#define cxinc() Perl_cxinc(aTHX)")
     if !$PERL511 and $inline_ops;
   declare( "PERL_CONTEXT", "*cx" );
   declare( "I32", "gimme");
@@ -633,9 +640,17 @@ sub doop {
   my $ppaddr = $op->ppaddr;
   my $sym    = loadop($op);
   my $ppname = "pp_" . $op->name;
-  $no_stack{$ppname}
-    ? runtime("PL_op = $ppaddr(aTHX);")
-    : runtime("DOOP($ppaddr);");
+  if ($inline_ops) {
+    # inlining direct calls is safe, just CALLRUNOPS for macros not
+    $ppaddr = $ppname;
+    $no_stack{$ppname}
+      ? runtime("PL_op = $ppaddr();")
+      : runtime("PUTBACK; PL_op = $ppaddr(); SPAGAIN;");
+  } else {
+    $no_stack{$ppname}
+      ? runtime("PL_op = $ppaddr(aTHX);")
+      : runtime("DOOP($ppaddr);");
+  }
   $know_op = 1;
   return $sym;
 }
@@ -658,7 +673,7 @@ sub pp_null {
   return $op->next;
 }
 
-# coverage: 34
+# coverage: 102
 sub pp_stub {
   my $op    = shift;
   my $gimme = gimme($op);
@@ -722,7 +737,7 @@ sub pp_or {
   return $op->other;
 }
 
-# coverage: 34
+# coverage: 102
 sub pp_cond_expr {
   my $op    = shift;
   my $false = $op->next;
@@ -838,9 +853,9 @@ sub pp_regcreset {
   }
 }
 
-# coverage: 35
+# coverage: 103
 sub pp_stringify {
-  if ($inline_ops) {
+  if ($inline_ops and $] >= 5.008) {
     my $op = shift;
     warn "inlining stringify\n" if $debug{op};
     my $sv = top_sv();
@@ -879,7 +894,7 @@ sub bad_pp_anoncode {
 }
 
 # inconsequence: gvs are not passed around on the stack
-# coverage: 26,35
+# coverage: 26,103
 sub bad_pp_srefgen {
   if ($inline_ops) {
     my $op = shift;
@@ -1635,7 +1650,7 @@ sub pp_require {
   return $op->next;
 }
 
-# coverage: 33
+# coverage: 32
 sub pp_entertry {
   my $op = shift;
   $curcop->write_back;
@@ -1643,20 +1658,14 @@ sub pp_entertry {
   write_back_stack();
   my $sym = doop($op);
   my $jmpbuf;
-  if ($] < 5.008009) {
-    $jmpbuf = sprintf( "jmpbuf%d", $jmpbuf_ix++ );
-    declare( "JMPENV", $jmpbuf );
-  }
   $entertry_defined = 1;
-  runtime(
-          sprintf( "PP_ENTERTRY(%s%s);",
-                   $] < 5.008009 ? "$jmpbuf," : "",
+  runtime(sprintf( "PP_ENTERTRY(%s);",
                    label( $op->other->next ) ) );
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
 }
 
-# coverage: 33
+# coverage: 32
 sub pp_leavetry {
   my $op = shift;
   default_pp($op);
@@ -2265,7 +2274,7 @@ OPTION:
       foreach $ref ( values %optimise ) {
         $$ref = 0;
       }
-      $inline_ops = 1 if $arg >= 3;
+      #$inline_ops = 1 if $arg >= 3;
       $freetmps_each_loop = 1 if $arg >= 2;
       if ( $arg >= 1 ) {
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
@@ -2317,6 +2326,21 @@ OPTION:
       }
     }
   }
+
+  if ($Opcode::VERSION >= "2.01") {
+    my $maxo = Opcode::opcodes();
+    for (0..$maxo-1) {
+      no strict 'refs';
+      my $ppname = "pp_".Opcode::opname($_);
+      # opflags n: no args, no return values. don't need save/restore stack
+      $no_stack{$ppname} = 1
+        if Opcode::opflags($_) & 512;
+    }
+    #if ($debug{op}) {
+    #  warn "no_stack: ",join(" ",sort keys %no_stack),"\n";
+    #}
+  }
+
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
   for (qw(optimize_warn_sv save_data_fh av_init save_sig),

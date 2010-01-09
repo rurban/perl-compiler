@@ -2518,27 +2518,27 @@ sub init_op_warn {
 
   # for reasons beyond imagination, MSVC5 considers pWARN_ALL non-const
   $init->add( split /\n/, <<EOT );
-    {
-        int i;
+{
+    register int i;
 
-        for( i = 0; i < ${num}; ++i )
+    for( i = 0; i < ${num}; ++i )
+    {
+        switch( (int)(${op_list}\[i].cop_warnings) )
         {
-            switch( (int)(${op_list}\[i].cop_warnings) )
-            {
-            case 1:
-                ${op_list}\[i].cop_warnings = pWARN_ALL;
-                break;
-            case 2:
-                ${op_list}\[i].cop_warnings = pWARN_NONE;
-                break;
-            case 3:
-                ${op_list}\[i].cop_warnings = pWARN_STD;
-                break;
-            default:
-                break;
-            }
+        case 1:
+            ${op_list}\[i].cop_warnings = pWARN_ALL;
+            break;
+        case 2:
+            ${op_list}\[i].cop_warnings = pWARN_NONE;
+            break;
+        case 3:
+            ${op_list}\[i].cop_warnings = pWARN_STD;
+            break;
+        default:
+            break;
         }
     }
+}
 EOT
 }
 

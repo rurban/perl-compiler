@@ -4,16 +4,22 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.16	2010-01-?? rurban
-	* CC.pm (1.05): added experimental -O3/-finline-ops. Can be removed if 
+	* CC.pm (1.05): added experimental -finline-ops. Always on. Can be removed if 
 	  it works okay for the new inlined versions.
-	inlined pp_enter, pp_reset, pp_regcreset, pp_stringify if -O3.
-	fixed pp_padsv DEREF for 5.10.
-	documented test coverage for each op.
+	Inlined pp_enter, pp_reset, pp_regcreset, pp_stringify.
+	Fixed pp_padsv DEREF for 5.10.
+	Documented test coverage for each op.
 	Fixed wrong $PERL511 definition.
+	Added Opcodes support >= 2.01 even with no_stack. (not on CPAN yet)
+	  added pp_pushmark pp_break pp_continue to no_stack handling.
 	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany).
+	register int for warn_sv loop
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
-	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage.
-	Switched test 32 (arith) with 33 (evaltry catch die) as it fails with 5.11.3.
+	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage 
+	  after 100.
+	Switched test 32->101 (arith) with 33->32 (evaltry catch die) as it fails 
+	  with 5.11.3.
+	Added new qr test 33 (Nick Koston).
 	* TESTS: added test 32 (evaltry catch die): Fails on 5.11.3 C/CC only,
 	  <5.11.3 it works okay.
 	* ByteLoader/Makefile.PL: removed cygwin gcc specific stack-protector removal. 

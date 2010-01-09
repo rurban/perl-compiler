@@ -112,7 +112,7 @@ sub generate_code {
 
     $BinPerl  = yclept();  # Calling convention for perl.
 
-    if (opt(shared)) {
+    if (opt(sharedlib)) {
         compile_module();
     } else {
         if ($Backend eq 'Bytecode') {
@@ -180,6 +180,7 @@ sub parse_argv {
         't',            # run the backend using perl -t
         'static',       # Link to static libperl
         'shared',       # Link to shared libperl
+        'staticxs',     # Link static XSUBs
         'sharedxs',     # Link shared XSUBs
         'sharedlib',    # Create a shared library module
         'stash',        # Detect external packages via B::Stash
@@ -334,8 +335,13 @@ sub cc_harness_msvc {
     my $link = "-out:$Output $obj";
     $compile .= " -I".$_ for split /\s+/, opt(I);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
-    my @mods = split /-?u /, $stash;
-    $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+    # TODO: -shared,-static,-sharedxs,-staticxs
+    if ($stash) {
+        my @mods = split /-?u /, $stash;
+        $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+    } else {
+        $link .= " ".ExtUtils::Embed::ldopts("-std");
+    }
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     vprint 3, "running $Config{cc} $compile";
     system("$Config{cc} $compile");
@@ -349,11 +355,12 @@ sub cc_harness {
     my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
+    # TODO: -shared,-static,-sharedxs,-staticxs
     if ($stash) {
         my @mods = split /-?u /, $stash;
         $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
     } else {
-        $command .= " ".ExtUtils::Embed::ldopts;
+        $command .= " ".ExtUtils::Embed::ldopts("-std");
     }
     # $command .= " -lperl" unless $command =~ / -lperl\b/;
     vprint 3, "running $Config{cc} $command";
@@ -422,7 +429,7 @@ sub checkopts_byte {
 
     if (opt(shared)) {
         warn "$0: Will not create a shared library for bytecode\n";
-        delete $Options->{shared};
+        delete $Options->{sharedlib};
     }
 
     for my $o ( qw[c S] ) {
@@ -708,19 +715,30 @@ Detect external packages automatically via B::Stash
 
 =item -static
 
-Link to static libperl
+Link to static libperl.a
+(Not yet implemented)
+
+=item -staticxs
+
+Link to static XSUBs if available. Together with -static this
+will gain no external dependencies.
+(Not yet implemented)
 
 =item -shared
 
 Link to shared libperl
+(Not yet implemented)
 
 =item -sharedxs
 
-Link shared XSUBs if the linker supports it. No DynaLoader needed
+Link shared XSUBs if the linker supports it. No DynaLoader needed.
+This will still require the shared XSUB libraries to be installed
+at the client, modification of @INC in the source is probably required.
+(Not yet implemented)
 
 =item -sharedlib
 
-Create a shared library (--shared for compat.). Currently disabled.
+Create a shared library (--sharedlib for compat.). Currently disabled.
 
 =item -testsuite
 
