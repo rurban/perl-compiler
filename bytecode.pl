@@ -555,15 +555,16 @@ struct byteloader_fdata {
 };
 
 #if PERL_VERSION > 8
-
 struct byteloader_xpv {
     char *xpv_pv;
     int   xpv_cur;
     int	  xpv_len;
 };
-
 #endif
 
+#ifdef PERL_DARWIN
+extern
+#endif
 struct byteloader_header {
     char 	archname[80];
     char 	version[16];
