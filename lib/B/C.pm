@@ -2147,8 +2147,8 @@ sub B::HV::save {
     # XXX Beware of weird package names containing double-quotes, \n, ...?
     $init->add(qq[hv$hv_index = gv_stashpv("$name", TRUE);]);
     if ($adpmroot) {
-      $init->add(
-        sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;", $adpmroot ) );
+      $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
+			  $adpmroot ) );
     }
     $sym = savesym( $hv, "hv$hv_index" );
     $hv_index++;
@@ -2157,33 +2157,31 @@ sub B::HV::save {
 
   # It's just an ordinary HV
   if ($PERL510) {
-    # 5.9: nvu fill max ivu mg stash.
-    $xpvhvsect->add( sprintf( "{0}, 0, %d, {0}, {0}, Nullhv", $hv->MAX ) );
-    $svsect->add(
-      sprintf(
-        "&xpvhv_list[%d], %lu, 0x%x, {%s}", # $hv->ARRAY
-        $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS, '0'
-      )
-    );
-    # riter went to a private _aux struct
-    $init->add(
-      sprintf( "HvRITER_set(&sv_list[%d], %d);", $svsect->index, $hv->RITER ) );
-    # $init->add(sprintf("HvEITER_set(&sv_list[%d], 0x%x);", $svsect->index, $hv->EITER));
+    $xpvhvsect->comment( "gvstash fill max keys mg stash" );
+    $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
+			     0, $hv->MAX, 0 ));
+    $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
+			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
+    if ($hv->MAGICAL) {
+      $sym = sprintf("&sv_list[%d]", $svsect->index);
+      my $hv_max = $hv->MAX + 1;
+      # magic: riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
+      $init->add("{\tHE **a; struct xpvhv_aux *aux;",
+		 "\tNewx(a, $hv_max, HE*);",
+		 "\tHvARRAY($sym) = a;",
+		 "\tZero(HvARRAY($sym), $hv_max, HE*);",
+		 "\tNewx(aux, 1, struct xpvhv_aux);",
+		 "\tHvARRAY($sym)[$hv_max] = (HE*)aux;",
+		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),
+		 "\tHvEITER_set($sym, NULL); }");
+    }
   }
   else {
-    # 5.8: array fill max keys nv mg stash riter eiter pmroot name
-    $xpvhvsect->add(
-      sprintf(
-        "0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
-        $hv->MAX, $hv->RITER
-      )
-    );
-    $svsect->add(
-      sprintf(
-        "&xpvhv_list[%d], %lu, 0x%x",
-        $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS
-      )
-    );
+    $xpvhvsect->comment( "array fill max keys nv mg stash riter eiter pmroot name" );
+    $xpvhvsect->add(sprintf( "0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
+			     $hv->MAX, $hv->RITER));
+    $svsect->add(sprintf( "&xpvhv_list[%d], %lu, 0x%x",
+			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
   }
   my $sv_list_index = $svsect->index;
   my @contents      = $hv->ARRAY;
@@ -2196,13 +2194,9 @@ sub B::HV::save {
     $init->add( "{", "\tHV *hv = (HV*)&sv_list[$sv_list_index];" );
     while (@contents) {
       my ( $key, $value ) = splice( @contents, 0, 2 );
-      $init->add(
-        sprintf(
-          "\thv_store(hv, %s, %u, %s, %s);",
-          cstring($key), length( pack "a*", $key ),
-          "(SV*)$value", hash($key)
-        )
-      );
+      $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
+			  cstring($key), length( pack "a*", $key ),
+			  "(SV*)$value", hash($key) ));
     }
     $init->add("}");
     $init->split;
@@ -2718,10 +2712,10 @@ EOT
 static void
 xs_init(pTHX)
 {
-    char *file = __FILE__;
-    /* dXSUB_SYS; */
-    dTARG;
-    dSP;
+	char *file = __FILE__;
+	/* dXSUB_SYS; */
+	dTARG;
+	dSP;
 EOT
 
   #if ($staticxs) { #FIXME!
@@ -2770,9 +2764,9 @@ EOT
 static void
 dl_init(pTHX)
 {
-    /* char *file = __FILE__; */
-    dTARG;
-    /* dSP; */
+	/* char *file = __FILE__; */
+	dTARG;
+	dSP;
 EOT
   print("/* Dynamicboot strapping code*/\n\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
