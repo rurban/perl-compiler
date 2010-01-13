@@ -13,7 +13,8 @@
 	Added Opcodes support >= 2.01 even with no_stack. (not on CPAN yet)
 	  added pp_pushmark pp_break pp_continue to no_stack handling.
 	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany).
-	register int for warn_sv loop
+	register int for warn_sv loop.
+	fixed hv init for magic hashes, pre-allocate array and xpvhv_aux.
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage 
 	  after 100.

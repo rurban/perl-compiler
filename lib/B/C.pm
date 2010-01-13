@@ -1971,6 +1971,9 @@ sub B::GV::save {
         if $package and exists ${"$package\::"}{AUTOLOAD};
       svref_2object( \*{"$package\::CLONE"} )->save
         if $package and exists ${"$package\::"}{CLONE};
+      # wrong. This causes B::C::bootstrap be added without XSLoader. or set $use_xsloader = 1
+      #svref_2object( \*{"$package\::bootstrap"} )->save
+      #	if $package and exists ${"$package\::"}{bootstrap};
     }
     if ( $] > 5.009 ) {
       # TODO implement heksect to place all heks at the beginning
@@ -2765,9 +2768,8 @@ static void
 dl_init(pTHX)
 {
 	/* char *file = __FILE__; */
-	dTARG;
-	dSP;
 EOT
+  print "\tdTARG;\n\tdSP;\n" if @DynaLoader::dl_modules;
   print("/* Dynamicboot strapping code*/\n\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
   foreach my $stashname (@DynaLoader::dl_modules) {
@@ -3428,6 +3430,11 @@ Optimize the initialization of op_ppaddr.
 
 Optimize the initialization of cop_warnings.
 
+=item B<-fav-init>
+
+Faster pre-initialization of AVs (arrays)
+
+
 =item B<-fuse-script-name>
 
 Use the script name instead of the program name as $0.
@@ -3436,16 +3443,13 @@ Use the script name instead of the program name as $0.
 
 Save compile-time modifications to the %SIG hash.
 
+
 =item B<-fcop>
 
 Omit COP info (nextstate without labels, unneeded NULL ops,
 files, linenumbers) for ~10% faster execution and less space,
 but warnings and errors will have no file and line infos.
 It will most likely not work yet. I<(was -fbypass-nullops in earlier compilers)>
-
-=item B<-fav-init>
-
-Faster pre-initialization of AVs (arrays)
 
 =back
 
