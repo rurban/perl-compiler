@@ -2274,7 +2274,6 @@ OPTION:
       foreach $ref ( values %optimise ) {
         $$ref = 0;
       }
-      #$inline_ops = 1 if $arg >= 3;
       $freetmps_each_loop = 1 if $arg >= 2;
       if ( $arg >= 1 ) {
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
@@ -2499,13 +2498,12 @@ Delays FREETMPS from the end of each statement to the end of the group
 of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
 
-=item B<-finline-ops>
+=item B<-fno-inline-ops>
 
-Additionally inlines the calls to certain small pp ops.
+Do not inline calls to certain small pp ops.
 
 Most of the inlinable ops were already inlined.
-Do the new ones only with this option.
-Will be done automatically later, but for easier testing it is optional so far.
+Turn off inlining for the new ops with this option.
 
 AUTOMATICALLY inlined:
 pp_null pp_stub pp_unstack pp_and pp_or pp_cond_expr pp_padsv pp_const
@@ -2540,8 +2538,6 @@ Optimisation level (n = 0, 1, 2). B<-O> means B<-O1>.
 B<-O1> sets B<-ffreetmps-each-bblock>.
 
 B<-O2> adds B<-ffreetmps-each-loop>.
-
-B<-O3> adds B<-finline-ops>.
 
 B<-fomit-taint> must be set explicitly.
 

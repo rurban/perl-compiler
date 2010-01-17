@@ -2086,7 +2086,7 @@ sub B::AV::save {
       $acc .= "\t*svp++ = (SV*)" . $array[$i]->save . ";\n\t";
     }
     $init->no_split;
-    # Statically initialize the array as the initial av_extend() is very expensive
+    # Faster initialize the array as the initial av_extend() is very expensive
     if ($B::C::av_init) {
       $init->add(
                  "{", "\tSV **svp;",
@@ -2106,7 +2106,7 @@ sub B::AV::save {
       $init->add( substr( $acc, 0, -2 ) );
       $init->add( "}" );
     }
-    else { # unoptimized
+    else { # unoptimized with the full av_extend()
       $init->add(
                  "{", "\tSV **svp;",
                  "\tAV *av = (AV*)&sv_list[$sv_list_index];",
@@ -3164,7 +3164,8 @@ sub compile {
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'cop'             => \$optimize_cop, # XXX very unsafe!
-					 # Better do it in CC, but get rid of NULL cops also there
+					 # Better do it in CC, but get rid of
+					 # NULL cops also there.
   );
   my %optimization_map = (
     0 => [qw()],                # special case
@@ -3509,8 +3510,7 @@ help make use of this compiler.
 
 =head1 BUGS
 
-A few.
-Current status: experimental.
+Current status: A few known bugs.
 
 5.6:
     reading from __DATA__ handles (15)
@@ -3522,9 +3522,6 @@ Current status: experimental.
 5.10:
     reading from __DATA__ handles (15) non-threaded
     destruction of static pvs for -O1
-
-5.11:
-    reading from __DATA__ handles (15)
 
 =head1 AUTHOR
 

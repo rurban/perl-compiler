@@ -287,7 +287,7 @@ Without extra arguments, it saves the main program.
 			A better fix, though, is just to change it to
 			$SIG{BAR} = \&foo. You can have multiple -u options.
 	-e ARG		Eval ARG at startup
-	-w		Warn on undefined SYMs
+NYI	-w		Warn on undefined SYMs
 	-l LIMIT	Force max linelength to LIMIT (e.g. MSVC to 2048)
 	-D		Debug options (concat or separate flags like perl -D)
 		o	Print walkoptree OPs
@@ -306,14 +306,15 @@ Without extra arguments, it saves the main program.
 				( only available with PerlIO )
 		ppaddr		Optimize the initialization of op_ppaddr.
 		warn-sv		Optimize the initialization of cop_warnings.
+		av-init		Faster initialization of AVs
 		use-script-name	Use the script name instead of the program name as $0.
 		save-sig-hash	Save compile-time modifications to the %SIG hash.
-		skip-unused	Skip apparently unused subs. fails with eval "".
+		cop		Omit COP, no file+line info for warnings
 	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
 	  	-O1	-fcog
-		-O2	-O1 -fcog -fppaddr -fwarn-sv
+		-O2	-O1 -fcog -fppaddr -fwarn-sv -fav-init
 		-O3     -O2 -fsave-sig-hash -fsave-data 
-		-O4     -O3 -fskip-unused
+		-O4     -O3 -fcop
 
 =head3 C Examples
 	perl -MO=C foo.pl > foo.c
@@ -325,9 +326,9 @@ For more information, see L<perlcc> and L<B::C>.
 
 =head2 The Bytecode Backend
 
-This backend is only useful if you also have a way to load and
-execute the bytecode that it produces. The L</ByteLoader> module provides
-this functionality.
+This backend is only useful if you also have a way to load and execute the
+bytecode that it produces. The L</ByteLoader> module provides this
+functionality.
 
 To turn a Perl program into executable byte code, you can use C<perlcc>
 with the C<-B> switch:
@@ -350,7 +351,7 @@ Without extra arguments, it saves the main program.
 	-ofilename	Output to filename instead of STDOUT.
 NYI	-v              Be verbose.
 	--		Force end of options.
-	-f		Force optimisations on or off one at a time.
+NYI	-f		Force optimisations on or off one at a time.
 			Each can be preceded by no- to turn the option off.
 		compress-nullops
 			Only fills in the necessary fields of ops which have
@@ -362,7 +363,7 @@ NYI	-v              Be verbose.
 			If op->op_next ever points to a NULLOP, replaces the
 			op_next field with the first non-NULLOP in the path
 			of execution.
-		strip-syntax-tree
+	-s              strip-syntax-tree
 			Leaves out code to fill in the pointers which link the
 			internal syntax tree together. They're not needed at
 			run-time but leaving them out will make it impossible
@@ -397,10 +398,11 @@ NYI	-D		Debug options (concat or separate flags like perl -D)
 =head3 Bytecode Invocation Examples
 
 	perl -MO=Bytecode,-O6,-H,-ofoo.plc foo.pl
+	./foo.plc
 
 	perl -MO=Bytecode,-S foo.pl > foo.S
 	assemble foo.S > foo.plc
-	byteperl foo.plc
+	perl -MByteLoader foo.plc
 
 	perl -MO=Bytecode,-m,-oFoo.pmc Foo.pm
 
@@ -431,9 +433,9 @@ subs to be saved. Without extra arguments, it saves the main program.
 	-ofilename	Output to filename instead of STDOUT
 	-v              Be verbose.
 	--		Force end of options
-	-pn		Generate code for perl patchlevel n (e.g. 3 or 4).
+NYI	-pn		Generate code for perl version n (e.g. 5.008007).
 			The default is to generate C code which will link
-			with the currently executing version of perl.
+			with the currently executing version of perl,
 			running the perl compiler.
 	-mModulename	Instead of generating source for a runnable executable,
 			generate source for an XSUB module. The
@@ -450,7 +452,7 @@ subs to be saved. Without extra arguments, it saves the main program.
 			A better fix, though, is just to change it to
 			$SIG{BAR} = \&foo. You can have multiple -u options.
 	-e ARG		Eval ARG at startup
-	-w		Warn on undefined SYMs
+NYI	-w		Warn on undefined SYMs
 	-l LIMIT	Force max linelength to LIMIT (e.g. MSVC to 2048)
 	-D		Debug options (concat or separate flags like perl -D)
 		o	Enable B debugging
@@ -467,27 +469,25 @@ subs to be saved. Without extra arguments, it saves the main program.
 			line of Perl code as it's processed (pp_nextstate).
 		t	Outputs timing information of compilation stages
 	-f		Force optimisations on or off one at a time.
-		[
 		cog	Copy-on-grow: PVs declared and initialised statically
-		no-cog	No copy-on-grow
-		These two not in CC yet.
-		]
                 freetmps-each-bblock   Delays FREETMPS from the end of each
                                        statement to the end of the each basic
                                        block.
-               freetmps-each-loop      Delays FREETMPS from the end of each
+                freetmps-each-loop     Delays FREETMPS from the end of each
                                        statement to the end of the group of
                                        basic blocks forming a loop. At most
                                        one of the freetmps-each-* options can
                                        be used.
-               omit-taint              Omits generating code for handling
+                no-inline-ops          Turn off aggressive inlining of ops
+                omit-taint             Omits generating code for handling
                                        perl's tainting mechanism.
 	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
-	  	-O1	-fcog
-		-O2	-O1 -fcog -fppaddr -fwarn-sv
-		-O3     -O2 -fsave-sig-hash -fsave-data 
-		-O4     -O3 -fskip-unused
+	  	-O1	-ffreetmps-each-bblock
+		-O2	-O1 -ffreetmps-each-loop
 
+The following B::C optimisations are automatically used:
+C<-fwarn-sv> C<-fsave-data> C<-fav-init> C<-fsave-sig-hash>
+and for Perl < 5.10 C<-fcog>.
 
 =head3 CC Invocation Example
 
