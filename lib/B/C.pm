@@ -1,7 +1,7 @@
 #      C.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
-#      Copyright (c) 2008, 2009 Reini Urban
+#      Copyright (c) 2008, 2009, 2010 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -2165,10 +2165,10 @@ sub B::HV::save {
 			     0, $hv->MAX, 0 ));
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
-    if ($hv->MAGICAL) {
+    if ($hv->MAGICAL) { # riter,eiter only for magic required
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
-      # magic: riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
+      # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
       $init->add("{\tHE **a; struct xpvhv_aux *aux;",
 		 "\tNewx(a, $hv_max, HE*);",
 		 "\tHvARRAY($sym) = a;",
@@ -3447,6 +3447,8 @@ Save compile-time modifications to the %SIG hash.
 
 =item B<-fcop>
 
+DO NOT USE YET!
+
 Omit COP info (nextstate without labels, unneeded NULL ops,
 files, linenumbers) for ~10% faster execution and less space,
 but warnings and errors will have no file and line infos.
@@ -3514,9 +3516,6 @@ Current status: A few known bugs.
 
 5.6:
     reading from __DATA__ handles (15)
-    AUTOLOAD xsubs (27)
-
-5.8:
     AUTOLOAD xsubs (27)
 
 5.10:

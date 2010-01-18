@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=33
+ntests=34
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
@@ -249,6 +249,10 @@ result[32]='12'
 # used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
 tests[33]='BEGIN{unshift @INC,"t";}use qr_loaded_module;print "ok";'
 result[33]='ok'
+# init of magic hashes. %ENV has e magic since a0714e2c perl.c  
+# (Steven Schubiger      2006-02-03 17:24:49 +0100 3967) i.e. 5.8.9 but not 5.8.8
+tests[34]='my $x=$ENV{TMPDIR};print "ok"'
+result[34]='ok'
 # unconfirmed, might be the same as just. or not
 #tests[34]='package qr;
 #my $var = 1;

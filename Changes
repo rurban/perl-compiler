@@ -12,15 +12,15 @@
 	Fixed wrong $PERL511 definition.
 	Added Opcodes support >= 2.01 even with no_stack. (not on CPAN yet)
 	  added pp_pushmark pp_break pp_continue to no_stack handling.
-	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany).
-	register int for warn_sv loop.
-	fixed hv init for magic hashes, pre-allocate array and xpvhv_aux.
+	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany),
+	register int for warn_sv loop
+	Fixed hv init for magic hashes, pre-allocate array and xpvhv_aux. (test 34)
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage 
 	  after 100.
 	Switched test 32->101 (arith) with 33->32 (evaltry catch die) as it fails 
 	  with 5.11.3.
-	Added new qr test 33 (Nick Koston).
+	Added new qr test 33 (Nick Koston), and test 34 for magic hashes.
 	* TESTS: added test 32 (evaltry catch die): Fails on 5.11.3 C/CC only,
 	  <5.11.3 it works okay.
 	* ByteLoader/Makefile.PL: removed cygwin gcc specific stack-protector removal. 
