@@ -20,9 +20,10 @@
 	  after 100.
 	Switched test 32->101 (arith) with 33->32 (evaltry catch die) as it fails 
 	  with 5.11.3.
-	Added new qr test 33 (Nick Koston), and test 34 for magic hashes.
+	Added new qr test 33 (Nick Koston), test 34 for magic hashes, test 35 for 
+	  broken methodcall syntax.
 	* TESTS: added test 32 (evaltry catch die): Fails on 5.11.3 C/CC only,
-	  <5.11.3 it works okay.
+	  <5.11.3 it works okay. Also tests 33, 34, 35.
 	* ByteLoader/Makefile.PL: removed cygwin gcc specific stack-protector removal. 
 	  It was a bug of mine.
 	Added more AUTHOR gcc -ansi warnings, just -pedantic not.

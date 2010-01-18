@@ -135,7 +135,21 @@ eval{print "1"};eval{die 1};print "2\n";
 >>>>
 12
 ######################### 32 CC entertry/jmpenv_jump/leavetry ####
-BEGIN{unshift @INC,"t";}use qr_loaded_module;print "ok";
+package qr;
+my $var = 1;
+my $qr_with_var = qr/^_?[^\W_0-9]\w*$var/;
+sub qr_called_in_sub { $name =~ $qr_with_var; }
+package main;
+print "ok";
 >>>>
 ok
 ######################### 33 the real qr bug from 5.6.2, see 20 #####
+# init of magic hashes. %ENV has e magic since 5.8.9
+my $x=$ENV{TMPDIR};print "ok"
+>>>>
+ok
+######################### 34 does init of magic hashes work in 5.10? #####
+package dummy;sub meth{print "ok"};package main;dummy->meth
+>>>>
+ok
+######################### 35 methodcall syntax fails #####
