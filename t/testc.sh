@@ -247,11 +247,9 @@ tests[32]='eval{print "1"};eval{die 1};print "2\n";'
 result[32]='12'
 # C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
 # used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
-#tests[33]='BEGIN{unshift @INC,"t";}use qr_loaded_module;print "ok";'
-#result[33]='ok'
-# a better test
-tests[33]='package qr;
-my $var = 1; 
+# fails with new constant only. still not repro
+tests[33]='package qr; 
+my $var = 1;
 my $qr_with_var = qr/^_?[^\W_0-9]\w*$var/;
 sub qr_called_in_sub { $name =~ $qr_with_var; }
 package main;
@@ -264,7 +262,6 @@ result[34]='ok'
 # methodcall syntax
 tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth'
 result[35]='ok'
-
 
 
 # from here on we test CC specifics only

@@ -7,6 +7,7 @@ function help {
   echo " -s                 skip all B:Debug, roundtrips and options"
   echo " -S                 skip all roundtrips and options but -S and Concise"
   echo " -c                 continue on errors"
+  echo " -o                 orig. no -Mblib. only for 5.6 and 5.8"
   echo " -q                 quiet"
   echo " -h                 help"
   echo "t/testplc.sh -q -s -c <=> perl -Mblib t/bytecode.t"
@@ -18,14 +19,18 @@ PERL=${PERL:-perl}
 #PERL=perl5.11.0
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
+
+function init {
 # test what? core or our module?
 #Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Mblib))'`"
-test -z "$CORE" && Mblib="-Mblib" # test this module
+Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
 ICMD="$PERL $Mblib -MByteLoader"
-if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; fi
-if [ -z $Mblib ]; then VERS="${VERS}_global"; fi
+if [ "$D" = "256" ]; then QOCMD=$OCMD; fi
+if [ "$Mblib" = " " ]; then VERS="${VERS}_global"; fi
+
+}
 
 function pass {
     #echo -n "$1 PASS "
@@ -66,9 +71,11 @@ function btest {
   
   # annotated assembler
   if [ -z "$SKIP" -o -n "$SKI" ]; then
-    bcall ${o} S,-s asm 1
+    if [ "$Mblib" != " " ]; then 
+	bcall ${o} S,-s asm 1
+    fi
   fi
-  if [ -n "$Mblib" -a -z "$SKIP" ]; then 
+  if [ "$Mblib" != " " -a -z "$SKIP" ]; then 
     rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.concise ${o}_s_${VERS}.dbg 2>/dev/null
     bcall ${o} s
     [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}s_${VERS}.disasm
@@ -97,12 +104,12 @@ function btest {
     $PERL $Mblib -MO=${qq}Concise,-exec ${o}.pl > ${o}_${VERS}.concise
   fi
   if [ -z "$SKIP" ]; then
-    if [ -n "$Mblib" ]; then 
+    if [ "$Mblib" != " " ]; then 
       #bcall ${o} TI
       bcall ${o} H
     fi
   fi
-  if [ -n "$Mblib" ]; then
+  if [ "$Mblib" != " " ]; then
     # -s ("scan") should be the new default
     [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
     ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
@@ -122,7 +129,7 @@ function btest {
   fi
 }
 
-ntests=32
+ntests=35
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -210,8 +217,27 @@ result[31]='date;who am i;ls -l;'
 # CC types and arith
 tests[32]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
 result[32]='12'
+# C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
+# used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
+# fails with new constant only. still not repro
+tests[33]='package qr; 
+my $var = 1;
+my $qr_with_var = qr/^_?[^\W_0-9]\w*$var/;
+sub qr_called_in_sub { $name =~ $qr_with_var; }
+package main;
+print "ok";'
+result[33]='ok'
+# init of magic hashes. %ENV has e magic since a0714e2c perl.c  
+# (Steven Schubiger      2006-02-03 17:24:49 +0100 3967) i.e. 5.8.9 but not 5.8.8
+tests[34]='my $x=$ENV{TMPDIR};print "ok"'
+result[34]='ok'
+# methodcall syntax
+tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth'
+result[35]='ok'
 
-while getopts "qsScCh" opt
+init
+
+while getopts "qsScoh" opt
 do
   if [ "$opt" = "q" ]; then
       Q=1
@@ -220,9 +246,9 @@ do
       if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; qq=""; fi
   fi
   if [ "$opt" = "s" ]; then SKIP=1; fi
+  if [ "$opt" = "o" ]; then Mblib=" "; SKIP=1; SKI=1; init; fi
   if [ "$opt" = "S" ]; then SKIP=1; SKI=1; fi
   if [ "$opt" = "c" ]; then CONT=1; shift; fi
-  if [ "$opt" = "C" ]; then CORE=1; shift; fi
   if [ "$opt" = "h" ]; then help; exit; fi
 done
 
