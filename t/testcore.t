@@ -8,13 +8,16 @@
 #   perl -pi -e "s|^(\s*)chdir 't' if -d|\$1chdir 't/CORE' if -d|" t/CORE/*/*.t
 #   perl -pi -e "s|require './|use lib "CORE"; require '|" `grep -l "require './" t/CORE/*/*.t`
 # and various require ./test.pl calls.
+#
+# See TESTS for recent results
+
 
 use Cwd;
 use File::Copy;
 
 BEGIN {
   unless (-d "t/CORE") {
-    print "1..0 #skip t/CORE missing\n";
+    print "1..0 #skip t/CORE missing. Read t/testcore.t how to setup.\n";
     exit 0;
   }
 }

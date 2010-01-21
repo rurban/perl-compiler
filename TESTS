@@ -23,6 +23,7 @@ perl$p -Mblib script/perlcc -O -r --testsuite t/CORE/*/*.t
 perl$p -Mblib t/testcore.t
 
 Test results from compiling t/*/*.t on 5.10.1
+
 		C		Bytecode	CC
 
 base/cond.t	OK		ok		OK
