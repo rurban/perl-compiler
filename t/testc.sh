@@ -10,7 +10,7 @@ function help {
   echo " -c                 continue on errors"
   echo " -k                 keep temp. files on PASS"
   echo " -E                 dump preprocessed source file with cc -E as _E.c"
-  echo " -o                 orig. no -Mblib. only for 5.6 and 5.8"
+  echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -q                 quiet"
   echo " -h                 help"
@@ -47,7 +47,7 @@ CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
 # rest. -DALLOW_PERL_OPTIONS for -Dtlv
-CCMD="$PERL script/cc_harness -g3 -Bdynamic -DALLOW_PERL_OPTIONS"  
+CCMD="$PERL script/cc_harness -d -g3 -Bdynamic -DALLOW_PERL_OPTIONS"  
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
@@ -309,7 +309,7 @@ do
   fi
   # -B dynamic or -B static
   if [ "$opt" = "B" ]; then 
-    CCMD="$PERL script/cc_harness -g3 -B${OPTARG}"
+    CCMD="$PERL script/cc_harness -d -g3 -B${OPTARG} -DALLOW_PERL_OPTIONS"
   fi
   if [ "$opt" = "O" ]; then OPTIM="$OPTARG"; fi
   if [ "$opt" = "a" ]; then # replace -Du, by -Do
