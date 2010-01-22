@@ -53,7 +53,9 @@ sub post_constants {
 sub ccflags {
   my $ccflags = shift->SUPER::ccflags(@_);
   return $ccflags unless -d ".svn";
-  $ccflags .= " -ansi -Wall -Wextra -pedantic" if $Config{cc} =~ /gcc/;
+  # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
+  # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
+  $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings" if $Config{cc} =~ /gcc/;
 }
 
 sub depend {
