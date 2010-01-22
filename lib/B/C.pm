@@ -199,6 +199,7 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 
+my $package_pv;
 my %symtable;
 my (%strtable, %hektable);
 my %xsub;
@@ -518,6 +519,13 @@ my $opsect_common =
 
 sub B::OP::_save_common {
   my $op = shift;
+  if ($op->next 
+      and $op->next->can('name')
+      and $op->next->name eq 'method_named')
+  {
+    # need to store away the pkg pv
+    $package_pv = $op->sv->PVX;
+  }
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
@@ -725,6 +733,18 @@ sub B::PVOP::save {
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
+# method_named is in 5.6.1
+sub method_named {
+  my $sv = shift;
+  my $name = $sv->PVX;
+  # Note: the pkg PV is at SP(1) [PL_stack_base+TOPMARK+1],
+  # the previous op->sv->PVX. We store it away in op->_save_common.
+  my $stash = $package_pv ? $package_pv."::" : "main::";
+  $name = $stash . $name;
+  warn "save method_name \"$name\"\n" if $debug{cv};
+  return svref_2object( \&{$name} );
+}
+
 sub B::SVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
@@ -742,6 +762,10 @@ sub B::SVOP::save {
     unless $B::C::optimize_ppaddr;
   $init->add("svop_list[$ix].op_sv = $svsym;")
     unless $is_const_addr;
+  if ($op->name eq 'method_named') {
+    my $cv = method_named($sv);
+    $cv->save;
+  }
   savesym( $op, "(OP*)&svop_list[$ix]" );
 }
 
@@ -754,8 +778,10 @@ sub B::PADOP::save {
   my $ix = $padopsect->index;
   $init->add( sprintf( "padop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  # padix already initialized
-  # $init->add(sprintf("padop_list[$ix].op_padix = %ld;", $op->padix)); # was commented
+  if ($op->name eq 'method_named') {
+    my $cv = method_named($op->sv);
+    $cv->save;
+  }
   savesym( $op, "(OP*)&padop_list[$ix]" );
 }
 
