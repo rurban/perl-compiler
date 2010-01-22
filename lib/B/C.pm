@@ -519,10 +519,11 @@ my $opsect_common =
 
 sub B::OP::_save_common {
   my $op = shift;
-  if ($op->next 
+  if ($op->next
       and $op->next->can('name')
-      and $op->next->name eq 'method_named')
-  {
+      and $op->next->name eq 'method_named'
+      and $op->can('sv')
+     ) {
     # need to store away the pkg pv
     $package_pv = $op->sv->PVX;
   }
