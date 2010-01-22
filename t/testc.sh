@@ -259,7 +259,7 @@ result[33]='ok'
 # (Steven Schubiger      2006-02-03 17:24:49 +0100 3967) i.e. 5.8.9 but not 5.8.8
 tests[34]='my $x=$ENV{TMPDIR};print "ok"'
 result[34]='ok'
-# methodcall syntax
+# method_named. fixed with 1.16
 tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth'
 result[35]='ok'
 
