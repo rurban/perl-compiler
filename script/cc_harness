@@ -5,6 +5,8 @@ $libdir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
 
 my $quiet++ if $ARGV[0] eq '-q';
 shift if $quiet;
+my $debug++ if $ARGV[0] eq '-d';
+shift if $debug;
 
 if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     ;
@@ -22,6 +24,10 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     $linkargs = ldopts;
 }
 
-$cccmd = "$Config{cc} $Config{ccflags} -I$libdir @ARGV $linkargs";
+my $ccflags = $Config{ccflags};
+$ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
+  if $debug and $Config{cc} =~ /gcc/;
+
+$cccmd = "$Config{cc} $ccflags -I$libdir @ARGV $linkargs";
 print "$cccmd\n" unless $quiet;
 exec $cccmd;
