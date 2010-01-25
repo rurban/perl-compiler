@@ -791,9 +791,14 @@ sub pp_const {
   if ($op->next
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
-      and $sv->can('PVX')
      ) {
-    $package_pv = $sv->PVX;
+    if ($$sv) {
+      $package_pv = $sv->PV;
+    } else {
+      my @c = comppadlist->ARRAY;
+      my @pad = $c[1]->ARRAY;
+      $package_pv = $pad[$op->targ]->PV if $pad[$op->targ]->can("PV");
+    }
     debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};
   }
   push( @stack, $obj );
@@ -903,14 +908,19 @@ sub bad_pp_anoncode {
 }
 
 # coverage: 35
-# XXX TODO get prev op
+# XXX TODO get prev op. For now saved in pp_const.
 sub pp_method_named {
   my ( $op ) = @_;
   my $sv = $op->sv;
-  my $name = $sv->PVX;
-  # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PVX.
-  #my $prevop = $op;
-  #my $package_pv = $prevop->sv->PVX;
+  my $name;
+  if ($$sv) {
+    $name = $sv->PV;
+  } else {
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    $name = $pad[$op->targ]->PV;
+  }
+  # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PV.
   my $stash = $package_pv ? $package_pv."::" : "main::";
   $name = $stash . $name;
   debug "save method_name \"$name\"\n" if $debug{op};

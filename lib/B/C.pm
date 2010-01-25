@@ -522,11 +522,16 @@ sub B::OP::_save_common {
   if ($op->next
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
-      and $op->can('sv')
-      and $op->sv->can('PVX')
      ) {
     # need to store away the pkg pv
-    $package_pv = $op->sv->PVX;
+    if ($op->can("sv") and ${$op->sv}) {
+      $package_pv = $op->sv->PV;
+    } else {
+      my @c = comppadlist->ARRAY;
+      my @pad = $c[1]->ARRAY;
+      $package_pv = $pad[$op->targ]->PV if $pad[$op->targ]->can("PV");
+    }
+    warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
   }
   return sprintf(
     "s\\_%x, s\\_%x, %s",
@@ -737,9 +742,8 @@ sub B::PVOP::save {
 
 # method_named is in 5.6.1
 sub method_named {
-  my $sv = shift;
-  my $name = $sv->PVX;
-  # Note: the pkg PV is at SP(1) [PL_stack_base+TOPMARK+1],
+  my $name = shift;
+  # Note: the pkg PV is at PL_stack_base+TOPMARK+1,
   # the previous op->sv->PVX. We store it away in op->_save_common.
   my $stash = $package_pv ? $package_pv."::" : "main::";
   $name = $stash . $name;
@@ -764,8 +768,15 @@ sub B::SVOP::save {
     unless $B::C::optimize_ppaddr;
   $init->add("svop_list[$ix].op_sv = $svsym;")
     unless $is_const_addr;
-  if ($op->name eq 'method_named' and $sv->can("PVX")) {
-    my $cv = method_named($sv);
+  if ($op->name eq 'method_named') {
+    my $cv;
+    if ( $$sv ) {
+      $cv = method_named($sv->PV);
+    } else {
+      my @c = comppadlist->ARRAY;
+      my @pad = $c[1]->ARRAY;
+      $cv = method_named($pad[$op->targ]->PV);
+    }
     $cv->save;
   }
   savesym( $op, "(OP*)&svop_list[$ix]" );
@@ -781,7 +792,9 @@ sub B::PADOP::save {
   $init->add( sprintf( "padop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   if ($op->name eq 'method_named') {
-    my $cv = method_named($op->sv);
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    my $cv = method_named($pad[$op->targ]->PV);
     $cv->save;
   }
   savesym( $op, "(OP*)&padop_list[$ix]" );
