@@ -764,7 +764,7 @@ sub B::SVOP::save {
     unless $B::C::optimize_ppaddr;
   $init->add("svop_list[$ix].op_sv = $svsym;")
     unless $is_const_addr;
-  if ($op->name eq 'method_named') {
+  if ($op->name eq 'method_named' and $sv->can("PVX")) {
     my $cv = method_named($sv);
     $cv->save;
   }

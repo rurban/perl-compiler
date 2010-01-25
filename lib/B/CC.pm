@@ -787,9 +787,11 @@ sub pp_const {
   else {
     $obj = $pad[ $op->targ ];
   }
+  # XXX looks like method_named has only const as prev op
   if ($op->next
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
+      and $sv->can('PVX')
      ) {
     $package_pv = $sv->PVX;
     debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};

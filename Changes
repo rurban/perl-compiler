@@ -12,10 +12,12 @@
 	Fixed wrong $PERL511 definition.
 	Added Opcodes support (no_stack), on CPAN as 0.01.
 	  added pp_pushmark pp_break pp_continue to no_stack handling.
+	Fixed method_named (CPAN #53889, test 35) assuming there is only const 
+	  before method_named. No counter examples found so far.
 	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany),
 	register int for warn_sv loop
 	Fixed hv init for magic hashes, pre-allocate array and xpvhv_aux. (test 34)
-	Fixed method_named (CPAN #53889, test 35) for B::C, B::CC not yet.
+	Fixed method_named (CPAN #53889, test 35) for B::C, better fix than for B::CC.
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage 
 	  after 100.
