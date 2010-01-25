@@ -523,6 +523,7 @@ sub B::OP::_save_common {
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
       and $op->can('sv')
+      and $op->sv->can('PVX')
      ) {
     # need to store away the pkg pv
     $package_pv = $op->sv->PVX;

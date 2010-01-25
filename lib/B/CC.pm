@@ -23,7 +23,7 @@ use B::C qw(save_unused_subs objsym init_sections mark_unused
   output_all output_boilerplate output_main fixup_ppaddr save_sig);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
-use Opcode;
+use Opcodes ();
 
 @B::OP::ISA = qw(B::NULLOP B);           # support -Do
 @B::LISTOP::ISA = qw(B::BINOP B);       # support -Do
@@ -63,6 +63,7 @@ my %skip_lexicals;	# PP names which don't need write_back_lexicals
 my %skip_invalidate;	# PP names which don't need invalidate_lexicals
 my %ignore_op;		# ops which do nothing except returning op_next
 my %need_curcop;	# ops which need PL_curcop
+my $package_pv;      # sv->pv of previous op for method_named
 
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
@@ -86,7 +87,6 @@ my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # unused?
 my $ITHREADS   = $Config{useithreads};
 my $PERL510    = ( $] >= 5.009005 );
 my $PERL511    = ( $] >= 5.011 );
-my $have_opcodes = $Opcode::VERSION > "1.16";
 
 my $SVt_PVLV = $PERL510 ? 10 : 9;
 my $SVt_PVAV = $PERL510 ? 11 : 10;
@@ -131,9 +131,9 @@ sub init_hash {
 #
 # Initialise the hashes for the default PP functions where we can avoid
 # either stack save/restore,write_back_stack, write_back_lexicals or invalidate_lexicals.
-# XXX We should really take some of this info from CORE opcode.pl.
+# XXX We should really take some of this info from Opcodes (was: CORE opcode.pl)
 #
-# no args and no return value = Opcode::argnum 0
+# no args and no return value = Opcodes::argnum 0
 %no_stack         = init_hash qw(pp_enter pp_unstack pp_leave
   pp_break pp_continue pp_dbstate);
 #skip write_back_stack (no args)
@@ -787,6 +787,13 @@ sub pp_const {
   else {
     $obj = $pad[ $op->targ ];
   }
+  if ($op->next
+      and $op->next->can('name')
+      and $op->next->name eq 'method_named'
+     ) {
+    $package_pv = $sv->PVX;
+    debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};
+  }
   push( @stack, $obj );
   return $op->next;
 }
@@ -891,6 +898,23 @@ sub bad_pp_anoncode {
   } else {
     default_pp(@_);
   }
+}
+
+# coverage: 35
+# XXX TODO get prev op
+sub pp_method_named {
+  my ( $op ) = @_;
+  my $sv = $op->sv;
+  my $name = $sv->PVX;
+  # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PVX.
+  #my $prevop = $op;
+  #my $package_pv = $prevop->sv->PVX;
+  my $stash = $package_pv ? $package_pv."::" : "main::";
+  $name = $stash . $name;
+  debug "save method_name \"$name\"\n" if $debug{op};
+  svref_2object( \&{$name} )->save;
+
+  default_pp(@_);
 }
 
 # inconsequence: gvs are not passed around on the stack
@@ -1483,7 +1507,7 @@ sub pp_preinc {
   return $op->next;
 }
 
-# coverage: 1-32
+# coverage: 1-32,35
 sub pp_pushmark {
   my $op = shift;
   write_back_stack();
@@ -1505,7 +1529,7 @@ sub pp_list {
   return $op->next;
 }
 
-# coverage: 6,8,9,10,24,26,27,31
+# coverage: 6,8,9,10,24,26,27,31,35
 sub pp_entersub {
   my $op = shift;
   $curcop->write_back;
@@ -2326,19 +2350,19 @@ OPTION:
     }
   }
 
-  if ($Opcode::VERSION >= "2.01") {
-    my $maxo = Opcode::opcodes();
-    for (0..$maxo-1) {
-      no strict 'refs';
-      my $ppname = "pp_".Opcode::opname($_);
-      # opflags n: no args, no return values. don't need save/restore stack
-      $no_stack{$ppname} = 1
-        if Opcode::opflags($_) & 512;
-    }
-    #if ($debug{op}) {
-    #  warn "no_stack: ",join(" ",sort keys %no_stack),"\n";
-    #}
+  # rgs didn't want opcodes to be added to Opcode. So I added it to a
+  # seperate Opcodes.
+  my $MAXO = Opcodes::opcodes();
+  for (0..$MAXO-1) {
+    no strict 'refs';
+    my $ppname = "pp_".Opcodes::opname($_);
+    # opflags n: no args, no return values. don't need save/restore stack
+    $no_stack{$ppname} = 1
+      if Opcodes::opflags($_) & 512;
   }
+  #if ($debug{op}) {
+  #  warn "no_stack: ",join(" ",sort keys %no_stack),"\n";
+  #}
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
@@ -2483,7 +2507,7 @@ code as it's processed (C<pp_nextstate>).
 
 Outputs timing information of compilation stages.
 
-=item B<-f>
+=item B<-f>C<OPTIM>
 
 Force optimisations on or off one at a time.
 
@@ -2503,9 +2527,10 @@ options can be used.
 Do not inline calls to certain small pp ops.
 
 Most of the inlinable ops were already inlined.
-Turn off inlining for the new ops with this option.
+Turns off inlining for some new ops.
 
 AUTOMATICALLY inlined:
+
 pp_null pp_stub pp_unstack pp_and pp_or pp_cond_expr pp_padsv pp_const
 pp_nextstate pp_dbstate pp_rv2gv pp_sort pp_gv pp_gvsv
 pp_aelemfast pp_ncmp pp_add pp_subtract pp_multiply pp_divide pp_modulo
@@ -2519,13 +2544,16 @@ pp_mapstart pp_grepwhile pp_mapwhile pp_return pp_range pp_flip pp_flop
 pp_enterloop pp_enteriter pp_leaveloop pp_next pp_redo pp_last pp_subst
 pp_substcont
 
-DONE with -finline-ops: pp_enter pp_reset pp_regcreset pp_stringify
+DONE with -finline-ops:
 
-TODO with -finline-ops: pp_anoncode pp_wantarray
-pp_srefgen pp_refgen pp_ref pp_trans 
-pp_schop pp_chop pp_schomp pp_chomp pp_not pp_sprintf
-pp_anonlist pp_shift pp_once pp_lock pp_rcatline pp_close pp_time pp_alarm
-pp_av2arylen: no lvalue, pp_length: no magic
+pp_enter pp_reset pp_regcreset pp_stringify
+
+TODO with -finline-ops:
+
+pp_anoncode pp_wantarray pp_srefgen pp_refgen pp_ref pp_trans pp_schop pp_chop
+pp_schomp pp_chomp pp_not pp_sprintf pp_anonlist pp_shift pp_once pp_lock
+pp_rcatline pp_close pp_time pp_alarm pp_av2arylen: no lvalue, pp_length: no
+magic
 
 =item B<-fomit-taint>
 
