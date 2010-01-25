@@ -24,7 +24,6 @@ use B::C qw(save_unused_subs objsym init_sections mark_unused
   svop_or_padop_pv);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
-use Opcodes ();
 
 @B::OP::ISA = qw(B::NULLOP B);           # support -Do
 @B::LISTOP::ISA = qw(B::BINOP B);       # support -Do
@@ -2351,13 +2350,15 @@ OPTION:
 
   # rgs didn't want opcodes to be added to Opcode. So I added it to a
   # seperate Opcodes.
-  my $MAXO = Opcodes::opcodes();
-  for (0..$MAXO-1) {
-    no strict 'refs';
-    my $ppname = "pp_".Opcodes::opname($_);
-    # opflags n: no args, no return values. don't need save/restore stack
-    $no_stack{$ppname} = 1
-      if Opcodes::opflags($_) & 512;
+  if (eval "require Opcodes;") {
+    my $MAXO = Opcodes::opcodes();
+    for (0..$MAXO-1) {
+      no strict 'refs';
+      my $ppname = "pp_".Opcodes::opname($_);
+      # opflags n: no args, no return values. don't need save/restore stack
+      $no_stack{$ppname} = 1
+        if Opcodes::opflags($_) & 512;
+    }
   }
   #if ($debug{op}) {
   #  warn "no_stack: ",join(" ",sort keys %no_stack),"\n";
