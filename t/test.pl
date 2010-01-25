@@ -902,14 +902,14 @@ my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;
 >>>>
 12
 ######### 101 - CC types and arith ###############
-require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)
->>>>
-B::PV
-######### 102 - CC 103 stringify srefgen ############
 if ($x eq "2"){}else{print "ok"}
 >>>>
 ok
-######### 103 - CC cond_expr,stub,scope ############
+######### 102 - CC cond_expr,stub,scope ############
+require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)
+>>>>
+B::PV
+######### 103 - CC stringify srefgen ############
 CCTESTS
         my $i = 100;
         for (split /\n####+.*##\n/, $cctests) {

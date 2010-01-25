@@ -273,7 +273,7 @@ result[101]='12'
 tests[102]='if ($x eq "2"){}else{print "ok"}'
 result[102]='ok'
 # CC stringify, srefgen. TODO: use B; fails
-tests[103]='require B; B->import; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
+tests[103]='require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
 result[103]='B::PV'
 
 
