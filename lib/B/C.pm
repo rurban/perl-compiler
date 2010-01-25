@@ -166,8 +166,10 @@ our %REGEXP;
 }
 
 @ISA       = qw(Exporter);
-@EXPORT_OK = qw(output_all output_boilerplate output_main mark_unused
-  init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr save_sig);
+@EXPORT_OK =
+  qw(output_all output_boilerplate output_main mark_unused
+     init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
+     save_sig svop_or_padop_pv);
 # for 5.6 better use the native B::C
 # 5.6.2 works fine though.
 use B
@@ -276,6 +278,19 @@ my %OP_COP = ( opnumber('nextstate') => 1 );
 $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
 $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL511;
 warn %OP_COP if $debug{cops};
+
+sub svop_or_padop_pv {
+  my $op = shift;
+  return "" unless $op->can("sv");
+  my $sv = $op->sv;
+  if ($$sv) {
+    return $sv->PV;
+  } else {
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    return $pad[$op->targ]->PV if $pad[$op->targ]->can("PV");
+  }
+}
 
 sub savesym {
   my ( $obj, $value ) = @_;
@@ -524,13 +539,7 @@ sub B::OP::_save_common {
       and $op->next->name eq 'method_named'
      ) {
     # need to store away the pkg pv
-    if ($op->can("sv") and ${$op->sv}) {
-      $package_pv = $op->sv->PV;
-    } else {
-      my @c = comppadlist->ARRAY;
-      my @pad = $c[1]->ARRAY;
-      $package_pv = $pad[$op->targ]->PV if $pad[$op->targ]->can("PV");
-    }
+    $package_pv = svop_or_padop_pv($op);
     warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
   }
   return sprintf(
@@ -769,14 +778,7 @@ sub B::SVOP::save {
   $init->add("svop_list[$ix].op_sv = $svsym;")
     unless $is_const_addr;
   if ($op->name eq 'method_named') {
-    my $cv;
-    if ( $$sv ) {
-      $cv = method_named($sv->PV);
-    } else {
-      my @c = comppadlist->ARRAY;
-      my @pad = $c[1]->ARRAY;
-      $cv = method_named($pad[$op->targ]->PV);
-    }
+    my $cv = method_named(svop_or_padop_pv($op));
     $cv->save;
   }
   savesym( $op, "(OP*)&svop_list[$ix]" );
@@ -792,9 +794,7 @@ sub B::PADOP::save {
   $init->add( sprintf( "padop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   if ($op->name eq 'method_named') {
-    my @c = comppadlist->ARRAY;
-    my @pad = $c[1]->ARRAY;
-    my $cv = method_named($pad[$op->targ]->PV);
+    my $cv = method_named(svop_or_padop_pv($op));
     $cv->save;
   }
   savesym( $op, "(OP*)&padop_list[$ix]" );

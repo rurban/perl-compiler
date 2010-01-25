@@ -20,7 +20,8 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
   OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR
 );
 use B::C qw(save_unused_subs objsym init_sections mark_unused
-  output_all output_boilerplate output_main fixup_ppaddr save_sig);
+  output_all output_boilerplate output_main fixup_ppaddr save_sig
+  svop_or_padop_pv);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 use Opcodes ();
@@ -792,13 +793,7 @@ sub pp_const {
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
      ) {
-    if ($$sv) {
-      $package_pv = $sv->PV;
-    } else {
-      my @c = comppadlist->ARRAY;
-      my @pad = $c[1]->ARRAY;
-      $package_pv = $pad[$op->targ]->PV if $pad[$op->targ]->can("PV");
-    }
+    $package_pv = svop_or_padop_pv($op);
     debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};
   }
   push( @stack, $obj );
@@ -911,15 +906,7 @@ sub bad_pp_anoncode {
 # XXX TODO get prev op. For now saved in pp_const.
 sub pp_method_named {
   my ( $op ) = @_;
-  my $sv = $op->sv;
-  my $name;
-  if ($$sv) {
-    $name = $sv->PV;
-  } else {
-    my @c = comppadlist->ARRAY;
-    my @pad = $c[1]->ARRAY;
-    $name = $pad[$op->targ]->PV;
-  }
+  my $name = svop_or_padop_pv($op);
   # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PV.
   my $stash = $package_pv ? $package_pv."::" : "main::";
   $name = $stash . $name;
