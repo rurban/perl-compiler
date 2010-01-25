@@ -288,7 +288,7 @@ sub svop_or_padop_pv {
   } else {
     my @c = comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
-    return $pad[$op->targ]->PV if $pad[$op->targ]->can("PV");
+    return $pad[$op->targ]->PV if $pad[$op->targ] and $pad[$op->targ]->can("PV");
   }
 }
 
