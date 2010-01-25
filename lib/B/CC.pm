@@ -1852,7 +1852,7 @@ sub enterloop {
   my $nextop = $op->nextop;
   my $lastop = $op->lastop;
   my $redoop = $op->redoop;
-  $curcop->write_back;
+  $curcop->write_back if $curcop;
   debug "enterloop: pushing on cxstack\n" if $debug{cxstack};
   push(
     @cxstack,
