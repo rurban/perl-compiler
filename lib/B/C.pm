@@ -2233,12 +2233,12 @@ sub B::HV::save {
                 $$hv, $hv->MAX ) if $debug{hv};
   my $sv_list_index = $svsect->index;
   my @contents     = $hv->ARRAY;
+  # protect against recursive self-reference
+  # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
+  # value => rv => cv => ... => rv => same hash
+  $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" );
   if (@contents) {
     my $i;
-    # protect against recursive self-reference
-    # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
-    # value => rv => cv => ... => rv => same hash
-    $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" );
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
       my $sv = $contents[$i];
       warn sprintf("HV recursion? with $sv -> %s\n", $sv->RV)
