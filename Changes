@@ -18,6 +18,9 @@
 	register int for warn_sv loop
 	Fixed hv init for magic hashes, pre-allocate array and xpvhv_aux. (test 34)
 	Fixed method_named (CPAN #53889, test 35) for B::C, better fix than for B::CC.
+	Added -DH for HV debuggging
+	Fixed HV cycles causing endless loops, i.e. with use Moose. Such as HVs referencing
+	  the parent. No testcase yet.
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage 
 	  after 100.
