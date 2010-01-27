@@ -2180,6 +2180,8 @@ sub B::HV::save {
   if ($name) {
 
     # It's a stash
+    warn sprintf( "saving stash HV \"%s\" 0x%x MAX=%d\n",
+                  $name, $$hv, $hv->MAX ) if $debug{hv};
 
     # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
     # the only symptom is that sv_reset tries to reset the PMf_USED flag of
@@ -2227,26 +2229,39 @@ sub B::HV::save {
     $svsect->add(sprintf( "&xpvhv_list[%d], %lu, 0x%x",
 			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
   }
+  warn sprintf( "saving HV 0x%x MAX=%d\n",
+                $$hv, $hv->MAX ) if $debug{hv};
   my $sv_list_index = $svsect->index;
-  my @contents      = $hv->ARRAY;
+  my @contents     = $hv->ARRAY;
   if (@contents) {
     my $i;
+    # protect against recursive self-reference
+    # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
+    # value => rv => cv => ... => rv => same hash
+    $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" );
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
-      $contents[$i] = $contents[$i]->save;
+      my $sv = $contents[$i];
+      warn sprintf("HV recursion? with $sv -> %s\n", $sv->RV)
+        if $sv->isa("B::RV")
+          #and $sv->RV->isa('B::CV')
+          and defined objsym($sv)
+          and $debug{hv};
+      $contents[$i] = $sv->save;
     }
     $init->no_split;
-    $init->add( "{", "\tHV *hv = (HV*)&sv_list[$sv_list_index];" );
+    $init->add( "{", "\tHV *hv = $sym;" );
     while (@contents) {
       my ( $key, $value ) = splice( @contents, 0, 2 );
       $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
 			  cstring($key), length( pack "a*", $key ),
 			  "(SV*)$value", hash($key) ));
+      warn sprintf( "  HV key %s=%s\n", $key, $value) if $debug{hv};
     }
     $init->add("}");
     $init->split;
   }
   $hv->save_magic();
-  return savesym( $hv, "(HV*)&sv_list[$sv_list_index]" );
+  return $sym;
 }
 
 sub B::IO::save_data {
@@ -3247,6 +3262,9 @@ OPTION:
         elsif ( $arg eq "A" ) {
           $debug{av}++;
         }
+        elsif ( $arg eq "H" ) {
+          $debug{hv}++;
+        }
         elsif ( $arg eq "C" ) {
           $debug{cv}++;
         }
@@ -3420,6 +3438,10 @@ B<COPs>, prints COPs as processed (incl. file & line num)
 =item B<-DA>
 
 prints B<AV> information on saving
+
+=item B<-DH>
+
+prints B<HV> information on saving
 
 =item B<-DC>
 
