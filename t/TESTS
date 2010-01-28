@@ -153,3 +153,7 @@ package dummy;sub meth{print "ok"};package main;dummy->meth
 >>>>
 ok
 ######################### 35 methodcall syntax fails #####
+my ($rv,%hv);%hv=(key=>\$rv);$rv=\%hv;print "ok";
+>>>>
+ok
+######################### 36 HV self-refs ###################

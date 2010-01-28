@@ -262,6 +262,9 @@ result[34]='ok'
 # method_named. fixed with 1.16
 tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth'
 result[35]='ok'
+# HV self-ref
+tests[36]='my ($rv, %hv); %hv = ( key => \$rv ); $rv = \%hv; print "ok";'
+result[36]='ok'
 
 
 # from here on we test CC specifics only

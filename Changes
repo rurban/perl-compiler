@@ -4,13 +4,14 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.16	2010-01-27 rurban
+	use Moose and benchmark still fails. IO even a regression.
+
 	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany),
 	register int for warn_sv loop
 	Fixed hv init for magic hashes, pre-allocate array and xpvhv_aux. (test 34)
 	Fixed method_named (CPAN #53889, test 35) for B::C, better fix than for B::CC.
 	Added -DH for HV debuggging.
-	Fixed HV cycles causing endless loops, i.e. with use Moose. Such as HVs referencing
-	  the parent. No testcase yet.
+	Fixed HV self-references causing endless loops, i.e. with use Moose, test 36.
 	* CC.pm (1.05): added experimental -finline-ops. Always on. Can be removed if 
 	  it works okay for the new inlined versions.
 	Inlined pp_enter, pp_reset, pp_regcreset, pp_stringify.
@@ -29,15 +30,14 @@
 	Switched test 32->101 (arith) with 33->32 (evaltry catch die) as it fails 
 	  with 5.11.3.
 	Added new qr test 33 (Nick Koston), test 34 for magic hashes, test 35 for 
-	  broken methodcall syntax (method_named).
+	  broken methodcall syntax (method_named), test 36 for HV self-references.
 	* TESTS: added test 32 (evaltry catch die): Fails on 5.11.3 C/CC only,
-	  <5.11.3 it works okay. Also tests 33, 34, 35.
+	  <5.11.3 it works okay. Also tests 33, 34, 35, 36.
 	* ByteLoader/Makefile.PL: removed cygwin gcc specific stack-protector removal. 
 	  It was a bug of mine.
 	Added more AUTHOR gcc -ansi warnings, just -pedantic not.
 	* Makefile.PL: Added more AUTHOR gcc warnings, also -pedantic.
-	Added Opcodes PREREQ_PM
-	
+	Added optional Opcodes PREREQ_PM
 
 1.15	2010-01-03 rurban
 	* t/test.pl: Fixed MSWin32 tests again. Lost the 1.13 patches with 1.14.

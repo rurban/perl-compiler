@@ -1076,7 +1076,7 @@ sub pp_gvsv {
 sub pp_aelemfast {
   my $op = shift;
   my $gvsym;
-  if ($ITHREADS) {
+  if ($ITHREADS and $op->can('padix')) {
     $gvsym = $pad[ $op->padix ]->as_sv;
   }
   else {
@@ -2350,7 +2350,8 @@ OPTION:
 
   # rgs didn't want opcodes to be added to Opcode. So I added it to a
   # seperate Opcodes.
-  if (eval "require Opcodes;") {
+  eval { require Opcodes; };
+  if (defined $Opcodes::VERSION) {
     my $MAXO = Opcodes::opcodes();
     for (0..$MAXO-1) {
       no strict 'refs';
