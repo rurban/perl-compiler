@@ -1453,7 +1453,7 @@ sub B::PVMG::save_magic {
       if ($PERL510) {
         $init->add( split /\n/,
           sprintf
-            <<CODE, $mg->pmflags, $$sv, cchar($type), cstring($ptr), $len );
+            <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
     REGEXP* rx = CALLREGCOMP($resym, %d);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
