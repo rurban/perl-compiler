@@ -290,7 +290,7 @@ sub cc_queue {
   else {
     push( @cc_todo, [ $name, $root, $start, ( @pl ? @pl : @padlist ) ] );
   }
-  my $fakeop = new B::FAKEOP( "next" => 0, sibling => 0, ppaddr => $name );
+  my $fakeop = B::FAKEOP->new( "next" => 0, sibling => 0, ppaddr => $name );
   $start = $fakeop->save;
   debug "cc_queue: name $name returns $start\n" if $debug{queue};
   return $start;
@@ -477,7 +477,7 @@ sub reload_lexicals {
   sub invalidate { $_[0]->[1] = 0 }    # force C variable to be invalid
 }
 
-my $curcop = new B::Shadow(
+my $curcop = B::Shadow->new(
   sub {
     my $opsym = shift->save;
     runtime("PL_curcop = (COP*)$opsym;");
@@ -580,7 +580,7 @@ sub load_pad {
       }
     }
     $pad[$ix] =
-      new B::Stackobj::Padsv( $type, $flags, $ix, "i_$name", "d_$name" );
+      B::Stackobj::Padsv->new( $type, $flags, $ix, "i_$name", "d_$name" );
 
     debug sprintf( "PL_curpad[$ix] = %s\n", $pad[$ix]->peek ) if $debug{pad};
   }
@@ -678,7 +678,7 @@ sub pp_stub {
   my $op    = shift;
   my $gimme = gimme($op);
   if ( $gimme != G_ARRAY ) {
-    my $obj = new B::Stackobj::Const(sv_undef);
+    my $obj = B::Stackobj::Const->new(sv_undef);
     push( @stack, $obj );
   }
   return $op->next;
@@ -781,7 +781,7 @@ sub pp_const {
   if ($$sv) {
     $obj = $constobj{$$sv};
     if ( !defined($obj) ) {
-      $obj = $constobj{$$sv} = new B::Stackobj::Const($sv);
+      $obj = $constobj{$$sv} = B::Stackobj::Const->new($sv);
     }
   }
   else {
@@ -836,7 +836,7 @@ sub bad_pp_reset {
   if ($inline_ops) {
     my $op = shift;
     warn "inlining reset\n" if $debug{op};
-    $curcop->write_back;
+    $curcop->write_back if $curcop;
     runtime '{ /* pp_reset */';
     runtime '  const char * const tmps = (MAXARG < 1) ? (const char *)"" : POPpconstx;';
     runtime '  sv_reset(tmps, CopSTASH(PL_curcop));}';
@@ -852,7 +852,7 @@ sub pp_regcreset {
   if ($inline_ops) {
     my $op = shift;
     warn "inlining regcreset\n" if $debug{op};
-    $curcop->write_back;
+    $curcop->write_back if $curcop;
     runtime 'PL_reginterp_cnt = 0;	/* pp_regcreset */';
     runtime 'TAINT_NOT;';
     return $op->next;
@@ -972,7 +972,7 @@ sub bad_pp_srefgen {
 # coverage: 28
 sub pp_rv2gv {
   my $op = shift;
-  $curcop->write_back;
+  $curcop->write_back if $curcop;
   my $ppname = "pp_" . $op->name;
   write_back_lexicals() unless $skip_lexicals{$ppname};
   write_back_stack()    unless $skip_stack{$ppname};
@@ -1107,8 +1107,8 @@ sub int_binop {
   }
   else {
     my $targ  = $pad[ $op->targ ];
-    my $right = new B::Pseudoreg( "IV", "riv" );
-    my $left  = new B::Pseudoreg( "IV", "liv" );
+    my $right = B::Pseudoreg->new( "IV", "riv" );
+    my $left  = B::Pseudoreg->new( "IV", "liv" );
     runtime( sprintf( "$$right = %s; $$left = %s;", pop_int(), pop_int ) );
     $targ->set_int( &$operator( $$left, $$right ) );
     push( @stack, $targ );
@@ -1143,7 +1143,7 @@ sub numeric_binop {
     }
     else {
       if ($force_int) {
-        my $rightruntime = new B::Pseudoreg( "IV", "riv" );
+        my $rightruntime = B::Pseudoreg->new( "IV", "riv" );
         runtime( sprintf( "$$rightruntime = %s;", $right ) );
         runtime(
           sprintf(
@@ -1152,7 +1152,7 @@ sub numeric_binop {
         );
       }
       else {
-        my $rightruntime = new B::Pseudoreg( "double", "rnv" );
+        my $rightruntime = B::Pseudoreg->new( "double", "rnv" );
         runtime( sprintf( "$$rightruntime = %s;", $right ) );
         runtime(
           sprintf(
@@ -1166,15 +1166,15 @@ sub numeric_binop {
     my $targ = $pad[ $op->targ ];
     $force_int ||= ( $targ->{type} == T_INT );
     if ($force_int) {
-      my $right = new B::Pseudoreg( "IV", "riv" );
-      my $left  = new B::Pseudoreg( "IV", "liv" );
+      my $right = B::Pseudoreg->new( "IV", "riv" );
+      my $left  = B::Pseudoreg->new( "IV", "liv" );
       runtime(
         sprintf( "$$right = %s; $$left = %s;", pop_numeric(), pop_numeric ) );
       $targ->set_int( &$operator( $$left, $$right ) );
     }
     else {
-      my $right = new B::Pseudoreg( "double", "rnv" );
-      my $left  = new B::Pseudoreg( "double", "lnv" );
+      my $right = B::Pseudoreg->new( "double", "rnv" );
+      my $left  = B::Pseudoreg->new( "double", "lnv" );
       runtime(
         sprintf( "$$right = %s; $$left = %s;", pop_numeric(), pop_numeric ) );
       $targ->set_numeric( &$operator( $$left, $$right ) );
@@ -1205,7 +1205,7 @@ sub pp_ncmp {
       runtime "}";
     }
     else {
-      my $rightruntime = new B::Pseudoreg( "double", "rnv" );
+      my $rightruntime = B::Pseudoreg->new( "double", "rnv" );
       runtime( sprintf( "$$rightruntime = %s;", $right ) );
       runtime sprintf( qq/if ("TOPn" > %s){/, $rightruntime );
       runtime sprintf("  sv_setiv(TOPs,1);");
@@ -1220,8 +1220,8 @@ sub pp_ncmp {
   }
   else {
     my $targ  = $pad[ $op->targ ];
-    my $right = new B::Pseudoreg( "double", "rnv" );
-    my $left  = new B::Pseudoreg( "double", "lnv" );
+    my $right = B::Pseudoreg->new( "double", "rnv" );
+    my $left  = B::Pseudoreg->new( "double", "lnv" );
     runtime(
       sprintf( "$$right = %s; $$left = %s;", pop_numeric(), pop_numeric ) );
     runtime sprintf( "if (%s > %s){ /*targ*/", $$left, $$right );
@@ -1299,10 +1299,10 @@ sub sv_binop {
 # coverage: ?
 sub bool_int_binop {
   my ( $op, $operator ) = @_;
-  my $right = new B::Pseudoreg( "IV", "riv" );
-  my $left  = new B::Pseudoreg( "IV", "liv" );
+  my $right = B::Pseudoreg->new( "IV", "riv" );
+  my $left  = B::Pseudoreg->new( "IV", "liv" );
   runtime( sprintf( "$$right = %s; $$left = %s;", pop_int(), pop_int() ) );
-  my $bool = new B::Stackobj::Bool( new B::Pseudoreg( "int", "b" ) );
+  my $bool = B::Stackobj::Bool->new( B::Pseudoreg->new( "int", "b" ) );
   $bool->set_int( &$operator( $$left, $$right ) );
   push( @stack, $bool );
   return $op->next;
@@ -1311,11 +1311,11 @@ sub bool_int_binop {
 # coverage: ?
 sub bool_numeric_binop {
   my ( $op, $operator ) = @_;
-  my $right = new B::Pseudoreg( "double", "rnv" );
-  my $left  = new B::Pseudoreg( "double", "lnv" );
+  my $right = B::Pseudoreg->new( "double", "rnv" );
+  my $left  = B::Pseudoreg->new( "double", "lnv" );
   runtime(
     sprintf( "$$right = %s; $$left = %s;", pop_numeric(), pop_numeric() ) );
-  my $bool = new B::Stackobj::Bool( new B::Pseudoreg( "int", "b" ) );
+  my $bool = B::Stackobj::Bool->new( B::Pseudoreg->new( "int", "b" ) );
   $bool->set_numeric( &$operator( $$left, $$right ) );
   push( @stack, $bool );
   return $op->next;
@@ -1325,7 +1325,7 @@ sub bool_numeric_binop {
 sub bool_sv_binop {
   my ( $op, $operator ) = @_;
   runtime( sprintf( "right = %s; left = %s;", pop_sv(), pop_sv() ) );
-  my $bool = new B::Stackobj::Bool( new B::Pseudoreg( "int", "b" ) );
+  my $bool = B::Stackobj::Bool->new( B::Pseudoreg->new( "int", "b" ) );
   $bool->set_numeric( &$operator( "left", "right" ) );
   push( @stack, $bool );
   return $op->next;
@@ -1530,7 +1530,7 @@ sub pp_list {
 # coverage: 6,8,9,10,24,26,27,31,35
 sub pp_entersub {
   my $op = shift;
-  $curcop->write_back;
+  $curcop->write_back if $curcop;
   write_back_lexicals( REGISTER | TEMPORARY );
   write_back_stack();
   my $sym = doop($op);
@@ -1576,7 +1576,7 @@ sub pp_enter {
   if ($inline_ops) {
     my $op = shift;
     warn "inlining enter\n" if $debug{op};
-    $curcop->write_back;
+    $curcop->write_back if $curcop;
     if (!($op->flags & OPf_WANT)) {
       if ( $#cxstack >= 0) {
         if ( $op->flags & OPf_SPECIAL ) {
@@ -1900,7 +1900,7 @@ sub pp_enteriter { enterloop(@_) }
 sub pp_leaveloop {
   my $op = shift;
   if ( !@cxstack ) {
-    die "panic: leaveloop";
+    die "panic: leaveloop, no cxstack";
   }
   debug "leaveloop: popping from cxstack\n" if $debug{cxstack};
   pop(@cxstack);

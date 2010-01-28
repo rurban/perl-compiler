@@ -284,7 +284,7 @@ sub svop_or_padop_pv {
   return "" unless $op->can("sv");
   my $sv = $op->sv;
   if ($$sv) {
-    return $sv->PV;
+    return $sv->PV if $sv->can("PV");
   } else {
     my @c = comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;

@@ -3,7 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.16	2010-01-?? rurban
+1.16	2010-01-27 rurban
+	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany),
+	register int for warn_sv loop
+	Fixed hv init for magic hashes, pre-allocate array and xpvhv_aux. (test 34)
+	Fixed method_named (CPAN #53889, test 35) for B::C, better fix than for B::CC.
+	Added -DH for HV debuggging.
+	Fixed HV cycles causing endless loops, i.e. with use Moose. Such as HVs referencing
+	  the parent. No testcase yet.
 	* CC.pm (1.05): added experimental -finline-ops. Always on. Can be removed if 
 	  it works okay for the new inlined versions.
 	Inlined pp_enter, pp_reset, pp_regcreset, pp_stringify.
@@ -14,13 +21,8 @@
 	  added pp_pushmark pp_break pp_continue to no_stack handling.
 	Fixed method_named (CPAN #53889, test 35) assuming there is only const 
 	  before method_named. No counter examples found so far.
-	* C.pm: Fixed braces warning for empty xpvcv startfield (Nullany),
-	register int for warn_sv loop
-	Fixed hv init for magic hashes, pre-allocate array and xpvhv_aux. (test 34)
-	Fixed method_named (CPAN #53889, test 35) for B::C, better fix than for B::CC.
-	Added -DH for HV debuggging
-	Fixed HV cycles causing endless loops, i.e. with use Moose. Such as HVs referencing
-	  the parent. No testcase yet.
+	Changed new OBJ => OBJ->new
+	More curcop->write_back protection.
 	* Stackobj.pm (1.00_02): RV fix for 5.11.
 	* t/testc.sh, t/test.pl: added CC specific tests to increase CC op coverage 
 	  after 100.
