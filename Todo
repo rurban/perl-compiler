@@ -49,6 +49,7 @@ global analysis of variables, type hints etc.
   Devel::TypeCheck instead of magic variable _ir, ... suffices
   e.g. mark IVonly SV's and magic/flags change functions and 
   optimize all op subtrees for the compiled backends to use direct ints.
+  understand MooseX::Method::Signatures and MooseX::Lexical::Types declarations
 demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
