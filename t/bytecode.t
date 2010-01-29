@@ -54,7 +54,7 @@ my @todo = ();
 @todo = (3,6,8..10,12,15,16,18,26,28,31,35) if $] < 5.007; # CORE failures, ours not yet enabled
 @todo = (9,10,12)   if $] >= 5.010;
 @todo = ()  	     if $] >= 5.010 and $ITHREADS and !$DEBUGGING;
-push @todo, (20,33) if $] >= 5.011003; # XXX pm_setre
+push @todo, (20,32) if $] >= 5.011003; # XXX pm_setre
 
 my @skip = (20,27,29) if $] >= 5.010;
 
