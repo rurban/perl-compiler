@@ -1348,7 +1348,8 @@ sub B::PVMG::save {
     } else {
       if ( $B::C::pv_copy_on_grow ) {
         # comppadnames needs &PL_sv_undef instead of 0
-        $savesym = (!$savesym or $savesym eq 'NULL') ? '(char*)&PL_sv_undef' : $savesym;
+        $savesym = (!$savesym or $savesym eq 'NULL') ? '(char*)&PL_sv_undef'
+	  : $savesym;
       }
     }
     $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
@@ -1367,15 +1368,19 @@ sub B::PVMG::save {
     # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
       if (!$savesym or $savesym eq 'NULL') {
-        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;", $svsect->index ) );
+        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
+			     $svsect->index ) );
       } else {
-        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv",
+				      $svsect->index ), $pv ) );
       }
     } else {
       if (!$savesym or $savesym eq 'NULL') {
-        $init->add( sprintf( "xpv_list[%d].xpv_pv = (char*)&PL_sv_undef;", $xpvsect->index ) );
+        $init->add( sprintf( "xpv_list[%d].xpv_pv = (char*)&PL_sv_undef;",
+			     $xpvsect->index ) );
       } else {
-        $init->add(savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
+        $init->add(savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ),
+			    $pv ) );
       }
     }
   }
@@ -1388,7 +1393,8 @@ sub B::PVMG::save_magic {
   my ($sv) = @_;
   my $sv_flags = $sv->FLAGS;
   warn sprintf( "saving magic for %s (0x%x) flags=0x%x  - called from %s:%s\n",
-		class($sv), $$sv, $sv_flags, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
+		class($sv), $$sv, $sv_flags,
+		@{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{mg};
   my $pkg = $sv->SvSTASH;
   if ($$pkg) {
@@ -1417,15 +1423,16 @@ sub B::PVMG::save_magic {
       warn sprintf( "%s magic\n", cchar($type) );
       eval {
         warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
-                      class($sv), $$sv, class($obj), $$obj, cchar($type), cstring($ptr) );
+                      class($sv), $$sv, class($obj), $$obj, cchar($type),
+		      cstring($ptr) );
       };
     }
 
-    unless ( $type eq 'r' ) { # test 23
-      $obj = $mg->OBJ;
+    unless ( $type eq 'r' or $type eq 'D' ) { # r - test 23 / D - Getopt::Long
       # 5.10: Can't call method "save" on unblessed reference
       #warn "Save MG ". $obj . "\n" if $PERL510;
       # 5.11 'P' fix in B::IV::save, IV => RV
+      $obj = $mg->OBJ;
       $obj->save
         unless $PERL510 and ref $obj eq 'SCALAR';
     }
@@ -1470,13 +1477,20 @@ CODE
 CODE
       }
     }
+    elsif ( $type eq 'D' ) { # XXX regdata AV
+      if ($obj = $mg->OBJ) {
+	# see Perl_mg_copy() in mg.c
+	$init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
+			   $$sv, $$sv, "'d'", cstring($ptr), $len ));
+      }
+    }
     else {
       $init->add(
         sprintf(
           "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
           $$sv, $$obj, cchar($type), cstring($ptr), $len
         )
-      );
+      )
     }
   }
 }
@@ -2090,10 +2104,12 @@ sub B::AV::save {
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS));
   }
   my $sv_list_index = $svsect->index;
+  # protect against recursive self-references (Getopt::Long)
+  $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
   $av->save_magic;
 
   if ( $debug{av} ) {
-    my $line = sprintf( "saving AV 0x%x FILL=$fill", $$av );
+    my $line = sprintf( "saving AV 0x%x [%s] FILL=$fill", $$av, class($av));
     $line .= sprintf( " AvFLAGS=0x%x", $av->AvFLAGS ) if $] < 5.009;
     warn "$line\n";
   }
@@ -2131,7 +2147,7 @@ sub B::AV::save {
     if ($B::C::av_init) {
       $init->add(
                  "{", "\tSV **svp;",
-                 "\tAV *av = (AV*)&sv_list[$sv_list_index];");
+                 "\tAV *av = $sym;");
       if ($fill > -1) {
         if ($PERL510) {
           $init->add(sprintf("\tNewx(svp, %d, SV*);", $fill < 3 ? 3 : $fill+1),
@@ -2150,7 +2166,7 @@ sub B::AV::save {
     else { # unoptimized with the full av_extend()
       $init->add(
                  "{", "\tSV **svp;",
-                 "\tAV *av = (AV*)&sv_list[$sv_list_index];",
+                 "\tAV *av = $sym;",
                  "\tav_extend(av, $fill);",
                  "\tsvp = AvARRAY(av);"
                 );
@@ -2166,10 +2182,10 @@ sub B::AV::save {
   }
   else {
     my $max = $av->MAX;
-    $init->add("av_extend((AV*)&sv_list[$sv_list_index], $max);")
+    $init->add("av_extend($sym, $max);")
       if $max > -1;
   }
-  return savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
+  return $sym;
 }
 
 sub B::HV::save {
@@ -2260,7 +2276,7 @@ sub B::HV::save {
     $init->add("}");
     $init->split;
   }
-  $hv->save_magic();
+  $hv->save_magic;
   return $sym;
 }
 
@@ -3254,7 +3270,7 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       if ($arg eq 'full') {
-        $arg = 'oOcAHCMGSpw';
+        $arg = 'oOcAHCMGSpW';
       }
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
@@ -3428,7 +3444,8 @@ debugger at the early CHECK step, where the compilation happens.
 
 =item B<-Dfull>
 
-Enable all debugging options, just not -Du.
+Enable all full debugging, as with C<-DoOcAHCMGSpW>.
+All but C<-Du>.
 
 =item B<-Do>
 
@@ -3440,7 +3457,7 @@ OP Type,Flags,Private
 
 =item B<-DS>
 
-prints B<SV/RE/RV> information on saving
+Scalar SVs, prints B<SV/RE/RV> information on saving
 
 =item B<-Dc>
 
@@ -3490,6 +3507,10 @@ B<disabled>.
 
 Copy-on-grow: PVs declared and initialised statically.
 Does not work yet with Perl 5.10 and higher.
+
+It is planned to switch off the perl destructor at the end
+and deconstruct our allocated data by ourselves. This fixes
+destructor problems with static data and is much faster.
 
 =item B<-fsave-data>
 

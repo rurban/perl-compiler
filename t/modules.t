@@ -18,9 +18,20 @@ BEGIN {
 }
 
 my %TODO = map{$_=>1}
-  qw(
-     Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
-    );
+  qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types);
+if ($] >= 5.010) {
+  $TODO{$_} = 1
+    for qw( Getopt::Long File::Temp ExtUtils::Install
+	    Compress::Raw::Zlib Compress::Raw::Bzip2 IO::Compress::Base LWP
+	    Storable base Params::Util Task::Weaken Class::Accessor
+	    Test::Tester Sub::Install Data::OptList
+	    Sub::Exporter Test::NoWarnings version Filter::Util::Call
+	    Algorithm::C3 Class::C3 Scope::Guard MRO::Compat Time::HiRes
+	    Class::Data::Inheritable Try::Tiny Test::Deep Carp::Clan
+	    Module::Pluggable Text::Balanced DBI Time::Local IO::Scalar
+	    Sub::Identify Class::ISA Tree::DAG_Node Path::Class Test::Pod
+	  );
+}
 
 use Config;
 my @modules;
@@ -79,7 +90,7 @@ for my $m (@modules) {
       `echo "$m - $opt" >>$log.err` if $^O ne 'MSWin32';
       my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null");
       if (`$^X -Mblib blib/script/perlcc $opt -r mod.pl $stderr` eq "ok") {
-	print   "ok $i  #     perlcc -r $opt use $m\n";
+	print   "ok $i      # perlcc -r $opt use $m\n";
 	if ($log) {
 	  print LOG "pass $m",$opt ? " - $opt\n" : "\n";
 	}
@@ -90,7 +101,7 @@ for my $m (@modules) {
 	  print "ok $i  #TODO perlcc -r $opt  no $m\n";
 	  print LOG "fail $m - $opt\n" if $log;
 	} else {
-	  print "nok $i #     perlcc -r $opt  no $m\n";
+	  print "not ok $i  # perlcc -r $opt  no $m\n";
 	  print LOG "fail $m\n" if $log;
 	  $fail++;
 	}

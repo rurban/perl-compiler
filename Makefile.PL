@@ -24,7 +24,7 @@ WriteMakefile(
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
                "lib/B/Asmdata.pm".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj".
-               "*.concise *~ dll.base dll.exp"},
+               "*.concise *~ dll.base dll.exp mod.pl"},
 );
 
 sub headerpath {
