@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.16';
+our $VERSION = '1.17';
 
 package B::C::Section;
 
@@ -2896,6 +2896,10 @@ sub B::GV::savecv {
   	      $name =~ /^([^A-Za-z].*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::)$/i );
   warn sprintf( "Used GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
+  if ($$cv and $name eq 'bootstrap' and $cv->XSUB) {
+    warn sprintf( "Skip 0x%x XS \"$fullname\"\n", $$cv ) if $debug{gv};
+    return;
+  }
   warn sprintf( "Saving GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
   $gv->save;
 }
@@ -3249,6 +3253,9 @@ OPTION:
     }
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
+      if ($arg eq 'full') {
+        $arg = 'oOcAHCMGSpw';
+      }
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
           B->debug(1);
@@ -3418,6 +3425,10 @@ of the form C<A::B>) where package C<A> does not contain any subs.
 Debug options (concatenated or separate flags like C<perl -D>).
 Verbose debugging options are crucial, because we have no interactive
 debugger at the early CHECK step, where the compilation happens.
+
+=item B<-Dfull>
+
+Enable all debugging options, just not -Du.
 
 =item B<-Do>
 
