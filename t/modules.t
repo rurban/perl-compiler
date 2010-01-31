@@ -21,15 +21,10 @@ my %TODO = map{$_=>1}
   qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types);
 if ($] >= 5.010) {
   $TODO{$_} = 1
-    for qw( File::Temp ExtUtils::Install Test Test::Harness
-	    Compress::Raw::Zlib Compress::Raw::Bzip2 IO::Compress::Base LWP
-	    Storable base Params::Util Task::Weaken Class::Accessor
-	    Test::Tester Sub::Install Data::OptList
-	    Sub::Exporter Test::NoWarnings version Filter::Util::Call
-	    Algorithm::C3 Class::C3 Scope::Guard MRO::Compat Time::HiRes
-	    Class::Data::Inheritable Try::Tiny Test::Deep Carp::Clan
-	    Module::Pluggable Text::Balanced DBI Time::Local IO::Scalar
-	    Sub::Identify Class::ISA Tree::DAG_Node Path::Class Test::Pod
+    for qw( Test::Harness Test File::Temp ExtUtils::Install
+	    Test::Tester Test::Deep
+	    DBI Test::Pod
+	    Attribute::Handlers
 	  );
 }
 
