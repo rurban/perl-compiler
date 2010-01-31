@@ -268,7 +268,7 @@ sub init_pp {
   map { declare( "SV", "*$_" ) } qw(sv src dst left right);
   declare( "MAGIC", "*mg" );
   $decl->add( "#undef cxinc", "#define cxinc() Perl_cxinc(aTHX)")
-    if !$PERL511 and $inline_ops;
+    if $] < 5.011001 and $inline_ops;
   declare( "PERL_CONTEXT", "*cx" );
   declare( "I32", "gimme");
   $decl->add("static OP * $ppname (pTHX);");
@@ -1590,7 +1590,7 @@ sub pp_enter {
     } else {
       runtime "gimme = OP_GIMME(PL_op, -1);";
     }
-    runtime($PERL511 ? 'ENTER_with_name("block");' : 'ENTER;',
+    runtime($] >= 5.011001 ? 'ENTER_with_name("block");' : 'ENTER;',
       "SAVETMPS;",
       "PUSHBLOCK(cx, CXt_BLOCK, SP);");
     return $op->next;

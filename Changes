@@ -4,21 +4,24 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.17	2010-01-31 rurban
-	Fixed most module failures: bootstrap was in the way.
+	Fixed now most module failures non-threaded at least: bootstrap was in the way.
 
 	* C.pm: Added option -Dfull for all full debugging info, set all options.
 	Skip saving XS bootstrap. Fixes most XS module failures. i.e.
 	  Digest::MD5, Data::Dumper, ..
 	  Fail: Attribute::Handlers, B::Hooks::EndOfScope, YAML, MooseX::Types
-	  for 5.8.9 from the top100.
+	  4 for 5.8.9-nt from the top100, and 3 for 5.11.4-nt: Attribute::Handlers, 
+	  File::Temp, ExtUtils::Install.
+	Fixed AV self-references causing endless loops, analog to HVs.
 	Fixed Getopt::Long crash with AV D magic (regdata),
 	  save_magic returns now the magic types as string.
+	* CC.pm: Fixed cxinc for 5.11.0
 	* t/bytecode.t: mixed up 32 with 33.
 	* t/modules.t, t/top100: new module test, see also the log.modules* 
 	  results in the svn repo.
 	* t/mymodules: added as reference. not executed.
-	* script/cc_harness: ldopts -std 
-	
+	* script/cc_harness: ldopts -std if no -B<opt>
+
 1.16	2010-01-27 rurban
 	use Moose and benchmark still fails. IO even a regression.
 

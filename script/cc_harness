@@ -13,7 +13,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
 } elsif (grep(/^-Bdynamic$/, @ARGV)) { # force dynamic linking with -Bdynamic
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
-    $linkargs = ldopts('-std');
+    $linkargs = ldopts;
 } elsif ( -e "$libdir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
     # prefer static linkage
     $linkargs = sprintf("%s $libdir/$Config{libperl} %s",

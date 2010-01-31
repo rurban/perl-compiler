@@ -21,11 +21,9 @@ my %TODO = map{$_=>1}
   qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types);
 if ($] >= 5.010) {
   $TODO{$_} = 1
-    for qw( Test::Harness Test File::Temp ExtUtils::Install
-	    Test::Tester Test::Deep
-	    DBI Test::Pod
-	    Attribute::Handlers
-	  );
+    for qw( File::Temp ExtUtils::Install );
+  $TODO{$_} = 0
+    for qw( B::Hooks::EndOfScope YAML MooseX::Types );
 }
 
 use Config;
@@ -92,13 +90,13 @@ for my $m (@modules) {
 	$pass++;
       }
       else {
+	$fail++;
 	if ($opt or $TODO{$m}) {
 	  print "ok $i  #TODO perlcc -r $opt  no $m\n";
 	  print LOG "fail $m - $opt\n" if $log;
 	} else {
 	  print "not ok $i  # perlcc -r $opt  no $m\n";
 	  print LOG "fail $m\n" if $log;
-	  $fail++;
 	}
       }
       $i++;
@@ -116,9 +114,9 @@ my $fc = percent($fail,$count);
 my $sc = percent($skip,$count);
 my $footer =
   "\n# $count modules tested with B-C-".$B::C::VERSION."\n"
-  ."# pass $pass / $count ($pc)\n"
-  ."# fail $fail / $count ($fc)\n"
-  ."# skip $skip / ".scalar @modules." ($sc not installed)\n";
+  .sprintf("# pass %3d / %3d (%s)\n", $pass, $count, $pc)
+  .sprintf("# fail %3d / %3d (%s)\n", $fail, $count, $fc )
+  .sprintf("# skip %3d / %3d (%s not installed)\n", $skip, scalar @modules, $sc);
 print $footer;
 print LOG $footer;
 

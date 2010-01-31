@@ -49,7 +49,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-fail Attribute::Handlers - 
+fail Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -84,7 +84,7 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope - 
+fail B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
@@ -92,8 +92,8 @@ pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
-fail YAML - 
-fail MooseX::Types - 
+fail YAML
+fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -105,5 +105,5 @@ skip Template::Stash
 
 # 94 modules tested with B-C-1.17
 # pass 90 / 94 (95.7%)
-# fail  / 94 (0.0%)
-# skip 6 / 100 (6.4% not installed)
+# fail  4 / 94 (4.0%)
+# skip  6 / 100 (6.4% not installed)

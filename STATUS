@@ -30,7 +30,7 @@ See below at the detailed 5.6, 5.8, 5.10, 5.11 status
 
 TEST STATUS
 -----------
-Tested on cygwin1.7, centos5, debian4, freebsd7, solaris10.
+Tested on cygwin1.7, centos5, debian4, debian5, freebsd7, solaris10, openbsd38
 List of failed tests.
 
 CORE (old)
@@ -92,7 +92,6 @@ c_o1-2:  	7,11
 cc: 	 	3,7,29
 cc_o1-2: 	3,7 
 
-1.09:
 freebsd 5.10.1  c+cc fails on 28 generally, cc passed 12 
 freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
 
@@ -124,98 +123,17 @@ t/cc_o1         18,21,25,26,29,30
 t/cc_o2         10,16,18,21,25,26,29,30		 
 
 5.11.2: same as 5.10.1
- 
 5.11.3: as 5.10.1, just c and cc fails with 32 (catch evaltry die)
+5.11.4: same as 5.10.1
 
 CPAN Modules
 ------------
 See t/modules.t. We only try to compile use module, no testsuite.
 We only try B::C so far.
 
-nok Getopt::Long 
-nok Params::Validate 
-nok Path::Class 
-nok Perl::Critic 
-nok Test::Kwalitee
-nok IO 
-nok DBI 
-nok PPI 
-nok Sub::Exporter 
-nok Benchmark 
-ok  Moose
-nok CGI
-?   CGI::FormBuilder
-?   CGI::Session
-?   CGI::Application
-?   DBIx::Class
-?   Template::Toolkit
-?   HTML::Mason
-?   HTML::Template
-nok Text::Template
-?   Any::Template
-?   Template::Alloy
-ok  Pod::Escapes
-nok Pod::Simple
-nok Test::Pod
-ok  Devel::Symdump
-nok Pod::Coverage
-nok Test::Pod::Coverage
-nok Compress::Raw::Bzip2
-nok IO::Compress::Bzip2
-nok Compress::Bzip2
-ok  IO::String
-nok File::Temp
-nok Archive::Zip
-ok  Math::BigInt::FastCalc
-nok Term::ReadKey
-?   Term::ReadLine::Perl
-?   Term::ReadLine::Gnu
-ok  XML::NamespaceSupport
-nok XML::SAX
-nok XML::LibXML::Common
-nok XML::LibXML
-nok XML::Parser
-nok Proc::ProcessTable
-nok YAML
-nok Config::Tiny
-ok  File::Copy::Recursive
-nok IPC::Run3
-ok  Probe::Perl
-ok  Tee 
-nok IO::CaptureOutput 
-nok File::pushd 
-nok File::HomeDir
-nok Digest::SHA
-ok  Module::Signature
-nok URI 
-ok  HTML::Tagset 
-nok HTML::Parser 
-nok LWP
-nok CPAN
-nok Net::IP 
-nok Net::DNS 
-nok Test::Reporter 
-nok CPAN::Reporter
-ok  Text::Glob 
-nok Number::Compare 
-nok File::Find::Rule 
-nok Data::Compare 
-nok CPAN::Checksums
-nok File::Remove 
-ok  File::chmod
-ok  Params::Util 
-nok Test::Script 
-nok CPAN::Checksums 
-nok CPAN::Inject
-nok Net::Telnet
-nok Module::ScanDeps 
-nok PAR::Dist
-ok  Socket6 
-nok IO::Socket::INET6
-ok  B::Generate 
-ok  PadWalker 
-nok Alias
-
+From top100:
+5.8.9:     fail 4% Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
+5.11.4-nt: fail 3% Attribute::Handlers File::Temp ExtUtils::Install
 
 5.10, 5.11 status
 -----------------

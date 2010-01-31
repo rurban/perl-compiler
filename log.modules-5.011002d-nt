@@ -105,5 +105,5 @@ skip Template::Stash
 
 # 79 modules tested with B-C-1.17
 # pass 75 / 79 (94.9%)
-# fail  / 79 (0.0%)
+# fail  4 / 79 (0.0%)
 # skip 21 / 100 (26.6% not installed)
