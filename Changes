@@ -14,7 +14,7 @@
 	* t/bytecode.t: mixed up 32 with 33.
 	* t/modules.t, t/top100: new module test, see also the log.modules* 
 	  results in the svn repo.
-	* t/mymodules: added as reference. not executed.
+	* t/mymodules: added as reference, not executed.
 	
 1.16	2010-01-27 rurban
 	use Moose and benchmark still fails. IO even a regression.

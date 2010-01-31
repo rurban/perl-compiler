@@ -2351,7 +2351,7 @@ OPTION:
   # rgs didn't want opcodes to be added to Opcode. So I added it to a
   # seperate Opcodes.
   eval { require Opcodes; };
-  if (defined $Opcodes::VERSION) {
+  if (!$@ and $Opcodes::VERSION) {
     my $MAXO = Opcodes::opcodes();
     for (0..$MAXO-1) {
       no strict 'refs';
