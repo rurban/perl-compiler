@@ -2096,7 +2096,7 @@ sub B::AV::save {
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
                          '0'));
-    $avreal = $av->FLAGS & 0x40000000; # SVpav_REAL
+    $avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
   }
   else {
     # 5.8: array fill max off nv mg stash alloc arylen flags
@@ -2120,7 +2120,7 @@ sub B::AV::save {
   }
 
   # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
-  if ($fill > -1 and $avreal and $magic !~ /D/) {
+  if ($fill > -1 and $magic !~ /D/) {
     my @array = $av->ARRAY; # crashes with D magic (Getopt::Long)
     if ( $debug{av} ) {
       my $el;
