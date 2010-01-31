@@ -1411,14 +1411,16 @@ sub B::PVMG::save_magic {
   if ($PERL510 and !$sv->MAGICAL) {
     warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x\n",
                  $sv_flags && 0xff, $sv_flags) if $debug{mg};
-    return $sv;
+    return '';
   }
   my @mgchain = $sv->MAGIC;
   my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
+  my $magic = '';
   foreach $mg (@mgchain) {
     $type = $mg->TYPE;
     $ptr  = $mg->PTR;
     $len  = $mg->LENGTH;
+    $magic .= $type;
     if ( $debug{mg} ) {
       warn sprintf( "%s magic\n", cchar($type) );
       eval {
@@ -1481,7 +1483,7 @@ CODE
       if ($obj = $mg->OBJ) {
 	# see Perl_mg_copy() in mg.c
 	$init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
-			   $$sv, $$sv, "'d'", cstring($ptr), $len ));
+			   $$sv, $$sv, "'D'", cstring($ptr), $len ));
       }
     }
     else {
@@ -1493,6 +1495,7 @@ CODE
       )
     }
   }
+  $magic;
 }
 
 # Since 5.11 also called by IV::save (SV -> IV)
@@ -2079,8 +2082,8 @@ sub B::AV::save {
   my $sym = objsym($av);
   return $sym if defined $sym;
 
+  my ($fill, $avreal);
   # cornercase: tied array without FETCHSIZE
-  my $fill;
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
 
@@ -2093,12 +2096,14 @@ sub B::AV::save {
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
                          '0'));
+    $avreal = $av->FLAGS & 0x40000000; # SVpav_REAL
   }
   else {
     # 5.8: array fill max off nv mg stash alloc arylen flags
     my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
     $line = "0, $fill, $fill, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init;
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
+    $avreal = $av->AvFLAGS & 1; # AVf_REAL
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS));
@@ -2106,7 +2111,7 @@ sub B::AV::save {
   my $sv_list_index = $svsect->index;
   # protect against recursive self-references (Getopt::Long)
   $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
-  $av->save_magic;
+  my $magic = $av->save_magic;
 
   if ( $debug{av} ) {
     my $line = sprintf( "saving AV 0x%x [%s] FILL=$fill", $$av, class($av));
@@ -2115,9 +2120,8 @@ sub B::AV::save {
   }
 
   # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
-  #if ($fill > -1 && ($avflags & AVf_REAL)) {
-  if ( $fill > -1 ) {
-    my @array = $av->ARRAY;
+  if ($fill > -1 and $avreal and $magic !~ /D/) {
+    my @array = $av->ARRAY; # crashes with D magic (Getopt::Long)
     if ( $debug{av} ) {
       my $el;
       my $i = 0;

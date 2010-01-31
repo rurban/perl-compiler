@@ -21,7 +21,7 @@ my %TODO = map{$_=>1}
   qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types);
 if ($] >= 5.010) {
   $TODO{$_} = 1
-    for qw( Getopt::Long File::Temp ExtUtils::Install
+    for qw( File::Temp ExtUtils::Install Test Test::Harness
 	    Compress::Raw::Zlib Compress::Raw::Bzip2 IO::Compress::Base LWP
 	    Storable base Params::Util Task::Weaken Class::Accessor
 	    Test::Tester Sub::Install Data::OptList
@@ -90,7 +90,7 @@ for my $m (@modules) {
       `echo "$m - $opt" >>$log.err` if $^O ne 'MSWin32';
       my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null");
       if (`$^X -Mblib blib/script/perlcc $opt -r mod.pl $stderr` eq "ok") {
-	print   "ok $i      # perlcc -r $opt use $m\n";
+	print   "ok $i      #",$TODO{$m}?"TODO":""," perlcc -r $opt use $m\n";
 	if ($log) {
 	  print LOG "pass $m",$opt ? " - $opt\n" : "\n";
 	}
