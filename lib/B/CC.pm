@@ -240,6 +240,21 @@ sub output_runtime {
   # Perl_vivify_ref not exported on MSWin32
   # coverage: 18
   if ($PERL510 and $^O eq 'MSWin32') {
+    # CC coverage: 18, 29
+    print << '__EOP';
+/* Code that crops up in three places to take a scalar and ready it to hold
+   a reference */
+#  define prepare_SV_for_RV(sv)						\
+    STMT_START {							\
+		    if (SvTYPE(sv) < SVt_RV)				\
+			sv_upgrade(sv, SVt_RV);				\
+		    else if (SvPVX_const(sv)) {				\
+			SvPV_free(sv);					\
+			SvLEN_set(sv, 0);				\
+                        SvCUR_set(sv, 0);				\
+		    }							\
+		 } STMT_END
+__EOP
     print << '__EOV' if $vivify_ref_defined;
 void
 Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
@@ -270,9 +285,6 @@ __EOV
 
     # XXX Todo PerlProc_setjmp PerlProc_longjmp
     # CC coverage: 12, 32
-
-    # XXX Todo prepare_SV_for_RV
-    # CC coverage: 18
   }
 
   foreach $ppdata (@pp_list) {
