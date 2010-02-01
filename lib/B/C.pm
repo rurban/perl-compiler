@@ -1108,12 +1108,14 @@ sub B::NV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $val = $sv->NVX;
+  my $sval = sprintf("%g", $val);
+  $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
   $val .= '.00' if $val =~ /^-?\d+$/;
   if ($PERL510) { # not fixed by NV isa IV >= 5.8
-    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {0}", $val ) );
+    $xpvnvsect->add( sprintf( "{%g}, 0, 0, {0}", $val ) );
   }
   else {
-    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
+    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %g", $sv->IVX, $val ) );
   }
   $svsect->add(
     sprintf(
@@ -1226,15 +1228,16 @@ sub B::PVNV::save {
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $val = $sv->NVX;
   $val .= '.00' if $val =~ /^-?\d+$/;
-  $val = "0" if $val eq 'nan';
+  my $sval = sprintf("%g", $val);
+  $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
   if ($PERL510) {
     $xpvnvsect->comment('$val, $len, $pvmax, $sv->IVX');
     $xpvnvsect->add(
-      sprintf( "%s, %u, %u, %d", $val, $len, $pvmax, $sv->IVX ) );    # ??
+      sprintf( "%g, %u, %u, %d", $val, $len, $pvmax, $sv->IVX ) );    # ??
   }
   else {
     $xpvnvsect->add(
-      sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $sv->IVX, $val ) );
+      sprintf( "%s, %u, %u, %d, %g", $savesym, $len, $pvmax, $sv->IVX, $val ) );
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
@@ -2545,6 +2548,53 @@ EOT
     print "#endif\n";
   }
   print "static GV *gv_list[$gv_index];\n" if $gv_index;
+  if ($PERL510 and $^O eq 'MSWin32') {
+    # mingw and msvc does not export newGP
+    print << '__EOGP';
+GP *
+Perl_newGP(pTHX_ GV *const gv)
+{
+    GP *gp;
+    U32 hash;
+#ifdef USE_ITHREADS
+    const char *const file
+	= (PL_curcop && CopFILE(PL_curcop)) ? CopFILE(PL_curcop) : "";
+    const STRLEN len = strlen(file);
+#else
+    SV *const temp_sv = CopFILESV(PL_curcop);
+    const char *file;
+    STRLEN len;
+
+    PERL_ARGS_ASSERT_NEWGP;
+
+    if (temp_sv) {
+	file = SvPVX(temp_sv);
+	len = SvCUR(temp_sv);
+    } else {
+	file = "";
+	len = 0;
+    }
+#endif
+
+    PERL_HASH(hash, file, len);
+
+    Newxz(gp, 1, GP);
+
+#ifndef PERL_DONT_CREATE_GVSV
+    gp->gp_sv = newSV(0);
+#endif
+
+    gp->gp_line = PL_curcop ? CopLINE(PL_curcop) : 0;
+    /* XXX Ideally this cast would be replaced with a change to const char*
+       in the struct.  */
+    gp->gp_file_hek = share_hek(file, len, hash);
+    gp->gp_egv = gv;
+    gp->gp_refcnt = 1;
+
+    return gp;
+}
+__EOGP
+  }
   print "\n";
 }
 
