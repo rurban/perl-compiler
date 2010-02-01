@@ -43,7 +43,7 @@ is( $lines[1], '(foo) <bar>', 'O.pm should call backend compile() method' );
 is( $lines[2], '[]', 'Nothing should be in $O::BEGIN_output without -q' );
 SKIP: {
   skip( 'stderr redirection to stdout does not work on Win32 cmd', 1)
-    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
+    if $^O eq 'MSWin32';
   is( $lines[3], '-e syntax OK', 'O.pm should not munge perl output without -qq');
 }
 
@@ -64,7 +64,7 @@ SKIP: {
 SKIP: {
   skip( 'Wrong O.pm die eval message with 5.6', 1) if $] < 5.007;
   skip( 'stderr redirection to stdout does not work on Win32 cmd', 1)
-    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
+    if $^O eq 'MSWin32';
 
   $args[1] = '-MO=success,fail';
   @lines = get_lines( @args );
