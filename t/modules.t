@@ -8,7 +8,7 @@
 # Recommended general lists are Task::Kensho and http://ali.as/top100/
 #
 # Reports:
-# for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.3d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
+# for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 
 BEGIN {
   unless (-d '.svn') {
@@ -39,16 +39,17 @@ my @modules;
 my @opts = (""); #, "-O", "-B"); # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV; # all 3 compilers
 my $log = 1;
+my $perlversion;
 # $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
 printf "1..%d\n", scalar @modules * scalar @opts;
 
 if ($log) {
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-  my $perlversion = sprintf("%1.6f%s%s",
-			    $],
-			    ($DEBUGGING ? 'd' : ''),
-			    ($Config{useithreads} ? '' : '-nt'));
+  $perlversion = sprintf("%1.6f%s%s",
+			 $],
+			 ($DEBUGGING ? 'd' : ''),
+			 ($Config{useithreads} ? '' : '-nt'));
   $log = "log.modules-$perlversion";
   if (-e $log) {
     use File::Copy;
@@ -113,7 +114,7 @@ my $pc = percent($pass,$count);
 my $fc = percent($fail,$count);
 my $sc = percent($skip,$count);
 my $footer =
-  "\n# $count modules tested with B-C-".$B::C::VERSION."\n"
+  "\n# $count modules tested with B-C-".$B::C::VERSION." - perl-$perlversion\n"
   .sprintf("# pass %3d / %3d (%s)\n", $pass, $count, $pc)
   .sprintf("# fail %3d / %3d (%s)\n", $fail, $count, $fc )
   .sprintf("# skip %3d / %3d (%s not installed)\n", $skip, scalar @modules, $sc);
