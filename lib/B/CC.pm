@@ -67,7 +67,7 @@ my $package_pv;      # sv->pv of previous op for method_named
 
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
-my $entertry_defined;
+my ($entertry_defined, $vivify_ref_defined);
 my ( $module_name, %debug );
 
 # Optimisation options. On the command line, use hyphens instead of
@@ -235,6 +235,38 @@ sub output_runtime {
 	SPAGAIN;                                \
     } while (0)
 ';
+  }
+
+  # Perl_vivify_ref not exported on MSWin32
+  # coverage: 18
+  if ($vivify_ref_defined and $PERL510 and $^O eq 'MSWin32') {
+    print << '__EOV';
+void
+Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
+{
+    PERL_ARGS_ASSERT_VIVIFY_REF;
+
+    SvGETMAGIC(sv);
+    if (!SvOK(sv)) {
+	if (SvREADONLY(sv))
+	    Perl_croak(aTHX_ "%s", PL_no_modify);
+	prepare_SV_for_RV(sv);
+	switch (to_what) {
+	case OPpDEREF_SV:
+	    SvRV_set(sv, newSV(0));
+	    break;
+	case OPpDEREF_AV:
+	    SvRV_set(sv, MUTABLE_SV(newAV()));
+	    break;
+	case OPpDEREF_HV:
+	    SvRV_set(sv, MUTABLE_SV(newHV()));
+	    break;
+	}
+	SvROK_on(sv);
+	SvSETMAGIC(sv);
+    }
+}
+__EOV
   }
 
   foreach $ppdata (@pp_list) {
@@ -765,6 +797,7 @@ sub pp_padsv {
       # coverage: 18
       runtime(sprintf( "Perl_vivify_ref(aTHX_ PL_curpad[%d], %d);",
                        $ix, $private & OPpDEREF ));
+      $vivify_ref_defined++;
       $pad[$ix]->invalidate;
     }
   }
