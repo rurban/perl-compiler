@@ -3,16 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.18	2010-02-02 rurban
+1.17	2010-02-02 rurban
+	Fixed now most module failures, non-threaded at least: bootstrap was in 
+	the way. 
 	strawberry perl fixes
-	
-	* C.pm:	Fixed unescaped savere (test ExtUtils::Install).
-	* CC.pm (1.06): Added missing unexported definitions for Win32, >=5.10: 
-	  newGP, vivify_ref, prepare_SV_for_RV (tests 18, 29)
-
-1.17	2010-01-31 rurban
-	Fixed now most module failures non-threaded at least: bootstrap was in 
-	the way.
 
 	* C.pm: Added option -Dfull for all full debugging info, set all options.
 	Skip saving XS bootstrap. Fixes most XS module failures. i.e.
@@ -23,7 +17,10 @@
 	Fixed AV self-references causing endless loops, analog to HVs.
 	Fixed Getopt::Long crash with AV D magic (regdata),
 	  save_magic returns now the magic types as string.
-	* CC.pm: Fixed cxinc for 5.11.0
+	Fixed unescaped savere (test ExtUtils::Install).
+	* CC.pm (1.06): Added missing unexported definitions for Win32, >=5.10: 
+	  newGP, vivify_ref, prepare_SV_for_RV (tests 18, 29)
+	Fixed cxinc for 5.11.0
 	* t/bytecode.t: mixed up 32 with 33.
 	* t/modules.t, t/top100: new module test, see also the log.modules* 
 	  results in the svn repo.
