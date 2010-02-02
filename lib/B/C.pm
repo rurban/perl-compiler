@@ -1766,10 +1766,10 @@ sub B::CV::save {
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
     $symsect->add
-      (sprintf("XPVCVIX$xpvcv_ix\t{0}, %u, %u, {%s}, {%s}, %s,"
+      (sprintf("XPVCVIX$xpvcv_ix\t{%d}, %u, %u, {%s}, {%s}, %s,"
 	       ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
 	       ." (CV*)s\\_%x, %s, 0x%x",
-	       0, # stash later
+	       0, # GvSTASH later. test 29 or Test::Harness
 	       $len, $len,
 	       $cv->DEPTH,
 	       "NULL", "Nullhv", #MAGIC + STASH later
@@ -1784,6 +1784,15 @@ sub B::CV::save {
 	       $cv->CvFLAGS
 	      )
       );
+    my $gvstash = $gv->STASH;
+    if ($$gvstash) {
+      # do not use GvSTASH because with DEBUGGING it checks for GP but
+      # there's no GP yet.
+      $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
+			   $$cv, $$gvstash ) );
+      warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
+	if $debug{cv};
+    }
     if ( $cv->OUTSIDE_SEQ ) {
       my $cop = $symtable{ sprintf( "s\\_%x", $cv->OUTSIDE_SEQ ) };
       $init->add( sprintf( "CvOUTSIDE_SEQ(%s) = %s;", $sym, $cop ) ) if $cop;
