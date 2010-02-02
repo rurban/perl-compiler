@@ -1766,10 +1766,10 @@ sub B::CV::save {
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
     $symsect->add
-      (sprintf("XPVCVIX$xpvcv_ix\t{s\\_%x}, %u, %u, {%s}, {%s}, %s,"
+      (sprintf("XPVCVIX$xpvcv_ix\t{0}, %u, %u, {%s}, {%s}, %s,"
 	       ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
 	       ." (CV*)s\\_%x, %s, 0x%x",
-	       $gv->STASH, # TODO! fails with 29
+	       0, # stash later
 	       $len, $len,
 	       $cv->DEPTH,
 	       "NULL", "Nullhv", #MAGIC + STASH later
@@ -1812,7 +1812,7 @@ sub B::CV::save {
 
   if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
     $init->add( sprintf( "CvOUTSIDE(s\\_%x) = PL_main_cv;", $$cv ) );
-    $init->add( sprintf("SvREFCNT_inc(PL_main_cv);") );
+    $init->add( sprintf( "SvREFCNT_inc(PL_main_cv);") );
   }
   if ($$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
