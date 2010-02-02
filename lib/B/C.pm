@@ -1234,7 +1234,7 @@ sub B::PVNV::save {
   if ($PERL510) {
     $xpvnvsect->comment('$val, $len, $pvmax, $sv->IVX');
     $xpvnvsect->add(
-      sprintf( "%g, %u, %u, %d", $val, $len, $pvmax, $sv->IVX ) );    # ??
+      sprintf( "{%g}, %u, %u, {%d}", $val, $len, $pvmax, $sv->IVX ) );    # ??
   }
   else {
     $xpvnvsect->add(
