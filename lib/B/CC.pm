@@ -48,7 +48,6 @@ my @pad;           # Lexicals in current pad as Stackobj-derived objects
 my @padlist;       # Copy of current padlist so PMOP repl code can find it
 my @cxstack;       # Shadows the (compile-time) cxstack for next,last,redo
 		    # This covers only a small part of the perl cxstack
-my $jmpbuf_ix = 0;  # Next free index for dynamically allocated jmpbufs
 my %constobj;      # OP_CONST constants as Stackobj-derived objects
                     # keyed by $$sv.
 my $need_freetmps = 0;	# We may postpone FREETMPS to the end of each basic
@@ -1737,7 +1736,6 @@ sub pp_entertry {
   write_back_lexicals( REGISTER | TEMPORARY );
   write_back_stack();
   my $sym = doop($op);
-  my $jmpbuf;
   $entertry_defined = 1;
   runtime(sprintf( "PP_ENTERTRY(%s);",
                    label( $op->other->next ) ) );

@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.18';
+our $VERSION = '1.17';
 
 package B::C::Section;
 
