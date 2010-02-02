@@ -18,6 +18,7 @@
 	Fixed Getopt::Long crash with AV D magic (regdata),
 	  save_magic returns now the magic types as string.
 	Fixed unescaped savere (test ExtUtils::Install).
+	Fixed CvSTASH "initializer element is not constant" (Test::Harness)
 	* CC.pm (1.06): Added missing unexported definitions for MSWin32, 
 	  >=5.10: newGP, vivify_ref, prepare_SV_for_RV (tests 18, 29).
 	  PerlProc_setjmp, PerlProc_longjmp (tests 12, 32).

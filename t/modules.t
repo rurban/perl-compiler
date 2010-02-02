@@ -21,6 +21,31 @@ BEGIN {
   }
 }
 
+use Config;
+
+eval { require IPC::Run; };
+my $have_IPC_Run = defined $IPC::Run::VERSION;
+
+sub run_cmd {
+    my ($cmd, $timeout) = @_;
+
+    if ( ! $have_IPC_Run ) {
+	local $@;
+	$out = `$cmd`;
+	$result = !$?;
+    } else {
+	my $in;
+	my @cmd = split /\s+/, $cmd;
+	if ($timeout) {
+	    $result = IPC::Run::run(\@cmd, \$in, \$out, \$err,
+				    IPC::Run::timeout($timeout));
+	} else {
+	    $result = IPC::Run::run(\@cmd, \$in, \$out, \$err);
+	}
+    }
+    return ($result, $out, $err);
+}
+
 my %TODO = map{$_=>1}
   qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types);
 if ($] >= 5.010) {
@@ -33,7 +58,6 @@ if ($] >= 5.011004) {
   $TODO{Test::NoWarnings} = 0;
 }
 
-use Config;
 my @modules;
 {
   local $/;
@@ -62,8 +86,7 @@ if ($log) {
     use File::Copy;
     copy $log, "$log.bak";
   }
-  open LOG, ">", "$log.err";
-  close LOG;
+  open ERR, ">", "$log.err";
   open LOG, ">", $log or die "Cannot write to $log";
   eval { require B::C; };
   print LOG "# B::C::VERSION = ",$B::C::VERSION,"\n";
@@ -90,9 +113,10 @@ for my $m (@modules) {
     print F "use $m;\nprint \"ok\";";
     close F;
     for my $opt (@opts) {
-      `echo "$m - $opt" >>$log.err` if $^O ne 'MSWin32';
-      my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null");
-      if (`$^X -Mblib blib/script/perlcc $opt -r mod.pl $stderr` eq "ok") {
+      print ERR "$m - $opt\n" if $log;
+      # my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null";
+      my ($result, $out, $err) = run_cmd("$^X -Mblib blib/script/perlcc $opt -r mod.pl");
+      if ($result and $out eq "ok") {
 	print   "ok $i      #",$TODO{$m}?"TODO":""," perlcc -r $opt use $m\n";
 	if ($log) {
 	  print LOG "pass $m",$opt ? " - $opt\n" : "\n";
@@ -100,12 +124,14 @@ for my $m (@modules) {
 	$pass++;
       }
       else {
+	print ERR "$err\n" if $log and $have_IPC_Run;
 	$fail++;
 	if ($opt or $TODO{$m}) {
 	  print "ok $i  #TODO perlcc -r $opt  no $m\n";
 	  print LOG "fail $m - $opt\n" if $log;
 	} else {
 	  print "not ok $i  # perlcc -r $opt  no $m\n";
+	  print "# ", join "\n#", split/\n/, $err;
 	  print LOG "fail $m\n" if $log;
 	}
       }
@@ -133,4 +159,5 @@ print LOG $footer;
 END {
   unlink ("mod.pl", "a");
   close LOG if $log;
+  close ERR if $log;
 }
