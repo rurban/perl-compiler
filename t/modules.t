@@ -1,18 +1,22 @@
 # -*- cperl -*-
-# t/modules.t - check if some common CPAN modules exist and
+# t/modules.t [-all] [t/mymodules]
+# check if some common CPAN modules exist and
 # can be compiled successfully. Only B::C is fatal,
-# CC and Bytecode optional. Use -all for all three, and
-# -log for the reports.
+# CC and Bytecode optional. Use -all for all three (optional), and
+# -log for the reports (now default).
 #
-# The list in t/modules comes from two bigger projects.
+# The list in t/mymodules comes from two bigger projects.
 # Recommended general lists are Task::Kensho and http://ali.as/top100/
+# We are using top100 from the latter.
+# We are NOT running the module testsuite yet, we can do that in another test
+# to burn CPU for a few hours.
 #
 # Reports:
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 
 BEGIN {
   unless (-d '.svn') {
-    print "1..0 #skip author test\n";
+    print "1..0 #skip author test (16min)\n";
     exit;
   }
 }
@@ -21,9 +25,12 @@ my %TODO = map{$_=>1}
   qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types);
 if ($] >= 5.010) {
   $TODO{$_} = 1
-    for qw( File::Temp ExtUtils::Install );
+    for qw( File::Temp ExtUtils::Install Test::NoWarnings);
   $TODO{$_} = 0
     for qw( B::Hooks::EndOfScope YAML MooseX::Types );
+}
+if ($] >= 5.011004) {
+  $TODO{Test::NoWarnings} = 0;
 }
 
 use Config;
@@ -36,8 +43,8 @@ my @modules;
   close F;
   @modules = grep {!/^#/} split /\n/, $s;
 }
-my @opts = (""); #, "-O", "-B"); # only B::C
-@opts = ("", "-O", "-B") if grep /-all/, @ARGV; # all 3 compilers
+my @opts = ("");				  # only B::C
+@opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
 my $log = 1;
 my $perlversion;
 # $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
@@ -70,6 +77,8 @@ if ($log) {
 my $i = 1;
 my ($skip, $pass, $fail);
 for my $m (@modules) {
+  local($\, $,);   # guard against -l and other things that screw with
+                   # print
   unless (eval "require $m;") {
     for (1 .. @opts) {
       print   "ok $i  #skip             no $m\n"; $i++;

@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.17';
+our $VERSION = '1.18';
 
 package B::C::Section;
 
@@ -346,7 +346,8 @@ sub savere {
     #$sym = sprintf("re_list[%d]", $re_index++);
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
     $xpvsect->add( sprintf( "{0}, %u, %u", $len, $pvmax ) );
-    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index, 0x4405, $pv ) );
+    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
+                           0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
     # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }

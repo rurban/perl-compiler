@@ -784,6 +784,8 @@ sub tests {
 sub run_cc_test {
     my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
     my ($opt, $got);
+    local($\, $,);   # guard against -l and other things that screw with
+                     # print
     $expect =~ s/\n$//;
     my $fnbackend = lc($backend); #C,-O2
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
