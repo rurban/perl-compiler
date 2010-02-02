@@ -1,13 +1,13 @@
 * Fixes
 
+detect &utf8::is_utf8 (Carp)
 CC backend: goto (needs test), 
 sort with non-default comparison. 
 last for non-loop blocks (needs simplier test, test 29).
 cc_queue error with the non-seperate sort optree, test 18
 
-check failing modules. 
-  5.8: Attribute::Handlers B::Hooks::EndOfScope YAML 
-    MooseX::Types YAML
+check failing modules:
+  5.8: Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
   5.10: 35/77 Digest::SHA1, Getopt::Long, Encode, File::Path, IO, ...
 improve XSUB handling (both static and dynamic, needs tests)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
@@ -16,7 +16,7 @@ allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
-compile-time initialisation of AvARRAYs (improved with -fav-init)
+compile-time initialisation of AvARRAYs (improved with -fav-init, but slower)
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 CvOUTSIDE for ordinary subs
 DATA filehandle for C-compiled program (almost done)

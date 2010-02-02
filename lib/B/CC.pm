@@ -67,14 +67,14 @@ my $package_pv;      # sv->pv of previous op for method_named
 
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
-my ($entertry_defined, $vivify_ref_defined);
+my ($entertry_defined, $vivify_ref_defined, $PerlProc_jmp_defined);
 my ( $module_name, %debug );
 
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint );
-$inline_ops = 1; # now always on
+$inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op()
 my %optimise = (
   freetmps_each_bblock => \$freetmps_each_bblock, #-O1
   freetmps_each_loop   => \$freetmps_each_loop,	  #-O2
@@ -174,6 +174,16 @@ sub save_runtime {
 sub output_runtime {
   my $ppdata;
   print qq(#include "cc_runtime.h"\n);
+  # PerlProc_setjmp PerlProc_longjmp for Windows
+  # CC coverage: 12, 32
+  print << '__EOF';
+#ifndef PerlProc_setjmp
+# define PerlProc_setjmp(b, n) Sigsetjmp((b), (n))
+# define PerlProc_longjmp(b, n) Siglongjmp((b), (n))
+#endif
+
+__EOF
+
 
   # Perls >=5.8.9 have a broken PP_ENTERTRY. See PERL_FLEXIBLE_EXCEPTIONS in cop.h
   # Fixed in CORE with 5.11.4
@@ -280,10 +290,8 @@ Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
 	SvSETMAGIC(sv);
     }
 }
-__EOV
 
-    # XXX Todo PerlProc_setjmp PerlProc_longjmp
-    # CC coverage: 12, 32
+__EOV
   }
 
   foreach $ppdata (@pp_list) {

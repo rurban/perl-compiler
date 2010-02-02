@@ -18,8 +18,9 @@
 	Fixed Getopt::Long crash with AV D magic (regdata),
 	  save_magic returns now the magic types as string.
 	Fixed unescaped savere (test ExtUtils::Install).
-	* CC.pm (1.06): Added missing unexported definitions for Win32, >=5.10: 
-	  newGP, vivify_ref, prepare_SV_for_RV (tests 18, 29)
+	* CC.pm (1.06): Added missing unexported definitions for MSWin32, 
+	  >=5.10: newGP, vivify_ref, prepare_SV_for_RV (tests 18, 29).
+	  PerlProc_setjmp, PerlProc_longjmp (tests 12, 32).
 	Fixed cxinc for 5.11.0
 	* t/bytecode.t: mixed up 32 with 33.
 	* t/modules.t, t/top100: new module test, see also the log.modules* 

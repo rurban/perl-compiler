@@ -23,6 +23,6 @@ push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 push @todo, (32)   if $] >= 5.011003;
 
 # skip core dump causing known limitations, like custom sort or runtime labels
-my @skip = (25,30);
+my @skip = (21,25,30);
 
 run_c_tests("CC,-O2", \@todo, \@skip);
