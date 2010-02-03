@@ -995,13 +995,13 @@ sub B::PMOP::save {
   my $pm = sprintf( "pmop_list[%d]", $pmopsect->index );
   $init->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  my $re = $op->precomp;
+  my $re = $op->precomp; #out of memory: Module::Pluggable, Carp::Clan - threaded
   if ( defined($re) ) {
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
       my $resym = cstring($re);
       my $relen = length($re);
-      $init->add(
+      $init->add( # Modification of a read-only value attempted. use DateTime - threaded
         sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));",
 		$op->pmflags ),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
@@ -1527,6 +1527,12 @@ sub B::RV::save {
     }
     # and stashes, too
     elsif ( $sv->RV->isa('B::HV') && $sv->RV->NAME ) {
+      $xrvsect->add("(SV*)Nullhv");
+      $init->add(
+        sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;\n", $xrvsect->index, $rv ) );
+    }
+    # one more: bootstrapped XS CVs (test Class::MOP, no simple testcase yet)
+    elsif ( $rv =~ /\(perl_get_cv/ ) {
       $xrvsect->add("(SV*)Nullhv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;\n", $xrvsect->index, $rv ) );

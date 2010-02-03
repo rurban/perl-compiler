@@ -15,10 +15,19 @@
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 
 BEGIN {
-  unless (-d '.svn') {
-    print "1..0 #skip author test (16min)\n";
+  #unless (-d '.svn') {
+  #  print "1..0 #skip author test (16min)\n";
+  #  exit;
+  #}
+  # try some simple XS module which exists in 5.6.2 and blead
+  # otherwise we'll get a bogus 40% failure rate
+  my $result = `$^X -Mblib blib/script/perlcc -e 'use re;'`;
+  # check whether linking with xs works at all
+  unless (-e 'a') {
+    print "1..0 #skip perlcc cannot link re. Most likely wrong ldopts. Try -Bdynamic or -Bstatic.\n";
     exit;
   }
+  unlink "a";
 }
 
 use Config;
@@ -53,9 +62,23 @@ if ($] >= 5.010) {
     for qw( File::Temp ExtUtils::Install Test::NoWarnings);
   $TODO{$_} = 0
     for qw( B::Hooks::EndOfScope YAML MooseX::Types );
-}
-if ($] >= 5.011004) {
-  $TODO{Test::NoWarnings} = 0;
+  if ($Config{useithreads}) {
+    $TODO{$_} = 1
+      for qw(
+             Test::Harness Pod::Simple IO Getopt::Long Pod::Parser
+             ExtUtils::MakeMaker Pod::Text File::Temp ExtUtils::Install
+             ExtUtils::CBuilder Module::Build Digest::MD5 URI HTML::Parser LWP
+             Storable Test::Tester Attribute::Handlers Test::NoWarnings
+             Filter::Util::Call Try::Tiny Class::MOP Moose Test::Deep Carp::Clan
+             Module::Pluggable DBI FCGI Tree::DAG_Node Path::Class Test::Warn
+             Encode CGI B::Hooks::EndOfScope Test::Pod Digest::SHA1
+             namespace::clean XML::SAX DateTime::Locale DateTime AppConfig
+             Template::Stash
+            );
+  }
+  if ($] >= 5.011004) {
+    $TODO{Test::NoWarnings} = 0; 
+  }
 }
 
 my @modules;
@@ -74,6 +97,7 @@ my $perlversion;
 # $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
 printf "1..%d\n", scalar @modules * scalar @opts;
+print "# basic perlcc check looks good - perlcc could link re successfully.\n";
 
 if ($log) {
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
@@ -128,16 +152,17 @@ for my $m (@modules) {
 	$fail++;
 	if ($opt or $TODO{$m}) {
 	  print "ok $i  #TODO perlcc -r $opt  no $m\n";
-	  print LOG "fail $m - $opt\n" if $log;
+	  print LOG "fail $m",$opt?" - $opt":"","\n" if $log;
 	} else {
 	  print "not ok $i  # perlcc -r $opt  no $m\n";
-	  print "# ", join "\n#", split/\n/, $err;
+	  print "# ", join "\n#", split/\n/, $err if $err;
+	  print "\n" if $err;
 	  print LOG "fail $m\n" if $log;
 	}
       }
       $i++;
     }
-    unlink "mod.pl";
+    unlink ("mod.pl", "a");
   }
 }
 
