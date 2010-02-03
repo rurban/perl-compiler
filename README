@@ -1,7 +1,7 @@
 	The B::C, B::CC, B::Bytecode Perl Compiler Kit
 
 	Copyright (c) 1996, 1997, Malcolm Beattie
-	Copyright (c) 2008, 2009 Reini Urban
+	Copyright (c) 2008, 2009, 2010 Reini Urban
 
 Releases are at http://search.cpan.org/dist/B-C/
 
@@ -12,22 +12,12 @@ USAGE
 
 The Bytecode, C and CC backends are now all functional
 enough to compile almost the whole of the main perl test
-suite for 5.8 and partially for 5.10. 
+suite and 97% of the top100 modules.
+
 In the case of the CC backend, any failures are all
 due to differences and/or known bugs documented below. See
 the file TESTS.  In the following examples, you'll need to
 replace "perl" by
-
-    perl -Iblib/arch
-
-if you have built the extensions for a dynamic loading
-platform but haven't installed the extensions
-completely. You'll need to replace "perl" by
-
-    ./perl
-
-if you have built the extensions into a statically linked
-perl binary.
 
 (1) To compile perl program foo.pl with the C backend, do
 
@@ -147,7 +137,7 @@ the extensions.
 
 Previous Perl releases had ByteLoader in CORE, so you can omit -MByteLoader there.
 
-You can also do -H to automatically use ByteLoader.
+You can also do -H to automatically use ByteLoader
 
     perl -MO=Bytecode,-H,-ofoo.plc foo.pl
     perl foo.plc
@@ -159,8 +149,9 @@ optimisation options and ways of getting at the intermediate "assembler"
 code that the Bytecode backend uses).
 
 (3) There are little Bourne shell scripts and perl programs to aid with
-some common operations: perlcc, assemble, disassemble, cc_harness, 
-t/testc.sh, t/testplc.sh, pl2exe.pl
+some common operations:
+
+  perlcc, assemble, disassemble, cc_harness
 
 XSUBS
 
@@ -191,6 +182,7 @@ DIFFERENCES
 The result of running a CC compiled Perl program can sometimes be different
 from running the same program with standard perl. Think of the compiler
 as having a slightly different implementation of the language Perl.
+
 Unfortunately, since Perl has had a single implementation until now,
 there are no formal standards or documents defining what behaviour is
 guaranteed of Perl the language and what just "happens to work".
@@ -248,15 +240,11 @@ Deprecated features
 
 STATUS
 
-C works fine, best with 5.10 threaded.
+C works fine, best with non-threaded perls. 3-4% fails on the top100 modules.
 Bytecode fails on >= 5.10 (in work)
-CC fails on some tests (see Todo)
+CC fails on some tests. See Todo.
 
-See STATUS
-
-CHANGES
-
-See Changes
+See STATUS for details.
 
 BUGS
 
@@ -278,7 +266,9 @@ The following render the compiler useless (without serious hacking):
 
 The following may give significant problems:
 
-* BEGIN blocks containing complex initialisation code
+* BEGIN blocks containing complex initialisation code, 
+  esp. sideeffects. All the BEGIN code is evaluated once at compile-time,
+  and NOT executed at run-time.
 * Code which is only ever referred to at runtime (e.g. via eval "..." or
   via method calls): see the -u option for the C and CC backends.
 * Run-time lookups of lexical variables in "outside" closures
@@ -324,10 +314,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-Fri 18 December 2009
+2010-02-03
 
 Malcolm Beattie
 2 September 1996
-
-
-
