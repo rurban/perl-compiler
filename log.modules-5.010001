@@ -5,7 +5,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 fail Pod::Simple
 fail IO
@@ -52,7 +52,7 @@ pass Sub::Install
 fail Attribute::Handlers - 
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+fail Test::NoWarnings - 
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -63,7 +63,7 @@ pass Scope::Guard
 pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
-fail Try::Tiny
+pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP
 fail Moose
@@ -87,13 +87,13 @@ fail CGI
 fail B::Hooks::EndOfScope
 fail Test::Pod
 fail Digest::SHA1
-skip namespace::clean
+fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 fail XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 fail DateTime::Locale
@@ -101,9 +101,9 @@ fail DateTime
 pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
+skip Template::Stash
 
-# 97 modules tested with B-C-1.17
-# pass  57 /  97 (58.8%)
-# fail  40 /  97 (41.2%)
-# skip   3 / 100 (3.1% not installed)
+# 98 modules tested with B-C-1.17 - perl-5.010001
+# pass  58 /  98 (59.2%)
+# fail  40 /  98 (40.8%)
+# skip   2 / 100 (2.0% not installed)

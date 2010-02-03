@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 
-# 98 modules tested with B-C-1.17
-# pass  95 /  98 (96.9%)
-# fail   3 /  98 (3.1%)
-# skip   2 / 100 (2.0% not installed)
+# 99 modules tested with B-C-1.17 - perl-5.011004d-nt
+# pass  96 /  99 (97.0%)
+# fail   3 /  99 (3.0%)
+# skip   1 / 100 (1.0% not installed)

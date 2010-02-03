@@ -20,12 +20,12 @@ pass constant
 pass Test
 fail Data::Dumper
 pass File::Spec
-fail File::Temp
-fail ExtUtils::Install
+fail File::Temp - 
+fail ExtUtils::Install - 
 pass Text::ParseWords
 fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 fail File::Path
 pass XSLoader
 pass MIME::Base64
@@ -52,7 +52,7 @@ pass Sub::Install
 fail Attribute::Handlers - 
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+fail Test::NoWarnings - 
 pass version
 skip Params::Validate
 skip Sub::Name
@@ -78,7 +78,7 @@ pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 skip FCGI
-pass Tree::DAG_Node
+fail Tree::DAG_Node
 fail Path::Class
 fail Test::Warn
 fail Encode
@@ -92,7 +92,7 @@ pass Class::Inspector
 skip Clone
 pass XML::NamespaceSupport
 fail XML::SAX
-fail YAML - 
+fail YAML
 skip MooseX::Types
 pass Class::Singleton
 skip DateTime::TimeZone
@@ -103,7 +103,7 @@ fail AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 
-# 77 modules tested with B-C-1.17
-# pass 40 / 77 (51.9%)
-# fail 35 / 77 (45.5%)
-# skip 23 / 100 (29.9% not installed)
+# 77 modules tested with B-C-1.17 - perl-5.010000-nt
+# pass  38 /  77 (49.4%)
+# fail  39 /  77 (50.6%)
+# skip  23 / 100 (29.9% not installed)

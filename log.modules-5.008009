@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 
-# 70 modules tested with B-C-1.17
-# pass 69 / 70 (98.6%)
-# fail 1 / 70 (1.4%)
-# skip 30 / 100 (42.9% not installed)
+# 70 modules tested with B-C-1.17 - perl-5.008009
+# pass  69 /  70 (98.6%)
+# fail   1 /  70 (1.4%)
+# skip  30 / 100 (42.9% not installed)

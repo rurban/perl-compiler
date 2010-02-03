@@ -134,20 +134,23 @@ We only try B::C so far.
 From top100:
 5.8.9:     fail 4% Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
 5.11.4-nt: fail 3% Attribute::Handlers File::Temp ExtUtils::Install
+>5.10 threaded:  ~40% failures
 
 5.10, 5.11 status
 -----------------
 TODO for B::C
   AUTOLOAD goto xsub and SelfLoader esp. on 5.8 (27). 
     use AutoLoader works okay. (test 27, 31)
-  test 29 non-threaded 5.8 (require $fname)
+  test 29 non-threaded 5.8 (use IO)
   5.11.3 test 32 catch evaltry die
   destruction: -O1 static PVs and HEKs (mult.) >=5.10
-  Fix and check t/modules and t/testcore.
+  Fix and check t/modules (in work) and t/testcore.
 
 Fix CC cc_queue sort 18 ccpp
 
 DONE:
+fixed several minor bugs only in modules, no short testcases yet. See Changes
+
 fixed PP_ENTEREVAL (CC test 12) for 5.10 with 1.14.
   Nullify ending retop for the string to CALLRUNOPS.
 
