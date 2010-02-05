@@ -20,12 +20,12 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp
-pass ExtUtils::Install
+fail File::Temp
+fail ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -62,14 +62,14 @@ skip Class::C3
 skip Scope::Guard
 skip MRO::Compat
 pass Time::HiRes
-skip Class::Data::Inheritable
-skip Try::Tiny
-skip Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
-skip Test::Deep
-skip Carp::Clan
-pass Module::Pluggable
+pass Class::Data::Inheritable
+pass Try::Tiny
+pass Devel::GlobalDestruction
+pass Class::MOP
+fail Moose
+pass Test::Deep
+pass Carp::Clan
+fail Module::Pluggable
 skip if
 pass Text::Balanced
 pass DBI
@@ -92,18 +92,18 @@ skip Class::Inspector
 skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
-skip YAML
-skip MooseX::Types
-skip Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
-skip IO::String
-skip AppConfig
-skip UNIVERSAL::require
+fail YAML
+fail MooseX::Types
+pass Class::Singleton
+fail DateTime::TimeZone
+pass DateTime::Locale
+fail DateTime
+pass IO::String
+pass AppConfig
+pass UNIVERSAL::require
 skip Template::Stash
 
-# 46 modules tested with B-C-1.17 - perl-5.008009d-nt
-# pass  45 /  46 (97.8%)
-# fail   1 /  46 (2.2%)
-# skip  54 / 100 (117.4% not installed)
+# 94 modules tested with B-C-1.17 - perl-5.008009d-nt
+# pass  83 /  94 (88.3%)
+# fail  11 /  94 (11.7%)
+# skip   6 / 100 (6.4% not installed)
