@@ -172,7 +172,7 @@ sub percent {
 my $count = scalar @modules - $skip;
 my $pc = percent($pass,$count);
 my $fc = percent($fail,$count);
-my $sc = percent($skip,$count);
+my $sc = percent($skip,scalar @modules);
 my $footer =
   "\n# $count modules tested with B-C-".$B::C::VERSION." - perl-$perlversion\n"
   .sprintf("# pass %3d / %3d (%s)\n", $pass, $count, $pc)
