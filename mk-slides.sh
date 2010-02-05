@@ -1,5 +1,5 @@
 #!/bin/sh
-# 
+# cpan Pod::S5
 
 perl -MTest::Pod -e'pod_file_ok q(frozenperl_2010.pod)' && \
 pod2s5 --theme rurban --creation "Minneapolis Sat Feb 7, 2010" \
