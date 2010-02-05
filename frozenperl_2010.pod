@@ -486,7 +486,7 @@ on B<5 platforms> (cygwin, debian, centos, solaris, freebsd)
 
 top100 modules?
 
-See webpage or svm repo for results for all tested perls / modules
+See webpage or svn repo for results for all tested perls / modules
 
 With 5.8 non-threaded 3 fails B<Attribute::Handlers> B<B::Hooks::EndOfScope> B<YAML> B<MooseX::Types>
 
