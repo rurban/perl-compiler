@@ -5,6 +5,8 @@ use 5.006;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
+system("$^X bytecode.pl");
+
 WriteMakefile(
     NAME	 => "B::C",
     VERSION_FROM => "lib/B/C.pm",
