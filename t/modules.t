@@ -23,7 +23,7 @@ BEGIN {
   # otherwise we'll get a bogus 40% failure rate
   my $result = `$^X -Mblib blib/script/perlcc -e 'use re;'`;
   # check whether linking with xs works at all
-  unless (-e 'a') {
+  unless (-e 'a' or -e 'a.out') {
     print "1..0 #skip perlcc cannot link re. Most likely wrong ldopts. Try -Bdynamic or -Bstatic.\n";
     exit;
   }
@@ -77,7 +77,7 @@ if ($] >= 5.010) {
             );
   }
   if ($] >= 5.011004) {
-    $TODO{Test::NoWarnings} = 0; 
+    $TODO{Test::NoWarnings} = 0;
   }
 }
 
