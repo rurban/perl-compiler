@@ -15,10 +15,10 @@
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 
 BEGIN {
-  #unless (-d '.svn') {
-  #  print "1..0 #skip author test (16min)\n";
-  #  exit;
-  #}
+  unless (-d '.svn') {
+    print "1..0 #skip author test (16min)\n";
+    exit;
+  }
   # try some simple XS module which exists in 5.6.2 and blead
   # otherwise we'll get a bogus 40% failure rate
   my $result = `$^X -Mblib blib/script/perlcc -e 'use re;'`;
@@ -27,7 +27,7 @@ BEGIN {
     print "1..0 #skip perlcc cannot link re. Most likely wrong ldopts. Try -Bdynamic or -Bstatic.\n";
     exit;
   }
-  unlink "a";
+  unlink ("a", "a.out");
 }
 
 use Config;
@@ -182,7 +182,7 @@ print $footer;
 print LOG $footer;
 
 END {
-  unlink ("mod.pl", "a");
+  unlink ("mod.pl", "a", "a.out");
   close LOG if $log;
   close ERR if $log;
 }

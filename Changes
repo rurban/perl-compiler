@@ -3,6 +3,13 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.18	2010-02-05 rurban
+	evaltry (test 12) still broken on most systems.
+
+	* t/modules.t: check for a.out (test from toddr)
+	* Makefile.PL: create lib/B/Asmdata.pm beforehand (toddr)
+	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin (test from toddr)
+
 1.17	2010-02-03 rurban
 	Fixed now most module failures, non-threaded at least: bootstrap was in 
 	the way. strawberry perl fixes. Fixed test 29, broke evaltry test 12
