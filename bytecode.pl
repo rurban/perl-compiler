@@ -123,6 +123,8 @@ print BYTERUN_C $c_header, <<'EOT';
 #include "byterun.h"
 #include "bytecode.h"
 
+struct byteloader_header bl_header;
+
 static const int optype_size[] = {
 EOT
 my $i = 0;
@@ -562,9 +564,6 @@ struct byteloader_xpv {
 };
 #endif
 
-#ifdef PERL_DARWIN
-extern
-#endif
 struct byteloader_header {
     char 	archname[80];
     char 	version[16];
@@ -574,7 +573,7 @@ struct byteloader_header {
     char 	byteorder[16];
     int 	archflag;
     char 	perlversion[16];
-} bl_header;
+};
 
 struct byteloader_state {
     struct byteloader_fdata	*bs_fdata;
