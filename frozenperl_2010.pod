@@ -297,7 +297,7 @@ Custom sort BLOCK is buggy, I<wrong queue implementation, causing endless loop>
 
 =item <small><code>sort { $a <=> $b } </code></small>
 
-<small>is optimized away, ok</small>
+<small>is optimised away, ok</small>
 
 =item <small><code>sort { $hash{$a} <=> $hash{$b} } </code></small>
 
@@ -325,7 +325,7 @@ Which software is compiler critical?
 
 Execution time is the same (sans B::CC)
 
-Startup time radical faster.
+Startup time is radical faster
 
 =head1 Projects
 
@@ -333,7 +333,7 @@ Which software is compiler critical?
 
 Execution time is the same (sans B::CC)
 
-Startup time radical faster.
+Startup time is radical faster.
 
 Web Apps with fast response times - 
 
@@ -345,7 +345,7 @@ Which software is compiler critical?
 
 Execution time is the same (sans B::CC)
 
-Startup time radical faster.
+Startup time is radical faster.
 
 Web Apps with fast response times - 
 
@@ -367,7 +367,7 @@ Optimise static initialization - strings and arrays
 
 non-threaded ! +10-20% performance
 
-common constant strings with gcc -Os =E<gt> automatically optimized
+common constant strings with gcc -Os =E<gt> automatically optimised
 
 =head1 New Optimisations
 
@@ -375,7 +375,7 @@ Optimise static initialization - strings and arrays
 
 non-threaded ! +10-20% performance
 
-common constant strings with gcc -Os =E<gt> automatically optimized
+common constant strings with gcc -Os =E<gt> automatically optimised
 
 av_extend - run-time malloc =E<gt> static arrays ?
 
