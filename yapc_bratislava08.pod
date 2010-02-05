@@ -1,0 +1,259 @@
+=head1 NAME
+
+yapc_bratislava08 - Need help with the perl compiler, emit C or JIT, blabla
+
+=head1 Preparation
+
+  open L<B-C/perloptreeguts.pod> and 
+  L<perl-current/pod/perlguts.pod>
+
+=head1 Contents
+
+I'll present very briefly about 5% of the internals, will debug
+some real-life problem and you have enough time to task deeper
+questions.
+
+* History
+* Current Status
+* Compilation
+* The op tree
+* B::Bytecode
+* B::C
+* Using the compiler
+* Debugging a problem
+* Ideas, pro and contra B
+
+-----------
+
+=head1 History
+
+The "perl compiler" modules B<B::Bytecode>, B<B::C> and B<B::CC>
+(C<B::C> compiles B to simple C, C<B::CC> to optimized C source)
+
+written 96-97 by Malcolm Beattie, Oxford.
+
+in core since Alpha 5, perl5.002
+
+Out of core since 5.9.5 (5.10)
+
+Now at CPAN as B::C maintained by me, rurban, 
+at F<http://search.cpan.org/dist/B-C/> (still as devel)
+
+--------
+
+With alpha3 (1997) it could compile almost the 
+whole perl test suite for all 3 compilers.
+
+With 5.10 it cannot even compile a regexp (due to the 5.10
+rewrite and SV changes) and its 21 internal tests
+(due to advanced features since 5.002: AUTOLOAD, our, ...).
+
+  perl -MO=C,-otest.c test.pl
+    => test.c
+  gcc test.c
+
+--------
+
+=head1 Current Status
+
+5.002 up to 5.8.9 works "ok", most tests pass, but not all.
+
+For 5.10 properly calling and saving a lexical context needs some 
+help, most likely from eastern hackers. I have best experiences 
+with russians.
+
+For 5.10/5.11 calling and constructing a regexp for B::C
+needs help. From demerque in Frankfurt, or someone else who
+knows how to call PM_SETRE and CALLREGCOMP in XS in 5.10.
+
+When these two problems are solved, I can release it as 
+B-C-1.05 and replace B::C from 5.8.
+
+When the testsuite with some advanced tests will pass, we can
+start using the compiler and bytecode features. Probably put the
+bytecode stuff back into core, because we need plc/pmc support
+and the ByteLoader part builtin.
+
+5.6 and earlier will keep using the core B::C modules, 
+as its internal structures changed too much.
+
+--------
+
+=head1 "Compilation"
+
+perl has an internal compiler, i.e. a parser (perly.y) reads the
+source lines and compiles it to a so-called op tree, a tree of
+simple operators (ops), which are internal pp_() functions.
+
+  See opcode.pl or perloptreeguts.pod
+
+As with XS all internal perl pp_ functions take no arguments, 
+all arguments are expected to be on the "perl stack", which 
+is a special heap area, not the CPU stack. (pp for "push/pop")
+
+The op tree represents the program code, but a program also needs 
+the data, the SV's, AV's and HV's. The arguments for the ops are 
+typically pointers to those SV's (SVREF) or lexicals (on PADs) 
+or direct SV's.
+
+perl is not too much functional, so there are seldom pointers to
+ops used as args to ops, mostly lexicals and SV's. 
+In L<perlguts.pod> you will see the all the used perl data, the
+internal variables, the SV's, AV's, HV's, but also CV's, GV's,
+...  But you will not learn about the op tree, the structure of
+the ops.  The perl compiler is all about the op tree, the ops.
+
+When executing a program, perl compiles ("parses and constructs")
+the optree and then simply runs linearly through the optree (a
+linear list now) from the beginning to the end.
+
+In the "perl compiler", the B backend is just the XS
+representation of the optree as perl objects, you can use perl
+methods to read from the various OP structs.
+
+The perl compiler consists of various B modules to convert from
+those B objects, representing the ops, to bytecode or C code.
+
+----------
+
+=head1 The op tree
+
+See L<perloptreeguts.pod> (in B::C and the perl5 wiki) and
+L<perlhack.pod>
+
+Similar to the perl internal variables, the SV's, the B<OP>'s are
+built as hierarchical C structures, based upon the BASEOP, and
+then more specialized OPs, for the different number of args and
+types of operations.
+
+  "$a + $b * $c"
+
+is compiled to (in C syntax, but really in memory)
+
+  newBINOP(OP_ADD, flags,
+     newSVREF($a),
+     newBINOP(OP_MULTIPLY, flags, 
+         newSVREF($b), 
+         newSVREF($c)
+     )
+  )
+
+Two BINOP's for ADD and MULTIPLY take two args (BINOP), and of
+those two args are the op for a SVREF (pointer to the SV for $a,
+$b and $c) and the OP_MULTIPLY.
+
+This parse-tree is recursive and looks like nested LISP code.
+
+The internal compiler (not B::C) runs in three passes over the
+perl code. The various passes contain also a "peephole"
+optimizer, which optimizes this recursive op tree and in the end
+it is ensured that we can linearly run through the tree by simply
+stepping through the C<op_next> pointers and with lists through
+the C<op_sibling> pointers.
+
+The Walker:
+
+  int
+  Perl_runops_standard(pTHX)
+  {
+	dVAR;
+	while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) {
+		PERL_ASYNC_CHECK();
+	}
+	TAINT_NOT;
+	return 0;
+  }
+
+
+=head1 B::Bytecode
+
+Generate the optree from a binary .plc/.pmc file, 
+platform-compatible.
+
+CROSS-PLATFORM PORTABILITY
+For different endian-ness there are ByteLoader converters in effect.
+Header entry: byteorder.
+64int - 64all - 32int is portable. Header entry: ivsize
+ITHREADS are unportable.
+
+Needs much less opcodes (~100) than perl opcodes.pl, 
+all the pp_ functions (~400).
+Just for every op, all the op flags (the struct fields) 
+and for every sv/av/hv type.
+
+Assembler and disassembler roundtrips.
+
+=head1 B::C
+
+Similar to bytecode it generates the whole optree ("code") and 
+data in memory with XS functions, and then jumps into ENTER 
+via the main walker C<Perl_runops_standard>.
+
+But it generates C code, which is statically compiled and linked
+to libperl. Dynamic perl features are still dynamic, but
+guaranteed static decisions can be optimized. => L<B::CC>
+
+=head1 Using the compiler
+
+  perlcc test.pl
+
+  t/testplc.sh (see the .plc, .asm, .disasm files and 
+                the roundtrips)
+
+  t/testc.sh 2
+
+=head1 Debugging a problem
+
+See STATUS
+
+  t/testc.sh 02 
+
+Debug a failure in the PREGCOMP call 
+
+Expand the preprocessor C macros to find 
+the actual failing calls.
+
+  gcc -E => .cee
+
+Fix the line number from main() on for the gdb stepper. 
+Our main() is perl_init_aaaa() here.
+
+Step to the problem and inspect it. gdb b perl_init_aaaa p
+
+
+=head1 Ideas
+
+The B modules can be used the read or change or transform the
+perl optree - a perl program in the internal representation.
+
+We might want to convert perl5 to various other formats, such as
+native code (JIT), perl6 or PIR, but maybe also to java, LISP,
+scheme, and compile this then to fast native and optimized code.
+
+Other possible advanced ways are:
+
+1. B<PPI>, the perl source level parser together with a source
+filter, which could be used for source level macro trickery.
+
+2. B<MAD>, compiles the optree externally to XML or YAML, and
+offline tools can convert these XML to other formats, such as
+perl6 code.  Advantage: This looks awful, but is easily debuggable.
+
+3. undump() and unexec
+
+Some cool B modules are L<B::Concise>, L<B::Deparse>, L<B::Lint>,
+L<B::Generate>.  
+
+And as advanced modules L<Devel::TypeCheck>, L<optimize>, 
+L<optimizer>, L<types>.
+These are the building blocks for a statically optimized 
+compiler (as B::CC), in contrast to the current slow, 
+dynamic interpreter.
+
+--
+rurban Bratislava, 2008-11-08 16:05 MET
+
+__END__
+Local Variables:
+  fill-column:65
+End:
