@@ -1,0 +1,12 @@
+B::MAGIC	T_MG_OBJ
+B::SV		T_SV_OBJ
+
+INPUT
+T_MG_OBJ
+	if (SvROK($arg)) {
+	    IV tmp = SvIV((SV*)SvRV($arg));
+	    $var = INT2PTR($type,tmp);
+	}
+	else
+	    croak(\"$var is not a reference\")
+

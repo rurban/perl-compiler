@@ -10,6 +10,8 @@
 # endif
 #endif
 
+typedef struct magic* B__MAGIC;
+
 static int
 my_runops(pTHX)
 {
@@ -56,7 +58,29 @@ my_runops(pTHX)
     return 0;
 }
 
-MODULE=B__C PACKAGE=B::C
+MODULE = B__MAGIC	PACKAGE = B::MAGIC
+
+#if PERL_VERSION < 7
+
+SV*
+precomp(mg)
+        B::MAGIC        mg
+    CODE:
+        if (mg->mg_type == 'r') {
+            REGEXP* rx = (REGEXP*)mg->mg_obj;
+            RETVAL = Nullsv;
+            if( rx )
+                RETVAL = newSVpvn( rx->precomp, rx->prelen );
+        }
+        else {
+            croak( "precomp is only meaningful on r-magic" );
+        }
+    OUTPUT:
+        RETVAL
+
+#endif
+
+MODULE=B__C 	PACKAGE=B::C
 
 PROTOTYPES: DISABLE
 
