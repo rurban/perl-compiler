@@ -54,11 +54,11 @@ Very dynamic language. eval "require $foo;" -> which packages?
 
 =over
 
-=item Improved startup time, esp. significant with larger code bases.  
+=item Improved startup time, esp. significant with larger code.  
 
-=item Reduced memory usage. <br><small> 9% reduction in memory usage for a 25000 line application</small>
+=item Reduced memory usage. <br><small> 9% less memory w/ 25000 lines</small>
 
-=item Ability to distribute binary only versions
+=item Distribute binary only versions
 
 =over 8
 
@@ -66,7 +66,7 @@ Very dynamic language. eval "require $foo;" -> which packages?
 
 =item Self contained application
 
-=item But you could also use a "Packager", like L<perl2exe>, L<perlapp>, L<PAR> <br> <small>They are no compilers, and slower startup </small>
+=item But you could also use a "Packager", like L<perl2exe>, L<perlapp>, L<PAR> <br> <small>They are no compilers, slower startup </small>
 
 =back
 
@@ -259,56 +259,6 @@ I<See testsuite and> F<STATUS>
 
 =back
 
-=head1 B::CC Limitations
-
-run-time ops vs compile-time ...
-
-dynamic range 1..$foo
-
-goto/next/last $label
-
-Undetected modules behind eval "require": <br>
-use B<-uModule> to enforce scanning these
-
-=head1 B::CC Limitations
-
-run-time ops vs compile-time<br>
-BEGIN blocks only compile-time side-effects.
-
-  BEGIN { <br>
-&nbsp;&nbsp;    use Package;   # okay <BR>
-&nbsp;&nbsp;    chdir "dir";   # not okay. <BR>
-&nbsp;&nbsp;                   # only done at compile-time, not at the user<BR>
-&nbsp;&nbsp;    print "stuff"; # okay, only at compile-time <BR>
-&nbsp;&nbsp;    eval "what";   # hmm; depends <br>
-  }
-
-Move eval "require Package;" to BEGIN
-
-=head1 B::CC Bugs
-
-Custom sort BLOCK is buggy, I<wrong queue implementation>
-
-=head1 B::CC Bugs
-
-Custom sort BLOCK is buggy, I<wrong queue implementation, causing endless loop>
-
-=over
-
-=item <small><code>sort { $a <=> $b } </code></small>
-
-<small>is optimised away, ok</small>
-
-=item <small><code>sort { $hash{$a} <=> $hash{$b} } </code></small>
-
-<small>maybe?</small>
-
-=item <small><code>sort { $hash{$a}->{field} <=> $hash{$b}->{field} } </code></small>
-
-<small>for sure not</small>
-
-=back
-
 =head1 Projects
 
 Which software is compiler critical?
@@ -451,6 +401,56 @@ HTML Template Processor
 2012: CC unrolling => jit within perl (C<perl -j>)
 
 Emit parrot pir.
+
+=head1 B::CC Limitations
+
+run-time ops vs compile-time ...
+
+dynamic range 1..$foo
+
+goto/next/last $label
+
+Undetected modules behind eval "require": <br>
+use B<-uModule> to enforce scanning these
+
+=head1 B::CC Limitations
+
+run-time ops vs compile-time<br>
+BEGIN blocks only compile-time side-effects.
+
+  BEGIN { <br>
+&nbsp;&nbsp;    use Package;   # okay <BR>
+&nbsp;&nbsp;    chdir "dir";   # not okay. <BR>
+&nbsp;&nbsp;                   # only done at compile-time, not at the user<BR>
+&nbsp;&nbsp;    print "stuff"; # okay, only at compile-time <BR>
+&nbsp;&nbsp;    eval "what";   # hmm; depends <br>
+  }
+
+Move eval "require Package;" to BEGIN
+
+=head1 B::CC Bugs
+
+Custom sort BLOCK is buggy, I<wrong queue implementation>
+
+=head1 B::CC Bugs
+
+Custom sort BLOCK is buggy, I<wrong queue implementation, causing endless loop>
+
+=over
+
+=item <small><code>sort { $a <=> $b } </code></small>
+
+<small>is optimised away, ok</small>
+
+=item <small><code>sort { $hash{$a} <=> $hash{$b} } </code></small>
+
+<small>maybe?</small>
+
+=item <small><code>sort { $hash{$a}->{field} <=> $hash{$b}->{field} } </code></small>
+
+<small>for sure not</small>
+
+=back
 
 =head1 Testsuite
 

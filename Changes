@@ -3,13 +3,16 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.18	2010-02-05 rurban
+1.18	2010-02-06 rurban
 	evaltry (test 12) still broken on most systems.
 
-	* C.pm: fixed r-magic for 5.6 (ExtUtils::Install, File::Temp, Template::Stash)
+	* C.pm, C.xs: fixed r-magic for 5.6 (ExtUtils::Install, 
+	  File::Temp, Template::Stash). need tests for run-time checks (33).
+	  5.6 misses MG->pregcomp
 	* t/modules.t: check for a.out (test from toddr)
 	* Makefile.PL: create lib/B/Asmdata.pm beforehand (toddr)
-	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin (test from toddr)
+	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin 
+	  (test from toddr)
 	* test 37 added - AV self-refs, analog to HVs (never failed, just to be sure)
 	  Removed -qq from 5.6 tests.
 

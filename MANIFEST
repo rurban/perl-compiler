@@ -90,4 +90,5 @@ t/testcc.sh
 t/top100
 TESTS
 Todo
+typemap
 yapc_bratislava08.pod

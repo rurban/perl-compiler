@@ -15,7 +15,7 @@ my $C = $] > 5.007 ? "-qq,C" : "C";
 system "$^X -Mblib -MO=$C,-oa.c $pl";
 # see if the ldopts libs are picked up correctly. This really depends on your perl package.
 system "$^X -Mblib script/cc_harness -q -DALLOW_PERL_OPTIONS a.c -o a";
-unless (-e "a") {
+unless (-e 'a' or -e 'a.out') {
   print "ok 1 #skip wrong ldopts for cc_harness. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   print "ok 2 #skip ditto\n";
   exit;
