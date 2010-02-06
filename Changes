@@ -6,6 +6,7 @@
 1.18	2010-02-05 rurban
 	evaltry (test 12) still broken on most systems.
 
+	* C.pm: fixed r-magic for 5.6 (ExtUtils::Install, File::Temp, Template::Stash)
 	* t/modules.t: check for a.out (test from toddr)
 	* Makefile.PL: create lib/B/Asmdata.pm beforehand (toddr)
 	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin (test from toddr)

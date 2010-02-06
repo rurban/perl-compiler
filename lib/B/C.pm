@@ -1455,13 +1455,20 @@ sub B::PVMG::save_magic {
       );
     }
     elsif ( $type eq 'r' ) {
-      my $rx   = $mg->REGEX;
+      my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX; # REGEX not in 5.6
       my $pmop = $REGEXP{$rx};
 
       confess "PMOP not found for REGEXP $rx" unless $pmop;
 
-      my ( $resym, $relen ) =
-        savere( $mg->precomp );    # string that generated the regexp
+      my ( $resym, $relen );
+      if ($PERL56) {
+        ;# XXX TODO r-magic still unsupported, need precomp XS method
+         #( $resym, $relen ) = savere( $mg->precomp );
+      }
+      else {
+        ( $resym, $relen ) =
+          savere( $mg->precomp );    # string that generated the regexp
+      }
       my $pmsym = $pmop->save;
       if ($PERL510) {
         $init->add( split /\n/,
@@ -1473,7 +1480,7 @@ sub B::PVMG::save_magic {
 }
 CODE
       }
-      else {
+      elsif (!$PERL56) { # XXX TODO r-magic still unsupported
         $init->add( split /\n/,
           sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
 {
