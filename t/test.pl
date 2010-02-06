@@ -806,10 +806,10 @@ sub run_cc_test {
         if (grep { m{blib(/|\\)arch$} } @INC) {
             $Mblib = "-Iblib/arch -Iblib/lib";  # forced -Mblib via cmdline without
             					# printing to stderr
-            $backend = "-qq,$backend,-q" unless $ENV{TEST_VERBOSE};
+            $backend = "-qq,$backend,-q" if (!$ENV{TEST_VERBOSE} and $] > 5.007);
         }
     } else {
-        $backend = "-qq,$backend,-q" unless $ENV{TEST_VERBOSE};
+        $backend = "-qq,$backend,-q" if (!$ENV{TEST_VERBOSE} and $] > 5.007);
     }
     $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],
                     verbose  => $ENV{TEST_VERBOSE}, # for debugging
