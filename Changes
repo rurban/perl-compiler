@@ -10,6 +10,7 @@
 	* Makefile.PL: create lib/B/Asmdata.pm beforehand (toddr)
 	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin (test from toddr)
 	* test 37 added - AV self-refs, analog to HVs (never failed, just to be sure)
+	  Removed -qq from 5.6 tests.
 
 1.17	2010-02-03 rurban
 	Fixed now most module failures, non-threaded at least: bootstrap was in 

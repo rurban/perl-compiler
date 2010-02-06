@@ -21,10 +21,10 @@ BEGIN {
   }
   # try some simple XS module which exists in 5.6.2 and blead
   # otherwise we'll get a bogus 40% failure rate
-  my $result = `$^X -Mblib blib/script/perlcc -e 'use re;'`;
+  my $result = `$^X -Mblib blib/script/perlcc -e 'use Sys::Hostname;'`;
   # check whether linking with xs works at all
   unless (-e 'a' or -e 'a.out') {
-    print "1..0 #skip perlcc cannot link re. Most likely wrong ldopts. Try -Bdynamic or -Bstatic.\n";
+    print "1..0 #skip perlcc cannot link Sys::Hostname. Most likely wrong ldopts from your Config.\n";
     exit;
   }
   unlink ("a", "a.out");
