@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=37
+ntests=38
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
@@ -268,6 +268,10 @@ result[36]='ok'
 # AV self-ref
 tests[37]='my ($rv, @av); @av = ( \$rv ); $rv = \@av; print "ok";'
 result[37]='ok'
+# constant autoload loop crash test
+tests[38]='for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_SET); close($null_fh); $ok++; } }if ($ok == 1024) { print "ok"; }'
+result[38]='ok'
+
 
 # from here on we test CC specifics only
 
