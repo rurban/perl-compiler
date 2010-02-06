@@ -15,10 +15,6 @@
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 
 BEGIN {
-  unless (-d '.svn') {
-    print "1..0 #skip author test (16min)\n";
-    exit;
-  }
   # try some simple XS module which exists in 5.6.2 and blead
   # otherwise we'll get a bogus 40% failure rate
   my $result = `$^X -Mblib blib/script/perlcc -e 'use Sys::Hostname;'`;
@@ -31,12 +27,14 @@ BEGIN {
 }
 
 use Config;
+use strict;
 
 eval { require IPC::Run; };
 my $have_IPC_Run = defined $IPC::Run::VERSION;
 
 sub run_cmd {
     my ($cmd, $timeout) = @_;
+    my ($out, $result, $in, $err);
 
     if ( ! $have_IPC_Run ) {
 	local $@;
@@ -77,27 +75,41 @@ if ($] >= 5.010) {
             );
   }
   if ($] >= 5.011004) {
-    $TODO{Test::NoWarnings} = 0;
+    $TODO{'Test::NoWarnings'} = 0;
   }
 }
 
+my $log = 1;
 my @modules;
 {
   local $/;
-  my $test = (@ARGV and -e $ARGV[0]) ? $ARGV[0] : "t/top100";
-  open F, "<", $test or die "$test not found";
-  my $s = <F>;
-  close F;
-  @modules = grep {!/^#/} split /\n/, $s;
+  my $test = (@ARGV and $ARGV[0]) ? $ARGV[0] : "t/top100";
+  if (-e $test) {
+    open F, "<", $test or die "$test not found";
+    my $s = <F>;
+    close F;
+    @modules = grep {!/^#/} split /\n/, $s;
+    unless (-d ".svn") {  # non-author: just pick 10 randomly
+      my @temp;
+      for (0..9) {
+        push @temp, ($modules[rand(scalar @modules)]);
+      }
+      @modules = @temp;
+      undef $log;
+    }
+  }
+  else {
+    undef $log;
+    @modules = ($test);
+  }
 }
 my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
-my $log = 1;
 my $perlversion;
 # $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
 printf "1..%d\n", scalar @modules * scalar @opts;
-print "# basic perlcc check looks good - perlcc could link re successfully.\n";
+print "# basic perlcc check looks good - perlcc could link successfully.\n";
 
 if ($log) {
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
