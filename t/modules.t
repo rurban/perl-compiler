@@ -132,7 +132,8 @@ for my $m (@modules) {
       print LOG "skip $m\n" if $log;
       $skip++;
     }
-  } else {
+  }
+  else {
     open F, ">", "mod.pl";
     print F "use $m;\nprint \"ok\";";
     close F;
@@ -153,7 +154,8 @@ for my $m (@modules) {
 	if ($opt or $TODO{$m}) {
 	  print "ok $i  #TODO perlcc -r $opt  no $m\n";
 	  print LOG "fail $m",$opt?" - $opt":"","\n" if $log;
-	} else {
+	}
+        else {
 	  print "not ok $i  # perlcc -r $opt  no $m\n";
 	  print "# ", join "\n#", split/\n/, $err if $err;
 	  print "\n" if $err;

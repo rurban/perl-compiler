@@ -9,6 +9,7 @@
 	* t/modules.t: check for a.out (test from toddr)
 	* Makefile.PL: create lib/B/Asmdata.pm beforehand (toddr)
 	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin (test from toddr)
+	* test 37 added - AV self-refs, analog to HVs (never failed, just to be sure)
 
 1.17	2010-02-03 rurban
 	Fixed now most module failures, non-threaded at least: bootstrap was in 
@@ -20,7 +21,7 @@
 	  Fail: Attribute::Handlers, B::Hooks::EndOfScope, YAML, MooseX::Types
 	  4 for 5.8.9-nt from the top100, and 3 for 5.11.4-nt: Attribute::Handlers, 
 	  File::Temp, ExtUtils::Install.
-	Fixed AV self-references causing endless loops, analog to HVs.
+	Fixed AV self-references causing endless loops, analog to HVs (test 27)
 	Fixed Getopt::Long crash with AV D magic (regdata),
 	  save_magic returns now the magic types as string.
 	Fixed unescaped savere (test ExtUtils::Install).

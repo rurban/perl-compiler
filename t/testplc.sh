@@ -129,7 +129,7 @@ function btest {
   fi
 }
 
-ntests=35
+ntests=37
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -234,6 +234,12 @@ result[34]='ok'
 # methodcall syntax
 tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth'
 result[35]='ok'
+# HV self-ref
+tests[36]='my ($rv, %hv); %hv = ( key => \$rv ); $rv = \%hv; print "ok";'
+result[36]='ok'
+# AV self-ref
+tests[37]='my ($rv, @av); @av = ( \$rv ); $rv = \@av; print "ok";'
+result[37]='ok'
 
 init
 

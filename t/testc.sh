@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=35
+ntests=37
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
@@ -265,7 +265,9 @@ result[35]='ok'
 # HV self-ref
 tests[36]='my ($rv, %hv); %hv = ( key => \$rv ); $rv = \%hv; print "ok";'
 result[36]='ok'
-
+# AV self-ref
+tests[37]='my ($rv, @av); @av = ( \$rv ); $rv = \@av; print "ok";'
+result[37]='ok'
 
 # from here on we test CC specifics only
 
