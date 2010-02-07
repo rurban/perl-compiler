@@ -176,11 +176,11 @@ use B
   qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
   threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
-  HEf_SVKEY SVf_POK SVf_ROK SVf_IVisUV);
+  HEf_SVKEY SVf_POK SVf_ROK SVf_NOK SVf_IVisUV);
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
-    B->import(qw(regex_padav CVf_CONST)); # both unsupported for 5.6
+    B->import(qw(regex_padav SVp_NOK CVf_CONST)); # both unsupported for 5.6
   } else {
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
@@ -1108,15 +1108,15 @@ sub B::NV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my $val = $sv->NVX;
+  my $val = $sv->NV;
   my $sval = sprintf("%g", $val);
   $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
   $val .= '.00' if $val =~ /^-?\d+$/;
   if ($PERL510) { # not fixed by NV isa IV >= 5.8
-    $xpvnvsect->add( sprintf( "{%g}, 0, 0, {0}", $val ) );
+    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {0}", $val ) );
   }
   else {
-    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %g", $sv->IVX, $val ) );
+    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
   }
   $svsect->add(
     sprintf(
@@ -1177,7 +1177,7 @@ sub B::PVLV::save {
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TYPE');
     $xpvlvsect->add(
-       sprintf("%s, %u, %u, %d, %g, 0, 0, %u, %u, 0, %s",
+       sprintf("%s, %u, %u, %d, %s, 0, 0, %u, %u, 0, %s",
 	       $pvsym,   $len,         $pvmax,       $sv->IVX,
 	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
@@ -1228,17 +1228,31 @@ sub B::PVNV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $val = $sv->NVX;
-  $val .= '.00' if $val =~ /^-?\d+$/;
-  my $sval = sprintf("%g", $val);
-  $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
+  # For now the stringification works of NVX to two ints ok. But we might need
+  # to store it as { low, high }.
   if ($PERL510) {
+    if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+      # it could be a double, or it could be 2 ints - union xpad_cop_seq
+      my $sval = sprintf("%g", $val);
+      $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
+      $val .= '.00' if $val =~ /^-?\d+$/;
+    } else {
+      $val = '0' if $val =~ /NAN$/i; # windows msvcrt
+    }
     $xpvnvsect->comment('$val, $len, $pvmax, $sv->IVX');
     $xpvnvsect->add(
-      sprintf( "{%g}, %u, %u, {%d}", $val, $len, $pvmax, $sv->IVX ) );    # ??
+      sprintf( "{%s}, %u, %u, {%d}", $val, $len, $pvmax, $sv->IVX ) );    # ??
+    unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+      warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
+      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
+                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
+                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %u;",
+                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_HIGH));
+    }
   }
   else {
     $xpvnvsect->add(
-      sprintf( "%s, %u, %u, %d, %g", $savesym, $len, $pvmax, $sv->IVX, $val ) );
+      sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $sv->IVX, $val ) );
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
@@ -1460,15 +1474,7 @@ sub B::PVMG::save_magic {
 
       confess "PMOP not found for REGEXP $rx" unless $pmop;
 
-      my ( $resym, $relen );
-      if ($PERL56) {
-        ;# XXX TODO r-magic still unsupported, need precomp XS method
-         #( $resym, $relen ) = savere( $mg->precomp );
-      }
-      else {
-        ( $resym, $relen ) =
-          savere( $mg->precomp );    # string that generated the regexp
-      }
+      my ( $resym, $relen ) = savere( $mg->precomp );
       my $pmsym = $pmop->save;
       if ($PERL510) {
         $init->add( split /\n/,
@@ -1480,7 +1486,7 @@ sub B::PVMG::save_magic {
 }
 CODE
       }
-      elsif (!$PERL56) { # XXX TODO r-magic still unsupported
+      else {
         $init->add( split /\n/,
           sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
 {
