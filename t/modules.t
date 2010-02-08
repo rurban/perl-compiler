@@ -127,7 +127,7 @@ for my $module (@modules) {
         }
 
       TODO: {
-          local $TODO = 'STDERR from compiler warnings unavoidable';
+          local $TODO = 'STDERR from compiler warnings in work';
           is($err, '', "$module_count: use $module no error output compiling")
             && ($module_passed)
               or log_err($module, $out, $err)
@@ -176,7 +176,7 @@ sub run_cmd {
         }
         else {
           $h->pump_nb;
-          diag "waiting $_\n" if $_ > 35;
+          diag sprintf("waiting %d[s]",$_*10) if $_ > 35;
           sleep 10;
         }
       }
