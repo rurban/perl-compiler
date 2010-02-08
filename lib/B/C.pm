@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.18';
+our $VERSION = '1.19';
 
 package B::C::Section;
 
@@ -157,9 +157,10 @@ package B::C;
 use Exporter ();
 our %REGEXP;
 
-{    # block necessary for caller to work
+{ # block necessary for caller to work
   my $caller = caller;
-  if ( $caller eq 'O' ) {
+  # r-magic fixed with 1.18. C.so|dll not needed anymore
+  if ( $caller eq 'O' and $] < 5.007 ) {
     require XSLoader;
     XSLoader::load('B::C');
   }
@@ -176,12 +177,16 @@ use B
   qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
   threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
-  HEf_SVKEY SVf_POK SVf_ROK SVf_NOK SVf_IVisUV);
+  HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV);
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
-    B->import(qw(regex_padav SVp_NOK CVf_CONST)); # both unsupported for 5.6
+    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST)); # both unsupported for 5.6
   } else {
+    eval q[
+      sub SVp_NOK() {0}; # unused
+      sub SVp_IOK() {0};
+     ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
 }
@@ -1203,9 +1208,12 @@ sub B::PVIV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
-  $xpvivsect->comment('$savesym, $len, $pvmax, $sv->IVX');
-  $xpvivsect->add(
-    sprintf( "%s, %u, %u, %d", $savesym, $len, $pvmax, $sv->IVX ) );
+  $xpvivsect->comment('pv, len, pvmax, IVX');
+  my $iv = $sv->IVX;
+  $iv = 0 if (!$PERL510 and $sv->FLAGS & (SVf_IOK|SVp_IOK));
+  $xpvivsect->add( sprintf( "%s, %u, %u, %ld",
+                            $PERL510?'{0}':$savesym,
+                            $len, $pvmax, $iv ) ); # IVTYPE long
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
             $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );

@@ -13,10 +13,8 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
-use strict;
-use Config;
 #use 5.008;
 use B qw(class main_cv main_root main_start
 	 begin_av init_av end_av cstring comppadlist
@@ -25,8 +23,14 @@ use B qw(class main_cv main_root main_start
 use B::Assembler qw(asm newasm endasm);
 
 BEGIN {
-  if ( $] < 5.009 ) { B::Asmdata->import(qw(@specialsv_name @optype)); }
-  else { B->import(qw(@specialsv_name @optype)); }
+  if ( $] < 5.009 ) {
+    B::Asmdata->import(qw(@specialsv_name @optype));
+    sub SVp_NOK() {}; # unused
+    sub SVf_NOK() {}; # unused
+  }
+  else {
+    B->import(qw(SVp_NOK SVf_NOK @specialsv_name @optype));
+  }
   if ( $] > 5.007 ) {
     B->import(qw(defstash curstash inc_gv dowarn
 		 warnhook diehook SVt_PVGV
@@ -35,6 +39,8 @@ BEGIN {
     B->import(qw(walkoptree walksymtable));
   }
 }
+use strict;
+use Config;
 use B::Concise;
 
 #################################################
@@ -406,18 +412,19 @@ sub B::PVNV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::PVIV::bsave($ix);
   if ($PERL510) {
-    # Magical AVs end up here, but AVs now don't have an NV slot actually
-    # allocated. Hence don't write out assembly to store the NV slot if
-    # we're actually an array.
     return if $sv->isa('B::AV');
-
-    # Likewise HVs have no NV slot actually allocated.
-    # I don't think that they can get here, but better safe than sorry
     return if $sv->isa('B::HV');
     return if $sv->isa('B::CV');
     return if $sv->isa('B::FM');
     return if $sv->isa('B::GV');
     return if $sv->isa('B::IO');
+
+    # cop_seq range instead of a double. (IV, NV)
+    unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+      asm "cop_seq_low", $sv->COP_SEQ_RANGE_LOW;
+      asm "cop_seq_high", $sv->COP_SEQ_RANGE_HIGH;
+      return;
+    }
   }
   asm "xnv", sprintf "%.40g", $sv->NVX;
 }
