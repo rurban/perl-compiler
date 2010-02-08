@@ -9,7 +9,7 @@ Graz, Austria
 
 =over
 
-=item Fixed most bugs I<(in work)> <br> bytecode: 12=>0, c: 7=>0, cc: 9=>5
+=item Fixed most bugs I<(in work)> <br> bytecode: 12=>0, c: 6=>1, cc: 9=>5
 
 =item 5.10 and 5.12, non-threaded favored I<(faster)>
 
@@ -375,20 +375,20 @@ Larger code base => more significant startup improvements
 
 =head1 Benchmarks (by cPanel)
 
-Web Service Daemon
+    Web Service Daemon <br>
 
     Resident Size (perlcc)  9072 <br>
-    Resident Size (perl)    9756
+    Resident Size (perl)    9756 <br> <br>
 
-DNS Settings Client
+    DNS Settings Client <br>
 
     Startup Time (perl)   0.074 <br>
-    Startup Time (perlcc) 0.021
+    Startup Time (perlcc) 0.021 <br> <br>
 
-HTML Template Processor
+    HTML Template Processor <br>
 
     Startup Time (perlcc) 0.037 <br>
-    Startup Time (perl)   0.695
+    Startup Time (perl)   0.695 <br>
 
 =head1 Plans
 
@@ -434,23 +434,16 @@ Custom sort BLOCK is buggy, I<wrong queue implementation>
 
 =head1 B::CC Bugs
 
-Custom sort BLOCK is buggy, I<wrong queue implementation, causing endless loop>
+Custom sort BLOCK is buggy, I<wrong queue implementation, causing an endless loop>
 
-=over
+  sort { $a <=> $b }  <br>
+  <small>is optimised away, ok</small><br><br>
 
-=item <small><code>sort { $a <=> $b } </code></small>
+  sort { $hash{$a} <=> $hash{$b} } <br>
+  <small>maybe?</small><br><br>
 
-<small>is optimised away, ok</small>
-
-=item <small><code>sort { $hash{$a} <=> $hash{$b} } </code></small>
-
-<small>maybe?</small>
-
-=item <small><code>sort { $hash{$a}->{field} <=> $hash{$b}->{field} } </code></small>
-
-<small>for sure not</small>
-
-=back
+  sort { $hash{$a}->{field} <=> $hash{$b}->{field} }  <br>
+  <small>for sure not</small>
 
 =head1 Testsuite
 
