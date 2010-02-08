@@ -26,7 +26,7 @@ WriteMakefile(
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
                "lib/B/Asmdata.pm script/perlcc ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
-               "*.concise *~ dll.base dll.exp mod.pl"
+               "*.concise *~ dll.base dll.exp mod.pl pcc* *.err *.bak"
              },
 );
 
