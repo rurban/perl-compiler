@@ -38,6 +38,7 @@ ByteLoader/ppport.h
 C.xs
 Changes
 Copying
+frozenperl_2010.pod
 hints/darwin.pl
 hints/openbsd.pl
 Makefile.PL
