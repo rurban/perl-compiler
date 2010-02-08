@@ -161,8 +161,7 @@ my ($rv, @av); @av = ( \$rv ); $rv = \@av; print "ok";
 >>>>
 ok
 ######################### 37 AV self-refs ###################
-for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_SET); close($null_fh); $ok++; } }if ($ok == 1024) { print "ok"; }
+for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_SET); close($null_fh); $ok++; }} if ($ok == 1024) {print "ok";}
 >>>>
 ok
 ############## 38 constant autoload loop crash test #########
-
