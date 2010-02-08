@@ -3,6 +3,21 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.19	2010-02-07 rurban
+
+	* C.pm: fixed evaltry (test 12), NVX was shared with 2 xpad_cop_seq ints
+	  which accidently just worked before 1.17 with %s, but not after changing 
+	  to the %g representation.
+	Ignore unused random (overlong) xpviv IV, causing
+	  "warning: this decimal constant is unsigned only in ISO C90"
+	* Bytecode.pm (1.06): same NVX => xpad_cop_seq fix as in C.pm, added 2 new 
+	  bytecodes (cop_seq_low, cop_seq_high), fixed tests 9,10,12. Passes 
+	  all tests > 5.6 now.
+	* bytecode.pl: added cop_seq_low (155), cop_seq_high (156) instead of xnv. 
+	  No conversion code for loading older bytecode needed, but fragile (double => 2 int)
+	* t/modules.t: refactored by toddr. 4*tests per module:
+	  -s a, exitcode 0, ok, no warnings on stderr
+
 1.18	2010-02-06 rurban
 	evaltry (test 12) still broken on most systems.
 
@@ -13,8 +28,9 @@
 	* Makefile.PL: create lib/B/Asmdata.pm beforehand (toddr)
 	* ByteLoader: fixed duplicate + missing bl_header for bsd and Darwin 
 	  (test from toddr)
-	* test 37 added - AV self-refs, analog to HVs (never failed, just to be sure)
-	  Removed -qq from 5.6 tests.
+	* test 37 added - AV self-refs, analog to HVs (never failed, just to
+	  be sure).
+	Removed -qq from 5.6 tests.
 
 1.17	2010-02-03 rurban
 	Fixed now most module failures, non-threaded at least: bootstrap was in 
