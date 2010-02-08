@@ -986,3 +986,5 @@ __END__
 # 5.10.0 misses the RX_EXTFLAGS macro
 154 10-10.5 op_reflags  PM_GETRE(cPMOP)->extflags	U32
 154 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
+155 10 	cop_seq_low	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xlow  U32
+156 10	cop_seq_high	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xhigh U32
