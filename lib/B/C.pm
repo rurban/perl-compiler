@@ -1254,6 +1254,8 @@ sub B::PVNV::save {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
                          $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
+                 # XXX pad.c: PAD_MAX = I32_MAX (4294967295)
+                 # gcc warning: this decimal constant is unsigned only in ISO C90
                  sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %u;",
                          $xpvnvsect->index, $sv->COP_SEQ_RANGE_HIGH));
     }
