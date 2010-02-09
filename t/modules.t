@@ -268,8 +268,13 @@ sub get_module_list {
   if (@modules and -e $modules[0]) {
     $module_list = $modules[0];
   }
-  else {
-    return @modules if @modules;
+  elsif (@modules) {
+    for my $m (@modules) {
+      if (eval "require $m; 1;" || $m eq 'if' ) {
+	$modules{$m} = 1;
+      }
+    }
+    return @modules;
   }
 
   local $/;
