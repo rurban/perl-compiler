@@ -890,7 +890,7 @@ sub run_c_tests {
     # add some CC specific tests after 100
     # perl -lne "/^\s*sub pp_(\w+)/ && print \$1" lib/B/CC.pm > ccpp
     # for p in `cat ccpp`; do echo -n "$p "; grep -m1 " $p[(\[ ]" *.concise; done
-    # 
+    #
     # grep -A1 "coverage: ny" lib/B/CC.pm|grep sub
     # pp_stub pp_cond_expr pp_dbstate pp_reset pp_stringify pp_ncmp pp_preinc
     # pp_formline pp_enterwrite pp_leavewrite pp_entergiven pp_leavegiven
@@ -938,6 +938,7 @@ CCTESTS
             print sprintf("ok %d # skip\n", $cnt);
         } else {
             my ($script, $expect) = split />>>+\n/;
+	    die "Invalid empty t/TESTS" if !$script or $expect eq '';
             run_cc_test($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo);
         }
         $cnt++;
