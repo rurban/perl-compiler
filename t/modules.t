@@ -116,7 +116,7 @@ for my $module (@modules) {
         ok(-e $binary_file && -s $binary_file > 20,
            "$module_count: use $module generates non-zero binary") or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0") or $module_passed = 0;
-        ok($out =~ /ok$/,  "$module_count: use $module $opt gives expected 'ok' output")
+        like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output")
           or $module_passed = 0;
         log_pass($module_passed ? "pass" : "fail", $module, $TODO);
 
