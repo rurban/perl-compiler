@@ -135,12 +135,7 @@ eval{print "1"};eval{die 1};print "2\n";
 >>>>
 12
 ######################### 32 CC entertry/jmpenv_jump/leavetry ####
-package qr;
-my $var = 1;
-my $qr_with_var = qr/^_?[^\W_0-9]\w*$var/;
-sub qr_called_in_sub { $name =~ $qr_with_var; }
-package main;
-print "ok";
+BEGIN{unshift @INC,("t");} use qr_loaded_module; print "ok";
 >>>>
 ok
 ######################### 33 the real qr bug from 5.6.2, see 20 #####
@@ -165,3 +160,8 @@ for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_S
 >>>>
 ok
 ############## 38 constant autoload loop crash test #########
+eval "require re;" if $] < 5.011;
+$a = ${qr//}; $a = 2; print $] < 5.007 ? 1 : re::is_regexp(\$a);
+>>>>
+1
+############## 39 non-regexps being upgraded to SVt_REGEXP #####

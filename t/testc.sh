@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=38
+ntests=39
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
@@ -247,13 +247,8 @@ tests[32]='eval{print "1"};eval{die 1};print "2\n";'
 result[32]='12'
 # C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
 # used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
-# fails with new constant only. still not repro
-tests[33]='package qr; 
-my $var = 1;
-my $qr_with_var = qr/^_?[^\W_0-9]\w*$var/;
-sub qr_called_in_sub { $name =~ $qr_with_var; }
-package main;
-print "ok";'
+# fails with new constant only. still not repro (r-magic probably)
+tests[33]='BEGIN{unshift @INC,("t");} use qr_loaded_module; print "ok"'
 result[33]='ok'
 # init of magic hashes. %ENV has e magic since a0714e2c perl.c  
 # (Steven Schubiger      2006-02-03 17:24:49 +0100 3967) i.e. 5.8.9 but not 5.8.8
@@ -271,6 +266,11 @@ result[37]='ok'
 # constant autoload loop crash test
 tests[38]='for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_SET); close($null_fh); $ok++; } }if ($ok == 1024) { print "ok"; }'
 result[38]='ok'
+# check re::is_regexp, and on 5.12 if being upgraded to SVt_REGEXP
+usere="`$PERL -e'print (($] < 5.011) ? q(use re;) : q())'`"
+tests[39]='{'$usere'$a=${qr//};$a=2;print ($] < 5.007?1:re::is_regexp(\$a))}'
+result[39]='1'
+# => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
 
 
 # from here on we test CC specifics only
