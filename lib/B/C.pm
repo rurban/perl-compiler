@@ -1002,6 +1002,7 @@ sub B::PMOP::save {
     unless $B::C::optimize_ppaddr;
   my $re = $op->precomp; #out of memory: Module::Pluggable, Carp::Clan - threaded
   if ( defined($re) ) {
+    $REGEXP{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
       my $resym = cstring($re);
@@ -1451,11 +1452,11 @@ sub B::PVMG::save_magic {
     $magic .= $type;
     if ( $debug{mg} ) {
       warn sprintf( "%s magic\n", cchar($type) );
-      eval {
-        warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
-                      class($sv), $$sv, class($obj), $$obj, cchar($type),
-		      cstring($ptr) );
-      };
+      #eval {
+      #  warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
+      #                class($sv), $$sv, class($obj), $$obj, cchar($type),
+      #		      cstring($ptr) );
+      #};
     }
 
     unless ( $type eq 'r' or $type eq 'D' ) { # r - test 23 / D - Getopt::Long
@@ -1478,32 +1479,33 @@ sub B::PVMG::save_magic {
         )
       );
     }
-    elsif ( $type eq 'r' ) {
+    elsif ( $type eq 'r' ) { # qr magic
       my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX; # REGEX not in 5.6
-      my $pmop = $REGEXP{$rx};
-
-      confess "PMOP not found for REGEXP $rx" unless $pmop;
+      my $pmop = $REGEXP{$rx}; # XXX how should this work?
+      # XXX stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c)
+      # confess "PMOP not found for REGEXP $rx" unless $pmop;
 
       my ( $resym, $relen ) = savere( $mg->precomp );
-      my $pmsym = $pmop->save;
-      if ($PERL510) {
-        $init->add( split /\n/,
-          sprintf
-            <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
+      if ($pmop) { # as long as we don't set %REGEXP we cannot store the qr regexp
+	my $pmsym = $pmop->save;
+	if ($PERL510) {
+	  $init->add( split /\n/,
+		      sprintf <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
     REGEXP* rx = CALLREGCOMP($resym, %d);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE
-      }
-      else {
-        $init->add( split /\n/,
-          sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
+        }
+	else {
+	  $init->add( split /\n/,
+		      sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
 {
     REGEXP* rx = pregcomp($resym, $resym + $relen, (PMOP*)$pmsym);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE
+	}
       }
     }
     elsif ( $type eq 'D' ) { # XXX regdata AV
