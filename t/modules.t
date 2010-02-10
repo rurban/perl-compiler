@@ -111,7 +111,6 @@ for my $module (@modules) {
         # my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null";
 
         my $cmd = "$^X -Mblib blib/script/perlcc $opt -r";
-        diag "$cmd -e 'use $module; print \"ok\"'";
         my ($result, $out, $err) = run_cmd("$cmd mod.pl");
         ok(-e $binary_file && -s $binary_file > 20,
            "$module_count: use $module generates non-zero binary") or $module_passed = 0;
@@ -123,6 +122,7 @@ for my $module (@modules) {
         if ($module_passed) {
           $pass++;
         } else {
+          diag "Failed: $cmd -e 'use $module; print \"ok\"'";
           $fail++;
         }
 
