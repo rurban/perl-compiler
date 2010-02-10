@@ -10,6 +10,7 @@
 	  to the %g representation.
 	Ignore unused random (overlong) xpviv IV, causing
 	  "warning: this decimal constant is unsigned only in ISO C90"
+	Defer rv => cv to run-time. Fixes ExtUtils::Install
 	* Bytecode.pm (1.06): same NVX => xpad_cop_seq fix as in C.pm, added 2 new 
 	  bytecodes (cop_seq_low, cop_seq_high), fixed tests 9,10,12. Passes 
 	  all tests > 5.6 now.
@@ -17,6 +18,7 @@
 	  No conversion code for loading older bytecode needed, but fragile (double => 2 int)
 	* t/modules.t: refactored by toddr. 4*tests per module:
 	  -s a, exitcode 0, ok, no warnings on stderr
+	* t/TESTS: added 38, failing on CC (Nick Koston)
 
 1.18	2010-02-06 rurban
 	evaltry (test 12) still broken on most systems.

@@ -1563,7 +1563,10 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;\n", $xrvsect->index, $rv ) );
     }
     else {
-      $xrvsect->add($rv);
+      #$xrvsect->add($rv); # not static initializable (e.g. cv160 for ExtUtils::Install)
+      $xrvsect->add("(SV*)Nullhv");
+      $init->add(
+        sprintf( "xrv_list[%d].xrv_rv = %s;\n", $xrvsect->index, $rv ) );
     }
     $svsect->add(
       sprintf(
