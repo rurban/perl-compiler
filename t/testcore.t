@@ -20,12 +20,15 @@ BEGIN {
     print "1..0 #skip t/CORE missing. Read t/testcore.t how to setup.\n";
     exit 0;
   }
+  unshift @INC, ("t");
 }
+
+require "test.pl";
 
 sub vcmd {
   my $cmd = join "", @_;
   print "#",$cmd,"\n";
-  `$cmd`;
+  run_cmd($cmd, 120); # timeout 2min
 }
 
 my $dir = getcwd();

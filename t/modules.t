@@ -13,7 +13,9 @@
 #
 # Reports:
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
+
 use strict;
+require "test.pl";
 use Test::More;
 
 # try some simple XS module which exists in 5.6.2 and blead
@@ -23,10 +25,12 @@ BEGIN {
   # check whether linking with xs works at all
   my $result = `$^X -Mblib blib/script/perlcc -e 'use Sys::Hostname;'`;
   unless (-e 'a' or -e 'a.out') {
-    plan skip_all => "perlcc cannot link Sys::Hostname (XS module). Most likely wrong ldopts. Try -Bdynamic or -Bstatic.";
+    plan skip_all => "perlcc cannot link Sys::Hostname (XS module). Most likely wrong ldopts.";
     exit;
   }
+  unshift @INC, 't';
 }
+
 
 # Possible binary files.
 my $binary_file = 'a';
@@ -49,7 +53,7 @@ use B::C;
 
 eval { require IPC::Run; };
 my $have_IPC_Run = defined $IPC::Run::VERSION;
-log_diag("Warning: IPC::Run is not available. Error trapping will be limited")
+log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
   unless $have_IPC_Run;
 
 my @opts = ("");				  # only B::C
@@ -113,7 +117,7 @@ for my $module (@modules) {
         $opt .= " $keep" if $keep;
 
         my $cmd = "$^X -Mblib blib/script/perlcc $opt -r";
-        my ($result, $out, $err) = run_cmd("$cmd mod.pl");
+        my ($result, $out, $err) = run_cmd("$cmd mod.pl", 600);
         ok(-e $binary_file && -s $binary_file > 20,
            "$module_count: use $module  generates non-zero binary") or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0") or $module_passed = 0;
@@ -152,46 +156,6 @@ exit;
 
 sub percent {
   $_[1] ? sprintf("%0.1f%%", $_[0]*100/$_[1]) : '';
-}
-
-sub run_cmd {
-  my ($cmd, $timeout) = @_;
-
-  my ($result, $out, $err) = (0, '', '');
-  if ( ! $have_IPC_Run ) {
-    local $@;
-    # No real way to trap STDERR?
-    $cmd .= " 2>&1" if($^O !~ /^MSWin32|VMS/);
-    $out = `$cmd`;
-    $result = $?;
-  }
-  else {
-    my $in;
-    my @cmd = split /\s+/, $cmd;
-
-    eval {
-      my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
-
-      for (1..60) {
-        if(!$h->pumpable) {
-          last;
-        }
-        else {
-          $h->pump_nb;
-          diag sprintf("waiting %d[s]",$_*10) if $_ > 35;
-          sleep 10;
-        }
-      }
-      if($h->pumpable) {
-        $h->kill_kill;
-        $err .= "Timed out waiting for process exit";
-      }
-      $h->finish or die "cat returned $?";
-      $result = $h->result(0);
-    };
-    $err .= "\$\@ = $@" if($@);
-  }
-  return ($result, $out, $err);
 }
 
 sub is_todo {
@@ -271,12 +235,9 @@ sub get_module_list {
     $module_list = $modules[0];
   }
   elsif (@modules) {
+    # cmdline overrides require check and keeps .c
+    $modules{$_} = 1 for @modules;
     $keep = "-S";
-    for my $m (@modules) {
-      if (eval "require $m; 1;" || $m eq 'if' ) {
-	$modules{$m} = 1;
-      }
-    }
     return @modules;
   }
 
