@@ -38,6 +38,7 @@ $opts_to_test = 3 if grep /-all/, @ARGV;
 
 # Determine list of modules to action.
 my %modules;
+my $keep = '';
 my @modules = get_module_list();
 my $test_count = scalar @modules * $opts_to_test * 4;
 # $test_count -= 4 * $opts_to_test * (scalar @modules - scalar(keys %modules));
@@ -98,7 +99,7 @@ for my $module (@modules) {
     $module = 'if(1) => "Sys::Hostname"' if $module eq 'if';
 
   TODO: {
-      local $TODO = "$module labeled to be skipped for this perl version"
+      local $TODO = "for perl-$perlversion"
         if is_todo($module);
       $todo++ if $TODO;
 
@@ -109,11 +110,12 @@ for my $module (@modules) {
       my $module_passed = 1;
       foreach my $opt (@opts) {
         # my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null";
+        $opt .= " $keep" if $keep;
 
         my $cmd = "$^X -Mblib blib/script/perlcc $opt -r";
         my ($result, $out, $err) = run_cmd("$cmd mod.pl");
         ok(-e $binary_file && -s $binary_file > 20,
-           "$module_count: use $module generates non-zero binary") or $module_passed = 0;
+           "$module_count: use $module  generates non-zero binary") or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0") or $module_passed = 0;
         like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output")
           or $module_passed = 0;
@@ -127,8 +129,8 @@ for my $module (@modules) {
         }
 
       TODO: {
-          local $TODO = 'STDERR from compiler warnings in work';
-          is($err, '', "$module_count: use $module no error output compiling")
+          local $TODO = 'STDERR from compiler warnings in work' if $err;
+          is($err, '', "$module_count: use $module  no error output compiling")
             && ($module_passed)
               or log_err($module, $out, $err)
             }
@@ -269,6 +271,7 @@ sub get_module_list {
     $module_list = $modules[0];
   }
   elsif (@modules) {
+    $keep = "-S";
     for my $m (@modules) {
       if (eval "require $m; 1;" || $m eq 'if' ) {
 	$modules{$m} = 1;
