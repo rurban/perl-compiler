@@ -17,10 +17,24 @@ WriteMakefile(
                   },
     'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>',
     'ABSTRACT' => 'Perl compiler',
-    # ($ExtUtils::MakeMaker::VERSION gt '6.31' ?
-    #    ('EXTRA_META'  => "recommends:\n" .
-    #     "    B::Debug:    1.11\n"
-    #    ) : ()),
+    (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
+       ('EXTRA_META'  => "recommends:\n" .
+        "    B::Debug:    1.12\n"
+       ) : ()),
+    ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
+    ('META_MERGE'  => {"recommends" =>
+                       {
+                        "B::Debug" => "1.12"},
+                       resources =>
+                       {
+                        license     => 'http://dev.perl.org/licenses/',
+                        homepage    => 'http://perl-compiler.googlecode.com',
+                        bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
+                        repository  => 'http://perl-compiler.googlecode.com/svn/',
+                        MailingList => 'http://groups.google.com/group/perl-compiler',
+                       },
+                      }
+    ) : ()),
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
