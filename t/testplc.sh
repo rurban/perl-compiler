@@ -214,8 +214,8 @@ result[30]='456123E0'
 # AUTOLOAD w/o goto
 tests[31]='package DummyShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} date();who("am","i");ls("-l");'
 result[31]='date;who am i;ls -l;'
-# CC types and arith
-tests[32]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
+# CC entertry/jmpenv_jump/leavetry
+tests[32]='eval{print "1"};eval{die 1};print "2\n";'
 result[32]='12'
 # C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
 # used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
