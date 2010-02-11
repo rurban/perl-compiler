@@ -8,7 +8,7 @@
 #
 package B::CC;
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 
 use Config;
 use strict;
@@ -1133,10 +1133,10 @@ sub pp_gvsv {
 sub pp_aelemfast {
   my $op = shift;
   my $gvsym;
-  if ($ITHREADS and $op->can('padix')) {
-    $gvsym = $pad[ $op->padix ]->as_sv;
+  if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
+    $gvsym = $op->can('padix') ? $pad[ $op->padix ]->as_sv : "''";
   }
-  else {
+  else { #svop
     $gvsym = $op->gv->save;
   }
   my $ix   = $op->private;
@@ -2369,6 +2369,7 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       $verbose++;
+      $arg = 'oOscprSqlt' if $arg eq 'full';
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
           B->debug(1);
