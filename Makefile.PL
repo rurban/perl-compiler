@@ -15,7 +15,7 @@ WriteMakefile(
     PREREQ_PM  => {'Opcodes' => '0',
     #	          'B'          => '1.0901'
                   },
-    'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <rurban@cpan.org>',
+    'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
