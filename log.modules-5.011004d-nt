@@ -95,9 +95,9 @@ pass XML::SAX
 pass YAML #TODO for perl-5.011004d-nt
 fail MooseX::Types #TODO for perl-5.011004d-nt
 pass Class::Singleton
-pass DateTime::TimeZone
+fail DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require

@@ -6,8 +6,8 @@ pass Exporter
 pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
-pass Pod::Escapes
-pass Pod::Simple
+skip Pod::Escapes
+skip Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
@@ -32,41 +32,41 @@ pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-skip URI
+pass URI
 pass HTML::Tagset
-pass HTML::Parser
+skip HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
-skip IO::Compress::Base
-skip LWP
+skip Compress::Raw::Zlib
+skip Compress::Raw::Bzip2
+pass IO::Compress::Base
+pass LWP
 pass Storable
 pass base
-pass List::MoreUtils
-pass Params::Util
-pass Task::Weaken
-pass Class::Accessor
+skip List::MoreUtils
+skip Params::Util
+skip Task::Weaken
+skip Class::Accessor
 pass Test::Tester
-pass Sub::Install
+skip Sub::Install
 fail Attribute::Handlers #TODO for perl-5.008009d-nt
-pass Data::OptList
-pass Sub::Exporter
-pass Test::NoWarnings
-pass version
-pass Params::Validate
-pass Sub::Name
+skip Data::OptList
+skip Sub::Exporter
+skip Test::NoWarnings
+fail version
+skip Params::Validate
+skip Sub::Name
 pass Filter::Util::Call
-pass Algorithm::C3
-pass Class::C3
+skip Algorithm::C3
+skip Class::C3
 pass Scope::Guard
-pass MRO::Compat
+fail MRO::Compat
 pass Time::HiRes
-pass Class::Data::Inheritable
+skip Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction
-pass Class::MOP
-fail Moose
+skip Devel::GlobalDestruction
+skip Class::MOP
+skip Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -74,36 +74,36 @@ pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
 pass Time::Local
-pass IO::Scalar
-pass Sub::Identify
+skip IO::Scalar
+skip Sub::Identify
 pass Class::ISA
 skip FCGI
-pass Tree::DAG_Node
-pass Path::Class
-pass Test::Warn
-pass Encode
-pass Variable::Magic
+skip Tree::DAG_Node
+skip Path::Class
+skip Test::Warn
+skip Encode
+skip Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope #TODO for perl-5.008009d-nt
-pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
-pass Class::Inspector
-pass Clone
+skip B::Hooks::EndOfScope
+skip Test::Pod
+skip Digest::SHA1
+skip namespace::clean
+skip Class::Inspector
+skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 fail YAML #TODO for perl-5.008009d-nt
-fail MooseX::Types #TODO for perl-5.008009d-nt
-pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-fail DateTime
+skip MooseX::Types
+skip Class::Singleton
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
 pass IO::String
-pass AppConfig
-pass UNIVERSAL::require
+skip AppConfig
+skip UNIVERSAL::require
 skip Template::Stash
-# 95 / 100 modules tested with B-C-1.19 - perl-5.008009d-nt
-# pass  88 /  95 (92.6%)
-# fail   7 /  95 (7.4%)
-# todo   4 / 100 (4.0%)
-# skip   5 / 100 (5.0% not installed)
+# 57 / 100 modules tested with B-C-1.19 - perl-5.008009d-nt
+# pass  52 /  57 (91.2%)
+# fail   5 /  57 (8.8%)
+# todo   2 / 100 (2.0%)
+# skip  43 / 100 (43.0% not installed)

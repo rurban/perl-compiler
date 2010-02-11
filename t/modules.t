@@ -160,21 +160,26 @@ sub percent {
 sub is_todo {
   my $module = shift or die;
 
-  foreach (qw(Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types)) {
+  foreach (qw(Attribute::Handlers B::Hooks::EndOfScope MooseX::Types)) {
     return 1 if $_ eq $module;
   }
 
-  if ($] >= 5.010 && $] < 5.011004) {
-    foreach(qw(File::Temp ExtUtils::Install Test::NoWarnings)) {
+  if ($] >= 5.007) {
+    foreach(qw(File::Temp)) {
+      return 1 if $_ eq $module;
+    }
+  }
+  if ($] > 5.010) {
+    foreach(qw(ExtUtils::Install)) {
       return 1 if $_ eq $module;
     }
   }
 
   if ($Config{useithreads}) {
     foreach(qw(
-               Pod::Parser File::Temp ExtUtils::Install
-               LWP Test::Tester Attribute::Handlers
-               Test::Deep DBI FCGI B::Hooks::EndOfScope Digest::SHA1
+               File::Temp ExtUtils::Install
+               Test::Tester Attribute::Handlers
+               Test::Deep FCGI B::Hooks::EndOfScope Digest::SHA1
                namespace::clean DateTime::Locale DateTime
                Template::Stash
               )) {

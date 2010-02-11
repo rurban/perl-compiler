@@ -9,7 +9,7 @@ pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
-skip Scalar::Util
+pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 fail ExtUtils::MakeMaker
@@ -23,29 +23,29 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-skip ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 skip ExtUtils::ParseXS
-skip Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
-skip MIME::Base64
-skip Digest
-skip Digest::MD5
+pass MIME::Base64
+pass Digest
+fail Digest::MD5
 skip Sub::Uplevel
-skip URI
-skip HTML::Tagset
-skip HTML::Parser
+pass URI
+pass HTML::Tagset
+pass HTML::Parser
 skip Test::Exception
-skip Net::Cmd
-skip Compress::Raw::Zlib
-skip Compress::Raw::Bzip2
-skip IO::Compress::Base
-skip LWP
+pass Net::Cmd
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
+pass IO::Compress::Base
+pass LWP
 skip Storable
 pass base
 skip List::MoreUtils
 skip Params::Util
-skip Task::Weaken
+pass Task::Weaken
 skip Class::Accessor
 skip Test::Tester
 skip Sub::Install
@@ -53,7 +53,7 @@ skip Attribute::Handlers
 skip Data::OptList
 skip Sub::Exporter
 skip Test::NoWarnings
-skip version
+pass version
 skip Params::Validate
 skip Sub::Name
 skip Filter::Util::Call
@@ -61,7 +61,7 @@ skip Algorithm::C3
 skip Class::C3
 skip Scope::Guard
 skip MRO::Compat
-skip Time::HiRes
+pass Time::HiRes
 skip Class::Data::Inheritable
 skip Try::Tiny
 skip Devel::GlobalDestruction
@@ -85,8 +85,8 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-pass Test::Pod
-skip Digest::SHA1
+skip Test::Pod
+fail Digest::SHA1
 skip namespace::clean
 skip Class::Inspector
 skip Clone
@@ -99,11 +99,11 @@ skip DateTime::TimeZone
 skip DateTime::Locale
 skip DateTime
 skip IO::String
-skip AppConfig
+pass AppConfig
 skip UNIVERSAL::require
 skip Template::Stash
-# 27 / 100 modules tested with B-C-1.19 - perl-5.006002d-nt
-# pass  26 /  27 (96.3%)
-# fail   1 /  27 (3.7%)
+# 45 / 100 modules tested with B-C-1.19 - perl-5.006002d-nt
+# pass  40 /  45 (88.9%)
+# fail   5 /  45 (11.1%)
 # todo   0 / 100 (0.0%)
-# skip  73 / 100 (73.0% not installed)
+# skip  55 / 100 (55.0% not installed)
