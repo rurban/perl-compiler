@@ -30,7 +30,7 @@ open(OUT, '>', $file) or skip_all( 'Cannot write fake backend module');
 print OUT while <DATA>;
 close *OUT;
 
-plan( 9 ); # And someone's responsible.
+plan tests => 9; # And someone's responsible.
 
 # use() makes it difficult to avoid O::import()
 require_ok( 'O' );
