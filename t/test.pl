@@ -130,7 +130,6 @@ sub runperl {
     die "test.pl:runperl() does not take a hashref"
 	if ref $_[0] and ref $_[0] eq 'HASH';
     my $runperl = &_create_runperl;
-    my $result;
     # ${^TAINT} is invalid in perl5.00505
     my $tainted;
     eval '$tainted = ${^TAINT};' if $] >= 5.006;
@@ -164,12 +163,14 @@ sub runperl {
 	$runperl =~ /(.*)/s;
 	$runperl = $1;
 
-	$result = `$runperl`;
+        my ($err,$result,$stderr) = run_cmd($runperl, 30);
+	$result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
+	return $result;
     } else {
-	$result = `$runperl`;
+        my ($err,$result,$stderr) = run_cmd($runperl, 30);
+	$result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
+	return $result;
     }
-    $result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
-    return $result;
 }
 
 *run_perl = \&runperl; # Nice alias.
@@ -396,7 +397,7 @@ sub run_cc_test {
     local($\, $,);   # guard against -l and other things that screw with
                      # print
     $expect =~ s/\n$//;
-    my ($result,$out,$stderr);
+    my ($out,$result,$stderr) = ('');
     my $fnbackend = lc($backend); #C,-O2
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
     $opt =~ s/,-/_/ if $opt;

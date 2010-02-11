@@ -8,8 +8,8 @@
 # The list in t/mymodules comes from two bigger projects.
 # Recommended general lists are Task::Kensho and http://ali.as/top100/
 # We are using top100 from the latter.
-# We are NOT running the module testsuite yet, we can do that in another test
-# to burn CPU for a few hours.
+# We are NOT running the full module testsuite yet, we can do that
+# in another author test to burn CPU for a few hours resp. days.
 #
 # Reports:
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
@@ -143,12 +143,11 @@ for my $module (@modules) {
     }}
 }
 
-#my $fail = $module_count - $pass - $todo - $skip;
 my $count = scalar @modules - $skip;
 log_diag("$count / $module_count modules tested with B-C-${B::C::VERSION} - perl-$perlversion");
 log_diag(sprintf("pass %3d / %3d (%s)", $pass, $count, percent($pass,$count)));
 log_diag(sprintf("fail %3d / %3d (%s)", $fail, $count, percent($fail,$count)));
-log_diag(sprintf("todo %3d / %3d (%s)", $todo, $module_count, percent($todo,$module_count)));
+log_diag(sprintf("todo %3d / %3d (%s)", $todo, $fail, percent($todo,$fail)));
 log_diag(sprintf("skip %3d / %3d (%s not installed)\n",
                  $skip, $module_count, percent($skip,$module_count)));
 
