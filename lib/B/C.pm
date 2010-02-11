@@ -1116,7 +1116,7 @@ sub B::NV::save {
   return $sym if defined $sym;
   my $val = $sv->NV;
   my $sval = sprintf("%g", $val);
-  $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
+  $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
   $val .= '.00' if $val =~ /^-?\d+$/;
   if ($PERL510) { # not fixed by NV isa IV >= 5.8
     $xpvnvsect->add( sprintf( "{%s}, 0, 0, {0}", $val ) );
@@ -1243,10 +1243,10 @@ sub B::PVNV::save {
     if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       # it could be a double, or it could be 2 ints - union xpad_cop_seq
       my $sval = sprintf("%g", $val);
-      $val = '0' if $sval =~ /NAN$/i; # windows msvcrt
+      $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
       $val .= '.00' if $val =~ /^-?\d+$/;
     } else {
-      $val = '0' if $val =~ /NAN$/i; # windows msvcrt
+      $val = '0' if $val =~ /(NAN|inf)$/i; # windows msvcrt
     }
     $xpvnvsect->comment('$val, $len, $pvmax, $sv->IVX');
     $xpvnvsect->add(
@@ -1483,7 +1483,7 @@ sub B::PVMG::save_magic {
       my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX; # REGEX not in 5.6
       my $pmop = $REGEXP{$rx}; # XXX how should this work?
       # XXX stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c)
-      # confess "PMOP not found for REGEXP $rx" unless $pmop;
+      # confess "PMOP not found for REGEXP $rx" unless $pmop; # disabled until fixed
 
       my ( $resym, $relen ) = savere( $mg->precomp );
       if ($pmop) { # as long as we don't set %REGEXP we cannot store the qr regexp
