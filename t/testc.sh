@@ -243,7 +243,7 @@ result[30]='456123E0'
 tests[31]='package MockShell;sub AUTOLOAD{my $p=$AUTOLOAD;$p=~s/.*:://;print(join(" ",$p,@_),";");} package main; MockShell::date();MockShell::who("am","i");MockShell::ls("-l");'
 result[31]='date;who am i;ls -l;'
 # CC entertry/jmpenv_jump/leavetry
-tests[32]='eval{print "1"};eval{die 1};print "2\n";'
+tests[32]='eval{print "1"};eval{die 1};print "2";'
 result[32]='12'
 # C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
 # used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.

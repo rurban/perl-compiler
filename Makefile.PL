@@ -24,7 +24,9 @@ WriteMakefile(
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
                        {
-                        "B::Debug" => "1.12"},
+                        "B::Debug" => "1.12",
+                        "IPC::Run" => 0,
+                       },
                        resources =>
                        {
                         license     => 'http://dev.perl.org/licenses/',

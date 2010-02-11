@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.17
+# B::C::VERSION = 1.19
 # perlversion = 5.010001
 # platform = cygwin
-# ithreads = yes
+# threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -11,7 +11,7 @@ fail Pod::Simple
 fail IO
 pass Scalar::Util
 fail Getopt::Long
-fail Pod::Parser
+fail Pod::Parser #TODO for perl-5.010001
 fail ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
@@ -20,8 +20,8 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp - 
-fail ExtUtils::Install - 
+fail File::Temp #TODO for perl-5.010001
+fail ExtUtils::Install #TODO for perl-5.010001
 pass Text::ParseWords
 fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -40,19 +40,19 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+fail LWP #TODO for perl-5.010001
 fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester
+fail Test::Tester #TODO for perl-5.010001
 pass Sub::Install
-fail Attribute::Handlers - 
+fail Attribute::Handlers #TODO for perl-5.010001
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings - 
+fail Test::NoWarnings #TODO for perl-5.010001
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -63,47 +63,47 @@ pass Scope::Guard
 pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
-pass Try::Tiny
+fail Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP
 fail Moose
-fail Test::Deep
-fail Carp::Clan
-fail Module::Pluggable
-skip if
+fail Test::Deep #TODO for perl-5.010001
+pass Carp::Clan
+pass Module::Pluggable
+pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+fail DBI #TODO for perl-5.010001
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+fail FCGI #TODO for perl-5.010001
 fail Tree::DAG_Node
 fail Path::Class
 fail Test::Warn
-fail Encode
+pass Encode
 pass Variable::Magic
 fail CGI
-fail B::Hooks::EndOfScope
+fail B::Hooks::EndOfScope #TODO for perl-5.010001
 fail Test::Pod
-fail Digest::SHA1
-fail namespace::clean
+fail Digest::SHA1 #TODO for perl-5.010001
+fail namespace::clean #TODO for perl-5.010001
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 fail XML::SAX
-pass YAML
-pass MooseX::Types
+pass YAML #TODO for perl-5.010001
+skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-fail DateTime::Locale
-fail DateTime
+pass DateTime::Locale #TODO for perl-5.010001
+fail DateTime #TODO for perl-5.010001
 pass IO::String
-fail AppConfig
+pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-
-# 98 modules tested with B-C-1.17 - perl-5.010001
-# pass  58 /  98 (59.2%)
-# fail  40 /  98 (40.8%)
-# skip   2 / 100 (2.0% not installed)
+fail Template::Stash #TODO for perl-5.010001
+# 99 / 100 modules tested with B-C-1.19 - perl-5.010001
+# pass  62 /  99 (62.6%)
+# fail  37 /  99 (37.4%)
+# todo  17 / 100 (17.0%)
+# skip   1 / 100 (1.0% not installed)

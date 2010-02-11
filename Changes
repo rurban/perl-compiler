@@ -3,14 +3,15 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.19	2010-02-07 rurban
+1.19	2010-02-10 rurban
 
 	* C.pm: fixed evaltry (test 12), NVX was shared with 2 xpad_cop_seq ints
 	  which accidently just worked before 1.17 with %s, but not after changing 
 	  to the %g representation.
 	Ignore unused random (overlong) xpviv IV, causing
 	  "warning: this decimal constant is unsigned only in ISO C90"
-	Defer rv => cv to run-time. Fixes ExtUtils::Install
+	Defer rv => cv to run-time < 5.10. Fixes ExtUtils::Install
+	Check for NV inf. Fixes DateTime
 	* Bytecode.pm (1.06): same NVX => xpad_cop_seq fix as in C.pm, added 2 new 
 	  bytecodes (cop_seq_low, cop_seq_high), fixed tests 9,10,12. Passes 
 	  all tests > 5.6 now.
@@ -18,7 +19,8 @@
 	  No conversion code for loading older bytecode needed, but fragile (double => 2 int)
 	* t/modules.t: refactored by toddr. 4*tests per module:
 	  -s a, exitcode 0, ok, no warnings on stderr
-	* t/TESTS: added 38, failing on CC (Nick Koston)
+	* t/TESTS: added 38, failing on CC (Nick Koston).
+	added 39, failing everywhere.
 
 1.18	2010-02-06 rurban
 	evaltry (test 12) still broken on most systems.

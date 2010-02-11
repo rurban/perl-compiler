@@ -1,3 +1,6 @@
+magic cases might need to be treated specially and testcases are quite hard to produce.
+
+
 sv_magic()
 ----------
 av.c
@@ -71,9 +74,19 @@ pp_sysread()
 	obj = name = namlen = 0.
 
 sv.c
+ref loops:
+        For certain magics the sv == obj - a "magic reference loop":
+        arylen, symtab, tiedscalar, .... There the obj refcount is 
+        not incremented.
 sv_setsv()
 	Doing sv_setsv(dstr, gv) gives '*' magic to dstr with
 	obj = dstr, name = GvNAME, namlen = GvNAMELEN.
+sv_setsv_flags()
+        Set vstring on SvVSTRING_mg (RMAGIC)
+sv_rvweaken()
+	tiedscalar weakens the RV obj to the PVIO. Sets a backref magic 
+	to the referred SV.
+
 
 util.c
 fbm_compile()
