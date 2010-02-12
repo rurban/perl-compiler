@@ -70,7 +70,8 @@ $perlversion = sprintf("%1.6f%s%s",
                        ($DEBUGGING ? 'd' : ''),
                        ($Config{useithreads} ? '' : '-nt'));
 if ($log) {
-  $log = "log.modules-$perlversion";
+  $log = @ARGV ? "log.modules-$perlversion-".scalar(localtime)
+    : "log.modules-$perlversion";
   if (-e $log) {
     use File::Copy;
     copy $log, "$log.bak";
@@ -80,6 +81,7 @@ if ($log) {
 }
 log_diag("B::C::VERSION = $B::C::VERSION");
 log_diag("perlversion = $perlversion");
+log_diag("path = $^X");
 log_diag("platform = $^O");
 log_diag($Config{'useithreads'} ? "threaded perl" : "non-threaded perl");
 

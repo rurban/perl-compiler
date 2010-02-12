@@ -1648,7 +1648,8 @@ sub pp_enter {
     } else {
       runtime "gimme = OP_GIMME(PL_op, -1);";
     }
-    runtime($] >= 5.011001 ? 'ENTER_with_name("block");' : 'ENTER;',
+    runtime($] >= 5.011001 and $] < 5.011004
+	    ? 'ENTER_with_name("block");' : 'ENTER;',
       "SAVETMPS;",
       "PUSHBLOCK(cx, CXt_BLOCK, SP);");
     return $op->next;

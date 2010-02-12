@@ -85,7 +85,8 @@ for (@tests) {
   $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${test}c" ],
 		  verbose  => $verbose, # for DEBUGGING
 		  nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-		  stderr   => 1, # to capture the "bytecode.pl syntax ok"	
+		  stderr   => 1, # to capture the "bytecode.pl syntax ok"
+		  timeout  => 10,
 		  progfile => $test);
   unless ($?) {
     # test coverage if -Dv is allowed
@@ -93,6 +94,7 @@ for (@tests) {
       my $cov = run_perl(progfile => "${test}c", # run the .plc
 			 nolib    => $ENV{PERL_CORE} ? 0 : 1,
 			 stderr   => 1,
+			 timeout  => 20,
 			 switches => [ "$Mblib -MByteLoader -Dv" ]);
       for (map { /\(insn (\d+)\)/ ? $1 : undef }
 	     grep /\(insn (\d+)\)/, split(/\n/, $cov)) {
@@ -103,6 +105,7 @@ for (@tests) {
                     verbose  => $ENV{TEST_VERBOSE}, # for debugging
 		    nolib    => $ENV{PERL_CORE} ? 0 : 1,
 		    stderr   => 1,
+		    timeout  => 5,
 		    switches => [ "$Mblib -MByteLoader" ]);
     unless ($?) {
       if ($cnt == 25 and $expect eq '0 1 2 3 4321' and $] < 5.008) {

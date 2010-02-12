@@ -163,11 +163,11 @@ sub runperl {
 	$runperl =~ /(.*)/s;
 	$runperl = $1;
 
-        my ($err,$result,$stderr) = run_cmd($runperl, 30);
+        my ($err,$result,$stderr) = run_cmd($runperl, $args{timeout});
 	$result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
 	return $result;
     } else {
-        my ($err,$result,$stderr) = run_cmd($runperl, 30);
+        my ($err,$result,$stderr) = run_cmd($runperl, $args{timeout});
 	$result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
 	return $result;
     }
@@ -426,6 +426,7 @@ sub run_cc_test {
                     verbose  => $ENV{TEST_VERBOSE}, # for debugging
                     nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
                     stderr   => 1, # to capture the "ccode.pl syntax ok"
+		    timeout  => 120,
                     progfile => $test);
     if (! $? and -s $cfile) {
         use ExtUtils::Embed ();
@@ -442,7 +443,7 @@ sub run_cc_test {
             return 0;
         }
         $exe = "./".$exe unless $^O eq 'MSWin32';
-        ($result,$out,$stderr) = run_cmd($exe,120);
+        ($result,$out,$stderr) = run_cmd($exe,5);
         if (defined($out) and !$result) {
             if ($cnt == 25 and $expect eq '0 1 2 3 4321' and $] < 5.008) {
                 $expect = '0 1 2 3 4 5 4321';

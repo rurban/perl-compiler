@@ -1,6 +1,8 @@
 * Fixes
 
-detect &utf8::is_utf8 (Carp)
+detect &utf8::is_utf8 (Carp), re::* and more internals
+dl_init() e.g. t/testm.sh File::Temp fails to init IO
+
 CC backend: goto (needs test), 
 sort with non-default comparison. 
 last for non-loop blocks (needs simplier test, test 29).
@@ -16,7 +18,6 @@ allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
-compile-time initialisation of AvARRAYs (improved with -fav-init, but slower)
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 CvOUTSIDE for ordinary subs
 DATA filehandle for C-compiled program (almost done)
@@ -39,15 +40,16 @@ ByteLoader compatibility: version, platform. eventually Bytecode version
   portability (test with 5.6 on cygwin, partially done)
 check CC op coverage, add tests
 
-* Optimisations
+* Optimizations
 
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
   and GV method names package::name. (partially done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
 proper static init of PVBM/FBM (almost done, just 5.8.9 not)
+compile-time initialisation of AvARRAYs (improved with -fav-init, but slower)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
-global analysis of variables, type hints etc.
+variable types: global analysis of variables, type hints etc.
   understand type attrs
     my $i : Cint;
   Devel::TypeCheck instead of magic variable _ir, ... suffices
@@ -58,4 +60,4 @@ demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
 tailcall optimization (entersub -> leavesub => goto)
-inline small pp ops: enter, reset, stringify, ... (CC -finline-ops/-O3)
+inline more small pp ops: enter, reset, stringify, ... (CC -finline-ops)

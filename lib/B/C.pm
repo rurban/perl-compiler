@@ -2895,12 +2895,13 @@ EOT
   #  print "\n#undef USE_DYNAMIC_LOADING
   #}
   print "\n#ifdef USE_DYNAMIC_LOADING";
-  print qq/\n\tnewXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);/;
+  print "\n\tnewXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);";
   print "\n#endif\n";
 
   # delete $xsub{'DynaLoader'};
   delete $xsub{'UNIVERSAL'};
-  print("/* bootstrapping code*/\n\tSAVETMPS;\n");
+  print("/* XS bootstrapping code*/\n");
+  print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
   print "#ifdef USE_DYNAMIC_LOADING\n";
   foreach my $stashname ( keys %static_ext ) {
@@ -2908,39 +2909,44 @@ EOT
     $stashxsub =~ s/::/__/g;
     #if ($stashxsub =~ m/\/(\w+)\.\w+$/ {$stashxsub = $1;}
     # cygwin has Win32CORE
+    warn "bootstrapping static $stashname added to xs_init\n" if $verbose;
     print "\tnewXS(\"${stashname}::bootstrap\", boot_$stashxsub, file);\n";
   }
   print "#endif\n";
   print "#ifdef USE_DYNAMIC_LOADING\n";
   print "\tPUSHMARK(sp);\n";
-  print qq/\tXPUSHp("DynaLoader", strlen("DynaLoader"));\n/;
-  print qq/\tPUTBACK;\n/;
+  printf "\tXPUSHp(\"DynaLoader\", %d);\n", length("DynaLoader");
+  print "\tPUTBACK;\n";
+  warn "bootstrapping DynaLoader added to xs_init\n" if $verbose;
   print "\tboot_DynaLoader(aTHX_ NULL);\n";
-  print qq/\tSPAGAIN;\n/;
+  print "\tSPAGAIN;\n";
   print "#endif\n";
 
   foreach my $stashname ( keys %xsub ) {
     if ( $xsub{$stashname} !~ m/Dynamic/ and !$static_ext{$stashname} ) {
       my $stashxsub = $stashname;
+      warn "bootstrapping $stashname added to xs_init\n" if $verbose;
       $stashxsub =~ s/::/__/g;
       print "\tPUSHMARK(sp);\n";
-      print qq/\tXPUSHp("$stashname",strlen("$stashname"));\n/;
-      print qq/\tPUTBACK;\n/;
+      printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
+      print "\tPUTBACK;\n";
       print "\tboot_$stashxsub(aTHX_ NULL);\n";
-      print qq/\tSPAGAIN;\n/;
+      print "\tSPAGAIN;\n";
     }
   }
-  print("\tFREETMPS;\n/* end bootstrapping code */\n");
+  print "\tFREETMPS;\n/* end XS bootstrapping code */\n";
   print "}\n";
 
   print <<'EOT';
+
 static void
 dl_init(pTHX)
 {
 	/* char *file = __FILE__; */
 EOT
   print "\tdTARG;\n\tdSP;\n" if @DynaLoader::dl_modules;
-  print("/* Dynamicboot strapping code*/\n\tSAVETMPS;\n");
+  print("/* DynaLoader bootstrapping */\n");
+  print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
   foreach my $stashname (@DynaLoader::dl_modules) {
     warn "Loaded $stashname\n" if $verbose;
@@ -2948,10 +2954,11 @@ EOT
       my $stashxsub = $stashname;
       $stashxsub =~ s/::/__/g;
       print "\tPUSHMARK(sp);\n";
-      print qq/\tXPUSHp("$stashname",/, length($stashname), qq/);\n/;
+      printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
+      #print qq/\tXPUSHp("$stashname",/, length($stashname), qq/);\n/;
       print qq/\tPUTBACK;\n/;
       print "#ifdef USE_DYNAMIC_LOADING\n";
-      warn "bootstrapping $stashname added to xs_init\n" if $verbose;
+      warn "bootstrapping $stashname added to dl_init\n" if $verbose;
       if ( $xsub{$stashname} eq 'Dynamic' ) {
         print qq/\tperl_call_method("bootstrap",G_DISCARD);\n/;
       }
@@ -2961,10 +2968,10 @@ EOT
       print "#else\n";
       print "\tboot_$stashxsub(aTHX_ NULL);\n";
       print "#endif\n";
-      print qq/\tSPAGAIN;\n/;
+      print "\tSPAGAIN;\n";
     }
   }
-  print("\tFREETMPS;\n/* end Dynamic bootstrapping code */\n");
+  print "\tFREETMPS;\n/* end DynaLoader bootstrapping */\n";
   print "}\n";
 }
 

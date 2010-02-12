@@ -111,7 +111,7 @@ sub run_c {
   my $d = "";
   $d = "-DALLOW_PERL_OPTIONS" if $ALLOW_PERL_OPTIONS{$t};
   vcmd "$^X -Mblib script/cc_harness -q $d $a.c -o $a" if -e "$a.c";
-  `./$a | tee $result` if -e "$a";
+  vcmd "./$a | tee $result" if -e "$a";
   prove ($a, $result, $i, $t, $backend);
   $i++;
 }
