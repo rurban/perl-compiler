@@ -38,7 +38,6 @@ ByteLoader/ppport.h
 C.xs
 Changes
 Copying
-frozenperl_2010.pod
 hints/darwin.pl
 hints/openbsd.pl
 Makefile.PL
@@ -50,9 +49,11 @@ perloptree.pod
 ramblings/cc.notes
 ramblings/curcop.runtime
 ramblings/flip-flop
+ramblings/frozenperl_2010.pod
 ramblings/magic
 ramblings/reg.alloc
 ramblings/runtime.porting
+ramblings/yapc_bratislava08.pod
 README
 README.alpha
 regen_lib.pl
@@ -92,4 +93,3 @@ t/top100
 TESTS
 Todo
 typemap
-yapc_bratislava08.pod
