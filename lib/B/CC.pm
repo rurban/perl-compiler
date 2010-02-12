@@ -72,13 +72,14 @@ my ( $module_name, %debug );
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
-my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint );
+my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint, $slow_signals );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op()
 my %optimise = (
   freetmps_each_bblock => \$freetmps_each_bblock, #-O1
   freetmps_each_loop   => \$freetmps_each_loop,	  #-O2
   inline_ops 	       => \$inline_ops,	  	  #always
   omit_taint           => \$omit_taint,
+  slow_signals         => \$slow_signals,
 );
 
 # perl patchlevel to generate code for (defaults to current patchlevel)
@@ -2139,6 +2140,7 @@ sub compile_bblock {
   $know_op = 0;
   do {
     $op = compile_op($op);
+    runtime("PERL_ASYNC_CHECK();") if $slow_signals;
   } while ( defined($op) && $$op && !exists( $leaders->{$$op} ) );
   write_back_stack();    # boo hoo: big loss
   reload_lexicals();
@@ -2616,6 +2618,18 @@ magic
 =item B<-fomit-taint>
 
 Omits generating code for handling perl's tainting mechanism.
+
+=item B<-fslow-signals>
+
+Add PERL_ASYNC_CHECK after every op as in the Perl runloop or B::C.
+
+perl "Safe signals" check the state of incoming signals after every op.
+See L<http://perldoc.perl.org/perlipc.html#Deferred-Signals-(Safe-Signals)>
+We trade safety for more speed and delay the execution of non-IO signals
+(IO signals are already handled in PerlIO) from after every single Perl op
+to after every Basic Block.
+
+Only with -fslow-signals we get the old slow and safe behaviour.
 
 =item B<-On>
 

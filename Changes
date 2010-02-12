@@ -12,6 +12,7 @@
 	  "warning: this decimal constant is unsigned only in ISO C90"
 	Defer rv => cv to run-time < 5.10. Fixes ExtUtils::Install
 	Check for NV inf. Fixes DateTime
+	* CC.pm (1.07): added -fslow-signals
 	* Bytecode.pm (1.06): same NVX => xpad_cop_seq fix as in C.pm, added 2 new 
 	  bytecodes (cop_seq_low, cop_seq_high), fixed tests 9,10,12. Passes 
 	  all tests > 5.6 now.
