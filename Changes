@@ -22,6 +22,7 @@
 	  -s a, exitcode 0, ok, no warnings on stderr
 	* t/TESTS: added 38, failing on CC (Nick Koston).
 	added 39, failing everywhere.
+	* MANIFEST, *.pod: Moved conference pods to ramblings
 
 1.18	2010-02-06 rurban
 	evaltry (test 12) still broken on most systems.
