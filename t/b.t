@@ -66,7 +66,7 @@ ok( (!grep $_ != 1, values %Subs), '...and found once' );
 # Tests for MAGIC / MOREMAGIC
 ok( B::svref_2object(\$.)->MAGIC->TYPE eq "\0", '$. has \0 magic' );
 SKIP: {
-  skip( 'skip old 5.6.2 bug #16828', 1) if $[ < 5.007;
+  skip( 'skip old 5.6.2 bug #16828', 1) if $] < 5.007;
 
   my $e = '';
   local $SIG{__DIE__} = sub { $e = $_[0] };
@@ -77,7 +77,7 @@ SKIP: {
 }
 
 SKIP: {
-  skip( 'In 5.6 regex are PMOP, qr// makes a PVMG', 2) if $[ < 5.007;
+  skip( 'In 5.6 regex are PMOP, qr// makes a PVMG', 2) if $] < 5.007;
   my $r = qr/foo/;
   my $obj = B::svref_2object($r); # a PVMG in 5.6
   my $regexp =  ($] < 5.011 and $] > 5.007) ? $obj->MAGIC : $obj;
@@ -92,7 +92,7 @@ is($iv_ref->REFCNT, 1, "Test B::IV->REFCNT");
 # Flag tests are needed still
 #diag $iv_ref->FLAGS();
 SKIP: {
-  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  skip( '5.6 had no object_2svref', 2) if $] < 5.007;
   my $iv_ret = $iv_ref->object_2svref();
   is(ref $iv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
   is($$iv_ret, $iv, "Test object_2svref()");
@@ -109,7 +109,7 @@ is($pv_ref->REFCNT, 1, "Test B::PV->REFCNT");
 # Flag tests are needed still
 #diag $pv_ref->FLAGS();
 SKIP: {
-  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  skip( '5.6 had no object_2svref', 2) if $] < 5.007;
   my $pv_ret = $pv_ref->object_2svref();
   is(ref $pv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
   is($$pv_ret, $pv, "Test object_2svref()");
@@ -126,7 +126,7 @@ is($nv_ref->REFCNT, 1, "Test B::NV->REFCNT");
 # Flag tests are needed still
 #diag $nv_ref->FLAGS();
 SKIP: {
-  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  skip( '5.6 had no object_2svref', 2) if $] < 5.007;
   my $nv_ret = $nv_ref->object_2svref();
   is(ref $nv_ret, "SCALAR", "Test object_2svref() return is SCALAR");
   is($$nv_ret, $nv, "Test object_2svref()");
@@ -141,7 +141,7 @@ is($null_ref->REFCNT, 1, "Test B::NULL->REFCNT");
 # Flag tests are needed still
 #diag $null_ref->FLAGS();
 SKIP: {
-  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  skip( '5.6 had no object_2svref', 2) if $] < 5.007;
   my $null_ret = $nv_ref->object_2svref();
   is(ref $null_ret, "SCALAR", "Test object_2svref() return is SCALAR");
   is($$null_ret, $nv, "Test object_2svref()");
@@ -155,7 +155,7 @@ is($cv_ref->REFCNT, 1, "Test $RV_class->REFCNT");
 is(ref $cv_ref, "$RV_class",
    "Test $RV_class return from svref_2object - code");
 SKIP: {
-  skip( '5.6 had no object_2svref', 2) if $[ < 5.007;
+  skip( '5.6 had no object_2svref', 2) if $] < 5.007;
   my $cv_ret = $cv_ref->object_2svref();
   is(ref $cv_ret, "REF", "Test object_2svref() return is REF");
   is($$cv_ret, $cv, "Test object_2svref()");
@@ -191,7 +191,7 @@ is(B::opnumber("pp_null"), 0, "Testing opnumber with opname (pp_null)");
 like(B::hash("wibble"), qr/0x[0-9a-f]*/, "Testing B::hash()");
 is(B::cstring("wibble"), '"wibble"', "Testing B::cstring()");
 SKIP: {
-  skip( '5.6 had no perlstring', 1) if $[ < 5.007;
+  skip( '5.6 had no perlstring', 1) if $] < 5.007;
   is(B::perlstring("wibble"), '"wibble"', "Testing B::perlstring()");
 }
 is(B::class(bless {}, "Wibble::Bibble"), "Bibble", "Testing B::class()");
