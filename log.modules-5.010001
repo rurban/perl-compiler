@@ -1,5 +1,6 @@
 # B::C::VERSION = 1.19
 # perlversion = 5.010001
+# path = /usr/bin/perl5.10.1
 # platform = cygwin
 # threaded perl
 pass Exporter
@@ -11,7 +12,7 @@ fail Pod::Simple
 fail IO
 pass Scalar::Util
 fail Getopt::Long
-fail Pod::Parser #TODO for perl-5.010001
+fail Pod::Parser
 fail ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
@@ -40,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO for perl-5.010001
+fail LWP
 fail Storable
 pass base
 pass List::MoreUtils
@@ -52,7 +53,7 @@ pass Sub::Install
 fail Attribute::Handlers #TODO for perl-5.010001
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings #TODO for perl-5.010001
+fail Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -72,7 +73,7 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI #TODO for perl-5.010001
+fail DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -92,7 +93,7 @@ pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 fail XML::SAX
-pass YAML #TODO for perl-5.010001
+pass YAML
 skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
@@ -105,5 +106,5 @@ fail Template::Stash #TODO for perl-5.010001
 # 99 / 100 modules tested with B-C-1.19 - perl-5.010001
 # pass  62 /  99 (62.6%)
 # fail  37 /  99 (37.4%)
-# todo  17 / 100 (17.0%)
+# todo  12 /  37 (32.4%)
 # skip   1 / 100 (1.0% not installed)

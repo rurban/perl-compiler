@@ -53,7 +53,8 @@ if ($DEBUGGING) {
 my @todo = (33,39);
 @todo = (3,6,8..10,12,15,16,18,26,28,31,33,35,38)
   if $] < 5.007; # CORE failures, ours not yet enabled
-push @todo, (32) if $] > 5.011003; # entertry fails with 5.11.4
+pop @todo if $] > 5.011003; # 39 passes on 5.11.3
+push @todo, (32) if $] > 5.011003; # entertry still fails with 5.11.4
 my @skip = (); #(20,27,29) if $] >= 5.010;
 
 my %todo = map { $_ => 1 } @todo;

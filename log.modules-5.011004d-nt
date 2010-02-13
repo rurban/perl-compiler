@@ -1,5 +1,6 @@
 # B::C::VERSION = 1.19
 # perlversion = 5.011004d-nt
+# path = /usr/local/bin/perl5.11.4d-nt
 # platform = cygwin
 # non-threaded perl
 pass Exporter
@@ -20,8 +21,8 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
-fail ExtUtils::Install
+fail File::Temp #TODO for perl-5.011004d-nt
+fail ExtUtils::Install #TODO for perl-5.011004d-nt
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -92,12 +93,12 @@ pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
-pass YAML #TODO for perl-5.011004d-nt
+pass YAML
 fail MooseX::Types #TODO for perl-5.011004d-nt
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
@@ -105,5 +106,5 @@ pass Template::Stash
 # 99 / 100 modules tested with B-C-1.19 - perl-5.011004d-nt
 # pass  94 /  99 (94.9%)
 # fail   5 /  99 (5.1%)
-# todo   4 / 100 (4.0%)
+# todo   5 /   5 (100.0%)
 # skip   1 / 100 (1.0% not installed)
