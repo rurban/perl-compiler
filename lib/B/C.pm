@@ -1237,17 +1237,17 @@ sub B::PVNV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $val = $sv->NVX;
-  # For now the stringification works of NVX to two ints ok. But we might need
-  # to store it as { low, high }.
+  if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+    # it could be a double, or it could be 2 ints - union xpad_cop_seq
+    my $sval = sprintf("%g", $val);
+    $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt (DateTime)
+    $val .= '.00' if $val =~ /^-?\d+$/;
+  } else {
+    $val = '0' if $val =~ /(NAN|inf)$/i; # windows msvcrt
+  }
   if ($PERL510) {
-    if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
-      # it could be a double, or it could be 2 ints - union xpad_cop_seq
-      my $sval = sprintf("%g", $val);
-      $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
-      $val .= '.00' if $val =~ /^-?\d+$/;
-    } else {
-      $val = '0' if $val =~ /(NAN|inf)$/i; # windows msvcrt
-    }
+    # For now the stringification works of NVX to two ints ok. But we might need
+    # to store it as { low, high }.
     $xpvnvsect->comment('$val, $len, $pvmax, $sv->IVX');
     $xpvnvsect->add(
       sprintf( "{%s}, %u, %u, {%d}", $val, $len, $pvmax, $sv->IVX ) );    # ??
@@ -1388,8 +1388,16 @@ sub B::PVMG::save {
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
   else {
-    $xpvmgsect->add(sprintf("%s, %u, %u, %d, %s, 0, 0",
-			    $savesym, $len, $pvmax, $sv->IVX, $sv->NVX));
+    # cannot initialize this pointer static
+    if ($savesym =~ /&(PL|sv)/) { # (char*)&PL_sv_undef | (char*)&sv_list[%d]
+      $xpvmgsect->add(sprintf("%d, %u, %u, %d, %s, 0, 0",
+			      0, $len, $pvmax, $sv->IVX, $sv->NVX));
+      $init->add( sprintf( "xpvmg_list[%d].xpv_pv = $savesym;",
+			   $xpvmgsect->index ) );
+    } else {
+      $xpvmgsect->add(sprintf("%s, %u, %u, %d, %s, 0, 0",
+			      $savesym, $len, $pvmax, $sv->IVX, $sv->NVX));
+    }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
@@ -1557,7 +1565,7 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;\n", $xrvsect->index, $rv ) );
     }
     # one more: bootstrapped XS CVs (test Class::MOP, no simple testcase yet)
-    elsif ( $rv =~ /\(perl_get_cv/ ) {
+    elsif ( $rv =~ /get_cv\(/ ) {
       $xrvsect->add("(SV*)Nullhv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;\n", $xrvsect->index, $rv ) );
@@ -1703,7 +1711,7 @@ sub B::CV::save {
     }
     warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
       if $debug{cv};
-    return qq/(perl_get_cv("$stashname\:\:$cvname",TRUE))/;
+    return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
     no strict 'refs';
@@ -2055,8 +2063,8 @@ sub B::GV::save {
       if ( $gvcv->XSUB && $name ne $origname ) {    #XSUB alias
         # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{ CV *cv;");
-        $init->add("\tcv=perl_get_cv($origname,TRUE);");
-        $init->add("\tGvCV($sym)=cv;");
+        $init->add("\tcv = get_cv($origname,TRUE);");
+        $init->add("\tGvCV($sym) = cv;");
         $init->add("\tSvREFCNT_inc((SV *)cv);");
         $init->add("}");
       }
@@ -2644,6 +2652,7 @@ __EOGP
 
 sub output_boilerplate {
   print <<'EOT';
+#define PERL_CORE
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -2653,6 +2662,12 @@ sub output_boilerplate {
 #define Perl_pp_mapstart Perl_pp_grepstart
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
+
+/* Since 5.8.8 */
+#ifndef Newx
+#define Newx(v,n,t)    New(0,v,n,t)
+#endif
+
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
 EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 
@@ -2753,6 +2768,9 @@ main(int argc, char **argv, char **env)
 
     PERL_SYS_INIT3(&argc,&argv,&env);
 
+#ifdef WIN32
+#define PL_do_undump 0
+#endif
     if (!PL_do_undump) {
 	my_perl = perl_alloc();
 	if (!my_perl)
@@ -2790,7 +2808,7 @@ EOT
 #else
 #define EXTRA_OPTIONS 4
 #endif /* ALLOW_PERL_OPTIONS */
-    New(0,fakeargv, argc + EXTRA_OPTIONS + 1, char *);
+    Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
     fakeargv[0] = argv[0];
     fakeargv[1] = "-e";
     fakeargv[2] = "";
@@ -2960,10 +2978,10 @@ EOT
       print "#ifdef USE_DYNAMIC_LOADING\n";
       warn "bootstrapping $stashname added to dl_init\n" if $verbose;
       if ( $xsub{$stashname} eq 'Dynamic' ) {
-        print qq/\tperl_call_method("bootstrap",G_DISCARD);\n/;
+        print qq/\tcall_method("bootstrap",G_DISCARD);\n/;
       }
       else {
-        print qq/\tperl_call_pv("XSLoader::load",G_DISCARD);\n/;
+        print qq/\tcall_pv("XSLoader::load",G_DISCARD);\n/;
       }
       print "#else\n";
       print "\tboot_$stashxsub(aTHX_ NULL);\n";

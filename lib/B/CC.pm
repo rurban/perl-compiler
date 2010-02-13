@@ -173,17 +173,8 @@ sub save_runtime {
 
 sub output_runtime {
   my $ppdata;
-  print qq(#include "cc_runtime.h"\n);
-  # PerlProc_setjmp PerlProc_longjmp for Windows
+  print qq(\n#include "cc_runtime.h"\n);
   # CC coverage: 12, 32
-  print << '__EOF';
-#ifndef PerlProc_setjmp
-# define PerlProc_setjmp(b, n) Sigsetjmp((b), (n))
-# define PerlProc_longjmp(b, n) Siglongjmp((b), (n))
-#endif
-
-__EOF
-
 
   # Perls >=5.8.9 have a broken PP_ENTERTRY. See PERL_FLEXIBLE_EXCEPTIONS in cop.h
   # Fixed in CORE with 5.11.4
@@ -857,7 +848,7 @@ sub pp_const {
   return $op->next;
 }
 
-# coverage: 1-32
+# coverage: 1-39, fails in 33
 sub pp_nextstate {
   my $op = shift;
   $curcop->load($op);
@@ -865,7 +856,13 @@ sub pp_nextstate {
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
   runtime("TAINT_NOT;\t/* nextstate */") unless $omit_taint;
+  #my $cxix  = $#cxstack;
+  # XXX What symptom I'm fighting here? test 33
+  #if ( $cxix >= 0 ) { # XXX
   runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;");
+  #} else {
+  #  runtime("sp = PL_stack_base;");
+  #}
   if ( $freetmps_each_bblock || $freetmps_each_loop ) {
     $need_freetmps = 1;
   }
@@ -1629,18 +1626,20 @@ sub pp_goto {
   return $op->next;
 }
 
-# coverage: 1-32
+# coverage: 1-39, c_argv.t 2
 sub pp_enter {
-  if ($inline_ops) {
+  # XXX fails with simple c_argv.t 2. no cxix. Disabled for now
+  if (0 and $inline_ops) {
     my $op = shift;
     warn "inlining enter\n" if $debug{op};
     $curcop->write_back if $curcop;
     if (!($op->flags & OPf_WANT)) {
-      if ( $#cxstack >= 0) {
+      my $cxix = $#cxstack;
+      if ( $cxix >= 0 ) {
         if ( $op->flags & OPf_SPECIAL ) {
           runtime "gimme = block_gimme();";
         } else {
-          runtime "cxstack[cxstack_ix].blk_gimme;";
+          runtime "gimme = cxstack[cxstack_ix].blk_gimme;";
         }
       } else {
         runtime "gimme = G_SCALAR;";
@@ -1927,9 +1926,11 @@ sub enterloop {
   $nextop->save;
   $lastop->save;
   $redoop->save;
-  if ($inline_ops and $op->name eq 'enterloop') {
+  if (0 and $inline_ops and $op->name eq 'enterloop') {
     warn "inlining enterloop\n" if $debug{op};
-    runtime "gimme = GIMME_V;";
+    # XXX = GIMME_V fails on freebsd7 5.8.8 (28)
+    # = block_gimme() fails on the rest, but passes on freebsd7
+    runtime "gimme = GIMME_V;"; # XXX
     if ($PERL511) {
       runtime('ENTER_with_name("loop1");',
               'SAVETMPS;',

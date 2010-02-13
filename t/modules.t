@@ -13,9 +13,12 @@
 #
 # Reports:
 # for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
+#
+# How to installed skip modules:
+# grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
+
 
 use strict;
-require "test.pl";
 use Test::More;
 
 # try some simple XS module which exists in 5.6.2 and blead
@@ -31,6 +34,11 @@ BEGIN {
   unshift @INC, 't';
 }
 
+our %modules;
+our $keep = '';
+our $log = 0;
+use modules;
+require "test.pl";
 
 # Possible binary files.
 my $binary_file = 'a';
@@ -38,12 +46,12 @@ $binary_file = 'a.out' if -e 'a.out';
 unlink 'a', 'a.out';
 
 my $opts_to_test = 1;
-$opts_to_test = 3 if grep /-all/, @ARGV;
+my $do_test;
+$opts_to_test = 3 if grep /^-all$/, @ARGV;
+$do_test = 1 if grep /^-t$/, @ARGV;
 
 # Determine list of modules to action.
-my %modules;
-my $keep = '';
-my @modules = get_module_list();
+our @modules = get_module_list();
 my $test_count = scalar @modules * $opts_to_test * 4;
 # $test_count -= 4 * $opts_to_test * (scalar @modules - scalar(keys %modules));
 plan tests => $test_count;
@@ -51,14 +59,13 @@ plan tests => $test_count;
 use Config;
 use B::C;
 
-eval { require IPC::Run; };
-my $have_IPC_Run = defined $IPC::Run::VERSION;
-log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
-  unless $have_IPC_Run;
+#eval { require IPC::Run; };
+#my $have_IPC_Run = defined $IPC::Run::VERSION;
+#log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
+#  unless $have_IPC_Run;
 
 my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
-my $log = 0;
 my $perlversion;
 $log = 1 if -d '.svn';
 $log = 0 if @ARGV;
@@ -155,10 +162,6 @@ log_diag(sprintf("skip %3d / %3d (%s not installed)\n",
 
 exit;
 
-sub percent {
-  $_[1] ? sprintf("%0.1f%%", $_[0]*100/$_[1]) : '';
-}
-
 sub is_todo {
   my $module = shift or die;
 
@@ -188,93 +191,4 @@ sub is_todo {
       return 1 if $_ eq $module;
     }
   }
-}
-
-sub log_diag {
-  my $message = shift;
-  chomp $message;
-  diag( $message );
-  return unless $log;
-
-  foreach ($log, "$log.err") {
-    open(LOG, ">>", $_);
-    $message =~ s/\n./\n# /xmsg;
-    print LOG "# $message\n";
-    close LOG;
-  }
-}
-
-sub log_pass {
-  my ($pass_msg, $module, $todo) = @_;
-  return unless $log;
-
-  if ($todo) {
-    $todo = " #TODO $todo";
-  } else {
-    $todo = '';
-  }
-
-  open(LOG, ">>", "$log");
-  print LOG "$pass_msg $module$todo\n";
-  close LOG;
-}
-
-sub log_err {
-  my ($module, $out, $err) = @_;
-  return if(!$log);
-
-  $_ =~ s/\n/\n# /xmsg foreach($out, $err); # Format for comments
-
-  open(ERR, ">>", "$log.err");
-  print ERR "Failed $module\n";
-  print ERR "# No output\n" if(!$out && !$err);
-  print ERR "# STDOUT:\n# $out\n" if($out && $out ne 'ok');
-  print ERR "# STDERR:\n# $err\n" if($err);
-  close ERR;
-}
-
-sub get_module_list {
-  # Parse for command line modules and use this if seen.
-  my @modules = grep {$_ !~ /^-(all|log|subset)$/} @ARGV; # Parse out -all var.
-  my $module_list  = 't/top100';
-  if (@modules and -e $modules[0]) {
-    $module_list = $modules[0];
-  }
-  elsif (@modules) {
-    # cmdline overrides require check and keeps .c
-    $modules{$_} = 1 for @modules;
-    $keep = "-S";
-    return @modules;
-  }
-
-  local $/;
-  open F, "<", $module_list or die "$module_list not found";
-  my $s = <F>;
-  close F;
-  @modules = grep {s/\s+//g;!/^#/} split /\n/, $s;
-
-  diag "scanning installed modules";
-  for my $m (@modules) {
-    if (eval "require $m; 1;" || $m eq 'if' ) {
-      $modules{$m} = 1;
-    }
-  }
-
-  if (! -e '.svn' || grep /^-subset$/, @ARGV) {
-    log_diag(".svn does not exist so only running a subset of tests");
-    @modules = random_sublist(@modules);
-  }
-
-  @modules;
-}
-
-sub random_sublist {
-  my @modules = @_;
-  my %sublist;
-  while (keys %sublist <= 10) {
-    my $m = $modules[int(rand(scalar @modules))];
-    next unless $modules{$m}; # Don't random test uninstalled module
-    $sublist{$m} = 1;
-  }
-  return keys %sublist;
 }

@@ -7,13 +7,14 @@ BEGIN {
 require "test.pl";
 use Test::More;
 use Cwd;
-
-my %modules;
-my $log = 0;
-my $keep = '';
-my @modules;
-eval { require IPC::Run; };
-my $have_IPC_Run = defined $IPC::Run::VERSION;
+use Exporter;
+our @ISA     = qw(Exporter);
+our @EXPORT = qw(%modules $have_IPC_Run $keep
+		 percent log_diag log_pass log_err get_module_list random_sublist
+		);
+our (%modules);
+our $log = 0;
+our $keep = '';
 
 sub percent {
   $_[1] ? sprintf("%0.1f%%", $_[0]*100/$_[1]) : '';

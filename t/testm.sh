@@ -1,14 +1,17 @@
 #!/bin/bash
 # t/testm.sh File::Temp
 # => $^X -Mblib blib/script/perlcc -S -e 'use File::Temp; print "ok"' -o file_temp
+#
+# How to installed skip modules:
+# grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
 
-# TODO: Try to run CPAN::Shell::test($module)
+# TODO: Try to run CPAN::Shell->testcc($module) with -t
 
 function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."
   echo " -k                 keep temp. files on PASS"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
-  echo " -t                 run the module tests also, not only use Module"
+  echo " -t                 run the module tests also, not only use Module (experimental)"
   echo " -h                 help"
 }
 
@@ -74,7 +77,7 @@ do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "c" ]; then CONT=1; fi
   if [ "$opt" = "k" ]; then KEEP=1; fi
-  if [ "$opt" = "t" ]; then TEST=-t; fi
+  if [ "$opt" = "t" ]; then TEST="-t"; fi
   if [ "$opt" = "h" ]; then help; exit; fi
 done
 
@@ -105,4 +108,3 @@ if [ -n "$1" ]; then
 else
     $PERL $Mblib t/modules.t $TEST
 fi
-

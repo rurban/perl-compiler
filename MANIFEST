@@ -1,5 +1,4 @@
 Artistic
-lib/B/Asmdata.pm
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
@@ -79,9 +78,11 @@ t/c_o4.t
 t/cc.t
 t/cc_o1.t
 t/cc_o2.t
-t/o.t
+t/modules.pm
 t/modules.t
 t/mymodules
+t/o.t
+t/qr_loaded_module.pm
 t/stash.t
 t/TESTS
 t/testcore.t
@@ -89,6 +90,7 @@ t/test.pl
 t/testplc.sh
 t/testc.sh
 t/testcc.sh
+t/testm.sh
 t/top100
 TESTS
 Todo
