@@ -64,7 +64,7 @@ pass Scope::Guard
 pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
-fail Try::Tiny
+pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP
 fail Moose
@@ -94,15 +94,15 @@ pass Clone
 pass XML::NamespaceSupport
 fail XML::SAX
 pass YAML
-skip MooseX::Types
+fail MooseX::Types #TODO for perl-5.010001
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO for perl-5.010001
 fail DateTime #TODO for perl-5.010001
 pass IO::String
-pass AppConfig
+fail AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO for perl-5.010001
+skip Template::Stash
 # 99 / 100 modules tested with B-C-1.19 - perl-5.010001
 # pass  62 /  99 (62.6%)
 # fail  37 /  99 (37.4%)

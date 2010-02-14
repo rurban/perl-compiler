@@ -1,7 +1,8 @@
-# B::C::VERSION = 1.17
+# B::C::VERSION = 1.19
 # perlversion = 5.010000-nt
+# path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin
-# ithreads = no
+# non-threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -20,8 +21,8 @@ pass constant
 pass Test
 fail Data::Dumper
 pass File::Spec
-fail File::Temp - 
-fail ExtUtils::Install - 
+fail File::Temp #TODO for perl-5.010000-nt
+fail ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -31,7 +32,7 @@ pass XSLoader
 pass MIME::Base64
 pass Digest
 fail Digest::MD5
-fail Sub::Uplevel
+pass Sub::Uplevel
 fail URI
 pass HTML::Tagset
 skip HTML::Parser
@@ -43,45 +44,45 @@ pass IO::Compress::Base
 fail LWP
 fail Storable
 pass base
-skip List::MoreUtils
+pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
 fail Test::Tester
 pass Sub::Install
-fail Attribute::Handlers - 
+fail Attribute::Handlers #TODO for perl-5.010000-nt
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings - 
+fail Test::NoWarnings
 pass version
 skip Params::Validate
-skip Sub::Name
+pass Sub::Name
 fail Filter::Util::Call
 pass Algorithm::C3
-skip Class::C3
+pass Class::C3
 pass Scope::Guard
-skip MRO::Compat
+pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-skip Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
+pass Devel::GlobalDestruction
+pass Class::MOP
+fail Moose
 fail Test::Deep
-fail Carp::Clan
+pass Carp::Clan
 fail Module::Pluggable
-skip if
+fail if(1) => "Sys::Hostname"
 skip Text::Balanced
 skip DBI
 fail Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+fail FCGI
 fail Tree::DAG_Node
 fail Path::Class
 fail Test::Warn
-fail Encode
+pass Encode
 skip Variable::Magic
 fail CGI
 skip B::Hooks::EndOfScope
@@ -102,8 +103,8 @@ pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-
-# 77 modules tested with B-C-1.17 - perl-5.010000-nt
-# pass  38 /  77 (49.4%)
-# fail  39 /  77 (50.6%)
-# skip  23 / 100 (29.9% not installed)
+# 86 / 100 modules tested with B-C-1.19 - perl-5.010000-nt
+# pass  47 /  86 (54.7%)
+# fail  39 /  86 (45.3%)
+# todo   2 /  39 (5.1%)
+# skip  14 / 100 (14.0% not installed)

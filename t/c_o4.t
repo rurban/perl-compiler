@@ -19,7 +19,7 @@ my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
 
-my @todo = (10,12,15,19,25,39);	#5.8.9
+my @todo = (10,12,19,25,39);	#5.8.9
 @todo    = (10,12,19,25,27,39) if !$ITHREADS;
 @todo = (10,12,15,19,25,27)    if $] < 5.007;
 @todo = (10,12,19,25,39)       if $] >= 5.010;
