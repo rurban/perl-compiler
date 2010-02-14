@@ -64,7 +64,7 @@ pass Scope::Guard
 pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
-pass Try::Tiny
+fail Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
 fail Moose
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 fail XML::SAX
 pass YAML
-fail MooseX::Types #TODO for perl-5.010001
+skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO for perl-5.010001
