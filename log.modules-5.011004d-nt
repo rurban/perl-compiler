@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.19
+# B::C::VERSION = 1.22
 # perlversion = 5.011004d-nt
 # path = /usr/local/bin/perl5.11.4d-nt
 # platform = cygwin
@@ -21,8 +21,8 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO for perl-5.011004d-nt
-fail ExtUtils::Install #TODO for perl-5.011004d-nt
+fail File::Temp #TODO for perl->= 5.007
+fail ExtUtils::Install #TODO for perl-> 5.010
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -35,7 +35,7 @@ pass Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-skip HTML::Parser
+pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
@@ -50,7 +50,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-fail Attribute::Handlers #TODO for perl-5.011004d-nt
+fail Attribute::Handlers #TODO for perl-generally
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -85,7 +85,7 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope #TODO for perl-5.011004d-nt
+pass B::Hooks::EndOfScope #TODO for perl-generally
 pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO for perl-5.011004d-nt
+fail MooseX::Types #TODO for perl-generally
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.19 - perl-5.011004d-nt
-# pass  94 /  99 (94.9%)
-# fail   5 /  99 (5.1%)
+# 100 / 100 modules tested with B-C-1.22 - perl-5.011004d-nt
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
 # todo   5 /   5 (100.0%)
-# skip   1 / 100 (1.0% not installed)
+# skip   0 / 100 (0.0% not installed)

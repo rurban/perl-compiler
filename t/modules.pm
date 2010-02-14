@@ -10,7 +10,7 @@ use Config;
 use Cwd;
 use Exporter;
 our @ISA     = qw(Exporter);
-our @EXPORT = qw(%modules $have_IPC_Run $keep
+our @EXPORT = qw(%modules $keep
 		 perlversion
 		 percent log_diag log_pass log_err get_module_list random_sublist
 		);

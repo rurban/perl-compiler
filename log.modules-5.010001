@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.20
+# B::C::VERSION = 1.22
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin
@@ -21,8 +21,8 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO for perl-5.010001
-fail ExtUtils::Install #TODO for perl-5.010001
+fail File::Temp #TODO for perl->= 5.007
+fail ExtUtils::Install #TODO for perl-> 5.010
 pass Text::ParseWords
 fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -42,15 +42,15 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 fail LWP
-pass Storable
+fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO for perl-5.010001
+fail Test::Tester #TODO for perl-with useithreads
 pass Sub::Install
-fail Attribute::Handlers #TODO for perl-5.010001
+fail Attribute::Handlers #TODO for perl-generally
 pass Data::OptList
 pass Sub::Exporter
 fail Test::NoWarnings
@@ -64,11 +64,11 @@ pass Scope::Guard
 pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
-fail Try::Tiny
+pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
+fail Class::MOP
 fail Moose
-fail Test::Deep #TODO for perl-5.010001
+fail Test::Deep #TODO for perl-with useithreads
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -78,33 +78,33 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI #TODO for perl-5.010001
+fail FCGI #TODO for perl-with useithreads
 fail Tree::DAG_Node
 fail Path::Class
 fail Test::Warn
 pass Encode
 pass Variable::Magic
 fail CGI
-fail B::Hooks::EndOfScope #TODO for perl-5.010001
+fail B::Hooks::EndOfScope #TODO for perl-generally
 fail Test::Pod
-fail Digest::SHA1 #TODO for perl-5.010001
-fail namespace::clean #TODO for perl-5.010001
+fail Digest::SHA1 #TODO for perl-with useithreads
+fail namespace::clean #TODO for perl-with useithreads
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 fail XML::SAX
 pass YAML
-skip MooseX::Types
+fail MooseX::Types #TODO for perl-generally
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale #TODO for perl-5.010001
-fail DateTime #TODO for perl-5.010001
+pass DateTime::Locale #TODO for perl-with useithreads
+fail DateTime #TODO for perl-with useithreads
 pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 99 / 100 modules tested with B-C-1.20 - perl-5.010001
-# pass  63 /  99 (63.6%)
-# fail  36 /  99 (36.4%)
-# todo  12 /  36 (33.3%)
-# skip   1 / 100 (1.0% not installed)
+fail Template::Stash #TODO for perl-with useithreads
+# 100 / 100 modules tested with B-C-1.22 - perl-5.010001
+# pass  62 / 100 (62.0%)
+# fail  38 / 100 (38.0%)
+# todo  13 /  38 (34.2%)
+# skip   0 / 100 (0.0% not installed)

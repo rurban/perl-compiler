@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.23	2010-02-14 rurban
+	* t/testm.sh: chmod +x
+	* t/modules.t: fix $have_IPC_Run
+
 1.22	2010-02-14 rurban
 	Tested with ActivePerl 5.10.0
 

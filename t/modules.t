@@ -59,7 +59,10 @@ plan tests => $test_count;
 use Config;
 use B::C;
 
-*have_IPC_Run = *modules::have_IPC_Run;
+eval { require IPC::Run; };
+my $have_IPC_Run = defined $IPC::Run::VERSION;
+log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
+  unless $have_IPC_Run;
 
 my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
@@ -166,7 +169,7 @@ sub is_todo {
   my $module = shift or die;
 
   foreach (qw(Attribute::Handlers B::Hooks::EndOfScope MooseX::Types)) {
-    return 1 'generally' if $_ eq $module;
+    return 'generally' if $_ eq $module;
   }
 
   if ($] < 5.007) {

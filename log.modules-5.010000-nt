@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.19
+# B::C::VERSION = 1.22
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin
@@ -21,7 +21,7 @@ pass constant
 pass Test
 fail Data::Dumper
 pass File::Spec
-fail File::Temp #TODO for perl-5.010000-nt
+fail File::Temp #TODO for perl->= 5.007
 fail ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder
@@ -50,7 +50,7 @@ pass Task::Weaken
 pass Class::Accessor
 fail Test::Tester
 pass Sub::Install
-fail Attribute::Handlers #TODO for perl-5.010000-nt
+fail Attribute::Handlers #TODO for perl-generally
 pass Data::OptList
 pass Sub::Exporter
 fail Test::NoWarnings
@@ -103,7 +103,7 @@ pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 86 / 100 modules tested with B-C-1.19 - perl-5.010000-nt
+# 86 / 100 modules tested with B-C-1.22 - perl-5.010000-nt
 # pass  47 /  86 (54.7%)
 # fail  39 /  86 (45.3%)
 # todo   2 /  39 (5.1%)
