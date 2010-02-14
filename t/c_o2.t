@@ -19,7 +19,7 @@ prepare_c_tests();
 my @todo = (39); #5.8.9
 @todo = (27,39)  if !$ITHREADS;
 @todo = (15,27)  if $] < 5.007;
-@todo = (39)     if $] >= 5.010;
+@todo = (29,39)  if $] >= 5.010;
 @todo = (15,39)  if $] >= 5.010 and !$ITHREADS;
 push @todo, (32) if $] >= 5.011003;
 

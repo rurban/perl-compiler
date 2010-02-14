@@ -6,15 +6,25 @@ BEGIN {
 
 require "test.pl";
 use Test::More;
+use Config;
 use Cwd;
 use Exporter;
 our @ISA     = qw(Exporter);
 our @EXPORT = qw(%modules $have_IPC_Run $keep
+		 perlversion
 		 percent log_diag log_pass log_err get_module_list random_sublist
 		);
 our (%modules);
 our $log = 0;
 our $keep = '';
+
+sub perlversion {
+  my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+  return sprintf("%1.6f%s%s",
+		 $],
+		 ($DEBUGGING ? 'd' : ''),
+		 ($Config{useithreads} ? '' : '-nt'));
+}
 
 sub percent {
   $_[1] ? sprintf("%0.1f%%", $_[0]*100/$_[1]) : '';

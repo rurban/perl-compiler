@@ -66,7 +66,7 @@ my $package_pv;      # sv->pv of previous op for method_named
 
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
-my ($entertry_defined, $vivify_ref_defined, $PerlProc_jmp_defined);
+my ( $entertry_defined, $vivify_ref_defined );
 my ( $module_name, %debug );
 
 # Optimisation options. On the command line, use hyphens instead of

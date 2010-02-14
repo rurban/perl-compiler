@@ -23,7 +23,7 @@ my @todo  = (39);   # 8,14-16 fail on 5.00505 (max 20 then)
 # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
 # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
 @todo = (15,27)     if $] < 5.007;
-@todo = (39)        if $] >= 5.010;
+@todo = (29,39)     if $] >= 5.010;
 @todo = (15,39)     if $] >= 5.010 and !$ITHREADS;
 push @todo, (32,39) if $] >= 5.011003;
 

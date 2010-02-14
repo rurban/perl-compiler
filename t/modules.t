@@ -59,10 +59,7 @@ plan tests => $test_count;
 use Config;
 use B::C;
 
-#eval { require IPC::Run; };
-#my $have_IPC_Run = defined $IPC::Run::VERSION;
-#log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
-#  unless $have_IPC_Run;
+*have_IPC_Run = *modules::have_IPC_Run;
 
 my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
@@ -71,11 +68,7 @@ $log = 1 if -d '.svn';
 $log = 0 if @ARGV;
 $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
-my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-$perlversion = sprintf("%1.6f%s%s",
-                       $],
-                       ($DEBUGGING ? 'd' : ''),
-                       ($Config{useithreads} ? '' : '-nt'));
+$perlversion = perlversion();
 if ($log) {
   $log = @ARGV ? "log.modules-$perlversion-".scalar(localtime)
     : "log.modules-$perlversion";
@@ -109,11 +102,18 @@ for my $module (@modules) {
       skip("$module not installed", 4 * scalar @opts);
       next MODULE;
     }
+    if (!$have_IPC_Run and is_skip($module)) {
+      $skip++;
+      log_pass("skip", "$module", 0);
+
+      skip("$module skipped endless loop", 4 * scalar @opts);
+      next MODULE;
+    }
     $module = 'if(1) => "Sys::Hostname"' if $module eq 'if';
 
   TODO: {
-      local $TODO = "for perl-$perlversion"
-        if is_todo($module);
+      my $s = is_todo($module);
+      local $TODO = "for perl-$s" if $s;
       $todo++ if $TODO;
 
       open F, ">", "mod.pl" or die;
@@ -166,17 +166,24 @@ sub is_todo {
   my $module = shift or die;
 
   foreach (qw(Attribute::Handlers B::Hooks::EndOfScope MooseX::Types)) {
-    return 1 if $_ eq $module;
+    return 1 'generally' if $_ eq $module;
   }
 
+  if ($] < 5.007) {
+    # Can't locate object method "RV" via package "B::PV" 
+    # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
+    foreach(qw(ExtUtils::MakeMaker)) {
+      return '< 5.007' if $_ eq $module;
+    }
+  }
   if ($] >= 5.007) {
     foreach(qw(File::Temp)) {
-      return 1 if $_ eq $module;
+      return '>= 5.007' if $_ eq $module;
     }
   }
   if ($] > 5.010) {
     foreach(qw(ExtUtils::Install)) {
-      return 1 if $_ eq $module;
+      return '> 5.010' if $_ eq $module;
     }
   }
 
@@ -188,6 +195,16 @@ sub is_todo {
                namespace::clean DateTime::Locale DateTime
                Template::Stash
               )) {
+      return 'with useithreads' if $_ eq $module;
+    }
+  }
+}
+
+sub is_skip {
+  my $module = shift or die;
+
+  if ($] >= 5.011004) {
+    foreach (qw(Test::Simple File::Temp Attribute::Handlers)) {
       return 1 if $_ eq $module;
     }
   }

@@ -12,6 +12,7 @@ function help {
   echo " -k                 keep temp. files on PASS"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -t                 run the module tests also, not only use Module (experimental)"
+  echo " -s                 install skipped (missing) modules"
   echo " -h                 help"
 }
 
@@ -19,36 +20,6 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
-
-function init {
-    BASE=`basename $0`
-    # if $] < 5.9 you may want to remove -Mblib for testing the core lib. -o
-    #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-    Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
-    if [ -z $Mblib ]; then 
-	VERS="${VERS}_global"; 
-	OCMD="$PERL $Mblib -MO=C,-DcAC,"
-	if [ $BASE = "testcc.sh" ]; then 
-	    OCMD="$PERL $Mblib -MO=CC,-DrOsplt,"
-	fi
-    else
-	OCMD="$PERL $Mblib -MO=C,-DcoOSAHGCMpu,-v,"
-	if [ $BASE = "testcc.sh" ]; then
-	    OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
-	fi
-    fi
-    OCMDO1="$(echo $OCMD|sed -e s/C,-D/C,-O1,-D/)"
-    OCMDO2="$(echo $OCMD|sed -e s/C,-D/C,-O2,-D/)"
-    OCMDO3="$(echo $OCMD|sed -e s/C,-D/C,-O3,-D/)"
-    OCMDO4="$(echo $OCMD|sed -e s/C,-D/C,-O4,-D/)"
-    CONT=
-    # 5.6: rather use -B static
-    #CCMD="$PERL script/cc_harness -g3"
-    # rest. -DALLOW_PERL_OPTIONS for -Dtlv
-    CCMD="$PERL script/cc_harness -d -g3 -Bdynamic -DALLOW_PERL_OPTIONS"  
-    LCMD=
-    # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
-}
 
 function vcmd {
     test -n "$QUIET" || echo $*
@@ -68,16 +39,19 @@ function fail {
     echo
 }
 
-init
-
 # 
 # getopts for -q -k -E -Du,-q -v -O2, -a -c
-while getopts "hckot" opt
+while getopts "hckots" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "c" ]; then CONT=1; fi
   if [ "$opt" = "k" ]; then KEEP=1; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
+  if [ "$opt" = "s" ]; then 
+      v=$($PERL -It -Mmodules -e'print perlversion')
+      grep ^skip log.modules-$v | cut -c6- | xargs $PERL -S cpan
+      exit
+  fi
   if [ "$opt" = "h" ]; then help; exit; fi
 done
 

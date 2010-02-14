@@ -342,6 +342,9 @@ sub cc_harness_msvc {
     } else {
         $link .= " ".ExtUtils::Embed::ldopts("-std");
     }
+    if ($Config{ccversion} eq '12.0.8804') {
+        $link =~ s/ -opt:ref,icf//;
+    }
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     vprint 3, "running $Config{cc} $compile";
     system("$Config{cc} $compile");

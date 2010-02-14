@@ -3,6 +3,17 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.22	2010-02-14 rurban
+	Tested with ActivePerl 5.10.0
+
+	* bytecode.h: unshare_hek exception for WIN32, not only MINGW
+	* t/modules.t: Added list of to be skipped modules, which cycle endlessly.
+	Improve todo message.
+	* t/testm.sh: add option -s "install skipped modules"
+	* Makefile.PL, cc_harness, perlcc: fix ldflags for ActivePerl 5.10.0 
+	  for MSVC6 (ccversion 12) -opt:ref,icf leads to invalid outfile "pt:ref,icf"
+	* c+cc test 29 fails on 5.10 randomly. Make it a TODO
+
 1.21	2010-02-14 rurban
 	* C.pm: Add missing Nullop for CC on 5.11.4 (cc 12).
 	Test 38 passes

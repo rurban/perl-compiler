@@ -19,7 +19,7 @@ my $ITHREADS  = ($Config{useithreads});
 
 my @todo = (18,21,25..27,29,30,39); # 5.8
 @todo =    (15,18,21,25..27,30,39) if $] < 5.007;
-@todo =    (18,21,25,26,30,39)  if $] >= 5.010;
+@todo =    (18,21,25,26,29,30,39)  if $] >= 5.010;
 # solaris and debian also. I suspect nvx<=>cop_seq_*
 push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 push @todo, (32)   if $] >= 5.011003;

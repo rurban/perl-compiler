@@ -434,6 +434,9 @@ sub run_cc_test {
         $command .= " ".ExtUtils::Embed::ldopts("-std");
         $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
+	if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
+	    $command =~ s/ -opt:ref,icf//;
+	}
         my $cmdline = "$Config{cc} $command $NULL";
         run_cmd($cmdline,20);
         unless (-e $exe) {
