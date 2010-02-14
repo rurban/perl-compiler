@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.21	2010-02-14 rurban
+	* C.pm: Add missing Nullop for CC on 5.11.4 (cc 12).
+	Test 38 passes
+
 1.20	2010-02-14 rurban
 	* C.pm: #define PERL_CORE broke Null macros on 5.11.4. Define those.
 

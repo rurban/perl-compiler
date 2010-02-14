@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.20';
+our $VERSION = '1.21';
 
 package B::C::Section;
 
@@ -2673,6 +2673,7 @@ sub output_boilerplate {
 #define Nullsv Null(SV*)
 #define Nullhv Null(HV*)
 #define Nullgv Null(GV*)
+#define Nullop Null(OP*)
 #endif
 
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader

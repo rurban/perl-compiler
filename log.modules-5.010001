@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.19
+# B::C::VERSION = 1.20
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin
@@ -42,7 +42,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 fail LWP
-fail Storable
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -66,7 +66,7 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
+pass Class::MOP
 fail Moose
 fail Test::Deep #TODO for perl-5.010001
 pass Carp::Clan
@@ -103,8 +103,8 @@ pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 99 / 100 modules tested with B-C-1.19 - perl-5.010001
-# pass  62 /  99 (62.6%)
-# fail  37 /  99 (37.4%)
-# todo  12 /  37 (32.4%)
+# 99 / 100 modules tested with B-C-1.20 - perl-5.010001
+# pass  63 /  99 (63.6%)
+# fail  36 /  99 (36.4%)
+# todo  12 /  36 (33.3%)
 # skip   1 / 100 (1.0% not installed)
