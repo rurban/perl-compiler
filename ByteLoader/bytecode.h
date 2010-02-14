@@ -597,11 +597,20 @@ static int bget_swab = 0;
 #endif
 
 #if PERL_VERSION < 10
-#define BSET_gp_file(gv, file)	GvFILE((GV*)gv) = file
+# define BSET_gp_file(gv, file)	GvFILE((GV*)gv) = file
 #else
 /* unshare_hek not public */
-# if !defined(__MINGW32__)
-#define BSET_gp_file(gv, file) \
+# if defined(WIN32)
+#  define BSET_gp_file(gv, file) \
+	STMT_START {							\
+	    STRLEN len = strlen(file);					\
+	    U32 hash;							\
+	    PERL_HASH(hash, file, len);					\
+	    GvFILE_HEK(gv) = share_hek(file, len, hash);		\
+	    Safefree(file);						\
+	} STMT_END
+# else
+#  define BSET_gp_file(gv, file) \
 	STMT_START {							\
 	    STRLEN len = strlen(file);					\
 	    U32 hash;							\
@@ -609,15 +618,6 @@ static int bget_swab = 0;
 	    if(GvFILE_HEK(gv)) {					\
 		Perl_unshare_hek(aTHX_ GvFILE_HEK(gv));			\
 	    }								\
-	    GvFILE_HEK(gv) = share_hek(file, len, hash);		\
-	    Safefree(file);						\
-	} STMT_END
-# else
-#define BSET_gp_file(gv, file) \
-	STMT_START {							\
-	    STRLEN len = strlen(file);					\
-	    U32 hash;							\
-	    PERL_HASH(hash, file, len);					\
 	    GvFILE_HEK(gv) = share_hek(file, len, hash);		\
 	    Safefree(file);						\
 	} STMT_END
