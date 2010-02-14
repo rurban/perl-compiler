@@ -2667,6 +2667,13 @@ sub output_boilerplate {
 #ifndef Newx
 #define Newx(v,n,t)    New(0,v,n,t)
 #endif
+/* No longer available when C<PERL_CORE> is defined. */
+#ifndef Nullsv
+#define Null(type) ((type)NULL)
+#define Nullsv Null(SV*)
+#define Nullhv Null(HV*)
+#define Nullgv Null(GV*)
+#endif
 
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
 EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
