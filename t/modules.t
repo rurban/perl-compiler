@@ -16,7 +16,7 @@
 #
 # How to installed skip modules:
 # grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
-
+# or t/testm.sh -s
 
 use strict;
 use Test::More;
@@ -51,6 +51,7 @@ $opts_to_test = 3 if grep /^-all$/, @ARGV;
 $do_test = 1 if grep /^-t$/, @ARGV;
 
 # Determine list of modules to action.
+diag "scanning installed modules";
 our @modules = get_module_list();
 my $test_count = scalar @modules * $opts_to_test * 4;
 # $test_count -= 4 * $opts_to_test * (scalar @modules - scalar(keys %modules));
@@ -116,7 +117,7 @@ for my $module (@modules) {
 
   TODO: {
       my $s = is_todo($module);
-      local $TODO = "for perl-$s" if $s;
+      local $TODO = "for $s" if $s;
       $todo++ if $TODO;
 
       open F, ">", "mod.pl" or die;

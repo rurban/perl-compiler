@@ -4,7 +4,10 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.24	2010-02-15 rurban
-	* C.pm: Fixed off by one array access in magic array init (valgrind is your friend)
+	* C.pm: Fixed off by one array access in magic array init (34)
+	  - valgrind is your friend.
+	* t/testm.sh: implement -s without log file
+	* t/modules.pm: export skip_modules, silence module scanning STDERR
 
 1.23	2010-02-14 rurban
 	* t/testm.sh: chmod +x

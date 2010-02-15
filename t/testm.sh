@@ -5,7 +5,7 @@
 # How to installed skip modules:
 # grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
 
-# TODO: Try to run CPAN::Shell->testcc($module) with -t
+# In work: Try to run CPAN::Shell->testcc($module) with -t
 
 function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."
@@ -49,7 +49,11 @@ do
   if [ "$opt" = "t" ]; then TEST="-t"; fi
   if [ "$opt" = "s" ]; then 
       v=$($PERL -It -Mmodules -e'print perlversion')
-      grep ^skip log.modules-$v | cut -c6- | xargs $PERL -S cpan
+      if [ -f log.modules-$v ]; then
+          grep ^skip log.modules-$v | cut -c6- | xargs $PERL -S cpan
+      else
+          $PERL -S cpan $($PERL $Mblib -It -Mmodules -e'$,=" "; print skip_modules')
+      fi
       exit
   fi
   if [ "$opt" = "h" ]; then help; exit; fi
