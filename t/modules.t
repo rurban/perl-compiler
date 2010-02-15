@@ -53,7 +53,7 @@ $do_test = 1 if grep /^-t$/, @ARGV;
 # Determine list of modules to action.
 diag "scanning installed modules";
 our @modules = get_module_list();
-my $test_count = scalar @modules * $opts_to_test * 4;
+my $test_count = scalar @modules * $opts_to_test * ($do_test ? 5 : 4);
 # $test_count -= 4 * $opts_to_test * (scalar @modules - scalar(keys %modules));
 plan tests => $test_count;
 
@@ -151,6 +151,12 @@ for my $module (@modules) {
             && ($module_passed)
               or log_err($module, $out, $err)
             }
+      }
+      if ($do_test) {
+        TODO: {
+          local $TODO = 'all module tests';
+          `$^X -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($module))"`;
+        }
       }
       unlink ("mod.pl", 'a', 'a.out');
     }}

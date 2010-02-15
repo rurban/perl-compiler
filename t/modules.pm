@@ -75,7 +75,7 @@ sub log_err {
 
 sub get_module_list {
   # Parse for command line modules and use this if seen.
-  my @modules = grep {$_ !~ /^-(all|log|subset)$/} @ARGV; # Parse out -all var.
+  my @modules = grep {$_ !~ /^-(all|log|subset|t)$/} @ARGV; # Parse out -all var.
   my $module_list  = 't/top100';
   if (@modules and -e $modules[0]) {
     $module_list = $modules[0];

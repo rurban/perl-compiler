@@ -20,6 +20,7 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
+Mblib=-Mblib
 
 function vcmd {
     test -n "$QUIET" || echo $*
