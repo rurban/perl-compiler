@@ -2288,11 +2288,11 @@ sub B::HV::save {
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
       $init->add("{\tHE **a; struct xpvhv_aux *aux;",
-		 "\tNewx(a, $hv_max, HE*);",
+		 sprintf("\tNewx(a, %d, HE*);", $hv_max+1),
 		 "\tHvARRAY($sym) = a;",
-		 "\tZero(HvARRAY($sym), $hv_max, HE*);",
+		 sprintf("\tZero(HvARRAY($sym), %d, HE*);", $hv_max+1),
 		 "\tNewx(aux, 1, struct xpvhv_aux);",
-		 "\tHvARRAY($sym)[$hv_max] = (HE*)aux;",
+		 sprintf("\tHvARRAY($sym)[%d] = (HE*)aux;", $hv_max),
 		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),
 		 "\tHvEITER_set($sym, NULL); }");
     }
