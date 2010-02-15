@@ -117,7 +117,7 @@ for my $module (@modules) {
 
   TODO: {
       my $s = is_todo($module);
-      local $TODO = "for $s" if $s;
+      local $TODO = $s if $s;
       $todo++ if $TODO;
 
       open F, ">", "mod.pl" or die;

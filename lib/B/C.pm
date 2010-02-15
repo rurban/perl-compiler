@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.23';
+our $VERSION = '1.24';
 
 package B::C::Section;
 
@@ -770,8 +770,14 @@ sub B::SVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  my $sv            = $op->sv;
-  my $svsym         = '(SV*)' . $sv->save;
+  my $sv    = $op->sv;
+  my $svsym = 'Nullsv';
+  if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
+    # pad does not need to be saved
+    warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
+  } else {
+    $svsym  = '(SV*)' . $sv->save;
+  }
   my $is_const_addr = $svsym =~ m/Null|\&/;
   $svopsect->comment("$opsect_common, sv");
   $svopsect->add(
@@ -2265,8 +2271,9 @@ sub B::HV::save {
     my $adpmroot = 0;
     $decl->add("static HV *hv$hv_index;");
 
-    # XXX Beware of weird package names containing double-quotes, \n, ...?
-    $init->add(qq[hv$hv_index = gv_stashpv("$name", TRUE);]);
+    # Fix weird package names containing double-quotes, \n analog to gv_fetchpv
+    $name = cstring($name);
+    $init->add(qq[hv$hv_index = gv_stashpv($name, TRUE);]);
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );

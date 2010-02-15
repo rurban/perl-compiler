@@ -6,6 +6,9 @@
 1.24	2010-02-15 rurban
 	* C.pm: Fixed off by one array access in magic array init (34)
 	  - valgrind is your friend.
+	Fixed aelemfast padsv access crash (Text::Tabs on freebsd7)
+	Fixed wrong stash names in gv_stashpv analog to gv_fetchpv
+	  (Text-Tabs+Wrap t/dandv.t)
 	* t/testm.sh: implement -s without log file
 	* t/modules.pm: export skip_modules, silence module scanning STDERR
 
