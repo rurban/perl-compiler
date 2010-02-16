@@ -12,7 +12,8 @@ use Exporter;
 our @ISA     = qw(Exporter);
 our @EXPORT = qw(%modules $keep
 		 perlversion
-		 percent log_diag log_pass log_err get_module_list random_sublist
+		 percent log_diag log_pass log_err get_module_list
+                 random_sublist is_subset
 		);
 our (%modules);
 our $log = 0;
@@ -73,6 +74,10 @@ sub log_err {
   close ERR;
 }
 
+sub is_subset {
+  return if ! -d '.svn' || grep /^-subset$/, @ARGV;
+}
+
 sub get_module_list {
   # Parse for command line modules and use this if seen.
   my @modules = grep {$_ !~ /^-(all|log|subset|t)$/} @ARGV; # Parse out -all var.
@@ -108,7 +113,7 @@ sub get_module_list {
     close SAVEOUT;
   }
 
-  if (! -e '.svn' || grep /^-subset$/, @ARGV) {
+  if (&is_subset) {
     log_diag(".svn does not exist so only running a subset of tests");
     @modules = random_sublist(@modules);
   }
@@ -146,14 +151,20 @@ package CPAN::Shell;
     *$command = sub { shift->rematein($command, @_); };
 }
 package CPAN::Module;
-sub testcc   { shift->rematein('testcc',@_); }
+sub testcc   {
+    my $self = shift;
+    my $inst_file = $self->inst_file or return;
+    # only if its a not-deprecated CPAN module. perl core not
+    return $self->deprecated_in_core or $self->_in_priv_or_arch($inst_file);
+    $self->rematein('testcc', @_);
+}
 package CPAN::Distribution;
 sub testcc   {
     my $self = shift;
     # $CPAN::DEBUG++;
     my $cwd = Cwd::getcwd();
     # posix shell only, but we are using a posix shell here. XXX -Wb=-uTest::Builder
-    $self->prefs->{test}->{commandline} = "for t in t/*.t; do echo \$t; $^X -I$cwd/blib/arch -I$cwd/blib/lib $cwd/blib/script/perlcc -r -stash \$t; done";
+    $self->prefs->{test}->{commandline} = "for t in t/*.t; do echo \"# \$t\"; $^X -I$cwd/blib/arch -I$cwd/blib/lib $cwd/blib/script/perlcc -r -stash \$t; done";
     $self->prefs->{test_report} = ''; # XXX ignored!
     $self->{make_test} = 'NO'; # override YAML check "Has already been tested successfully"
     $self->test(@_);

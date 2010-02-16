@@ -1,18 +1,24 @@
 # -*- cperl -*-
-# t/modules.t [-all] [t/mymodules]
+# t/modules.t [OPTIONS] [t/mymodules]
 # check if some common CPAN modules exist and
 # can be compiled successfully. Only B::C is fatal,
 # CC and Bytecode optional. Use -all for all three (optional), and
 # -log for the reports (now default).
 #
+# OPTIONS:
+#  -all     - run also B::CC and B::Bytecode
+#  -subset  - run only random 10 of all modules. default if ! -d .svn
+#  -t       - run also tests
+#  -log     - save log file. default on top100 and without subset
+#
 # The list in t/mymodules comes from two bigger projects.
 # Recommended general lists are Task::Kensho and http://ali.as/top100/
 # We are using top100 from the latter.
-# We are NOT running the full module testsuite yet, we can do that
+# We are NOT running the full module testsuite yet with -t, we can do that
 # in another author test to burn CPU for a few hours resp. days.
 #
 # Reports:
-# for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
+# for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 #
 # How to installed skip modules:
 # grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
@@ -83,11 +89,13 @@ if ($log) {
   open(LOG, ">", "$log");
   close LOG;
 }
-log_diag("B::C::VERSION = $B::C::VERSION");
-log_diag("perlversion = $perlversion");
-log_diag("path = $^X");
-log_diag("platform = $^O");
-log_diag($Config{'useithreads'} ? "threaded perl" : "non-threaded perl");
+unless (is_subset) {
+  log_diag("B::C::VERSION = $B::C::VERSION");
+  log_diag("perlversion = $perlversion");
+  log_diag("path = $^X");
+  log_diag("platform = $^O");
+  log_diag($Config{'useithreads'} ? "threaded perl" : "non-threaded perl");
+}
 
 my $module_count = 0;
 my ($skip, $pass, $fail, $todo) = (0,0,0,0);
@@ -155,7 +163,7 @@ for my $module (@modules) {
       if ($do_test) {
         TODO: {
           local $TODO = 'all module tests';
-          `$^X -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($module))"`;
+          `$^X -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc("$module")"`;
         }
       }
       unlink ("mod.pl", 'a', 'a.out');
