@@ -163,5 +163,9 @@ ok
 eval "require re;" if $] < 5.011;
 $a = ${qr//}; $a = 2; print $] < 5.007 ? 1 : re::is_regexp(\$a);
 >>>>
-1
 ############## 39 non-regexps being upgraded to SVt_REGEXP #####
+my $var = "this string has a null \\000 byte in it";print "ok";
+>>>>
+ok
+#### 40 String with a null byte -- used to generate broken .c on 5.6.2 with static pvs ####
+1

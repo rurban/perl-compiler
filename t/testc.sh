@@ -149,7 +149,7 @@ function ctest {
     fi
 }
 
-ntests=39
+ntests=40
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
@@ -271,6 +271,10 @@ usere="`$PERL -e'print (($] < 5.011) ? q(use re;) : q())'`"
 tests[39]='{'$usere'$a=${qr//};$a=2;print ($] < 5.007?1:re::is_regexp(\$a))}'
 result[39]='1'
 # => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
+
+# String with a null byte -- used to generate broken .c on 5.6.2 with static pvs ####
+tests[40]='my $var = "this string has a null \\000 byte in it";print "ok";'
+result[40]='ok'
 
 
 # from here on we test CC specifics only
