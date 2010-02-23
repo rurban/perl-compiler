@@ -9,7 +9,7 @@
 
 package B::C;
 
-our $VERSION = '1.24';
+our $VERSION = '1.25';
 
 package B::C::Section;
 
@@ -1473,7 +1473,7 @@ sub B::PVMG::save_magic {
       #};
     }
 
-    unless ( $type eq 'r' or $type eq 'D' ) { # r - test 23 / D - Getopt::Long
+    unless ( $type eq 'r' or $type eq 'D' or $type eq 'n' ) { # r - test 23 / D - Getopt::Long
       # 5.10: Can't call method "save" on unblessed reference
       #warn "Save MG ". $obj . "\n" if $PERL510;
       # 5.11 'P' fix in B::IV::save, IV => RV
@@ -1488,7 +1488,7 @@ sub B::PVMG::save_magic {
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(
         sprintf(
-          "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s,(char *) %s, %d);",
+          "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, (char *)%s, %d);",
           $$sv, $$obj, cchar($type), $ptrsv, $len
         )
       );
@@ -1528,6 +1528,23 @@ CODE
 	$init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
 			   $$sv, $$sv, "'D'", cstring($ptr), $len ));
       }
+    }
+    elsif ( $type eq 'n' ) { # shared_scalar is from XS dist/threads-shared
+      # XXX check if threads is loaded also? otherwise it is only stubbed
+      if ( $threads::VERSION ) {
+	my $stash = 'threads';
+	mark_package($stash);
+	$use_xsloader = 1;
+	$xsub{$stash} = 'Dynamic-XSLoaded';
+      }
+      my $stash = 'threads::shared';
+      mark_package($stash);
+      # XXX why is this needed? threads::shared should be initialized automatically
+      $use_xsloader = 1; # ensure threads::shared is initialized
+      # push @DynaLoader::dl_modules, ($stash);
+      $xsub{$stash} = 'Dynamic-XSLoaded';
+      $init->add(sprintf("sv_magic((SV*)s\\_%x, Nullsv, %s, %s, %d);",
+			   $$sv, "'n'", cstring($ptr), $len ));
     }
     else {
       $init->add(
@@ -1686,6 +1703,7 @@ sub B::CV::save {
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
     my $stashname = $egv->STASH->NAME;
+    my %static_pkg = map {$_=>1} static_xs_packages(); # do not bootstrap static core packages
     if ( $cvname eq "bootstrap" ) {
       my $file = $gv->FILE;
       $decl->add("/* bootstrap $file */");
@@ -1715,9 +1733,11 @@ sub B::CV::save {
           qw(IO::File IO::Handle IO::Socket
           IO::Seekable IO::Poll);
     }
-    warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
-      if $debug{cv};
-    return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
+    unless ($static_pkg{$stashname}) {
+      warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
+	if $debug{cv};
+      return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
+    }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
     no strict 'refs';
@@ -2861,7 +2881,7 @@ EOT
     $dollar_0 = '"' . $dollar_0 . '"';
 
     print <<EOT;
-    if ((tmpgv = gv_fetchpv("0",TRUE, SVt_PV))) {/* $0 */
+    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, ${dollar_0});
         SvSETMAGIC(tmpsv);
@@ -2870,7 +2890,7 @@ EOT
   }
   else {
     print <<EOT;
-    if ((tmpgv = gv_fetchpv("0",TRUE, SVt_PV))) {/* $0 */
+    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, argv[0]);
         SvSETMAGIC(tmpsv);
@@ -2879,7 +2899,7 @@ EOT
   }
 
   print <<'EOT';
-    if ((tmpgv = gv_fetchpv("\030",TRUE, SVt_PV))) {/* $^X */
+    if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
 #ifdef WIN32
         sv_setpv(tmpsv,"perl.exe");
@@ -3084,6 +3104,34 @@ sub mark_package {
   return 1;
 }
 
+sub core_packages {
+  my @pkg = qw(attributes Carp Carp::Heavy DB Exporter Exporter::Heavy Internals main Regexp utf8 warnings);
+  if ($] >= 5.010) {
+    @pkg = qw(attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings);
+  }
+  if ($] >= 5.011001) {
+    push @pkg, qw(XS::APItest::KeywordRPN);
+  }
+  push @pkg, qw(Win32)                           if $^O eq 'MSWin32';
+  push @pkg, qw(Win32 Win32CORE Cwd Cygwin)      if $^O eq 'cygwin';
+  push @pkg, qw(NetWare)                         if $^O eq 'NetWare';
+  push @pkg, qw(Cwd File File::Copy OS2)         if $^O eq 'os2';
+  push @pkg, qw(VMS VMS::Filespec vmsish Socket) if $^O eq 'VMS';
+  return @pkg;
+}
+
+sub static_xs_packages {
+  my @pkg = qw(Internals main Regexp utf8);
+  if ($] >= 5.010) {
+    @pkg = qw(Internals main mro re Regexp utf8 version);
+  }
+  push @pkg, qw(Win32CORE Cygwin)      	   if $^O eq 'cygwin';
+  push @pkg, qw(NetWare)                   if $^O eq 'NetWare';
+  push @pkg, qw(OS2)         		   if $^O eq 'os2';
+  push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
+  return @pkg;
+}
+
 sub should_save {
   no strict qw(vars refs);
   my $package = shift;
@@ -3117,6 +3165,14 @@ sub should_save {
     delete_unsaved_hashINC($package);
     return $unused_sub_packages{$package} = 0;
   }
+
+  # keep core packages
+  #my $qrpkg = "^".join("|",core_packages)."\$";
+  #if ($package =~ /$qrpkg/) {
+  #   warn "Keep core package $package\n" if $debug{pkg};
+      # XXX this does not seem right. better fix the XSUB stub generation for those
+      # return mark_package($package);
+  #}
 
   # Now see if current package looks like an OO class. This is probably too strong.
   foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
