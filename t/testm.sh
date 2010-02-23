@@ -3,13 +3,15 @@
 # => $^X -Mblib blib/script/perlcc -S -e 'use File::Temp; print "ok"' -o file_temp
 #
 # How to installed skip modules:
-# grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
-
-# In work: Try to run CPAN::Shell->testcc($module) with -t
+#  grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
+#  perl5.11.4-nt -S cpan `grep -v '#' t/mymodules`
+#
+# -t run CPAN::Shell->testcc($module)
 
 function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."
   echo " -k                 keep temp. files on PASS"
+  echo " -l                 log"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -t                 run the module tests also, not only use Module (experimental)"
   echo " -s                 install skipped (missing) modules"
@@ -40,12 +42,11 @@ function fail {
     echo
 }
 
-# 
-# getopts for -q -k -E -Du,-q -v -O2, -a -c
-while getopts "hokts" opt
+while getopts "hoklts" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "k" ]; then KEEP="-S"; fi
+  if [ "$opt" = "l" ]; then TEST="-log"; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
   if [ "$opt" = "s" ]; then 
       v=$($PERL -It -Mmodules -e'print perlversion')
