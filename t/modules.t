@@ -65,6 +65,7 @@ plan tests => $test_count;
 
 use Config;
 use B::C;
+use POSIX qw(strftime);
 
 eval { require IPC::Run; };
 my $have_IPC_Run = defined $IPC::Run::VERSION;
@@ -73,14 +74,13 @@ log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no
 
 my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
-my $perlversion;
+my $perlversion = perlversion();
 $log = 1 if -d '.svn';
 $log = 0 if @ARGV;
 $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
-$perlversion = perlversion();
 if ($log) {
-  $log = @ARGV ? "log.modules-$perlversion-".scalar(localtime)
+  $log = @ARGV ? "log.modules-$perlversion-".strftime("%Y%m%d-%H%M%S",localtime)
     : "log.modules-$perlversion";
   if (-e $log) {
     use File::Copy;
