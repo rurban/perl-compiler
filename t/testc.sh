@@ -149,15 +149,15 @@ function ctest {
     fi
 }
 
-ntests=40
+ntests=42
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
 declare -a cctests[$((100+$ncctests))]
 declare -a ccresult[$((100+$ncctests))]
-tests[1]="print 'hi'"
+tests[1]='print "hi"'
 result[1]='hi';
-tests[2]="for (1,2,3) { print if /\d/ }"
+tests[2]='for (1,2,3) { print if /\d/ }'
 result[2]='123';
 tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 result[3]='zzz2y2y2';
@@ -267,14 +267,25 @@ result[37]='ok'
 tests[38]='for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_SET); close($null_fh); $ok++; } }if ($ok == 1024) { print "ok"; }'
 result[38]='ok'
 # check re::is_regexp, and on 5.12 if being upgraded to SVt_REGEXP
+# => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
 usere="`$PERL -e'print (($] < 5.011) ? q(use re;) : q())'`"
 tests[39]='{'$usere'$a=${qr//};$a=2;print ($] < 5.007?1:re::is_regexp(\$a))}'
 result[39]='1'
-# => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
-
-# String with a null byte -- used to generate broken .c on 5.6.2 with static pvs ####
-tests[40]='my $var = "this string has a null \\000 byte in it";print "ok";'
+# String with a null byte -- used to generate broken .c on 5.6.2 with static pvs
+tests[40]='my $var="this string has a null \\000 byte in it";print "ok";'
 result[40]='ok'
+# Shared scalar, n magic. => Don't know how to handle magic of type \156.
+usethreads="`$PERL -MConfig -e'print ($Config{useithreads} ? q(use threads;) : q())'`"
+#;threads->create(sub{$s="ok"})->join;
+# not yet testing n, only P
+tests[41]=$usethreads'use threads::shared;{my $s="ok";share($s);print $s}'
+result[41]='ok'
+# Shared aggregate, P magic
+tests[42]=$usethreads'use threads::shared;my %h : shared; print "ok"'
+result[42]='ok'
+# Aggregate element, n + p magic
+tests[43]=$usethreads'use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]'
+result[43]='ok'
 
 
 # from here on we test CC specifics only

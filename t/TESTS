@@ -165,7 +165,27 @@ $a = ${qr//}; $a = 2; print $] < 5.007 ? 1 : re::is_regexp(\$a);
 >>>>
 1
 ############## 39 non-regexps being upgraded to SVt_REGEXP #####
-my $var = "this string has a null \\000 byte in it";print "ok";
+my $var="this string has a null \\000 byte in it";print "ok";
 >>>>
 ok
-#### 40 String with a null byte -- used to generate broken .c on 5.6.2 with static pvs ####
+#### 40 used to generate broken .c on 5.6.2 with static pvs ####
+# Shared scalar, n magic. => Don't know how to handle magic of type \156.
+# ;threads->create(sub{$s="ok"})->join;
+# not yet testing n, only P
+BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}}
+use threads; use threads::shared;{my $s="ok";share($s);print $s}
+>>>
+ok
+#### 41 n-magic (not yet) ####
+# Shared aggregate, P magic
+BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}}
+use threads; use threads::shared;my %h : shared; print "ok"
+>>>
+ok
+#### 42 P-magic ####
+# Aggregate element, n + p magic
+BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}}
+use threads; use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]
+>>>
+ok
+#### 43 n+p magic ####
