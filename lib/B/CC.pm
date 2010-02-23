@@ -1738,8 +1738,15 @@ sub pp_entertry {
   write_back_stack();
   my $sym = doop($op);
   $entertry_defined = 1;
-  runtime(sprintf( "PP_ENTERTRY(%s);",
-                   label( $op->other->next ) ) );
+  if (!$op->can("other")) { # 5.11.4-nt t/c_argv.t nok 2
+    debug "ENTERTRY label \$op->next (no other)";
+    runtime(sprintf( "PP_ENTERTRY(%s);",
+		     label( $op->next ) ) );
+  } else {
+    debug "ENTERTRY label \$op->other->next";
+    runtime(sprintf( "PP_ENTERTRY(%s);",
+		     label( $op->other->next ) ) );
+  }
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
 }
