@@ -286,7 +286,9 @@ result[42]='ok'
 # Aggregate element, n + p magic
 tests[43]=$usethreads'use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]'
 result[43]='ok'
-
+# perl #72922 (5.11.4 fails with magic_killbackrefs)
+tests[44]='use Scalar::Util "weaken";my $re1=qr/foo/;my $re2=$re1;weaken($re2);print "ok" if $re3=qr/$re1/;'
+result[44]='ok'
 
 # from here on we test CC specifics only
 

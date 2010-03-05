@@ -4,11 +4,12 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.25	2010-03-?? rurban
-	* C.pm: remove global my_perl, pass it properly around
+	* C.pm: remove global my_perl, pass it properly around.
 	* t/modules.t: fix -t (run module tests), print header only on full test 
 	* t/modules.pm: do not test core or deprecated modules, esp. do not download perl
 	Added is_subset.
 	* t/testm.sh: implement -k
+	* t/testc.sh, t/TESTS: add 44 for weaken import and magic_killbackrefs #72922
 
 1.24	2010-02-15 rurban
 	* C.pm: Fixed off by one array access in magic array init (34)
