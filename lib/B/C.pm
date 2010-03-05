@@ -124,7 +124,7 @@ sub output {
   foreach my $i ( @{ $section->[-1]{chunks} } ) {
     # dTARG and dSP unused -nt
     print $fh <<"EOT";
-static int perl_init_${name}()
+static int perl_init_${name}(pTHX)
 {
 	/* dTARG;
 	   dSP; */
@@ -136,7 +136,7 @@ EOT
     }
     print $fh "\treturn 0;\n}\n";
 
-    $section->SUPER::add("perl_init_${name}();");
+    $section->SUPER::add("perl_init_${name}(aTHX);");
     ++$name;
   }
   foreach my $i ( @{ $section->[-1]{evals} } ) {
@@ -144,7 +144,7 @@ EOT
   }
 
   print $fh <<"EOT";
-static int ${init_name}()
+static int ${init_name}(pTHX)
 {
 	/* dTARG;
 	   dSP; */
@@ -1698,7 +1698,7 @@ sub B::CV::save {
   }
 
   #INIT is removed from the symbol table, so this call must come
-  # from PL_initav->save. Re-bootstrapping  will push INIT back in
+  # from PL_initav->save. Re-bootstrapping  will push INIT back in,
   # so nullop should be sent.
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
@@ -1736,6 +1736,7 @@ sub B::CV::save {
     unless ($static_pkg{$stashname}) {
       warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
 	if $debug{cv};
+      # svref_2object( \&{"$cvstashname::bootstrap"} )->save;
       return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
     }
   }
@@ -2708,7 +2709,6 @@ EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 
 static void xs_init (pTHX);
 static void dl_init (pTHX);
-static PerlInterpreter *my_perl;
 EOT
   if ($] < 5.008008) {
     print "#define GvSVn(s) GvSV(s)\n";
@@ -2800,6 +2800,7 @@ main(int argc, char **argv, char **env)
     GV* tmpgv;
     SV* tmpsv;
     int options_count;
+    PerlInterpreter *my_perl;
 
     PERL_SYS_INIT3(&argc,&argv,&env);
 
@@ -2914,7 +2915,7 @@ EOT
     /* PL_main_cv = PL_compcv; */
     PL_compcv = 0;
 
-    exitstatus = perl_init();
+    exitstatus = perl_init(aTHX);
     if (exitstatus)
 	exit( exitstatus );
     dl_init(aTHX);
