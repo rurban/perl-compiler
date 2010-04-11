@@ -19,12 +19,7 @@ my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
 
-my @todo = (10,12,19,25,39);	#5.8.9
-@todo    = (10,12,19,25,27,39) if !$ITHREADS;
-@todo = (10,12,15,19,25,27,41..44) if $] < 5.007;
-@todo = (10,12,19,25,29,39,41) if $] >= 5.010;
-push @todo, (32)   if $] >= 5.011003;
-
+my @todo  = todo_tests_default("c_o4");
 my @skip = (15,27); # sigsegv, out of memory
 
 run_c_tests("C,-O4", \@todo, \@skip);
