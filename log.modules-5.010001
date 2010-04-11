@@ -13,3 +13,40 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
+pass ExtUtils::MakeMaker
+pass Test::Simple
+pass ExtUtils::Manifest
+pass Pod::Text
+pass constant
+pass Test
+pass Data::Dumper
+pass File::Spec
+fail File::Temp #TODO >= 5.007
+fail ExtUtils::Install #TODO > 5.010
+pass Text::ParseWords
+pass ExtUtils::CBuilder
+pass ExtUtils::ParseXS
+pass Module::Build
+pass File::Path
+pass XSLoader
+pass MIME::Base64
+pass Digest
+pass Digest::MD5
+pass Sub::Uplevel
+pass URI
+pass HTML::Tagset
+pass HTML::Parser
+pass Test::Exception
+pass Net::Cmd
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
+pass IO::Compress::Base
+pass LWP
+pass Storable
+pass base
+pass List::MoreUtils
+pass Params::Util
+pass Task::Weaken
+pass Class::Accessor
+fail Test::Tester #TODO with useithreads
+pass Sub::Install
