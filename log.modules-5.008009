@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.24
+# B::C::VERSION = 1.25
 # perlversion = 5.008009
 # path = /cyg1/usr/local/bin/perl5.8.9
 # platform = cygwin
@@ -103,7 +103,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 99 / 100 modules tested with B-C-1.24 - perl-5.008009
+# 99 / 100 modules tested with B-C-1.25 - perl-5.008009
 # pass  95 /  99 (96.0%)
 # fail   4 /  99 (4.0%)
 # todo  12 /   4 (300.0%)

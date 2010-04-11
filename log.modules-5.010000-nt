@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.24
+# B::C::VERSION = 1.25
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin
@@ -72,7 +72,7 @@ fail Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
-pass Text::Balanced
+skip Text::Balanced
 pass DBI
 pass Time::Local
 pass IO::Scalar
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 96 / 100 modules tested with B-C-1.24 - perl-5.010000-nt
-# pass  82 /  96 (85.4%)
-# fail  14 /  96 (14.6%)
+# 95 / 100 modules tested with B-C-1.25 - perl-5.010000-nt
+# pass  81 /  95 (85.3%)
+# fail  14 /  95 (14.7%)
 # todo   4 /  14 (28.6%)
-# skip   4 / 100 (4.0% not installed)
+# skip   5 / 100 (5.0% not installed)
