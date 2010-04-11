@@ -3,8 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.25	2010-03-?? rurban
+1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.
+	* t/c*.t: added test 40 \000 byte in PV failing on ori 5.6.2 (Nick Koston),
+	added more magic tests for shared vars - n,p,P magic: 39-43. 41 nyi
 	* t/modules.t: fix -t (run module tests), print header only on full test 
 	* t/modules.pm: do not test core or deprecated modules, esp. do not download perl
 	Added is_subset.
@@ -66,7 +68,7 @@
 	  all tests > 5.6 now.
 	* bytecode.pl: added cop_seq_low (155), cop_seq_high (156) instead of xnv. 
 	  No conversion code for loading older bytecode needed, but fragile (double => 2 int)
-	* t/modules.t: refactored by toddr. 4*tests per module:
+	* t/modules.t: refactored by Todd Rinaldo (toddr). 4*tests per module:
 	  -s a, exitcode 0, ok, no warnings on stderr
 	* t/TESTS: added 38, failing on CC (Nick Koston).
 	added 39, failing everywhere.

@@ -2527,8 +2527,8 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-      # -fcog hack to statically initialize PVs
-      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $B::C::pv_copy_on_grow;
+      # -fcog hack to statically initialize PVs (SVPV for 5.10-5.11 only)
+      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $B::C::pv_copy_on_grow and $] < 5.012;
       print "Static $typename ${name}_list[$lines];\n";
     }
   }
@@ -2585,7 +2585,8 @@ EOT
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.
   # gcc error: initializer element is not computable at load time
   # We introduce a SVPV as SV.
-  if ($PERL510 and $B::C::pv_copy_on_grow) {
+  # In core since 5.12
+  if ($PERL510 and $B::C::pv_copy_on_grow and $] < 5.012) {
     print <<'EOT';
 typedef struct svpv {
     void *	sv_any;
@@ -3742,7 +3743,9 @@ DO NOT USE YET!
 Omit COP info (nextstate without labels, unneeded NULL ops,
 files, linenumbers) for ~10% faster execution and less space,
 but warnings and errors will have no file and line infos.
-It will most likely not work yet. I<(was -fbypass-nullops in earlier compilers)>
+
+It will most likely not work yet. I<(was -fbypass-nullops in earlier
+compilers)>
 
 =back
 
@@ -3811,6 +3814,8 @@ Current status: A few known bugs.
 5.10:
     reading from __DATA__ handles (15) non-threaded
     destruction of static pvs for -O1
+    handling npP magic for shared threaded variables (41-43)
+    detecting internal core package subs (39)
 
 =head1 AUTHOR
 

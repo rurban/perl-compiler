@@ -51,7 +51,7 @@ if ($DEBUGGING) {
   }
 }
 my @todo = (33,39);
-@todo = (3,6,8..10,12,15,16,18,26,28,31,33,35,38)
+@todo = (3,6,8..10,12,15,16,18,26,28,31,33,35,38,41..43)
   if $] < 5.007; # CORE failures, ours not yet enabled
 pop @todo if $] > 5.011003; # 39 passes on 5.11.3
 push @todo, (32) if $] > 5.011003; # entertry still fails with 5.11.4

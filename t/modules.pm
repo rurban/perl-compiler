@@ -155,7 +155,18 @@ sub testcc   {
     my $self = shift;
     my $inst_file = $self->inst_file or return;
     # only if its a not-deprecated CPAN module. perl core not
-    return $self->deprecated_in_core or $self->_in_priv_or_arch($inst_file);
+    return if $self->_in_priv_or_arch($inst_file);
+    if ($] >= 5.011){
+      if ($self->can('deprecated_in_core')) {
+        return if $self->deprecated_in_core;
+      } else {
+        # CPAN-1.9402 has no such method anymore
+        # trying to support deprecated.pm by Nicholas 2009-02
+        if (my $distribution = $self->distribution) {
+          return if $distribution->isa_perl;
+        }
+      }
+    }
     $self->rematein('testcc', @_);
 }
 package CPAN::Distribution;

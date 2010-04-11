@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.24
+# B::C::VERSION = 1.25
 # perlversion = 5.010001
-# path = /usr/bin/perl5.10.1
+# path = /usr/bin/perl
 # platform = cygwin
 # threaded perl
 pass Exporter
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO generally
+skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO with useithreads
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash #TODO with useithreads
-# 100 / 100 modules tested with B-C-1.24 - perl-5.010001
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo  13 /   5 (260.0%)
-# skip   0 / 100 (0.0% not installed)
+# 99 / 100 modules tested with B-C-1.25 - perl-5.010001
+# pass  95 /  99 (96.0%)
+# fail   4 /  99 (4.0%)
+# todo  12 /   4 (300.0%)
+# skip   1 / 100 (1.0% not installed)
