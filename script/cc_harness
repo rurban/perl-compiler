@@ -1,8 +1,10 @@
 #!perl
 use Config;
 
-$libdir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
-
+my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
+my $libdir  = "$Config{prefix}/lib";
+my $useshrplib = $Config{useshrplib};
+my $linkargs;
 my $quiet++ if $ARGV[0] eq '-q';
 shift if $quiet;
 my $debug++ if $ARGV[0] eq '-d';
@@ -14,10 +16,15 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
     $linkargs = ldopts;
-} elsif ( -e "$libdir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
-    # prefer static linkage
-    $linkargs = sprintf("%s $libdir/$Config{libperl} %s",
+} elsif ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
+    # prefer static linkage manually, without broken ExtUtils::Embed 
+    $linkargs = sprintf("%s $coredir/$Config{libperl} %s",
 		        @Config{qw(ldflags libs)});
+} elsif ( $useshrplib and -e "$libdir/$Config{libperl}") {
+    # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
+    use ExtUtils::Embed;
+    $linkargs = ldopts('-std');
+    $linkargs =~ s|-lperl |$libdir/$Config{libperl} |;
 } else { # try dynamic lib if no static lib exists
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
@@ -60,6 +67,6 @@ my $ccflags = $Config{ccflags};
 $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
   if $debug and $Config{cc} =~ /gcc/;
 
-$cccmd = "$Config{cc} $ccflags -I$libdir @ARGV $linkargs";
+my $cccmd = "$Config{cc} $ccflags -I$coredir @ARGV $linkargs";
 print "$cccmd\n" unless $quiet;
 exec $cccmd;
