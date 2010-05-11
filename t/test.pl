@@ -506,8 +506,8 @@ sub todo_tests_default {
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
         @todo = (15,27,41..44) if $] < 5.007;
         # on cygwin 29 passes
-        @todo = (29,39,41)     if $] >= 5.010;
-        @todo = (15,39)        if $] >= 5.010 and !$ITHREADS;
+        @todo = (29,39,41,44)  if $] >= 5.010;
+        @todo = (15,39,44)     if $] >= 5.010 and !$ITHREADS;
         if ($what eq 'c_o4') {
             push @todo, (10,12,19,25);
         }
@@ -523,7 +523,8 @@ sub todo_tests_default {
 
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }
-    push @todo, (32)   if $] >= 5.011003;
+    push @todo, (41,42,43) if !$ITHREADS;
+    push @todo, (32)       if $] >= 5.011003;
     return @todo;
 }
 

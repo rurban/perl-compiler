@@ -3,6 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
+1.26	2010-05-?? rurban
+        * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
+
 1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.
 	* t/c*.t: added test 40 \000 byte in PV failing on ori 5.6.2 (Nick Koston),

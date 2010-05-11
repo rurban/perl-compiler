@@ -276,6 +276,7 @@ tests[40]='my $var="this string has a null \\000 byte in it";print "ok";'
 result[40]='ok'
 # Shared scalar, n magic. => Don't know how to handle magic of type \156.
 usethreads="`$PERL -MConfig -e'print ($Config{useithreads} ? q(use threads;) : q())'`"
+#usethreads='BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}} '
 #;threads->create(sub{$s="ok"})->join;
 # not yet testing n, only P
 tests[41]=$usethreads'use threads::shared;{my $s="ok";share($s);print $s}'

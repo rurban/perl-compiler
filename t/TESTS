@@ -64,7 +64,7 @@ b
 >>>>
 a
 b
-######################### 15 __DATA__ #######################
+######################### 15 __DATA__ TODO ##################
 BEGIN { tie @a, __PACKAGE__; sub TIEARRAY { bless{} } sub FETCH{1} }
 print $a[1]
 >>>>
@@ -172,19 +172,16 @@ ok
 # Shared scalar, n magic. => Don't know how to handle magic of type \156.
 # ;threads->create(sub{$s="ok"})->join;
 # not yet testing n, only P
-BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}}
 use threads; use threads::shared;{my $s="ok";share($s);print $s}
 >>>
 ok
-#### 41 n-magic (not yet) ####
+#### 41 n-magic TODO ####
 # Shared aggregate, P magic
-BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}}
 use threads; use threads::shared;my %h : shared; print "ok"
 >>>
 ok
 #### 42 P-magic ####
 # Aggregate element, n + p magic
-BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}}
 use threads; use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]
 >>>
 ok
@@ -193,4 +190,4 @@ ok
 use Scalar::Util "weaken";my $re1=qr/foo/;my $re2=$re1;weaken($re2);print "ok" if $re3=qr/$re1/;
 >>>
 ok
-#### 44 weaken ####
+#### 44 weaken TODO not detected ####
