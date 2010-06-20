@@ -110,7 +110,7 @@ sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)};
 >>>>
 26
 ######################### 26 ################################
-use Fcntl;print "ok" if ( &Fcntl::O_WRONLY );
+use Fcntl ();print "ok" if ( &Fcntl::O_WRONLY );
 >>>>
 ok
 ######################### 27 ################################
