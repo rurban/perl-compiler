@@ -880,7 +880,7 @@ __END__
 63 <8 	xav_fill	AvFILLp(bstate->bs_sv)		SSize_t
 64 <8 	xav_max		AvMAX(bstate->bs_sv)		SSize_t
 65 <10 	xav_flags	AvFLAGS(bstate->bs_sv)		U8
-65 10 	xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 I32
+65 10-12 xav_flags	((XPVAV*)(SvANY(bstate->bs_sv)))->xiv_u.xivu_i32 I32
 66 <10 	xhv_riter	HvRITER(bstate->bs_sv)			I32
 67 0 	xhv_name	bstate->bs_sv				pvindex		x
 68 8-9  xhv_pmroot	*(OP**)&HvPMROOT(bstate->bs_sv)		opindex
