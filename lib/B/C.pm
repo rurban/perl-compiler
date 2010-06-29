@@ -2234,17 +2234,19 @@ sub B::AV::save {
     }
     $init->no_split;
 
-    # Faster initialize the array as the initial av_extend() is very expensive
-    # Currently not faster at all. The problem is calloc, not extend.
+    # With -fav-init faster initialize the array as the initial av_extend() 
+    # is very expensive
+    # The problem was calloc, not av_extend.
     # Since we are always initializing every single element we don't need
-    # calloc, only malloc.
+    # calloc, only malloc. wmemset'ting with the pointer to PL_sv_undef
+    # might be faster also.
     if ($B::C::av_init) {
       $init->add(
                  "{", "\tSV **svp;",
                  "\tAV *av = $sym;");
       if ($fill > -1) {
         if ($PERL510) {
-	  # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
+          # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
           $init->add(sprintf(($MYMALLOC
 			     ? "\tNewx(svp, %d, SV*);"
 			     : "\tsvp = (SV*)malloc(%d * sizeof(SV*));"),
@@ -2252,7 +2254,10 @@ sub B::AV::save {
                      "\tAvALLOC(av) = svp;",
                      "\tAvARRAY(av) = svp;");
         } else { # read-only AvARRAY macro
-          $init->add(sprintf("\tNewz(0, svp, %d, SV*);", $fill < 3 ? 3 : $fill+1),
+          $init->add(sprintf(($MYMALLOC
+			     ? "\tNewz(0, svp, %d, SV*)"
+			     : "\tsvp = (SV*)malloc(%d * sizeof(SV*));"),
+                             $fill < 3 ? 3 : $fill+1),
                      "\tAvALLOC(av) = svp;",
                      # XXX Dirty hack from av.c:Perl_av_extend()
                      "\tSvPVX(av) = (char*)svp;");
