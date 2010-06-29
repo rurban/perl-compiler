@@ -431,8 +431,23 @@ sub run_cc_test {
     if (! $? and -s $cfile) {
         use ExtUtils::Embed ();
         my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
-        $command .= " ".ExtUtils::Embed::ldopts("-std");
-        $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
+	my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
+	my $libdir  = "$Config{prefix}/lib";
+	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
+	    # prefer static linkage manually, without broken ExtUtils::Embed
+	    $command .= sprintf("%s $coredir/$Config{libperl} %s",
+				@Config{qw(ldflags libs)});
+	} elsif ( $Config{useshrplib} and -e "$libdir/$Config{libperl}" ) {
+	    # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
+	    my $linkargs = ExtUtils::Embed::ldopts('-std');
+	    $linkargs =~ s|-lperl |$libdir/$Config{libperl} |;
+	    $command .= $linkargs;
+	    #$command .= sprintf("%s $libdir/$Config{libperl} %s",
+	    #			@Config{qw(ldflags libs)});
+	} else {
+	    $command .= " ".ExtUtils::Embed::ldopts("-std");
+	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
+	}
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 	if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
 	    $command =~ s/ -opt:ref,icf//;
