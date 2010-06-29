@@ -2255,7 +2255,7 @@ sub B::AV::save {
                      "\tAvARRAY(av) = svp;");
         } else { # read-only AvARRAY macro
           $init->add(sprintf(($MYMALLOC
-			     ? "\tNewz(0, svp, %d, SV*)"
+			     ? "\tNewx(svp, %d, SV*)"
 			     : "\tsvp = (SV*)malloc(%d * sizeof(SV*));"),
                              $fill < 3 ? 3 : $fill+1),
                      "\tAvALLOC(av) = svp;",
