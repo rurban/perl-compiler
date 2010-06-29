@@ -569,6 +569,7 @@ sub B::AV::bsave {
     if ( !$PERL510 ) {        # VERSION < 5.009
       asm "xav_flags", $av->AvFLAGS;
     }
+    #asm "xav_alloc", $av->AvALLOC if $] > 5.013002;
   }
   asm "sv_refcnt", $av->REFCNT;
   asm "xmg_stash", $stashix;
