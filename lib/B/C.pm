@@ -2091,7 +2091,7 @@ sub B::GV::save {
 	my $package = $gvcv->GV->EGV->STASH->NAME;
         # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{ CV *cv;");
-        warn "Marking $package...\n" if $debug{pkg};
+        warn "Save $package, XS alias $name to $origname\n" if $debug{pkg};
         mark_package($package);
         $init->add("\tcv = get_cv($origname,TRUE);");
         $init->add("\tGvCV($sym) = cv;");
