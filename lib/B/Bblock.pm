@@ -1,7 +1,7 @@
 # Maintained now in B::C by Reini Urban <rurban@x-ray.at>
 package B::Bblock;
 
-our $VERSION = '1.03_01';
+our $VERSION = '1.03_02';
 
 use Exporter ();
 @ISA       = "Exporter";
@@ -197,7 +197,7 @@ A basic block is a series of operations which is known to execute from
 start to finish, with no possibility of branching or halting.
 
 The block is the list of ops from the every leader up to the next.
-The leaders are the seperator of each basic block.
+The leaders are the separator of each basic block.
 
 The module can be used either stand alone or from inside another program.
 Standalone it just prints the basic blocks ops in L<B::Concise>.
@@ -218,7 +218,7 @@ Basic block leaders are:
 
 =head1 OPTIONS
 
-A comma-seperated list of sub names to walk.
+A comma-separated list of sub names to walk.
 
 =head2 Functions
 
