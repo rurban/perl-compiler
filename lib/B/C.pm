@@ -232,6 +232,7 @@ my $PERL510  = ( $] >= 5.009005 );
 my $PERL511  = ( $] >= 5.011 );
 my $PERL56   = ( $] <  5.008 );
 my $MAD      = $Config{mad};
+my $MYMALLOC = $Config{usemymalloc} eq 'define';
 
 my @threadsv_names;
 
@@ -2089,10 +2090,10 @@ sub B::GV::save {
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB && $name ne $origname ) {    #XSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        # must save as a 'stub' so newXS() has a CV to populate
-        $init->add("{ CV *cv;");
         warn "Save $package, XS alias $name to $origname\n" if $debug{pkg};
         mark_package($package);
+        # must save as a 'stub' so newXS() has a CV to populate
+        $init->add("{\tCV *cv;");
         $init->add("\tcv = get_cv($origname,TRUE);");
         $init->add("\tGvCV($sym) = cv;");
         $init->add("\tSvREFCNT_inc((SV *)cv);");
@@ -2232,14 +2233,22 @@ sub B::AV::save {
       $acc .= "\t*svp++ = (SV*)" . $array[$i]->save . ";\n\t";
     }
     $init->no_split;
+
     # Faster initialize the array as the initial av_extend() is very expensive
+    # Currently not faster at all. The problem is calloc, not extend.
+    # Since we are always initializing every single element we don't need
+    # calloc, only malloc.
     if ($B::C::av_init) {
       $init->add(
                  "{", "\tSV **svp;",
                  "\tAV *av = $sym;");
       if ($fill > -1) {
         if ($PERL510) {
-          $init->add(sprintf("\tNewx(svp, %d, SV*);", $fill < 3 ? 3 : $fill+1),
+	  # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
+          $init->add(sprintf(($MYMALLOC
+			     ? "\tNewx(svp, %d, SV*);"
+			     : "\tsvp = (SV*)malloc(%d * sizeof(SV*));"),
+			     $fill < 3 ? 3 : $fill+1),
                      "\tAvALLOC(av) = svp;",
                      "\tAvARRAY(av) = svp;");
         } else { # read-only AvARRAY macro
