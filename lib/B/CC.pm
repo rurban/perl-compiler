@@ -81,7 +81,8 @@ my %optimise = (
   omit_taint           => \$omit_taint,
   slow_signals         => \$slow_signals,
 );
-
+my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
+  qw(wait waitpid nextstate and cond_expr unstack or defined subst);
 # perl patchlevel to generate code for (defaults to current patchlevel)
 my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # unused?
 my $ITHREADS   = $Config{useithreads};
@@ -2156,7 +2157,9 @@ sub compile_bblock {
   $know_op = 0;
   do {
     $op = compile_op($op);
-    runtime("PERL_ASYNC_CHECK();") if $slow_signals;
+    if ($] < 5.013 and ($slow_signals or ($$op and $async_signals{$op->name}))) {
+      runtime("PERL_ASYNC_CHECK();");
+    }
   } while ( defined($op) && $$op && !exists( $leaders->{$$op} ) );
   write_back_stack();    # boo hoo: big loss
   reload_lexicals();
@@ -2201,7 +2204,6 @@ sub cc {
       $op = compile_bblock($op);
       if ( $need_freetmps && $freetmps_each_bblock ) {
         runtime("FREETMPS;");
-        runtime("PERL_ASYNC_CHECK();");
         $need_freetmps = 0;
       }
     } while defined($op) && $$op && !$done{$$op};
@@ -2209,10 +2211,8 @@ sub cc {
       runtime("FREETMPS;");
       $need_freetmps = 0;
     }
-    runtime("PERL_ASYNC_CHECK();") if $$op;
     if ( !$$op ) {
       runtime( "PUTBACK;",
-               "PERL_ASYNC_CHECK();",
                "return NULL;" );
     }
     elsif ( $done{$$op} ) {
@@ -2637,13 +2637,13 @@ Omits generating code for handling perl's tainting mechanism.
 
 =item B<-fslow-signals>
 
-Add PERL_ASYNC_CHECK after every op as in the Perl runloop or B::C.
+Add PERL_ASYNC_CHECK after every op as in the old Perl runloop before 5.13.
 
 perl "Safe signals" check the state of incoming signals after every op.
 See L<http://perldoc.perl.org/perlipc.html#Deferred-Signals-(Safe-Signals)>
 We trade safety for more speed and delay the execution of non-IO signals
 (IO signals are already handled in PerlIO) from after every single Perl op
-to after every Basic Block.
+to the same ops as used in 5.13.
 
 Only with -fslow-signals we get the old slow and safe behaviour.
 

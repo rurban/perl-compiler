@@ -1,17 +1,19 @@
 -*- change-log -*-
 	Started on CPAN with B-C-1.04_12
-	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
+	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
 1.26	2010-07-?? rurban
 	* C.pm: improve -fav-init performance if not usemymalloc: no
-	calloc, just direct libc malloc
+	  calloc, just direct libc malloc
 	Mark a package which is autoloaded from XS
-	* Bytecode.pm (1.07), bytecode.pl: xpvav.xiv_u was removed with 5.13.2 but not 
+	* CC.pm: the default -fno-slow-signals adds PERL_ASYNC_CHECK at
+	  the same ops as with 5.13, a major improvement.
+	* Bytecode.pm (1.07), bytecode.pl: xpvav.xiv_u was removed with 5.13.2 but not
 	  used anymore. read and set av_flags only until 5.12, compile only before 5.10
         * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
-	* cc_harness, t/test.pl: debian specific fixes for their broken linker
-	args.
+	* perlcc (2.07), cc_harness, t/test.pl: debian specific fixes for their broken
+	  -lperl linker args for ExtUtils::Embed::ldopts.
 	* t/test.pl: Fixed killing hangling tests with IPC::Run
 	* t/c*.t: make test 27 easier to debug (Nick Koston)
 
@@ -19,7 +21,7 @@
 	* C.pm: remove global my_perl, pass it properly around.
 	* t/c*.t: added test 40 \000 byte in PV failing on ori 5.6.2 (Nick Koston),
 	added more magic tests for shared vars - n,p,P magic: 39-43. 41 nyi
-	* t/modules.t: fix -t (run module tests), print header only on full test 
+	* t/modules.t: fix -t (run module tests), print header only on full test
 	* t/modules.pm: do not test core or deprecated modules, esp. do not download perl
 	Added is_subset.
 	* t/testm.sh: implement -k
@@ -45,7 +47,7 @@
 	* t/modules.t: Added list of to be skipped modules, which cycle endlessly.
 	Improve todo message.
 	* t/testm.sh: add option -s "install skipped modules"
-	* Makefile.PL, cc_harness, perlcc: fix ldflags for ActivePerl 5.10.0 
+	* Makefile.PL, cc_harness, perlcc: fix ldflags for ActivePerl 5.10.0
 	  for MSVC6 (ccversion 12) -opt:ref,icf leads to invalid outfile "pt:ref,icf"
 	* c+cc test 29 fails on 5.10 randomly. Make it a TODO
 
@@ -61,7 +63,7 @@
 	fail sometimes. Tested ok with strawberry 5.10.1
 
 	* C.pm: fixed evaltry (test 12) mostly, NVX was shared with 2 xpad_cop_seq ints
-	  which accidently just worked before 1.17 with %s, but not after changing 
+	  which accidently just worked before 1.17 with %s, but not after changing
 	  to the %g representation.
 	Ignore unused random (overlong) xpviv IV, causing
 	  "warning: this decimal constant is unsigned only in ISO C90"
@@ -72,7 +74,7 @@
 	Added Win32 workaround for missing PL_do_undump
 	Stripped perl_ prefix from perl_get_cv, perl_call_pv, perl_call_method
 	* CC.pm (1.07): added -fslow-signals.
-	Disabled inlined pp_enter: Fails on empty cxstack. 
+	Disabled inlined pp_enter: Fails on empty cxstack.
 	Backed out inlining of enterloop: GIMME_V fails on freebsd7
 	Remove strawberry PerlProc_setjmp definition, #define PERL_CORE fixed that
 	* Bytecode.pm (1.06): same NVX => xpad_cop_seq fix as in C.pm, added 2 new 
