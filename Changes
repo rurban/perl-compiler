@@ -3,8 +3,17 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked 
 	quite fine with Perl 5.6 and 5.8
 
-1.26	2010-05-?? rurban
+1.26	2010-07-?? rurban
+	* C.pm: improve -fav-init performance if not usemymalloc: no
+	calloc, just direct libc malloc
+	Mark a package which is autoloaded from XS
+	* Bytecode.pm (1.07), bytecode.pl: xpvav.xiv_u was removed with 5.13.2 but not 
+	  used anymore. read and set av_flags only until 5.12, compile only before 5.10
         * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
+	* cc_harness, t/test.pl: debian specific fixes for their broken linker
+	args.
+	* t/test.pl: Fixed killing hangling tests with IPC::Run
+	* t/c*.t: make test 27 easier to debug (Nick Koston)
 
 1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.
