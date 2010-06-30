@@ -45,6 +45,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.04, Enache Adrian, Fri, 18 Jul 2003 23:15:37 +0300
 # Version 2.05, Reini Urban, 2009-12-01 00:00:13
 # Version 2.06, Reini Urban, 2009-12-28 21:56:15
+# Version 2.07, Reini Urban, 2010-06-30 22:32:20
 
 use strict;
 use warnings;
@@ -56,7 +57,7 @@ use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use Cwd;
 use Pod::Usage;
-our $VERSION = 2.06;
+our $VERSION = 2.07;
 $| = 1;
 
 $SIG{INT} = sub { exit(); }; # exit gracefully and clean up after ourselves.
@@ -364,6 +365,12 @@ sub cc_harness {
         $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
     } else {
         $command .= " ".ExtUtils::Embed::ldopts("-std");
+    }
+    my $libdir  = "$Config{prefix}/lib";
+    my $useshrplib = $Config{useshrplib};
+    if ( $useshrplib and -e "$libdir/$Config{libperl}") {
+	# debian: only /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
+	$command =~ s|-lperl |$libdir/$Config{libperl} |;
     }
     # $command .= " -lperl" unless $command =~ / -lperl\b/;
     vprint 3, "running $Config{cc} $command";
