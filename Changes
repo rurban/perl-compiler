@@ -14,7 +14,9 @@
         * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
 	* perlcc (2.07), cc_harness, t/test.pl: debian specific fixes for their broken
 	  -lperl linker args for ExtUtils::Embed::ldopts.
-	* t/test.pl: Fixed killing hangling tests with IPC::Run
+	* t/test.pl: Fixed killing hangling tests with IPC::Run.
+	Fixed new cc TODO.
+	Run CC test 18 even not as AUTHOR
 	* t/c*.t: make test 27 easier to debug (Nick Koston)
 
 1.25	2010-04-11 rurban

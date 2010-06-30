@@ -352,7 +352,7 @@ sub run_cmd {
     else {
 	my $in;
 	my @cmd = split /\s+/, $cmd;
-	
+
 	eval {
 	    my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
 	    if ($timeout) {
@@ -453,7 +453,7 @@ sub run_cc_test {
 	    $command =~ s/ -opt:ref,icf//;
 	}
         my $cmdline = "$Config{cc} $command $NULL";
-        run_cmd($cmdline,20);
+        run_cmd($cmdline, 20);
         unless (-e $exe) {
             print "not ok $cnt $todo failed $cmdline\n";
             print STDERR "# ",system("$Config{cc} $command"), "\n";
@@ -461,7 +461,8 @@ sub run_cc_test {
             return 0;
         }
         $exe = "./".$exe unless $^O eq 'MSWin32';
-        ($result,$out,$stderr) = run_cmd($exe,5);
+	# system("/bin/bash -c ulimit -d 1000000") if -e "/bin/bash";
+        ($result,$out,$stderr) = run_cmd($exe, 5);
         if (defined($out) and !$result) {
             if ($cnt == 25 and $expect eq '0 1 2 3 4321' and $] < 5.008) {
                 $expect = '0 1 2 3 4 5 4321';
@@ -513,7 +514,7 @@ sub todo_tests_default {
     my $ITHREADS  = ($Config{useithreads});
 
     my @todo  = (39); # 8,14-16 fail on 5.00505 (max 20 then)
-    if ($what =~ /^c(|_o[1-4])/) {
+    if ($what =~ /^c(|_o[1-4])$/) {
         @todo     = (27,39)    if !$ITHREADS;
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
         # 15+28 fixed with 1.04_34
@@ -529,7 +530,7 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        my @todo = (18,21,25,27,29,30,39); #5.8.9
+        @todo = (18,21,25,27,29,30,39); #5.8.9
         push @todo, (15,41..44)           if $] < 5.007;
         @todo    = (18,21,25,29,30,39,41) if $] >= 5.010;
         @todo    = (10,16,18,21,25,29,30,39,41) if $] >= 5.010 and $what eq 'cc_o2';
@@ -604,7 +605,7 @@ CCTESTS
         if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
             $todo{$cnt} = $skip{$cnt} = 1;
         }
-        if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
+        if ($todo{$cnt} and $skip{$cnt} and (!$AUTHOR or $cnt==18)) {
             print sprintf("ok %d # skip\n", $cnt);
         } else {
             my ($script, $expect) = split />>>+\n/;
