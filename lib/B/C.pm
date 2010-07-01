@@ -230,6 +230,7 @@ my $max_string_len;
 my $ITHREADS = $Config{useithreads};
 my $PERL510  = ( $] >= 5.009005 );
 my $PERL511  = ( $] >= 5.011 );
+my $PERL513  = ( $] >= 5.013001 );
 my $PERL56   = ( $] <  5.008 );
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
@@ -351,7 +352,8 @@ sub savere {
     # BUG! Should be the same as newSVpvn($resym, $relen) but is not
     #$sym = sprintf("re_list[%d]", $re_index++);
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
-    $xpvsect->add( sprintf( "{0}, %u, %u", $len, $pvmax ) );
+    my $s = ($PERL513 ? "NULL," : "") . "{0}, %u, %u";
+    $xpvsect->add( sprintf( $s, $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
@@ -1351,7 +1353,8 @@ sub B::PV::save {
     # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
     # $flags ||= 0x04000000 if $B::C::pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
     # => Attempt to free unreferenced scalar: SV 0x4044e8.
-    $xpvsect->add( sprintf( "{0}, %u, %u", $len, $pvmax ) );
+    my $s = ($PERL513 ? "NULL," : "") . "{0}, %u, %u";
+    $xpvsect->add( sprintf( $s, $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "0"));
@@ -2178,6 +2181,7 @@ sub B::AV::save {
     # 5.9.4+: nvu fill max iv mg stash
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
     $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init;
+    $line = "Nullhv, {0}, $fill, $fill, NULL" if $PERL513;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
@@ -2323,9 +2327,15 @@ sub B::HV::save {
 
   # It's just an ordinary HV
   if ($PERL510) {
-    $xpvhvsect->comment( "gvstash fill max keys mg stash" );
-    $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
-			     0, $hv->MAX, 0 ));
+    if ($PERL513) {
+      $xpvhvsect->comment( "mg_stash mg_u keys fill" );
+      $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
+			       0, 0));
+    } else  {
+      $xpvhvsect->comment( "gvstash fill max keys mg stash" );
+      $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
+			       0, $hv->MAX, 0 ));
+    }
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
     if ($hv->MAGICAL) { # riter,eiter only for magic required
