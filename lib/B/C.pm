@@ -2,6 +2,7 @@
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010 Reini Urban
+#      Copyright (c) 2010 Nick Koston
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -62,6 +63,7 @@ sub new {
   my $section   = $class->SUPER::new(@_);
 
   $section->[-1]{evals}     = [];
+  $section->[-1]{initav}    = [];
   $section->[-1]{chunks}    = [];
   $section->[-1]{nosplit}   = 0;
   $section->[-1]{current}   = [];
@@ -114,6 +116,11 @@ sub add_eval {
   push @{ $section->[-1]{evals} }, @strings;
 }
 
+sub add_initav {
+  my $section = shift;
+  push @{ $section->[-1]{initav} }, @_;
+}
+
 sub output {
   my ( $section, $fh, $format, $init_name ) = @_;
   my $sym = $section->symtable || {};
@@ -129,6 +136,9 @@ static int perl_init_${name}(pTHX)
 	/* dTARG;
 	   dSP; */
 EOT
+    foreach my $i ( @{ $section->[-1]{initav} } ) {
+      print $fh "\t",$i,"\n";
+    }
     foreach my $j (@$i) {
       $j =~ s{(s\\_[0-9a-f]+)}
                    { exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
@@ -192,6 +202,7 @@ BEGIN {
 }
 use B::Asmdata qw(@specialsv_name);
 
+use B::C::Flags;
 use FileHandle;
 use Carp;
 use strict;
@@ -224,7 +235,9 @@ my $save_data_fh         = 0;
 my $save_sig             = 0;
 my $optimize_cop	 = 0;
 my $av_init		 = 0;
+my $av_init2		 = 0;
 my ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
+my @xpvav_sizes;
 my %debug;
 my $max_string_len;
 
@@ -2241,7 +2254,7 @@ sub B::AV::save {
   if ($PERL510) {
     # 5.9.4+: nvu fill max iv mg stash
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
-    $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init;
+    $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
     $line = "Nullhv, {0}, $fill, $fill, NULL" if $PERL513;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
@@ -2252,7 +2265,7 @@ sub B::AV::save {
   else {
     # 5.8: array fill max off nv mg stash alloc arylen flags
     my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
-    $line = "0, $fill, $fill, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init;
+    $line = "0, $fill, $fill, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init or $B::C::av_init2;
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
     $avreal = $av->AvFLAGS & 1; # AVf_REAL
     $xpvavsect->add($line);
@@ -2333,13 +2346,33 @@ sub B::AV::save {
     }
     $init->no_split;
 
+    # With -fav-init2 use independent_comalloc()
+    if ($B::C::av_init2) {
+      my $i = $xpvavsect->index;
+      $xpvav_sizes[$i] = $fill;
+      $init->add("{",
+		 "\tSV **svp = avchunks[$i];",
+                 "\tAV *av = $sym;");
+      if ($fill > -1) {
+        if ($PERL510) {
+          $init->add("\tAvALLOC(av) = svp;",
+                     "\tAvARRAY(av) = svp;");
+        } else {
+          $init->add("\tAvALLOC(av) = svp;",
+                     # XXX Dirty hack from av.c:Perl_av_extend()
+                     "\tSvPVX(av) = (char*)svp;");
+        }
+      }
+      $init->add( substr( $acc, 0, -2 ) );
+      $init->add( "}" );
+    }
     # With -fav-init faster initialize the array as the initial av_extend()
     # is very expensive
     # The problem was calloc, not av_extend.
     # Since we are always initializing every single element we don't need
     # calloc, only malloc. wmemset'ting with the pointer to PL_sv_undef
     # might be faster also.
-    if ($B::C::av_init) {
+    elsif ($B::C::av_init) {
       $init->add(
                  "{", "\tSV **svp;",
                  "\tAV *av = $sym;");
@@ -2679,12 +2712,10 @@ sub output_all {
 
   # hack for when Perl accesses PVX of GVs
   print 'Static char emptystring[] = "\0";';
-  if ($use_av_undef_speedup || $use_svpop_speedup)
-  {
+  print "\n";
+  if ($use_av_undef_speedup || $use_svpop_speedup) {
     print "int gcount;\n";
   }
-  print "\n";
-
   printf "\t/* %s */\n", $decl->comment if $decl->comment and $verbose;
   $decl->output( \*STDOUT, "%s\n" );
   print "\n";
@@ -2861,6 +2892,9 @@ static void dl_init (pTHX);
 EOT
   if ($] < 5.008008) {
     print "#define GvSVn(s) GvSV(s)\n";
+  }
+  if ($B::C::av_init2 and $B::C::Flags::use_declare_independent_comalloc) {
+    print "void** dlindependent_comalloc(size_t, size_t*, void**);\n";
   }
 }
 
@@ -3523,6 +3557,28 @@ sub save_main_rest {
     print "EXTERN_C void boot_$stashxsub (pTHX_ CV* cv);\n";
   }
   print "\n";
+  if ($B::C::av_init2) {
+    my $last = $xpvavsect->index;
+    my $size = $last + 1;
+    if ($last) {
+      $decl->add("static void* avchunks[$size];");
+      $decl->add("static size_t avsizes[$size] = ");
+      my $ptrsize = $Config{ptrsize};
+      my $acc = "";
+      for (0..$last) {
+	if ($xpvav_sizes[$_] > 0) {
+	  $acc .= $xpvav_sizes[$_] * $ptrsize;
+	} else {
+	  $acc .= 3 * $ptrsize;
+	}
+	$acc .= "," if $_ != $last;
+	$acc .= "\n\t" unless ($_+1) % 30;
+      }
+      $decl->add("\t{$acc};");
+      $init->add_initav("if (!independent_comalloc( $size, avsizes, avchunks ))");
+      $init->add_initav("\tPerl_die(aTHX_ \"panic: AV alloc failed\");");
+    }
+  }
   output_all("perl_init");
   print "\n";
   output_main();
@@ -3583,6 +3639,7 @@ sub compile {
     'ppaddr'          => \$B::C::optimize_ppaddr,
     'warn-sv'         => \$B::C::optimize_warn_sv,
     'av-init'         => \$B::C::av_init,
+    'av-init2'        => \$B::C::av_init2,
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'cop'             => \$optimize_cop, # XXX very unsafe!
@@ -3591,8 +3648,8 @@ sub compile {
   );
   my %optimization_map = (
     0 => [qw()],                # special case
-    1 => [qw(-fcog)],
-    2 => [qw(-fwarn-sv -fppaddr -fav-init)],
+    1 => [qw(-fcog -fav-init)],
+    2 => [qw(-fwarn-sv -fppaddr -fav-init2)],
     3 => [qw(-fsave-sig-hash -fsave-data)],
     4 => [qw(-fcop)],
   );
@@ -3699,6 +3756,16 @@ OPTION:
     elsif ( $opt eq "l" ) {
       $max_string_len = $arg;
     }
+  }
+  if (!$B::C::Flags::have_independent_comalloc) {
+    if ($B::C::av_init2) {
+      $B::C::av_init = 1;
+      $B::C::av_init2 = 0;
+    } elsif ($B::C::av_init) {
+      $B::C::av_init2 = 0;
+    }
+  } elsif ($B::C::av_init2 and $B::C::av_init) {
+    $B::C::av_init = 0;
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $ITHREADS);
   if ($B::C::pv_copy_on_grow and $PERL510) {
@@ -3874,8 +3941,12 @@ Optimize the initialization of cop_warnings.
 
 =item B<-fav-init>
 
-Faster pre-initialization of AVs (arrays)
+Faster pre-initialization of AVs (arrays and pads)
 
+=item B<-fav-init2>
+
+Even more faster pre-initialization of AVs with independent_comalloc, if supported.
+Excludes -fav_init if so, uses -fav_init if independent_comalloc is not supported.
 
 =item B<-fuse-script-name>
 

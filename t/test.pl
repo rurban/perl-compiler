@@ -403,6 +403,7 @@ sub run_cc_test {
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
     use Config;
+    require B::C::Flags;
     my $test = $fnbackend."code".$cnt.".pl";
     my $cfile = $fnbackend."code".$cnt.$opt.".c";
     my @obj = ($fnbackend."code".$cnt.$opt.".obj",
@@ -431,6 +432,8 @@ sub run_cc_test {
     if (! $? and -s $cfile) {
         use ExtUtils::Embed ();
         my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
+	$command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
+	$command .= $B::C::Flags::extra_cflags;
 	my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
 	my $libdir  = "$Config{prefix}/lib";
 	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
@@ -448,6 +451,7 @@ sub run_cc_test {
 	    $command .= " ".ExtUtils::Embed::ldopts("-std");
 	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
 	}
+	$command .= $B::C::Flags::extra_libs;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 	if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
 	    $command =~ s/ -opt:ref,icf//;

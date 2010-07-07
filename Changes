@@ -6,7 +6,10 @@
 1.26	2010-07-?? rurban
 	* C.pm: improve -fav-init performance if not usemymalloc: no
 	  calloc, just direct libc malloc
+	-O2 uses -fav-init2, i.e. experimental independent_comalloc(),
+	  -O1 uses now -fav-init (Nick Koston + Reini Urban)
 	Mark a package which is autoloaded from XS
+	* B::C::Flags: added by Makefile.PL probing independent_comalloc()
 	* CC.pm: the default -fno-slow-signals adds PERL_ASYNC_CHECK at
 	  the same ops as with 5.13, a major improvement.
 	* Bytecode.pm (1.07), bytecode.pl: xpvav.xiv_u was removed with 5.13.2 but not

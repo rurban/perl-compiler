@@ -8,6 +8,22 @@ my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 # generate lib/B/Asmdata.pm beforehand
 system("$^X bytecode.pl");
 
+my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
+my $have_independent_comalloc = &check_independent_comalloc;
+mkdir "lib/B/C" unless -d "lib/B/C";
+open PH, ">", "lib/B/C/Flags.pm";
+print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
+print PH "package B::C::Flags;\n\n";
+print PH "# -fav-init optimization\n";
+print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
+print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
+print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
+print PH "\$extra_cflags = \"$extra_cflags\";\n";
+print PH "\$extra_libs = \"$extra_libs\";\n";
+print PH "\n1;\n";
+close PH;
+chmod (0644, "lib/B/C/Flags.pm");
+
 WriteMakefile(
     NAME	 => "B::C",
     VERSION_FROM => "lib/B/C.pm",
@@ -17,7 +33,8 @@ WriteMakefile(
 		   'IPC::Run' => '0',
 		  #'B'        => '1.0901'
                   },
-    'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, Reini Urban <perl-compiler@googlegroups.com>',
+    'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, '
+	      . 'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
@@ -57,6 +74,66 @@ sub headerpath {
     }
 }
 
+# Check for Doug Lea's dlmalloc version, or ptmalloc2 included in glibc
+# or an extra ptmalloc3.
+# This improves -fav-init startup speed dramatically (18% tested).
+# ptmalloc3 needs #include <malloc-2.8.3.h>, but we don't want to clash
+# with an existing malloc.h from perl.h, so we declare it by ourselves.
+sub try_compile {
+    my $testc = shift;
+    my $libs = shift;
+    unless (open PROG, ">", "test.c") {
+	print ("Can't write test.c\n");
+	return 0;
+    }
+    print PROG $testc;
+    close PROG;
+    @candidate = ();
+    $devnull = $^O eq 'MSWin32' ? "> NUL" : ">/dev/null 2>&1";
+    my $cmd = "$Config{cc} $Config{ccflags} test.c";
+    push @candidate, "$cmd -o test$Config{EXE_EXT} $libs $devnull";
+    push @candidate, "$cmd -otest$Config{EXE_EXT} $libs $devnull";
+    while (my $cmd1 = shift (@candidate)) {
+	system ($cmd1);
+	unlink "test.c", "test$Config{EXE_EXT}";
+	$? == 0 && return 1;
+    }
+    return 0;
+}
+
+sub check_independent_comalloc {
+    my $testc = "
+#include <stdlib.h>
+#include <malloc.h>
+int main() {
+    void* chunks[3];
+    size_t sizes[3] = {3,25,4};
+    if (independent_comalloc( 3, sizes, chunks ) == 0) { exit(1); };
+    return 0;
+}
+";
+    try_compile($testc) and return 1;
+
+    my @extra_libs = ("-lptmalloc3", "-lptmalloc", "-ldlmalloc", "-lnedmalloc");
+    for my $lib (@extra_libs) {
+        $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
+        if (try_compile($testc, $lib)) {
+            $extra_libs = " $lib";
+            return 1;
+        }
+    }
+
+    my $testc =~ s/#include <malloc.h>/void** dlindependent_comalloc(size_t, size_t*, void**);/;
+    for my $lib (@extra_libs) {
+        $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
+        if (try_compile($testc, $lib)) {
+            $extra_libs = " $lib";
+            $use_declare_independent_comalloc = 1;
+            return 1;
+        }
+    }
+}
+
 package MY;
 
 sub libscan {
@@ -80,11 +157,15 @@ sub const_config {
 }
 
 sub post_constants {
-    "\nLIBS = $Config::Config{libs}\n";
+    my $libs = "\nLIBS = $Config::Config{libs}";
+    $libs .= " -lptmalloc3" if $use_ptmalloc3;
+    #XXX PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
+    return "$libs\n";
 }
 
 sub ccflags {
     my $ccflags = shift->SUPER::ccflags(@_);
+    $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $have_independent_comalloc;
     return $ccflags unless -d ".svn";
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
@@ -112,32 +193,6 @@ $byterun_h : Makefile bytecode.pl @headers
     $result .= "\ntest :: subdirs-test\n\n" if $] > 5.009;
     $result;
 }
-
-=pod
-
-=for CORE only
-
-sub postamble {
-    my $headerpath = main::headerpath();
-    my @headers = map { File::Spec->catfile($headerpath, $_) } qw(op.h cop.h);
-    my $noecho = shift->{NOECHO};
-
-"
-B\$(OBJ_EXT) : defsubs.h
-
-defsubs.h :: @headers defsubs_h.PL
-	\$(PERL) -I\$(INST_ARCHLIB) -I\$(INST_LIB) -I\$(PERL_ARCHLIB) -I\$(PERL_LIB) defsubs_h.PL defsubs.h $headerpath
-"
-}
-
-sub processPL {
-    my $text = shift->SUPER::processPL(@_);
-    # Append our extra parameter
-    $text =~ s/^\t.*defsubs_h\.PL.*/$& . ' ' . main::headerpath()/me;
-    $text;
-}
-
-=cut
 
 # Local Variables:
 #   mode: cperl

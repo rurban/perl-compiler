@@ -9,6 +9,7 @@ my $quiet++ if $ARGV[0] eq '-q';
 shift if $quiet;
 my $debug++ if $ARGV[0] eq '-d';
 shift if $debug;
+require B::C::Flags;
 
 if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     ;
@@ -37,6 +38,8 @@ sub cc_harness_msvc {
     my $obj = "${Output}.obj";
     my $compile = ExtUtils::Embed::ccopts." -c -Fo$obj @ARGV ";
     my $link = "-out:$Output $obj";
+    $compile .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
+    $compile .= $B::C::Flags::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs,-staticxs
@@ -47,6 +50,7 @@ sub cc_harness_msvc {
         $link .= " ".ExtUtils::Embed::ldopts("-std");
     }
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
+    $link .= $B::C::Flags::extra_libs;
     print "running $Config{cc} $compile" unless $quiet;
     system("$Config{cc} $compile");
     print "running $Config{ld} $link" unless $quiet;
@@ -54,8 +58,8 @@ sub cc_harness_msvc {
 }
 
 if ($^O =~ m/^MSWin/ && $Config{cc} =~ m/^cl/i) {
-  cc_harness_msvc(@ARGV);
-  exit;
+    cc_harness_msvc(@ARGV);
+    exit;
 }
 
 # ActivePerl 5.10.0.1004 claims to use MSVC6 but used MSVC8
@@ -66,6 +70,9 @@ if ($^O =~ m/^MSWin/ && $Config{cc} =~ m/^cl/i) {
 my $ccflags = $Config{ccflags};
 $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
   if $debug and $Config{cc} =~ /gcc/;
+$ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
+$ccflags .= $B::C::Flags::extra_cflags;
+$linkargs .= $B::C::Flags::extra_libs;
 
 my $cccmd = "$Config{cc} $ccflags -I$coredir @ARGV $linkargs";
 print "$cccmd\n" unless $quiet;
