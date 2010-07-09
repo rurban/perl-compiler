@@ -17,6 +17,6 @@ my $ITHREADS  = ($Config{useithreads});
 prepare_c_tests();
 
 my @todo  = todo_tests_default("c");
-my @skip = (27); # out of memory
+my @skip = ();
 
 run_c_tests("C", \@todo, \@skip);

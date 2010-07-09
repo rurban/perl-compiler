@@ -1806,8 +1806,6 @@ sub B::CV::save {
   $svsect->add("SVIX$sv_ix");
   my $xpvcv_ix = $xpvcvsect->index + 1;
   $xpvcvsect->add("XPVCVIX$xpvcv_ix");
-  # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
-  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
 
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
@@ -1816,6 +1814,7 @@ sub B::CV::save {
       if (ref $auto eq 'B::CV') { # explicit goto
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
+        $cv     = $auto;
       } else {
         # Recalculated root and xsub
         $root   = $cv->ROOT;
@@ -1826,6 +1825,10 @@ sub B::CV::save {
       }
     }
   }
+
+  # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
+  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
   my $padlistsym = 'NULL';

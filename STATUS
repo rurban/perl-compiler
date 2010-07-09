@@ -16,9 +16,7 @@ Several B::C and B::CC bugs fixed. 5.10 + 5.12 compatibility added.
 
 Open Problems for B::C:
 5.6:
-    test 15,27
-5.8:
-    const xsubcv via AUTOLOAD (test 27)
+    test 15
 5.10:
     Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
 5.11:
