@@ -22,6 +22,7 @@
 	Run CC test 18 even not as AUTHOR
 	* t/c*.t: make test 27 easier to debug (Nick Koston)
     * B::C: fix autoloading of constants AKA const xsubcv via AUTOLOAD [test 27] (Nick Koston)
+    * t/c*.t: add test 45 (Nick Koston)
     
 1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.

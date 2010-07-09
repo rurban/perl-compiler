@@ -545,6 +545,7 @@ sub todo_tests_default {
     }
     push @todo, (41,42,43) if !$ITHREADS;
     push @todo, (32)       if $] >= 5.011003;
+    push @todo, (45)  if $] >= 5.007;
     return @todo;
 }
 
