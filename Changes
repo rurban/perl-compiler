@@ -4,11 +4,14 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.26	2010-07-?? rurban
+	Start for 5.13.3 support
 	* C.pm: improve -fav-init performance if not usemymalloc: no
-	  calloc, just direct libc malloc
+	  calloc, just direct libc malloc.
 	-O2 uses -fav-init2, i.e. experimental independent_comalloc(),
 	  -O1 uses now -fav-init (Nick Koston + Reini Urban)
-	Mark a package which is autoloaded from XS
+	Mark a package which is autoloaded from XS.
+	5.13.3 support (xpv STASH, MAGIC, ... reorganization)
+	* bytecode.pl: CvGv_set since 5.13.3
 	* B::C::Flags: added by Makefile.PL probing independent_comalloc()
 	* CC.pm: the default -fno-slow-signals adds PERL_ASYNC_CHECK at
 	  the same ops as with 5.13, a major improvement.

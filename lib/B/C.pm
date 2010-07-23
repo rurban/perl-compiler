@@ -242,8 +242,9 @@ my %debug;
 my $max_string_len;
 
 my $ITHREADS = $Config{useithreads};
-my $PERL510  = ( $] >= 5.009005 );
+my $PERL513  = ( $] >= 5.013002 );
 my $PERL511  = ( $] >= 5.011 );
+my $PERL510  = ( $] >= 5.009005 );
 my $PERL513  = ( $] >= 5.013001 );
 my $PERL56   = ( $] <  5.008 );
 my $MAD      = $Config{mad};
@@ -347,7 +348,13 @@ sub savere {
   my $pv    = $re;
   my $len   = length $pv;
   my $pvmax = length( pack "a*", $pv ) + 1;
-  if ( 0 and $PERL511 ) {
+  if ($PERL513) {
+    $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $len, $pvmax ) );
+    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
+                           0x4405, savepv($pv) ) );
+    $sym = sprintf( "&sv_list[%d]", $svsect->index );
+  }
+  elsif ( 0 and $PERL511 ) {
     # TODO Fill in at least the engine pointer? Or let CALLREGCOMP do that?
     $orangesect->add(
       sprintf(
@@ -1096,9 +1103,11 @@ sub B::UV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   if ($PERL513) {
-    $xpvuvsect->add( sprintf( "Nullgv, {0}, 0, 0, {%lu}", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%lu}", $sv->UVX ) );
+  } elsif ($PERL510) {
+    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%lu}", $sv->UVX ) );
   } else {
-    $xpvuvsect->add( sprintf( $PERL510 ? "{0}, 0, 0, {%lu}" : "0, 0, 0, %lu", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "0, 0, 0, %lu", $sv->UVX ) );
   }
   $svsect->add(
     sprintf(
@@ -1151,13 +1160,15 @@ sub B::NV::save {
   $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
   $val .= '.00' if $val =~ /^-?\d+$/;
   if ($PERL513) {
-    $xpvnvsect->add( sprintf( "Nullgv, {0}, 0, 0, {0}, {%s}", $val ) );
-  }
-  elsif ($PERL510) { # not fixed by NV isa IV >= 5.8
-    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {0}", $val ) );
+    $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
+    $xpvnvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}, {%s}", $sv->IVX, $val ) );
+  } elsif ($PERL510) { # not fixed by NV isa IV >= 5.8
+    $xpvnvsect->comment('NVX, cur, len, IVX');
+    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {%ld}", $val, $sv->IVX ) );
   }
   else {
-    $xpvnvsect->add( sprintf( "0, 0, 0, %d, %s", $sv->IVX, $val ) );
+    $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
+    $xpvnvsect->add( sprintf( "0, 0, 0, %ld, %s", $sv->IVX, $val ) );
   }
   $svsect->add(
     sprintf(
@@ -1206,27 +1217,27 @@ sub B::PVLV::save {
   my $pv  = $sv->PV;
   my $len = length($pv);
   my ( $pvsym, $pvmax ) = savepv($pv);
-  my ( $lvtarg, $lvtarg_sym );
+  my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL513) {
-    $xpvlvsect->comment('MAGIC, STASH, CUR, LEN, xnv_u, GvNAME, TARGOFF, TARGLEN, TARG, TYPE');
+    $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("Nullhv, {0}, %u, %d, {%u}, {%g}, 0/*GvNAME later*/, %u, %u, 0, %s",
-	       $len, $pvmax, $sv->IVX, $sv->NVX,
+       sprintf("Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %u, %u, %u, Nullsv, %s",
+	       $len, $pvmax, $sv->NVX,
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } elsif ($PERL510) {
     $xpvlvsect->comment('xnv_u, CUR, LEN, GvNAME, MAGIC, STASH, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("%u, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, 0, %s",
-	       $sv->NVX, $len, $pvmax, 
+       sprintf("%u, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, Nullsv, %s",
+	       $sv->NVX, $len, $pvmax,
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("%s, %u, %u, %d, %s, 0, 0, %u, %u, 0, %s",
+       sprintf("%s, %u, %u, %d, %s, 0, 0, %u, %u, Nullsv, %s",
 	       $pvsym,   $len,         $pvmax,       $sv->IVX,
 	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
@@ -1253,16 +1264,17 @@ sub B::PVIV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $iv = $sv->IVX;
-  $iv = 0 if (!$PERL510 and $sv->FLAGS & (SVf_IOK|SVp_IOK));
   if ($PERL513) {
-    $xpvivsect->comment('mg_stash, mg_u, len, pvmax, IVX');
-    $xpvivsect->add( sprintf( "Nullgv, {0}, %u, %u, %ld",
-			      $len, $pvmax, $iv ) ); # IVTYPE long
+    $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
+    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, %ld", $len, $pvmax, $iv ) ); # IVTYPE long
+  } elsif ($PERL510) {
+    $xpvivsect->comment('xnv_u, cur, len, IVX');
+    $xpvivsect->add( sprintf( "{0}, %u, %u, %ld", $len, $pvmax, $iv ) ); # IVTYPE long
   } else {
-    $xpvivsect->comment('pv, len, pvmax, IVX');
+    $iv = 0 if $sv->FLAGS & (SVf_IOK|SVp_IOK);
+    $xpvivsect->comment('PVX, cur, len, IVX');
     $xpvivsect->add( sprintf( "%s, %u, %u, %ld",
-			      $PERL510?'{0}':$savesym,
-			      $len, $pvmax, $iv ) ); # IVTYPE long
+			      $savesym, $len, $pvmax, $iv ) ); # IVTYPE long
   }
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
@@ -1285,27 +1297,34 @@ sub B::PVNV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
-  my $val = $sv->NVX;
+  my $nvx = $sv->NVX;
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
-    my $sval = sprintf("%g", $val);
-    $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt (DateTime)
-    $val .= '.00' if $val =~ /^-?\d+$/;
+    my $sval = sprintf("%g", $nvx);
+    $nvx = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt (DateTime)
+    $nvx .= '.00' if $nvx =~ /^-?\d+$/;
   } else {
-    $val = '0' if $val =~ /(NAN|inf)$/i; # windows msvcrt
+    $nvx = '0' if $nvx =~ /(NAN|inf)$/i; # windows msvcrt
   }
-  if ($PERL510) {
+  if ($PERL513) {
+    $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
+    $xpvnvsect->add(
+      sprintf( "Nullhv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $sv->IVX, $nvx) );
+    unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+      warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
+      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
+                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
+                 # XXX pad.c: PAD_MAX = I32_MAX (4294967295)
+                 # gcc warning: this decimal constant is unsigned only in ISO C90
+                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %u;",
+                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_HIGH));
+    }
+  } elsif ($PERL510) {
     # For now the stringification works of NVX to two ints ok. But we might need
     # to store it as { low, high }.
-    if ($PERL513) {
-      $xpvnvsect->comment('magic, mg_u, len, pvmax, ivx, nvx');
-      $xpvnvsect->add(
-	sprintf( "Nullgv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $sv->IVX, $val ) );
-    } else {
-      $xpvnvsect->comment('$val, $len, $pvmax, $sv->IVX');
-      $xpvnvsect->add(
-        sprintf( "{%s}, %u, %u, {%d}", $val, $len, $pvmax, $sv->IVX ) );    # ??
-    }
+    $xpvnvsect->comment('NVX, cur, len, IVX');
+    $xpvnvsect->add(
+      sprintf( "{%s}, %u, %u, {%d}", $nvx, $len, $pvmax, $sv->IVX ) );    # ??
     unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
@@ -1317,8 +1336,9 @@ sub B::PVNV::save {
     }
   }
   else {
+    $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
     $xpvnvsect->add(
-      sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $sv->IVX, $val ) );
+      sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $sv->IVX, $nvx ) );
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
@@ -1399,8 +1419,7 @@ sub B::PV::save {
     # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
     # $flags ||= 0x04000000 if $B::C::pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
     # => Attempt to free unreferenced scalar: SV 0x4044e8.
-    my $s = ($PERL513 ? "Nullgv," : "") . "{0}, %u, %u";
-    $xpvsect->add( sprintf( $s, $len, $pvmax ) );
+    $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL513 ? "Nullhv," : "", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "0"));
@@ -1438,13 +1457,13 @@ sub B::PVMG::save {
       }
     }
     if ($PERL513) {
-      $xpvmgsect->comment("xmg_stash, xmg_u, pv_cur, pv_len, xiv_u, xnv_u");
-      $xpvmgsect->add(sprintf("Nullgv, {0}, %u, %u, {%ld}, {%s}",
+      $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
+      $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%d}, {%s}",
 			      $len, $pvmax, $sv->IVX, $sv->NVX));
     } else {
-      $xpvmgsect->comment("xnv_u, pv_cur, pv_len, xiv_u, xmg_u, xmg_stash");
-      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%ld}, {0}, 0",
-			      $sv->NVX, $len, $pvmax, $sv->IVX));
+      $xpvmgsect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash");
+      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%d}, {0}, 0",
+			    $sv->NVX, $len, $pvmax, $sv->IVX));
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
@@ -1893,46 +1912,44 @@ sub B::CV::save {
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL513) {
-      #$xpvcvsect->comment('mg_stash mg_u cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
+      #$xpvcvsect->comment('STASH, mg_u, cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
       $symsect->add
-	(sprintf("XPVCVIX$xpvcv_ix\t%s, {%s}, %u, %u, %s,"
-	       ." {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
-	       ." (CV*)s\\_%x, %s, 0x%x, %d",
-	       "Nullhv", "0", #MAGIC + STASH later
-	       $len, $len,
-	       "Nullhv",#CvSTASH later
-	       $startfield,
-	       $$root,
-	       "0",    #GV later
-	       "NULL", #cv_file later (now a HEK)
-	       $padlistsym,
-	       ${ $cv->OUTSIDE }, #if main_cv set later
-	       $cv->OUTSIDE_SEQ,
-	       $cv->CvFLAGS,
-	       $cv->DEPTH,
-	      )
-      );
+	(sprintf("XPVCVIX$xpvcv_ix\tNullhv, {0}, %u, %u, %s, "
+		 ." {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
+		 ." (CV*)s\\_%x, %s, 0x%x, %d",
+		 $len, $len, "Nullhv",#CvSTASH later
+
+		 $startfield, $$root, "0",  #GV later
+		 "NULL", #cv_file later (now a HEK)
+		 $padlistsym,
+
+		 ${ $cv->OUTSIDE }, #if main_cv set later
+		 $cv->OUTSIDE_SEQ,
+		 $cv->CvFLAGS,
+		 $cv->DEPTH,
+		)
+	);
     } else {
       #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
       $symsect->add
 	(sprintf("XPVCVIX$xpvcv_ix\t{%d}, %u, %u, {%s}, {%s}, %s,"
-	       ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
-	       ." (CV*)s\\_%x, %s, 0x%x",
-	       0, # GvSTASH later. test 29 or Test::Harness
-	       $len, $len,
-	       $cv->DEPTH,
-	       "NULL", "Nullhv", #MAGIC + STASH later
-	       "Nullhv",#CvSTASH later
-	       $startfield,
-	       $$root,
-	       "0",    #GV later
-	       "NULL", #cv_file later (now a HEK)
-	       $padlistsym,
-	       ${ $cv->OUTSIDE }, #if main_cv set later
-	       $cv->OUTSIDE_SEQ,
-	       $cv->CvFLAGS
-	      )
-      );
+		 ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
+		 ." (CV*)s\\_%x, %s, 0x%x",
+		 0, # GvSTASH later. test 29 or Test::Harness
+		 $len, $len,
+		 $cv->DEPTH,
+		 "NULL", "Nullhv", #MAGIC + STASH later
+		 "Nullhv",#CvSTASH later
+		 $startfield,
+		 $$root,
+		 "0",    #GV later
+		 "NULL", #cv_file later (now a HEK)
+		 $padlistsym,
+		 ${ $cv->OUTSIDE }, #if main_cv set later
+		 $cv->OUTSIDE_SEQ,
+		 $cv->CvFLAGS
+		)
+	);
     }
     my $gvstash = $gv->STASH;
     if ($$gvstash) {
@@ -1977,7 +1994,11 @@ sub B::CV::save {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
-    $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
+    if ($PERL513) {
+      $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
+    } else {
+      $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
+    }
     warn sprintf("done saving GV 0x%x for CV 0x%x\n",
     		  $$gv, $$cv) if $debug{cv};
   }
@@ -2254,7 +2275,17 @@ sub B::AV::save {
   $fill = -1 if $@;    # catch error in tie magic
 
   my $alloc;
-  if ($PERL510) {
+  if ($PERL513) {
+    # 5.13.3: STASH, MAGIC, fill max ALLOC
+    my $line = "Nullhv, {0}, -1, -1, NULL";
+    $line = "Nullhv, {0}, $fill, $fill, NULL" if $B::C::av_init;
+    $xpvavsect->add($line);
+    $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
+                         $xpvavsect->index, $av->REFCNT, $av->FLAGS,
+                         '0'));
+    $avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
+  }
+  elsif ($PERL510) {
     # 5.9.4+: nvu fill max iv mg stash
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
     $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
@@ -2459,10 +2490,10 @@ sub B::HV::save {
   # It's just an ordinary HV
   if ($PERL510) {
     if ($PERL513) {
-      $xpvhvsect->comment( "mg_stash mg_u keys fill" );
+      $xpvhvsect->comment( "stash mgu max keys" );
       $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
-			       0, 0));
-    } else  {
+			       $hv->MAX, 0 ));
+    } else {
       $xpvhvsect->comment( "gvstash fill max keys mg stash" );
       $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
 			       0, $hv->MAX, 0 ));
@@ -2562,15 +2593,14 @@ sub B::IO::save {
   }
   if ($PERL513) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
-    # IV xio_lines is now in IVX  $.
-    $xpviosect->comment("xmg_stash, xmg_u, cur, len, xiv_u, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
-    my $tmpl = "(HV*)NULL, /*STASH  later*/\n\t{0}, /*MAGIC later*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*IVX LINES*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    $xpviosect->comment("STASH, xmg_u, cur, len, ifp_u, xio_ofp, xio_dirpu, lines, ..., type, flags");
+    my $tmpl = "Nullhv, /*STASH later*/\n\t{0}, /*MAGIC later*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
       sprintf($tmpl,
         $len,                     $len + 1,
-	$io->LINES, 	# xiv_u
+	$io->LINES, 		  # moved to IVX with 5.11.1
         $io->PAGE,                $io->PAGE_LEN,
         $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
         cstring( $io->FMT_NAME ), cstring( $io->BOTTOM_NAME ),
