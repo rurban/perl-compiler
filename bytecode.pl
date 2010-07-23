@@ -866,7 +866,7 @@ __END__
 50 0 	xcv_stash	*(SV**)&CvSTASH(bstate->bs_sv)	svindex
 51 0 	xcv_start	CvSTART(bstate->bs_sv)		opindex
 52 0 	xcv_root	CvROOT(bstate->bs_sv)		opindex
-53 0 	xcv_gv		*(SV**)&CvGV(bstate->bs_sv)	svindex
+53 0 	xcv_gv		bstate->bs_sv			svindex		x
 #  <8   xcv_filegv	*(SV**)&CvFILEGV(bstate->bs_sv)	svindex
 54 0 	xcv_file	CvFILE(bstate->bs_sv)		pvindex
 55 0 	xcv_depth	CvDEPTH(bstate->bs_sv)		long
