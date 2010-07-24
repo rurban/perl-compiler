@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.25
+# B::C::VERSION = 1.26
 # perlversion = 5.008009
 # path = /cyg1/usr/local/bin/perl5.8.9
 # platform = cygwin
@@ -26,7 +26,7 @@ pass ExtUtils::Install #TODO with useithreads
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO generally
+pass MooseX::Types #TODO generally
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO with useithreads
@@ -103,7 +103,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 99 / 100 modules tested with B-C-1.25 - perl-5.008009
+# 99 / 100 modules tested with B-C-1.26 - perl-5.008009
 # pass  95 /  99 (96.0%)
 # fail   4 /  99 (4.0%)
 # todo  12 /   4 (300.0%)

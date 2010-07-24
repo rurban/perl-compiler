@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.25
+# B::C::VERSION = 1.26
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+fail LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -67,12 +67,12 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 fail Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
-skip Text::Balanced
+pass Text::Balanced
 pass DBI
 pass Time::Local
 pass IO::Scalar
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO generally
+pass MooseX::Types #TODO generally
 pass Class::Singleton
 skip DateTime::TimeZone
 skip DateTime::Locale
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 95 / 100 modules tested with B-C-1.25 - perl-5.010000-nt
-# pass  81 /  95 (85.3%)
-# fail  14 /  95 (14.7%)
-# todo   4 /  14 (28.6%)
-# skip   5 / 100 (5.0% not installed)
+# 96 / 100 modules tested with B-C-1.26 - perl-5.010000-nt
+# pass  83 /  96 (86.5%)
+# fail  13 /  96 (13.5%)
+# todo   4 /  13 (30.8%)
+# skip   4 / 100 (4.0% not installed)

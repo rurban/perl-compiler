@@ -245,7 +245,6 @@ my $ITHREADS = $Config{useithreads};
 my $PERL513  = ( $] >= 5.013002 );
 my $PERL511  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
-my $PERL513  = ( $] >= 5.013001 );
 my $PERL56   = ( $] <  5.008 );
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
@@ -2489,7 +2488,7 @@ sub B::HV::save {
 
   # It's just an ordinary HV
   if ($PERL510) {
-    if ($PERL513) {
+    if ($PERL513) { # fill removed with 5.13.1
       $xpvhvsect->comment( "stash mgu max keys" );
       $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
 			       $hv->MAX, 0 ));

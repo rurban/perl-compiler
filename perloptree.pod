@@ -564,6 +564,22 @@ not strictly required.
         entertry        eval {block}            ck_null         |
         once            once                    ck_null         |
 
+=head3 and
+
+Checks for falseness on the first argument on the stack.
+If false, returns immediately, keeping the false value on the stack.
+If true pops the stack, and returns the op at C<op_other>.
+
+Note: B<and> is also used for a simple B<if> without B<else>/B<elsif>. 
+The general B<if> is done with L<cond_expr>.
+
+=head3 cond_expr
+
+Checks for trueness on the first argument on the stack.
+If true returns the op at C<op_other>, if false C<op_next>.
+
+Note: A simple B<if> without else is done by L<and>.
+
 =head2 LISTOP
 
 The LISTOP class signifier is B<@>.
