@@ -201,7 +201,7 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 	sprintf(supported, "%x", BYTEORDER);
 	BGET_strconst(str, 16); /* optional 0x prefix, 12345678 or 1234 */
 	if (str[0] == 0x30 && str[1] == 0x78) { /* skip '0x' */
-	    strcpy(str, &str[2]);
+	    str++; str++;
 	}
 	strcpy(bl_header.byteorder, str);
 	if (strNE(str, supported)) {
