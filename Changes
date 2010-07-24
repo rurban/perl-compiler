@@ -12,6 +12,7 @@
 	Mark a package which is autoloaded from XS.
 	5.13.3 support (xpv STASH, MAGIC, ... reorganization)
 	* bytecode.pl: CvGv_set since 5.13.3
+	Fixed byteorder 0x stripping causing wrong bget_swab on 64bit
 	* B::C::Flags: added by Makefile.PL probing independent_comalloc()
 	* CC.pm: the default -fno-slow-signals adds PERL_ASYNC_CHECK at
 	  the same ops as with 5.13, a major improvement.
@@ -26,7 +27,7 @@
 	* t/c*.t: make test 27 easier to debug (Nick Koston)
     * B::C: fix autoloading of constants AKA const xsubcv via AUTOLOAD [test 27] (Nick Koston)
     * t/c*.t: add test 45 (Nick Koston)
-    
+
 1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.
 	* t/c*.t: added test 40 \000 byte in PV failing on ori 5.6.2 (Nick Koston),

@@ -1993,7 +1993,7 @@ sub B::CV::save {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
-    if ($] > 5.013003) {
+    if ($] >= 5.013003) {
       $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
@@ -2592,7 +2592,8 @@ sub B::IO::save {
   }
   if ($PERL513) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
-    $xpviosect->comment("STASH, xmg_u, cur, len, ifp_u, xio_ofp, xio_dirpu, lines, ..., type, flags");
+    # IFP in sv.sv_u.svu_fp
+    $xpviosect->comment("STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, page_len, ..., type, flags");
     my $tmpl = "Nullhv, /*STASH later*/\n\t{0}, /*MAGIC later*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
