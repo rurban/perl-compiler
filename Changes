@@ -10,7 +10,8 @@
 	-O2 uses -fav-init2, i.e. experimental independent_comalloc(),
 	  -O1 uses now -fav-init (Nick Koston + Reini Urban)
 	Mark a package which is autoloaded from XS.
-	5.13.3 support (xpv STASH, MAGIC, ... reorganization)
+	5.13.3 support (xpv STASH, MAGIC, ... reorganization), but CVs still failing
+	Check CVv_ANON when setting cv->GV. Fixes anon subs
 	* bytecode.pl: CvGv_set since 5.13.3
 	Fixed byteorder 0x stripping causing wrong bget_swab on 64bit
 	* B::C::Flags: added by Makefile.PL probing independent_comalloc()
@@ -18,6 +19,8 @@
 	  the same ops as with 5.13, a major improvement.
 	* Bytecode.pm (1.07), bytecode.pl: xpvav.xiv_u was removed with 5.13.2 but not
 	  used anymore. read and set av_flags only until 5.12, compile only before 5.10
+	Check CVv_ANON when setting cv->GV. Fixes anon subs
+	* bytecode.h: do not PM_SETRE with empty arg. fails since 5.13 debugging
         * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
 	* perlcc (2.07), cc_harness, t/test.pl: debian specific fixes for their broken
 	  -lperl linker args for ExtUtils::Embed::ldopts.

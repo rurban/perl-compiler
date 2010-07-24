@@ -255,9 +255,10 @@ static int bget_swab = 0;
 #if (PERL_VERSION >= 11)
 #define BSET_pregcomp(o, arg)						\
     STMT_START {                                                        \
-	PM_SETRE(cPMOPx(o), arg                                         \
-                 ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
-                 : Null(REGEXP*));                                      \
+      if (arg) {							\
+        PM_SETRE(cPMOPx(o),						\
+	         CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags)); \
+      }									\
     } STMT_END
 #endif
 #if (PERL_VERSION >= 10) && (PERL_VERSION < 11)
