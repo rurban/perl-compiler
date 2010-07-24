@@ -1993,7 +1993,7 @@ sub B::CV::save {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
-    if ($PERL513) {
+    if ($] > 5.013003) {
       $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
