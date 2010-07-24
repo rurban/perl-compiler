@@ -79,7 +79,7 @@ if [ -n "$1" ]; then
 	    name="$(perl -e'$ARGV[0]=~s{::}{_}g; print lc($ARGV[0])' $1)"
 	    echo $PERL $Mblib blib/script/perlcc -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
 	    $PERL $Mblib blib/script/perlcc -r $KEEP -e "use $1; print 'ok'" -o $name
-	    mv a.out.c $name.c
+	    test -f a.out.c && mv a.out.c $name.c
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
 	    shift
 	done

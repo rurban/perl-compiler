@@ -191,11 +191,12 @@ use B
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
-    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST)); # both unsupported for 5.6
+    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST CVf_ANON)); # both unsupported for 5.6
   } else {
     eval q[
       sub SVp_NOK() {0}; # unused
       sub SVp_IOK() {0};
+      sub CVf_ANON() {4};
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
@@ -245,7 +246,7 @@ my $ITHREADS = $Config{useithreads};
 my $PERL513  = ( $] >= 5.013002 );
 my $PERL511  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
-my $PERL56   = ( $] <  5.008 );
+my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
 
@@ -1154,20 +1155,21 @@ sub B::NV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my $val = $sv->NV;
-  my $sval = sprintf("%g", $val);
-  $val = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
-  $val .= '.00' if $val =~ /^-?\d+$/;
+  my $nv = $sv->NV;
+  my $sval = sprintf("%g", $nv);
+  $nv = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
+  $nv .= '.00' if $nv =~ /^-?\d+$/;
+  my $iv = $sv->FLAGS & SVp_IOK ? $sv->IVX : 0;
   if ($PERL513) {
     $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
-    $xpvnvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}, {%s}", $sv->IVX, $val ) );
+    $xpvnvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}, {%s}", $iv, $nv ) );
   } elsif ($PERL510) { # not fixed by NV isa IV >= 5.8
     $xpvnvsect->comment('NVX, cur, len, IVX');
-    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {%ld}", $val, $sv->IVX ) );
+    $xpvnvsect->add( sprintf( "{%s}, 0, 0, {%ld}", $nv, $iv ) );
   }
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
-    $xpvnvsect->add( sprintf( "0, 0, 0, %ld, %s", $sv->IVX, $val ) );
+    $xpvnvsect->add( sprintf( "0, 0, 0, %ld, %s", $iv, $nv ) );
   }
   $svsect->add(
     sprintf(
@@ -1176,7 +1178,7 @@ sub B::NV::save {
     )
   );
   warn sprintf( "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",
-    $val, $xpvnvsect->index, $svsect->index )
+    $nv, $xpvnvsect->index, $svsect->index )
     if $debug{sv};
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
@@ -1297,6 +1299,7 @@ sub B::PVNV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $nvx = $sv->NVX;
+  my $ivx = $sv->FLAGS & (SVf_IOK|SVp_IOK) ? $sv->IVX : 0;
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
     my $sval = sprintf("%g", $nvx);
@@ -1308,7 +1311,7 @@ sub B::PVNV::save {
   if ($PERL513) {
     $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
     $xpvnvsect->add(
-      sprintf( "Nullhv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $sv->IVX, $nvx) );
+      sprintf( "Nullhv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $ivx, $nvx) );
     unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
@@ -1323,7 +1326,7 @@ sub B::PVNV::save {
     # to store it as { low, high }.
     $xpvnvsect->comment('NVX, cur, len, IVX');
     $xpvnvsect->add(
-      sprintf( "{%s}, %u, %u, {%d}", $nvx, $len, $pvmax, $sv->IVX ) );    # ??
+      sprintf( "{%s}, %u, %u, {%d}", $nvx, $len, $pvmax, $ivx ) );    # ??
     unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
@@ -1337,7 +1340,7 @@ sub B::PVNV::save {
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
     $xpvnvsect->add(
-      sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $sv->IVX, $nvx ) );
+      sprintf( "%s, %u, %u, %d, %s", $savesym, $len, $pvmax, $ivx, $nvx ) );
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
@@ -1993,10 +1996,12 @@ sub B::CV::save {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
-    if ($] >= 5.013003) {
-      $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
-    } else {
-      $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
+    unless ($cv->CvFLAGS & CVf_ANON) {
+      if ($] >= 5.013003) {
+	$init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
+      } else {
+	$init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
+      }
     }
     warn sprintf("done saving GV 0x%x for CV 0x%x\n",
     		  $$gv, $$cv) if $debug{cv};

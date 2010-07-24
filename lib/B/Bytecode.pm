@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 
 #use 5.008;
 use B qw(class main_cv main_root main_start
@@ -25,16 +25,19 @@ use B::Assembler qw(asm newasm endasm);
 BEGIN {
   if ( $] < 5.009 ) {
     B::Asmdata->import(qw(@specialsv_name @optype));
-    sub SVp_NOK() {}; # unused
-    sub SVf_NOK() {}; # unused
+    eval q[
+      sub SVp_NOK() {}; # unused
+      sub SVf_NOK() {}; # unused
+      sub CVf_ANON() {4};
+   ];
   }
   else {
-    B->import(qw(SVp_NOK SVf_NOK @specialsv_name @optype));
+    B->import(qw(SVp_NOK SVf_NOK CVf_ANON @specialsv_name @optype));
   }
   if ( $] > 5.007 ) {
     B->import(qw(defstash curstash inc_gv dowarn
 		 warnhook diehook SVt_PVGV
-		 SVf_FAKE ));
+		 SVf_FAKE));
   } else {
     B->import(qw(walkoptree walksymtable));
   }
@@ -45,9 +48,10 @@ use B::Concise;
 
 #################################################
 
+my $PERL56  = ( $] <  5.008001 );
 my $PERL510 = ( $] >= 5.009005 );
 my $PERL511 = ( $] >= 5.011 );
-my $PERL56  = ( $] <  5.008001 );
+my $PERL513 = ( $] >= 5.013002 );
 our ($quiet);
 my ( $varix, $opix, $savebegins, %walked, %files, @cloop, %debug );
 my %strtab  = ( 0, 0 );
@@ -512,7 +516,11 @@ sub B::IO::bsave {
 sub B::CV::bsave {
   my ( $cv, $ix ) = @_;
   my $stashix   = $cv->STASH->ix;
-  my $gvix      = $cv->GV->ix;
+  # XXX since 5.13.3 CVf_ANON fail on GV
+  my $gvix;
+  if ($PERL510 and !$cv->CvFLAGS & CVf_ANON) {
+    $gvix = $cv->GV->ix;
+  }
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
   my $startix   = $cv->START->opwalk;
@@ -525,7 +533,9 @@ sub B::CV::bsave {
   unless ($PERL56) {
     asm "xcv_xsubany",   $cv->CONST ? $cv->XSUBANY->ix : 0;
   }
-  asm "xcv_gv",          $gvix;
+  if ($PERL510 and !$cv->CvFLAGS & CVf_ANON) {
+    asm "xcv_gv",          $gvix;
+  }
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
   asm "xcv_padlist",     $padlistix;
   asm "xcv_outside",     $outsideix;
@@ -796,7 +806,7 @@ sub B::PMOP::bsave {
       bwarn("op_pmstashpv main") if $debug{M};
       asm "op_pmstashpv", pvix "main" unless $PERL510;
     }
-  }
+  } # ithreads
   else {
     $rrop  = "op_pmreplrootgv";
     $rrarg  = $op->pmreplroot->ix;
@@ -1225,9 +1235,7 @@ OPs, prints each OP as it's processed
 
 =item B<-D>I<M>
 
-Set debugging flag for more verbose STDERR output.
-Verbose debugging options are crucial, because we have no interactive
-debugger at the early CHECK step, where the compilation happens.
+Debugging flag for more verbose STDERR output.
 
 B<M> for Magic and Matches.
 
