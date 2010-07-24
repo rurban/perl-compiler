@@ -1418,7 +1418,7 @@ sub B::PV::save {
     # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
     # $flags ||= 0x04000000 if $B::C::pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
     # => Attempt to free unreferenced scalar: SV 0x4044e8.
-    $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL513 ? "Nullhv," : "", $len, $pvmax ) );
+    $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL513 ? "Nullhv, " : "", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "0"));
