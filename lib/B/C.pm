@@ -3264,6 +3264,9 @@ sub save_object {
 
 sub Dummy_BootStrap { }
 
+#ignore nullified cv
+sub B::SPECIAL::savecv {}
+
 sub B::GV::savecv {
   my $gv      = shift;
   my $package = $gv->STASH->NAME;
