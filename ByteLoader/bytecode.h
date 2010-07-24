@@ -243,7 +243,7 @@ static int bget_swab = 0;
 	hv_store((HV*)sv, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur, arg, 0)
 #define BSET_pv_free(pv)	Safefree(pv.xpv_pv)
 
-#if (PERL_VERSION >= 13)
+#if (PERL_VERSION > 13 || ((PERL_VERSION == 13) && (PERL_SUBVERSION >= 3)))
 #define BSET_xcv_gv(sv, arg)	(CvGV_set((CV*)bstate->bs_sv, (GV*)arg))
 #else
 #define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
