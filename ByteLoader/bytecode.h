@@ -246,7 +246,7 @@ static int bget_swab = 0;
 #if (PERL_VERSION >= 13)
 #define BSET_xcv_gv(sv, arg)	(CvGV_set((CV*)bstate->bs_sv, (GV*)arg))
 #else
-#define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv, arg) = arg)
+#define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
 #endif
 
 #ifdef USE_ITHREADS
