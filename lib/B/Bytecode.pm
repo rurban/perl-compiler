@@ -516,7 +516,7 @@ sub B::IO::bsave {
 sub B::CV::bsave {
   my ( $cv, $ix ) = @_;
   my $stashix   = $cv->STASH->ix;
-  # XXX since 5.13.3 CVf_ANON fail on GV
+  # Since 5.13.3 CVf_ANON fails when setting a GV. Skip it on all versions
   my $gvix;
   if (!($cv->CvFLAGS & CVf_ANON)) {
     $gvix = $cv->GV->ix;

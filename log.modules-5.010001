@@ -1,7 +1,7 @@
 # B::C::VERSION = 1.26
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
-# platform = linux
+# platform = cygwin
 # threaded perl
 pass Exporter
 pass Text::Tabs
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-pass ExtUtils::Install #TODO > 5.010
+fail ExtUtils::Install #TODO > 5.010
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS

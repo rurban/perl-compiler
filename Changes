@@ -4,12 +4,14 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.26	2010-07-26 rurban
-	Start of 5.13.3 support, not yet ready.
+	Start of 5.13.3 support, CVs broken.
+
 	* C.pm: improve -fav-init performance if not usemymalloc: no
 	  calloc, just direct libc malloc.
 	-O2 uses -fav-init2, i.e. experimental independent_comalloc(),
 	  -O1 uses now -fav-init (Nick Koston + Reini Urban)
 	Mark a package which is autoloaded from XS.
+	Fix autoloading of constants AKA const xsubcv via AUTOLOAD [test 27] (Nick Koston)
 	5.13.3 support (xpv STASH, MAGIC, ... reorganization), but CVs still failing
 	Check CVv_ANON when setting cv->GV. Fixes anon subs.
 	Do not call REGEXP IVX and NVX methods (since 5.11)
@@ -25,12 +27,12 @@
         * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
 	* perlcc (2.07), cc_harness, t/test.pl: debian specific fixes for their broken
 	  -lperl linker args for ExtUtils::Embed::ldopts.
-	* t/test.pl: Fixed killing hangling tests with IPC::Run.
+	* t/test.pl: Have complete c/cc TODO/SKIP status in one place.
+	Fixed killing hangling tests with IPC::Run.
 	Fixed new cc TODO.
 	Run CC test 18 even not as AUTHOR
 	* t/c*.t: make test 27 easier to debug (Nick Koston)
-    * B::C: fix autoloading of constants AKA const xsubcv via AUTOLOAD [test 27] (Nick Koston)
-    * t/c*.t: add test 45 (Nick Koston)
+        Added test 45 (Nick Koston)
 
 1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.

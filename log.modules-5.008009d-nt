@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.24
+# B::C::VERSION = 1.26
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -67,7 +67,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -85,7 +85,7 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope #TODO generally
+fail B::Hooks::EndOfScope #TODO < 5.010
 pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 fail YAML
-fail MooseX::Types #TODO generally
+pass MooseX::Types #TODO generally
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.24 - perl-5.008009d-nt
-# pass  92 / 100 (92.0%)
-# fail   8 / 100 (8.0%)
-# todo   4 /   8 (50.0%)
+# 100 / 100 modules tested with B-C-1.26 - perl-5.008009d-nt
+# pass  93 / 100 (93.0%)
+# fail   7 / 100 (7.0%)
+# todo   4 /   7 (57.1%)
 # skip   0 / 100 (0.0% not installed)

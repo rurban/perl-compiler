@@ -540,6 +540,8 @@ sub todo_tests_default {
         @todo    = (10,16,18,21,25,29,30,39,41) if $] >= 5.010 and $what eq 'cc_o2';
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
+        push @todo, (44);
+        push @todo, (103) if $] >= 5.013002;
 
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }

@@ -19,10 +19,12 @@ Open Problems for B::C:
     test 15
 5.10:
     Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
-5.11:
+5.12:
     None. Completely same results as 5.10
+5.14:
+    CV broken
 
-See below at the detailed 5.6, 5.8, 5.10, 5.11 status
+See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
 TEST STATUS
 -----------
@@ -145,6 +147,12 @@ TODO for B::C
 Fix CC cc_queue sort 18 ccpp
 
 DONE:
+mark a package which is autoloaded from XS
+
+Check CVv_ANON when setting cv->GV. Fixes anon subs
+
+fixed forbidden REGEXP IVX/NVX access since 5.12
+
 fixed evaltry (test 12), NVX was shared with 2 xpad_cop_seq ints
   which accidently just worked before 1.17, but not after using the %g 
   representation changed with 1.16. Also fixed in Bytecode, fixing tests 9,10,12.
