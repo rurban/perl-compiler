@@ -13,7 +13,7 @@
 	Mark a package which is autoloaded from XS.
 	Fix autoloading of constants AKA const xsubcv via AUTOLOAD [test 27] (Nick Koston)
 	5.13.3 support (xpv STASH, MAGIC, ... reorganization), but CVs still failing
-	Check CVv_ANON when setting cv->GV. Fixes anon subs.
+	Check CVf_ANON when setting cv->GV. Fixes anon subs.
 	Do not call REGEXP IVX and NVX methods (since 5.11)
 	* bytecode.pl: CvGv_set since 5.13.3
 	Fixed byteorder 0x stripping causing wrong bget_swab on 64bit
