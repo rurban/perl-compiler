@@ -251,7 +251,9 @@ static int bget_swab = 0;
 
 #ifdef USE_ITHREADS
 
-/* copied after the code in newPMOP() */
+/* Copied after the code in newPMOP().
+   Since 5.13d PM_SETRE(op, NULL) fails
+ */
 #if (PERL_VERSION >= 11)
 #define BSET_pregcomp(o, arg)						\
     STMT_START {                                                        \
@@ -323,9 +325,10 @@ static int bget_swab = 0;
 #if (PERL_VERSION >= 10)
 #define BSET_pregcomp(o, arg)				\
     STMT_START {					\
-        PM_SETRE((PMOP*)(o), arg			\
-	  ? CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags) \
-	  : Null(REGEXP*));				\
+      if (arg) {					\
+        PM_SETRE((PMOP*)(o),				\
+	         CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags)); \
+      }							\
     } STMT_END
 #endif
 
