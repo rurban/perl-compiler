@@ -4,7 +4,7 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.26	2010-07-26 rurban
-	Start of 5.13.3 support, CVs broken.
+	Start of 5.14 support, CVs broken.
 
 	* C.pm: improve -fav-init performance if not usemymalloc: no
 	  calloc, just direct libc malloc.
@@ -17,7 +17,7 @@
 	Do not call REGEXP IVX and NVX methods (since 5.11)
 	* bytecode.pl: CvGv_set since 5.13.3
 	Fixed byteorder 0x stripping causing wrong bget_swab on 64bit
-	* B::C::Flags: added by Makefile.PL probing independent_comalloc()
+	* B::C::Flags: new. added by Makefile.PL probing independent_comalloc()
 	* CC.pm: the default -fno-slow-signals adds PERL_ASYNC_CHECK at
 	  the same ops as with 5.13, a major improvement.
 	* Bytecode.pm (1.07), bytecode.pl: xpvav.xiv_u was removed with 5.13.2 but not
