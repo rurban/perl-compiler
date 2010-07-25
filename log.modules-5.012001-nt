@@ -1,0 +1,110 @@
+# B::C::VERSION = 1.26
+# perlversion = 5.012001-nt
+# path = /usr/local/bin/perl5.12.1-nt
+# platform = linux
+# non-threaded perl
+pass Exporter
+pass Text::Tabs
+pass Text::Wrap
+fail Test::Harness #TODO > 5.010
+pass Pod::Escapes
+pass Pod::Simple
+pass IO
+pass Scalar::Util
+pass Getopt::Long
+pass Pod::Parser
+pass ExtUtils::MakeMaker
+skip Test::Simple
+pass ExtUtils::Manifest
+pass Pod::Text
+pass constant
+pass Test
+pass Data::Dumper
+pass File::Spec
+skip File::Temp
+pass ExtUtils::Install #TODO > 5.010
+pass Text::ParseWords
+pass ExtUtils::CBuilder
+pass ExtUtils::ParseXS
+pass Module::Build #TODO >= 5.10
+pass File::Path
+pass XSLoader
+pass MIME::Base64
+pass Digest
+pass Digest::MD5
+skip Sub::Uplevel
+skip URI
+skip HTML::Tagset
+skip HTML::Parser
+skip Test::Exception
+pass Net::Cmd
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
+pass IO::Compress::Base
+skip LWP
+pass Storable
+pass base
+skip List::MoreUtils
+skip Params::Util
+skip Task::Weaken
+skip Class::Accessor
+skip Test::Tester
+skip Sub::Install
+skip Attribute::Handlers
+skip Data::OptList
+skip Sub::Exporter
+skip Test::NoWarnings
+pass version
+skip Params::Validate
+pass Sub::Name
+pass Filter::Util::Call
+skip Algorithm::C3
+skip Class::C3
+skip Scope::Guard
+skip MRO::Compat
+pass Time::HiRes
+skip Class::Data::Inheritable
+skip Try::Tiny
+skip Devel::GlobalDestruction
+skip Class::MOP
+skip Moose
+skip Test::Deep
+skip Carp::Clan
+pass Module::Pluggable
+pass if(1) => "Sys::Hostname"
+pass Text::Balanced
+skip DBI
+pass Time::Local
+skip IO::Scalar
+skip Sub::Identify
+pass Class::ISA
+skip FCGI
+skip Tree::DAG_Node
+skip Path::Class
+skip Test::Warn
+pass Encode
+skip Variable::Magic
+pass CGI
+skip B::Hooks::EndOfScope
+pass Test::Pod #TODO >= 5.10
+skip Digest::SHA1
+skip namespace::clean
+skip Class::Inspector
+skip Clone
+skip XML::NamespaceSupport
+skip XML::SAX
+pass YAML
+skip MooseX::Types
+skip Class::Singleton
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
+skip IO::String
+skip AppConfig
+skip UNIVERSAL::require
+skip Template::Stash
+# 46 / 100 modules tested with B-C-1.26 - perl-5.012001-nt
+# pass  45 /  46 (97.8%)
+# fail   1 /  46 (2.2%)
+# todo   4 /   1 (400.0%)
+# skip  54 / 100 (54.0% not installed)
