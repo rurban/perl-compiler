@@ -1458,14 +1458,20 @@ sub B::PVMG::save {
 	  : $savesym;
       }
     }
+    my ($ivx,$nvx) = (0, "0");
+    # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
+    unless ($] >= 5.011 and $sv->isa('B::REGEXP')) {
+      $ivx = $sv->IVX;
+      $nvx = $sv->NVX;
+    }
     if ($PERL513) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
-      $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%d}, {%s}",
-			      $len, $pvmax, $sv->IVX, $sv->NVX));
+      $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%ld}, {%s}",
+			      $len, $pvmax, $ivx, $nvx));
     } else {
       $xpvmgsect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash");
-      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%d}, {0}, 0",
-			    $sv->NVX, $len, $pvmax, $sv->IVX));
+      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%ld}, {0}, 0",
+			    $nvx, $len, $pvmax, $ivx));
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
@@ -1473,7 +1479,7 @@ sub B::PVMG::save {
   else {
     # cannot initialize this pointer static
     if ($savesym =~ /&(PL|sv)/) { # (char*)&PL_sv_undef | (char*)&sv_list[%d]
-      $xpvmgsect->add(sprintf("%d, %u, %u, %d, %s, 0, 0",
+      $xpvmgsect->add(sprintf("%d, %u, %u, %ld, %s, 0, 0",
 			      0, $len, $pvmax, $sv->IVX, $sv->NVX));
       $init->add( sprintf( "xpvmg_list[%d].xpv_pv = $savesym;",
 			   $xpvmgsect->index ) );
@@ -1914,7 +1920,7 @@ sub B::CV::save {
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL513) {
-      #$xpvcvsect->comment('STASH, mg_u, cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
+      #$xpvcvsect->comment('STASH mg_u cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
       $symsect->add
 	(sprintf("XPVCVIX$xpvcv_ix\tNullhv, {0}, %u, %u, %s, "
 		 ." {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
@@ -1971,7 +1977,7 @@ sub B::CV::save {
     #$xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
     $symsect->add(
       sprintf("XPVCVIX$xpvcv_ix\t%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
-        cstring($pv), length($pv),length($pv),$cv->IVX,
+        cstring($pv), length($pv), length($pv), $cv->IVX,
         $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
         $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
       )

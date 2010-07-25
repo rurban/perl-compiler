@@ -4,14 +4,15 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.26	2010-07-26 rurban
-	Support 5.13.3
+	Start of 5.13.3 support, not yet ready.
 	* C.pm: improve -fav-init performance if not usemymalloc: no
 	  calloc, just direct libc malloc.
 	-O2 uses -fav-init2, i.e. experimental independent_comalloc(),
 	  -O1 uses now -fav-init (Nick Koston + Reini Urban)
 	Mark a package which is autoloaded from XS.
 	5.13.3 support (xpv STASH, MAGIC, ... reorganization), but CVs still failing
-	Check CVv_ANON when setting cv->GV. Fixes anon subs
+	Check CVv_ANON when setting cv->GV. Fixes anon subs.
+	Do not call REGEXP IVX and NVX methods (since 5.11)
 	* bytecode.pl: CvGv_set since 5.13.3
 	Fixed byteorder 0x stripping causing wrong bget_swab on 64bit
 	* B::C::Flags: added by Makefile.PL probing independent_comalloc()
