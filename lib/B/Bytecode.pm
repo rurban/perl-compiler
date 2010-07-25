@@ -518,7 +518,7 @@ sub B::CV::bsave {
   my $stashix   = $cv->STASH->ix;
   # XXX since 5.13.3 CVf_ANON fail on GV
   my $gvix;
-  if ($PERL510 and !$cv->CvFLAGS & CVf_ANON) {
+  if (!($cv->CvFLAGS & CVf_ANON)) {
     $gvix = $cv->GV->ix;
   }
   my $padlistix = $cv->PADLIST->ix;
@@ -533,7 +533,7 @@ sub B::CV::bsave {
   unless ($PERL56) {
     asm "xcv_xsubany",   $cv->CONST ? $cv->XSUBANY->ix : 0;
   }
-  if ($PERL510 and !$cv->CvFLAGS & CVf_ANON) {
+  if (!($cv->CvFLAGS & CVf_ANON)) {
     asm "xcv_gv",          $gvix;
   }
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
