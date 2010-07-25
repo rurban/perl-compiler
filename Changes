@@ -3,8 +3,8 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.26	2010-07-?? rurban
-	Start for 5.13.3 support
+1.26	2010-07-26 rurban
+	Support 5.13.3
 	* C.pm: improve -fav-init performance if not usemymalloc: no
 	  calloc, just direct libc malloc.
 	-O2 uses -fav-init2, i.e. experimental independent_comalloc(),

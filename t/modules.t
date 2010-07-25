@@ -183,15 +183,19 @@ exit;
 sub is_todo {
   my $module = shift or die;
 
-  foreach (qw(Attribute::Handlers B::Hooks::EndOfScope MooseX::Types)) {
+  foreach (qw(Attribute::Handlers MooseX::Types)) {
     return 'generally' if $_ eq $module;
   }
-
   if ($] < 5.007) {
-    # Can't locate object method "RV" via package "B::PV" 
+    # Can't locate object method "RV" via package "B::PV"
     # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
     foreach(qw(ExtUtils::MakeMaker)) {
       return '< 5.007' if $_ eq $module;
+    }
+  }
+  if ($] < 5.010) {
+    foreach(qw(B::Hooks::EndOfScope)) {
+      return '< 5.010' if $_ eq $module;
     }
   }
   if ($] >= 5.007) {
@@ -199,12 +203,24 @@ sub is_todo {
       return '>= 5.007' if $_ eq $module;
     }
   }
+  if ($] >= 5.010) {
+    foreach(qw(
+		Test::Simple Module::Build Test::Exception
+		Test::NoWarnings Test::Warn Test::Pod
+	     )) {
+      return '>= 5.10' if $_ eq $module;
+    }
+  }
   if ($] > 5.010) {
-    foreach(qw(ExtUtils::Install)) {
+    foreach(qw(ExtUtils::Install Test::Harness)) {
       return '> 5.010' if $_ eq $module;
     }
   }
-
+  if ($] >= 5.013) {
+    foreach(qw(Test)) {
+      return '>= 5.013' if $_ eq $module;
+    }
+  }
   if ($Config{useithreads}) {
     foreach(qw(
                File::Temp ExtUtils::Install
