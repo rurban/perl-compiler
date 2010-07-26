@@ -1,6 +1,6 @@
 # B::C::VERSION = 1.26
 # perlversion = 5.010001
-# path = /usr/bin/perl5.10.1
+# path = /usr/bin/perl
 # platform = cygwin
 # threaded perl
 pass Exporter

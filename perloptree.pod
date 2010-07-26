@@ -189,7 +189,7 @@ The class of an OP determines its size and the number of
 children. But the number and type of arguments is not so easy to
 declare as in C. F<opcode.pl> tries to declare some XS-prototype
 like arguments, but in lisp we would say most ops are "special"
-functions, context-dependent, hard to parse.
+functions, context-dependent, with special parsing and precedence rules.
 
 F<B.pm> L<http://search.cpan.org/perldoc?B> contains these
 classes and inheritance:
@@ -210,8 +210,8 @@ classes and inheritance:
 
 I<TODO: ascii graph from perlguts>
 
-F<op.h> L<http://search.cpan.org/src/RGARCIA/perl-5.10.0/op.h>
-contains all the gory details. Let's check it out.
+F<op.h> L<http://search.cpan.org/src/JESSE/perl-5.12.1/op.h>
+contains all the gory details. Let's check it out:
 
 =head2 OP Class Declarations in opcode.pl
 
@@ -424,6 +424,10 @@ The full list of all BASEOP's is:
         egrent        endgrent                ck_null         is0
         getlogin      getlogin                ck_null         st0
 	custom        unknown custom operator ck_null         0
+
+=head3 null
+
+null ops are skipped during the runloop, and are created by the peephole optimizer.
 
 =head2 UNOP
 
