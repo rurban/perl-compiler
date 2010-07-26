@@ -226,6 +226,11 @@ But since the new B::C compiler is better than the CORE compiler, it is installe
 
 Details:
 --------
+Test::Harness:
+t/testm.sh -D- Test::Harness; gdb ./test_harness
+  enter nextstate pushmark const(PV("ok"\0)) print leave
+cxstack is corrupt at leave
+
 5.8.9d-nt test 27 AUTOLOAD:
 gdb --args ccode27
   start

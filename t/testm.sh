@@ -86,7 +86,7 @@ if [ -n "$1" ]; then
 		echo $PERL $Mblib script/cc_harness -d -g3 -o$name $name.c
 		$PERL $Mblib script/cc_harness -d -g3 -o$name $name.c
 		if [ -f $name ]; then
-		  echo ./$name
+		  echo "running ./$name"
 		  ./$name
 		fi
 	      fi
