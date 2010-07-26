@@ -79,7 +79,7 @@ if [ -n "$1" ]; then
 	while [ -n "$1" ]; do
 	    # single module
 	    name="$(perl -e'$ARGV[0]=~s{::}{_}g; print lc($ARGV[0])' $1)"
-	    if [ ${KEEP:0:2} = "-D" ]; then
+	    if [ "${KEEP:0:2}" = "-D" ]; then
 	      echo $PERL $Mblib -MO=C,$KEEP,-o$name.c -e "\"use $1; print 'ok'\""
 	      $PERL $Mblib -MO=C,$KEEP,-o$name.c -e "use $1; print 'ok'"
 	      if [ -f $name.c ]; then
