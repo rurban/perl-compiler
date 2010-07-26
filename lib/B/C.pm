@@ -646,7 +646,8 @@ sub B::OP::save {
   else {
     $opsect->comment($opsect_common);
     $opsect->add( $op->_save_common );
-    $opsect->debug( $op->name, $op->flagspv );
+
+    $opsect->debug( $op->name, $op->flagspv ) if $debug{flags};
     my $ix = $opsect->index;
     $init->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
