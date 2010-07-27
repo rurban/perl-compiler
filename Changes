@@ -3,8 +3,12 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.27
-	* C.pm: add -DF print stringified sv and op flags
+1.27	2010-07-27 rurban
+	* C.pm: add -DF print stringified sv and op flags.
+	fixed xpvio off-by-one error for 5.10 (test 29)
+	rewrote XPVCV forwards: 1. only the SV is now forwarded, not the struct.
+	  2. no duplicate SVs, the forward is just a link to one SV (#define CVIX)
+	* t/testc.sh: add -D- for no gcc warnings
 	* t/testm.sh: add -D<args> flags for compiler debugging and link with -g
 
 1.26	2010-07-26 rurban

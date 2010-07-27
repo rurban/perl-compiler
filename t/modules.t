@@ -114,11 +114,12 @@ for my $module (@modules) {
       skip("$module not installed", 4 * scalar @opts);
       next MODULE;
     }
-    if (!$have_IPC_Run and is_skip($module)) {
+    if (is_skip($module)) { # !$have_IPC_Run is not really helpful here
+      my $why = is_skip($module);
       $skip++;
-      log_pass("skip", "$module", 0);
+      log_pass("skip", "$module $why", 0);
 
-      skip("$module skipped endless loop", 4 * scalar @opts);
+      skip("$module $why", 4 * scalar @opts);
       next MODULE;
     }
     $module = 'if(1) => "Sys::Hostname"' if $module eq 'if';
@@ -239,7 +240,12 @@ sub is_skip {
 
   if ($] >= 5.011004) {
     foreach (qw(Test::Simple File::Temp Attribute::Handlers)) {
-      return 1 if $_ eq $module;
+      return 'fails $] >= 5.011004' if $_ eq $module;
+    }
+    if ($Config{useithreads}) { # hangs and crashes threaded since 5.12
+      foreach (qw( Moose Class::MOP)) {
+	return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
+      }
     }
   }
 }
