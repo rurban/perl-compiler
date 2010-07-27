@@ -240,7 +240,7 @@ my $anonsub_index = 0;
 my $initsub_index = 0;
 
 my $package_pv;
-my %symtable;
+my (%symtable, %cvforward);
 my (%strtable, %hektable);
 my %xsub;
 my $warn_undefined_syms;
@@ -1400,8 +1400,7 @@ sub B::BM::save {
   if ($PERL510) {
     warn "Saving FBM for GV $sym\n" if $debug{gv};
     $init->add( sprintf( "$sym = (GV*)newSV_type(SVt_PVGV);" ),
-		sprintf( "SvFLAGS($sym) = 0x%x;%s", $sv->FLAGS,
-                         $debug{flags} ? " /* ".$sv->flagspv." */" : ""),
+		sprintf( "SvFLAGS($sym) = 0x%x;", $sv->FLAGS),
 		sprintf( "SvREFCNT($sym) = %u;", $sv->REFCNT + 1 ),
 		sprintf( "SvPVX($sym) = %s;", cstring($pv) ),
 		sprintf( "SvLEN_set($sym, %d);", $len ),
@@ -1505,7 +1504,7 @@ sub B::PVMG::save {
 			      $len, $pvmax, $ivx, $nvx));
     } else {
       $xpvmgsect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash");
-      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%ld}, {0}, 0",
+      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%ld}, {0}, Nullhv",
 			    $nvx, $len, $pvmax, $ivx));
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
@@ -1571,8 +1570,9 @@ sub B::PVMG::save_magic {
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
-    warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x\n",
-                 $sv_flags && 0xff, $sv_flags) if $debug{mg};
+    warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
+                 $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
+      if $debug{mg};
     return '';
   }
   my @mgchain = $sv->MAGIC;
@@ -1866,13 +1866,8 @@ sub B::CV::save {
     return svref_2object( \&Dummy_initxs )->save;
   }
 
-  # Reserve a place in svsect and xpvcvsect and record indices
+  # Reserve a place in svsect and record forward accesses. GvXPVGV(CVIX%d) = ...
   my $sv_ix = $svsect->index + 1;
-  $svsect->add("SVIX$sv_ix");
-  $svsect->debug($cv->flagspv) if $debug{flags};
-  my $xpvcv_ix = $xpvcvsect->index + 1;
-  $xpvcvsect->add("XPVCVIX$xpvcv_ix");
-
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   if ( !$$root && !$cvxsub ) {
@@ -1891,9 +1886,9 @@ sub B::CV::save {
       }
     }
   }
-
-  # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
-  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+  # Save intermediate symbol so that GvCV() doesn't recurse back to us via CvGV()
+  # This define is forwarded to the real sv below
+  $sym = savesym( $cv, "CVIX$sv_ix" );
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
@@ -1902,7 +1897,8 @@ sub B::CV::save {
   my $xsub       = 0;
   my $xsubany    = "Nullany";
   if ($$root) {
-    warn sprintf( "saving op tree for CV 0x%x, root = 0x%x\n", $$cv, $$root )
+    warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
+                  $$cv, $$root )
       if $debug{cv};
     my $ppname = "";
     if ($$gv) {
@@ -1923,8 +1919,8 @@ sub B::CV::save {
       $anonsub_index++;
     }
     $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
-    warn sprintf( "done saving op tree for CV 0x%x, name %s, root 0x%x => start=%s\n",
-      $$cv, $ppname, $$root, $startfield )
+    warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
+      $$cv, $debug{flags}?$cv->flagspv:$cv->FLAGS, $ppname, $$root, $startfield )
       if $debug{cv};
     # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
@@ -1934,15 +1930,26 @@ sub B::CV::save {
         if $debug{cv};
       $padlistsym = $padlist->save;
       warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
-        $padlistsym, $$padlist, $$cv )
+		    $padlistsym, $$padlist, $$cv )
         if $debug{cv};
-      $init->add( sprintf( "CvPADLIST(%s) = %s;", $sym, $padlistsym ) );
+      # do not record a forward for the pad only
+      $init->add( sprintf( "CvPADLIST(&sv_list[%d]) = %s;", $svsect->index + 1, $padlistsym ) );
     }
   }
   else {
     warn sprintf( "No definition for sub %s::%s (unable to autoload)\n",
       $cvstashname, $cvname ) if $verbose;
   }
+
+  # Now it is time to record the CV
+  $sv_ix = $svsect->index + 1;
+  if (!$cvforward{$sym}) { # avoid duplicates
+    $symsect->add
+      (sprintf("$sym\t&sv_list[%d]", $sv_ix )); # forward the old CVIX to the new CV
+    $cvforward{$sym}++;
+  }
+  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
   if ($PERL510) {
     my ( $pvsym, $len ) = save_hek($pv);
@@ -1959,13 +1966,12 @@ sub B::CV::save {
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL513) {
-      #$xpvcvsect->comment('STASH mg_u cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
-      $symsect->add
-	(sprintf("XPVCVIX$xpvcv_ix\tNullhv, {0}, %u, %u, %s, "
+      $xpvcvsect->comment('STASH mg_u cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
+      $xpvcvsect->add
+	(sprintf("Nullhv, {0}, %u, %u, %s, "
 		 ." {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
 		 ." (CV*)s\\_%x, %s, 0x%x, %d",
 		 $len, $len, "Nullhv",#CvSTASH later
-
 		 $startfield, $$root, "0",  #GV later
 		 "NULL", #cv_file later (now a HEK)
 		 $padlistsym,
@@ -1973,13 +1979,14 @@ sub B::CV::save {
 		 ${ $cv->OUTSIDE }, #if main_cv set later
 		 $cv->OUTSIDE_SEQ,
 		 $cv->CvFLAGS,
-		 $cv->DEPTH,
-		)
-	);
+		 $cv->DEPTH));
+      $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
+			   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
+      $svsect->debug( $cv->flagspv ) if $debug{flags};
     } else {
-      #$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
-      $symsect->add
-	(sprintf("XPVCVIX$xpvcv_ix\t{%d}, %u, %u, {%s}, {%s}, %s,"
+      $xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
+      $xpvcvsect->add
+	(sprintf("{%d}, %u, %u, {%s}, {%s}, %s,"
 		 ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
 		 ." (CV*)s\\_%x, %s, 0x%x",
 		 0, # GvSTASH later. test 29 or Test::Harness
@@ -1997,6 +2004,9 @@ sub B::CV::save {
 		 $cv->CvFLAGS
 		)
 	);
+      $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
+			   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
+      $svsect->debug( $cv->flagspv ) if $debug{flags};
     }
     my $gvstash = $gv->STASH;
     if ($$gvstash) {
@@ -2013,24 +2023,28 @@ sub B::CV::save {
     }
   }
   elsif ($PERL56) {
-    #$xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
-    $symsect->add(
-      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
-        cstring($pv), length($pv), length($pv), $cv->IVX,
-        $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
-        $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
-      )
-    );
+    $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
+    $xpvcvsect->add
+      (sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
+	       cstring($pv), length($pv), length($pv), $cv->IVX,
+	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
+	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
+	      ));
+    $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
+		 $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
+    $svsect->debug( $cv->flagspv ) if $debug{flags};
   }
   else {
-    #$xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
-    $symsect->add(
-      sprintf("XPVCVIX$xpvcv_ix\t%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-        cstring($pv),      length($pv), length($pv), $cv->IVX,
-        $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
-        $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
-      )
-    );
+    $xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
+    $xpvcvsect->add
+      (sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
+	       cstring($pv),      length($pv), length($pv), $cv->IVX,
+	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
+	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
+	      ));
+    $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
+		 $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
+    $svsect->debug( $cv->flagspv ) if $debug{flags};
   }
 
   if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
@@ -2070,11 +2084,6 @@ sub B::CV::save {
   if ($magic and $$magic) {
     $cv->save_magic; # XXX will this work?
   }
-  $symsect->add(sprintf(
-      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?', {0}':''),
-      $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
-    )
-  );
   return $sym;
 }
 
@@ -2689,7 +2698,7 @@ sub B::IO::save {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, lines, ..., type, flags");
     my $tmpl = "{0}, /*xnv_u*/\n\t0, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*IVX*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
-    $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
+    $tmpl =~ s{ /\*[^\*]+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
       sprintf($tmpl,
