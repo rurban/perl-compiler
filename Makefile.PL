@@ -31,27 +31,31 @@ WriteMakefile(
     EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
     PREREQ_PM  => {'Opcodes'  => '0',
 		   'IPC::Run' => '0',
-		  #'B'        => '1.0901'
+		   'B::Flags' => '0.02',
+                   #'B'        => '1.0901'
                   },
     'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, '
-	      . 'Reini Urban <perl-compiler@googlegroups.com>',
+	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
-        "    B::Debug:    1.12\n"
+        "    B::Debug:    1.12\n".
+        "    Opcodes: 0\n".
+        "    IPC::Run: 0\n",
        ) : ()),
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
                        {
                         "B::Debug" => "1.12",
+                        "Opcodes"  => '0',
                         "IPC::Run" => 0,
                        },
                        resources =>
                        {
                         license     => 'http://dev.perl.org/licenses/',
-                        homepage    => 'http://perl-compiler.googlecode.com',
+                        homepage    => 'http://www.perl-compiler.org',
                         bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
-                        repository  => 'http://perl-compiler.googlecode.com/svn/',
+                        repository  => 'http://perl-compiler.googlecode.com/',
                         MailingList => 'http://groups.google.com/group/perl-compiler',
                        },
                       }
