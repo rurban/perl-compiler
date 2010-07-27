@@ -178,6 +178,12 @@ EOT
   print $fh "\treturn 0;\n}\n";
 }
 
+#package B;
+#our $walkoptree_debug = 0;
+#
+#package B::OBJECT;
+#*walkoptree_debug = *B::walkoptree_debug;
+
 package B::C;
 use Exporter ();
 our %REGEXP;
@@ -3758,11 +3764,16 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       if ($arg eq 'full') {
-        $arg = 'oOcAHCMGSpW';
+        $arg = 'oOcAHCMGSpWF';
       }
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
-          B->debug(1);
+          if ($] < 5.012) {
+            B->debug(1); # XXX fails since 5.12 with
+            # Can't locate object method "walkoptree_debug" via package "B::LISTOP"
+          } else {
+            $debug{op}++;
+          }
         }
         elsif ( $arg eq "O" ) {
           $debug{op}++;
