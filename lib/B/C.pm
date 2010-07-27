@@ -1554,8 +1554,8 @@ sub B::PVMG::save {
 sub B::PVMG::save_magic {
   my ($sv) = @_;
   my $sv_flags = $sv->FLAGS;
-  warn sprintf( "saving magic for %s (0x%x) flags=0x%x  - called from %s:%s\n",
-		class($sv), $$sv, $sv_flags,
+  warn sprintf( "saving magic for %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
+		class($sv), $$sv, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "",
 		@{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{mg};
   my $pkg = $sv->SvSTASH;
@@ -3768,7 +3768,7 @@ OPTION:
       }
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
-          if ($] < 5.012) {
+          if (undef and $] < 5.012) {
             B->debug(1); # XXX fails since 5.12 with
             # Can't locate object method "walkoptree_debug" via package "B::LISTOP"
           } else {
