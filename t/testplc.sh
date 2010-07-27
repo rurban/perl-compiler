@@ -129,7 +129,7 @@ function btest {
   fi
 }
 
-ntests=39
+ntests=45
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
@@ -243,6 +243,28 @@ usere="`$PERL -e'print (($] < 5.011) ? q(use re;) : q())'`"
 tests[39]=$usere'$a=${qr//};$a=2;print ($] < 5.007?1:re::is_regexp(\$a))'
 result[39]='1'
 # => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
+# String with a null byte -- used to generate broken .c on 5.6.2 with static pvs
+tests[40]='my $var="this string has a null \\000 byte in it";print "ok";'
+result[40]='ok'
+# Shared scalar, n magic. => Don't know how to handle magic of type \156.
+usethreads="`$PERL -MConfig -e'print ($Config{useithreads} ? q(use threads;) : q())'`"
+#usethreads='BEGIN{use Config; unless ($Config{useithreads}) {print "ok"; exit}} '
+#;threads->create(sub{$s="ok"})->join;
+# not yet testing n, only P
+tests[41]=$usethreads'use threads::shared;{my $s="ok";share($s);print $s}'
+result[41]='ok'
+# Shared aggregate, P magic
+tests[42]=$usethreads'use threads::shared;my %h : shared; print "ok"'
+result[42]='ok'
+# Aggregate element, n + p magic
+tests[43]=$usethreads'use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]'
+result[43]='ok'
+# perl #72922 (5.11.4 fails with magic_killbackrefs)
+tests[44]='use Scalar::Util "weaken";my $re1=qr/foo/;my $re2=$re1;weaken($re2);print "ok" if $re3=qr/$re1/;'
+result[44]='ok'
+# test autoload and xs_init
+tests[45]='use Data::Dumper ();Data::Dumper::Dumper(\%main::);print "ok";'
+result[45]='ok'
 
 init
 
