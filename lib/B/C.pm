@@ -41,7 +41,7 @@ sub comment {
   $section->[-1]{comment};
 }
 
-# print debugging info (stringified flags) on -DF
+# add debugging info - stringified flags on -DF
 sub debug {
   my $section = shift;
   my $dbg = join( " ", @_ );
@@ -1121,7 +1121,7 @@ sub B::NULL::save {
     return savesym( $sv, "(void*)Nullsv /* XXX */" );
   }
   $svsect->add( sprintf( "0, %lu, 0x%x".($PERL510?', {0}':''), $sv->REFCNT, $sv->FLAGS ) );
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  #$svsect->debug( $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
@@ -1142,7 +1142,7 @@ sub B::UV::save {
       $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   warn sprintf( "Saving IV(UV) 0x%x to xpvuv_list[%d], sv_list[%d], called from %s:%s\n",
     $sv->UVX, $xpvuvsect->index, $svsect->index, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
     if $debug{sv};
@@ -1173,7 +1173,7 @@ sub B::IV::save {
       $xpvivsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   warn sprintf( "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
     $sv->IVX, $xpvivsect->index, $svsect->index, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
     if $debug{sv};
@@ -1206,7 +1206,7 @@ sub B::NV::save {
       $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : ''
     )
   );
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   warn sprintf( "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",
     $nv, $xpvnvsect->index, $svsect->index )
     if $debug{sv};
@@ -1274,7 +1274,7 @@ sub B::PVLV::save {
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
   }
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
 
   if ( !$B::C::pv_copy_on_grow ) {
     if ($PERL510) {
@@ -1311,7 +1311,7 @@ sub B::PVIV::save {
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
             $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   if ( defined($pv) && !$B::C::pv_copy_on_grow ) {
     if ($PERL510) {
       $init->add(
@@ -1340,25 +1340,18 @@ sub B::PVNV::save {
   } else {
     $nvx = '0' if $nvx =~ /(NAN|inf)$/i; # windows msvcrt
   }
-  if ($PERL513) {
-    $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
-    $xpvnvsect->add(
-      sprintf( "Nullhv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $ivx, $nvx) );
-    unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
-      warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
-      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
-                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
-                 # XXX pad.c: PAD_MAX = I32_MAX (4294967295)
-                 # gcc warning: this decimal constant is unsigned only in ISO C90
-                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %u;",
-                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_HIGH));
-    }
-  } elsif ($PERL510) {
+  if ($PERL510) {
     # For now the stringification works of NVX to two ints ok. But we might need
     # to store it as { low, high }.
-    $xpvnvsect->comment('NVX, cur, len, IVX');
-    $xpvnvsect->add(
-      sprintf( "{%s}, %u, %u, {%d}", $nvx, $len, $pvmax, $ivx ) );    # ??
+    if ($PERL513) {
+      $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
+      $xpvnvsect->add(
+        sprintf( "Nullhv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $ivx, $nvx) );
+    } else {
+      $xpvnvsect->comment('NVX, cur, len, IVX');
+      $xpvnvsect->add(
+        sprintf( "{%s}, %u, %u, {%d}", $nvx, $len, $pvmax, $ivx ) );
+    }
     unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
@@ -1377,7 +1370,7 @@ sub B::PVNV::save {
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
             $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   if ( defined($pv) && !$B::C::pv_copy_on_grow ) {
     if ($PERL510) {
       $init->add(
@@ -1420,7 +1413,7 @@ sub B::BM::save {
 	      ));
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
                          $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
-    $svsect->debug($sv->flagspv) if $debug{flags};
+    $svsect->debug( $sv->flagspv ) if $debug{flags};
     $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) )
       unless $B::C::pv_copy_on_grow;
   }
@@ -1472,7 +1465,7 @@ sub B::PV::save {
       $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
     }
   }
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
@@ -1526,7 +1519,7 @@ sub B::PVMG::save {
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
-  $svsect->debug($sv->flagspv) if $debug{flags};
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
   if ( !$B::C::pv_copy_on_grow ) {
     # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
@@ -1691,7 +1684,7 @@ sub B::RV::save {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is not computable at load time
     $svsect->add( sprintf( "0, %lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
-    $svsect->debug($sv->flagspv) if $debug{flags};
+    $svsect->debug( $sv->flagspv ) if $debug{flags};
     $init->add( sprintf( "sv_list[%d].sv_u.svu_rv = (SV*)%s;\n", $svsect->index, $rv ) );
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
@@ -1726,7 +1719,7 @@ sub B::RV::save {
         $xrvsect->index, $sv->REFCNT, $sv->FLAGS
       )
     );
-    $svsect->debug($sv->flagspv) if $debug{flags};
+    $svsect->debug( $sv->flagspv ) if $debug{flags};
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
 }
