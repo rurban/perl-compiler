@@ -47,7 +47,7 @@ CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
 # rest. -DALLOW_PERL_OPTIONS for -Dtlv
-CCMD="$PERL $Mblib script/cc_harness -d -g3 -DALLOW_PERL_OPTIONS"  
+CCMD="$PERL $Mblib script/cc_harness -g3 -DALLOW_PERL_OPTIONS"  
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
@@ -330,11 +330,14 @@ do
   if [ "$opt" = "k" ]; then KEEP=1; fi
   if [ "$opt" = "E" ]; then CPP=1; fi
   if [ "$opt" = "h" ]; then help; exit; fi
-  # -D options: u,-q for quiet, no -D for verbose
+  # -D options: u,-q for quiet, no -D for verbose, -D- for no gcc warnings
   if [ "$opt" = "D" ]; then
     OCMD="$PERL $Mblib -MO=C,-D${OPTARG},"
     if [ $BASE = "testcc.sh" ]; then 
         OCMD="$PERL $Mblib -MO=CC,-D${OPTARG},"
+    fi
+    if [ -z "${OPTARG/-/}" ]; then
+	CCMD="$PERL $Mblib script/cc_harness -d -g3 -DALLOW_PERL_OPTIONS"  
     fi
   fi
   # -B dynamic or -B static
