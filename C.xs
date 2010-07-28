@@ -1,3 +1,4 @@
+/* This XS part is unused since B-C-1.18 for all perls > 5.7 */
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
