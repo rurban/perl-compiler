@@ -386,7 +386,8 @@ sub cc_harness {
 
 # Where Perl is, and which include path to give it.
 sub yclept {
-    my $command = "$^X ";
+    my $command = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+    $command .= " ";
 
     # DWIM the -I to be Perl, not C, include directories.
     if (opt(I) && $Backend eq "Bytecode") {
@@ -398,8 +399,10 @@ sub yclept {
             }
         }
     }
-
-    $command .= "-I$_ " for @INC;
+    for (@INC) {
+      my $inc = m/\s/ ? qq{"$_"} : $_;
+      $command .= "-I$inc ";
+    }
     return $command;
 }
 
