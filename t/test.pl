@@ -476,7 +476,18 @@ sub run_cc_test {
                 unlink ($test, $cfile, $exe, @obj) unless $keep_c;
                 return 1;
             } else {
-                print "not ok $cnt $todo wanted: \"$expect\", got: \"$out\"\n";
+                # cc test failed, double check uncompiled
+                $got = run_perl(verbose  => $ENV{TEST_VERBOSE}, # for debugging
+                                nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
+                                stderr   => 1, # to capture the "ccode.pl syntax ok"
+                                timeout  => 10,
+                                progfile => $test);
+                if (! $? and $got =~ /^$expect$/) {
+                    print "not ok $cnt $todo wanted: \"$expect\", got: \"$out\"\n";
+                } else {
+                    print "ok $cnt # skip also fails uncompiled\n";
+                    return 1;
+                }
                 unlink ($test, $cfile, $exe, @obj) unless $keep_c_fail;
                 return 0;
             }
