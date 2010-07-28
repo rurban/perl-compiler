@@ -18,6 +18,6 @@ prepare_c_tests();
 
 my @todo  = todo_tests_default("cc");
 # skip core dumps, like custom sort or runtime labels
-my @skip = (18,21,25,29,30);
+my @skip = (18,21,24,25,29,30);
 
 run_c_tests("CC", \@todo, \@skip);

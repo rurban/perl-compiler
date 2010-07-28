@@ -19,6 +19,6 @@ my $ITHREADS  = ($Config{useithreads});
 
 my @todo  = todo_tests_default("cc_o1");
 # skip core dump causing known limitations, like custom sort or runtime labels
-my @skip = (18,21);
+my @skip = (18,21,24);
 
 run_c_tests("CC,-O1", \@todo, \@skip);

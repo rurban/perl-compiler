@@ -537,30 +537,33 @@ sub todo_tests_default {
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
         @todo = (15,41..44)   if $] < 5.007;
         # on cygwin 29 passes
-        @todo = (29,39,41,44) if $] >= 5.010;
-        @todo = (15,29,39,44) if $] >= 5.010 and !$ITHREADS;
+        @todo = (29,39,41,44)  if $] >= 5.010;
+        @todo = (15,29,39,44)  if $] >= 5.010 and !$ITHREADS;
+        push @todo, (27)       if $] >= 5.012 and $ITHREADS;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
+
         if ($what eq 'c_o4') {
             push @todo, (10,12,19,25);
         }
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        @todo = (18,21,25,29,30,39,41); #5.8.9
+        @todo = (18,21,24,25,29,30,39); #5.8.9
         push @todo, (15,41..44)           if $] < 5.007;
         @todo    = (18,21,25,29,30,39,41) if $] >= 5.010;
         @todo    = (10,16,18,21,25,29,30,39,41) if $] >= 5.010 and $what eq 'cc_o2';
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (44);
+        push @todo, (3,4,27,42,43) if $] >= 5.012 and $ITHREADS;
         push @todo, (103) if $] >= 5.013002;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
 
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }
     push @todo, (41,42,43) if !$ITHREADS;
-    push @todo, (32)       if $] >= 5.011003;
     push @todo, (45)       if $] >= 5.007;
+    push @todo, (32)       if $] >= 5.011003;
     return @todo;
 }
 
