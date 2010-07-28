@@ -1977,7 +1977,7 @@ sub B::CV::save {
 		 $padlistsym,
 		 ${ $cv->OUTSIDE }, #if main_cv set later
 		 $cv->OUTSIDE_SEQ,
-		 $$gv and $cv->CvFLAGS & 0x400 ? 0 : $cv->CvFLAGS, # otherwise we cannot set the GV
+		 ($$gv and $cv->CvFLAGS & 0x400) ? 0 : $cv->CvFLAGS, # otherwise we cannot set the GV
 		 $cv->DEPTH));
       $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
 			   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
