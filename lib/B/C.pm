@@ -1977,7 +1977,7 @@ sub B::CV::save {
 		 $padlistsym,
 		 ${ $cv->OUTSIDE }, #if main_cv set later
 		 $cv->OUTSIDE_SEQ,
-		 $$gv ? $cv->CvFLAGS & ~0x400 : $cv->CvFLAGS, # otherwise we cannot set the GV
+		 $$gv and $cv->CvFLAGS & 0x400 ? 0 : $cv->CvFLAGS, # otherwise we cannot set the GV
 		 $cv->DEPTH));
       $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
 			   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
@@ -2054,15 +2054,17 @@ sub B::CV::save {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
-    if ($] >= 5.013003) {
+    if ($PERL513) {
+      $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
       # since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted)
       # assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
+      # we init with CvFLAGS = 0 and set it later, as successfully done in the Bytecode compiler
       if ($cv->CvFLAGS & 0x0400) { # CVf_CVGV_RC
         warn sprintf( "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
                       $cv->FLAGS, $debug{flags}?$cv->flagspv:"", $cv->CvFLAGS & ~0x400)
           if $debug{cv};
+        $init->add( sprintf( "CvFLAGS((CV*)%s) = %u;", $sym, $cv->CvFLAGS ) );
       }
-      $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) )
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
     }
