@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.26
+# B::C::VERSION = 1.27
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin
@@ -103,7 +103,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 96 / 100 modules tested with B-C-1.26 - perl-5.010000-nt
+# 96 / 100 modules tested with B-C-1.27 - perl-5.010000-nt
 # pass  83 /  96 (86.5%)
 # fail  13 /  96 (13.5%)
 # todo   9 /  13 (69.2%)

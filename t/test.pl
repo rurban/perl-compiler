@@ -538,7 +538,7 @@ sub todo_tests_default {
         @todo = (15,41..44)   if $] < 5.007;
         # on cygwin 29 passes
         @todo = (29,39,41,44) if $] >= 5.010;
-        @todo = (15,39,44)    if $] >= 5.010 and !$ITHREADS;
+        @todo = (15,29,39,44) if $] >= 5.010 and !$ITHREADS;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
         if ($what eq 'c_o4') {
             push @todo, (10,12,19,25);
