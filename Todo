@@ -1,5 +1,7 @@
 * Fixes
 
+ccode9.c broke with r432 (new CVf_ANON check) for all perls (svn-bisect). 
+
 detect &utf8::is_utf8 (Carp), re::* and more internals
 fix dl_init() e.g. t/testm.sh File::Temp fails to init IO, threads also
 'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
