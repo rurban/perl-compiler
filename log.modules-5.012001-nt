@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.26
+# B::C::VERSION = 1.27
 # perlversion = 5.012001-nt
 # path = /usr/local/bin/perl5.12.1-nt
 # platform = linux
@@ -14,14 +14,14 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-pass Test::Simple #TODO >= 5.10
+skip Test::Simple fails $] >= 5.011004
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO >= 5.007
+skip File::Temp fails $] >= 5.011004
 pass ExtUtils::Install #TODO > 5.010
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -50,7 +50,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-fail Attribute::Handlers #TODO generally
+skip Attribute::Handlers fails $] >= 5.011004
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings #TODO >= 5.10
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.26 - perl-5.012001-nt
-# pass  96 / 100 (96.0%)
-# fail   4 / 100 (4.0%)
-# todo  11 /   4 (275.0%)
-# skip   0 / 100 (0.0% not installed)
+# 97 / 100 modules tested with B-C-1.27 - perl-5.012001-nt
+# pass  95 /  97 (97.9%)
+# fail   2 /  97 (2.1%)
+# todo   8 /   2 (400.0%)
+# skip   3 / 100 (3.0% not installed)
