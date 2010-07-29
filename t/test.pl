@@ -546,9 +546,8 @@ sub todo_tests_default {
         push @todo, (27)       if $] >= 5.012 and $ITHREADS;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
 
-        if ($what eq 'c_o4') {
-            push @todo, (10,12,19,25);
-        }
+	push @todo, (25) if $what =~ /c_o/ and $^O eq 'MSWin32';
+	push @todo, (10,12,19,27)  if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.27
+# B::C::VERSION = 1.27 r471
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-fail ExtUtils::Install
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.27 - perl-5.008009d-nt
-# pass  91 / 100 (91.0%)
-# fail   9 / 100 (9.0%)
-# todo   4 /   9 (44.4%)
+# pass  93 / 100 (93.0%)
+# fail   7 / 100 (7.0%)
+# todo   4 /   7 (57.1%)
 # skip   0 / 100 (0.0% not installed)
