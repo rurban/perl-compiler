@@ -3,10 +3,17 @@
 	Copyright (c) 1996, 1997, Malcolm Beattie
 	Copyright (c) 2008, 2009, 2010 Reini Urban
 
-Releases are at http://search.cpan.org/dist/B-C/
-
-Code is at http://code.google.com/p/perl-compiler/
+Homepage: http://www.perl-compiler.org/
+Releases: http://search.cpan.org/dist/B-C/
+Code: http://code.google.com/p/perl-compiler/
   svn checkout http://perl-compiler.googlecode.com/svn/trunk/ perl-compiler
+
+INSTALL
+
+cpan B::C
+
+On strawberry I needed
+  perl Makefile.PL FIXIN="perl -S pl2bat.bat"
 
 USAGE
 
@@ -16,8 +23,7 @@ suite and 97% of the top100 modules.
 
 In the case of the CC backend, any failures are all
 due to differences and/or known bugs documented below. See
-the file TESTS.  In the following examples, you'll need to
-replace "perl" by
+the file TESTS.
 
 (1) To compile perl program foo.pl with the C backend, do
 
@@ -240,9 +246,11 @@ Deprecated features
 
 STATUS
 
+5.13 is not yet fully supported. 
 C works fine, best with non-threaded perls. 3-4% fails on the top100 modules.
 Bytecode fails on >= 5.10 (in work)
 CC fails on some tests. See Todo.
+The Bytecode compiler is disabled for 5.6.2, use the default instead.
 
 See STATUS for details.
 
@@ -314,7 +322,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2010-02-03
+2010-07-29
 
 Malcolm Beattie
 2 September 1996
