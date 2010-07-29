@@ -90,7 +90,10 @@ if ($log) {
   close LOG;
 }
 unless (is_subset) {
-  log_diag("B::C::VERSION = $B::C::VERSION");
+  my $svnrev = `svn info|grep Revision:`;
+  chomp $svnrev;
+  $svnrev =~ s/Revision:\s+/r/;
+  log_diag("B::C::VERSION = $B::C::VERSION $svnrev");
   log_diag("perlversion = $perlversion");
   log_diag("path = $^X");
   log_diag("platform = $^O");
@@ -134,15 +137,19 @@ for my $module (@modules) {
       close F or die;
 
       my $module_passed = 1;
+      my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
       foreach my $opt (@opts) {
         # my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null";
         $opt .= " $keep" if $keep;
-
-        my $cmd = "$^X -Mblib blib/script/perlcc $opt -r";
-        my ($result, $out, $err) = run_cmd("$cmd mod.pl", 600);
+        # XXX TODO ./a often hangs but perlcc not
+        my @cmd = grep {!/^$/} $runperl,"-Mblib","blib/script/perlcc",$opt,"-r","mod.pl";
+        my $cmd = "$runperl -Mblib blib/script/perlcc $opt -r";
+        my ($result, $out, $err) = run_cmd(\@cmd, 120); # in secs
         ok(-e $binary_file && -s $binary_file > 20,
-           "$module_count: use $module  generates non-zero binary") or $module_passed = 0;
-        is($result, 0,  "$module_count: use $module $opt exits with 0") or $module_passed = 0;
+           "$module_count: use $module  generates non-zero binary")
+          or $module_passed = 0;
+        is($result, 0,  "$module_count: use $module $opt exits with 0")
+          or $module_passed = 0;
         like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output")
           or $module_passed = 0;
         log_pass($module_passed ? "pass" : "fail", $module, $TODO);
@@ -164,7 +171,7 @@ for my $module (@modules) {
       if ($do_test) {
         TODO: {
           local $TODO = 'all module tests';
-          `$^X -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc("$module")"`;
+          `$runperl -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc("$module")"`;
         }
       }
       unlink ("mod.pl", 'a', 'a.out');

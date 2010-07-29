@@ -342,18 +342,23 @@ sub run_cmd {
     my ($cmd, $timeout) = @_;
 
     my ($result, $out, $err) = (0, '', '');
-    if ( ! $have_IPC_Run ) {
+    if ( ! defined $IPC::Run::VERSION ) {
 	local $@;
+	if (ref($cmd) eq 'ARRAY') {
+            $cmd = join " ", @$cmd;
+        }
 	# No real way to trap STDERR?
-	$cmd .= " 2>&1" if($^O !~ /^MSWin32|VMS/);
+        $cmd .= " 2>&1" if ($^O !~ /^MSWin32|VMS/);
 	$out = `$cmd`;
 	$result = $?;
     }
     else {
 	my $in;
-	my @cmd = split /\s+/, $cmd;
+        # XXX TODO this fails with spaces in path. pass and check ARRAYREF then
+	my @cmd = ref($cmd) eq 'ARRAY' ? @$cmd : split /\s+/, $cmd;
 
 	eval {
+            # XXX TODO hanging or stacktrace'd children are not killed on cygwin
 	    my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
 	    if ($timeout) {
 		my $secs10 = $timeout/10;
