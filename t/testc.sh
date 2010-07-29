@@ -40,10 +40,6 @@ else
         OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
     fi
 fi
-OCMDO1="$(echo $OCMD|sed -e s/C,-D/C,-O1,-D/)"
-OCMDO2="$(echo $OCMD|sed -e s/C,-D/C,-O2,-D/)"
-OCMDO3="$(echo $OCMD|sed -e s/C,-D/C,-O3,-D/)"
-OCMDO4="$(echo $OCMD|sed -e s/C,-D/C,-O4,-D/)"
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
@@ -76,17 +72,12 @@ function fail {
 function runopt {
     o=$1
     optim=$2
+    OCMDO1="$(echo $OCMD|sed -e s/C,-D/C,-O$optim,-D/)"
     suff="_o${optim}"
     if [ "$optim" == "0" ]; then suff=""; fi
     rm ${o}${suff} ${o}${suff}.c 2> /dev/null
-    if [ $optim == 1 ]; then CMD=$OCMDO1
-     else if [ $optim == 2 ]; then CMD=$OCMDO2
-      else if [ $optim == 3 ]; then CMD=$OCMDO3
-       else if [ $optim == 4 ]; then CMD=$OCMDO4
-        else CMD=$OCMD
-       fi
-      fi
-     fi
+    if [ $optim -lt 5 ]; then CMD=$OCMDO1
+    else CMD=$OCMD
     fi
     vcmd ${CMD}-o${o}${suff}.c $o.pl
     test -z $CPP || vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
