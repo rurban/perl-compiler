@@ -2041,8 +2041,8 @@ sub B::CV::save {
 	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
 	      ));
-    $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
-		 $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
+    $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x",
+		 $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
     $svsect->debug( $cv->flagspv ) if $debug{flags};
   }
 
@@ -2105,7 +2105,8 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  warn sprintf( "  GV $sym type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), $gv->FLAGS )
+  warn sprintf( "  GV $sym type=%d, flags=0x%x%s\n", B::SV::SvTYPE($gv),
+		$gv->FLAGS, $debug{flags}?"(".$gv->flagspv.")":"")
     if $debug{gv} and !$PERL56; # B::SV::SvTYPE not with 5.6
   if ($PERL510 and $gv->FLAGS & 0x40000000) { # SVpbm_VALID
     warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
