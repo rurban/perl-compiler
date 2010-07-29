@@ -1979,9 +1979,6 @@ sub B::CV::save {
 		 $cv->OUTSIDE_SEQ,
 		 ($$gv and $cv->CvFLAGS & 0x400) ? 0 : $cv->CvFLAGS, # otherwise we cannot set the GV
 		 $cv->DEPTH));
-      $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
-			   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
-      $svsect->debug( $cv->flagspv ) if $debug{flags};
     } else {
       $xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
       $xpvcvsect->add
@@ -2003,10 +2000,10 @@ sub B::CV::save {
 		 $cv->CvFLAGS
 		)
 	);
-      $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x".($PERL510?', {0}':''),
-			   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
-      $svsect->debug( $cv->flagspv ) if $debug{flags};
     }
+    $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
+			 $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
+    $svsect->debug( $cv->flagspv ) if $debug{flags};
     my $gvstash = $gv->STASH;
     if ($$gvstash) {
       # do not use GvSTASH because with DEBUGGING it checks for GP but
