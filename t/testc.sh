@@ -6,6 +6,7 @@ function help {
   echo "t/testc.sh [OPTIONS] [1-$ntests]"
   echo " -D<debugflags>     for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
   echo " -O<0-4>            optimization level"
+  echo " -f<opt>            special optimization"
   echo " -B<static|dynamic> pass to cc_harness"
   echo " -c                 continue on errors"
   echo " -k                 keep temp. files on PASS"
@@ -310,8 +311,8 @@ result[103]='B::PV'
 init
 
 # 
-# getopts for -q -k -E -Du,-q -v -O2, -a -c
-while getopts "hqackoED:B:O:" opt
+# getopts for -q -k -E -Du,-q -v -O2, -a -c -fro-inc
+while getopts "hqackoED:B:O:f:" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
@@ -345,6 +346,9 @@ do
     CCMD="$PERL $Mblib script/cc_harness -d -g3 -B${OPTARG} -DALLOW_PERL_OPTIONS"
   fi
   if [ "$opt" = "O" ]; then OPTIM="$OPTARG"; fi
+  if [ "$opt" = "f" ]; then
+    OCMD=$(echo $OCMDO1|sed -e "s/,-O1,/,-f$OPTARG,/") 
+  fi
   if [ "$opt" = "a" ]; then # replace -Du, by -Do
     OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')" 
   fi
