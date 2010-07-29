@@ -3,19 +3,21 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.27	2010-07-28 rurban
-	Fixed 1.26 anonsub regressions
+1.27	2010-07-29 rurban
+	Fixed 1.26 CV regressions for 5.8 and 5.10
 
 	* C.pm: add -DF print stringified sv and op flags.
 	fixed xpvio off-by-one error for 5.10 (test 29)
 	rewrote XPVCV forwards: 1. only the SV is now forwarded, not the struct.
-	  2. no duplicate SVs, the forward is just a link to one SV (#define CVIX)
+	  2. no duplicate SVs, the CV forward is just a link to one SV (#define CVIX)
 	removed wrong CVf_ANON check causing CV failures (test 9,10,12). 5.13.3 still failing
-	* Bytecode.pm (1.08): removed wrong CVf_ANON check causing CV failures (test 9,10,12)
+	fixed CV svsect for 5.8 and 5.10
+	* Bytecode.pm (1.08): removed wrong CVf_ANON check causing CV failures (test 9,10,12,...)
 	* t/test.pl, t/bytecode.t: double check failing tests if it works uncompiled
 	* t/testc.sh: add -D- for no gcc warnings
 	* t/testm.sh: add -D<args> flags for compiler debugging and link with -g
 	* t/c_argv.t, script/perlcc: properly quote spaces in path of perl and `cwd`/blib
+	* t/modules.t: add svn rev to B::C::Version
 
 1.26	2010-07-26 rurban
 	Start of 5.14 support, CVs broken.
