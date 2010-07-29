@@ -560,7 +560,7 @@ sub todo_tests_default {
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (44);
-        push @todo, (3,4,27,42,43) if $] >= 5.012 and $ITHREADS;
+        push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (103) if $] >= 5.013002;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
 
