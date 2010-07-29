@@ -96,7 +96,8 @@ unless (is_subset) {
   log_diag("B::C::VERSION = $B::C::VERSION $svnrev");
   log_diag("perlversion = $perlversion");
   log_diag("path = $^X");
-  log_diag("platform = $^O");
+  my $bits = 8 * $Config{ptrsize};
+  log_diag("platform = $^O $bits"."bit");
   log_diag($Config{'useithreads'} ? "threaded perl" : "non-threaded perl");
 }
 
