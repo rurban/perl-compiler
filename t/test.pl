@@ -548,6 +548,10 @@ sub todo_tests_default {
         push @todo, (15,25,42..43)       if $] >= 5.013 and $ITHREADS;
 
 	push @todo, (11)  if $what =~ 'c_o[234]';
+        push @todo, (6,8..10,16,21,24..26,29..31,35,42,43)
+	  if $what =~ 'c_o[234]' and $] >= 5.010 and $] < 5.013 and $ITHREADS;
+        push @todo, (9,10,16,21,25,26,30,31)
+	  if $what =~ 'c_o[234]' and $] >= 5.010 and $] < 5.013 and !$ITHREADS;
 	push @todo, (12,25,28)  if $what =~ 'c_o[234]' and $] >= 5.013002;
 	push @todo, (25) if $what =~ /c_o/ and $^O eq 'MSWin32';
 	push @todo, (10,12,19,25,27)  if $what eq 'c_o4';
@@ -562,7 +566,7 @@ sub todo_tests_default {
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (44);
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
-        push @todo, (15,103) if $] >= 5.012001;
+        push @todo, (15,103) if $] >= 5.010;
         push @todo, (6,8..10,16,21,23,24,26,30,31,35,101) if $] >= 5.013002; #CV broken
 
         push @todo, (10,16) if $what eq 'cc_o2';
