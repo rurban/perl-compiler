@@ -533,7 +533,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (39); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (15,39,44); # 8,14-16 fail on 5.00505 (max 20 then)
     if ($what =~ /^c(|_o[1-4])$/) {
         @todo     = (39)      if !$ITHREADS;
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
@@ -547,13 +547,14 @@ sub todo_tests_default {
         push @todo, (6,8..10,16,21,23,24,26,30,31,35) if $] >= 5.013002; #CV broken
         push @todo, (15,25,42..43)       if $] >= 5.013 and $ITHREADS;
 
+	push @todo, (11)  if $what =~ 'c_o[234]';
 	push @todo, (12,25,28)  if $what =~ 'c_o[234]' and $] >= 5.013002;
 	push @todo, (25) if $what =~ /c_o/ and $^O eq 'MSWin32';
-	push @todo, (10,12,19,27)  if $what eq 'c_o4';
+	push @todo, (10,12,19,25,27)  if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        @todo = (18,21,24,25,29,30,39); #5.8.9
+        @todo = (11,18,21,24,25,29,30,39,103); #5.8.9
         push @todo, (15,41..45)           if $] < 5.007;
         @todo    = (18,21,25,29,30,39,41) if $] >= 5.010;
         @todo    = (10,16,18,21,25,29,30,39,41) if $] >= 5.010 and $what eq 'cc_o2';
@@ -564,6 +565,7 @@ sub todo_tests_default {
         push @todo, (15,103) if $] >= 5.012001;
         push @todo, (6,8..10,16,21,23,24,26,30,31,35,101) if $] >= 5.013002; #CV broken
 
+        push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }
     push @todo, (41,42,43) if !$ITHREADS;
