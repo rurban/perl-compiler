@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.27
+# B::C::VERSION = 1.27 r479
 # perlversion = 5.013003-nt
 # path = /usr/local/bin/perl5.13.3-nt
-# platform = linux
+# platform = linux 64bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 97 / 100 modules tested with B-C-1.27 - perl-5.013003-nt
-# pass  93 /  97 (95.9%)
-# fail   4 /  97 (4.1%)
-# todo   9 /   4 (225.0%)
+# pass  94 /  97 (96.9%)
+# fail   3 /  97 (3.1%)
+# todo   9 /   3 (300.0%)
 # skip   3 / 100 (3.0% not installed)
