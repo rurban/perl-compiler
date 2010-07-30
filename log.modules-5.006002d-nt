@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.27 r476
+# B::C::VERSION = 1.27 r486
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2
 # platform = cygwin 32bit
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker #TODO < 5.007
+fail ExtUtils::MakeMaker #TODO generally
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -24,7 +24,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+fail ExtUtils::CBuilder #TODO < 5.007
 skip ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+pass LWP #TODO generally
 skip Storable
 pass base
 pass List::MoreUtils
@@ -56,7 +56,7 @@ pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 skip Params::Validate
-fail Sub::Name
+fail Sub::Name #TODO < 5.007
 skip Filter::Util::Call
 skip Algorithm::C3
 skip Class::C3
@@ -106,5 +106,5 @@ skip Template::Stash
 # 78 / 100 modules tested with B-C-1.27 - perl-5.006002d-nt
 # pass  72 /  78 (92.3%)
 # fail   6 /  78 (7.7%)
-# todo   2 /   6 (33.3%)
+# todo   5 /   6 (83.3%)
 # skip  22 / 100 (22.0% not installed)

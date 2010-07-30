@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.27 r476
+# B::C::VERSION = 1.27 r486
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
+pass ExtUtils::MakeMaker #TODO generally
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+pass LWP #TODO generally
 pass Storable
 pass base
 pass List::MoreUtils
@@ -106,5 +106,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.27 - perl-5.008009d-nt
 # pass  93 / 100 (93.0%)
 # fail   7 / 100 (7.0%)
-# todo   4 /   7 (57.1%)
+# todo   6 /   7 (85.7%)
 # skip   0 / 100 (0.0% not installed)
