@@ -13,9 +13,11 @@
 	removed wrong CVf_ANON check causing CV failures (test 9,10,12). 5.13.3 still failing
 	fixed CV svsect for 5.8 and 5.10
 	* Bytecode.pm (1.08): removed wrong CVf_ANON check causing CV failures (test 9,10,12,...)
+	* perlcc (2.08): added --time, support vprint -1
 	* t/test.pl, t/bytecode.t: double check failing tests if it works uncompiled
 	* t/testc.sh: add -D- for no gcc warnings
 	* t/testm.sh: add -D<args> flags for compiler debugging and link with -g
+	added -T for perlcc --time
 	* t/c_argv.t, script/perlcc: properly quote spaces in path of perl and `cwd`/blib
 	* t/modules.t: add svn rev to B::C::Version
 
