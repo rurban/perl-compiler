@@ -338,7 +338,7 @@ do
   fi
   if [ "$opt" = "O" ]; then OPTIM="$OPTARG"; fi
   if [ "$opt" = "f" ]; then
-    OCMD=$(echo $OCMDO1|sed -e "s/,-O1,/,-f$OPTARG,/") 
+    OCMD="$(echo $OCMD|sed -e "s/C,/C,-f$OPTARG,/")"
   fi
   if [ "$opt" = "a" ]; then # replace -Du, by -Do
     OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')" 
