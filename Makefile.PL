@@ -32,6 +32,7 @@ WriteMakefile(
     PREREQ_PM  => {'Opcodes'  => '0',
 		   'IPC::Run' => '0',
 		   'B::Flags' => '0.02',
+		   'Time::HiRes' => '0',
                    #'B'        => '1.0901'
                   },
     'AUTHOR'   => 'Malcolm Beattie <mbeattie@sable.ox.ac.uk>, '
