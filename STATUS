@@ -153,9 +153,9 @@ TODO for B::C
 Fix CC cc_queue sort 18 ccpp
 
 DONE:
-mark a package which is autoloaded from XS
+fixed xpvio off-by-one error for 5.10 (test 29)
 
-Check CVv_ANON when setting cv->GV. Fixes anon subs
+mark a package which is autoloaded from XS
 
 fixed forbidden REGEXP IVX/NVX access since 5.12
 

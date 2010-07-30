@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.27	2010-07-29 rurban
+1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10
 
 	* C.pm: add -DF print stringified sv and op flags.
