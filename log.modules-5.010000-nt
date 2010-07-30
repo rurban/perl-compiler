@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.27
+# B::C::VERSION = 1.27 r476
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
-# platform = cygwin
+# platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs

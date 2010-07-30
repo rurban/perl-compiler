@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.27 r471
+# B::C::VERSION = 1.27 r476
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2
-# platform = cygwin
+# platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder
 skip ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 78 / 100 modules tested with B-C-1.27 - perl-5.006002d-nt
-# pass  71 /  78 (91.0%)
-# fail   7 /  78 (9.0%)
-# todo   2 /   7 (28.6%)
+# pass  72 /  78 (92.3%)
+# fail   6 /  78 (7.7%)
+# todo   2 /   6 (33.3%)
 # skip  22 / 100 (22.0% not installed)
