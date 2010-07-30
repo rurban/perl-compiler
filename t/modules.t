@@ -90,7 +90,7 @@ if ($log) {
   close LOG;
 }
 unless (is_subset) {
-  my $svnrev;
+  my $svnrev = "";
   if (-d '.svn') {
     $svnrev = `svn info|grep Revision:`;
     chomp $svnrev;
@@ -154,6 +154,7 @@ for my $module (@modules) {
           or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0")
           or $module_passed = 0;
+	$err =~ s/^Using .+blib\n//m if $] < 5.007;
         like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output")
           or $module_passed = 0;
         log_pass($module_passed ? "pass" : "fail", $module, $TODO);
@@ -257,14 +258,29 @@ sub is_todo {
                namespace::clean DateTime::Locale DateTime
                Template::Stash
               )) {
-      return 'with useithreads' if $_ eq $module;
+      return 'with threads' if $_ eq $module;
+    }
+    if ($] >= 5.010 and $] < 5.012) {
+      foreach(qw(
+                 Class::Accessor Class::MOP
+                )) {
+        return '5.10 with threads' if $_ eq $module;
+      }
     }
   } else {
     if ($] >= 5.010 and $] < 5.012) {
       foreach(qw(
                  IO ExtUtils::Install Test::Tester Test::Deep Path::Class
+		 Scalar::Util
                 )) {
-        return '5.10 without ithreads' if $_ eq $module;
+        return '5.10 without threads' if $_ eq $module;
+      }
+    }
+    if ($] >= 5.013) {
+      foreach(qw(
+                 DBI
+                )) {
+        return '5.13 without threads' if $_ eq $module;
       }
     }
   }

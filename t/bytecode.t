@@ -56,6 +56,7 @@ my @todo = (27,44,33,39);
 pop @todo if $] > 5.011003; # 39 passes on 5.11.3
 push @todo, (32) if $] > 5.011003; # entertry still fails with 5.11.4
 push @todo, (42,43) if $] > 5.011003 and $] < 5.013;
+push @todo, (42) if $ITHREADS and $] == 5.010001;
 push @todo, (41..43) if !$ITHREADS;
 my @skip = (); #(20,27,29) if $] >= 5.010;
 push @skip, (41..43) if !$ITHREADS;
