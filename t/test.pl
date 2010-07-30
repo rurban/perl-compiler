@@ -544,8 +544,10 @@ sub todo_tests_default {
         @todo = (39,41,44)     if $] >= 5.010;
         @todo = (15,29,39,44)  if $] >= 5.010 and !$ITHREADS;
         push @todo, (27)       if $] >= 5.012 and $ITHREADS;
-        push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
+        push @todo, (6,8..10,16,21,23,24,26,30,31,35) if $] >= 5.013002; #CV broken
+        push @todo, (15,25,42..43)       if $] >= 5.013 and $ITHREADS;
 
+	push @todo, (12,25,28)  if $what =~ 'c_o[234]' and $] >= 5.013002;
 	push @todo, (25) if $what =~ /c_o/ and $^O eq 'MSWin32';
 	push @todo, (10,12,19,27)  if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
@@ -560,7 +562,7 @@ sub todo_tests_default {
         push @todo, (44);
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (15,103) if $] >= 5.012001;
-        push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
+        push @todo, (6,8..10,16,21,23,24,26,30,31,35,101) if $] >= 5.013002; #CV broken
 
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }

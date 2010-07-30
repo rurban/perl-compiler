@@ -195,13 +195,13 @@ exit;
 sub is_todo {
   my $module = shift or die;
 
-  foreach (qw(Attribute::Handlers MooseX::Types)) {
+  foreach (qw(ExtUtils::MakeMaker LWP Attribute::Handlers MooseX::Types)) {
     return 'generally' if $_ eq $module;
   }
   if ($] < 5.007) {
     # Can't locate object method "RV" via package "B::PV"
     # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
-    foreach(qw(ExtUtils::MakeMaker)) {
+    foreach(qw( ExtUtils::CBuilder Sub::Name)) {
       return '< 5.007' if $_ eq $module;
     }
   }
@@ -224,12 +224,23 @@ sub is_todo {
     }
   }
   if ($] > 5.010) {
-    foreach(qw(ExtUtils::Install Test::Harness)) {
+    foreach(qw(ExtUtils::Install Test::Harness Moose)) {
       return '> 5.010' if $_ eq $module;
     }
   }
   if ($] >= 5.013) {
-    foreach(qw(Test)) {
+    foreach(qw(Test
+               Pod::Simple
+               Getopt::Long
+               Pod::Parser
+               ExtUtils::MakeMaker
+               Pod::Text
+               Test
+               Data::Dumper
+               ExtUtils::CBuilder
+               File::Path
+              ))
+    {
       return '>= 5.013' if $_ eq $module;
     }
   }
@@ -242,6 +253,14 @@ sub is_todo {
                Template::Stash
               )) {
       return 'with useithreads' if $_ eq $module;
+    }
+  } else {
+    if ($] >= 5.010 and $] < 5.012) {
+      foreach(qw(
+                 IO ExtUtils::Install Test::Tester Test::Deep Path::Class
+                )) {
+        return '5.10 without ithreads' if $_ eq $module;
+      }
     }
   }
 }

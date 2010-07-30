@@ -19,16 +19,19 @@ Open Problems for B::C:
     test 15
 5.10:
     Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
+        working on -fno-destruct instead
 5.12:
     None. Completely same results as 5.10
 5.14:
-    CV broken
+    tests 6,8..10,16,21,23,24,26,30,31,35 (CV's)
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
 TEST STATUS
 -----------
 Tested on cygwin1.7, centos5, debian4, debian5, freebsd7, solaris10, openbsd38
+Not so regurarily on centos4, windows7, strawberry-5.10.1, activeperl-5.10.1
+
 List of failed tests.
 
 CORE (old)
@@ -93,7 +96,7 @@ cc_o1-2: 	3,7
 freebsd 5.10.1  c+cc fails on 28 generally, cc passed 12 
 freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
 
-AS 5.8 MSVC6:
+AP 5.8 MSVC6:
 t/cc*   12 (similar to 5.10 nt?) (skipped)
 t/o     5,9 (skipped)
 t/stash 1   (skipped)
@@ -111,11 +114,11 @@ t/cc_o2         10,16,18,21,25..27,30
 
 5.10.1: 					| non-threaded
 t/bytecode 	ok				| ok
-t/c 		ok				| ok
-t/c_o1          ok				| ok
-t/c_o2          ok				| ok
-t/c_o3          ok				| ok
-t/c_o4          10,12,19,25
+t/c 		39,41,44			| 15,29,39,44
+t/c_o1          -"-				|  -"-
+t/c_o2          -"-				|  -"-
+t/c_o3          -"- 				|  -"-
+t/c_o4          10,12,19,27
 t/cc 		18,21,25,29,30
 t/cc_o1         18,21,25,26,29,30		 
 t/cc_o2         10,16,18,21,25,26,29,30		 
@@ -123,6 +126,7 @@ t/cc_o2         10,16,18,21,25,26,29,30
 5.11.2: same as 5.10.1
 5.11.3: as 5.10.1, just c and cc fails with 32 (catch evaltry die)
 5.11.4: same as 5.10.1
+5.13.3: 6,8..10,16,21,23,24,26,30,31,35
 
 CPAN Modules
 ------------
@@ -132,7 +136,8 @@ We only try B::C so far.
 From top100:
 5.8.9:     fail 4% Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
 5.11.4-nt: fail 3% Attribute::Handlers File::Temp ExtUtils::Install
->5.10 threaded:  ~40% failures
+5.12.1-nt: fail 7% LWP Moose Test::Harness Attribute::Handlers Test::Simple File::Temp ExtUtils::Install
+>5.10 threaded:  ~30% failures
 
 5.10, 5.11 status
 -----------------
@@ -142,6 +147,7 @@ TODO for B::C
   test 29 non-threaded 5.8 (use IO)
   ? 5.11.3 test 32 catch evaltry die
   destruction: -O1 static PVs and HEKs (mult.) >=5.10
+  CV forwarding (old ugly method <5.10, new >=5.10)
   Fix and check t/modules (in work) and t/testcore.
 
 Fix CC cc_queue sort 18 ccpp
