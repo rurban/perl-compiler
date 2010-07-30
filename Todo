@@ -46,11 +46,13 @@ check CC op coverage, add tests
 
 * Optimizations
 
+-fro-inc read-only INC paths (not the AV, run-time savepvn)
+-fno-destruct skip optree and sv destruction at all, leave it to the OS
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
   and GV method names package::name. (partially done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
 proper static init of PVBM/FBM (almost done, just 5.8.9 not)
-compile-time initialisation of AvARRAYs (improved with -fav-init, but slower)
+compile-time initialisation of AvARRAYs (improved with -fav-init)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 variable types: global analysis of variables, type hints etc.
