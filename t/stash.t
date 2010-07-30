@@ -94,7 +94,10 @@ if ($] < 5.009) {
 if ($] >= 5.010) {
     $expected = "attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
 }
-if ($] >= 5.011001) {
+if ($] >= 5.012) {
+    $expected = "Carp DB Exporter Internals IO::File IO::Seekable main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
+}
+if ($] >= 5.011001 and $] < 5.012) {
     $expected .= " XS::APItest::KeywordRPN";
 }
 
