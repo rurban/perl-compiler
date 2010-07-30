@@ -208,7 +208,7 @@ use B
   qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
   threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
-  HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV);
+  HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
@@ -249,16 +249,11 @@ my %unused_sub_packages;
 my %static_ext;
 my $use_xsloader;
 my $nullop_count         = 0;
-my $pv_copy_on_grow      = 0;
-my $optimize_ppaddr      = 0;
-my $optimize_warn_sv     = 0;
-my $use_perl_script_name = 0;
-my $save_data_fh         = 0;
-my $save_sig             = 0;
-my $optimize_cop	 = 0;
-my $av_init		 = 0;
-my $av_init2		 = 0;
+# optimizations:
+my ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
+    $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct);
 my ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
+
 my @xpvav_sizes;
 my $max_string_len;
 
@@ -437,7 +432,7 @@ sub savepv {
   my $pv    = pack "a*", shift;
   my $pvsym = 0;
   my $pvmax = 0;
-  if ($B::C::pv_copy_on_grow) {
+  if ($B::C::pv_copy_on_grow) { # or readonly
     $pvsym = sprintf( "pv%d", $pv_index++ );
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
       my $chars = join ', ', map { cchar $_ } split //, $pv;
@@ -485,6 +480,7 @@ sub save_pv_or_rv {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
     $len = $pok ? length($pv) : 0;
     if ($pok) {
+      local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
       ( $savesym, $pvmax ) = savepv($pv);
     } else {
       ( $savesym, $pvmax ) = ( '0', 0 );
@@ -576,8 +572,7 @@ my $opsect_common =
     my $op = shift;
     my $madprop = $MAD ? "0," : "";
     sprintf( "%s,%s %u, %u, $static, 0x%x, 0x%x",
-      $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags,
-      $op->private );
+      $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private );
   }
   $opsect_common .= ", flags, private";
 }
@@ -1253,7 +1248,11 @@ sub B::PVLV::save {
   return $sym if defined $sym;
   my $pv  = $sv->PV;
   my $len = length($pv);
-  my ( $pvsym, $pvmax ) = savepv($pv);
+  my ( $pvsym, $pvmax );
+  {
+    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+    ( $pvsym, $pvmax ) = savepv($pv);
+  }
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL513) {
     $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
@@ -1274,7 +1273,7 @@ sub B::PVLV::save {
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("%s, %u, %u, %d, %s, 0, 0, %u, %u, Nullsv, %s",
+       sprintf("%s, %u, %u, %ld, %s, 0, 0, %u, %u, Nullsv, %s",
 	       $pvsym,   $len,         $pvmax,       $sv->IVX,
 	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
@@ -1336,6 +1335,7 @@ sub B::PVNV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
@@ -1352,11 +1352,11 @@ sub B::PVNV::save {
     if ($PERL513) {
       $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
       $xpvnvsect->add(
-        sprintf( "Nullhv, {0}, %u, %u, {%d}, {%s}", $len, $pvmax, $ivx, $nvx) );
+        sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $len, $pvmax, $ivx, $nvx) );
     } else {
       $xpvnvsect->comment('NVX, cur, len, IVX');
       $xpvnvsect->add(
-        sprintf( "{%s}, %u, %u, {%d}", $nvx, $len, $pvmax, $ivx ) );
+        sprintf( "{%s}, %u, %u, {%ld}", $nvx, $len, $pvmax, $ivx ) );
     }
     unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
@@ -1409,6 +1409,7 @@ sub B::BM::save {
                 sprintf( "BmUSEFUL($sym) = %d;", $sv->USEFUL )
               );
   } else {
+    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
@@ -1446,6 +1447,7 @@ sub B::PV::save {
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3"
   my $flags = $sv->FLAGS;
+  local $B::C::pv_copy_on_grow = 1 if $flags & SVf_READONLY;
   if ($PERL510) {
     # XXX If READONLY and FAKE use newSVpvn_share instead
     #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
@@ -1478,8 +1480,10 @@ sub B::PVMG::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
-  warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
+  {
+    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+    my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+    warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
@@ -1544,8 +1548,9 @@ sub B::PVMG::save {
 			    $pv ) );
       }
     }
+   }
+   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
-  $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   $sv->save_magic;
   return $sym;
 }
@@ -1719,12 +1724,8 @@ sub B::RV::save {
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = %s;\n", $xrvsect->index, $rv ) );
     }
-    $svsect->add(
-      sprintf(
-        "&xrv_list[%d], %lu, 0x%x",
-        $xrvsect->index, $sv->REFCNT, $sv->FLAGS
-      )
-    );
+    $svsect->add(sprintf("&xrv_list[%d], %lu, 0x%x",
+			 $xrvsect->index, $sv->REFCNT, $sv->FLAGS));
     $svsect->debug( $sv->flagspv ) if $debug{flags};
     return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
@@ -1938,6 +1939,7 @@ sub B::CV::save {
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
     $startfield = "0" unless $startfield;
     if ($$padlist) {
+      local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
       $padlistsym = $padlist->save;
@@ -2318,7 +2320,7 @@ sub B::GV::save {
       #	if $package and exists ${"$package\::"}{bootstrap};
     }
     if ( $] > 5.009 ) {
-      # TODO implement heksect to place all heks at the beginning
+      # XXX TODO implement heksect to place all heks at the beginning
       #$heksect->add($gv->FILE);
       #$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
       $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
@@ -2734,7 +2736,7 @@ sub B::IO::save {
   elsif ($PERL510) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, lines, ..., type, flags");
-    my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*IVX*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%ld}, /*IVX*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*[^\*]+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
@@ -2755,7 +2757,7 @@ sub B::IO::save {
   else { # 5.6 and 5.8
     $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp, xio_dirpu, ..., subprocess, type, flags");
     $xpviosect->add(
-      sprintf("%s, %u, %u, %d, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
+      sprintf("%s, %u, %u, %ld, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
               $pvsym, 			   $len, $len + 1,
               $io->IVX,                    $io->NVX,
               $io->LINES,                  $io->PAGE,
@@ -2858,7 +2860,7 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $B::C::pv_copy_on_grow;
+      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $B::C::pv_copy_on_grow and $] < 5.012;
       printf "static %s %s_list[%u] = {\n", $typename, $name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
@@ -3102,6 +3104,67 @@ EOT
     print "    perl_destruct( my_perl );\n}\n\n";
   }
 
+  # -fno-destruct
+  if ( !$B::C::destruct ) {
+    print <<'EOT';
+int fast_perl_destruct( PerlInterpreter *my_perl );
+int fast_perl_destruct( PerlInterpreter *my_perl ) {
+    dVAR;
+    VOL signed char destruct_level;  /* see possible values in intrpvar.h */
+    HV *hv;
+#ifdef DEBUG_LEAKING_SCALARS_FORK_DUMP
+    pid_t child;
+#endif
+
+    PERL_ARGS_ASSERT_PERL_DESTRUCT;
+#ifndef MULTIPLICITY
+    PERL_UNUSED_ARG(my_perl);
+#endif
+
+    assert(PL_scopestack_ix == 1);
+
+    /* wait for all pseudo-forked children to finish */
+    PERL_WAIT_FOR_CHILDREN;
+
+    destruct_level = PL_perl_destruct_level;
+#ifdef DEBUGGING
+    {
+	const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
+	if (s) {
+            const int i = atoi(s);
+	    if (destruct_level < i)
+		destruct_level = i;
+	}
+    }
+#endif
+
+    if (PL_exit_flags & PERL_EXIT_DESTRUCT_END) {
+        dJMPENV;
+        int x = 0;
+
+        JMPENV_PUSH(x);
+	PERL_UNUSED_VAR(x);
+        if (PL_endav && !PL_minus_c)
+            call_list(PL_scopestack_ix, PL_endav);
+        JMPENV_POP;
+    }
+    LEAVE;
+    FREETMPS;
+    assert(PL_scopestack_ix == 0);
+
+    /* Need to flush since END blocks can produce output */
+    my_fflush_all();
+
+    if (CALL_FPTR(PL_threadhook)(aTHX)) {
+        /* Threads hook has vetoed further cleanup */
+	PL_veto_cleanup = TRUE;
+        return STATUS_EXIT;
+    }
+    PerlIO_destruct(aTHX);
+}
+EOT
+  }
+
   print <<'EOT';
 /* if USE_IMPLICIT_SYS, we need a 'real' exit */
 #if defined(exit)
@@ -3239,7 +3302,11 @@ EOT
 
     exitstatus = perl_run( my_perl );
 EOT
-  if ( $PERL510 and $B::C::pv_copy_on_grow) {
+  if ( !$B::C::destruct) {
+    warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
+    print "    fast_perl_destruct( my_perl );\n";
+  } elsif ( $PERL510 and $B::C::pv_copy_on_grow) {
+    warn "my_perl_destruct (-fcog)\n" if $verbose;
     print "    my_perl_destruct( my_perl );\n";
   } elsif ( $] >= 5.007003 ) {
     print "    perl_destruct( my_perl );\n";
@@ -3560,6 +3627,8 @@ sub save_unused_subs {
 }
 
 sub save_context {
+  # forbid run-time extends of curpad syms, names and INC
+  local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "save context:\n" if $verbose;
   $init->add("/* save context */",
 	     "/* curpad names */");
@@ -3770,6 +3839,7 @@ sub compile {
   my @options = @_;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
+  $B::C::destruct = 1;
   my %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
     'save-data'       => \$B::C::save_data_fh,
@@ -3777,6 +3847,8 @@ sub compile {
     'warn-sv'         => \$B::C::optimize_warn_sv,
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
+    'ro-inc'          => \$B::C::ro_inc,
+    'destruct'        => \$B::C::destruct,
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'cop'             => \$optimize_cop, # XXX very unsafe!
@@ -3786,8 +3858,8 @@ sub compile {
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fav-init)],
-    2 => [qw(-fwarn-sv -fppaddr -fav-init2)],
-    3 => [qw(-fsave-sig-hash -fsave-data)],
+    2 => [qw(-fwarn-sv -fppaddr -fav-init2 -fro-inc)],
+    3 => [qw(-fsave-sig-hash -fsave-data -fno-destruct)],
     4 => [qw(-fcop)],
   );
 OPTION:
@@ -3913,9 +3985,10 @@ OPTION:
     $B::C::av_init = 0;
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $ITHREADS);
-  if ($B::C::pv_copy_on_grow and $PERL510) {
+  if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
     warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
-    undef $B::C::pv_copy_on_grow if $PERL510; # XXX Still trying custom destructor.
+    # XXX Still trying custom destructor.
+    undef $B::C::pv_copy_on_grow;
   }
 
   init_sections();
@@ -4002,7 +4075,7 @@ debugger at the early CHECK step, where the compilation happens.
 
 =item B<-Dfull>
 
-Enable all full debugging, as with C<-DoOcAHCMGSpW>.
+Enable all full debugging, as with C<-DoOcAHCMGSpWF>.
 All but C<-Du>.
 
 =item B<-Do>
@@ -4068,11 +4141,8 @@ B<disabled>.
 =item B<-fcog>
 
 Copy-on-grow: PVs declared and initialised statically.
-Does not work yet with Perl 5.10 and higher.
-
-It is planned to switch off the perl destructor at the end
-and deconstruct our allocated data by ourselves. This fixes
-destructor problems with static data and is much faster.
+Does not work yet with Perl 5.10 and higher unless
+-fno-destruct is added.
 
 =item B<-fsave-data>
 
@@ -4094,8 +4164,26 @@ Faster pre-initialization of AVs (arrays and pads)
 
 =item B<-fav-init2>
 
-Even more faster pre-initialization of AVs with independent_comalloc, if supported.
+Even more faster pre-initialization of AVs with independent_comalloc if supported.
 Excludes -fav_init if so, uses -fav_init if independent_comalloc is not supported.
+
+=item B<-fro-inc>
+
+Set read-only @INC and %INC pathnames (not the AV) and also curpad names and symbols,
+to store them const and statically, not via malloc at run-time.
+
+This forbid run-time extends of curpad syms, names and INC strings.
+
+=item B<-fno-destruct>
+
+Does no global perl_destruct() at the end of the process, leaving
+the memory cleanup to operating system.
+
+This will cause problems if used embedded or as shared library/module,
+but not in long-running processes.
+
+This helps with destruction problems of static data in the
+default perl destructor, and enables -fcog since 5.10.
 
 =item B<-fuse-script-name>
 

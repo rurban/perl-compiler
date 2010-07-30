@@ -3,6 +3,11 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
+1.28	2010-07-31 rurban
+	* C.pm: add -fno-destruct (with -O3) almost no perl_destruct, 
+	  (enables -fcog >=5.10)
+	add -fro-inc (with -O2) readonly INC and curpad strings
+
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10
 
