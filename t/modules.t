@@ -90,9 +90,12 @@ if ($log) {
   close LOG;
 }
 unless (is_subset) {
-  my $svnrev = `svn info|grep Revision:`;
-  chomp $svnrev;
-  $svnrev =~ s/Revision:\s+/r/;
+  my $svnrev;
+  if (-d '.svn') {
+    $svnrev = `svn info|grep Revision:`;
+    chomp $svnrev;
+    $svnrev =~ s/Revision:\s+/r/;
+  }
   log_diag("B::C::VERSION = $B::C::VERSION $svnrev");
   log_diag("perlversion = $perlversion");
   log_diag("path = $^X");
