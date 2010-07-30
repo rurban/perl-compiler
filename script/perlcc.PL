@@ -46,6 +46,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.05, Reini Urban, 2009-12-01 00:00:13
 # Version 2.06, Reini Urban, 2009-12-28 21:56:15
 # Version 2.07, Reini Urban, 2010-06-30 22:32:20
+# Version 2.08, Reini Urban, 2010-07-30 21:30:33
 
 use strict;
 use warnings;
@@ -57,7 +58,8 @@ use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use Cwd;
 use Pod::Usage;
-our $VERSION = 2.07;
+use Time::HiRes qw(gettimeofday tv_interval);
+our $VERSION = 2.08;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -137,7 +139,7 @@ sub vprint {
     my $level;
     if (@_ == 1) {
         $level = 1;
-    } elsif ($_[0] =~ /^\d$/) {
+    } elsif ($_[0] =~ /^-?\d$/) {
         $level = shift;
     } else {
         # well, they forgot to use a number; means >0
@@ -189,6 +191,7 @@ sub parse_argv {
 	'log:s',        # where to log compilation process information
         'Wb:s',         # pass (comma-seperated) options to backend
         'testsuite',    # try to be nice to testsuite
+        'time',         # print benchmark timings
     );
 
     $Options->{v} += 0;
@@ -200,6 +203,7 @@ sub parse_argv {
 
     helpme() if opt(h); # And exit
 
+    #if( opt('time') && !opt(v) );
     $Output = opt(o) || ( is_win32 or $^O eq 'cygwin' ? 'a.exe' : 'a.out' );
     $Output = is_win32() ? $Output : relativize($Output);
     $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
@@ -311,13 +315,16 @@ sub compile_cstyle {
     vprint 1, "Compiling...";
     vprint 1, "Calling $command";
 
+    my $t0 = [gettimeofday] if opt('time');
     my ($output_r, $error_r) = spawnit($command);
+    my $elapsed = tv_interval ( $t0 ) if opt('time');
     my @output = @$output_r;
     my @error = @$error_r;
 
     if (@error && $? != 0) {
         _die("$0: $Input did not compile, which can't happen:\n@error\n");
     }
+    vprint -1, "c time: $elapsed" if opt('time');
 
     is_msvc ?
         cc_harness_msvc($cfile,$stash) :
@@ -574,8 +581,11 @@ EOU
 sub run {
     my (@commands) = @_;
 
+    my $t0 = [gettimeofday] if opt('time');
     print interruptrun(@commands) if (!opt('log'));
     $logfh->print(interruptrun(@commands)) if (opt('log'));
+    my $elapsed = tv_interval ( $t0 ) if opt('time');
+    vprint -1, "r time: $elapsed" if opt('time');
 }
 
 sub interruptrun

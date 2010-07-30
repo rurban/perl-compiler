@@ -43,13 +43,14 @@ function fail {
     echo
 }
 
-while getopts "hokltsD:" opt
+while getopts "hokltTsD:" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "k" ]; then KEEP="-S"; fi
   if [ "$opt" = "D" ]; then KEEP="-D${OPTARG}"; fi
   if [ "$opt" = "l" ]; then TEST="-log"; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
+  if [ "$opt" = "T" ]; then PERLCC_OPTS="--time"; PERLCC_TIMEOUT=120; fi
   if [ "$opt" = "s" ]; then 
       v=$($PERL -It -Mmodules -e'print perlversion')
       if [ -f log.modules-$v ]; then # and not older than a few days
@@ -71,6 +72,7 @@ fi
 # need to shift the options
 while [ -n "$1" -a "${1:0:1}" = "-" ]; do shift; done
 
+PERLCC_TIMEOUT=120
 if [ -n "$1" ]; then
     if [ -f "$1" ]; then
 	# run a mymodules.t like test
@@ -91,8 +93,8 @@ if [ -n "$1" ]; then
 		fi
 	      fi
 	    else
-	      echo $PERL $Mblib blib/script/perlcc -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
-	      $PERL $Mblib blib/script/perlcc -r $KEEP -e "use $1; print 'ok'" -o $name
+	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
+	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print 'ok'" -o $name
             fi
 	    test -f a.out.c && mv a.out.c $name.c
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
