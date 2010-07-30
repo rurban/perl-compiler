@@ -239,6 +239,11 @@ sub is_todo {
                Data::Dumper
                ExtUtils::CBuilder
                File::Path
+               AppConfig
+               DateTime::TimeZone
+               Path::Class
+               CGI
+               YAML
               ))
     {
       return '>= 5.013' if $_ eq $module;
