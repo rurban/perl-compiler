@@ -2351,7 +2351,7 @@ sub B::GV::save {
         $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
       }
       elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
-        warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsava-data.\n";
+        warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsave-data.\n";
       }
       warn "GV::save GvIO(*$name)\n" if $debug{gv};
     }
