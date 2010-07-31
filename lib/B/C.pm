@@ -397,7 +397,7 @@ sub savere {
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
-    $decl->add( sprintf( "static char *$sym = %s;\n", cstring($re) ) );
+    $decl->add( sprintf( "static const char *$sym = %s;\n", cstring($re) ) );
   }
   return ( $sym, length( pack "a*", $re ) );
 }
@@ -413,11 +413,11 @@ sub constpv {
     $strtable{$pv} = "$pvsym";
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
       my $chars = join ', ', map { cchar $_ } split //, $pv;
-      $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
+      $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
     } else {
       my $cstring = cstring($pv);
       if ( $cstring ne "0" ) {    # sic
-	$decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
+	$decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
       }
     }
   } else {
@@ -437,14 +437,15 @@ sub savepv {
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
       my $chars = join ', ', map { cchar $_ } split //, $pv;
       # >=5.10: A union's data members can NOT be declared static
-      $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
+      $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
     }
     else {
       my $cstring = cstring($pv);
       if ( $cstring ne "0" ) {    # sic
-        $decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
+        $decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
       }
     }
+    $pvmax = length( pack "a*", $pv ) + 1;
   }
   else {
     $pvmax = length( pack "a*", $pv ) + 1;
@@ -2847,7 +2848,7 @@ sub output_all {
   }
 
   # hack for when Perl accesses PVX of GVs
-  print 'Static char emptystring[] = "\0";';
+  print 'Static const char emptystring[] = "\0";';
   print "\n";
   if ($use_av_undef_speedup || $use_svpop_speedup) {
     print "int gcount;\n";
@@ -4219,15 +4220,17 @@ Disable all optimizations.
 
 =item B<-O1>
 
-Enable B<-fcog>.
+Enable B<-fcog>, B<-fav-init>.
+
+Note that -fcog without -fno-destruct will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable -O1 plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init>.
+Enable -O1 plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init2>, B<-fro-inc>.
 
 =item B<-O3>
 
-Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>.
+Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>.
 
 =item B<-O4>
 
