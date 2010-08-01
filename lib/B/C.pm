@@ -1493,8 +1493,16 @@ sub B::PVMG::save {
     } else {
       if ( $B::C::pv_copy_on_grow ) {
         # comppadnames needs &PL_sv_undef instead of 0
-        $savesym = (!$savesym or $savesym eq 'NULL') ? '(char*)&PL_sv_undef'
-	  : $savesym;
+	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
+	if (!$savesym or $savesym eq 'NULL') {
+	  if ($ITHREADS) {
+	    $savesym = "NULL";
+	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
+				 $svsect->index ) );
+	  } else {
+	    $savesym = '(char*)&PL_sv_undef';
+	  }
+	}
       }
     }
     my ($ivx,$nvx) = (0, "0");
@@ -2841,8 +2849,7 @@ sub output_all {
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
       # -fcog hack to statically initialize PVs (SVPV for 5.10-5.11 only)
-      $typename = 'SVPV' if $typename eq 'SV' and $PERL510
-	and $B::C::pv_copy_on_grow and $] < 5.012;
+      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $] < 5.012;
       print "Static $typename ${name}_list[$lines];\n";
     }
   }
@@ -2861,7 +2868,7 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $B::C::pv_copy_on_grow and $] < 5.012;
+      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $] < 5.012;
       printf "static %s %s_list[%u] = {\n", $typename, $name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
@@ -2902,7 +2909,7 @@ EOT
   # gcc error: initializer element is not computable at load time
   # We introduce a SVPV as SV.
   # In core since 5.12
-  if ($PERL510 and $B::C::pv_copy_on_grow and $] < 5.012) {
+  if ($PERL510 and $] < 5.012) {
     print <<'EOT';
 typedef struct svpv {
     void *	sv_any;
