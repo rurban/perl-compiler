@@ -10,19 +10,22 @@ system("$^X bytecode.pl");
 
 my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
 my $have_independent_comalloc = &check_independent_comalloc;
-mkdir "lib/B/C" unless -d "lib/B/C";
-open PH, ">", "lib/B/C/Flags.pm";
-print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
-print PH "package B::C::Flags;\n\n";
-print PH "# -fav-init optimization\n";
-print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
-print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
-print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
-print PH "\$extra_cflags = \"$extra_cflags\";\n";
-print PH "\$extra_libs = \"$extra_libs\";\n";
-print PH "\n1;\n";
-close PH;
-chmod (0644, "lib/B/C/Flags.pm");
+sub write_b_c_flags {
+    mkdir "lib/B/C" unless -d "lib/B/C";
+    open PH, ">", "lib/B/C/Flags.pm";
+    print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
+    print PH "package B::C::Flags;\n\n";
+    print PH "# -fav-init optimization\n";
+    print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
+    print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
+    print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
+    print PH "\$extra_cflags = \"$extra_cflags\";\n";
+    print PH "\$extra_libs = \"$extra_libs\";\n";
+    print PH "\n1;\n";
+    close PH;
+    chmod (0644, "lib/B/C/Flags.pm");
+}
+write_b_c_flags;
 
 WriteMakefile(
     NAME	 => "B::C",
