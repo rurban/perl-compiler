@@ -69,7 +69,9 @@ if ($^O =~ m/^MSWin/ && $Config{cc} =~ m/^cl/i) {
 
 my $ccflags = $Config{ccflags};
 $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
-  if $debug and $Config{cc} =~ /gcc/;
+  if $debug and $Config{cc} =~ /gcc/ and !$quiet;
+$ccflags .= " --no-warn -Wl,--warn-once"
+  if $Config{cc} =~ /gcc/ and $quiet;
 $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
 $ccflags .= $B::C::Flags::extra_cflags;
 $linkargs .= $B::C::Flags::extra_libs;
