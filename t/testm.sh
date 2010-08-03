@@ -94,9 +94,13 @@ if [ -n "$1" ]; then
 	      fi
 	    else
 	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
-	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print 'ok'" -o $name
+	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS $KEEP -e "use $1; print 'ok'" -o $name
+              test -f a.out.c && mv a.out.c $name.c
+              if [ -f $name ]; then
+		echo "running ./$name"
+		./$name
+              fi
             fi
-	    test -f a.out.c && mv a.out.c $name.c
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
 	    shift
 	done
