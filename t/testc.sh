@@ -141,7 +141,7 @@ function ctest {
     fi
 }
 
-ntests=45
+ntests=46
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=3
@@ -285,6 +285,9 @@ result[44]='ok'
 # test dynamic loading
 tests[45]='use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";'
 result[45]='ok'
+# Exporter should end up in main:: stash when used in
+tests[46]='use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }'
+result[46]='ok'
 
 # from here on we test CC specifics only
 
