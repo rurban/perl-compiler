@@ -144,7 +144,7 @@ my $x=$ENV{TMPDIR};print "ok"
 >>>>
 ok
 ######################### 34 does init of magic hashes work in 5.10? #####
-package dummy;sub meth{print "ok"};package main;dummy->meth
+package dummy;sub meth{print "ok"};package main;dummy->meth(1)
 >>>>
 ok
 ######################### 35 methodcall syntax fails #####

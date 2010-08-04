@@ -227,7 +227,7 @@ result[33]='ok'
 tests[34]='my $x=$ENV{TMPDIR};print "ok"'
 result[34]='ok'
 # methodcall syntax
-tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth'
+tests[35]='package dummy;sub meth{print "ok"};package main;dummy->meth(1)'
 result[35]='ok'
 # HV self-ref
 tests[36]='my ($rv, %hv); %hv = ( key => \$rv ); $rv = \%hv; print "ok";'
