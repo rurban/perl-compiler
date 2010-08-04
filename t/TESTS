@@ -191,7 +191,7 @@ use Scalar::Util "weaken";my $re1=qr/foo/;my $re2=$re1;weaken($re2);print "ok" i
 >>>
 ok
 #### 44 weaken TODO not detected ####
-use Data::Dumper ();Data::Dumper::Dumper(\%main::);print "ok";
+use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";
 >>>
 ok
-#### 45 # test autoload and xs_init ###
+#### 45 # test dynamic loading ###

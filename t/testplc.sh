@@ -262,8 +262,8 @@ result[43]='ok'
 # perl #72922 (5.11.4 fails with magic_killbackrefs)
 tests[44]='use Scalar::Util "weaken";my $re1=qr/foo/;my $re2=$re1;weaken($re2);print "ok" if $re3=qr/$re1/;'
 result[44]='ok'
-# test autoload and xs_init
-tests[45]='use Data::Dumper ();Data::Dumper::Dumper(\%main::);print "ok";'
+# test dynamic loading
+tests[45]='use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";'
 result[45]='ok'
 
 init
