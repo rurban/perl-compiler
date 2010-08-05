@@ -1862,13 +1862,17 @@ sub B::CV::save {
       svref_2object( \&IO::bootstrap )->save
         if grep { $stashname eq $_ }
           qw(IO::File IO::Handle IO::Socket
-          IO::Seekable IO::Poll);
+             IO::Seekable IO::Poll);
     }
     unless ($static_pkg{$stashname}) {
-      warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
+      warn sprintf( "bootstrap external XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
 	if $debug{cv};
-      # svref_2object( \&{"$cvstashname::bootstrap"} )->save;
+      svref_2object( \&{"$cvstashname::bootstrap"} )->save;
       return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
+    } else {
+      warn sprintf( "xs_init static_lib XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
+	if $debug{cv};
+      $xsub{$stashname} = 'Static';
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -1890,7 +1894,7 @@ sub B::CV::save {
     $xpvcvsect->add("XPVCVIX$xpvcv_ix");
   }
 
-  warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
+  warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as &sv_list[$sv_ix]\n", $$cv )
     if $debug{cv};
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
@@ -4248,7 +4252,7 @@ Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>.
 
 =item B<-O4>
 
-Enable -O3 plus B<-fcop>. Very unsafe.
+Enable -O3 plus B<-fcop>. Very unsafe, very fast, very small.
 
 =back
 
