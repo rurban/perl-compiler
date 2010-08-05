@@ -2,11 +2,12 @@
 # t/testm.sh File::Temp
 # => $^X -Mblib blib/script/perlcc -S -e 'use File::Temp; print "ok"' -o file_temp
 #
-# How to installed skip modules:
-#  grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
-#  perl5.11.4-nt -S cpan `grep -v '#' t/mymodules`
+# How to installed skip modules: 
+# t/testm.sh -s runs:
+#   grep ^skip log.modules-$ver|cut -c6-| xargs perl$ver -S cpan
+# perl$ver -S cpan `grep -v '#' t/mymodules`
 #
-# -t run CPAN::Shell->testcc($module)
+# -t runs CPAN::Shell->testcc($module)
 
 function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."
@@ -16,6 +17,7 @@ function help {
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -t                 run the module tests also, not only use Module (experimental)"
   echo " -s                 install skipped (missing) modules"
+  echo " -T                 time compilation and run"
   echo " -h                 help"
 }
 
@@ -43,11 +45,13 @@ function fail {
     echo
 }
 
-while getopts "hokltTsD:" opt
+while getopts "hokltTsD:O:f:" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
-  if [ "$opt" = "k" ]; then KEEP="-S"; fi
-  if [ "$opt" = "D" ]; then KEEP="-D${OPTARG}"; fi
+  if [ "$opt" = "k" ]; then KEEP="$KEEP -S"; fi
+  if [ "$opt" = "D" ]; then KEEP="$KEEP -Wb=-D${OPTARG}"; fi
+  if [ "$opt" = "O" ]; then KEEP="$KEEP -Wb=-O${OPTARG}"; fi
+  if [ "$opt" = "f" ]; then KEEP="$KEEP -Wb=-f${OPTARG}"; fi
   if [ "$opt" = "l" ]; then TEST="-log"; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
   if [ "$opt" = "T" ]; then PERLCC_OPTS="--time"; PERLCC_TIMEOUT=120; fi
@@ -94,12 +98,8 @@ if [ -n "$1" ]; then
 	      fi
 	    else
 	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
-	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS $KEEP -e "use $1; print 'ok'" -o $name
+	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print 'ok'" -o $name
               test -f a.out.c && mv a.out.c $name.c
-              if [ -f $name ]; then
-		echo "running ./$name"
-		./$name
-              fi
             fi
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
 	    shift
