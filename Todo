@@ -25,7 +25,7 @@ perl_parse replacement
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 CvOUTSIDE for ordinary subs
 DATA filehandle for C-compiled program (almost done)
-pv_copy_on_grow no &PL_SV_undef in static inits
+pv_copy_on_grow no &PL_SV_undef in static inits (done)
 
 * Features
 

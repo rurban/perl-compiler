@@ -24,6 +24,7 @@ use B::C qw(save_unused_subs objsym init_sections mark_unused
   svop_or_padop_pv);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
+use B::C::Flags;
 
 @B::OP::ISA = qw(B::NULLOP B);           # support -Do
 @B::LISTOP::ISA = qw(B::BINOP B);       # support -Do
@@ -2370,7 +2371,10 @@ OPTION:
       foreach $ref ( values %optimise ) {
         $$ref = 0;
       }
-      $freetmps_each_loop = 1 if $arg >= 2;
+      if ($arg >= 2) {
+        $freetmps_each_loop = 1;
+        $B::C::destruct = 0; # fast_destruct
+      }
       if ( $arg >= 1 ) {
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
@@ -2442,11 +2446,18 @@ OPTION:
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
-  for (qw(optimize_warn_sv save_data_fh av_init save_sig),
+  for (qw(optimize_warn_sv save_data_fh av_init save_sig destruct),
        $PERL510 ? () : "pv_copy_on_grow")
   {
     no strict 'refs';
     ${"B::C::$_"} = 1;
+  }
+  if (!$B::C::Flags::have_independent_comalloc) {
+    $B::C::av_init = 1;
+    $B::C::av_init2 = 0;
+  } else {
+    $B::C::av_init = 0;
+    $B::C::av_init2 = 1;
   }
   init_sections();
   $init = B::Section->get("init");
