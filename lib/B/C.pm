@@ -262,9 +262,10 @@ my $PERL513  = ( $] >= 5.013002 );
 my $PERL511  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
 my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
+# Thanks to Matteo Barbone for the C99 tip to init any union members
+my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
-
 my @threadsv_names;
 
 BEGIN {
@@ -1352,14 +1353,26 @@ sub B::PVNV::save {
     # to store it as { low, high }.
     if ($PERL513) {
       $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
-      $xpvnvsect->add(
-        sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $len, $pvmax, $ivx, $nvx) );
+      if ($C99) {
+        $xpvnvsect->add
+          (sprintf( "Nullhv, {0}, %u, %u, {%ld}, {.xpad_cop_seq.xlow = %u, .xpad_cop_seq.xhigh = %u}",
+                    $len, $pvmax, $ivx, $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH) );
+      } else {
+        $xpvnvsect->add
+          (sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $len, $pvmax, $ivx, $nvx) );
+      }
     } else {
       $xpvnvsect->comment('NVX, cur, len, IVX');
-      $xpvnvsect->add(
-        sprintf( "{%s}, %u, %u, {%ld}", $nvx, $len, $pvmax, $ivx ) );
+      if ($C99) {
+        $xpvnvsect->add(
+          sprintf( "{.xpad_cop_seq.xlow=%u, .xpad_cop_seq.xhigh=%u}, %u, %u, {%ld}",
+                   $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH, $len, $pvmax, $ivx ) );
+      } else {
+        $xpvnvsect->add(
+          sprintf( "{%s}, %u, %u, {%ld}", $nvx, $len, $pvmax, $ivx ) );
+      }
     }
-    unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+    unless ($C99 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
                          $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
