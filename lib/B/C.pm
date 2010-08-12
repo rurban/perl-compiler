@@ -262,7 +262,7 @@ my $PERL513  = ( $] >= 5.013002 );
 my $PERL511  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
 my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
-# Thanks to Matteo Barbone for the C99 tip to init any union members
+# Thanks to Mattia Barbon for the C99 tip to init any union members
 my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
@@ -1942,7 +1942,7 @@ sub B::CV::save {
     my $ppname = "";
     if ($$gv) {
       my $stashname = $gv->STASH->NAME;
-       my $gvname    = $gv->NAME;
+      my $gvname    = $gv->NAME;
       if ( $gvname ne "__ANON__" ) {
         $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
         $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
@@ -4311,8 +4311,8 @@ Current status: A few known bugs.
 
 =head1 AUTHOR
 
-Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>,
-Reini Urban, C<rurban@cpan.org>
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
+Reini Urban C<perl-compiler@googlegroups.com>
 
 =head1 SEE ALSO
 

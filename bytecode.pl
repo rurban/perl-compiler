@@ -767,9 +767,8 @@ ops, like xiv64, cop_arybase.
 
 =head1 AUTHOR
 
-Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-
-Reini Urban added the version logic, 5.10 support, portability.
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
+Reini Urban added the version logic, support >= 5.10, portability.
 
 =cut
 

@@ -450,8 +450,8 @@ Added with blversion 0.06_06.
 
 =head1 AUTHORS
 
-Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>.
-Reini Urban <rurban@cpan.org> since 2008.
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
+Reini Urban C<perl-compiler@googlegroups.com> since 2008.
 
 =cut
 

@@ -1281,7 +1281,7 @@ THIS CODE IS HIGHLY EXPERIMENTAL. USE AT YOUR OWN RISK.
 
 =head1 AUTHORS
 
-Originally written by Malcolm Beattie <mbeattie@sable.ox.ac.uk> and
+Originally written by Malcolm Beattie and
 modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.

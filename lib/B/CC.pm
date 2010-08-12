@@ -2742,8 +2742,8 @@ in the compiler.
 
 =head1 AUTHOR
 
-Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Reini Urban, C<rurban@cpan.org>
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
+Reini Urban C<perl-compiler@googlegroups.com>
 
 =cut
 

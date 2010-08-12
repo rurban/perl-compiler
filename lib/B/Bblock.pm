@@ -239,7 +239,8 @@ addresses.
 
 =head1 AUTHOR
 
-Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
+Reini Urban C<perl-compiler@googlegroups.com>
 
 =cut
 
