@@ -2423,6 +2423,10 @@ OPTION:
         elsif ( $arg eq "t" ) {
           $debug{timings}++;
         }
+        elsif ( $arg eq "F" and eval "require B::Flags;" ) {
+          $debug{flags}++;
+          $B::C::debug{flags}++;
+        }
       }
     }
   }
@@ -2593,6 +2597,10 @@ code as it's processed (C<pp_nextstate>).
 =item B<-Dt>
 
 Outputs timing information of compilation stages.
+
+=item B<-DF>
+
+Add Flags info to the code.
 
 =item B<-f>C<OPTIM>
 
