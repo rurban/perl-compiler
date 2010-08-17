@@ -420,7 +420,7 @@ sub constpv {
       $decl->add( sprintf( "static $const char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
-  wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
+  wantarray ? ( "(char*)$pvsym", length( pack "a*", $pv ) ) : "(char*)$pvsym";
 }
 
 sub savepv {
@@ -429,11 +429,11 @@ sub savepv {
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
+    $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
   } else {
     my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
+      $decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
   my $pvmax = length( pack "a*", $pv ) + 1;
