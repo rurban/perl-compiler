@@ -15,8 +15,8 @@ open F, ">", "$name.pl";
 print F $script;
 close F;
 
-# $ENV{LC_ALL} = 'C.UTF-8';
-my $expected = "24610 ö";
+$ENV{LC_ALL} = 'C.UTF-8';
+my $expected = "24610 Ã¶";
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 system "$runperl -Mblib blib/script/perlcc -o $name $name.pl";
 unless (-e $name or -e "$name.exe") {
@@ -24,7 +24,7 @@ unless (-e $name or -e "$name.exe") {
   exit;
 }
 my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
-my $result = `echo "ö" | $runexe`;
+my $result = `echo "Ã¶" | $runexe`;
 ok($result eq $expected, "#TODO B::C issue 29. $result ne $expected");
 
 system "$runperl -Mblib blib/script/perlcc -B -o $name.plc $name.pl";
@@ -33,7 +33,7 @@ unless (-e $name or -e "$name.exe") {
   exit;
 }
 $runexe = "$runperl -Mblib -MByteloader $name.plc";
-my $result = `echo "ö" | $runexe`;
+$result = `echo "Ã¶" | $runexe`;
 ok($result eq $expected, "#TODO Bytecode issue 29. $result ne $expected");
 
 END {
