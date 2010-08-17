@@ -1,0 +1,62 @@
+#! /usr/bin/env perl
+# http://code.google.com/p/perl-compiler/issues/detail?id=35
+# B::CC generates wrong C code for same variable in different scope
+use Test::More tests => 2;
+use strict;
+use Config;
+my $ITHREADS  = $Config{useithreads};
+my $base = "ccode35i";
+
+sub test {
+  my ($num, $script, $todo) =  @_;
+  my $name = $base."_$num";
+  unlink($name, "$name.c", "$name.pl", "$name.exe");
+  open F, ">", "$name.pl";
+  print F $script;
+  close F;
+
+  my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+  my $b = $] > 5.008 ? "-qq,CC" : "CC";
+  system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+  unless (-e "$name.c") {
+    print "not ok 1 #B::CC failed\n";
+    exit;
+  }
+  system "$runperl -Mblib blib/script/cc_harness -q -o$name $name.c";
+  my $ok = -e $name or -e "$name.exe";
+  if ($todo) {
+  TODO: {
+      local $TODO = $todo;
+      ok($ok);
+    }
+  } else {
+    ok($ok);
+  }
+  if ($ok) {
+    unlink($name, "$name.c", "$name.pl", "$name.exe");
+  }
+}
+
+# error: redeclaration of ‘d_x’ with no linkage
+my $script = <<'EOF';
+sub new {}
+sub test {
+  { my $x = 1; }
+  my $x = 2;
+  if ($x != 3) { 4; }
+}
+EOF
+
+test(1, $script, "B::CC issue 35");
+
+# error: redeclaration of ‘d_tmp5’ with no linkage
+$script = <<'EOF';
+sub test {
+  my $tmp5 = 1;
+  my $x = 2;
+  if ($x != 3) { 4; }
+}
+EOF
+
+# passes non-threaded (5.8.9d-nt, perl5.10.1d-nt)
+test(2, $script, $ITHREADS ? "B::CC issue 35 fail3.pl" : undef);

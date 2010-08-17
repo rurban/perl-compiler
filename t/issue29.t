@@ -3,7 +3,7 @@
 use Test::More tests => 2;
 use strict;
 
-my $name = "ccode_i29";
+my $name = "ccode29i";
 my $script = <<'EOF';
 use open qw(:std :utf8);
 $_ = <>;
