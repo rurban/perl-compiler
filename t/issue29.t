@@ -25,7 +25,8 @@ unless (-e $name or -e "$name.exe") {
 }
 my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
 my $result = `echo "ö" | $runexe`;
-ok($result eq $expected, "#TODO B::C issue 29. $result ne $expected");
+$result =~ s/\n$//;
+ok($result eq $expected, "#TODO B::C issue 29: '$result' ne '$expected'");
 
 system "$runperl -Mblib blib/script/perlcc -B -o $name.plc $name.pl";
 unless (-e $name or -e "$name.exe") {
@@ -34,7 +35,8 @@ unless (-e $name or -e "$name.exe") {
 }
 $runexe = "$runperl -Mblib -MByteloader $name.plc";
 $result = `echo "ö" | $runexe`;
-ok($result eq $expected, "#TODO Bytecode issue 29. $result ne $expected");
+$result =~ s/\n$//;
+ok($result eq $expected, "#Bytecode issue 29: '$result' eq '$expected'");
 
 END {
   #unlink($name, "$name.plc", "$name.pl", "$name.exe");
