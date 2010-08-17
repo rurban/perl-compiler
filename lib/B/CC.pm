@@ -605,7 +605,7 @@ sub load_pad {
     my $namesv = $namelist[$ix];
     my $type   = T_UNKNOWN;
     my $flags  = 0;
-    my $name   = "tmp$ix";
+    my $name   = "tmp";
     my $class  = class($namesv);
     if ( !defined($namesv) || $class eq "SPECIAL" ) {
       # temporaries have &PL_sv_undef instead of a PVNV for a name
@@ -629,8 +629,9 @@ sub load_pad {
         $flags |= REGISTER if $3;
       }
     }
+    $name = "${ix}_$name";
     $pad[$ix] =
-      B::Stackobj::Padsv->new( $type, $flags, $ix, "i_$name", "d_$name" );
+      B::Stackobj::Padsv->new( $type, $flags, $ix, "i$name", "d$name" );
 
     debug sprintf( "PL_curpad[$ix] = %s\n", $pad[$ix]->peek ) if $debug{pad};
   }
@@ -2373,7 +2374,7 @@ OPTION:
       }
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
-        $B::C::destruct = 0; # fast_destruct
+        $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       }
       if ( $arg >= 1 ) {
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
