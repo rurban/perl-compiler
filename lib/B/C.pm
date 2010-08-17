@@ -410,13 +410,14 @@ sub constpv {
   }
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $strtable{$pv} = "$pvsym";
+  my $const = $B::C::pv_copy_on_grow ? "const" : "";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
+    $decl->add( sprintf( "static $const char %s[] = { %s };", $pvsym, $chars ) );
   } else {
     my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
+      $decl->add( sprintf( "static $const char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
   wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
@@ -3111,30 +3112,6 @@ EOT
 
 sub output_main {
 
-  # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
-  if ( $PERL510 and $B::C::destruct and (%strtable or $B::C::pv_copy_on_grow)) {
-    print <<'EOT';
-int my_perl_destruct( PerlInterpreter *my_perl );
-int my_perl_destruct( PerlInterpreter *my_perl ) {
-    /* set all our static pv and hek to NULL so perl_destruct() will not cry */
-EOT
-    for (0 .. $svsect->index) {
-      # XXX set the sv/xpv to NULL, not the pv itself
-      my $sv = sprintf( "&sv_list[%d]", $_ );
-      printf ("    if (SvPOK(%s)) SvPV_set(%s, NULL);\n", $sv, $sv);
-      #my $pv = sprintf( "pv%d", $_ );
-      #printf ("    %s = NULL;\n", $pv);
-      #printf ("    memset(&%s, 0, sizeof(char *));\n", $pv);
-    }
-    for (0 .. $hek_index-1) {
-      # XXX who stores this hek? GvNAME and GvFILE most likely
-      my $hek = sprintf( "hek%d", $_ );
-      #printf ("    memset(%s, 0, sizeof(HEK *));\n", $hek);
-      printf ("    %s = NULL;\n", $hek);
-    }
-    print "    perl_destruct( my_perl );\n}\n\n";
-  }
-
   # -fno-destruct
   if ( !$B::C::destruct ) {
     print <<'EOT';
@@ -3204,7 +3181,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 EOT
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
-  elsif ( $PERL510 and $B::C::pv_copy_on_grow) {
+  elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow)) {
     print <<'EOT';
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
@@ -3367,7 +3344,7 @@ EOT
   if ( !$B::C::destruct) {
     warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
     print "    fast_perl_destruct( my_perl );\n";
-  } elsif ( $PERL510 and $B::C::pv_copy_on_grow) {
+  } elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow) ) {
     warn "my_perl_destruct (-fcog)\n" if $verbose;
     print "    my_perl_destruct( my_perl );\n";
   } elsif ( $] >= 5.007003 ) {
