@@ -41,7 +41,7 @@ sub test {
 my $script = <<'EOF';
 sub new {}
 sub test {
-  { my $x = 1; }
+   { my $x = 1; my $y = $x + 1;}
   my $x = 2;
   if ($x != 3) { 4; }
 }
@@ -53,7 +53,7 @@ test(1, $script, "B::CC issue 35");
 $script = <<'EOF';
 sub test {
   my $tmp5 = 1;
-  my $x = 2;
+  my $x = $tmp5 + 1;
   if ($x != 3) { 4; }
 }
 EOF
