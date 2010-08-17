@@ -58,7 +58,8 @@ use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use Cwd;
 use Pod::Usage;
-use Time::HiRes qw(gettimeofday tv_interval);
+# Time::HiRes does not work with 5.6
+# use Time::HiRes qw(gettimeofday tv_interval);
 our $VERSION = 2.08;
 $| = 1;
 eval { require B::C::Flags; };
@@ -69,6 +70,7 @@ use subs qw{
     cc_harness check_read check_write checkopts_byte choose_backend
     compile_byte compile_cstyle compile_module generate_code
     grab_stash parse_argv sanity_check vprint yclept spawnit
+    gettimeofday tv_interval
 };
 sub opt(*); # imal quoting
 sub is_win32();
@@ -203,7 +205,15 @@ sub parse_argv {
 
     helpme() if opt(h); # And exit
 
-    #if( opt('time') && !opt(v) );
+    if( $Options->{time} ) {
+      eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
+      if ($@) {
+        warn "-time ignored. No Time::HiRes\n";
+        $Options->{time} = 0;
+      } else {
+        Time::HiRes->import('gettimeofday','tv_interval');
+      }
+    }
     $Output = opt(o) || ( is_win32 or $^O eq 'cygwin' ? 'a.exe' : 'a.out' );
     $Output = is_win32() ? $Output : relativize($Output);
     $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
