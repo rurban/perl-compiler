@@ -9,7 +9,7 @@ my $quiet++ if $ARGV[0] eq '-q';
 shift if $quiet;
 my $debug++ if $ARGV[0] eq '-d';
 shift if $debug;
-require B::C::Flags;
+eval { require B::C::Flags; };
 
 if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     ;
