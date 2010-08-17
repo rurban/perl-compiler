@@ -398,7 +398,7 @@ sub savere {
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
-    $decl->add( sprintf( "static const char *$sym = %s;\n", cstring($re) ) );
+    $decl->add( sprintf( "static /*const*/ char *$sym = %s;\n", cstring($re) ) );
   }
   return ( $sym, length( pack "a*", $re ) );
 }
@@ -408,49 +408,34 @@ sub constpv {
   if (defined $strtable{$pv}) {
     return $strtable{$pv};
   }
-  my $pvsym;
-  if ( 0 and $B::C::pv_copy_on_grow ) { # fails
-    $pvsym = sprintf( "pv%d", $pv_index++ );
-    $strtable{$pv} = "$pvsym";
-    if ( defined $max_string_len && length($pv) > $max_string_len ) {
-      my $chars = join ', ', map { cchar $_ } split //, $pv;
-      $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
-    } else {
-      my $cstring = cstring($pv);
-      if ( $cstring ne "0" ) {    # sic
-	$decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
-      }
-    }
+  my $pvsym = sprintf( "pv%d", $pv_index++ );
+  $strtable{$pv} = "$pvsym";
+  if ( defined $max_string_len && length($pv) > $max_string_len ) {
+    my $chars = join ', ', map { cchar $_ } split //, $pv;
+    $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
   } else {
-    $pvsym = cstring($pv);
-    $strtable{$pv} = "$pvsym";
-    #$decl->add( sprintf( "#define %s %s", $pvsym, $cstring ) );
+    my $cstring = cstring($pv);
+    if ( $cstring ne "0" ) {    # sic
+      $decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
+    }
   }
-  return $pvsym;
+  wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
 }
 
 sub savepv {
+  return constpv($_[0]) if $B::C::pv_copy_on_grow; # or readonly
   my $pv    = pack "a*", shift;
-  my $pvsym = 0;
-  my $pvmax = 0;
-  if ($B::C::pv_copy_on_grow) { # or readonly
-    $pvsym = sprintf( "pv%d", $pv_index++ );
-    if ( defined $max_string_len && length($pv) > $max_string_len ) {
-      my $chars = join ', ', map { cchar $_ } split //, $pv;
-      # >=5.10: A union's data members can NOT be declared static
-      $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
+  my $pvsym = sprintf( "pv%d", $pv_index++ );
+  if ( defined $max_string_len && length($pv) > $max_string_len ) {
+    my $chars = join ', ', map { cchar $_ } split //, $pv;
+    $decl->add( sprintf( "static const char %s[] = { %s };", $pvsym, $chars ) );
+  } else {
+    my $cstring = cstring($pv);
+    if ( $cstring ne "0" ) {    # sic
+      $decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
     }
-    else {
-      my $cstring = cstring($pv);
-      if ( $cstring ne "0" ) {    # sic
-        $decl->add( sprintf( "static const char %s[] = %s;", $pvsym, $cstring ) );
-      }
-    }
-    $pvmax = length( pack "a*", $pv ) + 1;
   }
-  else {
-    $pvmax = length( pack "a*", $pv ) + 1;
-  }
+  my $pvmax = length( pack "a*", $pv ) + 1;
   return ( $pvsym, $pvmax );
 }
 
@@ -458,7 +443,6 @@ sub save_rv {
   my $sv = shift;
 
   # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
-
   # 5.6: Can't locate object method "RV" via package "B::PVMG"
   my $rv = $sv->RV->save;
 
@@ -467,7 +451,7 @@ sub save_rv {
   return $rv;
 }
 
-# savesym, pvmax, len, pv
+# => savesym, pvmax, len, pv
 sub save_pv_or_rv {
   my $sv = shift;
 
@@ -482,8 +466,8 @@ sub save_pv_or_rv {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
     $len = $pok ? length($pv) : 0;
     if ($pok) {
-      local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
-      ( $savesym, $pvmax ) = savepv($pv);
+      #local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+      ( $savesym, $pvmax ) = $sv->FLAGS & SVf_READONLY ? constpv($pv) : savepv($pv);
     } else {
       ( $savesym, $pvmax ) = ( '0', 0 );
     }
@@ -1251,10 +1235,10 @@ sub B::PVLV::save {
   my $pv  = $sv->PV;
   my $len = length($pv);
   my ( $pvsym, $pvmax );
-  {
-    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
-    ( $pvsym, $pvmax ) = savepv($pv);
-  }
+  #{
+    #local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+  ( $pvsym, $pvmax ) = $sv->FLAGS & SVf_READONLY ? constpv($pv) : savepv($pv);
+  #}
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL513) {
     $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
@@ -1336,8 +1320,8 @@ sub B::PVNV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+  my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
@@ -1456,12 +1440,12 @@ sub B::PV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
+  my $flags = $sv->FLAGS;
+  local $B::C::pv_copy_on_grow = 1 if $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3"
-  my $flags = $sv->FLAGS;
-  local $B::C::pv_copy_on_grow = 1 if $flags & SVf_READONLY;
   if ($PERL510) {
     # XXX If READONLY and FAKE use newSVpvn_share instead
     #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
@@ -1494,10 +1478,9 @@ sub B::PVMG::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  {
-    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
-    my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
-    warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
+
+  my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
@@ -1570,9 +1553,8 @@ sub B::PVMG::save {
 			    $pv ) );
       }
     }
-   }
-   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   }
+  $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
   $sv->save_magic;
   return $sym;
 }
@@ -1965,6 +1947,7 @@ sub B::CV::save {
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
     $startfield = "0" unless $startfield;
     if ($$padlist) {
+      # readonly comppad names and symbols
       local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
@@ -2848,6 +2831,7 @@ sub B::SV::save {
 sub output_all {
   my $init_name = shift;
   my $section;
+
   my @sections = (
     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
@@ -3057,6 +3041,28 @@ EOT
   if ($B::C::av_init2 and $B::C::Flags::use_declare_independent_comalloc) {
     print "void** dlindependent_comalloc(size_t, size_t*, void**);\n";
   }
+  if ($B::C::av_init2) {
+    my $last = $xpvavsect->index;
+    my $size = $last + 1;
+    if ($last) {
+      $decl->add("static void* avchunks[$size];");
+      $decl->add("static size_t avsizes[$size] = ");
+      my $ptrsize = $Config{ptrsize};
+      my $acc = "";
+      for (0..$last) {
+	if ($xpvav_sizes[$_] > 0) {
+	  $acc .= $xpvav_sizes[$_] * $ptrsize;
+	} else {
+	  $acc .= 3 * $ptrsize;
+	}
+	$acc .= "," if $_ != $last;
+	$acc .= "\n\t" unless ($_+1) % 30;
+      }
+      $decl->add("\t{$acc};");
+      $init->add_initav("if (!independent_comalloc( $size, avsizes, avchunks ))");
+      $init->add_initav("\tPerl_die(aTHX_ \"panic: AV alloc failed\");");
+    }
+  }
 }
 
 sub init_op_addr {
@@ -3104,6 +3110,30 @@ EOT
 }
 
 sub output_main {
+
+  # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
+  if ( $PERL510 and $B::C::destruct and (%strtable or $B::C::pv_copy_on_grow)) {
+    print <<'EOT';
+int my_perl_destruct( PerlInterpreter *my_perl );
+int my_perl_destruct( PerlInterpreter *my_perl ) {
+    /* set all our static pv and hek to NULL so perl_destruct() will not cry */
+EOT
+    for (0 .. $svsect->index) {
+      # XXX set the sv/xpv to NULL, not the pv itself
+      my $sv = sprintf( "&sv_list[%d]", $_ );
+      printf ("    if (SvPOK(%s)) SvPV_set(%s, NULL);\n", $sv, $sv);
+      #my $pv = sprintf( "pv%d", $_ );
+      #printf ("    %s = NULL;\n", $pv);
+      #printf ("    memset(&%s, 0, sizeof(char *));\n", $pv);
+    }
+    for (0 .. $hek_index-1) {
+      # XXX who stores this hek? GvNAME and GvFILE most likely
+      my $hek = sprintf( "hek%d", $_ );
+      #printf ("    memset(%s, 0, sizeof(HEK *));\n", $hek);
+      printf ("    %s = NULL;\n", $hek);
+    }
+    print "    perl_destruct( my_perl );\n}\n\n";
+  }
 
   # -fno-destruct
   if ( !$B::C::destruct ) {
@@ -3392,8 +3422,9 @@ EOT
   print "\tSPAGAIN;\n";
   print "#endif\n";
 
+  my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( keys %xsub ) {
-    if ( $xsub{$stashname} !~ m/Dynamic/ and !$static_ext{$stashname} ) {
+    if ( $xsub{$stashname} !~ m/Dynamic/ and !$static_ext{$stashname} and !$core{$stashname}) {
       my $stashxsub = $stashname;
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
       $stashxsub =~ s/::/__/g;
@@ -3795,28 +3826,6 @@ sub save_main_rest {
     print "EXTERN_C void boot_$stashxsub (pTHX_ CV* cv);\n";
   }
   print "\n";
-  if ($B::C::av_init2) {
-    my $last = $xpvavsect->index;
-    my $size = $last + 1;
-    if ($last) {
-      $decl->add("static void* avchunks[$size];");
-      $decl->add("static size_t avsizes[$size] = ");
-      my $ptrsize = $Config{ptrsize};
-      my $acc = "";
-      for (0..$last) {
-	if ($xpvav_sizes[$_] > 0) {
-	  $acc .= $xpvav_sizes[$_] * $ptrsize;
-	} else {
-	  $acc .= 3 * $ptrsize;
-	}
-	$acc .= "," if $_ != $last;
-	$acc .= "\n\t" unless ($_+1) % 30;
-      }
-      $decl->add("\t{$acc};");
-      $init->add_initav("if (!independent_comalloc( $size, avsizes, avchunks ))");
-      $init->add_initav("\tPerl_die(aTHX_ \"panic: AV alloc failed\");");
-    }
-  }
   output_all("perl_init");
   print "\n";
   output_main();
