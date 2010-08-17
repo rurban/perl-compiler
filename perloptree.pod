@@ -824,8 +824,8 @@ contexts are not controlled via COP's, but global C<Cx> structs.
 
 F<cop.h> says:
 
-Control ops (cops) are one of the three ops OP_NEXTSTATE, OP_DBSTATE, and
-OP_SETSTATE that (loosely speaking) are separate statements. They hold
+Control ops (cops) are one of the two ops OP_NEXTSTATE and OP_DBSTATE 
+that (loosely speaking) are separate statements. They hold
 information for lexical state and error reporting. At run time, C<PL_curcop> is set
 to point to the most recently executed cop, and thus can be used to determine
 our file-level current state.
@@ -873,10 +873,6 @@ For a short time there used to be three. C<SETSTATE> was
 added 1999 (pre Perl 5.6.0) to track linenumbers correctly
 in optimized blocks, disabled 1999 with change 4309 for Perl
 5.6.0, and removed with 5edb5b2abb at Perl 5.10.1.
-
-This requires a patch to remove wrong info from the F<cop.h> header.
-Read L<perlhack.pod> and submit the patch after investigating where it
-has gone to. Sam Vilain's GIT history might help.
 
 =head2 BASEOP_OR_UNOP
 
@@ -1061,7 +1057,7 @@ common logic.
      : CALL_FPTR(PL_check[type])(aTHX_ (OP*)o))
 
 So when a global B<PL_op_mask> is fitting to the type the OP is nullified at once.
-If not the type specific check function, with the help of F<opcodes.pl> generating 
+If not, the type specific check function with the help of F<opcodes.pl> generating 
 the C<PL_check> array in F<opnames.h> is called.
 
 
@@ -1082,7 +1078,7 @@ E.g. our C<newUNOP()> calls at the end:
 
     return fold_constants((OP *) unop);
 
-OA_FOLDCONST
+OA_FOLDCONST ...
 
 =head2 Lexical Pragmas
 
@@ -1172,8 +1168,7 @@ Malcom Beattie's B modules hooked into the early op tree stages to
 represent the internal ops as perl objects and added the perl compiler
 backends. See L<B> and L<perlcompile.pod>.
 
-The three main compiler backends are still B<Bytecode>, B<C> and B<CC>,
-and these do not work for current perl's (I<yet>).
+The three main compiler backends are still B<Bytecode>, B<C> and B<CC>.
 
 I<Todo: Describe B's object representation a little bit deeper, its
 CHECK hook, its internal transformers for Bytecode (asm and vars) and
@@ -1183,9 +1178,9 @@ C (the sections).>
 
 MAD stands for "Misc Attributed Data".
 
-Larry Wall worked on a new MAD compiler backend outside of the B approach,
-dumping the internal op tree representation as B<XML>, not as tree of perl B
-objects.
+Larry Wall worked on a new MAD compiler backend outside of the B
+approach, dumping the internal op tree representation as B<XML> or
+B<YAML>, not as tree of perl B objects.
 
 The idea is that all the information needed to recreate the original source is
 stored in the op tree. To do this the tokens for the ops are associated with ops,
@@ -1206,11 +1201,12 @@ Why this awful XML and not the rich tree of perl objects?
 Well there's an advantage.
 The MAD XML can be seen as some kind of XML Storable/Freeze of the B
 op tree, and can be therefore converted outside of the CHECK block,
-which means you can actually debug the conversion (= compilation)
-process. This is not possible within the CHECK block in the B
-backends.
+which means you can easier debug the conversion (= compilation)
+process. To debug the CHECK block in the B backends you have to 
+use the L<B::Debugger> B<Od> or B<Od_o> modules, which defer the 
+CHECK to INIT.
 
-B<kurila> L<http://search.cpan.org/dist/kurila/> uses this to convert
+B<kurila> L<http://search.cpan.org/dist/kurila/> uses MAD to convert
 Perl 5 source to the kurila dialect. 
 
 To convert a file 'source.pm' from Perl 5.10 to Kurila you need to do:
@@ -1241,11 +1237,12 @@ file, add the line:
   PL_runops = my_runops;
 
 This function should be as efficient as possible to keep your programs
-running as fast as possible.
+running as fast as possible. See L<Jit> for an even faster just-in-time 
+compilation runloop.
 
 =head3 Walkers or runops
 
-The standard op tree B<walker> or B<runops> is as simple as this ultrafast
+The standard op tree B<walker> or B<runops> is as simple as this fast
 C<Perl_runops_standard()> in (F<run.c>). It starts with C<main_start> and walks
 the C<op_next> chain until the end. No need to check other fields, strictly
 linear through the tree.
@@ -1255,7 +1252,7 @@ linear through the tree.
   {
 	dVAR;
 	while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) {
-		PERL_ASYNC_CHECK();
+		PERL_ASYNC_CHECK(); /* until 5.13.2 */
 	}
 	TAINT_NOT;
 	return 0;
@@ -1297,8 +1294,9 @@ L<Devel::TypeCheck> tries to verify possible static typing for
 expressions and variables, a pretty hard problem for compilers,
 esp. with such dynamic and untyped variables as Perl 5.
 
-Reini Urban is working on an interactive op tree debugger,
-L<B::Debugger>.
+Reini Urban maintains the interactive op tree debugger L<B::Debugger>, 
+the Compiler suite (B::C, B::CC, B::Bytecode), L<B::Generate> and 
+is working on L<Jit>.
 
 =head1 Various Articles
 
@@ -1328,14 +1326,16 @@ The wiki article should be more actual.
 
 =head1 Conclusion
 
-So this is about 30% of the basic op tree information so far. Not speaking about
-the guts. Simon has more 30%, in the source are more 10% to copy&paste, and in
-the compilers and run-time information is the rest. I hope with the help of some
-hackers we'll get it done, so that some people will begin poking around in the B
-backends. And write the wonderful new dump/undump functionality (which actually
-worked in the early years on Solaris), analyse and optimize the output, output
-PIR (parrot code), emit LLVM or another JIT optimized code or even write
-assemblers. I have a simple one at home. :)
+So this is about 30% of the basic op tree information so far. Not
+speaking about the guts. Simon has more 30%, in the source are more
+10% to copy&paste, and in the compilers and run-time information is
+the rest. I hope with the help of some hackers we'll get it done, so
+that some people will begin poking around in the B backends. And write
+the wonderful new dump/undump functionality (which actually worked in
+the early years on Solaris) to save-image and load-image at runtime as
+in LISP, analyse and optimize the output, output PIR (parrot code),
+emit LLVM or another JIT optimized code or even write assemblers. I
+have a simple one at home. :)
 
 Written 2008 on the perl5 wiki with socialtext and pod in parallel 
 by Reini Urban, CPAN ID rurban.
