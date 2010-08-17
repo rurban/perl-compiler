@@ -3112,7 +3112,7 @@ EOT
 
 sub output_main {
 
-  # -fno-destruct
+  # -fno-destruct only >5.8
   if ( !$B::C::destruct ) {
     print <<'EOT';
 int fast_perl_destruct( PerlInterpreter *my_perl );
@@ -4003,6 +4003,7 @@ OPTION:
     $B::C::av_init = 0;
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $ITHREADS);
+  $B::C::destruct = 1 if $] < 5.008;
   if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
     warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
     # XXX Still trying custom destructor.
