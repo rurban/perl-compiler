@@ -110,7 +110,8 @@ sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)};
 >>>>
 26
 ######################### 26 ################################
-use Fcntl (); print "ok" if ( Fcntl::O_CREAT() == 64 && &Fcntl::O_CREAT == 64 ); 
+# newlib: 0x200, glibc: 0x100
+use Fcntl (); print "ok" if ( Fcntl::O_CREAT() >= 64 && &Fcntl::O_CREAT >= 64 ); 
 >>>>
 ok
 ######################### 27 ################################
