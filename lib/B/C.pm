@@ -467,7 +467,6 @@ sub save_pv_or_rv {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
     $len = $pok ? length($pv) : 0;
     if ($pok) {
-      #local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
       ( $savesym, $pvmax ) = $sv->FLAGS & SVf_READONLY ? constpv($pv) : savepv($pv);
     } else {
       ( $savesym, $pvmax ) = ( '0', 0 );
@@ -1676,7 +1675,6 @@ CODE
       mark_package($stash);
       # XXX why is this needed? threads::shared should be initialized automatically
       $use_xsloader = 1; # ensure threads::shared is initialized
-      # push @DynaLoader::dl_modules, ($stash);
       $xsub{$stash} = 'Dynamic-XSLoaded';
       $init->add(sprintf("sv_magic((SV*)s\\_%x, Nullsv, %s, %s, %d);",
 			   $$sv, "'n'", cstring($ptr), $len ));
@@ -2531,14 +2529,14 @@ sub B::AV::save {
           # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
           $init->add(sprintf(($MYMALLOC
 			     ? "\tNewx(svp, %d, SV*);"
-			     : "\tsvp = (SV*)malloc(%d * sizeof(SV*));"),
+			     : "\tsvp = (SV**)malloc(%d * sizeof(SV*));"),
 			     $fill < 3 ? 3 : $fill+1),
                      "\tAvALLOC(av) = svp;",
                      "\tAvARRAY(av) = svp;");
         } else { # read-only AvARRAY macro
           $init->add(sprintf(($MYMALLOC
 			     ? "\tNewx(svp, %d, SV*)"
-			     : "\tsvp = (SV*)malloc(%d * sizeof(SV*));"),
+			     : "\tsvp = (SV**)malloc(%d * sizeof(SV*));"),
                              $fill < 3 ? 3 : $fill+1),
                      "\tAvALLOC(av) = svp;",
                      # XXX Dirty hack from av.c:Perl_av_extend()
@@ -3432,6 +3430,7 @@ EOT
   print("/* DynaLoader bootstrapping */\n");
   print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
+  warn "dl_init @DynaLoader::dl_modules\n" if $verbose;
   foreach my $stashname (@DynaLoader::dl_modules) {
     warn "Loaded $stashname\n" if $verbose;
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/Dynamic/ ) {
@@ -3453,6 +3452,9 @@ EOT
       print "\tboot_$stashxsub(aTHX_ NULL);\n";
       print "#endif\n";
       print "\tSPAGAIN;\n";
+    } else {
+      warn "no dl_init for $stashname: ".
+        (!$xsub{$stashname} ? "not visited\n" : "marked as $xsub{$stashname}\n") if $verbose;
     }
   }
   print "\tFREETMPS;\n/* end DynaLoader bootstrapping */\n";
@@ -3556,14 +3558,15 @@ sub core_packages {
   return @pkg;
 }
 
+# XS modules in CORE which do not need to be bootstrapped extra
 sub static_xs_packages {
   my @pkg = qw(Internals main Regexp utf8);
-  if ($] >= 5.010) {
-    @pkg = qw(Internals main mro re Regexp utf8 version);
-  }
-  push @pkg, qw(Win32CORE Cygwin)      	   if $^O eq 'cygwin';
-  push @pkg, qw(NetWare)                   if $^O eq 'NetWare';
-  push @pkg, qw(OS2)         		   if $^O eq 'os2';
+  push @pkg, qw(mro re version) 	if $] >= 5.010;
+  push @pkg, qw(DynaLoader)		if $Config{dlsrc};
+  # Win32CORE only in official pkg, and it needs to be bootstrapped, handled by static_ext.
+  push @pkg, qw(Cygwin)			if $^O eq 'cygwin';
+  push @pkg, qw(NetWare)		if $^O eq 'NetWare';
+  push @pkg, qw(OS2)			if $^O eq 'os2';
   push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
   return @pkg;
 }
