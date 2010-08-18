@@ -47,7 +47,9 @@ sub test {
 }
 EOF
 
-test(1, $script, "B::CC issue 35");
+#fixed with B-C-1.28 r527 (B::CC 1.08)
+use B::CC;
+test(1, $script, $B::CC::VERSION < 1.08 ? "B::CC issue 35" : undef);
 
 # error: redeclaration of ‘d_tmp5’ with no linkage
 $script = <<'EOF';
@@ -59,4 +61,4 @@ sub test {
 EOF
 
 # passes non-threaded (5.8.9d-nt, perl5.10.1d-nt)
-test(2, $script, $ITHREADS ? "B::CC issue 35 fail3.pl" : undef);
+test(2, $script, ($B::CC::VERSION < 1.08 and $ITHREADS) ? "B::CC issue 35 fail3.pl" : undef);
