@@ -366,7 +366,7 @@ sub savere {
   my $pvmax = length( pack "a*", $pv ) + 1;
   if ($PERL513) {
     $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $len, $pvmax ) );
-    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
+    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
   }
@@ -391,14 +391,14 @@ sub savere {
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
     my $s = ($PERL513 ? "NULL," : "") . "{0}, %u, %u";
     $xpvsect->add( sprintf( $s, $len, $pvmax ) );
-    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
+    $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
     # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
-    $decl->add( sprintf( "static /*const*/ char *$sym = %s;\n", cstring($re) ) );
+    $decl->add( sprintf( "static /*const*/ char *$sym = (char*)%s;\n", cstring($re) ) );
   }
   return ( $sym, length( pack "a*", $re ) );
 }
@@ -420,7 +420,7 @@ sub constpv {
       $decl->add( sprintf( "static $const char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
-  wantarray ? ( "(char*)$pvsym", length( pack "a*", $pv ) ) : "(char*)$pvsym";
+  wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
 }
 
 sub savepv {
@@ -1148,6 +1148,7 @@ sub B::IV::save {
   if ($sv->FLAGS & SVf_IVisUV) {
     return $sv->B::UV::save;
   }
+  # warn "no IV $sym" unless $sv->FLAGS & SVf_IOK;
   if ($PERL513) {
     $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}", $sv->IVX ) );
   } elsif ($PERL510) {
@@ -1176,7 +1177,8 @@ sub B::NV::save {
   my $sval = sprintf("%g", $nv);
   $nv = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
   $nv .= '.00' if $nv =~ /^-?\d+$/;
-  my $iv = $sv->IVX;
+  # IVX is invalid in B.xs and unused
+  my $iv = $sv->FLAGS & SVf_IOK ? $sv->IVX : 0;
   if ($PERL513) {
     $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
     $xpvnvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}, {%s}", $iv, $nv ) );
@@ -1240,6 +1242,7 @@ sub B::PVLV::save {
     #local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
   ( $pvsym, $pvmax ) = $sv->FLAGS & SVf_READONLY ? constpv($pv) : savepv($pv);
   #}
+  $pvsym = "(char*)$pvsym";
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL513) {
     $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
@@ -1287,6 +1290,7 @@ sub B::PVIV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  $savesym = "(char*)$savesym";
   my $iv = $sv->IVX;
   if ($PERL513) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
@@ -1323,6 +1327,7 @@ sub B::PVNV::save {
   return $sym if defined $sym;
   local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  $savesym = "(char*)$savesym";
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
@@ -1444,6 +1449,7 @@ sub B::PV::save {
   my $flags = $sv->FLAGS;
   local $B::C::pv_copy_on_grow = 1 if $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
+  $savesym = "(char*)$savesym";
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3"
@@ -2229,7 +2235,7 @@ sub B::GV::save {
   #if (!($svflags && 0x400)) { # defer to run-time (0x400 -> SvPOK) for convenience
   # XXX also empty "main::" destruction accesses a PVX, so do not check if_empty
   if ( !$PERL510 ) {
-    $init->add("if (SvPOK($sym)) SvPVX($sym) = emptystring;"); # unless $is_empty;
+    $init->add("if (SvPOK($sym)) SvPVX($sym) = (char*)emptystring;"); # unless $is_empty;
   }
 
   # Shouldn't need to do save_magic since gv_fetchpv handles that
@@ -3385,7 +3391,7 @@ EOT
     my $stashxsub = $stashname;
     $stashxsub =~ s/::/__/g;
     #if ($stashxsub =~ m/\/(\w+)\.\w+$/ {$stashxsub = $1;}
-    # cygwin has Win32CORE
+    # cygwin has Win32CORE in static_ext
     warn "bootstrapping static $stashname added to xs_init\n" if $verbose;
     print "\tnewXS(\"${stashname}::bootstrap\", boot_$stashxsub, file);\n";
   }
