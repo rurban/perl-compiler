@@ -241,7 +241,7 @@ my $initsub_index = 0;
 
 my $package_pv;
 my (%symtable, %cvforward);
-my (%strtable, %hektable);
+my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
 my $verbose = 0;
@@ -394,6 +394,7 @@ sub savere {
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
+    push @static_free, ($svsect->index) if $pvmax and $B::C::pv_copy_on_grow;
     # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
   else {
@@ -1279,6 +1280,8 @@ sub B::PVLV::save {
       $init->add(
         savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv ) );
     }
+  } else {
+    push @static_free, ($svsect->index) if $pvmax;
   }
   $sv->save_magic;
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1307,14 +1310,17 @@ sub B::PVIV::save {
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
             $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
   $svsect->debug( $sv->flagspv ) if $debug{flags};
-  if ( defined($pv) && !$B::C::pv_copy_on_grow ) {
-    if ($PERL510) {
-      $init->add(
-        savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
-    }
-    else {
-      $init->add(
-        savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
+  if ( defined($pv) ) {
+    if ( !$B::C::pv_copy_on_grow ) {
+      if ($PERL510) {
+	$init->add
+	  (savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      } else {
+	$init->add
+	  (savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
+      }
+    } else {
+      push @static_free, ($svsect->index) if $pvmax;
     }
   }
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1380,14 +1386,18 @@ sub B::PVNV::save {
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
             $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
   $svsect->debug( $sv->flagspv ) if $debug{flags};
-  if ( defined($pv) && !$B::C::pv_copy_on_grow ) {
-    if ($PERL510) {
-      $init->add(
-        savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
-    }
-    else {
-      $init->add(
-        savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv ) );
+  if ( defined($pv) ) {
+    if ( !$B::C::pv_copy_on_grow ) {
+      if ($PERL510) {
+	$init->add(
+          savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      }
+      else {
+        $init->add(
+          savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv ) );
+      }
+    } else {
+      push @static_free, ($svsect->index) if $pvmax;
     }
   }
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1423,8 +1433,11 @@ sub B::BM::save {
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
                          $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
     $svsect->debug( $sv->flagspv ) if $debug{flags};
-    $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) )
-      unless $B::C::pv_copy_on_grow;
+    if (!$B::C::pv_copy_on_grow) {
+      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
+    } else {
+      push @static_free, ($svsect->index) if defined($pv);
+    }
   }
   # Restore possible additional magic. fbm_compile adds just 'B'.
   $sv->save_magic;
@@ -1457,14 +1470,11 @@ sub B::PV::save {
     #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
     #  $init->add( sprintf( "$sym = (GV*)newSVpvn_share();" ));
     #}
-    # Before 5.10 in the PV SvANY was pv,len,pvmax. Since 5.10 the pv alone is below in the SV.sv_u
-    # $flags ||= 0x04000000 if $B::C::pv_copy_on_grow;   # SVf_BREAK trigger in sv_free. 0x04000000 for 5.5 - 5.11
-    # => Attempt to free unreferenced scalar: SV 0x4044e8.
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL513 ? "Nullhv, " : "", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "0"));
-    if ( defined($pv) && !$B::C::pv_copy_on_grow ) {
+    if ( defined($pv) and !$B::C::pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
     }
   }
@@ -1472,9 +1482,12 @@ sub B::PV::save {
     $xpvsect->add( sprintf( "%s, %u, %u", $savesym, $len, $pvmax ) );
     $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
 			 $xpvsect->index, $refcnt, $flags));
-    if ( defined($pv) && !$B::C::pv_copy_on_grow ) {
+    if ( defined($pv) and !$B::C::pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
     }
+  }
+  if ( $B::C::pv_copy_on_grow ) {
+    push @static_free, ($svsect->index) if defined($pv);
   }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1524,6 +1537,7 @@ sub B::PVMG::save {
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
+    push @static_free, ($svsect->index) if $pvmax and $B::C::pv_copy_on_grow;
   }
   else {
     # cannot initialize this pointer static
@@ -1535,6 +1549,7 @@ sub B::PVMG::save {
     } else {
       $xpvmgsect->add(sprintf("%s, %u, %u, %ld, %s, 0, 0",
 			      $savesym, $len, $pvmax, $sv->IVX, $sv->NVX));
+      push @static_free, ($svsect->index + 1) if $pvmax and $B::C::pv_copy_on_grow;
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
@@ -3179,18 +3194,14 @@ int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
     /* set all our static pv and hek to NULL so perl_destruct() will not cry */
 EOT
-    for (0 .. $svsect->index) {
-      # XXX set the sv/xpv to NULL, not the pv itself
-      my $sv = sprintf( "&sv_list[%d]", $_ );
-      printf ("    if (SvPOK(%s)) SvPV_set(%s, NULL);\n", $sv, $sv);
-      #my $pv = sprintf( "pv%d", $_ );
-      #printf ("    %s = NULL;\n", $pv);
-      #printf ("    memset(&%s, 0, sizeof(char *));\n", $pv);
+    for (0 .. $#static_free) {
+      # set the sv/xpv to NULL, not the pv itself
+      my $sv = sprintf( "&sv_list[%d]", $static_free[$_] );
+      printf ("    SvPV_set(%s, NULL);\n", $sv);
     }
     for (0 .. $hek_index-1) {
       # XXX who stores this hek? GvNAME and GvFILE most likely
       my $hek = sprintf( "hek%d", $_ );
-      #printf ("    memset(%s, 0, sizeof(HEK *));\n", $hek);
       printf ("    %s = NULL;\n", $hek);
     }
     print "    perl_destruct( my_perl );\n}\n\n";
