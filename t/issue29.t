@@ -11,6 +11,8 @@ print unpack('U*', $_), " ";
 print $_ if /\w/;
 EOF
 
+# :std only since perl-5.8.0 b178108dc
+$script =~ s/:std // if $] < 5.008;
 open F, ">", "$name.pl";
 print F $script;
 close F;
@@ -21,16 +23,20 @@ my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 system "$runperl -Mblib blib/script/perlcc -o $name $name.pl";
 unless (-e $name or -e "$name.exe") {
   print "ok 1 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
+  print "ok 2 #skip\n";
   exit;
 }
 my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
 my $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
-ok($result eq $expected, "#TODO B::C issue 29: '$result' ne '$expected'");
+TODO: {
+  local $TODO = "B::C issue 29";
+  ok($result eq $expected, "'$result' ne '$expected'");
+}
 
 system "$runperl -Mblib blib/script/perlcc -B -o $name.plc $name.pl";
 unless (-e $name or -e "$name.exe") {
-  print "ok 1 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
+  print "ok 2 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   exit;
 }
 $runexe = "$runperl -Mblib -MByteloader $name.plc";
