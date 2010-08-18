@@ -1422,7 +1422,7 @@ sub B::BM::save {
                 sprintf( "BmUSEFUL($sym) = %d;", $sv->USEFUL )
               );
   } else {
-    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY and $] != 5.008009;
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
@@ -3452,7 +3452,7 @@ EOT
       print "#endif\n";
       print "\tSPAGAIN;\n";
     } else {
-      warn "no dl_init for $stashname: ".
+      warn "  no dl_init for $stashname: ".
         (!$xsub{$stashname} ? "not visited\n" : "marked as $xsub{$stashname}\n") if $verbose;
     }
   }
