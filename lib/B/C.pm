@@ -3188,6 +3188,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 EOT
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
+  # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
   elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow)) {
     print <<'EOT';
 int my_perl_destruct( PerlInterpreter *my_perl );
@@ -3429,10 +3430,10 @@ EOT
   print("/* DynaLoader bootstrapping */\n");
   print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
-  warn "dl_init @DynaLoader::dl_modules\n" if $verbose;
+  #warn "dl_init @DynaLoader::dl_modules\n" if $verbose;
   foreach my $stashname (@DynaLoader::dl_modules) {
-    warn "Loaded $stashname\n" if $verbose;
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/Dynamic/ ) {
+      warn "Loaded $stashname\n" if $verbose;
       my $stashxsub = $stashname;
       $stashxsub =~ s/::/__/g;
       print "\tPUSHMARK(sp);\n";
@@ -3452,8 +3453,8 @@ EOT
       print "#endif\n";
       print "\tSPAGAIN;\n";
     } else {
-      warn "  no dl_init for $stashname: ".
-        (!$xsub{$stashname} ? "not visited\n" : "marked as $xsub{$stashname}\n") if $verbose;
+      warn "no dl_init for $stashname: ".
+        (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n") if $verbose;
     }
   }
   print "\tFREETMPS;\n/* end DynaLoader bootstrapping */\n";
