@@ -219,13 +219,13 @@ result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 # lvalue sub
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
-# xsub constants. newlib: 0x200, glibc: 0x100
-tests[27]='use Fcntl (); print "ok" if ( Fcntl::O_CREAT() >= 64 && &Fcntl::O_CREAT >= 64 ); '
+# xsub constants (constant folded). newlib: 0x200, glibc: 0x100
+tests[27]='use Fcntl ();my $a=Fcntl::O_CREAT(); print "ok" if ( $a >= 64 && &Fcntl::O_CREAT >= 64 );'
 result[27]='ok'
 # require $fname
 tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest28_} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);require $fname;unlink($fname);print $x;'
 result[28]='ok'
-# use test
+# special old IO handling
 tests[29]='use IO;print "ok"'
 result[29]='ok'
 # run-time context of .., fails in CC

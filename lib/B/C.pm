@@ -1834,8 +1834,8 @@ sub B::CV::save {
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
     my $stashname = $egv->STASH->NAME;
-    my %static_pkg = map {$_=>1} static_xs_packages(); # do not bootstrap static core packages
-    if ( $cvname eq "bootstrap" ) {
+    my %core_pkg = map {$_=>1} static_xs_packages(); # do not bootstrap static core packages
+    if (!$xsub{$stashname} and !$core_pkg{$stashname}) {
       my $file = $gv->FILE;
       $decl->add("/* bootstrap $file */");
       warn "Bootstrap $stashname $file\n" if $verbose;
@@ -1852,10 +1852,6 @@ sub B::CV::save {
         $xsub{$stashname} = 'Dynamic';
       }
 
-      # $xsub{$stashname}='Static' unless  $xsub{$stashname};
-      return qq/NULL/;
-    }
-    else {
       # XSUBs for IO::File, IO::Handle, IO::Socket,
       # IO::Seekable and IO::Poll
       # are defined in IO.xs, so let's bootstrap it
@@ -1863,16 +1859,8 @@ sub B::CV::save {
         if grep { $stashname eq $_ }
           qw(IO::File IO::Handle IO::Socket
              IO::Seekable IO::Poll);
-    }
-    unless ($static_pkg{$stashname}) {
-      warn sprintf( "bootstrap external XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
-	if $debug{cv};
-      svref_2object( \&{"$cvstashname::bootstrap"} )->save;
+
       return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
-    } else {
-      warn sprintf( "xs_init static_lib XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
-	if $debug{cv};
-      $xsub{$stashname} = 'Static';
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3078,7 +3066,7 @@ sub init_op_addr {
 {
     register int i;
     for( i = 0; i < ${num}; ++i ) {
-        ${op_list}\[i].op_ppaddr = PL_ppaddr[INT2PTR(int,${op_list}\[i].op_ppaddr)];
+        ${op_list}\[i].op_ppaddr = PL_ppaddr[PTR2IV(${op_list}\[i].op_ppaddr)];
     }
 }
 EOT
@@ -3379,7 +3367,7 @@ EOT
   print "\n\tnewXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);";
   print "\n#endif\n";
 
-  # delete $xsub{'DynaLoader'};
+  delete $xsub{'DynaLoader'};
   delete $xsub{'UNIVERSAL'};
   print("/* XS bootstrapping code*/\n");
   print("\tSAVETMPS;\n");
@@ -3403,9 +3391,9 @@ EOT
   print "\tSPAGAIN;\n";
   print "#endif\n";
 
-  my %core = map{$_ => 1} core_packages();
+  # my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( keys %xsub ) {
-    if ( $xsub{$stashname} !~ m/Dynamic/ and !$static_ext{$stashname} and !$core{$stashname}) {
+    if ( $xsub{$stashname} !~ m/Dynamic/ and !$static_ext{$stashname}) {
       my $stashxsub = $stashname;
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
       $stashxsub =~ s/::/__/g;
@@ -3542,21 +3530,22 @@ sub mark_package {
   return 1;
 }
 
-sub core_packages {
-  my @pkg = qw(attributes Carp Carp::Heavy DB Exporter Exporter::Heavy Internals main Regexp utf8 warnings);
-  if ($] >= 5.010) {
-    @pkg = qw(attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings);
-  }
-  if ($] >= 5.011001) {
-    push @pkg, qw(XS::APItest::KeywordRPN);
-  }
-  push @pkg, qw(Win32)                           if $^O eq 'MSWin32';
-  push @pkg, qw(Win32 Win32CORE Cwd Cygwin)      if $^O eq 'cygwin';
-  push @pkg, qw(NetWare)                         if $^O eq 'NetWare';
-  push @pkg, qw(Cwd File File::Copy OS2)         if $^O eq 'os2';
-  push @pkg, qw(VMS VMS::Filespec vmsish Socket) if $^O eq 'VMS';
-  return @pkg;
-}
+# Not needed. XS modules in CORE. They need to be bootstrapped
+#sub core_packages {
+#  my @pkg = qw(attributes Carp Carp::Heavy DB Exporter Exporter::Heavy Internals main Regexp utf8 warnings);
+#  if ($] >= 5.010) {
+#    @pkg = qw(attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings);
+#  }
+#  if ($] >= 5.011001) {
+#    push @pkg, qw(XS::APItest::KeywordRPN);
+#  }
+#  push @pkg, qw(Win32)                           if $^O eq 'MSWin32';
+#  push @pkg, qw(Win32 Win32CORE Cwd Cygwin)      if $^O eq 'cygwin';
+#  push @pkg, qw(NetWare)                         if $^O eq 'NetWare';
+#  push @pkg, qw(Cwd File File::Copy OS2)         if $^O eq 'os2';
+#  push @pkg, qw(VMS VMS::Filespec vmsish Socket) if $^O eq 'VMS';
+#  return @pkg;
+#}
 
 # XS modules in CORE which do not need to be bootstrapped extra
 sub static_xs_packages {

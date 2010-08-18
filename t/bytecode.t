@@ -78,7 +78,7 @@ else {
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO " : "#";
   my ($got, @insn);
-  if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
+  if ($todo{$cnt} and $skip{$cnt}) { # and !$AUTHOR
     print sprintf("ok %d # skip\n", $cnt);
     next;
   }

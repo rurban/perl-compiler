@@ -533,7 +533,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (15,39,44); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (15,39,44,46); # 8,14-16 fail on 5.00505 (max 20 then)
     if ($what =~ /^c(|_o[1-4])$/) {
         @todo     = (39)      if !$ITHREADS;
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
@@ -561,7 +561,7 @@ sub todo_tests_default {
         @todo = (11,18,21,24,25,29,30,39,103); #5.8.9
         push @todo, (15,41..45)           if $] < 5.007;
         @todo    = (18,21,25,29,30,39,41) if $] >= 5.010;
-        @todo    = (10,16,18,21,25,29,30,39,41) if $] >= 5.010 and $what eq 'cc_o2';
+        @todo    = (10,16,18,21,25,29,30,39,41,46) if $] >= 5.010 and $what eq 'cc_o2';
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (44);
@@ -573,7 +573,7 @@ sub todo_tests_default {
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }
     push @todo, (41,42,43) if !$ITHREADS;
-    push @todo, (45)       if $] >= 5.007;
+    push @todo, (45,46)    if $] >= 5.007;
     push @todo, (32)       if $] >= 5.011003;
     return @todo;
 }

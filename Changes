@@ -5,14 +5,17 @@
 
 1.28	2010-08-?? rurban
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
-	  (re-enables -fcog >=5.10)
+	  (re-enables -fcog >= 5.10)
 	add -fro-inc (with -O2) readonly INC and curpad strings.
-	const readonly strings (in work)
+	const readonly strings
 	do not boot static core packages (utf8, re, ...)
+	rewrote dynamic XS bootstrapping
 	* CC.pm (1.08): use new B::C optimizations, new -DF
+	fixed issue 35 same variable name in different scope (Heinz Knutzen)
 	* t/issue27.t added (Reported by alexchorny, Apr 25, 2010)
 	* t/issue29.t added (Reported by Heinz Knutzen)
-	  
+	* t/issue34.t added (Reported by Heinz Knutzen)
+	* t/issue35.t added (Reported by Heinz Knutzen)
 
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10
