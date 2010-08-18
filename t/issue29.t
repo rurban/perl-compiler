@@ -30,7 +30,7 @@ my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
 my $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 TODO: {
-  local $TODO = "B::C issue 29";
+  local $TODO = "B::C issue 29 utf8 perlio";
   ok($result eq $expected, "'$result' ne '$expected'");
 }
 
@@ -42,7 +42,7 @@ unless (-e $name or -e "$name.exe") {
 $runexe = "$runperl -Mblib -MByteloader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
-ok($result eq $expected, "#Bytecode issue 29: '$result' eq '$expected'");
+ok($result eq $expected, "Bytecode issue 29: '$result' eq '$expected'");
 
 END {
   #unlink($name, "$name.plc", "$name.pl", "$name.exe");
