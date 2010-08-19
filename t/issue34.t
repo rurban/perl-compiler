@@ -34,20 +34,20 @@ sub test {
     ok($ok);
   }
   if ($ok) {
-    unlink($runexe, "$name.c", "$name.pl", "issue34.dat");
+    unlink($runexe, "$name.c", "$name.pl", "$name.dat");
   }
 }
 
 my $script = <<'EOF';
 $/ = undef;
-open FILE, 'issue34.dat';
+open FILE, 'ccode34i.dat';
 my $first = <FILE>;
 my $rest = <FILE>;
 print "1:\n$first";
 print "2:\n$rest";
 EOF
 
-open F, ">", "issue34.dat";
+open F, ">", "ccode34i.dat";
 print F "line1\n";
 print F "line2\n";
 close F;
