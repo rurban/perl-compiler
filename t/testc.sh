@@ -44,7 +44,8 @@ CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
 # rest. -DALLOW_PERL_OPTIONS for -Dtlv
-CCMD="$PERL $Mblib script/cc_harness -g3 -DALLOW_PERL_OPTIONS"  
+#CCMD="$PERL $Mblib script/cc_harness -g3 -DALLOW_PERL_OPTIONS"
+CCMD="$PERL $Mblib script/cc_harness -g3"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
@@ -318,7 +319,7 @@ do
     OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
-    CCMD="$PERL $Mblib script/cc_harness -q -g3 -DALLOW_PERL_OPTIONS"
+    CCMD="$CCMD -q"
   fi
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "c" ]; then CONT=1; fi
@@ -332,12 +333,14 @@ do
         OCMD="$PERL $Mblib -MO=CC,-D${OPTARG},"
     fi
     if [ -z "${OPTARG/-/}" ]; then
-	CCMD="$PERL $Mblib script/cc_harness -d -g3 -DALLOW_PERL_OPTIONS"  
+        CCMD="$CCMD -d"
+	#CCMD="$PERL $Mblib script/cc_harness -d -g3 -DALLOW_PERL_OPTIONS"  
     fi
   fi
   # -B dynamic or -B static
   if [ "$opt" = "B" ]; then 
-    CCMD="$PERL $Mblib script/cc_harness -d -g3 -B${OPTARG} -DALLOW_PERL_OPTIONS"
+    CCMD="$CCMD -B${OPTARG}"
+    #CCMD="$PERL $Mblib script/cc_harness -d -g3 -B${OPTARG} -DALLOW_PERL_OPTIONS"
   fi
   if [ "$opt" = "O" ]; then OPTIM="$OPTARG"; fi
   if [ "$opt" = "f" ]; then
