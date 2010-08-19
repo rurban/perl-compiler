@@ -1844,9 +1844,13 @@ sub B::CV::save {
     if (!$xsub{$stashname} and !$core_pkg{$stashname}) {
       my $file = $gv->FILE;
 
+      # Without DynaLoader we must boot and link static
+      if ( !$Config{usedl} ) {
+        $xsub{$stashname} = 'Static';
+      }
       # if it not isa('DynaLoader'), it should hopefully be XSLoaded
       # ( attributes being an exception, of course )
-      if ( $stashname ne 'attributes'
+      elsif ( $stashname ne 'attributes'
         && !UNIVERSAL::isa( $stashname, 'DynaLoader' ) )
       {
         $xsub{$stashname} = 'Dynamic-XSLoaded';
@@ -2423,6 +2427,7 @@ sub B::AV::save {
   }
   $svsect->debug($av->flagspv) if $debug{flags};
   my $sv_list_index = $svsect->index;
+  my $av_index = $xpvavsect->index;
   # protect against recursive self-references (Getopt::Long)
   $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
   my $magic = $av->save_magic;
@@ -2498,7 +2503,7 @@ sub B::AV::save {
 
     # With -fav-init2 use independent_comalloc()
     if ($B::C::av_init2) {
-      my $i = $xpvavsect->index;
+      my $i = $av_index;
       $xpvav_sizes[$i] = $fill;
       $init->add("{",
 		 "\tSV **svp = avchunks[$i];",
@@ -3564,7 +3569,7 @@ sub mark_package {
 sub static_core_packages {
   my @pkg = qw(Internals main Regexp utf8);
   push @pkg, qw(mro re version) 	if $] >= 5.010;
-  push @pkg, qw(DynaLoader)		if $Config{dlsrc};
+  push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official pkg, and it needs to be bootstrapped, handled by static_ext.
   push @pkg, qw(Cygwin)			if $^O eq 'cygwin';
   push @pkg, qw(NetWare)		if $^O eq 'NetWare';
