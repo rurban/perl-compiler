@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.27 r486
+# B::C::VERSION = 1.28 r520
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2
 # platform = cygwin 32bit
@@ -6,7 +6,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -19,92 +19,92 @@ pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 pass Test
-pass Data::Dumper
+fail Data::Dumper
 pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder #TODO < 5.007
 skip ExtUtils::ParseXS
-pass Module::Build
+skip Module::Build
 pass File::Path
 pass XSLoader
-pass MIME::Base64
-pass Digest
-fail Digest::MD5
-pass Sub::Uplevel
-pass URI
-pass HTML::Tagset
-pass HTML::Parser
-pass Test::Exception
-pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-pass LWP #TODO generally
-skip Storable
+skip MIME::Base64
+skip Digest
+skip Digest::MD5
+skip Sub::Uplevel
+skip URI
+skip HTML::Tagset
+skip HTML::Parser
+skip Test::Exception
+skip Net::Cmd
+skip Compress::Raw::Zlib
+skip Compress::Raw::Bzip2
+skip IO::Compress::Base
+skip LWP
+fail Storable
 pass base
-pass List::MoreUtils
-pass Params::Util
-pass Task::Weaken
-pass Class::Accessor
-pass Test::Tester
-pass Sub::Install
-fail Attribute::Handlers #TODO generally
-pass Data::OptList
-pass Sub::Exporter
-pass Test::NoWarnings
-pass version
+skip List::MoreUtils
+skip Params::Util
+skip Task::Weaken
+skip Class::Accessor
+skip Test::Tester
+skip Sub::Install
+skip Attribute::Handlers
+skip Data::OptList
+skip Sub::Exporter
+skip Test::NoWarnings
+skip version
 skip Params::Validate
 fail Sub::Name #TODO < 5.007
 skip Filter::Util::Call
 skip Algorithm::C3
 skip Class::C3
-pass Scope::Guard
+skip Scope::Guard
 skip MRO::Compat
-pass Time::HiRes
-pass Class::Data::Inheritable
-pass Try::Tiny
-pass Devel::GlobalDestruction
+skip Time::HiRes
+skip Class::Data::Inheritable
+skip Try::Tiny
+skip Devel::GlobalDestruction
 skip Class::MOP
 skip Moose
-pass Test::Deep
-fail Carp::Clan
+skip Test::Deep
+skip Carp::Clan
 skip Module::Pluggable
-pass if(1) => "Sys::Hostname"
-pass Text::Balanced
+fail if(1) => "Sys::Hostname"
+skip Text::Balanced
 skip DBI
 pass Time::Local
-pass IO::Scalar
+skip IO::Scalar
 pass Sub::Identify
-pass Class::ISA
-pass FCGI
-pass Tree::DAG_Node
-pass Path::Class
-pass Test::Warn
+skip Class::ISA
+skip FCGI
+skip Tree::DAG_Node
+skip Path::Class
+skip Test::Warn
 skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-skip Test::Pod
-pass Digest::SHA1
+pass Test::Pod
+skip Digest::SHA1
 skip namespace::clean
-pass Class::Inspector
-pass Clone
-pass XML::NamespaceSupport
-pass XML::SAX
+skip Class::Inspector
+skip Clone
+skip XML::NamespaceSupport
+skip XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
 skip DateTime::TimeZone
 skip DateTime::Locale
 skip DateTime
-pass IO::String
+skip IO::String
 pass AppConfig
-pass UNIVERSAL::require
+skip UNIVERSAL::require
 skip Template::Stash
-# 78 / 100 modules tested with B-C-1.27 - perl-5.006002d-nt
-# pass  72 /  78 (92.3%)
-# fail   6 /  78 (7.7%)
-# todo   5 /   6 (83.3%)
-# skip  22 / 100 (22.0% not installed)
+# 34 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
+# pass  27 /  34 (79.4%)
+# fail   7 /  34 (20.6%)
+# todo   3 /   7 (42.9%)
+# skip  66 / 100 (66.0% not installed)
