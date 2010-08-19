@@ -39,11 +39,12 @@ unless (-e $name or -e "$name.exe") {
   print "ok 2 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   exit;
 }
-$runexe = "$runperl -Mblib -MByteloader $name.plc";
+$runexe = "$runperl -Mblib -MByteLoader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 ok($result eq $expected, "Bytecode issue 29: '$result' eq '$expected'");
 
 END {
-  #unlink($name, "$name.plc", "$name.pl", "$name.exe");
+  unlink($name, "$name.plc", "$name.pl", "$name.exe") 
+    if $result eq $expected;
 }
