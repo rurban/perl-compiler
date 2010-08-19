@@ -1335,45 +1335,39 @@ sub B::PVNV::save {
   $savesym = "(char*)$savesym";
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
+  my $uvuformat = $Config{uvuformat};
+  $uvuformat =~ s/"//g;
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
     my $sval = sprintf("%g", $nvx);
     $nvx = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt (DateTime)
     $nvx .= '.00' if $nvx =~ /^-?\d+$/;
   } else {
-    $nvx = '0' if $nvx =~ /(NAN|inf)$/i; # windows msvcrt
+    if ($PERL510 and $C99) {
+      # XXX U if > INT32_MAX = 2147483647
+      $nvx = sprintf(".xpad_cop_seq.xlow = %${uvuformat}, .xpad_cop_seq.xhigh = %${uvuformat}U",
+                     $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH);
+    } else {
+      my $sval = sprintf("%g", $nvx);
+      $nvx = '0' if $sval =~ /(NAN|inf)$/i;
+    }
   }
   if ($PERL510) {
-    # For now the stringification works of NVX to two ints ok. But we might need
-    # to store it as { low, high }.
+    # For some time the stringification works of NVX double to two ints worked ok.
     if ($PERL513) {
       $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
-      if ($C99) {
-        $xpvnvsect->add
-          (sprintf( "Nullhv, {0}, %u, %u, {%ld}, {.xpad_cop_seq.xlow = %u, .xpad_cop_seq.xhigh = %u}",
-                    $len, $pvmax, $ivx, $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH) );
-      } else {
-        $xpvnvsect->add
-          (sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $len, $pvmax, $ivx, $nvx) );
-      }
+      $xpvnvsect->add(sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $len, $pvmax, $ivx, $nvx) );
     } else {
       $xpvnvsect->comment('NVX, cur, len, IVX');
-      if ($C99) {
-        $xpvnvsect->add(
-          sprintf( "{.xpad_cop_seq.xlow=%u, .xpad_cop_seq.xhigh=%u}, %u, %u, {%ld}",
-                   $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH, $len, $pvmax, $ivx ) );
-      } else {
-        $xpvnvsect->add(
-          sprintf( "{%s}, %u, %u, {%ld}", $nvx, $len, $pvmax, $ivx ) );
-      }
+      $xpvnvsect->add(sprintf( "{%s}, %u, %u, {%ld}", $nvx, $len, $pvmax, $ivx ) );
     }
     unless ($C99 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
-      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %u;",
+      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %${uvuformat};",
                          $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
-                 # XXX pad.c: PAD_MAX = I32_MAX (4294967295)
-                 # gcc warning: this decimal constant is unsigned only in ISO C90
-                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %u;",
+                 # pad.c: PAD_MAX = I32_MAX (4294967295)
+                 # U suffix <= "warning: this decimal constant is unsigned only in ISO C90"
+                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %${uvuformat}U;",
                          $xpvnvsect->index, $sv->COP_SEQ_RANGE_HIGH));
     }
   }
@@ -1843,17 +1837,12 @@ sub B::CV::save {
     }
   }
 
-  #INIT is removed from the symbol table, so this call must come
-  # from PL_initav->save. Re-bootstrapping  will push INIT back in,
-  # so nullop should be sent.
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
     my $stashname = $egv->STASH->NAME;
-    my %core_pkg = map {$_=>1} static_xs_packages(); # do not bootstrap static core packages
+    my %core_pkg = map {$_=>1} static_core_packages(); # do not bootstrap static core packages
     if (!$xsub{$stashname} and !$core_pkg{$stashname}) {
       my $file = $gv->FILE;
-      $decl->add("/* bootstrap $file */");
-      warn "Bootstrap $stashname $file\n" if $verbose;
 
       # if it not isa('DynaLoader'), it should hopefully be XSLoaded
       # ( attributes being an exception, of course )
@@ -1867,15 +1856,25 @@ sub B::CV::save {
         $xsub{$stashname} = 'Dynamic';
       }
 
-      # XSUBs for IO::File, IO::Handle, IO::Socket,
-      # IO::Seekable and IO::Poll
-      # are defined in IO.xs, so let's bootstrap it
-      svref_2object( \&IO::bootstrap )->save
-        if grep { $stashname eq $_ }
-          qw(IO::File IO::Handle IO::Socket
-             IO::Seekable IO::Poll);
+      if ($cvname eq "bootstrap") {
+        $decl->add("/* bootstrap $file */");
+        warn "Bootstrap $stashname $file\n" if $verbose;
+        # INIT is removed from the symbol table, so this call must come
+        # from PL_initav->save. Re-bootstrapping  will push INIT back in,
+        # so nullop should be sent.
+        return qq/NULL/;
+      } else {
+        # XSUBs for IO::File, IO::Handle, IO::Socket, IO::Seekable and IO::Poll
+        # are defined in IO.xs, so let's bootstrap it.
+        if (grep { $stashname eq $_ } qw(IO::File IO::Handle IO::Socket
+                                         IO::Seekable IO::Poll)) {
+          warn "IO::bootstrap for $stashname\n" if $debug{cv};
+          svref_2object( \&IO::bootstrap )->save;
+        }
 
-      return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
+        warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv ) if $debug{cv};
+        return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
+      }
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3427,9 +3426,10 @@ dl_init(pTHX)
 	/* char *file = __FILE__; */
 EOT
   print "\tdTARG;\n\tdSP;\n" if @DynaLoader::dl_modules;
-  print("/* DynaLoader bootstrapping */\n");
-  print("\tSAVETMPS;\n");
-  print("\ttarg=sv_newmortal();\n");
+  print "/* DynaLoader bootstrapping */\n";
+  print "\tENTER;\n";
+  print "\tSAVETMPS;\n";
+  print "\ttarg = sv_newmortal();\n";
   #warn "dl_init @DynaLoader::dl_modules\n" if $verbose;
   foreach my $stashname (@DynaLoader::dl_modules) {
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/Dynamic/ ) {
@@ -3438,8 +3438,7 @@ EOT
       $stashxsub =~ s/::/__/g;
       print "\tPUSHMARK(sp);\n";
       printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
-      #print qq/\tXPUSHp("$stashname",/, length($stashname), qq/);\n/;
-      print qq/\tPUTBACK;\n/;
+      print "\tPUTBACK;\n";
       print "#ifdef USE_DYNAMIC_LOADING\n";
       warn "bootstrapping $stashname added to dl_init\n" if $verbose;
       if ( $xsub{$stashname} eq 'Dynamic' ) {
@@ -3457,7 +3456,9 @@ EOT
         (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n") if $verbose;
     }
   }
-  print "\tFREETMPS;\n/* end DynaLoader bootstrapping */\n";
+  print "\tFREETMPS;\n";
+  print "\tLEAVE;\n";
+  print "/* end DynaLoader bootstrapping */\n";
   print "}\n";
 }
 
@@ -3560,7 +3561,7 @@ sub mark_package {
 #}
 
 # XS modules in CORE which do not need to be bootstrapped extra
-sub static_xs_packages {
+sub static_core_packages {
   my @pkg = qw(Internals main Regexp utf8);
   push @pkg, qw(mro re version) 	if $] >= 5.010;
   push @pkg, qw(DynaLoader)		if $Config{dlsrc};
