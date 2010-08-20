@@ -251,7 +251,8 @@ my $use_xsloader;
 my $nullop_count         = 0;
 # optimizations:
 my ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
-    $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct);
+    $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
+    $const_strings);
 my ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 
 my @xpvav_sizes;
@@ -425,7 +426,7 @@ sub constpv {
 }
 
 sub savepv {
-  return constpv($_[0]) if $B::C::pv_copy_on_grow; # or readonly
+  return constpv($_[0]) if $B::C::const_strings and $B::C::pv_copy_on_grow; # or readonly
   my $pv    = pack "a*", shift;
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
@@ -1239,8 +1240,7 @@ sub B::PVLV::save {
   my $len = length($pv);
   my ( $pvsym, $pvmax );
   #{
-    #local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
-  ( $pvsym, $pvmax ) = $sv->FLAGS & SVf_READONLY ? constpv($pv) : savepv($pv);
+  ( $pvsym, $pvmax ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY) ? constpv($pv) : savepv($pv);
   #}
   $pvsym = "(char*)$pvsym";
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
@@ -1330,7 +1330,7 @@ sub B::PVNV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY;
+  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
   my $nvx = $sv->NVX;
@@ -1416,7 +1416,8 @@ sub B::BM::save {
                 sprintf( "BmUSEFUL($sym) = %d;", $sv->USEFUL )
               );
   } else {
-    local $B::C::pv_copy_on_grow = 1 if $sv->FLAGS & SVf_READONLY and $] != 5.008009;
+    local $B::C::pv_copy_on_grow = 1
+      if $B::C::const_strings and $sv->FLAGS & SVf_READONLY and $] != 5.008009;
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
@@ -1453,7 +1454,7 @@ sub B::PV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $flags = $sv->FLAGS;
-  local $B::C::pv_copy_on_grow = 1 if $flags & SVf_READONLY;
+  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
   my $refcnt = $sv->REFCNT;
@@ -3876,6 +3877,7 @@ sub compile {
   $B::C::destruct = 1;
   my %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
+    'const-strings'   => \$B::C::const_strings,
     'save-data'       => \$B::C::save_data_fh,
     'ppaddr'          => \$B::C::optimize_ppaddr,
     'warn-sv'         => \$B::C::optimize_warn_sv,
@@ -3893,7 +3895,7 @@ sub compile {
     0 => [qw()],                # special case
     1 => [qw(-fcog -fav-init)],
     2 => [qw(-fwarn-sv -fppaddr -fav-init2 -fro-inc)],
-    3 => [qw(-fsave-sig-hash -fsave-data -fno-destruct)],
+    3 => [qw(-fsave-sig-hash -fsave-data -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
 OPTION:
@@ -4179,6 +4181,12 @@ Copy-on-grow: PVs declared and initialised statically.
 Does not work yet with Perl 5.10 and higher unless
 -fno-destruct is added.
 
+=item B<-fconst-strings>
+
+Declares readonly strings as const, if -fcog is enabled.
+Note that readonly strings in eval'd string code will
+cause a run-time failure.
+
 =item B<-fsave-data>
 
 Save package::DATA filehandles ( only available with PerlIO ).
@@ -4204,8 +4212,9 @@ Excludes -fav_init if so, uses -fav_init if independent_comalloc is not supporte
 
 =item B<-fro-inc>
 
-Set read-only @INC and %INC pathnames (not the AV) and also curpad names and symbols,
-to store them const and statically, not via malloc at run-time.
+Set read-only @INC and %INC pathnames (-fconst-string, not the AV) and
+also curpad names and symbols, to store them const and statically, not
+via malloc at run-time.
 
 This forbid run-time extends of curpad syms, names and INC strings.
 
@@ -4264,7 +4273,8 @@ Enable -O1 plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init2>, B<-fro-inc>.
 
 =item B<-O3>
 
-Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>.
+Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>,
+B<-fconst-strings>
 
 =item B<-O4>
 

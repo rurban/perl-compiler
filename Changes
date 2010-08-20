@@ -7,7 +7,7 @@
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
 	  (re-enables -fcog >= 5.10)
 	add -fro-inc (with -O2) readonly INC and curpad strings.
-	const readonly strings
+	add -fconst-strings (with -O3) const readonly strings
 	do not boot static core packages (utf8, re, ...)
 	rewrote dynamic XS bootstrapping
 	fixed -O2/-fav-init2: store at wrong avchunk index
