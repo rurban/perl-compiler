@@ -124,7 +124,7 @@ for my $module (@modules) {
     if (is_skip($module)) { # !$have_IPC_Run is not really helpful here
       my $why = is_skip($module);
       $skip++;
-      log_pass("skip", "$module $why", 0);
+      log_pass("skip", "$module #$why", 0);
 
       skip("$module $why", 4 * scalar @opts);
       next MODULE;
