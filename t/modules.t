@@ -92,9 +92,13 @@ if ($log) {
 unless (is_subset) {
   my $svnrev = "";
   if (-d '.svn') {
+    local $ENV{LC_MESSAGES} = "C";
     $svnrev = `svn info|grep Revision:`;
     chomp $svnrev;
     $svnrev =~ s/Revision:\s+/r/;
+    my $svnstat = `svn status lib/B/C.pm t/test.pl t/*.t`;
+    chomp $svnstat;
+    $svnrev .= " M" if $svnstat;
   }
   log_diag("B::C::VERSION = $B::C::VERSION $svnrev");
   log_diag("perlversion = $perlversion");
