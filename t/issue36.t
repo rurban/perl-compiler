@@ -25,6 +25,6 @@ EOF
 use B::CC;
 # The problem seems to be non deterministic.
 # Some runs of B::CC succeed, some fail and others give a warning.
-ccompileok($_, "CC", "ccode37i", $script,
+ccompileok($_, "CC", "ccode36i", $script,
            $B::CC::VERSION < 1.08 ? "B::CC issue 36 fixed with B-C-1.28 r556 (B::CC 1.08)" : undef)
     for 1..5;

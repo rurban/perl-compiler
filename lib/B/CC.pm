@@ -106,7 +106,7 @@ if ($PERL511) {
   sub CXt_LOOP_LAZYIV { 7 }
   sub CxTYPE_no_LOOP  { ( $_[0]->{type} < 4 or $_[0]->{type} > 7 ) }
 }
-else {
+elsif (!$PERL510) {
   sub CXt_NULL       { 0 }
   sub CXt_SUB        { 1 }
   sub CXt_EVAL       { 2 }
@@ -2452,6 +2452,7 @@ OPTION:
       # opflags n: no args, no return values. don't need save/restore stack
       $no_stack{$ppname} = 1
         if Opcodes::opflags($_) & 512;
+      # XXX More Opcodes options to be added later
     }
   }
   #if ($debug{op}) {
@@ -2680,11 +2681,16 @@ Only with -fslow-signals we get the old slow and safe behaviour.
 
 Optimisation level (n = 0, 1, 2). B<-O> means B<-O1>.
 
+The following L<B::C> optimisations are applied automatically:
+
+optimize_warn_sv save_data_fh av-init2|av_init save_sig destruct
+pv_copy_on_grow
+
 B<-O1> sets B<-ffreetmps-each-bblock>.
 
-B<-O2> adds B<-ffreetmps-each-loop>.
+B<-O2> adds B<-ffreetmps-each-loop> and B<-fno-destruct> from L<B::C>.
 
-B<-fomit-taint> must be set explicitly.
+B<-fomit-taint> and B<-fslow-signals> must be set explicitly.
 
 =back
 
