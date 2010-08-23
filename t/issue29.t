@@ -1,9 +1,10 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=29
-use Test::More tests => 2;
 use strict;
-
 my $name = "ccode29i";
+BEGIN { die "1..2 #skip 5.6 has no IO discipline\n" if $] < 5.008; }
+use Test::More tests => 2;
+
 my $script = <<'EOF';
 use open qw(:std :utf8);
 $_ = <>;
@@ -11,8 +12,6 @@ print unpack('U*', $_), " ";
 print $_ if /\w/;
 EOF
 
-# :std only since perl-5.8.0 b178108dc
-$script =~ s/:std // if $] < 5.008;
 open F, ">", "$name.pl";
 print F $script;
 close F;
@@ -45,6 +44,7 @@ $result =~ s/\n$//;
 ok($result eq $expected, "Bytecode issue 29: '$result' eq '$expected'");
 
 END {
-  unlink($name, "$name.plc", "$name.pl", "$name.exe") 
+  unlink($name, "$name.plc", "$name.pl", "$name.exe")
     if $result eq $expected;
 }
+
