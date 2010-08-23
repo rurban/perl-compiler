@@ -15,10 +15,14 @@
 	fixed issue 35 same variable name in different scope (Heinz Knutzen)
 	fixed issue 38 on and/or return value not just no/yes (Heinz Knutzen)
 	* t/testc.sh: simplified
+	* t/test.pl: new faster test functions for the new issues
 	* t/issue27.t: added (Reported by alexchorny, Apr 25, 2010)
 	* t/issue29.t: added (Reported by Heinz Knutzen)
 	* t/issue34.t: added (Reported by Heinz Knutzen)
 	* t/issue35.t: added (Reported by Heinz Knutzen)
+	* t/issue36.t: added (Reported by Heinz Knutzen)
+	* t/issue37.t: added (Reported by Heinz Knutzen)
+	* t/issue38.t: added (Reported by Heinz Knutzen)
 
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10

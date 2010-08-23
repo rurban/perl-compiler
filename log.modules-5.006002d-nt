@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r520
+# B::C::VERSION = 1.28 r556 M
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2
 # platform = cygwin 32bit
@@ -8,20 +8,20 @@ pass Text::Tabs
 pass Text::Wrap
 fail Test::Harness
 pass Pod::Escapes
-pass Pod::Simple
+fail Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 fail ExtUtils::MakeMaker #TODO generally
-pass Test::Simple
+fail Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
-pass Test
-fail Data::Dumper
+fail Test
+pass Data::Dumper
 pass File::Spec
-pass File::Temp
+fail File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder #TODO < 5.007
@@ -42,7 +42,7 @@ skip Compress::Raw::Zlib
 skip Compress::Raw::Bzip2
 skip IO::Compress::Base
 skip LWP
-fail Storable
+pass Storable
 pass base
 skip List::MoreUtils
 skip Params::Util
@@ -71,7 +71,7 @@ skip Moose
 skip Test::Deep
 skip Carp::Clan
 skip Module::Pluggable
-fail if(1) => "Sys::Hostname"
+pass if(1) => "Sys::Hostname"
 skip Text::Balanced
 skip DBI
 pass Time::Local
@@ -84,9 +84,9 @@ skip Path::Class
 skip Test::Warn
 skip Encode
 skip Variable::Magic
-pass CGI
+fail CGI
 skip B::Hooks::EndOfScope
-pass Test::Pod
+fail Test::Pod
 skip Digest::SHA1
 skip namespace::clean
 skip Class::Inspector
@@ -104,7 +104,7 @@ pass AppConfig
 skip UNIVERSAL::require
 skip Template::Stash
 # 34 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
-# pass  27 /  34 (79.4%)
-# fail   7 /  34 (20.6%)
-# todo   3 /   7 (42.9%)
+# pass  24 /  34 (70.6%)
+# fail  10 /  34 (29.4%)
+# todo   3 /  10 (30.0%)
 # skip  66 / 100 (66.0% not installed)

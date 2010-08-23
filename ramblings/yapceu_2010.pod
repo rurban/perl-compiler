@@ -1,0 +1,569 @@
+=head1 YAPC::EU 2010
+
+The Perl Compiler
+
+B<rurban> - Reini Urban <br>
+Graz, Austria
+
+=head1 What's new?
+
+=over
+
+=item Fixed most bugs I<(in work)> bytecode: 12=>0, c: 6=>1, cc: 9=>5, 5.14 CVs
+
+=item .plc platform compatible, almost version compatible I<(.plc header change)>
+
+=item added testsuite
+
+=item more and better optimisations I<(in work)>
+
+=item B::C::Flags I<(customised extra_cflags + extra_libs)>
+
+=item removed B::Stash bloat from perlcc, -stash [optional]
+
+=back
+
+=head1 Who am I
+
+rurban maintains B<cygwin perl> since 5.8.8 
+and 3-4 modules, guts, B<B::*> => 5.10
+
+Mostly doing B<LISP>, B<Perl>, B<C>, B<bash> and B<PHP>, and support 
+for custom HW, windows + linux + real-time systems in real-life.
+Coding in winter, surfing in summer.
+
+1995 first on CPAN with the F<perl5.hlp> file and converter for Windows, and the windows dll versioning.
+
+=head1 Contents
+
+Compiler was started 1995 by Malcom Beattie, abandoned 2007 by
+p5p, revived 2008 by me.
+
+Very dynamic language: magic; tie; eval "require $foo;" -> which packages to import?
+
+=over
+
+=item Overview 
+
+=item Status
+
+=item Plans
+
+=back
+
+=head1 Why use B::C / perlcc?
+
+=over
+
+=item Improved startup time, esp. significant with larger code.  
+
+=item -fcog: less destruction time, -fno-destruct: no destruction time.
+
+=item Reduced memory usage. <br><small> 9% less memory w/ 25000 lines</small>
+
+=item Distribute binary only versions
+
+=over 8
+
+=item No need to ship an entire perl install
+
+=item Self contained application
+
+=item But you could also use a "Packager", like L<perl2exe>, L<perlapp>, L<PAR>  <small>no compilers! slower startup </small>
+
+=back
+
+=item And with B::CC - Improve run-time
+
+=back
+
+=head1 Overview
+
+In the Perl Compiler suite B<B::C> are three seperate compilers:
+
+=over
+
+=item B::Bytecode / ByteLoader (I<freeze/thaw> to F<.plc> + F<.pmc>)
+
+=item B::C  (I<freeze/thaw> to F<.c>)
+
+=item B::CC (I<optimising> to F<.c>)
+
+=back
+
+perl toke.c/op.c  -  B::C  - perl B<op walker> run.c
+
+Eliminate the whole parsing and dynamic allocation time.
+
+=head1 The Walker (Basics)
+
+After compilation walk the "op tree" - F<run.c>
+
+=begin perl
+
+  int
+  Perl_runops_standard(pTHX)
+  {
+	dVAR;
+	while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) {
+		PERL_ASYNC_CHECK(); /* moved to some ops with 5.14 */
+	}
+	TAINT_NOT;
+	return 0;
+  }
+
+=end perl
+
+=head1 The Walker (Basics)
+
+=begin perl
+
+	while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) {
+		PERL_ASYNC_CHECK();
+	}
+
+=end perl
+
+=head2 Observation
+
+1. The op tree is not a B<"tree">, it is reduced to a simple B<linked list> of ops.
+Every "op" (a C<pp_&lt;opname&gt;> function) returns the next op.
+
+2. PERL_ASYNC_CHECK was called after every single op.
+
+=head1 Perl Phases - the "Perl Compiler"
+
+=over
+
+=item => B<Parse + Compile> to op tree I<(in three phases, see> L<perlguts> and L<perloptree>)
+<br>
+
+=item BEGIN I<(use ...)>
+
+=item CHECK I<(O modules)>
+
+=item INIT I<(main phase)>
+
+=item END I<(cleanup, perl destructors)>
+
+=back
+
+Normal Perl functions start at B<INIT>, after BEGIN and CHECK. <br>
+The B<O> modules start at B<CHECK>, and skip INIT.
+
+=head1 Perl Phases - the "B Compilers"
+
+=over
+
+=item Parse + Compile to op tree I<(in three phases)>
+
+=item BEGIN I<(use ...)>
+
+=item => B<CHECK> (O) => freeze
+
+=item compiled I<INIT (main phase)>
+
+=item compiled I<END (cleanup, perl destructors)>
+
+=back
+
+=head1 Perl Phases - the "B Compilers"
+
+The B::C compiler, invoked via B<O>, freezes the state in B<CHECK>,
+and invokes then the walker.
+
+  $ perl -MO=C,-omyprog.c -e'print $a;' <br>
+  $ cc_harness -o myprog myprog.c <br>
+  $ ./myprog
+
+=head1 B::C - Unoptimised / the walker
+
+=begin C
+
+  perl -MO=C,-omyprog.c -e'print $a;'
+
+  while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) ;
+
+=end C
+
+=head1 B::CC - The optimiser / unrolled (1)
+
+=begin C
+
+  perl -MO=CC,-omyprog.c -e'print $a;'
+  while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX))) ;
+
+is unrolled to:
+  lab_6804728:
+        PL_op = &op_list[1];
+        PL_op = pp_enter();
+        PERL_ASYNC_CHECK(); /* <5.13 */
+        TAINT_NOT;      /* nextstate */
+        sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;
+        FREETMPS;
+  lab_68046b8:
+        PUSHMARK(sp);
+
+=end C
+
+=head1 B::CC - The optimiser / unrolled (2)
+
+=begin C
+
+  lab_68046b8:
+        PUSHMARK(sp);
+...
+        XPUSHs(GvSVn((GV*)PL_curpad[1]));
+        PL_op = (OP*)&listop_list[0];
+        PUTBACK; PL_op = pp_print(); SPAGAIN;
+  lab_6804708:
+        PL_op = (OP*)&listop_list[1];
+        PL_op = pp_leave();
+        PUTBACK;
+        return NULL;
+
+=end C
+
+=head1 B::CC - The optimiser / unrolled (3)
+
+<br><br><br>
+
+=over
+
+=item no CALL_FPTR - call by ref
+
+=item static direct function call
+
+=item prefetched into CPU cache!
+
+=item no unneeded stack handling
+
+=item PERL_ASYNC_CHECK only at certain ops
+
+=back
+
+=head1 Status
+
+5.6.2 and 5.8.9 non-threaded B::C are quite usable and have the
+least known bugs, but 5.10 and 5.12 became also pretty stable
+now. 5.14 still has some CV problems.
+
+Best are in the following order: 5.6.2, 5.8.9, 5.10, 5.12 non-threaded.
+
+=head1 Status Targets
+
+=over
+
+=item Bugfixes for B<B::C> I<(magic, xsub detection)>
+
+=item Test top100 CPAN modules I<(3-5 fail, all with magic)>
+
+=item Isolate bugs into simple tests I<(45 cases)>
+
+=item Test the perl cores suite I<(~20 fails)> Estimated 3-4 more open bugs.
+
+=back
+
+=head1 Status Summary
+
+=over
+
+=item 5.6.2, 5.8.9, 5.10, 5.12 not-threaded are almost bug free, with B::Bytecode and B::C
+
+=item B::C >=5.10 threaded (I<magic, pads>) in work <br> I<2-3 minor bugs with certain modules>
+
+=item With debugging perls there seem to be less bugs than with releases. <small>I<Normally it's the other way round></small>
+
+=item B::CC has some limitations and some more known bugs
+
+I<See testsuite and> F<STATUS>
+
+=back
+
+=head1 Projects
+
+Which software is compiler critical?
+
+=head1 Projects
+
+Which software is compiler critical?
+
+Execution time is the same (sans B::CC)
+
+=head1 Projects
+
+Which software is compiler critical?
+
+Execution time is the same (sans B::CC)
+
+Startup time is radical faster
+
+=head1 Projects
+
+Which software is compiler critical?
+
+Execution time is the same (sans B::CC)
+
+Startup time is radical faster.
+
+Web Apps with fast response times - 
+
+B<1 sec more or less =E<gt> good or bad software>
+
+=head1 Projects
+
+Which software is compiler critical?
+
+Execution time is the same (sans B::CC)
+
+Startup time is radical faster.
+
+Web Apps with fast response times - 
+
+Optimise static initialization - strings and arrays
+
+=head1 New Optimisations
+
+Optimise static initialization - strings and arrays
+
+non-threaded ! +10-20% performance
+
+C<ltrace> reveils C<Gthr_key_ptr>, C<gv_fetchpv>, C<savepvn>,
+C<av_extend> and C<safesysmalloc> as major culprits, the later
+three at B<startup-time>.
+
+=head1 New Optimisations
+
+Optimise static initialization - strings and arrays
+
+non-threaded ! +10-20% performance
+
+common constant strings with gcc -Os =E<gt> automatically optimised
+
+=head1 New Optimisations
+
+Optimise static initialization - strings and arrays
+
+non-threaded ! +10-20% performance
+
+common constant strings with gcc -Os =E<gt> automatically optimised
+
+av_extend - run-time malloc =E<gt> static arrays ?
+
+=head1 New Optimisations
+
+av_extend - run-time malloc => static arrays ?
+
+static arrays are impossible if not B<Readonly>
+
+can not be extended at run-time, need to be realloc'ed into the heap.
+
+But certain arrays can: -fro-inc (Readonly @INC), and compad names and symbols.
+
+=head1 New Optimisations
+
+av_extend - run-time malloc =E<gt> static arrays ?
+
+pre-allocate faster with B<-fav-init> or B<-O3> with C<independent_comalloc()>
+
+Same for hashes and strings I<(nyi)>.
+
+=head1 Real Life Applications
+
+B<cPanel> has used B::C compiled 5.6 for a decade, 
+and wants to switch to 5.8.9 (or later).
+
+B<cPanel> offers web hosting automation software that manages
+provider data, domains, emails, webspace. A typical large webapp.
+Perl startup time can be too slow for many AJAX calls which need 
+fast initial response times.
+
+=head1 Benchmarks (by cPanel)
+
+Larger code base => more significant startup improvements
+
+=over
+
+=item 18.78x faster startup for large production applications. (~ 70000 lines)
+
+=item 3.52x faster startup on smaller applications.   (~8000 lines)
+
+=item 3x faster startup on tiny applications < 1024 lines of code
+
+=item 2x faster startup for very tiny applications
+
+=item Guessed: 2x-10x faster run-time for CC optimised code, esp. arithmetic.
+
+=back
+
+=head1 Benchmarks (by cPanel)
+
+    Web Service Daemon <br>
+
+    Resident Size (perlcc)  9072 <br>
+    Resident Size (perl)    9756 <br> <br>
+
+    DNS Settings Client <br>
+
+    Startup Time (perl)   0.074 <br>
+    Startup Time (perlcc) 0.021 <br> <br>
+
+    HTML Template Processor <br>
+
+    Startup Time (perlcc) 0.037 <br>
+    Startup Time (perl)   0.695 <br>
+
+=head1 Plans
+
+2010: Find and fix all remaining bugs
+
+2010: Faster testsuite (Now C<8 min - 40min - 2 days>)
+
+2011: CC type and sub optimisations
+
+2012: CC unrolling => jit within perl (C<perl -j>) I<see my gist>
+
+=head1 B::C Limitations
+
+run-time ops vs compile-time<br>
+BEGIN blocks only compile-time side-effects.
+
+  BEGIN { <br>
+&nbsp;&nbsp;    use Package;   # okay <BR>
+&nbsp;&nbsp;    chdir "dir";   # not okay. <BR>
+&nbsp;&nbsp;                   # only done at compile-time, not at the user<BR>
+&nbsp;&nbsp;    print "stuff"; # okay, only at compile-time <BR>
+&nbsp;&nbsp;    eval "what";   # hmm; depends <br>
+  }
+
+Move eval "require Package;" to BEGIN
+
+=head1 B::CC Limitations
+
+run-time ops vs compile-time +
+
+dynamic range 1..$foo
+
+goto/next/last $label
+
+Undetected modules behind eval "require": <br>
+use B<-uModule> to enforce scanning these
+
+=head1 B::CC Bugs
+
+Custom sort BLOCK is buggy, I<wrong queue implementation>
+
+=head1 B::CC Bugs
+
+Custom sort BLOCK is buggy, I<wrong queue implementation, causing an endless loop>
+
+  sort { $a <=> $b }  <br>
+  <small>is optimised away, ok</small><br><br>
+
+  sort { $hash{$a} <=> $hash{$b} } <br>
+  <small>maybe?</small><br><br>
+
+  sort { $hash{$a}->{field} <=> $hash{$b}->{field} }  <br>
+  <small>for sure not</small>
+
+=head1 Testsuite
+
+B<user> make test I<(via cpan)>:
+
+45x (bytecode + c -O0 - O4 + cc -O0 - O2)
+
+=> B<8 min>
+
+=head1 Testsuite
+
+B<author> make test:
+
+45x bytecode + c -O0 - O4 + cc -O0 - O2 I<(8 min)>
+
+B<modules.t top100> B<(16 min)>
+
++ B<testcore.t> B<(16 min)>
+
+=> B<~40 min>
+
+=head1 Testsuite
+
+author make test B<40 min>
+
+for B<5-10> perls I<(5.6, 5.8, 5.10, 5.12, 5.14 / threaded + non-threaded)> 5*2=10
+
+on B<5 platforms> (cygwin, debian, centos, solaris, freebsd)
+
+=> 33 h (10*5*40 = 2000min) = B<1-2 days>, similar to the gcc testsuite.
+
+=head1 Testsuite
+
+top100 modules. See webpage or svn repo for results for all tested perls / modules
+
+With 5.8 non-threaded 3 fails B<File::Temp> B<B::Hooks::EndOfScope> B<YAML>
+
+With blead debugging + threaded 27 fails
+
+  log.modules-5.010001:pass MooseX::Types #TODO generally
+  log.modules-5.012001-nt:fail MooseX::Types #TODO generally
+  log.modules-5.013003-nt:pass MooseX::Types #TODO generally
+  log.modules-5.013003d:fail MooseX::Types #TODO generally
+
+=head1 CC
+
+=over
+
+=item Sub calls - Opcodes (on CPAN)
+
+What can we statically leave out per pp_?
+
+Now: arguments passing, return values for 50% ops
+
+Planned: more + direct xsub calls.
+
+=item Types - understand declarations
+
+Now: Unroll for known static types pp_opname completely into simple arithmetic.
+
+Known static types at compile-time? User declarations or L<Devel::TypeCheck>
+
+=back
+
+=head1 CC - User Type declarations
+
+Currently:
+
+  my $E<lt>nameE<gt>_i;  IV integer <br>
+  my $E<lt>nameE<gt>_ir; IV integer in a pseudo register <br>
+  my $E<lt>nameE<gt>_d;  NV double 
+
+<hr>
+
+Future ideas are type qualifiers such as <br>
+	<code>my (int $foo, double $foo_d); </code>
+
+or attributes such as <br>
+	<code>my ($foo:Cint, $foo:Creg_int, $foo:Cdouble);</code>
+
+or L<MooseX::Types>
+
+=head1 Links
+
+L<http://search.cpan.org/dist/B-C/>
+
+L<http://code.google.com/p/perl-compiler/>
+
+L<http://www.perl-compiler.org/>
+
+L<mailto:perl-compiler@googlegroups.com>
+
+=head1 Questions?
+
+=cut
+
+rurban Pisa, 2010-08-05
+
+__END__
+Local Variables:
+  fill-column:65
+End:
