@@ -2,6 +2,7 @@
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2009, 2010 Reini Urban
+#      Copyright (c) 2010 Heinz Knutzen
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -991,7 +992,9 @@ sub bad_pp_srefgen {
 	SV* sv = $sv;";
     # sv = POPs
     #B::svref_2object(\$sv);
-    if ($svobj->flags & 0xff == $SVt_PVLV and B::PVLV::LvTYPE($svobj) eq ord('y')) {
+    if (($svobj->flags & 0xff) == $SVt_PVLV
+	and B::PVLV::LvTYPE($svobj) eq ord('y'))
+    {
       runtime 'if (LvTARGLEN(sv))
 	    vivify_defelem(sv);
 	if (!(sv = LvTARG(sv)))
@@ -999,7 +1002,7 @@ sub bad_pp_srefgen {
 	else
 	    SvREFCNT_inc_void_NN(sv);';
     }
-    elsif ($svobj->flags & 0xff == $SVt_PVAV) {
+    elsif (($svobj->flags & 0xff) == $SVt_PVAV) {
       runtime 'if (!AvREAL((const AV *)sv) && AvREIFY((const AV *)sv))
 	    av_reify(MUTABLE_AV(sv));
 	SvTEMP_off(sv);
@@ -2108,6 +2111,7 @@ sub pp_substcont {
     $PERL510 ? "->op_pmstashstartu.op_pmreplstart" : "->op_pmreplstart",
     label( $pmop->pmreplstart )
   );
+  push( @bblock_todo, $pmop->pmreplstart );
   invalidate_lexicals();
   return $pmop->next;
 }
@@ -2187,7 +2191,7 @@ sub cc {
   $leaders = find_leaders( $root, $start );
   my @leaders = keys %$leaders;
   if ( $#leaders > -1 ) {
-    @bblock_todo = ( values %$leaders );
+    # @bblock_todo = ( values %$leaders ); # this does not look right
     unshift @bblock_todo, ($start) if $$start;
   }
   else {

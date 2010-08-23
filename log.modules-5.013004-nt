@@ -38,11 +38,11 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception #TODO >= 5.10
 pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
+fail Compress::Raw::Zlib
+fail Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO generally
-fail Storable
+pass LWP #TODO generally
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -56,8 +56,8 @@ pass Sub::Exporter
 pass Test::NoWarnings #TODO >= 5.10
 pass version
 pass Params::Validate
-skip Sub::Name
-fail Filter::Util::Call
+pass Sub::Name
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -66,8 +66,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
+pass Class::MOP
+pass Moose #TODO > 5.010
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class #TODO >= 5.013
 pass Test::Warn #TODO >= 5.10
@@ -87,24 +87,24 @@ pass Variable::Magic
 pass CGI #TODO >= 5.013
 pass B::Hooks::EndOfScope
 pass Test::Pod #TODO >= 5.10
-fail Digest::SHA1
-skip namespace::clean
+pass Digest::SHA1
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML #TODO >= 5.013
-skip MooseX::Types
+pass MooseX::Types #TODO generally
 pass Class::Singleton
 pass DateTime::TimeZone #TODO >= 5.013
-fail DateTime::Locale
-fail DateTime
+pass DateTime::Locale
+pass DateTime
 pass IO::String
 pass AppConfig #TODO >= 5.013
 pass UNIVERSAL::require
 pass Template::Stash
-# 91 / 100 modules tested with B-C-1.28 - perl-5.013004-nt
-# pass  82 /  91 (90.1%)
-# fail   9 /  91 (9.9%)
-# todo  22 /   9 (244.4%)
-# skip   9 / 100 (9.0% not installed)
+# 96 / 100 modules tested with B-C-1.28 - perl-5.013004-nt
+# pass  92 /  96 (95.8%)
+# fail   4 /  96 (4.2%)
+# todo  24 /   4 (600.0%)
+# skip   4 / 100 (4.0% not installed)

@@ -54,7 +54,7 @@ do
   if [ "$opt" = "f" ]; then KEEP="$KEEP -Wb=-f${OPTARG}"; fi
   if [ "$opt" = "l" ]; then TEST="-log"; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
-  if [ "$opt" = "T" ]; then PERLCC_OPTS="--time"; PERLCC_TIMEOUT=120; fi
+  if [ "$opt" = "T" ]; then PERLCC_OPTS="$PERLCC_OPTS --time"; PERLCC_TIMEOUT=120; fi
   if [ "$opt" = "s" ]; then 
       v=$($PERL -It -Mmodules -e'print perlversion')
       if [ -f log.modules-$v ]; then # and not older than a few days
