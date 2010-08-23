@@ -57,7 +57,7 @@ my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
 my %optab   = ( 0, 0 );
 my %spectab = $PERL56 ? () : ( 0, 0 ); # we need the special Nullsv on 5.6 (?)
-my $tix      = $PERL56 ? 0 : 1;
+my $tix     = $PERL56 ? 0 : 1;
 my %ops     = ( 0, 0 );
 my @packages;    # list of packages to compile. 5.6 only
 

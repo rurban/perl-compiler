@@ -17,4 +17,5 @@ EOF
 
 use B::CC;
 ctestok(1, "CC", "ccode38i", $script,
-        $B::CC::VERSION < 1.08 ? "B::CC issue 38" : undef);
+        $B::CC::VERSION < 1.08 
+	  ? "B::CC issue 38 fixed with B-C-1.28 r559 (B::CC 1.08) by Heinz Knutzen" : undef);
