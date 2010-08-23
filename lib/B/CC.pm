@@ -20,6 +20,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
   OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR
 );
+#CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused
   output_all output_boilerplate output_main fixup_ppaddr save_sig
   svop_or_padop_pv);
@@ -93,27 +94,16 @@ my $PERL511    = ( $] >= 5.011 );
 
 my $SVt_PVLV = $PERL510 ? 10 : 9;
 my $SVt_PVAV = $PERL510 ? 11 : 10;
-
+# use sub qw(CXt_LOOP_PLAIN CXt_LOOP);
 if ($PERL511) {
-  sub CXt_NULL        { 0 }
-  sub CXt_SUB         { 8 }
-  sub CXt_EVAL        { 10 }
-  sub CXt_SUBST       { 11 }
-  sub CXt_BLOCK       { 2 }
-  sub CXt_LOOP_FOR    { 4 }
-  sub CXt_LOOP_PLAIN  { 5 }
-  sub CXt_LOOP_LAZYSV { 6 }
-  sub CXt_LOOP_LAZYIV { 7 }
-  sub CxTYPE_no_LOOP  { ( $_[0]->{type} < 4 or $_[0]->{type} > 7 ) }
+  sub CXt_LOOP_PLAIN {5} # CXt_LOOP_FOR CXt_LOOP_LAZYSV CXt_LOOP_LAZYIV
+} else {
+  sub CXt_LOOP {3}
 }
-elsif (!$PERL510) {
-  sub CXt_NULL       { 0 }
-  sub CXt_SUB        { 1 }
-  sub CXt_EVAL       { 2 }
-  sub CXt_LOOP       { 3 }
-  sub CXt_SUBST      { 4 }
-  sub CXt_BLOCK      { 5 }
-  sub CxTYPE_no_LOOP { $_[0]->{type} != 3 }
+sub CxTYPE_no_LOOP  {
+  $PERL511 
+    ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 ) 
+    : $_[0]->{type} != 3
 }
 
 # Could rewrite push_runtime() and output_runtime() to use a
@@ -2043,7 +2033,7 @@ sub pp_redo {
   return $op->next;
 }
 
-# coverage: ?
+# coverage: issue36
 sub pp_last {
   my $op = shift;
   my $cxix;
