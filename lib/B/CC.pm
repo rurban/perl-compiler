@@ -751,11 +751,15 @@ sub pp_and {
   reload_lexicals();
   unshift( @bblock_todo, $next );
   if ( @stack >= 1 ) {
-    my $bool = pop_bool();
+    my $obj  = pop @stack;
+    my $bool = $obj->as_bool;
     write_back_stack();
     save_or_restore_lexical_state($$next);
     runtime(
-      sprintf( "if (!$bool) {XPUSHs(&PL_sv_no); goto %s;}", label($next) ) );
+      sprintf( 
+        "if (!$bool) { PUSHs((SV*)%s); goto %s;}", $obj->as_sv, label($next) 
+      ) 
+    );
   }
   else {
     save_or_restore_lexical_state($$next);
@@ -772,12 +776,13 @@ sub pp_or {
   reload_lexicals();
   unshift( @bblock_todo, $next );
   if ( @stack >= 1 ) {
-    my $bool = pop_bool @stack;
+    my $obj  = pop @stack;
+    my $bool = $obj->as_bool;
     write_back_stack();
     save_or_restore_lexical_state($$next);
     runtime(
       sprintf(
-        "if (%s) { XPUSHs(&PL_sv_yes); goto %s; }", $bool, label($next)
+        "if ($bool) { PUSHs((SV*)%s); goto %s; }", $obj->as_sv, label($next)
       )
     );
   }

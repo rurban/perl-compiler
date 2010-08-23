@@ -649,6 +649,93 @@ CCTESTS
         $cnt++;
     }
 }
+
+sub ctestok {
+    my ($num, $backend, $base, $script, $todo) =  @_;
+    my $name = $base."_$num";
+    unlink($name, "$name.c", "$name.pl", "$name.exe");
+    open F, ">", "$name.pl";
+    print F $script;
+    close F;
+
+    my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+    my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
+    system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+    unless (-e "$name.c") {
+        print "not ok 1 #B::$backend failed\n";
+        exit;
+    }
+    system "$runperl -Mblib blib/script/cc_harness -q -o$name $name.c";
+    my $exe = $name.$Config{exe_ext};
+    unless (-e $exe) {
+        if ($todo) {
+          TODO: {
+                local $TODO = $todo;
+                ok(undef, "failed to compile");
+            }
+        } else {
+            ok(undef, "failed to compile");
+        }
+    }
+    $exe = "./".$exe unless $^O eq 'MSWin32';
+    ($result,$out,$stderr) = run_cmd($exe, 5);
+    my $ok;
+    if (defined($out) and !$result) {
+        chomp $out;
+        $ok = $out =~ /^ok/;
+        unless ($ok) { #crosscheck uncompiled
+            my $out1 = `$runperl $name.pl`;
+            unless ($out1 =~ /^ok/) {
+                ok(1, "skip also fails uncompiled");
+                return;
+            }
+        }
+        if ($todo) {
+          TODO: {
+                local $TODO = $todo;
+                ok ($out =~ /^ok/);
+            }
+        } else {
+            ok ($out =~ /^ok/);
+        }
+    } else {
+        ok (undef);
+    }
+    if ($ok) {
+        unlink($name, "$name.c", "$name.pl", "$name.exe");
+    }
+}
+
+sub ccompileok {
+    my ($num, $backend, $base, $script, $todo) =  @_;
+    my $name = $base."_$num";
+    unlink($name, "$name.c", "$name.pl", "$name.exe");
+    open F, ">", "$name.pl";
+    print F $script;
+    close F;
+
+    my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+    my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
+    system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+    unless (-e "$name.c") {
+        print "not ok 1 #B::$backend failed\n";
+        exit;
+    }
+    system "$runperl -Mblib blib/script/cc_harness -q -o$name $name.c";
+    my $ok = -e $name or -e "$name.exe";
+    if ($todo) {
+      TODO: {
+            local $TODO = $todo;
+            ok($ok);
+        }
+    } else {
+        ok($ok);
+    }
+    if ($ok) {
+        unlink($name, "$name.c", "$name.pl", "$name.exe");
+    }
+}
+
 1;
 
 # Local Variables:

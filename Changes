@@ -13,6 +13,7 @@
 	fixed -O2/-fav-init2: store at wrong avchunk index
 	* CC.pm (1.08): use new B::C optimizations, new -DF
 	fixed issue 35 same variable name in different scope (Heinz Knutzen)
+	fixed issue 38 on and/or return value not just no/yes (Heinz Knutzen)
 	* t/testc.sh: simplified
 	* t/issue27.t: added (Reported by alexchorny, Apr 25, 2010)
 	* t/issue29.t: added (Reported by Heinz Knutzen)
