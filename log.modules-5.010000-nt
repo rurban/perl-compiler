@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.27 r486
+# B::C::VERSION = 1.28 r564
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin 32bit
@@ -9,8 +9,8 @@ pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
-fail IO #TODO 5.10 without ithreads
-pass Scalar::Util
+fail IO #TODO 5.10 without threads
+pass Scalar::Util #TODO 5.10 without threads
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker #TODO generally
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-fail ExtUtils::Install #TODO 5.10 without ithreads
+fail ExtUtils::Install #TODO 5.10 without threads
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -38,8 +38,8 @@ pass HTML::Tagset
 pass HTML::Parser
 fail Test::Exception #TODO >= 5.10
 pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
+fail Compress::Raw::Zlib
+fail Compress::Raw::Bzip2
 pass IO::Compress::Base
 fail LWP #TODO generally
 pass Storable
@@ -48,7 +48,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO 5.10 without ithreads
+fail Test::Tester #TODO 5.10 without threads
 pass Sub::Install
 fail Attribute::Handlers #TODO generally
 pass Data::OptList
@@ -68,7 +68,7 @@ pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
 pass Moose
-fail Test::Deep #TODO 5.10 without ithreads
+fail Test::Deep #TODO 5.10 without threads
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -80,7 +80,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class #TODO 5.10 without ithreads
+fail Path::Class #TODO 5.10 without threads
 fail Test::Warn #TODO >= 5.10
 pass Encode
 pass Variable::Magic
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 96 / 100 modules tested with B-C-1.27 - perl-5.010000-nt
-# pass  83 /  96 (86.5%)
-# fail  13 /  96 (13.5%)
-# todo  16 /  13 (123.1%)
+# 96 / 100 modules tested with B-C-1.28 - perl-5.010000-nt
+# pass  81 /  96 (84.4%)
+# fail  15 /  96 (15.6%)
+# todo  17 /  15 (113.3%)
 # skip   4 / 100 (4.0% not installed)
