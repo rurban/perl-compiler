@@ -19,4 +19,4 @@ my @a = f2();
 print "ok";
 EOF
 
-ctestok($_, "CC", "ccode39i", $script, "B::CC issue 39");
+ctestok(1, "CC", "ccode39i", $script, "B::CC issue 39");
