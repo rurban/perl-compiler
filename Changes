@@ -5,14 +5,15 @@
 
 1.28	2010-08-?? rurban
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
-	  (re-enables -fcog >= 5.10)
-	add -fro-inc (with -O2) readonly INC and curpad strings.
+	  (re-enables -fcog >= 5.10),
+	add -fro-inc (with -O2) readonly INC and curpad strings,
 	add -fconst-strings (with -O3) const readonly strings
-	do not boot static core packages (utf8, re, ...)
-	rewrote dynamic XS bootstrapping
-	fixed -O2/-fav-init2: store at wrong avchunk index
+	  and const more other fixed strings,
+	do not boot static core packages (utf8, re, ...),
+	fixed -O2/-fav-init2: store at wrong avchunk index,
+	initialise CopFILE and CopSTASHPV static with ITHREADS
 	* CC.pm (1.08): use new B::C optimizations, new -DF
-	fixed issue 35 same variable name in different scope (Heinz Knutzen)
+	fixed issue 35 same variable name in different scope (Heinz Knutzen),
 	fixed issue 38 on and/or return value not just no/yes (Heinz Knutzen)
 	* t/testc.sh: simplified
 	* t/test.pl: new faster test functions for the new issues

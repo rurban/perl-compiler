@@ -898,15 +898,20 @@ sub B::COP::save {
     $warn_sv = $warnings->save;
   }
 
+  # Trim the .pl extension, to print the executable name only.
+  my $file = $op->file;
+  $file =~ s/\.pl$//;
   if ($PERL511) {
     # cop_label now in hints_hash (Change #33656)
     $copsect->comment(
       "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
     $copsect->add(
       sprintf(
-              "%s, %u, %s, " . "NULL, 0, %u, " . "NULL, NULL",
+              "%s, %u, " . "%s, %s, 0, " . "%u, NULL, NULL",
               $op->_save_common, $op->line,
-	      $ITHREADS ? "(char *)NULL" : "Nullhv",
+	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+	      #$ITHREADS ? "(char *)NULL" : "Nullhv",
+	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
               $op->cop_seq,
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
       )
@@ -918,10 +923,12 @@ sub B::COP::save {
     }
   }
   elsif ($PERL510) {
-    $copsect->comment("$opsect_common, line, label, seq, warnings, hints_hash");
-    $copsect->add(sprintf("%s, %u, %s, " . "NULL, NULL, 0, " . "%u, %s, NULL",
-			  $op->_save_common,     $op->line,
-			  'NULL', $op->cop_seq,
+    $copsect->comment("$opsect_common, line, label, stash, file, hints, seq, warnings, hints_hash");
+    $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, 0, " . "%u, %s, NULL",
+			  $op->_save_common,     $op->line, 'NULL',
+			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
+			  $op->cop_seq,
 			  ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )));
     if ($op->label) {
       $init->add(sprintf( "CopLABEL_set(&cop_list[%d], CopLABEL_alloc(%s));",
@@ -930,15 +937,17 @@ sub B::COP::save {
   }
   else {
     # 5.8 misses cop_io
-    $copsect->comment("$opsect_common, label, seq, arybase, line, warn_sv, io");
+    $copsect->comment("$opsect_common, label, stash, file, seq, arybase, line, warn_sv, io");
     $copsect->add(
       sprintf(
-        "%s, %s, NULL, NULL, %u, %d, %u, %s %s",
-        $op->_save_common, cstring( $op->label ),
-        $op->cop_seq,      $op->arybase,
-        $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
-        ( $PERL56 ? "" : ", 0" )
-      )
+	      "%s, %s, %s, %s, %u, %d, %u, %s %s",
+	      $op->_save_common, cstring( $op->label ),
+	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
+	      $op->cop_seq,      $op->arybase,
+	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
+	      ( $PERL56 ? "" : ", 0" )
+	     )
     );
   }
   $copsect->debug( $op->name, $op->flagspv ) if $debug{flags};
@@ -948,15 +957,12 @@ sub B::COP::save {
   $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
     unless $B::C::optimize_warn_sv;
 
-  # Trim the .pl extension, to print the executable name only.
-  my $file = $op->file;
-  $file =~ s/\.pl$//;
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
-  ) unless $optimize_cop;
+  ) if !$optimize_cop and !$ITHREADS;
   $init->add(
     sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
-  );
+  ) if !$ITHREADS;
 
   savesym( $op, "(OP*)&cop_list[$ix]" );
 }
@@ -1586,6 +1592,22 @@ sub B::PVMG::save {
   return $sym;
 }
 
+# mark threads::shared to be xs-loaded
+sub mark_threads {
+  if ( $threads::VERSION ) {
+    my $stash = 'threads';
+    mark_package($stash);
+    $use_xsloader = 1;
+    $xsub{$stash} = 'Dynamic-XSLoaded';
+  }
+  my $stash = 'threads::shared';
+  mark_package($stash);
+  # XXX why is this needed? threads::shared should be initialized automatically
+  $use_xsloader = 1; # ensure threads::shared is initialized
+  $xsub{$stash} = 'Dynamic-XSLoaded';
+  warn "mark threads and threads::shared for 'P' magic\n" if $debug{mg};
+}
+
 sub B::PVMG::save_magic {
   my ($sv) = @_;
   my $sv_flags = $sv->FLAGS;
@@ -1595,14 +1617,19 @@ sub B::PVMG::save_magic {
     if $debug{mg};
   my $pkg = $sv->SvSTASH;
   if ($$pkg) {
-    warn "stash isa class($pkg) $$pkg\n" if $debug{mg} or $debug{gv};
+    warn sprintf("stash isa class($pkg) 0x%x\n", $$pkg) if $debug{mg} or $debug{gv};
   }
   $pkg->save;
   if ($$pkg) {
+    no strict 'refs';
     warn sprintf( "xmg_stash = %s (0x%x)\n", $pkg->NAME, $$pkg )
       if $debug{mg} or $debug{gv};
-    # XXX Hope stash is already going to be saved.
+    # Q: Who is initializing our stash from XS? ->save is missing that.
+    # A: We only need to init it when we need a CV
     $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$pkg ) );
+    # XXX Let's see if this helps
+    #svref_2object( \&IO::bootstrap )->save
+    #  if $pkg->NAME =~ /^FileHandle|IO::Handle$/;
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
@@ -1635,6 +1662,7 @@ sub B::PVMG::save_magic {
       $obj = $mg->OBJ;
       $obj->save
         unless $PERL510 and ref $obj eq 'SCALAR';
+      mark_threads if $type eq 'P';
     }
 
     if ( $len == HEf_SVKEY ) {
@@ -1677,7 +1705,7 @@ CODE
 	}
       }
     }
-    elsif ( $type eq 'D' ) { # XXX regdata AV
+    elsif ( $type eq 'D' ) { # XXX regdata AV - coverage?
       if ($obj = $mg->OBJ) {
 	# see Perl_mg_copy() in mg.c
 	$init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
@@ -1686,23 +1714,12 @@ CODE
     }
     elsif ( $type eq 'n' ) { # shared_scalar is from XS dist/threads-shared
       # XXX check if threads is loaded also? otherwise it is only stubbed
-      if ( $threads::VERSION ) {
-	my $stash = 'threads';
-	mark_package($stash);
-	$use_xsloader = 1;
-	$xsub{$stash} = 'Dynamic-XSLoaded';
-      }
-      my $stash = 'threads::shared';
-      mark_package($stash);
-      # XXX why is this needed? threads::shared should be initialized automatically
-      $use_xsloader = 1; # ensure threads::shared is initialized
-      $xsub{$stash} = 'Dynamic-XSLoaded';
+      mark_threads;
       $init->add(sprintf("sv_magic((SV*)s\\_%x, Nullsv, %s, %s, %d);",
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
     else {
-      $init->add(
-        sprintf(
+      $init->add(sprintf(
           "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
           $$sv, $$obj, cchar($type), cstring($ptr), $len
         )
@@ -1853,7 +1870,7 @@ sub B::CV::save {
     my $egv       = $gv->EGV;
     my $stashname = $egv->STASH->NAME;
     my %core_pkg = map {$_=>1} static_core_packages(); # do not bootstrap static core packages
-    if ( $cvname eq "bootstrap" ) {
+    if ( $cvname eq "bootstrap" and !$xsub{$stashname} ) {
       my $file = $gv->FILE;
       $decl->add("/* bootstrap $file */");
       warn "Bootstrap $stashname $file\n" if $verbose;
@@ -1874,7 +1891,9 @@ sub B::CV::save {
         $xsub{$stashname} = 'Dynamic';
       }
 
-      # $xsub{$stashname}='Static' unless  $xsub{$stashname};
+      # INIT is removed from the symbol table, so this call must come
+      # from PL_initav->save. Re-bootstrapping  will push INIT back in,
+      # so nullop should be sent.
       return qq/NULL/;
     }
     else {
@@ -3197,7 +3216,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
 
-    if (CALL_FPTR(PL_threadhook)(aTHX)) {
+    if (PL_threadhook(aTHX)) {
         /* Threads hook has vetoed further cleanup */
 	PL_veto_cleanup = TRUE;
         return STATUS_EXIT;
