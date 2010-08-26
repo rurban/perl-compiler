@@ -1939,7 +1939,10 @@ sub B::CV::save {
       if (ref $auto eq 'B::CV') { # explicit goto
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
-        $cv     = $auto if $$auto; # This is new
+	if ($$auto) {
+	  $cv     = $auto ; # This is new
+	  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+	}
       } else {
         # Recalculated root and xsub
         $root   = $cv->ROOT;
@@ -2080,7 +2083,7 @@ sub B::CV::save {
       }
     }
     my $gvstash = $gv->STASH;
-    if ($$gvstash) {
+    if ($$gvstash and $$cv) {
       # do not use GvSTASH because with DEBUGGING it checks for GP but
       # there's no GP yet.
       $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
