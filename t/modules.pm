@@ -155,7 +155,9 @@ sub testcc   {
     my $self = shift;
     my $inst_file = $self->inst_file or return;
     # only if its a not-deprecated CPAN module. perl core not
-    return if $self->_in_priv_or_arch($inst_file);
+    if ($self->can('_in_priv_or_arch')) { # 1.9301 not, 1.94 yes
+      return if $self->_in_priv_or_arch($inst_file);
+    }
     if ($] >= 5.011){
       if ($self->can('deprecated_in_core')) {
         return if $self->deprecated_in_core;
