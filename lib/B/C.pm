@@ -387,8 +387,9 @@ sub savere {
     $xpvsect->add( sprintf( $s, $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
-    $sym = sprintf( "&sv_list[%d]", $svsect->index );
-    push @static_free, ($svsect->index) if $pvmax and $B::C::pv_copy_on_grow;
+    my $s = "sv_list[".$svsect->index."]";
+    $sym = "&$s";
+    push @static_free, $s if $pvmax and $B::C::pv_copy_on_grow;
     # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
   else {
@@ -957,6 +958,7 @@ sub B::COP::save {
   $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
     unless $B::C::optimize_warn_sv;
 
+  push @static_free, "cop_list[$ix]" if $ITHREADS;
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
   ) if !$optimize_cop and !$ITHREADS;
@@ -1282,21 +1284,20 @@ sub B::PVLV::save {
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
-
+  my $s = "sv_list[".$svsect->index."]";
   if ( !$B::C::pv_copy_on_grow ) {
     if ($PERL510) {
-      $init->add(
-        savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      $init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
     }
     else {
       $init->add(
         savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv ) );
     }
   } else {
-    push @static_free, ($svsect->index) if $pvmax;
+    push @static_free, $s if $pvmax;
   }
   $sv->save_magic;
-  savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  savesym( $sv, "&$s" );
 }
 
 sub B::PVIV::save {
@@ -1322,20 +1323,20 @@ sub B::PVIV::save {
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
             $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
   $svsect->debug( $sv->flagspv ) if $debug{flags};
+  my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
     if ( !$B::C::pv_copy_on_grow ) {
       if ($PERL510) {
-	$init->add
-	  (savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+	$init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
       } else {
 	$init->add
 	  (savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
       }
     } else {
-      push @static_free, ($svsect->index) if $pvmax;
+      push @static_free, $s if $pvmax;
     }
   }
-  savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  savesym( $sv, "&$s" );
 }
 
 sub B::PVNV::save {
@@ -1397,18 +1398,18 @@ sub B::PVNV::save {
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
             $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
   $svsect->debug( $sv->flagspv ) if $debug{flags};
+  my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
     if ( !$B::C::pv_copy_on_grow ) {
       if ($PERL510) {
-	$init->add(
-          savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+	$init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
       }
       else {
         $init->add(
           savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv ) );
       }
     } else {
-      push @static_free, ($svsect->index) if $pvmax;
+      push @static_free, $s if $pvmax;
     }
   }
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1445,10 +1446,11 @@ sub B::BM::save {
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
                          $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
     $svsect->debug( $sv->flagspv ) if $debug{flags};
+    my $s = "sv_list[".$svsect->index."]";
     if (!$B::C::pv_copy_on_grow) {
       $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
     } else {
-      push @static_free, ($svsect->index) if defined($pv);
+      push @static_free, $s if defined($pv);
     }
   }
   # Restore possible additional magic. fbm_compile adds just 'B'.
@@ -1499,7 +1501,7 @@ sub B::PV::save {
     }
   }
   if ( $B::C::pv_copy_on_grow ) {
-    push @static_free, ($svsect->index) if defined($pv);
+    push @static_free, ("sv_list[".$svsect->index."]") if defined($pv);
   }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1549,7 +1551,8 @@ sub B::PVMG::save {
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
-    push @static_free, ($svsect->index) if $pvmax and $B::C::pv_copy_on_grow;
+    my $s = "sv_list[".$svsect->index."]";
+    push @static_free, $s if $pvmax and $B::C::pv_copy_on_grow;
   }
   else {
     # cannot initialize this pointer static
@@ -1561,7 +1564,8 @@ sub B::PVMG::save {
     } else {
       $xpvmgsect->add(sprintf("%s, %u, %u, %ld, %s, 0, 0",
 			      $savesym, $len, $pvmax, $sv->IVX, $sv->NVX));
-      push @static_free, ($svsect->index + 1) if $pvmax and $B::C::pv_copy_on_grow;
+      push @static_free, sprintf("sv_list[%d]", $svsect->index+1)
+	if $pvmax and $B::C::pv_copy_on_grow;
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
@@ -3238,8 +3242,13 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
 EOT
     for (0 .. $#static_free) {
       # set the sv/xpv to NULL, not the pv itself
-      my $sv = sprintf( "&sv_list[%d]", $static_free[$_] );
-      printf ("    SvPV_set(%s, NULL);\n", $sv);
+      my $s = $static_free[$_];
+      if ($s =~ /^sv_list/) {
+	print "    SvPV_set(&$s, NULL);\n";
+      } elsif ($s =~ /^cop_list/) {
+	print "   CopFILE_set(&$s, NULL);";
+	print "   CopSTASHPV_set(&$s, NULL);";
+      }
     }
     for (0 .. $hek_index-1) {
       # XXX who stores this hek? GvNAME and GvFILE most likely

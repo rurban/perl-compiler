@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.28 r564
+# B::C::VERSION = 1.28 r569
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2d-nt
+# path = /usr/local/bin/perl5.6.2
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
