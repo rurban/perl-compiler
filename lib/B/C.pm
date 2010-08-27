@@ -456,7 +456,8 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my ( $len, $pvmax, $savesym, $pv ) = ( 0, 0 );
-  if ($rok) {
+  # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
+  if ($rok and !$PERL56) {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv);
   }

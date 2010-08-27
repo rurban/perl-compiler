@@ -699,7 +699,14 @@ sub ctestok {
             ok ($out =~ /^ok/);
         }
     } else {
-        ok (undef);
+        if ($todo) {
+          TODO: {
+                local $TODO = $todo;
+                ok (undef);
+            }
+	} else {
+	    ok (undef);
+	}
     }
     if ($ok) {
         unlink($name, "$name.c", "$name.pl", "$name.exe");
