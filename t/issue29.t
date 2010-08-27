@@ -16,7 +16,7 @@ open F, ">", "$name.pl";
 print F $script;
 close F;
 
-$ENV{LC_ALL} = 'C.UTF-8';
+#$ENV{LC_ALL} = 'C.UTF-8'; $ENV{LANGUAGE} = $ENV{LANG} = 'en';
 my $expected = "24610 ö";
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 system "$runperl -Mblib blib/script/perlcc -o $name $name.pl";
@@ -33,9 +33,9 @@ TODO: {
   ok($result eq $expected, "'$result' ne '$expected'");
 }
 
-system "$runperl -Mblib blib/script/perlcc -B -o $name.plc $name.pl";
-unless (-e $name or -e "$name.exe") {
-  print "ok 2 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
+system "$runperl -Mblib -MO=Bytecode,-o$name.plc $name.pl";
+unless (-e "$name.plc") {
+  print "ok 2 #skip perlcc -B failed.\n";
   exit;
 }
 $runexe = "$runperl -Mblib -MByteLoader $name.plc";
