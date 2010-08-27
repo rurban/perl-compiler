@@ -1948,7 +1948,7 @@ sub B::CV::save {
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
 	if ($$auto) {
-	  $cv     = $auto ; # This is new
+	  $cv  = $auto ; # This is new
 	  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
 	}
       } else {
