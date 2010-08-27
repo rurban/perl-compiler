@@ -1162,14 +1162,16 @@ sub B::IV::save {
   my $i = $svsect->index + 1;
   if ($svflags & 0xff) { # Not nullified
     # XXX what the heck is going on here? e.g. 5.13.4d test 45
-    warn "IV no IOK sv_list[$i]" unless $svflags & (SVf_IOK|SVp_IOK);
+    warn "warning: IV no IOK sv_list[$i]" unless $svflags & (SVf_IOK|SVp_IOK);
   }
+  my $ivdformat = $Config{ivdformat};
+  $ivdformat =~ s/"//g;
   if ($PERL513) {
-    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}", $sv->IVX ) );
+    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%${ivdformat}}", $sv->IVX ) );
   } elsif ($PERL510) {
-    $xpvivsect->add( sprintf( "{0}, 0, 0, {%ld}", $sv->IVX ) );
+    $xpvivsect->add( sprintf( "{0}, 0, 0, {%${ivdformat}}", $sv->IVX ) );
   } else {
-    $xpvivsect->add( sprintf( "0, 0, 0, %ld", $sv->IVX ) );
+    $xpvivsect->add( sprintf( "0, 0, 0, %${ivdformat}", $sv->IVX ) );
   }
   $svsect->add(
     sprintf(
@@ -1307,16 +1309,18 @@ sub B::PVIV::save {
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym" if $B::C::const_strings;
   my $iv = $sv->IVX;
+  my $ivdformat = $Config{ivdformat};
+  $ivdformat =~ s/"//g;
   if ($PERL513) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
-    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, %ld", $len, $pvmax, $iv ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, %${ivdformat}", $len, $pvmax, $iv ) ); # IVTYPE long
   } elsif ($PERL510) {
     $xpvivsect->comment('xnv_u, cur, len, IVX');
-    $xpvivsect->add( sprintf( "{0}, %u, %u, %ld", $len, $pvmax, $iv ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "{0}, %u, %u, %${ivdformat}", $len, $pvmax, $iv ) ); # IVTYPE long
   } else {
     $iv = 0 if $sv->FLAGS & (SVf_IOK|SVp_IOK);
     $xpvivsect->comment('PVX, cur, len, IVX');
-    $xpvivsect->add( sprintf( "%s, %u, %u, %ld",
+    $xpvivsect->add( sprintf( "%s, %u, %u, %${ivdformat}",
 			      $savesym, $len, $pvmax, $iv ) ); # IVTYPE long
   }
   $svsect->add(
