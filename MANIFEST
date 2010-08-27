@@ -83,6 +83,14 @@ t/cc.t
 t/cc_last.t
 t/cc_o1.t
 t/cc_o2.t
+t/issue27.t
+t/issue29.t
+t/issue34.t
+t/issue35.t
+t/issue36.t
+t/issue37.t
+t/issue38.t
+t/issue39.t
 t/modules.pm
 t/modules.t
 t/mymodules
