@@ -311,7 +311,7 @@ sub svop_or_padop_pv {
   # XXX see SvSHARED_HEK_FROM_PV for the stash in S_method_common pp_hot.c
   if ($$sv) {
     return $sv->PV if $sv->can("PV");
-    if ($sv->ROK) {
+    if ($sv->FLAGS & SVf_ROK) {
       return $sv->RV->STASH->NAME;
     } else {
       warn "NYI S_method_common not fully implemented yet";
