@@ -1769,7 +1769,7 @@ sub B::RV::save {
       #$xrvsect->add($rv); # not static initializable (e.g. cv160 for ExtUtils::Install)
       $xrvsect->add("(SV*)Nullhv");
       $init->add(
-        sprintf( "xrv_list[%d].xrv_rv = %s;", $xrvsect->index, $rv ) );
+        sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     $svsect->add(sprintf("&xrv_list[%d], %lu, 0x%x",
 			 $xrvsect->index, $sv->REFCNT, $sv->FLAGS));
