@@ -295,11 +295,11 @@ sub is_skip {
 
   if ($] >= 5.011004) {
     foreach (qw(Test::Simple File::Temp Attribute::Handlers)) {
-      return 'fails $] >= 5.011004' if $_ eq $module;
+      #return 'fails $] >= 5.011004' if $_ eq $module;
     }
     if ($Config{useithreads}) { # hangs and crashes threaded since 5.12
       foreach (qw( Moose Class::MOP)) {
-	return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
+	#return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
       }
     }
   }

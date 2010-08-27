@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r572 M
+# B::C::VERSION = 1.28 r581 M
 # perlversion = 5.012001-nt
 # path = /usr/local/bin/perl5.12.1-nt
 # platform = linux 64bit
@@ -38,8 +38,8 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception #TODO >= 5.10
 pass Net::Cmd
-fail Compress::Raw::Zlib
-fail Compress::Raw::Bzip2
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 fail LWP #TODO generally
 pass Storable
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 97 / 100 modules tested with B-C-1.28 - perl-5.012001-nt
-# pass  93 /  97 (95.9%)
-# fail   4 /  97 (4.1%)
-# todo  11 /   4 (275.0%)
+# pass  95 /  97 (97.9%)
+# fail   2 /  97 (2.1%)
+# todo  11 /   2 (550.0%)
 # skip   3 / 100 (3.0% not installed)
