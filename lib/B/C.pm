@@ -383,8 +383,8 @@ sub savere {
     # BUG! Should be the same as newSVpvn($resym, $relen) but is not
     #$sym = sprintf("re_list[%d]", $re_index++);
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
-    my $s = ($PERL513 ? "NULL," : "") . "{0}, %u, %u";
-    $xpvsect->add( sprintf( $s, $len, $pvmax ) );
+    my $s1 = ($PERL513 ? "NULL," : "") . "{0}, %u, %u";
+    $xpvsect->add( sprintf( $s1, $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     my $s = "sv_list[".$svsect->index."]";
