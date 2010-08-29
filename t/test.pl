@@ -660,6 +660,12 @@ CCTESTS
 
 sub ctestok {
     my ($num, $backend, $base, $script, $todo) =  @_;
+    my $qr = '^ok'; # how lame
+    ctest($num, $qr, $backend, $base, $script, $todo);
+}
+
+sub ctest {
+    my ($num, $expected, $backend, $base, $script, $todo) =  @_;
     my $name = $base."_$num";
     unlink($name, "$name.c", "$name.pl", "$name.exe");
     open F, ">", "$name.pl";
@@ -690,7 +696,7 @@ sub ctestok {
     my $ok;
     if (defined($out) and !$result) {
         chomp $out;
-        $ok = $out =~ /^ok/;
+        $ok = $out =~ /$expected/;
         unless ($ok) { #crosscheck uncompiled
             my $out1 = `$runperl $name.pl`;
             unless ($out1 =~ /^ok/) {
@@ -701,10 +707,10 @@ sub ctestok {
         if ($todo) {
           TODO: {
                 local $TODO = $todo;
-                ok ($out =~ /^ok/);
+                ok ($out =~ /$expected/);
             }
         } else {
-            ok ($out =~ /^ok/);
+            ok ($out =~ /$expected/);
         }
     } else {
         if ($todo) {
