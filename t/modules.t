@@ -200,23 +200,23 @@ exit;
 sub is_todo {
   my $module = shift or die;
 
-  foreach (qw(ExtUtils::MakeMaker LWP Attribute::Handlers MooseX::Types)) {
+  foreach (qw( Attribute::Handlers Moose )) {
     return 'generally' if $_ eq $module;
   }
   if ($] < 5.007) {
     # Can't locate object method "RV" via package "B::PV"
     # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
-    foreach(qw( ExtUtils::CBuilder Sub::Name)) {
+    foreach(qw( ExtUtils::MakeMaker ExtUtils::CBuilder Sub::Name)) {
       return '< 5.007' if $_ eq $module;
     }
   }
   if ($] < 5.010) {
-    foreach(qw(B::Hooks::EndOfScope)) {
+    foreach(qw( B::Hooks::EndOfScope YAML )) {
       return '< 5.010' if $_ eq $module;
     }
   }
   if ($] >= 5.007) {
-    foreach(qw(File::Temp)) {
+    foreach(qw( ExtUtils::Install LWP File::Temp )) {
       return '>= 5.007' if $_ eq $module;
     }
   }
@@ -229,7 +229,7 @@ sub is_todo {
     }
   }
   if ($] > 5.010) {
-    foreach(qw(ExtUtils::Install Test::Harness Moose)) {
+    foreach(qw( Test::Harness )) {
       return '> 5.010' if $_ eq $module;
     }
   }
@@ -256,11 +256,11 @@ sub is_todo {
   }
   if ($Config{useithreads}) {
     foreach(qw(
-               File::Temp ExtUtils::Install
+               ExtUtils::MakeMaker File::Temp ExtUtils::Install
                Test::Tester Attribute::Handlers
                Test::Deep FCGI B::Hooks::EndOfScope Digest::SHA1
                namespace::clean DateTime::Locale DateTime
-               Template::Stash
+               Template::Stash MooseX::Types
               )) {
       return 'with threads' if $_ eq $module;
     }

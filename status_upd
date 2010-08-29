@@ -7,6 +7,8 @@
 # OPTIONS:
 # -s sort by test
 # -u update STATUS
+# -f fail only
+# -t todo only
 #
 use strict;
 
@@ -16,12 +18,14 @@ my $STATUS = "./STATUS";
 
 chdir ".." if ! -d "t" and -d "../t";
 chdir "../.." if ! -d "t" and -d "../../t";
-my ($sortbytest, $update, $quiet);
+my ($sortbytest, $update, $quiet, $failonly, $todoonly);
 
 for (@ARGV) {
   /^-s$/ and $sortbytest++;
   /^-u$/ and $update++;
   /^-q$/ and $quiet++;
+  /^-f$/ and $failonly++;
+  /^-t$/ and $todoonly++;
   -d "t/reports/$_" and $dir = "t/reports/$_";
   -d "$_" and $dir = $_;
 }
@@ -61,9 +65,11 @@ sub status {
     $failed =~ s{^.+(Failed tests?:?)}{$1}i;
     $failed =~ s{^.+TODO passed:}{TODO passed:};
     chomp $failed;
+    $failed =~ s/(\d)-(\d)/$1..$2/g;
     my $f = $failed;
     $f =~ s{^Failed tests?:?\s*(.+)$}{$1}i;
     $f =~ s{^TODO passed:\s*}{};
+    $f =~ s/ //g;
     my $c = "$file\t";
     $c .= "\t" if length($file) < 8;
     $c .= "$failed\n";
@@ -126,7 +132,9 @@ sub unify_results {
       undef $files->{$_} if defined $files->{$_};
     }
   }
-  # next check for all three pairs platform-version-feature the shortest commons
+
+  # ignore the platform for now. we don't have any platform issues.
+  # check for all pairs version - feature the shortest commons
   # 1. sort by versions (ignore platform + features) *-v-*
   my %versions;
   for (@platforms) {
@@ -157,20 +165,23 @@ sub unify_results {
 }
 
 my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
-my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
-print STDERR "$cmd\n" unless $quiet;
-my @g = `$cmd` or die $@;
+if (!$todoonly) {
+  my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
+  print STDERR "$cmd\n" unless $quiet;
+  my @g = `$cmd` or die $@;
 
-my $failed = status(@g);
-my $failedu = unify_results($failed->[1], "fail");
+  my $failed = status(@g);
+  my $failedu = unify_results($failed->[1], "fail");
+}
 
-$cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs;
-print STDERR "\n$cmd\n" unless $quiet;
-@g = `$cmd` or die $@;
+if (!$failonly) {
+  my $cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs;
+  print STDERR "\n$cmd\n" unless $quiet;
+  my @g = `$cmd` or die $@;
 
-my $todo = status(@g);
-my $todou = unify_results($todo->[1], "todo");
-
+  my $todo = status(@g);
+  my $todou = unify_results($todo->[1], "todo_pass");
+}
 # XXX TODO: update the TEST STATUS section in "./STATUS"
 if ($update) {
   die "file not found $STATUS\n" unless -e $STATUS;

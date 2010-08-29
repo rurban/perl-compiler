@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r581 M
+# B::C::VERSION = 1.28 r586 M
 # perlversion = 5.013004
 # path = /usr/local/bin/perl5.13.4
 # platform = linux 64bit
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long #TODO >= 5.013
 fail Pod::Parser #TODO >= 5.013
-fail ExtUtils::MakeMaker #TODO generally
+fail ExtUtils::MakeMaker #TODO >= 5.013
 fail Test::Simple #TODO >= 5.10
 pass ExtUtils::Manifest
 fail Pod::Text #TODO >= 5.013
@@ -22,7 +22,7 @@ fail Test #TODO >= 5.013
 pass Data::Dumper #TODO >= 5.013
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-fail ExtUtils::Install #TODO > 5.010
+fail ExtUtils::Install #TODO >= 5.007
 pass Text::ParseWords
 pass ExtUtils::CBuilder #TODO >= 5.013
 pass ExtUtils::ParseXS
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO generally
+fail LWP #TODO >= 5.007
 pass Storable
 pass base
 pass List::MoreUtils

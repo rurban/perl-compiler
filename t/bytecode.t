@@ -50,14 +50,18 @@ if ($DEBUGGING) {
     for (0..@insn_name) { $insncov{$_} = 0; }
   }
 }
-my @todo = (27,44,33,39);
-@todo = (3,6,8..10,12,15,16,18,26,28,31,33,35,38,41..43)
+my @todo = (32,33,39);
+@todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..43,46)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 pop @todo if $] > 5.011003; # 39 passes on 5.11.3
+push @todo, (27,44) if $] > 5.010;
 push @todo, (32) if $] > 5.011003; # entertry still fails with 5.11.4
 push @todo, (42,43) if $] > 5.011003 and $] < 5.013;
 push @todo, (42) if $ITHREADS and $] == 5.010001;
 push @todo, (41..43) if !$ITHREADS;
+@todo = (3..4,27..29,31..33,41..46) if $] >= 5.013003;
+push @todo, (10) if $] >= 5.013003 and $DEBUGGING;
+
 my @skip = (); #(20,27,29) if $] >= 5.010;
 push @skip, (41..43) if !$ITHREADS;
 

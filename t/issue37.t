@@ -11,9 +11,9 @@ BEGIN {
 my $script = <<'EOF';
 my $x;
 $x ||= 1;
-print "ok\n" if $x;
+print "ok" if $x;
 EOF
 
 use B::CC;
 ctestok(1, "CC", "ccode37i", $script,
-        $B::CC::VERSION < 1.08 ? "B::CC issue 37" : undef);
+        $B::CC::VERSION < 1.09 ? "B::CC issue 37" : undef);

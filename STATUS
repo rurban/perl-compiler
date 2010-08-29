@@ -16,12 +16,13 @@ Several B::C and B::CC bugs fixed. 5.10 + 5.12 compatibility added.
 
 Open Problems for B::C:
 5.6:
-    test 15
+    test 15, 35, 46
+5.8:
+    -"-
 5.10:
-    Optimization: destruction of static pvs for -O1 (-fcog temp. disabled)
-        working on -fno-destruct instead
+    -"-
 5.12:
-    None. Completely same results as 5.10
+    -"-
 5.14:
     tests 6,8..10,16,21,23,24,26,30,31,35 (CV's)
 
@@ -29,8 +30,8 @@ See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
 TEST STATUS
 -----------
-Tested on cygwin1.7, centos5, debian4, debian5, freebsd7, solaris10, openbsd38
-Not so regurarily on centos4, windows7, strawberry-5.10.1, activeperl-5.10.1
+Tested on cygwin1.7, centos5, debian4, debian5 64bit, freebsd7, solaris10 intel sunpro, openbsd38
+Not so regurarily on centos4, strawberry-5.10.1, activeperl-5.10.1
 
 List of failed tests.
 
@@ -47,7 +48,7 @@ t/cc_o1         15,18,21,25,27,28,30..32
 t/cc_o2         10,15,16,18,21,25,26,27,28,30..32
 
 5.8:  			                          	   | non-threaded
-t/bytecode      ok
+t/bytecode      27,44,33,39
 t/c             11,14,15,20,23,27..29,31,101,102 	   | 5,7-12,14-20,22-23,25,27,28,30,31
 t/c_o1          1,3-8,10..12,14,15,17..25,27..29,31,101,102| 7-12,14-20,22-23,25,27,28,30,31
 t/c_o2          1,3-12,14,15,17..25,27..29,31,101,102      | 7-12,14-20,22-23,25,27,28,30,31
@@ -102,7 +103,7 @@ t/o     5,9 (skipped)
 t/stash 1   (skipped)
 
 5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)		| non-threaded
-t/bytecode      ok
+t/bytecode      27,44,33,39
 t/c             ok				| 27
 t/c_o1          ok				| 27
 t/c_o2          ok				| 27
@@ -113,7 +114,7 @@ t/cc_o1         18,21,25..27,29.30
 t/cc_o2         10,16,18,21,25..27,30
 
 5.10.1: 					| non-threaded
-t/bytecode 	ok				| ok
+t/bytecode 	27,44,33,39			| 27,44,33,39
 t/c 		39,41,44			| 15,29,39,44
 t/c_o1          -"-				|  -"-
 t/c_o2          -"-				|  -"-
@@ -126,33 +127,38 @@ t/cc_o2         10,16,18,21,25,26,29,30
 5.11.2: same as 5.10.1
 5.11.3: as 5.10.1, just c and cc fails with 32 (catch evaltry die)
 5.11.4: same as 5.10.1
-5.13.3: 6,8..10,16,21,23,24,26,30,31,35
+5.13.3: broken 6,8..10,16,21,23,24,26,30,31,35
+5.13.4: broken 3..4,10,27..29,31,41..46
 
 CPAN Modules
 ------------
-See t/modules.t. We only try to compile use module, no testsuite.
+See t/modules.t. We only try to compile use module, not the testsuite.
 We only try B::C so far.
+The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 From top100:
 5.8.9:     fail 4% Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
 5.11.4-nt: fail 3% Attribute::Handlers File::Temp ExtUtils::Install
-5.12.1-nt: fail 7% LWP Moose Test::Harness Attribute::Handlers Test::Simple File::Temp ExtUtils::Install
+5.12.1-nt: fail 7% LWP Moose Test::Harness Attribute::Handlers Test::Simple File::Temp 
+                   ExtUtils::Install
 >5.10 threaded:  ~30% failures
 
-5.10, 5.11 status
------------------
+5.10, 5.12, 5.14 status
+-----------------------
 TODO for B::C
+  dl_init regression, fails for $use_xsloader=1 lately
   AUTOLOAD goto xsub and SelfLoader esp. on 5.8 (27). 
     use AutoLoader works okay. (test 27, 31)
   test 29 non-threaded 5.8 (use IO)
   ? 5.11.3 test 32 catch evaltry die
-  destruction: -O1 static PVs and HEKs (mult.) >=5.10
-  CV forwarding (old ugly method <5.10, new >=5.10)
-  Fix and check t/modules (in work) and t/testcore.
+  CV forwarding (old ugly method <5.10, new in work >=5.10)
+  check t/testcore and testm.sh -t
+  see google issues
 
 Fix CC cc_queue sort 18 ccpp
 
-DONE:
+DONE
+----
 fixed xpvio off-by-one error for 5.10 (test 29)
 
 mark a package which is autoloaded from XS
@@ -230,7 +236,7 @@ cop_io status?
 I've restored full 5.8 backwards compatibility, mainly for test comparison.
 But since the new B::C compiler is better than the CORE compiler, it is installed.
 
-Details:
+Details
 --------
 Test::Harness:
 t/testm.sh -D- Test::Harness; gdb ./test_harness
@@ -346,6 +352,8 @@ regex_padav(142) comppad_name(144) xgv_stash(145) signal(146) formfeed(147)
 
 JIT PLANS
 ---------
+Jit came alive March 2010 on github and now CPAN.
+
 B-C-1.04_10:
 Playing with the idea to target against parrot pir instead of lightning
 and use the parrot jit, with pbc_to_exe or exec_save.
@@ -360,10 +368,10 @@ to be able to use a high-level language.
 
 Abbrevations
 ------------
-bc B::ByteCode 
-c  B::C
-cc B::CC, 
--D -DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
--nt not threaded perl.
+bc 	B::ByteCode 
+c  	B::C
+cc 	B::CC
+-D 	-DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
+-nt 	not threaded perl
 
 2010-01-27 rurban

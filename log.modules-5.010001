@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r581 M
+# B::C::VERSION = 1.28 r586 M
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = linux 64bit
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 fail Pod::Parser
-fail ExtUtils::MakeMaker #TODO generally
+fail ExtUtils::MakeMaker #TODO with threads
 fail Test::Simple #TODO >= 5.10
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-fail ExtUtils::Install #TODO > 5.010
+fail ExtUtils::Install #TODO >= 5.007
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 fail IO::Compress::Base
-fail LWP #TODO generally
+fail LWP #TODO >= 5.007
 pass Storable
 pass base
 pass List::MoreUtils
@@ -67,7 +67,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP #TODO 5.10 with threads
-fail Moose #TODO > 5.010
+fail Moose #TODO generally
 fail Test::Deep #TODO with threads
 pass Carp::Clan
 pass Module::Pluggable
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO generally
+fail MooseX::Types #TODO with threads
 pass Class::Singleton
 fail DateTime::TimeZone
 pass DateTime::Locale #TODO with threads
