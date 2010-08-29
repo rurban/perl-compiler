@@ -1,6 +1,13 @@
 #!/usr/bin/perl -w
-# status_upd.pl [1.04_26]
-# process perlall-maketest logfiles: `perl$ver Makefile.PL && make test > log.test-$platform-$ver; make clean`
+# status_upd [-suq] [ 1.26 | path ]
+# process perlall-maketest logfiles:
+#  `perl$ver Makefile.PL && make test > log.test-$platform-$ver; make clean`
+# and find and sort by FAIL/TODO and platform+version
+#
+# OPTIONS:
+# -s sort by test
+# -u update STATUS
+#
 use strict;
 
 my $logs = "log.test-*-5.*";
@@ -9,19 +16,23 @@ my $STATUS = "./STATUS";
 
 chdir ".." if ! -d "t" and -d "../t";
 chdir "../.." if ! -d "t" and -d "../../t";
+my ($sortbytest, $update, $quiet);
 
-if (@ARGV and -d "t/reports/$ARGV[0]") {
-  $dir = "t/reports/".$ARGV[0];
+for (@ARGV) {
+  /^-s$/ and $sortbytest++;
+  /^-u$/ and $update++;
+  /^-q$/ and $quiet++;
+  -d "t/reports/$_" and $dir = "t/reports/$_";
+  -d "$_" and $dir = $_;
 }
-if (@ARGV and -d $ARGV[0]) {
-  $dir = $ARGV[0];
-}
 
-die "$STATUS not found\n" unless -f $STATUS;
-
+# read stdout lines from a grep command and
+# prints and return a string of the sorted
+# results and a hash for further processing.
 sub status {
   my @g = @_;
   my $s = "";
+  my %h;
   my $prefix = '';
   my $oldprefix = '';
   while (@g) {
@@ -36,42 +47,135 @@ sub status {
     unless ($prefix) {
       ($prefix) = $file =~ m{log.test-(.*?)-t/};
       if ($prefix and $oldprefix ne $prefix) {
-	$prefix = 'cygwin' if $prefix eq 'ATGRZWN502840';
+	#$prefix =~ s/ATGRZ.+?-/cygwin-/;
 	$s .= "\n$prefix:\n";
-	print STDERR "\n$prefix:\n";
+	print STDERR "\n$prefix:\n" unless $quiet;
       }
     }
     next unless $prefix;
     ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
     chomp $file if $file;
     next unless $file;
+    $file =~ s{\s*$}{};
+    $file =~ s{^\s*}{};
     $failed =~ s{^.+(Failed tests?:?)}{$1}i;
     $failed =~ s{^.+TODO passed:}{TODO passed:};
     chomp $failed;
+    my $f = $failed;
+    $f =~ s{^Failed tests?:?\s*(.+)$}{$1}i;
+    $f =~ s{^TODO passed:\s*}{};
     my $c = "$file\t";
     $c .= "\t" if length($file) < 8;
     $c .= "$failed\n";
-    print STDERR "$c";
+    $h{$prefix}->{$file} = $f;
+    print STDERR "$c" unless $quiet;
     $s .= $c;
+  }
+  [ $s, \%h ];
+}
+
+# split into platform, version, [feature]
+# debian-squeeze-amd64-5.10.1-nt => ("debian-squeeze-amd64", "5.10.1", "nt")
+sub platform_version_split {
+  local $_ = shift;
+  my ($p,$v,$f) = m/^(.+)-(5\.[\d\.]+)([-dnt]+)?$/;
+  $f =~ s/^-// if $f; # d, d-nt, nt or empty
+  return ($p,$v,$f);
+}
+
+sub cleanup_deleted {
+  my $h = shift;
+  my $f = shift;
+  for my $p (keys %$h) { 		# cleanup undef ("deleted") results
+    for (keys %{$h->{$p}}) {
+      delete $f->{$_} unless defined $f->{$_};
+    }
+  }
+  $f;
+}
+
+sub unify_common {
+  my $h = shift;
+  my $f = shift;		# skip already deleted results
+  my %files = %$f;
+  for my $p (@_) {
+    for (keys %{$h->{$p}}) {	# first for all platforms
+      if (!exists $files{$_}) { # only add if new, skipping undef ("deleted")
+	$files{$_} = $h->{$p}->{$_};
+      } else {			# undef ("delete") if different to previous result
+	undef $files{$_} if !$files{$_} or $files{$_} ne $h->{$p}->{$_};
+      }
+    }
+  }
+  return cleanup_deleted($h, \%files);
+}
+
+sub unify_results {
+  my $h = shift; 	# platform_version -> file -> failed
+  my $name = shift; 	# todo or fail
+  # first check for common results in files
+  my @platforms = keys %$h;
+  my $files = unify_common($h, {}, @platforms);
+  if (%$files) {
+    use Data::Dumper;
+    print Data::Dumper->Dump([$files],["common_$name"]);
+  }
+  # initialize for next round: delete already common found
+  for my $p (@platforms) {
+    for (keys %{$h->{$p}}) {
+      undef $files->{$_} if defined $files->{$_};
+    }
+  }
+  # next check for all three pairs platform-version-feature the shortest commons
+  # 1. sort by versions (ignore platform + features) *-v-*
+  my %versions;
+  for (@platforms) {
+    my ($p,$v,$f) = platform_version_split($_);
+    push @{$versions{$v}}, ($_);
+  }
+  for my $v (sort keys %versions) {
+    my $v1 = unify_common($h, $files, @{$versions{$v}});
+    if (%$v1) {
+      use Data::Dumper;
+      print Data::Dumper->Dump([$v1],["v$v $name"]);
+    }
+  }
+  # 2. sort by feature (ignore platform + version) *-*-f
+  my %feat;
+  for (@platforms) {
+    my ($p,$v,$f) = platform_version_split($_);
+    $f = "" unless $f;
+    push @{$feat{$f}}, ($_);
+  }
+  for my $f (sort keys %feat) {
+    my $f1 = unify_common($h, $files, @{$feat{$f}});
+    if (%$f1) {
+      use Data::Dumper;
+      print Data::Dumper->Dump([$f1],["feature $f $name"]);
+    }
   }
 }
 
-# update the TEST STATUS section in "./STATUS"
-# TODO grep -a -B1 -i "TODO passed" ' . ($dir eq '.' ? "$logs" : "$dir/$logs"
-my $cmd = 'grep -a -B1 -i "Failed test" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
-print STDERR "$cmd\n";
+my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
+my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
+print STDERR "$cmd\n" unless $quiet;
 my @g = `$cmd` or die $@;
 
-status(@g);
+my $failed = status(@g);
+my $failedu = unify_results($failed->[1], "fail");
 
-$cmd = 'grep -a -B1 -i "TODO passed" ' . ($dir eq '.' ? "$logs" : "$dir/$logs");
-print STDERR "\n$cmd\n";
+$cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs;
+print STDERR "\n$cmd\n" unless $quiet;
 @g = `$cmd` or die $@;
 
-status(@g);
+my $todo = status(@g);
+my $todou = unify_results($todo->[1], "todo");
 
-#print $s;
-exit;
+# XXX TODO: update the TEST STATUS section in "./STATUS"
+if ($update) {
+  die "file not found $STATUS\n" unless -e $STATUS;
+  # sort away platforms
+}
 
 # Local Variables:
 #   mode: cperl
