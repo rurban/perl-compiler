@@ -699,7 +699,7 @@ sub ctest {
         $ok = $out =~ /$expected/;
         unless ($ok) { #crosscheck uncompiled
             my $out1 = `$runperl $name.pl`;
-            unless ($out1 =~ /^ok/) {
+            unless ($out1 =~ /$expected/) {
                 ok(1, "skip also fails uncompiled");
                 return;
             }
