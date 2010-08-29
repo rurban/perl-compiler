@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r569
+# B::C::VERSION = 1.28 r586
 # perlversion = 5.010000-nt
 # path = /usr/local/bin/perl5.10.0-nt
 # platform = cygwin 32bit
@@ -38,8 +38,8 @@ pass HTML::Tagset
 pass HTML::Parser
 fail Test::Exception #TODO >= 5.10
 pass Net::Cmd
-fail Compress::Raw::Zlib
-fail Compress::Raw::Bzip2
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 fail LWP #TODO generally
 pass Storable
@@ -72,7 +72,7 @@ fail Test::Deep #TODO 5.10 without threads
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
-pass Text::Balanced
+skip Text::Balanced
 pass DBI
 pass Time::Local
 pass IO::Scalar
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 96 / 100 modules tested with B-C-1.28 - perl-5.010000-nt
-# pass  81 /  96 (84.4%)
-# fail  15 /  96 (15.6%)
-# todo  17 /  15 (113.3%)
-# skip   4 / 100 (4.0% not installed)
+# 95 / 100 modules tested with B-C-1.28 - perl-5.010000-nt
+# pass  82 /  95 (86.3%)
+# fail  13 /  95 (13.7%)
+# todo  17 /  13 (130.8%)
+# skip   5 / 100 (5.0% not installed)
