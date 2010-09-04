@@ -478,11 +478,16 @@ static int bget_swab = 0;
 #define BSET_cop_stashpv(cop, arg)	Perl_warn(aTHX_ "cop_stashpv without ITHREADS not yet implemented")
 #endif
 #if PERL_VERSION < 11
-#define BSET_cop_label(cop, arg)	(cop)->cop_label = arg
+# define BSET_cop_label(cop, arg)	(cop)->cop_label = arg
 #else
 /* See op.c:Perl_newSTATEOP. Test 21 */
-#define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
+# if (PERL_VERSION < 13) || ((PERL_VERSION == 13) && (PERL_SUBVERSION < 4))
+#  define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
         Perl_store_cop_label(aTHX_ (cop)->cop_hints_hash, arg)
+# else
+/* changed with 5.13.4-5 a77ac40c5b8 */
+#  define BSET_cop_label(cop, arg)	Perl_store_cop_label(aTHX_ (cop), arg, strlen(arg), 0)
+# endif
 #endif
 
 /* This is stolen from the code in newATTRSUB() */
