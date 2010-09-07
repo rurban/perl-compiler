@@ -127,8 +127,8 @@ sub init_hash {
 # XXX We should really take some of this info from Opcodes (was: CORE opcode.pl)
 #
 # no args and no return value = Opcodes::argnum 0
-%no_stack         = init_hash qw(pp_enter pp_unstack pp_leave
-  pp_break pp_continue pp_dbstate);
+%no_stack         = init_hash qw(pp_unstack pp_break pp_continue pp_dbstate);
+				# pp_enter pp_leave, use/change global stack.
 #skip write_back_stack (no args)
 %skip_stack       = init_hash qw(pp_enter);
 %skip_lexicals   = init_hash qw(pp_enter pp_enterloop);
@@ -2440,6 +2440,8 @@ OPTION:
       no strict 'refs';
       my $ppname = "pp_".Opcodes::opname($_);
       # opflags n: no args, no return values. don't need save/restore stack
+      # But pp_enter, pp_leave use/change global stack.
+      next if $ppname eq 'pp_enter' || $ppname eq 'pp_leave';
       $no_stack{$ppname} = 1
         if Opcodes::opflags($_) & 512;
       # XXX More Opcodes options to be added later
