@@ -11,7 +11,7 @@ BEGIN {
 # Explanation:
 # - f1 is called, it puts value 1 on the stack.
 # - f2 should discard this value, because f1 is called in void context.
-# - But if a block follows, this value is accidently added to the list 
+# - But if a block follows, this value is accidently added to the list
 #   of return values of f2.
 my $script = <<'EOF';
 sub f1 { 1 }
@@ -19,5 +19,5 @@ f1();
 print do { 7; 2 }, "\n";
 EOF
 
-ctest(1, '^2$', "CC", "ccode42i", $script, 
-      "B::CC issue 42");
+# fixed with r596. remove enter/leave from %no_stack, sp sync.
+ctest(1, '^2$', "CC", "ccode42i", $script);
