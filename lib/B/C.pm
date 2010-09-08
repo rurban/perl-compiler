@@ -919,9 +919,17 @@ sub B::COP::save {
       )
     );
     if ( $op->label ) {
-      $init->add(
-        sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
-		$copsect->index, cstring( $op->label )));
+      # test 29
+      if ($] > 5.013003) {
+	$init->add(
+	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
+		  $copsect->index, cstring( $op->label ),
+		  length $op->label, 0));
+      } else {
+	$init->add(
+	  sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
+		  $copsect->index, cstring( $op->label )));
+      }
     }
   }
   elsif ($PERL510) {
