@@ -924,7 +924,7 @@ sub pp_stringify {
     my $ix = $op->targ;
     my $targ = $pad[$ix];
     runtime "sv_copypv(PL_curpad[$ix], $sv);\t/* pp_stringify */";
-    $stack[-1] = $targ;
+    $stack[-1] = $targ if @stack;
     return $op->next;
   } else {
     default_pp(@_);
