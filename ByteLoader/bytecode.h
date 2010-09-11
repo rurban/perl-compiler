@@ -481,7 +481,7 @@ static int bget_swab = 0;
 # define BSET_cop_label(cop, arg)	(cop)->cop_label = arg
 #else
 /* See op.c:Perl_newSTATEOP. Test 21 */
-# if (PERL_VERSION < 13) || ((PERL_VERSION == 13) && (PERL_SUBVERSION < 4))
+# if (PERL_VERSION < 13) || ((PERL_VERSION == 13) && (PERL_SUBVERSION < 5))
 #  define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
         Perl_store_cop_label(aTHX_ (cop)->cop_hints_hash, arg)
 # else

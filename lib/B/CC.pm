@@ -305,7 +305,6 @@ sub init_pp {
   $declare_ref      = {};
   runtime("dSP;");
   declare( "I32", "oldsave" );
-  declare( "SV",  "**svp" );
   map { declare( "SV", "*$_" ) } qw(sv src dst left right);
   declare( "MAGIC", "*mg" );
   $decl->add( "#undef cxinc", "#define cxinc() Perl_cxinc(aTHX)")
@@ -1154,11 +1153,15 @@ sub pp_aelemfast {
     $av = "GvAV($gvsym)";
   }
   my $ix   = $op->private;
-  my $flag = $op->flags & OPf_MOD;
+  my $lval = $op->flags & OPf_MOD;
   write_back_stack();
   runtime(
-    "svp = av_fetch($av, $ix, $flag);",
-    "PUSHs(svp ? *svp : &PL_sv_undef);"
+    "{ AV* av = $av;",
+    "  SV** const svp = av_fetch(av, $ix, $lval);",
+    "  SV *sv = (svp ? *svp : &PL_sv_undef);",
+    !$lval ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : "",
+    "  PUSHs(sv);",
+    "}"
   );
   return $op->next;
 }

@@ -920,7 +920,7 @@ sub B::COP::save {
     );
     if ( $op->label ) {
       # test 29
-      if ($] > 5.013003) {
+      if ($] > 5.013004) {
 	$init->add(
 	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
 		  $copsect->index, cstring( $op->label ),
