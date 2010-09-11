@@ -1131,25 +1131,33 @@ sub pp_gvsv {
 # coverage: 16
 sub pp_aelemfast {
   my $op = shift;
-  my $gvsym;
-  if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
-    if ($op->can('padix')) {
-      $gvsym = $pad[ $op->padix ]->as_sv;
-    } else {
-      $gvsym = 'PL_incgv'; # XXX passes, but need to investigate why. cc test 43 5.10.1
-      #write_back_stack();
-      #runtime("PUSHs(&PL_sv_undef);");
-      #return $op->next;
+  my $av;
+  if ($op->flags & OPf_SPECIAL) {
+    my $sv = $pad[ $op->targ ]->as_sv;
+    $av = "MUTABLE_AV($sv)";
+  } else {
+    my $gvsym;
+    if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
+      if ($op->can('padix')) {
+        warn "padix\n";
+        $gvsym = $pad[ $op->padix ]->as_sv;
+      } else {
+        $gvsym = 'PL_incgv'; # XXX passes, but need to investigate why. cc test 43 5.10.1
+        #write_back_stack();
+        #runtime("PUSHs(&PL_sv_undef);");
+        #return $op->next;
+      }
     }
-  }
-  else { #svop
-    $gvsym = $op->gv->save;
+    else { #svop
+      $gvsym = $op->gv->save;
+    }
+    $av = "GvAV($gvsym)";
   }
   my $ix   = $op->private;
   my $flag = $op->flags & OPf_MOD;
   write_back_stack();
   runtime(
-    "svp = av_fetch(GvAV($gvsym), $ix, $flag);",
+    "svp = av_fetch($av, $ix, $flag);",
     "PUSHs(svp ? *svp : &PL_sv_undef);"
   );
   return $op->next;
