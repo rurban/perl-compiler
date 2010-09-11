@@ -11,8 +11,8 @@
 # 2. log.modules-$perlversion
 #
 # When running the Mock tests the actual tests are not executed,
-# instead the results from log file are used instead. A typical
-# perl-compiler testrun lasts several hours, with Mock
+# instead the results from log file are used instead for the result of ok. 
+# A typical perl-compiler testrun lasts several hours, with Mock
 # several seconds.
 
 use strict;
@@ -22,20 +22,22 @@ BEGIN {
 use Mock;
 use modules;
 
-my @mod = find_modules_report;
-my @tst = find_test_report;
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-my $logdir = ".";
-@logdir = grep /--logdir=(.+)/, @ARGV;
+my ($logdir) = grep /--logdir=(.+)/, @ARGV;
+my ($arch) = grep /--arch=(.+)/, @ARGV;
+$logdir = "." unless $logdir;
+my @mod = find_modules_report($logdir);
+my @tst = find_test_report($logdir, $arch);
 
-for my $test (@ARGV) {
+my @tests = @ARGV ? @ARGV : glob "t/*.t";
+for my $test (@tests) {
   my $version = perlversion;
-  my @files = $test =~ /modules.t/ ? @mod : @tst;
+  my @files = $test =~ /modules\.t/ ? @mod : @tst;
   @files = () if $test =~ /issue34\.t/;  # ignore handmade test
   @files = () if $test =~ /bytecode\.t/; # XXX make it into a sub from test.pl
   for my $log (@files) {
     #my $rpt = parse_report($_);
     # XXX run mock test and use result
-    `$X -Mblib -It -MMock -e "mock_harness(qq($log))" qq($test)`;
+    mock_harness($log, $test);
   }
 }

@@ -100,6 +100,7 @@ sub cleanup_deleted {
   $f;
 }
 
+# every
 sub unify_common {
   my $h = shift;
   my $f = shift;		# skip already deleted results

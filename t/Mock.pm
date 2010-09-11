@@ -7,7 +7,7 @@ BEGIN {
 
 =head1 NAME
 
-Mock - lengthy compiler tests
+Mock lengthy compiler tests. Replay from TAP.
 
 =head1 DESCRIPTION
 
@@ -22,7 +22,7 @@ Currently perl compiler tests are stored in two formats:
 
 When running the Mock tests the actual tests are not executed,
 instead the results from log file are used instead. A typical
-pelr-compiler testrun lasts several hours, with Mock
+perl-compiler testrun lasts several hours to days, with Mock
 several seconds.
 
 =head1 SYNOPSIS
@@ -31,7 +31,7 @@ several seconds.
   # actual tests
   for p in perl$perlall; do
     perl$p Makefile.PL && make && \
-      make test TEST_VERBOSE=1 2>&1 > log.test-`uname -a`-$p
+      make test TEST_VERBOSE=1 2>&1 > log.test-`uname -s`-$p
   done
   # fixup TODO's
   # check tests
@@ -43,23 +43,57 @@ several seconds.
 
 require "test.pl";
 use Test::More;
+use TAP::Parser;
+use Test::Harness::Straps;
 use Config;
 use Cwd;
 use Exporter;
 our @ISA     = qw(Exporter);
-our @EXPORT = qw();
+our @EXPORT = qw(find_modules_report find_test_report
+                 mock_harness run_cc_test ctest ctestok ccompileok
+);
 
 # log.test or log.modules
 # check only the latest version, and match revision and perlversion
-sub find_test_report () {
-  my $arch = shift || `uname -a`;
-  #log.test-
+sub find_test_report ($;$) {
+  my $logdir = shift;
+  my $arch = shift || `uname -s`;
+  #log.test-$arch-$versuffix
+  my $tmpl = "$logdir/log.test-*-5.*";
+  my @f = latest_files($tmpl);
 }
 
 sub find_modules_report {
+  my $logdir = shift;
+  #log.modules-$ver$suffix
+  latest_files("$logdir/log.modules-5.*");
+}
+
+# check date, max diff one day from youngest
+sub latest_files {
+  my $tmpl = shift;
+  my @f = glob $tmpl;
+  my @fdates = sort{$a->[1]<=>$b->[1]} map { [$_ => -M $_] } @f;
+  my $latest = $fdates[0]->[1]; 
+  my @ret;
+  for (@fdates) {
+    if ($_->[1]-$latest < 1.2) {
+      push @ret, $_->[0]; 
+    } else {
+      last;
+    }
+  }
+  @ret;
 }
 
 sub parse_report {
+  my ($log, $t) = @_;
+  my $straps = Test::Harness::Straps->new;
+  open my $fh, "<", $log;
+  my $result = $straps->analyze_fh($t, $fh);
+  close $fh;
+  # XXX replay only the part for the given test
+  $result;
 }
 
 sub result ($) {
@@ -69,14 +103,23 @@ sub result ($) {
 # 1, "C", "require LWP::UserAgent;\nprint q(ok);", "ok",0,1,"#TODO issue 27"
 sub run_cc_test {
 }
+# 1, "ok", "CC", "ccode37i", $script, $todo
+sub ctest {
+}
 # 1, "CC", "ccode37i", $script, $todo
 sub ctestok {
 }
 # 1, "CC", "ccode36i", $script, $todo
-sub ccompileok() {
+sub ccompileok {
 }
 
 sub mock_harness {
   my ($log, $t) = @_;
-  my $rpt = parse_report($log);
+  my $rpt = parse_report($log, $t);
+  my $details = $rpt->details;
+  # XXX execute the real tests with mock_harness (overridden test)
+  #     or just parse the TODO?
+  # Test::Harness $t
 }
+
+1;
