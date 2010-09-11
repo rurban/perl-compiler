@@ -1127,13 +1127,13 @@ sub pp_gvsv {
   return $op->next;
 }
 
-# coverage: 16
+# coverage: 16, issue44
 sub pp_aelemfast {
   my $op = shift;
   my $av;
   if ($op->flags & OPf_SPECIAL) {
     my $sv = $pad[ $op->targ ]->as_sv;
-    $av = "MUTABLE_AV($sv)";
+    $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
   } else {
     my $gvsym;
     if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
