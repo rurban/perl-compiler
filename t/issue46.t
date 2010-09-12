@@ -13,4 +13,4 @@ my $pattern = 'x'; 'foo' =~ /$pattern/o
 EOF
 
 ctest(1, '', "CC", "ccode46i", $script,
-      $Config{useithreads} ? "issue46 m//o cLOGOP->op_first" : undef);
+      $Config{useithreads} ? undef : "issue46 m//o cLOGOP->op_first");
