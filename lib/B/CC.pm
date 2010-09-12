@@ -758,6 +758,30 @@ sub pp_and {
   return $op->other;
 }
 
+# Nearly identical to pp_and, but leaves stack unchanged.
+sub pp_andassign {
+  my $op   = shift;
+  my $next = $op->next;
+  reload_lexicals();
+  unshift( @bblock_todo, $next );
+  if ( @stack >= 1 ) {
+    my $obj  = pop @stack;
+    my $bool = $obj->as_bool;
+    write_back_stack();
+    save_or_restore_lexical_state($$next);
+    runtime(
+      sprintf(
+        "PUSHs((SV*)%s); if (!$bool) { goto %s;}", $obj->as_sv, label($next)
+      )
+    );
+  }
+  else {
+    save_or_restore_lexical_state($$next);
+    runtime( sprintf( "if (!%s) goto %s;", top_bool(), label($next) ) );
+  }
+  return $op->other;
+}
+
 # coverage: 28
 sub pp_or {
   my $op   = shift;
@@ -779,6 +803,30 @@ sub pp_or {
     save_or_restore_lexical_state($$next);
     runtime( sprintf( "if (%s) goto %s;", top_bool(), label($next) ),
       "*sp--;" );
+  }
+  return $op->other;
+}
+
+# Nearly identical to pp_or, but leaves stack unchanged.
+sub pp_orassign {
+  my $op   = shift;
+  my $next = $op->next;
+  reload_lexicals();
+  unshift( @bblock_todo, $next );
+  if ( @stack >= 1 ) {
+    my $obj  = pop @stack;
+    my $bool = $obj->as_bool;
+    write_back_stack();
+    save_or_restore_lexical_state($$next);
+    runtime(
+      sprintf(
+        "PUSHs((SV*)%s); if ($bool) { goto %s; }", $obj->as_sv, label($next)
+      )
+    );
+  }
+  else {
+    save_or_restore_lexical_state($$next);
+    runtime( sprintf( "if (%s) goto %s;", top_bool(), label($next) ) );
   }
   return $op->other;
 }
@@ -2640,8 +2688,8 @@ Turns off inlining for some new ops.
 
 AUTOMATICALLY inlined:
 
-pp_null pp_stub pp_unstack pp_and pp_or pp_cond_expr pp_padsv pp_const
-pp_nextstate pp_dbstate pp_rv2gv pp_sort pp_gv pp_gvsv
+pp_null pp_stub pp_unstack pp_and pp_andassign pp_or pp_orassign pp_cond_expr
+pp_padsv pp_const pp_nextstate pp_dbstate pp_rv2gv pp_sort pp_gv pp_gvsv
 pp_aelemfast pp_ncmp pp_add pp_subtract pp_multiply pp_divide pp_modulo
 pp_left_shift pp_right_shift pp_i_add pp_i_subtract pp_i_multiply pp_i_divide
 pp_i_modulo pp_eq pp_ne pp_lt pp_gt pp_le pp_ge pp_i_eq pp_i_ne pp_i_lt
