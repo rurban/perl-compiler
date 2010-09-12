@@ -688,7 +688,9 @@ sub B::UNOP::save {
   my $ix = $unopsect->index;
   $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  savesym( $op, "(OP*)&unop_list[$ix]" );
+  $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
+  $op->first->save if ${ $op->first };
+  $sym;
 }
 
 sub B::BINOP::save {
@@ -708,7 +710,10 @@ sub B::BINOP::save {
   my $ix = $binopsect->index;
   $init->add( sprintf( "binop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  savesym( $op, "(OP*)&binop_list[$ix]" );
+  $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
+  $op->first->save if ${ $op->first };
+  $op->last->save if ${ $op->last };
+  $sym;
 }
 
 sub B::LISTOP::save {
@@ -728,7 +733,10 @@ sub B::LISTOP::save {
   my $ix = $listopsect->index;
   $init->add( sprintf( "listop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  savesym( $op, "(OP*)&listop_list[$ix]" );
+  $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
+  $op->first->save if ${ $op->first };
+  $op->last->save if ${ $op->last };
+  $sym;
 }
 
 sub B::LOGOP::save {
@@ -748,7 +756,10 @@ sub B::LOGOP::save {
   my $ix = $logopsect->index;
   $init->add( sprintf( "logop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  savesym( $op, "(OP*)&logop_list[$ix]" );
+  $sym = savesym( $op, "(OP*)&logop_list[$ix]" );
+  $op->first->save if ${ $op->first };
+  $op->other->save if ${ $op->other };
+  $sym;
 }
 
 sub B::LOOP::save {
@@ -775,7 +786,13 @@ sub B::LOOP::save {
   my $ix = $loopsect->index;
   $init->add( sprintf( "loop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  savesym( $op, "(OP*)&loop_list[$ix]" );
+  $sym = savesym( $op, "(OP*)&loop_list[$ix]" );
+  $op->first->save if ${ $op->first };
+  $op->last->save if ${ $op->last };
+  $op->redoop->save if ${ $op->redoop };
+  $op->nextop->save if ${ $op->nextop };
+  $op->lastop->save if ${ $op->lastop };
+  $sym;
 }
 
 sub B::PVOP::save {
