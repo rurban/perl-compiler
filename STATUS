@@ -4,7 +4,7 @@ Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
 fails 50% but in mine is a blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
-C is stable, minor bugs left.
+C is stable, minor bugs left, esp. with loading dynamic modules. okay with static linkage
 
 CC is unstable, work in progress.
 
@@ -155,7 +155,9 @@ TODO for B::C
   check t/testcore and testm.sh -t
   see google issues
 
-Fix CC cc_queue sort 18 ccpp
+Fix CC 
+  cc_queue sort 18 ccpp
+  several other issues detected (and mostly fixed) by Heinz Knutzen
 
 DONE
 ----
