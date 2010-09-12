@@ -722,8 +722,9 @@ sub ctest {
 	    ok (undef);
 	}
     }
+    unlink("$name.pl");
     if ($ok) {
-        unlink($name, "$name.c", "$name.pl", "$name.exe");
+        unlink($name, "$name.c", "$name.exe");
     }
 }
 
@@ -752,8 +753,9 @@ sub ccompileok {
     } else {
         ok($ok);
     }
+    unlink("$name.pl");
     if ($ok) {
-        unlink($name, "$name.c", "$name.pl", "$name.exe");
+        unlink($name, "$name.c", "$name.exe");
     }
 }
 
