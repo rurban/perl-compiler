@@ -926,13 +926,12 @@ sub B::COP::save {
       "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
     $copsect->add(
       sprintf(
-              "%s, %u, " . "%s, %s, 0, " . "%u, NULL, NULL",
+              "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
               $op->_save_common, $op->line,
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-	      #$ITHREADS ? "(char *)NULL" : "Nullhv",
 	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
               $op->cop_seq,
-              ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
+              ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
       )
     );
     if ( $op->label ) {
