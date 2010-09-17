@@ -99,8 +99,8 @@ current op. Or it might set the L</op_next> pointer.  See
 L</"Check Functions"> for more.
 
 Also, the subsequent constant folding routine C<fold_constants()>
-may nullify certain ops, which are skipped during final
-execution. See L</"Constant Folding"> for more.
+may fold certain arithmetic op sequences. See L</"Constant Folding">
+for more.
 
 =head2 Compile pass 2: context propagation
 
@@ -1063,16 +1063,17 @@ the C<PL_check> array in F<opnames.h> is called.
 
 =head2 Constant Folding
 
-In theory pretty easy. If all op's arguments are constant and the op is
-sideffect free ("purely functional"), replace the op with an constant op as
-result.
+In theory pretty easy. If all op's arguments in a sequence are constant and the
+op is sideffect free ("purely functional"), replace the op sequence with an
+constant op as result.
 
 We do it like this: We define the C<f> flag in F<opcodes.pl>, which tells the
-compiler in the first pass to call C<fold_constants()> on this op. See 
-L<"Compile pass 1: check routines and constant folding"> above.  
-If all args are constant, the result is constant also and the op will be nullified.
+compiler in the first pass to call C<fold_constants()> on this op. See
+L<"Compile pass 1: check routines and constant folding"> above.  If all args are
+constant, the result is constant also and the op sequence will be replaced by
+the constant.
 
-But take care, every C<f> op must be sideeffect free!
+But take care, every C<f> op must be sideeffect free.
 
 E.g. our C<newUNOP()> calls at the end:
 
@@ -1311,6 +1312,8 @@ that subject.
 L<http://www.perl.com/pub/a/2002/05/07/optree.html> is the next step by
 Simon Cozens.
 
+Scott Walters added more details at L<http://perldesignpatterns.com/?PerlAssembly>
+
 Joshua ben Jore wrote a 50 minute presentation on "Perl 5
 VM guts" at L<http://diotalevi.isa-geek.net/~josh/Presentations/Perl%205%20VM/>
 focusing on the op tree for SPUG, the Seattle Perl User's Group.
@@ -1322,20 +1325,19 @@ pdf L<http://scratchcomputing.com/developers/perl_guts_tour.pdf>
 
 This text was created in this wiki article:
 L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
-The wiki article should be more actual.
+The svn version should be more actual.
 
 =head1 Conclusion
 
-So this is about 30% of the basic op tree information so far. Not
-speaking about the guts. Simon has more 30%, in the source are more
-10% to copy&paste, and in the compilers and run-time information is
-the rest. I hope with the help of some hackers we'll get it done, so
-that some people will begin poking around in the B backends. And write
-the wonderful new dump/undump functionality (which actually worked in
-the early years on Solaris) to save-image and load-image at runtime as
-in LISP, analyse and optimize the output, output PIR (parrot code),
-emit LLVM or another JIT optimized code or even write assemblers. I
-have a simple one at home. :)
+So this is about 30% of the basic op tree information so far. Not speaking about
+the guts. Simon Cozens and Scott Walters have more 30%, in the source are more
+10% to copy&paste, and in the compilers and run-time information is the rest. I
+hope with the help of some hackers we'll get it done, so that some people will
+begin poking around in the B backends. And write the wonderful new dump/undump
+functionality (which actually worked in the early years on Solaris) to
+save-image and load-image at runtime as in LISP, analyse and optimize the
+output, output PIR (parrot code), emit LLVM or another JIT optimized code or
+even write assemblers. I have a simple one at home. :)
 
 Written 2008 on the perl5 wiki with socialtext and pod in parallel 
 by Reini Urban, CPAN ID rurban.
