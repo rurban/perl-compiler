@@ -16,9 +16,10 @@ use strict;
 #use 5.008;
 use B qw(main_start main_root class comppadlist peekop svref_2object
   timing_info init_av sv_undef amagic_generation
-  OPf_WANT_LIST OPf_WANT OPf_MOD OPf_STACKED OPf_SPECIAL
+  OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
+  OPf_MOD OPf_STACKED OPf_SPECIAL
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
-  OPpDEREF OPpFLIP_LINENUM G_ARRAY G_SCALAR
+  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY
 );
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused
@@ -698,10 +699,11 @@ sub doop {
 
 sub gimme {
   my $op    = shift;
-  my $flags = $op->flags;
-  return ( ( $flags & OPf_WANT )
-    ? ( ( $flags & OPf_WANT ) == OPf_WANT_LIST ? G_ARRAY : G_SCALAR )
-    : "dowantarray()" );
+  my $want = $op->flags & OPf_WANT;
+  return ( $want == OPf_WANT_VOID ? G_VOID :
+           $want == OPf_WANT_SCALAR ? G_SCALAR :
+           $want == OPf_WANT_LIST ? G_ARRAY :
+           undef );
 }
 
 #
@@ -718,7 +720,11 @@ sub pp_null {
 sub pp_stub {
   my $op    = shift;
   my $gimme = gimme($op);
-  if ( $gimme != G_ARRAY ) {
+  if ( not defined $gimme ) {
+    write_back_stack();
+    runtime("if (block_gimme() == G_SCALAR)",
+            "\tXPUSHs(&PL_sv_undef);");
+  } elsif ( $gimme == G_SCALAR ) {
     my $obj = B::Stackobj::Const->new(sv_undef);
     push( @stack, $obj );
   }
@@ -1640,7 +1646,9 @@ sub pp_list {
   my $op = shift;
   write_back_stack();
   my $gimme = gimme($op);
-  if ( $gimme == G_ARRAY ) {    # sic
+  if ( not defined $gimme ) {
+    runtime("PP_LIST(block_gimme());");
+  } elsif ( $gimme == G_ARRAY ) {    # sic
     runtime("POPMARK;");        # need this even though not a "full" pp_list
   }
   else {
