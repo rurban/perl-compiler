@@ -17,7 +17,6 @@ my $f = sub {
 print $f->(), "\n";
 EOF
 
-use B::CC;
 ctest(1, '^1$', "CC", "ccode47i", $script,
-      $B::CC::VERSION < 1.09 ? "anonsub in while" : undef);
+      "anonsub in while");
 
