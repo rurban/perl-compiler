@@ -540,8 +540,9 @@ sub todo_tests_default {
         # 15+28 fixed with 1.04_34
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
-        @todo = (15,41..45)    if $] < 5.007;
-        @todo = (15,35,44)     if $] < 5.010;
+        @todo = (15,41..46)    if $] < 5.007;
+        @todo = (15,39,35,44)  if $] < 5.010;
+        push @todo, (41)       if $] < 5.010 and $ITHREADS;
         @todo = (39,41,44)     if $] >= 5.010;
         @todo = (15,39,44)     if $] >= 5.010 and !$ITHREADS;
         #push @todo, (27)       if $] >= 5.012 and $ITHREADS;
@@ -549,6 +550,14 @@ sub todo_tests_default {
         push @todo, (15,42..43) if $] >= 5.013 and $ITHREADS;
 
 	#push @todo, (11)  if $what =~ 'c_o[234]';
+        push @todo, (35,42..43)
+	  if $what =~ 'c_o1' and !$DEBUGGING and $ITHREADS;
+        push @todo, (28,39,41,46)
+	  if $what =~ 'c_o2' and $DEBUGGING;
+        push @todo, (28,39)
+	  if $what =~ 'c_o2' and $DEBUGGING and !$ITHREADS;
+        push @todo, (29)
+	  if $what =~ 'c_o2' and !$ITHREADS;
 	push @todo, (12,14,17..20,22..23,28,34,36..38,40)
 	  if $what =~ 'c_o2' and $ITHREADS and !$DEBUGGING;
         push @todo, (6,8..10,16,21,24..26,29..31,35,42,43)
@@ -567,13 +576,14 @@ sub todo_tests_default {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
         @todo = (11,18,21,24,25,29,30,35,39,103); #5.8.9
-        push @todo, (15,27,41..46)           if $] < 5.007;
+        push @todo, (15,27,41..46)        if $] < 5.007;
         @todo    = (18,21,25,29,30,39,41) if $] >= 5.010;
         @todo    = (10,16,18,21,25,29,30,39,41,46) if $] >= 5.010 and $what eq 'cc_o2';
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (44);
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
+        push @todo, (35) if !$ITHREADS;
         push @todo, (15,103) if $] >= 5.010;
         push @todo, (6,8..10,12,16,21,23,24,26,28,30,31,35,101) if $] >= 5.013002; #CV broken
 

@@ -89,6 +89,14 @@ sub platform_version_split {
   return ($p,$v,$f);
 }
 
+# From List::Util
+# One argument is true
+sub any { $_ && return 1 for @_; 0 }
+# All arguments are true
+sub all { $_ || return 0 for @_; 1 }
+# All arguments are false
+sub none { $_ && return 0 for @_; 1 }
+
 sub cleanup_deleted {
   my $h = shift;
   my $f = shift;
@@ -101,7 +109,7 @@ sub cleanup_deleted {
 }
 
 # every
-sub unify_common {
+sub all_common {
   my $h = shift;
   my $f = shift;		# skip already deleted results
   my %files = %$f;
@@ -122,7 +130,7 @@ sub unify_results {
   my $name = shift; 	# todo or fail
   # first check for common results in files
   my @platforms = keys %$h;
-  my $files = unify_common($h, {}, @platforms);
+  my $files = all_common($h, {}, @platforms);
   if (%$files) {
     use Data::Dumper;
     print Data::Dumper->Dump([$files],["common_$name"]);
@@ -143,7 +151,7 @@ sub unify_results {
     push @{$versions{$v}}, ($_);
   }
   for my $v (sort keys %versions) {
-    my $v1 = unify_common($h, $files, @{$versions{$v}});
+    my $v1 = all_common($h, $files, @{$versions{$v}});
     if (%$v1) {
       use Data::Dumper;
       print Data::Dumper->Dump([$v1],["v$v $name"]);
@@ -157,7 +165,7 @@ sub unify_results {
     push @{$feat{$f}}, ($_);
   }
   for my $f (sort keys %feat) {
-    my $f1 = unify_common($h, $files, @{$feat{$f}});
+    my $f1 = all_common($h, $files, @{$feat{$f}});
     if (%$f1) {
       use Data::Dumper;
       print Data::Dumper->Dump([$f1],["feature $f $name"]);

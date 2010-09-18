@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.28	2010-08-?? rurban
+1.28	2010-09-?? rurban
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
 	  (re-enables -fcog >= 5.10),
 	add -fro-inc (with -O2) readonly INC and curpad strings,
@@ -15,6 +15,9 @@
 	* CC.pm (1.08): use new B::C optimizations, new -DF
 	fixed issue 35 same variable name in different scope (Heinz Knutzen),
 	fixed issue 38 on and/or return value not just no/yes (Heinz Knutzen)
+	fixed issue 44 aelemfast missing for lexicals (Heinz Knutzen)
+	fixed issue 48 wrong truth value for array assignment in boolean 
+	  context (Heinz Knutzen)
 	* t/testc.sh: simplified
 	* t/test.pl: new faster test functions for the new issues
 	* t/issue27.t: added (Reported by alexchorny, Apr 25, 2010)
@@ -24,6 +27,14 @@
 	* t/issue36.t: added (Reported by Heinz Knutzen)
 	* t/issue37.t: added (Reported by Heinz Knutzen)
 	* t/issue38.t: added (Reported by Heinz Knutzen)
+	* t/issue39.t: added (Reported by Heinz Knutzen)
+	* t/issue42.t: added (Reported by Heinz Knutzen)
+	* t/issue34.t: added (Reported by Heinz Knutzen)
+	* t/issue44.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue45.t: added (Reported by Heinz Knutzen)
+	* t/issue46.t: added (Reported by Heinz Knutzen)
+	* t/issue47.t: added (Reported by Heinz Knutzen)
+	* t/issue48.t: added (Reported and fixed by Heinz Knutzen)
 
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10

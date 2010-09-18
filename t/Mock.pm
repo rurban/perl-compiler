@@ -48,6 +48,7 @@ use Test::Harness::Straps;
 use Config;
 use Cwd;
 use Exporter;
+our $details;
 our @ISA     = qw(Exporter);
 our @EXPORT = qw(find_modules_report find_test_report
                  mock_harness run_cc_test ctest ctestok ccompileok
@@ -102,24 +103,31 @@ sub result ($) {
 
 # 1, "C", "require LWP::UserAgent;\nprint q(ok);", "ok",0,1,"#TODO issue 27"
 sub run_cc_test {
+  my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
+  print @_;
 }
 # 1, "ok", "CC", "ccode37i", $script, $todo
 sub ctest {
+  my ($num, $expected, $backend, $base, $script, $todo) =  @_;
+  print @_;
 }
 # 1, "CC", "ccode37i", $script, $todo
-sub ctestok {
-}
+#sub ctestok {
+#}
 # 1, "CC", "ccode36i", $script, $todo
 sub ccompileok {
+  my ($num, $backend, $base, $script, $todo) =  @_;
+  print @_;
 }
 
 sub mock_harness {
   my ($log, $t) = @_;
   my $rpt = parse_report($log, $t);
-  my $details = $rpt->details;
-  # XXX execute the real tests with mock_harness (overridden test)
-  #     or just parse the TODO?
-  # Test::Harness $t
+  $details = $rpt->details;
+  # execute the real tests with mock_harness (overridden test)
+  my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+  my $dbg = $^P ? "-d" : "";
+  system("$X $dbg -It -MMock -MExtUtils::Command::MM -e\"test_harness(1, 'blib/lib', 'blib/arch')\" $t");
 }
 
 1;

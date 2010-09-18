@@ -23,6 +23,11 @@ use Mock;
 use modules;
 
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+unless (eval "require Test::Harness::Straps;") {
+  print "Installing Test::Harness::Straps via cpan...\n";
+  system("$X -S cpan Test::Harness::Straps");
+}
+
 my ($logdir) = grep /--logdir=(.+)/, @ARGV;
 my ($arch) = grep /--arch=(.+)/, @ARGV;
 $logdir = "." unless $logdir;
