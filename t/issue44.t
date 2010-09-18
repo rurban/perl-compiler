@@ -14,4 +14,6 @@ my @a = (1,2);
 print $a[0], "\n";
 EOF
 
-ctest(1, '^1$', "CC", "ccode44i", $script);
+use B::CC;
+ctest(1, '^1$', "CC", "ccode44i", $script,
+      $B::CC::VERSION < 1.08 ? "fixed with B::CC 1.08 r601 (B-C-1.28)" : undef);
