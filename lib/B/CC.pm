@@ -2253,7 +2253,12 @@ sub cc {
   $leaders = find_leaders( $root, $start );
   my @leaders = keys %$leaders;
   if ( $#leaders > -1 ) {
-    # @bblock_todo = ( values %$leaders ); # this does not look right
+    # Don't add basic blocks of dead code.
+    # It would produce errors when processing $cxstack.
+    # @bblock_todo = ( values %$leaders );
+    # Instead, save $root (pp_leavesub) separately,
+    # because it will not get compiled if located in dead code.
+    $root->save;
     unshift @bblock_todo, ($start) if $$start;
   }
   else {
