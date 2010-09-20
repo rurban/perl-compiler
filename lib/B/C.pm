@@ -678,6 +678,20 @@ sub private { $_[0]->{private} || 0 }
 
 package B::C;
 
+# dummy for B::C, only needed for B::CC
+sub label {}
+
+# save alternate ops if defined, and also add labels (need for B::CC)
+sub do_labels ($@) {
+  my $op = shift;
+  for my $m (@_) {
+    if ( ${ $op->$m } ) {
+      label($op->$m);
+      $op->$m->save;
+    }
+  }
+}
+
 sub B::UNOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
@@ -689,7 +703,7 @@ sub B::UNOP::save {
   $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
-  $op->first->save if ${ $op->first };
+  do_labels ($op, 'first');
   $sym;
 }
 
@@ -711,8 +725,7 @@ sub B::BINOP::save {
   $init->add( sprintf( "binop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
-  $op->first->save if ${ $op->first };
-  $op->last->save if ${ $op->last };
+  do_labels ($op, 'first', 'last');
   $sym;
 }
 
@@ -734,8 +747,7 @@ sub B::LISTOP::save {
   $init->add( sprintf( "listop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
-  $op->first->save if ${ $op->first };
-  $op->last->save if ${ $op->last };
+  do_labels ($op, 'first', 'last');
   $sym;
 }
 
@@ -757,8 +769,7 @@ sub B::LOGOP::save {
   $init->add( sprintf( "logop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&logop_list[$ix]" );
-  $op->first->save if ${ $op->first };
-  $op->other->save if ${ $op->other };
+  do_labels ($op, 'first', 'other');
   $sym;
 }
 
@@ -787,11 +798,7 @@ sub B::LOOP::save {
   $init->add( sprintf( "loop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&loop_list[$ix]" );
-  $op->first->save if ${ $op->first };
-  $op->last->save if ${ $op->last };
-  $op->redoop->save if ${ $op->redoop };
-  $op->nextop->save if ${ $op->nextop };
-  $op->lastop->save if ${ $op->lastop };
+  do_labels($op, qw(first last redoop nextop lastop));
   $sym;
 }
 
