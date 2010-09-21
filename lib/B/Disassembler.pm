@@ -6,7 +6,7 @@
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.06';
+$B::Disassembler::VERSION = '1.07';
 
 package B::Disassembler::BytecodeStream;
 
@@ -220,7 +220,15 @@ our (
 
 sub dis_header($) {
   my ($fh) = @_;
-  $magic = $fh->GET_U32();
+  my $str = $fh->readn(3);
+  if ($str eq '#! ')  {
+    $str .= $fh->GET_comment_t;
+    $str .= $fh->GET_comment_t;
+    $magic = $fh->GET_U32;
+  } else {
+    $str .= $fh->readn(1);
+    $magic = unpack( "L", $str );
+  }
   warn("bad magic") if $magic != 0x43424c50;
   $archname  = $fh->GET_strconst();
   $blversion = $fh->GET_strconst();

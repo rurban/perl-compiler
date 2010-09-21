@@ -18,6 +18,7 @@
 	fixed issue 44 aelemfast missing for lexicals (Heinz Knutzen)
 	fixed issue 48 wrong truth value for array assignment in boolean 
 	  context (Heinz Knutzen)
+	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
 	* t/testc.sh: simplified
 	* t/test.pl: new faster test functions for the new issues
 	* t/issue27.t: added (Reported by alexchorny, Apr 25, 2010)
