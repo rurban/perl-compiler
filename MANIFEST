@@ -91,6 +91,12 @@ t/issue36.t
 t/issue37.t
 t/issue38.t
 t/issue39.t
+t/issue42.t
+t/issue44.t
+t/issue45.t
+t/issue46.t
+t/issue47.t
+t/issue48.t
 t/modules.pm
 t/modules.t
 t/mymodules
