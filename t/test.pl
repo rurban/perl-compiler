@@ -535,24 +535,24 @@ sub todo_tests_default {
 
     my @todo  = (15,39,44,46); # 8,14-16 fail on 5.00505 (max 20 then)
     if ($what =~ /^c(|_o[1-4])$/) {
-        @todo     = (39)      if !$ITHREADS;
+        @todo     = (39,46)      if !$ITHREADS;
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
         # 15+28 fixed with 1.04_34
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
         @todo = (15,41..46)    if $] < 5.007;
-        @todo = (15,39,35,44)  if $] < 5.010;
+        @todo = (15,39,35,44,46) if $] < 5.010;
         push @todo, (41)       if $] < 5.010 and $ITHREADS;
-        @todo = (39,41,44)     if $] >= 5.010;
-        @todo = (15,39,44)     if $] >= 5.010 and !$ITHREADS;
-        #push @todo, (27)       if $] >= 5.012 and $ITHREADS;
+        @todo = (39,41,44,46)  if $] >= 5.010;
+        @todo = (15,39,46)     if $] >= 5.010 and !$ITHREADS;
+        #push @todo, (27)      if $] >= 5.012 and $ITHREADS;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
         push @todo, (15,42..43) if $] >= 5.013 and $ITHREADS;
 
-	#push @todo, (11)  if $what =~ 'c_o[234]';
+	push @todo, (11)  if $what =~ 'c_o[1234]';
         push @todo, (35,42..43)
 	  if $what =~ 'c_o1' and !$DEBUGGING and $ITHREADS;
-        push @todo, (28,39,41,46)
+        push @todo, (28,39,41)
 	  if $what =~ 'c_o2' and $DEBUGGING;
         push @todo, (28,39)
 	  if $what =~ 'c_o2' and $DEBUGGING and !$ITHREADS;
@@ -581,7 +581,7 @@ sub todo_tests_default {
         @todo    = (10,16,18,21,25,29,30,39,41,46) if $] >= 5.010 and $what eq 'cc_o2';
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
-        push @todo, (44);
+        push @todo, (15,44);
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (35) if !$ITHREADS;
         push @todo, (15,103) if $] >= 5.010;
