@@ -52,6 +52,7 @@ my @pad;           # Lexicals in current pad as Stackobj-derived objects
 my @padlist;       # Copy of current padlist so PMOP repl code can find it
 my @cxstack;       # Shadows the (compile-time) cxstack for next,last,redo
 		    # This covers only a small part of the perl cxstack
+my $labels;         # hashref to array of op labels
 my %constobj;      # OP_CONST constants as Stackobj-derived objects
                     # keyed by $$sv.
 my $need_freetmps = 0;	# We may postpone FREETMPS to the end of each basic
@@ -555,6 +556,18 @@ sub dopoptolabel {
     }
   }
   return $cxix;
+}
+
+sub push_label {
+  my $op = shift;
+  my $type = shift;
+  push @{$labels->{$type}}, ( $op );
+}
+
+sub pop_label {
+  my $type = shift;
+  my $op = pop @{$labels->{$type}};
+  write_label ( $op );
 }
 
 sub error {
@@ -1820,10 +1833,14 @@ sub pp_entertry {
     debug "ENTERTRY label \$op->next (no other)";
     runtime(sprintf( "PP_ENTERTRY(%s);",
 		     label( $op->next ) ) );
+    push_label ($op->next, 'leavetry');
   } else {
     debug "ENTERTRY label \$op->other->next";
     runtime(sprintf( "PP_ENTERTRY(%s);",
 		     label( $op->other->next ) ) );
+    invalidate_lexicals( REGISTER | TEMPORARY );
+    push_label ($op->other->next, 'leavetry');
+    #write_label( $op->other->next );
   }
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
@@ -1834,6 +1851,7 @@ sub pp_leavetry {
   my $op = shift;
   default_pp($op);
   runtime("PP_LEAVETRY;");
+  pop_label 'leavetry';
   return $op->next;
 }
 
