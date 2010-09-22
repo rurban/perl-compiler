@@ -665,6 +665,9 @@ sub label {
   }
 }
 
+# XXX TODO: 32, 45
+# cccode32.c:463: error: label ‘lab_c983c0’ used but not defined
+# cccode45.c:23382: error: label ‘lab_1185258’ used but not defined
 sub write_label {
   my $op = shift;
   push_runtime( sprintf( "  %s:", label($op) ) );

@@ -1,20 +1,20 @@
-# B::C::VERSION = 1.28 r586 M
+# B::C::VERSION = 1.28 r620
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
-# platform = linux 64bit
+# platform = cygwin 32bit
 # threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness #TODO > 5.010
+pass Test::Harness #TODO > 5.010
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
-fail Pod::Parser
-fail ExtUtils::MakeMaker #TODO with threads
-fail Test::Simple #TODO >= 5.10
+pass Pod::Parser
+pass ExtUtils::MakeMaker #TODO with threads
+pass Test::Simple #TODO >= 5.10
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
@@ -36,18 +36,18 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception #TODO >= 5.10
+pass Test::Exception #TODO >= 5.10
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 fail IO::Compress::Base
-fail LWP #TODO >= 5.007
+pass LWP #TODO >= 5.007
 pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-fail Class::Accessor #TODO 5.10 with threads
+pass Class::Accessor #TODO 5.10 with threads
 fail Test::Tester #TODO with threads
 pass Sub::Install
 fail Attribute::Handlers #TODO generally
@@ -68,7 +68,7 @@ pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP #TODO 5.10 with threads
 fail Moose #TODO generally
-fail Test::Deep #TODO with threads
+pass Test::Deep #TODO with threads
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -78,16 +78,16 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI #TODO with threads
+pass FCGI #TODO with threads
 pass Tree::DAG_Node
 pass Path::Class
-fail Test::Warn #TODO >= 5.10
+pass Test::Warn #TODO >= 5.10
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope #TODO with threads
-fail Test::Pod #TODO >= 5.10
-fail Digest::SHA1 #TODO with threads
+pass Test::Pod #TODO >= 5.10
+pass Digest::SHA1 #TODO with threads
 pass namespace::clean #TODO with threads
 pass Class::Inspector
 pass Clone
@@ -97,14 +97,14 @@ pass YAML
 fail MooseX::Types #TODO with threads
 pass Class::Singleton
 fail DateTime::TimeZone
-pass DateTime::Locale #TODO with threads
-fail DateTime #TODO with threads
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash #TODO with threads
-# 100 / 100 modules tested with B-C-1.28 - perl-5.010001
-# pass  76 / 100 (76.0%)
-# fail  24 / 100 (24.0%)
-# todo  25 /  24 (104.2%)
-# skip   0 / 100 (0.0% not installed)
+# 98 / 100 modules tested with B-C-1.28 - perl-5.010001
+# pass  87 /  98 (88.8%)
+# fail  11 /  98 (11.2%)
+# todo  23 /  11 (209.1%)
+# skip   2 / 100 (2.0% not installed)
