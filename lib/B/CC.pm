@@ -2029,6 +2029,10 @@ sub enterloop {
   $nextop->save;
   $lastop->save;
   $redoop->save;
+  # We need to compile the corresponding pp_leaveloop even if it's
+  # never executed. This is needed to get @cxstack right.
+  # Use case:  while(1) { .. }
+  unshift @bblock_todo, ($lastop);
   if (0 and $inline_ops and $op->name eq 'enterloop') {
     warn "inlining enterloop\n" if $debug{op};
     # XXX = GIMME_V fails on freebsd7 5.8.8 (28)
