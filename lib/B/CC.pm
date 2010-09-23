@@ -567,7 +567,8 @@ sub push_label {
 sub pop_label {
   my $type = shift;
   my $op = pop @{$labels->{$type}};
-  write_label ( $op );
+  # avoid duplicate labels
+  write_label ( $op ) unless $labels->{label}->{$$op};
 }
 
 sub error {
@@ -672,9 +673,13 @@ sub label {
   my $op = shift;
   # Preserve original label name for "real" labels
   if ($op->can("label") and $op->label) {
+    # cc should error errors on duplicate named labels
     return sprintf( "label_%s_%x", $op->label, $$op );
   } else {
-    return sprintf( "lab_%x", $$op );
+    # but avoid printing duplicate jump labels
+    my $l = sprintf( "lab_%x", $$op );
+    $labels->{label}->{$$op} = $l;
+    return $l;
   }
 }
 
