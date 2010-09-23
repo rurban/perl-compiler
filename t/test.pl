@@ -577,8 +577,8 @@ sub todo_tests_default {
         # on cygwin 29 passes
         @todo = (11,18,21,24,25,29,30,35,39,103); #5.8.9
         push @todo, (15,27,41..46)        if $] < 5.007;
-        @todo    = (18,21,25,29,30,39,41) if $] >= 5.010;
-        @todo    = (10,16,18,21,25,29,30,39,41,46) if $] >= 5.010 and $what eq 'cc_o2';
+        @todo    = (21,25,29,30,39,41) if $] >= 5.010;
+        @todo    = (10,16,21,25,29,30,39,41,46) if $] >= 5.010 and $what eq 'cc_o2';
         # solaris and debian also. I suspect nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (15,44);
@@ -588,7 +588,7 @@ sub todo_tests_default {
         push @todo, (6,8..10,12,16,21,23,24,26,28,30,31,35,101) if $] >= 5.013002; #CV broken
 
         push @todo, (10,16) if $what eq 'cc_o2';
-        push @todo, (26) if $what =~ /^cc_o[12]/;
+        push @todo, (14,26) if $what =~ /^cc_o[12]/;
     }
     push @todo, (41,42,43) if !$ITHREADS;
     push @todo, (45,46)    if $] >= 5.007;
@@ -657,7 +657,7 @@ CCTESTS
         if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
             $todo{$cnt} = $skip{$cnt} = 1;
         }
-        if ($todo{$cnt} and $skip{$cnt} and (!$AUTHOR or $cnt==18)) {
+        if ($todo{$cnt} and $skip{$cnt} and (!$AUTHOR or $cnt==28)) {
             print sprintf("ok %d # skip\n", $cnt);
         } else {
             my ($script, $expect) = split />>>+\n/;
