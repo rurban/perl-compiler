@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r586 M
+# B::C::VERSION = 1.28 r620
 # perlversion = 5.012000
 # path = /usr/local/bin/perl5.12.0
 # platform = cygwin 32bit
@@ -6,7 +6,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO > 5.010
+fail Test::Harness #TODO > 5.010
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -47,7 +47,7 @@ pass base
 skip List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor
+fail Class::Accessor
 skip Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO generally
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 83 / 100 modules tested with B-C-1.28 - perl-5.012000
-# pass  73 /  83 (88.0%)
-# fail  10 /  83 (12.0%)
-# todo  13 /  10 (130.0%)
+# pass  71 /  83 (85.5%)
+# fail  12 /  83 (14.5%)
+# todo  13 /  12 (108.3%)
 # skip  17 / 100 (17.0% not installed)
