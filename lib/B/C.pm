@@ -606,9 +606,11 @@ sub B::OP::save {
       # unsafe after entersub, entereval, anoncode, sort block (pushmark pushmark)
       # Rather skip this with CC not with C because we need the context.
       # XXX we dont have the prevop, it can be any op type.
-      my $prevop = getsym(sprintf("&op_list[%d]", $opsect->index));
-      warn sprintf( "Skip Null COP: %d, prev=\\s%x\n",
-                    $op->targ, $prevop) if $verbose or $debug{cops};
+      if ($verbose or $debug{cops}) {
+        my $prevop = getsym(sprintf("&op_list[%d]", $opsect->index));
+        warn sprintf( "Skip Null COP: %d, prev=\\s%x\n",
+                      $op->targ, $prevop);
+      }
       return savesym( $op, $op->next->save );
     }
     if ($PERL511) {

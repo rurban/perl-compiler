@@ -18,7 +18,9 @@
 	fixed issue 44 aelemfast missing for lexicals (Heinz Knutzen)
 	fixed issue 48 wrong truth value for array assignment in boolean 
 	  context (Heinz Knutzen)
-	added entertry labels, fixes test 32 (push_label, pop_label)
+	add labels for alternate ops (e.g. run-time jumps). Not sure yet if the 
+	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label).
+	  resolve duplicate such labels
 	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
 	* t/testc.sh: simplified
 	* t/test.pl: new faster test functions for the new issues
