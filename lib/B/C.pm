@@ -2773,10 +2773,10 @@ sub B::IO::save_data {
 }
 
 # Not needed since 5.10
-#sub B::IO::SUBPROCESS {
-#  return if $PERL510;
-#  warn "B::IO::SUBPROCESS missing (harmless)\n" if $verbose;
-#}
+sub B::IO::SUBPROCESS {
+  return if $PERL510;
+  warn "B::IO::SUBPROCESS missing (harmless)\n" if $verbose;
+}
 
 sub B::IO::save {
   my ($io) = @_;
