@@ -1243,15 +1243,16 @@ sub pp_aelemfast {
 
 # coverage: ?
 sub int_binop {
-  my ( $op, $operator ) = @_;
+  my ( $op, $operator, $unsigned ) = @_;
   if ( $op->flags & OPf_STACKED ) {
     my $right = pop_int();
     if ( @stack >= 1 ) {
       my $left = top_int();
-      $stack[-1]->set_int( &$operator( $left, $right ) );
+      $stack[-1]->set_int( &$operator( $left, $right ), $unsigned );
     }
     else {
-      runtime( sprintf( "sv_setiv(TOPs, %s);", &$operator( "TOPi", $right ) ) );
+      my $sv_setxv = $unsigned ? 'sv_setuv' : 'sv_setiv';
+      runtime( sprintf( "$sv_setxv(TOPs, %s);", &$operator( "TOPi", $right ) ) );
     }
   }
   else {
@@ -1259,7 +1260,7 @@ sub int_binop {
     my $right = B::Pseudoreg->new( "IV", "riv" );
     my $left  = B::Pseudoreg->new( "IV", "liv" );
     runtime( sprintf( "$$right = %s; $$left = %s;", pop_int(), pop_int ) );
-    $targ->set_int( &$operator( $$left, $$right ) );
+    $targ->set_int( &$operator( $$left, $$right ), $unsigned );
     push( @stack, $targ );
   }
   return $op->next;
@@ -1524,8 +1525,11 @@ BEGIN {
   sub pp_divide   { numeric_binop( $_[0], $divide_op ) }
 
   sub pp_modulo      { int_binop( $_[0], $modulo_op ) }    # differs from perl's
-  sub pp_left_shift  { int_binop( $_[0], $lshift_op ) }
-  sub pp_right_shift { int_binop( $_[0], $rshift_op ) }
+  # http://perldoc.perl.org/perlop.html#Shift-Operators:
+  # If use integer is in force then signed C integers are used,
+  # else unsigned C integers are used.
+  sub pp_left_shift  { int_binop( $_[0], $lshift_op, VALID_UNSIGNED ) }
+  sub pp_right_shift { int_binop( $_[0], $rshift_op, VALID_UNSIGNED ) }
   sub pp_i_add       { int_binop( $_[0], $plus_op ) }
   sub pp_i_subtract  { int_binop( $_[0], $minus_op ) }
   sub pp_i_multiply  { int_binop( $_[0], $multiply_op ) }
