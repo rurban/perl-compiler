@@ -129,7 +129,7 @@ sub init_hash {
 # XXX We should really take some of this info from Opcodes (was: CORE opcode.pl)
 #
 # no args and no return value = Opcodes::argnum 0
-%no_stack         = init_hash qw(pp_unstack pp_break pp_continue pp_dbstate);
+%no_stack         = init_hash qw(pp_unstack pp_break pp_continue);
 				# pp_enter pp_leave, use/change global stack.
 #skip write_back_stack (no args)
 %skip_stack       = init_hash qw(pp_enter);
@@ -945,12 +945,8 @@ sub pp_nextstate {
   return $op->next;
 }
 
-# coverage: ny
-sub pp_dbstate {
-  my $op = shift;
-  $curcop->invalidate;    # XXX?
-  return default_pp($op);
-}
+# Like pp_nextstate, but used instead when the debugger is active.
+sub pp_dbstate { pp_nextstate(@_) }
 
 #default_pp will handle this:
 #sub pp_bless { $curcop->write_back; default_pp(@_) }
