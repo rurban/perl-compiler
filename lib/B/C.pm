@@ -311,6 +311,10 @@ sub svop_or_padop_pv {
   # XXX see SvSHARED_HEK_FROM_PV for the stash in S_method_common pp_hot.c
   if ($$sv) {
     return $sv->PV if $sv->can("PV");
+    if ($sv->isa("B::SPECIAL")) { # DateTime::TimeZone
+      warn "NYI op->sv==B::SPECIAL S_method_common not fully implemented yet";
+      return '';
+    }
     if ($sv->FLAGS & SVf_ROK) {
       return $sv->RV->STASH->NAME;
     } else {
