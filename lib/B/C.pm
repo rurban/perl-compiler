@@ -1653,10 +1653,13 @@ sub mark_threads {
 sub B::PVMG::save_magic {
   my ($sv) = @_;
   my $sv_flags = $sv->FLAGS;
-  warn sprintf( "saving magic for %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
-		class($sv), $$sv, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "",
-		@{[(caller(1))[3]]}, @{[(caller(1))[2]]})
-    if $debug{mg};
+  if ($debug{mg}) {
+    my $flagspv = "";
+    $flagspv = $sv->flagspv if $debug{flags} and $PERL510 and !$sv->MAGICAL;
+    warn sprintf( "saving magic for %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
+		class($sv), $$sv, $sv_flags, $debug{flags} ? "(".$flagspv.")" : "",
+		@{[(caller(1))[3]]}, @{[(caller(1))[2]]});
+  }
   my $pkg = $sv->SvSTASH;
   if ($$pkg) {
     warn sprintf("stash isa class($pkg) 0x%x\n", $$pkg) if $debug{mg} or $debug{gv};
