@@ -510,6 +510,19 @@ sub save_hek {
   wantarray ? ( "$sym", length( pack "a*", $str ) ) : "$sym";
 }
 
+
+sub ivx ($) {
+  my $ivx = shift;
+  my $ivdformat = $Config{ivdformat};
+  $ivdformat =~ s/"//g;
+  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+  # U if > INT32_MAX = 2147483647
+  my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "U" : "");
+  $sval = '0' if $sval =~ /(NAN|inf)$/i;
+  return $sval;
+  #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
+}
+
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
@@ -1166,11 +1179,11 @@ sub B::UV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   if ($PERL513) {
-    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%lu}", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%luU}", $sv->UVX ) );
   } elsif ($PERL510) {
-    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%lu}", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%luU}", $sv->UVX ) );
   } else {
-    $xpvuvsect->add( sprintf( "0, 0, 0, %lu", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "0, 0, 0, %luU", $sv->UVX ) );
   }
   $svsect->add(
     sprintf(
@@ -1202,14 +1215,12 @@ sub B::IV::save {
     # XXX what the heck is going on here? e.g. 5.13.4d test 45
     warn "warning: IV no IOK sv_list[$i]" unless $svflags & (SVf_IOK|SVp_IOK);
   }
-  my $ivdformat = $Config{ivdformat};
-  $ivdformat =~ s/"//g;
   if ($PERL513) {
-    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%${ivdformat}}", $sv->IVX ) );
+    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", ivx $sv->IVX ) );
   } elsif ($PERL510) {
-    $xpvivsect->add( sprintf( "{0}, 0, 0, {%${ivdformat}}", $sv->IVX ) );
+    $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", ivx $sv->IVX ) );
   } else {
-    $xpvivsect->add( sprintf( "0, 0, 0, %${ivdformat}", $sv->IVX ) );
+    $xpvivsect->add( sprintf( "0, 0, 0, %s", ivx $sv->IVX ) );
   }
   $svsect->add(
     sprintf(
@@ -1346,20 +1357,17 @@ sub B::PVIV::save {
   return $sym if defined $sym;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym" if $B::C::const_strings;
-  my $iv = $sv->IVX;
-  my $ivdformat = $Config{ivdformat};
-  $ivdformat =~ s/"//g;
   if ($PERL513) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
-    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, %${ivdformat}", $len, $pvmax, $iv ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, %s", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
   } elsif ($PERL510) {
     $xpvivsect->comment('xnv_u, cur, len, IVX');
-    $xpvivsect->add( sprintf( "{0}, %u, %u, %${ivdformat}", $len, $pvmax, $iv ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "{0}, %u, %u, %s", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
   } else {
-    $iv = 0 if $sv->FLAGS & (SVf_IOK|SVp_IOK);
+    #$iv = 0 if $sv->FLAGS & (SVf_IOK|SVp_IOK);
     $xpvivsect->comment('PVX, cur, len, IVX');
-    $xpvivsect->add( sprintf( "%s, %u, %u, %${ivdformat}",
-			      $savesym, $len, $pvmax, $iv ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "%s, %u, %u, %s",
+			      $savesym, $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
   }
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
