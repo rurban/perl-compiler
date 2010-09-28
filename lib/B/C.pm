@@ -233,7 +233,7 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 
-my $package_pv;
+my $package_pv; # global stash for methods since 5.13
 my (%symtable, %cvforward);
 my (%strtable, %hektable, @static_free);
 my %xsub;
@@ -306,8 +306,18 @@ warn %OP_COP if $debug{cops};
 
 sub svop_or_padop_pv {
   my $op = shift;
-  return "" unless $op->can("sv");
-  my $sv = $op->sv; # XXX with 5.13 here is a IV
+  my $sv;
+  if ($PERL513 and !$op->can("sv")) {
+    if ($op->can("pmreplroot") and $op->pmreplroot->can("sv")) {
+      $sv = $op->pmreplroot->sv;
+    } else {
+      return $package_pv unless $op->flags & 4;
+      return $package_pv unless $op->first->can("sv");
+      $sv = $op->first->sv;
+    }
+  } else {
+    $sv = $op->sv;
+  }
   # XXX see SvSHARED_HEK_FROM_PV for the stash in S_method_common pp_hot.c
   if ($$sv) {
     return $sv->PV if $sv->can("PV");
@@ -1991,6 +2001,7 @@ sub B::CV::save {
 
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
+  $package_pv = $cvstashname;
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
       if (ref $auto eq 'B::CV') { # explicit goto
@@ -3877,13 +3888,15 @@ sub save_main_rest {
     sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W );
 
   # startpoints
+  warn "Writing initav\n" if $debug{av};
   my $init_av = init_av->save;
+  warn "Writing endav\n" if $debug{av};
   my $end_av  = end_av->save;
   $init->add(
     "/* startpoints */",
     sprintf( "PL_main_root = s\\_%x;",  ${ main_root() } ),
     sprintf( "PL_main_start = s\\_%x;", ${ main_start() } ),
-    "PL_initav = (AV *) $init_av;",
+    "PL_initav = (AV*) $init_av;",
     "PL_endav = (AV*) $end_av;\n"
   );
   save_context();
