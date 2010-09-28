@@ -307,7 +307,7 @@ warn %OP_COP if $debug{cops};
 sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
-  if ($PERL513 and !$op->can("sv")) {
+  if (!$op->can("sv")) {
     if ($op->can("pmreplroot") and $op->pmreplroot->can("sv")) {
       $sv = $op->pmreplroot->sv;
     } else {
