@@ -83,8 +83,8 @@ if [ -n "$1" ]; then
 	$PERL $Mblib t/modules.t $TEST "$1"
     else
 	while [ -n "$1" ]; do
-	    # single module
-	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{install}{inst}i;print lc($a)' $1)"
+	    # single module. update,setup,install are UAC terms
+	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
 	    if [ "${KEEP:0:2}" = "-D" ]; then
 	      echo $PERL $Mblib -MO=C,$KEEP,-o$name.c -e "\"use $1; print 'ok'\""
 	      $PERL $Mblib -MO=C,$KEEP,-o$name.c -e "use $1; print 'ok'"
