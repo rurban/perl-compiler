@@ -691,12 +691,12 @@ sub ctest {
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
-    system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+    system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
         print "not ok 1 #B::$backend failed\n";
         exit;
     }
-    system "$runperl -Mblib blib/script/cc_harness -q -o$name $name.c";
+    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o$name $name.c";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {
         if ($todo) {
@@ -755,12 +755,12 @@ sub ccompileok {
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
-    system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+    system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
         print "not ok 1 #B::$backend failed\n";
         exit;
     }
-    system "$runperl -Mblib blib/script/cc_harness -q -o$name $name.c";
+    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o$name $name.c";
     my $ok = -e $name or -e "$name.exe";
     if ($todo) {
       TODO: {

@@ -12,33 +12,45 @@
 	do not boot static core packages (utf8, re, ...),
 	fixed -O2/-fav-init2: store at wrong avchunk index,
 	initialise CopFILE and CopSTASHPV static with ITHREADS
-	* CC.pm (1.08): use new B::C optimizations, new -DF
+	improved 5.13 method_named package detection (first and pmreplroot),
+	  in endav still failing (Test::Deep)
+	* CC.pm (1.08): many fixes
+	use new B::C optimizations, new -DF
 	fixed issue 35 same variable name in different scope (Heinz Knutzen),
+	fixed issue 36 panic: leaveloop, no cxstack (Heinz Knutzen)
+	fixed issue 37 orassign (Heinz Knutzen)
 	fixed issue 38 on and/or return value not just no/yes (Heinz Knutzen)
+	fixed issue 39 Bizarre copy of ARRAY in leavesub (Heinz Knutzen)
+	fixed issue 42 remove enter/leave from %no_stack (Heinz Knutzen)
 	fixed issue 44 aelemfast missing for lexicals (Heinz Knutzen)
+	fixed issue 47 anonsub in while (Heinz Knutzen)
 	fixed issue 48 wrong truth value for array assignment in boolean 
 	  context (Heinz Knutzen)
+	fixed issue 49 Can't "last" outside a loop block (Heinz Knutzen)
 	add labels for alternate ops (e.g. run-time jumps). Not sure yet if the 
-	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label).
-	  resolve duplicate such labels
+	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label), 
+	  issue 64. resolve duplicate such labels.
 	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
 	* t/testc.sh: simplified
+	* t/testm.sh: fixed UAC issues on Win7
 	* t/test.pl: new faster test functions for the new issues
 	* t/issue27.t: added (Reported by alexchorny, Apr 25, 2010)
 	* t/issue29.t: added (Reported by Heinz Knutzen)
 	* t/issue34.t: added (Reported by Heinz Knutzen)
-	* t/issue35.t: added (Reported by Heinz Knutzen)
-	* t/issue36.t: added (Reported by Heinz Knutzen)
-	* t/issue37.t: added (Reported by Heinz Knutzen)
-	* t/issue38.t: added (Reported by Heinz Knutzen)
-	* t/issue39.t: added (Reported by Heinz Knutzen)
-	* t/issue42.t: added (Reported by Heinz Knutzen)
-	* t/issue34.t: added (Reported by Heinz Knutzen)
+	* t/issue35.t: added (Reported and partially fixed by Heinz Knutzen)
+	* t/issue36.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue37.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue38.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue39.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue42.t: added (Reported and fixed by Heinz Knutzen)
 	* t/issue44.t: added (Reported and fixed by Heinz Knutzen)
-	* t/issue45.t: added (Reported by Heinz Knutzen)
-	* t/issue46.t: added (Reported by Heinz Knutzen)
-	* t/issue47.t: added (Reported by Heinz Knutzen)
+	* t/issue45.t: added (Reported by Heinz Knutzen), dorassign missing
+	* t/issue46.t: added (Reported by Heinz Knutzen), fixed by r610
+	* t/issue47.t: added (Reported and fixed by Heinz Knutzen)
 	* t/issue48.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue49.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue50.t: added (Reported by Heinz Knutzen)
+	* t/issue51.t: added (Reported by Heinz Knutzen)
 
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10

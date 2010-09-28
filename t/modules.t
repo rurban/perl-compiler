@@ -199,14 +199,16 @@ exit;
 
 sub is_todo {
   my $module = shift or die;
+  my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 
+  # Attribute::Handlers passes only 5.008009d
   foreach (qw( Attribute::Handlers Moose )) {
     return 'generally' if $_ eq $module;
   }
   if ($] < 5.007) {
     # Can't locate object method "RV" via package "B::PV"
     # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
-    foreach(qw( ExtUtils::MakeMaker ExtUtils::CBuilder Sub::Name)) {
+    foreach(qw( ExtUtils::CBuilder ExtUtils::Install Sub::Name Digest::MD5 )) {
       return '< 5.007' if $_ eq $module;
     }
   }
@@ -216,13 +218,13 @@ sub is_todo {
     }
   }
   if ($] >= 5.007) {
-    foreach(qw( ExtUtils::Install LWP File::Temp )) {
+    foreach(qw( File::Temp )) {
       return '>= 5.007' if $_ eq $module;
     }
   }
   if ($] >= 5.010) {
     foreach(qw(
-		Test::Simple Module::Build Test::Exception
+		Test::Simple Test::Exception
 		Test::NoWarnings Test::Warn Test::Pod
 	     )) {
       return '>= 5.10' if $_ eq $module;
@@ -237,7 +239,6 @@ sub is_todo {
     foreach(qw(Test
                Pod::Simple
                Getopt::Long
-               Pod::Parser
                ExtUtils::MakeMaker
                Pod::Text
                Test
@@ -254,28 +255,53 @@ sub is_todo {
       return '>= 5.013' if $_ eq $module;
     }
   }
+  # Module::Build passes -nt and 5.13.5d-nt
+  return 'without threads' if 'Module::Build' eq $module and
+    (($DEBUGGING and $] < 5.013) or $Config{useithreads});
   if ($Config{useithreads}) {
     foreach(qw(
                ExtUtils::MakeMaker File::Temp ExtUtils::Install
                Test::Tester Attribute::Handlers
                Test::Deep FCGI B::Hooks::EndOfScope Digest::SHA1
                namespace::clean DateTime::Locale DateTime
-               Template::Stash MooseX::Types
+               Template::Stash MooseX::Types LWP
               )) {
       return 'with threads' if $_ eq $module;
     }
+    if ($] >= 5.008008 and $] < 5.013) {
+      foreach(qw(
+                 Class::MOP
+                )) {
+	return '5.8-5.12 with threads' if $_ eq $module;
+      }
+    }
     if ($] >= 5.010 and $] < 5.012) {
       foreach(qw(
-                 Class::Accessor Class::MOP
+                 Class::Accessor
                 )) {
         return '5.10 with threads' if $_ eq $module;
       }
     }
-  } else {
+    if ($] >= 5.012 and $] != 5.012002) {
+      foreach(qw(
+                 Pod::Parser
+                )) {
+        return '>= 5.12 with threads' if $_ eq $module;
+      }
+    }
+
+  } else { #no threads
+    if ($] >= 5.008008 and $] < 5.010) {
+      foreach(qw(
+                 FCGI version
+                )) {
+	return '5.8 without threads' if $_ eq $module;
+      }
+    }
     if ($] >= 5.010 and $] < 5.012) {
       foreach(qw(
-                 IO ExtUtils::Install Test::Tester Test::Deep Path::Class
-		 Scalar::Util
+                 IO ExtUtils::Install Test::Tester Path::Class
+		 Scalar::Util Text::Balanced
                 )) {
         return '5.10 without threads' if $_ eq $module;
       }
