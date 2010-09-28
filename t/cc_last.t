@@ -19,8 +19,9 @@ label: {
 }
 EOF
 
+use B::CC;
 ctestok(1, "CC", $base, $script1,
-           "B::CC last outside loop");
+           $B::CC::VERSION < 1.08 ? "B::CC last outside loop" : undef);
 
 my $script2 = <<'EOF';
 # Label not found at compile-time for last
@@ -44,4 +45,4 @@ my $script3 = <<'EOF';
 }
 EOF
 ctestok(3, "CC", $base, $script1,
-           "B::CC last for non-loop block");
+           $B::CC::VERSION < 1.08 ? "B::CC last for non-loop block" : undef);

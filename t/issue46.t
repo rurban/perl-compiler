@@ -12,5 +12,7 @@ my $script = <<'EOF';
 my $pattern = 'x'; 'foo' =~ /$pattern/o
 EOF
 
+use B::CC; # fixed with r610
 ctest(1, '', "CC", "ccode46i", $script,
-      $Config{useithreads} ? undef : "issue46 m//o cLOGOP->op_first");
+      $Config{useithreads} or $B::CC::VERSION >= 1.08
+      ? undef : "issue46 m//o cLOGOP->op_first fixed with r610");
