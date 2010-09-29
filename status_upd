@@ -108,17 +108,54 @@ sub cleanup_deleted {
   $f;
 }
 
+sub h_size($) { scalar keys %{$_[0]} }
+sub split_tests($) {
+  my $t = shift;
+  $t =~ s/Failed tests?:?\s*//;
+  map {
+    if (/(\d+)\.\.(\d+)/) {
+      ($1 .. $2)
+    } else {
+      $_
+    }
+  } split /,\s*/, $t;
+}
+
+sub in_both ($$) {
+  # only the elements on both lists
+  my %h1 = map { $_ => 1 } @{$_[0]};
+  my %h2 = map { $_ => 1 } @{$_[1]};
+  for (keys %h1) {
+    my $e = $h1{$_};
+    undef $h1{$_} unless $h2{$e};
+  }
+  keys %h1;
+}
+
 # every
 sub all_common {
-  my $h = shift;
-  my $f = shift;		# skip already deleted results
+  my $h = shift;		# platform_version -> test_file -> test_no_failed
+  my $f = shift;		# skip already deleted results, initially empty
   my %files = %$f;
-  for my $p (@_) {
-    for (keys %{$h->{$p}}) {	# first for all platforms
-      if (!exists $files{$_}) { # only add if new, skipping undef ("deleted")
-	$files{$_} = $h->{$p}->{$_};
-      } else {			# undef ("delete") if different to previous result
-	undef $files{$_} if !$files{$_} or $files{$_} ne $h->{$p}->{$_};
+  # init with shortest list, sort hash by least number of keys
+  my @p = sort { h_size($h->{$a}) <=> h_size($h->{$b}) } keys %$h;
+  my $pivot = $p[0];
+  for (keys %{$h->{$pivot}}) {
+    $files{$_} = $h->{$pivot}->{$_};
+  }
+  for my $p (@_) {		# check for common keys (in every)
+    for (keys %{$h->{$p}}) {	# strip out not yet seen
+      if (!$files{$_}) {
+        undef $files{$_};
+      } elsif ($files{$_} ne $h->{$p}->{$_}) { # strip out not common tests
+        my @t1 = split_tests $h->{$p}->{$_}; # TODO
+        my @t2 = split_tests $files{$_};
+        my @both = in_both(\@t1,\@t2);
+        if (@both) {
+          $files{$_} = join(",", @both); #"Failed tests: ".
+        } else {
+          undef $files{$_};
+        }
       }
     }
   }
@@ -128,7 +165,7 @@ sub all_common {
 sub unify_results {
   my $h = shift; 	# platform_version -> file -> failed
   my $name = shift; 	# todo or fail
-  # first check for common results in files
+  # first check for common results in files, all platforms
   my @platforms = keys %$h;
   my $files = all_common($h, {}, @platforms);
   if (%$files) {
