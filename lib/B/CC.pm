@@ -2250,8 +2250,8 @@ sub compile_op {
 sub compile_bblock {
   my $op = shift;
   warn "compile_bblock: ", peekop($op), "\n" if $verbose;
-  save_or_restore_lexical_state($$op);
   write_label($op);
+  save_or_restore_lexical_state($$op);
   $know_op = 0;
   do {
     $op = compile_op($op);
