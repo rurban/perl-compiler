@@ -11,6 +11,7 @@
 # -t todo only
 #
 use strict;
+use Data::Dumper;
 
 my $logs = "log.test-*-5.*";
 my $dir = ".";
@@ -77,15 +78,17 @@ sub status {
     print STDERR "$c" unless $quiet;
     $s .= $c;
   }
+  print "\n";
   [ $s, \%h ];
 }
 
 # split into platform, version, [feature]
-# debian-squeeze-amd64-5.10.1-nt => ("debian-squeeze-amd64", "5.10.1", "nt")
+# debian-squeeze-amd64-5.10.1-nt => ("debian-squeeze-amd64", "5.10", "nt")
 sub platform_version_split {
   local $_ = shift;
   my ($p,$v,$f) = m/^(.+)-(5\.[\d\.]+)([-dnt]+)?$/;
   $f =~ s/^-// if $f; # d, d-nt, nt or empty
+  $v =~ s/(\d\.\d+)\.\d+/$1/;
   return ($p,$v,$f);
 }
 
@@ -111,7 +114,7 @@ sub cleanup_deleted {
 sub h_size($) { scalar keys %{$_[0]} }
 sub split_tests($) {
   my $t = shift;
-  $t =~ s/Failed tests?:?\s*//;
+  #$t =~ s/Failed tests?:?\s*//;
   map {
     if (/(\d+)\.\.(\d+)/) {
       ($1 .. $2)
@@ -129,7 +132,7 @@ sub in_both ($$) {
     my $e = $h1{$_};
     undef $h1{$_} unless $h2{$e};
   }
-  keys %h1;
+  sort keys %h1;
 }
 
 # every
@@ -152,7 +155,7 @@ sub all_common {
         my @t2 = split_tests $files{$_};
         my @both = in_both(\@t1,\@t2);
         if (@both) {
-          $files{$_} = join(",", @both); #"Failed tests: ".
+          $files{$_} = join(",", @both);
         } else {
           undef $files{$_};
         }
@@ -169,16 +172,28 @@ sub unify_results {
   my @platforms = keys %$h;
   my $files = all_common($h, {}, @platforms);
   if (%$files) {
-    use Data::Dumper;
     print Data::Dumper->Dump([$files],["common_$name"]);
   }
+
   # initialize for next round: delete already common found
   for my $p (@platforms) {
     for (keys %{$h->{$p}}) {
-      undef $files->{$_} if defined $files->{$_};
+      if (!$files->{$_}) {
+        undef $h->{$p}->{$_};
+      } elsif ($files->{$_} ne $h->{$p}->{$_}) { # strip out not common tests
+        my @t1 = split_tests $h->{$p}->{$_};
+        my @t2 = split_tests $files->{$_};
+        my @both = in_both(\@t1,\@t2);
+        if (@both) {
+          $h->{$p}->{$_} = join(",", @both);
+        } else {
+          undef $h->{$p}->{$_};
+        }
+      }
     }
   }
 
+  my $h_sav = $h;
   # ignore the platform for now. we don't have any platform issues.
   # check for all pairs version - feature the shortest commons
   # 1. sort by versions (ignore platform + features) *-v-*
@@ -190,11 +205,12 @@ sub unify_results {
   for my $v (sort keys %versions) {
     my $v1 = all_common($h, $files, @{$versions{$v}});
     if (%$v1) {
-      use Data::Dumper;
       print Data::Dumper->Dump([$v1],["v$v $name"]);
     }
   }
+
   # 2. sort by feature (ignore platform + version) *-*-f
+  $h = $h_sav;
   my %feat;
   for (@platforms) {
     my ($p,$v,$f) = platform_version_split($_);
@@ -204,7 +220,6 @@ sub unify_results {
   for my $f (sort keys %feat) {
     my $f1 = all_common($h, $files, @{$feat{$f}});
     if (%$f1) {
-      use Data::Dumper;
       print Data::Dumper->Dump([$f1],["feature $f $name"]);
     }
   }
