@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r644
+# B::C::VERSION = 1.28 r647
 # perlversion = 5.013005-nt
 # path = /usr/local/bin/perl5.13.5-nt
 # platform = cygwin 32bit
@@ -12,7 +12,7 @@ pass Pod::Simple #TODO >= 5.013
 pass IO
 pass Scalar::Util
 pass Getopt::Long #TODO >= 5.013
-pass Pod::Parser #TODO >= 5.013
+pass Pod::Parser
 pass ExtUtils::MakeMaker #TODO >= 5.013
 pass Test::Simple #TODO >= 5.10
 pass ExtUtils::Manifest
@@ -22,11 +22,11 @@ fail Test #TODO >= 5.013
 pass Data::Dumper #TODO >= 5.013
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-pass ExtUtils::Install #TODO >= 5.007
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder #TODO >= 5.013
 pass ExtUtils::ParseXS
-pass Module::Build #TODO >= 5.10
+pass Module::Build
 pass File::Path #TODO >= 5.013
 pass XSLoader
 pass MIME::Base64
@@ -41,14 +41,14 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO >= 5.007
+fail LWP
 pass Storable
 pass base
 skip List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-skip Test::Tester
+pass Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO generally
 pass Data::OptList
@@ -68,7 +68,7 @@ pass Try::Tiny
 skip Devel::GlobalDestruction
 skip Class::MOP
 skip Moose
-skip Test::Deep
+pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig #TODO >= 5.013
 pass UNIVERSAL::require
 skip Template::Stash
-# 79 / 100 modules tested with B-C-1.28 - perl-5.013005-nt
-# pass  75 /  79 (94.9%)
-# fail   4 /  79 (5.1%)
-# todo  24 /   4 (600.0%)
-# skip  21 / 100 (21.0% not installed)
+# 81 / 100 modules tested with B-C-1.28 - perl-5.013005-nt
+# pass  76 /  81 (93.8%)
+# fail   5 /  81 (6.2%)
+# todo  20 /   5 (400.0%)
+# skip  19 / 100 (19.0% not installed)
