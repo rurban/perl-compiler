@@ -22,6 +22,6 @@ prepare_c_tests();
 
 my @todo  = todo_tests_default("cc_o2");
 # skip core dump causing known limitations, like custom sort or runtime labels
-my @skip = (14,21,24,25,30,31);
+my @skip = (21,24,25,30,31);
 
 run_c_tests("CC,-O2", \@todo, \@skip);
