@@ -21,6 +21,9 @@ else {
 }
 EOF
 
+use B::CC;
 ctest(1, '^http$', "CC", "ccode51i", $script,
-      "nested if on multiple variables - issue51");
+      $B::CC::VERSION < 1.08
+      ? "nested if on multiple variables - issue51. Fixed with B-C-1.28 r659"
+      : undef);
 
