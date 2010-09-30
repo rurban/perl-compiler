@@ -716,7 +716,10 @@ sub do_labels ($@) {
   for my $m (@_) {
     if ( ${ $op->$m } ) {
       label($op->$m);
-      $op->$m->save;
+      # no first cycles in op_free
+      unless ($m eq 'first' and ${$op->$m} == ${$op->first}) {
+	$op->$m->save;
+      }
     }
   }
 }

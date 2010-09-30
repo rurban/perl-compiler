@@ -1095,7 +1095,7 @@ sub bad_pp_srefgen {
 # coverage: 9,10,27
 #sub pp_refgen
 
-# coverage: 28
+# coverage: 28, 14
 sub pp_rv2gv {
   my $op = shift;
   $curcop->write_back if $curcop;
