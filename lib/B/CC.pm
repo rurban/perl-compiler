@@ -72,7 +72,7 @@ my $package_pv;      # sv->pv of previous op for method_named
 my %lexstate;           #state of padsvs at the start of a bblock
 my $verbose;
 my ( $entertry_defined, $vivify_ref_defined );
-my ( $module_name, %debug );
+my ( $module_name, %debug, $strict );
 
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
@@ -1951,7 +1951,12 @@ sub pp_range {
   my $op    = shift;
   my $flags = $op->flags;
   if ( !( $flags & OPf_WANT ) ) {
-    warn("context of range unknown at compile-time\n");
+    if ($strict) {
+      error("context of range unknown at compile-time\n");
+    } else {
+      warn("context of range unknown at compile-time\n");
+      runtime('warn("context of range unknown at compile-time");');
+    }
     return default_pp($op);
   }
   write_back_lexicals();
@@ -1968,12 +1973,18 @@ sub pp_range {
   return $op->next;
 }
 
-# coverage: 17
+# coverage: 17, 30
 sub pp_flip {
   my $op    = shift;
   my $flags = $op->flags;
   if ( !( $flags & OPf_WANT ) ) {
-    error("context of flip unknown at compile-time");
+    if ($strict) {
+      error("context of flip unknown at compile-time\n");
+    } else {
+      warn("context of flip unknown at compile-time\n");
+      runtime('warn("context of flip unknown at compile-time");');
+    }
+    return default_pp($op);
   }
   if ( ( $flags & OPf_WANT ) == OPf_WANT_LIST ) {
     return $op->first->other;
@@ -2455,6 +2466,10 @@ OPTION:
       $arg ||= shift @options;
       mark_unused( $arg, undef );
     }
+    elsif ( $opt eq "strict" ) {
+      $arg ||= shift @options;
+      $strict++;
+    }
     elsif ( $opt eq "f" ) {
       $arg ||= shift @options;
       my $value = $arg !~ s/^no-//;
@@ -2663,6 +2678,10 @@ source for an XSUB module. The boot_Modulename function (which
 DynaLoader can look for) does the appropriate initialisation and runs
 the main part of the Perl source that is being compiled.
 
+=item B<-strict>
+
+Fail with compile-time errors, which are otherwise deferred to run-time
+warnings.  This happens only for range and flip without compile-time context.
 
 =item B<-D>
 
@@ -2844,7 +2863,9 @@ generates the output
 
     456123E0
 
-with standard Perl but gives a compile-time error with compiled Perl.
+with standard Perl but gives a run-time warning with compiled Perl.
+
+If the option B<-strict> is used it gives a compile-time error.
 
 =head2 Arithmetic
 
