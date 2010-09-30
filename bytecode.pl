@@ -80,8 +80,14 @@ if ($] > 5.009) {
 
 use B qw(@optype @specialsv_name);
 ';
-} else {
+} elsif ($] > 5.008) {
     print ASMDATA_PM 'our(%insn_data, @insn_name, @optype, @specialsv_name);
+
+@optype = qw(OP UNOP BINOP LOGOP LISTOP PMOP SVOP PADOP PVOP LOOP COP);
+@specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE);
+';
+} else {
+    print ASMDATA_PM 'my(%insn_data, @insn_name, @optype, @specialsv_name);
 
 @optype = qw(OP UNOP BINOP LOGOP LISTOP PMOP SVOP PADOP PVOP LOOP COP);
 @specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE);
