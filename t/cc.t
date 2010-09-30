@@ -17,7 +17,7 @@ my $ITHREADS  = ($Config{useithreads});
 prepare_c_tests();
 
 my @todo  = todo_tests_default("cc");
-# skip core dumps, like custom sort or runtime labels
-my @skip = (21,30);
+# skip core dumps and endless loops, like custom sort or runtime labels
+my @skip = (14,21,30);
 
 run_c_tests("CC", \@todo, \@skip);

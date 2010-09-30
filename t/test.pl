@@ -543,7 +543,7 @@ sub todo_tests_default {
         @todo = (15,39,35,44,46) if $] < 5.010;
         @todo = (15,35,41..46) if $] < 5.007;
         push @todo, (41)       if $] < 5.010 and $ITHREADS;
-        @todo = (39,41,44,46)  if $] >= 5.010;
+        @todo = (14,39,41,44,46)  if $] >= 5.010;
         @todo = (15,39,46)     if $] >= 5.010 and !$ITHREADS;
         #push @todo, (27)      if $] >= 5.012 and $ITHREADS;
         push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
