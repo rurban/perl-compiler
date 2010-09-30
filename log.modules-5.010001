@@ -97,8 +97,8 @@ fail YAML
 fail MooseX::Types #TODO with threads
 pass Class::Singleton
 pass DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+pass DateTime::Locale #TODO with threads
+fail DateTime #TODO with threads
 pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
