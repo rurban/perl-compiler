@@ -2800,13 +2800,6 @@ sub B::IO::save_data {
   #}
 }
 
-# Not needed since 5.10
-eval '
-sub B::IO::SUBPROCESS {
-  return if $PERL510;
-  warn "B::IO::SUBPROCESS missing (harmless)\n" if $verbose;
-}' unless $PERL510;
-
 sub B::IO::save {
   my ($io) = @_;
   my $sym = objsym($io);
@@ -3303,13 +3296,14 @@ EOT
     print <<'EOT';
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
-    /* set all our static pv and hek to NULL so perl_destruct() will not cry */
+    /* set all our static pv and hek to &PL_sv_undef so perl_destruct() will not cry */
 EOT
     for (0 .. $#static_free) {
-      # set the sv/xpv to NULL, not the pv itself
+      # set the sv/xpv to &PL_sv_undef, not the pv itself. 
+      # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
       my $s = $static_free[$_];
       if ($s =~ /^sv_list/) {
-	print "    SvPV_set(&$s, NULL);\n";
+	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	print "   CopFILE_set(&$s, NULL);";
 	print "   CopSTASHPV_set(&$s, NULL);";
