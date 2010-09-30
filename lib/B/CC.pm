@@ -2858,10 +2858,11 @@ Features of standard perl such as C<$[> which have been deprecated
 in standard perl since Perl5 was released have not been implemented
 in the compiler.
 
-=head1 AUTHOR
+=head1 AUTHORS
 
 Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
 Reini Urban C<perl-compiler@googlegroups.com>
+Heinz Knutzen C<heinz.knutzen at gmx.de>
 
 =cut
 
