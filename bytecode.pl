@@ -413,12 +413,26 @@ EOT
 	next;
     }
     my $optarg = $argtype eq "none" ? "" : ", arg";
+    my ($argfmt, $rvaldcast);
+    if ($fundtype =~ /(strconst|pvcontents)/) {
+	$argfmt = '\"%s\"';
+	$rvaldcast = '(char*)';
+    } elsif ($argtype =~ /index$/) {
+	$argfmt = '0x%x, ix:%d';
+	$rvaldcast = '(unsigned int)';
+    } else {
+	$argfmt = '%d';
+	$rvaldcast = '(int)';
+    }
     if ($optarg) {
 	print BYTERUN_C "\t\t$argtype arg;\n";
+	if ($rvalcast) {
+	    $argtype = $rvalcast . $argtype;
+	}
 	if ($unsupp and $holes{$insn_num}) {
 	    printf BYTERUN_C "\t\tPerlIO_printf(Perl_error_log, \"Unsupported bytecode instruction %%d (%s) at stream offset %%d.\\n\",
 	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
-      }
+	}
 	print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
 	if ($fundtype eq 'strconst') {
 	    my $maxsize = ($flags =~ /(\d+$)/) ? $1 : 0;
@@ -426,9 +440,8 @@ EOT
 	} else {
 	    printf BYTERUN_C "\t\tBGET_%s(arg);\n", $fundtype;
 	}
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", (int)insn, arg%s));\n",
-	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
-	    ($argtype =~ /index$/ ? ', ix' : '');
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, ${rvaldcast}arg%s));\n",
+	  $argfmt, ($argtype =~ /index$/ ? ', (int)ix' : '');
 	if ($insn eq 'newopx' or $insn eq 'newop') {
 	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s]\\n\", PL_op_name[arg>>7]));\n";
 	}
@@ -440,13 +453,14 @@ EOT
 	    printf BYTERUN_C "\t\tPerlIO_printf(Perl_error_log, \"Unsupported bytecode instruction %%d (%s) at stream offset %%d.\\n\",
 	                                  insn, bstate->bs_fdata->next_out);\n", uc($insn);
 	}
-	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", (int)insn));\n";
+	print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %3d) $insn\\n\", insn));\n";
     }
     if ($flags =~ /x/) {
 	# Special setter method named after insn
 	print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
 	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optarg));\n",
+	my $optargcast = $optarg eq ", arg" ? ", ${rvaldcast}arg" : '';
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
 	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %d'))
 	      : '';
@@ -458,7 +472,7 @@ EOT
     }
     elsif ($optarg && $lvalue ne "none") {
 	print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n" unless $unsupp;
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", arg%s));\n",
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", ${rvaldcast}arg%s));\n",
 	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
