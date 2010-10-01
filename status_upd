@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# status_upd [-suq] [ 1.26 | path ]
+# status_upd [-suqftad] [ 1.26 | path ]
 # process perlall-maketest logfiles:
 #  `perl$ver Makefile.PL && make test > log.test-$platform-$ver; make clean`
 # and find and sort by FAIL/TODO and platform+version
@@ -7,8 +7,11 @@
 # OPTIONS:
 # -s sort by test
 # -u update STATUS
+# -q quiet
 # -f fail only
 # -t todo only
+# -a do not skip too old logs
+# -d no unify dumps
 #
 use strict;
 use Data::Dumper;
@@ -19,7 +22,7 @@ my $STATUS = "./STATUS";
 
 chdir ".." if ! -d "t" and -d "../t";
 chdir "../.." if ! -d "t" and -d "../../t";
-my ($sortbytest, $update, $quiet, $failonly, $todoonly);
+my ($sortbytest, $update, $quiet, $failonly, $todoonly, $noskip, $nodump);
 
 for (@ARGV) {
   /^-s$/ and $sortbytest++;
@@ -27,6 +30,8 @@ for (@ARGV) {
   /^-q$/ and $quiet++;
   /^-f$/ and $failonly++;
   /^-t$/ and $todoonly++;
+  /^-a$/ and $noskip++;
+  /^-d$/ and $nodump++;
   -d "t/reports/$_" and $dir = "t/reports/$_";
   -d "$_" and $dir = $_;
 }
@@ -49,18 +54,25 @@ sub status {
     }
     my $file = shift @g;
     my $failed = shift @g;
+    my $ctime = 0;
     unless ($prefix) {
+      my ($f) = $file =~ m{(log.test-.*?)-t/};
       ($prefix) = $file =~ m{log.test-(.*?)-t/};
       if ($prefix and $oldprefix ne $prefix) {
 	#$prefix =~ s/ATGRZ.+?-/cygwin-/;
+        $ctime = -f $f ? sprintf("%0.3f", -C $f) : 0;
 	$s .= "\n$prefix:\n";
-	print STDERR "\n$prefix:\n" unless $quiet;
+	print STDERR "\n$prefix: age=$ctime" unless $quiet;
+        if ($ctime > 1.5 and !$noskip) {
+          print STDERR " skipped: too old" unless $quiet;
+        }
+        print STDERR "\n" unless $quiet;
       }
     }
     next unless $prefix;
-    ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
-    chomp $file if $file;
     next unless $file;
+    chomp $file;
+    ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
     $file =~ s{\s*$}{};
     $file =~ s{^\s*}{};
     $failed =~ s{^.+(Failed tests?:?)}{$1}i;
@@ -75,6 +87,7 @@ sub status {
     $c .= "\t" if length($file) < 8;
     $c .= "$failed\n";
     $h{$prefix}->{$file} = $f;
+    next if $ctime > 1.5 and !$noskip;
     print STDERR "$c" unless $quiet;
     $s .= $c;
   }
@@ -232,7 +245,7 @@ if (!$todoonly) {
   my @g = `$cmd` or die $@;
 
   my $failed = status(@g);
-  my $failedu = unify_results($failed->[1], "fail");
+  my $failedu = unify_results($failed->[1], "fail") unless $nodump;
 }
 
 if (!$failonly) {
@@ -241,11 +254,12 @@ if (!$failonly) {
   my @g = `$cmd` or die $@;
 
   my $todo = status(@g);
-  my $todou = unify_results($todo->[1], "todo_pass");
+  my $todou = unify_results($todo->[1], "todo_pass") unless $nodump;
 }
 # XXX TODO: update the TEST STATUS section in "./STATUS"
 if ($update) {
   die "file not found $STATUS\n" unless -e $STATUS;
+  die "-u update STATUS not yet implemented\n";
   # sort away platforms
 }
 
