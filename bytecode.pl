@@ -430,7 +430,7 @@ EOT
 	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x, ix:%d' : '%d'),
 	    ($argtype =~ /index$/ ? ', ix' : '');
 	if ($insn eq 'newopx' or $insn eq 'newop') {
-	    printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%%s]\\n\", PL_op_name[arg>>7]));\n",
+	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s]\\n\", PL_op_name[arg>>7]));\n";
 	}
 	if ($fundtype eq 'PV') {
 	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
