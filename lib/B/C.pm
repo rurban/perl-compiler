@@ -2096,8 +2096,11 @@ sub B::CV::save {
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL513) {
       my $xpvc = sprintf
+	# stash magic cur len cvstash
 	("Nullhv, {0}, %u, %u, %s, "
+	 # start root cvgv cvfile cvpadlist
 	 ." {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
+	 # outside outside_seq cvflags cvdepth
 	 ." (CV*)s\\_%x, %s, 0x%x, %d",
 	 $len, $len, "Nullhv",#CvSTASH later
 	 $startfield, $$root, "0",  #GV later
@@ -2219,6 +2222,8 @@ sub B::CV::save {
           if $debug{cv};
         $init->add( sprintf( "CvFLAGS((CV*)%s) = %u;", $sym, $cv->CvFLAGS ) );
       }
+      # XXX TODO someone is overwriting CvSTART also
+      $init->add("CvSTART($sym) = $startfield;");
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
     }
