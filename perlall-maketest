@@ -1,9 +1,6 @@
 #!/bin/sh
 arch="$(uname -s)"
-bad="5.00558 5.8.7 "
-#perlall=${perlall:-"5.6.0 5.6.1 5.6.2 5.8.0 5.8.1 5.8.2 5.8.3 5.8.4 5.8.5 5.8.6 5.8.8 5.8.9 5.8.9d-nt 5.8.9d 5.9.5 5.10.0-nt 5.10.1 5.10.1d 5.10.1d-nt 5.11.2@5f61da69 5.11.2d-nt 5.11.2 5.11.2d 5.11.2d-nt 5.11.3d-nt 5.11.4d-nt 5.11.5d 5.11.5d-nt 5.11.5"}
-perlall=${perlall:-"5.6.2 5.8.9d 5.8.9d-nt 5.10.0-nt 5.10.1 5.11.5-nt 5.12.0 5.12.1d-nt 5.13.4-nt 5.13.4 5.13.4d 5.13.4d-nt"}
-# 5.11.0 5.11.0d 5.11.0-nt 5.11.0d-nt 5.11.1d 
+perlall=${perlall:-"5.6.2 5.8.9d 5.8.9d-nt 5.10.0-nt 5.10.1 5.11.5-nt 5.12.0 5.12.1d-nt 5.13.4-nt 5.13.5 5.13.5d 5.13.5d-nt"}
 # may link to perlall-make and perlall-makeinstall
 base=$(basename $0)
 
@@ -22,13 +19,12 @@ do
   echo perl$p Makefile.PL
   perl$p Makefile.PL 2>&1 >>$log && \
   ( make 2>&1 >>$log && \
-    rm $log 2>/dev/null
     if [ "$base" = "perlall-maketest" ]; then
-	make test TEST_VERBOSE=1 2>&1 | tee $log
+	make test TEST_VERBOSE=1 2>&1 | tee -a $log
     fi
     if [ $? = 0 -a "$base" = "perlall-makeinstall" ]
     then
-	make test install 2>&1 | tee $log 
+	make test install 2>&1 | tee -a $log 
     fi
     ( echo >> $log
       echo "----" >> $log
