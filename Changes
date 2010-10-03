@@ -4,6 +4,8 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.28	2010-09-?? rurban
+	fixed CV for 5.14
+
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
 	  (re-enables -fcog >= 5.10),
 	add -fro-inc (with -O2) readonly INC and curpad strings,
@@ -14,6 +16,7 @@
 	initialise CopFILE and CopSTASHPV static with ITHREADS
 	improved 5.13 method_named package detection (first and pmreplroot),
 	  in endav still failing (Test::Deep)
+	fixed overwritten CvSTART for 5.13.x
 	* CC.pm (1.08): many fixes
 	use new B::C optimizations, new -DF
 	fixed issue 35 same variable name in different scope (Heinz Knutzen),

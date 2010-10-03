@@ -2511,7 +2511,7 @@ sub B::AV::save {
   if ($PERL513) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
     my $line = "Nullhv, {0}, -1, -1, NULL";
-    $line = "Nullhv, {0}, $fill, $fill, NULL" if $B::C::av_init;
+    $line = "Nullhv, {0}, $fill, $fill, NULL" if $B::C::av_init or $B::C::av_init2;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
@@ -2639,7 +2639,7 @@ sub B::AV::save {
     # is very expensive
     # The problem was calloc, not av_extend.
     # Since we are always initializing every single element we don't need
-    # calloc, only malloc. wmemset'ting with the pointer to PL_sv_undef
+    # calloc, only malloc. wmemset'ting the pointer to PL_sv_undef
     # might be faster also.
     elsif ($B::C::av_init) {
       $init->add(
