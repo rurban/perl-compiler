@@ -202,7 +202,7 @@ sub is_todo {
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 
   # Attribute::Handlers passes only 5.008009d
-  foreach (qw( Attribute::Handlers Moose )) {
+  foreach (qw( Attribute::Handlers LWP )) {
     return 'generally' if $_ eq $module;
   }
   if ($] < 5.007) {
@@ -224,7 +224,7 @@ sub is_todo {
   }
   if ($] >= 5.010) {
     foreach(qw(
-		Test::Simple Test::Exception
+		Test::Simple
 		Test::NoWarnings Test::Warn Test::Pod
 	     )) {
       return '>= 5.10' if $_ eq $module;
@@ -236,15 +236,7 @@ sub is_todo {
     }
   }
   if ($] >= 5.013) {
-    foreach(qw(Test
-               Pod::Simple
-               Getopt::Long
-               ExtUtils::MakeMaker
-               Pod::Text
-               Test
-               Data::Dumper
-               ExtUtils::CBuilder
-               File::Path
+    foreach(qw(
                AppConfig
                DateTime::TimeZone
                Path::Class
@@ -264,7 +256,7 @@ sub is_todo {
                Test::Tester Attribute::Handlers
                Test::Deep FCGI B::Hooks::EndOfScope Digest::SHA1
                namespace::clean DateTime::Locale DateTime
-               Template::Stash MooseX::Types LWP
+               Template::Stash MooseX::Types Moose IO
               )) {
       return 'with threads' if $_ eq $module;
     }
@@ -280,6 +272,13 @@ sub is_todo {
                  Class::Accessor
                 )) {
         return '5.10 with threads' if $_ eq $module;
+      }
+    }
+    if ($] >= 5.010) {
+      foreach(qw(
+                 Test::Exception URI
+                )) {
+        return '>= 5.10 with threads' if $_ eq $module;
       }
     }
     if ($] >= 5.012 and $] != 5.012002) {

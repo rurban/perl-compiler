@@ -1,6 +1,6 @@
 #!/bin/sh
 arch="$(uname -s)"
-perlall=${perlall:-"5.6.2 5.8.9d 5.8.9d-nt 5.10.0-nt 5.10.1 5.11.5-nt 5.12.0 5.12.1d-nt 5.13.4-nt 5.13.5 5.13.5d 5.13.5d-nt"}
+perlall=${perlall:-"5.6.2 5.8.9d 5.8.9d-nt 5.10.0-nt 5.10.1 5.11.5-nt 5.12.0 5.12.1d-nt 5.13.5-nt 5.13.5 5.13.5d 5.13.5d-nt"}
 # may link to perlall-make and perlall-makeinstall
 base=$(basename $0)
 
