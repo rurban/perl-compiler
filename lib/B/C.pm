@@ -1224,9 +1224,13 @@ sub B::IV::save {
     return $sv->B::UV::save;
   }
   my $i = $svsect->index + 1;
-  if ($svflags & 0xff) { # Not nullified
-    # XXX what the heck is going on here? e.g. 5.13.4d test 45
-    warn "warning: IV no IOK sv_list[$i]" unless $svflags & (SVf_IOK|SVp_IOK);
+  if ($svflags & 0xff and !($svflags & (SVf_IOK|SVp_IOK))) { # Not nullified
+    unless ($PERL510 and $svflags & 0x00010000) { # PADSTALE - out of scope lexical is !IOK
+      warn sprintf( "IV 0x%x !IOK sv_list[$i] 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
+                    $sv->IVX, $xpvivsect->index, $svsect->index, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
+        if $debug{sv};
+      warn "warning: IV !IOK sv_list[$i]";
+    }
   }
   if ($PERL513) {
     $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", ivx $sv->IVX ) );
@@ -3180,7 +3184,7 @@ EOT
       }
       $decl->add("\t{$acc};");
       $init->add_initav("if (!independent_comalloc( $size, avsizes, avchunks ))");
-      $init->add_initav("\tPerl_die(aTHX_ \"panic: AV alloc failed\");");
+      $init->add_initav("    Perl_die(aTHX_ \"panic: AV alloc failed\");");
     }
   }
 }
@@ -3313,8 +3317,8 @@ EOT
       if ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "   CopFILE_set(&$s, NULL);";
-	print "   CopSTASHPV_set(&$s, NULL);";
+	print "   CopFILE_set(&$s, NULL);\n";
+	print "   CopSTASHPV_set(&$s, NULL);\n";
       }
     }
     for (0 .. $hek_index-1) {
