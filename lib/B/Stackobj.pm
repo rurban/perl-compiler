@@ -59,6 +59,14 @@ sub invalidate {
   shift->{flags} &= ~( VALID_INT | VALID_UNSIGNED | VALID_DOUBLE );
 }
 
+sub invalidate_int {
+  shift->{flags} &= ~( VALID_INT | VALID_UNSIGNED );
+}
+
+sub invalidate_double {
+  shift->{flags} &= ~( VALID_DOUBLE );
+}
+
 sub as_sv {
   my $obj = shift;
   if ( !( $obj->{flags} & VALID_SV ) ) {
