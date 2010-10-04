@@ -326,10 +326,18 @@ sub svop_or_padop_pv {
       return '';
     }
     if ($sv->FLAGS & SVf_ROK) {
-      return $sv->RV->STASH->NAME;
+      goto missing if $sv->isa("B::NULL");
+      my $rv = $sv->RV;
+      if ($rv->isa("B::PVGV")) {
+	my $o = $rv->IO;
+	return $o->STASH->NAME if $$o;
+      }
+      goto missing if $rv->isa("B::PVMG");
+      return $rv->STASH->NAME;
     } else {
+    missing:
       warn "NYI S_method_common not fully implemented yet";
-      ''
+      return '';
     }
   } else {
     my @c = comppadlist->ARRAY;
