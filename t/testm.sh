@@ -13,9 +13,11 @@ function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."
   echo " -k                 keep temp. files on PASS"
   echo " -D<arg>            add debugging flags"
+  echo " -f<arg>            add optimisation flags"
   echo " -l                 log"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -t                 run the module tests also, not only use Module (experimental)"
+  echo " -F                 run failing modules only"
   echo " -s                 install skipped (missing) modules"
   echo " -T                 time compilation and run"
   echo " -h                 help"
@@ -45,7 +47,7 @@ function fail {
     echo
 }
 
-while getopts "hokltTsD:O:f:" opt
+while getopts "hokltTsFD:O:f:" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "k" ]; then KEEP="$KEEP -S"; fi
@@ -61,6 +63,13 @@ do
           grep ^skip log.modules-$v | perl -anle 'print $F[1]' | xargs $PERL -S cpan
       else
           $PERL -S cpan $($PERL $Mblib -It -Mmodules -e'$,=" "; print skip_modules')
+      fi
+      exit
+  fi
+  if [ "$opt" = "F" ]; then 
+      v=$($PERL -It -Mmodules -e'print perlversion')
+      if [ -f log.modules-$v ]; then # and not older than a few days
+          grep ^fail log.modules-$v | perl -anle 'print $F[1]' | xargs $PERL t/testm.sh
       fi
       exit
   fi
