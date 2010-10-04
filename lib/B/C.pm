@@ -1910,9 +1910,10 @@ sub B::CV::save {
   my $gv = $cv->GV;
   my ( $cvname, $cvstashname );
   if ($$gv) {
-    $cvname      = $gv->NAME;
     $cvstashname = $gv->STASH->NAME;
-    warn sprintf( "CV as PVGV 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
+    $cvname      = $gv->NAME;
+    warn sprintf( "CV 0x%x as PVGV 0x%x %s::%s CvFLAGS=0x%x\n",
+                  $$cv, $$gv, $cvstashname, $cvname, $cv->CvFLAGS )
       if $debug{cv};
   }
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -1923,10 +1924,11 @@ sub B::CV::save {
     $isconst = $PERL56 ? 0 : $cv->CvFLAGS & CVf_CONST;
   }
   if ($isconst) {
-    my $value = $cv->XSUBANY;
     my $stash = $gv->STASH;
-    if ($value) {
-      my $vsym  = $value->save;
+    warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
+      if $debug{cv};
+    if (!($cv->CvFLAGS & CVf_ANON) and $cv->XSUBANY) {
+      my $vsym  = $cv->XSUBANY->save;
       my $stsym = $stash->save;
       my $name  = cstring($cvname);
       $decl->add("static CV* cv$cv_index;");
