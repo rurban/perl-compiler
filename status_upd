@@ -15,6 +15,7 @@
 #
 use strict;
 use Data::Dumper;
+use Set::Object qw(reftype);
 
 my $logs = "log.test-*-5.*";
 my $dir = ".";
@@ -151,31 +152,29 @@ sub in_both ($$) {
 # every
 sub all_common {
   my $h = shift;		# platform_version -> test_file -> test_no_failed
-  my $f = shift;		# skip already deleted results, initially empty
-  my %files = %$f;
+  my $result = shift;		# skip already deleted results, initially empty
+  my (%tests);
   # init with shortest list, sort hash by least number of keys
   my @p = sort { h_size($h->{$a}) <=> h_size($h->{$b}) } keys %$h;
   my $pivot = $p[0];
-  for (keys %{$h->{$pivot}}) {
-    $files{$_} = $h->{$pivot}->{$_};
+  my $pivotset = Set::Object->new(keys %{$h->{$pivot}});
+  for ($pivotset->members) {
+    my $k = $h->{$pivot}->{$_};
+    $tests{$_} = Set::Object->new(split_tests($k));
   }
   for my $p (@_) {		# check for common keys (in every)
-    for (keys %{$h->{$p}}) {	# strip out not yet seen
-      if (!$files{$_}) {
-        undef $files{$_};
-      } elsif ($files{$_} ne $h->{$p}->{$_}) { # strip out not common tests
-        my @t1 = split_tests $h->{$p}->{$_}; # TODO
-        my @t2 = split_tests $files{$_};
-        my @both = in_both(\@t1,\@t2);
-        if (@both) {
-          $files{$_} = join(",", @both);
-        } else {
-          undef $files{$_};
-        }
+    my $c = $pivotset * Set::Object->new(keys %{$h->{$p}});
+    for ($c->members) {
+      if (exists $tests{$_}) {
+        $result->{$_} = $tests{$_} * $result->{$_}; # without already
+        $result->{$_} = $result->{$_} * Set::Object->new( split_tests($h->{$p}->{$_}) )
+          if $result->{$_}->members;
+        $result->{$_} = $result->{$_}->members;
       }
+      delete $result->{$_} unless $result->{$_};
     }
   }
-  return cleanup_deleted($h, \%files);
+  return $result;
 }
 
 sub unify_results {
@@ -186,21 +185,21 @@ sub unify_results {
   my $files = all_common($h, {}, @platforms);
   if (%$files) {
     print Data::Dumper->Dump([$files],["common_$name"]);
-  }
 
-  # initialize for next round: delete already common found
-  for my $p (@platforms) {
-    for (keys %{$h->{$p}}) {
-      if (!$files->{$_}) {
-        undef $h->{$p}->{$_};
-      } elsif ($files->{$_} ne $h->{$p}->{$_}) { # strip out not common tests
-        my @t1 = split_tests $h->{$p}->{$_};
-        my @t2 = split_tests $files->{$_};
-        my @both = in_both(\@t1,\@t2);
-        if (@both) {
-          $h->{$p}->{$_} = join(",", @both);
-        } else {
+    # initialize for next round: delete already common found
+    for my $p (@platforms) {
+      for (keys %{$h->{$p}}) {
+        if (!$files->{$_}) {
           undef $h->{$p}->{$_};
+        } elsif ($files->{$_} ne $h->{$p}->{$_}) { # strip out not common tests
+          my @t1 = split_tests $h->{$p}->{$_};
+          my @t2 = split_tests $files->{$_};
+          my @both = in_both(\@t1,\@t2);
+          if (@both) {
+            $h->{$p}->{$_} = join(",", @both);
+          } else {
+            undef $h->{$p}->{$_};
+          }
         }
       }
     }
