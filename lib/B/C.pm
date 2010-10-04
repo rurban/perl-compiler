@@ -1923,20 +1923,18 @@ sub B::CV::save {
   { no strict 'subs';
     $isconst = $PERL56 ? 0 : $cv->CvFLAGS & CVf_CONST;
   }
-  if ($isconst) {
+  if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
     my $stash = $gv->STASH;
     warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
-    if (!($cv->CvFLAGS & CVf_ANON) and $cv->XSUBANY) {
-      my $vsym  = $cv->XSUBANY->save;
-      my $stsym = $stash->save;
-      my $name  = cstring($cvname);
-      $decl->add("static CV* cv$cv_index;");
-      $init->add("cv$cv_index = newCONSTSUB( $stsym, NULL, (SV*)$vsym );");
-      my $sym = savesym( $cv, "cv$cv_index" );
-      $cv_index++;
-      return $sym;
-    }
+    my $stsym = $stash->save;
+    my $name  = cstring($cvname);
+    my $vsym  = $cv->XSUBANY->save;
+    $decl->add("static CV* cv$cv_index;");
+    $init->add("cv$cv_index = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+    my $sym = savesym( $cv, "cv$cv_index" );
+    $cv_index++;
+    return $sym;
   }
 
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
