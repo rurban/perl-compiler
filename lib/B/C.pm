@@ -1226,9 +1226,6 @@ sub B::IV::save {
   my $i = $svsect->index + 1;
   if ($svflags & 0xff and !($svflags & (SVf_IOK|SVp_IOK))) { # Not nullified
     unless ($PERL510 and $svflags & 0x00010000) { # PADSTALE - out of scope lexical is !IOK
-      warn sprintf( "IV 0x%x !IOK sv_list[$i] 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
-                    $sv->IVX, $xpvivsect->index, $svsect->index, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
-        if $debug{sv};
       warn "warning: IV !IOK sv_list[$i]";
     }
   }
