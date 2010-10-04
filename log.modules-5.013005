@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r647
+# B::C::VERSION = 1.28 r680 M
 # perlversion = 5.013005
 # path = /usr/local/bin/perl5.13.5
 # platform = cygwin 32bit
@@ -18,24 +18,24 @@ fail Test::Simple #TODO >= 5.10
 pass ExtUtils::Manifest
 fail Pod::Text #TODO >= 5.013
 pass constant
-fail Test #TODO >= 5.013
-skip Data::Dumper
+pass Test #TODO >= 5.013
+fail Data::Dumper #TODO >= 5.013
 pass File::Spec
 fail File::Temp #TODO >= 5.007
 fail ExtUtils::Install #TODO with threads
 pass Text::ParseWords
 pass ExtUtils::CBuilder #TODO >= 5.013
 pass ExtUtils::ParseXS
-skip Module::Build
+fail Module::Build #TODO without threads
 pass File::Path #TODO >= 5.013
 pass XSLoader
 pass MIME::Base64
 pass Digest
-skip Digest::MD5
+fail Digest::MD5
 pass Sub::Uplevel
 fail URI
 pass HTML::Tagset
-skip HTML::Parser
+pass HTML::Parser
 fail Test::Exception #TODO >= 5.10
 pass Net::Cmd
 pass Compress::Raw::Zlib
@@ -48,7 +48,7 @@ skip List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-skip Test::Tester
+fail Test::Tester #TODO with threads
 pass Sub::Install
 fail Attribute::Handlers #TODO generally
 pass Data::OptList
@@ -68,7 +68,7 @@ pass Try::Tiny
 skip Devel::GlobalDestruction
 skip Class::MOP
 skip Moose
-skip Test::Deep
+fail Test::Deep #TODO with threads
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -82,7 +82,7 @@ skip FCGI
 pass Tree::DAG_Node
 fail Path::Class #TODO >= 5.013
 fail Test::Warn #TODO >= 5.10
-skip Encode
+fail Encode
 skip Variable::Magic
 fail CGI #TODO >= 5.013
 skip B::Hooks::EndOfScope
@@ -93,7 +93,7 @@ pass Class::Inspector
 skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
-skip YAML
+fail YAML #TODO >= 5.013
 skip MooseX::Types
 pass Class::Singleton
 skip DateTime::TimeZone
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig #TODO >= 5.013
 pass UNIVERSAL::require
 skip Template::Stash
-# 74 / 100 modules tested with B-C-1.28 - perl-5.013005
-# pass  56 /  74 (75.7%)
-# fail  18 /  74 (24.3%)
-# todo  21 /  18 (116.7%)
-# skip  26 / 100 (26.0% not installed)
+# 82 / 100 modules tested with B-C-1.28 - perl-5.013005
+# pass  58 /  82 (70.7%)
+# fail  24 /  82 (29.3%)
+# todo  26 /  24 (108.3%)
+# skip  18 / 100 (18.0% not installed)

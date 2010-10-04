@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r679 M
+# B::C::VERSION = 1.28 r678 M
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = linux 64bit
@@ -97,8 +97,8 @@ fail YAML
 fail MooseX::Types #TODO with threads
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale #TODO with threads
-fail DateTime #TODO with threads
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 fail AppConfig
 pass UNIVERSAL::require

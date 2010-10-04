@@ -547,7 +547,8 @@ sub todo_tests_default {
         push @todo, (28)       if $] >= 5.013;
 	# fixed with r678
         #push @todo, (6,8..10,16,21,24,26,30,31,35) if $] >= 5.013002; #CV broken
-        push @todo, (15,42..43) if $] >= 5.013 and $ITHREADS;
+        push @todo, (15,42..43)
+	  if $] >= 5.013 and $ITHREADS;
         push @todo, (35,42..43)
 	  if $what =~ 'c_o1' and !$DEBUGGING and $ITHREADS;
         push @todo, (28,39,41)
@@ -569,8 +570,12 @@ sub todo_tests_default {
 	  if $what =~ /c_o[234]/ and $] >= 5.013 and $ITHREADS;
 	push @todo, (12,16,25,28)
 	  if $what =~ /c_o[234]/ and $] >= 5.013002;
-	push @todo, (25) if $what eq 'c_o' and $^O eq 'MSWin32';
-	push @todo, (10,12,19,25) if $what eq 'c_o4';
+	push @todo, (25)
+	  if $what eq 'c_o' and $^O eq 'MSWin32';
+	push @todo, (10,12,19,25)
+	  if $what eq 'c_o4';
+        push @todo, (10)
+	  if $what eq 'c_o3' and $] >= 5.010;
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
