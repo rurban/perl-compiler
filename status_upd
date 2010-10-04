@@ -106,29 +106,9 @@ sub platform_version_split {
   return ($p,$v,$f);
 }
 
-# From List::Util
-# One argument is true
-sub any { $_ && return 1 for @_; 0 }
-# All arguments are true
-sub all { $_ || return 0 for @_; 1 }
-# All arguments are false
-sub none { $_ && return 0 for @_; 1 }
-
-sub cleanup_deleted {
-  my $h = shift;
-  my $f = shift;
-  for my $p (keys %$h) { 		# cleanup undef ("deleted") results
-    for (keys %{$h->{$p}}) {
-      delete $f->{$_} unless defined $f->{$_};
-    }
-  }
-  $f;
-}
-
 sub h_size($) { scalar keys %{$_[0]} }
 sub split_tests($) {
   my $t = shift;
-  #$t =~ s/Failed tests?:?\s*//;
   map {
     if (/(\d+)\.\.(\d+)/) {
       ($1 .. $2)
@@ -154,8 +134,11 @@ sub all_common {
   my $h = shift;		# platform_version -> test_file -> test_no_failed
   my $result = shift;		# skip already deleted results, initially empty
   my (%tests);
+  if (@_ == 1) {
+    return $h->{$_[0]};
+  }
   # init with shortest list, sort hash by least number of keys
-  my @p = sort { h_size($h->{$a}) <=> h_size($h->{$b}) } keys %$h;
+  my @p = sort { h_size($h->{$a}) <=> h_size($h->{$b}) } @_;
   my $pivot = $p[0];
   my $pivotset = Set::Object->new(keys %{$h->{$pivot}});
   for ($pivotset->members) {
@@ -166,7 +149,7 @@ sub all_common {
     my $c = $pivotset * Set::Object->new(keys %{$h->{$p}});
     for ($c->members) {
       if (exists $tests{$_}) {
-        $result->{$_} = $tests{$_} * $result->{$_}; # without already
+	$result->{$_} = $result->{$_} ? $tests{$_} * $result->{$_} : $tests{$_};
         $result->{$_} = $result->{$_} * Set::Object->new( split_tests($h->{$p}->{$_}) )
           if $result->{$_}->members;
         $result->{$_} = $result->{$_}->members;
@@ -182,21 +165,17 @@ sub unify_results {
   my $name = shift; 	# todo or fail
   # first check for common results in files, all platforms
   my @platforms = keys %$h;
-  my $files = all_common($h, {}, @platforms);
-  if (%$files) {
-    print Data::Dumper->Dump([$files],["common_$name"]);
+  my $result = all_common($h, {}, @platforms);
+  if (%$result) {
+    print Data::Dumper->Dump([$result],["common_$name"]);
 
     # initialize for next round: delete already common found
     for my $p (@platforms) {
       for (keys %{$h->{$p}}) {
-        if (!$files->{$_}) {
-          undef $h->{$p}->{$_};
-        } elsif ($files->{$_} ne $h->{$p}->{$_}) { # strip out not common tests
-          my @t1 = split_tests $h->{$p}->{$_};
-          my @t2 = split_tests $files->{$_};
-          my @both = in_both(\@t1,\@t2);
-          if (@both) {
-            $h->{$p}->{$_} = join(",", @both);
+        if ($result->{$_} and $result->{$_} ne $h->{$p}->{$_}) { # strip out common tests
+	  my $both = Set::Object->new(split_tests $h->{$p}->{$_}) - Set::Object->new($result->{$_});
+          if ($both->members) {
+            $h->{$p}->{$_} = join(",", $both->members);
           } else {
             undef $h->{$p}->{$_};
           }
@@ -215,7 +194,7 @@ sub unify_results {
     push @{$versions{$v}}, ($_);
   }
   for my $v (sort keys %versions) {
-    my $v1 = all_common($h, $files, @{$versions{$v}});
+    my $v1 = all_common($h, $result, @{$versions{$v}});
     if (%$v1) {
       print Data::Dumper->Dump([$v1],["v$v $name"]);
     }
@@ -230,7 +209,7 @@ sub unify_results {
     push @{$feat{$f}}, ($_);
   }
   for my $f (sort keys %feat) {
-    my $f1 = all_common($h, $files, @{$feat{$f}});
+    my $f1 = all_common($h, $result, @{$feat{$f}});
     if (%$f1) {
       print Data::Dumper->Dump([$f1],["feature $f $name"]);
     }
