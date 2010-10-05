@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r682
+# B::C::VERSION = 1.28 r696
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = linux 64bit
@@ -9,39 +9,39 @@ pass Text::Wrap
 fail Test::Harness #TODO > 5.010
 pass Pod::Escapes
 pass Pod::Simple
-fail IO #TODO with threads
+pass IO #TODO with threads
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker #TODO with threads
-fail Test::Simple #TODO >= 5.10
+pass ExtUtils::MakeMaker #TODO with threads
+pass Test::Simple #TODO >= 5.10
 pass ExtUtils::Manifest
-fail Pod::Text
+pass Pod::Text
 pass constant
 pass Test
-fail Data::Dumper
+pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO >= 5.007
 pass ExtUtils::Install #TODO with threads
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build #TODO without threads
+pass Module::Build #TODO without threads
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
-fail Digest::MD5
+pass Digest::MD5
 pass Sub::Uplevel
-fail URI #TODO >= 5.10 with threads
+pass URI #TODO >= 5.10 with threads
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception #TODO >= 5.10 with threads
+pass Test::Exception #TODO >= 5.10 with threads
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO generally
+pass LWP #TODO generally
 pass Storable
 pass base
 pass List::MoreUtils
@@ -53,7 +53,7 @@ pass Sub::Install
 fail Attribute::Handlers #TODO generally
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings #TODO >= 5.10
+pass Test::NoWarnings #TODO >= 5.10
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -66,45 +66,45 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO 5.8-5.12 with threads
-fail Moose #TODO with threads
+pass Class::MOP #TODO 5.8-5.12 with threads
+pass Moose #TODO with threads
 fail Test::Deep #TODO with threads
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI #TODO with threads
 pass Tree::DAG_Node
-fail Path::Class
-fail Test::Warn #TODO >= 5.10
+pass Path::Class
+pass Test::Warn #TODO >= 5.10
 pass Encode
 pass Variable::Magic
-fail CGI
+pass CGI
 pass B::Hooks::EndOfScope #TODO with threads
-fail Test::Pod #TODO >= 5.10
-fail Digest::SHA1 #TODO with threads
+pass Test::Pod #TODO >= 5.10
+pass Digest::SHA1 #TODO with threads
 pass namespace::clean #TODO with threads
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
-fail YAML
-fail MooseX::Types #TODO with threads
+pass YAML
+pass MooseX::Types #TODO with threads
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO with threads
-fail DateTime #TODO with threads
+pass DateTime #TODO with threads
 pass IO::String
-fail AppConfig
+pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash #TODO with threads
 # 100 / 100 modules tested with B-C-1.28 - perl-5.010001
-# pass  72 / 100 (72.0%)
-# fail  28 / 100 (28.0%)
-# todo  27 /  28 (96.4%)
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
+# todo  27 /   5 (540.0%)
 # skip   0 / 100 (0.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r679 M
+# B::C::VERSION = 1.28 r689
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+fail LWP #TODO generally
 pass Storable
 pass base
 pass List::MoreUtils
@@ -67,7 +67,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose #TODO generally
+fail Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
