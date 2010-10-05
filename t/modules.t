@@ -197,6 +197,7 @@ log_diag(sprintf("skip %3d / %3d (%s not installed)\n",
 
 exit;
 
+# for t in $(cat t/top100); do grep -a " $t" t/test.pl log.modules-5.0*; read; done
 sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
@@ -208,12 +209,12 @@ sub is_todo {
   if ($] < 5.007) {
     # Can't locate object method "RV" via package "B::PV"
     # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
-    foreach(qw( ExtUtils::CBuilder ExtUtils::Install Sub::Name Digest::MD5 )) {
+    foreach(qw( ExtUtils::CBuilder Digest::MD5 )) {
       return '< 5.007' if $_ eq $module;
     }
   }
   if ($] < 5.010) {
-    foreach(qw( B::Hooks::EndOfScope YAML )) {
+    foreach(qw( ExtUtils::Install B::Hooks::EndOfScope YAML Moose )) {
       return '< 5.010' if $_ eq $module;
     }
   }
@@ -222,29 +223,20 @@ sub is_todo {
       return '>= 5.007' if $_ eq $module;
     }
   }
-  if ($] >= 5.010) {
-    foreach(qw(
-		Test::Simple
-		Test::NoWarnings Test::Warn Test::Pod
-	     )) {
-      return '>= 5.10' if $_ eq $module;
-    }
-  }
   if ($] > 5.010) {
-    foreach(qw( Test::Harness )) {
+    foreach(qw(
+		Test::Harness
+		Test::Deep
+	     )) {
       return '> 5.010' if $_ eq $module;
     }
   }
-  if ($] >= 5.013) {
+  if ($] > 5.013) {
     foreach(qw(
-               AppConfig
-               DateTime::TimeZone
-               Path::Class
-               CGI
-               YAML
+               Test DBI
               ))
     {
-      return '>= 5.013' if $_ eq $module;
+      return '> 5.013' if $_ eq $module;
     }
   }
   # Module::Build passes -nt and 5.13.5d-nt
@@ -252,44 +244,43 @@ sub is_todo {
     (($DEBUGGING and $] < 5.013) or $Config{useithreads});
   if ($Config{useithreads}) {
     foreach(qw(
-               ExtUtils::MakeMaker File::Temp ExtUtils::Install
-               Test::Tester Attribute::Handlers
-               Test::Deep FCGI B::Hooks::EndOfScope Digest::SHA1
-               namespace::clean DateTime::Locale DateTime
-               Template::Stash MooseX::Types Moose IO
+               Test::Tester
               )) {
       return 'with threads' if $_ eq $module;
     }
-    if ($] >= 5.008008 and $] < 5.013) {
+    if ($] >= 5.013 and $DEBUGGING) {
       foreach(qw(
                  Class::MOP
                 )) {
-	return '5.8-5.12 with threads' if $_ eq $module;
-      }
-    }
-    if ($] >= 5.010 and $] < 5.012) {
-      foreach(qw(
-                 Class::Accessor
-                )) {
-        return '5.10 with threads' if $_ eq $module;
+	return '5.13.5d' if $_ eq $module;
       }
     }
     if ($] >= 5.010) {
       foreach(qw(
-                 Test::Exception URI
                 )) {
         return '>= 5.10 with threads' if $_ eq $module;
       }
     }
-    if ($] >= 5.012 and $] != 5.012002) {
+    if ($] >= 5.010 and !$DEBUGGING) {
       foreach(qw(
-                 Pod::Parser
+                 URI
                 )) {
-        return '>= 5.12 with threads' if $_ eq $module;
+	return '>= 5.10 with threads and !$DEBUGGING' if $_ eq $module;
       }
     }
-
   } else { #no threads
+    foreach(qw(
+               MooseX::Types
+              )) {
+      return 'without threads' if $_ eq $module;
+    }
+    if ($] < 5.010) {
+      foreach(qw(
+                 Module::Build
+                )) {
+	return '<5.10 without threads' if $_ eq $module;
+      }
+    }
     if ($] >= 5.008008 and $] < 5.010) {
       foreach(qw(
                  FCGI version
@@ -299,15 +290,14 @@ sub is_todo {
     }
     if ($] >= 5.010 and $] < 5.012) {
       foreach(qw(
-                 IO ExtUtils::Install Test::Tester Path::Class
-		 Scalar::Util Text::Balanced
+                 Test::Tester
                 )) {
         return '5.10 without threads' if $_ eq $module;
       }
     }
     if ($] >= 5.013) {
       foreach(qw(
-                 DBI
+                 Encode
                 )) {
         return '5.13 without threads' if $_ eq $module;
       }

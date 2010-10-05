@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r689
+# B::C::VERSION = 1.28 r698 M
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 fail YAML #TODO < 5.010
-fail MooseX::Types
+fail MooseX::Types #TODO generally
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -106,5 +106,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.008009-nt
 # pass  92 / 100 (92.0%)
 # fail   8 / 100 (8.0%)
-# todo   7 /   8 (87.5%)
+# todo   8 /   8 (100.0%)
 # skip   0 / 100 (0.0% not installed)
