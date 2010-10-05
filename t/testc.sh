@@ -289,6 +289,9 @@ result[45]='ok'
 # Exporter should end up in main:: stash when used in
 tests[46]='use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }'
 result[46]='ok'
+# issue27
+tests[47]='require LWP::UserAgent;\nprint q(ok);'
+result[47]='ok'
 
 # from here on we test CC specifics only
 
@@ -301,7 +304,48 @@ result[102]='ok'
 # CC stringify, srefgen. TODO: use B; fails
 tests[103]='require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
 result[103]='B::PV'
-
+# issue35
+tests[104]='sub new{}sub test{{my $x=1;my $y=$x+1;}my $x=2;if($x!=3){4;}}'
+result[104]=''
+# issue36
+tests[105]='sub f{shift==2}sub test{while(1){last if f(2);}while(1){last if f(2);}}'
+result[105]=''
+# issue37
+tests[106]='my $x;$x||=1;print "ok" if $x;'
+result[106]='ok'
+# issue38
+tests[107]='my $x=2;$x=$x||3;print "ok" if $x==2;'
+result[107]='ok'
+# issue39
+tests[108]='sub f1{0}sub f2{my $x;if(f1()){}if($x){}else{[$x]}}my @a=f2();print "ok";'
+result[108]='ok'
+# issue42
+tests[109]='sub f1{1}f1();print do{7;2},"\n";'
+result[109]='2'
+# issue44
+tests[110]='my @a=(1,2);print $a[0],"\n";'
+result[110]='1'
+# issue45
+tests[111]='my $x;$x//=1;print "ok" if $x;'
+result[111]='ok'
+# issue46
+tests[112]='my $pattern="x";"foo"=~/$pattern/o;print "ok";'
+result[112]='ok'
+# issue47
+tests[113]='my $f=sub{while(1){return(1);}};print $f->(),"\n";'
+result[113]='1'
+# issue48
+tests[114]='sub f{()}print((my ($v)=f())?1:2,"\n");'
+result[114]='2'
+# issue49
+tests[115]='while(1){while(1){last;}last;}print "ok"'
+result[115]='ok'
+# issue51
+tests[116]='my ($p1,$p2)=(80,80);if($p1<=23&&23<=$p2){print "telnet\n";}elsif ($p1 <= 80 && 80 <= $p2){print "http\n";}else{print "fail\n"}'
+result[116]='http'
+# issue52
+tests[117]='my $x;my $y = 1;$x and $y == 2;print $y == 1 ? "ok\n" : "fail\n";'
+result[117]='ok'
 
 init
 
