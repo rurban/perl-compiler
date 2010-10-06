@@ -1955,7 +1955,7 @@ sub B::CV::save {
       warn "Bootstrap $stashname $file\n" if $verbose;
 
       # Without DynaLoader we must boot and link static
-      if ( !$Config{usedl} or $core_pkg{$stashname} ) {
+      if ( !$Config{usedl} ) {
         $xsub{$stashname} = 'Static';
       }
       # if it not isa('DynaLoader'), it should hopefully be XSLoaded
@@ -2993,8 +2993,8 @@ sub output_all {
 
   # hack for when Perl accesses PVX of GVs
   print 'Static const char emptystring[] = "\0";';
-  # newXS for core XS need a filename
-  print 'Static const char xsfile[] = __FILE__;';
+  # newXS for core XS needs a filename
+  print 'Static const char xsfile[] = "universal.c";';
   print "\n";
   if ($use_av_undef_speedup || $use_svpop_speedup) {
     print "int gcount;\n";
@@ -3681,14 +3681,15 @@ sub mark_package {
 
 # XS modules in CORE which do not need to be bootstrapped extra
 sub static_core_packages {
-  my @pkg = qw(Internals main Regexp utf8);
-  push @pkg, qw(mro re version) 	if $] >= 5.010;
+  my @pkg  = qw(Internals main Regexp utf8 UNIVERSAL);
+  push @pkg, qw(mro re version Tie::Hash::NamedCapture) if $] >= 5.010;
   push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official pkg, and it needs to be bootstrapped, handled by static_ext.
   push @pkg, qw(Cygwin)			if $^O eq 'cygwin';
   push @pkg, qw(NetWare)		if $^O eq 'NetWare';
   push @pkg, qw(OS2)			if $^O eq 'os2';
   push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
+  push @pkg, qw(PerlIO) if $] >= 5.008006; # get_layer only
   return @pkg;
 }
 
