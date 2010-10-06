@@ -436,9 +436,10 @@ sub run_cc_test {
                     progfile => $test);
     if (! $? and -s $cfile) {
         use ExtUtils::Embed ();
-        my $command = ExtUtils::Embed::ccopts." -o $exe $cfile ";
-	$command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
-	$command .= $B::C::Flags::extra_cflags;
+        my $command = ExtUtils::Embed::ccopts;
+	$command .= " -DHAVE_INDEPENDENT_COMALLOC "
+	  if $B::C::Flags::have_independent_comalloc;
+	$command .= " -o $exe $cfile ".$B::C::Flags::extra_cflags . " ";
 	my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
 	my $libdir  = "$Config{prefix}/lib";
 	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
