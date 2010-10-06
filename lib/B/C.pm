@@ -1995,7 +1995,7 @@ sub B::CV::save {
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
       $decl->add("XS($xs);");
-      return qq/newXS("$stashname\:\:$cvname", $xs, xsfile)/;
+      return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
