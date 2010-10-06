@@ -151,7 +151,7 @@ for my $module (@modules) {
         $opt .= " $keep" if $keep;
         # XXX TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/} $runperl,"-Mblib","blib/script/perlcc",$opt,"-r","mod.pl";
-        my $cmd = "$runperl -Mblib blib/script/perlcc $opt -r";
+        my $cmd = "$runperl -Mblib blib/script/perlcc $opt -r"; # only for the msg
         my ($result, $out, $err) = run_cmd(\@cmd, 120); # in secs
         ok(-e $binary_file && -s $binary_file > 20,
            "$module_count: use $module  generates non-zero binary")
