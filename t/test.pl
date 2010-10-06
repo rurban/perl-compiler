@@ -435,8 +435,8 @@ sub run_cc_test {
 		    timeout  => 120,
                     progfile => $test);
     if (! $? and -s $cfile) {
-        use ExtUtils::Embed ();
-        my $command = ExtUtils::Embed::ccopts;
+	use ExtUtils::Embed ();
+	my $command = ExtUtils::Embed::ccopts;
 	$command .= " -DHAVE_INDEPENDENT_COMALLOC "
 	  if $B::C::Flags::have_independent_comalloc;
 	$command .= " -o $exe $cfile ".$B::C::Flags::extra_cflags . " ";
