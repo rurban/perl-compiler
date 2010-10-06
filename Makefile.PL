@@ -10,6 +10,20 @@ system("$^X bytecode.pl");
 
 my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
 my $have_independent_comalloc = &check_independent_comalloc;
+{
+    my ($e_c) = grep { /-extra-cflags[= ](.+)/ } @ARGV;
+    my ($e_l) = grep { /-extra-libs[= ](.+)/ } @ARGV;
+    $extra_cflags .= " $e_c" if $e_c;
+    $extra_libs .= " $e_l" if $e_l;
+}
+# cygwin still has the old gdb-6 debugger which does not understand dwarf4 features from gcc-4.5
+if ($Config{gccversion} =~ /^4\.[56]\./) {
+    my $gdb_ver = `gdb --version`;
+    if ($gdb_ver =~ /gdb 6\./) {
+        print "Adding extra_cflags=-gstrict-dwarf for gcc-4.5 for a gdb-6 debugger which does not understand dwarf4 features\n";
+        $extra_cflags .= " -gstrict-dwarf";
+    }
+}
 sub write_b_c_flags {
     mkdir "lib/B/C" unless -d "lib/B/C";
     open PH, ">", "lib/B/C/Flags.pm";
