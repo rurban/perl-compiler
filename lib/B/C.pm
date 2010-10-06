@@ -1955,7 +1955,7 @@ sub B::CV::save {
       warn "Bootstrap $stashname $file\n" if $verbose;
 
       # Without DynaLoader we must boot and link static
-      if ( !$Config{usedl} ) {
+      if ( !$Config{usedl} or $core_pkg{$stashname} ) {
         $xsub{$stashname} = 'Static';
       }
       # if it not isa('DynaLoader'), it should hopefully be XSLoaded
@@ -1986,9 +1986,16 @@ sub B::CV::save {
     }
     unless ( $core_pkg{$stashname} ) {
       warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
-	if $debug{cv};
-      # svref_2object( \&{"$cvstashname::bootstrap"} )->save;
+    	if $debug{cv};
       return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
+    } else {
+      my $xsstash = $stashname;
+      $xsstash =~ s/::/_/g;
+      my $xs = "XS_${xsstash}_${cvname}";
+      warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
+    	if $debug{cv};
+      $decl->add("XS($xs);");
+      return qq/newXS("$stashname\:\:$cvname", $xs, xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -2986,6 +2993,8 @@ sub output_all {
 
   # hack for when Perl accesses PVX of GVs
   print 'Static const char emptystring[] = "\0";';
+  # newXS for core XS need a filename
+  print 'Static const char xsfile[] = __FILE__;';
   print "\n";
   if ($use_av_undef_speedup || $use_svpop_speedup) {
     print "int gcount;\n";
@@ -3322,8 +3331,8 @@ EOT
       if ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "   CopFILE_set(&$s, NULL);\n";
-	print "   CopSTASHPV_set(&$s, NULL);\n";
+	print "    CopFILE_set(&$s, NULL);\n";
+	print "    CopSTASHPV_set(&$s, NULL);\n";
       }
     }
     for (0 .. $hek_index-1) {

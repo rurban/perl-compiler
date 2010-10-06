@@ -21,6 +21,6 @@ prepare_c_tests();
 
 my @todo  = todo_tests_default("c_o3");
 my @skip = (27, # out of memory
-	    28); # hangs
+	    28); # hangs, must be killed
 
 run_c_tests("C,-O3", \@todo, \@skip);

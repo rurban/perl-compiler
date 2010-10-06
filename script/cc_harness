@@ -17,8 +17,11 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
     $linkargs = ldopts;
-} elsif ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
-    # prefer static linkage manually, without broken ExtUtils::Embed 
+} elsif ( -e "$coredir/$Config{libperl}" and
+	  # with cygwin debugging the importlib gives no symbols
+	  ($^O eq 'cygwin' or $Config{libperl} !~ /\.(dll|so)$/ ))
+{
+    # prefer static linkage manually, without broken ExtUtils::Embed
     $linkargs = sprintf("%s $coredir/$Config{libperl} %s",
 		        @Config{qw(ldflags libs)});
 } elsif ( $useshrplib and -e "$libdir/$Config{libperl}") {

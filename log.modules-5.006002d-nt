@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r678 M
+# B::C::VERSION = 1.28 r687
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+fail LWP #TODO generally
 skip Storable
 pass base
 pass List::MoreUtils
@@ -106,5 +106,5 @@ skip Template::Stash
 # 78 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
 # pass  71 /  78 (91.0%)
 # fail   7 /  78 (9.0%)
-# todo   6 /   7 (85.7%)
+# todo   7 /   7 (100.0%)
 # skip  22 / 100 (22.0% not installed)
