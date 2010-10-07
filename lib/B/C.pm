@@ -251,6 +251,7 @@ my ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 
 my @xpvav_sizes;
 my $max_string_len;
+my %static_core_pkg; #= map {$_ => 1} static_core_packages();
 
 my $ITHREADS = $Config{useithreads};
 my $PERL513  = ( $] >= 5.013002 );
@@ -1948,7 +1949,6 @@ sub B::CV::save {
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
     my $stashname = $egv->STASH->NAME;
-    my %core_pkg = map {$_=>1} static_core_packages(); # do not bootstrap static core packages
     if ( $cvname eq "bootstrap" and !$xsub{$stashname} ) {
       my $file = $gv->FILE;
       $decl->add("/* bootstrap $file */");
@@ -1984,14 +1984,29 @@ sub B::CV::save {
           qw(IO::File IO::Handle IO::Socket
           IO::Seekable IO::Poll);
     }
-    unless ( $core_pkg{$stashname} ) {
-      warn sprintf( "stub for XSUB $cvstashname\:\:$cvname CV 0x%x\n", $$cv )
+    unless ( in_static_core($stashname,$cvname) ) {
+      warn sprintf( "stub for XSUB $stashname\:\:$cvname CV 0x%x\n", $$cv )
     	if $debug{cv};
       return qq/get_cv("$stashname\:\:$cvname",TRUE)/;
     } else {
       my $xsstash = $stashname;
       $xsstash =~ s/::/_/g;
       my $xs = "XS_${xsstash}_${cvname}";
+      if ($stashname eq 'version') {
+        my %vtrans = ('()'   => 'noop',
+                      'parse' => 'new',
+                      '(""'   => 'stringify',
+                      '(0+'   => 'numify',
+                      '(cmp'  => 'vcmp',
+                      '(<=>'  => 'vcmp',
+                      '(bool' => 'boolean',
+                      '(nomethod' => 'noop',
+                      'declare'   => 'qv',
+                     );
+        if ($vtrans{$cvname}) {
+          $xs = "XS_${xsstash}_".$vtrans{$cvname};
+        }
+      }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
       $decl->add("XS($xs);");
@@ -3679,17 +3694,45 @@ sub mark_package {
   return 1;
 }
 
-# XS modules in CORE which do not need to be bootstrapped extra
+# XS in CORE which do not need to be bootstrapped extra.
+# There are some specials like mro,re,UNIVERSAL.
+sub in_static_core {
+  my ($stashname, $cvname) = @_;
+  if ($stashname eq 'UNIVERSAL') {
+    return $cvname =~ /^(isa|can|DOES|VERSION)$/;
+  }
+  %static_core_pkg = map {$_ => 1} static_core_packages()
+    unless %static_core_pkg;
+  return 1 if $static_core_pkg{$stashname};
+  if ($stashname eq 'mro') {
+    return $cvname eq 'method_changed_in';
+  }
+  if ($stashname eq 're') {
+    return $cvname =~ /^(is_regexp|regname|regnames_count|regexp_pattern)$/;;
+  }
+  if ($stashname eq 'PerlIO') {
+    return $cvname eq 'get_layers';
+  }
+  if ($stashname eq 'PerlIO::Layer') {
+    return $cvname =~ /^(find|NoWarnings)$/;
+  }
+  return 0;
+}
+
+# XS modules in CORE. Reserved namespaces.
+# Note: mro,re,UNIVERSAL have both, static core and dynamic/static XS
+# version has an external ::vxs
 sub static_core_packages {
-  my @pkg  = qw(Internals main Regexp utf8 UNIVERSAL);
-  push @pkg, qw(mro re version Tie::Hash::NamedCapture) if $] >= 5.010;
+  my @pkg  = qw(Internals utf8 UNIVERSAL);
+  push @pkg, qw(version Tie::Hash::NamedCapture) if $] >= 5.010;
   push @pkg, qw(DynaLoader)		if $Config{usedl};
-  # Win32CORE only in official pkg, and it needs to be bootstrapped, handled by static_ext.
+  # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
+  # handled by static_ext.
   push @pkg, qw(Cygwin)			if $^O eq 'cygwin';
   push @pkg, qw(NetWare)		if $^O eq 'NetWare';
   push @pkg, qw(OS2)			if $^O eq 'os2';
   push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
-  push @pkg, qw(PerlIO) if $] >= 5.008006; # get_layer only
+  #push @pkg, qw(PerlIO) if $] >= 5.008006; # get_layers only
   return @pkg;
 }
 
