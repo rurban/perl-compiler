@@ -1,12 +1,12 @@
 # B::C::VERSION = 1.28 r705
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
-# platform = linux 64bit
+# platform = cygwin 32bit
 # threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness #TODO > 5.010
+pass Test::Harness #TODO > 5.010
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
