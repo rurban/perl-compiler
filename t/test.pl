@@ -569,12 +569,11 @@ sub todo_tests_default {
         # on cygwin 29 passes
         @todo = (21,30,35,39); #5.8.9
         push @todo, (15,27,41..46)  if $] < 5.007;
-        @todo    = (21,29,30,35,39,41..44) if $] >= 5.010;
+        @todo    = (21,29,30,35,39,41..44,103) if $] >= 5.010;
         # solaris also. I suspected nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (15)  if $] >= 5.010;
-        push @todo, (103) if $] < 5.010 and !$ITHREADS;
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (26) if $what =~ /^cc_o[12]/;
     }
