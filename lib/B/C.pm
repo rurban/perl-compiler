@@ -2091,7 +2091,7 @@ sub B::CV::save {
     }
     $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
     warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
-      $$cv, $debug{flags}?$cv->flagspv:$cv->FLAGS, $ppname, $$root, $startfield )
+      $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
       if $debug{cv};
     # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root

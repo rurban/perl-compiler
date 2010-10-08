@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.28 r705
+# B::C::VERSION = 1.28 r714
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2d-nt
+# path = /usr/local/bin/perl5.6.2
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
@@ -24,25 +24,25 @@ pass File::Spec
 pass File::Temp
 fail ExtUtils::Install #TODO < 5.010
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO < 5.007
+pass ExtUtils::CBuilder #TODO < 5.007
 skip ExtUtils::ParseXS
-fail Module::Build #TODO without threads
+pass Module::Build #TODO without threads
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
-fail Digest::MD5 #TODO < 5.007
+skip Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-pass Compress::Raw::Zlib
+skip Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-fail LWP #TODO generally
-skip Storable
+skip IO::Compress::Base
+skip LWP
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -55,14 +55,14 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
-skip Params::Validate
-fail Sub::Name
-skip Filter::Util::Call
-skip Algorithm::C3
-skip Class::C3
+fail Params::Validate
+pass Sub::Name
+pass Filter::Util::Call
+pass Algorithm::C3
+pass Class::C3
 pass Scope::Guard
-skip MRO::Compat
-pass Time::HiRes
+pass MRO::Compat
+skip Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,8 +86,8 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-skip Test::Pod
-pass Digest::SHA1
+pass Test::Pod
+skip Digest::SHA1
 skip namespace::clean
 pass Class::Inspector
 pass Clone
@@ -96,15 +96,15 @@ pass XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+pass DateTime::TimeZone
+pass DateTime::Locale
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 78 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
-# pass  71 /  78 (91.0%)
-# fail   7 /  78 (9.0%)
-# todo   6 /   7 (85.7%)
-# skip  22 / 100 (22.0% not installed)
+# 81 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
+# pass  78 /  81 (96.3%)
+# fail   3 /  81 (3.7%)
+# todo   4 /   3 (133.3%)
+# skip  19 / 100 (19.0% not installed)
