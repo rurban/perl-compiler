@@ -324,7 +324,7 @@ sub svop_or_padop_pv {
     return $sv->PV if $sv->can("PV");
     if ($sv->isa("B::SPECIAL")) { # DateTime::TimeZone
       warn "NYI op->sv==B::SPECIAL S_method_common not fully implemented yet";
-      return '';
+      return $package_pv;
     }
     if ($sv->FLAGS & SVf_ROK) {
       goto missing if $sv->isa("B::NULL");
@@ -338,7 +338,7 @@ sub svop_or_padop_pv {
     } else {
     missing:
       warn "NYI S_method_common not fully implemented yet";
-      return '';
+      return $package_pv;
     }
   } else {
     my @c = comppadlist->ARRAY;
@@ -609,8 +609,11 @@ sub B::OP::_save_common {
       and $op->next->name eq 'method_named'
      ) {
     # XXX HACK! need to store away the pkg pv. Fails since 5.13
-    $package_pv = svop_or_padop_pv($op);
-    warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
+    my $pv = svop_or_padop_pv($op);
+    if ($pv and $pv !~ /[! \(]/) {
+      $package_pv = $pv;
+      warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
+    }
   }
   return sprintf(
     "s\\_%x, s\\_%x, %s",
@@ -1707,6 +1710,8 @@ sub B::PVMG::save_magic {
     # Q: Who is initializing our stash from XS? ->save is missing that.
     # A: We only need to init it when we need a CV
     $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$pkg ) );
+    # better default for method names
+    $package_pv = $pkg->NAME;
     # XXX Let's see if this helps
     #svref_2object( \&IO::bootstrap )->save
     #  if $pkg->NAME =~ /^FileHandle|IO::Handle$/;
