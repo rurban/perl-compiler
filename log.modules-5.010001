@@ -1,12 +1,12 @@
-# B::C::VERSION = 1.28 r705
+# B::C::VERSION = 1.28 r712
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
-# platform = cygwin 32bit
+# platform = linux 64bit
 # threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO > 5.010
+fail Test::Harness #TODO > 5.010
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -26,13 +26,13 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build #TODO without threads
+pass Module::Build #TODO without threads
 pass File::Path
-pass XSLoader
-pass MIME::Base64
-pass Digest
-pass Digest::MD5
-pass Sub::Uplevel
+fail XSLoader
+fail MIME::Base64
+fail Digest
+fail Digest::MD5
+fail Sub::Uplevel
 pass URI #TODO >= 5.10 with threads and !$DEBUGGING
 pass HTML::Tagset
 pass HTML::Parser
@@ -66,8 +66,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
-fail Moose
+pass Class::MOP
+pass Moose
 fail Test::Deep #TODO > 5.010
 pass Carp::Clan
 pass Module::Pluggable
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.010001
-# pass  91 / 100 (91.0%)
-# fail   9 / 100 (9.0%)
-# todo   8 /   9 (88.9%)
+# pass  90 / 100 (90.0%)
+# fail  10 / 100 (10.0%)
+# todo   8 /  10 (80.0%)
 # skip   0 / 100 (0.0% not installed)

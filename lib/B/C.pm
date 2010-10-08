@@ -3743,6 +3743,8 @@ sub should_save {
   return $unused_sub_packages{$package} = 0
     if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
   warn "Considering $package\n" if $debug{pkg};
+  return if index $package, " "; # XXX skip invalid package names
+  return if index $package, "("; # XXX this causes the compiler to abort
   foreach my $u ( grep( $unused_sub_packages{$_}, keys %unused_sub_packages ) )
   {
     # If this package is a prefix to something we are saving, traverse it

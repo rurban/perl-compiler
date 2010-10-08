@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r707
+# B::C::VERSION = 1.28 r712
 # perlversion = 5.013005d-nt
 # path = /usr/local/bin/perl5.13.5d-nt
 # platform = linux 64bit
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -66,8 +66,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
-fail Moose
+pass Class::MOP
+pass Moose
 pass Test::Deep #TODO > 5.010
 pass Carp::Clan
 pass Module::Pluggable
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.013005d-nt
-# pass  90 / 100 (90.0%)
-# fail  10 / 100 (10.0%)
-# todo   9 /  10 (90.0%)
+# pass  93 / 100 (93.0%)
+# fail   7 / 100 (7.0%)
+# todo   9 /   7 (128.6%)
 # skip   0 / 100 (0.0% not installed)
