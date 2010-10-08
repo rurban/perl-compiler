@@ -50,10 +50,10 @@ function fail {
 while getopts "hokltTsFD:O:f:" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
-  if [ "$opt" = "k" ]; then KEEP="$KEEP -S"; fi
-  if [ "$opt" = "D" ]; then KEEP="$KEEP -Wb=-D${OPTARG}"; fi
-  if [ "$opt" = "O" ]; then KEEP="$KEEP -Wb=-O${OPTARG}"; fi
-  if [ "$opt" = "f" ]; then KEEP="$KEEP -Wb=-f${OPTARG}"; fi
+  if [ "$opt" = "k" ]; then KEEP="-S"; fi
+  if [ "$opt" = "D" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-D${OPTARG}"; COPTS="$COPTS,-D${OPTARG}"; fi
+  if [ "$opt" = "O" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-O${OPTARG}"; COPTS="$COPTS,-O${OPTARG}"; fi
+  if [ "$opt" = "f" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-f${OPTARG}"; COPTS="$COPTS,-f${OPTARG}"; fi
   if [ "$opt" = "l" ]; then TEST="-log"; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
   if [ "$opt" = "T" ]; then PERLCC_OPTS="$PERLCC_OPTS --time"; PERLCC_TIMEOUT=120; fi
@@ -94,9 +94,10 @@ if [ -n "$1" ]; then
 	while [ -n "$1" ]; do
 	    # single module. update,setup,install are UAC terms
 	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
-	    if [ "${KEEP:0:2}" = "-D" ]; then
-	      echo $PERL $Mblib -MO=C,$KEEP,-o$name.c -e "\"use $1; print 'ok'\""
-	      $PERL $Mblib -MO=C,$KEEP,-o$name.c -e "use $1; print 'ok'"
+	    if [ "${COPTS/,-D/}" != "$COPTS" ]; then
+              COPTS="${COPTS:1}"
+	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print 'ok'\""
+	      $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "use $1; print 'ok'"
 	      if [ -f $name.c ]; then
 		echo $PERL $Mblib script/cc_harness -d -g3 -o$name $name.c
 		$PERL $Mblib script/cc_harness -d -g3 -o$name $name.c
