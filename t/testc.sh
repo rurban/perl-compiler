@@ -350,7 +350,7 @@ init
 
 # 
 # getopts for -q -k -E -Du,-q -v -O2, -a -c -fro-inc
-while getopts "hqackoED:B:O:f:" opt
+while getopts "hackoED:B:O:f:q" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1

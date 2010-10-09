@@ -549,9 +549,9 @@ sub todo_tests_default {
         @todo = (15,35,41..46)      if $] < 5.007;
         push @todo, (41..43,103)    if $] >= 5.010;
         push @todo, (28)            if $] >= 5.013;
-        push @todo, (28,39,41)
+        push @todo, (39,41)
 	  if $what =~ 'c_o2' and $DEBUGGING;
-        push @todo, (28,39)
+        push @todo, (39)
 	  if $what =~ 'c_o2' and $DEBUGGING and !$ITHREADS;
         push @todo, (11)
 	  if $what =~ 'c_o2' and $DEBUGGING and $ITHREADS;
@@ -560,6 +560,8 @@ sub todo_tests_default {
         push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
 	push @todo, (10,12)
 	  if $what =~ /c_o[234]/ and $] >= 5.010;
+	push @todo, (28) #END destruction
+	  if $what =~ /c_o[34]/;
 	push @todo, (25)
 	  if $what eq 'c_o' and $^O eq 'MSWin32';
 	push @todo, (19,25)
