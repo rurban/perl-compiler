@@ -21,7 +21,7 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO >= 5.007
+pass File::Temp #TODO >= 5.007
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO generally
+pass LWP #TODO generally
 pass Storable
 pass base
 pass List::MoreUtils
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO without threads
+pass MooseX::Types #TODO without threads
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.010001-nt
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   7 /   5 (140.0%)
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   7 /   2 (350.0%)
 # skip   0 / 100 (0.0% not installed)

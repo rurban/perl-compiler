@@ -108,3 +108,5 @@ pass Template::Stash
 # fail   8 / 100 (8.0%)
 # todo  10 /   8 (125.0%)
 # skip   0 / 100 (0.0% not installed)
+fail Test::Warn
+pass Encode
