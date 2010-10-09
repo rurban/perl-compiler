@@ -17,10 +17,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
     $linkargs = ldopts;
-} elsif ( -e "$coredir/$Config{libperl}" and
-	  # with cygwin debugging the importlib gives no symbols
-	  ($^O eq 'cygwin' or $Config{libperl} !~ /\.(dll|so)$/ ))
-{
+} elsif (-e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/) {
     # prefer static linkage manually, without broken ExtUtils::Embed
     $linkargs = sprintf("%s $coredir/$Config{libperl} %s",
 		        @Config{qw(ldflags libs)});
@@ -41,7 +38,7 @@ sub cc_harness_msvc {
     my $obj = "${Output}.obj";
     my $compile = ExtUtils::Embed::ccopts." -c -Fo$obj @ARGV ";
     my $link = "-out:$Output $obj";
-    $compile .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
+    $compile .= " -DHAVE_INDEPENDENT_COMALLOC " if $B::C::Flags::have_independent_comalloc;
     $compile .= $B::C::Flags::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
