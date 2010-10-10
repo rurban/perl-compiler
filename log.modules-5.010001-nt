@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r712
+# B::C::VERSION = 1.28 r717 M
 # perlversion = 5.010001-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
+fail ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.010001-nt
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   7 /   2 (350.0%)
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   7 /   3 (233.3%)
 # skip   0 / 100 (0.0% not installed)

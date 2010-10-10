@@ -555,8 +555,6 @@ sub todo_tests_default {
 	  if $what =~ 'c_o2' and $DEBUGGING and !$ITHREADS;
         push @todo, (11)
 	  if $what =~ 'c_o2' and $DEBUGGING and $ITHREADS;
-        push @todo, (10,34,36..38,40)
-	  if $what eq 'c_o2' and $] >= 5.010;
         push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
 	push @todo, (10,12)
 	  if $what =~ /c_o[234]/ and $] >= 5.010;

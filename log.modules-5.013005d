@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r712
+# B::C::VERSION = 1.28 r717 M
 # perlversion = 5.013005d
 # path = /usr/local/bin/perl5.13.5d
 # platform = linux 64bit
@@ -14,7 +14,7 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-pass Test::Simple
+fail Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
@@ -36,7 +36,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-pass Test::Exception
+fail Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -53,7 +53,7 @@ pass Sub::Install
 fail Attribute::Handlers #TODO generally
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -66,7 +66,7 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO 5.13.5d
+pass Class::MOP #TODO 5.13.5d
 pass Moose
 fail Test::Deep #TODO > 5.010
 pass Carp::Clan
@@ -81,12 +81,12 @@ pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
-pass Test::Warn
+fail Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod
+fail Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -104,9 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.013005d
-# pass  92 / 100 (92.0%)
-# fail   8 / 100 (8.0%)
-# todo  10 /   8 (125.0%)
+# pass  88 / 100 (88.0%)
+# fail  12 / 100 (12.0%)
+# todo  10 /  12 (83.3%)
 # skip   0 / 100 (0.0% not installed)
-fail Test::Warn
-pass Encode

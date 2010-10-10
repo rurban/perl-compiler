@@ -3961,8 +3961,13 @@ sub save_main_rest {
   # startpoints
   warn "Writing initav\n" if $debug{av};
   my $init_av = init_av->save;
-  warn "Writing endav\n" if $debug{av};
-  my $end_av  = end_av->save;
+  my $end_av;
+  {
+    # XXX TODO >=5.10 need to defer nullifying of all vars in END, not only new ones.
+    local ($B::C::pv_copy_on_grow, $B::C::const_strings);
+    warn "Writing endav\n" if $debug{av};
+    $end_av  = end_av->save;
+  }
   $init->add(
     "/* startpoints */",
     sprintf( "PL_main_root = s\\_%x;",  ${ main_root() } ),
