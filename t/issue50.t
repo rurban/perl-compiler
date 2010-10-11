@@ -41,5 +41,8 @@ EOF
 
 $script =~ s/\$ivsize/$ivsize/eg;
 
+use B::CC;
 ctestok(1, "CC", "ccode50i", $script,
-      "perlcc UV << issue50");
+      $B::CC::VERSION < 1.08
+        ? "perlcc UV << issue50 - fixed with r633"
+	: undef);
