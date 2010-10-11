@@ -305,6 +305,7 @@ $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
 $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL511;
 warn %OP_COP if $debug{cops};
 
+# always called from method_named, so hashp should be defined
 sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
@@ -320,7 +321,11 @@ sub svop_or_padop_pv {
     $sv = $op->sv;
   }
   # XXX see SvSHARED_HEK_FROM_PV for the stash in S_method_common pp_hot.c
+  # In this hash the CV is stored directly
   if ($$sv) {
+    #if ($PERL510) { # PVX->hek_hash - STRUCT_OFFSET(struct hek, hek_key)
+    #} else {        # UVX
+    #}
     return $sv->PV if $sv->can("PV");
     if ($sv->isa("B::SPECIAL")) { # DateTime::TimeZone
       warn "NYI op->sv==B::SPECIAL S_method_common not fully implemented yet";
@@ -337,7 +342,8 @@ sub svop_or_padop_pv {
       return $rv->STASH->NAME;
     } else {
     missing:
-      warn "NYI S_method_common not fully implemented yet";
+      warn sprintf("NYI S_method_common not fully implemented yet sv=$sv flags=0x%x",
+		   $sv->FLAGS);
       return $package_pv;
     }
   } else {
@@ -1093,8 +1099,10 @@ sub B::PMOP::save {
     );
   }
   elsif ($PERL56) {
+    # pmdynflags does not exist as B method. It is only used for PMdf_UTF8 dynamically,
+    # if static we set this already in pmflags.
     $pmopsect->comment(
-"$opsect_common, first, last, pmreplroot, pmreplstart, pmnext, pmregexp, pmpermflags, pmdynflags"
+"$opsect_common, first, last, pmreplroot, pmreplstart, pmnext, pmregexp, pmflags, pmpermflags, pmdynflags"
     );
     $pmopsect->add(
       sprintf(
@@ -1102,7 +1110,7 @@ sub B::PMOP::save {
         $op->_save_common,
 	${ $op->first }, ${ $op->last },
 	$replrootfield,  $replstartfield,
-        $op->pmpermflags, $op->pmflags # XXX original 5.6 B::C has this reversed!
+	$op->pmflags, $op->pmpermflags, 0 # XXX original 5.6 B::C misses pmdynflags
       )
     );
   } else {
