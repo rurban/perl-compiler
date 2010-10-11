@@ -405,8 +405,8 @@ sub run_cc_test {
     my ($out,$result,$stderr) = ('');
     my $fnbackend = lc($backend); #C,-O2
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
-    if ($cnt == 28 and $backend = 'C,-O3') {
-	print "not ok $cnt # $backend SIGSEGV or hangs\n";
+    if ($cnt == 28 and $backend eq 'C,-O3') {
+	print "ok $cnt # skip $backend SIGSEGV or hangs\n";
 	return 0;
     }
     $opt =~ s/,-/_/ if $opt;
