@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r702
+# B::C::VERSION = 1.28 r722 M
 # perlversion = 5.013005
 # path = /usr/local/bin/perl5.13.5
 # platform = cygwin 32bit
@@ -22,7 +22,7 @@ pass Test #TODO > 5.013
 pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO >= 5.007
-fail ExtUtils::Install
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -48,14 +48,14 @@ skip List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO with threads
+pass Test::Tester #TODO with threads
 pass Sub::Install
 fail Attribute::Handlers #TODO generally
 pass Data::OptList
 pass Sub::Exporter
 fail Test::NoWarnings
 pass version
-pass Params::Validate
+skip Params::Validate
 skip Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
@@ -96,15 +96,15 @@ pass XML::SAX
 pass YAML
 skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
+skip DateTime::TimeZone
 skip DateTime::Locale
 skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 84 / 100 modules tested with B-C-1.28 - perl-5.013005
-# pass  78 /  84 (92.9%)
-# fail   6 /  84 (7.1%)
-# todo   9 /   6 (150.0%)
-# skip  16 / 100 (16.0% not installed)
+# 82 / 100 modules tested with B-C-1.28 - perl-5.013005
+# pass  78 /  82 (95.1%)
+# fail   4 /  82 (4.9%)
+# todo   9 /   4 (225.0%)
+# skip  18 / 100 (18.0% not installed)

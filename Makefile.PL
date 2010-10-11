@@ -80,8 +80,8 @@ WriteMakefile(
     ) : ()),
     SIGN  => 1,
     clean => { FILES =>
-               "bytecode[0-9]* ccode[0-9]* cccode[0-9]* ".
-               "lib/B/Asmdata.pm script/perlcc ".
+               "bytecode[0-9]* ".
+               "lib/B/Asmdata.pm script/perlcc ccode* cccode* ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak"
              },
