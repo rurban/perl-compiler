@@ -47,6 +47,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.06, Reini Urban, 2009-12-28 21:56:15
 # Version 2.07, Reini Urban, 2010-06-30 22:32:20
 # Version 2.08, Reini Urban, 2010-07-30 21:30:33
+# Version 2.09, Reini Urban, 2010-10-11 13:54:52
 
 use strict;
 use warnings;
@@ -60,7 +61,7 @@ use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.08;
+our $VERSION = 2.09;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -336,9 +337,12 @@ sub compile_cstyle {
     }
     vprint -1, "c time: $elapsed" if opt('time');
 
+    $t0 = [gettimeofday] if opt('time');
     is_msvc ?
         cc_harness_msvc($cfile,$stash) :
         cc_harness($cfile,$stash) unless opt(c);
+    $elapsed = tv_interval ( $t0 ) if opt('time');
+    vprint -1, "cc time: $elapsed" if opt('time');
 
     if ($lose) {
         vprint 2, "unlinking $cfile";
@@ -416,9 +420,9 @@ sub yclept {
             }
         }
     }
-    for (@INC) {
-      my $inc = m/\s/ ? qq{"$_"} : $_;
-      $command .= "-I$inc ";
+    for my $i (@INC) {
+      my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
+      $command .= "-I$inc " unless grep {$i eq $inc} @INC; #prepend additional @INC
     }
     return $command;
 }
