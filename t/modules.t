@@ -218,11 +218,11 @@ sub is_todo {
       return '< 5.010' if $_ eq $module;
     }
   }
-  if ($] >= 5.007) {
-    foreach(qw( File::Temp )) {
-      return '>= 5.007' if $_ eq $module;
-    }
-  }
+  #if ($] >= 5.007) {
+  #  foreach(qw( File::Temp )) {
+  #    return '>= 5.007' if $_ eq $module;
+  #  }
+  #}
   if ($] > 5.010) {
     foreach(qw(
 		Test::Harness
@@ -309,7 +309,7 @@ sub is_skip {
   my $module = shift or die;
 
   if ($] >= 5.011004) {
-    foreach (qw(Test::Simple File::Temp Attribute::Handlers)) {
+    foreach (qw(Test::Simple Attribute::Handlers)) {
       #return 'fails $] >= 5.011004' if $_ eq $module;
     }
     if ($Config{useithreads}) { # hangs and crashes threaded since 5.12

@@ -250,7 +250,7 @@ my ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name
 my ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 
 my @xpvav_sizes;
-my $max_string_len;
+my ($max_string_len, $in_endav);
 my %static_core_pkg; #= map {$_ => 1} static_core_packages();
 
 my $ITHREADS = $Config{useithreads};
@@ -1326,7 +1326,12 @@ sub savepvn {
 sub B::PVLV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if defined $sym;
+  if (defined $sym) {
+    if ($in_endav) {
+      @static_free = grep {!/$sym/} @static_free;
+    }
+    return $sym;
+  }
   my $pv  = $sv->PV;
   my $len = length($pv);
   my ( $pvsym, $pvmax );
@@ -1371,7 +1376,7 @@ sub B::PVLV::save {
         savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv ) );
     }
   } else {
-    push @static_free, $s if $pvmax;
+    push @static_free, $s if $pvmax and !$in_endav;
   }
   $sv->save_magic;
   savesym( $sv, "&$s" );
@@ -1380,15 +1385,20 @@ sub B::PVLV::save {
 sub B::PVIV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if defined $sym;
+  if (defined $sym) {
+    if ($in_endav) {
+      @static_free = grep {!/$sym/} @static_free;
+    }
+    return $sym;
+  }
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym" if $B::C::const_strings;
   if ($PERL513) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
-    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, %s", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
   } elsif ($PERL510) {
     $xpvivsect->comment('xnv_u, cur, len, IVX');
-    $xpvivsect->add( sprintf( "{0}, %u, %u, %s", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
+    $xpvivsect->add( sprintf( "{0}, %u, %u, {%s}", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
   } else {
     #$iv = 0 if $sv->FLAGS & (SVf_IOK|SVp_IOK);
     $xpvivsect->comment('PVX, cur, len, IVX');
@@ -1409,7 +1419,7 @@ sub B::PVIV::save {
 	  (savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
       }
     } else {
-      push @static_free, $s if $pvmax;
+      push @static_free, $s if $pvmax and !$in_endav;
     }
   }
   savesym( $sv, "&$s" );
@@ -1418,7 +1428,12 @@ sub B::PVIV::save {
 sub B::PVNV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if defined $sym;
+  if (defined $sym) {
+    if ($in_endav) {
+      @static_free = grep {!/$sym/} @static_free;
+    }
+    return $sym;
+  }
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym" if $B::C::const_strings;
@@ -1485,7 +1500,7 @@ sub B::PVNV::save {
           savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv ) );
       }
     } else {
-      push @static_free, $s if $pvmax;
+      push @static_free, $s if $pvmax and !$in_endav;
     }
   }
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1526,7 +1541,7 @@ sub B::BM::save {
     if (!$B::C::pv_copy_on_grow) {
       $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
     } else {
-      push @static_free, $s if defined($pv);
+      push @static_free, $s if defined($pv) and !$in_endav;
     }
   }
   # Restore possible additional magic. fbm_compile adds just 'B'.
@@ -1547,7 +1562,12 @@ sub B::BM::save {
 sub B::PV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if defined $sym;
+  if (defined $sym) {
+    if ($in_endav) {
+      @static_free = grep {!/$sym/} @static_free;
+    }
+    return $sym;
+  }
   my $flags = $sv->FLAGS;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
@@ -1577,7 +1597,7 @@ sub B::PV::save {
     }
   }
   if ( $B::C::pv_copy_on_grow ) {
-    push @static_free, ("sv_list[".$svsect->index."]") if defined($pv);
+    push @static_free, ("sv_list[".$svsect->index."]") if defined($pv) and !$in_endav;
   }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -1586,7 +1606,12 @@ sub B::PV::save {
 sub B::PVMG::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  return $sym if defined $sym;
+  if (defined $sym) {
+    if ($in_endav) {
+      @static_free = grep {!/$sym/} @static_free;
+    }
+    return $sym;
+  }
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym" if $B::C::const_strings;
   warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
@@ -1628,7 +1653,7 @@ sub B::PVMG::save {
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
     my $s = "sv_list[".$svsect->index."]";
-    push @static_free, $s if $pvmax and $B::C::pv_copy_on_grow;
+    push @static_free, $s if $pvmax and $B::C::pv_copy_on_grow and !$in_endav;
   }
   else {
     # cannot initialize this pointer static
@@ -1641,7 +1666,7 @@ sub B::PVMG::save {
       $xpvmgsect->add(sprintf("%s, %u, %u, %ld, %s, 0, 0",
 			      $savesym, $len, $pvmax, $sv->IVX, $sv->NVX));
       push @static_free, sprintf("sv_list[%d]", $svsect->index+1)
-	if $pvmax and $B::C::pv_copy_on_grow;
+	if $pvmax and $B::C::pv_copy_on_grow and !$in_endav;
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
@@ -3963,8 +3988,9 @@ sub save_main_rest {
   my $init_av = init_av->save;
   my $end_av;
   {
-    # XXX TODO >=5.10 need to defer nullifying of all vars in END, not only new ones.
+    # >=5.10 need to defer nullifying of all vars in END, not only new ones.
     local ($B::C::pv_copy_on_grow, $B::C::const_strings);
+    $in_endav = 1;
     warn "Writing endav\n" if $debug{av};
     $end_av  = end_av->save;
   }
