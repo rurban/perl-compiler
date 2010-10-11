@@ -4,7 +4,7 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.28	2010-09-?? rurban
-	fixed CV for 5.14
+	fixed CV and most named methods for 5.14
 
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
 	  (re-enables -fcog >= 5.10),
@@ -17,6 +17,7 @@
 	improved 5.13 method_named package detection (first and pmreplroot),
 	  in endav still failing (Test::Deep)
 	fixed overwritten CvSTART for 5.13.x
+	do not cog/const nullify vars in END blocks
 	* CC.pm (1.08): many fixes
 	use new B::C optimizations, new -DF
 	fixed issue 35 same variable name in different scope (Heinz Knutzen),
@@ -30,10 +31,16 @@
 	fixed issue 48 wrong truth value for array assignment in boolean 
 	  context (Heinz Knutzen)
 	fixed issue 49 Can't "last" outside a loop block (Heinz Knutzen)
+	fixed issue 51 errors on nested if statement with test on multiple variables
+	   (Heinz Knutzen)
+	fixed issue 52 errors on variable with numeric value used in second 
+	  expression of 'and' (Heinz Knutzen)
 	add labels for alternate ops (e.g. run-time jumps). Not sure yet if the 
 	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label), 
-	  issue 64. resolve duplicate such labels.
+	  issue 46. resolve duplicate such labels.
 	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
+	* perlcc (2.09): added cc time for --time.
+	same INC as in caller - omit duplicates
 	* t/testc.sh: simplified
 	* t/testm.sh: fixed UAC issues on Win7
 	* t/test.pl: new faster test functions for the new issues
@@ -53,7 +60,8 @@
 	* t/issue48.t: added (Reported and fixed by Heinz Knutzen)
 	* t/issue49.t: added (Reported and fixed by Heinz Knutzen)
 	* t/issue50.t: added (Reported by Heinz Knutzen)
-	* t/issue51.t: added (Reported by Heinz Knutzen)
+	* t/issue51.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue52.t: added (Reported and fixed by Heinz Knutzen)
 
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10
