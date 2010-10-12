@@ -144,23 +144,36 @@ for my $module (@modules) {
       print F "use $module;\nprint 'ok';\n" or die;
       close F or die;
 
+      my ($result, $out, $err);
       my $module_passed = 1;
       my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
       foreach my $opt (@opts) {
-        # my $stderr = $^O eq 'MSWin32' ? "" : ($log ? "2>>$log.err" : "2>/dev/null";
         $opt .= " $keep" if $keep;
         # XXX TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/} $runperl,"-Mblib","blib/script/perlcc",$opt,"-r","mod.pl";
         my $cmd = "$runperl -Mblib blib/script/perlcc $opt -r"; # only for the msg
-        my ($result, $out, $err) = run_cmd(\@cmd, 120); # in secs
+        ($result, $out, $err) = run_cmd(\@cmd, 120); # in secs
         ok(-e $binary_file && -s $binary_file > 20,
            "$module_count: use $module  generates non-zero binary")
           or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0")
           or $module_passed = 0;
 	$err =~ s/^Using .+blib\n//m if $] < 5.007;
-        like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output")
-          or $module_passed = 0;
+        like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output");
+        unless ($out =~ /ok$/ms) { # crosscheck for a perlcc problem
+          my ($r, $err1);
+          $module_passed = 0;
+          @cmd = ($runperl,"-Mblib","-MO=C,-oa.out.c","mod.pl");
+          ($r, $out, $err1) = run_cmd(\@cmd, 10); # in secs
+          @cmd = ($runperl,"-Mblib","script/cc_harness","-o","a","a.out.c");
+          ($r, $out, $err1) = run_cmd(\@cmd, 20); # in secs
+          @cmd = ($^O eq 'MSWin32' ? "a.exe" : "./a");
+          ($r, $out, $err1) = run_cmd(\@cmd, 40); # in secs
+          if ($out =~ /ok$/ms) {
+            $module_passed = 1;
+            diag "crosscheck that perlcc only failed. With -MO=C + cc_harness => ok";
+          }
+        }
         log_pass($module_passed ? "pass" : "fail", $module, $TODO);
 
         if ($module_passed) {
