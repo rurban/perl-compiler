@@ -423,9 +423,10 @@ sub yclept {
     my %OINC;
     $OINC{$Config{$_}}++ for (qw(privlib archlib sitelib sitearch vendorlib vendorarch));
     $OINC{'.'}++ unless ${^TAINT};
+    $OINC{$_}++ for split ':', $Config{otherlibdirs};
     for my $i (@INC) {
-      my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
-      $command .= "-I$inc " unless $OINC{$i}; # omit internal @INC dirs
+        my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
+        $command .= "-I$inc " unless $OINC{$i}; # omit internal @INC dirs
     }
     return $command;
 }
