@@ -11,6 +11,7 @@
 
 function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."
+  echo " -q                 quiet"
   echo " -k                 keep temp. files on PASS"
   echo " -D<arg>            add debugging flags"
   echo " -f<arg>            add optimisation flags"
@@ -47,9 +48,10 @@ function fail {
     echo
 }
 
-while getopts "hokltTsFD:O:f:" opt
+while getopts "hokltTsFD:O:f:q" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
+  if [ "$opt" = "q" ]; then QUIET=1; fi
   if [ "$opt" = "k" ]; then KEEP="-S"; fi
   if [ "$opt" = "D" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-D${OPTARG}"; COPTS="$COPTS,-D${OPTARG}"; fi
   if [ "$opt" = "O" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-O${OPTARG}"; COPTS="$COPTS,-O${OPTARG}"; fi
@@ -107,6 +109,7 @@ if [ -n "$1" ]; then
 		fi
 	      fi
 	    else
+	      [ -z "$QUIET" ] && PERLCC_OPTS="$PERLCC_OPTS -v 4"
 	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
 	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print 'ok'" -o $name
               test -f a.out.c && mv a.out.c $name.c
