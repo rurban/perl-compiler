@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r717
+# B::C::VERSION = 1.28 r729
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit
@@ -21,7 +21,7 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp #TODO >= 5.007
+pass File::Temp
 pass ExtUtils::Install #TODO < 5.010
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -106,5 +106,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.008009-nt
 # pass  97 / 100 (97.0%)
 # fail   3 / 100 (3.0%)
-# todo  11 /   3 (366.7%)
+# todo  10 /   3 (333.3%)
 # skip   0 / 100 (0.0% not installed)

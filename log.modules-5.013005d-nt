@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.28 r722 M
+# B::C::VERSION = 1.28 r729
 # perlversion = 5.013005d-nt
 # path = /usr/local/bin/perl5.13.5d-nt
-# platform = cygwin 32bit
+# platform = linux 64bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs
@@ -21,7 +21,7 @@ pass constant
 fail Test #TODO > 5.013
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO >= 5.007
+fail File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -73,7 +73,7 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+fail DBI #TODO > 5.013
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.28 - perl-5.013005d-nt
-# pass  87 /  99 (87.9%)
-# fail  12 /  99 (12.1%)
-# todo   8 /  12 (66.7%)
-# skip   1 / 100 (1.0% not installed)
+# 100 / 100 modules tested with B-C-1.28 - perl-5.013005d-nt
+# pass  87 / 100 (87.0%)
+# fail  13 / 100 (13.0%)
+# todo   8 /  13 (61.5%)
+# skip   0 / 100 (0.0% not installed)
