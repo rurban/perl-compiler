@@ -383,7 +383,7 @@ sub cc_harness {
     use ExtUtils::Embed ();
     my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
     $command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
-    $command .= $B::C::Flags::extra_cflags;
+    $command .= $B::C::Flags::extra_cflags if $B::C::Flags::extra_cflags;
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs,-staticxs
@@ -400,7 +400,7 @@ sub cc_harness {
 	$command =~ s|-lperl |$libdir/$Config{libperl} |;
     }
     # $command .= " -lperl" unless $command =~ / -lperl\b/;
-    $command .= $B::C::Flags::extra_libs;
+    $command .= $B::C::Flags::extra_libs if $B::C::Flags::extra_libs;
     vprint 3, "running $Config{cc} $command";
     system("$Config{cc} $command");
 }

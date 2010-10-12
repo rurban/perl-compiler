@@ -38,7 +38,6 @@ ByteLoader/ByteLoader.xs
 ByteLoader/hints/sunos.pl
 ByteLoader/Makefile.PL
 ByteLoader/ppport.h
-C.xs
 Changes
 Copying
 hints/darwin.pl

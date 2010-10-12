@@ -203,8 +203,6 @@ sub depend {
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
     my $result = "
-C.c : C.xs Makefile
-
 $asmdata : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 

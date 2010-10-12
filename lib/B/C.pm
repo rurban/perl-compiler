@@ -182,15 +182,6 @@ package B::C;
 use Exporter ();
 our %REGEXP;
 
-{ # block necessary for caller to work
-  my $caller = caller;
-  # r-magic fixed with 1.18. C.so|dll not needed anymore
-  if ( $caller eq 'O' and $] < 5.007 ) {
-    require XSLoader;
-    XSLoader::load('B::C');
-  }
-}
-
 @ISA       = qw(Exporter);
 @EXPORT_OK =
   qw(output_all output_boilerplate output_main mark_unused
@@ -314,6 +305,8 @@ sub svop_or_padop_pv {
       $sv = $op->pmreplroot->sv;
     } else {
       return $package_pv unless $op->flags & 4;
+      # op->first is disallowed for !KIDS and OPpCONST_BARE
+      return $package_pv if $op->name eq 'const' and $op->flags & 64;
       return $package_pv unless $op->first->can("sv");
       $sv = $op->first->sv;
     }
@@ -734,10 +727,9 @@ sub do_labels ($@) {
   for my $m (@_) {
     if ( ${ $op->$m } ) {
       label($op->$m);
-      # no first cycles in op_free
-      unless ($m eq 'first' and ${$op->$m} == ${$op->first}) {
-	$op->$m->save;
-      }
+      $op->$m->save if $m ne 'first'
+	or ($op->flags & 4
+	    and !($op->name eq 'const' and $op->flags & 64)); #OPpCONST_BARE has no first
     }
   }
 }
@@ -1799,7 +1791,7 @@ sub B::PVMG::save_magic {
       my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX; # REGEX not in 5.6
       my $pmop = $REGEXP{$rx}; # XXX how should this work?
       # XXX stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c)
-      # confess "PMOP not found for REGEXP $rx" unless $pmop; # disabled until fixed
+      confess "PMOP not found for REGEXP $rx" unless $pmop; # disabled until fixed
 
       my ( $resym, $relen ) = savere( $mg->precomp );
       if ($pmop) { # as long as we don't set %REGEXP we cannot store the qr regexp
