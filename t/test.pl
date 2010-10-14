@@ -640,7 +640,7 @@ CCTESTS
         if ($todo{$cnt} and $skip{$cnt} and
             # those are currently blocking the system
             # do not even run them at home if TODO+SKIP
-            (!$AUTHOR or ($cnt==18 or $cnt==28)))
+            (!$AUTHOR or ($cnt==14 or $cnt==18 or $cnt==28)))
         {
             print sprintf("ok %d # skip\n", $cnt);
         } else {
