@@ -63,11 +63,11 @@ sub status {
 	#$prefix =~ s/ATGRZ.+?-/cygwin-/;
         $ctime = -f $f ? sprintf("%0.3f", -C $f) : 0;
 	$s .= "\n$prefix:\n";
-	print STDERR "\n$prefix: age=$ctime" unless $quiet;
+	print "\n$prefix: age=$ctime" unless $quiet;
         if ($ctime > 1.5 and !$noskip) {
-          print STDERR " skipped: too old" unless $quiet;
+          print " skipped: too old" unless $quiet;
         }
-        print STDERR "\n" unless $quiet;
+        print "\n" unless $quiet;
       }
     }
     next unless $prefix;
@@ -89,7 +89,7 @@ sub status {
     $c .= "$failed\n";
     $h{$prefix}->{$file} = $f;
     next if $ctime > 1.5 and !$noskip;
-    print STDERR "$c" unless $quiet;
+    print "$c" unless $quiet;
     $s .= $c;
   }
   print "\n";
@@ -219,7 +219,7 @@ sub unify_results {
 my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
 if (!$todoonly) {
   my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
-  print STDERR "$cmd\n" unless $quiet;
+  print "$cmd\n" unless $quiet;
   my @g = `$cmd` or die $@;
 
   my $failed = status(@g);
@@ -228,7 +228,7 @@ if (!$todoonly) {
 
 if (!$failonly) {
   my $cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs;
-  print STDERR "\n$cmd\n" unless $quiet;
+  print "\n$cmd\n" unless $quiet;
   my @g = `$cmd` or die $@;
 
   my $todo = status(@g);
