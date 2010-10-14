@@ -1791,7 +1791,7 @@ sub B::PVMG::save_magic {
       my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX; # REGEX not in 5.6
       my $pmop = $REGEXP{$rx}; # XXX how should this work?
       # XXX stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c)
-      confess "PMOP not found for REGEXP $rx" unless $pmop; # disabled until fixed
+      #confess "PMOP not found for REGEXP $rx" unless $pmop; # disabled until fixed
 
       my ( $resym, $relen ) = savere( $mg->precomp );
       if ($pmop) { # as long as we don't set %REGEXP we cannot store the qr regexp

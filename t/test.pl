@@ -538,26 +538,26 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (15,29,35,39,44,46); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (15,35,44,46); # 8,14-16 fail on 5.00505 (max 20 then)
     if ($what =~ /^c(|_o[1-4])$/) {
-        @todo     = (35,39,44,46)  if !$ITHREADS;
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
         # 15+28 fixed with 1.04_34
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
-        @todo = (15,29,39,35,44,46) if $] < 5.010;
+        @todo = (15,35,39,44,46)    if $] < 5.010;
         @todo = (15,35,41..46,103)  if $] < 5.007;
         push @todo, (41..43,103)    if $] >= 5.010;
-        push @todo, (28);
         push @todo, (39,41)
 	  if $what =~ 'c_o2' and $DEBUGGING;
         push @todo, (39)
 	  if $what =~ 'c_o2' and $DEBUGGING and !$ITHREADS;
         push @todo, (11)
 	  if $what =~ 'c_o2' and $DEBUGGING and $ITHREADS;
-        push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
+        #push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
 	push @todo, (10,12)
 	  if $what =~ /c_o[234]/ and $] >= 5.010;
+	push @todo, (11,28)
+	  if $what =~ /c_o[1234]/;
 	push @todo, (25)
 	  if $what eq 'c_o' and $^O eq 'MSWin32';
 	push @todo, (19,25)
@@ -565,9 +565,9 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        @todo = (15,21,28,30,35,39); #5.8.9
-        push @todo, (27,41..46)     if $] < 5.007;
-        push @todo, (29,41..44,103) if $] >= 5.010;
+        @todo = (14,15,21,30,35,44,103); #5.8.9
+        push @todo, (27,41..46) if $] < 5.007;
+        push @todo, (25,41..43) if $] >= 5.010;
         # solaris also. I suspected nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;

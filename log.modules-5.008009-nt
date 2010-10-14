@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r729
+# B::C::VERSION = 1.28 r739 M
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install #TODO < 5.010
+fail ExtUtils::Install #TODO < 5.010
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -69,7 +69,7 @@ pass Devel::GlobalDestruction
 pass Class::MOP
 fail Moose #TODO < 5.010
 pass Test::Deep
-pass Carp::Clan
+fail Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML #TODO < 5.010
-pass MooseX::Types #TODO without threads
+fail MooseX::Types #TODO without threads
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.008009-nt
-# pass  97 / 100 (97.0%)
-# fail   3 / 100 (3.0%)
-# todo  10 /   3 (333.3%)
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo  10 /   6 (166.7%)
 # skip   0 / 100 (0.0% not installed)
