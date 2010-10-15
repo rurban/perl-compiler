@@ -18,7 +18,7 @@
 # in another author test to burn CPU for a few hours resp. days.
 #
 # Reports:
-# for p in 5.6.2d-nt 5.8.9 5.10.1 5.11.4d 5.11.4d-nt; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
+# for p in 5.6.2 5.8.9 5.10.1 5.12.2; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 #
 # How to installed skip modules:
 # grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
@@ -27,7 +27,7 @@
 use strict;
 use Test::More;
 
-# try some simple XS module which exists in 5.6.2 and blead
+# Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
 
 BEGIN {
@@ -238,10 +238,20 @@ sub is_todo {
   #}
   if ($] > 5.010) {
     foreach(qw(
-		Test::Harness
-		Test::Deep
+	       Test::NoWarnings
 	     )) {
       return '> 5.010' if $_ eq $module;
+    }
+  }
+  if ($] > 5.010 and $DEBUGGING) {
+    foreach(qw(
+	       Test::Harness
+	       Test::Deep
+	       Test::Warn
+	       Test::Tester
+	       Test::Pod
+	     )) {
+      return '> 5.010 and $DEBUGGING' if $_ eq $module;
     }
   }
   if ($] > 5.013) {

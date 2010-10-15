@@ -561,9 +561,9 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        @todo = (14,15,21,28,30,35,39,44,103); #5.8.9
-        push @todo, (27,41..46) if $] < 5.007;
-        push @todo, (29,41..44) if $] >= 5.010;
+        @todo = (14,15,21,28,30,35,39,41,44,103); #5.8.9
+        push @todo, (27,41..46)    if $] < 5.007;
+        push @todo, (25,29,41..44) if $] >= 5.010;
         # solaris also. I suspected nvx<=>cop_seq_*
         push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
