@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.28 r739 M
+# B::C::VERSION = 1.28 r741 M
 # perlversion = 5.013005d-nt
 # path = /usr/local/bin/perl5.13.5d-nt
-# platform = cygwin 32bit
+# platform = linux 64bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs
@@ -14,11 +14,11 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 fail ExtUtils::MakeMaker
-fail Test::Simple
+fail Test::Simple #TODO > 5.013
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
-fail Test #TODO > 5.013
+fail Test
 pass Data::Dumper
 pass File::Spec
 fail File::Temp

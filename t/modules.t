@@ -246,7 +246,7 @@ sub is_todo {
   }
   if ($] > 5.013) {
     foreach(qw(
-               Test DBI
+               Test::Simple DBI
               ))
     {
       return '> 5.013' if $_ eq $module;

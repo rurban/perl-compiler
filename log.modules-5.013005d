@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.28 r739
+# B::C::VERSION = 1.28 r741 M
 # perlversion = 5.013005d
 # path = /usr/local/bin/perl5.13.5d
-# platform = cygwin 32bit
+# platform = linux 64bit
 # threaded perl
 pass Exporter
 pass Text::Tabs
@@ -14,11 +14,11 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-fail Test::Simple
+fail Test::Simple #TODO > 5.013
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
-fail Test #TODO > 5.013
+fail Test
 pass Data::Dumper
 pass File::Spec
 fail File::Temp
@@ -88,13 +88,13 @@ pass CGI
 pass B::Hooks::EndOfScope
 fail Test::Pod
 pass Digest::SHA1
-skip namespace::clean
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.28 - perl-5.013005d
-# pass  86 /  98 (87.8%)
-# fail  12 /  98 (12.2%)
+# 100 / 100 modules tested with B-C-1.28 - perl-5.013005d
+# pass  88 / 100 (88.0%)
+# fail  12 / 100 (12.0%)
 # todo   9 /  12 (75.0%)
-# skip   2 / 100 (2.0% not installed)
+# skip   0 / 100 (0.0% not installed)
