@@ -262,9 +262,6 @@ sub is_todo {
       return '> 5.013' if $_ eq $module;
     }
   }
-  # Module::Build passes -nt and 5.13.5d-nt
-  return 'without threads' if 'Module::Build' eq $module and
-    (($DEBUGGING and $] < 5.013) or $Config{useithreads});
   if ($Config{useithreads}) {
     foreach(qw(
                Test::Tester
@@ -293,7 +290,7 @@ sub is_todo {
     }
   } else { #no threads
     foreach(qw(
-               MooseX::Types
+               MooseX::Types ExtUtils::MakeMaker
               )) {
       return 'without threads' if $_ eq $module;
     }
