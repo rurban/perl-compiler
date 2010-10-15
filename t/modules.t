@@ -215,32 +215,23 @@ sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 
-  # Attribute::Handlers passes only 5.008009d
-  foreach (qw( Attribute::Handlers LWP )) {
-    return 'generally' if $_ eq $module;
-  }
-  if ($] < 5.007) {
-    # Can't locate object method "RV" via package "B::PV"
-    # (perhaps you forgot to load "B::PV"?) at lib/B/C.pm line 422
-    foreach(qw( ExtUtils::CBuilder Digest::MD5 )) {
-      return '< 5.007' if $_ eq $module;
+  if ($] > 5.007 and $] < 5.010001 and $DEBUGGING) {
+    foreach(qw( ExtUtils::Install )) {
+      return '5.8 debugging' if $_ eq $module;
     }
   }
-  if ($] < 5.010) {
-    foreach(qw( ExtUtils::Install B::Hooks::EndOfScope YAML Moose )) {
-      return '< 5.010' if $_ eq $module;
+  if ($] <= 5.010) {
+    foreach(qw(
+	       Carp::Clan
+	     )) {
+      return '< 5.10.1' if $_ eq $module;
     }
   }
-  #if ($] >= 5.007) {
-  #  foreach(qw( File::Temp )) {
-  #    return '>= 5.007' if $_ eq $module;
-  #  }
-  #}
   if ($] > 5.010) {
     foreach(qw(
 	       Test::NoWarnings
 	     )) {
-      return '> 5.010' if $_ eq $module;
+      return '> 5.10' if $_ eq $module;
     }
   }
   if ($] > 5.010 and $DEBUGGING) {
@@ -251,15 +242,15 @@ sub is_todo {
 	       Test::Tester
 	       Test::Pod
 	     )) {
-      return '> 5.010 and $DEBUGGING' if $_ eq $module;
+      return '> 5.10 and $DEBUGGING' if $_ eq $module;
     }
   }
   if ($] > 5.013) {
     foreach(qw(
-               Test::Simple DBI
+               Test::Simple DBI File::Temp
               ))
     {
-      return '> 5.013' if $_ eq $module;
+      return '> 5.13' if $_ eq $module;
     }
   }
   if ($Config{useithreads}) {
@@ -268,19 +259,24 @@ sub is_todo {
               )) {
       return 'with threads' if $_ eq $module;
     }
+    if ($] > 5.008 and $] < 5.010) {
+      foreach (qw( Attribute::Handlers )) {
+	return '5.8  with threads' if $_ eq $module;
+      }
+    }
     if ($] >= 5.013 and $DEBUGGING) {
       foreach(qw(
                  Class::MOP
                 )) {
-	return '5.13.5d' if $_ eq $module;
+	return '5.13.5d with threads' if $_ eq $module;
       }
     }
-    if ($] >= 5.010) {
-      foreach(qw(
-                )) {
-        return '>= 5.10 with threads' if $_ eq $module;
-      }
-    }
+    #if ($] >= 5.010) {
+    #  foreach(qw(
+    #            )) {
+    #    return '>= 5.10 with threads' if $_ eq $module;
+    #  }
+    #}
     if ($] >= 5.010 and !$DEBUGGING) {
       foreach(qw(
                  URI
@@ -296,16 +292,16 @@ sub is_todo {
     }
     if ($] < 5.010) {
       foreach(qw(
-                 Module::Build
+                 Module::Build B::Hooks::EndOfScope
                 )) {
 	return '<5.10 without threads' if $_ eq $module;
       }
     }
     if ($] >= 5.008008 and $] < 5.010) {
       foreach(qw(
-                 FCGI version
+                 version
                 )) {
-	return '5.8 without threads' if $_ eq $module;
+	return '5.8' if $_ eq $module;
       }
     }
     if ($] >= 5.010 and $] < 5.012) {
