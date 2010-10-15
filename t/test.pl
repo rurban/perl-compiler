@@ -547,17 +547,11 @@ sub todo_tests_default {
         @todo = (15,35,39,44,46)    if $] < 5.010;
         @todo = (15,35,41..46,103)  if $] < 5.007;
         push @todo, (41..43,103)    if $] >= 5.010;
-        push @todo, (17..20,22,34..41)
-	  if $what =~ 'c_o2';
+        #push @todo, (17..20,22,34..41) if $what =~ 'c_o2';
         #push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
-	push @todo, (10,12)
-	  if $what =~ /c_o[234]/ and $] >= 5.010;
-	push @todo, (11,28)
-	  if $what =~ /c_o[234]/;
-	push @todo, (25)
-	  if $what eq 'c_o' and $^O eq 'MSWin32';
-	push @todo, (12,19,25)
-	  if $what eq 'c_o4';
+	#push @todo, (10..12,28) if $what =~ /c_o[234]/ and $] >= 5.010;
+	push @todo, (25) if $what eq 'c_o' and $^O eq 'MSWin32';
+	#push @todo, (12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes

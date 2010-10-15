@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.28 r735
+# B::C::VERSION = 1.28 r743
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2
+# path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
@@ -58,10 +58,10 @@ pass version
 skip Params::Validate
 pass Sub::Name
 skip Filter::Util::Call
-skip Algorithm::C3
-skip Class::C3
+pass Algorithm::C3
+pass Class::C3
 pass Scope::Guard
-skip MRO::Compat
+pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 78 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
-# pass  76 /  78 (97.4%)
-# fail   2 /  78 (2.6%)
+# 81 / 100 modules tested with B-C-1.28 - perl-5.006002d-nt
+# pass  79 /  81 (97.5%)
+# fail   2 /  81 (2.5%)
 # todo   6 /   2 (300.0%)
-# skip  22 / 100 (22.0% not installed)
+# skip  19 / 100 (19.0% not installed)
