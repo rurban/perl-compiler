@@ -17,6 +17,18 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
     $linkargs = ldopts;
+} elsif (grep(/^-Bstatic$/, @ARGV)) { # force static linking with -Bstatic
+    use ExtUtils::Embed;
+    @ARGV = grep{ !/^-Bstatic$/o } @ARGV;
+    $linkargs = ldopts("-std");
+    for my $lib ("$libdir/libperl.a", "$coredir/libperl.a") {
+      if (-e $lib) {
+	$linkargs =~ s|-lperl |$lib |;
+	$linkargs .= " $coredir/DynaLoader.o" if -e "$coredir/DynaLoader.o";
+	#$linkargs .= " $coredir/Win32CORE.o" if $^O eq 'cygwin' and -e "$coredir/Win32CORE.o";
+	last;
+      }
+    }
 } elsif (-e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/) {
     # prefer static linkage manually, without broken ExtUtils::Embed
     $linkargs = sprintf("%s $coredir/$Config{libperl} %s",
