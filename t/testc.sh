@@ -52,6 +52,7 @@ LCMD=
 
 function vcmd {
     test -n "$QUIET" || echo $*
+    #echo $*
     $*
 }
 
@@ -73,7 +74,7 @@ function fail {
 function runopt {
     o=$1
     optim=$2
-    OCMDO1="$(echo $OCMD|sed -e s/C,-D/C,-O$optim,-D/)"
+    OCMDO1="$(echo $OCMD|sed -e s/C,/C,-O$optim,/)"
     suff="_o${optim}"
     if [ "$optim" == "0" ]; then suff=""; fi
     rm ${o}${suff} ${o}${suff}.c 2> /dev/null
@@ -354,14 +355,6 @@ while getopts "hackoED:B:O:f:q" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
-    # O from 5.6 does not support -qq
-    qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
-    # replace -D*,-v by -q 
-    OCMD="$(echo $OCMD    |sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)" 
-    OCMDO1="$(echo $OCMDO1|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
-    OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
-    OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
-    OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     CCMD="$CCMD -q"
   fi
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
@@ -397,6 +390,14 @@ if [ -z $OPTIM ]; then OPTIM=-1; fi # all
 if [ -z "$QUIET" ]; then
     make 
 else
+    # O from 5.6 does not support -qq
+    qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
+    # replace -D*,-v by -q 
+    OCMD="$(echo $OCMD    |sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)" 
+    OCMDO1="$(echo $OCMDO1|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
+    OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
+    OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
+    OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     make --silent >/dev/null
 fi
 
@@ -412,7 +413,7 @@ else
   for b in $(seq -f"%02.0f" $ntests); do
     ctest $b
   done
-  if [ $BASE = "testcc.sh" ]; then 
+  if [ $BASE = "testcc.sh" ]; then
     for b in $(seq -f"%02.0f" 101 $(($ncctests+100))); do
       ctest $b
     done

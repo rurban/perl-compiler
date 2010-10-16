@@ -1408,7 +1408,7 @@ sub B::PVIV::save {
   }
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
-            $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
+            $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {&PL_sv_undef}' : '' ) );
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
@@ -1488,7 +1488,7 @@ sub B::PVNV::save {
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
-            $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : '' ) );
+            $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {&PL_sv_undef}' : '' ) );
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
@@ -1531,7 +1531,7 @@ sub B::BM::save {
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
-	       defined($pv) && $B::C::pv_copy_on_grow ? cstring($pv) : "0",
+	       defined($pv) && $B::C::pv_copy_on_grow ? cstring($pv) : "&PL_sv_undef",
 	       $len,        $len + 258,    $sv->IVX, $sv->NVX,
 	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
 	      ));
@@ -1584,7 +1584,7 @@ sub B::PV::save {
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL513 ? "Nullhv, " : "", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
-                           defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "0"));
+                           defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "&PL_sv_undef"));
     if ( defined($pv) and !$B::C::pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
     }
@@ -2315,7 +2315,7 @@ sub B::CV::save {
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
       "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?', {0}':''),
-      $sv_ix, $xpvcv_ix, $cv->REFCNT + 1, $cv->FLAGS
+      $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $cv->FLAGS
       )
     );
   }
