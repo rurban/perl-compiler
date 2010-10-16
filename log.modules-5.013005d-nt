@@ -1,27 +1,27 @@
-# B::C::VERSION = 1.28 r741 M
+# B::C::VERSION = 1.28 r743
 # perlversion = 5.013005d-nt
 # path = /usr/local/bin/perl5.13.5d-nt
-# platform = linux 64bit
+# platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness #TODO > 5.010
+fail Test::Harness #TODO > 5.10 and $DEBUGGING
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker
-fail Test::Simple #TODO > 5.013
+fail ExtUtils::MakeMaker #TODO without threads
+fail Test::Simple #TODO > 5.13
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 fail Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
+fail File::Temp #TODO > 5.13
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -41,19 +41,19 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO generally
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester
+fail Test::Tester #TODO > 5.10 and $DEBUGGING
 pass Sub::Install
-fail Attribute::Handlers #TODO generally
+fail Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+fail Test::NoWarnings #TODO > 5.10
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -68,12 +68,12 @@ pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
 pass Moose
-fail Test::Deep #TODO > 5.010
+fail Test::Deep #TODO > 5.10 and $DEBUGGING
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI #TODO > 5.013
+fail DBI #TODO > 5.13
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -81,12 +81,12 @@ pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
-fail Test::Warn
+fail Test::Warn #TODO > 5.10 and $DEBUGGING
 pass Encode #TODO 5.13 without threads
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-fail Test::Pod
+fail Test::Pod #TODO > 5.10 and $DEBUGGING
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -106,5 +106,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.28 - perl-5.013005d-nt
 # pass  87 / 100 (87.0%)
 # fail  13 / 100 (13.0%)
-# todo   8 /  13 (61.5%)
+# todo  12 /  13 (92.3%)
 # skip   0 / 100 (0.0% not installed)
