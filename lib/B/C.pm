@@ -2315,7 +2315,7 @@ sub B::CV::save {
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
       "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?', {0}':''),
-      $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
+      $sv_ix, $xpvcv_ix, $cv->REFCNT + 1, $cv->FLAGS
       )
     );
   }
@@ -3038,7 +3038,7 @@ sub output_all {
   }
 
   # hack for when Perl accesses PVX of GVs
-  print 'Static const char emptystring[] = "\0";';
+  print 'Static const char emptystring[] = "\0";', "\n";
   # newXS for core XS needs a filename
   print 'Static const char xsfile[] = "universal.c";';
   print "\n";

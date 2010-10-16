@@ -104,7 +104,7 @@ if ($PERL511) {
 }
 sub CxTYPE_no_LOOP  {
   $PERL511 
-    ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 ) 
+    ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 )
     : $_[0]->{type} != 3
 }
 
