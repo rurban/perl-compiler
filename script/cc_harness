@@ -38,6 +38,11 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     use ExtUtils::Embed;
     $linkargs = ldopts('-std');
     $linkargs =~ s|-lperl |$libdir/$Config{libperl} |;
+} elsif ( $useshrplib and -e "$coredir/$Config{libperl}") {
+    # just help cygwin debugging
+    use ExtUtils::Embed;
+    $linkargs = ldopts('-std');
+    $linkargs =~ s|-lperl |$coredir/$Config{libperl} |;
 } else { # try dynamic lib if no static lib exists
     use ExtUtils::Embed;
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
@@ -80,6 +85,9 @@ if ($^O =~ m/^MSWin/ && $Config{cc} =~ m/^cl/i) {
 #}
 
 my $ccflags = $Config{ccflags};
+if ($ccflags =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/) {
+  $linkargs =~ s/-fstack-protector//;
+}
 $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
   if $debug and $Config{cc} =~ /gcc/ and !$quiet;
 $ccflags .= " --no-warn -Wl,--warn-once"
