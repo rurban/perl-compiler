@@ -290,7 +290,7 @@ result[45]='ok'
 tests[46]='use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }'
 result[46]='ok'
 # issue27
-tests[47]='require LWP::UserAgent;\nprint q(ok);'
+tests[47]='require LWP::UserAgent; print q(ok);'
 result[47]='ok'
 
 # from here on we test CC specifics only

@@ -24,7 +24,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     for my $lib ("$libdir/libperl.a", "$coredir/libperl.a") {
       if (-e $lib) {
 	$linkargs =~ s|-lperl |$lib |;
-	$linkargs .= " $coredir/DynaLoader.o" if -e "$coredir/DynaLoader.o";
+	push @ARGV, ("$coredir/DynaLoader.o") if -e "$coredir/DynaLoader.o";
 	#$linkargs .= " $coredir/Win32CORE.o" if $^O eq 'cygwin' and -e "$coredir/Win32CORE.o";
 	last;
       }
@@ -88,7 +88,8 @@ my $ccflags = $Config{ccflags};
 if ($ccflags =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/) {
   $linkargs =~ s/-fstack-protector//;
 }
-$ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
+#-pedantic -Wextra -Wconversion
+$ccflags .= " -ansi -Wall -Wshadow -Wcast-qual -Wwrite-strings"
   if $debug and $Config{cc} =~ /gcc/ and !$quiet;
 $ccflags .= " --no-warn -Wl,--warn-once"
   if $Config{cc} =~ /gcc/ and $quiet;

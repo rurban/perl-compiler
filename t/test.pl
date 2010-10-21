@@ -454,11 +454,15 @@ sub run_cc_test {
 	    # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
 	    my $linkargs = ExtUtils::Embed::ldopts('-std');
 	    $linkargs =~ s|-lperl |$libdir/$Config{libperl} |;
+            $linkargs =~ s/-fstack-protector//
+              if $command =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/;
 	    $command .= $linkargs;
-	    #$command .= sprintf("%s $libdir/$Config{libperl} %s",
-	    #			@Config{qw(ldflags libs)});
 	} else {
-	    $command .= " ".ExtUtils::Embed::ldopts("-std");
+	    my $linkargs = ExtUtils::Embed::ldopts('-std');
+            # cygwin gcc-4.3 crashes with -fstack-protector 2x
+            $linkargs =~ s/-fstack-protector//
+              if $command =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/;
+	    $command .= " ".$linkargs;
 	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
 	}
 	$command .= $B::C::Flags::extra_libs;

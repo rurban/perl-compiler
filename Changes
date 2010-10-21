@@ -19,6 +19,8 @@
 	fixed overwritten CvSTART for 5.13.x
 	do not cog/const nullify vars in END blocks
 	disallow CONST->op_first with CONST_BARE. fixes ExtUtils::Install
+	add ptr_undef instead of NULL initialization non-threaded
+	better XSLoader::load detection and save GV (test 46 and modules), still failing though
 	* C.xs, typemap: removed. r-magic replaces this hack completely
 	* CC.pm (1.08): many fixes
 	use new B::C optimizations, new -DF
@@ -43,6 +45,7 @@
 	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
 	* perlcc (2.09): added cc time for --time.
 	same INC as in caller - omit duplicates
+	* cc_harness: improve -Bstatic
 	* t/testc.sh: simplified
 	* t/testm.sh: fixed UAC issues on Win7
 	* t/test.pl: new faster test functions for the new issues

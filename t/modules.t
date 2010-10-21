@@ -32,7 +32,8 @@ use Test::More;
 
 BEGIN {
   # check whether linking with xs works at all
-  my $result = `$^X -Mblib blib/script/perlcc -e 'use Sys::Hostname;'`;
+  my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+  my $result = `$X -Mblib blib/script/perlcc -e 'use Sys::Hostname;'`;
   unless (-e 'a' or -e 'a.out') {
     plan skip_all => "perlcc cannot link Sys::Hostname (XS module). Most likely wrong ldopts.";
     exit;

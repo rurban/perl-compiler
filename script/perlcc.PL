@@ -387,11 +387,12 @@ sub cc_harness {
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs,-staticxs
+    my $ldopts = ExtUtils::Embed::ldopts("-std");
     if ($stash) {
         my @mods = split /-?u /, $stash;
         $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
     } else {
-        $command .= " ".ExtUtils::Embed::ldopts("-std");
+        $command .= " $ldopts";
     }
     my $libdir  = "$Config{prefix}/lib";
     my $useshrplib = $Config{useshrplib};

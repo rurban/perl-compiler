@@ -17,13 +17,13 @@ my $have_independent_comalloc = &check_independent_comalloc;
     $extra_libs .= " $e_l" if $e_l;
 }
 # cygwin still has the old gdb-6 debugger which does not understand dwarf4 features from gcc-4.5
-if ($Config{gccversion} =~ /^4\.[56]\./) {
-    my $gdb_ver = `gdb --version`;
-    if ($gdb_ver =~ /gdb 6\./) {
-        print "Adding extra_cflags=-gstrict-dwarf for gcc-4.5 for a gdb-6 debugger which does not understand dwarf4 features\n";
-        $extra_cflags .= " -gstrict-dwarf";
-    }
-}
+#if ($Config{gccversion} =~ /^4\.[56]\./) {
+#    my $gdb_ver = `gdb --version`;
+#    if ($gdb_ver =~ /gdb 6\./) {
+#        print "Adding extra_cflags=-gstrict-dwarf for gcc-4.5 for a gdb-6 debugger which does not understand dwarf4 features\n";
+#        $extra_cflags .= " -gstrict-dwarf";
+#    }
+#}
 sub write_b_c_flags {
     mkdir "lib/B/C" unless -d "lib/B/C";
     open PH, ">", "lib/B/C/Flags.pm";
@@ -48,7 +48,7 @@ WriteMakefile(
     EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
     PREREQ_PM  => {'Opcodes'  => '0',
 		   'IPC::Run' => '0',
-		   'B::Flags' => '0.02',
+		   'B::Flags' => '0.04',
 		   'Time::HiRes' => '0',
                    #'B'        => '1.0901'
                   },
@@ -57,15 +57,15 @@ WriteMakefile(
     'ABSTRACT' => 'Perl compiler',
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
-        "    B::Debug:    1.12\n".
-        "    Opcodes: 0\n".
-        "    IPC::Run: 0\n",
+        "    B::Debug:  1.16\n".
+        "    Opcodes:   0.9\n".
+        "    IPC::Run:  0\n",
        ) : ()),
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
                        {
-                        "B::Debug" => "1.12",
-                        "Opcodes"  => '0',
+                        "B::Debug" => '1.16',
+                        "Opcodes"  => '0.9',
                         "IPC::Run" => 0,
                        },
                        resources =>
