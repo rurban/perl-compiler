@@ -19,8 +19,12 @@
 	fixed overwritten CvSTART for 5.13.x
 	do not cog/const nullify vars in END blocks
 	disallow CONST->op_first with CONST_BARE. fixes ExtUtils::Install
+	better XSLoader::load detection: aliases and defined in END blocks
+	save XSLoader::load GV (test 46 and modules), still failing though
+	bootstrap also static core packages
 	add ptr_undef instead of NULL initialization non-threaded
-	better XSLoader::load detection and save GV (test 46 and modules), still failing though
+	fix many cast warnings
+	fix AV fill +1
 	* C.xs, typemap: removed. r-magic replaces this hack completely
 	* CC.pm (1.08): many fixes
 	use new B::C optimizations, new -DF
