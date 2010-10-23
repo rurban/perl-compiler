@@ -2579,12 +2579,12 @@ sub B::AV::save {
   my $alloc;
   if ($PERL513) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
-    my $line = "Nullhv, {0}, -1, -1, NULL";
-    $line = "Nullhv, {0}, $fill, $fill, NULL" if $B::C::av_init or $B::C::av_init2;
+    my $line = "Nullhv, {0}, -1, -1, 0";
+    $line = "Nullhv, {0}, $fill, $fill, 0" if $B::C::av_init or $B::C::av_init2;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
-                         '(char*)ptr_undef'));
+                         '0'));
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
   }
   elsif ($PERL510) {
