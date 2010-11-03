@@ -546,6 +546,7 @@ sub ivx ($) {
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
 # in perl_init ( ~10 bytes/op with GCC/i386 )
 sub B::OP::fake_ppaddr {
+  return "NULL" unless $_[0]->can('name');
   return $B::C::optimize_ppaddr
     ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
     : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
@@ -4414,7 +4415,7 @@ cause a run-time failure.
 =item B<-fsave-data>
 
 Save package::DATA filehandles ( only available with PerlIO ).
-Does not work yet on Perl 5.6, 5.11 and non-threaded 5.10, and is
+Does not work yet on Perl 5.6, 5.12 and non-threaded 5.10, and is
 enabled automatically where it is known to work.
 
 =item B<-fppaddr>
@@ -4540,11 +4541,10 @@ Current status: A few known bugs.
     reading from __DATA__ handles (15)
     AUTOLOAD xsubs (27)
 
-5.10:
+>=5.10:
+    xsloader argument missing
     reading from __DATA__ handles (15) non-threaded
-    destruction of static pvs for -O1
     handling npP magic for shared threaded variables (41-43)
-    detecting internal core package subs (39)
 
 =head1 AUTHOR
 
