@@ -464,7 +464,7 @@ static int bget_swab = 0;
 #define BSET_op_ppaddr(o, arg) Perl_croak(aTHX_ "op_ppaddr not yet implemented")
 #define BSET_curpad(pad, arg) STMT_START {	\
 	PL_comppad = (AV *)arg;			\
-	pad = AvARRAY(arg);			\
+	PL_curpad = AvARRAY(arg);		\
     } STMT_END
 
 #ifdef USE_ITHREADS
