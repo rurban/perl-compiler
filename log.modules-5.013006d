@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r758 M
+# B::C::VERSION = 1.28 r758
 # perlversion = 5.013006d
 # path = /usr/local/bin/perl5.13.6d
 # platform = cygwin 32bit
@@ -78,7 +78,7 @@ fail Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 fail Test::Warn #TODO > 5.10 and $DEBUGGING
@@ -98,13 +98,13 @@ fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-skip DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.28 - perl-5.013006d
-# pass  71 /  98 (72.4%)
-# fail  27 /  98 (27.6%)
+# 100 / 100 modules tested with B-C-1.28 - perl-5.013006d
+# pass  73 / 100 (73.0%)
+# fail  27 / 100 (27.0%)
 # todo  10 /  27 (37.0%)
-# skip   2 / 100 (2.0% not installed)
+# skip   0 / 100 (0.0% not installed)
