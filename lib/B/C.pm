@@ -2310,7 +2310,7 @@ sub B::CV::save {
   if ($$stash) {
     $stash->save;
     # $sym fixed test 27
-    $init->add( sprintf( "CvSTASH($sym) = s\\_%x;", $$stash ) );
+    $init->add( sprintf( "CvSTASH_set($sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv};
   }
@@ -3058,6 +3058,11 @@ sub output_all {
       print "#undef CopFILE_set\n";
       print "#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))\n";
     }
+  }
+  if ($] < 5.013007 ) {
+    print "#ifndef CvSTASH_set\n";
+    print "#define CvSTASH_set(cv,hv) CvSTASH((cv)) = (hv)\n";
+    print "#endif\n";
   }
   if ($use_av_undef_speedup || $use_svpop_speedup) {
     print "int gcount;\n";
