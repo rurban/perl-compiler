@@ -882,7 +882,8 @@ __END__
 47 0 	xio_type	IoTYPE(bstate->bs_sv)		char
 48 0 	xio_flags	IoFLAGS(bstate->bs_sv)		char
 49 8 	xcv_xsubany	*(SV**)&CvXSUBANY(bstate->bs_sv).any_ptr svindex
-50 0 	xcv_stash	*(SV**)&CvSTASH(bstate->bs_sv)	svindex
+50 <13	xcv_stash	CvSTASH(bstate->bs_sv)		svindex
+50 13	xcv_stash	bstate->bs_sv			svindex		x
 51 0 	xcv_start	CvSTART(bstate->bs_sv)		opindex
 52 0 	xcv_root	CvROOT(bstate->bs_sv)		opindex
 53 0 	xcv_gv		bstate->bs_sv			svindex		x
