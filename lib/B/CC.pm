@@ -934,6 +934,7 @@ sub pp_nextstate {
   my $op = shift;
   $curcop->load($op);
   @stack = ();
+  pop_label 'nextstate' if $labels->{'nextstate'}->[-1] and $labels->{'nextstate'}->[-1] == $$op;
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
   runtime("TAINT_NOT;\t/* nextstate */") unless $omit_taint;
@@ -1843,12 +1844,13 @@ sub pp_entertry {
   my $sym = doop($op);
   $entertry_defined = 1;
   if (!$op->can("other")) { # 5.11.4-nt t/c_argv.t nok 2
-    debug "ENTERTRY label \$op->next (no other)";
-    runtime(sprintf( "PP_ENTERTRY(%s);",
-		     label( $op->next ) ) );
-    push_label ($op->next, 'leavetry');
+    debug "ENTERTRY label \$op->next (no other)\n";
+    my $next = $op->next;
+    my $l = label( $next );
+    runtime(sprintf( "PP_ENTERTRY(%s);", $l));
+    push_label ($next, $next->isa('B::COP') ? 'nextstate' : 'leavetry');
   } else {
-    debug "ENTERTRY label \$op->other->next";
+    debug "ENTERTRY label \$op->other->next\n";
     runtime(sprintf( "PP_ENTERTRY(%s);",
 		     label( $op->other->next ) ) );
     invalidate_lexicals( REGISTER | TEMPORARY );
@@ -1862,9 +1864,9 @@ sub pp_entertry {
 # coverage: 32
 sub pp_leavetry {
   my $op = shift;
+  pop_label 'leavetry';
   default_pp($op);
   runtime("PP_LEAVETRY;");
-  pop_label 'leavetry';
   return $op->next;
 }
 
