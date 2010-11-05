@@ -33,7 +33,7 @@ use Test::More;
 BEGIN {
   # check whether linking with xs works at all
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  my $result = `$X -Mblib blib/script/perlcc -e 'use Scalar::Util;'`;
+  my $result = `$X -Mblib blib/script/perlcc -S -o a -e "use Scalar::Util;"`;
   unless (-e 'a' or -e 'a.out') {
     plan skip_all => "perlcc cannot link XS module Scalar::Util. Most likely wrong ldopts.";
     exit;
