@@ -2310,7 +2310,7 @@ sub B::CV::save {
   if ($$stash) {
     $stash->save;
     # $sym fixed test 27
-    $init->add( sprintf( "CvSTASH_set($sym, s\\_%x);", $$stash ) );
+    $init->add( sprintf( "CvSTASH_set((CV*)$sym, (HV*)s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv};
   }
