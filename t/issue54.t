@@ -31,7 +31,7 @@ $result =~ s/\n$//;
 
 #TODO: {
   #local $TODO = "Bytecode issue 54 curpad";
-ok($result eq $expected, "'$result' eq '$expected'");
+ok($result eq $expected, "issue54 - pad_swipe error with package pmcs");
 #}
 
 END {
