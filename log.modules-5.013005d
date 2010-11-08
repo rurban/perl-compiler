@@ -18,10 +18,10 @@ pass Test::Simple #TODO > 5.13
 pass ExtUtils::Manifest
 fail Pod::Text
 pass constant
-fail Test
+pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO > 5.13
+pass File::Temp #TODO > 5.13
 fail ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -36,7 +36,7 @@ fail Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception
+pass Test::Exception
 pass Net::Cmd
 fail Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -50,7 +50,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester #TODO > 5.10 and $DEBUGGING
 pass Sub::Install
-fail Attribute::Handlers
+pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings #TODO > 5.10
@@ -68,12 +68,12 @@ fail Try::Tiny
 fail Devel::GlobalDestruction
 pass Class::MOP #TODO 5.13.5d with threads
 fail Moose
-fail Test::Deep #TODO > 5.10 and $DEBUGGING
+pass Test::Deep #TODO > 5.10 and $DEBUGGING
 pass Carp::Clan
 pass Module::Pluggable
 fail if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI #TODO > 5.13
+pass DBI #TODO > 5.13
 fail Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -81,7 +81,7 @@ pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
-fail Test::Warn #TODO > 5.10 and $DEBUGGING
+pass Test::Warn #TODO > 5.10 and $DEBUGGING
 fail Encode
 pass Variable::Magic
 pass CGI
