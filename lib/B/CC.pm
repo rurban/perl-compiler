@@ -576,7 +576,7 @@ sub pop_label {
   my $type = shift;
   my $op = pop @{$labels->{$type}};
   # avoid duplicate labels
-  write_label ( $op ) unless $labels->{label}->{$$op};
+  write_label ($op);
 }
 
 sub error {
@@ -684,19 +684,22 @@ sub label {
     # cc should error errors on duplicate named labels
     return sprintf( "label_%s_%x", $op->label, $$op );
   } else {
-    # but avoid printing duplicate jump labels
-    my $l = sprintf( "lab_%x", $$op );
-    $labels->{label}->{$$op} = $l;
-    return $l;
+    return sprintf( "lab_%x", $$op );
   }
 }
 
-# XXX TODO: 32, 45
-# cccode32.c:463: error: label ‘lab_c983c0’ used but not defined
-# cccode45.c:23382: error: label ‘lab_1185258’ used but not defined
+# XXX TODO: 32, 45 > 5.12
+# cccode32.c:463: error: label lab_c983c0 used but not defined (entrytry->label->nextstate)
+# cccode45.c:23382: error: label lab_1185258 used but not defined
 sub write_label {
   my $op = shift;
-  push_runtime( sprintf( "  %s:", label($op) ) );
+  #debug sprintf("lab_%x:?\n", $$op);
+  unless ($labels->{label}->{$$op}) {
+    my $l = label($op);
+    push_runtime( sprintf( "  %s:", label($op) ) );
+    # avoid printing duplicate jump labels
+    $labels->{label}->{$$op} = $l;
+  }
 }
 
 sub loadop {
@@ -932,9 +935,13 @@ sub pp_const {
 # coverage: 1-39, fails in 33
 sub pp_nextstate {
   my $op = shift;
+  if ($labels->{'nextstate'}->[-1] and $labels->{'nextstate'}->[-1] == $op) {
+    pop_label 'nextstate';
+  } else {
+    write_label($op);
+  }
   $curcop->load($op);
   @stack = ();
-  pop_label 'nextstate' if $labels->{'nextstate'}->[-1] and $labels->{'nextstate'}->[-1] == $$op;
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
   runtime("TAINT_NOT;\t/* nextstate */") unless $omit_taint;
@@ -1843,7 +1850,7 @@ sub pp_entertry {
   write_back_stack();
   my $sym = doop($op);
   $entertry_defined = 1;
-  if (!$op->can("other")) { # 5.11.4-nt t/c_argv.t nok 2
+  if (!$op->can("other")) { # since 5.11.4
     debug "ENTERTRY label \$op->next (no other)\n";
     my $next = $op->next;
     my $l = label( $next );
@@ -1864,7 +1871,7 @@ sub pp_entertry {
 # coverage: 32
 sub pp_leavetry {
   my $op = shift;
-  pop_label 'leavetry';
+  pop_label 'leavetry' if $labels->{'leavetry'}->[-1] and $labels->{'leavetry'}->[-1] == $op;
   default_pp($op);
   runtime("PP_LEAVETRY;");
   return $op->next;
