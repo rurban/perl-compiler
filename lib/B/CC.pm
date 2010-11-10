@@ -688,9 +688,6 @@ sub label {
   }
 }
 
-# XXX TODO: 32, 45 > 5.12
-# cccode32.c:463: error: label lab_c983c0 used but not defined (entrytry->label->nextstate)
-# cccode45.c:23382: error: label lab_1185258 used but not defined
 sub write_label {
   my $op = shift;
   #debug sprintf("lab_%x:?\n", $$op);
