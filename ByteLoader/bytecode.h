@@ -243,7 +243,7 @@ static int bget_swab = 0;
 	hv_store((HV*)sv, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur, arg, 0)
 #define BSET_pv_free(pv)	Safefree(pv.xpv_pv)
 
-#if (PERL_VERSION > 13 || ((PERL_VERSION == 13) && (PERL_SUBVERSION >= 3)))
+#if PERL_VERSION > 13 || defined(CvGV_set)
 #define BSET_xcv_gv(sv, arg)	(CvGV_set((CV*)bstate->bs_sv, (GV*)arg))
 #else
 #define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
@@ -251,7 +251,7 @@ static int bget_swab = 0;
 #if PERL_VERSION > 13 || defined(CvSTASH_set)
 #define BSET_xcv_stash(sv, arg)	(CvSTASH_set((CV*)bstate->bs_sv, (HV*)arg))
 #else
-#define BSET_xcv_stash(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
+#define BSET_xcv_stash(sv, arg)	(*(SV**)&CvSTASH(bstate->bs_sv) = arg)
 #endif
 
 #ifdef USE_ITHREADS

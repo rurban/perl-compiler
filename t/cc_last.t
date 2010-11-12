@@ -44,5 +44,16 @@ my $script3 = <<'EOF';
   print " not ok\n";
 }
 EOF
-ctestok(3, "CC", $base, $script1,
+ctestok(3, "CC", $base, $script3,
            $B::CC::VERSION < 1.08 ? "B::CC last for non-loop block" : undef);
+
+my $script4 = <<'EOF';
+# issue 55 segfault for non local loop exit
+LOOP:
+{
+    my $sub = sub { last LOOP; };
+    $sub->();
+}
+EOF
+ctestok(4, "CC", $base, $script4,
+           $B::CC::VERSION < 1.08 ? "B::CC issue 55 non-local exit with last segv" : undef);
