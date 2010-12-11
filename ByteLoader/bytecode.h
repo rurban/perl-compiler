@@ -376,7 +376,7 @@ static int bget_swab = 0;
 	BSET_newop(newop, size);		\
 	/* newop->op_next = o; XXX */		\
 	o = newop;				\
-	arg >>=7;				\
+	arg >>= 7;				\
 	BSET_op_type(o, arg);			\
 	BSET_OBJ_STOREX(o);			\
     } STMT_END

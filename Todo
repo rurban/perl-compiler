@@ -1,5 +1,6 @@
 * Fixes
 
+5.13 entertry upgraded to LOGOP in ck_eval
 fix Dynaloader arg for dl_init()
 'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
 
