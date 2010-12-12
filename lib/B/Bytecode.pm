@@ -153,19 +153,22 @@ sub B::OP::ix {
     my $arg = $PERL56 ? $optype_enum{class($op)} : $op->size | $op->type << 7;
     my $opsize = $PERL56 ? '?' : $op->size;
     if (ref($op) eq 'B::OP') { # check wrong BASEOPs
-      # Introducing the entrytry hack:
+      # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
       #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
-      #   op->other points to the leavetry op.
+      #   op->other points to the leavetry op, which is needed for the eval scope.
       if ($op->name eq 'entertry') {
 	$opsize = $op->size + (2*$Config{ptrsize});
 	$arg = $PERL56 ? $optype_enum{LOGOP} : $opsize | $op->type << 7;
-	# LISTOP patch not yet posted and applied upstream
-	bless $op, $] > 5.013007 ? 'B::LISTOP' : 'B::LOGOP';
+	# "make entertry LISTOP" patch in consideration
+	# bless $op, $] > 5.013007 ? 'B::LISTOP' : 'B::LOGOP';
+        warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n";
+        bless $op, 'B::LOGOP';
       } elsif (0) { # only needed when we have to check for new wrong BASEOP's
 	if (eval "require Opcodes;") {
 	  my $class = Opcodes::opclass($op->type);
 	  if ($class > 0) {
 	    my $classname = $optype[$class];
+            warn "Upgrading entertry {$op->name} BASEOP to $classname...\n";
 	    bless $op, "B::".$classname if $classname;
 	  }
 	} else {
