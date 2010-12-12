@@ -157,7 +157,7 @@ sub B::OP::ix {
       #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
       #   op->other points to the leavetry op.
       if ($op->name eq 'entertry') {
-	$opsize = $op->size + $Config{ptrsize};
+	$opsize = $op->size + (2*$Config{ptrsize});
 	$arg = $PERL56 ? $optype_enum{LOGOP} : $opsize | $op->type << 7;
 	# LISTOP patch not yet posted and applied upstream
 	bless $op, $] > 5.013007 ? 'B::LISTOP' : 'B::LOGOP';
