@@ -5,6 +5,8 @@ The Perl Compiler
 B<rurban> - Reini Urban <br>
 Graz, Austria
 
+See the screencast of this talk at L<http://vimeo.com/14058377>
+
 =head1 What's new?
 
 =over
