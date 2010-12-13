@@ -100,6 +100,9 @@ if ($] >= 5.012) {
 if ($] >= 5.011001 and $] < 5.012) {
     $expected .= " XS::APItest::KeywordRPN";
 }
+if ($] >= 5.013005) {
+    $expected = "Carp DB Exporter Internals IO::File IO::Seekable main mro re Regexp utf8 version warnings";
+}
 
 {
     no strict 'vars';
