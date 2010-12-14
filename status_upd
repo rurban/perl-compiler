@@ -41,9 +41,10 @@ for (@ARGV) {
 # prints and return a string of the sorted
 # results and a hash for further processing.
 sub status {
+  my $h = shift;
   my @g = @_;
   my $s = "";
-  my %h;
+  my %h = %$h;
   my $prefix = '';
   my $oldprefix = '';
   while (@g) {
@@ -102,7 +103,7 @@ sub platform_version_split {
   local $_ = shift;
   my ($p,$v,$f) = m/^(.+)-(5\.[\d\.]+)([-dnt]+)?$/;
   $f =~ s/^-// if $f; # d, d-nt, nt or empty
-  $v =~ s/(\d\.\d+)\.\d+/$1/;
+  $v =~ s/(\d\.\d+)\.\d+/$1/ if $v;
   return ($p,$v,$f);
 }
 
@@ -135,6 +136,7 @@ sub all_common {
   my $result = shift;		# skip already deleted results, initially empty
   my (%tests);
   if (@_ == 1) {
+    delete $h->{$_[0]}->{''};
     return $h->{$_[0]};
   }
   # init with shortest list, sort hash by least number of keys
@@ -142,13 +144,14 @@ sub all_common {
   my $pivot = $p[0];
   my $pivotset = Set::Object->new(keys %{$h->{$pivot}});
   for ($pivotset->members) {
-    my $k = $h->{$pivot}->{$_};
-    $tests{$_} = Set::Object->new(split_tests($k));
+    if (my $k = $h->{$pivot}->{$_}) {
+      $tests{$_} = Set::Object->new(split_tests($k));
+    }
   }
   for my $p (@_) {		# check for common keys (in every)
     my $c = $pivotset * Set::Object->new(keys %{$h->{$p}});
     for ($c->members) {
-      if (exists $tests{$_}) {
+      if ($_ and exists $tests{$_}) {
 	$result->{$_} = $result->{$_} ? $tests{$_} * $result->{$_} : $tests{$_};
         $result->{$_} = $result->{$_} * Set::Object->new( split_tests($h->{$p}->{$_}) )
           if $result->{$_}->members;
@@ -157,6 +160,7 @@ sub all_common {
       delete $result->{$_} unless $result->{$_};
     }
   }
+  delete $result->{''};
   return $result;
 }
 
@@ -191,7 +195,7 @@ sub unify_results {
   my %versions;
   for (@platforms) {
     my ($p,$v,$f) = platform_version_split($_);
-    push @{$versions{$v}}, ($_);
+    push @{$versions{$v}}, ($_) if $v;
   }
   for my $v (sort keys %versions) {
     my $v1 = all_common($h, $result, @{$versions{$v}});
@@ -217,23 +221,44 @@ sub unify_results {
 }
 
 my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
+my $cmd = 'grep -a -i "tests" ' . $dlogs;
+print "$cmd\n" unless $quiet;
+my %h;
+my %h_sav = %h;
+if (my @g = `$cmd`) {
+  for my $file (@g) {
+    my $prefix;
+    if (($prefix) = $file =~ m{log.test-(.*?):}) {
+      ($file) = $file =~ m/(log.test-.*?):/;
+      my $ctime = -f $file ? sprintf("%0.3f", -C $file) : 0;
+      if ($ctime < 1.5 or $noskip) {
+        $h{$prefix}->{''} = '';
+      }
+    }
+  }
+} else {
+  die "no $logs found\n";
+}
+
+
 if (!$todoonly) {
   my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
   print "$cmd\n" unless $quiet;
-  my @g = `$cmd` or die $@;
-
-  my $failed = status(@g);
-  my $failedu = unify_results($failed->[1], "fail") unless $nodump;
+  if (my @g = `$cmd`) {
+    my $failed = status(\%h, @g);
+    my $failedu = unify_results($failed->[1], "fail") unless $nodump;
+  }
 }
-
+%h = %h_sav;
 if (!$failonly) {
   my $cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs;
   print "\n$cmd\n" unless $quiet;
-  my @g = `$cmd` or die $@;
-
-  my $todo = status(@g);
-  my $todou = unify_results($todo->[1], "todo_pass") unless $nodump;
+  if (my @g = `$cmd`) {
+    my $todo = status(\%h, @g);
+    my $todou = unify_results($todo->[1], "todo_pass") unless $nodump;
+  }
 }
+
 # XXX TODO: update the TEST STATUS section in "./STATUS"
 if ($update) {
   die "file not found $STATUS\n" unless -e $STATUS;
