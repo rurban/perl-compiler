@@ -47,6 +47,7 @@ sub status {
   my %h = %$h;
   my $prefix = '';
   my $oldprefix = '';
+  my $skipped = 0;
   while (@g) {
     if ($g[0] =~ /^--/) {
       $oldprefix = $prefix if $prefix;
@@ -66,7 +67,10 @@ sub status {
 	$s .= "\n$prefix:\n";
 	print "\n$prefix: age=$ctime" unless $quiet;
         if ($ctime > 1.5 and !$noskip) {
+          $skipped = 1;
           print " skipped: too old" unless $quiet;
+        } else {
+          $skipped = 0;
         }
         print "\n" unless $quiet;
       }
@@ -89,7 +93,7 @@ sub status {
     $c .= "\t" if length($file) < 8;
     $c .= "$failed\n";
     $h{$prefix}->{$file} = $f;
-    next if $ctime > 1.5 and !$noskip;
+    next if $skipped;
     print "$c" unless $quiet;
     $s .= $c;
   }
@@ -222,7 +226,7 @@ sub unify_results {
 
 my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
 my $cmd = 'grep -a -i "tests" ' . $dlogs;
-print "$cmd\n" unless $quiet;
+#print "$cmd\n" unless $quiet;
 my %h;
 my %h_sav = %h;
 if (my @g = `$cmd`) {
