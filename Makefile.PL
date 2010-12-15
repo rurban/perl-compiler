@@ -85,7 +85,6 @@ WriteMakefile(
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak"
              },
-    SKIP => [qw( dynamic dynamic_lib )]
 );
 
 sub headerpath {
