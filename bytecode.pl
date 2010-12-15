@@ -414,12 +414,12 @@ EOT
     }
     my $optarg = $argtype eq "none" ? "" : ", arg";
     my ($argfmt, $rvaldcast);
-    if ($fundtype =~ /(strconst|pvcontents)/) {
+    if ($fundtype =~ /(strconst|pvcontents|op_tr_array)/) {
 	$argfmt = '\"%s\"';
 	$rvaldcast = '(char*)';
     } elsif ($argtype =~ /index$/) {
 	$argfmt = '0x%x, ix:%d';
-	$rvaldcast = '(unsigned int)';
+	$rvaldcast = "($argtype)";
     } else {
 	$argfmt = '%d';
 	$rvaldcast = '(int)';
@@ -462,7 +462,7 @@ EOT
 	my $optargcast = $optarg eq ", arg" ? ", ${rvaldcast}arg" : '';
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
-	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %d'))
+	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %ld'))
 	      : '';
     } elsif ($flags =~ /s/) {
 	# Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
@@ -473,7 +473,7 @@ EOT
     elsif ($optarg && $lvalue ne "none") {
 	print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n" unless $unsupp;
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", ${rvaldcast}arg%s));\n",
-	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%d');
+	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%ld');
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 }
@@ -1008,3 +1008,4 @@ __END__
 154 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
 155 10 	cop_seq_low	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xlow  U32
 156 10	cop_seq_high	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xhigh U32
+157 13  op_pmflags32	cPMOP->op_pmflags		U32

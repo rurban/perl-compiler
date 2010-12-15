@@ -543,7 +543,7 @@ sub B::IO::bsave {
 sub B::CV::bsave {
   my ( $cv, $ix ) = @_;
   my $stashix   = $cv->STASH->ix;
-  my $gvix = $cv->GV->ix;
+  my $gvix      = $cv->GV->ix;
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
   my $startix   = $cv->START->opwalk;
@@ -556,13 +556,18 @@ sub B::CV::bsave {
   unless ($PERL56) {
     asm "xcv_xsubany",   $cv->CONST ? $cv->XSUBANY->ix : 0;
   }
-  asm "xcv_gv",          $gvix;
-  asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
   asm "xcv_padlist",     $padlistix;
   asm "xcv_outside",     $outsideix;
-  asm "xcv_flags",       $cv->CvFLAGS;
   asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
   asm "xcv_depth",       $cv->DEPTH;
+
+  # XXX need to turn off oldgv first: sv_del_backref error
+  if ($] > 5.013003) { # turn on RC (refcounted) temporarily.
+    ; #asm "xcv_flags",     0x400;
+  }
+  asm "xcv_flags",       $cv->CvFLAGS;
+  asm "xcv_gv",          $gvix;	# XXX del_backref 27
+  asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
 }
 
 sub B::FM::bsave {
@@ -853,7 +858,8 @@ sub B::PMOP::bsave {
     asm "pregcomp";
   }
   elsif ($PERL510) {
-    asm "op_pmflags", $op->pmflags;
+    # Since PMf_BASE_SHIFT we need a U32, which is a new bytecode for backwards compat
+    asm ($op->pmflags > 0xffff ? "op_pmflags32" : "op_pmflags"), $op->pmflags;
     bwarn("PMOP pmstashpv: ", $op->pmstashpv,
           ", op_pmflags: ", $op->pmflags
          ) if $debug{M};
