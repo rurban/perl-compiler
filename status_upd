@@ -196,15 +196,18 @@ sub unify_results {
   # ignore the platform for now. we don't have any platform issues.
   # check for all pairs version - feature the shortest commons
   # 1. sort by versions (ignore platform + features) *-v-*
+  # ignore older devel versions (5.11), just blead
   my %versions;
   for (@platforms) {
     my ($p,$v,$f) = platform_version_split($_);
     push @{$versions{$v}}, ($_) if $v;
   }
   for my $v (sort keys %versions) {
-    my $v1 = all_common($h, $result, @{$versions{$v}});
-    if (%$v1) {
-      print Data::Dumper->Dump([$v1],["v$v $name"]);
+    if ($v !~ /^5\.(7|9|11)$/) { # skip 5.11, 5.9, 5.7, but not blead (5.13 currently)
+      my $v1 = all_common($h, $result, @{$versions{$v}});
+      if (%$v1) {
+        print Data::Dumper->Dump([$v1],["v$v $name"]);
+      }
     }
   }
 
