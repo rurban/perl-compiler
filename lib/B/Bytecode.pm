@@ -560,13 +560,8 @@ sub B::CV::bsave {
   asm "xcv_outside",     $outsideix;
   asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
   asm "xcv_depth",       $cv->DEPTH;
-
-  # XXX need to turn off oldgv first: sv_del_backref error
-  if ($] > 5.013003) { # turn on RC (refcounted) temporarily.
-    ; #asm "xcv_flags",     0x400;
-  }
   asm "xcv_flags",       $cv->CvFLAGS;
-  asm "xcv_gv",          $gvix;	# XXX del_backref 27
+  asm "xcv_gv",          $gvix;
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
 }
 
