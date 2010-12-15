@@ -940,7 +940,7 @@ sub B::COP::save {
   my $is_special = $warnings->isa("B::SPECIAL");
   my $warnsvcast;
   if ($is_special and $B::C::optimize_warn_sv) {
-    $warnsvcast = ($PERL510 and !$PERL511) ? "STRLEN*" : "SV*";
+    $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
   }
   if ( $is_special && $$warnings == 4 ) {
     # use warnings 'all';
