@@ -254,8 +254,6 @@ sub output_runtime {
 void
 Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
 {
-    PERL_ARGS_ASSERT_VIVIFY_REF;
-
     SvGETMAGIC(sv);
     if (!SvOK(sv)) {
 	if (SvREADONLY(sv))
@@ -266,10 +264,10 @@ Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
 	    SvRV_set(sv, newSV(0));
 	    break;
 	case OPpDEREF_AV:
-	    SvRV_set(sv, MUTABLE_SV(newAV()));
+	    SvRV_set(sv, newAV());
 	    break;
 	case OPpDEREF_HV:
-	    SvRV_set(sv, MUTABLE_SV(newHV()));
+	    SvRV_set(sv, newHV());
 	    break;
 	}
 	SvROK_on(sv);
