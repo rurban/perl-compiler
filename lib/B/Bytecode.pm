@@ -443,6 +443,7 @@ sub B::PVNV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::PVIV::bsave($ix);
   if ($PERL510) {
+    # getting back to PVMG
     return if $sv->isa('B::AV');
     return if $sv->isa('B::HV');
     return if $sv->isa('B::CV');
@@ -854,7 +855,11 @@ sub B::PMOP::bsave {
   }
   elsif ($PERL510) {
     # Since PMf_BASE_SHIFT we need a U32, which is a new bytecode for backwards compat
-    asm ($op->pmflags > 0xffff ? "op_pmflags32" : "op_pmflags"), $op->pmflags;
+    if ($op->pmflags > 0xffff) {
+      asm "op_pmflags32", $op->pmflags;
+    } else {
+      asm "op_pmflags", $op->pmflags;
+    }
     bwarn("PMOP pmstashpv: ", $op->pmstashpv,
           ", op_pmflags: ", $op->pmflags
          ) if $debug{M};

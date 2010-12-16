@@ -1,8 +1,10 @@
 * Fixes
 
-5.13 entertry upgraded to LOGOP in ck_eval
 fix Dynaloader arg for dl_init()
 'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
+del_backref cvgv since 5.13
+run-time label lookup
+store_cop_label for 5.12 windows/AIX only
 
 CC backend: goto (needs test), 
 sort with non-default comparison. 
@@ -25,6 +27,7 @@ method_named packagepv quirks at compile-time. Are run-time pkg names tested?
 
 * Features
 
+run-time label lookup
 type checking: Devel::TypeCheck
 compile time v. runtime initialisation:
   execute run-time BEGIN blocks for side-effects such as print or chdir, 

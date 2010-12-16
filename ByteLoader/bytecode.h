@@ -487,8 +487,12 @@ static int bget_swab = 0;
 #else
 /* See op.c:Perl_newSTATEOP. Test 21 */
 # if (PERL_VERSION < 13) || ((PERL_VERSION == 13) && (PERL_SUBVERSION < 5))
-#  define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
+#  if defined(_WIN32) || (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
+#   define BSET_cop_label(cop, arg)      /* XXX not exported */
+#  else
+#   define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
         Perl_store_cop_label(aTHX_ (cop)->cop_hints_hash, arg)
+#  endif
 # else
 /* changed with 5.13.4-5 a77ac40c5b8 */
 #  define BSET_cop_label(cop, arg)	Perl_store_cop_label(aTHX_ (cop), arg, strlen(arg), 0)
