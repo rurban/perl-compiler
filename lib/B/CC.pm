@@ -240,6 +240,9 @@ sub output_runtime {
     print << '__EOV' if $vivify_ref_defined;
 
 /* Code to take a scalar and ready it to hold a reference */
+#  ifndef SVt_RV
+#    define SVt_RV   SVt_IV
+#  endif
 #  define prepare_SV_for_RV(sv)						\
     STMT_START {							\
 		    if (SvTYPE(sv) < SVt_RV)				\
