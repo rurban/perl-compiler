@@ -28,8 +28,8 @@ EOF
 
 use B::CC;
 ctestok(1, "CC", "ccode31i", $script,
-      $B::CC::VERSION <= 1.08
+      ($B::CC::VERSION < 1.08 or ($]>5.009 and $]<5.011)) # fails 5.10 only
       ? "B:CC Regex in pkg var fails"
       : undef);
 
-#unlink "ccode31i.pm";
+END { unlink "ccode31i.pm"; }
