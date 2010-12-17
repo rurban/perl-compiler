@@ -30,9 +30,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
       }
     }
 } elsif (-e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/) {
-    # prefer static linkage manually, without broken ExtUtils::Embed
-    $linkargs = sprintf("%s $coredir/$Config{libperl} %s",
-		        @Config{qw(ldflags libs)});
+    $linkargs = ldopts("-std");
 } elsif ( $useshrplib and -e "$libdir/$Config{libperl}") {
     # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
     use ExtUtils::Embed;
