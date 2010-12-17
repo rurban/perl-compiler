@@ -3376,8 +3376,12 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 
     if (PL_threadhook(aTHX)) {
         /* Threads hook has vetoed further cleanup */
+#if (PERL_VERSION > 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION > 8))
 	PL_veto_cleanup = TRUE;
         return STATUS_EXIT;
+#else
+        return STATUS_NATIVE_EXPORT;
+#endif
     }
     PerlIO_destruct(aTHX);
 }
@@ -3394,6 +3398,7 @@ EOT
     for (0 .. $#static_free) {
       # set the sv/xpv to &PL_sv_undef, not the pv itself. 
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
+      # XXX Another idea >5.10 is SvFLAGS(pv) = SVTYPEMASK
       my $s = $static_free[$_];
       if ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
