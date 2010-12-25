@@ -240,7 +240,7 @@ tests[38]='for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_
 result[38]='ok'
 # check re::is_regexp, and on 5.12 if being upgraded to SVt_REGEXP
 usere="`$PERL -e'print (($] < 5.011) ? q(use re;) : q())'`"
-tests[39]=$usere'$a=${qr//};$a=2;print ($] < 5.007?1:re::is_regexp(\$a))'
+tests[39]=$usere'$a=qr/x/;print ($] < 5.007?1:re::is_regexp($a))'
 result[39]='1'
 # => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
 # String with a null byte -- used to generate broken .c on 5.6.2 with static pvs

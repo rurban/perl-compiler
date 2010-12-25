@@ -161,7 +161,7 @@ for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_S
 >>>>
 ok
 ############## 38 constant autoload loop crash test #########
-{$a=qr//;print($] < 5.007 ? 1 : re::is_regexp($a))}
+{$a=qr/x/;print($] < 5.007 ? 1 : re::is_regexp($a))}
 >>>>
 1
 ############## 39 non-regexps being upgraded to SVt_REGEXP #####
