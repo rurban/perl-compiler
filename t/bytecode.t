@@ -62,7 +62,7 @@ push @todo, (42)    if $ITHREADS and $] == 5.010001; # XXX ???
 push @todo, (42..43) if !$ITHREADS;
 push @todo, (44)    if $] > 5.011003;
 # cannot store labels on windows 5.12: 21
-push @todo, (21,44) if $^O eq 'MSWin32' and if $] > 5.011003 and $] < 5.013;
+push @todo, (21,44) if $^O eq 'MSWin32' and $] > 5.011003 and $] < 5.013;
 #push @todo, (10) if $] >= 5.013003 and $DEBUGGING;
 
 my @skip = (); #(20,27,29) if $] >= 5.010;
