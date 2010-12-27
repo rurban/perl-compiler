@@ -50,7 +50,7 @@ if ($DEBUGGING) {
     for (0..@insn_name) { $insncov{$_} = 0; }
   }
 }
-my @todo = (33);
+my @todo = (); # 33 fixed with r802
 @todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..44,46)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #pop @todo if $] > 5.011003; # 39 passes on 5.11.3
