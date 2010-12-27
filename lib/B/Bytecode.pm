@@ -51,8 +51,9 @@ my $PERL56  = ( $] <  5.008001 );
 my $PERL510 = ( $] >= 5.009005 );
 my $PERL511 = ( $] >= 5.011 );
 my $PERL513 = ( $] >= 5.013002 );
-our ($quiet);
-my ( $varix, $opix, $savebegins, %walked, %files, @cloop, %debug );
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+our ($quiet, %debug);
+my ( $varix, $opix, $savebegins, %walked, %files, @cloop );
 my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
 my %optab   = ( 0, 0 );
@@ -65,9 +66,10 @@ my @packages;    # list of packages to compile. 5.6 only
 sub nice ($) { }
 
 my %optype_enum;
-my ($SVt_PVGV, $SVf_FAKE, $POK);
+my ($SVt_PV, $SVt_PVGV, $SVf_FAKE, $POK);
 if ($PERL56) {
   sub dowarn {};
+  $SVt_PV = 4;
   $SVt_PVGV = 13;
   $SVf_FAKE = 0x00100000;
   $POK = 0x00040000 | 0x04000000;
@@ -77,6 +79,7 @@ if ($PERL56) {
   sub MAGICAL56 { $_[0]->FLAGS & 0x000E000 } #(SVs_GMG|SVs_SMG|SVs_RMG)
 } else {
   no strict 'subs';
+  $SVt_PV = 4;
   $SVt_PVGV = SVt_PVGV;
   $SVf_FAKE = SVf_FAKE;
 }
@@ -163,7 +166,7 @@ sub B::OP::ix {
 	# bless $op, $] > 5.013007 ? 'B::LISTOP' : 'B::LOGOP';
         warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n";
         bless $op, 'B::LOGOP';
-      } elsif (0) { # only needed when we have to check for new wrong BASEOP's
+      } elsif ($DEBUGGING) { # only needed when we have to check for new wrong BASEOP's
 	if (eval "require Opcodes;") {
 	  my $class = Opcodes::opclass($op->type);
 	  if ($class > 0) {
@@ -173,7 +176,7 @@ sub B::OP::ix {
 	  }
 	} else {
           # 5.10 only
-	  my %baseops = map { $_ => 1} qw(2 5 6 7 8 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 181 182 183 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268 269 270 271 272 273 274 275 276 277 278 279 280 281 282 283 284 285 286 287 288 289 290 291 292 295 296 297 298 300 301 302 303 306 307 308 309 310 311 312 313 314 315 316 317 318 319 320 321 322 323 324 325 326 327 328 330 331 333 334 336 337 339 340 341 342 347 348 352 353 358 359 360);
+	  my %baseops = map { $_ => 1} qw(3 184 2 5 6 7 8 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 181 182 183 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268 269 270 271 272 273 274 275 276 277 278 279 280 281 282 283 284 285 286 287 288 289 290 291 292 295 296 297 298 300 301 302 303 306 307 308 309 310 311 312 313 314 315 316 317 318 319 320 321 322 323 324 325 326 327 328 330 331 333 334 336 337 339 340 341 342 347 348 352 353 358 359 360);
 	  warn "unknown OP class for ".$op->name."\n" unless $baseops{$op->type};
 	}
       }
@@ -614,6 +617,7 @@ sub B::GV::desired {
     eval "require B::Debug;";
     $gv->debug;
   }
+  #unless ($] > 5.013005 and $hv->NAME eq 'B')
   $files{ $gv->FILE } && $gv->LINE
     || ${ $cv   = $gv->CV }   && $files{ $cv->FILE }
     || ${ $form = $gv->FORM } && $files{ $form->FILE };
@@ -629,11 +633,27 @@ sub B::HV::bwalk {
       if ( $$hash && $hash->NAME ) {
         $hash->bwalk;
       }
-      $v->ix(1) if desired $v;
+      # B since 5.13.6 (744aaba0598) pollutes our namespace. Keep it clean
+      # XXX This fails if our source really needs any B constant
+      unless ($] > 5.013005 and $hv->NAME eq 'B') {
+	$v->ix(1) if desired $v;
+      }
     }
     else {
+      if ($] > 5.013005 and $hv->NAME eq 'B') { # see above. omit B prototypes
+	return;
+      }
       nice "[prototype]";
-      asm "gv_fetchpvx", cstring $hv->NAME . "::$k";
+      # XXX when? do not init empty prototypes. But only 64-bit fails.
+      if ($PERL510 and $v->SvTYPE == $SVt_PVGV) {
+	asm "newpv", cstring $hv->NAME . "::$k";
+	# Beware of special gv_fetchpv GV_* flags.
+	# gv_fetchpvx uses only GV_ADD, which fails e.g. with *Fcntl::O_SHLOCK,
+	# if "Your vendor has not defined Fcntl macro O_SHLOCK"
+	asm "gv_fetchpvn_flags", 0x20; 	# GV_NOADD_NOINIT
+      } else {
+	asm "gv_fetchpvx", cstring $hv->NAME . "::$k";
+      }
       $svtab{$$v} = $varix = $tix;
       # we need the sv_flags before, esp. for DEBUGGING asserts
       asm "sv_flags",  $v->FLAGS;
@@ -795,7 +815,7 @@ sub B::PMOP::bsave {
   my ( $rrop, $rrarg, $rstart );
 
   # my $pmnextix = $op->pmnext->ix;	# XXX
-  bwarn( B::peekop($op), ", ix: $ix" ) if $debug{M} or $debug{o};
+  bwarn( B::peekop($op), " ix: $ix" ) if $debug{M} or $debug{o};
   if (ITHREADS) {
     if ( $op->name eq 'subst' ) {
       $rrop   = "op_pmreplroot";
@@ -855,14 +875,8 @@ sub B::PMOP::bsave {
   }
   elsif ($PERL510) {
     # Since PMf_BASE_SHIFT we need a U32, which is a new bytecode for backwards compat
-    if ($op->pmflags > 0xffff) {
-      asm "op_pmflags32", $op->pmflags;
-    } else {
-      asm "op_pmflags", $op->pmflags;
-    }
-    bwarn("PMOP pmstashpv: ", $op->pmstashpv,
-          ", op_pmflags: ", $op->pmflags
-         ) if $debug{M};
+    asm "op_pmflags", $op->pmflags;
+    bwarn("PMOP op_pmflags: ", $op->pmflags) if $debug{M};
     my $pv = $op->precomp;
     asm "newpv", pvstring $pv;
     asm "pregcomp";
@@ -950,6 +964,7 @@ sub B::OP::opwalk {
       ? () : $op->oplist; # 5.6 may be called by a COP
     push @cloop, undef;
     $ix = $_->ix while $_ = pop @oplist;
+    print "\n# rest of cloop\n";
     while ( $_ = pop @cloop ) {
       asm "ldop",    $optab{$$_};
       asm "op_next", $optab{ ${ $_->next } };
@@ -963,6 +978,7 @@ sub save_cq {
   if ( ( $av = begin_av )->isa("B::AV") ) {
     if ($savebegins) {
       for ( $av->ARRAY ) {
+	# XXX Need to extra added paths to @INC
         next unless $_->FILE eq $0;
         asm "push_begin", $_->ix;
       }
@@ -1025,7 +1041,7 @@ sub symwalk {
     walksymtable( \%{"$_[0]"}, "desired", \&symwalk, $_[0] );
   }
   warn "considering $_[0] ... " . ( $ok ? "accepted\n" : "rejected\n" )
-    if $debug{bc};
+    if $debug{b};
   $ok;
 }
 

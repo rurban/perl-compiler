@@ -22,10 +22,10 @@ bl_getc(struct byteloader_fdata *data)
     if (SvCUR(data->datasv) <= (STRLEN)data->next_out) {
       int result;
       /* Run out of buffered data, so attempt to read some more */
-      *(SvPV_nolen (data->datasv)) = '\0';
-      SvCUR_set (data->datasv, 0);
+      *(SvPV_nolen(data->datasv)) = '\0';
+      SvCUR_set(data->datasv, 0);
       data->next_out = 0;
-      result = FILTER_READ (data->idx + 1, data->datasv, BYTELOADER_BUFFER);
+      result = FILTER_READ(data->idx + 1, data->datasv, BYTELOADER_BUFFER);
 
       /* Filter returned error, or we got EOF and no data, then return EOF.
 	 Not sure if filter is allowed to return EOF and add data simultaneously
@@ -35,7 +35,7 @@ bl_getc(struct byteloader_fdata *data)
       /* Else there must be at least one byte present, which is good enough */
     }
 
-    return *((U8 *) SvPV_nolen (data->datasv) + data->next_out++);
+    return *((U8 *) SvPV_nolen(data->datasv) + data->next_out++);
 }
 
 int
@@ -46,14 +46,14 @@ bl_read(struct byteloader_fdata *data, char *buf, size_t size, size_t n)
     STRLEN len;
     size_t wanted = size * n;
 
-    start = SvPV (data->datasv, len);
+    start = SvPV(data->datasv, len);
     if (len < (data->next_out + wanted)) {
       int result;
 
       /* Shuffle data to start of buffer */
       len -= data->next_out;
       if (len) {
-	memmove (start, start + data->next_out, len + 1);
+	memmove(start, start + data->next_out, len + 1);
       } else {
 	*start = '\0';	/* Avoid call to memmove. */
       }
@@ -62,9 +62,9 @@ bl_read(struct byteloader_fdata *data, char *buf, size_t size, size_t n)
 
       /* Attempt to read more data. */
       do {
-	result = FILTER_READ (data->idx + 1, data->datasv, BYTELOADER_BUFFER);
+	result = FILTER_READ(data->idx + 1, data->datasv, BYTELOADER_BUFFER);
 	
-	start = SvPV (data->datasv, len);
+	start = SvPV(data->datasv, len);
       } while (result > 0 && len < wanted);
       /* Loop while not (EOF || error) and short reads */
 
@@ -74,7 +74,7 @@ bl_read(struct byteloader_fdata *data, char *buf, size_t size, size_t n)
     }
 
     if (wanted > 0) {
-      memcpy (buf, start + data->next_out, wanted);
+      memcpy(buf, start + data->next_out, wanted);
       data->next_out += wanted;
       wanted /= size;
     }

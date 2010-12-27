@@ -1,7 +1,7 @@
 #      Assembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008,2009 Reini Urban
+#      Copyright (c) 2008,2009,2010 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -17,7 +17,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '0.08';
+$VERSION   = '0.09';
 
 use strict;
 my %opnumber;
@@ -172,6 +172,10 @@ sub B::Asmdata::PUT_long {
 
 sub B::Asmdata::PUT_svtype {
   $Config{longsize} == 8 ? &B::Asmdata::PUT_IV64 : &B::Asmdata::PUT_U32;
+}
+
+sub B::Asmdata::PUT_pmflags {
+  return ($] < 5.013) ? B::Asmdata::PUT_U16(@_) : B::Asmdata::PUT_U32(@_);
 }
 
 my %unesc = (
@@ -453,6 +457,9 @@ __END__
 B::Assembler - Assemble Perl bytecode
 
 =head1 SYNOPSIS
+
+	perl -MO=Bytecode,-S,-omy.asm my.pl
+	assemble my.asm > my.plc
 
 	use B::Assembler qw(newasm endasm assemble);
 	newasm(\&printsub);	# sets up for assembly

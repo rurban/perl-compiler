@@ -42,7 +42,7 @@ my $c_header = <<"EOT";
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2008,2009 Reini Urban
+ *      Copyright (c) 2008,2009,2010 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
  *      License or the Artistic License, as specified in the README file.
@@ -462,7 +462,7 @@ EOT
 	my $optargcast = $optarg eq ", arg" ? ", ${rvaldcast}arg" : '';
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
-	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ($argtype =~ /index$/ ? ', 0x%x' : ', %ld'))
+	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ", ".($argtype =~ /index$/ ? '0x%x' : $argfmt))
 	      : '';
     } elsif ($flags =~ /s/) {
 	# Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
@@ -473,7 +473,7 @@ EOT
     elsif ($optarg && $lvalue ne "none") {
 	print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n" unless $unsupp;
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", ${rvaldcast}arg%s));\n",
-	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : '%ld');
+	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : $argfmt);
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 }
@@ -960,7 +960,7 @@ __END__
 110 !i10   op_pmstash	*(SV**)&(cPMOP->op_pmstashstartu).op_pmreplstart svindex
 111 !i10   op_pmreplrootgv *(SV**)&(cPMOP->op_pmreplrootu).op_pmreplroot svindex
 112 0   pregcomp	PL_op				pvcontents	x
-113 0   op_pmflags	cPMOP->op_pmflags		U16
+113 0   op_pmflags	cPMOP->op_pmflags		pmflags		x
 114 <10 op_pmpermflags  cPMOP->op_pmpermflags		U16
 115 8-10 op_pmdynflags   cPMOP->op_pmdynflags		U8
 116 0 	op_sv		cSVOP->op_sv			svindex
@@ -1008,4 +1008,4 @@ __END__
 154 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
 155 10 	cop_seq_low	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xlow  U32
 156 10	cop_seq_high	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xhigh U32
-157 13  op_pmflags32	cPMOP->op_pmflags		U32
+157 8	gv_fetchpvn_flags bstate->bs_sv			U32		x

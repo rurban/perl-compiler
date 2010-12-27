@@ -47,6 +47,7 @@
 	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label), 
 	  issue 46. resolve duplicate such labels.
 	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
+	* Assembler.pm (1.09): support pmflags
 	* perlcc (2.09): added cc time for --time.
 	same INC as in caller - omit duplicates
 	* cc_harness: improve -Bstatic
