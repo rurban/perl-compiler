@@ -3,9 +3,24 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.28	2010-09-?? rurban
-	fixed CV and most named methods for 5.14
+1.28	2010-12-?? rurban
+	fixed pmflags, CV and most named methods for 5.14
 
+	* Bytecode.pm (1.09):
+	fixed cv_gv and push_begin del_backref problem (27, ...) > 5.13
+	special cased op_pmflags: U32 needed since 5.13 (PMf_BASE_SHIFT)
+	  Fixes op_pmflags since 5.12 ((3..4,27..29,31,33), esp. pp_subst
+	start for Windows 5.12 cop_store_label workaround: Feature disabled for now.
+	  Will have to include CORE hv.c
+	  mingw	5.12 compiles now again and passes all but 21,33,42..44
+	Fixed entrytry with Bytecode >= 5.12:
+	  ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a 
+	  B::OP (BASEOP) 
+	add BEGIN { push|unshift @INC } parts of blocks (test 33)
+	* Byteloader (0.07):
+	Support new CvSTASH_set.
+	Basic op_pmflags U16/U32 support. No version conversion yet.
+	BSET_gv_fetchpvn_flags: new for empty constant prototypes (fails on 64bit only)
 	* C.pm: add -fno-destruct (with -O3) with a minimal perl_destruct,
 	  (re-enables -fcog >= 5.10),
 	add -fro-inc (with -O2) readonly INC and curpad strings,
@@ -46,7 +61,8 @@
 	add labels for alternate ops (e.g. run-time jumps). Not sure yet if the 
 	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label), 
 	  issue 46. resolve duplicate such labels.
-	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header
+	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header.
+	support pmflags
 	* Assembler.pm (1.09): support pmflags
 	* perlcc (2.09): added cc time for --time.
 	same INC as in caller - omit duplicates

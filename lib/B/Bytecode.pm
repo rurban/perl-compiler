@@ -978,7 +978,6 @@ sub save_cq {
   if ( ( $av = begin_av )->isa("B::AV") ) {
     if ($savebegins) {
       for ( $av->ARRAY ) {
-	# XXX Need to extra added paths to @INC
         next unless $_->FILE eq $0;
         asm "push_begin", $_->ix;
       }
@@ -989,6 +988,13 @@ sub save_cq {
 
         # XXX BEGIN { goto A while 1; A: }
         for ( my $op = $_->START ; $$op ; $op = $op->next ) {
+	  # special cases for:
+	  # 1. push|unshift @INC, "libpath"
+	  if ($op->name =~ /^(unshift|push)$/) {
+	    asm "push_begin", $_->ix;
+	    last;
+	  }
+	  # 2. use|require ... unless in tests
           next unless $op->name eq 'require' ||
 
               # this kludge needed for tests
@@ -1230,8 +1236,11 @@ Prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
 
 =item B<-b>
 
-Save all the BEGIN blocks. Normally only BEGIN blocks that C<require>
-other files (ex. C<use Foo;>) are saved.
+Save all the BEGIN blocks.
+
+Normally only BEGIN blocks that C<require>
+other files (ex. C<use Foo;>) or push|unshift
+to @INC are saved.
 
 =item B<-k>
 
@@ -1266,7 +1275,7 @@ Be verbose.
 
 =item B<-TI>
 
-Restore @INC for running within the CORE testsuite.
+Restore full @INC for running within the CORE testsuite.
 
 =item B<-TF> I<cop file>
 
