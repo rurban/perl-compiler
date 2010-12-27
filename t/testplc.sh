@@ -78,13 +78,13 @@ function btest {
   if [ "$Mblib" != " " -a -z "$SKIP" ]; then 
     rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.concise ${o}_s_${VERS}.dbg 2>/dev/null
     bcall ${o} s
-    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}s_${VERS}.disasm
-    $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}s_${VERS}.disasm
-    mv ${o}s_${VERS}.disasm ${o}_s_${VERS}.disasm
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}_s_${VERS}.disasm
+    $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}_s_${VERS}.disasm
+    #mv ${o}s_${VERS}.disasm ${o}_s_${VERS}.disasm
 
     # understand annotations
-    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}S_${VERS}.asm \> ${o}S_${VERS}.plc
-    $PERL $Mblib script/assemble ${o}S_${VERS}.asm > ${o}S_${VERS}.plc
+    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}_s_${VERS}.disasm \> ${o}S_${VERS}.plc
+    $PERL $Mblib script/assemble ${o}_s_${VERS}.disasm > ${o}S_${VERS}.plc
     # full assembler roundtrips
     [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}S_${VERS}.plc \> ${o}S_${VERS}.disasm
     $PERL $Mblib script/disassemble ${o}S_${VERS}.plc > ${o}S_${VERS}.disasm
@@ -124,7 +124,11 @@ function btest {
       test "X$res" = "X${result[$n]}" && pass "./${o}.plc" "=> '$res'"
   else
       fail "./${o}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
-      [ -n "$Q" ] || (echo ${ICMD} -D$D ${o}.plc; ${ICMD} -D$D ${o}.plc)
+      if [ -z "$Q" ]; then
+          echo -n "Again with -Dv? (or Ctrl-Break)"
+          read
+          echo ${ICMD} -D$D ${o}.plc; ${ICMD} -D$D ${o}.plc
+      fi
       test -z $CONT && exit
   fi
 }
