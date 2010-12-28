@@ -10,8 +10,8 @@
 	fixed cv_gv and push_begin del_backref problem (27, ...) > 5.13
 	special cased op_pmflags: U32 needed since 5.13 (PMf_BASE_SHIFT)
 	  Fixes op_pmflags since 5.12 ((3..4,27..29,31,33), esp. pp_subst
-	start for Windows 5.12 cop_store_label workaround: Feature disabled for now.
-	  Will have to include CORE hv.c
+	start for Windows 5.12 cop_store_label workaround: Labels disabled for now.
+	  Failed to include CORE hv.c: too large.
 	  mingw	5.12 compiles now again and passes all but 21,33,42..44
 	Fixed entrytry with Bytecode >= 5.12:
 	  ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a 
@@ -40,9 +40,10 @@
 	add ptr_undef instead of NULL initialization non-threaded
 	fix many cast warnings
 	fix AV fill +1
-	* C.xs, typemap: removed. r-magic replaces this hack completely
+	required to run C.xs runloop to find PMOPs for QRs
 	* CC.pm (1.08): many fixes
 	use new B::C optimizations, new -DF
+	fixed issue 31 also run C.xs runloop to find PMOPs for QRs,
 	fixed issue 35 same variable name in different scope (Heinz Knutzen),
 	fixed issue 36 panic: leaveloop, no cxstack (Heinz Knutzen)
 	fixed issue 37 orassign (Heinz Knutzen)
@@ -67,11 +68,12 @@
 	* perlcc (2.09): added cc time for --time.
 	same INC as in caller - omit duplicates
 	* cc_harness: improve -Bstatic
-	* t/testc.sh: simplified
+	* t/testc.sh: simplified. Fixed various wrong tests
 	* t/testm.sh: fixed UAC issues on Win7
 	* t/test.pl: new faster test functions for the new issues
 	* t/issue27.t: added (Reported by alexchorny, Apr 25, 2010)
 	* t/issue29.t: added (Reported by Heinz Knutzen)
+	* t/issue31.t: added (Reported by Heinz Knutzen)
 	* t/issue34.t: added (Reported by Heinz Knutzen)
 	* t/issue35.t: added (Reported and partially fixed by Heinz Knutzen)
 	* t/issue36.t: added (Reported and fixed by Heinz Knutzen)
@@ -88,6 +90,7 @@
 	* t/issue50.t: added (Reported by Heinz Knutzen)
 	* t/issue51.t: added (Reported and fixed by Heinz Knutzen)
 	* t/issue52.t: added (Reported and fixed by Heinz Knutzen)
+	* t/issue54.t: added and fixed
 
 1.27	2010-07-30 rurban
 	Fixed 1.26 CV regressions for 5.8 and 5.10
