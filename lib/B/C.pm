@@ -182,7 +182,15 @@ package B::C;
 use Exporter ();
 our %REGEXP;
 
-@ISA       = qw(Exporter);
+{ # block necessary for caller to work
+  my $caller = caller;
+  if ( $caller eq 'O' ) {
+    require XSLoader;
+    XSLoader::load('B::C'); # for r-magic only
+  }
+}
+
+@ISA        = qw(Exporter);
 @EXPORT_OK =
   qw(output_all output_boilerplate output_main mark_unused
      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
@@ -992,7 +1000,7 @@ sub B::COP::save {
 	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
 		  $copsect->index, cstring( $op->label ),
 		  length $op->label, 0));
-      } else {
+      } elsif ($^O !~ /^MSWin32|AIX$/ or !$ENV{PERL_DL_NONLAZY}) {
 	$init->add(
 	  sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
 		  $copsect->index, cstring( $op->label )));
@@ -1789,25 +1797,31 @@ sub B::PVMG::save_magic {
         )
       );
     }
-    elsif ( $type eq 'r' ) { # qr magic, formerly done in C.xs. test 20
-      my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX; # REGEX not in 5.6
-      my $pmop = $REGEXP{$rx}; # XXX how should this work?
-      # XXX stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c)
-      #confess "PMOP not found for REGEXP $rx" unless $pmop; # disabled until fixed
-
-      my ( $resym, $relen ) = savere( $mg->precomp );
-      if ($pmop) { # as long as we don't set %REGEXP we cannot store the qr regexp
+    elsif ( $type eq 'r' ) { # qr magic, for 5.6 done in C.xs. test 20
+      my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX;
+      # stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c) in C.xs
+      my $pmop = $REGEXP{$rx};
+      if (!$pmop) {
+	warn "C.xs Warning: PMOP missing for QR\n";
+      } else {
+	my ($resym, $relen);
+	if ($PERL56) {
+	  ($resym, $relen) = savere( $pmop->precomp ); # 5.6 has precomp only in PMOP
+	} else {
+	  ($resym, $relen) = savere( $mg->precomp );
+	}
 	my $pmsym = $pmop->save;
 	if ($PERL510) {
 	  $init->add( split /\n/,
-		      sprintf <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
+		    sprintf <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
     REGEXP* rx = CALLREGCOMP($resym, %d);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE
-        }
+	}
 	else {
+	  $pmsym =~ s/\(OP\*\)\&pmop_list/&pmop_list/;
 	  $init->add( split /\n/,
 		      sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
 {
@@ -1815,7 +1829,7 @@ CODE
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE
-	}
+        }
       }
     }
     elsif ( $type eq 'D' ) { # XXX regdata AV - coverage?

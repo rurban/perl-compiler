@@ -141,6 +141,14 @@ sub init_hash {
   pp_enter pp_method);
 %ignore_op = init_hash qw(pp_scalar pp_regcmaybe pp_lineseq pp_scope pp_null);
 
+{ # block necessary for caller to work
+  my $caller = caller;
+  if ( $caller eq 'O' ) {
+    require XSLoader;
+    XSLoader::load('B::C'); # for r-magic only
+  }
+}
+
 sub debug {
   if ( $debug{runtime} ) {
     # TODO: fix COP to callers line number

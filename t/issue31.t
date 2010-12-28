@@ -8,7 +8,8 @@ BEGIN {
   require "test.pl";
 }
 
-open FH, ">", "ccode31i.pm";
+my $pm = "Ccode31i.pm";
+open FH, ">", $pm;
 print FH <<'EOF';
 package Ccode31i;
 my $regex = qr/\w+/;
@@ -32,4 +33,4 @@ ctestok(1, "CC", "ccode31i", $script,
       ? "B:CC Regex in pkg var fails"
       : undef);
 
-END { unlink "ccode31i.pm"; }
+END { unlink $pm; }
