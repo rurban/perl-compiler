@@ -1001,7 +1001,7 @@ sub B::COP::save {
 		  $copsect->index, cstring( $op->label ),
 		  length $op->label, 0));
       } elsif ($^O !~ /^MSWin32|AIX$/ or !$ENV{PERL_DL_NONLAZY}) {
-	$init->add(
+        $init->add(
 	  sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
 		  $copsect->index, cstring( $op->label )));
       }
@@ -1875,7 +1875,7 @@ sub B::RV::save {
   }
   else {
     # GVs need to be handled at runtime
-    if ( ref( $sv->RV ) eq 'B::GV' ) {
+    if ( ref( $sv->RV ) eq 'B::GV' or $rv =~ /^gv_list/) {
       $xrvsect->add("(SV*)Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
