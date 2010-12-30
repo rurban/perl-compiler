@@ -538,6 +538,7 @@ sub todo_tests_default {
     my $ITHREADS  = ($Config{useithreads});
 
     my @todo  = (35,41..46); # 8,14-16 fail on 5.00505 (max 20 then)
+    push @todo, (15) if !$ITHREADS;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
@@ -562,16 +563,16 @@ sub todo_tests_default {
         # on cygwin 29 passes
         push @todo, (21,30,103); #5.8.9
         push @todo, (27)    if $] < 5.007;
-        #push @todo, (39)    if $] > 5.007;
+        #push @todo, (39)   if $] > 5.007;
         push @todo, (11,27) if $] < 5.009;
-        push @todo, (14) if $] >= 5.010;
+        push @todo, (14)    if $] >= 5.010;
         # solaris also. I suspected nvx<=>cop_seq_*
         push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         #push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (26)    if $what =~ /^cc_o[12]/;
     }
-    push @todo, (32)        if $] >= 5.011003;
+    #push @todo, (32)       if $] >= 5.011003;
     return @todo;
 }
 
