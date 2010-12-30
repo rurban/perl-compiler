@@ -644,6 +644,16 @@ sub B::OP::save {
         cstring( $threadsv_names[ $op->targ ] ) )
     );
   }
+  if (ref($op) eq 'B::OP') { # check wrong BASEOPs
+    # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
+    #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
+    #   op->other points to the leavetry op, which is needed for the eval scope.
+    if ($op->name eq 'entertry') {
+      warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n";
+      bless $op, 'B::LOGOP';
+      return $op->save($level);
+    }
+  }
 
   # since 5.10 nullified cops free their additional fields
   if ( $PERL510 and !$type and $OP_COP{ $op->targ } ) {
