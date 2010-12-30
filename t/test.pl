@@ -537,7 +537,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (35,41..46); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (35,41..44,46); # 8,14-16 fail on 5.00505 (max 20 then)
     push @todo, (15) if !$ITHREADS;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {

@@ -3,8 +3,8 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.28	2010-12-?? rurban
-	fixed pmflags, CV and most named methods for 5.14
+1.28	2010-12-31 rurban
+	fixed XSLoader, pmflags, CV and most named methods for 5.14
 
 	* Bytecode.pm (1.09):
 	fixed cv_gv and push_begin del_backref problem (27, ...) > 5.13
@@ -44,6 +44,8 @@
 	Fixed entrytry >= 5.12 as in Bytecode:
 	  ck_eval upgrades the UNOP entertry to a LOGOP, 
 	  but B gets us just a B::OP (BASEOP) 
+	Fixed XSLoader, loading dynamic modules works now (test 45),
+	  had to set the .pm path in the calling context.
 	* CC.pm (1.08): many fixes
 	use new B::C optimizations, new -DF
 	fixed issue 31 also run C.xs runloop to find PMOPs for QRs,

@@ -1724,13 +1724,13 @@ sub mark_threads {
     my $stash = 'threads';
     mark_package($stash);
     $use_xsloader = 1;
-    $xsub{$stash} = 'Dynamic-XSLoaded';
+    $xsub{$stash} = 'Dynamic-' . $INC{'threads.pm'};
   }
   my $stash = 'threads::shared';
   mark_package($stash);
   # XXX why is this needed? threads::shared should be initialized automatically
   $use_xsloader = 1; # ensure threads::shared is initialized
-  $xsub{$stash} = 'Dynamic-XSLoaded';
+  $xsub{$stash} = 'Dynamic-' . $INC{'threads/shared.pm'};
   warn "mark threads and threads::shared for 'P' magic\n" if $debug{mg};
 }
 
@@ -2020,7 +2020,19 @@ sub B::CV::save {
       elsif ( $stashname ne 'attributes'
         && !UNIVERSAL::isa( $stashname, 'DynaLoader' ) )
       {
-        $xsub{$stashname} = 'Dynamic-XSLoaded';
+	my $stashfile = $stashname;
+	if ($file =~ /XSLoader\.pm$/) {
+	  $stashfile =~ s/::/\//g;
+	  $file = $INC{$stashfile . ".pm"};
+	}
+	unless ($file) {
+	  for (@DynaLoader::dl_shared_objects) {
+	    if (index($_, $stashfile)) {
+	      $file = $_; last;
+	    }
+	  }
+	}
+	$xsub{$stashname} = 'Dynamic-'.$file;
         $use_xsloader = 1;
       }
       else {
@@ -3636,7 +3648,7 @@ EOT
 
   # my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( keys %xsub ) {
-    if ( $xsub{$stashname} !~ m/Dynamic/ and !$static_ext{$stashname}) {
+    if ( $xsub{$stashname} !~ m/^Dynamic/ and !$static_ext{$stashname}) {
       my $stashxsub = $stashname;
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
       $stashxsub =~ s/::/__/g;
@@ -3655,41 +3667,55 @@ EOT
 static void
 dl_init(pTHX)
 {
-	/* char *file = __FILE__; */
+	char *file = __FILE__;
 EOT
-  if (@DynaLoader::dl_modules) {
+  my ($dl, $xs);
+  foreach my $stashname (@DynaLoader::dl_modules) {
+    if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
+      # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
+      # otherwise we only have -e
+      $xs++ if $xsub{$stashname} ne 'Dynamic';
+      $dl++;
+    }
+  }
+  if ($dl) {
     print "\tdTARG;\n\tdSP;\n";
+    print "\tPERL_CONTEXT *cx;\n\tregister I32 cxix;\n" if $xs;
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
+    print "\tcx = &cxstack[++cxstack_ix]; cx->blk_oldcop = PL_curcop;\n" if $xs;
     print "\tSAVETMPS;\n";
     print "\ttarg = sv_newmortal();\n";
-    #warn "dl_init @DynaLoader::dl_modules\n" if $verbose;
     foreach my $stashname (@DynaLoader::dl_modules) {
-      if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/Dynamic/ ) {
-        warn "Loaded $stashname\n" if $verbose;
-        my $stashxsub = $stashname;
-        $stashxsub =~ s/::/__/g;
-        print "\tPUSHMARK(sp);\n";
+      if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
+        warn "dl_init $stashname\n" if $verbose;
+        print "\tPUSHMARK(sp);\n\tEXTEND(SP,1);\n";
         printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
         print "\tPUTBACK;\n";
         print "#ifdef USE_DYNAMIC_LOADING\n";
         warn "bootstrapping $stashname added to dl_init\n" if $verbose;
         if ( $xsub{$stashname} eq 'Dynamic' ) {
-          print qq/\tcall_method("bootstrap",G_DISCARD);\n/;
+          print qq/\tcall_method("bootstrap",G_VOID|G_DISCARD);\n/;
         }
-        else {
-          print qq/\tcall_pv("XSLoader::load",G_DISCARD);\n/;
+        else { # XS: need to fix cx for caller[1] to find auto/...
+	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
+	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop,"%s");\n/, $stashfile;
+          print qq/\tcall_pv("XSLoader::load",G_VOID|G_DISCARD);\n/;
         }
         print "#else\n";
+        my $stashxsub = $stashname;
+        $stashxsub =~ s/::/__/g;
         print "\tboot_$stashxsub(aTHX_ NULL);\n";
         print "#endif\n";
         print "\tSPAGAIN;\n";
+        #print "\tPUTBACK;\n";
       } else {
         warn "no dl_init for $stashname, ".
           (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n") if $verbose;
       }
     }
     print "\tFREETMPS;\n";
+    print "\tcxstack_ix--;\n" if $xs;
     print "\tLEAVE;\n";
     print "/* end DynaLoader bootstrapping */\n";
   }
