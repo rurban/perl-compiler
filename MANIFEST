@@ -85,6 +85,7 @@ t/cc_o1.t
 t/cc_o2.t
 t/issue27.t
 t/issue29.t
+t/issue31.t
 t/issue34.t
 t/issue35.t
 t/issue36.t
