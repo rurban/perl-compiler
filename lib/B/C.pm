@@ -3685,7 +3685,7 @@ EOT
     }
   }
   if ($dl) {
-    print "\tdTARG;\n\tdSP;\n";
+    print "\tdTARG; dSP;\n";
     print "\tPERL_CONTEXT *cx;\n\tregister I32 cxix;\n" if $xs;
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
@@ -3696,6 +3696,7 @@ EOT
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
         warn "dl_init $stashname\n" if $verbose;
         print "\tPUSHMARK(sp);\n\tEXTEND(SP,1);\n";
+	# XXX -O1 needs XPUSHs with dynamic pv
         printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
         print "\tPUTBACK;\n";
         print "#ifdef USE_DYNAMIC_LOADING\n";
