@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.28 r801
+# B::C::VERSION = 1.28 r817
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -19,7 +19,7 @@ pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 fail Test
-fail Data::Dumper
+pass Data::Dumper
 pass File::Spec
 fail File::Temp
 fail ExtUtils::Install #TODO 5.8 debugging
@@ -27,9 +27,9 @@ pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build #TODO <5.10 without threads
-fail File::Path
+pass File::Path
 pass XSLoader
-fail MIME::Base64
+pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
@@ -38,7 +38,7 @@ pass HTML::Tagset
 pass HTML::Parser
 fail Test::Exception
 pass Net::Cmd
-fail Compress::Raw::Zlib
+pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
@@ -54,8 +54,8 @@ fail Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
 fail Test::NoWarnings
-fail version #TODO 5.8
-fail Params::Validate
+pass version #TODO 5.8
+pass Params::Validate
 fail Sub::Name
 fail Filter::Util::Call
 pass Algorithm::C3
@@ -65,20 +65,20 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-fail Devel::GlobalDestruction
+pass Devel::GlobalDestruction
 pass Class::MOP
 fail Moose
 fail Test::Deep
 pass Carp::Clan #TODO < 5.10.1
 pass Module::Pluggable
-fail if(1) => "Sys::Hostname"
+pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 fail DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 fail Test::Warn
@@ -102,9 +102,9 @@ pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.28 - perl-5.008009d-nt
-# pass  72 / 100 (72.0%)
-# fail  28 / 100 (28.0%)
-# todo   7 /  28 (25.0%)
-# skip   0 / 100 (0.0% not installed)
+skip Template::Stash
+# 98 / 100 modules tested with B-C-1.28 - perl-5.008009d-nt
+# pass  78 /  98 (79.6%)
+# fail  20 /  98 (20.4%)
+# todo   7 /  20 (35.0%)
+# skip   2 / 100 (2.0% not installed)
