@@ -549,8 +549,9 @@ sub todo_tests_default {
         push @todo, (103)  if $] < 5.007;
         push @todo, (39)   if $] < 5.009;
         push @todo, (103)  if $] >= 5.010;
-        push @todo, (16)   if $] >= 5.012;
-        push @todo, (29)   if $what eq 'c_o1' and $DEBUGGING;
+        push @todo, (28)   if $what eq 'c';
+        push @todo, (16)   if $what eq 'c'    and $] >= 5.012;
+        #push @todo, (29)   if $what eq 'c_o1' and $DEBUGGING;
         push @todo, (12)   if $what eq 'c_o2';
         push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
         #push @todo, (17..20,22,34..41) if $what =~ 'c_o2';
@@ -561,7 +562,7 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        push @todo, (21,30,103); #5.8.9
+        push @todo, (21,30,45,103); #5.8.9
         push @todo, (27)    if $] < 5.007;
         #push @todo, (39)   if $] > 5.007;
         push @todo, (11,27) if $] < 5.009;

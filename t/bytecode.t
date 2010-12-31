@@ -50,19 +50,17 @@ if ($DEBUGGING) {
     for (0..@insn_name) { $insncov{$_} = 0; }
   }
 }
-my @todo = (); # 33 fixed with r802
+my @todo = (44); # 33 fixed with r802
 @todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..44,46)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #pop @todo if $] > 5.011003; # 39 passes on 5.11.3
-#push @todo, (27) if $] >= 5.010;   # del_backref fixed with r790
+push @todo, (27) if $] >= 5.010;   # del_backref fixed with r790. not?
 #push @todo, (32) if $] > 5.011003; # entertry fixed with r776
-push @todo, (44)    if $] < 5.010;
 push @todo, (42,43) if $] > 5.011003 and $] < 5.013;
 push @todo, (42)    if $ITHREADS and $] == 5.010001; # XXX ???
-push @todo, (42..43) if !$ITHREADS;
-push @todo, (44)    if $] > 5.011003;
+push @todo, (41..43) if !$ITHREADS;
 # cannot store labels on windows 5.12: 21
-push @todo, (21,44) if $^O eq 'MSWin32' and $] > 5.011003 and $] < 5.013;
+push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
 #push @todo, (10) if $] >= 5.013003 and $DEBUGGING;
 
 my @skip = (); #(20,27,29) if $] >= 5.010;

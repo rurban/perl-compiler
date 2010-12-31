@@ -1,7 +1,7 @@
 #! /usr/bin/env perl
 # B::CC limitations with last/next/continue. See README
 # see also issue36.t
-use Test::More tests => 3;
+use Test::More tests => 4;
 use strict;
 BEGIN {
     unshift @INC, 't';
@@ -56,4 +56,4 @@ LOOP:
 }
 EOF
 ctestok(4, "CC", $base, $script4,
-           $B::CC::VERSION < 1.09 ? "B::CC issue 55 non-local exit with last segv" : undef);
+           $B::CC::VERSION < 1.10 ? "B::CC issue 55 non-local exit with last segv" : undef);
