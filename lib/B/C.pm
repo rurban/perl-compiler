@@ -3859,8 +3859,8 @@ sub should_save {
   return $unused_sub_packages{$package} = 0
     if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
   warn "Considering $package\n" if $debug{pkg};
-  return if index $package, " "; # XXX skip invalid package names
-  return if index $package, "("; # XXX this causes the compiler to abort
+  return if index($package, " ") != -1; # XXX skip invalid package names
+  return if index($package, "(") != -1; # XXX this causes the compiler to abort
   foreach my $u ( grep( $unused_sub_packages{$_}, keys %unused_sub_packages ) )
   {
     # If this package is a prefix to something we are saving, traverse it
@@ -3882,7 +3882,7 @@ sub should_save {
   if ( $package eq "FileHandle"
     || $package eq "Config"
     || $package eq "SelectSaver"
-    || $package =~ /^(B|IO)::/ )
+    || $package =~ /^(B|PerlIO|Internals|IO)::/ )
   {
     delete_unsaved_hashINC($package);
     return $unused_sub_packages{$package} = 0;
