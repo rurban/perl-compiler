@@ -211,44 +211,59 @@ log_diag(sprintf("skip %3d / %3d (%s not installed)\n",
 
 exit;
 
-# for t in $(cat t/top100); do grep -a " $t" t/test.pl log.modules-5.0*; read; done
+# for t in $(cat t/top100); do grep -a " $t" t/modules.t log.modules-5.0*; read; done
 sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 
-  if ($] > 5.007 and $] < 5.010001 and $DEBUGGING) {
+  foreach(qw(
+             Attribute::Handlers
+             Sub::Name
+             Filter::Util::Call
+             Moose
+             DBI
+            )) {
+    return 'always' if $_ eq $module;
+  }
+  if ($] < 5.008009) {
+    foreach(qw(
+	       Params::Validate
+	     )) {
+      return '< 5.8.9' if $_ eq $module;
+    }
+  }
+  if ($] >= 5.010 or $DEBUGGING) {
     foreach(qw( ExtUtils::Install )) {
-      return '5.8 debugging' if $_ eq $module;
+      return '>= 5.10 or debugging' if $_ eq $module;
     }
   }
-  if ($] <= 5.010) {
-    foreach(qw(
-	       Carp::Clan
-	     )) {
-      return '< 5.10.1' if $_ eq $module;
-    }
-  }
-  if ($] > 5.010) {
-    foreach(qw(
-	       Test::NoWarnings
-	     )) {
-      return '> 5.10' if $_ eq $module;
-    }
-  }
+# if ($] <= 5.010) {
+#   foreach(qw(
+#	       Carp::Clan
+#	     )) {
+#     return '< 5.10.1' if $_ eq $module;
+#   }
+# }
+#  if ($] > 5.010) {
+#    foreach(qw(
+#	       Test::NoWarnings
+#	     )) {
+#      return '> 5.10' if $_ eq $module;
+#    }
+#  }
   if ($] > 5.010 and $DEBUGGING) {
     foreach(qw(
-	       Test::Harness
-	       Test::Deep
-	       Test::Warn
-	       Test::Tester
-	       Test::Pod
+               Test
+               Encode
 	     )) {
       return '> 5.10 and $DEBUGGING' if $_ eq $module;
     }
   }
   if ($] > 5.013) {
     foreach(qw(
-               Test::Simple DBI File::Temp
+               ExtUtils::MakeMaker
+               MooseX::Types
+               Encode
               ))
     {
       return '> 5.13' if $_ eq $module;
@@ -256,65 +271,86 @@ sub is_todo {
   }
   if ($Config{useithreads}) {
     foreach(qw(
-               Test::Tester
+               Storable
               )) {
       return 'with threads' if $_ eq $module;
     }
-    if ($] > 5.008 and $] < 5.010) {
-      foreach (qw( Attribute::Handlers )) {
-	return '5.8  with threads' if $_ eq $module;
-      }
+#    if ($] > 5.008 and $] < 5.010) {
+#      foreach (qw( Attribute::Handlers )) {
+#	return '5.8  with threads' if $_ eq $module;
+#      }
     }
-    if ($] >= 5.013 and $DEBUGGING) {
+    if ($] >= 5.012) {
       foreach(qw(
-                 Class::MOP
+                 File::Temp
+                 File::Path
+                 MIME::Base64
                 )) {
-	return '5.13.5d with threads' if $_ eq $module;
+	return '>=5.12 with threads' if $_ eq $module;
       }
     }
-    #if ($] >= 5.010) {
-    #  foreach(qw(
-    #            )) {
-    #    return '>= 5.10 with threads' if $_ eq $module;
-    #  }
-    #}
-    if ($] >= 5.010 and !$DEBUGGING) {
+    if ($] >= 5.013) {
       foreach(qw(
-                 URI
+                 Pod::Text
+                 Sub::Uplevel
+                 Test::Exception
+                 Test::Deep
+                 Test::Warn
+                 Compress::Raw::Zlib
+                 Params::Validate
+                 Try::Tiny
+                 Devel::GlobalDestruction
+                 if
+                 Time::Local
+                 B::Hooks::EndOfScope
                 )) {
-	return '>= 5.10 with threads and !$DEBUGGING' if $_ eq $module;
+	return '5.13 with threads' if $_ eq $module;
       }
     }
+#   if ($] >= 5.013 and $DEBUGGING) {
+#     foreach(qw(
+#                Class::MOP
+#               )) {
+#	return '5.13.5d with threads' if $_ eq $module;
+#     }
+#   }
   } else { #no threads
     foreach(qw(
-               MooseX::Types ExtUtils::MakeMaker
+               MooseX::Types
               )) {
       return 'without threads' if $_ eq $module;
     }
+    if ($DEBUGGING) {
+      foreach(qw(
+                 Storable
+                )) {
+	return 'debugging without threads' if $_ eq $module;
+      }
+    }
     if ($] < 5.010) {
       foreach(qw(
-                 Module::Build B::Hooks::EndOfScope
+                 B::Hooks::EndOfScope Test::Tester
                 )) {
 	return '<5.10 without threads' if $_ eq $module;
       }
     }
     if ($] >= 5.008008 and $] < 5.010) {
       foreach(qw(
-                 version
+                 Test::Exception Test::Deep
                 )) {
-	return '5.8' if $_ eq $module;
+	return '5.8 without threads' if $_ eq $module;
       }
     }
-    if ($] >= 5.010 and $] < 5.012) {
+    if ($] >= 5.010 and $] < 5.013) {
       foreach(qw(
-                 Test::Tester
+                 ExtUtils::MakeMaker
                 )) {
-        return '5.10 without threads' if $_ eq $module;
+        return '5.10,5.12 without threads' if $_ eq $module;
       }
     }
     if ($] >= 5.013) {
       foreach(qw(
-                 Encode
+                 Text::Wrap
                 )) {
         return '5.13 without threads' if $_ eq $module;
       }
@@ -326,12 +362,12 @@ sub is_skip {
   my $module = shift or die;
 
   if ($] >= 5.011004) {
-    foreach (qw(Test::Simple Attribute::Handlers)) {
+    foreach (qw(Attribute::Handlers)) {
       #return 'fails $] >= 5.011004' if $_ eq $module;
     }
     if ($Config{useithreads}) { # hangs and crashes threaded since 5.12
-      foreach (qw( Moose Class::MOP)) {
-	#return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
+      foreach (qw( Moose )) {
+	 return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
       }
     }
   }
