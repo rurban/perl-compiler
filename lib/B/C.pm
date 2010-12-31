@@ -1927,8 +1927,14 @@ sub try_autoload {
   if (exists ${"$cvstashname\::"}{AUTOLOAD}) {
     my $auto = \&{"$cvstashname\::AUTOLOAD"};
     # Tweaked version of __PACKAGE__::AUTOLOAD
-    ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
+    ${"AutoLoader\::AUTOLOAD"} = ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
+
+    # Prevent eval from polluting STDOUT and our c code
+    open(REALSTDOUT,">&STDOUT");
+    open(STDOUT,">","/dev/null");
     eval { &$auto };
+    open(STDOUT,">&REALSTDOUT");
+
     # eval { &{"$cvstashname\::$cvname"} };
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
