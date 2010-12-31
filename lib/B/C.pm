@@ -3670,7 +3670,13 @@ dl_init(pTHX)
 	char *file = __FILE__;
 EOT
   my ($dl, $xs);
-  foreach my $stashname (@DynaLoader::dl_modules) {
+  my @dl_modules = @DynaLoader::dl_modules;
+  my @PERLMODS = split(/\,/, $ENV{'PERLMODS'}); # from cpanel
+  foreach my $perlmod (@PERLMODS) {
+    warn "Extra module ${perlmod}\n";
+    push @dl_modules, $perlmod unless grep /^$perlmod$/, @dl_modules;
+  }
+  foreach my $stashname (@dl_modules) {
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
@@ -3686,7 +3692,7 @@ EOT
     print "\tcx = &cxstack[++cxstack_ix]; cx->blk_oldcop = PL_curcop;\n" if $xs;
     print "\tSAVETMPS;\n";
     print "\ttarg = sv_newmortal();\n";
-    foreach my $stashname (@DynaLoader::dl_modules) {
+    foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
         warn "dl_init $stashname\n" if $verbose;
         print "\tPUSHMARK(sp);\n\tEXTEND(SP,1);\n";

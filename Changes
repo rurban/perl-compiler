@@ -67,6 +67,7 @@
 	add labels for alternate ops (e.g. run-time jumps). Not sure yet if the 
 	  full alternate subtrees are saved. fixes test 32 (push_label, pop_label), 
 	  issue 46. resolve duplicate such labels.
+	honor $ENV{'PERLMODS'} (by cPanel)
 	* Disassembler.pm (1.07): read over #! + use Bytecode .plc header.
 	support pmflags
 	* Assembler.pm (1.09): support pmflags
