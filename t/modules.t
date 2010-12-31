@@ -269,16 +269,12 @@ sub is_todo {
       return '> 5.13' if $_ eq $module;
     }
   }
+
   if ($Config{useithreads}) {
     foreach(qw(
                Storable
               )) {
       return 'with threads' if $_ eq $module;
-    }
-#    if ($] > 5.008 and $] < 5.010) {
-#      foreach (qw( Attribute::Handlers )) {
-#	return '5.8  with threads' if $_ eq $module;
-#      }
     }
     if ($] >= 5.012) {
       foreach(qw(
@@ -307,13 +303,6 @@ sub is_todo {
 	return '5.13 with threads' if $_ eq $module;
       }
     }
-#   if ($] >= 5.013 and $DEBUGGING) {
-#     foreach(qw(
-#                Class::MOP
-#               )) {
-#	return '5.13.5d with threads' if $_ eq $module;
-#     }
-#   }
   } else { #no threads
     foreach(qw(
                MooseX::Types
