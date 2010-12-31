@@ -1,6 +1,10 @@
 #! /usr/bin/env perl
 # better use testc.sh -O2 for debugging
 BEGIN {
+  unless (-d ".svn") {
+    print "1..0 #SKIP Only if -d .svn\n";
+    exit;
+  }
   if ($ENV{PERL_CORE}){
     chdir('t') if -d 't';
     @INC = ('.', '../lib');
