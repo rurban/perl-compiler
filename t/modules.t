@@ -351,9 +351,9 @@ sub is_skip {
   my $module = shift or die;
 
   if ($] >= 5.011004) {
-    foreach (qw(Attribute::Handlers)) {
-      #return 'fails $] >= 5.011004' if $_ eq $module;
-    }
+    #foreach (qw(Attribute::Handlers)) {
+    #  return 'fails $] >= 5.011004' if $_ eq $module;
+    #}
     if ($Config{useithreads}) { # hangs and crashes threaded since 5.12
       foreach (qw( Moose )) {
 	 return 'hangs threaded, $] >= 5.011004' if $_ eq $module;

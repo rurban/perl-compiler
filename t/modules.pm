@@ -124,7 +124,7 @@ sub get_module_list {
 sub random_sublist {
   my @modules = @_;
   my %sublist;
-  while (keys %sublist <= 10) {
+  while (keys %sublist < 10) {
     my $m = $modules[int(rand(scalar @modules))];
     next unless $modules{$m}; # Don't random test uninstalled module
     $sublist{$m} = 1;
