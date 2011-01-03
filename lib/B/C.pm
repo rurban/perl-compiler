@@ -956,10 +956,7 @@ sub B::COP::save {
   my $warn_sv;
   my $warnings   = $op->warnings;
   my $is_special = $warnings->isa("B::SPECIAL");
-  my $warnsvcast;
-  if ($is_special and $B::C::optimize_warn_sv) {
-    $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
-  }
+  my $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
   if ( $is_special && $$warnings == 4 ) {
     # use warnings 'all';
     $warn_sv =
@@ -983,7 +980,7 @@ sub B::COP::save {
   }
   else {
     # something else
-    $warn_sv = $warnings->save;
+    $warn_sv = $PERL510 ? "(STRLEN*)".$warnings->save : $warnings->save;
   }
 
   # Trim the .pl extension, to print the executable name only.
@@ -3717,7 +3714,7 @@ EOT
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
-	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop,"%s");\n/, $stashfile;
+	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop,"%s");\n/, $stashfile if $stashfile;
           print qq/\tcall_pv("XSLoader::load",G_VOID|G_DISCARD);\n/;
         }
         print "#else\n";
