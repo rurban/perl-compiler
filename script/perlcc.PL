@@ -386,12 +386,19 @@ sub cc_harness {
     $command .= $B::C::Flags::extra_cflags if $B::C::Flags::extra_cflags;
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
+    my $ccflags = $command;
     # TODO: -shared,-static,-sharedxs,-staticxs
     my $ldopts = ExtUtils::Embed::ldopts("-std");
     if ($stash) {
         my @mods = split /-?u /, $stash;
-        $command .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+        $ldopts = " ".ExtUtils::Embed::ldopts("-std", \@mods);
+        if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
+          $ldopts =~ s/-fstack-protector//;
+        }
     } else {
+        if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
+          $ldopts =~ s/-fstack-protector//;
+        }
         $command .= " $ldopts";
     }
     my $libdir  = "$Config{prefix}/lib";
