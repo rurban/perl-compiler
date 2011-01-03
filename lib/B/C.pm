@@ -1,7 +1,7 @@
 #      C.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
-#      Copyright (c) 2008, 2009, 2010 Reini Urban
+#      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
 #
 #      You may distribute under the terms of either the GNU General Public
@@ -10,7 +10,7 @@
 
 package B::C;
 
-our $VERSION = '1.28';
+our $VERSION = '1.29';
 my %debug;
 
 package B::C::Section;
@@ -2030,8 +2030,9 @@ sub B::CV::save {
 	  $file = $INC{$stashfile . ".pm"};
 	}
 	unless ($file) {
+          $stashfile = "/" . $stashfile . '\.' . $Config{dlext};
 	  for (@DynaLoader::dl_shared_objects) {
-	    if (index($_, $stashfile)) {
+	    if (m{$stashfile$}) {
 	      $file = $_; last;
 	    }
 	  }
