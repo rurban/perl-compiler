@@ -649,7 +649,7 @@ sub B::OP::save {
     #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
     #   op->other points to the leavetry op, which is needed for the eval scope.
     if ($op->name eq 'entertry') {
-      warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n";
+      warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n" if $verbose;
       bless $op, 'B::LOGOP';
       return $op->save($level);
     }
@@ -1930,6 +1930,7 @@ sub try_autoload {
     ${"AutoLoader\::AUTOLOAD"} = ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
 
     # Prevent eval from polluting STDOUT and our c code
+    local *REALSTDOUT;
     open(REALSTDOUT,">&STDOUT");
     open(STDOUT,">","/dev/null");
     eval { &$auto };
@@ -3680,7 +3681,11 @@ EOT
   my @PERLMODS = split(/\,/, $ENV{'PERLMODS'}); # from cpanel
   foreach my $perlmod (@PERLMODS) {
     warn "Extra module ${perlmod}\n";
-    push @dl_modules, $perlmod unless grep /^$perlmod$/, @dl_modules;
+    push @dl_modules, $perlmod unless grep { $_ ne $perlmod } @dl_modules;
+  }
+  if (!$unused_sub_packages{B}) { # filter out unused B. used within the compiler only
+    warn "no dl_init for B, not marked\n";
+    @dl_modules = grep { $_ ne 'B' } @dl_modules;
   }
   foreach my $stashname (@dl_modules) {
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {

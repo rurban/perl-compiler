@@ -1,6 +1,5 @@
 * Fixes
 
-fix Dynaloader arg for dl_init()
 'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
 del_backref cvgv since 5.13
 run-time label lookup
@@ -10,10 +9,10 @@ CC backend: goto (needs test),
 sort with non-default comparison. 
 cc_queue error with the non-seperate sort optree, test 18
 
-check failing modules Attribute::Handlers B::Hooks::EndOfScope
+check failing modules Storable Moose Attribute::Handlers B::Hooks::EndOfScope
 check perlcc failing with File::Temp
 proper destruction of vars in END blocks on -O2
-improve XSUB handling (both static and dynamic, needs tests)
+improve XSUB handling (perlcc, both static and dynamic, needs tests)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
   them, whereas the compiler expects them to be linked to a xpv[inahc]v_root
