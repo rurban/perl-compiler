@@ -218,8 +218,6 @@ sub is_todo {
 
   foreach(qw(
              Attribute::Handlers
-             Sub::Name
-             Filter::Util::Call
              Moose
              DBI
             )) {

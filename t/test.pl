@@ -537,8 +537,8 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (35,41..44,46); # 8,14-16 fail on 5.00505 (max 20 then)
-    push @todo, (15) if !$ITHREADS;
+    my @todo  = (15,35,41..44,46); # 8,14-16 fail on 5.00505 (max 20 then)
+    #push @todo, (15) if !$ITHREADS;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
@@ -553,11 +553,11 @@ sub todo_tests_default {
         push @todo, (28)   if $what eq 'c';
         push @todo, (16)   if $] > 5.013;
         #push @todo, (29)   if $what eq 'c_o1' and $DEBUGGING;
-        push @todo, (12)   if $what eq 'c_o2';
+        push @todo, (12)   if $what =~ /c_o[234]/;
         push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
         #push @todo, (17..20,22,34..41) if $what =~ 'c_o2';
         #push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
-	#push @todo, (10..12,28) if $what =~ /c_o[234]/ and $] >= 5.010;
+	push @todo, (29,45) if $what =~ /c_o[234]/ and $] >= 5.010;
 	#push @todo, (25) if $what eq 'c_o' and $^O eq 'MSWin32';
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {

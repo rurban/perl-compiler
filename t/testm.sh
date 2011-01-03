@@ -93,6 +93,7 @@ if [ -n "$1" ]; then
 	# run a mymodules.t like test
 	$PERL $Mblib t/modules.t $TEST "$1"
     else
+        [ -z "$QUIET" ] && PERLCC_OPTS="$PERLCC_OPTS -v 4"
 	while [ -n "$1" ]; do
 	    # single module. update,setup,install are UAC terms
 	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
@@ -109,7 +110,6 @@ if [ -n "$1" ]; then
 		fi
 	      fi
 	    else
-	      [ -z "$QUIET" ] && PERLCC_OPTS="$PERLCC_OPTS -v 4"
 	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
 	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print 'ok'" -o $name
               test -f a.out.c && mv a.out.c $name.c
