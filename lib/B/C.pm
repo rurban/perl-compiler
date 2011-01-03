@@ -3684,7 +3684,7 @@ EOT
     push @dl_modules, $perlmod unless grep { $_ ne $perlmod } @dl_modules;
   }
   if (!$unused_sub_packages{B}) { # filter out unused B. used within the compiler only
-    warn "no dl_init for B, not marked\n";
+    warn "no dl_init for B, not marked\n" if $verbose;
     @dl_modules = grep { $_ ne 'B' } @dl_modules;
   }
   foreach my $stashname (@dl_modules) {
@@ -3706,14 +3706,14 @@ EOT
     foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
         warn "dl_init $stashname\n" if $verbose;
-        print "\tPUSHMARK(sp);\n\tEXTEND(SP,1);\n";
+        print "\tPUSHMARK(sp);\n";
 	# XXX -O1 needs XPUSHs with dynamic pv
         printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
         print "\tPUTBACK;\n";
         print "#ifdef USE_DYNAMIC_LOADING\n";
         warn "bootstrapping $stashname added to dl_init\n" if $verbose;
         if ( $xsub{$stashname} eq 'Dynamic' ) {
-          print qq/\tcall_method("bootstrap",G_VOID|G_DISCARD);\n/;
+          print qq/\tcall_method("DynaLoader::bootstrap_inherit",G_VOID|G_DISCARD);\n/;
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
