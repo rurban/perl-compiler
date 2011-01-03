@@ -1933,7 +1933,6 @@ sub try_autoload {
     eval { &$auto };
     open(STDOUT,">&REALSTDOUT");
 
-    # eval { &{"$cvstashname\::$cvname"} };
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
       # but not the whole CV optree. XXX This still fails with 5.8
@@ -2030,7 +2029,9 @@ sub B::CV::save {
 	  $file = $INC{$stashfile . ".pm"};
 	}
 	unless ($file) {
-          $stashfile = "/" . $stashfile . '\.' . $Config{dlext};
+          my ($laststash) = $stashname =~ /::([^:]+)$/;
+          $laststash = $stashname unless $laststash;
+          $stashfile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
 	  for (@DynaLoader::dl_shared_objects) {
 	    if (m{$stashfile$}) {
 	      $file = $_; last;
@@ -3715,6 +3716,7 @@ EOT
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
+          #warn "$xsub{$stashname}\n" if $verbose;
 	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop,"%s");\n/, $stashfile if $stashfile;
           print qq/\tcall_pv("XSLoader::load",G_VOID|G_DISCARD);\n/;
         }
