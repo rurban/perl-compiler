@@ -2024,14 +2024,15 @@ sub B::CV::save {
         && !UNIVERSAL::isa( $stashname, 'DynaLoader' ) )
       {
 	my $stashfile = $stashname;
-	if ($file =~ /XSLoader\.pm$/) {
-	  $stashfile =~ s/::/\//g;
+        $stashfile =~ s/::/\//g;
+	if ($file =~ /XSLoader\.pm$/) { # always the case
 	  $file = $INC{$stashfile . ".pm"};
 	}
 	unless ($file) {
           my ($laststash) = $stashname =~ /::([^:]+)$/;
           $laststash = $stashname unless $laststash;
-          $stashfile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
+          my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
+          $stashfile .= '\.pm';
 	  for (@DynaLoader::dl_shared_objects) {
 	    if (m{$stashfile$}) {
 	      $file = $_; last;
@@ -3696,10 +3697,9 @@ EOT
   }
   if ($dl) {
     print "\tdTARG; dSP;\n";
-    print "\tPERL_CONTEXT *cx;\n\tregister I32 cxix;\n" if $xs;
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
-    print "\tcx = &cxstack[++cxstack_ix]; cx->blk_oldcop = PL_curcop;\n" if $xs;
+    print "\t++cxstack_ix; cxstack[cxstack_ix].blk_oldcop = PL_curcop;\n" if $xs;
     print "\tSAVETMPS;\n";
     print "\ttarg = sv_newmortal();\n";
     foreach my $stashname (@dl_modules) {
