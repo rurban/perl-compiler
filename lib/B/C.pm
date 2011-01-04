@@ -542,8 +542,8 @@ sub ivx ($) {
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/"//g;
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
-  # U if > INT32_MAX = 2147483647
-  my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "U" : "");
+  # UL if > INT32_MAX = 2147483647
+  my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   return $sval;
   #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
@@ -994,8 +994,8 @@ sub B::COP::save {
       sprintf(
               "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
               $op->_save_common, $op->line,
-	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
+	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
+	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
               $op->cop_seq,
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
       )
@@ -1346,6 +1346,7 @@ sub B::PVLV::save {
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
       @static_free = grep {!/$sym/} @static_free;
     }
     return $sym;
@@ -1405,6 +1406,7 @@ sub B::PVIV::save {
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
       @static_free = grep {!/$sym/} @static_free;
     }
     return $sym;
@@ -1448,6 +1450,7 @@ sub B::PVNV::save {
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
       @static_free = grep {!/$sym/} @static_free;
     }
     return $sym;
@@ -1582,6 +1585,7 @@ sub B::PV::save {
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
       @static_free = grep {!/$sym/} @static_free;
     }
     return $sym;
@@ -1626,6 +1630,7 @@ sub B::PVMG::save {
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
       @static_free = grep {!/$sym/} @static_free;
     }
     return $sym;
@@ -2034,7 +2039,7 @@ sub B::CV::save {
           my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
           $stashfile .= '\.pm';
 	  for (@DynaLoader::dl_shared_objects) {
-	    if (m{$stashfile$}) {
+	    if (m{$sofile$}) {
 	      $file = $_; last;
 	    }
 	  }
@@ -2176,6 +2181,7 @@ sub B::CV::save {
       local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
+      # XXX avlen 2
       $padlistsym = $padlist->save;
       warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
 		    $padlistsym, $$padlist, $$cv )
@@ -3604,6 +3610,8 @@ EOT
   } elsif ( $] >= 5.007003 ) {
     print "    perl_destruct( my_perl );\n";
   }
+  # XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless
+  #print "    PL_dirty = 1;\n" unless $B::C::pv_copy_on_grow; # protect against pad undef in END block
   print <<'EOT';
     perl_free( my_perl );
 
@@ -3954,7 +3962,7 @@ sub save_unused_subs {
   my %sav_debug;
   if ( $debug{unused} ) {
     %sav_debug = %debug;
-    %debug     = ();
+    %debug = ();
   }
   if ($verbose) {
     warn "Prescan for unused subs" . ($sav_debug{unused} ? " (silent)\n" : "\n");
@@ -3965,7 +3973,7 @@ sub save_unused_subs {
     warn "Saving unused subs" . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
   walksymtable( \%{"main::"}, "savecv", \&should_save );
-  if ( $debug{unused} ) {
+  if ( $sav_debug{unused} ) {
     %debug = %sav_debug;
   }
 }
