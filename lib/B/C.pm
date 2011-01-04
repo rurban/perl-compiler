@@ -2529,7 +2529,7 @@ sub B::GV::save {
       warn "GV::save \%$name\n" if $debug{gv};
     }
     my $gvcv = $gv->CV;
-    if ( $$gvcv && $savefields & Save_CV ) {
+    if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB && $name ne $origname ) {    #XSUB alias
