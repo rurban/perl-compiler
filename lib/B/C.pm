@@ -1153,8 +1153,7 @@ sub B::PMOP::save {
       my $resym = "(char*)".cstring($re);
       my $relen = length($re);
       $init->add( # Modification of a read-only value attempted. use DateTime - threaded
-        sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), %u));",
-		$op->pmflags ),
+        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen)".sprintf("%u);",$op->pmflags),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
     }
@@ -1647,7 +1646,7 @@ sub B::PVMG::save {
       if ( $B::C::pv_copy_on_grow ) {
         # comppadnames needs &PL_sv_undef instead of 0
 	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
-	if (!$savesym or $savesym eq 'NULL') {
+	if (!$pv or !$savesym or $savesym eq 'NULL') {
 	  if ($ITHREADS) {
 	    $savesym = "NULL";
 	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
@@ -1698,7 +1697,7 @@ sub B::PVMG::save {
   if ( !$B::C::pv_copy_on_grow ) {
     # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
-      if (!$savesym or $savesym eq 'NULL') {
+      if (!$pv or !$savesym or $savesym eq 'NULL') {
         $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
 			     $svsect->index ) );
       } else {
@@ -1706,7 +1705,7 @@ sub B::PVMG::save {
 				      $svsect->index ), $pv ) );
       }
     } else {
-      if (!$savesym or $savesym eq 'NULL') {
+      if (!$pv or !$savesym or $savesym eq 'NULL') {
         $init->add( sprintf( "xpv_list[%d].xpv_pv = (char*)&PL_sv_undef;",
 			     $xpvsect->index ) );
       } else {
@@ -2030,17 +2029,16 @@ sub B::CV::save {
       {
 	my $stashfile = $stashname;
         $stashfile =~ s/::/\//g;
-	if ($file =~ /XSLoader\.pm$/) { # always the case
+	if ($file =~ /XSLoader\.pm$/) { # almost always the case
 	  $file = $INC{$stashfile . ".pm"};
 	}
-	unless ($file) {
+	unless ($file) { # do the reverse as DynaLoader: soname => pm
           my ($laststash) = $stashname =~ /::([^:]+)$/;
           $laststash = $stashname unless $laststash;
           my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
-          $stashfile .= '\.pm';
 	  for (@DynaLoader::dl_shared_objects) {
-	    if (m{$sofile$}) {
-	      $file = $_; last;
+	    if (m{^(.+/)$sofile$}) {
+	      $file = $1. $stashfile.".pm"; last;
 	    }
 	  }
 	}
@@ -2705,12 +2703,15 @@ sub B::AV::save {
     my @values = map { $_->save() || () } @array;
     for (my $i=0;$i<=$#array;$i++) {
       if ( $use_av_undef_speedup
+           && defined $values[$i]
+           && defined $values[$i+1]
+           && defined $values[$i+2]
 	   && $values[$i] =~ /^\&sv_list\[(\d+)\]/
 	   && $values[$i+1] eq "&sv_list[" . ($1+1) . "]"
 	   && $values[$i+2] eq "&sv_list[" . ($1+2) . "]" )
       {
 	$count=0;
-	while($values[$i+$count+1] eq "&sv_list[" . ($1+$count+1) . "]") {
+	while (defined($values[$i+$count+1]) and $values[$i+$count+1] eq "&sv_list[" . ($1+$count+1) . "]") {
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=" . $1 . "; gcount<" . ($1+$count+1) . "; gcount++) {"
