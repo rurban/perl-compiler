@@ -1153,23 +1153,20 @@ sub B::PMOP::save {
       my $resym = "(char*)".cstring($re);
       my $relen = length($re);
       $init->add( # Modification of a read-only value attempted. use DateTime - threaded
-        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen)".sprintf("%u);",$op->pmflags),
+        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen),".sprintf("%u));",$op->pmflags),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
     }
     elsif ($PERL56) {
       my ( $resym, $relen ) = savere( $re, 0 );
       $init->add(
-        sprintf("$pm.op_pmregexp = pregcomp((char*)$resym, (char*)$resym + %u, &$pm);",
-		$relen )
+        "$pm.op_pmregexp = pregcomp((char*)$resym, (char*)$resym + $relen, &$pm);"
       );
     }
     else { # 5.8
       my ( $resym, $relen ) = savere( $re, 0 );
       $init->add(
-        sprintf(
-          "PM_SETRE(&$pm, CALLREGCOMP(aTHX_ (char*)$resym, (char*)$resym + %u, &$pm));",
-          $relen )
+          "PM_SETRE(&$pm, CALLREGCOMP(aTHX_ (char*)$resym, (char*)$resym + $relen, &$pm));"
       );
     }
   }
