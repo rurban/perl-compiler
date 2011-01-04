@@ -3717,6 +3717,7 @@ EOT
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
           #warn "$xsub{$stashname}\n" if $verbose;
+          # i.e. PUSHBLOCK
 	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop,"%s");\n/, $stashfile if $stashfile;
           print qq/\tcall_pv("XSLoader::load",G_VOID|G_DISCARD);\n/;
         }
@@ -3733,7 +3734,7 @@ EOT
       }
     }
     print "\tFREETMPS;\n";
-    print "\tcxstack_ix--;\n" if $xs;
+    print "\tcxstack_ix--;\n" if $xs;  	# i.e. POPBLOCK
     print "\tLEAVE;\n";
     print "/* end DynaLoader bootstrapping */\n";
   }

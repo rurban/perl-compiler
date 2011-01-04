@@ -73,15 +73,15 @@ if ($PERL56) {
   $SVt_PVGV = 13;
   $SVf_FAKE = 0x00100000;
   $POK = 0x00040000 | 0x04000000;
-  for ( my $i = 0 ; $i < @optype ; $i++ ) {
-    $optype_enum{ $optype[$i] } = $i;
-  }
   sub MAGICAL56 { $_[0]->FLAGS & 0x000E000 } #(SVs_GMG|SVs_SMG|SVs_RMG)
 } else {
   no strict 'subs';
   $SVt_PV = 4;
   $SVt_PVGV = SVt_PVGV;
   $SVf_FAKE = SVf_FAKE;
+}
+for ( my $i = 0 ; $i < @optype ; $i++ ) {
+  $optype_enum{ $optype[$i] } = $i;
 }
 
 BEGIN {
@@ -161,17 +161,27 @@ sub B::OP::ix {
       #   op->other points to the leavetry op, which is needed for the eval scope.
       if ($op->name eq 'entertry') {
 	$opsize = $op->size + (2*$Config{ptrsize});
-	$arg = $PERL56 ? $optype_enum{LOGOP} : $opsize | $op->type << 7;
-	# "make entertry LISTOP" patch in consideration
-	# bless $op, $] > 5.013007 ? 'B::LISTOP' : 'B::LOGOP';
-        warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n";
+	$arg = $PERL56 ? $optype_enum{LOGOP} : $opsize | $optype_enum{LOGOP} << 7;
+        warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n"
+	  unless $quiet;
         bless $op, 'B::LOGOP';
+      } elsif ($op->name eq 'aelemfast') {
+        if (0) {
+          my $class = ITHREADS ? 'PADOP' : 'SVOP';
+          my $type  = ITHREADS ? $optype_enum{PADOP} : $optype_enum{SVOP};
+          $opsize = $op->size + $Config{ptrsize};
+          $arg = $PERL56 ? $type : $opsize | $type << 7;
+          warn "Upgrading aelemfast from BASEOP to $class...\n"
+            unless $quiet;
+          bless $op, "B::$class";
+        }
       } elsif ($DEBUGGING) { # only needed when we have to check for new wrong BASEOP's
 	if (eval "require Opcodes;") {
 	  my $class = Opcodes::opclass($op->type);
 	  if ($class > 0) {
 	    my $classname = $optype[$class];
-            warn "Upgrading entertry {$op->name} BASEOP to $classname...\n";
+	    my $name = $op->name;
+            warn "Upgrading $name BASEOP to $classname...\n";
 	    bless $op, "B::".$classname if $classname;
 	  }
 	} else {
