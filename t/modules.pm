@@ -82,7 +82,7 @@ sub get_module_list {
   # Parse for command line modules and use this if seen.
   my @modules = grep {$_ !~ /^-(all|log|subset|t)$/} @ARGV; # Parse out -all var.
   my $module_list  = 't/top100';
-  if (@modules and -e $modules[0]) {
+  if (@modules and -e $modules[0] and ! -x $modules[0]) { # skip an executable compiled module
     $module_list = $modules[0];
   }
   elsif (@modules) {
@@ -98,7 +98,7 @@ sub get_module_list {
   close F;
   @modules = grep {s/\s+//g;!/^#/} split /\n/, $s;
 
-  #diag "scanning installed modules";
+  diag "scanning installed modules";
   for my $m (@modules) {
     # redirect stderr
     open (SAVEOUT, ">&STDERR");
