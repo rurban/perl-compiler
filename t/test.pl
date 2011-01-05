@@ -545,20 +545,15 @@ sub todo_tests_default {
         # 15+28 fixed with 1.04_34
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
-        # @todo = (15,35,39,44,46)    if $] < 5.010;
         push @todo, (103)  if $] < 5.007;
         push @todo, (45)   if $what ne 'c' and $] < 5.007;
         push @todo, (39)   if $] > 5.007 and $] < 5.009;
         push @todo, (103)  if $] >= 5.010;
         push @todo, (28)   if $what eq 'c';
-        push @todo, (16)   if $] > 5.013;
-        #push @todo, (29)   if $what eq 'c_o1' and $DEBUGGING;
-        push @todo, (12)   if $what =~ /c_o[234]/;
         push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
-        #push @todo, (17..20,22,34..41) if $what =~ 'c_o2';
-        #push @todo, (26) if $what eq 'c_o1' and $] < 5.010;
-	push @todo, (29,45) if $what =~ /c_o[234]/ and $] >= 5.010;
-	#push @todo, (25) if $what eq 'c_o' and $^O eq 'MSWin32';
+        push @todo, (16)   if $] > 5.013 and $ITHREADS;
+        push @todo, (12)   if $what =~ /c_o[234]/;
+	push @todo, (29,45)if $what =~ /c_o[1234]/ and $] >= 5.010;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)

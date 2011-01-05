@@ -8,6 +8,8 @@
 # perl$ver -S cpan `grep -v '#' t/mymodules`
 #
 # -t runs CPAN::Shell->testcc($module)
+# Example:
+# cwd=~/Perl/B-C; perl5.12.2d-nt -I$cwd/blib/arch -I$cwd/blib/lib $cwd/blib/script/perlcc -S -r -Wb=-O1 -v 4 t/test.t
 
 function help {
   echo "t/testm.sh [OPTIONS] [module|modules-file]..."

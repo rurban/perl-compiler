@@ -3,6 +3,19 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
+1.29	2011-01-xx rurban
+	improve dl_init
+
+	* C.pm (1.29): 
+	use DynaLoader::bootstrap_inherit, fixes dl_init when the module has no ISA 
+	  DynaLoader. eg. Test::Harness with Time::HiRes
+	improved CopFILE detection as context for dl_init (test 29)
+	fix cop_warning cast warnings
+	print debug messages for beginav and endav
+	protect against undefined strings, and % in regex
+	protect against undefined gvcv->GV->EGV (Spiffy)
+	* t/modules.pm: subset use 10 not 11 modules. run tests with -O1
+
 1.28	2010-12-31 rurban
 	fixed XSLoader, pmflags, CV and most named methods for 5.14
 
@@ -35,7 +48,7 @@
 	do not cog/const nullify vars in END blocks
 	disallow CONST->op_first with CONST_BARE. fixes ExtUtils::Install
 	better XSLoader::load detection: aliases and defined in END blocks
-	save XSLoader::load GV (test 46 and modules), still failing though
+	save XSLoader::load GV (test 46 and modules)
 	bootstrap also static core packages
 	add ptr_undef instead of NULL initialization non-threaded
 	fix many cast warnings
