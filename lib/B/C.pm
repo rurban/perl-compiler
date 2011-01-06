@@ -3431,7 +3431,8 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         return STATUS_NATIVE_EXPORT;
 #endif
     }
-    return PerlIO_destruct(aTHX);
+    PerlIO_destruct(aTHX);
+    return 0;
 }
 EOT
   }
