@@ -154,7 +154,7 @@ for my $module (@modules) {
         my @cmd = grep {!/^$/} $runperl,"-Mblib","blib/script/perlcc",$opt,"-r","mod.pl";
         my $cmd = "$runperl -Mblib blib/script/perlcc $opt -r"; # only for the msg
         ($result, $out, $err) = run_cmd(\@cmd, 120); # in secs
-        ok(-e $binary_file and -s $binary_file,
+        ok(-s $binary_file,
            "$module_count: use $module  generates non-zero binary")
           or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0")
