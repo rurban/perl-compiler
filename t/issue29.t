@@ -1,10 +1,14 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=29
 use strict;
-my $name = "ccode29i";
-BEGIN { die "1..2 #skip 5.6 has no IO discipline\n" if $] < 5.008; }
+BEGIN {
+  if ($] < 5.008) {
+    print "1..1\nok 1 #skip 5.6 has no IO discipline\n"; exit;
+  }
+}
 use Test::More tests => 2;
 
+my $name = "ccode29i";
 my $script = <<'EOF';
 use open qw(:std :utf8);
 $_ = <>;
