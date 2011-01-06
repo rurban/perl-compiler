@@ -244,7 +244,7 @@ result[32]='12'
 # fails with new constant only. still not repro (r-magic probably)
 tests[33]='BEGIN{unshift @INC,("t");} use qr_loaded_module; print "ok"'
 result[33]='ok'
-# init of magic hashes. %ENV has e magic since a0714e2c perl.c  
+# init of magic hashes. %ENV has e magic since a0714e2c perl.c
 # (Steven Schubiger      2006-02-03 17:24:49 +0100 3967) i.e. 5.8.9 but not 5.8.8
 tests[34]='my $x=$ENV{TMPDIR};print "ok"'
 result[34]='ok'

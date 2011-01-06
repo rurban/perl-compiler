@@ -46,26 +46,28 @@ WriteMakefile(
     VERSION_FROM => "lib/B/C.pm",
     PL_FILES   => { 'script/perlcc.PL'    => 'script/perlcc' },
     EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
-    PREREQ_PM  => {'Opcodes'  => '0',
-		   'IPC::Run' => '0',
-		   'B::Flags' => '0.04',
-		   'Time::HiRes' => '0',
-                   #'B'        => '1.0901'
+    PREREQ_PM  => {'Opcodes'  => '0',    # optional
+		   'IPC::Run' => '0',    # optional
+		   'B::Flags' => '0.04', # optional
+		   'Time::HiRes' => '0', # optional
+                   #'B'        => '1.0901' # required but in CORE
                   },
     'AUTHOR'   => 'Malcolm Beattie (retired), '
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
+        "    B::Flags:  0.04\n".
         "    B::Debug:  1.16\n".
-        "    Opcodes:   0.9\n".
+        "    Opcodes:   0.10\n".
         "    IPC::Run:  0\n",
        ) : ()),
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
                        {
+                        'B::Flags' => '0.04',
                         "B::Debug" => '1.16',
-                        "Opcodes"  => '0.9',
+                        "Opcodes"  => '0.10',
                         "IPC::Run" => 0,
                        },
                        resources =>

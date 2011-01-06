@@ -15,6 +15,7 @@
 	protect against undefined strings, and % in regex
 	protect against undefined gvcv->GV->EGV (Spiffy)
 	* t/modules.pm: subset use 10 not 11 modules. run tests with -O1
+	* t/modules.t: fixed binary detection on non-windows (a.out)
 
 1.28	2010-12-31 rurban
 	fixed XSLoader, pmflags, CV and most named methods for 5.14
