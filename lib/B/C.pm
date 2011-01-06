@@ -3430,7 +3430,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         return STATUS_NATIVE_EXPORT;
 #endif
     }
-    PerlIO_destruct(aTHX);
+    return PerlIO_destruct(aTHX);
 }
 EOT
   }
@@ -3459,7 +3459,7 @@ EOT
       my $hek = sprintf( "hek%d", $_ );
       printf ("    %s = NULL;\n", $hek);
     }
-    print "    perl_destruct( my_perl );\n}\n\n";
+    print "    return perl_destruct( my_perl );\n}\n\n";
   }
 
   print <<'EOT';
