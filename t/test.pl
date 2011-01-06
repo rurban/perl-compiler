@@ -550,7 +550,7 @@ sub todo_tests_default {
         #push @todo, (45)   if $what ne 'c' and $] < 5.007;
         push @todo, (39)   if $] > 5.007 and $] < 5.009;
         push @todo, (103)  if $] >= 5.010;
-        push @todo, (28)   if $] >= 5.007 and $what ne 'c_o1';
+        push @todo, (28)   $what ne 'c_o1';
         push @todo, (12)   if $what =~ /c_o[234]/;
         push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
 	push @todo, (29)   if $what =~ /c_o[1234]/ and $] >= 5.010;
