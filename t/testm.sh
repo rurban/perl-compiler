@@ -17,6 +17,7 @@ function help {
   echo " -k                 keep temp. files on PASS"
   echo " -D<arg>            add debugging flags"
   echo " -f<arg>            add optimisation flags"
+  echo " -O<arg>            add optimisation flags"
   echo " -l                 log"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -t                 run the module tests also, not only use Module (experimental)"

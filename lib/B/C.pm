@@ -1820,10 +1820,11 @@ sub B::PVMG::save_magic {
 	}
 	my $pmsym = $pmop->save;
 	if ($PERL510) {
+          push @static_free, $resym;
 	  $init->add( split /\n/,
 		    sprintf <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
-    REGEXP* rx = CALLREGCOMP($resym, %d);
+    REGEXP* rx = CALLREGCOMP((SV* const)$resym, %d);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE
@@ -1833,7 +1834,7 @@ CODE
 	  $init->add( split /\n/,
 		      sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
 {
-    REGEXP* rx = pregcomp($resym, $resym + $relen, (PMOP*)$pmsym);
+    REGEXP* rx = pregcomp((char*)$resym,(char*)($resym + $relen), (PMOP*)$pmsym);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE
