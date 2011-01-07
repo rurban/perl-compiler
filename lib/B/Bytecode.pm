@@ -683,9 +683,9 @@ sub B::OP::bsave_thin {
   if ( $ix != $opix ) {
     nice '-' . $op->name . '-', asm "ldop", $opix = $ix;
   }
+  asm "op_flags",   $op->flags, op_flags( $op->flags );
   asm "op_next",    $nextix;
   asm "op_targ",    $op->targ if $op->type;             # tricky
-  asm "op_flags",   $op->flags, op_flags( $op->flags );
   asm "op_private", $op->private;                       # private concise flags?
 }
 
@@ -974,7 +974,7 @@ sub B::OP::opwalk {
       ? () : $op->oplist; # 5.6 may be called by a COP
     push @cloop, undef;
     $ix = $_->ix while $_ = pop @oplist;
-    print "\n# rest of cloop\n";
+    #print "\n# rest of cloop\n";
     while ( $_ = pop @cloop ) {
       asm "ldop",    $optab{$$_};
       asm "op_next", $optab{ ${ $_->next } };

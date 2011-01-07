@@ -488,8 +488,10 @@ print BYTERUN_C <<'EOT';
 	      /* NOTREACHED */
 	  }
 	  /* debop is not public in 5.10.0 on strict platforms like mingw and MSVC, cygwin is fine. */
-#if defined(DEBUG_t_TEST_) && !defined(_MSC_VER) && !defined(__MINGW32__)
-          if (PL_op && DEBUG_t_TEST_) debop(PL_op);
+#if defined(DEBUG_t_TEST_) && !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(AIX)
+          if (PL_op && DEBUG_t_TEST_)
+              /* XXX GV without flags will assert. We need to skip newopx ops until op_flags are set */
+              if ((insn != INSN_NEWOPX) && (insn != INSN_NEWOP)) debop(PL_op);
 #endif
         }
     }
