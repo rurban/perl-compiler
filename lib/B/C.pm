@@ -2437,10 +2437,11 @@ sub B::GV::save {
       my $gp = $gv->GP;    # B limitation
       if ( $gp and !$is_empty ) {
         warn(sprintf(
-                     "New GvGP for $name: 0x%x%s %s 0x%x 0x%x\n",
+                     "New GvGP for $name: 0x%x%s %s FILEGV:0x%x GP:0x%x\n",
                      $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                      $gv->FILE, ${ $gv->FILEGV }, $gp
                     )) if $debug{gv};
+        # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
         $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
         $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       }
@@ -2464,7 +2465,7 @@ sub B::GV::save {
   #if (!($svflags && 0x400)) { # defer to run-time (0x400 -> SvPOK) for convenience
   # XXX also empty "main::" destruction accesses a PVX, so do not check if_empty
   if ( !$PERL510 ) {
-    $init->add("if (SvPOK($sym)) SvPVX($sym) = (char*)emptystring;"); # unless $is_empty;
+    $init->add("if (SvPOK($sym) && !SvPVX($sym)) SvPVX($sym) = (char*)emptystring;");
   }
 
   # Shouldn't need to do save_magic since gv_fetchpv handles that
@@ -2577,6 +2578,8 @@ sub B::GV::save {
       $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
     }
     else {
+      # XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
+      # GvFILE is at gp+1
       $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
         unless $optimize_cop;
       warn "GV::save GvFILE(*$name) " . cstring( $gv->FILE ) . "\n"
@@ -4106,9 +4109,13 @@ sub save_main_rest {
     "/* startpoints */",
     sprintf( "PL_main_root = s\\_%x;",  ${ main_root() } ),
     sprintf( "PL_main_start = s\\_%x;", ${ main_start() } ),
-    "PL_initav = (AV*) $init_av;",
-    "PL_endav = (AV*) $end_av;\n"
   );
+  $init->add(index($init_av,'(AV*)')>=0
+             ? "PL_initav = $init_av;"
+             : "PL_initav = (AV*)$init_av;");
+  $init->add(index($end_av,'(AV*)')>=0
+             ? "PL_endav = $end_av;"
+             : "PL_endav = (AV*)$end_av;");
   save_context();
 
   # XSLoader used later
