@@ -21,7 +21,7 @@
 # for p in 5.6.2 5.8.9 5.10.1 5.12.2; do make -S clean; perl$p Makefile.PL; make; perl$p -Mblib t/modules.t -log; done
 #
 # How to installed skip modules:
-# grep ^skip log.modules-bla|cut -c6-| xargs perlbla -S cpan
+# grep ^skip log.modules-bla|perl -lane'print $F[1]'| xargs perlbla -S cpan
 # or t/testm.sh -s
 
 use strict;
@@ -274,9 +274,8 @@ sub is_todo {
       File::Path
       Path::Class
     )) { return '5.8-5.10 DEBUGGING with threads' if $_ eq $module; }}
-    if ($] => 5.009 and $] < 5.12) { foreach(qw(
+    if ($] >= 5.009 and $] < 5.12) { foreach(qw(
       Carp::Clan
-      Template::Stash
     )) { return '5.10 with threads' if $_ eq $module; }}
     if ($] < 5.012) { foreach(qw(
       Module::Build
@@ -308,7 +307,6 @@ sub is_todo {
       B::Hooks::EndOfScope
     )) { return '<5.10 without threads' if $_ eq $module; }}
     if ($] >= 5.010 and $] < 5.013) { foreach(qw(
-      namespace::clean
       ExtUtils::MakeMaker
     )) { return '5.10,5.12 without threads' if $_ eq $module; }}
     if ($] >= 5.013) { foreach(qw(

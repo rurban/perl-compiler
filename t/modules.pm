@@ -55,6 +55,7 @@ sub log_pass {
     $todo = '';
   }
 
+  diag( "$pass_msg $module$todo" );
   open(LOG, ">>", "$log");
   print LOG "$pass_msg $module$todo\n";
   close LOG;
@@ -64,6 +65,9 @@ sub log_err {
   my ($module, $out, $err) = @_;
   return if(!$log);
 
+  # diag prints for TODO to a special todo fh, which does not end at the console
+  diag( "fail $module $out" );
+  # Test::More->builder->_print_comment( Test::More->builder->failure_output, "fail $module $out" );
   $_ =~ s/\n/\n# /xmsg foreach($out, $err); # Format for comments
 
   open(ERR, ">>", "$log.err");

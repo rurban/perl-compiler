@@ -4,7 +4,7 @@
 #
 # How to installed skip modules: 
 # t/testm.sh -s runs:
-#   grep ^skip log.modules-$ver|cut -c6-| xargs perl$ver -S cpan
+#   grep ^skip log.modules-$ver|perl -lane'print $F[1]'| xargs perl$ver -S cpan
 # perl$ver -S cpan `grep -v '#' t/mymodules`
 #
 # -t runs CPAN::Shell->testcc($module)

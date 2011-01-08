@@ -70,16 +70,11 @@ B::C (new)
 ----
 t/testc.sh -q -c; t/testcc.sh -q -c or make test TEST_VERBOSE=1
 
-5.6.2:						| non-threaded
+5.6.2:
 t/bytecode      broken/not used
-t/c             15,27            		| 15,27
-t/c_o1          15,27				| 15
-t/c_o2          15,27				| 15
-t/c_o3          15,27				| 15
-t/c_o4		10,12,15,19,25,27
-t/cc            15,18,21,25,27,30
-t/cc_o1         15,18,21,25..27,30
-t/cc_o2         10,15,16,18,21,25..27,30
+t/c             15,35,41-46,103
+t/c_o1          +28
+t/cc            15,21,29,30,45
 
 5.8.0
 redhat perl http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576363.html:
@@ -100,35 +95,31 @@ freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
 AP 5.8 MSVC6:
 t/cc*   12 (similar to 5.10 nt?) (skipped)
 t/o     5,9 (skipped)
-t/stash 1   (skipped)
 
-5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)		| non-threaded
-t/bytecode      27,44,33,39
-t/c             ok				| 27
-t/c_o1          ok				| 27
-t/c_o2          ok				| 27
-t/c_o3          ok				| 27
-t/c_o4          10,12,15,19,25  		| 10,12,19,25,27
-t/cc            18,21,25,27,29,30
-t/cc_o1         18,21,25..27,29.30
-t/cc_o2         10,16,18,21,25..27,30
+5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)
+t/bytecode      39
+t/c             15,28,35,39,41-46
+t/c_o1          -"-
+t/cc            21,30,35,39,41-46
 
-5.10.1: 					| non-threaded
-t/bytecode 	27,44,33,39			| 27,44,33,39
-t/c 		39,41,44			| 15,29,39,44
-t/c_o1          -"-				|  -"-
-t/c_o2          -"-				|  -"-
-t/c_o3          -"- 				|  -"-
-t/c_o4          10,12,19,27
-t/cc 		18,21,25,29,30
-t/cc_o1         18,21,25,26,29,30		 
-t/cc_o2         10,16,18,21,25,26,29,30		 
+5.10.1:
+t/bytecode 	42,44
+t/c 		28,35,41-44,46
+t/c_o1          +15,45
+t/cc 		21,30,35,41-46
 
-5.11.2: same as 5.10.1
-5.11.3: as 5.10.1, just c and cc fails with 32 (catch evaltry die)
-5.11.4: same as 5.10.1
-5.13.3: broken 6,8..10,16,21,23,24,26,30,31,35
-5.13.4: broken 3..4,10,27..29,31,41..46
+5.12.2:
+t/bytecode 	21,27,32,41-44
+t/c 		15,28,35,41-44,46
+t/c_o1          -"-
+t/cc 		21,30,35,41-46
+
+5.13.8:
+t/bytecode 	28,31,41-44
+t/c 		15,28,35,41-44,46
+t/c_o1          -"-
+t/cc 		21,29,30,35,41-46
+
 
 CPAN Modules
 ------------

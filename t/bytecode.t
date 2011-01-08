@@ -60,8 +60,8 @@ push @todo, (32)    if $] > 5.011;
 push @todo, (28)    if $] > 5.013;	# del_backref
 push @todo, (41..43)if !$ITHREADS;
 push @todo, (32)    if !$ITHREADS and $] >= 5.010 and $] < 5.013; # del_backref fixed with r790. not?
-push @todo, (27)    if !$ITHREADS and $] >= 5.010;
-push @todo, (42,43) if !$ITHREADS and $] >= 5.013;
+push @todo, (27,43) if !$ITHREADS and $] >= 5.010;
+push @todo, (42)    if !$ITHREADS and $] >= 5.013;
 push @todo, (27)    if $Config{ptrsize} == 8;
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;

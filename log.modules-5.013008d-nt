@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.29 r855 M
+# B::C::VERSION = 1.29 r858 M
 # perlversion = 5.013008d-nt
 # path = /usr/local/bin/perl5.13.8d-nt
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
 pass Text::Tabs
-pass Text::Wrap #TODO 5.13 without threads
+pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install #TODO >= 5.10 or debugging
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO without threads
+fail LWP #TODO always
 pass Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
@@ -82,7 +82,7 @@ pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
-pass Encode #TODO > 5.13
+pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO > 5.13
+fail MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -106,5 +106,5 @@ pass Template::Stash
 # 99 / 100 modules tested with B-C-1.29 - perl-5.013008d-nt
 # pass  94 /  99 (94.9%)
 # fail   5 /  99 (5.1%)
-# todo   9 /   5 (180.0%)
+# todo   6 /   5 (120.0%)
 # skip   1 / 100 (1.0% not installed)
