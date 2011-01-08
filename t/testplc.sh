@@ -118,6 +118,8 @@ function btest {
     [ -n "$Q" ] || echo ${OCMD}-o${o}.plc ${o}.pl
     ${OCMD}-o${o}.plc ${o}.pl || (test -z $CONT && exit)
   fi
+  [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}.plc -o ${o}.disasm
+  $PERL $Mblib script/disassemble ${o}.plc > ${o}.disasm
   [ -n "$Q" ] || echo ${ICMD} ${o}.plc
   res=$(${ICMD} ${o}.plc)
   if [ "X$res" = "X${result[$n]}" ]; then
