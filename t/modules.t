@@ -226,6 +226,8 @@ sub is_todo {
     Module::Build
     Digest::MD5
     Template::Stash
+    ExtUtils::Install
+    Class::Accessor
   )) { return '5.6' if $_ eq $module; }}
   if ($] < 5.008009) { foreach(qw(
     Params::Validate
