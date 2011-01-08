@@ -181,7 +181,7 @@ sub B::OP::ix {
 	  if ($class > 0) {
 	    my $classname = $optype[$class];
 	    my $name = $op->name;
-            warn "Upgrading $name BASEOP to $classname...\n";
+            warn "Upgrading $name BASEOP to $classname...\n" unless $quiet;
 	    bless $op, "B::".$classname if $classname;
 	  }
 	} else {
@@ -653,21 +653,27 @@ sub B::HV::bwalk {
       if ($] > 5.013005 and $hv->NAME eq 'B') { # see above. omit B prototypes
 	return;
       }
-      nice "[prototype]";
-      # XXX when? do not init empty prototypes. But only 64-bit fails.
-      if ($PERL510 and $v->SvTYPE == $SVt_PVGV) {
-	asm "newpv", cstring $hv->NAME . "::$k";
+      # XXX Not working! Special init for empty (null-string) prototypes
+      # Note: not found constants are &PL_sv_yes, found typically IV
+      if ($PERL510 and 0 and $v->SvTYPE == $SVt_PV and !$v->PVX) {
+        nice "[emptyCONST]";
+	asm "newpv", pvstring ($hv->NAME . "::" . $k);
 	# Beware of special gv_fetchpv GV_* flags.
 	# gv_fetchpvx uses only GV_ADD, which fails e.g. with *Fcntl::O_SHLOCK,
 	# if "Your vendor has not defined Fcntl macro O_SHLOCK"
-	asm "gv_fetchpvn_flags", 0x20; 	# GV_NOADD_NOINIT
+	asm "gv_fetchpvn_flags", 1 << 7 + $SVt_PV, "f:0x81<<7+t:PV";# GVf_IMPORTED_CV+INTRO
+        $svtab{$$v} = $varix = $tix;
+        asm "sv_flags",  $v->FLAGS;
+        $v->bsave( $tix++ );
+        #$tix++;
       } else {
-	asm "gv_fetchpvx", cstring $hv->NAME . "::$k";
+        nice "[prototype]";
+	asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
+        $svtab{$$v} = $varix = $tix;
+        # we need the sv_flags before, esp. for DEBUGGING asserts
+        asm "sv_flags",  $v->FLAGS;
+        $v->bsave( $tix++ );
       }
-      $svtab{$$v} = $varix = $tix;
-      # we need the sv_flags before, esp. for DEBUGGING asserts
-      asm "sv_flags",  $v->FLAGS;
-      $v->bsave( $tix++ );
     }
   }
 }

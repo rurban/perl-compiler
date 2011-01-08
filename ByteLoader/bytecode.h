@@ -222,14 +222,15 @@ static int bget_swab = 0;
 	GvGP(sv) = GvGP(arg);			\
     } STMT_END
 
-#define BSET_gv_fetchpv(sv, arg)	sv = (SV*)gv_fetchpv(arg, GV_ADD, SVt_PV)
+/* New GV's are stored as HE+HEK, which is alloc'ed anew */ 
+#define BSET_gv_fetchpv(sv, arg)	sv = (SV*)gv_fetchpv(savepv(arg), GV_ADD, SVt_PV)
 #define BSET_gv_fetchpvx(sv, arg) STMT_START {	\
 	BSET_gv_fetchpv(sv, arg);		\
 	BSET_OBJ_STOREX(sv);			\
     } STMT_END
 #define BSET_gv_fetchpvn_flags(sv, arg) STMT_START {	 \
-        int flags = (arg & 0xff00) >> 16; int type = arg & 0xff; \
-	sv = (SV*)gv_fetchpv(bstate->bs_pv.xpv_pv, flags, type); \
+        int flags = (arg & 0xff80) >> 7; int type = arg & 0x7f; \
+	sv = (SV*)gv_fetchpv(savepv(bstate->bs_pv.xpv_pv), flags, type); \
 	BSET_OBJ_STOREX(sv);				 \
     } STMT_END
 
