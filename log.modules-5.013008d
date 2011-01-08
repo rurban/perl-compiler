@@ -1,0 +1,110 @@
+# B::C::VERSION = 1.29 r865 M
+# perlversion = 5.013008d
+# path = /usr/local/bin/perl5.13.8d
+# platform = cygwin 32bit
+# threaded perl
+pass Exporter
+pass Text::Tabs
+fail Text::Wrap
+fail Test::Harness
+pass Pod::Escapes
+fail Pod::Simple
+fail IO
+pass Scalar::Util
+pass Getopt::Long
+fail Pod::Parser
+fail ExtUtils::MakeMaker #TODO > 5.13
+fail Test::Simple
+pass ExtUtils::Manifest
+fail Pod::Text
+pass constant
+fail Test
+fail Data::Dumper
+pass File::Spec
+fail File::Temp
+fail ExtUtils::Install
+pass Text::ParseWords
+fail ExtUtils::CBuilder
+pass ExtUtils::ParseXS
+fail Module::Build
+fail File::Path
+pass XSLoader
+fail MIME::Base64
+pass Digest
+fail Digest::MD5
+fail Sub::Uplevel
+fail URI
+pass HTML::Tagset
+fail HTML::Parser
+fail Test::Exception
+fail Net::Cmd
+fail Compress::Raw::Zlib
+fail Compress::Raw::Bzip2
+fail IO::Compress::Base
+fail LWP #TODO always
+fail Storable #TODO with threads
+pass base
+pass List::MoreUtils
+pass Params::Util
+pass Task::Weaken
+fail Class::Accessor #TODO with threads
+fail Test::Tester #TODO with threads
+pass Sub::Install
+fail Attribute::Handlers #TODO always
+pass Data::OptList
+pass Sub::Exporter
+fail Test::NoWarnings
+pass version
+fail Params::Validate
+fail Sub::Name
+fail Filter::Util::Call #TODO with threads
+pass Algorithm::C3
+pass Class::C3
+fail Scope::Guard
+pass MRO::Compat
+pass Time::HiRes
+pass Class::Data::Inheritable
+fail Try::Tiny
+pass Devel::GlobalDestruction
+fail Class::MOP
+skip Moose #hangs threaded, $] >= 5.011004
+fail Test::Deep
+pass Carp::Clan #TODO 5.10 with threads
+fail Module::Pluggable
+fail if(1) => "Sys::Hostname"
+pass Text::Balanced
+fail DBI
+fail Time::Local
+pass IO::Scalar
+pass Sub::Identify
+pass Class::ISA
+skip FCGI
+fail Tree::DAG_Node
+fail Path::Class
+fail Test::Warn
+fail Encode
+pass Variable::Magic
+fail CGI
+fail B::Hooks::EndOfScope
+fail Test::Pod
+fail Digest::SHA1
+fail namespace::clean
+pass Class::Inspector
+pass Clone
+pass XML::NamespaceSupport
+fail XML::SAX
+fail YAML
+fail MooseX::Types #TODO always
+pass Class::Singleton
+fail DateTime::TimeZone
+fail DateTime::Locale
+fail DateTime
+pass IO::String
+fail AppConfig
+pass UNIVERSAL::require
+fail Template::Stash #TODO 5.10 with threads
+# 98 / 100 modules tested with B-C-1.29 - perl-5.013008d
+# pass  39 /  98 (39.8%)
+# fail  59 /  98 (60.2%)
+# todo  10 /  59 (16.9%)
+# skip   2 / 100 (2.0% not installed)
