@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.29 r858
+# B::C::VERSION = 1.29 r865
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2d-nt
+# path = /cyg1/usr/local/bin/perl5.6.2
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
@@ -40,14 +40,14 @@ pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-skip IO::Compress::Base
-skip LWP
-fail Storable #TODO debugging without threads
+pass IO::Compress::Base
+fail LWP #TODO always
+skip Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor
+fail Class::Accessor
 pass Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO always
@@ -55,14 +55,14 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
-fail Params::Validate #TODO < 5.8.9
+skip Params::Validate
 fail Sub::Name #TODO < 5.13.8
-pass Filter::Util::Call
+skip Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
 pass MRO::Compat
-skip Time::HiRes
+pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
@@ -70,7 +70,7 @@ skip Class::MOP
 skip Moose
 pass Test::Deep
 pass Carp::Clan
-pass Module::Pluggable
+skip Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 skip DBI
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,8 +86,8 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-pass Test::Pod
-skip Digest::SHA1
+skip Test::Pod
+pass Digest::SHA1
 skip namespace::clean
 pass Class::Inspector
 pass Clone
@@ -96,15 +96,15 @@ pass XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-fail DateTime::Locale #TODO < 5.13.8
-fail DateTime #TODO < 5.13.8
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.6
-# 85 / 100 modules tested with B-C-1.29 - perl-5.006002d-nt
-# pass  74 /  85 (87.1%)
-# fail  11 /  85 (12.9%)
-# todo  10 /  11 (90.9%)
-# skip  15 / 100 (15.0% not installed)
+skip Template::Stash
+# 81 / 100 modules tested with B-C-1.29 - perl-5.006002d-nt
+# pass  73 /  81 (90.1%)
+# fail   8 /  81 (9.9%)
+# todo   6 /   8 (75.0%)
+# skip  19 / 100 (19.0% not installed)

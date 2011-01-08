@@ -18,6 +18,7 @@
 	* t/modules.pm: subset use 10 not 11 modules. run tests with -O1
 	less TODO tests, esp for 5.13
 	* t/modules.t: fixed binary detection on non-windows (a.out)
+	* ByteLoader: fixed -Dt for GV
 
 1.28	2010-12-31 rurban
 	fixed XSLoader, pmflags, CV and most named methods for 5.14
