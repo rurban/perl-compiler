@@ -1,4 +1,5 @@
 Artistic
+cc_runtime.h
 lib/B/Assembler.pm
 lib/B/Bblock.pm
 lib/B/Bytecode.pm
@@ -83,6 +84,7 @@ t/cc.t
 t/cc_last.t
 t/cc_o1.t
 t/cc_o2.t
+t/issue24.t
 t/issue27.t
 t/issue29.t
 t/issue31.t

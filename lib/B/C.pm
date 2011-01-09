@@ -297,6 +297,7 @@ sub walk_and_save_optree {
 # Look this up here so we can do just a number compare
 # rather than looking up the name of every BASEOP in B::OP
 my $OP_THREADSV = opnumber('threadsv');
+my $OP_DBMOPEN = opnumber('dbmopen');
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
@@ -808,6 +809,13 @@ sub B::LISTOP::save {
   $init->add( sprintf( "listop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
+  if ($op->type == $OP_DBMOPEN) {
+    # XXX resolve it at compile-time, not at run-time
+    # mark_package('AnyDBM_File') does too much, just bootstrap the single ISA
+    require AnyDBM_File;
+    my $dbm = $AnyDBM_File::ISA[0];
+    svref_2object( \&{"$dbm\::bootstrap"} )->save;
+  }
   do_labels ($op, 'first', 'last');
   $sym;
 }
