@@ -66,8 +66,8 @@ push @todo, (27)    if $Config{ptrsize} == 8;
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
 
-my @skip = (); #(20,27,29) if $] >= 5.010;
-push @skip, (42..43) if !$ITHREADS;
+my @skip = ();
+push @skip, (27,32,42..43) if !$ITHREADS;
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
@@ -86,7 +86,7 @@ else {
 for (@tests) {
   my $todo = $todo{$cnt} ? "#TODO " : "#";
   my ($got, @insn);
-  if ($todo{$cnt} and $skip{$cnt}) { # and !$AUTHOR
+  if ($todo{$cnt} and $skip{$cnt} and !$AUTHOR) {
     print sprintf("ok %d # skip\n", $cnt);
     next;
   }

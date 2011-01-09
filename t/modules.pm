@@ -118,7 +118,7 @@ sub get_module_list {
   }
 
   if (&is_subset) {
-    log_diag("testing a subset of the top100 modules");
+    log_diag("testing a random subset of the top100 modules");
     @modules = random_sublist(@modules);
   }
 
