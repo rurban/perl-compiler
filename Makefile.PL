@@ -6,7 +6,7 @@ use 5.006;
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 # generate lib/B/Asmdata.pm beforehand
-system("$^X bytecode.pl");
+system($^X,"bytecode.pl");
 
 my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
 my $have_independent_comalloc = &check_independent_comalloc;
@@ -229,6 +229,7 @@ sub depend {
     my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
+    my $cc_runtime_h = File::Spec->catfile($headerpath, 'cc_runtime.h');
     my $result = "
 $asmdata : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
@@ -239,7 +240,17 @@ $byterun_c : Makefile bytecode.pl @headers
 $byterun_h : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 ";
-    $result .= "\ntest :: subdirs-test\n\n" if $] > 5.009;
+    if ($] > 5.013007) {
+        $result .= "
+# This is the best location
+$cc_runtime_h : cc_runtime.h
+	\$(CP) cc_runtime.h $cc_runtime_h
+
+test :: $cc_runtime_h
+";
+    } elsif ($] > 5.009) {
+        $result .= "\ntest :: subdirs-test\n\n";
+    }
     $result;
 }
 
