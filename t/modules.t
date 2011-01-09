@@ -276,6 +276,7 @@ sub is_todo {
     )) { return '5.8-5.10 DEBUGGING with threads' if $_ eq $module; }}
     if ($] >= 5.009 and $] < 5.12) { foreach(qw(
       Carp::Clan
+      Template::Stash
     )) { return '5.10 with threads' if $_ eq $module; }}
     if ($] < 5.012) { foreach(qw(
       Module::Build
@@ -295,6 +296,7 @@ sub is_todo {
     if ($] >= 5.012) { foreach(qw(
     )) { return '>=5.12 with threads' if $_ eq $module; }}
     if ($] >= 5.013) { foreach(qw(
+      Template::Stash
     )) { return '5.13 with threads' if $_ eq $module; }}
   } else { #no threads
     foreach(qw(
