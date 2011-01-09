@@ -2242,6 +2242,16 @@ sub pp_substcont {
   return $pmop->next;
 }
 
+# coverage: issue24
+# resolve the DBM library at compile-time, not at run-time
+sub pp_dbmopen {
+  my $op = shift;
+  require AnyDBM_File;
+  my $dbm = $AnyDBM_File::ISA[0];
+  svref_2object( \&{"$dbm\::bootstrap"} )->save;
+  return default_pp($op);
+}
+
 sub default_pp {
   my $op     = shift;
   my $ppname = "pp_" . $op->name;
