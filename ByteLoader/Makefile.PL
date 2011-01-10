@@ -7,7 +7,12 @@ my $lddlflags = $Config{lddlflags};
 if ( -d ".svn" ) {
   $ccflags .= " -ansi -Wall -Wextra" if $Config{cc} =~ /gcc/;
 }
-
+if ($] < 5.007) {
+  # We are not called by ../Makefile.PL, but be sure about that for now.
+  print "perl 5.6 does still use the builtin Bytecode compiler and ByteLoader\n";
+  ExtUtils::MakeMaker::WriteEmptyMakefile;
+  exit;
+}
 WriteMakefile(
     NAME		=> 'ByteLoader',
     VERSION_FROM	=> 'ByteLoader.pm',
