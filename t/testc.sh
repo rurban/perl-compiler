@@ -143,10 +143,10 @@ function ctest {
     fi
 }
 
-ntests=46
+ntests=48
 declare -a tests[$ntests]
 declare -a result[$ntests]
-ncctests=3
+ncctests=17
 declare -a cctests[$((100+$ncctests))]
 declare -a ccresult[$((100+$ncctests))]
 tests[1]='print "hi"'
@@ -290,8 +290,11 @@ result[45]='ok'
 tests[46]='use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }'
 result[46]='ok'
 # issue27
-tests[47]='require LWP::UserAgent; print q(ok);'
+tests[47]='require LWP::UserAgent;print q(ok);'
 result[47]='ok'
+# issue24
+tests[48]='dbmopen(%H,q(f),0644);print q(ok);'
+result[48]='ok'
 
 # from here on we test CC specifics only
 

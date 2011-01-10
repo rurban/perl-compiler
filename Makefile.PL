@@ -89,31 +89,6 @@ WriteMakefile(
              },
 );
 
-# EUMM has a problem. If a subproject has a XS but main not,
-# main needs the dynamic+dynamic_lib target. So we create an unused dummy target.
-# MSWin32 is quite strict, so we need a full XS, other targets do not care.
-# touch C.c is enough there.
-# XXX Some old 5.6. tests (which exactly?) still fail on regex, so we better keep
-# the old xs and just do not use bootstrap it.
-if (0) {
-    open my $c, ">", "C.c";
-    if ($^O =~ /MSWin32|AIX/) {
-        print $c <<'EOF';
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-#ifdef __cplusplus
-extern "C"
-#endif
-XS(B__C);
-XS(B__C) { 1; }
-EOF
-    } else {
-        print $c "/* dummy */\n";
-    }
-    close $c;
-}
-
 sub headerpath {
     if ($core) {
 	return File::Spec->catdir(File::Spec->updir,
@@ -243,8 +218,8 @@ $byterun_h : Makefile bytecode.pl @headers
     if ($] > 5.013007) {
         $result .= "
 # This is the best location
-$cc_runtime_h : cc_runtime.h
-	\$(CP) cc_runtime.h $cc_runtime_h
+$cc_runtime_h : cc_runtime514.h
+	\$(CP) cc_runtime514.h $cc_runtime_h
 
 test :: $cc_runtime_h
 ";
