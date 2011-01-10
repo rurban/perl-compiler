@@ -18,7 +18,7 @@ my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $expected = `$runperl $name.pl`;
 
 $result = `$runperl $Mblib blib/script/perlcc -r -B $name.pl`;
-is($result, $expected, "Bytecode dbm");
+is($result, $expected, "Bytecode dbm fixed with r882, 1.30");
 
 $Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
 $result = `$runperl $Mblib blib/script/perlcc -r $name.pl`;
@@ -30,7 +30,7 @@ is($result, $expected, "C dbm fixed with r879, 1.30");
 $result = `$runperl $Mblib blib/script/perlcc -r -O $name.pl`;
 TODO: {
   local $TODO = "B::CC issue 24 dbm";
-  is($result, $expected, "CC dbm");
+  is($result, $expected, "CC dbm fixed with r881, but XSLoader missing");
 }
 
 END {

@@ -48,6 +48,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.07, Reini Urban, 2010-06-30 22:32:20
 # Version 2.08, Reini Urban, 2010-07-30 21:30:33
 # Version 2.09, Reini Urban, 2010-10-11 13:54:52
+# Version 2.10, Reini Urban, 2011-01-10 01:02:00
 
 use strict;
 use warnings;
@@ -61,7 +62,7 @@ use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.09;
+our $VERSION = 2.10;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -132,6 +133,9 @@ sub generate_code {
 }
 
 sub run_code {
+    if ($Backend eq 'Bytecode') {
+        $Output = "$BinPerl $Output @ARGV";
+    }
     vprint 0, "Running code $Output @ARGV";
     run("$Output @ARGV");
     exit(0);
@@ -215,8 +219,6 @@ sub parse_argv {
         Time::HiRes->import('gettimeofday','tv_interval');
       }
     }
-    $Output = opt(o) || ( is_win32 or $^O eq 'cygwin' ? 'a.exe' : 'a.out' );
-    $Output = is_win32() ? $Output : relativize($Output);
     $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
 
     if (opt(e)) {
@@ -234,9 +236,21 @@ sub parse_argv {
         vprint 1, "$0: using $Input as input file, ignoring @ARGV\n" if @ARGV;
         check_read($Input);
         check_perl($Input);
-        sanity_check();
     }
 
+    if (opt(o)) {
+        $Output = opt(o);
+    } elsif (opt(B)) {
+        if (opt(e)) {
+            (undef, $Output) = tempfile("plcXXXXX", SUFFIX => ".plc");
+        } else {
+            $Output = $Input . "c";
+        }
+    } else {
+        $Output = ( is_win32() or $^O eq 'cygwin' ) ? 'a.exe' : 'a.out';
+    }
+    $Output = is_win32() ? $Output : relativize($Output);
+    sanity_check();
 }
 
 sub opt(*) {
@@ -249,11 +263,18 @@ sub compile_module {
 }
 
 sub compile_byte {
+
+    vprint 1, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
+    vprint 1, "Compiling...";
+    vprint 1, "Calling $command";
 
+    my $t0 = [gettimeofday] if opt('time');
     my ($output_r, $error_r) = spawnit($command);
+    my $elapsed = tv_interval ( $t0 ) if opt('time');
+    vprint -1, "c time: $elapsed" if opt('time');
 
     if (@$error_r && $? != 0) {
 	_die("$0: $Input did not compile:\n@$error_r\n");
@@ -263,7 +284,6 @@ sub compile_byte {
     }
 
     chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!");
-    exit 0;
 }
 
 sub compile_cstyle {
@@ -504,7 +524,7 @@ sub sanity_check {
         } else {
             warn "$0: Will not write output on top of input file, ",
                 "compiling to a.out instead\n";
-            $Output = ( is_win32 or $^O eq 'cygwin' ? 'a.exe' : 'a.out' );
+            $Output = (is_win32 or $^O eq 'cygwin') ? 'a.exe' : 'a.out';
         }
     }
 }
