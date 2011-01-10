@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r876 M
+# B::C::VERSION = 1.29 r888
 # perlversion = 5.013008d-nt
 # path = /usr/local/bin/perl5.13.8d-nt
 # platform = cygwin 32bit
@@ -73,7 +73,7 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.29 - perl-5.013008d-nt
-# pass  94 /  99 (94.9%)
-# fail   5 /  99 (5.1%)
+# 100 / 100 modules tested with B-C-1.29 - perl-5.013008d-nt
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
 # todo   6 /   5 (120.0%)
-# skip   1 / 100 (1.0% not installed)
+# skip   0 / 100 (0.0% not installed)
