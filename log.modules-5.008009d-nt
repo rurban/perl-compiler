@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r865
+# B::C::VERSION = 1.29 r872
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -24,7 +24,7 @@ pass File::Spec
 fail File::Temp #TODO 5.8.x
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+skip ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.29 - perl-5.008009d-nt
-# pass  75 / 100 (75.0%)
-# fail  25 / 100 (25.0%)
-# todo  18 /  25 (72.0%)
-# skip   0 / 100 (0.0% not installed)
+# 99 / 100 modules tested with B-C-1.29 - perl-5.008009d-nt
+# pass  75 /  99 (75.8%)
+# fail  24 /  99 (24.2%)
+# todo  18 /  24 (75.0%)
+# skip   1 / 100 (1.0% not installed)

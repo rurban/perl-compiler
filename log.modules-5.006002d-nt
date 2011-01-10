@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.29 r865
+# B::C::VERSION = 1.29 r872
 # perlversion = 5.006002d-nt
-# path = /cyg1/usr/local/bin/perl5.6.2
+# path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install
+fail ExtUtils::Install #TODO 5.6
 pass Text::ParseWords
 fail ExtUtils::CBuilder #TODO < 5.8.9
 skip ExtUtils::ParseXS
@@ -47,7 +47,7 @@ pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-fail Class::Accessor
+fail Class::Accessor #TODO 5.6
 pass Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO always
@@ -106,5 +106,5 @@ skip Template::Stash
 # 81 / 100 modules tested with B-C-1.29 - perl-5.006002d-nt
 # pass  73 /  81 (90.1%)
 # fail   8 /  81 (9.9%)
-# todo   6 /   8 (75.0%)
+# todo   8 /   8 (100.0%)
 # skip  19 / 100 (19.0% not installed)
