@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r886
+# B::C::VERSION = 1.29 r878
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -16,7 +16,7 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 fail Test::Simple #TODO 5.8.x
 pass ExtUtils::Manifest
-fail Pod::Text
+pass Pod::Text
 pass constant
 fail Test
 pass Data::Dumper
@@ -24,7 +24,7 @@ pass File::Spec
 fail File::Temp #TODO 5.8.x
 pass ExtUtils::Install
 pass Text::ParseWords
-skip ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -54,7 +54,7 @@ fail Attribute::Handlers #TODO always
 pass Data::OptList
 pass Sub::Exporter
 fail Test::NoWarnings
-fail version
+pass version
 pass Params::Validate
 fail Sub::Name #TODO < 5.13.8
 pass Filter::Util::Call
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 fail Test::Warn #TODO 5.8.9
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 99 / 100 modules tested with B-C-1.29 - perl-5.008009d-nt
-# pass  75 /  99 (75.8%)
-# fail  24 /  99 (24.2%)
-# todo  18 /  24 (75.0%)
+# pass  78 /  99 (78.8%)
+# fail  21 /  99 (21.2%)
+# todo  18 /  21 (85.7%)
 # skip   1 / 100 (1.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r886
+# B::C::VERSION = 1.29 r878
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -40,9 +40,9 @@ pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-fail LWP #TODO always
-skip Storable
+skip IO::Compress::Base
+skip LWP
+fail Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -55,14 +55,14 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
-skip Params::Validate
+fail Params::Validate #TODO < 5.8.9
 pass Sub::Name #TODO < 5.13.8
-skip Filter::Util::Call
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
 pass MRO::Compat
-pass Time::HiRes
+skip Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
@@ -70,7 +70,7 @@ skip Class::MOP
 skip Moose
 pass Test::Deep
 pass Carp::Clan
-skip Module::Pluggable
+pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 skip DBI
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,8 +86,8 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-skip Test::Pod
-pass Digest::SHA1
+pass Test::Pod
+skip Digest::SHA1
 skip namespace::clean
 pass Class::Inspector
 pass Clone
@@ -96,15 +96,15 @@ pass XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+pass DateTime::TimeZone
+fail DateTime::Locale #TODO < 5.13.8
+fail DateTime #TODO < 5.13.8
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 81 / 100 modules tested with B-C-1.29 - perl-5.006002d-nt
-# pass  75 /  81 (92.6%)
-# fail   6 /  81 (7.4%)
-# todo   8 /   6 (133.3%)
-# skip  19 / 100 (19.0% not installed)
+fail Template::Stash #TODO 5.6
+# 85 / 100 modules tested with B-C-1.29 - perl-5.006002d-nt
+# pass  75 /  85 (88.2%)
+# fail  10 /  85 (11.8%)
+# todo  12 /  10 (120.0%)
+# skip  15 / 100 (15.0% not installed)

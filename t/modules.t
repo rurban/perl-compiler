@@ -211,7 +211,8 @@ log_diag(sprintf("skip %3d / %3d (%s not installed)\n",
 
 exit;
 
-# for t in $(cat t/top100); do grep -a " $t" t/modules.t `ls log.modules-5.0*|grep -v .err`; read; done
+# t/todomod.pl
+# for t in $(cat t/top100); do perl -ne"\$ARGV=~s/log.modules-//;print \$ARGV,': ',\$_ if / $t\s/" t/modules.t `ls log.modules-5.0*|grep -v .err`; read; done
 sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
@@ -241,9 +242,11 @@ sub is_todo {
     File::Temp
   )) { return '5.8.x' if $_ eq $module; }}
   if ($] == 5.008009) { foreach(qw(
+    Test
     Test::Deep
     Test::Warn
     Test::Pod
+    Test::NoWarnings
   )) { return '5.8.9' if $_ eq $module; }}
   if ($] > 5.013) { foreach(qw(
     ExtUtils::MakeMaker

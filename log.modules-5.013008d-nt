@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r872
+# B::C::VERSION = 1.29 r876 M
 # perlversion = 5.013008d-nt
 # path = /usr/local/bin/perl5.13.8d-nt
 # platform = cygwin 32bit
@@ -73,12 +73,12 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+skip DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
