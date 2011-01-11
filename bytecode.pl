@@ -42,7 +42,7 @@ my $c_header = <<"EOT";
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2008,2009,2010 Reini Urban
+ *      Copyright (c) 2008,2009,2010,2011 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
  *      License or the Artistic License, as specified in the README file.
@@ -385,6 +385,8 @@ if ($] > 5.007) {
     for (@insndata) { $holes{$_->[0]}++ if $_->[1] and $insn_nums{$_->[0]} == 1; }
 }
 
+my $UVxf = substr($Config{uvxformat},1,-1);
+
 for (@insndata) {
     my ($unsupp, $rvalcast);
     ($insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags) = @$_;
@@ -413,16 +415,19 @@ EOT
 	next;
     }
     my $optarg = $argtype eq "none" ? "" : ", arg";
-    my ($argfmt, $rvaldcast);
+    my ($argfmt, $rvaldcast, $printarg);
     if ($fundtype =~ /(strconst|pvcontents|op_tr_array)/) {
 	$argfmt = '\"%s\"';
 	$rvaldcast = '(char*)';
+        $printarg = "${rvaldcast}arg";
     } elsif ($argtype =~ /index$/) {
-	$argfmt = '0x%x, ix:%d';
+	$argfmt = '0x%'.$UVxf.', ix:%d';
 	$rvaldcast = "($argtype)";
+        $printarg = "PTR2UV(arg)";
     } else {
 	$argfmt = '%d';
 	$rvaldcast = '(int)';
+        $printarg = "${rvaldcast}arg";
     }
     if ($optarg) {
 	print BYTERUN_C "\t\t$argtype arg;\n";
@@ -440,7 +445,7 @@ EOT
 	} else {
 	    printf BYTERUN_C "\t\tBGET_%s(arg);\n", $fundtype;
 	}
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, ${rvaldcast}arg%s));\n",
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, $printarg%s));\n",
 	  $argfmt, ($argtype =~ /index$/ ? ', (int)ix' : '');
 	if ($insn eq 'newopx' or $insn eq 'newop') {
 	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s]\\n\", PL_op_name[arg>>7]));\n";
@@ -459,10 +464,10 @@ EOT
 	# Special setter method named after insn
 	print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
 	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
-	my $optargcast = $optarg eq ", arg" ? ", ${rvaldcast}arg" : '';
+	my $optargcast = $optarg eq ", arg" ? ", $printarg" : '';
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
-	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ", ".($argtype =~ /index$/ ? '0x%x' : $argfmt))
+	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ", ".($argtype =~ /index$/ ? '0x%'.$UVxf : $argfmt))
 	      : '';
     } elsif ($flags =~ /s/) {
 	# Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
@@ -472,8 +477,8 @@ EOT
     }
     elsif ($optarg && $lvalue ne "none") {
 	print BYTERUN_C "\t\t$lvalue = ${rvalcast}arg;\n" unless $unsupp;
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", ${rvaldcast}arg%s));\n",
-	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%x' : $argfmt);
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   $lvalue = ${rvalcast}%s;\\n\", $printarg%s));\n",
+	  $fundtype =~ /(strconst|pvcontents)/ ? '\"%s\"' : ($argtype =~ /index$/ ? '0x%'.$UVxf : $argfmt);
     }
     print BYTERUN_C "\t\tbreak;\n\t    }\n";
 }
