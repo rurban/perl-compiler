@@ -217,6 +217,7 @@ sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 
+  # XXX Attribute::Handlers has a CHECK block. Need to add this to the compilation
   foreach(qw(
     LWP
     Attribute::Handlers
@@ -251,7 +252,7 @@ sub is_todo {
   if ($] > 5.013) { foreach(qw(
     ExtUtils::MakeMaker
   )) { return '> 5.13' if $_ eq $module; }}
-  if ($] < 5.013008) { foreach(qw(
+  if ($] < 5.013008) { foreach(qw(	# looks like Dave fixed that in CORE
     Sub::Name
     DBI
     DateTime::Locale
