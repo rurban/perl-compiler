@@ -215,7 +215,7 @@ $byterun_c : Makefile bytecode.pl @headers
 $byterun_h : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 ";
-    if ($] > 5.013007) {
+    if ($] > 5.013007 and !-e $cc_runtime_h) {
         $result .= "
 # This is the best location
 $cc_runtime_h : cc_runtime514.h
