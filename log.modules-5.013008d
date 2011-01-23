@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r872
+# B::C::VERSION = 1.29 r890
 # perlversion = 5.013008d
 # path = /usr/local/bin/perl5.13.8d
 # platform = cygwin 32bit
@@ -102,9 +102,9 @@ fail DateTime
 pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
+fail Template::Stash #TODO 5.10 with threads
 # 98 / 100 modules tested with B-C-1.29 - perl-5.013008d
 # pass  39 /  98 (39.8%)
 # fail  59 /  98 (60.2%)
-# todo   9 /  59 (15.3%)
+# todo  10 /  59 (16.9%)
 # skip   2 / 100 (2.0% not installed)
