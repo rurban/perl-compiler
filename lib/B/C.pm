@@ -238,6 +238,7 @@ my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
 my $verbose = 0;
+my ($dumpxs, $outfile);
 my %unused_sub_packages;
 my %static_ext;
 my $use_xsloader;
@@ -3125,13 +3126,13 @@ sub output_all {
 #endif
 EOT
   }
-  if ($] < 5.013009 ) { # added with c43ae56ff9cd before 5.13.9 at 2011-01-21
+  if ($] < 5.013010 ) { # added with c43ae56ff9cd before 5.13.10 at 2011-01-21
     print <<'EOT';
 #ifndef GvCV_set
-#  define GvCV_set(gv,cv)   (GvGP(gv)->gp_cv = (cv))
+#  define GvCV_set(gv,cv)   (GvCV(gv) = (cv))
 #endif
 #ifndef GvGP_set
-#  define GvGP_set(gv,gp)   ((gv)->sv_u.svu_gp = (gp))
+#  define GvGP_set(gv,gp)   (GvGP(gv) = (gp))
 #endif
 EOT
   }
@@ -3727,6 +3728,7 @@ EOT
     }
   }
   if ($dl) {
+    if ($dumpxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
@@ -3742,15 +3744,34 @@ EOT
         print "\tPUTBACK;\n";
         print "#ifdef USE_DYNAMIC_LOADING\n";
         warn "bootstrapping $stashname added to dl_init\n" if $verbose;
+        my $stashfile;
         if ( $xsub{$stashname} eq 'Dynamic' ) {
-          print qq/\tcall_method("DynaLoader::bootstrap_inherit",G_VOID|G_DISCARD);\n/;
+          print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
-	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
+	  ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
           #warn "$xsub{$stashname}\n" if $verbose;
           # i.e. PUSHBLOCK
-	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop,"%s");\n/, $stashfile if $stashfile;
-          print qq/\tcall_pv("XSLoader::load",G_VOID|G_DISCARD);\n/;
+	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop, "%s");\n/, $stashfile if $stashfile;
+          print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
+        }
+        if ($dumpxs) {
+          my ($laststash) = $stashname =~ /::([^:]+)$/;
+          $laststash = $stashname unless $laststash;
+          my ($path) = $stashname =~ s/::/\//g;
+          $path .= "/" if $path; # can be empty
+          my $sofile = "auto/" . $path . $laststash . '/'. $laststash . '\.' . $Config{dlext};
+          warn "dumpxs search $sofile in @DynaLoader::dl_shared_objects\n"
+            if $verbose and $debug{pkg};
+          for (@DynaLoader::dl_shared_objects) {
+            if (m{^(.+/)$sofile$}) {
+              print XS $stashname,"\t",$_,"\n";
+              warn "dumpxs $stashname\t$_\n" if $verbose;
+              $sofile = '';
+              last;
+            }
+          }
+          print XS $stashname,"\n" if $sofile; # error case
         }
         print "#else\n";
         my $stashxsub = $stashname;
@@ -3768,6 +3789,7 @@ EOT
     print "\tcxstack_ix--;\n" if $xs;  	# i.e. POPBLOCK
     print "\tLEAVE;\n";
     print "/* end DynaLoader bootstrapping */\n";
+    close XS if $dumpxs;
   }
   print "}\n";
 }
@@ -4311,7 +4333,12 @@ OPTION:
     }
     elsif ( $opt eq "o" ) {
       $arg ||= shift @options;
-      open( STDOUT, ">$arg" ) or return "$arg: $!\n";
+      $outfile = $arg;
+      open( STDOUT, ">", $arg ) or return "$arg: $!\n";
+    }
+    elsif ( $opt eq "d" and $arg eq "umpxs" ) {
+      $outfile = "perlcc" unless $outfile;
+      $dumpxs = 1;
     }
     elsif ( $opt eq "v" ) {
       $verbose = 1;
@@ -4442,6 +4469,11 @@ options. The compiler tries to figure out which packages may possibly
 have subs in which need compiling but the current version doesn't do
 it very well. In particular, it is confused by nested packages (i.e.
 of the form C<A::B>) where package C<A> does not contain any subs.
+
+=item B<-dumpxs>
+
+Dump a list of bootstrapped XS package names to F<outfile.lst>,
+needed for C<perlcc -staticxs>
 
 =item B<-D>C<[OPTIONS]>
 

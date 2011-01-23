@@ -290,17 +290,18 @@ sub compile_cstyle {
     my $stash = opt(stash) ? grab_stash() : "";
     my $taint = opt(T) ? '-T' :
                 opt(t) ? '-t' : '';
+    $stash .= "," if $stash; #stash can be empty
 
     # What are we going to call our output C file?
     my $lose = 0;
     my ($cfh);
     my $testsuite = '';
     my $addoptions = opt(Wb);
-
     if( $addoptions ) {
-        $addoptions .= ',' if $addoptions !~ m/,$/;
+        $addoptions .= ',' if $addoptions;
     }
 
+    my $dumpxs = opt(staticxs) ? "-dumpxs," : '';
     if (opt(testsuite)) {
         my $bo = join '', @begin_output;
         $bo =~ s/\\/\\\\\\\\/gs;
@@ -338,8 +339,7 @@ sub compile_cstyle {
         $max_line_len = '-l2000,';
     }
 
-    my $options = "$addoptions$testsuite$max_line_len$stash";
-    $options .= "," if $options and $options !~ m/,$/; #stash can be empty
+    my $options = "$addoptions$testsuite$max_line_len$dumpxs$stash";
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
     my $command = "$BinPerl $taint -MO=$Backend,$options"."-o$cfile $Input";
@@ -356,11 +356,21 @@ sub compile_cstyle {
         _die("$0: $Input did not compile, which can't happen:\n@error\n");
     }
     vprint -1, "c time: $elapsed" if opt('time');
+    my $extra_libs = '';
+    if ($dumpxs and open(XS, "<", $cfile.".lst")) {
+        while (<XS>) {
+            my ($s, $l) = m/^([^\t]+)(.*)$/;
+            $stash .= ",-u$s";
+            $extra_libs .= " ".substr($l,1) if $l;
+        }
+        close XS;
+        vprint 1, "staticxs $stash $extra_libs";
+    }
 
     $t0 = [gettimeofday] if opt('time');
     is_msvc ?
-        cc_harness_msvc($cfile,$stash) :
-        cc_harness($cfile,$stash) unless opt(c);
+        cc_harness_msvc($cfile, $stash, $extra_libs) :
+        cc_harness($cfile, $stash, $extra_libs) unless opt(c);
     $elapsed = tv_interval ( $t0 ) if opt('time');
     vprint -1, "cc time: $elapsed" if opt('time');
 
@@ -371,7 +381,7 @@ sub compile_cstyle {
 }
 
 sub cc_harness_msvc {
-    my ($cfile,$stash)=@_;
+    my ($cfile, $stash, $extra_libs)=@_;
     use ExtUtils::Embed ();
     my $obj = "${Output}.obj";
     my $compile = ExtUtils::Embed::ccopts." -c -Fo$obj $cfile ";
@@ -379,8 +389,9 @@ sub cc_harness_msvc {
     $compile .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $compile .= $B::C::Flags::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
+    $compile .= " -UUSE_DYNAMIC_LOADING" if opt(staticxs);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
-    # TODO: -shared,-static,-sharedxs,-staticxs
+    # TODO: -shared,-static,-sharedxs
     if ($stash) {
         my @mods = split /-?u /, $stash;
         $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
@@ -390,6 +401,7 @@ sub cc_harness_msvc {
     if ($Config{ccversion} eq '12.0.8804') {
         $link =~ s/ -opt:ref,icf//;
     }
+    $link .= $extra_libs;
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     $link .= $B::C::Flags::extra_libs;
     vprint 3, "running $Config{cc} $compile";
@@ -399,7 +411,7 @@ sub cc_harness_msvc {
 }
 
 sub cc_harness {
-    my ($cfile,$stash)=@_;
+    my ($cfile, $stash, $extra_libs) = @_;
     use ExtUtils::Embed ();
     my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
     $command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
@@ -407,20 +419,20 @@ sub cc_harness {
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
     my $ccflags = $command;
-    # TODO: -shared,-static,-sharedxs,-staticxs
-    my $ldopts = ExtUtils::Embed::ldopts("-std");
+    $command .= " -UUSE_DYNAMIC_LOADING" if opt(staticxs);
+    # TODO: -shared,-static,-sharedxs
+    my $ldopts;
     if ($stash) {
         my @mods = split /-?u /, $stash;
-        $ldopts = " ".ExtUtils::Embed::ldopts("-std", \@mods);
-        if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
-          $ldopts =~ s/-fstack-protector//;
-        }
+        $ldopts = ExtUtils::Embed::ldopts("-std", \@mods);
     } else {
-        if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
-          $ldopts =~ s/-fstack-protector//;
-        }
-        $command .= " $ldopts";
+        $ldopts = ExtUtils::Embed::ldopts("-std");
     }
+    # gcc crashes with this duplicate arg
+    if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
+        $ldopts =~ s/-fstack-protector//;
+    }
+    $command .= " ".$ldopts;
     my $libdir  = "$Config{prefix}/lib";
     my $useshrplib = $Config{useshrplib};
     if ( $useshrplib and -e "$libdir/$Config{libperl}") {
@@ -428,6 +440,7 @@ sub cc_harness {
 	$command =~ s|-lperl |$libdir/$Config{libperl} |;
     }
     # $command .= " -lperl" unless $command =~ / -lperl\b/;
+    $command .= $extra_libs;
     $command .= $B::C::Flags::extra_libs if $B::C::Flags::extra_libs;
     vprint 3, "running $Config{cc} $command";
     system("$Config{cc} $command");
@@ -464,7 +477,7 @@ sub yclept {
     my $_stash;
     sub grab_stash {
 
-        warn "already called get_stash once" if $_stash;
+        warn "already called grab_stash once" if $_stash;
 
         my $taint = opt('T') ? '-T' :
                     opt('t') ? '-t' : '';
@@ -482,13 +495,13 @@ sub yclept {
 
         # band-aid for modules with noisy BEGIN {}
         foreach my $i ( @stash ) {
-            $i =~ m/-u(?:[\w:]+|\<none\>)$/ and $stash[0] = $i and next;
+            $i =~ m/-[ux](?:[\w:]+|\<none\>)$/ and $stash[0] = $i and next;
             push @begin_output, $i;
         }
         chomp $stash[0];
-        $stash[0] =~ s/,-u\<none\>//;
-        $stash[0] =~ s/^.*?-u/-u/s;
-        vprint 2, "Stash: ", join " ", split /,?-u/, $stash[0];
+        $stash[0] =~ s/,-[ux]\<none\>//;
+        $stash[0] =~ s/^.*?-([ux])/-$1/s;
+        vprint 2, "Stash: ", join " ", split /,?-[ux]/, $stash[0];
         chomp $stash[0];
         return $_stash = $stash[0];
     }
@@ -695,6 +708,7 @@ perlcc - generate executables from Perl programs
     perlcc -S -o hello file   # Creates a C file, 'file.c',
                               # then compiles it to executable 'hello'
     perlcc -c out.c file      # Creates a C file, 'out.c' from 'file'
+    perlcc -staticxs -o hello hello.pl # Compiles and links dynaloaded XS modules statically
 
     perlcc -e 'print q//'     # Compiles a one-liner into 'a.out'
     perlcc -c -e 'print q//'  # Creates a C file 'a.out.c'
@@ -798,7 +812,6 @@ Link to static libperl.a
 
 Link to static XSUBs if available. Together with -static this
 will gain no external dependencies.
-(Not yet implemented)
 
 =item -shared
 
@@ -830,7 +843,7 @@ Create a shared library (--sharedlib for compat.). Currently disabled.
 #   fill-column: 100
 # End:
 # vim: expandtab shiftwidth=4:
-
+q
 !NO!SUBS!
 
 close OUT or die "Can't close $file: $!";
