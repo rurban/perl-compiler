@@ -395,6 +395,8 @@ sub cc_harness_msvc {
     if ($stash) {
         my @mods = split /-?u /, $stash;
         $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+        # XXX staticxs need to check if the last mods for staticxs found a static lib.
+        # XXX only if not use the extra_libs
     } else {
         $link .= " ".ExtUtils::Embed::ldopts("-std");
     }

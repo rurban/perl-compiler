@@ -4,14 +4,17 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.30	2011-01-xx rurban
-	dbmopen, cc_runtime.h
+	dbmopen, cc_runtime.h, -staticxs
 
-	* C.pm (1.30): support dbmopen, fixes issue 24 
+	* C.pm (1.30): support dbmopen, fixes issue 24
+	support GvCV_set and GvGP_set introduced with 5.13.9
 	* CC.pm (1.30): support dbmopen, issue 24 failing due to XSLoader (test 45)
 	* Bytecode.pm (1.30): support dbmopen, fixes issue 24
-	* perlcc (2.10): fixed -B -r, -B output and run bytecode
-	* cc_runtime514.h: removed from CORE. If so cp it back. 
-	  renamed not to pollute tests with older perls
+	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
+	implement -staticxs to workaround DynaLoader problems.
+	* Stash (1.01): add option xs to print xs modules only with -x prefix.
+	* cc_runtime514.h: removed from CORE. If so, cp it back. 
+	  Renamed not to pollute tests with older perls.
 	* t/issue24.t: added
 
 1.29	2011-01-08 rurban
