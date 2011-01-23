@@ -29,14 +29,19 @@ use Test::More;
 
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
-
+my $staticxs = '-staticxs';
 BEGIN {
   # check whether linking with xs works at all
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  my $result = `$X -Mblib blib/script/perlcc -S -o a -e "use Scalar::Util;"`;
+  my $result = `$X -Mblib blib/script/perlcc -staticxs -S -o a -e "use Scalar::Util;"`;
   unless (-e 'a' or -e 'a.out') {
-    plan skip_all => "perlcc cannot link XS module Scalar::Util. Most likely wrong ldopts.";
-    exit;
+    my $result = `$X -Mblib blib/script/perlcc -S -o a -e "use Scalar::Util;"`;
+    unless (-e 'a' or -e 'a.out') {
+      plan skip_all => "perlcc cannot link XS module Scalar::Util. Most likely wrong ldopts.";
+      exit;
+    } else {
+      $staticxs = '';
+    }
   }
   unshift @INC, 't';
 }
@@ -151,8 +156,8 @@ for my $module (@modules) {
       foreach my $opt (@opts) {
         $opt .= " $keep" if $keep;
         # XXX TODO ./a often hangs but perlcc not
-        my @cmd = grep {!/^$/} $runperl,"-Mblib","blib/script/perlcc",$opt,"-r","mod.pl";
-        my $cmd = "$runperl -Mblib blib/script/perlcc $opt -r"; # only for the msg
+        my @cmd = grep {!/^$/} $runperl,"-Mblib","blib/script/perlcc",$opt,$staticxs,"-r","mod.pl";
+        my $cmd = "$runperl -Mblib blib/script/perlcc $opt $staticxs -r"; # only for the msg
         ($result, $out, $err) = run_cmd(\@cmd, 120); # in secs
         ok(-s $binary_file,
            "$module_count: use $module  generates non-zero binary")

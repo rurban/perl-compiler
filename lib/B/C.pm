@@ -3758,7 +3758,8 @@ EOT
         if ($dumpxs) {
           my ($laststash) = $stashname =~ /::([^:]+)$/;
           $laststash = $stashname unless $laststash;
-          my ($path) = $stashname =~ s/::/\//g;
+          my $path = $stashname;
+          $path =~ s/::/\//g;
           $path .= "/" if $path; # can be empty
           my $sofile = "auto/" . $path . $laststash . '/'. $laststash . '\.' . $Config{dlext};
           warn "dumpxs search $sofile in @DynaLoader::dl_shared_objects\n"
