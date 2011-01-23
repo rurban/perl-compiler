@@ -5,7 +5,7 @@ use Test::More tests => 3;
 
 my $name = "ccode24i";
 my $script = <<'EOF';
-my %H; dbmopen(%H,'ccode24i.db',0600); print '_ok_';
+my %H; dbmopen(%H,'ccode24i.db',0600); print q(ok);
 EOF
 
 open F, ">", "$name.pl";
