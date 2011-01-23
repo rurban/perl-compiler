@@ -2450,11 +2450,11 @@ sub B::GV::save {
                      $gv->FILE, ${ $gv->FILEGV }, $gp
                     )) if $debug{gv};
         # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-        $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
+        $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
         $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       }
       else {
-        $init->add( sprintf("GvGP($sym) = Perl_newGP(aTHX_ $sym);") );
+        $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       }
     }
   }
@@ -2509,7 +2509,7 @@ sub B::GV::save {
   # XXX is that correct?
   if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
     # Shared glob *foo = *bar
-    $init->add( "gp_free($sym);", "GvGP($sym) = GvGP($egvsym);" );
+    $init->add( "gp_free($sym);", "GvGP_set($sym, GvGP($egvsym));" );
   }
   elsif ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
@@ -2553,7 +2553,7 @@ sub B::GV::save {
         # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{\tCV *cv;");
         $init->add("\tcv = get_cv($origname,TRUE);");
-        $init->add("\tGvCV($sym) = cv;");
+        $init->add("\tGvCV_set($sym, cv);");
         $init->add("\tSvREFCNT_inc((SV *)cv);");
         $init->add("}");
       }
@@ -2561,7 +2561,7 @@ sub B::GV::save {
         # TODO: may need fix CvGEN if >0 to re-validate the CV methods
         # on PERL510 (>0 + <subgeneration)
         warn "GV::save &$name ($origname)...\n" if $debug{gv};
-        $init->add( sprintf( "GvCV($sym) = (CV*)(%s);", $gvcv->save ) );
+        $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
         warn "GV::save &$name\n" if $debug{gv};
       }
     }
@@ -3119,9 +3119,21 @@ sub output_all {
     }
   }
   if ($] < 5.013007 ) {
-    print "#ifndef CvSTASH_set\n";
-    print "#define CvSTASH_set(cv,hv) CvSTASH((cv)) = (hv)\n";
-    print "#endif\n";
+    print <<'EOT';
+#ifndef CvSTASH_set
+#  define CvSTASH_set(cv,hv) CvSTASH((cv)) = (hv)
+#endif
+EOT
+  }
+  if ($] < 5.013009 ) { # added with c43ae56ff9cd before 5.13.9 at 2011-01-21
+    print <<'EOT';
+#ifndef GvCV_set
+#  define GvCV_set(gv,cv)   (GvGP(gv)->gp_cv = (cv))
+#endif
+#ifndef GvGP_set
+#  define GvGP_set(gv,gp)   ((gv)->sv_u.svu_gp = (gp))
+#endif
+EOT
   }
   if ($use_av_undef_speedup || $use_svpop_speedup) {
     print "int gcount;\n";
