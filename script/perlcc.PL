@@ -689,6 +689,7 @@ sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
     unlink $cfile if ($cfile && !opt(S) && !opt(c));
+    unlink $cfile.".lst" if opt(staticxs);
 }
 
 __END__
