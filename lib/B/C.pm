@@ -10,7 +10,7 @@
 
 package B::C;
 
-our $VERSION = '1.29';
+our $VERSION = '1.30';
 my %debug;
 
 package B::C::Section;

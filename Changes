@@ -4,7 +4,7 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.30	2011-01-xx rurban
-	dbmopen, cc_runtime.h, -staticxs
+	dbmopen, cc_runtime.h, --staticxs
 
 	* C.pm (1.30): support dbmopen, fixes issue 24
 	support GvCV_set and GvGP_set introduced with 5.13.9
@@ -12,10 +12,10 @@
 	* Bytecode.pm (1.30): support dbmopen, fixes issue 24
 	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
 	implement --staticxs to workaround DynaLoader problems.
-	implemented getopts bundling: -ScO -e'bla' -v4 -oa is now possible
-	disabled some old single-dash switches: -testsuite, -time, -log. 
-	  require now double-dash --testsuite, ... 
-	  legacy handling for -Wb=.. and -stash
+	implemented getopts bundling: -ScO -e'bla' -v4 -oa is now possible.
+	disabled some old single-dash switches: -testsuite, -time, -log,
+	  requires now double-dash --testsuite, ... 
+	  legacy handling only for -Wb=.. and -stash
 	fixed -B -e'oneliner'
 	* Stash (1.01): add option xs to print xs modules only with -x prefix.
 	* cc_runtime514.h: removed from CORE. If so, cp it back. 

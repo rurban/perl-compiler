@@ -29,13 +29,13 @@ use Test::More;
 
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
-my $staticxs = '-staticxs';
+my $staticxs = '--staticxs';
 BEGIN {
   # check whether linking with xs works at all
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  my $result = `$X -Mblib blib/script/perlcc -staticxs -S -o a -e "use Scalar::Util;"`;
+  my $result = `$X -Mblib blib/script/perlcc --staticxs -S -oa -e"use Scalar::Util;"`;
   unless (-e 'a' or -e 'a.out') {
-    my $result = `$X -Mblib blib/script/perlcc -S -o a -e "use Scalar::Util;"`;
+    my $result = `$X -Mblib blib/script/perlcc -S -oa -e"use Scalar::Util;"`;
     unless (-e 'a' or -e 'a.out') {
       plan skip_all => "perlcc cannot link XS module Scalar::Util. Most likely wrong ldopts.";
       exit;
