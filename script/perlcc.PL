@@ -48,7 +48,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.07, Reini Urban, 2010-06-30 22:32:20
 # Version 2.08, Reini Urban, 2010-07-30 21:30:33
 # Version 2.09, Reini Urban, 2010-10-11 13:54:52
-# Version 2.10, Reini Urban, 2011-01-10 01:02:00
+# Version 2.10, Reini Urban, 2011-01-24 18:46:11
 
 use strict;
 use warnings;
@@ -166,8 +166,7 @@ sub parse_argv {
     use Getopt::Long;
 
     # disallows using long arguments
-    # Getopt::Long::Configure("bundling");
-
+    Getopt::Long::Configure("bundling");
     Getopt::Long::Configure("no_ignore_case");
 
     # no difference in exists and defined for %ENV; also, a "0"
@@ -175,6 +174,16 @@ sub parse_argv {
     unshift @ARGV, split ' ', $ENV{PERLCC_OPTS} if $ENV{PERLCC_OPTS};
 
     $Options = {};
+    # support single dash -Wb. GetOptions requires --Wb with bundling enabled.
+    my ($wb) = grep /^-Wb=(.+)/, @ARGV;
+    if ($wb) {
+        $Options->{Wb} = substr($wb,4);
+        @ARGV = grep !/^-Wb=(.+)/, @ARGV;
+    }
+    if (grep /^-stash$/, @ARGV) {
+        $Options->{stash}++;
+        @ARGV = grep !/^-stash$/, @ARGV;
+    }
     Getopt::Long::GetOptions( $Options,
         'L:s',          # lib directory
         'I:s',          # include directories (FOR C, NOT FOR PERL)
@@ -266,6 +275,9 @@ sub compile_byte {
 
     vprint 1, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
+    if ($] >= 5.007 and $Input =~ /^-e/) {
+        $opts = "-H";
+    }
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
     vprint 1, "Compiling...";
@@ -283,7 +295,7 @@ sub compile_byte {
 	warn "$0: Unexpected compiler output:\n@error" if @error;
     }
 
-    chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!");
+    chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!\n");
 }
 
 sub compile_cstyle {
@@ -376,7 +388,7 @@ sub compile_cstyle {
 
     if ($lose) {
         vprint 2, "unlinking $cfile";
-        unlink $cfile or _die("can't unlink $cfile: $!");
+        unlink $cfile or _die("can't unlink $cfile: $!\n");
     }
 }
 
@@ -582,7 +594,7 @@ sub check_perl {
         _die("Please try a perlier file!\n");
     }
 
-    open(my $handle, "<", $file)    or _die("XXX: can't open $file: $!");
+    open(my $handle, "<", $file)    or _die("XXX: can't open $file: $!\n");
     local $_ = <$handle>;
     if (/^#!/ && !/perl/) {
         _die("$0: $file is a ", /^#!\s*(\S+)/, " script, not perl\n");
@@ -605,7 +617,7 @@ sub spawnit {
     @error = <S_ERROR>;
     close S_ERROR;
     close S_OUT;
-    unlink $errname or _die("$0: Can't unlink error file $errname");
+    unlink $errname or _die("$0: Can't unlink error file $errname\n");
     return (\@output, \@error);
 }
 
@@ -635,7 +647,11 @@ sub _die {
 sub _usage_and_die {
     _die(<<EOU);
 $0: Usage:
-$0 [-o executable] [-h][-r] [-O|-B|-c|-S] [-I /foo] [-L /foo] [-log log] [source[.pl] | -e oneliner]
+$0 [-o executable] [-h][-r] [-O|-B|-c|-S] [-I /foo] [-L /foo] [--log log] [source[.pl] | -e oneliner]
+More options (see perldoc perlcc)
+  -v[1-4]
+  --stash     --staticxs
+  --testsuite --time
 EOU
 }
 
@@ -688,8 +704,14 @@ sub is_win32() { $^O =~ m/^MSWin/ }
 sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
-    unlink $cfile if ($cfile && !opt(S) && !opt(c));
-    unlink $cfile.".lst" if opt(staticxs);
+    if ($cfile && !opt(S) && !opt(c)) {
+        vprint 2, "unlinking $cfile";
+        unlink $cfile;
+    }
+    if (opt(staticxs) and !opt(S)) {
+        vprint 2, "unlinking $cfile.lst";
+        unlink "$cfile.lst";
+    }
 }
 
 __END__
@@ -790,7 +812,7 @@ Set verbosity of output from 0 to max. 4.
 
 Run the resulting compiled script after compiling it.
 
-=item -log I<logfile>
+=item --log I<logfile>
 
 Log the output of compiling to a file rather than to stdout.
 
@@ -802,39 +824,39 @@ Pass the options to the compiler backend, such as -Wb=-O2,-v
 
 run the backend using perl -T or -t
 
-=item -stash
+=item --stash
 
 Detect external packages automatically via B::Stash
 
-=item -static
+=item --static
 
 Link to static libperl.a
 (Not yet implemented)
 
-=item -staticxs
+=item --staticxs
 
 Link to static XSUBs if available. Together with -static this
 will gain no external dependencies.
 
-=item -shared
+=item --shared
 
 Link to shared libperl
 (Not yet implemented)
 
-=item -sharedxs
+=item --sharedxs
 
 Link shared XSUBs if the linker supports it. No DynaLoader needed.
 This will still require the shared XSUB libraries to be installed
 at the client, modification of @INC in the source is probably required.
 (Not yet implemented)
 
-=item -sharedlib
+=item --sharedlib
 
-Create a shared library (--sharedlib for compat.). Currently disabled.
+Create a shared library. Currently disabled.
 
-=item -testsuite
+=item --testsuite
 
-  perlcc -r -testsuite t/harness
+  perlcc -r --testsuite t/harness
 
 =back
 

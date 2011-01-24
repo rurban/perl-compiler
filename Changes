@@ -11,11 +11,17 @@
 	* CC.pm (1.30): support dbmopen, issue 24 failing due to XSLoader (test 45)
 	* Bytecode.pm (1.30): support dbmopen, fixes issue 24
 	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
-	implement -staticxs to workaround DynaLoader problems.
+	implement --staticxs to workaround DynaLoader problems.
+	implemented getopts bundling: -ScO -e'bla' -v4 -oa is now possible
+	disabled some old single-dash switches: -testsuite, -time, -log. 
+	  require now double-dash --testsuite, ... 
+	  legacy handling for -Wb=.. and -stash
+	fixed -B -e'oneliner'
 	* Stash (1.01): add option xs to print xs modules only with -x prefix.
 	* cc_runtime514.h: removed from CORE. If so, cp it back. 
 	  Renamed not to pollute tests with older perls.
 	* t/issue24.t: added
+	* t/e_perlcc.t: added
 
 1.29	2011-01-08 rurban
 	improve dl_init
