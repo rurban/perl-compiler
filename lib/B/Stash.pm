@@ -63,7 +63,6 @@ sub import {
     eval q[
      CHECK {
       ] . ($debug ? q[print "scanxs main\n"; my $debug=1;] : "") . q[
-      my %static_core_pkg;
       B->import(qw(svref_2object CVf_CONST CVf_ANON));
       my @arr = scanxs( $main::{"main::"},'',$debug );
       @arr = map { s/\:\:$//; $_ eq "<none>" ? () : $_; } @arr;
@@ -90,7 +89,6 @@ sub compile {
     BEGIN { require B; }
     print "scanxs main\n" if $debug;
     return sub {
-      my %static_core_pkg;
       B->import(qw(svref_2object CVf_CONST CVf_ANON));
       my @arr = scanxs( $main::{"main::"},'',$debug );
       @arr = map { s/\:\:$//; $_ eq "<none>" ? () : $_; } @arr;
@@ -105,17 +103,15 @@ sub scan {
   my $debug = shift;
   $prefix = '' unless defined $prefix;
   my @return;
-  foreach my $key ( keys %{$start} ) {
-    if ( $key =~ /::$/ ) {
-      my $name = $prefix . $key;
-      print $name,"\n" if $debug;
-      unless ( $start eq ${$start}{$key} or $key eq "B::" ) {
-        push @return, $key unless omit( $name );
-        foreach my $subscan ( scan( ${$start}{$key}, $name ) ) {
-          my $subname = $key.$subscan;
-          print $subname,"\n" if $debug;
-          push @return, $subname;
-        }
+  foreach my $key ( grep /::$/, keys %{$start} ) {
+    my $name = $prefix . $key;
+    print $name,"\n" if $debug;
+    unless ( $start eq ${$start}{$key} or omit($name) ) {
+      push @return, $key unless $name eq "version::"; # version has an external ::vxs module
+      foreach my $subscan ( scan( ${$start}{$key}, $name ) ) {
+        my $subname = $key.$subscan;
+        print $subname,"\n" if $debug;
+        push @return, $subname unless $name eq "version::";
       }
     }
   }
@@ -123,21 +119,22 @@ sub scan {
 }
 
 sub omit {
-  my $module = shift;
+  my $name = shift;
   my %omit   = (
     "DynaLoader::"   => 1,
     "XSLoader::"     => 1,
     "CORE::"         => 1,
     "CORE::GLOBAL::" => 1,
-    "UNIVERSAL::"    => 1
+    "UNIVERSAL::"    => 1,
+    "B::"    	     => 1,
+    "O::"    	     => 1
   );
-  return 1 if $omit{$module};
-  #%static_core_pkg = map {$_ => 1} static_core_packages()
-  #  unless %static_core_pkg;
-  return 1 if $static_core_pkg{substr($module,0,-2)};
-  if ( $module eq "IO::" or $module eq "IO::Handle::" ) {
-    $module =~ s/::/\//g;
-    return 1 unless $INC{$module};
+  my %static_core_pkg = map {$_ => 1} static_core_packages();
+  return 1 if $omit{$name};
+  return 1 if $static_core_pkg{substr($name,0,-2)};
+  if ( $name eq "IO::" or $name eq "IO::Handle::" ) {
+    $name =~ s/::/\//g;
+    return 1 unless $INC{$name};
   }
 
   return 0;
@@ -149,20 +146,22 @@ sub scanxs {
   my $prefix = shift;
   my $debug = shift;
   $prefix = '' unless defined $prefix;
+  my %IO = (IO::File:: => 1,
+            IO::Handle:: => 1,
+            IO::Socket:: => 1,
+            IO::Seekable:: => 1,
+            IO::Poll:: => 1);
   my @return;
-  foreach my $key ( keys %{$start} ) {
-    if ( $key =~ /::$/ ) {
-      my $name = $prefix . $key;
-      print $name,"\n" if $debug;
-      $name = "IO" if grep { $name eq $_."::" }
-        qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
-      unless ( $start eq ${$start}{$key} or $name eq "B::" ) {
-        push @return, $name if !omit($name) and has_xs($name, $debug);
-        foreach my $subscan ( scanxs( ${$start}{$key}, $name, $debug ) ) {
-          my $subname = $key.$subscan;
-          print $subname,"\n" if $debug;
-          push @return, $subname if !omit($name) and has_xs($subname, $debug);
-        }
+  foreach my $key ( grep /::$/, keys %{$start} ) {
+    my $name = $prefix . $key;
+    print $name,"\n" if $debug;
+    $name = "IO" if $IO{$name};
+    unless ( $start eq ${$start}{$key} or omit($name) ) {
+      push @return, $name if has_xs($name, $debug) and $name ne "version::";
+      foreach my $subscan ( scanxs( ${$start}{$key}, $name, $debug ) ) {
+        my $subname = $key.$subscan;
+        print $subname,"\n" if $debug;
+        push @return, $subname if !omit($subname) and has_xs($subname, $debug) and $name ne "version::";
       }
     }
   }
@@ -170,17 +169,14 @@ sub scanxs {
 }
 
 sub has_xs {
-  my $module = shift;
+  my $name = shift;
   my $debug = shift;
-  foreach my $key ( keys %{$module} ) {
-    my $name = $module . $key;
-    #print "has_xs: $name\n" if $debug;
-    my $cv = svref_2object( \&{$name} );
-    print "has_xs: &",$name," -> ",$cv," ",$cv->XSUB,"\n" if $debug and $cv;
+  foreach my $key ( keys %{$name} ) {
+    my $cvname = $name . $key;
+    my $cv = svref_2object( \&{$cvname} );
+    print "has_xs: &",$cvname," -> ",$cv," ",$cv->XSUB,"\n" if $debug and $cv;
     if ( $cv and $cv->XSUB ) {
-      return 0 if in_static_core(substr($module,0,-2), $key);
-      #my $CVf_CONST = $] < 5.010 ? 0x200 : 0x400; #5.11 0x0004
-      #my $CVf_ANON =  $] < 5.010 ? 0x04 : 0x80;
+      return 0 if in_static_core(substr($name,0,-2), $key);
       return 1 if $] < 5.007 or !($cv->CvFLAGS & CVf_CONST) or ($cv->CvFLAGS & CVf_ANON);
     }
   }
@@ -195,8 +191,6 @@ sub in_static_core {
   if ($stashname eq 'UNIVERSAL') {
     return $cvname =~ /^(isa|can|DOES|VERSION)$/;
   }
-  %static_core_pkg = map {$_ => 1} static_core_packages()
-    unless %static_core_pkg;
   return 1 if $static_core_pkg{$stashname};
   if ($stashname eq 'mro') {
     return $cvname eq 'method_changed_in';
@@ -219,7 +213,7 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
-  push @pkg, qw(version Tie::Hash::NamedCapture) if $] >= 5.010;
+  push @pkg, qw(Tie::Hash::NamedCapture) if $] >= 5.010;
   push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
