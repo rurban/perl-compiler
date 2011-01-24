@@ -3285,6 +3285,9 @@ sub output_boilerplate {
 #define PERL_CORE
 #include "EXTERN.h"
 #include "perl.h"
+#ifdef NO_DYNAMIC_LOADING
+# undef USE_DYNAMIC_LOADING
+#endif
 #include "XSUB.h"
 
 /* Workaround for mapstart: the only op which needs a different ppaddr */

@@ -401,7 +401,7 @@ sub cc_harness_msvc {
     $compile .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $compile .= $B::C::Flags::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
-    $compile .= " -UUSE_DYNAMIC_LOADING" if opt(staticxs);
+    $compile .= " -DNO_DYNAMIC_LOADING" if opt(staticxs);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs
     if ($stash) {
@@ -433,7 +433,7 @@ sub cc_harness {
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
     my $ccflags = $command;
-    $command .= " -UUSE_DYNAMIC_LOADING" if opt(staticxs);
+    $command .= " -DNO_DYNAMIC_LOADING" if opt(staticxs);
     # TODO: -shared,-static,-sharedxs
     my $ldopts;
     if ($stash) {
