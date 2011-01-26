@@ -10,6 +10,7 @@
 	support GvCV_set and GvGP_set introduced with 5.13.9
 	* CC.pm (1.09): support dbmopen, issue 24 failing due to XSLoader (test 45)
 	no pp_name shortnames in embed.h since 5.13.9, use Perl_pp_name.
+	Option -strict only used with DEBUGGING perls. 
 	* Bytecode.pm (1.30): support dbmopen, fixes issue 24
 	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
 	implement --staticxs to workaround DynaLoader problems.

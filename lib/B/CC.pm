@@ -594,10 +594,10 @@ sub error {
   my $line   = $curcop->[0]->line;
   $errors++;
   if (@_) {
-    warn sprintf( "%s:%d: $format\n", $file, $line, @_ );
+    warn sprintf( "ERROR at %s:%d: $format\n", $file, $line, @_ );
   }
   else {
-    warn sprintf( "%s:%d: %s\n", $file, $line, $format );
+    warn sprintf( "ERROR at %s:%d: %s\n", $file, $line, $format );
   }
 }
 
@@ -1067,7 +1067,7 @@ sub bad_pp_srefgen {
   if ($inline_ops) {
     my $op = shift;
     warn "inlining srefgen\n" if $debug{op};
-    my $ppname = "pp_" . $op->name;
+    #my $ppname = "pp_" . $op->name;
     #$curcop->write_back;
     #write_back_lexicals() unless $skip_lexicals{$ppname};
     #write_back_stack()    unless $skip_stack{$ppname};
@@ -2580,6 +2580,7 @@ OPTION:
       }
     }
   }
+  $strict++ if !$strict and $Config{ccflags} !~ m/-DDEBUGGING/;
 
   # rgs didn't want opcodes to be added to Opcode. So I added it to a
   # seperate Opcodes.
@@ -2713,8 +2714,9 @@ the main part of the Perl source that is being compiled.
 
 =item B<-strict>
 
-Fail with compile-time errors, which are otherwise deferred to run-time
-warnings.  This happens only for range and flip without compile-time context.
+With a DEBUGGING perl compile-time errors for range and flip without
+compile-time context are only warnings.
+With -strict these warnings are fatal, otherwise only run-time errors occur.
 
 =item B<-D>
 
