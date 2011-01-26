@@ -1,7 +1,7 @@
 #      CC.pm
 #
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
-#      Copyright (c) 2009, 2010 Reini Urban
+#      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
 #
 #      You may distribute under the terms of either the GNU General Public
@@ -9,7 +9,7 @@
 #
 package B::CC;
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 
 use Config;
 use strict;
@@ -722,7 +722,7 @@ sub doop {
   my $ppname = "pp_" . $op->name;
   if ($inline_ops) {
     # inlining direct calls is safe, just CALLRUNOPS for macros not
-    $ppaddr = $ppname;
+    $ppaddr = "Perl_".$ppname;
     $no_stack{$ppname}
       ? runtime("PL_op = $ppaddr();")
       : runtime("PUTBACK; PL_op = $ppaddr(); SPAGAIN;");
