@@ -276,7 +276,7 @@ sub compile_byte {
     vprint 1, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
     if ($] >= 5.007 and $Input =~ /^-e/) {
-        $opts = "-H";
+        $opts = "-H,";
     }
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
