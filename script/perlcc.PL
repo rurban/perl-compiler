@@ -134,9 +134,9 @@ sub generate_code {
 
 sub run_code {
     if ($Backend eq 'Bytecode') {
-        $Output = "$BinPerl $Output @ARGV";
+        $Output = "$BinPerl $Output";
     }
-    vprint 0, "Running code $Output @ARGV";
+    vprint 0, "Running code $Output";
     run("$Output @ARGV");
     exit(0);
 }
