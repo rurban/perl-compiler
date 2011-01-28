@@ -3,14 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.30	2011-01-xx rurban
-	dbmopen, cc_runtime.h, --staticxs
+1.30	2011-02-xx rurban
+	dbmopen, cc_runtime.h, perlcc, --staticxs
 
-	* C.pm (1.30): support dbmopen, fixes issue 24
+	* C.pm (1.30): support dbmopen, fixes issue 24.
 	support GvCV_set and GvGP_set introduced with 5.13.9
 	* CC.pm (1.09): support dbmopen, issue 24 failing due to XSLoader (test 45)
 	no pp_name shortnames in embed.h since 5.13.9, use Perl_pp_name.
-	Option -strict only used with DEBUGGING perls. 
+	option -strict only used with DEBUGGING perls.
 	* Bytecode.pm (1.30): support dbmopen, fixes issue 24
 	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
 	implement --staticxs to workaround DynaLoader problems.
@@ -19,7 +19,10 @@
 	  requires now double-dash --testsuite, ... 
 	  legacy handling only for -Wb=.. and -stash
 	fixed -B -e'oneliner'
+	fixed -B @ARGV, no duplication of @ARGV, c_argv.t 3
 	* Stash (1.01): add option xs to print xs modules only with -x prefix.
+	usable via -MO=Stash also
+	new option -D for debugging
 	* cc_runtime514.h: removed from CORE. If so, cp it back. 
 	  Renamed not to pollute tests with older perls.
 	* t/issue24.t: added

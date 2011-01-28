@@ -3669,7 +3669,7 @@ EOT
   print("/* XS bootstrapping code*/\n");
   print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
-  print "#ifdef USE_DYNAMIC_LOADING\n";
+  #print "#ifdef USE_DYNAMIC_LOADING\n";
   foreach my $stashname ( keys %static_ext ) {
     my $stashxsub = $stashname;
     $stashxsub =~ s/::/__/g;
@@ -3678,7 +3678,7 @@ EOT
     warn "bootstrapping static $stashname added to xs_init\n" if $verbose;
     print "\tnewXS(\"${stashname}::bootstrap\", boot_$stashxsub, file);\n";
   }
-  print "#endif\n";
+  #print "#endif\n";
   print "#ifdef USE_DYNAMIC_LOADING\n";
   print "\tPUSHMARK(sp);\n";
   printf "\tXPUSHp(\"DynaLoader\", %d);\n", length("DynaLoader");

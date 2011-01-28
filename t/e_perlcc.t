@@ -61,7 +61,6 @@ print F q(print q(ok));
 close F;
 $e = q("print q(ok)");
 
-my $f = q("a.pl");
 is(`$X -Mblib blib/script/perlcc -S -o a -r $f`, "ok", "-S -o -r file");
 ok(-e 'a.out.c', "-S => a.out.c file");
 unlink ('a.out.c', $exe);
@@ -141,7 +140,7 @@ ok(-e $exe, "keep executable");
 unlink ($exe);
 
 # -BS: ignore -S
-isnt(`$X -Mblib blib/script/perlcc -BSr -oa.plc -r -e $e`, "ok", "-BSr -o -e");
+like(`$X -Mblib blib/script/perlcc -BSr -oa.plc -e $e`, qr/ignored\nok$/m, "-BSr -o -e");
 ok(-e 'a.plc', "a.plc file");
 unlink ('a.plc');
 
