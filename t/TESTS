@@ -161,7 +161,7 @@ for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_fh,0,SEEK_S
 >>>>
 ok
 ############## 38 constant autoload loop crash test #########
-{$a=qr/x/;print($] < 5.007 ? 1 : re::is_regexp($a))}
+{$a=qr/x/;print($] < 5.010 ? 1 : re::is_regexp($a))}
 >>>>
 1
 ############## 39 non-regexps being upgraded to SVt_REGEXP #####
@@ -199,3 +199,7 @@ use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }
 >>>
 ok
 #### 46 Exporter should end up in main:: stash when used in ####
+@ISA=(q(ok));print $ISA[0];
+>>>
+ok
+#### 47 non-tied av->MAGICAL ####

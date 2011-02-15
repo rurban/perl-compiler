@@ -1,12 +1,10 @@
-# B::Bytecode.pm
+# B::Bytecode.pm - The bytecode compiler (.plc), loaded by ByteLoader
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
-# Copyright (c) 2008,2009,2010 Reini Urban <rurban@cpan.org>. All rights reserved.
+# Copyright (c) 2008-2011 Reini Urban <rurban@cpan.org>. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
-# Based on the original Bytecode.pm module written by Malcolm Beattie.
-#
 # Reviving 5.6 support here is work in progress:
 #   So far the original is used instead, even if the list of failed tests
 #   is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
@@ -24,6 +22,7 @@ use B::Assembler qw(asm newasm endasm);
 
 BEGIN {
   if ( $] < 5.009 ) {
+    require B::Asmdata;
     B::Asmdata->import(qw(@specialsv_name @optype));
     eval q[
       sub SVp_NOK() {}; # unused
@@ -64,6 +63,7 @@ my @packages;    # list of packages to compile. 5.6 only
 
 # sub asm ($;$$) { }
 sub nice ($) { }
+sub nice1 ($) { }
 
 my %optype_enum;
 my ($SVt_PV, $SVt_PVGV, $SVf_FAKE, $POK);
@@ -93,6 +93,7 @@ BEGIN {
   die $@ if $@;
 }
 
+sub ashex {$quiet ? undef : sprintf("0x%x",shift)}
 
 #################################################
 
@@ -139,6 +140,8 @@ sub pvix {
   my $str = pvstring shift;
   my $ix  = $strtab{$str};
   defined($ix) ? $ix : do {
+    nice1 "-PV- $tix";
+    B::Assembler::maxsvix($tix) if $debug{A};
     asm "newpv", $str;
     asm "stpv", $strtab{$str} = $tix;
     $tix++;
@@ -151,13 +154,16 @@ sub B::OP::ix {
   defined($ix) ? $ix : do {
     nice "[" . $op->name . " $tix]";
     $ops{$tix} = $op;
-    # Note: This left-shift 7 encoding of the optype has nothing to do with OCSHIFT in opcode.pl
+    # Note: This left-shift 7 encoding of the optype has nothing to do with OCSHIFT
+    # in opcode.pl
     # The counterpart is hardcoded in Byteloader/bytecode.h: BSET_newopx
     my $arg = $PERL56 ? $optype_enum{class($op)} : $op->size | $op->type << 7;
     my $opsize = $PERL56 ? '?' : $op->size;
     if (ref($op) eq 'B::OP') { # check wrong BASEOPs
-      # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
-      #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
+      # [perl #80622] Introducing the entrytry hack, needed since 5.12,
+      # fixed with 5.13.8 a425677
+      #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a
+      #   B::OP (BASEOP).
       #   op->other points to the leavetry op, which is needed for the eval scope.
       if ($op->name eq 'entertry') {
 	$opsize = $op->size + (2*$Config{ptrsize});
@@ -175,7 +181,7 @@ sub B::OP::ix {
             unless $quiet;
           bless $op, "B::$class";
         }
-      } elsif ($DEBUGGING) { # only needed when we have to check for new wrong BASEOP's
+      } elsif ($DEBUGGING) { # only needed when we want to check for new wrong BASEOP's
 	if (eval "require Opcodes;") {
 	  my $class = Opcodes::opclass($op->type);
 	  if ($class > 0) {
@@ -200,6 +206,8 @@ sub B::SPECIAL::ix {
   my $spec = shift;
   my $ix   = $spectab{$$spec};
   defined($ix) ? $ix : do {
+    B::Assembler::maxsvix($tix) if $debug{A};
+    nice "[SPECIAL $tix]";
     asm "ldspecsvx", $$spec, $specialsv_name[$$spec];
     asm "stsv", $tix if $PERL56;
     $spectab{$$spec} = $varix = $tix++;
@@ -210,12 +218,11 @@ sub B::SV::ix {
   my $sv = shift;
   my $ix = $svtab{$$sv};
   defined($ix) ? $ix : do {
-    nice '[' . class($sv) . ']';
+    nice '[' . class($sv) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
     asm "newsvx", $sv->FLAGS, $debug{Comment} ? sv_flags($sv) : '';
     asm "stsv", $tix if $PERL56;
     $svtab{$$sv} = $varix = $ix = $tix++;
-
     #nice "\tsvtab ".$$sv." => bsave(".$ix.");
     $sv->bsave($ix);
     $ix;
@@ -234,26 +241,27 @@ sub B::GV::ix {
       or ( !$PERL510 and !$PERL56 and $gv->GP ) )
     {    # only gv with gp
       my ( $svix, $avix, $hvix, $cvix, $ioix, $formix );
-      nice "[GV]";
-
       # 510 without debugging misses B::SPECIAL::NAME
       my $name;
       if ( $PERL510
         and ( $gv->STASH->isa('B::SPECIAL') or $gv->isa('B::SPECIAL') ) )
       {
         $name = '_';
+        nice '[GV] # "_"';
         return 0;
       }
       else {
         $name = $gv->STASH->NAME . "::"
           . ( class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME );
       }
+      nice "[GV $tix]";
+      B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_fetchpvx", cstring $name;
       asm "stsv", $tix if $PERL56;
       $svtab{$$gv} = $varix = $ix = $tix++;
-      asm "sv_flags",  $gv->FLAGS;
+      asm "sv_flags",  $gv->FLAGS, ashex($gv->FLAGS);
       asm "sv_refcnt", $gv->REFCNT;
-      asm "xgv_flags", $gv->GvFLAGS;
+      asm "xgv_flags", $gv->GvFLAGS, ashex($gv->GvFLAGS);
 
       asm "gp_refcnt", $gv->GvREFCNT;
       asm "load_glob", $ix if $name eq "CORE::GLOBAL::glob";
@@ -273,7 +281,7 @@ sub B::GV::ix {
 
       # }}}} XXX
 
-      nice "-GP-", asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
+      nice1 "-GP-", asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
       asm "gp_sv", $svix, sv_flags( $gv->SV );
       asm "gp_av", $avix, sv_flags( $gv->AV );
       asm "gp_hv", $hvix, sv_flags( $gv->HV );
@@ -286,7 +294,8 @@ sub B::GV::ix {
       asm "formfeed", $svix if $name eq "main::\cL";
     }
     else {
-      nice "[GV]";
+      nice "[GV $tix]";
+      B::Assembler::maxsvix($tix) if $debug{A};
       asm "newsvx", $gv->FLAGS, $debug{Comment} ? sv_flags($gv) : '';
       asm "stsv", $tix if $PERL56;
       $svtab{$$gv} = $varix = $ix = $tix++;
@@ -316,20 +325,21 @@ sub B::HV::ix {
     my ( $ix, $i, @array );
     my $name = $hv->NAME;
     if ($name) {
-      nice "[STASH]";
+      nice "[STASH $tix]";
+      B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_stashpvx", cstring $name;
       asm "ldsv", $tix if $PERL56;
-      asm "sv_flags",    $hv->FLAGS;
+      asm "sv_flags", $hv->FLAGS, ashex($hv->FLAGS);
       $svtab{$$hv} = $varix = $ix = $tix++;
       asm "xhv_name", pvix $name;
 
       # my $pmrootix = $hv->PMROOT->ix;	# XXX
       asm "ldsv", $varix = $ix unless $ix == $varix;
-
       # asm "xhv_pmroot", $pmrootix;	# XXX
     }
     else {
-      nice "[HV]";
+      nice "[HV $tix]";
+      B::Assembler::maxsvix($tix) if $debug{A};
       asm "newsvx", $hv->FLAGS, $debug{Comment} ? sv_flags($hv) : '';
       asm "stsv", $tix if $PERL56;
       $svtab{$$hv} = $varix = $ix = $tix++;
@@ -338,7 +348,7 @@ sub B::HV::ix {
         next if $i = not $i;
         $_ = $_->ix;
       }
-      nice "-HV-", asm "ldsv", $varix = $ix unless $ix == $varix;
+      nice1 "-HV-", asm "ldsv", $varix = $ix unless $ix == $varix;
       ( $i = not $i ) ? asm( "newpv", pvstring $_) : asm( "hv_store", $_ )
         for @array;
       if ( VERSION < 5.009 ) {
@@ -381,7 +391,7 @@ sub B::RV::bsave {
   my $rvix = $sv->RV->ix;
   $sv->B::NULL::bsave($ix);
   # RV with DEBUGGING already requires sv_flags before SvRV_set
-  asm "sv_flags", $sv->FLAGS;
+  asm "sv_flags", $sv->FLAGS, ashex($sv->FLAGS);
   asm "xrv", $rvix;
 }
 
@@ -472,7 +482,7 @@ sub B::PVNV::bsave {
 
 sub B::PVMG::domagic {
   my ( $sv, $ix ) = @_;
-  nice '-MAGICAL-'; # XXX TODO no empty line before
+  nice1 '-MAGICAL-'; # XXX TODO no empty line before
   my @mglist = $sv->MAGIC;
   my ( @mgix, @namix );
   for (@mglist) {
@@ -480,9 +490,9 @@ sub B::PVMG::domagic {
     push @namix, $_->PTR->ix if $_->LENGTH == B::HEf_SVKEY;
   }
 
-  nice '-' . class($sv) . '-', asm "ldsv", $varix = $ix unless $ix == $varix;
+  nice1 '-' . class($sv) . '-', asm "ldsv", $varix = $ix unless $ix == $varix;
   for (@mglist) {
-    asm "sv_magic", cstring $_->TYPE;
+    asm "sv_magic", ord($_->TYPE), cstring $_->TYPE;
     asm "mg_obj",   shift @mgix;
     my $length = $_->LENGTH;
     if ( $length == B::HEf_SVKEY and !$PERL56) {
@@ -510,7 +520,7 @@ sub B::PVLV::bsave {
   my ( $sv, $ix ) = @_;
   my $targix = $sv->TARG->ix;
   $sv->B::PVMG::bsave($ix);
-  asm "xlv_targ",    $targix unless $PERL56; # XXX really? xlv_targ IS defined there
+  asm "xlv_targ",    $targix unless $PERL56; # XXX really? xlv_targ IS defined
   asm "xlv_targoff", $sv->TARGOFF;
   asm "xlv_targlen", $sv->TARGLEN;
   asm "xlv_type",    $sv->TYPE;
@@ -584,7 +594,13 @@ sub B::FM::bsave {
 
 sub B::AV::bsave {
   my ( $av, $ix ) = @_;
-  return $av->B::PVMG::bsave($ix) if !$PERL56 and $av->MAGICAL;
+  if (!$PERL56 and $av->MAGICAL) {
+    $av->B::PVMG::bsave($ix);
+    for ($av->MAGIC) {
+      return if $_->TYPE eq 'P'; # 'P' tied AV has no ARRAY/FETCHSIZE,..., test 16
+      # but e.g. 'I' (@ISA) has
+    }
+  }
   my @array = $av->ARRAY;
   $_ = $_->ix for @array; # hack. walks the ->ix methods to save the elements
   my $stashix = $av->SvSTASH->ix;
@@ -592,9 +608,10 @@ sub B::AV::bsave {
     asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
 
   if ($PERL56) {
-    asm "sv_flags", $av->FLAGS & ~SVf_READONLY; # SvREADONLY_off($av) in case PADCONST
+    # SvREADONLY_off($av) w PADCONST
+    asm "sv_flags", $av->FLAGS & ~SVf_READONLY, ashex($av->FLAGS);
     $av->domagic($ix) if MAGICAL56($av);
-    asm "xav_flags", $av->AvFLAGS;
+    asm "xav_flags", $av->AvFLAGS, ashex($av->AvFLAGS);
     asm "xav_max", -1;
     asm "xav_fill", -1;
     if ($av->FILL > -1) {
@@ -604,11 +621,11 @@ sub B::AV::bsave {
     }
     asm "sv_flags", $av->FLAGS if $av->FLAGS & SVf_READONLY; # restore flags
   } else {
-    #$av->domagic($ix) if $av->MAGICAL;
+    #$av->domagic($ix) if $av->MAGICAL; # XXX need tests for magic arrays
     asm "av_extend", $av->MAX if $av->MAX >= 0;
     asm "av_pushx", $_ for @array;
     if ( !$PERL510 ) {        # VERSION < 5.009
-      asm "xav_flags", $av->AvFLAGS;
+      asm "xav_flags", $av->AvFLAGS, ashex($av->AvFLAGS);
     }
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
@@ -652,22 +669,25 @@ sub B::HV::bwalk {
       # XXX Not working! Special init for empty (null-string) prototypes
       # Note: not found constants are &PL_sv_yes, found typically IV
       if ($PERL510 and 0 and $v->SvTYPE == $SVt_PV and !$v->PVX) {
-        nice "[emptyCONST]";
+        nice "[emptyCONST $tix]";
+        B::Assembler::maxsvix($tix) if $debug{A};
 	asm "newpv", pvstring ($hv->NAME . "::" . $k);
 	# Beware of special gv_fetchpv GV_* flags.
 	# gv_fetchpvx uses only GV_ADD, which fails e.g. with *Fcntl::O_SHLOCK,
 	# if "Your vendor has not defined Fcntl macro O_SHLOCK"
-	asm "gv_fetchpvn_flags", 1 << 7 + $SVt_PV, "f:0x81<<7+t:PV";# GVf_IMPORTED_CV+INTRO
+	asm "gv_fetchpvn_flags", 1 << 7 + $SVt_PV,
+          "f:0x81<<7+t:PV";# GVf_IMPORTED_CV+INTRO
         $svtab{$$v} = $varix = $tix;
-        asm "sv_flags",  $v->FLAGS;
+        asm "sv_flags", $v->FLAGS, ashex($v->FLAGS);
         $v->bsave( $tix++ );
         #$tix++;
       } else {
-        nice "[prototype]";
+        nice "[prototype $tix]";
+        B::Assembler::maxsvix($tix) if $debug{A};
 	asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
         $svtab{$$v} = $varix = $tix;
         # we need the sv_flags before, esp. for DEBUGGING asserts
-        asm "sv_flags",  $v->FLAGS;
+        asm "sv_flags",  $v->FLAGS, ashex($v->FLAGS);
         $v->bsave( $tix++ );
       }
     }
@@ -890,7 +910,8 @@ sub B::PMOP::bsave {
     asm "pregcomp";
   }
   elsif ($PERL510) {
-    # Since PMf_BASE_SHIFT we need a U32, which is a new bytecode for backwards compat
+    # Since PMf_BASE_SHIFT we need a U32, which is a new bytecode for
+    # backwards compat
     asm "op_pmflags", $op->pmflags;
     bwarn("PMOP op_pmflags: ", $op->pmflags) if $debug{M};
     my $pv = $op->precomp;
@@ -1070,7 +1091,7 @@ sub symwalk {
 ################### end perl 5.6 backport ###################################
 
 sub compile {
-  my ( $head, $scan, $T_inhinc, $keep_syn );
+  my ( $head, $scan, $T_inhinc, $keep_syn, $module );
   my $cwd = '';
   $files{$0} = 1;
 
@@ -1098,10 +1119,12 @@ sub compile {
           : print "@_\n";
       };
       *nice = sub ($) { print "\n# @_\n" unless $quiet; };
+      *nice1 = sub ($) { print "# @_\n" unless $quiet; };
     }
     elsif (/^-v/) {
       warn "conflicting -q ignored" if $quiet;
       *nice = sub ($) { print "\n# @_\n"; print STDERR "@_\n" };
+      *nice1 = sub ($) { print "# @_\n"; print STDERR "@_\n" };
     }
     elsif (/^-H/) {
       require ByteLoader;
@@ -1114,6 +1137,9 @@ use ByteLoader '$ByteLoader::VERSION';
     }
     elsif (/^-k/) {
       keep_syn;
+    }
+    elsif (/^-m/) {
+      $module = 1;
     }
     elsif (/^-o(.*)$/) {
       open STDOUT, ">$1" or die "open $1: $!";
@@ -1167,7 +1193,8 @@ use ByteLoader '$ByteLoader::VERSION';
     if ($debug{-S}) {
       my $header = B::Assembler::gen_header_hash;
       asm sprintf("#%-10s\t","magic").sprintf("0x%x",$header->{magic});
-      for (qw(archname blversion ivsize ptrsize byteorder longsize archflag perlversion)) {
+      for (qw(archname blversion ivsize ptrsize byteorder longsize archflag
+              perlversion)) {
 	asm sprintf("#%-10s\t",$_).$header->{$_};
       }
     }
@@ -1188,14 +1215,21 @@ use ByteLoader '$ByteLoader::VERSION';
       }
       walkoptree( main_root, "bsave" ) unless ref(main_root) eq "B::NULL";
     }
-    asm "main_start", $PERL56 ? main_start->ix : main_start->opwalk;
-    #asm "main_start", main_start->opwalk;
-    asm "main_root",  main_root->ix;
-    asm "main_cv",    main_cv->ix;
-    asm "curpad",     ( comppadlist->ARRAY )[1]->ix;
+    unless ($module) {
+      nice '<main_start>';
+      asm "main_start", $PERL56 ? main_start->ix : main_start->opwalk;
+      #asm "main_start", main_start->opwalk;
+      nice '<main_root>';
+      asm "main_root",  main_root->ix;
+      nice '<main_cv>';
+      asm "main_cv",    main_cv->ix;
+      nice '<curpad>';
+      asm "curpad",     ( comppadlist->ARRAY )[1]->ix;
+    }
 
     asm "signal", cstring "__WARN__"    # XXX
       if !$PERL56 and warnhook->ix;
+    nice '<incav>';
     asm "incav", inc_gv->AV->ix if $T_inhinc;
     save_cq;
     asm "incav", inc_gv->AV->ix if $T_inhinc;
@@ -1216,7 +1250,7 @@ use ByteLoader '$ByteLoader::VERSION';
     }
 
     endasm;
-    }
+  }
 }
 
 1;
@@ -1275,11 +1309,18 @@ expressions. When gotos are found keep the syntax tree.
 
 Output assembler source rather than piping it through the assembler
 and outputting bytecode.
-Without -q the assembler source is commented.
+Without C<-q> the assembler source is commented.
+
+=item B<-m>
+
+Compile to a F<.pmc> module rather than to a single standalone F<.plc> program.
+
+Currently this just means that the bytecodes for initialising C<main_start>,
+C<main_root>, C<main_cv> and C<curpad> are omitted.
 
 =item B<-u>I<package>
 
-use package. Might be needed of the package is not automatically detected.
+"use package." Might be needed of the package is not automatically detected.
 
 =item B<-q>
 
@@ -1356,12 +1397,12 @@ THIS CODE IS HIGHLY EXPERIMENTAL. USE AT YOUR OWN RISK.
 
 =head1 AUTHORS
 
-Originally written by Malcolm Beattie and
+Originally written by Malcolm Beattie 1996 and
 modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
 
-Enhanced by Reini Urban <rurban@cpan.org>, 2008, 2009
+Enhanced by Reini Urban <rurban@cpan.org>, 2008-
 
 =cut
 

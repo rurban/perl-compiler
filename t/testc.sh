@@ -31,13 +31,13 @@ Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
 if [ -z $Mblib ]; then 
     VERS="${VERS}_global"; 
     OCMD="$PERL $Mblib -MO=C,-DcAC,"
-    if [ $BASE = "testcc.sh" ]; then 
-        OCMD="$PERL $Mblib -MO=CC,-DrOsplt,"
+    if [ $BASE = "testcc.sh" ]; then # DrOsplt 
+        OCMD="$PERL $Mblib -MO=CC,-DOsplt,"
     fi
 else
     OCMD="$PERL $Mblib -MO=C,-DcoOSAHGCMpu,-v,"
-    if [ $BASE = "testcc.sh" ]; then
-        OCMD="$PERL $Mblib -MO=CC,-DoOscprSql,-v,"
+    if [ $BASE = "testcc.sh" ]; then # DoOscprSql
+        OCMD="$PERL $Mblib -MO=CC,-DoOscpSql,-v,"
     fi
 fi
 CONT=
@@ -143,7 +143,7 @@ function ctest {
     fi
 }
 
-ntests=48
+ntests=49
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=17
@@ -262,7 +262,7 @@ tests[38]='for(1 .. 1024) { if (open(my $null_fh,"<","/dev/null")) { seek($null_
 result[38]='ok'
 # check re::is_regexp, and on 5.12 if being upgraded to SVt_REGEXP
 # => Undefined subroutine &re::is_regexp with B-C-1.19, even with -ure
-tests[39]='{$a=qr/x/;print($]<5.007?1:re::is_regexp($a))}'
+tests[39]='{$a=qr/x/;print($]<5.010?1:re::is_regexp($a))}'
 result[39]='1'
 # String with a null byte -- used to generate broken .c on 5.6.2 with static pvs
 tests[40]='my $var="this string has a null \\000 byte in it";print "ok";'
@@ -289,12 +289,16 @@ result[45]='ok'
 # Exporter should end up in main:: stash when used in
 tests[46]='use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }'
 result[46]='ok'
-# issue27
-tests[47]='require LWP::UserAgent;print q(ok);'
+# non-tied av->MAGICAL
+tests[47]='@ISA=(q(ok));print $ISA[0];'
 result[47]='ok'
-# issue24
-tests[48]='dbmopen(%H,q(f),0644);print q(ok);'
+#-------------
+# issue27
+tests[48]='require LWP::UserAgent;print q(ok);'
 result[48]='ok'
+# issue24
+tests[49]='dbmopen(%H,q(f),0644);print q(ok);'
+result[49]='ok'
 
 # from here on we test CC specifics only
 

@@ -1,5 +1,4 @@
 # Stash.pm -- show what stashes are loaded
-# vishalb@hotmail.com
 package B::Stash;
 
 our $VERSION = '1.01';
@@ -12,19 +11,30 @@ B::Stash - show what stashes are loaded
 
 =head1 DESCRIPTION
 
-B::Stash has a poor side-effect only API and is only used by perlcc and L<B::C>.
+B::Stash has a poor side-effect only API and is only used by perlcc and L<B::C>,
+and there its usability is also inferior.
 
-It hooks into CHECK prints a comma-seperated list of loaded stashes (I<package names>)
-prefixed with B<-u>.
+It hooks into B<CHECK> and prints a comma-seperated list of loaded stashes
+(I<package names>) prefixed with B<-u>.
 
-With the B<xs> argument stashes with XS modules only are printed, prefixed with B<-x>.
+With the B<xs> option stashes with XS modules only are printed, prefixed with B<-x>.
 
-With the B<-D> argument some debugging output is added.
+With the B<-D> option some debugging output is added.
 
-Note that the resulting list of modules from B::Stash is usually larger than
-the list of used modules determined by the compiler suite (C, CC, Bytecode).
+Note that the resulting list of modules from B::Stash is usually larger and more
+inexact than the list of used modules determined by the compiler suite (C, CC, Bytecode).
 
 =head1 SYNOPSIS
+
+  # typical usage:
+  perlcc -stash -e'use IO::Handle;'
+
+  perlcc -stash -v3 -e'use IO::Handle;'
+  =>
+  ...
+  Stash: main strict Cwd Regexp Exporter Exporter::Heavy warnings DB
+         attributes Carp Carp::Heavy Symbol PerlIO SelectSaver
+  ...
 
   perl -c -MB::Stash -e'use IO::Handle;'
   => -umain,-uIO
@@ -111,7 +121,7 @@ sub scan {
       foreach my $subscan ( scan( ${$start}{$key}, $name ) ) {
         my $subname = $key.$subscan;
         print $subname,"\n" if $debug;
-        push @return, $subname unless $name eq "version::";
+        push @return, $subname;
       }
     }
   }
@@ -126,8 +136,9 @@ sub omit {
     "CORE::"         => 1,
     "CORE::GLOBAL::" => 1,
     "UNIVERSAL::"    => 1,
-    "B::"    	     => 1,
-    "O::"    	     => 1
+    "B::"    	     => 1, # inexact. There could be interesting external B modules
+    "O::"    	     => 1,
+    'PerlIO::Layer::'=> 1, # inexact. Only find|NoWarnings should be skipped
   );
   my %static_core_pkg = map {$_ => 1} static_core_packages();
   return 1 if $omit{$name};
@@ -161,7 +172,9 @@ sub scanxs {
       foreach my $subscan ( scanxs( ${$start}{$key}, $name, $debug ) ) {
         my $subname = $key.$subscan;
         print $subname,"\n" if $debug;
-        push @return, $subname if !omit($subname) and has_xs($subname, $debug) and $name ne "version::";
+        # there are more interesting version subpackages
+        push @return, $subname if !omit($subname) and has_xs($subname, $debug)
+          and $name ne "version::";
       }
     }
   }
@@ -209,7 +222,7 @@ sub in_static_core {
 
 # Keep in sync with B::C
 # XS modules in CORE. Reserved namespaces.
-# Note: mro,re,UNIVERSAL have both, static core and dynamic/static XS
+# Note: mro,re,UNIVERSAL have both, static core and dynamic/static XS.
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
@@ -226,6 +239,19 @@ sub static_core_packages {
 }
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Vishal Bhatia <vishalb@hotmail.com> I(1999),
+Reini Urban C<perl-compiler@googlegroups.com> I(2011)
+
+=head1 SEE ALSO
+
+L<B::C> has a superior two-pass stash scanner.
+
+=cut
 
 # Local Variables:
 #   mode: cperl

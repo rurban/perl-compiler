@@ -1,7 +1,7 @@
 #      Assembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008,2009,2010 Reini Urban
+#      Copyright (c) 2008,2009,2010,2011 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -93,20 +93,22 @@ sub B::Asmdata::PUT_NV {
 
 sub B::Asmdata::PUT_objindex {    # could allow names here
   my $maxidx = $_[1] || 0xffffffff;
-  my $arg = limcheck( $_[0], 0, $maxidx, '*index' );
+  my $what = $_[2] || 'ix';
+  my $arg = limcheck( $_[0], 0, $maxidx, $what );
   pack( "L", $arg );
 }
-sub B::Asmdata::PUT_svindex { B::Asmdata::PUT_objindex( @_, $maxsvix ) }
-sub B::Asmdata::PUT_opindex { &B::Asmdata::PUT_objindex( @_, $maxopix ) }
-sub B::Asmdata::PUT_pvindex { &B::Asmdata::PUT_objindex }
-sub B::Asmdata::PUT_hekindex { &B::Asmdata::PUT_objindex }
+sub B::Asmdata::PUT_svindex { B::Asmdata::PUT_objindex( @_, $maxsvix, 'svix' ) }
+sub B::Asmdata::PUT_opindex { B::Asmdata::PUT_objindex( @_, $maxopix, 'opix' ) }
+sub B::Asmdata::PUT_pvindex { B::Asmdata::PUT_objindex( @_, $maxsvix, 'pvix' ) }
+sub B::Asmdata::PUT_hekindex { B::Asmdata::PUT_objindex( @_ ) }
 
 sub B::Asmdata::PUT_strconst {
   my $arg = shift;
   my $str = uncstring($arg);
   if ( !defined($str) ) {
     my @callstack = caller(1);
-    error "bad string constant: '$arg', called from ".$callstack[3]." line:".$callstack[2];
+    error "bad string constant: '$arg', called from ".$callstack[3]
+      ." line:".$callstack[2];
     $str = '';
   }
   if ( $str =~ s/\0//g ) {
@@ -401,6 +403,9 @@ sub assemble {
   ( $line, $comment ) = strip_comments($line);
   if ($line) {
     ( $insn, $arg ) = parse_statement($line);
+    if ($debug and !$comment and $insn =~ /_flags/) {
+      $comment = sprintf("0x%x", $arg);
+    }
     $out->( assemble_insn( $insn, $arg, $comment ) );
     if ($debug) {
       $out->( assemble_insn( "nop", undef ) );
@@ -476,9 +481,9 @@ B::Bytecode helper module.
 
 =head1 AUTHORS
 
-Malcolm Beattie, C<mbeattie@sable.ox.ac.uk>
-Per-statement interface by Benjamin Stuhl, C<sho_pi@hotmail.com>
-Comments: Reini Urban
+Malcolm Beattie C<MICB at cpan.org> I<(1996, retired)>,
+Per-statement interface by Benjamin Stuhl C<sho_pi@hotmail.com>,
+Reini Urban C<perl-compiler@googlegroups.com> I(2008-)
 
 =cut
 

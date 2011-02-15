@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r878
+# B::C::VERSION = 1.30 r890 M
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -24,14 +24,14 @@ pass File::Spec
 pass File::Temp
 fail ExtUtils::Install #TODO 5.6
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO < 5.8.9
+pass ExtUtils::CBuilder #TODO < 5.8.9
 skip ExtUtils::ParseXS
 fail Module::Build #TODO 5.6
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
-fail Digest::MD5 #TODO 5.6
+pass Digest::MD5 #TODO 5.6
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
@@ -47,7 +47,7 @@ pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor #TODO 5.6
+fail Class::Accessor #TODO 5.6
 pass Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO always
@@ -55,9 +55,9 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
-fail Params::Validate #TODO < 5.8.9
-pass Sub::Name #TODO < 5.13.8
-pass Filter::Util::Call
+pass Params::Validate #TODO < 5.8.9
+fail Sub::Name #TODO < 5.13.8
+fail Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -98,13 +98,13 @@ skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 fail DateTime::Locale #TODO < 5.13.8
-fail DateTime #TODO < 5.13.8
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.6
-# 85 / 100 modules tested with B-C-1.29 - perl-5.006002d-nt
-# pass  75 /  85 (88.2%)
-# fail  10 /  85 (11.8%)
-# todo  12 /  10 (120.0%)
-# skip  15 / 100 (15.0% not installed)
+# 84 / 100 modules tested with B-C-1.30 - perl-5.006002d-nt
+# pass  75 /  84 (89.3%)
+# fail   9 /  84 (10.7%)
+# todo  11 /   9 (122.2%)
+# skip  16 / 100 (16.0% not installed)

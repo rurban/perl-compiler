@@ -13,6 +13,7 @@ print F $d;
 close F;
 is(`$runperl $Mblib blib/script/perlcc -r $pl ok 1`, "ok 1\n",
    "perlcc -r file args");
+unlink("a", "a.out");
 
 open F, ">", $pl;
 my $d2 = $d;
@@ -21,6 +22,7 @@ print F $d2;
 close F;
 is(`$runperl $Mblib blib/script/perlcc -O -r $pl ok 2`, "ok 2\n",
    "perlcc -O -r file args");
+unlink("a", "a.out");
 
 open F, ">", $pl;
 my $d3 = $d;

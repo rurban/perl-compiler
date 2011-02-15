@@ -377,8 +377,8 @@ B::Stackobj - Helper module for CC backend
 
 A simple representation of pp stacks and lexical pads for the B::CC compiler.
 
-For lexical pads (i.e. my variables) we even assume the type of variables
-according a magic naming scheme.
+For lexical pads (i.e. my variables) we currently assume the type of variables
+according to a magic naming scheme.
 
   my $<name>_i;  IV integer
   my $<name>_ir; IV integer in a pseudo register
@@ -394,14 +394,12 @@ or attributes such as:
 
 See L<B::CC>.
 
-Note: To represent on this stack not only PADs,SV,IV,PV,NV,BOOL,Special and a SV
-const, but also GV,CV,RV,AV,HV use B::Stackobj::Const.
+TODO: To represent on this stack not only PADs,SV,IV,PV,NV,BOOL,Special
+and a SV const, but also GV,CV,RV,AV,HV use B::Stackobj::Const.
 
 =head1 AUTHOR
 
-Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
-Reini Urban C<perl-compiler@googlegroups.com>.
-
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>
 
 =cut
 

@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
-# B::CC limitations with last/next/continue. See README
-# see also issue36.t
+# B::CC limitations with last/next/continue. See README.
+# See also issue36.t
 use Test::More tests => 4;
 use strict;
 BEGIN {
@@ -21,7 +21,7 @@ EOF
 
 use B::CC;
 ctestok(1, "CC", $base, $script1,
-           $B::CC::VERSION < 1.08 ? "B::CC last outside loop" : undef);
+        ($B::CC::VERSION < 1.08 ? "last outside loop fixed with B-CC-1.08" : undef));
 
 my $script2 = <<'EOF';
 # Label not found at compile-time for last
@@ -45,7 +45,7 @@ my $script3 = <<'EOF';
 }
 EOF
 ctestok(3, "CC", $base, $script3,
-           $B::CC::VERSION < 1.08 ? "B::CC last for non-loop block" : undef);
+           $B::CC::VERSION < 1.08 ? "last for non-loop block fixed with B-CC-1.08" : undef);
 
 my $script4 = <<'EOF';
 # issue 55 segfault for non local loop exit

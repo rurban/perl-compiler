@@ -148,8 +148,6 @@ sub output {
     print $fh <<"EOT";
 static int perl_init_${name}(pTHX)
 {
-	/* dTARG;
-	   dSP; */
 EOT
     foreach my $i ( @{ $section->[-1]{initav} } ) {
       print $fh "\t",$i,"\n";
@@ -171,8 +169,6 @@ EOT
   print $fh <<"EOT";
 static int ${init_name}(pTHX)
 {
-	/* dTARG;
-	   dSP; */
 EOT
   $section->SUPER::output( $fh, $format );
   print $fh "\treturn 0;\n}\n";
@@ -192,7 +188,7 @@ our %REGEXP;
 
 @ISA        = qw(Exporter);
 @EXPORT_OK =
-  qw(output_all output_boilerplate output_main mark_unused
+  qw(output_all output_boilerplate output_main output_main_rest mark_unused
      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
      save_sig svop_or_padop_pv);
 # for 5.6 better use the native B::C
@@ -237,17 +233,36 @@ my (%symtable, %cvforward);
 my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
-my $verbose = 0;
-my ($dumpxs, $outfile);
+my ($staticxs, $outfile);
 my %unused_sub_packages;
 my %static_ext;
 my $use_xsloader;
 my $nullop_count         = 0;
-# optimizations:
-my ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
+# options and optimizations shared with B::CC
+our ($module, $init_name);
+our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
+our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $const_strings);
-my ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
+    $fold, $warnings, $const_strings);
+our $verbose = 0;
+our %option_map = (
+    'cog'             => \$B::C::pv_copy_on_grow,
+    'const-strings'   => \$B::C::const_strings,
+    'save-data'       => \$B::C::save_data_fh,
+    'ppaddr'          => \$B::C::optimize_ppaddr,
+    'warn-sv'         => \$B::C::optimize_warn_sv,
+    'av-init'         => \$B::C::av_init,
+    'av-init2'        => \$B::C::av_init2,
+    'ro-inc'          => \$B::C::ro_inc,
+    'destruct'        => \$B::C::destruct, # disable with -fno-destruct
+    'fold'            => \$B::C::fold,     # disable with -fno-fold
+    'warnings'        => \$B::C::warnings, # disable with -fno-warnings
+    'use-script-name' => \$use_perl_script_name,
+    'save-sig-hash'   => \$B::C::save_sig,
+    'cop'             => \$optimize_cop, # XXX very unsafe!
+					 # Better do it in CC, but get rid of
+					 # NULL cops also there.
+);
 
 my @xpvav_sizes;
 my ($max_string_len, $in_endav);
@@ -288,6 +303,8 @@ my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
 sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
+sub verbose { if (@_) { $verbose = shift; } else { $verbose; } }
+sub module  { if (@_) { $module = shift; } else { $module; } }
 
 sub walk_and_save_optree {
   my ( $name, $root, $start ) = @_;
@@ -561,6 +578,7 @@ sub B::OP::fake_ppaddr {
     ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
     : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
 }
+sub B::FAKEOP::fake_ppaddr { "NULL" }
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
 # $op->next and $op->sibling
@@ -1010,13 +1028,13 @@ sub B::COP::save {
       )
     );
     if ( $op->label ) {
-      # test 29
+      # test 29 and 15,16,21
       if ($] > 5.013004) {
 	$init->add(
 	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
 		  $copsect->index, cstring( $op->label ),
 		  length $op->label, 0));
-      } elsif ($^O !~ /^MSWin32|AIX$/ or !$ENV{PERL_DL_NONLAZY}) {
+      } elsif (!($^O =~ /^(MSWin32|AIX)$/ or $ENV{PERL_DL_NONLAZY})) {
         $init->add(
 	  sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
 		  $copsect->index, cstring( $op->label )));
@@ -1161,8 +1179,15 @@ sub B::PMOP::save {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
       my $resym = "(char*)".cstring($re);
       my $relen = length($re);
-      $init->add( # Modification of a read-only value attempted. use DateTime - threaded
-        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen),".sprintf("%u));",$op->pmflags),
+      my $pmflags = $op->pmflags;
+      # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
+      if ($] >= 5.013009 and $pmflags & 4) {
+        # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
+        svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+        svref_2object( \&{"utf8\::Cased"} )->save;
+      }
+      $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
+        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen),".sprintf("%u));", $pmflags),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
     }
@@ -1359,9 +1384,8 @@ sub B::PVLV::save {
   my $pv  = $sv->PV;
   my $len = length($pv);
   my ( $pvsym, $pvmax );
-  #{
-  ( $pvsym, $pvmax ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY) ? constpv($pv) : savepv($pv);
-  #}
+  ( $pvsym, $pvmax ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
+    ? constpv($pv) : savepv($pv);
   $pvsym = "(char*)$pvsym";# if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL513) {
@@ -1712,10 +1736,10 @@ sub B::PVMG::save {
       }
     } else {
       if (!$pv or !$savesym or $savesym eq 'NULL') {
-        $init->add( sprintf( "xpv_list[%d].xpv_pv = (char*)&PL_sv_undef;",
-			     $xpvsect->index ) );
+        $init->add( sprintf( "xpvmg_list[%d].xpv_pv = (char*)&PL_sv_undef;",
+			     $xpvmgsect->index ) );
       } else {
-        $init->add(savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ),
+        $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
 			    $pv ) );
       }
     }
@@ -2540,6 +2564,17 @@ sub B::GV::save {
       warn "GV::save \%$name\n" if $debug{gv};
     }
     my $gvcv = $gv->CV;
+    if ( !$$gvcv && $savefields & Save_CV ) {
+      no strict 'refs';
+      # Fix test 31, catch unreferenced AUTOLOAD. The downside:
+      # It stores the whole optree and all its children.
+      # Similar with test 39: re::is_regexp
+      svref_2object( \*{"$package\::AUTOLOAD"} )->save
+        if $package and exists ${"$package\::"}{AUTOLOAD};
+      svref_2object( \*{"$package\::CLONE"} )->save
+        if $package and exists ${"$package\::"}{CLONE};
+      $gvcv = $gv->CV; # try again
+    }
     if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
@@ -2565,18 +2600,6 @@ sub B::GV::save {
         $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
         warn "GV::save &$name\n" if $debug{gv};
       }
-    }
-    if ( !$$gvcv && $savefields & Save_CV ) {
-      no strict 'refs';
-      # Fix test 31, catch unreferenced AUTOLOAD. The downside:
-      # It stores the whole optree and all its children.
-      svref_2object( \*{"$package\::AUTOLOAD"} )->save
-        if $package and exists ${"$package\::"}{AUTOLOAD};
-      svref_2object( \*{"$package\::CLONE"} )->save
-        if $package and exists ${"$package\::"}{CLONE};
-      # wrong. This causes B::C::bootstrap be added without XSLoader. or set $use_xsloader = 1
-      #svref_2object( \*{"$package\::bootstrap"} )->save
-      #	if $package and exists ${"$package\::"}{bootstrap};
     }
     if ( $] > 5.009 ) {
       # XXX TODO implement heksect to place all heks at the beginning
@@ -2707,12 +2730,12 @@ sub B::AV::save {
     #  $acc .= "\t*svp++ = (SV*)" . $array[$i]->save . ";\n\t";
     #}
     # Init optimization by Nick Koston
-    # The idea is to create loops so there is less c code. In the real world this seems
+    # The idea is to create loops so there is less C code. In the real world this seems
     # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
     my $count;
     my @values = map { $_->save() || () } @array;
     for (my $i=0;$i<=$#array;$i++) {
-      if ( $use_av_undef_speedup
+      if ( $use_svpop_speedup
            && defined $values[$i]
            && defined $values[$i+1]
            && defined $values[$i+2]
@@ -2728,12 +2751,12 @@ sub B::AV::save {
 	  ." *svp++ = (SV*)&sv_list[gcount]; };\n\t";
 	$i += $count;
       } elsif ($use_av_undef_speedup
-	       && $values[$i] eq "ptr_undef"
-	       && $values[$i+1] eq "ptr_undef"
-	       && $values[$i+2] eq "ptr_undef")
+	       && $values[$i]   =~ /^ptr_undef|&PL_sv_undef$/
+	       && $values[$i+1] =~ /^ptr_undef|&PL_sv_undef$/
+	       && $values[$i+2] =~ /^ptr_undef|&PL_sv_undef$/)
       {
 	$count=0;
-	while ($values[$i+$count+1] eq "ptr_undef") {
+	while ($values[$i+$count+1] =~ /^ptr_undef|&PL_sv_undef$/) {
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=0; gcount<" . ($count+1) . "; gcount++) {"
@@ -2752,6 +2775,7 @@ sub B::AV::save {
       $init->add("{",
 		 "\tSV **svp = avchunks[$i];",
                  "\tAV *av = $sym;");
+      $init->add("\tregister int gcount;") if $count;
       if ($fill > -1) {
         if ($PERL510) {
           $init->add("\tAvALLOC(av) = svp;",
@@ -2775,6 +2799,7 @@ sub B::AV::save {
       $init->add(
                  "{", "\tSV **svp;",
                  "\tAV *av = $sym;");
+      $init->add("\tregister int gcount;") if $count;
       if ($fill > -1) {
         if ($PERL510) {
           # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
@@ -2799,8 +2824,9 @@ sub B::AV::save {
     }
     else { # unoptimized with the full av_extend()
       my $fill1 = $fill < 3 ? 3 : $fill+1;
+      $init->add("{", "\tSV **svp;");
+      $init->add("\tregister int gcount;") if $count;
       $init->add(
-                 "{", "\tSV **svp;",
                  "\tAV *av = $sym;",
                  "\tav_extend(av, $fill1);",
                  "\tsvp = AvARRAY(av);"
@@ -3136,9 +3162,6 @@ EOT
 #endif
 EOT
   }
-  if ($use_av_undef_speedup || $use_svpop_speedup) {
-    print "int gcount;\n";
-  }
   printf "\t/* %s */\n", $decl->comment if $decl->comment and $verbose;
   $decl->output( \*STDOUT, "%s\n" );
   print "\n";
@@ -3158,7 +3181,8 @@ EOT
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
   if ($verbose) {
-    warn compile_stats();
+    my $caller = caller;
+    warn $caller eq 'B::CC' ? B::CC::compile_stats() : compile_stats();
     warn "NULLOP count: $nullop_count\n";
   }
 }
@@ -3388,7 +3412,7 @@ sub init_op_warn {
 EOT
 }
 
-sub output_main {
+sub output_main_rest {
 
   # -fno-destruct only >5.8
   if ( !$B::C::destruct ) {
@@ -3486,175 +3510,20 @@ EOT
     for (0 .. $hek_index-1) {
       # XXX who stores this hek? GvNAME and GvFILE most likely
       my $hek = sprintf( "hek%d", $_ );
-      printf ("    %s = NULL;\n", $hek);
+      print "\n   " unless $_ % 8;
+      printf (" %s = NULL;", $hek);
     }
-    print "    return perl_destruct( my_perl );\n}\n\n";
+    print "\n    return perl_destruct( my_perl );\n}\n\n";
   }
 
   print <<'EOT';
-/* if USE_IMPLICIT_SYS, we need a 'real' exit */
-#if defined(exit)
-#undef exit
-#endif
-
-int
-main(int argc, char **argv, char **env)
-{
-    int exitstatus;
-    int i;
-    char **fakeargv;
-    GV* tmpgv;
-    SV* tmpsv;
-    int options_count;
-    PerlInterpreter *my_perl;
-
-    PERL_SYS_INIT3(&argc,&argv,&env);
-
-#ifdef WIN32
-#define PL_do_undump 0
-#endif
-    if (!PL_do_undump) {
-	my_perl = perl_alloc();
-	if (!my_perl)
-	    exit(1);
-	perl_construct( my_perl );
-	PL_perl_destruct_level = 0;
-    }
-EOT
-  if ($ITHREADS and $] > 5.007) {
-    # XXX init free elems!
-    my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
-    print <<EOT;
-#ifdef USE_ITHREADS
-    for( i = 0; i < $pad_len; ++i ) {
-        av_push( PL_regex_padav, newSViv(0) );
-    }
-    PL_regex_pad = AvARRAY( PL_regex_padav );
-#endif
-EOT
-  }
-
-  if (!$PERL510) {
-    print <<'EOT';
-#if defined(CSH)
-    if (!PL_cshlen)
-      PL_cshlen = strlen(PL_cshname);
-#endif
-EOT
-  }
-
-  # XXX With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
-  print <<'EOT';
-#ifdef ALLOW_PERL_OPTIONS
-#define EXTRA_OPTIONS 3
-#else
-#define EXTRA_OPTIONS 4
-#endif /* ALLOW_PERL_OPTIONS */
-    Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
-    fakeargv[0] = argv[0];
-    fakeargv[1] = "-e";
-    fakeargv[2] = "";
-    options_count = 3;
-EOT
-
-  # honour -T
-  if (!$PERL56 and ${^TAINT}) {
-   print <<'EOT';
-    fakeargv[options_count] = "-T";
-    ++options_count;
-EOT
-  }
-  print <<'EOT';
-#ifndef ALLOW_PERL_OPTIONS
-    fakeargv[options_count] = "--";
-    ++options_count;
-#endif /* ALLOW_PERL_OPTIONS */
-    for (i = 1; i < argc; i++)
-	fakeargv[i + options_count - 1] = argv[i];
-    fakeargv[argc + options_count - 1] = 0;
-
-    exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
-			    fakeargv, NULL);
-
-    if (exitstatus)
-	exit( exitstatus );
-
-    TAINT;
-EOT
-
-  if ($use_perl_script_name) {
-    my $dollar_0 = $0;
-    $dollar_0 =~ s/\\/\\\\/g;
-    $dollar_0 = '"' . $dollar_0 . '"';
-
-    print <<EOT;
-    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
-        tmpsv = GvSVn(tmpgv);
-        sv_setpv(tmpsv, ${dollar_0});
-        SvSETMAGIC(tmpsv);
-    }
-EOT
-  }
-  else {
-    print <<EOT;
-    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
-        tmpsv = GvSVn(tmpgv);
-        sv_setpv(tmpsv, argv[0]);
-        SvSETMAGIC(tmpsv);
-    }
-EOT
-  }
-
-  print <<'EOT';
-    if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
-        tmpsv = GvSVn(tmpgv);
-#ifdef WIN32
-        sv_setpv(tmpsv,"perl.exe");
-#else
-        sv_setpv(tmpsv,"perl");
-#endif
-        SvSETMAGIC(tmpsv);
-    }
-
-    TAINT_NOT;
-
-    /* PL_main_cv = PL_compcv; */
-    PL_compcv = 0;
-
-    exitstatus = perl_init(aTHX);
-    if (exitstatus)
-	exit( exitstatus );
-    dl_init(aTHX);
-
-    exitstatus = perl_run( my_perl );
-EOT
-  if ( !$B::C::destruct) {
-    warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
-    print "    fast_perl_destruct( my_perl );\n";
-  } elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow) ) {
-    warn "my_perl_destruct (-fcog)\n" if $verbose;
-    print "    my_perl_destruct( my_perl );\n";
-  } elsif ( $] >= 5.007003 ) {
-    print "    perl_destruct( my_perl );\n";
-  }
-  # XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless
-  #print "    PL_dirty = 1;\n" unless $B::C::pv_copy_on_grow; # protect against pad undef in END block
-  print <<'EOT';
-    perl_free( my_perl );
-
-    PERL_SYS_TERM();
-
-    exit( exitstatus );
-}
 
 /* yanked from perl.c */
 static void
 xs_init(pTHX)
 {
 	char *file = __FILE__;
-	/* dXSUB_SYS; */
-	dTARG;
-	dSP;
+	dTARG; dSP;
 EOT
 
   #if ($staticxs) { #FIXME!
@@ -3718,9 +3587,13 @@ EOT
     warn "Extra module ${perlmod}\n";
     push @dl_modules, $perlmod unless grep { $_ ne $perlmod } @dl_modules;
   }
-  if (!$unused_sub_packages{B}) { # filter out unused B. used within the compiler only
-    warn "no dl_init for B, not marked\n" if $verbose;
-    @dl_modules = grep { $_ ne 'B' } @dl_modules;
+  # filter out unused dynaloaded B modules, used within the compiler only.
+  for my $c (qw(B B::C)) {
+    if (!$xsub{$c} and !$unused_sub_packages{$c}) {
+      # (hopefully, see test 103)
+      warn "no dl_init for $c, not marked\n" if $verbose;
+      @dl_modules = grep { $_ ne 'B' } @dl_modules;
+    }
   }
   foreach my $stashname (@dl_modules) {
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
@@ -3731,7 +3604,7 @@ EOT
     }
   }
   if ($dl) {
-    if ($dumpxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
+    if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
@@ -3758,24 +3631,25 @@ EOT
 	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop, "%s");\n/, $stashfile if $stashfile;
           print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
         }
-        if ($dumpxs) {
+        if ($staticxs) {
           my ($laststash) = $stashname =~ /::([^:]+)$/;
-          $laststash = $stashname unless $laststash;
           my $path = $stashname;
           $path =~ s/::/\//g;
           $path .= "/" if $path; # can be empty
-          my $sofile = "auto/" . $path . $laststash . '/'. $laststash . '\.' . $Config{dlext};
-          warn "dumpxs search $sofile in @DynaLoader::dl_shared_objects\n"
+          $laststash = $stashname unless $laststash; # without ::
+          my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
+          warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
             if $verbose and $debug{pkg};
           for (@DynaLoader::dl_shared_objects) {
             if (m{^(.+/)$sofile$}) {
               print XS $stashname,"\t",$_,"\n";
-              warn "dumpxs $stashname\t$_\n" if $verbose;
+              warn "staticxs $stashname\t$_\n" if $verbose;
               $sofile = '';
               last;
             }
           }
           print XS $stashname,"\n" if $sofile; # error case
+          warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and $verbose;
         }
         print "#else\n";
         my $stashxsub = $stashname;
@@ -3793,9 +3667,171 @@ EOT
     print "\tcxstack_ix--;\n" if $xs;  	# i.e. POPBLOCK
     print "\tLEAVE;\n";
     print "/* end DynaLoader bootstrapping */\n";
-    close XS if $dumpxs;
+    close XS if $staticxs;
   }
   print "}\n";
+}
+
+sub output_main {
+  if (!defined($module)) {
+    print <<'EOT';
+
+/* if USE_IMPLICIT_SYS, we need a 'real' exit */
+#if defined(exit)
+#undef exit
+#endif
+
+int
+main(int argc, char **argv, char **env)
+{
+    int exitstatus;
+    int i;
+    char **fakeargv;
+    GV* tmpgv;
+    SV* tmpsv;
+    int options_count;
+    PerlInterpreter *my_perl;
+
+    PERL_SYS_INIT3(&argc,&argv,&env);
+
+#ifdef WIN32
+#define PL_do_undump 0
+#endif
+    if (!PL_do_undump) {
+	my_perl = perl_alloc();
+	if (!my_perl)
+	    exit(1);
+	perl_construct( my_perl );
+	PL_perl_destruct_level = 0;
+    }
+EOT
+    if ($ITHREADS and $] > 5.007) {
+      # XXX init free elems!
+      my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
+      print <<EOT;
+#ifdef USE_ITHREADS
+    for( i = 0; i < $pad_len; ++i ) {
+        av_push( PL_regex_padav, newSViv(0) );
+    }
+    PL_regex_pad = AvARRAY( PL_regex_padav );
+#endif
+EOT
+    }
+
+    if (!$PERL510) {
+      print <<'EOT';
+#if defined(CSH)
+    if (!PL_cshlen)
+      PL_cshlen = strlen(PL_cshname);
+#endif
+EOT
+    }
+
+    # XXX With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
+    print <<'EOT';
+#ifdef ALLOW_PERL_OPTIONS
+#define EXTRA_OPTIONS 3
+#else
+#define EXTRA_OPTIONS 4
+#endif /* ALLOW_PERL_OPTIONS */
+    Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
+    fakeargv[0] = argv[0];
+    fakeargv[1] = "-e";
+    fakeargv[2] = "";
+    options_count = 3;
+EOT
+
+    # honour -T
+    if (!$PERL56 and ${^TAINT}) {
+      print <<'EOT';
+    fakeargv[options_count] = "-T";
+    ++options_count;
+EOT
+    }
+    print <<'EOT';
+#ifndef ALLOW_PERL_OPTIONS
+    fakeargv[options_count] = "--";
+    ++options_count;
+#endif /* ALLOW_PERL_OPTIONS */
+    for (i = 1; i < argc; i++)
+	fakeargv[i + options_count - 1] = argv[i];
+    fakeargv[argc + options_count - 1] = 0;
+
+    exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
+			    fakeargv, NULL);
+
+    if (exitstatus)
+	exit( exitstatus );
+
+    TAINT;
+EOT
+
+    if ($use_perl_script_name) {
+      my $dollar_0 = $0;
+      $dollar_0 =~ s/\\/\\\\/g;
+      $dollar_0 = '"' . $dollar_0 . '"';
+
+      print <<EOT;
+    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
+        tmpsv = GvSVn(tmpgv);
+        sv_setpv(tmpsv, ${dollar_0});
+        SvSETMAGIC(tmpsv);
+    }
+EOT
+    }
+    else {
+      print <<EOT;
+    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
+        tmpsv = GvSVn(tmpgv);
+        sv_setpv(tmpsv, argv[0]);
+        SvSETMAGIC(tmpsv);
+    }
+EOT
+    }
+
+    print <<'EOT';
+    if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
+        tmpsv = GvSVn(tmpgv);
+#ifdef WIN32
+        sv_setpv(tmpsv,"perl.exe");
+#else
+        sv_setpv(tmpsv,"perl");
+#endif
+        SvSETMAGIC(tmpsv);
+    }
+
+    TAINT_NOT;
+
+    /* PL_main_cv = PL_compcv; */
+    PL_compcv = 0;
+
+    exitstatus = perl_init(aTHX);
+    if (exitstatus)
+	exit( exitstatus );
+    dl_init(aTHX);
+
+    exitstatus = perl_run( my_perl );
+EOT
+    if ( !$B::C::destruct) {
+      warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
+      print "    fast_perl_destruct( my_perl );\n";
+    } elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow) ) {
+      warn "my_perl_destruct (-fcog)\n" if $verbose;
+      print "    my_perl_destruct( my_perl );\n";
+    } elsif ( $] >= 5.007003 ) {
+      print "    perl_destruct( my_perl );\n";
+    }
+    # XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless
+    #print "    PL_dirty = 1;\n" unless $B::C::pv_copy_on_grow; # protect against pad undef in END block
+    print <<'EOT';
+    perl_free( my_perl );
+
+    PERL_SYS_TERM();
+
+    exit( exitstatus );
+}
+EOT
+  } # module
 }
 
 sub dump_symtable {
@@ -3939,8 +3975,13 @@ sub should_save {
     return 1 if ( $u =~ /^$package\:\:/ );
   }
   if ( exists $unused_sub_packages{$package} ) {
-    warn "Cached $package is " . $unused_sub_packages{$package} . "\n"
-      if $debug{pkg};
+    if ($debug{pkg}) {
+      if ($unused_sub_packages{$package}) {
+        warn "$package is cached\n";
+      } else {
+        warn "Cached $package is already deleted\n";
+      }
+    }
     delete_unsaved_hashINC($package) unless $unused_sub_packages{$package};
     return $unused_sub_packages{$package};
   }
@@ -3967,8 +4008,9 @@ sub should_save {
 
   # Now see if current package looks like an OO class. This is probably too strong.
   foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
-    # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically
-    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp)$/ ) {
+    # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
+    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp|utf8)$/ ) {
+      next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -3979,9 +4021,19 @@ sub should_save {
 
 sub delete_unsaved_hashINC {
   my $packname = shift;
+  if ($] >= 5.013005 and $packname eq "warnings::register") {
+    # XXX TODO check if -fwarnings not set via cmdline
+    $B::C::warnings = 0;
+    warn "Using -fno-warnings\n" if $verbose or $debug{pkg};
+  }
+  if ($] >= 5.013009 and $packname eq "utf8") {
+    # XXX TODO check if -ffold not set via cmdline
+    $B::C::fold = 0;
+    warn "Using -fno-fold\n" if $verbose or $debug{pkg};
+  }
   $packname =~ s/\:\:/\//g;
   $packname .= '.pm';
-  warn "Deleting $packname\n" if $INC{$packname} and $debug{pkg};
+  warn "Deleting $packname from \%INC\n" if $INC{$packname} and $debug{pkg};
   delete $INC{$packname};
 }
 
@@ -4013,17 +4065,40 @@ sub save_unused_subs {
     %sav_debug = %debug;
     %debug = ();
   }
+  my $main = $module ? $module."::" : "main::";
   if ($verbose) {
-    warn "Prescan for unused subs" . ($sav_debug{unused} ? " (silent)\n" : "\n");
+    warn "Prescan for unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
-  &descend_marked_unused;
-  walkpackages( \%{"main::"}, sub { should_save( $_[0] ); return 1 } );
+  descend_marked_unused();
+  walkpackages( \%{$main},
+                sub { should_save( $_[0] ); return 1 },
+                $main eq 'main::' ? undef : $main );
   if ($verbose) {
-    warn "Saving unused subs" . ($sav_debug{unused} ? " (silent)\n" : "\n");
+    warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
-  walksymtable( \%{"main::"}, "savecv", \&should_save );
+  walksymtable( \%{$main}, "savecv", \&should_save );
   if ( $sav_debug{unused} ) {
     %debug = %sav_debug;
+  }
+
+  # If any m//im is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
+  # e.g. by require HTTP::Date;
+  if ($] >= 5.013009 and $B::C::fold) {
+    # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
+    # It adds about 1.6MB.
+    svref_2object( \&{"utf8\::SWASHNEW"} )->save;
+    # mark_package( "utf8::Cased" );
+  }
+  if ($] >= 5.013005 and $B::C::warnings) { # run-time Carp
+    svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
+  }
+  # XSLoader was used, force saving of XSLoader::load
+  if ($use_xsloader) {
+    $init->add("/* force saving of XSLoader::load */");
+    eval { XSLoader::load; };
+    #svref_2object( \*XSLoader::load )->save;
+    svref_2object( \&XSLoader::load )->save;
+    $use_xsloader = 0;
   }
 }
 
@@ -4031,8 +4106,7 @@ sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "save context:\n" if $verbose;
-  $init->add("/* save context */",
-	     "/* curpad names */");
+  $init->add("/* curpad names */");
   warn "curpad names:\n" if $verbose;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save;
   warn "curpad syms:\n" if $verbose;
@@ -4121,17 +4195,7 @@ sub save_main_rest {
     if $verbose or $debug{cv};
   $init->add("");
   $init->add("/* done main optree, extra subs which might be unused */");
-
   save_unused_subs();
-
-  # XSLoader was used, force saving of XSLoader::load
-  if ($use_xsloader) {
-    $init->add("/* force saving of XSLoader::load */");
-    eval { XSLoader::load; };
-    #svref_2object( \*XSLoader::load )->save;
-    svref_2object( \&XSLoader::load )->save;
-    $use_xsloader = 0;
-  }
   $init->add("/* done extras */");
 
   save_sig($warner) if $B::C::save_sig;
@@ -4140,7 +4204,7 @@ sub save_main_rest {
   $init->add( "/* honor -w */",
     sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W );
 
-  # startpoints
+  # startpoints: XXX TODO push BEGIN/END blocks to modules code.
   warn "Writing initav\n" if $debug{av};
   my $init_av = init_av->save;
   my $end_av;
@@ -4151,20 +4215,22 @@ sub save_main_rest {
     warn "Writing endav\n" if $debug{av};
     $end_av  = end_av->save;
   }
-  $init->add(
-    "/* startpoints */",
-    sprintf( "PL_main_root = s\\_%x;",  ${ main_root() } ),
-    sprintf( "PL_main_start = s\\_%x;", ${ main_start() } ),
-  );
-  $init->add(index($init_av,'(AV*)')>=0
+  if ( !defined($module) ) {
+    $init->add(
+      "/* startpoints */",
+      sprintf( "PL_main_root = s\\_%x;",  ${ main_root() } ),
+      sprintf( "PL_main_start = s\\_%x;", ${ main_start() } ),
+    );
+    $init->add(index($init_av,'(AV*)')>=0
              ? "PL_initav = $init_av;"
              : "PL_initav = (AV*)$init_av;");
-  $init->add(index($end_av,'(AV*)')>=0
+    $init->add(index($end_av,'(AV*)')>=0
              ? "PL_endav = $end_av;"
              : "PL_endav = (AV*)$end_av;");
-  save_context();
+    save_context();
+  }
 
-  # XSLoader used later
+  # If XSLoader is used later (e.g. in INIT or END block)
   if ($use_xsloader) {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
@@ -4186,9 +4252,44 @@ sub save_main_rest {
     print "EXTERN_C void boot_$stashxsub (pTHX_ CV* cv);\n";
   }
   print "\n";
-  output_all("perl_init");
+  output_all($init_name || "perl_init");
   print "\n";
-  output_main();
+  output_main_rest();
+
+  if ( defined($module) ) {
+    my $cmodule = $module ? $module : "main";
+    $cmodule =~ s/::/__/g;
+
+    my $start = "op_list[0]";
+    warn "curpad syms:\n" if $verbose;
+    $init->add("/* curpad syms */");
+    my $curpad_sym = ( comppadlist->ARRAY )[1]->save;
+
+    print <<"EOT";
+
+#include "XSUB.h"
+XS(boot_$cmodule)
+{
+    dXSARGS;
+    perl_init();
+    ENTER;
+    SAVETMPS;
+    SAVEVPTR(PL_curpad);
+    SAVEVPTR(PL_op);
+    dl_init(aTHX);
+    PL_curpad = AvARRAY($curpad_sym);
+    PL_comppad = $curpad_sym;
+    PL_op = $start;
+    perl_run( aTHX ); /* Perl_runops_standard(aTHX); */
+    FREETMPS;
+    LEAVE;
+    ST(0) = &PL_sv_yes;
+    XSRETURN(1);
+}
+EOT
+  } else {
+    output_main();
+  }
 }
 
 sub init_sections {
@@ -4241,22 +4342,8 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
-  my %option_map = (
-    'cog'             => \$B::C::pv_copy_on_grow,
-    'const-strings'   => \$B::C::const_strings,
-    'save-data'       => \$B::C::save_data_fh,
-    'ppaddr'          => \$B::C::optimize_ppaddr,
-    'warn-sv'         => \$B::C::optimize_warn_sv,
-    'av-init'         => \$B::C::av_init,
-    'av-init2'        => \$B::C::av_init2,
-    'ro-inc'          => \$B::C::ro_inc,
-    'destruct'        => \$B::C::destruct,
-    'use-script-name' => \$use_perl_script_name,
-    'save-sig-hash'   => \$B::C::save_sig,
-    'cop'             => \$optimize_cop, # XXX very unsafe!
-					 # Better do it in CC, but get rid of
-					 # NULL cops also there.
-  );
+  $B::C::fold = 1     if $] >= 5.013009;
+  $B::C::warnings = 1 if $] >= 5.013005;
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fav-init)],
@@ -4340,9 +4427,18 @@ OPTION:
       $outfile = $arg;
       open( STDOUT, ">", $arg ) or return "$arg: $!\n";
     }
-    elsif ( $opt eq "d" and $arg eq "umpxs" ) {
+    elsif ( $opt eq "s" and $arg eq "taticxs" ) {
       $outfile = "perlcc" unless $outfile;
-      $dumpxs = 1;
+      $staticxs = 1;
+    }
+    elsif ( $opt eq "n" ) {
+      $arg ||= shift @options;
+      $init_name = $arg;
+    }
+    elsif ( $opt eq "m" ) {
+      # $arg ||= shift @options;
+      $module = $arg;
+      mark_unused( $arg, undef );
     }
     elsif ( $opt eq "v" ) {
       $verbose = 1;
@@ -4402,13 +4498,14 @@ OPTION:
   foreach my $i (@eval_at_startup) {
     $init->add_eval($i);
   }
+  # modules or main?
   if (@options) {
     return sub {
       my $objname;
       foreach $objname (@options) {
         eval "save_object(\\$objname)";
       }
-      output_all();
+      output_all($init_name || "init_module");
     }
   }
   else {
@@ -4448,9 +4545,25 @@ Without extra arguments, it saves the main program.
 
 =over 4
 
-=item B<-ofilename>
+=item B<-o>I<filename>
 
 Output to filename instead of STDOUT
+
+=item B<-m>I<Packagename> I<(NYI)>
+
+Prepare to compile a module with all dependent code to a single shared
+library rather than to standalone program.
+
+Currently this just means that the code for initialising C<main_start>,
+C<main_root> and C<curpad> are omitted.
+The F<.pm> stub to bootstrap the shared lib is not generated.
+This option should be used via C<perlcc -m>.
+
+Not yet implemented.
+
+=item B<-n>I<init_name>
+
+Default: "perl_init" and "init_module"
 
 =item B<-v>
 
@@ -4460,9 +4573,9 @@ Verbose compilation. Currently gives a few compilation statistics.
 
 Force end of options
 
-=item B<-uPackname>
+=item B<-u>I<Package>
 
-Force apparently unused subs from package Packname to be compiled.
+Force all apparently unused subs from Package to be compiled.
 This allows programs to use eval "foo()" even when sub foo is never
 seen to be used at compile time. The down side is that any subs which
 really are never used also have code generated. This option is
@@ -4474,16 +4587,17 @@ have subs in which need compiling but the current version doesn't do
 it very well. In particular, it is confused by nested packages (i.e.
 of the form C<A::B>) where package C<A> does not contain any subs.
 
-=item B<-dumpxs>
+=item B<-staticxs>
 
-Dump a list of bootstrapped XS package names to F<outfile.lst>,
-needed for C<perlcc -staticxs>
+Dump a list of bootstrapped XS package names to F<outfile.lst>
+needed for C<perlcc --staticxs> and add code to DynaLoader to add
+the .so/.dll path to PATH.
 
 =item B<-D>C<[OPTIONS]>
 
-Debug options (concatenated or separate flags like C<perl -D>).
-Verbose debugging options are crucial, because we have no interactive
-debugger at the early CHECK step, where the compilation happens.
+Debug options, concatenated or separate flags like C<perl -D>.
+Verbose debugging options are crucial, because the interactive
+debugger L<Od> adds a lot of ballast to the resulting code.
 
 =item B<-Dfull>
 
@@ -4554,13 +4668,17 @@ B<disabled>.
 
 Copy-on-grow: PVs declared and initialised statically.
 Does not work yet with Perl 5.10 and higher unless
--fno-destruct is added.
+C<-fno-destruct> is added.
+
+Enabled with C<-O1>.
 
 =item B<-fconst-strings>
 
-Declares readonly strings as const. Enables -fcog.
+Declares readonly strings as const. Enables C<-fcog>.
 Note that readonly strings in eval'd string code will
 cause a run-time failure.
+
+Enabled with C<-O3>.
 
 =item B<-fsave-data>
 
@@ -4568,50 +4686,92 @@ Save package::DATA filehandles ( only available with PerlIO ).
 Does not work yet on Perl 5.6, 5.12 and non-threaded 5.10, and is
 enabled automatically where it is known to work.
 
+Enabled with C<-O3>.
+
 =item B<-fppaddr>
 
-Optimize the initialization of op_ppaddr.
+Optimize the initialization of C<op_ppaddr>.
+
+Enabled with C<-O2>.
 
 =item B<-fwarn-sv>
 
 Optimize the initialization of cop_warnings.
 
+Enabled with C<-O2>.
+
 =item B<-fav-init>
 
 Faster pre-initialization of AVs (arrays and pads)
 
+Enabled with C<-O1>.
+
 =item B<-fav-init2>
 
-Even more faster pre-initialization of AVs with independent_comalloc if supported.
-Excludes -fav_init if so, uses -fav_init if independent_comalloc is not supported.
+Even more faster pre-initialization of AVs with B<independent_comalloc()> if supported.
+Excludes C<-fav_init> if so; uses C<-fav_init> if C<independent_comalloc()> is not supported.
+
+C<independent_comalloc()> is recommended from B<ptmalloc3>, but also included in
+C<ptmalloc>, C<dlmalloc> and C<nedmalloc>.
+Download C<ptmalloc3> here: L<XXX>
+
+Enabled with C<-O2>.
 
 =item B<-fro-inc>
 
-Set read-only @INC and %INC pathnames (-fconst-string, not the AV) and
-also curpad names and symbols, to store them const and statically, not
+Set read-only B<@INC> and B<%INC> pathnames (C<-fconst-string>, not the AV) and
+also B<curpad> names and symbols, to store them const and statically, not
 via malloc at run-time.
 
-This forbid run-time extends of curpad syms, names and INC strings.
+This forbids run-time extends of curpad syms, names and INC strings,
+the run-time will crash then.
+
+Enabled with C<-O2>.
 
 =item B<-fno-destruct>
 
-Does no global perl_destruct() at the end of the process, leaving
+Does no global C<perl_destruct()> at the end of the process, leaving
 the memory cleanup to operating system.
 
 This will cause problems if used embedded or as shared library/module,
 but not in long-running processes.
 
 This helps with destruction problems of static data in the
-default perl destructor, and enables -fcog since 5.10.
+default perl destructor, and enables C<-fcog> since 5.10.
+
+Enabled with C<-O3>.
+
+=item B<-fno-fold> I<(since 5.14)>
+
+m//i since 5.13.10 requires the whole unicore/To/Fold table in memory,
+which is about 1.6MB on 32-bit. In CORE this is demand-loaded from F<utf8.pm>.
+
+If you are sure not to use or require any case-insensitive
+matching you can strip this table from memory with C<-fno-fold>.
+
+Not enabled with any C<-O> option.
+
+=item B<-fno-warnings> I<(since 5.14)>
+
+Run-time warnings since 5.13.5 require some C<warnings::register_categories>
+in memory, which is about 68kB on 32-bit. In CORE this is demand-loaded
+from F<warnings.pm>.
+
+You can strip this table from memory with C<-fno-warnings>.
+
+Not enabled with any C<-O> option.
 
 =item B<-fuse-script-name>
 
-Use the script name instead of the program name as $0.
+Use the script name instead of the program name as C<$0>.
+
+Not enabled with any C<-O> option.
 
 =item B<-fsave-sig-hash>
 
 Save compile-time modifications to the %SIG hash.
 
+Enabled with C<-O3>.
 
 =item B<-fcop>
 
@@ -4623,6 +4783,8 @@ but warnings and errors will have no file and line infos.
 
 It will most likely not work yet. I<(was -fbypass-nullops in earlier
 compilers)>
+
+Enabled with C<-O4>.
 
 =back
 
@@ -4640,28 +4802,30 @@ Disable all optimizations.
 
 Enable B<-fcog>, B<-fav-init>.
 
-Note that -fcog without -fno-destruct will be disabled >= 5.10.
+Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable -O1 plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init2>, B<-fro-inc>.
+Enable B<-O1> plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init2>, B<-fro-inc>.
 
 =item B<-O3>
 
-Enable -O2 plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>,
+Enable B<-O2> plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>,
 B<-fconst-strings>
 
 =item B<-O4>
 
-Enable -O3 plus B<-fcop>. Very unsafe, very fast, very small.
+Enable B<-O3> plus B<-fcop>. Very unsafe, 10% faster, 10% smaller.
 
 =back
 
-=item B<-llimit>
+=item B<-l>I<limit>
+
+"line length limit".
 
 Some C compilers impose an arbitrary limit on the length of string
-constants (e.g. 2048 characters for Microsoft Visual C++).  The
-B<-llimit> options tells the C backend not to generate string literals
+constants (e.g. 2048 characters for Microsoft Visual C++).
+B<-l2048> tells the C backend not to generate string literals
 exceeding that limit.
 
 =item B<-e ARG>
@@ -4692,14 +4856,19 @@ Current status: A few known bugs.
     AUTOLOAD xsubs (27)
 
 >=5.10:
-    xsloader argument missing
+    &XSLoader::load sometimes missing
     reading from __DATA__ handles (15) non-threaded
     handling npP magic for shared threaded variables (41-43)
+    destruction of variables in END blocks
 
 =head1 AUTHOR
 
-Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
-Reini Urban C<perl-compiler@googlegroups.com>
+Malcolm Beattie C<MICB at cpan.org> I<(1996-1998, retired)>,
+Nick Ing-Simmons <nik at tiuk.ti.com> I(1998-1999),
+Vishal Bhatia <vishal at deja.com> I(1999),
+Gurusamy Sarathy <gsar at cpan.org> I(1998-2001),
+Mattia Barbon <mbarbon at dsi.unive.it> I(2002),
+Reini Urban C<perl-compiler@googlegroups.com> I(2008-)
 
 =head1 SEE ALSO
 

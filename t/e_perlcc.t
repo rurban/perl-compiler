@@ -3,57 +3,61 @@
 # test most perlcc options
 
 use strict;
-use Test::More tests => 71;
+use Test::More tests => 75;
 use Config;
 
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $exe = $^O eq 'MSWin32' ? 'a.exe' : 'a';
-unlink ('a.out.c', $exe);
+my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
+#my $o = '';
+#$o = "-Wb=-fno-warnings" if $] >= 5.013005;
+#$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
+my $perlcc = "$X -Mblib blib/script/perlcc";
+sub cleanup { unlink ('a.out.c', $exe, "a.out.c.lst", "a.c", "a.c.lst"); }
 my $e = q("print q(ok)");
 
-is(`$X -Mblib blib/script/perlcc -S -o a -r -e $e`, "ok", "-S -o -r -e");
+is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o -r -e");
 ok(-e 'a.out.c', "-S => a.out.c file");
-unlink ('a.out.c', $exe);
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -o a -r -e $e`, "ok", "-r -o -e");
+is(`$perlcc -o a -r -e $e`, "ok", "-r -o -e");
 ok(! -e 'a.out.c', "no a.out.c file");
 ok(-e $exe, "keep executable");
-unlink ($exe);
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -r -e $e`, "ok", "-r -e");
+is(`$perlcc -r -e $e`, "ok", "-r -e");
 ok(! -e 'a.out.c', "no a.out.c file");
 ok(-e $exe, "keep executable");
-unlink ($exe);
+cleanup;
 
-system(qq($X -Mblib blib/script/perlcc -o a -e $e));
+system(qq($perlcc -o a -e $e));
 ok(-e 'a', '-o => -e a');
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
-unlink ($exe);
+cleanup;
 
 # Try a simple XS module which exists in 5.6.2 and blead
 $e = q("use Data::Dumper ();Data::Dumper::Dumpxs({});print q(ok)");
-is(`$X -Mblib blib/script/perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static"));
-unlink ($exe);
+is(`$perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static"));
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs");
+is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs");
 ok(! -e 'a.out.c', "delete a.out.c file without -S");
 ok(-e $exe, "keep executable"); #14
 ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
-unlink ($exe);
-unlink ("a.out.c.lst");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc --staticxs -S -o a -r -e $e`, "ok",
+is(`$perlcc --staticxs -S -o a -r -e $e`, "ok",
    "-S -o -r --staticxs xs");
 ok(-e 'a.out.c', "keep a.out.c file with -S");
 ok(-e $exe, "keep executable");
 ok(-e 'a.out.c.lst', "keep a.out.c.lst with -S"); #19
-unlink ("a.out.c.lst");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
+is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
    "-S -o -r --staticxs without xs");
 ok(! -e 'a.out.c.lst', "no a.out.c.lst without xs");
-unlink ("a.out.c.lst");
+cleanup;
 
 my $f = "a.pl";
 open F,">",$f;
@@ -61,95 +65,109 @@ print F q(print q(ok));
 close F;
 $e = q("print q(ok)");
 
-is(`$X -Mblib blib/script/perlcc -S -o a -r $f`, "ok", "-S -o -r file");
-ok(-e 'a.out.c', "-S => a.out.c file");
-unlink ('a.out.c', $exe);
+is(`$perlcc -S -o a -r $f`, "ok", "-S -o -r file");
+ok(-e 'a.c', "-S => a.c file");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -o a -r $f`, "ok", "-r -o file");
-ok(! -e 'a.out.c', "no a.out.c file");
+is(`$perlcc -o a -r $f`, "ok", "-r -o file");
+ok(! -e 'a.c', "no a.c file");
 ok(-e $exe, "keep executable");
-unlink ($exe);
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -o a $f`, "", "-o file");
-ok(! -e 'a.out.c', "no a.out.c file");
+
+is(`$perlcc -o a $f`, "", "-o file");
+ok(! -e 'a.c', "no a.c file");
 ok(-e $exe, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
-unlink ($exe);
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -S -o a $f`, "", "-S -o file");
+is(`$perlcc -S -o a $f`, "", "-S -o file");
 ok(-e $exe, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
-unlink ($exe);
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -Sc -o a $f`, "", "-c -o file");
-ok(-e 'a.out.c', "a.out.c file");
+is(`$perlcc -Sc -o a $f`, "", "-c -o file");
+ok(-e 'a.c', "a.c file");
 ok(! -e $exe, "no executable");
-unlink ("a.out.c");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -c -o a $f`, "", "-c -o file");
-ok(! -e 'a.out.c', "no a.out.c file");
+is(`$perlcc -c -o a $f`, "", "-c -o file");
+ok(-e 'a.c', "a.c file");
 ok(! -e $exe, "no executable");
 
 TODO: {
   local $TODO = "B::Stash imports too many";
-  is(`$X -Mblib blib/script/perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file");
-  is(`$X -Mblib blib/script/perlcc --stash -r -oa $f`, "ok", "--stash -o file");
+  is(`$perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file");
+  is(`$perlcc --stash -r -oa $f`, "ok", "--stash -o file");
   ok(-e $exe, "executable");
-  unlink ($exe);
+  cleanup;
 }
 
-is(`$X -Mblib blib/script/perlcc -t -o a $f`, "", "-t -o file");
+is(`$perlcc -t -o a $f`, "", "-t -o file");
 ok(-e $exe, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
-unlink ($exe);
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -T -o a $f`, "", "-T -o file");
+is(`$perlcc -T -o a $f`, "", "-T -o file");
 ok(-e $exe, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
-unlink ($exe);
+cleanup;
 
 # compiler verboseness
-TODO: {
-  local $TODO = "compiler --Wb=-v verbose should be passed to STDOUT";
-  isnt(`$X -Mblib blib/script/perlcc --Wb=-O1,-v -o a $f`, "", "--Wb=-O1,-v -o file");
-}
-ok(-e $exe, "executable");
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok"); #48
-unlink ($exe);
-
-is(`$X -Mblib blib/script/perlcc --Wb=-O1 -r $f`, "ok", "old-style -Wb=-O1");
+isnt(`$perlcc --Wb=-fno-fold,-v -o a $f $redir`, '/Writing output/m',
+     "--Wb=-fno-fold,-v -o file");
+like(`$perlcc -B --Wb=-DG,-v -o a $f $redir`, "/-GP-/m",
+     "-B --Wb=-DG,-v -o file");
+cleanup;
+is(`$perlcc -Wb=-O1 -r $f`, "ok", "old-style -Wb=-O1");
 
 # perlcc must be verbose
-isnt(`$X -Mblib blib/script/perlcc -v 1 -o a $f`, "", "-v 1 -o file");
-isnt(`$X -Mblib blib/script/perlcc -v 2 -o a $f`, "", "-v 2 -o file");
-isnt(`$X -Mblib blib/script/perlcc -v 3 -o a $f`, "", "-v 3 -o file");
-isnt(`$X -Mblib blib/script/perlcc -v 4 -o a $f`, "", "-v 4 -o file");
+isnt(`$perlcc -v 1 -o a $f`, "", "-v 1 -o file");
+isnt(`$perlcc -v1 -o a $f`, "", "-v1 -o file");
+isnt(`$perlcc -v2 -o a $f`, "", "-v2 -o file");
+isnt(`$perlcc -v3 -o a $f`, "", "-v3 -o file");
+isnt(`$perlcc -v4 -o a $f`, "", "-v4 -o file");
+like(`$perlcc -v5 $f $redir`, '/Writing output/m',
+     "-v5 turns on -Wb=-v");
+like(`$perlcc -v5 -B $f $redir`, '/-GP-/m',
+     "-B -v5 turns on -Wb=-v");
+like(`$perlcc -v6 $f $redir`, '/saving magic for AV/m',
+     "-v6 turns on -Dfull");
+like(`$perlcc -v6 -B $f $redir`, '/nextstate/m',
+     "-B -v6 turns on -DM,-DG,-DA");
+cleanup;
 
 # switch bundling since 2.10
-is(`$X -Mblib blib/script/perlcc -r -e$e`, "ok", "-e$e");
-like(`$X -Mblib blib/script/perlcc -v1 -r -e$e`, '/ok$/m', "-v1");
-is(`$X -Mblib blib/script/perlcc -oa -r -e$e`, "ok", "-oa");
+is(`$perlcc -r -e$e`, "ok", "-e$e");
+cleanup;
+like(`$perlcc -v1 -r -e$e`, '/ok$/m', "-v1");
+cleanup;
+is(`$perlcc -oa -r -e$e`, "ok", "-oa");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -OSr -oa $f`, "ok", "-OSr -o file");
-ok(-e 'a.out.c', "-S => a.out.c file");
-unlink ('a.out.c', $exe);
+is(`$perlcc -OSr -oa $f`, "ok", "-OSr -o file");
+ok(-e 'a.c', "-S => a.c file");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -Or -oa $f`, "ok", "-Or -o file");
-ok(! -e 'a.out.c', "no a.out.c file");
+is(`$perlcc -Or -oa $f`, "ok", "-Or -o file");
+ok(! -e 'a.c', "no a.c file");
 ok(-e $exe, "keep executable");
-unlink ($exe);
+cleanup;
 
 # -BS: ignore -S
-like(`$X -Mblib blib/script/perlcc -BSr -oa.plc -e $e`, qr/ignored\nok$/m, "-BSr -o -e");
+like(`$perlcc -BSr -oa.plc -e $e $redir`, '/-S ignored/', "-BSr -o -e");
 ok(-e 'a.plc', "a.plc file");
-unlink ('a.plc');
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -Br -oa.plc $f`, "ok", "-Br -o file");
+is(`$perlcc -Br -oa.plc $f`, "ok", "-Br -o file");
 ok(-e 'a.plc', "a.plc file");
+cleanup;
 
-is(`$X -Mblib blib/script/perlcc -B -oa.plc -e$e`, "", "-B -o -e");
+is(`$perlcc -B -oa.plc -e$e`, "", "-B -o -e");
 ok(-e 'a.plc', "a.plc");
 is(`$X -Mblib a.plc`, "ok", "executable plc");
-unlink ('a.plc');
+cleanup;
+
+#TODO: -m
 
 unlink ($f);

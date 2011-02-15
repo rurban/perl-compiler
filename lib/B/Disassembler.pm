@@ -1,12 +1,12 @@
 #      Disassembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008,2009,2010 Reini Urban
+#      Copyright (c) 2008,2009,2010,2011 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.07';
+$B::Disassembler::VERSION = '1.08';
 
 package B::Disassembler::BytecodeStream;
 
@@ -222,12 +222,33 @@ use B::Asmdata qw(%insn_data @insn_name);
 use Opcode qw(opset_to_ops full_opset);
 use Config qw(%Config);
 
-my $opix;
+BEGIN {
+  if ( $] < 5.009 ) {
+    B::Asmdata->import(qw(@specialsv_name));
+  }
+  else {
+    B->import(qw(@specialsv_name));
+  }
+}
+
+my $ix;
 our @opname = opset_to_ops(full_opset);
 our (
   $magic,   $archname, $blversion, $ivsize,
   $ptrsize, $longsize, $byteorder, $archflag, $perlversion
 );
+						# >=5.12
+our  @svnames = ("NULL");			# 0
+push @svnames, "BIND"   if $] >= 5.009;	# 1
+push @svnames, ("IV", "NV");			# 2,3
+push @svnames, "RV"     if $] < 5.011;		#
+push @svnames, ("PV", "PVIV", "PVNV", "PVMG");	# 4-7
+push @svnames, "BM"     if $] < 5.009;
+push @svnames, "REGEXP" if $] >= 5.011;	# 8
+push @svnames, "GV"     if $] >= 5.009;	# 9
+push @svnames, ("PVLV", "AV", "HV", "CV");	# 10-13
+push @svnames, "GV"     if $] < 5.009;
+push @svnames, ("FM", "IO");			# 14,15
 
 sub dis_header($) {
   my ($fh) = @_;
@@ -289,34 +310,52 @@ sub print_insn {
   my ( $insn, $arg, $comment ) = @_;
   undef $comment unless $comment;
   if ( defined($arg) ) {
-    if ( $insn eq 'newopx' or $insn eq 'ldop' ) {    # threaded or unthreaded
+    # threaded or unthreaded
+    if ( $insn eq 'newopx' or $insn eq 'ldop' and $] > 5.007) {
       my $type = $arg >> 7;
       my $size = $arg - ( $type << 7 );
       $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type ) if $comment;
-      printf "\n# [%s %d]\n", $opname[$type], $opix++ if $comment;
+      printf "\n# [%s %d]\n", $opname[$type], $ix++ if $comment;
     }
     elsif ( !$comment ) {
       ;
     }
-    elsif ( $insn eq 'newsvx' ) {
-
-      # TODO which type? SV, AV or GV. check arg
+    elsif ( $insn eq 'stpv' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
-      printf "\n# [%s]\n", 'SV';
+      printf "# -%s- %d\n", 'PV', $ix++;
+    }
+    elsif ( $insn eq 'newsvx' ) {
+      my $type = $arg & 0xff; # SVTYPEMASK
+      $arg .= sprintf("\t# type=%d,flags=0x%x", $type, $arg);
+      $arg .= $comment if $comment ne '1';
+      printf "\n# [%s %d]\n", $svnames[$type], $ix++;
     }
     elsif ( $insn eq 'gv_stashpvx' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
-      printf "\n# [%s]\n", "STASH";
+      printf "\n# [%s %d]\n", "STASH", $ix++;
+    }
+    elsif ( $insn eq 'ldspecsvx' ) {
+      $arg .= "\t# $specialsv_name[$arg]";
+      $arg .= $comment if $comment ne '1';
+      printf "\n# [%s %d]\n", "SPECIAL", $ix++;
     }
     elsif ( $insn eq 'ldsv' ) {
-
-      # TODO which type? SV, AV or GV. check arg
       $arg .= "\t# " . $comment if $comment ne '1';
-      printf "\n# -%s-\n", 'SV';
+      printf "# -%s-\n", 'GP/AV/HV/NULL/MG';
     }
     elsif ( $insn eq 'gv_fetchpvx' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
-      printf "\n# [%s]\n", 'prototype';
+      printf "\n# [%s %d]\n", 'GV', $ix++;
+    }
+    elsif ( $insn eq 'sv_magic' ) {
+      $arg .= sprintf( "\t# '%s'", chr($arg) );
+    }
+    elsif ( $insn =~ /_flags/ ) {
+      $arg .= sprintf( "\t# 0x%x", $arg );
+    }
+    elsif ( $insn eq 'op_type' and $] < 5.007 ) {
+      my $type = $arg;
+      $arg .= sprintf( "\t# [ %s ]", $opname[$type] );
     }
     else {
       $arg .= "\t# " . $comment if $comment ne '1';
@@ -344,7 +383,7 @@ sub disassemble_fh {
   my $out     = shift;
   my $verbose = shift;
   my ( $c, $getmeth, $insn, $arg );
-  $opix = 1;
+  $ix = 1;
   bless $fh, "B::Disassembler::BytecodeStream";
   dis_header($fh);
   if ($verbose) {

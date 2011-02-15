@@ -165,6 +165,7 @@ package MY;
 sub libscan {
     # Ignore temp testing files
     return 0 if $_[1] =~ /^(.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl)$/;
+    return 0 if $_[1] =~ /\.svn|~/; # needed for msys perl5.6
     # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
     # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
     return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
@@ -172,8 +173,8 @@ sub libscan {
 }
 
 
-# XXX Fix ActivePerl for MSVC6
-# The linker for cl 12.0.8804 has no -opt:ref,icf. Looks like a msvc8 linker syntax.
+# Fix ActivePerl for MSVC6
+# The linker for cl 12.0.8804 has no -opt:ref,icf, which is MSVC8 linker syntax.
 sub const_config {
     my $s = shift->SUPER::const_config(@_);
     if ($Config::Config{ccversion} eq '12.0.8804' and $Config::Config{cc} eq 'cl') {
@@ -184,7 +185,7 @@ sub const_config {
 
 sub post_constants {
     my $libs = "\nLIBS = $Config::Config{libs}";
-    $libs .= " -lptmalloc3" if $use_ptmalloc3;
+    $libs .= $extra_libs if $extra_libs;
     #XXX PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
     return "$libs\n";
 }
@@ -192,10 +193,12 @@ sub post_constants {
 sub ccflags {
     my $ccflags = shift->SUPER::ccflags(@_);
     $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $have_independent_comalloc;
+    $ccflags .= $extra_cflags if $extra_cflags;
     return $ccflags unless -d ".svn";
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
-    $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings" if $Config{cc} =~ /gcc/;
+    $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
+      if $Config{cc} =~ /gcc/;
 }
 
 sub depend {
@@ -225,6 +228,9 @@ test :: $cc_runtime_h
 ";
     } elsif ($] > 5.009) {
         $result .= "\ntest :: subdirs-test\n\n";
+    }
+    if ($Config{make} eq 'mingw32-make') { # mingw32 make different to msys make
+        $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
     }
     $result;
 }

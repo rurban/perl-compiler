@@ -929,7 +929,7 @@ __END__
 83 0 	gp_refcnt_add	GvREFCNT(bstate->bs_sv)			I32		x
 84 0 	gp_av		*(SV**)&GvAV(bstate->bs_sv)		svindex
 85 0 	gp_hv		*(SV**)&GvHV(bstate->bs_sv)		svindex
-86 0 	gp_cv		*(SV**)&GvCV(bstate->bs_sv)		svindex
+86 0 	gp_cv		*(SV**)&GvCV(bstate->bs_sv)		svindex		x
 87 <9 	gp_file		GvFILE(bstate->bs_sv)			pvindex
 87 9 	gp_file		bstate->bs_sv				pvindex		x
 88 0 	gp_io		*(SV**)&GvIOp(bstate->bs_sv)		svindex

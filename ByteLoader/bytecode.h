@@ -23,6 +23,13 @@ static int bget_swab = 0;
 #include "ppport.h"
 #endif
 
+#ifndef GvCV_set
+#  define GvCV_set(gv,cv)   (GvCV(gv) = (cv))
+#endif
+#ifndef GvGP_set
+#  define GvGP_set(gv,gp)   (GvGP(gv) = (gp))
+#endif
+
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
 #define BGET_FGETC() bl_getc(bstate->bs_fdata)
@@ -219,7 +226,7 @@ static int bget_swab = 0;
 #define BSET_gp_refcnt_add(gprefcnt, arg)	gprefcnt += arg
 #define BSET_gp_share(sv, arg) STMT_START {	\
 	gp_free((GV*)sv);			\
-	GvGP(sv) = GvGP(arg);			\
+	GvGP_set(sv, GvGP(arg));                \
     } STMT_END
 
 /* New GV's are stored as HE+HEK, which is alloc'ed anew */ 
@@ -271,6 +278,11 @@ static int bget_swab = 0;
 #define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv = (GV*)arg)
 #else
 #define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
+#endif
+#if PERL_VERSION > 13 || defined(GvCV_set)
+#define BSET_gp_cv(sv, arg)	GvCV_set(bstate->bs_sv, (CV*)arg)
+#else
+#define BSET_gp_cv(sv, arg)	(*(SV**)&GvCV(bstate->bs_sv) = arg)
 #endif
 #if PERL_VERSION > 13 || defined(CvSTASH_set)
 #define BSET_xcv_stash(sv, arg)	(CvSTASH_set((CV*)bstate->bs_sv, (HV*)arg))
@@ -469,7 +481,7 @@ static int bget_swab = 0;
         Perl_load_module(aTHX_ PERL_LOADMOD_NOIMPORT,			\
                 newSVpvn("File::Glob", 10), Nullsv, Nullsv, Nullsv);	\
         glob_gv = gv_fetchpv("File::Glob::csh_glob", FALSE, SVt_PVCV);	\
-        GvCV(gv) = GvCV(glob_gv);					\
+        GvCV_set(gv, GvCV(glob_gv));					\
         SvREFCNT_inc((SV*)GvCV(gv));					\
         GvIMPORTED_CV_on(gv);						\
         LEAVE;								\

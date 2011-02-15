@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.29 r878 M
+# B::C::VERSION = 1.30 r890 M
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -41,8 +41,8 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO always
-fail Storable #TODO with threads
+pass LWP #TODO always
+pass Storable #TODO with threads
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -53,11 +53,11 @@ pass Sub::Install
 fail Attribute::Handlers #TODO always
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 pass Params::Validate
-fail Sub::Name #TODO < 5.13.8
-fail Filter::Util::Call #TODO with threads
+pass Sub::Name #TODO < 5.13.8
+pass Filter::Util::Call #TODO with threads
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -73,7 +73,7 @@ fail Carp::Clan #TODO 5.10 with threads
 fail Module::Pluggable #TODO 5.8-5.10 with threads
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI #TODO < 5.13.8
+pass DBI #TODO < 5.13.8
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
-# 100 / 100 modules tested with B-C-1.29 - perl-5.010001
-# pass  76 / 100 (76.0%)
-# fail  24 / 100 (24.0%)
-# todo  23 /  24 (95.8%)
+# 100 / 100 modules tested with B-C-1.30 - perl-5.010001
+# pass  80 / 100 (80.0%)
+# fail  20 / 100 (20.0%)
+# todo  23 /  20 (115.0%)
 # skip   0 / 100 (0.0% not installed)

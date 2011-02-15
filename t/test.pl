@@ -432,6 +432,8 @@ sub run_cc_test {
     } else {
         $backend = "-qq,$backend,-q" if (!$ENV{TEST_VERBOSE} and $] > 5.007);
     }
+    $backend .= ",-fno-warnings" if $] >= 5.013005;
+    $backend .= ",-fno-fold" if $] >= 5.013009;
     $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],
                     verbose  => $ENV{TEST_VERBOSE}, # for debugging
                     nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
@@ -538,6 +540,7 @@ sub todo_tests_default {
     my $ITHREADS  = ($Config{useithreads});
 
     my @todo  = (15,35,41..46); # 8,14-16 fail on 5.00505 (max 20 then)
+    push @todo, (103)  if $] < 5.007 or $] >= 5.010;
     #push @todo, (15) if !$ITHREADS;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
@@ -546,10 +549,8 @@ sub todo_tests_default {
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
         # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
         # @todo = (15,35,39,44,46)    if $] < 5.010;
-        push @todo, (103)  if $] < 5.007;
         #push @todo, (45)   if $what ne 'c' and $] < 5.007;
         push @todo, (39)   if $] > 5.007 and $] < 5.009;
-        push @todo, (103)  if $] >= 5.010;
         push @todo, (28)   if $what ne 'c_o1';
         push @todo, (12,16)   if $what =~ /c_o[234]/ and $] >= 5.010;;
         push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
@@ -569,6 +570,7 @@ sub todo_tests_default {
         push @todo, (10,16,27) if $what eq 'cc_o2';
         push @todo, (26)    if $what =~ /^cc_o[12]/;
         push @todo, (3,4)   if $] >= 5.012 and $ITHREADS;
+        push @todo, (16)    if $] >= 5.013009;
     }
     push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
     #push @todo, (32)       if $] >= 5.011003;
@@ -639,7 +641,10 @@ CCTESTS
         if ($todo{$cnt} and $skip{$cnt} and
             # those are currently blocking the system
             # do not even run them at home if TODO+SKIP
-            (!$AUTHOR or ($cnt==14 or $cnt==18)))
+            (!$AUTHOR
+             or ($cnt==15 and $backend eq 'C,-O1') # hanging
+             # or ($cnt==14 or $cnt==18)
+            ))
         {
             print sprintf("ok %d # skip\n", $cnt);
         } else {

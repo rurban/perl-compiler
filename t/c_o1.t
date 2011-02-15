@@ -10,12 +10,12 @@ BEGIN {
   require 'test.pl'; # for run_perl()
 }
 use strict;
-#my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
 
 my @todo  = todo_tests_default("c_o1");
-my @skip = (15,27); # out of memory
+my @skip = (15) if $] == 5.010000 and $ITHREADS and !$DEBUGGING; # hanging
 
 run_c_tests("C,-O1", \@todo, \@skip);

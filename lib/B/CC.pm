@@ -15,7 +15,7 @@ use Config;
 use strict;
 #use 5.008;
 use B qw(main_start main_root class comppadlist peekop svref_2object
-  timing_info init_av sv_undef amagic_generation
+  timing_info init_av end_av sv_undef amagic_generation
   OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
   OPf_MOD OPf_STACKED OPf_SPECIAL
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
@@ -23,7 +23,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
 );
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused
-  output_all output_boilerplate output_main fixup_ppaddr save_sig
+  output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
   svop_or_padop_pv);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
@@ -61,35 +61,37 @@ my $need_freetmps = 0;	# We may postpone FREETMPS to the end of each basic
 my $know_op       = 0;	# Set when C variable op already holds the right op
 			# (from an immediately preceding DOOP(ppname)).
 my $errors        = 0;	# Number of errors encountered
+my $op_count      = 0;	# for B::compile_stats on verbose
 my %no_stack;		# PP names which don't need save pp restore stack
 my %skip_stack;	# PP names which don't need write_back_stack (empty)
 my %skip_lexicals;	# PP names which don't need write_back_lexicals
 my %skip_invalidate;	# PP names which don't need invalidate_lexicals
 my %ignore_op;		# ops which do nothing except returning op_next
 my %need_curcop;	# ops which need PL_curcop
-my $package_pv;      # sv->pv of previous op for method_named
+my $package_pv;         # sv->pv of previous op for method_named
 
-my %lexstate;           #state of padsvs at the start of a bblock
+my %lexstate;           # state of padsvs at the start of a bblock
 my $verbose;
 my ( $entertry_defined, $vivify_ref_defined );
-my ( $module_name, %debug, $strict );
+my ( $init_name, %debug, $strict );
 
 # Optimisation options. On the command line, use hyphens instead of
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
+# Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint, $slow_signals );
-$inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op()
+$inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 my %optimise = (
-  freetmps_each_bblock => \$freetmps_each_bblock, #-O1
-  freetmps_each_loop   => \$freetmps_each_loop,	  #-O2
-  inline_ops 	       => \$inline_ops,	  	  #always
+  freetmps_each_bblock => \$freetmps_each_bblock, # -O1
+  freetmps_each_loop   => \$freetmps_each_loop,	  # -O2
+  inline_ops 	       => \$inline_ops,	  	  # not on Win32
   omit_taint           => \$omit_taint,
   slow_signals         => \$slow_signals,
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
-  qw(wait waitpid nextstate and cond_expr unstack or defined subst);
+  qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
 # perl patchlevel to generate code for (defaults to current patchlevel)
-my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # unused?
+my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # XXX unused?
 my $ITHREADS   = $Config{useithreads};
 my $PERL510    = ( $] >= 5.009005 );
 my $PERL511    = ( $] >= 5.011 );
@@ -329,19 +331,20 @@ sub init_pp {
 # Initialise runtime_callback function for Stackobj class
 BEGIN { B::Stackobj::set_callback( \&runtime ) }
 
-# new ccpp optree (XXX fixme test 18)
-# Initialise saveoptree_callback for B::C class
+# new ccpp optree (XXX fixme test 18, 28)
+# Initialise saveoptree_callback for B::C class, replaces B::C::walk_and_save_optree
+# Called by every CV::save if ROOT
 sub cc_queue {
   my ( $name, $root, $start, @pl ) = @_;
   debug "cc_queue: name $name, root $root, start $start, padlist (@pl)\n"
     if $debug{queue};
   if ( $name eq "*ignore*" ) {
-    $name = 0;
-  }
-  else {
+    $name = '';
+  } else {
     push( @cc_todo, [ $name, $root, $start, ( @pl ? @pl : @padlist ) ] );
   }
-  my $fakeop = B::FAKEOP->new( "next" => 0, sibling => 0, ppaddr => $name );
+  my $fakeop = B::FAKEOP->new( "next" => 0, sibling => 0, ppaddr => $name,
+                               targ=>0, type=>0, flags=>0, private=>0);
   $start = $fakeop->save;
   debug "cc_queue: name $name returns $start\n" if $debug{queue};
   return $start;
@@ -467,7 +470,7 @@ sub reload_lexicals {
   #
   # This class allocates pseudo-registers (OK, so they're C variables).
   #
-  my %alloc;    # Keyed by variable name. A value of 1 means the
+  my %alloc;   # Keyed by variable name. A value of 1 means the
                 # variable has been declared. A value of 2 means
                 # it's in use.
 
@@ -604,7 +607,7 @@ sub error {
 #
 # Load pad takes (the elements of) a PADLIST as arguments and loads up @pad
 # with Stackobj-derived objects which represent those lexicals.  If/when perl
-# itself can generate type information (my int $foo; my $foo:Cint) then we'll
+# itself can generate type information (my int $foo; my $foo : c_int) then we'll
 # take advantage of that here. Until then, we'll use various hacks to tell the
 # compiler when we want a lexical to be a particular type or to be a register.
 #
@@ -702,7 +705,11 @@ sub write_label {
   #debug sprintf("lab_%x:?\n", $$op);
   unless ($labels->{label}->{$$op}) {
     my $l = label($op);
-    push_runtime( sprintf( "  %s:", label($op) ) );
+    if ($verbose) {
+      push_runtime(sprintf( "  %s:\t/* %s */", label($op), $op->name ));
+    } else {
+      push_runtime(sprintf( "  %s:", label($op) ));
+    }
     # avoid printing duplicate jump labels
     $labels->{label}->{$$op} = $l;
   }
@@ -711,6 +718,7 @@ sub write_label {
 sub loadop {
   my $op    = shift;
   my $opsym = $op->save;
+  $op_count++; # for statistics
   runtime("PL_op = $opsym;") unless $know_op;
   return $opsym;
 }
@@ -724,8 +732,8 @@ sub doop {
     # inlining direct calls is safe, just CALLRUNOPS for macros not
     $ppaddr = "Perl_".$ppname;
     $no_stack{$ppname}
-      ? runtime("PL_op = $ppaddr();")
-      : runtime("PUTBACK; PL_op = $ppaddr(); SPAGAIN;");
+      ? runtime("PL_op = $ppaddr(aTHX);")
+      : runtime("PUTBACK; PL_op = $ppaddr(aTHX); SPAGAIN;");
   } else {
     $no_stack{$ppname}
       ? runtime("PL_op = $ppaddr(aTHX);")
@@ -751,6 +759,7 @@ sub gimme {
 # coverage: 18,19,25,...
 sub pp_null {
   my $op = shift;
+  $B::C::nullop_count++;
   return $op->next;
 }
 
@@ -789,9 +798,9 @@ sub pp_and {
     write_back_stack();
     save_or_restore_lexical_state($$next);
     runtime(
-      sprintf( 
-        "if (!$bool) { PUSHs((SV*)%s); goto %s;}", $obj->as_sv, label($next) 
-      ) 
+      sprintf(
+        "if (!$bool) { PUSHs((SV*)%s); goto %s;}", $obj->as_sv, label($next)
+      )
     );
   }
   else {
@@ -872,6 +881,22 @@ sub pp_orassign {
     save_or_restore_lexical_state($$next);
     runtime( sprintf( "if (%s) goto %s;", top_bool(), label($next) ) );
   }
+  return $op->other;
+}
+
+# coverage: issue 45 (1,2)
+# in CORE aliased to pp_defined
+# default dor is okay issue 45 (3,4)
+sub pp_dorassign {
+  my $op   = shift;
+  my $next = $op->next;
+  reload_lexicals();
+  unshift( @bblock_todo, $next );
+  my $sv  = pop @stack;
+  write_back_stack();
+  save_or_restore_lexical_state($$next);
+  runtime( sprintf( "PUSHs(%s); if (%s && SvANY(%s)) goto %s;\t/* dorassign */",
+                    $sv->as_sv, $sv->as_sv, $sv->as_sv, label($next)) );
   return $op->other;
 }
 
@@ -2224,8 +2249,7 @@ sub pp_substcont {
   write_back_stack();
   doop($op);
   my $pmop = $op->other;
-  warn sprintf( "substcont: op = %s, pmop = %s\n", peekop($op), peekop($pmop) )
-    if $verbose;
+  #warn sprintf( "substcont: op = %s, pmop = %s\n", peekop($op), peekop($pmop) ) if $verbose;
 
   #   my $pmopsym = objsym($pmop);
   my $pmopsym = $pmop->save;    # XXX can this recurse?
@@ -2293,7 +2317,7 @@ sub compile_op {
 
 sub compile_bblock {
   my $op = shift;
-  warn "compile_bblock: ", peekop($op), "\n" if $verbose;
+  warn "compile_bblock: ", peekop($op), "\n" if $debug{bblock};
   save_or_restore_lexical_state($$op);
   write_label($op);
   $know_op = 0;
@@ -2316,6 +2340,7 @@ sub cc {
     $decl->add( sprintf( "#define $name  %s", $done{$$start} ) );
     return;
   }
+  warn "cc $name\n" if $verbose;
   init_pp($name);
   load_pad(@padlist);
   %lexstate = ();
@@ -2343,9 +2368,9 @@ sub cc {
   }
   while (@bblock_todo) {
     $op = shift @bblock_todo;
-    warn sprintf( "Considering basic block %s\n", peekop($op) ) if $verbose;
+    warn sprintf( "Considering basic block %s\n", peekop($op) ) if $debug{bblock};
     next if !defined($op) || !$$op || $done{$$op};
-    warn "...compiling it\n" if $verbose;
+    warn "...compiling it\n" if $debug{bblock};
     do {
       $done{$$op} = $name;
       $op = compile_bblock($op);
@@ -2375,9 +2400,8 @@ sub cc {
 }
 
 sub cc_recurse {
-  my $ccinfo;
-  my $start;
-  $start = cc_queue(@_) if @_;
+  my ($ccinfo);
+  my $start = cc_queue(@_) if @_;
 
   while ( $ccinfo = shift @cc_todo ) {
     debug "cc(ccinfo): @$ccinfo\n" if $debug{queue};
@@ -2402,29 +2426,45 @@ sub cc_main {
   my $start = cc_recurse( "pp_main", main_root, main_start, @comppadlist );
 
   # Do save_unused_subs before saving inc_hv
+  B::C::module($module) if $module;
   save_unused_subs();
-  cc_recurse();
 
   my $warner = $SIG{__WARN__};
   save_sig($warner);
 
-  my $inc_hv          = svref_2object( \%INC )->save;
-  my $inc_av          = svref_2object( \@INC )->save;
-  my $amagic_generate = amagic_generation;
-  return if $errors;
+  my($inc_hv, $inc_av, $end_av);
   if ( !defined($module) ) {
+    # forbid run-time extends of curpad syms, names and INC
+    local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    warn "save context:\n" if $verbose;
+    $init->add("/* save context */");
+    $inc_hv          = svref_2object( \%INC )->save;
+    $inc_av          = svref_2object( \@INC )->save;
+  }
+  {
+    # >=5.10 need to defer nullifying of all vars in END, not only new ones.
+    local ($B::C::pv_copy_on_grow, $B::C::const_strings);
+    $B::C::in_endav = 1;
+    $end_av  = end_av->save;
+  }
+  cc_recurse();
+  return if $errors;
+
+  if ( !defined($module) ) {
+    my $amagic_generate = amagic_generation;
+    # XXX TODO push BEGIN/END blocks to modules code.
     $init->add(
       sprintf( "PL_main_root = s\\_%x;", ${ main_root() } ),
       "PL_main_start = $start;",
-      "/* save context */",
       "PL_curpad = AvARRAY($curpad_sym);",
       "PL_comppad = $curpad_sym;",
       "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
       "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
-      "PL_initav = (AV *) $init_av;",
       "GvHV(PL_incgv) = $inc_hv;",
       "GvAV(PL_incgv) = $inc_av;",
       "PL_amagic_generation = $amagic_generate;",
+      "PL_initav = (AV*)$init_av;",
+      "PL_endav = (AV*)$end_av;"
     );
   }
 
@@ -2435,10 +2475,10 @@ sub cc_main {
   output_all("perl_init");
   output_runtime();
   print "\n";
-  output_main();
+  output_main_rest();
 
   if ( defined($module) ) {
-    my $cmodule = $module;
+    my $cmodule = $module ||= 'main';
     $cmodule =~ s/::/__/g;
     print <<"EOT";
 
@@ -2460,10 +2500,16 @@ XS(boot_$cmodule)
     XSRETURN(1);
 }
 EOT
+  } else {
+    output_main();
   }
   if ( $debug{timings} ) {
     warn sprintf( "Done at %s\n", timing_info );
   }
+}
+
+sub compile_stats {
+    return "Total number of OPs processed: $op_count\n";
 }
 
 sub compile {
@@ -2489,11 +2535,7 @@ OPTION:
     }
     elsif ( $opt eq "v" ) {
       $verbose       = 1;
-      *B::C::verbose = *verbose;
-    }
-    elsif ( $opt eq "n" ) {
-      $arg ||= shift @options;
-      $module_name = $arg;
+      B::C::verbose(1); # crashed in C _save_common_middle(B::FAKEOP)
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
@@ -2512,7 +2554,14 @@ OPTION:
         $$ref = $value;
       }
       else {
-        warn qq(ignoring unknown optimisation option "$arg"\n);
+        # Pass down to B::C
+        my $ref = $B::C::option_map{$arg};
+        if ( defined($ref) ) {
+          $$ref = $value;
+        }
+        else {
+          warn qq(ignoring unknown optimisation option "$arg"\n);
+        }
       }
     }
     elsif ( $opt eq "O" ) {
@@ -2529,8 +2578,11 @@ OPTION:
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
     }
-    elsif ( $opt eq "m" ) {
+    elsif ( $opt eq "n" ) {
       $arg ||= shift @options;
+      $init_name = $arg;
+    }
+    elsif ( $opt eq "m" ) {
       $module = $arg;
       mark_unused( $arg, undef );
     }
@@ -2621,6 +2673,7 @@ OPTION:
   $init = B::Section->get("init");
   $decl = B::Section->get("decl");
 
+  # just some subs or main?
   if (@options) {
     return sub {
       my ( $objname, $ppname );
@@ -2636,8 +2689,9 @@ OPTION:
       fixup_ppaddr();
       output_boilerplate();
       print "\n";
-      output_all( $module_name || "init_module" );
+      output_all( $init_name || "init_module" );
       output_runtime();
+      # output_main_rest();
     }
   }
   else {
@@ -2712,17 +2766,21 @@ source for an XSUB module. The boot_Modulename function (which
 DynaLoader can look for) does the appropriate initialisation and runs
 the main part of the Perl source that is being compiled.
 
+=item B<-nInitname>
+
+Provide a different init name for additional objects added as options.
+
 =item B<-strict>
 
 With a DEBUGGING perl compile-time errors for range and flip without
 compile-time context are only warnings.
-With -strict these warnings are fatal, otherwise only run-time errors occur.
+With C<-strict> these warnings are fatal, otherwise only run-time errors occur.
 
 =item B<-D>
 
 Debug options (concatenated or separate flags like C<perl -D>).
-Verbose debugging options are crucial, because we have no interactive
-debugger at the early CHECK step, where the compilation happens.
+Verbose debugging options are crucial, because the interactive
+debugger L<Od> adds a lot of ballast to the resulting code.
 
 =item B<-Dr>
 
@@ -2764,17 +2822,22 @@ Add Flags info to the code.
 =item B<-f>C<OPTIM>
 
 Force optimisations on or off one at a time.
+Unknown optimizations are passed down to L<B::C>.
 
 =item B<-ffreetmps-each-bblock>
 
 Delays FREETMPS from the end of each statement to the end of the each
 basic block.
 
+Enabled with B<-O1>.
+
 =item B<-ffreetmps-each-loop>
 
 Delays FREETMPS from the end of each statement to the end of the group
 of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
+
+Enabled with B<-O2>.
 
 =item B<-fno-inline-ops>
 
@@ -2821,7 +2884,7 @@ perl "Safe signals" check the state of incoming signals after every op.
 See L<http://perldoc.perl.org/perlipc.html#Deferred-Signals-(Safe-Signals)>
 We trade safety for more speed and delay the execution of non-IO signals
 (IO signals are already handled in PerlIO) from after every single Perl op
-to the same ops as used in 5.13.
+to the same ops as used in 5.14.
 
 Only with -fslow-signals we get the old slow and safe behaviour.
 
@@ -2916,9 +2979,11 @@ in the compiler.
 
 =head1 AUTHORS
 
-Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
-Reini Urban C<perl-compiler@googlegroups.com>
-Heinz Knutzen C<heinz.knutzen at gmx.de>
+Malcolm Beattie C<MICB at cpan.org> I<(1996-1998, retired)>,
+Vishal Bhatia <vishal at deja.com> I(1999),
+Gurusamy Sarathy <gsar@cpan.org> I(1998-2001),
+Reini Urban C<perl-compiler@googlegroups.com> I(2008-),
+Heinz Knutzen C<heinz.knutzen at gmx.de> I(2010)
 
 =cut
 

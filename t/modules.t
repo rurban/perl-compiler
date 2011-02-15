@@ -31,7 +31,7 @@ use Test::More;
 # otherwise we'll get a bogus 40% failure rate
 my $staticxs = '--staticxs';
 BEGIN {
-  # check whether linking with xs works at all
+  # check whether linking with xs works at all. Try with and without --staticxs
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
   my $result = `$X -Mblib blib/script/perlcc --staticxs -S -oa -e"use Scalar::Util;"`;
   unless (-e 'a' or -e 'a.out') {
@@ -170,14 +170,14 @@ for my $module (@modules) {
           my ($r, $err1);
           $module_passed = 0;
           @cmd = ($runperl,"-Mblib","-MO=C,-oa.out.c","mod.pl");
-          ($r, $out, $err1) = run_cmd(\@cmd, 10); # in secs
+          ($r, $out, $err1) = run_cmd(\@cmd, 30); # in secs
           @cmd = ($runperl,"-Mblib","script/cc_harness","-o","a","a.out.c");
           ($r, $out, $err1) = run_cmd(\@cmd, 20); # in secs
           @cmd = ($^O eq 'MSWin32' ? "a.exe" : "./a");
-          ($r, $out, $err1) = run_cmd(\@cmd, 40); # in secs
+          ($r, $out, $err1) = run_cmd(\@cmd, 10); # in secs
           if ($out =~ /ok$/ms) {
             $module_passed = 1;
-            diag "crosscheck that perlcc only failed. With -MO=C + cc_harness => ok";
+            diag "crosscheck that only perlcc $staticxs failed. With -MO=C + cc_harness => ok";
           }
         }
         log_pass($module_passed ? "pass" : "fail", $module, $TODO);
