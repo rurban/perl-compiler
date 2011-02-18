@@ -30,6 +30,10 @@
 	renamed -n module_name to init_name.
 	check and set -f options from C also.
 	implement outline of -m module, name detection missing.
+	added option -fno-name-magic.
+	added experimental option -ftype-attr.
+	added TYPES pod section.
+	added pod for some funcs: load_pad, cc_queue, label
 	option -strict only used with DEBUGGING perls.
 	be less chatty with compiling bblocks.
 	light layout cleanup of generated code sections.
@@ -74,7 +78,7 @@
 	* t/issue24.t: added
 	* t/issue45.t: fixed and added 3 more tests
 	* t/e_perlcc.t: added
-	* t/testc.sh, t/TESTS: fixed wrong test 39 for 5.8, added 47
+	* t/testc.sh, t/TESTS: fixed wrong test 39 for 5.8, added 47, 104 (reset), 105 (type-attr).
 	* t/testplc.sh: added 47
 	* Changes: added more missing history ca. 1997-2000
 

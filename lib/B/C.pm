@@ -1183,8 +1183,9 @@ sub B::PMOP::save {
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
+        require "utf8_heavy.pl"; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
-        svref_2object( \&{"utf8\::Cased"} )->save;
+        #svref_2object( \&{"utf8\::Cased"} )->save;
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
         "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen),".sprintf("%u));", $pmflags),
@@ -2019,6 +2020,8 @@ sub B::CV::save {
     warn sprintf( "CV 0x%x as PVGV 0x%x %s::%s CvFLAGS=0x%x\n",
                   $$cv, $$gv, $cvstashname, $cvname, $cv->CvFLAGS )
       if $debug{cv};
+    # XXX not needed, we already loaded utf8_heavy
+    #return if "$cvstashname\::$cvname" eq 'utf8::AUTOLOAD';
   }
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
@@ -2151,7 +2154,12 @@ sub B::CV::save {
     if $debug{cv};
   $package_pv = $cvstashname;
   if ( !$$root && !$cvxsub ) {
-    if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
+    if ("$cvstashname\::$cvname" eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
+      require "utf8_heavy.pl";
+      # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
+      # already polluted.
+      svref_2object( \&{"utf8\::SWASHNEW"} )->save;
+    } elsif ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
       if (ref $auto eq 'B::CV') { # explicit goto
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
@@ -2470,7 +2478,7 @@ sub B::GV::save {
       my $gp = $gv->GP;    # B limitation
       if ( $gp and !$is_empty ) {
         warn(sprintf(
-                     "New GvGP for $name: 0x%x%s %s FILEGV:0x%x GP:0x%x\n",
+                     "New GvGP for $fullname: 0x%x%s %s FILEGV:0x%x GP:0x%x\n",
                      $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                      $gv->FILE, ${ $gv->FILEGV }, $gp
                     )) if $debug{gv};
@@ -2541,27 +2549,27 @@ sub B::GV::save {
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
     my $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
-      warn "GV::save gvsv $sym\n" if $debug{gv};
+      warn "GV::save \$"."$sym\n" if $debug{gv};
       $gvsv->save; #mostly NULL. $gvsv->isa("B::NULL");
       $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
-      warn "GV::save \$$name\n" if $debug{gv};
+      warn "GV::save \$$fullname\n" if $debug{gv};
     }
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
       if ($PERL510 and $fullname eq 'main::ARGV') {
         $init->add( '/* Skip overwriting @main::ARGV */' );
-        warn "Skipping GV::save \@$name\n" if $debug{gv};
+        warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
         $gvav->save;
         $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
-        warn "GV::save \@$name\n" if $debug{gv};
+        warn "GV::save \@$fullname\n" if $debug{gv};
       }
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
       $gvhv->save;
       $init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
-      warn "GV::save \%$name\n" if $debug{gv};
+      warn "GV::save \%$fullname\n" if $debug{gv};
     }
     my $gvcv = $gv->CV;
     if ( !$$gvcv && $savefields & Save_CV ) {
@@ -2578,9 +2586,9 @@ sub B::GV::save {
     if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
-      if ( $gvcv->XSUB && $name ne $origname ) {    #XSUB alias
+      if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        warn "Save $package, XS alias of $name to $origname\n" if $debug{pkg};
+        warn "Save $package, XS alias of $fullname to $origname\n" if $debug{pkg};
         {
           no strict 'refs';
           svref_2object( \*{"$package\::bootstrap"} )->save if $package;# and defined ${"$package\::bootstrap"};
@@ -2596,9 +2604,9 @@ sub B::GV::save {
       else {
         # TODO: may need fix CvGEN if >0 to re-validate the CV methods
         # on PERL510 (>0 + <subgeneration)
-        warn "GV::save &$name ($origname)...\n" if $debug{gv};
+        warn "GV::save &$fullname...\n" if $debug{gv};
         $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
-        warn "GV::save &$name\n" if $debug{gv};
+        # warn "GV::save'd &$fullname\n" if $debug{gv};
       }
     }
     if ( $] > 5.009 ) {
@@ -2614,7 +2622,7 @@ sub B::GV::save {
       # GvFILE is at gp+1
       $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
         unless $optimize_cop;
-      warn "GV::save GvFILE(*$name) " . cstring( $gv->FILE ) . "\n"
+      warn "GV::save GvFILE(*$fullname) " . cstring( $gv->FILE ) . "\n"
         if $debug{gv};
     }
     my $gvform = $gv->FORM;
@@ -2622,7 +2630,7 @@ sub B::GV::save {
       warn "GV::save gvform->save ...\n" if $debug{gv};
       $gvform->save;
       $init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
-      warn "GV::save GvFORM(*$name)\n" if $debug{gv};
+      warn "GV::save GvFORM(*$fullname)\n" if $debug{gv};
     }
     my $gvio = $gv->IO;
     if ( $$gvio && $savefields & Save_IO ) {
@@ -2639,11 +2647,11 @@ sub B::GV::save {
       elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
         warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsave-data.\n";
       }
-      warn "GV::save GvIO(*$name)\n" if $debug{gv};
+      warn "GV::save GvIO(*$fullname)\n" if $debug{gv};
     }
     $init->add("");
   }
-  warn "GV::save $name done\n" if $debug{gv};
+  warn "GV::save $fullname done\n" if $debug{gv};
   return $sym;
 }
 
@@ -3867,7 +3875,7 @@ sub B::GV::savecv {
   my $hv      = $gv->HV;
 
   my $fullname = $package . "::" . $name;
-  warn sprintf( "Checking GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
+  warn sprintf( "Checking GV &%s 0x%x\n", cstring($fullname), $$gv ) if $debug{gv};
 
   # We may be looking at this package just because it is a branch in the
   # symbol table which is on the path to a package which we need to save
@@ -3877,15 +3885,16 @@ sub B::GV::savecv {
   return if ( $package ne 'main' and !$unused_sub_packages{$package} );
   return if ( $package eq 'main' and
   	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::)$/ );
-    # this regex was too greedy and was taking out something like sub _update {} in main (because of the _)
+    # this regex was too greedy and was taking out something like sub _update {} in main
+    # because of the "_"
 
-  warn sprintf( "Used GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
+  warn sprintf( "Used GV \&$fullname 0x%x\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
   if ($$cv and $name eq 'bootstrap' and $cv->XSUB) {
-    warn sprintf( "Skip 0x%x XS \"$fullname\"\n", $$cv ) if $debug{gv};
+    warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
-  warn sprintf( "Saving GV method 0x%x \"$fullname\"\n", $$gv ) if $debug{gv};
+  warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save;
 }
 
@@ -4019,20 +4028,26 @@ sub should_save {
   return $unused_sub_packages{$package} = 0;
 }
 
-sub delete_unsaved_hashINC {
+sub inc_packname {
   my $packname = shift;
-  if ($] >= 5.013005 and $packname eq "warnings::register") {
-    # XXX TODO check if -fwarnings not set via cmdline
-    $B::C::warnings = 0;
-    warn "Using -fno-warnings\n" if $verbose or $debug{pkg};
-  }
-  if ($] >= 5.013009 and $packname eq "utf8") {
-    # XXX TODO check if -ffold not set via cmdline
-    $B::C::fold = 0;
-    warn "Using -fno-fold\n" if $verbose or $debug{pkg};
-  }
   $packname =~ s/\:\:/\//g;
   $packname .= '.pm';
+  $packname;
+}
+
+sub delete_unsaved_hashINC {
+  my $packname = shift;
+  #if ($] >= 5.013005 and $packname eq "warnings::register") {
+    # XXX TODO check if -fwarnings not set via cmdline
+    #$B::C::warnings = 0;
+    #warn "Using -fno-warnings\n" if $verbose or $debug{pkg};
+  #}
+  #if ($] >= 5.013009 and $packname eq "utf8") {
+    # XXX TODO check if -ffold not set via cmdline
+    #$B::C::fold = 0;
+    #warn "Using -fno-fold\n" if $verbose or $debug{pkg};
+  #}
+  $packname = inc_packname($packname);
   warn "Deleting $packname from \%INC\n" if $INC{$packname} and $debug{pkg};
   delete $INC{$packname};
 }
@@ -4083,13 +4098,13 @@ sub save_unused_subs {
 
   # If any m//im is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
   # e.g. by require HTTP::Date;
-  if ($] >= 5.013009 and $B::C::fold) {
+  if ($] >= 5.013009 and ($B::C::fold or exists($INC{'utf8.pm'}))) {
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
-    # mark_package( "utf8::Cased" );
   }
-  if ($] >= 5.013005 and $B::C::warnings) { # run-time Carp
+  # run-time Carp
+  if ($] >= 5.013005 and ($B::C::warnings or exists($INC{'Carp.pm'}))) {
     svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
   }
   # XSLoader was used, force saving of XSLoader::load
@@ -4342,8 +4357,8 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
-  $B::C::fold = 1     if $] >= 5.013009;
-  $B::C::warnings = 1 if $] >= 5.013005;
+  $B::C::fold = 1     if $] >= 5.013009; # includes utf8::Cased tables
+  $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fav-init)],

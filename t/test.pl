@@ -614,6 +614,14 @@ require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)
 >>>>
 B::PV
 ######### 103 - CC stringify srefgen ############
+@a=(1..4);while($a=shift@a){print $a;}continue{$a=~/2/ and reset q(a);}
+>>>>
+12
+######### 104 CC reset ###############################
+use blib; use B::CC; my int $r;my $i:int;our double $d=(0,2,3.0); $r=$i*$i; $r*=$d; print $r;
+>>>>
+12
+######### 105 CC attrs ###############################
 CCTESTS
         my $i = 100;
         for (split /\n####+.*##\n/, $cctests) {

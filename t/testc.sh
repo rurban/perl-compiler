@@ -115,9 +115,12 @@ function ctest {
     else
 	echo "$str" > ${o}.pl
     fi
-    if [ $OPTIM -ge 0 ]; then
+    if [ -z "$str" ]; then
+      true
+    else
+      if [ $OPTIM -ge 0 ]; then
 	runopt "$o" "$OPTIM"
-    else # -1
+      else # -1
 	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
 	vcmd ${OCMD}-o$o.c $o.pl
         test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit)
@@ -140,13 +143,14 @@ function ctest {
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
 	    test -z $CONT && exit
 	fi
+      fi
     fi
 }
 
 ntests=49
 declare -a tests[$ntests]
 declare -a result[$ntests]
-ncctests=17
+ncctests=23
 declare -a cctests[$((100+$ncctests))]
 declare -a ccresult[$((100+$ncctests))]
 tests[1]='print "hi"'
@@ -216,8 +220,9 @@ tests[24]='sub level1{return(level2()?"fail":"ok")} sub level2{0} print level1()
 result[24]='ok'
 # enforce custom ncmp sort and count it. fails as CC in all. How to enforce icmp?
 # <=5.6 qsort needs two more passes here than >=5.8 merge_sort
+# 5.12 got it backwards and added 4 more passes.
 tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
-result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
+result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : $] > 5.013 ? q( 4 5 6 7) : q())'` 4321";
 # lvalue sub
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
 result[26]="26";
@@ -292,13 +297,16 @@ result[46]='ok'
 # non-tied av->MAGICAL
 tests[47]='@ISA=(q(ok));print $ISA[0];'
 result[47]='ok'
+# m//i
+tests[48]='print q(ok) if "test" =~ /es/i;'
+result[48]='ok'
 #-------------
 # issue27
-tests[48]='require LWP::UserAgent;print q(ok);'
-result[48]='ok'
-# issue24
-tests[49]='dbmopen(%H,q(f),0644);print q(ok);'
+tests[49]='require LWP::UserAgent;print q(ok);'
 result[49]='ok'
+# issue24
+tests[50]='dbmopen(%H,q(f),0644);print q(ok);'
+result[50]='ok'
 
 # from here on we test CC specifics only
 
@@ -311,48 +319,55 @@ result[102]='ok'
 # CC stringify, srefgen. TODO: use B; fails
 tests[103]='require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
 result[103]='B::PV'
+# CC reset
+tests[104]='@a=(1..4);while($a=shift@a){print $a;}continue{$a=~/2/ and reset q(a);}'
+result[104]='12'
+# CC attrs. requires -MB::CC with pure perl
+tests[105]='use blib;use B::CC;my int $r;my $i:int;our double $d=(0,2,3.0); $r=$i*$i; $r*=$d; print $r;'
+result[105]='12'
+
 # issue35
-tests[104]='sub new{}sub test{{my $x=1;my $y=$x+1;}my $x=2;if($x!=3){4;}}'
-result[104]=''
+tests[110]='sub new{}sub test{{my $x=1;my $y=$x+1;}my $x=2;if($x!=3){4;}}'
+result[110]=''
 # issue36
-tests[105]='sub f{shift==2}sub test{while(1){last if f(2);}while(1){last if f(2);}}'
-result[105]=''
+tests[111]='sub f{shift==2}sub test{while(1){last if f(2);}while(1){last if f(2);}}'
+result[111]=''
 # issue37
-tests[106]='my $x;$x||=1;print "ok" if $x;'
-result[106]='ok'
-# issue38
-tests[107]='my $x=2;$x=$x||3;print "ok" if $x==2;'
-result[107]='ok'
-# issue39
-tests[108]='sub f1{0}sub f2{my $x;if(f1()){}if($x){}else{[$x]}}my @a=f2();print "ok";'
-result[108]='ok'
-# issue42
-tests[109]='sub f1{1}f1();print do{7;2},"\n";'
-result[109]='2'
-# issue44
-tests[110]='my @a=(1,2);print $a[0],"\n";'
-result[110]='1'
-# issue45
-tests[111]='my $x;$x//=1;print "ok" if $x;'
-result[111]='ok'
-# issue46
-tests[112]='my $pattern="x";"foo"=~/$pattern/o;print "ok";'
+tests[112]='my $x;$x||=1;print "ok" if $x;'
 result[112]='ok'
-# issue47
-tests[113]='my $f=sub{while(1){return(1);}};print $f->(),"\n";'
-result[113]='1'
-# issue48
-tests[114]='sub f{()}print((my ($v)=f())?1:2,"\n");'
-result[114]='2'
-# issue49
-tests[115]='while(1){while(1){last;}last;}print "ok"'
-result[115]='ok'
-# issue51
-tests[116]='my ($p1,$p2)=(80,80);if($p1<=23&&23<=$p2){print "telnet\n";}elsif ($p1 <= 80 && 80 <= $p2){print "http\n";}else{print "fail\n"}'
-result[116]='http'
-# issue52
-tests[117]='my $x;my $y = 1;$x and $y == 2;print $y == 1 ? "ok\n" : "fail\n";'
+# issue38
+tests[113]='my $x=2;$x=$x||3;print "ok" if $x==2;'
+result[113]='ok'
+# issue39
+tests[114]='sub f1{0}sub f2{my $x;if(f1()){}if($x){}else{[$x]}}my @a=f2();print "ok";'
+result[114]='ok'
+# issue42
+tests[115]='sub f1{1}f1();print do{7;2},"\n";'
+result[115]='2'
+# issue44
+tests[116]='my @a=(1,2);print $a[0],"\n";'
+result[116]='1'
+# issue45
+tests[117]='my $x;$x//=1;print "ok" if $x;'
 result[117]='ok'
+# issue46
+tests[118]='my $pattern="x";"foo"=~/$pattern/o;print "ok";'
+result[118]='ok'
+# issue47
+tests[119]='my $f=sub{while(1){return(1);}};print $f->(),"\n";'
+result[119]='1'
+# issue48
+tests[120]='sub f{()}print((my ($v)=f())?1:2,"\n");'
+result[120]='2'
+# issue49
+tests[121]='while(1){while(1){last;}last;}print "ok"'
+result[121]='ok'
+# issue51
+tests[122]='my ($p1,$p2)=(80,80);if($p1<=23&&23<=$p2){print "telnet\n";}elsif ($p1 <= 80 && 80 <= $p2){print "http\n";}else{print "fail\n"}'
+result[122]='http'
+# issue52
+tests[123]='my $x;my $y = 1;$x and $y == 2;print $y == 1 ? "ok\n" : "fail\n";'
+result[123]='ok'
 
 init
 

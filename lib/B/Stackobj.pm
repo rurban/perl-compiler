@@ -39,8 +39,8 @@ sub VALID_DOUBLE ()   { 0x04 }
 sub VALID_SV ()       { 0x08 }
 sub REGISTER ()       { 0x10 }    # no implicit write-back when calling subs
 sub TEMPORARY ()      { 0x20 }    # no implicit write-back needed at all
-sub SAVE_INT ()       { 0x40 }    #if int part needs to be saved at all
-sub SAVE_DOUBLE ()    { 0x80 }    #if double part needs to be saved at all
+sub SAVE_INT ()       { 0x40 }    # if int part needs to be saved at all
+sub SAVE_DOUBLE ()    { 0x80 }    # if double part needs to be saved at all
 
 #
 # Callback for runtime code generation
@@ -367,7 +367,7 @@ __END__
 
 =head1 NAME
 
-B::Stackobj - Helper module for CC backend
+B::Stackobj - Stack and type annotation helper module for the CC backend
 
 =head1 SYNOPSIS
 
@@ -376,23 +376,34 @@ B::Stackobj - Helper module for CC backend
 =head1 DESCRIPTION
 
 A simple representation of pp stacks and lexical pads for the B::CC compiler.
+All locals and function arguments get type annotated, for all B::CC ops which
+can be optimized.
 
-For lexical pads (i.e. my variables) we currently assume the type of variables
-according to a magic naming scheme.
+For lexical pads (i.e. my or better our variables) we currently can force the type of
+variables according to a magic naming scheme in L<B::CC/load_pad>.
 
-  my $<name>_i;  IV integer
-  my $<name>_ir; IV integer in a pseudo register
-  my $<name>_d;  NV double
+    my $<name>_i;    IV integer
+    my $<name>_ir;   IV integer in a pseudo register
+    my $<name>_d;    NV double
 
-Future ideas are type qualifiers such as
+Future ideas are B<type qualifiers> as attributes
 
-	my (int $foo, double $foo_d);
+  B<double>, B<int>, B<register>, B<temp>, B<unsigned>, B<ro>
 
-or attributes such as:
+such as in
 
-	my ($foo:Cint, $foo:Cintr, $foo:Cdouble);
+	our int $i : unsigned : ro;
+        our double $d;
 
-See L<B::CC>.
+Type attributes for sub definitions are not spec'ed yet.
+L<Ctypes> attributes and objects should also be recognized, such as
+C<c_int> and C<c_double>.
+
+B<my vs our>: Note that only B<our> attributes are resolved at B<compile-time>,
+B<my> attributes are resolved at B<run-time>. So the compiler will only see
+type attributes for our variables.
+
+See L<B::CC/load_pad> and L<Ctypes>.
 
 TODO: To represent on this stack not only PADs,SV,IV,PV,NV,BOOL,Special
 and a SV const, but also GV,CV,RV,AV,HV use B::Stackobj::Const.
