@@ -179,12 +179,13 @@ Currently supported are B<int> and B<double> only. See </load_pad>.
 
 =item B<-ftype-attr> (DOES NOT WORK YET)
 
-Experimentally support B<type attributes> for B<int> and B<double>, SCALAR only so far.
+Experimentally support B<type attributes> for B<int> and B<double>,
+SCALAR only so far.
 For most ops new C vars are used then, not the fat perl vars.
-Very awkward to use until the basic type classes are supported from within core.
+Very awkward to use until the basic type classes are supported from
+within core or use types.
 
-Enabled with B<-O2>. See L<TYPES>
-See </load_pad>.
+Enabled with B<-O2>. See L<TYPES> and </load_pad>.
 
 =item B<-D>
 
@@ -856,7 +857,7 @@ sub error {
 }
 
 # run-time eval is too late for attrs being checked by perlcore. BEGIN does not help.
-# use types is the right approach. until types is fixed we use this.
+# use types is the right approach. But until types is fixed we use this hack.
 sub init_type_attrs {
   if ($type_attr) {
     eval q[
@@ -961,14 +962,14 @@ sub load_pad {
       }
 
       # Valid scalar type attributes:
-      #   int double string register temporary ro readonly
+      #   int double ro readonly unsigned
       # Note: PVMG from above also.
       # Typed arrays and hashes later. We need to add string also.
       if (class($namesv) =~ /^(I|P|S|N)V/ and UNIVERSAL::can($class, "MODIFY_SCALAR_ATTRIBUTES")) {
         require attributes;
         #my $svtype = uc reftype ($namesv);
-        # XXX FIXME test 105
-        my @attr = attributes::get(\$namesv); # how to get em from B?
+        # test 105
+        my @attr = attributes::get(\$namesv); # how to get em from B? see optimize
         warn "\$$name attrs: ".@attr if $verbose or $debug{pad};
         #my $valid_types = ${"$class\::valid_attr"}; # They ARE valid, parser checked already.
       }
