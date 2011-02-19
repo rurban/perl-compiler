@@ -560,7 +560,7 @@ sub todo_tests_default {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
         push @todo, (15,21,29,30,45); #5.8.9
-        #push @todo, (27)   if $] < 5.007;
+        push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
         push @todo, (39)    if $] > 5.007 and $] < 5.009;
         #push @todo, (11,27) if $] < 5.009;
         push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
@@ -618,7 +618,7 @@ B::PV
 >>>>
 12
 ######### 104 CC reset ###############################
-use blib; use B::CC; my int $r;my $i:int;our double $d=(0,2,3.0); $r=$i*$i; $r*=$d; print $r;
+use blib;use B::CC;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;
 >>>>
 12
 ######### 105 CC attrs ###############################

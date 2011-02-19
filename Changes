@@ -9,7 +9,9 @@
 	* C.pm (1.30): support dbmopen, fixes issue 24.
 	fixed xpvmgsect (was xpvsect) !-fcog < 5.10 (YAML, test 41,42,43).
 	fixed m//i since 5.13.10: swash_init("utf8::Cased").
-	support GvCV_set and GvGP_set introduced with 5.13.10.
+	fixed method_common package_pv detection in most cases.
+	  still two cases open, without tests. PADOP GV NULL 0x20000, GV RV 0x40802.
+	support GvCV_set and GvGP_set introduced with 5.13.10. [RT#??]
 	implement -staticxs for perlcc --staticxs
 	  either link to found static libs or link to shared lib with
 	  fixed LD_LIBRARY_PATH/PATH (nyi in C, just perlcc).
@@ -19,6 +21,8 @@
 	implement outline of -m module, name detection missing.
 	added -fno-fold recommended since 5.13.9 to omit the huge utf8 tables.
 	added -fno-warnings, recommended since 5.13.5.
+	init XS within Od.
+	prevent autoloaded STDERR printing on non-debugging perls (e.g. "Storablelogcarp").
 	* CC.pm (1.09): support dbmopen, issue 24 failing due to XSLoader (test 45)
 	no pp_name shortnames in embed.h since 5.13.9, use Perl_pp_name(aTHX).
 	implemented dorassign, fixes issue 45.
@@ -33,18 +37,18 @@
 	added option -fno-name-magic.
 	added experimental option -ftype-attr.
 	added TYPES pod section.
-	added pod for some funcs: load_pad, cc_queue, label
+	added pod for some funcs: load_pad, cc_queue, label.
 	option -strict only used with DEBUGGING perls.
 	be less chatty with compiling bblocks.
 	light layout cleanup of generated code sections.
 	added Vishal Bhatia <vishal at deja.com> to AUTHORS.
 	* Bytecode.pm (1.30): support dbmopen, fixes issue 24.
 	re-added -m, compile as module to .pmc
-	store AV elems for non-tied AV->MAGICAL >5.6 (i.e. @ISA, ...) (new test 47)
-	-DA: limcheck PV
-	verbosity: added nice1 (condense elements)
-	  name SV indices also
-	* Byteloader: support GvCV_set introduced with 5.13.10 (RT#??)
+	store AV elems for non-tied AV->MAGICAL >5.6 (i.e. @ISA, ...) (new test 47).
+	-DA: limcheck PV.
+	verbosity: added nice1 (condense elements).
+	  name SV indices also.
+	* Byteloader: support GvCV_set introduced with 5.13.10 [RT#??]
 	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
 	implement --staticxs to workaround DynaLoader problems. use it in t/modules.t
 	  add sopath to PATH on -r. Without -r the sofile should be symlinked so that the
@@ -53,34 +57,37 @@
 	implemented getopts bundling: -ScO -e'bla' -v4 -oa is now possible.
 	disabled some old single-minus switches: -testsuite, -time, -log, ...
 	  requires now double-minus --testsuite, --time, --log, ...
-	  kept legacy handling only for -Wb=.. and -stash
-	fixed -B -e'oneliner'
-	fixed -B @ARGV, no duplication of @ARGV, c_argv.t 3
-	re-added -m|--sharedlib for Bytecode and C (NYI)
-	print C and CC filtered compiler output
-	-v5 adds -v to the compiler options
-	-v6 adds -Dfull to the compiler options
-	support -Wb= for -B
-	fixed -Br for 5.6: add -MByteLoader
+	  kept legacy handling only for -Wb=.. and -stash.
+	fixed -B -e'oneliner'.
+	fixed -B @ARGV, no duplication of @ARGV, c_argv.t 3.
+	re-added -m|--sharedlib for Bytecode and C (NYI).
+	print C and CC filtered compiler output.
+	-v5 adds -v to the compiler options.
+	-v6 adds -Dfull to the compiler options.
+	support -Wb= for -B.
+	fixed -Br for 5.6: add -MByteLoader.
 	* Stash (1.01): add option xs to print xs modules with -x prefix.
 	usable via -MO=Stash also.
 	new option -D for debugging.
 	omit PerlIO::Layer.
 	added pod
 	* Disassembler (1.08): 5.6: fix ldop comments.
-	add op_type names, add @svnames, add indices, add ldspecsvx type
+	add op_type names, add @svnames, add indices, add ldspecsvx type.
 	* Assembler (0.10): print more flags (as hex) and indices.
-	better limcheck diagnostics (op,sv,pv)
+	better limcheck diagnostics (op,sv,pv).
 	* cc_runtime514.h: removed from CORE with 5.13.9. If so, cp it back.
 	  Renamed not to pollute tests with older perls.
 	  Expanded PERL_MAGIC_taint 't' for 5.6.
-	* t/modules.t: try --staticxs first, try crosscheck without perlcc
-	* t/issue24.t: added
-	* t/issue45.t: fixed and added 3 more tests
-	* t/e_perlcc.t: added
+	* C.xs: added experimental method_cv for the hash-only case, untested.
+	* t/modules.t: try --staticxs first, try crosscheck without perlcc.
+	* t/issue24.t: added.
+	* t/issue45.t: fixed and added 3 more tests.
+	* t/e_perlcc.t: added.
 	* t/testc.sh, t/TESTS: fixed wrong test 39 for 5.8, added 47, 104 (reset), 105 (type-attr).
-	* t/testplc.sh: added 47
-	* Changes: added more missing history ca. 1997-2000
+	* t/testplc.sh: added 47.
+	* status_upd: recommend and fix ./status_upd -f -q -d
+	  -q -d prints only the actual tests
+	* Changes: added more missing history ca. 1997-2000.
 
 1.29	2011-01-08 rurban
 	improve dl_init

@@ -180,7 +180,7 @@ our %REGEXP;
 
 { # block necessary for caller to work
   my $caller = caller;
-  if ( $caller eq 'O' ) {
+  if ( $caller eq 'O' or $caller eq 'Od' ) {
     require XSLoader;
     XSLoader::load('B::C'); # for r-magic only
   }
@@ -228,7 +228,7 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 
-my $package_pv; # global stash for methods since 5.13
+my ($prev_op, $package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward);
 my (%strtable, %hektable, @static_free);
 my %xsub;
@@ -269,6 +269,7 @@ my ($max_string_len, $in_endav);
 my %static_core_pkg; #= map {$_ => 1} static_core_packages();
 
 my $ITHREADS = $Config{useithreads};
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $PERL513  = ( $] >= 5.013002 );
 my $PERL511  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
@@ -323,7 +324,8 @@ $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
 $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL511;
 warn %OP_COP if $debug{cops};
 
-# always called from method_named, so hashp should be defined
+# 1. called from method_named, so hashp should be defined
+# 2. called from svop before method_named to cache the $package_pv
 sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
@@ -348,7 +350,8 @@ sub svop_or_padop_pv {
     #}
     return $sv->PV if $sv->can("PV");
     if ($sv->isa("B::SPECIAL")) { # DateTime::TimeZone
-      warn "NYI op->sv==B::SPECIAL S_method_common not fully implemented yet";
+      # XXX null -> method_named
+      warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
       return $package_pv;
     }
     if ($sv->FLAGS & SVf_ROK) {
@@ -362,7 +365,15 @@ sub svop_or_padop_pv {
       return $rv->STASH->NAME;
     } else {
     missing:
-      warn sprintf("NYI S_method_common not fully implemented yet sv=$sv flags=0x%x",
+      if ($sv->isa("B::IV") and $op->name eq 'method_named') {
+        warn sprintf("Try method_cv(sv=$sv,$package_pv) flags=0x%x",
+                     $sv->FLAGS);
+        # XXX untested!
+        return svref_2object(method_cv($$sv, $package_pv));
+      }
+      # XXX NULL gv 0x20000
+      # or PADOP gv 0x40802
+      warn sprintf("NYI S_method_common not fully implemented yet sv=$sv flags=0x%x, keep $package_pv\n",
 		   $sv->FLAGS);
       return $package_pv;
     }
@@ -632,6 +643,7 @@ my $opsect_common =
 
 sub B::OP::_save_common {
   my $op = shift;
+  $prev_op = $op;
   if ($op->next
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
@@ -907,8 +919,12 @@ sub B::PVOP::save {
 sub method_named {
   my $name = shift;
   return unless $name;
-  # Note: the pkg PV is at PL_stack_base+TOPMARK+1,
-  # the previous op->sv->PVX. We store it away globally in op->_save_common.
+  # Note: the pkg PV is unacessible(?) at PL_stack_base+TOPMARK+1.
+  # But also at the previous op->sv->PV. We stored it away globally in op->_save_common.
+  if (ref $name eq 'B::CV') {
+    warn $name;
+    return $name;
+  }
   my $stash = $package_pv ? $package_pv."::" : "main::";
   $name = $stash . $name;
   warn "save method_name \"$name\"\n" if $debug{cv};
@@ -927,6 +943,10 @@ sub B::SVOP::save {
   } else {
     $svsym  = '(SV*)' . $sv->save;
   }
+  if ($op->name eq 'method_named') {
+    my $cv = method_named(svop_or_padop_pv($op));
+    $cv->save if $cv;
+  }
   my $is_const_addr = $svsym =~ m/Null|\&/;
   $svopsect->comment("$opsect_common, sv");
   $svopsect->add(
@@ -939,10 +959,6 @@ sub B::SVOP::save {
     unless $B::C::optimize_ppaddr;
   $init->add("svop_list[$ix].op_sv = $svsym;")
     unless $is_const_addr;
-  if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_or_padop_pv($op));
-    $cv->save if $cv;
-  }
   savesym( $op, "(OP*)&svop_list[$ix]" );
 }
 
@@ -950,16 +966,16 @@ sub B::PADOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  if ($op->name eq 'method_named') {
+    my $cv = method_named(svop_or_padop_pv($op));
+    $cv->save if $cv;
+  }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
   $padopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $padopsect->index;
   $init->add( sprintf( "padop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_or_padop_pv($op));
-    $cv->save if $cv;
-  }
   savesym( $op, "(OP*)&padop_list[$ix]" );
 }
 
@@ -1962,12 +1978,16 @@ sub try_autoload {
     # Tweaked version of __PACKAGE__::AUTOLOAD
     ${"AutoLoader\::AUTOLOAD"} = ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
 
-    # Prevent eval from polluting STDOUT and our c code
+    # Prevent eval from polluting STDOUT,STDERR and our c code. With a debugging perl STDERR is written
     local *REALSTDOUT;
+    local *REALSTDERR unless $DEBUGGING;
     open(REALSTDOUT,">&STDOUT");
+    open(REALSTDERR,">&STDERR") unless $DEBUGGING;
     open(STDOUT,">","/dev/null");
+    open(STDERR,">","/dev/null") unless $DEBUGGING;
     eval { &$auto };
     open(STDOUT,">&REALSTDOUT");
+    open(STDERR,">&REALSTDERR") unless $DEBUGGING;
 
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,

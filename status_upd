@@ -10,9 +10,10 @@
 # -q quiet
 # -f fail only
 # -t todo only
-# -a do not skip too old logs
+# -a all, do not skip too old logs
 # -d no unify dumps
 #
+# status_upd -f -q -d
 use strict;
 use Data::Dumper;
 use Set::Object qw(reftype);
@@ -64,12 +65,13 @@ sub status {
       if ($prefix and $oldprefix ne $prefix) {
 	#$prefix =~ s/ATGRZ.+?-/cygwin-/;
         $ctime = -f $f ? sprintf("%0.3f", -C $f) : 0;
-	$s .= "\n$prefix:\n";
 	print "\n$prefix: age=$ctime" unless $quiet;
         if ($ctime > 1.5 and !$noskip) {
           $skipped = 1;
           print " skipped: too old" unless $quiet;
+          $s .= "\n$prefix:\n" unless $quiet;
         } else {
+          $s .= "\n$prefix:\n";
           $skipped = 0;
         }
         print "\n" unless $quiet;
@@ -89,7 +91,7 @@ sub status {
     $f =~ s{^Failed tests?:?\s*(.+)$}{$1}i;
     $f =~ s{^TODO passed:\s*}{};
     $f =~ s/ //g;
-    my $c = "$file\t";
+    my $c = "$file\t" if $failed;
     $c .= "\t" if length($file) < 8;
     $c .= "$failed\n";
     $h{$prefix}->{$file} = $f;
@@ -97,7 +99,7 @@ sub status {
     print "$c" unless $quiet;
     $s .= $c;
   }
-  print "\n";
+  print "\n" unless $quiet;
   [ $s, \%h ];
 }
 
@@ -159,7 +161,7 @@ sub all_common {
 	$result->{$_} = $result->{$_} ? $tests{$_} * $result->{$_} : $tests{$_};
         $result->{$_} = $result->{$_} * Set::Object->new( split_tests($h->{$p}->{$_}) )
           if $result->{$_}->members;
-        $result->{$_} = $result->{$_}->members;
+        $result->{$_} = $result->{$_}->members;# status_upd -f -q -d
       }
       delete $result->{$_} unless $result->{$_};
     }
@@ -168,6 +170,7 @@ sub all_common {
   return $result;
 }
 
+# XXX FIXME does not work yet
 sub unify_results {
   my $h = shift; 	# platform_version -> file -> failed
   my $name = shift; 	# todo or fail
@@ -181,7 +184,8 @@ sub unify_results {
     for my $p (@platforms) {
       for (keys %{$h->{$p}}) {
         if ($result->{$_} and $result->{$_} ne $h->{$p}->{$_}) { # strip out common tests
-	  my $both = Set::Object->new(split_tests $h->{$p}->{$_}) - Set::Object->new($result->{$_});
+	  my $both = Set::Object->new(split_tests $h->{$p}->{$_})
+                   - Set::Object->new($result->{$_});
           if ($both->members) {
             $h->{$p}->{$_} = join(",", $both->members);
           } else {
@@ -247,12 +251,12 @@ if (my @g = `$cmd`) {
   die "no $logs found\n";
 }
 
-
 if (!$todoonly) {
   my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
   print "$cmd\n" unless $quiet;
   if (my @g = `$cmd`) {
     my $failed = status(\%h, @g);
+    print $failed->[0] if $nodump and $quiet;
     my $failedu = unify_results($failed->[1], "fail") unless $nodump;
   }
 }
@@ -262,6 +266,7 @@ if (!$failonly) {
   print "\n$cmd\n" unless $quiet;
   if (my @g = `$cmd`) {
     my $todo = status(\%h, @g);
+    print $todo->[0] if $nodump and $quiet;
     my $todou = unify_results($todo->[1], "todo_pass") unless $nodump;
   }
 }

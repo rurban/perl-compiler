@@ -856,6 +856,7 @@ sub error {
 }
 
 # run-time eval is too late for attrs being checked by perlcore. BEGIN does not help.
+# use types is the right approach. until types is fixed we use this.
 sub init_type_attrs {
   if ($type_attr) {
     eval q[
@@ -2867,9 +2868,8 @@ sub compile_stats {
     return "Total number of OPs processed: $op_count\n";
 }
 
-# accessible via use B::CC '-ftype-attr'; in user code. or -MB::CC=-ftype-attr on the cmdline
-#sub import {
-sub compile {
+# Accessible via use B::CC '-ftype-attr'; in user code, or -MB::CC=-O2 on the cmdline
+sub import {
   my @options = @_;
   my ( $option, $opt, $arg );
 OPTION:
@@ -3027,12 +3027,14 @@ OPTION:
     $B::C::av_init = 0;
     $B::C::av_init2 = 1;
   }
-  init_type_attrs if $type_attr; # too late for -MB::CC=-O2 on import. attrs are checked before
-#}
+  init_type_attrs if $type_attr; # but too late for -MB::CC=-O2 on import. attrs are checked before
+  @options;
+}
 
-#sub compile {
-#  my @options = @_;
-  #import(@options);
+# -MO=CC entry point
+sub compile {
+  my @options = @_;
+  @options = import(@options);
 
   init_sections();
   $init = B::Section->get("init");
@@ -3077,8 +3079,12 @@ Note that C<cc_harness> lives in the C<B> subdirectory of your perl
 library directory. The utility called C<perlcc> may also be used to
 help make use of this compiler.
 
+	# create a shared XS module
         perl -MO=CC,-mFoo,-oFoo.c Foo.pm
         perl cc_harness -shared -c -o Foo.so Foo.c
+
+        # side-effects just for the types and attributes
+        perl -MB::CC -e'my int $i:unsigned; ...'
 
 =head1 TYPES
 

@@ -144,9 +144,11 @@ sub run_code {
     }
     if (opt(staticxs) and $extra_libs) {
         my $path = '';
+        my $PATHSEP = $^O eq 'MSWin32' ? ';' : ':';
         for (split / /, $extra_libs) {
             s{/[^/]+$}{};
-            $path .= ":$_" if $_;
+            # XXX qx quote?
+            $path .= $PATHSEP.$_ if $_;
         }
         if ($^O =~ /^MSWin32|msys|cygwin$/) {
             $ENV{PATH} .= $path;

@@ -323,7 +323,7 @@ result[103]='B::PV'
 tests[104]='@a=(1..4);while($a=shift@a){print $a;}continue{$a=~/2/ and reset q(a);}'
 result[104]='12'
 # CC attrs. requires -MB::CC with pure perl
-tests[105]='use blib;use B::CC;my int $r;my $i:int;our double $d=(0,2,3.0); $r=$i*$i; $r*=$d; print $r;'
+tests[105]='use blib;use B::CC;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 result[105]='12'
 
 # issue35
