@@ -21,6 +21,9 @@
 	implement outline of -m module, name detection missing.
 	added -fno-fold recommended since 5.13.9 to omit the huge utf8 tables.
 	added -fno-warnings, recommended since 5.13.5.
+	added special workaround for Scalar::Util bootstrapping which did not detect 
+	  List::Util, since it is not in its ISA, only required. need a better scan.
+	  fixes test 44.
 	init XS within Od.
 	prevent autoloaded STDERR printing on non-debugging perls (e.g. "Storablelogcarp").
 	* CC.pm (1.09): support dbmopen, issue 24 failing due to XSLoader (test 45)

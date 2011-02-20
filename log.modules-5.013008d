@@ -9,24 +9,24 @@ pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
-fail IO
+pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker #TODO > 5.13
+pass ExtUtils::MakeMaker #TODO > 5.13
 pass Test::Simple
 pass ExtUtils::Manifest
-fail Pod::Text
+pass Pod::Text
 pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -85,8 +85,8 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope
-fail Test::Pod
+pass B::Hooks::EndOfScope
+pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -96,7 +96,7 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
 # 98 / 100 modules tested with B-C-1.30 - perl-5.013008d
-# pass  85 /  98 (86.7%)
-# fail  13 /  98 (13.3%)
-# todo  10 /  13 (76.9%)
+# pass  93 /  98 (94.9%)
+# fail   5 /  98 (5.1%)
+# todo  10 /   5 (200.0%)
 # skip   2 / 100 (2.0% not installed)
