@@ -103,7 +103,7 @@ method_cv(meth, packname)
 	    if (isGV(gv) && GvCV(gv) &&
 		(!GvCVGEN(gv) || GvCVGEN(gv)
                  == (PL_sub_generation + HvMROMETA(stash)->cache_gen)))
-              RETVAL = MUTABLE_SV(GvCV(gv));
+              RETVAL = (CV*)MUTABLE_SV(GvCV(gv));
               return;
           }
         }
@@ -112,7 +112,7 @@ method_cv(meth, packname)
 			      SvPV_nolen_const(meth),
 			      GV_AUTOLOAD | GV_CROAK);
     	assert(gv);
-    	RETVAL = isGV(gv) ? MUTABLE_SV(GvCV(gv)) : MUTABLE_SV(gv);
+    	RETVAL = isGV(gv) ? (CV*)MUTABLE_SV(GvCV(gv)) : (CV*)MUTABLE_SV(gv);
     OUTPUT:
         RETVAL
 
