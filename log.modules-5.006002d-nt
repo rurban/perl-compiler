@@ -9,11 +9,11 @@ pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
-pass IO
+fail IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
+fail ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -57,7 +57,7 @@ pass Test::NoWarnings
 pass version
 pass Params::Validate #TODO < 5.8.9
 fail Sub::Name #TODO < 5.13.8
-fail Filter::Util::Call
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -80,8 +80,8 @@ pass Sub::Identify
 pass Class::ISA
 skip FCGI
 pass Tree::DAG_Node
-pass Path::Class
-pass Test::Warn
+fail Path::Class
+fail Test::Warn
 skip Encode
 skip Variable::Magic
 pass CGI
@@ -92,7 +92,7 @@ skip namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
-pass XML::SAX
+fail XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.6
 # 84 / 100 modules tested with B-C-1.30 - perl-5.006002d-nt
-# pass  75 /  84 (89.3%)
-# fail   9 /  84 (10.7%)
-# todo  11 /   9 (122.2%)
+# pass  71 /  84 (84.5%)
+# fail  13 /  84 (15.5%)
+# todo  11 /  13 (84.6%)
 # skip  16 / 100 (16.0% not installed)

@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
+fail ExtUtils::MakeMaker
 fail Test::Simple #TODO 5.8.x
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -82,7 +82,7 @@ pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 fail Test::Warn #TODO 5.8.9
-pass Encode
+fail Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope #TODO <5.10 without threads
@@ -92,19 +92,19 @@ pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
-pass XML::SAX
-pass YAML
+fail XML::SAX
+fail YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO < 5.13.8
-pass DateTime #TODO < 5.13.8
+fail DateTime #TODO < 5.13.8
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.30 - perl-5.008009d-nt
-# pass  84 / 100 (84.0%)
-# fail  16 / 100 (16.0%)
-# todo  20 /  16 (125.0%)
+# pass  79 / 100 (79.0%)
+# fail  21 / 100 (21.0%)
+# todo  20 /  21 (95.2%)
 # skip   0 / 100 (0.0% not installed)

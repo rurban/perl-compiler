@@ -116,7 +116,7 @@ cleanup;
 # compiler verboseness
 isnt(`$perlcc --Wb=-fno-fold,-v -o a $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
-like(`$perlcc -B --Wb=-DG,-v -o a $f $redir`, "/-GP-/m",
+like(`$perlcc -B --Wb=-DG,-v -o a $f $redir`, "/-PV-/m",
      "-B --Wb=-DG,-v -o file");
 cleanup;
 is(`$perlcc -Wb=-O1 -r $f`, "ok", "old-style -Wb=-O1");
@@ -129,7 +129,7 @@ isnt(`$perlcc -v3 -o a $f`, "", "-v3 -o file");
 isnt(`$perlcc -v4 -o a $f`, "", "-v4 -o file");
 like(`$perlcc -v5 $f $redir`, '/Writing output/m',
      "-v5 turns on -Wb=-v");
-like(`$perlcc -v5 -B $f $redir`, '/-GP-/m',
+like(`$perlcc -v5 -B $f $redir`, '/-PV-/m',
      "-B -v5 turns on -Wb=-v");
 like(`$perlcc -v6 $f $redir`, '/saving magic for AV/m',
      "-v6 turns on -Dfull");
