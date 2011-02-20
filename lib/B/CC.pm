@@ -2500,14 +2500,14 @@ sub pp_next {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      warn "\"next\" used outside loop\n";
+      warn "Warning: \"next\" used outside loop\n";
       return default_pp($op); # no optimization
     }
   }
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
-      warn(sprintf("Label not found at compile time for \"next %s\"\n", $op->pv ));
+      warn(sprintf("Warning: Label not found at compile time for \"next %s\"\n", $op->pv ));
       return default_pp($op); # no optimization
     }
   }
@@ -2526,14 +2526,14 @@ sub pp_redo {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      warn("\"redo\" used outside loop\n");
+      warn("Warning: \"redo\" used outside loop\n");
       return default_pp($op); # no optimization
     }
   }
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
-      warn(sprintf("Label not found at compile time for \"redo %s\"\n", $op->pv ));
+      warn(sprintf("Warning: Label not found at compile time for \"redo %s\"\n", $op->pv ));
       return default_pp($op); # no optimization
     }
   }
@@ -2545,35 +2545,37 @@ sub pp_redo {
   return $op->next;
 }
 
-# coverage: issue36
+# coverage: issue36, cc_last.t
 sub pp_last {
   my $op = shift;
   my $cxix;
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      warn("\"last\" used outside loop\n");
-      return default_pp($op); # no optimization
+      warn("Warning: \"last\" used outside loop\n");
+      #return default_pp($op); # no optimization
     }
   }
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
-      warn( sprintf("Label not found at compile time for \"last %s\"\n", $op->pv ));
-      return default_pp($op); # no optimization
+      warn( sprintf("Warning: Label not found at compile time for \"last %s\"\n", $op->pv ));
+      #return default_pp($op); # no optimization
     }
 
     # XXX Add support for "last" to leave non-loop blocks
     if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
-      warn("Use of \"last\" for non-loop blocks is not yet implemented\n");
-      return default_pp($op); # no optimization
+      warn("Error: Use of \"last\" for non-loop blocks is not yet implemented\n");
+      #return default_pp($op); # no optimization
     }
   }
   default_pp($op);
   my $lastop = $cxstack[$cxix]->{lastop}->next;
-  push( @bblock_todo, $lastop );
-  save_or_restore_lexical_state($$lastop);
-  runtime( sprintf( "goto %s;", label($lastop) ) );
+  if ($lastop) {
+    push( @bblock_todo, $lastop );
+    save_or_restore_lexical_state($$lastop);
+    runtime( sprintf( "goto %s;", label($lastop) ) );
+  }
   return $op->next;
 }
 
