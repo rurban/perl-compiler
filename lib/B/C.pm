@@ -1683,7 +1683,7 @@ sub B::PVMG::save {
   }
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
-  warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
+  #warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
@@ -2608,12 +2608,20 @@ sub B::GV::save {
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        warn "Save $package, XS alias of $fullname to $origname\n" if $debug{pkg};
-        {
-          no strict 'refs';
-          svref_2object( \*{"$package\::bootstrap"} )->save if $package;# and defined ${"$package\::bootstrap"};
+        warn "Boot $package, XS alias of $fullname to $origname\n" if $debug{pkg};
+        if (0) { my $s = $package;
+         $s =~ s/::/\//g;
+         require "$s.pm";
         }
         mark_package($package);
+        {
+          no strict 'refs';
+          svref_2object( \&{"$package\::bootstrap"} )->save
+            if $package and defined &{"$package\::bootstrap"};
+        }
+        if ($package eq 'Scalar::Util') { # XXX hack, requires List::Util which loads the XS
+          svref_2object( \&List::Util::bootstrap )->save;
+        }
         # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{\tCV *cv;");
         $init->add("\tcv = get_cv($origname,TRUE);");
@@ -3924,6 +3932,8 @@ sub mark_package {
     no strict 'refs';
     $unused_sub_packages{$package} = 1;
     if ( defined @{ $package . '::ISA' } ) {
+      # XXX walking the ISA is often not enough.
+      # we should really check all new packages since the last full scan.
       foreach my $isa ( @{ $package . '::ISA' } ) {
         if ( $isa eq 'DynaLoader' ) {
           unless ( defined( &{ $package . '::bootstrap' } ) ) {
@@ -3931,8 +3941,9 @@ sub mark_package {
             eval { $package->bootstrap };
           }
         }
-        # else
+        #else
         {
+          if (0) { my $s=$package; $s=~s/::/\//g; require "$s.pm"; }
           unless ( $unused_sub_packages{$isa} ) {
             warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
             mark_package($isa);
@@ -4104,6 +4115,9 @@ sub save_unused_subs {
   if ($verbose) {
     warn "Prescan for unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
+  # XXX TODO better strategy for compile-time added and required packages:
+  # loop savecv and check pkg cache for new pkgs.
+  # if so loop again with those new pkgs only, until the list of new pkgs is empty
   descend_marked_unused();
   walkpackages( \%{$main},
                 sub { should_save( $_[0] ); return 1 },
@@ -4112,18 +4126,23 @@ sub save_unused_subs {
     warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
   walksymtable( \%{$main}, "savecv", \&should_save );
+
   if ( $sav_debug{unused} ) {
     %debug = %sav_debug;
   }
 
-  # If any m//im is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
-  # e.g. by require HTTP::Date;
+  # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
+  # With -fno-fold we don't insist on loading utf8_heavy and Carp.
+  # Until it is compile-time required.
   if ($] >= 5.013009 and ($B::C::fold or exists($INC{'utf8.pm'}))) {
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-    # It adds about 1.6MB.
+    # It adds about 1.6MB exe size 32-bit.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
   }
   # run-time Carp
+  # With -fno-warnings we don't insist on initializing warnings::register_categories and Carp.
+  # Until it is compile-time required.
+  # 68KB exe size 32-bit
   if ($] >= 5.013005 and ($B::C::warnings or exists($INC{'Carp.pm'}))) {
     svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
   }
@@ -4131,7 +4150,6 @@ sub save_unused_subs {
   if ($use_xsloader) {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
-    #svref_2object( \*XSLoader::load )->save;
     svref_2object( \&XSLoader::load )->save;
     $use_xsloader = 0;
   }
