@@ -50,17 +50,19 @@ if ($DEBUGGING) {
     for (0..@insn_name) { $insncov{$_} = 0; }
   }
 }
-my @todo = (44); # 33 fixed with r802
+my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later
 @todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..44,46)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
-push @todo, (39)    if $] > 5.007 and $] < 5.010;
+#push @todo, (39)    if $] > 5.007 and $] < 5.010;
 push @todo, (42,43) if $] > 5.011003 and $] < 5.013;
 push @todo, (42)    if $ITHREADS and $] == 5.010001; # XXX WTF???
-push @todo, (32)    if $] > 5.011;
-push @todo, (28)    if $] > 5.013;	# del_backref
+push @todo, (44)    if $] >= 5.010;
+push @todo, (32)    if $] > 5.011 and $] < 5.013008; # del_backref fixed with r790
+push @todo, (28)    if !$ITHREADS and $] > 5.013 and $] < 5.013008; # del_backref
 push @todo, (41..43)if !$ITHREADS;
-push @todo, (32)    if !$ITHREADS and $] >= 5.010 and $] < 5.013; # del_backref fixed with r790. not?
-push @todo, (27,43) if !$ITHREADS and $] >= 5.010;
+push @todo, (27)    if $ITHREADS and $] >= 5.010 and $] < 5.013;
+push @todo, (27)    if $ITHREADS and $] >= 5.013009;
+push @todo, (27)    if !$ITHREADS and $] >= 5.010 and $] < 5.013008;
 push @todo, (42)    if !$ITHREADS and $] >= 5.013;
 push @todo, (27)    if $Config{ptrsize} == 8;
 # cannot store labels on windows 5.12: 21
