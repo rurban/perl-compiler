@@ -366,15 +366,16 @@ sub svop_or_padop_pv {
     } else {
     missing:
       if ($sv->isa("B::IV") and $op->name eq 'method_named') {
-        warn sprintf("Try method_cv(sv=$sv,$package_pv) flags=0x%x",
+        warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
                      $sv->FLAGS);
         # XXX untested!
         return svref_2object(method_cv($$sv, $package_pv));
       }
       # XXX NULL gv 0x20000
       # or PADOP gv 0x40802
-      warn sprintf("NYI S_method_common not fully implemented yet sv=$sv flags=0x%x, keep $package_pv\n",
-		   $sv->FLAGS);
+      # or method arg (test 35)
+      warn sprintf("NYI S_method_common not fully implemented yet sv=$sv %d flags=0x%x, keep $package_pv\n",
+		   $sv->can("IVX") ? $sv->IVX : 0, $sv->FLAGS);
       return $package_pv;
     }
   } else {
@@ -644,12 +645,17 @@ my $opsect_common =
 sub B::OP::_save_common {
   my $op = shift;
   $prev_op = $op;
-  if ($op->next
-      and $op->next->can('name')
-      and $op->next->name eq 'method_named'
+  # method_named packages are always const PV sM/BARE
+  if ($op->type > 0 and
+      (
+       ($op->next->can('name') and $op->next->name eq 'method_named') # 0 args
+       or
+       ($op->next->can('next') and $op->next->next and $op->next->next->can('name')
+	and $op->next->next->name eq 'method_named')) # 1 arg
+      or # more args
+      ($op->name eq 'const' and $op->flags == 34)
      ) {
-    # XXX HACK! need to store away the pkg pv. Fails since 5.13
-    my $pv = svop_or_padop_pv($op);
+    my $pv = svop_or_padop_pv($op); # XXX HACK! need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
       warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};

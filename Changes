@@ -11,6 +11,7 @@
 	fixed m//i since 5.13.10: swash_init("utf8::Cased").
 	fixed method_common package_pv detection in most cases.
 	  still two cases open, without tests. PADOP GV NULL 0x20000, GV RV 0x40802.
+	fixed method_named with >= 1 arg, checking for const PV package_pv (test 35)
 	support GvCV_set and GvGP_set introduced with 5.13.10. [RT#??]
 	implement -staticxs for perlcc --staticxs
 	  either link to found static libs or link to shared lib with
