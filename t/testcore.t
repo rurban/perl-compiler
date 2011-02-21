@@ -3,11 +3,12 @@
 #
 # Copy your matching CORE t dirs into t/CORE.
 # For now we test qw(base comp lib op run)
-# Then fixup the @INC setters.
+# Then fixup the @INC setters, and various require ./test.pl calls.
+#
 #   perl -pi -e 's/^(\s*\@INC = )/# $1/' t/CORE/*/*.t
 #   perl -pi -e "s|^(\s*)chdir 't' if -d|\$1chdir 't/CORE' if -d|" t/CORE/*/*.t
 #   perl -pi -e "s|require './|use lib "CORE"; require '|" `grep -l "require './" t/CORE/*/*.t`
-# and various require ./test.pl calls.
+#
 #
 # See TESTS for recent results
 
@@ -38,11 +39,13 @@ unlink ("t/perl", "t/CORE/perl");
 #symlink "t/CORE/perl", $^X;
 #symlink "t/CORE/test.pl", "t/test.pl" unless -e "t/CORE/test.pl";
 #symlink "t/CORE/harness", "t/test.pl" unless -e "t/CORE/harness";
-`ln -s $^X t/perl`;
-`ln -s $^X t/CORE/perl`;
+`ln -sf $^X t/perl`;
+`ln -sf $^X t/CORE/perl`;
 # CORE t/test.pl would be better, but this fails only on 2 tests
 -e "t/CORE/test.pl" or `ln -s t/test.pl t/CORE/test.pl`;
 -e "t/CORE/harness" or `ln -s t/test.pl t/CORE/harness`; # better than nothing
+`ln -s t/test.pl harness`; # base/term
+`ln -s t/test.pl TEST`;  # cmd/mod 8
 
 my %ALLOW_PERL_OPTIONS;
 for (qw(
@@ -62,19 +65,22 @@ my @fail = map { "t/CORE/$_" }
      base/lex.t
      base/rs.t
      base/term.t
-     cmd/for.t
-     cmd/mod.t
+     cmd/while.t
      comp/bproto.t
-     comp/cpp.t
+     comp/colon.t
+     comp/decl.t
      comp/fold.t
-     comp/multiline.t
+     comp/form_scope.t
+     comp/line_debug.t
+     comp/hints.t
      comp/our.t
+     comp/package.t
+     comp/packagev.t
      comp/parser.t
-     comp/redef.t
+     comp/proto.t
      comp/require.t
      comp/retainedlines.t
      comp/script.t
-     comp/uproto.t
      comp/use.t
      op/anonsub.t
      op/avhv.t
@@ -103,6 +109,8 @@ sub run_c {
   # perlcc 2.06 should now work also: omit unneeded B::Stash -u<> and fixed linking
   # see t/c_argv.t
   my $backopts = $backend eq 'C' ? "-qq,C,-O3" : "-qq,CC";
+  $backopts .= ",-fno-warnings" if $backend =~ /^C/ and $] >= 5.013005;
+  $backopts .= ",-fno-fold"     if $backend =~ /^C/ and $] >= 5.013009;
   vcmd "$^X -Mblib -MO=$backopts,-o$a.c $t";
   # CORE often does BEGIN chdir "t" or patched to chdir "t/CORE"
   chdir $dir;
@@ -159,6 +167,6 @@ for my $t (@tests) {
 }
 
 END {
-  unlink ( "t/perl", "t/CORE/perl" );
-  #unlink ("a","a.c","t/a.c","t/CORE/a.c","aa.c","aa","t/aa.c","t/CORE/aa.c","b.plc");
+  unlink ( "t/perl", "t/CORE/perl", "harness", "TEST" );
+  unlink ("a","a.c","t/a.c","t/CORE/a.c","aa.c","aa","t/aa.c","t/CORE/aa.c","b.plc");
 }
