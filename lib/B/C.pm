@@ -365,18 +365,16 @@ sub svop_or_padop_pv {
       return $rv->STASH->NAME;
     } else {
     missing:
-      if ($sv->isa("B::IV") and $op->name eq 'method_named') {
+      if ($op->name ne 'method_named') {
+	# Called from some svop before method_named. no magic pv string, so a method arg.
+	# The first const pv as method_named arg is always the $package_pv.
+	return $package_pv;
+      } elsif ($sv->isa("B::IV")) {
         warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
                      $sv->FLAGS);
         # XXX untested!
         return svref_2object(method_cv($$sv, $package_pv));
       }
-      # XXX NULL gv 0x20000
-      # or PADOP gv 0x40802
-      # or method arg (test 35)
-      warn sprintf("NYI S_method_common not fully implemented yet sv=$sv %d flags=0x%x, keep $package_pv\n",
-		   $sv->can("IVX") ? $sv->IVX : 0, $sv->FLAGS);
-      return $package_pv;
     }
   } else {
     my @c = comppadlist->ARRAY;

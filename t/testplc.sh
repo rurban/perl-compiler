@@ -29,6 +29,9 @@ QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
 ICMD="$PERL $Mblib -MByteLoader"
 if [ "$D" = "256" ]; then QOCMD=$OCMD; fi
 if [ "$Mblib" = " " ]; then VERS="${VERS}_global"; fi
+v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
+OCMD=${OCMD}${v513}
+QOCMD=${QOCMD}${v513}
 
 }
 

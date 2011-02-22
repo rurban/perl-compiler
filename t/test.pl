@@ -409,6 +409,10 @@ sub run_cc_test {
 	print "ok $cnt # skip $backend SIGSEGV or hangs\n";
 	return 0;
     }
+    if ($todo and $cnt =~ /^(15|103)$/ and $] eq '5.010001') {
+	print "ok $cnt # skip $backend hangs\n";
+	return 0;
+    }
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
     use Config;
@@ -559,7 +563,7 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        push @todo, (44);
+        push @todo, (35,44);
         push @todo, (15,21,29,30,45); #5.8.9
         push @todo, (105)   if $what =~ /^cc(_o1)?/;
         push @todo, (10,16,27) if $what eq 'cc_o2';
@@ -575,7 +579,7 @@ sub todo_tests_default {
         push @todo, (16)    if $] >= 5.013009;
     }
     push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
-    #push @todo, (32)       if $] >= 5.011003;
+    #push @todo, (32)  if $] >= 5.011003;
     return @todo;
 }
 
