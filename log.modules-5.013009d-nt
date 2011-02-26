@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r915 M
+# B::C::VERSION = 1.30 r925
 # perlversion = 5.013009d-nt
 # path = /usr/local/bin/perl5.13.9d-nt
 # platform = cygwin 32bit
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 83 / 100 modules tested with B-C-1.30 - perl-5.013009d-nt
-# pass  80 /  83 (96.4%)
-# fail   3 /  83 (3.6%)
-# todo   4 /   3 (133.3%)
+# pass  79 /  83 (95.2%)
+# fail   4 /  83 (4.8%)
+# todo   4 /   4 (100.0%)
 # skip  17 / 100 (17.0% not installed)

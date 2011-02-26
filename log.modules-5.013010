@@ -1,6 +1,6 @@
 # B::C::VERSION = 1.30 r925
-# perlversion = 5.013008d
-# path = /usr/local/bin/perl5.13.8d
+# perlversion = 5.013010
+# path = /usr/local/bin/perl5.13.10
 # platform = cygwin 32bit
 # threaded perl
 pass Exporter
@@ -22,11 +22,11 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -44,11 +44,11 @@ pass IO::Compress::Base
 pass LWP #TODO always
 pass Storable #TODO with threads
 pass base
-pass List::MoreUtils
+skip List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor #TODO with threads
-fail Test::Tester #TODO with threads
+skip Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO always
 pass Data::OptList
@@ -56,7 +56,7 @@ pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-pass Sub::Name
+skip Sub::Name
 pass Filter::Util::Call #TODO with threads
 pass Algorithm::C3
 pass Class::C3
@@ -66,45 +66,45 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
-skip Moose #hangs threaded, $] >= 5.011004
+skip Class::MOP
+skip Moose
 pass Test::Deep
 pass Carp::Clan #TODO 5.10 with threads
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+skip DBI
 pass Time::Local
 pass IO::Scalar
-pass Sub::Identify
+skip Sub::Identify
 pass Class::ISA
 skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
 pass Encode
-pass Variable::Magic
+skip Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope
+skip B::Hooks::EndOfScope
 pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
+skip Digest::SHA1
+skip namespace::clean
 pass Class::Inspector
-pass Clone
+skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.10 with threads
-# 98 / 100 modules tested with B-C-1.30 - perl-5.013008d
-# pass  91 /  98 (92.9%)
-# fail   7 /  98 (7.1%)
-# todo  10 /   7 (142.9%)
-# skip   2 / 100 (2.0% not installed)
+skip Template::Stash
+# 83 / 100 modules tested with B-C-1.30 - perl-5.013010
+# pass  82 /  83 (98.8%)
+# fail   1 /  83 (1.2%)
+# todo   7 /   1 (700.0%)
+# skip  17 / 100 (17.0% not installed)

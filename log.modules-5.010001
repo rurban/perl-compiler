@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r926 M
+# B::C::VERSION = 1.30 r925
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -69,8 +69,8 @@ pass Devel::GlobalDestruction
 fail Class::MOP #TODO < 5.13 with threads
 fail Moose #TODO always
 pass Test::Deep
-pass Carp::Clan #TODO 5.10 with threads
-pass Module::Pluggable #TODO 5.8-5.10 with threads
+fail Carp::Clan #TODO 5.10 with threads
+fail Module::Pluggable #TODO 5.8-5.10 with threads
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI #TODO < 5.13.8
@@ -82,7 +82,7 @@ pass FCGI #TODO < 5.13 with threads
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
-pass Encode #TODO 5.8-5.10 with threads
+fail Encode #TODO 5.8-5.10 with threads
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
@@ -96,15 +96,15 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
-pass DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+fail DateTime::TimeZone
+fail DateTime::Locale #TODO < 5.13.8
+fail DateTime #TODO < 5.13.8
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash #TODO 5.10 with threads
-# 98 / 100 modules tested with B-C-1.30 - perl-5.010001
-# pass  92 /  98 (93.9%)
-# fail   6 /  98 (6.1%)
-# todo  21 /   6 (350.0%)
-# skip   2 / 100 (2.0% not installed)
+fail Template::Stash #TODO 5.10 with threads
+# 100 / 100 modules tested with B-C-1.30 - perl-5.010001
+# pass  87 / 100 (87.0%)
+# fail  13 / 100 (13.0%)
+# todo  23 /  13 (176.9%)
+# skip   0 / 100 (0.0% not installed)
