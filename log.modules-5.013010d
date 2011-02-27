@@ -1,6 +1,6 @@
 # B::C::VERSION = 1.30 r925
-# perlversion = 5.013010
-# path = /usr/local/bin/perl5.13.10
+# perlversion = 5.013010d
+# path = /usr/local/bin/perl5.13.10d
 # platform = cygwin 32bit
 # threaded perl
 pass Exporter
@@ -22,14 +22,14 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install
+fail ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
 pass XSLoader
-pass MIME::Base64
+fail MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -102,9 +102,9 @@ pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.10 with threads
-# 99 / 100 modules tested with B-C-1.30 - perl-5.013010
-# pass  94 /  99 (94.9%)
-# fail   5 /  99 (5.1%)
-# todo  10 /   5 (200.0%)
-# skip   1 / 100 (1.0% not installed)
+skip Template::Stash
+# 97 / 100 modules tested with B-C-1.30 - perl-5.013010d
+# pass  91 /  97 (93.8%)
+# fail   6 /  97 (6.2%)
+# todo   9 /   6 (150.0%)
+# skip   3 / 100 (3.0% not installed)

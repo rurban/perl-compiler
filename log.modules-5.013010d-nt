@@ -1,8 +1,8 @@
 # B::C::VERSION = 1.30 r925
-# perlversion = 5.013010
-# path = /usr/local/bin/perl5.13.10
+# perlversion = 5.013010d-nt
+# path = /usr/local/bin/perl5.13.10d-nt
 # platform = cygwin 32bit
-# threaded perl
+# non-threaded perl
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker #TODO > 5.13
+fail ExtUtils::MakeMaker #TODO > 5.13
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -41,14 +41,14 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO always
-pass Storable #TODO with threads
+fail LWP #TODO always
+pass Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor #TODO with threads
-fail Test::Tester #TODO with threads
+pass Class::Accessor
+pass Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO always
 pass Data::OptList
@@ -57,7 +57,7 @@ pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
-pass Filter::Util::Call #TODO with threads
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -67,9 +67,9 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP
-skip Moose #hangs threaded, $] >= 5.011004
+fail Moose #TODO always
 pass Test::Deep
-pass Carp::Clan #TODO 5.10 with threads
+pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
@@ -102,9 +102,9 @@ pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.10 with threads
-# 99 / 100 modules tested with B-C-1.30 - perl-5.013010
-# pass  94 /  99 (94.9%)
-# fail   5 /  99 (5.1%)
-# todo  10 /   5 (200.0%)
-# skip   1 / 100 (1.0% not installed)
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.30 - perl-5.013010d-nt
+# pass  93 / 100 (93.0%)
+# fail   7 / 100 (7.0%)
+# todo   6 /   7 (85.7%)
+# skip   0 / 100 (0.0% not installed)
