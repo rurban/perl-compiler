@@ -66,8 +66,10 @@ sub log_err {
   return if(!$log);
 
   # diag prints for TODO to a special todo fh, which does not end at the console
-  diag( "fail $module $out" );
+  # ignore diag the TODO empty STDERR test for now. we diag the ok test only
+  # diag( "fail $module $out" );
   # Test::More->builder->_print_comment( Test::More->builder->failure_output, "fail $module $out" );
+
   $_ =~ s/\n/\n# /xmsg foreach($out, $err); # Format for comments
 
   open(ERR, ">>", "$log.err");

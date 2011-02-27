@@ -202,7 +202,7 @@ for my $module (@modules) {
           `$runperl -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc("$module")"`;
         }
       }
-      unlink ("mod.pl", 'a', 'a.out');
+      unlink ("mod.pl", 'a', 'a.out', 'a.exe');
     }}
 }
 
