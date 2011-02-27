@@ -23,12 +23,12 @@ cleanup;
 
 is(`$perlcc -o a -r -e $e`, "ok", "-r -o -e");
 ok(! -e 'a.out.c', "no a.out.c file");
-ok(-e $exe, "keep executable");
+ok(-e $exe, "-o keep executable");
 cleanup;
 
 is(`$perlcc -r -e $e`, "ok", "-r -e");
 ok(! -e 'a.out.c', "no a.out.c file");
-ok(-e $exe, "keep executable");
+ok(! -e $exe, "do not keep executable"); #8
 cleanup;
 
 system(qq($perlcc -o a -e $e));
@@ -43,7 +43,7 @@ cleanup;
 
 is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs");
 ok(! -e 'a.out.c', "delete a.out.c file without -S");
-ok(-e $exe, "keep executable"); #14
+ok(! -e $exe, "do not keep executable"); #14
 ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
 cleanup;
 
