@@ -375,8 +375,7 @@ sub compile_cstyle {
             q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} .
             q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
     }
-    if (opt(S) || opt(c)) {
-        # We need to keep it.
+    if (opt(S) || opt(c)) { # We need to keep it
         if (opt(e)) {
             $cfile = "a.out.c";
         } else {
@@ -388,8 +387,7 @@ sub compile_cstyle {
             $cfile = $Output if opt(c) && $Output =~ /\.c\z/i;
         }
         check_write($cfile);
-    } else {
-        # Don't need to keep it, be safe with a tempfile.
+    } else { # Do not keep tempfiles (no -S nor -c)
         $lose = 1;
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below

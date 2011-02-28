@@ -3,12 +3,13 @@
 # test most perlcc options
 
 use strict;
-use Test::More tests => 75;
+use Test::More tests => 76;
 use Config;
 
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-my $exe = $^O eq 'MSWin32' ? 'a.exe' : 'a';
+my $exe = $^O =~ /MSWin32|cygwin/ ? 'a.exe' : 'a.out';
+my $a   = $^O eq 'MSWin32' ? 'a.exe' : 'a';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 #my $o = '';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
@@ -17,22 +18,23 @@ my $perlcc = "$X -Mblib blib/script/perlcc";
 sub cleanup { unlink ('a.out.c', $exe, "a.out.c.lst", "a.c", "a.c.lst"); }
 my $e = q("print q(ok)");
 
-is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o -r -e");
+is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o a -r -e");
 ok(-e 'a.out.c', "-S => a.out.c file");
+ok(-e $a, "keep a executable");
 cleanup;
 
-is(`$perlcc -o a -r -e $e`, "ok", "-r -o -e");
+is(`$perlcc -o a -r -e $e`, "ok", "-o a r -e");
 ok(! -e 'a.out.c', "no a.out.c file");
-ok(-e $exe, "-o keep executable");
+ok(-e $a, "keep a executable"); # 6
 cleanup;
 
 is(`$perlcc -r -e $e`, "ok", "-r -e");
 ok(! -e 'a.out.c', "no a.out.c file");
-ok(! -e $exe, "do not keep executable"); #8
+ok(-e $exe, "keep default executable"); #9
 cleanup;
 
 system(qq($perlcc -o a -e $e));
-ok(-e 'a', '-o => -e a');
+ok(-e $a, '-o => -e a');
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
@@ -43,15 +45,15 @@ cleanup;
 
 is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs");
 ok(! -e 'a.out.c', "delete a.out.c file without -S");
-ok(! -e $exe, "do not keep executable"); #14
+ok(-e $exe, "keep executable"); #15
 ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
 cleanup;
 
 is(`$perlcc --staticxs -S -o a -r -e $e`, "ok",
    "-S -o -r --staticxs xs");
 ok(-e 'a.out.c', "keep a.out.c file with -S");
-ok(-e $exe, "keep executable");
-ok(-e 'a.out.c.lst', "keep a.out.c.lst with -S"); #19
+ok(-e $a, "keep executable"); #19
+ok(-e 'a.out.c.lst', "keep a.out.c.lst with -S");
 cleanup;
 
 is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
@@ -71,45 +73,45 @@ cleanup;
 
 is(`$perlcc -o a -r $f`, "ok", "-r -o file");
 ok(! -e 'a.c', "no a.c file");
-ok(-e $exe, "keep executable");
+ok(-e $a, "keep executable");
 cleanup;
 
 
 is(`$perlcc -o a $f`, "", "-o file");
 ok(! -e 'a.c', "no a.c file");
-ok(-e $exe, "executable");
+ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
 is(`$perlcc -S -o a $f`, "", "-S -o file");
-ok(-e $exe, "executable");
+ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
 is(`$perlcc -Sc -o a $f`, "", "-c -o file");
 ok(-e 'a.c', "a.c file");
-ok(! -e $exe, "no executable");
+ok(! -e $a, "no executable");
 cleanup;
 
 is(`$perlcc -c -o a $f`, "", "-c -o file");
 ok(-e 'a.c', "a.c file");
-ok(! -e $exe, "no executable");
+ok(! -e $a, "no executable");
 
 TODO: {
   local $TODO = "B::Stash imports too many";
   is(`$perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file");
   is(`$perlcc --stash -r -oa $f`, "ok", "--stash -o file");
-  ok(-e $exe, "executable");
+  ok(-e $a, "executable");
   cleanup;
 }
 
 is(`$perlcc -t -o a $f`, "", "-t -o file");
-ok(-e $exe, "executable");
+ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
 is(`$perlcc -T -o a $f`, "", "-T -o file");
-ok(-e $exe, "executable");
+ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
@@ -151,7 +153,7 @@ cleanup;
 
 is(`$perlcc -Or -oa $f`, "ok", "-Or -o file");
 ok(! -e 'a.c', "no a.c file");
-ok(-e $exe, "keep executable");
+ok(-e $a, "keep executable");
 cleanup;
 
 # -BS: ignore -S
