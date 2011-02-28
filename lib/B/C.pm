@@ -2624,7 +2624,7 @@ sub B::GV::save {
             if $package and defined &{"$package\::bootstrap"};
         }
         if ($package eq 'Scalar::Util') { # XXX hack, requires List::Util which loads the XS
-          svref_2object( \&List::Util::bootstrap )->save;
+          svref_2object( \&{"List::Util::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{\tCV *cv;");
