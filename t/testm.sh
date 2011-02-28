@@ -65,8 +65,10 @@ do
   if [ "$opt" = "s" ]; then 
       v=$($PERL -It -Mmodules -e'print perlversion')
       if [ -f log.modules-$v ]; then # and not older than a few days
+	  echo $PERL -S cpan `grep ^skip log.modules-$v | perl -anle 'print $F[1]'`
           grep ^skip log.modules-$v | perl -anle 'print $F[1]' | xargs $PERL -S cpan
       else
+	  echo $PERL -S cpan $($PERL $Mblib -It -Mmodules -e'$,=" "; print skip_modules')
           $PERL -S cpan $($PERL $Mblib -It -Mmodules -e'$,=" "; print skip_modules')
       fi
       exit
