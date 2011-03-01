@@ -15,7 +15,7 @@ my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
 #$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
 my $perlcc = "$X -Mblib blib/script/perlcc";
-sub cleanup { unlink ('a.out.c', $exe, "a.out.c.lst", "a.c", "a.c.lst"); }
+sub cleanup { unlink ('a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 
 is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o a -r -e");
@@ -88,14 +88,15 @@ ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
-is(`$perlcc -Sc -o a $f`, "", "-c -o file");
+is(`$perlcc -Sc -o a $f`, "", "-Sc -o file");
 ok(-e 'a.c', "a.c file");
-ok(! -e $a, "no executable");
+ok(! -e $a, "-Sc no executable, compile only");
 cleanup;
 
 is(`$perlcc -c -o a $f`, "", "-c -o file");
 ok(-e 'a.c', "a.c file");
-ok(! -e $a, "no executable");
+ok(! -e $a, "-c no executable, compile only");
+cleanup;
 
 TODO: {
   local $TODO = "B::Stash imports too many";
