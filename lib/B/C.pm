@@ -309,7 +309,9 @@ sub module  { if (@_) { $module = shift; } else { $module; } }
 
 sub walk_and_save_optree {
   my ( $name, $root, $start ) = @_;
-  $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
+  if ($root) {
+    $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
+  }
   return objsym($start);
 }
 
