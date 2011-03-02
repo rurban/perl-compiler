@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r932
+# B::C::VERSION = 1.30 r938
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -96,15 +96,15 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
-pass DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+fail DateTime::TimeZone
+fail DateTime::Locale #TODO < 5.13.8
+fail DateTime #TODO < 5.13.8
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
-# 98 / 100 modules tested with B-C-1.30 - perl-5.010001
-# pass  88 /  98 (89.8%)
-# fail  10 /  98 (10.2%)
-# todo  21 /  10 (210.0%)
-# skip   2 / 100 (2.0% not installed)
+# 100 / 100 modules tested with B-C-1.30 - perl-5.010001
+# pass  87 / 100 (87.0%)
+# fail  13 / 100 (13.0%)
+# todo  23 /  13 (176.9%)
+# skip   0 / 100 (0.0% not installed)
