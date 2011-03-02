@@ -570,7 +570,7 @@ sub todo_tests_default {
         # on cygwin 29 passes
         push @todo, (35); # fixed 44 -nt
         push @todo, (21,30,45); #5.8.9
-        push @todo, (44)    if $ITHREADS;
+        push @todo, (44)    if $ITHREADS or $] < 5.012;
         push @todo, (105)   if $what =~ /^cc(_o1)?/;
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
@@ -695,7 +695,7 @@ sub ctest {
     my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
     system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
-        print "not ok 1 #B::$backend failed\n";
+        print "not ok $num #B::$backend failed\n";
         exit;
     }
     system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o$name $name.c";
@@ -709,6 +709,7 @@ sub ctest {
         } else {
             ok(undef, "failed to compile");
         }
+        return;
     }
     $exe = "./".$exe unless $^O eq 'MSWin32';
     ($result,$out,$stderr) = run_cmd($exe, 5);
