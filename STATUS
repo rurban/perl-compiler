@@ -12,26 +12,18 @@ C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
-Several B::C and B::CC bugs fixed. 5.10 + 5.12 compatibility added.
+Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 compatibility added.
 
 Open Problems for B::C:
-5.6:
-    test 15, 35, 46
-5.8:
-    -"-
-5.10:
-    -"-
-5.12:
-    -"-
-5.14:
-    tests 6,8..10,16,21,23,24,26,30,31,35 (CV's)
+  tests 15, 46
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
 TEST STATUS
 -----------
-Tested on cygwin1.7, centos5, debian4, debian5 64bit, freebsd7, solaris10 intel sunpro, openbsd38
-Not so regurarily on centos4, strawberry-5.10.1, activeperl-5.10.1
+Tested on cygwin1.7, centos5, debian4, debian5 64bit, freebsd7, freebsd8, 
+solaris10 intel sunpro, openbsd38
+Not so regurarily on centos4, strawberry-5.10.1, strawberry-5.12.2, activeperl-5.10.1
 
 List of failed tests.
 
