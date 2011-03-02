@@ -72,6 +72,9 @@ print "# got = @got\n";
 @got = grep { ! /^(Cwd|File|File::Copy|OS2)$/ } @got  if $^O eq 'os2';
 @got = grep { ! /^(Win32|Win32CORE|Cwd|Cygwin)$/} @got if $^O eq 'cygwin';
 @got = grep { ! /^(Devel::Cover)$/            } @got  if $cover =~ /-MDevel::Cover/;
+# freebsd prepends BSDPAN.pm
+@got = grep { ! /^(Exporter::Heavy|strict)$/} @got
+  if $^O eq 'freebsd';
 
 if ($Is_VMS) {
     @got = grep { ! /^File(?:::Copy)?$/    } @got;
@@ -103,6 +106,11 @@ if ($] >= 5.011001 and $] < 5.012) {
 if ($] >= 5.013005) {
     $expected = "Carp DB Exporter Internals IO::File IO::Seekable main mro re Regexp utf8 version warnings";
 }
+if ($^O eq 'freebsd') {
+  for (qw(Internals IO::File IO::Seekable Tie::Hash::NamedCapture version utf8 warnings)) {
+    $expected =~ s/$_ //;
+  }
+}
 
 {
     no strict 'vars';
@@ -114,7 +122,7 @@ if ((($Config{static_ext} eq ' ')
      || ($Config{static_ext} eq 'Win23CORE' and $^O eq 'cygwin'))
     && !($^O eq 'os2' and $OS2::is_aout)
    ) {
-    print "# got [$got]\n# vs.\n# expected [$expected]\nnot " if $got ne $expected;
+    print "# got      [$got]\n# vs.\n# expected [$expected]\nnot " if $got ne $expected;
     ok;
 } else {
     print "ok $test # skipped: one or more static extensions\n"; $test++;
