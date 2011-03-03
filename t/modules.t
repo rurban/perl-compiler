@@ -221,7 +221,7 @@ exit;
 sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-
+  # ---------------------------------------
   # XXX Attribute::Handlers has a CHECK block. Need to add this to the compilation
   foreach(qw(
     Attribute::Handlers
@@ -240,7 +240,6 @@ sub is_todo {
   )) { return '5.6' if $_ eq $module; }}
   if ($] < 5.008009) { foreach(qw(
     ExtUtils::CBuilder
-    DBI
   )) { return '< 5.8.9' if $_ eq $module; }}
   if ($] =~ /^5.008/) { foreach(qw(
     Test::Harness
@@ -256,13 +255,7 @@ sub is_todo {
     Test::Pod
     Test::NoWarnings
   )) { return '5.8.9' if $_ eq $module; }}
-  if ($] > 5.013) { foreach(qw(
-    ExtUtils::MakeMaker
-  )) { return '> 5.13' if $_ eq $module; }}
-  if ($] < 5.013008) { foreach(qw(
-    Module::Build
-  )) { return '< 5.13.8' if $_ eq $module; }} # looks like Dave fixed that in CORE with 5.13.8
-
+  # ---------------------------------------
   if ($Config{useithreads}) {
     foreach(qw(
       Test::Tester
@@ -301,7 +294,7 @@ sub is_todo {
     if ($] >= 5.013) { foreach(qw(
       Template::Stash
     )) { return '5.13 with threads' if $_ eq $module; }}
-  } else { #no threads
+  } else { #no threads --------------------------------
     foreach(qw(
       LWP
       MooseX::Types
@@ -318,6 +311,17 @@ sub is_todo {
       Module::Build
     )) { return '5.13 without threads' if $_ eq $module; }}
   }
+  # ---------------------------------------
+  if ($] < 5.013008) { foreach(qw(
+    Module::Build
+  )) { return '< 5.13.8' if $_ eq $module; }} # looks like Dave fixed that in CORE with 5.13.8
+  if ($] < 5.010) { foreach(qw(
+    DBI
+  )) { return '< 5.10' if $_ eq $module; }}
+  if ($] > 5.013) { foreach(qw(
+    ExtUtils::MakeMaker
+  )) { return '> 5.13' if $_ eq $module; }}
+  # ---------------------------------------
 }
 
 sub is_skip {

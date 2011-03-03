@@ -3923,7 +3923,7 @@ sub B::GV::savecv {
   #return unless ( $unused_sub_packages{$package} );
   return if ( $package ne 'main' and !$unused_sub_packages{$package} );
   return if ( $package eq 'main' and
-  	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::)$/ );
+  	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
     # this regex was too greedy and was taking out something like sub _update {} in main
     # because of the "_"
 
