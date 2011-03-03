@@ -224,21 +224,23 @@ sub is_todo {
 
   # XXX Attribute::Handlers has a CHECK block. Need to add this to the compilation
   foreach(qw(
-    LWP
     Attribute::Handlers
     Moose
     MooseX::Types
+    Class::MOP
   )) { return 'always' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
-    Module::Build
-    Digest::MD5
+    Storable
     Template::Stash
     ExtUtils::Install
     Class::Accessor
+    Sub::Name
+    Filter::Util::Call
+    DateTime::Locale
   )) { return '5.6' if $_ eq $module; }}
   if ($] < 5.008009) { foreach(qw(
-    Params::Validate
     ExtUtils::CBuilder
+    DBI
   )) { return '< 5.8.9' if $_ eq $module; }}
   if ($] =~ /^5.008/) { foreach(qw(
     Test::Harness
@@ -258,21 +260,14 @@ sub is_todo {
     ExtUtils::MakeMaker
   )) { return '> 5.13' if $_ eq $module; }}
   if ($] < 5.013008) { foreach(qw(
-    Sub::Name
-    DBI
-    DateTime::Locale
-    DateTime
+    Module::Build
   )) { return '< 5.13.8' if $_ eq $module; }} # looks like Dave fixed that in CORE with 5.13.8
 
   if ($Config{useithreads}) {
     foreach(qw(
-      Storable
-      Class::Accessor
       Test::Tester
-      Filter::Util::Call
     )) { return 'with threads' if $_ eq $module; }
     if ($] > 5.007 and $] < 5.012) { foreach(qw(
-      MIME::Base64
       Module::Pluggable
       if
       Encode
@@ -283,9 +278,12 @@ sub is_todo {
       File::Path
       Path::Class
     )) { return '5.8-5.10 DEBUGGING with threads' if $_ eq $module; }}
-    if ($] >= 5.009 and $] < 5.12) { foreach(qw(
+    if ($] >= 5.009 and $] < 5.012) { foreach(qw(
       Carp::Clan
       Template::Stash
+      DateTime
+      DateTime::TimeZone
+      DateTime::Locale
     )) { return '5.10 with threads' if $_ eq $module; }}
     if ($] < 5.012) { foreach(qw(
       Module::Build
@@ -294,13 +292,9 @@ sub is_todo {
       IO::Compress::Base
     )) { return '< 5.13 DEBUGGING with threads' if $_ eq $module; }}
     if ($] < 5.012 and !$DEBUGGING) { foreach(qw(
-      Digest::SHA1
     )) { return '< 5.13 !DEBUGGING with threads' if $_ eq $module; }}
     if ($] < 5.013) { foreach(qw(
-      Test::Harness
       ExtUtils::Install
-      Class::MOP
-      FCGI
     )) { return '< 5.13 with threads' if $_ eq $module; }}
     if ($] >= 5.012) { foreach(qw(
     )) { return '>=5.12 with threads' if $_ eq $module; }}
@@ -309,18 +303,19 @@ sub is_todo {
     )) { return '5.13 with threads' if $_ eq $module; }}
   } else { #no threads
     foreach(qw(
+      LWP
       MooseX::Types
     )) { return 'without threads' if $_ eq $module; }
     if ($DEBUGGING) { foreach(qw(
       Storable
     )) { return 'debugging without threads' if $_ eq $module; }}
     if ($] < 5.010) { foreach(qw(
-      B::Hooks::EndOfScope
     )) { return '<5.10 without threads' if $_ eq $module; }}
     if ($] >= 5.010 and $] < 5.013) { foreach(qw(
       ExtUtils::MakeMaker
     )) { return '5.10,5.12 without threads' if $_ eq $module; }}
     if ($] >= 5.013) { foreach(qw(
+      Module::Build
     )) { return '5.13 without threads' if $_ eq $module; }}
   }
 }

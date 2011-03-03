@@ -6,9 +6,9 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
-fail Pod::Simple
+pass Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
@@ -86,7 +86,7 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-fail Test::Pod
+pass Test::Pod
 skip Digest::SHA1
 skip namespace::clean
 pass Class::Inspector
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.6
 # 85 / 100 modules tested with B-C-1.30 - perl-5.006002d-nt
-# pass  72 /  85 (84.7%)
-# fail  13 /  85 (15.3%)
-# todo  12 /  13 (92.3%)
+# pass  75 /  85 (88.2%)
+# fail  10 /  85 (11.8%)
+# todo  12 /  10 (120.0%)
 # skip  15 / 100 (15.0% not installed)
