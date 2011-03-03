@@ -2625,8 +2625,13 @@ sub B::GV::save {
           svref_2object( \&{"$package\::bootstrap"} )->save
             if $package and defined &{"$package\::bootstrap"};
         }
-        if ($package eq 'Scalar::Util') { # XXX hack, requires List::Util which loads the XS
-          svref_2object( \&{"List::Util::bootstrap"} )->save;
+        # issue 57: incomplete xs dependency detection
+        my %hack_xs_detect =
+          ('Scalar::Util'  => 'List::Util',
+           'Sub::Exporter' => 'Params::Util',
+          );
+        if (my $dep = $hack_xs_detect{$package}) {
+          svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
         $init->add("{\tCV *cv;");
