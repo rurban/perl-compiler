@@ -115,35 +115,42 @@ t/cc 		21,29,30,35,41-46
 
 CPAN Modules
 ------------
-See t/modules.t. We only try to compile use module, not the testsuite.
+See t/modules.t:is_todo() We only try to compile use module, not the testsuite.
 We only try B::C so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 From top100:
-5.8.9:     fail 4% Attribute::Handlers B::Hooks::EndOfScope YAML MooseX::Types
-5.11.4-nt: fail 3% Attribute::Handlers File::Temp ExtUtils::Install
-5.12.1-nt: fail 7% LWP Moose Test::Harness Attribute::Handlers Test::Simple File::Temp 
-                   ExtUtils::Install
->5.10 threaded:  ~30% failures
+generally: fail 4% Attribute::Handlers Moose MooseX::Types Class::MOP
+5.6:       fail 11.8% + Storable Template::Stash ExtUtils::Install Class::Accessor 
+                        Sub::Name Filter::Util::Call DateTime::Locale
+5.8.9:     fail 17%   + Test::* File::Temp LWP Module::Build DBI
+           reason: issue58, END block destruction
+5.12:      fail 7% + Module::Build LWP
+5.14       fail 5% + Template::Stash Test::Tester
 
 5.10, 5.12, 5.14 status
 -----------------------
 TODO for B::C
-  dl_init regression, fails for $use_xsloader=1 lately
-  AUTOLOAD goto xsub and SelfLoader esp. on 5.8 (27). 
-    use AutoLoader works okay. (test 27, 31)
-  test 29 non-threaded 5.8 (use IO)
-  ? 5.11.3 test 32 catch evaltry die
-  CV forwarding (old ugly method <5.10, new in work >=5.10)
+  tests 15,28,41,42,43,46
   check t/testcore and testm.sh -t
   see google issues
 
 Fix CC 
-  cc_queue sort 18 ccpp
   several other issues detected (and mostly fixed) by Heinz Knutzen
 
 DONE
 ----
+fixed with 1.30:
+  cc_queue sort 18 ccpp
+  dl_init regression
+  xs_init (soname by context)
+  5.14 support
+  package_pv detection for method_named
+  AUTOLOAD goto xsub and SelfLoader esp. on 5.8 (27). 
+    use AutoLoader works okay. (test 27, 31)
+  >5.11.3 test 32 catch evaltry die
+  fixed test 29 >5.10 DEBUGGING for -O0 (use IO)
+
 fixed xpvio off-by-one error for 5.10 (test 29)
 
 mark a package which is autoloaded from XS

@@ -559,11 +559,11 @@ sub todo_tests_default {
         # push @todo, (39)   if $] > 5.007 and $] < 5.009;
         # fixed with 1.30
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
-        push @todo, (28)   if $what ne 'c_o1';
-        push @todo, (12,16)   if $what =~ /c_o[234]/ and $] >= 5.010;;
+        push @todo, (28)   if $what !~ /c_o[13]/; # -O2 wrong alignment in free
+        push @todo, (12,16)if $what =~ /c_o[234]/ and $] >= 5.010;;
+        # c.t fixed with 1.30
+	push @todo, (29)   if $what =~ /c_o[234]/ and $] >= 5.010 and !$DEBUGGING;
         push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
-        # fixed with 1.30
-	push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
