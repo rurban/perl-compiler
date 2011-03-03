@@ -545,6 +545,7 @@ sub todo_tests_default {
 
     my @todo  = (15,41..43,46); # 8,14-16 fail on 5.00505 (max 20 then)
     push @todo, (103)  if $] < 5.007 or $] >= 5.010;
+    push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
     #push @todo, (15) if !$ITHREADS;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
@@ -561,9 +562,11 @@ sub todo_tests_default {
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
         push @todo, (28)   if $what !~ /c_o[13]/; # -O2 wrong alignment in free
         push @todo, (12,16)if $what =~ /c_o[234]/ and $] >= 5.010;;
+        push @todo, (21)   if $] > 5.011 and $] < 5.013005;
         # c.t fixed with 1.30
-	push @todo, (29)   if $what =~ /c_o[234]/ and $] >= 5.010 and !$DEBUGGING;
-        push @todo, (19)   if $what eq 'c_o2' and $ITHREADS;
+        push @todo, (16,29,44,45) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
+        push @todo, (44,45) if $what =~ /c_o[123]/;
+        push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
