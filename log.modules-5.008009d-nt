@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r938
+# B::C::VERSION = 1.30 r944
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build #TODO < 5.13.8
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO always
+fail LWP #TODO without threads
 pass Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
@@ -56,7 +56,7 @@ pass Sub::Exporter
 fail Test::NoWarnings #TODO 5.8.9
 pass version
 pass Params::Validate
-pass Sub::Name #TODO < 5.13.8
+pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
@@ -66,14 +66,14 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
+fail Class::MOP #TODO always
 fail Moose #TODO always
 fail Test::Deep #TODO 5.8.9
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI #TODO < 5.13.8
+fail DBI #TODO < 5.10
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -85,7 +85,7 @@ fail Test::Warn #TODO 5.8.9
 pass Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope #TODO <5.10 without threads
+pass B::Hooks::EndOfScope
 fail Test::Pod #TODO 5.8.9
 pass Digest::SHA1
 pass namespace::clean
@@ -97,14 +97,14 @@ pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale #TODO < 5.13.8
-pass DateTime #TODO < 5.13.8
+pass DateTime::Locale
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.30 - perl-5.008009d-nt
-# pass  83 / 100 (83.0%)
-# fail  17 / 100 (17.0%)
-# todo  20 /  17 (117.6%)
+# pass  84 / 100 (84.0%)
+# fail  16 / 100 (16.0%)
+# todo  18 /  16 (112.5%)
 # skip   0 / 100 (0.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r938
+# B::C::VERSION = 1.30 r944
 # perlversion = 5.013010d-nt
 # path = /usr/local/bin/perl5.13.10d-nt
 # platform = cygwin 32bit
@@ -26,7 +26,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build #TODO 5.13 without threads
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO always
+fail LWP #TODO without threads
 pass Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
@@ -66,7 +66,7 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
+fail Class::MOP #TODO always
 fail Moose #TODO always
 pass Test::Deep
 pass Carp::Clan
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.30 - perl-5.013010d-nt
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo   6 /   7 (85.7%)
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo   8 /   6 (133.3%)
 # skip   0 / 100 (0.0% not installed)

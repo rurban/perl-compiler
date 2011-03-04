@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r938
+# B::C::VERSION = 1.30 r944
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -6,7 +6,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO < 5.13 with threads
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -29,7 +29,7 @@ pass ExtUtils::ParseXS
 fail Module::Build #TODO < 5.12 with threads
 pass File::Path
 pass XSLoader
-pass MIME::Base64 #TODO 5.8-5.10 with threads
+pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
@@ -41,13 +41,13 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO always
-pass Storable #TODO with threads
+pass LWP
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor #TODO with threads
+pass Class::Accessor
 fail Test::Tester #TODO with threads
 pass Sub::Install
 fail Attribute::Handlers #TODO always
@@ -56,8 +56,8 @@ pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-pass Sub::Name #TODO < 5.13.8
-pass Filter::Util::Call #TODO with threads
+pass Sub::Name
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -66,19 +66,19 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO < 5.13 with threads
+fail Class::MOP #TODO always
 fail Moose #TODO always
 pass Test::Deep
 fail Carp::Clan #TODO 5.10 with threads
 fail Module::Pluggable #TODO 5.8-5.10 with threads
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI #TODO < 5.13.8
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI #TODO < 5.13 with threads
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -87,7 +87,7 @@ pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-pass Digest::SHA1 #TODO < 5.13 !DEBUGGING with threads
+pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
 pass Clone
@@ -96,9 +96,9 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
-fail DateTime::TimeZone
-fail DateTime::Locale #TODO < 5.13.8
-fail DateTime #TODO < 5.13.8
+fail DateTime::TimeZone #TODO 5.10 with threads
+fail DateTime::Locale #TODO 5.10 with threads
+fail DateTime #TODO 5.10 with threads
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
@@ -106,5 +106,5 @@ fail Template::Stash #TODO 5.10 with threads
 # 100 / 100 modules tested with B-C-1.30 - perl-5.010001
 # pass  87 / 100 (87.0%)
 # fail  13 / 100 (13.0%)
-# todo  23 /  13 (176.9%)
+# todo  14 /  13 (107.7%)
 # skip   0 / 100 (0.0% not installed)
