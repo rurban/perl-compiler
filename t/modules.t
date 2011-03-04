@@ -259,6 +259,7 @@ sub is_todo {
   if ($Config{useithreads}) {
     foreach(qw(
       Test::Tester
+      ExtUtils::Install
     )) { return 'with threads' if $_ eq $module; }
     if ($] > 5.007 and $] < 5.012) { foreach(qw(
       Module::Pluggable
@@ -273,10 +274,13 @@ sub is_todo {
     )) { return '5.8-5.10 DEBUGGING with threads' if $_ eq $module; }}
     if ($] >= 5.009 and $] < 5.012) { foreach(qw(
       Carp::Clan
+      Pod::Text
+      Data::Dumper
       Template::Stash
       DateTime
       DateTime::TimeZone
       DateTime::Locale
+      ExtUtils::CBuilder
     )) { return '5.10 with threads' if $_ eq $module; }}
     if ($] < 5.012) { foreach(qw(
       Module::Build
@@ -287,7 +291,6 @@ sub is_todo {
     if ($] < 5.012 and !$DEBUGGING) { foreach(qw(
     )) { return '< 5.13 !DEBUGGING with threads' if $_ eq $module; }}
     if ($] < 5.013) { foreach(qw(
-      ExtUtils::Install
     )) { return '< 5.13 with threads' if $_ eq $module; }}
     if ($] >= 5.012) { foreach(qw(
     )) { return '>=5.12 with threads' if $_ eq $module; }}

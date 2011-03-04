@@ -6,7 +6,7 @@ my $gfail;
 for $t (`cat t/top100`) {
   chomp $t;
   local $Term::ANSIColor::AUTORESET = 1;
-  local @ARGV = grep !/(\.err|bak)$/, "t/modules.t", glob "log.modules-5.0*";
+  local @ARGV = grep !/\.(err|bak)/, "t/modules.t", glob "log.modules-5.0*";
   my ($fail,$f,$f1);
   while (<>) {
     if (!$f or ($f ne $ARGV)) {
