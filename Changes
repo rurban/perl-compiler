@@ -31,6 +31,7 @@
 	no pp_name shortnames in embed.h since 5.13.9, use Perl_pp_name(aTHX).
 	implemented dorassign, fixes issue 45.
 	fixed XSLoader detection, moved use_xsloader to save_unused_subs()
+	skip duplicate cc(pp_sub_*) functions (freebsd 45)
 	added missing END block code (test 28).
 	added B::C::verbose on -v
 	  fixed B::C::verbose crash by adding B::FAKEOP::fake_ppaddr.

@@ -276,6 +276,7 @@ my @cc_todo;       # list of tuples defining what PP code needs to be
                     # saved (e.g. CV, main or PMOP repl code). Each tuple
                     # is [$name, $root, $start, @padlist]. PMOP repl code
                     # tuples inherit padlist.
+my %cc_pp_sub;     # hashed names of pp_sub functions already saved
 my @stack;         # shadows perl's stack when contents are known.
                     # Values are objects derived from class B::Stackobj
 my @pad;           # Lexicals in current pad as Stackobj-derived objects
@@ -2763,8 +2764,14 @@ sub cc_recurse {
   my $start = cc_queue(@_) if @_;
 
   while ( $ccinfo = shift @cc_todo ) {
-    debug "cc(ccinfo): @$ccinfo\n" if $debug{queue};
-    cc(@$ccinfo);
+    if ($cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
+      warn "cc $ccinfo->[0] already defined\n" if $verbose;
+      debug "cc(ccinfo): @$ccinfo already defined\n" if $debug{queue};
+    } else {
+      debug "cc(ccinfo): @$ccinfo\n" if $debug{queue};
+      cc(@$ccinfo);
+      $cc_pp_sub{$ccinfo->[0]}++;
+    }
   }
   return $start;
 }
