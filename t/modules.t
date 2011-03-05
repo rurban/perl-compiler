@@ -241,13 +241,13 @@ sub is_todo {
   if ($] < 5.008009) { foreach(qw(
     ExtUtils::CBuilder
   )) { return '< 5.8.9' if $_ eq $module; }}
-  if ($] =~ /^5.008/) { foreach(qw(
+  if ($] =~ /^5.008/ or $] eq '5.010000') { foreach(qw(
     Test::Harness
     Test::Simple
     Test::Tester
     Test::Exception
     File::Temp
-  )) { return '5.8.x' if $_ eq $module; }}
+  )) { return '5.8.x and 5.10.0' if $_ eq $module; }}
   if ($] == 5.008009) { foreach(qw(
     Test
     Test::Deep
@@ -336,6 +336,7 @@ sub is_skip {
     #}
     if ($Config{useithreads}) { # hangs and crashes threaded since 5.12
       foreach (qw( Moose )) {
+        # Recursive inheritance detected in package 'Moose::Object' at /usr/lib/perl5/5.13.10/i686-debug-cygwin/DynaLoader.pm line 103
 	 return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
       }
     }
