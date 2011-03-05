@@ -7,6 +7,10 @@ BEGIN {
   }
 }
 use Test::More tests => 2;
+use Config;
+
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $ITHREADS  = ($Config{useithreads});
 
 my $name = "ccode29i";
 my $script = <<'EOF';
@@ -45,7 +49,11 @@ unless (-e "$name.plc") {
 $runexe = "$runperl -Mblib -MByteLoader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
-ok($result eq $expected, "'$result' eq '$expected'");
+TODO: {
+  local $TODO = "B::Bytecode issue 29 utf8 perlio"
+    if $] >= 5.012002 and $ITHREADS and $DEBUGGING;
+  ok($result eq $expected, "'$result' eq '$expected'");
+}
 
 END {
   unlink($name, "$name.plc", "$name.pl", "$name.exe")
