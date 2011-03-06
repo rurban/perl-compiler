@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r944
+# B::C::VERSION = 1.30 r950 M
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -16,15 +16,15 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
-pass Pod::Text
+pass Pod::Text #TODO 5.10 with threads
 pass constant
 pass Test
-pass Data::Dumper
+pass Data::Dumper #TODO 5.10 with threads
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install #TODO < 5.13 with threads
+pass ExtUtils::Install #TODO with threads
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+pass ExtUtils::CBuilder #TODO 5.10 with threads
 pass ExtUtils::ParseXS
 fail Module::Build #TODO < 5.12 with threads
 pass File::Path
@@ -106,5 +106,5 @@ fail Template::Stash #TODO 5.10 with threads
 # 100 / 100 modules tested with B-C-1.30 - perl-5.010001
 # pass  87 / 100 (87.0%)
 # fail  13 / 100 (13.0%)
-# todo  14 /  13 (107.7%)
+# todo  17 /  13 (130.8%)
 # skip   0 / 100 (0.0% not installed)

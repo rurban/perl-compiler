@@ -12,7 +12,7 @@
 	fixed method_common package_pv detection in most cases.
 	  still two cases open, without tests. PADOP GV NULL 0x20000, GV RV 0x40802.
 	fixed method_named with >= 1 arg, checking for const PV package_pv (test 35)
-	support GvCV_set and GvGP_set introduced with 5.13.10. [RT#??]
+	support GvCV_set and GvGP_set introduced with 5.13.10. [RT#65630]
 	implement -staticxs for perlcc --staticxs
 	  either link to found static libs or link to shared lib with
 	  fixed LD_LIBRARY_PATH/PATH (nyi in C, just perlcc).
@@ -53,7 +53,7 @@
 	-DA: limcheck PV.
 	verbosity: added nice1 (condense elements).
 	  name SV indices also.
-	* Byteloader: support GvCV_set introduced with 5.13.10 [RT#??]
+	* Byteloader: support GvCV_set introduced with 5.13.10 [RT#65630]
 	* perlcc (2.10): fixed -B -r, -B output and run bytecode.
 	implement --staticxs to workaround DynaLoader problems. use it in t/modules.t
 	  add sopath to PATH on -r. Without -r the sofile should be symlinked so that the
@@ -80,7 +80,8 @@
 	add op_type names, add @svnames, add indices, add ldspecsvx type.
 	* Assembler (0.10): print more flags (as hex) and indices.
 	better limcheck diagnostics (op,sv,pv).
-	* cc_runtime514.h: removed from CORE with 5.13.9. If so, cp it back.
+	* cc_runtime514.h: removed from CORE with 5.13.9. [RT#65628]
+	  If so, cp it back. You might need sudo cp. (unchecked)
 	  Renamed not to pollute tests with older perls.
 	  Expanded PERL_MAGIC_taint 't' for 5.6.
 	* C.xs: added experimental method_cv for the hash-only case, untested.
@@ -91,6 +92,7 @@
 	* t/testc.sh, t/TESTS: fixed wrong test 39 for 5.8, added 47, 104 (reset), 105 (type-attr).
 	* t/testplc.sh: added 47.
 	* t/stash.t: rewritten. allow 5.6, use Test::More, more stable
+	* t/todomod.pl: added. interactive tool to check log.modules reports and fix TODOs
 	* status_upd: recommend and fix ./status_upd -f -q -d
 	  -q -d prints only the actual tests
 	* Changes: added more missing history ca. 1997-2000.

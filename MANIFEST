@@ -118,6 +118,7 @@ t/testplc.sh
 t/testc.sh
 t/testcc.sh
 t/testm.sh
+t/todomod.pl
 t/top100
 TESTS
 Todo
