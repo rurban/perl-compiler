@@ -112,9 +112,12 @@ TODO: {
   cleanup;
 }
 
-is(`$perlcc -t -o a $f`, "", "-t -o file");
-ok(-e $a, "executable");
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
+is(`$perlcc -t -o a $f`, "", "-t -o file"); #44
+TODO: {
+  local $TODO = '-t unsupported with 5.6' if $] < 5.007;
+  ok(-e $a, "executable"); #45
+  is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok"); #46
+}
 cleanup;
 
 is(`$perlcc -T -o a $f`, "", "-T -o file");
@@ -180,7 +183,10 @@ cleanup;
 
 is(`$perlcc -B -oa.plc -e$e`, "", "-B -o -e");
 ok(-e 'a.plc', "a.plc");
-is(`$X -Mblib a.plc`, "ok", "executable plc");
+TODO: {
+  local $TODO = 'yet unsupported 5.6' if $] < 5.007;
+  is(`$X -Mblib a.plc`, "ok", "executable plc"); #76
+}
 cleanup;
 
 #TODO: -m
