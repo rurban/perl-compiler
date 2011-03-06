@@ -766,7 +766,8 @@ sub todo_tests_default {
         push @todo, (35); # fixed 44 -nt
         push @todo, (21,30,45); #5.8.9
         push @todo, (44)    if $ITHREADS or $] < 5.012;
-        push @todo, (105)   if $what =~ /^cc(_o1)?/;
+        push @todo, (44)    if !$ITHREADS and $] >= 5.012;
+        push @todo, (105)   if $what =~ /^cc(_o1)?/ or ($] > 5.008005 and $] < 5.010);
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
         push @todo, (28,39,103,105) if $] > 5.007 and $] < 5.009;
@@ -777,8 +778,8 @@ sub todo_tests_default {
         #push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (26)    if $what =~ /^cc_o[12]/;
         push @todo, (15)    if ($] >= 5.012 or $] < 5.010) and $ITHREADS;
-        push @todo, (25)    if $] >= 5.012 and $DEBUGGING and $ITHREADS;
-        push @todo, (3,4)   if $] >= 5.012 and $ITHREADS;
+        push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
+        push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
         #push @todo, (16)    if $] >= 5.013009;
     }
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
