@@ -1570,6 +1570,8 @@ sub pp_gvsv {
   else {
     $gvsym = $op->gv->save;
   }
+  # Expects GV*, not SV* PL_curpad
+  $gvsym = "(GV*)$gvsym" if $gvsym =~ /PL_curpad/;
   write_back_stack();
   if ( $op->private & OPpLVAL_INTRO ) {
     runtime("XPUSHs(save_scalar($gvsym));");
@@ -1577,8 +1579,6 @@ sub pp_gvsv {
     #push( @stack, $obj );
   }
   else {
-    # Expects GV*, not SV* PL_curpad
-    $gvsym = "(GV*)$gvsym" if $gvsym =~ /PL_curpad/;
     $PERL510
       ? runtime("XPUSHs(GvSVn($gvsym));")
       : runtime("XPUSHs(GvSV($gvsym));");
@@ -1597,7 +1597,7 @@ sub pp_aelemfast {
     my $gvsym;
     if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
       if ($op->can('padix')) {
-        warn "padix\n";
+        #warn "padix\n";
         $gvsym = $pad[ $op->padix ]->as_sv;
       } else {
         $gvsym = 'PL_incgv'; # XXX passes, but need to investigate why. cc test 43 5.10.1
