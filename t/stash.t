@@ -1,43 +1,35 @@
 #! /usr/bin/env perl
 
 BEGIN {
-    if ($ENV{PERL_CORE}){
-	chdir('t') if -d 't';
-	if ($^O eq 'MacOS') {
-	    @INC = qw(: ::lib ::macos:lib);
-	} else {
-	    @INC = '.';
-	    push @INC, '../lib';
-	}
-    } else {
-	unshift @INC, 't';
-    }
+    #if ($ENV{PERL_CORE}){
+    #    chdir('t') if -d 't';
+    #    if ($^O eq 'MacOS') {
+    #        @INC = qw(: ::lib ::macos:lib);
+    #    } else {
+    #        @INC = '.';
+    #        push @INC, '../lib';
+    #    }
+    #} else {
+    #    unshift @INC, 't';
+    #}
     use Config;
     if (($Config{'extensions'} !~ /\bB\b/) ){
         print "1..0 # Skip -- Perl configured without B module\n";
         exit 0;
     }
-    if ($] < 5.007 ){
-        print "1..0 # Skip -- stash tests disabled for 5.6\n";
+    if ($] < 5.007 and $^O eq 'os2'){
+        print "1..0 # Skip -- stash tests disabled for OS2 5.6\n";
         exit 0;
     }
-    if ($^O eq 'MSWin32' and $Config{cc} =~ /^cl/i) {
-        print "1..0 # Skip -- stash tests skipped on MSVC for now\n";
-        exit 0;
-    }
+    #if ($^O eq 'MSWin32' and $Config{cc} =~ /^cl/i) {
+    #    print "1..0 # Skip -- stash tests skipped on MSVC for now\n";
+    #    exit 0;
+    #}
 }
 
-$|  = 1;
-use warnings;
+use Test::More tests => 4;
 use strict;
 use Config;
-
-print "1..1\n";
-
-my $test = 1;
-
-sub ok { print "ok $test\n"; $test++ }
-
 
 my $got;
 my $Is_VMS = $^O eq 'VMS';
@@ -47,32 +39,34 @@ my $path = join " ", map { qq["-I$_"] } @INC;
 $path = '"-I../lib" "-Iperl_root:[lib]"' if $Is_VMS;   # gets too long otherwise
 my $redir = $Is_MacOS ? "" : "2>&1";
 my $cover = $ENV{HARNESS_PERL_SWITCHES} || "";
+my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 
-chomp($got = `$^X $path "-MB::Stash" $cover "-Mwarnings" -e1`);
-
+chomp($got = `$X $path "-MB::Stash" $cover "-Mwarnings" -e1`);
+$got =~ s/Using \w+blib\n// if $] < 5.008001;
 $got =~ s/-u//g;
-
-print "# got = $got\n";
+diag "got = $got";
 
 my @got = map { s/^\S+ //; $_ }
               sort { $a cmp $b }
                    map { lc($_) . " " . $_ }
                        split /,/, $got;
-
-print "# (after sorting)\n";
-print "# got = @got\n";
+diag "(after sorting)";
+diag "got = @got";
+ok (@got > 3, "not empty");
+ok ($got =~ /main,/, "contains main");
+ok ($got =~ /,warnings/, "contains warnings");
 
 @got = grep { ! /^(PerlIO|open)(?:::\w+)?$/ } @got;
 
-print "# (after perlio censorings)\n";
-print "# got = @got\n";
+diag "(after perlio censorings)";
+diag "got = @got";
 
 @got = grep { ! /^Win32$/                     } @got  if $^O eq 'MSWin32';
 @got = grep { ! /^NetWare$/                   } @got  if $^O eq 'NetWare';
 @got = grep { ! /^(Cwd|File|File::Copy|OS2)$/ } @got  if $^O eq 'os2';
 @got = grep { ! /^(Win32|Win32CORE|Cwd|Cygwin)$/} @got if $^O eq 'cygwin';
 @got = grep { ! /^(Devel::Cover)$/            } @got  if $cover =~ /-MDevel::Cover/;
-# freebsd prepends BSDPAN.pm
+# XXX freebsd prepends BSDPAN.pm ?
 @got = grep { ! /^(Exporter::Heavy|strict)$/} @got
   if $^O eq 'freebsd';
 
@@ -84,47 +78,51 @@ if ($Is_VMS) {
     @got = grep { ! /^Socket$/             } @got;
 }
 
-print "# (after platform censorings)\n";
-print "# got = @got\n";
+diag "(after platform censorings)";
+diag "got = @got";
 
 $got = "@got";
 
-my $expected = "attributes Carp Carp::Heavy DB Internals main Regexp utf8 version warnings";
-if ($] < 5.009) {
-    $expected =~ s/version //;
-    $expected =~ s/DB /DB Exporter Exporter::Heavy /;
+my $expected = "attributes Carp Carp::Heavy DB Exporter Exporter::Heavy main Regexp strict warnings";
+if ($] < 5.008001) {
+    $expected = "attributes Carp Carp::Heavy DB Exporter Exporter::Heavy main strict warnings";
 }
 if ($] >= 5.010) {
-    $expected = "attributes Carp Carp::Heavy DB Internals main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
+    $expected = "attributes Carp Carp::Heavy DB Exporter Exporter::Heavy main mro re Regexp strict Tie Tie::Hash warnings";
 }
-if ($] >= 5.012) {
-    $expected = "Carp DB Exporter Internals IO::File IO::Seekable main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
+if ($] >= 5.011002) {
+    $expected = "Carp DB Exporter Exporter::Heavy main mro re Regexp strict Tie Tie::Hash warnings";
+    #Carp DB Exporter main mro re Regexp Tie Tie::Hash Tie::Hash::NamedCapture utf8 version warnings";
 }
-if ($] >= 5.011001 and $] < 5.012) {
+if ($] >= 5.011001 and $] < 5.011004) {
     $expected .= " XS::APItest::KeywordRPN";
 }
-if ($] >= 5.013005) {
-    $expected = "Carp DB Exporter Internals IO::File IO::Seekable main mro re Regexp utf8 version warnings";
+if ($] >= 5.013004) {
+    $expected = "Carp DB Exporter Exporter::Heavy main mro re Regexp strict Tie Tie::Hash warnings";
 }
-if ($^O eq 'freebsd') {
-  for (qw(Internals IO::File IO::Seekable Tie::Hash::NamedCapture version utf8 warnings)) {
-    $expected =~ s/$_ //;
-  }
+if ($] >= 5.013006) {
+    $expected = "Carp DB Exporter Exporter::Heavy main mro re Regexp strict warnings";
 }
 
 {
     no strict 'vars';
-    use vars '$OS2::is_aout';
+    if ($^O eq 'os2') {
+      eval q(use vars '$OS2::is_aout';);
+    }
 }
 
-if ((($Config{static_ext} eq ' ') 
-     || ($Config{static_ext} eq '')
-     || ($Config{static_ext} eq 'Win23CORE' and $^O eq 'cygwin'))
-    && !($^O eq 'os2' and $OS2::is_aout)
-   ) {
-    print "# got      [$got]\n# vs.\n# expected [$expected]\nnot " if $got ne $expected;
-    ok;
-} else {
-    print "ok $test # skipped: one or more static extensions\n"; $test++;
+TODO: {
+  local $TODO = "exact stashes may vary";
+  if ((($Config{static_ext} eq ' ')
+       || ($Config{static_ext} eq '')
+       || ($^O eq 'cygwin' and $Config{static_ext} =~ /^(Cwd )?Win32CORE$/))
+      && !($^O eq 'os2' and $OS2::is_aout)
+     ) {
+    diag "got      [$got]" if $got ne $expected;
+    diag "expected [$expected]" if $got ne $expected;
+    ok($got eq $expected);
+  } else {
+    ok(1,"skip: one or more static extensions");
+  }
 }
 

@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.30	2011-02-28 rurban
+1.30	2011-03-06 rurban
 	dbmopen, cc_runtime.h, perlcc, --staticxs
 
 	* C.pm (1.30): support dbmopen, fixes issue 24.
@@ -90,6 +90,7 @@
 	* t/e_perlcc.t: added to test the new option handling.
 	* t/testc.sh, t/TESTS: fixed wrong test 39 for 5.8, added 47, 104 (reset), 105 (type-attr).
 	* t/testplc.sh: added 47.
+	* t/stash.t: rewritten. allow 5.6, use Test::More, more stable
 	* status_upd: recommend and fix ./status_upd -f -q -d
 	  -q -d prints only the actual tests
 	* Changes: added more missing history ca. 1997-2000.
