@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r944
+# B::C::VERSION = 1.30 r950
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -6,7 +6,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness #TODO 5.8.x
+fail Test::Harness #TODO 5.8.x and 5.10.0
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -14,14 +14,14 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-fail Test::Simple #TODO 5.8.x
+fail Test::Simple #TODO 5.8.x and 5.10.0
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 fail Test #TODO 5.8.9
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO 5.8.x
+fail File::Temp #TODO 5.8.x and 5.10.0
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -36,7 +36,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception #TODO 5.8.x
+fail Test::Exception #TODO 5.8.x and 5.10.0
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -48,7 +48,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO 5.8.x
+fail Test::Tester #TODO 5.8.x and 5.10.0
 pass Sub::Install
 fail Attribute::Handlers #TODO always
 pass Data::OptList

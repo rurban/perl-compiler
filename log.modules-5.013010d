@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install
+fail ExtUtils::Install #TODO with threads
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -106,5 +106,5 @@ fail Template::Stash #TODO 5.13 with threads
 # 98 / 100 modules tested with B-C-1.30 - perl-5.013010d
 # pass  92 /  98 (93.9%)
 # fail   6 /  98 (6.1%)
-# todo   6 /   6 (100.0%)
+# todo   7 /   6 (116.7%)
 # skip   2 / 100 (2.0% not installed)
