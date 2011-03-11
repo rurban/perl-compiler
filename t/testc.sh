@@ -406,7 +406,8 @@ do
     OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')" 
   fi
 done
-CCMD="$CCMD -g3"
+
+test $(perl -V:gccversion) = "gccversion='';" || CCMD="$CCMD -g3"
 if [ -z $OPTIM ]; then OPTIM=-1; fi # all
 
 if [ -z "$QUIET" ]; then
@@ -420,7 +421,8 @@ else
     OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
-    make --silent >/dev/null
+    # gnu make?
+    make --silent >/dev/null || make 2&>1 >/dev/null
 fi
 
 # need to shift the options
