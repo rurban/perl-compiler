@@ -1121,10 +1121,10 @@ sub B::PMOP::save {
   my $gvsym;
   my $ppaddr = $op->ppaddr;
 
-  # under ithreads, OP_PUSHRE.op_replroot is an integer
+  # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
   $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
-  if ( $MULTI && $op->name eq "pushre" ) {
-    $replrootfield = "INT2PTR(OP*,$replrootfield)";
+  if ( $ITHREADS && $op->name eq "pushre" ) {
+    $replrootfield = "INT2PTR(OP*,${replroot})";
   }
   elsif ($$replroot) {
     # OP_PUSHRE (a mutated version of OP_MATCH for the regexp
