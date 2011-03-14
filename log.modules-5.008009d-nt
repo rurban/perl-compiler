@@ -24,7 +24,7 @@ pass File::Spec
 fail File::Temp #TODO 5.8.x and 5.10.0
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build #TODO < 5.13.8
 pass File::Path
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.30 - perl-5.008009d-nt
-# pass  84 / 100 (84.0%)
-# fail  16 / 100 (16.0%)
-# todo  18 /  16 (112.5%)
+# pass  83 / 100 (83.0%)
+# fail  17 / 100 (17.0%)
+# todo  18 /  17 (105.9%)
 # skip   0 / 100 (0.0% not installed)

@@ -646,7 +646,7 @@ sub ctest {
         print "not ok $num #B::$backend failed\n";
         exit;
     }
-    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o$name $name.c";
+    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {
         if ($todo) {
@@ -711,7 +711,7 @@ sub ccompileok {
         print "not ok 1 #B::$backend failed\n";
         exit;
     }
-    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o$name $name.c";
+    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
     my $ok = -e $name or -e "$name.exe";
     if ($todo) {
       TODO: {

@@ -96,9 +96,9 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
-fail DateTime::TimeZone #TODO 5.10 with threads
-fail DateTime::Locale #TODO 5.10 with threads
-fail DateTime #TODO 5.10 with threads
+pass DateTime::TimeZone #TODO 5.10 with threads
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require

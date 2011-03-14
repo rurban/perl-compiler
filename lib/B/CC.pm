@@ -327,6 +327,7 @@ my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
 # perl patchlevel to generate code for (defaults to current patchlevel)
 my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # XXX unused?
+my $MULTI      = $Config{usemultiplicity};
 my $ITHREADS   = $Config{useithreads};
 my $PERL510    = ( $] >= 5.009005 );
 my $PERL511    = ( $] >= 5.011 );
@@ -440,7 +441,7 @@ sub output_runtime {
   # 5.6.2 not, 5.8.9 not. coverage 32
 
   # test 12. Used by entereval + dofile
-  if ($PERL510 or $ITHREADS) {
+  if ($PERL510 or $MULTI) {
     # Threads error Bug#55302: too few arguments to function
     # CALLRUNOPS()=>CALLRUNOPS(aTHX)
     # fixed with 5.11.4
@@ -1542,7 +1543,7 @@ sub pp_sort {
 sub pp_gv {
   my $op = shift;
   my $gvsym;
-  if ($ITHREADS) {
+  if ($MULTI) {
     $gvsym = $pad[ $op->padix ]->as_sv;
     #push @stack, ($pad[$op->padix]);
   }
@@ -1561,7 +1562,7 @@ sub pp_gv {
 sub pp_gvsv {
   my $op = shift;
   my $gvsym;
-  if ($ITHREADS) {
+  if ($MULTI) {
     #debug(sprintf("OP name=%s, class=%s\n",$op->name,class($op))) if $debug{pad};
     debug( sprintf( "GVSV->padix = %d\n", $op->padix ) ) if $debug{pad};
     $gvsym = $pad[ $op->padix ]->as_sv;
@@ -1595,7 +1596,7 @@ sub pp_aelemfast {
     $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
   } else {
     my $gvsym;
-    if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
+    if ($MULTI) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
       if ($op->can('padix')) {
         #warn "padix\n";
         $gvsym = $pad[ $op->padix ]->as_sv;

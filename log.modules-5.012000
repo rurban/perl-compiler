@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r932
+# B::C::VERSION = 1.30 r958
 # perlversion = 5.012000
 # path = /usr/local/bin/perl5.12.0
 # platform = cygwin 32bit
@@ -6,7 +6,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO < 5.13 with threads
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -22,11 +22,11 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install #TODO < 5.13 with threads
+fail ExtUtils::Install #TODO with threads
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+fail Module::Build #TODO < 5.13.8
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -41,13 +41,13 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO always
-pass Storable #TODO with threads
+pass LWP
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor #TODO with threads
+pass Class::Accessor
 fail Test::Tester #TODO with threads
 pass Sub::Install
 fail Attribute::Handlers #TODO always
@@ -56,8 +56,8 @@ pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-pass Sub::Name #TODO < 5.13.8
-pass Filter::Util::Call #TODO with threads
+pass Sub::Name
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -66,19 +66,19 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO < 5.13 with threads
+fail Class::MOP #TODO always
 skip Moose #hangs threaded, $] >= 5.011004
 pass Test::Deep
-pass Carp::Clan #TODO 5.10 with threads
+pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI #TODO < 5.13.8
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI #TODO < 5.13 with threads
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -97,14 +97,14 @@ pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale #TODO < 5.13.8
-pass DateTime #TODO < 5.13.8
+pass DateTime::Locale
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash #TODO 5.10 with threads
+pass Template::Stash
 # 99 / 100 modules tested with B-C-1.30 - perl-5.012000
 # pass  93 /  99 (93.9%)
 # fail   6 /  99 (6.1%)
-# todo  17 /   6 (283.3%)
+# todo   6 /   6 (100.0%)
 # skip   1 / 100 (1.0% not installed)

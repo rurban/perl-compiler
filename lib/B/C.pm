@@ -268,6 +268,7 @@ my @xpvav_sizes;
 my ($max_string_len, $in_endav);
 my %static_core_pkg; #= map {$_ => 1} static_core_packages();
 
+my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $PERL513  = ( $] >= 5.013002 );
@@ -712,7 +713,7 @@ sub B::OP::save {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
       $copsect->add(sprintf("%s, 0, %s, NULL, 0, 0, NULL, NULL",
-			    $op->_save_common, $ITHREADS ? "(char *)NULL" : "Nullhv"));
+			    $op->_save_common, $MULTI ? "(char *)NULL" : "Nullhv"));
     }
     elsif ($PERL510) {
       $copsect->comment("$opsect_common, line, label, seq, warn_int, hints_hash");
@@ -1043,8 +1044,8 @@ sub B::COP::save {
       sprintf(
               "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
               $op->_save_common, $op->line,
-	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
-	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
+	      $MULTI ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
+	      $MULTI ? "(char*)".constpv( $file ) : "Nullgv",
               $op->cop_seq,
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
       )
@@ -1067,8 +1068,8 @@ sub B::COP::save {
     $copsect->comment("$opsect_common, line, label, stash, file, hints, seq, warnings, hints_hash");
     $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, 0, " . "%u, %s, NULL",
 			  $op->_save_common,     $op->line, 'NULL',
-			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
+			  $MULTI ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+			  $MULTI ? "(char*)".constpv( $file ) : "NULL",
 			  $op->cop_seq,
 			  ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )));
     if ($op->label) {
@@ -1083,8 +1084,8 @@ sub B::COP::save {
       sprintf(
 	      "%s, %s, %s, %s, %u, %d, %u, %s %s",
 	      $op->_save_common, cstring( $op->label ),
-	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
+	      $MULTI ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+	      $MULTI ? "(char*)".constpv( $file ) : "NULL",
 	      $op->cop_seq,      $op->arybase,
 	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
 	      ( $PERL56 ? "" : ", 0" )
@@ -1098,13 +1099,13 @@ sub B::COP::save {
   $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
     unless $B::C::optimize_warn_sv;
 
-  push @static_free, "cop_list[$ix]" if $ITHREADS;
+  push @static_free, "cop_list[$ix]" if $MULTI;
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
-  ) if !$optimize_cop and !$ITHREADS;
+  ) if !$optimize_cop and !$MULTI;
   $init->add(
     sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
-  ) if !$ITHREADS;
+  ) if !$MULTI;
 
   savesym( $op, "(OP*)&cop_list[$ix]" );
 }
@@ -1122,8 +1123,8 @@ sub B::PMOP::save {
 
   # under ithreads, OP_PUSHRE.op_replroot is an integer
   $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
-  if ( $ITHREADS && $op->name eq "pushre" ) {
-    $replrootfield = "INT2PTR(OP*,${replroot})";
+  if ( $MULTI && $op->name eq "pushre" ) {
+    $replrootfield = "INT2PTR(OP*,$replrootfield)";
   }
   elsif ($$replroot) {
     # OP_PUSHRE (a mutated version of OP_MATCH for the regexp
@@ -1182,10 +1183,10 @@ sub B::PMOP::save {
         ${ $op->last },    $replrootfield,
         $replstartfield,   $ITHREADS ? $op->pmoffset : 0,
         $op->pmflags,      $op->pmpermflags,
-        $op->pmdynflags,   $ITHREADS ? cstring($op->pmstashpv) : "0"
+        $op->pmdynflags,   $MULTI ? cstring($op->pmstashpv) : "0"
       )
     );
-    if (!$ITHREADS and $op->pmstash) {
+    if (!$MULTI and $op->pmstash) {
       my $stash = $op->pmstash->save;
       $init->add( sprintf( "pmop_list[%d].op_pmstash = %s;", $pmopsect->index, $stash ) );
     }
@@ -1700,7 +1701,7 @@ sub B::PVMG::save {
         # comppadnames needs &PL_sv_undef instead of 0
 	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
 	if (!$pv or !$savesym or $savesym eq 'NULL') {
-	  if ($ITHREADS) {
+	  if ($MULTI) {
 	    $savesym = "NULL";
 	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
 				 $svsect->index ) );
@@ -2411,7 +2412,7 @@ sub B::CV::save {
     		  $$gv, $$cv) if $debug{cv};
   }
   unless ($optimize_cop) {
-    if ($ITHREADS) {
+    if ($MULTI) {
       $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
     }
     else {
@@ -3006,7 +3007,7 @@ sub B::IO::save_data {
   $init->add( "GvSVn( $sym ) = (SV*)$ref;");
 
   # XXX 5.10 non-threaded crashes at this eval_pv. 5.11 crashes threaded. test 15
-  #if (!$PERL510 or $ITHREADS) {   # or ($PERL510 and !$PERL511)
+  #if (!$PERL510 or $MULTI) {   # or ($PERL510 and !$PERL511)
   $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
   $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
   #}
@@ -3183,7 +3184,7 @@ sub output_all {
   print 'Static const char emptystring[] = "\0";',"\n";
   # newXS for core XS needs a filename
   print 'Static const char xsfile[] = "universal.c";',"\n";
-  if ($ITHREADS) {
+  if ($MULTI) {
     print "#define ptr_undef 0\n";
   } else {
     print "#define ptr_undef &PL_sv_undef\n";
@@ -3550,8 +3551,8 @@ EOT
       if ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "    CopFILE_set(&$s, NULL);\n";
-	print "    CopSTASHPV_set(&$s, NULL);\n";
+	print "    CopFILE_set(&$s, NULL);\n" unless $MULTI;
+	print "    CopSTASHPV_set(&$s, NULL);\n" unless $MULTI;
       }
     }
     for (0 .. $hek_index-1) {
@@ -3755,7 +3756,7 @@ EOT
     if ($ITHREADS and $] > 5.007) {
       # XXX init free elems!
       my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
-      print <<EOT;
+      print <<'EOT';
 #ifdef USE_ITHREADS
     for( i = 0; i < $pad_len; ++i ) {
         av_push( PL_regex_padav, newSViv(0) );
@@ -3818,7 +3819,7 @@ EOT
       $dollar_0 =~ s/\\/\\\\/g;
       $dollar_0 = '"' . $dollar_0 . '"';
 
-      print <<EOT;
+      print <<'EOT';
     if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, ${dollar_0});
@@ -3827,7 +3828,7 @@ EOT
 EOT
     }
     else {
-      print <<EOT;
+      print <<'EOT';
     if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, argv[0]);
@@ -4551,7 +4552,7 @@ OPTION:
   } elsif ($B::C::av_init2 and $B::C::av_init) {
     $B::C::av_init = 0;
   }
-  $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $ITHREADS);
+  $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008;
   if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
     warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";

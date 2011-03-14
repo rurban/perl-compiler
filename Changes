@@ -3,6 +3,15 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
+1.31	2011-04-?? rurban
+	multiplicity support for darwin
+	
+	* C.pm (1.31): replace $ITHREADS by $MULTI (darwin),
+	my_perl_destruct: disable CopFILE_set NULL and CopSTASHPV_set NULL on $MULTI,
+	* CC.pm (1.10): replace $ITHREADS by $MULTI (darwin)
+	* t/test.pl: -ofile => -o file (darwin cc)
+
+
 1.30	2011-03-06 rurban
 	dbmopen, cc_runtime.h, perlcc, --staticxs
 
