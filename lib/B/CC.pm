@@ -1543,7 +1543,7 @@ sub pp_sort {
 sub pp_gv {
   my $op = shift;
   my $gvsym;
-  if ($MULTI) {
+  if ($ITHREADS) {
     $gvsym = $pad[ $op->padix ]->as_sv;
     #push @stack, ($pad[$op->padix]);
   }
@@ -1562,7 +1562,7 @@ sub pp_gv {
 sub pp_gvsv {
   my $op = shift;
   my $gvsym;
-  if ($MULTI) {
+  if ($ITHREADS) {
     #debug(sprintf("OP name=%s, class=%s\n",$op->name,class($op))) if $debug{pad};
     debug( sprintf( "GVSV->padix = %d\n", $op->padix ) ) if $debug{pad};
     $gvsym = $pad[ $op->padix ]->as_sv;
@@ -1596,7 +1596,7 @@ sub pp_aelemfast {
     $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
   } else {
     my $gvsym;
-    if ($MULTI) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
+    if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
       if ($op->can('padix')) {
         #warn "padix\n";
         $gvsym = $pad[ $op->padix ]->as_sv;
