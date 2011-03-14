@@ -1044,8 +1044,8 @@ sub B::COP::save {
       sprintf(
               "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
               $op->_save_common, $op->line,
-	      $MULTI ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
-	      $MULTI ? "(char*)".constpv( $file ) : "Nullgv",
+	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
+	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
               $op->cop_seq,
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
       )
@@ -1068,8 +1068,8 @@ sub B::COP::save {
     $copsect->comment("$opsect_common, line, label, stash, file, hints, seq, warnings, hints_hash");
     $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, 0, " . "%u, %s, NULL",
 			  $op->_save_common,     $op->line, 'NULL',
-			  $MULTI ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-			  $MULTI ? "(char*)".constpv( $file ) : "NULL",
+			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
 			  $op->cop_seq,
 			  ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )));
     if ($op->label) {
@@ -1084,8 +1084,8 @@ sub B::COP::save {
       sprintf(
 	      "%s, %s, %s, %s, %u, %d, %u, %s %s",
 	      $op->_save_common, cstring( $op->label ),
-	      $MULTI ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-	      $MULTI ? "(char*)".constpv( $file ) : "NULL",
+	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
+	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
 	      $op->cop_seq,      $op->arybase,
 	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
 	      ( $PERL56 ? "" : ", 0" )
@@ -1099,13 +1099,13 @@ sub B::COP::save {
   $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
     unless $B::C::optimize_warn_sv;
 
-  push @static_free, "cop_list[$ix]" if $MULTI;
+  push @static_free, "cop_list[$ix]" if $ITHREADS;
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
-  ) if !$optimize_cop and !$MULTI;
+  ) if !$optimize_cop and !$ITHREADS;
   $init->add(
     sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
-  ) if !$MULTI;
+  ) if !$ITHREADS;
 
   savesym( $op, "(OP*)&cop_list[$ix]" );
 }
