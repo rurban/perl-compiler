@@ -32,17 +32,20 @@ use Test::More;
 my $staticxs = '--staticxs';
 BEGIN {
   # check whether linking with xs works at all. Try with and without --staticxs
+  if ($^O eq 'darwin') { $staticxs = ''; goto BEGIN_END; }
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  my $result = `$X -Mblib blib/script/perlcc --staticxs -S -oa -e"use Scalar::Util;"`;
-  unless (-e 'a' or -e 'a.out') {
-    my $result = `$X -Mblib blib/script/perlcc -S -oa -e"use Scalar::Util;"`;
+  my $result = `$X -Mblib blib/script/perlcc --staticxs -S -oa -e"use Data::Dumper;"`;
+  my $exe = $^O eq 'MSWin32' ? 'a.exe' : 'a';
+  unless (-e $exe or -e 'a.out') {
+    my $result = `$X -Mblib blib/script/perlcc -S -oa -e"use Data::Dumper;"`;
     unless (-e 'a' or -e 'a.out') {
-      plan skip_all => "perlcc cannot link XS module Scalar::Util. Most likely wrong ldopts.";
+      plan skip_all => "perlcc cannot link XS module Data::Dumper. Most likely wrong ldopts.";
       exit;
     } else {
       $staticxs = '';
     }
   }
+ BEGIN_END:
   unshift @INC, 't';
 }
 
