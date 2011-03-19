@@ -713,7 +713,7 @@ sub B::OP::save {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
       $copsect->add(sprintf("%s, 0, %s, NULL, 0, 0, NULL, NULL",
-			    $op->_save_common, $MULTI ? "(char *)NULL" : "Nullhv"));
+			    $op->_save_common, $ITHREADS ? "(char *)NULL" : "Nullhv"));
     }
     elsif ($PERL510) {
       $copsect->comment("$opsect_common, line, label, seq, warn_int, hints_hash");
@@ -3441,7 +3441,7 @@ sub init_op_warn {
     register int i;
     for( i = 0; i < ${num}; ++i )
     {
-        switch( (int)(${op_list}\[i].cop_warnings) )
+        switch( PTR2IV(${op_list}\[i].cop_warnings) )
         {
         case 1:
             ${op_list}\[i].cop_warnings = pWARN_ALL;
@@ -3756,7 +3756,7 @@ EOT
     if ($ITHREADS and $] > 5.007) {
       # XXX init free elems!
       my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
-      print <<'EOT';
+      print <<EOT;
 #ifdef USE_ITHREADS
     for( i = 0; i < $pad_len; ++i ) {
         av_push( PL_regex_padav, newSViv(0) );
