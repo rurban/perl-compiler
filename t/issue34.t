@@ -20,7 +20,7 @@ sub test {
     print "not ok 1 #B::CC failed\n";
     exit;
   }
-  system "$runperl -Mblib blib/script/cc_harness -q -o$name $name.c";
+  system "$runperl -Mblib blib/script/cc_harness -q -o $name $name.c";
   my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
   ok(-e $runexe, "$runexe exists");
   my $result = `$runexe`;

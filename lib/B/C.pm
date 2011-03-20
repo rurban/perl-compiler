@@ -955,6 +955,9 @@ sub B::SVOP::save {
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
+  if ($MULTI and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/) { # t/testm.sh Test::Pod
+    $is_const_addr = 0;
+  }
   $svopsect->comment("$opsect_common, sv");
   $svopsect->add(
     sprintf( "%s, %s",

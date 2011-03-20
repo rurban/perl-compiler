@@ -24,7 +24,9 @@ sub perlversion {
   return sprintf("%1.6f%s%s",
 		 $],
 		 ($DEBUGGING ? 'd' : ''),
-		 ($Config{useithreads} ? '' : '-nt'));
+		 ($Config{useithreads} ? '' 
+		    : $Config{usemultiplicity} ? '-m' 
+		      : '-nt'));
 }
 
 sub percent {

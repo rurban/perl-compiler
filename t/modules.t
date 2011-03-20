@@ -29,8 +29,9 @@ use Test::More;
 
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
-my $staticxs = '--staticxs';
+my $staticxs = '';
 BEGIN {
+  $staticxs = '--staticxs';
   # check whether linking with xs works at all. Try with and without --staticxs
   if ($^O eq 'darwin') { $staticxs = ''; goto BEGIN_END; }
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
@@ -114,7 +115,9 @@ unless (is_subset) {
   log_diag("path = $^X");
   my $bits = 8 * $Config{ptrsize};
   log_diag("platform = $^O $bits"."bit");
-  log_diag($Config{'useithreads'} ? "threaded perl" : "non-threaded perl");
+  log_diag($Config{'useithreads'} ? "threaded perl" 
+	: $Config{'usemultiplicity'} ? "multi perl" 
+	  : "non-threaded perl");
 }
 
 my $module_count = 0;

@@ -90,7 +90,7 @@ if ($ccflags =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/) {
 $ccflags .= " -ansi -Wall -Wshadow -Wcast-qual -Wwrite-strings"
   if $debug and $Config{cc} =~ /gcc/ and !$quiet;
 $ccflags .= " --no-warn -Wl,--warn-once"
-  if $Config{cc} =~ /gcc/ and $quiet;
+  if $Config{cc} =~ /gcc/ and $quiet and $^O ne 'darwin';
 $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
 $ccflags .= $B::C::Flags::extra_cflags;
 $linkargs .= $B::C::Flags::extra_libs;
