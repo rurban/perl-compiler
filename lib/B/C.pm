@@ -3554,8 +3554,8 @@ EOT
       if ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "    CopFILE_set(&$s, NULL);\n" unless $MULTI;
-	print "    CopSTASHPV_set(&$s, NULL);\n" unless $MULTI;
+	print "    CopFILE_set(&$s, NULL);\n" if $ITHREADS or !$MULTI;
+	print "    CopSTASHPV_set(&$s, NULL);\n" if $ITHREADS or !$MULTI;
       }
     }
     for (0 .. $hek_index-1) {
@@ -3822,7 +3822,7 @@ EOT
       $dollar_0 =~ s/\\/\\\\/g;
       $dollar_0 = '"' . $dollar_0 . '"';
 
-      print <<'EOT';
+      print <<"EOT";
     if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, ${dollar_0});
@@ -3831,7 +3831,7 @@ EOT
 EOT
     }
     else {
-      print <<'EOT';
+      print <<"EOT";
     if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, argv[0]);
@@ -3840,7 +3840,7 @@ EOT
 EOT
     }
 
-    print <<'EOT';
+    print <<"EOT";
     if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
 #ifdef WIN32
