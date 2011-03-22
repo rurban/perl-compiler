@@ -58,4 +58,4 @@ LOOP:
 print "ok";
 EOF
 ctestok(4, "CC", $base, $script4,
-           $B::CC::VERSION < 1.10 ? "B::CC issue 55 non-local exit with last segv" : undef);
+           $B::CC::VERSION < 1.11 ? "B::CC issue 55 non-local exit with last segv" : undef);
