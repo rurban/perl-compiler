@@ -176,6 +176,7 @@ EOT
 
 package B::C;
 use Exporter ();
+use Errno ();
 our %REGEXP;
 
 { # block necessary for caller to work
