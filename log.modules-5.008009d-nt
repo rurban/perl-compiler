@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r950 M
+# B::C::VERSION = 1.30 r973
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -22,9 +22,9 @@ fail Test #TODO 5.8.9
 pass Data::Dumper
 pass File::Spec
 fail File::Temp #TODO 5.8.x and 5.10.0
-pass ExtUtils::Install
+fail ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build #TODO < 5.13.8
 pass File::Path
@@ -42,7 +42,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 fail LWP #TODO without threads
-pass Storable #TODO debugging without threads
+fail Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -56,7 +56,7 @@ pass Sub::Exporter
 fail Test::NoWarnings #TODO 5.8.9
 pass version
 pass Params::Validate
-pass Sub::Name
+fail Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
@@ -66,8 +66,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO always
-fail Moose #TODO always
+pass Class::MOP #TODO always
+pass Moose #TODO always
 fail Test::Deep #TODO 5.8.9
 pass Carp::Clan
 pass Module::Pluggable
@@ -94,17 +94,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+pass MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+fail DateTime::Locale
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.30 - perl-5.008009d-nt
-# pass  83 / 100 (83.0%)
-# fail  17 / 100 (17.0%)
-# todo  18 /  17 (105.9%)
+# pass  82 / 100 (82.0%)
+# fail  18 / 100 (18.0%)
+# todo  18 /  18 (100.0%)
 # skip   0 / 100 (0.0% not installed)

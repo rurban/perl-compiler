@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r950 M
+# B::C::VERSION = 1.30 r973
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -22,7 +22,7 @@ pass Test
 pass Data::Dumper #TODO 5.10 with threads
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install #TODO with threads
+fail ExtUtils::Install #TODO with threads
 pass Text::ParseWords
 pass ExtUtils::CBuilder #TODO 5.10 with threads
 pass ExtUtils::ParseXS
@@ -41,8 +41,8 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
-pass Storable
+fail LWP
+fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -56,8 +56,8 @@ pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-pass Sub::Name
-pass Filter::Util::Call
+fail Sub::Name
+fail Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -73,7 +73,7 @@ fail Carp::Clan #TODO 5.10 with threads
 fail Module::Pluggable #TODO 5.8-5.10 with threads
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+fail DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -96,15 +96,15 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
-pass DateTime::TimeZone #TODO 5.10 with threads
-skip DateTime::Locale
-skip DateTime
+fail DateTime::TimeZone #TODO 5.10 with threads
+fail DateTime::Locale #TODO 5.10 with threads
+fail DateTime #TODO 5.10 with threads
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
 # 100 / 100 modules tested with B-C-1.30 - perl-5.010001
-# pass  87 / 100 (87.0%)
-# fail  13 / 100 (13.0%)
-# todo  17 /  13 (130.8%)
+# pass  81 / 100 (81.0%)
+# fail  19 / 100 (19.0%)
+# todo  17 /  19 (89.5%)
 # skip   0 / 100 (0.0% not installed)

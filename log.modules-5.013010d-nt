@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r950
+# B::C::VERSION = 1.30 r973
 # perlversion = 5.013010d-nt
 # path = /usr/local/bin/perl5.13.10d-nt
 # platform = cygwin 32bit
@@ -66,7 +66,7 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO always
+pass Class::MOP #TODO always
 fail Moose #TODO always
 pass Test::Deep
 pass Carp::Clan
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.30 - perl-5.013010d-nt
-# pass  94 / 100 (94.0%)
-# fail   6 / 100 (6.0%)
-# todo   8 /   6 (133.3%)
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
+# todo   8 /   5 (160.0%)
 # skip   0 / 100 (0.0% not installed)

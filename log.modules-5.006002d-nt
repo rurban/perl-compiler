@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r950
+# B::C::VERSION = 1.30 r973
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -47,7 +47,7 @@ pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-fail Class::Accessor #TODO 5.6
+pass Class::Accessor #TODO 5.6
 pass Test::Tester
 pass Sub::Install
 fail Attribute::Handlers #TODO always
@@ -57,7 +57,7 @@ pass Test::NoWarnings
 pass version
 pass Params::Validate
 fail Sub::Name #TODO 5.6
-fail Filter::Util::Call #TODO 5.6
+pass Filter::Util::Call #TODO 5.6
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.6
 # 85 / 100 modules tested with B-C-1.30 - perl-5.006002d-nt
-# pass  75 /  85 (88.2%)
-# fail  10 /  85 (11.8%)
-# todo  10 /  10 (100.0%)
+# pass  77 /  85 (90.6%)
+# fail   8 /  85 (9.4%)
+# todo  10 /   8 (125.0%)
 # skip  15 / 100 (15.0% not installed)
