@@ -3,6 +3,11 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
+1.32	2011-0.... rurban
+
+	* cc_harness: fixed darwin coredir
+	* perlcc: fixed darwin coredir
+
 1.31	2011-03-21 rurban
 	multiplicity support and more darwin fixes
 

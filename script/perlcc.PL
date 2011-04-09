@@ -504,7 +504,7 @@ sub cc_harness {
     }
     my $libperl = $Config{libperl};
     my $libdir  = $Config{prefix} . "/lib";
-    my $coredir = $ENV{PERL_SRC} || $Config{installarchlib}."/CORE";
+    my $coredir = $ENV{PERL_SRC} || $Config{archlib}."/CORE";
     if ($extra_libs) {
         # splice extra_libs after $Config{ldopts} before @archives
         my $i_ldopts = index($ldopts, $ldflags);

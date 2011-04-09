@@ -238,7 +238,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 
 use Config;
 use strict;

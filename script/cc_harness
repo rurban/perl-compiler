@@ -1,7 +1,7 @@
 #!perl
 use Config;
 
-my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
+my $coredir = $ENV{PERL_SRC} || "$Config{archlib}/CORE"; # XXX was installarchlib
 my $libdir  = "$Config{prefix}/lib";
 my $useshrplib = $Config{useshrplib};
 my $linkargs;
