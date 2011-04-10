@@ -218,21 +218,29 @@ $byterun_c : Makefile bytecode.pl @headers
 $byterun_h : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
 ";
-    if ($] > 5.013007 and !-e $cc_runtime_h) {
-        $result .= "
-# This is the best location
-$cc_runtime_h : cc_runtime514.h
-	\$(CP) cc_runtime514.h $cc_runtime_h
-
-test :: $cc_runtime_h
-";
-    } elsif ($] > 5.009) {
+    if ($] > 5.009) {
         $result .= "\ntest :: subdirs-test\n\n";
     }
     if ($Config{make} eq 'mingw32-make') { # mingw32 make different to msys make
         $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
     }
     $result;
+}
+
+sub install {
+    my $result = shift->SUPER::install(@_);
+    if ($] > 5.013007 and !-e File::Spec->catfile($headerpath, 'cc_runtime.h')) {
+        $result =~ s/install :: pure_install doc_install/install :: pure_install doc_install ccinc_install/;
+	$result .= '
+ccinc_install :: $(PERL_INC)/cc_runtime.h
+
+$(PERL_INC)/cc_runtime.h : cc_runtime514.h
+	$(NOECHO) $(MOD_INSTALL) 
+	    	read $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist
+		write $(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist
+		cc_runtime514.h $@
+';
+    }
 }
 
 # Local Variables:

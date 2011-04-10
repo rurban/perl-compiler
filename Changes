@@ -3,8 +3,11 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.32	2011-0.... rurban
+1.32	2011-04-?? rurban
 
+	* Makefile.PL: move cc_runtime.h installation to make install step
+	  (sudo). tests on darwin gcc ok, does use -I.
+	* cc_runtime.h: renamed from cc_runtime514.h 
 	* cc_harness: fixed darwin coredir
 	* perlcc: fixed darwin coredir
 
