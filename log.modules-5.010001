@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r973
+# B::C::VERSION = 1.32 r979
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 fail Storable
 pass base
 pass List::MoreUtils
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
-# 100 / 100 modules tested with B-C-1.30 - perl-5.010001
-# pass  81 / 100 (81.0%)
-# fail  19 / 100 (19.0%)
-# todo  17 /  19 (89.5%)
+# 100 / 100 modules tested with B-C-1.32 - perl-5.010001
+# pass  82 / 100 (82.0%)
+# fail  18 / 100 (18.0%)
+# todo  17 /  18 (94.4%)
 # skip   0 / 100 (0.0% not installed)
