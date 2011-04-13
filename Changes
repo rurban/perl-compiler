@@ -6,10 +6,11 @@
 1.32	2011-04-?? rurban
 
 	* Makefile.PL: move cc_runtime.h installation to make install step
-	  (sudo). tests on darwin gcc ok, does use -I.
+	  (sudo). Tested ok on darwin gcc, does use -I. internally.
 	* cc_runtime.h: renamed from cc_runtime514.h 
 	* cc_harness: fixed darwin coredir
-	* perlcc: fixed darwin coredir
+	* perlcc (2.11): fixed darwin coredir.
+	omit darwin linking to dynamic .bundle - generate .a via libtool
 
 1.31	2011-03-21 rurban
 	multiplicity support and more darwin fixes

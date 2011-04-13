@@ -1,13 +1,14 @@
 # B::Bytecode.pm - The bytecode compiler (.plc), loaded by ByteLoader
+#
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
 # Copyright (c) 2008-2011 Reini Urban <rurban@cpan.org>. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
-# Reviving 5.6 support here is work in progress:
-#   So far the original is used instead, even if the list of failed tests
-#   is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
+# Reviving 5.6 support here is work in progress, and not yet enabled.
+# So far the original is used instead, even if the list of failed tests
+# is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
 
 package B::Bytecode;
 
@@ -48,8 +49,8 @@ use B::Concise;
 
 my $PERL56  = ( $] <  5.008001 );
 my $PERL510 = ( $] >= 5.009005 );
-my $PERL511 = ( $] >= 5.011 );
-my $PERL513 = ( $] >= 5.013002 );
+my $PERL512 = ( $] >= 5.011 );
+#my $PERL514 = ( $] >= 5.013002 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 our ($quiet, %debug);
 my ( $varix, $opix, $savebegins, %walked, %files, @cloop );
@@ -413,7 +414,7 @@ sub B::PV::bsave {
 sub B::IV::bsave {
   my ( $sv, $ix ) = @_;
   return $sv->B::RV::bsave($ix)
-    if $PERL511 and $sv->FLAGS & B::SVf_ROK;
+    if $PERL512 and $sv->FLAGS & B::SVf_ROK;
   $sv->B::NULL::bsave($ix);
   if ($PERL56) {
     asm $sv->needs64bits ? "xiv64" : "xiv32", $sv->IVX;
@@ -936,7 +937,7 @@ sub B::PADOP::bsave {
   $op->B::OP::bsave($ix);
 
   # XXX crashed in 5.11 (where, why?)
-  #if ($PERL511) {
+  #if ($PERL512) {
   asm "op_padix", $op->padix;
   #}
 }

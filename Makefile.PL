@@ -6,7 +6,8 @@ use 5.006;
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 # generate lib/B/Asmdata.pm beforehand
-system($^X,"bytecode.pl");
+# my $X = $^X =~ / / ? qq("$^X") : $^X;
+system($^X, "bytecode.pl");
 
 my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
 my $have_independent_comalloc = &check_independent_comalloc;
@@ -107,8 +108,8 @@ sub try_compile {
     my $testc = shift;
     my $libs = shift;
     unless (open PROG, ">", "test.c") {
-	print ("Can't write test.c\n");
-	return 0;
+        print ("Can't write test.c\n");
+        return 0;
     }
     print PROG $testc;
     close PROG;

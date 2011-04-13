@@ -49,6 +49,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.08, Reini Urban, 2010-07-30 21:30:33
 # Version 2.09, Reini Urban, 2010-10-11 13:54:52
 # Version 2.10, Reini Urban, 2011-02-11 22:58:37
+# Version 2.11, Reini Urban, 2011-04-11 20:16:00
 
 use strict;
 use warnings;
@@ -63,7 +64,7 @@ use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.10;
+our $VERSION = 2.11;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -115,7 +116,6 @@ sub choose_backend {
     $Backend = 'CC' if opt(O);
 }
 
-
 sub generate_code {
 
     vprint 0, "Compiling $Input";
@@ -153,7 +153,7 @@ sub run_code {
         if ($^O =~ /^MSWin32|msys|cygwin$/) {
             $ENV{PATH} .= $path;
             vprint 0, "PATH=\$PATH$path";
-        } else {
+        } elsif ($^O ne 'darwin') {
             $ENV{LD_LIBRARY_PATH} .= $path;
             vprint 0, "LD_LIBRARY_PATH=\$LD_LIBRARY_PATH$path";
         }
@@ -416,19 +416,36 @@ sub compile_cstyle {
         _die("$Input did not compile, which can't happen:\n@error\n");
     } else {
         my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
-	@error = grep { !/^$i syntax OK$/o } @error;
-	warn "$0: Unexpected compiler output\n@error" if @error and opt(v)<5;
-	warn "@error" if @error and opt(v)>4;
+        @error = grep { !/^$i syntax OK$/o } @error;
+        warn "$0: Unexpected compiler output\n@error" if @error and opt(v)<5;
+        warn "@error" if @error and opt(v)>4;
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
     if ($staticxs and open(XS, "<", $cfile.".lst")) {
+        my $dylib;
         while (<XS>) {
             my ($s, $l) = m/^([^\t]+)(.*)$/;
             $stash .= ",-u$s";
-            $extra_libs .= " ".substr($l,1) if $l;
+            if ($l) {
+                $l = substr($l,1);
+                if ($^O eq 'darwin' and $l =~/\.bundle$/) {
+                    $dylib = $l; $dylib =~ s/\.bundle$/.a/;
+                    $dylib = basename($dylib) unless -w $dylib;
+                    if (-e $dylib) {
+                        vprint 2, "Using static ".$dylib;
+                    } else {
+                        vprint 1, "Creating static ".$dylib;
+                        vprint 5, "libtool -static ".$l." -o ".$dylib;
+                        system("libtool","-static",$l,"-o",$dylib);
+                    }
+                    $l = "./".$dylib;
+                }
+                $extra_libs .= " ".$l;
+            }
         }
         close XS;
+        $extra_libs = "-L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
         vprint 1, "staticxs $stash $extra_libs";
     }
 
@@ -701,7 +718,6 @@ sub check_perl {
     if (/^#!/ && !/perl/) {
         _die("$file is a ", /^#!\s*(\S+)/, " script, not perl\n");
     }
-
 }
 
 # File spawning and error collecting
@@ -768,8 +784,7 @@ sub run {
     vprint -1, "r time: $elapsed" if opt('time');
 }
 
-sub interruptrun
-{
+sub interruptrun {
     my (@commands) = @_;
 
     my $command = join('', @commands);
@@ -785,16 +800,14 @@ sub interruptrun
 	  $Config{'osname'} ne 'MSWin32' &&
 	  $command =~ m"(^|\s)perlcc\s");
 
-    eval
-    {
+    eval {
          local($SIG{ALRM}) = sub { die "INFINITE LOOP"; };
          alarm($ENV{PERLCC_TIMEOUT}) if ($needalarm);
 	 $text = join('', <FD>);
 	 alarm(0) if ($needalarm);
     };
 
-    if ($@)
-    {
+    if ($@) {
         eval { kill 'HUP', $pid };
         vprint 0, "SYSTEM TIMEOUT (infinite loop?)\n";
     }

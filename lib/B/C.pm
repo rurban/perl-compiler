@@ -199,6 +199,7 @@ use B
   class cchar svref_2object compile_stats comppadlist hash
   threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
   HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
+
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
@@ -272,8 +273,8 @@ my %static_core_pkg; #= map {$_ => 1} static_core_packages();
 my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-my $PERL513  = ( $] >= 5.013002 );
-my $PERL511  = ( $] >= 5.011 );
+my $PERL514  = ( $] >= 5.013002 );
+my $PERL512  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
 my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
 # Thanks to Mattia Barbon for the C99 tip to init any union members
@@ -300,7 +301,7 @@ my @op_sections = \(
   $listopsect, $logopsect,  $loopsect, $opsect,
   $pmopsect,   $pvopsect,   $svopsect, $unopsect
 );
-# push @op_sections, ($resect) if $PERL511;
+# push @op_sections, ($resect) if $PERL512;
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
@@ -325,7 +326,7 @@ my $OP_DBMOPEN = opnumber('dbmopen');
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
 $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
-$OP_COP{ opnumber('dbstate') }  = 1 unless $PERL511;
+$OP_COP{ opnumber('dbstate') }  = 1 unless $PERL512;
 warn %OP_COP if $debug{cops};
 
 # 1. called from method_named, so hashp should be defined
@@ -368,7 +369,7 @@ sub svop_or_padop_pv {
       goto missing if $rv->isa("B::PVMG");
       return $rv->STASH->NAME;
     } else {
-    missing:
+  missing:
       if ($op->name ne 'method_named') {
 	# Called from some svop before method_named. no magic pv string, so a method arg.
 	# The first const pv as method_named arg is always the $package_pv.
@@ -421,13 +422,13 @@ sub savere {
   my $pv    = $re;
   my $len   = length $pv;
   my $pvmax = length( pack "a*", $pv ) + 1;
-  if ($PERL513) {
+  if ($PERL514) {
     $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
   }
-  elsif ( 0 and $PERL511 ) {
+  elsif ( 0 and $PERL512 ) {
     # TODO Fill in at least the engine pointer? Or let CALLREGCOMP do that?
     $orangesect->add(
       sprintf(
@@ -446,7 +447,7 @@ sub savere {
     # BUG! Should be the same as newSVpvn($resym, $relen) but is not
     #$sym = sprintf("re_list[%d]", $re_index++);
     #$resect->add(sprintf("0,0,0,%s", cstring($re)));
-    my $s1 = ($PERL513 ? "NULL," : "") . "{0}, %u, %u";
+    my $s1 = ($PERL514 ? "NULL," : "") . "{0}, %u, %u";
     $xpvsect->add( sprintf( $s1, $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
@@ -573,7 +574,7 @@ sub save_hek {
 sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
-  $ivdformat =~ s/"//g;
+  $ivdformat =~ s/"//g; #" poor editor
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
   # UL if > INT32_MAX = 2147483647
   my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
@@ -710,7 +711,7 @@ sub B::OP::save {
       }
       return savesym( $op, $op->next->save );
     }
-    if ($PERL511) {
+    if ($PERL512) {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
       $copsect->add(sprintf("%s, 0, %s, NULL, 0, 0, NULL, NULL",
@@ -849,7 +850,7 @@ sub B::LISTOP::save {
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
   if ($op->type == $OP_DBMOPEN) {
-    # XXX resolve it at compile-time, not at run-time
+    # resolves it at compile-time, not at run-time
     # mark_package('AnyDBM_File') does too much, just bootstrap the single ISA
     require AnyDBM_File;
     my $dbm = $AnyDBM_File::ISA[0];
@@ -1040,7 +1041,7 @@ sub B::COP::save {
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
-  if ($PERL511) {
+  if ($PERL512) {
     # cop_label now in hints_hash (Change #33656)
     $copsect->comment(
       "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
@@ -1278,7 +1279,7 @@ sub B::UV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  if ($PERL513) {
+  if ($PERL514) {
     $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%luU}", $sv->UVX ) );
   } elsif ($PERL510) {
     $xpvuvsect->add( sprintf( "{0}, 0, 0, {%luU}", $sv->UVX ) );
@@ -1304,7 +1305,7 @@ sub B::IV::save {
   return $sym if defined $sym;
   # Since 5.11 the RV is no special SV object anymore, just a IV (test 16)
   my $svflags = $sv->FLAGS;
-  if ($PERL511 and $svflags & SVf_ROK) {
+  if ($PERL512 and $svflags & SVf_ROK) {
     return $sv->B::RV::save;
   }
   if ($svflags & SVf_IVisUV) {
@@ -1317,7 +1318,7 @@ sub B::IV::save {
       warn "warning: IV !IOK sv_list[$i]";
     }
   }
-  if ($PERL513) {
+  if ($PERL514) {
     $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", ivx $sv->IVX ) );
   } elsif ($PERL510) {
     $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", ivx $sv->IVX ) );
@@ -1347,7 +1348,7 @@ sub B::NV::save {
   $nv .= '.00' if $nv =~ /^-?\d+$/;
   # IVX is invalid in B.xs and unused
   my $iv = $sv->FLAGS & SVf_IOK ? $sv->IVX : 0;
-  if ($PERL513) {
+  if ($PERL514) {
     $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
     $xpvnvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}, {%s}", $iv, $nv ) );
   } elsif ($PERL510) { # not fixed by NV isa IV >= 5.8
@@ -1416,7 +1417,7 @@ sub B::PVLV::save {
     ? constpv($pv) : savepv($pv);
   $pvsym = "(char*)$pvsym";# if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
-  if ($PERL513) {
+  if ($PERL514) {
     $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
        sprintf("Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %u, %u, %u, Nullsv, %s",
@@ -1470,7 +1471,7 @@ sub B::PVIV::save {
   }
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
-  if ($PERL513) {
+  if ($PERL514) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
     $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $len, $pvmax, ivx($sv->IVX) ) ); # IVTYPE long
   } elsif ($PERL510) {
@@ -1518,7 +1519,7 @@ sub B::PVNV::save {
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
   my $uvuformat = $Config{uvuformat};
-  $uvuformat =~ s/"//g;
+  $uvuformat =~ s/"//g;	#" poor editor
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
     my $sval = sprintf("%g", $nvx);
@@ -1539,7 +1540,7 @@ sub B::PVNV::save {
   }
   if ($PERL510) {
     # For some time the stringification works of NVX double to two ints worked ok.
-    if ($PERL513) {
+    if ($PERL514) {
       $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
       $xpvnvsect->add(sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $len, $pvmax, $ivx, $nvx) );
     } else {
@@ -1659,7 +1660,7 @@ sub B::PV::save {
     #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
     #  $init->add( sprintf( "$sym = (GV*)newSVpvn_share();" ));
     #}
-    $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL513 ? "Nullhv, " : "", $len, $pvmax ) );
+    $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "(char*)ptr_undef"));
@@ -1721,7 +1722,7 @@ sub B::PVMG::save {
       $ivx = $sv->IVX; # both apparently unused
       $nvx = $sv->NVX;
     }
-    if ($PERL513) {
+    if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
       $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%ld}, {%s}",
 			      $len, $pvmax, $ivx, $nvx));
@@ -2279,7 +2280,7 @@ sub B::CV::save {
     my ( $pvsym, $len ) = save_hek($pv);
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
-    if ($PERL513) {
+    if ($PERL514) {
       my $xpvc = sprintf
 	# stash magic cur len cvstash
 	("Nullhv, {0}, %u, %u, %s, "
@@ -2396,7 +2397,7 @@ sub B::CV::save {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
-    if ($PERL513) {
+    if ($PERL514) {
       $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
       # since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted)
       # assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
@@ -2710,7 +2711,7 @@ sub B::AV::save {
   $fill = -1 if $@;    # catch error in tie magic
 
   my $alloc;
-  if ($PERL513) {
+  if ($PERL514) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
     my $line = "Nullhv, {0}, -1, -1, 0";
     $line = "Nullhv, {0}, $fill, $fill, 0" if $B::C::av_init or $B::C::av_init2;
@@ -2724,7 +2725,7 @@ sub B::AV::save {
     # 5.9.4+: nvu fill max iv mg stash
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
     $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
-    $line = "Nullhv, {0}, $fill, $fill, NULL" if $PERL513;
+    $line = "Nullhv, {0}, $fill, $fill, NULL" if $PERL514;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
@@ -2842,7 +2843,7 @@ sub B::AV::save {
       $init->add( "}" );
     }
     # With -fav-init faster initialize the array as the initial av_extend()
-    # is very expensive
+    # is very expensive.
     # The problem was calloc, not av_extend.
     # Since we are always initializing every single element we don't need
     # calloc, only malloc. wmemset'ting the pointer to PL_sv_undef
@@ -2933,7 +2934,7 @@ sub B::HV::save {
 
   # It's just an ordinary HV
   if ($PERL510) {
-    if ($PERL513) { # fill removed with 5.13.1
+    if ($PERL514) { # fill removed with 5.13.1
       $xpvhvsect->comment( "stash mgu max keys" );
       $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
 			       $hv->MAX, 0 ));
@@ -3011,7 +3012,7 @@ sub B::IO::save_data {
   $init->add( "GvSVn( $sym ) = (SV*)$ref;");
 
   # XXX 5.10 non-threaded crashes at this eval_pv. 5.11 crashes threaded. test 15
-  #if (!$PERL510 or $MULTI) {   # or ($PERL510 and !$PERL511)
+  #if (!$PERL510 or $MULTI) {   # or ($PERL510 and !$PERL512)
   $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
   $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
   #}
@@ -3030,7 +3031,7 @@ sub B::IO::save {
     $pvsym = 'NULL';
     $len = 0;
   }
-  if ($PERL513) {
+  if ($PERL514) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     # IFP in sv.sv_u.svu_fp
     $xpviosect->comment("STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, page_len, ..., type, flags");
@@ -3291,7 +3292,7 @@ typedef struct svpv {
 } SVPV;
 EOT
   }
-  if ($PERL511) {
+  if ($PERL512) {
     print "typedef struct p5rx RE;\n";
   }
   elsif ($PERL510) {

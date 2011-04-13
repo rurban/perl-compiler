@@ -8,7 +8,7 @@ use Config;
 
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-my $exe = $^O =~ /MSWin32|cygwin/ ? 'a.exe' : 'a.out';
+my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : 'a.out';
 my $a   = $^O eq 'MSWin32' ? 'a.exe' : 'a';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 #my $o = '';
@@ -44,7 +44,7 @@ is(`$perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static"));
 cleanup;
 
 TODO: {
-  local $TODO = '--staticxs is experimental'; # fails 5.8 only
+  local $TODO = '--staticxs is experimental'; # fails 5.8 and darwin only
   is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs"); #13
   ok(-e $exe, "keep executable"); #14
 }
@@ -129,14 +129,14 @@ cleanup;
 isnt(`$perlcc --Wb=-fno-fold,-v -o a $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
 TODO: {
-  local $TODO = "catch STDERR not STDOUT";# fails freebsd only
+  local $TODO = "catch STDERR not STDOUT"; # fails freebsd only
   like(`$perlcc -B --Wb=-DG,-v -o a $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
 }
 cleanup;
 is(`$perlcc -Wb=-O1 -r $f`, "ok", "old-style -Wb=-O1");
 
-# perlcc must be verbose
+# perlcc verboseness
 isnt(`$perlcc -v 1 -o a $f`, "", "-v 1 -o file");
 isnt(`$perlcc -v1 -o a $f`, "", "-v1 -o file");
 isnt(`$perlcc -v2 -o a $f`, "", "-v2 -o file");
