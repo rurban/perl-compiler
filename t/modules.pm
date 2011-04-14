@@ -121,8 +121,8 @@ sub get_module_list {
     close SAVEOUT;
   }
 
-  if (&is_subset) {
-    log_diag("testing a random subset of the top100 modules");
+  if (&is_subset and @modules > 10) {
+    log_diag("testing a random subset of the $module_list modules");
     @modules = random_sublist(@modules);
   }
 
@@ -132,6 +132,7 @@ sub get_module_list {
 sub random_sublist {
   my @modules = @_;
   my %sublist;
+  return 1 if scalar(@modules) < 2;
   while (keys %sublist < 10) {
     my $m = $modules[int(rand(scalar @modules))];
     next unless $modules{$m}; # Don't random test uninstalled module
