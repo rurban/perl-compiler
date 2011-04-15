@@ -330,18 +330,18 @@ my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # XXX unused?
 my $MULTI      = $Config{usemultiplicity};
 my $ITHREADS   = $Config{useithreads};
 my $PERL510    = ( $] >= 5.009005 );
-my $PERL511    = ( $] >= 5.011 );
+my $PERL512    = ( $] >= 5.011 );
 
 my $SVt_PVLV = $PERL510 ? 10 : 9;
 my $SVt_PVAV = $PERL510 ? 11 : 10;
 # use sub qw(CXt_LOOP_PLAIN CXt_LOOP);
-if ($PERL511) {
+if ($PERL512) {
   sub CXt_LOOP_PLAIN {5} # CXt_LOOP_FOR CXt_LOOP_LAZYSV CXt_LOOP_LAZYIV
 } else {
   sub CXt_LOOP {3}
 }
 sub CxTYPE_no_LOOP  {
-  $PERL511 
+  $PERL512 
     ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 )
     : $_[0]->{type} != 3
 }
@@ -2439,7 +2439,7 @@ sub enterloop {
   push(
     @cxstack,
     {
-      type => $PERL511 ? CXt_LOOP_PLAIN : CXt_LOOP,
+      type => $PERL512 ? CXt_LOOP_PLAIN : CXt_LOOP,
       op => $op,
       "label" => $curcop->[0]->label,
       nextop  => $nextop,
@@ -2460,7 +2460,7 @@ sub enterloop {
     # XXX = GIMME_V fails on freebsd7 5.8.8 (28)
     # = block_gimme() fails on the rest, but passes on freebsd7
     runtime "gimme = GIMME_V;"; # XXX
-    if ($PERL511) {
+    if ($PERL512) {
       runtime('ENTER_with_name("loop1");',
               'SAVETMPS;',
               'ENTER_with_name("loop2");',

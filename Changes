@@ -10,7 +10,7 @@
 	* cc_runtime.h: renamed from cc_runtime514.h 
 	* cc_harness: fixed darwin coredir
 	* perlcc (2.11): fixed darwin coredir.
-	omit darwin linking to dynamic .bundle - generate .a via libtool
+	  omit darwin linking to dynamic .bundle - generate .a via libtool
 
 1.31	2011-03-21 rurban
 	multiplicity support and more darwin fixes
@@ -67,7 +67,7 @@
 	be less chatty with compiling bblocks.
 	light layout cleanup of generated code sections.
 	added Vishal Bhatia <vishal at deja.com> to AUTHORS.
-	* Bytecode.pm (1.30): support dbmopen, fixes issue 24.
+	* Bytecode.pm (1.10): support dbmopen, fixes issue 24.
 	re-added -m, compile as module to .pmc
 	store AV elems for non-tied AV->MAGICAL >5.6 (i.e. @ISA, ...) (new test 47).
 	-DA: limcheck PV.
