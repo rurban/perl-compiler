@@ -37,14 +37,14 @@ QOCMD=${QOCMD}${v513}
 
 function pass {
     #echo -n "$1 PASS "
-    echo -e -n "\e[1;32mPASS \e[0;0m"
+    echo -e -n "\033[1;32mPASS \033[0;0m"
     #shift
     echo $*
     echo
 }
 function fail {
     #echo -n "$1 FAIL "
-    echo -e -n "\e[1;31mFAIL \e[0;0m"
+    echo -e -n "\033[1;31mFAIL \033[0;0m"
     #shift
     echo $*
     echo
