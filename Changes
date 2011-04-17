@@ -5,6 +5,8 @@
 
 1.32	2011-04-?? rurban
 
+	* C.pm (1.32): check PERL_TRACK_MEMPOOL for AV malloc (25)
+	  fixed init chunk splitting for CV and -fav-init2 (if >10000 lines)
 	* Makefile.PL: move cc_runtime.h installation to make install step
 	  (sudo). Tested ok on darwin gcc, does use -I. internally.
 	* cc_runtime.h: renamed from cc_runtime514.h 

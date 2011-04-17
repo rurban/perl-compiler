@@ -12,7 +12,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 
 #use 5.008;
 use B qw(class main_cv main_root main_start

@@ -2621,10 +2621,7 @@ sub B::GV::save {
       if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
         warn "Boot $package, XS alias of $fullname to $origname\n" if $debug{pkg};
-        if (0) { my $s = $package;
-         $s =~ s/::/\//g;
-         require "$s.pm";
-        }
+        if (0) { my $s = $package; $s =~ s/::/\//g; require "$s.pm"; }
         mark_package($package);
         {
           no strict 'refs';
@@ -2640,11 +2637,10 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-        $init->add("{\tCV *cv;");
-        $init->add("\tcv = get_cv($origname,TRUE);");
-        $init->add("\tGvCV_set($sym, cv);");
-        $init->add("\tSvREFCNT_inc((SV *)cv);");
-        $init->add("}");
+        $init->add("{\tCV *cv;
+		cv = get_cv($origname,TRUE);
+		GvCV_set($sym, cv);
+		SvREFCNT_inc((SV *)cv); }");
       }
       else {
         # TODO: may need fix CvGEN if >0 to re-validate the CV methods
@@ -2825,22 +2821,20 @@ sub B::AV::save {
     if ($B::C::av_init2) {
       my $i = $av_index;
       $xpvav_sizes[$i] = $fill;
-      $init->add("{",
-		 "\tSV **svp = avchunks[$i];",
-                 "\tAV *av = $sym;");
-      $init->add("\tregister int gcount;") if $count;
+      my $init_add = "{ SV **svp = avchunks[$i]; AV *av = $sym;\n";
+      $init_add .= "\tregister int gcount;\n" if $count;
       if ($fill > -1) {
         if ($PERL510) {
-          $init->add("\tAvALLOC(av) = svp;",
-                     "\tAvARRAY(av) = svp;");
+          $init_add .= "\tAvALLOC(av) = svp;\n".
+                       "\tAvARRAY(av) = svp;\n";
         } else {
-          $init->add("\tAvALLOC(av) = svp;",
-                     # XXX Dirty hack from av.c:Perl_av_extend()
-                     "\tSvPVX(av) = (char*)svp;");
+          $init_add .= "\tAvALLOC(av) = svp;\n" .
+                       # XXX Dirty hack from av.c:Perl_av_extend()
+                       "\tSvPVX(av) = (char*)svp;";
         }
       }
-      $init->add( substr( $acc, 0, -2 ) );
-      $init->add( "}" );
+      $init_add .= substr( $acc, 0, -2 );
+      $init->add( $init_add . "}" );
     }
     # With -fav-init faster initialize the array as the initial av_extend()
     # is very expensive.

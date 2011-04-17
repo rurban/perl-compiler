@@ -105,8 +105,8 @@ if [ -n "$1" ]; then
 	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
 	    if [ "${COPTS/,-D/}" != "$COPTS" ]; then
               COPTS="${COPTS:1}"
-	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print 'ok'\""
-	      $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "use $1; print 'ok'"
+	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print q(ok)\""
+	      $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "use $1; print q(ok)"
 	      if [ -f $name.c ]; then
 		echo $PERL $Mblib script/cc_harness -d -g3 -o$name $name.c
 		$PERL $Mblib script/cc_harness -d -g3 -o$name $name.c
@@ -116,8 +116,8 @@ if [ -n "$1" ]; then
 		fi
 	      fi
 	    else
-	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print 'ok'\"" -o $name
-	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print 'ok'" -o $name
+	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print q(ok)\"" -o $name
+	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print q(ok)" -o $name
               test -f a.out.c && mv a.out.c $name.c
             fi
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
