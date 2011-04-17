@@ -575,7 +575,7 @@ sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/"//g; #" poor editor
-  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1; 
   # UL if > INT32_MAX = 2147483647
   my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
@@ -2853,26 +2853,30 @@ sub B::AV::save {
                  "{", "\tSV **svp;",
                  "\tAV *av = $sym;");
       $init->add("\tregister int gcount;") if $count;
+      my $fill1 = $fill < 3 ? 3 : $fill+1;
       if ($fill > -1) {
+        # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
+	if ($MYMALLOC) {
+          $init->add(sprintf("\tNewx(svp, %d, SV*);", $fill1),
+                     "\tAvALLOC(av) = svp;");
+        } else {
+	  # Bypassing Perl_safesysmalloc on darwin fails with free wrong pool, test 25.
+	  # So with DEBUGGING perls we have to track memory and use calloc.
+	  $init->add("#ifdef PERL_TRACK_MEMPOOL",
+		     sprintf("\tsvp = (SV**)Perl_safesysmalloc(%d * sizeof(SV*));", $fill1),
+		     "#else",
+		     sprintf("\tsvp = (SV**)malloc(%d * sizeof(SV*));", $fill1),
+		     "#endif",
+          	     "\tAvALLOC(av) = svp;");
+	}
         if ($PERL510) {
-          # Perl_safesysmalloc (= calloc => malloc) or Perl_malloc (= mymalloc)?
-          $init->add(sprintf(($MYMALLOC
-			     ? "\tNewx(svp, %d, SV*);"
-			     : "\tsvp = (SV**)malloc(%d * sizeof(SV*));"),
-			     $fill < 3 ? 3 : $fill+1),
-                     "\tAvALLOC(av) = svp;",
-                     "\tAvARRAY(av) = svp;");
+	  $init->add("\tAvARRAY(av) = svp;");
         } else { # read-only AvARRAY macro
-          $init->add(sprintf(($MYMALLOC
-			     ? "\tNewx(svp, %d, SV*)"
-			     : "\tsvp = (SV**)malloc(%d * sizeof(SV*));"),
-                             $fill < 3 ? 3 : $fill+1),
-                     "\tAvALLOC(av) = svp;",
-                     # XXX Dirty hack from av.c:Perl_av_extend()
-                     "\tSvPVX(av) = (char*)svp;");
+	  # XXX Dirty hack from av.c:Perl_av_extend()
+          $init->add("\tSvPVX(av) = (char*)svp;");
         }
       }
-      $init->add( substr( $acc, 0, -2 ) );
+      $init->add( substr( $acc, 0, -2 ) ); # AvFILLp already in XPVAV
       $init->add( "}" );
     }
     else { # unoptimized with the full av_extend()
