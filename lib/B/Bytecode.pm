@@ -12,7 +12,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.10';
+our $VERSION = '1.11';
 
 #use 5.008;
 use B qw(class main_cv main_root main_start
@@ -569,14 +569,13 @@ sub B::CV::bsave {
   my $outsideix = $cv->OUTSIDE->ix;
   my $startix   = $cv->START->opwalk;
   my $rootix    = $cv->ROOT->ix;
+  my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0; 
 
   $cv->B::PVMG::bsave($ix);
   asm "xcv_stash",       $stashix;
   asm "xcv_start",       $startix;
   asm "xcv_root",        $rootix;
-  unless ($PERL56) {
-    asm "xcv_xsubany",   $cv->CONST ? $cv->XSUBANY->ix : 0;
-  }
+  asm "xcv_xsubany",     $xsubanyix unless $PERL56;
   asm "xcv_padlist",     $padlistix;
   asm "xcv_outside",     $outsideix;
   asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
