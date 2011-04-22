@@ -22,8 +22,8 @@ D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
 
 function init {
 # test what? core or our module?
-#Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Mblib))'`"
-Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
+Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Mblib))'`"
+#Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
 ICMD="$PERL $Mblib -MByteLoader"
@@ -79,25 +79,50 @@ function btest {
     fi
   fi
   if [ "$Mblib" != " " -a -z "$SKIP" ]; then 
-    rm ${o}s_${VERS}.disasm ${o}_s_${VERS}.concise ${o}_s_${VERS}.dbg 2>/dev/null
+    m=${o}s_${VERS}
+    rm ${m}.disasm ${o}_${VERS}.concise ${o}_${VERS}.dbg 2>/dev/null
     bcall ${o} s
-    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}s_${VERS}.plc \> ${o}_s_${VERS}.disasm
-    $PERL $Mblib script/disassemble ${o}s_${VERS}.plc > ${o}_s_${VERS}.disasm
-    #mv ${o}s_${VERS}.disasm ${o}_s_${VERS}.disasm
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble $m.plc \> ${m}.disasm
+    $PERL $Mblib script/disassemble $m.plc > ${m}.disasm
+    [ -n "$Q" ] || echo ${ICMD} ${m}.plc
+    res=$(${ICMD} ${m}.plc)
+    if [ "X$res" != "X${result[$n]}" ]; then
+      fail "./${m}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
+    fi
 
     # understand annotations
-    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}_s_${VERS}.disasm \> ${o}S_${VERS}.plc
-    $PERL $Mblib script/assemble ${o}_s_${VERS}.disasm > ${o}S_${VERS}.plc
+    m=${o}S_${VERS}
+    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}s_${VERS}.disasm \> $m.plc
+    $PERL $Mblib script/assemble ${o}s_${VERS}.disasm > $m.plc
     # full assembler roundtrips
-    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}S_${VERS}.plc \> ${o}S_${VERS}.disasm
-    $PERL $Mblib script/disassemble ${o}S_${VERS}.plc > ${o}S_${VERS}.disasm
-    [ -n "$Q" ] || echo $PERL $Mblib script/assemble ${o}S_${VERS}.disasm \> ${o}SD_${VERS}.plc
-    $PERL $Mblib script/assemble ${o}S_${VERS}.disasm > ${o}SD_${VERS}.plc
-    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc \> ${o}SDS_${VERS}.disasm
-    $PERL $Mblib script/disassemble ${o}SD_${VERS}.plc > ${o}SDS_${VERS}.disasm
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble $m.plc \> $m.disasm
+    $PERL $Mblib script/disassemble $m.plc > $m.disasm
+    md=${o}SD_${VERS}
+    [ -n "$Q" ] || echo $PERL $Mblib script/assemble $m.disasm \> ${md}.plc
+    $PERL $Mblib script/assemble $m.disasm > ${md}.plc
+    [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${md}.plc \> ${o}SDS_${VERS}.disasm
+    $PERL $Mblib script/disassemble ${md}.plc > ${o}SDS_${VERS}.disasm
+
+    bcall ${o} i
+    m=${o}i_${VERS}
+    $PERL $Mblib script/disassemble ${m}.plc > ${m}.disasm
+    [ -n "$Q" ] || echo ${ICMD} ${m}.plc
+    res=$(${ICMD} ${m}.plc)
+    if [ "X$res" = "X${result[$n]}" ]; then
+      pass "./${m}.plc" "=> '$res'"
+    else
+      fail "./${m}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
+    fi
 
     bcall ${o} k
-    $PERL $Mblib script/disassemble ${o}k_${VERS}.plc > ${o}k_${VERS}.disasm
+    m=${o}k_${VERS}
+    $PERL $Mblib script/disassemble ${m}.plc > ${m}.disasm
+    [ -n "$Q" ] || echo ${ICMD} ${m}.plc
+    res=$(${ICMD} ${m}.plc)
+    if [ "X$res" != "X${result[$n]}" ]; then
+      fail "./${m}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
+    fi
+
     [ -n "$Q" ] || echo $PERL $Mblib -MO=${qq}Debug,-exec ${o}.pl -o ${o}_${VERS}.dbg
     [ -n "$Q" ] || $PERL $Mblib -MO=${qq}Debug,-exec ${o}.pl > ${o}_${VERS}.dbg
   fi
@@ -126,7 +151,7 @@ function btest {
   [ -n "$Q" ] || echo ${ICMD} ${o}.plc
   res=$(${ICMD} ${o}.plc)
   if [ "X$res" = "X${result[$n]}" ]; then
-      test "X$res" = "X${result[$n]}" && pass "./${o}.plc" "=> '$res'"
+      pass "./${o}.plc" "=> '$res'"
   else
       fail "./${o}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
       if [ -z "$Q" ]; then

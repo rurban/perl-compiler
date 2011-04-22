@@ -430,13 +430,16 @@ sub compile_cstyle {
             if ($l) {
                 $l = substr($l,1);
                 if ($^O eq 'darwin' and $l =~/\.bundle$/) {
-                    $dylib = $l; $dylib =~ s/\.bundle$/.a/;
-                    $dylib = basename($dylib) unless -w $dylib;
+                    $dylib = $l;
+                    $dylib =~ s/\.bundle$/.a/;
+                    $dylib =~ s{^.*/auto/}{};
+                    $dylib =~ s{/.+?(/[^/]+)}{$1};
+                    $dylib =~ s{/}{_}g;
                     if (-e $dylib) {
                         vprint 2, "Using static ".$dylib;
                     } else {
                         vprint 1, "Creating static ".$dylib;
-                        vprint 5, "libtool -static ".$l." -o ".$dylib;
+                        vprint 4, "libtool -static ".$l." -o ".$dylib;
                         system("libtool","-static",$l,"-o",$dylib);
                     }
                     $l = "./".$dylib;

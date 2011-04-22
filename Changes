@@ -4,10 +4,15 @@
 	quite fine with Perl 5.6 and 5.8
 
 1.32	2011-04-?? rurban
+        more darwin and bytecode fixes.
 
-	* Bytecode.pm (1.11): fixed const xsub xsubany ptr >=5.10 <5.14 (27)
-	* C.pm (1.32): check PERL_TRACK_MEMPOOL for AV malloc (25)
-	  fixed init chunk splitting for CV and -fav-init2 (if >10000 lines)
+	* Bytecode.pm (1.11): fixed const xsub xsubany ptr >=5.10 <5.14 (27).
+	save_cq => save_begin+save_init_end: moved push_begin upfront for the same
+	  init order (44).
+	added option -i includeall which adds no BEGIN require ops, but adds 
+	  all included symbols.
+	* C.pm (1.32): check PERL_TRACK_MEMPOOL for AV malloc (25).
+	  fixed init chunk splitting for CV and -fav-init2, if >10000 lines.
 	* Makefile.PL: move cc_runtime.h installation to make install step
 	  (sudo). Tested ok on darwin gcc, does use -I. internally.
 	* cc_runtime.h: renamed from cc_runtime514.h 

@@ -52,8 +52,8 @@ my $PERL510 = ( $] >= 5.009005 );
 my $PERL512 = ( $] >= 5.011 );
 #my $PERL514 = ( $] >= 5.013002 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-our ($quiet, %debug);
-my ( $varix, $opix, $savebegins, %walked, %files, @cloop );
+our ($quiet, $includeall, $savebegins);
+my ( $varix, $opix, %debug, %walked, %files, @cloop );
 my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
 my %optab   = ( 0, 0 );
@@ -483,7 +483,7 @@ sub B::PVNV::bsave {
 
 sub B::PVMG::domagic {
   my ( $sv, $ix ) = @_;
-  nice1 '-MAGICAL-'; # XXX TODO no empty line before
+  nice1 '-MAGICAL-'; # no empty line before
   my @mglist = $sv->MAGIC;
   my ( @mgix, @namix );
   for (@mglist) {
@@ -569,7 +569,8 @@ sub B::CV::bsave {
   my $outsideix = $cv->OUTSIDE->ix;
   my $startix   = $cv->START->opwalk;
   my $rootix    = $cv->ROOT->ix;
-  my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0; 
+  # TODO 5.14 will need CvGV_set to add backref magic
+  my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0;
 
   $cv->B::PVMG::bsave($ix);
   asm "xcv_stash",       $stashix;
@@ -640,7 +641,6 @@ sub B::GV::desired {
     eval "require B::Debug;";
     $gv->debug;
   }
-  #unless ($] > 5.013005 and $hv->NAME eq 'B')
   $files{ $gv->FILE } && $gv->LINE
     || ${ $cv   = $gv->CV }   && $files{ $cv->FILE }
     || ${ $form = $gv->FORM } && $files{ $form->FILE };
@@ -666,30 +666,13 @@ sub B::HV::bwalk {
       if ($] > 5.013005 and $hv->NAME eq 'B') { # see above. omit B prototypes
 	return;
       }
-      # XXX Not working! Special init for empty (null-string) prototypes
-      # Note: not found constants are &PL_sv_yes, found typically IV
-      if ($PERL510 and 0 and $v->SvTYPE == $SVt_PV and !$v->PVX) {
-        nice "[emptyCONST $tix]";
-        B::Assembler::maxsvix($tix) if $debug{A};
-	asm "newpv", pvstring ($hv->NAME . "::" . $k);
-	# Beware of special gv_fetchpv GV_* flags.
-	# gv_fetchpvx uses only GV_ADD, which fails e.g. with *Fcntl::O_SHLOCK,
-	# if "Your vendor has not defined Fcntl macro O_SHLOCK"
-	asm "gv_fetchpvn_flags", 1 << 7 + $SVt_PV,
-          "f:0x81<<7+t:PV";# GVf_IMPORTED_CV+INTRO
-        $svtab{$$v} = $varix = $tix;
-        asm "sv_flags", $v->FLAGS, ashex($v->FLAGS);
-        $v->bsave( $tix++ );
-        #$tix++;
-      } else {
-        nice "[prototype $tix]";
-        B::Assembler::maxsvix($tix) if $debug{A};
-	asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
-        $svtab{$$v} = $varix = $tix;
-        # we need the sv_flags before, esp. for DEBUGGING asserts
-        asm "sv_flags",  $v->FLAGS, ashex($v->FLAGS);
-        $v->bsave( $tix++ );
-      }
+      nice "[prototype $tix]";
+      B::Assembler::maxsvix($tix) if $debug{A};
+      asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
+      $svtab{$$v} = $varix = $tix;
+      # we need the sv_flags before, esp. for DEBUGGING asserts
+      asm "sv_flags",  $v->FLAGS, ashex($v->FLAGS);
+      $v->bsave( $tix++ );
     }
   }
 }
@@ -1010,9 +993,19 @@ sub B::OP::opwalk {
   }
 }
 
-sub save_cq {
+# Do run-time requires with -s savebegin and without -i includeall.
+# Otherwise all side-effects of BEGIN blocks are already in the current
+# compiled code.
+# -s or !-i will have smaller code, but run-time access of dependent modules
+# such as with python, where all modules are byte-compiled.
+# With -i the behaviour is similar to the C or CC compiler, where everything
+# is packed into one file.
+# Redo only certain ops, such as push @INC ""; unshift @INC "" (TODO *INC)
+# use/require defs and boot sections are already included.
+sub save_begin {
   my $av;
-  if ( ( $av = begin_av )->isa("B::AV") ) {
+  if ( ( $av = begin_av )->isa("B::AV") and $av->ARRAY) {
+    nice '<push_begin>';
     if ($savebegins) {
       for ( $av->ARRAY ) {
         next unless $_->FILE eq $0;
@@ -1025,36 +1018,44 @@ sub save_cq {
 
         # XXX BEGIN { goto A while 1; A: }
         for ( my $op = $_->START ; $$op ; $op = $op->next ) {
-	  # special cases for:
+	  # special case only for @INC manip 
 	  # 1. push|unshift @INC, "libpath"
-	  if ($op->name =~ /^(unshift|push)$/) {
-	    asm "push_begin", $_->ix;
+	  if ($op->name =~ /^(unshift|push)$/) { # XXX need to check for @INC
+            nice1 '<unshift|push in BEGIN>';
+	    asm "push_begin", $_->ix if $_;
 	    last;
 	  }
-	  # 2. use|require ... unless in tests
-          next unless $op->name eq 'require' ||
-
-              # this kludge needed for tests
-              $op->name eq 'gv' && do {
-                my $gv =
-                  class($op) eq 'SVOP'
-                  ? $op->gv
-                  : ( ( $_->PADLIST->ARRAY )[1]->ARRAY )[ $op->padix ];
-                $$gv && $gv->NAME =~ /use_ok|plan/;
-              };
-          asm "push_begin", $_->ix;
-          last;
+	  # 2. no use|require
+	  if (!$includeall) {
+	    next if $op->name eq 'require';
+            # this kludge needed for tests
+            $op->name eq 'gv' && do {
+              my $gv = class($op) eq 'SVOP'
+                ? $op->gv
+                : ( ( $_->PADLIST->ARRAY )[1]->ARRAY )[ $op->padix ];
+              $$gv && $gv->NAME =~ /use_ok|plan/;
+            };
+            nice1 '<require in BEGIN>';
+            asm "push_begin", $_->ix if $_;
+            last;
+	  }
         }
       }
     }
   }
-  if ( ( $av = init_av )->isa("B::AV") ) {
+}
+
+sub save_init_end {
+  my $av;
+  if ( ( $av = init_av )->isa("B::AV") and $av->ARRAY ) {
+    nice '<push_init>';
     for ( $av->ARRAY ) {
       next unless $_->FILE eq $0;
       asm "push_init", $_->ix;
     }
   }
-  if ( ( $av = end_av )->isa("B::AV") ) {
+  if ( ( $av = end_av )->isa("B::AV") and $av->ARRAY ) {
+    nice '<push_end>';
     for ( $av->ARRAY ) {
       next unless $_->FILE eq $0;
       asm "push_end", $_->ix;
@@ -1094,6 +1095,11 @@ sub compile {
   my ( $head, $scan, $T_inhinc, $keep_syn, $module );
   my $cwd = '';
   $files{$0} = 1;
+  # includeall mode (without require):
+  if ($includeall) {
+    # add imported symbols => values %INC
+    $files{$_} = 1 for values %INC;
+  }
 
   sub keep_syn {
     $keep_syn         = 1;
@@ -1146,6 +1152,9 @@ use ByteLoader '$ByteLoader::VERSION';
     }
     elsif (/^-f(.*)$/) {
       $files{$1} = 1;
+    }
+    elsif (/^-i/) {
+      $includeall = 1;
     }
     elsif (/^-D(.*)$/) {
       $debug{$1}++;
@@ -1201,6 +1210,8 @@ use ByteLoader '$ByteLoader::VERSION';
     print $head if $head;
     newasm sub { print @_ };
 
+    save_begin;
+    nice '<end_begin>';
     if (!$PERL56) {
       defstash->bwalk;
     } else {
@@ -1231,7 +1242,7 @@ use ByteLoader '$ByteLoader::VERSION';
       if !$PERL56 and warnhook->ix;
     nice '<incav>';
     asm "incav", inc_gv->AV->ix if $T_inhinc;
-    save_cq;
+    save_init_end;
     asm "incav", inc_gv->AV->ix if $T_inhinc;
     asm "dowarn", dowarn unless $PERL56;
 
@@ -1283,6 +1294,7 @@ the sourcecode in memory.
 =item B<-H>
 
 Prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
+This way you will not need to add C<-MByteLoader> to your perl command-line.
 
 =item B<-b>
 
@@ -1322,6 +1334,19 @@ C<main_root>, C<main_cv> and C<curpad> are omitted.
 
 "use package." Might be needed of the package is not automatically detected.
 
+=item B<-f>I<file>
+
+Include file. If not -i define all symbols in the given included 
+source file. -i adds all included files.
+
+=item B<-i> includeall 
+
+Include all used packages and its symbols. Does no run-time require from
+BEGIN blocks (C<use> package).
+
+This creates bigger and more independent code, but is more error prone and
+does not support pre-compiled C<.pmc> modules.
+
 =item B<-q>
 
 Be quiet.
@@ -1342,17 +1367,17 @@ Set the COP file - for running within the CORE testsuite.
 
 OPs, prints each OP as it's processed
 
-=item B<-D>I<M>
+=item B<-DM>
 
 Debugging flag for more verbose STDERR output.
 
 B<M> for Magic and Matches.
 
-=item B<-D>I<G>
+=item B<-DG>
 
 Debug GV's
 
-=item B<-D>I<A>
+=item B<-DA>
 
 Set developer B<A>ssertions, to help find possible obj-indices out of range.
 
@@ -1392,8 +1417,6 @@ Special GV's fail.
 =head1 NOTICE
 
 There are also undocumented bugs and options.
-
-THIS CODE IS HIGHLY EXPERIMENTAL. USE AT YOUR OWN RISK.
 
 =head1 AUTHORS
 

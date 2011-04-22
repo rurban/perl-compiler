@@ -6,7 +6,7 @@ perloptree - The Perl op tree
 
 Various material about the internal Perl compilation representation
 during parsing and optimization, before the actual execution
-begins. The B<"B" op tree>.
+begins, represented as C<B> objects, the B<"B" op tree>.
 
 The well-known L<perlguts.pod> focuses more on the internal
 representation of the variables, but not so on the structure, the
@@ -16,8 +16,7 @@ And we have L<perlhack.pod>, which shows e.g. ways to hack into
 the op tree structure within the debugger. It focuses on getting
 people to start patching and hacking on the CORE, not
 understanding or writing compiler backends or optimizations,
-which the op tree mainly is used for.  Btw., this here is merely
-prose around the source comments. But who reads source?
+which the op tree mainly is used for.  
 
 =head1 Brief Summary
 
@@ -47,7 +46,7 @@ of the following to be called (oversimplifying a bit):
 
 See also L<perlhack.pod#Op Trees>
 
-The simplest type of an op structure is C<OP>, a L</BASEOP>: this
+The simpliest type of an op structure is C<OP>, a L</BASEOP>: this
 has no children. Unary operators, L</UNOP>s, have one child, and
 this is pointed to by the C<op_first> field. Binary operators
 (L</BINOP>s) have not only an C<op_first> field but also an
