@@ -52,7 +52,7 @@ my $PERL510 = ( $] >= 5.009005 );
 my $PERL512 = ( $] >= 5.011 );
 #my $PERL514 = ( $] >= 5.013002 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-our ($quiet, $includeall, $savebegins);
+our ($quiet, $includeall, $savebegins, $T_inhinc);
 my ( $varix, $opix, %debug, %walked, %files, @cloop );
 my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
@@ -221,7 +221,9 @@ sub B::SV::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($sv) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newsvx", $sv->FLAGS, $debug{Comment} ? sv_flags($sv) : '';
+    my $type = $sv->FLAGS & 0xff; # SVTYPEMASK
+    asm "newsvx", $sv->FLAGS, 
+     $debug{Comment} ? sprintf("type=%d,flags=0x%x,%s", $type, $sv->FLAGS,sv_flags($sv)) : '';
     asm "stsv", $tix if $PERL56;
     $svtab{$$sv} = $varix = $ix = $tix++;
     #nice "\tsvtab ".$$sv." => bsave(".$ix.");
@@ -235,8 +237,10 @@ sub B::GV::ix {
   my $ix = $svtab{$$gv};
   defined($ix) ? $ix : do {
     if ( $debug{G} and !$PERL510 ) {
+      select *STDERR;
       eval "require B::Debug;";
       $gv->B::GV::debug;
+      select *STDOUT;
     }
     if ( ( $PERL510 and $gv->isGV_with_GP )
       or ( !$PERL510 and !$PERL56 and $gv->GP ) )
@@ -637,9 +641,11 @@ sub B::AV::bsave {
 sub B::GV::desired {
   my $gv = shift;
   my ( $cv, $form );
-  if ( $debug{G} and !$PERL510 ) {
+  if ( $debug{Gall} and !$PERL510 ) {
+    select *STDERR;	
     eval "require B::Debug;";
     $gv->debug;
+    select *STDOUT;
   }
   $files{ $gv->FILE } && $gv->LINE
     || ${ $cv   = $gv->CV }   && $files{ $cv->FILE }
@@ -1018,27 +1024,28 @@ sub save_begin {
 
         # XXX BEGIN { goto A while 1; A: }
         for ( my $op = $_->START ; $$op ; $op = $op->next ) {
-	  # special case only for @INC manip 
 	  # 1. push|unshift @INC, "libpath"
-	  if ($op->name =~ /^(unshift|push)$/) { # XXX need to check for @INC
-            nice1 '<unshift|push in BEGIN>';
-	    asm "push_begin", $_->ix if $_;
-	    last;
+	  if ($op->name eq 'gv') {
+            my $gv = class($op) eq 'SVOP'
+                  ? $op->gv
+                  : ( ( $_->PADLIST->ARRAY )[1]->ARRAY )[ $op->padix ];
+	    nice1 '<gv '.$gv->NAME.'>' if $$gv;
+            asm "incav", inc_gv->AV->ix if $$gv and $gv->NAME eq 'INC'; 
 	  }
-	  # 2. no use|require
+	  # 2. use|require
 	  if (!$includeall) {
-	    next if $op->name eq 'require';
-            # this kludge needed for tests
-            $op->name eq 'gv' && do {
-              my $gv = class($op) eq 'SVOP'
-                ? $op->gv
-                : ( ( $_->PADLIST->ARRAY )[1]->ARRAY )[ $op->padix ];
-              $$gv && $gv->NAME =~ /use_ok|plan/;
-            };
-            nice1 '<require in BEGIN>';
-            asm "push_begin", $_->ix if $_;
-            last;
-	  }
+	    next unless $op->name eq 'require' ||
+              # this kludge needed for tests
+              $op->name eq 'gv' && do {
+                my $gv = class($op) eq 'SVOP'
+                  ? $op->gv
+                  : ( ( $_->PADLIST->ARRAY )[1]->ARRAY )[ $op->padix ];
+                $$gv && $gv->NAME =~ /use_ok|plan/;
+              };
+              nice1 '<require in BEGIN>';
+              asm "push_begin", $_->ix if $_;
+              last;
+	   }
         }
       }
     }
@@ -1092,7 +1099,7 @@ sub symwalk {
 ################### end perl 5.6 backport ###################################
 
 sub compile {
-  my ( $head, $scan, $T_inhinc, $keep_syn, $module );
+  my ( $head, $scan, $keep_syn, $module );
   my $cwd = '';
   $files{$0} = 1;
   # includeall mode (without require):
@@ -1210,7 +1217,10 @@ use ByteLoader '$ByteLoader::VERSION';
     print $head if $head;
     newasm sub { print @_ };
 
+    nice '<incav>' if $T_inhinc;
+    asm "incav", inc_gv->AV->ix if $T_inhinc;
     save_begin;
+    #asm "incav", inc_gv->AV->ix if $T_inhinc;
     nice '<end_begin>';
     if (!$PERL56) {
       defstash->bwalk;
@@ -1240,10 +1250,7 @@ use ByteLoader '$ByteLoader::VERSION';
 
     asm "signal", cstring "__WARN__"    # XXX
       if !$PERL56 and warnhook->ix;
-    nice '<incav>';
-    asm "incav", inc_gv->AV->ix if $T_inhinc;
     save_init_end;
-    asm "incav", inc_gv->AV->ix if $T_inhinc;
     asm "dowarn", dowarn unless $PERL56;
 
     {
