@@ -405,10 +405,10 @@ sub run_cc_test {
     my ($out,$result,$stderr) = ('');
     my $fnbackend = lc($backend); #C,-O2
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
-    if ($cnt == 28 and $backend eq 'C,-O3') {
-	print "ok $cnt # skip $backend SIGSEGV or hangs\n";
-	return 0;
-    }
+#    if ($cnt == 28 and $backend eq 'C,-O3') {
+#	print "ok $cnt # skip $backend SIGSEGV or hangs\n";
+#	return 0;
+#    }
     if ($todo and $cnt =~ /^(15|103)$/ and $] eq '5.010001') {
 	print "ok $cnt # skip $backend hangs\n";
 	return 0;
