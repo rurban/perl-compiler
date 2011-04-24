@@ -399,8 +399,15 @@ while( defined( $asmline = <ASM> ) ){
     $disline = <DIS>;
     ++$lineno;
     last if $lineno eq $firstbadline; # bail out where errors begin
+    if ($asmline ne $disline) {
+	# $asmline might be hex, if < 8 it will be disassembled as int
+	my ($op, $n) = $asmline =~ /(\w+) (0x\d+)/;
+	if ($n =~ /^0x/ and hex($n) < 8) {
+	    $asmline = "$op ".hex($n)."\n";	
+	}
+    }
     ok( $asmline eq $disline, $descr[$lineno] );
-    printf "# %5d %s\n", $lineno, $asmline if $dbg;
+    printf "# %5d %s#     = %s\n", $lineno, $asmline, $disline if $dbg;
 }
 close( ASM );
 close( DIS );

@@ -6,7 +6,7 @@
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.08';
+$B::Disassembler::VERSION = '1.10';
 
 package B::Disassembler::BytecodeStream;
 
@@ -175,30 +175,31 @@ sub GET_IV64 {
   croak "reached EOF while reading I32" unless length($str) == 8;
 
   # Todo: check byteorder
-  return sprintf "0x%09llx", unpack( "q", $str );
+  my $i = unpack( "q", $str );
+  return $i > 8 ? sprintf "0x%09llx", $i : $i;
 }
 
 sub GET_IV {
-
   # Check the header settings, not the current settings.
   $B::Disassembler::ivsize == 4 ? &GET_I32 : &GET_IV64;
-
   # $Config{ivsize} == 4 ? &GET_I32 : &GET_IV64;
 }
 
 sub GET_PADOFFSET {
-
   # Check the header settings, not the current settings.
   $B::Disassembler::ptrsize == 8 ? &GET_IV64 : &GET_U32;
-
   # $Config{ptrsize} == 8 ? &GET_IV64 : &GET_U32;
 }
 
 sub GET_long {
-
-  # FIXME: this should check the header settings, not the current settings.
-  # B::Disassembler::ivsize ?
-  $Config{longsize} == 8 ? &GET_IV64 : &GET_U32;
+  # Check the header settings, not the current settings.
+  # B::Disassembler::ivsize or longsize if ge xxx?
+  if ($B::Disassembler::longsize) {
+    return $B::Disassembler::longsize == 8 ? &GET_IV64 : &GET_U32;
+  } else {
+    # return $Config{longsize} == 8 ? &GET_IV64 : &GET_U32;
+    return $B::Disassembler::ivsize == 8 ? &GET_IV64 : &GET_U32;
+  }
 }
 
 sub GET_pmflags {
@@ -500,7 +501,9 @@ Added with blversion 0.06_03, and also with blversion 0.04.
 See L<BcVersions>
 
 B<archflag> is a bitmask of opcode platform-dependencies.
-Currently used is only bit 1 for USE_ITHREADS.
+Currently used:
+  bit 1 for USE_ITHREADS
+  bit 2 for MULTIPLICITY
 Added with  blversion 0.06_05.
 
 B<perlversion> $] of the perl which produced this bytecode as string.
