@@ -234,8 +234,8 @@ Context of ".."
 
 Arithmetic
 
-    Optimized Compiled Perl programs use native C arithmetic
-    much more frequently than standard perl. Operations on
+    Optimized compiled Perl programs use native C arithmetic
+    much more frequently than standard perl. So operations on
     large numbers or on boundary cases may produce different behaviour.
 
 Deprecated features
@@ -246,9 +246,7 @@ Deprecated features
 
 STATUS
 
-5.13 is not yet fully supported. 
-C works fine, best with non-threaded perls. 3-4% fails on the top100 modules.
-Bytecode fails on >= 5.10 (in work)
+C and Bytecode works fine, best with non-threaded perls. 3-4% fails on the top100 modules.
 CC fails on some tests. See Todo.
 The Bytecode compiler is disabled for 5.6.2, use the default instead.
 
@@ -260,15 +258,14 @@ Here are some things which may cause the compiler problems.
 
 The following render the compiler useless (without serious hacking):
 
-* Use of the DATA filehandle (via __END__ or __DATA__ tokens) on certain 
-  Perl versions. See test 15.
+* Use of the DATA filehandle (via __END__ or __DATA__ tokens) on earlier 
+  Perl versions withotu IO::Scalar. See test 15.
 * Operator overloading with %OVERLOAD
 * The (deprecated) magic array-offset variable $[ does not work
 * For -O1 and -O2 copy-on-grow of static pvs and heks since 5.10 is disabled. 
   Fixes of the destruction failures there is work in progress.
 * The following operators are not yet implemented for CC
     goto
-    sort with a non-default comparison (i.e. a named sub or inline block)
     continue/next/last to a outer LABEL
 * You can't use "last" to exit from a non-loop block.
 
@@ -288,8 +285,6 @@ The following may cause problems (not thoroughly tested):
 * For the C and CC backends: compile-time strings which are longer than
   your C compiler can cope with in a single line or definition.
 * Reliance on intimate details of global destruction
-* For the Bytecode backend: high -On optimisation numbers with code
-  that has complex flow of control.
 * Any "-w" option in the first line of your perl program is seen and
   acted on by perl itself before the compiler starts. The compiler
   itself then runs with warnings turned on. This may cause perl to
@@ -322,7 +317,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2010-07-29
+2011-04-21
 
 Malcolm Beattie
 2 September 1996

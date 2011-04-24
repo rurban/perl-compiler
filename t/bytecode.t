@@ -32,7 +32,8 @@ BEGIN {
 use strict;
 my $PERL56  = ( $] <  5.008001 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-my $ITHREADS  = ($Config{useithreads});
+my $ITHREADS  = $Config{useithreads};
+my $MULTI     = $Config{usemultiplicity};
 my $AUTHOR    = -d ".svn";
 
 my @tests = tests();

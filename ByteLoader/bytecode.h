@@ -106,7 +106,7 @@ static int bget_swab = 0;
 	if (bget_swab) { arg = _swab_iv_(arg, bl_header.longsize); }	\
 	if (bl_header.longsize != LONGSIZE) {				\
 	    Perl_warn(aTHX_						\
-		       "Different LONGSIZE .plc %d, perl %d",		\
+		      "Different LONGSIZE .plc %d, perl %d",		\
 		      bl_header.longsize, LONGSIZE);			\
 	}								\
     } STMT_END

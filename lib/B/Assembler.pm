@@ -17,7 +17,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '0.09';
+$VERSION   = '1.10';
 
 use strict;
 my %opnumber;
@@ -232,7 +232,7 @@ sub strip_comments {
 #   magic, archname, ByteLoader $VERSION, ivsize, ptrsize, longsize, byteorder,
 #   archflag, perlversion
 # byteorder is strconst, not U32 because of varying size issues (?)
-# archflag currently only bit 1 for use_ithreads
+# archflag: bit 1: useithreads, bit 2: multiplicity
 # perlversion for the bytecode translation.
 
 sub gen_header {
@@ -261,7 +261,7 @@ sub gen_header {
 #   archflag, perlversion
 # nvtype is irrelevant (floats are stored as strings)
 # byteorder is strconst, not U32 because of varying size issues (?)
-# archflag currently only bit 1 for use_ithreads
+# archflag: bit 1: useithreads, bit 2: multiplicity
 # perlversion for the bytecode translation.
 
 sub gen_header_hash {
@@ -297,6 +297,7 @@ sub gen_header_hash {
   if ( $blversion ge "0.06_05" ) {
     my $archflag = 0;
     $archflag += 1 if $Config{useithreads};
+    $archflag += 2 if $Config{usemultiplicity};
     $header->{archflag} = $archflag;
   }
   if ( $blversion ge "0.06_06" ) {

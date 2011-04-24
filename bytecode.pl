@@ -237,6 +237,11 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 #else
 # define HAVE_ITHREADS_I 0
 #endif
+#ifdef MULTIPLICITY
+# define HAVE_MULTIPLICITY_I 2
+#else
+# define HAVE_MULTIPLICITY_I 0
+#endif
     if (strGE(bl_header.version, "0.06_05")) {
         BGET_U16(sz); /* archflag */
         bl_header.archflag = sz;
@@ -244,7 +249,14 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
 	    HEADER_FAIL2("Wrong USE_ITHREADS. Bytecode: %s, System: %s)",
 		         bl_header.archflag & 1 ? "yes" : "no",
 			 HAVE_ITHREADS_I ? "yes" : "no");
-      }
+	}
+	if (strGE(bl_header.version, "0.08")) {		
+ 	    if ((sz & 2) != HAVE_MULTIPLICITY_I) {
+	        HEADER_FAIL2("Wrong MULTIPLICITY. Bytecode: %s, System: %s)",
+		             bl_header.archflag & 2 ? "yes" : "no",
+			     HAVE_MULTIPLICITY_I ? "yes" : "no");
+	    }
+	}
     }
 
     if (bl_header.ivsize != IVSIZE) {
@@ -315,7 +327,8 @@ EOT
 
 
 my ($idx, @insn_name, $insn_num, $ver, $insn, $lvalue, $argtype, $flags, $fundtype, $unsupp);
-my $ithreads = $Config{useithreads} eq 'define';
+my $ITHREADS = $Config{useithreads} eq 'define';
+my $MULTI = $Config{useithreads} eq 'define';
 
 $insn_num = 0;
 my @data = <DATA>;
@@ -344,8 +357,12 @@ for (@data) {
     }
     if ($ver) {
 	if ($ver =~ /^\!?i/) {
-	    $unsupp++ if ($ver =~ /^i/ and !$ithreads) or ($ver =~ /\!i/ and $ithreads);
+	    $unsupp++ if ($ver =~ /^i/ and !$ITHREADS) or ($ver =~ /\!i/ and $ITHREADS);
 	    $ver =~ s/^\!?i//;
+	}
+	if ($ver =~ /^\!?m/) {
+	    $unsupp++ if ($ver =~ /^m/ and !$MULTI) or ($ver =~ /\!m/ and $MULTI);
+	    $ver =~ s/^\!?m//;
 	}
 	# perl version 5.010000 => 10.000, 5.009003 => 9.003
 	# Have to round the float: 5.010 - 5 = 0.00999999999999979
@@ -758,8 +775,8 @@ Header entry: byteorder.
 
 64int - 64all - 32int is portable. Header entry: ivsize
 
-ITHREADS are unportable.
-Header entry: archflag - bitflag 1.
+ITHREADS are unportable; header entry: archflag - bitflag 1.
+MULTIPLICITY is also unportable; header entry: archflag - bitflag 2
 
 TODO For cross-version portability we will try to translate older
 bytecode ops to the current perl op via L<ByteLoader::Translate>.
@@ -821,11 +838,12 @@ __END__
 # ret so that \0-terminated strings can be read properly as bytecode.
 #
 # The argtype is either a single type or "rightvaluecast/argtype".
-# The version is either "i" or "!i" for ithreads or not,
-# or num, num-num, >num or <num.
-# "0" is for all, "<10" requires PERL_VERSION<10, "10" requires
-# PERL_VERSION>=10, ">10" requires PERL_VERSION>10, "10-10"
-# requires PERL_VERSION>==10 only.
+# The version is either "i" or "!i" for ITHREADS or not,
+#   "m" or "!m" for MULTI or not,
+#   or num, num-num, >num or <num.
+#   "0" is for all, "<10" requires PERL_VERSION<10, "10" requires
+#   PERL_VERSION>=10, ">10" requires PERL_VERSION>10, "10-10"
+#   requires PERL_VERSION>==10 only.
 # lvalue is the (statemachine) value to read or write.
 # argtype specifies the reader or writer method.
 # flags x specifies a special reader method named by BSET_$insn in bytecode.h

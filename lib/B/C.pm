@@ -4782,7 +4782,8 @@ Excludes C<-fav_init> if so; uses C<-fav_init> if C<independent_comalloc()> is n
 
 C<independent_comalloc()> is recommended from B<ptmalloc3>, but also included in
 C<ptmalloc>, C<dlmalloc> and C<nedmalloc>.
-Download C<ptmalloc3> here: L<XXX>
+Download C<ptmalloc3> here: L<http://www.malloc.de/en/>
+Note: C<independent_comalloc()> is not included in C<google-perftools> C<tcmalloc>.
 
 Enabled with C<-O2>.
 
