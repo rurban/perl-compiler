@@ -36,20 +36,13 @@ QOCMD=${QOCMD}${v513}
 }
 
 function pass {
-    #echo -n "$1 PASS "
     echo -e -n "\033[1;32mPASS \033[0;0m"
-    #shift
     echo $*
-    echo
 }
 function fail {
-    #echo -n "$1 FAIL "
     echo -e -n "\033[1;31mFAIL \033[0;0m"
-    #shift
     echo $*
-    echo
 }
-
 function bcall {
     o=$1
     opt=${2:-s}
@@ -65,6 +58,7 @@ function btest {
       if [ "$n" = "08" ]; then n=8; fi 
       if [ "$n" = "09" ]; then n=9; fi
       echo "${tests[${n}]}" > ${o}.pl
+      test -z "${tests[${n}]}" && exit
       str="${tests[${n}]}"
   else 
       echo "$2" > ${o}.pl
@@ -76,6 +70,8 @@ function btest {
   if [ -z "$SKIP" -o -n "$SKI" ]; then
     if [ "$Mblib" != " " ]; then 
 	bcall ${o} S,-s asm 1
+	bcall ${o} S,-k asm 1
+	bcall ${o} S,-i asm 1
     fi
   fi
   if [ "$Mblib" != " " -a -z "$SKIP" ]; then 
@@ -346,7 +342,7 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq -f"%02.0f" $ntests); do
+  for b in $(seq $ntests); do
     btest $b
   done
 fi
