@@ -28,6 +28,9 @@
 	* cc_harness: fixed darwin coredir
 	* perlcc (2.11): fixed darwin coredir.
 	omit darwin linking to dynamic .bundle - generate .a via libtool
+	* TESTS: removed END block from test 28, only test run-time require (fixed 28)
+	added 48 for previous test 28 END block lexvar del_backref failure
+	added 49 for m//i blowup and -fno-fold testing
 	* assembler.t: fix for hex->int IV roundtrips
 
 1.31	2011-03-21 rurban

@@ -297,16 +297,19 @@ result[46]='ok'
 # non-tied av->MAGICAL
 tests[47]='@ISA=(q(ok));print $ISA[0];'
 result[47]='ok'
-# m//i
-tests[48]='print q(ok) if "test" =~ /es/i;'
+# END block del_backref
+tests[48]='my $s=q{ok};END{print $s}'
 result[48]='ok'
+# no-fold
+tests[49]='print q(ok) if "test" =~ /es/i;'
+result[49]='ok'
 #-------------
 # issue27
-tests[49]='require LWP::UserAgent;print q(ok);'
-result[49]='ok'
-# issue24
-tests[50]='dbmopen(%H,q(f),0644);print q(ok);'
+tests[50]='require LWP::UserAgent;print q(ok);'
 result[50]='ok'
+# issue24
+tests[51]='dbmopen(%H,q(f),0644);print q(ok);'
+result[51]='ok'
 
 # from here on we test CC specifics only
 
@@ -434,11 +437,11 @@ if [ -n "$1" ]; then
     shift
   done
 else
-  for b in $(seq -f"%02.0f" $ntests); do
+  for b in $(seq $ntests); do
     ctest $b
   done
   if [ $BASE = "testcc.sh" ]; then
-    for b in $(seq -f"%02.0f" 101 $(($ncctests+100))); do
+    for b in $(seq 101 $(($ncctests+100))); do
       ctest $b
     done
   fi

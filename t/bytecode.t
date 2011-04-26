@@ -2,7 +2,7 @@
 my $keep_pl       = 0;	# set it to keep the src pl files
 my $keep_plc      = 0;	# set it to keep the bytecode files
 my $keep_plc_fail = 1;	# set it to keep the bytecode files on failures
-my $do_coverage   = undef; # do bytecode insn coverage
+my $do_coverage   = $ENV{TEST_COVERAGE}; # do bytecode insn coverage
 my $verbose       = $ENV{TEST_VERBOSE}; # better use t/testplc.sh for debugging
 use Config;
 # Debugging Note: perl5.6.2 has no -Dvl, use -D260 (256+4) instead. v mapped to f
@@ -49,7 +49,7 @@ if ($DEBUGGING) {
   # op coverage either via Assembler debug, or via ByteLoader -Dv on a -DDEBUGGING perl
   if ($do_coverage) {
     use B::Asmdata q(@insn_name);
-    for (0..@insn_name) { $insncov{$_} = 0; }
+    $insncov{$_} = 0 for 0..@insn_name;
   }
 }
 my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
@@ -58,7 +58,7 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
 #44 fixed by moving push_begin upfront
 push @todo, (42..43)if $] >= 5.010;
 push @todo, (32)    if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
-push @todo, (28)    if $] > 5.013; # more del_backref
+push @todo, (48)    if $] > 5.013; # END block lexvar del_backref
 push @todo, (41)    if !$ITHREADS;
 push @todo, (27)    if $] >= 5.010;
 # cannot store labels on windows 5.12: 21
@@ -77,8 +77,9 @@ unless ($Mblib) { # check for -Mblib from the testsuite
   }
 }
 else {
-  $backend = "-qq,Bytecode,-q" unless $ENV{TEST_VERBOSE};
+  $backend = "-qq,Bytecode" unless $ENV{TEST_VERBOSE};
 }
+# $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
 $backend .= ",-H" unless $PERL56;
 
 #$Bytecode = $] >= 5.007 ? 'Bytecode' : 'Bytecode56';
@@ -95,10 +96,11 @@ for (@tests) {
   $test = "bytecode$cnt.pl";
   open T, ">$test"; print T $script; close T;
   unlink "${test}c" if -e "${test}c";
+  $? = 0;
   $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${test}c" ],
 		  verbose  => $verbose, # for DEBUGGING
 		  nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-		  stderr   => 1, # to capture the "bytecode.pl syntax ok"
+		  stderr   => $PERL56 ? 1 : 0, # capture "bytecode.pl syntax ok"
 		  timeout  => 10,
 		  progfile => $test);
   unless ($?) {
@@ -114,10 +116,11 @@ for (@tests) {
 	$insncov{$_}++;
       }
     }
+    $? = 0;
     $got = run_perl(progfile => "${test}c", # run the .plc
                     verbose  => $ENV{TEST_VERBOSE}, # for debugging
 		    nolib    => $ENV{PERL_CORE} ? 0 : 1,
-		    stderr   => 1,
+		    stderr   => $PERL56 ? 1 : 0,
 		    timeout  => 5,
                     switches => [ "$Mblib".($PERL56 ? " -MByteLoader" : "") ]);
     unless ($?) {

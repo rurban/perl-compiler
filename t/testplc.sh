@@ -239,7 +239,7 @@ result[26]="26";
 tests[27]='use Fcntl (); print "ok" if ( Fcntl::O_CREAT() >= 64 && &Fcntl::O_CREAT >= 64 );'
 result[27]='ok'
 # require test
-tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest_27.} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);sleep 1;require $fname;unlink($fname);print $x;'
+tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{cctest28_} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);sleep 1;require $fname;unlink($fname);print $x;'
 result[28]='ok'
 # use test
 tests[29]='use IO;print "ok"'
@@ -307,13 +307,19 @@ result[46]='ok'
 # non-tied av->MAGICAL
 tests[47]='@ISA=(q(ok));print $ISA[0];'
 result[47]='ok'
+# END block del_backref
+tests[48]='my $s=q{ok};END{print $s}'
+result[48]='ok'
+# no-fold
+tests[49]='print q(ok) if "test" =~ /es/i;'
+result[49]='ok'
 #-------------
 # issue27
-tests[48]='require LWP::UserAgent;print q(ok);'
-result[48]='ok'
+tests[50]='require LWP::UserAgent;print q(ok);'
+result[50]='ok'
 # issue24
-tests[49]='dbmopen(%H,q(f),0644);print q(ok);'
-result[49]='ok'
+tests[51]='dbmopen(%H,q(f),0644);print q(ok);'
+result[51]='ok'
 
 
 init
