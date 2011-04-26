@@ -176,7 +176,7 @@ EOT
 
 package B::C;
 use Exporter ();
-use Errno ();
+use Errno (); #needed since 5.14
 our %REGEXP;
 
 { # block necessary for caller to work
@@ -2883,7 +2883,7 @@ sub B::AV::save {
                  "\tsvp = AvARRAY(av);"
                 );
       $init->add( substr( $acc, 0, -2 ) );
-      $init->add( "\tAvFILLp(av) = $fill1;", "}" );
+      $init->add( "\tAvFILLp(av) = $fill;", "}" );
     }
     $init->split;
 
@@ -4067,7 +4067,7 @@ sub should_save {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
     if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp|utf8)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
-      next if $package eq 'Errno' and $m eq 'TIEHASH' and $PERL514;
+      next if $package eq 'Errno' and $m eq 'TIEHASH';
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -4283,6 +4283,7 @@ sub save_main_rest {
     local ($B::C::pv_copy_on_grow, $B::C::const_strings);
     $in_endav = 1;
     warn "Writing endav\n" if $debug{av};
+    $init->add("/* END block */");
     $end_av  = end_av->save;
     $in_endav = 0;
   }
