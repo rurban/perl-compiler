@@ -1303,7 +1303,15 @@ the sourcecode in memory.
 Prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
 This way you will not need to add C<-MByteLoader> to your perl command-line.
 
-=item B<-b>
+=item B<-i> includeall
+
+Include all used packages and its symbols. Does no run-time require from
+BEGIN blocks (C<use> package).
+
+This creates bigger and more independent code, but is more error prone and
+does not support pre-compiled C<.pmc> modules.
+
+=item B<-b> savebegin
 
 Save all the BEGIN blocks.
 
@@ -1343,16 +1351,8 @@ C<main_root>, C<main_cv> and C<curpad> are omitted.
 
 =item B<-f>I<file>
 
-Include file. If not -i define all symbols in the given included 
-source file. -i adds all included files.
-
-=item B<-i> includeall 
-
-Include all used packages and its symbols. Does no run-time require from
-BEGIN blocks (C<use> package).
-
-This creates bigger and more independent code, but is more error prone and
-does not support pre-compiled C<.pmc> modules.
+Include file. If not C<-i> define all symbols in the given included
+source file. C<-i> would all included files, C<-f> only a certain file - full path needed.
 
 =item B<-q>
 
