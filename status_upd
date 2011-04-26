@@ -13,9 +13,10 @@
 # -a all, do not skip too old logs
 # -d no unify dumps
 #
-# status_upd -f -q -d
+# status_upd -fqd
 use strict;
 use Data::Dumper;
+use Getopt::Long;
 use Set::Object qw(reftype);
 
 my $logs = "log.test-*-5.*";
@@ -25,15 +26,16 @@ my $STATUS = "./STATUS";
 chdir ".." if ! -d "t" and -d "../t";
 chdir "../.." if ! -d "t" and -d "../../t";
 my ($sortbytest, $update, $quiet, $failonly, $todoonly, $noskip, $nodump);
+Getopt::Long::Configure ("bundling");
+GetOptions ("sort|s" => \$sortbytest,
+	"update|u" => \$update,
+	"quiet|q" => \$quiet,
+	"fail|f" => \$failonly,
+	"toto|t" => \$todoonly,
+	"all|a" => \$noskip,
+	"dump|d" => \$nodump);
 
 for (@ARGV) {
-  /^-s$/ and $sortbytest++;
-  /^-u$/ and $update++;
-  /^-q$/ and $quiet++;
-  /^-f$/ and $failonly++;
-  /^-t$/ and $todoonly++;
-  /^-a$/ and $noskip++;
-  /^-d$/ and $nodump++;
   -d "t/reports/$_" and $dir = "t/reports/$_";
   -d "$_" and $dir = $_;
 }

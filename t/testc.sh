@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # t/testc.sh -c -Du,-q -B static 2>&1 |tee c.log|grep FAIL
 # for p in 5.6.2 5.8.8-nt 5.8.9d 5.10.1d 5.10.1d-nt 5.11.2d 5.11.2d-nt; do make -s clean; echo perl$p; perl$p Makefile.PL; t/testc.sh -q -O0 31; done
 # quiet c only: t/testc.sh -q -O0
@@ -35,11 +35,13 @@ if [ -z $Mblib ]; then
         OCMD="$PERL $Mblib -MO=CC,-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,-DcoOSAHGCMpu,-v,"
+    OCMD="$PERL $Mblib -MO=C,-DcOSAHGCMpu,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
-        OCMD="$PERL $Mblib -MO=CC,-DoOscpSql,-v,"
+        OCMD="$PERL $Mblib -MO=CC,-DOscpSql,-v,"
     fi
 fi
+v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
+OCMD=${OCMD}${v513}
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
@@ -52,23 +54,16 @@ LCMD=
 
 function vcmd {
     test -n "$QUIET" || echo $*
-    #echo $*
     $*
 }
 
 function pass {
-    #echo -n "$1 PASS "
     echo -e -n "\033[1;32mPASS \033[0;0m"
-    shift
     echo $*
-    echo
 }
 function fail {
-    #echo -n "$1 FAIL "
     echo -e -n "\033[1;31mFAIL \033[0;0m"
-    shift
     echo $*
-    echo
 }
 
 function runopt {

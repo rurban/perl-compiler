@@ -575,7 +575,7 @@ sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/"//g; #" poor editor
-  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1; 
+  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
   # UL if > INT32_MAX = 2147483647
   my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
@@ -4067,6 +4067,7 @@ sub should_save {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
     if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp|utf8)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
+      next if $package eq 'Errno' and $m eq 'TIEHASH' and $PERL514;
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -4283,6 +4284,7 @@ sub save_main_rest {
     $in_endav = 1;
     warn "Writing endav\n" if $debug{av};
     $end_av  = end_av->save;
+    $in_endav = 0;
   }
   if ( !defined($module) ) {
     $init->add(
@@ -4440,10 +4442,10 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       if ($arg eq 'full') {
-        $arg = 'oOcAHCMGSpWF';
+        $arg = 'OcAHCMGSpWF';
       }
       elsif ($arg eq 'ufull') {
-        $arg = 'uoOcAHCMGSpWF';
+        $arg = 'uOcAHCMGSpWF';
       }
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
