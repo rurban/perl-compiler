@@ -83,12 +83,13 @@ sub log_err {
 }
 
 sub is_subset {
+  return 0 if grep /^-no-subset$/, @ARGV;
   return ! -d '.svn' || grep /^-subset$/, @ARGV;
 }
 
 sub get_module_list {
   # Parse for command line modules and use this if seen.
-  my @modules = grep {$_ !~ /^-(all|log|subset|t)$/} @ARGV; # Parse out -all var.
+  my @modules = grep {$_ !~ /^-([\w-]+)$/} @ARGV; # ignore options
   my $module_list  = 't/top100';
   if (@modules and -e $modules[0] and ! -x $modules[0]) { # skip an executable compiled module
     $module_list = $modules[0];

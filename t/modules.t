@@ -8,6 +8,7 @@
 # OPTIONS:
 #  -all     - run also B::CC and B::Bytecode
 #  -subset  - run only random 10 of all modules. default if ! -d .svn
+#  -no-subset  - all 100 modules
 #  -t       - run also tests
 #  -log     - save log file. default on top100 and without subset
 #
