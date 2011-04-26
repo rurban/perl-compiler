@@ -131,6 +131,12 @@ function btest {
     if [ "$Mblib" != " " ]; then 
       #bcall ${o} TI
       bcall ${o} H
+      m="${o}H_${VERS}"
+      [ -n "$Q" ] || echo $PERL $Mblib ${m}.plc
+      res=$($PERL $Mblib ${m}.plc)
+      if [ "X$res" != "X${result[$n]}" ]; then
+          fail "./${m}.plc" "'$str' => '$res' Expected: '${result[$n]}'"
+      fi
     fi
   fi
   if [ "$Mblib" != " " ]; then
