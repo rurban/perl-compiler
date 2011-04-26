@@ -58,7 +58,7 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
 #44 fixed by moving push_begin upfront
 push @todo, (42..43)if $] >= 5.010;
 push @todo, (32)    if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
-push @todo, (48)    if $] > 5.013; # END block lexvar del_backref
+# push @todo, (48)    if $] > 5.013; # END block del_backref fixed with r1003
 push @todo, (41)    if !$ITHREADS;
 push @todo, (27)    if $] >= 5.010;
 # cannot store labels on windows 5.12: 21

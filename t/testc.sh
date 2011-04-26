@@ -292,19 +292,22 @@ result[46]='ok'
 # non-tied av->MAGICAL
 tests[47]='@ISA=(q(ok));print $ISA[0];'
 result[47]='ok'
-# END block del_backref
+# END block del_backref with bytecode only
 tests[48]='my $s=q{ok};END{print $s}'
 result[48]='ok'
 # no-fold
 tests[49]='print q(ok) if "test" =~ /es/i;'
 result[49]='ok'
+# failed until r1000 (AvFILL 3 of END)
+tests[50]='print q{ok};END{}'
+result[50]='ok'
 #-------------
 # issue27
-tests[50]='require LWP::UserAgent;print q(ok);'
-result[50]='ok'
+tests[70]='require LWP::UserAgent;print q(ok);'
+result[70]='ok'
 # issue24
-tests[51]='dbmopen(%H,q(f),0644);print q(ok);'
-result[51]='ok'
+tests[71]='dbmopen(%H,q(f),0644);print q(ok);'
+result[71]='ok'
 
 # from here on we test CC specifics only
 

@@ -750,7 +750,7 @@ sub todo_tests_default {
         # push @todo, (39)   if $] > 5.007 and $] < 5.009;
         # fixed with 1.30
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
-        push @todo, (28)   if $what !~ /c_o[13]/; # -O2 wrong alignment in free
+        push @todo, (28,48) if $what =~ /c_o[34]/;
         push @todo, (21)   if $] > 5.011 and $] <= 5.013006;
         push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
         # c.t fixed with 1.30

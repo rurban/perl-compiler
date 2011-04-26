@@ -585,7 +585,10 @@ sub B::CV::bsave {
   asm "xcv_outside",     $outsideix;
   asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
   asm "xcv_depth",       $cv->DEPTH;
-  asm "xcv_flags",       $cv->CvFLAGS;
+  # add the RC flag if there's no backref magic. eg END (48)
+  my $cvflags = $cv->CvFLAGS;
+  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
+  asm "xcv_flags",       $cvflags;
   asm "xcv_gv",          $gvix;
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
 }

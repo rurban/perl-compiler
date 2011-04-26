@@ -313,13 +313,16 @@ result[48]='ok'
 # no-fold
 tests[49]='print q(ok) if "test" =~ /es/i;'
 result[49]='ok'
+# failed until r1000, overlarge AvFILL=3 endav
+tests[50]='print q(ok);END{}'
+result[50]='ok'
 #-------------
 # issue27
-tests[50]='require LWP::UserAgent;print q(ok);'
-result[50]='ok'
+tests[70]='require LWP::UserAgent;print q(ok);'
+result[70]='ok'
 # issue24
-tests[51]='dbmopen(%H,q(f),0644);print q(ok);'
-result[51]='ok'
+tests[71]='dbmopen(%H,q(f),0644);print q(ok);'
+result[71]='ok'
 
 
 init
