@@ -732,7 +732,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (15,41..43,46); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (15,41..43,46,50); # 8,14-16 fail on 5.00505 (max 20 then)
     push @todo, (103)  if $] < 5.007 or $] >= 5.010;
     push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
     push @todo, (29)   if $] >= 5.013006;
@@ -770,7 +770,7 @@ sub todo_tests_default {
         push @todo, (105)   if $what =~ /^cc(_o1)?/ or ($] > 5.008005 and $] < 5.010);
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
-        push @todo, (28,39,103,105) if $] > 5.007 and $] < 5.009;
+        push @todo, (103,105) if $] > 5.007 and $] < 5.009;
         #push @todo, (11,27) if $] < 5.009;
         push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
         # solaris also. I suspected nvx<=>cop_seq_*

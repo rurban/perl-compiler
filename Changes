@@ -18,6 +18,7 @@
 	* C.pm (1.32): check PERL_TRACK_MEMPOOL for AV malloc (25).
 	fixed init chunk splitting for CV and -fav-init2, if >10000 lines.
 	fixed overlarge AvFILL=3 of endav. Undefined subroutine &main:: (48)
+	work on try_isa, only !can try_autoload
 	* Assembler.pm (1.10): archflag bit 2 for MULTPLICITY
 	* Disassembler.pm (1.10): archflag bit 2 for MULTPLICITY
 	use longsize resp. ivsize from .plc not from perl
@@ -34,6 +35,7 @@
 	* TESTS: removed END block from test 28, only test run-time require (fixed 28)
 	added 48 for previous test 28 END block lexvar del_backref failure
 	added 49 for m//i blowup and -fno-fold testing
+	added 50 empty @ISA issue 64
 	* assembler.t: fix for hex->int IV roundtrips
 
 1.31	2011-03-21 rurban

@@ -211,3 +211,12 @@ print q(ok) if "test" =~ /es/i;
 >>>>
 ok
 #### 49 no-fold ####
+package Top;
+sub top{q(ok)};
+package Next;
+@ISA=qw(Top);
+package main;
+print Next->top();
+>>>>
+ok
+#### 50 @ISA issue 64 #####

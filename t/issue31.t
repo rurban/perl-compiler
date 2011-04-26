@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=31
-# B:CC Regex in pkg var fails
+# B:CC Regex in pkg var fails on 5.6 and 5.10
 use Test::More tests => 1;
 use strict;
 BEGIN {

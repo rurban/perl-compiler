@@ -1976,19 +1976,43 @@ sub B::RV::save {
   }
 }
 
-# compile-time expansion of AUTOLOAD to get the goto &sub addresses
+# If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
+# XXX issue 64, empty @ISA (in Bytecode ok)
+sub try_isa {
+  my ( $pv, $sub ) = @_;
+  no strict 'refs';
+  # return 0 unless $pv->can($sub); # XXX theoretically a valid shortcut
+  my $isa = \@{$pv .'::ISA'};
+  for (@$isa) { # XXX empty
+    warn sprintf( "Try %s::%s\n", $_, $sub ) if $verbose;
+    if (defined(*{$_ .'::'. $sub}{CODE})) {
+      mark_package($_);
+      return 1;
+    # XXX: depth-first traversal, need mro::get_linear_isa.
+    } elsif (defined @{ $pv . '::ISA' }) {
+      try_isa($_, $sub) and return 1;
+    }
+  }
+  return 1; # not found
+}
+
+# if the sub is not found,
+# 1. try @ISA, mark_package and return.
+# 2. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
+  warn sprintf( "No definition for sub %s::%s. Try \@ISA\n", $cvstashname, $cvname )
+    if $verbose;
+  return 1 if try_isa($cvstashname, $cvname);
+
   warn sprintf( "No definition for sub %s::%s. Try Autoload\n", $cvstashname, $cvname )
     if $verbose;
-
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
-  no strict 'refs';
   # Since 5.10 AUTOLOAD xsubs are already resolved
-  if (exists ${"$cvstashname\::"}{AUTOLOAD}) {
-    my $auto = \&{"$cvstashname\::AUTOLOAD"};
+  if (exists ${$cvstashname.'::'}{AUTOLOAD}) {
+    my $auto = \&{$cvstashname.'::AUTOLOAD'};
     # Tweaked version of __PACKAGE__::AUTOLOAD
-    ${"AutoLoader\::AUTOLOAD"} = ${"$cvstashname\::AUTOLOAD"} = "$cvstashname\::$cvname";
+    $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
 
     # Prevent eval from polluting STDOUT,STDERR and our c code. With a debugging perl STDERR is written
     local *REALSTDOUT;
@@ -2004,7 +2028,7 @@ sub try_autoload {
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
       # but not the whole CV optree. XXX This still fails with 5.8
-      my $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
+      my $cv = svref_2object( \&{$cvstashname.'::'.$cvname} );
       return $cv;
     }
   }
@@ -2013,7 +2037,7 @@ sub try_autoload {
 
   # Handle AutoLoader classes explicitly. Any more general AUTOLOAD
   # use should be handled by the class itself.
-  my $isa = \@{"$cvstashname\::ISA"};
+  my $isa = \@{$cvstashname.'::ISA'};
   if ( grep( $_ eq "AutoLoader", @$isa ) ) {
     warn "Forcing immediate load of sub derived from AutoLoader\n" if $verbose;
 
@@ -2030,10 +2054,10 @@ sub try_autoload {
     }
   }
 
-  svref_2object( \*{"$cvstashname\::AUTOLOAD"} )->save
+  svref_2object( \*{$cvstashname.'::AUTOLOAD'} )->save
     if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
-  svref_2object( \*{"$cvstashname\::CLONE"} )->save
-    if $cvstashname and exists ${"$cvstashname\::"}{CLONE};
+  svref_2object( \*{$cvstashname.'::CLONE'} )->save
+    if $cvstashname and exists ${$cvstashname.'::'}{CLONE};
 }
 sub Dummy_initxs { }
 

@@ -313,9 +313,12 @@ result[48]='ok'
 # no-fold
 tests[49]='print q(ok) if "test" =~ /es/i;'
 result[49]='ok'
-# failed until r1000, overlarge AvFILL=3 endav
-tests[50]='print q(ok);END{}'
+# @ISA issue 64
+tests[50]='package Top;sub top{q(ok)};package Next;@ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
+# failed until r1000, overlarge AvFILL=3 endav
+#tests[50]='print q(ok);END{}'
+#result[50]='ok
 #-------------
 # issue27
 tests[70]='require LWP::UserAgent;print q(ok);'
