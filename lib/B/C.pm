@@ -1989,7 +1989,7 @@ sub try_isa {
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_);
       return 1;
-    # XXX: depth-first traversal, need mro::get_linear_isa.
+    # XXX: depth-first recursive traversal. mro::get_linear_isa would be better.
     } elsif (defined @{ $cvstashname . '::ISA' }) {
       try_isa($_, $cvname) and return 1;
     }

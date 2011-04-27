@@ -295,15 +295,15 @@ result[47]='ok'
 # END block del_backref with bytecode only
 tests[48]='my $s=q{ok};END{print $s}'
 result[48]='ok'
+# even this failed until r1000 (AvFILL 3 of END)
+#tests[48]='print q{ok};END{}'
+#result[48]='ok'
 # no-fold
 tests[49]='print q(ok) if "test" =~ /es/i;'
 result[49]='ok'
 # @ISA issue 64
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
-# failed until r1000 (AvFILL 3 of END)
-#tests[50]='print q{ok};END{}'
-#result[50]='ok'
 #-------------
 # issue27
 tests[70]='require LWP::UserAgent;print q(ok);'
