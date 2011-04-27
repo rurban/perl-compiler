@@ -1,0 +1,32 @@
+# B::C::VERSION = 1.32 r1000 M
+# perlversion = 5.014000-m
+# path = /usr/local/bin/perl5.14.0-m
+# platform = darwin 64bit
+# multi perl
+fail Test::Warn
+pass Encode
+pass Variable::Magic
+pass CGI
+pass B::Hooks::EndOfScope
+pass Test::Pod
+pass Digest::SHA1
+pass namespace::clean
+pass Class::Inspector
+pass Clone
+pass XML::NamespaceSupport
+pass XML::SAX
+pass YAML
+pass MooseX::Types #TODO always
+pass Class::Singleton
+pass DateTime::TimeZone
+pass DateTime::Locale
+pass DateTime
+pass IO::String
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.32 - perl-5.014000-m
+# pass  92 / 100 (92.0%)
+# fail   8 / 100 (8.0%)
+# todo   7 /   8 (87.5%)
+# skip   0 / 100 (0.0% not installed)
