@@ -31,4 +31,3 @@ ccompileok(1, "CC", "ccode49i", $script,
       $B::CC::VERSION < 1.08
         ? "fixed with B::CC 1.08 r625 (B-C-1.28)"
         : undef);
-

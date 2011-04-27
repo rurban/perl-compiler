@@ -11,7 +11,6 @@ use Test::More tests => 1;
 
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 
-
 TODO: {
   local $TODO = 'require LWP::UserAgent still fails'; # cygwin-5.10.1,5.10.1d-nt,5.3.10*,...
   # &Config::AUTOLOAD failed on Config::launcher at Config.pm line 72.

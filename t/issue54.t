@@ -35,7 +35,7 @@ my $result = `$runexe`;
 $result =~ s/\n$//;
 
 SKIP: {
-  skip "no pmc on 5.6", 1 if $] < 5.008;
+  skip "no pmc on 5.6 (yet)", 1 if $] < 5.008;
   ok($result eq $expected, "issue54 - pad_swipe error with package pmcs");
 }
 
@@ -43,4 +43,3 @@ END {
   unlink($name, "$name.pmc", "$name.pm")
     if $result eq $expected;
 }
-
