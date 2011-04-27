@@ -1983,14 +1983,13 @@ sub try_isa {
   no strict 'refs';
   # XXX theoretically a valid shortcut. In reality it fails...
   # return 0 unless $cvstashname->can($cvname); 
-  my $isa = \@{$cvstashname .'::ISA'};
-  for (@$isa) { # XXX empty when/why?
-    warn sprintf( "Try %s::%s\n", $_, $cvname ) if $verbose;
+  for (@{$cvstashname .'::ISA'}) { # XXX empty when/why?
+    warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_);
       return 1;
     # XXX: depth-first recursive traversal. mro::get_linear_isa would be better.
-    } elsif (defined @{ $cvstashname . '::ISA' }) {
+    } elsif (defined @{ $_ . '::ISA' }) {
       try_isa($_, $cvname) and return 1;
     }
   }
@@ -2003,16 +2002,16 @@ sub try_isa {
 # 2. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
-  warn sprintf( "No definition for sub %s::%s. Try \@ISA\n", $cvstashname, $cvname )
-    if $verbose;
+  warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA\n",
+		$cvstashname, $cvname, $cvstashname ) if $verbose;
   return 1 if try_isa($cvstashname, $cvname);
 
   if (defined(*{'UNIVERSAL::'. $cvname}{CODE})) {
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
 
-  warn sprintf( "No definition for sub %s::%s. Try Autoload\n", $cvstashname, $cvname )
-    if $verbose;
+  warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
+		$cvstashname, $cvname, $cvstashname ) if $verbose;
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
   if (exists ${$cvstashname.'::'}{AUTOLOAD}) {
@@ -2835,7 +2834,7 @@ sub B::AV::save {
 	       && $values[$i+2] =~ /^ptr_undef|&PL_sv_undef$/)
       {
 	$count=0;
-	while ($values[$i+$count+1] =~ /^ptr_undef|&PL_sv_undef$/) {
+	while (defined $values[$i+$count+1] and $values[$i+$count+1] =~ /^ptr_undef|&PL_sv_undef$/) {
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=0; gcount<" . ($count+1) . "; gcount++) {"
@@ -3663,7 +3662,7 @@ dl_init(pTHX)
 EOT
   my ($dl, $xs);
   my @dl_modules = @DynaLoader::dl_modules;
-  my @PERLMODS = split(/\,/, $ENV{'PERLMODS'}); # from cpanel
+  my @PERLMODS = split(/\,/, $ENV{'PERLMODS'}) if $ENV{'PERLMODS'}; # from cpanel
   foreach my $perlmod (@PERLMODS) {
     warn "Extra module ${perlmod}\n";
     push @dl_modules, $perlmod unless grep { $_ ne $perlmod } @dl_modules;

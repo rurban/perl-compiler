@@ -430,6 +430,8 @@ sub compile_cstyle {
             if ($l) {
                 $l = substr($l,1);
                 if ($^O eq 'darwin' and $l =~/\.bundle$/) {
+# XXX this does not work yet. file was built for unsupported file format 
+# which is not the architecture being linked (x86_64)
                     $dylib = $l;
                     $dylib =~ s/\.bundle$/.a/;
                     $dylib =~ s{^.*/auto/}{};
@@ -439,7 +441,9 @@ sub compile_cstyle {
                         vprint 2, "Using static ".$dylib;
                     } else {
                         vprint 1, "Creating static ".$dylib;
-                        vprint 4, "libtool -static ".$l." -o ".$dylib;
+                        #my ($arch) = $Config{ldflags} =~ /-arch (\w+)/;
+                        #$arch = $arch ? " -arch_only $arch" : "";
+                        vprint 3, "libtool -static ".$l." -o ".$dylib;
                         system("libtool","-static",$l,"-o",$dylib);
                     }
                     $l = "./".$dylib;

@@ -10,7 +10,7 @@
 	save_cq => save_begin+save_init_end: moved push_begin upfront for the same
 	  init order (44).
 	add CVf_CVGV_RC flag (refcount) on CV with no backref magic, e.g. END (48)
-	added option -i includeall which adds no BEGIN require ops, but adds 
+	added option -i includeall which adds no BEGIN require ops, but adds
 	  all included symbols.
 	better BEGIN block @INC manipulation detection (33)
 	print newsvx flags if -S or Comment
