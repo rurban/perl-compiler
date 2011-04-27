@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r958
+# B::C::VERSION = 1.32 r1004 M
 # perlversion = 5.012000
 # path = /usr/local/bin/perl5.12.0
 # platform = cygwin 32bit
@@ -42,7 +42,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-pass Storable
+fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -50,14 +50,14 @@ pass Task::Weaken
 pass Class::Accessor
 fail Test::Tester #TODO with threads
 pass Sub::Install
-fail Attribute::Handlers #TODO always
+pass Attribute::Handlers #TODO always
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-pass Sub::Name
-pass Filter::Util::Call
+fail Sub::Name
+fail Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -66,14 +66,14 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP #TODO always
+pass Class::MOP #TODO always
 skip Moose #hangs threaded, $] >= 5.011004
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+fail DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -94,17 +94,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+pass MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+fail DateTime::Locale
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.30 - perl-5.012000
-# pass  93 /  99 (93.9%)
-# fail   6 /  99 (6.1%)
-# todo   6 /   6 (100.0%)
+# 99 / 100 modules tested with B-C-1.32 - perl-5.012000
+# pass  90 /  99 (90.9%)
+# fail   9 /  99 (9.1%)
+# todo   6 /   9 (66.7%)
 # skip   1 / 100 (1.0% not installed)

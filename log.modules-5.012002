@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.30 r954
+# B::C::VERSION = 1.32 r996
 # perlversion = 5.012002
 # path = /usr/local/bin/perl5.12.2
 # platform = cygwin 32bit
@@ -42,7 +42,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-pass Storable
+fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -56,8 +56,8 @@ pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-pass Sub::Name
-pass Filter::Util::Call
+fail Sub::Name
+fail Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -73,7 +73,7 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+fail DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -97,14 +97,14 @@ pass YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+fail DateTime::Locale
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.30 - perl-5.012002
-# pass  92 /  99 (92.9%)
-# fail   7 /  99 (7.1%)
-# todo   6 /   7 (85.7%)
+# 99 / 100 modules tested with B-C-1.32 - perl-5.012002
+# pass  86 /  99 (86.9%)
+# fail  13 /  99 (13.1%)
+# todo   6 /  13 (46.2%)
 # skip   1 / 100 (1.0% not installed)
