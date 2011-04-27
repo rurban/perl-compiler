@@ -360,13 +360,13 @@ sub svop_or_padop_pv {
       return $package_pv;
     }
     if ($sv->FLAGS & SVf_ROK) {
-      goto missing if $sv->isa("B::NULL");
+      goto missing if ref $sv eq "B::NULL";
       my $rv = $sv->RV;
-      if ($rv->isa("B::PVGV")) {
+      if (ref $rv eq "B::PVGV") {
 	my $o = $rv->IO;
 	return $o->STASH->NAME if $$o;
       }
-      goto missing if $rv->isa("B::PVMG");
+      goto missing if ref($rv) eq "B::PVMG";
       return $rv->STASH->NAME;
     } else {
   missing:
@@ -374,7 +374,7 @@ sub svop_or_padop_pv {
 	# Called from some svop before method_named. no magic pv string, so a method arg.
 	# The first const pv as method_named arg is always the $package_pv.
 	return $package_pv;
-      } elsif ($sv->isa("B::IV")) {
+      } elsif (ref($sv) eq "B::IV") {
         warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
                      $sv->FLAGS);
         # XXX untested!
@@ -1010,7 +1010,7 @@ sub B::COP::save {
   # shameless cut'n'paste from B::Deparse
   my $warn_sv;
   my $warnings   = $op->warnings;
-  my $is_special = $warnings->isa("B::SPECIAL");
+  my $is_special = ref($warnings) eq "B::SPECIAL";
   my $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
   if ( $is_special && $$warnings == 4 ) {
     # use warnings 'all';
@@ -1718,7 +1718,7 @@ sub B::PVMG::save {
     }
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
-    unless ($] >= 5.011 and $sv->isa('B::REGEXP')) {
+    unless ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
       $ivx = $sv->IVX; # both apparently unused
       $nvx = $sv->NVX;
     }
@@ -1952,7 +1952,7 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # and stashes, too
-    elsif ( $sv->RV->isa('B::HV') && $sv->RV->NAME ) {
+    elsif ( ref($sv->RV) eq 'B::HV' && $sv->RV->NAME ) {
       $xrvsect->add("(SV*)Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
@@ -2500,11 +2500,11 @@ sub B::GV::save {
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
-  my $is_special = $gv->isa("B::SPECIAL");
+  my $is_special = ref($gv) eq "B::SPECIAL";
 
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
-    unless ($egv->isa("B::SPECIAL")) {
+    if (ref($egv) ne "B::SPECIAL") {
       my $estash = $egv->STASH->NAME;
       if ( $$gv != $$egv ) {
         warn(sprintf( "EGV name is %s, saving it now\n",
@@ -3007,8 +3007,8 @@ sub B::HV::save {
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
       my $sv = $contents[$i];
       warn sprintf("HV recursion? with $sv -> %s\n", $sv->RV)
-        if $sv->isa("B::RV")
-          #and $sv->RV->isa('B::CV')
+        if ref($sv) eq "B::RV"
+          #and ref($sv->RV) eq 'B::CV'
           and defined objsym($sv)
           and $debug{hv};
       $contents[$i] = $sv->save;
