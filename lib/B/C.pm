@@ -1979,31 +1979,37 @@ sub B::RV::save {
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
 # XXX issue 64, empty @ISA (in Bytecode ok)
 sub try_isa {
-  my ( $pv, $sub ) = @_;
+  my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
-  # return 0 unless $pv->can($sub); # XXX theoretically a valid shortcut
-  my $isa = \@{$pv .'::ISA'};
-  for (@$isa) { # XXX empty
-    warn sprintf( "Try %s::%s\n", $_, $sub ) if $verbose;
-    if (defined(*{$_ .'::'. $sub}{CODE})) {
+  # XXX theoretically a valid shortcut. In reality it fails...
+  # return 0 unless $cvstashname->can($cvname); 
+  my $isa = \@{$cvstashname .'::ISA'};
+  for (@$isa) { # XXX empty when/why?
+    warn sprintf( "Try %s::%s\n", $_, $cvname ) if $verbose;
+    if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_);
       return 1;
     # XXX: depth-first traversal, need mro::get_linear_isa.
-    } elsif (defined @{ $pv . '::ISA' }) {
-      try_isa($_, $sub) and return 1;
+    } elsif (defined @{ $cvstashname . '::ISA' }) {
+      try_isa($_, $cvname) and return 1;
     }
   }
   return 1; # not found
 }
 
-# if the sub is not found,
+# if the sub or method is not found,
 # 1. try @ISA, mark_package and return.
+# 2. try UNIVERSAL::method
 # 2. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
   warn sprintf( "No definition for sub %s::%s. Try \@ISA\n", $cvstashname, $cvname )
     if $verbose;
   return 1 if try_isa($cvstashname, $cvname);
+
+  if (defined(*{'UNIVERSAL::'. $cvname}{CODE})) {
+    return svref_2object( \&{'UNIVERSAL::'.$cvname} );
+  }
 
   warn sprintf( "No definition for sub %s::%s. Try Autoload\n", $cvstashname, $cvname )
     if $verbose;

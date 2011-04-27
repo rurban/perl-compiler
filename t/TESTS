@@ -214,7 +214,7 @@ ok
 package Top;
 sub top{q(ok)};
 package Next;
-@ISA=qw(Top);
+our @ISA=qw(Top);
 package main;
 print Next->top();
 >>>>
