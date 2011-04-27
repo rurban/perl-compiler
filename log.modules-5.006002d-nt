@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.32 r1001
+# B::C::VERSION = 1.32 r1011
 # perlversion = 5.006002d-nt
-# path = /cyg1/usr/local/bin/perl5.6.2
+# path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
 # non-threaded perl
 pass Exporter
@@ -11,7 +11,7 @@ pass Pod::Escapes
 pass Pod::Simple
 pass IO
 pass Scalar::Util
-fail Getopt::Long
+pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
@@ -41,7 +41,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO without threads
+pass LWP #TODO without threads
 skip Storable
 pass base
 pass List::MoreUtils
@@ -50,7 +50,7 @@ pass Task::Weaken
 pass Class::Accessor #TODO 5.6
 pass Test::Tester
 pass Sub::Install
-fail Attribute::Handlers #TODO always
+pass Attribute::Handlers #TODO always
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -62,7 +62,7 @@ pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
 pass MRO::Compat
-fail Time::HiRes
+pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
@@ -72,7 +72,7 @@ pass Test::Deep
 pass Carp::Clan
 skip Module::Pluggable
 pass if(1) => "Sys::Hostname"
-fail Text::Balanced
+pass Text::Balanced
 skip DBI
 pass Time::Local
 pass IO::Scalar
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 82 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
-# pass  74 /  82 (90.2%)
-# fail   8 /  82 (9.8%)
-# todo   7 /   8 (87.5%)
+# pass  79 /  82 (96.3%)
+# fail   3 /  82 (3.7%)
+# todo   7 /   3 (233.3%)
 # skip  18 / 100 (18.0% not installed)
