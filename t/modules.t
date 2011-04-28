@@ -342,8 +342,9 @@ sub is_skip {
     #  return 'fails $] >= 5.011004' if $_ eq $module;
     #}
     if ($Config{useithreads}) { # hangs and crashes threaded since 5.12
-      foreach (qw( Moose )) {
-        # Recursive inheritance detected in package 'Moose::Object' at /usr/lib/perl5/5.13.10/i686-debug-cygwin/DynaLoader.pm line 103
+      foreach (qw(  )) {
+        # Old: Recursive inheritance detected in package 'Moose::Object' at /usr/lib/perl5/5.13.10/i686-debug-cygwin/DynaLoader.pm line 103
+        # Update: Moose works ok with r1013
 	 return 'hangs threaded, $] >= 5.011004' if $_ eq $module;
       }
     }
