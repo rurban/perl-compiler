@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1004 M
+# B::C::VERSION = 1.32 r1007
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -22,7 +22,7 @@ pass Test #TODO 5.8.9
 pass Data::Dumper
 pass File::Spec
 pass File::Temp #TODO 5.8.x and 5.10.0
-fail ExtUtils::Install
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -41,8 +41,8 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP #TODO without threads
-fail Storable #TODO debugging without threads
+pass LWP #TODO without threads
+pass Storable #TODO debugging without threads
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.32 - perl-5.008009d-nt
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo  18 /   7 (257.1%)
+# pass  96 / 100 (96.0%)
+# fail   4 / 100 (4.0%)
+# todo  18 /   4 (450.0%)
 # skip   0 / 100 (0.0% not installed)

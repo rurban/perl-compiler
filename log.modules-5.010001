@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1004 M
+# B::C::VERSION = 1.32 r1007
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -42,7 +42,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-fail Storable
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -67,7 +67,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP #TODO always
-fail Moose #TODO always
+pass Moose #TODO always
 pass Test::Deep
 fail Carp::Clan #TODO 5.10 with threads
 fail Module::Pluggable #TODO 5.8-5.10 with threads
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+pass MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone #TODO 5.10 with threads
 skip DateTime::Locale
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
-# 98 / 100 modules tested with B-C-1.32 - perl-5.010001
-# pass  84 /  98 (85.7%)
-# fail  14 /  98 (14.3%)
-# todo  15 /  14 (107.1%)
-# skip   2 / 100 (2.0% not installed)
+# 100 / 100 modules tested with B-C-1.32 - perl-5.010001
+# pass  86 / 100 (86.0%)
+# fail  14 / 100 (14.0%)
+# todo  17 /  14 (121.4%)
+# skip   0 / 100 (0.0% not installed)
