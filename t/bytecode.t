@@ -53,7 +53,7 @@ if ($DEBUGGING) {
   }
 }
 my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
-@todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..43,46)
+@todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..43,46,50)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #44 fixed by moving push_begin upfront
 push @todo, (42..43)if $] >= 5.010;
