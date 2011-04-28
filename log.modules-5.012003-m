@@ -6,9 +6,9 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
-fail Pod::Simple
+pass Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
@@ -69,7 +69,7 @@ pass Devel::GlobalDestruction
 fail Class::MOP #TODO always
 fail Moose #TODO always
 fail Test::Deep
-fail Carp::Clan
+pass Carp::Clan
 fail Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash
 # 100 / 100 modules tested with B-C-1.32 - perl-5.012003-m
-# pass  84 / 100 (84.0%)
-# fail  16 / 100 (16.0%)
-# todo   7 /  16 (43.8%)
+# pass  87 / 100 (87.0%)
+# fail  13 / 100 (13.0%)
+# todo   7 /  13 (53.8%)
 # skip   0 / 100 (0.0% not installed)
