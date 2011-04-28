@@ -2454,7 +2454,7 @@ sub B::CV::save {
     }
   }
   my $stash = $cv->STASH;
-  if ($$stash) {
+  if ($$stash and ref($stash)) {
     $stash->save;
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, (HV*)s\\_%x);", $$stash ) );
@@ -2610,7 +2610,7 @@ sub B::GV::save {
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
     my $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
-      warn "GV::save \$"."$sym\n" if $debug{gv};
+      warn "GV::save \$".$sym."\n" if $debug{gv};
       $gvsv->save; #mostly NULL. $gvsv->isa("B::NULL");
       $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       warn "GV::save \$$fullname\n" if $debug{gv};
@@ -2693,7 +2693,7 @@ sub B::GV::save {
       $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
         unless $optimize_cop;
       warn "GV::save GvFILE(*$fullname) " . cstring( $gv->FILE ) . "\n"
-        if $debug{gv};
+        if $debug{gv} and !$ITHREADS;
     }
     my $gvform = $gv->FORM;
     if ( $$gvform && $savefields & Save_FORM ) {
