@@ -3990,7 +3990,13 @@ sub mark_package {
           if (0) { my $s=$package; $s=~s/::/\//g; require "$s.pm"; }
           unless ( $unused_sub_packages{$isa} ) {
             warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
-            mark_package($isa);
+            if (exists $unused_sub_packages{$isa} ) {
+              warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
+              $unused_sub_packages{$isa} = 1;
+              walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
+            } else {
+              mark_package($isa);
+            }
           }
         }
       }
@@ -4096,6 +4102,7 @@ sub should_save {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
     if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp|utf8)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
+      # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
@@ -4139,9 +4146,9 @@ sub walkpackages {
     local (*glob);
     next unless $ref;
     *glob = $ref;
-    warn("Walkpackages $prefix$sym\n") if $debug{pkg} and $debug{walk};
     if ( $sym =~ /::$/ ) {
       $sym = $prefix . $sym;
+      warn("Walkpackages $sym\n") if $debug{pkg} and $debug{walk};
       # The walker was missing main subs to avoid recursion into O compiler subs again
       if ( $sym ne "main::" && $sym ne "<none>::" && &$recurse($sym) ) {
         walkpackages( \%glob, $recurse, $sym );
