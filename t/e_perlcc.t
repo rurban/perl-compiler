@@ -14,7 +14,9 @@ my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 #my $o = '';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
 #$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
-my $perlcc = "$X -Mblib blib/script/perlcc";
+my $perlcc = $] < 5.008
+  ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc"
+  : "$X -Mblib blib/script/perlcc";
 sub cleanup { unlink ('a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 
@@ -185,7 +187,7 @@ is(`$perlcc -B -oa.plc -e$e`, "", "-B -o -e");
 ok(-e 'a.plc', "a.plc");
 TODO: {
   local $TODO = 'yet unsupported 5.6' if $] < 5.007;
-  is(`$X -Mblib a.plc`, "ok", "executable plc"); #76
+  is(`$X -Iblib/arch -Iblib/lib a.plc`, "ok", "executable plc"); #76
 }
 cleanup;
 
