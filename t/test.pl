@@ -780,6 +780,7 @@ sub todo_tests_default {
         push @todo, (15)    if ($] >= 5.012 or $] < 5.010) and $ITHREADS;
         push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
         push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
+        push @todo, (103)   if $] >= 5.012 and $ITHREADS;
         #push @todo, (16)    if $] >= 5.013009;
     }
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
