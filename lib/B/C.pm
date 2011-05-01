@@ -236,7 +236,7 @@ my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
-my %unused_sub_packages;
+my %include_package;
 my %static_ext;
 my $use_xsloader;
 my $nullop_count         = 0;
@@ -360,13 +360,13 @@ sub svop_or_padop_pv {
       return $package_pv;
     }
     if ($sv->FLAGS & SVf_ROK) {
-      goto missing if ref $sv eq "B::NULL";
+      goto missing if $sv->isa("B::NULL");
       my $rv = $sv->RV;
-      if (ref $rv eq "B::PVGV") {
+      if ($rv->isa("B::PVGV")) {
 	my $o = $rv->IO;
 	return $o->STASH->NAME if $$o;
       }
-      goto missing if ref($rv) eq "B::PVMG";
+      goto missing if $rv->isa("B::PVMG");
       return $rv->STASH->NAME;
     } else {
   missing:
@@ -374,7 +374,7 @@ sub svop_or_padop_pv {
 	# Called from some svop before method_named. no magic pv string, so a method arg.
 	# The first const pv as method_named arg is always the $package_pv.
 	return $package_pv;
-      } elsif (ref($sv) eq "B::IV") {
+      } elsif ($sv->isa("B::IV")) {
         warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
                      $sv->FLAGS);
         # XXX untested!
@@ -1011,7 +1011,7 @@ sub B::COP::save {
   # shameless cut'n'paste from B::Deparse
   my $warn_sv;
   my $warnings   = $op->warnings;
-  my $is_special = ref($warnings) eq "B::SPECIAL";
+  my $is_special = $warnings->isa("B::SPECIAL");
   my $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
   if ( $is_special && $$warnings == 4 ) {
     # use warnings 'all';
@@ -1719,7 +1719,7 @@ sub B::PVMG::save {
     }
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
-    unless ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
+    unless ($] >= 5.011 and $sv->isa('B::REGEXP')) {
       $ivx = $sv->IVX; # both apparently unused
       $nvx = $sv->NVX;
     }
@@ -1953,7 +1953,7 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # and stashes, too
-    elsif ( ref($sv->RV) eq 'B::HV' && $sv->RV->NAME ) {
+    elsif ( $sv->RV->isa('B::HV') && $sv->RV->NAME ) {
       $xrvsect->add("(SV*)Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
@@ -2501,11 +2501,11 @@ sub B::GV::save {
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
-  my $is_special = ref($gv) eq "B::SPECIAL";
+  my $is_special = $gv->isa("B::SPECIAL");
 
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
-    if (ref($egv) ne "B::SPECIAL") {
+    unless ($egv->isa("B::SPECIAL")) {
       my $estash = $egv->STASH->NAME;
       if ( $$gv != $$egv ) {
         warn(sprintf( "EGV name is %s, saving it now\n",
@@ -3008,8 +3008,8 @@ sub B::HV::save {
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
       my $sv = $contents[$i];
       warn sprintf("HV recursion? with $sv -> %s\n", $sv->RV)
-        if ref($sv) eq "B::RV"
-          #and ref($sv->RV) eq 'B::CV'
+        if $sv->isa("B::RV")
+          #and $sv->RV->isa('B::CV')
           and defined objsym($sv)
           and $debug{hv};
       $contents[$i] = $sv->save;
@@ -3673,7 +3673,7 @@ EOT
   }
   # filter out unused dynaloaded B modules, used within the compiler only.
   for my $c (qw(B B::C)) {
-    if (!$xsub{$c} and !$unused_sub_packages{$c}) {
+    if (!$xsub{$c} and !$include_package{$c}) {
       # (hopefully, see test 103)
       warn "no dl_init for $c, not marked\n" if $verbose;
       @dl_modules = grep { $_ ne 'B' } @dl_modules;
@@ -3957,8 +3957,7 @@ sub B::GV::savecv {
   # symbol table which is on the path to a package which we need to save
   # e.g. this is 'Getopt' and we need to save 'Getopt::Long'
   #
-  #return unless ( $unused_sub_packages{$package} );
-  return if ( $package ne 'main' and !$unused_sub_packages{$package} );
+  return if  $package ne 'main' and !$include_package{$package} );
   return if ( $package eq 'main' and
   	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
     # this regex was too greedy and was taking out something like sub _update {} in main
@@ -3977,15 +3976,17 @@ sub B::GV::savecv {
 sub mark_package {
   my $package = shift;
   my $force = shift;
-  if ( !$unused_sub_packages{$package} or $force ) {
+  $force = 0 if $] < 5.010;
+  if ( !$include_package{$package} or $force ) {
     no strict 'refs';
-    if (exists $unused_sub_packages{$package} and !$unused_sub_packages{$package}) {
+    # i.e. if force
+    if (exists $include_package{$package} and !$include_package{$package}) {
       warn "$package previously deleted, save now\n" if $verbose;
-      $unused_sub_packages{$package} = 1;
+      $include_package{$package} = 1;
       add_hashINC( $package );
       walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
     } else{
-      $unused_sub_packages{$package} = 1;
+      $include_package{$package} = 1;
     }
     if ( defined @{ $package . '::ISA' } and !$force ) {
       # XXX walking the ISA is often not enough.
@@ -4000,7 +4001,7 @@ sub mark_package {
         #else
         {
           if (0) { my $s=$package; $s=~s/::/\//g; require "$s.pm"; }
-          unless ( $unused_sub_packages{$isa} ) {
+          unless ( $include_package{$isa} ) {
             warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
 	    mark_package( $isa, 1);
           }
@@ -4057,13 +4058,13 @@ sub should_save {
   no strict qw(vars refs);
   my $package = shift;
   $package =~ s/::$//;
-  return $unused_sub_packages{$package} = 0
+  return $include_package{$package} = 0
     if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
   warn "Considering $package\n" if $debug{pkg};
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
-  foreach my $u ( grep( $unused_sub_packages{$_}, keys %unused_sub_packages ) )
+  foreach my $u ( grep( $include_package{$_}, keys %include_package ) )
   {
     # If this package is a prefix to something we are saving, traverse it
     # but do not mark it for saving if it is not already
@@ -4071,16 +4072,16 @@ sub should_save {
     # not save Getopt
     return 1 if ( $u =~ /^$package\:\:/ );
   }
-  if ( exists $unused_sub_packages{$package} ) {
+  if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
-      if ($unused_sub_packages{$package}) {
+      if ($include_package{$package}) {
         warn "$package is cached\n";
       } else {
         warn "Cached $package is already deleted\n";
       }
     }
-    delete_unsaved_hashINC($package) unless $unused_sub_packages{$package};
-    return $unused_sub_packages{$package};
+    delete_unsaved_hashINC($package) unless $include_package{$package};
+    return $include_package{$package};
   }
 
   # Omit the packages which we use (and which cause grief
@@ -4092,7 +4093,7 @@ sub should_save {
     || $package =~ /^(B|PerlIO|Internals|IO)::/ )
   {
     delete_unsaved_hashINC($package);
-    return $unused_sub_packages{$package} = 0;
+    return $include_package{$package} = 0;
   }
 
   # keep core packages
@@ -4115,7 +4116,7 @@ sub should_save {
     }
   }
   delete_unsaved_hashINC($package);
-  return $unused_sub_packages{$package} = 0;
+  return $include_package{$package} = 0;
 }
 
 sub inc_packname {
@@ -4243,7 +4244,7 @@ sub save_context {
 }
 
 sub descend_marked_unused {
-  foreach my $pack ( keys %unused_sub_packages ) {
+  foreach my $pack ( keys %include_package ) {
     mark_package($pack);
   }
 }
@@ -4448,7 +4449,7 @@ sub init_sections {
 
 sub mark_unused {
   my ( $arg, $val ) = @_;
-  $unused_sub_packages{$arg} = $val;
+  $include_package{$arg} = $val;
 }
 
 sub compile {
@@ -4687,9 +4688,9 @@ Verbose compilation. Currently gives a few compilation statistics.
 
 Force end of options
 
-=item B<-u>I<Package>
+=item B<-u>I<Package> "use Package"
 
-Force all apparently unused subs from Package to be compiled.
+Force all subs from Package to be compiled.
 This allows programs to use eval "foo()" even when sub foo is never
 seen to be used at compile time. The down side is that any subs which
 really are never used also have code generated. This option is
