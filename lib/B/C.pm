@@ -3957,7 +3957,7 @@ sub B::GV::savecv {
   # symbol table which is on the path to a package which we need to save
   # e.g. this is 'Getopt' and we need to save 'Getopt::Long'
   #
-  return if  $package ne 'main' and !$include_package{$package} );
+  return if ( $package ne 'main' and !$include_package{$package} );
   return if ( $package eq 'main' and
   	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
     # this regex was too greedy and was taking out something like sub _update {} in main
