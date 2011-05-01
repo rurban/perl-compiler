@@ -19,8 +19,9 @@
 	fixed init chunk splitting for CV and -fav-init2, if >10000 lines.
 	fixed overlarge AvFILL=3 of endav. Undefined subroutine &main:: (48)
 	work on try_isa, only !can try_autoload
-	detect and fix already discarded packages which are brought back in by 
-	  someone else's ISA. (Sub::Name needs DynaLoader::dl_load_flags)
+	mark_package force: detect and fix already discarded packages which
+	  are brought back in directly or by someone else's ISA. (e.g. Sub::Name
+	  needs DynaLoader::dl_load_flags)
 	* Assembler.pm (1.10): archflag bit 2 for MULTPLICITY
 	* Disassembler.pm (1.10): archflag bit 2 for MULTPLICITY
 	use longsize resp. ivsize from .plc not from perl
@@ -30,7 +31,7 @@
 	* bytecode.pl: support m for MULTIPLICITY (yet unused)
 	* Makefile.PL: move cc_runtime.h installation to make install step
 	  (sudo). Tested ok on darwin gcc, does use -I. internally.
-	* cc_runtime.h: renamed from cc_runtime514.h 
+	* cc_runtime.h: renamed from cc_runtime514.h
 	* cc_harness: fixed darwin coredir
 	* perlcc (2.11): fixed darwin coredir.
 	omit darwin linking to dynamic .bundle - generate .a via libtool

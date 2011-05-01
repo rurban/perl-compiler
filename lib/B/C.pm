@@ -948,6 +948,7 @@ sub B::SVOP::save {
   my $svsym = 'Nullsv';
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     # pad does not need to be saved
+    $svsym = '&PL_sv_undef';
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
   } else {
     $svsym  = '(SV*)' . $sv->save;
@@ -1986,7 +1987,7 @@ sub try_isa {
   for (@{$cvstashname .'::ISA'}) { # XXX empty when/why?
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
-      mark_package($_);
+      mark_package($_, 1);
       return 1;
     # XXX: depth-first recursive traversal. mro::get_linear_isa would be better.
     } elsif (defined @{ $_ . '::ISA' }) {
@@ -2651,7 +2652,7 @@ sub B::GV::save {
 	my $package = $gvcv->GV->EGV->STASH->NAME;
         warn "Boot $package, XS alias of $fullname to $origname\n" if $debug{pkg};
         if (0) { my $s = $package; $s =~ s/::/\//g; require "$s.pm"; }
-        mark_package($package);
+        mark_package($package, 1);
         {
           no strict 'refs';
           svref_2object( \&{"$package\::bootstrap"} )->save
@@ -3552,6 +3553,9 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
+#if PERL_VERSION >= 11 && defined(PERL_PHASE_DESTRUCT)
+    PL_phase = PERL_PHASE_DESTRUCT;
+#endif
 
     if (PL_threadhook(aTHX)) {
         /* Threads hook has vetoed further cleanup */
@@ -3972,10 +3976,18 @@ sub B::GV::savecv {
 
 sub mark_package {
   my $package = shift;
-  unless ( $unused_sub_packages{$package} ) {
+  my $force = shift;
+  if ( !$unused_sub_packages{$package} or $force ) {
     no strict 'refs';
-    $unused_sub_packages{$package} = 1;
-    if ( defined @{ $package . '::ISA' } ) {
+    if (exists $unused_sub_packages{$package} and !$unused_sub_packages{$package}) {
+      warn "$package previously deleted, save now\n" if $verbose;
+      $unused_sub_packages{$package} = 1;
+      add_hashINC( $package );
+      walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
+    } else{
+      $unused_sub_packages{$package} = 1;
+    }
+    if ( defined @{ $package . '::ISA' } and !$force ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
       foreach my $isa ( @{ $package . '::ISA' } ) {
@@ -3990,13 +4002,7 @@ sub mark_package {
           if (0) { my $s=$package; $s=~s/::/\//g; require "$s.pm"; }
           unless ( $unused_sub_packages{$isa} ) {
             warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
-            if (exists $unused_sub_packages{$isa} ) {
-              warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
-              $unused_sub_packages{$isa} = 1;
-              walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
-            } else {
-              mark_package($isa);
-            }
+	    mark_package( $isa, 1);
           }
         }
       }
@@ -4121,19 +4127,15 @@ sub inc_packname {
 
 sub delete_unsaved_hashINC {
   my $packname = shift;
-  #if ($] >= 5.013005 and $packname eq "warnings::register") {
-    # XXX TODO check if -fwarnings not set via cmdline
-    #$B::C::warnings = 0;
-    #warn "Using -fno-warnings\n" if $verbose or $debug{pkg};
-  #}
-  #if ($] >= 5.013009 and $packname eq "utf8") {
-    # XXX TODO check if -ffold not set via cmdline
-    #$B::C::fold = 0;
-    #warn "Using -fno-fold\n" if $verbose or $debug{pkg};
-  #}
   $packname = inc_packname($packname);
   warn "Deleting $packname from \%INC\n" if $INC{$packname} and $debug{pkg};
   delete $INC{$packname};
+}
+sub add_hashINC {
+  my $packname = shift;
+  my $incpack = inc_packname($packname);
+  warn "Adding $packname to \%INC\n" if $debug{pkg};
+  $INC{$incpack} = $packname;
 }
 
 sub walkpackages {
@@ -4210,11 +4212,15 @@ sub save_unused_subs {
 
 sub save_context {
   # forbid run-time extends of curpad syms, names and INC
-  local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "save context:\n" if $verbose;
   $init->add("/* curpad names */");
   warn "curpad names:\n" if $verbose;
+  # Record comppad sv's names, may not be static
+  local $B::C::pv_copy_on_grow = 0;
+  #my $svi = $svsect->index;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save;
+  # XXX from $svi to $svsect->index we have new sv's
+  $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "curpad syms:\n" if $verbose;
   $init->add("/* curpad syms */");
   my $curpad_sym      = ( comppadlist->ARRAY )[1]->save;
