@@ -3,17 +3,24 @@
 # process perlall-maketest logfiles:
 #  `perl$ver Makefile.PL && make test > log.test-$platform-$ver; make clean`
 # and find and sort by FAIL/TODO and platform+version
-#
-# OPTIONS:
-# -s sort by test
-# -u update STATUS
-# -q quiet
-# -f fail only
-# -t todo only
-# -a all, do not skip too old logs
-# -d no unify dumps
-#
-# status_upd -fqd
+
+sub help {
+  print <<EOF;
+status_upd -fqd [ 1.32 | path]
+
+OPTIONS:
+ -q quiet
+ -f fail only
+ -t todo only
+ -d no unify dumps
+ -a all, do not skip too old logs
+ -s sort by test  (ignored)
+ -u update STATUS (ignored)
+ -h help
+EOF
+  exit;
+}
+
 use strict;
 use Data::Dumper;
 use Getopt::Long;
@@ -25,15 +32,18 @@ my $STATUS = "./STATUS";
 
 chdir ".." if ! -d "t" and -d "../t";
 chdir "../.." if ! -d "t" and -d "../../t";
-my ($sortbytest, $update, $quiet, $failonly, $todoonly, $noskip, $nodump);
+my ($sortbytest, $update, $quiet, $failonly, $todoonly, $noskip, $nodump, $help);
 Getopt::Long::Configure ("bundling");
-GetOptions ("sort|s" => \$sortbytest,
-	"update|u" => \$update,
-	"quiet|q" => \$quiet,
-	"fail|f" => \$failonly,
-	"toto|t" => \$todoonly,
-	"all|a" => \$noskip,
-	"dump|d" => \$nodump);
+GetOptions ("sort|s"   => \$sortbytest, #ignored
+	    "update|u" => \$update,     #ignored
+	    "quiet|q"  => \$quiet,
+	    "fail|f"   => \$failonly,
+	    "todo|pass|t" => \$todoonly,
+	    "all|a"    => \$noskip,
+	    "dump|d"   => \$nodump,
+	    "help|h"   => \$help);
+
+help if $help;
 
 for (@ARGV) {
   -d "t/reports/$_" and $dir = "t/reports/$_";
