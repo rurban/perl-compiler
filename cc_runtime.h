@@ -46,7 +46,7 @@
     } while(0)
 
 /* Anyone using eval "" deserves this mess */
-#if PERL_VERSION > 7
+#if PERL_VERSION > 9
 
 #define PP_EVAL(ppaddr, nxt) do {		\
 	dJMPENV;				\
@@ -83,7 +83,7 @@
 	    }                                      \
 	} STMT_END
 
-#else /* perl-5.6 */
+#else /* 5.6 and 5.8 */
 
 #define PP_EVAL(ppaddr, nxt) do {		\
 	dJMPENV;				\
