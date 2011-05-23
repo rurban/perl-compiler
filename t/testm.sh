@@ -51,7 +51,7 @@ function fail {
     echo $*
     echo
 }
-if test -n $v513; then PERLCC_OPTS="$PERLCC_OPTS -Wb=$v513"; fi
+[ -n "$v513" ] && PERLCC_OPTS="$PERLCC_OPTS -Wb=$v513"
 #PERLCC_OPTS=v513
 while getopts "hokltTsFD:O:f:qv" opt
 do
