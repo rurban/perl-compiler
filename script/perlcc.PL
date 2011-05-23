@@ -387,6 +387,8 @@ sub compile_cstyle {
             $cfile = $Output if opt(c) && $Output =~ /\.c\z/i;
         }
         check_write($cfile);
+    } elsif (opt(o)) {
+        $cfile = opt(o).".c";
     } else { # Do not keep tempfiles (no -S nor -c)
         $lose = 1;
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
