@@ -32,6 +32,7 @@ function help {
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 Mblib=-Mblib
+v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings))'`"
 
 function vcmd {
     test -n "$QUIET" || echo $*
@@ -50,11 +51,13 @@ function fail {
     echo $*
     echo
 }
-
-while getopts "hokltTsFD:O:f:q" opt
+if test -n $v513; then PERLCC_OPTS="$PERLCC_OPTS -Wb=$v513"; fi
+#PERLCC_OPTS=v513
+while getopts "hokltTsFD:O:f:qv" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "q" ]; then QUIET=1; fi
+  if [ "$opt" = "v" ]; then QUIET=0; PERLCC_OPTS="$PERLCC_OPTS -v6"; fi
   if [ "$opt" = "k" ]; then KEEP="-S"; fi
   if [ "$opt" = "D" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-D${OPTARG}"; COPTS="$COPTS,-D${OPTARG}"; fi
   if [ "$opt" = "O" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-O${OPTARG}"; COPTS="$COPTS,-O${OPTARG}"; fi
