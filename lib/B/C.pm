@@ -1012,7 +1012,7 @@ sub B::COP::save {
   # shameless cut'n'paste from B::Deparse
   my $warn_sv;
   my $warnings   = $op->warnings;
-  my $is_special = $warnings->isa("B::SPECIAL");
+  my $is_special = ref($warnings) eq 'B::SPECIAL';
   my $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
   if ( $is_special && $$warnings == 4 ) {
     # use warnings 'all';
