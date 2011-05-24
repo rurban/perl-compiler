@@ -21,12 +21,12 @@ sub cleanup { unlink ('a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 
 is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o a -r -e");
-ok(-e 'a.out.c', "-S => a.out.c file");
+ok(-e 'a.c', "-S => a.c file");
 ok(-e $a, "keep a executable");
 cleanup;
 
 is(`$perlcc -o a -r -e $e`, "ok", "-o a r -e");
-ok(! -e 'a.out.c', "no a.out.c file");
+ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep a executable"); # 6
 cleanup;
 
@@ -60,13 +60,13 @@ TODO: {
      "-S -o -r --staticxs xs"); #17
   ok(-e $a, "keep executable"); #18
 }
-ok(-e 'a.out.c', "keep a.out.c file with -S");
-ok(-e 'a.out.c.lst', "keep a.out.c.lst with -S");
+ok(-e 'a.c', "keep a.c file with -S");
+ok(-e 'a.c.lst', "keep a.c.lst with -S");
 cleanup;
 
 is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
    "-S -o -r --staticxs without xs");
-ok(! -e 'a.out.c.lst', "no a.out.c.lst without xs");
+ok(! -e 'a.c.lst', "no a.c.lst without xs");
 cleanup;
 
 my $f = "a.pl";
