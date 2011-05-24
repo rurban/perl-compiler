@@ -1979,14 +1979,13 @@ sub B::RV::save {
 }
 
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
-# XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
+# XXX issue 64, empty @ISA rif a package has no subs. in Bytecode ok
 sub try_isa {
   #return 0; # XXX disabled for now
-
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
   # XXX theoretically a valid shortcut. In reality it fails...
-  # return 0 unless $cvstashname->can($cvname); 
+  # return 0 unless $cvstashname->can($cvname);
   for (@{$cvstashname .'::ISA'}) { # XXX empty when/why?
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
@@ -2006,6 +2005,7 @@ sub try_isa {
 # 2. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
+  no strict 'refs';
   warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA\n",
 		$cvstashname, $cvname, $cvstashname ) if $verbose;
   return 1 if try_isa($cvstashname, $cvname);
@@ -2274,9 +2274,9 @@ sub B::CV::save {
       $anonsub_index++;
     }
     $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
-    warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
-      $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
-      if $debug{cv};
+    #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
+    #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
+    #  if $debug{cv};
     # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
     $startfield = "0" unless $startfield;
@@ -2663,7 +2663,7 @@ sub B::GV::save {
           svref_2object( \&{"$package\::bootstrap"} )->save
             if $package and defined &{"$package\::bootstrap"};
         }
-        # issue 57: incomplete xs dependency detection
+        # XXX issue 57: incomplete xs dependency detection
         my %hack_xs_detect =
           ('Scalar::Util'  => 'List::Util',
            'Sub::Exporter' => 'Params::Util',
@@ -2681,12 +2681,17 @@ sub B::GV::save {
         # TODO: may need fix CvGEN if >0 to re-validate the CV methods
         # on PERL510 (>0 + <subgeneration)
         warn "GV::save &$fullname...\n" if $debug{gv};
-        $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
+	my $gvcvsym = $gvcv->save;
+	if ($gvcvsym =~ /sv_list/) {
+	  $init->add( sprintf( "if (!GvCV($sym)) GvCV_set($sym, (CV*)(%s));", $gvcvsym ) );
+	} else {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcvsym ) );
+	}
         # warn "GV::save'd &$fullname\n" if $debug{gv};
       }
     }
     if ( $] > 5.009 ) {
-      # XXX TODO implement heksect to place all heks at the beginning
+      # TODO implement heksect to place all heks at the beginning
       #$heksect->add($gv->FILE);
       #$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
       $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
@@ -3924,7 +3929,6 @@ EOT
 }
 
 sub dump_symtable {
-
   # For debugging
   my ( $sym, $val );
   warn "----Symbol table:\n";
@@ -4003,18 +4007,14 @@ sub mark_package {
             eval { $package->bootstrap };
           }
         }
-        #else
-        {
-          if (0) { my $s=$package; $s=~s/::/\//g; require "$s.pm"; }
-          unless ( $include_package{$isa} ) {
-            warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
-            if (exists $include_package{$isa} ) {
-              warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
-              mark_package($isa);
-              walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
-            } else {
-              mark_package($isa);
-            }
+	unless ( $include_package{$isa} ) {
+	  warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
+	  if (exists $include_package{$isa} ) {
+	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
+	    mark_package($isa);
+	    walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
+          } else {
+            mark_package($isa);
           }
         }
       }
