@@ -335,7 +335,8 @@ sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
   if (!$op->can("sv")) {
-    if ($op->can("pmreplroot") and $op->pmreplroot->can("sv")) {
+    # $op->can('pmreplroot') fails for 5.14
+    if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
       $sv = $op->pmreplroot->sv;
     } else {
       return $package_pv unless $op->flags & 4;
@@ -354,7 +355,7 @@ sub svop_or_padop_pv {
     #} else {        # UVX
     #}
     return $sv->PV if $sv->can("PV");
-    if ($sv->isa("B::SPECIAL")) { # DateTime::TimeZone
+    if (ref($sv) eq "B::SPECIAL") { # DateTime::TimeZone
       # XXX null -> method_named
       warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
       return $package_pv;
@@ -1978,8 +1979,10 @@ sub B::RV::save {
 }
 
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
-# XXX issue 64, empty @ISA (in Bytecode ok)
+# XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
+  #return 0; # XXX disabled for now
+
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
   # XXX theoretically a valid shortcut. In reality it fails...
@@ -1987,14 +1990,14 @@ sub try_isa {
   for (@{$cvstashname .'::ISA'}) { # XXX empty when/why?
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
-      mark_package($_, 1);
+      mark_package($_, 1); # force
       return 1;
     # XXX: depth-first recursive traversal. mro::get_linear_isa would be better.
     } elsif (defined @{ $_ . '::ISA' }) {
       try_isa($_, $cvname) and return 1;
     }
   }
-  return 1; # not found
+  return 0; # not found
 }
 
 # if the sub or method is not found,
@@ -2007,10 +2010,10 @@ sub try_autoload {
 		$cvstashname, $cvname, $cvstashname ) if $verbose;
   return 1 if try_isa($cvstashname, $cvname);
 
+  no strict 'refs';
   if (defined(*{'UNIVERSAL::'. $cvname}{CODE})) {
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
-
   warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
 		$cvstashname, $cvname, $cvstashname ) if $verbose;
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
@@ -2020,7 +2023,8 @@ sub try_autoload {
     # Tweaked version of __PACKAGE__::AUTOLOAD
     $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
 
-    # Prevent eval from polluting STDOUT,STDERR and our c code. With a debugging perl STDERR is written
+    # Prevent eval from polluting STDOUT,STDERR and our c code.
+    # With a debugging perl STDERR is written
     local *REALSTDOUT;
     local *REALSTDERR unless $DEBUGGING;
     open(REALSTDOUT,">&STDOUT");
@@ -2113,6 +2117,7 @@ sub B::CV::save {
       my $file = $gv->FILE;
       $decl->add("/* bootstrap $file */");
       warn "Bootstrap $stashname $file\n" if $verbose;
+      mark_package($stashname);
 
       # Without DynaLoader we must boot and link static
       if ( !$Config{usedl} ) {
@@ -2216,10 +2221,10 @@ sub B::CV::save {
     if $debug{cv};
   $package_pv = $cvstashname;
   if ( !$$root && !$cvxsub ) {
-    if ("$cvstashname\::$cvname" eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
+    if ($cvstashname eq 'utf8' and $cvname eq 'SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
       require "utf8_heavy.pl";
       # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
-      # already polluted.
+      # already polluted. See issue 61.
       svref_2object( \&{"utf8\::SWASHNEW"} )->save;
     } elsif ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
       if (ref $auto eq 'B::CV') { # explicit goto
@@ -3496,7 +3501,7 @@ EOT
 sub output_main_rest {
 
   # -fno-destruct only >5.8
-  if ( !$B::C::destruct ) {
+  if ( !$B::C::destruct and $^O ne 'MSWin32') {
     print <<'EOT';
 int fast_perl_destruct( PerlInterpreter *my_perl );
 
@@ -3896,7 +3901,7 @@ EOT
 
     exitstatus = perl_run( my_perl );
 EOT
-    if ( !$B::C::destruct) {
+    if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
     } elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow) ) {
@@ -3988,7 +3993,7 @@ sub mark_package {
     } else{
       $include_package{$package} = 1;
     }
-    if ( defined @{ $package . '::ISA' } and !$force ) {
+    if ( defined @{ $package . '::ISA' } ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
       foreach my $isa ( @{ $package . '::ISA' } ) {
@@ -4003,7 +4008,13 @@ sub mark_package {
           if (0) { my $s=$package; $s=~s/::/\//g; require "$s.pm"; }
           unless ( $include_package{$isa} ) {
             warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
-	    mark_package( $isa, 1);
+            if (exists $include_package{$isa} ) {
+              warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
+              mark_package($isa);
+              walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
+            } else {
+              mark_package($isa);
+            }
           }
         }
       }
@@ -4602,7 +4613,7 @@ OPTION:
     $B::C::av_init = 0;
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
-  $B::C::destruct = 1 if $] < 5.008;
+  $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
   if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
     warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
     # XXX Still trying custom destructor.

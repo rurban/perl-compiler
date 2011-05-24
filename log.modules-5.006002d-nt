@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1017 M
+# B::C::VERSION = 1.32 r1024
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -29,7 +29,7 @@ skip ExtUtils::ParseXS
 fail Module::Build #TODO < 5.13.8
 pass File::Path
 pass XSLoader
-pass MIME::Base64
+fail MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
@@ -40,9 +40,9 @@ pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-pass LWP #TODO without threads
-skip Storable
+skip IO::Compress::Base
+skip LWP
+pass Storable #TODO 5.6
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -57,20 +57,20 @@ pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name #TODO 5.6
-skip Filter::Util::Call
+pass Filter::Util::Call #TODO 5.6
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
 pass MRO::Compat
-pass Time::HiRes
+skip Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction
+fail Devel::GlobalDestruction
 skip Class::MOP
 skip Moose
 pass Test::Deep
 pass Carp::Clan
-skip Module::Pluggable
+pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 skip DBI
@@ -78,7 +78,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,8 +86,8 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-skip Test::Pod
-pass Digest::SHA1
+pass Test::Pod
+skip Digest::SHA1
 skip namespace::clean
 pass Class::Inspector
 pass Clone
@@ -96,15 +96,15 @@ pass XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+pass DateTime::TimeZone
+fail DateTime::Locale #TODO 5.6
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 82 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
-# pass  80 /  82 (97.6%)
-# fail   2 /  82 (2.4%)
-# todo   7 /   2 (350.0%)
-# skip  18 / 100 (18.0% not installed)
+fail Template::Stash #TODO 5.6
+# 85 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
+# pass  78 /  85 (91.8%)
+# fail   7 /  85 (8.2%)
+# todo  10 /   7 (142.9%)
+# skip  15 / 100 (15.0% not installed)

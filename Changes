@@ -27,7 +27,9 @@
 	use longsize resp. ivsize from .plc not from perl
 	print newsvx flags
 	print hex IV < 8 as int
-	* ByteLoader (0.08): support archflag 2 MULTPLICITY
+	* ByteLoader (0.08): support archflag 2 MULTPLICITY,
+	[perl #86186] force binary IO for __DATA__ handles, which changed 
+	  in core with 5.14
 	* bytecode.pl: support m for MULTIPLICITY (yet unused)
 	* Makefile.PL: move cc_runtime.h installation to make install step
 	  (sudo). Tested ok on darwin gcc, does use -I. internally.
