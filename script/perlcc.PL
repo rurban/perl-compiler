@@ -377,7 +377,7 @@ sub compile_cstyle {
     }
     if (opt(S) || opt(c)) { # We need to keep it
         if (opt(e)) {
-            $cfile = "a.out.c";
+            $cfile = opt(o) ? opt(o).".c" : "a.out.c";
         } else {
             $cfile = basename($Input);
             # File off extension if present
