@@ -611,7 +611,8 @@ CCTESTS
             # those are currently blocking the system
             # do not even run them at home if TODO+SKIP
             (!$AUTHOR
-             or ($cnt==15 and $backend eq 'C,-O1') # hanging
+             or ($cnt==15 and $backend eq 'C,-O1')   # hanging
+             or ($cnt==103 and $backend eq 'CC,-O2') # hanging
              # or ($cnt==14 or $cnt==18)
             ))
         {
