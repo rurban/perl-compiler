@@ -1721,8 +1721,12 @@ sub B::PVMG::save {
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
     unless ($] >= 5.011 and $sv->isa('B::REGEXP')) {
-      $ivx = $sv->IVX; # both apparently unused
-      $nvx = $sv->NVX;
+      $ivx = $sv->IVX; # XXX IV or HEK* namehek. How to detect?
+      if ($PERL510) {
+        $nvx = "0"; # xgv_stash ptr deferred
+      } else {
+        $nvx = $sv->NVX;
+      }
     }
     if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
