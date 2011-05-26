@@ -1817,7 +1817,7 @@ sub B::PVMG::save_magic {
       if $debug{mg} or $debug{gv};
     # Q: Who is initializing our stash from XS? ->save is missing that.
     # A: We only need to init it when we need a CV
-    $init->add( sprintf( "SvSTASH(s\\_%x) = s\\_%x;", $$sv, $$pkg ) );
+    $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
     # better default for method names
     $package_pv = $pkg->NAME;
     # XXX Let's see if this helps
@@ -2681,13 +2681,7 @@ sub B::GV::save {
         # TODO: may need fix CvGEN if >0 to re-validate the CV methods
         # on PERL510 (>0 + <subgeneration)
         warn "GV::save &$fullname...\n" if $debug{gv};
-	my $gvcvsym = $gvcv->save;
-	if ($gvcvsym =~ /sv_list/) {
-	  $init->add( sprintf( "if (!GvCV($sym)) GvCV_set($sym, (CV*)(%s));", $gvcvsym ) );
-	} else {
-	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcvsym ) );
-	}
-        # warn "GV::save'd &$fullname\n" if $debug{gv};
+	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
       }
     }
     if ( $] > 5.009 ) {
@@ -3235,6 +3229,13 @@ sub output_all {
       print "#undef CopFILE_set\n";
       print "#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))\n";
     }
+  }
+  if ($] < 5.008008 ) {
+    print <<'EOT';
+#ifndef SvSTASH_set
+#  define SvSTASH_set(sv,hv) SvSTASH((cv)) = (hv)
+#endif
+EOT
   }
   if ($] < 5.013007 ) {
     print <<'EOT';
