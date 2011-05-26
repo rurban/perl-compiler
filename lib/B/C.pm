@@ -1321,11 +1321,11 @@ sub B::IV::save {
     }
   }
   if ($PERL514) {
-    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", ivx $sv->IVX ) );
+    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", ivx($sv->IVX) ) );
   } elsif ($PERL510) {
-    $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", ivx $sv->IVX ) );
+    $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", ivx($sv->IVX) ) );
   } else {
-    $xpvivsect->add( sprintf( "0, 0, 0, %s", ivx $sv->IVX ) );
+    $xpvivsect->add( sprintf( "0, 0, 0, %s", ivx($sv->IVX) ) );
   }
   $svsect->add(
     sprintf(
@@ -1721,12 +1721,8 @@ sub B::PVMG::save {
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
     unless ($] >= 5.011 and $sv->isa('B::REGEXP')) {
-      $ivx = $sv->IVX; # XXX IV or HEK* namehek. How to detect?
-      if ($PERL510) {
-        $nvx = "0"; # xgv_stash ptr deferred
-      } else {
-        $nvx = $sv->NVX;
-      }
+      $ivx = $sv->IVX; # XXX How to detect HEK* namehek?
+      $nvx = $sv->NVX; # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
     }
     if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
@@ -2510,11 +2506,11 @@ sub B::GV::save {
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
-  my $is_special = $gv->isa("B::SPECIAL");
+  my $is_special = ref($gv) eq 'B::SPECIAL';
 
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
-    unless ($egv->isa("B::SPECIAL")) {
+    unless (ref($egv) eq 'B::SPECIAL') {
       my $estash = $egv->STASH->NAME;
       if ( $$gv != $$egv ) {
         warn(sprintf( "EGV name is %s, saving it now\n",
@@ -3022,7 +3018,7 @@ sub B::HV::save {
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
       my $sv = $contents[$i];
       warn sprintf("HV recursion? with $sv -> %s\n", $sv->RV)
-        if $sv->isa("B::RV")
+        if ref($sv) eq 'B::RV'
           #and $sv->RV->isa('B::CV')
           and defined objsym($sv)
           and $debug{hv};
