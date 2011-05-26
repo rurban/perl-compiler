@@ -2018,7 +2018,7 @@ sub try_autoload {
 		$cvstashname, $cvname, $cvstashname ) if $verbose;
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
-  if (exists ${$cvstashname.'::'}{AUTOLOAD}) {
+  if (exists ${$cvstashname.'::'}{AUTOLOAD} and !$PERL510) {
     my $auto = \&{$cvstashname.'::AUTOLOAD'};
     # Tweaked version of __PACKAGE__::AUTOLOAD
     $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
