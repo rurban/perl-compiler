@@ -3233,7 +3233,7 @@ sub output_all {
   if ($] < 5.008008 ) {
     print <<'EOT';
 #ifndef SvSTASH_set
-#  define SvSTASH_set(sv,hv) SvSTASH((cv)) = (hv)
+#  define SvSTASH_set(sv,hv) SvSTASH((sv)) = (hv)
 #endif
 EOT
   }
