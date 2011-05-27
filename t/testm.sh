@@ -79,8 +79,8 @@ do
   if [ "$opt" = "F" ]; then 
       v=$($PERL -It -Mmodules -e'print perlversion')
       if [ -f log.modules-$v ]; then # and not older than a few days
-	  echo $PERL -S cpan `grep ^fail log.modules-$v | perl -anle 'print $F[1]'`
-          grep ^fail log.modules-$v | perl -anle 'print $F[1]' | xargs $PERL t/testm.sh
+	  echo t/testm.sh `grep ^fail log.modules-$v | perl -anle 'print $F[1]'`
+          grep ^fail log.modules-$v | perl -anle 'print $F[1]' | xargs t/testm.sh -q
       fi
       exit
   fi
@@ -108,8 +108,8 @@ if [ -n "$1" ]; then
 	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
 	    if [ "${COPTS/,-D/}" != "$COPTS" ]; then
               COPTS="${COPTS:1}"
-	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print q(ok)\""
-	      $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "use $1; print q(ok)"
+	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print qq(ok\\n)\""
+	      $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "use $1; print qq(ok\\n)"
 	      if [ -f $name.c ]; then
 		echo $PERL $Mblib script/cc_harness -d -g3 -o $name $name.c
 		$PERL $Mblib script/cc_harness -d -g3 -o $name $name.c
@@ -119,8 +119,8 @@ if [ -n "$1" ]; then
 		fi
 	      fi
 	    else
-	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print q(ok)\"" -o $name
-	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print q(ok)" -o $name
+	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print qq(ok\\n)\"" -o $name
+	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print qq(ok\\n)" -o $name
               test -f a.out.c && mv a.out.c $name.c
             fi
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
