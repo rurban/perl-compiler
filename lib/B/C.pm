@@ -595,6 +595,7 @@ sub B::OP::fake_ppaddr {
     : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
 }
 sub B::FAKEOP::fake_ppaddr { "NULL" }
+sub B::OP::isa { UNIVERSAL::isa(@_) } # walkoptree_slow missed that
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
 # $op->next and $op->sibling
@@ -2007,7 +2008,7 @@ sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
   warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA\n",
-		$cvstashname, $cvname, $cvstashname ) if $verbose;
+		$cvstashname, $cvname, $cvstashname ) if $debug{cv};
   return 1 if try_isa($cvstashname, $cvname);
 
   no strict 'refs';
@@ -2015,7 +2016,7 @@ sub try_autoload {
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
   warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
-		$cvstashname, $cvname, $cvstashname ) if $verbose;
+		$cvstashname, $cvname, $cvstashname ) if $debug{cv};
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
   if (exists ${$cvstashname.'::'}{AUTOLOAD} and !$PERL510) {
@@ -2433,7 +2434,8 @@ sub B::CV::save {
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
     $gv->save;
     if ($PERL514) {
-      $init->add( sprintf( "CvGV_set((CV*)%s, %s);", $sym, objsym($gv) ) );
+      # XXX gvcv might be PVMG
+      $init->add( sprintf( "CvGV_set((CV*)%s, (GV*)%s);", $sym, objsym($gv) ) );
       # since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted)
       # assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
       # we init with CvFLAGS = 0 and set it later, as successfully done in the Bytecode compiler
@@ -2538,12 +2540,18 @@ sub B::GV::save {
   sub Save_FORM() { 16 }
   sub Save_IO()   { 32 }
 
+  my $gp;
   if ( $PERL510 and $gv->isGV_with_GP ) {
     if ($fullname eq 'main::ARGV') {
       warn "Skip overwriting main::ARGV GP\n" if $debug{gv};
     } else {
-      my $gp = $gv->GP;    # B limitation
-      if ( $gp and !$is_empty ) {
+      $gp = $gv->GP;    # B limitation
+      if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
+	# Shared glob *foo = *bar
+	$init->add( "GvGP_set($sym, GvGP($egvsym));" );
+	$is_empty = 1;
+      }
+      elsif ( $gp and !$is_empty ) {
         warn(sprintf(
                      "New GvGP for $fullname: 0x%x%s %s FILEGV:0x%x GP:0x%x\n",
                      $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
@@ -2605,13 +2613,7 @@ sub B::GV::save {
   # called after perl_parse()
   $savefields &= ~Save_CV if $fullname eq 'attributes::bootstrap';
 
-  # save it
-  # XXX is that correct?
-  if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
-    # Shared glob *foo = *bar
-    $init->add( "gp_free($sym);", "GvGP_set($sym, GvGP($egvsym));" );
-  }
-  elsif ($savefields) {
+  if ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
     my $gvsv = $gv->SV;
@@ -2656,7 +2658,6 @@ sub B::GV::save {
       if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
         warn "Boot $package, XS alias of $fullname to $origname\n" if $debug{pkg};
-        if (0) { my $s = $package; $s =~ s/::/\//g; require "$s.pm"; }
         mark_package($package, 1);
         {
           no strict 'refs';
@@ -2677,54 +2678,54 @@ sub B::GV::save {
 		GvCV_set($sym, cv);
 		SvREFCNT_inc((SV *)cv); }");
       }
-      else {
+      elsif (!$PERL510 or $gp) {
         # TODO: may need fix CvGEN if >0 to re-validate the CV methods
         # on PERL510 (>0 + <subgeneration)
         warn "GV::save &$fullname...\n" if $debug{gv};
 	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
       }
     }
-    if ( $] > 5.009 ) {
-      # TODO implement heksect to place all heks at the beginning
-      #$heksect->add($gv->FILE);
-      #$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
-      $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
-        unless $optimize_cop;
-      $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
-    }
-    else {
-      # XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
-      # GvFILE is at gp+1
-      $init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
-        unless $optimize_cop;
-      warn "GV::save GvFILE(*$fullname) " . cstring( $gv->FILE ) . "\n"
-        if $debug{gv} and !$ITHREADS;
-    }
-    my $gvform = $gv->FORM;
-    if ( $$gvform && $savefields & Save_FORM ) {
-      warn "GV::save gvform->save ...\n" if $debug{gv};
-      $gvform->save;
-      $init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
-      warn "GV::save GvFORM(*$fullname)\n" if $debug{gv};
-    }
-    my $gvio = $gv->IO;
-    if ( $$gvio && $savefields & Save_IO ) {
-      warn "GV::save gvio->save $fullname...\n" if $debug{gv};
-      $gvio->save;
-      $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
-      if ( $fullname =~ m/::DATA$/ && $B::C::save_data_fh ) { # -O3 or 5.8
-        no strict 'refs';
-        my $fh = *{$fullname}{IO};
-        use strict 'refs';
-        warn "GV::save_data $sym, $fullname ...\n" if $debug{gv};
-        $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
+    if (!$PERL510 or $gp) {
+      if ( $] > 5.009 ) {
+	# TODO implement heksect to place all heks at the beginning
+	#$heksect->add($gv->FILE);
+	#$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
+	$init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
+	  unless $optimize_cop;
+	$init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
+      } else {
+	# XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
+	# GvFILE is at gp+1
+	$init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
+	  unless $optimize_cop;
+	warn "GV::save GvFILE(*$fullname) " . cstring( $gv->FILE ) . "\n"
+	  if $debug{gv} and !$ITHREADS;
       }
-      elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
-        warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsave-data.\n";
+      my $gvform = $gv->FORM;
+      if ( $$gvform && $savefields & Save_FORM ) {
+	warn "GV::save gvform->save ...\n" if $debug{gv};
+	$gvform->save;
+	$init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
+	warn "GV::save GvFORM(*$fullname)\n" if $debug{gv};
       }
-      warn "GV::save GvIO(*$fullname)\n" if $debug{gv};
+      my $gvio = $gv->IO;
+      if ( $$gvio && $savefields & Save_IO ) {
+	warn "GV::save gvio->save $fullname...\n" if $debug{gv};
+	$gvio->save;
+	$init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
+	if ( $fullname =~ m/::DATA$/ && $B::C::save_data_fh ) { # -O3 or 5.8
+	  no strict 'refs';
+	  my $fh = *{$fullname}{IO};
+	  use strict 'refs';
+	  warn "GV::save_data $sym, $fullname ...\n" if $debug{gv};
+	  $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
+	} elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
+	  warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsave-data.\n";
+	}
+	warn "GV::save GvIO(*$fullname)\n" if $debug{gv};
+      }
+      $init->add("");
     }
-    $init->add("");
   }
   warn "GV::save $fullname done\n" if $debug{gv};
   return $sym;
@@ -4119,7 +4120,7 @@ sub should_save {
   # Now see if current package looks like an OO class. This is probably too strong.
   foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
-    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(version|Regexp|utf8)$/ ) {
+    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';

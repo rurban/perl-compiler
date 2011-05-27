@@ -18,7 +18,9 @@
 	* C.pm (1.32): check PERL_TRACK_MEMPOOL for AV malloc (25).
 	fixed init chunk splitting for CV and -fav-init2, if >10000 lines.
 	fixed overlarge AvFILL=3 of endav. Undefined subroutine &main:: (48)
-	work on try_isa, only !can try_autoload
+	fixed shared GPs on typeglob assignment. do not gp_free them, which
+	  deleted GPs in other GVs, just set them once.
+	added try_isa before try_autoload.
 	mark_package force: detect and fix already discarded packages which
 	  are brought back in directly or by someone else's ISA. (e.g. Sub::Name
 	  needs DynaLoader::dl_load_flags)
@@ -28,7 +30,7 @@
 	print newsvx flags
 	print hex IV < 8 as int
 	* ByteLoader (0.08): support archflag 2 MULTPLICITY,
-	[perl #86186] force binary IO for __DATA__ handles, which changed 
+	[perl #86186] force binary IO for __DATA__ handles, which changed
 	  in core with 5.14
 	* bytecode.pl: support m for MULTIPLICITY (yet unused)
 	* Makefile.PL: move cc_runtime.h installation to make install step
@@ -47,7 +49,7 @@
 	multiplicity support and more darwin fixes
 
 	* C.pm (1.31): replace $ITHREADS by $MULTI (darwin),
-	my_perl_destruct: disable CopFILE_set NULL and CopSTASHPV_set NULL 
+	my_perl_destruct: disable CopFILE_set NULL and CopSTASHPV_set NULL
         on $MULTI, PL_sv_yes|no special on MULTI
 	* CC.pm (1.10): replace $ITHREADS by $MULTI (darwin)
 	* t/test.pl, issue34.t, issue35.t: -ofile => -o file (darwin cc)
@@ -151,8 +153,8 @@
 1.29	2011-01-08 rurban
 	improve dl_init
 
-	* C.pm (1.29): 
-	use DynaLoader::bootstrap_inherit, fixes dl_init when the module has no ISA 
+	* C.pm (1.29):
+	use DynaLoader::bootstrap_inherit, fixes dl_init when the module has no ISA
 	  DynaLoader. eg. Test::Harness with Time::HiRes
 	improved CopFILE detection as context for dl_init (test 29)
 	fix cop_warning cast warnings
@@ -176,8 +178,8 @@
 	  Failed to include CORE hv.c: too large.
 	  mingw	5.12 compiles now again and passes all but 21,33,42..44
 	Fixed entrytry with Bytecode >= 5.12:
-	  ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a 
-	  B::OP (BASEOP) 
+	  ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a
+	  B::OP (BASEOP)
 	add BEGIN { push|unshift @INC } parts of blocks (test 33)
 	* Byteloader (0.07):
 	Support new CvSTASH_set.
