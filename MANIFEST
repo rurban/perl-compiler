@@ -68,6 +68,7 @@ script/perlcc.PL
 script/pl2exe.pl
 STATUS
 status_upd
+store_rpt
 t/asmdata.t
 t/assembler.t
 t/bblock.t
