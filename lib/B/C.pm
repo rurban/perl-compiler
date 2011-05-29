@@ -212,6 +212,7 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
+  if ($] >= 5.010) {require mro; mro->import;}
 }
 use B::Asmdata qw(@specialsv_name);
 
@@ -1982,19 +1983,24 @@ sub B::RV::save {
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
 # XXX issue 64, empty @ISA rif a package has no subs. in Bytecode ok
 sub try_isa {
-  #return 0; # XXX disabled for now
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
   # XXX theoretically a valid shortcut. In reality it fails...
   # return 0 unless $cvstashname->can($cvname);
-  for (@{$cvstashname .'::ISA'}) { # XXX empty when/why?
+  my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
+  warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
+		$cvstashname, $cvname, $cvstashname, join(",",@isa))
+    if $debug{cv};
+  for (@isa) { # global @ISA or in pad
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_, 1); # force
       return 1;
-    # XXX: depth-first recursive traversal. mro::get_linear_isa would be better.
-    } elsif (defined @{ $_ . '::ISA' }) {
-      try_isa($_, $cvname) and return 1;
+    } else {
+      my @i = $PERL510 ? @{mro::get_linear_isa($_)} : @{ $_ . '::ISA' };
+      if (@i) {
+	try_isa($_, $cvname) and return 1;
+      }
     }
   }
   return 0; # not found
@@ -2007,8 +2013,6 @@ sub try_isa {
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
-  warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA\n",
-		$cvstashname, $cvname, $cvstashname ) if $debug{cv};
   return 1 if try_isa($cvstashname, $cvname);
 
   no strict 'refs';
@@ -2504,6 +2508,7 @@ sub B::GV::save {
   my $is_empty = $gv->is_empty;
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
+  return $sym if $package =~ /^B::C/;
   my $fullname = $package . "::" . $gvname;
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
@@ -2629,16 +2634,16 @@ sub B::GV::save {
         $init->add( '/* Skip overwriting @main::ARGV */' );
         warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
+        warn "GV::save \@$fullname\n" if $debug{gv};
         $gvav->save;
         $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
-        warn "GV::save \@$fullname\n" if $debug{gv};
       }
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
+      warn "GV::save \%$fullname\n" if $debug{gv};
       $gvhv->save;
       $init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
-      warn "GV::save \%$fullname\n" if $debug{gv};
     }
     my $gvcv = $gv->CV;
     if ( !$$gvcv && $savefields & Save_CV ) {
@@ -3999,10 +4004,11 @@ sub mark_package {
     } else{
       $include_package{$package} = 1;
     }
-    if ( defined @{ $package . '::ISA' } ) {
+    my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
+    if ( @isa or defined @{ $package . '::ISA' } ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
-      foreach my $isa ( @{ $package . '::ISA' } ) {
+      foreach my $isa ( @isa ) {
         if ( $isa eq 'DynaLoader' ) {
           unless ( defined( &{ $package . '::bootstrap' } ) ) {
             warn "Forcing bootstrap of $package\n" if $verbose;

@@ -18,11 +18,11 @@
 	* C.pm (1.32): check PERL_TRACK_MEMPOOL for AV malloc (25).
 	fixed init chunk splitting for CV and -fav-init2, if >10000 lines.
 	fixed overlarge AvFILL=3 of endav. Undefined subroutine &main:: (48)
-	fixed shared GPs on typeglob assignment. do not gp_free them, which
-	  deleted GPs in other GVs, just set them once.
-	added try_isa before try_autoload.
+	fixed shared GPs on typeglob assignment. do not gp_free shared GPs,
+	  just set them once.
+	added try_isa before try_autoload. use mro::get_linear_isa instead of @ISA
 	mark_package force: detect and fix already discarded packages which
-	  are brought back in directly or by someone else's ISA. (e.g. Sub::Name
+	  are brought back in directly or by someone else's @ISA. (e.g. Sub::Name
 	  needs DynaLoader::dl_load_flags)
 	* Assembler.pm (1.10): archflag bit 2 for MULTPLICITY
 	* Disassembler.pm (1.10): archflag bit 2 for MULTPLICITY
