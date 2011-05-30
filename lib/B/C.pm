@@ -1949,6 +1949,7 @@ sub B::RV::save {
 		class($sv), $$sv, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{sv};
   my $rv = save_rv($sv);
+  return '0' unless $rv;
   if ($PERL510) {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is computable at load time
@@ -2103,7 +2104,7 @@ sub B::CV::save {
     # XXX not needed, we already loaded utf8_heavy
     #return if "$cvstashname\::$cvname" eq 'utf8::AUTOLOAD';
   }
-  return if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname};
+  return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname};
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
@@ -3995,6 +3996,7 @@ sub B::GV::savecv {
   	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
     # this regex was too greedy and was taking out something like sub _update {} in main
     # because of the "_"
+  return if $fullname eq 'B::walksymtable'; # XXX fails
 
   warn sprintf( "Used GV \&$fullname 0x%x\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
