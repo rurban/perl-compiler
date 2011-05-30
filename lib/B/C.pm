@@ -231,6 +231,14 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 
+my %all_bc_subs = map {$_=>1} qw(B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
+B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next B::FAKEOP::ppaddr
+B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP::type
+B::GV::save B::GV::savecv B::HV::save B::IO::save B::IO::save_data B::IV::save B::LISTOP::save
+B::LOGOP::save B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save B::OP::_save_common
+B::OP::fake_ppaddr B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save
+B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::RV::save
+B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save );
 my ($prev_op, $package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward);
 my (%strtable, %hektable, @static_free);
@@ -1703,7 +1711,8 @@ sub B::PVMG::save {
 
   if ($PERL510) {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
-      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym));
+      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
+	if $savesym ne '(char*)';
       $savesym = '0';
     } else {
       if ( $B::C::pv_copy_on_grow ) {
@@ -2094,6 +2103,8 @@ sub B::CV::save {
     # XXX not needed, we already loaded utf8_heavy
     #return if "$cvstashname\::$cvname" eq 'utf8::AUTOLOAD';
   }
+  return if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname};
+
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
   my $cvxsub  = $cv->XSUB;
@@ -2105,6 +2116,7 @@ sub B::CV::save {
     my $stash = $gv->STASH;
     warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
+    warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
     my $vsym  = $cv->XSUBANY->save;
@@ -2158,6 +2170,7 @@ sub B::CV::save {
       # INIT is removed from the symbol table, so this call must come
       # from PL_initav->save. Re-bootstrapping  will push INIT back in,
       # so nullop should be sent.
+      warn sprintf( "%s::%s\n", $stashname, $cvname) if $debug{sub};
       return qq/NULL/;
     }
     else {
@@ -2169,6 +2182,7 @@ sub B::CV::save {
           qw(IO::File IO::Handle IO::Socket
           IO::Seekable IO::Poll);
     }
+    warn sprintf( "%s::%s\n", $stashname, $cvname) if $debug{sub};
     unless ( in_static_core($stashname,$cvname) ) {
       no strict 'refs';
       warn sprintf( "stub for XSUB $stashname\:\:$cvname CV 0x%x\n", $$cv )
@@ -2204,6 +2218,7 @@ sub B::CV::save {
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
     no strict 'refs';
+    warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
     return svref_2object( \&Dummy_initxs )->save;
   }
 
@@ -2298,8 +2313,10 @@ sub B::CV::save {
       # do not record a forward for the pad only
       $init->add( "CvPADLIST($sym) = $padlistsym;" );
     }
+    warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
   }
   else {
+    warn sprintf( "%s::%s not found\n", $cvstashname, $cvname) if $debug{sub};
     warn sprintf( "No definition for sub %s::%s (unable to autoload)\n",
       $cvstashname, $cvname ) if $verbose;
   }
@@ -3985,6 +4002,10 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
+  if ($package eq 'B::C') {
+    warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
+    return;
+  }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save;
 }
@@ -4015,7 +4036,7 @@ sub mark_package {
             eval { $package->bootstrap };
           }
         }
-	unless ( $include_package{$isa} ) {
+	if ( !$include_package{$isa} and $isa ne 'B::C') {
 	  warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
@@ -4271,8 +4292,8 @@ sub descend_marked_unused {
 sub save_main {
 
   # this is mainly for the test suite
-  my $warner = $SIG{__WARN__};
-  local $SIG{__WARN__} = sub { print STDERR @_ };
+  #my $warner = $SIG{__WARN__};
+  #local $SIG{__WARN__} = sub { print STDERR @_ };
 
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
@@ -4303,10 +4324,12 @@ sub save_sig {
   local $SIG{__WARN__} = shift;
   $init->no_split;
   $init->add( "/* save %SIG */" ) if $verbose;
+  warn "save %SIG\n" if $verbose;
   $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",1);" );
   foreach my $k ( keys %SIG ) {
     next unless ref $SIG{$k};
     my $cv = svref_2object( \$SIG{$k} );
+    next if $cv->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
     my $sv = $cv->save;
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
     $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
@@ -4539,6 +4562,9 @@ OPTION:
         elsif ( $arg eq "S" ) {
           $debug{sv}++;
         }
+        elsif ( $arg eq "s" ) {
+          $debug{sub}++;
+        }
         elsif ( $arg eq "p" ) {
           $debug{pkg}++;
         }
@@ -4748,7 +4774,7 @@ OP Type,Flags,Private
 
 =item B<-DS>
 
-Scalar SVs, prints B<SV/RE/RV> information on saving
+Scalar SVs, prints B<SV/RE/RV> information on saving.
 
 =item B<-Dc>
 
@@ -4756,27 +4782,31 @@ B<COPs>, prints COPs as processed (incl. file & line num)
 
 =item B<-DA>
 
-prints B<AV> information on saving
+prints B<AV> information on saving.
 
 =item B<-DH>
 
-prints B<HV> information on saving
+prints B<HV> information on saving.
 
 =item B<-DC>
 
-prints B<CV> information on saving
+prints B<CV> information on saving.
 
 =item B<-DG>
 
-prints B<GV> information on saving
+prints B<GV> information on saving.
 
 =item B<-DM>
 
-prints B<MAGIC> information on saving
+prints B<MAGIC> information on saving.
 
 =item B<-Dp>
 
 prints cached B<package> information, if used or not.
+
+=item B<-Ds>
+
+prints all compiled sub names, optionally with " not found".
 
 =item B<-DF>
 

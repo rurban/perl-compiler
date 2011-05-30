@@ -206,6 +206,7 @@ sub parse_argv {
         $Options->{stash}++;
         @ARGV = grep !/^-stash$/, @ARGV;
     }
+    $Options->{spawn} = 1;
     Getopt::Long::GetOptions( $Options,
         'L=s',          # lib directory
         'I=s',          # include directories (FOR C, NOT FOR PERL)
@@ -229,6 +230,7 @@ sub parse_argv {
 	'log:s',        # where to log compilation process information
         'Wb:s',         # pass (comma-seperated) options to backend
         'testsuite',    # try to be nice to testsuite
+        'spawn!',	# --no-spawn
         'time',         # print benchmark timings
     );
 
@@ -732,20 +734,23 @@ sub check_perl {
 # File spawning and error collecting
 sub spawnit {
     my ($command) = shift;
-    my (@error,@output);
-    my $errname;
-    (undef, $errname) = tempfile("pccXXXXX");
-    {
-	open (S_OUT, "$command 2>$errname |")
-	  or _die("Couldn't spawn the compiler.\n");
-	@output = <S_OUT>;
+    my (@error,@output,$errname);
+    if ($Options->{spawn}) {
+        (undef, $errname) = tempfile("pccXXXXX");
+        {
+	    open (S_OUT, "$command 2>$errname |")
+	      or _die("Couldn't spawn the compiler.\n");
+            @output = <S_OUT>;
+        }
+        open (S_ERROR, $errname) or _die("Couldn't read the error file.\n");
+        @error = <S_ERROR>;
+        close S_ERROR;
+        close S_OUT;
+        unlink $errname or _die("Can't unlink error file $errname\n");
+        return (\@output, \@error);
+    } else {
+        @output = split /\n/, `$command`;
     }
-    open (S_ERROR, $errname) or _die("Couldn't read the error file.\n");
-    @error = <S_ERROR>;
-    close S_ERROR;
-    close S_OUT;
-    unlink $errname or _die("Can't unlink error file $errname\n");
-    return (\@output, \@error);
 }
 
 sub helpme {
@@ -987,6 +992,11 @@ Currently only enabled for Bytecode and CC.
 =item --testsuite
 
   perlcc -r --testsuite t/harness
+
+=item --no-spawn
+
+Do not spawn subprocesses for compilation, because broken
+shells might not be able to kill its children.
 
 =back
 
