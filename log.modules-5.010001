@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1042 M
+# B::C::VERSION = 1.32 r1036
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -55,7 +55,7 @@ pass Data::OptList
 pass Sub::Exporter
 fail Test::NoWarnings
 pass version
-fail Params::Validate
+pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
@@ -88,7 +88,7 @@ pass CGI
 fail B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
-fail namespace::clean
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
@@ -103,8 +103,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
-# 98 / 100 modules tested with B-C-1.32 - perl-5.010001
-# pass  70 /  98 (71.4%)
-# fail  28 /  98 (28.6%)
-# todo  15 /  28 (53.6%)
-# skip   2 / 100 (2.0% not installed)
+# 100 / 100 modules tested with B-C-1.32 - perl-5.010001
+# pass  72 / 100 (72.0%)
+# fail  28 / 100 (28.0%)
+# todo  17 /  28 (60.7%)
+# skip   0 / 100 (0.0% not installed)

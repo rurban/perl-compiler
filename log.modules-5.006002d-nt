@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1042 M
+# B::C::VERSION = 1.32 r1036
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -13,7 +13,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
+fail ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -24,7 +24,7 @@ pass File::Spec
 pass File::Temp
 fail ExtUtils::Install #TODO 5.6
 pass Text::ParseWords
-pass ExtUtils::CBuilder #TODO < 5.8.9
+fail ExtUtils::CBuilder #TODO < 5.8.9
 skip ExtUtils::ParseXS
 fail Module::Build #TODO < 5.13.8
 pass File::Path
@@ -40,9 +40,9 @@ pass Test::Exception
 pass Net::Cmd
 fail Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-fail IO::Compress::Base
-fail LWP #TODO without threads
-skip Storable
+skip IO::Compress::Base
+skip LWP
+fail Storable #TODO 5.6
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -70,7 +70,7 @@ skip Class::MOP
 skip Moose
 fail Test::Deep
 pass Carp::Clan
-skip Module::Pluggable
+fail Module::Pluggable
 fail if(1) => "Sys::Hostname"
 pass Text::Balanced
 skip DBI
@@ -80,7 +80,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 skip Encode
 skip Variable::Magic
@@ -102,9 +102,9 @@ skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 82 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
-# pass  71 /  82 (86.6%)
-# fail  11 /  82 (13.4%)
-# todo   7 /  11 (63.6%)
-# skip  18 / 100 (18.0% not installed)
+fail Template::Stash #TODO 5.6
+# 85 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
+# pass  69 /  85 (81.2%)
+# fail  16 /  85 (18.8%)
+# todo  10 /  16 (62.5%)
+# skip  15 / 100 (15.0% not installed)

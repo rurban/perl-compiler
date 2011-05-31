@@ -88,7 +88,7 @@ pass CGI
 fail B::Hooks::EndOfScope
 pass Test::Pod #TODO 5.8.9
 pass Digest::SHA1
-pass namespace::clean
+fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
