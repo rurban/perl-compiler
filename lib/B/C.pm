@@ -218,7 +218,7 @@ use B::Asmdata qw(@specialsv_name);
 
 use B::C::Flags;
 use FileHandle;
-use Carp;
+#use Carp;
 use strict;
 use Config;
 
@@ -1264,7 +1264,7 @@ sub B::SPECIAL::save {
   #   warn "SPECIAL::save specialsv $$sv\n"; # debug
   my $sym = $specialsv_name[$$sv];
   if ( !defined($sym) ) {
-    confess "unknown specialsv index $$sv passed to B::SPECIAL::save";
+    warn "unknown specialsv index $$sv passed to B::SPECIAL::save";
   }
   return $sym;
 }
@@ -3212,8 +3212,7 @@ sub B::SV::save {
   # This is where we catch an honest-to-goodness Nullsv (which gets
   # blessed into B::SV explicitly) and any stray erroneous SVs.
   return 0 unless $$sv;
-  confess
-    sprintf( "cannot save that type of SV: %s (0x%x)\n", class($sv), $$sv );
+  warn sprintf( "cannot save that type of SV: %s (0x%x)\n", class($sv), $$sv );
 }
 
 sub output_all {
@@ -4501,7 +4500,7 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
-  $B::C::fold = 1     if $] >= 5.013009; # includes utf8::Cased tables
+  $B::C::fold     = 1 if $] >= 5.013009; # includes utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories
   my %optimization_map = (
     0 => [qw()],                # special case
