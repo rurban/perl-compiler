@@ -604,7 +604,9 @@ sub B::OP::fake_ppaddr {
     : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
 }
 sub B::FAKEOP::fake_ppaddr { "NULL" }
-sub B::OP::isa { UNIVERSAL::isa(@_) } # walkoptree_slow missed that
+# XXX HACK! duct-taping around compiler problems
+sub B::OP::isa { UNIVERSAL::isa(@_) } # walkoptree_slow misses that
+sub B::OBJECT::name  { "" }           # B misses that
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
 # $op->next and $op->sibling
@@ -4129,9 +4131,7 @@ sub should_save {
   # Omit the packages which we use (and which cause grief
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
-  if ( $package eq "FileHandle"
-    || $package eq "Config"
-    || $package eq "SelectSaver"
+  if ( $package =~ /^(FileHandle|Config|SelectSaver|mro|B)$/
     || $package =~ /^(B|PerlIO|Internals|IO)::/ )
   {
     delete_unsaved_hashINC($package);
