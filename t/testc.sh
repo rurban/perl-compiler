@@ -35,7 +35,7 @@ if [ -z $Mblib ]; then
         OCMD="$PERL $Mblib -MO=CC,-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,-DcOSAHGCMpu,-v,"
+    OCMD="$PERL $Mblib -MO=C,-DsGCp,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
         OCMD="$PERL $Mblib -MO=CC,-DOscpSql,-v,"
     fi

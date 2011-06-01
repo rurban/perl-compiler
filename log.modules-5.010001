@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1036
+# B::C::VERSION = 1.32 r1049
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
 # platform = cygwin 32bit
@@ -86,7 +86,7 @@ fail Encode #TODO 5.8-5.10 with threads
 pass Variable::Magic
 pass CGI
 fail B::Hooks::EndOfScope
-pass Test::Pod
+fail Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -94,11 +94,11 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+pass MooseX::Types #TODO always
 pass Class::Singleton
 fail DateTime::TimeZone #TODO 5.10 with threads
-skip DateTime::Locale
-skip DateTime
+fail DateTime::Locale #TODO 5.10 with threads
+fail DateTime #TODO 5.10 with threads
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require

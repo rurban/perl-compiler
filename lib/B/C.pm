@@ -2662,6 +2662,7 @@ sub B::GV::save {
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
       warn "GV::save \%$fullname\n" if $debug{gv};
+      # XXX TODO 49: crash at %warnings::Bits in BEGIN { %hv = ... }
       $gvhv->save;
       $init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
     }
