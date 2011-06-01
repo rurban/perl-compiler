@@ -1818,6 +1818,7 @@ sub B::PVMG::save_magic {
 		class($sv), $$sv, $sv_flags, $debug{flags} ? "(".$flagspv.")" : "",
 		@{[(caller(1))[3]]}, @{[(caller(1))[2]]});
   }
+
   my $pkg = $sv->SvSTASH;
   if ($$pkg) {
     warn sprintf("stash isa class($pkg) 0x%x\n", $$pkg) if $debug{mg} or $debug{gv};
@@ -1830,11 +1831,9 @@ sub B::PVMG::save_magic {
     # Q: Who is initializing our stash from XS? ->save is missing that.
     # A: We only need to init it when we need a CV
     $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
+    $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
     # better default for method names
     $package_pv = $pkg->NAME;
-    # XXX Let's see if this helps
-    #svref_2object( \&IO::bootstrap )->save
-    #  if $pkg->NAME =~ /^FileHandle|IO::Handle$/;
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
@@ -2104,8 +2103,8 @@ sub B::CV::save {
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if "$cvstashname\::$cvname" eq 'utf8::AUTOLOAD';
+    return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname.'::'.$cvname};
   }
-  return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname};
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
@@ -2772,7 +2771,6 @@ sub B::AV::save {
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
 
-  my $alloc;
   if ($PERL514) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
     my $line = "Nullhv, {0}, -1, -1, 0";
@@ -2972,7 +2970,6 @@ sub B::HV::save {
   return $sym if defined $sym;
   my $name = $hv->NAME;
   if ($name) {
-
     # It's a stash
     warn sprintf( "saving stash HV \"%s\" 0x%x MAX=%d\n",
                   $name, $$hv, $hv->MAX ) if $debug{hv};
@@ -2995,6 +2992,7 @@ sub B::HV::save {
     $hv_index++;
     return $sym;
   }
+  return $sym if $name =~ /^B::C/;
 
   # It's just an ordinary HV
   if ($PERL510) {
@@ -3199,14 +3197,15 @@ sub B::IO::save {
       $fsym->save;
     }
   }
-  $io->save_magic; # XXX TODO: does this handle the stash also?
 
-  #my $stash = $io->STASH;
+  $io->save_magic; # This handle the stash also (we need to inc the refcnt)
+  #my $stash = $io->SvSTASH;
   #if ($$stash) {
-  #  $stash->save;
-  #  $init->add( sprintf( "IoSTASH(s\\_%x) = s\\_%x;", $$io, $$stash ) );
-  #  warn sprintf( "done saving STASH 0x%x for IO 0x%x\n", $$stash, $$io )
-  #    if $debug{gv};
+  #  $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
+    #  $stash->save;
+    #  $init->add( sprintf( "IoSTASH(s\\_%x) = s\\_%x;", $$io, $$stash ) );
+    #  warn sprintf( "done saving STASH 0x%x for IO 0x%x\n", $$stash, $$io )
+    #    if $debug{gv};
   #}
 
   return $sym;
