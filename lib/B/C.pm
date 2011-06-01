@@ -1227,7 +1227,6 @@ sub B::PMOP::save {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
         require "utf8_heavy.pl"; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
-        #svref_2object( \&{"utf8\::Cased"} )->save;
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
         "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen),".sprintf("%u));", $pmflags),
@@ -2507,6 +2506,9 @@ sub B::CV::save {
   return $sym;
 }
 
+my @_v = Internals::V;
+sub B::_V { @_v };
+
 sub B::GV::save {
   my ($gv) = @_;
   my $sym = objsym($gv);
@@ -2705,9 +2707,12 @@ sub B::GV::save {
 		SvREFCNT_inc((SV *)cv); }");
       }
       elsif (!$PERL510 or $gp) {
-        # TODO: may need fix CvGEN if >0 to re-validate the CV methods
-        # on PERL510 (>0 + <subgeneration)
-        warn "GV::save &$fullname...\n" if $debug{gv};
+	if ($fullname eq 'Internals::V') { # local_patches
+	  $gvcv = svref_2object( \&B::_V );
+	}
+	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
+	# on PERL510 (>0 + <subgeneration)
+	warn "GV::save &$fullname...\n" if $debug{gv};
 	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
       }
     }
@@ -4352,7 +4357,7 @@ sub save_sig {
 sub save_main_rest {
   # this is mainly for the test suite
   my $warner = $SIG{__WARN__};
-  local $SIG{__WARN__} = sub { print STDERR @_ };
+  # local $SIG{__WARN__} = sub { print STDERR @_ };
 
   warn "done main optree, walking symtable for extras\n"
     if $verbose or $debug{cv};
@@ -4507,8 +4512,8 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
-  $B::C::fold     = 1if $] >= 5.013009; # includes utf8::Cased tables
-  $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories
+  $B::C::fold     = 1 if $] >= 5.013009; # includes utf8::Cased tables
+  $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fav-init)],
