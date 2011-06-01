@@ -4177,8 +4177,10 @@ sub delete_unsaved_hashINC {
 sub add_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
-  warn "Adding $packname to \%INC\n" if $debug{pkg};
-  $INC{$incpack} = $packname;
+  unless ($INC{$incpack}) {
+    warn "Adding $packname to \%INC\n" if $debug{pkg};
+    $INC{$incpack} = $packname;
+  }
 }
 
 sub walkpackages {
@@ -4236,6 +4238,7 @@ sub save_unused_subs {
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB exe size 32-bit.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
+    add_hashINC("utf8");
   }
   # run-time Carp
   # With -fno-warnings we don't insist on initializing warnings::register_categories and Carp.
@@ -4243,12 +4246,15 @@ sub save_unused_subs {
   # 68KB exe size 32-bit
   if ($] >= 5.013005 and ($B::C::warnings or exists($INC{'Carp.pm'}))) {
     svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
+    add_hashINC("warnings");
+    add_hashINC("warnings::register");
   }
   # XSLoader was used, force saving of XSLoader::load
   if ($use_xsloader) {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
     svref_2object( \&XSLoader::load )->save;
+    add_hashINC("XSLoader");
     $use_xsloader = 0;
   }
 }
@@ -4501,7 +4507,7 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
-  $B::C::fold     = 1 if $] >= 5.013009; # includes utf8::Cased tables
+  $B::C::fold     = 1if $] >= 5.013009; # includes utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories
   my %optimization_map = (
     0 => [qw()],                # special case
