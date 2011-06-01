@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1049
+# B::C::VERSION = 1.32 r1052 M
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -88,7 +88,7 @@ pass CGI
 fail B::Hooks::EndOfScope
 pass Test::Pod #TODO 5.8.9
 pass Digest::SHA1
-fail namespace::clean
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport

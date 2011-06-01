@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1042 M
+# B::C::VERSION = 1.32 r1046 M
 # perlversion = 5.014000
 # path = /usr/local/bin/perl5.14.0
 # platform = cygwin 32bit
@@ -94,7 +94,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+pass MooseX::Types #TODO always
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -104,7 +104,7 @@ pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 98 / 100 modules tested with B-C-1.32 - perl-5.014000
-# pass  96 /  98 (98.0%)
-# fail   2 /  98 (2.0%)
-# todo   7 /   2 (350.0%)
+# pass  97 /  98 (99.0%)
+# fail   1 /  98 (1.0%)
+# todo   7 /   1 (700.0%)
 # skip   2 / 100 (2.0% not installed)
