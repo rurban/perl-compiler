@@ -4135,7 +4135,7 @@ sub should_save {
   # Omit the packages which we use (and which cause grief
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
-  if ( $package =~ /^(FileHandle|Config|SelectSaver|mro|B)$/
+  if ( $package =~ /^(FileHandle|SelectSaver|mro|B)$/
     || $package =~ /^(B|PerlIO|Internals|IO)::/ )
   {
     delete_unsaved_hashINC($package);
