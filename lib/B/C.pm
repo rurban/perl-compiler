@@ -2117,7 +2117,7 @@ sub B::CV::save {
     my $stash = $gv->STASH;
     warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
-    warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
+    # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
     my $vsym  = $cv->XSUBANY->save;
@@ -4157,6 +4157,7 @@ sub should_save {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';
+      next if $package eq 'Config'; #and $m eq 'DESTROY'; # only load Config when AUTOLOAD'ed
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
