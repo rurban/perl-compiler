@@ -2509,7 +2509,7 @@ sub B::CV::save {
   return $sym;
 }
 
-my @_v = Internals::V;
+my @_v = Internals::V() if $PERL510;
 sub B::_V { @_v };
 
 sub B::GV::save {
