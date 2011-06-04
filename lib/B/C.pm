@@ -2509,7 +2509,7 @@ sub B::CV::save {
   return $sym;
 }
 
-my @_v = Internals::V() if $PERL510;
+my @_v = Internals::V() if $] >= 5.011;
 sub B::_V { @_v };
 
 sub B::GV::save {
@@ -2710,7 +2710,7 @@ sub B::GV::save {
 		SvREFCNT_inc((SV *)cv); }");
       }
       elsif (!$PERL510 or $gp) {
-	if ($fullname eq 'Internals::V') { # local_patches
+	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
 	  $gvcv = svref_2object( \&B::_V );
 	}
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
