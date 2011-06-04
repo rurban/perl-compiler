@@ -25,6 +25,7 @@
 	  are brought back in directly or by someone else's @ISA. (e.g. Sub::Name
 	  needs DynaLoader::dl_load_flags)
 	add manually compiled packages to %INC to avoid a runtime require
+	special case Config detection, AUTOLOAD = launcher, included by Dynaloader
 	added -Ds for all sub names
 	do not compile any B::C subs, esp. our %SIG handler
 	add our own Internals::V as it is not exported by libperl

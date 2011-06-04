@@ -2031,6 +2031,9 @@ sub try_autoload {
   }
   warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
 		$cvstashname, $cvname, $cvstashname ) if $debug{cv};
+  if ($cvstashname eq 'Config') {
+    return svref_2object( \&{'Config::launcher'} );
+  }
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
   if (exists ${$cvstashname.'::'}{AUTOLOAD} and !$PERL510) {
@@ -3991,7 +3994,8 @@ sub B::GV::savecv {
   my $hv      = $gv->HV;
 
   my $fullname = $package . "::" . $name;
-  warn sprintf( "Checking GV &%s 0x%x\n", cstring($fullname), $$gv ) if $debug{gv};
+  warn sprintf( "Checking GV &%s 0x%x\n", cstring($fullname), $$gv )
+    if $debug{gv};
 
   # We may be looking at this package just because it is a branch in the
   # symbol table which is on the path to a package which we need to save
@@ -3999,10 +4003,7 @@ sub B::GV::savecv {
   #
   return if ( $package ne 'main' and !$include_package{$package} );
   return if ( $package eq 'main' and
-  	      $name =~ /^([^_A-Za-z].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
-    # this regex was too greedy and was taking out something like sub _update {} in main
-    # because of the "_"
-  return if $fullname eq 'B::walksymtable'; # XXX fails
+  	      $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
   warn sprintf( "Used GV \&$fullname 0x%x\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
@@ -4013,6 +4014,12 @@ sub B::GV::savecv {
   if ($package eq 'B::C') {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
+  }
+  return if $fullname eq 'B::walksymtable'; # XXX fails and should not be needed
+  # Config is marked on any Config symbol as TIE and DESTROY are exceptions,
+  # used by the compiler itself
+  if ($name eq'Config') {
+    mark_package('Config') if $name eq 'Config' and !$include_package{Config};
   }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save;
@@ -4157,7 +4164,7 @@ sub should_save {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';
-      next if $package eq 'Config'; #and $m eq 'DESTROY'; # only load Config when AUTOLOAD'ed
+      next if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -4261,6 +4268,7 @@ sub save_unused_subs {
     svref_2object( \&XSLoader::load )->save;
     add_hashINC("XSLoader");
     $use_xsloader = 0;
+    mark_package('Config', 1); # required by Dynaloader and special cased previously
   }
 }
 
@@ -4342,7 +4350,7 @@ sub save_sig {
   foreach my $k ( keys %SIG ) {
     next unless ref $SIG{$k};
     my $cv = svref_2object( \$SIG{$k} );
-    next if $cv->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
+    next if ref($cv) eq 'B::CV' and $cv->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
     my $sv = $cv->save;
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
     $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
