@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.32	2011-05-?? rurban
+1.32	2011-06-?? rurban
         more darwin and package scan fixes, Bytecode -i includeall
 
 	* Bytecode.pm (1.11): fixed const xsub xsubany ptr >=5.10 <5.14 (27).

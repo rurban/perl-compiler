@@ -250,7 +250,7 @@ my %static_ext;
 my $use_xsloader;
 my $nullop_count         = 0;
 # options and optimizations shared with B::CC
-our ($module, $init_name);
+our ($module, $init_name, %savINC);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
@@ -2002,6 +2002,7 @@ sub try_isa {
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
+    next if $_ eq '$cvstashname';
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_, 1); # force
@@ -4016,10 +4017,10 @@ sub B::GV::savecv {
     return;
   }
   return if $fullname eq 'B::walksymtable'; # XXX fails and should not be needed
-  # Config is marked on any Config symbol as TIE and DESTROY are exceptions,
+  # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
-  if ($name eq'Config') {
-    mark_package('Config') if $name eq 'Config' and !$include_package{Config};
+  if ($name eq 'Config') {
+    mark_package('Config', 1) if !$include_package{Config};
   }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save;
@@ -4033,7 +4034,7 @@ sub mark_package {
     no strict 'refs';
     # i.e. if force
     if (exists $include_package{$package} and !$include_package{$package}) {
-      warn "$package previously deleted, save now\n" if $verbose;
+      warn sprintf("$package previously deleted, save now%s\n",$force?" (forced)":"") if $verbose;
       $include_package{$package} = 1;
       add_hashINC( $package );
       walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
@@ -4045,6 +4046,7 @@ sub mark_package {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
       foreach my $isa ( @isa ) {
+	next if $isa eq $package;
         if ( $isa eq 'DynaLoader' ) {
           unless ( defined( &{ $package . '::bootstrap' } ) ) {
             warn "Forcing bootstrap of $package\n" if $verbose;
@@ -4164,7 +4166,7 @@ sub should_save {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';
-      next if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
+      return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -4177,21 +4179,32 @@ sub inc_packname {
   my $packname = shift;
   $packname =~ s/\:\:/\//g;
   $packname .= '.pm';
-  $packname;
+  return $packname;
 }
 
 sub delete_unsaved_hashINC {
   my $packname = shift;
-  $packname = inc_packname($packname);
-  warn "Deleting $packname from \%INC\n" if $INC{$packname} and $debug{pkg};
-  delete $INC{$packname};
+  my $incpack = inc_packname($packname);
+  warn "Deleting $packname from \%INC\n" if $INC{$incpack} and $debug{pkg};
+  $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack} and $INC{$incpack};
+  delete $INC{ $incpack };
 }
+
 sub add_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
   unless ($INC{$incpack}) {
-    warn "Adding $packname to \%INC\n" if $debug{pkg};
-    $INC{$incpack} = $packname;
+    if ($savINC{$incpack}) {
+      warn "Adding $packname to \%INC (again)\n" if $debug{pkg};
+      $INC{$incpack} = $savINC{$incpack};
+    } else {
+      warn "Adding $packname to \%INC\n" if $debug{pkg};
+      for (@INC) {
+        my $p = $_.'/'.$incpack;
+        if (-e $p) { $INC{$incpack} = $p; last; }
+      }
+      $INC{$incpack} = $incpack unless $INC{$incpack};
+    } 
   }
 }
 
