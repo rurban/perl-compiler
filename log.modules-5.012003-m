@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1053 M
+# B::C::VERSION = 1.32 r1060 M
 # perlversion = 5.012003-m
 # path = /opt/local/bin/perl5.12.3
 # platform = darwin 64bit
@@ -27,7 +27,7 @@ pass Text::ParseWords
 fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 fail Module::Build #TODO < 5.13.8
-fail File::Path
+pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
@@ -36,7 +36,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception
+pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -87,12 +87,12 @@ pass Variable::Magic
 fail CGI
 pass B::Hooks::EndOfScope
 fail Test::Pod
-pass Digest::SHA1
+fail Digest::SHA1
 fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
-pass XML::SAX
+fail XML::SAX
 fail YAML
 fail MooseX::Types #TODO always
 pass Class::Singleton
