@@ -142,7 +142,7 @@ function ctest {
     fi
 }
 
-ntests=49
+ntests=50
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=23

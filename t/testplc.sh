@@ -165,7 +165,7 @@ function btest {
   fi
 }
 
-ntests=49
+ntests=50
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
