@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1052 M
+# B::C::VERSION = 1.32 r1062 M
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit
@@ -6,14 +6,14 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness #TODO 5.8.x and 5.10.0
+pass Test::Harness #TODO 5.8.x and 5.10.0
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker
+pass ExtUtils::MakeMaker
 pass Test::Simple #TODO 5.8.x and 5.10.0
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -21,15 +21,15 @@ pass constant
 pass Test #TODO 5.8.9
 pass Data::Dumper
 pass File::Spec
-fail File::Temp #TODO 5.8.x and 5.10.0
+pass File::Temp #TODO 5.8.x and 5.10.0
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build #TODO < 5.13.8
-fail File::Path
+pass Module::Build #TODO < 5.13.8
+pass File::Path
 pass XSLoader
-fail MIME::Base64
+pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
@@ -38,9 +38,9 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception #TODO 5.8.x and 5.10.0
 pass Net::Cmd
-fail Compress::Raw::Zlib
+pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-fail IO::Compress::Base
+pass IO::Compress::Base
 fail LWP #TODO without threads
 pass Storable #TODO debugging without threads
 pass base
@@ -55,7 +55,7 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings #TODO 5.8.9
 pass version
-fail Params::Validate
+pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
@@ -68,10 +68,10 @@ pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP #TODO always
 pass Moose #TODO always
-fail Test::Deep #TODO 5.8.9
+pass Test::Deep #TODO 5.8.9
 pass Carp::Clan
-fail Module::Pluggable
-fail if(1) => "Sys::Hostname"
+pass Module::Pluggable
+pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI #TODO < 5.10
 pass Time::Local
@@ -80,12 +80,12 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class
+pass Path::Class
 pass Test::Warn #TODO 5.8.9
-fail Encode
+pass Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope
+pass B::Hooks::EndOfScope
 pass Test::Pod #TODO 5.8.9
 pass Digest::SHA1
 pass namespace::clean
@@ -96,15 +96,15 @@ pass XML::SAX
 pass YAML
 pass MooseX::Types #TODO always
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
+pass Template::Stash
 # 100 / 100 modules tested with B-C-1.32 - perl-5.008009d-nt
-# pass  80 / 100 (80.0%)
-# fail  20 / 100 (20.0%)
-# todo  18 /  20 (90.0%)
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo  18 /   1 (1800.0%)
 # skip   0 / 100 (0.0% not installed)

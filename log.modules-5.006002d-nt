@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1052 M
+# B::C::VERSION = 1.32 r1062 M
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit
@@ -6,7 +6,7 @@
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -29,7 +29,7 @@ skip ExtUtils::ParseXS
 fail Module::Build #TODO < 5.13.8
 pass File::Path
 pass XSLoader
-fail MIME::Base64
+pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
@@ -38,9 +38,9 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-fail Compress::Raw::Zlib
+pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
-fail IO::Compress::Base
+pass IO::Compress::Base
 fail LWP #TODO without threads
 skip Storable
 pass base
@@ -57,28 +57,28 @@ pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name #TODO 5.6
-pass Filter::Util::Call #TODO 5.6
+skip Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
 pass MRO::Compat
-skip Time::HiRes
+pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 fail Devel::GlobalDestruction
 skip Class::MOP
 skip Moose
-fail Test::Deep
+pass Test::Deep
 pass Carp::Clan
 skip Module::Pluggable
-fail if(1) => "Sys::Hostname"
+pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 skip DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,8 +86,8 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-pass Test::Pod
-skip Digest::SHA1
+skip Test::Pod
+pass Digest::SHA1
 skip namespace::clean
 pass Class::Inspector
 pass Clone
@@ -96,15 +96,15 @@ pass XML::SAX
 skip YAML
 skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-fail DateTime::Locale #TODO 5.6
-fail DateTime
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 82 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
-# pass  71 /  82 (86.6%)
-# fail  11 /  82 (13.4%)
-# todo   7 /  11 (63.6%)
+# pass  78 /  82 (95.1%)
+# fail   4 /  82 (4.9%)
+# todo   7 /   4 (175.0%)
 # skip  18 / 100 (18.0% not installed)
