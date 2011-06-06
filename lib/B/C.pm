@@ -1732,7 +1732,7 @@ sub B::PVMG::save {
     }
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
-    unless ($] >= 5.011 and $sv->isa('B::REGEXP')) {
+    unless ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
       $ivx = $sv->IVX; # XXX How to detect HEK* namehek?
       $nvx = $sv->NVX; # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
     }
@@ -2616,13 +2616,13 @@ sub B::GV::save {
 
   # Shouldn't need to do save_magic since gv_fetchpv handles that
   #$gv->save_magic if $PERL510;
-  # XXX will always be > 1!!!
-  my $refcnt = $gv->REFCNT + 1;
-  $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt - 1 ) ) if $refcnt > 1;
+  # Will always be > 1
+  my $refcnt = $gv->REFCNT;
+  $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
 
   return $sym if $is_empty;
 
-  # XXX B::walksymtable creates an extra reference to the GV
+  # B::walksymtable creates an extra reference to the GV
   my $gvrefcnt = $gv->GvREFCNT;
   if ( $gvrefcnt > 1 ) {
     $init->add( sprintf( "GvREFCNT($sym) += %u;", $gvrefcnt - 1 ) );
