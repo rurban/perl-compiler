@@ -237,6 +237,7 @@ sub is_todo {
   #  MooseX::Types
   #)) { return 'always' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
+    DateTime
     Storable
     Template::Stash
     ExtUtils::Install
@@ -244,23 +245,25 @@ sub is_todo {
     Filter::Util::Call
     DateTime::Locale
     Devel::GlobalDestruction
+    Module::Build
   )) { return '5.6' if $_ eq $module; }}
   #if ($] < 5.008009) { foreach(qw(
   #)) { return '< 5.8.9' if $_ eq $module; }}
   # restricted v_string hash?
-  #if ($] =~ /^5.008/ or $] eq '5.010000') { foreach(qw(
-  #  IO
-  #  Test::Simple
-  #  Test::Tester
-  #  Test::Exception
-  #  Test::Deep
-  #)) { return '5.8.x and 5.10.0' if $_ eq $module; }}
-  #if ($] eq '5.010000') { foreach(qw(
-  #  Attribute::Handlers
-  #  Test::Simple
-  #  Test::NoWarnings
-  #  Pod::Text
-  #)) { return '5.10.0' if $_ eq $module; }}
+  if ($] eq '5.010000') { foreach(qw(
+   IO
+   Path::Class
+  )) { return '5.10.0 restricted hash/...' if $_ eq $module; }}
+  if ($] eq '5.010000') { foreach(qw(
+   Attribute::Handlers
+   ExtUtils::Install
+   Module::Pluggable
+   Pod::Text
+   Test::Pod
+   Test::Simple
+   Test::NoWarnings
+   Test::Warn
+  )) { return '5.10.x crash' if $_ eq $module; }}
   #if ($] == 5.008009) { foreach(qw(
   #  Test
   #  Test::Warn
@@ -274,6 +277,7 @@ sub is_todo {
   #  Test::Harness
   #  Pod::Simple
   #)) { return '5.10.1 - 5.14' if $_ eq $module; }}
+
   # ---------------------------------------
   if ($Config{useithreads}) {
     #foreach(qw(
@@ -291,16 +295,17 @@ sub is_todo {
     #if ($] > 5.009 and $] < 5.015 and $DEBUGGING) { foreach(qw(
     #  File::Path
     #)) { return '5.10-5.14 DEBUGGING with threads' if $_ eq $module; }}
-    #if ($] >= 5.009 and $] < 5.012) { foreach(qw(
-    #  Carp::Clan
-    #  Template::Stash
-    #  DateTime
-    #  DateTime::TimeZone
-    #  DateTime::Locale
-    #  ExtUtils::Install
-    #  Class::MOP
-    #  Devel::GlobalDestruction
-    #)) { return '5.10 with threads' if $_ eq $module; }}
+    if ($] >= 5.009 and $] < 5.012) { foreach(qw(
+     Carp::Clan
+     DateTime::Locale
+     Encode
+     Module::Build
+     Module::Pluggable
+     MooseX::Types
+     Template::Stash
+     Test::Harness
+     Test::Tester
+    )) { return '5.10 with threads' if $_ eq $module; }}
     #if ($] >= 5.009 and $] < 5.014) { foreach(qw(
     #  ExtUtils::Install
     #  Module::Build
@@ -318,15 +323,12 @@ sub is_todo {
       Template::Stash
     )) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
-    foreach(qw(
-      LWP
-    )) { return 'without threads' if $_ eq $module; }
+    #foreach(qw(
+    #  LWP
+    #)) { return 'without threads' if $_ eq $module; }
     #if ($DEBUGGING) { foreach(qw(
     #  Storable
     #)) { return 'DEBUGGING without threads' if $_ eq $module; }}
-    #if ($] >= 5.010 and $] < 5.012 and $DEBUGGING) { foreach(qw(
-    # File::Temp
-    #)) { return '5.10 DEBUGGING without threads' if $_ eq $module; }}
     #if ($] < 5.010) { foreach(qw(
     #)) { return '<5.10 without threads' if $_ eq $module; }}
     # long linking time

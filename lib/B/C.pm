@@ -1910,6 +1910,7 @@ sub B::PVMG::save_magic {
         )
       );
     }
+    # coverage $Template::Stash::PRIVATE
     elsif ( $type eq 'r' ) { # qr magic, for 5.6 done in C.xs. test 20
       my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX;
       # stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c) in C.xs
