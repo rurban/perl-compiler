@@ -96,7 +96,7 @@ fi
 # need to shift the options
 while [ -n "$1" -a "${1:0:1}" = "-" ]; do shift; done
 
-PERLCC_TIMEOUT=120
+PERLCC_TIMEOUT=360
 if [ -n "$1" ]; then
     if [ -f "$1" ]; then
 	# run a mymodules.t like test
@@ -121,7 +121,7 @@ if [ -n "$1" ]; then
 	    else
 	      echo $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "\"use $1; print qq(ok\\n)\"" -o $name
 	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print qq(ok\\n)" -o $name
-              test -f a.out.c && mv a.out.c $name.c
+              # test -f a.out.c && mv a.out.c $name.c
             fi
 	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
 	    shift
