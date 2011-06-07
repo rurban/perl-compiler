@@ -3,8 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4 and worked
 	quite fine with Perl 5.6 and 5.8
 
-1.32	2011-06-?? rurban
+1.32	2011-06-07 rurban
         more darwin and package scan fixes, Bytecode -i includeall
+	all top100 modules can be now be compiled
 
 	* Bytecode.pm (1.11): fixed const xsub xsubany ptr >=5.10 <5.14 (27).
 	save_cq => save_begin+save_init_end: moved push_begin upfront for the same
@@ -24,9 +25,10 @@
 	mark_package force: detect and fix already discarded packages which
 	  are brought back in directly or by someone else's @ISA. (e.g. Sub::Name
 	  needs DynaLoader::dl_load_flags)
+	improved method_named package search, still not exact though (LWP)
 	add manually compiled packages to %INC to avoid a runtime require
 	special case Config detection, AUTOLOAD = launcher, included by Dynaloader
-	added -Ds for all sub names
+	added -Ds to print all sub names
 	do not compile any B::C subs, esp. our %SIG handler
 	add our own Internals::V as it is not exported by libperl
 	inc the REFCNT of stashes (Path::Class)

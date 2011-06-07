@@ -755,10 +755,10 @@ sub todo_tests_default {
         push @todo, (21)   if $] > 5.011 and $] <= 5.013006;
         push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
         # c.t fixed with 1.30
-        push @todo, (16,29,44,45) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
-        push @todo, (12,16)if $what =~ /c_o[234]/ and $] >= 5.010;;
-        push @todo, (44,45) if $what =~ /c_o[123]/;
-
+        push @todo, (16,29,44,45,49) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
+        push @todo, (10,12,16) if $what =~ /c_o[234]/ and $] >= 5.010;;
+        push @todo, (44,45) if $what =~ /c_o[1234]/;
+        push @todo, (50)    if $what eq 'c_o3';
         push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
@@ -778,12 +778,14 @@ sub todo_tests_default {
         push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
         #push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (26)    if $what =~ /^cc_o[12]/;
+        push @todo, (27)    if $] < 5.010 and $what eq 'cc_o2';
         push @todo, (15)    if ($] >= 5.012 or $] < 5.010) and $ITHREADS;
         push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
         push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
         push @todo, (103)   if $] >= 5.012 and $ITHREADS;
         #push @todo, (16)    if $] >= 5.013009;
     }
+    push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
     push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
     #push @todo, (32)  if $] >= 5.011003;
