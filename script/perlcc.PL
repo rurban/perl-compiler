@@ -456,7 +456,7 @@ sub compile_cstyle {
             }
         }
         close XS;
-        $extra_libs = "-L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
+        $extra_libs = " -L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
         vprint 1, "staticxs $stash $extra_libs";
     }
 
