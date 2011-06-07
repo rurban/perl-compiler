@@ -105,14 +105,15 @@ sub run_c {
   chdir $dir;
   my $result = $t; $result =~ s/\.t$/-c.result/;
   my $a = $backend eq 'C' ? 'a' : 'aa';
+  $result =~ s/-c.result$/-cc.result/ if $backend eq 'CC';
   unlink ($a, "$a.c", "t/$a.c", "t/CORE/$a.c", $result);
   # perlcc 2.06 should now work also: omit unneeded B::Stash -u<> and fixed linking
   # see t/c_argv.t
-  my $backopts = $backend eq 'C' ? "-qq,C,-O3" : "-qq,CC";
+  my $backopts = $backend eq 'C' ? "-qq,C" : "-qq,CC";
   $backopts .= ",-fno-warnings" if $backend =~ /^C/ and $] >= 5.013005;
   $backopts .= ",-fno-fold"     if $backend =~ /^C/ and $] >= 5.013009;
   vcmd "$^X -Mblib -MO=$backopts,-o$a.c $t";
-  # CORE often does BEGIN chdir "t" or patched to chdir "t/CORE"
+  # CORE often does BEGIN chdir "t", patched to chdir "t/CORE"
   chdir $dir;
   move ("t/$a.c", "$a.c") if -e "t/$a.c";
   move ("t/CORE/$a.c", "$a.c") if -e "t/CORE/$a.c";
