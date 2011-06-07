@@ -188,7 +188,7 @@ sub testcc   {
     my $cwd = Cwd::getcwd();
     # posix shell only, but we are using a posix shell here. XXX -Wb=-uTest::Builder
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    $self->prefs->{test}->{commandline} = "for t in t/*.t; do echo \"# \$t\"; $X -I\"$cwd/blib/arch\" -I\"$cwd/blib/lib\" \"$cwd/blib/script/perlcc\" -T -r --staticxs \$t; done";
+    $self->prefs->{test}->{commandline} = "for t in t/*.t; do echo \"# \$t\"; $X -I\"$cwd/blib/arch\" -I\"$cwd/blib/lib\" \"$cwd/blib/script/perlcc\" -T -r \$t; done";
     $self->prefs->{test_report} = ''; # XXX ignored!
     $self->{make_test} = 'NO'; # override YAML check "Has already been tested successfully"
     $self->test(@_);
