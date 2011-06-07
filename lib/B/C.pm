@@ -30,6 +30,15 @@ sub add {
   push( @{ $section->[-1]{values} }, @_ );
 }
 
+sub remove {
+  my $section = shift;
+  if (@_) {
+    splice @{ $section->[-1]{values} }, shift, 1;
+  } else {
+    pop  @{ $section->[-1]{values} };
+  }
+}
+
 sub index {
   my $section = shift;
   return scalar( @{ $section->[-1]{values} } ) - 1;
@@ -239,7 +248,7 @@ B::LOGOP::save B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save B::OP::_s
 B::OP::fake_ppaddr B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save
 B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::RV::save
 B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save );
-my ($prev_op, $package_pv); # global stash for methods since 5.13
+my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward);
 my (%strtable, %hektable, @static_free);
 my %xsub;
@@ -423,6 +432,12 @@ sub getsym {
     warn "warning: undefined symbol $sym\n" if $warn_undefined_syms;
     return "UNUSED";
   }
+}
+
+sub delsym {
+  my ( $obj ) = @_;
+  my $sym = sprintf( "s\\_%x", $$obj );
+  delete $symtable{$sym};
 }
 
 sub savere {
@@ -674,6 +689,7 @@ sub B::OP::_save_common {
     my $pv = svop_or_padop_pv($op); # XXX HACK! need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
+      unshift @package_pv, $package_pv;
       warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
     }
   }
@@ -937,18 +953,31 @@ sub B::PVOP::save {
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
+# XXX Until we know exactly the package name for a method_call
+# we improve the heuristics by maintaining this mru list.
+sub push_package {
+  my $p = shift;
+  unshift @package_pv, $p;
+  # remove duplicates at the end
+  @package_pv = grep { $p ne $_ } @package_pv;
+}
+
 # method_named is in 5.6.1
 sub method_named {
   my $name = shift;
   return unless $name;
   # Note: the pkg PV is unacessible(?) at PL_stack_base+TOPMARK+1.
   # But also at the previous op->sv->PV. We stored it away globally in op->_save_common.
-  if (ref $name eq 'B::CV') {
+  if (ref($name) eq 'B::CV') {
     warn $name;
     return $name;
   }
-  my $stash = $package_pv ? $package_pv."::" : "main::";
-  $name = $stash . $name;
+  my $method;
+  for ($package_pv, @package_pv, 'main') {
+    no strict 'refs';
+    $method = $_ . '::' . $name;
+    last if defined(*{$method}{CODE});
+  }
   warn "save method_name \"$name\"\n" if $debug{cv};
   return svref_2object( \&{$name} );
 }
@@ -1833,7 +1862,8 @@ sub B::PVMG::save_magic {
     $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
     $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
     # better default for method names
-    $package_pv = $pkg->NAME;
+    # $package_pv = $pkg->NAME;
+    push_package $package_pv;
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
@@ -2244,7 +2274,8 @@ sub B::CV::save {
 
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
-  $package_pv = $cvstashname;
+  # $package_pv = $cvstashname;
+  push_package $package_pv;
   if ( !$$root && !$cvxsub ) {
     if ($cvstashname eq 'utf8' and $cvname eq 'SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
       require "utf8_heavy.pl";
@@ -2324,6 +2355,11 @@ sub B::CV::save {
     warn sprintf( "%s::%s not found\n", $cvstashname, $cvname) if $debug{sub};
     warn sprintf( "No definition for sub %s::%s (unable to autoload)\n",
       $cvstashname, $cvname ) if $verbose;
+    # XXX empty CV should not be saved
+    # $svsect->remove( $sv_ix );
+    # $xpvcvsect->remove( $xpvcv_ix );
+    # delsym( $cv );
+    # return '0';
   }
 
   # Now it is time to record the CV
@@ -4127,7 +4163,9 @@ sub should_save {
     # but do not mark it for saving if it is not already
     # e.g. to get to Getopt::Long we need to traverse Getopt but need
     # not save Getopt
-    return 1 if ( $u =~ /^$package\:\:/ );
+    my $p = $package;
+    $p =~ s/(\W)/\\$1/g;
+    return 1 if ( $u =~ /^$p\:\:/ );
   }
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
