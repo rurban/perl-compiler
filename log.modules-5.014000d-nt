@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.32 r1065 M
+# B::C::VERSION = 1.32 r1066 M
 # perlversion = 5.014000d-nt
-# path = perl5.14.0d-nt
-# platform = darwin 64bit non-threaded
+# path = /usr/local/bin/perl5.14.0d-nt@a88ace0b
+# threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO without threads
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.32 - perl-5.014000d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
-# skip   0 / 100 (0.0% not installed)
+# 99 / 100 modules tested with B-C-1.32 - perl-5.014000d-nt
+# pass  99 /  99 (100.0%)
+# fail   0 /  99 (0.0%)
+# todo   0 /   0 ()
+# skip   1 / 100 (1.0% not installed)

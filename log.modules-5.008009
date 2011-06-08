@@ -1,23 +1,23 @@
-# B::C::VERSION = 1.32 r1065 M
+# B::C::VERSION = 1.32 r1078 M
 # perlversion = 5.008009
-# path = perl5.8.9
-# threaded
+# path = /usr/bin/perl5.8.9
+# platform = darwin 32bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
-pass IO #TODO 5.8.x and 5.10.0
+pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-pass Test::Simple #TODO 5.8.x and 5.10.0
+pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
-pass Test #TODO 5.8.9
+pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build #TODO < 5.13.8
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -35,7 +35,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-pass Test::Exception #TODO 5.8.x and 5.10.0
+pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO 5.8.x and 5.10.0
+fail Test::Tester #TODO 5.8
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -66,13 +66,13 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose #TODO always
-pass Test::Deep #TODO 5.8.x and 5.10.0
+fail Moose #TODO 5.8
+pass Test::Deep
 pass Carp::Clan
-pass Module::Pluggable #TODO 5.8-5.10 with threads
+pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI #TODO < 5.10
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -80,12 +80,12 @@ pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
-pass Test::Warn #TODO 5.8.9
-pass Encode #TODO 5.8-5.10 with threads
+pass Test::Warn
+pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod #TODO 5.8.9
+pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+fail MooseX::Types #TODO 5.8
 pass Class::Singleton
 skip DateTime::TimeZone
 skip DateTime::Locale
@@ -105,5 +105,5 @@ pass Template::Stash
 # 96 / 100 modules tested with B-C-1.32 - perl-5.008009
 # pass  93 /  96 (96.9%)
 # fail   3 /  96 (3.1%)
-# todo  14 /   3 (466.7%)
+# todo   3 /   3 (100.0%)
 # skip   4 / 100 (4.0% not installed)

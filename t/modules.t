@@ -259,13 +259,15 @@ sub is_todo {
   if ($] eq '5.010000') { foreach(qw(
    IO
    Path::Class
+   DateTime::TimeZone
   )) { return '5.10.0 restricted hash/...' if $_ eq $module; }}
   if ($] eq '5.010000') { foreach(qw(
    Attribute::Handlers
-   ExtUtils::Install
    Module::Pluggable
    Pod::Text
    Test::Pod
+   Test::Deep
+   Test::Exception
    Test::Simple
    Test::NoWarnings
    Test::Warn

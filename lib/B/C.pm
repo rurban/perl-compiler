@@ -958,7 +958,8 @@ sub B::PVOP::save {
 sub push_package ($) {
   my $p = shift;
   @package_pv = grep { $p ne $_ } @package_pv; # remove duplicates at the end
-  unshift @package_pv, $p; 			  # prepend at the front
+  unshift @package_pv, $p; 		       # prepend at the front
+  mark_package($p);
 }
 
 # method_named is in 5.6.1
