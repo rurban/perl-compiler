@@ -689,7 +689,7 @@ sub B::OP::_save_common {
     my $pv = svop_or_padop_pv($op); # XXX HACK! need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
-      unshift @package_pv, $package_pv;
+      push_package($package_pv);
       warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
     }
   }
@@ -955,11 +955,10 @@ sub B::PVOP::save {
 
 # XXX Until we know exactly the package name for a method_call
 # we improve the method search heuristics by maintaining this mru list.
-sub push_package {
+sub push_package ($) {
   my $p = shift;
-  # remove duplicates at the end
-  @package_pv = grep { $p ne $_ } @package_pv;
-  unshift @package_pv, $p;
+  @package_pv = grep { $p ne $_ } @package_pv; # remove duplicates at the end
+  unshift @package_pv, $p; 			  # prepend at the front
 }
 
 # method_named is in 5.6.1
@@ -967,7 +966,8 @@ sub method_named {
   my $name = shift;
   return unless $name;
   # Note: the pkg PV is unacessible(?) at PL_stack_base+TOPMARK+1.
-  # But also at the previous op->sv->PV. We stored it away globally in op->_save_common.
+  # But also at the previous (minus string args) op->sv->PV.
+  # We stored it away globally in op->_save_common.
   if (ref($name) eq 'B::CV') {
     warn $name;
     return $name;
@@ -1863,7 +1863,7 @@ sub B::PVMG::save_magic {
     $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
     # better default for method names
     # $package_pv = $pkg->NAME;
-    push_package $package_pv;
+    push_package($package_pv);
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
@@ -2104,7 +2104,8 @@ sub try_autoload {
     # Tweaked version of AutoLoader::AUTOLOAD
     my $dir = $cvstashname;
     $dir =~ s(::)(/)g;
-    eval { require "auto/$dir/$cvname.al" };
+    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
+    # eval { require "auto/$dir/$cvname.al" };
     if ($@) {
       warn qq(failed require "auto/$dir/$cvname.al": $@\n);
       return 0;
@@ -2276,7 +2277,7 @@ sub B::CV::save {
   warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   # $package_pv = $cvstashname;
-  push_package $package_pv;
+  push_package($package_pv);
   if ( !$$root && !$cvxsub ) {
     if ($cvstashname eq 'utf8' and $cvname eq 'SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
       require "utf8_heavy.pl";
@@ -2704,7 +2705,7 @@ sub B::GV::save {
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
       warn "GV::save \%$fullname\n" if $debug{gv};
-      # XXX TODO 49: crash at %warnings::Bits in BEGIN { %hv = ... }
+      # XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
       $gvhv->save;
       $init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
     }

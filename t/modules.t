@@ -237,16 +237,19 @@ sub is_todo {
   #  MooseX::Types
   #)) { return 'always' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
-    DateTime
-    Storable
-    Template::Stash
     ExtUtils::Install
-    Class::Accessor
-    Filter::Util::Call
+    Module::Build
+  )) { return '5.6 C crash' if $_ eq $module; }}
+  if ($] < 5.007) { foreach(qw(
+    DateTime
+    Template::Stash
     DateTime::Locale
     Devel::GlobalDestruction
-    Module::Build
-  )) { return '5.6' if $_ eq $module; }}
+  )) { return '5.6 r-magic' if $_ eq $module; }}
+  if ($] < 5.007) { foreach(qw(
+    Test::Harness
+    Storable
+  )) { return '5.6 .al noise' if $_ eq $module; }}
   #if ($] < 5.008009) { foreach(qw(
   #)) { return '< 5.8.9' if $_ eq $module; }}
   # restricted v_string hash?

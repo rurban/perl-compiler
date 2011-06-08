@@ -1,12 +1,11 @@
-# B::C::VERSION = 1.32 r1060 M
+# B::C::VERSION = 1.32 r1065 M
 # perlversion = 5.010000
-# path = /usr/bin/perl5.10.0
-# platform = darwin 64bit
-# threaded perl
+# path = perl5.10.0
+# platform = darwin 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO 5.8.x and 5.10.0
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 fail IO
@@ -14,19 +13,19 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-fail Test::Simple #TODO 5.8.x and 5.10.0
+fail Test::Simple #TODO 5.10.0 restricted hash/...
 pass ExtUtils::Manifest
-fail Pod::Text #TODO 5.10 with threads
+fail Pod::Text #TODO 5.10.x crash
 pass constant
 pass Test
-pass Data::Dumper #TODO 5.10 with threads
+pass Data::Dumper
 pass File::Spec
-pass File::Temp #TODO 5.8.x and 5.10.0
-fail ExtUtils::Install #TODO with threads
+pass File::Temp
+fail ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder #TODO 5.10 with threads
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build #TODO < 5.12 with threads
+fail Module::Build #TODO 5.10 with threads
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -36,7 +35,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception #TODO 5.8.x and 5.10.0
+fail Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -48,12 +47,12 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO 5.8.x and 5.10.0
+fail Test::Tester #TODO 5.10 with threads
 pass Sub::Install
-fail Attribute::Handlers #TODO always
+fail Attribute::Handlers #TODO 5.10.x crash
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+fail Test::NoWarnings #TODO 5.10.0 restricted hash/...
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -66,11 +65,11 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 fail Devel::GlobalDestruction
-fail Class::MOP #TODO always
-fail Moose #TODO always
+fail Class::MOP
+fail Moose
 fail Test::Deep
 fail Carp::Clan #TODO 5.10 with threads
-fail Module::Pluggable #TODO 5.8-5.10 with threads
+fail Module::Pluggable #TODO 5.10.x crash
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
@@ -80,13 +79,13 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class
-fail Test::Warn
-fail Encode #TODO 5.8-5.10 with threads
+fail Path::Class #TODO 5.10.0 restricted hash/...
+fail Test::Warn #TODO 5.10.0 restricted hash/...
+fail Encode #TODO 5.10 with threads
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-fail Test::Pod
+fail Test::Pod #TODO 5.10.x crash
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -94,9 +93,9 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO always
+fail MooseX::Types #TODO 5.10 with threads
 pass Class::Singleton
-fail DateTime::TimeZone #TODO 5.10 with threads
+fail DateTime::TimeZone
 fail DateTime::Locale #TODO 5.10 with threads
 skip DateTime
 pass IO::String
@@ -106,5 +105,5 @@ fail Template::Stash #TODO 5.10 with threads
 # 99 / 100 modules tested with B-C-1.32 - perl-5.010000
 # pass  76 /  99 (76.8%)
 # fail  23 /  99 (23.2%)
-# todo  20 /  23 (87.0%)
+# todo  15 /  23 (65.2%)
 # skip   1 / 100 (1.0% not installed)

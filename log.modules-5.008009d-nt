@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.32 r1068 M
+# B::C::VERSION = 1.32 r1076 M
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = cygwin 32bit non-threaded
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.32 - perl-5.008009d-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   0 /   1 (0.0%)
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.32 r1066 M
+# B::C::VERSION = 1.32 r1076 M
 # perlversion = 5.010001
 # path = /usr/bin/perl5.10.1
-# threaded
+# platform = cygwin 32bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness #TODO 5.10 with threads
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -25,7 +25,7 @@ fail ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+fail Module::Build #TODO 5.10 with threads
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -41,13 +41,13 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-pass Storable
+fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester
+fail Test::Tester #TODO 5.10 with threads
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -66,10 +66,10 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 fail Devel::GlobalDestruction
 fail Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
-fail Carp::Clan
-fail Module::Pluggable
+fail Carp::Clan #TODO 5.10 with threads
+fail Module::Pluggable #TODO 5.10 with threads
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
@@ -81,7 +81,7 @@ pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
-fail Encode
+fail Encode #TODO 5.10 with threads
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types #TODO 5.10 with threads
 pass Class::Singleton
-pass DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+fail DateTime::TimeZone
+fail DateTime::Locale #TODO 5.10 with threads
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
-# 98 / 100 modules tested with B-C-1.32 - perl-5.010001
-# pass  87 /  98 (88.8%)
-# fail  11 /  98 (11.2%)
-# todo   0 /  11 (0.0%)
-# skip   2 / 100 (2.0% not installed)
+fail Template::Stash #TODO 5.10 with threads
+# 100 / 100 modules tested with B-C-1.32 - perl-5.010001
+# pass  86 / 100 (86.0%)
+# fail  14 / 100 (14.0%)
+# todo   9 /  14 (64.3%)
+# skip   0 / 100 (0.0% not installed)

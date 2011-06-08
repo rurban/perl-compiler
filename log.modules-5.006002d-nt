@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.32 r1068 M
+# B::C::VERSION = 1.32 r1076 M
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2d-nt
+# path = perl5.6.2d-nt
 # platform = cygwin 32bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -21,11 +21,11 @@ pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install #TODO 5.6
+fail ExtUtils::Install #TODO 5.6 C crash
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 skip ExtUtils::ParseXS
-fail Module::Build
+fail Module::Build #TODO 5.6 C crash
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -46,7 +46,7 @@ pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-pass Class::Accessor #TODO 5.6
+pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
@@ -56,7 +56,7 @@ pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
-pass Filter::Util::Call #TODO 5.6
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -64,7 +64,7 @@ pass MRO::Compat
 skip Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-fail Devel::GlobalDestruction #TODO 5.6
+fail Devel::GlobalDestruction #TODO 5.6 r-magic
 skip Class::MOP
 skip Moose
 pass Test::Deep
@@ -96,14 +96,14 @@ skip YAML
 skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-fail DateTime::Locale #TODO 5.6
-fail DateTime
+fail DateTime::Locale #TODO 5.6 r-magic
+fail DateTime #TODO 5.6 r-magic
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.6
+fail Template::Stash #TODO 5.6 r-magic
 # 85 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
 # pass  79 /  85 (92.9%)
 # fail   6 /  85 (7.1%)
-# todo   7 /   6 (116.7%)
+# todo   9 /   6 (150.0%)
 # skip  15 / 100 (15.0% not installed)

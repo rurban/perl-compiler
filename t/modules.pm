@@ -113,7 +113,7 @@ sub get_module_list {
     open (SAVEOUT, ">&STDERR");
     close STDERR;
     open (STDERR, ">", \$modules::saveout);
-    if (eval "require $m; 1;" || $m eq 'if' ) {
+    if (eval "require $m;" or $m eq 'if') {
       $modules{$m} = 1;
     }
     # restore stderr
@@ -136,7 +136,7 @@ sub random_sublist {
   return 1 if scalar(@modules) < 2;
   while (keys %sublist < 10) {
     my $m = $modules[int(rand(scalar @modules))];
-    next unless $modules{$m}; # Don't random test uninstalled module
+    next unless $modules{$m}; # Don't random test uninstalled modules
     $sublist{$m} = 1;
   }
   return keys %sublist;
