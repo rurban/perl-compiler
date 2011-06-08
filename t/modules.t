@@ -250,8 +250,11 @@ sub is_todo {
     Test::Harness
     Storable
   )) { return '5.6 .al noise' if $_ eq $module; }}
-  #if ($] < 5.008009) { foreach(qw(
-  #)) { return '< 5.8.9' if $_ eq $module; }}
+  if ($] > 5.008001 and $] < 5.010) { foreach(qw(
+    Test::Tester
+    Moose
+    MooseX::Types
+  )) { return '5.8' if $_ eq $module; }}
   # restricted v_string hash?
   if ($] eq '5.010000') { foreach(qw(
    IO
@@ -267,97 +270,26 @@ sub is_todo {
    Test::NoWarnings
    Test::Warn
   )) { return '5.10.x crash' if $_ eq $module; }}
-  #if ($] == 5.008009) { foreach(qw(
-  #  Test
-  #  Test::Warn
-  #  Test::Pod
-  #)) { return '5.8.9' if $_ eq $module; }}
-  # exception: 5.10.1d-nt 5.15.0-m
-  #if ($] =~ /^5.012/) { foreach(qw(
-  #  Pod::Text
-  #)) { return '5.12' if $_ eq $module; }}
-  #if ($] >= 5.010001 and $] < 5.015) { foreach(qw(
-  #  Test::Harness
-  #  Pod::Simple
-  #)) { return '5.10.1 - 5.14' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
-    #foreach(qw(
-    #  Test::Tester
-    #)) { return 'with threads' if $_ eq $module; }
-    #if ($] > 5.007 and $] < 5.012) { foreach(qw(
-    #  Module::Pluggable
-    #  if
-    #  Encode
-    #)) { return '5.8-5.10 with threads' if $_ eq $module; }}
-    #if ($] > 5.007 and $] < 5.012 and $DEBUGGING) { foreach(qw(
-    #  ExtUtils::MakeMaker
-    #  Path::Class
-    #)) { return '5.8-5.10 DEBUGGING with threads' if $_ eq $module; }}
-    #if ($] > 5.009 and $] < 5.015 and $DEBUGGING) { foreach(qw(
-    #  File::Path
-    #)) { return '5.10-5.14 DEBUGGING with threads' if $_ eq $module; }}
     if ($] >= 5.009 and $] < 5.012) { foreach(qw(
-     Carp::Clan
-     DateTime::Locale
-     Encode
-     Module::Build
-     Module::Pluggable
-     MooseX::Types
-     Template::Stash
-     Test::Harness
-     Test::Tester
+      Carp::Clan
+      DateTime::Locale
+      Encode
+      Module::Build
+      Module::Pluggable
+      MooseX::Types
+      Template::Stash
+      Test::Harness
+      Test::Tester
     )) { return '5.10 with threads' if $_ eq $module; }}
-    #if ($] >= 5.009 and $] < 5.014) { foreach(qw(
-    #  ExtUtils::Install
-    #  Module::Build
-    #)) { return '5.10-5.12 with threads' if $_ eq $module; }}
-    #if ($] < 5.012 and $DEBUGGING) { foreach(qw(
-    #  IO::Compress::Base
-    #)) { return '< 5.13 DEBUGGING with threads' if $_ eq $module; }}
-    #if ($] < 5.012 and !$DEBUGGING) { foreach(qw(
-    #)) { return '< 5.13 !DEBUGGING with threads' if $_ eq $module; }}
-    #if ($] < 5.013) { foreach(qw(
-    #)) { return '< 5.13 with threads' if $_ eq $module; }}
-    #if ($] >= 5.012) { foreach(qw(
-    #)) { return '>=5.12 with threads' if $_ eq $module; }}
     if ($] >= 5.013) { foreach(qw(
       Template::Stash
+      Test::Tester
     )) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
-    #foreach(qw(
-    #  LWP
-    #)) { return 'without threads' if $_ eq $module; }
-    #if ($DEBUGGING) { foreach(qw(
-    #  Storable
-    #)) { return 'DEBUGGING without threads' if $_ eq $module; }}
-    #if ($] < 5.010) { foreach(qw(
-    #)) { return '<5.10 without threads' if $_ eq $module; }}
-    # long linking time
-    #if ($] >= 5.010 and $] < 5.013) { foreach(qw(
-    #  ExtUtils::MakeMaker
-    #)) { return '5.10,5.12 without threads' if $_ eq $module; }}
-    #if ($] >= 5.013 and $] < 5.015) { foreach(qw(
-    #  Module::Build
-    #)) { return '5.14 without threads' if $_ eq $module; }}
   }
-  # ---------------------------------------
-  #if ($] > 5.010000 and $] < 5.015 and $DEBUGGING) { foreach(qw(
-  #  Test::Simple
-  #  Test::Deep
-  #  Class::MOP
-  #  ExtUtils::CBuilder
-  #)) { return '5.10.1-5.14 DEBUGGING' if $_ eq $module; }}
-  #if ($] < 5.013008) { foreach(qw(
-  #  Module::Build
-  #)) { return '< 5.13.8' if $_ eq $module; }} # looks like Dave fixed that in CORE with 5.13.8
-  #if ($] < 5.010) { foreach(qw(
-  #  DBI
-  #)) { return '< 5.10' if $_ eq $module; }}
-  #if ($] > 5.013 and $] < 5.015) { foreach(qw(
-  #  ExtUtils::MakeMaker
-  #)) { return '5.14' if $_ eq $module; }}
   # ---------------------------------------
 }
 

@@ -40,8 +40,8 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
-fail Storable
+fail LWP
+fail Storable #TODO 5.10 with threads
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -72,12 +72,12 @@ fail Carp::Clan #TODO 5.10 with threads
 fail Module::Pluggable #TODO 5.10 with threads
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+fail DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
