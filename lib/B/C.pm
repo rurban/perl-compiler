@@ -954,12 +954,12 @@ sub B::PVOP::save {
 }
 
 # XXX Until we know exactly the package name for a method_call
-# we improve the heuristics by maintaining this mru list.
+# we improve the method search heuristics by maintaining this mru list.
 sub push_package {
   my $p = shift;
-  unshift @package_pv, $p;
   # remove duplicates at the end
   @package_pv = grep { $p ne $_ } @package_pv;
+  unshift @package_pv, $p;
 }
 
 # method_named is in 5.6.1
