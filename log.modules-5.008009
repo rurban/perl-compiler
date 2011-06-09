@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.32 r1078 M
+# B::C::VERSION = 1.32 r1083 M
 # perlversion = 5.008009
-# path = /usr/bin/perl5.8.9
+# path = perl5.8.9
 # platform = darwin 32bit threaded
 pass Exporter
 pass Text::Tabs
@@ -97,13 +97,13 @@ fail MooseX::Types #TODO 5.8
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-skip DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.32 - perl-5.008009
-# pass  96 /  99 (97.0%)
-# fail   3 /  99 (3.0%)
+# 100 / 100 modules tested with B-C-1.32 - perl-5.008009
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
 # todo   3 /   3 (100.0%)
-# skip   1 / 100 (1.0% not installed)
+# skip   0 / 100 (0.0% not installed)
