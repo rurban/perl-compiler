@@ -675,17 +675,27 @@ my $opsect_common =
 
 sub B::OP::_save_common {
   my $op = shift;
-  $prev_op = $op;
-  # method_named packages are always const PV sM/BARE
+  # method_named packages are always const PV sM/BARE.
+  # XXX The package name is always the first arg to method_named, but there may appear
+  # more arguments in between, even const strings.
   if ($op->type > 0 and
-      (
+      (($op->name eq 'const' and $op->flags == 34)) # or $op->name eq 'gv'
+      and (
        ($op->next->can('name') and $op->next->name eq 'method_named') # 0 args
        or
        ($op->next->can('next') and $op->next->next and $op->next->next->can('name')
-	and $op->next->next->name eq 'method_named')) # 1 arg
-      or # more args
-      ($op->name eq 'const' and $op->flags == 34)
-     ) {
+	and $op->next->next->name eq 'method_named')	   # 1 arg
+       or
+       ($op->next->can('next') and $op->next->next and $op->next->next->can('next')
+        and $op->next->next->next and $op->next->next->next->can('name')
+	and $op->next->next->next->name eq 'method_named') # 2 args
+       or
+       ($op->next->can('next') and $op->next->next and $op->next->next->can('next')
+        and $op->next->next->next and $op->next->next->next->can('next')
+        and $op->next->next->next->next and $op->next->next->next->next->can('name')
+	and $op->next->next->next->next->name eq 'method_named') # 3 args
+       # XXX TODO support more args ...
+     )) {
     my $pv = svop_or_padop_pv($op); # XXX HACK! need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
@@ -693,6 +703,7 @@ sub B::OP::_save_common {
       warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
     }
   }
+  $prev_op = $op;
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
