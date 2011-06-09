@@ -17,6 +17,7 @@ Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 compatibility added.
 Open Problems for B::C:
   test 46 (easy: add aux :: GVs)
   test 50 (issue 64 - limitation: no ISA of empty packages)
+  r-magic failing in 5.10
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
