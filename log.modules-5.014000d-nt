@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.32 r1078 M
+# B::C::VERSION = 1.32 r1079 M
 # perlversion = 5.014000d-nt
-# path = /usr/local/bin/perl5.14.0d-nt
-# platform = darwin 64bit non-threaded
+# path = /usr/local/bin/perl5.14.0d-nt@a88ace0b
+# platform = cygwin 32bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
