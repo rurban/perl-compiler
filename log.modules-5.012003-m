@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.32 r1065 M
+# B::C::VERSION = 1.32 r1078 M
 # perlversion = 5.012003-m
-# path = perl5.12.3
-# threaded
+# path = /opt/local/bin/perl5.12.3
+# platform = darwin 64bit multi
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.32 - perl-5.012003-m
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   0 /   1 (0.0%)
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

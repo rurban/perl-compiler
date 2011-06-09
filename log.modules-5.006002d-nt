@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.32 r1076 M
+# B::C::VERSION = 1.32 r1079 M
 # perlversion = 5.006002d-nt
-# path = perl5.6.2d-nt
+# path = /usr/local/bin/perl5.6.2d-nt
 # platform = cygwin 32bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+pass Test::Harness #TODO 5.6 .al noise
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -41,7 +41,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-pass Storable
+pass Storable #TODO 5.6 .al noise
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -101,9 +101,9 @@ fail DateTime #TODO 5.6 r-magic
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.6 r-magic
-# 85 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
-# pass  79 /  85 (92.9%)
-# fail   6 /  85 (7.1%)
-# todo   9 /   6 (150.0%)
-# skip  15 / 100 (15.0% not installed)
+skip Template::Stash
+# 88 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
+# pass  83 /  88 (94.3%)
+# fail   5 /  88 (5.7%)
+# todo   7 /   5 (140.0%)
+# skip  12 / 100 (12.0% not installed)

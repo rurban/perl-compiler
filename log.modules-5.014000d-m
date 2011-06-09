@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.32 r1065 M
+# B::C::VERSION = 1.32 r1078 M
 # perlversion = 5.014000d-m
-# path = perl5.14.0d-m
-# threaded
+# path = /usr/local/bin/perl5.14.0d-m
+# platform = darwin 64bit multi
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap

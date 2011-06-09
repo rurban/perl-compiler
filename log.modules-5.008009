@@ -54,7 +54,7 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
-skip Params::Validate
+pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
@@ -95,15 +95,15 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO 5.8
 pass Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
+pass DateTime::TimeZone
+pass DateTime::Locale
 skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 96 / 100 modules tested with B-C-1.32 - perl-5.008009
-# pass  93 /  96 (96.9%)
-# fail   3 /  96 (3.1%)
+# 99 / 100 modules tested with B-C-1.32 - perl-5.008009
+# pass  96 /  99 (97.0%)
+# fail   3 /  99 (3.0%)
 # todo   3 /   3 (100.0%)
-# skip   4 / 100 (4.0% not installed)
+# skip   1 / 100 (1.0% not installed)
