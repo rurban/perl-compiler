@@ -112,7 +112,8 @@ if ($] >= 5.013006) {
 }
 
 TODO: {
-  local $TODO = "exact stashes may vary";
+  # todo: freebsd
+  local $TODO = "exact stashes may vary" if $^O != /^(MSWin32|cygwin|linux|darwin)$/;
   if ((($Config{static_ext} eq ' ')
        || ($Config{static_ext} eq '')
        || ($^O eq 'cygwin' and $Config{static_ext} =~ /^(Cwd )?Win32CORE$/))
@@ -125,4 +126,3 @@ TODO: {
     ok(1,"skip: one or more static extensions");
   }
 }
-

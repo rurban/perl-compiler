@@ -248,7 +248,6 @@ sub is_todo {
   )) { return '5.6 r-magic' if $_ eq $module; }}
   if ($] < 5.007) { foreach(qw(
     Test::Harness
-    Storable
   )) { return '5.6 .al noise' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
     Test::Tester
@@ -264,6 +263,7 @@ sub is_todo {
   if ($] eq '5.010000') { foreach(qw(
    Attribute::Handlers
    Module::Pluggable
+   Moose
    Pod::Text
    Test::Pod
    Test::Deep
@@ -279,6 +279,7 @@ sub is_todo {
       Carp::Clan
       DateTime::Locale
       Encode
+      ExtUtils::Install
       Module::Build
       Module::Pluggable
       MooseX::Types
@@ -286,8 +287,15 @@ sub is_todo {
       Test::Harness
       Test::Tester
     )) { return '5.10 with threads' if $_ eq $module; }}
+    if ($] eq 5.012000) { foreach(qw(
+      DBI
+      DateTime
+      DateTime::Locale
+      Filter::Util::Call
+      Storable
+      Sub::Name
+    )) { return '5.12.0 with threads' if $_ eq $module; }}
     if ($] >= 5.013) { foreach(qw(
-      Template::Stash
       Test::Tester
     )) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------

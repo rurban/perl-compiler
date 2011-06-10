@@ -1,6 +1,6 @@
 # B::C::VERSION = 1.32 r1083 M
 # perlversion = 5.010000
-# path = perl5.10.0
+# path = /usr/bin/perl5.10.0
 # platform = darwin 64bit threaded
 pass Exporter
 pass Text::Tabs
@@ -15,13 +15,13 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 fail Test::Simple #TODO 5.10.x crash
 pass ExtUtils::Manifest
-fail Pod::Text #TODO 5.10.x crash
+pass Pod::Text #TODO 5.10.x crash
 pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-fail ExtUtils::Install
+pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
@@ -64,12 +64,12 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-fail Devel::GlobalDestruction
-fail Class::MOP
+pass Devel::GlobalDestruction
+pass Class::MOP
 fail Moose
 fail Test::Deep #TODO 5.10.x crash
-fail Carp::Clan #TODO 5.10 with threads
-fail Module::Pluggable #TODO 5.10.x crash
+pass Carp::Clan #TODO 5.10 with threads
+pass Module::Pluggable #TODO 5.10.x crash
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
@@ -81,7 +81,7 @@ pass FCGI
 pass Tree::DAG_Node
 fail Path::Class #TODO 5.10.0 restricted hash/...
 fail Test::Warn #TODO 5.10.x crash
-fail Encode #TODO 5.10 with threads
+pass Encode #TODO 5.10 with threads
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
@@ -101,9 +101,9 @@ skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.10 with threads
+pass Template::Stash #TODO 5.10 with threads
 # 99 / 100 modules tested with B-C-1.32 - perl-5.010000
-# pass  76 /  99 (76.8%)
-# fail  23 /  99 (23.2%)
-# todo  20 /  23 (87.0%)
+# pass  84 /  99 (84.8%)
+# fail  15 /  99 (15.2%)
+# todo  20 /  15 (133.3%)
 # skip   1 / 100 (1.0% not installed)

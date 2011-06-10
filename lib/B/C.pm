@@ -967,8 +967,8 @@ sub B::PVOP::save {
 # XXX Until we know exactly the package name for a method_call
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
-  my $p = shift;
-  @package_pv = grep { $p ne $_ } @package_pv; # remove duplicates at the end
+  my $p = shift or return;
+  @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
   mark_package($p);
 }
@@ -2918,6 +2918,9 @@ sub B::AV::save {
 	  ." *svp++ = (SV*)&sv_list[gcount]; };\n\t";
 	$i += $count;
       } elsif ($use_av_undef_speedup
+	       && defined $values[$i]
+	       && defined $values[$i+1]
+	       && defined $values[$i+2]
 	       && $values[$i]   =~ /^ptr_undef|&PL_sv_undef$/
 	       && $values[$i+1] =~ /^ptr_undef|&PL_sv_undef$/
 	       && $values[$i+2] =~ /^ptr_undef|&PL_sv_undef$/)
@@ -3046,7 +3049,7 @@ sub B::HV::save {
     $hv_index++;
     return $sym;
   }
-  return $sym if $name =~ /^B::C/;
+  # return $sym if $name =~ /^B::C/;
 
   # It's just an ordinary HV
   if ($PERL510) {
