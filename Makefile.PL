@@ -235,11 +235,11 @@ sub install {
 	$result .= '
 ccinc_install :: $(PERL_INC)/cc_runtime.h
 
-$(PERL_INC)/cc_runtime.h : cc_runtime514.h
-	$(NOECHO) $(MOD_INSTALL) 
-	    	read $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist
-		write $(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist
-		cc_runtime514.h $@
+$(PERL_INC)/cc_runtime.h : cc_runtime.h
+	$(NOECHO) $(MOD_INSTALL) \
+	    	read $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist \
+		write $(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist \
+		cc_runtime.h $@
 ';
     }
 }

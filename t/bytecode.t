@@ -56,7 +56,7 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
 @todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..43,46,50)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #44 fixed by moving push_begin upfront
-push @todo, (42..43)if $] >= 5.010;
+push @todo, (42,43) if $] >= 5.010;
 push @todo, (32)    if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
 # push @todo, (48)    if $] > 5.013; # END block del_backref fixed with r1004
 push @todo, (41)    if !$ITHREADS;
