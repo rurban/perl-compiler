@@ -56,9 +56,12 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
 @todo = (3,6,8..10,12,15,16,18,26..28,31,33,35,38,41..43,46,50)
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #44 fixed by moving push_begin upfront
+push @todo, (21,24..26,28,33,38..39) if $^O eq 'solaris' and $] eq '5.008008';
+push @todo, (10,18,22,24,27..28,30,45) if $^O eq 'linux' and $] eq '5.008008';
+push @todo, (42,43) if $] <= 5.008009 and $^O eq 'freebsd';
 push @todo, (42,43) if $] >= 5.010;
 push @todo, (32)    if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
-# push @todo, (48)    if $] > 5.013; # END block del_backref fixed with r1004
+#push @todo, (48)   if $] > 5.013; # END block del_backref fixed with r1004
 push @todo, (41)    if !$ITHREADS;
 push @todo, (27)    if $] >= 5.010;
 # cannot store labels on windows 5.12: 21

@@ -103,6 +103,7 @@ if ($] >= 5.013004) {
 if ($] >= 5.013006) {
     $expected = "Carp DB Exporter Exporter::Heavy main mro re Regexp strict warnings";
 }
+$expected =~ s/(Exporter::Heavy|strict) //g if $^O eq 'freebsd';
 
 {
     no strict 'vars';
@@ -113,7 +114,7 @@ if ($] >= 5.013006) {
 
 TODO: {
   # todo: freebsd
-  local $TODO = "exact stashes may vary" if $^O != /^(MSWin32|cygwin|linux|darwin)$/;
+  local $TODO = "exact stashes may vary" if $^O !~ /^(MSWin32|cygwin|linux|darwin)$/;
   if ((($Config{static_ext} eq ' ')
        || ($Config{static_ext} eq '')
        || ($^O eq 'cygwin' and $Config{static_ext} =~ /^(Cwd )?Win32CORE$/))

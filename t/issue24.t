@@ -31,11 +31,11 @@ unlink("$name.db*");
 
 $Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
 $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
-#TODO: {
-#  local $TODO = "B::C issue 24 dbm"
-#    if $] > 5.013010 and $ITHREADS and $DEBUGGING;
+TODO: {
+  local $TODO = "B::C issue 24 dbm"
+    if $] >= 5.012 and $ITHREADS;
   is($result, $expected, "C dbm fixed with r879, 1.30");
-#}
+}
 unlink("$name.db*", "a", "a.out");
 
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
