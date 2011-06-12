@@ -759,7 +759,7 @@ sub todo_tests_default {
         # c.t fixed with 1.30
         push @todo, (16,29,44,45,49) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
         push @todo, (10,12,16) if $what =~ /c_o[234]/ and $] >= 5.010;
-        push @todo, (11)    if $what =~ /c_o[234]/ and $] < 5.010;
+        push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
         push @todo, (44,45) if $what =~ /c_o[1234]/;
         push @todo, (50)    if $what =~ /c_o[234]/;
         push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
@@ -777,7 +777,7 @@ sub todo_tests_default {
         push @todo, (27)    if $] < 5.007 and $what eq 'cc_o2';
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
         push @todo, (11,45,103,105) if $] > 5.007 and $] < 5.009;
-        push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and !$ITHREADS);
+        push @todo, (29)    if $] < 5.008006 or $] > 5.013;
         #push @todo, (11,27) if $] < 5.009;
         push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
         # solaris also. I suspected nvx<=>cop_seq_*

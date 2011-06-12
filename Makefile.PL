@@ -242,6 +242,7 @@ $(PERL_INC)/cc_runtime.h : cc_runtime.h
 		cc_runtime.h $@
 ';
     }
+    $result
 }
 
 # Local Variables:

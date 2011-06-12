@@ -22,7 +22,7 @@ my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $expected = `$runperl $name.pl`;
 
 $result = `$runperl $Mblib blib/script/perlcc -r -B $name.pl`;
-TODO: {
+TODO: { #1
   local $TODO = "Bytecode issue 24 dbm (still original compiler)"
     if $] < 5.008001 or $result =~ /No dbm on this machine/;
   is($result, $expected, "Bytecode dbm fixed with r882, 1.30");
@@ -31,15 +31,15 @@ unlink("$name.db*");
 
 $Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
 $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
-TODO: {
+TODO: { #2
   local $TODO = "B::C issue 24 dbm"
-    if $] >= 5.012 and $ITHREADS;
+    if ($] >= 5.012 and $ITHREADS) or ($] > 5.007 and $] < 5.008008);
   is($result, $expected, "C dbm fixed with r879, 1.30");
 }
 unlink("$name.db*", "a", "a.out");
 
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
-TODO: {
+TODO: { #3
   local $TODO = "B::CC issue 24 dbm <5.10";
   is($result, $expected, "CC dbm fixed with r881, XSLoader with 1.32");
 }
