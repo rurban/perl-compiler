@@ -1103,6 +1103,70 @@ record, with deletes written by C<Perl_magic_clearhint>. C<SAVEHINTS>
 saves the current C<PL_compiling.cop_hints_hash> on the save stack, so that
 it will be correctly restored when any inner compiling scope is exited.
 
+=head1 Examples
+
+=head2 Call a subroutine
+
+subname(args...) =>
+
+  pushmark
+    args ...
+  gv => subname
+  entersub
+
+=head2 Call a method
+
+Here we have several combinations to define the package and the method name, either
+compile-time (static as constant string), or dynamic as B<GV> (subname) or 
+B<GVSV>/B<PADSV> (package name).
+
+B<method_named> holds the method name as C<sv> if know at compile time.
+If not B<gv> (of the name) and B<method> is used.
+The package name is at the top of the stack.
+A call stack is added with B<pushmark>.
+
+1. Static compile time package and method:
+
+Class->subname(args...) =>
+
+  pushmark
+  const PV => "Class"
+    args ...
+  method_named => "subname"
+  entersub
+
+2. Run-time package and compile-time method:
+
+$obj->subname(args...) =>
+
+  pushmark
+  padsv/gvsv => *packagename
+    args ...
+  method_named => "subname"
+  entersub
+
+3. Run-time package and run-time method:
+
+$obj->$meth(args...) =>
+
+  pushmark
+  padsv/gvsv => *packagename
+    args ...
+  gvsv => GV *meth
+  method
+  entersub
+
+4. Compile-time package and run-time method:
+
+Class->$meth(args...) =>
+
+  pushmark
+  const PV => "Class"
+    args ...
+  gvsv => GV *meth
+  method
+  entersub
+
 =head1 Hooks
 
 =head2 Special execution blocks BEGIN, CHECK, UNITCHECK, INIT, END
@@ -1267,7 +1331,9 @@ accessors, only via XS. Or via L<B::Generate> as explained in Simon Cozen's
 I<Todo: Show the other runloops, and esp. the B:Utils ones.>
 I<Todo: Describe the dumper, the debugging and more extended walkers.>
 
-=head1 Internal and external modifications
+=head1 SEE ALSO
+
+=head2 Internal and external modifications
 
 See the short description of the internal optimizer in the "Brief Summary".
 
@@ -1280,7 +1346,7 @@ is done in most B modules. Best see L<B::Utils>.
 You may also create custom ops at runtime (well, strictly speaking at
 compile-time) via L<B::Generate>.
 
-=head1 Modules
+=head2 Modules
 
 The most important op tree module is L<B::Concise> by Stephen McCamant.
 
@@ -1298,7 +1364,7 @@ Reini Urban maintains the interactive op tree debugger L<B::Debugger>,
 the Compiler suite (B::C, B::CC, B::Bytecode), L<B::Generate> and 
 is working on L<Jit>.
 
-=head1 Various Articles
+=head2 Various Articles
 
 The best source of information is the source. It is very well documented.
 
