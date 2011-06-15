@@ -148,7 +148,7 @@ ok
 package dummy;sub meth{print "ok"};package main;dummy->meth(1)
 >>>>
 ok
-######################### 35 methodcall syntax fails #####
+######################### 35 static methodcall #####
 my ($rv,%hv);%hv=(key=>\$rv);$rv=\%hv;print "ok";
 >>>>
 ok

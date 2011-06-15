@@ -1125,7 +1125,7 @@ If not B<gv> (of the name) and B<method> is used.
 The package name is at the top of the stack.
 A call stack is added with B<pushmark>.
 
-1. Static compile time package and method:
+1. Static compile time package ("class") and method:
 
 Class->subname(args...) =>
 
@@ -1135,7 +1135,7 @@ Class->subname(args...) =>
   method_named => "subname"
   entersub
 
-2. Run-time package and compile-time method:
+2. Run-time package ("object") and compile-time method:
 
 $obj->subname(args...) =>
 
@@ -1156,7 +1156,7 @@ $obj->$meth(args...) =>
   method
   entersub
 
-4. Compile-time package and run-time method:
+4. Compile-time package ("class") and run-time method:
 
 Class->$meth(args...) =>
 

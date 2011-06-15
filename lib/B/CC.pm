@@ -2562,7 +2562,7 @@ sub pp_last {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
       warn( sprintf("Warning: Label not found at compile time for \"last %s\"\n", $op->pv ));
-      #return default_pp($op); # no optimization
+      return default_pp($op); # no optimization
     }
 
     # XXX Add support for "last" to leave non-loop blocks
@@ -2882,6 +2882,8 @@ sub compile_stats {
 # Accessible via use B::CC '-ftype-attr'; in user code, or -MB::CC=-O2 on the cmdline
 sub import {
   my @options = @_;
+  # Allow debugging in CHECK blocks without Od
+  $DB::single=1 if defined &DB::DB;
   my ( $option, $opt, $arg );
 OPTION:
   while ( $option = shift @options ) {

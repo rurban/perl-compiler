@@ -353,6 +353,11 @@ sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
   if (!$op->can("sv")) {
+    if ($op->can('name') and $op->name eq 'padsv') {
+      my @c = comppadlist->ARRAY;
+      my @pad = $c[1]->ARRAY;
+      return $pad[$op->targ]->PV if $pad[$op->targ] and $pad[$op->targ]->can("PV");
+    }
     # $op->can('pmreplroot') fails for 5.14
     if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
       $sv = $op->pmreplroot->sv;
@@ -390,7 +395,7 @@ sub svop_or_padop_pv {
     } else {
   missing:
       if ($op->name ne 'method_named') {
-	# Called from some svop before method_named. no magic pv string, so a method arg.
+	# Called from first const/padsv before method_named. no magic pv string, so a method arg.
 	# The first const pv as method_named arg is always the $package_pv.
 	return $package_pv;
       } elsif ($sv->isa("B::IV")) {
@@ -595,7 +600,6 @@ sub save_hek {
   wantarray ? ( "$sym", length( pack "a*", $str ) ) : "$sym";
 }
 
-
 sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
@@ -675,35 +679,27 @@ my $opsect_common =
 
 sub B::OP::_save_common {
   my $op = shift;
-  # method_named packages are always const PV sM/BARE.
-  # XXX The package name is always the first arg to method_named, but there may appear
-  # more arguments in between, even const strings.
+  # compile-time method_named packages are always const PV sM/BARE, they should be optimized.
+  # run-time packages are in gvsv/padsv. This is difficult to optimize.
+  #   my Foo $obj = shift; $obj->bar(); # TODO typed $obj
+  # entersub -> pushmark -> package -> args...
+  # See perl -MO=Terse -e '$foo->bar("var")'
+  # See also http://www.perl.com/pub/2000/06/dougpatch.html
   if ($op->type > 0 and
-      (($op->name eq 'const' and $op->flags == 34)) # or $op->name eq 'gv'
-      and (
-       ($op->next->can('name') and $op->next->name eq 'method_named') # 0 args
-       or
-       ($op->next->can('next') and $op->next->next and $op->next->next->can('name')
-	and $op->next->next->name eq 'method_named')	   # 1 arg
-       or
-       ($op->next->can('next') and $op->next->next and $op->next->next->can('next')
-        and $op->next->next->next and $op->next->next->next->can('name')
-	and $op->next->next->next->name eq 'method_named') # 2 args
-       or
-       ($op->next->can('next') and $op->next->next and $op->next->next->can('next')
-        and $op->next->next->next and $op->next->next->next->can('next')
-        and $op->next->next->next->next and $op->next->next->next->next->can('name')
-	and $op->next->next->next->next->name eq 'method_named') # 3 args
-       # XXX TODO support more args ...
-     )) {
-    my $pv = svop_or_padop_pv($op); # XXX HACK! need to store away the pkg pv. Failed since 5.13
+      $op->name eq 'entersub' and $op->first and $op->first->can('name') and
+      $op->first->name eq 'pushmark' and
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 34) # Foo->bar()  compile-time lookup
+       or $op->first->next->name eq 'padsv'      # $foo->bar() run-time lookup
+       or $op->first->next->name eq 'gvsv')     
+     ) {
+    my $pv = svop_or_padop_pv($op->first->next); # XXX need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
       push_package($package_pv);
-      warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv};
+      warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv} or $debug{pkg};
     }
   }
-  $prev_op = $op;
+  # $prev_op = $op;
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
@@ -978,7 +974,7 @@ sub method_named {
   my $name = shift;
   return unless $name;
   # Note: the pkg PV is unacessible(?) at PL_stack_base+TOPMARK+1.
-  # But also at the previous (minus string args) op->sv->PV.
+  # But it is also at the previous (after pushmark, before all args) op->sv->PV.
   # We stored it away globally in op->_save_common.
   if (ref($name) eq 'B::CV') {
     warn $name;
@@ -4585,6 +4581,8 @@ sub mark_unused {
 
 sub compile {
   my @options = @_;
+  # Allow debugging in CHECK blocks without Od
+  $DB::single=1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
