@@ -4201,7 +4201,7 @@ sub should_save {
         warn "Cached $package is already deleted\n";
       }
     }
-    # delete_unsaved_hashINC($package) unless $include_package{$package};
+    delete_unsaved_hashINC($package) unless $include_package{$package};
     return $include_package{$package};
   }
 
