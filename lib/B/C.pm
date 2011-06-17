@@ -259,7 +259,7 @@ my %static_ext;
 my $use_xsloader;
 my $nullop_count         = 0;
 # options and optimizations shared with B::CC
-our ($module, $init_name, %savINC);
+our ($module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
@@ -688,15 +688,20 @@ sub B::OP::_save_common {
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
-      (($op->first->next->name eq 'const' and $op->first->next->flags == 34) # Foo->bar()  compile-time lookup
+      # Foo->bar()  compile-time lookup, 34 = BARE in all versions
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
        or $op->first->next->name eq 'padsv'      # $foo->bar() run-time lookup
-       or $op->first->next->name eq 'gvsv')     
+       or $op->first->next->name eq 'gvsv')      # not found so far
      ) {
-    my $pv = svop_or_padop_pv($op->first->next); # XXX need to store away the pkg pv. Failed since 5.13
+    my $pkgop = $op->first->next;
+    warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv} or $debug{pkg};
+    my $pv = svop_or_padop_pv($pkgop); # XXX need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
       push_package($package_pv);
       warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv} or $debug{pkg};
+    } else {
+      warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
     }
   }
   # $prev_op = $op;
@@ -1163,6 +1168,12 @@ sub B::COP::save {
     sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
   ) if !$ITHREADS;
 
+  # our root: store all packages from this file
+  if (!$mainfile) {
+    $mainfile = $file if $op->stashpv eq 'main';
+  } else {
+    mark_package($op->stashpv) if $mainfile eq $file and $op->stashpv ne 'main';
+  }
   savesym( $op, "(OP*)&cop_list[$ix]" );
 }
 
@@ -4180,6 +4191,8 @@ sub should_save {
     $p =~ s/(\W)/\\$1/g;
     return 1 if ( $u =~ /^$p\:\:/ );
   }
+  # If this package is in the same file as main:: or our source, save it. (72, 73)
+  # XXX TODO
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
       if ($include_package{$package}) {
@@ -4188,7 +4201,7 @@ sub should_save {
         warn "Cached $package is already deleted\n";
       }
     }
-    delete_unsaved_hashINC($package) unless $include_package{$package};
+    # delete_unsaved_hashINC($package) unless $include_package{$package};
     return $include_package{$package};
   }
 
