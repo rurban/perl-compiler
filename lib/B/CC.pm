@@ -2561,8 +2561,9 @@ sub pp_last {
   else {
     $cxix = dopoptolabel( $op->pv );
     if ( $cxix < 0 ) {
+      # coverage: cc_last.t 2 (ok) 4 (nok)
       warn( sprintf("Warning: Label not found at compile time for \"last %s\"\n", $op->pv ));
-      return default_pp($op); # no optimization
+      #return default_pp($op); # no optimization
     }
 
     # XXX Add support for "last" to leave non-loop blocks

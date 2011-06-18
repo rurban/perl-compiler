@@ -145,10 +145,10 @@ my $x=$ENV{TMPDIR};print "ok"
 >>>>
 ok
 ######################### 34 does init of magic hashes work in 5.10? #####
-package dummy;sub meth{print "ok"};package main;dummy->meth(1)
+package dummy;my $i=0;sub meth{print $i++};package main;dummy->meth(1);my dummy $o=bless {},"dummy";$o->meth("const");my $meth="meth";$o->$meth("const");dummy->$meth("const");dummy::meth("dummy","const")
 >>>>
-ok
-######################### 35 static methodcall #####
+01234
+######################### 35 method calls #####
 my ($rv,%hv);%hv=(key=>\$rv);$rv=\%hv;print "ok";
 >>>>
 ok

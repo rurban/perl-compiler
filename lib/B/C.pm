@@ -10,7 +10,7 @@
 
 package B::C;
 
-our $VERSION = '1.34';
+our $VERSION = '1.35';
 my %debug;
 
 package B::C::Section;
@@ -1170,9 +1170,9 @@ sub B::COP::save {
 
   # our root: store all packages from this file
   if (!$mainfile) {
-    $mainfile = $file if $op->stashpv eq 'main';
+    $mainfile = $op->file if $op->stashpv eq 'main';
   } else {
-    mark_package($op->stashpv) if $mainfile eq $file and $op->stashpv ne 'main';
+    mark_package($op->stashpv) if $mainfile eq $op->file and $op->stashpv ne 'main';
   }
   savesym( $op, "(OP*)&cop_list[$ix]" );
 }
@@ -4192,7 +4192,20 @@ sub should_save {
     return 1 if ( $u =~ /^$p\:\:/ );
   }
   # If this package is in the same file as main:: or our source, save it. (72, 73)
-  # XXX TODO
+  if ($mainfile) {
+    # Find the first cv in this package for CV->FILE
+    no strict 'refs';
+    for my $sym (keys %{$package.'::'}) {
+      if (defined &{$package.'::'.$sym}) {
+	# compare cv->FILE to $mainfile
+	my $cv = svref_2object(\&{$package.'::'.$sym});
+	if ($cv and $cv->FILE) {
+	  $include_package{$package} = 1 if $mainfile eq $cv->FILE;
+	  last;
+	}
+      }
+    }
+  }
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
       if ($include_package{$package}) {
