@@ -688,6 +688,12 @@ sub ctest {
                 ok (undef);
             }
 	} else {
+	    #crosscheck uncompiled
+	    my $out1 = `$runperl $name.pl`;
+            unless ($out1 =~ /$expected/) {
+                ok(1, "skip also fails uncompiled");
+                return;
+            }
 	    ok (undef);
 	}
     }
