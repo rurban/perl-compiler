@@ -14,7 +14,10 @@ my $script1 = <<'EOF';
 # last outside loop
 label: {
   print "ok\n";
-  last label;
+  my $i = 1;
+  {
+    last label if $i;
+  }
   print " not ok\n";
 }
 EOF

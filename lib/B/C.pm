@@ -4222,7 +4222,8 @@ sub should_save {
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
   if ( $package =~ /^(FileHandle|SelectSaver|mro|B)$/
-    || $package =~ /^(B|PerlIO|Internals|IO)::/ )
+       || $package =~ /^(B|PerlIO|Internals|IO)::/
+       or ($DB::deep and $package =~ /^(DB|Term::ReadLine)/))
   {
     delete_unsaved_hashINC($package);
     return $include_package{$package} = 0;

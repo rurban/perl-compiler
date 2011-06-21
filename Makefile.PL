@@ -86,7 +86,7 @@ WriteMakefile(
                "bytecode[0-9]* ".
                "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
-               "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak"
+               "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a"
              },
 );
 

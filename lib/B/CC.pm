@@ -238,7 +238,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.10';
+our $VERSION = '1.11';
 
 use Config;
 use strict;
@@ -827,7 +827,10 @@ sub dopoptolabel {
   debug "dopoptolabel: returning $cxix\n" if $debug{cxstack};
   if ($cxix < 0 and $debug{cxstack}) {
     for my $cx (0 .. $#cxstack) {
-      print $cx,$cxstack[$cx],"\n";
+      debug "$cx: ",$cxstack[$cx]->{label},"\n";
+    }
+    for my $op (keys %{$labels->{label}}) {
+      debug $labels->{label}->{$op},"\n";
     }
   }
   return $cxix;
@@ -1041,8 +1044,8 @@ sub label {
   my $op = shift;
   # Preserve original label name for "real" labels
   if ($op->can("label") and $op->label) {
-    # cc should error errors on duplicate named labels
-    return sprintf( "label_%s_%x", $op->label, $$op );
+    # cc should error on duplicate named labels
+    return sprintf( "label_%s_%x", $op->label, $$op);
   } else {
     return sprintf( "lab_%x", $$op );
   }
@@ -1050,9 +1053,14 @@ sub label {
 
 sub write_label {
   my $op = shift;
-  #debug sprintf("lab_%x:?\n", $$op);
+  # debug sprintf("lab_%x:?\n", $$op) if $debug{cxstack};
   unless ($labels->{label}->{$$op}) {
     my $l = label($op);
+    # named label but op not yet known?
+    if ( $op->can("label") and $op->label ) {
+      $l = "label_".$op->label;
+      push_runtime(sprintf( "  %s:", $l));
+    }
     if ($verbose) {
       push_runtime(sprintf( "  %s:\t/* %s */", label($op), $op->name ));
     } else {
@@ -1060,6 +1068,16 @@ sub write_label {
     }
     # avoid printing duplicate jump labels
     $labels->{label}->{$$op} = $l;
+    if ($op->can("label") and $op->label ) {
+      push(@cxstack, {
+		      type   => 0,
+		      op     => $op,
+		      nextop => $op->can("nextop") && $op->nextop ? $op->nextop : $op->next,
+		      redoop => $op->can("redoop") && $op->redoop ? $op->redoop : $op,
+		      lastop => $op->can("lastop") && $op->lastop ? $op->lastop : $op,
+		      'label' => $op->can("label") && $op->label  ? $op->label : $l
+		     });
+    }
   }
 }
 
@@ -1315,6 +1333,7 @@ sub pp_const {
 sub pp_nextstate {
   my $op = shift;
   if ($labels->{'nextstate'}->[-1] and $labels->{'nextstate'}->[-1] == $op) {
+    debug sprintf("pop_label nextstate: cxstack label %s\n", $curcop->[0]->label) if $debug{cxstack};
     pop_label 'nextstate';
   } else {
     write_label($op);
@@ -2559,17 +2578,24 @@ sub pp_last {
     }
   }
   else {
-    $cxix = dopoptolabel( $op->pv );
-    if ( $cxix < 0 ) {
-      # coverage: cc_last.t 2 (ok) 4 (nok)
-      warn( sprintf("Warning: Label not found at compile time for \"last %s\"\n", $op->pv ));
-      #return default_pp($op); # no optimization
+    my $label = $op->pv;
+    if ($label) {
+      $cxix = dopoptolabel( $label );
+      if ( $cxix < 0 ) {
+	# coverage: cc_last.t 2 (ok) 4 (ok)
+	warn( sprintf("Warning: Label not found at compile time for \"last %s\"\n", $label ));
+	# last does not jump into the future, by name without $$op
+	# instead it should jump to the block afterwards
+	$labels->{nlabel}->{$label} = $$op;
+	return $op->next;
+      }
     }
 
-    # XXX Add support for "last" to leave non-loop blocks
+    # XXX Add support for "last" to leave non-loop blocks. label fixed with 1.11
     if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
-      warn("Error: Use of \"last\" for non-loop blocks is not yet implemented\n");
-      #return default_pp($op); # no optimization
+      if (!$cxstack[$cxix]->{'lastop'} or !$cxstack[$cxix]->{'label'}) {
+	error("Use of \"last\" for non-loop and non-label blocks not yet implemented\n");
+      }
     }
   }
   default_pp($op);
@@ -2614,7 +2640,7 @@ sub pp_substcont {
 
   #   my $pmopsym = objsym($pmop);
   my $pmopsym = $pmop->save;    # XXX can this recurse?
-  warn "pmopsym = $pmopsym\n" if $verbose;
+  # warn "pmopsym = $pmopsym\n" if $verbose;
   save_or_restore_lexical_state( ${ $pmop->pmreplstart } );
   runtime sprintf(
     "if (PL_op == ((PMOP*)(%s))%s) goto %s;",
