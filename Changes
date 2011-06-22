@@ -9,7 +9,8 @@
 	detect previously missing packages within the main sourcefile (50,35,72,73)
 	* CC (1.11): allow debugging without -MOd=CC
 	Try to jump from last to unknown label, put labels also onto cxstack.
-	Fixed cc_last.t test 4, jump out of anonsub.
+	Fixed cc_last.t test 4, jump out of anonsub, but not across C
+	  functions yet (this is disallowed in C, need to split)
 	* t/cc_last.t: Fixed test 2. This works compiled and uncompiled,
 	  but the returned errcode is not compared. Skip if so.
 	* t/TESTS: add all 5 different method calls methods to test 35 => 01234

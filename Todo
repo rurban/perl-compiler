@@ -2,14 +2,12 @@
 
 'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
 del_backref cvgv since 5.13
-run-time label lookup
-store_cop_label for 5.12 windows/AIX only
+run-time label lookup (fixed all tests, need more tests)
+store_cop_label for 5.12 windows/AIX only (=> p5p; needs CORE patch)
 
 CC backend: goto (needs test), 
-sort with non-default comparison. 
-cc_queue error with the non-seperate sort optree, test 18
 
-check failing modules Storable Moose Attribute::Handlers B::Hooks::EndOfScope
+check failing modules: Test::Tester with threads
 check perlcc failing with File::Temp
 proper destruction of vars in END blocks on -O2
 improve XSUB handling (perlcc, both static and dynamic, needs tests)
@@ -26,16 +24,18 @@ method_named packagepv quirks at compile-time. Are run-time pkg names tested?
 
 * Features
 
-run-time label lookup
+modularize (-m) for faster link times
+run-time label lookup (fixed)
+skip code after BEGIN goto (usually Carp including B in some AUTOLOAD block, issue 61)
 type checking: Devel::TypeCheck
-compile time v. runtime initialisation:
+compile time v. runtime initialisation (mostly done):
   execute run-time BEGIN blocks for side-effects such as print or chdir, 
   use and require not.
 save PMOPs in compiled form
-selection of what to dump
+selection of what to dump (done)
 options for cutting out line info (COP elimination) etc. (-fcop)
-shared constants (share_hek, constpv)
-check module dependencies, vs. link libs static, not via DynaLoader
+shared constants: share_hek, constpv (mostly done)
+check module dependencies, vs. link libs static, not via DynaLoader (done)
 check Bytecode op coverage in the tests, should cover all ops 0-142
 ByteLoader compatibility: version, platform. eventually Bytecode version 
   portability (test with 5.6 on cygwin, partially done)
@@ -53,11 +53,11 @@ compile-time initialisation of AvARRAYs (improved with -fav-init and -fav-init2)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 variable types: global analysis of variables, type hints etc.
-  understand type attrs
-    my $i : Cint; my $j : int; 
+  understand type decl and attrs
+    my int $i; my $j : int; 
   Devel::TypeCheck instead of magic variable _ir, ... suffices
   e.g. mark IVonly SV's and magic/flags change functions and 
-  optimize all op subtrees for the compiled backends to use direct ints.
+    optimize all op subtrees for the compiled backends to use direct ints.
   understand MooseX::Method::Signatures and MooseX::Lexical::Types declarations
 demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
