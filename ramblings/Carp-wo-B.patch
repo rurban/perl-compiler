@@ -1,0 +1,63 @@
+2011-06-22 rurban
+
+Remove huge B dependency from Carp, introduced with 5.14 to detect
+incomplete caller override.
+
+This reduces the memory and run-time footprint in case of errors, 
+and enables the compiler not to include B.
+
+--- perl-5.14.1/lib/Carp.pm.orig	2011-04-25 00:21:22.000000000 -0500
++++ perl-5.14.1/lib/Carp.pm	2011-06-22 09:26:48.000000000 -0500
+@@ -98,38 +98,20 @@
+     }
+ 
+     my $sub_name = Carp::get_subname( \%call_info );
+-    if ( $call_info{has_args} ) {
+-        my @args;
+-        if (   @DB::args == 1
+-            && ref $DB::args[0] eq ref \$i
+-            && $DB::args[0] == \$i ) {
+-            @DB::args = ();    # Don't let anyone see the address of $i
+-            local $@;
+-            my $where = eval {
+-                my $func    = $cgc or return '';
+-                my $gv      = B::svref_2object($func)->GV;
+-                my $package = $gv->STASH->NAME;
+-                my $subname = $gv->NAME;
+-                return unless defined $package && defined $subname;
+-
+-                # returning CORE::GLOBAL::caller isn't useful for tracing the cause:
+-                return if $package eq 'CORE::GLOBAL' && $subname eq 'caller';
+-                " in &${package}::$subname";
+-            } // '';
+-            @args
+-                = "** Incomplete caller override detected$where; \@DB::args were not set **";
+-        }
+-        else {
+-            @args = map { Carp::format_arg($_) } @DB::args;
+-        }
+-        if ( $MaxArgNums and @args > $MaxArgNums )
+-        {    # More than we want to show?
+-            $#args = $MaxArgNums;
+-            push @args, '...';
+-        }
+-
+-        # Push the args onto the subroutine
+-        $sub_name .= '(' . join( ', ', @args ) . ')';
++    if ( $call_info{has_args} ) { # 5.12 version without B and caller package
++      my @args;
++      if (@DB::args == 1 && ref $DB::args[0] eq ref \$i && $DB::args[0] == \$i) {
++	@DB::args = (); # Don't let anyone see the address of $i
++	@args = "** Incomplete caller override detected; \@DB::args were not set **";
++      } else {
++	@args = map {Carp::format_arg($_)} @DB::args;
++      }
++      if ($MaxArgNums and @args > $MaxArgNums) { # More than we want to show?
++	$#args = $MaxArgNums;
++	push @args, '...';
++      }
++      # Push the args onto the subroutine
++      $sub_name .= '(' . join (', ', @args) . ')';
+     }
+     $call_info{sub_name} = $sub_name;
+     return wantarray() ? %call_info : \%call_info;

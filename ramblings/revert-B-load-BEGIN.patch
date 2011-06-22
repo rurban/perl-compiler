@@ -1,0 +1,52 @@
+--- ext/B/B.pm.orig	2011-06-16 19:06:09.000000000 -0500
++++ ext/B/B.pm	2011-06-21 18:21:13.000000000 -0500
+@@ -6,26 +6,16 @@
+ #      License or the Artistic License, as specified in the README file.
+ #
+ package B;
+-use strict;
+ 
++require XSLoader;
+ require Exporter;
+-@B::ISA = qw(Exporter);
++@ISA = qw(Exporter);
+ 
+ # walkoptree_slow comes from B.pm (you are there),
+ # walkoptree comes from B.xs
+ 
+-BEGIN {
+-    $B::VERSION = '1.29';
+-    @B::EXPORT_OK = ();
+-
+-    # Our BOOT code needs $VERSION set, and will append to @EXPORT_OK.
+-    # Want our constants loaded before the compiler meets OPf_KIDS below, as
+-    # the combination of having the constant stay a Proxy Constant Subroutine
+-    # and its value being inlined saves a little over .5K
+-
+-    require XSLoader;
+-    XSLoader::load();
+-}
++$B::VERSION = '1.29_01';
++@EXPORT_OK = ();
+ 
+ push @B::EXPORT_OK, (qw(minus_c ppname save_BEGINs
+ 			class peekop cast_I32 cstring cchar hash threadsv_names
+@@ -38,6 +28,9 @@
+ 			@specialsv_name
+ 		      ), $] > 5.009 && 'unitcheck_av');
+ 
++sub OPf_KIDS ();
++use strict;
++
+ @B::SV::ISA = 'B::OBJECT';
+ @B::NULL::ISA = 'B::SV';
+ @B::PV::ISA = 'B::SV';
+@@ -332,6 +325,8 @@
+     }
+ }
+ 
++XSLoader::load();
++
+ 1;
+ 
+ __END__

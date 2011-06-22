@@ -1072,7 +1072,7 @@ sub write_label {
       push(@cxstack, {
 		      type   => 0,
 		      op     => $op,
-		      nextop => $op->can("nextop") && $op->nextop ? $op->nextop : $op->next,
+		      nextop => $op->can("nextop") && $op->nextop ? $op->nextop : $op,
 		      redoop => $op->can("redoop") && $op->redoop ? $op->redoop : $op,
 		      lastop => $op->can("lastop") && $op->lastop ? $op->lastop : $op,
 		      'label' => $op->can("label") && $op->label  ? $op->label : $l
