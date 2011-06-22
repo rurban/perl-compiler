@@ -739,7 +739,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (41..43,46,50); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (41..43,46); # 8,14-16 fail on 5.00505 (max 20 then)
     push @todo, (103)  if $] < 5.007 or $] >= 5.010;
     #push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
     #push @todo, (29)   if $] >= 5.013006;
@@ -764,7 +764,7 @@ sub todo_tests_default {
         #push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
         # c.t fixed with 1.30
         push @todo, (16,29,44,45,49) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
-        push @todo, (10,12,16) if $what =~ /c_o[234]/ and $] >= 5.010;
+        push @todo, (10,12,16,29) if $what =~ /c_o[234]/ and $] >= 5.010;
         push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
         push @todo, (44,45) if $what =~ /c_o[1234]/;
         push @todo, (50)    if $what =~ /c_o[234]/;

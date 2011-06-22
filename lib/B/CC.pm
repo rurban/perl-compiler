@@ -2526,17 +2526,30 @@ sub pp_next {
     }
   }
   else {
-    $cxix = dopoptolabel( $op->pv );
-    if ( $cxix < 0 ) {
-      warn(sprintf("Warning: Label not found at compile time for \"next %s\"\n", $op->pv ));
-      return default_pp($op); # no optimization
+    my $label = $op->pv;
+    if ($label) {
+      $cxix = dopoptolabel( $label );
+      if ( $cxix < 0 ) {
+	# coverage: t/testcc 21
+	warn(sprintf("Warning: Label not found at compile time for \"next %s\"\n", $label ));
+	$labels->{nlabel}->{$label} = $$op;
+	return $op->next;
+      }
+    }
+    # Add support to leave non-loop blocks.
+    if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
+      if (!$cxstack[$cxix]->{'nextop'} or !$cxstack[$cxix]->{'label'}) {
+	error("Use of \"next\" for non-loop and non-label blocks not yet implemented\n");
+      }
     }
   }
   default_pp($op);
   my $nextop = $cxstack[$cxix]->{nextop};
-  push( @bblock_todo, $nextop );
-  save_or_restore_lexical_state($$nextop);
-  runtime( sprintf( "goto %s;", label($nextop) ) );
+  if ($nextop) {
+    push( @bblock_todo, $nextop );
+    save_or_restore_lexical_state($$nextop);
+    runtime( sprintf( "goto %s;", label($nextop) ) );
+  }
   return $op->next;
 }
 
@@ -2552,17 +2565,29 @@ sub pp_redo {
     }
   }
   else {
-    $cxix = dopoptolabel( $op->pv );
-    if ( $cxix < 0 ) {
-      warn(sprintf("Warning: Label not found at compile time for \"redo %s\"\n", $op->pv ));
-      return default_pp($op); # no optimization
+    my $label = $op->pv;
+    if ($label) {
+      $cxix = dopoptolabel( $label );
+      if ( $cxix < 0 ) {
+	warn(sprintf("Warning: Label not found at compile time for \"redo %s\"\n", $label ));
+	$labels->{nlabel}->{$label} = $$op;
+	return $op->next;
+      }
+    }
+    # Add support to leave non-loop blocks.
+    if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
+      if (!$cxstack[$cxix]->{'redoop'} or !$cxstack[$cxix]->{'label'}) {
+	error("Use of \"redo\" for non-loop and non-label blocks not yet implemented\n");
+      }
     }
   }
   default_pp($op);
   my $redoop = $cxstack[$cxix]->{redoop};
-  push( @bblock_todo, $redoop );
-  save_or_restore_lexical_state($$redoop);
-  runtime( sprintf( "goto %s;", label($redoop) ) );
+  if ($redoop) {
+    push( @bblock_todo, $redoop );
+    save_or_restore_lexical_state($$redoop);
+    runtime( sprintf( "goto %s;", label($redoop) ) );
+  }
   return $op->next;
 }
 
@@ -2591,7 +2616,7 @@ sub pp_last {
       }
     }
 
-    # XXX Add support for "last" to leave non-loop blocks. label fixed with 1.11
+    # Add support to leave non-loop blocks. label fixed with 1.11
     if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
       if (!$cxstack[$cxix]->{'lastop'} or !$cxstack[$cxix]->{'label'}) {
 	error("Use of \"last\" for non-loop and non-label blocks not yet implemented\n");
@@ -3128,16 +3153,18 @@ help make use of this compiler.
 
 =head1 TYPES
 
-Implemented type classes are B<int> and B<double>. Planned is B<string> also.
-Implemented are only SCALAR types yet.
+Implemented type classes are B<int> and B<double>.
+Planned is B<string> also.
+Implemented are only SCALAR types yet. 
+Typed arrays and hashes and perfect hashes need CORE and L<types> support first.
 
-Implemented are infered types via the names of locals, with '_i', '_d' suffix
+Deprecated are inferred types via the names of locals, with '_i', '_d' suffix
 and an optional 'r' suffix for register allocation.
 
   C<my ($i_i, $j_ir, $num_d);>
 
 Planned type attributes are B<int>, B<double>, B<string>,
-B<unsigned>, B<register>, B<temporary>, B<ro> and B<readonly>.
+B<unsigned>, B<register>, B<temporary>, B<ro> / B<const>.
 
 The attributes are perl attributes, and int|double|string are either
 compiler classes or hints for more allowed types.
@@ -3147,18 +3174,19 @@ compiler classes or hints for more allowed types.
   C<my int $i :string;>  declares a PVIV. Same as C<my $i:int:string;>
 
   C<my int @array :unsigned = (0..4);> will be used as c var in faster arithmetic and cmp.
-                                        With :readonly or :ro even more.
-  C<my string %hash : readonly = (foo => any, bar => any);> declare string keys only
-                  and may be generated as read-only perfect hash.
+                                       With :const or :ro even more.
+  C<my string %hash :const 
+    = (foo => 'foo', bar => 'bar');> declare string values,
+                                     generate as read-only perfect hash.
 
-B<unsigned> is valid for int only and declares an UV.
+B<:unsigned> is valid for int only and declares an UV.
 
-B<register> denotes optionally a short and hot life-time.
+B<:register> denotes optionally a short and hot life-time.
 
-B<temporary> are usually generated internally, nameless lexicals.
+B<:temporary> are usually generated internally, nameless lexicals.
 They are more aggressivly destroyed and ignored.
 
-B<ro> and B<readonly> throw a compile-time error on write access and may optimize
+B<:ro> or B<:const> throw a compile-time error on write access and may optimize
 the internal structure of the variable. We don't need to write back the variable
 to perl (lexical write_back).
 
@@ -3173,24 +3201,23 @@ NOT YET OK (attributes):
 
   my int $i :register;
   my $i :int;
-  my $const :int:ro;
+  my $const :int:const;
   my $uv :int:unsigned;
 
 ISSUES
 
-This does not work with pure perl, unless you C<use B::CC> or implement the classes and
-attribute type stubs in your code, C<sub Mypkg::MODIFY_SCALAR_ATTRIBUTES {}> and
-C<sub Mypkg::FETCH_SCALAR_ATTRIBUTES {}>. (TODO: empty should be enough to be detected
-by the compiler.)
+This does not work with pure perl, unless you C<use B::CC> or C<use types> or 
+implement the classes and attribute type stubs in your code,
+C<sub Mypkg::MODIFY_SCALAR_ATTRIBUTES {}> and C<sub Mypkg::FETCH_SCALAR_ATTRIBUTES {}>.
+(TODO: empty should be enough to be detected by the compiler.)
 
 Compiled code pulls in the magic MODIFY_SCALAR_ATTRIBUTES and FETCH_SCALAR_ATTRIBUTES
 functions, even if they are used at compile time only.
 
 Using attributes adds an import block to your code.
 
-Only B<our> variable attributes are checked at compile-time, B<my> variables attributes at
-run-time only, which is too late for the compiler.
-
+Only B<our> variable attributes are checked at compile-time, 
+B<my> variables attributes at run-time only, which is too late for the compiler.
 Perl attributes suck. Nobody thought of the compiler then.
 
 FUTURE
@@ -3200,13 +3227,15 @@ We should be able to support types on ARRAY and HASH.
   my int @array; # array of ints, faster magic-less access esp. in inlined arithmetic and cmp.
   my string @array : readonly = qw(foo bar); # compile-time error on write. no lexical write_back
 
-  my int $hash = {1 => any, 2 => bla};	    # int keys (also on hashrefs), typechecked on write
-  my string %hash1 : readonly = (foo => any); # string keys only => gperf, compile-time error on write
+  my int $hash = {"1" => 1, "2" => 2}; # int values, type-checked on write my
+  string %hash1 : readonly = (foo => 'bar');# string keys only => maybe gperf
+                                            # compile-time error on write
 
-Hash value types defaults to full SVs as values, only the keys are typed.
+Typed hash keys are always strings, values are typed.
 
 We should be also able to add type attributes for functions and methods,
-i.e. for argument and return types. No idea for specs yet.
+i.e. for argument and return types. See L<types> and 
+L<http://blogs.perl.org/users/rurban/2011/02/use-types.html>
 
 =head1 BUGS
 
@@ -3261,6 +3290,7 @@ If the option B<-strict> is used it gives a compile-time error.
 Compiled Perl programs use native C arithmetic much more frequently
 than standard perl. Operations on large numbers or on boundary
 cases may produce different behaviour.
+In doubt B::CC code behaves more like with C<use integer>.
 
 =head2 Deprecated features
 
