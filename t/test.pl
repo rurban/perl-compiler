@@ -773,9 +773,8 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
+        push @todo, (21,30,35,50); # fixed 44 -nt
 	push @todo, (3,16)  if $] eq '5.008005';
-        push @todo, (35); # fixed 44 -nt
-        push @todo, (21,30); #5.8.9
         push @todo, (44)    if $ITHREADS or $] < 5.012;
         #push @todo, (44)   if !$ITHREADS and $] >= 5.012;
         push @todo, (105)   if $what =~ /^cc(_o1)?/ or ($] > 5.008005 and $] < 5.010);
