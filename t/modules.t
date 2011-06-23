@@ -208,7 +208,7 @@ for my $module (@modules) {
       if ($do_test) {
         TODO: {
           local $TODO = 'all module tests';
-          `$runperl -Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc("$module")"`;
+          `$runperl -Mblib -It -MCPAN -Mmodules -e "CPAN::Shell->testcc("$module")"`;
         }
       }
       unlink ("mod.pl", 'a', 'a.out', 'a.exe');

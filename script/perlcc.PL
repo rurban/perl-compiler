@@ -246,7 +246,7 @@ sub parse_argv {
     if( $Options->{time} ) {
       eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
       if ($@) {
-        warn "-time ignored. No Time::HiRes\n";
+        warn "--time ignored. No Time::HiRes\n";
         $Options->{time} = 0;
       } else {
         Time::HiRes->import('gettimeofday','tv_interval');
@@ -992,6 +992,11 @@ Currently only enabled for Bytecode and CC.
 =item --testsuite
 
   perlcc -r --testsuite t/harness
+
+=item --time
+
+Benchmark the different phases B<c> I<(B::* compilation)>,
+B<cc> I<(cc compile + link)>, and B<r> (runtime).
 
 =item --no-spawn
 

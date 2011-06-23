@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.33 r1087 M
+# B::C::VERSION = 1.35 r1105 M
 # perlversion = 5.010000
-# path = /usr/bin/perl5.10.0
+# path = /usr/bin/perl5.10.0-m
 # platform = darwin 64bit threaded
 pass Exporter
 pass Text::Tabs
@@ -92,18 +92,3 @@ pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
-pass YAML
-fail MooseX::Types #TODO 5.10 with threads
-pass Class::Singleton
-fail DateTime::TimeZone #TODO 5.10.0 restricted hash/...
-fail DateTime::Locale #TODO 5.10 with threads
-skip DateTime
-pass IO::String
-pass AppConfig
-pass UNIVERSAL::require
-pass Template::Stash #TODO 5.10 with threads
-# 99 / 100 modules tested with B-C-1.33 - perl-5.010000
-# pass  84 /  99 (84.8%)
-# fail  15 /  99 (15.2%)
-# todo  22 /  15 (146.7%)
-# skip   1 / 100 (1.0% not installed)

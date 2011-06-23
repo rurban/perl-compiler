@@ -155,11 +155,12 @@ sub skip_modules {
 # preparing automatic module tests
 
 package CPAN::Shell;
-{   # add testcc to the dispatching methods
-    no strict "refs";
-    my $command = 'testcc';
-    *$command = sub { shift->rematein($command, @_); };
-}
+#{   # add testcc to the dispatching methods
+#    no strict "refs";
+#    my $command = 'testcc';
+#    *$command = sub { shift->rematein($command, @_); };
+#}
+sub testcc { shift->rematein('testcc', @_); }
 package CPAN::Module;
 sub testcc   {
     my $self = shift;
@@ -194,3 +195,5 @@ sub testcc   {
     $self->test(@_);
     # done
 }
+
+1;

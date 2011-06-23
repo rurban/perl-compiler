@@ -123,7 +123,9 @@ if [ -n "$1" ]; then
 	      $PERL $Mblib blib/script/perlcc $PERLCC_OPTS -r $KEEP -e "use $1; print qq(ok\\n)" -o $name
               # test -f a.out.c && mv a.out.c $name.c
             fi
-	    [ -n "$TEST" ] && $PERL $Mblib -It -MCPAN -Mmodules -e"CPAN::Shell->testcc(q($1))"
+	    if [ "$TEST" = "-t" ]; then 
+		$PERL $Mblib -It -MCPAN -Mmodules -e "CPAN::Shell->testcc(q($1))"
+	    fi
 	    shift
 	done
     fi
