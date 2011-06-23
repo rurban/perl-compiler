@@ -366,6 +366,8 @@ sub compile_cstyle {
     }
 
     my $staticxs = opt(staticxs) ? "-staticxs," : '';
+    warn "--staticxs on darwin does not work yet\n"
+        if $staticxs and $^O eq 'darwin';
     if (opt(testsuite)) {
         my $bo = join '', @begin_output;
         $bo =~ s/\\/\\\\\\\\/gs;
