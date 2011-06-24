@@ -66,10 +66,8 @@ sub output {
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
-    if ($dodbg) {
-      if ($section->[-1]{dbg}->[$i]) {
-	$dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
-      }
+    if ($dodbg and $section->[-1]{dbg}->[$i]) {
+      $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
     }
     printf $fh $format, $_, $i, $dbg;
     ++$i;
@@ -671,6 +669,7 @@ my $opsect_common =
   sub B::OP::_save_common_middle {
     my $op = shift;
     my $madprop = $MAD ? "0," : "";
+    # XXX maybe add a ix=opindex string for debugging if $debug{flags}
     sprintf( "%s,%s %u, %u, $static, 0x%x, 0x%x",
       $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private );
   }
@@ -1333,6 +1332,11 @@ sub B::NULL::save {
   warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
   $svsect->add( sprintf( "0, %lu, 0x%x".($PERL510?', {(char*)ptr_undef}':''), $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
+  if ($debug{flags} and $DEBUGGING) { # add index to sv_debug_file to easily find the Nullsv
+    # $svsect->debug( "ix added to sv_debug_file" );
+    $init->add(sprintf(qq(sv_list[%d].sv_debug_file = "NULL sv_list[%d] 0x%x";), 
+		       $svsect->index, $svsect->index, $sv->FLAGS));
+  }
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
@@ -3300,6 +3304,7 @@ sub output_all {
   $symsect->output( \*STDOUT, "#define %s\n" );
   print "\n";
   output_declarations();
+  # XXX add debug versions with ix=opindex if $debug{flags}
   foreach $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
@@ -3392,6 +3397,7 @@ sub output_declarations {
 #define UNUSED 0
 #define sym_0 0
 EOT
+
   # Tricky hack for -fcog since 5.10 required. We need a char* as
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.
   # gcc error: initializer element is not computable at load time
@@ -3491,6 +3497,8 @@ __EOGP
 }
 
 sub output_boilerplate {
+  # Store the sv_list index in sv_debug_file when debugging
+  print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUGGING;
   print <<'EOT';
 #define PERL_CORE
 #include "EXTERN.h"
@@ -4617,8 +4625,8 @@ sub compile {
   $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
-    1 => [qw(-fcog -fav-init)],
-    2 => [qw(-fwarn-sv -fppaddr -fav-init2 -fro-inc)],
+    1 => [qw(-fcog -fppaddr -fav-init2)], # falls back to -fav-init
+    2 => [qw(-fwarn-sv -fro-inc)],
     3 => [qw(-fsave-sig-hash -fsave-data -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
@@ -4950,6 +4958,48 @@ C<-fno-destruct> is added.
 
 Enabled with C<-O1>.
 
+=item B<-fav-init>
+
+Faster pre-initialization of AVs (arrays and pads). 
+Also used if -fav-init2 is used and independent_comalloc() is not detected.
+
+Enabled with C<-O1>.
+
+=item B<-fav-init2>
+
+Even more faster pre-initialization of AVs with B<independent_comalloc()> if supported.
+Excludes C<-fav_init> if so; uses C<-fav_init> if C<independent_comalloc()> is not supported.
+
+C<independent_comalloc()> is recommended from B<ptmalloc3>, but also included in
+C<ptmalloc>, C<dlmalloc> and C<nedmalloc>.
+Download C<ptmalloc3> here: L<http://www.malloc.de/en/>
+Note: C<independent_comalloc()> is not included in C<google-perftools> C<tcmalloc>.
+
+Enabled with C<-O1>.
+
+=item B<-fppaddr>
+
+Optimize the initialization of C<op_ppaddr>.
+
+Enabled with C<-O1>.
+
+=item B<-fwarn-sv>
+
+Optimize the initialization of cop_warnings.
+
+Enabled with C<-O2>.
+
+=item B<-fro-inc>
+
+Set read-only B<@INC> and B<%INC> pathnames (C<-fconst-string>, not the AV) and
+also B<curpad> names and symbols, to store them const and statically, not
+via malloc at run-time.
+
+This forbids run-time extends of curpad syms, names and INC strings,
+the run-time will crash then.
+
+Enabled with C<-O2>.
+
 =item B<-fconst-strings>
 
 Declares readonly strings as const. Enables C<-fcog>.
@@ -4966,47 +5016,6 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O3>.
 
-=item B<-fppaddr>
-
-Optimize the initialization of C<op_ppaddr>.
-
-Enabled with C<-O2>.
-
-=item B<-fwarn-sv>
-
-Optimize the initialization of cop_warnings.
-
-Enabled with C<-O2>.
-
-=item B<-fav-init>
-
-Faster pre-initialization of AVs (arrays and pads)
-
-Enabled with C<-O1>.
-
-=item B<-fav-init2>
-
-Even more faster pre-initialization of AVs with B<independent_comalloc()> if supported.
-Excludes C<-fav_init> if so; uses C<-fav_init> if C<independent_comalloc()> is not supported.
-
-C<independent_comalloc()> is recommended from B<ptmalloc3>, but also included in
-C<ptmalloc>, C<dlmalloc> and C<nedmalloc>.
-Download C<ptmalloc3> here: L<http://www.malloc.de/en/>
-Note: C<independent_comalloc()> is not included in C<google-perftools> C<tcmalloc>.
-
-Enabled with C<-O2>.
-
-=item B<-fro-inc>
-
-Set read-only B<@INC> and B<%INC> pathnames (C<-fconst-string>, not the AV) and
-also B<curpad> names and symbols, to store them const and statically, not
-via malloc at run-time.
-
-This forbids run-time extends of curpad syms, names and INC strings,
-the run-time will crash then.
-
-Enabled with C<-O2>.
-
 =item B<-fno-destruct>
 
 Does no global C<perl_destruct()> at the end of the process, leaving
@@ -5017,6 +5026,12 @@ but not in long-running processes.
 
 This helps with destruction problems of static data in the
 default perl destructor, and enables C<-fcog> since 5.10.
+
+Enabled with C<-O3>.
+
+=item B<-fsave-sig-hash>
+
+Save compile-time modifications to the %SIG hash.
 
 Enabled with C<-O3>.
 
@@ -5046,12 +5061,6 @@ Use the script name instead of the program name as C<$0>.
 
 Not enabled with any C<-O> option.
 
-=item B<-fsave-sig-hash>
-
-Save compile-time modifications to the %SIG hash.
-
-Enabled with C<-O3>.
-
 =item B<-fcop>
 
 DO NOT USE YET!
@@ -5079,13 +5088,13 @@ Disable all optimizations.
 
 =item B<-O1>
 
-Enable B<-fcog>, B<-fav-init>.
+Enable B<-fcog>, B<-fav-init2>/B<-fav-init> and B<-fppaddr>.
 
 Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fppaddr>, B<-fwarn-sv>, B<-fav-init2>, B<-fro-inc>.
+Enable B<-O1> plus B<-fwarn-sv>, B<-fro-inc>.
 
 =item B<-O3>
 

@@ -6,7 +6,10 @@
 1.35	2011-07-xx rurban
 	* C: allow debugging without -MOd=C
 	improve package_pv detection for methods, two more tests.
-	detect previously missing packages within the main sourcefile (50,35,72,73)
+	detect previously missing packages within the main sourcefile
+	(50,35,72,73)
+	-O1 now includes also -fav-init2 and -fppaddr, which are all
+	stable. -O2 string handling (-fro-inc) still unstable.
 	* CC (1.11): allow debugging without -MOd=CC
 	Try to jump from last to unknown label, put labels also onto cxstack.
 	Fixed cc_last.t test 4, jump out of anonsub, but not across C

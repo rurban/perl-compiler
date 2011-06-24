@@ -118,7 +118,8 @@ unless (is_subset) {
   log_diag("platform = $^O $bits"."bit ".(
 	   $Config{'useithreads'} ? "threaded"
 	   : $Config{'usemultiplicity'} ? "multi"
-	     : "non-threaded"));
+	     : "non-threaded").
+	   ($Config{ccflags} =~ m/-DDEBUGGING/ ? " debug" : ""));
 }
 
 my $module_count = 0;
