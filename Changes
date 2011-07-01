@@ -16,7 +16,7 @@
 	  functions yet (this is disallowed in C, need to split)
 	* t/cc_last.t: Fixed test 2. This works compiled and uncompiled,
 	  but the returned errcode is not compared. Skip if so.
-	* t/TESTS: add all 5 different method calls methods to test 35 => 01234
+	* t/TESTS: add all 5 possible method/sub calls to test 35 => 01234
 	* ramblings/*.patches: CORE patches added and recommended in README
 
 1.34	2011-06-12 rurban
