@@ -1,0 +1,68 @@
+In the first B::C debugging article we stepped into the B::C comnpiler with Od.
+In the second B::C debugging article we stepped the c code with gdb.
+We saw that the compiler is missing a sub in a seperate package, the most a typical 
+problem with the compiler.
+
+We have a cool workaround for this, the -u option. 
+<b>-udummy<b> forces all symbols in the package dummy to be dumped.
+
+<tt>'package dummy;sub meth{print "ok"};package main;dummy->meth'</tt> as ccode35.pl
+
+<pre>
+$ <b>perl -MO=C,-Do,-v,-udummy,-occode35.c ccode35.pl</b>
+
+Starting compile
+Walking tree
+walkoptree: 0. LISTOP (0x1471a20) leave
+walkoptree: 1. OP (0x1471a48) enter
+walkoptree: 1. COP (0x14719e0) nextstate
+walkoptree: 1. UNOP (0x1471998) entersub
+walkoptree: 2. OP (0x14719c0) pushmark
+walkoptree: 2. SVOP (0x1472000) const
+walkoptree: 2. SVOP (0x1471978) method_named
+done main optree, walking symtable for extras
+Prescan for unused subs
+Saving unused subs
+walkoptree: 0. UNOP (0x164a6c0) leavesub
+walkoptree: 1. LISTOP (0x164a698) lineseq
+walkoptree: 2. COP (0x1472a00) nextstate
+walkoptree: 2. LISTOP (0x1472d48) print
+walkoptree: 3. OP (0x1523598) pushmark
+walkoptree: 3. SVOP (0x147fad8) const
+save context:
+curpad names:
+curpad syms:
+%INC and @INC:
+amagic_generation = 1
+Writing output
+Total number of OPs processed: 13
+NULLOP count: 0
+Loaded Cwd
+Loaded B
+Loaded IO
+Loaded Fcntl
+Loaded B::C
+ccode35.pl syntax OK
+</pre>
+
+Here it is!
+0. UNOP (0x164a6c0) leavesub
+1. LISTOP (0x164a698) lineseq
+2. COP (0x1472a00) nextstate
+2. LISTOP (0x1472d48) print
+3. OP (0x1523598) pushmark
+3. SVOP (0x147fad8) const
+
+is indeed our missing &dummy::meth
+
+$ perl -MO=Concise,dummy::meth ccode35.pl
+dummy::meth:
+5  <1> leavesub[1 ref] K/REFC,1 ->(end)
+-     <@> lineseq KP ->5
+1        <;> nextstate(dummy 1 ccode35.pl:1) v ->2
+4        <@> print sK ->5
+2           <0> pushmark s ->3
+3           <$> const(PV "ok") s ->4
+
+Any sub argument to B::Concise dumps the optree for this sub, not just main.
+

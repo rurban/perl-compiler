@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -101,9 +101,9 @@ pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 98 / 100 modules tested with B-C-1.32 - perl-5.014000
-# pass  97 /  98 (99.0%)
-# fail   1 /  98 (1.0%)
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.32 - perl-5.014000
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)
-# skip   2 / 100 (2.0% not installed)
+# skip   0 / 100 (0.0% not installed)

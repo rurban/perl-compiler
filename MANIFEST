@@ -58,6 +58,13 @@ ramblings/magic
 ramblings/reg.alloc
 ramblings/runtime.porting
 ramblings/yapc_bratislava08.pod
+ramblings/blogs-debugging-article1.pod
+ramblings/blogs-debugging-article2.pod
+ramblings/blogs-debugging-article3.pod
+ramblings/blogs-debugging-article4.pod
+ramblings/Carp-wo-B.patch
+ramblings/Export-store_cop_label-for-the-perl-compiler.patch
+ramblings/revert-B-load-BEGIN.patch
 README
 README.alpha
 regen_lib.pl

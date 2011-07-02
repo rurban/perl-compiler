@@ -103,16 +103,18 @@ cleanup;
 
 is(`$perlcc -c -o a $f`, "", "-c -o file");
 ok(-e 'a.c', "a.c file");
-ok(! -e $a, "-c no executable, compile only");
+ok(! -e $a, "-c no executable, compile only"); #40
 cleanup;
 
+SKIP: {
 TODO: {
+  skip "--stash hangs < 5.12", 3 if $] < 5.012;
   local $TODO = "B::Stash imports too many";
-  is(`$perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file");
+  is(`$perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file"); #41
   is(`$perlcc --stash -r -oa $f`, "ok", "--stash -o file");
   ok(-e $a, "executable");
   cleanup;
-}
+}}
 
 is(`$perlcc -t -o a $f`, "", "-t -o file"); #44
 TODO: {

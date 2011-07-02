@@ -1,0 +1,92 @@
+In the first B::C debugging article we saw how to use the perl level debugger 
+stepping into compiling code with <b>Od</b>.
+
+However we found no error in the compiler at a first glance.
+Inspecting the generated c code we see for the perl code
+<tt>
+'package dummy;sub meth{print "ok"};package main;dummy->meth'
+</tt>
+
+parts of the optree as
+
+<pre>
+listop_list[0].op_ppaddr = PL_ppaddr[OP_LEAVE];
+op_list[0].op_ppaddr = PL_ppaddr[OP_ENTER];
+cop_list[0].op_ppaddr = PL_ppaddr[OP_NEXTSTATE];
+cop_list[0].cop_warnings = pWARN_STD;
+unop_list[0].op_ppaddr = PL_ppaddr[OP_ENTERSUB];
+op_list[1].op_ppaddr = PL_ppaddr[OP_PUSHMARK];
+sv_list[0].sv_u.svu_pv = savepvn("dummy", 5);
+svop_list[0].op_ppaddr = PL_ppaddr[OP_CONST];
+sv_list[1].sv_u.svu_pv = savepvn("meth", 4);
+svop_list[1].op_ppaddr = PL_ppaddr[OP_METHOD_NAMED];
+..
+</pre>
+
+Check the optree with Concise:
+<pre>
+$ perl -MO=Concise -e'package dummy;sub meth{print "ok"};
+                      package main;dummy->meth'
+7  <@> leave[1 ref] vKP/REFC ->(end)
+1     <0> enter ->2
+2     <;> nextstate(main 2 -e:1) v:{ ->3
+6     <1> entersub[t1] vKS/TARG ->7
+3        <0> pushmark s ->4
+4        <$> const[PV "dummy"] sM/BARE ->5
+5        <$> method_named[PV "meth"] ->6
+</pre>
+
+Lets debug into that live. Maybe method_named is wrong. You need a DEBUGGING perl, 
+and I always prefer -g3 to expand macros.
+
+<em>I generated that as testcase 35 with <tt>t/testc.sh 35</tt>, 
+so I get a ccode35.c and exe.</em>
+
+<pre>
+$ gdb ccode35
+(gdb) start
+main (argc=1, argv=0x1499a60, env=0x14880e0) at ccode35.c:240
+240     {
+(gdb) b Perl_pp_method_named
+Breakpoint 2 at 0x5212b7b9: file pp_hot.c, line 3023.
+(gdb) c
+Breakpoint 2, Perl_pp_method_named () at pp_hot.c:3023
+3023        dVAR; dSP;
+(gdb) bt
+#0  Perl_pp_method_named () at pp_hot.c:3023
+#1  0x520d95d1 in Perl_runops_debug () at dump.c:1968
+#2  0x52027747 in S_run_body (oldscope=1) at perl.c:2431
+#3  0x52026ce7 in perl_run (my_perl=0x1499b60) at perl.c:2349
+#4  0x00401e00 in _fu25__PL_compcv () at ccode35.c:307
+(gdb) n
+3024        SV* const sv = cSVOP_sv;
+(gdb) n
+3025        U32 hash = SvSHARED_HASH(sv);
+(gdb) p *sv
+$1 = {sv_any = 0x403390, sv_refcnt = 1, sv_flags = 151012357, sv_u = {
+    svu_iv = 21808872, svu_uv = 21808872, svu_rv = 0x14cc6e8,
+    svu_pv = 0x14cc6e8 "meth", svu_array = 0x14cc6e8, svu_hash = 0x14cc6e8,
+    svu_gp = 0x14cc6e8}}
+</pre>
+
+So we are in the method named "meth", which should be in the "dummy" package.
+Since the error is
+  Can't locate object method "meth" via package "dummy" (perhaps you forgot 
+  to load "dummy"?) at ccode35 line 1.
+we trust that the stash for meth is correctly assigned as "dummy", but we believe 
+that the cv optree for <b>dummy::meth</b> is not stored.
+
+Indeed inspecting the c code shows us:
+<pre>
+	svop_list[1].op_ppaddr = PL_ppaddr[OP_METHOD_NAMED];
+	
+	/* done main optree, extra subs which might be unused */
+	/* done extras */
+</pre>
+
+There's only the optree for main, but no further subs. 
+we miss &dummy::meth. 
+
+Back to the B::Debugger <b>Od</b>. 
+why is this sub not stored?
+

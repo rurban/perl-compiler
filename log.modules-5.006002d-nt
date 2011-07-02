@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.32 r1084 M
+# B::C::VERSION = 1.35 r1112 M
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2d-nt
-# platform = cygwin 32bit non-threaded
+# path = /cyg1/usr/local/bin/perl5.6.2
+# platform = cygwin 32bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -41,7 +41,7 @@ pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-pass Storable #TODO 5.6 .al noise
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 88 / 100 modules tested with B-C-1.32 - perl-5.006002d-nt
+# 88 / 100 modules tested with B-C-1.35 - perl-5.006002d-nt
 # pass  83 /  88 (94.3%)
 # fail   5 /  88 (5.7%)
-# todo   7 /   5 (140.0%)
+# todo   6 /   5 (120.0%)
 # skip  12 / 100 (12.0% not installed)

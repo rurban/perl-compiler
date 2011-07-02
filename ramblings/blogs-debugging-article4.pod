@@ -1,0 +1,94 @@
+In the <a href="http://blogs.perl.org/users/rurban/2010/01/debugging-bc-hitting-the-recursion-depth.html">first B::C debugging article</a> we stepped into the B::C compiler with <b>Od</b>.
+In the <a href="http://blogs.perl.org/users/rurban/2010/01/debugging-bc-gdb-into-it-part-2.html">second B::C debugging article</a> we stepped the c code with <b>gdb</b>.
+We saw that the compiler is missing a method_named sub (aka a package->method call), the most typical problem with the compiler.
+In the <a href="http://blogs.perl.org/users/rurban/2010/01/debugging-bc-the-workaround-part-3.html">third B::C debugging article</a> we saw the easy workaround, using -u<package> to force using the package subs from the package given in the <strong>-u</strong> option.
+
+Now let's finally fix this bug which was introduced with the addition of the opcode <strong>method_named</strong> forever.
+Looking at the source of pp_method_named() we see that the package name is a PV at 
+[PL_stack_base+TOPMARK+1], and the method name is at the stack.
+Looking at the <a href="http://search.cpan.org/dist/illguts/index.html#markstack">illguts stack page</a>, inspecting the optree generator in op.c and debugging into pp_method_named we confirm that the missing package PV is the SVOP->sv of the previous op. The name of the CONST.
+
+<pre>
+(gdb) <strong>b S_method_common</strong>
+(gdb) <strong>c</strong>
+S_method_common (meth=0x148c060, hashp=0xc1cb0c) at pp_hot.c:3039
+(gdb) <strong>p name</strong>
+$2 = 0x14930dc "meth"
+(gdb) <strong>p *sv</strong>
+$3 = {sv_any = 0x1471138, sv_refcnt = 1, sv_flags = 134235141, sv_u = {
+    svu_iv = -5931823458978044120, svu_uv = 12514920614731507496,
+    svu_rv = 0x148e728, svu_pv = 0x148e728 "dummy", svu_array = 0x148e728,
+    svu_hash = 0x148e728, svu_gp = 0x148e728}}
+(gdb) <strong>p **(PL_stack_base+1)</strong>
+$9 = {sv_any = 0x1471138, sv_refcnt = 1, sv_flags = 134235141, sv_u = {
+    svu_iv = -5931823458978044120, svu_uv = 12514920614731507496,
+    svu_rv = 0x148e728, svu_pv = 0x148e728 "dummy", svu_array = 0x148e728,
+    svu_hash = 0x148e728, svu_gp = 0x148e728}}
+</pre>
+
+When we look in opcode.pl for method_named we see that is a combined
+SVOP_OR_PADOP, a SVOP unthreaded and a PADOP threaded. So we have to
+fix two methods, B::SVOP::save and B::PADOP::save to store the
+undetected cv for method_named.
+
+The compiler just walks the ops but does not store away the optree, so
+we have no access to the previous op.
+
+So we need to add
+<pre>
+  if ($op->name eq 'method_named') {
+    my $cv = method_named($sv);
+    $cv->save;
+  }
+</pre>
+
+to the SVOP and PADOP save methods and add the helper function to get us the cv.
+
+<pre>
+sub method_named {
+  my $sv = shift;
+  my $name = $sv->PVX;
+  # Note: the pkg PV is at PL_stack_base+TOPMARK+1,
+  # the previous op->sv->PVX. We store it away in op->_save_common.
+  my $stash = $package_pv ? $package_pv."::" : "main::";
+  $name = $stash . $name;
+  warn "save method_name \"$name\"\n" if $debug{cv};
+  return svref_2object( \&{$name} );
+}
+</pre>
+
+Fortunately we have a common method for all ops, where we can store
+away the $package_pv for any upcoming method_named op.
+
+<pre>
+sub B::OP::_save_common {
+  my $op = shift;
+  if ($op->next 
+      and $op->next->can('name')
+      and $op->next->name eq 'method_named')
+  {
+    # need to store away the pkg pv
+    $package_pv = $op->sv->PVX;
+  }
+ ...
+</pre>
+
+Test it:
+<pre>
+$ <strong>t/testc.sh 35</strong>
+=> 
+./ccode35
+PASS => 'ok'
+</pre>
+
+We just fixed one of the oldest compiler bugs, the methodcall syntax: pkg->method.
+It's not fixed for CC, because CC unrolls the runops loop and does not use B::OP::_save_common. In CC the most common ops have their own optimized method.
+
+The testsuite
+<b>make test</b> <em>(~2 min with the current perl)</em> and 
+<b>perlall-maketest</b> <em>(~20 min for all installed perls)</em> and 
+<b>perltestvm</b> <em>(~60min for all installed perls in all accessible platforms - freebsd, debian, centos, solaris, ...)</em>
+confirms that.
+
+Let's look what the biggest testsuite, cpantesters, says. 
+make dist, upload to pause and wait for the smoke.
