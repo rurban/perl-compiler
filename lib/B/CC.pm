@@ -3167,7 +3167,7 @@ and an optional 'r' suffix for register allocation.
   C<my ($i_i, $j_ir, $num_d);>
 
 Planned type attributes are B<int>, B<double>, B<string>,
-B<unsigned>, B<register>, B<temporary>, B<ro> / B<const>.
+B<unsigned>, B<ro> / B<const>.
 
 The attributes are perl attributes, and int|double|string are either
 compiler classes or hints for more allowed types.
@@ -3178,7 +3178,7 @@ compiler classes or hints for more allowed types.
 
   C<my int @array :unsigned = (0..4);> will be used as c var in faster arithmetic and cmp.
                                        With :const or :ro even more.
-  C<my string %hash :const 
+  C<my string %hash :const
     = (foo => 'foo', bar => 'bar');> declare string values,
                                      generate as read-only perfect hash.
 
@@ -3209,7 +3209,7 @@ NOT YET OK (attributes):
 
 ISSUES
 
-This does not work with pure perl, unless you C<use B::CC> or C<use types> or 
+This does not work with pure perl, unless you C<use B::CC> or C<use types> or
 implement the classes and attribute type stubs in your code,
 C<sub Mypkg::MODIFY_SCALAR_ATTRIBUTES {}> and C<sub Mypkg::FETCH_SCALAR_ATTRIBUTES {}>.
 (TODO: empty should be enough to be detected by the compiler.)
@@ -3219,9 +3219,11 @@ functions, even if they are used at compile time only.
 
 Using attributes adds an import block to your code.
 
-Only B<our> variable attributes are checked at compile-time, 
+Only B<our> variable attributes are checked at compile-time,
 B<my> variables attributes at run-time only, which is too late for the compiler.
-Perl attributes suck. Nobody thought of the compiler then.
+But only my variables can be typed, our not as they are typed automatically with
+the defined package.
+Perl attributes need to be fixed for types hints.
 
 FUTURE
 
@@ -3266,7 +3268,8 @@ produces the output
 
     024
 
-with standard perl but gives a compile-time error with the compiler.
+with standard perl but calculates with the compiler the
+goto label_NUMBER wrong, producing 01234.
 
 =head2 Context of ".."
 
