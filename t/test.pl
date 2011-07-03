@@ -780,6 +780,7 @@ sub todo_tests_default {
         push @todo, (105)   if $what =~ /^cc(_o1)?/ or ($] > 5.008005 and $] < 5.010);
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (27)    if $] < 5.007 and $what eq 'cc_o2';
+        push @todo, (45)    if $] < 5.007;
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
         push @todo, (11,45,103,105) if $] > 5.007 and $] < 5.009;
         push @todo, (29)    if $] < 5.008006 or $] > 5.013;

@@ -1059,7 +1059,10 @@ sub write_label {
     # named label but op not yet known?
     if ( $op->can("label") and $op->label ) {
       $l = "label_".$op->label;
-      push_runtime(sprintf( "  %s:", $l));
+      # only print first such label. test 21
+      push_runtime(sprintf( "  %s:", $l))
+	unless $labels->{label}->{$l};
+      $labels->{label}->{$l} = $$op;
     }
     if ($verbose) {
       push_runtime(sprintf( "  %s:\t/* %s */", label($op), $op->name ));

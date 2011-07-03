@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.32 r1084 M
+# B::C::VERSION = 1.35 r1112 M
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
-# platform = cygwin 32bit non-threaded
+# platform = cygwin 32bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.32 - perl-5.008009d-nt
+# 100 / 100 modules tested with B-C-1.35 - perl-5.008009d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   3 /   0 ()
