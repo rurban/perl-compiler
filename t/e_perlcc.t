@@ -108,7 +108,7 @@ cleanup;
 
 SKIP: {
 TODO: {
-  skip "--stash hangs < 5.12", 3 if $] < 5.012;
+  skip "--stash hangs < 5.12", 3 if $] < 5.012; #because of DB?
   local $TODO = "B::Stash imports too many";
   is(`$perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file"); #41
   is(`$perlcc --stash -r -oa $f`, "ok", "--stash -o file");
