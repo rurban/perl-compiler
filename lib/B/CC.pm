@@ -375,7 +375,9 @@ sub init_hash {
 %skip_lexicals   = init_hash qw(pp_enter pp_enterloop pp_leave pp_nextstate pp_dbstate);
 # which ops no not write to pad vars
 %skip_invalidate = init_hash qw(pp_enter pp_enterloop pp_leave pp_nextstate pp_dbstate
-  pp_return pp_leavesub pp_list pp_pushmark);
+  pp_return pp_leavesub pp_list pp_pushmark 
+  pp_anonlist
+  );
 
 %need_curcop     = init_hash qw(pp_rv2gv pp_bless pp_repeat pp_sort pp_caller
   pp_reset pp_rv2cv pp_entereval pp_require pp_dofile
@@ -669,8 +671,7 @@ sub save_or_restore_lexical_state {
       if ( $changed & VALID_SV ) {
         ( $old_flags & VALID_SV ) ? $lex->write_back : $lex->invalidate;
       }
-      if ( $changed & VALID_DOUBLE )
-      {
+      if ( $changed & VALID_DOUBLE ) {
         ( $old_flags & VALID_DOUBLE ) ? $lex->load_double : $lex->invalidate_double;
       }
       if ( $changed & VALID_INT ) {
@@ -955,14 +956,14 @@ sub load_pad {
           $type  = T_DOUBLE;
           $flags = VALID_SV | VALID_DOUBLE;
         }
-        elsif ($class eq 'c_int') {  # use Ctypes;
-          $type  = T_INT;
-          $flags = VALID_SV | VALID_INT;
-        }
-        elsif ($class eq 'c_double') {
-          $type  = T_DOUBLE;
-          $flags = VALID_SV | VALID_DOUBLE;
-        }
+        #elsif ($class eq 'c_int') {  # use Ctypes;
+        #  $type  = T_INT;
+        #  $flags = VALID_SV | VALID_INT;
+        #}
+        #elsif ($class eq 'c_double') {
+        #  $type  = T_DOUBLE;
+        #  $flags = VALID_SV | VALID_DOUBLE;
+        #}
         # TODO: MooseX::Types
       }
 
