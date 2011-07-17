@@ -9,8 +9,12 @@
 #  define PM_GETRE(o)     ((o)->op_pmregexp)
 # endif
 #endif
+#ifndef RX_EXTFLAGS
+# define RX_EXTFLAGS(prog) ((prog)->extflags)
+#endif
 
 typedef struct magic* B__MAGIC;
+typedef SV* B__REGEXP;
 
 static int
 my_runops(pTHX)
@@ -77,6 +81,16 @@ precomp(mg)
         }
     OUTPUT:
         RETVAL
+
+#endif
+
+MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
+
+#if PERL_VERSION > 10
+
+U32
+RX_EXTFLAGS(rx)
+	  B::REGEXP rx
 
 #endif
 

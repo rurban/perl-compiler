@@ -10,15 +10,18 @@
 	(50,35,72,73)
 	-O1 now includes also -fav-init2 and -fppaddr, which are all
 	stable. -O2 string handling (-fro-inc) still unstable.
+	added B::REGEXP::save for \$qr (Encode::Alias), issue 71
 	* CC (1.11): allow debugging without -MOd=CC
 	Try to jump from last to unknown label, put labels also onto cxstack.
 	Fixed cc_last.t test 4, jump out of anonsub, but not across C
 	  functions yet (this is disallowed in C, need to split)
+	* C.xs: added B::REGEXP::EXTFLAGS (missing from B)
 	* t/cc_last.t: Fixed test 2. This works compiled and uncompiled,
 	  but the returned errcode is not compared. Skip if so.
 	* t/TESTS: add all 5 possible method/sub calls to test 35 => 01234
 	* ramblings/*.patches: CORE patches added and recommended in README.
 	* ramblings/blogs-debugging-article[1-4].pod: added to MANIFEST
+	* t/issue71.t: added
 
 1.34	2011-06-12 rurban
 	* Makefile.PL: fixed make install < 5.13.7

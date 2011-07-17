@@ -498,8 +498,8 @@ sub constpv {
   }
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $strtable{$pv} = "$pvsym";
-  #my $const = ($B::C::pv_copy_on_grow and $B::C::const_strings) ? "const" : "";
-  my $const = "const";
+  my $const = ($B::C::pv_copy_on_grow and $B::C::const_strings) ? "const" : "";
+  #my $const = "const";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "static $const char %s[] = { %s };", $pvsym, $chars ) );
@@ -1276,7 +1276,7 @@ sub B::PMOP::save {
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
-        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen),".sprintf("%u));", $pmflags),
+        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
     }
@@ -1748,6 +1748,38 @@ sub B::PV::save {
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
+# post 5.11. called from save_rv not from PMOP::save
+sub B::REGEXP::save {
+  my ($sv) = @_;
+  my $sym = objsym($sv);
+  return $sym if defined $sym;
+  my $pv = $sv->PV;
+  my $len = length(pack("a*", $pv));
+  # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
+  $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $len, $len+1 ) );
+  $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
+  		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, cstring($pv)));
+  my $ix = $svsect->index;
+  warn "Saving RX \"".$sv->PV."\" to sv_list[$ix], called from @{[(caller(1))[3]]}, "
+    ."@{[(caller(2))[3]]}, @{[(caller(3))[3]]}, @{[(caller(4))[3]]}\n" if $debug{rx} or $debug{sv};
+  if (0) {
+    my $pkg = $sv->SvSTASH;
+    if ($$pkg) {
+      warn sprintf("stash isa class($pkg) 0x%x\n", $$pkg) if $debug{mg} or $debug{gv};
+      $pkg->save;
+      $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
+      $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+    }
+  }
+  $init->add(# replace XVP with struct regexp. need pv and extflags
+	     sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(&sv_list[$ix], 0x%x));",
+		     $sv->EXTFLAGS));
+  $svsect->debug( $sv->flagspv ) if $debug{flags};
+  my $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
+  $sv->save_magic;
+  return $sym;
+}
+
 sub B::PVMG::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
@@ -1775,7 +1807,7 @@ sub B::PVMG::save {
 	  if ($MULTI) {
 	    $savesym = "NULL";
 	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
-				 $svsect->index ) );
+				 $svsect->index+1 ) );
 	  } else {
 	    $savesym = '(char*)&PL_sv_undef';
 	  }
@@ -1784,7 +1816,10 @@ sub B::PVMG::save {
     }
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
-    unless ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
+    if ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
+      return B::REGEXP::save($sv);
+    }
+    else {
       $ivx = $sv->IVX; # XXX How to detect HEK* namehek?
       $nvx = $sv->NVX; # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
     }
@@ -4230,7 +4265,7 @@ sub should_save {
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
   if ( $package =~ /^(FileHandle|SelectSaver|mro|B)$/
-       || $package =~ /^(B|PerlIO|Internals|IO)::/
+       or $package =~ /^(B|PerlIO|Internals|IO)::/
        or ($DB::deep and $package =~ /^(DB|Term::ReadLine)/))
   {
     delete_unsaved_hashINC($package);
@@ -4381,7 +4416,7 @@ sub save_context {
   #my $svi = $svsect->index;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save;
   # XXX from $svi to $svsect->index we have new sv's
-  $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+  #$B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "curpad syms:\n" if $verbose;
   $init->add("/* curpad syms */");
   my $curpad_sym      = ( comppadlist->ARRAY )[1]->save;
@@ -4677,6 +4712,9 @@ OPTION:
         }
         elsif ( $arg eq "M" ) {
           $debug{mg}++;
+        }
+        elsif ( $arg eq "R" ) {
+          $debug{rx}++;
         }
         elsif ( $arg eq "G" ) {
           $debug{gv}++;
