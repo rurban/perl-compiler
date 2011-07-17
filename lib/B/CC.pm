@@ -1266,7 +1266,7 @@ sub pp_dorassign {
   write_back_stack();
   save_or_restore_lexical_state($$next);
   runtime( sprintf( "PUSHs(%s); if (%s && SvANY(%s)) goto %s;\t/* dorassign */",
-                    $sv->as_sv, $sv->as_sv, $sv->as_sv, label($next)) );
+                    $sv->as_sv, $sv->as_sv, $sv->as_sv, label($next)) ) if $sv;
   return $op->other;
 }
 
@@ -2821,7 +2821,11 @@ sub cc_recurse {
   my $start = cc_queue(@_) if @_;
 
   while ( $ccinfo = shift @cc_todo ) {
-    if ($cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
+    if ($DB::deep and $ccinfo->[0] =~ /^pp_sub_(DB|Term__ReadLine)_/) {
+      warn "cc $ccinfo->[0] skipped (debugging)\n" if $verbose;
+      debug "cc(ccinfo): @$ccinfo skipped (debugging)\n" if $debug{queue};
+    }
+    elsif ($cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
       warn "cc $ccinfo->[0] already defined\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo already defined\n" if $debug{queue};
     } else {
@@ -2858,14 +2862,14 @@ sub cc_main {
   my($inc_hv, $inc_av, $end_av);
   if ( !defined($module) ) {
     # forbid run-time extends of curpad syms, names and INC
-    local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
     warn "save context:\n" if $verbose;
     $init->add("/* save context */");
     $inc_hv          = svref_2object( \%INC )->save;
     $inc_av          = svref_2object( \@INC )->save;
   }
   {
-    # >=5.10 need to defer nullifying of all vars in END, not only new ones.
+    # >=5.10 needs to defer nullifying of all vars in END, not only new ones.
     local ($B::C::pv_copy_on_grow, $B::C::const_strings);
     $B::C::in_endav = 1;
     $end_av  = end_av->save;
@@ -3061,8 +3065,8 @@ OPTION:
   }
   $strict++ if !$strict and $Config{ccflags} !~ m/-DDEBUGGING/;
 
-  # rgs didn't want opcodes to be added to Opcode. So I added it to a
-  # seperate Opcodes.
+  # rgs didn't want opcodes to be added to Opcode. So I had to add it to a
+  # seperate Opcodes package.
   eval { require Opcodes; };
   if (!$@ and $Opcodes::VERSION) {
     my $MAXO = Opcodes::opcodes();
