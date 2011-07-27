@@ -1112,7 +1112,12 @@ sub B::COP::save {
     );
     if ( $op->label ) {
       # test 29 and 15,16,21
-      if ($] > 5.013004) {
+      if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee
+	$init->add(
+	  sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
+		  $copsect->index, cstring( $op->label ),
+		  length $op->label, 0));
+      } elsif ($] > 5.013004) {
 	$init->add(
 	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
 		  $copsect->index, cstring( $op->label ),
@@ -1775,7 +1780,7 @@ sub B::REGEXP::save {
 	     sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(&sv_list[$ix], 0x%x));",
 		     $sv->EXTFLAGS));
   $svsect->debug( $sv->flagspv ) if $debug{flags};
-  my $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
+  $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
   $sv->save_magic;
   return $sym;
 }
