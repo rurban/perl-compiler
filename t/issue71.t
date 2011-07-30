@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=71
-# Encode::decode fails in multiple ways with B::REGEXP unattached to PMOPs
+# Encode::decode fails in multiple ways with B::REGEXP refs unattached to PMOPs
 use Test::More tests => 3;
 use strict;
 BEGIN {
@@ -8,14 +8,15 @@ BEGIN {
   require "test.pl";
 }
 
+# XXX TODO simplification of Encode::Alias. not yet: SvANY(REGEXP)=SvANY(CALLREGCOMP)
+# e.g. Encode::Alias define_alias( qr/^(.*)$/ => '"\L$1"' ) creates REGEXP refs without PMOP's.
 my $script = <<'EOF';
 package my;
 our @a;
-sub f { my($alias,$name)=splice(@_,0,2); push @a,$alias,$name; ref $alias and $name =~ $$alias }
+sub f { my($alias,$name)=splice(@_,0,2); push @a,$alias,$name; ref $alias }
 package main;
 *f=*my::f;
-my $qr = qr/^(.*)$/;
-print "ok" if f(\$qr => "test");
+print "ok" if f(qr/^(.*)$/ => "test");
 EOF
 
 use B::C;
