@@ -1,8 +1,8 @@
 B::MAGIC	T_MG_OBJ
-B::REGEXP       T_SV_OBJ
+B::REGEXP       T_RX_OBJ
 
 INPUT
-T_SV_OBJ
+T_RX_OBJ
         if (SvROK($arg)) {
             IV tmp = SvIV((SV*)SvRV($arg));
             $var = INT2PTR($type,tmp);
