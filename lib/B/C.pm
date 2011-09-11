@@ -1337,7 +1337,7 @@ sub B::NULL::save {
   warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
   $svsect->add( sprintf( "0, %lu, 0x%x".($PERL510?', {(char*)ptr_undef}':''), $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
-  if ($debug{flags} and $DEBUGGING) { # add index to sv_debug_file to easily find the Nullsv
+  if ($debug{flags} and $]>5.009 and $DEBUGGING) { # add index to sv_debug_file to easily find the Nullsv
     # $svsect->debug( "ix added to sv_debug_file" );
     $init->add(sprintf(qq(sv_list[%d].sv_debug_file = "NULL sv_list[%d] 0x%x";), 
 		       $svsect->index, $svsect->index, $sv->FLAGS));
@@ -1640,7 +1640,7 @@ sub B::PVNV::save {
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
-    if ( !$B::C::pv_copy_on_grow ) {
+    if ( !$B::C::pv_copy_on_grow or $] < 5.010) {
       if ($PERL510) {
 	$init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
       }
@@ -1795,6 +1795,7 @@ sub B::PVMG::save {
     }
     return $sym;
   }
+  # local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
   #warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
@@ -3463,10 +3464,12 @@ typedef struct svpv {
     PERL_BITFIELD32 sv_debug_inpad:1;
     PERL_BITFIELD32 sv_debug_cloned:1;
     PERL_BITFIELD32 sv_debug_line:16;
-# if (PERL_VERSION < 11)
+# if PERL_VERSION < 11
     U32		sv_debug_serial;	/* 5.10 only */
 # endif
+# if PERL_VERSION > 8
     char *	sv_debug_file;
+# endif
 #endif
 } SVPV;
 EOT
@@ -3740,8 +3743,8 @@ EOT
       if ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "    CopFILE_set(&$s, NULL);\n" if $ITHREADS or !$MULTI;
-	print "    CopSTASHPV_set(&$s, NULL);\n" if $ITHREADS or !$MULTI;
+	print "    CopFILE_set(&$s, NULL); CopSTASHPV_set(&$s, NULL);\n"
+	  if $ITHREADS or !$MULTI;
       }
     }
     for (0 .. $hek_index-1) {
