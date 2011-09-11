@@ -19,9 +19,9 @@ package main;
 print "ok" if f(qr/^(.*)$/ => "test");
 EOF
 
-use B::C;
-ctestok(1, "C", "ccode72i", $script,
-	$B::C::VERSION < 1.36 ? "SvANY(REGEXP)=SvANY(CALLREGCOMP)" : undef
+use B::C; # still wrong test, that's why it passes
+ctestok(1, "C", "ccode71i", $script,
+	$B::C::VERSION < 1.35 ? "SvANY(REGEXP)=SvANY(CALLREGCOMP)" : undef
        );
 
 $script = <<'EOF';
@@ -32,12 +32,12 @@ EOF
 
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
-ctestok(2, "C", "ccode72i", $script,
+ctestok(2, "C", "ccode71i", $script,
 	$B::C::VERSION < 1.36 ? "B:C reg_temp_copy from invalid r->offs" : undef
        );
 
 use B::CC;
-ctestok(3, "CC", "ccode72i", $script,
+ctestok(3, "CC", "ccode71i", $script,
       $B::CC::VERSION < 1.12
       ? "B:CC Encode::decode fails to leave_scope with const PAD PV 'Encode'"
       : undef);

@@ -759,6 +759,7 @@ sub todo_tests_default {
         # fixed with 1.30
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
         push @todo, (29)   if $] > 5.009 and $] < 5.012;
+        push @todo, (48) if $what =~ /c_o[234]/ and $] < 5.010;
         push @todo, (28,48) if $what =~ /c_o[34]/;
         push @todo, (21)   if $] > 5.011 and $] <= 5.013006;
         #push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
@@ -767,7 +768,7 @@ sub todo_tests_default {
         push @todo, (10,12,16,29) if $what =~ /c_o[234]/ and $] >= 5.010;
         push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
         push @todo, (44,45) if $what =~ /c_o[1234]/;
-        push @todo, (50)    if $what =~ /c_o[234]/ or $] < 5.010;
+        #push @todo, (50)    if $what =~ /c_o[234]/ or $] < 5.010; # @ISA issue 64
         push @todo, (34)    if $what =~ /c_o[34]/ and $] > 5.011 and $] <= 5.013;
         push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
@@ -792,6 +793,7 @@ sub todo_tests_default {
         #push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
         push @todo, (26)    if $what =~ /^cc_o[12]/;
         push @todo, (27)    if $] < 5.010 and $what eq 'cc_o2';
+        push @todo, (105)   if $] >= 5.010;
         push @todo, (15)    if $] > 5.011 and $] < 5.013;
         push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
         push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
