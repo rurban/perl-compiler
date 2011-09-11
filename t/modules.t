@@ -10,11 +10,11 @@
 #  -subset  - run only random 10 of all modules. default if ! -d .svn
 #  -no-subset  - all 100 modules
 #  -t       - run also tests
-#  -log     - save log file. default on top100 and without subset
+#  -log     - save log file. default on test10 and without subset
 #
 # The list in t/mymodules comes from two bigger projects.
 # Recommended general lists are Task::Kensho and http://ali.as/top100/
-# We are using top100 from the latter.
+# We are using 10 problematic modules from the latter.
 # We are NOT running the full module testsuite yet with -t, we can do that
 # in another author test to burn CPU for a few hours resp. days.
 #

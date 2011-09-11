@@ -90,7 +90,8 @@ sub is_subset {
 sub get_module_list {
   # Parse for command line modules and use this if seen.
   my @modules = grep {$_ !~ /^-([\w-]+)$/} @ARGV; # ignore options
-  my $module_list  = 't/top100';
+  # -no-subset defaults to all top100
+  my $module_list  = (grep /^-no-subset$/, @ARGV) ? 't/top100' : 't/test10';
   if (@modules and -e $modules[0] and ! -x $modules[0]) { # skip an executable compiled module
     $module_list = $modules[0];
   }
