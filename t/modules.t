@@ -86,8 +86,8 @@ log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no
 my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
 my $perlversion = perlversion();
-$log = 1 if -d '.svn';
 $log = 0 if @ARGV;
+$log = 1 if grep /^top100/, @ARGV;
 $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
 if ($log) {
