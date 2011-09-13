@@ -4244,10 +4244,8 @@ sub should_save {
   }
   # Needed since 5.12.2: Check already if deleted
   if ( !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
-    if ($debug{pkg}) {
-        warn "Cached $package is already deleted (early)\n";
-	return 0;
-      }
+    warn "Cached $package is already deleted (early)\n" if ($debug{pkg});
+    return 0;
   }
   # If this package is in the same file as main:: or our source, save it. (72, 73)
   if ($mainfile) {
