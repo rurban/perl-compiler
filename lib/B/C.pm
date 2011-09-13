@@ -2284,7 +2284,7 @@ sub B::CV::save {
           IO::Seekable IO::Poll);
     }
     warn sprintf( "%s::%s\n", $stashname, $cvname) if $debug{sub};
-    unless ( in_static_core($stashname,$cvname) ) {
+    unless ( in_static_core($stashname, $cvname) ) {
       no strict 'refs';
       warn sprintf( "stub for XSUB $stashname\:\:$cvname CV 0x%x\n", $$cv )
     	if $debug{cv};
@@ -2313,8 +2313,10 @@ sub B::CV::save {
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
-      $decl->add("XS($xs);");
-      return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
+      if ($] < 5.015002 and $stashname ne 'DynaLoader') {
+	$decl->add("XS($xs);");
+	return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
+      }
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -4148,7 +4150,9 @@ sub mark_package {
       warn sprintf("$package previously deleted, save now%s\n",$force?" (forced)":"") if $verbose;
       $include_package{$package} = 1;
       add_hashINC( $package );
-      walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
+      walksymtable( \%{$package.'::'}, "savecv", 
+		    sub { should_save( $_[0] ); return 1 }, 
+		    $package.'::' );
     } else{
       $include_package{$package} = 1;
     }
@@ -4243,8 +4247,10 @@ sub should_save {
     return 1 if ( $u =~ /^$p\:\:/ );
   }
   # Needed since 5.12.2: Check already if deleted
-  if ( !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
-    warn "Cached $package is already deleted (early)\n" if ($debug{pkg});
+  if ( $] > 5.015001 and 
+       !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
+    $include_package{$package} = 0;
+    warn "Cached $package not in \%INC, already deleted (early)\n" if ($debug{pkg});
     return 0;
   }
   # If this package is in the same file as main:: or our source, save it. (72, 73)
@@ -4420,6 +4426,8 @@ sub save_unused_subs {
     eval { XSLoader::load; };
     svref_2object( \&XSLoader::load )->save;
     add_hashINC("XSLoader");
+    add_hashINC("DynaLoader");
+    # mark_package("XSLoader", 1);
     $use_xsloader = 0;
     mark_package('Config', 1); # required by Dynaloader and special cased previously
   }
@@ -4566,6 +4574,8 @@ sub save_main_rest {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
     svref_2object( \&XSLoader::load )->save;
+    add_hashINC("XSLoader");
+    add_hashINC("DynaLoader");
     $use_xsloader = 0;
   }
 
