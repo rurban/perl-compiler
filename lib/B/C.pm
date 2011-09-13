@@ -4242,6 +4242,13 @@ sub should_save {
     $p =~ s/(\W)/\\$1/g;
     return 1 if ( $u =~ /^$p\:\:/ );
   }
+  # Needed since 5.12.2: Check already if deleted
+  if ( !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
+    if ($debug{pkg}) {
+        warn "Cached $package is already deleted (early)\n";
+	return 0;
+      }
+  }
   # If this package is in the same file as main:: or our source, save it. (72, 73)
   if ($mainfile) {
     # Find the first cv in this package for CV->FILE
@@ -4314,9 +4321,13 @@ sub inc_packname {
 sub delete_unsaved_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
-  warn "Deleting $packname from \%INC\n" if $INC{$incpack} and $debug{pkg};
-  $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack} and $INC{$incpack};
-  delete $INC{ $incpack };
+  if ($INC{$incpack}) {
+    warn "Deleting $packname from \%INC\n" if $debug{pkg};
+    $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack};
+    $INC{$incpack} = undef;
+    delete $INC{$incpack};
+    $include_package{$packname} = 0;
+  }
 }
 
 sub add_hashINC {
@@ -4339,18 +4350,20 @@ sub add_hashINC {
 
 sub walkpackages {
   my ( $symref, $recurse, $prefix ) = @_;
-  my $sym;
-  my $ref;
+  my ($sym, $ref);
   no strict 'vars';
   $prefix = '' unless defined $prefix;
+  # check if already deleted - failed since 5.15.2
+  return if $savINC{inc_packname(substr($prefix,0,-2))};
   while ( ( $sym, $ref ) = each %$symref ) {
-    local (*glob);
     next unless $ref;
+    local (*glob);
     *glob = $ref;
     if ( $sym =~ /::$/ ) {
       $sym = $prefix . $sym;
       warn("Walkpackages $sym\n") if $debug{pkg} and $debug{walk};
-      # The walker was missing main subs to avoid recursion into O compiler subs again
+      # This walker skips main subs to avoid recursion into O compiler subs again
+      # and main syms are already handled
       if ( $sym ne "main::" && $sym ne "<none>::" && &$recurse($sym) ) {
         walkpackages( \%glob, $recurse, $sym );
       }
