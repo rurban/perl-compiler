@@ -18,5 +18,6 @@ prepare_c_tests();
 
 my @todo  = todo_tests_default("c");
 my @skip = ();
+push @skip, 29 if $] > 5.015; #hangs at while Perl_hfree_next_entry hv.c:1670
 
 run_c_tests("C", \@todo, \@skip);

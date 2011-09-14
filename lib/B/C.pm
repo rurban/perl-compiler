@@ -4147,13 +4147,14 @@ sub mark_package {
     no strict 'refs';
     # i.e. if force
     if (exists $include_package{$package} and !$include_package{$package}) {
-      warn sprintf("$package previously deleted, save now%s\n",$force?" (forced)":"") if $verbose;
+      warn sprintf("$package previously deleted, save now%s\n",
+		   $force?" (forced)":"") if $verbose;
       $include_package{$package} = 1;
       add_hashINC( $package );
       walksymtable( \%{$package.'::'}, "savecv", 
 		    sub { should_save( $_[0] ); return 1 }, 
 		    $package.'::' );
-    } else{
+    } else {
       $include_package{$package} = 1;
     }
     my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };

@@ -506,7 +506,11 @@ sub output_runtime {
 		    }							\
 		 } STMT_END
 
+#if (PERL_VERSION > 15) || ((PERL_VERSION == 15) && (PERL_SUBVERSION >= 2))
+SV*
+#else
 void
+#endif
 Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
 {
     SvGETMAGIC(sv);
@@ -1296,8 +1300,13 @@ sub pp_padsv {
     }
     elsif ( $private & OPpDEREF ) {
       # coverage: 18
-      runtime(sprintf( "Perl_vivify_ref(aTHX_ PL_curpad[%d], %d);",
-                       $ix, $private & OPpDEREF ));
+      if ($] >= 5.015002) {
+	runtime(sprintf( "PL_curpad[%d] = Perl_vivify_ref(aTHX_ PL_curpad[%d], %d);",
+			 $ix, $ix, $private & OPpDEREF ));
+      } else {
+	runtime(sprintf( "Perl_vivify_ref(aTHX_ PL_curpad[%d], %d);",
+			 $ix, $private & OPpDEREF ));
+      }
       $vivify_ref_defined++;
       $pad[$ix]->invalidate;
     }

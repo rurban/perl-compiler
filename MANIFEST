@@ -123,12 +123,13 @@ t/stash.t
 t/TESTS
 t/testcore.t
 t/test.pl
-t/testplc.sh
 t/testc.sh
 t/testcc.sh
 t/testm.sh
+t/testplc.sh
 t/todomod.pl
 t/top100
+t/test10
 TESTS
 Todo
 typemap
