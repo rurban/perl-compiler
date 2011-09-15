@@ -3,14 +3,18 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.35	2011-07-xx rurban
+1.35	2011-09-xx rurban
 	* C: allow debugging without -MOd=C
 	improve package_pv detection for methods, two more tests.
 	detect previously missing packages within the main sourcefile
 	(50,35,72,73)
 	-O1 now includes also -fav-init2 and -fppaddr, which are all
 	stable. -O2 string handling (-fro-inc) still unstable.
-	added B::REGEXP::save for \$qr (Encode::Alias), issue 71
+	added B::REGEXP::save for \$qr (Encode::Alias), issue 71. Still
+	  not fully fixed. Encode::Alias unusable.
+	fixed empty HV assertions since 5.15, new HV default keys = 7 (3,4,36).
+	workaround 5.15.2 inability to walk with from %INC deleted
+	  stashes, also workaround adding already deleted DynaLoader.
 	* CC (1.11): allow debugging without -MOd=CC
 	Try to jump from last to unknown label, put labels also onto cxstack.
 	Fixed cc_last.t test 4, jump out of anonsub, but not across C

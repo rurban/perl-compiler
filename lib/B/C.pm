@@ -1111,7 +1111,7 @@ sub B::COP::save {
       )
     );
     if ( $op->label ) {
-      # test 29 and 15,16,21
+      # test 29 and 15,16,21. 44,45
       if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee
 	$init->add(
 	  sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
@@ -3106,6 +3106,7 @@ sub B::HV::save {
   # return $sym if $name =~ /^B::C/;
 
   # It's just an ordinary HV
+  # KEYS = 0, inc. dynamically below with hv_store
   if ($PERL510) {
     if ($PERL514) { # fill removed with 5.13.1
       $xpvhvsect->comment( "stash mgu max keys" );
@@ -3170,6 +3171,18 @@ sub B::HV::save {
     }
     $init->add("}");
     $init->split;
+  } elsif ($] >= 5.015)  { 
+    # test 36
+    $init->add( "HvTOTALKEYS($sym) = 0;");
+    # empty contents cleared in aassign (keys = 7, not 0)
+    # XXX should be fixed in CORE
+    if (0) {
+    $init->add( "{\tchar *array;",
+		"\tNewxz(array, sizeof(HE*) + sizeof(struct xpvhv_aux), char);",
+		"\tHvARRAY($sym) = (HE**)array;",
+		"\tHvTOTALKEYS($sym) = 0;",
+		"}" );
+    }
   }
   $hv->save_magic;
   return $sym;

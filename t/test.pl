@@ -745,6 +745,10 @@ sub todo_tests_default {
     #push @todo, (29)   if $] >= 5.013006;
     push @todo, (15);
     push @todo, (7)   if $] eq '5.008005';
+    # 5.15 empty HV fixed with r1124
+    #push @todo, (3,4,36) if $] >= 5.015; # Assert array: Perl_hfree_next_entry hv.c:1716
+    push @todo, (29,44,45) if $] >= 5.015001;
+    push @todo, (39)    if $] >= 5.015002;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
@@ -762,7 +766,6 @@ sub todo_tests_default {
         push @todo, (48)    if $what =~ /c_o[234]/ and $] < 5.010;
         push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.015;
         push @todo, (21)    if $] > 5.011 and $] <= 5.013006;
-        push @todo, (15,29,39,44,45) if $] >= 5.015002;
         #push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
         # c.t fixed with 1.30
         push @todo, (16,29,44,45,49) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
@@ -800,12 +803,11 @@ sub todo_tests_default {
         push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
         push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
         push @todo, (103)   if $] >= 5.012 and $ITHREADS;
-        push @todo, (49)    if $] >= 5.013009;
+        #push @todo, (49)    if $] >= 5.013009 and $] < 5.014;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
     push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
-    push @todo, (3,4,36) if $] >= 5.015;
     #push @todo, (32)  if $] >= 5.011003;
     return @todo;
 }
