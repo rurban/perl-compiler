@@ -45,29 +45,32 @@ $e = q("use Data::Dumper ();Data::Dumper::Dumpxs({});print q(ok)");
 is(`$perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static"));
 cleanup;
 
-TODO: {
-  local $TODO = '--staticxs is experimental'; # fails 5.8 and darwin only
-  is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs"); #13
-  ok(-e $exe, "keep executable"); #14
-}
-ok(! -e 'a.out.c', "delete a.out.c file without -S");
-ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
-cleanup;
+SKIP: {
+  skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
+ TODO: {
+    local $TODO = '--staticxs is experimental'; # fails 5.8 and darwin only
+    is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs"); #13
+    ok(-e $exe, "keep executable"); #14
+  }
+  ok(! -e 'a.out.c', "delete a.out.c file without -S");
+  ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
+  cleanup;
+  
+ TODO: {
+    local $TODO = '--staticxs is experimental';
+    is(`$perlcc --staticxs -S -o a -r -e $e`, "ok",
+       "-S -o -r --staticxs xs"); #17
+    ok(-e $a, "keep executable"); #18
+  }
+  ok(-e 'a.c', "keep a.c file with -S");
+  ok(-e 'a.c.lst', "keep a.c.lst with -S");
+  cleanup;
 
-TODO: {
-  local $TODO = '--staticxs is experimental';
-  is(`$perlcc --staticxs -S -o a -r -e $e`, "ok",
-     "-S -o -r --staticxs xs"); #17
-  ok(-e $a, "keep executable"); #18
+  is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
+     "-S -o -r --staticxs without xs");
+  ok(! -e 'a.c.lst', "no a.c.lst without xs");
+  cleanup;
 }
-ok(-e 'a.c', "keep a.c file with -S");
-ok(-e 'a.c.lst', "keep a.c.lst with -S");
-cleanup;
-
-is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
-   "-S -o -r --staticxs without xs");
-ok(! -e 'a.c.lst', "no a.c.lst without xs");
-cleanup;
 
 my $f = "a.pl";
 open F,">",$f;
