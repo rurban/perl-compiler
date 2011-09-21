@@ -87,7 +87,7 @@ my @opts = ("");				  # only B::C
 @opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
 my $perlversion = perlversion();
 $log = 0 if @ARGV;
-$log = 1 if grep /^top100/, @ARGV;
+$log = 1 if grep /top100$/, @ARGV;
 $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 
 if ($log) {
