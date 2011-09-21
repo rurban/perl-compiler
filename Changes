@@ -15,6 +15,8 @@
 	fixed empty HV assertions since 5.15, new HV default keys = 7 (3,4,36).
 	workaround 5.15.2 inability to walk with from %INC deleted
 	  stashes, also workaround adding already deleted DynaLoader.
+	use proper PL_envgv for *main::ENV which is inited in perl_parse
+	  (fixes e.g. CGI apps using run-time values not compile-time)
 	* CC (1.11): allow debugging without -MOd=CC
 	Try to jump from last to unknown label, put labels also onto cxstack.
 	Fixed cc_last.t test 4, jump out of anonsub, but not across C

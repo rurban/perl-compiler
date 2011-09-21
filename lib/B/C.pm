@@ -2664,6 +2664,10 @@ sub B::GV::save {
       }
     }
   }
+  if ($fullname eq 'main::ENV') {
+    $init->add(qq[$sym = PL_envgv;]);
+    return $sym;
+  }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
@@ -2770,10 +2774,12 @@ sub B::GV::save {
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
-      warn "GV::save \%$fullname\n" if $debug{gv};
-      # XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
-      $gvhv->save;
-      $init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
+      if ($fullname ne 'main::ENV') {
+	warn "GV::save \%$fullname\n" if $debug{gv};
+	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
+	$gvhv->save;
+	$init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
+      }
     }
     my $gvcv = $gv->CV;
     if ( !$$gvcv && $savefields & Save_CV ) {
@@ -4013,7 +4019,7 @@ EOT
     fakeargv[argc + options_count - 1] = 0;
 
     exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
-			    fakeargv, NULL);
+			    fakeargv, env);
 
     if (exitstatus)
 	exit( exitstatus );
