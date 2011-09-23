@@ -498,15 +498,15 @@ sub constpv {
   }
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $strtable{$pv} = "$pvsym";
-  my $const = ($B::C::pv_copy_on_grow and $B::C::const_strings) ? "const" : "";
+  my $const = ($B::C::pv_copy_on_grow and $B::C::const_strings) ? " const" : "";
   #my $const = "const";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "static $const char %s[] = { %s };", $pvsym, $chars ) );
+    $decl->add( sprintf( "static$const char %s[] = { %s };", $pvsym, $chars ) );
   } else {
     my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "static $const char %s[] = %s;", $pvsym, $cstring ) );
+      $decl->add( sprintf( "static$const char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
   wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
@@ -2112,7 +2112,7 @@ sub try_isa {
   return 0; # not found
 }
 
-# if the sub or method is not found,
+# If the sub or method is not found:
 # 1. try @ISA, mark_package and return.
 # 2. try UNIVERSAL::method
 # 2. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
@@ -2313,10 +2313,8 @@ sub B::CV::save {
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
-      if ($] < 5.015002 and $stashname ne 'DynaLoader') {
-	$decl->add("XS($xs);");
-	return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
-      }
+      $decl->add("XS($xs);");
+      return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -2326,7 +2324,7 @@ sub B::CV::save {
   }
 
   # This define is forwarded to the real sv below
-  # The new method, which saves a SV only works since 5.10 (?)
+  # The new method, which saves a SV only works since 5.10 (? Does not work in newer perls)
   my $sv_ix = $svsect->index + 1;
   my $xpvcv_ix;
   my $new_cv_fw = 0;#$PERL510; # XXX this does not work yet
@@ -2469,7 +2467,7 @@ sub B::CV::save {
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
 	#	  ));
       } else {
-	$xpvcvsect->comment('STASH mg_u cur len cv_stash start_u root_u gv file padlist outside outside_seq flags depth');
+	$xpvcvsect->comment('STASH mg_u cur len CV_STASH START_U ROOT_U GV file PADLIST OUTSIDE outside_seq flags depth');
 	$xpvcvsect->add($xpvc);
 	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
@@ -2501,7 +2499,7 @@ sub B::CV::save {
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
 	#	  ));
       } else {
-	$xpvcvsect->comment('GvSTASH cur len  depth mg_u mg_stash cv_stash start_u root_u cv_gv cv_file cv_padlist cv_outside outside_seq cv_flags');
+	$xpvcvsect->comment('GvSTASH cur len  depth mg_u MG_STASH CV_STASH START_U ROOT_U CV_GV cv_file PADLIST OUTSIDE outside_seq cv_flags');
 	$xpvcvsect->add($xpvc);
 	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
@@ -2896,7 +2894,7 @@ sub B::AV::save {
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
   }
   elsif ($PERL510) {
-    # 5.9.4+: nvu fill max iv mg stash
+    # 5.9.4+: nvu fill max iv MG STASH
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
     $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
     $line = "Nullhv, {0}, $fill, $fill, NULL" if $PERL514;
@@ -2907,7 +2905,7 @@ sub B::AV::save {
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
   }
   else {
-    # 5.8: array fill max off nv mg stash alloc arylen flags
+    # 5.8: ARRAY fill max off nv MG STASH ALLOC arylen flags
     my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
     $line = "0, $fill, $fill, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init or $B::C::av_init2;
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
@@ -3035,7 +3033,7 @@ sub B::AV::save {
           $init->add(sprintf("\tNewx(svp, %d, SV*);", $fill1),
                      "\tAvALLOC(av) = svp;");
         } else {
-	  # Bypassing Perl_safesysmalloc on darwin fails with free wrong pool, test 25.
+	  # Bypassing Perl_safesysmalloc on darwin fails with "free from wrong pool", test 25.
 	  # So with DEBUGGING perls we have to track memory and use calloc.
 	  $init->add("#ifdef PERL_TRACK_MEMPOOL",
 		     sprintf("\tsvp = (SV**)Perl_safesysmalloc(%d * sizeof(SV*));", $fill1),
@@ -3094,7 +3092,7 @@ sub B::HV::save {
     # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
     # the only symptom is that sv_reset tries to reset the PMf_USED flag of
     # a trashed op but we look at the trashed op_type and segfault.
-    #my $adpmroot = ${$hv->PMROOT};
+    #my $adpmroot = ${$hv->PMROOT}; # XXX When was this fixed?
     my $adpmroot = 0;
     $decl->add("static HV *hv$hv_index;");
 
@@ -3119,7 +3117,7 @@ sub B::HV::save {
       $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
 			       $hv->MAX, 0 ));
     } else {
-      $xpvhvsect->comment( "gvstash fill max keys mg stash" );
+      $xpvhvsect->comment( "GVSTASH fill max keys MG STASH" );
       $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
 			       0, $hv->MAX, 0 ));
     }
@@ -4959,8 +4957,8 @@ of the form C<A::B>) where package C<A> does not contain any subs.
 =item B<-staticxs>
 
 Dump a list of bootstrapped XS package names to F<outfile.lst>
-needed for C<perlcc --staticxs> and add code to DynaLoader to add
-the .so/.dll path to PATH.
+needed for C<perlcc --staticxs>. 
+Add code to DynaLoader to add the .so/.dll path to PATH.
 
 =item B<-D>C<[OPTIONS]>
 
