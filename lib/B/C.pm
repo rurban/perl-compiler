@@ -2291,7 +2291,7 @@ sub B::CV::save {
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       #mark_package($stashname); # not needed
-      return qq/get_cv("$stashname\::$cvname",TRUE)/;
+      return qq/get_cv("$stashname\::$cvname", TRUE)/;
     } else {
       my $xsstash = $stashname;
       $xsstash =~ s/::/_/g;
@@ -2313,8 +2313,14 @@ sub B::CV::save {
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
-      $decl->add("XS($xs);");
-      return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
+      if ($stashname eq 'DynaLoader' and $] >= 5.015002) {
+	# XXX DynaLoader symbols since 5.15.2 exported as t (16,29,44,45)
+	# and already initialized (?)
+	return qq/get_cv("$stashname\::$cvname", TRUE)/;
+      } else {
+	$decl->add("XS($xs);");
+	return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
+      }
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {

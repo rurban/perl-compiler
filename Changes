@@ -16,6 +16,7 @@
 	fixed empty HV assertions since 5.15, new HV default keys = 7 (3,4,36).
 	workaround 5.15.2 inability to walk with from %INC deleted
 	  stashes, also workaround adding already deleted DynaLoader.
+	fixed new 5.15.2 DynaLoader init.
 	use proper PL_envgv for *main::ENV which is inited in perl_parse
 	  (fixes e.g. CGI apps using run-time values, not compile-time)
 	* CC (1.11): allow debugging without -MOd=CC
