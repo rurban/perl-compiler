@@ -2313,14 +2313,12 @@ sub B::CV::save {
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
-      if ($stashname eq 'DynaLoader' and $] >= 5.015002) {
-	# XXX DynaLoader symbols since 5.15.2 exported as t (16,29,44,45)
-	# and already initialized (?)
-	return qq/get_cv("$stashname\::$cvname", TRUE)/;
-      } else {
-	$decl->add("XS($xs);");
-	return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
+      if ($stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
+	# XXX DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45)
+	warn "DynaLoader broken with 5.15.2-5.15.3.\nUse 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]";
       }
+      $decl->add("XS($xs);");
+      return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {

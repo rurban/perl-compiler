@@ -22,7 +22,7 @@ my $e = q("print q(ok)");
 
 is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o a -r -e");
 ok(-e 'a.c', "-S => a.c file");
-ok(-e $a, "keep a executable");
+ok(-e $a, "keep a executable"); #3
 cleanup;
 
 is(`$perlcc -o a -r -e $e`, "ok", "-o a r -e");
@@ -30,19 +30,19 @@ ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep a executable"); # 6
 cleanup;
 
-is(`$perlcc -r -e $e`, "ok", "-r -e");
+is(`$perlcc -r -e $e`, "ok", "-r -e"); #7
 ok(! -e 'a.out.c', "no a.out.c file");
 ok(-e $exe, "keep default executable"); #9
 cleanup;
 
 system(qq($perlcc -o a -e $e));
 ok(-e $a, '-o => -e a');
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
+is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok"); #11
 cleanup;
 
-# Try a simple XS module which exists in 5.6.2 and blead
+# Try a simple XS module which exists in 5.6.2 and blead (test 45)
 $e = q("use Data::Dumper ();Data::Dumper::Dumpxs({});print q(ok)");
-is(`$perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static"));
+is(`$perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static")); #12
 cleanup;
 
 SKIP: {
