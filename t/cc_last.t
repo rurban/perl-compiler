@@ -37,9 +37,10 @@ lab1: {
   print " not ok\n";
 }
 EOF
-# This fails with the same result and errcode uncompiled.
-ctest(2, '$ok$', "CC", $base, $script2);
-#BOGUS Same result and errcode as uncompiled. Label not found for last
+TODO: {
+  local $TODO = "Same result and errcode as uncompiled. Label not found for last";
+  ctest(2, '$ok$', "CC", $base, $script2);
+}
 
 # Fixed by Heinz Knutzen for issue 36
 my $script3 = <<'EOF';

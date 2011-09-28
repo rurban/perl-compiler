@@ -1080,9 +1080,9 @@ sub write_label {
       push(@cxstack, {
 		      type   => 0,
 		      op     => $op,
-		      nextop => ref $op eq 'B::LOOP' and $op->nextop ? $op->nextop : $op,
-		      redoop => ref $op eq 'B::LOOP' and $op->redoop ? $op->redoop : $op,
-		      lastop => ref $op eq 'B::LOOP' and $op->lastop ? $op->lastop : $op,
+		      nextop => ref($op) eq 'B::LOOP' and $op->nextop ? $op->nextop : $op,
+		      redoop => ref($op) eq 'B::LOOP' and $op->redoop ? $op->redoop : $op,
+		      lastop => ref($op) eq 'B::LOOP' and $op->lastop ? $op->lastop : $op,
 		      'label' => $op->can("label") && $op->label  ? $op->label : $l
 		     });
     }
@@ -2637,8 +2637,8 @@ sub pp_last {
     }
   }
   default_pp($op);
-  my $lastop = $cxstack[$cxix]->{lastop}->next;
-  if ($lastop) {
+  if ($cxstack[$cxix]->{lastop} and $cxstack[$cxix]->{lastop}->next) {
+    my $lastop = $cxstack[$cxix]->{lastop}->next;
     push( @bblock_todo, $lastop );
     save_or_restore_lexical_state($$lastop);
     runtime( sprintf( "goto %s;", label($lastop) ) );
