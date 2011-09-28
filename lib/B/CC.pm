@@ -1080,9 +1080,9 @@ sub write_label {
       push(@cxstack, {
 		      type   => 0,
 		      op     => $op,
-		      nextop => ref($op) eq 'B::LOOP' and $op->nextop ? $op->nextop : $op,
-		      redoop => ref($op) eq 'B::LOOP' and $op->redoop ? $op->redoop : $op,
-		      lastop => ref($op) eq 'B::LOOP' and $op->lastop ? $op->lastop : $op,
+		      nextop => ((ref($op) eq 'B::LOOP') && $op->nextop) ? $op->nextop : $op,
+		      redoop => ((ref($op) eq 'B::LOOP') && $op->redoop) ? $op->redoop : $op,
+		      lastop => ((ref($op) eq 'B::LOOP') && $op->lastop) ? $op->lastop : $op,
 		      'label' => $op->can("label") && $op->label  ? $op->label : $l
 		     });
     }
