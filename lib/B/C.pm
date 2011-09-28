@@ -2314,8 +2314,13 @@ sub B::CV::save {
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
       if ($stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
-	# XXX DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45)
-	warn "DynaLoader broken with 5.15.2-5.15.3.\nUse 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]";
+	# [perl #100138] DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45).
+	# Not die because the patched libperl is hard to detect (nm libperl|egrep "_XS_Dyna.* t "),
+	# and we want to allow a patched libperl.
+	warn "DynaLoader broken with 5.15.2-5.15.3.\n".
+	  "Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
+	    unless $B::C::DynaLoader_warn; 
+	$B::C::DynaLoader_warn++;
       }
       $decl->add("XS($xs);");
       return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
