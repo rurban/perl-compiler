@@ -251,8 +251,7 @@ sub is_todo {
     Test::Harness
   )) { return '5.6 .al noise' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
-    Test::Tester
-    Moose
+    ExtUtils::CBuilder
     MooseX::Types
   )) { return '5.8' if $_ eq $module; }}
   # restricted v_string hash?

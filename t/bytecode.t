@@ -57,7 +57,8 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #44 fixed by moving push_begin upfront
 push @todo, (21,24..26,28,33,38..39) if $^O eq 'solaris' and $] eq '5.008008';
-push @todo, (10,18,22,24,27..28,30,45) if $^O eq 'linux' and $] eq '5.008008';
+# fixed with 1.35
+#push @todo, (10,18,22,24,27..28,30,45) if $^O eq 'linux' and $] eq '5.008008';
 push @todo, (42,43) if $] <= 5.008009 and !$ITHREADS;
 push @todo, (42,43) if $] >= 5.010;
 push @todo, (32)    if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
