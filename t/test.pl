@@ -772,7 +772,7 @@ sub todo_tests_default {
         # push @todo, (16,44,45) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
         # push @todo, (10,12) if $what =~ /c_o[234]/ and $] >= 5.010 and $] < 5.015;
         push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
-        push @todo, (44,45) if $what =~ /c_o[234]/;
+        push @todo, (29,44,45) if $what =~ /c_o[234]/;
         #push @todo, (50)    if $what =~ /c_o[234]/ or $] < 5.010; # @ISA issue 64
         push @todo, (50)    if $what eq 'c_o4'; # @ISA issue 64
         push @todo, (34)    if $what =~ /c_o[34]/ and $] > 5.011 and $] <= 5.013;
