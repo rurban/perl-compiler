@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.35 r1137
+# B::C::VERSION = 1.35 r1146
 # perlversion = 5.014001-nt
-# path = perl5.14.1-nt
-# platform = darwin 64bit non-threaded
+# path = /usr/local/cpanel/bin/perl5.14.1
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
