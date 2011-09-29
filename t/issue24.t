@@ -43,10 +43,10 @@ SKIP: {
 }
 
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
-TODO: { #3
-  local $TODO = "B::CC issue 24 dbm <5.10";
+#TODO: { #3
+  #local $TODO = "B::CC issue 24 dbm <5.10";
   is($result, $expected, "CC dbm fixed with r881, XSLoader with 1.32");
-}
+#}
 
 END {
   unlink("$name*", "a", "a.out");

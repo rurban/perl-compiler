@@ -2318,7 +2318,7 @@ sub B::CV::save {
 	# Not die because the patched libperl is hard to detect (nm libperl|egrep "_XS_Dyna.* t "),
 	# and we want to allow a patched libperl.
 	warn "Warning: DynaLoader broken with 5.15.2-5.15.3.\n".
-	  "Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
+	  "  Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
 	    unless $B::C::DynaLoader_warn; 
 	$B::C::DynaLoader_warn++;
       }

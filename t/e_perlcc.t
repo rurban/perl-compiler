@@ -137,7 +137,7 @@ cleanup;
 isnt(`$perlcc --Wb=-fno-fold,-v -o a $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
 TODO: {
-  local $TODO = "catch STDERR not STDOUT"; # fails freebsd only
+  local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   like(`$perlcc -B --Wb=-DG,-v -o a $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
 }
@@ -151,7 +151,7 @@ isnt(`$perlcc -v2 -o a $f`, "", "-v2 -o file");
 isnt(`$perlcc -v3 -o a $f`, "", "-v3 -o file");
 isnt(`$perlcc -v4 -o a $f`, "", "-v4 -o file");
 TODO: {
-  local $TODO = "catch STDERR not STDOUT"; # fails freebsd only
+  local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   like(`$perlcc -v5 $f $redir`, '/Writing output/m',
        "-v5 turns on -Wb=-v"); #58
   like(`$perlcc -v5 -B $f $redir`, '/-PV-/m',

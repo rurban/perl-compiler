@@ -743,14 +743,15 @@ sub todo_tests_default {
     push @todo, (103)  if $] < 5.007 or $] >= 5.010;
     #push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
     #push @todo, (29)   if $] >= 5.013006;
-    push @todo, (15);
+    #push @todo, (15);
     push @todo, (7)   if $] eq '5.008005';
     # 5.15 empty HV fixed with r1124
     #push @todo, (3,4,36) if $] >= 5.015; # Assert array: Perl_hfree_next_entry hv.c:1716
-    push @todo, (29,44,45) if $] >= 5.015002;  # DynaLoader 5.15.2 issue
+    push @todo, (16,29,44,45) if $] >= 5.015002;  # DynaLoader 5.15.2 issue
     push @todo, (39)    if $] >= 5.015002;
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
+	push @todo, (15);
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
         # 15+28 fixed with 1.04_34
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
@@ -764,12 +765,12 @@ sub todo_tests_default {
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
         push @todo, (29)    if $] > 5.009 and $] < 5.012;
         push @todo, (48)    if $what =~ /c_o[234]/ and $] < 5.010;
-        push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.014;
+        # push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.014;
         push @todo, (21)    if $] > 5.011 and $] <= 5.013006;
         #push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
         # c.t fixed with 1.30
-        push @todo, (16,29,44,45) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
-        push @todo, (10,12,16,29) if $what =~ /c_o[234]/ and $] >= 5.010 and $] < 5.015;
+        # push @todo, (16,44,45) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
+        # push @todo, (10,12) if $what =~ /c_o[234]/ and $] >= 5.010 and $] < 5.015;
         push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
         push @todo, (44,45) if $what =~ /c_o[234]/;
         #push @todo, (50)    if $what =~ /c_o[234]/ or $] < 5.010; # @ISA issue 64
@@ -780,7 +781,7 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        push @todo, (21,30,35,50); # fixed 44 -nt
+        push @todo, (21,30,50); # fixed 44 -nt
 	push @todo, (3,16)  if $] eq '5.008005';
         push @todo, (44)    if $ITHREADS or $] < 5.012;
         #push @todo, (44)   if !$ITHREADS and $] >= 5.012;
