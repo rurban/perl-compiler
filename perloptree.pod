@@ -8,11 +8,11 @@ Various material about the internal Perl compilation representation
 during parsing and optimization, before the actual execution
 begins, represented as C<B> objects, the B<"B" op tree>.
 
-The well-known L<perlguts.pod> focuses more on the internal
+The well-known L<perlguts>.pod focuses more on the internal
 representation of the variables, but not so on the structure, the
 sequence and the optimization of the basic operations, the ops.
 
-And we have L<perlhack.pod>, which shows e.g. ways to hack into
+And we have L<perlhack>.pod, which shows e.g. ways to hack into
 the op tree structure within the debugger. It focuses on getting
 people to start patching and hacking on the CORE, not
 understanding or writing compiler backends or optimizations,
@@ -44,7 +44,7 @@ of the following to be called (oversimplifying a bit):
      newBINOP(OP_MULTIPLY, flags, newSVREF($b), newSVREF($c))
   )
 
-See also L<perlhack.pod#Op Trees>
+See also L<perlhack#Op Trees>
 
 The simpliest type of an op structure is C<OP>, a L</BASEOP>: this
 has no children. Unary operators, L</UNOP>s, have one child, and
@@ -1117,10 +1117,10 @@ subname(args...) =>
 =head2 Call a method
 
 Here we have several combinations to define the package and the method name, either
-compile-time (static as constant string), or dynamic as B<GV> (subname) or 
-B<GVSV>/B<PADSV> (package name).
+compile-time (static as constant string), or dynamic as B<GV> (for the method name) or 
+B<PADSV> (package name).
 
-B<method_named> holds the method name as C<sv> if know at compile time.
+B<method_named> holds the method name as C<sv> if known at compile time.
 If not B<gv> (of the name) and B<method> is used.
 The package name is at the top of the stack.
 A call stack is added with B<pushmark>.
@@ -1130,19 +1130,19 @@ A call stack is added with B<pushmark>.
 Class->subname(args...) =>
 
   pushmark
-  const PV => "Class"
+  const => PV "Class"
     args ...
-  method_named => "subname"
+  method_named => PV "subname"
   entersub
 
 2. Run-time package ("object") and compile-time method:
 
-$obj->subname(args...) =>
+$obj->meth(args...) =>
 
   pushmark
-  padsv/gvsv => *packagename
+  padsv => GV *packagename
     args ...
-  method_named => "subname"
+  method_named => PV "meth"
   entersub
 
 3. Run-time package and run-time method:
@@ -1150,7 +1150,7 @@ $obj->subname(args...) =>
 $obj->$meth(args...) =>
 
   pushmark
-  padsv/gvsv => *packagename
+  padsv => GV *packagename
     args ...
   gvsv => GV *meth
   method
@@ -1161,7 +1161,7 @@ $obj->$meth(args...) =>
 Class->$meth(args...) =>
 
   pushmark
-  const PV => "Class"
+  const => PV "Class"
     args ...
   gvsv => GV *meth
   method
@@ -1230,7 +1230,7 @@ manipulate these values array.
 
 Malcom Beattie's B modules hooked into the early op tree stages to
 represent the internal ops as perl objects and added the perl compiler
-backends. See L<B> and L<perlcompile.pod>.
+backends. See L<B> and L<perlcompile>.
 
 The three main compiler backends are still B<Bytecode>, B<C> and B<CC>.
 
@@ -1268,7 +1268,9 @@ op tree, and can be therefore converted outside of the CHECK block,
 which means you can easier debug the conversion (= compilation)
 process. To debug the CHECK block in the B backends you have to 
 use the L<B::Debugger> B<Od> or B<Od_o> modules, which defer the 
-CHECK to INIT.
+CHECK to INIT. Debugging the highly recursive data is not easy, 
+and often problems can not be reproduced in the B debugger because 
+the B debugger influences the optree.
 
 B<kurila> L<http://search.cpan.org/dist/kurila/> uses MAD to convert
 Perl 5 source to the kurila dialect. 
@@ -1398,11 +1400,11 @@ So this is about 30% of the basic op tree information so far. Not speaking about
 the guts. Simon Cozens and Scott Walters have more 30%, in the source are more
 10% to copy&paste, and in the compilers and run-time information is the rest. I
 hope with the help of some hackers we'll get it done, so that some people will
-begin poking around in the B backends. And write the wonderful new dump/undump
+begin poking around in the B backends. And write the wonderful new C<dump>/C<undump>
 functionality (which actually worked in the early years on Solaris) to
 save-image and load-image at runtime as in LISP, analyse and optimize the
 output, output PIR (parrot code), emit LLVM or another JIT optimized code or
 even write assemblers. I have a simple one at home. :)
 
 Written 2008 on the perl5 wiki with socialtext and pod in parallel 
-by Reini Urban, CPAN ID rurban.
+by Reini Urban, CPAN ID C<rurban>.

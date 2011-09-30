@@ -74,6 +74,7 @@ ramblings/reg.alloc
 ramblings/revert-B-load-BEGIN.patch
 ramblings/runtime.porting
 ramblings/yapc_bratislava08.pod
+ramblings/yapceu_2010.pod
 regen_lib.pl
 script/assemble
 script/cc_harness

@@ -24,15 +24,18 @@
 	* CC (1.11): allow debugging without -MOd=CC
 	Try to jump from last to unknown label, put labels also onto cxstack.
 	Fixed cc_last.t test 4, jump out of anonsub, but not across C
-	  functions yet (this is disallowed in C, need to split)
-	* C.xs: added B::REGEXP::EXTFLAGS (missing from B)
+	  functions yet (this is disallowed in C, need to split).
+	* C.xs: added B::REGEXP::EXTFLAGS (missing from B).
 	* t/cc_last.t: Fixed test 2. This works compiled and uncompiled,
 	  but the returned errcode is not compared. Skip if so.
-	* t/TESTS: add all 5 possible method/sub calls to test 35 => 01234
-	* ramblings/*.patches: CORE patches added and recommended in README.
-	* ramblings/blogs-debugging-article[1-4].pod: added to MANIFEST
+	* t/TESTS: add all 5 possible method/sub calls to test 35 =>
+	  01234. See http://blogs.perl.org/users/rurban/2011/06/how-perl-calls-subs-and-methods.html
 	* t/stash.t: fixed 5.8.8 stashes (overload, threads, ...)
-	* t/issue71.t: added
+	* t/issue71.t: added, but not fixed yet
+	* ramblings/*.patches: CORE patches added and recommended in README.
+	* ramblings/blogs-debugging-article[1-4].pod: added to MANIFEST.
+	* perlcompile.pod, perloptree.pod: improved.
+	* ramblings/yapceu_2010.pod: added.
 
 1.34	2011-06-12 rurban
 	* Makefile.PL: fixed make install < 5.13.7

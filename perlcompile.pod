@@ -5,52 +5,31 @@ perlcompile - Introduction to the Perl Compiler-Translator
 =head1 DESCRIPTION
 
 Perl has always had a compiler: your source is compiled into an
-internal form (a parse tree) which is then optimized before being
-run.  Since version 5.005, Perl has shipped with a module
-capable of inspecting the optimized parse tree (C<B>), and this has
-been used to write many useful utilities, including a module that lets
-you turn your Perl into C source code that can be compiled into a
-native executable.
+internal form (a parse tree, "optree") which is then optimized before
+being run.  Since version 5.005, Perl has shipped with a module
+capable of inspecting the optimized optree (L<B>), and this has been
+used to write many useful utilities, including the L<B::C> and
+L<B::CC> modules that lets you turn your Perl into C source code that
+can be compiled into a native executable.
 
-The C<B> module provides access to the parse tree, and other modules
-("backends") do things with the tree.  Some write it out as
-bytecode, C source code, or a semi-human-readable text.  Another
-traverses the parse tree to build a cross-reference of which
-subroutines, formats, and variables are used where.  Another checks
-your code for dubious constructs.  Yet another backend dumps the
-parse tree back out as Perl source, acting as a source code beautifier
-or deobfuscator.
+The C<B> module provides access to the optree, and other modules
+("backends") do things with the tree.  Some write it out as bytecode
+L<B::Bytecode>, C source code L<B::C>, or a semi-human-readable text.
+Another L<B::Xref> traverses the parse tree to build a cross-reference
+of which subroutines, formats, and variables are used where.  Another
+L<B::Lint> checks your code for dubious constructs. L<B::Deparse>
+dumps the parse tree back out as Perl source, acting as a source code
+beautifier or deobfuscator.
 
 Because its original purpose was to be a way to produce C code
 corresponding to a Perl program, and in turn a native executable, the
-C<B> module and its associated backends are known as "the
-compiler", even though they don't really compile anything.
-Different parts of the compiler are more accurately a "translator",
-or an "inspector", but people want Perl to have a "compiler
-option" not an "inspector gadget".  What can you do?
+C<B> module and its associated backends, mainly L<B::C>, L<B::CC> and
+L<B::Bytecode> are known as "the compiler", even though they don't
+really compile anything.
 
 This document covers the use of the Perl compiler: which modules
 it comprises, how to use the most important of the backend modules,
 what problems there are, and how to work around them.
-
-=head2 Other perl to exe compilers
-
-Maybe you want to look for the free L<PAR> module or some commercial 
-products, like C<perl2exe> at L<http://www.indigostar.com/perl2exe.htm> 
-and C<perlapp> as C<PerlDevKit> from ActiveState at 
-L<http://www.activestate.com/Products/perl_dev_kit/>
-
-These are technically no compilers, just source packagers with a
-simple native code unpacker. Run-time behaviour is actually slower
-than with a normal perl source or real compiler, because of the
-additional unpacking and check steps. It's just convenient to have
-single file applications.
-
-The simpliest windows I<"compiler"> would be then F<pl2exe.pl> 
-in L<C::DynaLib>.
-
-Several years ago the C<undump> functionality used to work on several 
-platforms. See L<perlrun> for C<-u>.
 
 =head2 Layout
 
@@ -681,23 +660,15 @@ usage.
 =head1 KNOWN PROBLEMS
 
 BEGIN{} blocks are executed before compiling your code.  Any external
-state that is initialized in BEGIN{}, such as opening files, initiating
-database connections etc., do not behave properly.  To work around
-this, Perl has an INIT{} block that corresponds to code being executed
-before your program begins running but after your program has finished
-being compiled.  Execution order: BEGIN{}, (possible save of state
-through compiler back-end), INIT{}, program runs, END{}.
+state that is initialized in BEGIN{}, such as main code in use'd
+modules, opening files, initiating database connections etc., do not
+behave properly.  To work around this, Perl has an INIT{} block that
+corresponds to code being executed before your program begins running
+but after your program has finished being compiled.  Execution order:
+BEGIN{}, (possible save of state through compiler back-end), INIT{},
+program runs, END{}.
 
 CC backend: goto, sort with non-default comparison. last for non-loop blocks.
-
-improve XSUB handling (both static and dynamic)
-
-sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts.
-
-allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
-  them, whereas the compiler expects them to be linked to a xpv[inahc]v_root
-
-list the same as X[IPR]V structures.
 
 ref counts
 
@@ -705,19 +676,30 @@ perl_parse replacement
 
 fix cstring for long strings
 
-compile-time initialisation of AvARRAYs
-
 signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
 
 CvOUTSIDE for ordinary subs
 
-DATA filehandle for standalone Bytecode program (easy)
+See F<STATUS>
 
-DATA filehandle for multiple bytecode-compiled modules (harder)
+=head2 Other perl to exe compilers
 
-DATA filehandle for C-compiled program (yet harder)
+Maybe you want to look for the free L<PAR> module or some commercial 
+products, like C<perl2exe> at L<http://www.indigostar.com/perl2exe.htm> 
+and C<perlapp> as C<PerlDevKit> from ActiveState at 
+L<http://www.activestate.com/Products/perl_dev_kit/>
 
-pad panics since 5.10
+These are technically no compilers, just B<source packagers> with a
+simple native code unpacker. Run-time behaviour is actually slower
+than with a normal perl source or real compiler, because of the
+additional unpacking and check steps. It's just convenient to have
+single file applications.
+
+The simpliest windows I<"compiler"> would be then F<pl2exe.pl> 
+in L<C::DynaLib>.
+
+Several years ago the C<undump> functionality used to work on several 
+platforms. See L<perlrun> for C<-u>. Work is planned to revive C<undump>.
 
 =head1 AUTHOR
 
@@ -730,19 +712,6 @@ compiler module, maintained by Reini Urban I<rurban@cpan.org>.
 
 =head1 SEE ALSO
 
-L<perlguts>
-
-L<http://books.simon-cozens.org/index.php/Perl_5_Internals> 
-with a simplier version at L<http://www.faqs.org/docs/perl5int/>.
-
-"Hacking the Optree for Fun..." at L<http://www.perl.com/pub/a/2002/05/07/optree.html>, 
-the next step by Simon Cozens.
-
-Joshua ben Jore wrote a 50 minute presentation on 
-"Perl 5 VM" guts at L<http://diotalevi.isa-geek.net/~josh/Presentations/Perl%205%20VM/> 
-focusing on the optree for SPUG, the Seattle Perl User's Group.
-
-The attempt for a new L<perloptreeguts> manual at
-L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
+L<perlguts>, L<illguts>, L<perloptree>
 
 =cut
