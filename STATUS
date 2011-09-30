@@ -4,20 +4,20 @@ Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
 fails 50% but in mine is a blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
-C is stable, minor bugs left, esp. with loading dynamic modules. okay with static linkage
+C is stable, minor bugs left, v_strings in restricted hashes, loose QR Regexp, ...
 
-CC is unstable, work in progress.
+CC is unstable and slow, work in progress.
 
 C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
-Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 compatibility added.
+Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.15 compatibility added.
+Since 5.15.2 one CORE patch required, 2 optional patches recommended.
 
 Open Problems for B::C:
   test 46 (easy: add aux :: GVs)
   test 50 (issue 64 - limitation: no ISA of empty packages)
-  r-magic failing in 5.10
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
@@ -92,27 +92,33 @@ t/o     5,9 (skipped)
 
 5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)
 t/bytecode      -
-t/c             28,41-43,46,50
-t/c_o1         +15,44,45,48
-t/cc            15,21,30,35,41-46,48,50,103,105
+t/c             41-43,46
+t/c_o1         +15,44,45
+t/cc            11,15,21,30,41-46,50,103,105
 
 5.10.1:
-t/bytecode 	-
-t/c 		41-43,46,50
-t/c_o1         +15,44
-t/cc 		21,30,35,41-46,50,103,105
+t/bytecode 	27
+t/c 		15,41-43,46
+t/c_o1          -"-
+t/cc 		14,21,30,35,41-43,46,50,103,105
 
 5.12.3:
 t/bytecode 	21,32
-t/c 		21,41-43,46,50
-t/c_o1         +44 
-t/cc 		3,4,15,21,30,35,41-46,50,103,105
+t/c 		21,41-43,46
+t/c_o1          -"- 
+t/cc 		14,21,30,41-43,46,50,103,105
 
-5.14.0:
-t/bytecode 	-
-t/c 		15,16,29,41-46,49,50
+5.14.2:
+t/bytecode 	27
+t/c 		15,41-43,46
 t/c_o1          -"-
-t/cc 		3,4,15,21,29,30,35,41-46,50,103,105
+t/cc 		14,21,29,30,41-43,46,50,103,105
+
+5.15.3:
+t/bytecode 	27
+t/c 		15,41-43,46
+t/c_o1          -"-
+t/cc 		14,21,29,30,41-43,46,50,103,105
 
 
 CPAN Modules
@@ -125,17 +131,15 @@ From top100:
 generally: fail 0%
 5.6:       fail 5%   ExtUtils::Install Module::Build DateTime Devel::GlobalDestruction
                      DateTime::Locale
-5.8.9:     fail 3%   Test::Tester Moose MooseX::Types
-5.10.1     fail 15%  Test::Harness ExtUtils::Install Module::Build Storable Test::Tester
-                     Devel::GlobalDestruction Class::MOP Moose Carp::Clan Module::Pluggable
-                     DBI FCGI Encode MooseX::Types Template::Stash
-5.12:      fail 4%   ExtUtils::Install Module::Build LWP Storable
-5.14       fail 1%   Test::Tester
+5.8.9:     fail 2%   ExtUtils::CBuilder MooseX::Types
+5.10       fail 0%  
+5.12:      fail 0%  
+5.14       fail 0%   
+5.15.3     fail 0%   
 
 5.10, 5.12, 5.14 status
 -----------------------
 TODO for B::C
-  better method_name package detection
   tests 15,21,41-43: B destruction,46,50
   restricted hashes in 5.10.0
   r magic
@@ -144,9 +148,15 @@ TODO for B::C
 
 Fix CC 
   several other issues detected (and mostly fixed) by Heinz Knutzen
+  minimize pad copies from local to pad
 
 DONE
 ----
+fixed with 1.35:
+  improve package_pv detection for methods,
+  detect previously missing packages within the main 
+  run-time %ENV
+
 fixed with 1.32:
   improved scanner, try_isa, mark_package force, ...
   do not gp_free shared GPs 
