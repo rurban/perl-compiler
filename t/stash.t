@@ -69,6 +69,7 @@ diag "got = @got";
 # XXX freebsd prepends BSDPAN.pm ?
 @got = grep { ! /^(Exporter::Heavy|strict)$/} @got
   if $^O eq 'freebsd';
+@got = grep { ! /^(threads)$/} @got; # < 5.8.9
 
 if ($Is_VMS) {
     @got = grep { ! /^File(?:::Copy)?$/    } @got;
@@ -84,6 +85,9 @@ diag "got = @got";
 $got = "@got";
 
 my $expected = "attributes Carp Carp::Heavy DB Exporter Exporter::Heavy main Regexp strict warnings";
+if ($] < 5.008009) {
+    $expected = "attributes Carp DB Exporter Exporter::Heavy main overload Regexp strict warnings";
+}
 if ($] < 5.008001) {
     $expected = "attributes Carp Carp::Heavy DB Exporter Exporter::Heavy main strict warnings";
 }
@@ -115,6 +119,7 @@ $expected =~ s/(Exporter::Heavy|strict) //g if $^O eq 'freebsd';
 TODO: {
   # todo: freebsd
   local $TODO = "exact stashes may vary" if $^O !~ /^(MSWin32|cygwin|linux|darwin)$/;
+  local $TODO = "exact stashes may vary" if $] < 5.009;
   if ((($Config{static_ext} eq ' ')
        || ($Config{static_ext} eq '')
        || ($^O eq 'cygwin' and $Config{static_ext} =~ /^(Cwd )?Win32CORE$/))
@@ -124,6 +129,6 @@ TODO: {
     diag "expected [$expected]" if $got ne $expected;
     ok($got eq $expected);
   } else {
-    ok(1,"skip: one or more static extensions");
+    ok(1, "skip: one or more static extensions");
   }
 }
