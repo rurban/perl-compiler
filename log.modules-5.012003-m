@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.35 r1113 M
+# B::C::VERSION = 1.35 r1146 M
 # perlversion = 5.012003-m
-# path = /opt/local/bin/perl5.12.3
+# path = perl5.12.3-m
 # platform = darwin 64bit multi
 pass Exporter
 pass Text::Tabs

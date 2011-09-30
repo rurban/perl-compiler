@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.35 r1149
+# B::C::VERSION = 1.35 r1150 M
 # perlversion = 5.014001-nt
-# path = /usr/local/cpanel/bin/perl5.14.1
+# path = /usr/local/cpanel/3rdparty/perl/514/bin/perl5.14.1
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -76,7 +76,7 @@ pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
-pass Class::ISA
+skip Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
@@ -100,10 +100,10 @@ pass DateTime::Locale
 pass DateTime
 pass IO::String
 pass AppConfig
-pass UNIVERSAL::require
+skip UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.35 - perl-5.014001-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
+# 98 / 100 modules tested with B-C-1.35 - perl-5.014001-nt
+# pass  98 /  98 (100.0%)
+# fail   0 /  98 (0.0%)
 # todo   0 /   0 ()
-# skip   0 / 100 (0.0% not installed)
+# skip   2 / 100 (2.0% not installed)

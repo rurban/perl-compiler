@@ -1,8 +1,7 @@
-# B::C::VERSION = 1.28 r752
+# B::C::VERSION = 1.35 r1152
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
-# platform = linux 64bit
-# non-threaded perl
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -13,7 +12,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker #TODO without threads
+pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -24,9 +23,9 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder #TODO 5.8
 pass ExtUtils::ParseXS
-pass Module::Build #TODO <5.10 without threads
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -50,11 +49,11 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-fail Attribute::Handlers
+pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
-pass version #TODO 5.8
+pass version
 pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
@@ -69,7 +68,7 @@ pass Devel::GlobalDestruction
 pass Class::MOP
 fail Moose
 pass Test::Deep
-pass Carp::Clan #TODO < 5.10.1
+pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
@@ -85,7 +84,7 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope #TODO <5.10 without threads
+pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
@@ -94,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types #TODO without threads
+fail MooseX::Types #TODO 5.8
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.28 - perl-5.008009-nt
+# 100 / 100 modules tested with B-C-1.35 - perl-5.008009-nt
 # pass  97 / 100 (97.0%)
 # fail   3 / 100 (3.0%)
-# todo   6 /   3 (200.0%)
+# todo   2 /   3 (66.7%)
 # skip   0 / 100 (0.0% not installed)

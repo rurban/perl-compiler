@@ -775,11 +775,12 @@ sub todo_tests_default {
         # push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
         push @todo, (44,45) if $] < 5.009;
         push @todo, (29,44,45) if $what =~ /c_o[234]/;
-        #push @todo, (50)    if $what =~ /c_o[234]/ or $] < 5.010; # @ISA issue 64
-        push @todo, (50)    if $what eq 'c_o4'; # @ISA issue 64
+	# @ISA issue 64
+        push @todo, (50)    if $what eq 'c_o4' and ($] < 5.010 or $] >= 5.014); 
         push @todo, (10)    if $what =~ /c_o[234]/ and $] >= 5.010;
         push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
         push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
+        push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.009 and !$ITHREADS;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)

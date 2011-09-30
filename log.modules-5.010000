@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.35 r1113 M
+# B::C::VERSION = 1.35 r1146
 # perlversion = 5.010000
-# path = /usr/bin/perl5.10.0-m
+# path = perl5.10.0-m
 # platform = darwin 64bit threaded
 pass Exporter
 pass Text::Tabs
@@ -15,15 +15,15 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 fail Test::Simple #TODO 5.10.x crash
 pass ExtUtils::Manifest
-pass Pod::Text #TODO 5.10.x crash
+fail Pod::Text #TODO 5.10.x crash
 pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install #TODO 5.10 with threads
+fail ExtUtils::Install #TODO 5.10 with threads
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 fail Module::Build #TODO 5.10 with threads
 pass File::Path
@@ -64,11 +64,11 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction
+fail Devel::GlobalDestruction
 pass Class::MOP
 fail Moose #TODO 5.10.x crash
 fail Test::Deep #TODO 5.10.x crash
-pass Carp::Clan #TODO 5.10 with threads
+fail Carp::Clan #TODO 5.10 with threads
 pass Module::Pluggable #TODO 5.10.x crash
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
@@ -81,7 +81,7 @@ pass FCGI
 pass Tree::DAG_Node
 fail Path::Class #TODO 5.10.0 restricted hash/...
 fail Test::Warn #TODO 5.10.x crash
-pass Encode #TODO 5.10 with threads
+fail Encode #TODO 5.10 with threads
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
@@ -96,14 +96,14 @@ pass YAML
 fail MooseX::Types #TODO 5.10 with threads
 pass Class::Singleton
 fail DateTime::TimeZone #TODO 5.10.0 restricted hash/...
-fail DateTime::Locale #TODO 5.10 with threads
-skip DateTime
+pass DateTime::Locale #TODO 5.10 with threads
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash #TODO 5.10 with threads
-# 99 / 100 modules tested with B-C-1.35 - perl-5.010000
-# pass  84 /  99 (84.8%)
-# fail  15 /  99 (15.2%)
-# todo  22 /  15 (146.7%)
-# skip   1 / 100 (1.0% not installed)
+fail Template::Stash #TODO 5.10 with threads
+# 100 / 100 modules tested with B-C-1.35 - perl-5.010000
+# pass  78 / 100 (78.0%)
+# fail  22 / 100 (22.0%)
+# todo  22 /  22 (100.0%)
+# skip   0 / 100 (0.0% not installed)

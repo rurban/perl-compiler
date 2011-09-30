@@ -251,7 +251,6 @@ sub is_todo {
     Test::Harness
   )) { return '5.6 .al noise' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
-    ExtUtils::CBuilder
     MooseX::Types
   )) { return '5.8' if $_ eq $module; }}
   # restricted v_string hash?
@@ -260,32 +259,25 @@ sub is_todo {
    Path::Class
    DateTime::TimeZone
   )) { return '5.10.0 restricted hash/...' if $_ eq $module; }}
-  if ($] eq '5.010000') { foreach(qw(
-   Attribute::Handlers
-   Module::Pluggable
+  if ($] =~ /^5\.010/) { foreach(qw(
+   Devel::GlobalDestruction
    Moose
-   Pod::Text
-   Test::Pod
-   Test::Deep
-   Test::Exception
-   Test::Simple
-   Test::NoWarnings
-   Test::Warn
   )) { return '5.10.x crash' if $_ eq $module; }}
+  if ($] < 5.014) { foreach(qw(
+   ExtUtils::CBuilder
+  )) { return '< 5.14' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
     if ($] >= 5.009 and $] < 5.012) { foreach(qw(
       Carp::Clan
-      DateTime::Locale
+      DateTime
       Encode
       ExtUtils::Install
       Module::Build
-      Module::Pluggable
       MooseX::Types
+      Pod::Text
       Template::Stash
-      Test::Harness
-      Test::Tester
     )) { return '5.10 with threads' if $_ eq $module; }}
     if ($] eq 5.012000) { foreach(qw(
       DBI
@@ -299,6 +291,9 @@ sub is_todo {
       Test::Tester
     )) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
+    if ($] > 5.008001 and $] < 5.010) { foreach(qw(
+      Moose
+    )) { return '5.8 without threads' if $_ eq $module; }}
   }
   # ---------------------------------------
 }
