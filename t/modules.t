@@ -269,6 +269,12 @@ sub is_todo {
   if ($] > 5.015) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
+  if ($] >= 5.015002) { foreach(qw(
+   DateTime
+   ExtUtils::CBuilder
+   File::Temp
+   Test::Harness
+  )) { return '>= 5.15.2' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
