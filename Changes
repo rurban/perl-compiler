@@ -28,8 +28,8 @@
 	* C.xs: added B::REGEXP::EXTFLAGS (missing from B).
 	* t/cc_last.t: Fixed test 2. This works compiled and uncompiled,
 	  but the returned errcode is not compared. Skip if so.
-	* t/TESTS: add all 5 possible method/sub calls to test 35 =>
-	  01234. See http://blogs.perl.org/users/rurban/2011/06/how-perl-calls-subs-and-methods.html
+	* t/TESTS: add all 5 possible method/sub calls to test 35 =>01234.
+	  See http://blogs.perl.org/users/rurban/2011/06/how-perl-calls-subs-and-methods.html
 	* t/stash.t: fixed 5.8.8 stashes (overload, threads, ...)
 	* t/issue71.t: added, but not fixed yet
 	* ramblings/*.patches: CORE patches added and recommended in README.

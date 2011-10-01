@@ -747,8 +747,8 @@ sub todo_tests_default {
     push @todo, (7)   if $] eq '5.008005';
     # 5.15 empty HV fixed with r1124
     #push @todo, (3,4,36) if $] >= 5.015; # Assert array: Perl_hfree_next_entry hv.c:1716
-    push @todo, (16,29,44,45) if $] >= 5.015002;  # DynaLoader 5.15.2 issue
-    push @todo, (39)    if $] >= 5.015002;
+    push @todo, (16,39,44,45) if $] >= 5.015002 and !$ENV{DL_NOWARN};  # DynaLoader 5.15.2 issue
+    push @todo, (29)    if $] >= 5.015002; # B::C crash
     # 15 passes on cygwin XP, but fails on cygwin Win7
     if ($what =~ /^c(|_o[1-4])$/) {
 	push @todo, (15);
@@ -776,7 +776,7 @@ sub todo_tests_default {
         push @todo, (44,45) if $] < 5.009;
         push @todo, (29,44,45) if $what =~ /c_o[234]/;
 	# @ISA issue 64
-        push @todo, (50)    if $what eq 'c_o4' and ($] < 5.010 or $] >= 5.014); 
+        push @todo, (50)    if $what eq 'c_o4'; 
         push @todo, (10)    if $what =~ /c_o[234]/ and $] >= 5.010;
         push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
         push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
@@ -806,6 +806,7 @@ sub todo_tests_default {
         push @todo, (27)    if $] < 5.010 and $what eq 'cc_o2';
         push @todo, (105)   if $] >= 5.010;
         push @todo, (15)    if $] > 5.011 and $] < 5.013;
+        push @todo, (15)    if $] > 5.015;
         push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
         push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
         push @todo, (103)   if $] >= 5.012 and $ITHREADS;

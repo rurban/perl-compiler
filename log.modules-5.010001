@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.35 r1152
+# B::C::VERSION = 1.35 r1154 M
 # perlversion = 5.010001
 # path = /usr/local/bin/perl5.10.1
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO 5.10 with threads
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -15,7 +15,7 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
-fail Pod::Text
+fail Pod::Text #TODO 5.10 with threads
 pass constant
 pass Test
 pass Data::Dumper
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 fail ExtUtils::Install #TODO 5.10 with threads
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+fail ExtUtils::CBuilder #TODO < 5.14
 pass ExtUtils::ParseXS
 fail Module::Build #TODO 5.10 with threads
 pass File::Path
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester #TODO 5.10 with threads
+pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -64,12 +64,12 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-fail Devel::GlobalDestruction
+fail Devel::GlobalDestruction #TODO 5.10.x crash
 pass Class::MOP
-fail Moose
+fail Moose #TODO 5.10.x crash
 pass Test::Deep
 fail Carp::Clan #TODO 5.10 with threads
-pass Module::Pluggable #TODO 5.10 with threads
+pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
@@ -96,8 +96,8 @@ pass YAML
 fail MooseX::Types #TODO 5.10 with threads
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale #TODO 5.10 with threads
-fail DateTime
+pass DateTime::Locale
+fail DateTime #TODO 5.10 with threads
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
@@ -105,5 +105,5 @@ fail Template::Stash #TODO 5.10 with threads
 # 100 / 100 modules tested with B-C-1.35 - perl-5.010001
 # pass  89 / 100 (89.0%)
 # fail  11 / 100 (11.0%)
-# todo  10 /  11 (90.9%)
+# todo  11 /  11 (100.0%)
 # skip   0 / 100 (0.0% not installed)

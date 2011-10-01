@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.35 r1154
-# perlversion = 5.014001d-nt
-# path = /usr/local/cpanel/bin/perl5.14.1d
-# platform = linux 64bit non-threaded debug
+# B::C::VERSION = 1.35 r1146 M
+# perlversion = 5.015003-nt
+# path = perl5.15.3-nt
+# platform = darwin 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -20,10 +20,10 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp
+fail File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -79,12 +79,12 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope
+fail B::Hooks::EndOfScope #TODO > 5.15
 pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.35 - perl-5.014001d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# 100 / 100 modules tested with B-C-1.35 - perl-5.015003-nt
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo   1 /   6 (16.7%)
 # skip   0 / 100 (0.0% not installed)

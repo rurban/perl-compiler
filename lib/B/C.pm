@@ -2313,7 +2313,7 @@ sub B::CV::save {
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
-      if ($stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
+      if (!$ENV{DL_NOWARN} and $stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
 	# [perl #100138] DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45).
 	# Not die because the patched libperl is hard to detect (nm libperl|egrep "_XS_Dyna.* t "),
 	# and we want to allow a patched libperl.

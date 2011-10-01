@@ -127,7 +127,7 @@ See t/modules.t:is_todo() We only try to compile use module, not the testsuite.
 We only try B::C so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
-From top100:
+Compile-time status from top100:
 generally: fail 0%
 5.6:       fail 5%   ExtUtils::Install Module::Build DateTime Devel::GlobalDestruction
                      DateTime::Locale
@@ -136,6 +136,8 @@ generally: fail 0%
 5.12:      fail 0%  
 5.14       fail 0%   
 5.15.3     fail 0%   
+
+Run-time tests not yet fully done
 
 5.10, 5.12, 5.14 status
 -----------------------
