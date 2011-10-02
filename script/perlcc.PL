@@ -50,6 +50,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.09, Reini Urban, 2010-10-11 13:54:52
 # Version 2.10, Reini Urban, 2011-02-11 22:58:37
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
+# Version 2.12, Reini Urban, 2011-10-02 05:19:00
 
 use strict;
 use warnings;
@@ -64,7 +65,7 @@ use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.11;
+our $VERSION = 2.12;
 $| = 1;
 eval { require B::C::Flags; };
 
