@@ -1,0 +1,44 @@
+Required for 5.15.2 and 5.15.3 only
+
+From 4497a11a0d2e48af795e0e4d8f8c185e48d87b10 Mon Sep 17 00:00:00 2001
+From: Reini Urban <rurban@x-ray.at>
+Date: Tue, 27 Sep 2011 06:45:37 -0500
+Subject: [PATCH] Export DynaLoader symbols from libperl again
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="------------1.7.6.1"
+
+This is a multi-part message in MIME format.
+--------------1.7.6.1
+Content-Type: text/plain; charset=UTF-8; format=fixed
+Content-Transfer-Encoding: 8bit
+
+
+With 5.15.2 and the new xubpp, DynaLoader symbols were XS_INTERNAL, before
+they were effectively XS_EXTERNAL. This broke B::C and possibly other
+embedded apps which link to DynaLoader functions.
+---
+ ext/DynaLoader/dlutils.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+
+--------------1.7.6.1
+Content-Type: text/x-patch; name="0001-Export-DynaLoader-symbols-from-libperl-again.patch"
+Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment; filename="0001-Export-DynaLoader-symbols-from-libperl-again.patch"
+
+diff --git a/ext/DynaLoader/dlutils.c b/ext/DynaLoader/dlutils.c
+index 1ba9a61..574ccad 100644
+--- a/ext/DynaLoader/dlutils.c
++++ b/ext/DynaLoader/dlutils.c
+@@ -8,6 +8,7 @@
+  *                      files when the interpreter exits
+  */
+ 
++#define PERL_EUPXS_ALWAYS_EXPORT
+ #ifndef START_MY_CXT /* Some IDEs try compiling this standalone. */
+ #   include "EXTERN.h"
+ #   include "perl.h"
+
+--------------1.7.6.1--
+
+

@@ -1,3 +1,5 @@
+Optional for 5.14.0 and 5.14.1
+
 2011-06-22 rurban
 
 Remove huge B dependency from Carp, introduced with 5.14 to detect
