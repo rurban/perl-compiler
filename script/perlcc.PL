@@ -59,7 +59,7 @@ use FileHandle;
 use Config;
 use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
-use File::Basename qw(basename);
+use File::Basename qw(basename dirname);
 use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
@@ -610,10 +610,15 @@ sub yclept {
     $OINC{$Config{$_}}++ for (qw(privlib archlib sitelib sitearch vendorlib vendorarch));
     $OINC{'.'}++ unless ${^TAINT};
     $OINC{$_}++ for split ':', $Config{otherlibdirs};
+    if (my $incver = $Config{inc_version_list}) {
+        my $incpre = dirname($Config{sitelib});
+        $OINC{$_}++ for map { File::Spec->catdir($incpre,$_) } split(' ',$incver);
+    }
     for my $i (@INC) {
         my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
         $command .= "-I$inc " unless $OINC{$i}; # omit internal @INC dirs
     }
+    
     return $command;
 }
 
