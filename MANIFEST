@@ -60,7 +60,8 @@ lib/B/Stash.pm
 perlcompile.pod
 perloptree.pod
 ramblings/Carp-wo-B.patch
-ramblings/Export-store_cop_label-for-the-perl-compiler.patch
+ramblings/Export-DynaLoader-symbols-from-libperl-again.patch
+ramblings/Export-store_cop_label-on-Windows.patch
 ramblings/blogs-debugging-article1.pod
 ramblings/blogs-debugging-article2.pod
 ramblings/blogs-debugging-article3.pod
