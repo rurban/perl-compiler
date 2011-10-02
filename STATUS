@@ -13,7 +13,6 @@ In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
 Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.15 compatibility added.
-Since 5.15.2 one CORE patch required, 2 optional patches recommended.
 
 Open Problems for B::C:
   test 46 (easy: add aux :: GVs)

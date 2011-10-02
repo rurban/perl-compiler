@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.35	2011-09-xx rurban
+1.35	2011-10-02 rurban
 	tested from 5.6.2 until 5.15.3
 	* C: allow debugging without -MOd=C
 	improve package_pv detection for methods, two more tests.
@@ -13,11 +13,13 @@
 	stable. -O2 string handling (-fro-inc) still unstable.
 	added B::REGEXP::save for \$qr (Encode::Alias), issue 71. Still
 	  not fully fixed. Encode::Alias unusable.
-	fixed empty HV assertions since 5.15, new HV default keys = 7 (3,4,36).
+	fixed empty HV assertions since 5.15, new HV default keys = 7
+	  (3,4,36), but still unsolved 5.15 problem with endless loop in
+	  Perl_hfree_next_entry hv.c:1716 (3,4,36)
 	workaround 5.15.2 inability to walk with from %INC deleted
 	  stashes, also workaround adding already deleted DynaLoader.
 	CORE patch [perl #100138] for new 5.15.2-5.15.3 DynaLoader XS_INTERNAL
-	  problem required (16,29,44,45)
+	  problem required (16,29,44,45). Fixed with 5.15.4
 	  0001-Export-DynaLoader-symbols-from-libperl-again.patch
 	use proper PL_envgv for *main::ENV which is inited in perl_parse
 	  (fixes e.g. CGI apps using run-time values, not compile-time)
