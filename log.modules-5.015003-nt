@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.35 r1146 M
+# B::C::VERSION = 1.35 r1164
 # perlversion = 5.015003-nt
 # path = perl5.15.3-nt
 # platform = darwin 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+fail Test::Harness #TODO >= 5.15.2
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -20,10 +20,10 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
+fail File::Temp #TODO >= 5.15.2
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+fail ExtUtils::CBuilder #TODO always
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -97,7 +97,7 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+fail DateTime #TODO >= 5.15.2
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
@@ -105,5 +105,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.35 - perl-5.015003-nt
 # pass  94 / 100 (94.0%)
 # fail   6 / 100 (6.0%)
-# todo   1 /   6 (16.7%)
+# todo   5 /   6 (83.3%)
 # skip   0 / 100 (0.0% not installed)
