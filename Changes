@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.36	2011-10-xx rurban
+	* C: fixed representation of lexical warnings which was broken
+	since 8e01d9a6  5.8.9/5.9.4
+
 1.35	2011-10-02 rurban
 	tested from 5.6.2 until 5.15.3
 	* C: allow debugging without -MOd=C

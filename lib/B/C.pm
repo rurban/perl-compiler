@@ -338,6 +338,10 @@ sub walk_and_save_optree {
 # rather than looking up the name of every BASEOP in B::OP
 my $OP_THREADSV = opnumber('threadsv');
 my $OP_DBMOPEN = opnumber('dbmopen');
+#my $OP_PUSHMARK = opnumber('pushmark');
+#my $OP_CONST = opnumber('const');
+#my $OP_PADSV = opnumber('padsv');
+#my $OP_ENTERSUB = opnumber('entersub');
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
@@ -689,8 +693,7 @@ sub B::OP::_save_common {
       $op->first->name eq 'pushmark' and
       # Foo->bar()  compile-time lookup, 34 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
-       or $op->first->next->name eq 'padsv'      # $foo->bar() run-time lookup
-       or $op->first->next->name eq 'gvsv')      # not found so far
+       or $op->first->next->name eq 'padsv')      # $foo->bar() run-time lookup
      ) {
     my $pkgop = $op->first->next;
     warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv} or $debug{pkg};
@@ -725,6 +728,14 @@ sub B::OP::save {
         cstring( $threadsv_names[ $op->targ ] ) )
     );
   }
+  #if ( $type == $OP_PUSHMARK ) {
+  #  $look_for_packagepv++;
+  #} elsif ( $type == $OP_ENTERSUB ) {
+  #  $look_for_packagepv = 0;
+  #} elsif ( $look_for_packagepv and $type == $OP_CONST or $type == $OP_PADSV ) {
+  #  $look_for_packagepv = 0;
+  #  $package_pv = $op->sv->PV;
+  #}
   if (ref($op) eq 'B::OP') { # check wrong BASEOPs
     # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
     #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
@@ -821,7 +832,7 @@ package B::C;
 # dummy for B::C, only needed for B::CC
 sub label {}
 
-# save alternate ops if defined, and also add labels (need for B::CC)
+# save alternate ops if defined, and also add labels (needed for B::CC)
 sub do_labels ($@) {
   my $op = shift;
   for my $m (@_) {
@@ -978,8 +989,9 @@ sub method_named {
   my $name = shift;
   return unless $name;
   # Note: the pkg PV is unacessible(?) at PL_stack_base+TOPMARK+1.
-  # But it is also at the previous (after pushmark, before all args) op->sv->PV.
-  # We stored it away globally in op->_save_common.
+  # But it is also at the const or padsv after the pushmark, before all args.
+  # See L<perloptree/"Call a method">
+  # We check it in op->_save_common
   if (ref($name) eq 'B::CV') {
     warn $name;
     return $name;
@@ -1089,8 +1101,15 @@ sub B::COP::save {
       : 'pWARN_STD';
   }
   else {
-    # something else
-    $warn_sv = $PERL510 ? "(STRLEN*)".$warnings->save : $warnings->save;
+    # LEXWARN_on: Original $warnings->save from 5.8 was wrong, 
+    # DUP_WARNINGS copied length PVX bytes.
+    $warn_sv = $warnings->save;
+    my $ivdformat = $Config{ivdformat};
+    $ivdformat =~ s/"//g; #" poor editor
+    # XXX make_temp_object in B.xs:make_warnings_object since 5.8.9 creates a
+    # wrong PVX value for the ptr. But the length is our value! Brave API. 
+    $init->add(sprintf("*(IV*)(SvPVX($warn_sv)) = %${ivdformat};", length($warnings->PVX)));
+    $warn_sv = "($warnsvcast)SvPVX($warn_sv)";
   }
 
   # Trim the .pl extension, to print the executable name only.
@@ -1753,7 +1772,7 @@ sub B::PV::save {
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
-# post 5.11. called from save_rv not from PMOP::save
+# post 5.11: When called from save_rv not from PMOP::save precomp
 sub B::REGEXP::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
@@ -1914,20 +1933,21 @@ sub B::PVMG::save_magic {
 
   my $pkg = $sv->SvSTASH;
   if ($$pkg) {
-    warn sprintf("stash isa class($pkg) 0x%x\n", $$pkg) if $debug{mg} or $debug{gv};
+    warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
+      if $debug{mg} or $debug{gv};
   }
   $pkg->save;
   if ($$pkg) {
     no strict 'refs';
-    warn sprintf( "xmg_stash = %s (0x%x)\n", $pkg->NAME, $$pkg )
+    warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
       if $debug{mg} or $debug{gv};
     # Q: Who is initializing our stash from XS? ->save is missing that.
     # A: We only need to init it when we need a CV
     $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
     $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-    # better default for method names
-    # $package_pv = $pkg->NAME;
-    push_package($package_pv);
+    # $package_pv = $pkg->NAME; # undecided
+    # push_package($package_pv);  # useless code
+    push_package($pkg->NAME);  # correct code
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
