@@ -129,12 +129,13 @@ The full module testsuite is run with t/testm.sh -t [OPTS] Module
 Compile-time status from top100:
 generally: fail 0%
 5.6:       fail 5%   ExtUtils::Install Module::Build DateTime Devel::GlobalDestruction
-                     DateTime::Locale
+                     Template::Stash
 5.8.9:     fail 2%   ExtUtils::CBuilder MooseX::Types
 5.10       fail 0%  
 5.12:      fail 0%  
 5.14       fail 0%   
-5.15.3     fail 0%   
+5.15.3     fail 6%   Test::Harness File::Temp ExtUtils::CBuilder Path::Class
+                     B::Hooks::EndOfScope DateTime
 
 Run-time tests not yet fully done
 
@@ -142,8 +143,9 @@ Run-time tests not yet fully done
 -----------------------
 TODO for B::C
   tests 15,21,41-43: B destruction,46,50
+  Encode::Alias Regexp issue 71
   restricted hashes in 5.10.0
-  r magic
+  r-magic (e.g. Template::Stash)
   check t/testcore and testm.sh -t
   see google issues
 
@@ -155,7 +157,7 @@ DONE
 ----
 fixed with 1.35:
   improve package_pv detection for methods,
-  detect previously missing packages within the main 
+  detect previously missing packages within the main source file 
   run-time %ENV
 
 fixed with 1.32:

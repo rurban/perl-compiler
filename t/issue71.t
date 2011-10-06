@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=71
-# Encode::decode fails in multiple ways with B::REGEXP refs unattached to PMOPs
+# Encode::decode fails in multiple ways. 1 with B::REGEXP refs unattached to PMOPs
 use Test::More tests => 3;
 use strict;
 BEGIN {
@@ -8,7 +8,7 @@ BEGIN {
   require "test.pl";
 }
 
-# XXX TODO simplification of Encode::Alias. not yet: SvANY(REGEXP)=SvANY(CALLREGCOMP)
+# Simplification of Encode::Alias to test SvANY(REGEXP)=SvANY(CALLREGCOMP)
 # e.g. Encode::Alias define_alias( qr/^(.*)$/ => '"\L$1"' ) creates REGEXP refs without PMOP's.
 my $script = <<'EOF';
 package my;
@@ -28,7 +28,7 @@ package main;
 print "ok" if f(qr/^(.*)$/ => '"\L$1"');
 EOF
 
-use B::C; # still wrong test, that's why it passes
+use B::C;
 ctestok(1, "C", "ccode71i", $script,
 	$B::C::VERSION < 1.35 ? "SvANY(REGEXP)=SvANY(CALLREGCOMP)" : undef
        );
@@ -39,10 +39,14 @@ my $x = 'abc';
 print "ok" if 'abc' eq Encode::decode('UTF-8', $x);
 EOF
 
+# These 2 tests fail because of stale QR Regexp (see test 1), 
+# issue71 (const destruction) 
+# and issue76 (invalid cop_warnings)
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	$B::C::VERSION < 1.36 ? "B:C reg_temp_copy from invalid r->offs" : undef
+	$B::C::VERSION < 1.35 ? "B:C reg_temp_copy from invalid r->offs" 
+                              : "Encode::decode fails to leave_scope with const PAD PV 'Encode'"
        );
 
 use B::CC;

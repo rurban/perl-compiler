@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.35 r1152
+# B::C::VERSION = 1.35 r1157
 # perlversion = 5.008009
-# path = /usr/local/bin/perl5.8.9
-# platform = linux 64bit threaded
+# path = perl5.8.9
+# platform = darwin 32bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO 5.8
+pass ExtUtils::CBuilder #TODO < 5.14
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.35 - perl-5.008009
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   2 /   2 (100.0%)
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   2 /   1 (200.0%)
 # skip   0 / 100 (0.0% not installed)
