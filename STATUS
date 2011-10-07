@@ -143,11 +143,11 @@ Run-time tests not yet fully done
 -----------------------
 TODO for B::C
   tests 15,21,41-43: B destruction,46,50
-  Encode::Alias Regexp issue 71
+  Encode static const destruction issue 71
   restricted hashes in 5.10.0
-  r-magic (e.g. Template::Stash)
+  r-magic (e.g. Template::Stash 5.10.0 only)
   check t/testcore and testm.sh -t
-  see google issues
+  see google issues (71,59)
 
 Fix CC 
   several other issues detected (and mostly fixed) by Heinz Knutzen

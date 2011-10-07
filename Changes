@@ -4,8 +4,10 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.36	2011-10-xx rurban
-	* C: fixed representation of lexical warnings which was broken
+	* C: new B::WARNOBJ, fixed representation of lexical warnings which was broken
 	since 8e01d9a6  5.8.9/5.9.4
+	Move -fwarn-sv from -O2 to -O1
+	Move -fsave-data from -O3 to -O2
 
 1.35	2011-10-02 rurban
 	tested from 5.6.2 until 5.15.3

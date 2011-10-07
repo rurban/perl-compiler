@@ -10,7 +10,7 @@
 
 package B::C;
 
-our $VERSION = '1.35';
+our $VERSION = '1.36';
 my %debug;
 
 package B::C::Section;
@@ -338,10 +338,6 @@ sub walk_and_save_optree {
 # rather than looking up the name of every BASEOP in B::OP
 my $OP_THREADSV = opnumber('threadsv');
 my $OP_DBMOPEN = opnumber('dbmopen');
-#my $OP_PUSHMARK = opnumber('pushmark');
-#my $OP_CONST = opnumber('const');
-#my $OP_PADSV = opnumber('padsv');
-#my $OP_ENTERSUB = opnumber('entersub');
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
@@ -728,14 +724,6 @@ sub B::OP::save {
         cstring( $threadsv_names[ $op->targ ] ) )
     );
   }
-  #if ( $type == $OP_PUSHMARK ) {
-  #  $look_for_packagepv++;
-  #} elsif ( $type == $OP_ENTERSUB ) {
-  #  $look_for_packagepv = 0;
-  #} elsif ( $look_for_packagepv and $type == $OP_CONST or $type == $OP_PADSV ) {
-  #  $look_for_packagepv = 0;
-  #  $package_pv = $op->sv->PV;
-  #}
   if (ref($op) eq 'B::OP') { # check wrong BASEOPs
     # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
     #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
@@ -1101,15 +1089,11 @@ sub B::COP::save {
       : 'pWARN_STD';
   }
   else {
-    # LEXWARN_on: Original $warnings->save from 5.8 was wrong, 
+    # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong, 
     # DUP_WARNINGS copied length PVX bytes.
+    $warnings = bless $warnings, "B::WARNOBJ";
     $warn_sv = $warnings->save;
-    my $ivdformat = $Config{ivdformat};
-    $ivdformat =~ s/"//g; #" poor editor
-    # XXX make_temp_object in B.xs:make_warnings_object since 5.8.9 creates a
-    # wrong PVX value for the ptr. But the length is our value! Brave API. 
-    $init->add(sprintf("*(IV*)(SvPVX($warn_sv)) = %${ivdformat};", length($warnings->PVX)));
-    $warn_sv = "($warnsvcast)SvPVX($warn_sv)";
+    $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
   }
 
   # Trim the .pl extension, to print the executable name only.
@@ -1739,6 +1723,8 @@ sub B::PV::save {
   }
   my $flags = $sv->FLAGS;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
+  # XSLoader reuses this SV, must be dynamic
+  $B::C::pv_copy_on_grow = 0 if $sv->PVX =~ /::bootstrap$/;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
   my $refcnt = $sv->REFCNT;
@@ -1770,6 +1756,24 @@ sub B::PV::save {
   }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+}
+
+# pre vs. post 5.8.9/5.9.4 logic
+@B::WARNOBJ::ISA = qw(B::PV B::IV);
+sub B::WARNOBJ::save {
+  my ($sv) = @_;
+  my $sym = objsym($sv);
+  if (defined $sym) {
+    if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
+      @static_free = grep {!/$sym/} @static_free;
+    }
+    return $sym;
+  }
+  my $iv = $] >= 5.008009 ? length($sv->PVX) : $sv->IV;
+  my $pvsym = sprintf( "iv%d", $pv_index++ );
+  $decl->add( sprintf( "static const int %s = %d;", $pvsym, $iv ) );
+  return savesym($sv, $pvsym);
 }
 
 # post 5.11: When called from save_rv not from PMOP::save precomp
@@ -2118,7 +2122,7 @@ sub try_isa {
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
     next if $_ eq '$cvstashname';
-    warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $verbose;
+    warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_, 1); # force
       return 1;
@@ -2449,7 +2453,7 @@ sub B::CV::save {
   else {
     warn sprintf( "%s::%s not found\n", $cvstashname, $cvname) if $debug{sub};
     warn sprintf( "No definition for sub %s::%s (unable to autoload)\n",
-      $cvstashname, $cvname ) if $verbose;
+      $cvstashname, $cvname ) if $debug{cv};
     # XXX empty CV should not be saved
     # $svsect->remove( $sv_ix );
     # $xpvcvsect->remove( $xpvcv_ix );
@@ -2891,7 +2895,7 @@ sub B::GV::save {
 	  warn "GV::save_data $sym, $fullname ...\n" if $debug{gv};
 	  $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
 	} elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
-	  warn "Warning: __DATA__ handle $fullname not stored. Need -O3 or -fsave-data.\n";
+	  warn "Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.\n";
 	}
 	warn "GV::save GvIO(*$fullname)\n" if $debug{gv};
       }
@@ -3418,6 +3422,7 @@ sub output_all {
       print "#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))\n";
     }
   }
+  # print "#define MyPVX(sv) ".($] < 5.010 ? "SvPVX(sv)" : "((sv)->sv_u.svu_pv)")."\n";
   if ($] < 5.008008 ) {
     print <<'EOT';
 #ifndef SvSTASH_set
@@ -3852,7 +3857,8 @@ EOT
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
       $stashxsub =~ s/::/__/g;
       print "\tPUSHMARK(sp);\n";
-      printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
+      printf "\tXPUSHp(\"%s\", %d);\n", # "::bootstrap" gets appended, TODO
+	0 ? "strdup($stashname)" : $stashname, length($stashname);
       print "\tPUTBACK;\n";
       print "\tboot_$stashxsub(aTHX_ NULL);\n";
       print "\tSPAGAIN;\n";
@@ -3903,8 +3909,11 @@ EOT
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
         warn "dl_init $stashname\n" if $verbose;
         print "\tPUSHMARK(sp);\n";
-	# XXX -O1 needs XPUSHs with dynamic pv
-        printf "\tXPUSHp(\"%s\", %d);\n", $stashname, length($stashname);
+	# XXX -O1 or -O2 needs XPUSHs with dynamic pv
+	printf "\tXPUSHp(%s, %d);\n", # "::bootstrap" gets appended 
+	  # XXX hack: -O1 not, since -O2 but which opt exactly?
+	  $B::C::pv_copy_on_grow ? "strdup(\"$stashname\")" : "\"$stashname\"", 
+	    length($stashname);
         print "\tPUTBACK;\n";
         print "#ifdef USE_DYNAMIC_LOADING\n";
         warn "bootstrapping $stashname added to dl_init\n" if $verbose;
@@ -3913,6 +3922,7 @@ EOT
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
+	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
           #warn "$xsub{$stashname}\n" if $verbose;
           # i.e. PUSHBLOCK
@@ -4736,9 +4746,9 @@ sub compile {
   $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
-    1 => [qw(-fcog -fppaddr -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fwarn-sv -fro-inc)],
-    3 => [qw(-fsave-sig-hash -fsave-data -fno-destruct -fconst-strings)],
+    1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
+    2 => [qw(-fro-inc -fsave-data)],
+    3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
 OPTION:
@@ -5101,7 +5111,7 @@ Enabled with C<-O1>.
 
 Optimize the initialization of cop_warnings.
 
-Enabled with C<-O2>.
+Enabled with C<-O1>.
 
 =item B<-fro-inc>
 
@@ -5114,19 +5124,19 @@ the run-time will crash then.
 
 Enabled with C<-O2>.
 
-=item B<-fconst-strings>
-
-Declares readonly strings as const. Enables C<-fcog>.
-Note that readonly strings in eval'd string code will
-cause a run-time failure.
-
-Enabled with C<-O3>.
-
 =item B<-fsave-data>
 
 Save package::DATA filehandles ( only available with PerlIO ).
 Does not work yet on Perl 5.6, 5.12 and non-threaded 5.10, and is
 enabled automatically where it is known to work.
+
+Enabled with C<-O2>.
+
+=item B<-fconst-strings>
+
+Declares readonly strings as const. Enables C<-fcog>.
+Note that readonly strings in eval'd string code will
+cause a run-time failure.
 
 Enabled with C<-O3>.
 
