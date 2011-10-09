@@ -1091,7 +1091,7 @@ sub B::COP::save {
   else {
     # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong, 
     # DUP_WARNINGS copied length PVX bytes.
-    $warnings = bless $warnings, "B::WARNOBJ";
+    $warnings = bless $warnings, "B::LEXWARN";
     $warn_sv = $warnings->save;
     $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
   }
@@ -1758,19 +1758,14 @@ sub B::PV::save {
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
-# pre vs. post 5.8.9/5.9.4 logic
-@B::WARNOBJ::ISA = qw(B::PV B::IV);
-sub B::WARNOBJ::save {
+# pre vs. post 5.8.9/5.9.4 logic for lexical warnings
+@B::LEXWARN::ISA = qw(B::PV B::IV);
+sub B::LEXWARN::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
-  if (defined $sym) {
-    if ($in_endav) {
-      warn "in_endav: static_free without $sym\n" if $debug{av};
-      @static_free = grep {!/$sym/} @static_free;
-    }
-    return $sym;
-  }
+  return $sym if defined $sym;
   my $iv = $] >= 5.008009 ? length($sv->PVX) : $sv->IV;
+  if ($] < 5.009004 and $[ >= 5.009) { $iv = length($sv->PVX); }  
   my $pvsym = sprintf( "iv%d", $pv_index++ );
   $decl->add( sprintf( "static const int %s = %d;", $pvsym, $iv ) );
   return savesym($sv, $pvsym);
