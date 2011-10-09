@@ -1944,9 +1944,8 @@ sub B::PVMG::save_magic {
     # A: We only need to init it when we need a CV
     $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
     $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-    # $package_pv = $pkg->NAME; # undecided
-    # push_package($package_pv);  # useless code
-    push_package($pkg->NAME);  # correct code
+    # XXX
+    #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
