@@ -692,7 +692,7 @@ sub B::OP::_save_common {
        or $op->first->next->name eq 'padsv')      # $foo->bar() run-time lookup
      ) {
     my $pkgop = $op->first->next;
-    warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv} or $debug{pkg};
+    warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
     my $pv = svop_or_padop_pv($pkgop); # XXX need to store away the pkg pv. Failed since 5.13
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
@@ -4197,7 +4197,10 @@ sub mark_package {
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     # i.e. if force
-    if (exists $include_package{$package} and !$include_package{$package}) {
+    if (exists $include_package{$package} 
+	and !$include_package{$package} 
+	and $savINC{inc_packname($package)}) 
+    {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
       $include_package{$package} = 1;
