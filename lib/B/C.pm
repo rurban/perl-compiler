@@ -310,7 +310,8 @@ my (
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
   $svsect,    $resect,    $xpvsect,    $xpvavsect, $xpvhvsect,
   $xpvcvsect, $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $orangesect
+  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $orangesect,
+  $free
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -1093,7 +1094,10 @@ sub B::COP::save {
     # DUP_WARNINGS copied length PVX bytes.
     $warnings = bless $warnings, "B::LEXWARN";
     $warn_sv = $warnings->save;
+    my $ix = $copsect->index + 1;
     $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
+    $free->add( sprintf( "cop_list[%d].cop_warnings = NULL;", $ix ) );
+    #push @static_free, sprintf("cop_list[%d]", $ix);
   }
 
   # Trim the .pl extension, to print the executable name only.
@@ -3794,6 +3798,7 @@ EOT
 	  if $ITHREADS or !$MULTI;
       }
     }
+    $free->output( \*STDOUT, "%s\n" );
     for (0 .. $hek_index-1) {
       # XXX who stores this hek? GvNAME and GvFILE most likely
       my $hek = sprintf( "hek%d", $_ );
@@ -4690,6 +4695,7 @@ EOT
 sub init_sections {
   my @sections = (
     decl   => \$decl,
+    free   => \$free,
     sym    => \$symsect,
     hek    => \$heksect,
     binop  => \$binopsect,
