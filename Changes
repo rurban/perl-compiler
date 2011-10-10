@@ -6,6 +6,8 @@
 1.36	2011-10-xx rurban
 	* C: new B::LEXWARN, fixed representation of lexical warnings which was broken
 	  since 8e01d9a6  5.8.9/5.9.4 (issue 76)
+	added section free, use it for lexical cop_warnings (const int*)
+	  (TODO: static PV, HEK + COPs)
 	Move -fwarn-sv from -O2 to -O1
 	Move -fsave-data from -O3 to -O2
 

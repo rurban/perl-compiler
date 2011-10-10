@@ -247,7 +247,7 @@ B::OP::fake_ppaddr B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::sa
 B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::RV::save
 B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save );
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
-my (%symtable, %cvforward);
+my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
@@ -1762,6 +1762,19 @@ sub B::PV::save {
   return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
 }
 
+sub lexwarnsym {
+  my $iv = shift;
+  if ($lexwarnsym{$iv}) {
+    return $lexwarnsym{$iv};
+  } else {
+    warn "internal warning: lexwarn value $iv looks wrong\n" if $iv > 66000;
+    my $sym = sprintf( "iv%d", $pv_index++ );
+    $decl->add( sprintf( "static const STRLEN %s = %d;", $sym, $iv ) );
+    $lexwarnsym{$iv} = $sym;
+    return $sym;
+  }
+}
+
 # pre vs. post 5.8.9/5.9.4 logic for lexical warnings
 @B::LEXWARN::ISA = qw(B::PV B::IV);
 sub B::LEXWARN::save {
@@ -1769,10 +1782,9 @@ sub B::LEXWARN::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $iv = $] >= 5.008009 ? length($sv->PVX) : $sv->IV;
-  if ($] < 5.009004 and $[ >= 5.009) { $iv = length($sv->PVX); }  
-  my $pvsym = sprintf( "iv%d", $pv_index++ );
-  $decl->add( sprintf( "static const int %s = %d;", $pvsym, $iv ) );
-  return savesym($sv, $pvsym);
+  if ($] < 5.009004 and $[ >= 5.009) { $iv = length($sv->PVX); }
+  my $ivsym = lexwarnsym($iv); # look for shared const int's
+  return savesym($sv, $ivsym);
 }
 
 # post 5.11: When called from save_rv not from PMOP::save precomp
