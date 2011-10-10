@@ -123,6 +123,7 @@ t/issue51.t
 t/issue52.t
 t/issue54.t
 t/issue71.t
+t/issue76.t
 t/modules.pm
 t/modules.t
 t/mymodules
