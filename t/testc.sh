@@ -341,6 +341,12 @@ use Encode;
 my $x = "abc";
 print "ok" if "abc" eq Encode::decode("UTF-8", $x);'
 result[75]='ok'
+tests[76]='use warnings;
+{ no warnings q(void); # issue76 lexwarn
+  length "ok";
+  print "ok"
+};'
+result[76]='ok'
 
 # from here on we test CC specifics only
 

@@ -1388,7 +1388,7 @@ sub B::IV::save {
   if ($svflags & 0xff and !($svflags & (SVf_IOK|SVp_IOK))) { # Not nullified
     unless (($PERL510 and $svflags & 0x00010000) # PADSTALE - out of scope lexical is !IOK
 	    or (!$PERL510 and $svflags & 0x00000100)) { # PADBUSY
-      warn "warning: IV !IOK sv_list[$i]";
+      warn "internal warning: IV !IOK sv_list[$i]";
     }
   }
   if ($PERL514) {
