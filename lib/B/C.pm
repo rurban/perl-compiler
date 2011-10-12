@@ -1728,7 +1728,7 @@ sub B::PV::save {
   my $flags = $sv->FLAGS;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   # XSLoader reuses this SV, must be dynamic
-  $B::C::pv_copy_on_grow = 0 if $sv->PVX =~ /::bootstrap$/;
+  $B::C::pv_copy_on_grow = 0 if !($sv->FLAGS & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
   my $refcnt = $sv->REFCNT;
