@@ -1377,7 +1377,7 @@ sub B::UV::save {
 }
 
 sub B::IV::save {
-  my ($sv) = @_;
+  my ($sv, $name) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
   # Since 5.11 the RV is no special SV object anymore, just a IV (test 16)
@@ -1392,7 +1392,7 @@ sub B::IV::save {
   if ($svflags & 0xff and !($svflags & (SVf_IOK|SVp_IOK))) { # Not nullified
     unless (($PERL510 and $svflags & 0x00010000) # PADSTALE - out of scope lexical is !IOK
 	    or (!$PERL510 and $svflags & 0x00000100)) { # PADBUSY
-      warn "internal warning: IV !IOK sv_list[$i]";
+      warn "internal warning: IV !IOK $name sv_list[$i]\n";
     }
   }
   if ($PERL514) {
@@ -2239,6 +2239,7 @@ sub B::CV::save {
     #return if "$cvstashname\::$cvname" eq 'utf8::AUTOLOAD';
     return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname.'::'.$cvname};
   }
+  my $fullname = $cvstashname.'::'.$cvname;
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
@@ -2265,6 +2266,7 @@ sub B::CV::save {
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
     my $stashname = $egv->STASH->NAME;
+    $fullname = $stashname.'::'.$cvname;
     if ( $cvname eq "bootstrap" and !$xsub{$stashname} ) {
       my $file = $gv->FILE;
       $decl->add("/* bootstrap $file */");
@@ -2305,7 +2307,7 @@ sub B::CV::save {
       # INIT is removed from the symbol table, so this call must come
       # from PL_initav->save. Re-bootstrapping  will push INIT back in,
       # so nullop should be sent.
-      warn sprintf( "%s::%s\n", $stashname, $cvname) if $debug{sub};
+      warn $fullname."\n" if $debug{sub};
       return qq/NULL/;
     }
     else {
@@ -2317,15 +2319,15 @@ sub B::CV::save {
           qw(IO::File IO::Handle IO::Socket
           IO::Seekable IO::Poll);
     }
-    warn sprintf( "%s::%s\n", $stashname, $cvname) if $debug{sub};
+    warn $fullname."\n" if $debug{sub};
     unless ( in_static_core($stashname, $cvname) ) {
       no strict 'refs';
-      warn sprintf( "stub for XSUB $stashname\:\:$cvname CV 0x%x\n", $$cv )
+      warn sprintf( "stub for XSUB $fullname CV 0x%x\n", $$cv )
     	if $debug{cv};
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       #mark_package($stashname); # not needed
-      return qq/get_cv("$stashname\::$cvname", TRUE)/;
+      return qq/get_cv("$fullname", TRUE)/;
     } else {
       my $xsstash = $stashname;
       $xsstash =~ s/::/_/g;
@@ -2357,12 +2359,12 @@ sub B::CV::save {
 	$B::C::DynaLoader_warn++;
       }
       $decl->add("XS($xs);");
-      return qq/newXS("$stashname\:\:$cvname", $xs, (char*)xsfile)/;
+      return qq/newXS("$fullname", $xs, (char*)xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
     no strict 'refs';
-    warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
+    warn $fullname."\n" if $debug{sub};
     return svref_2object( \&Dummy_initxs )->save;
   }
 
@@ -2381,7 +2383,7 @@ sub B::CV::save {
     $sym = savesym( $cv, "&sv_list[$sv_ix]" );
   }
 
-  warn sprintf( "saving $cvstashname\:\:$cvname CV 0x%x as $sym\n", $$cv )
+  warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   # $package_pv = $cvstashname;
   push_package($package_pv);
@@ -2424,6 +2426,7 @@ sub B::CV::save {
     if ($$gv) {
       my $stashname = $gv->STASH->NAME;
       my $gvname    = $gv->NAME;
+      $fullname = $stashname.'::'.$gvname;
       if ( $gvname ne "__ANON__" ) {
         $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
         $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
@@ -2451,19 +2454,19 @@ sub B::CV::save {
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
       # XXX avlen 2
-      $padlistsym = $padlist->save;
+      $padlistsym = $padlist->save($fullname.' :pad');
       warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
 		    $padlistsym, $$padlist, $$cv )
         if $debug{cv};
       # do not record a forward for the pad only
       $init->add( "CvPADLIST($sym) = $padlistsym;" );
     }
-    warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
+    warn $fullname."\n" if $debug{sub};
   }
   else {
-    warn sprintf( "%s::%s not found\n", $cvstashname, $cvname) if $debug{sub};
-    warn sprintf( "No definition for sub %s::%s (unable to autoload)\n",
-      $cvstashname, $cvname ) if $debug{cv};
+    warn $fullname." not found\n" if $debug{sub};
+    warn "No definition for sub $fullname (unable to autoload)\n"
+      if $debug{cv};
     # XXX empty CV should not be saved
     # $svsect->remove( $sv_ix );
     # $xpvcvsect->remove( $xpvcv_ix );
@@ -2634,7 +2637,7 @@ sub B::CV::save {
   }
   my $stash = $cv->STASH;
   if ($$stash and ref($stash)) {
-    $stash->save;
+    $stash->save();
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, (HV*)s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
@@ -2798,7 +2801,7 @@ sub B::GV::save {
     my $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save \$".$sym."\n" if $debug{gv};
-      $gvsv->save; #mostly NULL. $gvsv->isa("B::NULL");
+      $gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
       $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       warn "GV::save \$$fullname\n" if $debug{gv};
     }
@@ -2809,7 +2812,7 @@ sub B::GV::save {
         warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
         warn "GV::save \@$fullname\n" if $debug{gv};
-        $gvav->save;
+        $gvav->save($fullname);
         $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
       }
     }
@@ -2818,7 +2821,7 @@ sub B::GV::save {
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
-	$gvhv->save;
+	$gvhv->save($fullname);
 	$init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
       }
     }
@@ -2889,14 +2892,14 @@ sub B::GV::save {
       my $gvform = $gv->FORM;
       if ( $$gvform && $savefields & Save_FORM ) {
 	warn "GV::save gvform->save ...\n" if $debug{gv};
-	$gvform->save;
+	$gvform->save($fullname);
 	$init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
 	warn "GV::save GvFORM(*$fullname)\n" if $debug{gv};
       }
       my $gvio = $gv->IO;
       if ( $$gvio && $savefields & Save_IO ) {
 	warn "GV::save gvio->save $fullname...\n" if $debug{gv};
-	$gvio->save;
+	$gvio->save($fullname);
 	$init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	if ( $fullname =~ m/::DATA$/ && $B::C::save_data_fh ) { # -O3 or 5.8
 	  no strict 'refs';
@@ -2917,7 +2920,7 @@ sub B::GV::save {
 }
 
 sub B::AV::save {
-  my ($av) = @_;
+  my ($av, $name) = @_;
   my $sym = objsym($av);
   return $sym if defined $sym;
 
@@ -2994,14 +2997,12 @@ sub B::AV::save {
     # you want to keep this out of the no_split/split
     # map("\t*svp++ = (SV*)$_;", @names),
     my $acc = '';
-    #foreach my $i ( 0 .. $#array ) {
-    #  $acc .= "\t*svp++ = (SV*)" . $array[$i]->save . ";\n\t";
-    #}
     # Init optimization by Nick Koston
     # The idea is to create loops so there is less C code. In the real world this seems
     # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
     my $count;
-    my @values = map { $_->save() || () } @array;
+    my @values = map { $_->save($name."[".$count++."]") || () } @array;
+    $count = 0;
     for (my $i=0;$i<=$#array;$i++) {
       if ( $use_svpop_speedup
            && defined $values[$i]
@@ -3123,7 +3124,7 @@ sub B::AV::save {
 }
 
 sub B::HV::save {
-  my ($hv) = @_;
+  my ($hv, $name) = @_;
   my $sym = objsym($hv);
   return $sym if defined $sym;
   my $name = $hv->NAME;
@@ -3205,7 +3206,7 @@ sub B::HV::save {
           #and $sv->RV->isa('B::CV')
           and defined objsym($sv)
           and $debug{hv};
-      $contents[$i] = $sv->save;
+      $contents[$i] = $sv->save($name.'{'.$i.'}');
     }
     $init->no_split;
     $init->add( "{", "\tHV *hv = $sym;" );
@@ -4203,7 +4204,7 @@ sub B::GV::savecv {
     mark_package('Config', 1) if !$include_package{Config};
   }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
-  $gv->save;
+  $gv->save($fullname);
 }
 
 sub mark_package {
@@ -4512,17 +4513,17 @@ sub save_context {
   # Record comppad sv's names, may not be static
   local $B::C::pv_copy_on_grow = 0;
   #my $svi = $svsect->index;
-  my $curpad_nam      = ( comppadlist->ARRAY )[0]->save;
+  my $curpad_nam      = ( comppadlist->ARRAY )[0]->save('curpad_name');
   # XXX from $svi to $svsect->index we have new sv's
   #$B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "curpad syms:\n" if $verbose;
   $init->add("/* curpad syms */");
-  my $curpad_sym      = ( comppadlist->ARRAY )[1]->save;
+  my $curpad_sym      = ( comppadlist->ARRAY )[1]->save('curpad_syms');
   warn "\%INC and \@INC:\n" if $verbose;
   $init->add('/* %INC */');
-  my $inc_hv          = svref_2object( \%INC )->save;
+  my $inc_hv          = svref_2object( \%INC )->save('INC');
   $init->add('/* @INC */');
-  my $inc_av          = svref_2object( \@INC )->save;
+  my $inc_av          = svref_2object( \@INC )->save('INC');
   my $amagic_generate = amagic_generation;
   warn "amagic_generation = $amagic_generate\n" if $verbose;
   $init->add(
