@@ -11,9 +11,13 @@
 	  (TODO: static PV, HEK + COPs)
 	workaround for utf8::SWASHNEW adjusted to 5.15
 	PAD* sv flags changed in 5.15.3
-	better error messages, pass and print symbolname
+	XSLoader API changed: with 5.15 need dynamic HEK for calling COP (TODO)
+	Set SvLEN=0 for static PVs to skip sv_clear
+	Enable -fcog (copy on grow) for strings globally (i.e. >= 5.10)
 	Move -fwarn-sv from -O2 to -O1
 	Move -fsave-data from -O3 to -O2
+	Compile *main::DATA IO handle automatically (__DATA__), just package __DATA__
+	  handles need -fsave-data
 	* C.xs: added -Dts support to runloop for internal compiler problems
 
 1.35	2011-10-02 rurban

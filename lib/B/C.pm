@@ -450,7 +450,7 @@ sub savere {
   my $sym;
   my $pv    = $re;
   my $len   = length $pv;
-  my $pvmax = length( pack "a*", $pv ) + 1;
+  my $pvmax = 0; # length( pack "a*", $pv ) + 1;
   if ($PERL514) {
     $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
@@ -568,7 +568,6 @@ sub save_pv_or_rv {
       ( $savesym, $pvmax ) = ( 'ptr_undef', 0 );
     }
   }
-
   return ( $savesym, $pvmax, $len, $pv );
 }
 
@@ -1493,6 +1492,7 @@ sub B::PVLV::save {
   my ( $pvsym, $pvmax );
   ( $pvsym, $pvmax ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
     ? constpv($pv) : savepv($pv);
+  $pvmax = 0 if $B::C::pv_copy_on_grow;
   $pvsym = "(char*)$pvsym";# if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL514) {
@@ -1594,6 +1594,7 @@ sub B::PVNV::save {
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
+  $pvmax = 0 if $B::C::pv_copy_on_grow;
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
   my $uvuformat = $Config{uvuformat};
@@ -1735,6 +1736,7 @@ sub B::PV::save {
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3"
+  $pvmax = 0 if $B::C::pv_copy_on_grow;
   if ($PERL510) {
     # XXX If READONLY and FAKE use newSVpvn_share instead
     #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
@@ -1796,7 +1798,7 @@ sub B::REGEXP::save {
   my $pv = $sv->PV;
   my $len = length(pack("a*", $pv));
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
-  $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $len, $len+1 ) );
+  $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $len, 0 ) );
   $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
   		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, cstring($pv)));
   my $ix = $svsect->index;
@@ -1833,6 +1835,7 @@ sub B::PVMG::save {
   # local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
+  $pvmax = 0 if $B::C::pv_copy_on_grow;
   #warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
@@ -2387,7 +2390,7 @@ sub B::CV::save {
   warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   # $package_pv = $cvstashname;
-  push_package($package_pv);
+  # push_package($package_pv);
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
     require "utf8_heavy.pl";
     # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
@@ -2903,7 +2906,9 @@ sub B::GV::save {
 	warn "GV::save gvio->save $fullname...\n" if $debug{gv};
 	$gvio->save($fullname);
 	$init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
-	if ( $fullname =~ m/::DATA$/ && $B::C::save_data_fh ) { # -O3 or 5.8
+	if ( $fullname =~ m/::DATA$/ &&
+	     ( $fullname eq 'main::DATA' or $B::C::save_data_fh) ) # -O2 or 5.8
+	{
 	  no strict 'refs';
 	  my $fh = *{$fullname}{IO};
 	  use strict 'refs';
@@ -3940,6 +3945,8 @@ EOT
 	  ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
           #warn "$xsub{$stashname}\n" if $verbose;
           # i.e. PUSHBLOCK
+	  #printf qq/\tCopSTASH_set(cxstack[0].blk_oldcop, "%s");\n/, $stashname;
+	  printf qq/\tCopSTASHPV_set(cxstack[0].blk_oldcop, "%s");\n/, $stashname;
 	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop, "%s");\n/, $stashfile if $stashfile;
           print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
         }
@@ -4913,9 +4920,9 @@ OPTION:
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
   if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
-    warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
+    #warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
     # XXX Still trying custom destructor.
-    undef $B::C::pv_copy_on_grow;
+    #undef $B::C::pv_copy_on_grow;
   }
 
   init_sections();
