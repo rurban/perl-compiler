@@ -3126,7 +3126,7 @@ sub B::AV::save {
 }
 
 sub B::HV::save {
-  my ($hv, $name) = @_;
+  my ($hv, $fullname) = @_;
   my $sym = objsym($hv);
   return $sym if defined $sym;
   my $name = $hv->NAME;
@@ -3208,7 +3208,7 @@ sub B::HV::save {
           #and $sv->RV->isa('B::CV')
           and defined objsym($sv)
           and $debug{hv};
-      $contents[$i] = $sv->save($name.'{'.$i.'}');
+      $contents[$i] = $sv->save($fullname.'{'.$i.'}');
     }
     $init->no_split;
     $init->add( "{", "\tHV *hv = $sym;" );
