@@ -1391,8 +1391,9 @@ sub B::IV::save {
   my $i = $svsect->index + 1;
   if ($svflags & 0xff and !($svflags & (SVf_IOK|SVp_IOK))) { # Not nullified
     unless (($PERL510 and $svflags & 0x00010000) # PADSTALE - out of scope lexical is !IOK
-	    or (!$PERL510 and $svflags & 0x00000100)) { # PADBUSY
-      warn "internal warning: IV !IOK $name sv_list[$i]\n";
+	    or (!$PERL510 and $svflags & 0x00000100) # PADBUSY
+	    or ($] > 5.015002 and $svflags & 0x60002)) { # 5.15.3 changed PAD bits
+      warn sprintf("Internal warning: IV !IOK $name sv_list[$i] 0x%x\n",$svflags);
     }
   }
   if ($PERL514) {
@@ -1727,7 +1728,7 @@ sub B::PV::save {
   }
   my $flags = $sv->FLAGS;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
-  # XSLoader reuses this SV, must be dynamic
+  # XSLoader reuses this SV, so it must be dynamic
   $B::C::pv_copy_on_grow = 0 if !($sv->FLAGS & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
@@ -2387,13 +2388,14 @@ sub B::CV::save {
     if $debug{cv};
   # $package_pv = $cvstashname;
   push_package($package_pv);
+  if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
+    require "utf8_heavy.pl";
+    # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
+    # already polluted. See issue 61.
+    svref_2object( \&{"utf8\::SWASHNEW"} )->save;
+  }
   if ( !$$root && !$cvxsub ) {
-    if ($cvstashname eq 'utf8' and $cvname eq 'SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
-      require "utf8_heavy.pl";
-      # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
-      # already polluted. See issue 61.
-      svref_2object( \&{"utf8\::SWASHNEW"} )->save;
-    } elsif ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
+    if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
       if (ref $auto eq 'B::CV') { # explicit goto
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;

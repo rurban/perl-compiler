@@ -4,12 +4,17 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.36	2011-10-xx rurban
+	lexical warnings and more 5.15 fixes
 	* C: new B::LEXWARN, fixed representation of lexical warnings which was broken
 	  since 8e01d9a6  5.8.9/5.9.4 (issue 76)
-	added section free, use it for lexical cop_warnings (const int*)
+	added section free, use it for lexical cop_warnings (const STRLEN*)
 	  (TODO: static PV, HEK + COPs)
+	workaround for utf8::SWASHNEW adjusted to 5.15
+	PAD* sv flags changed in 5.15.3
+	better error messages, pass and print symbolname
 	Move -fwarn-sv from -O2 to -O1
 	Move -fsave-data from -O3 to -O2
+	* C.xs: added -Dts support to runloop for internal compiler problems
 
 1.35	2011-10-02 rurban
 	tested from 5.6.2 until 5.15.3
