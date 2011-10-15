@@ -4995,9 +4995,9 @@ OPTION:
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
   if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
-    #warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
+    warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
     # XXX Still trying custom destructor.
-    #undef $B::C::pv_copy_on_grow;
+    undef $B::C::pv_copy_on_grow;
   }
 
   init_sections();
