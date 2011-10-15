@@ -306,8 +306,8 @@ BEGIN {
 sub XSLoader::load_file {
   package DynaLoader;
   use Config;
-  my $module = shift;
-  my $modlibname = shift;
+  my $module = shift or die "missing module name";
+  my $modlibname = shift or die "missing module filepath";
 #print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n";
   push @_, $module;
   # works with static linking too
@@ -318,10 +318,10 @@ sub XSLoader::load_file {
   my $modfname = $modparts[-1];
   my $modpname = join('/',@modparts);
   my $c = @modparts;
-  my $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
+  $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
   my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config->{dlext};
 
-  # skip the .bs "bullshit" part
+  # skip the .bs "bullshit" part, needed for some old solaris ages ago
 
   goto \&DynaLoader::bootstrap_inherit if not -f $file;
   my $bootname = "boot_$module";
