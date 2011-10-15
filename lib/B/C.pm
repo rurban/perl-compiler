@@ -303,6 +303,64 @@ BEGIN {
   @threadsv_names = threadsv_names();
 }
 
+sub XSLoader::load_file {
+  package DynaLoader;
+  use Config;
+  my $module = shift;
+  my $modlibname = shift;
+#print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n";
+  push @_, $module;
+  # works with static linking too
+  my $boots = "$module\::bootstrap";
+  goto &$boots if defined &$boots;
+
+  my @modparts = split(/::/,$module);
+  my $modfname = $modparts[-1];
+  my $modpname = join('/',@modparts);
+  my $c = @modparts;
+  my $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
+  my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config->{dlext};
+
+  # skip the .bs "bullshit" part
+
+  goto \&DynaLoader::bootstrap_inherit if not -f $file;
+  my $bootname = "boot_$module";
+  $bootname =~ s/\W/_/g;
+  @DynaLoader::dl_require_symbols = ($bootname);
+
+  my $boot_symbol_ref;
+  if ($boot_symbol_ref = dl_find_symbol(0, $bootname)) {
+    goto boot; #extension library has already been loaded, e.g. darwin
+  }
+  # Many dynamic extension loading problems will appear to come from
+  # this section of code: XYZ failed at line 123 of DynaLoader.pm.
+  # Often these errors are actually occurring in the initialisation
+  # C code of the extension XS file. Perl reports the error as being
+  # in this perl code simply because this was the last perl code
+  # it executed.
+
+  my $libref = dl_load_file($file, 0) or do { 
+    die("Can't load '$file' for module $module: " . dl_error());
+  };
+  push(@DynaLoader::dl_librefs,$libref);  # record loaded object
+
+  my @unresolved = dl_undef_symbols();
+  if (@unresolved) {
+    die("Undefined symbols present after loading $file: @unresolved\n");
+  }
+
+  $boot_symbol_ref = dl_find_symbol($libref, $bootname) or do {
+    die("Can't find '$bootname' symbol in $file\n");
+  };
+  push(@DynaLoader::dl_modules, $module); # record loaded module
+
+ boot:
+  my $xs = dl_install_xsub($boots, $boot_symbol_ref, $file);
+  # See comment block above
+  push(@DynaLoader::dl_shared_objects, $file); # record files loaded
+  return &$xs(@_);
+}
+
 # Code sections
 my (
   $init,      $decl,      $symsect,    $binopsect, $condopsect,
@@ -2002,7 +2060,7 @@ sub B::PVMG::save_magic {
     }
 
     if ( $len == HEf_SVKEY ) {
-      #The pointer is an SV*
+      # The pointer is an SV*
       $ptrsv = svref_2object($ptr)->save;
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(
@@ -2455,7 +2513,7 @@ sub B::CV::save {
     $startfield = "0" unless $startfield;
     if ($$padlist) {
       # readonly comppad names and symbols
-      local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+      #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
       # XXX avlen 2
@@ -3922,33 +3980,37 @@ EOT
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
     print "\t++cxstack_ix; cxstack[cxstack_ix].blk_oldcop = PL_curcop;\n" if $xs;
+    print "\t/* assert(cxstack_ix == 0); */\n" if $xs;
     print "\tSAVETMPS;\n";
-    print "\ttarg = sv_newmortal();\n";
+    print "\ttarg = sv_newmortal();\n" if $] < 5.008008;
     foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
         warn "dl_init $stashname\n" if $verbose;
         print "\tPUSHMARK(sp);\n";
 	# XXX -O1 or -O2 needs XPUSHs with dynamic pv
-	printf "\tXPUSHp(%s, %d);\n", # "::bootstrap" gets appended 
-	  # XXX hack: -O1 not, since -O2 but which opt exactly?
-	  $B::C::pv_copy_on_grow ? "strdup(\"$stashname\")" : "\"$stashname\"", 
-	    length($stashname);
-        print "\tPUTBACK;\n";
-        print "#ifdef USE_DYNAMIC_LOADING\n";
-        warn "bootstrapping $stashname added to dl_init\n" if $verbose;
-        my $stashfile;
+	printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
+	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
         if ( $xsub{$stashname} eq 'Dynamic' ) {
+	  print "\tPUTBACK;\n";
+	  print "#ifdef USE_DYNAMIC_LOADING\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
+	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
+	  if ($] >= 5.015003) {
+	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
+	  }
+	  print "\tPUTBACK;\n";
+	  print "#ifdef USE_DYNAMIC_LOADING\n";
+	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
-	  ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
-          #warn "$xsub{$stashname}\n" if $verbose;
-          # i.e. PUSHBLOCK
-	  #printf qq/\tCopSTASH_set(cxstack[0].blk_oldcop, "%s");\n/, $stashname;
-	  printf qq/\tCopSTASHPV_set(cxstack[0].blk_oldcop, "%s");\n/, $stashname;
-	  printf qq/\tCopFILE_set(cxstack[0].blk_oldcop, "%s");\n/, $stashfile if $stashfile;
-          print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
+	  if ($] >= 5.015003) {
+	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
+	  } else {
+	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/, 
+	      $stashfile if $stashfile;
+	    print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
+	  }
         }
         if ($staticxs) {
           my ($laststash) = $stashname =~ /::([^:]+)$/;
@@ -4503,10 +4565,15 @@ sub save_unused_subs {
   }
   # XSLoader was used, force saving of XSLoader::load
   if ($use_xsloader) {
-    $init->add("/* force saving of XSLoader::load */");
-    eval { XSLoader::load; };
-    svref_2object( \&XSLoader::load )->save;
-    add_hashINC("XSLoader");
+    if ($] < 5.015003) {
+      $init->add("/* force saving of XSLoader::load */");
+      eval { XSLoader::load; };
+      svref_2object( \&XSLoader::load )->save;
+    } else {
+      $init->add("/* custom XSLoader::load_file */");
+      svref_2object( \&XSLoader::load_file )->save;
+    }
+    add_hashINC("XSLoader") if $] < 5.015003;
     add_hashINC("DynaLoader");
     # mark_package("XSLoader", 1);
     $use_xsloader = 0;
@@ -4524,15 +4591,19 @@ sub save_context {
   #my $svi = $svsect->index;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save('curpad_name');
   # XXX from $svi to $svsect->index we have new sv's
-  #$B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
   warn "curpad syms:\n" if $verbose;
   $init->add("/* curpad syms */");
   my $curpad_sym      = ( comppadlist->ARRAY )[1]->save('curpad_syms');
-  warn "\%INC and \@INC:\n" if $verbose;
-  $init->add('/* %INC */');
-  my $inc_hv          = svref_2object( \%INC )->save('INC');
-  $init->add('/* @INC */');
-  my $inc_av          = svref_2object( \@INC )->save('INC');
+  my ($inc_hv, $inc_av);
+  {
+    local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    local $B::C::const_strings = 1 if $B::C::ro_inc;
+    warn "\%INC and \@INC:\n" if $verbose;
+    $init->add('/* %INC */');
+    $inc_hv          = svref_2object( \%INC )->save('INC');
+    $init->add('/* @INC */');
+    $inc_av          = svref_2object( \@INC )->save('INC');
+  }
   my $amagic_generate = amagic_generation;
   warn "amagic_generation = $amagic_generate\n" if $verbose;
   $init->add(
@@ -4653,9 +4724,13 @@ sub save_main_rest {
   # If XSLoader is used later (e.g. in INIT or END block)
   if ($use_xsloader) {
     $init->add("/* force saving of XSLoader::load */");
-    eval { XSLoader::load; };
-    svref_2object( \&XSLoader::load )->save;
-    add_hashINC("XSLoader");
+    if ($] < 5.015003) {
+      eval { XSLoader::load; };
+      svref_2object( \&XSLoader::load )->save;
+    } else {
+      svref_2object( \&XSLoader::load_file )->save;
+    }
+    add_hashINC("XSLoader") if $] < 5.015003;
     add_hashINC("DynaLoader");
     $use_xsloader = 0;
   }
