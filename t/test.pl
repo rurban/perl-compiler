@@ -763,7 +763,7 @@ sub todo_tests_default {
         # push @todo, (39)   if $] > 5.007 and $] < 5.009;
         # fixed with 1.30
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
-	push @todo, (13,29)    if $] >= 5.015002 and $what =~ /c_o[34]/;
+	push @todo, (13,29) if $] > 5.009 and $what =~ /c_o[34]/;
         push @todo, (29)    if $] > 5.009 and $] < 5.012;
         push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
         # push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.014;
