@@ -20,6 +20,8 @@
 	Move -fsave-data from -O3 to -O2
 	Compile *main::DATA IO handle automatically (__DATA__), just package __DATA__
 	  handles need -fsave-data
+	Die with 5.8.4/5.8.5 threaded with split->pushre on invalid
+	  pmreplroot. This is a core B::walkoptree bug and can not be easily fixed.
 	* C.xs: added -Dts support to runloop to check internal compiler problems
 
 1.35	2011-10-02 rurban

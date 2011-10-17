@@ -303,12 +303,14 @@ BEGIN {
   @threadsv_names = threadsv_names();
 }
 
+# 5.15.3 workaround [perl #101336]
 sub XSLoader::load_file {
-  package DynaLoader;
+  #package DynaLoader;
   use Config;
   my $module = shift or die "missing module name";
   my $modlibname = shift or die "missing module filepath";
 #print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n";
+
   push @_, $module;
   # works with static linking too
   my $boots = "$module\::bootstrap";
@@ -329,7 +331,7 @@ sub XSLoader::load_file {
   @DynaLoader::dl_require_symbols = ($bootname);
 
   my $boot_symbol_ref;
-  if ($boot_symbol_ref = dl_find_symbol(0, $bootname)) {
+  if ($boot_symbol_ref = DynaLoader::dl_find_symbol(0, $bootname)) {
     goto boot; #extension library has already been loaded, e.g. darwin
   }
   # Many dynamic extension loading problems will appear to come from
@@ -339,23 +341,23 @@ sub XSLoader::load_file {
   # in this perl code simply because this was the last perl code
   # it executed.
 
-  my $libref = dl_load_file($file, 0) or do { 
-    die("Can't load '$file' for module $module: " . dl_error());
+  my $libref = DynaLoader::dl_load_file($file, 0) or do { 
+    die("Can't load '$file' for module $module: " . DynaLoader::dl_error());
   };
   push(@DynaLoader::dl_librefs,$libref);  # record loaded object
 
-  my @unresolved = dl_undef_symbols();
+  my @unresolved = DynaLoader::dl_undef_symbols();
   if (@unresolved) {
     die("Undefined symbols present after loading $file: @unresolved\n");
   }
 
-  $boot_symbol_ref = dl_find_symbol($libref, $bootname) or do {
+  $boot_symbol_ref = DynaLoader::dl_find_symbol($libref, $bootname) or do {
     die("Can't find '$bootname' symbol in $file\n");
   };
   push(@DynaLoader::dl_modules, $module); # record loaded module
 
  boot:
-  my $xs = dl_install_xsub($boots, $boot_symbol_ref, $file);
+  my $xs = DynaLoader::dl_install_xsub($boots, $boot_symbol_ref, $file);
   # See comment block above
   push(@DynaLoader::dl_shared_objects, $file); # record files loaded
   return &$xs(@_);
@@ -3321,6 +3323,7 @@ sub B::IO::save_data {
   $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
   $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
   #}
+  mark_package("IO::File", 1);
 }
 
 sub B::IO::save {
@@ -4013,7 +4016,14 @@ EOT
 	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
+	  # 5.15.3 workaround for [perl #101336]
 	  if ($] >= 5.015003) {
+	    no strict 'refs'; 
+	    unless (grep /^DynaLoader$/, @{$stashname."::ISA"}) {
+	      push @{$stashname."::ISA"}, 'DynaLoader';
+	      B::svref_2object( \@{$stashname."::ISA"} ) ->save;
+	    }
+	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
 	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
 	  } else {
 	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/, 
@@ -4581,6 +4591,7 @@ sub save_unused_subs {
     } else {
       $init->add("/* custom XSLoader::load_file */");
       svref_2object( \&XSLoader::load_file )->save;
+      svref_2object( \&DynaLoader::dl_load_flags )->save; # not saved as XSUB constant?
     }
     add_hashINC("XSLoader") if $] < 5.015003;
     add_hashINC("DynaLoader");
