@@ -3978,6 +3978,7 @@ EOT
       @dl_modules = grep { $_ ne 'B' } @dl_modules;
     }
   }
+  @DynaLoader::dl_modules = @dl_modules;
   foreach my $stashname (@dl_modules) {
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
@@ -4060,7 +4061,12 @@ EOT
         #print "\tPUTBACK;\n";
       } else {
         warn "no dl_init for $stashname, ".
-          (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n") if $verbose;
+          (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n") 
+	    if $verbose;
+	# XXX Too late. This might fool run-time DynaLoading.
+	# We really should remove this via init from @DynaLoader::dl_modules
+	@DynaLoader::dl_modules = grep { $_ ne $stashname } @DynaLoader::dl_modules;
+
       }
     }
     print "\tFREETMPS;\n";

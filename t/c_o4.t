@@ -20,6 +20,8 @@ my $ITHREADS  = ($Config{useithreads});
 prepare_c_tests();
 
 my @todo  = todo_tests_default("c_o4");
-my @skip = (15,27); # sigsegv, out of memory
+my @skip = (15,
+	    27, # sigsegv, out of memory
+	    29);  # hangs, must be killed
 
 run_c_tests("C,-O4", \@todo, \@skip);

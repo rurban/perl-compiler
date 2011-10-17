@@ -44,7 +44,7 @@ SKIP: {
 
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
 TODO: { #3
-  local $TODO = "B::CC issue 24 dbm <5.10" if $] < 5.010 or $] >= 5.015;
+  local $TODO = "B::CC issue 24 dbm <5.10" if $] < 5.010;
   is($result, $expected, "CC dbm fixed with r881, XSLoader with 1.32");
 }
 

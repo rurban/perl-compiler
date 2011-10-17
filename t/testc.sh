@@ -447,7 +447,7 @@ do
   fi
 done
 
-test "$(perl -V:gccversion)" = "gccversion='';" || CCMD="$CCMD -g" #-g3
+test "$(perl -V:gccversion)" = "gccversion='';" || CCMD="$CCMD -g3"
 if [ -z $OPTIM ]; then OPTIM=-1; fi # all
 
 if [ -z "$QUIET" ]; then

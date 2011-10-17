@@ -269,7 +269,6 @@ sub is_todo {
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
   if ($] >= 5.015002) { foreach(qw(
-   DateTime
    File::Temp
    Test::Harness
   )) { return '>= 5.15.2' if $_ eq $module; }}
