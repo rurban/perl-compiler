@@ -744,7 +744,7 @@ sub todo_tests_default {
     #push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
     #push @todo, (29)   if $] >= 5.013006;
     #push @todo, (15);
-    push @todo, (7)   if $] eq '5.008005';
+    push @todo, (7)   if $] eq '5.008005' and $ITHREADS;
     # 5.15 empty HV fixed with r1124
     #push @todo, (3,4,36) if $] >= 5.015; # Assert array: Perl_hfree_next_entry hv.c:1716
     push @todo, (16,39,44,45) if $] >= 5.015002 and !$ENV{DL_NOWARN};  # DynaLoader 5.15.2 issue
@@ -789,12 +789,14 @@ sub todo_tests_default {
 	push @todo, (3,16)  if $] eq '5.008005';
         push @todo, (44)    if $ITHREADS or $] < 5.012;
         #push @todo, (44)   if !$ITHREADS and $] >= 5.012;
+	push @todo, (7)     if $] > 5.008 and $] < 5.008008; # only know 5.8.4 and 5.8.5
         push @todo, (105)   if $] > 5.008005 and $] < 5.010;
         push @todo, (10,16) if $what eq 'cc_o2';
         push @todo, (27)    if $] < 5.007 and $what eq 'cc_o2';
         push @todo, (45)    if $] < 5.007;
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
         push @todo, (11,45,103,105) if $] > 5.007 and $] < 5.009;
+	push @todo, (3)     if $] > 5.008 and $] < 5.008005 and $what =~ /^cc_o[12]/; # only tested 5.8.4 and .5
         push @todo, (29)    if $] < 5.008006 or $] > 5.013;
         #push @todo, (11,27) if $] < 5.009;
         push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;

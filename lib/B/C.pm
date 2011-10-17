@@ -1249,7 +1249,12 @@ sub B::PMOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  my $replroot  = $op->pmreplroot;
+  # 5.8.5-thr crashes here (7) at pushre
+  if ($] < 5.008008 and $ITHREADS and $$op < 256) { # B bug. split->first->pmreplroot = 0x1
+    die "Internal B::walkoptree error: invalid PMOP for pushre\n";
+    return;
+  }
+  my $replroot  = $op->pmreplroot; 
   my $replstart = $op->pmreplstart;
   my $replrootfield;
   my $replstartfield = sprintf( "s\\_%x", $$replstart );
@@ -1259,6 +1264,7 @@ sub B::PMOP::save {
   # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
   $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
   if ( $ITHREADS && $op->name eq "pushre" ) {
+    warn "PMOP::save saving a pp_pushre as int ${replroot}\n" if $debug{gv};
     $replrootfield = "INT2PTR(OP*,${replroot})";
   }
   elsif ($$replroot) {
@@ -1266,8 +1272,8 @@ sub B::PMOP::save {
     # argument to a split) stores a GV in op_pmreplroot instead
     # of a substitution syntax tree. We don't want to walk that...
     if ( $op->name eq "pushre" ) {
-      $gvsym = $replroot->save;
       warn "PMOP::save saving a pp_pushre with GV $gvsym\n" if $debug{gv};
+      $gvsym = $replroot->save;
       $replrootfield = 0;
     }
     else {
