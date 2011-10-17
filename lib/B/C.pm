@@ -3976,6 +3976,7 @@ EOT
       # (hopefully, see test 103)
       warn "no dl_init for $c, not marked\n" if $verbose;
       @dl_modules = grep { $_ ne 'B' } @dl_modules;
+      # XXX Be sure to store the new @dl_modules
     }
   }
   @DynaLoader::dl_modules = @dl_modules;

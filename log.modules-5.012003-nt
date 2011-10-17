@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.35 r1154
+# B::C::VERSION = 1.36 r1192
 # perlversion = 5.012003-nt
 # path = /usr/local/bin/perl5.12.3-nt
 # platform = linux 64bit non-threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO < 5.14
+fail ExtUtils::CBuilder #TODO always
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.35 - perl-5.012003-nt
+# 100 / 100 modules tested with B-C-1.36 - perl-5.012003-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)

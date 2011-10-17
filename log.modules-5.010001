@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.35 r1154 M
+# B::C::VERSION = 1.36 r1192
 # perlversion = 5.010001
 # path = /usr/local/bin/perl5.10.1
 # platform = linux 64bit threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 fail ExtUtils::Install #TODO 5.10 with threads
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO < 5.14
+fail ExtUtils::CBuilder #TODO always
 pass ExtUtils::ParseXS
 fail Module::Build #TODO 5.10 with threads
 pass File::Path
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash #TODO 5.10 with threads
-# 100 / 100 modules tested with B-C-1.35 - perl-5.010001
+# 100 / 100 modules tested with B-C-1.36 - perl-5.010001
 # pass  89 / 100 (89.0%)
 # fail  11 / 100 (11.0%)
 # todo  11 /  11 (100.0%)
