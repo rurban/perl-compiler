@@ -130,7 +130,7 @@ sub B::PMOP::mark_if_leader {
   if ( $op->name ne "pushre" ) {
     my $replroot = $op->pmreplroot;
     if ($$replroot) {
-      mark_leader($replroot);
+      mark_leader( $replroot );
       mark_leader( $op->next );
       mark_leader( $op->pmreplstart );
     }

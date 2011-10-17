@@ -1056,7 +1056,7 @@ sub B::SVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  my $sv    = $op->sv;
+  my $sv    = $op->sv; # XXX moose1 crash with 5.8.5-nt
   my $svsym = 'Nullsv';
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     # pad does not need to be saved
@@ -3802,6 +3802,9 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #endif
 
 #ifndef MULTIPLICITY
+#   ifndef PERL_UNUSED_ARG
+#     define PERL_UNUSED_ARG(x) ((void)x)
+#   endif
     PERL_UNUSED_ARG(my_perl);
 #endif
 

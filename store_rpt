@@ -18,7 +18,7 @@ function do_cp {
 
 if test "$1" = "mv"; then move=1; shift; fi
 if test "$1" = "-v"; then v=$2; fi
-v=${1:-1.35}
+v=${1:-1.36}
 
 m=$(ls log.modules-5.*|egrep -v ".(orig|err)")
 if [ -n "$m" ]; then
