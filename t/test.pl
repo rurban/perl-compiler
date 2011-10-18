@@ -763,8 +763,8 @@ sub todo_tests_default {
         # push @todo, (39)   if $] > 5.007 and $] < 5.009;
         # fixed with 1.30
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
-	push @todo, (13,29) if $] > 5.009 and $what =~ /c_o[34]/;
-        push @todo, (29)    if $] > 5.009 and $] < 5.012;
+	push @todo, (13)     if $] > 5.009 and $what =~ /c_o[34]/;
+        #push @todo, (29)    if $] > 5.009 and $] < 5.012;
         push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
         # push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.014;
         push @todo, (21)    if $] > 5.011 and $] <= 5.013006;
@@ -778,7 +778,7 @@ sub todo_tests_default {
         #push @todo, (29,44,45) if $what =~ /c_o[234]/;
 	# @ISA issue 64
         push @todo, (50)    if $what eq 'c_o4'; 
-        push @todo, (10)    if $what =~ /c_o[234]/ and $] >= 5.010;
+        #push @todo, (10)    if $what =~ /c_o[234]/ and $] >= 5.010;
         push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
         push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
         push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.009 and !$ITHREADS;
@@ -799,7 +799,6 @@ sub todo_tests_default {
         push @todo, (11,45,103,105) if $] > 5.007 and $] < 5.009;
 	push @todo, (3)     if $] > 5.008 and $] < 5.008005 and $what =~ /^cc_o[12]/; # only tested 5.8.4 and .5
         push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $what =~ /^cc_o[12]/);
-	push @todo, (29)    if $] >= 5.015002 and $what =~ /cc_o[12]/;
         #push @todo, (11,27) if $] < 5.009;
         push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
         # solaris also. I suspected nvx<=>cop_seq_*
@@ -815,7 +814,7 @@ sub todo_tests_default {
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
-    push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
+    #push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
     #push @todo, (32)  if $] >= 5.011003;
     return @todo;
 }
