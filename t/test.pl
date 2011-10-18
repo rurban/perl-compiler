@@ -750,8 +750,8 @@ sub todo_tests_default {
     #push @todo, (3,4,36) if $] >= 5.015; # Assert array: Perl_hfree_next_entry hv.c:1716
     #push @todo, (16,39,44,45) if $] >= 5.015002 and !$ENV{DL_NOWARN};  # DynaLoader 5.15.2 issue
     # 15 passes on cygwin XP, but fails on cygwin Win7
+    push @todo, (15) if $] > 5.013;
     if ($what =~ /^c(|_o[1-4])$/) {
-	push @todo, (15);
         # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
         # 15+28 fixed with 1.04_34
         # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
@@ -779,14 +779,15 @@ sub todo_tests_default {
 	# @ISA issue 64
         push @todo, (50)    if $what eq 'c_o4'; 
         #push @todo, (10)    if $what =~ /c_o[234]/ and $] >= 5.010;
-        push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
-        push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
-        push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.009 and !$ITHREADS;
+        #push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
+        #push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
+        push @todo, (11)    if $what =~ /c_o[1234]/
+	  and $] > 5.007 and $] < 5.009 and !$ITHREADS;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes
-        push @todo, (15,21,30,50); # fixed 44 -nt
+        push @todo, (21,30,50); # fixed 44 -nt
 	push @todo, (3,16)  if $] eq '5.008005';
         push @todo, (44)    if $ITHREADS or $] < 5.012;
         #push @todo, (44)   if !$ITHREADS and $] >= 5.012;
@@ -797,8 +798,9 @@ sub todo_tests_default {
         push @todo, (45)    if $] < 5.007;
         push @todo, (104)   if $] < 5.007; # leaveloop, no cxstack
         push @todo, (11,45,103,105) if $] > 5.007 and $] < 5.009;
-	push @todo, (3)     if $] > 5.008 and $] < 5.008005 and $what =~ /^cc_o[12]/; # only tested 5.8.4 and .5
-        push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $what =~ /^cc_o[12]/);
+	# only tested 5.8.4 and .5
+	push @todo, (3)     if $] > 5.008 and $] < 5.008005 and $what =~ /^cc_o[12]/;
+        push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $] < 5.015);
         #push @todo, (11,27) if $] < 5.009;
         push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
         # solaris also. I suspected nvx<=>cop_seq_*

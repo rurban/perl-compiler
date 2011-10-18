@@ -39,21 +39,21 @@ my $x = 'abc';
 print "ok" if 'abc' eq Encode::decode('UTF-8', $x);
 EOF
 
-#SKIP: {
-#  skip "hangs at Perl_hfree_next_entry >= 5.15", 2 if $] >= 5.015;
-
 # These 2 tests failed until 1.35 because of stale QR Regexp (see test 1), 
 # issue71 (const destruction) and issue76 (invalid cop_warnings).
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	$B::C::VERSION < 1.35 ? "B:C reg_temp_copy from invalid r->offs" 
-                              : "Encode::decode fails to leave_scope with const PAD PV 'Encode'"
-       );
+	$B::C::VERSION < 1.35 
+        ? "B:C reg_temp_copy from invalid r->offs" 
+        : "Encode::decode fails to leave_scope with const PAD PV 'Encode'");
+
+SKIP: {
+  skip "hangs at Perl_hfree_next_entry >= 5.15", 1 if $] >= 5.015;
 
 use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
       $B::CC::VERSION < 1.12
       ? "B:CC Encode::decode fails to leave_scope with const PAD PV 'Encode'"
       : undef);
-#}
+}

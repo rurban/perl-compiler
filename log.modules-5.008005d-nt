@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.36 r1193
+# B::C::VERSION = 1.36 r1200
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -26,7 +26,7 @@ pass Text::ParseWords
 fail ExtUtils::CBuilder #TODO always
 pass ExtUtils::ParseXS
 fail Module::Build
-fail File::Path
+pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash
 # 99 / 100 modules tested with B-C-1.36 - perl-5.008005d-nt
-# pass  68 /  99 (68.7%)
-# fail  31 /  99 (31.3%)
-# todo   2 /  31 (6.5%)
+# pass  69 /  99 (69.7%)
+# fail  30 /  99 (30.3%)
+# todo   2 /  30 (6.7%)
 # skip   1 / 100 (1.0% not installed)

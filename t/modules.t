@@ -234,8 +234,8 @@ sub is_todo {
   # ---------------------------------------
   # overlong linking time
   foreach(qw(
-   ExtUtils::CBuilder
-  )) { return 'always' if $_ eq $module; }
+    ExtUtils::CBuilder
+  )) { return 'mostly' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
     ExtUtils::Install
     Module::Build
@@ -246,9 +246,36 @@ sub is_todo {
     DateTime::Locale
     Devel::GlobalDestruction
   )) { return '5.6 r-magic' if $_ eq $module; }}
-  if ($] < 5.007) { foreach(qw(
-    Test::Harness
-  )) { return '5.6 .al noise' if $_ eq $module; }}
+  #if ($] < 5.007) { foreach(qw(
+  #  Test::Harness
+  #)) { return '5.6 .al noise' if $_ eq $module; }}
+  if ($] >= 5.008004 and $] < 5.008008) { foreach(qw(
+ Text::Tabs
+ Getopt::Long
+ Path::Class
+ Test::Warn
+  )) { return '5.8.4-5.8.7' if $_ eq $module; }}
+  if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
+ Text::Wrap
+ Test::Harness
+ ExtUtils::MakeMaker
+ Test::Simple
+ ExtUtils::Install
+ Module::Build
+ Sub::Uplevel
+ Test::Exception
+ LWP
+ Test::Tester
+ Test::NoWarnings
+ Params::Validate
+ Try::Tiny
+ Test::Deep
+ DBI
+ Tree::DAG_Node
+ DateTime
+ DateTime::TimeZone
+ Template::Stash
+  )) { return '5.8.5' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
     MooseX::Types
   )) { return '5.8' if $_ eq $module; }}
@@ -262,16 +289,16 @@ sub is_todo {
    Devel::GlobalDestruction
    Moose
   )) { return '5.10.x crash' if $_ eq $module; }}
-  #if ($] < 5.014) { foreach(qw(
-  # ExtUtils::CBuilder
-  #)) { return '< 5.14' if $_ eq $module; }}
+  if ($] < 5.014) { foreach(qw(
+   #ExtUtils::CBuilder
+  )) { return '< 5.14' if $_ eq $module; }}
   if ($] > 5.015) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
+  # DateTime only d-nt (timeout?)
   if ($] >= 5.015002) { foreach(qw(
    Path::Class
    File::Temp
-   Test::Harness
   )) { return '>= 5.15.2' if $_ eq $module; }}
 
   # ---------------------------------------
@@ -294,10 +321,17 @@ sub is_todo {
       Storable
       Sub::Name
     )) { return '5.12.0 with threads' if $_ eq $module; }}
-    if ($] >= 5.013) { foreach(qw(
-      Test::Tester
-    )) { return '>=5.13 with threads' if $_ eq $module; }}
+    #if ($] >= 5.013) { foreach(qw(
+    #  Test::Tester
+    #)) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
+    if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
+      Pod::Simple
+      Pod::Text
+      File::Temp
+      CGI
+      Test::Pod      
+    )) { return '5.8.1-5.8.8 without threads' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.010) { foreach(qw(
       Moose
     )) { return '5.8 without threads' if $_ eq $module; }}

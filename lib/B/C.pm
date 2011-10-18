@@ -665,6 +665,9 @@ sub ivx ($) {
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
   # UL if > INT32_MAX = 2147483647
   my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
+  if ($ivx < -$intmax) {
+    $sval = sprintf("%${ivdformat}%s", $ivx, "L"); # DateTime
+  }
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   return $sval;
   #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
