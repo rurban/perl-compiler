@@ -65,7 +65,7 @@ t/testc.sh -q -c; t/testcc.sh -q -c or make test TEST_VERBOSE=1
 
 5.6.2:
 t/bytecode      broken/not used
-t/c             15,41-43,46,50
+t/c             15,41-43,50
 t/c_o1,2       +44,45
 t/cc            15,21,30,35,41-46,50,103-105
 
@@ -91,33 +91,33 @@ t/o     5,9 (skipped)
 
 5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)
 t/bytecode      -
-t/c             41-43,46
+t/c             41-43
 t/c_o1,2       +11
 t/cc           +11,21,30,50,103,105
 
 5.10.1:
 t/bytecode 	27
-t/c 		41-43,46
+t/c 		41-43
 t/c_o1,2          -"-
-t/cc 		14,21,30,35,41-43,46,50,103,105
+t/cc 		14,21,30,35,41-43,50,103,105
 
 5.12.3:
 t/bytecode 	21,32
-t/c 		21,41-43,46
+t/c 		21,41-43
 t/c_o1,2          -"- 
-t/cc 		14,21,30,41-43,46,50,103,105
+t/cc 		14,21,30,41-43,50,103,105
 
 5.14.2:
 t/bytecode 	27
-t/c 		41-43,46
+t/c 		41-43
 t/c_o1,2          -"-
-t/cc 		14,15,21,29,30,41-43,46,50,103,105
+t/cc 		14,15,21,29,30,41-43,50,103,105
 
 5.15.3:
 t/bytecode 	27
-t/c 		15,41-43,46
+t/c 		15,41-43
 t/c_o1,2          -"-
-t/cc 		14,15,21,30,41-43,46,50,103,105
+t/cc 		14,15,21,30,41-43,50,103,105
 
 
 CPAN Modules
@@ -162,6 +162,9 @@ Fix CC
 
 DONE
 ----
+fixed with 1.37:
+  fixed wrong test 46, test for Exporter STASH in *main:: STASH
+
 fixed with 1.36:
   5.15 XSLoader and hash init
   support lexical warnings
