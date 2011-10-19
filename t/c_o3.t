@@ -14,7 +14,7 @@ BEGIN {
   require 'test.pl'; # for run_perl()
 }
 use strict;
-#my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
@@ -22,7 +22,7 @@ prepare_c_tests();
 my @todo  = todo_tests_default("c_o3");
 my @skip = (27, # out of memory
 	    28, # hangs, must be killed
-	    29  # -"-
+	    $DEBUGGING ? 29 : () # issue 78 if not DEBUGGING
 	    );
 
 run_c_tests("C,-O3", \@todo, \@skip);

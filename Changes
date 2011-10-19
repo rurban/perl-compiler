@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.36	2011-10-xx rurban
+1.36	2011-10-19 rurban
 	lexical warnings and more 5.15 fixes
 	* C: new B::LEXWARN, fixed representation of lexical warnings which was broken
 	  since 8e01d9a6  5.8.9/5.9.4 (issue 76)
@@ -19,7 +19,7 @@
 	Move -fwarn-sv from -O2 to -O1
 	Move -fsave-data from -O3 to -O2
 	Compile *main::DATA IO handle automatically (__DATA__), just package __DATA__
-	  handles need -fsave-data
+	  handles need -fsave-data (15)
 	Die with 5.8.4/5.8.5 threaded with split->pushre on invalid
 	  pmreplroot. This is a core B::walkoptree bug and can not be easily fixed.
 	* C.xs: added -Dts support to runloop to check internal compiler problems

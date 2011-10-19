@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.36 r1199
+# B::C::VERSION = 1.36 r1201 M
 # perlversion = 5.010001
 # path = /usr/local/bin/perl5.10.1
 # platform = linux 64bit threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 fail ExtUtils::Install #TODO 5.10 with threads
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO always
+fail ExtUtils::CBuilder #TODO mostly
 pass ExtUtils::ParseXS
 fail Module::Build #TODO 5.10 with threads
 pass File::Path

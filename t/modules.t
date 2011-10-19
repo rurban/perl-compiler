@@ -289,9 +289,9 @@ sub is_todo {
    Devel::GlobalDestruction
    Moose
   )) { return '5.10.x crash' if $_ eq $module; }}
-  if ($] < 5.014) { foreach(qw(
+  #if ($] < 5.014) { foreach(qw(
    #ExtUtils::CBuilder
-  )) { return '< 5.14' if $_ eq $module; }}
+  #)) { return '< 5.14' if $_ eq $module; }}
   if ($] > 5.015) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
