@@ -409,10 +409,10 @@ sub run_cc_test {
 #	print "ok $cnt # skip $backend SIGSEGV or hangs\n";
 #	return 0;
 #    }
-    if ($todo and $cnt =~ /^(15|103)$/ and $] eq '5.010001') {
-	print "ok $cnt # skip $backend hangs\n";
-	return 0;
-    }
+#    if ($todo and $cnt =~ /^(103)$/ and $] eq '5.010001') {
+#	print "ok $cnt # skip $backend hangs\n";
+#	return 0;
+#    }
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
     use Config;

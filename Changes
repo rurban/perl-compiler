@@ -15,14 +15,18 @@
 	  XSLoader::load_file for [perl #101336] >= 5.15.3,
 	  also use mXPUSH for sp instead of 1-arg targ
 	Set SvLEN=0 for static PVs to skip sv_clear (problem with 13)
-	Enable -fcog (copy on grow) for strings globally (i.e. >= 5.10)
+	Handle overlarge negative 64bit ints, double not yet.
 	Move -fwarn-sv from -O2 to -O1
 	Move -fsave-data from -O3 to -O2
 	Compile *main::DATA IO handle automatically (__DATA__), just package __DATA__
 	  handles need -fsave-data (15)
 	Die with 5.8.4/5.8.5 threaded with split->pushre on invalid
-	  pmreplroot. This is a core B::walkoptree bug and can not be easily fixed.
-	* C.xs: added -Dts support to runloop to check internal compiler problems
+	  pmreplroot. This is a core B::walkoptree bug and can not be
+	  easily fixed.
+	Tests 15 and 103 do not hang anymore, 15 and 29 pass mostly
+	* C.xs: added -Dts support to runloop to check internal compiler
+	  problems
+	* t/issue76.t: added
 
 1.35	2011-10-02 rurban
 	tested from 5.6.2 until 5.15.3

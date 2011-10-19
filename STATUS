@@ -92,32 +92,32 @@ t/o     5,9 (skipped)
 5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)
 t/bytecode      -
 t/c             41-43,46
-t/c_o1         +15,44,45
-t/cc            11,15,21,30,41-46,50,103,105
+t/c_o1,2       +11
+t/cc           +11,21,30,50,103,105
 
 5.10.1:
 t/bytecode 	27
-t/c 		15,41-43,46
-t/c_o1          -"-
+t/c 		41-43,46
+t/c_o1,2          -"-
 t/cc 		14,21,30,35,41-43,46,50,103,105
 
 5.12.3:
 t/bytecode 	21,32
 t/c 		21,41-43,46
-t/c_o1          -"- 
+t/c_o1,2          -"- 
 t/cc 		14,21,30,41-43,46,50,103,105
 
 5.14.2:
 t/bytecode 	27
-t/c 		15,41-43,46
-t/c_o1          -"-
-t/cc 		14,21,29,30,41-43,46,50,103,105
+t/c 		41-43,46
+t/c_o1,2          -"-
+t/cc 		14,15,21,29,30,41-43,46,50,103,105
 
 5.15.3:
 t/bytecode 	27
 t/c 		15,41-43,46
-t/c_o1          -"-
-t/cc 		14,21,29,30,41-43,46,50,103,105
+t/c_o1,2          -"-
+t/cc 		14,15,21,30,41-43,46,50,103,105
 
 
 CPAN Modules
@@ -127,23 +127,29 @@ We only try B::C so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 Compile-time status from top100:
-generally: fail 0%
-5.6:       fail 5%   ExtUtils::Install Module::Build DateTime Devel::GlobalDestruction
-                     Template::Stash
-5.8.9:     fail 2%   ExtUtils::CBuilder MooseX::Types
-5.10       fail 0%  
-5.12:      fail 0%  
-5.14       fail 0%   
-5.15.3     fail 6%   Test::Harness File::Temp ExtUtils::CBuilder Path::Class
-                     B::Hooks::EndOfScope DateTime
+generally: fail 1%
+5.6.2      fail 2%   ExtUtils::Install Template::Stash
+5.8.8      fail 6%   Pod::Simple Pod::Text File::Temp Moose CGI Test::Pod
+5.8.8-thr  fail 2%   ExtUtils::CBuilder MooseX::Types
+5.8.9      fail 3%   ExtUtils::CBuilder Moose MooseX::Types
+5.10.1     fail 1%   ExtUtils::CBuilder
+5.12.3     fail 1%   ExtUtils::CBuilder
+5.14.2     fail 1%   ExtUtils::CBuilder
+5.15.3     fail 3%   File::Temp ExtUtils::CBuilder Path::Class
 
 Run-time tests not yet fully done
+
+5.15 status
+-----------
+new XSLoader:load_file not fully stable yet 
+  (runtime load of Carp leads to issue78)
 
 5.10, 5.12, 5.14 status
 -----------------------
 TODO for B::C
-  tests 15,21,41-43: B destruction,46,50
-  Encode static const destruction issue 71
+  new __DATA__ fixes not fully stable
+  tests 21,41-43: B destruction,46,50
+  Encode static const destruction in PAD issue 71
   restricted hashes in 5.10.0
   r-magic (e.g. Template::Stash 5.10.0 only)
   check t/testcore and testm.sh -t
@@ -152,9 +158,17 @@ TODO for B::C
 Fix CC 
   several other issues detected (and mostly fixed) by Heinz Knutzen
   minimize pad copies from local to pad
+  label not defined (utf8::SWASHNEW)
 
 DONE
 ----
+fixed with 1.36:
+  5.15 XSLoader and hash init
+  support lexical warnings
+  better __DATA__ detection and support, 
+    still IO::File not IO::Scalar handle though
+  fixed test 29 mostly (use IO)
+
 fixed with 1.35:
   improve package_pv detection for methods,
   detect previously missing packages within the main source file 
