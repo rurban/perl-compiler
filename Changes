@@ -3,6 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.37	2011-xx-xx rurban
+	* t/TESTS: fixed wrong test 46 (Exporter in *main:: STASH)
+
 1.36	2011-10-19 rurban
 	lexical warnings and more 5.15 fixes
 	* C: new B::LEXWARN, fixed representation of lexical warnings which was broken

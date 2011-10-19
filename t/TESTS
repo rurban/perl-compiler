@@ -195,7 +195,7 @@ use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";
 >>>
 ok
 #### 45 test dynamic loading ####
-use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }
+use Exporter; print q(ok) if defined *main::Exporter::{HASH};
 >>>
 ok
 #### 46 Exporter should end up in main:: stash when used in ####

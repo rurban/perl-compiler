@@ -739,7 +739,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (41..43,46); # 8,14-16 fail on 5.00505 (max 20 then)
+    my @todo  = (41..43); # 8,14-16 fail on 5.00505 (max 20 then)
     push @todo, (103)  if $] < 5.007 or $] >= 5.010;
     #push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
     #push @todo, (29)   if $] >= 5.013006;

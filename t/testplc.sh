@@ -302,7 +302,7 @@ result[44]='ok'
 tests[45]='use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";'
 result[45]='ok'
 # Exporter should end up in main:: stash when used in
-tests[46]='use Exporter; if (exists $main::{"Exporter::"}) { print "ok"; }'
+tests[46]='use Exporter; print q(ok) if defined *main::Exporter::{HASH};'
 result[46]='ok'
 # non-tied av->MAGICAL
 tests[47]='@ISA=(q(ok));print $ISA[0];'
