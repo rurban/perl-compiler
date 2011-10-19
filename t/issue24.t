@@ -30,16 +30,11 @@ TODO: { #1
 unlink("$name.db*");
 
 $Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
-$result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
-#XXX TODO
-SKIP: {
-  skip "hangs at Perl_hfree_next_entry >= 5.15", 1 if $] >= 5.015;
- TODO: { #2
-    local $TODO = "B::C issue 24 dbm"
-      if ($] >= 5.012 and $ITHREADS) or ($] > 5.007 and $] < 5.010);
-    is($result, $expected, "C dbm fixed with r879, 1.30");
-  }
-  unlink("$name.db*", "a", "a.out");
+TODO: { #2
+  local $TODO = "B::C issue 24 dbm"
+    if ($] >= 5.012 and $ITHREADS) or ($] > 5.007 and $] < 5.010);
+  $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
+  is($result, $expected, "C dbm fixed with r879, 1.30");
 }
 
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
