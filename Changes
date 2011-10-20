@@ -4,7 +4,12 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.37	2011-xx-xx rurban
-	* t/TESTS: fixed wrong test 46 (Exporter in *main:: STASH)
+	* C: issue79: save stashes also, but only values which are also stashes to
+	  avoid a second walker besides savecv, and thus unneeded
+	  territory; B::STASHGV (46)
+	* t/TESTS: changed  test 46 (Exporter:: and other stashes in
+	  %main:: stash) to cover issue 79.
+	  use Exporter; print q(ok) if %main::Exporter::
 
 1.36	2011-10-19 rurban
 	lexical warnings and more 5.15 fixes

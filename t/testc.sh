@@ -287,7 +287,7 @@ result[44]='ok'
 tests[45]='use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";'
 result[45]='ok'
 # issue 79: Exporter:: stash missing in main::
-tests[46]='use Exporter; print "ok" if scalar(keys(%main::Exporter::)) > 2'
+tests[46]='use Exporter; print "ok" if %main::Exporter::'
 result[46]='ok'
 # non-tied av->MAGICAL
 tests[47]='@ISA=(q(ok));print $ISA[0];'

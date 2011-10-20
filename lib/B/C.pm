@@ -849,6 +849,10 @@ sub B::OP::save {
   }
 }
 
+# needed for special GV logic: save only stashes for stashes
+package B::STASHGV;
+our @ISA = ('B::GV');
+
 package B::FAKEOP;
 
 our @ISA = qw(B::OP);
@@ -2752,10 +2756,24 @@ sub B::GV::save {
     warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
     return B::BM::save($gv);
   }
-  my $is_empty = $gv->is_empty;
+if (0) {
+  if ($PERL512 and $gv->FLAGS & 0x2) { # IV
+    warn sprintf( "  Skip GV $sym isa IV (RV)\n") if $debug{gv};
+    return $sym;
+  }
+  elsif (!$PERL510 and $gv->FLAGS & 0x3) { # RV
+    warn sprintf( "  Skip GV $sym isa RV\n") if $debug{gv};
+    return $sym;
+  }
+  elsif ($PERL510 and $]< 5.012 and $gv->FLAGS & 0x4) { # 510 RV
+    warn sprintf( "  Skip GV $sym isa RV\n") if $debug{gv};
+    return $sym;
+  }
+}
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
   return $sym if $package =~ /^B::C/;
+  my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
@@ -2809,9 +2827,9 @@ sub B::GV::save {
       }
       elsif ( $gp and !$is_empty ) {
         warn(sprintf(
-                     "New GvGP for $fullname: 0x%x%s %s FILEGV:0x%x GP:0x%x\n",
+                     "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
                      $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
-                     $gv->FILE, ${ $gv->FILEGV }, $gp
+                     $gv->FILE, $gp
                     )) if $debug{gv};
         # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
         $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
@@ -2862,6 +2880,12 @@ sub B::GV::save {
   }
   elsif ( $gvname eq '!' ) {
     $savefields = Save_HV;
+  }
+  # issue 79: Only save stashes for stashes.
+  # But not other values to avoid recursion into unneeded territory.
+  # We walk via savecv, not via stashes.
+  if (ref($gv) eq 'B::STASHGV' and $gvname !~ /::$/) {
+    return $sym;
   }
 
   # attributes::bootstrap is created in perl_parse
@@ -2991,7 +3015,7 @@ sub B::GV::save {
       $init->add("");
     }
   }
-  warn "GV::save $fullname done\n" if $debug{gv};
+  warn "GV::save *$fullname done\n" if $debug{gv};
   return $sym;
 }
 
@@ -3204,8 +3228,9 @@ sub B::HV::save {
   my $sym = objsym($hv);
   return $sym if defined $sym;
   my $name = $hv->NAME;
+  my $is_stash = $name;
   if ($name) {
-    # It's a stash
+    # It's a stash. See issue 79 + test 46
     warn sprintf( "saving stash HV \"%s\" 0x%x MAX=%d\n",
                   $name, $$hv, $hv->MAX ) if $debug{hv};
 
@@ -3225,9 +3250,13 @@ sub B::HV::save {
     }
     $sym = savesym( $hv, "hv$hv_index" );
     $hv_index++;
-    return $sym;
+
+    # issue 79: save main stashes to check for packages, but not all.
+    # and via B::STASHGV we only save stashes for stashes.
+    # XXX For efficiency we skip most stash symbols here, just the root syms.
+    # However it should be now safe to save all stash symbols.
+    return $sym if skip_pkg($name) or $fullname !~ /^main::/; 
   }
-  # return $sym if $name =~ /^B::C/;
 
   # It's just an ordinary HV
   # KEYS = 0, inc. dynamically below with hv_store
@@ -3276,22 +3305,35 @@ sub B::HV::save {
   if (@contents) {
     my $i;
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
+      my $key = $contents[$i - 1];
       my $sv = $contents[$i];
-      warn sprintf("HV recursion? with $sv -> %s\n", $sv->RV)
+      warn sprintf("HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV)
         if ref($sv) eq 'B::RV'
           #and $sv->RV->isa('B::CV')
           and defined objsym($sv)
           and $debug{hv};
-      $contents[$i] = $sv->save($fullname.'{'.$i.'}');
+      if ($is_stash) {
+	if (ref($sv) eq "B::GV" and $sv->NAME =~ /::$/) {
+	  $sv = bless $sv, "B::STASHGV"; # do not expand stash GV's only other stashes
+	  $contents[$i] = $sv->save($fullname.'{'.$key.'}');
+	} else {
+	  warn "skip STASH symbol ",$fullname.'{'.$key.'}',"\n" if $debug{hv};
+	  $contents[$i] = undef;
+	}
+      } else {
+	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
+      }
     }
     $init->no_split;
     $init->add( "{", "\tHV *hv = $sym;" );
     while (@contents) {
       my ( $key, $value ) = splice( @contents, 0, 2 );
-      $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
-			  cstring($key), length( pack "a*", $key ),
-			  "(SV*)$value", hash($key) ));
-      warn sprintf( "  HV key %s=%s\n", $key, $value) if $debug{hv};
+      if ($value) {
+	$init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
+			    cstring($key), length( pack "a*", $key ),
+			    "(SV*)$value", hash($key) ));
+	warn sprintf( "  HV key %s=%s\n", $key, $value) if $debug{hv};
+      }
     }
     $init->add("}");
     $init->split;
@@ -4398,6 +4440,20 @@ sub static_core_packages {
   return @pkg;
 }
 
+sub skip_pkg {
+  my $package = shift;
+  if ( $package =~ /^(FileHandle|SelectSaver|mro|O)$/
+       or $package =~ /^(B|PerlIO|Internals|IO)::/
+       or $package =~ /::::/
+       or index($package, " ") != -1 # XXX skip invalid package names
+       or index($package, "(") != -1 # XXX this causes the compiler to abort
+       or index($package, ")") != -1 # XXX this causes the compiler to abort
+       or ($DB::deep and $package =~ /^(DB|Term::ReadLine)/)) {
+    return 1;
+  }
+  return 0;
+}
+
 sub should_save {
   no strict qw(vars refs);
   my $package = shift;
@@ -4455,10 +4511,7 @@ sub should_save {
   # Omit the packages which we use (and which cause grief
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
-  if ( $package =~ /^(FileHandle|SelectSaver|mro|B)$/
-       or $package =~ /^(B|PerlIO|Internals|IO)::/
-       or ($DB::deep and $package =~ /^(DB|Term::ReadLine)/))
-  {
+  if (skip_pkg($package)) {
     delete_unsaved_hashINC($package);
     return $include_package{$package} = 0;
   }
