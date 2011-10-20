@@ -195,10 +195,10 @@ use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";
 >>>
 ok
 #### 45 test dynamic loading ####
-use Exporter; print q(ok) if defined *main::Exporter::{HASH};
+use Exporter; print q(ok) if scalar(keys(%main::Exporter::)) > 2;
 >>>
 ok
-#### 46 Exporter should end up in main:: stash when used in ####
+#### 46 Exporter:: stash missing, issue 79 ####
 @ISA=(q(ok));print $ISA[0];
 >>>
 ok
