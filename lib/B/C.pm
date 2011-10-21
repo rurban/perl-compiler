@@ -261,7 +261,7 @@ our ($module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings);
+    $fold, $warnings, $const_strings, $stash);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -272,6 +272,7 @@ our %option_map = (
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
     'ro-inc'          => \$B::C::ro_inc,
+    'stash'           => \$B::C::stash,    # disable with -fno-stash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
     'warnings'        => \$B::C::warnings, # disable with -fno-warnings
@@ -3255,7 +3256,7 @@ sub B::HV::save {
     # and via B::STASHGV we only save stashes for stashes.
     # XXX For efficiency we skip most stash symbols here, just the root syms.
     # However it should be now safe to save all stash symbols.
-    return $sym if skip_pkg($name) or $fullname !~ /^main::/; 
+    return $sym if !$B::C::stash; #skip_pkg($name) or $fullname !~ /^main::/; 
   }
 
   # It's just an ordinary HV
@@ -4925,12 +4926,13 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::destruct = 1;
+  $B::C::stash    = 1;
   $B::C::fold     = 1 if $] >= 5.013009; # includes utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data)],
+    2 => [qw(-fro-inc -fsave-data -fno-stash)],
     3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
@@ -5312,6 +5314,16 @@ Enabled with C<-O2>.
 Save package::DATA filehandles ( only available with PerlIO ).
 Does not work yet on Perl 5.6, 5.12 and non-threaded 5.10, and is
 enabled automatically where it is known to work.
+
+Enabled with C<-O2>.
+
+=item B<-fno-stash>
+
+Omit dynamic creation of stashes, which are nested hashes of symbol tables, 
+names ending with ::, starting at %main::.
+These are rarely needed, sometimes for checking of existance of packages,
+which could be better done by checking %INC, and cost about 10% space and
+startup-time.
 
 Enabled with C<-O2>.
 
