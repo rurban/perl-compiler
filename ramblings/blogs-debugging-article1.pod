@@ -1,0 +1,105 @@
+The nature of the data driven perl compiler is hitting the perl
+debuggers recursion limit, even on one-liners.
+
+Consider this bug: <a href="https://rt.cpan.org/Ticket/Display.html?id=53889"><em>[CPAN #53889]</em></a>
+<pre>
+package dummy;sub meth{print "ok"};package main;dummy->meth
+=>
+ok
+</pre>
+
+The compiler does not detect the meth sub in the dummy package.
+
+<pre>
+  $ perl -MO=C,-DcOACMSGpo,-v,-oa.c -e 'package dummy;
+        sub meth{print "ok"};package main;dummy->meth'
+  $ cc_harness a.c
+  $ ./a
+</pre>
+
+Can't locate object method "meth" via package "dummy" (perhaps you forgot to load "dummy"?) at -e line 1.
+
+<em>BTW: Easier tested in the distro with 
+<pre>$ <b>t/testc.sh 35</b></pre>
+</em>
+
+First if you don't see the error in the generated c file, always turn on all debugging options and save it into a log file.
+
+$ perl -Mblib -MO=C,-DcOACMSGpoW,-v,-occode35.c ccode35.pl 2>&1 | tee methodcall.log
+
+"-DcOACMSGpoW,-v" is all debugging info you get.
+
+Now let's debug it.
+
+<pre>
+$ cpan B::Debugger
+$ perl -Mblib <strong>-d -MOd</strong>=C,-DcOACMSGpo,-v -e 'package dummy;sub meth{print "ok"};package main;dummy->meth'
+</pre>
+The code in question is in &should_save.
+
+<pre>
+Od::CODE(0x1870d30)((eval 9)[/cygdrive/f/prog/Perl/B-C/blib/lib/Od.pm:12]:11):
+11:                 &$compile();
+DB<1> <strong>s</strong>
+B::C::CODE(0x1453910)(/cygdrive/f/prog/Perl/B-C/blib/lib/B/C.pm:3295):
+3295:       return sub { save_main() };
+DB<1> <strong>s</strong>
+B::C::save_main(/cygdrive/f/prog/Perl/B-C/blib/lib/B/C.pm:3005):
+3005:     my $warner = $SIG{__WARN__};
+DB<1> <strong>c should_save</strong>
+
+Debugged program terminated.  Use q to quit or R to restart,
+  use o inhibit_exit to avoid stopping after program termination,
+  h q, h R or h o to get additional info.
+</pre>
+
+Oops. Not stopping there. Od is not perfect yet.
+Next attempt with line number.
+
+<pre>
+<strong>s 
+s 
+b 2908</strong>
+
+B::C::should_save(/cygdrive/f/prog/Perl/B-C/blib/lib/B/C.pm:2908):
+2908:     foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
+</pre>
+
+better attempt. <br>
+we are enhancing the recursion limit (deep) from 100 to 500,
+and set a conditional breakpoint which only breaks when considering the "dummy" package
+
+<pre>
+<strong>x $DB::deep = 500
+b 2908 $package eq 'dummy'
+c
+x \%unused_sub_packages</strong>
+</pre>
+
+and so on. This is pretty deep in the symbol walker, which tries to detect all possible used subs in possible used packages. Undetected packages will cause such errors, 
+<pre>Can't locate object method "meth" via package "dummy" (perhaps you forgot to load "dummy"?) at -e line 1.</pre>
+
+Lets continue:
+<pre>
+DB<2> <strong>n</strong>
+2915:     delete_unsaved_hashINC($package);
+DB<2>
+2916:     return $unused_sub_packages{$package} = 0;
+DB<2>
+2959:     walkpackages( \%{"main::"}, sub { should_save( $_[0] ); return 1 } );
+DB<2> <strong>s</strong>
+2942:           walkpackages( \%glob, $recurse, $sym );
+  DB<3> <strong>x \%glob</strong>
+0  HASH(0x14ab450)
+   'DESTROY' => *dummy::DESTROY
+   'TIEARRAY' => *dummy::TIEARRAY
+   'TIEHANDLE' => *dummy::TIEHANDLE
+   'TIEHASH' => *dummy::TIEHASH
+   'TIESCALAR' => *dummy::TIESCALAR
+   'meth' => *dummy::meth
+   'new' => *dummy::new
+</pre>
+
+Aha, the meth symbol is there. The error is probably somewhere else in the method_named() op.
+
+To be continued at <a href="http://blogs.perl.org/users/rurban/2010/01/debugging-bc-gdb-into-it-part-2.html">part 2 Debugging B::C, gdb into it</a>.
