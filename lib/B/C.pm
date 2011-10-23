@@ -3252,11 +3252,11 @@ sub B::HV::save {
     $sym = savesym( $hv, "hv$hv_index" );
     $hv_index++;
 
-    # issue 79: save main stashes to check for packages, but not all.
+    # issue 79: save stashes to check for packages.
     # and via B::STASHGV we only save stashes for stashes.
-    # XXX For efficiency we skip most stash symbols here, just the root syms.
+    # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
-    return $sym if !$B::C::stash; #skip_pkg($name) or $fullname !~ /^main::/; 
+    return $sym if $fullname !~ /::$/ or !$B::C::stash;
   }
 
   # It's just an ordinary HV

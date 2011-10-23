@@ -28,20 +28,20 @@ BASE=`basename $0`
 # if $] < 5.9 you may want to remove -Mblib for testing the core lib. -o
 #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
 Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
+v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
+# OCMD=${OCMD}${v513}
 if [ -z $Mblib ]; then 
     VERS="${VERS}_global"; 
-    OCMD="$PERL $Mblib -MO=C,-DcAC,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-DcAC,"
     if [ $BASE = "testcc.sh" ]; then # DrOsplt 
-        OCMD="$PERL $Mblib -MO=CC,-DOsplt,"
+        OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,-DsGCp,-v,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-DsGCp,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
-        OCMD="$PERL $Mblib -MO=CC,-DOscpSql,-v,"
+        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
     fi
 fi
-v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
-OCMD=${OCMD}${v513}
 CONT=
 # 5.6: rather use -B static
 #CCMD="$PERL script/cc_harness -g3"
