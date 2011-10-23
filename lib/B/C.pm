@@ -3256,7 +3256,7 @@ sub B::HV::save {
     # and via B::STASHGV we only save stashes for stashes.
     # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
-    return $sym if $fullname !~ /::$/ or !$B::C::stash;
+    return $sym if $fullname !~ /::$/ or !$B::C::stash or skip_pkg($name);
   }
 
   # It's just an ordinary HV
