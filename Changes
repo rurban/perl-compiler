@@ -8,7 +8,8 @@
 	* C: issue79: save stashes also, but only directly under %main::
 	  and values which are also stashes to avoid a second walker
 	  besides savecv, and thus unneeded territory; B::STASHGV (46)
-	New -fno-stash with -O2 to omit stashes (rarely needed)
+	New -fno-stash with -O2 to omit stashes, which are rarely needed
+	* CC (1.12) allow overriding of -f<opt> B::C flags
 	* t/TESTS: changed  test 46 (Exporter:: and other stashes in
 	  %main:: stash) to cover issue 79.
 	  use Exporter; print q(ok) if %main::Exporter::

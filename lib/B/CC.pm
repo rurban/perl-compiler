@@ -238,7 +238,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.11';
+our $VERSION = '1.12';
 
 use Config;
 use strict;
@@ -311,7 +311,7 @@ my ( $init_name, %debug, $strict );
 # underscores here because they are OK in (strict) barewords.
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint,
-     $slow_signals, $name_magic, $type_attr );
+     $slow_signals, $name_magic, $type_attr, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $name_magic = 1;
 my %optimise = (
@@ -2997,6 +2997,7 @@ OPTION:
         my $ref = $B::C::option_map{$arg};
         if ( defined($ref) ) {
           $$ref = $value;
+	  $c_optimise{$ref}++;
         }
         else {
           warn qq(ignoring unknown optimisation option "$arg"\n);
@@ -3100,14 +3101,15 @@ OPTION:
        $PERL510 ? () : "pv_copy_on_grow")
   {
     no strict 'refs';
-    ${"B::C::$_"} = 1;
+    ${"B::C::$_"} = 1 unless $c_optimise{$_};
   }
+  $B::C::stash = 0 unless $c_optimise{stash};
   if (!$B::C::Flags::have_independent_comalloc) {
-    $B::C::av_init = 1;
-    $B::C::av_init2 = 0;
+    $B::C::av_init = 1 unless $c_optimise{av_init};
+    $B::C::av_init2 = 0 unless $c_optimise{av_init2};
   } else {
-    $B::C::av_init = 0;
-    $B::C::av_init2 = 1;
+    $B::C::av_init = 0 unless $c_optimise{av_init};
+    $B::C::av_init2 = 1 unless $c_optimise{av_init2};
   }
   init_type_attrs if $type_attr; # but too late for -MB::CC=-O2 on import. attrs are checked before
   @options;
