@@ -544,7 +544,7 @@ sub run_c_tests {
     my @skip = @{$_[2]};
 
     use Config;
-    my $AUTHOR      = -d ".svn";
+    my $AUTHOR      = -d ".svn" or -d ".git";
     my $keep_c      = 0;	  # set it to keep the pl, c and exe files
     my $keep_c_fail = 1;          # keep on failures
 

@@ -26,7 +26,6 @@
 
 Releases are at http://search.cpan.org/dist/B-C/
 Code is now at http://code.google.com/p/perl-compiler/
-  svn checkout http://perl-compiler.googlecode.com/svn/trunk/ perl-compiler-read-only
 
 CHANGES
 

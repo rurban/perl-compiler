@@ -110,6 +110,13 @@ unless (is_subset) {
     my $svnstat = `svn status lib/B/C.pm t/test.pl t/*.t`;
     chomp $svnstat;
     $svnrev .= " M" if $svnstat;
+  } elsif (-d '.git') {
+    local $ENV{LC_MESSAGES} = "C";
+    $svnrev = `git log -1 --pretty=format:"%h %ad | %s" --date=short`;
+    chomp $svnrev;
+    my $gitdiff = `git diff lib/B/C.pm t/test.pl t/*.t`;
+    chomp $gitdiff;
+    $svnrev .= " M" if $gitdiff;
   }
   log_diag("B::C::VERSION = $B::C::VERSION $svnrev");
   log_diag("perlversion = $perlversion");

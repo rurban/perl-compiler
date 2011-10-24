@@ -4,8 +4,8 @@ my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 my $ccflags   = $Config{ccflags};
 my $lddlflags = $Config{lddlflags};
 
-if ( -d ".svn" ) {
-  $ccflags .= " -ansi -Wall -Wextra" if $Config{cc} =~ /gcc/;
+if ( -d '.svn' or -d '.git' ) {
+  $ccflags .= ' -ansi -Wall -Wextra' if $Config{cc} =~ /gcc/;
 }
 if ($] < 5.007) {
   # We are not called by ../Makefile.PL, but be sure about that for now.

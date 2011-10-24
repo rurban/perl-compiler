@@ -84,7 +84,7 @@ sub log_err {
 
 sub is_subset {
   return 0 if grep /^-no-subset$/, @ARGV;
-  return ! -d '.svn' || grep /^-subset$/, @ARGV;
+  return ! (-d '.svn' or -d'.git') || grep /^-subset$/, @ARGV;
 }
 
 sub get_module_list {

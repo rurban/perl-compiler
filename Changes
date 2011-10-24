@@ -4,12 +4,14 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.37	2011-xx-xx rurban
-	Save %main:: stashes
+	Save %main:: stashes. Switched to git, added github mirror
 	* C: issue79: save stashes also, but only directly under %main::
 	  and values which are also stashes to avoid a second walker
 	  besides savecv, and thus unneeded territory; B::STASHGV (46)
 	New -fno-stash with -O2 to omit stashes, which are rarely needed
 	* CC (1.12) allow overriding of -f<opt> B::C flags
+	* META.yml: remove from MANIFEST and repo, let make dist
+	  autogenerate it
 	* t/TESTS: changed  test 46 (Exporter:: and other stashes in
 	  %main:: stash) to cover issue 79.
 	  use Exporter; print q(ok) if %main::Exporter::

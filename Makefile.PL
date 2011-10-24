@@ -100,7 +100,8 @@ sub headerpath {
 }
 
 # Check for Doug Lea's dlmalloc version, or ptmalloc2 included in glibc
-# or an extra ptmalloc3.
+# or the best: ptmalloc3 with independent_comalloc().
+# http://www.malloc.de/malloc/ptmalloc3-current.tar.gz
 # This improves -fav-init startup speed dramatically (18% tested).
 # ptmalloc3 needs #include <malloc-2.8.3.h>, but we don't want to clash
 # with an existing malloc.h from perl.h, so we declare it by ourselves.
@@ -165,7 +166,7 @@ package MY;
 
 sub libscan {
     # Ignore temp testing files
-    return 0 if $_[1] =~ /^(.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl)$/;
+    return 0 if $_[1] =~ /^(\.git|\.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl)$/;
     return 0 if $_[1] =~ /\.svn|~/; # needed for msys perl5.6
     # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
     # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
@@ -195,7 +196,7 @@ sub ccflags {
     my $ccflags = shift->SUPER::ccflags(@_);
     $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $have_independent_comalloc;
     $ccflags .= $extra_cflags if $extra_cflags;
-    return $ccflags unless -d ".svn";
+    return $ccflags unless -d ".svn" or -d ".git";
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
     $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"

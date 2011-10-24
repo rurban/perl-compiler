@@ -6,6 +6,8 @@
 Homepage: http://www.perl-compiler.org/
 Releases: http://search.cpan.org/dist/B-C/
 Code: http://code.google.com/p/perl-compiler/
+  git clone https://code.google.com/p/perl-compiler/
+was previously:
   svn checkout http://perl-compiler.googlecode.com/svn/trunk/ perl-compiler
 
 INSTALL
@@ -94,13 +96,11 @@ fail in mysterious ways and give wrong answers rather than just crash
 in boring ways. CC is still on the experimental level. Please use your 
 test suite.
 
-If your program uses classes which define methods (or other
-subs which are not exported and not apparently used until
-runtime) then you'll need to use -u compile-time options
-(see the NOTES file) to force the subs to be
-compiled. Future releases will probably default the other
-way, do more auto-detection and provide more fine-grained
-control.
+If your program uses classes which define methods (or other subs which
+are not exported and not apparently used until runtime) then you'll
+need to use -u compile-time options (see the NOTES file) to force the
+subs to be compiled. Future releases will probably default the other
+way, do more auto-detection and provide more fine-grained control.
 
 Since compiled executables need linking with libperl, you
 may want to turn libperl.a into a shared library if your

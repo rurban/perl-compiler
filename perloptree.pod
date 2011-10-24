@@ -1370,6 +1370,9 @@ is working on L<Jit>.
 
 The best source of information is the source. It is very well documented.
 
+There are some pod files from talks and workshops in F<ramblings/>.
+From YAPC EU 2010 there is a good screencast at L<http://vimeo.com/14058377>.
+
 Simon Cozens has posted the course material to NetThink's
 L<http://books.simon-cozens.org/index.php/Perl_5_Internals#The_Lexer_and_the_Parser>
 training course. This is the currently best available description on
@@ -1392,7 +1395,7 @@ pdf L<http://scratchcomputing.com/developers/perl_guts_tour.pdf>
 
 This text was created in this wiki article:
 L<http://www.perlfoundation.org/perl5/index.cgi?optree_guts>
-The svn version should be more actual.
+The with B::C released version should be more actual.
 
 =head1 Conclusion
 

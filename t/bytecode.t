@@ -34,7 +34,7 @@ my $PERL56  = ( $] <  5.008001 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = $Config{useithreads};
 my $MULTI     = $Config{usemultiplicity};
-my $AUTHOR    = -d ".svn";
+my $AUTHOR    = -d '.svn' or -d '.git';
 
 my @tests = tests();
 my $numtests = $#tests+1;
