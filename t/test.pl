@@ -817,7 +817,7 @@ sub todo_tests_default {
         push @todo, (103)   if $] >= 5.012 and $ITHREADS;
         #push @todo, (49)    if $] >= 5.013009 and $] < 5.015 and !$ITHREADS; # fixed with r1142
     }
-    push @todo, (46)   if $what =~ /^cc?_o[234]/; #to be skipped
+    push @todo, (46)   if $what =~ /^c_o[234]/ or $what =~ /^cc/; #to be skipped
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
     #push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
