@@ -10,7 +10,7 @@
 
 package B::C;
 
-our $VERSION = '1.36';
+our $VERSION = '1.37';
 my %debug;
 
 package B::C::Section;
@@ -2014,7 +2014,7 @@ sub mark_threads {
 }
 
 sub B::PVMG::save_magic {
-  my ($sv) = @_;
+  my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
   if ($debug{mg}) {
     my $flagspv = "";
@@ -2028,9 +2028,9 @@ sub B::PVMG::save_magic {
   if ($$pkg) {
     warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
       if $debug{mg} or $debug{gv};
-  }
-  $pkg->save;
-  if ($$pkg) {
+
+    $pkg->save($fullname);
+
     no strict 'refs';
     warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
       if $debug{mg} or $debug{gv};
@@ -2716,9 +2716,9 @@ sub B::CV::save {
   }
   my $stash = $cv->STASH;
   if ($$stash and ref($stash)) {
-    $stash->save();
+    $stash->save($fullname);
     # $sym fixed test 27
-    $init->add( sprintf( "CvSTASH_set((CV*)$sym, (HV*)s\\_%x);", $$stash ) );
+    $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv};
   }
@@ -2969,7 +2969,7 @@ if (0) {
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
-	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save ) );
+	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save($fullname) ) );
       }
     }
     if (!$PERL510 or $gp) {
@@ -3232,7 +3232,7 @@ sub B::HV::save {
   my $is_stash = $name;
   if ($name) {
     # It's a stash. See issue 79 + test 46
-    warn sprintf( "saving stash HV \"%s\" 0x%x MAX=%d\n",
+    warn sprintf( "saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
                   $name, $$hv, $hv->MAX ) if $debug{hv};
 
     # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
@@ -3243,8 +3243,8 @@ sub B::HV::save {
     $decl->add("static HV *hv$hv_index;");
 
     # Fix weird package names containing double-quotes, \n analog to gv_fetchpv
-    $name = cstring($name);
-    $init->add(qq[hv$hv_index = gv_stashpv($name, TRUE);]);
+    my $cname = cstring($name);
+    $init->add(qq[hv$hv_index = gv_stashpv($cname, TRUE);]);
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );
@@ -3256,10 +3256,12 @@ sub B::HV::save {
     # and via B::STASHGV we only save stashes for stashes.
     # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
-    return $sym if $fullname !~ /::$/ or !$B::C::stash or skip_pkg($name);
+    # $fullname !~ /::$/ or
+    return $sym if !$B::C::stash or skip_pkg($name);
+    warn "saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
 
-  # It's just an ordinary HV
+  # Ordinary HV or Stash
   # KEYS = 0, inc. dynamically below with hv_store
   if ($PERL510) {
     if ($PERL514) { # fill removed with 5.13.1
@@ -3302,7 +3304,7 @@ sub B::HV::save {
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
   # value => rv => cv => ... => rv => same hash
-  $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" );
+  $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
   if (@contents) {
     my $i;
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
@@ -3326,19 +3328,20 @@ sub B::HV::save {
       }
     }
     $init->no_split;
-    $init->add( "{", "\tHV *hv = $sym;" );
+    $init->add( "{", 
+		sprintf("\tHV *hv = %s$sym;", $sym=~/^hv|\(HV/ ? '' : '(HV*)' ));
     while (@contents) {
       my ( $key, $value ) = splice( @contents, 0, 2 );
       if ($value) {
 	$init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
-			    cstring($key), length( pack "a*", $key ),
-			    "(SV*)$value", hash($key) ));
-	warn sprintf( "  HV key %s=%s\n", $key, $value) if $debug{hv};
+			      cstring($key), length( pack "a*", $key ),
+			      "(SV*)$value", hash($key) ));
+	warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
       }
     }
     $init->add("}");
     $init->split;
-  } elsif ($] >= 5.015)  { 
+  } elsif ($] >= 5.015) { # empty contents still needs to set keys=0 
     # test 36
     $init->add( "HvTOTALKEYS($sym) = 0;");
     # empty contents cleared in aassign (keys = 7, not 0)
@@ -3373,7 +3376,7 @@ sub B::IO::save_data {
 }
 
 sub B::IO::save {
-  my ($io) = @_;
+  my ($io, $fullname) = @_;
   my $sym = objsym($io);
   return $sym if defined $sym;
   my $pv = $io->PV;
@@ -3490,7 +3493,7 @@ sub B::IO::save {
     }
   }
 
-  $io->save_magic; # This handle the stash also (we need to inc the refcnt)
+  $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
   #my $stash = $io->SvSTASH;
   #if ($$stash) {
   #  $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
