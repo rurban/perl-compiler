@@ -3275,7 +3275,8 @@ sub B::HV::save {
     }
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
-    if ($hv->MAGICAL) { # riter,eiter only for magic required
+    # XXX failed at 16 (tied magic) for %main::
+    if ($hv->MAGICAL and !$is_stash) { # riter,eiter only for magic required
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
@@ -3288,7 +3289,7 @@ sub B::HV::save {
 		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),
 		 "\tHvEITER_set($sym, NULL); }");
     }
-  }
+  } # !5.10
   else {
     $xpvhvsect->comment( "array fill max keys nv mg stash riter eiter pmroot name" );
     $xpvhvsect->add(sprintf( "0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
