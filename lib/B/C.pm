@@ -2960,7 +2960,7 @@ if (0) {
         $init->add("{\tCV *cv;
 		cv = get_cv($origname,TRUE);
 		GvCV_set($sym, cv);
-		SvREFCNT_inc((SV *)cv); }");
+		SvREFCNT_inc((SV *)cv);","}");
       }
       elsif (!$PERL510 or $gp) {
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
@@ -3298,7 +3298,7 @@ sub B::HV::save {
 			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
   }
   $svsect->debug($hv->flagspv) if $debug{flags};
-  warn sprintf( "saving HV 0x%x MAX=%d\n",
+  warn sprintf( "saving HV $fullname 0x%x MAX=%d\n",
                 $$hv, $hv->MAX ) if $debug{hv};
   my $sv_list_index = $svsect->index;
   my @contents     = $hv->ARRAY;
@@ -3321,7 +3321,7 @@ sub B::HV::save {
 	  $sv = bless $sv, "B::STASHGV"; # do not expand stash GV's only other stashes
 	  $contents[$i] = $sv->save($fullname.'{'.$key.'}');
 	} else {
-	  warn "skip STASH symbol ",$fullname.'{'.$key.'}',"\n" if $debug{hv};
+	  warn "skip STASH symbol *",$fullname.$key,"\n" if $debug{hv};
 	  $contents[$i] = undef;
 	}
       } else {
@@ -4447,8 +4447,8 @@ sub static_core_packages {
 
 sub skip_pkg {
   my $package = shift;
-  if ( $package =~ /^(FileHandle|SelectSaver|mro|O)$/
-       or $package =~ /^(B|PerlIO|Internals|IO)::/
+  if ( $package =~ /^(FileHandle|SelectSaver|mro)$/
+       or $package =~ /^(main::)?(B|PerlIO|Internals|IO|O)::/
        or $package =~ /::::/
        or index($package, " ") != -1 # XXX skip invalid package names
        or index($package, "(") != -1 # XXX this causes the compiler to abort
@@ -5011,6 +5011,15 @@ OPTION:
         }
         elsif ( $arg eq "u" ) {
           $debug{unused}++;
+        }
+        elsif ( $arg eq "r" ) {
+          $debug{runtime}++;
+	  $SIG{__WARN__} = sub { 
+	    warn @_; 
+	    my $s = join(" ", @_); 
+	    chomp $s;
+	    $init->add("/* ".$s." */") if $init; 
+	  };
         }
         else {
           warn "ignoring unknown debug option: $arg\n";

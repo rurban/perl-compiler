@@ -5,10 +5,11 @@
 
 1.37	2011-xx-xx rurban
 	Save %main:: stashes. Switched to git, added github mirror
-	* C: issue79: save stashes also, but only directly under %main::
-	  and values which are also stashes to avoid a second walker
-	  besides savecv, and thus unneeded territory; B::STASHGV (46)
-	New -fno-stash with -O2 to omit stashes, which are rarely needed
+	* C: issue79: save stashes also, but only values which are also
+	  stashes to avoid a second walker besides savecv, and thus do not
+	  walk into unneeded territory; B::STASHGV (46)
+	New -fno-stash with -O2 to omit stashes, which are rarely needed.
+	New debug option -Dr "runtime" to add debug output to the .c code (as in CC)
 	* CC (1.12) allow overriding of -f<opt> B::C flags
 	* META.yml: remove from MANIFEST and repo, let make dist
 	  autogenerate it
