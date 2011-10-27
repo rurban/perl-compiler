@@ -22,7 +22,7 @@ prepare_c_tests();
 my @todo  = todo_tests_default("c_o3");
 my @skip = (27, # out of memory
 	    28, # hangs, must be killed
-	    $DEBUGGING ? 29 : (), # issue 78 if not DEBUGGING
+	    $DEBUGGING ? () : 29, # issue 78 if not DEBUGGING > 5.15
 	    46
 	    );
 

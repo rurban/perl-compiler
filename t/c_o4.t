@@ -22,7 +22,7 @@ prepare_c_tests();
 my @todo  = todo_tests_default("c_o4");
 my @skip = (15,
 	    27, # sigsegv, out of memory
-	    29,  # hangs, must be killed
+	    $DEBUGGING ? () : 29, # issue 78 if not DEBUGGING > 5.15
 	    46
 	   );
 
