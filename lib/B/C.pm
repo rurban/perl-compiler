@@ -5264,6 +5264,11 @@ Together with B<-Dp> also prints every B<walked> package symbol.
 
 do not print B<-D> information when parsing for the unused subs.
 
+=item B<-Dr>
+
+Writes debugging output to STDERR just as it's about to write to the
+program's runtime. Otherwise writes debugging info to STDERR only.
+
 =item B<-f>I<OPTIM>
 
 Force options/optimisations on or off one at a time. You can explicitly
