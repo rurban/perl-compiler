@@ -14,7 +14,7 @@ BEGIN {
   require 'test.pl'; # for run_perl()
 }
 use strict;
-#my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
