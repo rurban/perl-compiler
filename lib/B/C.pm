@@ -5266,8 +5266,8 @@ do not print B<-D> information when parsing for the unused subs.
 
 =item B<-Dr>
 
-Writes debugging output to STDERR just as it's about to write to the
-program's runtime. Otherwise writes debugging info to STDERR only.
+Writes debugging output to STDERR and to the program's generated C file.
+Otherwise writes debugging info to STDERR only.
 
 =item B<-f>I<OPTIM>
 
