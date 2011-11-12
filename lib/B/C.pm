@@ -1859,7 +1859,7 @@ sub B::LEXWARN::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $iv = $] >= 5.008009 ? length($sv->PVX) : $sv->IV;
-  if ($] < 5.009004 and $[ >= 5.009) { $iv = length($sv->PVX); }
+  if ($] < 5.009004 and $] >= 5.009) { $iv = length($sv->PVX); }
   my $ivsym = lexwarnsym($iv); # look for shared const int's
   return savesym($sv, $ivsym);
 }
