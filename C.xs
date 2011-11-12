@@ -34,7 +34,8 @@ my_runops(pTHX)
 			      "WARNING: %"UVxf" changed from %"UVxf" to %"UVxf"\n",
 			      PTR2UV(PL_watchaddr), PTR2UV(PL_watchok),
 			      PTR2UV(*PL_watchaddr));
-#if !(defined(_WIN32) || (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX))
+#if defined(DEBUGGING) \
+   && !(defined(_WIN32) || (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX))
 # if (PERL_VERSION > 7)
 	    if (DEBUG_s_TEST_) debstack();
 	    if (DEBUG_t_TEST_) debop(PL_op);
