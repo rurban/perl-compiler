@@ -1,0 +1,16 @@
+MYMETA.json
+MYMETA.yml
+C.bs
+C.c
+C.o
+Makefile
+Makefile.old
+a
+a.c
+a.c.lst
+ccode*
+cccode*
+a.plc
+log.test-*
+pm_to_blib
+nohup.out
