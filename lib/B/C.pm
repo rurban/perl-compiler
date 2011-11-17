@@ -2136,6 +2136,13 @@ CODE
       $init->add(sprintf("sv_magic((SV*)s\\_%x, Nullsv, %s, %s, %d);",
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
+    elsif ( $type eq 'c' ) { # ovrld - AMT overload table on stash not yet
+      $init->add(sprintf(
+          "/* sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d); */",
+          $$sv, $$obj, cchar($type), cstring($ptr), $len
+        )
+      )
+    }
     else {
       $init->add(sprintf(
           "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
@@ -3680,6 +3687,10 @@ EOT
   if ($PERL510 and $^O eq 'MSWin32') {
     # mingw and msvc does not export newGP
     print << '__EOGP';
+
+#ifndef newGP
+PERL_CALLCONV GP * Perl_newGP(pTHX_ GV *const gv);
+
 GP *
 Perl_newGP(pTHX_ GV *const gv)
 {
@@ -3722,6 +3733,7 @@ Perl_newGP(pTHX_ GV *const gv)
 
     return gp;
 }
+#endif
 __EOGP
   }
   print "\n";
