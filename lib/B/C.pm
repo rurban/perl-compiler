@@ -2136,12 +2136,10 @@ CODE
       $init->add(sprintf("sv_magic((SV*)s\\_%x, Nullsv, %s, %s, %d);",
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
-    elsif ( $type eq 'c' ) { # ovrld - AMT overload table on stash not yet
+    elsif ( $type eq 'c' ) {
       $init->add(sprintf(
-          "/* sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d); */",
-          $$sv, $$obj, cchar($type), cstring($ptr), $len
-        )
-      )
+          "/* AMT overload table for the stash s\\_%x is generated dynamically */",
+          $$sv ));
     }
     else {
       $init->add(sprintf(
