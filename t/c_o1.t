@@ -1,6 +1,10 @@
 #! /usr/bin/env perl
 # better use testc.sh -O1 for debugging
 BEGIN {
+  unless (-d ".svn" or -d '.git') {
+    print "1..0 #SKIP Only if -d .svn|.git\n";
+    exit;
+  }
   if ($ENV{PERL_CORE}){
     chdir('t') if -d 't';
     @INC = ('.', '../lib');
