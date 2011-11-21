@@ -523,8 +523,9 @@ static int bget_swab = 0;
 #else
 /* See op.c:Perl_newSTATEOP. Test 21 */
 # if (PERL_VERSION < 13) || ((PERL_VERSION == 13) && (PERL_SUBVERSION < 5))
-#  if defined(_WIN32) || (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
+#  if defined(_WIN32) || defined(AIX)
 #   define BSET_cop_label(cop, arg)      /* Unlucky. Not exported with 5.12 and 5.14 */
+    /* XXX Check in Makefile.PL if patched. cygwin has -Wl=export-all-symbols */
 #   error "cop_label is not part of the public API for your perl. Try a perl <5.12 or >5.15"
 #  else
 #   define BSET_cop_label(cop, arg)	(cop)->cop_hints_hash = \
@@ -534,8 +535,9 @@ static int bget_swab = 0;
 #  if  (PERL_VERSION > 15) || ((PERL_VERSION == 15) && (PERL_SUBVERSION > 0))
 #   define BSET_cop_label(cop, arg)	Perl_cop_store_label(aTHX_ (cop), arg, strlen(arg), 0)
 #  else
-/* changed (macro -> function) with 5.13.4-5 a77ac40c5b8. Windows still out of luck */
-#   if defined(_WIN32) || (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX)
+/* changed (macro -> function) with 5.13.4-5 a77ac40c5b8. Windows still out of luck.
+   XXX Check in Makefile.PL if patched. cygwin has -Wl=export-all-symbols */
+#   if defined(_WIN32) || defined(AIX)
 #    define BSET_cop_label(cop, arg)
 #    error "cop_label is not part of the public API for your perl. Try a perl <5.12 or >5.15"
 #   else
