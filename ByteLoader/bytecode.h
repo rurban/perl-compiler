@@ -120,7 +120,7 @@ static int bget_swab = 0;
 #define BGET_OR_CROAK(arg, type) STMT_START {				\
 	if (BGET_FREAD(&arg, sizeof(type), 1) < 1) {			\
 	    Perl_croak(aTHX_						\
-		       "EOF or error while trying to read %d bytes for %s", \
+		       "EOF or error while trying to read %lu bytes for %s", \
 		       sizeof(type), STRINGIFY(type));			\
 	}								\
     } STMT_END
