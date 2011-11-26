@@ -121,7 +121,7 @@ sub op_flags {
 sub sv_flags {
   return '' if $quiet or $B::Concise::VERSION < 0.74;    # or ($] == 5.010);
   return '' unless $debug{Comment};
-  return 'B::SPECIAL' if $_[0]->isa('B::SPECIAL');
+  return 'B::SPECIAL' if $_[0]->isa('B::SPECIAL'); # warn objects 1-6
   my ($sv) = @_;
   my %h;
 
@@ -665,16 +665,16 @@ sub B::HV::bwalk {
       if ( $$hash && $hash->NAME ) {
         $hash->bwalk;
       }
-      # B since 5.13.6 (744aaba0598) pollutes our namespace. Keep it clean
+      # RT#81332 B since 5.13.6 (744aaba0598) pollutes our namespace. Keep it clean
       # XXX This fails if our source really needs any B constant
-      unless ($] > 5.013005 and $hv->NAME eq 'B') {
-	$v->ix(1) if desired $v;
-      }
+      #unless ($] > 5.013005 and $hv->NAME eq 'B') {
+      $v->ix(1) if desired $v;
+      #}
     }
     else {
-      if ($] > 5.013005 and $hv->NAME eq 'B') { # see above. omit B prototypes
-	return;
-      }
+#      if ($] > 5.013005 and $hv->NAME eq 'B') { # RT#81332 see above. omit B prototypes
+#	return;
+#      }
       nice "[prototype $tix]";
       B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
