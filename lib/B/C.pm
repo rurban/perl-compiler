@@ -2551,6 +2551,7 @@ sub B::CV::save {
     warn $fullname." not found\n" if $debug{sub};
     warn "No definition for sub $fullname (unable to autoload)\n"
       if $debug{cv};
+    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
     # XXX empty CV should not be saved
     # $svsect->remove( $sv_ix );
     # $xpvcvsect->remove( $xpvcv_ix );
@@ -5103,7 +5104,7 @@ OPTION:
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
   if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
-    warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n";
+    warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n" if $verbose;
     # XXX Still trying custom destructor.
     undef $B::C::pv_copy_on_grow;
   }
@@ -5435,18 +5436,17 @@ Disable all optimizations.
 
 =item B<-O1>
 
-Enable B<-fcog>, B<-fav-init2>/B<-fav-init> and B<-fppaddr>.
+Enable B<-fcog>, B<-fav-init2>/B<-fav-init>, B<-fppaddr> and B<-fwarn-sv>.
 
 Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fwarn-sv>, B<-fro-inc>.
+Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<-fno-stash>.
 
 =item B<-O3>
 
-Enable B<-O2> plus B<-fsave-sig-hash>, B<-fsave-data>, B<-fno-destruct>,
-B<-fconst-strings>
+Enable B<-O2> plus B<-fsave-sig-hash>, B<-fno-destruct> and B<-fconst-strings>.
 
 =item B<-O4>
 

@@ -51,6 +51,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.10, Reini Urban, 2011-02-11 22:58:37
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
+# Version 2.13, Reini Urban, 2011-12-xx
 
 use strict;
 use warnings;
@@ -65,7 +66,7 @@ use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.12;
+our $VERSION = 2.13;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -198,10 +199,13 @@ sub parse_argv {
 
     $Options = {};
     # support single dash -Wb. GetOptions requires --Wb with bundling enabled.
-    my ($wb) = grep /^-Wb=(.+)/, @ARGV;
-    if ($wb) {
+    if (my ($wb) = grep /^-Wb=(.+)/, @ARGV) {
         $Options->{Wb} = substr($wb,4);
         @ARGV = grep !/^-Wb=(.+)/, @ARGV;
+    }
+    if (my ($o1) = grep /^-O(\d)$/, @ARGV) {
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",-O.$o1" : "-O.$o1";
+        @ARGV = grep !/^-O(\d)$/, @ARGV;
     }
     if (grep /^-stash$/, @ARGV) {
         $Options->{stash}++;
@@ -214,25 +218,29 @@ sub parse_argv {
         'o=s',          # Output executable
         'v:i',          # Verbosity level
         'e=s',          # One-liner
-        'm|sharedlib:s',# Module [name]
+        'm|sharedlib:s',# as Module [name] (new since 2.11, not yet tested)
 	'r',            # run resulting executable
         'B',            # Byte compiler backend
         'O',            # Optimised C backend B::CC
+        'O1',           # -O1 i.e. -Wb=-O1 (new since 2.13)
+        'O2',           # -O2 i.e. -Wb=-O2 (new since 2.13)
         'c',            # Compile only
         'h',            # Help me
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
-        'static',       # Link to static libperl (default)
-        'shared',       # Link to shared libperl
-        'staticxs',     # Link static XSUBs
-        'sharedxs',     # Link shared XSUBs (default)
+        'u:s',          # use package (new since 2.13)
+        'U:s',          # skip package (new since 2.13)
+        'static',       # Link to static libperl (default, new since 2.11)
+        'shared',       # Link to shared libperl (new since 2.07)
+        'staticxs',     # Link static XSUBs (new since 2.07)
+        'sharedxs',     # Link shared XSUBs (default, new since 2.07))
         'stash',        # Detect external packages via B::Stash
 	'log:s',        # where to log compilation process information
         'Wb:s',         # pass (comma-seperated) options to backend
         'testsuite',    # try to be nice to testsuite
-        'spawn!',	# --no-spawn
-        'time',         # print benchmark timings
+        'spawn!',	# --no-spawn (new since 2.12)
+        'time',         # print benchmark timings (new since 2.08)
     );
 
     $Options->{v} += 0;
@@ -243,6 +251,10 @@ sub parse_argv {
     }
 
     helpme() if opt(h); # And exit
+    $Options->{Wb} .= ",-O1" if opt(O1);
+    $Options->{Wb} .= ",-O2" if opt(O2);
+    $Options->{Wb} .= ",-O3" if opt(O3);
+    $Options->{Wb} .= ",-O4" if opt(O4);
 
     if( $Options->{time} ) {
       eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
@@ -619,7 +631,7 @@ sub yclept {
         my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
         $command .= "-I$inc " unless $OINC{$i}; # omit internal @INC dirs
     }
-    
+
     return $command;
 }
 
@@ -945,6 +957,14 @@ Use the 'optimised' C code generator B::CC. This is more experimental than
 everything else put together, and the code created is not guaranteed to
 compile in finite time and memory, or indeed, at all.
 
+=item -O1
+
+Shortcut for C<-Wb=-O1>
+
+=item -O2
+
+Shortcut for C<-Wb=-O2>
+
 =item -v I<0-6>
 
 Set verbosity of output from 0 to max. 6.
@@ -964,6 +984,14 @@ Pass the options to the compiler backend, such as -Wb=-O2,-v
 =item -T or -t
 
 run the backend using perl -T or -t
+
+=item -u package
+
+Add package to link.
+
+=item -U package
+
+Skip package stash, do not add package to link.
 
 =item --stash
 
@@ -995,7 +1023,7 @@ at the client, modification of @INC in the source is probably required.
 =item -m|--sharedlib [Modulename]
 
 Create a module, resp. a shared library.
-Currently only enabled for Bytecode and CC.
+Currently only enabled for Bytecode and CC. I<(not yet tested)>
 
 =item --testsuite
 
