@@ -13,8 +13,10 @@
 # define RX_EXTFLAGS(prog) ((prog)->extflags)
 #endif
 
-typedef struct magic* B__MAGIC;
-typedef SV* B__REGEXP;
+typedef struct magic *B__MAGIC;
+#if PERL_VERSION >= 11
+typedef struct p5rx  *B__REGEXP;
+#endif
 
 static int
 my_runops(pTHX)

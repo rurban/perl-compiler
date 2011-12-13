@@ -1,9 +1,9 @@
 B::MAGIC	T_MG_OBJ
-B::REGEXP       T_RX_OBJ
+B::REGEXP	T_RX_OBJ
 
 INPUT
 T_RX_OBJ
-        if (SvROK($arg)) {
+        if (SvROK($arg) && SvTYPE(SvRV($arg)) == SVt_REGEXP) {
             IV tmp = SvIV((SV*)SvRV($arg));
             $var = INT2PTR($type,tmp);
         }
@@ -15,4 +15,4 @@ T_MG_OBJ
 	    $var = INT2PTR($type,tmp);
 	}
 	else
-	    croak(\"$var is not a reference to PVMG\")
+	    croak(\"$var is not a reference\")
