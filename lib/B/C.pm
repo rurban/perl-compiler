@@ -548,7 +548,7 @@ sub savere {
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
-    $decl->add( sprintf( "static const char *$sym = %s;", cstring($re) ) );
+    $decl->add( sprintf( "Static const char *$sym = %s;", cstring($re) ) );
   }
   return ( $sym, length( pack "a*", $re ) );
 }
@@ -564,11 +564,11 @@ sub constpv {
   #my $const = "const";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "static$const char %s[] = { %s };", $pvsym, $chars ) );
+    $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
   } else {
     my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "static$const char %s[] = %s;", $pvsym, $cstring ) );
+      $decl->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
   wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
@@ -580,11 +580,11 @@ sub savepv {
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "static char %s[] = { %s };", $pvsym, $chars ) );
+    $decl->add( sprintf( "Static char %s[] = { %s };", $pvsym, $chars ) );
   } else {
     my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "static char %s[] = %s;", $pvsym, $cstring ) );
+      $decl->add( sprintf( "Static char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
   my $pvmax = length( pack "a*", $pv ) + 1;
@@ -1846,7 +1846,7 @@ sub lexwarnsym {
   } else {
     warn "internal warning: lexwarn value $iv looks wrong\n" if $iv > 66000;
     my $sym = sprintf( "iv%d", $pv_index++ );
-    $decl->add( sprintf( "static const STRLEN %s = %d;", $sym, $iv ) );
+    $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $iv ) );
     $lexwarnsym{$iv} = $sym;
     return $sym;
   }
@@ -2339,7 +2339,7 @@ sub B::CV::save {
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
     my $vsym  = $cv->XSUBANY->save;
-    $decl->add("static CV* cv$cv_index;");
+    $decl->add("Static CV* cv$cv_index;");
     $init->add("cv$cv_index = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
     my $sym = savesym( $cv, "cv$cv_index" );
     $cv_index++;
@@ -3246,7 +3246,7 @@ sub B::HV::save {
     # a trashed op but we look at the trashed op_type and segfault.
     #my $adpmroot = ${$hv->PMROOT}; # XXX When was this fixed?
     my $adpmroot = 0;
-    $decl->add("static HV *hv$hv_index;");
+    $decl->add("Static HV *hv$hv_index;");
 
     # Fix weird package names containing double-quotes, \n analog to gv_fetchpv
     my $cname = cstring($name);
@@ -3597,7 +3597,7 @@ EOT
       my $name = $section->name;
       my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
       $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $] < 5.012;
-      printf "static %s %s_list[%u] = {\n", $typename, $name, $lines;
+      printf "Static %s %s_list[%u] = {\n", $typename, $name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
       $section->output( \*STDOUT, "\t{ %s }, /* %d */%s\n" );
@@ -3682,7 +3682,7 @@ EOT
     print "# define RX_EXTFLAGS(prog) ((prog)->extflags)\n";
     print "#endif\n";
   }
-  print "static GV *gv_list[$gv_index];\n" if $gv_index;
+  print "Static GV *gv_list[$gv_index];\n" if $gv_index;
   if ($PERL510 and $^O eq 'MSWin32') {
     # mingw and msvc does not export newGP
     print << '__EOGP';
@@ -3785,8 +3785,8 @@ EOT
     my $last = $xpvavsect->index;
     my $size = $last + 1;
     if ($last) {
-      $decl->add("static void* avchunks[$size];");
-      $decl->add("static size_t avsizes[$size] = ");
+      $decl->add("Static void* avchunks[$size];");
+      $decl->add("Static size_t avsizes[$size] = ");
       my $ptrsize = $Config{ptrsize};
       my $acc = "";
       for (0..$last) {
