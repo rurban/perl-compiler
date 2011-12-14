@@ -21,7 +21,7 @@ typedef struct p5rx  *B__REGEXP;
 static int
 my_runops(pTHX)
 {
-    HV* regexp_hv = get_hv( "B::C::REGEXP", 0 );
+    HV* regexp_hv = get_hv( "B::C::Regexp", 0 );
     SV* key = newSViv( 0 );
 
     DEBUG_l(Perl_deb(aTHX_ "Entering new RUNOPS level (B::C)\n"));

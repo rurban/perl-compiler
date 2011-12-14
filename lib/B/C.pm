@@ -184,7 +184,7 @@ EOT
 package B::C;
 use Exporter ();
 use Errno (); #needed since 5.14
-our %REGEXP;
+our %Regexp;
 
 { # block necessary for caller to work
   my $caller = caller;
@@ -1348,7 +1348,7 @@ sub B::PMOP::save {
     unless $B::C::optimize_ppaddr;
   my $re = $op->precomp; #out of memory: Module::Pluggable, Carp::Clan - threaded
   if ( defined($re) ) {
-    $REGEXP{$$op} = $op;
+    $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
       my $resym = "(char*)".cstring($re);
@@ -2090,7 +2090,7 @@ sub B::PVMG::save_magic {
     elsif ( $type eq 'r' ) { # qr magic, for 5.6 done in C.xs. test 20
       my $rx   = $PERL56 ? ${$mg->OBJ} : $mg->REGEX;
       # stored by some PMOP *pm = cLOGOP->op_other (pp_ctl.c) in C.xs
-      my $pmop = $REGEXP{$rx};
+      my $pmop = $Regexp{$rx};
       if (!$pmop) {
 	warn "C.xs Warning: PMOP missing for QR\n";
       } else {
