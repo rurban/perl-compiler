@@ -233,8 +233,8 @@ sub parse_argv {
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
-        'u:s%',         # use packages (new since 2.13)
-        'U:s%',         # skip packages (new since 2.13)
+        'u:s@',         # use packages (new since 2.13)
+        'U:s@',         # skip packages (new since 2.13)
         'static',       # Link to static libperl (default, new since 2.11)
         'shared',       # Link to shared libperl (new since 2.07)
         'staticxs',     # Link static XSUBs (new since 2.07)
