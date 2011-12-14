@@ -252,7 +252,7 @@ my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
-my %include_package;
+my (%include_package, %skip_package);
 my %static_ext;
 my $use_xsloader;
 my $nullop_count         = 0;
@@ -2311,18 +2311,18 @@ sub B::CV::save {
     return $sym;
   }
   my $gv = $cv->GV;
-  my ( $cvname, $cvstashname );
+  my ( $cvname, $cvstashname, $fullname );
   if ($$gv) {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
-    warn sprintf( "CV 0x%x as PVGV 0x%x %s::%s CvFLAGS=0x%x\n",
-                  $$cv, $$gv, $cvstashname, $cvname, $cv->CvFLAGS )
+    $fullname    = $cvstashname.'::'.$cvname;
+    warn sprintf( "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
+                  $$cv, $$gv, $fullname, $cv->CvFLAGS )
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
-    #return if "$cvstashname\::$cvname" eq 'utf8::AUTOLOAD';
-    return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$cvstashname.'::'.$cvname};
+    #return if $fullname eq 'utf8::AUTOLOAD';
+    return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$fullname} or $skip_package{$cvstashname};
   }
-  my $fullname = $cvstashname.'::'.$cvname;
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
@@ -2779,7 +2779,7 @@ if (0) {
 }
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
-  return $sym if $package =~ /^B::C/;
+  return $sym if $skip_package{$package};
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   my $name     = cstring($fullname);
@@ -4036,9 +4036,15 @@ EOT
     if (!$xsub{$c} and !$include_package{$c}) {
       # (hopefully, see test 103)
       warn "no dl_init for $c, not marked\n" if $verbose;
+      # RT81332 pollute
       @dl_modules = grep { $_ ne 'B' } @dl_modules;
       # XXX Be sure to store the new @dl_modules
     }
+  }
+  for my $c (keys %skip_package) {
+    delete $xsub{$c};
+    $include_package{$c} = undef;
+    @dl_modules = grep { $_ ne $c } @dl_modules;
   }
   @DynaLoader::dl_modules = @dl_modules;
   foreach my $stashname (@dl_modules) {
@@ -4930,8 +4936,15 @@ sub init_sections {
 }
 
 sub mark_unused {
-  my ( $arg, $val ) = @_;
-  $include_package{$arg} = $val;
+  my ( $pkg, $val ) = @_;
+  $include_package{$pkg} = $val;
+}
+
+sub mark_skip {
+  for (@_) {
+    delete $include_package{$_};
+    $skip_package{$_} = 1;
+  }
 }
 
 sub compile {
@@ -4951,6 +4964,7 @@ sub compile {
     3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
+  mark_skip('B::C', 'B::C::Flags', 'B::CC');
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
@@ -5061,6 +5075,10 @@ OPTION:
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
       mark_unused( $arg, undef );
+    }
+    elsif ( $opt eq "U" ) {
+      $arg ||= shift @options;
+      mark_skip( $arg );
     }
     elsif ( $opt eq "f" ) {
       $arg ||= shift @options;
@@ -5191,6 +5209,7 @@ Force end of options
 =item B<-u>I<Package> "use Package"
 
 Force all subs from Package to be compiled.
+
 This allows programs to use eval "foo()" even when sub foo is never
 seen to be used at compile time. The down side is that any subs which
 really are never used also have code generated. This option is
@@ -5202,10 +5221,17 @@ have subs in which need compiling but the current version doesn't do
 it very well. In particular, it is confused by nested packages (i.e.
 of the form C<A::B>) where package C<A> does not contain any subs.
 
+=item B<-U>I<Package> "unuse" skip Package
+
+Ignore all subs from Package to be compiled.
+
+Certain packages might not be needed at run-time, even if the pessimistic
+walker detects it.
+
 =item B<-staticxs>
 
 Dump a list of bootstrapped XS package names to F<outfile.lst>
-needed for C<perlcc --staticxs>. 
+needed for C<perlcc --staticxs>.
 Add code to DynaLoader to add the .so/.dll path to PATH.
 
 =item B<-D>C<[OPTIONS]>

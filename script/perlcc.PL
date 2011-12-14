@@ -233,8 +233,8 @@ sub parse_argv {
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
-        'u:s',          # use package (new since 2.13)
-        'U:s',          # skip package (new since 2.13)
+        'u:s%',         # use packages (new since 2.13)
+        'U:s%',         # skip packages (new since 2.13)
         'static',       # Link to static libperl (default, new since 2.11)
         'shared',       # Link to shared libperl (new since 2.07)
         'staticxs',     # Link static XSUBs (new since 2.07)
@@ -367,9 +367,12 @@ sub compile_byte {
 
 sub compile_cstyle {
     my $stash = opt(stash) ? grab_stash() : "";
-    my $taint = opt(T) ? '-T' :
-                opt(t) ? '-t' : '';
     $stash .= "," if $stash; #stash can be empty
+    $stash .= "-u$_," for @{$Options->{u}};
+    $stash .= "-U$_," for @{$Options->{U}};
+
+    my $taint = opt(T) ? '-T' :
+                       opt(t) ? '-t' : '';
 
     # What are we going to call our output C file?
     my $lose = 0;
@@ -456,6 +459,7 @@ sub compile_cstyle {
         my $dylib;
         while (<XS>) {
             my ($s, $l) = m/^([^\t]+)(.*)$/;
+            next if grep { $s eq $_ } @{$Options->{U}};
             $stash .= ",-u$s";
             if ($l) {
                 $l = substr($l,1);
@@ -500,7 +504,7 @@ sub compile_cstyle {
 }
 
 sub cc_harness_msvc {
-    my ($cfile, $stash, $extra_libs)=@_;
+    my ($cfile, $stash, $extra_libs) = @_;
     use ExtUtils::Embed ();
     my $obj = "${Output}.obj";
     my $compile = ExtUtils::Embed::ccopts." -c -Fo$obj $cfile ";
@@ -514,7 +518,7 @@ sub cc_harness_msvc {
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs
     if ($stash) {
-        my @mods = split /,?-?u/, $stash;
+        my @mods = split /,?-?u/, $stash; # XXX -U stashes
         $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
         # XXX staticxs need to check if the last mods for staticxs found a static lib.
         # XXX only if not use the extra_libs
@@ -550,7 +554,7 @@ sub cc_harness {
     _die("--sharedxs with useshrplib=false\n") if !$useshrplib and opt(sharedxs);
     my $ldopts;
     if ($stash) {
-        my @mods = split /,?-?u/, $stash;
+        my @mods = split /,?-?u/, $stash; # XXX -U stashes
         $ldopts = ExtUtils::Embed::ldopts("-std", \@mods);
     } else {
         $ldopts = ExtUtils::Embed::ldopts("-std");
@@ -1012,11 +1016,11 @@ run the backend using perl -T or -t
 
 =item -u package
 
-Add package to link.
+Add package(s) to compiler and force linking to it.
 
 =item -U package
 
-Skip package stash, do not add package to link.
+Skip package(s). Do not compile and link.
 
 =item --stash
 
