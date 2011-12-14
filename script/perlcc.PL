@@ -51,7 +51,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.10, Reini Urban, 2011-02-11 22:58:37
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
-# Version 2.13, Reini Urban, 2011-12-xx
+# Version 2.13, Reini Urban, 2011-12-14 08:36:00
 
 use strict;
 use warnings;
@@ -120,7 +120,7 @@ sub choose_backend {
 
 sub generate_code {
 
-    vprint 0, "Compiling $Input";
+    vprint 1, "Compiling $Input";
 
     $BinPerl  = yclept();  # Calling convention for perl.
 
@@ -203,9 +203,14 @@ sub parse_argv {
         $Options->{Wb} = substr($wb,4);
         @ARGV = grep !/^-Wb=(.+)/, @ARGV;
     }
+    # -O2 i.e. -Wb=-O1 (new since 2.13)
     if (my ($o1) = grep /^-O(\d)$/, @ARGV) {
-        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",-O.$o1" : "-O.$o1";
-        @ARGV = grep !/^-O(\d)$/, @ARGV;
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",$o1" : $o1;
+        @ARGV = grep !/^-O\d$/, @ARGV;
+    }
+    if (my ($v) = grep /^-v\d$/, @ARGV) {
+        $Options->{v} = 0+substr($v,2);
+        @ARGV = grep !/^-v\d$/, @ARGV;
     }
     if (grep /^-stash$/, @ARGV) {
         $Options->{stash}++;
@@ -222,8 +227,7 @@ sub parse_argv {
 	'r',            # run resulting executable
         'B',            # Byte compiler backend
         'O',            # Optimised C backend B::CC
-        'O1',           # -O1 i.e. -Wb=-O1 (new since 2.13)
-        'O2',           # -O2 i.e. -Wb=-O2 (new since 2.13)
+        #'O1-4'         # alias for -Wb=-O1 (new since 2.13)
         'c',            # Compile only
         'h',            # Help me
         'S',            # Dump C files
@@ -238,9 +242,12 @@ sub parse_argv {
         'stash',        # Detect external packages via B::Stash
 	'log:s',        # where to log compilation process information
         'Wb:s',         # pass (comma-seperated) options to backend
+        'Wc:s',         # pass (comma-seperated) options to cc (new since 2.13)
+        'Wl:s',         # pass (comma-seperated) options to ld (new since 2.13)
         'testsuite',    # try to be nice to testsuite
         'spawn!',	# --no-spawn (new since 2.12)
         'time',         # print benchmark timings (new since 2.08)
+        'version',      # (new since 2.13)
     );
 
     $Options->{v} += 0;
@@ -251,6 +258,10 @@ sub parse_argv {
     }
 
     helpme() if opt(h); # And exit
+    if (opt(version)) {
+      die "perlcc $VERSION\n";
+    }
+
     $Options->{Wb} .= ",-O1" if opt(O1);
     $Options->{Wb} .= ",-O2" if opt(O2);
     $Options->{Wb} .= ",-O3" if opt(O3);
@@ -335,7 +346,7 @@ sub compile_byte {
     }
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
-    vprint 1, "Compiling...";
+    vprint 5, "Compiling...";
     vprint 1, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
@@ -411,7 +422,7 @@ sub compile_cstyle {
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below
     }
-    vprint 1, "Writing C on $cfile";
+    vprint 2, "Writing C on $cfile";
 
     my $max_line_len = '';
     if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/i) {
@@ -422,7 +433,7 @@ sub compile_cstyle {
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
     my $command = "$BinPerl $taint -MO=$Backend,$options"."-o$cfile $Input";
-    vprint 1, "Compiling...";
+    vprint 5, "Compiling...";
     vprint 1, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
@@ -472,7 +483,7 @@ sub compile_cstyle {
         }
         close XS;
         $extra_libs = " -L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
-        vprint 1, "staticxs $stash $extra_libs";
+        vprint 2, "staticxs: $stash $extra_libs";
     }
 
     $t0 = [gettimeofday] if opt('time');
@@ -482,8 +493,8 @@ sub compile_cstyle {
     $elapsed = tv_interval ( $t0 ) if opt('time');
     vprint -1, "cc time: $elapsed" if opt('time');
 
-    if ($lose) {
-        vprint 2, "unlinking $cfile";
+    if ($lose and -s $Output) {
+        vprint 2, "Unlinking $cfile";
         unlink $cfile or _die("can't unlink $cfile: $!\n");
     }
 }
@@ -498,6 +509,8 @@ sub cc_harness_msvc {
     $compile .= $B::C::Flags::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
     $compile .= " -DNO_DYNAMIC_LOADING" if opt(staticxs);
+    $compile .= " ".opt(Wc) if opt(Wc);
+
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs
     if ($stash) {
@@ -511,12 +524,13 @@ sub cc_harness_msvc {
     if ($Config{ccversion} eq '12.0.8804') {
         $link =~ s/ -opt:ref,icf//;
     }
+    $link .= " ".opt(Wl) if opt(Wl);
     # $link .= $extra_libs;
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     $link .= $B::C::Flags::extra_libs;
-    vprint 3, "running $Config{cc} $compile";
+    vprint 3, "Calling $Config{cc} $compile";
     system("$Config{cc} $compile");
-    vprint 3, "running $Config{ld} $link";
+    vprint 3, "Calling $Config{ld} $link";
     system("$Config{ld} $link");
 }
 
@@ -528,8 +542,10 @@ sub cc_harness {
     $command .= $B::C::Flags::extra_cflags if $B::C::Flags::extra_cflags;
     $command .= " -I".$_ for split /\s+/, opt(I);
     $command .= " -L".$_ for split /\s+/, opt(L);
-    my $ccflags = $command;
     $command .= " -DNO_DYNAMIC_LOADING" if opt(staticxs);
+    $command .= " ".opt(Wc) if opt(Wc);
+    my $ccflags = $command;
+
     my $useshrplib = $Config{useshrplib};
     _die("--sharedxs with useshrplib=false\n") if !$useshrplib and opt(sharedxs);
     my $ldopts;
@@ -539,7 +555,9 @@ sub cc_harness {
     } else {
         $ldopts = ExtUtils::Embed::ldopts("-std");
     }
-    # gcc crashes with this duplicate arg
+    $ldopts .= " ".opt(Wl) if opt(Wl);
+
+    # gcc crashes with this duplicate -fstack-protector arg
     my $ldflags = $Config{ldflags};
     if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
         $ldopts =~ s/-fstack-protector//;
@@ -600,7 +618,7 @@ sub cc_harness {
     $ldopts .= " -lperl" unless $command =~ /perl/;
     $command .= " ".$ldopts;
     $command .= $B::C::Flags::extra_libs if $B::C::Flags::extra_libs;
-    vprint 3, "running $Config{cc} $command";
+    vprint 3, "Calling $Config{cc} $command";
     system("$Config{cc} $command");
 }
 
@@ -855,11 +873,11 @@ sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
     if ($cfile && !opt(S) && !opt(c) && -e $cfile) {
-        vprint 2, "unlinking $cfile";
+        vprint 2, "Unlinking $cfile";
         unlink $cfile;
     }
     if (opt(staticxs) and !opt(S)) {
-        vprint 2, "unlinking $cfile.lst";
+        vprint 2, "Unlinking $cfile.lst";
         unlink "$cfile.lst";
     }
 }
@@ -957,13 +975,12 @@ Use the 'optimised' C code generator B::CC. This is more experimental than
 everything else put together, and the code created is not guaranteed to
 compile in finite time and memory, or indeed, at all.
 
-=item -O1
+=item -OI<1-4>
 
-Shortcut for C<-Wb=-O1>
+Pass the numeric optimisation option to the compiler backend.
+Shortcut for C<-Wb=-On>.
 
-=item -O2
-
-Shortcut for C<-Wb=-O2>
+This does not enforce B::CC.
 
 =item -v I<0-6>
 
@@ -977,9 +994,17 @@ Run the resulting compiled script after compiling it.
 
 Log the output of compiling to a file rather than to stdout.
 
-=item -Wb=I<options>
+=item --Wb=I<options>
 
-Pass the options to the compiler backend, such as -Wb=-O2,-v
+Pass the options to the compiler backend, such as --Wb=-O2,-v
+
+=item --Wc=I<options>
+
+Pass comma-seperated options to cc.
+
+=item --Wl=I<options>
+
+Pass comma-seperated options to ld.
 
 =item -T or -t
 

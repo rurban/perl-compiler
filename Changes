@@ -3,16 +3,19 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.37	2011-xx-xx rurban
-	Save %main:: stashes. Switched to git, added github mirror
+1.37	2011-12-xx rurban
+	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	* C: issue79: save stashes also, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not
 	  walk into unneeded territory; B::STASHGV (46)
 	New -fno-stash with -O2 to omit stashes, which are rarely needed.
 	New debug option -Dr "runtime" to add debug output to the .c code (as in CC)
 	* CC (1.12) allow overriding of -f<opt> B::C flags
+	* perlcc (2.13): added options -O1-4, -u, -U, --Wc, --Wl, --version,
+	Keep cfile if output is empty,
+	Changed verbosity levels and output wording.
 	* META.yml: remove from MANIFEST and repo, let make dist
-	  autogenerate it
+	  autogenerate it.
 	* t/TESTS: changed  test 46 (Exporter:: and other stashes in
 	  %main:: stash) to cover issue 79.
 	  use Exporter; print q(ok) if %main::Exporter::
@@ -21,9 +24,9 @@
 	lexical warnings and more 5.15 fixes
 	* C: new B::LEXWARN, fixed representation of lexical warnings which was broken
 	  since 8e01d9a6  5.8.9/5.9.4 (issue 76)
-	added section free, use it for lexical cop_warnings (const STRLEN*)
+	Added section free, use it for lexical cop_warnings (const STRLEN*)
 	  (TODO: static PV, HEK + COPs)
-	workaround for utf8::SWASHNEW adjusted to 5.15
+	Workaround for utf8::SWASHNEW adjusted to 5.15
 	PAD* sv flags changed in 5.15.3
 	XSLoader API changed (HEK in caller i.e.): had to add a
 	  XSLoader::load_file for [perl #101336] >= 5.15.3,

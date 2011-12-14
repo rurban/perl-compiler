@@ -4227,7 +4227,6 @@ EOT
 
     exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
 			    fakeargv, env);
-
     if (exitstatus)
 	exit( exitstatus );
 
@@ -4273,6 +4272,7 @@ EOT
     /* PL_main_cv = PL_compcv; */
     PL_compcv = 0;
 
+    /* our special compiled init */
     exitstatus = perl_init(aTHX);
     if (exitstatus)
 	exit( exitstatus );
