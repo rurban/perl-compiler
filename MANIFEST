@@ -127,6 +127,7 @@ t/modules.pm
 t/modules.t
 t/mymodules
 t/o.t
+t/perldoc.t
 t/qr_loaded_module.pm
 t/stash.t
 t/test.pl
