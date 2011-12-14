@@ -69,7 +69,7 @@ sub output {
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
     }
-    printf $fh $format, $_, $i, $dbg;
+    printf $fh $format, $_, $section->name, $i, $dbg;
     ++$i;
   }
 }
@@ -3600,7 +3600,7 @@ EOT
       printf "Static %s %s_list[%u] = {\n", $typename, $name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
-      $section->output( \*STDOUT, "\t{ %s }, /* %d */%s\n" );
+      $section->output( \*STDOUT, "\t{ %s }, /* %s_list[%d] */%s\n" );
       print "};\n\n";
     }
   }
@@ -3679,7 +3679,7 @@ EOT
   }
   if ($] == 5.010000) {
     print "#ifndef RX_EXTFLAGS\n";
-    print "# define RX_EXTFLAGS(prog) ((prog)->extflags)\n";
+    print "# define RX_EXTFLAGS(rx) ((rx)->extflags)\n";
     print "#endif\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
