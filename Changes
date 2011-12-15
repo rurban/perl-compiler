@@ -11,6 +11,7 @@
 	New -fno-stash with -O2 to omit stashes, which are rarely needed.
 	New debug option -Dr "runtime" to add debug output to the .c code (as in CC)
 	New option -Upackage to skip package, mark_skip()
+	Re-implemented sharepvn via share_hek() and SvLEN=0 (71)
 	* CC (1.12) allow overriding of -f<opt> B::C flags
 	* perlcc (2.13): added options -O1-4, -u, -U, --Wc, --Wl, --version,
 	Keep cfile if output is empty,
