@@ -1058,8 +1058,9 @@ sub method_named {
     $method = $_ . '::' . $name;
     last if defined(*{$method}{CODE});
   }
-  warn "save method_name \"$name\"\n" if $debug{cv};
-  return svref_2object( \&{$name} );
+  $method = $name unless $method;
+  warn "save method_name \"$method\"\n" if $debug{cv};
+  return svref_2object( \&{$method} );
 }
 
 sub B::SVOP::save {
@@ -2321,7 +2322,7 @@ sub B::CV::save {
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
-    return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -2945,9 +2946,9 @@ if (0) {
     if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
-      if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB alias
+      if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB CONSTSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        warn "Boot $package, XS alias of $fullname to $origname\n" if $debug{pkg};
+        warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n" if $debug{pkg};
         mark_package($package, 1);
         {
           no strict 'refs';
@@ -4942,7 +4943,8 @@ sub mark_unused {
 
 sub mark_skip {
   for (@_) {
-    delete $include_package{$_};
+    delete_unsaved_hashINC($_);
+    $include_package{$_} = 0;
     $skip_package{$_} = 1;
   }
 }
