@@ -3977,12 +3977,6 @@ EOT
       }
     }
     $free->output( \*STDOUT, "%s\n" );
-    for (0 .. $hek_index-1) {
-      # XXX who stores this hek? GvNAME and GvFILE most likely
-      my $hek = sprintf( "hek%d", $_ );
-      print "\n   " unless $_ % 8;
-      printf (" %s = NULL;", $hek);
-    }
     print "\n    return perl_destruct( my_perl );\n}\n\n";
   }
 
