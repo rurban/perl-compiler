@@ -2488,10 +2488,16 @@ sub B::CV::save {
 	  $cv  = $auto ; # This is new. i.e. via AUTOLOAD or UNIVERSAL, in another stash
 	  my $gv = $cv->GV;
 	  if ($$gv) {
-	    return $cv->save
-	      if $cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME; # UNIVERSAL or AUTOLOAD
+	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
+	      warn "New $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	      $svsect->remove;
+	      $xpvcvsect->remove;
+	      delsym($cv);
+	      return $cv->save;
+	    }
 	  }
 	  $sym = savesym( $cv, "&sv_list[$sv_ix]" ); # GOTO
+	  warn "$fullname GOTO\n" if $verbose;
 	}
       } else {
         # Recalculated root and xsub
@@ -2499,8 +2505,13 @@ sub B::CV::save {
         $cvxsub = $cv->XSUB;
 	my $gv = $cv->GV;
 	if ($$gv) {
-	  return $cv->save
-	    if $cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME; # UNIVERSAL or AUTOLOAD
+	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
+	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	    $svsect->remove;
+	    $xpvcvsect->remove;
+	    delsym($cv);
+	    return $cv->save;
+	  }
 	}
       }
       if ( $$root || $cvxsub ) {
