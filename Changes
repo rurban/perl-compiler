@@ -21,6 +21,7 @@
 	* t/TESTS: changed  test 46 (Exporter:: and other stashes in
 	  %main:: stash) to cover issue 79.
 	  use Exporter; print q(ok) if %main::Exporter::
+	* t/perldoc.t: fixed for 5.8 with manually adding -uFile::Spec -uIO::Handle
 
 1.36	2011-10-19 rurban
 	lexical warnings and more 5.15 fixes
