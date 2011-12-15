@@ -2207,7 +2207,7 @@ sub B::RV::save {
 }
 
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
-# XXX issue 64, empty @ISA rif a package has no subs. in Bytecode ok
+# XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
@@ -2218,7 +2218,7 @@ sub try_isa {
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
-    next if $_ eq '$cvstashname';
+    next if $_ eq $cvstashname;
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_, 1); # force
@@ -2244,6 +2244,7 @@ sub try_autoload {
 
   no strict 'refs';
   if (defined(*{'UNIVERSAL::'. $cvname}{CODE})) {
+    warn "Found UNIVERSAL::$cvname\n" if $debug{cv};
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
   warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
@@ -2483,17 +2484,27 @@ sub B::CV::save {
   }
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
-      if (ref $auto eq 'B::CV') { # explicit goto
+      if (ref $auto eq 'B::CV') { # explicit goto or UNIVERSAL
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
 	if ($$auto) {
-	  $cv  = $auto ; # This is new
-	  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+	  $cv  = $auto ; # This is new. i.e. via AUTOLOAD or UNIVERSAL, in another stash
+	  my $gv = $cv->GV;
+	  if ($$gv) {
+	    return $cv->save
+	      if $cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME; # UNIVERSAL or AUTOLOAD
+	  }
+	  $sym = savesym( $cv, "&sv_list[$sv_ix]" ); # GOTO
 	}
       } else {
         # Recalculated root and xsub
         $root   = $cv->ROOT;
         $cvxsub = $cv->XSUB;
+	my $gv = $cv->GV;
+	if ($$gv) {
+	  return $cv->save
+	    if $cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME; # UNIVERSAL or AUTOLOAD
+	}
       }
       if ( $$root || $cvxsub ) {
         warn "Successful forced autoload\n" if $verbose;
@@ -4380,6 +4391,7 @@ sub mark_package {
   my $package = shift;
   my $force = shift;
   $force = 0 if $] < 5.010;
+  return if $skip_package{$package};
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     # i.e. if force
@@ -4395,7 +4407,8 @@ sub mark_package {
 		    sub { should_save( $_[0] ); return 1 },
 		    $package.'::' );
     } else {
-      warn sprintf("mark $package%s\n", $force?" (forced)":"") if $verbose and $debug{pkg};
+      warn sprintf("mark $package%s\n", $force?" (forced)":"")
+	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
     }
     my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
@@ -4506,7 +4519,7 @@ sub should_save {
   if ( $] > 5.015001 and 
        !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
     $include_package{$package} = 0;
-    warn "Cached $package not in \%INC, already deleted (early)\n" if ($debug{pkg});
+    warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
   }
   # If this package is in the same file as main:: or our source, save it. (72, 73)

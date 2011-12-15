@@ -8,6 +8,8 @@
 	* C: issue79: save stashes also, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not
 	  walk into unneeded territory; B::STASHGV (46)
+	UNIVERSAL (magic) methods were not correctly stored, which led to method not
+	  found at run-time.
 	New -fno-stash with -O2 to omit stashes, which are rarely needed.
 	New debug option -Dr "runtime" to add debug output to the .c code (as in CC)
 	New option -Upackage to skip package, mark_skip()
