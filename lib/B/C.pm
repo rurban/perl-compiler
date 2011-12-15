@@ -3,6 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
+#      Copyright (c) 2011 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -1524,7 +1525,7 @@ sub B::NV::save {
 }
 
 sub savepvn {
-  my ( $dest, $pv ) = @_;
+  my ( $dest, $pv, $sv ) = @_;
   my @res;
 
   # work with byte offsets/lengths
@@ -1544,9 +1545,14 @@ sub savepvn {
       if $debug{sv};
   }
   else {
-    warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-    push @res,
-      sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), length($pv) );
+    # If READONLY and FAKE use newSVpvn_share instead. (test 75)
+    if ($PERL510 and $sv and (($sv->FLAGS & 0x09000000) == 0x09000000)) {
+      warn sprintf( "Saving shared PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
+      push @res, sprintf( "%s = (char*)HEK_KEY(share_hek(%s, %u, %u));", $dest, cstring($pv), length($pv), hash($pv) );
+    } else {
+      warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
+      push @res, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), length($pv) );
+    }
   }
   return @res;
 }
@@ -1566,7 +1572,7 @@ sub B::PVLV::save {
   my ( $pvsym, $pvmax );
   ( $pvsym, $pvmax ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
     ? constpv($pv) : savepv($pv);
-  $pvmax = 0 if $B::C::pv_copy_on_grow;
+  $pvmax = 0 if $B::C::pv_copy_on_grow or ($PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000));
   $pvsym = "(char*)$pvsym";# if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL514) {
@@ -1598,7 +1604,7 @@ sub B::PVLV::save {
   my $s = "sv_list[".$svsect->index."]";
   if ( !$B::C::pv_copy_on_grow ) {
     if ($PERL510) {
-      $init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
+      $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
     }
     else {
       $init->add(
@@ -1643,7 +1649,7 @@ sub B::PVIV::save {
   if ( defined($pv) ) {
     if ( !$B::C::pv_copy_on_grow ) {
       if ($PERL510) {
-	$init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
+	$init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
       } else {
 	$init->add
 	  (savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
@@ -1668,7 +1674,7 @@ sub B::PVNV::save {
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
-  $pvmax = 0 if $B::C::pv_copy_on_grow;
+  $pvmax = 0 if $B::C::pv_copy_on_grow or ($PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000));
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
   my $uvuformat = $Config{uvuformat};
@@ -1725,7 +1731,7 @@ sub B::PVNV::save {
   if ( defined($pv) ) {
     if ( !$B::C::pv_copy_on_grow or $] < 5.010) {
       if ($PERL510) {
-	$init->add( savepvn( "$s.sv_u.svu_pv", $pv ) );
+	$init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
       }
       else {
         $init->add(
@@ -1810,18 +1816,14 @@ sub B::PV::save {
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3"
-  $pvmax = 0 if $B::C::pv_copy_on_grow;
+  $pvmax = 0 if $B::C::pv_copy_on_grow or ($PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000));
   if ($PERL510) {
-    # XXX If READONLY and FAKE use newSVpvn_share instead
-    #if (($sv->FLAGS & 0x01000000|0x08000000) == 0x01000000|0x08000000) {
-    #  $init->add( sprintf( "$sym = (GV*)newSVpvn_share();" ));
-    #}
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $len, $pvmax ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
                            defined($pv) && $B::C::pv_copy_on_grow ? $savesym : "(char*)ptr_undef"));
     if ( defined($pv) and !$B::C::pv_copy_on_grow ) {
-      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv ) );
+      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv ) );
     }
   }
   else {
@@ -1909,7 +1911,7 @@ sub B::PVMG::save {
   # local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   my ( $savesym, $pvmax, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
-  $pvmax = 0 if $B::C::pv_copy_on_grow;
+  $pvmax = 0 if $B::C::pv_copy_on_grow or ($PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000));
   #warn sprintf( "PVMG %s (0x%x) $savesym, $pvmax, $len, $pv\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
@@ -1980,7 +1982,7 @@ sub B::PVMG::save {
 			     $svsect->index ) );
       } else {
         $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv",
-				      $svsect->index ), $pv ) );
+				      $svsect->index ), $pv, $sv ) );
       }
     } else {
       if (!$pv or !$savesym or $savesym eq 'NULL') {
@@ -2714,7 +2716,7 @@ sub B::CV::save {
   }
   unless ($optimize_cop) {
     if ($MULTI) {
-      $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
+      $init->add( savepvn( "CvFILE($sym)", $cv->FILE, $gv ) );
     }
     else {
       $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
