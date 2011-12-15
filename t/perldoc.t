@@ -33,6 +33,8 @@ $t0 = [gettimeofday];
 my $cc = `./perldoc -T -f wait`;
 my $t2 = tv_interval( $t0, [gettimeofday]);
 TODO: {
+  # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
+  # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
   local $TODO = "compiled does not print yet" if $] >= 5.010;
   is($cc, $ori, "same result");
 }
