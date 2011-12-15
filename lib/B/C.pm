@@ -2326,6 +2326,7 @@ sub B::CV::save {
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
     return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -4382,18 +4383,19 @@ sub mark_package {
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     # i.e. if force
-    if (exists $include_package{$package} 
-	and !$include_package{$package} 
-	and $savINC{inc_packname($package)}) 
+    if (exists $include_package{$package}
+	and !$include_package{$package}
+	and $savINC{inc_packname($package)})
     {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
       $include_package{$package} = 1;
       add_hashINC( $package );
-      walksymtable( \%{$package.'::'}, "savecv", 
-		    sub { should_save( $_[0] ); return 1 }, 
+      walksymtable( \%{$package.'::'}, "savecv",
+		    sub { should_save( $_[0] ); return 1 },
 		    $package.'::' );
     } else {
+      warn sprintf("mark $package%s\n", $force?" (forced)":"") if $verbose and $debug{pkg};
       $include_package{$package} = 1;
     }
     my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
@@ -4408,7 +4410,7 @@ sub mark_package {
             eval { $package->bootstrap };
           }
         }
-	if ( !$include_package{$isa} and $isa ne 'B::C') {
+	if ( !$include_package{$isa} and !$skip_package{$isa} ) {
 	  warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
