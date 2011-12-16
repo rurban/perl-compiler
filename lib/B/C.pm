@@ -1059,8 +1059,9 @@ sub method_named {
     $method = $_ . '::' . $name;
     last if defined(*{$method}{CODE});
   }
-  warn "save method_name \"$name\"\n" if $debug{cv};
-  return svref_2object( \&{$name} );
+  $method = $name unless $method;
+  warn "save method_name \"$method\"\n" if $debug{cv};
+  return svref_2object( \&{$method} );
 }
 
 sub B::SVOP::save {
@@ -2205,7 +2206,7 @@ sub B::RV::save {
 }
 
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
-# XXX issue 64, empty @ISA rif a package has no subs. in Bytecode ok
+# XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
@@ -2216,7 +2217,7 @@ sub try_isa {
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
-    next if $_ eq '$cvstashname';
+    next if $_ eq $cvstashname;
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(*{$_ .'::'. $cvname}{CODE})) {
       mark_package($_, 1); # force
@@ -2242,6 +2243,7 @@ sub try_autoload {
 
   no strict 'refs';
   if (defined(*{'UNIVERSAL::'. $cvname}{CODE})) {
+    warn "Found UNIVERSAL::$cvname\n" if $debug{cv};
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
   warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
@@ -2323,7 +2325,8 @@ sub B::CV::save {
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
-    return '0' if $cvstashname eq 'B::C' or $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -2480,17 +2483,38 @@ sub B::CV::save {
   }
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
-      if (ref $auto eq 'B::CV') { # explicit goto
+      if (ref $auto eq 'B::CV') { # explicit goto or UNIVERSAL
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
 	if ($$auto) {
-	  $cv  = $auto ; # This is new
-	  $sym = savesym( $cv, "&sv_list[$sv_ix]" );
+	  $cv  = $auto ; # This is new. i.e. via AUTOLOAD or UNIVERSAL, in another stash
+	  my $gv = $cv->GV;
+	  if ($$gv) {
+	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
+	      warn "New $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	      $svsect->remove;
+	      $xpvcvsect->remove;
+	      delsym($cv);
+	      return $cv->save;
+	    }
+	  }
+	  $sym = savesym( $cv, "&sv_list[$sv_ix]" ); # GOTO
+	  warn "$fullname GOTO\n" if $verbose;
 	}
       } else {
         # Recalculated root and xsub
         $root   = $cv->ROOT;
         $cvxsub = $cv->XSUB;
+	my $gv = $cv->GV;
+	if ($$gv) {
+	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
+	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	    $svsect->remove;
+	    $xpvcvsect->remove;
+	    delsym($cv);
+	    return $cv->save;
+	  }
+	}
       }
       if ( $$root || $cvxsub ) {
         warn "Successful forced autoload\n" if $verbose;
@@ -2947,9 +2971,9 @@ if (0) {
     if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
-      if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB alias
+      if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB CONSTSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        warn "Boot $package, XS alias of $fullname to $origname\n" if $debug{pkg};
+        warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n" if $debug{pkg};
         mark_package($package, 1);
         {
           no strict 'refs';
@@ -4377,21 +4401,24 @@ sub mark_package {
   my $package = shift;
   my $force = shift;
   $force = 0 if $] < 5.010;
+  return if $skip_package{$package};
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     # i.e. if force
-    if (exists $include_package{$package} 
-	and !$include_package{$package} 
-	and $savINC{inc_packname($package)}) 
+    if (exists $include_package{$package}
+	and !$include_package{$package}
+	and $savINC{inc_packname($package)})
     {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
       $include_package{$package} = 1;
       add_hashINC( $package );
-      walksymtable( \%{$package.'::'}, "savecv", 
-		    sub { should_save( $_[0] ); return 1 }, 
+      walksymtable( \%{$package.'::'}, "savecv",
+		    sub { should_save( $_[0] ); return 1 },
 		    $package.'::' );
     } else {
+      warn sprintf("mark $package%s\n", $force?" (forced)":"")
+	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
     }
     my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
@@ -4406,7 +4433,7 @@ sub mark_package {
             eval { $package->bootstrap };
           }
         }
-	if ( !$include_package{$isa} and $isa ne 'B::C') {
+	if ( !$include_package{$isa} and !$skip_package{$isa} ) {
 	  warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
@@ -4502,7 +4529,7 @@ sub should_save {
   if ( $] > 5.015001 and 
        !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
     $include_package{$package} = 0;
-    warn "Cached $package not in \%INC, already deleted (early)\n" if ($debug{pkg});
+    warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
   }
   # If this package is in the same file as main:: or our source, save it. (72, 73)
@@ -4944,7 +4971,8 @@ sub mark_unused {
 
 sub mark_skip {
   for (@_) {
-    delete $include_package{$_};
+    delete_unsaved_hashINC($_);
+    $include_package{$_} = 0;
     $skip_package{$_} = 1;
   }
 }
