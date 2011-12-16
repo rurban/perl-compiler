@@ -1549,7 +1549,8 @@ sub savepvn {
     # If READONLY and FAKE use newSVpvn_share instead. (test 75)
     if ($PERL510 and $sv and (($sv->FLAGS & 0x09000000) == 0x09000000)) {
       warn sprintf( "Saving shared PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-      push @res, sprintf( "%s = (char*)HEK_KEY(share_hek(%s, %u, %u));", $dest, cstring($pv), length($pv), hash($pv) );
+      push @res, sprintf( "%s = (char*)HEK_KEY(share_hek(%s, %u, %u));",
+			  $dest, cstring($pv), length($pv), hash($pv) );
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       push @res, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), length($pv) );
@@ -3976,12 +3977,6 @@ EOT
       }
     }
     $free->output( \*STDOUT, "%s\n" );
-    for (0 .. $hek_index-1) {
-      # XXX who stores this hek? GvNAME and GvFILE most likely
-      my $hek = sprintf( "hek%d", $_ );
-      print "\n   " unless $_ % 8;
-      printf (" %s = NULL;", $hek);
-    }
     print "\n    return perl_destruct( my_perl );\n}\n\n";
   }
 
