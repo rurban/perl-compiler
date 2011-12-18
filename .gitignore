@@ -35,3 +35,5 @@ ramblings/frozenperl2010/
 ramblings/yapceu2010/
 blib
 lib/B/C/Flags.pm
+MANIFEST.files
+TAGS
