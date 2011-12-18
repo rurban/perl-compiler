@@ -118,14 +118,14 @@ function ctest {
       else # -1
 	rm $o.c $o ${o}_o.c ${o}_o 2> /dev/null
 	vcmd ${OCMD}-o$o.c $o.pl
-        test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit)
+        test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit 2)
 	test -z $CPP || vcmd $CCMD $o.c -c -E -o ${o}_E.c
 	vcmd $CCMD $o.c $LCMD -o $o
 	test -x $o || (test -z $CONT && exit)
 	if [ -z "$QUIET" ]; then echo "./$o"
 	else echo -n "./$o "
         fi
-	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit)
+	res=$(./$o) || (fail "./${o}${suff}" "'$?' = $?"; test -z $CONT && exit 1)
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
             if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
@@ -136,7 +136,7 @@ function ctest {
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"
-	    test -z $CONT && exit
+	    test -z $CONT && exit 3
 	fi
       fi
     fi
