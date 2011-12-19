@@ -3975,6 +3975,8 @@ EOT
 	print "    $s = NULL;\n";
       } elsif ($s =~ /^sv_list/) {
 	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
+      } elsif ($s =~ /^&sv_list/) {
+	print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	print "    CopFILE_set(&$s, NULL); CopSTASHPV_set(&$s, NULL);\n"
 	  if $ITHREADS or !$MULTI;
@@ -4487,7 +4489,7 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
-  push @pkg, qw(version Tie::Hash::NamedCapture) if $] >= 5.010;
+  push @pkg, qw(version)                if $] >= 5.010; #Tie::Hash::NamedCapture
   push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
@@ -5002,7 +5004,7 @@ sub compile {
     3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
-  mark_skip('B::C', 'B::C::Flags', 'B::CC');
+  mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata');
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
