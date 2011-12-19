@@ -11,7 +11,7 @@
 
 package B::C;
 
-our $VERSION = '1.37';
+our $VERSION = '1.36';
 my %debug;
 
 package B::C::Section;
@@ -633,7 +633,8 @@ sub save_pv_or_rv {
   return ( $savesym, $pvmax, $len, $pv );
 }
 
-# shared global string
+# shared global string. mostly GvNAME and GvFILE,
+# but also CV prototypes or bareword hash keys.
 sub save_hek {
   my $str = shift; # not cstring'ed
   my $len = length $str;
@@ -643,7 +644,7 @@ sub save_hek {
       : $hektable{$str};
   }
   my $sym = sprintf( "hek%d", $hek_index++ );
-  $hektable{$str} = "(HEK *)$sym";
+  $hektable{$str} = $sym;
   my $cstr = cstring($str);
   if ($B::C::pv_copy_on_grow) {
     $decl->add(sprintf("HEK *%s;",$sym));
@@ -2598,21 +2599,22 @@ sub B::CV::save {
   }
 
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
+  my ( $pvsym, $len );
   if ($PERL510) {
-    my ( $pvsym, $len ) = save_hek($pv);
+    ( $pvsym, $len ) = save_hek($pv);
+    if ($len) {
+      $pvsym = "(char *)&$pvsym";
+    }
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
       my $xpvc = sprintf
-	# stash magic cur len cvstash
-	("Nullhv, {0}, %u, %u, %s, "
-	 # start root cvgv cvfile cvpadlist
-	 ." {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
-	 # outside outside_seq cvflags cvdepth
-	 ." (CV*)s\\_%x, %s, 0x%x, %d",
+	# stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
+	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)s\\_%x, %s, 0x%x, %d",
 	 $len, $len, "Nullhv",#CvSTASH later
-	 $startfield, $$root, "0",  #GV later
-	 "NULL", #cv_file later (now a HEK)
+	 $startfield, $$root,
+	 "0",    #GV later
+	 "NULL", #cvfile later (now a HEK)
 	 $padlistsym,
 	 ${ $cv->OUTSIDE }, #if main_cv set later
 	 $cv->OUTSIDE_SEQ,
@@ -2761,7 +2763,7 @@ sub B::CV::save {
   }
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
-      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?', {0}':''),
+      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {$pvsym}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $cv->FLAGS
       )
     );
