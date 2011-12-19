@@ -646,16 +646,9 @@ sub save_hek {
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = "(HEK *)$sym";
   my $cstr = cstring($str);
-  if ($B::C::pv_copy_on_grow) {
-    $decl->add(sprintf("HEK *%s;",$sym));
-    # XXX we can optimize this call also to static
-    $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		       $sym, $cstr, $cur, B::hash($str)));
-  } else {
-    $decl->add(sprintf("Static HEK *%s;",$sym));
-    $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		       $sym, $cstr, $cur, B::hash($str)));
-  }
+  $decl->add(sprintf("Static HEK *%s;",$sym));
+  $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+		     $sym, $cstr, $cur, B::hash($str)));
   wantarray ? ( $sym, $cur ) : $sym;
 }
 
@@ -1549,7 +1542,6 @@ sub savepvn {
     if ($PERL510 and $sv and (($sv->FLAGS & 0x09000000) == 0x09000000)) {
       warn sprintf( "Saving shared HEK %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       my $hek = save_hek($pv);
-      # $strtable{$pv} = "(HEK *)$hek";
       push @init, sprintf( "%s = HEK_KEY($hek);", $dest );
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
@@ -1811,16 +1803,20 @@ sub B::PV::save {
     return $sym;
   }
   my $flags = $sv->FLAGS;
-  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
+  my $shared_hek = $PERL510 and (($flags & 0x09000000) == 0x09000000);
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY and !$shared_hek;
   # XSLoader reuses this SV, so it must be dynamic
-  $B::C::pv_copy_on_grow = 0 if !($sv->FLAGS & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
+  $B::C::pv_copy_on_grow = 0 if !($flags & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3".
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   if ($PERL510) {
+    if ($B::C::const_strings and $flags & SVf_READONLY and !$len) {
+      #=> constpv: turnoff SVf_FAKE
+      $flags &= ~0x01000000;
+    }
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
