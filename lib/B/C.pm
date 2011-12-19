@@ -1571,9 +1571,9 @@ sub B::PVLV::save {
   }
   my $pv  = $sv->PV;
   my $cur = length($pv);
-  my ( $pvsym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
-    ? constpv($pv) : savepv($pv);
   my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
+  my ( $pvsym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY and !$shared_hek)
+    ? constpv($pv) : savepv($pv);
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   $pvsym = "(char*)$pvsym";# if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
@@ -1673,10 +1673,10 @@ sub B::PVNV::save {
     }
     return $sym;
   }
+  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
-  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
@@ -1811,14 +1811,14 @@ sub B::PV::save {
     return $sym;
   }
   my $flags = $sv->FLAGS;
-  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
+  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
+  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY and !$shared_hek;
   # XSLoader reuses this SV, so it must be dynamic
   $B::C::pv_copy_on_grow = 0 if !($sv->FLAGS & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3".
-  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   if ($PERL510) {
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
