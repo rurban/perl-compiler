@@ -83,7 +83,10 @@ function runopt {
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
     else echo -n "./${o}${suff} "
     fi
+    mem=$(ulimit -m)
+    ulimit -S -m 50000
     res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
+    ulimit -S -m $mem
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
         if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}${suff} 2>/dev/null; fi
@@ -129,10 +132,15 @@ function ctest {
 	if [ "X$res" = "X${result[$n]}" ]; then
 	    pass "./$o" "'$str' => '$res'"
             if [ -z $KEEP ]; then rm ${o}_E.c ${o}.c ${o} 2>/dev/null; fi
-	    runopt $o 1 && \
-	    runopt $o 2  && \
-	    runopt $o 3
-	    #runopt $o 4 && \
+	    if [ $BASE = "testcc.sh" ]; then
+	      runopt $o 1 && \
+	        runopt $o 2
+            else
+	      runopt $o 1 && \
+	        runopt $o 2 && \
+	        runopt $o 3 && \
+	        runopt $o 4
+            fi
 	    true
 	else
 	    fail "./$o" "'$str' => '$res' Expected: '${result[$n]}'"

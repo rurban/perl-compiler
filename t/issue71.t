@@ -48,12 +48,9 @@ ctestok(2, "C", "ccode71i", $script,
         ? "B:C reg_temp_copy from invalid r->offs" 
         : "Encode::decode fails to leave_scope with const PAD PV 'Encode'");
 
-SKIP: {
-  skip "issue 78 hangs at Perl_hfree_next_entry >= 5.15", 1 if $] >= 5.015;
-
 use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
       $B::CC::VERSION < 1.12
       ? "B:CC Encode::decode fails to leave_scope with const PAD PV 'Encode'"
       : undef);
-}
+
