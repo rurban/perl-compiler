@@ -2764,7 +2764,11 @@ sub B::CV::save {
     );
   }
   if ($len) {
-    $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
+    if ($PERL510) {
+      $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
+    } else {
+      $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;", $sv_ix, cstring($pv)));
+    }
   }
   return $sym;
 }
@@ -4069,9 +4073,9 @@ EOT
   for my $c (qw(B B::C)) {
     if (!$xsub{$c} and !$include_package{$c}) {
       # (hopefully, see test 103)
-      warn "no dl_init for $c, not marked\n" if $verbose;
+      warn "no dl_init for $c, not marked\n" if $verbose and !$skip_package{$c};
       # RT81332 pollute
-      @dl_modules = grep { $_ ne 'B' } @dl_modules;
+      @dl_modules = grep { $_ ne $c } @dl_modules;
       # XXX Be sure to store the new @dl_modules
     }
   }
