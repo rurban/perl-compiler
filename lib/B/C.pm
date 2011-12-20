@@ -1543,7 +1543,7 @@ sub savepvn {
     if ($PERL510 and $sv and (($sv->FLAGS & 0x09000000) == 0x09000000)) {
       warn sprintf( "Saving shared HEK %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       my $hek = save_hek($pv);
-      push @init, sprintf( "%s = HEK_KEY($hek);", $dest );
+      push @init, sprintf( "%s = HEK_KEY($hek);", $dest ) unless $hek eq 'NULL';
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), length($pv) );
