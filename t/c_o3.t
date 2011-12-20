@@ -20,10 +20,9 @@ my $ITHREADS  = ($Config{useithreads});
 prepare_c_tests();
 
 my @todo  = todo_tests_default("c_o3");
-my @skip = (27, # out of memory
-	    28, # hangs, must be killed
+my @skip = (
 	    $DEBUGGING ? () : 29, # issue 78 if not DEBUGGING > 5.15
-	    46
+	    46 # stashes unsupported on purpose
 	    );
 
 run_c_tests("C,-O3", \@todo, \@skip);

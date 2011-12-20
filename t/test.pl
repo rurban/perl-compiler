@@ -777,7 +777,7 @@ sub todo_tests_default {
         push @todo, (44,45) if $] < 5.009;
         #push @todo, (29,44,45) if $what =~ /c_o[234]/;
 	# @ISA issue 64
-        push @todo, (15,50)  if $what eq 'c_o4'; 
+        push @todo, (15,50)  if $what eq 'c_o4';
         #push @todo, (10)    if $what =~ /c_o[234]/ and $] >= 5.010;
         #push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
         #push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
@@ -786,6 +786,8 @@ sub todo_tests_default {
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
 	# issue 78 error at DynaLoader (require Carp + invalid version)
         push @todo, (29,44,45) if $] > 5.015 and $what =~ /c_o[34]/;
+	# DynaLoader::dl_load_file()
+        push @todo, (15,27) if $] > 5.015 and $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
         # 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
         # on cygwin 29 passes

@@ -20,10 +20,10 @@ my $ITHREADS  = ($Config{useithreads});
 prepare_c_tests();
 
 my @todo  = todo_tests_default("c_o4");
-my @skip = (15,
-	    27, # sigsegv, out of memory
+my @skip = (#15, # DynaLoader::dl_load_file()
+	    #27, # DynaLoader::dl_load_file()
 	    $DEBUGGING ? () : 29, # issue 78 if not DEBUGGING > 5.15
-	    46
+	    46 # stashes unsupported on purpose
 	   );
 
 run_c_tests("C,-O4", \@todo, \@skip);
