@@ -46,11 +46,11 @@ use B::C;
 ctestok(2, "C", "ccode71i", $script,
 	$B::C::VERSION < 1.35 
         ? "B:C reg_temp_copy from invalid r->offs" 
-        : "Encode::decode fails to leave_scope with const PAD PV 'Encode'");
+        : "alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 
 use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
       $B::CC::VERSION < 1.12
-      ? "B:CC Encode::decode fails to leave_scope with const PAD PV 'Encode'"
+      ? "Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
       : undef);
 
