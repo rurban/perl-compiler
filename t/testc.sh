@@ -358,10 +358,21 @@ tests[76]='use warnings;
 result[76]='ok'
 tests[81]='sub int::check {1}  #create int package for types
 sub x(int,int) { @_ } #cvproto
-print "o" if prototype \&x eq "int,int";
+my $o = prototype \&x;
+if ($o eq "int,int") {print "o"}else{print $o};
 sub y($) { @_ } #cvproto
-print "k" if prototype \&y eq "\$";'
-result[81]='ok'
+my $p = prototype \&y;
+if ($p eq q($)) {print "k"}else{print $p};
+require bytes;
+sub my::length ($) { # possible prototype mismatch vs _
+  if ( bytes->can(q(length)) ) {
+     *length = *bytes::length;
+     goto &bytes::length;
+  }
+  return CORE::length( $_[0] );
+}
+print my::length($p);'
+result[81]='ok1'
 
 # from here on we test CC specifics only
 
