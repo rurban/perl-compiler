@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# http://code.google.com/p/perl-compiler/issues/detail?id=80
+# http://code.google.com/p/perl-compiler/issues/detail?id=81
 # store cv prototypes
 use Test::More tests => 3;
 use strict;
@@ -15,7 +15,7 @@ sub y($) { @_ } #cvproto
 print "k" if prototype \&y eq "\$";
 EOF
 
-my $name='ccode80i';
+my $name='ccode81i';
 open my $s, ">$name.pl";
 print $s $script;
 close $s;

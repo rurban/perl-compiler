@@ -356,12 +356,12 @@ tests[76]='use warnings;
   print "ok"
 };'
 result[76]='ok'
-tests[80]='sub int::check {1}  #create int package for types
+tests[81]='sub int::check {1}  #create int package for types
 sub x(int,int) { @_ } #cvproto
 print "o" if prototype \&x eq "int,int";
 sub y($) { @_ } #cvproto
 print "k" if prototype \&y eq "\$";'
-result[80]='ok'
+result[81]='ok'
 
 # from here on we test CC specifics only
 

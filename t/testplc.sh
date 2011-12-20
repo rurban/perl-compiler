@@ -326,12 +326,12 @@ result[70]='ok'
 # issue24
 tests[71]='dbmopen(%H,q(f),0644);print q(ok);'
 result[71]='ok'
-tests[80]='sub int::check {1}    #create int package for types
+tests[81]='sub int::check {1}    #create int package for types
 sub x(int,int) { @_ } #cvproto
 print "o" if prototype \&x eq "int,int";
 sub y($) { @_ } #cvproto
 print "k" if prototype \&y eq "\$";'
-result[80]='12'
+result[81]='12'
 
 
 init
