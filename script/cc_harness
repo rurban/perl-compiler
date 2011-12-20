@@ -4,6 +4,7 @@ use Config;
 my $coredir = $ENV{PERL_SRC} || "$Config{archlib}/CORE"; # XXX was installarchlib
 my $libdir  = "$Config{prefix}/lib";
 my $useshrplib = $Config{useshrplib};
+my $libs = $Config{libs};
 my $linkargs;
 my $quiet++ if $ARGV[0] eq '-q';
 shift if $quiet;
@@ -46,6 +47,8 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     @ARGV = grep{ !/^-Bdynamic$/o } @ARGV;
     $linkargs = ldopts('-std');
 }
+# Note (probably harmless): No library found for -lnsl
+$linkargs .= " $libs" if index($linkargs,$libs) == -1;
 
 sub cc_harness_msvc {
     my @ARGV = @_;
