@@ -642,6 +642,7 @@ sub ctest {
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
+    $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005;
     system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
         print "not ok $num #B::$backend failed\n";

@@ -2600,9 +2600,6 @@ sub B::CV::save {
   my ( $pvsym, $len );
   if ($PERL510) {
     ( $pvsym, $len ) = save_hek($pv);
-    if ($len) {
-      $pvsym = "(char *)&$pvsym";
-    }
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
@@ -2761,10 +2758,13 @@ sub B::CV::save {
   }
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
-      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {$pvsym}":''),
+      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $cv->FLAGS
       )
     );
+  }
+  if ($len) {
+    $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
   }
   return $sym;
 }
