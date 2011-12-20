@@ -120,7 +120,7 @@ sub choose_backend {
 
 sub generate_code {
 
-    vprint 1, "Compiling $Input";
+    vprint 0, "Compiling $Input";
 
     $BinPerl  = yclept();  # Calling convention for perl.
 
@@ -180,8 +180,11 @@ sub vprint {
     $msg .= "\n" unless substr($msg, -1) eq "\n";
     if (opt('v') > $level)
     {
-         print        "$0: $msg" if !opt('log');
-	 print $logfh "$0: $msg" if  opt('log');
+	if (opt('log')) {
+	    print $logfh "$0: $msg" ;
+	} else {
+	    print        "$0: $msg";
+	}
     }
 }
 

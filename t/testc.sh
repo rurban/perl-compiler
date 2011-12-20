@@ -343,7 +343,8 @@ package main;
 *f=*my::f;
 print "ok" if f(qr/^(.*)$/ => q("\L$1"));'
 result[71]="ok"
-# issue 71_2+3: cop_warnings issue76 and const destruction issue71
+# issue 71_2+3: cop_warnings issue76 and const destruction issue71 fixed
+# ok with "utf-8-strict"
 tests[75]='
 use Encode;
 my $x = "abc";

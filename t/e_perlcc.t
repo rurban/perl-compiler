@@ -11,6 +11,7 @@ my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : 'a.out';
 my $a   = $^O eq 'MSWin32' ? 'a.exe' : 'a';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
+my $devnull = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 #my $o = '';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
 #$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
@@ -20,46 +21,46 @@ my $perlcc = $] < 5.008
 sub cleanup { unlink ('a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 
-is(`$perlcc -S -o a -r -e $e`, "ok", "-S -o a -r -e");
+is(`$perlcc -S -o a -r -e $e $devnull`, "ok", "-S -o a -r -e");
 ok(-e 'a.c', "-S => a.c file");
 ok(-e $a, "keep a executable"); #3
 cleanup;
 
-is(`$perlcc -o a -r -e $e`, "ok", "-o a r -e");
+is(`$perlcc -o a -r -e $e  $devnull`, "ok", "-o a r -e");
 ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep a executable"); # 6
 cleanup;
 
-is(`$perlcc -r -e $e`, "ok", "-r -e"); #7
+is(`$perlcc -r -e $e  $devnull`, "ok", "-r -e"); #7
 ok(! -e 'a.out.c', "no a.out.c file");
 ok(-e $exe, "keep default executable"); #9
 cleanup;
 
-system(qq($perlcc -o a -e $e));
+system(qq($perlcc -o a -e $e $devnull));
 ok(-e $a, '-o => -e a');
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok"); #11
 cleanup;
 
 # Try a simple XS module which exists in 5.6.2 and blead (test 45)
 $e = q("use Data::Dumper ();Data::Dumper::Dumpxs({});print q(ok)");
-is(`$perlcc -r -e $e`, "ok", "-r xs ".($usedl ? "dynamic" : "static")); #12
+is(`$perlcc -r -e $e  $devnull`, "ok", "-r xs ".($usedl ? "dynamic" : "static")); #12
 cleanup;
 
 SKIP: {
   skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
  TODO: {
     # fails 5.8,5.15 and darwin only
-    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015; 
-    is(`$perlcc --staticxs -r -e $e`, "ok", "-r --staticxs xs"); #13
+    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
+    is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
     ok(-e $exe, "keep executable"); #14
   }
   ok(! -e 'a.out.c', "delete a.out.c file without -S");
   ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
   cleanup;
-  
+
  TODO: {
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
-    is(`$perlcc --staticxs -S -o a -r -e $e`, "ok",
+    is(`$perlcc --staticxs -S -o a -r -e $e  $devnull`, "ok",
        "-S -o -r --staticxs xs"); #17
     ok(-e $a, "keep executable"); #18
   }
@@ -67,7 +68,7 @@ SKIP: {
   ok(-e 'a.c.lst', "keep a.c.lst with -S");
   cleanup;
 
-  is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"`, "ok",
+  is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"  $devnull`, "ok",
      "-S -o -r --staticxs without xs");
   ok(! -e 'a.c.lst', "no a.c.lst without xs");
   cleanup;
@@ -79,33 +80,33 @@ print F q(print q(ok));
 close F;
 $e = q("print q(ok)");
 
-is(`$perlcc -S -o a -r $f`, "ok", "-S -o -r file");
+is(`$perlcc -S -o a -r $f $devnull`, "ok", "-S -o -r file");
 ok(-e 'a.c', "-S => a.c file");
 cleanup;
 
-is(`$perlcc -o a -r $f`, "ok", "-r -o file");
+is(`$perlcc -o a -r $f $devnull`, "ok", "-r -o file");
 ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep executable");
 cleanup;
 
 
-is(`$perlcc -o a $f`, "", "-o file");
+is(`$perlcc -o a $f $devnull`, "", "-o file");
 ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
-is(`$perlcc -S -o a $f`, "", "-S -o file");
+is(`$perlcc -S -o a $f $devnull`, "", "-S -o file");
 ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
 
-is(`$perlcc -Sc -o a $f`, "", "-Sc -o file");
+is(`$perlcc -Sc -o a $f $devnull`, "", "-Sc -o file");
 ok(-e 'a.c', "a.c file");
 ok(! -e $a, "-Sc no executable, compile only");
 cleanup;
 
-is(`$perlcc -c -o a $f`, "", "-c -o file");
+is(`$perlcc -c -o a $f $devnull`, "", "-c -o file");
 ok(-e 'a.c', "a.c file");
 ok(! -e $a, "-c no executable, compile only"); #40
 cleanup;
@@ -115,13 +116,13 @@ TODO: {
   skip "--stash hangs < 5.12", 3 if $] < 5.012; #because of DB?
   skip "--stash hangs >= 5.14", 3 if $] >= 5.014; #because of DB?
   local $TODO = "B::Stash imports too many";
-  is(`$perlcc -stash -r -o a $f`, "ok", "old-style -stash -o file"); #41
-  is(`$perlcc --stash -r -oa $f`, "ok", "--stash -o file");
+  is(`$perlcc -stash -r -o a $f $devnull`, "ok", "old-style -stash -o file"); #41
+  is(`$perlcc --stash -r -oa $f $devnull`, "ok", "--stash -o file");
   ok(-e $a, "executable");
   cleanup;
 }}
 
-is(`$perlcc -t -o a $f`, "", "-t -o file"); #44
+is(`$perlcc -t -o a $f $devnull`, "", "-t -o file"); #44
 TODO: {
   local $TODO = '-t unsupported with 5.6' if $] < 5.007;
   ok(-e $a, "executable"); #45
@@ -129,7 +130,7 @@ TODO: {
 }
 cleanup;
 
-is(`$perlcc -T -o a $f`, "", "-T -o file");
+is(`$perlcc -T -o a $f $devnull`, "", "-T -o file");
 ok(-e $a, "executable");
 is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
 cleanup;
@@ -143,14 +144,14 @@ TODO: {
        "-B -v5 --Wb=-DG -o file"); #51
 }
 cleanup;
-is(`$perlcc -Wb=-O1 -r $f`, "ok", "old-style -Wb=-O1");
+is(`$perlcc -Wb=-O1 -r $f $devnull`, "ok", "old-style -Wb=-O1");
 
 # perlcc verboseness
-isnt(`$perlcc -v 1 -o a $f`, "", "-v 1 -o file");
-isnt(`$perlcc -v1 -o a $f`, "", "-v1 -o file");
-isnt(`$perlcc -v2 -o a $f`, "", "-v2 -o file");
-isnt(`$perlcc -v3 -o a $f`, "", "-v3 -o file");
-isnt(`$perlcc -v4 -o a $f`, "", "-v4 -o file");
+isnt(`$perlcc -v 1 -o a $f $devnull`, "", "-v 1 -o file");
+isnt(`$perlcc -v1 -o a $f $devnull`, "", "-v1 -o file");
+isnt(`$perlcc -v2 -o a $f $devnull`, "", "-v2 -o file");
+isnt(`$perlcc -v3 -o a $f $devnull`, "", "-v3 -o file");
+isnt(`$perlcc -v4 -o a $f $devnull`, "", "-v4 -o file");
 TODO: {
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   like(`$perlcc -v5 $f $redir`, '/Writing output/m',
@@ -165,18 +166,18 @@ TODO: {
 cleanup;
 
 # switch bundling since 2.10
-is(`$perlcc -r -e$e`, "ok", "-e$e");
+is(`$perlcc -r -e$e $devnull`, "ok", "-e$e");
 cleanup;
-like(`$perlcc -v1 -r -e$e`, '/ok$/m', "-v1");
+like(`$perlcc -v1 -r -e$e $devnull`, '/ok$/m', "-v1");
 cleanup;
-is(`$perlcc -oa -r -e$e`, "ok", "-oa");
+is(`$perlcc -oa -r -e$e $devnull`, "ok", "-oa");
 cleanup;
 
-is(`$perlcc -OSr -oa $f`, "ok", "-OSr -o file");
+is(`$perlcc -OSr -oa $f $devnull`, "ok", "-OSr -o file");
 ok(-e 'a.c', "-S => a.c file");
 cleanup;
 
-is(`$perlcc -Or -oa $f`, "ok", "-Or -o file");
+is(`$perlcc -Or -oa $f $devnull`, "ok", "-Or -o file");
 ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep executable");
 cleanup;
@@ -186,11 +187,11 @@ like(`$perlcc -BSr -oa.plc -e $e $redir`, '/-S ignored/', "-BSr -o -e");
 ok(-e 'a.plc', "a.plc file");
 cleanup;
 
-is(`$perlcc -Br -oa.plc $f`, "ok", "-Br -o file");
+is(`$perlcc -Br -oa.plc $f $devnull`, "ok", "-Br -o file");
 ok(-e 'a.plc', "a.plc file");
 cleanup;
 
-is(`$perlcc -B -oa.plc -e$e`, "", "-B -o -e");
+is(`$perlcc -B -oa.plc -e$e $devnull`, "", "-B -o -e");
 ok(-e 'a.plc', "a.plc");
 TODO: {
   local $TODO = 'yet unsupported 5.6' if $] < 5.007;
