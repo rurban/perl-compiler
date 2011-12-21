@@ -20,12 +20,12 @@
 	  as IsCOW (removed SVf_FAKE).
 	Added Internals::hv_clear_placeholders XS name exception, similar
 	  to version:: (issue 83)
-	Store CV prototypes (issue 81)
+	Store CV prototypes, issue 81 and issue 84 for empty () vs NULL prototypes.
 	Fixed 5.15.2 hang at hfree_next_entry (issue 78)
 	Enable -fcog copy-on-grow with static strings for >= 5.10
 	* CC (1.12) allow overriding of -f<opt> B::C flags
 	* perlcc (2.13): added options -O1-4, -u, -U, --Wc, --Wl, --version,
-	Keep cfile if output is empty,
+	Keep cfile if output is empty.
 	Changed verbosity levels and output wording.
 	* META.yml: remove from MANIFEST and repo, let make dist
 	  autogenerate it.
