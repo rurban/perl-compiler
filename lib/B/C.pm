@@ -2420,7 +2420,7 @@ sub B::CV::save {
       my $xsstash = $stashname;
       $xsstash =~ s/::/_/g;
       my $xs = "XS_${xsstash}_${cvname}";
-      if ($stashname eq 'version') {
+      if ($stashname eq 'version') { # exceptions see universal.c:struct xsub_details details[]
         my %vtrans = ('()'   => 'noop',
                       'parse' => 'new',
                       '(""'   => 'stringify',
@@ -2434,6 +2434,9 @@ sub B::CV::save {
         if ($vtrans{$cvname}) {
           $xs = "XS_${xsstash}_".$vtrans{$cvname};
         }
+      }
+      if ($fullname eq 'Internals::hv_clear_placeholders') {
+	$xs = 'XS_Internals_hv_clear_placehold';
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
@@ -4636,7 +4639,7 @@ sub add_hashINC {
         if (-e $p) { $INC{$incpack} = $p; last; }
       }
       $INC{$incpack} = $incpack unless $INC{$incpack};
-    } 
+    }
   }
 }
 
