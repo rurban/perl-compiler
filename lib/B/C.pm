@@ -2604,7 +2604,11 @@ sub B::CV::save {
   my ( $pvsym, $cur, $len ) = ('NULL',0,0);
   if ($PERL510) {
     ( $pvsym, $cur ) = save_hek($pv);
-    $len = $cur+1 if $cur;
+    # XXX issue 84: we need to check the cv->PV ptr not the value.
+    # "" is different to NULL for prototypes
+    if ($cur) {
+      $len = $B::C::pv_copy_on_grow ? 0 : $cur+1;
+    }
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
@@ -2635,7 +2639,11 @@ sub B::CV::save {
       }
     } else {
       $cur = length ( pack "a*", $pv );
-      $len = $cur+1 if $cur;
+      if ($cur) {
+	# XXX issue 84: we need to check the cv->PV ptr not the value.
+	# "" is different to NULL for prototypes
+	$len = $B::C::pv_copy_on_grow ? 0 : $cur+1;
+      }
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
@@ -2773,9 +2781,12 @@ sub B::CV::save {
   # issue 84: empty prototypes sub xx(){} vs sub xx{}
   if ($PERL510 and $cur) {
     $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
-  } else { # not static, they are freed
+  } elsif (!$B::C::pv_copy_on_grow) { # not static, they are freed when redefined
     $init->add( sprintf("SvPVX(&sv_list[%d]) = savepvn(%s, %u);",
 			$sv_ix, cstring($pv), $cur));
+  } else {
+    $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;",
+			$sv_ix, cstring($pv)));
   }
   return $sym;
 }
@@ -5170,11 +5181,11 @@ OPTION:
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
-  if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
-    warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n" if $verbose;
+  #if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
+    #warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n" if $verbose;
     # XXX Still trying custom destructor.
-    undef $B::C::pv_copy_on_grow;
-  }
+    #undef $B::C::pv_copy_on_grow;
+  #}
 
   init_sections();
   foreach my $i (@eval_at_startup) {
