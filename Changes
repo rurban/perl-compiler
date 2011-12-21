@@ -17,7 +17,7 @@
 	  Special FAKE+READONLY handling: LEN = 0 if pv_copy_on_grow or shared_hek.
 	  Fixed !SvIsCOW_shared_hash + FAKE+READONLY conflict (failing test 13, issue 82).
 	  Shared COW hashkeys which are optimized to static const strings may not be marked
-	  as IsCOW.
+	  as IsCOW (removed SVf_FAKE).
 	Added Internals::hv_clear_placeholders XS name exception, similar
 	  to version:: (issue 83)
 	Store CV prototypes (issue 81)

@@ -638,7 +638,8 @@ sub save_pv_or_rv {
 sub save_hek {
   my $str = shift; # not cstring'ed
   my $len = length $str;
-  unless ($len) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
+  # force empty string for CV prototypes
+  if (!$len and !@_) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
   if (defined $hektable{$str}) {
     return wantarray ? ($hektable{$str}, length( pack "a*", $hektable{$str} ))
       : $hektable{$str};
@@ -2600,16 +2601,17 @@ sub B::CV::save {
   }
 
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
-  my ( $pvsym, $len );
+  my ( $pvsym, $cur, $len ) = ('NULL',0,0);
   if ($PERL510) {
-    ( $pvsym, $len ) = save_hek($pv);
+    ( $pvsym, $cur ) = save_hek($pv);
+    $len = $cur+1 if $cur;
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
       my $xpvc = sprintf
 	# stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
 	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)s\\_%x, %s, 0x%x, %d",
-	 $len, $len, "Nullhv",#CvSTASH later
+	 $cur, $len, "Nullhv",#CvSTASH later
 	 $startfield, $$root,
 	 "0",    #GV later
 	 "NULL", #cvfile later (now a HEK)
@@ -2632,12 +2634,14 @@ sub B::CV::save {
 	$svsect->debug( $cv->flagspv ) if $debug{flags};
       }
     } else {
+      $cur = length ( pack "a*", $pv );
+      $len = $cur+1 if $cur;
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
 	 ." (CV*)s\\_%x, %s, 0x%x",
 	 0, # GvSTASH later. test 29 or Test::Harness
-	 $len, $len,
+	 $cur, $len,
 	 $cv->DEPTH,
 	 "NULL", "Nullhv", #MAGIC + STASH later
 	 "Nullhv",#CvSTASH later
@@ -2766,12 +2770,12 @@ sub B::CV::save {
       )
     );
   }
-  if ($len) { # CV prototypes (issue 81)
-    if ($PERL510) {
-      $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
-    } else {
-      $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;", $sv_ix, cstring($pv)));
-    }
+  # issue 84: empty prototypes sub xx(){} vs sub xx{}
+  if ($PERL510 and $cur) {
+    $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
+  } else { # not static, they are freed
+    $init->add( sprintf("SvPVX(&sv_list[%d]) = savepvn(%s, %u);",
+			$sv_ix, cstring($pv), $cur));
   }
   return $sym;
 }
