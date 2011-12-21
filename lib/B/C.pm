@@ -2766,7 +2766,7 @@ sub B::CV::save {
       )
     );
   }
-  if ($len) {
+  if ($len) { # CV prototypes (issue 81)
     if ($PERL510) {
       $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
     } else {
