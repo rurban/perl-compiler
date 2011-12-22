@@ -244,7 +244,7 @@ sub unify_results {
 }
 
 my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
-my $cmd = 'grep -a -i "tests" ' . $dlogs;
+my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE";
 #print "$cmd\n" unless $quiet;
 my %h;
 my %h_sav = %h;
@@ -264,7 +264,7 @@ if (my @g = `$cmd`) {
 }
 
 if (!$todoonly) {
-  my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs;
+  my $cmd = 'grep -a -B1 -i "Failed test" ' . $dlogs . " | grep -v t/CORE";
   print "$cmd\n" unless $quiet;
   if (my @g = `$cmd`) {
     my $failed = status(\%h, @g);
@@ -274,7 +274,7 @@ if (!$todoonly) {
 }
 %h = %h_sav;
 if (!$failonly) {
-  my $cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs;
+  my $cmd = 'grep -a -B1 -i "TODO passed" ' . $dlogs . " | grep -v t/CORE";
   print "\n$cmd\n" unless $quiet;
   if (my @g = `$cmd`) {
     my $todo = status(\%h, @g);
