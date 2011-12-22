@@ -488,7 +488,7 @@ else
     OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO4="$(echo $OCMDO4|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     # gnu make?
-    make --silent >/dev/null || make 2&>1 >/dev/null
+    make -s >/dev/null || make 2&>1 >/dev/null
 fi
 
 # need to shift the options

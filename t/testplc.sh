@@ -354,7 +354,7 @@ done
 if [ -z "$Q" ]; then
     make
 else
-    make --silent >/dev/null
+    make -s >/dev/null
 fi
 
 # need to shift the options
