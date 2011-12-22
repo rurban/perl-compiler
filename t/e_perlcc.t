@@ -26,12 +26,12 @@ ok(-e 'a.c', "-S => a.c file");
 ok(-e $a, "keep a executable"); #3
 cleanup;
 
-is(`$perlcc -o a -r -e $e  $devnull`, "ok", "-o a r -e");
+is(`$perlcc -o a -r -e $e $devnull`, "ok", "-o a r -e");
 ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep a executable"); # 6
 cleanup;
 
-is(`$perlcc -r -e $e  $devnull`, "ok", "-r -e"); #7
+is(`$perlcc -r -e $e $devnull`, "ok", "-r -e"); #7
 ok(! -e 'a.out.c', "no a.out.c file");
 ok(-e $exe, "keep default executable"); #9
 cleanup;

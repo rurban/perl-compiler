@@ -2069,7 +2069,7 @@ sub B::PVMG::save_magic {
       #};
     }
 
-    unless ( $type eq 'r' or $type eq 'D' or $type eq 'n' ) { # r - test 23 / D - Getopt::Long
+    unless ( $type =~ /^[rDn]$/ ) { # r - test 23 / D - Getopt::Long
       # 5.10: Can't call method "save" on unblessed reference
       #warn "Save MG ". $obj . "\n" if $PERL510;
       # 5.11 'P' fix in B::IV::save, IV => RV
@@ -3329,7 +3329,7 @@ sub B::HV::save {
 			       0, $hv->MAX, 0 ));
     }
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
-			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
+			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
     if ($hv->MAGICAL and !$is_stash) { # riter,eiter only for magic required
       $sym = sprintf("&sv_list[%d]", $svsect->index);
@@ -3353,9 +3353,9 @@ sub B::HV::save {
 			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
   }
   $svsect->debug($hv->flagspv) if $debug{flags};
-  warn sprintf( "saving HV $fullname 0x%x MAX=%d\n",
-                $$hv, $hv->MAX ) if $debug{hv};
   my $sv_list_index = $svsect->index;
+  warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
+                $$hv, $hv->MAX ) if $debug{hv};
   my @contents     = $hv->ARRAY;
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
@@ -3380,6 +3380,7 @@ sub B::HV::save {
 	  $contents[$i] = undef;
 	}
       } else {
+	warn "saving HV $fullname".'{'.$key."}\n" if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
       }
     }
@@ -3400,6 +3401,7 @@ sub B::HV::save {
   } elsif ($] >= 5.015) { # empty contents still needs to set keys=0 
     # test 36
     $init->add( "HvTOTALKEYS($sym) = 0;");
+    $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
     # empty contents cleared in aassign (keys = 7, not 0)
     # XXX should be fixed in CORE
     if (0) {

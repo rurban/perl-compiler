@@ -22,6 +22,7 @@
 	  to version:: (issue 83)
 	Store CV prototypes, issue 81 and issue 84 for empty () vs NULL prototypes.
 	Fixed 5.15.2 hang at hfree_next_entry (issue 78)
+	Defer writing of READONLY hash keys since 5.15 (issue 88)
 	Enable -fcog copy-on-grow with static strings for >= 5.10
 	* CC (1.12) allow overriding of -f<opt> B::C flags
 	* perlcc (2.13): added options -O1-4, -u, -U, --Wc, --Wl, --version,
