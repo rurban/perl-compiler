@@ -67,6 +67,7 @@ push @todo, (41)    if !$ITHREADS;
 push @todo, (27)    if $] >= 5.010;
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
+push @todo, (46) if $] >= 5.015;
 
 my @skip = ();
 #push @skip, (27,32,42..43) if !$ITHREADS;
