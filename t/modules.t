@@ -306,6 +306,7 @@ sub is_todo {
   if ($] >= 5.015002) { foreach(qw(
    Path::Class
    File::Temp
+   Module::Build
   )) { return '>= 5.15.2' if $_ eq $module; }}
 
   # ---------------------------------------

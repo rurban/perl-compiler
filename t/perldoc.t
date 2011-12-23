@@ -55,8 +55,8 @@ TODO: {
 TODO: {
   local $TODO = "slow compiled -O2";
   ok($t3 <= $t2, "compiled -O2 not slower than -O0: $t3 <= $t2");
-  ok($t3 < $t1,  "compiled -O2 faster than uncompiled: $t3 < $t1");
 }
+ok($t3 < $t1,  "compiled -O2 faster than uncompiled: $t3 < $t1");
 
 END {
   unlink $perldocexe if -e $perldocexe;
