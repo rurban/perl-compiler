@@ -1565,7 +1565,7 @@ sub B::PVLV::save {
   }
   my $pv  = $sv->PV;
   my $cur = length($pv);
-  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
+  my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   my ( $pvsym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY and !$shared_hek)
     ? constpv($pv) : savepv($pv);
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
@@ -1667,7 +1667,7 @@ sub B::PVNV::save {
     }
     return $sym;
   }
-  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
+  my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
@@ -1805,7 +1805,7 @@ sub B::PV::save {
     return $sym;
   }
   my $flags = $sv->FLAGS;
-  my $shared_hek = $PERL510 and (($flags & 0x09000000) == 0x09000000);
+  my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY and !$shared_hek;
   # XSLoader reuses this SV, so it must be dynamic
   $B::C::pv_copy_on_grow = 0 if !($flags & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
@@ -1912,7 +1912,7 @@ sub B::PVMG::save {
   # local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
-  my $shared_hek = $PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000);
+  my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   #warn sprintf( "PVMG %s (0x%x) $savesym, $len, $cur, $pv\n", $sym, $$sv ) if $debug{mg};
 
