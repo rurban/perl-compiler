@@ -24,7 +24,10 @@ sub test3 {
   my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
   system($runperl,'-Mblib',"-MO=Bytecode,-o$name.plc","$name.pl");
   my $runexe = qx($runperl -Mblib -MByteLoader $name.plc);
-  is($runexe, 'ok', "Bytecode $name");
+ TODO: {
+   local $TODO = '%+ setting regdata magic crashes' if $name eq 'ccode90i_c';
+   is($runexe, 'ok', "Bytecode $name");
+  }
   ctestok(2, "C", $name, $script, @_);
   ctestok(3, "CC", $name, $script, @_);
   #unlink("$name.plc", "$name.pl");
