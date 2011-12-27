@@ -46,6 +46,7 @@ my %errs = %!; # t/op/magic.t Errno compiled in
 print q(ok) if defined ${"!"}{ENOENT};
 EOF
 
+# this fails so far, %{"!"} is not detected at compile-time. requires -uErrno
 test3('ccode90i_er', <<'EOF', 'requires -uErrno');
 my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};
