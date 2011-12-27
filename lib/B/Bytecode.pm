@@ -498,8 +498,9 @@ sub B::PVMG::domagic {
 
   nice1 '-' . class($sv) . '-', asm "ldsv", $varix = $ix unless $ix == $varix;
   for (@mglist) {
+    next unless ord($_->TYPE);
     asm "sv_magic", ord($_->TYPE), cstring $_->TYPE;
-    asm "mg_obj",   shift @mgix;
+    asm "mg_obj",   shift @mgix; # D sets itself, see mg.c:mg_copy
     my $length = $_->LENGTH;
     if ( $length == B::HEf_SVKEY and !$PERL56) {
       asm "mg_namex", shift @namix;
