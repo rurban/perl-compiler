@@ -2834,6 +2834,10 @@ if (0) {
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
   return $sym if $skip_package{$package};
+
+  #XXX Tie::Hash::NamedCapture is added for *main::+ or *main::-
+  #XXX Errno is added for *main::!
+
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   my $name     = cstring($fullname);
@@ -2939,7 +2943,7 @@ if (0) {
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  elsif ( $gvname eq '!' ) {
+  elsif ( $gvname eq '!' ) { #Errno
     $savefields = Save_HV;
   }
   # issue 79: Only save stashes for stashes.
@@ -4428,7 +4432,7 @@ sub B::GV::savecv {
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
   if ($name eq 'Config') {
-    mark_package('Config', 1) if !$include_package{Config};
+    mark_package('Config', 1) if !$include_package{'Config'};
   }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save($fullname);
@@ -4448,7 +4452,7 @@ sub mark_package {
     {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
-      $include_package{$package} = 1;
+      # $include_package{$package} = 1;
       add_hashINC( $package );
       walksymtable( \%{$package.'::'}, "savecv",
 		    sub { should_save( $_[0] ); return 1 },
@@ -4516,7 +4520,8 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
-  push @pkg, qw(version)                if $] >= 5.010; #Tie::Hash::NamedCapture
+  # Tie::Hash::NamedCapture is dynamic
+  push @pkg, qw(version)                if $] >= 5.010; # partially static and dynamic
   push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
@@ -4635,6 +4640,19 @@ sub inc_packname {
   return $packname;
 }
 
+sub packname_inc {
+  my $packname = shift;
+  $packname =~ s/\//::/g;
+  if ($packname =~ /^(Config_git\.pl|Config_heavy.pl)$/) {
+    return 'Config';
+  }
+  if ($packname eq 'utf8_heavy.pl') {
+    return 'utf8';
+  }
+  $packname =~ s/\.p[lm]$//;
+  return $packname;
+}
+
 sub delete_unsaved_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
@@ -4650,6 +4668,7 @@ sub delete_unsaved_hashINC {
 sub add_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
+  $include_package{$packname} = 1;
   unless ($INC{$incpack}) {
     if ($savINC{$incpack}) {
       warn "Adding $packname to \%INC (again)\n" if $debug{pkg};
@@ -4755,6 +4774,34 @@ sub save_unused_subs {
 sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   warn "save context:\n" if $verbose;
+
+  if ($PERL510) {
+    # Tie::Hash::NamedCapture is added for *main::+ or *main::-
+    # Errno is added for *main::!
+    no strict 'refs';
+    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
+      use strict 'refs';
+      if (!$include_package{'Tie::Hash::NamedCapture'}) {
+	$init->add("/* force saving of Tie::Hash::NamedCapture */");
+	mark_package('Tie::Hash::NamedCapture', 1);
+      } # else already included
+    } else {
+      use strict 'refs';
+      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
+    }
+    no strict 'refs';
+    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
+      use strict 'refs';
+      if (!$include_package{'Errno'}) {
+	$init->add("/* force saving of Errno */");
+	mark_package('Errno', 1);
+      } # else already included
+    } else {
+      use strict 'refs';
+      delete_unsaved_hashINC('Errno');
+    }
+  }
+
   $init->add("/* curpad names */");
   warn "curpad names:\n" if $verbose;
   # Record comppad sv's names, may not be static
