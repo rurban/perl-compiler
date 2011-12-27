@@ -1826,6 +1826,11 @@ sub B::PV::save {
     if ( defined($pv) and !$B::C::pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv ) );
     }
+    if ($debug{flags} and $DEBUGGING) { # add sv_debug_file
+      $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
+			 $svsect->index, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
+			 $svsect->index, $sv->FLAGS));
+    }
   }
   else {
     $xpvsect->add( sprintf( "%s, %u, %u", "(char*)$savesym", $cur, $len ) );
