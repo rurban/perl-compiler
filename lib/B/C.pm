@@ -2975,6 +2975,10 @@ if (0) {
         warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
         warn "GV::save \@$fullname\n" if $debug{gv};
+	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
+	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
+	  mark_package('Tie::Hash::NamedCapture', 1);
+	}
         $gvav->save($fullname);
         $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
       }
@@ -2987,7 +2991,7 @@ if (0) {
 	  $init->add("/* force saving of Errno */");
 	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
-	  $init->add("/* force saving of Tie::Hash::NamedCapture */");
+	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
 	  mark_package('Tie::Hash::NamedCapture', 1);
 	}
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
