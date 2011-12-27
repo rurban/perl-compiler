@@ -255,7 +255,7 @@ my $warn_undefined_syms;
 my ($staticxs, $outfile);
 my (%include_package, %skip_package);
 my %static_ext;
-my $use_xsloader;
+my ($use_xsloader, $inc_cleanup);
 my $nullop_count         = 0;
 # options and optimizations shared with B::CC
 our ($module, $init_name, %savINC, $mainfile);
@@ -2934,7 +2934,7 @@ if (0) {
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  elsif ( $gvname eq '!' ) {
+  elsif ( $gvname eq '!' ) { #Errno
     $savefields = Save_HV;
   }
   # issue 79: Only save stashes for stashes.
@@ -2972,6 +2972,9 @@ if (0) {
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
+      if ($fullname eq 'main::INC') {
+	inc_cleanup();
+      }
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
@@ -3996,9 +3999,9 @@ EOT
       if ($s =~ /^sv_list\[\d+\]\./) { # pv directly (unused)
 	print "    $s = NULL;\n";
       } elsif ($s =~ /^sv_list/) {
-	print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
+       print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^&sv_list/) {
-	print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
+       print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	print "    CopFILE_set(&$s, NULL); CopSTASHPV_set(&$s, NULL);\n"
 	  if $ITHREADS or !$MULTI;
@@ -4423,7 +4426,7 @@ sub B::GV::savecv {
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
   if ($name eq 'Config') {
-    mark_package('Config', 1) if !$include_package{Config};
+    mark_package('Config', 1) if !$include_package{'Config'};
   }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save($fullname);
@@ -4443,7 +4446,7 @@ sub mark_package {
     {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
-      $include_package{$package} = 1;
+      # $include_package{$package} = 1;
       add_hashINC( $package );
       walksymtable( \%{$package.'::'}, "savecv",
 		    sub { should_save( $_[0] ); return 1 },
@@ -4511,7 +4514,7 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
-  push @pkg, qw(version)                if $] >= 5.010; #Tie::Hash::NamedCapture
+  push @pkg, qw(version)                if $] >= 5.010; # partially static and dynamic
   push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
@@ -4630,6 +4633,19 @@ sub inc_packname {
   return $packname;
 }
 
+sub packname_inc {
+  my $packname = shift;
+  $packname =~ s/\//::/g;
+  if ($packname =~ /^(Config_git\.pl|Config_heavy.pl)$/) {
+    return 'Config';
+  }
+  if ($packname eq 'utf8_heavy.pl') {
+    return 'utf8';
+  }
+  $packname =~ s/\.p[lm]$//;
+  return $packname;
+}
+
 sub delete_unsaved_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
@@ -4645,6 +4661,7 @@ sub delete_unsaved_hashINC {
 sub add_hashINC {
   my $packname = shift;
   my $incpack = inc_packname($packname);
+  $include_package{$packname} = 1;
   unless ($INC{$incpack}) {
     if ($savINC{$incpack}) {
       warn "Adding $packname to \%INC (again)\n" if $debug{pkg};
@@ -4747,6 +4764,23 @@ sub save_unused_subs {
   }
 }
 
+sub inc_cleanup {
+  return if $inc_cleanup;
+  # %INC sanity check issue 89:
+  # omit unused, unsaved packages, so that at least run-time require will pull them in.
+  for my $packname (keys %INC) {
+    my $pkg = packname_inc($packname);
+    if ($packname =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
+      delete $INC{$packname};
+    } elsif ($packname eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
+      delete $INC{$packname};
+    } else {
+      delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
+    }
+  }
+  $inc_cleanup++;
+}
+
 sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   warn "save context:\n" if $verbose;
@@ -4766,6 +4800,7 @@ sub save_context {
     local $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
+    inc_cleanup();
     $inc_hv          = svref_2object( \%INC )->save('INC');
     $init->add('/* @INC */');
     $inc_av          = svref_2object( \@INC )->save('INC');
