@@ -124,6 +124,7 @@ t/issue54.t
 t/issue71.t
 t/issue76.t
 t/issue81.t
+t/issue90.t
 t/modules.pm
 t/modules.t
 t/mymodules

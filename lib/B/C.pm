@@ -2943,7 +2943,7 @@ if (0) {
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  elsif ( $gvname eq '!' ) { #Errno
+  elsif ( $fullname eq 'main::!' ) { #Errno
     $savefields = Save_HV;
   }
   # issue 79: Only save stashes for stashes.
@@ -2983,6 +2983,13 @@ if (0) {
     if ( $$gvhv && $savefields & Save_HV ) {
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
+	if ($fullname eq 'main::!') { # force loading Errno
+	  $init->add("/* force saving of Errno */");
+	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
+	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
+	  $init->add("/* force saving of Tie::Hash::NamedCapture */");
+	  mark_package('Tie::Hash::NamedCapture', 1);
+	}
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
 	$gvhv->save($fullname);
 	$init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
