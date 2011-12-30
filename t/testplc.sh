@@ -332,6 +332,12 @@ print "o" if prototype \&x eq "int,int";
 sub y($) { @_ } #cvproto
 print "k" if prototype \&y eq "\$";'
 result[81]='12'
+tests[90]='my $s = q(test string);
+$s =~ s/(?<first>test) (?<second>string)/\2 \1/g;
+print q(o) if $s eq q(string test);
+q(test string) =~ /(?<first>\w+) (?<second>\w+)/;
+print q(k) if $+{first} eq q(test);'
+result[90]='ok'
 
 
 init

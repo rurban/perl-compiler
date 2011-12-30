@@ -3,6 +3,7 @@
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
 # Copyright (c) 2008-2011 Reini Urban <rurban@cpan.org>. All rights reserved.
+# Copyright (c) 2011 cPanel Inc. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -12,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.11';
+our $VERSION = '1.12';
 
 #use 5.008;
 use B qw(class main_cv main_root main_start
@@ -497,8 +498,9 @@ sub B::PVMG::domagic {
 
   nice1 '-' . class($sv) . '-', asm "ldsv", $varix = $ix unless $ix == $varix;
   for (@mglist) {
+    next unless ord($_->TYPE);
     asm "sv_magic", ord($_->TYPE), cstring $_->TYPE;
-    asm "mg_obj",   shift @mgix;
+    asm "mg_obj",   shift @mgix; # D sets itself, see mg.c:mg_copy
     my $length = $_->LENGTH;
     if ( $length == B::HEf_SVKEY and !$PERL56) {
       asm "mg_namex", shift @namix;
@@ -645,7 +647,7 @@ sub B::GV::desired {
   my $gv = shift;
   my ( $cv, $form );
   if ( $debug{Gall} and !$PERL510 ) {
-    select *STDERR;	
+    select *STDERR;
     eval "require B::Debug;";
     $gv->debug;
     select *STDOUT;
@@ -1105,6 +1107,7 @@ sub compile {
   my ( $head, $scan, $keep_syn, $module );
   my $cwd = '';
   $files{$0} = 1;
+  $DB::single=1 if defined &DB::DB;
   # includeall mode (without require):
   if ($includeall) {
     # add imported symbols => values %INC
@@ -1435,7 +1438,7 @@ modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
 
-Enhanced by Reini Urban <rurban@cpan.org>, 2008-
+Enhanced by Reini Urban <rurban@cpan.org>, 2008-2011
 
 =cut
 

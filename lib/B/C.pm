@@ -2834,6 +2834,10 @@ if (0) {
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
   return $sym if $skip_package{$package};
+
+  #XXX Tie::Hash::NamedCapture is added for *main::+ or *main::-
+  #XXX Errno is added for *main::!
+
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   my $name     = cstring($fullname);
@@ -2939,7 +2943,7 @@ if (0) {
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  elsif ( $gvname eq '!' ) { #Errno
+  elsif ( $fullname eq 'main::!' ) { #Errno
     $savefields = Save_HV;
   }
   # issue 79: Only save stashes for stashes.
@@ -2971,6 +2975,10 @@ if (0) {
         warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
         warn "GV::save \@$fullname\n" if $debug{gv};
+	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
+	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
+	  mark_package('Tie::Hash::NamedCapture', 1);
+	}
         $gvav->save($fullname);
         $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
       }
@@ -2982,6 +2990,13 @@ if (0) {
       }
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
+	if ($fullname eq 'main::!') { # force loading Errno
+	  $init->add("/* \%! force saving of Errno */");
+	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
+	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
+	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
+	  mark_package('Tie::Hash::NamedCapture', 1);
+	}
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
 	$gvhv->save($fullname);
 	$init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
@@ -4519,6 +4534,7 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
+  # Tie::Hash::NamedCapture is dynamic
   push @pkg, qw(version)                if $] >= 5.010; # partially static and dynamic
   push @pkg, qw(DynaLoader)		if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
@@ -4789,6 +4805,34 @@ sub inc_cleanup {
 sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   warn "save context:\n" if $verbose;
+
+  if ($PERL510) {
+    # Tie::Hash::NamedCapture is added for *main::+ or *main::-
+    # Errno is added for *main::!
+    no strict 'refs';
+    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
+      use strict 'refs';
+      if (!$include_package{'Tie::Hash::NamedCapture'}) {
+	$init->add("/* force saving of Tie::Hash::NamedCapture */");
+	mark_package('Tie::Hash::NamedCapture', 1);
+      } # else already included
+    } else {
+      use strict 'refs';
+      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
+    }
+    no strict 'refs';
+    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
+      use strict 'refs';
+      if (!$include_package{'Errno'}) {
+	$init->add("/* force saving of Errno */");
+	mark_package('Errno', 1);
+      } # else already included
+    } else {
+      use strict 'refs';
+      delete_unsaved_hashINC('Errno');
+    }
+  }
+
   $init->add("/* curpad names */");
   warn "curpad names:\n" if $verbose;
   # Record comppad sv's names, may not be static

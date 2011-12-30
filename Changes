@@ -24,7 +24,10 @@
 	Fixed 5.15.2 hang at hfree_next_entry (issue 78)
 	Defer writing of READONLY hash keys since 5.15 (issue 88)
 	Enable -fcog copy-on-grow with static strings for >= 5.10
-	* CC (1.12) allow overriding of -f<opt> B::C flags
+	Improved Errno vs. *main::! and Tie::Hash::NamedCapture vs *main::+  / - logic (issue 90)
+	* CC (1.12): allow overriding of -f<opt> B::C flags
+	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90)
+	support -d debugging without -MOd
 	* perlcc (2.13): added options -O1-4, -u, -U, --Wc, --Wl, --version,
 	Keep cfile if output is empty.
 	Changed verbosity levels and output wording.
