@@ -2252,10 +2252,17 @@ sub try_autoload {
     warn "Found UNIVERSAL::$cvname\n" if $debug{cv};
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
-  warn sprintf( "No definition for sub %s::%s. Try %s::AUTOLOAD\n",
-		$cvstashname, $cvname, $cvstashname ) if $debug{cv};
+  my $fullname = $cvstashname . '::' . $cvname;
+  warn sprintf( "No definition for sub %s. Try %s::AUTOLOAD\n",
+		$fullname, $cvstashname ) if $debug{cv};
+  # First some exceptions, fooled by goto
   if ($cvstashname eq 'Config') {
     return svref_2object( \&{'Config::launcher'} );
+  }
+  if ($fullname eq 'utf8::SWASHNEW') {
+    # utf8_heavy was loaded so far, so defer to a demand-loading stub
+    my $stub = sub {require 'utf8_heavy.pl'; goto &utf8::SWASHNEW; };
+    return svref_2object( $stub );
   }
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
@@ -2500,7 +2507,7 @@ sub B::CV::save {
 	  my $gv = $cv->GV;
 	  if ($$gv) {
 	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	      warn "New $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	      warn "New ".$gv->STASH->NAME."::".$gv->NAME."\n" if $verbose;
 	      $svsect->remove;
 	      $xpvcvsect->remove;
 	      delsym($cv);
