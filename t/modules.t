@@ -299,7 +299,8 @@ sub is_todo {
   #if ($] < 5.014) { foreach(qw(
    #ExtUtils::CBuilder
   #)) { return '< 5.14' if $_ eq $module; }}
-  if ($] > 5.015) { foreach(qw(
+  # fixed between v5.15.6-210-g5343a61 and v5.15.6-233-gfb7aafe
+  if ($] > 5.015 and $] < 5.015006) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
   # DateTime only d-nt (timeout?)
