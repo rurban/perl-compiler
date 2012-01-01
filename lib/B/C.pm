@@ -2840,10 +2840,7 @@ if (0) {
 }
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
-  return $sym if $skip_package{$package};
-
-  #XXX Tie::Hash::NamedCapture is added for *main::+ or *main::-
-  #XXX Errno is added for *main::!
+  return $sym if $skip_package{$package} or $package =~ /^B::C::/;
 
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
@@ -5117,7 +5114,8 @@ sub compile {
     3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings)],
     4 => [qw(-fcop)],
   );
-  mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata');
+  mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
+	    'B::Pseudoreg', 'B::Shadow');
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
