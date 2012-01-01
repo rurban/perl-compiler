@@ -13,7 +13,7 @@ my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 
 TODO: {
   local $TODO = 'require LWP::UserAgent still fails'
-    if $] < 5.013 or $] > 5.015002; # cygwin-5.10.1,5.10.1d-nt,5.3.10*,...
+    if $] < 5.013 or $] > 5.015002; # cygwin-5.10.1,5.10.1d-nt,5.13.10*,...
   # new: Global symbol "%Config" requires explicit package name at 5.8.9/Time/Local.pm line 36
   # 5.15: Undefined subroutine &utf8::SWASHNEW called at /usr/local/lib/perl5/5.15.3/constant.pm line 36
   # old: &Config::AUTOLOAD failed on Config::launcher at Config.pm line 72.
