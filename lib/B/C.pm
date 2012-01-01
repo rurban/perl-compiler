@@ -245,8 +245,9 @@ B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP:
 B::GV::save B::GV::savecv B::HV::save B::IO::save B::IO::save_data B::IV::save B::LISTOP::save
 B::LOGOP::save B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save B::OP::_save_common
 B::OP::fake_ppaddr B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save
-B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::RV::save
-B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save );
+B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::REGEXP::save 
+B::RV::save B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save 
+B::UV::save B::REGEXP::EXTFLAGS);
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
@@ -2840,7 +2841,7 @@ if (0) {
 }
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
-  return $sym if $skip_package{$package} or $package =~ /^B::C::/;
+  return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
 
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
@@ -4460,7 +4461,7 @@ sub mark_package {
   my $package = shift;
   my $force = shift;
   $force = 0 if $] < 5.010;
-  return if $skip_package{$package};
+  return if $skip_package{$package} or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     # i.e. if force
@@ -5115,7 +5116,7 @@ sub compile {
     4 => [qw(-fcop)],
   );
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
-	    'B::Pseudoreg', 'B::Shadow');
+	    'B::Section', 'B::Pseudoreg', 'B::Shadow');
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
