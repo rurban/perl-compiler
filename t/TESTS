@@ -195,7 +195,7 @@ use Data::Dumper ();Data::Dumper::Dumpxs({});print "ok";
 >>>
 ok
 #### 45 test dynamic loading ####
-use Exporter; print q(ok) if %main::Exporter::
+use Exporter; print q(ok) if scalar(keys(%main::Exporter::)) > 2
 >>>
 ok
 #### 46 Exporter:: stash missing, issue 79 ####
