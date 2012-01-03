@@ -11,7 +11,7 @@ use Set::Object qw(reftype);
 
 sub help {
   print <<EOF;
-status_upd -fqd [ 1.32 | path]
+status_upd -fqd [ 1.32 | path ]
 
 OPTIONS:
  -q quiet

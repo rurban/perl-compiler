@@ -5,31 +5,46 @@ function do_cp {
       do 
       for f in $(grep -l "$grep$r" $m)
       do 
-        mkdir -p t/reports/$v/r$r
+        mkdir -p t/reports/$v/$r
 	if test "$move" = "1"
 	then
-	    mv $f t/reports/$v/r$r/
+	    mv $f t/reports/$v/$r/
 	else
-	    cp -p $f t/reports/$v/r$r/
+	    cp -p $f t/reports/$v/$r/
 	fi
       done
     done
 }
 
 if test "$1" = "mv"; then move=1; shift; fi
-if test "$1" = "-v"; then v=$2; fi
-v=${1:-1.36}
+if test "$1" = "-v"; then
+  v=$2
+else
+  v=`perl -ane'print $F[2] if /^VERSION =/' Makefile`
+fi
 
 m=$(ls log.modules-5.*|egrep -v ".(orig|err)")
 if [ -n "$m" ]; then
-    grep="VERSION = $v r"
     r=$(perl -lane "print substr(\$F[4],1) if /VERSION = $v r/" $m)
+    if [ -n "$r" ]; then
+	grep="VERSION = $v r"
+    else
+	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\d \\w+ /" $m)
+	grep="VERSION = $v "
+    fi
     do_cp
 fi
 
 m=$(ls log.test-*-5.*|egrep -v ".(orig|err)")
 if [ -n "$m" ]; then
-    grep="Revision: "
     r=$(perl -lane "print \$F[1] if /^Revision: \\d+\$/" $m)
+    if [ -n "$r" ]; then
+        # svn
+	grep="Revision: "
+    else
+	# git
+	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\d \\w+ /" $m)
+	grep=" "
+    fi
     do_cp
 fi
