@@ -612,9 +612,11 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 0 );
+  # XXX overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
   if ($rok and !$PERL56) {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
+    warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv);
   }
   else {
@@ -2968,8 +2970,18 @@ if (0) {
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
     my $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
-      warn "GV::save \$".$sym."\n" if $debug{gv};
-      $gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
+      warn "GV::save \$".$sym." $gvsv\n" if $debug{gv};
+      if ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK) {
+	warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
+	my $rv = $gvsv->object_2svref();
+	my $origsv = $$rv;
+	# warn "$origsv";
+	no strict 'refs';
+	${$fullname} = "$origsv";
+	svref_2object(\${$fullname})->save($fullname);
+      } else {
+	$gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
+      }
       $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       warn "GV::save \$$fullname\n" if $debug{gv};
     }
