@@ -2352,20 +2352,6 @@ sub B::CV::save {
   { no strict 'subs';
     $isconst = $PERL56 ? 0 : $cv->CvFLAGS & CVf_CONST;
   }
-  if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
-    my $stash = $gv->STASH;
-    warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
-      if $debug{cv};
-    # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
-    my $stsym = $stash->save;
-    my $name  = cstring($cvname);
-    my $vsym  = $cv->XSUBANY->save;
-    $decl->add("Static CV* cv$cv_index;");
-    $init->add("cv$cv_index = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
-    my $sym = savesym( $cv, "cv$cv_index" );
-    $cv_index++;
-    return $sym;
-  }
 
   if ( !$isconst && $cvxsub && ( $cvname ne "INIT" ) ) {
     my $egv       = $gv->EGV;
@@ -2463,7 +2449,7 @@ sub B::CV::save {
 	# and we want to allow a patched libperl.
 	warn "Warning: DynaLoader broken with 5.15.2-5.15.3.\n".
 	  "  Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
-	    unless $B::C::DynaLoader_warn; 
+	    unless $B::C::DynaLoader_warn;
 	$B::C::DynaLoader_warn++;
       }
       $decl->add("XS($xs);");
@@ -2474,6 +2460,21 @@ sub B::CV::save {
     no strict 'refs';
     warn $fullname."\n" if $debug{sub};
     return svref_2object( \&Dummy_initxs )->save;
+  }
+
+  if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
+    my $stash = $gv->STASH;
+    warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
+      if $debug{cv};
+    # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
+    my $stsym = $stash->save;
+    my $name  = cstring($cvname);
+    my $vsym  = $cv->XSUBANY->save;
+    $decl->add("Static CV* cv$cv_index;");
+    $init->add("cv$cv_index = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+    my $sym = savesym( $cv, "cv$cv_index" );
+    $cv_index++;
+    return $sym;
   }
 
   # This define is forwarded to the real sv below
