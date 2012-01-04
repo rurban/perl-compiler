@@ -2437,19 +2437,20 @@ sub B::CV::save {
       $xsstash =~ s/::/_/g;
       my $xs = "XS_${xsstash}_${cvname}";
       if ($stashname eq 'version') { # exceptions see universal.c:struct xsub_details details[]
-        my %vtrans = ('()'   => 'noop',
+        my %vtrans = (
                       'parse' => 'new',
                       '(""'   => 'stringify',
                       '(0+'   => 'numify',
                       '(cmp'  => 'vcmp',
                       '(<=>'  => 'vcmp',
                       '(bool' => 'boolean',
-                      '(nomethod' => 'noop',
                       'declare'   => 'qv',
                      );
         if ($vtrans{$cvname}) {
-          $xs = "XS_${xsstash}_".$vtrans{$cvname};
-        }
+          $xs = "XS_version_".$vtrans{$cvname};
+        } elsif ($cvname =~ /^\(/ ) {
+          $xs = "XS_version_noop";
+	}
       }
       if ($fullname eq 'Internals::hv_clear_placeholders') {
 	$xs = 'XS_Internals_hv_clear_placehold';
