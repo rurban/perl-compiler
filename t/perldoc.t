@@ -41,8 +41,8 @@ TODO: {
 
 ok($t2 < $t1, "compiled faster than uncompiled: $t2 < $t1");
 
-$res = `$perlcc -Wb=-O2 -o perldoc_O2$exe $perldoc`;
-ok(-s "perldoc_O2$exe", "perldoc compiled");
+$res = `$perlcc -Wb=-O3 -o perldoc_O3$exe $perldoc`;
+ok(-s "perldoc_O3$exe", "perldoc compiled");
 
 $t0 = [gettimeofday];
 $cc = $^O eq 'MSWin32' ? `perldoc$exe -T -f wait` : `./perldoc -T -f wait`;
@@ -53,12 +53,12 @@ TODO: {
 }
 
 TODO: {
-  local $TODO = "slow compiled -O2";
-  ok($t3 <= $t2, "compiled -O2 not slower than -O0: $t3 <= $t2");
+  local $TODO = "slow compiled -O3";
+  ok($t3 <= $t2, "compiled -O3 not slower than -O0: $t3 <= $t2");
 }
-ok($t3 < $t1,  "compiled -O2 faster than uncompiled: $t3 < $t1");
+ok($t3 < $t1,  "compiled -O3 faster than uncompiled: $t3 < $t1");
 
 END {
   unlink $perldocexe if -e $perldocexe;
-  unlink "perldoc_O2$exe" if -e "perldoc_O2$exe";
+  unlink "perldoc_O3$exe" if -e "perldoc_O3$exe";
 }
