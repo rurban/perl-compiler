@@ -1165,7 +1165,7 @@ sub B::COP::save {
     # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
     $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
-    $free->add( sprintf( "cop_list[%d].cop_warnings = NULL;", $ix ) );
+    $free->add( sprintf( "    cop_list[%d].cop_warnings = NULL;", $ix ) );
     #push @static_free, sprintf("cop_list[%d]", $ix);
   }
 
@@ -5149,13 +5149,13 @@ sub compile {
   my @eval_at_startup;
   $B::C::destruct = 1;
   $B::C::stash    = 1;
-  $B::C::fold     = 1 if $] >= 5.013009; # includes utf8::Cased tables
-  $B::C::warnings = 1 if $] >= 5.013005; # includes Carp warnings categories and B
+  $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
+  $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data -fno-stash)],
-    3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings)],
+    3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
@@ -5612,7 +5612,7 @@ which is about 1.6MB on 32-bit. In CORE this is demand-loaded from F<utf8.pm>.
 If you are sure not to use or require any case-insensitive
 matching you can strip this table from memory with C<-fno-fold>.
 
-Not enabled with any C<-O> option.
+Enabled with C<-O3>.
 
 =item B<-fno-warnings> I<(since 5.14)>
 
@@ -5622,7 +5622,7 @@ from F<warnings.pm>.
 
 You can strip this table from memory with C<-fno-warnings>.
 
-Not enabled with any C<-O> option.
+Enabled with C<-O3>.
 
 =item B<-fuse-script-name>
 
