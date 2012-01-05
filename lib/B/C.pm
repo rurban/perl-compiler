@@ -637,7 +637,7 @@ sub save_pv_or_rv {
   return ( $savesym, $cur, $len, $pv );
 }
 
-# shared global string. mostly GvNAME and GvFILE,
+# shared global string. Mostly GvNAME and GvFILE,
 # but also CV prototypes or bareword hash keys.
 sub save_hek {
   my $str = shift; # not cstring'ed
@@ -653,6 +653,10 @@ sub save_hek {
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
+  # not-randomized hash keys:
+  # shared_hek's are not used as object fields,
+  # so not vulnerable to oCERT-2011-003 style DOS attacks.
+  # (bare-word hash keys?)
   $init->add(sprintf("%s = share_hek(%s, %u, %s);",
 		     $sym, $cstr, $cur, B::hash($str)));
   wantarray ? ( $sym, $cur ) : $sym;
@@ -3464,7 +3468,7 @@ sub B::HV::save {
       if ($value) {
 	$init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
 			      cstring($key), length( pack "a*", $key ),
-			      "(SV*)$value", hash($key) ));
+			      "(SV*)$value", 0 )); # !! randomized hash keys
 	warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
       }
     }
@@ -4969,7 +4973,7 @@ sub save_sig {
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
     $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
                         cstring($k), length( pack "a*", $k ),
-                        'sv', hash($k) ) );
+                        'sv', 0 ) ); # XXX randomized hash keys!
     $init->add( "\t".'mg_set(sv);', '}' );
   }
   $init->add('}');

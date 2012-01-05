@@ -8,6 +8,8 @@
 	* C: issue79: save stashes also, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not
 	  walk into unneeded territory; B::STASHGV (46, issue 79)
+	Fixed vulnerability to oCERT-2011-003 style DOS attacks. Do not pre-compute hashes,
+	  use the random seed from perl startup.
 	New -fno-stash with -O2 to omit stashes, which are rarely needed.
 	UNIVERSAL methods were not correctly stored, which led to method not
 	  found at run-time errors.
