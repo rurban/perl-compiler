@@ -1,7 +1,7 @@
 # B::C::VERSION = 1.37 a6ed5a7 2012-01-04 | Do not initialize CONSTSUB XS methods twice
-# perlversion = 5.008009d-nt
-# path = /usr/local/bin/perl5.8.9d-nt
-# platform = linux 64bit non-threaded debug
+# perlversion = 5.012004
+# path = /usr/bin/perl5.12.4
+# platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -34,11 +34,11 @@ pass Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-skip HTML::Parser
+pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-skip Compress::Raw::Zlib
-skip Compress::Raw::Bzip2
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
 pass Storable
@@ -66,44 +66,44 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose #TODO 5.8 without threads
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+pass DBI
 pass Time::Local
-skip IO::Scalar
-skip Sub::Identify
+pass IO::Scalar
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
-skip Tree::DAG_Node
-skip Path::Class
-skip Test::Warn
+pass FCGI
+pass Tree::DAG_Node
+pass Path::Class
+pass Test::Warn
 pass Encode
-skip Variable::Magic
+pass Variable::Magic
 pass CGI
-skip B::Hooks::EndOfScope
-skip Test::Pod
-skip Digest::SHA1
+pass B::Hooks::EndOfScope
+pass Test::Pod
+pass Digest::SHA1
 pass namespace::clean
-skip Class::Inspector
-skip Clone
-skip XML::NamespaceSupport
-skip XML::SAX
+pass Class::Inspector
+pass Clone
+pass XML::NamespaceSupport
+pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
-skip IO::String
-skip AppConfig
-skip UNIVERSAL::require
-skip Template::Stash
-# 77 / 100 modules tested with B-C-1.37 - perl-5.008009d-nt
-# pass  76 /  77 (98.7%)
-# fail   1 /  77 (1.3%)
-# todo   2 /   1 (200.0%)
-# skip  23 / 100 (23.0% not installed)
+pass IO::String
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.37 - perl-5.012004
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   1 /   0 ()
+# skip   0 / 100 (0.0% not installed)

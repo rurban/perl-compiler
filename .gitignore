@@ -17,7 +17,6 @@ a.c.lst
 ccode*
 cccode*
 a.plc
-log.*
 *.log
 pm_to_blib
 nohup.out

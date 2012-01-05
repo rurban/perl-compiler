@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.36 r1203 M
+# B::C::VERSION = 1.37 a6ed5a7 2012-01-04 | Do not initialize CONSTSUB XS methods twice
 # perlversion = 5.014002d
-# path = perl5.14.2d
-# platform = darwin 64bit threaded debug
+# path = /usr/local/bin/perl5.14.2d
+# platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO mostly
+pass ExtUtils::CBuilder #TODO mostly
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.36 - perl-5.014002d
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
+# 100 / 100 modules tested with B-C-1.37 - perl-5.014002d
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   1 /   0 ()
 # skip   0 / 100 (0.0% not installed)

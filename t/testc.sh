@@ -207,6 +207,7 @@ result[18]='ba';
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
 result[19]='431';
 # not repro: something like this is broken in original 5.6 (Net::DNS::ZoneFile::Fast)
+# see new test 33
 tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
 result[20]='1';
 # broken on early alpha and 5.10: run-time labels.
