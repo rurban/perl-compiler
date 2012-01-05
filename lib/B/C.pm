@@ -1157,11 +1157,13 @@ sub B::COP::save {
       : 'pWARN_STD';
   }
   else {
-    # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong, 
+    # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong,
     # DUP_WARNINGS copied length PVX bytes.
     $warnings = bless $warnings, "B::LEXWARN";
     $warn_sv = $warnings->save;
     my $ix = $copsect->index + 1;
+    # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
+    $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
     $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
     $free->add( sprintf( "cop_list[%d].cop_warnings = NULL;", $ix ) );
     #push @static_free, sprintf("cop_list[%d]", $ix);
