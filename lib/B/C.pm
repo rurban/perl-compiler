@@ -239,6 +239,7 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 
+# exclude all not B::C:: prefixed subs
 my %all_bc_subs = map {$_=>1} qw(B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
 B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next B::FAKEOP::ppaddr
 B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP::type
