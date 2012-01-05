@@ -251,7 +251,7 @@ result[32]='12'
 # C qr test was broken in 5.6 -- needs to load an actual file to test. See test 20.
 # used to error with Can't locate object method "save" via package "U??WVS?-" (perhaps you forgot to load "U??WVS?-"?) at /usr/lib/perl5/5.6.2/i686-linux/B/C.pm line 676.
 # fails with new constant only. still not repro (r-magic probably)
-tests[33]='BEGIN{unshift @INC,("t");} use qr_loaded_module; print "ok"'
+tests[33]='BEGIN{unshift @INC,("t");} use qr_loaded_module; print "ok" if qr_loaded_module::qr_called_in_sub("name1")'
 result[33]='ok'
 # init of magic hashes. %ENV has e magic since a0714e2c perl.c
 # (Steven Schubiger      2006-02-03 17:24:49 +0100 3967) i.e. 5.8.9 but not 5.8.8
