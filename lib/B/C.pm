@@ -1613,10 +1613,14 @@ sub B::PVLV::save {
         savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv ) );
     }
   } else {
-    push @static_free, $s if $len and !$in_endav;
+    if ($shared_hek) { # avoid free of static hek's
+      $free->add("    SvFAKE_off($s);");
+    } else {
+      push @static_free, $s if $len and !$in_endav;
+    }
   }
   $sv->save_magic;
-  savesym( $sv, "&$s" );
+  savesym( $sv, "&".$s );
 }
 
 sub B::PVIV::save {
@@ -1629,8 +1633,11 @@ sub B::PVIV::save {
     }
     return $sym;
   }
+  my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
+  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
+  $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   if ($PERL514) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
     $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $cur, $len, ivx($sv->IVX) ) ); # IVTYPE long
@@ -1657,10 +1664,14 @@ sub B::PVIV::save {
 	  (savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
       }
     } else {
-      push @static_free, $s if $len and !$in_endav;
+      if ($shared_hek) { # avoid free of static hek's
+	$free->add("    SvFAKE_off($s);");
+      } else {
+	push @static_free, $s if $len and !$in_endav;
+      }
     }
   }
-  savesym( $sv, "&$s" );
+  savesym( $sv, "&".$s );
 }
 
 sub B::PVNV::save {
@@ -1741,10 +1752,14 @@ sub B::PVNV::save {
           savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv ) );
       }
     } else {
-      push @static_free, $s if $len and !$in_endav;
+      if ($shared_hek) { # avoid free of static hek's
+	$free->add("    SvFAKE_off($s);");
+      } else {
+	push @static_free, $s if $len and !$in_endav;
+      }
     }
   }
-  savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  savesym( $sv, "&".$s );
 }
 
 sub B::BM::save {
@@ -1811,7 +1826,7 @@ sub B::PV::save {
     return $sym;
   }
   my $flags = $sv->FLAGS;
-  my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
+  my $shared_hek = $PERL510 ? (($flags & 0x09000000) == 0x09000000) : undef;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY and !$shared_hek;
   # XSLoader reuses this SV, so it must be dynamic
   $B::C::pv_copy_on_grow = 0 if !($flags & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
@@ -1846,11 +1861,16 @@ sub B::PV::save {
       $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
     }
   }
+  my $s = "sv_list[".$svsect->index."]";
   if ( $B::C::pv_copy_on_grow ) {
-    push @static_free, ("sv_list[".$svsect->index."]") if defined($pv) and !$in_endav;
+    if ($shared_hek) { # avoid free of static hek's
+      $free->add("    SvFAKE_off(&$s);");
+    } else {
+      push @static_free, $s if defined($pv) and !$in_endav;
+    }
   }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
-  return savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  savesym( $sv, "&".$s );
 }
 
 sub lexwarnsym {
@@ -1968,7 +1988,11 @@ sub B::PVMG::save {
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
     my $s = "sv_list[".$svsect->index."]";
-    push @static_free, $s if $len and $B::C::pv_copy_on_grow and !$in_endav;
+    if ($shared_hek) { # avoid free of static hek's
+      $free->add("    SvFAKE_off($s);");
+    } else {
+      push @static_free, $s if $len and $B::C::pv_copy_on_grow and !$in_endav;
+    }
   }
   else {
     # cannot initialize this pointer static
