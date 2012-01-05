@@ -764,7 +764,6 @@ sub todo_tests_default {
         # push @todo, (39)   if $] > 5.007 and $] < 5.009;
         # fixed with 1.30
         # push @todo, (21)   if $] > 5.011 and $] < 5.013;
-	push @todo, (13)     if $] > 5.009 and $what =~ /c_o[34]/;
         #push @todo, (29)    if $] > 5.009 and $] < 5.012;
         push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
         # push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.014;
@@ -775,12 +774,12 @@ sub todo_tests_default {
         # push @todo, (10,12) if $what =~ /c_o[234]/ and $] >= 5.010 and $] < 5.015;
 	# fixed with 1.35
         # push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
+        push @todo, (13)     if $what =~ /c_o[12]/ and $] >= 5.010 and !$ITHREADS;
         push @todo, (44,45) if $] < 5.009;
         push @todo, (44,50) if $what eq 'c' and $] > 5.013 and !$ITHREADS;
         #push @todo, (29,44,45) if $what =~ /c_o[234]/;
 	# @ISA issue 64
         push @todo, (15,50)  if $what eq 'c_o4';
-        push @todo, (13)     if $what =~ /c_o[1234]/ and $] >= 5.010;
         #push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
         #push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
         push @todo, (11)    if $what =~ /c_o[1234]/
