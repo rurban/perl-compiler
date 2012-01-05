@@ -5162,7 +5162,7 @@ sub compile {
     4 => [qw(-fcop)],
   );
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
-	    'B::Section', 'B::Pseudoreg', 'B::Shadow');
+	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O');
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
