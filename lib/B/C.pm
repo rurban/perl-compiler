@@ -653,12 +653,8 @@ sub save_hek {
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
-  # not-randomized hash keys:
-  # shared_hek's are not used as object fields,
-  # so not vulnerable to oCERT-2011-003 style DOS attacks.
-  # (bare-word hash keys?)
   $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		     $sym, $cstr, $cur, B::hash($str)));
+		     $sym, $cstr, $cur, 0));
   wantarray ? ( $sym, $cur ) : $sym;
 }
 
