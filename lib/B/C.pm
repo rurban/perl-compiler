@@ -1395,6 +1395,8 @@ sub B::SPECIAL::save {
   my ($sv) = @_;
   # special case: $$sv is not the address but an index into specialsv_list
   #   warn "SPECIAL::save specialsv $$sv\n"; # debug
+  @specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE)
+    unless @specialsv_name; # 5.6.2 Exporter quirks
   my $sym = $specialsv_name[$$sv];
   if ( !defined($sym) ) {
     warn "unknown specialsv index $$sv passed to B::SPECIAL::save";
@@ -2136,6 +2138,7 @@ sub B::PVMG::save_magic {
 	my ($resym, $relen);
 	if ($PERL56) {
 	  ($resym, $relen) = savere( $pmop->precomp ); # 5.6 has precomp only in PMOP
+	  ($resym, $relen) = savere( $mg->precomp ) unless $relen;
 	} else {
 	  ($resym, $relen) = savere( $mg->precomp );
 	}
