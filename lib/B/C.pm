@@ -4111,7 +4111,9 @@ EOT
       printf "\tXPUSHp(\"%s\", %d);\n", # "::bootstrap" gets appended, TODO
 	0 ? "strdup($stashname)" : $stashname, length($stashname);
       print "\tPUTBACK;\n";
-      print "\tboot_$stashxsub(aTHX_ NULL);\n";
+      # Tie::Hash::NamedCapture requires callers cv in its BOOT (issue 86),
+      # but the arg has the __attribute__(unused).
+      print "\tboot_$stashxsub(aTHX_ PL_main_cv);\n";
       print "\tSPAGAIN;\n";
     }
   }
