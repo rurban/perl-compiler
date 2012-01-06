@@ -21,7 +21,8 @@ print $s $script;
 close $s;
 
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-system($runperl,'-Mblib',"-MO=Bytecode,-o$name.plc","$name.pl");
+my $q = $] < 5.008001 ? "" : "-qq,";
+system($runperl,'-Mblib',"-MO=${q}Bytecode,-o$name.plc","$name.pl");
 my $runexe = qx($runperl -Mblib -MByteLoader $name.plc);
 is($runexe, 'ok', 'Bytecode');
 

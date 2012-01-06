@@ -4,7 +4,7 @@
 use Test::More tests => 9;
 use strict;
 BEGIN {
-  die "1..0 #requires 5.10\n" if $] < 5.010;
+  die "1..0 # Tie::Named::Capture requires Perl v5.10\n" if $] < 5.010;
   unshift @INC, 't';
   require "test.pl";
 }

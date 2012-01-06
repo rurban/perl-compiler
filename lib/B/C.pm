@@ -2738,6 +2738,7 @@ sub B::CV::save {
     }
   }
   elsif ($PERL56) {
+    $cur = length ( pack "a*", $pv );
     my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
 	       cstring($pv), length($pv), length($pv), $cv->IVX,
 	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
@@ -2754,6 +2755,7 @@ sub B::CV::save {
     }
   }
   else { #5.8
+    $cur = length ( pack "a*", $pv );
     my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
 	       cstring($pv),      length($pv), length($pv), $cv->IVX,
 	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
@@ -2825,15 +2827,20 @@ sub B::CV::save {
       )
     );
   }
+  if ($cur) {
+    warn sprintf( "Saving CV proto %s for CV 0x%x\n", $pv, $$cv ) if $debug{cv};
+  }
   # issue 84: empty prototypes sub xx(){} vs sub xx{}
-  if ($PERL510 and $cur) {
-    $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
-  } elsif (!$B::C::pv_copy_on_grow) { # not static, they are freed when redefined
-    $init->add( sprintf("SvPVX(&sv_list[%d]) = savepvn(%s, %u);",
-			$sv_ix, cstring($pv), $cur));
-  } else {
-    $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;",
-			$sv_ix, cstring($pv)));
+  if ($PERL510) {
+    if ($cur) {
+      $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
+    } elsif (!$B::C::pv_copy_on_grow) { # not static, they are freed when redefined
+      $init->add( sprintf("SvPVX(&sv_list[%d]) = savepvn(%s, %u);",
+			  $sv_ix, cstring($pv), $cur));
+    } else {
+      $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;",
+			  $sv_ix, cstring($pv)));
+    }
   }
   return $sym;
 }
