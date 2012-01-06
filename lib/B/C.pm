@@ -653,8 +653,13 @@ sub save_hek {
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
-  $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		     $sym, $cstr, $cur, 0));
+  if (0) {
+    $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+		       $sym, $cstr, $cur, B::hash($str)));
+  } else {
+    $init->add(sprintf("%s = my_share_hek(aTHX_ %s, %u, 0);",
+		       $sym, $cstr, $cur));
+  }
   wantarray ? ( $sym, $cur ) : $sym;
 }
 
@@ -3864,6 +3869,25 @@ Perl_newGP(pTHX_ GV *const gv)
 }
 #endif
 __EOGP
+  }
+  # Need fresh re-hash of strtab. share_hek does not allow hash = 0
+  if ( $PERL510 ) {
+    print <<'EOT';
+HEK *
+my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
+
+HEK *
+my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
+    register HE* he;
+    /* XXX Set flag to UTF8 if len is negative. We don't do UTF8 yet */
+    HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
+    if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
+        he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
+    }
+    HvSHAREKEYS_off(PL_strtab);
+    return HeKEY(he);
+}
+EOT
   }
   print "\n";
 }
