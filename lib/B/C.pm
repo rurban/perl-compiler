@@ -637,8 +637,8 @@ sub save_pv_or_rv {
   return ( $savesym, $cur, $len, $pv );
 }
 
-# shared global string. Mostly GvNAME and GvFILE,
-# but also CV prototypes or bareword hash keys.
+# Shared global string in PL_strtab.
+# Mostly GvNAME and GvFILE but also CV prototypes or bareword hash keys.
 sub save_hek {
   my $str = shift; # not cstring'ed
   my $len = length $str;
@@ -654,9 +654,17 @@ sub save_hek {
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
   if (0) {
+    # not-randomized global shared hash keys:
+    # share_hek needs a non-zero hash parameter, unlike hv_store.
+    # Vulnerable to oCERT-2011-003 style DOS attacks?
+    # user-input (object fields) does not affect strtab it is pretty safe.
     $init->add(sprintf("%s = share_hek(%s, %u, %s);",
 		       $sym, $cstr, $cur, B::hash($str)));
   } else {
+    # re-hash strtab
+    # pre-computed hashes are different than run-time computed hashes,
+    # so we will have double entries for CV protos e.g. which will emit strange warnings.
+    # E.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
     $init->add(sprintf("%s = my_share_hek(aTHX_ %s, %u, 0);",
 		       $sym, $cstr, $cur));
   }
