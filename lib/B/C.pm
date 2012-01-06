@@ -3887,13 +3887,13 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     register HE* he;
-    /* XXX Set flag to UTF8 if len is negative. We don't do UTF8 yet */
     HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
+    /* XXX use hv_common_key_len if we start supporting UTF8 */
     if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
         he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
     }
     HvSHAREKEYS_off(PL_strtab);
-    return HeKEY(he);
+    return HeKEY_hek(he);
 }
 EOT
   }
