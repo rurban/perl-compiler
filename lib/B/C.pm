@@ -663,9 +663,9 @@ sub save_hek {
   } else {
     # re-hash strtab
     # pre-computed hashes are different than run-time computed hashes,
-    # so we will have double entries for CV protos e.g. which will emit strange warnings.
+    # So we will have double entries for CV protos e.g. which will emit strange warnings.
     # E.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
-    $init->add(sprintf("%s = my_share_hek(aTHX_ %s, %u, 0);",
+    $init->add(sprintf("%s = share_hek(%s, %u, 0);",
 		       $sym, $cstr, $cur));
   }
   wantarray ? ( $sym, $cur ) : $sym;
@@ -3889,12 +3889,14 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     register HE* he;
     HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
     /* XXX use hv_common_key_len if we start supporting UTF8 */
-    if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
-        he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
+    if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, hash))) {
+        he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, hash);
     }
     HvSHAREKEYS_off(PL_strtab);
     return HeKEY_hek(he);
 }
+#define share_hek(str,len,hash) my_share_hek( aTHX_ str,len,hash );
+
 EOT
   }
   print "\n";
