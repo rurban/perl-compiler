@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 a6ed5a7 2012-01-04 | Do not initialize CONSTSUB XS methods twice
+# B::C::VERSION = 1.37 f172242 2012-01-05 | skip compiling O::
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
@@ -72,7 +72,7 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+pass DBI
 pass Time::Local
 skip IO::Scalar
 skip Sub::Identify
@@ -85,25 +85,25 @@ pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-skip Test::Pod
+pass Test::Pod
 skip Digest::SHA1
 pass namespace::clean
 skip Class::Inspector
 skip Clone
-skip XML::NamespaceSupport
-skip XML::SAX
+pass XML::NamespaceSupport
+pass XML::SAX
 pass YAML
 fail MooseX::Types #TODO 5.8
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
-skip IO::String
+pass IO::String
 skip AppConfig
 skip UNIVERSAL::require
 skip Template::Stash
-# 83 / 100 modules tested with B-C-1.37 - perl-5.008009d
-# pass  81 /  83 (97.6%)
-# fail   2 /  83 (2.4%)
+# 88 / 100 modules tested with B-C-1.37 - perl-5.008009d
+# pass  86 /  88 (97.7%)
+# fail   2 /  88 (2.3%)
 # todo   2 /   2 (100.0%)
-# skip  17 / 100 (17.0% not installed)
+# skip  12 / 100 (12.0% not installed)
