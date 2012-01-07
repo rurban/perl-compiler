@@ -1623,7 +1623,7 @@ sub B::PVLV::save {
     }
   } else {
     if ($shared_hek) { # avoid free of static hek's
-      $free->add("    SvFAKE_off($s);");
+      $free->add("    SvFAKE_off(&$s);");
     } else {
       push @static_free, $s if $len and !$in_endav;
     }
@@ -1674,7 +1674,7 @@ sub B::PVIV::save {
       }
     } else {
       if ($shared_hek) { # avoid free of static hek's
-	$free->add("    SvFAKE_off($s);");
+	$free->add("    SvFAKE_off(&$s);");
       } else {
 	push @static_free, $s if $len and !$in_endav;
       }
@@ -1762,7 +1762,7 @@ sub B::PVNV::save {
       }
     } else {
       if ($shared_hek) { # avoid free of static hek's
-	$free->add("    SvFAKE_off($s);");
+	$free->add("    SvFAKE_off(&$s);");
       } else {
 	push @static_free, $s if $len and !$in_endav;
       }
@@ -1998,7 +1998,7 @@ sub B::PVMG::save {
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
     my $s = "sv_list[".$svsect->index."]";
     if ($shared_hek) { # avoid free of static hek's
-      $free->add("    SvFAKE_off($s);");
+      $free->add("    SvFAKE_off(&$s);");
     } else {
       push @static_free, $s if $len and $B::C::pv_copy_on_grow and !$in_endav;
     }
