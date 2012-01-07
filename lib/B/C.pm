@@ -2475,8 +2475,14 @@ sub B::CV::save {
           $xs = "XS_version_noop";
 	}
       }
-      if ($fullname eq 'Internals::hv_clear_placeholders') {
+      elsif ($fullname eq 'Internals::hv_clear_placeholders') {
 	$xs = 'XS_Internals_hv_clear_placehold';
+      }
+      elsif ($fullname eq 'Tie::Hash::NamedCapture::FIRSTKEY') {
+	$xs = 'XS_Tie_Hash_NamedCapture_FIRSTK';
+      }
+      elsif ($fullname eq 'Tie::Hash::NamedCapture::NEXTKEY') {
+	$xs = 'XS_Tie_Hash_NamedCapture_NEXTK';
       }
       warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
     	if $debug{cv};
@@ -4599,16 +4605,16 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
-  # Tie::Hash::NamedCapture is dynamic
-  push @pkg, qw(version)                if $] >= 5.010; # partially static and dynamic
-  push @pkg, qw(DynaLoader)		if $Config{usedl};
+  push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
+  push @pkg, 'Tie::Hash::NamedCapture' if $] < 5.014; # dynamic since 5.14
+  push @pkg, 'DynaLoader'		if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
-  push @pkg, qw(Cygwin)			if $^O eq 'cygwin';
-  push @pkg, qw(NetWare)		if $^O eq 'NetWare';
-  push @pkg, qw(OS2)			if $^O eq 'os2';
+  push @pkg, 'Cygwin'			if $^O eq 'cygwin';
+  push @pkg, 'NetWare'		if $^O eq 'NetWare';
+  push @pkg, 'OS2'			if $^O eq 'os2';
   push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
-  #push @pkg, qw(PerlIO) if $] >= 5.008006; # get_layers only
+  #push @pkg, 'PerlIO' if $] >= 5.008006; # get_layers only
   return @pkg;
 }
 
