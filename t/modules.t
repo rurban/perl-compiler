@@ -306,8 +306,6 @@ sub is_todo {
   # DateTime only d-nt (timeout?)
   if ($] >= 5.015002) { foreach(qw(
    Path::Class
-   File::Temp
-   Module::Build
   )) { return '>= 5.15.2' if $_ eq $module; }}
 
   # ---------------------------------------
