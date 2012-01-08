@@ -653,21 +653,15 @@ sub save_hek {
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
-  if (0) {
-    # not-randomized global shared hash keys:
-    # share_hek needs a non-zero hash parameter, unlike hv_store.
-    # Vulnerable to oCERT-2011-003 style DOS attacks?
-    # user-input (object fields) does not affect strtab it is pretty safe.
-    $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		       $sym, $cstr, $cur, B::hash($str)));
-  } else {
-    # re-hash strtab
-    # pre-computed hashes are different than run-time computed hashes,
-    # So we will have double entries for CV protos e.g. which will emit strange warnings.
-    # E.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
-    $init->add(sprintf("%s = share_hek(%s, %u, 0);",
-		       $sym, $cstr, $cur));
-  }
+  # not-randomized global shared hash keys:
+  # share_hek needs a non-zero hash parameter, unlike hv_store.
+  # Vulnerable to oCERT-2011-003 style DOS attacks?
+  # user-input (object fields) does not affect strtab it is pretty safe.
+  $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+		     $sym, $cstr, $cur, B::hash($str)));
+  # Note that pre-computed hashes are different than run-time computed hashes,
+  # so we will have double entries for CV protos e.g. which will emit strange warnings.
+  # E.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
   wantarray ? ( $sym, $cur ) : $sym;
 }
 
@@ -1702,7 +1696,7 @@ sub B::PVNV::save {
   my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
-  $savesym = "(char*)$savesym";
+  $savesym = substr($savesym,0,1) ne "(" ? "(char*)".$savesym : $savesym;
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
@@ -1749,8 +1743,13 @@ sub B::PVNV::save {
   }
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
-    $xpvnvsect->add(
-      sprintf( "%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
+    if ($savesym =~ /^\(char\*\)get_cv\("/) { # Moose 5.8.9d
+      $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", 'NULL', $cur, $len, $ivx, $nvx ) );
+      $init->add(sprintf("xpvnv_list[%d].xpv_pv = %s;", $xpvnvsect->index, $savesym));
+    } else {
+      $xpvnvsect->add(
+		      sprintf( "%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
+    }
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
@@ -2519,9 +2518,10 @@ sub B::CV::save {
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
     my $vsym  = $cv->XSUBANY->save;
-    $decl->add("Static CV* cv$cv_index;");
-    $init->add("cv$cv_index = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
-    my $sym = savesym( $cv, "cv$cv_index" );
+    my $cvi = "cv".$cv_index;
+    $decl->add("Static CV* $cvi;");
+    $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+    my $sym = savesym( $cv, $cvi );
     $cv_index++;
     return $sym;
   }
