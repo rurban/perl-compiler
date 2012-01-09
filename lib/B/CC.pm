@@ -251,7 +251,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
   OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY
 );
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
-use B::C qw(save_unused_subs objsym init_sections mark_unused
+use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
   svop_or_padop_pv);
 use B::Bblock qw(find_leaders);
@@ -3094,6 +3094,10 @@ OPTION:
   #if ($debug{op}) {
   #  warn "no_stack: ",join(" ",sort keys %no_stack),"\n";
   #}
+
+  mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
+	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O', 'Opcodes',
+	    'B::Stackobj', 'B::Bblock');
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
