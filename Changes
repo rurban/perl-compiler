@@ -37,7 +37,8 @@
 	Updated version XS methods, default to noop for (...
 	Strip version object overload from XS packages (issue 91), XS needs plain PVs
 	Do not initialize CONSTSUB XS methods twice, boot does it for us
-	pass main_cv to XS boot_$name, fixes Tie::Hash::NamedCapture (issue 86)
+	Pass main_cv to XS boot_$name, fixes boot of Tie::Hash::NamedCapture (issue 86)
+	Fixed share_hek strings with -O1 (test 13)
 	* CC (1.12): allow overriding of -f<opt> B::C flags
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90)
 	support -d debugging without -MOd

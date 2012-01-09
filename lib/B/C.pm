@@ -4208,6 +4208,7 @@ EOT
       print "\tPUTBACK;\n";
       # Tie::Hash::NamedCapture requires callers cv in its BOOT (issue 86),
       # but the arg has the __attribute__(unused).
+      # CvSTASH(CvGV(cv)) must be valid
       print "\tboot_$stashxsub(aTHX_ PL_main_cv);\n";
       print "\tSPAGAIN;\n";
     }
@@ -4321,13 +4322,14 @@ EOT
         print "#else\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
+	# XXX CvSTASH(CvGV(cv)) is invalid here (issue 86)
         print "\tboot_$stashxsub(aTHX_ PL_main_cv);\n";
         print "#endif\n";
         print "\tSPAGAIN;\n";
         #print "\tPUTBACK;\n";
       } else {
         warn "no dl_init for $stashname, ".
-          (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n") 
+          (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n")
 	    if $verbose;
 	# XXX Too late. This might fool run-time DynaLoading.
 	# We really should remove this via init from @DynaLoader::dl_modules
