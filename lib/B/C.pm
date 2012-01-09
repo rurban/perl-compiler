@@ -658,7 +658,7 @@ sub save_hek {
   # Vulnerable to oCERT-2011-003 style DOS attacks?
   # user-input (object fields) does not affect strtab it is pretty safe.
   $init->add(sprintf("%s = share_hek(%s, %u, %s);",
-		     $sym, $cstr, $cur, B::hash($str)));
+		     $sym, $cstr, $cur, '0'));
   # Note that pre-computed hashes are different than run-time computed hashes,
   # so we will have double entries for CV protos e.g. which will emit strange warnings.
   # E.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
