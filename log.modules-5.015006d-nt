@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 a6ed5a7 2012-01-04 | Do not initialize CONSTSUB XS methods twice
+# B::C::VERSION = 1.37 c3b708e 2012-01-08 | Fixed get_cv in static context as xpnv.xpv (Moose 5.8)
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
 # platform = linux 64bit non-threaded debug
@@ -20,12 +20,12 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp #TODO >= 5.15.2
+pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder #TODO mostly
 pass ExtUtils::ParseXS
-pass Module::Build #TODO >= 5.15.2
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -101,9 +101,9 @@ pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
+pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015006d-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   4 /   1 (400.0%)
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   2 /   0 ()
 # skip   0 / 100 (0.0% not installed)

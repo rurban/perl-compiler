@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 f172242 2012-01-05 | skip compiling O::
+# B::C::VERSION = 1.37 928655a 2012-01-07 | merge with master
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction #TODO 5.10.x crash
 pass Class::MOP
-fail Moose #TODO 5.10.x crash
+pass Moose #TODO 5.10.x crash
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,7 +103,7 @@ skip AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 93 / 100 modules tested with B-C-1.37 - perl-5.010001d-nt
-# pass  91 /  93 (97.8%)
-# fail   2 /  93 (2.2%)
-# todo   3 /   2 (150.0%)
+# pass  93 /  93 (100.0%)
+# fail   0 /  93 (0.0%)
+# todo   3 /   0 ()
 # skip   7 / 100 (7.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 f172242 2012-01-05 | skip compiling O::
+# B::C::VERSION = 1.37 928655a 2012-01-07 | merge with master
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = linux 64bit non-threaded debug
