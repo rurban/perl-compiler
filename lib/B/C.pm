@@ -623,6 +623,8 @@ sub save_pv_or_rv {
   else {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
     $cur = $pok ? length($pv) : 0;
+    my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
+    local $B::C::pv_copy_on_grow if $shared_hek;
     if ($pok) {
       if ($B::C::pv_copy_on_grow) {
 	( $savesym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
@@ -1643,7 +1645,8 @@ sub B::PVIV::save {
     return $sym;
   }
   my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
+  local $B::C::pv_copy_on_grow;
+  $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = "(char*)$savesym";
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
@@ -1694,7 +1697,10 @@ sub B::PVNV::save {
     return $sym;
   }
   my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
+  local $B::C::pv_copy_on_grow;
+  $B::C::pv_copy_on_grow = 1 if $B::C::const_strings
+    and !$shared_hek
+    and $sv->FLAGS & SVf_READONLY;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = substr($savesym,0,1) ne "(" ? "(char*)".$savesym : $savesym;
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
@@ -1795,7 +1801,8 @@ sub B::BM::save {
                 sprintf( "BmUSEFUL($sym) = %d;", $sv->USEFUL )
               );
   } else {
-    local $B::C::pv_copy_on_grow = 1
+    local $B::C::pv_copy_on_grow;
+    $B::C::pv_copy_on_grow = 1
       if $B::C::const_strings and $sv->FLAGS & SVf_READONLY and $] != 5.008009;
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
@@ -1841,7 +1848,10 @@ sub B::PV::save {
   }
   my $flags = $sv->FLAGS;
   my $shared_hek = $PERL510 ? (($flags & 0x09000000) == 0x09000000) : undef;
-  local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY and !$shared_hek;
+  local $B::C::pv_copy_on_grow;
+  $B::C::pv_copy_on_grow = 1 if $B::C::const_strings
+    and !$shared_hek
+    and $flags & SVf_READONLY;
   # XSLoader reuses this SV, so it must be dynamic
   $B::C::pv_copy_on_grow = 0 if !($flags & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
@@ -3890,24 +3900,8 @@ __EOGP
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
 
-HEK *
-my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
-    if (!hash) {
-      register HE* he;
-      /* XXX use hv_common_key_len if we start supporting UTF8 */
-      if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
-        HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
-        he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
-        HvSHAREKEYS_off(PL_strtab);
-      }
-      return HeKEY_hek(he);
-    } else {
-      return Perl_share_hek(aTHX_ str, len, hash);
-    }
-}
 #undef share_hek
 #define share_hek(str,len,hash) my_share_hek( aTHX_ str,len,hash );
-
 EOT
   }
   print "\n";
@@ -4024,6 +4018,27 @@ EOT
 }
 
 sub output_main_rest {
+
+  if ( $PERL510 ) {
+    print <<'EOT';
+HEK *
+my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
+    if (!hash) {
+      register HE* he;
+      /* XXX use hv_common_key_len if we start supporting UTF8 */
+      if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
+        HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
+        he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
+        HvSHAREKEYS_off(PL_strtab);
+      }
+      return HeKEY_hek(he);
+    } else {
+      return Perl_share_hek(aTHX_ str, len, hash);
+    }
+}
+
+EOT
+  }
 
   # -fno-destruct only >5.8
   if ( !$B::C::destruct and $^O ne 'MSWin32') {
@@ -4939,7 +4954,7 @@ sub save_context {
   $init->add("/* curpad names */");
   warn "curpad names:\n" if $verbose;
   # Record comppad sv's names, may not be static
-  local $B::C::pv_copy_on_grow = 0;
+  local $B::C::pv_copy_on_grow;
   #my $svi = $svsect->index;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save('curpad_name');
   # XXX from $svi to $svsect->index we have new sv's
@@ -4948,8 +4963,10 @@ sub save_context {
   my $curpad_sym      = ( comppadlist->ARRAY )[1]->save('curpad_syms');
   my ($inc_hv, $inc_av);
   {
-    local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-    local $B::C::const_strings = 1 if $B::C::ro_inc;
+    local $B::C::pv_copy_on_grow;
+    $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    local $B::C::const_strings;
+    $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
     inc_cleanup();
