@@ -564,7 +564,6 @@ sub constpv {
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $strtable{$pv} = "$pvsym";
   my $const = ($B::C::pv_copy_on_grow and $B::C::const_strings) ? " const" : "";
-  #my $const = "const";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
@@ -4322,7 +4321,7 @@ EOT
         print "#else\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
-        print "\tboot_$stashxsub(aTHX_ NULL);\n";
+        print "\tboot_$stashxsub(aTHX_ PL_main_cv);\n";
         print "#endif\n";
         print "\tSPAGAIN;\n";
         #print "\tPUTBACK;\n";

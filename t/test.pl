@@ -774,7 +774,8 @@ sub todo_tests_default {
         # push @todo, (10,12) if $what =~ /c_o[234]/ and $] >= 5.010 and $] < 5.015;
 	# fixed with 1.35
         # push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
-        push @todo, (13)     if $what =~ /c_o[12]/ and $] >= 5.010 and !$ITHREADS;
+	# fixed with 25a3c47
+        # push @todo, (13)     if $what =~ /c_o[12]/ and $] >= 5.010 and !$ITHREADS;
         push @todo, (44,45) if $] < 5.009;
         push @todo, (44,50) if $what eq 'c' and $] > 5.013 and !$ITHREADS;
         #push @todo, (29,44,45) if $what =~ /c_o[234]/;
