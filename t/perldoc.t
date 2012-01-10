@@ -25,12 +25,27 @@ plan tests => 7;
 my $res = `$perlcc -o perldoc$exe $perldoc`;
 ok(-s $perldocexe, "$perldocexe compiled");
 
+diag "see if $perldoc -T works";
+my $T_opt = "-T -f wait";
+my $ori;
 my $t0 = [gettimeofday];
-my $ori = `$X -S $perldoc -T -f wait`;
+if ($^O eq 'MSWin32') {
+  $T_opt = "-t -f wait";
+  $ori = `$X -S $perldoc $T_opt`;
+} else {
+  $ori = `$X -S $perldoc $T_opt 2>&1`;
+}
 my $t1 = tv_interval( $t0, [gettimeofday]);
+if ($ori =~ /Unknown option/) {
+  $T_opt = "-f wait > /dev/stdout";
+  diag "No, use > /dev/stdout instead";
+  $t0 = [gettimeofday];
+  $ori = `$X -S $perldoc $T_opt`;
+  $t1 = tv_interval( $t0, [gettimeofday]);
+}
 
 $t0 = [gettimeofday];
-my $cc = `./perldoc -T -f wait`;
+my $cc = `./perldoc $T_opt`;
 my $t2 = tv_interval( $t0, [gettimeofday]);
 TODO: {
   # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
@@ -45,7 +60,7 @@ $res = `$perlcc -Wb=-O3 -o perldoc_O3$exe $perldoc`;
 ok(-s "perldoc_O3$exe", "perldoc compiled");
 
 $t0 = [gettimeofday];
-$cc = $^O eq 'MSWin32' ? `perldoc$exe -T -f wait` : `./perldoc -T -f wait`;
+$cc = $^O eq 'MSWin32' ? `perldoc$exe $T_opt` : `./perldoc $T_opt`;
 my $t3 = tv_interval( $t0, [gettimeofday]);
 TODO: {
   local $TODO = "compiled does not print yet" if $] >= 5.010;
