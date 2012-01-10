@@ -24,25 +24,27 @@
 	New option -Upackage to skip package, mark_skip()
 	Re-implemented sharepvn via share_hek() and SvLEN=0 (issue 71),
 	  Special FAKE+READONLY handling: LEN = 0 if pv_copy_on_grow or shared_hek.
-	  Fixed !SvIsCOW_shared_hash + FAKE+READONLY conflict (failing test 13, issue 82).
+	  Fixed !SvIsCOW_shared_hash + FAKE+READONLY conflict (test 13, issue 82).
 	  Shared COW hashkeys which are optimized to static const strings may not be marked
-	  as IsCOW (removed SVf_FAKE).
+	  as IsCOW (remove SVf_FAKE).
 	Added Internals::hv_clear_placeholders XS name exception, similar
 	  to version:: (issue 83)
 	Store CV prototypes, issue 81 and issue 84 for empty () vs NULL prototypes.
 	Fixed 5.15.2 hang at hfree_next_entry (issue 78)
 	Defer writing of READONLY hash keys since 5.15 (issue 88)
-	Enable -fcog copy-on-grow with static strings for >= 5.10 (broke -O1)
+	Enable -fcog copy-on-grow with static strings for >= 5.10
 	Improved Errno vs. *main::! and Tie::Hash::NamedCapture vs *main::+  / - logic (issue 90)
 	Updated version XS methods, default to noop for (...
 	Strip version object overload from XS packages (issue 91), XS needs plain PVs
 	Do not initialize CONSTSUB XS methods twice, boot does it for us
 	Pass main_cv to XS boot_$name, fixes boot of Tie::Hash::NamedCapture (issue 86)
 	Fixed share_hek strings with -O1 (test 13)
-	* CC (1.12): allow overriding of -f<opt> B::C flags
+	Fixed bootstrapping the XS part of attributes (test 42, 43).
+	* CC (1.12): allow overriding of -f<opt> B::C flags.
+	skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90)
 	support -d debugging without -MOd
-	* perlcc (2.13): added options -O1-4, -u, -U, --Wc, --Wl, --version,
+	* perlcc (2.13): added options -O[1-4], -u, -U, --Wc, --Wl, --version,
 	Keep cfile if output is empty.
 	Changed verbosity levels and output wording.
 	* META.yml: remove from MANIFEST and repo, let make dist

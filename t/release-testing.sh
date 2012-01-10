@@ -8,10 +8,10 @@ rm -f rename
 perlall -m --nogit make '-Mblib t/modules.t t/top100'
 
 date=`date +%Y%m%d`
-for m in log.modules-5.*-$date-*; do n=`echo $m|sed 's,-[20][0-9]*-[0-9]*,,'`; mv -i $m $n; done
+for m in log.modules-5.*-$date-*; do n=`echo $m|sed 's,-[20][0-9]*-[0-9]*,,'`; mv $m $n; done
 # t/todomod.pl
 
 # test vm's
-perlall testvm --all
+#perlall testvm --all
 
 ./status_upd -fqd
