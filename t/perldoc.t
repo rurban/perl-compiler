@@ -14,38 +14,45 @@ use Time::HiRes qw(gettimeofday tv_interval);
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = $] < 5.008
-  ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc -uFile::Spec -uIO::Handle"
-  : "$X -Mblib blib/script/perlcc -uFile::Spec -uIO::Handle";
+  ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc"
+  : "$X -Mblib blib/script/perlcc";
+$perlcc .= " -Wb=-fno-fold,-fno-warnings,-fno-stash -UB";
 my $exe = $Config{exe_ext};
 my $perldocexe = "perldoc$exe";
 # XXX bother File::Which?
 die "1..1 # $perldoc not found\n" unless -f $perldoc;
 plan tests => 7;
 
-my $res = `$perlcc -o perldoc$exe $perldoc`;
+my $compile = "$perlcc -o perldoc$exe $perldoc";
+diag $compile;
+my $res = `$compile`;
 ok(-s $perldocexe, "$perldocexe compiled");
 
 diag "see if $perldoc -T works";
 my $T_opt = "-T -f wait";
 my $ori;
+my $PAGER = '';
 my $t0 = [gettimeofday];
 if ($^O eq 'MSWin32') {
   $T_opt = "-t -f wait";
-  $ori = `$X -S $perldoc $T_opt`;
+  $PAGER = "PERLDOC_PAGER=type ";
+  $ori = `$PAGER$X -S $perldoc $T_opt`;
 } else {
   $ori = `$X -S $perldoc $T_opt 2>&1`;
 }
 my $t1 = tv_interval( $t0, [gettimeofday]);
 if ($ori =~ /Unknown option/) {
-  $T_opt = "-f wait > /dev/stdout";
-  diag "No, use > /dev/stdout instead";
+  $T_opt = "-t -f wait";
+  $PAGER = "PERLDOC_PAGER=cat " if $^O ne 'MSWin32';
+  diag "No, use $PAGER instead";
   $t0 = [gettimeofday];
-  $ori = `$X -S $perldoc $T_opt`;
+  $ori = `$PAGER$X -S $perldoc $T_opt`;
   $t1 = tv_interval( $t0, [gettimeofday]);
+} else {
+  diag "it does";
 }
-
 $t0 = [gettimeofday];
-my $cc = `./perldoc $T_opt`;
+my $cc = `$PAGER ./perldoc $T_opt`;
 my $t2 = tv_interval( $t0, [gettimeofday]);
 TODO: {
   # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
@@ -56,11 +63,13 @@ TODO: {
 
 ok($t2 < $t1, "compiled faster than uncompiled: $t2 < $t1");
 
-$res = `$perlcc -Wb=-O3 -o perldoc_O3$exe $perldoc`;
+my $compile = "$perlcc -O3 -o perldoc_O3$exe $perldoc";
+diag $compile;
+$res = `$compile`;
 ok(-s "perldoc_O3$exe", "perldoc compiled");
 
 $t0 = [gettimeofday];
-$cc = $^O eq 'MSWin32' ? `perldoc$exe $T_opt` : `./perldoc $T_opt`;
+$cc = $^O eq 'MSWin32' ? `$PAGER perldoc$exe $T_opt` : `$PAGER ./perldoc $T_opt`;
 my $t3 = tv_interval( $t0, [gettimeofday]);
 TODO: {
   local $TODO = "compiled does not print yet" if $] >= 5.010;
