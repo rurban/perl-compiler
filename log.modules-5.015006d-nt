@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 c3b708e 2012-01-08 | Fixed get_cv in static context as xpnv.xpv (Moose 5.8)
+# B::C::VERSION = 1.37 047a9ed 2012-01-09 | fix attributes (42,43): do not save, but xsload it
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
 # platform = linux 64bit non-threaded debug

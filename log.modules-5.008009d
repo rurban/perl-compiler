@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 928655a 2012-01-07 | merge with master
+# B::C::VERSION = 1.37 047a9ed 2012-01-09 | fix attributes (42,43): do not save, but xsload it
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -74,36 +74,36 @@ pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
 pass Time::Local
-skip IO::Scalar
-skip Sub::Identify
+pass IO::Scalar
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
-skip Tree::DAG_Node
-skip Path::Class
-skip Test::Warn
+pass FCGI
+pass Tree::DAG_Node
+pass Path::Class
+pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-skip Digest::SHA1
+pass Digest::SHA1
 pass namespace::clean
-skip Class::Inspector
-skip Clone
+pass Class::Inspector
+pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types #TODO 5.8
+pass MooseX::Types #TODO 5.8
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-skip AppConfig
-skip UNIVERSAL::require
-skip Template::Stash
-# 88 / 100 modules tested with B-C-1.37 - perl-5.008009d
-# pass  86 /  88 (97.7%)
-# fail   2 /  88 (2.3%)
-# todo   2 /   2 (100.0%)
-# skip  12 / 100 (12.0% not installed)
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.37 - perl-5.008009d
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   2 /   0 ()
+# skip   0 / 100 (0.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 928655a 2012-01-07 | merge with master
+# B::C::VERSION = 1.37 047a9ed 2012-01-09 | fix attributes (42,43): do not save, but xsload it
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug

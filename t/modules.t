@@ -256,33 +256,29 @@ sub is_todo {
   #if ($] < 5.007) { foreach(qw(
   #  Test::Harness
   #)) { return '5.6 .al noise' if $_ eq $module; }}
+  if ($] >= 5.008004 and $] < 5.008005) { foreach(qw(
+    File::Path
+    Module::Pluggable
+  )) { return '5.8.4' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.008008) { foreach(qw(
- Text::Tabs
- Getopt::Long
- Path::Class
- Test::Warn
+    Getopt::Long
+    Path::Class
+    Test::Warn
   )) { return '5.8.4-5.8.7' if $_ eq $module; }}
   if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
- Text::Wrap
- Test::Harness
- ExtUtils::MakeMaker
- Test::Simple
- ExtUtils::Install
- Module::Build
- Sub::Uplevel
- Test::Exception
- LWP
- Test::Tester
- Test::NoWarnings
- Params::Validate
- Try::Tiny
- Test::Deep
- DBI
- Tree::DAG_Node
- DateTime
- DateTime::TimeZone
- Template::Stash
+    Module::Build
+    LWP
+    Template::Stash
   )) { return '5.8.5' if $_ eq $module; }}
+  if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
+    Test::Simple
+    Test::Exception
+    Test::Tester
+    Test::NoWarnings
+    Test::Deep
+    Test::Warn
+    Test::Pod
+  )) { return '5.8.4-5 Dont know how to handle magic of type \156' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
     MooseX::Types
   )) { return '5.8' if $_ eq $module; }}
@@ -332,12 +328,26 @@ sub is_todo {
     #  Test::Tester
     #)) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
+    if ($] >= 5.008004 and $] <= 5.008005) { foreach(qw(
+      Test::Harness
+      ExtUtils::MakeMaker
+      ExtUtils::Install
+      Sub::Uplevel
+      Params::Validate
+      DBI
+      Tree::DAG_Node
+      DateTime::TimeZone
+      DateTime
+      Try::Tiny
+      Text::Tabs
+      Text::Wrap
+    )) { return '5.8.4-5.8.5 without threads' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
       Pod::Simple
       Pod::Text
       File::Temp
       CGI
-      Test::Pod      
+      Test::Pod
     )) { return '5.8.1-5.8.8 without threads' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.010) { foreach(qw(
       Moose

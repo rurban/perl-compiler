@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 928655a 2012-01-07 | merge with master
+# B::C::VERSION = 1.37 047a9ed 2012-01-09 | fix attributes (42,43): do not save, but xsload it
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
@@ -57,7 +57,7 @@ pass version
 pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
-skip Algorithm::C3
+pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
 pass MRO::Compat
@@ -102,8 +102,8 @@ pass IO::String
 skip AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
-# 93 / 100 modules tested with B-C-1.37 - perl-5.010001d-nt
-# pass  93 /  93 (100.0%)
-# fail   0 /  93 (0.0%)
+# 94 / 100 modules tested with B-C-1.37 - perl-5.010001d-nt
+# pass  94 /  94 (100.0%)
+# fail   0 /  94 (0.0%)
 # todo   3 /   0 ()
-# skip   7 / 100 (7.0% not installed)
+# skip   6 / 100 (6.0% not installed)
