@@ -2637,7 +2637,7 @@ sub B::CV::save {
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
     $startfield = "0" unless $startfield;
     if ($$padlist) {
-      # readonly comppad names and symbols
+      # XXX readonly comppad names and symbols invalid
       #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv};
@@ -2837,6 +2837,7 @@ sub B::CV::save {
   }
   my $stash = $cv->STASH;
   if ($$stash and ref($stash)) {
+    # $init->add("/* saving STASH $fullname */\n" if $debug{cv};
     $stash->save($fullname);
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
@@ -3046,7 +3047,6 @@ if (0) {
 	warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
 	my $rv = $gvsv->object_2svref();
 	my $origsv = $$rv;
-	# warn "$origsv";
 	no strict 'refs';
 	${$fullname} = "$origsv";
 	svref_2object(\${$fullname})->save($fullname);
@@ -3156,14 +3156,14 @@ if (0) {
       }
       my $gvform = $gv->FORM;
       if ( $$gvform && $savefields & Save_FORM ) {
-	warn "GV::save gvform->save ...\n" if $debug{gv};
+	warn "GV::save GvFORM(*$fullname) ...\n" if $debug{gv};
 	$gvform->save($fullname);
 	$init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
-	warn "GV::save GvFORM(*$fullname)\n" if $debug{gv};
+	warn "GV::save GvFORM(*$fullname) done\n" if $debug{gv};
       }
       my $gvio = $gv->IO;
       if ( $$gvio && $savefields & Save_IO ) {
-	warn "GV::save gvio->save $fullname...\n" if $debug{gv};
+	warn "GV::save GvIO(*$fullname)...\n" if $debug{gv};
 	$gvio->save($fullname);
 	$init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	if ( $fullname =~ m/::DATA$/ &&
@@ -3177,7 +3177,7 @@ if (0) {
 	} elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
 	  warn "Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.\n";
 	}
-	warn "GV::save GvIO(*$fullname)\n" if $debug{gv};
+	warn "GV::save GvIO(*$fullname) done\n" if $debug{gv};
       }
       $init->add("");
     }
@@ -3398,7 +3398,7 @@ sub B::HV::save {
   my $is_stash = $name;
   if ($name) {
     # It's a stash. See issue 79 + test 46
-    warn sprintf( "saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
+    warn sprintf( "Saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
                   $name, $$hv, $hv->MAX ) if $debug{hv};
 
     # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
@@ -3424,7 +3424,7 @@ sub B::HV::save {
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
     return $sym if !$B::C::stash or skip_pkg($name);
-    warn "saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
+    warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
 
   # Ordinary HV or Stash
@@ -3473,7 +3473,8 @@ sub B::HV::save {
   # value => rv => cv => ... => rv => same hash
   $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
   if (@contents) {
-    my $i;
+    my ($i, $length);
+    $length = scalar(@contents);
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
       my $key = $contents[$i - 1];
       my $sv = $contents[$i];
@@ -3485,43 +3486,39 @@ sub B::HV::save {
       if ($is_stash) {
 	if (ref($sv) eq "B::GV" and $sv->NAME =~ /::$/) {
 	  $sv = bless $sv, "B::STASHGV"; # do not expand stash GV's only other stashes
+	  warn "saving STASH $fullname".'{'.$key."}\n" if $debug{hv};
 	  $contents[$i] = $sv->save($fullname.'{'.$key.'}');
 	} else {
 	  warn "skip STASH symbol *",$fullname.$key,"\n" if $debug{hv};
 	  $contents[$i] = undef;
+	  $length -= 2;
+	  # warn "(length=$length)\n" if $debug{hv};
 	}
       } else {
 	warn "saving HV $fullname".'{'.$key."}\n" if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
       }
     }
-    $init->no_split;
-    $init->add( "{", 
-		sprintf("\tHV *hv = %s$sym;", $sym=~/^hv|\(HV/ ? '' : '(HV*)' ));
-    while (@contents) {
-      my ( $key, $value ) = splice( @contents, 0, 2 );
-      if ($value) {
-	$init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
+    if ($length) { # there may be skipped STASH symbols
+      $init->no_split;
+      $init->add( "{",
+		  sprintf("\tHV *hv = %s$sym;", $sym=~/^hv|\(HV/ ? '' : '(HV*)' ));
+      while (@contents) {
+	my ( $key, $value ) = splice( @contents, 0, 2 );
+	if ($value) {
+	  $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
 			      cstring($key), length( pack "a*", $key ),
 			      "(SV*)$value", 0 )); # !! randomized hash keys
-	warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
+	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
+	}
       }
+      $init->add("}");
+      $init->split;
     }
-    $init->add("}");
-    $init->split;
-  } elsif ($] >= 5.015) { # empty contents still needs to set keys=0 
+  } elsif ($] >= 5.015) { # empty contents still needs to set keys=0
     # test 36
     $init->add( "HvTOTALKEYS($sym) = 0;");
     $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
-    # empty contents cleared in aassign (keys = 7, not 0)
-    # XXX should be fixed in CORE
-    if (0) {
-    $init->add( "{\tchar *array;",
-		"\tNewxz(array, sizeof(HE*) + sizeof(struct xpvhv_aux), char);",
-		"\tHvARRAY($sym) = (HE**)array;",
-		"\tHvTOTALKEYS($sym) = 0;",
-		"}" );
-    }
   }
   $hv->save_magic;
   return $sym;
@@ -5627,11 +5624,10 @@ Enabled with C<-O1>.
 
 =item B<-fro-inc>
 
-Set read-only B<@INC> and B<%INC> pathnames (C<-fconst-string>, not the AV) and
-also B<curpad> names and symbols, to store them const and statically, not
-via malloc at run-time.
+Set read-only B<@INC> and B<%INC> pathnames (C<-fconst-string>, not the AV)
+to store them const and statically, not via malloc at run-time.
 
-This forbids run-time extends of curpad syms, names and INC strings,
+This forbids run-time extends of INC path strings,
 the run-time will crash then.
 
 Enabled with C<-O2>.
