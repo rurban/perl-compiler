@@ -1748,12 +1748,11 @@ sub B::PVNV::save {
   }
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
-    if ($savesym =~ /^\(char\*\)get_cv\("/) { # Moose 5.8.9d
+    if ($savesym =~ /^\(char\*\)get_cv\("/) { # Moose 5.8.9d Moose::Util::TypeConstraints::OptimizedConstraints::RegexpRef
       $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", 'NULL', $cur, $len, $ivx, $nvx ) );
       $init->add(sprintf("xpvnv_list[%d].xpv_pv = %s;", $xpvnvsect->index, $savesym));
     } else {
-      $xpvnvsect->add(
-		      sprintf( "%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
+      $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
     }
   }
   $svsect->add(
@@ -3027,10 +3026,15 @@ if (0) {
     return $sym;
   }
 
-  # attributes::bootstrap is created in perl_parse
-  # saving it would overwrite it, because perl_init() is
-  # called after perl_parse()
-  $savefields &= ~Save_CV if $fullname eq 'attributes::bootstrap';
+  # attributes::bootstrap is created in perl_parse.
+  # Saving it would overwrite it, because perl_init() is
+  # called after perl_parse(). But we need to xsload it.
+  if ($fullname eq 'attributes::bootstrap') {
+    $savefields &= ~Save_CV;
+    mark_package('attributes');
+    $xsub{attributes} = 'Dynamic-'. $INC{'attributes.pm'};
+    $use_xsloader = 1;
+  }
 
   if ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
