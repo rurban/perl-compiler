@@ -239,10 +239,9 @@ sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
   # ---------------------------------------
-  # overlong linking time
   foreach(qw(
     ExtUtils::CBuilder
-  )) { return 'mostly' if $_ eq $module; }
+  )) { return 'overlong linking time' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
     ExtUtils::Install
     Module::Build
@@ -252,7 +251,7 @@ sub is_todo {
     Template::Stash
     DateTime::Locale
     Devel::GlobalDestruction
-  )) { return '5.6 r-magic' if $_ eq $module; }}
+  )) { return '5.6 qr r-magic' if $_ eq $module; }}
   #if ($] < 5.007) { foreach(qw(
   #  Test::Harness
   #)) { return '5.6 .al noise' if $_ eq $module; }}
@@ -261,7 +260,6 @@ sub is_todo {
     Module::Pluggable
   )) { return '5.8.4' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.008008) { foreach(qw(
-    Getopt::Long
     Path::Class
     Test::Warn
   )) { return '5.8.4-5.8.7' if $_ eq $module; }}
@@ -278,7 +276,7 @@ sub is_todo {
     Test::Deep
     Test::Warn
     Test::Pod
-  )) { return '5.8.4-5 Dont know how to handle magic of type \156' if $_ eq $module; }}
+  )) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
     MooseX::Types
   )) { return '5.8' if $_ eq $module; }}
@@ -330,6 +328,7 @@ sub is_todo {
   } else { #no threads --------------------------------
     if ($] >= 5.008004 and $] <= 5.008005) { foreach(qw(
       Test::Harness
+      Getopt::Long
       ExtUtils::MakeMaker
       ExtUtils::Install
       Sub::Uplevel
