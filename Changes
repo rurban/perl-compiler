@@ -46,6 +46,9 @@
 	support -d debugging without -MOd
 	* perlcc (2.13): added options -O[1-4], -u, -U, --Wc, --Wl, --version,
 	Keep cfile if output is empty.
+	Change -o output C file directory and name with -S or -c:
+	  Before in current directory, now in -o directory.
+	  Before with input name, now with -o name.
 	Changed verbosity levels and output wording.
 	* META.yml: remove from MANIFEST and repo, let make dist
 	  autogenerate it.
