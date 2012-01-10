@@ -51,7 +51,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.10, Reini Urban, 2011-02-11 22:58:37
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
-# Version 2.13, Reini Urban, 2011-12-14 08:36:00
+# Version 2.13, Reini Urban, 2012-01-10 13:03:00
 
 use strict;
 use warnings;
@@ -409,7 +409,9 @@ sub compile_cstyle {
             q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} .
             q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
     }
-    if (opt(S) || opt(c)) { # We need to keep it
+    if (opt(o)) {
+        $cfile = opt(o).".c";
+    } elsif (opt(S) || opt(c)) { # We need to keep it
         if (opt(e)) {
             $cfile = opt(o) ? opt(o).".c" : "a.out.c";
         } else {
@@ -421,9 +423,7 @@ sub compile_cstyle {
             $cfile = $Output if opt(c) && $Output =~ /\.c\z/i;
         }
         check_write($cfile);
-    } elsif (opt(o)) {
-        $cfile = opt(o).".c";
-    } else { # Do not keep tempfiles (no -S nor -c)
+    } else { # Do not keep tempfiles (no -S nor -c nor -o)
         $lose = 1;
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below
