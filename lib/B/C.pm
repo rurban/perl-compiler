@@ -1074,13 +1074,14 @@ sub B::SVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  my $sv    = $op->sv; # XXX moose1 crash with 5.8.5-nt
   my $svsym = 'Nullsv';
+  my $sv;
+  # XXX moose1 crash with 5.8.5-nt, Cwd::_perl_abs_path also
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
-    # pad does not need to be saved
-    $svsym = '&PL_sv_undef';
+    $svsym = '&PL_sv_undef'; # pad does not need to be saved
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
   } else {
+    my $sv    = $op->sv;
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
   }
   if ($op->name eq 'method_named') {
