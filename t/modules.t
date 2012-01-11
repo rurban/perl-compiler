@@ -256,13 +256,8 @@ sub is_todo {
   #  Test::Harness
   #)) { return '5.6 .al noise' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.008005) { foreach(qw(
-    File::Path
     Module::Pluggable
   )) { return '5.8.4' if $_ eq $module; }}
-  if ($] >= 5.008004 and $] < 5.008008) { foreach(qw(
-    Path::Class
-    Test::Warn
-  )) { return '5.8.4-5.8.7' if $_ eq $module; }}
   if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
     Module::Build
     LWP
@@ -275,7 +270,7 @@ sub is_todo {
     Test::NoWarnings
     Test::Deep
     Test::Warn
-    Test::Pod
+    #Test::Pod
   )) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
   if ($] > 5.008001 and $] < 5.010) { foreach(qw(
     MooseX::Types
@@ -326,26 +321,17 @@ sub is_todo {
     #  Test::Tester
     #)) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
-    if ($] >= 5.008004 and $] <= 5.008005) { foreach(qw(
-      Test::Harness
-      Getopt::Long
-      ExtUtils::MakeMaker
-      ExtUtils::Install
-      Sub::Uplevel
-      Params::Validate
-      DBI
-      Tree::DAG_Node
-      DateTime::TimeZone
-      DateTime
-      Try::Tiny
-      Text::Tabs
-      Text::Wrap
-    )) { return '5.8.4-5.8.5 without threads' if $_ eq $module; }}
+    # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
+    #if ($] >= 5.008004 and $] <= 5.008005) { foreach(qw(
+    #  DateTime
+    #  Try::Tiny
+    #)) { return '5.8.4-5.8.5 without threads' if $_ eq $module; }}
+    # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
-      Pod::Simple
-      Pod::Text
-      File::Temp
-      CGI
+      #Pod::Simple
+      #Pod::Text
+      #File::Temp
+      #CGI
       Test::Pod
     )) { return '5.8.1-5.8.8 without threads' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.010) { foreach(qw(

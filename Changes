@@ -40,6 +40,7 @@
 	Pass main_cv to XS boot_$name, fixes boot of Tie::Hash::NamedCapture (issue 86)
 	Fixed share_hek strings with -O1 (test 13)
 	Fixed bootstrapping the XS part of attributes (test 42, 43).
+	Fixed most 5.8.[45] problems by ignoring aelemfast SPECIAL pads.
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90)
