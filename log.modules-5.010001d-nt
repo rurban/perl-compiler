@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 047a9ed 2012-01-09 | fix attributes (42,43): do not save, but xsload it
+# B::C::VERSION = 1.37 769ecbe 2012-01-10 | clean rename and POSIX is it influences some module tests
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder #TODO mostly
+pass ExtUtils::CBuilder #TODO overlong linking time
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
