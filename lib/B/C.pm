@@ -5237,13 +5237,14 @@ sub compile {
   my @eval_at_startup;
   $B::C::destruct = 1;
   $B::C::stash    = 1;
+  $B::C::save_sig = 1;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data -fno-stash)],
-    3 => [qw(-fsave-sig-hash -fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
@@ -5326,7 +5327,7 @@ OPTION:
 	    warn @_; 
 	    my $s = join(" ", @_); 
 	    chomp $s;
-	    $init->add("/* ".$s." */") if $init; 
+	    $init->add("/* ".$s." */") if $init;
 	  };
         }
         else {
@@ -5685,11 +5686,9 @@ default perl destructor, and enables C<-fcog> since 5.10.
 
 Enabled with C<-O3>.
 
-=item B<-fsave-sig-hash>
+=item B<-fno-save-sig-hash>
 
-Save compile-time modifications to the %SIG hash.
-
-Enabled with C<-O3>.
+Disable compile-time modifications to the %SIG hash.
 
 =item B<-fno-fold> I<(since 5.14)>
 
@@ -5754,7 +5753,7 @@ Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<-fno-stash>.
 
 =item B<-O3>
 
-Enable B<-O2> plus B<-fsave-sig-hash>, B<-fno-destruct> and B<-fconst-strings>.
+Enable B<-O2> plus B<-fno-destruct> and B<-fconst-strings>.
 
 =item B<-O4>
 
