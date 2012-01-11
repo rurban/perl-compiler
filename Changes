@@ -52,6 +52,7 @@
 	Change -o output C file directory and name with -S or -c:
 	  Before in current directory, now in -o directory.
 	  Before with input name, now with -o name.
+	Add -rpath for all --staticxs libs if supported.
 	Changed verbosity levels and output wording.
 	* META.yml: remove from MANIFEST and repo, let make dist
 	  autogenerate it.

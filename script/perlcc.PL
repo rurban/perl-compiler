@@ -458,6 +458,7 @@ sub compile_cstyle {
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
+    my @rpath = ();
     if ($staticxs and open(XS, "<", $cfile.".lst")) {
         my $dylib;
         while (<XS>) {
@@ -486,10 +487,14 @@ sub compile_cstyle {
                     $l = "./".$dylib;
                 }
                 $extra_libs .= " ".$l;
+                push @rpath, dirname($l);
             }
         }
         close XS;
         $extra_libs = " -L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
+        my ($rpath) = $Config{ccdlflags} =~ /^(.+rpath.)/;
+        $rpath =~ s/^-Wl,-E//; # already done via ccdlflags
+        $extra_libs .= " $rpath".join(" ".$rpath,@rpath) if $rpath and @rpath;
         vprint 2, "staticxs: $stash $extra_libs";
     }
 
@@ -532,7 +537,7 @@ sub cc_harness_msvc {
         $link =~ s/ -opt:ref,icf//;
     }
     $link .= " ".opt(Wl) if opt(Wl);
-    # $link .= $extra_libs;
+    $link .= $extra_libs;
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     $link .= $B::C::Flags::extra_libs;
     vprint 3, "Calling $Config{cc} $compile";
@@ -1035,9 +1040,10 @@ Link to static libperl.a
 
 =item --staticxs
 
-Link to static XS if available. If the XS are only available as
-shared libs link to those, but the LD_LIBRARY_PATH/PATH must be
-extended then at run-time.
+Link to static XS if available.
+If the XS libs are only available as shared libs link to those ("prelink").
+
+Systems without rpath (windows, cygwin) must be extend LD_LIBRARY_PATH/PATH at run-time.
 Together with -static, purely static modules and no run-time eval or
 require this will gain no external dependencies.
 
