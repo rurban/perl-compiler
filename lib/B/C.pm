@@ -594,11 +594,13 @@ sub savepv {
 }
 
 sub save_rv {
-  my $sv = shift;
-
+  my ($sv, $fullname) = @_;
+  if (!$fullname) {
+    $fullname = '(unknown)';
+  }
   # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
   # 5.6: Can't locate object method "RV" via package "B::PVMG"
-  my $rv = $sv->RV->save;
+  my $rv = $sv->RV->save($fullname);
 
   $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
 
@@ -607,7 +609,7 @@ sub save_rv {
 
 # => savesym, cur, len, pv
 sub save_pv_or_rv {
-  my $sv = shift;
+  my ($sv, $fullname) = @_;
 
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
@@ -617,7 +619,7 @@ sub save_pv_or_rv {
   if ($rok and !$PERL56) {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
     warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
-    $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv);
+    $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
   }
   else {
     $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
@@ -1463,13 +1465,13 @@ sub B::UV::save {
 }
 
 sub B::IV::save {
-  my ($sv, $name) = @_;
+  my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
   # Since 5.11 the RV is no special SV object anymore, just a IV (test 16)
   my $svflags = $sv->FLAGS;
   if ($PERL512 and $svflags & SVf_ROK) {
-    return $sv->B::RV::save;
+    return $sv->B::RV::save($fullname);
   }
   if ($svflags & SVf_IVisUV) {
     return $sv->B::UV::save;
@@ -1479,7 +1481,7 @@ sub B::IV::save {
     unless (($PERL510 and $svflags & 0x00010000) # PADSTALE - out of scope lexical is !IOK
 	    or (!$PERL510 and $svflags & 0x00000100) # PADBUSY
 	    or ($] > 5.015002 and $svflags & 0x60002)) { # 5.15.3 changed PAD bits
-      warn sprintf("Internal warning: IV !IOK $name sv_list[$i] 0x%x\n",$svflags);
+      warn sprintf("Internal warning: IV !IOK $fullname sv_list[$i] 0x%x\n",$svflags);
     }
   }
   if ($PERL514) {
@@ -1836,7 +1838,7 @@ sub B::BM::save {
 }
 
 sub B::PV::save {
-  my ($sv, $name) = @_;
+  my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
@@ -1852,8 +1854,8 @@ sub B::PV::save {
     and !$shared_hek
     and $flags & SVf_READONLY;
   # XSLoader reuses this SV, so it must be dynamic
-  $B::C::pv_copy_on_grow = 0 if !($flags & SVf_ROK) and $sv->PV =~ /::bootstrap$/;
-  my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
+  $B::C::pv_copy_on_grow = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
+  my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv, $fullname);
   my $refcnt = $sv->REFCNT;
   # $refcnt-- if $B::C::pv_copy_on_grow;
   # static pv, do not destruct. test 13 with pv0 "3".
@@ -1954,7 +1956,7 @@ sub B::REGEXP::save {
 }
 
 sub B::PVMG::save {
-  my ($sv) = @_;
+  my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
   if (defined $sym) {
     if ($in_endav) {
@@ -1964,7 +1966,7 @@ sub B::PVMG::save {
     return $sym;
   }
   # local $B::C::pv_copy_on_grow = 1 if $B::C::const_strings and $flags & SVf_READONLY;
-  my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
+  my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv, $fullname);
   $savesym = "(char*)$savesym";
   my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
@@ -2066,13 +2068,20 @@ sub mark_threads {
     mark_package($stash);
     $use_xsloader = 1;
     $xsub{$stash} = 'Dynamic-' . $INC{'threads.pm'};
+    warn "mark threads for 'P' magic\n" if $debug{mg};
+  } else {
+    warn "ignore to mark threads for 'P' magic\n" if $debug{mg};
   }
-  my $stash = 'threads::shared';
-  mark_package($stash);
-  # XXX why is this needed? threads::shared should be initialized automatically
-  $use_xsloader = 1; # ensure threads::shared is initialized
-  $xsub{$stash} = 'Dynamic-' . $INC{'threads/shared.pm'};
-  warn "mark threads and threads::shared for 'P' magic\n" if $debug{mg};
+  if ( $INC{'threads/shared.pm'} ) {
+    my $stash = 'threads::shared';
+    mark_package($stash);
+    # XXX why is this needed? threads::shared should be initialized automatically
+    $use_xsloader = 1; # ensure threads::shared is initialized
+    $xsub{$stash} = 'Dynamic-' . $INC{'threads/shared.pm'};
+    warn "mark threads::shared for 'P' magic\n" if $debug{mg};
+  } else {
+    warn "ignore to mark threads::shared for 'P' magic\n" if $debug{mg};
+  }
 }
 
 sub B::PVMG::save_magic {
@@ -2080,8 +2089,9 @@ sub B::PVMG::save_magic {
   my $sv_flags = $sv->FLAGS;
   if ($debug{mg}) {
     my $flagspv = "";
+    $fullname = '' unless $fullname;
     $flagspv = $sv->flagspv if $debug{flags} and $PERL510 and !$sv->MAGICAL;
-    warn sprintf( "saving magic for %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
+    warn sprintf( "saving magic for %s $fullname (0x%x) flags=0x%x%s  - called from %s:%s\n",
 		class($sv), $$sv, $sv_flags, $debug{flags} ? "(".$flagspv.")" : "",
 		@{[(caller(1))[3]]}, @{[(caller(1))[2]]});
   }
@@ -2132,14 +2142,14 @@ sub B::PVMG::save_magic {
       #warn "Save MG ". $obj . "\n" if $PERL510;
       # 5.11 'P' fix in B::IV::save, IV => RV
       $obj = $mg->OBJ;
-      $obj->save
+      $obj->save($fullname)
         unless $PERL510 and ref $obj eq 'SCALAR';
       mark_threads if $type eq 'P';
     }
 
     if ( $len == HEf_SVKEY ) {
       # The pointer is an SV*
-      $ptrsv = svref_2object($ptr)->save;
+      $ptrsv = svref_2object($ptr)->save($fullname);
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(
         sprintf(
@@ -2163,26 +2173,26 @@ sub B::PVMG::save_magic {
 	} else {
 	  ($resym, $relen) = savere( $mg->precomp );
 	}
-	my $pmsym = $pmop->save;
+	my $pmsym = $pmop->save($fullname);
 	if ($PERL510) {
           push @static_free, $resym;
 	  $init->add( split /\n/,
-		    sprintf <<CODE, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
+		    sprintf <<CODE1, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
     REGEXP* rx = CALLREGCOMP((SV* const)$resym, %d);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
-CODE
+CODE1
 	}
 	else {
 	  $pmsym =~ s/\(OP\*\)\&pmop_list/&pmop_list/;
 	  $init->add( split /\n/,
-		      sprintf <<CODE, $$sv, cchar($type), cstring($ptr), $len );
+		      sprintf <<CODE2, $$sv, cchar($type), cstring($ptr), $len );
 {
     REGEXP* rx = pregcomp((char*)$resym,(char*)($resym + $relen), (PMOP*)$pmsym);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
-CODE
+CODE2
         }
       }
     }
@@ -2217,13 +2227,13 @@ CODE
 
 # Since 5.11 also called by IV::save (SV -> IV)
 sub B::RV::save {
-  my ($sv) = @_;
+  my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
   warn sprintf( "Saving RV %s (0x%x) - called from %s:%s\n",
 		class($sv), $$sv, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{sv};
-  my $rv = save_rv($sv);
+  my $rv = save_rv($sv, $fullname);
   return '0' unless $rv;
   if ($PERL510) {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
@@ -2574,7 +2584,7 @@ sub B::CV::save {
 	      $svsect->remove;
 	      $xpvcvsect->remove;
 	      delsym($cv);
-	      return $cv->save;
+	      return $cv->save($gv->STASH->NAME."::".$gv->NAME);
 	    }
 	  }
 	  $sym = savesym( $cv, "&sv_list[$sv_ix]" ); # GOTO
@@ -3188,10 +3198,11 @@ if (0) {
 }
 
 sub B::AV::save {
-  my ($av, $name) = @_;
+  my ($av, $fullname) = @_;
   my $sym = objsym($av);
   return $sym if defined $sym;
 
+  $fullname = '' unless $fullname;
   my ($fill, $avreal);
   # cornercase: tied array without FETCHSIZE
   eval { $fill = $av->FILL; };
@@ -3269,7 +3280,7 @@ sub B::AV::save {
     # The idea is to create loops so there is less C code. In the real world this seems
     # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
     my $count;
-    my @values = map { $_->save($name."[".$count++."]") || () } @array;
+    my @values = map { $_->save($fullname."[".$count++."]") || () } @array;
     $count = 0;
     for (my $i=0;$i<=$#array;$i++) {
       if ( $use_svpop_speedup
@@ -3393,6 +3404,7 @@ sub B::AV::save {
 
 sub B::HV::save {
   my ($hv, $fullname) = @_;
+  $fullname = '' unless $fullname;
   my $sym = objsym($hv);
   return $sym if defined $sym;
   my $name = $hv->NAME;
@@ -3521,7 +3533,7 @@ sub B::HV::save {
     $init->add( "HvTOTALKEYS($sym) = 0;");
     $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   }
-  $hv->save_magic;
+  $hv->save_magic($fullname);
   return $sym;
 }
 
@@ -4724,6 +4736,15 @@ sub should_save {
       }
     }
   }
+
+  # Omit the packages which we use (and which cause grief
+  # because of fancy "goto &$AUTOLOAD" stuff).
+  # XXX Surely there must be a nicer way to do this.
+  if (skip_pkg($package)) {
+    delete_unsaved_hashINC($package);
+    return $include_package{$package} = 0;
+  }
+
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
       if ($include_package{$package}) {
@@ -4734,14 +4755,6 @@ sub should_save {
     }
     delete_unsaved_hashINC($package) unless $include_package{$package};
     return $include_package{$package};
-  }
-
-  # Omit the packages which we use (and which cause grief
-  # because of fancy "goto &$AUTOLOAD" stuff).
-  # XXX Surely there must be a nicer way to do this.
-  if (skip_pkg($package)) {
-    delete_unsaved_hashINC($package);
-    return $include_package{$package} = 0;
   }
 
   # keep core packages
