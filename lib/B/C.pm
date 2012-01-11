@@ -2039,12 +2039,14 @@ sub B::PVMG::save {
   if ( !$B::C::pv_copy_on_grow ) {
     # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
-      if (!$pv or !$savesym or $savesym eq 'NULL') {
-        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
-			     $svsect->index ) );
-      } else {
-        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv",
-				      $svsect->index ), $pv, $sv ) );
+      if ($savesym) {
+	if (!$pv or $savesym eq 'NULL') {
+	  $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
+			       $svsect->index ) );
+	} else {
+	  $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv",
+					$svsect->index ), $pv, $sv ) );
+	}
       }
     } else {
       if (!$pv or !$savesym or $savesym eq 'NULL') {
