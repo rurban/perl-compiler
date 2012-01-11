@@ -38,7 +38,7 @@
 	Updated version XS methods, default to noop for (...
 	Strip version object overload from XS packages (issue 91), XS needs plain PVs
 	Do not initialize CONSTSUB XS methods twice, boot does it for us
-	Pass main_cv to XS boot_$name, fixes boot of Tie::Hash::NamedCapture (issue 86)
+	Pass proper cv to XS boot_$name, fixes boot of Tie::Hash::NamedCapture (issue 86)
 	Fixed share_hek strings with -O1 (test 13)
 	Fixed bootstrapping the XS part of attributes (test 42, 43).
 	Fixed most 5.8.[45] problems by ignoring aelemfast SPECIAL pads.

@@ -1,7 +1,7 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=90
 # Magic Tie::Named::Capture <=> *main::+ main::*- and Errno vs !
-use Test::More tests => 9;
+use Test::More tests => 12;
 use strict;
 BEGIN {
   die "1..0 # Tie::Named::Capture requires Perl v5.10\n" if $] < 5.010;
@@ -22,7 +22,7 @@ sub test3 {
   my $script = shift;
   save($name, $script);
   my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  system($runperl,'-Mblib',"-MO=Bytecode,-o$name.plc","$name.pl");
+  system($runperl,'-Mblib',"-MO=-qq,Bytecode,-o$name.plc","$name.pl");
   my $runexe = qx($runperl -Mblib -MByteLoader $name.plc);
  TODO: {
    local $TODO = '%+ setting regdata magic crashes' if $name eq 'ccode90i_c';
@@ -30,9 +30,14 @@ sub test3 {
   }
   ctestok(2, "C", $name, $script, @_);
   ctestok(3, "CC", $name, $script, @_);
+  $runexe = qx($runperl -Mblib blib/script/perlcc --staticxs -r -o$name $name.pl);
+ TODO: {
+   local $TODO = '--staticxs Tie::Hash::NamedCapture' if $name eq 'ccode90i_c';
+   is($runexe, 'ok', "--staticxs $name");
+  }
   #unlink("$name.plc", "$name.pl");
-  #unlink("$name_2.c", "$name_2");
-  #unlink("$name_3.c", "$name_3");
+  #unlink("${name}_2.c", "${name}_2");
+  #unlink("${name}_3.c", "${name}_3");
 }
 
 

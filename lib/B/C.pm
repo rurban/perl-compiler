@@ -246,8 +246,8 @@ B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP:
 B::GV::save B::GV::savecv B::HV::save B::IO::save B::IO::save_data B::IV::save B::LISTOP::save
 B::LOGOP::save B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save B::OP::_save_common
 B::OP::fake_ppaddr B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save
-B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::REGEXP::save 
-B::RV::save B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save 
+B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::REGEXP::save
+B::RV::save B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save
 B::UV::save B::REGEXP::EXTFLAGS);
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
@@ -4220,10 +4220,7 @@ EOT
       printf "\tXPUSHp(\"%s\", %d);\n", # "::bootstrap" gets appended, TODO
 	0 ? "strdup($stashname)" : $stashname, length($stashname);
       print "\tPUTBACK;\n";
-      # Tie::Hash::NamedCapture requires callers cv in its BOOT (issue 86),
-      # but the arg has the __attribute__(unused).
-      # CvSTASH(CvGV(cv)) must be valid
-      print "\tboot_$stashxsub(aTHX_ PL_main_cv);\n";
+      print "\tboot_$stashxsub(aTHX_ NULL);\n";
       print "\tSPAGAIN;\n";
     }
   }
@@ -4308,7 +4305,7 @@ EOT
 	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
 	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
 	  } else {
-	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/, 
+	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/,
 	      $stashfile if $stashfile;
 	    print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
 	  }
@@ -4336,8 +4333,12 @@ EOT
         print "#else\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
-	# XXX CvSTASH(CvGV(cv)) is invalid here (issue 86)
-        print "\tboot_$stashxsub(aTHX_ PL_main_cv);\n";
+        if ($staticxs) {
+	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
+	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname::bootstrap\", TRUE));\n";
+	} else {
+	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
+	}
         print "#endif\n";
         print "\tSPAGAIN;\n";
         #print "\tPUTBACK;\n";
@@ -5323,9 +5324,9 @@ OPTION:
         }
         elsif ( $arg eq "r" ) {
           $debug{runtime}++;
-	  $SIG{__WARN__} = sub { 
+	  $SIG{__WARN__} = sub {
 	    warn @_; 
-	    my $s = join(" ", @_); 
+	    my $s = join(" ", @_);
 	    chomp $s;
 	    $init->add("/* ".$s." */") if $init;
 	  };
