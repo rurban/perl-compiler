@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 769ecbe 2012-01-10 | clean rename and POSIX is it influences some module tests
+# B::C::VERSION = 1.37 f3c65bd 2012-01-11 | remove temp. and wrong debugging code
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -99,11 +99,11 @@ pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-skip AppConfig
-skip UNIVERSAL::require
-skip Template::Stash
-# 95 / 100 modules tested with B-C-1.37 - perl-5.008004d-nt
-# pass  95 /  95 (100.0%)
-# fail   0 /  95 (0.0%)
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 98 / 100 modules tested with B-C-1.37 - perl-5.008004d-nt
+# pass  98 /  98 (100.0%)
+# fail   0 /  98 (0.0%)
 # todo   4 /   0 ()
-# skip   5 / 100 (5.0% not installed)
+# skip   2 / 100 (2.0% not installed)

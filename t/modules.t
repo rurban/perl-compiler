@@ -89,9 +89,11 @@ my $perlversion = perlversion();
 $log = 0 if @ARGV;
 $log = 1 if grep /top100$/, @ARGV;
 $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
+my $nodate = 1 if grep /-no-date/, @ARGV;
 
 if ($log) {
-  $log = @ARGV ? "log.modules-$perlversion-".strftime("%Y%m%d-%H%M%S",localtime)
+  $log = (@ARGV and !$nodate)
+    ? "log.modules-$perlversion-".strftime("%Y%m%d-%H%M%S",localtime)
     : "log.modules-$perlversion";
   if (-e $log) {
     use File::Copy;

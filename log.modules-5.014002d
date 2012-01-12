@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 769ecbe 2012-01-10 | clean rename and POSIX is it influences some module tests
+# B::C::VERSION = 1.37 f3c65bd 2012-01-11 | remove temp. and wrong debugging code
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug

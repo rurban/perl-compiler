@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 fa9af50 2012-01-10 | Merge branch 'master' of github.com:rurban/perl-compiler
+# B::C::VERSION = 1.37 f3c65bd 2012-01-11 | remove temp. and wrong debugging code
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -79,13 +79,13 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class #TODO 5.8.4-5.8.7
-fail Test::Warn #TODO 5.8.4-5.8.7
+pass Path::Class
+fail Test::Warn #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-fail Test::Pod #TODO 5.8.4-5 shared_scalar n-magic (\156)
+fail Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -105,5 +105,5 @@ skip Template::Stash
 # 93 / 100 modules tested with B-C-1.37 - perl-5.008005d
 # pass  86 /  93 (92.5%)
 # fail   7 /  93 (7.5%)
-# todo  11 /   7 (157.1%)
+# todo   9 /   7 (128.6%)
 # skip   7 / 100 (7.0% not installed)

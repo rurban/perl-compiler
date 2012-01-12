@@ -1065,7 +1065,11 @@ sub method_named {
   for ($package_pv, @package_pv, 'main') {
     no strict 'refs';
     $method = $_ . '::' . $name;
-    last if defined(*{$method}{CODE});
+    if (defined(*{$method}{CODE})) {
+      $include_package{$_} = 1; # issue59
+      mark_package($_, 1);
+      last;
+    }
   }
   $method = $name unless $method;
   warn "save method_name \"$method\"\n" if $debug{cv};
@@ -2464,13 +2468,18 @@ sub B::CV::save {
       return qq/NULL/;
     }
     else {
-      # XSUBs for IO::File, IO::Handle, IO::Socket,
-      # IO::Seekable and IO::Poll
+      # XSUBs for IO::File, IO::Handle, IO::Socket, IO::Seekable and IO::Poll
       # are defined in IO.xs, so let's bootstrap it
-      svref_2object( \&IO::bootstrap )->save
-        if grep { $stashname eq $_ }
-          qw(IO::File IO::Handle IO::Socket
-          IO::Seekable IO::Poll);
+      my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
+      if (grep { $stashname eq $_ } @IO) {
+	# mark_package('IO', 1);
+	# $xsub{IO} = 'Dynamic-'. $INC{'IO.pm'}; # XSLoader (issue59)
+	svref_2object( \&IO::bootstrap )->save;
+	mark_package('IO::Handle', 1);
+	#for (@IO) { # mark all IO packages
+	#  mark_package($_, 1);
+	#}
+      }
     }
     warn $fullname."\n" if $debug{sub};
     unless ( in_static_core($stashname, $cvname) ) {
@@ -3045,8 +3054,8 @@ if (0) {
   # called after perl_parse(). But we need to xsload it.
   if ($fullname eq 'attributes::bootstrap') {
     $savefields &= ~Save_CV;
-    mark_package('attributes');
-    $xsub{attributes} = 'Dynamic-'. $INC{'attributes.pm'};
+    mark_package('attributes', 1);
+    $xsub{attributes} = 'Dynamic-'. $INC{'attributes.pm'}; # XSLoader
     $use_xsloader = 1;
   }
 
@@ -4595,6 +4604,8 @@ sub mark_package {
   return if $skip_package{$package} or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
+    my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
+    mark_package('IO') if grep { $package eq $_ } @IO;
     # i.e. if force
     if (exists $include_package{$package}
 	and !$include_package{$package}
@@ -4685,8 +4696,8 @@ sub static_core_packages {
 
 sub skip_pkg {
   my $package = shift;
-  if ( $package =~ /^(FileHandle|SelectSaver|mro)$/
-       or $package =~ /^(main::)?(B|PerlIO|Internals|IO|O)::/
+  if ( $package =~ /^(SelectSaver|mro)$/
+       or $package =~ /^(main::)?(B|PerlIO|Internals|O)::/
        or $package =~ /::::/
        or index($package, " ") != -1 # XXX skip invalid package names
        or index($package, "(") != -1 # XXX this causes the compiler to abort
@@ -4703,7 +4714,7 @@ sub should_save {
   $package =~ s/::$//;
   return $include_package{$package} = 0
     if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
-  warn "Considering $package\n" if $debug{pkg};
+  warn "Considering $package $include_package{$package}\n" if $debug{pkg};
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
@@ -4718,7 +4729,7 @@ sub should_save {
     return 1 if ( $u =~ /^$p\:\:/ );
   }
   # Needed since 5.12.2: Check already if deleted
-  if ( $] > 5.015001 and 
+  if ( $] > 5.015001 and
        !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
     $include_package{$package} = 0;
     warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};

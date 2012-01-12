@@ -1,16 +1,16 @@
-# B::C::VERSION = 1.35 r1164
+# B::C::VERSION = 1.37 f3c65bd 2012-01-11 | remove temp. and wrong debugging code
 # perlversion = 5.006002d-nt
-# path = perl5.6.2d
+# path = perl5.6.2d-nt
 # platform = darwin 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO 5.6 .al noise
+pass Test::Harness
 pass Pod::Escapes
-pass Pod::Simple
+fail Pod::Simple
 pass IO
 pass Scalar::Util
-pass Getopt::Long
+fail Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
@@ -20,65 +20,65 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp
-fail ExtUtils::Install #TODO 5.6 C crash
+fail File::Temp
+pass ExtUtils::Install #TODO 5.6 C crash
 pass Text::ParseWords
-skip ExtUtils::CBuilder
+fail ExtUtils::CBuilder #TODO overlong linking time
 skip ExtUtils::ParseXS
-skip Module::Build
+pass Module::Build #TODO 5.6 C crash
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
 pass Digest::MD5
-skip Sub::Uplevel
-skip URI
+pass Sub::Uplevel
+fail URI
 pass HTML::Tagset
-skip HTML::Parser
-skip Test::Exception
-skip Net::Cmd
+pass HTML::Parser
+pass Test::Exception
+pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-skip LWP
-skip Storable
+fail LWP
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
-skip Task::Weaken
-skip Class::Accessor
+pass Task::Weaken
+pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
-skip Data::OptList
-skip Sub::Exporter
-skip Test::NoWarnings
-skip version
-skip Params::Validate
+pass Data::OptList
+pass Sub::Exporter
+fail Test::NoWarnings
+pass version
+pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
-skip Algorithm::C3
-skip Class::C3
+pass Algorithm::C3
+pass Class::C3
 skip Scope::Guard
-skip MRO::Compat
-skip Time::HiRes
-skip Class::Data::Inheritable
-skip Try::Tiny
-skip Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
-skip Test::Deep
-skip Carp::Clan
+pass MRO::Compat
+pass Time::HiRes
+pass Class::Data::Inheritable
+pass Try::Tiny
+pass Devel::GlobalDestruction #TODO 5.6 qr r-magic
+pass Class::MOP
+pass Moose
+pass Test::Deep
+pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+pass DBI
 pass Time::Local
-skip IO::Scalar
+pass IO::Scalar
 pass Sub::Identify
-skip Class::ISA
+pass Class::ISA
 pass FCGI
-skip Tree::DAG_Node
+pass Tree::DAG_Node
 skip Path::Class
 skip Test::Warn
 skip Encode
@@ -90,20 +90,20 @@ pass Digest::SHA1
 skip namespace::clean
 skip Class::Inspector
 pass Clone
-skip XML::NamespaceSupport
+pass XML::NamespaceSupport
 skip XML::SAX
-skip YAML
+fail YAML
 skip MooseX::Types
-skip Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+pass Class::Singleton
+pass DateTime::TimeZone
+pass DateTime::Locale #TODO 5.6 qr r-magic
+fail DateTime #TODO 5.6 qr r-magic
 pass IO::String
 pass AppConfig
-skip UNIVERSAL::require
-fail Template::Stash #TODO 5.6 r-magic
-# 50 / 100 modules tested with B-C-1.35 - perl-5.006002d-nt
-# pass  48 /  50 (96.0%)
-# fail   2 /  50 (4.0%)
-# todo   3 /   2 (150.0%)
-# skip  50 / 100 (50.0% not installed)
+pass UNIVERSAL::require
+fail Template::Stash #TODO 5.6 qr r-magic
+# 88 / 100 modules tested with B-C-1.37 - perl-5.006002d-nt
+# pass  78 /  88 (88.6%)
+# fail  10 /  88 (11.4%)
+# todo   7 /  10 (70.0%)
+# skip  12 / 100 (12.0% not installed)
