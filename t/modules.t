@@ -241,66 +241,53 @@ sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
   # ---------------------------------------
-  foreach(qw(
-    ExtUtils::CBuilder
-  )) { return 'overlong linking time' if $_ eq $module; }
+  #foreach(qw(
+  #  ExtUtils::CBuilder
+  #)) { return 'overlong linking time' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
+    Pod::Simple
+    Getopt::Long
+    File::Temp
+    URI
+    LWP
+    Test::NoWarnings
     ExtUtils::Install
     Module::Build
+    YAML
   )) { return '5.6 C crash' if $_ eq $module; }}
   if ($] < 5.007) { foreach(qw(
     DateTime
     Template::Stash
     DateTime::Locale
-    Devel::GlobalDestruction
   )) { return '5.6 qr r-magic' if $_ eq $module; }}
   #if ($] < 5.007) { foreach(qw(
   #  Test::Harness
   #)) { return '5.6 .al noise' if $_ eq $module; }}
-  if ($] >= 5.008004 and $] < 5.008005) { foreach(qw(
-    Module::Pluggable
-  )) { return '5.8.4' if $_ eq $module; }}
   if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
     Module::Build
-    LWP
-    Template::Stash
   )) { return '5.8.5' if $_ eq $module; }}
   if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
     Test::Simple
     Test::Exception
     Test::Tester
-    Test::NoWarnings
-    Test::Deep
-    Test::Warn
-    #Test::Pod
   )) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
-  if ($] > 5.008001 and $] < 5.010) { foreach(qw(
-    MooseX::Types
-  )) { return '5.8' if $_ eq $module; }}
   # restricted v_string hash?
   if ($] eq '5.010000') { foreach(qw(
    IO
    Path::Class
    DateTime::TimeZone
   )) { return '5.10.0 restricted hash/...' if $_ eq $module; }}
-  if ($] =~ /^5\.010/) { foreach(qw(
-   Devel::GlobalDestruction
-   Moose
-  )) { return '5.10.x crash' if $_ eq $module; }}
-  #if ($] < 5.014) { foreach(qw(
-   #ExtUtils::CBuilder
-  #)) { return '< 5.14' if $_ eq $module; }}
   # fixed between v5.15.6-210-g5343a61 and v5.15.6-233-gfb7aafe
   if ($] > 5.015 and $] < 5.015006) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
-  # DateTime only d-nt (timeout?)
-  if ($] >= 5.015002) { foreach(qw(
-   Path::Class
-  )) { return '>= 5.15.2' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
+    if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
+      Test::Pod
+    )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
+    Test::Pod
     if ($] >= 5.009 and $] < 5.012) { foreach(qw(
       Carp::Clan
       DateTime
@@ -319,26 +306,11 @@ sub is_todo {
       Storable
       Sub::Name
     )) { return '5.12.0 with threads' if $_ eq $module; }}
-    #if ($] >= 5.013) { foreach(qw(
-    #  Test::Tester
-    #)) { return '>=5.13 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
     # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
-    #if ($] >= 5.008004 and $] <= 5.008005) { foreach(qw(
-    #  DateTime
-    #  Try::Tiny
-    #)) { return '5.8.4-5.8.5 without threads' if $_ eq $module; }}
-    # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
-    if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
-      #Pod::Simple
-      #Pod::Text
-      #File::Temp
-      #CGI
-      Test::Pod
-    )) { return '5.8.1-5.8.8 without threads' if $_ eq $module; }}
-    if ($] > 5.008001 and $] < 5.010) { foreach(qw(
-      Moose
-    )) { return '5.8 without threads' if $_ eq $module; }}
+    if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
+      DateTime
+    )) { return '5.8.5 without threads' if $_ eq $module; }}
   }
   # ---------------------------------------
 }
