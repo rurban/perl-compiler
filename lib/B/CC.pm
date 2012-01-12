@@ -3098,6 +3098,7 @@ OPTION:
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
 	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O', 'Opcodes',
 	    'B::Stackobj', 'B::Bblock');
+  #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.

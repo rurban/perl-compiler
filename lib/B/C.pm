@@ -600,6 +600,9 @@ sub save_rv {
   }
   # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
   # 5.6: Can't locate object method "RV" via package "B::PVMG"
+  unless ($sv->FLAGS & SVf_ROK) {
+    die "$sv $fullname is no ref";
+  }
   my $rv = $sv->RV->save($fullname);
 
   $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
@@ -2059,7 +2062,7 @@ sub B::PVMG::save {
     }
   }
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
-  $sv->save_magic;
+  $sv->save_magic($fullname);
   return $sym;
 }
 
@@ -2150,8 +2153,8 @@ sub B::PVMG::save_magic {
     }
 
     if ( $len == HEf_SVKEY ) {
-      # The pointer is an SV*
-      $ptrsv = svref_2object($ptr)->save($fullname);
+      # The pointer is an SV* ('s' sigelem e.g.)
+      $ptrsv = $ptr->save($fullname);
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(
         sprintf(
@@ -5253,6 +5256,8 @@ sub compile {
   );
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
 	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O');
+  #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
+
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {

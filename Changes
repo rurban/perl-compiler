@@ -42,7 +42,9 @@
 	Fixed share_hek strings with -O1 (test 13)
 	Fixed bootstrapping the XS part of attributes (test 42, 43).
 	Fixed most 5.8.[45] problems by ignoring aelemfast SPECIAL pads.
-	Moved -fsave-sig-hash from -O3 to -O0. You need -fno-save-sig-hash to disable it.
+	Moved -fsave-sig-hash from -O3 to -O0. You need -fno-save-sig-hash
+	  to disable it.
+	Fixed saving %SIG signals and more -2 SV magic (issue 92)
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) - works only partially.
