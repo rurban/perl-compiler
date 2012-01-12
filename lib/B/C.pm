@@ -600,9 +600,6 @@ sub save_rv {
   }
   # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
   # 5.6: Can't locate object method "RV" via package "B::PVMG"
-  unless ($sv->FLAGS & SVf_ROK) {
-    die "$sv $fullname is no ref";
-  }
   my $rv = $sv->RV->save($fullname);
 
   $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
