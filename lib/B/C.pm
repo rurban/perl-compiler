@@ -1974,7 +1974,7 @@ sub B::PVMG::save {
 
   if ($PERL510) {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
-      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
+      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, substr($savesym,7)))
 	if $savesym ne '(char*)';
       $savesym = '0';
     } else {
@@ -5048,16 +5048,17 @@ sub save_sig {
   $init->no_split;
   $init->add( "/* save %SIG */" ) if $verbose;
   warn "save %SIG\n" if $verbose;
-  $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",1);" );
+  $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
   foreach my $k ( keys %SIG ) {
     next unless ref $SIG{$k};
-    my $cv = svref_2object( \$SIG{$k} );
-    next if ref($cv) eq 'B::CV' and $cv->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
-    my $sv = $cv->save;
+    my $cvref = svref_2object( \$SIG{$k} );
+    next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
+    my $sv = $cvref->save;
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
     $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
                         cstring($k), length( pack "a*", $k ),
                         'sv', 0 ) ); # XXX randomized hash keys!
+    # XXX leads to No such signal: invalid mg_ptr->PV
     $init->add( "\t".'mg_set(sv);', '}' );
   }
   $init->add('}');
