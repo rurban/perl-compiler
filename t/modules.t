@@ -287,7 +287,6 @@ sub is_todo {
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
       Test::Pod
     )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
-    Test::Pod
     if ($] >= 5.009 and $] < 5.012) { foreach(qw(
       Carp::Clan
       DateTime
