@@ -1368,7 +1368,7 @@ sub B::PMOP::save {
     $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
-      my $resym = "(char*)".cstring($re);
+      my $resym = cstring($re);
       my $relen = length($re);
       my $pmflags = $op->pmflags;
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
