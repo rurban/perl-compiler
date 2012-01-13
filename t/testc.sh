@@ -485,7 +485,13 @@ do
   fi
 done
 
-test "$(perl -V:gccversion)" = "gccversion='';" || CCMD="$CCMD -g3"
+if [ "$(perl -V:gccversion)" != "gccversion='';" ]; then
+    if [ "$(uname)" = "Darwin" ]; then
+	CCMD="$CCMD -g"
+    else
+	CCMD="$CCMD -g3"
+    fi
+fi
 if [ -z $OPTIM ]; then OPTIM=-1; fi # all
 
 if [ -z "$QUIET" ]; then
