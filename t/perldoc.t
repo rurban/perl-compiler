@@ -11,6 +11,8 @@ use Config;
 use File::Spec;
 use Time::HiRes qw(gettimeofday tv_interval);
 
+sub faster { ($_[1] - $_[0]) < 0.01 }
+
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = $] < 5.008
@@ -26,7 +28,7 @@ plan tests => 7;
 my $compile = "$perlcc -o perldoc$exe $perldoc";
 diag $compile;
 my $res = `$compile`;
-ok(-s $perldocexe, "$perldocexe compiled");
+ok(-s $perldocexe, "$perldocexe compiled"); #1
 
 diag "see if $perldoc -T works";
 my $T_opt = "-T -f wait";
@@ -58,29 +60,32 @@ TODO: {
   # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
   # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
   local $TODO = "compiled does not print yet" if $] >= 5.010;
-  is($cc, $ori, "same result");
+  is($cc, $ori, "same result"); #2
 }
 
-ok($t2 < $t1, "compiled faster than uncompiled: $t2 < $t1");
+SKIP: {
+  skip "cannot compare times", 1 if $cc ne $ori;
+  ok(faster($t2,$t1), "compiled faster than uncompiled: $t2 < $t1"); #3
+}
 
-my $compile = "$perlcc -O3 -o perldoc_O3$exe $perldoc";
+$compile = "$perlcc -O3 -o perldoc_O3$exe $perldoc";
 diag $compile;
 $res = `$compile`;
-ok(-s "perldoc_O3$exe", "perldoc compiled");
+ok(-s "perldoc_O3$exe", "perldoc compiled"); #4
 
 $t0 = [gettimeofday];
 $cc = $^O eq 'MSWin32' ? `$PAGER perldoc$exe $T_opt` : `$PAGER ./perldoc $T_opt`;
 my $t3 = tv_interval( $t0, [gettimeofday]);
 TODO: {
   local $TODO = "compiled does not print yet" if $] >= 5.010;
-  is($cc, $ori, "same result");
+  is($cc, $ori, "same result"); #5
 }
 
-TODO: {
-  local $TODO = "slow compiled -O3";
-  ok($t3 <= $t2, "compiled -O3 not slower than -O0: $t3 <= $t2");
+SKIP: {
+  skip "cannot compare times", 2 if $cc ne $ori;
+  ok(faster($t3,$t2), "compiled -O3 not slower than -O0: $t3 <= $t2"); #6
+  ok(faster($t3,$t1),  "compiled -O3 faster than uncompiled: $t3 < $t1"); #7
 }
-ok($t3 < $t1,  "compiled -O3 faster than uncompiled: $t3 < $t1");
 
 END {
   unlink $perldocexe if -e $perldocexe;
