@@ -770,7 +770,6 @@ sub B::OP::_save_common {
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
       push_package($package_pv);
-      warn "save package_pv \"$package_pv\" for method_name\n" if $debug{cv} or $debug{pkg};
     } else {
       warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
     }
@@ -1044,6 +1043,8 @@ sub B::PVOP::save {
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
   my $p = shift or return;
+  warn "save package_pv \"$package_pv\" for method_name\n" 
+    if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
   mark_package($p);
@@ -4228,6 +4229,11 @@ EOT
 
   # my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( keys %xsub ) {
+    my $incpack = inc_packname($stashname);
+    unless ($INC{$incpack}) { # skip deleted packages
+      warn "skip xs_init for $stashname, !\$INC{$incpack}\n" if $debug{pkg};
+      next;
+    }
     if ( $xsub{$stashname} !~ m/^Dynamic/ and !$static_ext{$stashname}) {
       my $stashxsub = $stashname;
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
@@ -4274,6 +4280,11 @@ EOT
   }
   @DynaLoader::dl_modules = @dl_modules;
   foreach my $stashname (@dl_modules) {
+    my $incpack = inc_packname($stashname);
+    unless ($INC{$incpack}) { # skip deleted packages
+      warn "skip dl_init for $stashname, !\$INC{$incpack}\n" if $debug{pkg};
+      delete $xsub{$stashname};
+    }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
