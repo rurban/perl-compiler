@@ -4230,11 +4230,11 @@ EOT
 
   # my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( keys %xsub ) {
-    my $incpack = inc_packname($stashname);
-    unless ($INC{$incpack}) { # skip deleted packages
-      warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
-      next;
-    }
+    #my $incpack = inc_packname($stashname);
+    #unless ($INC{$incpack}) { # skip deleted packages
+    #  warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+    #  next;
+    #}
     if ( $xsub{$stashname} !~ m/^Dynamic/ and !$static_ext{$stashname}) {
       my $stashxsub = $stashname;
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
@@ -4281,11 +4281,11 @@ EOT
   }
   @DynaLoader::dl_modules = @dl_modules;
   foreach my $stashname (@dl_modules) {
-    my $incpack = inc_packname($stashname);
-    unless ($INC{$incpack}) { # skip deleted packages
-      warn "skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
-      delete $xsub{$stashname};
-    }
+    #my $incpack = inc_packname($stashname);
+    #unless ($INC{$incpack}) { # skip deleted packages
+    #  warn "skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+    #  delete $xsub{$stashname};
+    #}
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
@@ -5040,8 +5040,8 @@ sub save_context {
 sub descend_marked_unused {
   warn "descend_marked_unused ".join(" ",keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( keys %include_package ) {
-    my $incpack = inc_packname($pack);
-    mark_package($pack) if $INC{$incpack};
+    # my $incpack = inc_packname($pack);
+    mark_package($pack); # if $INC{$incpack};
   }
 }
 
