@@ -18,7 +18,7 @@ my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = $] < 5.008
   ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc"
   : "$X -Mblib blib/script/perlcc";
-$perlcc .= " -Wb=-fno-fold,-fno-warnings,-fno-stash -UB";
+$perlcc .= " -Wb=-fno-fold,-fno-warnings,-fno-stash -UB -uPod::Perldoc::ToMan -uPod::Perldoc::ToText";
 my $exe = $Config{exe_ext};
 my $perldocexe = "perldoc$exe";
 # XXX bother File::Which?
