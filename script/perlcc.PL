@@ -70,7 +70,7 @@ our $VERSION = 2.13;
 $| = 1;
 eval { require B::C::Flags; };
 
-$SIG{INT} = sub { exit(); }; # exit gracefully and clean up after ourselves.
+$SIG{INT} = sub { exit(); } if exists $SIG{INT}; # exit gracefully and clean up after ourselves.
 
 use subs qw{
     cc_harness check_read check_write checkopts_byte choose_backend
@@ -855,20 +855,22 @@ sub interruptrun {
     local(*FD);
     my $pid = open(FD, "$command |");
     my $text;
-
-    local($SIG{HUP}) = sub { kill 9, $pid; exit };
-    local($SIG{INT}) = sub { kill 9, $pid; exit };
+    local($SIG{HUP}, $SIG{INT});
+    for (qw(HUP INT)) {
+	$SIG{$_} = sub { kill 9, $pid; exit } if exists $SIG{$_};
+    }
 
     my $needalarm =
           ($ENV{PERLCC_TIMEOUT} &&
+	   exists $SIG{ALRM} &&
 	  $Config{'osname'} ne 'MSWin32' &&
 	  $command =~ m"(^|\s)perlcc\s");
 
     eval {
-         local($SIG{ALRM}) = sub { die "INFINITE LOOP"; };
-         alarm($ENV{PERLCC_TIMEOUT}) if ($needalarm);
+         local($SIG{ALRM}) = sub { die "INFINITE LOOP"; } if exists $SIG{ALRM};
+         alarm($ENV{PERLCC_TIMEOUT}) if $needalarm;
 	 $text = join('', <FD>);
-	 alarm(0) if ($needalarm);
+	 alarm(0) if $needalarm;
     };
 
     if ($@) {
