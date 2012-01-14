@@ -6,6 +6,7 @@
 1.37	2012-01-xx rurban
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	Fixed hashes and share_hek, when mixed compiled and load-time for >5.8.
+	Revised package walker leading to much smaller executables
 
 	* C: save stashes also, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not
@@ -45,7 +46,13 @@
 	Moved -fsave-sig-hash from -O3 to -O0. You need -fno-save-sig-hash
 	  to disable it.
 	Fixed saving %SIG signals and more -2 SV magic (issue 92)
-	Fixed IO, was erronously skipped (issue 59)
+	Adjusted IO logic, was erronously skipped (issue 59)
+	Defer saving INC to match internally skipped packages (issue 85,87)
+	Do not XS load skipped packages.
+	At descend_marked_unused, the 2nd walker step, skip already
+	  skipped and never used packages.
+	Save ext/mro only if the ext mro methods were loaded.
+	Force loading of -u arguments to avoid runtime loading.
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) - works only partially.

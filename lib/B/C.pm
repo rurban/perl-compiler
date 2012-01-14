@@ -1043,7 +1043,7 @@ sub B::PVOP::save {
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
   my $p = shift or return;
-  warn "save package_pv \"$package_pv\" for method_name\n" 
+  warn "save package_pv \"$package_pv\" for method_name\n"
     if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
@@ -2971,6 +2971,10 @@ if (0) {
     $init->add(qq[$sym = PL_envgv;]);
     return $sym;
   }
+  # defer to the end because we remove compiler-internal and skipped stuff
+  if ($fullname eq 'main::INC') {
+    return $sym;
+  }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
@@ -3101,10 +3105,7 @@ if (0) {
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
-      if ($fullname eq 'main::INC') {
-	inc_cleanup();
-      }
-      if ($fullname ne 'main::ENV') {
+      if ($fullname !~ /^main::(ENV|INC)$/) {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
 	  $init->add("/* \%! force saving of Errno */");
@@ -4231,7 +4232,7 @@ EOT
   foreach my $stashname ( keys %xsub ) {
     my $incpack = inc_packname($stashname);
     unless ($INC{$incpack}) { # skip deleted packages
-      warn "skip xs_init for $stashname, !\$INC{$incpack}\n" if $debug{pkg};
+      warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
       next;
     }
     if ( $xsub{$stashname} !~ m/^Dynamic/ and !$static_ext{$stashname}) {
@@ -4282,7 +4283,7 @@ EOT
   foreach my $stashname (@dl_modules) {
     my $incpack = inc_packname($stashname);
     unless ($INC{$incpack}) { # skip deleted packages
-      warn "skip dl_init for $stashname, !\$INC{$incpack}\n" if $debug{pkg};
+      warn "skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
       delete $xsub{$stashname};
     }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
@@ -4734,6 +4735,7 @@ sub should_save {
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
+  return if $package eq 'mro' and keys %{mro::} == 1; # core or ext?
   foreach my $u ( grep( $include_package{$_}, keys %include_package ) )
   {
     # If this package is a prefix to something we are saving, traverse it
@@ -5015,11 +5017,12 @@ sub save_context {
     local $B::C::const_strings;
     $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
-    $init->add('/* %INC */');
+    $init->add('/* *INC */');
     inc_cleanup();
-    $inc_hv          = svref_2object( \%INC )->save('INC');
+    svref_2object( \*main::INC )->save('main::INC');
+    $inc_hv          = svref_2object( \%main::INC )->save('main::INC');
     $init->add('/* @INC */');
-    $inc_av          = svref_2object( \@INC )->save('INC');
+    $inc_av          = svref_2object( \@main::INC )->save('main::INC');
   }
   my $amagic_generate = amagic_generation;
   warn "amagic_generation = $amagic_generate\n" if $verbose;
@@ -5035,8 +5038,10 @@ sub save_context {
 }
 
 sub descend_marked_unused {
+  warn "descend_marked_unused ".join(" ",keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( keys %include_package ) {
-    mark_package($pack);
+    my $incpack = inc_packname($pack);
+    mark_package($pack) if $INC{$incpack};
   }
 }
 
@@ -5385,14 +5390,15 @@ OPTION:
     elsif ( $opt eq "m" ) {
       # $arg ||= shift @options;
       $module = $arg;
-      mark_unused( $arg, undef );
+      mark_unused( $arg, 1 );
     }
     elsif ( $opt eq "v" ) {
       $verbose = 1;
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      mark_unused( $arg, undef );
+      eval "require $arg;";
+      mark_unused( $arg, 1 );
     }
     elsif ( $opt eq "U" ) {
       $arg ||= shift @options;
