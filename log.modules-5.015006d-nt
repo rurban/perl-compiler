@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 f3c65bd 2012-01-11 | remove temp. and wrong debugging code
+# B::C::VERSION = 1.37 8df38dc 2012-01-12 | fix syntax error in t/modules.t
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
 # platform = linux 64bit non-threaded debug
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder #TODO overlong linking time
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class #TODO >= 5.15.2
+pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -105,5 +105,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015006d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   2 /   0 ()
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)
