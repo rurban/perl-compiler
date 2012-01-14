@@ -245,24 +245,8 @@ sub is_todo {
   #  ExtUtils::CBuilder
   #)) { return 'overlong linking time' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
-    Pod::Simple
-    Getopt::Long
-    File::Temp
-    URI
-    LWP
-    Test::NoWarnings
-    ExtUtils::Install
-    Module::Build
-    YAML
-  )) { return '5.6 C crash' if $_ eq $module; }}
-  if ($] < 5.007) { foreach(qw(
-    DateTime
-    Template::Stash
-    DateTime::Locale
-  )) { return '5.6 qr r-magic' if $_ eq $module; }}
-  #if ($] < 5.007) { foreach(qw(
-  #  Test::Harness
-  #)) { return '5.6 .al noise' if $_ eq $module; }}
+    ExtUtils::CBuilder
+  )) { return '5.6' if $_ eq $module; }}
   if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
     Module::Build
   )) { return '5.8.5' if $_ eq $module; }}

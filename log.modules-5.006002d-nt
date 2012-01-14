@@ -1,16 +1,16 @@
-# B::C::VERSION = 1.37 f3c65bd 2012-01-11 | remove temp. and wrong debugging code
+# B::C::VERSION = 1.37 86d3e7a 2012-01-13 | revise 6e7f2269 mg->PTR fix for 5.6
 # perlversion = 5.006002d-nt
-# path = perl5.6.2d-nt
+# path = /usr/local/bin/perl5.6.2d-nt
 # platform = darwin 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
-fail Pod::Simple
+pass Pod::Simple #TODO 5.6 C crash
 pass IO
 pass Scalar::Util
-fail Getopt::Long
+pass Getopt::Long #TODO 5.6 C crash
 pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
@@ -20,10 +20,10 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
+pass File::Temp #TODO 5.6 C crash
 pass ExtUtils::Install #TODO 5.6 C crash
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO overlong linking time
+fail ExtUtils::CBuilder
 skip ExtUtils::ParseXS
 pass Module::Build #TODO 5.6 C crash
 pass File::Path
@@ -32,7 +32,7 @@ pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-fail URI
+pass URI #TODO 5.6 C crash
 pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP #TODO 5.6 C crash
 pass Storable
 pass base
 pass List::MoreUtils
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+pass Test::NoWarnings #TODO 5.6 C crash
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -64,7 +64,7 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction #TODO 5.6 qr r-magic
+pass Devel::GlobalDestruction
 pass Class::MOP
 pass Moose
 pass Test::Deep
@@ -92,18 +92,18 @@ skip Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 skip XML::SAX
-fail YAML
+pass YAML #TODO 5.6 C crash
 skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale #TODO 5.6 qr r-magic
-fail DateTime #TODO 5.6 qr r-magic
+pass DateTime #TODO 5.6 qr r-magic
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash #TODO 5.6 qr r-magic
+pass Template::Stash #TODO 5.6 qr r-magic
 # 88 / 100 modules tested with B-C-1.37 - perl-5.006002d-nt
-# pass  78 /  88 (88.6%)
-# fail  10 /  88 (11.4%)
-# todo   7 /  10 (70.0%)
+# pass  87 /  88 (98.9%)
+# fail   1 /  88 (1.1%)
+# todo  12 /   1 (1200.0%)
 # skip  12 / 100 (12.0% not installed)
