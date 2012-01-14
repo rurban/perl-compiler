@@ -650,14 +650,14 @@ sub plctest {
     my $out = qx($runperl -Mblib -MByteLoader $name.plc);
     chomp $out;
     my $ok = $out =~ /$expected/;
-    if ($todo =~ /TODO/) {
+    if ($todo and $todo =~ /TODO/) {
 	$todo =~ s/TODO //;
       TODO: {
 	    local $TODO = $todo;
 	    ok($ok);
 	}
     } else {
-	ok($ok, "Bytecode $base $todo");
+	ok($ok, "Bytecode $base".$todo ? " $todo" : '');
     }
     if ($ok) {
         unlink("$name.plc", "$base.pl");
@@ -689,7 +689,7 @@ sub ctest {
     system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {
-	if ($todo =~ /TODO/) {
+	if ($todo and $todo =~ /TODO/) {
 	    $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
