@@ -20,14 +20,8 @@ sub save {
 sub test3 {
   my $name = shift;
   my $script = shift;
-  save($name, $script);
-  my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  system($runperl,'-Mblib',"-MO=-qq,Bytecode,-o$name.plc","$name.pl");
-  my $runexe = qx($runperl -Mblib -MByteLoader $name.plc);
- TODO: {
-   local $TODO = '%+ setting regdata magic crashes' if $name eq 'ccode90i_c';
-   is($runexe, 'ok', "Bytecode $name");
-  }
+  $todo = 'TODO %+ setting regdata magic crashes' if $name eq 'ccode90i_c';
+  plctestok(1, $name, $script, $todo);
   ctestok(2, "C", $name, $script, @_);
   ctestok(3, "CC", $name, $script, @_);
   $runexe = qx($runperl -Mblib blib/script/perlcc --staticxs -r -o$name $name.pl);
@@ -35,13 +29,10 @@ sub test3 {
    local $TODO = '--staticxs Tie::Hash::NamedCapture' if $name eq 'ccode90i_c';
    is($runexe, 'ok', "--staticxs $name");
   }
-  #unlink("$name.plc", "$name.pl");
-  #unlink("${name}_2.c", "${name}_2");
-  #unlink("${name}_3.c", "${name}_3");
 }
 
 
-test3('ccode90i_c', <<'EOF');
+test3('ccode90i_c', <<'EOF', '%+ includes Tie::Hash::NamedCapture');
 my $s = 'test string';
 $s =~ s/(?<first>test) (?<second>string)/\2 \1/g;
 print q(o) if $s eq 'string test';
@@ -49,13 +40,13 @@ print q(o) if $s eq 'string test';
 print q(k) if $+{first} eq 'test';
 EOF
 
-test3('ccode90i_es', <<'EOF');
+test3('ccode90i_es', <<'EOF', '%! magic');
 my %errs = %!; # t/op/magic.t Errno compiled in
 print q(ok) if defined ${"!"}{ENOENT};
 EOF
 
 # this fails so far, %{"!"} is not detected at compile-time. requires -uErrno
-test3('ccode90i_er', <<'EOF', 'requires -uErrno');
+test3('ccode90i_er', <<'EOF', 'TODO may require -uErrno');
 my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};
 EOF

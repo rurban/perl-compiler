@@ -626,6 +626,44 @@ CCTESTS
     }
 }
 
+sub plctestok {
+    my ($num, $base, $script, $todo) =  @_;
+    plctest($num,'^ok', $base, $script, $todo);
+}
+
+sub plctest {
+    my ($num, $expected, $base, $script, $todo) =  @_;
+
+    my $name = $base."_$num";
+    unlink($name, "$name.plc", "$name.pl", "$name.exe");
+    open F, ">", "$base.pl";
+    print F $script;
+    close F;
+
+    my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+    my $b = $] > 5.008 ? "-qq,Bytecode" : "Bytecode";
+    system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.plc $base.pl";
+    unless (-e "$name.plc") {
+        print "not ok $num #B::Bytecode failed\n";
+        exit;
+    }
+    my $out = qx($runperl -Mblib -MByteLoader $name.plc);
+    chomp $out;
+    my $ok = $out =~ /$expected/;
+    if ($todo =~ /TODO/) {
+	$todo =~ s/TODO //;
+      TODO: {
+	    local $TODO = $todo;
+	    ok($ok);
+	}
+    } else {
+	ok($ok, "Bytecode $base $todo");
+    }
+    if ($ok) {
+        unlink("$name.plc", "$base.pl");
+    }
+}
+
 sub ctestok {
     my ($num, $backend, $base, $script, $todo) =  @_;
     my $qr = '^ok'; # how lame
@@ -651,13 +689,14 @@ sub ctest {
     system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {
-        if ($todo) {
+	if ($todo =~ /TODO/) {
+	    $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
                 ok(undef, "failed to compile");
             }
         } else {
-            ok(undef, "failed to compile");
+            ok(undef, "failed to compile $todo");
         }
         return;
     }
@@ -670,20 +709,22 @@ sub ctest {
         unless ($ok) { #crosscheck uncompiled
             my $out1 = `$runperl $name.pl`;
             unless ($out1 =~ /$expected/) {
-                ok(1, "skip also fails uncompiled");
+                ok(1, "skip also fails uncompiled $todo");
                 return;
             }
         }
-        if ($todo) {
+	if ($todo =~ /TODO/) {
+	    $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
                 ok ($out =~ /$expected/);
             }
         } else {
-            ok ($out =~ /$expected/);
+            ok ($out =~ /$expected/, $todo);
         }
     } else {
-        if ($todo) {
+	if ($todo =~ /TODO/) {
+	    $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
                 ok (undef);
@@ -695,7 +736,7 @@ sub ctest {
                 ok(1, "skip also fails uncompiled");
                 return;
             }
-	    ok (undef);
+	    ok (undef, $todo);
 	}
     }
     unlink("$name.pl");
@@ -721,13 +762,14 @@ sub ccompileok {
     }
     system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
     my $ok = -e $name or -e "$name.exe";
-    if ($todo) {
+    if ($todo =~ /TODO/) {
       TODO: {
+	    $todo =~ s/TODO //;
             local $TODO = $todo;
             ok($ok);
         }
     } else {
-        ok($ok);
+        ok($ok, $todo);
     }
     unlink("$name.pl");
     if ($ok) {

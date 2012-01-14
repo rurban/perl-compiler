@@ -18,5 +18,5 @@ EOF
 use B::CC;
 ctestok(1, "CC", "ccode52i", $script,
       $B::CC::VERSION < 1.08
-      ? "B:CC numeric value used in second expression of 'and' - issue52 fixed with r692"
+      ? "TODO B:CC numeric value used in second expression of 'and' - issue52 fixed with r692"
       : undef);

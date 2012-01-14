@@ -7,6 +7,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
+my $name='ccode81i';
 my $script = <<'EOF';
 sub int::check {1}    #create int package for types
 sub x(int,int) { @_ } #cvproto
@@ -15,23 +16,8 @@ sub y($) { @_ } #cvproto
 print "k" if prototype \&y eq "\$";
 EOF
 
-my $name='ccode81i';
-open my $s, ">$name.pl";
-print $s $script;
-close $s;
-
-my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-my $q = $] < 5.008001 ? "" : "-qq,";
-system($runperl,'-Mblib',"-MO=${q}Bytecode,-o$name.plc","$name.pl");
-my $runexe = qx($runperl -Mblib -MByteLoader $name.plc);
-is($runexe, 'ok', 'Bytecode');
-
 use B::C;
-ctestok(2, "C", $name, $script,
-	$B::C::VERSION < '1.37' ? "cvproto" : undef
-       );
-
-use B::CC;
-ctestok(3, "CC", $name, $script, 
-	$B::C::VERSION < '1.37' ? "cvproto" : undef
-       );
+my $todo = ($B::C::VERSION < '1.37' ? "TODO " : "");
+plctestok(1, $name, $script, "${todo}BC cvproto");
+ctestok(2, "C", $name, $script, "${todo}C cvproto");
+ctestok(3, "CC", $name, $script, "${todo}CC cvproto");

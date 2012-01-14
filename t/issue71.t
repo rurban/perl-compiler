@@ -30,7 +30,7 @@ EOF
 
 use B::C;
 ctestok(1, "C", "ccode71i", $script,
-	$B::C::VERSION < 1.35 ? "SvANY(REGEXP)=SvANY(CALLREGCOMP)" : undef
+	($B::C::VERSION < 1.35 ? "TODO " : ""). "SvANY(REGEXP)=SvANY(CALLREGCOMP)"
        );
 
 $script = <<'EOF';
@@ -44,13 +44,13 @@ EOF
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	$B::C::VERSION < 1.35 
-        ? "B:C reg_temp_copy from invalid r->offs" 
-        : "alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
+	$B::C::VERSION < 1.35
+        ? "TODO B:C reg_temp_copy from invalid r->offs"
+        : "TODO alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 
 use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
       $B::CC::VERSION < 1.13
-      ? "Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
+      ? "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
       : undef);
 

@@ -13,7 +13,7 @@ my $pattern = 'x'; 'foo' =~ /$pattern/o;
 print "ok";
 EOF
 
-use B::CC; # fixed with r610
+use B::CC;
 ctestok(1, "CC", "ccode46i", $script,
-	($Config{useithreads} or $B::CC::VERSION >= 1.08)
-	? undef : "issue46 m//o cLOGOP->op_first fixed with r610, threaded only");
+	(($Config{useithreads} or $B::CC::VERSION >= 1.08)
+	 ? "" : "TODO "). "issue46 m//o cLOGOP->op_first fixed with r610, threaded only");

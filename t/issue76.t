@@ -16,12 +16,12 @@ use warnings;
 }
 EOF
 
-ok("bytecode skip");
+ok(1, "bytecode LEXWARN skip");
 
 use B::C;
 ctestok(2, "C", "ccode76i", $script,
-	$B::C::VERSION < 1.36 ? "LEXWARN" : undef
+	($B::C::VERSION < 1.36 ? "TODO " : "")."C LEXWARN implemented with B-C-1.36"
        );
 
 use B::CC;
-ctestok(3, "CC", "ccode76i", $script);
+ctestok(3, "CC", "ccode76i", $script, "CC LEXWARN");

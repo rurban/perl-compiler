@@ -20,24 +20,17 @@ $result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
 close $remote;
 EOF
 
-open F, ">", "$name.pl";
-print F $script;
-close F;
-
 my $expected = "ok";
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $q = $] < 5.008001 ? "" : "-qq,";
-system($runperl,'-Mblib',"-MO=${q}Bytecode,-o$name.plc","$name.pl");
-my $result = qx($runperl -Mblib -MByteLoader $name.plc);
-is($result, $expected, 'Bytecode connect to http://perl.org:80');
+my $result = qx($runperl $name.pl);
+my $canconnect = $result eq $expected ? 1 : 0;
 
-TODO: {
-  local $TODO = "cannot connect to http://perl.org:80" if $result ne $expected;
-  ctestok(2, "C", $name, $script);
-  ctestok(3, "CC", $name, $script, "CC fails");
-}
+my $cmt = ($canconnect ? "" : "TODO ") ."connect to http://perl.org:80";
+plctestok(1, $name, $script, $cmt);
 
-END {
-  unlink($name, $name, "$name.pl", "$name.plc")
-    if $result eq $expected;
+SKIP: {
+  skip "eats memory on 5.6", 2 if $] <= 5.008001;
+  ctestok(2, "C", $name, $script, "C $name $cmt");
+  ctestok(3, "CC", $name, $script, "CC $name $cmt");
 }

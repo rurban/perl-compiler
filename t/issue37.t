@@ -16,4 +16,4 @@ EOF
 
 use B::CC;
 ctestok(1, "CC", "ccode37i", $script,
-        $B::CC::VERSION < 1.08 ? "B::CC issue 37" : undef);
+        $B::CC::VERSION < 1.08 ? "TODO B::CC issue 37" : "orassign ||=");
