@@ -20,6 +20,10 @@ $result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
 close $remote;
 EOF
 
+open F, "> $name.pl";
+print F $script;
+close F;
+
 my $expected = "ok";
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $q = $] < 5.008001 ? "" : "-qq,";

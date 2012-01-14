@@ -713,7 +713,7 @@ sub ctest {
                 return;
             }
         }
-	if ($todo =~ /TODO/) {
+	if ($todo and $todo =~ /TODO/) {
 	    $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
@@ -723,7 +723,7 @@ sub ctest {
             ok ($out =~ /$expected/, $todo);
         }
     } else {
-	if ($todo =~ /TODO/) {
+	if ($todo and $todo =~ /TODO/) {
 	    $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
@@ -762,7 +762,7 @@ sub ccompileok {
     }
     system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
     my $ok = -e $name or -e "$name.exe";
-    if ($todo =~ /TODO/) {
+    if ($todo and $todo =~ /TODO/) {
       TODO: {
 	    $todo =~ s/TODO //;
             local $TODO = $todo;
