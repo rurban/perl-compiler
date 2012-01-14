@@ -2155,7 +2155,12 @@ sub B::PVMG::save_magic {
 
     if ( $len == HEf_SVKEY ) {
       # The pointer is an SV* ('s' sigelem e.g.)
-      $ptrsv = $ptr->save($fullname);
+      # XXX On 5.6 ptr might be a SCALAR (which is wrong)
+      if (ref($ptr) eq 'SCALAR') {
+	$ptrsv = svref_2object($ptr)->save($fullname);
+      } else {
+	$ptrsv = $ptr->save($fullname);
+      }
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(
         sprintf(
