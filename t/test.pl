@@ -607,23 +607,20 @@ CCTESTS
         if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
             $todo{$cnt} = $skip{$cnt} = 1;
         }
-        if ($cnt == 46) {
-            $backend .= ',-fstash';
-        }
         if ($todo{$cnt} and $skip{$cnt} and
             # those are currently blocking the system
             # do not even run them at home if TODO+SKIP
             (!$AUTHOR
              or ($cnt==15 and $backend eq 'C,-O1')   # hanging
              or ($cnt==103 and $backend eq 'CC,-O2') # hanging
-             # or ($cnt==14 or $cnt==18)
             ))
         {
             print sprintf("ok %d # skip\n", $cnt);
         } else {
             my ($script, $expect) = split />>>+\n/;
 	    die "Invalid empty t/TESTS" if !$script or $expect eq '';
-            run_cc_test($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo);
+            run_cc_test($cnt, $backend.($cnt == 46 ? ',-fstash' : ''),
+			$script, $expect, $keep_c, $keep_c_fail, $todo);
         }
         $cnt++;
     }
