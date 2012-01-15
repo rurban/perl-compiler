@@ -44,6 +44,8 @@
 	Fixed most 5.8.[45] problems by ignoring aelemfast SPECIAL pads.
 	Moved -fsave-sig-hash from -O3 to -O0. You need -fno-save-sig-hash
 	  to disable it.
+        Removed -fno-stash from -O2, -fno-stash is now the default. You
+	  need -fstash to add stashes. It caused not understood problems.
 	Fixed saving %SIG signals and more -2 SV magic (issue 92)
 	Adjusted IO logic, was erronously skipped (issue 59)
 	Defer saving INC to match internally skipped packages (issue 85,87)

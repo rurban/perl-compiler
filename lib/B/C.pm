@@ -5268,12 +5268,13 @@ sub compile {
   $B::C::destruct = 1;
   $B::C::stash    = 1;
   $B::C::save_sig = 1;
+  $B::C::stash    = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data -fno-stash)],
+    2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
@@ -5688,16 +5689,6 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O2>.
 
-=item B<-fno-stash>
-
-Omit dynamic creation of stashes, which are nested hashes of symbol tables, 
-names ending with ::, starting at %main::.
-These are rarely needed, sometimes for checking of existance of packages,
-which could be better done by checking %INC, and cost about 10% space and
-startup-time.
-
-Enabled with C<-O2>.
-
 =item B<-fconst-strings>
 
 Declares readonly strings as const. Enables C<-fcog>.
@@ -5743,6 +5734,16 @@ You can strip this table from memory with C<-fno-warnings>.
 
 Enabled with C<-O3>.
 
+=item B<-fstash>
+
+Add dynamic creation of stashes, which are nested hashes of symbol tables,
+names ending with C<::>, starting at C<%main::>.
+These are rarely needed, sometimes for checking of existance of packages,
+which could be better done by checking C<%INC>, and cost about 10% space and
+startup-time.
+
+C<-fno-stash> is the default.
+
 =item B<-fuse-script-name>
 
 Use the script name instead of the program name as C<$0>.
@@ -5782,7 +5783,7 @@ Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<-fno-stash>.
+Enable B<-O1> plus B<-fro-inc> and B<-fsave-data>.
 
 =item B<-O3>
 
