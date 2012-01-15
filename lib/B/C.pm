@@ -240,15 +240,18 @@ my $anonsub_index = 0;
 my $initsub_index = 0;
 
 # exclude all not B::C:: prefixed subs
-my %all_bc_subs = map {$_=>1} qw(B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
-B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next B::FAKEOP::ppaddr
-B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP::type
-B::GV::save B::GV::savecv B::HV::save B::IO::save B::IO::save_data B::IV::save B::LISTOP::save
-B::LOGOP::save B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save B::OP::_save_common
-B::OP::fake_ppaddr B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save
-B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save B::REGEXP::save
-B::RV::save B::SPECIAL::save B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save
-B::UV::save B::REGEXP::EXTFLAGS);
+my %all_bc_subs = map {$_=>1}
+  qw(B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
+     B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next
+     B::FAKEOP::ppaddr B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling
+     B::FAKEOP::targ B::FAKEOP::type B::GV::save B::GV::savecv B::HV::save
+     B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
+     B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
+     B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
+     B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save B::PVLV::save
+     B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
+     B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
+     B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
@@ -4735,6 +4738,7 @@ sub should_save {
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
+  # core static mro has exactly one member, ext/mro has more
   return if $package eq 'mro' and keys %{mro::} == 1; # core or ext?
   foreach my $u ( grep( $include_package{$_}, keys %include_package ) )
   {
@@ -4792,10 +4796,13 @@ sub should_save {
   # Now see if current package looks like an OO class. This is probably too strong.
   foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
+    # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
+    # The walker deserves a rewrite.
     if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';
+      # XXX Config and FileHandle should not just return. If unneeded skip em.
       return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
       return 0 if $package eq 'FileHandle' and $m eq 'new';
       warn "$package has method $m: saving package\n" if $debug{pkg};
@@ -4808,6 +4815,7 @@ sub should_save {
 
 sub inc_packname {
   my $packname = shift;
+  # See below at the reverse packname_inc: utf8 => utf8.pm + utf8_heavy.pl
   $packname =~ s/\:\:/\//g;
   $packname .= '.pm';
   return $packname;
@@ -5033,10 +5041,11 @@ sub save_context {
 }
 
 sub descend_marked_unused {
-  warn "descend_marked_unused ".join(" ",keys %include_package)."\n" if $debug{pkg};
+  warn "\%skip_package: ".join(" ",keys %skip_package)."\n" if $debug{pkg};
+  warn "descend_marked_unused: "
+    .join(" ",grep{!$skip_package{$_}} keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( keys %include_package ) {
-    # my $incpack = inc_packname($pack);
-    mark_package($pack); # if $INC{$incpack};
+    mark_package($pack) unless $skip_package{$pack};
   }
 }
 
@@ -5280,8 +5289,8 @@ sub compile {
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
-  mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
-	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O');
+  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
+	       B::Section B::Pseudoreg B::Shadow);
   #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
 
 OPTION:
