@@ -228,7 +228,7 @@ use B::C::Flags;
 use FileHandle;
 #use Carp;
 use strict;
-use Config;
+use Config ();
 
 my $hv_index      = 0;
 my $gv_index      = 0;
@@ -288,19 +288,19 @@ our %option_map = (
 
 my @xpvav_sizes;
 my ($max_string_len, $in_endav);
-my %static_core_pkg; #= map {$_ => 1} static_core_packages();
+my %static_core_pkg; # = map {$_ => 1} static_core_packages();
 
-my $MULTI = $Config{usemultiplicity};
-my $ITHREADS = $Config{useithreads};
-my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $MULTI = $Config::Config{usemultiplicity};
+my $ITHREADS = $Config::Config{useithreads};
+my $DEBUGGING = ($Config::Config{ccflags} =~ m/-DDEBUGGING/);
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
 my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
 # Thanks to Mattia Barbon for the C99 tip to init any union members
-my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
-my $MAD      = $Config{mad};
-my $MYMALLOC = $Config{usemymalloc} eq 'define';
+my $C99 = $Config::Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
+my $MAD      = $Config::Config{mad};
+my $MYMALLOC = $Config::Config{usemymalloc} eq 'define';
 my @threadsv_names;
 
 BEGIN {
@@ -310,7 +310,7 @@ BEGIN {
 # 5.15.3 workaround [perl #101336]
 sub XSLoader::load_file {
   #package DynaLoader;
-  use Config;
+  use Config ();
   my $module = shift or die "missing module name";
   my $modlibname = shift or die "missing module filepath";
 #print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n";
@@ -325,7 +325,7 @@ sub XSLoader::load_file {
   my $modpname = join('/',@modparts);
   my $c = @modparts;
   $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
-  my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config->{dlext};
+  my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config{dlext};
 
   # skip the .bs "bullshit" part, needed for some old solaris ages ago
 
@@ -670,9 +670,9 @@ sub save_hek {
 
 sub ivx ($) {
   my $ivx = shift;
-  my $ivdformat = $Config{ivdformat};
+  my $ivdformat = $Config::Config{ivdformat};
   $ivdformat =~ s/"//g; #" poor editor
-  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+  my $intmax = (1 << ($Config::Config{ivsize}*4-1)) - 1;
   # UL if > INT32_MAX = 2147483647
   my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
   if ($ivx < -$intmax) {
@@ -1713,7 +1713,7 @@ sub B::PVNV::save {
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   my $nvx = $sv->NVX;
   my $ivx = $sv->IVX; # here must be IVX!
-  my $uvuformat = $Config{uvuformat};
+  my $uvuformat = $Config::Config{uvuformat};
   $uvuformat =~ s/"//g;	#" poor editor
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
@@ -1723,7 +1723,7 @@ sub B::PVNV::save {
   } else {
     if ($PERL510 and $C99) {
       # U if > INT32_MAX = 2147483647
-      my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+      my $intmax = (1 << ($Config::Config{ivsize}*4-1)) - 1;
       $nvx = sprintf(".xpad_cop_seq.xlow = %${uvuformat}, .xpad_cop_seq.xhigh = %${uvuformat}%s",
                      $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH,
 		     $sv->COP_SEQ_RANGE_HIGH > $intmax  ? "U" : ""
@@ -1744,7 +1744,7 @@ sub B::PVNV::save {
     }
     unless ($C99 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
-      my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+      my $intmax = (1 << ($Config::Config{ivsize}*4-1)) - 1;
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %${uvuformat};",
                          $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
                  # pad.c: PAD_MAX = I32_MAX (4294967295)
@@ -2437,7 +2437,7 @@ sub B::CV::save {
       mark_package($stashname);
 
       # Without DynaLoader we must boot and link static
-      if ( !$Config{usedl} ) {
+      if ( !$Config::Config{usedl} ) {
         $xsub{$stashname} = 'Static';
       }
       # if it not isa('DynaLoader'), it should hopefully be XSLoaded
@@ -2453,7 +2453,7 @@ sub B::CV::save {
 	unless ($file) { # do the reverse as DynaLoader: soname => pm
           my ($laststash) = $stashname =~ /::([^:]+)$/;
           $laststash = $stashname unless $laststash;
-          my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
+          my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config::Config{dlext};
 	  for (@DynaLoader::dl_shared_objects) {
 	    if (m{^(.+/)$sofile$}) {
 	      $file = $1. $stashfile.".pm"; last;
@@ -3987,7 +3987,7 @@ EOT
     if ($last) {
       $decl->add("Static void* avchunks[$size];");
       $decl->add("Static size_t avsizes[$size] = ");
-      my $ptrsize = $Config{ptrsize};
+      my $ptrsize = $Config::Config{ptrsize};
       my $acc = "";
       for (0..$last) {
 	if ($xpvav_sizes[$_] > 0) {
@@ -4344,7 +4344,7 @@ EOT
           $path =~ s/::/\//g;
           $path .= "/" if $path; # can be empty
           $laststash = $stashname unless $laststash; # without ::
-          my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
+          my $sofile = "auto/" . $path . $laststash . '\.' . $Config::Config{dlext};
           warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
             if $verbose and $debug{pkg};
           for (@DynaLoader::dl_shared_objects) {
@@ -4630,7 +4630,7 @@ sub mark_package {
     {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
-      # $include_package{$package} = 1;
+      $include_package{$package} = 1;
       add_hashINC( $package );
       walksymtable( \%{$package.'::'}, "savecv",
 		    sub { should_save( $_[0] ); return 1 },
@@ -4700,7 +4700,7 @@ sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
   push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
   push @pkg, 'Tie::Hash::NamedCapture' if $] < 5.014; # dynamic since 5.14
-  push @pkg, 'DynaLoader'		if $Config{usedl};
+  push @pkg, 'DynaLoader'		if $Config::Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
   push @pkg, 'Cygwin'			if $^O eq 'cygwin';
@@ -4788,14 +4788,6 @@ sub should_save {
     delete_unsaved_hashINC($package) unless $include_package{$package};
     return $include_package{$package};
   }
-
-  # keep core packages
-  #my $qrpkg = "^".join("|",core_packages)."\$";
-  #if ($package =~ /$qrpkg/) {
-  #   warn "Keep core package $package\n" if $debug{pkg};
-      # XXX this does not seem right. better fix the XSUB stub generation for those
-      # return mark_package($package);
-  #}
 
   # Now see if current package looks like an OO class. This is probably too strong.
   foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
@@ -4953,7 +4945,7 @@ sub save_unused_subs {
 }
 
 sub inc_cleanup {
-  return if $inc_cleanup;
+  # return if $inc_cleanup;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $packname (keys %INC) {
@@ -4962,11 +4954,12 @@ sub inc_cleanup {
       delete $INC{$packname};
     } elsif ($packname eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $INC{$packname};
+      delete_unsaved_hashINC('utf8');
     } else {
       delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
     }
   }
-  $inc_cleanup++;
+  # $inc_cleanup++;
 }
 
 sub save_context {
@@ -5017,7 +5010,7 @@ sub save_context {
     local $B::C::const_strings;
     $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
-    $init->add('/* *INC */');
+    $init->add('/* %INC */');
     inc_cleanup();
     svref_2object( \*main::INC )->save('main::INC');
     $inc_hv          = svref_2object( \%main::INC )->save('main::INC');
@@ -5164,7 +5157,7 @@ sub save_main_rest {
   output_boilerplate();
 
   # add static modules like " Win32CORE"
-  foreach my $stashname ( split /\s+/, $Config{static_ext} ) {
+  foreach my $stashname ( split /\s+/, $Config::Config{static_ext} ) {
     next if $stashname =~ /^\s*$/;    # often a leading space
     $static_ext{$stashname}++;
     my $stashxsub = $stashname;
