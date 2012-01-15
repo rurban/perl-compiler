@@ -1,13 +1,13 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=90
 # Magic Tie::Named::Capture <=> *main::+ main::*- and Errno vs !
-use Test::More tests => 9;
 use strict;
 BEGIN {
   die "1..0 # Tie::Named::Capture requires Perl v5.10\n" if $] < 5.010;
   unshift @INC, 't';
   require "test.pl";
 }
+use Test::More tests => 9;
 
 my $i=0;
 sub test3 {
