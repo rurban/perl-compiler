@@ -4216,7 +4216,7 @@ EOT
     #if ($stashxsub =~ m/\/(\w+)\.\w+$/ {$stashxsub = $1;}
     # cygwin has Win32CORE in static_ext
     warn "bootstrapping static $stashname added to xs_init\n" if $verbose;
-    print "\tnewXS(\"${stashname}::bootstrap\", boot_$stashxsub, file);\n";
+    print "\tnewXS(\"$stashname\::bootstrap\", boot_$stashxsub, file);\n";
   }
   #print "#endif\n";
   print "#ifdef USE_DYNAMIC_LOADING\n";
@@ -4363,7 +4363,7 @@ EOT
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
 	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
-	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname::bootstrap\", TRUE));\n";
+	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", TRUE));\n";
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
 	}
@@ -4600,7 +4600,7 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
-  if ($package eq 'B::C') {
+  if ($package =~ /^B::C(C)?$/) {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
