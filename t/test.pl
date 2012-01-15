@@ -607,6 +607,9 @@ CCTESTS
         if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
             $todo{$cnt} = $skip{$cnt} = 1;
         }
+        if ($cnt == 46) {
+            $backend .= ',-fstash';
+        }
         if ($todo{$cnt} and $skip{$cnt} and
             # those are currently blocking the system
             # do not even run them at home if TODO+SKIP

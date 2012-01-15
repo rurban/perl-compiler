@@ -198,7 +198,7 @@ ok
 use Exporter; print q(ok) if %main::Exporter::
 >>>
 ok
-#### 46 Exporter:: store stashes? issue 79. skip >= -O2 ####
+#### 46 Exporter:: store stashes with -fstash. issue 79.  ####
 @ISA=(q(ok));print $ISA[0];
 >>>
 ok
