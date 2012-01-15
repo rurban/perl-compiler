@@ -22,7 +22,6 @@ prepare_c_tests();
 my @todo  = todo_tests_default("c_o3");
 my @skip = (
 	    $DEBUGGING ? () : 29, # issue 78 if not DEBUGGING > 5.15
-	    46 # stashes unsupported on purpose
 	    );
 
 run_c_tests("C,-O3", \@todo, \@skip);

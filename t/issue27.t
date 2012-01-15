@@ -19,11 +19,11 @@ TODO: {
   # 5.15: Undefined subroutine &utf8::SWASHNEW called at /usr/local/lib/perl5/5.15.3/constant.pm line 36
   # old: &Config::AUTOLOAD failed on Config::launcher at Config.pm line 72.
   is(`$X -Mblib blib/script/perlcc -occodei27 -r -e"require LWP::UserAgent;print q(ok);"`, 'ok',
-     "issue 27 - LWP::UserAgent");
+     "LWP::UserAgent");
 }
 # But works with -O2 just fine
 is(`$X -Mblib blib/script/perlcc -O2 -occodei27_o2 -r -e"require LWP::UserAgent;print q(ok);"`, 'ok',
-   "issue 27 - LWP::UserAgent");
+   "-O2 LWP::UserAgent");
 
 END {
   unlink qw(ccodei27_o2 ccodei27_o2.c);
