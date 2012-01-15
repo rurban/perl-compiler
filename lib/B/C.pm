@@ -4945,7 +4945,6 @@ sub save_unused_subs {
 }
 
 sub inc_cleanup {
-  # return if $inc_cleanup;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $packname (keys %INC) {
@@ -4959,7 +4958,10 @@ sub inc_cleanup {
       delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
     }
   }
-  # $inc_cleanup++;
+  if ($debug{pkg} and $verbose) {
+    warn "\%INC: ".join(" ",keys %INC)."\n";
+    warn "\%include_package: ".join(" ",grep{$include_package{$_}} keys %include_package)."\n";
+  }
 }
 
 sub save_context {
