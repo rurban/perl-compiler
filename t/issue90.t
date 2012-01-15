@@ -9,13 +9,15 @@ BEGIN {
   require "test.pl";
 }
 
+my $i=0;
 sub test3 {
   my $name = shift;
   my $script = shift;
   my $todo = 'TODO %+ setting regdata magic crashes' if $name eq 'ccode90i_c';
-  plctestok(1, $name, $script, $todo);
-  ctestok(2, "C", $name, $script, @_);
-  ctestok(3, "CC", $name, $script, @_);
+  plctestok($i*3+1, $name, $script, $todo);
+  ctestok($i*3+2, "C", $name, $script, 'C '.join(''.@_));
+  ctestok($i*3+3, "CC", $name, $script, 'CC '.join('',@_));
+  $i++;
 }
 
 test3('ccode90i_c', <<'EOF', '%+ includes Tie::Hash::NamedCapture');

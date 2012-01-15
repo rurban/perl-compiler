@@ -657,7 +657,7 @@ sub plctest {
 	    ok($ok);
 	}
     } else {
-	ok($ok, "Bytecode $base".$todo ? " $todo" : '');
+	ok($ok, "Bytecode $base".($todo ? " $todo" : ''));
     }
     if ($ok) {
         unlink("$name.plc", "$base.pl");
