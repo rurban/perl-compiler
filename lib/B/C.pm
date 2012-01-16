@@ -3944,7 +3944,14 @@ EOT
 sub output_boilerplate {
   # Store the sv_list index in sv_debug_file when debugging
   print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUGGING;
-  print <<'EOT';
+  if ($B::C::Flags::have_independent_comalloc) {
+    print <<'EOT1';
+#ifdef NEED_MALLOC_283
+# include "malloc-2.8.3.h"
+#endif
+EOT1
+  }
+  print <<'EOT2';
 #define PERL_CORE
 #include "EXTERN.h"
 #include "perl.h"
@@ -3977,7 +3984,7 @@ EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 
 static void xs_init (pTHX);
 static void dl_init (pTHX);
-EOT
+EOT2
   if ($] < 5.008008) {
     print "#define GvSVn(s) GvSV(s)\n";
   }
