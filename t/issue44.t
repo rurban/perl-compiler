@@ -15,5 +15,6 @@ print $a[0], "\n";
 EOF
 
 use B::CC;
-ctest(1, '^1$', "CC", "ccode44i", $script,
-      $B::CC::VERSION < 1.08 ? "fixed with B::CC 1.08 r601 (B-C-1.28)" : undef);
+ctest(1, '^1$', "CC", "ccode44i", $script, # fixed with B::CC 1.08 r601 (B-C-1.28)
+      ($B::CC::VERSION < 1.08 ? "TODO " : "")
+      . "pp_aelemfast not implemented for local vars OPf_SPECIAL, fixed with B-C-1.28");

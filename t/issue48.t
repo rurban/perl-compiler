@@ -14,8 +14,7 @@ print((my ($v) = f()) ? 1 : 2, "\n");
 EOF
 
 use B::CC;
-ctest(1, '^2', "CC", "ccode48i", $script,
-      $B::CC::VERSION < 1.08
-        ? "fixed with B::CC 1.08 r614 (B-C-1.28)"
-        : undef);
+ctest(1, '^2', "CC", "ccode48i", $script, # fixed with B::CC 1.08 r614
+      ($B::CC::VERSION < 1.08 ? "TODO " : "")
+      . "CC wrong truth value for array assignment in boolean context, fixed with B-C-1.28");
 

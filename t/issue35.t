@@ -27,10 +27,10 @@ sub test {
   if ($todo) {
   TODO: {
       local $TODO = $todo;
-      ok($ok);
+      ok($ok, 'CC same variable in different scope');
     }
   } else {
-    ok($ok);
+    ok($ok, 'CC same variable in different scope');
   }
   if ($ok) {
     unlink($name, "$name.c", "$name.pl", "$name.exe");

@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=38
-# ||= doesn't work with B::CC
+# $x = $x || 3 didn't work with B::CC
 use Test::More tests => 1;
 use strict;
 BEGIN {
@@ -17,5 +17,6 @@ EOF
 
 use B::CC;
 ctestok(1, "CC", "ccode38i", $script,
-        $B::CC::VERSION < 1.08 
-	  ? "B::CC issue 38 fixed with B-C-1.28 r559 (B::CC 1.08) by Heinz Knutzen" : undef);
+        $B::CC::VERSION < 1.08
+	  ? "TODO B::CC issue 38 fixed with B-C-1.28 r559 (B::CC 1.08) by Heinz Knutzen"
+	  : 'CC $x = $x || 3 should return the value not return true/false');

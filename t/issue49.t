@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=49
-# B:CC Can't "last" outside a loop block
+# B::CC Can't "last" outside a loop block
 use Test::More tests => 1;
 use strict;
 BEGIN {
@@ -27,7 +27,6 @@ while (1) {
 EOF
 
 use B::CC;
-ccompileok(1, "CC", "ccode49i", $script,
-      $B::CC::VERSION < 1.08
-        ? "fixed with B::CC 1.08 r625 (B-C-1.28)"
-        : undef);
+ccompileok(1, "CC", "ccode49i", $script, # fixed with B::CC 1.08 r625
+	   ($B::CC::VERSION < 1.08 ? "TODO " : "")
+	   . "CC Can't \"last\" outside a loop block, fixed with B-C-1.28");

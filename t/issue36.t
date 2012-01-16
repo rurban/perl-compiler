@@ -25,6 +25,7 @@ use B::CC;
 # The problem seems to be non deterministic.
 # Some runs of B::CC succeed, some fail and others give a warning.
 ccompileok($_, "CC", "ccode36i", $script,
-           $B::CC::VERSION < 1.08 
-	   ? "B::CC issue 36 fixed with B-C-1.28 r556 (B::CC 1.08) by Heinz Knutzen" : undef)
+           $B::CC::VERSION < 1.08
+	     ? "TODO B::CC issue 36 fixed with B-C-1.28 r556 (B::CC 1.08) by Heinz Knutzen"
+	     : "CC fails sometimes on some loops (fixed with B-C-1.28 r556)")
     for 1..5;

@@ -19,4 +19,4 @@ EOF
 
 use B::CC;
 ctest(1, '^1$', "CC", "ccode47i", $script,
-      $B::CC::VERSION < 1.08 ? "anonsub in while fixed with r618" : undef);
+      ($B::CC::VERSION < 1.08 ? "TODO ":"")."CC anonsub in while fixed with r618");
