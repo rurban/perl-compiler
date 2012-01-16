@@ -252,6 +252,7 @@ my %all_bc_subs = map {$_=>1}
      B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
+#
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
@@ -3832,7 +3833,7 @@ EOT
   # We introduce a SVPV as SV.
   # In core since 5.12
   if ($PERL510 and $] < 5.012) {
-    print <<'EOT';
+    print <<'EOT0';
 typedef struct svpv {
     void *	sv_any;
     U32		sv_refcnt;
@@ -3859,7 +3860,8 @@ typedef struct svpv {
 # endif
 #endif
 } SVPV;
-EOT
+EOT0
+
   }
   if ($PERL512) {
     print "typedef struct p5rx RE;\n";
@@ -3927,16 +3929,19 @@ Perl_newGP(pTHX_ GV *const gv)
 }
 #endif
 __EOGP
+
   }
+
   # Need fresh re-hash of strtab. share_hek does not allow hash = 0
   if ( $PERL510 ) {
-    print <<'EOT';
+    print <<'_EOT0';
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
 
 #undef share_hek
 #define share_hek(str,len,hash) my_share_hek( aTHX_ str,len,hash );
-EOT
+_EOT0
+
   }
   print "\n";
 }
@@ -3945,13 +3950,14 @@ sub output_boilerplate {
   # Store the sv_list index in sv_debug_file when debugging
   print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUGGING;
   if ($B::C::Flags::have_independent_comalloc) {
-    print <<'EOT1';
+    print <<'_EOT1';
 #ifdef NEED_MALLOC_283
 # include "malloc-2.8.3.h"
 #endif
-EOT1
+_EOT1
+
   }
-  print <<'EOT2';
+  print <<'_EOT2';
 #define PERL_CORE
 #include "EXTERN.h"
 #include "perl.h"
@@ -3984,7 +3990,8 @@ EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 
 static void xs_init (pTHX);
 static void dl_init (pTHX);
-EOT2
+_EOT2
+
   if ($] < 5.008008) {
     print "#define GvSVn(s) GvSV(s)\n";
   }
@@ -4019,14 +4026,15 @@ sub init_op_addr {
   my ( $op_type, $num ) = @_;
   my $op_list = $op_type . "_list";
 
-  $init->add( split /\n/, <<EOT );
+  $init->add( split /\n/, <<_EOT3 );
 {
     register int i;
     for( i = 0; i < ${num}; ++i ) {
         ${op_list}\[i].op_ppaddr = PL_ppaddr[PTR2IV(${op_list}\[i].op_ppaddr)];
     }
 }
-EOT
+_EOT3
+
 }
 
 sub init_op_warn {
@@ -4034,7 +4042,7 @@ sub init_op_warn {
   my $op_list = $op_type . "_list";
 
   # for reasons beyond imagination, MSVC5 considers pWARN_ALL non-const
-  $init->add( split /\n/, <<EOT );
+  $init->add( split /\n/, <<_EOT4 );
 {
     register int i;
     for( i = 0; i < ${num}; ++i )
@@ -4055,13 +4063,14 @@ sub init_op_warn {
         }
     }
 }
-EOT
+_EOT4
+
 }
 
 sub output_main_rest {
 
   if ( $PERL510 ) {
-    print <<'EOT';
+    print <<'_EOT5';
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
@@ -4078,12 +4087,13 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     }
 }
 
-EOT
+_EOT5
+
   }
 
   # -fno-destruct only >5.8
   if ( !$B::C::destruct and $^O ne 'MSWin32') {
-    print <<'EOT';
+    print <<'_EOT6';
 int fast_perl_destruct( PerlInterpreter *my_perl );
 
 #ifndef dVAR
@@ -4158,16 +4168,18 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
     PerlIO_destruct(aTHX);
     return 0;
 }
-EOT
+_EOT6
+
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
   elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow)) {
-    print <<'EOT';
+    print <<'_EOT7';
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
     /* set all our static pv and hek to &PL_sv_undef so perl_destruct() will not cry */
-EOT
+_EOT7
+
     for (0 .. $#static_free) {
       # set the sv/xpv to &PL_sv_undef, not the pv itself. 
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
@@ -4197,7 +4209,7 @@ EOT
     print "\n    return perl_destruct( my_perl );\n}\n\n";
   }
 
-  print <<'EOT';
+  print <<'_EOT8';
 
 /* yanked from perl.c */
 static void
@@ -4205,7 +4217,7 @@ xs_init(pTHX)
 {
 	char *file = __FILE__;
 	dTARG; dSP;
-EOT
+_EOT8
 
   #if ($staticxs) { #FIXME!
   #  print "\n#undef USE_DYNAMIC_LOADING
@@ -4260,13 +4272,14 @@ EOT
   print "\tFREETMPS;\n/* end XS bootstrapping code */\n";
   print "}\n";
 
-  print <<'EOT';
+  print <<'_EOT9';
 
 static void
 dl_init(pTHX)
 {
 	char *file = __FILE__;
-EOT
+_EOT9
+
   my ($dl, $xs);
   my @dl_modules = @DynaLoader::dl_modules;
   my @PERLMODS = split(/\,/, $ENV{'PERLMODS'}) if $ENV{'PERLMODS'}; # from cpanel
@@ -4401,7 +4414,7 @@ EOT
 
 sub output_main {
   if (!defined($module)) {
-    print <<'EOT';
+    print <<'_EOT10';
 
 /* if USE_IMPLICIT_SYS, we need a 'real' exit */
 #if defined(exit)
@@ -4431,31 +4444,32 @@ main(int argc, char **argv, char **env)
 	perl_construct( my_perl );
 	PL_perl_destruct_level = 0;
     }
-EOT
+_EOT10
+
     if ($ITHREADS and $] > 5.007) {
       # XXX init free elems!
       my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
-      print <<EOT;
+      print <<_EOT11;
 #ifdef USE_ITHREADS
     for( i = 0; i < $pad_len; ++i ) {
         av_push( PL_regex_padav, newSViv(0) );
     }
     PL_regex_pad = AvARRAY( PL_regex_padav );
 #endif
-EOT
+_EOT11
     }
 
     if (!$PERL510) {
-      print <<'EOT';
+      print <<'_EOT12';
 #if defined(CSH)
     if (!PL_cshlen)
       PL_cshlen = strlen(PL_cshname);
 #endif
-EOT
+_EOT12
     }
 
     # XXX With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
-    print <<'EOT';
+    print <<'_EOT13';
 #ifdef ALLOW_PERL_OPTIONS
 #define EXTRA_OPTIONS 3
 #else
@@ -4466,16 +4480,17 @@ EOT
     fakeargv[1] = "-e";
     fakeargv[2] = "";
     options_count = 3;
-EOT
+_EOT13
 
     # honour -T
     if (!$PERL56 and ${^TAINT}) {
-      print <<'EOT';
+      print <<'_EOT14';
     fakeargv[options_count] = "-T";
     ++options_count;
-EOT
+_EOT14
+
     }
-    print <<'EOT';
+    print <<'_EOT15';
 #ifndef ALLOW_PERL_OPTIONS
     fakeargv[options_count] = "--";
     ++options_count;
@@ -4490,7 +4505,7 @@ EOT
 	exit( exitstatus );
 
     TAINT;
-EOT
+_EOT15
 
     if ($use_perl_script_name) {
       my $dollar_0 = $0;
@@ -4504,6 +4519,7 @@ EOT
         SvSETMAGIC(tmpsv);
     }
 EOT
+
     }
     else {
       print <<"EOT";
@@ -4513,6 +4529,7 @@ EOT
         SvSETMAGIC(tmpsv);
     }
 EOT
+
     }
 
     print <<"EOT";
@@ -4539,6 +4556,7 @@ EOT
 
     exitstatus = perl_run( my_perl );
 EOT
+
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
@@ -4558,6 +4576,7 @@ EOT
     exit( exitstatus );
 }
 EOT
+
   } # module
 }
 
@@ -5218,6 +5237,7 @@ XS(boot_$cmodule)
     XSRETURN(1);
 }
 EOT
+
   } else {
     output_main();
   }
