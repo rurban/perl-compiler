@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 273bc6c 2012-01-15 | C walker: descend_marked_unused do not mark skipped packages M
+# B::C::VERSION = 1.37 2ce23a4 2012-01-16 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.014002-nt
 # path = /usr/local/bin/perl5.14.2-nt
 # platform = linux 64bit non-threaded

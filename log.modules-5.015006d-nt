@@ -1,40 +1,40 @@
-# B::C::VERSION = 1.37 8df38dc 2012-01-12 | fix syntax error in t/modules.t
+# B::C::VERSION = 1.37 2ce23a4 2012-01-16 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
 # platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
-pass Pod::Simple
+fail Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
-pass ExtUtils::Manifest
+fail ExtUtils::Manifest
 pass Pod::Text
 pass constant
 pass Test
-pass Data::Dumper
+fail Data::Dumper
 pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
-pass File::Path
+fail File::Path
 pass XSLoader
-pass MIME::Base64
+fail MIME::Base64
 pass Digest
-pass Digest::MD5
+fail Digest::MD5
 pass Sub::Uplevel
-pass URI
+fail URI
 pass HTML::Tagset
-pass HTML::Parser
+fail HTML::Parser
 pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
@@ -44,19 +44,19 @@ pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
-pass Params::Util
+fail Params::Util
 pass Task::Weaken
-pass Class::Accessor
+fail Class::Accessor
 pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
-pass Data::OptList
-pass Sub::Exporter
+fail Data::OptList
+fail Sub::Exporter
 pass Test::NoWarnings
 pass version
-pass Params::Validate
-pass Sub::Name
-pass Filter::Util::Call
+fail Params::Validate
+fail Sub::Name
+fail Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -64,46 +64,46 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+fail Devel::GlobalDestruction
+fail Class::MOP
+fail Moose
 pass Test::Deep
 pass Carp::Clan
-pass Module::Pluggable
-pass if(1) => "Sys::Hostname"
-pass Text::Balanced
-pass DBI
+fail Module::Pluggable
+fail if(1) => "Sys::Hostname"
+fail Text::Balanced
+fail DBI
 pass Time::Local
-pass IO::Scalar
+fail IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope
+fail B::Hooks::EndOfScope
 pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
+fail Digest::SHA1
+fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
-pass XML::SAX
-pass YAML
-pass MooseX::Types
+fail XML::SAX
+fail YAML
+fail MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
+fail DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
+fail Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015006d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# pass  65 / 100 (65.0%)
+# fail  35 / 100 (35.0%)
+# todo   0 /  35 (0.0%)
 # skip   0 / 100 (0.0% not installed)
