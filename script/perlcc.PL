@@ -458,7 +458,7 @@ sub compile_cstyle {
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
-    my @rpath = ();
+    my %rpath;
     if ($staticxs and open(XS, "<", $cfile.".lst")) {
         my $dylib;
         while (<XS>) {
@@ -475,26 +475,48 @@ sub compile_cstyle {
                     $dylib =~ s{^.*/auto/}{};
                     $dylib =~ s{/.+?(/[^/]+)}{$1};
                     $dylib =~ s{/}{_}g;
+                    $dylib = 'pcc'.$dylib;
                     if (-e $dylib) {
                         vprint 2, "Using static ".$dylib;
                     } else {
                         vprint 1, "Creating static ".$dylib;
-                        #my ($arch) = $Config{ldflags} =~ /-arch (\w+)/;
-                        #$arch = $arch ? " -arch_only $arch" : "";
-                        vprint 3, "libtool -static ".$l." -o ".$dylib;
-                        system("libtool","-static",$l,"-o",$dylib);
+                        my @cmd = ("libtool","-static",$l,"-o",$dylib);
+                        if (my ($arch) = $Config{ldflags} =~ /-arch (\w+)/) {
+                            # XXX multiarch not yet supported
+                            unless ($Config{ldflags} =~ /-arch (\w+) -arch/) {
+                                push @cmd, "-arch_only", $arch;
+                            }
+                        } else {
+                          if ($Config{ivsize}==8) {
+                              $arch = "x86_64";
+                          } elsif ($Config{uname} =~ /i386/) {
+                              $arch = "i386";
+                          } elsif ($Config{uname} =~ /ppc/) {
+                              $arch = "ppc";
+                          }
+                          push @cmd, "-arch_only",$arch if $arch;
+                        }
+                        vprint 3, join(" ", @cmd);
+                        system(@cmd);
+                        @cmd = ('ranlib',$dylib);
+                        vprint 3, join(" ", @cmd);
+                        system(@cmd);
                     }
-                    $l = "./".$dylib;
+                    $l = "-l".subtr($dylib,0,-2);
                 }
                 $extra_libs .= " ".$l;
-                push @rpath, dirname($l);
+                $rpath{dirname($l)}++ unless substr($l,0,5) eq '-lpcc';
             }
         }
         close XS;
         $extra_libs = " -L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
-        my ($rpath) = $Config{ccdlflags} =~ /^(.+rpath.)/;
-        $rpath =~ s/^-Wl,-E//; # already done via ccdlflags
-        $extra_libs .= " $rpath".join(" ".$rpath,@rpath) if $rpath and @rpath;
+        my ($rpath) = $Config{ccdlflags} =~ /^(.+rpath,)/;
+        ($rpath) = $Config{ccdlflags} =~ m{^(.+-R,)/} unless $rpath;
+        if (!$rpath and $Config{gccversion}) {
+            $rpath = '-Wl,-rpath,';
+        }
+        $rpath =~ s/^-Wl,-E// if $rpath;         # already done via ccdlflags
+        $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
         vprint 2, "staticxs: $stash $extra_libs";
     }
 

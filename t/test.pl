@@ -818,15 +818,15 @@ sub todo_tests_default {
         # push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
 	# fixed with 25a3c47
         # push @todo, (13)     if $what =~ /c_o[12]/ and $] >= 5.010 and !$ITHREADS;
-        push @todo, (44,45) if $] < 5.009;
-        push @todo, (44,50) if $what eq 'c' and $] > 5.013 and !$ITHREADS;
+        #push @todo, (44,45) if $] < 5.009;
+        push @todo, (50) if $what eq 'c' and $] > 5.013 and !$ITHREADS;
         #push @todo, (29,44,45) if $what =~ /c_o[234]/;
 	# @ISA issue 64
         push @todo, (15,50)  if $what eq 'c_o4';
         #push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
         #push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
-        push @todo, (11)    if $what =~ /c_o[1234]/
-	  and $] > 5.007 and $] < 5.009 and !$ITHREADS;
+        #push @todo, (11)    if $what =~ /c_o[1234]/
+	#  and $] > 5.007 and $] < 5.009 and !$ITHREADS;
 	push @todo, (10,12,19,25) if $what eq 'c_o4';
 	# issue 78 error at DynaLoader (require Carp + invalid version)
         push @todo, (29,44,45) if $] > 5.015 and $what =~ /c_o[34]/;
@@ -835,11 +835,11 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
-	push @todo, (21,30,50); # fixed 44 -nt
-	push @todo, (3)     if $] > 5.008 and $] <= 5.008005;
+	push @todo, (21,30,46,50); # fixed 44 -nt
+	#push @todo, (3)     if $] > 5.008 and $] <= 5.008005;
 	push @todo, (16)    if $] <= 5.008005;
-	push @todo, (15)    if $] < 5.012;
-	push @todo, (44)    if $ITHREADS or $] < 5.012;
+	#push @todo, (15)    if $] < 5.012;
+	#push @todo, (44)    if $ITHREADS or $] < 5.012;
         #push @todo, (44)   if !$ITHREADS and $] >= 5.012;
 	push @todo, (7)     if $] > 5.008 and $] < 5.008008; # only know 5.8.4 and 5.8.5
 	push @todo, (105)   if $] > 5.008005 and $] < 5.010;
@@ -847,7 +847,8 @@ sub todo_tests_default {
 	push @todo, (27)    if $] < 5.007 and $what eq 'cc_o2';
 	push @todo, (45)    if $] < 5.007;
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
-	push @todo, (11,45,103,105) if $] > 5.007 and $] < 5.009;
+	push @todo, (45,105) if $] > 5.007 and $] < 5.009;
+	push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
 	push @todo, (3)     if $] > 5.008 and $] < 5.008005 and $what =~ /^cc_o[12]/;
 	push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $] < 5.015);
@@ -864,7 +865,6 @@ sub todo_tests_default {
 	push @todo, (103)   if $] >= 5.012 and $ITHREADS;
 	#push @todo, (49)    if $] >= 5.013009 and $] < 5.015 and !$ITHREADS; # fixed with r1142
     }
-    push @todo, (46)   if $what =~ /^c_o[234]/ or $what =~ /^cc/; #to be skipped
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
     #push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;

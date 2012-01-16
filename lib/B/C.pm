@@ -2912,7 +2912,7 @@ sub B::GV::save {
   my $sym = objsym($gv);
   if ( defined($sym) ) {
     warn sprintf( "GV 0x%x already saved as $sym\n", $$gv ) if $debug{gv};
-    return $sym;
+    return $sym unless $_[1] eq 'main::INC' and $_[2];
   }
   else {
     my $ix = $gv_index++;
@@ -2975,7 +2975,7 @@ if (0) {
     return $sym;
   }
   # defer to the end because we remove compiler-internal and skipped stuff
-  if ($fullname eq 'main::INC') {
+  if ($fullname eq 'main::INC' and !$_[2]) {
     return $sym;
   }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
@@ -5022,7 +5022,7 @@ sub save_context {
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
     inc_cleanup();
-    svref_2object( \*main::INC )->save('main::INC');
+    svref_2object( \*main::INC )->save('main::INC', 'now');
     $inc_hv          = svref_2object( \%main::INC )->save('main::INC');
     $init->add('/* @INC */');
     $inc_av          = svref_2object( \@main::INC )->save('main::INC');
