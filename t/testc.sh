@@ -183,7 +183,7 @@ result[10]='133';
 # index: do fbm_compile or not
 tests[11]='$x="Cannot use"; print index $x, "Can"'
 result[11]='0';
-tests[12]='my $i_i=6; eval "print \$i_i\n"'
+tests[12]='my $i_i=6; eval "print \$i_i\n"; print ""'
 result[12]='6';
 tests[13]='BEGIN { %h=(1=>2,3=>4) } print $h{3}'
 result[13]='4';
