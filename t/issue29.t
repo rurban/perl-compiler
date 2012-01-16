@@ -41,7 +41,7 @@ TODO: {
   ok($result eq $expected, "'$result' ne '$expected'");
 }
 
-system "$runperl -Mblib -MO=Bytecode,-o$name.plc $name.pl";
+system "$runperl -Mblib -MO=-qq,Bytecode,-o$name.plc $name.pl";
 unless (-e "$name.plc") {
   print "ok 2 #skip perlcc -B failed.\n";
   exit;
