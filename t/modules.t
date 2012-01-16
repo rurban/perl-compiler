@@ -27,6 +27,7 @@
 
 use strict;
 use Test::More;
+use File::Temp;
 
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
@@ -36,11 +37,13 @@ BEGIN {
   # check whether linking with xs works at all. Try with and without --staticxs
   if ($^O eq 'darwin') { $staticxs = ''; goto BEGIN_END; }
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  my $result = `$X -Mblib blib/script/perlcc --staticxs -S -oa -e"use Data::Dumper;"`;
-  my $exe = $^O eq 'MSWin32' ? 'a.exe' : 'a';
+  my $tmp = File::Temp->new(TEMPLATE => 'pccXXXXX');
+  my $out = $tmp->filename;
+  my $result = `$X -Mblib blib/script/perlcc --staticxs -S -o$out -e"use Data::Dumper;"`;
+  my $exe = $^O eq 'MSWin32' ? "$out.exe" : $out;
   unless (-e $exe or -e 'a.out') {
-    my $result = `$X -Mblib blib/script/perlcc -S -oa -e"use Data::Dumper;"`;
-    unless (-e 'a' or -e 'a.out') {
+    my $result = `$X -Mblib blib/script/perlcc -S -o$out -e"use Data::Dumper;"`;
+    unless (-e $out or -e 'a.out') {
       plan skip_all => "perlcc cannot link XS module Data::Dumper. Most likely wrong ldopts.";
       exit;
     } else {
@@ -56,12 +59,6 @@ our $keep = '';
 our $log = 0;
 use modules;
 require "test.pl";
-
-# Possible binary files.
-my $binary_file = 'a.out';
-$binary_file = 'a' if $^O eq 'cygwin';
-$binary_file = 'a.exe' if $^O eq 'MSWin32';
-unlink $binary_file;
 
 my $opts_to_test = 1;
 my $do_test;
@@ -139,6 +136,16 @@ for my $module (@modules) {
   $module_count++;
   local($\, $,);   # guard against -l and other things that screw with
                    # print
+
+  # Possible binary files.
+  my $name = $module;
+  $name =~ s/::/_/g;
+  $name =~ s{(install|setup|update)}{substr($1,0,4)}ie;
+  my $out = $name;
+  my $out_c  = "$name.c";
+  my $out_pl = "$name.pl";
+  $out = "$out.exe" if $^O eq 'MSWin32';
+
  SKIP: {
     # if is a special module that can't be required like others
     unless ($modules{$module}) {
@@ -163,38 +170,38 @@ for my $module (@modules) {
       local $TODO = $s if $s;
       $todo++ if $TODO;
 
-      open F, ">", "mod.pl" or die;
+      open F, ">", $out_pl or die;
       print F "use $module;\nprint 'ok';\n" or die;
       close F or die;
 
-      my ($result, $out, $err);
+      my ($result, $stdout, $err);
       my $module_passed = 1;
       my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
       foreach my $opt (@opts) {
         $opt .= " $keep" if $keep;
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
-	  $runperl,"-Mblib","blib/script/perlcc",$opt,$staticxs,"-r","mod.pl";
-        my $cmd = "$runperl -Mblib blib/script/perlcc $opt $staticxs -r"; # only for the msg
+	  $runperl,"-Mblib","blib/script/perlcc",$opt,$staticxs,"-o$out","-r",$out_pl;
+        my $cmd = "$runperl -Mblib blib/script/perlcc $opt $staticxs -o$out -r"; # only for the msg
 	# Esp. darwin-2level has insane link times
-        ($result, $out, $err) = run_cmd(\@cmd, 720); # in secs.
-        ok(-s $binary_file,
+        ($result, $stdout, $err) = run_cmd(\@cmd, 720); # in secs.
+        ok(-s $out,
            "$module_count: use $module  generates non-zero binary")
           or $module_passed = 0;
         is($result, 0,  "$module_count: use $module $opt exits with 0")
           or $module_passed = 0;
 	$err =~ s/^Using .+blib\n//m if $] < 5.007;
-        like($out, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output");
-        unless ($out =~ /ok$/ms) { # crosscheck for a perlcc problem (XXX not needed anymore)
+        like($stdout, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output");
+        unless ($stdout =~ /ok$/ms) { # crosscheck for a perlcc problem (XXX not needed anymore)
           my ($r, $err1);
           $module_passed = 0;
-          @cmd = ($runperl,"-Mblib","-MO=C,-oa.out.c","mod.pl");
-          ($r, $out, $err1) = run_cmd(\@cmd, 60); # in secs
-          @cmd = ($runperl,"-Mblib","script/cc_harness","-o","a","a.out.c");
-          ($r, $out, $err1) = run_cmd(\@cmd, 360); # in secs
-          @cmd = ($^O eq 'MSWin32' ? "a.exe" : "./a");
-          ($r, $out, $err1) = run_cmd(\@cmd, 20); # in secs
-          if ($out =~ /ok$/ms) {
+          @cmd = ($runperl,"-Mblib","-MO=C,-o$out_c",$out_pl);
+          ($r, $stdout, $err1) = run_cmd(\@cmd, 60); # in secs
+          @cmd = ($runperl,"-Mblib","script/cc_harness","-o$out",$out_c);
+          ($r, $stdout, $err1) = run_cmd(\@cmd, 360); # in secs
+          @cmd = ($^O eq 'MSWin32' ? "$out" : "./$out");
+          ($r, $stdout, $err1) = run_cmd(\@cmd, 20); # in secs
+          if ($stdout =~ /ok$/ms) {
             $module_passed = 1;
             diag "crosscheck that only perlcc $staticxs failed. With -MO=C + cc_harness => ok";
           }
@@ -212,7 +219,7 @@ for my $module (@modules) {
           local $TODO = 'STDERR from compiler warnings in work' if $err;
           is($err, '', "$module_count: use $module  no error output compiling")
             && ($module_passed)
-              or log_err($module, $out, $err)
+              or log_err($module, $stdout, $err)
             }
       }
       if ($do_test) {
@@ -221,7 +228,9 @@ for my $module (@modules) {
           `$runperl -Mblib -It -MCPAN -Mmodules -e "CPAN::Shell->testcc("$module")"`;
         }
       }
-      unlink ("mod.pl", 'a', 'a.out', 'a.exe');
+      for ($out_pl, $out, $out_c, $out_c.".lst") {
+	unlink $_ if -f $_ ;
+      }
     }}
 }
 

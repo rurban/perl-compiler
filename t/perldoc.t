@@ -84,7 +84,7 @@ TODO: {
 SKIP: {
   skip "cannot compare times", 2 if $cc ne $ori;
   ok(faster($t3,$t2), "compiled -O3 not slower than -O0: $t3 <= $t2"); #6
-  ok(faster($t3,$t1),  "compiled -O3 faster than uncompiled: $t3 < $t1"); #7
+  ok(faster($t3,$t1), "compiled -O3 faster than uncompiled: $t3 < $t1"); #7
 }
 
 END {
