@@ -4527,6 +4527,7 @@ EOT
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, argv[0]);
         SvSETMAGIC(tmpsv);
+        CopFILE_set(&PL_compiling, argv[0]);
     }
 EOT
 
@@ -4545,8 +4546,21 @@ EOT
 
     TAINT_NOT;
 
-    /* PL_main_cv = PL_compcv; */
-    PL_compcv = 0;
+    #if 0
+      PL_compcv = 0;
+    #else
+      PL_compcv = MUTABLE_CV(newSV_type(SVt_PVCV));
+      CvUNIQUE_on(PL_compcv);
+      CvPADLIST(PL_compcv) = pad_new(0);
+      boot_core_PerlIO();
+      boot_core_UNIVERSAL();
+     #if PERL_VERSION > 9
+      boot_core_mro();
+     #endif
+     #if PERL_VERSION < 11
+      boot_core_xsutils(); /* attributes::bootstrap */
+     #endif
+    #endif
 
     /* our special compiled init */
     exitstatus = perl_init(aTHX);
@@ -4765,7 +4779,14 @@ sub should_save {
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
   # core static mro has exactly one member, ext/mro has more
-  return if $package eq 'mro' and keys %{mro::} == 1; # core or ext?
+  if ($package eq 'mro') {
+    if (keys %{mro::} == 1) { # core or ext?
+      warn "ext/mro not loaded - skip\n" if $debug{pkg};
+      return;
+    } else {
+      warn "ext/mro already loaded\n" if $debug{pkg};
+    }
+  }
   foreach my $u ( grep( $include_package{$_}, keys %include_package ) )
   {
     # If this package is a prefix to something we are saving, traverse it
