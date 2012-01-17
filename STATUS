@@ -4,27 +4,26 @@ Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
 fails 50% but in mine is a blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
-C is stable, minor bugs left, v_strings in restricted hashes, loose QR Regexp, ...
+C is a bit unstable, minor bugs left.
 
-CC is unstable and slow, work in progress.
+CC is very unstable and slow, work in progress.
 
 C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
-Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.15 compatibility added.
+Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.16 compatibility added.
 
 Open Problems for B::C:
-  test 46 (easy: add aux :: GVs)
-  test 50 (issue 64 - limitation: no ISA of empty packages)
+  shared_hek cleanup, see google issues
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
 TEST STATUS
 -----------
-Tested on cygwin1.7, centos5, debian4, debian5 64bit, freebsd7, freebsd8, 
-solaris10 intel sunpro, openbsd38
-Not so regurarily on centos4, strawberry-5.10.1, strawberry-5.12.2, activeperl-5.10.1
+Tested on cygwin1.7, centos4, centos5.6, centos6, 
+debian5, freebsd7, solaris10 intel sunpro, openbsd49
+Not so regurarily on strawberry-5.10.1, strawberry-5.12.2, activeperl-5.10.1
 
 List of failed tests.
 
@@ -69,55 +68,47 @@ t/c             15,41-43,50
 t/c_o1,2       +44,45
 t/cc            15,21,30,35,41-46,50,103-105
 
-5.8.0
-redhat perl http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576363.html:
-byterun.c:678: duplicate case value
-byterun.c:669: previously used here
-
-5.8.3 + 5.8.5 threaded 1.09
-cpantesters http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576377.html
-http://www.nntp.perl.org/group/perl.cpan.testers/2009/12/msg6576274.html
-c 	 	7
-c_o1-2:  	7,11
-cc: 	 	3,7,29
-cc_o1-2: 	3,7 
-
-freebsd 5.10.1  c+cc fails on 28 generally, cc passed 12 
-freebsd 5.8.9:  c_o1-2: 11 (fixed with 1.09?)
-
-AP 5.8 MSVC6:
-t/cc*   12 (similar to 5.10 nt?) (skipped)
-t/o     5,9 (skipped)
-
-5.8.9: (5.8.8, 5.8.9 + 5.8.8-nt)
+5.8.[45]:
 t/bytecode      -
-t/c             41-43
-t/c_o1,2       +11
-t/cc           +11,21,30,50,103,105
+t/c             7,42-43
+t/c_o1,2,3      7,15,27,42-45
+t/cc            3,7,15,21,27,29,30,42-46,50,103,117
+
+5.8.9:
+t/bytecode      -
+t/c             42-43
+t/c_o1,2,3      15,27,41-45
+t/cc            15,21,27,30,41-45,50,103,105
 
 5.10.1:
-t/bytecode 	27
-t/c 		41-43
-t/c_o1,2          -"-
-t/cc 		14,21,30,35,41-43,50,103,105
+t/bytecode 	27,42,43
+t/c 		33,41-43
+t/c_o1          5,8,15,20,25,27,33,41-45,49
+t/c_o2          5,8,15,18,20,25,27,33,41-45,49
+t/c_o3 		15,27,33,41-45
+t/cc 		14,15,21,25,27,30,33,35,41-45,50,103,105
 
-5.12.3:
-t/bytecode 	21,32
-t/c 		21,41-43
-t/c_o1,2          -"- 
-t/cc 		14,21,30,41-43,50,103,105
+5.12.4:
+t/bytecode 	32,46
+t/c 		41-43
+t/c_o1          5,15,20,27,29,41-45,49
+t/c_o2          +2
+t/c_o3 		15,27,29,41-45,49
+t/cc 		3,4,14,15,21,25,27,29,30,41-46,50,103
 
 5.14.2:
-t/bytecode 	27
-t/c 		41-43
-t/c_o1,2          -"-
-t/cc 		14,15,21,29,30,41-43,50,103,105
+t/bytecode 	27,46
+t/c 		46
+t/c_o1,2        5,8,11,15,25,27,29,33,41-45,49
+t/c_o3 		15,27,29,41-45,49
+t/cc 		14,15,21,25,27,29,30,41-45,49,50,103
 
-5.15.3:
-t/bytecode 	27
-t/c 		15,41-43
-t/c_o1,2          -"-
-t/cc 		14,15,21,30,41-43,50,103,105
+5.15.6:
+t/bytecode 	27,46
+t/c 		-
+t/c_o1,2        5,8,11,15,25,27,29,33,41-45,49
+t/c_o3 		15,27,29,41-45,49
+t/cc 		14,15,21,25,27,29,30,41-45,49,50,103
 
 
 CPAN Modules

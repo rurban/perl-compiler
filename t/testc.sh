@@ -76,6 +76,9 @@ function runopt {
     if [ $optim -lt 5 ]; then CMD=$OCMDO1
     else CMD=$OCMD
     fi
+    if [ "$o" = "ccode46" -o "$o" = "cccode46" ]; then
+	CMD="$CMD-fstash,"
+    fi
     vcmd ${CMD}-o${o}${suff}.c $o.pl
     test -z $CPP || vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
     vcmd $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}

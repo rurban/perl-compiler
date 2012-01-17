@@ -782,52 +782,27 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = (41..43); # 8,14-16 fail on 5.00505 (max 20 then)
-    push @todo, (103)  if $] < 5.007 or $] >= 5.010;
-    #push @todo, (29)   if $] >= 5.010 and !$DEBUGGING;
-    #push @todo, (29)   if $] >= 5.013006;
-    #push @todo, (15);
+    my @todo  = ();
     # split->pushre->pmreplroot as int. bug in B walker
-    push @todo, (7)   if $] > 5.008 and $] < 5.008008 and $ITHREADS;
-    # 5.15 empty HV fixed with r1124
-    #push @todo, (3,4,36) if $] >= 5.015; # Assert array: Perl_hfree_next_entry hv.c:1716
-    #push @todo, (16,39,44,45) if $] >= 5.015002 and !$ENV{DL_NOWARN};  # DynaLoader 5.15.2 issue
-    # 15 passes on cygwin XP, but fails on cygwin Win7
-    push @todo, (15) if $] > 5.013 or $] < 5.007;
+    push @todo, (7)   if $] > 5.008 and $] < 5.008008; # and $ITHREADS;
+    push @todo, (15)  if $] < 5.007 or $what =~ /c_o[1234]/;
     if ($what =~ /^c(|_o[1-4])$/) {
-        # 14+23 fixed with 1.04_29, for 5.10 with 1.04_31
-        # 15+28 fixed with 1.04_34
-        # 5.6.2 CORE: 8,15,16,22. 16 fixed with 1.04_24, 8 with 1.04_25
-        # 5.8.8 CORE: 11,14,15,20,23 / non-threaded: 5,7-12,14-20,22-23,25
-        # @todo = (15,35,39,44,46)    if $] < 5.010;
-        # fixed with 1.30
-        # push @todo, (45)   if $] > 5.007;
-        # fixed with 1.30
-        # push @todo, (39)   if $] > 5.007 and $] < 5.009;
-        # fixed with 1.30
-        # push @todo, (21)   if $] > 5.011 and $] < 5.013;
-        #push @todo, (29)    if $] > 5.009 and $] < 5.012;
-        push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
-        # push @todo, (28,48) if $what =~ /c_o[34]/  and $] < 5.014;
-        push @todo, (21)    if $] > 5.011 and $] <= 5.013006;
-        #push @todo, (25)   if $] =~ /5\.012/ and $DEBUGGING and $ITHREADS; # linux only
-        # c.t fixed with 1.30
-        # push @todo, (16,44,45) if $] > 5.013 and !$DEBUGGING and !$ITHREADS;
-        # push @todo, (10,12) if $what =~ /c_o[234]/ and $] >= 5.010 and $] < 5.015;
-	# fixed with 1.35
-        # push @todo, (11)    if $what =~ /c_o[1234]/ and $] < 5.010;
-	# fixed with 25a3c47
-        # push @todo, (13)     if $what =~ /c_o[12]/ and $] >= 5.010 and !$ITHREADS;
-        #push @todo, (44,45) if $] < 5.009;
-        push @todo, (50) if $what eq 'c' and $] > 5.013 and !$ITHREADS;
-        #push @todo, (29,44,45) if $what =~ /c_o[234]/;
+        push @todo, (42,43,44)    if $what =~ /c_o[1234]/;
 	# @ISA issue 64
-        push @todo, (15,50)  if $what eq 'c_o4';
-        #push @todo, (34)    if $what =~ /c_o[34]/  and $] > 5.011 and $] <= 5.013;
-        #push @todo, (19)    if $what eq 'c_o2' and $ITHREADS;
-        #push @todo, (11)    if $what =~ /c_o[1234]/
-	#  and $] > 5.007 and $] < 5.009 and !$ITHREADS;
-	push @todo, (10,12,19,25) if $what eq 'c_o4';
+        push @todo, (10,12,19,25,50)  if $what eq 'c_o4';
+
+        push @todo, (15,27,41,45) if $] < 5.010 and $what =~ /c_o[1234]/;
+        push @todo, (5,8,20,25,27,33,41,45,49) if $] >= 5.010 and $] < 5.012 and $what =~ /c_o[12]/;
+        push @todo, (27,33,41,45)              if $] >= 5.010 and $what eq 'c_o3';
+        push @todo, (27,33,41,45,50)           if $] >= 5.010 and $what eq 'c_o4';
+        push @todo, (5,21,25,27,29,41,45,49)   if $] >= 5.012 and $what =~ /c_o[12]/;
+        push @todo, (29,49)                    if $] >= 5.012 and $what eq 'c_o3';
+        push @todo, (46)        if $] >= 5.014 and $] < 5.015 and $what eq 'c';
+        push @todo, (5,8,11,33) if $] >= 5.014 and $what =~ /c_o[12]/;
+        push @todo, (2)         if $what eq 'c_o2' and $] > 5.011 and $] < 5.013;
+
+        push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
+        # push @todo, (50) if $] > 5.013  and $what eq 'c' and !$ITHREADS;
 	# issue 78 error at DynaLoader (require Carp + invalid version)
         push @todo, (29,44,45) if $] > 5.015 and $what =~ /c_o[34]/;
 	# DynaLoader::dl_load_file()
@@ -835,7 +810,10 @@ sub todo_tests_default {
     } elsif ($what =~ /^cc/) {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
-	push @todo, (21,30,46,50); # fixed 44 -nt
+	#15,21,27,30,41-45,50,103,105
+	push @todo, (15,21,27,30,41..45,50,103);
+	push @todo, (14,25,29,49) if $] >= 5.012;
+	push @todo, (3,4,46) if $] >= 5.012 and $] < 5.014;
 	#push @todo, (3)     if $] > 5.008 and $] <= 5.008005;
 	push @todo, (16)    if $] <= 5.008005;
 	#push @todo, (15)    if $] < 5.012;
@@ -844,11 +822,9 @@ sub todo_tests_default {
 	push @todo, (7)     if $] > 5.008 and $] < 5.008008; # only know 5.8.4 and 5.8.5
 	push @todo, (105)   if $] > 5.008005 and $] < 5.010;
 	push @todo, (10,16) if $what eq 'cc_o2';
-	push @todo, (27)    if $] < 5.007 and $what eq 'cc_o2';
-	push @todo, (45)    if $] < 5.007;
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
-	push @todo, (45,105) if $] > 5.007 and $] < 5.009;
-	push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
+	push @todo, (105)   if $] > 5.007 and $] < 5.009;
+	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
 	push @todo, (3)     if $] > 5.008 and $] < 5.008005 and $what =~ /^cc_o[12]/;
 	push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $] < 5.015);
@@ -858,8 +834,8 @@ sub todo_tests_default {
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	#push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
-	push @todo, (27)    if $] < 5.010 and $what eq 'cc_o2';
-	push @todo, (105)   if $] >= 5.010;
+	push @todo, (27)    if $] < 5.010;
+	push @todo, (49,105)   if $] >= 5.010;
 	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
 	push @todo, (103)   if $] >= 5.012 and $ITHREADS;

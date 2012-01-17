@@ -3,13 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.37	2012-01-xx rurban
+1.37	2012-01-19 rurban
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	Fixed hashes and share_hek, when mixed compiled and load-time for >5.8.
 
 	Stability: This release is the first which passes all module tests and passes
 	most tests and is used in production with -staticxs -O3, but further logical
-	improvements failed for no apparent reasons, so it's still considered unstable.
+	improvements (deferred %INC cleanup) failed for no apparent reasons, so it's
+	still considered unstable.
 
 	* C: save stashes optionally with -fstash, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not
@@ -52,7 +53,6 @@
 	  need -fstash to add stashes. It caused not understood problems.
 	Fixed saving %SIG signals and more -2 SV magic (issue 92)
 	Adjusted IO logic, was erronously skipped (issue 59)
-	XXX: Defer saving INC to match internally skipped packages (issue 85,87)
 	inc_cleanup: save only those %INC keys which are stored.
 	Save ext/mro only if the ext mro methods were loaded.
 	Force loading of -u arguments to avoid runtime loading.

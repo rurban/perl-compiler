@@ -4549,20 +4549,22 @@ EOT
 
     TAINT_NOT;
 
-    #if 0
+    #if PERL_VERSION < 10
       PL_compcv = 0;
     #else
       PL_compcv = MUTABLE_CV(newSV_type(SVt_PVCV));
       CvUNIQUE_on(PL_compcv);
       CvPADLIST(PL_compcv) = pad_new(0);
+    #endif
+    #if PERL_VERSION > 7
       boot_core_PerlIO();
-      boot_core_UNIVERSAL();
-     #if PERL_VERSION > 9
+    #endif
+    boot_core_UNIVERSAL();
+    #if PERL_VERSION > 9
       boot_core_mro();
-     #endif
-     #if PERL_VERSION < 11
+    #endif
+    #if PERL_VERSION < 11
       boot_core_xsutils(); /* attributes::bootstrap */
-     #endif
     #endif
 
     /* our special compiled init */
