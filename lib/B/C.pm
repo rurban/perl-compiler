@@ -4689,7 +4689,7 @@ sub mark_package {
       $include_package{$package} = 1;
     }
     my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
-    if ( @isa or defined @{ $package . '::ISA' } ) {
+    if ( @isa ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
       foreach my $isa ( @isa ) {

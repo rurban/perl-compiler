@@ -794,11 +794,12 @@ sub todo_tests_default {
         push @todo, (15,27,41,45) if $] < 5.010 and $what =~ /c_o[1234]/;
         push @todo, (5,8,20,25,27,33,41,45,49) if $] >= 5.010 and $] < 5.012 and $what =~ /c_o[12]/;
         push @todo, (27,33,41,45)              if $] >= 5.010 and $what eq 'c_o3';
-        push @todo, (27,33,41,45,50)           if $] >= 5.010 and $what eq 'c_o4';
+        push @todo, (50)                       if $] >= 5.010 and $what =~ /c_o[34]/;
         push @todo, (5,21,25,27,29,41,45,49)   if $] >= 5.012 and $what =~ /c_o[12]/;
-        push @todo, (29,49)                    if $] >= 5.012 and $what eq 'c_o3';
+        push @todo, (29,49)                    if $] >= 5.012 and $what =~ /c_o[34]/;
+        push @todo, (41..43)    if $DEBUGGING;
         push @todo, (46)        if $] >= 5.014 and $] < 5.015 and $what eq 'c';
-        push @todo, (5,8,11,33) if $] >= 5.014 and $what =~ /c_o[12]/;
+        push @todo, (5,8,11,33,34) if $] >= 5.014 and $what =~ /c_o[12]/;
         push @todo, (2)         if $what eq 'c_o2' and $] > 5.011 and $] < 5.013;
 
         push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
