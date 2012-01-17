@@ -2913,7 +2913,7 @@ sub B::GV::save {
   my $sym = objsym($gv);
   if ( defined($sym) ) {
     warn sprintf( "GV 0x%x already saved as $sym\n", $$gv ) if $debug{gv};
-    return $sym unless $_[1] eq 'main::INC' and $_[2];
+    return $sym; # unless $_[1] eq 'main::INC' and $_[2];
   }
   else {
     my $ix = $gv_index++;
@@ -2976,9 +2976,9 @@ if (0) {
     return $sym;
   }
   # defer to the end because we remove compiler-internal and skipped stuff
-  if ($fullname eq 'main::INC' and !$_[2]) {
-    return $sym;
-  }
+  #if ($fullname eq 'main::INC' and !$_[2]) {
+  #  return $sym;
+  #}
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
@@ -3109,6 +3109,9 @@ if (0) {
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
+      if ($fullname eq 'main::INC') {
+	inc_cleanup();
+      }
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
@@ -5000,6 +5003,7 @@ sub save_unused_subs {
 }
 
 sub inc_cleanup {
+  return if $inc_cleanup;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $packname (keys %INC) {
@@ -5017,6 +5021,7 @@ sub inc_cleanup {
     warn "\%INC: ".join(" ",keys %INC)."\n";
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} keys %include_package)."\n";
   }
+  $inc_cleanup++;
 }
 
 sub save_context {
@@ -5069,10 +5074,10 @@ sub save_context {
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
     inc_cleanup();
-    svref_2object( \*main::INC )->save('main::INC', 'now');
-    $inc_hv          = svref_2object( \%main::INC )->save('main::INC');
+    # svref_2object( \*main::INC )->save('main::INC', 'now');
+    $inc_hv          = svref_2object( \%INC )->save('main::INC');
     $init->add('/* @INC */');
-    $inc_av          = svref_2object( \@main::INC )->save('main::INC');
+    $inc_av          = svref_2object( \@INC )->save('main::INC');
   }
   my $amagic_generate = amagic_generation;
   warn "amagic_generation = $amagic_generate\n" if $verbose;

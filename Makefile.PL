@@ -145,7 +145,7 @@ int main() {
 ";
     my $testc = $testori;
     if (try_compile($testc)) {
-	warn "independent_comalloc() as-is activated\n";
+	warn "-fav-init2 available: independent_comalloc() as-is activated\n";
 	return 1;
     }
 
@@ -154,7 +154,7 @@ int main() {
         $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
         if (try_compile($testc, $lib)) {
             $extra_libs = " $lib";
-	    warn "independent_comalloc() with $lib activated\n";
+	    warn "-fav-init2 available: independent_comalloc() with $lib activated\n";
             return 1;
         }
     }
@@ -165,7 +165,7 @@ int main() {
         if (try_compile($testc, $lib)) {
             $extra_libs = " $lib";
             $use_declare_independent_comalloc = 1;
-	    warn "dlindependent_comalloc() with $lib activated\n";
+	    warn "-fav-init2 available: dlindependent_comalloc() with $lib activated\n";
             return 1;
         }
     }
@@ -177,11 +177,11 @@ int main() {
         if (try_compile($testc, $lib)) {
             $extra_cflags = " -DNEED_MALLOC_283";
             $extra_libs = " $lib";
-	    warn "independent_comalloc() with -DNEED_MALLOC_283 $lib activated\n";
+	    warn "-fav-init2 available: independent_comalloc() with -DNEED_MALLOC_283 $lib activated\n";
             return 1;
         }
     }
-    warn "independent_comalloc() not detected.\n";
+    warn "-fav-init2 not available: independent_comalloc() not detected.\n";
     warn "  Install with $^X Makefile.PL INSTALL_PTMALLOC3 on POSIX systems\n";
     return 0;
 }
