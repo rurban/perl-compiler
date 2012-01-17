@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 2ce23a4 2012-01-16 | Merge branch 'master' of github.com:rurban/perl-compiler
+# B::C::VERSION = 1.37 76ad25b 2012-01-16 | perldoc.t: add Pod::Perldoc::BaseTo to include all Pod::Perldoc::ToMan modules M
 # perlversion = 5.014002-nt
 # path = /usr/local/bin/perl5.14.2-nt
 # platform = linux 64bit non-threaded

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 2ce23a4 2012-01-16 | Merge branch 'master' of github.com:rurban/perl-compiler
+# B::C::VERSION = 1.37 76ad25b 2012-01-16 | perldoc.t: add Pod::Perldoc::BaseTo to include all Pod::Perldoc::ToMan modules M
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
 # platform = linux 64bit non-threaded debug
@@ -8,24 +8,24 @@ pass Text::Wrap
 fail Test::Harness
 pass Pod::Escapes
 fail Pod::Simple
-pass IO
+fail IO
 pass Scalar::Util
-pass Getopt::Long
+fail Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
-pass Test::Simple
+fail ExtUtils::MakeMaker
+fail Test::Simple
 fail ExtUtils::Manifest
-pass Pod::Text
+fail Pod::Text
 pass constant
-pass Test
+fail Test
 fail Data::Dumper
 pass File::Spec
-pass File::Temp
-pass ExtUtils::Install
+fail File::Temp
+fail ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 fail File::Path
 pass XSLoader
 fail MIME::Base64
@@ -37,11 +37,11 @@ pass HTML::Tagset
 fail HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-pass LWP
-pass Storable
+fail Compress::Raw::Zlib
+fail Compress::Raw::Bzip2
+fail IO::Compress::Base
+fail LWP
+fail Storable
 pass base
 pass List::MoreUtils
 fail Params::Util
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 fail Data::OptList
 fail Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 fail Params::Validate
 fail Sub::Name
@@ -67,8 +67,8 @@ pass Try::Tiny
 fail Devel::GlobalDestruction
 fail Class::MOP
 fail Moose
-pass Test::Deep
-pass Carp::Clan
+fail Test::Deep
+fail Carp::Clan
 fail Module::Pluggable
 fail if(1) => "Sys::Hostname"
 fail Text::Balanced
@@ -79,13 +79,13 @@ pass Sub::Identify
 pass Class::ISA
 fail FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
-pass Encode
+fail Encode
 pass Variable::Magic
-pass CGI
+fail CGI
 fail B::Hooks::EndOfScope
-pass Test::Pod
+fail Test::Pod
 fail Digest::SHA1
 fail namespace::clean
 pass Class::Inspector
@@ -99,11 +99,11 @@ fail DateTime::TimeZone
 pass DateTime::Locale
 fail DateTime
 pass IO::String
-pass AppConfig
+fail AppConfig
 pass UNIVERSAL::require
 fail Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015006d-nt
-# pass  65 / 100 (65.0%)
-# fail  35 / 100 (35.0%)
-# todo   0 /  35 (0.0%)
+# pass  43 / 100 (43.0%)
+# fail  57 / 100 (57.0%)
+# todo   0 /  57 (0.0%)
 # skip   0 / 100 (0.0% not installed)
