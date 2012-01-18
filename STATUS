@@ -4,7 +4,8 @@ Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
 fails 50% but in mine is a blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
-C is a bit unstable, minor bugs left.
+C is used in production, but a bit unstable, minor bugs left
+and improvements are not always improvements.
 
 CC is very unstable and slow, work in progress.
 
@@ -15,7 +16,9 @@ new CPAN compiler and the CORE compiler. See below.
 Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.16 compatibility added.
 
 Open Problems for B::C:
-  shared_hek cleanup, see google issues
+  shared_hek cleanup,
+  %INC mess (seen with run-time require),
+  see google issues
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
 
@@ -130,17 +133,16 @@ generally: fail 1%
 
 Run-time tests not yet fully done
 
-5.15 status
+5.16 status
 -----------
-new XSLoader:load_file not fully stable yet 
-  (runtime load of Carp leads to issue78)
+new XSLoader:load_file
+hang at hfree_next_entry issue78 (runtime load of Carp)
 
 5.10, 5.12, 5.14 status
 -----------------------
 TODO for B::C
-  new __DATA__ fixes not fully stable
   tests 21,41-43: B destruction,46,50
-  Encode static const destruction in PAD issue 71
+  Encode qr-copy issue 71
   restricted hashes in 5.10.0
   r-magic (e.g. Template::Stash 5.10.0 only)
   check t/testcore and testm.sh -t
@@ -155,6 +157,20 @@ DONE
 ----
 fixed with 1.37:
   fixed wrong test 46, test for Exporter STASH in *main:: STASH
+  copy-on-grow with LEN=0 and FAKE clash with share_hek
+  share_hek re-implemented
+  init of READONLY hash keys
+  re-hash everything at startup (oCERT-2011-003)
+  find UNIVERSAL methods
+  hv_clear_placeholders
+  %+, %-, %!
+  %SIG
+  magic->PTR when SV (>5.6)
+  attributes::reftype
+  inc_cleanup (partially)
+  CV prototypes (>5.10)
+  ignore aelemfast SPECIAL pads (5.8.[45])
+  strip version object overload from XS packages (i91)
 
 fixed with 1.36:
   5.15 XSLoader and hash init
