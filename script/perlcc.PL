@@ -877,10 +877,9 @@ sub interruptrun {
     local(*FD);
     my $pid = open(FD, "$command |");
     my $text;
-    local($SIG{HUP}, $SIG{INT});
-    for (qw(HUP INT)) {
-	$SIG{$_} = sub { kill 9, $pid; exit } if exists $SIG{$_};
-    }
+
+    local($SIG{HUP}, $SIG{INT}) if exists $SIG{HUP};
+    $SIG{HUP} = $SIG{INT} = sub { kill 9, $pid; exit } if exists $SIG{HUP};
 
     my $needalarm =
           ($ENV{PERLCC_TIMEOUT} &&
