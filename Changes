@@ -4,14 +4,14 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.37	2012-01-19 rurban
-	Enabled copy-on-grow strings >= 5.10
+	Enabled copy-on-grow strings >= 5.10.
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	Fixed hashes and share_hek, when mixed compiled and load-time for >5.8.
 
-	Stability: This release is the first which passes all module tests and passes
-	most tests and is used in production with -staticxs -O3, but copy-on-grow and
-	further logical	improvements (deferred %INC cleanup) failed for no apparent
-	reasons, so it's still considered unstable.
+	Stability: This release is the first which passes most tests, all
+	module tests and is used in production with --staticxs -O3, but
+	copy-on-grow and further logical improvements (deferred
+	%INC cleanup) fail so far, so it's still considered unstable.
 
 	* C: save stashes optionally with -fstash, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not
@@ -27,8 +27,8 @@
 	Re-implemented sharepvn via share_hek() and SvLEN=0 (issue 71),
 	  Special FAKE+READONLY handling: LEN = 0 if pv_copy_on_grow or shared_hek.
 	  Fixed !SvIsCOW_shared_hash + FAKE+READONLY conflict (test 13, issue 82).
-	  Shared COW hashkeys which are optimized to static const strings may not be marked
-	  as IsCOW (remove SVf_FAKE).
+	  Shared COW hashkeys which are optimized to static const strings
+	  may not be marked as IsCOW (remove SVf_FAKE).
 	Re-implemented CORE share_hek with hash=0
 	  Otherwise shared HEK's (post-5.10) come up with duplicate entries
 	  for the same keys; one compile-time created and one run-time created with
@@ -40,11 +40,13 @@
 	Fixed 5.15.2 hang at hfree_next_entry (issue 78)
 	Defer writing of READONLY hash keys since 5.15 (issue 88)
 	Enable -fcog copy-on-grow with static strings for >= 5.10
-	Improved Errno vs. *main::! and Tie::Hash::NamedCapture vs *main::+  / - logic (issue 90)
+	Improved Errno vs. *main::! and Tie::Hash::NamedCapture vs
+	  *main::+  / - logic (issue 90)
 	Updated version XS methods, default to noop for (...
 	Strip version object overload from XS packages (issue 91), XS needs plain PVs
 	Do not initialize CONSTSUB XS methods twice, boot does it for us
-	Pass proper cv to XS boot_$name, fixes boot of Tie::Hash::NamedCapture (issue 86)
+	Pass proper cv to XS boot_$name, fixes boot of
+	  Tie::Hash::NamedCapture (issue 86)
 	Fixed share_hek strings with -O1 (test 13)
 	Fixed bootstrapping the XS part of attributes (test 42, 43).
 	Fixed most 5.8.[45] problems by ignoring aelemfast SPECIAL pads.
@@ -57,10 +59,12 @@
 	inc_cleanup: save only those %INC keys which are stored.
 	Save ext/mro only if the ext mro methods were loaded.
 	Force loading of -u arguments to avoid runtime loading.
+	Call boot_core_PerlIO, mro, UNIVERSAL and xsutils.
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
-	skip internal packages with mark_skip (fixes cc_o2 tests).
-	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) - works only partially.
-	support -d debugging without -MOd
+	Skip internal packages with mark_skip (fixes cc_o2 tests).
+	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) -
+	  works only partially.
+	Support -d debugging without -MOd
 	* Stackobj (1.00_03): add UL or L to overlong integers. doubles
 	  not yet
 	* perlcc (2.13): added options -O[1-4], -u, -U, --Wc, --Wl, --version,
