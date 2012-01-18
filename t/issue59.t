@@ -30,11 +30,11 @@ my $q = $] < 5.008001 ? "" : "-qq,";
 my $result = qx($runperl $name.pl);
 my $canconnect = $result eq $expected ? 1 : 0;
 
-my $cmt = ($canconnect ? "" : "TODO ") ."connect to http://perl.org:80";
+my $cmt = ($canconnect ? "" : "TODO ") ."connect to http://perl.org:80 via IO::Socket";
 plctestok(1, $name, $script, $cmt);
 
 SKIP: {
   skip "eats memory on 5.6", 2 if $] <= 5.008001;
   ctestok(2, "C", $name, $script, "C $name $cmt");
-  ctestok(3, "CC", $name, $script, "CC $name $cmt");
+  ctestok(3, "CC", $name, $script, "TODO CC $name $cmt");
 }

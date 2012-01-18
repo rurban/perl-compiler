@@ -4587,14 +4587,14 @@ EOT
     }
     # XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless
     #print "    PL_dirty = 1;\n" unless $B::C::pv_copy_on_grow; # protect against pad undef in END block
-    print <<'EOT';
+    print <<'EOT1';
     perl_free( my_perl );
 
     PERL_SYS_TERM();
 
     exit( exitstatus );
 }
-EOT
+EOT1
 
   } # module
 }
@@ -5505,18 +5505,12 @@ OPTION:
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
-  #if ($B::C::pv_copy_on_grow and $PERL510 and $B::C::destruct) {
-    #warn "Warning: -fcog / -O1 static PV copy-on-grow disabled.\n" if $verbose;
-    # XXX Still trying custom destructor.
-    #undef $B::C::pv_copy_on_grow;
-  #}
 
   init_sections();
   foreach my $i (@eval_at_startup) {
     $init->add_eval($i);
   }
-  # modules or main?
-  if (@options) {
+  if (@options) { # modules or main?
     return sub {
       my $objname;
       foreach $objname (@options) {
