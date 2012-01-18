@@ -3,12 +3,10 @@
 # Magic Tie::Named::Capture <=> *main::+ main::*- and Errno vs !
 use strict;
 BEGIN {
-  die "1..0 # Tie::Named::Capture requires Perl v5.10\n" if $] < 5.010;
   unshift @INC, 't';
   require "test.pl";
 }
 use Test::More tests => 9;
-
 my $i=0;
 sub test3 {
   my $name = shift;
@@ -20,13 +18,18 @@ sub test3 {
   $i++;
 }
 
-test3('ccode90i_c', <<'EOF', '%+ includes Tie::Hash::NamedCapture');
+SKIP: {
+  skip "Tie::Named::Capture requires Perl v5.10", 3 if $] < 5.010;
+
+  test3('ccode90i_c', <<'EOF', '%+ includes Tie::Hash::NamedCapture');
 my $s = 'test string';
 $s =~ s/(?<first>test) (?<second>string)/\2 \1/g;
 print q(o) if $s eq 'string test';
 'test string' =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq 'test';
 EOF
+
+}
 
 test3('ccode90i_es', <<'EOF', '%! magic');
 my %errs = %!; # t/op/magic.t Errno compiled in
