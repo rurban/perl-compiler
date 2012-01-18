@@ -61,6 +61,8 @@
 	skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) - works only partially.
 	support -d debugging without -MOd
+	* Stackobj (1.00_03): add UL or L to overlong integers. doubles
+	  not yet
 	* perlcc (2.13): added options -O[1-4], -u, -U, --Wc, --Wl, --version,
 	Keep cfile if output is empty.
 	Change -o output C file directory and name with -S or -c:

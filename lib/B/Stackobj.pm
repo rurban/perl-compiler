@@ -2,13 +2,14 @@
 #
 #      Copyright (c) 1996 Malcolm Beattie
 #      Copyright (c) 2010 Reini Urban
+#      Copyright (c) 2012 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 #
 package B::Stackobj;
 
-our $VERSION = '1.00_02';
+our $VERSION = '1.00_03';
 
 use Exporter ();
 @ISA       = qw(Exporter);
@@ -25,6 +26,7 @@ use Exporter ();
 use Carp qw(confess);
 use strict;
 use B qw(class SVf_IOK SVf_NOK SVf_IVisUV SVf_ROK);
+use Config;
 
 # Types
 sub T_UNKNOWN () { 0 }
@@ -161,7 +163,16 @@ sub minipeek {
 #
 sub set_int {
   my ( $obj, $expr, $unsigned ) = @_;
-  runtime("$obj->{iv} = $expr;");
+  my $ivdformat = $Config{ivdformat};
+  $ivdformat =~ s/"//g; #" poor editor
+  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+  # UL if > INT32_MAX = 2147483647
+  my $sval = sprintf("%${ivdformat}%s", $expr, $expr > $intmax  ? "UL" : "");
+  if ($expr < -$intmax) {
+    $sval = sprintf("%${ivdformat}%s", $expr, "L"); # DateTime
+  }
+  $sval = '0' if $sval =~ /(NAN|inf)$/i;
+  runtime("$obj->{iv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_DOUBLE );
   $obj->{flags} |= VALID_INT | SAVE_INT;
   $obj->{flags} |= VALID_UNSIGNED if $unsigned;
