@@ -141,9 +141,9 @@ for my $module (@modules) {
   my $name = $module;
   $name =~ s/::/_/g;
   $name =~ s{(install|setup|update)}{substr($1,0,4)}ie;
-  my $out = $name;
-  my $out_c  = "$name.c";
-  my $out_pl = "$name.pl";
+  my $out = 'pcc'.$name;
+  my $out_c  = "$out.c";
+  my $out_pl = "$out.pl";
   $out = "$out.exe" if $^O eq 'MSWin32';
 
  SKIP: {

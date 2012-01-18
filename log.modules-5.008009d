@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 8df38dc 2012-01-12 | fix syntax error in t/modules.t
+# B::C::VERSION = 1.37 d664299 2012-01-17 | Tune Changes M
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
