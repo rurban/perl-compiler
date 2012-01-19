@@ -3686,40 +3686,79 @@ sub B::IO::save {
   }
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
   if (!$PERL56) { # PerlIO
-    # deal with $x = *STDIN/STDOUT/STDERR{IO}
-    my $perlio_func;
-    foreach (qw(stdin stdout stderr)) {
-      $perlio_func = $_ if $io->IsSTD($_);
+    # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
+    my ( $ioh, $perlio_ifp, $perlio_ofp);
+    my $o = $io->object_2svref();
+    my $fd = $o->fileno();
+    my $iotype = $io->IoTYPE;
+    my $ioflags = $io->IoFLAGS;
+    # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also
+    if ($io->IsSTD('stdin') or $fd == 0) { # XXX
+      $perlio_ifp = $ioh = 'stdin';
+      $init->add("IoIFP(${sym}) = PerlIO_stdin();");
     }
-    if ($perlio_func eq 'stdin') {
-      $init->add("IoIFP(${sym}) = PerlIO_${perlio_func}();");
-    } elsif ($perlio_func) {
-      $init->add("IoOFP(${sym}) = PerlIO_${perlio_func}();");
-    } elsif ($pv) { # If an IO handle was opened at BEGIN, we might want to init.
-      # XXX also pipes or sockets or fail or warn?
-      # $init->add("do_openn($gvsym, $pv, $pvlen, 0, 0, 0, IoIFP($sym), NULL, 0);");
-      # file write or read. XXX filename = pv?
-      # XXX Warnings need file+line no.
-      # XXX What should be an error, what a warning and what can be restored
-      if ($io->IoFLAGS & 0x00020000) { # PERLIO_F_WRBUF
-	warn "WARNING: Write to FileHandle $fullname for $pv\n";
-	$init->add( sprintf( "%s = PerlIO_fdopen(%d, %s);",
-			     "IoOFP($sym)", $io->IoMODE, $pv));
+    elsif ($io->IsSTD('stdout') or $fd == -1) { # XXX -1 for closed?
+      $perlio_ifp = $ioh = 'stdout';
+      $init->add("IoIFP(${sym}) = PerlIO_stdout();");
+    }
+    elsif ($io->IsSTD('stderr') or $fd == -2) {
+      $perlio_ifp = $ioh = 'stderr';
+      $init->add("IoIFP(${sym}) = PerlIO_stderr();");
+    }
+    if ($iotype ne "\c@" and $iotype ne " ") {
+      # If an IO handle was opened at BEGIN, we might want to init.
+      # IOTYPE:
+      #  -    STDIN/OUT           HANDLE IoIOFP alias
+      #  I    STDIN/OUT/ERR       HANDLE IoIOFP alias
+      #  <    read-only           HANDLE
+      #  >    write-only          HANDLE
+      #  a    append              HANDLE
+      #  +    read and write      HANDLE
+      #  s    socket              DIE
+      #  |    pipe                DIE
+      #  I    IMPLICIT            HANDLE IoIOFP alias
+      #  #    NUMERIC             HANDLE fdopen
+      #  space closed             IGNORE
+      #  \0   ex/closed?          IGNORE
+      # file write
+      if ($iotype =~ /[a>]/ and !$perlio_ifp) {
+	my $fn = "unknown filename \&$fd";;
+	warn "Warning: Write BEGIN-block $fullname to FileHandle \"",$iotype,"$fn\"\n";
+	$init->add( '/* XXX WARNING: You need to manually fix this filename */',
+		   sprintf( "IoIFP($sym) = PerlIO_fdopen(%d, %s);",
+			    $ioflags, cstring($fn)));
+	$ioh++;
       }
-      elsif ($io->IoFLAGS & 0x00040000) { # PERLIO_F_RDBUF
-	warn "WARNING: Read from FileHandle $fullname for $pv\n";
-	$init->add( sprintf( "%s = PerlIO_fdopen(%d, %s);",
-			     "IoIFP($sym)", $io->IoMODE, $pv));
-	#if (my $tell = $io->tell){$init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")}
-      } else {
-	# XXX file+line no.
-	warn sprintf("WARNING: Unhandled IO Handle %s %s (%d) for $pv\n",
-		     cstring($io->IoTYPE), $fullname, $io->IoFLAGS);
+      # read-only
+      if ($iotype =~ /[<#\+]/ and !$perlio_ifp) {
+	if ($iotype eq '#') {
+	  my $mode = 'r';
+	  warn "Warning: Read BEGIN-block $fullname from numeric FileHandle \"",$iotype,"\&$fd\"\n"
+	    if $verbose;
+	  $init->add( sprintf("IoIFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
+			      cstring($mode), $fd));
+	} else {
+	  my $fn = "unknown filename \&$fd";
+	  warn "Warning: Read BEGIN-block $fullname from FileHandle \"",$iotype,"$fn\"\n";
+	  $init->add('/* XXX WARNING: You need to manually fix this filename */',
+		     sprintf( "IoIFP($sym) = PerlIO_fdopen(%d, %s);",
+			       $ioflags, cstring($fn)));
+	}
+	$ioh++;
+	if (my $tell = $o->tell()) {
+	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
+	}
+      }
+      unless ($ioh) {
+	warn sprintf("Warning: Unhandled BEGIN-block IO Handle %s %s (%d)\n",
+		     cstring($iotype), $fullname, $ioflags);
+	$init->add('/* XXX WARNING: You might want to manually open an IO handle here:',
+		    'IoTYPE='.cstring($iotype)." SYMBOL=$fullname, IoFLAGS=$ioflags */");
       }
     } else {
-      # XXX file+line no.
-      warn sprintf("WARNING: Unhandled IO Handle %s %s (%d)\n",
-		   cstring($io->IoTYPE), $fullname, $io->IoFLAGS);
+      warn sprintf("Ignore closed IO Handle %s %s (%d)\n",
+		   cstring($iotype), $fullname, $ioflags)
+	if $debug{gv};
     }
   }
 

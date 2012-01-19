@@ -14,7 +14,6 @@
 #endif
 
 typedef struct magic  *B__MAGIC;
-typedef SV  *B__IO;
 #if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
 #endif
@@ -117,33 +116,6 @@ RX_EXTFLAGS(rx)
 	  B::REGEXP rx
 
 #endif
-
-MODULE = B__IO	PACKAGE = B::IO
-
-bool
-IsStdHandle(io,name)
-	B::IO	io
-	const char*	name
-    PREINIT:
-	PerlIO* handle = 0;
-    CODE:
-	if( strEQ( name, "stdin" ) ) {
-	    handle = PerlIO_stdin();
-	    RETVAL = handle == IoIFP(io);
-	}
-	else if( strEQ( name, "stdout" ) ) {
-	    handle = PerlIO_stdout();
-	    RETVAL = handle == IoOFP(io);
-	}
-	else if( strEQ( name, "stderr" ) ) {
-	    handle = PerlIO_stderr();
-	    RETVAL = handle == IoOFP(io);
-	}
-	else {
-	    croak( "Invalid value '%s'", name );
-	}
-    OUTPUT:
-	RETVAL
 
 MODULE=B__C 	PACKAGE=B::C
 
