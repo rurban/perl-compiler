@@ -584,6 +584,7 @@ use blib;use B::CC;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; pr
 12
 ######### 105 CC attrs ###############################
 CCTESTS
+
         my $i = 100;
         for (split /\n####+.*##\n/, $cctests) {
             next unless $_;
@@ -791,11 +792,11 @@ sub todo_tests_default {
 	# @ISA issue 64
         push @todo, (10,12,19,25,50)  if $what eq 'c_o4';
 
-        push @todo, (15,27,41,45) if $] < 5.010 and $what =~ /c_o[1234]/;
+        push @todo, (15,27,41,45)              if $] < 5.010 and $what =~ /c_o[1234]/;
         push @todo, (5,8,20,25,27,33,41,45,49) if $] >= 5.010 and $] < 5.012 and $what =~ /c_o[12]/;
         push @todo, (27,33,41,45)              if $] >= 5.010 and $what eq 'c_o3';
-        push @todo, (50)                       if $] >= 5.010 and $what =~ /c_o[34]/;
-        push @todo, (5,21,25,27,29,41,45,49)   if $] >= 5.012 and $what =~ /c_o[12]/;
+        push @todo, (50)                       if $] >= 5.010 and $] < 5.012 and $what =~ /c_o[34]/;
+        push @todo, (25,27,29,41,49)           if $] >= 5.012 and $what =~ /c_o[12]/;
         push @todo, (29,49)                    if $] >= 5.012 and $what =~ /c_o[34]/;
         push @todo, (41..43)    if $DEBUGGING;
         push @todo, (46)        if $] >= 5.014 and $] < 5.015 and $what eq 'c';
@@ -812,9 +813,9 @@ sub todo_tests_default {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
 	#15,21,27,30,41-45,50,103,105
-	push @todo, (15,21,27,30,41..45,50,103);
+	push @todo, (15,21,27,30,41..46,50,103);
 	push @todo, (14,25,29,49) if $] >= 5.012;
-	push @todo, (3,4,46) if $] >= 5.012 and $] < 5.014;
+	push @todo, (3,4)   if $] >= 5.012 and $] < 5.014;
 	#push @todo, (3)     if $] > 5.008 and $] <= 5.008005;
 	push @todo, (16)    if $] <= 5.008005;
 	#push @todo, (15)    if $] < 5.012;
