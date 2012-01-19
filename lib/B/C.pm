@@ -3687,26 +3687,27 @@ sub B::IO::save {
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
   if (!$PERL56) { # PerlIO
     # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
-    my ( $ioh, $perlio_ifp, $perlio_ofp);
+    my $perlio_func;
+    # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also.
+    # But we need to set both.
     my $o = $io->object_2svref();
     my $fd = $o->fileno();
-    my $iotype = $io->IoTYPE;
-    my $ioflags = $io->IoFLAGS;
-    # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also
-    if ($io->IsSTD('stdin') or $fd == 0) { # XXX
-      $perlio_ifp = $ioh = 'stdin';
-      $init->add("IoIFP(${sym}) = PerlIO_stdin();");
+    my $i = 0;
+    foreach (qw(stdin stdout stderr)) {
+      if ($io->IsSTD($_) or $fd == -$i) {
+	$perlio_func = $_;
+      }
+      $i++;
     }
-    elsif ($io->IsSTD('stdout') or $fd == -1) { # XXX -1 for closed?
-      $perlio_ifp = $ioh = 'stdout';
-      $init->add("IoIFP(${sym}) = PerlIO_stdout();");
-    }
-    elsif ($io->IsSTD('stderr') or $fd == -2) {
-      $perlio_ifp = $ioh = 'stderr';
-      $init->add("IoIFP(${sym}) = PerlIO_stderr();");
-    }
-    if ($iotype ne "\c@" and $iotype ne " ") {
-      # If an IO handle was opened at BEGIN, we might want to init.
+    if ($perlio_func) {
+      $init->add("IoIFP(${sym}) = IoOFP(${sym}) = PerlIO_${perlio_func}();");
+      if ($fd < 0) {
+	# XXX fails at flush == EOF, wrong init-time?
+      }
+    } else {
+      my $iotype = $io->IoTYPE;
+      my $ioflags = $io->IoFLAGS;
+      # If an IO handle was opened at BEGIN, we might want to re-init it.
       # IOTYPE:
       #  -    STDIN/OUT           HANDLE IoIOFP alias
       #  I    STDIN/OUT/ERR       HANDLE IoIOFP alias
@@ -3717,48 +3718,47 @@ sub B::IO::save {
       #  s    socket              DIE
       #  |    pipe                DIE
       #  I    IMPLICIT            HANDLE IoIOFP alias
-      #  #    NUMERIC             HANDLE fdopen
+      #  #    NUMERIC             HANDLE openn, which mode?
       #  space closed             IGNORE
       #  \0   ex/closed?          IGNORE
-      # file write
-      if ($iotype =~ /[a>]/ and !$perlio_ifp) {
+      if ($iotype eq "\c@" or $iotype eq " ") {
+	warn sprintf("Ignore closed IO Handle %s %s (%d)\n",
+		     cstring($iotype), $fullname, $ioflags)
+	  if $debug{gv};
+      }
+      elsif ($iotype =~ /[a>]/) { # write-only
 	my $fn = "unknown filename \&$fd";;
 	warn "Warning: Write BEGIN-block $fullname to FileHandle \"",$iotype,"$fn\"\n";
 	$init->add( '/* XXX WARNING: You need to manually fix this filename */',
-		   sprintf( "IoIFP($sym) = PerlIO_fdopen(%d, %s);",
-			    $ioflags, cstring($fn)));
-	$ioh++;
+		    sprintf( "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(%d, %s);", $ioflags, cstring($fn)));
       }
-      # read-only
-      if ($iotype =~ /[<#\+]/ and !$perlio_ifp) {
-	if ($iotype eq '#') {
-	  my $mode = 'r';
-	  warn "Warning: Read BEGIN-block $fullname from numeric FileHandle \"",$iotype,"\&$fd\"\n"
-	    if $verbose;
-	  $init->add( sprintf("IoIFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
-			      cstring($mode), $fd));
-	} else {
-	  my $fn = "unknown filename \&$fd";
-	  warn "Warning: Read BEGIN-block $fullname from FileHandle \"",$iotype,"$fn\"\n";
-	  $init->add('/* XXX WARNING: You need to manually fix this filename */',
-		     sprintf( "IoIFP($sym) = PerlIO_fdopen(%d, %s);",
-			       $ioflags, cstring($fn)));
-	}
-	$ioh++;
+      # read or read-write
+      elsif ($iotype eq '#') {
+	my $mode = '+';
+	warn "Warning: Read BEGIN-block $fullname from numeric FileHandle \"",$iotype,"\&$fd\"\n"
+	  if $verbose;
+	$init->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
+			    cstring($mode), $fd));
 	if (my $tell = $o->tell()) {
 	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
 	}
       }
-      unless ($ioh) {
+      elsif ($iotype =~ /[<#\+]/) {
+	my $fn = "unknown filename \&$fd";
+	warn "Warning: Read BEGIN-block $fullname from FileHandle \"",$iotype,"$fn\"\n";
+	$init->add('/* XXX WARNING: You need to manually fix this filename */',
+		   sprintf( "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(%d, %s);",
+			    $ioflags, cstring($fn)));
+	if (my $tell = $o->tell()) {
+	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
+	}
+      } else {
 	warn sprintf("Warning: Unhandled BEGIN-block IO Handle %s %s (%d)\n",
 		     cstring($iotype), $fullname, $ioflags);
 	$init->add('/* XXX WARNING: You might want to manually open an IO handle here:',
-		    'IoTYPE='.cstring($iotype)." SYMBOL=$fullname, IoFLAGS=$ioflags */");
+		   "IoTYPE=$iotype SYMBOL=$fullname, IoFLAGS=$ioflags ",
+		   sprintf( "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(0, ''); */"));
       }
-    } else {
-      warn sprintf("Ignore closed IO Handle %s %s (%d)\n",
-		   cstring($iotype), $fullname, $ioflags)
-	if $debug{gv};
     }
   }
 
