@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.37	2012-01-19 rurban
+1.37	2012-01-20 rurban
 	Enabled copy-on-grow strings >= 5.10.
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	Fixed hashes and share_hek, when mixed compiled and load-time for >5.8.
@@ -61,6 +61,9 @@
 	Save ext/mro only if the ext mro methods were loaded.
 	Force loading of -u arguments to avoid runtime loading.
 	Call boot_core_PerlIO, mro, UNIVERSAL and xsutils.
+	Warn on unsavable IO objects from BEGIN blocks. Fixed >&STDOUT... handles,
+	  i.e. Test::Builder, Test::NoWarnings and parts of the core testing.
+	  See http://blogs.perl.org/users/rurban/2012/01/what-to-avoid-in-begin-blocks.html
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	Skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) -
