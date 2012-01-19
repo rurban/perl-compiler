@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.37 d664299 2012-01-17 | Tune Changes M
+# B::C::VERSION = 1.37 2afe08c 2012-01-18 | more module test results
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
-# platform = linux 64bit threaded debug
+# platform = darwin 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.37 - perl-5.008009d
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
+# 99 / 100 modules tested with B-C-1.37 - perl-5.008009d
+# pass  99 /  99 (100.0%)
+# fail   0 /  99 (0.0%)
 # todo   0 /   0 ()
-# skip   0 / 100 (0.0% not installed)
+# skip   1 / 100 (1.0% not installed)
