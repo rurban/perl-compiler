@@ -4843,7 +4843,7 @@ sub should_save {
   $package =~ s/::$//;
   return $include_package{$package} = 0
     if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
-  warn "Considering $package $include_package{$package}\n" if $debug{pkg};
+  warn "Considering $package\n" if $debug{pkg}; #$include_package{$package}
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
@@ -4899,7 +4899,7 @@ sub should_save {
 
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
-      if ($include_package{$package}) {
+      if (exists $include_package{$package} and $include_package{$package}) {
         warn "$package is cached\n";
       } else {
         warn "Cached $package is already deleted\n";
@@ -5034,7 +5034,7 @@ sub save_unused_subs {
   # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
   # With -fno-fold we don't insist on loading utf8_heavy and Carp.
   # Until it is compile-time required.
-  if ($] >= 5.013009 and ($B::C::fold or exists($INC{'utf8.pm'}))) {
+  if ($] >= 5.013009 and $INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'}))) {
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB exe size 32-bit.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
