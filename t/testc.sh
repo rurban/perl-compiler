@@ -319,7 +319,7 @@ result[49]='ok'
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
 # XXX TODO check if signals work, sigwarn and SIG{INT}
-tests[51]='$SIG{__WARN__}=sub{$w++;};$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
+tests[51]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
 result[51]='ok'
 #-------------
 # issue27
@@ -388,6 +388,9 @@ print q(o) if $s eq q(string test);
 q(test string) =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq q(test);'
 result[90]='ok'
+# IO handles
+tests[93]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
+result[93]='ok'
 
 # from here on we test CC specifics only
 

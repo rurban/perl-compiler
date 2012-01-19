@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=93
 # recover state of IO objects. Or not
+# Another testcase is t/testm.sh Test::NoWarnings
 use strict;
 BEGIN {
   unshift @INC, 't';
@@ -31,7 +32,6 @@ EOF
 my $ok = <<'EOF';
 my $out;open($out, ">&STDOUT");print $out 'ok';
 EOF
-
 
 sub test3 {
   my $name = shift;

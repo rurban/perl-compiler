@@ -3576,7 +3576,7 @@ sub B::IO::save_data {
   $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
   $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
   #}
-  mark_package("IO::File", 1);
+  mark_package("IO::Handle", 1);
 }
 
 sub B::IO::save {
@@ -3676,18 +3676,6 @@ sub B::IO::save {
   if ($PERL510 and !$B::C::pv_copy_on_grow and $len) {
     $init->add(sprintf("SvPVX(sv_list[%d]) = $pvsym;", $svsect->index));
   }
-  if (!$PERL56) { # PerlIO
-    # deal with $x = *STDIN/STDOUT/STDERR{IO}
-    my $perlio_func;
-    foreach (qw(stdin stdout stderr)) {
-      $io->IsSTD($_) and $perlio_func = $_;
-    }
-    if ($perlio_func) {
-      $init->add("IoIFP(${sym}) = PerlIO_${perlio_func}();");
-      $init->add("IoOFP(${sym}) = PerlIO_${perlio_func}();");
-    }
-  }
-
   my ( $field, $fsym );
   foreach $field (qw(TOP_GV FMT_GV BOTTOM_GV)) {
     $fsym = $io->$field();
@@ -3696,8 +3684,45 @@ sub B::IO::save {
       $fsym->save;
     }
   }
-
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
+  if (!$PERL56) { # PerlIO
+    # deal with $x = *STDIN/STDOUT/STDERR{IO}
+    my $perlio_func;
+    foreach (qw(stdin stdout stderr)) {
+      $perlio_func = $_ if $io->IsSTD($_);
+    }
+    if ($perlio_func eq 'stdin') {
+      $init->add("IoIFP(${sym}) = PerlIO_${perlio_func}();");
+    } elsif ($perlio_func) {
+      $init->add("IoOFP(${sym}) = PerlIO_${perlio_func}();");
+    } elsif ($pv) { # If an IO handle was opened at BEGIN, we might want to init.
+      # XXX also pipes or sockets or fail or warn?
+      # $init->add("do_openn($gvsym, $pv, $pvlen, 0, 0, 0, IoIFP($sym), NULL, 0);");
+      # file write or read. XXX filename = pv?
+      # XXX Warnings need file+line no.
+      # XXX What should be an error, what a warning and what can be restored
+      if ($io->IoFLAGS & 0x00020000) { # PERLIO_F_WRBUF
+	warn "WARNING: Write to FileHandle $fullname for $pv\n";
+	$init->add( sprintf( "%s = PerlIO_fdopen(%d, %s);",
+			     "IoOFP($sym)", $io->IoMODE, $pv));
+      }
+      elsif ($io->IoFLAGS & 0x00040000) { # PERLIO_F_RDBUF
+	warn "WARNING: Read from FileHandle $fullname for $pv\n";
+	$init->add( sprintf( "%s = PerlIO_fdopen(%d, %s);",
+			     "IoIFP($sym)", $io->IoMODE, $pv));
+	#if (my $tell = $io->tell){$init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")}
+      } else {
+	# XXX file+line no.
+	warn sprintf("WARNING: Unhandled IO Handle %s %s (%d) for $pv\n",
+		     cstring($io->IoTYPE), $fullname, $io->IoFLAGS);
+      }
+    } else {
+      # XXX file+line no.
+      warn sprintf("WARNING: Unhandled IO Handle %s %s (%d)\n",
+		   cstring($io->IoTYPE), $fullname, $io->IoFLAGS);
+    }
+  }
+
   #my $stash = $io->SvSTASH;
   #if ($$stash) {
   #  $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
@@ -5104,11 +5129,6 @@ sub descend_marked_unused {
 }
 
 sub save_main {
-
-  # this is mainly for the test suite
-  #my $warner = $SIG{__WARN__};
-  #local $SIG{__WARN__} = sub { print STDERR @_ };
-
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
@@ -5135,21 +5155,30 @@ sub fixup_ppaddr {
 
 # save %SIG ( in case it was set in a BEGIN block )
 sub save_sig {
-  local $SIG{__WARN__} = shift;
+  # local $SIG{__WARN__} = shift;
   $init->no_split;
-  $init->add( "/* save %SIG */" ) if $verbose;
-  warn "save %SIG\n" if $verbose;
-  $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
+  my @save_sig;
   foreach my $k ( keys %SIG ) {
     next unless ref $SIG{$k};
     my $cvref = svref_2object( \$SIG{$k} );
-    next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
+    next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handler
+    push @save_sig, [$k, $cvref];
+  }
+  unless (@save_sig) {
+    $init->add( "/* no %SIG in BEGIN block */" ) if $verbose;
+    warn "no %SIG in BEGIN block\n" if $verbose;
+    return;
+  }
+  $init->add( "/* save %SIG */" ) if $verbose;
+  warn "save %SIG\n" if $verbose;
+  $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
+  foreach my $x ( @save_sig ) {
+    my ($k, $cvref) = @$x;
     my $sv = $cvref->save;
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
     $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
                         cstring($k), length( pack "a*", $k ),
                         'sv', 0 ) ); # XXX randomized hash keys!
-    # XXX leads to No such signal: invalid mg_ptr->PV
     $init->add( "\t".'mg_set(sv);', '}' );
   }
   $init->add('}');
@@ -5159,7 +5188,7 @@ sub save_sig {
 sub save_main_rest {
   # this is mainly for the test suite
   my $warner = $SIG{__WARN__};
-  # local $SIG{__WARN__} = sub { print STDERR @_ };
+  # local $SIG{__WARN__} = sub { print STDERR @_ } unless $debug{runtime};
 
   warn "done main optree, walking symtable for extras\n"
     if $verbose or $debug{cv};
@@ -5381,9 +5410,6 @@ OPTION:
         elsif ( $arg eq "O" ) {
           $debug{op}++;
         }
-        elsif ( $arg eq "c" ) {
-          $debug{cops}++;
-        }
         elsif ( $arg eq "A" ) {
           $debug{av}++;
         }
@@ -5405,17 +5431,20 @@ OPTION:
         elsif ( $arg eq "S" ) {
           $debug{sv}++;
         }
-        elsif ( $arg eq "s" ) {
-          $debug{sub}++;
-        }
-        elsif ( $arg eq "p" ) {
-          $debug{pkg}++;
-        }
         elsif ( $arg eq "F" ) {
           $debug{flags}++ if eval "require B::Flags;";
         }
         elsif ( $arg eq "W" ) {
           $debug{walk}++;
+        }
+        elsif ( $arg eq "c" ) {
+          $debug{cops}++;
+        }
+        elsif ( $arg eq "s" ) {
+          $debug{sub}++;
+        }
+        elsif ( $arg eq "p" ) {
+          $debug{pkg}++;
         }
         elsif ( $arg eq "u" ) {
           $debug{unused}++;
