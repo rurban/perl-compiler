@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.37 2afe08c 2012-01-18 | more module test results
+# B::C::VERSION = 1.37 de32fa0 2012-01-18 | more darwin test results 2afe08c
 # perlversion = 5.010001d-nt
-# path = /usr/local/bin/perl5.10.1d-nt
-# platform = darwin 64bit non-threaded debug
+# path = /usr/local/bin/perl5.10.1-nt
+# platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -74,10 +74,10 @@ pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
 pass Time::Local
-pass IO::Scalar
-pass Sub::Identify
+skip IO::Scalar
+skip Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,7 +86,7 @@ pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-pass Digest::SHA1
+skip Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
 pass Clone
@@ -99,11 +99,11 @@ pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-pass AppConfig
+skip AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.37 - perl-5.010001d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
-# skip   0 / 100 (0.0% not installed)
+skip Template::Stash
+# 94 / 100 modules tested with B-C-1.37 - perl-5.010001d-nt
+# pass  93 /  94 (98.9%)
+# fail   1 /  94 (1.1%)
+# todo   0 /   1 (0.0%)
+# skip   6 / 100 (6.0% not installed)
