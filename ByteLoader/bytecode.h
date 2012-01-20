@@ -700,6 +700,18 @@ static int bget_swab = 0;
 	r = arg;					\
 	} STMT_END
 
+/* restore dups for stdin, stdout and stderr */
+#define BSET_xio_ifp(sv,fd)						\
+    STMT_START {							\
+      if (fd == 0) {							\
+	IoIFP(sv) = IoOFP(sv) = PerlIO_stdin();				\
+      } else if (fd == 1) {						\
+	IoIFP(sv) = IoOFP(sv) = PerlIO_stdout();			\
+      } else if (fd == 2) {						\
+	IoIFP(sv) = IoOFP(sv) = PerlIO_stderr();			\
+      }									\
+    } STMT_END
+
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
