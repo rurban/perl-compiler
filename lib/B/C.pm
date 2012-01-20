@@ -3737,15 +3737,16 @@ sub B::IO::save {
       }
       elsif ($iotype =~ /[<#\+]/) {
 	warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"
-	  if $fd > 3; # need to setup it up before
+	  if $fd >= 3; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
 		   "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"r\");");
 	if (my $tell = $o->tell()) {
 	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
 	}
       } else {
-	warn sprintf("Warning: Unhandled BEGIN-block IO Handle %s\&%d %s (%d)\n",
-		     cstring($iotype), $fd, $fullname, $ioflags);
+	# XXX We should really die here
+	warn sprintf("ERROR: Unhandled BEGIN-block IO Handle %s\&%d (%d) from %s\n",
+		     cstring($iotype), $fd, $ioflags, $fullname);
 	$init->add("/* XXX WARNING: Unhandled BEGIN-block IO Handle ",
 		   "IoTYPE=$iotype SYMBOL=$fullname, IoFLAGS=$ioflags */",
 		   "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"$iotype\");");
