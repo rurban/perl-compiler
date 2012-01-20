@@ -568,7 +568,7 @@ sub B::IO::bsave {
   # issue93: restore std handles
   if (!$PERL56) {
     my $o = $io->object_2svref();
-    my $fd = $o->fileno();
+    my $fd = $o->can('fileno') ? $o->fileno() : 99;
     my $i = 0;
     my $perlio_func = '';
     foreach (qw(stdin stdout stderr)) {
