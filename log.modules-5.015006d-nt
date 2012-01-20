@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 de32fa0 2012-01-18 | more darwin test results 2afe08c
+# B::C::VERSION = 1.37 78b811f 2012-01-19 | Update Changes (IO restore)
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
 # platform = linux 64bit non-threaded debug
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015006d-nt
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   0 /   5 (0.0%)
+# pass  96 / 100 (96.0%)
+# fail   4 / 100 (4.0%)
+# todo   0 /   4 (0.0%)
 # skip   0 / 100 (0.0% not installed)

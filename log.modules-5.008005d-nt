@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 de32fa0 2012-01-18 | more darwin test results 2afe08c
+# B::C::VERSION = 1.37 78b811f 2012-01-19 | Update Changes (IO restore)
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
