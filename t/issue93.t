@@ -40,10 +40,7 @@ sub test3 {
   my $name = shift;
   my $script = shift;
   my $cmt = shift;
- TODO: {
-   local $TODO = 'cannot restore stdio handles with Bytecode yet' if $name ne 'ccode91ig';
-   plctestok($i*3+1, $name, $script, "BC $cmt");
-  }
+  plctestok($i*3+1, $name, $script, "BC $cmt");
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
   $i++;
