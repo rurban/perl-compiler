@@ -48,7 +48,8 @@
 	Pass proper cv to XS boot_$name, fixes boot of
 	  Tie::Hash::NamedCapture (issue 86)
 	Fixed share_hek strings with -O1 (test 13)
-	Fixed bootstrapping the XS part of attributes (test 42, 43).
+	Fixed bootstrapping the XS/core part of attributes,
+	  thereby fixed threads tests 41-43.
 	Fixed most 5.8.[45] problems by ignoring aelemfast SPECIAL pads.
 	Fixed magic -> PTR when SV (>5.6)
 	Moved -fsave-sig-hash from -O3 to -O0. You need -fno-save-sig-hash
@@ -62,13 +63,15 @@
 	  utf8_heavy.pl similarly.
 	Force loading of -u arguments to avoid runtime loading.
 	Call boot_core_PerlIO, mro, UNIVERSAL and xsutils.
-	Warn on unsavable IO objects from BEGIN blocks. Fixed >&STDOUT... handles,
+	Warn on unsavable IO objects from BEGIN blocks.
+	  Fixed >&STD... handles (issue 93),
 	  i.e. Test::Builder, Test::NoWarnings and parts of the core testing.
 	  See http://blogs.perl.org/users/rurban/2012/01/what-to-avoid-in-begin-blocks.html
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	Skip internal packages with mark_skip (fixes cc_o2 tests).
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) -
 	  works only partially.
+	Fixed >&STD... handles (issue 93)
 	Support -d debugging without -MOd
 	* Stackobj (1.00_03): add UL or L to overlong integers. doubles
 	  not yet
@@ -79,6 +82,8 @@
 	  Before with input name, now with -o name.
 	Add -rpath for all --staticxs libs if supported.
 	Changed verbosity levels and output wording.
+	* bytecode.pl: added xio_ifp
+	* bytecode.h: added BSET_xio_ifp
 	* META.yml: remove from MANIFEST and repo, let make dist
 	  autogenerate it.
 	* t/test.pl, t/TESTS: changed test 46 (Exporter:: and other stashes in

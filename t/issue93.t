@@ -56,4 +56,4 @@ TODO: {
 test3('ccode91ig', $ok,   '&STDOUT at run-time');
 test3('ccode91iw', $work, '&STDOUT restore');
 
-END {unlink "pcc.tmpfile" if -f "pcc.tmp";}
+END {unlink "pcc.tmp" if -f "pcc.tmp";}
