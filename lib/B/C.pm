@@ -3685,7 +3685,7 @@ sub B::IO::save {
     }
   }
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
-  if (!$PERL56) { # PerlIO
+  if (!$PERL56 and $fullname ne 'main::DATA') { # PerlIO
     # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
     my $perlio_func;
     # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also.
@@ -3702,7 +3702,7 @@ sub B::IO::save {
     if ($perlio_func) {
       $init->add("IoIFP(${sym}) = IoOFP(${sym}) = PerlIO_${perlio_func}();");
       if ($fd < 0) {
-	# XXX fails at flush == EOF, wrong init-time?
+	# XXX print may fail at flush == EOF, wrong init-time?
       }
     } else {
       my $iotype = $io->IoTYPE;
@@ -3717,7 +3717,6 @@ sub B::IO::save {
       #  +    read and write      HANDLE fdopen
       #  s    socket              DIE
       #  |    pipe                DIE
-      #  I    IMPLICIT            HANDLE ?
       #  #    NUMERIC             HANDLE fdopen
       #  space closed             IGNORE
       #  \0   ex/closed?          IGNORE
@@ -3728,7 +3727,7 @@ sub B::IO::save {
       }
       elsif ($iotype =~ /[a>]/) { # write-only
 	warn "Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd\n"
-	  if $fd >= 3;
+	  if $fd >= 3 or $verbose;
 	my $mode = $iotype eq '>' ? 'w' : 'a';
 	#$init->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
 	#		    cstring($mode), $fd));
@@ -3737,7 +3736,7 @@ sub B::IO::save {
       }
       elsif ($iotype =~ /[<#\+]/) {
 	warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"
-	  if $fd >= 3; # need to setup it up before
+	  if $fd >= 3 or $verbose; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
 		   "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"r\");");
 	if (my $tell = $o->tell()) {
