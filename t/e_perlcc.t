@@ -47,13 +47,13 @@ is(`$perlcc -r -e $e  $devnull`, "ok", "-r xs ".($usedl ? "dynamic" : "static"))
 cleanup;
 
 SKIP: {
-  skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
+  #skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
  TODO: {
     # fails 5.8,5.15 and darwin only
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
     is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
+    ok(-e $exe, "keep executable"); #14
   }
-  ok(-e $exe, "keep executable"); #14
   ok(! -e 'a.out.c', "delete a.out.c file without -S");
   ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
   cleanup;
@@ -62,8 +62,8 @@ SKIP: {
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
     is(`$perlcc --staticxs -S -o a -r -e $e  $devnull`, "ok",
        "-S -o -r --staticxs xs"); #17
+    ok(-e $a, "keep executable"); #18
   }
-  ok(-e $a, "keep executable"); #18
   ok(-e 'a.c', "keep a.c file with -S");
   ok(-e 'a.c.lst', "keep a.c.lst with -S");
   cleanup;
