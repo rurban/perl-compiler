@@ -199,7 +199,7 @@ our %Regexp;
 @EXPORT_OK =
   qw(output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
-     save_sig svop_or_padop_pv);
+     save_sig svop_or_padop_pv inc_cleanup);
 # for 5.6 better use the native B::C
 # 5.6.2 works fine though.
 use B

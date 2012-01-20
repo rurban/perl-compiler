@@ -253,7 +253,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
-  svop_or_padop_pv);
+  svop_or_padop_pv inc_cleanup);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 use B::C::Flags;
@@ -2874,6 +2874,8 @@ sub cc_main {
     #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
     warn "save context:\n" if $verbose;
     $init->add("/* save context */");
+    $init->add('/* %INC */');
+    inc_cleanup();
     $inc_hv          = svref_2object( \%INC )->save;
     $inc_av          = svref_2object( \@INC )->save;
   }
