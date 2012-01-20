@@ -20,4 +20,4 @@ use B::C;
 my $todo = ($B::C::VERSION < '1.37' ? "TODO " : "");
 plctestok(1, $name, $script, "${todo}BC cvproto");
 ctestok(2, "C", $name, $script, "${todo}C cvproto");
-ctestok(3, "CC", $name, $script, "${todo}CC cvproto");
+ctestok(3, "CC", $name, $script, "TODO CC cvproto");
