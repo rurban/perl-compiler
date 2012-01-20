@@ -475,6 +475,7 @@ sub run_cc_test {
 	    $command =~ s/ -opt:ref,icf//;
 	}
         my $cmdline = "$Config{cc} $command $NULL";
+	diag ($cmdline) if $ENV{TEST_VERBOSE};
         run_cmd($cmdline, 20);
         unless (-e $exe) {
             print "not ok $cnt $todo failed $cmdline\n";

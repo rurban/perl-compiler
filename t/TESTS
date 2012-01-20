@@ -172,17 +172,17 @@ ok
 # Shared scalar, n magic. => Don't know how to handle magic of type \156.
 # ;threads->create(sub{$s="ok"})->join;
 # not yet testing n, only P
-use threads; use threads::shared;{my $s="ok";share($s);print $s}
+use threads::shared;{my $s="ok";share($s);print $s}
 >>>
 ok
 #### 41 n-magic ####
 # Shared aggregate, P magic
-use threads; use threads::shared;my %h : shared; print "ok"
+use threads::shared;my %h : shared; print "ok"
 >>>
 ok
 #### 42 P-magic ####
 # Aggregate element, n + p magic
-use threads; use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]
+use threads::shared;my @a : shared; $a[0]="ok"; print $a[0]
 >>>
 ok
 #### 43 n+p magic ####
