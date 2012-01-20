@@ -58,7 +58,8 @@
 	Fixed saving %SIG signals and more -2 SV magic (issue 92)
 	Adjusted IO logic, was erronously skipped (issue 59)
 	inc_cleanup: save only those %INC keys which are stored.
-	Save ext/mro only if the ext mro methods were loaded.
+	Save ext/mro only if the ext mro methods were loaded, and
+	  utf8_heavy.pl similarly.
 	Force loading of -u arguments to avoid runtime loading.
 	Call boot_core_PerlIO, mro, UNIVERSAL and xsutils.
 	Warn on unsavable IO objects from BEGIN blocks. Fixed >&STDOUT... handles,

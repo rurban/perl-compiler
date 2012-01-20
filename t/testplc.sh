@@ -340,7 +340,29 @@ print q(o) if $s eq q(string test);
 q(test string) =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq q(test);'
 result[90]='ok'
-
+# IO handles
+tests[93]='
+my ($pid, $out, $in);
+BEGIN {
+  local(*FPID);
+  $pid = open(FPID, "echo <<EOF |");    # DIE
+  open($out, ">&STDOUT");		# EASY
+  open(my $tmp, ">", "pcc.tmp");	# HARD to get filename, WARN
+  print $tmp "test\n";
+  close $tmp;				# OK closed
+  open($in, "<", "pcc.tmp");		# HARD to get filename, WARN
+}
+# === run-time ===
+print $out "o";
+kill 0, $pid; 			     # BAD! warn? die?
+print "k" if "test" eq read $in, my $x, 4;
+unlink "pcc.tmp";
+'
+result[93]='ok'
+tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
+result[931]='ok'
+tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
+result[932]='ok'
 
 init
 
