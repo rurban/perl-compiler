@@ -1034,3 +1034,5 @@ __END__
 155 10 	cop_seq_low	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xlow  U32
 156 10	cop_seq_high	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xhigh U32
 157 8	gv_fetchpvn_flags bstate->bs_sv			U32		x
+# restore dup to stdio handles 0-2
+158 0 	xio_ifp		bstate->bs_sv	  		char		x
