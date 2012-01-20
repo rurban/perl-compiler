@@ -3067,10 +3067,14 @@ if (0) {
   # Saving it would overwrite it, because perl_init() is
   # called after perl_parse(). But we need to xsload it.
   if ($fullname eq 'attributes::bootstrap') {
-    $savefields &= ~Save_CV;
     mark_package('attributes', 1);
-    $xsub{attributes} = 'Dynamic-'. $INC{'attributes.pm'}; # XSLoader
-    $use_xsloader = 1;
+    if ($] >= 5.011) {
+      $savefields &= ~Save_CV;
+      $xsub{attributes} = 'Dynamic-'. $INC{'attributes.pm'}; # XSLoader
+      $use_xsloader = 1;
+    } else {
+      $xsub{attributes} = 'Static';
+    }
   }
 
   if ($savefields) {
@@ -4801,6 +4805,7 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
+  push @pkg, 'attributes'             if $] <  5.011; # partially static and dynamic
   push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
   push @pkg, 'Tie::Hash::NamedCapture' if $] < 5.014; # dynamic since 5.14
   push @pkg, 'DynaLoader'		if $Config{usedl};
