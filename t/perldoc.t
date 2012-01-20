@@ -18,8 +18,8 @@ my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = $] < 5.008
   ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc"
   : "$X -Mblib blib/script/perlcc";
-$perlcc .= " -Wb=-fno-fold,-fno-warnings -UB"
-        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo";
+$perlcc .= " -Wb=-fno-fold,-fno-warnings -UB";
+#        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo";
 my $exe = $Config{exe_ext};
 my $perldocexe = $^O eq 'MSWin32' ? "perldoc$exe" : "./perldoc$exe";
 # XXX bother File::Which?
@@ -60,7 +60,7 @@ my $t2 = tv_interval( $t0, [gettimeofday]);
 TODO: {
   # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
   # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
-  local $TODO = "compiled does not print yet" if $] >= 5.010;
+  local $TODO = "compiled does not print yet";
   is($out, $ori, "same result"); #2
 }
 
@@ -74,13 +74,13 @@ $perldocexe = $^O eq 'MSWin32' ? "perldoc_O3$exe" : "./perldoc_O3$exe";
 $compile = "$perlcc -O3 -o $perldocexe $perldoc";
 diag $compile;
 $res = `$compile`;
-ok(-s "$perldocexe", "perldoc compiled"); #4
+ok(-s $perldocexe, "perldoc compiled"); #4
 
 $t0 = [gettimeofday];
 ($result, $out, $err) = run_cmd("$PAGER $perldocexe $T_opt", 20);
 my $t3 = tv_interval( $t0, [gettimeofday]);
 TODO: {
-  local $TODO = "compiled does not print yet" if $] >= 5.010;
+  local $TODO = "compiled does not print yet";
   is($out, $ori, "same result"); #5
 }
 

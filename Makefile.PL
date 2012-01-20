@@ -113,6 +113,9 @@ sub headerpath {
 sub try_compile {
     my $testc = shift;
     my $libs = shift;
+    # For consistency (without considering LD_PRELOAD) require perl to
+    # be compiled with the same malloc library.
+    return 0 unless $Config{libs} =~ /\b\Q$lib\E\b/;
     unless (open PROG, ">", "test.c") {
         print ("Can't write test.c\n");
         return 0;
@@ -181,8 +184,9 @@ int main() {
             return 1;
         }
     }
-    warn "-fav-init2 not available: independent_comalloc() not detected.\n";
-    warn "  Install with $^X Makefile.PL INSTALL_PTMALLOC3 on POSIX systems\n";
+    #warn "-fav-init2 not available, independent_comalloc() not detected.\n";
+    #warn "  Install on POSIX systems with:\n";
+    #warn "  $^X Makefile.PL INSTALL_PTMALLOC3\n\n";
     return 0;
 }
 
@@ -209,6 +213,7 @@ sub install_independent_comalloc {
     }
     _system('make check');
     _system('sudo cp libptmalloc3.a /usr/lib/');
+    warn "No you must recompile your perl with linking to this library\n";
     chdir "..";
 }
 

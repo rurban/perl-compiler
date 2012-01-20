@@ -48,6 +48,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     $linkargs = ldopts('-std');
 }
 # Note (probably harmless): No library found for -lnsl
+$linkargs = $B::C::Flags::extra_libs . " " . $linkargs;
 $linkargs .= " $libs" if index($linkargs,$libs) == -1;
 
 sub cc_harness_msvc {
@@ -61,6 +62,7 @@ sub cc_harness_msvc {
     $compile .= " -I".$_ for split /\s+/, opt(I);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs,-staticxs
+    $link .= $B::C::Flags::extra_libs;
     if ($stash) {
         my @mods = split /-?u /, $stash;
         $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
@@ -68,7 +70,6 @@ sub cc_harness_msvc {
         $link .= " ".ExtUtils::Embed::ldopts("-std");
     }
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
-    $link .= $B::C::Flags::extra_libs;
     print "running $Config{cc} $compile" unless $quiet;
     system("$Config{cc} $compile");
     print "running $Config{ld} $link" unless $quiet;
@@ -96,7 +97,6 @@ $ccflags .= " --no-warn -Wl,--warn-once"
   if $Config{cc} =~ /gcc/ and $quiet and $^O ne 'darwin';
 $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
 $ccflags .= $B::C::Flags::extra_cflags;
-$linkargs .= $B::C::Flags::extra_libs;
 
 my $cccmd = "$Config{cc} $ccflags -I$coredir @ARGV $linkargs";
 print "$cccmd\n" unless $quiet;

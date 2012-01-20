@@ -3576,7 +3576,7 @@ sub B::IO::save_data {
   $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
   $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
   #}
-  mark_package("IO::File", 1);
+  mark_package("IO::Handle", 1);
 }
 
 sub B::IO::save {
@@ -3676,18 +3676,6 @@ sub B::IO::save {
   if ($PERL510 and !$B::C::pv_copy_on_grow and $len) {
     $init->add(sprintf("SvPVX(sv_list[%d]) = $pvsym;", $svsect->index));
   }
-  if (!$PERL56) { # PerlIO
-    # deal with $x = *STDIN/STDOUT/STDERR{IO}
-    my $perlio_func;
-    foreach (qw(stdin stdout stderr)) {
-      $io->IsSTD($_) and $perlio_func = $_;
-    }
-    if ($perlio_func) {
-      $init->add("IoIFP(${sym}) = PerlIO_${perlio_func}();");
-      $init->add("IoOFP(${sym}) = PerlIO_${perlio_func}();");
-    }
-  }
-
   my ( $field, $fsym );
   foreach $field (qw(TOP_GV FMT_GV BOTTOM_GV)) {
     $fsym = $io->$field();
@@ -3696,8 +3684,84 @@ sub B::IO::save {
       $fsym->save;
     }
   }
-
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
+  if (!$PERL56) { # PerlIO
+    # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
+    my $perlio_func;
+    # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also.
+    # But we need to set both.
+    my $o = $io->object_2svref();
+    my $fd = $o->fileno();
+    my $i = 0;
+    foreach (qw(stdin stdout stderr)) {
+      if ($io->IsSTD($_) or $fd == -$i) {
+	$perlio_func = $_;
+      }
+      $i++;
+    }
+    if ($perlio_func) {
+      $init->add("IoIFP(${sym}) = IoOFP(${sym}) = PerlIO_${perlio_func}();");
+      if ($fd < 0) {
+	# XXX fails at flush == EOF, wrong init-time?
+      }
+    } else {
+      my $iotype = $io->IoTYPE;
+      my $ioflags = $io->IoFLAGS;
+      # If an IO handle was opened at BEGIN, we might want to re-init it.
+      # IOTYPE:
+      #  -    STDIN/OUT           HANDLE IoIOFP alias
+      #  I    STDIN/OUT/ERR       HANDLE IoIOFP alias
+      #  <    read-only           HANDLE
+      #  >    write-only          HANDLE
+      #  a    append              HANDLE
+      #  +    read and write      HANDLE
+      #  s    socket              DIE
+      #  |    pipe                DIE
+      #  I    IMPLICIT            HANDLE IoIOFP alias
+      #  #    NUMERIC             HANDLE openn, which mode?
+      #  space closed             IGNORE
+      #  \0   ex/closed?          IGNORE
+      if ($iotype eq "\c@" or $iotype eq " ") {
+	warn sprintf("Ignore closed IO Handle %s %s (%d)\n",
+		     cstring($iotype), $fullname, $ioflags)
+	  if $debug{gv};
+      }
+      elsif ($iotype =~ /[a>]/) { # write-only
+	my $fn = "unknown filename \&$fd";;
+	warn "Warning: Write BEGIN-block $fullname to FileHandle \"",$iotype,"$fn\"\n";
+	$init->add( '/* XXX WARNING: You need to manually fix this filename */',
+		    sprintf( "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(%d, %s);", $ioflags, cstring($fn)));
+      }
+      # read or read-write
+      elsif ($iotype eq '#') {
+	my $mode = '+';
+	warn "Warning: Read BEGIN-block $fullname from numeric FileHandle \"",$iotype,"\&$fd\"\n"
+	  if $verbose;
+	$init->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
+			    cstring($mode), $fd));
+	if (my $tell = $o->tell()) {
+	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
+	}
+      }
+      elsif ($iotype =~ /[<#\+]/) {
+	my $fn = "unknown filename \&$fd";
+	warn "Warning: Read BEGIN-block $fullname from FileHandle \"",$iotype,"$fn\"\n";
+	$init->add('/* XXX WARNING: You need to manually fix this filename */',
+		   sprintf( "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(%d, %s);",
+			    $ioflags, cstring($fn)));
+	if (my $tell = $o->tell()) {
+	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
+	}
+      } else {
+	warn sprintf("Warning: Unhandled BEGIN-block IO Handle %s %s (%d)\n",
+		     cstring($iotype), $fullname, $ioflags);
+	$init->add('/* XXX WARNING: You might want to manually open an IO handle here:',
+		   "IoTYPE=$iotype SYMBOL=$fullname, IoFLAGS=$ioflags ",
+		   sprintf( "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(0, ''); */"));
+      }
+    }
+  }
+
   #my $stash = $io->SvSTASH;
   #if ($$stash) {
   #  $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
@@ -4779,7 +4843,7 @@ sub should_save {
   $package =~ s/::$//;
   return $include_package{$package} = 0
     if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
-  warn "Considering $package $include_package{$package}\n" if $debug{pkg};
+  warn "Considering $package\n" if $debug{pkg}; #$include_package{$package}
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
@@ -4835,7 +4899,7 @@ sub should_save {
 
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
-      if ($include_package{$package}) {
+      if (exists $include_package{$package} and $include_package{$package}) {
         warn "$package is cached\n";
       } else {
         warn "Cached $package is already deleted\n";
@@ -4970,7 +5034,7 @@ sub save_unused_subs {
   # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
   # With -fno-fold we don't insist on loading utf8_heavy and Carp.
   # Until it is compile-time required.
-  if ($] >= 5.013009 and ($B::C::fold or exists($INC{'utf8.pm'}))) {
+  if ($] >= 5.013009 and $INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'}))) {
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB exe size 32-bit.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
@@ -5104,11 +5168,6 @@ sub descend_marked_unused {
 }
 
 sub save_main {
-
-  # this is mainly for the test suite
-  #my $warner = $SIG{__WARN__};
-  #local $SIG{__WARN__} = sub { print STDERR @_ };
-
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
@@ -5135,21 +5194,30 @@ sub fixup_ppaddr {
 
 # save %SIG ( in case it was set in a BEGIN block )
 sub save_sig {
-  local $SIG{__WARN__} = shift;
+  # local $SIG{__WARN__} = shift;
   $init->no_split;
-  $init->add( "/* save %SIG */" ) if $verbose;
-  warn "save %SIG\n" if $verbose;
-  $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
+  my @save_sig;
   foreach my $k ( keys %SIG ) {
     next unless ref $SIG{$k};
     my $cvref = svref_2object( \$SIG{$k} );
-    next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handlers
+    next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handler
+    push @save_sig, [$k, $cvref];
+  }
+  unless (@save_sig) {
+    $init->add( "/* no %SIG in BEGIN block */" ) if $verbose;
+    warn "no %SIG in BEGIN block\n" if $verbose;
+    return;
+  }
+  $init->add( "/* save %SIG */" ) if $verbose;
+  warn "save %SIG\n" if $verbose;
+  $init->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
+  foreach my $x ( @save_sig ) {
+    my ($k, $cvref) = @$x;
     my $sv = $cvref->save;
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
     $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
                         cstring($k), length( pack "a*", $k ),
                         'sv', 0 ) ); # XXX randomized hash keys!
-    # XXX leads to No such signal: invalid mg_ptr->PV
     $init->add( "\t".'mg_set(sv);', '}' );
   }
   $init->add('}');
@@ -5159,7 +5227,7 @@ sub save_sig {
 sub save_main_rest {
   # this is mainly for the test suite
   my $warner = $SIG{__WARN__};
-  # local $SIG{__WARN__} = sub { print STDERR @_ };
+  # local $SIG{__WARN__} = sub { print STDERR @_ } unless $debug{runtime};
 
   warn "done main optree, walking symtable for extras\n"
     if $verbose or $debug{cv};
@@ -5381,9 +5449,6 @@ OPTION:
         elsif ( $arg eq "O" ) {
           $debug{op}++;
         }
-        elsif ( $arg eq "c" ) {
-          $debug{cops}++;
-        }
         elsif ( $arg eq "A" ) {
           $debug{av}++;
         }
@@ -5405,17 +5470,20 @@ OPTION:
         elsif ( $arg eq "S" ) {
           $debug{sv}++;
         }
-        elsif ( $arg eq "s" ) {
-          $debug{sub}++;
-        }
-        elsif ( $arg eq "p" ) {
-          $debug{pkg}++;
-        }
         elsif ( $arg eq "F" ) {
           $debug{flags}++ if eval "require B::Flags;";
         }
         elsif ( $arg eq "W" ) {
           $debug{walk}++;
+        }
+        elsif ( $arg eq "c" ) {
+          $debug{cops}++;
+        }
+        elsif ( $arg eq "s" ) {
+          $debug{sub}++;
+        }
+        elsif ( $arg eq "p" ) {
+          $debug{pkg}++;
         }
         elsif ( $arg eq "u" ) {
           $debug{unused}++;

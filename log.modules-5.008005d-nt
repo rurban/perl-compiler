@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 c0bcc96 2012-01-13 | Merge commit '3f50f2b'
+# B::C::VERSION = 1.37 de32fa0 2012-01-18 | more darwin test results 2afe08c
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build #TODO 5.8.5
 pass File::Path
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 97 / 100 modules tested with B-C-1.37 - perl-5.008005d-nt
-# pass  96 /  97 (99.0%)
-# fail   1 /  97 (1.0%)
-# todo   5 /   1 (500.0%)
+# pass  97 /  97 (100.0%)
+# fail   0 /  97 (0.0%)
+# todo   5 /   0 ()
 # skip   3 / 100 (3.0% not installed)

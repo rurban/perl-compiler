@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.37 76ad25b 2012-01-16 | perldoc.t: add Pod::Perldoc::BaseTo to include all Pod::Perldoc::ToMan modules M
+# B::C::VERSION = 1.37 de32fa0 2012-01-18 | more darwin test results 2afe08c
 # perlversion = 5.012004
 # path = /usr/bin/perl5.12.4
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -46,17 +46,17 @@ pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-fail Class::Accessor
+pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 pass Params::Validate
-fail Sub::Name
-fail Filter::Util::Call
+pass Sub::Name
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -64,20 +64,20 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-fail Devel::GlobalDestruction
-fail Class::MOP
-fail Moose
+pass Devel::GlobalDestruction
+pass Class::MOP
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -86,24 +86,24 @@ pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-fail Digest::SHA1
-fail namespace::clean
+pass Digest::SHA1
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.012004
-# pass  85 / 100 (85.0%)
-# fail  15 / 100 (15.0%)
-# todo   0 /  15 (0.0%)
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   0 /   1 (0.0%)
 # skip   0 / 100 (0.0% not installed)

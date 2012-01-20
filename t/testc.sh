@@ -319,7 +319,7 @@ result[49]='ok'
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
 # XXX TODO check if signals work, sigwarn and SIG{INT}
-tests[51]='$SIG{__WARN__}=sub{$w++;};$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
+tests[51]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
 result[51]='ok'
 #-------------
 # issue27
@@ -388,6 +388,29 @@ print q(o) if $s eq q(string test);
 q(test string) =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq q(test);'
 result[90]='ok'
+# IO handles
+tests[93]='
+my ($pid, $out, $in);
+BEGIN {
+  local(*FPID);
+  $pid = open(FPID, "echo <<EOF |");    # DIE
+  open($out, ">&STDOUT");		# EASY
+  open(my $tmp, ">", ".tmpfile");	# HARD to get filename, WARN
+  print $tmp "test\n";
+  close $tmp;				# OK closed
+  open($in, "<", ".tmpfile");		# HARD to get filename, WARN
+}
+# === run-time ===
+print $out "ok";
+print "kill 1, $pid"; 			# DIE, if $pid is set at BEGIN only
+read $in, my $x, 4;
+unlink ".tmpfile";
+'
+result[93]='ok'
+tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
+result[931]='ok'
+tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
+result[932]='ok'
 
 # from here on we test CC specifics only
 

@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.37 76ad25b 2012-01-16 | perldoc.t: add Pod::Perldoc::BaseTo to include all Pod::Perldoc::ToMan modules M
+# B::C::VERSION = 1.37 de32fa0 2012-01-18 | more darwin test results 2afe08c
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -40,23 +40,23 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
-fail Storable
+pass LWP
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
-fail Class::Accessor
+pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 pass Params::Validate
-fail Sub::Name
-fail Filter::Util::Call
+pass Sub::Name
+pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
 pass Scope::Guard
@@ -64,15 +64,15 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-fail Devel::GlobalDestruction
-fail Class::MOP
-fail Moose
+pass Devel::GlobalDestruction
+pass Class::MOP
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 skip IO::Scalar
 skip Sub::Identify
@@ -87,23 +87,23 @@ pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
 skip Digest::SHA1
-fail namespace::clean
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 skip AppConfig
 pass UNIVERSAL::require
 skip Template::Stash
 # 94 / 100 modules tested with B-C-1.37 - perl-5.010001d-nt
-# pass  80 /  94 (85.1%)
-# fail  14 /  94 (14.9%)
-# todo   0 /  14 (0.0%)
+# pass  93 /  94 (98.9%)
+# fail   1 /  94 (1.1%)
+# todo   0 /   1 (0.0%)
 # skip   6 / 100 (6.0% not installed)
