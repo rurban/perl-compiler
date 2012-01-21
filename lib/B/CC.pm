@@ -236,6 +236,7 @@ Add Flags info to the code.
 
 =cut
 
+
 package B::CC;
 
 our $VERSION = '1.12';
@@ -871,6 +872,7 @@ sub error {
 sub init_type_attrs {
   if ($type_attr) {
     eval q[
+
   our $valid_attr = '^(int|double|string|unsigned|register|temporary|ro|readonly)$';
   sub MODIFY_SCALAR_ATTRIBUTES {
     my $pkg = shift;
@@ -903,6 +905,7 @@ sub init_type_attrs {
   sub MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
   sub FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
     ];
+
   }
 }
 
@@ -2956,6 +2959,10 @@ sub import {
   # Allow debugging in CHECK blocks without Od
   $DB::single=1 if defined &DB::DB;
   my ( $option, $opt, $arg );
+  # init with -O0
+  foreach my $ref ( values %optimise ) {
+    $$ref = 0;
+  }
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
@@ -3008,8 +3015,7 @@ OPTION:
     }
     elsif ( $opt eq "O" ) {
       $arg = 1 if $arg eq "";
-      my $ref;
-      foreach $ref ( values %optimise ) {
+      foreach my $ref ( values %optimise ) {
         $$ref = 0;
       }
       if ($arg >= 2) {
