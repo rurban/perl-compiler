@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 78b811f 2012-01-19 | Update Changes (IO restore)
+# B::C::VERSION = 1.37 83cbc9f 2012-01-20 | add inc_cleanup to CC also
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
