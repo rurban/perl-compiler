@@ -660,15 +660,14 @@ sub save_hek {
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
-  # not-randomized global shared hash keys:
-  # share_hek needs a non-zero hash parameter, unlike hv_store.
-  # Vulnerable to oCERT-2011-003 style DOS attacks?
-  # user-input (object fields) does not affect strtab it is pretty safe.
+  # randomized global shared hash keys:
+  #   share_hek needs a non-zero hash parameter, unlike hv_store.
+  #   Vulnerable to oCERT-2011-003 style DOS attacks?
+  #   user-input (object fields) does not affect strtab, it is pretty safe.
+  # But we need to randomize them to avoid run-time conflicts
+  #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
   $init->add(sprintf("%s = share_hek(%s, %u, %s);",
 		     $sym, $cstr, $cur, '0'));
-  # Note that pre-computed hashes are different than run-time computed hashes,
-  # so we will have double entries for CV protos e.g. which will emit strange warnings.
-  # E.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
   wantarray ? ( $sym, $cur ) : $sym;
 }
 
@@ -1573,6 +1572,9 @@ sub savepvn {
       warn sprintf( "Saving shared HEK %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       my $hek = save_hek($pv);
       push @init, sprintf( "%s = HEK_KEY($hek);", $dest ) unless $hek eq 'NULL';
+      if ($DEBUGGING) { # we have to bypass a wrong HE->HEK assert in hv.c
+	push @static_free, $dest;
+      }
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), length($pv) );
@@ -4139,6 +4141,8 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
       register HE* he;
       /* XXX use hv_common_key_len if we start supporting UTF8 */
       if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
+	/* Does not work with DEBUGGING as there is an artifical assert in hv.c
+	   which checks that a HE is allocated before the HEK. */
         HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
         he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
         HvSHAREKEYS_off(PL_strtab);
@@ -4150,7 +4154,6 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
 }
 
 _EOT5
-
   }
 
   # -fno-destruct only >5.8
@@ -4261,13 +4264,6 @@ _EOT7
       }
     }
     $free->output( \*STDOUT, "%s\n" );
-    #for (0 .. $hek_index-1) {
-      # Stored by GvNAME,GvFILE,cv->PV protos, shared hash keys as const op->svop.
-      # Destruct only needed for shared hash keys. But this is done via sv_list above
-    #  my $hek = sprintf( "hek%d", $_ );
-    #  print "\n   " unless $_ % 8;
-    #  printf (" %s = NULL;", $hek);
-    #}
     print "\n    return perl_destruct( my_perl );\n}\n\n";
   }
 
