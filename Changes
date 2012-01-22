@@ -69,6 +69,8 @@
 	  See http://blogs.perl.org/users/rurban/2012/01/what-to-avoid-in-begin-blocks.html
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	Skip internal packages with mark_skip (fixes cc_o2 tests).
+	Move -ftype-attr from -O2 to -O1 and define int,double and string
+	  packages before.
 	* Bytecode (1.12): detect Tie::Hash::NamedCapture (issue 90) -
 	  works only partially.
 	Fixed >&STD... handles (issue 93)
