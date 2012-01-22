@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 83cbc9f 2012-01-20 | add inc_cleanup to CC also
+# B::C::VERSION = 1.37 0bfce30 2012-01-21 | revise share_hek to bypass hv.c hek assert on DEBUGGING
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
