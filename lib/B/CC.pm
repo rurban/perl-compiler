@@ -3,6 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
+#      Copyright (c) 2012 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -62,6 +63,13 @@ options. The compiler tries to figure out which packages may possibly
 have subs in which need compiling but the current version doesn't do
 it very well. In particular, it is confused by nested packages (i.e.
 of the form C<A::B>) where package C<A> does not contain any subs.
+
+=item B<-UPackname>  "unuse" skip Package
+
+Ignore all subs from Package to be compiled.
+
+Certain packages might not be needed at run-time, even if the pessimistic
+walker detects it.
 
 =item B<-mModulename>
 
@@ -240,6 +248,9 @@ Add Flags info to the code.
 package B::CC;
 
 our $VERSION = '1.12';
+
+# Start registering the L<types> namespaces.
+$int::VERSION = $double::VERSION = $string::VERSION = '0.01';
 
 use Config;
 use strict;
@@ -869,27 +880,27 @@ sub error {
 
 # run-time eval is too late for attrs being checked by perlcore. BEGIN does not help.
 # use types is the right approach. But until types is fixed we use this hack.
+# Note that we also need a new CHECK_SCALAR_ATTRIBUTES hook, starting with v5.18.
 sub init_type_attrs {
-  if ($type_attr) {
-    eval q[
+  eval q[
 
-  our $valid_attr = '^(int|double|string|unsigned|register|temporary|ro|readonly)$';
+  our $valid_attr = '^(int|double|string|unsigned|register|temporary|ro|readonly|const)$';
   sub MODIFY_SCALAR_ATTRIBUTES {
     my $pkg = shift;
     my $v = shift;
-    my @bad;
-    my $attr = $valid_attr;
+    my $attr = $B::CC::valid_attr;
     $attr =~ s/\b$pkg\b//;
-    if (@bad = grep !/$attr/, @_) { return @bad; }
-    else {
-      no strict 'refs'; push @{"$pkg\::$v\::attributes"}, @_; # create a magic glob
+    if (my @bad = grep !/$attr/, @_) {
+      return @bad;
+    } else {
+      no strict 'refs';
+      push @{"$pkg\::$v\::attributes"}, @_; # create a magic glob
       return ();
     }
   }
   sub FETCH_SCALAR_ATTRIBUTES {
+    my ($pkg, $v) = @_;
     no strict 'refs';
-    my $pkg = shift;
-    my $v = shift;
     return @{"$pkg\::$v\::attributes"};
   }
 
@@ -897,16 +908,17 @@ sub init_type_attrs {
   sub main::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
   sub main::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
 
-  package int;    # my int $i : register : ro;
-  sub MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
-  sub FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
+  # my int $i : register : ro;
+  sub int::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
+  sub int::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
 
-  package double; # my double $d : ro;
-  sub MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
-  sub FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
-    ];
+  # my double $d : ro;
+  sub double::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
+  sub double::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
 
-  }
+  sub string::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
+  sub string::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
+  ];
 }
 
 =head2 load_pad
@@ -952,7 +964,7 @@ sub load_pad {
       # my int $i; my double $d; compiled code only, unless the source provides the int and double packages.
       # With Ctypes it is easier. my c_int $i; defines an external Ctypes int, which can be efficiently
       # compiled in Perl also.
-      # Better use attributes, like my $i:int; my $d:double; which works un-compiled also.
+      # XXX Better use attributes, like my $i:int; my $d:double; which works un-compiled also.
       if (ref($namesv) eq 'B::PVMG' and ref($namesv->SvSTASH) eq 'B::HV') { # my int
         $class = $namesv->SvSTASH->NAME;
         if ($class eq 'int') {
@@ -975,10 +987,13 @@ sub load_pad {
       }
 
       # Valid scalar type attributes:
-      #   int double ro readonly unsigned
+      #   int double string ro readonly const unsigned
       # Note: PVMG from above also.
-      # Typed arrays and hashes later. We need to add string also.
-      if (class($namesv) =~ /^(I|P|S|N)V/ and UNIVERSAL::can($class, "MODIFY_SCALAR_ATTRIBUTES")) {
+      # Typed arrays and hashes later.
+      if (0 and $class =~ /^(I|P|S|N)V/
+	  and $type_attr
+	  and UNIVERSAL::can($class,"CHECK_SCALAR_ATTRIBUTES")) # with 5.18
+      {
         require attributes;
         #my $svtype = uc reftype ($namesv);
         # test 105
@@ -2987,7 +3002,12 @@ OPTION:
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      mark_unused( $arg, undef );
+      eval "require $arg;";
+      mark_unused( $arg, 1 );
+    }
+    elsif ( $opt eq "U" ) {
+      $arg ||= shift @options;
+      mark_skip( $arg );
     }
     elsif ( $opt eq "strict" ) {
       $arg ||= shift @options;
@@ -3020,10 +3040,10 @@ OPTION:
       }
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
-        $type_attr = 1;
         $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       }
       if ( $arg >= 1 ) {
+        $type_attr = 1;
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
     }
@@ -3124,7 +3144,7 @@ OPTION:
     $B::C::av_init = 0 unless $c_optimise{av_init};
     $B::C::av_init2 = 1 unless $c_optimise{av_init2};
   }
-  init_type_attrs if $type_attr; # but too late for -MB::CC=-O2 on import. attrs are checked before
+  init_type_attrs() if $type_attr; # but too late for -MB::CC=-O2 on import. attrs are checked before
   @options;
 }
 
