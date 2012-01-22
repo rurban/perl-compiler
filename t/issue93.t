@@ -25,7 +25,8 @@ BEGIN {
 # === run-time ===
 print $out 'o';
 kill 0, $pid; 			     # BAD! warn? die?
-print 'k' if 'test' eq read $in, my $x, 4;
+read $in, my $x, 4;
+print 'k' if 'test' eq $x;
 unlink 'pcc.tmp';
 EOF
 
