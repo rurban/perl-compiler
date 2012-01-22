@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.37 83cbc9f 2012-01-20 | add inc_cleanup to CC also
+# B::C::VERSION = 1.37 0bfce30 2012-01-21 | revise share_hek to bypass hv.c hek assert on DEBUGGING
 # perlversion = 5.015006d-nt
 # path = /usr/local/bin/perl5.15.6d-nt
-# platform = linux 64bit non-threaded debug
+# platform = darwin 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015006d-nt
-# pass  96 / 100 (96.0%)
-# fail   4 / 100 (4.0%)
-# todo   0 /   4 (0.0%)
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo   0 /   6 (0.0%)
 # skip   0 / 100 (0.0% not installed)
