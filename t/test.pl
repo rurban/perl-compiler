@@ -814,7 +814,7 @@ sub todo_tests_default {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
 	#15,21,27,30,41-45,50,103,105
-	push @todo, (15,21,27,30,41..46,50,103);
+	push @todo, (15,21,27,30,38,41..46,50,103);
 	push @todo, (14,25,29,49) if $] >= 5.012;
 	push @todo, (3,4)   if $] >= 5.012 and $] < 5.014;
 	#push @todo, (3)     if $] > 5.008 and $] <= 5.008005;
