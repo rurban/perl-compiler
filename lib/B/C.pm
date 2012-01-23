@@ -825,7 +825,13 @@ sub B::OP::save {
       }
       return savesym( $op, $op->next->save );
     }
-    if ($PERL512) {
+    if ($ITHREADS and $] >= 5.015004) {
+      $copsect->comment(
+        "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
+      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, 0, NULL, NULL",
+			    $op->_save_common));
+    }
+    elsif ($PERL512) {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
       $copsect->add(sprintf("%s, 0, %s, NULL, 0, 0, NULL, NULL",
@@ -1192,19 +1198,36 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
-    # cop_label now in hints_hash (Change #33656)
-    $copsect->comment(
-      "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
-    $copsect->add(
-      sprintf(
+    if ($ITHREADS and $] >= 5.015004) {
+      # XXX cop_stashflags missing, need heuristics
+      my $stashpv = $op->stashpv;
+      # Encode is too heavy: Encode::is_utf8($op->stashpv) ? 1 : 0
+      my $stashflags = 0;
+      $stashflags = 1 if $stashpv =~ /([^\x{00}-\x{ff}])/;
+      $copsect->comment(
+	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
+      $copsect->add(
+	sprintf(
+              "%s, %u, " . "%s, %s, %d, 0, " . "%u, %s, NULL",
+              $op->_save_common, $op->line,
+	      "(char*)".constpv( $op->stashpv ), # we can store this static
+	      "(char*)".constpv( $file ), $stashflags,
+              $op->cop_seq, $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+	       ));
+    } else {
+      # cop_label now in hints_hash (Change #33656)
+      $copsect->comment(
+	      "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
+      $copsect->add(
+	sprintf(
               "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
               $op->_save_common, $op->line,
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
               $op->cop_seq,
-              ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
-      )
-    );
+              ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
+	       ));
+    }
     if ( $op->label ) {
       # test 29 and 15,16,21. 44,45
       if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee

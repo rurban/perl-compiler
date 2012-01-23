@@ -67,6 +67,7 @@
 	  Fixed >&STD... handles (issue 93),
 	  i.e. Test::Builder, Test::NoWarnings and parts of the core testing.
 	  See http://blogs.perl.org/users/rurban/2012/01/what-to-avoid-in-begin-blocks.html
+	B::COP::stashflags is missing, use utf8 heuristics for now (>5.15.4 threaded).
 	* CC (1.12): allow overriding of -f<opt> B::C flags.
 	Skip internal packages with mark_skip (fixes cc_o2 tests).
 	Move -ftype-attr from -O2 to -O1 and define int,double and string
