@@ -1199,11 +1199,6 @@ sub B::COP::save {
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
     if ($ITHREADS and $] >= 5.015004) {
-      # XXX cop_stashflags missing, need heuristics
-      my $stashpv = $op->stashpv;
-      # Encode is too heavy: Encode::is_utf8($op->stashpv) ? 1 : 0
-      my $stashflags = 0;
-      $stashflags = 1 if $stashpv =~ /([^\x{00}-\x{ff}])/;
       $copsect->comment(
 	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
       $copsect->add(
@@ -1211,7 +1206,7 @@ sub B::COP::save {
               "%s, %u, " . "%s, %s, %d, 0, " . "%u, %s, NULL",
               $op->_save_common, $op->line,
 	      "(char*)".constpv( $op->stashpv ), # we can store this static
-	      "(char*)".constpv( $file ), $stashflags,
+	      "(char*)".constpv( $file ), $op->stashflags,
               $op->cop_seq, $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } else {
@@ -3004,6 +2999,9 @@ if (0) {
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
   #}
+  if ($fullname eq 'main::@') {
+    return $sym;
+  }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
@@ -3108,17 +3106,21 @@ if (0) {
     my $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save \$".$sym." $gvsv\n" if $debug{gv};
-      if ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK) {
+      if ($fullname eq 'main::@') { # $@ = PL_errors
+	$init->add( "GvSVn($sym) = (SV*)PL_errors;" );
+      }
+      elsif ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK) {
 	warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
 	my $rv = $gvsv->object_2svref();
 	my $origsv = $$rv;
 	no strict 'refs';
 	${$fullname} = "$origsv";
 	svref_2object(\${$fullname})->save($fullname);
+	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       } else {
 	$gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
+	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       }
-      $init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       warn "GV::save \$$fullname\n" if $debug{gv};
     }
     my $gvav = $gv->AV;
@@ -4529,15 +4531,22 @@ _EOT10
 
     if ($ITHREADS and $] > 5.007) {
       # XXX init free elems!
-      my $pad_len = regex_padav->FILL + 1 - 1;    # first is an avref
+      my $pad_len = regex_padav->FILL;    # first is an empty avref
       print <<_EOT11;
 #ifdef USE_ITHREADS
+    if (!*PL_regex_pad) {
+      /* Someone is overwriting regex_pad since 5.15, but not on -fno-warnings */
+      PL_regex_padav = newAV();
+      av_push(PL_regex_padav, newSVpvs("")); /* First entry is empty */
+      PL_regex_pad = AvARRAY(PL_regex_padav);
+    }
     for( i = 0; i < $pad_len; ++i ) {
         av_push( PL_regex_padav, newSViv(0) );
     }
     PL_regex_pad = AvARRAY( PL_regex_padav );
 #endif
 _EOT11
+
     }
 
     if (!$PERL510) {

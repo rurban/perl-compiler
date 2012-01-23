@@ -17,6 +17,9 @@ typedef struct magic  *B__MAGIC;
 #if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
 #endif
+#if PERL_VERSION >= 15
+typedef COP  *B__COP;
+#endif
 
 static int
 my_runops(pTHX)
@@ -116,6 +119,19 @@ RX_EXTFLAGS(rx)
 	  B::REGEXP rx
 
 #endif
+
+MODULE = B	PACKAGE = B::COP	PREFIX = COP_
+
+#if (PERL_VERSION >= 15) && defined(USE_ITHREADS) && defined(CopSTASH_flags)
+
+#define COP_stashflags(o)	CopSTASH_flags(o)
+
+U32
+COP_stashflags(o)
+	B::COP	o
+
+#endif
+
 
 MODULE=B__C 	PACKAGE=B::C
 

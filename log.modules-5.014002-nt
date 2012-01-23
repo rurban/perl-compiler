@@ -4,3 +4,4 @@
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
+pass Text::Wrap

@@ -1,5 +1,6 @@
 B::MAGIC	T_MG_OBJ
 B::REGEXP	T_RX_OBJ
+B::COP		T_OP_OBJ
 
 INPUT
 T_RX_OBJ
@@ -15,6 +16,14 @@ T_RX_OBJ
         else
               croak(\"$var is of type %d, not a reference to REGEXP\", SvTYPE($arg));
 T_MG_OBJ
+	if (SvROK($arg)) {
+	    IV tmp = SvIV((SV*)SvRV($arg));
+	    $var = INT2PTR($type,tmp);
+	}
+	else
+	    croak(\"$var is not a reference\")
+
+T_OP_OBJ
 	if (SvROK($arg)) {
 	    IV tmp = SvIV((SV*)SvRV($arg));
 	    $var = INT2PTR($type,tmp);

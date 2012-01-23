@@ -800,7 +800,7 @@ sub todo_tests_default {
 	# issue 78 error at DynaLoader (require Carp + invalid version)
         #push @todo, (29,44,45) if $] > 5.015 and $what =~ /c_o[34]/;
 	# DynaLoader::dl_load_file()
-        push @todo, (15,27,44,45) if $] > 5.015 and $what eq 'c_o4';
+        push @todo, (15,27,29,41..45,49) if $] > 5.015 and $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
@@ -823,13 +823,14 @@ sub todo_tests_default {
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	#push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
-	push @todo, (27)    if $] < 5.010;
+	push @todo, (27)    if $] <= 5.008008;
 	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
 	#push @todo, (103)   if $] >= 5.012 and $ITHREADS;
 	#push @todo, (49)    if $] >= 5.013009 and $] < 5.015 and !$ITHREADS; # fixed with r1142
+	push @todo, (49)    if $] >= 5.015 and and $DEBUGGING and !$ITHREADS;
     }
-    push @todo, (12)   if $] >= 5.015007 and $ITHREADS;
+    #push @todo, (12)   if $] >= 5.015007 and $ITHREADS;
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     #push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
     #push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;

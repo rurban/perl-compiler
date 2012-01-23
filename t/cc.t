@@ -11,7 +11,7 @@ BEGIN {
   require 'test.pl'; # for run_perl()
 }
 use strict;
-#my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
@@ -20,7 +20,8 @@ my @todo  = todo_tests_default("cc");
 # skip core dumps and endless loops, like custom sort or runtime labels
 my @skip = (14,21,30,
 	    46, # unsupported
-            103 # hangs
+            103, # hangs with non-DEBUGGING
+	    (($DEBUGGING and $] > 5.015) ? (105) : ()),
            );
 
 run_c_tests("CC", \@todo, \@skip);
