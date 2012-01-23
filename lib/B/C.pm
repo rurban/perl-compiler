@@ -2506,6 +2506,7 @@ sub B::CV::save {
 	# $xsub{IO} = 'Dynamic-'. $INC{'IO.pm'}; # XSLoader (issue59)
 	svref_2object( \&IO::bootstrap )->save;
 	mark_package('IO::Handle', 1);
+	mark_package('SelectSaver', 1);
 	#for (@IO) { # mark all IO packages
 	#  mark_package($_, 1);
 	#}
@@ -2999,9 +3000,6 @@ if (0) {
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
   #}
-  if ($fullname eq 'main::@') {
-    return $sym;
-  }
   $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
@@ -4849,7 +4847,7 @@ sub static_core_packages {
 
 sub skip_pkg {
   my $package = shift;
-  if ( $package =~ /^(SelectSaver|mro)$/
+  if ( $package =~ /^(mro)$/
        or $package =~ /^(main::)?(B|PerlIO|Internals|O)::/
        or $package =~ /::::/
        or index($package, " ") != -1 # XXX skip invalid package names

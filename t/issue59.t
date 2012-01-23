@@ -7,6 +7,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
+use Config;
 
 my $name = "ccode59i";
 my $script = <<'EOF';
@@ -35,6 +36,8 @@ plctestok(1, $name, $script, $cmt);
 
 SKIP: {
   skip "eats memory on 5.6", 2 if $] <= 5.008001;
+  $cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
+  $cmt = "TODO 5.6.2"   if $] < 5.007;
   ctestok(2, "C", $name, $script, "C $name $cmt");
   ctestok(3, "CC", $name, $script, "TODO CC $name $cmt");
 }

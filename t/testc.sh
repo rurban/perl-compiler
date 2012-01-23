@@ -37,7 +37,7 @@ if [ -z $Mblib ]; then
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,${v513}-DsGCp,-v,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-DsCp,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
     fi
@@ -390,6 +390,17 @@ q(test string) =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq q(test);'
 result[90]='ok'
 # IO handles
+tests[91]='# issue59
+use strict;
+use warnings;
+use IO::Socket;
+my $remote = IO::Socket::INET->new( Proto => "tcp", PeerAddr => "perl.org", PeerPort => "80" );
+print $remote "GET / HTTP/1.0" . "\r\n\r\n";
+my $result = <$remote>;
+$result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
+close $remote;
+'
+result[91]='ok'
 tests[93]='
 my ($pid, $out, $in);
 BEGIN {
