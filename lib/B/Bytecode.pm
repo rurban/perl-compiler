@@ -562,18 +562,18 @@ sub B::IO::bsave {
   asm "xio_type",        ord $io->IoTYPE;
   if ($PERL56) { # do not mess with PerlIO
     asm "xio_flags",       $io->IoFLAGS;
+  } else {
+    # XXX IOf_NOLINE off was added with 5.8, but not used (?)
+    asm "xio_flags", ord($io->IoFLAGS) & ~32;		# XXX IOf_NOLINE 32
   }
-  # XXX IOf_NOLINE off was added with 5.8, but not used (?)
-  # asm "xio_flags", ord($io->IoFLAGS) & ~32;		# XXX IOf_NOLINE 32
   # issue93: restore std handles
   if (!$PERL56) {
     my $o = $io->object_2svref();
-    my $fd = $o->can('fileno') ? $o->fileno() : 99;
+    my $fd = ref($o) eq 'IO::Handle' ? 99 : $o->fileno();
+    bwarn( "io $ix perlio($fd) ".ref($o) ) if $fd == 99;
     my $i = 0;
-    my $perlio_func = '';
     foreach (qw(stdin stdout stderr)) {
       if ($io->IsSTD($_) or $fd == -$i) { # negative stdout: closed or not yet init
-	$perlio_func = $_;
 	nice1 "-perlio_$_($fd)-";
 	# bwarn( "io $ix perlio_$_($fd)" );
 	asm "xio_flags",  $io->IoFLAGS;
