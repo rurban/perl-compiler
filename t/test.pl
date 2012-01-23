@@ -828,7 +828,7 @@ sub todo_tests_default {
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
 	#push @todo, (103)   if $] >= 5.012 and $ITHREADS;
 	#push @todo, (49)    if $] >= 5.013009 and $] < 5.015 and !$ITHREADS; # fixed with r1142
-	push @todo, (49)    if $] >= 5.015 and and $DEBUGGING and !$ITHREADS;
+	push @todo, (49)    if $] >= 5.015 and $DEBUGGING and !$ITHREADS;
     }
     #push @todo, (12)   if $] >= 5.015007 and $ITHREADS;
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
