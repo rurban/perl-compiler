@@ -172,6 +172,8 @@ sub set_int {
     $sval = sprintf("%${ivdformat}%s", $expr, "L"); # DateTime
   }
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
+  # bullshit detector: e.g. boolean expr = 'lnv0 == rnv0'
+  $sval = $expr if $sval eq '0' and $expr;
   runtime("$obj->{iv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_DOUBLE );
   $obj->{flags} |= VALID_INT | SAVE_INT;

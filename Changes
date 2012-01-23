@@ -3,14 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.37	2012-01-20 rurban
+1.37	2012-01-24 rurban
 	Enabled copy-on-grow strings >= 5.10.
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	Fixed hashes and share_hek, when mixed compiled and load-time for >5.8.
 
 	Stability: This release is the first which passes most tests, all
 	module tests and is used in production with --staticxs -O3, but
-	copy-on-grow and further logical improvements (deferred
+	copy-on-grow hek's and further logical improvements (deferred
 	%INC cleanup) fail so far, so it's still considered unstable.
 
 	* C: save stashes optionally with -fstash, but only values which are also
