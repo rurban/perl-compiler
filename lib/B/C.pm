@@ -3107,7 +3107,7 @@ if (0) {
       if ($fullname eq 'main::@') { # $@ = PL_errors
 	$init->add( "GvSVn($sym) = (SV*)PL_errors;" );
       }
-      elsif ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK) {
+      elsif ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK and !$PERL56) {
 	warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
 	my $rv = $gvsv->object_2svref();
 	my $origsv = $$rv;
