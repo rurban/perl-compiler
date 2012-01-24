@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 0bfce30 2012-01-21 | revise share_hek to bypass hv.c hek assert on DEBUGGING
+# B::C::VERSION = 1.37 5d71fb8 2012-01-23 | cc105 hangs non-debugging, not vice versa
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-skip LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-skip Path::Class
+pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -97,13 +97,13 @@ skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO 5.8.5 without threads
+fail DateTime #TODO 5.8.5 without threads
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 97 / 100 modules tested with B-C-1.37 - perl-5.008005d-nt
-# pass  97 /  97 (100.0%)
-# fail   0 /  97 (0.0%)
-# todo   5 /   0 ()
-# skip   3 / 100 (3.0% not installed)
+# 99 / 100 modules tested with B-C-1.37 - perl-5.008005d-nt
+# pass  98 /  99 (99.0%)
+# fail   1 /  99 (1.0%)
+# todo   5 /   1 (500.0%)
+# skip   1 / 100 (1.0% not installed)

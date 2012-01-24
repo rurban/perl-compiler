@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 0bfce30 2012-01-21 | revise share_hek to bypass hv.c hek assert on DEBUGGING
+# B::C::VERSION = 1.37 5d71fb8 2012-01-23 | cc105 hangs non-debugging, not vice versa
 # perlversion = 5.015007d-nt
 # path = /usr/local/bin/perl5.15.7d-nt
 # platform = linux 64bit non-threaded debug
