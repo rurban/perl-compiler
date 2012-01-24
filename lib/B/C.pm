@@ -4936,7 +4936,7 @@ sub should_save {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
     # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
     # The walker deserves a rewrite.
-    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8)$/ ) {
+    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
       next if $package eq 'Errno' and $m eq 'TIEHASH';
