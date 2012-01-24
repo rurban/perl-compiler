@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 e531fea 2012-01-22 | revise C analog to BC in d9ba51739. ->can does not work
+# B::C::VERSION = 1.37 0111298 2012-01-23 | skip SelectSaver in walker, mark it with IO::Handle only M
 # perlversion = 5.015007-nt
 # path = /usr/local/bin/perl5.15.7-nt
 # platform = linux 64bit non-threaded
@@ -97,13 +97,13 @@ fail MooseX::Types
 pass Class::Singleton
 fail DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015007-nt
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   0 /   2 (0.0%)
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   0 /   3 (0.0%)
 # skip   0 / 100 (0.0% not installed)

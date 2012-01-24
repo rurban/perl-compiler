@@ -8,10 +8,10 @@
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
 	Fixed hashes and share_hek, when mixed compiled and load-time for >5.8.
 
-	Stability: This release is the first which passes most tests, all
-	module tests and is used in production with --staticxs -O3, but
-	copy-on-grow hek's and further logical improvements (deferred
-	%INC cleanup) fail so far, so it's still considered unstable.
+	Stability: This release is the first which passes almost all tests and
+	is used in production with --staticxs -O3, but copy-on-grow hek's and
+	further logical improvements (deferred %INC cleanup) fail so far, so it's
+	still considered unstable.
 
 	* C: save stashes optionally with -fstash, but only values which are also
 	  stashes to avoid a second walker besides savecv, and thus do not

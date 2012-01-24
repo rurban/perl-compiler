@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 0bfce30 2012-01-21 | revise share_hek to bypass hv.c hek assert on DEBUGGING
+# B::C::VERSION = 1.37 0111298 2012-01-23 | skip SelectSaver in walker, mark it with IO::Handle only M
 # perlversion = 5.012004
 # path = /usr/bin/perl5.12.4
 # platform = linux 64bit threaded
