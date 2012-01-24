@@ -3,6 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.38	2012-01-24 rurban
+	t/issue93.t: fixed syntax error
+
 1.37	2012-01-24 rurban
 	Enabled copy-on-grow strings >= 5.10.
 	Save %main:: stashes w/o -fno-stash. Switched to git, added github mirror
