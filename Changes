@@ -95,7 +95,7 @@
 	  use Exporter; print q(ok) if %main::Exporter::
 	* t/test.pl: use general comments with optional TODO. Before only TODO
 	* t/perldoc.t: fixed for 5.8 with manually adding -uFile::Spec -uIO::Handle
-	* t/issue81.t: added
+	* t/issue59.t, t/issue81.t, t/issue90.t, t/issue93.t: added
 
 1.36	2011-10-19 rurban
 	lexical warnings and more 5.15 fixes

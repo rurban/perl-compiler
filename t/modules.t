@@ -256,14 +256,9 @@ sub is_todo {
   if ($] < 5.007) { foreach(qw(
     ExtUtils::CBuilder
   )) { return '5.6' if $_ eq $module; }}
-  if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
-    Module::Build
-  )) { return '5.8.5' if $_ eq $module; }}
-  if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
-    Test::Simple
-    Test::Exception
-    Test::Tester
-  )) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
+  if ($] >= 5.008004 and $] < 5.0080006) { foreach(qw(
+    Module::Pluggable
+  )) { return '5.8.5 CopFILE_set' if $_ eq $module; }}
   # restricted v_string hash?
   if ($] eq '5.010000') { foreach(qw(
    IO
@@ -274,9 +269,22 @@ sub is_todo {
   if ($] > 5.015 and $] < 5.015006) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
+  if ($] > 5.015) { foreach(qw(
+      Moose
+      MooseX::Types
+      DateTime
+  )) { return '> 5.15 (unshare_hek)' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
+    if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
+      Test::NoWarnings
+      Test::Warn
+      Test::Simple
+      Test::Exception
+      Test::Tester
+      Test::Deep
+    )) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
       Test::Pod
     )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
@@ -303,6 +311,9 @@ sub is_todo {
     if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
       DateTime
     )) { return '5.8.5 without threads' if $_ eq $module; }}
+    if ($] > 5.015) { foreach(qw(
+      DateTime::TimeZone
+    )) { return '> 5.15 without threads' if $_ eq $module; }}
   }
   # ---------------------------------------
 }

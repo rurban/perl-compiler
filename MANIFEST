@@ -121,6 +121,7 @@ t/issue50.t
 t/issue51.t
 t/issue52.t
 t/issue54.t
+t/issue59.t
 t/issue71.t
 t/issue76.t
 t/issue81.t

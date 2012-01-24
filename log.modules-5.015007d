@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 e531fea 2012-01-22 | revise C analog to BC in d9ba51739. ->can does not work
+# B::C::VERSION = 1.37 ff550ae 2012-01-24 | update 5.6 results M
 # perlversion = 5.015007d
 # path = /usr/local/bin/perl5.15.7d
 # platform = linux 64bit threaded debug
@@ -12,7 +12,7 @@ pass IO
 pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker
+pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -23,9 +23,9 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+fail Moose #TODO > 5.15 with threads (unshare_hek)
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -86,24 +86,24 @@ pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-fail Digest::SHA1
+pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+fail MooseX::Types #TODO > 5.15 with threads (unshare_hek)
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+fail DateTime #TODO > 5.15 with threads (unshare_hek)
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.37 - perl-5.015007d
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo   0 /   7 (0.0%)
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   3 /   3 (100.0%)
 # skip   0 / 100 (0.0% not installed)

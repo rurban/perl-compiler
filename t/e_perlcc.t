@@ -68,9 +68,9 @@ SKIP: {
   ok(-e 'a.c.lst', "keep a.c.lst with -S");
   cleanup;
 
-  is(`$perlcc --staticxs -S -o a -r -e "print q(ok)"  $devnull`, "ok",
+  is(`$perlcc --staticxs -S -o a -O3 -r -e "print q(ok)"  $devnull`, "ok",
      "-S -o -r --staticxs without xs");
-  ok(! -e 'a.c.lst', "no a.c.lst without xs");
+  ok(! -e 'a.c.lst', "no a.c.lst without xs"); #22
   cleanup;
 }
 

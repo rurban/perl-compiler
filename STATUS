@@ -5,7 +5,7 @@ fails 50% but in mine is a blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
 C is used in production, but a bit unstable, minor bugs left
-and improvements are not always improvements.
+and obvious improvements are not always improvements.
 
 CC is very unstable and slow, work in progress.
 
@@ -16,8 +16,8 @@ new CPAN compiler and the CORE compiler. See below.
 Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.16 compatibility added.
 
 Open Problems for B::C:
-  shared_hek cleanup,
-  %INC mess (seen with run-time require),
+  shared_hek cleanup esp. since 5.15,
+  %INC mess, seen with run-time require,
   see google issues
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
@@ -73,8 +73,8 @@ t/cc            15,21,30,35,41-46,50,103-105
 
 5.8.[45]:
 t/bytecode      -
-t/c             7,42-43
-t/cc            3,7,15,21,27,29,30,42-46,50,103,117
+t/c             -
+t/cc            3,7,15,21,27,29,30,44-46,50,103,105
 
 5.8.9:
 t/bytecode      -
@@ -109,22 +109,21 @@ We only try B::C so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 Compile-time status from top100:
-generally: fail 1%
-5.6.2      fail 2%   ExtUtils::Install Template::Stash
-5.8.8      fail 6%   Pod::Simple Pod::Text File::Temp Moose CGI Test::Pod
-5.8.8-thr  fail 2%   ExtUtils::CBuilder MooseX::Types
-5.8.9      fail 3%   ExtUtils::CBuilder Moose MooseX::Types
-5.10.1     fail 1%   ExtUtils::CBuilder
-5.12.3     fail 1%   ExtUtils::CBuilder
-5.14.2     fail 1%   ExtUtils::CBuilder
-5.15.3     fail 3%   File::Temp ExtUtils::CBuilder Path::Class
+generally: pass 100%
+5.6.2      pass 100%
+5.8.9      fail 1%   Test::NoWarnings
+5.10.1     pass 100%
+5.12.4     pass 100%
+5.14.2     pass 100%
+5.15.7     fail 4% (unshare_hek) Moose MooseX::Types DateTime DateTime::TimeZone
 
 Run-time tests not yet fully done
 
 5.16 status
 -----------
 new XSLoader:load_file
-hang at hfree_next_entry issue78 (runtime load of Carp)
+hang at hfree_next_entry issue78 (runtime load of Carp), esp. problematic non-debugging
+unshare_hek issues in dynamic scope
 
 5.10, 5.12, 5.14 status
 -----------------------
@@ -149,7 +148,7 @@ fixed with 1.37:
   share_hek re-implemented
   init of READONLY hash keys
   re-hash everything at startup (oCERT-2011-003)
-  find UNIVERSAL methods
+  find UNIVERSAL methods, load SelectSaver with IO
   hv_clear_placeholders
   %+, %-, %!
   %SIG
@@ -159,6 +158,9 @@ fixed with 1.37:
   CV prototypes (>5.10)
   ignore aelemfast SPECIAL pads (5.8.[45])
   strip version object overload from XS packages (i91)
+  restore stdio handles from BEGIN blocks (Test::NoWarnings)
+  B::COP::stashflags (>5.15.4)
+  lost PL_regex_pad, (5.15 threaded)
 
 fixed with 1.36:
   5.15 XSLoader and hash init
