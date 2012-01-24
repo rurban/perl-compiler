@@ -109,7 +109,7 @@ sub run_c {
   unlink ($a, "$a.c", "t/$a.c", "t/CORE/$a.c", $result);
   # perlcc 2.06 should now work also: omit unneeded B::Stash -u<> and fixed linking
   # see t/c_argv.t
-  my $backopts = $backend eq 'C' ? "-qq,C" : "-qq,CC";
+  my $backopts = $backend eq 'C' ? "-qq,C,-O3" : "-qq,CC";
   $backopts .= ",-fno-warnings" if $backend =~ /^C/ and $] >= 5.013005;
   $backopts .= ",-fno-fold"     if $backend =~ /^C/ and $] >= 5.013009;
   vcmd "$^X -Mblib -MO=$backopts,-o$a.c $t";
