@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 86d3e7a 2012-01-13 | revise 6e7f2269 mg->PTR fix for 5.6
+# B::C::VERSION = 1.37 af0c384 2012-01-24 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.006002d-nt
 # path = /usr/local/bin/perl5.6.2d-nt
 # platform = darwin 64bit non-threaded debug
@@ -7,10 +7,10 @@ pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
-pass Pod::Simple #TODO 5.6 C crash
+pass Pod::Simple
 pass IO
 pass Scalar::Util
-pass Getopt::Long #TODO 5.6 C crash
+pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
@@ -20,93 +20,7 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp #TODO 5.6 C crash
-pass ExtUtils::Install #TODO 5.6 C crash
-pass Text::ParseWords
-fail ExtUtils::CBuilder
-skip ExtUtils::ParseXS
-pass Module::Build #TODO 5.6 C crash
-pass File::Path
-pass XSLoader
-pass MIME::Base64
-pass Digest
-pass Digest::MD5
-pass Sub::Uplevel
-pass URI #TODO 5.6 C crash
-pass HTML::Tagset
-pass HTML::Parser
-pass Test::Exception
-pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-pass LWP #TODO 5.6 C crash
-pass Storable
-pass base
-pass List::MoreUtils
-pass Params::Util
-pass Task::Weaken
-pass Class::Accessor
-pass Test::Tester
-pass Sub::Install
-pass Attribute::Handlers
-pass Data::OptList
-pass Sub::Exporter
-pass Test::NoWarnings #TODO 5.6 C crash
-pass version
-pass Params::Validate
-pass Sub::Name
-pass Filter::Util::Call
-pass Algorithm::C3
-pass Class::C3
-skip Scope::Guard
-pass MRO::Compat
-pass Time::HiRes
-pass Class::Data::Inheritable
-pass Try::Tiny
-pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
-pass Test::Deep
-pass Carp::Clan
-pass Module::Pluggable
-pass if(1) => "Sys::Hostname"
-pass Text::Balanced
-pass DBI
-pass Time::Local
-pass IO::Scalar
-pass Sub::Identify
-pass Class::ISA
-pass FCGI
-pass Tree::DAG_Node
-skip Path::Class
-skip Test::Warn
-skip Encode
-skip Variable::Magic
-pass CGI
-skip B::Hooks::EndOfScope
-skip Test::Pod
-pass Digest::SHA1
-skip namespace::clean
-skip Class::Inspector
-pass Clone
-pass XML::NamespaceSupport
-skip XML::SAX
-pass YAML #TODO 5.6 C crash
-skip MooseX::Types
-pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale #TODO 5.6 qr r-magic
-pass DateTime #TODO 5.6 qr r-magic
-pass IO::String
-pass AppConfig
-pass UNIVERSAL::require
-pass Template::Stash #TODO 5.6 qr r-magic
-# 88 / 100 modules tested with B-C-1.37 - perl-5.006002d-nt
-# pass  87 /  88 (98.9%)
-# fail   1 /  88 (1.1%)
-# todo  12 /   1 (1200.0%)
-# skip  12 / 100 (12.0% not installed)
+pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 fail ExtUtils::CBuilder #TODO 5.6
