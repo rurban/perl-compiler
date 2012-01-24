@@ -4535,7 +4535,11 @@ _EOT10
     if (!*PL_regex_pad) {
       /* Someone is overwriting regex_pad since 5.15, but not on -fno-warnings */
       PL_regex_padav = newAV();
+#if PERL_VERSION > 10
       av_push(PL_regex_padav, newSVpvs("")); /* First entry is empty */
+#else
+      av_push(PL_regex_padav, newSViv(0));
+#endif
       PL_regex_pad = AvARRAY(PL_regex_padav);
     }
     for( i = 0; i < $pad_len; ++i ) {
