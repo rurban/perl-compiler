@@ -115,7 +115,7 @@ sub try_compile {
     my $libs = shift;
     # For consistency (without considering LD_PRELOAD) require perl to
     # be compiled with the same malloc library.
-    return 0 unless $Config{libs} =~ /\b\Q$lib\E\b/;
+    return 0 unless $Config{libs} =~ /\b\Q$libs\E\b/;
     unless (open PROG, ">", "test.c") {
         print ("Can't write test.c\n");
         return 0;
