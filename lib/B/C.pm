@@ -11,7 +11,7 @@
 
 package B::C;
 
-our $VERSION = '1.38';
+our $VERSION = '1.39';
 my %debug;
 
 package B::C::Section;
@@ -2361,10 +2361,30 @@ sub try_autoload {
   }
   if ($fullname eq 'utf8::SWASHNEW') {
     # utf8_heavy was loaded so far, so defer to a demand-loading stub
-    my $stub = sub {require 'utf8_heavy.pl'; goto &utf8::SWASHNEW; };
+    my $stub = sub { require 'utf8_heavy.pl'; goto &utf8::SWASHNEW; };
     return svref_2object( $stub );
   }
-  # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
+
+  # Handle AutoLoader classes. Any more general AUTOLOAD
+  # use should be handled by the class itself.
+  my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
+  if ( $cvstashname =~ /^POSIX|Storable|DynaLoader|Net::SSLeay|Class::MethodMaker$/
+    or (exists ${$cvstashname.'::'}{AUTOLOAD} and grep( $_ eq "AutoLoader", @isa ) ) )
+  {
+    # Tweaked version of AutoLoader::AUTOLOAD
+    my $dir = $cvstashname;
+    $dir =~ s(::)(/)g;
+    warn "require \"auto/$dir/$cvname.al\"\n" if $debug{cv};
+    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
+    unless ($@) {
+      warn "Forced load of \"auto/$dir/$cvname.al\"\n" if $verbose;
+      return svref_2object( \&$fullname )
+	if defined &$fullname;
+    }
+  }
+
+  # XXX Still not found, now it's getting dangerous (until 5.10 only)
+  # Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
   if (exists ${$cvstashname.'::'}{AUTOLOAD} and !$PERL510) {
     my $auto = \&{$cvstashname.'::AUTOLOAD'};
@@ -2379,6 +2399,7 @@ sub try_autoload {
     open(REALSTDERR,">&STDERR") unless $DEBUGGING;
     open(STDOUT,">","/dev/null");
     open(STDERR,">","/dev/null") unless $DEBUGGING;
+    warn "eval \&$cvstashname\::AUTOLOAD\n" if $debug{cv};
     eval { &$auto };
     open(STDOUT,">&REALSTDOUT");
     open(STDERR,">&REALSTDERR") unless $DEBUGGING;
@@ -2392,27 +2413,6 @@ sub try_autoload {
   }
 
   # XXX TODO Check Selfloader (test 31?)
-
-  # Handle AutoLoader classes explicitly. Any more general AUTOLOAD
-  # use should be handled by the class itself.
-  my $isa = \@{$cvstashname.'::ISA'};
-  if ( grep( $_ eq "AutoLoader", @$isa ) ) {
-    warn "Forcing immediate load of sub derived from AutoLoader\n" if $verbose;
-
-    # Tweaked version of AutoLoader::AUTOLOAD
-    my $dir = $cvstashname;
-    $dir =~ s(::)(/)g;
-    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
-    # eval { require "auto/$dir/$cvname.al" };
-    if ($@) {
-      warn qq(failed require "auto/$dir/$cvname.al": $@\n);
-      return 0;
-    }
-    else {
-      return 1;
-    }
-  }
-
   svref_2object( \*{$cvstashname.'::AUTOLOAD'} )->save
     if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
   svref_2object( \*{$cvstashname.'::CLONE'} )->save
@@ -3367,8 +3367,8 @@ sub B::AV::save {
 	$acc .= "\tfor (gcount=0; gcount<" . ($count+1) . "; gcount++) {"
 	  ." *svp++ = (SV*)&PL_sv_undef; };\n\t";
 	$i += $count;
-      } else {
-	$acc .= "\t*svp++ = (SV*)" . $values[$i] . ";\n\t";
+      } else { # XXX 5.8.9d Test::NoWarnings has empty values
+	$acc .= "\t*svp++ = (SV*)" . ($values[$i] ? $values[$i] : '&PL_sv_undef') . ";\n\t";
       }
     }
     $init->no_split;
