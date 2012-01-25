@@ -2361,58 +2361,48 @@ sub try_autoload {
   }
   if ($fullname eq 'utf8::SWASHNEW') {
     # utf8_heavy was loaded so far, so defer to a demand-loading stub
-    my $stub = sub {require 'utf8_heavy.pl'; goto &utf8::SWASHNEW; };
+    my $stub = sub { require 'utf8_heavy.pl'; goto &utf8::SWASHNEW; };
     return svref_2object( $stub );
   }
-  # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
+
+  # Handle AutoLoader classes. Any more general AUTOLOAD
+  # use should be handled by the class itself.
+  my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
+  if ( $cvstashname =~ /^POSIX|Storable|DynaLoader|Net::SSLeay|Class::MethodMaker$/
+    or (exists ${$cvstashname.'::'}{AUTOLOAD} and grep( $_ eq "AutoLoader", @isa ) ) )
+  {
+    # Tweaked version of AutoLoader::AUTOLOAD
+    my $dir = $cvstashname;
+    $dir =~ s(::)(/)g;
+    warn "require \"auto/$dir/$cvname.al\"\n" if $debug{cv};
+    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
+    unless ($@) {
+      warn "Forced load of \"auto/$dir/$cvname.al\"\n" if $verbose;
+      return svref_2object( \&$fullname )
+	if defined &$fullname;
+    }
+  }
+
+  # XXX Still not found, now it's getting dangerous (until 5.10 only)
+  # Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
   if (exists ${$cvstashname.'::'}{AUTOLOAD} and !$PERL510) {
+    my $auto = \&{$cvstashname.'::AUTOLOAD'};
+    # Tweaked version of __PACKAGE__::AUTOLOAD
+    $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
 
-    # XXX Hack. Avoid certain compile-time sideeffects, such as
-    # creating 'POSIX' and 'rename' files and dirs.
-    if ($fullname eq 'POSIX::rename') {
-      eval q|sub POSIX::rename {
-    usage "rename(oldfilename, newfilename)" if @_ != 2;
-    CORE::rename($_[0], $_[1]);}|;
-    } elsif ($fullname eq 'POSIX::creat') {
-      eval q/sub POSIX::creat {
-    usage "creat(filename, mode)" if @_ != 2;
-    &open($_[0], &O_WRONLY | &O_CREAT | &O_TRUNC, $_[1]);}/;
-    } elsif ($fullname eq 'POSIX::mkdir') {
-      eval q/sub POSIX::mkdir {
-    usage "mkdir(directoryname, mode)" if @_ != 2;
-    CORE::mkdir($_[0], $_[1]);}/;
-    } elsif ($fullname eq 'POSIX::link') {
-      eval q/sub POSIX::link {
-    usage "link(oldfilename, newfilename)" if @_ != 2;
-    CORE::link($_[0], $_[1]);}/;
-    } elsif ($fullname eq 'POSIX::unlink') {
-      eval q/sub POSIX::unlink {
-    usage "unlink(filename)" if @_ != 1;
-    CORE::unlink($_[0]);}/;
-    } elsif ($fullname eq 'Storable::logcarp') {
-      eval q/sub Storable::logcarp { Carp::carp(@_);}/;
-    } elsif ($fullname eq 'Storable::logcroak') {
-      eval q/sub Storable::logcroak { Carp::croak(@_);}/;
-    } else {
-      my $auto = \&{$cvstashname.'::AUTOLOAD'};
-      # Tweaked version of __PACKAGE__::AUTOLOAD
-      $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
-
-      # Prevent eval from polluting STDOUT,STDERR and our c code.
-      # With a debugging perl STDERR is written
-      local *REALSTDOUT;
-      local *REALSTDERR unless $DEBUGGING;
-      open(REALSTDOUT,">&STDOUT");
-      open(REALSTDERR,">&STDERR") unless $DEBUGGING;
-      open(STDOUT,">","/dev/null");
-      open(STDERR,">","/dev/null") unless $DEBUGGING;
-      warn "eval \&$cvstashname\::AUTOLOAD\n" if $debug{cv};
-      eval { &$auto };
-      open(STDOUT,">&REALSTDOUT");
-      open(STDERR,">&REALSTDERR") unless $DEBUGGING;
-    }
-#die if -d 'POSIX' or -f 'link' or -f 'POSIX';
+    # Prevent eval from polluting STDOUT,STDERR and our c code.
+    # With a debugging perl STDERR is written
+    local *REALSTDOUT;
+    local *REALSTDERR unless $DEBUGGING;
+    open(REALSTDOUT,">&STDOUT");
+    open(REALSTDERR,">&STDERR") unless $DEBUGGING;
+    open(STDOUT,">","/dev/null");
+    open(STDERR,">","/dev/null") unless $DEBUGGING;
+    warn "eval \&$cvstashname\::AUTOLOAD\n" if $debug{cv};
+    eval { &$auto };
+    open(STDOUT,">&REALSTDOUT");
+    open(STDERR,">&REALSTDERR") unless $DEBUGGING;
 
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
@@ -2423,27 +2413,6 @@ sub try_autoload {
   }
 
   # XXX TODO Check Selfloader (test 31?)
-
-  # Handle AutoLoader classes explicitly. Any more general AUTOLOAD
-  # use should be handled by the class itself.
-  my $isa = \@{$cvstashname.'::ISA'};
-  if ( grep( $_ eq "AutoLoader", @$isa ) ) {
-    warn "Forcing immediate load of sub derived from AutoLoader\n" if $verbose;
-
-    # Tweaked version of AutoLoader::AUTOLOAD
-    my $dir = $cvstashname;
-    $dir =~ s(::)(/)g;
-    warn "require \"auto/$dir/$cvname.al\"\n" if $debug{cv};
-    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
-    if ($@) {
-      warn qq(failed require "auto/$dir/$cvname.al": $@\n);
-      return 0;
-    }
-    else {
-      return 1;
-    }
-  }
-
   svref_2object( \*{$cvstashname.'::AUTOLOAD'} )->save
     if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
   svref_2object( \*{$cvstashname.'::CLONE'} )->save
@@ -3398,8 +3367,8 @@ sub B::AV::save {
 	$acc .= "\tfor (gcount=0; gcount<" . ($count+1) . "; gcount++) {"
 	  ." *svp++ = (SV*)&PL_sv_undef; };\n\t";
 	$i += $count;
-      } else {
-	$acc .= "\t*svp++ = (SV*)" . $values[$i] . ";\n\t";
+      } else { # XXX 5.8.9d Test::NoWarnings has empty values
+	$acc .= "\t*svp++ = (SV*)" . ($values[$i] ? $values[$i] : '&PL_sv_undef') . ";\n\t";
       }
     }
     $init->no_split;
