@@ -61,6 +61,7 @@ WriteMakefile(
     'AUTHOR'   => 'Malcolm Beattie (retired), '
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
+    'LICENSE'  => 'perl',
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
         "    B::Flags:  0.04\n".
