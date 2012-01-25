@@ -794,7 +794,7 @@ sub todo_tests_default {
         push @todo, (15)    if $] > 5.010 and $ITHREADS;
 
 	# @ISA issue 64
-        push @todo, (10,12,19,25,50)  if $what eq 'c_o4';
+        push @todo, (10,12,19,25,42,43,50)  if $what eq 'c_o4';
         #push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
         # push @todo, (50) if $] > 5.013  and $what eq 'c' and !$ITHREADS;
 	# issue 78 error at DynaLoader (require Carp + invalid version)
