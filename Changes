@@ -4,9 +4,9 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.39	2012-02-xx rurban
-	C: fixed some POSIX and Storable .al compile-time side-effects such as
-	  creating files and dirs. First try loading .al files, then eval
-	  the dangerous AUTOLOAD.
+	C: improved eval AUTOLOAD, avoid some POSIX and Storable .al compile-time
+	  side-effects such as creating files and dirs. First try loading
+	  .al files, then eval the dangerous AUTOLOAD.
 
 1.38	2012-01-24 rurban
 	t/issue93.t: fixed syntax error

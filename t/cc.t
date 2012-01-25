@@ -21,7 +21,7 @@ my @todo  = todo_tests_default("cc");
 my @skip = (14,21,30,
 	    46, # unsupported
             103, # hangs with non-DEBUGGING
-	    ((!$DEBUGGING and $] > 5.015) ? (105) : ()),
+	    ((!$DEBUGGING and $] > 5.010) ? (105) : ()),
            );
 
 run_c_tests("CC", \@todo, \@skip);
