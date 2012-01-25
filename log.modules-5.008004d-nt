@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 0111298 2012-01-23 | skip SelectSaver in walker, mark it with IO::Handle only M
+# B::C::VERSION = 1.38 aca7189 2012-01-24 | release 1.38: fixed t/issue93.t syntax error
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.37 - perl-5.008004d-nt
+# 98 / 100 modules tested with B-C-1.38 - perl-5.008004d-nt
 # pass  97 /  98 (99.0%)
 # fail   1 /  98 (1.0%)
 # todo   0 /   1 (0.0%)

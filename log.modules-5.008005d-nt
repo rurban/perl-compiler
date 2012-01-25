@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 0111298 2012-01-23 | skip SelectSaver in walker, mark it with IO::Handle only M
+# B::C::VERSION = 1.38 aca7189 2012-01-24 | release 1.38: fixed t/issue93.t syntax error
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -13,7 +13,7 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-pass Test::Simple #TODO 5.8.4-5 shared_scalar n-magic (\156)
+pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build #TODO 5.8.5
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -35,19 +35,19 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-pass Test::Exception #TODO 5.8.4-5 shared_scalar n-magic (\156)
+pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-skip LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester #TODO 5.8.4-5 shared_scalar n-magic (\156)
+pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 97 / 100 modules tested with B-C-1.37 - perl-5.008005d-nt
-# pass  97 /  97 (100.0%)
-# fail   0 /  97 (0.0%)
-# todo   5 /   0 ()
-# skip   3 / 100 (3.0% not installed)
+# 98 / 100 modules tested with B-C-1.38 - perl-5.008005d-nt
+# pass  98 /  98 (100.0%)
+# fail   0 /  98 (0.0%)
+# todo   1 /   0 ()
+# skip   2 / 100 (2.0% not installed)
