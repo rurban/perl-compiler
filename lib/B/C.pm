@@ -11,7 +11,7 @@
 
 package B::C;
 
-our $VERSION = '1.38';
+our $VERSION = '1.39';
 my %debug;
 
 package B::C::Section;
@@ -2367,21 +2367,52 @@ sub try_autoload {
   # XXX Search and call ::AUTOLOAD (=> ROOT and XSUB) (test 27, 5.8)
   # Since 5.10 AUTOLOAD xsubs are already resolved
   if (exists ${$cvstashname.'::'}{AUTOLOAD} and !$PERL510) {
-    my $auto = \&{$cvstashname.'::AUTOLOAD'};
-    # Tweaked version of __PACKAGE__::AUTOLOAD
-    $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
 
-    # Prevent eval from polluting STDOUT,STDERR and our c code.
-    # With a debugging perl STDERR is written
-    local *REALSTDOUT;
-    local *REALSTDERR unless $DEBUGGING;
-    open(REALSTDOUT,">&STDOUT");
-    open(REALSTDERR,">&STDERR") unless $DEBUGGING;
-    open(STDOUT,">","/dev/null");
-    open(STDERR,">","/dev/null") unless $DEBUGGING;
-    eval { &$auto };
-    open(STDOUT,">&REALSTDOUT");
-    open(STDERR,">&REALSTDERR") unless $DEBUGGING;
+    # XXX Hack. Avoid certain compile-time sideeffects, such as
+    # creating 'POSIX' and 'rename' files and dirs.
+    if ($fullname eq 'POSIX::rename') {
+      eval q|sub POSIX::rename {
+    usage "rename(oldfilename, newfilename)" if @_ != 2;
+    CORE::rename($_[0], $_[1]);}|;
+    } elsif ($fullname eq 'POSIX::creat') {
+      eval q/sub POSIX::creat {
+    usage "creat(filename, mode)" if @_ != 2;
+    &open($_[0], &O_WRONLY | &O_CREAT | &O_TRUNC, $_[1]);}/;
+    } elsif ($fullname eq 'POSIX::mkdir') {
+      eval q/sub POSIX::mkdir {
+    usage "mkdir(directoryname, mode)" if @_ != 2;
+    CORE::mkdir($_[0], $_[1]);}/;
+    } elsif ($fullname eq 'POSIX::link') {
+      eval q/sub POSIX::link {
+    usage "link(oldfilename, newfilename)" if @_ != 2;
+    CORE::link($_[0], $_[1]);}/;
+    } elsif ($fullname eq 'POSIX::unlink') {
+      eval q/sub POSIX::unlink {
+    usage "unlink(filename)" if @_ != 1;
+    CORE::unlink($_[0]);}/;
+    } elsif ($fullname eq 'Storable::logcarp') {
+      eval q/sub Storable::logcarp { Carp::carp(@_);}/;
+    } elsif ($fullname eq 'Storable::logcroak') {
+      eval q/sub Storable::logcroak { Carp::croak(@_);}/;
+    } else {
+      my $auto = \&{$cvstashname.'::AUTOLOAD'};
+      # Tweaked version of __PACKAGE__::AUTOLOAD
+      $AutoLoader::AUTOLOAD = ${$cvstashname.'::AUTOLOAD'} = "$cvstashname\::$cvname";
+
+      # Prevent eval from polluting STDOUT,STDERR and our c code.
+      # With a debugging perl STDERR is written
+      local *REALSTDOUT;
+      local *REALSTDERR unless $DEBUGGING;
+      open(REALSTDOUT,">&STDOUT");
+      open(REALSTDERR,">&STDERR") unless $DEBUGGING;
+      open(STDOUT,">","/dev/null");
+      open(STDERR,">","/dev/null") unless $DEBUGGING;
+      warn "eval \&$cvstashname\::AUTOLOAD\n" if $debug{cv};
+      eval { &$auto };
+      open(STDOUT,">&REALSTDOUT");
+      open(STDERR,">&REALSTDERR") unless $DEBUGGING;
+    }
+#die if -d 'POSIX' or -f 'link' or -f 'POSIX';
 
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
@@ -2402,8 +2433,8 @@ sub try_autoload {
     # Tweaked version of AutoLoader::AUTOLOAD
     my $dir = $cvstashname;
     $dir =~ s(::)(/)g;
+    warn "require \"auto/$dir/$cvname.al\"\n" if $debug{cv};
     eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
-    # eval { require "auto/$dir/$cvname.al" };
     if ($@) {
       warn qq(failed require "auto/$dir/$cvname.al": $@\n);
       return 0;
