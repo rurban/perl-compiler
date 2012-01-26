@@ -255,7 +255,7 @@ sub _fresh_perl {
     $runperl_args->{progfile} = $tmpfile;
     $runperl_args->{stderr} = 1;
 
-    open TEST, ">$tmpfile" or die "Cannot open $tmpfile: $!";
+    open TEST, ">", $tmpfile or die "Cannot open $tmpfile: $!";
 
     # VMS adjustments
     if( $^O eq 'VMS' ) {
@@ -419,22 +419,23 @@ sub run_cc_test {
     require B::C::Flags;
     my $test = $fnbackend."code".$cnt.".pl";
     my $cfile = $fnbackend."code".$cnt.$opt.".c";
-    my @obj = ($fnbackend."code".$cnt.$opt.".obj",
+    my @obj;
+    @obj = ($fnbackend."code".$cnt.$opt.".obj",
                $fnbackend."code".$cnt.$opt.".ilk",
                $fnbackend."code".$cnt.$opt.".pdb")
       if $Config{cc} =~ /^cl/i; # MSVC uses a lot of intermediate files
     my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
     unlink ($test, $cfile, $exe, @obj);
-    open T, ">$test"; print T $script; close T;
+    open T, ">", $test; print T $script; close T;
     my $Mblib = $] >= 5.009005 ? "-Mblib" : ""; # test also the CORE B in older perls
     unless ($Mblib) {           # check for -Mblib from the testsuite
         if (grep { m{blib(/|\\)arch$} } @INC) {
             $Mblib = "-Iblib/arch -Iblib/lib";  # forced -Mblib via cmdline without
             					# printing to stderr
-            $backend = "-qq,$backend,-q" if (!$ENV{TEST_VERBOSE} and $] > 5.007);
+            $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
         }
     } else {
-        $backend = "-qq,$backend,-q" if (!$ENV{TEST_VERBOSE} and $] > 5.007);
+        $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
     }
     $backend .= ",-fno-warnings" if $] >= 5.013005;
     $backend .= ",-fno-fold" if $] >= 5.013009;
@@ -828,7 +829,7 @@ sub todo_tests_default {
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
 	#push @todo, (103)   if $] >= 5.012 and $ITHREADS;
 	#push @todo, (49)    if $] >= 5.013009 and $] < 5.015 and !$ITHREADS; # fixed with r1142
-	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS; #not
+	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
     }
     #push @todo, (12)   if $] >= 5.015007 and $ITHREADS;
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
@@ -846,3 +847,4 @@ sub todo_tests_default {
 #   fill-column: 78
 # End:
 # vim: expandtab shiftwidth=4:
+

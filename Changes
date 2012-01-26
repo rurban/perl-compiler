@@ -5,6 +5,9 @@
 
 1.40	2012-02-xx rurban
 	C: fixed deferred %INC, %INC is now stored and cleaned up at the end.
+	Work on __DATA__ handles  as PerlIO Layer: works dynamic and try to get
+	  it work static also.
+	Check for XSLoader now at the very end (test 27)
 
 1.39	2012-01-25 rurban
 	C: improved eval AUTOLOAD, avoid some POSIX and Storable .al compile-time

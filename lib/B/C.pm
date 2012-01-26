@@ -10,14 +10,16 @@
 #
 
 package B::C;
+use strict;
 
 our $VERSION = '1.40';
 my %debug;
 
 package B::C::Section;
+use strict;
 
 use B ();
-use base B::Section;
+use base 'B::Section';
 
 sub new {
   my $class = shift;
@@ -76,6 +78,7 @@ sub output {
 }
 
 package B::C::InitSection;
+use strict;
 
 # avoid use vars
 @B::C::InitSection::ISA = qw(B::C::Section);
@@ -183,6 +186,7 @@ EOT
 }
 
 package B::C;
+use strict;
 use Exporter ();
 use Errno (); #needed since 5.14
 our %Regexp;
@@ -195,8 +199,8 @@ our %Regexp;
   }
 }
 
-@ISA        = qw(Exporter);
-@EXPORT_OK =
+our @ISA        = qw(Exporter);
+our @EXPORT_OK =
   qw(output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
      save_sig svop_or_padop_pv inc_cleanup);
@@ -227,7 +231,6 @@ use B::Asmdata qw(@specialsv_name);
 use B::C::Flags;
 use FileHandle;
 #use Carp;
-use strict;
 use Config;
 
 my $hv_index      = 0;
@@ -483,7 +486,7 @@ sub savesym {
   my ( $obj, $value ) = @_;
   my $sym = sprintf( "s\\_%x", $$obj );
   $symtable{$sym} = $value;
-  $value;
+  return $value;
 }
 
 sub objsym {
@@ -577,7 +580,7 @@ sub constpv {
       $decl->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
     }
   }
-  wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
+  return wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
 }
 
 sub savepv {
@@ -3593,24 +3596,27 @@ sub B::HV::save {
 sub B::IO::save_data {
   my ( $io, $sym, $globname, @data ) = @_;
   my $data = join '', @data;
-
   # XXX using $DATA might clobber it!
   my $ref = svref_2object( \\$data )->save;
   $init->add("/* save $globname in RV ($ref) */") if $verbose;
   $init->add( "GvSVn( $sym ) = (SV*)$ref;");
 
-  # run-time load of PerlIO::scalar
-  $init->add_eval( sprintf 'open(%s, "<", \\\\$%s)', $globname, $globname );
-  # => eval_pv("open(main::DATA, \"<\", \\$main::DATA)",1);
-  if (!$PERL56) {      # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
+  if ($PERL56) {
+    # Pseudo FileHandle
+    $init->add_eval( sprintf 'open(%s, \'<\', $%s)', $globname, $globname );
+    # => eval_pv("open(main::DATA, '<', \\$main::DATA)",1);
+  } else { # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
+    $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s)', $globname, $globname );
+    # => eval_pv("open(main::DATA, '<:scalar', $main::DATA)",1); DATA being a ref to $data
     $use_xsloader = 1; # it's just a layer without subs, and CORE would load it later as layer.
     require PerlIO;
     require PerlIO::scalar;
     $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
-    $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
-    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
     mark_package("PerlIO", 1);
-    mark_package("PerlIO::scalar", 1);
+    # XXX fails to link static
+    # $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
+    # $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
+    # mark_package("PerlIO::scalar", 1);
   }
 }
 
@@ -4405,6 +4411,7 @@ _EOT9
       $dl++;
     }
   }
+  B::C::force_saving_xsLoader() if $dl or $xs;
   if ($dl) {
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
@@ -4908,6 +4915,7 @@ sub should_save {
     warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
   }
+  return 1 if $package =~ /^DynaLoader|XSLoader$/ and $use_xsloader;
   # If this package is in the same file as main:: or our source, save it. (72, 73)
   if ($mainfile) {
     # Find the first cv in this package for CV->FILE
@@ -5005,6 +5013,8 @@ sub add_hashINC {
     if ($savINC{$incpack}) {
       warn "Adding $packname to \%INC (again)\n" if $debug{pkg};
       $INC{$incpack} = $savINC{$incpack};
+      # need to check xsub
+      $use_xsloader = 1 if $packname =~ /^DynaLoader|XSLoader$/;
     } else {
       warn "Adding $packname to \%INC\n" if $debug{pkg};
       for (@INC) {
@@ -5085,8 +5095,7 @@ sub save_unused_subs {
     add_hashINC("warnings::register");
   }
   if ($use_xsloader) {
-    force_saving_xsLoader();
-    $use_xsloader = 0;
+    B::C::force_saving_xsLoader();
     mark_package('Config', 1); # required by Dynaloader and special cased previously
   }
 }
@@ -5259,6 +5268,7 @@ sub force_saving_xsLoader {
   }
   add_hashINC("XSLoader") if $] < 5.015003;
   add_hashINC("DynaLoader");
+  $use_xsloader = 0; # do not load again
 }
 
 sub save_main_rest {
@@ -5305,13 +5315,10 @@ sub save_main_rest {
              ? "PL_endav = $end_av;"
              : "PL_endav = (AV*)$end_av;");
   }
-  # If XSLoader is used later, e.g. in INIT or END block
-  if ($use_xsloader) {
-    force_saving_xsLoader();
-    $use_xsloader = 0;
-  }
-
   save_context() unless defined($module);
+  # warn "use_xsloader=$use_xsloader\n" if $verbose;
+  # If XSLoader was forced later, e.g. in curpad, INIT or END block
+  B::C::force_saving_xsLoader() if $use_xsloader;
   fixup_ppaddr();
 
   warn "Writing output\n" if $verbose;
@@ -5469,7 +5476,7 @@ OPTION:
       elsif ($arg eq 'ufull') {
         $arg = 'uOcAHCMGSpWF';
       }
-      foreach $arg ( split( //, $arg ) ) {
+      foreach my $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
 	  $verbose++;
 	  B->debug(1);
@@ -5499,7 +5506,7 @@ OPTION:
           $debug{sv}++;
         }
         elsif ( $arg eq "F" ) {
-          $debug{flags}++ if eval "require B::Flags;";
+          $debug{flags}++ if require B::Flags;
         }
         elsif ( $arg eq "W" ) {
           $debug{walk}++;
@@ -5553,7 +5560,7 @@ OPTION:
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      eval "require $arg;";
+      require $arg;
       mark_unused( $arg, 1 );
     }
     elsif ( $opt eq "U" ) {
