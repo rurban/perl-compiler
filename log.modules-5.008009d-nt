@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.38 aca7189 2012-01-24 | release 1.38: fixed t/issue93.t syntax error
+# B::C::VERSION = 1.39 e34b86a 2012-01-25 | release 1.39
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = linux 64bit non-threaded debug
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.38 - perl-5.008009d-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   0 /   1 (0.0%)
+# 100 / 100 modules tested with B-C-1.39 - perl-5.008009d-nt
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)
