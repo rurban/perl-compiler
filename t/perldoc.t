@@ -35,28 +35,29 @@ diag "see if $perldoc -T works";
 my $T_opt = "-T -f wait";
 my $ori;
 my $PAGER = '';
+my ($result, $out, $err);
 my $t0 = [gettimeofday];
 if ($^O eq 'MSWin32') {
   $T_opt = "-t -f wait";
   $PAGER = "PERLDOC_PAGER=type ";
-  $ori = `$PAGER$X -S $perldoc $T_opt`;
+  ($result, $ori, $err) = run_cmd("$PAGER$X -S $perldoc $T_opt", 20);
 } else {
-  $ori = `$X -S $perldoc $T_opt 2>&1`;
+  ($result, $ori, $err) = run_cmd("$X -S $perldoc $T_opt 2>&1", 20);
 }
-my $t1 = tv_interval( $t0, [gettimeofday]);
+my $t1 = tv_interval( $t0 );
 if ($ori =~ /Unknown option/) {
   $T_opt = "-t -f wait";
   $PAGER = "PERLDOC_PAGER=cat " if $^O ne 'MSWin32';
   diag "No, use $PAGER instead";
   $t0 = [gettimeofday];
-  $ori = `$PAGER$X -S $perldoc $T_opt`;
-  $t1 = tv_interval( $t0, [gettimeofday]);
+  ($result, $ori, $err) = run_cmd("$PAGER$X -S $perldoc $T_opt", 20);
+  $t1 = tv_interval( $t0 );
 } else {
   diag "it does";
 }
 $t0 = [gettimeofday];
-my ($result, $out, $err) = run_cmd("$PAGER $perldocexe $T_opt", 20);
-my $t2 = tv_interval( $t0, [gettimeofday]);
+($result, $out, $err) = run_cmd("$PAGER $perldocexe $T_opt", 20);
+my $t2 = tv_interval( $t0 );
 TODO: {
   # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
   # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
@@ -66,7 +67,7 @@ TODO: {
 
 SKIP: {
   skip "cannot compare times", 1 if $out ne $ori;
-  ok(faster($t2,$t1), "compiled faster than uncompiled: $t2 < $t1"); #3
+  ok(faster($t1,$t2), "compiled faster than uncompiled: $t2 < $t1"); #3
 }
 
 unlink $perldocexe if -e $perldocexe;
@@ -78,7 +79,7 @@ ok(-s $perldocexe, "perldoc compiled"); #4
 
 $t0 = [gettimeofday];
 ($result, $out, $err) = run_cmd("$PAGER $perldocexe $T_opt", 20);
-my $t3 = tv_interval( $t0, [gettimeofday]);
+my $t3 = tv_interval( $t0 );
 TODO: {
   local $TODO = "compiled does not print yet";
   is($out, $ori, "same result"); #5
@@ -86,8 +87,8 @@ TODO: {
 
 SKIP: {
   skip "cannot compare times", 2 if $out ne $ori;
-  ok(faster($t3,$t2), "compiled -O3 not slower than -O0: $t3 <= $t2"); #6
-  ok(faster($t3,$t1), "compiled -O3 faster than uncompiled: $t3 < $t1"); #7
+  ok(faster($t2,$t3), "compiled -O3 not slower than -O0: $t3 <= $t2"); #6
+  ok(faster($t1,$t3), "compiled -O3 faster than uncompiled: $t3 < $t1"); #7
 }
 
 END {

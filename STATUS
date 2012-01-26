@@ -1,11 +1,10 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
 Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
-fails 50% but in mine is a blocker.
+fails 50% but in mine is a 5.6 blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
-C is used in production, but a bit unstable, minor bugs left
-and obvious improvements are not always improvements.
+C is used in production, but a bit unstable, not all methods packages are detected.
 
 CC is very unstable and slow, work in progress.
 
@@ -13,11 +12,11 @@ C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
-Most B::C and B::CC bugs fixed. 5.10 + 5.12 + 5.14 + 5.16 compatibility added.
+Most B::C and B::CC bugs fixed.
+5.10 + 5.12 + 5.14 + 5.16 compatibility added.
 
 Open Problems for B::C:
   shared_hek cleanup esp. since 5.15,
-  %INC mess, seen with run-time require,
   see google issues
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
@@ -111,7 +110,7 @@ The full module testsuite is run with t/testm.sh -t [OPTS] Module
 Compile-time status from top100:
 generally: pass 100%
 5.6.2      pass 100%
-5.8.9      fail 1%   Test::NoWarnings
+5.8.9      pass 100%
 5.10.1     pass 100%
 5.12.4     pass 100%
 5.14.2     pass 100%
@@ -385,6 +384,7 @@ regex_padav(142) comppad_name(144) xgv_stash(145) signal(146) formfeed(147)
 JIT PLANS
 ---------
 Jit came alive March 2010 on github and now CPAN.
+It works to do profiling, but is not finished.
 
 B-C-1.04_10:
 Playing with the idea to target against parrot pir instead of lightning
@@ -406,4 +406,4 @@ cc 	B::CC
 -D 	-DDEBUGGING perl, also used as d version suffix, eg 5.8.8d
 -nt 	not threaded perl
 
-2010-01-27 rurban
+2012-01-26 rurban
