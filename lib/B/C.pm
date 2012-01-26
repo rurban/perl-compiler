@@ -11,7 +11,7 @@
 
 package B::C;
 
-our $VERSION = '1.39';
+our $VERSION = '1.40';
 my %debug;
 
 package B::C::Section;
@@ -261,7 +261,7 @@ my $warn_undefined_syms;
 my ($staticxs, $outfile);
 my (%include_package, %skip_package);
 my %static_ext;
-my ($use_xsloader, $inc_cleanup);
+my ($use_xsloader);
 my $nullop_count         = 0;
 # options and optimizations shared with B::CC
 our ($module, $init_name, %savINC, $mainfile);
@@ -2934,7 +2934,7 @@ sub B::GV::save {
   my $sym = objsym($gv);
   if ( defined($sym) ) {
     warn sprintf( "GV 0x%x already saved as $sym\n", $$gv ) if $debug{gv};
-    return $sym; # unless $_[1] eq 'main::INC' and $_[2];
+    return $sym;
   }
   else {
     my $ix = $gv_index++;
@@ -3138,9 +3138,6 @@ if (0) {
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
-      if ($fullname eq 'main::INC') {
-	inc_cleanup();
-      }
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
@@ -3151,8 +3148,10 @@ if (0) {
 	  mark_package('Tie::Hash::NamedCapture', 1);
 	}
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
-	$gvhv->save($fullname);
-	$init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
+	if ($fullname ne 'main::INC') {
+	  $gvhv->save($fullname);
+	  $init->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
+	}
       }
     }
     my $gvcv = $gv->CV;
@@ -5095,7 +5094,6 @@ sub save_unused_subs {
 }
 
 sub inc_cleanup {
-  return if $inc_cleanup;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $packname (keys %INC) {
@@ -5110,10 +5108,9 @@ sub inc_cleanup {
     }
   }
   if ($debug{pkg} and $verbose) {
-    warn "\%INC: ".join(" ",keys %INC)."\n";
-    warn "\%include_package: ".join(" ",grep{$include_package{$_}} keys %include_package)."\n";
+    warn "\%INC: ".join(" ",sort keys %INC)."\n";
+    warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
   }
-  $inc_cleanup++;
 }
 
 sub save_context {
@@ -5166,10 +5163,12 @@ sub save_context {
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
     inc_cleanup();
-    # svref_2object( \*main::INC )->save('main::INC', 'now');
-    $inc_hv          = svref_2object( \%INC )->save('main::INC');
-    $init->add('/* @INC */');
-    $inc_av          = svref_2object( \@INC )->save('main::INC');
+    my $inc_gv = svref_2object( \*main::INC );
+    $inc_hv    = $inc_gv->HV->save('main::INC');
+    $init->add( sprintf( "GvHV(%s) = s\\_%x;",
+			 $inc_gv->save('main::INC'), $inc_gv->HV ) );
+    # $init->add('/* @INC */');
+    $inc_av    = $inc_gv->AV->save('main::INC');
   }
   my $amagic_generate = amagic_generation;
   warn "amagic_generation = $amagic_generate\n" if $verbose;

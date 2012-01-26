@@ -32,12 +32,12 @@ v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
 if [ -z $Mblib ]; then 
     VERS="${VERS}_global"; 
-    OCMD="$PERL $Mblib -MO=C,${v513}-DcAC,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-Dcsp,"
     if [ $BASE = "testcc.sh" ]; then # DrOsplt 
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,${v513}-DsCp,-v,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-Dsp,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
     fi
