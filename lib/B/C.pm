@@ -3599,12 +3599,20 @@ sub B::IO::save_data {
   $init->add("/* save $globname in RV ($ref) */") if $verbose;
   $init->add( "GvSVn( $sym ) = (SV*)$ref;");
 
-  # XXX 5.10 non-threaded crashes at this eval_pv. 5.11 crashes threaded. test 15
-  #if (!$PERL510 or $MULTI) {   # or ($PERL510 and !$PERL512)
-  $use_xsloader = 1 if !$PERL56; # for PerlIO::scalar
-  $init->add_eval( sprintf 'open(%s, "<", $%s)', $globname, $globname );
-  #}
-  mark_package("IO::Handle", 1);
+  # run-time load of PerlIO::scalar
+  $init->add_eval( sprintf 'open(%s, "<", \\\\$%s)', $globname, $globname );
+  # => eval_pv("open(main::DATA, \"<\", $main::DATA)",1);
+  if (!$PERL56) {      # force inclusion of PerlIO::scalar
+    $use_xsloader = 1; # it's just a layer without subs
+    require PerlIO;
+    require PerlIO::scalar;
+    $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};
+    $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'}; # as it was loaded from begin
+    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'};
+    mark_package("PerlIO", 1);
+    mark_package("PerlIO::scalar", 1);
+    # svref_2object( \$PerlIO::scalar::VERSION )->save;
+  }
 }
 
 sub B::IO::save {
@@ -4378,6 +4386,7 @@ _EOT9
     }
   }
   for my $c (keys %skip_package) {
+    warn "no dl_init for $c, skipped\n" if $verbose and $xsub{$c};
     delete $xsub{$c};
     $include_package{$c} = undef;
     @dl_modules = grep { $_ ne $c } @dl_modules;
@@ -4851,7 +4860,7 @@ sub static_core_packages {
 sub skip_pkg {
   my $package = shift;
   if ( $package =~ /^(mro)$/
-       or $package =~ /^(main::)?(B|PerlIO|Internals|O)::/
+       or $package =~ /^(main::)?(B|Internals|O)::/
        or $package =~ /::::/
        or index($package, " ") != -1 # XXX skip invalid package names
        or index($package, "(") != -1 # XXX this causes the compiler to abort
@@ -4950,7 +4959,7 @@ sub should_save {
       return mark_package($package);
     }
   }
-  delete_unsaved_hashINC($package);
+  delete_unsaved_hashINC($package) unless $package =~ /^PerlIO/;
   return $include_package{$package} = 0;
 }
 
@@ -5292,9 +5301,7 @@ sub save_main_rest {
     $init->add(index($end_av,'(AV*)')>=0
              ? "PL_endav = $end_av;"
              : "PL_endav = (AV*)$end_av;");
-    save_context();
   }
-
   # If XSLoader is used later (e.g. in INIT or END block)
   if ($use_xsloader) {
     $init->add("/* force saving of XSLoader::load */");
@@ -5309,6 +5316,7 @@ sub save_main_rest {
     $use_xsloader = 0;
   }
 
+  save_context() unless defined($module);
   fixup_ppaddr();
 
   warn "Writing output\n" if $verbose;
