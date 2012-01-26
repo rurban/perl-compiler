@@ -3601,17 +3601,16 @@ sub B::IO::save_data {
 
   # run-time load of PerlIO::scalar
   $init->add_eval( sprintf 'open(%s, "<", \\\\$%s)', $globname, $globname );
-  # => eval_pv("open(main::DATA, \"<\", $main::DATA)",1);
-  if (!$PERL56) {      # force inclusion of PerlIO::scalar
-    $use_xsloader = 1; # it's just a layer without subs
+  # => eval_pv("open(main::DATA, \"<\", \\$main::DATA)",1);
+  if (!$PERL56) {      # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
+    $use_xsloader = 1; # it's just a layer without subs, and CORE would load it later as layer.
     require PerlIO;
     require PerlIO::scalar;
-    $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};
-    $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'}; # as it was loaded from begin
-    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'};
+    $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
+    $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
+    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
     mark_package("PerlIO", 1);
     mark_package("PerlIO::scalar", 1);
-    # svref_2object( \$PerlIO::scalar::VERSION )->save;
   }
 }
 
@@ -4340,11 +4339,12 @@ _EOT8
 
   # my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( keys %xsub ) {
-    #my $incpack = inc_packname($stashname);
-    #unless ($INC{$incpack}) { # skip deleted packages
-    #  warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
-    #  next;
-    #}
+    my $incpack = inc_packname($stashname);
+    unless (exists $INC{$incpack}) { # skip deleted packages
+      warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+      delete $xsub{$stashname} unless $static_ext{$stashname};
+      next;
+    }
     if ( $xsub{$stashname} !~ m/^Dynamic/ and !$static_ext{$stashname}) {
       my $stashxsub = $stashname;
       warn "bootstrapping $stashname added to xs_init\n" if $verbose;
@@ -4393,11 +4393,11 @@ _EOT9
   }
   @DynaLoader::dl_modules = @dl_modules;
   foreach my $stashname (@dl_modules) {
-    #my $incpack = inc_packname($stashname);
-    #unless ($INC{$incpack}) { # skip deleted packages
-    #  warn "skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+    my $incpack = inc_packname($stashname);
+    unless (exists $INC{$incpack}) { # skip deleted packages
+      warn "XXX skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
     #  delete $xsub{$stashname};
-    #}
+    }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
@@ -4416,6 +4416,7 @@ _EOT9
     print "\ttarg = sv_newmortal();\n" if $] < 5.008008;
     foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
+	$use_xsloader = 1;
         warn "dl_init $stashname\n" if $verbose;
         print "\tPUSHMARK(sp);\n";
 	# XXX -O1 or -O2 needs XPUSHs with dynamic pv
@@ -4437,7 +4438,7 @@ _EOT9
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]
 	  if ($] >= 5.015003) {
-	    no strict 'refs'; 
+	    no strict 'refs';
 	    unless (grep /^DynaLoader$/, @{$stashname."::ISA"}) {
 	      push @{$stashname."::ISA"}, 'DynaLoader';
 	      B::svref_2object( \@{$stashname."::ISA"} ) ->save;
@@ -5083,20 +5084,8 @@ sub save_unused_subs {
     add_hashINC("warnings");
     add_hashINC("warnings::register");
   }
-  # XSLoader was used, force saving of XSLoader::load
   if ($use_xsloader) {
-    if ($] < 5.015003) {
-      $init->add("/* force saving of XSLoader::load */");
-      eval { XSLoader::load; };
-      svref_2object( \&XSLoader::load )->save;
-    } else {
-      $init->add("/* custom XSLoader::load_file */");
-      svref_2object( \&XSLoader::load_file )->save;
-      svref_2object( \&DynaLoader::dl_load_flags )->save; # not saved as XSUB constant?
-    }
-    add_hashINC("XSLoader") if $] < 5.015003;
-    add_hashINC("DynaLoader");
-    # mark_package("XSLoader", 1);
+    force_saving_xsLoader();
     $use_xsloader = 0;
     mark_package('Config', 1); # required by Dynaloader and special cased previously
   }
@@ -5258,6 +5247,20 @@ sub save_sig {
   $init->split;
 }
 
+sub force_saving_xsLoader {
+  if ($] < 5.015003) {
+    $init->add("/* force saving of XSLoader::load */");
+    eval { XSLoader::load; };
+    svref_2object( \&XSLoader::load )->save;
+  } else {
+    $init->add("/* custom XSLoader::load_file */");
+    svref_2object( \&XSLoader::load_file )->save;
+    svref_2object( \&DynaLoader::dl_load_flags )->save; # not saved as XSUB constant?
+  }
+  add_hashINC("XSLoader") if $] < 5.015003;
+  add_hashINC("DynaLoader");
+}
+
 sub save_main_rest {
   # this is mainly for the test suite
   my $warner = $SIG{__WARN__};
@@ -5302,17 +5305,9 @@ sub save_main_rest {
              ? "PL_endav = $end_av;"
              : "PL_endav = (AV*)$end_av;");
   }
-  # If XSLoader is used later (e.g. in INIT or END block)
+  # If XSLoader is used later, e.g. in INIT or END block
   if ($use_xsloader) {
-    $init->add("/* force saving of XSLoader::load */");
-    if ($] < 5.015003) {
-      eval { XSLoader::load; };
-      svref_2object( \&XSLoader::load )->save;
-    } else {
-      svref_2object( \&XSLoader::load_file )->save;
-    }
-    add_hashINC("XSLoader") if $] < 5.015003;
-    add_hashINC("DynaLoader");
+    force_saving_xsLoader();
     $use_xsloader = 0;
   }
 
