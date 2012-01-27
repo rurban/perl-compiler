@@ -262,7 +262,7 @@ my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
-my (%include_package, %skip_package);
+my (%include_package, %skip_package, %saved);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
@@ -4411,7 +4411,7 @@ _EOT9
       $dl++;
     }
   }
-  B::C::force_saving_xsLoader() if $dl or $xs;
+  B::C::force_saving_xsLoader() if $use_xsloader and ($dl or $xs);
   if ($dl) {
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
@@ -4757,6 +4757,8 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
+  # we should not delete already saved packages
+  $saved{$package}++;
   return if $fullname eq 'B::walksymtable'; # XXX fails and should not be needed
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
@@ -4937,7 +4939,7 @@ sub should_save {
   # XXX Surely there must be a nicer way to do this.
   if (skip_pkg($package)) {
     delete_unsaved_hashINC($package);
-    return $include_package{$package} = 0;
+    return; # $include_package{$package} = 0;
   }
 
   if ( exists $include_package{$package} ) {
@@ -4973,50 +4975,55 @@ sub should_save {
 }
 
 sub inc_packname {
-  my $packname = shift;
+  my $package = shift;
   # See below at the reverse packname_inc: utf8 => utf8.pm + utf8_heavy.pl
-  $packname =~ s/\:\:/\//g;
-  $packname .= '.pm';
-  return $packname;
+  $package =~ s/\:\:/\//g;
+  $package .= '.pm';
+  return $package;
 }
 
 sub packname_inc {
-  my $packname = shift;
-  $packname =~ s/\//::/g;
-  if ($packname =~ /^(Config_git\.pl|Config_heavy.pl)$/) {
+  my $package = shift;
+  $package =~ s/\//::/g;
+  if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/) {
     return 'Config';
   }
-  if ($packname eq 'utf8_heavy.pl') {
+  if ($package eq 'utf8_heavy.pl') {
     return 'utf8';
   }
-  $packname =~ s/\.p[lm]$//;
-  return $packname;
+  $package =~ s/\.p[lm]$//;
+  return $package;
 }
 
 sub delete_unsaved_hashINC {
-  my $packname = shift;
-  my $incpack = inc_packname($packname);
+  my $package = shift;
+  my $incpack = inc_packname($package);
+  # Not already saved package, so it is not loaded again at run-time.
+  return if $saved{$package};
+  return if $package =~ /^DynaLoader|XSLoader$/
+    and defined $use_xsloader
+    and $use_xsloader == 0;
+  $include_package{$package} = 0;
   if ($INC{$incpack}) {
-    warn "Deleting $packname from \%INC\n" if $debug{pkg};
+    warn "Deleting $package from \%INC\n" if $debug{pkg};
     $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack};
     $INC{$incpack} = undef;
     delete $INC{$incpack};
-    $include_package{$packname} = 0;
   }
 }
 
 sub add_hashINC {
-  my $packname = shift;
-  my $incpack = inc_packname($packname);
-  $include_package{$packname} = 1;
+  my $package = shift;
+  my $incpack = inc_packname($package);
+  $include_package{$package} = 1;
   unless ($INC{$incpack}) {
     if ($savINC{$incpack}) {
-      warn "Adding $packname to \%INC (again)\n" if $debug{pkg};
+      warn "Adding $package to \%INC (again)\n" if $debug{pkg};
       $INC{$incpack} = $savINC{$incpack};
       # need to check xsub
-      $use_xsloader = 1 if $packname =~ /^DynaLoader|XSLoader$/;
+      $use_xsloader = 1 if $package =~ /^DynaLoader|XSLoader$/;
     } else {
-      warn "Adding $packname to \%INC\n" if $debug{pkg};
+      warn "Adding $package to \%INC\n" if $debug{pkg};
       for (@INC) {
         my $p = $_.'/'.$incpack;
         if (-e $p) { $INC{$incpack} = $p; last; }
@@ -5103,12 +5110,12 @@ sub save_unused_subs {
 sub inc_cleanup {
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
-  for my $packname (keys %INC) {
-    my $pkg = packname_inc($packname);
-    if ($packname =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
-      delete $INC{$packname};
-    } elsif ($packname eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
-      delete $INC{$packname};
+  for my $package (keys %INC) {
+    my $pkg = packname_inc($package);
+    if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
+      delete $INC{$package};
+    } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
+      delete $INC{$package};
       delete_unsaved_hashINC('utf8');
     } else {
       delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
@@ -5423,7 +5430,7 @@ sub mark_unused {
 sub mark_skip {
   for (@_) {
     delete_unsaved_hashINC($_);
-    $include_package{$_} = 0;
+    # $include_package{$_} = 0;
     $skip_package{$_} = 1;
   }
 }
