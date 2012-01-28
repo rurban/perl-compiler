@@ -5,8 +5,9 @@
 
 1.40	2012-02-xx rurban
 	* C: fixed deferred %INC, %INC is now stored and cleaned up at the end.
-	Work on __DATA__ handles  as PerlIO Layer: works dynamic and try to get
-	  it work static also.
+	Improved __DATA__ handle  as PerlIO layer, PerlIO::scalar now
+	  loaded static (test 15).
+	Defer eval section after dl_init (e.g. for PerlIO::scalar) (test 15)
 	Check for XSLoader now at the very end (test 27)
 	Fixed MUTABLE_CV for 5.10.0
 	Improved 5.8 method lifting for not-found methods a bit (5.8. perldoc.t)

@@ -14,6 +14,7 @@ use strict;
 
 our $VERSION = '1.40';
 my %debug;
+my $eval_pvs = '';
 
 package B::C::Section;
 use strict;
@@ -173,8 +174,9 @@ EOT
     $section->SUPER::add("perl_init_${name}(aTHX);");
     ++$name;
   }
-  foreach my $i ( @{ $section->[-1]{evals} } ) {
-    $section->SUPER::add( sprintf q{eval_pv("%s",1);}, $i );
+  # We need to output evals after dl_init.
+  foreach my $s ( @{ $section->[-1]{evals} } ) {
+    ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
   }
 
   print $fh <<"EOT";
@@ -314,13 +316,17 @@ BEGIN {
   @threadsv_names = threadsv_names();
 }
 
+# This the Carp free workaround for DynaLoader::bootstrap
+sub DynaLoader::croak {die @_}
+
 # 5.15.3 workaround [perl #101336]
 sub XSLoader::load_file {
   #package DynaLoader;
-  use Config;
+  use Config ();
   my $module = shift or die "missing module name";
   my $modlibname = shift or die "missing module filepath";
-#print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n";
+  print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n"
+      if ${DynaLoader::dl_debug};
 
   push @_, $module;
   # works with static linking too
@@ -2336,7 +2342,7 @@ sub try_isa {
   for (@isa) { # global @ISA or in pad
     next if $_ eq $cvstashname;
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
-    if (defined(*{$_ .'::'. $cvname}{CODE})) {
+    if (defined(&{$_ .'::'. $cvname})) {
       mark_package($_, 1); # force
       return 1;
     } else {
@@ -3614,19 +3620,17 @@ sub B::IO::save_data {
   if ($PERL56) {
     # Pseudo FileHandle
     $init->add_eval( sprintf 'open(%s, \'<\', $%s)', $globname, $globname );
-    # => eval_pv("open(main::DATA, '<', \\$main::DATA)",1);
   } else { # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
     $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s)', $globname, $globname );
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA)",1); DATA being a ref to $data
-    $use_xsloader = 1; # it's just a layer without subs, and CORE would load it later as layer.
+    $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
     require PerlIO;
     require PerlIO::scalar;
     $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
     mark_package("PerlIO", 1);
-    # XXX fails to link static
-    # $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
-    # $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
-    # mark_package("PerlIO::scalar", 1);
+    $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
+    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
+    mark_package("PerlIO::scalar", 1);
   }
 }
 
@@ -4687,9 +4691,9 @@ EOT
     if (exitstatus)
 	exit( exitstatus );
     dl_init(aTHX);
-
-    exitstatus = perl_run( my_perl );
 EOT
+    print $B::C::eval_pvs if $B::C::eval_pvs;
+    print "    exitstatus = perl_run( my_perl );\n";
 
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
@@ -4825,6 +4829,7 @@ sub mark_package {
 	    mark_package($isa);
 	    walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
           } else {
+	    #warn "isa $isa save\n" if $verbose;
             mark_package($isa);
           }
         }
@@ -5133,8 +5138,8 @@ sub inc_cleanup {
     }
   }
   if ($debug{pkg} and $verbose) {
-    warn "\%INC: ".join(" ",sort keys %INC)."\n";
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
+    warn "\%INC: ".join(" ",sort keys %INC)."\n";
   }
 }
 
