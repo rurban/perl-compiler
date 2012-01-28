@@ -86,10 +86,11 @@ function runopt {
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
     else echo -n "./${o}${suff} "
     fi
-    mem=$(ulimit -m)
-    ulimit -S -m 50000
+    mem=$(ulimit -m 2>/dev/null)
+    err=$?
+    test -z $err && ulimit -S -m 50000
     res=$(./${o}${suff}) || fail "./${o}${suff}" "errcode $?"
-    ulimit -S -m $mem
+    test -z $err && ulimit -S -m $mem
     if [ "X$res" = "X${result[$n]}" ]; then
 	test "X$res" = "X${result[$n]}" && pass "./${o}${suff}" "=> '$res'"
         if [ -z $KEEP ]; then rm ${o}${suff}_E.c ${o}${suff}.c ${o}${suff} 2>/dev/null; fi
