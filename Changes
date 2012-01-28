@@ -9,6 +9,8 @@
 	  it work static also.
 	Check for XSLoader now at the very end (test 27)
 	Fixed MUTABLE_CV for 5.10.0
+	Bytecode: fixed test 22
+	  Cannot locate object method "fileno" via package "IO::File"
 
 1.39	2012-01-25 rurban
 	C: improved eval AUTOLOAD, avoid some POSIX and Storable .al compile-time
