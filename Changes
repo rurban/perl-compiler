@@ -4,23 +4,23 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.40	2012-02-xx rurban
-	C: fixed deferred %INC, %INC is now stored and cleaned up at the end.
+	* C: fixed deferred %INC, %INC is now stored and cleaned up at the end.
 	Work on __DATA__ handles  as PerlIO Layer: works dynamic and try to get
 	  it work static also.
 	Check for XSLoader now at the very end (test 27)
 	Fixed MUTABLE_CV for 5.10.0
-	Bytecode: fixed test 22
+	* Bytecode: fixed test 22
 	  Cannot locate object method "fileno" via package "IO::File"
 
 1.39	2012-01-25 rurban
-	C: improved eval AUTOLOAD, avoid some POSIX and Storable .al compile-time
+	* C: improved eval AUTOLOAD, avoid some POSIX and Storable .al compile-time
 	  side-effects such as creating files and dirs. First try loading
 	  .al files, only then eval the dangerous AUTOLOAD.
-	Makefile.PL: typo in -fav-init2 independent_comalloc detection.
+	* Makefile.PL: typo in -fav-init2 independent_comalloc detection.
 	Added LICENSE key, META and the files were not enough to please pause.
 
 1.38	2012-01-24 rurban
-	t/issue93.t: fixed syntax error
+	* t/issue93.t: fixed syntax error
 
 1.37	2012-01-24 rurban
 	Enabled copy-on-grow strings >= 5.10.
