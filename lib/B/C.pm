@@ -4654,7 +4654,7 @@ EOT
 
     TAINT_NOT;
 
-    #if PERL_VERSION < 10
+    #if PERL_VERSION < 10 || ((PERL_VERSION == 10) && (PERL_SUBVERSION < 1))
       PL_compcv = 0;
     #else
       PL_compcv = MUTABLE_CV(newSV_type(SVt_PVCV));

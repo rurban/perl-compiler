@@ -8,6 +8,7 @@
 	Work on __DATA__ handles  as PerlIO Layer: works dynamic and try to get
 	  it work static also.
 	Check for XSLoader now at the very end (test 27)
+	Fixed MUTABLE_CV for 5.10.0
 
 1.39	2012-01-25 rurban
 	C: improved eval AUTOLOAD, avoid some POSIX and Storable .al compile-time
