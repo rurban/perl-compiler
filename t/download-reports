@@ -1,0 +1,91 @@
+#!/usr/bin/perl -w
+
+use strict;
+my $ver;
+if (@ARGV) {
+  $ver = shift;
+} elsif (-f 'Makefile') {
+  (undef,undef,$ver) = split(/ /,`grep "^VERSION = " Makefile`);
+  chomp $ver;
+} else {
+  die 'Makefile or version argument missing'
+}
+my $dir = "t/reports/$ver";
+die "wrong version or $dir missing"
+  unless -d $dir;
+
+my $yaml;
+# $wget = `http://www.cpantesters.org/distro/B/B-C.html?grade=1&perlmat=1&patches=1&oncpan=2&distmat=2&perlver=ALL&osname=ALL&version=$ver`;
+my $cache = "$dir/B-C.yaml";
+if (-f $cache and -M _ < 1) {
+  local $/;
+  open my $fh, '<', $cache;
+  $yaml = <$fh>;
+  close $fh,
+} else {
+  chdir $dir or die;
+  $yaml = `wget -O- -q http://www.cpantesters.org/distro/B/B-C.yaml`;
+  chdir '../../..';
+  die unless $yaml;
+  open my $fh, '>', $cache;
+  print $fh $yaml;
+  close $fh;
+}
+
+use YAML::XS;
+use Data::Dumper;
+use HTML::Entities;
+
+# HTML::Entities::decode_entities
+sub unescapeHTML {
+  my $string = shift;
+  # expanded version from CGI
+  $string=~ s[&(\S*?);]{
+        local $_ = $1;
+        /^amp$/i        ? "&" :
+        /^quot$/i       ? '"' :
+        /^gt$/i         ? ">" :
+        /^lt$/i         ? "<" :
+        /^Agrave$/i     ? "Á" :
+        /^acirc$/i      ? "â" :
+        /^ouml$/i       ? "ö" :
+        /^uuml$/i       ? "ü" :
+        /^auml$/i       ? "ä" :
+        /^Ouml$/i       ? "Ö" :
+        /^Uuml$/i       ? "Ü" :
+        /^Auml$/i       ? "Ä" :
+        /^#(\d+)$/      ? chr($1) :
+	/^#x([0-9a-f]+)$/i ? chr(hex($1)) :
+        $_
+       }gex;
+  return $string;
+}
+
+my $content = Load $yaml;
+for my $e (@$content) {
+  if ($e->{version} eq $ver) {
+    print Dumper $e;
+    my $fn = "$dir/log.test-".$e->{osname}.$e->{osvers}."-".$e->{perl};
+    my $guid = $e->{guid};
+    sleep 0.3;
+    my $rpt = `wget -O- -q http://www.cpantesters.org/cpan/report/$guid`;
+    # check for DEBUGGING
+    if ($rpt =~ /ccflags[^\n]+ -DDEBUGGING.+?\n/sm) {
+      $fn .= 'd';
+    }
+    if ($e->{platform} !~ /thread/) {
+      $fn .= "-nt";
+    }
+    if (-e $fn) {
+      warn "Skipping $fn already exists\n";
+    } else {
+      $rpt =~ s/^.*<pre>\nFrom:/From/sm;
+      $rpt =~ s{<hr class="clear-contentunit" />.*$}{}s;
+      decode_entities($rpt);
+      # $rpt = unescapeHTML($rpt);
+      open my $fh, '>', $fn;
+      print $fh $rpt;
+      close $fh;
+    }
+  }
+}
