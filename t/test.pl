@@ -786,8 +786,6 @@ sub todo_tests_default {
     my $ITHREADS  = ($Config{useithreads});
 
     my @todo  = ();
-    # split->pushre->pmreplroot as int. bug in B walker
-    # push @todo, (7)   if $] > 5.008 and $] < 5.008008; # and $ITHREADS;
     push @todo, (15)  if $] < 5.007;
     if ($what =~ /^c(|_o[1-4])$/) {
         push @todo, (50)    if $] >= 5.010 and $] < 5.012 and $what =~ /c_o[4]/;
@@ -796,10 +794,6 @@ sub todo_tests_default {
 
 	# @ISA issue 64
         push @todo, (10,12,19,25,42,43,50)  if $what eq 'c_o4';
-        #push @todo, (48)    if $what eq 'c_o4' and $] < 5.010;
-        # push @todo, (50) if $] > 5.013  and $what eq 'c' and !$ITHREADS;
-	# issue 78 error at DynaLoader (require Carp + invalid version)
-        #push @todo, (29,44,45) if $] > 5.015 and $what =~ /c_o[34]/;
 	# DynaLoader::dl_load_file()
         push @todo, (15,27,29,41..45,49) if $] > 5.015 and $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
@@ -808,34 +802,25 @@ sub todo_tests_default {
 	#15,21,27,30,41-45,50,103,105
 	push @todo, (21,30,46,50,103,105);
 	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
-	push @todo, (15)    if $] < 5.008008 or $] >= 5.010;
+	push @todo, (15);   #if $] < 5.008008 or $] >= 5.010;
 	push @todo, (14)    if $] >= 5.012;
 
-	#push @todo, (44)    if $ITHREADS or $] < 5.012;
-        #push @todo, (44)   if !$ITHREADS and $] >= 5.012;
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
 	push @todo, (10,16) if $what eq 'cc_o2';
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
 	push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $] < 5.015);
-	#push @todo, (11,27) if $] < 5.009;
 	push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
-	#push @todo, (3,4,27,42,43) if $] >= 5.011004 and $ITHREADS;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
+	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
 	push @todo, (27)    if $] <= 5.008008;
 	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
-	#push @todo, (103)   if $] >= 5.012 and $ITHREADS;
-	#push @todo, (49)    if $] >= 5.013009 and $] < 5.015 and !$ITHREADS; # fixed with r1142
 	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
     }
-    #push @todo, (12)   if $] >= 5.015007 and $ITHREADS;
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
-    #push @todo, (25)   if $] eq "5.010001" and !$DEBUGGING and $ITHREADS;
-    #push @todo, (25)   if $] >= 5.010 and $] < 5.012 and !$ITHREADS;
-    #push @todo, (32)  if $] >= 5.011003;
     return @todo;
 }
 
@@ -847,4 +832,3 @@ sub todo_tests_default {
 #   fill-column: 78
 # End:
 # vim: expandtab shiftwidth=4:
-
