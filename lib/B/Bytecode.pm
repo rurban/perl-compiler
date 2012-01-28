@@ -569,8 +569,9 @@ sub B::IO::bsave {
   # issue93: restore std handles
   if (!$PERL56) {
     my $o = $io->object_2svref();
-    my $fd = ref($o) eq 'IO::Handle' ? 99 : $o->fileno();
-    bwarn( "io $ix perlio($fd) ".ref($o) ) if $fd == 99;
+    my $fd = 99;
+    $fd = $o->fileno() if $o->can('fileno');
+    bwarn( "io ix=$ix perlio no fileno for ".ref($o) ) if $fd == 99;
     my $i = 0;
     foreach (qw(stdin stdout stderr)) {
       if ($io->IsSTD($_) or $fd == -$i) { # negative stdout: closed or not yet init

@@ -3732,7 +3732,7 @@ sub B::IO::save {
     # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also.
     # But we need to set both.
     my $o = $io->object_2svref();
-    my $fd =  ref($o) eq 'IO::Handle' ? undef : $o->fileno();
+    my $fd = $o->fileno() if $o->can('fileno');
     my $i = 0;
     foreach (qw(stdin stdout stderr)) {
       if ($io->IsSTD($_) or $fd == -$i) {
