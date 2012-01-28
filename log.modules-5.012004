@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.39 e34b86a 2012-01-25 | release 1.39
+# B::C::VERSION = 1.40 7188066 2012-01-26 | do not delete already saved packages from %INC
 # perlversion = 5.012004
 # path = /usr/bin/perl5.12.4
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.39 - perl-5.012004
+# 100 / 100 modules tested with B-C-1.40 - perl-5.012004
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

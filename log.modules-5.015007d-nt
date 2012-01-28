@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.39 c73ae3e 2012-01-25 | improve AUTOLOAD wording, cc105 fails since 5.10
+# B::C::VERSION = 1.40 7188066 2012-01-26 | do not delete already saved packages from %INC
 # perlversion = 5.015007d-nt
 # path = /usr/local/bin/perl5.15.7
 # platform = linux 64bit non-threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.39 - perl-5.015007d-nt
+# 100 / 100 modules tested with B-C-1.40 - perl-5.015007d-nt
 # pass  96 / 100 (96.0%)
 # fail   4 / 100 (4.0%)
 # todo   4 /   4 (100.0%)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.39 09e8795 2012-01-25 | -fav-init2 relevant typo, wrongly used -lptmalloc3
+# B::C::VERSION = 1.40 7188066 2012-01-26 | do not delete already saved packages from %INC
 # perlversion = 5.014002-nt
 # path = /usr/local/bin/perl5.14.2-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.39 - perl-5.014002-nt
+# 100 / 100 modules tested with B-C-1.40 - perl-5.014002-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

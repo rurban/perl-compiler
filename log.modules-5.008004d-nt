@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.39 e34b86a 2012-01-25 | release 1.39
+# B::C::VERSION = 1.40 7188066 2012-01-26 | do not delete already saved packages from %INC
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.39 - perl-5.008004d-nt
+# 98 / 100 modules tested with B-C-1.40 - perl-5.008004d-nt
 # pass  98 /  98 (100.0%)
 # fail   0 /  98 (0.0%)
 # todo   0 /   0 ()
