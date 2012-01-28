@@ -9,6 +9,7 @@
 	  it work static also.
 	Check for XSLoader now at the very end (test 27)
 	Fixed MUTABLE_CV for 5.10.0
+	Improved 5.8 method lifting for not-found methods a bit (5.8. perldoc.t)
 	* Bytecode: fixed test 22
 	  Cannot locate object method "fileno" via package "IO::File"
 	* Makefile.PL: readonly $lib fix for MSWin32

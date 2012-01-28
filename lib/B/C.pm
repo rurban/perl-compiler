@@ -427,6 +427,7 @@ sub svop_or_padop_pv {
       my @c = comppadlist->ARRAY;
       my @pad = $c[1]->ARRAY;
       return $pad[$op->targ]->PV if $pad[$op->targ] and $pad[$op->targ]->can("PV");
+      # This might fail with B::NULL (optimized ex-const pv) entries in the pad.
     }
     # $op->can('pmreplroot') fails for 5.14
     if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -763,20 +764,25 @@ sub B::OP::_save_common {
   # entersub -> pushmark -> package -> args...
   # See perl -MO=Terse -e '$foo->bar("var")'
   # See also http://www.perl.com/pub/2000/06/dougpatch.html
+  # XXX TODO 5.8
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
       # Foo->bar()  compile-time lookup, 34 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
-       or $op->first->next->name eq 'padsv')      # $foo->bar() run-time lookup
+       or $op->first->next->name eq 'padsv'      # $foo->bar() run-time lookup
+       or ($op->first->next->name eq 'gvsv' and !$op->first->next->type  # 5.8 ex-gvsv
+	   and $op->first->next->next->name eq 'const' and $op->first->next->next->flags == 34))
      ) {
     my $pkgop = $op->first->next;
+    $pkgop = $op->first->next->next unless $op->first->next->type; # 5.8 ex-gvsv
     warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
-    my $pv = svop_or_padop_pv($pkgop); # XXX need to store away the pkg pv. Failed since 5.13
+    my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
     if ($pv and $pv !~ /[! \(]/) {
       $package_pv = $pv;
       push_package($package_pv);
     } else {
+      # mostly optimized-away padsv NULL pads with 5.8
       warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
     }
   }
@@ -1078,10 +1084,12 @@ sub method_named {
   for ($package_pv, @package_pv, 'main') {
     no strict 'refs';
     $method = $_ . '::' . $name;
-    if (defined(*{$method}{CODE})) {
+    if (defined(&$method)) {
       $include_package{$_} = 1; # issue59
       mark_package($_, 1);
       last;
+    } else {
+      warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
   $method = $name unless $method;
@@ -2607,8 +2615,10 @@ sub B::CV::save {
 
   warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
-  # $package_pv = $cvstashname;
-  # push_package($package_pv);
+  if (!$$root and $] < 5.010) {
+    $package_pv = $cvstashname;
+    push_package($package_pv);
+  }
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
     require "utf8_heavy.pl";
     # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
@@ -4794,6 +4804,7 @@ sub mark_package {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
+      push_package($package) if $] < 5.010;
     }
     my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
     if ( @isa ) {
