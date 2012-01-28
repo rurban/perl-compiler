@@ -164,7 +164,9 @@ int main() {
     }
     # try without the ptmalloc3 header, just the library
     $testc =~ s/#include <malloc>/void** dlindependent_comalloc(size_t, size_t*, void**);/;
-    for my $lib (@extra_libs) {
+    for (@extra_libs) {
+	my $lib = $_;
+        $lib = 'libptmalloc3.lib' if $^O eq 'MSWin32';
         $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
         if (try_compile($testc, $lib)) {
             $extra_libs = " $lib";
@@ -176,14 +178,13 @@ int main() {
     # Desperate. External ptmalloc3 header to overcome -I path shadowing
     $testc = $testori;
     $testc =~ s/#include <malloc.h>/#include "malloc-2.8.3.h"/;
-    for my $lib ("-lptmalloc3") {
-        $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
-        if (try_compile($testc, $lib)) {
-            $extra_cflags = " -DNEED_MALLOC_283";
-            $extra_libs = " $lib";
-	    warn "-fav-init2 available: independent_comalloc() with -DNEED_MALLOC_283 $lib activated\n";
-            return 1;
-        }
+    my $lib = "-lptmalloc3";
+    $lib = 'libptmalloc3.lib' if $^O eq 'MSWin32';
+    if (try_compile($testc, $lib)) {
+	$extra_cflags = " -DNEED_MALLOC_283";
+	$extra_libs = " $lib";
+	warn "-fav-init2 available: independent_comalloc() with -DNEED_MALLOC_283 $lib activated\n";
+	return 1;
     }
     #warn "-fav-init2 not available, independent_comalloc() not detected.\n";
     #warn "  Install on POSIX systems with:\n";
