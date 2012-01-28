@@ -571,6 +571,7 @@ sub B::IO::bsave {
     my $o = $io->object_2svref();
     my $fd = 99;
     $fd = $o->fileno() if $o->can('fileno');
+    $fd = $o->fileno() if ref($o) eq 'IO::File' and $fd == 99;
     bwarn( "io ix=$ix perlio no fileno for ".ref($o) ) if $fd == 99;
     my $i = 0;
     foreach (qw(stdin stdout stderr)) {
