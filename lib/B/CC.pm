@@ -2889,10 +2889,6 @@ sub cc_main {
   my($inc_hv, $inc_av, $end_av);
   if ( !defined($module) ) {
     # forbid run-time extends of curpad syms, names and INC
-    local $B::C::pv_copy_on_grow;
-    $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-    local $B::C::const_strings;
-    $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "save context:\n" if $verbose;
     $init->add("/* save context */");
     $init->add('/* %INC */');
@@ -2901,6 +2897,8 @@ sub cc_main {
     $inc_hv    = $inc_gv->HV->save('main::INC');
     $init->add( sprintf( "GvHV(%s) = s\\_%x;",
 			 $inc_gv->save('main::INC'), $inc_gv->HV ) );
+    local ($B::C::pv_copy_on_grow, $B::C::const_strings);
+    $B::C::pv_copy_on_grow = $B::C::const_strings = 1 if $B::C::ro_inc;
     $inc_hv          = $inc_gv->HV->save('main::INC');
     $inc_av          = $inc_gv->AV->save('main::INC');
   }
