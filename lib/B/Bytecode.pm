@@ -1203,6 +1203,7 @@ use ByteLoader '$ByteLoader::VERSION';
       my $thatfile = $1;
       *B::COP::file = sub { $thatfile };
     }
+    # Use -m instead for modules
     elsif (/^-u(.*)/ and $PERL56) {
       my $arg ||= $1;
       push @packages, $arg;

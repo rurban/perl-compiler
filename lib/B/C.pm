@@ -3743,7 +3743,8 @@ sub B::IO::save {
   if (!$PERL56 and $fullname ne 'main::DATA') { # PerlIO
     # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
     my $perlio_func;
-    # Note: all single-direction fp use IFP, just bi-directional pipes and sockets use OFP also.
+    # Note: all single-direction fp use IFP, just bi-directional pipes and
+    # sockets use OFP also.
     # But we need to set both.
     my $o = $io->object_2svref();
     my $fd = $o->fileno() if $o->can('fileno');
@@ -3787,7 +3788,7 @@ sub B::IO::save {
 	#$init->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
 	#		    cstring($mode), $fd));
 	$init->add(sprintf( "%sIoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(%d, %s);%s",
-			    $fd<3?'':'/*',$fd,$mode,$fd<3?'':'*/'));
+			    $fd<3?'':'/*',$fd,cstring($mode),$fd<3?'':'*/'));
       }
       elsif ($iotype =~ /[<#\+]/) {
 	warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"

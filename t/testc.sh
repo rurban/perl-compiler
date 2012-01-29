@@ -407,7 +407,7 @@ my ($pid, $out, $in);
 BEGIN {
   local(*FPID);
   $pid = open(FPID, "echo <<EOF |");    # DIE
-  open($out, ">&STDOUT");		# EASY
+  open($out, ">&STDERR");		# EASY
   open(my $tmp, ">", "pcc.tmp");	# HARD to get filename, WARN
   print $tmp "test\n";
   close $tmp;				# OK closed
@@ -422,7 +422,7 @@ unlink "pcc.tmp";
 result[93]='ok'
 tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
-tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
+tests[932]='my $f;BEGIN{open($f,">&STDERR");}print $f "ok"'
 result[932]='ok'
 
 # from here on we test CC specifics only

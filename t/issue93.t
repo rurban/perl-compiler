@@ -16,7 +16,7 @@ my ($pid, $out, $in);
 BEGIN {
   local(*FPID);
   $pid = open(FPID, 'echo <<EOF |'); #impossible
-  open($out, '>&STDOUT');            #easy
+  open($out, '>&STDERR');            #easy
   open(my $tmp, '>', 'pcc.tmp');     #hard to gather filename
   print $tmp "test\n";
   close $tmp;                        #ok closed, easy
@@ -31,10 +31,10 @@ unlink 'pcc.tmp';
 EOF
 
 my $ok = <<'EOF';
-my $out;open($out,'>&STDOUT');print $out 'ok';
+my $out;open($out,'>&STDERR');print $out 'ok';
 EOF
 my $work = <<'EOF';
-my $out;BEGIN{open($out,'>&STDOUT');}print $out 'ok';
+my $out;BEGIN{open($out,'>&STDERR');}print $out 'ok';
 EOF
 
 sub test3 {

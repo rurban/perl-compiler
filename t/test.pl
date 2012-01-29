@@ -644,7 +644,8 @@ sub plctest {
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    my $b = $] > 5.008 ? "-qq,Bytecode" : "Bytecode";
+    my $nostdoutclobber = $base !~ /^ccode91i/;
+    my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,Bytecode" : "Bytecode";
     system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.plc $base.pl";
     unless (-e "$name.plc") {
         print "not ok $num #B::Bytecode failed\n";
