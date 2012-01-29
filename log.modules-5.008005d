@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.37 c0bcc96 2012-01-13 | Merge commit '3f50f2b'
+# B::C::VERSION = 1.40 07f38aa 2012-01-28 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build #TODO 5.8.5
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+fail Test::NoWarnings #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -67,7 +67,7 @@ pass Try::Tiny
 skip Devel::GlobalDestruction
 skip Class::MOP
 skip Moose
-fail Test::Deep
+fail Test::Deep #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -80,7 +80,7 @@ pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
-fail Test::Warn
+fail Test::Warn #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Encode
 pass Variable::Magic
 pass CGI
@@ -95,15 +95,15 @@ pass XML::SAX
 pass YAML
 skip MooseX::Types
 pass Class::Singleton
-skip DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
-skip DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 93 / 100 modules tested with B-C-1.37 - perl-5.008005d
-# pass  86 /  93 (92.5%)
-# fail   7 /  93 (7.5%)
-# todo   5 /   7 (71.4%)
-# skip   7 / 100 (7.0% not installed)
+pass Template::Stash
+# 96 / 100 modules tested with B-C-1.40 - perl-5.008005d
+# pass  88 /  96 (91.7%)
+# fail   8 /  96 (8.3%)
+# todo   7 /   8 (87.5%)
+# skip   4 / 100 (4.0% not installed)

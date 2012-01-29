@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.40 7188066 2012-01-26 | do not delete already saved packages from %INC
+# B::C::VERSION = 1.40 3740451 2012-01-28 | CC minor -fro-inc simplification
 # perlversion = 5.015007-nt
 # path = /usr/local/bin/perl5.15.7-nt
 # platform = linux 64bit non-threaded
