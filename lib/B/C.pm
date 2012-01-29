@@ -4425,7 +4425,7 @@ _EOT9
       $dl++;
     }
   }
-  B::C::force_saving_xsLoader() if $use_xsloader and ($dl or $xs);
+  force_saving_xsloader() if $use_xsloader and ($dl or $xs);
   if ($dl) {
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
@@ -4792,6 +4792,7 @@ sub mark_package {
     no strict 'refs';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
     mark_package('IO') if grep { $package eq $_ } @IO;
+    $use_xsloader = 1 if $package =~ /^B|Carp$/; # to help CC a bit (49)
     # i.e. if force
     if (exists $include_package{$package}
 	and !$include_package{$package}
@@ -5118,7 +5119,7 @@ sub save_unused_subs {
     add_hashINC("warnings::register");
   }
   if ($use_xsloader) {
-    B::C::force_saving_xsLoader();
+    force_saving_xsloader();
     mark_package('Config', 1); # required by Dynaloader and special cased previously
   }
 }
@@ -5279,7 +5280,7 @@ sub save_sig {
   $init->split;
 }
 
-sub force_saving_xsLoader {
+sub force_saving_xsloader {
   if ($] < 5.015003) {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
@@ -5341,7 +5342,7 @@ sub save_main_rest {
   save_context() unless defined($module);
   # warn "use_xsloader=$use_xsloader\n" if $verbose;
   # If XSLoader was forced later, e.g. in curpad, INIT or END block
-  B::C::force_saving_xsLoader() if $use_xsloader;
+  force_saving_xsloader() if $use_xsloader;
   fixup_ppaddr();
 
   warn "Writing output\n" if $verbose;

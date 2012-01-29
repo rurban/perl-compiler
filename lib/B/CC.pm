@@ -2889,13 +2889,20 @@ sub cc_main {
   my($inc_hv, $inc_av, $end_av);
   if ( !defined($module) ) {
     # forbid run-time extends of curpad syms, names and INC
-    #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    local $B::C::pv_copy_on_grow;
+    $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    local $B::C::const_strings;
+    $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "save context:\n" if $verbose;
     $init->add("/* save context */");
     $init->add('/* %INC */');
     inc_cleanup();
-    $inc_hv          = svref_2object( \%INC )->save;
-    $inc_av          = svref_2object( \@INC )->save;
+    my $inc_gv = svref_2object( \*main::INC );
+    $inc_hv    = $inc_gv->HV->save('main::INC');
+    $init->add( sprintf( "GvHV(%s) = s\\_%x;",
+			 $inc_gv->save('main::INC'), $inc_gv->HV ) );
+    $inc_hv          = $inc_gv->HV->save('main::INC');
+    $inc_av          = $inc_gv->AV->save('main::INC');
   }
   {
     # >=5.10 needs to defer nullifying of all vars in END, not only new ones.
@@ -2972,12 +2979,14 @@ sub compile_stats {
 sub import {
   my @options = @_;
   # Allow debugging in CHECK blocks without Od
-  $DB::single=1 if defined &DB::DB;
+  $DB::single = 1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   # init with -O0
   foreach my $ref ( values %optimise ) {
     $$ref = 0;
   }
+  $B::C::fold     = 0 if $] >= 5.013009; # utf8::Cased tables
+  $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
@@ -3126,7 +3135,7 @@ OPTION:
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
 	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O', 'Opcodes',
 	    'B::Stackobj', 'B::Bblock');
-  #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
+  mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
