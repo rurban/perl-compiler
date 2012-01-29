@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.37 db607a3 2012-01-24 | Merge branch 'master' of github.com:rurban/perl-compiler
+# B::C::VERSION = 1.40 cc250d0 2012-01-29 | update module tests with 3740451. Module::Build regression in 5.8.5d from 1.37
 # perlversion = 5.006002d-nt
-# path = /usr/local/bin/perl5.6.2d-nt
+# path = perl5.6.2d-nt
 # platform = darwin 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 88 / 100 modules tested with B-C-1.37 - perl-5.006002d-nt
+# 88 / 100 modules tested with B-C-1.40 - perl-5.006002d-nt
 # pass  88 /  88 (100.0%)
 # fail   0 /  88 (0.0%)
 # todo   1 /   0 ()
