@@ -16,7 +16,7 @@ my ($pid, $out, $in);
 BEGIN {
   local(*FPID);
   $pid = open(FPID, 'echo <<EOF |'); #impossible
-  open($out, '>&STDERR');            #easy
+  open($out, '>&STDOUT');            #easy
   open(my $tmp, '>', 'pcc.tmp');     #hard to gather filename
   print $tmp "test\n";
   close $tmp;                        #ok closed, easy
@@ -31,10 +31,11 @@ unlink 'pcc.tmp';
 EOF
 
 my $ok = <<'EOF';
-my $out;open($out,'>&STDERR');print $out 'ok';
+my $out;open($out,'>&STDOUT');print $out qq(ok\n);
 EOF
+
 my $work = <<'EOF';
-my $out;BEGIN{open($out,'>&STDERR');}print $out 'ok';
+my $out;BEGIN{open($out,'>&STDOUT');}print $out qq(ok\n);
 EOF
 
 sub test3 {
@@ -42,17 +43,20 @@ sub test3 {
   my $script = shift;
   my $cmt = shift;
   plctestok($i*3+1, $name, $script,
-	    (($name eq 'ccode91iw' and $] < 5.014)?"TODO needs 5.14 ":"")."BC $cmt");
+	    (($name eq 'ccode93iw' and $] < 5.014)?"TODO needs 5.14 ":"")."BC $cmt");
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
   $i++;
 }
 
 TODO: {
-  local $TODO = "recover state open files";
-  test3('ccode91ib', $todo, 'various hard IO BEGIN problems');
+  local $TODO = "recover IO state generally";
+  test3('ccode93ib', $todo, 'various hard IO BEGIN problems');
 }
-test3('ccode91ig', $ok,   '&STDOUT at run-time');
-test3('ccode91iw', $work, '&STDOUT restore');
+test3('ccode93ig', $ok,   '&STDOUT at run-time');
+TODO: {
+  local $TODO = "recover STDIO state";
+  test3('ccode93iw', $work, '&STDOUT restore');
+}
 
 END {unlink "pcc.tmp" if -f "pcc.tmp";}

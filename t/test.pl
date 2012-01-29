@@ -644,9 +644,11 @@ sub plctest {
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    my $nostdoutclobber = $base !~ /^ccode91i/;
+    # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
+    my $nostdoutclobber = $base !~ /^ccode93i/;
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,Bytecode" : "Bytecode";
     system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.plc $base.pl";
+    # $out =~ s/^$base.pl syntax OK\n//m;
     unless (-e "$name.plc") {
         print "not ok $num #B::Bytecode failed\n";
         exit;
@@ -683,7 +685,9 @@ sub ctest {
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
+    # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
+    my $nostdoutclobber = $base !~ /^ccode93i/;
+    my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
     $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005;
     system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {

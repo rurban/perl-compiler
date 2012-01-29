@@ -571,7 +571,7 @@ sub B::IO::bsave {
     my $o = $io->object_2svref();
     my $fd = 99;
     $fd = $o->fileno() if $o->can('fileno');
-    bwarn( "io ix=$ix perlio no fileno for ".ref($o) ) if $fd == 99;
+    bwarn( "io ix=$ix perlio no fileno for ".ref($o)." from ".ref($io) ) if $fd == 99;
     my $i = 0;
     foreach (qw(stdin stdout stderr)) {
       if ($io->IsSTD($_) or $fd == -$i) { # negative stdout: closed or not yet init
