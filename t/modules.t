@@ -277,7 +277,7 @@ sub is_todo {
 
   # ---------------------------------------
   if ($Config{useithreads}) {
-    if (!$DEDBUGGING) { foreach(qw(
+    if (!$DEBUGGING) { foreach(qw(
       Test::Tester
     )) { return 'non-debugging with threads' if $_ eq $module; }}
     if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
