@@ -264,7 +264,7 @@ my (%strtable, %hektable, @static_free);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
-my (%include_package, %skip_package, %saved);
+my (%include_package, %skip_package, %saved, %isa_cache);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
@@ -1091,16 +1091,18 @@ sub method_named {
     no strict 'refs';
     $method = $_ . '::' . $name;
     if (defined(&$method)) {
+      warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
       $include_package{$_} = 1; # issue59
       mark_package($_, 1);
       last;
     } else {
-      warn "no definition for method_name \"$method\"\n" if $debug{cv};
-      if (my $child = try_isa($_,$name)) {
-	$method = $child . '::' . $name;
-	$include_package{$child} = 1;
+      if (my $parent = try_isa($_,$name)) {
+	warn sprintf( "Found &%s::%s\n", $parent, $name ) if $debug{cv};
+	$method = $parent . '::' . $name;
+	$include_package{$parent} = 1;
 	last;
       }
+      warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
   $method = $name unless $method;
@@ -2337,6 +2339,9 @@ sub B::RV::save {
 # XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
   my ( $cvstashname, $cvname ) = @_;
+  if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
+    return $found;
+  }
   no strict 'refs';
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
@@ -2350,13 +2355,15 @@ sub try_isa {
     next if $already{$_};
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(&{$_ .'::'. $cvname})) {
+      $isa_cache{"$cvstashname\::$cvname"} = $_;
       mark_package($_, 1); # force
       return $_;
     } else {
       $already{$_}++; # avoid recursive cycles
       my @i = $PERL510 ? @{mro::get_linear_isa($_)} : @{ $_ . '::ISA' };
       if (@i) {
-	try_isa($_, $cvname) and return $_;
+	my $parent = try_isa($_, $cvname);
+	return $parent if $parent;
       }
     }
   }
