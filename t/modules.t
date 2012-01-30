@@ -253,9 +253,9 @@ sub is_todo {
   #foreach(qw(
   #  ExtUtils::CBuilder
   #)) { return 'overlong linking time' if $_ eq $module; }
-  if ($] < 5.007) { foreach(qw(
-    ExtUtils::CBuilder
-  )) { return '5.6' if $_ eq $module; }}
+  #if ($] < 5.007) { foreach(qw(
+  #  ExtUtils::CBuilder
+  #)) { return '5.6' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.0080006) { foreach(qw(
     Module::Pluggable
   )) { return '5.8.5 CopFILE_set' if $_ eq $module; }}
@@ -277,7 +277,11 @@ sub is_todo {
 
   # ---------------------------------------
   if ($Config{useithreads}) {
+    if (!$DEDBUGGING) { foreach(qw(
+      Test::Tester
+    )) { return 'non-debugging with threads' if $_ eq $module; }}
     if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
+      Module::Build
       Test::NoWarnings
       Test::Warn
       Test::Simple
@@ -298,6 +302,7 @@ sub is_todo {
       Pod::Text
       Template::Stash
     )) { return '5.10 with threads' if $_ eq $module; }}
+    # XXX 5.12.0 not tested recently
     if ($] eq 5.012000) { foreach(qw(
       DBI
       DateTime

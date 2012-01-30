@@ -11,10 +11,12 @@ my $i=0;
 sub test3 {
   my $name = shift;
   my $script = shift;
-  my $todo = 'TODO %+ setting regdata magic crashes' if $name eq 'ccode90i_c';
+  my $cmt = join('',@_);
+  my $todo;
+  $todo = 'TODO %+ setting regdata magic crashes' if $name eq 'ccode90i_c';
   plctestok($i*3+1, $name, $script, $todo);
-  ctestok($i*3+2, "C", $name, $script, 'C '.join(''.@_));
-  ctestok($i*3+3, "CC", $name, $script, 'TODO CC '.join('',@_));
+  ctestok($i*3+2, "C", $name, $script, "C $cmt");
+  ctestok($i*3+3, "CC", $name, $script, "TODO CC $cmt");
   $i++;
 }
 

@@ -390,6 +390,12 @@ print q(o) if $s eq q(string test);
 q(test string) =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq q(test);'
 result[90]='ok'
+tests[901]='my %errs = %!; # t/op/magic.t Errno compiled in
+print q(ok) if defined ${"!"}{ENOENT};'
+result[901]='ok'
+tests[902]='my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
+print q(ok) if defined ${"!"}{ENOENT};'
+result[902]='ok'
 # IO handles
 tests[91]='# issue59
 use strict;

@@ -3744,7 +3744,7 @@ sub B::IO::save {
     # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
     my $perlio_func;
     # Note: all single-direction fp use IFP, just bi-directional pipes and
-    # sockets use OFP also. But we need to set both.
+    # sockets use OFP also. But we need to set both, pp_print checks OFP.
     my $o = $io->object_2svref();
     eval "require ".ref($o).";";
     my $fd = $o->fileno();

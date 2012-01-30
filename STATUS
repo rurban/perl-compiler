@@ -16,7 +16,7 @@ Most B::C and B::CC bugs fixed.
 5.10 + 5.12 + 5.14 + 5.16 compatibility added.
 
 Open Problems for B::C:
-  shared_hek cleanup esp. since 5.15,
+  shared_hek cleanup esp. since 5.15
   see google issues
 
 See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
@@ -83,22 +83,22 @@ t/cc            21,30,46,50,103,105
 5.10.1:
 t/bytecode 	27,42,43
 t/c 		-
-t/cc 		14,15,21,30,46,50,103,105
+t/cc 		14,21,30,46,50,103,105
 
 5.12.4:
 t/bytecode 	32,46
 t/c 		21
-t/cc 		14,15,21,30,46,50,103,105
+t/cc 		14,21,30,46,50,103,105
 
 5.14.2:
 t/bytecode 	27,46
 t/c 		-
-t/cc 		14,15,21,30,46,50,103,105
+t/cc 		14,21,30,46,50,103,105
 
 5.15.7:
 t/bytecode 	27,46
 t/c 		-
-t/cc 		14,15,21,30,46,50,103,105
+t/cc 		14,21,30,46,50,103,105
 
 
 CPAN Modules

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.40 3740451 2012-01-28 | CC minor -fro-inc simplification
+# B::C::VERSION = 1.40 91d35c0 2012-01-29 | ->fileno needs the package loaded M
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug

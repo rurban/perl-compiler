@@ -3,7 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.40	2012-02-xx rurban
+1.40	2012-01-30 rurban
+	static PerlIO Layers (e.g. __DATA__)
+
 	* C: fixed deferred %INC, %INC is now stored and cleaned up at the end.
 	Improved __DATA__ handle  as PerlIO layer, PerlIO::scalar now
 	  loaded static (test 15).

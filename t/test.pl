@@ -793,12 +793,14 @@ sub todo_tests_default {
     my @todo  = ();
     push @todo, (15)  if $] < 5.007;
     if ($what =~ /^c(|_o[1-4])$/) {
-        push @todo, (50)    if $] >= 5.010 and $] < 5.012 and $what =~ /c_o[4]/;
+        push @todo, (7)     if $] == 5.008005;
         push @todo, (21)    if $] >= 5.012 and $] < 5.014;
         push @todo, (15)    if $] > 5.010 and $ITHREADS;
+        push @todo, (27)    if $] >= 5.012 and $] < 5.014 and $ITHREADS and $DEBUGGING;
 
 	# @ISA issue 64
         push @todo, (10,12,19,25,42,43,50)  if $what eq 'c_o4';
+        push @todo, (48)  if $] >= 5.008009 and $] < 5.010 and $what eq 'c_o4';
 	# DynaLoader::dl_load_file()
         push @todo, (15,27,29,41..45,49) if $] > 5.015 and $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
@@ -806,11 +808,12 @@ sub todo_tests_default {
 	# on cygwin 29 passes
 	#15,21,27,30,41-45,50,103,105
 	push @todo, (21,30,46,50,103,105);
-	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
-	push @todo, (15);   #if $] < 5.008008 or $] >= 5.010;
-	push @todo, (14)    if $] >= 5.012;
-
+	push @todo, (15)    if $] < 5.008008;
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
+	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
+        push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
+
+	push @todo, (14)    if $] >= 5.012;
 	push @todo, (10,16) if $what eq 'cc_o2';
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
