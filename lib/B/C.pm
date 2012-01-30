@@ -2338,19 +2338,22 @@ sub B::RV::save {
 sub try_isa {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
-  # XXX theoretically a valid shortcut. In reality it fails...
+  # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
   my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
   warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
+  my %already;
   for (@isa) { # global @ISA or in pad
     next if $_ eq $cvstashname;
+    next if $already{$_};
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(&{$_ .'::'. $cvname})) {
       mark_package($_, 1); # force
       return $_;
     } else {
+      $already{$_}++; # avoid recursive cycles
       my @i = $PERL510 ? @{mro::get_linear_isa($_)} : @{ $_ . '::ISA' };
       if (@i) {
 	try_isa($_, $cvname) and return $_;
