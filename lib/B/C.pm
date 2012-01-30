@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.41';
+our $VERSION = '1.42';
 my %debug;
 my $eval_pvs = '';
 
@@ -1096,6 +1096,11 @@ sub method_named {
       last;
     } else {
       warn "no definition for method_name \"$method\"\n" if $debug{cv};
+      if (my $child = try_isa($_,$name)) {
+	$method = $child . '::' . $name;
+	$include_package{$child} = 1;
+	last;
+      }
     }
   }
   $method = $name unless $method;
@@ -2344,11 +2349,11 @@ sub try_isa {
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(&{$_ .'::'. $cvname})) {
       mark_package($_, 1); # force
-      return 1;
+      return $_;
     } else {
       my @i = $PERL510 ? @{mro::get_linear_isa($_)} : @{ $_ . '::ISA' };
       if (@i) {
-	try_isa($_, $cvname) and return 1;
+	try_isa($_, $cvname) and return $_;
       }
     }
   }
@@ -2358,7 +2363,7 @@ sub try_isa {
 # If the sub or method is not found:
 # 1. try @ISA, mark_package and return.
 # 2. try UNIVERSAL::method
-# 2. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
+# 3. try compile-time expansion of AUTOLOAD to get the goto &sub addresses
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
