@@ -2911,6 +2911,7 @@ sub B::CV::save {
   if ($$stash and ref($stash)) {
     # $init->add("/* saving STASH $fullname */\n" if $debug{cv};
     $stash->save($fullname);
+    push_package($cvstashname);
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
