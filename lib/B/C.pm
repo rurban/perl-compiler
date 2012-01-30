@@ -5143,7 +5143,8 @@ sub inc_cleanup {
   }
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
-    warn "\%INC: ".join(" ",sort keys %INC)."\n";
+    my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
+    warn "\%INC: ".join(" ",@inc)."\n";
   }
 }
 
