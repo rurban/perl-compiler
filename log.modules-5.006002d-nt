@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.40 cc250d0 2012-01-29 | update module tests with 3740451. Module::Build regression in 5.8.5d from 1.37
+# B::C::VERSION = 1.40 40834b5 2012-01-29 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.006002d-nt
 # path = perl5.6.2d-nt
 # platform = darwin 64bit non-threaded debug
