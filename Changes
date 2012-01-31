@@ -4,13 +4,18 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.42	2012-02-01 rurban
-	C: Improved finding methods in parent classes (Warning: method not found),
+	* C: Improved finding methods in parent classes (Warning: method not found),
 	Save @ISA of those child classes.
 	Re-implement and simplify my_share_hek, now in terms of share_hek.
 	  PL_strtab hack gone. This fixed the shared_hek destruction problems.
+	* perlcc: perlcc -stash does not hang anymore, renabled t/e_perlcc.t -stash section
+	* Stash (1.02): '-xs' does not load B anymore.
+	  Now in seperate directory Stash
+	* Stash/Stash.xs: new with CvIsXSUB() to get rid of B, polluting the stashes.
+	* Stash/Makefile.PL: new
 
 1.41	2012-01-30 rurban
-	t/modules.t: Fixed syntax error
+	* t/modules.t: Fixed syntax error
 
 1.40	2012-01-30 rurban
 	static PerlIO Layers (e.g. __DATA__)

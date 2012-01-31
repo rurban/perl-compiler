@@ -42,6 +42,9 @@ NOTES
 README
 README.alpha
 STATUS
+Stash/Makefile.PL
+Stash/Stash.pm
+Stash/t/stash.t
 TESTS
 Todo
 bytecode.pl
@@ -55,7 +58,6 @@ lib/B/C.pm
 lib/B/CC.pm
 lib/B/Disassembler.pm
 lib/B/Stackobj.pm
-lib/B/Stash.pm
 perlcompile.pod
 perloptree.pod
 ramblings/Carp-wo-B.patch
@@ -135,7 +137,6 @@ t/o.t
 t/perldoc.t
 t/qr_loaded_module.pm
 t/release-testing.sh
-t/stash.t
 t/test.pl
 t/test10
 t/testc.sh
