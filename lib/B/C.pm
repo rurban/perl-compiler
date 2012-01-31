@@ -2355,7 +2355,7 @@ sub try_isa {
     next if $already{$_};
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(&{$_ .'::'. $cvname})) {
-      svref_2object( \@{$cvstashname . '::ISA'} )->save("@"."$cvstashname\::ISA");
+      svref_2object( \@{$cvstashname . '::ISA'} )->save("$cvstashname\::ISA");
       $isa_cache{"$cvstashname\::$cvname"} = $_;
       mark_package($_, 1); # force
       return $_;
@@ -2365,7 +2365,7 @@ sub try_isa {
       if (@i) {
 	my $parent = try_isa($_, $cvname);
 	if ($parent) {
-	  svref_2object( \@{$_ . '::ISA'} )->save("@"."$_\::ISA");
+	  svref_2object( \@{$_ . '::ISA'} )->save("$_\::ISA");
 	  return $parent;
 	}
       }
@@ -3348,10 +3348,15 @@ sub B::AV::save {
   if ($fill > -1 and $magic !~ /D/) {
     my @array = $av->ARRAY; # crashes with D magic (Getopt::Long)
     if ( $debug{av} ) {
-      my $el;
       my $i = 0;
-      foreach $el (@array) {
-        warn sprintf( "AV 0x%x[%d] = %s 0x%x\n", $$av, $i++, class($el), $$el );
+      foreach my $el (@array) {
+	my $val = '';
+	# if SvIOK print iv, POK pv
+	if ($el->can('FLAGS')) {
+	  $val = $el->IVX if $el->FLAGS & SVf_IOK;
+	  $val = '"'.$el->PVX.'"' if $el->FLAGS & SVf_POK;
+	}
+        warn sprintf( "AV 0x%x[%d] = %s 0x%x $val\n", $$av, $i++, class($el), $$el );
       }
     }
 
