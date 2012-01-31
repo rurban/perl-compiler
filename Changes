@@ -4,7 +4,8 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.42	2012-02-01 rurban
-	C: Improved finding methods in child classes (Warning: method not found)
+	C: Improved finding methods in parent classes (Warning: method not found),
+	Save @ISA of those child classes.
 
 1.41	2012-01-30 rurban
 	t/modules.t: Fixed syntax error

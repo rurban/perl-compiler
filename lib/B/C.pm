@@ -2355,6 +2355,7 @@ sub try_isa {
     next if $already{$_};
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(&{$_ .'::'. $cvname})) {
+      svref_2object( \@{$cvstashname . '::ISA'} )->save("@"."$cvstashname\::ISA");
       $isa_cache{"$cvstashname\::$cvname"} = $_;
       mark_package($_, 1); # force
       return $_;
@@ -2363,7 +2364,10 @@ sub try_isa {
       my @i = $PERL510 ? @{mro::get_linear_isa($_)} : @{ $_ . '::ISA' };
       if (@i) {
 	my $parent = try_isa($_, $cvname);
-	return $parent if $parent;
+	if ($parent) {
+	  svref_2object( \@{$_ . '::ISA'} )->save("@"."$_\::ISA");
+	  return $parent;
+	}
       }
     }
   }
@@ -3335,7 +3339,7 @@ sub B::AV::save {
   my $magic = $av->save_magic;
 
   if ( $debug{av} ) {
-    my $line = sprintf( "saving AV 0x%x [%s] FILL=$fill", $$av, class($av));
+    my $line = sprintf( "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, class($av));
     $line .= sprintf( " AvFLAGS=0x%x", $av->AvFLAGS ) if $] < 5.009;
     warn "$line\n";
   }
