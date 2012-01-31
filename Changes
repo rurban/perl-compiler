@@ -6,6 +6,8 @@
 1.42	2012-02-01 rurban
 	C: Improved finding methods in parent classes (Warning: method not found),
 	Save @ISA of those child classes.
+	Re-implement and simplify my_share_hek, now in terms of share_hek.
+	  PL_strtab hack gone. This fixed the shared_hek destruction problems.
 
 1.41	2012-01-30 rurban
 	t/modules.t: Fixed syntax error

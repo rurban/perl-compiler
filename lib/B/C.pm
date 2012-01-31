@@ -2686,7 +2686,7 @@ sub B::CV::save {
 	}
       }
       if ( $$root || $cvxsub ) {
-        warn "Successful forced autoload\n" if $verbose;
+        warn "Successful forced autoload\n" if $verbose and $debug{cv};
       }
     }
   }
@@ -4210,19 +4210,9 @@ sub output_main_rest {
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
-      register HE* he;
-      /* XXX use hv_common_key_len if we start supporting UTF8 */
-      if (!(he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, 0, NULL, 0))) {
-	/* Does not work with DEBUGGING as there is an artifical assert in hv.c
-	   which checks that a HE is allocated before the HEK. */
-        HvSHAREKEYS_on(PL_strtab); /* XXX This is a hack! */
-        he = (HE *) hv_common(PL_strtab, NULL, str, len, 0, HV_FETCH_ISSTORE, NULL, 0);
-        HvSHAREKEYS_off(PL_strtab);
-      }
-      return HeKEY_hek(he);
-    } else {
-      return Perl_share_hek(aTHX_ str, len, hash);
+      PERL_HASH(hash, str, len);
     }
+    return Perl_share_hek(aTHX_ str, len, hash);
 }
 
 _EOT5
@@ -4715,6 +4705,7 @@ EOT
 	exit( exitstatus );
     dl_init(aTHX);
 EOT
+
     print $B::C::eval_pvs if $B::C::eval_pvs;
     print "    exitstatus = perl_run( my_perl );\n";
 
