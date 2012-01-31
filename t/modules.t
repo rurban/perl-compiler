@@ -39,12 +39,13 @@ BEGIN {
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
   my $tmp = File::Temp->new(TEMPLATE => 'pccXXXXX');
   my $out = $tmp->filename;
-  my $result = `$X -Mblib blib/script/perlcc --staticxs -S -o$out -e"use Data::Dumper;"`;
+  my $result = `$X -Mblib blib/script/perlcc --staticxs -o$out -e"use Data::Dumper;"`;
   my $exe = $^O eq 'MSWin32' ? "$out.exe" : $out;
   unless (-e $exe or -e 'a.out') {
-    my $result = `$X -Mblib blib/script/perlcc -S -o$out -e"use Data::Dumper;"`;
+    my $result = `$X -Mblib blib/script/perlcc -o$out -e"use Data::Dumper;"`;
     unless (-e $out or -e 'a.out') {
       plan skip_all => "perlcc cannot link XS module Data::Dumper. Most likely wrong ldopts.";
+      unlk$out
       exit;
     } else {
       $staticxs = '';
