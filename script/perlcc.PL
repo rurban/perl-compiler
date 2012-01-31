@@ -460,7 +460,6 @@ sub compile_cstyle {
     $extra_libs = '';
     my %rpath;
     if ($staticxs and open(XS, "<", $cfile.".lst")) {
-        my $dylib;
         while (<XS>) {
             my ($s, $l) = m/^([^\t]+)(.*)$/;
             next if grep { $s eq $_ } @{$Options->{U}};
@@ -468,48 +467,31 @@ sub compile_cstyle {
             if ($l) {
                 $l = substr($l,1);
                 if ($^O eq 'darwin' and $l =~/\.bundle$/) {
-# XXX this does not work yet. file was built for unsupported file format 
-# which is not the architecture being linked (x86_64)
-                    $dylib = $l;
-                    $dylib =~ s/\.bundle$/.a/;
-                    $dylib =~ s{^.*/auto/}{};
-                    $dylib =~ s{/.+?(/[^/]+)}{$1};
-                    $dylib =~ s{/}{_}g;
-                    $dylib = 'pcc'.$dylib;
-                    if (-e $dylib) {
-                        vprint 2, "Using static ".$dylib;
+                    my $ofile = $l;
+                    $ofile =~ s/\.bundle$/.o/;
+                    $ofile =~ s{^.*/auto/}{};
+                    $ofile =~ s{(.*)/[^/]+\.o}{$1.o};
+                    $ofile =~ s{/}{_}g;
+                    $ofile = 'pcc'.$ofile;
+                    if (-e $ofile) {
+                        vprint 2, "Using ".$ofile;
                     } else {
-                        vprint 1, "Creating static ".$dylib;
-                        my @cmd = ("libtool","-static",$l,"-o",$dylib);
-                        if (my ($arch) = $Config{ldflags} =~ /-arch (\w+)/) {
-                            # XXX multiarch not yet supported
-                            unless ($Config{ldflags} =~ /-arch (\w+) -arch/) {
-                                push @cmd, "-arch_only", $arch;
-                            }
-                        } else {
-                          if ($Config{ivsize}==8) {
-                              $arch = "x86_64";
-                          } elsif ($Config{uname} =~ /i386/) {
-                              $arch = "i386";
-                          } elsif ($Config{uname} =~ /ppc/) {
-                              $arch = "ppc";
-                          }
-                          push @cmd, "-arch_only",$arch if $arch;
-                        }
-                        vprint 3, join(" ", @cmd);
-                        system(@cmd);
-                        @cmd = ('ranlib',$dylib);
-                        vprint 3, join(" ", @cmd);
-                        system(@cmd);
+                        vprint 1, "Creating ".$ofile;
+                        # This fails sometimes
+                        my $cmd = "otool -tv $l | \"$^X\" -pe "
+        . q{'s{^/}{# .file /};s/^00[0-9a-f]+\s/\t/;s/^\(__(\w+)(,__.*?)?\) section/q(.).lc($1)/e'} 
+        . " | as -o \"$ofile\"";
+                        vprint 3, $cmd;
+                        system($cmd);
                     }
-                    $l = "-l".subtr($dylib,0,-2);
+                    $extra_libs .= " ".$l if -e $ofile;
+                } else {
+                    $extra_libs .= " ".$l;
+                    $rpath{dirname($l)}++;
                 }
-                $extra_libs .= " ".$l;
-                $rpath{dirname($l)}++ unless substr($l,0,5) eq '-lpcc';
             }
         }
         close XS;
-        $extra_libs = " -L. -Wl,-search_paths_first $extra_libs" if $^O eq 'darwin' and $dylib;
         my ($rpath) = $Config{ccdlflags} =~ /^(.+rpath,)/;
         ($rpath) = $Config{ccdlflags} =~ m{^(.+-R,)/} unless $rpath;
         if (!$rpath and $Config{gccversion}) {

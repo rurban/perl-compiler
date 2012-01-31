@@ -270,11 +270,11 @@ sub is_todo {
   if ($] > 5.015 and $] < 5.015006) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
-  if ($] > 5.015) { foreach(qw(
-      Moose
-      MooseX::Types
-      DateTime
-  )) { return '> 5.15 (unshare_hek)' if $_ eq $module; }}
+  #if ($] > 5.015) { foreach(qw(
+  #    Moose
+  #    MooseX::Types
+  #    DateTime
+  #)) { return '> 5.15 (unshare_hek)' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
@@ -317,9 +317,9 @@ sub is_todo {
     if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
       DateTime
     )) { return '5.8.5 without threads' if $_ eq $module; }}
-    if ($] > 5.015) { foreach(qw(
-      DateTime::TimeZone
-    )) { return '> 5.15 without threads' if $_ eq $module; }}
+    #if ($] > 5.015) { foreach(qw(
+    #  DateTime::TimeZone
+    #)) { return '> 5.15 without threads' if $_ eq $module; }}
   }
   # ---------------------------------------
 }
