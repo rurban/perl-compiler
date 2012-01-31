@@ -714,7 +714,8 @@ sub ctest {
     if (defined($out) and !$result) {
         chomp $out;
         $ok = $out =~ /$expected/;
-        unless ($ok) { #crosscheck uncompiled
+	diag($out);
+	unless ($ok) { #crosscheck uncompiled
             my $out1 = `$runperl $name.pl`;
             unless ($out1 =~ /$expected/) {
                 ok(1, "skip also fails uncompiled $todo");
@@ -726,6 +727,7 @@ sub ctest {
           TODO: {
                 local $TODO = $todo;
                 ok ($out =~ /$expected/);
+		diag($out);
             }
         } else {
             ok ($out =~ /$expected/, $todo);

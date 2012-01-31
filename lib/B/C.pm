@@ -770,18 +770,21 @@ sub B::OP::_save_common {
   # entersub -> pushmark -> package -> args...
   # See perl -MO=Terse -e '$foo->bar("var")'
   # See also http://www.perl.com/pub/2000/06/dougpatch.html
-  # XXX TODO 5.8
+  # XXX TODO 5.8 ex-gvsv
+  # XXX TODO Check for method_named as last argument
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
       # Foo->bar()  compile-time lookup, 34 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
-       or $op->first->next->name eq 'padsv'      # $foo->bar() run-time lookup
-       or ($op->first->next->name eq 'gvsv' and !$op->first->next->type  # 5.8 ex-gvsv
+       or $op->first->next->name eq 'padsv'      # or $foo->bar() run-time lookup
+       or ($] < 5.010 and $op->first->next->name eq 'gvsv' and !$op->first->next->type  # 5.8 ex-gvsv
 	   and $op->first->next->next->name eq 'const' and $op->first->next->next->flags == 34))
      ) {
     my $pkgop = $op->first->next;
-    $pkgop = $op->first->next->next unless $op->first->next->type; # 5.8 ex-gvsv
+    if ($] < 5.010 and !$op->first->next->type) { # 5.8 ex-gvsv
+      $pkgop = $op->first->next->next;
+    }
     warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
     my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
     if ($pv and $pv !~ /[! \(]/) {
@@ -2700,7 +2703,7 @@ sub B::CV::save {
   if ($$root) {
     warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
                   $$cv, $$root )
-      if $debug{cv};
+      if $debug{cv} and $debug{gv};
     my $ppname = "";
     if ($$gv) {
       my $stashname = $gv->STASH->NAME;
@@ -2731,12 +2734,12 @@ sub B::CV::save {
       # XXX readonly comppad names and symbols invalid
       #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
-        if $debug{cv};
+        if $debug{cv} and $debug{gv};
       # XXX avlen 2
       $padlistsym = $padlist->save($fullname.' :pad');
       warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
 		    $padlistsym, $$padlist, $$cv )
-        if $debug{cv};
+        if $debug{cv} and $debug{gv};
       # do not record a forward for the pad only
       $init->add( "CvPADLIST($sym) = $padlistsym;" );
     }
@@ -2848,7 +2851,7 @@ sub B::CV::save {
       $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
 			   $$cv, $$gvstash ) );
       warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
-	if $debug{cv};
+	if $debug{cv} and $debug{gv};
     }
     if ( $cv->OUTSIDE_SEQ ) {
       my $cop = $symtable{ sprintf( "s\\_%x", $cv->OUTSIDE_SEQ ) };
@@ -2896,7 +2899,7 @@ sub B::CV::save {
   }
   if ($$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
-    warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv};
+    warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv} and $debug{gv};
     $gv->save;
     if ($PERL514) {
       # XXX gvcv might be PVMG
@@ -2916,7 +2919,7 @@ sub B::CV::save {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
     }
     warn sprintf("done saving GV 0x%x for CV 0x%x\n",
-    		  $$gv, $$cv) if $debug{cv};
+		 $$gv, $$cv) if $debug{cv} and $debug{gv};
   }
   unless ($optimize_cop) {
     if ($MULTI) {
@@ -2934,7 +2937,7 @@ sub B::CV::save {
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
-      if $debug{cv};
+      if $debug{cv} and $debug{gv};
   }
   my $magic = $cv->MAGIC;
   if ($magic and $$magic) {

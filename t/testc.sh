@@ -430,6 +430,11 @@ tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
 tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
+tests[95]='use IO::Socket::SSL();
+my IO::Socket::SSL $handle = new IO::Socket::SSL;
+$handle->blocking(0);
+print "ok";'
+result[95]='ok'
 
 # from here on we test CC specifics only
 
