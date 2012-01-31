@@ -809,6 +809,7 @@ sub todo_tests_default {
 	#15,21,27,30,41-45,50,103,105
 	push @todo, (21,30,46,50,103,105);
 	push @todo, (15)    if $] < 5.008008;
+	push @todo, (15)    if $] >= 5.012 and $] < 5.015 and $ITHREADS;
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
 	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
@@ -826,7 +827,7 @@ sub todo_tests_default {
 	push @todo, (27)    if $] <= 5.008008;
 	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
-	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
+	#push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
