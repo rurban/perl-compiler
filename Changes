@@ -4,13 +4,14 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.42	2012-02-01 rurban
-	* C: Improved finding methods in parent classes (Warning: method not found),
+	* C: Improved finding methods in parent classes, visible by the
+	warning: <method> not found with -Ds, try_isa now
 	Save @ISA of those child classes.
 	Re-implement and simplify my_share_hek, now in terms of share_hek.
 	  PL_strtab hack gone. This fixed the shared_hek destruction
 	  problems.
 	Turn off CvDYNFILE needed since 5.15.4, use static CvFILE. (DateTime)
-	* perlcc: perlcc -stash does not hang anymore, renabled t/e_perlcc.t -stash section
+	* t/e_perlcc.t: perlcc -stash does not hang anymore, renabled stash section
 	* Stash (1.02): '-xs' does not load B anymore.
 	  Now in seperate directory Stash
 	* Stash/Stash.xs: new with CvIsXSUB() to get rid of B, polluting the stashes.

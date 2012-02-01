@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.42 dbda95c 2012-01-31 | Turn off CvDYNFILE needed since 5.15.4, use static CvFILE. (DateTime)
-# perlversion = 5.006002d-nt
-# path = perl5.6.2d-nt
-# platform = darwin 64bit non-threaded debug
+# B::C::VERSION = 1.42 1ca5bd1 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
+# perlversion = 5.014002
+# path = /usr/local/bin/perl5.14.2
+# platform = darwin 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -24,7 +24,7 @@ pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
-skip ExtUtils::ParseXS
+pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
 pass XSLoader
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
+pass Test::Tester #TODO non-debugging with threads
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -59,7 +59,7 @@ pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
-skip Scope::Guard
+pass Scope::Guard
 pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
@@ -79,21 +79,21 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-skip Path::Class
-skip Test::Warn
-skip Encode
-skip Variable::Magic
+pass Path::Class
+pass Test::Warn
+pass Encode
+pass Variable::Magic
 pass CGI
-skip B::Hooks::EndOfScope
-skip Test::Pod
+pass B::Hooks::EndOfScope
+pass Test::Pod
 pass Digest::SHA1
-skip namespace::clean
-skip Class::Inspector
+pass namespace::clean
+pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
-skip XML::SAX
+pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 88 / 100 modules tested with B-C-1.42 - perl-5.006002d-nt
-# pass  88 /  88 (100.0%)
-# fail   0 /  88 (0.0%)
-# todo   0 /   0 ()
-# skip  12 / 100 (12.0% not installed)
+# 100 / 100 modules tested with B-C-1.42 - perl-5.014002
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   1 /   0 ()
+# skip   0 / 100 (0.0% not installed)
