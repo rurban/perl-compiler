@@ -1070,7 +1070,7 @@ sub B::PVOP::save {
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
   my $p = shift or return;
-  warn "save package_pv \"$package_pv\" for method_name\n"
+  warn "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}\n"
     if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
@@ -2933,7 +2933,6 @@ sub B::CV::save {
   if ($$stash and ref($stash)) {
     # $init->add("/* saving STASH $fullname */\n" if $debug{cv};
     $stash->save($fullname);
-    push_package($cvstashname);
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )

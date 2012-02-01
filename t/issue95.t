@@ -1,12 +1,12 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=95
-# methods not found
+# methods not found. see t/testc.sh -DCsP,-v -O0 95
 use strict;
 BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 3;
+use Test::More tests => 5;
 eval "use IO::Socket::SSL";
 plan skip_all => "IO::Socket::SSL required for testing issue95" if $@;
 
@@ -37,16 +37,26 @@ sub compile_check {
   print F $script;
   close F;
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  $b .= ',-Dsp,-v';
+  $b .= ',-DCsp,-v';
   my ($result,$out,$stderr) =
-    run_cmd("$X -Iblib/arch -Iblib/lib -MO=$b,-o$name.c,-uB $name.pl", 20);
+    run_cmd("$X -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl", 20);
   unless (-e "$name.c") {
     print "not ok $num # $name B::$b failed\n";
     exit;
   }
   # check stderr for "blocking not found"
+  #diag length $stderr," ",length $out;
+  if (!$stderr and $out) {
+    $stderr = $out;
+  }
   my $notfound = $stderr =~ /blocking not found/;
   ok(!$notfound, $cmt);
+  # check stderr for "save package_pv "blocking" for method_name"
+  my $found = $stderr =~ /save package_pv "blocking" for method_name/;
+ TODO: {
+   local $TODO = "wrong package_pv blocking";
+   ok(!$found, $cmt);
+  }
 }
 
 compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method found in \@ISA");
