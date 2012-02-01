@@ -69,13 +69,11 @@ sub import {
       print "-umain,-u", join( ",-u", @arr ), "\n";
     } ];
   } else {
-    # BEGIN { require B; }
     eval q[
      CHECK {
       ] . ($debug ? q[print "scanxs main\n"; my $debug=1;] : "") . q[
       require XSLoader;
       XSLoader::load('B::Stash'); # for xs only
-      # B->import(qw(svref_2object CVf_CONST CVf_ANON));
       my @arr = scanxs( $main::{"main::"},'',$debug );
       @arr = map { s/\:\:$//; $_ eq "<none>" ? () : $_; } @arr;
       print "-x", join( ",-x", @arr ), "\n";
@@ -100,10 +98,8 @@ sub compile {
   } else {
     require XSLoader;
     XSLoader::load('B::Stash'); # for xs only
-    # BEGIN { require B; }
     print "scanxs main\n" if $debug;
     return sub {
-      # B->import(qw(svref_2object CVf_CONST CVf_ANON));
       my @arr = scanxs( $main::{"main::"},'',$debug );
       @arr = map { s/\:\:$//; $_ eq "<none>" ? () : $_; } @arr;
       print "-x", join( ",-x", @arr ), "\n";
@@ -140,7 +136,7 @@ sub omit {
     "CORE::"         => 1,
     "CORE::GLOBAL::" => 1,
     "UNIVERSAL::"    => 1,
-     # "B::"    	     => 1, # inexact. There could be interesting external B modules
+    "B::"    	     => 1, # inexact. There could be interesting external B modules
     "O::"    	     => 1,
     'PerlIO::Layer::'=> 1, # inexact. Only find|NoWarnings should be skipped
   );

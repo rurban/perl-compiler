@@ -44,7 +44,6 @@ README.alpha
 STATUS
 Stash/Makefile.PL
 Stash/Stash.pm
-Stash/t/stash.t
 TESTS
 Todo
 bytecode.pl
@@ -138,6 +137,7 @@ t/o.t
 t/perldoc.t
 t/qr_loaded_module.pm
 t/release-testing.sh
+t/stash.t
 t/test.pl
 t/test10
 t/testc.sh
