@@ -189,7 +189,7 @@ sub B::OP::ix {
 	  if ($class > 0) {
 	    my $classname = $optype[$class];
 	    my $name = $op->name;
-            warn "Upgrading $name BASEOP to $classname...\n" unless $quiet;
+            warn "Upgrading $name BASEOP to $classname...\n" if $classname and !$quiet;
 	    bless $op, "B::".$classname if $classname;
 	  }
 	}
