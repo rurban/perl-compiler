@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 c6b4523 2012-01-31 | add issue95, less verbose -DC warnings, diag failed tests M
+# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.012004
 # path = /usr/bin/perl5.12.4
 # platform = linux 64bit threaded

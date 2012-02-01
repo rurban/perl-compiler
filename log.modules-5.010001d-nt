@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 409aae4 2012-01-31 | make t/download-reports usable for other packages also
+# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug

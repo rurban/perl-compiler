@@ -6,9 +6,13 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 5;
+use Test::More;
 eval "use IO::Socket::SSL";
-plan skip_all => "IO::Socket::SSL required for testing issue95" if $@;
+if ($@) {
+  plan skip_all => "IO::Socket::SSL required for testing issue95" ;
+} else {
+  plan tests => 5;
+}
 
 my $issue = <<'EOF';
 use IO::Socket::INET   ();
