@@ -2770,6 +2770,7 @@ sub B::CV::save {
 
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
   my ( $pvsym, $cur, $len ) = ('NULL',0,0);
+  my $CvFLAGS = $cv->CvFLAGS;
   if ($PERL510) {
     ( $pvsym, $cur ) = save_hek($pv);
     # XXX issue 84: we need to check the cv->PV ptr not the value.
@@ -2780,6 +2781,9 @@ sub B::CV::save {
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
+      # cv_undef wants to free it when CvDYNFILE(cv) is true.
+      # E.g. DateTime: boot_POSIX. newXS reuses cv if autoloaded. So turn it off globally.
+      my $CvFLAGS = $cv->CvFLAGS & ~0x1000; # CVf_DYNFILE
       my $xpvc = sprintf
 	# stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
 	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)s\\_%x, %s, 0x%x, %d",
@@ -2790,7 +2794,7 @@ sub B::CV::save {
 	 $padlistsym,
 	 ${ $cv->OUTSIDE }, #if main_cv set later
 	 $cv->OUTSIDE_SEQ,
-	 ($$gv and $cv->CvFLAGS & 0x400) ? 0 : $cv->CvFLAGS, # otherwise we cannot set the GV
+	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
@@ -2907,11 +2911,11 @@ sub B::CV::save {
       # since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted)
       # assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
       # we init with CvFLAGS = 0 and set it later, as successfully done in the Bytecode compiler
-      if ($cv->CvFLAGS & 0x0400) { # CVf_CVGV_RC
+      if ($CvFLAGS & 0x0400) { # CVf_CVGV_RC
         warn sprintf( "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
-                      $cv->FLAGS, $debug{flags}?$cv->flagspv:"", $cv->CvFLAGS & ~0x400)
+                      $cv->FLAGS, $debug{flags}?$cv->flagspv:"", $CvFLAGS & ~0x400)
           if $debug{cv};
-        $init->add( sprintf( "CvFLAGS((CV*)%s) = %u;", $sym, $cv->CvFLAGS ) );
+        $init->add( sprintf( "CvFLAGS((CV*)%s) = %u;", $sym, $CvFLAGS ) );
       }
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
@@ -2924,8 +2928,7 @@ sub B::CV::save {
   unless ($optimize_cop) {
     if ($MULTI) {
       $init->add( savepvn( "CvFILE($sym)", $cv->FILE, $gv ) );
-    }
-    else {
+    } else {
       $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
     }
   }
