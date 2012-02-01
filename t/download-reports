@@ -13,10 +13,18 @@ if (@ARGV) {
 my $dir = "t/reports/$ver";
 die "wrong version or $dir missing"
   unless -d $dir;
+my $distname;
+if (-f 'Makefile') {
+  (undef,undef,$distname) = split(/ /,`grep "^DISTNAME = " Makefile`);
+  chomp $distname;
+} else {
+  $distname = 'B-C';
+}
+
 
 my $yaml;
 # $wget = `http://www.cpantesters.org/distro/B/B-C.html?grade=1&perlmat=1&patches=1&oncpan=2&distmat=2&perlver=ALL&osname=ALL&version=$ver`;
-my $cache = "$dir/B-C.yaml";
+my $cache = "$dir/$distname.yaml";
 if (-f $cache and -M _ < 1) {
   local $/;
   open my $fh, '<', $cache;
@@ -24,7 +32,8 @@ if (-f $cache and -M _ < 1) {
   close $fh,
 } else {
   chdir $dir or die;
-  $yaml = `wget -O- -q http://www.cpantesters.org/distro/B/B-C.yaml`;
+  my $d = substr($distname,0,1);
+  $yaml = `wget -O- -q http://www.cpantesters.org/distro/$d/$distname.yaml`;
   chdir '../../..';
   die unless $yaml;
   open my $fh, '>', $cache;

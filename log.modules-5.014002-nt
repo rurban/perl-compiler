@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.40 91d35c0 2012-01-29 | ->fileno needs the package loaded M
+# B::C::VERSION = 1.42 2e7a18f 2012-01-31 | Stash 1.02: moved to Stash/, new Stash.xs to get rid of B
 # perlversion = 5.014002-nt
 # path = /usr/local/bin/perl5.14.2-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.40 - perl-5.014002-nt
+# 100 / 100 modules tested with B-C-1.42 - perl-5.014002-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
