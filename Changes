@@ -13,6 +13,9 @@
 	  Now in seperate directory Stash
 	* Stash/Stash.xs: new with CvIsXSUB() to get rid of B, polluting the stashes.
 	* Stash/Makefile.PL: new
+	* Bytecode (1.13): support shared hek (42,43)
+	* ByteLoader/bytecode.h (0.09), bytecode.pl: support shared hek (42,43),
+	  added xpvshared
 
 1.41	2012-01-30 rurban
 	* t/modules.t: Fixed syntax error

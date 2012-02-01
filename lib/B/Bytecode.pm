@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 #use 5.008;
 use B qw( class main_cv main_root main_start
@@ -410,6 +410,9 @@ sub B::PV::bsave {
       asm  "newpv", pvstring $sv->PV ;
       asm  "xpv";
     }
+  } elsif ($PERL510 and $sv and ($sv->FLAGS & 0x09000000) == 0x09000000) { # 42
+    asm "newpv", pvstring $sv->PVBM;
+    asm "xpvshared";
   } else {
     asm "newpv", pvstring $sv->PVBM;
     asm "xpv";
