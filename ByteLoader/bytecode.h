@@ -261,6 +261,13 @@ static int bget_swab = 0;
 	SvCUR_set(sv, bstate->bs_pv.xpv_cur);	\
 	SvLEN_set(sv, bstate->bs_pv.xpv_len);	\
     } while (0)
+#define BSET_xpvshared(sv)	do {	\
+        U32 hash;							\
+        PERL_HASH(hash, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur);	\
+        SvPV_set(sv, HEK_KEY(share_hek(bstate->bs_pv.xpv_pv,bstate->bs_pv.xpv_cur,hash))); \
+	SvCUR_set(sv, bstate->bs_pv.xpv_cur);	\
+	SvLEN_set(sv, 0);	\
+    } while (0)
 #define BSET_xpv_cur(sv, arg) SvCUR_set(sv, arg)
 #define BSET_xpv_len(sv, arg) SvLEN_set(sv, arg)
 #define BSET_xiv(sv, arg) SvIV_set(sv, arg)

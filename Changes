@@ -7,12 +7,17 @@
 	* C: Improved finding methods in parent classes (Warning: method not found),
 	Save @ISA of those child classes.
 	Re-implement and simplify my_share_hek, now in terms of share_hek.
-	  PL_strtab hack gone. This fixed the shared_hek destruction problems.
+	  PL_strtab hack gone. This fixed the shared_hek destruction
+	  problems.
+	Turn off CvDYNFILE needed since 5.15.4, use static CvFILE. (DateTime)
 	* perlcc: perlcc -stash does not hang anymore, renabled t/e_perlcc.t -stash section
 	* Stash (1.02): '-xs' does not load B anymore.
 	  Now in seperate directory Stash
 	* Stash/Stash.xs: new with CvIsXSUB() to get rid of B, polluting the stashes.
 	* Stash/Makefile.PL: new
+	* Bytecode (1.13): support shared hek (42,43)
+	* ByteLoader (0.09), ByteLoader/bytecode.h, bytecode.pl: support shared hek (42,43),
+	  added xpvshared
 
 1.41	2012-01-30 rurban
 	* t/modules.t: Fixed syntax error

@@ -1036,3 +1036,4 @@ __END__
 157 8	gv_fetchpvn_flags bstate->bs_sv			U32		x
 # restore dup to stdio handles 0-2
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
+159 10 	xpvshared	bstate->bs_sv			none		x
