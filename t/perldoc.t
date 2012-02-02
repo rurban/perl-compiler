@@ -29,7 +29,7 @@ plan tests => 7;
 
 # XXX interestingly 5.8 perlcc cannot compile perldoc because Cwd disturbs the method finding
 # vice versa 5.14 cannot be compile perldoc manually because File::Temp is not included
-my $compile = $]<5.010?"$X -Mblib -MO=C,-UB,-uFile::Temp,-operldoc.c $perldoc":"$perlcc -o $perldocexe $perldoc";
+my $compile = $]<5.010?"$X -Mblib -MO=C,-UB,-operldoc.c $perldoc":"$perlcc -o $perldocexe $perldoc";
 diag $compile;
 my $res = `$compile`;
 system("$X -Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
@@ -77,7 +77,7 @@ SKIP: {
 
 unlink $perldocexe if -e $perldocexe;
 $perldocexe = $^O eq 'MSWin32' ? "perldoc_O3$exe" : "./perldoc_O3$exe";
-$compile = $]<5.010?"$X -Mblib -MO=C,-O3,-UB,-uFile::Temp,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
+$compile = $]<5.010?"$X -Mblib -MO=C,-O3,-UB,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
 diag $compile;
 $res = `$compile`;
 system("$X -Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
