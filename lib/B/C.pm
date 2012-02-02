@@ -765,37 +765,32 @@ my $opsect_common =
 sub B::OP::_save_common {
   my $op = shift;
   # compile-time method_named packages are always const PV sM/BARE, they should be optimized.
-  # run-time packages are in gvsv/padsv. This is difficult to optimize.
+  # run-time packages are in padsv (printed as gvsv). This is difficult to optimize.
   #   my Foo $obj = shift; $obj->bar(); # TODO typed $obj
-  # entersub -> pushmark -> package -> args...
+  # entersub -> pushmark -> package -> args.. -> method_named|method|gv
   # See perl -MO=Terse -e '$foo->bar("var")'
   # See also http://www.perl.com/pub/2000/06/dougpatch.html
-  # XXX TODO 5.8 ex-gvsv
-  # XXX TODO Check for method_named as last argument
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
       # Foo->bar()  compile-time lookup, 34 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
-       or $op->first->next->name eq 'padsv'      # or $foo->bar() run-time lookup
-       or ($] < 5.010 and $op->first->next->name eq 'gvsv' and !$op->first->next->type  # 5.8 ex-gvsv
-	   and $op->first->next->next->name eq 'const' and $op->first->next->next->flags == 34))
-     ) {
+       # or $foo->bar() run-time lookup
+       or $op->first->next->name eq 'padsv')) {
     my $pkgop = $op->first->next;
-    if ($] < 5.010 and !$op->first->next->type) { # 5.8 ex-gvsv
-      $pkgop = $op->first->next->next;
-    }
-    warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
-    my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
-    if ($pv and $pv !~ /[! \(]/) {
-      $package_pv = $pv;
-      push_package($package_pv);
-    } else {
-      # mostly optimized-away padsv NULL pads with 5.8
-      warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
+    my $tmp = $pkgop; # walk args until method_named
+    do { $tmp = $tmp->next; } while $tmp->name !~ /^method_named|method|gv$/;
+    if ($tmp->name eq 'method_named') {
+      warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
+      my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
+      if ($pv and $pv !~ /[! \(]/) {
+	$package_pv = $pv;
+	push_package($package_pv);
+      } else {
+	warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
+      }
     }
   }
-  # $prev_op = $op;
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
@@ -2372,7 +2367,9 @@ sub try_isa {
       if (get_isa($_)) {
 	my $parent = try_isa($_, $cvname);
 	if ($parent) {
+	  warn "save \@$parent\::ISA\n" if $debug{pkg};
 	  svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
+	  warn "save \@$_\::ISA\n" if $debug{pkg};
 	  svref_2object( \@{$_ . '::ISA'} )->save("$_\::ISA");
 	  return $parent;
 	}
@@ -3177,6 +3174,7 @@ if (0) {
         warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
         warn "GV::save \@$fullname\n" if $debug{gv};
+	warn "save \@$fullname\n" if $gvname eq 'ISA' and $debug{pkg};
 	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
 	  mark_package('Tie::Hash::NamedCapture', 1);
@@ -3832,7 +3830,8 @@ sub B::IO::save {
 	  if $fd >= 3 or $verbose; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
 		   "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"r\");");
-	if (my $tell = $o->tell()) {
+	my $tell;
+	if ($o->can('tell') and $tell = $o->tell()) {
 	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
 	}
       } else {
