@@ -105,7 +105,7 @@ if [ -n "$1" ]; then
         [ -z "$QUIET" ] && PERLCC_OPTS="$PERLCC_OPTS -v4"
 	while [ -n "$1" ]; do
 	    # single module. update,setup,install are UAC terms
-	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
+	    name=pcc"$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
 	    if [ "${COPTS/,-D/}" != "$COPTS" ]; then
               COPTS="${COPTS:1}"
 	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print qq(ok\\n)\""

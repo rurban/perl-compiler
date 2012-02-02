@@ -6,6 +6,7 @@
 1.43	2012-02-xx rurban
 	* C: Fixed more method not found:  issue95 and t/perldoc.t:
 	  parent @File::Spec::ISA was not saved.
+	Fix -u<module> without file extension.
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 
