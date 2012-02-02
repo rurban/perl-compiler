@@ -2338,6 +2338,11 @@ sub B::RV::save {
   }
 }
 
+sub get_isa ($) {
+  no strict 'refs';
+  return $PERL510 ? @{mro::get_linear_isa($_[0])} : @{ $_[0] . '::ISA' };
+}
+
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
 # XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
@@ -2345,10 +2350,9 @@ sub try_isa {
   if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
     return $found;
   }
-  no strict 'refs';
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
-  my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
+  my @isa = get_isa($cvstashname);
   warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
@@ -2357,6 +2361,7 @@ sub try_isa {
     next if $_ eq $cvstashname;
     next if $already{$_};
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
+    no strict 'refs';
     if (defined(&{$_ .'::'. $cvname})) {
       svref_2object( \@{$cvstashname . '::ISA'} )->save("$cvstashname\::ISA");
       $isa_cache{"$cvstashname\::$cvname"} = $_;
@@ -2364,10 +2369,10 @@ sub try_isa {
       return $_;
     } else {
       $already{$_}++; # avoid recursive cycles
-      my @i = $PERL510 ? @{mro::get_linear_isa($_)} : @{ $_ . '::ISA' };
-      if (@i) {
+      if (get_isa($_)) {
 	my $parent = try_isa($_, $cvname);
 	if ($parent) {
+	  svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
 	  svref_2object( \@{$_ . '::ISA'} )->save("$_\::ISA");
 	  return $parent;
 	}
@@ -2406,7 +2411,7 @@ sub try_autoload {
 
   # Handle AutoLoader classes. Any more general AUTOLOAD
   # use should be handled by the class itself.
-  my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
+  my @isa = get_isa($cvstashname);
   if ( $cvstashname =~ /^POSIX|Storable|DynaLoader|Net::SSLeay|Class::MethodMaker$/
     or (exists ${$cvstashname.'::'}{AUTOLOAD} and grep( $_ eq "AutoLoader", @isa ) ) )
   {
@@ -2663,7 +2668,7 @@ sub B::CV::save {
 	  my $gv = $cv->GV;
 	  if ($$gv) {
 	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	      warn "New ".$gv->STASH->NAME."::".$gv->NAME."\n" if $verbose;
+	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded\n" if $debug{sub};
 	      $svsect->remove;
 	      $xpvcvsect->remove;
 	      delsym($cv);
@@ -2746,7 +2751,7 @@ sub B::CV::save {
     warn $fullname."\n" if $debug{sub};
   }
   else {
-    warn $fullname." not found\n" if $debug{sub};
+    warn "&".$fullname." not found\n" if $verbose or $debug{sub};
     warn "No definition for sub $fullname (unable to autoload)\n"
       if $debug{cv};
     $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
@@ -2781,7 +2786,7 @@ sub B::CV::save {
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
-      # cv_undef wants to free it when CvDYNFILE(cv) is true.
+      # cv_undef wants to free it when CvDYNFILE(cv) is true, since 5.15.4.
       # E.g. DateTime: boot_POSIX. newXS reuses cv if autoloaded. So turn it off globally.
       my $CvFLAGS = $cv->CvFLAGS & ~0x1000; # CVf_DYNFILE
       my $xpvc = sprintf
@@ -4835,8 +4840,7 @@ sub mark_package {
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
     }
-    my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
-    if ( @isa ) {
+    if ( my @isa = get_isa($package) ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
       foreach my $isa ( @isa ) {
