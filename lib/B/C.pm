@@ -1091,15 +1091,20 @@ sub method_named {
     if (defined(&$method)) {
       warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
       $include_package{$_} = 1; # issue59
+      $package_pv = $_;
       mark_package($_, 1);
       last;
     } else {
+      return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
+      return if $method eq 'threads::tid' and !$ITHREADS; # Without ithreads threads.pm is not loaded
       if (my $parent = try_isa($_,$name)) {
 	warn sprintf( "Found &%s::%s\n", $parent, $name ) if $debug{cv};
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
+	$package_pv = $parent;
 	last;
       }
+      $method = $package_pv.'::'.$name;
       warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
@@ -5612,7 +5617,11 @@ OPTION:
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      require $arg;
+      if ($arg =~ /\.p/) {
+	eval "require $arg;";
+      } else {
+	eval "require $arg.pm;";
+      }
       mark_unused( $arg, 1 );
     }
     elsif ( $opt eq "U" ) {
