@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
-# perlversion = 5.015007d
-# path = /usr/local/bin/perl5.15.7d
-# platform = linux 64bit threaded debug
+# B::C::VERSION = 1.42 1ca5bd1 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
+# perlversion = 5.010001-m
+# path = /usr/local/bin/perl5.10.1-m
+# platform = darwin 64bit multi
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -83,27 +83,3 @@ pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
-pass CGI
-pass B::Hooks::EndOfScope
-pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
-pass Class::Inspector
-pass Clone
-pass XML::NamespaceSupport
-pass XML::SAX
-pass YAML
-pass MooseX::Types
-pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
-pass IO::String
-pass AppConfig
-pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.015007d
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
-# skip   0 / 100 (0.0% not installed)

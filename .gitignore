@@ -42,3 +42,4 @@ log.make-*
 log.do-*
 log.testvm-*
 .DS_Store
+B-C-*.tar.gz

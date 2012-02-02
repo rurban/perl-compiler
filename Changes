@@ -23,6 +23,7 @@
 	* Bytecode (1.13): support shared strings/hek (42,43)
 	* ByteLoader (0.09), ByteLoader/bytecode.h, bytecode.pl: support shared strings/hek (42,43),
 	  added xpvshared
+	* t/issue95.t: added, isa methods not found
 
 1.41	2012-01-30 rurban
 	* t/modules.t: Fixed syntax error

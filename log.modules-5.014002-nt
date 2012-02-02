@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 2e7a18f 2012-01-31 | Stash 1.02: moved to Stash/, new Stash.xs to get rid of B
+# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.014002-nt
 # path = /usr/local/bin/perl5.14.2-nt
 # platform = linux 64bit non-threaded

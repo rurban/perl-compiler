@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.40 91d35c0 2012-01-29 | ->fileno needs the package loaded M
+# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.40 - perl-5.010001d-nt
+# 100 / 100 modules tested with B-C-1.42 - perl-5.010001d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

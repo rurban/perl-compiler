@@ -118,8 +118,8 @@ $expected =~ s/(Exporter::Heavy|strict) //g if $^O eq 'freebsd';
 
 TODO: {
   # todo: freebsd
-  local $TODO = "exact stashes may vary" if $^O !~ /^(MSWin32|cygwin|linux|darwin)$/;
-  local $TODO = "exact stashes may vary" if $] < 5.009;
+  # local $TODO = "exact stashes may vary" if $^O !~ /^(MSWin32|cygwin|linux|darwin)$/;
+  local $TODO = "exact stashes may vary";
   if ((($Config{static_ext} eq ' ')
        || ($Config{static_ext} eq '')
        || ($^O eq 'cygwin' and $Config{static_ext} =~ /^(Cwd )?Win32CORE$/))
