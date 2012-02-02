@@ -1089,28 +1089,26 @@ sub method_named {
     no strict 'refs';
     $method = $_ . '::' . $name;
     if (defined(&$method)) {
-      warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
       $include_package{$_} = 1; # issue59
       $package_pv = $_;
       mark_package($_, 1);
-      last;
+      warn "save found method_name \"$method\"\n" if $debug{cv};
+      return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       return if $method eq 'threads::tid' and !$ITHREADS; # Without ithreads threads.pm is not loaded
       if (my $parent = try_isa($_,$name)) {
-	warn sprintf( "Found &%s::%s\n", $parent, $name ) if $debug{cv};
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
 	$package_pv = $parent;
-	last;
+	warn "save found method_name \"$method\"\n" if $debug{cv};
+	return svref_2object( \&{$method} );
       }
-      $method = $package_pv.'::'.$name;
-      warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
-  $method = $name unless $method;
-  warn "save method_name \"$method\"\n" if $debug{cv};
-  return svref_2object( \&{$method} );
+  $method = $package_pv.'::'.$name;
+  warn "no definition for method_name \"$method\"\n" if $debug{cv};
+  return;
 }
 
 sub B::SVOP::save {
@@ -2670,7 +2668,7 @@ sub B::CV::save {
 	  my $gv = $cv->GV;
 	  if ($$gv) {
 	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded\n" if $debug{sub};
+	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded. remove old cv\n" if $debug{sub};
 	      $svsect->remove;
 	      $xpvcvsect->remove;
 	      delsym($cv);
@@ -2687,7 +2685,7 @@ sub B::CV::save {
 	my $gv = $cv->GV;
 	if ($$gv) {
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME. remove old cv\n" if $verbose;
 	    $svsect->remove;
 	    $xpvcvsect->remove;
 	    delsym($cv);
@@ -2754,14 +2752,14 @@ sub B::CV::save {
   }
   else {
     warn "&".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload)\n"
+    warn "No definition for sub $fullname (unable to autoload), remove cv\n"
       if $debug{cv};
     $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
     # XXX empty CV should not be saved
-    # $svsect->remove( $sv_ix );
-    # $xpvcvsect->remove( $xpvcv_ix );
-    # delsym( $cv );
-    # return '0';
+    $svsect->remove( $sv_ix );
+    $xpvcvsect->remove( $xpvcv_ix );
+    delsym( $cv );
+    return '0';
   }
 
   # Now it is time to record the CV
