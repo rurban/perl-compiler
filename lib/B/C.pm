@@ -424,7 +424,7 @@ $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL512;
 warn %OP_COP if $debug{cops};
 
 # 1. called from method_named, so hashp should be defined
-# 2. called from svop before method_named to cache the $package_pv
+# 2. called from svop before method/method_named to cache the $package_pv
 sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
@@ -471,9 +471,9 @@ sub svop_or_padop_pv {
       return $rv->STASH->NAME;
     } else {
   missing:
-      if ($op->name ne 'method_named') {
+      if ($op->name != /^method(_named)?/) {
 	# Called from first const/padsv before method_named. no magic pv string, so a method arg.
-	# The first const pv as method_named arg is always the $package_pv.
+	# The first const pv as method or method_named arg is always the $package_pv.
 	return $package_pv;
       } elsif ($sv->isa("B::IV")) {
         warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
@@ -773,8 +773,8 @@ sub B::OP::_save_common {
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
-      # Foo->bar()  compile-time lookup, 34 = BARE in all versions
-      (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
+      # Foo->bar()  compile-time lookup, 64 = BARE in all versions
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
        # or $foo->bar() run-time lookup
        or $op->first->next->name eq 'padsv')) {
     my $pkgop = $op->first->next;
