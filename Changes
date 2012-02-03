@@ -9,6 +9,7 @@
 	Fix -u<module> without file extension.
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
+	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
 
 1.42	2012-02-01 rurban
 	* C: Improved finding methods in parent classes, visible by the
