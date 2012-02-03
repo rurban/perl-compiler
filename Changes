@@ -9,7 +9,8 @@
 	Do not save not undefined CVs
 	Fix -u<module> without file extension.
 	Special case Carp calling threads and B methods.
-	Sanified package_pv default a bit when a method padsv was not found.
+	Sanified package_pv default a bit when a method padsv was not
+	found. Check for method_named as last argument of methods.
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 

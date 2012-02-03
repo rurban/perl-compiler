@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 dbda95c 2012-01-31 | Turn off CvDYNFILE needed since 5.15.4, use static CvFILE. (DateTime)
+# B::C::VERSION = 1.42 96ab7bb 2012-02-02 | t/testm.sh: use pcc prefix for the name
 # perlversion = 5.006002d-nt
 # path = perl5.6.2d-nt
 # platform = darwin 64bit non-threaded debug
