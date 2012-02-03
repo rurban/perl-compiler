@@ -1,7 +1,7 @@
 # Stash.pm -- show what stashes are loaded
 package B::Stash;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 =pod
 
