@@ -260,7 +260,7 @@ my %all_bc_subs = map {$_=>1}
 #
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %hektable, @static_free);
+my (%strtable, %hektable, @static_free, %newpkg);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
@@ -425,6 +425,9 @@ warn %OP_COP if $debug{cops};
 
 # 1. called from method_named, so hashp should be defined
 # 2. called from svop before method/method_named to cache the $package_pv
+# XXX padsv package names are dynamic. They cannot be determined at compile-time.
+# We can catch the 'new' method though and assign the const package_pv to the symbol
+# and compare the padsv then. $foo=new Class;$foo->method;
 sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
@@ -433,7 +436,7 @@ sub svop_or_padop_pv {
       my @c = comppadlist->ARRAY;
       my @pad = $c[1]->ARRAY;
       return $pad[$op->targ]->PV if $pad[$op->targ] and $pad[$op->targ]->can("PV");
-      # This might fail with B::NULL (optimized ex-const pv) entries in the pad.
+    #  # This might fail with B::NULL (optimized ex-const pv) entries in the pad.
     }
     # $op->can('pmreplroot') fails for 5.14
     if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -448,17 +451,12 @@ sub svop_or_padop_pv {
   } else {
     $sv = $op->sv;
   }
-  # XXX see SvSHARED_HEK_FROM_PV for the stash in S_method_common pp_hot.c
-  # In this hash the CV is stored directly
   if ($$sv) {
-    #if ($PERL510) { # PVX->hek_hash - STRUCT_OFFSET(struct hek, hek_key)
-    #} else {        # UVX
-    #}
     return $sv->PV if $sv->can("PV");
     if (ref($sv) eq "B::SPECIAL") { # DateTime::TimeZone
       # XXX null -> method_named
       warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
-      return $package_pv;
+      return '';
     }
     if ($sv->FLAGS & SVf_ROK) {
       goto missing if $sv->isa("B::NULL");
@@ -469,18 +467,6 @@ sub svop_or_padop_pv {
       }
       goto missing if $rv->isa("B::PVMG");
       return $rv->STASH->NAME;
-    } else {
-  missing:
-      if ($op->name != /^method(_named)?/) {
-	# Called from first const/padsv before method_named. no magic pv string, so a method arg.
-	# The first const pv as method or method_named arg is always the $package_pv.
-	return $package_pv;
-      } elsif ($sv->isa("B::IV")) {
-        warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
-                     $sv->FLAGS);
-        # XXX untested!
-        return svref_2object(method_cv($$sv, $package_pv));
-      }
     }
   } else {
     my @c = comppadlist->ARRAY;
@@ -777,17 +763,30 @@ sub B::OP::_save_common {
       (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
        # or $foo->bar() run-time lookup
        or $op->first->next->name eq 'padsv')) {
-    my $pkgop = $op->first->next;
-    my $tmp = $pkgop; # walk args until method_named
+    my $pkgop = $op->first->next; # padsv for objects or const for classes
+    my $tmp = $pkgop; # walk args until method or sub end
     do { $tmp = $tmp->next; } while $tmp->name !~ /^method_named|method|gv$/;
-    if ($tmp->name eq 'method_named') {
-      warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
+    my $methop = $tmp->name;
+    if (substr($methop,0,6) eq 'method') {
+      warn "check package_pv ".$pkgop->name." for $methop\n" if $debug{cv};
       my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
       if ($pv and $pv !~ /[! \(]/) {
-	$package_pv = $pv;
-	push_package($package_pv);
+	if ($pkgop->name eq 'const') {
+	  $package_pv = $pv;
+	  push_package($package_pv);
+	} elsif ($pkgop->name eq 'padsv') {
+	  if ($newpkg{$pv}) { # XXX TODO symbol = new Class? 
+	    $package_pv = $pv;
+	    push_package($package_pv);
+	  } else {
+	    my $methodname = svop_or_padop_pv($tmp);
+	    warn "package_pv of object for $methop $methodname not found\n"
+	      if $debug{cv} or $debug{pkg};
+	  }
+	}
       } else {
-	warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
+	my $methodname = svop_or_padop_pv($tmp);
+	warn "package_pv for $methop $methodname not found\n" if $debug{cv} or $debug{pkg};
       }
     }
   }
@@ -1073,17 +1072,20 @@ sub push_package ($) {
 }
 
 # method_named is in 5.6.1
+# Find the package of methods, run-time (heuristic) for objects, compile-time (const) for classes.
+# we have a default $package_pv, and several candidates @package_pv.
+# Note: Package PV of an object is unacessible at compile-time, only at run-time.
+# We only know the symbol name of the object.
+# But a classname is a the const after the pushmark, before all args.
+# See L<perloptree/"Call a method">
+# We check it in op->_save_common
 sub method_named {
   my $name = shift;
   return unless $name;
-  # Note: the pkg PV is unacessible(?) at PL_stack_base+TOPMARK+1.
-  # But it is also at the const or padsv after the pushmark, before all args.
-  # See L<perloptree/"Call a method">
-  # We check it in op->_save_common
-  if (ref($name) eq 'B::CV') {
-    warn $name;
-    return $name;
-  }
+  #if (ref($name) eq 'B::CV') {
+  #  warn $name;
+  #  return $name;
+  #}
   my $method;
   for ($package_pv, @package_pv, 'main') {
     no strict 'refs';
@@ -1095,19 +1097,18 @@ sub method_named {
       warn "save found method_name \"$method\"\n" if $debug{cv};
       return svref_2object( \&{$method} );
     } else {
-      return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
+      return if $method =~ /^threads::(GV|NAME|STASH)$/;  # Carp artefact to ignore B
       return if $method eq 'threads::tid' and !$ITHREADS; # Without ithreads threads.pm is not loaded
       if (my $parent = try_isa($_,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
-	$package_pv = $parent;
+	$package_pv = $parent; # looks like a good new default
 	warn "save found method_name \"$method\"\n" if $debug{cv};
 	return svref_2object( \&{$method} );
       }
     }
   }
-  $method = $package_pv.'::'.$name;
-  warn "no definition for method_name \"$method\"\n" if $debug{cv};
+  warn "no definition for method_name \"$package_pv\::$name\"\n" if $debug{cv};
   return;
 }
 
@@ -2752,7 +2753,7 @@ sub B::CV::save {
   }
   else {
     warn "&".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload), remove cv\n"
+    warn "No definition for sub $fullname (unable to autoload), remove old cv\n"
       if $debug{cv};
     $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
     # XXX empty CV should not be saved
