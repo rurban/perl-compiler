@@ -5592,7 +5592,7 @@ OPTION:
           $debug{sv}++;
         }
         elsif ( $arg eq "F" ) {
-          $debug{flags}++ if require B::Flags and $] > 5.008;
+          $debug{flags}++ if $] > 5.008 and require B::Flags;
         }
         elsif ( $arg eq "W" ) {
           $debug{walk}++;
