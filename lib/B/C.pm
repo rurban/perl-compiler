@@ -262,7 +262,7 @@ my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free, %newpkg);
 my %xsub;
-my $warn_undefined_syms;
+my ($warn_undefined_syms, $method_named_warn);
 my ($staticxs, $outfile);
 my (%include_package, %skip_package, %saved, %isa_cache);
 my %static_ext;
@@ -423,20 +423,28 @@ $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
 $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL512;
 warn %OP_COP if $debug{cops};
 
+sub padopname {
+  my $op = shift;
+  if ($op->can('name') and $op->name eq 'padsv') {
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    if (my $sym = $pad[$op->targ]) {
+      my $name = $sym->PV if $sym->can("PV");
+      my $stash = $sym->STASH->NAME if $sym->can("STASH");
+      return wantarray ? ($stash,$name,$sym) : $name;
+    }
+  }
+}
+
+# PV from svop or symbolname from padop, not the stash.
 # 1. called from method_named, so hashp should be defined
 # 2. called from svop before method/method_named to cache the $package_pv
-# XXX padsv package names are dynamic. They cannot be determined at compile-time.
-# We can catch the 'new' method though and assign the const package_pv to the symbol
-# and compare the padsv then. $foo=new Class;$foo->method;
 sub svop_or_padop_pv {
   my $op = shift;
   my $sv;
   if (!$op->can("sv")) {
-    if ($op->can('name') and $op->name eq 'padsv') {
-      my @c = comppadlist->ARRAY;
-      my @pad = $c[1]->ARRAY;
-      return $pad[$op->targ]->PV if $pad[$op->targ] and $pad[$op->targ]->can("PV");
-    #  # This might fail with B::NULL (optimized ex-const pv) entries in the pad.
+    if ($op->can('name') and $op->name eq 'padsv') { # symbol name, not package name
+      return padopname($op);
     }
     # $op->can('pmreplroot') fails for 5.14
     if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -455,7 +463,7 @@ sub svop_or_padop_pv {
     return $sv->PV if $sv->can("PV");
     if (ref($sv) eq "B::SPECIAL") { # DateTime::TimeZone
       # XXX null -> method_named
-      warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
+      warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{meth};
       return '';
     }
     if ($sv->FLAGS & SVf_ROK) {
@@ -468,10 +476,8 @@ sub svop_or_padop_pv {
       goto missing if $rv->isa("B::PVMG");
       return $rv->STASH->NAME;
     }
-  } else {
-    my @c = comppadlist->ARRAY;
-    my @pad = $c[1]->ARRAY;
-    return $pad[$op->targ]->PV if $pad[$op->targ] and $pad[$op->targ]->can("PV");
+  } else {  # symbol name, not package name
+    return padopname($op);
   }
 }
 
@@ -748,48 +754,69 @@ my $opsect_common =
   $opsect_common .= ", flags, private";
 }
 
-sub B::OP::_save_common {
+# Check method calls for the class to store the full sub name.
+# Also associate objects with classes - $obj=new Class; - to resolve method calls later.
+# Compile-time method_named packages are always const PV sM/BARE.
+# run-time packages ("objects") are in padsv (printed as gvsv).
+#   my Foo $obj = shift; $obj->bar();
+# entersub -> pushmark -> package -> args.. -> method_named|method|gv
+# See perl -MO=Terse -e '$foo->bar("var")'
+# See also http://www.perl.com/pub/2000/06/dougpatch.html
+sub check_entersub {
   my $op = shift;
-  # compile-time method_named packages are always const PV sM/BARE, they should be optimized.
-  # run-time packages are in padsv (printed as gvsv). This is difficult to optimize.
-  #   my Foo $obj = shift; $obj->bar(); # TODO typed $obj
-  # entersub -> pushmark -> package -> args.. -> method_named|method|gv
-  # See perl -MO=Terse -e '$foo->bar("var")'
-  # See also http://www.perl.com/pub/2000/06/dougpatch.html
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
-      # Foo->bar()  compile-time lookup, 64 = BARE in all versions
+       # Foo->bar()  compile-time lookup, 64 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
        # or $foo->bar() run-time lookup
        or $op->first->next->name eq 'padsv')) {
     my $pkgop = $op->first->next; # padsv for objects or const for classes
-    my $tmp = $pkgop; # walk args until method or sub end
-    do { $tmp = $tmp->next; } while $tmp->name !~ /^method_named|method|gv$/;
-    my $methop = $tmp->name;
-    if (substr($methop,0,6) eq 'method') {
-      warn "check package_pv ".$pkgop->name." for $methop\n" if $debug{cv};
-      my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
-      if ($pv and $pv !~ /[! \(]/) {
-	if ($pkgop->name eq 'const') {
+    my $methop = $pkgop; # walk args until method or sub end. This ends
+    do { $methop = $methop->next; } while $methop->name !~ /^method_named|method|gv$/;
+    my $methopname = $methop->name;
+    if (substr($methopname,0,6) eq 'method') {
+      warn "check package_pv ".$pkgop->name." for $methopname\n" if $debug{meth};
+      if ($pkgop->name eq 'const') {
+	my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
+	if ($pv and $pv !~ /[! \(]/) {
+	  # padsv package names are dynamic. They cannot be determined at compile-time.
+	  # We can catch the 'new' method and assign the const package_pv to the symbol
+	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
+	  if ($methopname eq 'method_named' and 'new' eq svop_or_padop_pv($methop)) {
+	    my $symop = $op->next;
+	    if ($symop->name eq 'padsv' and $symop->next->name eq 'sassign') {
+	      my ($stash,$name,$sym) = padopname($symop);
+	      warn "$stash\::$name => new $pv\n" if $debug{meth};
+	      $newpkg{"$stash\::$name"} = $pv;
+	    }
+	  }
 	  $package_pv = $pv;
 	  push_package($package_pv);
-	} elsif ($pkgop->name eq 'padsv') {
-	  if ($newpkg{$pv}) { # XXX TODO symbol = new Class? 
-	    $package_pv = $pv;
-	    push_package($package_pv);
-	  } else {
-	    my $methodname = svop_or_padop_pv($tmp);
-	    warn "package_pv of object for $methop $methodname not found\n"
-	      if $debug{cv} or $debug{pkg};
-	  }
+	}
+      } elsif ($pkgop->name eq 'padsv') {
+	my ($stash,$name,$sym) = padopname($pkgop);
+	if (my $pv = $newpkg{"$stash\::$name"}) { # $symbol = new Class?
+	  $package_pv = $pv;
+	  push_package($package_pv);
+	} else {
+	  my $methodname = svop_or_padop_pv($methop);
+	  warn "package_pv of object for $methopname $methodname not found\n"
+	    if $debug{meth};
+	  push_package($stash);
 	}
       } else {
-	my $methodname = svop_or_padop_pv($tmp);
-	warn "package_pv for $methop $methodname not found\n" if $debug{cv} or $debug{pkg};
+	my $methodname = svop_or_padop_pv($methop);
+	warn "XXX package_pv for $methopname $methodname not found\n" if $debug{meth};
       }
     }
   }
+}
+
+# This is called for every op, so eventually abused
+sub B::OP::_save_common {
+  my $op = shift;
+  check_entersub($op);
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
@@ -1065,7 +1092,7 @@ sub B::PVOP::save {
 sub push_package ($) {
   my $p = shift or return;
   warn "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}\n"
-    if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
+    if $debug{meth} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
   mark_package($p);
@@ -1094,7 +1121,7 @@ sub method_named {
       $include_package{$_} = 1; # issue59
       $package_pv = $_;
       mark_package($_, 1);
-      warn "save found method_name \"$method\"\n" if $debug{cv};
+      warn "save found method_name \"$method\"\n" if $debug{cv} or $debug{meth};
       return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/;  # Carp artefact to ignore B
@@ -1103,12 +1130,14 @@ sub method_named {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
 	$package_pv = $parent; # looks like a good new default
-	warn "save found method_name \"$method\"\n" if $debug{cv};
+	warn "save found method_name \"$method\"\n" if $debug{cv} or $debug{meth};
 	return svref_2object( \&{$method} );
       }
     }
   }
-  warn "no definition for method_name \"$package_pv\::$name\"\n" if $debug{cv};
+  warn "WARNING: method \"$package_pv\::$name\" not found.\n" if $verbose;
+  warn "Probably need to define the right package with -uPackage\n"
+    if $verbose and !$method_named_warn++;
   return;
 }
 
@@ -2354,7 +2383,7 @@ sub try_isa {
   my @isa = get_isa($cvstashname);
   warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
-    if $debug{cv};
+    if $debug{cv} or $debug{meth};
   my %already;
   for (@isa) { # global @ISA or in pad
     next if $_ eq $cvstashname;
@@ -2371,9 +2400,9 @@ sub try_isa {
       if (get_isa($_)) {
 	my $parent = try_isa($_, $cvname);
 	if ($parent) {
-	  warn "save \@$parent\::ISA\n" if $debug{pkg};
+	  warn "save \@$parent\::ISA\n" if $debug{pkg} or $debug{meth};
 	  svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
-	  warn "save \@$_\::ISA\n" if $debug{pkg};
+	  warn "save \@$_\::ISA\n" if $debug{pkg} or $debug{meth};
 	  svref_2object( \@{$_ . '::ISA'} )->save("$_\::ISA");
 	  return $parent;
 	}
@@ -5527,10 +5556,10 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       if ($arg eq 'full') {
-        $arg = 'OcAHCMGSpWF';
+        $arg = 'OcAHCMGSsmpWF';
       }
       elsif ($arg eq 'ufull') {
-        $arg = 'uOcAHCMGSpWF';
+        $arg = 'uOcAHCMGSsmpWF';
       }
       foreach my $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
@@ -5575,6 +5604,9 @@ OPTION:
         }
         elsif ( $arg eq "p" ) {
           $debug{pkg}++;
+        }
+        elsif ( $arg eq "m" ) {
+          $debug{meth}++;
         }
         elsif ( $arg eq "u" ) {
           $debug{unused}++;
