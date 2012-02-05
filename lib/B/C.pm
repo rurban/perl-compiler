@@ -783,6 +783,7 @@ sub check_entersub {
 	  # padsv package names are dynamic. They cannot be determined at compile-time.
 	  # We can catch the 'new' method and assign the const package_pv to the symbol
 	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
+	  # Note: 'new' is no keyword (yet), we'd really need to check bless.
 	  if ($methopname eq 'method_named' and 'new' eq svop_or_padop_pv($methop)) {
 	    my $symop = $op->next;
 	    if ($symop->name eq 'padsv' and $symop->next->name eq 'sassign') {
@@ -1114,7 +1115,7 @@ sub method_named {
   #  return $name;
   #}
   my $method;
-  for ($package_pv, @package_pv, 'main') {
+  for ($package_pv, @package_pv, 'main', grep{$include_package{$_}} keys %include_package) {
     no strict 'refs';
     $method = $_ . '::' . $name;
     if (defined(&$method)) {
@@ -1135,8 +1136,8 @@ sub method_named {
       }
     }
   }
-  warn "WARNING: method \"$package_pv\::$name\" not found.\n" if $verbose;
-  warn "Probably need to define the right package with -uPackage\n"
+  warn "WARNING: method \"$package_pv\::$name\" found in no package.\n" if $verbose;
+  warn "Probably need to define the right package with -uPackage, or maybe it is not needed.\n"
     if $verbose and !$method_named_warn++;
   return;
 }
