@@ -754,7 +754,7 @@ my $opsect_common =
   $opsect_common .= ", flags, private";
 }
 
-# Check method calls for the class to store the full sub name.
+# Heuristic to check method calls for the class to store the full sub name.
 # Also associate objects with classes - $obj=new Class; - to resolve method calls later.
 # Compile-time method_named packages are always const PV sM/BARE.
 # run-time packages ("objects") are in padsv (printed as gvsv).
@@ -770,7 +770,7 @@ sub check_entersub {
        # Foo->bar()  compile-time lookup, 64 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
        # or $foo->bar() run-time lookup
-       or $op->first->next->name eq 'padsv')) {
+       or $op->first->next->name eq 'padsv')) { # note that padsv is called gvsv in Concise
     my $pkgop = $op->first->next; # padsv for objects or const for classes
     my $methop = $pkgop; # walk args until method or sub end. This ends
     do { $methop = $methop->next; } while $methop->name !~ /^method_named|method|gv$/;
@@ -780,7 +780,8 @@ sub check_entersub {
       if ($pkgop->name eq 'const') {
 	my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
 	if ($pv and $pv !~ /[! \(]/) {
-	  # padsv package names are dynamic. They cannot be determined at compile-time.
+	  # padsv package names are dynamic. They cannot be determined at compile-time,
+	  # unless they are typed.
 	  # We can catch the 'new' method and assign the const package_pv to the symbol
 	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
 	  # Note: 'new' is no keyword (yet), we'd really need to check bless.
@@ -817,7 +818,9 @@ sub check_entersub {
 # This is called for every op, so eventually abused
 sub B::OP::_save_common {
   my $op = shift;
-  check_entersub($op);
+  if ($op->type > 0 and $op->name eq 'entersub') {
+    check_entersub($op);
+  }
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
