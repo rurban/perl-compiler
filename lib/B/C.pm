@@ -436,7 +436,7 @@ sub padopname {
   }
 }
 
-# PV from svop or symbolname from padop, not the stash.
+# Returns PV from svop or symbolname from padop, not the stash.
 # 1. called from method_named, so hashp should be defined
 # 2. called from svop before method/method_named to cache the $package_pv
 sub svop_or_padop_pv {
