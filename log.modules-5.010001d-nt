@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
+# B::C::VERSION = 1.42 52c6dfb 2012-02-07 | Update Todo
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -20,12 +20,12 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp
+fail File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -37,11 +37,11 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
+fail Compress::Raw::Zlib
+fail Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
-pass Storable
+fail LWP
+fail Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42 - perl-5.010001d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# pass  90 / 100 (90.0%)
+# fail  10 / 100 (10.0%)
+# todo   0 /  10 (0.0%)
 # skip   0 / 100 (0.0% not installed)

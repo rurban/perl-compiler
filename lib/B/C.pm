@@ -257,12 +257,16 @@ my %all_bc_subs = map {$_=>1}
      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
 # track all internally used packages. all other may not be deleted automatically
-# - hidden mothods
+# - hidden methods
 my %all_bc_pkg = map {$_=>1}
   qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
      B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
      B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
-     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV 
+     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
+     AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
+     warnings warnings::register DB next maybe maybe::next FileHandle fields vars
+     AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
+     ExtUtils::Constant::ProxySubs threads base
     );
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
