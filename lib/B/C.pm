@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42';
+our $VERSION = '1.43';
 my %debug;
 my $eval_pvs = '';
 
@@ -232,7 +232,6 @@ use B::Asmdata qw(@specialsv_name);
 
 use B::C::Flags;
 use FileHandle;
-#use Carp;
 use Config;
 
 my $hv_index      = 0;
@@ -257,7 +256,26 @@ my %all_bc_subs = map {$_=>1}
      B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
-#
+# track all internally used packages. all other may not be deleted automatically
+# - hidden mothods
+my %all_bc_pkg = map {$_=>1}
+  qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
+     B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
+     B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
+     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV 
+    );
+# B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
+# perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
+# perl5.15.7d-nt -MErrno -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uwarnings,-uwarnings::register,-uConfig,-uDB,-uvars,-uCarp,-uPerlIO,-uthreads
+# perl5.15.7d-nt -Mblib -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uCwd,-uRegexp,-uoverload,-uFile,-uFile::Spec,-uFile::Spec::Unix,-uDos,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-uEPOC,-ublib,-uScalar,-uScalar::Util,-uvars,-uCarp,-uVMS,-uVMS::Filespec,-uVMS::Feature,-uWin32,-uPerlIO,-uthreads
+# perl -MO=Stash -e0
+# -umain,-uTie,-uTie::Hash,-ure,-umro,-ustrict,-uRegexp,-uoverload,-uExporter,-uExporter::Heavy,-uwarnings,-uDB,-uCarp,-uPerlIO,-uthreads
+# pb -MB::Stash -e0
+# -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
+
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
