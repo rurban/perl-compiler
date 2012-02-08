@@ -1,15 +1,13 @@
 * Fixes
 
-'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
-del_backref cvgv since 5.13
-run-time label lookup (fixed all tests, need more tests)
+-DF Flags crash with newpkg
+do not throw away non-B:C loaded packages not to miss run-time added methods
+'n' magic (shared_scalar on 5.10.0 and earlier perls) e.g. t/testm.sh Test::Tester
+run-time label lookup (done for the easy and documented limitations)
 store_cop_label for 5.12 windows/AIX only (=> p5p; needs CORE patch)
 
 CC backend: goto (needs test), 
 
-check failing modules: Test::Tester with threads
-check perlcc failing with File::Temp
-proper destruction of vars in END blocks on -O2
 improve XSUB handling (perlcc, both static and dynamic, needs tests)
 sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
 allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
@@ -17,25 +15,18 @@ allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
-signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
+NV overflow initialisation analog to ivx (ExtUtils::CBuilder)
 CvOUTSIDE for ordinary subs
-DATA filehandle for C-compiled program (almost done)
-method_named packagepv quirks at compile-time. Are run-time pkg names tested?
 
 * Features
 
+optimize static or typed method calls. How-perl-compiles-subs-and-methods.md
+detect typed objects (my Class $obj = new Class;)
 modularize (-m) for faster link times
-run-time label lookup (fixed)
-skip code after BEGIN goto (usually Carp including B in some AUTOLOAD block, issue 61)
-type checking: Devel::TypeCheck
-compile time v. runtime initialisation (mostly done):
-  execute run-time BEGIN blocks for side-effects such as print or chdir, 
-  use and require not.
-save PMOPs in compiled form
-selection of what to dump (done)
-options for cutting out line info (COP elimination) etc. (-fcop)
-shared constants: share_hek, constpv (mostly done)
-check module dependencies, vs. link libs static, not via DynaLoader (done)
+BEGIN goto optim: skip code after BEGIN goto
+  usually Carp including B in some AUTOLOAD block, issue 61
+save PMOPs in compiled form (?)
+options for cutting out line info (COP elimination) etc. (fix -fcop)
 check Bytecode op coverage in the tests, should cover all ops 0-142
 ByteLoader compatibility: version, platform. eventually Bytecode version 
   portability (test with 5.6 on cygwin, partially done)
@@ -43,13 +34,9 @@ check CC op coverage, add tests
 
 * Optimizations
 
--fro-inc read-only INC paths. not the AV, run-time savepvn (done)
--fno-destruct skip optree and sv destruction at all, leave it to the OS (done)
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
   and GV method names package::name. (partially done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
-proper static init of PVBM/FBM (almost done, just 5.8.9 not)
-compile-time initialisation of AvARRAYs (improved with -fav-init and -fav-init2)
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 variable types: global analysis of variables, type hints etc.
@@ -63,4 +50,3 @@ demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
 tailcall optimization (entersub -> leavesub => goto)
-inline more small pp ops: enter, reset, stringify, ... (CC -finline-ops)
