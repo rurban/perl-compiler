@@ -270,7 +270,31 @@ my %all_bc_subs = map {$_=>1}
      B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
-#
+
+# track all internally used packages. all other may not be deleted automatically
+# - hidden methods
+my %all_bc_pkg = map {$_=>1}
+  qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
+     B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
+     B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
+     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
+     AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
+     warnings warnings::register DB next maybe maybe::next FileHandle fields vars
+     AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
+     ExtUtils::Constant::ProxySubs threads base IO::File
+    );
+# B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
+# perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
+# perl5.15.7d-nt -MErrno -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uwarnings,-uwarnings::register,-uConfig,-uDB,-uvars,-uCarp,-uPerlIO,-uthreads
+# perl5.15.7d-nt -Mblib -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uCwd,-uRegexp,-uoverload,-uFile,-uFile::Spec,-uFile::Spec::Unix,-uDos,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-uEPOC,-ublib,-uScalar,-uScalar::Util,-uvars,-uCarp,-uVMS,-uVMS::Filespec,-uVMS::Feature,-uWin32,-uPerlIO,-uthreads
+# perl -MO=Stash -e0
+# -umain,-uTie,-uTie::Hash,-ure,-umro,-ustrict,-uRegexp,-uoverload,-uExporter,-uExporter::Heavy,-uwarnings,-uDB,-uCarp,-uPerlIO,-uthreads
+# pb -MB::Stash -e0
+# -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
+
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
@@ -287,7 +311,7 @@ our ($module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -297,6 +321,7 @@ our %option_map = (
     'warn-sv'         => \$B::C::optimize_warn_sv,
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
+    'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
     'stash'           => \$B::C::stash,    # disable with -fno-stash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
@@ -5251,6 +5276,12 @@ sub skip_pkg {
   return 0;
 }
 
+# with -O0 or -O1 do not delete packages which were brought in from
+# the script, i.e. not defined in B::C or O. Just to be on the safe side.
+sub can_delete {
+  return $B::C::can_delete_pkg or $all_bc_pkg{$_{0}};
+}
+
 sub should_save {
   no strict qw(vars refs);
   my $package = shift;
@@ -5307,7 +5338,7 @@ sub should_save {
   # Omit the packages which we use (and which cause grief
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
-  if (skip_pkg($package)) {
+  if (skip_pkg($package) and can_delete($package) ) {
     delete_unsaved_hashINC($package);
     return; # $include_package{$package} = 0;
   }
@@ -5320,7 +5351,9 @@ sub should_save {
         warn "Cached $package is already deleted\n";
       }
     }
-    delete_unsaved_hashINC($package) unless $include_package{$package};
+    if (!$include_package{$package} and can_delete($package)) {
+      delete_unsaved_hashINC($package);
+    }
     return $include_package{$package};
   }
 
@@ -5340,7 +5373,9 @@ sub should_save {
       return mark_package($package);
     }
   }
-  delete_unsaved_hashINC($package) unless $package =~ /^PerlIO/;
+  if ($package !~ /^PerlIO/ and can_delete($package)) {
+    delete_unsaved_hashINC($package);
+  }
   return $include_package{$package} = 0;
 }
 
@@ -5833,7 +5868,7 @@ sub compile {
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data)],
+    2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
@@ -6224,6 +6259,15 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O2>.
 
+=item B<-fdelete-pkg>
+
+Delete packages which appear to be nowhere used automatically.
+This creates smaller executables but might miss run-time called
+methods. Note that you can always use -u to add automatically
+deleted packages.
+
+Enabled with C<-O2>.
+
 =item B<-fconst-strings>
 
 Declares readonly strings as const. Enables C<-fcog>.
@@ -6318,7 +6362,7 @@ Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fro-inc> and B<-fsave-data>.
+Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<-fdelete-pkg>.
 
 =item B<-O3>
 
@@ -6326,7 +6370,8 @@ Enable B<-O2> plus B<-fno-destruct> and B<-fconst-strings>.
 
 =item B<-O4>
 
-Enable B<-O3> plus B<-fcop>. Very unsafe, 10% faster, 10% smaller.
+Enable B<-O3> plus B<-fcop>. Very unsafe, rarely works,
+10% faster, 10% smaller.
 
 =back
 
