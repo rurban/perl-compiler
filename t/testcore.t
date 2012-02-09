@@ -99,6 +99,7 @@ my @fail = map { "t/CORE/$_" }
 
 my @tests = $ARGV[0] eq '-fail' ? @fail :
   (@ARGV ? @ARGV : <t/CORE/*/*.t>);
+my $Mblib = Mblib;
 
 sub run_c {
   my ($t, $backend) = @_;
@@ -112,14 +113,14 @@ sub run_c {
   my $backopts = $backend eq 'C' ? "-qq,C,-O3" : "-qq,CC";
   $backopts .= ",-fno-warnings" if $backend =~ /^C/ and $] >= 5.013005;
   $backopts .= ",-fno-fold"     if $backend =~ /^C/ and $] >= 5.013009;
-  vcmd "$^X -Mblib -MO=$backopts,-o$a.c $t";
+  vcmd "$^X $Mblib -MO=$backopts,-o$a.c $t";
   # CORE often does BEGIN chdir "t", patched to chdir "t/CORE"
   chdir $dir;
   move ("t/$a.c", "$a.c") if -e "t/$a.c";
   move ("t/CORE/$a.c", "$a.c") if -e "t/CORE/$a.c";
   my $d = "";
   $d = "-DALLOW_PERL_OPTIONS" if $ALLOW_PERL_OPTIONS{$t};
-  vcmd "$^X -Mblib script/cc_harness -q $d $a.c -o $a" if -e "$a.c";
+  vcmd "$^X $Mblib script/cc_harness -q $d $a.c -o $a" if -e "$a.c";
   vcmd "./$a | tee $result" if -e "$a";
   prove ($a, $result, $i, $t, $backend);
   $i++;
@@ -157,11 +158,11 @@ for my $t (@tests) {
     chdir $dir;
     $result = $t; $result =~ s/\.t$/-bc.result/;
     unlink ("b.plc", "t/b.plc", "t/CORE/b.plc", $result);
-    vcmd "$^X -Mblib -MO=-qq,Bytecode,-H,-s,-ob.plc $t";
+    vcmd "$^X $Mblib -MO=-qq,Bytecode,-H,-s,-ob.plc $t";
     chdir $dir;
     move ("t/b.plc", "b.plc") if -e "t/b.plc";
     move ("t/CORE/b.plc", "b.plc") if -e "t/CORE/b.plc";
-    vcmd "$^X -Mblib b.plc > $result" if -e "b.plc";
+    vcmd "$^X $Mblib b.plc > $result" if -e "b.plc";
     prove ("b.plc", $result, $i, $t, $backend);
     $i++;
   }

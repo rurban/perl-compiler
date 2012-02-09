@@ -26,8 +26,8 @@ close F;
 
 #$ENV{LC_ALL} = 'C.UTF-8'; $ENV{LANGUAGE} = $ENV{LANG} = 'en';
 my $expected = "24610 ö";
-my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-system "$runperl -Mblib blib/script/perlcc -o $name $name.pl";
+my $runperl = $^X =~ m/\s/ ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
+system "$runperl blib/script/perlcc -o $name $name.pl";
 unless (-e $name or -e "$name.exe") {
   print "ok 1 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   print "ok 2 #skip\n";
@@ -41,12 +41,12 @@ TODO: {
   ok($result eq $expected, "'$result' ne '$expected'");
 }
 
-system "$runperl -Mblib -MO=-qq,Bytecode,-o$name.plc $name.pl";
+system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
 unless (-e "$name.plc") {
   print "ok 2 #skip perlcc -B failed.\n";
   exit;
 }
-$runexe = "$runperl -Mblib -MByteLoader $name.plc";
+$runexe = "$runperl -MByteLoader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 TODO: {
@@ -59,4 +59,3 @@ END {
   unlink($name, "$name.plc", "$name.pl", "$name.exe")
     if $result eq $expected;
 }
-

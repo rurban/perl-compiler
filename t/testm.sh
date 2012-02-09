@@ -31,7 +31,7 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
-Mblib=-Mblib
+Mblib="-Iblib/arch -Iblib/lib"
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings))'`"
 
 function vcmd {

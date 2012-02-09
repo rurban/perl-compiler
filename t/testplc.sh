@@ -22,7 +22,7 @@ D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
 
 function init {
 # test what? core or our module?
-Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Mblib))'`"
+Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Iblib/arch -Iblib/lib))'`"
 #Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
 OCMD="$PERL $Mblib -MO=Bytecode,"
 QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"

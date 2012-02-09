@@ -15,9 +15,7 @@ my $devnull = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 #my $o = '';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
 #$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
-my $perlcc = $] < 5.008
-  ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc"
-  : "$X -Mblib blib/script/perlcc";
+my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
 sub cleanup { unlink ('a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 

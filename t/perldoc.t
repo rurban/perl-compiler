@@ -14,10 +14,9 @@ use Time::HiRes qw(gettimeofday tv_interval);
 sub faster { ($_[1] - $_[0]) < 0.01 }
 
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+my $Mblib = "-Iblib/arch -Iblib/lib";
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
-my $perlcc = $] < 5.008
-  ? "$X -Iblib/arch -Iblib/lib blib/script/perlcc"
-  : "$X -Mblib blib/script/perlcc";
+my $perlcc = "$X $Mblib blib/script/perlcc";
 $perlcc .= " -Wb=-fno-fold,-fno-warnings" if $] > 5.013;
 $perlcc .= " -UB";
 #        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo";
@@ -29,10 +28,10 @@ plan tests => 7;
 
 # XXX interestingly 5.8 perlcc cannot compile perldoc because Cwd disturbs the method finding
 # vice versa 5.14 cannot be compile perldoc manually because File::Temp is not included
-my $compile = $]<5.010?"$X -Mblib -MO=C,-UB,-operldoc.c $perldoc":"$perlcc -o $perldocexe $perldoc";
+my $compile = $]<5.010?"$X $Mblib -MO=C,-UB,-operldoc.c $perldoc":"$perlcc -o $perldocexe $perldoc";
 diag $compile;
 my $res = `$compile`;
-system("$X -Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
+system("$X $Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
 ok(-s $perldocexe, "$perldocexe compiled"); #1
 diag $res unless -s $perldocexe;
 
@@ -77,10 +76,10 @@ SKIP: {
 
 unlink $perldocexe if -e $perldocexe;
 $perldocexe = $^O eq 'MSWin32' ? "perldoc_O3$exe" : "./perldoc_O3$exe";
-$compile = $]<5.010?"$X -Mblib -MO=C,-O3,-UB,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
+$compile = $]<5.010?"$X $Mblib -MO=C,-O3,-UB,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
 diag $compile;
 $res = `$compile`;
-system("$X -Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
+system("$X $Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
 ok(-s $perldocexe, "perldoc compiled"); #4
 unlink "perldoc.c" if $] < 5.10;
 diag $res unless -s $perldocexe;
