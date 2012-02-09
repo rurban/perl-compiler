@@ -266,7 +266,8 @@ my %all_bc_pkg = map {$_=>1}
      AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
      warnings warnings::register DB next maybe maybe::next FileHandle fields vars
      AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
-     ExtUtils::Constant::ProxySubs threads base IO::File
+     ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
+     DynaLoader XSLoader O
     );
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -5678,7 +5679,6 @@ OPTION:
         push @opt, @{ $optimization_map{$i} }
           if exists $optimization_map{$i};
       }
-      $opt{$arg}++;
       unshift @options, @opt;
       warn "options : ".(join " ",@opt)."\n" if $verbose;
     }
