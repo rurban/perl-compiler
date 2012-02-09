@@ -5947,10 +5947,12 @@ Enabled with C<-O2>.
 
 =item B<-fdelete-pkg>
 
-Delete packages which appear to be nowhere used automatically.
-This creates smaller executables but might miss run-time called
-methods. Note that you can always use -u to add automatically
-deleted packages.
+Delete packages which appear to be nowhere used automatically.  This creates
+smaller executables but might miss run-time called methods. Note that you can
+always use -u to add automatically deleted packages.
+
+Without -fdelete-pkg i.e. with -O0,-O1 only packages which are defined by the
+compiler and its dependencies itself and are apparently unused are deleted.
 
 Enabled with C<-O2>.
 
