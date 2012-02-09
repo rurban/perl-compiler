@@ -12,10 +12,10 @@ print F $d;
 close F;
 my $exe = $^O eq 'MSWin32' ? 'a' : './a';
 my $C = $] > 5.007 ? "-qq,C" : "C";
-my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-system "$X -Mblib -MO=$C,-O3,-oa.c $pl";
+my $X = $^X =~ m/\s/ ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
+system "$X -MO=$C,-O3,-oa.c $pl";
 # see if the ldopts libs are picked up correctly. This really depends on your perl package.
-system "$X -Mblib script/cc_harness -q -DALLOW_PERL_OPTIONS a.c -o a";
+system "$X script/cc_harness -q -DALLOW_PERL_OPTIONS a.c -o a";
 unless (-e 'a' or -e 'a.out') {
   print "ok 1 #skip wrong ldopts for cc_harness. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   print "ok 2 #skip ditto\n";
@@ -32,7 +32,7 @@ my $exp = "21-";
 print $ok ne $exp ? "not " : "", "ok 2",
   $ok ne $exp ? "# want: $exp got: $ok\n" : "\n";
 
-system "$X -Mblib script/cc_harness -q a.c -o a";
+system "$X script/cc_harness -q a.c -o a";
 $ok = `$exe -s -- -abc=2 -def`;
 $exp = "---";
 chomp $ok;

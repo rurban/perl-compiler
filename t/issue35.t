@@ -16,13 +16,14 @@ sub test {
   close F;
 
   my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+  $runperl .= " -Iblib/arch -Iblib/lib";
   my $b = $] > 5.008 ? "-qq,CC" : "CC";
-  system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+  system "$runperl -MO=$b,-o$name.c $name.pl";
   unless (-e "$name.c") {
     print "not ok 1 #B::CC failed\n";
     exit;
   }
-  system "$runperl -Mblib blib/script/cc_harness -q -o $name $name.c";
+  system "$runperl blib/script/cc_harness -q -o $name $name.c";
   my $ok = -e $name or -e "$name.exe";
   if ($todo) {
   TODO: {

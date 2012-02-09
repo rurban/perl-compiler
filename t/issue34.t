@@ -14,13 +14,14 @@ sub test {
   close F;
 
   my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+  $runperl .= " -Iblib/arch -Iblib/lib";
   my $b = $] > 5.008 ? "-qq,CC" : "CC";
-  system "$runperl -Mblib -MO=$b,-o$name.c $name.pl";
+  system "$runperl -MO=$b,-o$name.c $name.pl";
   unless (-e "$name.c") {
     print "not ok 1 #B::CC failed\n";
     exit;
   }
-  system "$runperl -Mblib blib/script/cc_harness -q -o $name $name.c";
+  system "$runperl blib/script/cc_harness -q -o $name $name.c";
   my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
   ok(-e $runexe, "$runexe exists");
   my $result = `$runexe`;
@@ -52,11 +53,11 @@ print F "line1\n";
 print F "line2\n";
 close F;
 
-my $expected = <<'EOF';
+my $expected = <<'EOF1';
 1:
 line1
 line2
 2:
-EOF
+EOF1
 
 test(1, $script, $expected, 'B::C,-O4 issue 34 $/=undef ignored');

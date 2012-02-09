@@ -18,7 +18,7 @@ print F $script;
 close F;
 
 my $result;
-my $Mblib = $] < 5.007 ? "" : "-Mblib"; # 5.6 Bytecode not yet released
+my $Mblib = $] < 5.007 ? "" : "-Iblib/arch -Iblib/lib"; # 5.6 Bytecode not yet released
 my $O = $] >= 5.013005 ? "-Wb=-fno-fold,-fno-warnings" : ""; # reduce bloat
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $expected = `$runperl $name.pl`;
@@ -31,7 +31,7 @@ TODO: { #1
 }
 unlink("$name.db*");
 
-$Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
+$Mblib = "-Iblib/arch -Iblib/lib" if $] < 5.007;
 TODO: { #2
   local $TODO = "B::C issue 24 dbm 5.10.0 or 5.6"
     if $] < 5.007 or $] eq '5.010000';

@@ -2,8 +2,7 @@
 use strict;
 use Test::More tests => 4;
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-my $Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
-$Mblib = '-Iblib\arch -Iblib\lib' if $] < 5.007 and $^O eq 'MSWin32';
+my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 my $a = $^O eq 'MSWin32' ? 'a' : './a'; 
 my $pl = "ccode00.pl";
 my $plc = $pl . "c";

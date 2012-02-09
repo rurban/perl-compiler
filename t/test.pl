@@ -386,6 +386,10 @@ sub run_cmd {
     return ($result, $out, $err);
 }
 
+sub Mblib {
+   $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
+}
+
 sub tests {
     my $in = shift || "t/TESTS";
     $in = "TESTS" unless -f $in;
@@ -429,11 +433,11 @@ sub run_cc_test {
     unlink ($test, $cfile, $exe, @obj);
     open T, ">", $test; print T $script; close T;
     # Being able to test also the CORE B in older perls
-    my $Mblib = $] >= 5.009005 ? "-Mblib" : "";
+    my $Mblib = $] >= 5.009005 ? Mblib() : "";
     my $useshrplib = $Config{useshrplib} eq 'true';
     unless ($Mblib) {           # check for -Mblib from the testsuite
         if (grep { m{blib(/|\\)arch$} } @INC) {
-            $Mblib = "-Iblib/arch -Iblib/lib";  # forced -Mblib via cmdline without
+            $Mblib = Mblib();  # forced -Mblib via cmdline without
             					# printing to stderr
             $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
         }
@@ -655,13 +659,14 @@ sub plctest {
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,Bytecode" : "Bytecode";
-    system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.plc $base.pl";
+    my $Mblib = Mblib;
+    system "$runperl $Mblib -MO=$b,-o$name.plc $base.pl";
     # $out =~ s/^$base.pl syntax OK\n//m;
     unless (-e "$name.plc") {
         print "not ok $num #B::Bytecode failed\n";
         exit;
     }
-    my $out = qx($runperl -Mblib -MByteLoader $name.plc);
+    my $out = qx($runperl $Mblib -MByteLoader $name.plc);
     chomp $out;
     my $ok = $out =~ /$expected/;
     if ($todo and $todo =~ /TODO/) {
@@ -697,12 +702,12 @@ sub ctest {
     my $nostdoutclobber = $base !~ /^ccode93i/;
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
     $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005;
-    system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
+    system "$runperl ".Mblib." -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
         print "not ok $num #B::$backend failed\n";
         exit;
     }
-    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
+    system "$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {
 	if ($todo and $todo =~ /TODO/) {
@@ -773,12 +778,13 @@ sub ccompileok {
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
-    system "$runperl -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
+    my $Mblib = Mblib;
+    system "$runperl $Mblib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
         print "not ok 1 #B::$backend failed\n";
         exit;
     }
-    system "$runperl -Iblib/arch -Iblib/lib blib/script/cc_harness -q -o $name $name.c";
+    system "$runperl $Mblib blib/script/cc_harness -q -o $name $name.c";
     my $ok = -e $name or -e "$name.exe";
     if ($todo and $todo =~ /TODO/) {
       TODO: {
