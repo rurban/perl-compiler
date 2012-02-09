@@ -27,10 +27,10 @@ function init {
 BASE=`basename $0`
 # if $] < 5.9 you may want to remove -Mblib for testing the core lib. -o
 #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
-Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
+Mblib=${Mblib:--Iblib/arch -Iblib/lib} # B::C is now fully 5.6+5.8 backwards compatible
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
-if [ -z $Mblib ]; then 
+if [ -z "$Mblib" ]; then
     VERS="${VERS}_global"; 
     OCMD="$PERL $Mblib -MO=C,${v513}-DcspF,"
     if [ $BASE = "testcc.sh" ]; then # DrOsplt 
