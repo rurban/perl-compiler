@@ -132,45 +132,5 @@ COP_stashflags(o)
 
 #endif
 
-
-MODULE=B__C 	PACKAGE=B::C
-
-PROTOTYPES: DISABLE
-
-#if PERL_VERSION >= 11
-
-CV*
-method_cv(meth, packname)
-        SV* meth;
-	char *packname;
-   CODE:
-	U32 hash;
-    	HV* stash; /* XXX from op before, also on the run-time stack */
-        GV* gv;
-	hash = SvSHARED_HASH(meth);
-        stash = gv_stashpv(packname, TRUE);
-	if (hash) {
-          const HE* const he = hv_fetch_ent(stash, meth, 0, hash);
-          if (he) {
-	    gv = MUTABLE_GV(HeVAL(he));
-	    if (isGV(gv) && GvCV(gv) &&
-		(!GvCVGEN(gv) || GvCVGEN(gv)
-                 == (PL_sub_generation + HvMROMETA(stash)->cache_gen)))
-              RETVAL = (CV*)MUTABLE_SV(GvCV(gv));
-              return;
-          }
-        }
-        /* public API since 5.11 */
-	gv = gv_fetchmethod_flags(stash,
-			      SvPV_nolen_const(meth),
-			      GV_AUTOLOAD | GV_CROAK);
-    	assert(gv);
-    	RETVAL = isGV(gv) ? (CV*)MUTABLE_SV(GvCV(gv)) : (CV*)MUTABLE_SV(gv);
-    OUTPUT:
-        RETVAL
-
-#endif
-
-
 BOOT:
     PL_runops = my_runops;

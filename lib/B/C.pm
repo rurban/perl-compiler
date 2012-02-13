@@ -476,11 +476,6 @@ sub svop_or_padop_pv {
 	# Called from first const/padsv before method_named. no magic pv string, so a method arg.
 	# The first const pv as method or method_named arg is always the $package_pv.
 	return $package_pv;
-      } elsif ($sv->isa("B::IV")) {
-        warn sprintf("Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
-                     $sv->FLAGS);
-        # XXX untested!
-        return svref_2object(method_cv($$sv, $package_pv));
       }
     }
   } else {
@@ -1092,6 +1087,7 @@ sub method_named {
     if (defined(&$method)) {
       warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
       $include_package{$_} = 1; # issue59
+      $package_pv = $_;
       mark_package($_, 1);
       last;
     } else {
@@ -1099,12 +1095,14 @@ sub method_named {
 	warn sprintf( "Found &%s::%s\n", $parent, $name ) if $debug{cv};
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
+	$package_pv = $parent;
 	last;
       }
       warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
-  $method = $name unless $method;
+  $method = $package_pv.'::'.$name;
+  # $method = $name unless $method;
   warn "save method_name \"$method\"\n" if $debug{cv};
   return svref_2object( \&{$method} );
 }
