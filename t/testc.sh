@@ -37,7 +37,7 @@ if [ -z "$Mblib" ]; then
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,${v513}-DspF,-v,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-Dsp,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
     fi
@@ -538,7 +538,7 @@ done
 
 if [ "$(perl -V:gccversion)" != "gccversion='';" ]; then
     if [ "$(uname)" = "Darwin" ]; then
-	CCMD="$CCMD -g"
+	CCMD="$CCMD -g -fno-openmp -fno-var-tracking"
     else
 	CCMD="$CCMD -g3"
     fi

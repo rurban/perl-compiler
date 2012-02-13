@@ -1121,7 +1121,8 @@ sub method_named {
       return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
-      return if $method eq 'threads::tid' and !$ITHREADS; # Without ithreads threads.pm is not loaded
+      # Without ithreads threads.pm is not loaded
+      return svref_2object(\&Dummy_initxs) if $method eq 'threads::tid' and !$ITHREADS;
       if (my $parent = try_isa($_,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
@@ -2723,6 +2724,18 @@ sub B::CV::save {
       }
     }
   }
+  if (!$$root) {
+    warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
+    warn "No definition for sub $fullname (unable to autoload), remove CV [$sv_ix]\n"
+      if $debug{cv};
+    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
+    # Empty CV (methods) must be skipped not to disturb method resolution
+    # (e.g. t/testm.sh POSIX)
+    $svsect->remove( $sv_ix );
+    $xpvcvsect->remove( $xpvcv_ix );
+    delsym( $cv );
+    return undef;
+  }
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
@@ -2730,62 +2743,49 @@ sub B::CV::save {
   my $pv         = $cv->PV;
   my $xsub       = 0;
   my $xsubany    = "Nullany";
-  if ($$root) {
-    warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
-                  $$cv, $$root )
-      if $debug{cv} and $debug{gv};
-    my $ppname = "";
-    if ($$gv) {
-      my $stashname = $gv->STASH->NAME;
-      my $gvname    = $gv->NAME;
-      $fullname = $stashname.'::'.$gvname;
-      if ( $gvname ne "__ANON__" ) {
-        $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
-        $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
-        $ppname =~ s/::/__/g;
-        if ( $gvname eq "INIT" ) {
-          $ppname .= "_$initsub_index";
-          $initsub_index++;
-        }
+  warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
+		$$cv, $$root )
+    if $debug{cv} and $debug{gv};
+  my $ppname = "";
+  if ($$gv) {
+    my $stashname = $gv->STASH->NAME;
+    my $gvname    = $gv->NAME;
+    $fullname = $stashname.'::'.$gvname;
+    if ( $gvname ne "__ANON__" ) {
+      $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
+      $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
+      $ppname =~ s/::/__/g;
+      if ( $gvname eq "INIT" ) {
+	$ppname .= "_$initsub_index";
+	$initsub_index++;
       }
     }
-    if ( !$ppname ) {
-      $ppname = "pp_anonsub_$anonsub_index";
-      $anonsub_index++;
-    }
-    $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
-    #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
-    #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
-    #  if $debug{cv};
-    # XXX missing cv_start for AUTOLOAD on 5.8
-    $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
-    $startfield = "0" unless $startfield;
-    if ($$padlist) {
-      # XXX readonly comppad names and symbols invalid
-      #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-      warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
-        if $debug{cv} and $debug{gv};
-      # XXX avlen 2
-      $padlistsym = $padlist->save($fullname.' :pad');
-      warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
-		    $padlistsym, $$padlist, $$cv )
-        if $debug{cv} and $debug{gv};
-      # do not record a forward for the pad only
-      $init->add( "CvPADLIST($sym) = $padlistsym;" );
-    }
-    warn $fullname."\n" if $debug{sub};
   }
-  else {
-    warn "&".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload), remove CV [$sv_ix]\n"
-      if $debug{cv};
-    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
-    # XXX empty CV should not be saved (e.g. t/testm.sh POSIX)
-    $svsect->remove( $sv_ix );
-    $xpvcvsect->remove( $xpvcv_ix );
-    delsym( $cv );
-    return undef;
+  if ( !$ppname ) {
+    $ppname = "pp_anonsub_$anonsub_index";
+    $anonsub_index++;
   }
+  $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
+  #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
+  #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
+  #  if $debug{cv};
+  # XXX missing cv_start for AUTOLOAD on 5.8
+  $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
+  $startfield = "0" unless $startfield;
+  if ($$padlist) {
+    # XXX readonly comppad names and symbols invalid
+    #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
+      if $debug{cv} and $debug{gv};
+    # XXX avlen 2
+    $padlistsym = $padlist->save($fullname.' :pad');
+    warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
+		  $padlistsym, $$padlist, $$cv )
+      if $debug{cv} and $debug{gv};
+    # do not record a forward for the pad only
+    $init->add( "CvPADLIST($sym) = $padlistsym;" );
+  }
+  warn $fullname."\n" if $debug{sub};
 
   # Now it is time to record the CV
   if ($new_cv_fw) {
