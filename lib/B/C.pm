@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43';
+our $VERSION = '1.42_01';
 my %debug;
 my $eval_pvs = '';
 
@@ -37,7 +37,7 @@ sub add {
 sub remove {
   my $section = shift;
   if (@_) {
-    splice @{ $section->[-1]{values} }, shift, 1;
+    $section->[-1]{values}[shift] = undef;
   } else {
     pop  @{ $section->[-1]{values} };
   }
@@ -69,6 +69,7 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
+    next unless defined $_;
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
@@ -2501,8 +2502,8 @@ sub B::CV::save {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
     $fullname    = $cvstashname.'::'.$cvname;
-    warn sprintf( "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
-                  $$cv, $$gv, $fullname, $cv->CvFLAGS )
+    warn sprintf( "CV [%d] as PVGV %s %s CvFLAGS=0x%x\n",
+                  $svsect->index + 1, objsym($gv), $fullname, $cv->CvFLAGS )
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
@@ -2776,14 +2777,14 @@ sub B::CV::save {
   }
   else {
     warn "&".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload), remove cv\n"
+    warn "No definition for sub $fullname (unable to autoload), remove CV [$sv_ix]\n"
       if $debug{cv};
     $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
-    # XXX empty CV should not be saved
+    # XXX empty CV should not be saved (e.g. t/testm.sh POSIX)
     $svsect->remove( $sv_ix );
     $xpvcvsect->remove( $xpvcv_ix );
     delsym( $cv );
-    return '0';
+    return undef;
   }
 
   # Now it is time to record the CV
@@ -3273,7 +3274,11 @@ if (0) {
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
-	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save($fullname) ) );
+	if (my $_cv = $gvcv->save($fullname)) {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $_cv ) );
+	} else {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(get_cv(\"%s\", TRUE)));", $fullname ) );
+	}
       }
     }
     if (!$PERL510 or $gp) {
@@ -5038,13 +5043,16 @@ sub should_save {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
     # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
     # The walker deserves a rewrite.
-    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
-      next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
+    if ( UNIVERSAL::can( $package, $m )
+	 and !$all_bc_pkg{$package} # only add non B::C packages
+	 and $package !~ /^(B::C|version|utf8)$/ )
+    {
+      #next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
-      next if $package eq 'Errno' and $m eq 'TIEHASH';
+      #next if $package eq 'Errno' and $m eq 'TIEHASH';
       # XXX Config and FileHandle should not just return. If unneeded skip em.
-      return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
-      return 0 if $package eq 'FileHandle' and $m eq 'new';
+      #return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
+      #return 0 if $package eq 'FileHandle' and $m eq 'new';
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -5649,10 +5657,10 @@ OPTION:
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      if ($arg =~ /\.p/) {
-	eval "require $arg;";
+      if ($arg =~ /\.p[lm]$/) {
+	eval "require \"$arg\";"; # path as string
       } else {
-	eval "require $arg.pm;";
+	eval "require $arg;";     # package as bareword with ::
       }
       mark_unused( $arg, 1 );
     }
