@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42';
+our $VERSION = '1.43';
 my %debug;
 my $eval_pvs = '';
 
@@ -37,7 +37,7 @@ sub add {
 sub remove {
   my $section = shift;
   if (@_) {
-    splice @{ $section->[-1]{values} }, shift, 1;
+    $section->[-1]{values}[shift] = undef;
   } else {
     pop  @{ $section->[-1]{values} };
   }
@@ -69,6 +69,7 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
+    next unless defined $_;
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
@@ -5612,7 +5613,11 @@ OPTION:
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      require $arg;
+      if ($arg =~ /\.p[lm]$/) {
+	eval "require \"$arg\";";  # path as string
+      } else {
+	eval "require $arg;";      # package as bareword with ::
+      }
       mark_unused( $arg, 1 );
     }
     elsif ( $opt eq "U" ) {
