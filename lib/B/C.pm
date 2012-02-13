@@ -1120,7 +1120,8 @@ sub method_named {
       return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
-      return if $method eq 'threads::tid' and !$ITHREADS; # Without ithreads threads.pm is not loaded
+      # Without ithreads threads.pm is not loaded
+      return svref_2object(\&Dummy_initxs) if $method eq 'threads::tid' and !$ITHREADS;
       if (my $parent = try_isa($_,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
