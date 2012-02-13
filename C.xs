@@ -132,5 +132,9 @@ COP_stashflags(o)
 
 #endif
 
+MODULE = B__C	PACKAGE = B::C
+
+PROTOTYPES: DISABLE
+
 BOOT:
     PL_runops = my_runops;
