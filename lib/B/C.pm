@@ -239,29 +239,29 @@ my $initsub_index = 0;
 
 # exclude all not B::C:: prefixed subs
 my %all_bc_subs = map {$_=>1}
-  qw(B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
-     B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next
-     B::FAKEOP::ppaddr B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling
-     B::FAKEOP::targ B::FAKEOP::type B::GV::save B::GV::savecv B::HV::save
-     B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
-     B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
-     B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
-     B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save B::PVLV::save
-     B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
-     B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
-     B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
+  qw( B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
+      B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next
+      B::FAKEOP::ppaddr B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling
+      B::FAKEOP::targ B::FAKEOP::type B::GV::save B::GV::savecv B::HV::save
+      B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
+      B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
+      B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
+      B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save B::PVLV::save
+      B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
+      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
+      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS );
 # Track all internally used packages. All other may not be deleted automatically
 # - hidden methods. -fdelete-pkg
 my %all_bc_pkg = map {$_=>1}
   qw( B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
-     B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
-     B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
-     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
-     AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
-     warnings warnings::register DB next maybe maybe::next FileHandle fields vars
-     AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
-     ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
-     DynaLoader XSLoader O );
+      B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
+      B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
+      B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
+      AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
+      warnings warnings::register DB next maybe maybe::next FileHandle fields vars
+      AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
+      ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
+      DynaLoader XSLoader O );
 if (%blib::) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
   for (qw(Cwd File File::Spec File::Spec::Unix Dos EPOC blib Scalar
 	  Scalar::Util vars VMS VMS::Filespec VMS::Feature Win32)) {
@@ -646,7 +646,7 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 0 );
-  # XXX overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION
+  # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
   if ($rok and !$PERL56) {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
@@ -3189,13 +3189,18 @@ if (0) {
       if ($fullname eq 'main::@') { # $@ = PL_errors
 	$init->add( "GvSVn($sym) = (SV*)PL_errors;" );
       }
-      elsif ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK and !$PERL56) {
-	warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
-	my $rv = $gvsv->object_2svref();
-	my $origsv = $$rv;
-	no strict 'refs';
-	${$fullname} = "$origsv";
-	svref_2object(\${$fullname})->save($fullname);
+      elsif ($gvname eq 'VERSION' and $xsub{$package} and !$PERL56) {
+	my $SVs_RMG = $PERL510 ? 0x00800000 : 0x00008000;
+	if ( $gvsv->FLAGS & SVf_ROK ) {
+	  warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
+	  my $rv = $gvsv->object_2svref();
+	  my $origsv = $$rv;
+	  no strict 'refs';
+	  ${$fullname} = "$origsv";
+	  svref_2object(\${$fullname})->save($fullname);
+        } elsif ( $gvsv->FLAGS & $SVs_RMG ) {
+	  warn "XXX Strip overload from magic XS $package\::VERSION (issue 91)\n"; #if $debug{gv};
+	}
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       } else {
 	$gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
