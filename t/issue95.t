@@ -7,7 +7,7 @@ BEGIN {
   require "test.pl";
 }
 use Test::More;
-eval "use IO::Socket::SSL";
+eval "require IO::Socket::SSL;";
 if ($@) {
   plan skip_all => "IO::Socket::SSL required for testing issue95" ;
 } else {
@@ -53,16 +53,16 @@ sub compile_check {
   if (!$stderr and $out) {
     $stderr = $out;
   }
-  my $notfound = $stderr =~ /blocking not found/;
-  ok(!$notfound, $cmt);
-  # check stderr for "save package_pv "blocking" for method_name"
-  my $found = $stderr =~ /save package_pv "blocking" for method_name/;
+  #wrong package
  TODO: {
-   local $TODO = "wrong package_pv blocking";
-   ok(!$found, $cmt);
+   local $TODO = 'wrong package_pv "blocking" confused with method_name';
+   my $notfound = $stderr =~ /save package_pv "blocking" for method_name/;
+   ok(!$notfound, $cmt);
   }
+  my $found = $stderr =~ /Found &IO::Socket::blocking/;
+  ok($found, $cmt);
 }
 
-compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method found in \@ISA");
+compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking found");
 compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
 ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');
