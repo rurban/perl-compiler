@@ -93,8 +93,11 @@ sub status {
     next unless $file;
     chomp $file;
     ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
-    $file =~ s{\s*$}{};
-    $file =~ s{^\s*}{};
+    if ($file) {
+      $file =~ s{\s*$}{};
+      $file =~ s{^\s*}{};
+    }
+    $file = "" unless $file;
     $failed =~ s{^.+(Failed tests?:?)}{$1}i;
     $failed =~ s{^.+TODO passed:}{TODO passed:};
     chomp $failed;
@@ -243,8 +246,8 @@ sub unify_results {
   }
 }
 
-my $dlogs = $dir eq '.' ? "$logs" : "$dir/$logs";
-my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE";
+my $dlogs = '`ls '.($dir eq '.'?$logs:"$dir/$logs").'|egrep -v \'\.[1-9]$\'`';
+my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE | grep -v '\.[19]'";
 #print "$cmd\n" unless $quiet;
 my %h;
 my %h_sav = %h;
