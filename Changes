@@ -4,7 +4,13 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.43	2012-02-xx rurban
-	* C: Fix -u<module> without file extension.
+	* C: Fixed more method not found. issue95 and t/perldoc.t -
+	  parent @File::Spec::ISA was not saved.
+	Do not save not undefined CVs
+	Fix -u<module> without file extension.
+	Special case Carp calling threads and B methods.
+	Sanified package_pv default a bit when a method padsv was not
+	found. Check for method_named as last argument of methods.
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing

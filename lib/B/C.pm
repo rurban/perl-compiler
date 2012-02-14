@@ -233,7 +233,6 @@ use B::Asmdata qw(@specialsv_name);
 
 use B::C::Flags;
 use FileHandle;
-#use Carp;
 use Config;
 
 my $hv_index      = 0;
@@ -258,7 +257,31 @@ my %all_bc_subs = map {$_=>1}
      B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
-#
+# track all internally used packages. all other may not be deleted automatically
+# - hidden methods
+my %all_bc_pkg = map {$_=>1}
+  qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
+     B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
+     B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
+     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
+     AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
+     warnings warnings::register DB next maybe maybe::next FileHandle fields vars
+     AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
+     ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
+     DynaLoader XSLoader O
+    );
+# B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
+# perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
+# perl5.15.7d-nt -MErrno -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uwarnings,-uwarnings::register,-uConfig,-uDB,-uvars,-uCarp,-uPerlIO,-uthreads
+# perl5.15.7d-nt -Mblib -MO=Stash -e0
+# -umain,-ure,-umro,-ustrict,-uCwd,-uRegexp,-uoverload,-uFile,-uFile::Spec,-uFile::Spec::Unix,-uDos,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-uEPOC,-ublib,-uScalar,-uScalar::Util,-uvars,-uCarp,-uVMS,-uVMS::Filespec,-uVMS::Feature,-uWin32,-uPerlIO,-uthreads
+# perl -MO=Stash -e0
+# -umain,-uTie,-uTie::Hash,-ure,-umro,-ustrict,-uRegexp,-uoverload,-uExporter,-uExporter::Heavy,-uwarnings,-uDB,-uCarp,-uPerlIO,-uthreads
+# pb -MB::Stash -e0
+# -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
+
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free);
@@ -274,7 +297,7 @@ our ($module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -284,6 +307,7 @@ our %option_map = (
     'warn-sv'         => \$B::C::optimize_warn_sv,
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
+    'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
     'stash'           => \$B::C::stash,    # disable with -fno-stash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
@@ -1085,20 +1109,21 @@ sub method_named {
     no strict 'refs';
     $method = $_ . '::' . $name;
     if (defined(&$method)) {
-      warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
       $include_package{$_} = 1; # issue59
       $package_pv = $_;
       mark_package($_, 1);
-      last;
+      warn "save found method_name \"$method\"\n" if $debug{cv};
+      return svref_2object( \&{$method} );
     } else {
+      return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
+      # Without ithreads threads.pm is not loaded
+      return svref_2object(\&Dummy_initxs) if $method eq 'threads::tid' and !$ITHREADS;
       if (my $parent = try_isa($_,$name)) {
-	warn sprintf( "Found &%s::%s\n", $parent, $name ) if $debug{cv};
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
 	$package_pv = $parent;
 	last;
       }
-      warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
   $method = $package_pv.'::'.$name;
@@ -2473,8 +2498,8 @@ sub B::CV::save {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
     $fullname    = $cvstashname.'::'.$cvname;
-    warn sprintf( "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
-                  $$cv, $$gv, $fullname, $cv->CvFLAGS )
+    warn sprintf( "CV [%d] as PVGV %s %s CvFLAGS=0x%x\n",
+                  $svsect->index + 1, objsym($gv), $fullname, $cv->CvFLAGS )
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
@@ -2664,7 +2689,7 @@ sub B::CV::save {
 	  my $gv = $cv->GV;
 	  if ($$gv) {
 	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded\n" if $debug{sub};
+	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded. remove old cv\n" if $debug{sub};
 	      $svsect->remove;
 	      $xpvcvsect->remove;
 	      delsym($cv);
@@ -2681,7 +2706,7 @@ sub B::CV::save {
 	my $gv = $cv->GV;
 	if ($$gv) {
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME. remove old cv\n" if $verbose;
 	    $svsect->remove;
 	    $xpvcvsect->remove;
 	    delsym($cv);
@@ -2694,6 +2719,18 @@ sub B::CV::save {
       }
     }
   }
+  if (!$$root) {
+    warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
+    warn "No definition for sub $fullname (unable to autoload), remove CV [$sv_ix]\n"
+      if $debug{cv};
+    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
+    # Empty CV (methods) must be skipped not to disturb method resolution
+    # (e.g. t/testm.sh POSIX)
+    $svsect->remove( $sv_ix );
+    $xpvcvsect->remove( $xpvcv_ix );
+    delsym( $cv );
+    return undef;
+  }
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
@@ -2701,62 +2738,49 @@ sub B::CV::save {
   my $pv         = $cv->PV;
   my $xsub       = 0;
   my $xsubany    = "Nullany";
-  if ($$root) {
-    warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
-                  $$cv, $$root )
-      if $debug{cv} and $debug{gv};
-    my $ppname = "";
-    if ($$gv) {
-      my $stashname = $gv->STASH->NAME;
-      my $gvname    = $gv->NAME;
-      $fullname = $stashname.'::'.$gvname;
-      if ( $gvname ne "__ANON__" ) {
-        $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
-        $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
-        $ppname =~ s/::/__/g;
-        if ( $gvname eq "INIT" ) {
-          $ppname .= "_$initsub_index";
-          $initsub_index++;
-        }
+  warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
+		$$cv, $$root )
+    if $debug{cv} and $debug{gv};
+  my $ppname = "";
+  if ($$gv) {
+    my $stashname = $gv->STASH->NAME;
+    my $gvname    = $gv->NAME;
+    $fullname = $stashname.'::'.$gvname;
+    if ( $gvname ne "__ANON__" ) {
+      $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
+      $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
+      $ppname =~ s/::/__/g;
+      if ( $gvname eq "INIT" ) {
+	$ppname .= "_$initsub_index";
+	$initsub_index++;
       }
     }
-    if ( !$ppname ) {
-      $ppname = "pp_anonsub_$anonsub_index";
-      $anonsub_index++;
-    }
-    $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
-    #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
-    #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
-    #  if $debug{cv};
-    # XXX missing cv_start for AUTOLOAD on 5.8
-    $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
-    $startfield = "0" unless $startfield;
-    if ($$padlist) {
-      # XXX readonly comppad names and symbols invalid
-      #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-      warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
-        if $debug{cv} and $debug{gv};
-      # XXX avlen 2
-      $padlistsym = $padlist->save($fullname.' :pad');
-      warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
-		    $padlistsym, $$padlist, $$cv )
-        if $debug{cv} and $debug{gv};
-      # do not record a forward for the pad only
-      $init->add( "CvPADLIST($sym) = $padlistsym;" );
-    }
-    warn $fullname."\n" if $debug{sub};
   }
-  else {
-    warn "&".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload)\n"
-      if $debug{cv};
-    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
-    # XXX empty CV should not be saved
-    # $svsect->remove( $sv_ix );
-    # $xpvcvsect->remove( $xpvcv_ix );
-    # delsym( $cv );
-    # return '0';
+  if ( !$ppname ) {
+    $ppname = "pp_anonsub_$anonsub_index";
+    $anonsub_index++;
   }
+  $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
+  #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
+  #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
+  #  if $debug{cv};
+  # XXX missing cv_start for AUTOLOAD on 5.8
+  $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
+  $startfield = "0" unless $startfield;
+  if ($$padlist) {
+    # XXX readonly comppad names and symbols invalid
+    #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
+    warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
+      if $debug{cv} and $debug{gv};
+    # XXX avlen 2
+    $padlistsym = $padlist->save($fullname.' :pad');
+    warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
+		  $padlistsym, $$padlist, $$cv )
+      if $debug{cv} and $debug{gv};
+    # do not record a forward for the pad only
+    $init->add( "CvPADLIST($sym) = $padlistsym;" );
+  }
+  warn $fullname."\n" if $debug{sub};
 
   # Now it is time to record the CV
   if ($new_cv_fw) {
@@ -3245,7 +3269,11 @@ if (0) {
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
-	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save($fullname) ) );
+	if (my $_cv = $gvcv->save($fullname)) {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $_cv ) );
+	} else {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(get_cv(\"%s\", TRUE)));", $fullname ) );
+	}
       }
     }
     if (!$PERL510 or $gp) {
@@ -4924,6 +4952,12 @@ sub skip_pkg {
   return 0;
 }
 
+# with -O0 or -O1 do not delete packages which were brought in from
+# the script, i.e. not defined in B::C or O. Just to be on the safe side.
+sub can_delete {
+  return $can_delete_pkg or $all_bc_pkg{$_{0}};
+}
+
 sub should_save {
   no strict qw(vars refs);
   my $package = shift;
@@ -4980,7 +5014,7 @@ sub should_save {
   # Omit the packages which we use (and which cause grief
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
-  if (skip_pkg($package)) {
+  if (skip_pkg($package) and can_delete($package) ) {
     delete_unsaved_hashINC($package);
     return; # $include_package{$package} = 0;
   }
@@ -4993,7 +5027,9 @@ sub should_save {
         warn "Cached $package is already deleted\n";
       }
     }
-    delete_unsaved_hashINC($package) unless $include_package{$package};
+    if (!$include_package{$package} and can_delete($package)) {
+      delete_unsaved_hashINC($package);
+    }
     return $include_package{$package};
   }
 
@@ -5002,18 +5038,23 @@ sub should_save {
     # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
     # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
     # The walker deserves a rewrite.
-    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
-      next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
+    if ( UNIVERSAL::can( $package, $m )
+	 and !$all_bc_pkg{$package} # only add non B::C packages
+	 and $package !~ /^(B::C|version|utf8)$/ )
+    {
+      #next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
-      next if $package eq 'Errno' and $m eq 'TIEHASH';
+      #next if $package eq 'Errno' and $m eq 'TIEHASH';
       # XXX Config and FileHandle should not just return. If unneeded skip em.
-      return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
-      return 0 if $package eq 'FileHandle' and $m eq 'new';
+      #return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
+      #return 0 if $package eq 'FileHandle' and $m eq 'new';
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
   }
-  delete_unsaved_hashINC($package) unless $package =~ /^PerlIO/;
+  if ($package !~ /^PerlIO/ and can_delete($package)) {
+    delete_unsaved_hashINC($package);
+  }
   return $include_package{$package} = 0;
 }
 
@@ -5494,7 +5535,7 @@ sub compile {
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data)],
+    2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
@@ -5907,6 +5948,17 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O2>.
 
+=item B<-fdelete-pkg>
+
+Delete packages which appear to be nowhere used automatically.  This creates
+smaller executables but might miss run-time called methods. Note that you can
+always use -u to add automatically deleted packages.
+
+Without -fdelete-pkg i.e. with -O0,-O1 only packages which are defined by the
+compiler and its dependencies itself and are apparently unused are deleted.
+
+Enabled with C<-O2>.
+
 =item B<-fconst-strings>
 
 Declares readonly strings as const. Enables C<-fcog>.
@@ -6001,7 +6053,7 @@ Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fro-inc> and B<-fsave-data>.
+Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<-fdelete-pkg>.
 
 =item B<-O3>
 
@@ -6009,7 +6061,8 @@ Enable B<-O2> plus B<-fno-destruct> and B<-fconst-strings>.
 
 =item B<-O4>
 
-Enable B<-O3> plus B<-fcop>. Very unsafe, 10% faster, 10% smaller.
+Enable B<-O3> plus B<-fcop>. Very unsafe, rarely works,
+10% faster, 10% smaller.
 
 =back
 

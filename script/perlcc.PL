@@ -52,6 +52,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
 # Version 2.13, Reini Urban, 2012-01-10 13:03:00
+# Version 2.14, Reini Urban, 2012-02-01 20:00:00
 
 use strict;
 use warnings;
@@ -62,11 +63,11 @@ use Config;
 use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use File::Basename qw(basename dirname);
-use Cwd;
+# use Cwd;
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.13;
+our $VERSION = 2.14;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -764,7 +765,7 @@ sub check_write {
     if (-e _) {
         _die("Cannot write on $file: $!\n") unless -w _;
     }
-    unless (-w cwd()) {
+    unless (-w '.') {
         _die("Cannot write in this directory: $!\n");
     }
 }

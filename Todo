@@ -1,7 +1,7 @@
 * Fixes
 
--DF Flags crash with newpkg
-do not throw away non-B:C loaded packages not to miss run-time added methods
+-DF Flags crashes with newpkg
+do not throw away non-B:C loaded packages not to miss run-time added methods ('all_bc_pkg')
 'n' magic (shared_scalar on 5.10.0 and earlier perls) e.g. t/testm.sh Test::Tester
 run-time label lookup (done for the easy and documented limitations)
 store_cop_label for 5.12 windows/AIX only (=> p5p; needs CORE patch)
