@@ -36,11 +36,7 @@ sub add {
 
 sub remove {
   my $section = shift;
-  if (@_) {
-    $section->[-1]{values}[shift] = undef;
-  } else {
-    pop  @{ $section->[-1]{values} };
-  }
+  pop  @{ $section->[-1]{values} };
 }
 
 sub index {
@@ -69,7 +65,6 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
-    next unless defined $_;
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
@@ -180,10 +175,8 @@ EOT
     ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
   }
 
-  print $fh <<"EOT";
-static int ${init_name}(pTHX)
-{
-EOT
+  print $fh "static int ${init_name}(pTHX)
+{";
   $section->SUPER::output( $fh, $format );
   print $fh "\treturn 0;\n}\n";
 }
@@ -204,16 +197,16 @@ our %Regexp;
 
 our @ISA        = qw(Exporter);
 our @EXPORT_OK =
-  qw(output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
-     init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
-     save_sig svop_or_padop_pv inc_cleanup);
+  qw( output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
+      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
+      save_sig svop_or_padop_pv inc_cleanup );
 # for 5.6 better use the native B::C
 # 5.6.2 works fine though.
 use B
-  qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
-  class cchar svref_2object compile_stats comppadlist hash
-  threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
-  HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
+  qw( minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
+      class cchar svref_2object compile_stats comppadlist hash
+      threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
+      HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY );
 
 BEGIN {
   if ($] >=  5.008) {
@@ -257,10 +250,10 @@ my %all_bc_subs = map {$_=>1}
      B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
-# track all internally used packages. all other may not be deleted automatically
-# - hidden methods
+# Track all internally used packages. All other may not be deleted automatically
+# - hidden methods. -fdelete-pkg
 my %all_bc_pkg = map {$_=>1}
-  qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
+  qw( B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
      B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
      B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
      B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
@@ -268,8 +261,13 @@ my %all_bc_pkg = map {$_=>1}
      warnings warnings::register DB next maybe maybe::next FileHandle fields vars
      AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
      ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
-     DynaLoader XSLoader O
-    );
+     DynaLoader XSLoader O );
+if (%blib::) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
+  for (qw(Cwd File File::Spec File::Spec::Unix Dos EPOC blib Scalar
+	  Scalar::Util vars VMS VMS::Filespec VMS::Feature Win32)) {
+    $all_bc_pkg{$_} = 1;
+  }
+}
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
 # -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
@@ -344,7 +342,7 @@ BEGIN {
 # This the Carp free workaround for DynaLoader::bootstrap
 sub DynaLoader::croak {die @_}
 
-# 5.15.3 workaround [perl #101336]
+# 5.15.3 workaround [perl #101336], without .bs support
 sub XSLoader::load_file {
   #package DynaLoader;
   use Config ();
@@ -1085,7 +1083,7 @@ sub B::PVOP::save {
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
   my $p = shift or return;
-  warn "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}\n"
+  warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
     if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
@@ -2669,9 +2667,13 @@ sub B::CV::save {
 
   warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
-  if (!$$root and $] < 5.010) {
-    $package_pv = $cvstashname;
-    push_package($package_pv);
+  if (!$$root and $cvstashname) {
+    if ($] < 5.010) {
+      $package_pv = $cvstashname;
+      push_package($package_pv);
+    } else {
+      push_package($cvstashname);
+    }
   }
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
     require "utf8_heavy.pl";
@@ -2690,8 +2692,10 @@ sub B::CV::save {
 	  if ($$gv) {
 	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
 	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded. remove old cv\n" if $debug{sub};
-	      $svsect->remove;
-	      $xpvcvsect->remove;
+	      unless ($new_cv_fw) {
+		$svsect->remove;
+		$xpvcvsect->remove;
+	      }
 	      delsym($cv);
 	      return $cv->save($gv->STASH->NAME."::".$gv->NAME);
 	    }
@@ -2707,8 +2711,10 @@ sub B::CV::save {
 	if ($$gv) {
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
 	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME. remove old cv\n" if $verbose;
-	    $svsect->remove;
-	    $xpvcvsect->remove;
+	    unless ($new_cv_fw) {
+	      $svsect->remove;
+	      $xpvcvsect->remove;
+	    }
 	    delsym($cv);
 	    return $cv->save;
 	  }
@@ -2721,15 +2727,22 @@ sub B::CV::save {
   }
   if (!$$root) {
     warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload), remove CV [$sv_ix]\n"
-      if $debug{cv};
-    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
-    # Empty CV (methods) must be skipped not to disturb method resolution
-    # (e.g. t/testm.sh POSIX)
-    $svsect->remove( $sv_ix );
-    $xpvcvsect->remove( $xpvcv_ix );
-    delsym( $cv );
-    return undef;
+    $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
+    if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
+      warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
+	if $debug{cv};
+      $svsect->remove;
+      $xpvcvsect->remove;
+      delsym( $cv );
+      # Empty CV (methods) must be skipped not to disturb method resolution
+      # (e.g. t/testm.sh POSIX)
+      return '0';
+    } else {
+      # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
+      warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
+	if $debug{cv};
+      # continue, must save the 2 symbols from above
+    }
   }
 
   my $startfield = 0;
@@ -3271,8 +3284,8 @@ if (0) {
 	warn "GV::save &$fullname...\n" if $debug{gv};
 	if (my $_cv = $gvcv->save($fullname)) {
 	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $_cv ) );
-	} else {
-	  $init->add( sprintf( "GvCV_set($sym, (CV*)(get_cv(\"%s\", TRUE)));", $fullname ) );
+	#} else {
+	#  $init->add( sprintf( "GvCV_set($sym, (CV*)(get_cv(\"%s\", TRUE)));", $fullname ) );
 	}
       }
     }
@@ -5951,11 +5964,11 @@ Enabled with C<-O2>.
 =item B<-fdelete-pkg>
 
 Delete packages which appear to be nowhere used automatically.  This creates
-smaller executables but might miss run-time called methods. Note that you can
+smaller executables but might miss run-time called methods.  Note that you can
 always use -u to add automatically deleted packages.
 
-Without -fdelete-pkg i.e. with -O0,-O1 only packages which are defined by the
-compiler and its dependencies itself and are apparently unused are deleted.
+Without -fdelete-pkg - i.e. with -O0,-O1 - only packages which are defined by
+the compiler and its dependencies itself and are apparently unused are deleted.
 
 Enabled with C<-O2>.
 
