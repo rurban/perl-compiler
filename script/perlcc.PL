@@ -248,7 +248,7 @@ sub parse_argv {
         'Wb:s',         # pass (comma-seperated) options to backend
         'Wc:s',         # pass (comma-seperated) options to cc (new since 2.13)
         'Wl:s',         # pass (comma-seperated) options to ld (new since 2.13)
-        'testsuite',    # try to be nice to testsuite
+        'testsuite',    # try to be nice to testsuite (STDOUT, STDERR handles)
         'spawn!',	# --no-spawn (new since 2.12)
         'time',         # print benchmark timings (new since 2.08)
         'version',      # (new since 2.13)
@@ -263,7 +263,8 @@ sub parse_argv {
 
     helpme() if opt(h); # And exit
     if (opt(version)) {
-      die "perlcc $VERSION\n";
+      require B::C;
+      die "perlcc $VERSION, B-C-${B::C::VERSION}\n";
     }
 
     $Options->{Wb} .= ",-O1" if opt(O1);
@@ -908,36 +909,41 @@ perlcc - generate executables from Perl programs
 
 =head1 SYNOPSIS
 
-    perlcc hello              # Compiles into executable 'a.out'
-    perlcc -o hello hello.pl  # Compiles into executable 'hello'
+    perlcc hello.pl            # Compiles into executable 'a.out'
+    perlcc -o hello hello.pl   # Compiles into executable 'hello'
 
-    perlcc -O file            # Compiles using the optimised CC backend
-    perlcc -Wb=-O2 file       # Compiles with C, using -O2 optimizations
-    perlcc -B file            # Compiles using the bytecode backend
-    perlcc -B -m file.pm      # Compiles a module to file.pmc
+    perlcc -O file.pl          # Compiles using the optimised CC backend
+    perlcc -O3 file.pl         # Compiles with C, using -O3 optimizations
+    perlcc -B file.pl          # Compiles using the bytecode backend
+    perlcc -B -m file.pm       # Compiles a module to file.pmc
 
-    perlcc -c file            # Creates a C file, 'file.c'
-    perlcc -S -o hello file   # Creates a C file, 'file.c',
-                              # then compiles it to executable 'hello'
-    perlcc -c out.c file      # Creates a C file, 'out.c' from 'file'
+    perlcc -c file.pl          # Creates a C file, 'file.c'
+    perlcc -S -o hello file.pl # Keep C file
+    perlcc -c out.c file.pl    # Creates a C file, 'out.c' from 'file'
     perlcc --staticxs -r -o hello hello.pl # Compiles,links and runs with
-                              # XS modules static/dynaloaded
+                               # XS modules static/dynaloaded
 
-    perlcc -e 'print q//'     # Compiles a one-liner into 'a.out'
-    perlcc -c -e 'print q//'  # Creates a C file 'a.out.c'
+    perlcc -e 'print q//'      # Compiles a one-liner into 'a.out'
+    perlcc -c -e 'print q//'   # Creates a C file 'a.out.c'
 
-    perlcc -I /foo hello      # extra headers (notice the space after -I)
-    perlcc -L /foo hello      # extra libraries (notice the space after -L)
+    perlcc -I /foo hello       # extra headers for C
+    perlcc -L /foo hello       # extra libraries for C
+    perlcc --Wb=-Dsp           # extra perl compiler options
+    perlcc --Wc=-fno-openmp    # extra C compiler options
+    perlcc --Wl=-s             # extra C linker options
 
-    perlcc -r hello           # compiles 'hello' into 'a.out', runs 'a.out'.
-    perlcc -r hello a b c     # compiles 'hello' into 'a.out', runs 'a.out'.
-                              # with arguments 'a b c'
+    perlcc -uIO::Socket        # force saving IO::Socket
+    perlcc -UB                 # "unuse" B, compile without any B symbols
 
-    perlcc hello -log c.log   # compiles 'hello' into 'a.out' logs compile
-                              # log into 'c.log'.
+    perlcc -r hello            # compiles 'hello' into 'a.out', runs 'a.out'
+    perlcc -r hello a b c      # compiles 'hello' into 'a.out', runs 'a.out'
+                               # with arguments 'a b c'
 
-    perlcc -h       	      # help, only SYNOPSIS
-    perlcc -v 2 -h  	      # verbose help, also DESCRIPTION and OPTIONS
+    perlcc hello -log c.log    # compiles 'hello' into 'a.out', log into 'c.log'
+
+    perlcc -h       	       # help, only SYNOPSIS
+    perlcc -v2 -h  	       # verbose help, also DESCRIPTION and OPTIONS
+    perlcc --version  	       # prints internal perlcc and the B-C release version
 
 =head1 DESCRIPTION
 
