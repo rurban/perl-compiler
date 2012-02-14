@@ -39,6 +39,7 @@ BEGIN {
   # check whether linking with xs works at all. Try with and without --staticxs
   if ($^O eq 'darwin') { $staticxs = ''; goto BEGIN_END; }
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+  my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
   my $tmp = File::Temp->new(TEMPLATE => 'pccXXXXX');
   my $out = $tmp->filename;
   my $result = `$X $Mblib blib/script/perlcc --staticxs -o$out -e"use Data::Dumper;"`;
@@ -47,7 +48,7 @@ BEGIN {
     my $result = `$X $Mblib blib/script/perlcc -o$out -e"use Data::Dumper;"`;
     unless (-e $out or -e 'a.out') {
       plan skip_all => "perlcc cannot link XS module Data::Dumper. Most likely wrong ldopts.";
-      unlk$out
+      unlink $out;
       exit;
     } else {
       $staticxs = '';
