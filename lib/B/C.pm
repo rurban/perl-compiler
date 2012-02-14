@@ -36,11 +36,7 @@ sub add {
 
 sub remove {
   my $section = shift;
-  if (@_) { # XXX
-    splice @{ $section }, shift, 1;
-  } else {
-    pop  @{ $section->[-1]{values} };
-  }
+  pop  @{ $section->[-1]{values} };
 }
 
 sub index {
@@ -1089,7 +1085,7 @@ sub B::PVOP::save {
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
   my $p = shift or return;
-  warn "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}\n"
+  warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
     if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   unshift @package_pv, $p; 		       # prepend at the front
@@ -2673,9 +2669,13 @@ sub B::CV::save {
 
   warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
-  if (!$$root and $] < 5.010) {
-    $package_pv = $cvstashname;
-    push_package($package_pv);
+  if ( !$$root and $cvstashname ) {
+    if ($] < 5.010) {
+      $package_pv = $cvstashname;
+      push_package($package_pv);
+    } else {
+      push_package($cvstashname);
+    }
   }
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
     require "utf8_heavy.pl";
@@ -2694,8 +2694,10 @@ sub B::CV::save {
 	  if ($$gv) {
 	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
 	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded. remove old cv\n" if $debug{sub};
-	      $svsect->remove;
-	      $xpvcvsect->remove;
+	      unless ($new_cv_fw) {
+		$svsect->remove;
+		$xpvcvsect->remove;
+	      }
 	      delsym($cv);
 	      return $cv->save($gv->STASH->NAME."::".$gv->NAME);
 	    }
@@ -2711,8 +2713,10 @@ sub B::CV::save {
 	if ($$gv) {
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
 	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME. remove old cv\n" if $verbose;
-	    $svsect->remove;
-	    $xpvcvsect->remove;
+	    unless ($new_cv_fw) {
+	      $svsect->remove;
+	      $xpvcvsect->remove;
+	    }
 	    delsym($cv);
 	    return $cv->save;
 	  }
@@ -2725,15 +2729,21 @@ sub B::CV::save {
   }
   if (!$$root) {
     warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
-    warn "No definition for sub $fullname (unable to autoload), remove cv\n"
-      if $debug{cv};
-    $init->add( "/* $fullname not found */" ) if $verbose or $debug{sub};
-    # Empty CV (methods) must be skipped not to disturb method resolution
-    $svsect->remove; #( $sv_ix );
-    $xpvcvsect->remove; #( $xpvcv_ix );
-    delsym( $cv );
-    #return svref_2object( \&Dummy_initxs )->save;
-    return '0';
+    $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
+    if ($sv_ix == $svsect->index and !$new_cv_fw) {
+      warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
+	if $debug{cv};
+      delsym($cv);
+      $svsect->remove;
+      $xpvcvsect->remove;
+      # Empty CV (methods) must be skipped not to disturb method resolution
+      return '0';
+    } else {
+      # interim AUTOLOAD cv saved, cannot delete (Fcntl, POSIX)
+      warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
+	if $debug{cv};
+      # must save the 2 symbols from above
+    }
   }
 
   my $startfield = 0;
@@ -3273,7 +3283,9 @@ if (0) {
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
-	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save($fullname) ) );
+	if (my $cv = $gvcv->save($fullname)) {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cv ) );
+	}
       }
     }
     if (!$PERL510 or $gp) {
