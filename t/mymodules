@@ -1,7 +1,14 @@
-#Bundle::DBD::mysql
-#Bundle::LWP
 Acme::Spork
-Alias
+CDB_File
+String::CRC32
+IO::Interface
+Sub::Uplevel
+Params::Util
+Params::Validate
+Module::Runtime
+Log::Log4perl
+Filesys::Df
+Net::LibIDN
 Any::Template
 Archive::Tar
 Archive::Tar::Streamed
@@ -133,8 +140,6 @@ Number::Compare
 PAR::Dist
 PPI
 PadWalker
-Params::Util
-Params::Validate
 Parse::RecDescent
 Path::Class
 Perl::Critic
