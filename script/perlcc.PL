@@ -389,12 +389,12 @@ sub compile_cstyle {
     }
     $addoptions .= opt(Wb);
     if( $addoptions ) {
-        $addoptions .= ',-v' if opt(v) > 4;
-        $addoptions .= ',-Dfull' if opt(v) > 5;
+        $addoptions .= ',-Dfull' if opt(v) >= 6;
+        $addoptions .= ',-Dsp,-v' if opt(v) == 5;
         $addoptions .= ',';
     } elsif (opt(v) > 4) {
-        $addoptions = '-v,';
-        $addoptions .= '-Dfull,' if opt(v) > 5;
+        $addoptions = '-Dsp,-v,';
+        $addoptions = '-Dfull,-v,' if opt(v) >= 6;
     }
 
     my $staticxs = opt(staticxs) ? "-staticxs," : '';
