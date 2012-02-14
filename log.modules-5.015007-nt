@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 52c6dfb 2012-02-07 | Update Todo
+# B::C::VERSION = 1.43 c6dbeb2 2012-02-08 | missed some internal pkgs, can now skip IO and Fcntl
 # perlversion = 5.015007-nt
 # path = /usr/local/bin/perl5.15.7-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.015007-nt
+# 100 / 100 modules tested with B-C-1.43 - perl-5.015007-nt
 # pass  95 / 100 (95.0%)
 # fail   5 / 100 (5.0%)
 # todo   0 /   5 (0.0%)
