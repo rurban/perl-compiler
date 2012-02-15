@@ -31,7 +31,7 @@ sub compile_check {
     $stderr = $out;
   }
   $stderr =~ s/main::stderr.*//s;
-
+  # With PADOP (threaded) the ->sv is wrong, returning a B::SPECIAL object of the targ, instead of PADSV
   like($stderr,qr/skip saving gvsv\((B::VERSION|)\) defined/, "should detect and skip B::VERSION");
   unlike($stderr,qr/GV::save \*B::VERSION done/, "should not save *B::VERSION");
 }
