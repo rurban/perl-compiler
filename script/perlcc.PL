@@ -77,7 +77,7 @@ use subs qw{
     cc_harness check_read check_write checkopts_byte choose_backend
     compile_byte compile_cstyle compile_module generate_code
     grab_stash parse_argv sanity_check vprint yclept spawnit
-    gettimeofday tv_interval
+    gettimeofday tv_interval vsystem
 };
 sub opt(*); # imal quoting
 sub is_win32();
@@ -189,6 +189,14 @@ sub vprint {
     }
 }
 
+sub vsystem {
+    if (opt('dryrun')) {
+        print "@_\n";
+    } else {
+       system(@_);
+    }
+}
+
 sub parse_argv {
 
     use Getopt::Long;
@@ -231,7 +239,8 @@ sub parse_argv {
 	'r',            # run resulting executable
         'B',            # Byte compiler backend
         'O',            # Optimised C backend B::CC
-        #'O1-4'         # alias for -Wb=-O1 (new since 2.13)
+         #'O1-4'        # alias for -Wb=-O1 (new since 2.13)
+        'dryrun|n',     # only print commands, do not execute
         'c',            # Compile only
         'h',            # Help me
         'S',            # Dump C files
@@ -367,7 +376,9 @@ sub compile_byte {
 	warn "@error" if @error and opt(v)>4;
     }
 
-    chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!\n");
+    unless (opt(dryrun)) {
+      chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!\n");
+    }
 }
 
 sub compile_cstyle {
@@ -376,8 +387,8 @@ sub compile_cstyle {
     $stash .= "-u$_," for @{$Options->{u}};
     $stash .= "-U$_," for @{$Options->{U}};
 
-    my $taint = opt(T) ? '-T' :
-                       opt(t) ? '-t' : '';
+    my $taint = opt(T) ? ' -T' :
+                       opt(t) ? ' -t' : '';
 
     # What are we going to call our output C file?
     my $lose = 0;
@@ -440,7 +451,7 @@ sub compile_cstyle {
     my $options = "$addoptions$testsuite$max_line_len$staticxs$stash";
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
-    my $command = "$BinPerl $taint -MO=$Backend,$options"."-o$cfile $Input";
+    my $command = "$BinPerl$taint -MO=$Backend,$options"."-o$cfile $Input";
     vprint 5, "Compiling...";
     vprint 1, "Calling $command";
 
@@ -484,7 +495,7 @@ sub compile_cstyle {
         . q{'s{^/}{# .file /};s/^00[0-9a-f]+\s/\t/;s/^\(__(\w+)(,__.*?)?\) section/q(.).lc($1)/e'} 
         . " | as -o \"$ofile\"";
                         vprint 3, $cmd;
-                        system($cmd);
+                        vsystem($cmd);
                     }
                     $extra_libs .= " ".$l if -e $ofile;
                 } else {
@@ -500,7 +511,7 @@ sub compile_cstyle {
             $rpath = '-Wl,-rpath,';
         }
         $rpath =~ s/^-Wl,-E// if $rpath;         # already done via ccdlflags
-        $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
+        # $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
         vprint 2, "staticxs: $stash $extra_libs";
     }
 
@@ -547,9 +558,9 @@ sub cc_harness_msvc {
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     $link .= $B::C::Flags::extra_libs;
     vprint 3, "Calling $Config{cc} $compile";
-    system("$Config{cc} $compile");
+    vsystem("$Config{cc} $compile");
     vprint 3, "Calling $Config{ld} $link";
-    system("$Config{ld} $link");
+    vsystem("$Config{ld} $link");
 }
 
 sub cc_harness {
@@ -637,14 +648,12 @@ sub cc_harness {
     $command .= " ".$ldopts;
     $command .= $B::C::Flags::extra_libs if $B::C::Flags::extra_libs;
     vprint 3, "Calling $Config{cc} $command";
-    system("$Config{cc} $command");
+    vsystem("$Config{cc} $command");
 }
 
 # Where Perl is, and which include path to give it.
 sub yclept {
     my $command = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    $command .= " ";
-
     # DWIM the -I to be Perl, not C, include directories.
     if (opt(I) && $Backend eq "Bytecode") {
         for (split /\s+/, opt(I)) {
@@ -665,7 +674,7 @@ sub yclept {
     }
     for my $i (@INC) {
         my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
-        $command .= "-I$inc " unless $OINC{$i}; # omit internal @INC dirs
+        $command .= " -I$inc" unless $OINC{$i}; # omit internal @INC dirs
     }
 
     return $command;
@@ -678,9 +687,9 @@ sub yclept {
 
         warn "already called grab_stash once" if $_stash;
 
-        my $taint = opt('T') ? '-T' :
-                    opt('t') ? '-t' : '';
-        my $command = "$BinPerl $taint -MB::Stash -c $Input";
+        my $taint = opt('T') ? ' -T' :
+                    opt('t') ? ' -t' : '';
+        my $command = "$BinPerl$taint -MB::Stash -c $Input";
         # Filename here is perfectly sanitised.
         vprint 3, "Calling $command\n";
 
@@ -776,7 +785,7 @@ sub check_perl {
     unless (-T $file) {
         warn "$0: Binary `$file' sure doesn't smell like perl source!\n";
         print "Checking file type... ";
-        system("file", $file);
+        vsystem("file", $file);
         _die("Please try a perlier file!\n");
     }
 
@@ -791,6 +800,9 @@ sub check_perl {
 sub spawnit {
     my ($command) = shift;
     my (@error,@output,$errname);
+    if (opt('dryrun')) {
+        print "$command\n"; return (\@output, \@error);
+    }
     if ($Options->{spawn}) {
         (undef, $errname) = tempfile("pccXXXXX");
         {
