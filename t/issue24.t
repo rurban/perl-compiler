@@ -33,6 +33,8 @@ $Mblib = "-Iblib/arch -Iblib/lib" if $] < 5.007;
 TODO: { #2
   local $TODO = "B::C issue 24 dbm >=5.12thr or 5.10.0 or 5.6"
     if ($] >= 5.012 and $ITHREADS) or $] < 5.007 or $] eq '5.010000';
+  local $TODO = "B::C issue 24 dbm 32bit centos6"
+    if ($] >= 5.015 and !$ITHREADS and $Config{ptrsize} == 4);
   $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
   is($result, $expected, "C dbm fixed with r879, 1.30");
 }
