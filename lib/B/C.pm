@@ -477,12 +477,11 @@ sub svop_or_padop_pv {
     #if ($PERL510) { # PVX->hek_hash - STRUCT_OFFSET(struct hek, hek_key)
     #} else {        # UVX
     #}
-    return $sv->PV if $sv->can("PV");
-    if (ref($sv) eq "B::SPECIAL") { # DateTime::TimeZone
+    #if (ref($sv) eq "B::SPECIAL") { # DateTime::TimeZone
       # XXX null -> method_named
-      warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
-      return $package_pv;
-    }
+    #  warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
+    #  return $package_pv;
+    #}
     if ($sv->FLAGS & SVf_ROK) {
       goto missing if $sv->isa("B::NULL");
       my $rv = $sv->RV;
@@ -493,6 +492,10 @@ sub svop_or_padop_pv {
       goto missing if $rv->isa("B::PVMG");
       return $rv->STASH->NAME;
     } else {
+      if ($op->name eq 'gvsv') {
+	return $sv->STASH->NAME.'::'.$sv->NAME;
+      }
+      return $sv->PV if $sv->can("PV");
   missing:
       if ($op->name != /^method(_named)?/) {
 	# Called from first const/padsv before method_named. no magic pv string, so a method arg.
@@ -1115,7 +1118,7 @@ sub method_named {
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded
-      return svref_2object(\&Dummy_initxs) if $method eq 'threads::tid' and !$ITHREADS;
+      return if $method eq 'threads::tid' and !$ITHREADS;
       if (my $parent = try_isa($_,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
@@ -1140,6 +1143,10 @@ sub B::SVOP::save {
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     $svsym = '&PL_sv_undef'; # pad does not need to be saved
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
+  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
+    # do not save a gvsv if just checked for defined'ness
+    my $gvsv = svop_or_padop_pv($op);
+    warn "skip saving gvsv($gvsv) defined\n" if $debug{gv};
   } else {
     my $sv    = $op->sv;
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
@@ -1173,6 +1180,17 @@ sub B::PADOP::save {
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_or_padop_pv($op));
     $cv->save if $cv;
+  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
+    my $gvsv = $op->sv;
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    my $targ = ref($gvsv) eq 'B::SPECIAL' ? $$gvsv : $op->targ;
+    if (ref($pad[$targ]) eq 'B::GV') {
+      $gvsv = $pad[$targ]->STASH->NAME.'::'.$pad[$targ]->NAME;
+    } else {
+      $gvsv = '';
+    }
+    warn "skip saving gvsv() defined\n" if $debug{gv}; #name optimized away
   }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
@@ -3049,6 +3067,8 @@ if (0) {
 
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
+  return $sym if $fullname eq 'threads::tid' and !$ITHREADS; # checked for defined'ness in Carp
+
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
