@@ -3190,16 +3190,15 @@ if (0) {
 	$init->add( "GvSVn($sym) = (SV*)PL_errors;" );
       }
       elsif ($gvname eq 'VERSION' and $xsub{$package} and !$PERL56) {
-	my $SVs_RMG = $PERL510 ? 0x00800000 : 0x00008000;
 	if ( $gvsv->FLAGS & SVf_ROK ) {
 	  warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
 	  my $rv = $gvsv->object_2svref();
 	  my $origsv = $$rv;
 	  no strict 'refs';
 	  ${$fullname} = "$origsv";
-	  svref_2object(\${$fullname})->save($fullname);
-        } elsif ( $gvsv->FLAGS & $SVs_RMG ) {
-	  warn "XXX Strip overload from magic XS $package\::VERSION (issue 91)\n"; #if $debug{gv};
+	  svref_2object(\$$fullname)->save($fullname);
+	} else {
+	  $gvsv->save($fullname);
 	}
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       } else {
@@ -4522,11 +4521,11 @@ _EOT9
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
+	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  if ($] >= 5.015003) {
 	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
 	  }
 	  print "\tPUTBACK;\n";
-	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]
@@ -4551,8 +4550,8 @@ _EOT9
           $path .= "/" if $path; # can be empty
           $laststash = $stashname unless $laststash; # without ::
           my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
-          warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
-            if $verbose and $debug{pkg};
+          #warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
+          #  if $verbose and $debug{pkg};
           for (@DynaLoader::dl_shared_objects) {
             if (m{^(.+/)$sofile$}) {
               print XS $stashname,"\t",$_,"\n";
@@ -4565,6 +4564,7 @@ _EOT9
           warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and $verbose;
         }
         print "#else\n";
+	print "\tPUTBACK;\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
