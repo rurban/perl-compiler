@@ -1184,6 +1184,7 @@ sub B::PADOP::save {
     my $gvsv = $op->sv;
     my @c = comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
+    # With PADOP (threaded) the ->sv is wrong, returning a B::SPECIAL object of the targ, instead of PADSV
     my $targ = ref($gvsv) eq 'B::SPECIAL' ? $$gvsv : $op->targ;
     if (ref($pad[$targ]) eq 'B::GV') {
       $gvsv = $pad[$targ]->STASH->NAME.'::'.$pad[$targ]->NAME;
@@ -3063,11 +3064,18 @@ if (0) {
 }
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
-  return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
-
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
-  return $sym if $fullname eq 'threads::tid' and !$ITHREADS; # checked for defined'ness in Carp
+  return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
+
+  if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
+    $init->add(qq[$sym = &PL_sv_undef;]);
+    return $sym;
+  }
+  #if ( !defined(*{$fullname}{GLOB}) or $skip_package{$package} or $package =~ /^B::C(C?)::/) {
+  #  $init->add(qq[$sym = &PL_sv_undef;]);
+  #  return $sym;
+  #}
 
   my $name     = cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
