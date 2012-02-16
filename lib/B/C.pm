@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_01';
+our $VERSION = '1.42_02';
 my %debug;
 my $eval_pvs = '';
 
@@ -527,9 +527,8 @@ sub getsym {
   my $value;
 
   return 0 if $sym eq "sym_0";    # special case
-  $value = $symtable{$sym};
-  if ( defined($value) ) {
-    return $value;
+  if ( exists $symtable{$sym} ) {
+    return $symtable{$sym};
   }
   else {
     warn "warning: undefined symbol $sym\n" if $warn_undefined_syms;
@@ -593,7 +592,7 @@ sub savere {
 
 sub constpv {
   my $pv    = pack "a*", shift;
-  if (defined $strtable{$pv}) {
+  if (exists $strtable{$pv}) {
     return $strtable{$pv};
   }
   my $pvsym = sprintf( "pv%d", $pv_index++ );
@@ -682,7 +681,7 @@ sub save_hek {
   my $len = length $str;
   # force empty string for CV prototypes
   if (!$len and !@_) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
-  if (defined $hektable{$str}) {
+  if (exists $hektable{$str}) {
     return wantarray ? ($hektable{$str}, length( pack "a*", $hektable{$str} ))
       : $hektable{$str};
   }
@@ -1143,10 +1142,6 @@ sub B::SVOP::save {
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     $svsym = '&PL_sv_undef'; # pad does not need to be saved
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
-  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
-    # do not save a gvsv if just checked for defined'ness
-    my $gvsv = svop_or_padop_pv($op);
-    warn "skip saving gvsv($gvsv) defined\n" if $debug{gv};
   } else {
     my $sv    = $op->sv;
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
@@ -1180,18 +1175,6 @@ sub B::PADOP::save {
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_or_padop_pv($op));
     $cv->save if $cv;
-  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
-    my $gvsv = $op->sv;
-    my @c = comppadlist->ARRAY;
-    my @pad = $c[1]->ARRAY;
-    # With PADOP (threaded) the ->sv is wrong, returning a B::SPECIAL object of the targ, instead of PADSV
-    my $targ = ref($gvsv) eq 'B::SPECIAL' ? $$gvsv : $op->targ;
-    if (ref($pad[$targ]) eq 'B::GV') {
-      $gvsv = $pad[$targ]->STASH->NAME.'::'.$pad[$targ]->NAME;
-    } else {
-      $gvsv = '';
-    }
-    warn "skip saving gvsv() defined\n" if $debug{gv}; #name optimized away
   }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
