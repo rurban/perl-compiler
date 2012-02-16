@@ -446,7 +446,9 @@ $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
 $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL512;
 warn %OP_COP if $debug{cops};
 
-# 1. called from method_named, so hashp should be defined
+# XXX (hack) Returns a SVOP->pv for package_pv or the symbol name for other functions.
+# split into svop_pv and svop_symname
+# 1. called from method_named to get the pv
 # 2. called from svop before method/method_named to cache the $package_pv
 sub svop_or_padop_pv {
   my $op = shift;
@@ -471,17 +473,7 @@ sub svop_or_padop_pv {
   } else {
     $sv = $op->sv;
   }
-  # XXX see SvSHARED_HEK_FROM_PV for the stash in S_method_common pp_hot.c
-  # In this hash the CV is stored directly
   if ($$sv) {
-    #if ($PERL510) { # PVX->hek_hash - STRUCT_OFFSET(struct hek, hek_key)
-    #} else {        # UVX
-    #}
-    #if (ref($sv) eq "B::SPECIAL") { # DateTime::TimeZone
-      # XXX null -> method_named
-    #  warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
-    #  return $package_pv;
-    #}
     if ($sv->FLAGS & SVf_ROK) {
       goto missing if $sv->isa("B::NULL");
       my $rv = $sv->RV;
@@ -730,6 +722,7 @@ sub B::FAKEOP::fake_ppaddr { "NULL" }
 # XXX HACK! duct-taping around compiler problems
 sub B::OP::isa { UNIVERSAL::isa(@_) } # walkoptree_slow misses that
 sub B::OBJECT::name  { "" }           # B misses that
+$isa_cache{'B::OBJECT::can'} = 'UNIVERSAL';
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
 # $op->next and $op->sibling
@@ -1083,13 +1076,18 @@ sub B::PVOP::save {
 
 # XXX Until we know exactly the package name for a method_call
 # we improve the method search heuristics by maintaining this mru list.
-sub push_package ($) {
+sub push_package ($;$) {
   my $p = shift or return;
+  my $soft = shift;
   warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
     if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
-  unshift @package_pv, $p; 		       # prepend at the front
-  mark_package($p);
+  if ($soft) {
+    push @package_pv, $p; 		       # add to the end
+  } else {
+    unshift @package_pv, $p; 		       # prepend at the front
+    mark_package($p);
+  }
 }
 
 # method_named is in 5.6.1
@@ -1123,6 +1121,23 @@ sub method_named {
 	$include_package{$parent} = 1;
 	$package_pv = $parent;
 	last;
+      }
+      # last desperate round to find the package in all include_package
+      for (keys %include_package) {
+	next if skip_pkg($_);
+	if (defined(&$method)) {
+	  $include_package{$_} = 1; # issue59
+	  $package_pv = $_;
+	  mark_package($_, 1);
+	  warn "save found method_name \"$method\"\n" if $debug{cv};
+	  return svref_2object( \&{$method} );
+	}
+	if (my $parent = try_isa($_,$name)) {
+	  $method = $parent . '::' . $name;
+	  $include_package{$parent} = 1;
+	  $package_pv = $parent;
+	  last;
+	}
       }
     }
   }
@@ -2187,8 +2202,7 @@ sub B::PVMG::save_magic {
     # A: We only need to init it when we need a CV
     $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
     $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-    # XXX
-    #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+    push_package($pkg->NAME, 'soft');
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
@@ -2362,35 +2376,39 @@ sub get_isa ($) {
   return $PERL510 ? @{mro::get_linear_isa($_[0])} : @{ $_[0] . '::ISA' };
 }
 
+# try_isa($pkg,$name) returns the found $pkg for the method $pkg::$name
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
 # XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
-  my ( $cvstashname, $cvname ) = @_;
+  my ( $cvstashname, $cvname, $already ) = @_;
   if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
     return $found;
   }
+  $already = {} unless $already;
+  return 0 if $already->{$_};
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
   my @isa = get_isa($cvstashname);
   warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
-  my %already;
   for (@isa) { # global @ISA or in pad
     next if $_ eq $cvstashname;
-    next if $already{$_};
-    warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
+    next if $already->{$_};
+    # warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     no strict 'refs';
     if (defined(&{$_ .'::'. $cvname})) {
       svref_2object( \@{$cvstashname . '::ISA'} )->save("$cvstashname\::ISA");
       $isa_cache{"$cvstashname\::$cvname"} = $_;
       mark_package($_, 1); # force
+      $package_pv = $_; # locality
       return $_;
     } else {
-      $already{$_}++; # avoid recursive cycles
+      $already->{$_}++; # avoid recursive cycles
       if (get_isa($_)) {
-	my $parent = try_isa($_, $cvname);
+	my $parent = try_isa($_, $cvname, $already);
 	if ($parent) {
+	  $isa_cache{"$cvstashname\::$cvname"} = $parent;
 	  warn "save \@$parent\::ISA\n" if $debug{pkg};
 	  svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
 	  warn "save \@$_\::ISA\n" if $debug{pkg};

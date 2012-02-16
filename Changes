@@ -6,7 +6,10 @@
 1.43	2012-02-xx rurban
 	* C: Fixed more method not found. issue95 and t/perldoc.t -
 	  parent @File::Spec::ISA was not saved.
-	Do not save not undefined CVs
+	try_isa(): Desperate method finding attempt by trying all seen packages, which
+	  slows down the compiler a lot. Added internal ISA Caching.
+	Avoid savinf not undefined CVs if possible. with Autoloading, i.e. POSIX
+	  the first is always saved as empty CV.
 	Fix -u<module> without file extension.
 	Special case Carp calling threads and B methods.
 	Sanified package_pv default a bit when a method padsv was not
