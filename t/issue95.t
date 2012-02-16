@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=95
-# methods not found. see t/testc.sh -DCsP,-v -O0 95
+# methods not found in no ISA in any candidate. see t/testc.sh -DCsP,-v -O0 95
+# not enough candidates.
 use strict;
 BEGIN {
   unshift @INC, 't';
@@ -14,7 +15,7 @@ if ($@) {
   plan tests => 5;
 }
 
-my $issue = <<'EOF';
+my $issue = <<'EOF1';
 use IO::Socket::INET   ();
 use IO::Socket::SSL    ('inet4');
 use Net::SSLeay        ();
@@ -24,14 +25,14 @@ use Socket             ();
 my $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";
-EOF
+EOF1
 
-my $typed = <<'EOF';
+my $typed = <<'EOF2';
 use IO::Socket::SSL();
 my IO::Socket::SSL $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";
-EOF
+EOF2
 
 sub compile_check {
   my ($num,$b,$base,$script,$cmt) = @_;
@@ -54,15 +55,15 @@ sub compile_check {
     $stderr = $out;
   }
   #wrong package
+  my $notfound = $stderr =~ /save package_pv "blocking" for method_name/;
+  ok(!$notfound, $cmt.' method mixed up as package');
  TODO: {
-   local $TODO = 'wrong package_pv "blocking" confused with method_name';
-   my $notfound = $stderr =~ /save package_pv "blocking" for method_name/;
-   ok(!$notfound, $cmt);
-  }
-  my $found = $stderr =~ /Found &IO::Socket::blocking/;
-  ok($found, $cmt);
+   local $TODO = '&IO::Socket::blocking not found in any @ISA';
+   my $found = $stderr =~ /Found &IO::Socket::blocking/;
+   ok($found, $cmt.' found');
+ }
 }
 
-compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking found");
-compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
+compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking");
+compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed'); #NYI
 ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');
