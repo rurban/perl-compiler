@@ -2658,16 +2658,22 @@ sub B::CV::save {
     my $stash = $gv->STASH;
     warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
-    # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
-    my $stsym = $stash->save;
-    my $name  = cstring($cvname);
-    my $vsym  = $cv->XSUBANY->save;
-    my $cvi = "cv".$cv_index;
-    $decl->add("Static CV* $cvi;");
-    $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
-    my $sym = savesym( $cv, $cvi );
-    $cv_index++;
-    return $sym;
+    if ($xsub{$cvstashname}) {
+      warn sprintf( "stub for constXSUB $fullname CV 0x%x\n", $$cv )
+    	if $debug{cv};
+      return qq/get_cv("$fullname", TRUE)/;
+    } else {
+      # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
+      my $stsym = $stash->save;
+      my $name  = cstring($cvname);
+      my $vsym  = $cv->XSUBANY->save;
+      my $cvi = "cv".$cv_index;
+      $decl->add("Static CV* $cvi;");
+      $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+      my $sym = savesym( $cv, $cvi );
+      $cv_index++;
+      return $sym;
+    }
   }
 
   # This define is forwarded to the real sv below
@@ -3070,7 +3076,7 @@ if (0) {
   return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
 
   if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
-    $init->add(qq[$sym = &PL_sv_undef;]);
+    $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
     return $sym;
   }
   #if ( !defined(*{$fullname}{GLOB}) or $skip_package{$package} or $package =~ /^B::C(C?)::/) {
