@@ -2656,24 +2656,24 @@ sub B::CV::save {
 
   if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
     my $stash = $gv->STASH;
-    warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
-      if $debug{cv};
+    # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
+    my $cvi = "cv".$cv_index;
+    $decl->add("Static CV* $cvi;");
     if ($xsub{$cvstashname}) {
-      warn sprintf( "stub for CONSTSUB $fullname CV 0x%x\n", $$cv )
-    	if $debug{cv};
-      return qq/get_cv("$fullname", TRUE)/;
+      warn sprintf( "stub for XS CONSTSUB $fullname CV 0x%x\n", $$cv )
+	if $debug{cv};
+      $init->add("$cvi = get_cv(\"$fullname\", TRUE);");
     } else {
-      # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
       my $stsym = $stash->save;
       my $name  = cstring($cvname);
       my $vsym  = $cv->XSUBANY->save;
-      my $cvi = "cv".$cv_index;
-      $decl->add("Static CV* $cvi;");
+      warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
+	if $debug{cv};
       $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
-      my $sym = savesym( $cv, $cvi );
-      $cv_index++;
-      return $sym;
     }
+    my $sym = savesym( $cv, $cvi );
+    $cv_index++;
+    return $sym;
   }
 
   # This define is forwarded to the real sv below
@@ -2694,12 +2694,8 @@ sub B::CV::save {
   warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
     if $debug{cv};
   if (!$$root and $cvstashname) {
-    if ($] < 5.010) {
-      $package_pv = $cvstashname;
-      push_package($package_pv);
-    } else {
-      push_package($cvstashname);
-    }
+    $package_pv = $cvstashname;
+    push_package($package_pv);
   }
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
     require "utf8_heavy.pl";
