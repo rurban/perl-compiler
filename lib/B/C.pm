@@ -2659,7 +2659,7 @@ sub B::CV::save {
     warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
     if ($xsub{$cvstashname}) {
-      warn sprintf( "stub for constXSUB $fullname CV 0x%x\n", $$cv )
+      warn sprintf( "stub for CONSTSUB $fullname CV 0x%x\n", $$cv )
     	if $debug{cv};
       return qq/get_cv("$fullname", TRUE)/;
     } else {
