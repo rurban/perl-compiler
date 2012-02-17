@@ -56,7 +56,7 @@ sub compile_check {
   }
   #wrong package
   my $notfound = $stderr =~ /save package_pv "blocking" for method_name/;
-  ok(!$notfound, $cmt.' method mixed up as package');
+  ok(!$notfound, $cmt.' mixed up as package');
  #TODO: {
  #  local $TODO = '&IO::Socket::blocking not found in any @ISA';
    my $found = $stderr =~ /save found method_name "IO::Socket::blocking"/;
@@ -64,6 +64,6 @@ sub compile_check {
  #}
 }
 
-compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking");
-compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed'); #NYI
+compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method");
+compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed method'); #optimization NYI
 ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');

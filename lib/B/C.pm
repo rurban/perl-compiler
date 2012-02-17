@@ -1124,7 +1124,7 @@ sub method_named {
       }
       # last desperate round to find the package in all include_package
       for (keys %include_package) {
-	next if skip_pkg($_);
+	next if $skip_package{$_}; # forced to skip
 	if (defined(&$method)) {
 	  $include_package{$_} = 1; # issue59
 	  $package_pv = $_;
@@ -2655,25 +2655,26 @@ sub B::CV::save {
   }
 
   if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
-    my $stash = $gv->STASH;
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
-    my $cvi = "cv".$cv_index;
-    $decl->add("Static CV* $cvi;");
-    if ($xsub{$cvstashname}) {
-      warn sprintf( "stub for XS CONSTSUB $fullname CV 0x%x\n", $$cv )
+    if ($cvxsub) {
+      warn sprintf( "Ignore XS CONSTSUB $fullname CV 0x%x\n", $$cv )
 	if $debug{cv};
-      $init->add("$cvi = get_cv(\"$fullname\", TRUE);");
+      return qq/NULL/;
+      # $init->add("$cvi = get_cv(\"$fullname\", TRUE);");
     } else {
+      my $cvi = "cv".$cv_index;
+      $decl->add("Static CV* $cvi;");
+      my $stash = $gv->STASH;
       my $stsym = $stash->save;
       my $name  = cstring($cvname);
       my $vsym  = $cv->XSUBANY->save;
       warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
 	if $debug{cv};
       $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+      my $sym = savesym( $cv, $cvi );
+      $cv_index++;
+      return $sym;
     }
-    my $sym = savesym( $cv, $cvi );
-    $cv_index++;
-    return $sym;
   }
 
   # This define is forwarded to the real sv below
