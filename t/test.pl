@@ -798,7 +798,7 @@ sub todo_tests_default {
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
 
-    my @todo  = ();
+    my @todo  = (15);
     push @todo, (15)  if $] < 5.007;
     if ($what =~ /^c(|_o[1-4])$/) {
         push @todo, (7)     if $] == 5.008005;

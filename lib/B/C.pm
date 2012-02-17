@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_02';
+our $VERSION = '1.42_03';
 my %debug;
 my $eval_pvs = '';
 
@@ -200,6 +200,7 @@ our @EXPORT_OK =
   qw( output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
       init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
       save_sig svop_or_padop_pv inc_cleanup );
+
 # for 5.6 better use the native B::C
 # 5.6.2 works fine though.
 use B
@@ -250,6 +251,7 @@ my %all_bc_subs = map {$_=>1}
       B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
       B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
       B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS );
+
 # Track all internally used packages. All other may not be deleted automatically
 # - hidden methods. -fdelete-pkg
 my %all_bc_pkg = map {$_=>1}
@@ -261,13 +263,15 @@ my %all_bc_pkg = map {$_=>1}
       warnings warnings::register DB next maybe maybe::next FileHandle fields vars
       AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
       ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
-      DynaLoader XSLoader O );
+      DynaLoader XSLoader O
+   );
 if (%blib::) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
   for (qw(Cwd File File::Spec File::Spec::Unix Dos EPOC blib Scalar
 	  Scalar::Util vars VMS VMS::Filespec VMS::Feature Win32)) {
     $all_bc_pkg{$_} = 1;
   }
 }
+
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
 # -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
@@ -793,9 +797,9 @@ sub B::OP::_save_common {
     my $pkgop = $op->first->next;
     my $tmp = $pkgop; # walk args until method_named
     do { $tmp = $tmp->next; } while $tmp->name !~ /^method_named|method|gv$/;
-    if ($tmp->name eq 'method_named') {
-      warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
-      my $pv = svop_or_padop_pv($pkgop); # 5.13: need to store away the pkg pv
+    if ($tmp->name =~ /^method_named|method/) {
+      warn "check package_pv ".$pkgop->name." for ".$tmp->name."\n" if $debug{cv};
+      my $pv = svop_or_padop_pv($pkgop); # Since 5.13: need to store away the pkg pv
       if ($pv and $pv !~ /[! \(]/) {
 	$package_pv = $pv;
 	push_package($package_pv);
@@ -1090,6 +1094,24 @@ sub push_package ($;$) {
   }
 }
 
+sub find_method {
+  my ($pkg, $name) = @_;
+  return if $skip_package{$pkg}; # forced to skip
+  no strict 'refs';
+  my $method = $pkg . '::' . $name;
+  if (defined(&{$method})) {
+    $include_package{$_} = 1; # issue59
+    $package_pv = $pkg;
+    mark_package($pkg, 1);
+    return $method;
+  }
+  if (my $parent = try_isa($pkg,$name)) { # this already does mark_package...
+    $include_package{$parent} = 1;
+    return $parent . '::' . $name;
+  }
+}
+
+
 # method_named is in 5.6.1
 sub method_named {
   my $name = shift;
@@ -1103,40 +1125,42 @@ sub method_named {
     return $name;
   }
   my $method;
-  for ($package_pv, @package_pv, 'main') {
+  for my $p ($package_pv, @package_pv, 'main') {
+    next if $skip_package{$p}; # forced to skip
     no strict 'refs';
-    $method = $_ . '::' . $name;
-    if (defined(&$method)) {
-      $include_package{$_} = 1; # issue59
-      $package_pv = $_;
-      mark_package($_, 1);
+    $method = $p . '::' . $name;
+    if (defined(&{$method})) {
+      $include_package{$p} = 1; # issue59
+      $package_pv = $p;
+      mark_package($p, 1);
       warn "save found method_name \"$method\"\n" if $debug{cv};
       return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded
       return if $method eq 'threads::tid' and !$ITHREADS;
-      if (my $parent = try_isa($_,$name)) {
+      if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
 	$package_pv = $parent;
-	last;
+	mark_package($_, 1);
+	warn "save found method_name \"$method\"\n" if $debug{cv};
+	return svref_2object( \&{$method} );
       }
-      # last desperate round to find the package in all include_package
+      $method = $p.'::'.$name;
+      warn "2nd round to find the package for \"$method\"\n" if $debug{cv};
       for (keys %include_package) {
-	next if $skip_package{$_}; # forced to skip
-	if (defined(&$method)) {
-	  $include_package{$_} = 1; # issue59
-	  $package_pv = $_;
-	  mark_package($_, 1);
+	if ($method = find_method($_, $name)) {
 	  warn "save found method_name \"$method\"\n" if $debug{cv};
 	  return svref_2object( \&{$method} );
 	}
-	if (my $parent = try_isa($_,$name)) {
-	  $method = $parent . '::' . $name;
-	  $include_package{$parent} = 1;
-	  $package_pv = $parent;
-	  last;
+      }
+      $method = $p.'::'.$name;
+      warn "3nd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
+      for (map{packname_inc($_)} keys %savINC) {
+	if ($method = find_method($_, $name)) {
+	  warn "save found method_name \"$method\"\n" if $debug{cv};
+	  return svref_2object( \&{$method} );
 	}
       }
     }
@@ -2382,11 +2406,9 @@ sub get_isa ($) {
 sub try_isa {
   my $cvstashname = shift;
   my $cvname = shift;
-  if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
-    return $found;
+  if (exists $isa_cache{"$cvstashname\::$cvname"}) {
+    return $isa_cache{"$cvstashname\::$cvname"};
   }
-  my $already = @_ ? shift : {};
-  return 0 if exists $already->{$_};
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
   my @isa = get_isa($cvstashname);
@@ -2395,7 +2417,6 @@ sub try_isa {
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
     next if $_ eq $cvstashname;
-    next if exists $already->{$_};
     # warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     no strict 'refs';
     if (defined(&{$_ .'::'. $cvname})) {
@@ -2403,13 +2424,16 @@ sub try_isa {
       $isa_cache{"$cvstashname\::$cvname"} = $_;
       mark_package($_, 1); # force
       $package_pv = $_; # locality
+      warn sprintf( "Found &%s::%s\n", $_, $cvname ) if $debug{cv};
       return $_;
     } else {
-      $already->{$_}++; # avoid recursive cycles
+      $isa_cache{"$_\::$cvname"} = 0;
       if (get_isa($_)) {
-	my $parent = try_isa($_, $cvname, $already);
+	my $parent = try_isa($_, $cvname);
 	if ($parent) {
+	  $isa_cache{"$_\::$cvname"} = $parent;
 	  $isa_cache{"$cvstashname\::$cvname"} = $parent;
+	  warn sprintf( "Found &%s::%s\n", $parent, $cvname ) if $debug{cv};
 	  warn "save \@$parent\::ISA\n" if $debug{pkg};
 	  svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
 	  warn "save \@$_\::ISA\n" if $debug{pkg};
@@ -2419,6 +2443,7 @@ sub try_isa {
       }
     }
   }
+  $isa_cache{"$cvstashname\::$cvname"} = 0;
   return 0; # not found
 }
 
@@ -2432,7 +2457,7 @@ sub try_autoload {
   return 1 if try_isa($cvstashname, $cvname);
 
   no strict 'refs';
-  if (defined(*{'UNIVERSAL::'. $cvname}{CODE})) {
+  if (defined(&{'UNIVERSAL::'. $cvname})) {
     warn "Found UNIVERSAL::$cvname\n" if $debug{cv};
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
