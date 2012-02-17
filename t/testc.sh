@@ -336,6 +336,11 @@ result[72]='ok'
 # object call: dynamic method_named with args.
 tests[73]='package dummy;sub meth{print "ok"};package main;my $meth="meth";my $o = bless {},"dummy"; $o->$meth("const")'
 result[73]='ok'
+tests[74]='package dummy;
+my $invoked_as_script = !caller();
+__PACKAGE__->script(@ARGV) if $invoked_as_script;
+sub script {my($package,@args)=@_;print "ok"}'
+result[74]='ok'
 # issue71
 tests[71]='
 package my;
