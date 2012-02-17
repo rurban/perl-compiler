@@ -1951,7 +1951,7 @@ sub B::PV::save {
   # static pv, do not destruct. test 13 with pv0 "3".
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   if ($PERL510) {
-    if ($B::C::const_strings and $flags & SVf_READONLY and !$len) {
+    if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
       #=> constpv: turnoff SVf_FAKE
       $flags &= ~0x01000000;
     }
@@ -2380,12 +2380,13 @@ sub get_isa ($) {
 # If a method can be called (via UNIVERSAL::can) search the ISA's. No AUTOLOAD needed.
 # XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
-  my ( $cvstashname, $cvname, $already ) = @_;
+  my $cvstashname = shift;
+  my $cvname = shift;
   if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
     return $found;
   }
-  $already = {} unless $already;
-  return 0 if $already->{$_};
+  my $already = @_ ? shift : {};
+  return 0 if exists $already->{$_};
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
   my @isa = get_isa($cvstashname);
@@ -2394,7 +2395,7 @@ sub try_isa {
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
     next if $_ eq $cvstashname;
-    next if $already->{$_};
+    next if exists $already->{$_};
     # warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     no strict 'refs';
     if (defined(&{$_ .'::'. $cvname})) {

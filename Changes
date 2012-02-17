@@ -17,6 +17,7 @@
 	Fixed wrong boot_ arg for the xs version check with --staticxs
 	Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
 	  loaded later.
+	With hek do not drop FAKE, only for const pv
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
