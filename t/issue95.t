@@ -12,7 +12,7 @@ eval "require IO::Socket::SSL;";
 if ($@) {
   plan skip_all => "IO::Socket::SSL required for testing issue95" ;
 } else {
-  plan tests => 5;
+  plan tests => 6;
 }
 
 my $issue = <<'EOF1';
@@ -33,6 +33,13 @@ my IO::Socket::SSL $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";
 EOF2
+
+my $plain = <<'EOF3';
+package dummy;
+my $invoked_as_script = !caller();
+__PACKAGE__->script(@ARGV) if $invoked_as_script;
+sub script {my($package,@args)=@_;print "ok"}
+EOF3
 
 sub compile_check {
   my ($num,$b,$base,$script,$cmt) = @_;
@@ -65,5 +72,6 @@ sub compile_check {
 }
 
 compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method");
-compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed method'); #optimization NYI
-ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');
+compile_check(3,'C,-O3,-UB','ccode95i',$typed,'typed method'); #optimization NYI
+ctestok(5,'C,-O3,-UB','ccode95i',$issue,'TODO run');
+ctestok(6,'C,-O3,-UB','ccode95i',$plain,'TODO find __PACKAGE__');
