@@ -265,7 +265,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
-  svop_or_padop_pv inc_cleanup);
+  svop_pv inc_cleanup);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 use B::C::Flags;
@@ -1348,12 +1348,12 @@ sub pp_const {
   else {
     $obj = $pad[ $op->targ ];
   }
-  # XXX looks like method_named has only const as prev op
+  # XXX looks like method_named has only const as prev op. TODO use the better B::C checks at entersub
   if ($op->next
       and $op->next->can('name')
       and $op->next->name eq 'method_named'
      ) {
-    $package_pv = svop_or_padop_pv($op);
+    $package_pv = svop_pv($op);
     debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};
   }
   push( @stack, $obj );
@@ -1468,7 +1468,7 @@ sub bad_pp_anoncode {
 # XXX TODO get prev op. For now saved in pp_const.
 sub pp_method_named {
   my ( $op ) = @_;
-  my $name = svop_or_padop_pv($op);
+  my $name = svop_pv($op);
   # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PV.
   my $stash = $package_pv ? $package_pv."::" : "main::";
   $name = $stash . $name;

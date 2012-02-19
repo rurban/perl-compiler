@@ -485,10 +485,12 @@ sub cache_svop_pkg {
   } elsif ($svop->name eq 'gv') {
     $sv = $svop->gv;
   }
-  if (@_) { # set
-    $newpkg{$$sv} = shift;
-  } else {  # get
-    return $newpkg{$$sv};
+  if ($sv and $$sv) {
+    if (@_) { # set
+      $newpkg{$$sv} = shift;
+    } else {  # get
+      return $newpkg{$$sv};
+    }
   }
 }
 
@@ -551,7 +553,7 @@ sub svop_pv {
   } else {
     $sv = $op->sv;
   }
-  if ($$sv) {
+  if ($sv and $$sv) {
     return $sv->PV if $sv->can("PV");
   } else {
     my $pv = padop_name($op);
@@ -848,7 +850,8 @@ sub check_entersub {
        # Foo->bar()  compile-time lookup, 64 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
        # or $foo->bar() run-time lookup
-       or $op->first->next->name eq 'padsv')) { # note that padsv is called gvsv in Concise
+       or $op->first->next->name eq 'padsv')) # note that padsv is called gvsv in Concise
+  {
     my $pkgop = $op->first->next; # padsv for objects or const for classes
     my $methop = $pkgop; # walk args until method or sub end. This ends
     do { $methop = $methop->next; } while $methop->name !~ /^method_named|method|gv$/;
@@ -1248,8 +1251,7 @@ sub method_named {
   #  warn $name;
   #  return $name;
   #}
-  my $method;
-  my @candidates;
+  my ($method, @candidates);
   for my $p ( $package_pv, @package_pv, 'main',
 	      grep{$include_package{$_}} keys %include_package,
 	      map{packname_inc($_)} keys %savINC ) {
@@ -1279,7 +1281,7 @@ sub method_named {
       }
     }
   }
-  warn "WARNING: method \"$package_pv\::$name\" found in no packages ",join(" "),@candidates,".\n" if $verbose;
+  warn "WARNING: method \"$package_pv\::$name\" found in no packages ",join(" ",@candidates),".\n" if $verbose;
   warn "Probably need to define the right package with -uPackage, or maybe the method is never called.\n"
     if $verbose and !$method_named_warn++;
   $method = $package_pv.'::'.$name;
