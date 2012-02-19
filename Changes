@@ -23,6 +23,7 @@
 	  PL_strtab hack gone. This fixed the shared_hek destruction
 	  problems.
 	Turn off CvDYNFILE needed since 5.15.4, use static CvFILE. (DateTime)
+	Changed option -DW to -Dw ("walk") for consistency
 	* t/e_perlcc.t: perlcc -stash does not hang anymore, renabled stash section
 	* Stash (1.02): '-xs' does not load B anymore.
 	  Now in seperate directory Stash
