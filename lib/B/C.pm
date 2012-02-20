@@ -349,6 +349,7 @@ BEGIN {
 sub DynaLoader::croak {die @_}
 
 # 5.15.3 workaround [perl #101336], without .bs support
+# XSLoader::load_file($module, $modlibname, ...)
 sub XSLoader::load_file {
   #package DynaLoader;
   use Config ();
@@ -387,10 +388,10 @@ sub XSLoader::load_file {
   # in this perl code simply because this was the last perl code
   # it executed.
 
-  my $libref = DynaLoader::dl_load_file($file, 0) or do { 
+  my $libref = DynaLoader::dl_load_file($file, 0) or do {
     die("Can't load '$file' for module $module: " . DynaLoader::dl_error());
   };
-  push(@DynaLoader::dl_librefs,$libref);  # record loaded object
+  push(@DynaLoader::dl_librefs, $libref);  # record loaded object
 
   my @unresolved = DynaLoader::dl_undef_symbols();
   if (@unresolved) {
@@ -1214,8 +1215,8 @@ sub B::PVOP::save {
 sub push_package ($;$) {
   my $p = shift or return;
   my $soft = shift;
-  #warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
-  #  if $debug{meth} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
+  warn "save package_pv \"$p\" for method_name\n"
+    if $debug{meth} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   if ($soft) {
     push @package_pv, $p; 		       # add to the end
@@ -4703,10 +4704,6 @@ _EOT9
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
 	  print "#ifdef USE_DYNAMIC_LOADING\n";
-	  if ($] >= 5.015003) {
-	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
-	  }
-	  print "\tPUTBACK;\n";
 	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]
@@ -4717,8 +4714,11 @@ _EOT9
 	      B::svref_2object( \@{$stashname."::ISA"} ) ->save;
 	    }
 	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
+	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
+	    print "\tPUTBACK;\n";
 	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
 	  } else {
+	    print "\tPUTBACK;\n";
 	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/,
 	      $stashfile if $stashfile;
 	    print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;

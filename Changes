@@ -4,8 +4,9 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.43	2012-02-xx rurban
-	* C: Improved package detection for methods:  issue95 and t/perldoc.t:
-	  parent @File::Spec::ISA was not saved.
+	Improved package detection for methods
+
+	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
 	Detect typed lexicals objects to reliably find method packages.
 	Sanified package_pv default a bit when a method padsv was not
 	  found. Check for method_named as last argument of methods.
@@ -21,7 +22,7 @@
 	Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
 	  loaded later.
 	With hek do not drop FAKE, only for const pv.
-	Broke __DATA__ (15), dbmopen (i24)
+	Broke __DATA__ (15), dbmopen (i24), Test::NoWarnings
 	* CC (1.13): added check_entersub, check_bless - bless and new caching
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
