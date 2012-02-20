@@ -1220,6 +1220,7 @@ sub push_package ($;$) {
   warn "save package_pv \"$p\" for method_name\n"
     if $debug{meth} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
+  $soft = 1 if $p =~ /^B::/; # improve our chances not to pull in B
   if ($soft) {
     push @package_pv, $p; 		       # add to the end
   } else {
@@ -1281,6 +1282,7 @@ sub method_named {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded
       return if $method eq 'threads::tid' and !$ITHREADS;
+      return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
