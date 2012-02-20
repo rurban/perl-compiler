@@ -1280,7 +1280,8 @@ sub method_named {
       return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
-      # Without ithreads threads.pm is not loaded
+      # Without ithreads threads.pm is not loaded. This broke 15 by sideeffect,
+      # omitting DynaLoader methods.
       return if $method eq 'threads::tid' and !$ITHREADS;
       return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
@@ -3907,6 +3908,7 @@ sub B::IO::save_data {
     require PerlIO;
     require PerlIO::scalar;
     $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
+    force_saving_xsloader();
     mark_package("PerlIO", 1);
     $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
     $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
