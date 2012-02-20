@@ -457,7 +457,7 @@ warn %OP_COP if $debug{cops};
 sub padop_name {
   my $op = shift;
   my $cv = shift;
-  if ($op->can('name') and $op->name eq 'padsv') {
+  if ($op->can('name') and ($op->name eq 'padsv' or $op->name eq 'method_named')) {
     my @c = $cv ? $cv->PADLIST : comppadlist->ARRAY;
     my $depth = 1 + ($cv ? $cv->DEPTH : main_cv->DEPTH);
     my @pad = $c[$depth]->ARRAY;
@@ -517,7 +517,7 @@ sub svop_name {
     } else {
       $sv = $op->sv;
     }
-    if ($$sv) {
+    if ($sv and $$sv) {
       if ($sv->FLAGS & SVf_ROK) {
 	return '' if $sv->isa("B::NULL");
 	my $rv = $sv->RV;
@@ -560,7 +560,7 @@ sub svop_pv {
   }
   if ($sv and $$sv) {
     return $sv->PV if $sv->can("PV");
-  } else {
+  } else { # threaded
     my $pv = padop_name($op);
     return $pv;
   }
@@ -862,7 +862,7 @@ sub check_entersub {
     do { $methop = $methop->next; } while $methop->name !~ /^method_named|method$/;
     my $methopname = $methop->name;
     if (substr($methopname,0,6) eq 'method') {
-      my $methodname = svop_pv($methop);
+      my $methodname = $methopname eq 'method' ? svop_name($methop) : svop_pv($methop);
       warn "check package_pv ".$pkgop->name." for $methopname \"$methodname\"\n" if $debug{meth};
       if ($pkgop->name eq 'const') {
 	my $pv = svop_pv($pkgop); # 5.13: need to store away the pkg pv
@@ -1214,8 +1214,8 @@ sub B::PVOP::save {
 sub push_package ($;$) {
   my $p = shift or return;
   my $soft = shift;
-  warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
-    if $debug{meth} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
+  #warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
+  #  if $debug{meth} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
   if ($soft) {
     push @package_pv, $p; 		       # add to the end

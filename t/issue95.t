@@ -41,7 +41,7 @@ sub compile_check {
   print F $script;
   close F;
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  $b .= ',-DCsp,-v';
+  $b .= ',-DCmsp,-v';
   my ($result,$out,$stderr) =
     run_cmd("$X -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl", 20);
   unless (-e "$name.c") {
@@ -53,16 +53,12 @@ sub compile_check {
   if (!$stderr and $out) {
     $stderr = $out;
   }
-  my $notfound = $stderr =~ /blocking not found/;
-  ok(!$notfound, $cmt);
-  # check stderr for "save package_pv "blocking" for method_name"
-  my $found = $stderr =~ /save package_pv "blocking" for method_name/;
- TODO: {
-   local $TODO = "wrong package_pv blocking";
-   ok(!$found, $cmt);
-  }
+  my $notfound = $stderr =~ /save package_pv "blocking" for method_name/;
+  ok(!$notfound, $cmt.' mixed up as package');
+  my $found = $stderr =~ /save found method_name "IO::Socket::blocking"/;
+  ok(!$found, $cmt.' found');
 }
 
-compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method found in \@ISA");
-compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
+compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method");
+compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed method'); #NYI
 ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');
