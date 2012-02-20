@@ -463,8 +463,8 @@ sub padop_name {
     my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
     if (my $sv = $pad[$op->targ]) {
-      if (ref($types[$op->targ]) ne 'B::SPECIAL') {
-	my $pv = $types[1]->PVX;
+      if (defined($types[$op->targ]) and ref($types[$op->targ]) ne 'B::SPECIAL') {
+	my $pv = $types[1]->can('PVX') ? $types[1]->PVX : '';
 	# need to fix B for SVpad_TYPEDI without formal STASH
 	my $stash = ref($types[$op->targ]) eq 'B::PVMG' ? $types[1]->SvSTASH->NAME : '';
 	return wantarray ? ($stash,$pv,$sv) : $pv;
