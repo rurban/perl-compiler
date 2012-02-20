@@ -41,5 +41,7 @@ log.test-*
 log.make-*
 log.do-*
 log.testvm-*
+log.modules-*.err
+log.modules-5*-201*-*
 .DS_Store
 B-C-*.tar.gz

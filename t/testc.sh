@@ -4,7 +4,7 @@
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-$ntests]"
-  echo " -D<debugflags>     for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
+  echo " -D<debugflags>     for O=C or O=CC. Default: C,-DspmF,-v resp. CC,-DOscpSql,-v"
   echo " -O<0-4>            optimization level"
   echo " -f<opt>            special optimization"
   echo " -B<static|dynamic> pass to cc_harness"
@@ -32,14 +32,14 @@ v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
 if [ -z "$Mblib" ]; then
     VERS="${VERS}_global"; 
-    OCMD="$PERL $Mblib -MO=C,${v513}-DcspF,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-Dcsp,"
     if [ $BASE = "testcc.sh" ]; then # DrOsplt 
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,${v513}-DspF,-v,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-DspmF,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
-        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
+        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSqlm,-v,"
     fi
 fi
 CONT=
@@ -320,9 +320,11 @@ result[49]='ok'
 # @ISA issue 64
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
-# XXX TODO check if signals work, sigwarn and SIG{INT}
-tests[51]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
+tests[51]='sub Top::top{q(ok)};package Next;our @ISA=qw(Top);sub new{bless{},"Next"};package main;my $obj=new Next;print $obj->top();'
 result[51]='ok'
+# XXX TODO check if signals work, sigwarn and SIG{INT}
+tests[52]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
+result[52]='ok'
 #-------------
 # issue27
 tests[70]='require LWP::UserAgent;print q(ok);'

@@ -247,7 +247,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 # Start registering the L<types> namespaces.
 $int::VERSION = $double::VERSION = $string::VERSION = '0.01';
@@ -265,7 +265,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
-  svop_or_padop_pv inc_cleanup);
+  inc_cleanup);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 use B::C::Flags;
@@ -1348,14 +1348,6 @@ sub pp_const {
   else {
     $obj = $pad[ $op->targ ];
   }
-  # XXX looks like method_named has only const as prev op
-  if ($op->next
-      and $op->next->can('name')
-      and $op->next->name eq 'method_named'
-     ) {
-    $package_pv = svop_or_padop_pv($op);
-    debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};
-  }
   push( @stack, $obj );
   return $op->next;
 }
@@ -1388,7 +1380,6 @@ sub pp_nextstate {
 sub pp_dbstate { pp_nextstate(@_) }
 
 #default_pp will handle this:
-#sub pp_bless { $curcop->write_back; default_pp(@_) }
 #sub pp_repeat { $curcop->write_back; default_pp(@_) }
 # The following subs need $curcop->write_back if we decide to support arybase:
 # pp_pos, pp_substr, pp_index, pp_rindex, pp_aslice, pp_lslice, pp_splice
@@ -1465,16 +1456,11 @@ sub bad_pp_anoncode {
 }
 
 # coverage: 35
-# XXX TODO get prev op. For now saved in pp_const.
+# XXX TODO store package_pv in entersub and bless
 sub pp_method_named {
   my ( $op ) = @_;
-  my $name = svop_or_padop_pv($op);
-  # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PV.
-  my $stash = $package_pv ? $package_pv."::" : "main::";
-  $name = $stash . $name;
-  debug "save method_name \"$name\"\n" if $debug{op};
-  svref_2object( \&{$name} )->save;
-
+  my $cv = B::C::method_named(B::C::svop_pv($op));
+  $cv->save if $cv;
   default_pp(@_);
 }
 
@@ -2142,8 +2128,18 @@ sub pp_entersub {
           "\tSPAGAIN;}");
   $know_op = 0;
   invalidate_lexicals( REGISTER | TEMPORARY );
+  B::C::check_entersub($op);
   return $op->next;
 }
+
+# coverage: 16,26,35,51,72,73
+sub pp_bless {
+  my $op = shift;
+  $curcop->write_back if $curcop;
+  B::C::check_bless($op);
+  default_pp($op);
+}
+
 
 # coverage: ny
 sub pp_formline {
