@@ -702,10 +702,13 @@ sub ivx ($) {
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/"//g; #" poor editor
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
-  # UL if > INT32_MAX = 2147483647
-  my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? "UL" : "");
+  # LL if INT32_MAX .. INT64_MAX
+  # UL  if > INT32_MAX = 2147483647
+  my $ll = $Config{d_longlong} ? "LL" : "UL";
+  my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax  ? $ll : "");
   if ($ivx < -$intmax) {
-    $sval = sprintf("%${ivdformat}%s", $ivx, "L"); # DateTime
+    my $l = $Config{d_longlong} ? "LL" : "L";
+    $sval = sprintf("%${ivdformat}%s", $ivx, $l); # DateTime
   }
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   return $sval;
