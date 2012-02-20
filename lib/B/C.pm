@@ -507,7 +507,7 @@ sub svop_name {
 	$sv = $op->pmreplroot->sv;
       } else {
 	$sv = $op->first->sv unless $op->flags & 4
-	  or ($op->name eq 'const' and $op->flags & 64) or $op->first->can("sv");
+	  or ($op->name eq 'const' and $op->flags & 34) or $op->first->can("sv");
       }
     } else {
       $sv = $op->sv;
@@ -533,8 +533,8 @@ sub svop_name {
   }
 }
 
-# Returns a SVOP->pv (const pv mostly). for the symbol and stash name see svop_name
-# 1. called from method_named to get the pv
+# Returns a SVOP->pv (const PV or method_named PV mostly). for the symbol and stash name see svop_name
+# 1. called from check_entersub/method_named to get the pv
 # 2. called from svop before method/method_named to cache the $package_pv
 sub svop_pv {
   my $op = shift;
@@ -548,7 +548,7 @@ sub svop_pv {
       $sv = $op->pmreplroot->sv;
     } else {
       $sv = $op->first->sv unless $op->flags & 4
-	or ($op->name eq 'const' and $op->flags & 64) or $op->first->can("sv");
+	or ($op->name eq 'const' and $op->flags & 34) or $op->first->can("sv");
     }
   } else {
     $sv = $op->sv;
@@ -847,10 +847,10 @@ sub check_entersub {
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
-       # Foo->bar()  compile-time lookup, 64 = BARE in all versions
-      (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
-       # or $foo->bar() run-time lookup
-       or $op->first->next->name eq 'padsv')) # note that padsv is called gvsv in Concise
+       # Foo->bar()  compile-time lookup, 34 WANT_SCALAR,MOD in all versions
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
+        # or $foo->bar() run-time lookup
+        or $op->first->next->name eq 'padsv')) # note that padsv is called gvsv in Concise
   {
     my $pkgop = $op->first->next; # padsv for objects or const for classes
     my $methop = $pkgop; # walk args until method or sub end. This ends
