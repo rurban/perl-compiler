@@ -30,7 +30,7 @@ BASE=`basename $0`
 Mblib=${Mblib:--Iblib/arch -Iblib/lib} # B::C is now fully 5.6+5.8 backwards compatible
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
-if [ -z $Mblib ]; then 
+if [ -z "$Mblib" ]; then
     VERS="${VERS}_global"; 
     OCMD="$PERL $Mblib -MO=C,${v513}-Dcsp,"
     if [ $BASE = "testcc.sh" ]; then # DrOsplt 
