@@ -454,18 +454,20 @@ $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL512;
 warn %OP_COP if $debug{cops};
 
 # scalar: pv. list: (stash,pv,sv)
-# pads are not named
+# pads are not named, but may be typed
 sub padop_name {
   my $op = shift;
-  my $cv = shift;
+  my $curcv = shift;
   if ($op->can('name') and ($op->name eq 'padsv' or $op->name eq 'method_named')) {
-    my @c = $cv ? $cv->PADLIST : comppadlist->ARRAY;
-    my $depth = 1 + ($cv ? $cv->DEPTH : main_cv->DEPTH);
-    my @pad = $c[$depth]->ARRAY;
-    my @t = $c[0]->ARRAY;
+    my @c = $curcv ? $curcv->PADLIST : comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    my @types = $c[0]->ARRAY;
     if (my $sv = $pad[$op->targ]) {
-      if (!$$sv and ref($t[$op->targ] eq 'B::PVMG')) {
-	return $t[1]->SvSTASH->NAME; # type name
+      if (ref($types[$op->targ]) ne 'B::SPECIAL') {
+	my $pv = $types[1]->PVX;
+	# need to fix B for SVpad_TYPEDI without formal STASH
+	my $stash = ref($types[$op->targ]) eq 'B::PVMG' ? $types[1]->SvSTASH->NAME : '';
+	return wantarray ? ($stash,$pv,$sv) : $pv;
       } else {
 	my $pv = $sv->PV if $sv->can("PV");
 	my $stash = $sv->STASH->NAME if $sv->can("STASH");
@@ -506,7 +508,7 @@ sub svop_name {
   my $sv;
   if ($op->can('name') and $op->name eq 'padsv') {
     my @r = padop_name($op);
-    return $r[1];
+    return $r[1] ? $r[1] : $r[0];
   } else {
     if (!$op->can("sv")) {
       if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -876,7 +878,7 @@ sub check_entersub {
 	  if ($methopname eq 'method_named' and 'new' eq svop_pv($methop)) {
 	    my $symop = $op->next;
 	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv') and $symop->next->name eq 'sassign') {
-	      warn "cache object \$",svop_name($symop)," = new $pv;\n"
+	      warn "cache object ",svop_name($symop)," = new $pv;\n"
 		if $debug{meth};
 	      cache_svop_pkg($symop, $pv);
 	    }
@@ -885,14 +887,14 @@ sub check_entersub {
 	  push_package($package_pv);
 	}
       } elsif ($pkgop->name eq 'padsv') { # check cached obj class
-	my $objname = svop_name($pkgop);
+	my $objname = padop_name($pkgop);
 	if (my $pv = cache_svop_pkg($pkgop)) {
-	  warn "cached package_pv of object $objname for $methopname $methodname found: \"$pv\"\n"
+	  warn "cached package_pv of object $objname for $methopname \"$methodname\" found: \"$pv\"\n"
 	    if $debug{meth};
 	  $package_pv = $pv;
 	  push_package($package_pv);
 	} else {
-	  warn "package_pv of object $objname for $methopname $methodname not found\n"
+	  warn "package_pv of object $objname for $methopname \"$methodname\" not found\n"
 	    if $debug{meth};
 	}
       } else {
@@ -928,7 +930,7 @@ sub check_bless {
     my $pv = svop_pv($pkgop);
     if ($pv and $pv !~ /[! \(]/) {
       my $symop = $op->next;
-      warn sprintf("cache \$%s = bless(..., \"$pv\")\n", svop_name($symop)) if $debug{meth};
+      warn sprintf("cache %s = bless(..., \"$pv\")\n", svop_name($symop)) if $debug{meth};
       cache_svop_pkg($symop, $pv);
       $package_pv = $pv;
       push_package($package_pv);
