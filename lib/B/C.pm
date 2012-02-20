@@ -467,7 +467,7 @@ sub padop_name {
     if (defined($t) and ref($t) ne 'B::SPECIAL') {
       my $pv = $t->can('PVX') ? $t->PVX : '';
       # need to fix B for SVpad_TYPEDI without formal STASH
-      my $stash = ref($t) eq 'B::PVMG' ? $t->SvSTASH->NAME : '';
+      my $stash = (ref($t) eq 'B::PVMG' and ref($t->SvSTASH) ne 'B::SPECIAL') ? $t->SvSTASH->NAME : '';
       return wantarray ? ($stash,$pv,$sv) : $pv;
     } elsif ($sv) {
       my $pv = $sv->PV if $sv->can("PV");
