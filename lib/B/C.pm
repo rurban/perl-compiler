@@ -839,7 +839,7 @@ my $opsect_common =
 # Compile-time method_named packages are always const PV sM/BARE.
 # run-time packages ("objects") are in padsv (printed as gvsv).
 #   my Foo $obj = shift; $obj->bar();
-# entersub -> pushmark -> package -> args.. -> method_named|method|gv
+# entersub -> pushmark -> package -> args.. -> method_named|method
 # See perl -MO=Terse -e '$foo->bar("var")'
 # See also http://www.perl.com/pub/2000/06/dougpatch.html
 sub check_entersub {
