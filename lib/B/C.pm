@@ -461,10 +461,15 @@ sub padop_name {
     my @c = $cv ? $cv->PADLIST : comppadlist->ARRAY;
     my $depth = 1 + ($cv ? $cv->DEPTH : main_cv->DEPTH);
     my @pad = $c[$depth]->ARRAY;
+    my @t = $c[0]->ARRAY;
     if (my $sv = $pad[$op->targ]) {
-      my $pv = $sv->PV if $sv->can("PV");
-      my $stash = $sv->STASH->NAME if $sv->can("STASH");
-      return wantarray ? ($stash,$pv,$sv) : $pv;
+      if (!$$sv and ref($t[$op->targ] eq 'B::PVMG')) {
+	return $t[1]->SvSTASH->NAME; # type name
+      } else {
+	my $pv = $sv->PV if $sv->can("PV");
+	my $stash = $sv->STASH->NAME if $sv->can("STASH");
+	return wantarray ? ($stash,$pv,$sv) : $pv;
+      }
     }
   }
 }
@@ -879,13 +884,14 @@ sub check_entersub {
 	  push_package($package_pv);
 	}
       } elsif ($pkgop->name eq 'padsv') { # check cached obj class
+	my $objname = svop_name($pkgop);
 	if (my $pv = cache_svop_pkg($pkgop)) {
-	  warn "cached package_pv of object for $methopname $methodname found: \"$pv\"\n"
+	  warn "cached package_pv of object $objname for $methopname $methodname found: \"$pv\"\n"
 	    if $debug{meth};
 	  $package_pv = $pv;
 	  push_package($package_pv);
 	} else {
-	  warn "package_pv of object for $methopname $methodname not found\n"
+	  warn "package_pv of object $objname for $methopname $methodname not found\n"
 	    if $debug{meth};
 	}
       } else {
@@ -911,13 +917,13 @@ sub check_bless {
   my $op = shift;
   if ($op->type > 0 and
       $op->name eq 'bless' and
-      $op->first and $op->first->next->next->name eq 'pushmark' and
-      $op->first->next->next->next->next->name eq 'const' and
+      $op->first and $op->first->next->name eq 'pushmark' and
+      $op->first->next->next->next->name eq 'const' and
       ($op->next->name eq 'padsv' or $op->next->name eq 'gvsv') and
       $op->next->next->name eq 'sassign'
      )
   {
-    my $pkgop = $op->first->next->next->next->next;
+    my $pkgop = $op->first->next->next->next;
     my $pv = svop_pv($pkgop);
     if ($pv and $pv !~ /[! \(]/) {
       my $symop = $op->next;
