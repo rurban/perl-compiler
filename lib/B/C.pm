@@ -462,17 +462,17 @@ sub padop_name {
     my @c = $curcv ? $curcv->PADLIST : comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
-    if (my $sv = $pad[$op->targ]) {
-      if (defined($types[$op->targ]) and ref($types[$op->targ]) ne 'B::SPECIAL') {
-	my $pv = $types[1]->can('PVX') ? $types[1]->PVX : '';
-	# need to fix B for SVpad_TYPEDI without formal STASH
-	my $stash = ref($types[$op->targ]) eq 'B::PVMG' ? $types[1]->SvSTASH->NAME : '';
-	return wantarray ? ($stash,$pv,$sv) : $pv;
-      } else {
-	my $pv = $sv->PV if $sv->can("PV");
-	my $stash = $sv->STASH->NAME if $sv->can("STASH");
-	return wantarray ? ($stash,$pv,$sv) : $pv;
-      }
+    my $sv = $pad[$op->targ];
+    my $t = $types[$op->targ];
+    if (defined($t) and ref($t) ne 'B::SPECIAL') {
+      my $pv = $t->can('PVX') ? $t->PVX : '';
+      # need to fix B for SVpad_TYPEDI without formal STASH
+      my $stash = ref($t) eq 'B::PVMG' ? $t->SvSTASH->NAME : '';
+      return wantarray ? ($stash,$pv,$sv) : $pv;
+    } elsif ($sv) {
+      my $pv = $sv->PV if $sv->can("PV");
+      my $stash = $sv->STASH->NAME if $sv->can("STASH");
+      return wantarray ? ($stash,$pv,$sv) : $pv;
     }
   }
 }
