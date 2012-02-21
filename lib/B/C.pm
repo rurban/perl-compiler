@@ -846,6 +846,19 @@ my $opsect_common =
   $opsect_common .= ", flags, private";
 }
 
+# run-time loaded package, detected via bless or new.
+sub force_dynpackage {
+  my $pv = shift;
+  no strict 'refs';
+  if ($pv !~ /^B::/ and !%{"$pv::"}) { # XXX only loaded at run-time
+    eval "require $pv;";
+    if (!$@) {
+      warn "load \"$pv\"\n" if $debug{meth};
+      mark_package($pv);
+    }
+  }
+}
+
 # Heuristic to check method calls for the class to store the full sub name.
 # Also associate objects with classes - $obj=new Class; - to resolve method calls later.
 # Compile-time method_named packages are always const PV sM/BARE.
@@ -884,7 +897,9 @@ sub check_entersub {
 	    my $symop = $op->next;
 	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
 		and $symop->next->name eq 'sassign') {
+	      no strict 'refs';
 	      warn "cache object $objname = new $pv;\n" if $debug{meth};
+	      force_dynpackage($pv);
 	      svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
 	      cache_svop_pkg($symop, $pv);
 	    }
@@ -937,6 +952,7 @@ sub check_bless {
       my $symop = $op->next;
       warn sprintf("cache %s = bless(..., \"$pv\")\n", svop_name($symop)) if $debug{meth};
       cache_svop_pkg($symop, $pv);
+      force_dynpackage($pv);
       $package_pv = $pv;
       push_package($package_pv);
     }
@@ -1316,7 +1332,7 @@ sub method_named {
     }
   }
   warn "WARNING: method \"$package_pv->$name\" not found"
-      . ($verbose ? " in no packages ".join(" ",@candidates) : "")
+      . ($verbose ? " in ".join(" ",@candidates) : "")
       .".\n";
   warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
     if $verbose and !$method_named_warn++;
@@ -2762,13 +2778,15 @@ sub B::CV::save {
     else {
       # XSUBs for IO::File, IO::Handle, IO::Socket, IO::Seekable and IO::Poll
       # are defined in IO.xs, so let's bootstrap it
-      my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
+      my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll IO::Select IO::Dir IO::Pipe);
       if (grep { $stashname eq $_ } @IO) {
 	# mark_package('IO', 1);
 	# $xsub{IO} = 'Dynamic-'. $INC{'IO.pm'}; # XSLoader (issue59)
 	svref_2object( \&IO::bootstrap )->save;
-	mark_package('IO::Handle', 1);
-	mark_package('SelectSaver', 1);
+	mark_unused('IO::Select', 1 );  #weak (do not delete)
+	mark_package('IO::Handle', 1);  #strong (force)
+	mark_package('SelectSaver', 1); #strong (force)
+	#mark_package('IO::Select', 1 );
 	#for (@IO) { # mark all IO packages
 	#  mark_package($_, 1);
 	#}
