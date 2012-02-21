@@ -534,7 +534,8 @@ sub svop_name {
 	if ($op->name eq 'gvsv') {
 	  return $sv->STASH->NAME.'::'.$sv->NAME;
 	} else {
-	  return $sv->STASH->NAME;
+	  return $sv->can('STASH') ? $sv->STASH->NAME
+	    : $sv->can('NAME') ? $sv->NAME : $sv->PV;
 	}
       }
     }
@@ -877,12 +878,14 @@ sub check_entersub {
 	  # unless they are typed.
 	  # We can catch the 'new' method and assign the const package_pv to the symbol
 	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
-	  # Note: 'new' is no keyword (yet), we check bless also.
+	  # Note: 'new' is no keyword (yet), but good enough. We check bless also.
 	  if ($methopname eq 'method_named' and 'new' eq svop_pv($methop)) {
+	    my $objname = svop_name($pkgop);
 	    my $symop = $op->next;
-	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv') and $symop->next->name eq 'sassign') {
-	      warn "cache object ",svop_name($symop)," = new $pv;\n"
-		if $debug{meth};
+	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
+		and $symop->next->name eq 'sassign') {
+	      warn "cache object $objname = new $pv;\n" if $debug{meth};
+	      svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
 	      cache_svop_pkg($symop, $pv);
 	    }
 	  }
@@ -892,13 +895,12 @@ sub check_entersub {
       } elsif ($pkgop->name eq 'padsv') { # check cached obj class
 	my $objname = padop_name($pkgop);
 	if (my $pv = cache_svop_pkg($pkgop)) {
-	  warn "cached package_pv of object $objname for $methopname \"$methodname\" found: \"$pv\"\n"
-	    if $debug{meth};
+	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
+	  svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
 	  $package_pv = $pv;
 	  push_package($package_pv);
 	} else {
-	  warn "package_pv of object $objname for $methopname \"$methodname\" not found\n"
-	    if $debug{meth};
+	  warn "package for $objname->$methodname not found\n" if $debug{meth};
 	}
       } else {
 	my $methodname = svop_pv($methop);
@@ -1304,7 +1306,7 @@ sub method_named {
 	}
       }
       $method = $p.'::'.$name;
-      warn "3nd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
+      warn "3rd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
       for (map{packname_inc($_)} keys %savINC) {
 	if ($method = find_method($_, $name)) {
 	  warn "save found method_name \"$method\"\n" if $debug{cv};
@@ -1313,7 +1315,7 @@ sub method_named {
       }
     }
   }
-  warn "WARNING: method \"$package_pv\::$name\" found in no packages ",join(" ",@candidates),".\n" if $verbose;
+  warn "WARNING: method \"$package_pv\::$name\" found in no packages ",join(" ",@candidates),".\n";
   warn "Probably need to define the right package with -uPackage, or maybe the method is never called.\n"
     if $verbose and !$method_named_warn++;
   $method = $package_pv.'::'.$name;
