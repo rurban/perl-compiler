@@ -884,7 +884,12 @@ sub check_entersub {
 	    my $symop = $op->next;
 	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
 		and $symop->next->name eq 'sassign') {
+	      no strict 'refs';
 	      warn "cache object $objname = new $pv;\n" if $debug{meth};
+	      unless (%{"$pv::"}) {
+		eval "require $pv;" ;
+		warn "load \"$pv\"\n" if !$@ and $debug{meth};
+	      }
 	      svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
 	      cache_svop_pkg($symop, $pv);
 	    }
@@ -895,7 +900,12 @@ sub check_entersub {
       } elsif ($pkgop->name eq 'padsv') { # check cached obj class
 	my $objname = padop_name($pkgop);
 	if (my $pv = cache_svop_pkg($pkgop)) {
+	  no strict 'refs';
 	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
+	  unless (%{"$pv::"}) {
+	    eval "require $pv;" ;
+	    warn "load \"$pv\"\n" if !$@ and $debug{meth};
+	  }
 	  svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
 	  $package_pv = $pv;
 	  push_package($package_pv);
@@ -1288,7 +1298,7 @@ sub method_named {
       # Without ithreads threads.pm is not loaded. This broke 15 by sideeffect,
       # omitting DynaLoader methods.
       return if $method eq 'threads::tid' and !$ITHREADS;
-      return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
+      return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa'; # this is ours
       if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
@@ -1300,6 +1310,11 @@ sub method_named {
       $method = $p.'::'.$name;
       warn "2nd round to find the package for \"$method\"\n" if $debug{cv};
       for (keys %include_package) {
+	my $pack = packname_inc($_);
+	if (!$INC{$pack} and $savINC{$pack} and $_ !~ m/^B::/) {
+	  eval "require $_;";
+	  warn "reload \"$_\"\n" if !$@ and $debug{meth};
+	}
 	if ($method = find_method($_, $name)) {
 	  warn "save found method_name \"$method\"\n" if $debug{cv};
 	  return svref_2object( \&{$method} );
@@ -1307,17 +1322,22 @@ sub method_named {
       }
       $method = $p.'::'.$name;
       warn "3rd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
-      for (map{packname_inc($_)} keys %savINC) {
-	if ($method = find_method($_, $name)) {
+      for (keys %INC, keys %savINC) {
+	my $pack = packname_inc($_);
+	if ($method = find_method($pack, $name)) {
 	  warn "save found method_name \"$method\"\n" if $debug{cv};
 	  return svref_2object( \&{$method} );
 	}
       }
     }
   }
-  warn "WARNING: method \"$package_pv\::$name\" found in no packages ",join(" ",@candidates),".\n";
-  warn "Probably need to define the right package with -uPackage, or maybe the method is never called.\n"
-    if $verbose and !$method_named_warn++;
+  if ($name !~ /^can|isa$/) {
+    warn "WARNING: method for \"$package_pv->$name\" not found in ",join(" ",@candidates),".\n";
+    warn "Probably need to define the right package with -uPackage, or maybe the method is never called.\n"
+      if $verbose and !$method_named_warn++;
+  } else {
+    $package_pv = 'UNIVERSAL';
+  }
   $method = $package_pv.'::'.$name;
   return svref_2object( \&{$method} );
 }
@@ -2833,9 +2853,8 @@ sub B::CV::save {
 
   if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
-    if ($cvxsub) {
-      warn sprintf( "Ignore XS CONSTSUB $fullname CV 0x%x\n", $$cv )
-	if $debug{cv};
+    if ($xsub{$cvstashname}) { # not use constant, just XS imports, as they are added later
+      warn sprintf( "Ignore XS CONSTSUB $fullname CV 0x%x\n", $$cv ) if $debug{cv};
       return qq/NULL/;
       # $init->add("$cvi = get_cv(\"$fullname\", TRUE);");
     } else {
@@ -2926,7 +2945,7 @@ sub B::CV::save {
     }
   }
   if (!$$root) {
-    warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
+    warn "WARNING: &".$fullname." not found\n" if !$isconst and ($verbose or $debug{sub});
     $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
     if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
       warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
