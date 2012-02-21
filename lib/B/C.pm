@@ -1331,11 +1331,13 @@ sub method_named {
       }
     }
   }
-  warn "WARNING: method \"$package_pv->$name\" not found"
+  if ($name !~ /^tid|can|isa$/) {
+    warn "WARNING: method \"$package_pv->$name\" not found"
       . ($verbose ? " in ".join(" ",@candidates) : "")
-      .".\n";
-  warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
-    if $verbose and !$method_named_warn++;
+	.".\n";
+    warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
+      if $verbose and !$method_named_warn++;
+  }
   $method = $package_pv.'::'.$name;
   return svref_2object( \&{$method} );
 }
