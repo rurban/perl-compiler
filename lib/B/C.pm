@@ -292,7 +292,7 @@ my (%strtable, %hektable, @static_free, %newpkg);
 my %xsub;
 my ($warn_undefined_syms, $method_named_warn);
 my ($staticxs, $outfile);
-my (%include_package, %skip_package, %saved, %isa_cache);
+my (%include_package, %skip_package, %saved, %isa_cache, %method_cache);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
@@ -1279,6 +1279,8 @@ sub find_method {
 sub method_named {
   my $name = shift;
   return unless $name;
+  my $cop = shift;
+  my $loc = $cop ? " at ".$cop->file." line ".$cop->line : "";
   #if (ref($name) eq 'B::CV') {
   #  warn $name;
   #  return $name;
@@ -1289,16 +1291,17 @@ sub method_named {
 	      map{packname_inc($_)} keys %savINC ) {
     push @candidates, $p unless grep {$p eq $_} @candidates;
   }
+ CAND:
   for my $p (@candidates) {
     next if $skip_package{$p}; # forced to skip
     no strict 'refs';
     $method = $p . '::' . $name;
+    last CAND if $method_cache{$method};
     if (defined(&{$method})) {
       $include_package{$p} = 1; # issue59
       $package_pv = $p;
       mark_package($p, 1);
-      warn "save found method_name \"$method\"\n" if $debug{meth};
-      return svref_2object( \&{$method} );
+      last CAND;
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded. This broke 15 by sideeffect,
@@ -1310,29 +1313,34 @@ sub method_named {
 	$include_package{$parent} = 1;
 	$package_pv = $parent; # looks like a good new default
 	mark_package($parent, 1);
-	warn "save found method_name \"$method\"\n" if $debug{meth};
-	return svref_2object( \&{$method} );
+	last CAND;
       }
       $method = $p.'::'.$name;
       warn "2nd round to find the package for \"$method\"\n" if $debug{cv};
       for (keys %include_package) {
 	if ($method = find_method($_, $name)) {
-	  warn "save found method_name \"$method\"\n" if $debug{cv};
-	  return svref_2object( \&{$method} );
+	  last CAND;
 	}
       }
       $method = $p.'::'.$name;
       warn "3rd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
       for (map{packname_inc($_)} keys %savINC) {
 	if ($method = find_method($_, $name)) {
-	  warn "save found method_name \"$method\"\n" if $debug{cv};
-	  return svref_2object( \&{$method} );
+	  last CAND;
 	}
       }
     }
   }
+  if (defined(&{$method})) {
+    unless ($method_cache{$method}) {
+      $method_cache{$method} = $method;
+      warn "save found method_name \"$method\"$loc\n" if $debug{meth};
+    }
+    return svref_2object( \&{$method} );
+  }
   if ($name !~ /^tid|can|isa$/) {
     warn "WARNING: method \"$package_pv->$name\" not found"
+      .$loc
       . ($verbose ? " in ".join(" ",@candidates) : "")
 	.".\n";
     warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
@@ -1340,6 +1348,13 @@ sub method_named {
   }
   $method = $package_pv.'::'.$name;
   return svref_2object( \&{$method} );
+}
+
+# return the next COP for file and line info
+sub curcop {
+  my $op = shift;
+  while ($op and ref($op) ne 'B::COP' and ref($op) ne 'B::NULL') { $op = $op->next; }
+  return ($op and ref($op) eq 'B::COP') ? $op : undef;
 }
 
 sub B::SVOP::save {
@@ -1357,7 +1372,7 @@ sub B::SVOP::save {
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
   }
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_pv($op));
+    my $cv = method_named(svop_pv($op), curcop($op));
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
@@ -1383,7 +1398,7 @@ sub B::PADOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_pv($op));
+    my $cv = method_named(svop_pv($op), curcop($op));
     $cv->save if $cv;
   }
   $padopsect->comment("$opsect_common, padix");
@@ -2583,7 +2598,7 @@ sub try_isa {
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
   my @isa = get_isa($cvstashname);
-  warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
+  warn sprintf( "  Search %s::%s in (%s)\n",
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv} or $debug{meth};
   for (@isa) { # global @ISA or in pad
@@ -2633,7 +2648,7 @@ sub try_autoload {
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
   my $fullname = $cvstashname . '::' . $cvname;
-  warn sprintf( "No definition for sub %s. Try %s::AUTOLOAD\n",
+  warn sprintf( "  Search %s via %s::AUTOLOAD\n",
 		$fullname, $cvstashname ) if $debug{cv};
   # First some exceptions, fooled by goto
   if ($cvstashname eq 'Config') {
@@ -2962,7 +2977,7 @@ sub B::CV::save {
     } else {
       # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
       warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
-	if $debug{cv};
+	if $debug{cv} or $verbose;
       # continue, must save the 2 symbols from above
     }
   }
