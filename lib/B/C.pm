@@ -1315,8 +1315,10 @@ sub method_named {
       }
     }
   }
-  warn "WARNING: method \"$package_pv\::$name\" found in no packages ",join(" ",@candidates),".\n";
-  warn "Probably need to define the right package with -uPackage, or maybe the method is never called.\n"
+  warn "WARNING: method \"$package_pv\::$name\" not found"
+      . ($verbose ? " in no packages ".join(" ",@candidates) : "")
+      .".\n";
+  warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
     if $verbose and !$method_named_warn++;
   $method = $package_pv.'::'.$name;
   return svref_2object( \&{$method} );
@@ -2833,7 +2835,7 @@ sub B::CV::save {
 
   if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
-    if ($cvxsub) {
+    if ($xsub{$cvstashname}) { # use constant not, just later added constants from XS
       warn sprintf( "Ignore XS CONSTSUB $fullname CV 0x%x\n", $$cv )
 	if $debug{cv};
       return qq/NULL/;
