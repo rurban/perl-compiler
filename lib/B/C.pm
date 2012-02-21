@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_04';
+our $VERSION = '1.42_05';
 my %debug;
 my $eval_pvs = '';
 
@@ -1315,7 +1315,7 @@ sub method_named {
       }
     }
   }
-  warn "WARNING: method \"$package_pv\::$name\" not found"
+  warn "WARNING: method \"$package_pv->$name\" not found"
       . ($verbose ? " in no packages ".join(" ",@candidates) : "")
       .".\n";
   warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"

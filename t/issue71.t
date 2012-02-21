@@ -30,7 +30,7 @@ EOF
 
 use B::C;
 ctestok(1, "C", "ccode71i", $script,
-	($B::C::VERSION < 1.35 ? "TODO " : ""). "SvANY(REGEXP)=SvANY(CALLREGCOMP)"
+	($B::C::VERSION lt '1.35' ? "TODO " : ""). "SvANY(REGEXP)=SvANY(CALLREGCOMP)"
        );
 
 $script = <<'EOF';
