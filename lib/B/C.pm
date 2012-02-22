@@ -850,7 +850,7 @@ my $opsect_common =
 sub force_dynpackage {
   my $pv = shift;
   no strict 'refs';
-  if ($pv !~ /^B::/ and !%{"$pv::"}) { # XXX only loaded at run-time
+  if (!$skip_package{$pv} and $pv !~ /^B::/ and !%{"$pv::"}) { # XXX only loaded at run-time
     eval "require $pv;";
     if (!$@) {
       warn "load \"$pv\"\n" if $debug{meth};
