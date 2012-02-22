@@ -1341,7 +1341,7 @@ sub method_named {
   if ($name !~ /^tid|can|isa$/) {
     warn "WARNING: method \"$package_pv->$name\" not found"
       .$loc
-      . ($verbose ? " in ".join(" ",@candidates) : "")
+      . ($verbose ? " in (".join(" ",@candidates).")" : "")
 	.".\n";
     warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
       if $verbose and !$method_named_warn++;
@@ -1367,6 +1367,10 @@ sub B::SVOP::save {
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     $svsym = '&PL_sv_undef'; # pad does not need to be saved
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
+  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
+    # do not save a gvsv if just checked for defined'ness
+    my $gvsv = svop_name($op);
+    warn "skip saving gvsv($gvsv) defined\n" if $debug{gv};
   } else {
     my $sv    = $op->sv;
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
@@ -1400,6 +1404,11 @@ sub B::PADOP::save {
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_pv($op), curcop($op));
     $cv->save if $cv;
+  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
+    # do not save a gvsv if just checked for defined'ness.
+    # XXX maybe allow op->flags & SCALAR allow creating the GV
+    my $gvsv = padop_name($op);
+    warn "skip saving gvsv($gvsv) defined\n" if $debug{gv};
   }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
