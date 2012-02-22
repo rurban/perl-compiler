@@ -1338,11 +1338,12 @@ sub method_named {
     }
     return svref_2object( \&{$method} );
   }
-  if ($name !~ /^tid|can|isa$/) {
+  my $b = $Config{archname}."/B\.pm";
+  if ($name !~ /^tid|can|isa|pmreplroot$/ and $loc !~ m/$b line / and $package_pv !~ /^B::/) {
     warn "WARNING: method \"$package_pv->$name\" not found"
-      .$loc
-      . ($verbose ? " in (".join(" ",@candidates).")" : "")
-	.".\n";
+        . $loc
+	. ($verbose ? " in (".join(" ",@candidates).")" : "")
+	. ".\n";
     warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
       if $verbose and !$method_named_warn++;
   }
