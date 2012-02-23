@@ -533,6 +533,8 @@ sub svop_name {
       } else {
 	if ($op->name eq 'gvsv') {
 	  return $sv->STASH->NAME.'::'.$sv->NAME;
+	} elsif ($op->name eq 'gv') {
+	  return $sv->STASH->NAME.'::'.$sv->NAME;
 	} else {
 	  return $sv->can('STASH') ? $sv->STASH->NAME
 	    : $sv->can('NAME') ? $sv->NAME : $sv->PV;
@@ -1363,18 +1365,22 @@ sub B::SVOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   my $svsym = 'Nullsv';
-  my $sv;
   # XXX moose1 crash with 5.8.5-nt, Cwd::_perl_abs_path also
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     $svsym = '&PL_sv_undef'; # pad does not need to be saved
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
-  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
-    # do not save a gvsv if just checked for defined'ness
+  } elsif ($op->name eq 'gv' and $op->next and $op->next->name eq 'rv2cv'
+	   and $op->next->next and $op->next->next->name eq 'defined' ) {
+    my $gv = $op->sv;
     my $gvsv = svop_name($op);
-    warn "skip saving gvsv($gvsv) defined\n" if $debug{gv};
+    warn "skip saving defined(&$gvsv)\n" if $debug{gv}; # defer to run-time
+    $svsym  = '(SV*)' . $gv->save( 8 ); # ~Save_CV in B::GV::save
   } else {
-    my $sv    = $op->sv;
-    $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
+    my $sv  = $op->sv;
+    $svsym  =  $sv->save("svop ".$op->name);
+    if ($svsym !~ /^sv_list/) {
+      $svsym = '(SV*)'.$svsym;
+    }
   }
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_pv($op), curcop($op));
@@ -1405,11 +1411,6 @@ sub B::PADOP::save {
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_pv($op), curcop($op));
     $cv->save if $cv;
-  } elsif ($op->name eq 'gvsv' and $op->next and $op->next->name eq 'defined') {
-    # do not save a gvsv if just checked for defined'ness.
-    # XXX maybe allow op->flags & SCALAR allow creating the GV
-    my $gvsv = padop_name($op);
-    warn "skip saving gvsv($gvsv) defined\n" if $debug{gv};
   }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
@@ -3258,8 +3259,9 @@ sub B::CV::save {
 my @_v = Internals::V() if $] >= 5.011;
 sub B::_V { @_v };
 
+# filter to skip certain types
 sub B::GV::save {
-  my ($gv) = @_;
+  my ($gv, $filter) = @_;
   my $sym = objsym($gv);
   if ( defined($sym) ) {
     warn sprintf( "GV 0x%x already saved as $sym\n", $$gv ) if $debug{gv};
@@ -3415,6 +3417,7 @@ if (0) {
   elsif ( $fullname eq 'main::!' ) { #Errno
     $savefields = Save_HV;
   }
+  $savefields &= ~$filter if ($filter and $filter > 0 and $filter < 64);
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.

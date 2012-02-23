@@ -1,15 +1,15 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=96
-# defined gvsv should not store the gvsv
+# defined &gv should not store the gv->CV
 use strict;
 BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
 use Test::More;
-plan tests => 2;
+plan tests => 3;
 
-my $script = 'defined($B::VERSION) && print q(ok)';
+my $script = 'defined(&B::OP::name) && print q(ok)';
 
 sub compile_check {
   my ($num,$b,$base,$script,$cmt) = @_;
@@ -32,8 +32,9 @@ sub compile_check {
   }
   $stderr =~ s/main::stderr.*//s;
 
-  like($stderr,qr/skip saving gvsv\((B::VERSION|)\) defined/, "should detect and skip B::VERSION");
-  unlike($stderr,qr/GV::save \*B::VERSION done/, "should not save *B::VERSION");
+  like($stderr,qr/skip saving defined\(&B::OP::name\)/, "detect defined(&B::OP::name)");
+  like($stderr,qr/GV::save \*B::OP::name done/, "should save *B::OP::name");
+  unlike($stderr,qr/GV::save &B::OP::name/, "should not save &B::OP::name");
 }
 
-compile_check(1,'C,-O3,-DG','ccode96i',$script,"");
+compile_check(1,'C,-O3,-DGC','ccode96i',$script,"");
