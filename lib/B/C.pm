@@ -2682,7 +2682,7 @@ sub B::CV::save {
 
   if ($isconst and !($cv->CvFLAGS & CVf_ANON)) {
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
-    if ($cvxsub) {
+    if ($xsub{$cvstashname}) { # use constant not, just later added constants from XS
       warn sprintf( "Ignore XS CONSTSUB $fullname CV 0x%x\n", $$cv )
 	if $debug{cv};
       return qq/NULL/;
