@@ -327,22 +327,11 @@ tests[52]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,99
 result[52]='ok'
 #-------------
 # issue27
-tests[70]='require LWP::UserAgent;print q(ok);'
-result[70]='ok'
+tests[227]='require LWP::UserAgent;print q(ok);'
+result[227]='ok'
 #issue 24
-tests[74]='dbmopen(%H,q(f),0644);print q(ok);'
-result[74]='ok'
-# object call: method_named with args.
-tests[72]='package dummy;sub meth{print "ok"};package main;my dummy $o = bless {},"dummy"; $o->meth("const")'
-result[72]='ok'
-# object call: dynamic method_named with args.
-tests[73]='package dummy;sub meth{print "ok"};package main;my $meth="meth";my $o = bless {},"dummy"; $o->$meth("const")'
-result[73]='ok'
-tests[74]='package dummy;
-my $invoked_as_script = !caller();
-__PACKAGE__->script(@ARGV) if $invoked_as_script;
-sub script {my($package,@args)=@_;print "ok"}'
-result[74]='ok'
+tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
+result[224]='ok'
 # issue71
 tests[71]='
 package my;
@@ -361,6 +350,17 @@ package main;
 *f=*my::f;
 print "ok" if f(qr/^(.*)$/ => q("\L$1"));'
 result[71]="ok"
+# object call: method_named with args.
+tests[72]='package dummy;sub meth{print "ok"};package main;my dummy $o = bless {},"dummy"; $o->meth("const")'
+result[72]='ok'
+# object call: dynamic method_named with args.
+tests[73]='package dummy;sub meth{print "ok"};package main;my $meth="meth";my $o = bless {},"dummy"; $o->$meth("const")'
+result[73]='ok'
+tests[74]='package dummy;
+my $invoked_as_script = !caller();
+__PACKAGE__->script(@ARGV) if $invoked_as_script;
+sub script {my($package,@args)=@_;print "ok"}'
+result[74]='ok'
 # issue 71_2+3: cop_warnings issue76 and const destruction issue71 fixed
 # ok with "utf-8-strict"
 tests[75]='

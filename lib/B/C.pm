@@ -1354,7 +1354,7 @@ sub method_named {
 }
 
 # return the next COP for file and line info
-sub curcop {
+sub nextcop {
   my $op = shift;
   while ($op and ref($op) ne 'B::COP' and ref($op) ne 'B::NULL') { $op = $op->next; }
   return ($op and ref($op) eq 'B::COP') ? $op : undef;
@@ -1374,7 +1374,12 @@ sub B::SVOP::save {
     my $gv = $op->sv;
     my $gvsv = svop_name($op);
     warn "skip saving defined(&$gvsv)\n" if $debug{gv}; # defer to run-time
-    $svsym  = '(SV*)' . $gv->save( 8 ); # ~Save_CV in B::GV::save
+    if ($gvsv !~ /^DynaLoader::/) {
+      warn "skip saving defined(&$gvsv)\n" if $debug{gv}; # defer to run-time
+      $svsym  = '(SV*)' . $gv->save( 8 ); # ~Save_CV in B::GV::save
+    } else {
+      $svsym  = '(SV*)' . $gv->save();
+    }
   } else {
     my $sv  = $op->sv;
     $svsym  =  $sv->save("svop ".$op->name);
@@ -1383,7 +1388,7 @@ sub B::SVOP::save {
     }
   }
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_pv($op), curcop($op));
+    my $cv = method_named(svop_pv($op), nextcop($op));
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
@@ -1409,7 +1414,7 @@ sub B::PADOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_pv($op), curcop($op));
+    my $cv = method_named(svop_pv($op), nextcop($op));
     $cv->save if $cv;
   }
   $padopsect->comment("$opsect_common, padix");
@@ -3961,10 +3966,10 @@ sub B::IO::save_data {
     $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s)', $globname, $globname );
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA)",1); DATA being a ref to $data
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
+    force_saving_xsloader();
     require PerlIO;
     require PerlIO::scalar;
     $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
-    force_saving_xsloader();
     mark_package("PerlIO", 1);
     $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
     $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
@@ -5465,7 +5470,7 @@ sub save_unused_subs {
   }
   if ($use_xsloader) {
     force_saving_xsloader();
-    mark_package('Config', 1); # required by Dynaloader and special cased previously
+    # mark_package('Config', 1); # required by Dynaloader and special cased previously
   }
 }
 
@@ -5638,6 +5643,7 @@ sub force_saving_xsloader {
   }
   add_hashINC("XSLoader") if $] < 5.015003;
   add_hashINC("DynaLoader");
+  mark_package('Config', 1); # required by Dynaloader
   $use_xsloader = 0; # do not load again
 }
 
