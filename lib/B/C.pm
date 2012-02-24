@@ -413,9 +413,9 @@ my (
   $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
   $svsect,    $resect,    $xpvsect,    $xpvavsect, $xpvhvsect,
-  $xpvcvsect, $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $orangesect,
-  $free
+  $xpvcvsect, $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect,
+  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,
+  $orangesect,$free
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
