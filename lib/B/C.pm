@@ -799,7 +799,7 @@ sub B::OP::_save_common {
        or $op->first->next->name eq 'padsv')) {
     my $pkgop = $op->first->next;
     my $tmp = $pkgop; # walk args until method_named
-    do { $tmp = $tmp->next; } while $tmp->name !~ /^method_named|method|gv$/;
+    do { $tmp = $tmp->next; } while $tmp->name !~ /^method_named|method$/;
     if ($tmp->name =~ /^method_named|method/) {
       warn "check package_pv ".$pkgop->name." for ".$tmp->name."\n" if $debug{cv};
       my $pv = svop_or_padop_pv($pkgop); # Since 5.13: need to store away the pkg pv
