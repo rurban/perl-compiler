@@ -3480,8 +3480,9 @@ if (0) {
         $init->add( '/* Skip overwriting @main::ARGV */' );
         warn "Skipping GV::save \@$fullname\n" if $debug{gv};
       } else {
+	no strict 'refs';
         warn "GV::save \@$fullname\n" if $debug{gv};
-	warn "save \@$fullname\n" if $gvname eq 'ISA' and $debug{pkg};
+	warn "save \@$fullname=(".join(" ",get_isa($package)).")\n" if $gvname eq 'ISA' and $debug{pkg};
 	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
 	  mark_package('Tie::Hash::NamedCapture', 1);
