@@ -1308,7 +1308,7 @@ sub method_named {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded. This broke 15 by sideeffect,
       # omitting DynaLoader methods.
-      # return if $method eq 'threads::tid' and !$ITHREADS;
+      return svref_2object( \&{'threads::tid'} ) if $method eq 'threads::tid' and !$ITHREADS;
       return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
