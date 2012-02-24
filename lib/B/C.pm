@@ -558,8 +558,11 @@ sub svop_pv {
     if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
       $sv = $op->pmreplroot->sv;
     } else {
-      $sv = $op->first->sv unless $op->flags & 4
-	or ($op->name eq 'const' and $op->flags & 34) or $op->first->can("sv");
+      if ($op->flags & 4 				  # OPf_KIDS
+	  and !($op->name eq 'const' and $op->flags & 64) # !OPpCONST_BARE
+	  and $op->first->can("sv")) {
+	$sv = $op->first->sv;
+      }
     }
   } else {
     $sv = $op->sv;
@@ -1306,8 +1309,8 @@ sub method_named {
       last CAND;
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
-      # Without ithreads threads.pm is not loaded. This broke 15 by sideeffect,
-      # omitting DynaLoader methods.
+      # Without ithreads threads.pm is not loaded. Return none broke 15 and 51 by sideeffect,
+      # omitting DynaLoader methods, eg.
       return svref_2object( \&{'threads::tid'} ) if $method eq 'threads::tid' and !$ITHREADS;
       return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
@@ -1373,7 +1376,6 @@ sub B::SVOP::save {
 	   and $op->next->next and $op->next->next->name eq 'defined' ) {
     my $gv = $op->sv;
     my $gvsv = svop_name($op);
-    warn "skip saving defined(&$gvsv)\n" if $debug{gv}; # defer to run-time
     if ($gvsv !~ /^DynaLoader::/) {
       warn "skip saving defined(&$gvsv)\n" if $debug{gv}; # defer to run-time
       $svsym  = '(SV*)' . $gv->save( 8 ); # ~Save_CV in B::GV::save
@@ -4710,7 +4712,7 @@ _EOT8
       printf "\tXPUSHp(\"%s\", %d);\n", # "::bootstrap" gets appended, TODO
 	0 ? "strdup($stashname)" : $stashname, length($stashname);
       print "\tPUTBACK;\n";
-      print "\tboot_$stashxsub(aTHX_ NULL);\n";
+      print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", TRUE));\n";
       print "\tSPAGAIN;\n";
     }
   }
@@ -4833,7 +4835,7 @@ _EOT9
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
-	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
+	  # CvSTASH(CvGV(cv)) is invalid without (issue 86) - NamedCapture.xs
 	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", TRUE));\n";
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
