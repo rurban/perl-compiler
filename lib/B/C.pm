@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_05';
+our $VERSION = '1.43';
 my %debug;
 my $eval_pvs = '';
 
@@ -1308,7 +1308,7 @@ sub method_named {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded. This broke 15 by sideeffect,
       # omitting DynaLoader methods.
-      return if $method eq 'threads::tid' and !$ITHREADS;
+      # return if $method eq 'threads::tid' and !$ITHREADS;
       return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
@@ -3299,8 +3299,9 @@ if (0) {
   return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
 
   if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
-    $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
-    return $sym;
+    $filter = 8;
+    # $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
+    # return $sym;
   }
   #if ( !defined(*{$fullname}{GLOB}) or $skip_package{$package} or $package =~ /^B::C(C?)::/) {
   #  $init->add(qq[$sym = &PL_sv_undef;]);
