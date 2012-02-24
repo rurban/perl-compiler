@@ -793,8 +793,8 @@ sub B::OP::_save_common {
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
-      # Foo->bar()  compile-time lookup, 64 = BARE in all versions
-      (($op->first->next->name eq 'const' and $op->first->next->flags == 64)
+      # Foo->bar()  compile-time lookup, 34 WANT_SCALAR,MOD in all versions
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
        # or $foo->bar() run-time lookup
        or $op->first->next->name eq 'padsv')) {
     my $pkgop = $op->first->next;
