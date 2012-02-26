@@ -121,7 +121,7 @@ sub choose_backend {
 
 sub generate_code {
 
-    vprint 0, "Compiling $Input";
+    vprint 4, "Compiling $Input";
 
     $BinPerl  = yclept();  # Calling convention for perl.
 
@@ -341,7 +341,7 @@ sub compile_module {
 
 sub compile_byte {
 
-    vprint 1, "Writing B on $Output";
+    vprint 3, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
     if ($] >= 5.007 and $Input =~ /^-e/) {
         $opts = "-H,";
@@ -441,7 +441,7 @@ sub compile_cstyle {
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below
     }
-    vprint 2, "Writing C on $cfile";
+    vprint 3, "Writing C on $cfile";
 
     my $max_line_len = '';
     if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/i) {
@@ -487,9 +487,9 @@ sub compile_cstyle {
                     $ofile =~ s{/}{_}g;
                     $ofile = 'pcc'.$ofile;
                     if (-e $ofile) {
-                        vprint 2, "Using ".$ofile;
+                        vprint 3, "Using ".$ofile;
                     } else {
-                        vprint 1, "Creating ".$ofile;
+                        vprint 3, "Creating ".$ofile;
                         # This fails sometimes
                         my $cmd = "otool -tv $l | \"$^X\" -pe "
         . q{'s{^/}{# .file /};s/^00[0-9a-f]+\s/\t/;s/^\(__(\w+)(,__.*?)?\) section/q(.).lc($1)/e'} 
@@ -512,7 +512,7 @@ sub compile_cstyle {
         }
         $rpath =~ s/^-Wl,-E// if $rpath;         # already done via ccdlflags
         # $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
-        vprint 2, "staticxs: $stash $extra_libs";
+        vprint 4, "staticxs: $stash $extra_libs";
     }
 
     $t0 = [gettimeofday] if opt('time');
@@ -523,7 +523,7 @@ sub compile_cstyle {
     vprint -1, "cc time: $elapsed" if opt('time');
 
     if ($lose and -s $Output) {
-        vprint 2, "Unlinking $cfile";
+        vprint 3, "Unlinking $cfile";
         unlink $cfile or _die("can't unlink $cfile: $!\n");
     }
 }
@@ -904,11 +904,11 @@ sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
     if ($cfile && !opt(S) && !opt(c) && -e $cfile) {
-        vprint 2, "Unlinking $cfile";
+        vprint 4, "Unlinking $cfile";
         unlink $cfile;
     }
     if (opt(staticxs) and !opt(S)) {
-        vprint 2, "Unlinking $cfile.lst";
+        vprint 4, "Unlinking $cfile.lst";
         unlink "$cfile.lst";
     }
 }
