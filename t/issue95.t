@@ -64,7 +64,7 @@ sub compile_check {
   my $notfound = $stderr =~ /save package_pv "blocking" for method_name/;
   ok(!$notfound, $cmt.' mixed up as package');
   my $found = $stderr =~ /save found method_name "IO::Socket::blocking"/;
-  ok(!$found, $cmt.' found');
+  ok($found, $cmt.' found');
 }
 
 compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method");
