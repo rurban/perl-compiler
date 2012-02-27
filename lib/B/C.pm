@@ -253,7 +253,7 @@ my %all_bc_subs = map {$_=>1}
       B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS
    );
 
-# Track all internally used packages. All other may not be deleted automatically
+# Track all internally used packages. All others may not be deleted automatically
 # - hidden methods. -fdelete-pkg
 my %all_bc_pkg = map {$_=>1}
   qw( B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
@@ -261,15 +261,18 @@ my %all_bc_pkg = map {$_=>1}
       B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
       B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
       AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
-      warnings warnings::register DB next maybe maybe::next FileHandle fields vars
+      warnings warnings::register DB next maybe maybe::next FileHandle fields
       AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
       ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
       DynaLoader XSLoader O
    );
+# Note: BEGIN-time sideffect-only packages like strict, vars or constant even without functions
+# should not be deleted, so they are not listed here.
+# Keep: vars strict constant
 
-if (%blib::) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
+if (exists $INC{'blib.pm'}) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
   for (qw(Cwd File File::Spec File::Spec::Unix Dos EPOC blib Scalar
-	  Scalar::Util vars VMS VMS::Filespec VMS::Feature Win32)) {
+	  Scalar::Util VMS VMS::Filespec VMS::Feature Win32)) {
     $all_bc_pkg{$_} = 1;
   }
 }
@@ -5487,8 +5490,12 @@ sub inc_cleanup {
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $INC{$package};
       delete_unsaved_hashINC('utf8');
-    } else {
-      delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
+    } elsif(!$include_package{$pkg}) {
+      if (can_delete($pkg)) {
+	delete_unsaved_hashINC($pkg);
+      } else {
+	warn "Skip deleting $package from \%INC due to -fno-delete-pkg\n" if $debug{pkg};
+      }
     }
   }
   if ($debug{pkg} and $verbose) {
