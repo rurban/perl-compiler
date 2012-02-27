@@ -2,6 +2,7 @@
 p=$(perl -ane'print $F[2] if /^FULLPERL =/' Makefile);
 log=log.critical-`basename $p`-g`git rev-parse HEAD|cut -c1-8`
 test -f $log && mv $log $log~
+# 91 = issue 59
 tests="15 27 29 51 224 227 72 74 91 95"
 echo $p > $log
 git log --oneline -1 >> $log
