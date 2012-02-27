@@ -889,7 +889,7 @@ sub check_entersub {
   {
     my $pkgop = $op->first->next; # padsv for objects or const for classes
     my $methop = $pkgop; # walk args until method or sub end. This ends
-    do { $methop = $methop->next; } 
+    do { $methop = $methop->next; }
       while ($methop->name !~ /^method_named|method$/
 	     or ($methop->name eq 'gv' and $methop->next->name ne 'entersub'));
     my $methopname = $methop->name;

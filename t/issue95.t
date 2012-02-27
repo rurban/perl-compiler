@@ -69,5 +69,5 @@ sub compile_check {
 
 compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method");
 compile_check(3,'C,-O3,-UB','ccode95i',$typed,'typed method'); #optimization NYI
-ctestok(5,'C,-O3,-UB','ccode95i',$issue,'TODO run');
-ctestok(6,'C,-O3,-UB','ccode95i',$plain,'TODO find __PACKAGE__');
+ctestok(5,'C,-O3,-UB','ccode95i',$issue,'run');
+ctestok(6,'C,-O3,-UB','ccode95i',$plain,'find __PACKAGE__');
