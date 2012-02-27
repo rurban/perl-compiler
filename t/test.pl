@@ -802,6 +802,7 @@ sub todo_tests_default {
 
     my @todo  = ();
     push @todo, (15)  if $] < 5.007;
+    push @todo, (15)  if $] >= 5.015;
     if ($what =~ /^c(|_o[1-4])$/) {
         push @todo, (7)     if $] == 5.008005;
         push @todo, (21)    if $] >= 5.012 and $] < 5.014;

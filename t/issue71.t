@@ -54,7 +54,7 @@ SKIP: {
 skip "hangs", 1 if !$DEBUGGING;
 use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
-      $B::CC::VERSION < 1.13
+      $B::CC::VERSION < 1.14
       ? "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
       : undef);
 }
