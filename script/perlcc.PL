@@ -361,7 +361,7 @@ sub compile_byte {
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
     vprint 5, "Compiling...";
-    vprint 1, "Calling $command";
+    vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
     my ($output_r, $error_r) = spawnit($command);
@@ -453,7 +453,7 @@ sub compile_cstyle {
     # sucks.
     my $command = "$BinPerl$taint -MO=$Backend,$options"."-o$cfile $Input";
     vprint 5, "Compiling...";
-    vprint 1, "Calling $command";
+    vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
     my ($output_r, $error_r) = spawnit($command);
