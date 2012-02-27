@@ -5650,11 +5650,11 @@ sub save_sig {
   foreach my $x ( @save_sig ) {
     my ($k, $cvref) = @$x;
     my $sv = $cvref->save;
-    $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
-    $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
+    $init->add( "\t{", sprintf "\t".'SV* sv = (SV*)%s;', $sv );
+    $init->add( sprintf("\t\thv_store(hv, %s, %u, %s, %s);",
                         cstring($k), length( pack "a*", $k ),
                         'sv', 0 ) ); # XXX randomized hash keys!
-    $init->add( "\t".'mg_set(sv);', '}' );
+    $init->add( "\t\t".'mg_set(sv);', "\t}" );
   }
   $init->add('}');
   $init->split;
