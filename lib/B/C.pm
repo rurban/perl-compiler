@@ -887,7 +887,7 @@ sub check_entersub {
   {
     my $pkgop = $op->first->next; # padsv for objects or const for classes
     my $methop = $pkgop; # walk args until method or sub end. This ends
-    do { $methop = $methop->next; } while $methop->name !~ /^method_named|method$/;
+    do { $methop = $methop->next; } while $methop->name !~ /^method_named|method|gv$/;
     my $methopname = $methop->name;
     if (substr($methopname,0,6) eq 'method') {
       my $methodname = $methopname eq 'method' ? svop_name($methop) : svop_pv($methop);
@@ -2945,17 +2945,30 @@ sub B::CV::save {
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
 	if ($$auto) {
+	  # XXX This has now created a wrong GV name!
+	  my $oldcv = $cv;
 	  $cv  = $auto ; # This is new. i.e. via AUTOLOAD or UNIVERSAL, in another stash
-	  my $gv = $cv->GV;
-	  if ($$gv) {
-	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	      warn "New ".$gv->STASH->NAME."::".$gv->NAME." autoloaded. remove old cv\n" if $debug{sub};
+	  my $gvnew = $cv->GV;
+	  if ($$gvnew) {
+	    if ($cvstashname ne $gvnew->STASH->NAME or $cvname ne $gvnew->NAME) { # UNIVERSAL or AUTOLOAD
+	      my $newname = $gvnew->STASH->NAME."::".$gvnew->NAME;
+	      warn "New $newname autoloaded. remove old cv\n" if $debug{sub}; # and wrong GV?
 	      unless ($new_cv_fw) {
 		$svsect->remove;
 		$xpvcvsect->remove;
 	      }
-	      delsym($cv);
-	      return $cv->save($gv->STASH->NAME."::".$gv->NAME);
+	      delsym($oldcv);
+	      no strict 'refs';
+	      my $newsym = svref_2object( \*{$newname} )->save;
+	      my $cvsym = $cv->save($newname);
+	      if (my $oldsym = objsym($gv)) {
+		warn "Alias polluted $oldsym to $newsym\n" if $debug{gv};
+		$init->add("$oldsym = $newsym;");
+		delsym($gv);
+	      }# else {
+		#$init->add("GvCV_set(gv_fetchpv(\"$fullname\", TRUE, SVt_PV), (CV*)NULL);");
+	      #}
+	      return $cvsym;
 	    }
 	  }
 	  $sym = savesym( $cv, "&sv_list[$sv_ix]" ); # GOTO
@@ -2965,7 +2978,7 @@ sub B::CV::save {
         # Recalculated root and xsub
         $root   = $cv->ROOT;
         $cvxsub = $cv->XSUB;
-	my $gv = $cv->GV;
+	$gv = $cv->GV;
 	if ($$gv) {
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
 	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME. remove old cv\n" if $verbose;
