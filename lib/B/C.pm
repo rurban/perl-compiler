@@ -1407,6 +1407,13 @@ sub B::PADOP::save {
     my $cv = method_named(svop_pv($op), nextcop($op));
     $cv->save if $cv;
   }
+  # This is saved by curpad syms at the end. But with __DATA__ handles it is better to save earlier
+  if ($op->name eq 'padsv' or $op->name eq 'gvsv' or $op->name eq 'gv') {
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    my $sv = $pad[$op->padix];
+    $sv->save("padop ".padop_name($op->name)) if $sv and $$sv;
+  }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
   $padopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
@@ -3267,7 +3274,8 @@ sub B::CV::save {
 }
 
 my @_v = Internals::V() if $] >= 5.011;
-sub B::_V { @_v };
+sub
+  Config::B::_V { @_v };
 
 # filter to skip certain types
 sub B::GV::save {
@@ -3552,7 +3560,7 @@ if (0) {
       }
       elsif (!$PERL510 or $gp) {
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
-	  $gvcv = svref_2object( \&B::_V );
+	  $gvcv = svref_2object( \&Config::B::_V );
 	}
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
@@ -5135,7 +5143,7 @@ sub mark_package {
     no strict 'refs';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
     mark_package('IO') if grep { $package eq $_ } @IO;
-    $use_xsloader = 1 if $package =~ /^B|Carp$/; # to help CC a bit (49)
+    $use_xsloader = 1 if $package =~ /^B|Carp|IO$/; # to help CC a bit (49)
     # i.e. if force
     if (exists $include_package{$package}
 	and !$include_package{$package}
@@ -5256,6 +5264,10 @@ sub should_save {
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
+  if ($skip_package{$package} or $package =~ /^B::C(C?)::/) {
+    delete_unsaved_hashINC($package);
+    return;
+  }
   # core static mro has exactly one member, ext/mro has more
   if ($package eq 'mro') {
     if (keys %{mro::} == 1) { # core or ext?
@@ -5306,7 +5318,6 @@ sub should_save {
     delete_unsaved_hashINC($package);
     return; # $include_package{$package} = 0;
   }
-
   if ( exists $include_package{$package} ) {
     if ($debug{pkg}) {
       if (exists $include_package{$package} and $include_package{$package}) {
