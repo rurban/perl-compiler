@@ -840,6 +840,7 @@ sub force_dynpackage {
   no strict 'refs';
   if (!$skip_package{$pv} and $pv !~ /^B::/) { # XXX only loaded at run-time
     if (!$INC{packname_inc($pv)}) {
+      # warn "load \"$pv\"\n";
       eval "require $pv;";
       if (!$@) {
 	warn "load \"$pv\"\n" if $debug{meth};
@@ -1280,7 +1281,7 @@ sub method_named {
   my ($method, @candidates);
   for my $p ( $package_pv, @package_pv, 'main',
 	      grep{$include_package{$_}} keys %include_package,
-	      map{packname_inc($_)} keys %savINC ) {
+	      map{packname_inc($_)} keys %INC ) {
     push @candidates, $p unless grep {$p eq $_} @candidates;
   }
  CAND:
@@ -1315,8 +1316,8 @@ sub method_named {
 	}
       }
       $method = $p.'::'.$name;
-      warn "3rd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
-      for (map{packname_inc($_)} keys %savINC) {
+      warn "3rd desperate round to find the package for \"$method\" in \%INC \n" if $debug{cv};
+      for (map{packname_inc($_)} keys %INC) {
 	if ($method = find_method($_, $name)) {
 	  last CAND;
 	}
@@ -5368,6 +5369,7 @@ sub packname_inc {
 
 sub delete_unsaved_hashINC {
   my $package = shift;
+  my $do = shift;
   my $incpack = inc_packname($package);
   # Not already saved package, so it is not loaded again at run-time.
   return if $saved{$package};
@@ -5375,7 +5377,7 @@ sub delete_unsaved_hashINC {
     and defined $use_xsloader
     and $use_xsloader == 0;
   $include_package{$package} = 0;
-  if ($INC{$incpack}) {
+  if ($do and $INC{$incpack}) {
     warn "Deleting $package from \%INC\n" if $debug{pkg};
     $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack};
     $INC{$incpack} = undef;
@@ -5487,9 +5489,9 @@ sub inc_cleanup {
       delete $INC{$package};
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $INC{$package};
-      delete_unsaved_hashINC('utf8');
+      delete_unsaved_hashINC('utf8', 1);
     } elsif(!$include_package{$pkg} and $package =~ /\.pm$/) { # keep autoloaded and other parts
-      delete_unsaved_hashINC($pkg);
+      delete_unsaved_hashINC($pkg, 1);
     }
   }
   if ($debug{pkg} and $verbose) {
