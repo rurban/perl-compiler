@@ -67,7 +67,9 @@ WriteMakefile(
         "    B::Flags:  0.04\n".
         "    B::Debug:  1.16\n".
         "    Opcodes:   0.10\n".
-        "    IPC::Run:  0\n",
+        "    IPC::Run:  0\n".
+        "    Set::Object: 0\n".
+        "    IO::Socket::SSL: 0\n"
        ) : ()),
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
@@ -76,6 +78,8 @@ WriteMakefile(
                         "B::Debug" => '1.16',
                         "Opcodes"  => '0.10',
                         "IPC::Run" => 0,
+			"Set::Object" => 0,
+			"IO::Socket::SSL" => 0,
                        },
                        resources =>
                        {

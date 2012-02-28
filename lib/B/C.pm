@@ -418,17 +418,15 @@ my (
   $init,      $decl,      $symsect,    $binopsect, $condopsect,
   $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
-  $svsect,    $resect,    $xpvsect,    $xpvavsect, $xpvhvsect,
-  $xpvcvsect, $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $orangesect,
-  $free
+  $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
+  $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
   $listopsect, $logopsect,  $loopsect, $opsect,
   $pmopsect,   $pvopsect,   $svopsect, $unopsect
 );
-# push @op_sections, ($resect) if $PERL512;
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
@@ -623,25 +621,8 @@ sub savere {
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
   }
-  elsif ( 0 and $PERL512 ) {
-    # TODO Fill in at least the engine pointer? Or let CALLREGCOMP do that?
-    $orangesect->add(
-      sprintf(
-              "0,%u,%u, 0,0,NULL, NULL,NULL,"
-              . "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0",
-              $cur, $len
-             )
-    );
-    $resect->add(sprintf("&orange_list[%d], 1, %d, %s",
-                         $orangesect->index, $flags, cstring($re) ));
-    $sym = sprintf( "re_list[%d]", $resect->index );
-    warn sprintf( "Saving RE $sym->orangesect[%d] $re\n", $orangesect->index )
-      if $debug{sv};
-  }
   elsif ($PERL510) {
     # BUG! Should be the same as newSVpvn($resym, $relen) but is not
-    #$sym = sprintf("re_list[%d]", $re_index++);
-    #$resect->add(sprintf("0,0,0,%s", cstring($re)));
     my $s1 = ($PERL514 ? "NULL," : "") . "{0}, %u, %u";
     $xpvsect->add( sprintf( $s1, $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
@@ -649,7 +630,6 @@ sub savere {
     my $s = "sv_list[".$svsect->index."]";
     $sym = "&$s";
     push @static_free, $s if $len and $B::C::pv_copy_on_grow;
-    # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
@@ -860,6 +840,7 @@ sub force_dynpackage {
   no strict 'refs';
   if (!$skip_package{$pv} and $pv !~ /^B::/) { # XXX only loaded at run-time
     if (!$INC{packname_inc($pv)}) {
+      # warn "load \"$pv\"\n";
       eval "require $pv;";
       if (!$@) {
 	warn "load \"$pv\"\n" if $debug{meth};
@@ -1300,7 +1281,7 @@ sub method_named {
   my ($method, @candidates);
   for my $p ( $package_pv, @package_pv, 'main',
 	      grep{$include_package{$_}} keys %include_package,
-	      map{packname_inc($_)} keys %savINC ) {
+	      map{packname_inc($_)} keys %INC ) {
     push @candidates, $p unless grep {$p eq $_} @candidates;
   }
  CAND:
@@ -1335,8 +1316,8 @@ sub method_named {
 	}
       }
       $method = $p.'::'.$name;
-      warn "3rd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
-      for (map{packname_inc($_)} keys %savINC) {
+      warn "3rd desperate round to find the package for \"$method\" in \%INC \n" if $debug{cv};
+      for (map{packname_inc($_)} keys %INC) {
 	if ($method = find_method($_, $name)) {
 	  last CAND;
 	}
@@ -4208,10 +4189,9 @@ sub output_all {
   my @sections = (
     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
-    $loopsect,   $copsect,   $svsect,    $xpvsect,   $orangesect,
-    $resect,     $xpvavsect, $xpvhvsect, $xpvcvsect, $xpvivsect,
-    $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect, $xrvsect,
-    $xpvbmsect,  $xpviosect
+    $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
+    $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
+    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect
   );
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
   $symsect->output( \*STDOUT, "#define %s\n" );
@@ -5263,7 +5243,7 @@ sub skip_pkg {
 # with -O0 or -O1 do not delete packages which were brought in from
 # the script, i.e. not defined in B::C or O. Just to be on the safe side.
 sub can_delete {
-  return $can_delete_pkg or $all_bc_pkg{$_{0}};
+  if ($can_delete_pkg or $all_bc_pkg{$_{0}}) { return 1; } else { return undef; }
 }
 
 sub should_save {
@@ -5389,6 +5369,7 @@ sub packname_inc {
 
 sub delete_unsaved_hashINC {
   my $package = shift;
+  my $do = shift;
   my $incpack = inc_packname($package);
   # Not already saved package, so it is not loaded again at run-time.
   return if $saved{$package};
@@ -5396,7 +5377,7 @@ sub delete_unsaved_hashINC {
     and defined $use_xsloader
     and $use_xsloader == 0;
   $include_package{$package} = 0;
-  if ($INC{$incpack}) {
+  if ($do and $INC{$incpack}) {
     warn "Deleting $package from \%INC\n" if $debug{pkg};
     $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack};
     $INC{$incpack} = undef;
@@ -5501,20 +5482,16 @@ sub save_unused_subs {
 
 sub inc_cleanup {
   # %INC sanity check issue 89:
-  # omit unused, unsaved packages, so that at least run-time require will pull them in.
+  warn "Delete unsaved packages from \%INC, so run-time require will pull them in:\n" if $debug{pkg};
   for my $package (keys %INC) {
     my $pkg = packname_inc($package);
     if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
       delete $INC{$package};
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $INC{$package};
-      delete_unsaved_hashINC('utf8');
-    } elsif(!$include_package{$pkg}) {
-      if (can_delete($pkg)) {
-	delete_unsaved_hashINC($pkg);
-      } else {
-	warn "Skip deleting $package from \%INC due to -fno-delete-pkg\n" if $debug{pkg};
-      }
+      delete_unsaved_hashINC('utf8', 1);
+    } elsif(!$include_package{$pkg} and $package =~ /\.pm$/) { # keep autoloaded and other parts
+      delete_unsaved_hashINC($pkg, 1);
     }
   }
   if ($debug{pkg} and $verbose) {
@@ -5798,8 +5775,6 @@ sub init_sections {
     svop   => \$svopsect,
     unop   => \$unopsect,
     sv     => \$svsect,
-    orange => \$orangesect,
-    re     => \$resect,
     xpv    => \$xpvsect,
     xpvav  => \$xpvavsect,
     xpvhv  => \$xpvhvsect,
