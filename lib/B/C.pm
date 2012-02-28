@@ -459,12 +459,14 @@ warn %OP_COP if $debug{cops};
 sub padop_name {
   my $op = shift;
   my $curcv = shift;
-  if ($op->can('name') and ($op->name eq 'padsv' or $op->name eq 'method_named')) {
+  if ($op->can('name')
+      and ($op->name eq 'padsv' or $op->name eq 'method_named' or ref($op) eq 'B::SVOP')) {
     my @c = $curcv ? $curcv->PADLIST : comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
-    my $sv = $pad[$op->targ];
-    my $t = $types[$op->targ];
+    my $ix = $op->can('padix') ? $op->padix : $op->targ;
+    my $sv = $pad[$ix];
+    my $t = $types[$ix];
     if (defined($t) and ref($t) ne 'B::SPECIAL') {
       my $pv = $t->can('PVX') ? $t->PVX : '';
       # need to fix B for SVpad_TYPEDI without formal STASH
@@ -488,7 +490,8 @@ sub cache_svop_pkg {
   if ($svop->name eq 'padsv') {
     my @c = comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
-    $sv = $pad[$svop->targ];
+    my $ix = $svop->can('padix') ? $svop->padix : $svop->targ;
+    $sv = $pad[$ix];
   } elsif ($svop->name eq 'gvsv') {
     $sv = $svop->sv;
   } elsif ($svop->name eq 'gv') {
@@ -876,10 +879,10 @@ sub check_entersub {
     my $methopname = $methop->name;
     if (substr($methopname,0,6) eq 'method') {
       my $methodname = $methopname eq 'method' ? svop_name($methop) : svop_pv($methop);
-      warn "check package_pv ".$pkgop->name." for $methopname \"$methodname\"\n" if $debug{meth};
       if ($pkgop->name eq 'const') {
 	my $pv = svop_pv($pkgop); # 5.13: need to store away the pkg pv
 	if ($pv and $pv !~ /[! \(]/) {
+	  warn "check package_pv $pv for $methopname \"$methodname\"\n" if $debug{meth};
 	  # padsv package names are dynamic. They cannot be determined at compile-time,
 	  # unless they are typed.
 	  # We can catch the 'new' method and assign the const package_pv to the symbol
@@ -1411,7 +1414,8 @@ sub B::PADOP::save {
   if ($op->name eq 'padsv' or $op->name eq 'gvsv' or $op->name eq 'gv') {
     my @c = comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
-    my $sv = $pad[$op->padix];
+    my $ix = $op->can('padix') ? $op->padix : $op->targ;
+    my $sv = $pad[$ix];
     $sv->save("padop ".padop_name($op->name)) if $sv and $$sv;
   }
   $padopsect->comment("$opsect_common, padix");
