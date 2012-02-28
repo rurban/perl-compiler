@@ -52,7 +52,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
 # Version 2.13, Reini Urban, 2012-01-10 13:03:00
-# Version 2.14, Reini Urban, 2012-02-01 20:00:00
+# Version 2.14, Reini Urban, 2012-02-28 09:04:07
 
 use strict;
 use warnings;
@@ -246,17 +246,18 @@ sub parse_argv {
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
-        'u:s@',         # use packages (new since 2.13)
-        'U:s@',         # skip packages (new since 2.13)
+        'u=s@',         # use packages (new since 2.13)
+        'U=s@',         # skip packages (new since 2.13)
         'static',       # Link to static libperl (default, new since 2.11)
         'shared',       # Link to shared libperl (new since 2.07)
         'staticxs',     # Link static XSUBs (new since 2.07)
         'sharedxs',     # Link shared XSUBs (default, new since 2.07))
         'stash',        # Detect external packages via B::Stash
 	'log:s',        # where to log compilation process information
-        'Wb:s',         # pass (comma-seperated) options to backend
-        'Wc:s',         # pass (comma-seperated) options to cc (new since 2.13)
-        'Wl:s',         # pass (comma-seperated) options to ld (new since 2.13)
+        'Wb=s',         # pass (comma-seperated) options to backend
+        'f=s@',         # pass compiler option(s) to backend (new since 2.14)
+        'Wc=s',         # pass (comma-seperated) options to cc (new since 2.13)
+        'Wl=s',         # pass (comma-seperated) options to ld (new since 2.13)
         'testsuite',    # try to be nice to testsuite (STDOUT, STDERR handles)
         'spawn!',	# --no-spawn (new since 2.12)
         'time',         # print benchmark timings (new since 2.08)
@@ -406,6 +407,9 @@ sub compile_cstyle {
     } elsif (opt(v) > 4) {
         $addoptions = '-Dsp,-v,';
         $addoptions = '-Dfull,-v,' if opt(v) >= 6;
+    }
+    if (opt(f)) {
+        $addoptions .= "-f$_," for @{$Options->{f}};
     }
 
     my $staticxs = opt(staticxs) ? "-staticxs," : '';
@@ -941,6 +945,7 @@ perlcc - generate executables from Perl programs
     perlcc -I /foo hello       # extra headers for C
     perlcc -L /foo hello       # extra libraries for C
     perlcc --Wb=-Dsp           # extra perl compiler options
+    perlcc -fno-delete-pkg     # extra perl compiler options
     perlcc --Wc=-fno-openmp    # extra C compiler options
     perlcc --Wl=-s             # extra C linker options
 
@@ -1030,9 +1035,14 @@ Run the resulting compiled script after compiling it.
 
 Log the output of compiling to a file rather than to stdout.
 
+=item -f<option> or --f=<option>
+
+Pass the options to the compiler backend, such as
+C<-fstash> or C<-fno-delete-pkg>.
+
 =item --Wb=I<options>
 
-Pass the options to the compiler backend, such as --Wb=-O2,-v
+Pass the options to the compiler backend, such as C<--Wb=-O2,-v>
 
 =item --Wc=I<options>
 
