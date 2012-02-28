@@ -413,8 +413,7 @@ my $remote = IO::Socket::INET->new( Proto => "tcp", PeerAddr => "perl.org", Peer
 print $remote "GET / HTTP/1.0" . "\r\n\r\n";
 my $result = <$remote>;
 $result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
-close $remote;
-'
+close $remote;'
 result[91]='ok'
 tests[93]='
 my ($pid, $out, $in);

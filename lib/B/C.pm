@@ -2721,10 +2721,10 @@ sub try_autoload {
   }
 
   # XXX TODO Check Selfloader (test 31?)
-  svref_2object( \*{$cvstashname.'::AUTOLOAD'} )->save
-    if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
   svref_2object( \*{$cvstashname.'::CLONE'} )->save
     if $cvstashname and exists ${$cvstashname.'::'}{CLONE};
+  svref_2object( \*{$cvstashname.'::AUTOLOAD'} )->save
+    if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
 }
 sub Dummy_initxs { }
 
@@ -2989,7 +2989,7 @@ sub B::CV::save {
     }
   }
   if (!$$root) {
-    if ($fullname ne 'threads::tid') {
+    if ($fullname ne 'threads::tid' and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"}))) {
       warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
     }
     $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
@@ -3274,8 +3274,7 @@ sub B::CV::save {
 }
 
 my @_v = Internals::V() if $] >= 5.011;
-sub
-  Config::B::_V { @_v };
+sub Config::B::_V { @_v };
 
 # filter to skip certain types
 sub B::GV::save {
