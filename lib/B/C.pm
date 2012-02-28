@@ -289,7 +289,7 @@ if (exists $INC{'blib.pm'}) { # http://blogs.perl.org/users/rurban/2012/02/the-u
 # pb -MB::Stash -e0
 # -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
 
-my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
+my ($package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, @static_free, %newpkg);
 my %xsub;
@@ -300,7 +300,7 @@ my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
 # options and optimizations shared with B::CC
-our ($module, $init_name, %savINC, $mainfile);
+our ($curcv, $module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
@@ -458,10 +458,12 @@ warn %OP_COP if $debug{cops};
 # pads are not named, but may be typed
 sub padop_name {
   my $op = shift;
-  my $curcv = shift;
+  my $cv = shift;
   if ($op->can('name')
-      and ($op->name eq 'padsv' or $op->name eq 'method_named' or ref($op) eq 'B::SVOP')) {
-    my @c = $curcv ? $curcv->PADLIST : comppadlist->ARRAY;
+      and ($op->name eq 'padsv' or $op->name eq 'method_named'
+	   or ref($op) eq 'B::SVOP')) #threaded
+  {
+    my @c = $cv ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
@@ -509,9 +511,10 @@ sub cache_svop_pkg {
 # unused
 sub svop_name {
   my $op = shift;
+  my $cv = shift;
   my $sv;
   if ($op->can('name') and $op->name eq 'padsv') {
-    my @r = padop_name($op);
+    my @r = padop_name($op, $cv);
     return $r[1] ? $r[1] : $r[0];
   } else {
     if (!$op->can("sv")) {
@@ -553,10 +556,11 @@ sub svop_name {
 # 2. called from svop before method/method_named to cache the $package_pv
 sub svop_pv {
   my $op = shift;
+  my $cv = shift;
   my $sv;
   if (!$op->can("sv")) {
     if ($op->can('name') and $op->name eq 'padsv') {
-      my $pv = padop_name($op);
+      my $pv = padop_name($op, $cv);
       return $pv;
     }
     if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -574,7 +578,7 @@ sub svop_pv {
   if ($sv and $$sv) {
     return $sv->PV if $sv->can("PV");
   } else { # threaded
-    my $pv = padop_name($op);
+    my $pv = padop_name($op, $cv);
     return $pv;
   }
 }
@@ -863,6 +867,7 @@ sub force_dynpackage {
 # See also http://www.perl.com/pub/2000/06/dougpatch.html
 sub check_entersub {
   my $op = shift;
+  my $cv = shift;
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
@@ -878,9 +883,9 @@ sub check_entersub {
 	     or ($methop->name eq 'gv' and $methop->next->name ne 'entersub'));
     my $methopname = $methop->name;
     if (substr($methopname,0,6) eq 'method') {
-      my $methodname = $methopname eq 'method' ? svop_name($methop) : svop_pv($methop);
+      my $methodname = $methopname eq 'method' ? svop_name($methop, $cv) : svop_pv($methop, $cv);
       if ($pkgop->name eq 'const') {
-	my $pv = svop_pv($pkgop); # 5.13: need to store away the pkg pv
+	my $pv = svop_pv($pkgop, $cv); # 5.13: need to store away the pkg pv
 	if ($pv and $pv !~ /[! \(]/) {
 	  warn "check package_pv $pv for $methopname \"$methodname\"\n" if $debug{meth};
 	  # padsv package names are dynamic. They cannot be determined at compile-time,
@@ -888,7 +893,7 @@ sub check_entersub {
 	  # We can catch the 'new' method and assign the const package_pv to the symbol
 	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
 	  # Note: 'new' is no keyword (yet), but good enough. We check bless also.
-	  if ($methopname eq 'method_named' and 'new' eq svop_pv($methop)) {
+	  if ($methopname eq 'method_named' and 'new' eq svop_pv($methop, $cv)) {
 	    my $objname = svop_name($pkgop);
 	    my $symop = $op->next;
 	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
@@ -904,7 +909,7 @@ sub check_entersub {
 	  push_package($package_pv);
 	}
       } elsif ($pkgop->name eq 'padsv') { # check cached obj class
-	my $objname = padop_name($pkgop);
+	my $objname = padop_name($pkgop, $B::C::curcv);
 	if (my $pv = cache_svop_pkg($pkgop)) {
 	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
 	  svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
@@ -914,7 +919,7 @@ sub check_entersub {
 	  warn "package for $objname->$methodname not found\n" if $debug{meth};
 	}
       } else {
-	my $methodname = svop_pv($methop);
+	my $methodname = svop_pv($methop, $cv);
 	warn "XXX package_pv for $methopname $methodname not found\n" if $debug{meth};
       }
     }
@@ -934,6 +939,7 @@ sub check_entersub {
 # my $o = bless {},"pkg";
 sub check_bless {
   my $op = shift;
+  my $cv = shift;
   if ($op->type > 0 and
       $op->name eq 'bless' and
       $op->first and $op->first->next->name eq 'pushmark' and
@@ -943,10 +949,10 @@ sub check_bless {
      )
   {
     my $pkgop = $op->first->next->next->next;
-    my $pv = svop_pv($pkgop);
+    my $pv = svop_pv($pkgop, $cv);
     if ($pv and $pv !~ /[! \(]/) {
       my $symop = $op->next;
-      warn sprintf("cache %s = bless(..., \"$pv\")\n", svop_name($symop)) if $debug{meth};
+      warn sprintf("cache %s = bless(..., \"$pv\")\n", svop_name($symop, $cv)) if $debug{meth};
       cache_svop_pkg($symop, $pv);
       force_dynpackage($pv);
       $package_pv = $pv;
@@ -957,8 +963,8 @@ sub check_bless {
 
 sub B::OP::_save_common {
   my $op = shift;
-  check_entersub($op) if $op->type > 0 and $op->name eq 'entersub';
-  check_bless($op) if $op->type > 0 and $op->name eq 'bless';
+  check_entersub($op, $B::C::curcv) if $op->type > 0 and $op->name eq 'entersub';
+  check_bless($op, $B::C::curcv) if $op->type > 0 and $op->name eq 'bless';
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
@@ -1381,7 +1387,7 @@ sub B::SVOP::save {
     }
   }
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_pv($op), nextcop($op));
+    my $cv = method_named(svop_pv($op, $B::C::curcv), nextcop($op));
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
@@ -1407,7 +1413,7 @@ sub B::PADOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_pv($op), nextcop($op));
+    my $cv = method_named(svop_pv($op, $B::C::curcv), nextcop($op));
     $cv->save if $cv;
   }
   # This is saved by curpad syms at the end. But with __DATA__ handles it is better to save earlier
@@ -1416,7 +1422,7 @@ sub B::PADOP::save {
     my @pad = $c[1]->ARRAY;
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
     my $sv = $pad[$ix];
-    $sv->save("padop ".padop_name($op->name)) if $sv and $$sv;
+    $sv->save("padop ".padop_name($op->name, $B::C::curcv)) if $sv and $$sv;
   }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
@@ -3016,6 +3022,7 @@ sub B::CV::save {
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
+  $B::C::curcv = $cv;
   my $padlistsym = 'NULL';
   my $pv         = $cv->PV;
   my $xsub       = 0;
@@ -5597,6 +5604,7 @@ sub descend_marked_unused {
 sub save_main {
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
+  $B::C::curcv = B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   $verbose
     ? walkoptree_slow( main_root, "save" )
