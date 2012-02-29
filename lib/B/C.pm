@@ -470,7 +470,7 @@ sub padop_name {
     my $sv = $pad[$ix];
     my $t = $types[$ix];
     if (defined($t) and ref($t) ne 'B::SPECIAL') {
-      my $pv = $t->can('PVX') ? $t->PVX : '';
+      my $pv = $sv->can("PV") ? $sv->PV : ($t->can('PVX') ? $t->PVX : '');
       # need to fix B for SVpad_TYPEDI without formal STASH
       my $stash = (ref($t) eq 'B::PVMG' and ref($t->SvSTASH) ne 'B::SPECIAL') ? $t->SvSTASH->NAME : '';
       return wantarray ? ($stash,$pv,$sv) : $pv;
@@ -868,6 +868,7 @@ sub force_dynpackage {
 sub check_entersub {
   my $op = shift;
   my $cv = shift;
+  $cv = $B::C::curcv unless $cv;
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
@@ -963,8 +964,10 @@ sub check_bless {
 
 sub B::OP::_save_common {
   my $op = shift;
-  check_entersub($op, $B::C::curcv) if $op->type > 0 and $op->name eq 'entersub';
-  check_bless($op, $B::C::curcv) if $op->type > 0 and $op->name eq 'bless';
+  if ($op->type > 0) {
+    check_entersub($op) if $op->name eq 'entersub';
+    check_bless($op) if $op->name eq 'bless';
+  }
   return sprintf(
     "s\\_%x, s\\_%x, %s",
     ${ $op->next },
@@ -1308,7 +1311,7 @@ sub method_named {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded. Return none broke 15 and 51 by sideeffect,
       # omitting DynaLoader methods, eg.
-      return svref_2object( \&{'threads::tid'} ) if $method eq 'threads::tid' and !$ITHREADS;
+      return svref_2object( \&{'threads::tid'} ) if $method eq 'threads::tid';
       return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
@@ -1348,6 +1351,7 @@ sub method_named {
 	. ".\n";
     warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
       if $verbose and !$method_named_warn++;
+    return undef if $ITHREADS;
   }
   $method = $package_pv.'::'.$name;
   return svref_2object( \&{$method} );
@@ -5849,9 +5853,11 @@ sub compile {
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
-  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
-	       B::Section B::Pseudoreg B::Shadow);
-  #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
+  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::C::Section
+	       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
+  $include_package{'B::C::InitSection::SUPER'} = 0;
+  $include_package{'B::C::Section::SUPER'} = 0;
+  mark_skip('DB', 'Term::ReadLine') if exists $DB::{deep};
 
 OPTION:
   while ( $option = shift @options ) {
