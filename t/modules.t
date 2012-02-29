@@ -185,7 +185,7 @@ for my $module (@modules) {
         $opt .= " $keep" if $keep;
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
-	  $runperl,$Mblib,"blib/script/perlcc",$opt,$staticxs,"-o$out","-r",$out_pl;
+	  $runperl,split(/ /,$Mblib),"blib/script/perlcc",split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
         my $cmd = "$runperl $Mblib blib/script/perlcc $opt $staticxs -o$out -r"; # only for the msg
 	# Esp. darwin-2level has insane link times
         ($result, $stdout, $err) = run_cmd(\@cmd, 720); # in secs.
