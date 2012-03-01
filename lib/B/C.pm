@@ -1165,13 +1165,10 @@ sub B::LISTOP::save {
   $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
   if ($op->type == $OP_DBMOPEN) {
     # resolves it at compile-time, not at run-time
-    # mark_package('AnyDBM_File') does too much, just bootstrap the single ISA
-    require AnyDBM_File;
+    mark_package('AnyDBM_File');
     use strict 'refs';
     my $dbm = $AnyDBM_File::ISA[0];
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
-    svref_2object( \@AnyDBM_File::ISA )->save;
-    svref_2object( \$AnyDBM_File::VERSION )->save;
   }
   do_labels ($op, 'first', 'last');
   $sym;
