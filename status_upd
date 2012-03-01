@@ -248,8 +248,9 @@ sub unify_results {
 }
 
 my $dlogs = '`ls '.($dir eq '.'?$logs:"$dir/$logs").'|egrep -v \'\.[1-9]$\'`';
-my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE | grep -v '\.[19]'";
-#print "$cmd\n" unless $quiet;
+#warn $dlogs."\n" unless $quiet; #`
+my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE";
+warn "$cmd\n" unless $quiet;
 my %h;
 my %h_sav = %h;
 if (my @g = `$cmd`) {
