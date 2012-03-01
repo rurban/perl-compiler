@@ -13,7 +13,7 @@ BEGIN {
 my $script = <<'EOF';
 package my;
 our @a;
-sub f { 
+sub f {
   my($alias,$name)=@_;
   unshift(@a, $alias => $name);
   my $find = "ok"; 

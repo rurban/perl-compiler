@@ -187,7 +187,7 @@ for my $module (@modules) {
         my @cmd = grep {!/^$/}
 	  $runperl,split(/ /,$Mblib),"blib/script/perlcc",split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
         my $cmd = "$runperl $Mblib blib/script/perlcc $opt $staticxs -o$out -r"; # only for the msg
-	# Esp. darwin-2level has insane link times
+	# My Macbook Air with gcc-mp and with 1GB RAM has insane compile times
         ($result, $stdout, $err) = run_cmd(\@cmd, 720); # in secs.
         ok(-s $out,
            "$module_count: use $module  generates non-zero binary")
