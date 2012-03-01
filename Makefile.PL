@@ -16,7 +16,11 @@ unless (-e 'lib/B/C/Flags.pm') {
 
 # generate lib/B/Asmdata.pm beforehand
 # my $X = $^X =~ / / ? qq("$^X") : $^X;
-system($^X, "bytecode.pl");
+if ($core) {
+    system($^X,"-I../../lib/auto","-I../../lib","bytecode.pl");
+} else {
+    system($^X, "bytecode.pl");
+}
 
 my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
 my $have_independent_comalloc = check_independent_comalloc();
