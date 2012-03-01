@@ -1167,8 +1167,11 @@ sub B::LISTOP::save {
     # resolves it at compile-time, not at run-time
     # mark_package('AnyDBM_File') does too much, just bootstrap the single ISA
     require AnyDBM_File;
+    use strict 'refs';
     my $dbm = $AnyDBM_File::ISA[0];
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
+    svref_2object( \@AnyDBM_File::ISA )->save;
+    svref_2object( \$AnyDBM_File::VERSION )->save;
   }
   do_labels ($op, 'first', 'last');
   $sym;
@@ -1321,19 +1324,19 @@ sub method_named {
 	last CAND;
       }
       $method = $p.'::'.$name;
-      warn "2nd round to find the package for \"$method\"\n" if $debug{cv};
-      for (keys %include_package) {
-	if ($method = find_method($_, $name)) {
-	  last CAND;
-	}
-      }
-      $method = $p.'::'.$name;
-      warn "3rd desperate round to find the package for \"$method\" in \%INC \n" if $debug{cv};
-      for (map{packname_inc($_)} keys %INC) {
-	if ($method = find_method($_, $name)) {
-	  last CAND;
-	}
-      }
+      #warn "2nd round to find the package for \"$method\"\n" if $debug{cv};
+      #for (keys %include_package) {
+	#if ($method = find_method($_, $name)) {
+	 # last CAND;
+	#}
+      #}
+      #$method = $p.'::'.$name;
+      #warn "3rd desperate round to find the package for \"$method\" in \%INC \n" if $debug{cv};
+      #for (map{packname_inc($_)} keys %INC) {
+	#if ($method = find_method($_, $name)) {
+	#  last CAND;
+	#}
+      #}
     }
   }
   if (defined(&{$method})) {
@@ -1345,12 +1348,12 @@ sub method_named {
   }
   my $b = $Config{archname}."/B\.pm";
   if ($name !~ /^tid|can|isa|pmreplroot$/ and $loc !~ m/$b line / and $package_pv !~ /^B::/) {
-    warn "WARNING: method \"$package_pv->$name\" not found"
-        . $loc
-	. ($verbose ? " in (".join(" ",@candidates).")" : "")
-	. ".\n";
-    warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
-      if $verbose and !$method_named_warn++;
+#    warn "WARNING: method \"$package_pv->$name\" not found"
+#        . $loc
+#	. ($verbose ? " in (".join(" ",@candidates).")" : "")
+#	. ".\n";
+#    warn "Either need to force a package with -uPackage, or maybe the method is never called at run-time.\n"
+#      if $verbose and !$method_named_warn++;
     return undef if $ITHREADS;
   }
   $method = $package_pv.'::'.$name;
@@ -5854,9 +5857,9 @@ sub compile {
     4 => [qw(-fcop)],
   );
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::C::Section
-	       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
-  $include_package{'B::C::InitSection::SUPER'} = 0;
-  $include_package{'B::C::Section::SUPER'} = 0;
+	       B::Section B::Pseudoreg B::Shadow B::C::InitSection
+               B::C::Section::SUPER B::C::InitSection::SUPER
+	      );
   mark_skip('DB', 'Term::ReadLine') if exists $DB::{deep};
 
 OPTION:
