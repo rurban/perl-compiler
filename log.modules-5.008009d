@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_04 db3d3fc 2012-02-19 | fixes for threads and -Dm
+# B::C::VERSION = 1.42_07 8e7ecfe 2012-03-01 | print first grep and avoid useless grep -v '\.[19]'
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_04 - perl-5.008009d
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# 100 / 100 modules tested with B-C-1.42_07 - perl-5.008009d
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   0 /   1 (0.0%)
 # skip   0 / 100 (0.0% not installed)

@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.42_04 db3d3fc 2012-02-19 | fixes for threads and -Dm
+# B::C::VERSION = 1.42_07 8e7ecfe 2012-03-01 | print first grep and avoid useless grep -v '\.[19]'
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -20,10 +20,10 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
+pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 fail Module::Build
 pass File::Path
@@ -37,11 +37,11 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-fail Compress::Raw::Zlib
-fail Compress::Raw::Bzip2
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
-fail Storable
+pass LWP
+pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class
+pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_04 - perl-5.010001d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# 100 / 100 modules tested with B-C-1.42_07 - perl-5.010001d-nt
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   0 /   1 (0.0%)
 # skip   0 / 100 (0.0% not installed)
