@@ -6,45 +6,45 @@ define run10plc
 end
 #set args -Dtv -Mblib -MByteLoader bytecode10.plc
 # grep -Hn PL_no_modify *.c|perl -ne'/^([\w.]+:\d+)/ && print "break $1\n";'
-define break_no_modify
-  break av.c:342
-  break av.c:435
-  break av.c:540
-  break av.c:579
-  break av.c:648
-  break av.c:720
-  break av.c:851
-  break doop.c:640
-  break doop.c:1025
-  break doop.c:1111
-  break mg.c:615
-  break mg.c:2361
-  break pp.c:161
-  break pp.c:864
-  break pp.c:881
-  break pp.c:903
-  break pp_hot.c:401
-  break pp_hot.c:2098
-  break pp_hot.c:2966
-  break pp_sort.c:1569
-  break pp_sys.c:1027
-  break regcomp.c:4924
-  break regcomp.c:5225
-  break sv.c:3247
-  break sv.c:3365
-  break sv.c:3424
-  break sv.c:4331
-  break sv.c:4349
-  break sv.c:4748
-  break sv.c:6950
-  break sv.c:7113
-  break sv.c:8390
-  break universal.c:1353
-  break universal.c:1375
-  break universal.c:1396
-  break util.c:3430
-  break util.c:3433
-end
+#define break_no_modify
+#  break av.c:342
+#  break av.c:435
+#  break av.c:540
+#  break av.c:579
+#  break av.c:648
+#  break av.c:720
+#  break av.c:851
+#  break doop.c:640
+#  break doop.c:1025
+#  break doop.c:1111
+#  break mg.c:615
+#  break mg.c:2361
+#  break pp.c:161
+#  break pp.c:864
+#  break pp.c:881
+#  break pp.c:903
+#  break pp_hot.c:401
+#  break pp_hot.c:2098
+#  break pp_hot.c:2966
+#  break pp_sort.c:1569
+#  break pp_sys.c:1027
+#  break regcomp.c:4924
+#  break regcomp.c:5225
+#  break sv.c:3247
+#  break sv.c:3365
+#  break sv.c:3424
+#  break sv.c:4331
+#  break sv.c:4349
+#  break sv.c:4748
+#  break sv.c:6950
+#  break sv.c:7113
+#  break sv.c:8390
+#  break universal.c:1353
+#  break universal.c:1375
+#  break universal.c:1396
+#  break util.c:3430
+#  break util.c:3433
+#end
 
 # break Dynaloader.xs:190
 # break byteloader_filter
@@ -57,23 +57,69 @@ end
 # break Perl_pp_match
 # break Perl_pad_new
 
-# threaded
-define stack_dump
-  call Perl_sv_dump(my_perl, *sp)
+# stack dump, sp or PL_sp or my_perl->Istack_sp?
+define sp_dump
+  if my_perl
+    p/x **my_perl->Istack_sp
+    call Perl_sv_dump(my_perl, *my_perl->Istack_sp)
+  else
+    p/x **PL_sp
+    Perl_sv_dump(*PL_sp)
+  end
 end
-# non-threaded
-define stack_dump_nt
-  call Perl_sv_dump(*sp)
+document sp_dump
+ => Perl_sv_dump(PL_sp)
 end
+
 define op_dump
-  call Perl_op_dump(my_perl, PL_op)
+  if my_perl
+    p/x *my_perl->Iop
+    call Perl_op_dump(my_perl, my_perl->Iop)
+  else
+    p/x *PL_op
+    call Perl_op_dump(PL_op)
+  end
 end
-define op_dump_nt
-  call Perl_op_dump(PL_op)
+document op_dump
+ => Perl_op_dump(PL_op)
+see `odump op`
 end
+
 define sv_dump
-  call Perl_sv_dump(my_perl, sv)
+  p/x *sv
+  if my_perl
+    call Perl_sv_dump(my_perl, sv)
+  else
+    call Perl_sv_dump(sv)
+  end
 end
-define sv_dump_nt
-  call Perl_sv_dump(sv)
+document sv_dump
+ => Perl_sv_dump(sv)
+see `sdump sv`
+end
+
+define odump
+  p/x *$arg0
+  if my_perl
+    call Perl_op_dump(my_perl, $arg0)
+  else
+    call Perl_op_dump($arg0)
+  end
+end
+document odump
+odump op => p/x *op; Perl_op_dump(op)
+see `help op_dump` for PL_op
+end
+
+define sdump
+  p/x *$arg0
+  if my_perl
+    call Perl_sv_dump(my_perl, $arg0)
+  else
+    call Perl_sv_dump($arg0)
+  end
+end
+document sdump
+sdump sv => p/x *sv; Perl_sv_dump(sv)
+see `help sv_dump`
 end
