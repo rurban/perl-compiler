@@ -364,7 +364,7 @@ sub script {my($package,@args)=@_;print "ok"}'
 result[74]='ok'
 # issue 71_2+3: cop_warnings issue76 and const destruction issue71 fixed
 # ok with "utf-8-strict"
-tests[75]='
+tests[75]='#TODO
 use Encode;
 my $x = "abc";
 print "ok" if "abc" eq Encode::decode("UTF-8", $x);'
@@ -405,7 +405,7 @@ tests[902]='my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};'
 result[902]='ok'
 # IO handles
-tests[91]='# issue59
+tests[91]='# issue59 TODO
 use strict;
 use warnings;
 use IO::Socket;
@@ -415,7 +415,7 @@ my $result = <$remote>;
 $result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
 close $remote;'
 result[91]='ok'
-tests[93]='
+tests[93]='#SKIP
 my ($pid, $out, $in);
 BEGIN {
   local(*FPID);
@@ -437,7 +437,8 @@ tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
 tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
-tests[95]='use IO::Socket::SSL();
+tests[95]='#TODO IO::Socket::SSL::DESTROY
+use IO::Socket::SSL();
 my IO::Socket::SSL $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";'
