@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 8e7ecfe 2012-03-01 | print first grep and avoid useless grep -v '\.[19]'
+# B::C::VERSION = 1.42_07 6354acf 2012-03-02 | .gdbinit: better generic macros, even with help
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug
