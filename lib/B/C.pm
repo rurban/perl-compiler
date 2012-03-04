@@ -239,35 +239,33 @@ my $anonsub_index = 0;
 my $initsub_index = 0;
 
 # exclude all not B::C:: prefixed subs
-my %all_bc_subs = map {$_=>1}
-  qw( B::AV::save B::BINOP::save B::BM::save B::COP::save B::CV::save
-      B::FAKEOP::fake_ppaddr B::FAKEOP::flags B::FAKEOP::new B::FAKEOP::next
-      B::FAKEOP::ppaddr B::FAKEOP::private B::FAKEOP::save B::FAKEOP::sibling
-      B::FAKEOP::targ B::FAKEOP::type B::GV::save B::GV::savecv B::HV::save
-      B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
-      B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
-      B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
-      B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save B::PVLV::save
-      B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
-      B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
-      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS
-   );
+my %all_bc_subs = map {$_=>1} qw(B::AV::save B::BINOP::save B::BM::save
+      B::COP::save B::CV::save B::FAKEOP::fake_ppaddr B::FAKEOP::flags
+      B::FAKEOP::new B::FAKEOP::next B::FAKEOP::ppaddr B::FAKEOP::private
+      B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP::type
+      B::GV::save B::GV::savecv B::HV::save B::IO::save B::IO::save_data
+      B::IV::save B::LISTOP::save B::LOGOP::save B::LOOP::save B::NULL::save
+      B::NV::save B::OBJECT::save B::OP::_save_common B::OP::fake_ppaddr
+      B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save
+      B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic
+      B::PVNV::save B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save
+      B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save
+      B::REGEXP::EXTFLAGS);
 
 # Track all internally used packages. All others may not be deleted automatically
 # - hidden methods. -fdelete-pkg
-my %all_bc_pkg = map {$_=>1}
-  qw( B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
-      B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
-      B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
-      B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
+my %all_bc_pkg = map {$_=>1} qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
+      B::GV B::HV B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV
+      B::OBJECT B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV
+      B::PVOP B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
       AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
       warnings warnings::register DB next maybe maybe::next FileHandle fields
-      AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
-      ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
-      DynaLoader XSLoader O
-   );
-# Note: BEGIN-time sideffect-only packages like strict, vars or constant even without functions
-# should not be deleted, so they are not listed here.
+      AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils
+      ExtUtils::Constant ExtUtils::Constant::ProxySubs threads base IO::File
+      IO::Seekable IO::Handle IO DynaLoader XSLoader O);
+
+# Note: BEGIN-time sideffect-only packages like strict, vars or constant even
+# without functions should not be deleted, so they are not listed here.
 # Keep: vars strict constant
 
 if (exists $INC{'blib.pm'}) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
