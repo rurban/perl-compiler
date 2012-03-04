@@ -1658,7 +1658,7 @@ sub B::PMOP::save {
 	$op->pmflags, $op->pmpermflags, 0 # XXX original 5.6 B::C misses pmdynflags
       )
     );
-  } else {
+  } else { # perl5.8.x
     $pmopsect->comment(
 "$opsect_common, first, last, pmreplroot, pmreplstart, pmoffset, pmflags, pmpermflags, pmdynflags, pmstash"
     );
@@ -1669,10 +1669,10 @@ sub B::PMOP::save {
         ${ $op->last },    $replrootfield,
         $replstartfield,   $ITHREADS ? $op->pmoffset : 0,
         $op->pmflags,      $op->pmpermflags,
-        $op->pmdynflags,   $MULTI ? cstring($op->pmstashpv) : "0"
+        $op->pmdynflags,   $ITHREADS ? cstring($op->pmstashpv) : "0"
       )
     );
-    if (!$MULTI and $op->pmstash) {
+    if (!$ITHREADS and $op->pmstash) {
       my $stash = $op->pmstash->save;
       $init->add( sprintf( "pmop_list[%d].op_pmstash = %s;", $pmopsect->index, $stash ) );
     }
