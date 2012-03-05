@@ -2962,6 +2962,8 @@ sub B::CV::save {
 		$xpvcvsect->remove;
 	      }
 	      delsym($oldcv);
+	      return $cv->save($newname) if !$PERL510;
+
 	      no strict 'refs';
 	      my $newsym = svref_2object( \*{$newname} )->save;
 	      my $cvsym = $cv->save($newname);
