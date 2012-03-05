@@ -262,7 +262,7 @@ my %all_bc_pkg = map {$_=>1} qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
       warnings warnings::register DB next maybe maybe::next FileHandle fields
       AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils
       ExtUtils::Constant ExtUtils::Constant::ProxySubs threads base IO::File
-      IO::Seekable IO::Handle IO DynaLoader XSLoader O);
+      IO::Seekable IO::Handle IO DynaLoader XSLoader O );
 
 # Note: BEGIN-time sideffect-only packages like strict, vars or constant even
 # without functions should not be deleted, so they are not listed here.
@@ -845,7 +845,6 @@ sub force_dynpackage {
   no strict 'refs';
   if (!$skip_package{$pv} and $pv !~ /^B::/) { # XXX only loaded at run-time
     if (!$INC{packname_inc($pv)}) {
-      # warn "load \"$pv\"\n";
       eval "require $pv;";
       if (!$@) {
 	warn "load \"$pv\"\n" if $debug{meth};
@@ -900,7 +899,8 @@ sub check_entersub {
 	      no strict 'refs';
 	      warn "cache object $objname = new $pv;\n" if $debug{meth};
 	      force_dynpackage($pv);
-	      svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
+	      svref_2object( \&{"$pv\::$methodname"} )->save
+		if $methodname and defined(&{"$pv\::$methodname"});
 	      cache_svop_pkg($symop, $pv);
 	    }
 	  }
@@ -911,7 +911,8 @@ sub check_entersub {
 	my $objname = padop_name($pkgop, $B::C::curcv);
 	if (my $pv = cache_svop_pkg($pkgop)) {
 	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
-	  svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
+	  svref_2object( \&{"$pv\::$methodname"} )->save
+	    if $methodname and defined(&{"$pv\::$methodname"});
 	  $package_pv = $pv;
 	  push_package($package_pv);
 	} else {
@@ -2076,7 +2077,7 @@ sub B::PVNV::save {
   }
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
-    if ($savesym =~ /^\(char\*\)get_cv\("/) { # Moose 5.8.9d Moose::Util::TypeConstraints::OptimizedConstraints::RegexpRef
+    if ($savesym =~ /^\(char\*\)get_cv\("/) { #" Moose 5.8.9d Moose::Util::TypeConstraints::OptimizedConstraints::RegexpRef
       $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", 'NULL', $cur, $len, $ivx, $nvx ) );
       $init->add(sprintf("xpvnv_list[%d].xpv_pv = %s;", $xpvnvsect->index, $savesym));
     } else {
@@ -2514,6 +2515,7 @@ sub B::PVMG::save_magic {
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE1
+
 	}
 	else {
 	  $pmsym =~ s/\(OP\*\)\&pmop_list/&pmop_list/;
@@ -2524,6 +2526,7 @@ CODE1
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE2
+
         }
       }
     }
