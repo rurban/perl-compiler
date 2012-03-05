@@ -3185,13 +3185,15 @@ sub B::CV::save {
   }
   elsif ($PERL56) {
     $cur = length ( pack "a*", $pv );
-    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
+    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
+		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
 	       cstring($pv), length($pv), length($pv), $cv->IVX,
 	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
 	      );
     if ($new_cv_fw) {
-      $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
+      $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub'
+			  .' xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
       $xpvcvsect->add($xpvc);
       $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
 		   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
@@ -3202,13 +3204,16 @@ sub B::CV::save {
   }
   else { #5.8
     $cur = length ( pack "a*", $pv );
-    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
+    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub,"
+		       ." $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
 	       cstring($pv),      length($pv), length($pv), $cv->IVX,
 	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
 	      );
     if ($new_cv_fw) {
-      $xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
+      $xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash '
+			  .'start root xsub xsubany cv_gv cv_file cv_depth cv_padlist'
+			  .' cv_outside cv_flags outside_seq');
       $xpvcvsect->add($xpvc);
       $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
 		   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
@@ -3486,7 +3491,8 @@ if (0) {
       }
       elsif ($gvname eq 'VERSION' and $xsub{$package} and !$PERL56) {
 	if ( $gvsv->FLAGS & SVf_ROK ) {
-	  warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
+	  warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n"
+	    if $debug{gv};
 	  my $rv = $gvsv->object_2svref();
 	  my $origsv = $$rv;
 	  no strict 'refs';
@@ -3510,7 +3516,8 @@ if (0) {
       } else {
 	no strict 'refs';
         warn "GV::save \@$fullname\n" if $debug{gv};
-	warn "save \@$fullname=(".join(" ",get_isa($package)).")\n" if $gvname eq 'ISA' and $debug{pkg};
+	warn "save \@$fullname=(".join(" ",get_isa($package)).")\n"
+	  if $gvname eq 'ISA' and $debug{pkg};
 	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
 	  mark_package('Tie::Hash::NamedCapture', 1);
@@ -3549,12 +3556,14 @@ if (0) {
         if $package and exists ${"$package\::"}{CLONE};
       $gvcv = $gv->CV; # try again
     }
-    if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
+    if ( $$gvcv && $savefields & Save_CV
+	 and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB CONSTSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n" if $debug{pkg};
+        warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n"
+	  if $debug{pkg};
         mark_package($package, 1);
         {
           no strict 'refs';
@@ -3737,7 +3746,9 @@ sub B::AV::save {
 	   && $values[$i+2] eq "&sv_list[" . ($1+2) . "]" )
       {
 	$count=0;
-	while (defined($values[$i+$count+1]) and $values[$i+$count+1] eq "&sv_list[" . ($1+$count+1) . "]") {
+	while (defined($values[$i+$count+1])
+	       and $values[$i+$count+1] eq "&sv_list[" . ($1+$count+1) . "]")
+	{
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=" . $1 . "; gcount<" . ($1+$count+1) . "; gcount++) {"
@@ -3752,7 +3763,9 @@ sub B::AV::save {
 	       && $values[$i+2] =~ /^ptr_undef|&PL_sv_undef$/)
       {
 	$count=0;
-	while (defined $values[$i+$count+1] and $values[$i+$count+1] =~ /^ptr_undef|&PL_sv_undef$/) {
+	while (defined $values[$i+$count+1]
+	       and $values[$i+$count+1] =~ /^ptr_undef|&PL_sv_undef$/)
+	{
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=0; gcount<" . ($count+1) . "; gcount++) {"
@@ -4024,8 +4037,13 @@ sub B::IO::save {
   if ($PERL514) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
     # IFP in sv.sv_u.svu_fp
-    $xpviosect->comment("STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, page_len, ..., type, flags");
-    my $tmpl = "Nullhv, /*STASH later*/\n\t{0}, /*MAGIC later*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    $xpviosect->comment("STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, "
+			."page_len, ..., type, flags");
+    my $tmpl = "Nullhv, /*STASH later*/\n\t{0}, /*MAGIC later*/\n\t%u, /*cur*/\n\t%u, /*len*/\n"
+      ."\t{%d}, /*LINES*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d,"
+      ." /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n"
+      ."\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n"
+      ."\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
@@ -4044,8 +4062,14 @@ sub B::IO::save {
   }
   elsif ($] > 5.011000) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
-    $xpviosect->comment("xnv_u, cur, len, lines, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, ..., type, flags");
-    my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    $xpviosect->comment("xnv_u, cur, len, lines, xmg_u, xmg_stash, xio_ifp, xio_ofp, "
+			."xio_dirpu, ..., type, flags");
+    my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n"
+      ."\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n"
+      ."\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n"
+      ."\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n"
+      ."\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n"
+      ."\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
@@ -4064,8 +4088,14 @@ sub B::IO::save {
   }
   elsif ($PERL510) {
     warn sprintf( "IO 0x%x (%s) = '%s'\n", $$io, $io->SvTYPE, $pv ) if $debug{sv};
-    $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp, xio_dirpu, lines, ..., type, flags");
-    my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%ld}, /*IVX*/\n\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
+    $xpviosect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash, xio_ifp, xio_ofp,"
+			." xio_dirpu, lines, ..., type, flags");
+    my $tmpl = "{0}, /*xnv_u*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%ld}, /*IVX*/\n"
+      ."\t{0}, /*MAGIC later*/\n\t(HV*)NULL, /*STASH  later*/\n\t0, /*IFP later*/\n"
+      ."\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*LINES*/\n\t%d, /*PAGE*/\n"
+      ."\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n"
+      ."\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n"
+      ."\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
     $tmpl =~ s{ /\*[^\*]+?\*/\n\t}{}g unless $verbose;
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
@@ -4084,9 +4114,11 @@ sub B::IO::save {
 			 $B::C::pv_copy_on_grow ? $pvsym : 0));
   }
   else { # 5.6 and 5.8
-    $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp, xio_dirpu, ..., subprocess, type, flags");
+    $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp,"
+			." xio_dirpu, ..., subprocess, type, flags");
     $xpviosect->add(
-      sprintf("%s, %u, %u, %ld, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
+      sprintf("%s, %u, %u, %ld, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv,"
+	      ." %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
               $pvsym, 			   $len, $len + 1,
               $io->IVX,                    $io->NVX,
               $io->LINES,                  $io->PAGE,
@@ -4421,7 +4453,6 @@ Perl_newGP(pTHX_ GV *const gv)
 __EOGP
 
   }
-
   # Need fresh re-hash of strtab. share_hek does not allow hash = 0
   if ( $PERL510 ) {
     print <<'_EOT0';
