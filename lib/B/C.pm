@@ -867,77 +867,59 @@ sub check_entersub {
   $cv = $B::C::curcv unless $cv;
   if ($op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
-      $op->first->name eq 'pushmark') {
-    if (# Foo->bar()  compile-time lookup, 34 WANT_SCALAR,MOD in all versions
-        ($op->first->next->name eq 'const' and $op->first->next->flags == 34)
-        # or $foo->bar() run-time lookup
-        or ($op->first->next->name eq 'padsv')) # note that padsv is called gvsv in Concise
-    {
-      my $pkgop = $op->first->next; # padsv for objects or const for classes
-      my $methop = $pkgop; # walk args until method or sub end. This ends
-      do { $methop = $methop->next; }
-	while ($methop->name !~ /^method_named|method$/
-	       or ($methop->name eq 'gv' and $methop->next->name ne 'entersub'));
-      my $methopname = $methop->name;
-      if (substr($methopname,0,6) eq 'method') {
-	my $methodname = $methopname eq 'method' ? svop_name($methop, $cv) : svop_pv($methop, $cv);
-	if ($pkgop->name eq 'const') {
-	  my $pv = svop_pv($pkgop, $cv); # 5.13: need to store away the pkg pv
-	  if ($pv and $pv !~ /[! \(]/) {
-	    warn "check package_pv $pv for $methopname \"$methodname\"\n" if $debug{meth};
-	    # padsv package names are dynamic. They cannot be determined at compile-time,
-	    # unless they are typed.
-	    # We can catch the 'new' method and assign the const package_pv to the symbol
-	    # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
-	    # Note: 'new' is no keyword (yet), but good enough. We check bless also.
-	    if ($methopname eq 'method_named' and 'new' eq svop_pv($methop, $cv)) {
-	      my $objname = svop_name($pkgop);
-	      my $symop = $op->next;
-	      if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
-		  and $symop->next->name eq 'sassign') {
-		no strict 'refs';
-		warn "cache object $objname = new $pv;\n" if $debug{meth};
-		force_dynpackage($pv);
-		svref_2object( \&{"$pv\::$methodname"} )->save
-		  if $methodname and defined(&{"$pv\::$methodname"});
-		cache_svop_pkg($symop, $pv);
-	      }
+      $op->first->name eq 'pushmark' and
+      # Foo->bar()  compile-time lookup, 34 WANT_SCALAR,MOD in all versions
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
+       # or $foo->bar() run-time lookup
+       or ($op->first->next->name eq 'padsv'))) # note that padsv is called gvsv in Concise
+  {
+    my $pkgop = $op->first->next; # padsv for objects or const for classes
+    my $methop = $pkgop; # walk args until method or sub end. This ends
+    do { $methop = $methop->next; }
+      while ($methop->name !~ /^method_named|method$/
+	     or ($methop->name eq 'gv' and $methop->next->name ne 'entersub'));
+    my $methopname = $methop->name;
+    if (substr($methopname,0,6) eq 'method') {
+      my $methodname = $methopname eq 'method' ? svop_name($methop, $cv) : svop_pv($methop, $cv);
+      if ($pkgop->name eq 'const') {
+	my $pv = svop_pv($pkgop, $cv); # 5.13: need to store away the pkg pv
+	if ($pv and $pv !~ /[! \(]/) {
+	  warn "check package_pv $pv for $methopname \"$methodname\"\n" if $debug{meth};
+	  # padsv package names are dynamic. They cannot be determined at compile-time,
+	  # unless they are typed.
+	  # We can catch the 'new' method and assign the const package_pv to the symbol
+	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
+	  # Note: 'new' is no keyword (yet), but good enough. We check bless also.
+	  if ($methopname eq 'method_named' and 'new' eq svop_pv($methop, $cv)) {
+	    my $objname = svop_name($pkgop);
+	    my $symop = $op->next;
+	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
+		and $symop->next->name eq 'sassign') {
+	      no strict 'refs';
+	      warn "cache object $objname = new $pv;\n" if $debug{meth};
+	      force_dynpackage($pv);
+	      svref_2object( \&{"$pv\::$methodname"} )->save
+		if $methodname and defined(&{"$pv\::$methodname"});
+	      cache_svop_pkg($symop, $pv);
 	    }
-	    $package_pv = $pv;
-	    push_package($package_pv);
 	  }
-	} elsif ($pkgop->name eq 'padsv') { # check cached obj class
-	  my $objname = padop_name($pkgop, $cv);
-	  if (my $pv = cache_svop_pkg($pkgop)) {
-	    warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
-	    svref_2object( \&{"$pv\::$methodname"} )->save
-	      if $methodname and defined(&{"$pv\::$methodname"});
-	    $package_pv = $pv;
-	    push_package($package_pv);
-	  } else {
-	    warn "package for $objname->$methodname not found\n" if $debug{meth};
-	  }
+	  $package_pv = $pv;
+	  push_package($package_pv);
+	}
+      } elsif ($pkgop->name eq 'padsv') { # check cached obj class
+	my $objname = padop_name($pkgop, $cv);
+	if (my $pv = cache_svop_pkg($pkgop)) {
+	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
+	  svref_2object( \&{"$pv\::$methodname"} )->save
+	    if $methodname and defined(&{"$pv\::$methodname"});
+	  $package_pv = $pv;
+	  push_package($package_pv);
 	} else {
-	  my $methodname = svop_pv($methop, $cv);
-	  warn "XXX package_pv for $methopname $methodname not found\n" if $debug{meth};
+	  warn "package for $objname->$methodname not found\n" if $debug{meth};
 	}
-      }
-    } else {
-      # entersub->first -> args -> gv->next == entersub
-      my $gvop = $op->first->next;
-      do { $gvop = $gvop->next; }
-      while ($gvop and $gvop->name eq 'gv' and $gvop->next->name ne 'entersub');
-      if ($gvop and $gvop->name eq 'gv' and $gvop->private & 32) { # OPpEARLY_CV
-	my $stash;
-	if ($ITHREADS) {
-	  ($stash) = padop_name($gvop, $cv);
-	} else {
-	  $stash = $gvop->sv->STASH->NAME;
-	}
-	if ($stash and $stash !~ /[! \(]/) {
-	  warn "check_require $stash\n" if $debug{meth};
-	  force_dynpackage($stash) unless $include_package{$stash};
-	}
+      } else {
+	my $methodname = svop_pv($methop, $cv);
+	warn "XXX package_pv for $methopname $methodname not found\n" if $debug{meth};
       }
     }
   }
