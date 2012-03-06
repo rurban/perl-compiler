@@ -2274,6 +2274,7 @@ sub pp_require {
           "}");
   $know_op = 1;
   invalidate_lexicals( REGISTER | TEMPORARY );
+  B::C::check_require($op); # mark package
   return $op->next;
 }
 

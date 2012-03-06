@@ -1647,7 +1647,7 @@ sub B::PMOP::save {
     die "Internal B::walkoptree error: invalid PMOP for pushre\n";
     return;
   }
-  my $replroot  = $op->pmreplroot; 
+  my $replroot  = $op->pmreplroot;
   my $replstart = $op->pmreplstart;
   my $replrootfield;
   my $replstartfield = sprintf( "s\\_%x", $$replstart );

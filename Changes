@@ -3,14 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2012-02-xx rurban
-	Improved package detection for methods
+1.43	2012-03-xx rurban
+	Improved package detection: methods, functions, require, new and bless
 
 	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
 	Detect typed lexicals objects to reliably find method packages.
 	Sanified package_pv default a bit when a method padsv was not
 	  found. Check for method_named as last argument of methods.
-	Added check_entersub, check_bless - bless and new caching of
+	Added check_entersub, check_bless, check_require - bless and new caching of
 	  packages for methods
 	try_isa(): Desperate method finding attempt by trying all seen packages, which
 	  slows down the compiler a lot. Added internal ISA Caching.
@@ -22,7 +22,7 @@
 	Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
 	  loaded later.
 	With hek do not drop FAKE, only for const pv.
-	Broke __DATA__ (15), dbmopen (i24), Test::NoWarnings
+	Broke __DATA__ (15), 91, 95, perldoc, Test::NoWarnings
 	Detect and skip GV->save in defined (issue 96).
 	Threaded use the right CV PADLIST for SVOP's, proper curcv for new and
 	  bless detection.
