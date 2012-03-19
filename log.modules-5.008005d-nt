@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 8e7ecfe 2012-03-01 | print first grep and avoid useless grep -v '\.[19]'
+# B::C::VERSION = 1.42_07 1a6cb9f 2012-03-06 | throw away entersub -> gv stash detection - unneeded and unstable.
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+fail LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 99 / 100 modules tested with B-C-1.42_07 - perl-5.008005d-nt
-# pass  98 /  99 (99.0%)
-# fail   1 /  99 (1.0%)
-# todo   1 /   1 (100.0%)
+# pass  97 /  99 (98.0%)
+# fail   2 /  99 (2.0%)
+# todo   1 /   2 (50.0%)
 # skip   1 / 100 (1.0% not installed)

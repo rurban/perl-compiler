@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 8e7ecfe 2012-03-01 | print first grep and avoid useless grep -v '\.[19]'
+# B::C::VERSION = 1.42_07 1a6cb9f 2012-03-06 | throw away entersub -> gv stash detection - unneeded and unstable.
 # perlversion = 5.012004
 # path = /usr/bin/perl5.12.4
 # platform = linux 64bit threaded
@@ -7,12 +7,12 @@ pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
-pass Pod::Simple
+fail Pod::Simple
 pass IO
 pass Scalar::Util
-pass Getopt::Long
+fail Getopt::Long
 pass Pod::Parser
-pass ExtUtils::MakeMaker
+fail ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -32,7 +32,7 @@ pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-pass URI
+fail URI
 pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+fail LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -65,12 +65,12 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+fail Class::MOP
+fail Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
-pass if(1) => "Sys::Hostname"
+fail if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
 pass Time::Local
@@ -85,7 +85,7 @@ pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod
+fail Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-pass AppConfig
+fail AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42_07 - perl-5.012004
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
+# pass  88 / 100 (88.0%)
+# fail  12 / 100 (12.0%)
+# todo   1 /  12 (8.3%)
 # skip   0 / 100 (0.0% not installed)

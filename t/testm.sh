@@ -76,7 +76,7 @@ do
       fi
       exit
   fi
-  if [ "$opt" = "F" ]; then 
+  if [ "$opt" = "F" ]; then
       v=$($PERL -It -Mmodules -e'print perlversion')
       if [ -f log.modules-$v ]; then # and not older than a few days
 	  echo t/testm.sh `grep ^fail log.modules-$v | perl -anle 'print $F[1]'`
