@@ -81,6 +81,8 @@ do
       if [ -f log.modules-$v ]; then # and not older than a few days
 	  echo t/testm.sh `grep ^fail log.modules-$v | perl -anle 'print $F[1]'`
           for m in $(grep ^fail log.modules-$v | perl -anle 'print $F[1]'); do t/testm.sh -q $m; done
+      else
+	  echo "Error: log.modules-$v not found"
       fi
       exit
   fi
