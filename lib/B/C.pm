@@ -479,14 +479,14 @@ sub padop_name {
     }
   }
 }
-# unused
+
 sub svop_name {
   my $op = shift;
   my $cv = shift;
   my $sv;
   if ($op->can('name') and $op->name eq 'padsv') {
     my @r = padop_name($op, $cv);
-    return $r[1] ? $r[1] : $r[0];
+    return wantarray ? @r : ($r[1] ? $r[1] : $r[0]);
   } else {
     if (!$op->can("sv")) {
       if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -510,9 +510,9 @@ sub svop_name {
 	return $rv->STASH->NAME;
       } else {
 	if ($op->name eq 'gvsv') {
-	  return $sv->STASH->NAME.'::'.$sv->NAME;
+	  return wantarray ? ($sv->STASH->NAME, $sv->NAME) : $sv->STASH->NAME.'::'.$sv->NAME;
 	} elsif ($op->name eq 'gv') {
-	  return $sv->STASH->NAME.'::'.$sv->NAME;
+	  return wantarray ? ($sv->STASH->NAME, $sv->NAME) : $sv->STASH->NAME.'::'.$sv->NAME;
 	} else {
 	  return $sv->can('STASH') ? $sv->STASH->NAME
 	    : $sv->can('NAME') ? $sv->NAME : $sv->PV;
