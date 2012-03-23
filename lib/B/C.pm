@@ -3932,17 +3932,18 @@ sub B::HV::save {
   if ($PERL510) {
     if ($PERL514) { # fill removed with 5.13.1
       $xpvhvsect->comment( "stash mgu max keys" );
-      $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
+      $xpvhvsect->add(sprintf( "Nullhv, {0}, %u, %u",
 			       $hv->MAX, 0 ));
     } else {
       $xpvhvsect->comment( "GVSTASH fill max keys MG STASH" );
-      $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
+      $xpvhvsect->add(sprintf( "{0}, %u, %u, {%u}, {0}, Nullhv",
 			       0, $hv->MAX, 0 ));
     }
-    $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
+    $svsect->add(sprintf("&xpvhv_list[%d], %u, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
-    if ($hv->MAGICAL and !$is_stash) { # riter,eiter only for magic required
+    # Since 5.015?? RITER must be always set for hv_store
+    if ($] > 5.015 or ($hv->MAGICAL and !$is_stash)) { # riter,eiter only for magic required
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
@@ -3958,9 +3959,9 @@ sub B::HV::save {
   } # !5.10
   else {
     $xpvhvsect->comment( "array fill max keys nv mg stash riter eiter pmroot name" );
-    $xpvhvsect->add(sprintf( "0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
+    $xpvhvsect->add(sprintf( "0, 0, %u, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
 			     $hv->MAX, $hv->RITER));
-    $svsect->add(sprintf( "&xpvhv_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf( "&xpvhv_list[%d], %u, 0x%x",
 			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
   }
   $svsect->debug($hv->flagspv) if $debug{flags};
