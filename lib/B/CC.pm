@@ -2289,10 +2289,9 @@ sub pp_entertry {
   $entertry_defined = 1;
   my $next = $op->next;
   $next = $op->other->next if $op->can("other"); # before 5.11.4
-  debug "ENTERTRY label \$next\n";
+  debug "ENTERTRY label \$next ".ref($next)." ".$next->name."\n";
   my $l = label( $next );
   runtime(sprintf( "PP_ENTERTRY(%s);", $l));
-debug "push_label \$next ".ref($next)." ".$next->name."\n";
   push_label ($next, $next->isa('B::COP') ? 'nextstate' : 'leavetry');
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
