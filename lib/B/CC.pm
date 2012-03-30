@@ -438,7 +438,7 @@ sub output_runtime {
   # Fixed in CORE with 5.11.4
   print'
 #undef PP_ENTERTRY
-#define PP_ENTERTRY(label)  	\
+#define PP_ENTERTRY(label)  	        \
 	STMT_START {                    \
 	    dJMPENV;			\
 	    int ret;			\
@@ -2290,12 +2290,17 @@ sub pp_entertry {
   write_back_stack();
   my $sym = doop($op);
   $entertry_defined = 1;
-  my $next = $op->next;
-  $next = $op->other->next if $op->can("other"); # before 5.11.4
-  debug "ENTERTRY label \$next ".ref($next)." ".$next->name."\n";
+  my $next = $op->next; # broken in 5.12, fixed in B::C by upgrading BASEOP
+  # jump past leavetry
+  my $next = $op->other->next if $op->can("other"); # before 5.11.4 and after 5.13.8
   my $l = label( $next );
+  debug "ENTERTRY label=$l (".ref($op).") ->".$next->name."(".ref($next).")\n";
   runtime(sprintf( "PP_ENTERTRY(%s);", $l));
-  push_label ($next, $next->isa('B::COP') ? 'nextstate' : 'leavetry');
+  if ($next->isa('B::COP')) {
+    push_label($next, 'nextstate');
+  } else {
+    push_label($op->other, 'leavetry') if $op->can("other");
+  }
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
 }
@@ -2306,6 +2311,7 @@ sub pp_leavetry {
   pop_label 'leavetry' if $labels->{'leavetry'}->[-1] and $labels->{'leavetry'}->[-1] == $op;
   default_pp($op);
   runtime("PP_LEAVETRY;");
+  write_label($op->next);
   return $op->next;
 }
 
