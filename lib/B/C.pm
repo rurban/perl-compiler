@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_05';
+our $VERSION = '1.42_06';
 my %debug;
 my $eval_pvs = '';
 
@@ -199,7 +199,7 @@ our @ISA        = qw(Exporter);
 our @EXPORT_OK =
   qw( output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
       init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
-      save_sig svop_or_padop_pv inc_cleanup );
+      save_sig inc_cleanup );
 
 # for 5.6 better use the native B::C
 # 5.6.2 works fine though.
@@ -254,8 +254,8 @@ my %all_bc_subs = map {$_=>1}
 
 # Track all internally used packages. All other may not be deleted automatically
 # - hidden methods. -fdelete-pkg
-my %all_bc_pkg = map {$_=>1}
-  qw( B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
+my %all_bc_pkg = map { $_=>1 } qw(
+      B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
       B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
       B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
       B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
@@ -265,12 +265,15 @@ my %all_bc_pkg = map {$_=>1}
       ExtUtils::Constant::ProxySubs threads base IO::File IO::Seekable IO::Handle IO
       DynaLoader XSLoader O
    );
-if (%blib::) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
+
+# http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-of--mblib.html
+if (%blib::) {
   for (qw(Cwd File File::Spec File::Spec::Unix Dos EPOC blib Scalar
 	  Scalar::Util vars VMS VMS::Filespec VMS::Feature Win32)) {
     $all_bc_pkg{$_} = 1;
   }
 }
+
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -286,7 +289,7 @@ if (%blib::) { # http://blogs.perl.org/users/rurban/2012/02/the-unexpected-case-
 
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %hektable, @static_free);
+my (%strtable, %hektable, @static_free, %newpkg);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
@@ -347,6 +350,7 @@ BEGIN {
 sub DynaLoader::croak {die @_}
 
 # 5.15.3 workaround [perl #101336], without .bs support
+# XSLoader::load_file($module, $modlibname, ...)
 sub XSLoader::load_file {
   #package DynaLoader;
   use Config ();
@@ -385,7 +389,7 @@ sub XSLoader::load_file {
   # in this perl code simply because this was the last perl code
   # it executed.
 
-  my $libref = DynaLoader::dl_load_file($file, 0) or do { 
+  my $libref = DynaLoader::dl_load_file($file, 0) or do {
     die("Can't load '$file' for module $module: " . DynaLoader::dl_error());
   };
   push(@DynaLoader::dl_librefs,$libref);  # record loaded object
@@ -449,6 +453,129 @@ my %OP_COP = ( opnumber('nextstate') => 1 );
 $OP_COP{ opnumber('setstate') } = 1 if $] > 5.005003 and $] < 5.005062;
 $OP_COP{ opnumber('dbstate') }  = 1 unless $PERL512;
 warn %OP_COP if $debug{cops};
+
+# scalar: pv. list: (stash,pv,sv)
+# pads are not named, but may be typed
+sub padop_name {
+  my $op = shift;
+  my $curcv = shift;
+  if ($op->can('name') and ($op->name eq 'padsv' or $op->name eq 'method_named')) {
+    my @c = $curcv ? $curcv->PADLIST : comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    my @types = $c[0]->ARRAY;
+    my $sv = $pad[$op->targ];
+    my $t = $types[$op->targ];
+    if (defined($t) and ref($t) ne 'B::SPECIAL') {
+      my $pv = $t->can('PVX') ? $t->PVX : '';
+      # need to fix B for SVpad_TYPEDI without formal STASH
+      my $stash = (ref($t) eq 'B::PVMG' and ref($t->SvSTASH) ne 'B::SPECIAL') ? $t->SvSTASH->NAME : '';
+      return wantarray ? ($stash,$pv,$sv) : $pv;
+    } elsif ($sv) {
+      my $pv = $sv->PV if $sv->can("PV");
+      my $stash = $sv->STASH->NAME if $sv->can("STASH");
+      return wantarray ? ($stash,$pv,$sv) : $pv;
+    }
+  }
+}
+
+# get or set package name for a variable, defined by
+# $obj = bless {}, "Package"; or
+# $obj = new Package; resp. $obj = Package->new;
+# obj can be a padsv or gvsv
+sub cache_svop_pkg {
+  my $svop = shift;
+  my $sv;
+  if ($svop->name eq 'padsv') {
+    my @c = comppadlist->ARRAY;
+    my @pad = $c[1]->ARRAY;
+    $sv = $pad[$svop->targ];
+  } elsif ($svop->name eq 'gvsv') {
+    $sv = $svop->sv;
+  } elsif ($svop->name eq 'gv') {
+    $sv = $svop->gv;
+  }
+  if ($sv and $$sv) {
+    if (@_) { # set
+      $newpkg{$$sv} = shift;
+    } else {  # get
+      return $newpkg{$$sv};
+    }
+  }
+}
+
+# unused
+sub svop_name {
+  my $op = shift;
+  my $sv;
+  if ($op->can('name') and $op->name eq 'padsv') {
+    my @r = padop_name($op);
+    return $r[1] ? $r[1] : $r[0];
+  } else {
+    if (!$op->can("sv")) {
+      if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
+	$sv = $op->pmreplroot->sv;
+      } else {
+	$sv = $op->first->sv unless $op->flags & 4
+	  or ($op->name eq 'const' and $op->flags & 34) or $op->first->can("sv");
+      }
+    } else {
+      $sv = $op->sv;
+    }
+    if ($sv and $$sv) {
+      if ($sv->FLAGS & SVf_ROK) {
+	return '' if $sv->isa("B::NULL");
+	my $rv = $sv->RV;
+	if ($rv->isa("B::PVGV")) {
+	  my $o = $rv->IO;
+	  return $o->STASH->NAME if $$o;
+	}
+	return '' if $rv->isa("B::PVMG");
+	return $rv->STASH->NAME;
+      } else {
+	if ($op->name eq 'gvsv') {
+	  return $sv->STASH->NAME.'::'.$sv->NAME;
+	} elsif ($op->name eq 'gv') {
+	  return $sv->STASH->NAME.'::'.$sv->NAME;
+	} else {
+	  return $sv->can('STASH') ? $sv->STASH->NAME
+	    : $sv->can('NAME') ? $sv->NAME : $sv->PV;
+	}
+      }
+    }
+  }
+}
+
+# Returns a SVOP->pv (const PV or method_named PV mostly). for the symbol and stash name see svop_name
+# 1. called from check_entersub/method_named to get the pv
+# 2. called from svop before method/method_named to cache the $package_pv
+sub svop_pv {
+  my $op = shift;
+  my $sv;
+  if (!$op->can("sv")) {
+    if ($op->can('name') and $op->name eq 'padsv') {
+      my $pv = padop_name($op);
+      return $pv;
+    }
+    # $op->can('pmreplroot') fails for 5.14
+    if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
+      $sv = $op->pmreplroot->sv;
+    } else {
+      return $package_pv unless $op->flags & 4;
+      # op->first is disallowed for !KIDS and OPpCONST_BARE
+      return $package_pv if $op->name eq 'const' and $op->flags & 64;
+      return $package_pv unless $op->first->can("sv");
+      $sv = $op->first->sv;
+    }
+  } else {
+    $sv = $op->sv;
+  }
+  if ($sv and $$sv) {
+    return $sv->PV if $sv->can("PV");
+  } else { # threaded
+    my $pv = padop_name($op);
+    return $pv;
+  }
+}
 
 # XXX (hack) Returns a SVOP->pv for package_pv or the symbol name for other functions.
 # split into svop_pv and svop_symname
@@ -782,15 +909,131 @@ my $opsect_common =
   $opsect_common .= ", flags, private";
 }
 
+
+# run-time loaded package, detected via bless or new.
+sub force_dynpackage {
+  my $pv = shift;
+  no strict 'refs';
+  if (!$skip_package{$pv} and $pv !~ /^B::/ and !%{"$pv::"}) { # XXX only loaded at run-time
+    eval "require $pv;";
+    if (!$@) {
+      warn "load \"$pv\"\n" if $debug{meth};
+      mark_package($pv);
+    }
+  }
+}
+
+# Heuristic to check method calls for the class to store the full sub name.
+# Also associate objects with classes - $obj=new Class; - to resolve method calls later.
+# Compile-time method_named packages are always const PV sM/BARE.
+# run-time packages ("objects") are in padsv (printed as gvsv).
+#   my Foo $obj = shift; $obj->bar();
+# entersub -> pushmark -> package -> args.. -> method_named|method
+# See perl -MO=Terse -e '$foo->bar("var")'
+# See also http://www.perl.com/pub/2000/06/dougpatch.html
+sub check_entersub {
+  my $op = shift;
+  if ($op->type > 0 and
+      $op->name eq 'entersub' and $op->first and $op->first->can('name') and
+      $op->first->name eq 'pushmark' and
+       # Foo->bar()  compile-time lookup, 34 WANT_SCALAR,MOD in all versions
+      (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
+        # or $foo->bar() run-time lookup
+        or $op->first->next->name eq 'padsv')) # note that padsv is called gvsv in Concise
+  {
+    my $pkgop = $op->first->next; # padsv for objects or const for classes
+    my $methop = $pkgop; # walk args until method or sub end. This ends
+    do { $methop = $methop->next; } while $methop->name !~ /^method_named|method$/;
+    my $methopname = $methop->name;
+    if (substr($methopname,0,6) eq 'method') {
+      my $methodname = $methopname eq 'method' ? svop_name($methop) : svop_pv($methop);
+      warn "check package_pv ".$pkgop->name." for $methopname \"$methodname\"\n" if $debug{meth};
+      if ($pkgop->name eq 'const') {
+	my $pv = svop_pv($pkgop); # 5.13: need to store away the pkg pv
+	if ($pv and $pv !~ /[! \(]/) {
+	  # padsv package names are dynamic. They cannot be determined at compile-time,
+	  # unless they are typed.
+	  # We can catch the 'new' method and assign the const package_pv to the symbol
+	  # and compare the padsv then. $foo=new Class;$foo->method; #main::foo => Class
+	  # Note: 'new' is no keyword (yet), but good enough. We check bless also.
+	  if ($methopname eq 'method_named' and 'new' eq svop_pv($methop)) {
+	    my $objname = svop_name($pkgop);
+	    my $symop = $op->next;
+	    if (($symop->name eq 'padsv' or $symop->name eq 'gvsv')
+		and $symop->next->name eq 'sassign') {
+	      no strict 'refs';
+	      warn "cache object $objname = new $pv;\n" if $debug{meth};
+	      force_dynpackage($pv);
+	      svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
+	      cache_svop_pkg($symop, $pv);
+	    }
+	  }
+	  $package_pv = $pv;
+	  push_package($package_pv);
+	}
+      } elsif ($pkgop->name eq 'padsv') { # check cached obj class
+	my $objname = padop_name($pkgop);
+	if (my $pv = cache_svop_pkg($pkgop)) {
+	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
+	  svref_2object( \&{"$pv\::$methodname"} )->save if $methodname and defined(&{"$pv\::$methodname"});
+	  $package_pv = $pv;
+	  push_package($package_pv);
+	} else {
+	  warn "package for $objname->$methodname not found\n" if $debug{meth};
+	}
+      } else {
+	my $methodname = svop_pv($methop);
+	warn "XXX package_pv for $methopname $methodname not found\n" if $debug{meth};
+      }
+    }
+  }
+}
+
+# $ p -MO=Concise ccode72.pl
+# ...
+# 8     <2> sassign vKS/2 ->9
+# 6        <@> bless sK/2 ->7                     <== start at 6
+# -           <0> ex-pushmark s ->3
+# 4           <@> anonhash sK* ->5
+# 3              <0> pushmark s ->4
+# 5           <$> const(PV "pkg") s ->6           <== pkgop
+# 7        <0> padsv[$o:2,3] sRM*/LVINTRO ->8     <== symop
+#
+# my $o = bless {},"pkg";
+sub check_bless {
+  my $op = shift;
+  if ($op->type > 0 and
+      $op->name eq 'bless' and
+      $op->first and $op->first->next->name eq 'pushmark' and
+      $op->first->next->next->next->name eq 'const' and
+      ($op->next->name eq 'padsv' or $op->next->name eq 'gvsv') and
+      $op->next->next->name eq 'sassign'
+     )
+  {
+    my $pkgop = $op->first->next->next->next;
+    my $pv = svop_pv($pkgop);
+    if ($pv and $pv !~ /[! \(]/) {
+      my $symop = $op->next;
+      warn sprintf("cache %s = bless(..., \"$pv\")\n", svop_name($symop)) if $debug{meth};
+      cache_svop_pkg($symop, $pv);
+      force_dynpackage($pv);
+      $package_pv = $pv;
+      push_package($package_pv);
+    }
+  }
+}
+
 sub B::OP::_save_common {
   my $op = shift;
+  check_entersub($op) if $op->type > 0 and $op->name eq 'entersub';
+  check_bless($op) if $op->type > 0 and $op->name eq 'bless';
   # compile-time method_named packages are always const PV sM/BARE, they should be optimized.
   # run-time packages are in padsv (printed as gvsv). This is difficult to optimize.
   #   my Foo $obj = shift; $obj->bar(); # TODO typed $obj
   # entersub -> pushmark -> package -> args.. -> method_named|method|gv
   # See perl -MO=Terse -e '$foo->bar("var")'
   # See also http://www.perl.com/pub/2000/06/dougpatch.html
-  if ($op->type > 0 and
+  if (0 and $op->type > 0 and
       $op->name eq 'entersub' and $op->first and $op->first->can('name') and
       $op->first->name eq 'pushmark' and
       # Foo->bar()  compile-time lookup, 34 WANT_SCALAR,MOD in all versions
@@ -1086,9 +1329,10 @@ sub B::PVOP::save {
 sub push_package ($;$) {
   my $p = shift or return;
   my $soft = shift;
-  warn "save package_pv \"$p\" for method_name from @{[(caller(1))[3]]}\n"
+  warn "save package_pv \"$p\" for method_name\n"
     if $debug{cv} or $debug{pkg} and !grep { $p eq $_ } @package_pv;
   @package_pv = grep { $p ne $_ } @package_pv if @package_pv; # remove duplicates at the end
+  $soft = 1 if $p =~ /^B::/; # improve our chances not to pull in B
   if ($soft) {
     push @package_pv, $p; 		       # add to the end
   } else {
@@ -1140,8 +1384,10 @@ sub method_named {
       return svref_2object( \&{$method} );
     } else {
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
-      # Without ithreads threads.pm is not loaded
-      return if $method eq 'threads::tid' and !$ITHREADS;
+      # Without ithreads threads.pm is not loaded. This broke 15 and more (51) by sideeffect,
+      # omitting DynaLoader methods?
+      return svref_2object( \&{'threads::tid'} ) if $method eq 'threads::tid' and !$ITHREADS;
+      return svref_2object( \&{'UNIVERSAL::isa'} ) if $method eq 'B::OP::isa';
       if (my $parent = try_isa($p,$name)) {
 	$method = $parent . '::' . $name;
 	$include_package{$parent} = 1;
@@ -1159,7 +1405,7 @@ sub method_named {
 	}
       }
       $method = $p.'::'.$name;
-      warn "3nd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
+      warn "3rd desperate round to find the package for \"$method\" in \%savINC \n" if $debug{cv};
       for (map{packname_inc($_)} keys %savINC) {
 	if ($method = find_method($_, $name)) {
 	  warn "save found method_name \"$method\"\n" if $debug{cv};
@@ -1174,22 +1420,41 @@ sub method_named {
   return svref_2object( \&{$method} );
 }
 
+# return the next COP for file and line info
+sub nextcop {
+  my $op = shift;
+  while ($op and ref($op) ne 'B::COP' and ref($op) ne 'B::NULL') { $op = $op->next; }
+  return ($op and ref($op) eq 'B::COP') ? $op : undef;
+}
+
 sub B::SVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
   my $svsym = 'Nullsv';
-  my $sv;
   # XXX moose1 crash with 5.8.5-nt, Cwd::_perl_abs_path also
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     $svsym = '&PL_sv_undef'; # pad does not need to be saved
     warn sprintf("SVOP->sv aelemfast pad %d\n", $op->flags) if $debug{sv};
+  } elsif ($op->name eq 'gv' and $op->next and $op->next->name eq 'rv2cv'
+	   and $op->next->next and $op->next->next->name eq 'defined' ) {
+    my $gv = $op->sv;
+    my $gvsv = svop_name($op);
+    if ($gvsv !~ /^DynaLoader::/) {
+      warn "skip saving defined(&$gvsv)\n" if $debug{gv}; # defer to run-time
+      $svsym  = '(SV*)' . $gv->save( 8 ); # ~Save_CV in B::GV::save
+    } else {
+      $svsym  = '(SV*)' . $gv->save();
+    }
   } else {
-    my $sv    = $op->sv;
-    $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
+    my $sv  = $op->sv;
+    $svsym  =  $sv->save("svop ".$op->name);
+    if ($svsym !~ /^sv_list/) {
+      $svsym = '(SV*)'.$svsym;
+    }
   }
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_or_padop_pv($op));
+    my $cv = method_named(svop_pv($op), nextcop($op));
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
@@ -1215,7 +1480,7 @@ sub B::PADOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   if ($op->name eq 'method_named') {
-    my $cv = method_named(svop_or_padop_pv($op));
+    my $cv = method_named(svop_pv($op), nextcop($op));
     $cv->save if $cv;
   }
   $padopsect->comment("$opsect_common, padix");
@@ -2415,7 +2680,7 @@ sub try_isa {
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
   # return 0 unless $cvstashname->can($cvname);
   my @isa = get_isa($cvstashname);
-  warn sprintf( "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
+  warn sprintf( "  Search %s::%s in (%s)\n",
 		$cvstashname, $cvname, $cvstashname, join(",",@isa))
     if $debug{cv};
   for (@isa) { # global @ISA or in pad
@@ -2465,7 +2730,7 @@ sub try_autoload {
     return svref_2object( \&{'UNIVERSAL::'.$cvname} );
   }
   my $fullname = $cvstashname . '::' . $cvname;
-  warn sprintf( "No definition for sub %s. Try %s::AUTOLOAD\n",
+  warn sprintf( "  Search %s via %s::AUTOLOAD\n",
 		$fullname, $cvstashname ) if $debug{cv};
   # First some exceptions, fooled by goto
   if ($cvstashname eq 'Config') {
@@ -3063,8 +3328,9 @@ sub B::CV::save {
 my @_v = Internals::V() if $] >= 5.011;
 sub B::_V { @_v };
 
+# filter to skip certain types
 sub B::GV::save {
-  my ($gv) = @_;
+  my ($gv, $filter) = @_;
   my $sym = objsym($gv);
   if ( defined($sym) ) {
     warn sprintf( "GV 0x%x already saved as $sym\n", $$gv ) if $debug{gv};
@@ -3102,8 +3368,9 @@ if (0) {
   return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
 
   if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
-    $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
-    return $sym;
+    $filter = 8;
+    # $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
+    # return $sym;
   }
   #if ( !defined(*{$fullname}{GLOB}) or $skip_package{$package} or $package =~ /^B::C(C?)::/) {
   #  $init->add(qq[$sym = &PL_sv_undef;]);
@@ -3220,6 +3487,7 @@ if (0) {
   elsif ( $fullname eq 'main::!' ) { #Errno
     $savefields = Save_HV;
   }
+  $savefields &= ~$filter if ($filter and $filter > 0 and $filter < 64);
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.
@@ -3762,6 +4030,7 @@ sub B::IO::save_data {
     $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s)', $globname, $globname );
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA)",1); DATA being a ref to $data
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
+    force_saving_xsloader();
     require PerlIO;
     require PerlIO::scalar;
     $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
@@ -4505,7 +4774,7 @@ _EOT8
       printf "\tXPUSHp(\"%s\", %d);\n", # "::bootstrap" gets appended, TODO
 	0 ? "strdup($stashname)" : $stashname, length($stashname);
       print "\tPUTBACK;\n";
-      print "\tboot_$stashxsub(aTHX_ NULL);\n";
+      print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", TRUE));\n";
       print "\tSPAGAIN;\n";
     }
   }
@@ -4583,10 +4852,6 @@ _EOT9
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
 	  print "#ifdef USE_DYNAMIC_LOADING\n";
-	  if ($] >= 5.015003) {
-	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
-	  }
-	  print "\tPUTBACK;\n";
 	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]
@@ -4597,8 +4862,11 @@ _EOT9
 	      B::svref_2object( \@{$stashname."::ISA"} ) ->save;
 	    }
 	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
+	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
+	    print "\tPUTBACK;\n";
 	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
 	  } else {
+	    print "\tPUTBACK;\n";
 	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/,
 	      $stashfile if $stashfile;
 	    print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
@@ -4629,7 +4897,7 @@ _EOT9
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
-	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
+	  # CvSTASH(CvGV(cv)) is invalid without (issue 86) - NamedCapture.xs
 	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", TRUE));\n";
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
