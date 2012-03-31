@@ -2289,7 +2289,7 @@ sub pp_entertry {
   $entertry_defined = 1;
   my $next = $op->next; # broken in 5.12, fixed in B::C by upgrading BASEOP
   # jump past leavetry
-  my $next = $op->other->next if $op->can("other"); # before 5.11.4 and after 5.13.8
+  $next = $op->other->next if $op->can("other"); # before 5.11.4 and after 5.13.8
   my $l = label( $next );
   debug "ENTERTRY label=$l (".ref($op).") ->".$next->name."(".ref($next).")\n";
   runtime(sprintf( "PP_ENTERTRY(%s);", $l));
