@@ -461,6 +461,7 @@ sub padop_name {
       and ($op->name eq 'padsv' or $op->name eq 'method_named'
 	   or ref($op) eq 'B::SVOP')) #threaded
   {
+    return () if $cv and ref($cv->PADLIST) eq 'B::SPECIAL';
     my @c = $cv ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
@@ -3058,6 +3059,8 @@ sub B::CV::save {
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
+  # stub CV i.e. ExtUtils::MakeMaker padlist isa B::SPECIAL (POSIX::ARG_MAX autoloaded)
+  # but this has an empty $$root also
   $B::C::curcv = $cv;
   my $padlistsym = 'NULL';
   my $pv         = $cv->PV;
@@ -3085,14 +3088,14 @@ sub B::CV::save {
     $ppname = "pp_anonsub_$anonsub_index";
     $anonsub_index++;
   }
-  $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
+  $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY ) if $$root;
   #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
   #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
   #  if $debug{cv};
   # XXX missing cv_start for AUTOLOAD on 5.8
-  $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
+  $startfield = objsym($root->next) if !$startfield and $$root; # 5.8 autoload has only root
   $startfield = "0" unless $startfield;
-  if ($$padlist) {
+  if ($$padlist and ref($padlist) ne 'B::SPECIAL') {
     # XXX readonly comppad names and symbols invalid
     #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
     warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
