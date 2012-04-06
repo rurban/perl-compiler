@@ -3,7 +3,10 @@
 perlall -m --nogit maketest -v
 
 # creates log.modules files with date added
-perlall -m --nogit make '-Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100'
+for l in `git ls-tree --name-only master|grep log.modules`; do
+    v=`perl -ne'm{^# path = .+perl(5.*)} and print $1' $l`
+    [ -n $v ] && perlall=$v perlall make '-Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100'
+done
 # t/todomod.pl
 
 # test vm's
