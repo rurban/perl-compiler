@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 3e1530d 2012-03-31 | CC 2nd my masks earlier $next
+# B::C::VERSION = 1.42_07 967f3f3 2012-04-04 | module update, 3e1530d fixed a couple of fails
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug
