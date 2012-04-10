@@ -1,6 +1,6 @@
 # B::C::VERSION = 1.42_07 967f3f3 2012-04-04 | module update, 3e1530d fixed a couple of fails
-# perlversion = 5.014002-nt
-# path = /usr/local/bin/perl5.14.2-nt
+# perlversion = 5.012004-nt
+# path = /usr/local/bin/perl5.12.4-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -70,7 +70,7 @@ pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
-pass if(1) => "Sys::Hostname"
+fail if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
 pass Time::Local
@@ -99,11 +99,11 @@ pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-pass AppConfig
+fail AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_07 - perl-5.014002-nt
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo   0 /   7 (0.0%)
+# 100 / 100 modules tested with B-C-1.42_07 - perl-5.012004-nt
+# pass  92 / 100 (92.0%)
+# fail   8 / 100 (8.0%)
+# todo   0 /   8 (0.0%)
 # skip   0 / 100 (0.0% not installed)
