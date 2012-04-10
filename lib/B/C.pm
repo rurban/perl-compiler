@@ -1414,7 +1414,7 @@ sub B::SVOP::save {
     }
   } else {
     my $sv  = $op->sv;
-    $svsym  =  $sv->save("svop ".$op->name);
+    $svsym  =  $sv->save(); #"svop ".$op->name);
     if ($svsym !~ /^sv_list/) {
       $svsym = '(SV*)'.$svsym;
     }
@@ -4185,13 +4185,11 @@ sub B::IO::save {
     # Note: all single-direction fp use IFP, just bi-directional pipes and
     # sockets use OFP also. But we need to set both, pp_print checks OFP.
     my $o = $io->object_2svref();
-    eval "require ".ref($o).";";
+    eval "require(".ref($o).");";
     my $fd = $o->fileno();
-    # use IO::Handle ();
-    # my $fd = IO::Handle::fileno($o);
     my $i = 0;
     foreach (qw(stdin stdout stderr)) {
-      if ($io->IsSTD($_) or $fd == -$i) {
+      if ($io->IsSTD($_) or ($fd and $fd == -$i)) {
 	$perlio_func = $_;
       }
       $i++;
@@ -5182,7 +5180,7 @@ sub B::GV::savecv {
   my $hv      = $gv->HV;
 
   my $fullname = $package . "::" . $name;
-  warn sprintf( "Checking GV &%s 0x%x\n", cstring($fullname), $$gv )
+  warn sprintf( "Checking GV &%s 0x%x\n", $fullname, $$gv )
     if $debug{gv};
 
   # We may be looking at this package just because it is a branch in the
@@ -5234,15 +5232,17 @@ sub mark_package {
 		   $force?" (forced)":"") if $verbose;
       # $include_package{$package} = 1;
       add_hashINC( $package );
-      walksymtable( \%{$package.'::'}, "savecv",
-		    sub { should_save( $_[0] ); return 1 },
-		    $package.'::' );
     } else {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
     }
+    walkpackages( \%{$package},
+		  sub { should_save( $_[0] ); return 1 },
+		  $package.'::' )  if $force;
+    walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
+
     if ( my @isa = get_isa($package) ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
@@ -6039,7 +6039,7 @@ OPTION:
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
       if ($arg =~ /\.p[lm]$/) {
-	eval "require \"$arg\";";  # path as string
+	eval "require(\"$arg\");";  # path as string
       } else {
 	eval "require $arg;";      # package as bareword with ::
       }
