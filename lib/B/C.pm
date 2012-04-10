@@ -5212,7 +5212,7 @@ sub B::GV::savecv {
     mark_package('Config', 1) if !$include_package{'Config'};
   }
   warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
-  $gv->save($fullname);
+  $gv->save;
 }
 
 sub mark_package {
@@ -5332,7 +5332,7 @@ sub skip_pkg {
 # with -O0 or -O1 do not delete packages which were brought in from
 # the script, i.e. not defined in B::C or O. Just to be on the safe side.
 sub can_delete {
-  if ($can_delete_pkg or $all_bc_pkg{$_{0}}) { return 1; } else { return undef; }
+  if ($can_delete_pkg or $all_bc_pkg{$_[0]}) { return 1; } else { return undef; }
 }
 
 sub should_save {
@@ -5646,7 +5646,7 @@ sub save_context {
     my $inc_gv = svref_2object( \*main::INC );
     $inc_hv    = $inc_gv->HV->save('main::INC');
     $init->add( sprintf( "GvHV(%s) = s\\_%x;",
-			 $inc_gv->save('main::INC'), $inc_gv->HV ) );
+			 $inc_gv->save, $inc_gv->HV ) );
     # $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
