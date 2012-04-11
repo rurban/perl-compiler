@@ -3161,7 +3161,8 @@ sub B::CV::save {
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
 	#	  ));
       } else {
-	$xpvcvsect->comment('STASH mg_u cur len CV_STASH START_U ROOT_U GV file PADLIST OUTSIDE outside_seq flags depth');
+	$xpvcvsect->comment('STASH mg_u cur len CV_STASH START_U ROOT_U GV file'
+			   .' PADLIST OUTSIDE outside_seq flags depth');
 	$xpvcvsect->add($xpvc);
 	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
