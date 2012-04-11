@@ -2878,7 +2878,12 @@ sub B::CV::save {
       return qq/get_cv("$fullname", TRUE)/;
     } else {
       my $xsstash = $stashname;
-      $xsstash =~ s/::/_/g;
+      if ($xsstash =~ /^PerlIO::Layer/) {
+	$xsstash =~ s/::/__/g; # standard XS names
+	$xsstash .= '_';
+      } else {
+	$xsstash =~ s/::/_/g;  # special (shortened) CORE names
+      }
       my $xs = "XS_${xsstash}_${cvname}";
       if ($stashname eq 'version') { # exceptions see universal.c:struct xsub_details details[]
         my %vtrans = (
@@ -3205,8 +3210,8 @@ sub B::CV::save {
     if ($$gvstash and $$cv) {
       # do not use GvSTASH because with DEBUGGING it checks for GP but
       # there's no GP yet.
-      $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
-			   $$cv, $$gvstash ) );
+      $init->add( sprintf( "GvXPVGV($sym)->xnv_u.xgv_stash = s\\_%x;",
+			   $$gvstash ) );
       warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
 	if $debug{cv} and $debug{gv};
     }
