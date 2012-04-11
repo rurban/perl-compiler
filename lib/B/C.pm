@@ -3199,7 +3199,8 @@ sub B::CV::save {
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
 	#	  ));
       } else {
-	$xpvcvsect->comment('GvSTASH cur len  depth mg_u MG_STASH CV_STASH START_U ROOT_U CV_GV cv_file PADLIST OUTSIDE outside_seq cv_flags');
+	$xpvcvsect->comment('GvSTASH cur len  depth mg_u MG_STASH CV_STASH START_U'
+			   .' ROOT_U CV_GV cv_file PADLIST OUTSIDE outside_seq cv_flags');
 	$xpvcvsect->add($xpvc);
 	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
@@ -3210,8 +3211,7 @@ sub B::CV::save {
     if ($$gvstash and $$cv) {
       # do not use GvSTASH because with DEBUGGING it checks for GP but
       # there's no GP yet.
-      $init->add( sprintf( "GvXPVGV($sym)->xnv_u.xgv_stash = s\\_%x;",
-			   $$gvstash ) );
+      $init->add( sprintf( "GvXPVGV($sym)->xnv_u.xgv_stash = s\\_%x;", $$gvstash ));
       warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
 	if $debug{cv} and $debug{gv};
     }
@@ -3261,8 +3261,8 @@ sub B::CV::save {
   }
 
   if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
-    $init->add( sprintf( "CvOUTSIDE(s\\_%x) = PL_main_cv;", $$cv ) );
-    $init->add( sprintf( "SvREFCNT_inc(PL_main_cv);") );
+    $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
+		"SvREFCNT_inc(PL_main_cv);" );
   }
   if ($$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
