@@ -5246,7 +5246,7 @@ sub mark_package {
     }
     walkpackages( \%{$package},
 		  sub { should_save( $_[0] ); return 1 },
-		  $package.'::' )  if $force;
+		  $package.'::' )  if $force and $package !~ /^main::/;
     walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
 
     if ( my @isa = get_isa($package) ) {
@@ -5351,6 +5351,7 @@ sub should_save {
   return if index($package, " ") != -1; # XXX skip invalid package names
   return if index($package, "(") != -1; # XXX this causes the compiler to abort
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
+  return if $package =~ /^main::/;
   if ($skip_package{$package} or $package =~ /^B::C(C?)::/) {
     delete_unsaved_hashINC($package);
     return;
