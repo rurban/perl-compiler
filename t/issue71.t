@@ -51,7 +51,7 @@ ctestok(2, "C", "ccode71i", $script,
 
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 SKIP: {
-skip "hangs", 1 if !$DEBUGGING;
+skip "hangs", 1 if !$DEBUGGING or $] < 5.010;
 use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
       $B::CC::VERSION < 1.14
