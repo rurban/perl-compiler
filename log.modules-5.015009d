@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 967f3f3 2012-04-04 | module update, 3e1530d fixed a couple of fails
+# B::C::VERSION = 1.42_07 a9b3612 2012-04-13 | i71_3 hangs also with DEBUGGING <5.10
 # perlversion = 5.015009d
 # path = /usr/local/bin/perl5.15.9d-32
 # platform = linux 32bit threaded debug
@@ -7,12 +7,12 @@ pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
-fail Pod::Simple
+pass Pod::Simple
 pass IO
 pass Scalar::Util
-fail Getopt::Long
+pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker
+pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -25,14 +25,13 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-fail URI
+pass URI
 pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
@@ -40,7 +39,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -85,7 +84,7 @@ pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-fail Test::Pod
+pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -99,11 +98,11 @@ pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-fail AppConfig
+pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_07 - perl-5.015009d
-# pass  92 / 100 (92.0%)
-# fail   8 / 100 (8.0%)
-# todo   0 /   8 (0.0%)
-# skip   0 / 100 (0.0% not installed)
+# 99 / 99 modules tested with B-C-1.42_07 - perl-5.015009d
+# pass  99 /  99 (100.0%)
+# fail   0 /  99 (0.0%)
+# todo   0 /   0 ()
+# skip   0 /  99 (0.0% not installed)
