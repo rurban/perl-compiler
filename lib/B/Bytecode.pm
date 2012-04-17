@@ -746,10 +746,12 @@ sub B::UNOP::bsave {
     && $op->flags & OPf_MOD
     && $op->private & OPpLVAL_INTRO
 
-    # change #18774 made my life hard
+    # change #18774 (localref) made my life hard (commit 82d039840b913b4)
     ? $first->ix
     : 0;
 
+  # XXX Are there more new UNOP's with first?
+  $firstix = $first->ix if $name eq 'require'; #issue 97
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
 }
