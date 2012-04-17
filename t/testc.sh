@@ -443,6 +443,8 @@ my IO::Socket::SSL $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";'
 result[95]='ok'
+tests[97]='use v5.12; print q(ok);'
+result[97]='ok'
 
 # from here on we test CC specifics only
 

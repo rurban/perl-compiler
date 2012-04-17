@@ -363,6 +363,8 @@ tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
 tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
+tests[97]='use v5.12; print q(ok);'
+result[97]='ok'
 
 init
 
