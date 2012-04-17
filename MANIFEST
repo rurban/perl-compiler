@@ -130,6 +130,7 @@ t/issue81.t
 t/issue90.t
 t/issue93.t
 t/issue95.t
+t/issue97.t
 t/modules.pm
 t/modules.t
 t/mymodules
