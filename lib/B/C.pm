@@ -771,6 +771,22 @@ sub ivx ($) {
   return $sval;
   #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
 }
+ # protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]
+sub nvx ($) {
+  my $nvx = shift;
+  my $nvgformat = $Config{nvgformat};
+  $nvgformat =~ s/"//g; #" poor editor
+  my $dblmax = "1.79769313486232e+308";
+  # my $ldblmax = "1.18973149535723176502e+4932L"
+  my $ll = $Config{d_longdbl} ? "LL" : "L";
+  my $sval = sprintf("%${nvgformat}%s", $nvx, $nvx > $dblmax ? $ll : "");
+  if ($nvx < -$dblmax) {
+    $sval = sprintf("%${nvgformat}%s", $nvx, $ll);
+  }
+  $sval = '0' if $sval =~ /(NAN|inf)$/i;
+  $sval .= '.00' if $sval =~ /^-?\d+$/;
+  return $sval;
+}
 
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
@@ -1861,9 +1877,7 @@ sub B::NV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my $nv = $sv->NV;
-  my $sval = sprintf("%g", $nv);
-  $nv = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt
+  my $nv = nvx($sv->NV);
   $nv .= '.00' if $nv =~ /^-?\d+$/;
   # IVX is invalid in B.xs and unused
   my $iv = $sv->FLAGS & SVf_IOK ? $sv->IVX : 0;
@@ -1949,25 +1963,25 @@ sub B::PVLV::save {
   if ($PERL514) {
     $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %u, %u, %u, Nullsv, %s",
-	       $cur, $len, $sv->NVX,
+       sprintf("Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %s, %u, %u, Nullsv, %s",
+	       $cur, $len, nvx($sv->NVX),
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } elsif ($PERL510) {
     $xpvlvsect->comment('xnv_u, CUR, LEN, GvNAME, MAGIC, STASH, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("%u, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, Nullsv, %s",
-	       $sv->NVX, $cur, $len,
+       sprintf("%s, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, Nullsv, %s",
+	       nvx($sv->NVX), $cur, $len,
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("%s, %u, %u, %ld, %s, 0, 0, %u, %u, Nullsv, %s",
-	       $pvsym, $cur, $len, $sv->IVX,
-	       $sv->NVX, $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
+       sprintf("%s, %u, %u, %s, %s, 0, 0, %u, %u, Nullsv, %s",
+	       $pvsym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
+	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
   }
@@ -2062,23 +2076,18 @@ sub B::PVNV::save {
   my ( $savesym, $cur, $len, $pv ) = save_pv_or_rv($sv);
   $savesym = substr($savesym,0,1) ne "(" ? "(char*)".$savesym : $savesym;
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
-  my $nvx = $sv->NVX;
+  my $nvx;
   my $ivx = $sv->IVX; # here must be IVX!
-  my $uvuformat = $Config{uvuformat};
-  $uvuformat =~ s/"//g;	#" poor editor
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
-    my $sval = sprintf("%g", $nvx);
-    $nvx = '0' if $sval =~ /(NAN|inf)$/i; # windows msvcrt (DateTime)
-    $nvx .= '.00' if $nvx =~ /^-?\d+$/;
+    $nvx = nvx($sv->NV);
   } else {
     if ($PERL510 and $C99) {
       $nvx = sprintf(".xpad_cop_seq.xlow = %s, .xpad_cop_seq.xhigh = %s",
                      ivx($sv->COP_SEQ_RANGE_LOW), ivx($sv->COP_SEQ_RANGE_HIGH),
 		    );
     } else {
-      my $sval = sprintf("%g", $nvx);
-      $nvx = '0' if $sval =~ /(NAN|inf)$/i;
+      $nvx = nvx($sv->NVX);
     }
   }
   if ($PERL510) {
@@ -2158,9 +2167,9 @@ sub B::BM::save {
       if $B::C::const_strings and $sv->FLAGS & SVf_READONLY and $] != 5.008009;
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
-       sprintf("%s, %u, %u, %d, %s, 0, 0, %d, %u, 0x%x",
+       sprintf("%s, %u, %u, %s, %s, 0, 0, %d, %u, 0x%x",
 	       defined($pv) && $B::C::pv_copy_on_grow ? cstring($pv) : "(char*)ptr_undef",
-	       $len,        $len + 258,    $sv->IVX, $sv->NVX,
+	       $len,        $len + 258,    ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
 	      ));
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
@@ -2349,16 +2358,16 @@ sub B::PVMG::save {
       return B::REGEXP::save($sv);
     }
     else {
-      $ivx = $sv->IVX; # XXX How to detect HEK* namehek?
-      $nvx = $sv->NVX; # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
+      $ivx = ivx($sv->IVX); # XXX How to detect HEK* namehek?
+      $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
     }
     if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
-      $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%ld}, {%s}",
+      $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%s}, {%s}",
 			      $cur, $len, $ivx, $nvx));
     } else {
       $xpvmgsect->comment("xnv_u, cur, len, xiv_u, xmg_u, xmg_stash");
-      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%ld}, {0}, Nullhv",
+      $xpvmgsect->add(sprintf("{%s}, %u, %u, {%s}, {0}, Nullhv",
 			    $nvx, $cur, $len, $ivx));
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
@@ -2373,13 +2382,13 @@ sub B::PVMG::save {
   else {
     # cannot initialize this pointer static
     if ($savesym =~ /&(PL|sv)/) { # (char*)&PL_sv_undef | (char*)&sv_list[%d]
-      $xpvmgsect->add(sprintf("%d, %u, %u, %ld, %s, 0, 0",
-			      0, $cur, $len, $sv->IVX, $sv->NVX));
+      $xpvmgsect->add(sprintf("%d, %u, %u, %s, %s, 0, 0",
+			      0, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
       $init->add( sprintf( "xpvmg_list[%d].xpv_pv = $savesym;",
 			   $xpvmgsect->index ) );
     } else {
-      $xpvmgsect->add(sprintf("%s, %u, %u, %ld, %s, 0, 0",
-			      $savesym, $cur, $len, $sv->IVX, $sv->NVX));
+      $xpvmgsect->add(sprintf("%s, %u, %u, %s, %s, 0, 0",
+			      $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
       push @static_free, sprintf("sv_list[%d]", $svsect->index+1)
 	if $len and $B::C::pv_copy_on_grow and !$in_endav;
     }
@@ -3218,10 +3227,10 @@ sub B::CV::save {
   }
   elsif ($PERL56) {
     $cur = length ( pack "a*", $pv );
-    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
+    my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
 		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
-	       cstring($pv), length($pv), length($pv), $cv->IVX,
-	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
+	       cstring($pv), length($pv), length($pv), ivx($cv->IVX),
+	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
 	      );
     if ($new_cv_fw) {
@@ -3237,10 +3246,10 @@ sub B::CV::save {
   }
   else { #5.8
     $cur = length ( pack "a*", $pv );
-    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub,"
+    my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub,"
 		       ." $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-	       cstring($pv),      length($pv), length($pv), $cv->IVX,
-	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
+	       cstring($pv),      length($pv), length($pv), ivx($cv->IVX),
+	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
 	      );
     if ($new_cv_fw) {
@@ -4151,10 +4160,10 @@ sub B::IO::save {
     $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp,"
 			." xio_dirpu, ..., subprocess, type, flags");
     $xpviosect->add(
-      sprintf("%s, %u, %u, %ld, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv,"
+      sprintf("%s, %u, %u, %s, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv,"
 	      ." %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
               $pvsym, 			   $len, $len + 1,
-              $io->IVX,                    $io->NVX,
+              ivx($io->IVX),               nvx($io->NVX),
               $io->LINES,                  $io->PAGE,
               $io->PAGE_LEN,               $io->LINES_LEFT,
               cstring( $io->TOP_NAME ),    cstring( $io->FMT_NAME ),
