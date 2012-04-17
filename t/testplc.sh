@@ -366,6 +366,8 @@ tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
 tests[97]='use v5.12; print q(ok);'
 result[97]='ok'
+tests[971]='use v5.6; print q(ok);'
+result[971]='ok'
 tests[98]='BEGIN{$^H{feature_say} = 1;}
 sub test { eval(""); }
 print q(ok);'
