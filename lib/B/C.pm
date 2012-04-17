@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_07';
+our $VERSION = '1.43';
 my %debug;
 my $eval_pvs = '';
 
@@ -1530,11 +1530,11 @@ sub B::COP::save {
 	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, %d, 0, " . "%u, %s, NULL",
+              "%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
               $op->_save_common, $op->line,
 	      "(char*)".constpv( $op->stashpv ), # we can store this static
 	      "(char*)".constpv( $file ), $op->stashflags,
-              $op->cop_seq, $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+              ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } else {
       # cop_label now in hints_hash (Change #33656)
@@ -1542,11 +1542,11 @@ sub B::COP::save {
 	      "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
+              "%s, %u, " . "%s, %s, 0, " . "%s, %s, NULL",
               $op->_save_common, $op->line,
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
-              $op->cop_seq,
+              ivx($op->cop_seq),
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
 	       ));
     }
@@ -1571,11 +1571,11 @@ sub B::COP::save {
   }
   elsif ($PERL510) {
     $copsect->comment("$opsect_common, line, label, stash, file, hints, seq, warnings, hints_hash");
-    $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, 0, " . "%u, %s, NULL",
+    $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, 0, " . "%s, %s, NULL",
 			  $op->_save_common,     $op->line, 'NULL',
 			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-			  $op->cop_seq,
+			  ivx($op->cop_seq),
 			  ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )));
     if ($op->label) {
       $init->add(sprintf( "CopLABEL_set(&cop_list[%d], CopLABEL_alloc(%s));",
@@ -1587,11 +1587,11 @@ sub B::COP::save {
     $copsect->comment("$opsect_common, label, stash, file, seq, arybase, line, warn_sv, io");
     $copsect->add(
       sprintf(
-	      "%s, %s, %s, %s, %u, %d, %u, %s %s",
+	      "%s, %s, %s, %s, %s, %d, %u, %s %s",
 	      $op->_save_common, cstring( $op->label ),
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-	      $op->cop_seq,      $op->arybase,
+	      ivx($op->cop_seq),      $op->arybase,
 	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
 	      ( $PERL56 ? "" : ", 0" )
 	     )
@@ -2073,11 +2073,8 @@ sub B::PVNV::save {
     $nvx .= '.00' if $nvx =~ /^-?\d+$/;
   } else {
     if ($PERL510 and $C99) {
-      # U if > INT32_MAX = 2147483647
-      my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
-      $nvx = sprintf(".xpad_cop_seq.xlow = %${uvuformat}, .xpad_cop_seq.xhigh = %${uvuformat}%s",
-                     $sv->COP_SEQ_RANGE_LOW, $sv->COP_SEQ_RANGE_HIGH,
-		     $sv->COP_SEQ_RANGE_HIGH > $intmax  ? "U" : ""
+      $nvx = sprintf(".xpad_cop_seq.xlow = %s, .xpad_cop_seq.xhigh = %s",
+                     ivx($sv->COP_SEQ_RANGE_LOW), ivx($sv->COP_SEQ_RANGE_HIGH),
 		    );
     } else {
       my $sval = sprintf("%g", $nvx);
@@ -2095,14 +2092,12 @@ sub B::PVNV::save {
     }
     unless ($C99 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
-      my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
-      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %${uvuformat};",
-                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_LOW),
+      $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %s;",
+                         $xpvnvsect->index, ivx($sv->COP_SEQ_RANGE_LOW)),
                  # pad.c: PAD_MAX = I32_MAX (4294967295)
                  # U suffix <= "warning: this decimal constant is unsigned only in ISO C90"
-                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %${uvuformat}%s;",
-                         $xpvnvsect->index, $sv->COP_SEQ_RANGE_HIGH,
-			 $sv->COP_SEQ_RANGE_HIGH > $intmax  ? "U" : ""));
+                 sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %s;",
+                         $xpvnvsect->index, ivx($sv->COP_SEQ_RANGE_HIGH)));
     }
   }
   else {
@@ -3151,7 +3146,7 @@ sub B::CV::save {
 	 "NULL", #cvfile later (now a HEK)
 	 $padlistsym,
 	 ${ $cv->OUTSIDE }, #if main_cv set later
-	 $cv->OUTSIDE_SEQ,
+	 ivx($cv->OUTSIDE_SEQ),
 	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
       if (!$new_cv_fw) {
