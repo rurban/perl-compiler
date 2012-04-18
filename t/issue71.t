@@ -51,10 +51,9 @@ ctestok(2, "C", "ccode71i", $script,
 
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 SKIP: {
-skip "hangs", 1 if !$DEBUGGING or $] < 5.010;
-use B::CC;
-ctestok(3, "CC", "ccode71i", $script,
-      $B::CC::VERSION < 1.14
-      ? "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
-      : undef);
+  my $msg = "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV),"
+    ." function Perl_pp_padhv";
+  skip "hangs", 1 if !$DEBUGGING or $] < 5.010 or $Config{useithreads};
+  use B::CC;
+  ctestok(3, "CC", "ccode71i", $script, $B::CC::VERSION < 1.14 ? $msg : undef);
 }
