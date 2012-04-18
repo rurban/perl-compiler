@@ -3,8 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2012-03-xx rurban
+1.43	2012-04-xx rurban
 	Improved package detection: methods, functions, require, new and bless
+	5.16 support
 
 	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
 	Detect typed lexicals objects to reliably find method packages.
@@ -12,6 +13,7 @@
 	  found. Check for method_named as last argument of methods.
 	Added check_entersub, check_bless, check_require - bless and new caching of
 	  packages for methods
+	Recursively store all package subs in 2nd pass, not only the needed.
 	try_isa(): Desperate method finding attempt by trying all seen packages, which
 	  slows down the compiler a lot. Added internal ISA Caching.
 	Special case Carp calling threads and B methods.
@@ -27,6 +29,7 @@
 	Threaded use the right CV PADLIST for SVOP's, proper curcv for new and
 	  bless detection.
 	* CC (1.13): added check_entersub, check_bless - bless and new caching
+	* Bytecode (1.14): fixed require and op_first, issue 97
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
@@ -34,6 +37,8 @@
 	new option -f passthru to C and CC
 
 1.42	2012-02-01 rurban
+	stable up to 5.14
+
 	* C: Improved finding methods in parent classes, visible by the
 	warning: <method> not found with -Ds, try_isa now
 	Save @ISA of those child classes.
