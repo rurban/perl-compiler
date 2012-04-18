@@ -3101,6 +3101,12 @@ OPTION:
           $debug{flags}++;
           $B::C::debug{flags}++;
         }
+	elsif ( exists $B::C::debug_map{$arg} ) {
+          $B::C::debug{ $B::C::debug_map{$arg} }++;
+	}
+	else {
+	  warn qq(ignoring unknown -D option "$arg"\n);
+	}
       }
     }
   }

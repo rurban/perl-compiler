@@ -324,6 +324,22 @@ our %option_map = (
 					 # Better do it in CC, but get rid of
 					 # NULL cops also there.
 );
+our %debug_map = (
+    'O' => 'op',
+    'A' => 'av',
+    'H' => 'hv',
+    'C' => 'cv',
+    'M' => 'mg',
+    'R' => 'rx',
+    'G' => 'gv',
+    'S' => 'sv',
+    'w' => 'walk',
+    'c' => 'cops',
+    's' => 'sub',
+    'p' => 'pkg',
+    'm' => 'meth',
+    'u' => 'unused',
+);
 
 my @xpvav_sizes;
 my ($max_string_len, $in_endav);
@@ -5964,54 +5980,15 @@ OPTION:
         $arg = 'uOcAHCMGSsmpwF';
       }
       foreach my $arg ( split( //, $arg ) ) {
-        if ( $arg eq "o" ) {
+        if (exists $debug_map{$arg}) {
+          $debug{ $debug_map{$arg} }++;
+        }
+        elsif ( $arg eq "o" ) {
 	  $verbose++;
 	  B->debug(1);
         }
-        elsif ( $arg eq "O" ) {
-          $debug{op}++;
-        }
-        elsif ( $arg eq "A" ) {
-          $debug{av}++;
-        }
-        elsif ( $arg eq "H" ) {
-          $debug{hv}++;
-        }
-        elsif ( $arg eq "C" ) {
-          $debug{cv}++;
-        }
-        elsif ( $arg eq "M" ) {
-          $debug{mg}++;
-        }
-        elsif ( $arg eq "R" ) {
-          $debug{rx}++;
-        }
-        elsif ( $arg eq "G" ) {
-          $debug{gv}++;
-        }
-        elsif ( $arg eq "S" ) {
-          $debug{sv}++;
-        }
         elsif ( $arg eq "F" ) {
           $debug{flags}++ if $] > 5.008 and eval "require B::Flags;";
-        }
-        elsif ( $arg eq "w" ) {
-          $debug{walk}++;
-        }
-        elsif ( $arg eq "c" ) {
-          $debug{cops}++;
-        }
-        elsif ( $arg eq "s" ) {
-          $debug{sub}++;
-        }
-        elsif ( $arg eq "p" ) {
-          $debug{pkg}++;
-        }
-        elsif ( $arg eq "m" ) {
-          $debug{meth}++;
-        }
-        elsif ( $arg eq "u" ) {
-          $debug{unused}++;
         }
         elsif ( $arg eq "r" ) {
           $debug{runtime}++;
