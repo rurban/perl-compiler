@@ -5934,6 +5934,7 @@ sub compile {
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::C::Section
 	       B::Section B::Pseudoreg B::Shadow B::C::InitSection
                B::C::Section::SUPER B::C::InitSection::SUPER
+	       B::Stackobj B::Bblock
 	      );
   mark_skip('DB', 'Term::ReadLine') if exists $DB::{deep};
 

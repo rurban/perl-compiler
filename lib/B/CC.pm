@@ -3128,7 +3128,8 @@ OPTION:
 
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
 	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O', 'Opcodes',
-	    'B::Stackobj', 'B::Bblock');
+	    'B::Stackobj', 'B::Stackobj::Bool', 'B::Stackobj::Padsv', 'B::Stackobj::Const',
+	    'B::Bblock');
   mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
 
   # Set some B::C optimizations.
