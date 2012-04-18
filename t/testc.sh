@@ -333,6 +333,12 @@ result[227]='ok'
 #issue 24
 tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
 result[224]='ok'
+tests[68]='package A;
+sub test {
+  use Data::Dumper; /^(.*?)\d+$/;
+  "Some::Package"->new();}
+print "ok"'
+result[68]='ok'
 # issue71
 tests[71]='
 package my;
