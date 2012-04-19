@@ -376,6 +376,10 @@ sub XSLoader::load_file {
       if ${DynaLoader::dl_debug};
 
   push @_, $module;
+  #if (my $ver = ${$module."::VERSION"}) {
+  #  # XXX Ensure that there is no v-magic attached,. Else xs_version_bootcheck will fail.
+  #  push @_, $ver;
+  #}
   # works with static linking too
   my $boots = "$module\::bootstrap";
   goto &$boots if defined &$boots;
@@ -4899,6 +4903,11 @@ _EOT9
 	printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
 	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
         if ( $xsub{$stashname} eq 'Dynamic' ) {
+	  { no strict 'refs';
+	    if (my $ver = ${$stashname."::VERSION"}) {
+	      printf "\tmXPUSHp(\"%s\", %d);\n", $ver, length($ver);
+	    }
+	  }
 	  print "\tPUTBACK;\n";
 	  print "#ifdef USE_DYNAMIC_LOADING\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
@@ -4947,6 +4956,11 @@ _EOT9
           warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and $verbose;
         }
         print "#else\n";
+	{ no strict 'refs';
+	  if (my $ver = ${$stashname."::VERSION"}) {
+	    printf "\tmXPUSHp(\"%s\", %d);\n", $ver, length($ver);
+	  }
+	}
 	print "\tPUTBACK;\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
