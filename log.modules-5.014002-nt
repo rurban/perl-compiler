@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 967f3f3 2012-04-04 | module update, 3e1530d fixed a couple of fails
+# B::C::VERSION = 1.43 155fdde 2012-04-18 | pass down CC -D flags to C and warn if unknown (%B::C::debug_map)
 # perlversion = 5.014002-nt
 # path = /usr/local/bin/perl5.14.2-nt
 # platform = linux 64bit non-threaded
@@ -7,12 +7,12 @@ pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
-fail Pod::Simple
+pass Pod::Simple
 pass IO
 pass Scalar::Util
-fail Getopt::Long
+pass Getopt::Long
 pass Pod::Parser
-fail ExtUtils::MakeMaker
+pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
@@ -25,14 +25,13 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-fail URI
+pass URI
 pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
@@ -40,7 +39,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -85,7 +84,7 @@ pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-fail Test::Pod
+pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -102,8 +101,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_07 - perl-5.014002-nt
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo   0 /   7 (0.0%)
-# skip   0 / 100 (0.0% not installed)
+# 99 / 99 modules tested with B-C-1.43 - perl-5.014002-nt
+# pass  98 /  99 (99.0%)
+# fail   1 /  99 (1.0%)
+# todo   0 /   1 (0.0%)
+# skip   0 /  99 (0.0% not installed)
