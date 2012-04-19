@@ -324,7 +324,7 @@ result[50]='ok'
 #-------------
 tests[68]='package A;
 sub test {
-  use Data::Dumper; /^(.*?)\d+$/;
+  use Data::Dumper (); /^(.*?)\d+$/;
   "Some::Package"->new();}
 print "ok"'
 result[68]='ok'
