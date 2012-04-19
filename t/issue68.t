@@ -4,11 +4,12 @@
 use strict;
 my $name = "ccode68i";
 use Test::More tests => 1;
+use Config;
 
 my $source = <<'EOF';
 package A;
 sub test {
-   use Data::Dumper;
+   use Data::Dumper ();
    
    $_ =~ /^(.*?)\d+$/;
    "Some::Package"->new();
@@ -38,8 +39,8 @@ my $runexe = $] < 5.008
 my $result = `$runexe`;
 $result =~ s/\n$//;
 
-SKIP: {
-  # skip "no v-objects on 5.6", 1 if $] < 5.008;
+TODO: {
+  local $TODO = "threaded >= 5.010" if $] >= 5.010 and $Config{useithreads};
   ok($result eq $expected, "issue68 - newPMOP assert");
 }
 
