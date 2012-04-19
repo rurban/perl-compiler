@@ -929,14 +929,14 @@ sub B::PMOP::bsave {
     asm "pregcomp";
   }
   elsif ($PERL510) {
-    # Since PMf_BASE_SHIFT we need a U32, which is a new bytecode for
-    # backwards compat
+    my $pv = $op->precomp;
+    # Since PMf_BASE_SHIFT we need a U32, which needs a new bytecode for
+    # backwards compat.
     asm "op_pmflags", $op->pmflags;
     bwarn("PMOP op_pmflags: ", $op->pmflags) if $debug{M};
-    my $pv = $op->precomp;
+    # pregcomp does not set the extflags correctly, just the pmflags
     asm "newpv", pvstring $pv;
     asm "pregcomp";
-    # pregcomp does not set the extflags correctly, just the pmflags
     asm "op_reflags", $op->reflags if $pv; # so overwrite the extflags
   }
 }
