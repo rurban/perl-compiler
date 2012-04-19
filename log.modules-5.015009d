@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 23dcddc 2012-04-16 | t/release-testing.sh: module test only -m
+# B::C::VERSION = 1.43 155fdde 2012-04-18 | pass down CC -D flags to C and warn if unknown (%B::C::debug_map)
 # perlversion = 5.015009d
 # path = /usr/local/bin/perl5.15.9d-32
 # platform = linux 32bit threaded debug
@@ -101,7 +101,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 99 modules tested with B-C-1.42_07 - perl-5.015009d
+# 99 / 99 modules tested with B-C-1.43 - perl-5.015009d
 # pass  99 /  99 (100.0%)
 # fail   0 /  99 (0.0%)
 # todo   0 /   0 ()

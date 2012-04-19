@@ -1,31 +1,30 @@
-# B::C::VERSION = 1.42_07 967f3f3 2012-04-04 | module update, 3e1530d fixed a couple of fails
+# B::C::VERSION = 1.43 155fdde 2012-04-18 | pass down CC -D flags to C and warn if unknown (%B::C::debug_map)
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
-fail Pod::Simple
+pass Pod::Simple
 pass IO
 pass Scalar::Util
-fail Getopt::Long
-fail Pod::Parser
-fail ExtUtils::MakeMaker
-fail Test::Simple
+pass Getopt::Long
+pass Pod::Parser
+pass ExtUtils::MakeMaker
+pass Test::Simple
 pass ExtUtils::Manifest
-fail Pod::Text
+pass Pod::Text
 pass constant
 pass Test
-fail Data::Dumper
+pass Data::Dumper
 pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -35,7 +34,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception
+pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -47,13 +46,13 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester
+pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
-fail version
+pass Test::NoWarnings
+pass version
 pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
@@ -65,9 +64,9 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
+pass Class::MOP
 pass Moose
-fail Test::Deep
+pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -80,14 +79,14 @@ pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
-fail Test::Warn
+pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-fail Test::Pod
+pass Test::Pod
 pass Digest::SHA1
-fail namespace::clean
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
@@ -95,15 +94,15 @@ pass XML::SAX
 pass YAML
 pass MooseX::Types
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-fail AppConfig
+pass AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
-# 100 / 100 modules tested with B-C-1.42_07 - perl-5.008009-nt
-# pass  78 / 100 (78.0%)
-# fail  22 / 100 (22.0%)
-# todo   0 /  22 (0.0%)
-# skip   0 / 100 (0.0% not installed)
+pass Template::Stash
+# 99 / 99 modules tested with B-C-1.43 - perl-5.008009-nt
+# pass  98 /  99 (99.0%)
+# fail   1 /  99 (1.0%)
+# todo   0 /   1 (0.0%)
+# skip   0 /  99 (0.0% not installed)
