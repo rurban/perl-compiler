@@ -4,7 +4,8 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.43	2012-04-xx rurban
-	Improved package detection: methods, functions, require, new and bless
+	Improved package detection: methods, functions, require, new and bless.
+	Bigger compile sizes. Store all subs of dependent packages.
 	5.16 support
 
 	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
@@ -28,6 +29,9 @@
 	Detect and skip GV->save in defined (issue 96).
 	Threaded use the right CV PADLIST for SVOP's, proper curcv for new and
 	  bless detection.
+	Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
+	  to get rid of the pesky Invalid version format error in xs_version_bootcheck
+	  if the $VERSION had already version magic attached. (no testcase, hard to repro)
 	* CC (1.13): added check_entersub, check_bless - bless and new caching
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
