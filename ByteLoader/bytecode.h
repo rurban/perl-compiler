@@ -310,8 +310,18 @@ static int bget_swab = 0;
 #define BSET_pregcomp(o, arg)						\
     STMT_START {                                                        \
       if (arg) {							\
+	SV * const repointer = &PL_sv_undef;				\
+	av_push(PL_regex_padav, repointer);				\
+	cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);		\
         PM_SETRE(cPMOPx(o),						\
 	         CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags)); \
+	PL_regex_pad = AvARRAY(PL_regex_padav);				\
+	if (SvCUR(PL_regex_pad[0])) {					\
+	  SV * const repointer = PL_regex_pad[0];			\
+	  if (SvCUR(repointer) % sizeof(IV)) {				\
+	    SvCUR_set(repointer, SvEND(repointer));			\
+	  }								\
+	}								\
       }									\
     } STMT_END
 #endif
