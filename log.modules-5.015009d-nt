@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 78397f2 2012-04-17 | t/issue97.t added
+# B::C::VERSION = 1.43 9e1d1e4 2012-04-19 | Fixed regex_pad offset in threaded perls >= 5.11, issue 68
 # perlversion = 5.015009d-nt
 # path = /usr/local/bin/perl5.15.9d-nt-32
 # platform = linux 32bit non-threaded debug
@@ -101,7 +101,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 99 modules tested with B-C-1.42_07 - perl-5.015009d-nt
+# 99 / 99 modules tested with B-C-1.43 - perl-5.015009d-nt
 # pass  99 /  99 (100.0%)
 # fail   0 /  99 (0.0%)
 # todo   1 /   0 ()
