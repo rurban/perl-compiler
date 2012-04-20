@@ -262,7 +262,7 @@ my %all_bc_pkg = map {$_=>1} qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
       warnings warnings::register DB next maybe maybe::next FileHandle fields
       AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils
       ExtUtils::Constant ExtUtils::Constant::ProxySubs threads base IO::File
-      IO::Seekable IO::Handle IO DynaLoader XSLoader O );
+      IO::Seekable IO::Handle IO DynaLoader XSLoader O);
 
 # Note: BEGIN-time sideffect-only packages like strict, vars or constant even
 # without functions should not be deleted, so they are not listed here.
@@ -3178,6 +3178,8 @@ sub B::CV::save {
 	 ivx($cv->OUTSIDE_SEQ),
 	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
+      # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
+      warn "lexwarnsym in XPVCV OUTSIDE: $xpvc" if $xpvc =~ /, \(CV\*\)iv\d/; # t/testc.sh -q -O3 227
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
