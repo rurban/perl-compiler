@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=68
-# newPMOP assertion
+# newPMOP assertion >=5.10 threaded
 use strict;
 my $name = "ccode68i";
 use Test::More tests => 1;
@@ -40,7 +40,8 @@ my $result = `$runexe`;
 $result =~ s/\n$//;
 
 TODO: {
-  local $TODO = "threaded >= 5.010" if $] >= 5.010 and $Config{useithreads};
+  use B::Bytecode;
+  local $TODO = "threaded >= 5.010" if $] >= 5.010 and $Config{useithreads} and $B::Bytecode::VERSION lt "1.14";
   ok($result eq $expected, "issue68 - newPMOP assert");
 }
 
