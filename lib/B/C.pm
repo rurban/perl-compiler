@@ -1767,10 +1767,13 @@ sub B::PMOP::save {
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
       }
       if ($] >= 5.011 and $ITHREADS) {
-	$init->add("av_push(PL_regex_padav, &PL_sv_undef);",
-		   "$pm.op_pmoffset = av_len(PL_regex_padav);",
-		   "PL_regex_pad = AvARRAY(PL_regex_padav);"
-		  );
+	my $pad_len = regex_padav->FILL; # already allocated
+	if ($pmopsect->index > $pad_len) {
+	  $init->add("av_push(PL_regex_padav, &PL_sv_undef);",
+		     "$pm.op_pmoffset = av_len(PL_regex_padav);",
+		     "PL_regex_pad = AvARRAY(PL_regex_padav);"
+		    );
+	}
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
         "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
