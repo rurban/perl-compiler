@@ -1693,18 +1693,22 @@ sub B::PMOP::save {
     }
   }
 
+  my $pmop_pmoffset = $ITHREADS # for >5.11thr just a placeholder.
+    ? ($] >= 5.011 ? $pmopsect->index + 1 : $op->pmoffset)
+    : 0; # op_pmregexp pointer
+
   # pmnext handling is broken in perl itself, we think. Bad op_pmnext
   # fields aren't noticed in perl's runtime (unless you try reset) but we
   # segfault when trying to dereference it to find op->op_pmnext->op_type
   if ($PERL510) {
     $pmopsect->comment(
-      "$opsect_common, first, last, pmoffset, pmflags, pmreplroot, pmreplstart"
+      "$opsect_common, first, last, pmoffset/pmregexp, pmflags, pmreplroot, pmreplstart"
     );
     $pmopsect->add(
       sprintf(
         "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",
         $op->_save_common, ${ $op->first },
-        ${ $op->last }, ( $ITHREADS ? $op->pmoffset : 0 ),
+        ${ $op->last }, $pmop_pmoffset,
         $op->pmflags, $replrootfield,
         $replstartfield
       )
@@ -1727,14 +1731,14 @@ sub B::PMOP::save {
     );
   } else { # perl5.8.x
     $pmopsect->comment(
-"$opsect_common, first, last, pmreplroot, pmreplstart, pmoffset, pmflags, pmpermflags, pmdynflags, pmstash"
+"$opsect_common, first, last, pmreplroot, pmreplstart, pmoffset/pmregexp, pmflags, pmpermflags, pmdynflags, pmstash"
     );
     $pmopsect->add(
       sprintf(
         "%s, s\\_%x, s\\_%x, %s, %s, 0, %u, 0x%x, 0x%x, 0x%x, %s",
         $op->_save_common, ${ $op->first },
         ${ $op->last },    $replrootfield,
-        $replstartfield,   $ITHREADS ? $op->pmoffset : 0,
+        $replstartfield,   $pmop_pmoffset,
         $op->pmflags,      $op->pmpermflags,
         $op->pmdynflags,   $ITHREADS ? cstring($op->pmstashpv) : "0"
       )
@@ -1761,6 +1765,12 @@ sub B::PMOP::save {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
         require "utf8_heavy.pl"; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+      }
+      if ($] >= 5.011 and $ITHREADS) {
+	$init->add("av_push(PL_regex_padav, &PL_sv_undef);",
+		   "$pm.op_pmoffset = av_len(PL_regex_padav);",
+		   "PL_regex_pad = AvARRAY(PL_regex_padav);"
+		  );
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
         "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
