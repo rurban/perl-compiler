@@ -880,10 +880,14 @@ sub force_dynpackage {
   my $pv = shift;
   no strict 'refs';
   if (!$skip_package{$pv} and $pv !~ /^B::/) { # XXX only loaded at run-time
-    if (!$INC{packname_inc($pv)}) {
+    if (!$INC{inc_packname($pv)}) {
       eval "require $pv;";
       if (!$@) {
-	warn "load \"$pv\"\n" if $debug{meth};
+	if (!$INC{inc_packname($pv)}) {
+	  warn "Warning: Problem with require \"$pv\" - !\$INC{".inc_packname($pv)."}\n";
+	} else {
+	  warn "load \"$pv\"\n" if $debug{meth};
+	}
       }
     }
     mark_package($pv);
