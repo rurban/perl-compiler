@@ -1697,9 +1697,9 @@ sub B::PMOP::save {
     }
   }
 
-  my $pmop_pmoffset = $ITHREADS # for >5.11thr just a placeholder.
-    ? ($] >= 5.011 ? $pmopsect->index + 1 : $op->pmoffset)
-    : 0; # op_pmregexp pointer
+  my $pmop_pmoffset = $ITHREADS # for >5.10thr (regex_padav) start with 1
+    ? ($] > 5.010 ? $pmopsect->index + 2 : $op->pmoffset)
+    : 0; # NULL op_pmregexp pointer
 
   # pmnext handling is broken in perl itself, we think. Bad op_pmnext
   # fields aren't noticed in perl's runtime (unless you try reset) but we
@@ -1772,7 +1772,7 @@ sub B::PMOP::save {
       }
       if ($] >= 5.011 and $ITHREADS) {
 	my $pad_len = regex_padav->FILL; # already allocated
-	if ($pmopsect->index > $pad_len) {
+	if (($pmopsect->index + 1) > $pad_len) {
 	  $init->add("av_push(PL_regex_padav, &PL_sv_undef);",
 		     "$pm.op_pmoffset = av_len(PL_regex_padav);",
 		     "PL_regex_pad = AvARRAY(PL_regex_padav);"
