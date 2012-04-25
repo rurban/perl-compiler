@@ -316,12 +316,6 @@ static int bget_swab = 0;
 	PL_regex_pad = AvARRAY(PL_regex_padav);				\
         PM_SETRE(cPMOPx(o),						\
 	         CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags)); \
-	if (SvCUR(PL_regex_pad[0])) {					\
-	  SV * const repointer = PL_regex_pad[0];			\
-	  if (SvCUR(repointer) % sizeof(IV)) {				\
-	    SvCUR_set(repointer, SvEND(repointer));			\
-	  }								\
-	}								\
       }									\
     } STMT_END
 #endif
