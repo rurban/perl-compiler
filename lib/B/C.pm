@@ -821,6 +821,7 @@ sub B::OP::fake_ppaddr {
 sub B::FAKEOP::fake_ppaddr { "NULL" }
 # XXX HACK! duct-taping around compiler problems
 sub B::OP::isa { UNIVERSAL::isa(@_) } # walkoptree_slow misses that
+sub B::OP::can { UNIVERSAL::can(@_) }
 sub B::OBJECT::name  { "" }           # B misses that
 $isa_cache{'B::OBJECT::can'} = 'UNIVERSAL';
 
@@ -948,7 +949,7 @@ sub check_entersub {
 	  push_package($package_pv);
 	}
       } elsif ($pkgop->name eq 'padsv') { # check cached obj class
-	my $objname = padop_name($pkgop, $cv);
+	my $objname = padop_name($pkgop, $cv) || '';
 	if (my $pv = cache_svop_pkg($pkgop)) {
 	  warn "cached package for $objname->$methodname found: \"$pv\"\n" if $debug{meth};
 	  svref_2object( \&{"$pv\::$methodname"} )->save
@@ -1170,9 +1171,9 @@ sub do_labels ($@) {
   for my $m (@_) {
     if ( ${ $op->$m } ) {
       label($op->$m);
-      $op->$m->save if $m ne 'first'
-       or ($op->flags & 4
-           and !($op->name eq 'const' and $op->flags & 64)); #OPpCONST_BARE has no first
+      $op->$m->save if $m ne 'first'; # first is saved by walkoptree, avoid recursion.
+      # or ($op->flags & 4
+      #     and !($op->name eq 'const' and $op->flags & 64)); #OPpCONST_BARE has no first
     }
   }
 }
@@ -1188,7 +1189,7 @@ sub B::UNOP::save {
   $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
-  do_labels ($op, 'first');
+  #do_labels ($op, 'first');
   $sym;
 }
 
@@ -1454,6 +1455,7 @@ sub B::SVOP::save {
     }
   } else {
     my $sv  = $op->sv;
+    # XXX Deep recursion in recursive functions
     $svsym  =  $sv->save(); #"svop ".$op->name);
     if ($svsym !~ /^sv_list/) {
       $svsym = '(SV*)'.$svsym;
@@ -2692,6 +2694,8 @@ sub try_isa {
   my $cvstashname = shift;
   my $cvname = shift;
   if (exists $isa_cache{"$cvstashname\::$cvname"}) {
+    warn "cached try_isa $cvstashname\::$cvname => "
+      .$isa_cache{"$cvstashname\::$cvname"}."\n" if $debug{meth};
     return $isa_cache{"$cvstashname\::$cvname"};
   }
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
@@ -2833,7 +2837,7 @@ sub B::CV::save {
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
     return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
-    mark_package($cvstashname, 1) unless $include_package{$cvstashname};
+    # mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -3045,7 +3049,7 @@ sub B::CV::save {
 
 	      no strict 'refs';
 	      my $newsym = svref_2object( \*{$newname} )->save;
-	      my $cvsym = $cv->save($newname);
+	      my $cvsym = defined objsym($cv) ? objsym($cv) : $cv->save($newname);
 	      if (my $oldsym = objsym($gv)) {
 		warn "Alias polluted $oldsym to $newsym\n" if $debug{gv};
 		$init->add("$oldsym = $newsym;");
@@ -3347,6 +3351,7 @@ sub B::CV::save {
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv} and $debug{gv};
+    mark_package($cvstashname) if $cvstashname and !$include_package{$cvstashname};
   }
   my $magic = $cv->MAGIC;
   if ($magic and $$magic) {
@@ -5256,9 +5261,17 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
+  if ($fullname eq 'B::walksymtable') {
+    # XXX Note that saving recursive functions recurses at all
+    warn sprintf( "Skip recursive \&$fullname\n" ) if $debug{gv};
+    return;
+  }
+  if (exists $all_bc_subs{$fullname}) {
+    warn sprintf( "Skip our \&$fullname\n" ) if $debug{gv};
+    return;
+  }
   # we should not delete already saved packages
   $saved{$package}++;
-  return if $fullname eq 'B::walksymtable'; # XXX fails and should not be needed
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
   if ($name eq 'Config') {
@@ -5293,6 +5306,7 @@ sub mark_package {
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
     }
+    # XXX Now or later to avoid deep recursion?
     walkpackages( \%{$package},
 		  sub { should_save( $_[0] ); return 1 },
 		  $package.'::' )  if $force and $package !~ /^main::/;
