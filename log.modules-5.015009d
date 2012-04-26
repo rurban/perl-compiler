@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 155fdde 2012-04-18 | pass down CC -D flags to C and warn if unknown (%B::C::debug_map)
+# B::C::VERSION = 1.43 deb074e 2012-04-25 | Bytecode thr: remove unneeded repointer adjust
 # perlversion = 5.015009d
 # path = /usr/local/bin/perl5.15.9d-32
 # platform = linux 32bit threaded debug
