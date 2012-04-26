@@ -262,7 +262,7 @@ my %all_bc_pkg = map {$_=>1} qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
       warnings warnings::register DB next maybe maybe::next FileHandle fields
       AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils
       ExtUtils::Constant ExtUtils::Constant::ProxySubs threads base IO::File
-      IO::Seekable IO::Handle IO DynaLoader XSLoader O );
+      IO::Seekable IO::Handle IO DynaLoader XSLoader O);
 
 # Note: BEGIN-time sideffect-only packages like strict, vars or constant even
 # without functions should not be deleted, so they are not listed here.
@@ -880,10 +880,14 @@ sub force_dynpackage {
   my $pv = shift;
   no strict 'refs';
   if (!$skip_package{$pv} and $pv !~ /^B::/) { # XXX only loaded at run-time
-    if (!$INC{packname_inc($pv)}) {
+    if (!$INC{inc_packname($pv)}) {
       eval "require $pv;";
       if (!$@) {
-	warn "load \"$pv\"\n" if $debug{meth};
+	if (!$INC{inc_packname($pv)}) {
+	  warn "Warning: Problem with require \"$pv\" - !\$INC{".inc_packname($pv)."}\n";
+	} else {
+	  warn "load \"$pv\"\n" if $debug{meth};
+	}
       }
     }
     mark_package($pv);
@@ -1693,18 +1697,22 @@ sub B::PMOP::save {
     }
   }
 
+  my $pmop_pmoffset = $ITHREADS # for >5.10thr (regex_padav) start with 1
+    ? ($] > 5.010 ? $pmopsect->index + 2 : $op->pmoffset)
+    : 0; # NULL op_pmregexp pointer
+
   # pmnext handling is broken in perl itself, we think. Bad op_pmnext
   # fields aren't noticed in perl's runtime (unless you try reset) but we
   # segfault when trying to dereference it to find op->op_pmnext->op_type
   if ($PERL510) {
     $pmopsect->comment(
-      "$opsect_common, first, last, pmoffset, pmflags, pmreplroot, pmreplstart"
+      "$opsect_common, first, last, pmoffset/pmregexp, pmflags, pmreplroot, pmreplstart"
     );
     $pmopsect->add(
       sprintf(
         "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",
         $op->_save_common, ${ $op->first },
-        ${ $op->last }, ( $ITHREADS ? $op->pmoffset : 0 ),
+        ${ $op->last }, $pmop_pmoffset,
         $op->pmflags, $replrootfield,
         $replstartfield
       )
@@ -1727,14 +1735,14 @@ sub B::PMOP::save {
     );
   } else { # perl5.8.x
     $pmopsect->comment(
-"$opsect_common, first, last, pmreplroot, pmreplstart, pmoffset, pmflags, pmpermflags, pmdynflags, pmstash"
+"$opsect_common, first, last, pmreplroot, pmreplstart, pmoffset/pmregexp, pmflags, pmpermflags, pmdynflags, pmstash"
     );
     $pmopsect->add(
       sprintf(
         "%s, s\\_%x, s\\_%x, %s, %s, 0, %u, 0x%x, 0x%x, 0x%x, %s",
         $op->_save_common, ${ $op->first },
         ${ $op->last },    $replrootfield,
-        $replstartfield,   $ITHREADS ? $op->pmoffset : 0,
+        $replstartfield,   $pmop_pmoffset,
         $op->pmflags,      $op->pmpermflags,
         $op->pmdynflags,   $ITHREADS ? cstring($op->pmstashpv) : "0"
       )
@@ -1761,6 +1769,15 @@ sub B::PMOP::save {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
         require "utf8_heavy.pl"; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+      }
+      if ($] >= 5.011 and $ITHREADS) {
+	my $pad_len = regex_padav->FILL; # already allocated
+	if (($pmopsect->index + 1) > $pad_len) {
+	  $init->add("av_push(PL_regex_padav, &PL_sv_undef);",
+		     "$pm.op_pmoffset = av_len(PL_regex_padav);",
+		     "PL_regex_pad = AvARRAY(PL_regex_padav);"
+		    );
+	}
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
         "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
@@ -3178,6 +3195,8 @@ sub B::CV::save {
 	 ivx($cv->OUTSIDE_SEQ),
 	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
+      # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
+      warn "lexwarnsym in XPVCV OUTSIDE: $xpvc" if $xpvc =~ /, \(CV\*\)iv\d/; # t/testc.sh -q -O3 227
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
@@ -5127,11 +5146,7 @@ EOT
     print <<"EOT";
     if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
-#ifdef WIN32
-        sv_setpv(tmpsv,"perl.exe");
-#else
-        sv_setpv(tmpsv,"perl");
-#endif
+        sv_setpv(tmpsv,"$^X");
         SvSETMAGIC(tmpsv);
     }
 

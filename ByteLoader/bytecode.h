@@ -313,15 +313,9 @@ static int bget_swab = 0;
 	SV * const repointer = &PL_sv_undef;				\
 	av_push(PL_regex_padav, repointer);				\
 	cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);		\
+	PL_regex_pad = AvARRAY(PL_regex_padav);				\
         PM_SETRE(cPMOPx(o),						\
 	         CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags)); \
-	PL_regex_pad = AvARRAY(PL_regex_padav);				\
-	if (SvCUR(PL_regex_pad[0])) {					\
-	  SV * const repointer = PL_regex_pad[0];			\
-	  if (SvCUR(repointer) % sizeof(IV)) {				\
-	    SvCUR_set(repointer, SvEND(repointer));			\
-	  }								\
-	}								\
       }									\
     } STMT_END
 #endif
@@ -329,7 +323,7 @@ static int bget_swab = 0;
 /* see op.c:newPMOP
  * Must use a SV now. build it on the fly from the given pv. 
  * TODO: 5.11 could use newSVpvn_flags with SVf_TEMP
- * PM_SETRE adjust no PL_regex_pad, so repoint manually.
+ * PM_SETRE does not adjust PL_regex_pad, so repoint manually.
  */
 #define BSET_pregcomp(o, arg)						\
     STMT_START {                                                        \
