@@ -5615,7 +5615,7 @@ sub save_unused_subs {
   do {
     @init_unused = grep { $include_package{$_} } keys %include_package;
     if ($verbose) {
-      warn "Prescan ".length(@init_unused)." packages for unused subs in $main"
+      warn "Prescan ".scalar(@init_unused)." packages for unused subs in $main"
 	. ($sav_debug{unused} ? " (silent)\n" : "\n");
     }
     descend_marked_unused();
@@ -5628,7 +5628,7 @@ sub save_unused_subs {
     walksymtable( \%{$main}, "savecv", \&should_save );
     @unused = grep { $include_package{$_} } keys %include_package;
     if ($verbose) {
-      warn sprintf("old unused: %d, new: %d\n", length @init_unused, length @unused);
+      warn sprintf("old unused: %d, new: %d\n", scalar @init_unused, scalar @unused);
     }
   } while @unused > @init_unused;
 
