@@ -2694,8 +2694,8 @@ sub try_isa {
   my $cvstashname = shift;
   my $cvname = shift;
   if (exists $isa_cache{"$cvstashname\::$cvname"}) {
-    warn "cached try_isa $cvstashname\::$cvname => "
-      .$isa_cache{"$cvstashname\::$cvname"}."\n" if $debug{meth};
+    #warn "cached try_isa $cvstashname\::$cvname => "
+    #  .$isa_cache{"$cvstashname\::$cvname"}."\n" if $debug{meth};
     return $isa_cache{"$cvstashname\::$cvname"};
   }
   # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
@@ -2837,7 +2837,7 @@ sub B::CV::save {
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
     return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
-    # mark_package($cvstashname, 1) unless $include_package{$cvstashname};
+    mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -3422,6 +3422,13 @@ if (0) {
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
+  my $fancyname;
+  if ( $filter =~ / :pad/ ) {
+    $fancyname = cstring($filter);
+    $filter = 0;
+  } else {
+    $fancyname = cstring($fullname);
+  }
 
   if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
     $filter = 8;
@@ -3434,7 +3441,7 @@ if (0) {
   #}
 
   my $name     = cstring($fullname);
-  warn "  GV name is $name\n" if $debug{gv};
+  warn "  GV name is $fancyname\n" if $debug{gv};
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
 
@@ -3543,7 +3550,7 @@ if (0) {
   elsif ( $fullname eq 'main::!' ) { #Errno
     $savefields = Save_HV;
   }
-  $savefields &= ~$filter if ($filter and $filter > 0 and $filter < 64);
+  $savefields &= ~$filter if ($filter and $filter !~ / :pad/ and $filter > 0 and $filter < 64);
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.
@@ -5297,19 +5304,20 @@ sub mark_package {
     {
       warn sprintf("$package previously deleted, save now%s\n",
 		   $force?" (forced)":"") if $verbose;
-      # $include_package{$package} = 1;
+      $include_package{$package} = 1;
       add_hashINC( $package );
+      # Avoid deep recursion
+      # walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
     } else {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
     }
-    # XXX Now or later to avoid deep recursion?
-    walkpackages( \%{$package},
-		  sub { should_save( $_[0] ); return 1 },
-		  $package.'::' )  if $force and $package !~ /^main::/;
-    walksymtable( \%{$package.'::'}, "savecv", \&should_save, $package.'::' );
+    # XXX TODO Re-walk later to avoid deep recursion
+    #walkpackages( \%{$package},
+    #		  sub { should_save( $_[0] ); return 1 },
+    #		  $package.'::' )  if $force and $package !~ /^main::/;
 
     if ( my @isa = get_isa($package) ) {
       # XXX walking the ISA is often not enough.
@@ -5327,7 +5335,8 @@ sub mark_package {
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
 	    mark_package($isa);
-	    walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
+	    # Avoid deep recursion
+	    # walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
           } else {
 	    #warn "isa $isa save\n" if $verbose;
             mark_package($isa);
@@ -5598,20 +5607,30 @@ sub save_unused_subs {
     %debug = ();
   }
   my $main = $module ? $module."::" : "main::";
-  if ($verbose) {
-    warn "Prescan for unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
-  }
-  # XXX TODO better strategy for compile-time added and required packages:
+
+  # Better strategy for compile-time added and required packages:
   # loop savecv and check pkg cache for new pkgs.
   # if so loop again with those new pkgs only, until the list of new pkgs is empty
-  descend_marked_unused();
-  walkpackages( \%{$main},
-                sub { should_save( $_[0] ); return 1 },
-                $main eq 'main::' ? undef : $main );
-  if ($verbose) {
-    warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
-  }
-  walksymtable( \%{$main}, "savecv", \&should_save );
+  my (@init_unused, @unused);
+  do {
+    @init_unused = grep { $include_package{$_} } keys %include_package;
+    if ($verbose) {
+      warn "Prescan ".length(@init_unused)." packages for unused subs in $main"
+	. ($sav_debug{unused} ? " (silent)\n" : "\n");
+    }
+    descend_marked_unused();
+    walkpackages( \%{$main},
+		  sub { should_save( $_[0] ); return 1 },
+		  $main eq 'main::' ? undef : $main );
+    if ($verbose) {
+      warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
+    }
+    walksymtable( \%{$main}, "savecv", \&should_save );
+    @unused = grep { $include_package{$_} } keys %include_package;
+    if ($verbose) {
+      warn sprintf("old unused: %d, new: %d\n", length @init_unused, length @unused);
+    }
+  } while @unused > @init_unused;
 
   if ( $sav_debug{unused} ) {
     %debug = %sav_debug;
