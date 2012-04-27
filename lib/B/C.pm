@@ -1189,7 +1189,7 @@ sub B::UNOP::save {
   $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
-  #do_labels ($op, 'first');
+  do_labels ($op, 'first');
   $sym;
 }
 
@@ -3351,7 +3351,6 @@ sub B::CV::save {
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv} and $debug{gv};
-    mark_package($cvstashname) if $cvstashname and !$include_package{$cvstashname};
   }
   my $magic = $cv->MAGIC;
   if ($magic and $$magic) {
