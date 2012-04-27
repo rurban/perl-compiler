@@ -3423,7 +3423,7 @@ if (0) {
   my $fullname = $package . "::" . $gvname;
   return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
   my $fancyname;
-  if ( $filter =~ / :pad/ ) {
+  if ( $filter and $filter =~ / :pad/ ) {
     $fancyname = cstring($filter);
     $filter = 0;
   } else {
