@@ -3,7 +3,7 @@
 function do_cp {
     for r in $r
       do 
-      for f in $(grep -l "$grep$r" $m)
+      for f in $(grep -l "$grep$r" $m 2>/dev/null)
       do 
         mkdir -p t/reports/$v/$r
 	if test "$move" = "1"
