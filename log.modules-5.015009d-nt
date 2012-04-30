@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.43 deb074e 2012-04-25 | Bytecode thr: remove unneeded repointer adjust
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.015009d-nt
-# path = /usr/local/bin/perl5.15.9d-nt-asan
+# path = /usr/local/bin/perl5.15.9d-nt-git
 # platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
@@ -64,38 +64,45 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
-fail Moose
+pass Class::MOP
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
-skip Sub::Identify
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
 pass Encode
-skip Variable::Magic
+pass Variable::Magic
 pass CGI
-skip B::Hooks::EndOfScope
+pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
-skip Clone
+pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone #TODO > 5.15 without threads
 pass DateTime::Locale
-skip DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 99 / 99 modules tested with B-C-1.43 - perl-5.015009d-nt
+# pass  99 /  99 (100.0%)
+# fail   0 /  99 (0.0%)
+# todo   1 /   0 ()
+# skip   0 /  99 (0.0% not installed)

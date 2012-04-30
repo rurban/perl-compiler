@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 1a6cb9f 2012-03-06 | throw away entersub -> gv stash detection - unneeded and unstable.
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -25,7 +25,6 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -102,8 +101,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.42_07 - perl-5.008005d-nt
-# pass  97 /  99 (98.0%)
-# fail   2 /  99 (2.0%)
+# 98 / 99 modules tested with B-C-1.43 - perl-5.008005d-nt
+# pass  96 /  98 (98.0%)
+# fail   2 /  98 (2.0%)
 # todo   1 /   2 (50.0%)
-# skip   1 / 100 (1.0% not installed)
+# skip   1 /  99 (1.0% not installed)

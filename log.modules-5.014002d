@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 155fdde 2012-04-18 | pass down CC -D flags to C and warn if unknown (%B::C::debug_map)
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug
