@@ -14,6 +14,7 @@ use strict;
 
 our $VERSION = '1.43';
 my %debug;
+our $check;
 my $eval_pvs = '';
 
 package B::C::Section;
@@ -61,6 +62,7 @@ sub output {
   my ( $section, $fh, $format ) = @_;
   my $sym = $section->symtable || {};
   my $default = $section->default;
+  return if $B::C::check;
   my $i = 0;
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
@@ -148,6 +150,7 @@ sub output {
   my ( $section, $fh, $format, $init_name ) = @_;
   my $sym = $section->symtable || {};
   my $default = $section->default;
+  return if $B::C::check;
   push @{ $section->[-1]{chunks} }, $section->[-1]{current};
 
   my $name = "aaaa";
@@ -4333,6 +4336,7 @@ sub B::SV::save {
 sub output_all {
   my $init_name = shift;
   my $section;
+  return if $check;
 
   my @sections = (
     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
@@ -5884,6 +5888,7 @@ sub save_main_rest {
   force_saving_xsloader() if $use_xsloader;
   fixup_ppaddr();
 
+  return if $check;
   warn "Writing output\n" if $verbose;
   output_boilerplate();
 
@@ -6032,6 +6037,9 @@ OPTION:
     if ( $opt eq "w" ) {
       $warn_undefined_syms = 1;
     }
+    if ( $opt eq "c" ) {
+      $check = 1;
+    }
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       if ($arg eq 'full') {
@@ -6068,7 +6076,11 @@ OPTION:
     elsif ( $opt eq "o" ) {
       $arg ||= shift @options;
       $outfile = $arg;
-      open( STDOUT, ">", $arg ) or return "$arg: $!\n";
+      if ($check) {
+	warn "Warning: -o argument ignored with -c\n";
+      } else {
+	open( STDOUT, ">", $arg ) or return "$arg: $!\n";
+      }
     }
     elsif ( $opt eq "s" and $arg eq "taticxs" ) {
       $outfile = "perlcc" unless $outfile;
@@ -6194,6 +6206,12 @@ Without extra arguments, it saves the main program.
 =item B<-o>I<filename>
 
 Output to filename instead of STDOUT
+
+=item B<-c>
+
+Check and abort.
+
+Compiles and prints only warnings, but does not emit C code.
 
 =item B<-m>I<Packagename> I<(NYI)>
 
