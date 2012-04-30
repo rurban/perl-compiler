@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_07 f2a08a5 2012-03-03 | add log.modules-5.015008 + -nt
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -25,7 +25,6 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -102,8 +101,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.42_07 - perl-5.008005d
-# pass  98 /  98 (100.0%)
-# fail   0 /  98 (0.0%)
-# todo   8 /   0 ()
-# skip   2 / 100 (2.0% not installed)
+# 97 / 99 modules tested with B-C-1.43 - perl-5.008005d
+# pass  97 /  97 (100.0%)
+# fail   0 /  97 (0.0%)
+# todo   7 /   0 ()
+# skip   2 /  99 (2.0% not installed)

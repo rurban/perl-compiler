@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 155fdde 2012-04-18 | pass down CC -D flags to C and warn if unknown (%B::C::debug_map)
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.012004-nt
 # path = /usr/local/bin/perl5.12.4-nt
 # platform = linux 64bit non-threaded
@@ -15,7 +15,7 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
-fail Pod::Text
+pass Pod::Text
 pass constant
 pass Test
 pass Data::Dumper
@@ -80,7 +80,7 @@ pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
-fail Encode
+pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
@@ -98,11 +98,11 @@ pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-pass AppConfig
+fail AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 99 / 99 modules tested with B-C-1.43 - perl-5.012004-nt
-# pass  96 /  99 (97.0%)
-# fail   3 /  99 (3.0%)
-# todo   0 /   3 (0.0%)
+# pass  97 /  99 (98.0%)
+# fail   2 /  99 (2.0%)
+# todo   0 /   2 (0.0%)
 # skip   0 /  99 (0.0% not installed)

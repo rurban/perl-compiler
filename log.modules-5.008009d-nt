@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.42_07 1a6cb9f 2012-03-06 | throw away entersub -> gv stash detection - unneeded and unstable.
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = linux 64bit non-threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 fail Pod::Simple
 pass IO
@@ -23,9 +23,8 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -52,7 +51,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-fail Test::NoWarnings
+pass Test::NoWarnings
 fail version
 pass Params::Validate
 pass Sub::Name
@@ -66,7 +65,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 fail Class::MOP
-fail Moose
+pass Moose
 fail Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -93,7 +92,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 fail DateTime::TimeZone
 pass DateTime::Locale
@@ -101,9 +100,9 @@ pass DateTime
 pass IO::String
 fail AppConfig
 pass UNIVERSAL::require
-fail Template::Stash
-# 100 / 100 modules tested with B-C-1.42_07 - perl-5.008009d-nt
-# pass  75 / 100 (75.0%)
-# fail  25 / 100 (25.0%)
-# todo   0 /  25 (0.0%)
-# skip   0 / 100 (0.0% not installed)
+skip Template::Stash
+# 98 / 99 modules tested with B-C-1.43 - perl-5.008009d-nt
+# pass  80 /  98 (81.6%)
+# fail  18 /  98 (18.4%)
+# todo   0 /  18 (0.0%)
+# skip   1 /  99 (1.0% not installed)
