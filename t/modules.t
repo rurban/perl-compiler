@@ -254,9 +254,12 @@ sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
   # ---------------------------------------
-  #foreach(qw(
-  #  ExtUtils::CBuilder
-  #)) { return 'overlong linking time' if $_ eq $module; }
+  foreach(qw(
+    Module::Build
+  )) { return 'overlong linking time' if $_ eq $module; }
+  foreach(qw(
+      Test::NoWarnings
+  )) { return 'print() on unopened filehandle $Testout' if $_ eq $module; }
   #if ($] < 5.007) { foreach(qw(
   #  ExtUtils::CBuilder
   #)) { return '5.6' if $_ eq $module; }}
