@@ -21,7 +21,7 @@ ExtUtils::Install
 Text::ParseWords
 ExtUtils::CBuilder
 ExtUtils::ParseXS
-#Module::Build
+Module::Build
 File::Path
 XSLoader
 MIME::Base64
