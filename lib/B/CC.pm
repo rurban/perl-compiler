@@ -42,6 +42,12 @@ Without extra arguments, it saves the main program.
 
 Output to filename instead of STDOUT
 
+=item B<-c>
+
+Check and abort.
+
+Compiles and prints only warnings, but does not emit C code.
+
 =item B<-v>
 
 Verbose compilation (prints a few compilation stages).
@@ -313,7 +319,7 @@ my %need_curcop;	# ops which need PL_curcop
 my $package_pv;         # sv->pv of previous op for method_named
 
 my %lexstate;           # state of padsvs at the start of a bblock
-my $verbose;
+my ( $verbose, $check );
 my ( $entertry_defined, $vivify_ref_defined );
 my ( $init_name, %debug, $strict );
 
@@ -2905,7 +2911,7 @@ sub cc_main {
     $end_av  = end_av->save;
   }
   cc_recurse();
-  return if $errors;
+  return if $errors or $check;
 
   if ( !defined($module) ) {
     my $amagic_generate = amagic_generation;
@@ -2998,6 +3004,10 @@ OPTION:
     elsif ( $opt eq "o" ) {
       $arg ||= shift @options;
       open( STDOUT, ">$arg" ) or return "open '>$arg': $!\n";
+    }
+    elsif ( $opt eq "c" ) {
+      $check       = 1;
+      $B::C::check = 1;
     }
     elsif ( $opt eq "v" ) {
       $verbose       = 1;
@@ -3181,6 +3191,7 @@ sub compile {
       my $warner = $SIG{__WARN__};
       save_sig($warner);
       fixup_ppaddr();
+      return if $check;
       output_boilerplate();
       print "\n";
       output_all( $init_name || "init_module" );
