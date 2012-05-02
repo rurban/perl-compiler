@@ -2467,7 +2467,7 @@ sub B::PVMG::save {
 
 # mark threads::shared to be xs-loaded
 sub mark_threads {
-  if ( $threads::VERSION ) {
+  if ( $INC{'threads.pm'} ) {
     my $stash = 'threads';
     mark_package($stash);
     $use_xsloader = 1;
@@ -2896,7 +2896,7 @@ sub B::CV::save {
       # from PL_initav->save. Re-bootstrapping  will push INIT back in,
       # so nullop should be sent.
       warn $fullname."\n" if $debug{sub};
-      return qq/NULL/;
+      return savesym( $cv, 'NULL' );
     }
     else {
       # XSUBs for IO::File, IO::Handle, IO::Socket, IO::Seekable and IO::Poll
@@ -2923,7 +2923,7 @@ sub B::CV::save {
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       #mark_package($stashname); # not needed
-      return qq/get_cv("$fullname", TRUE)/;
+      return savesym($cv, qq/get_cv("$fullname", TRUE)/);
     } else {
       my $xsstash = $stashname;
       if ($xsstash =~ /^PerlIO::Layer/) {
@@ -2970,7 +2970,7 @@ sub B::CV::save {
 	$B::C::DynaLoader_warn++;
       }
       $decl->add("XS($xs);");
-      return qq/newXS("$fullname", $xs, (char*)xsfile)/;
+      return savesym($cv, qq/newXS("$fullname", $xs, (char*)xsfile)/);
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3042,7 +3042,7 @@ sub B::CV::save {
 	  if ($$gvnew) {
 	    if ($cvstashname ne $gvnew->STASH->NAME or $cvname ne $gvnew->NAME) { # UNIVERSAL or AUTOLOAD
 	      my $newname = $gvnew->STASH->NAME."::".$gvnew->NAME;
-	      warn "New $newname autoloaded. remove old cv\n" if $debug{sub}; # and wrong GV?
+	      warn " New $newname autoloaded. remove old cv\n" if $debug{sub}; # and wrong GV?
 	      unless ($new_cv_fw) {
 		$svsect->remove;
 		$xpvcvsect->remove;
@@ -3090,7 +3090,7 @@ sub B::CV::save {
   }
   if (!$$root) {
     if ($fullname ne 'threads::tid' and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"}))) {
-      warn "WARNING: &".$fullname." not found\n" if $verbose or $debug{sub};
+      warn "Warning: &".$fullname." not found\n" if $verbose or $debug{sub};
     }
     $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
     if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
@@ -3433,10 +3433,9 @@ if (0) {
     $fancyname = cstring($fullname);
   }
 
-  if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
+  # checked for defined'ness in Carp. So the GV must exist, the CV not
+  if ($fullname =~ /^threads::(tid|AUTOLOAD)$/ and !$ITHREADS) {
     $filter = 8;
-    # $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
-    # return $sym;
   }
   #if ( !defined(*{$fullname}{GLOB}) or $skip_package{$package} or $package =~ /^B::C(C?)::/) {
   #  $init->add(qq[$sym = &PL_sv_undef;]);
@@ -4285,7 +4284,7 @@ sub B::IO::save {
       }
       elsif ($iotype =~ /[a>]/) { # write-only
 	warn "Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd\n"
-	  if $fd >= 3 or $verbose;
+	  if $fd >= 3;
 	my $mode = $iotype eq '>' ? 'w' : 'a';
 	#$init->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
 	#		    cstring($mode), $fd));
@@ -4294,7 +4293,7 @@ sub B::IO::save {
       }
       elsif ($iotype =~ /[<#\+]/) {
 	warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"
-	  if $fd >= 3 or $verbose; # need to setup it up before
+	  if $fd >= 3; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
 		   "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"r\");");
 	my $tell;
