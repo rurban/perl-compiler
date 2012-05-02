@@ -38,9 +38,9 @@ SKIP: {
   skip "eats memory on 5.6", 2 if $] <= 5.008001;
   skip "fails 5.14 threaded", 2
     if $] > 5.014 and $] < 5.015 and $Config{'useithreads'} and ! -d ".git";
-  $cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
+  # $cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
   $cmt = "TODO 5.6.2"   if $] < 5.007;
-  $cmt = "TODO 5.15"    if $] > 5.015;
+  # $cmt = "TODO 5.15"    if $] > 5.015;
   ctestok(2, "C", $name, $script, "C $name $cmt");
   ctestok(3, "CC", $name, $script, "TODO CC $name $cmt");
 }
