@@ -173,6 +173,7 @@ sub all_common {
     delete $h->{$_[0]}->{''};
     return $h->{$_[0]};
   }
+  return {} unless @_;
   # init with shortest list, sort hash by least number of keys
   my @p = sort { h_size($h->{$a}) <=> h_size($h->{$b}) } @_;
   my $pivot = $p[0];
