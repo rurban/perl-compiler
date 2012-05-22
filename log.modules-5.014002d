@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 ceead94 2012-04-30 | implement -c for B::C and B::CC - fixes issue 99
+# B::C::VERSION = 1.43 1049b74 2012-05-03 | status_upd: protect against an empty list
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug
@@ -96,14 +96,14 @@ pass YAML
 pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
+fail DateTime::Locale
 pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.43 - perl-5.014002d
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   2 /   1 (200.0%)
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   2 /   2 (100.0%)
 # skip   0 / 100 (0.0% not installed)
