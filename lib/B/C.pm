@@ -1570,7 +1570,19 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
-    if ($ITHREADS and $] >= 5.015004) {
+    if ($ITHREADS and $] >= 5.016 and $B::VERSION gt '1.34') {
+      # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen
+      $copsect->comment(
+	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
+      $copsect->add(
+	sprintf(
+              "%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
+              $op->_save_common, $op->line,
+	      "(char*)".constpv( $op->stashpv ), # we can store this static
+	      "(char*)".constpv( $file ), $op->stashlen,
+              ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+	       ));
+    } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
       $copsect->comment(
 	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
       $copsect->add(
@@ -1653,9 +1665,14 @@ sub B::COP::save {
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
   ) if !$optimize_cop and !$ITHREADS;
-  $init->add(
-    sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
-  ) if !$ITHREADS;
+  if (!$ITHREADS) {
+    if ($] >= 5.016) {
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s, %d);",
+			  constpv( $op->stashpv ), length $op->stashpv));
+    } else {
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
+    }
+  }
 
   # our root: store all packages from this file
   if (!$mainfile) {
@@ -4798,8 +4815,10 @@ _EOT7
       } elsif ($s =~ /^&sv_list/) {
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "    CopFILE_set(&$s, NULL); CopSTASHPV_set(&$s, NULL);\n"
-	  if $ITHREADS or !$MULTI;
+	if ($ITHREADS or !$MULTI) {
+	  print "    CopFILE_set(&$s, NULL);";
+	  print $] <5.016 ? " CopSTASHPV_set(&$s, NULL);\n" : " CopSTASHPV_set(&$s, NULL, 0);\n";
+	}
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
