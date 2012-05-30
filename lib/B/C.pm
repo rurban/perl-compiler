@@ -1570,17 +1570,19 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
-    if ($ITHREADS and $] >= 5.016 and $B::VERSION gt '1.34') {
+    if ($ITHREADS and $] >= 5.016) {
       # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen
       $copsect->comment(
 	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
-              $op->_save_common, $op->line,
-	      "(char*)".constpv( $op->stashpv ), # we can store this static
-	      "(char*)".constpv( $file ), $op->stashlen,
-              ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+		"%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
+		$op->_save_common, $op->line,
+		"(char*)".constpv( $op->stashpv ), # we can store this static
+		"(char*)".constpv( $file ),
+		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len)
+		$B::VERSION gt '1.34' ? $op->stashlen : length($op->stashpv),
+		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
       $copsect->comment(
@@ -1666,12 +1668,7 @@ sub B::COP::save {
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
   ) if !$optimize_cop and !$ITHREADS;
   if (!$ITHREADS) {
-    if ($] >= 5.016) {
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s, %d);",
-			  constpv( $op->stashpv ), length $op->stashpv));
-    } else {
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
-    }
+    $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
   }
 
   # our root: store all packages from this file

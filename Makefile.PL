@@ -51,6 +51,9 @@ sub write_b_c_flags {
 }
 write_b_c_flags;
 
+# XXX Check for 5.16.0 B-1.34 and offer to patch it? 
+# Or not needed as we do not want to support utf8 and \0 in stashes there
+
 WriteMakefile(
     NAME	 => "B::C",
     VERSION_FROM => "lib/B/C.pm",
