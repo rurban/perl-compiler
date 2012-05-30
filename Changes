@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2012-04-xx rurban
+1.43	2012-06-xx rurban
 	Improved package detection: methods, functions, require, new and bless.
 	Bigger compile sizes. Store all subs of dependent packages.
 	5.16 support
@@ -32,6 +32,9 @@
 	Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
 	  to get rid of the pesky Invalid version format error in xs_version_bootcheck
 	  if the $VERSION had already version magic attached. (no testcase, hard to repro)
+	perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
+	  we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
+	  If you need it upgrade to B 1.35
 	* CC (1.13): added check_entersub, check_bless - bless and new caching
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68
