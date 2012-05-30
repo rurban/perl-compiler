@@ -35,6 +35,7 @@
 	perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
 	  we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
 	  If you need it upgrade to B 1.35
+	amagic_generation was removed with 5.17
 	* CC (1.13): added check_entersub, check_bless - bless and new caching
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68

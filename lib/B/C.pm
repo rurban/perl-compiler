@@ -5757,17 +5757,18 @@ sub save_context {
     # $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
-  my $amagic_generate = amagic_generation;
-  warn "amagic_generation = $amagic_generate\n" if $verbose;
   $init->add(
     "GvHV(PL_incgv) = $inc_hv;",
     "GvAV(PL_incgv) = $inc_av;",
     "PL_curpad = AvARRAY($curpad_sym);",
     "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
     "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */",
-    "PL_amagic_generation = $amagic_generate;"
-  );
+    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+  if ($] < 5.017) {
+    my $amagic_generate = amagic_generation;
+    warn "amagic_generation = $amagic_generate\n" if $verbose;
+    $init->add("PL_amagic_generation = $amagic_generate;");
+  };
 }
 
 sub descend_marked_unused {
