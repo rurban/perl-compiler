@@ -364,7 +364,7 @@ sub XSLoader::load_file {
   my $boots = "$module\::bootstrap";
   goto &$boots if defined &$boots;
 
-  my @modparts = split(/::/,$module);
+  my @modparts = split(/::/,$module); # crashes threaded, issue 100
   my $modfname = $modparts[-1];
   my $modpname = join('/',@modparts);
   my $c = @modparts;
@@ -1266,7 +1266,32 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
-    if ($ITHREADS and $] >= 5.015004) {
+    if ($ITHREADS and $] >= 5.017) {
+      $copsect->comment(
+	      "$opsect_common, line, stashoff, file, hints, seq, warnings, hints_hash");
+      $copsect->add(
+	sprintf(
+		"%s, %u, " . "%d, %s, 0, " . "%s, %s, NULL",
+		$op->_save_common, $op->line,
+		$op->stashoff, "(char*)".constpv( $file ), #hints=0
+		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+	       ));
+    } elsif ($ITHREADS and $] >= 5.016) {
+      # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen (5.16.0 only)
+      $copsect->comment(
+	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
+      $copsect->add(
+	sprintf(
+		"%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
+		$op->_save_common, $op->line,
+		"(char*)".constpv( $op->stashpv ), # we can store this static
+		"(char*)".constpv( $file ),
+		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len),
+		# 5.16.0 B-1.35 has stashlen, 5.16.1 we will see.
+		$op->can('stashlen') ? $op->stashlen : length($op->stashpv),
+		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+	       ));
+    } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
       $copsect->comment(
 	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
       $copsect->add(
@@ -1350,7 +1375,8 @@ sub B::COP::save {
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
   ) if !$optimize_cop and !$ITHREADS;
   $init->add(
-    sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) )
+    sprintf( "CopSTASHPV_set(&cop_list[$ix], %s%s);", constpv( $op->stashpv ),
+             $]<5.016 or $]>=5.017 ? "" : ", ".length($op->stashpv))
   ) if !$ITHREADS;
 
   # our root: store all packages from this file
@@ -4455,8 +4481,12 @@ _EOT7
       } elsif ($s =~ /^&sv_list/) {
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
-	print "    CopFILE_set(&$s, NULL); CopSTASHPV_set(&$s, NULL);\n"
-	  if $ITHREADS or !$MULTI;
+	if ($ITHREADS or !$MULTI) {
+	  print "    CopFILE_set(&$s, NULL);";
+	  print $]<5.016 or $]>=5.017
+	    ? " CopSTASHPV_set(&$s, NULL);\n"
+	    : " CopSTASHPV_set(&$s, NULL, 0);\n";
+	}
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
