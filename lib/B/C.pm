@@ -4814,7 +4814,7 @@ _EOT7
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
-	  print $]<5.016 or $]>=5.017
+	  print !$ITHREADS or $]<5.016 or $]>=5.017
 	    ? " CopSTASHPV_set(&$s, NULL);\n"
 	    : " CopSTASHPV_set(&$s, NULL, 0);\n";
 	}
