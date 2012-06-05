@@ -387,7 +387,7 @@ sub XSLoader::load_file {
   my $boots = "$module\::bootstrap";
   goto &$boots if defined &$boots;
 
-  my @modparts = split(/::/,$module);
+  my @modparts = split(/::/,$module); # crashes threaded, issue 100
   my $modfname = $modparts[-1];
   my $modpname = join('/',@modparts);
   my $c = @modparts;
@@ -4814,7 +4814,9 @@ _EOT7
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
-	  print $] <5.016 ? " CopSTASHPV_set(&$s, NULL);\n" : " CopSTASHPV_set(&$s, NULL, 0);\n";
+	  print $]<5.016 or $]>=5.017
+	    ? " CopSTASHPV_set(&$s, NULL);\n"
+	    : " CopSTASHPV_set(&$s, NULL, 0);\n";
 	}
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
