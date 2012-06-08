@@ -305,7 +305,7 @@ our ($curcv, $module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $opt_require);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -323,6 +323,7 @@ our %option_map = (
     'warnings'        => \$B::C::warnings, # disable with -fno-warnings
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
+    'require'         => \$B::C::opt_require,
     'cop'             => \$optimize_cop, # XXX very unsafe!
 					 # Better do it in CC, but get rid of
 					 # NULL cops also there.
@@ -1006,6 +1007,10 @@ sub check_bless {
   }
 }
 
+# TODO This should be optional, -frequire, as it
+# turns run-time loading into compile-time, resulting into
+# huge self-contained executables, compared to slim exe doing
+# some extra work due to some extra logic.
 # $ p -MO=Concise -e'require MyModule'
 # 5  <@> leave[1 ref] vKP/REFC ->(end)
 # 1     <0> enter ->2
@@ -1039,7 +1044,7 @@ sub B::OP::_save_common {
   if ($op->type > 0) {
     check_entersub($op) if $op->name eq 'entersub';
     check_bless($op)    if $op->name eq 'bless';
-    check_require($op)  if $op->name eq 'require';
+    check_require($op)  if $op->name eq 'require' and $opt_require;
   }
   return sprintf(
     "s\\_%x, s\\_%x, %s",
@@ -6467,6 +6472,12 @@ This helps with destruction problems of static data in the
 default perl destructor, and enables C<-fcog> since 5.10.
 
 Enabled with C<-O3>.
+
+=item B<-frequire>
+
+Includes packages of require statements. Without certain packages will not be
+found, thus run-time loaded. With C<-frequire> you will compile more packages
+into the executables, even those which are very seldom loaded at run-time.
 
 =item B<-fno-save-sig-hash>
 
