@@ -6475,12 +6475,6 @@ default perl destructor, and enables C<-fcog> since 5.10.
 
 Enabled with C<-O3>.
 
-=item B<-frequire>
-
-Includes packages of require statements. Without certain packages will not be
-found, thus run-time loaded. With C<-frequire> you will compile more packages
-into the executables, even those which are very seldom loaded at run-time.
-
 =item B<-fno-save-sig-hash>
 
 Disable compile-time modifications to the %SIG hash.
@@ -6514,6 +6508,15 @@ which could be better done by checking C<%INC>, and cost about 10% space and
 startup-time.
 
 C<-fno-stash> is the default.
+
+=item B<-frequire>
+
+Includes packages of require statements. Without C<-frequire> certain packages
+will not be found, thus run-time loaded. With C<-frequire> you will compile
+more packages into the executables, even those which are very seldom loaded at
+run-time.
+
+C<-fno-require> is the default.
 
 =item B<-fuse-script-name>
 
