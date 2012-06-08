@@ -1571,9 +1571,10 @@ sub B::COP::save {
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
     if ($ITHREADS and $] >= 5.016) {
-      # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen
+      # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen (5.16.0 only)
       $copsect->comment(
-	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
+	      "$opsect_common, line, stashpv, file, ".$] >= 5.017 ?"stashoff":"stashlen"
+	      .", hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
 		"%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
@@ -1581,7 +1582,9 @@ sub B::COP::save {
 		"(char*)".constpv( $op->stashpv ), # we can store this static
 		"(char*)".constpv( $file ),
 		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len)
-		$B::VERSION gt '1.34' ? $op->stashlen : length($op->stashpv),
+		# 5.16.0 B-1.35 has stashlen, 5.17 not anymore
+		$] >= 5.017 ? $op->stashoff :
+		  ($op->can('stashlen') : $op->stashlen : length($op->stashpv)),
 		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
