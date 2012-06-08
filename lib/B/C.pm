@@ -305,7 +305,7 @@ our ($curcv, $module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $opt_require);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $opt_require, $opt_search);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -324,6 +324,7 @@ our %option_map = (
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'require'         => \$B::C::opt_require,
+    'search'          => \$B::C::opt_search,
     'cop'             => \$optimize_cop, # XXX very unsafe!
 					 # Better do it in CC, but get rid of
 					 # NULL cops also there.
@@ -1386,6 +1387,7 @@ sub method_named {
       mark_package($p, 1);
       last CAND;
     } else {
+      return unless $B::C::search;
       return if $method =~ /^threads::(GV|NAME|STASH)$/; # Carp artefact to ignore B
       # Without ithreads threads.pm is not loaded. Return none broke 15 and 51 by sideeffect,
       # omitting DynaLoader methods, eg.
@@ -6027,6 +6029,8 @@ sub compile {
   $B::C::stash    = 1;
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
+  $B::C::opt_search  = 1;
+  $B::C::opt_require = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   my %optimization_map = (
@@ -6509,7 +6513,7 @@ startup-time.
 
 C<-fno-stash> is the default.
 
-=item B<-frequire>
+=item B<-frequire> I<(since B.C.1.43)>
 
 Includes packages of require statements. Without C<-frequire> certain packages
 will not be found, thus run-time loaded. With C<-frequire> you will compile
@@ -6517,6 +6521,15 @@ more packages into the executables, even those which are very seldom loaded at
 run-time.
 
 C<-fno-require> is the default.
+
+=item B<-fno-search> I<(since B.C.1.43)>
+
+When looking for methods the compiler does an extensive heuristic search
+through all likely packages to find the right method, and adds the found
+package then. However, it might be wanted not to include all likely packages,
+rather add packages by C<-u> instead.
+
+C<-fsearch> is the default.
 
 =item B<-fuse-script-name>
 
