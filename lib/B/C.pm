@@ -1088,10 +1088,22 @@ sub B::OP::save {
       }
       return savesym( $op, $op->next->save );
     }
-    if ($ITHREADS and $] >= 5.015004) {
+    if ($ITHREADS and $] >= 5.017) {
+      $copsect->comment(
+	      "$opsect_common, line, stashoff, file, hints, seq, warnings, hints_hash");
+      $copsect->add(sprintf("%s, 0, 0, (char *)NULL, 0, 0, NULL, NULL",
+			    $op->_save_common));
+    }
+    elsif ($ITHREADS and $] >= 5.016) {
+      $copsect->comment(
+        "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
+      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, 0, NULL, NULL",
+			    $op->_save_common));
+    }
+    elsif ($ITHREADS and $] >= 5.015004) {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
-      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, 0, NULL, NULL",
+      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, NULL, NULL",
 			    $op->_save_common));
     }
     elsif ($PERL512) {
@@ -1570,21 +1582,31 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
-    if ($ITHREADS and $] >= 5.016) {
+    if ($ITHREADS and $] >= 5.017) {
+      $copsect->comment(
+	      "$opsect_common, line, stashoff, file, hints, seq, warnings, hints_hash");
+      $copsect->add(
+	sprintf(
+		"%s, %u, " . "%d, %s, 0, " . "%s, %s, NULL",
+		$op->_save_common, $op->line,
+		$op->stashoff, "(char*)".constpv( $file ), #hints=0
+		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+	       ));
+    } elsif ($ITHREADS and $] >= 5.016) {
       # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen (5.16.0 only)
       $copsect->comment(
-	      "$opsect_common, line, stashpv, file, ".$] >= 5.017 ?"stashoff":"stashlen"
-	      .", hints, seq, warnings, hints_hash");
+	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
 		"%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
 		$op->_save_common, $op->line,
+
 		"(char*)".constpv( $op->stashpv ), # we can store this static
 		"(char*)".constpv( $file ),
-		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len)
-		# 5.16.0 B-1.35 has stashlen, 5.17 not anymore
-		$] >= 5.017 ? $op->stashoff :
-		  ($op->can('stashlen') : $op->stashlen : length($op->stashpv)),
+		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len),
+		# 5.16.0 B-1.35 has stashlen, 5.16.1 we will see.
+		$op->can('stashlen') ? $op->stashlen : length($op->stashpv),
+
 		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
