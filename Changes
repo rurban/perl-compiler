@@ -34,7 +34,8 @@
 	  if the $VERSION had already version magic attached. (no testcase, hard to repro)
 	perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
 	  we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
-	  If you need it upgrade to B 1.35
+	  5.17 thr introduced a yet unsupported cop->stashoff (alloccopstash not exported).
+	Fixed Null COP storage for 5.16 and 5.17
 	amagic_generation was removed with 5.17
 	* CC (1.13): added check_entersub, check_bless - bless and new caching
 	* Bytecode (1.14): fixed require and op_first, issue 97
