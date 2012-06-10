@@ -3138,7 +3138,6 @@ sub cc_main {
       "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
       "GvHV(PL_incgv) = $inc_hv;",
       "GvAV(PL_incgv) = $inc_av;",
-      "PL_amagic_generation = $amagic_generate;",
       "PL_initav = (AV*)$init_av;",
       "PL_endav = (AV*)$end_av;"
     );
