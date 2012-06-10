@@ -209,7 +209,7 @@ our @EXPORT_OK =
 use B
   qw( minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
       class cchar svref_2object compile_stats comppadlist hash
-      threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
+      threadsv_names main_cv init_av end_av opnumber cstring
       HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY );
 
 BEGIN {
@@ -1094,10 +1094,22 @@ sub B::OP::save {
       }
       return savesym( $op, $op->next->save );
     }
-    if ($ITHREADS and $] >= 5.015004) {
+    if ($ITHREADS and $] >= 5.017) {
+      $copsect->comment(
+	      "$opsect_common, line, stashoff, file, hints, seq, warnings, hints_hash");
+      $copsect->add(sprintf("%s, 0, 0, (char *)NULL, 0, 0, NULL, NULL",
+			    $op->_save_common));
+    }
+    elsif ($ITHREADS and $] >= 5.016) {
+      $copsect->comment(
+        "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
+      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, 0, NULL, NULL",
+			    $op->_save_common));
+    }
+    elsif ($ITHREADS and $] >= 5.015004) {
       $copsect->comment(
         "$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
-      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, 0, NULL, NULL",
+      $copsect->add(sprintf("%s, 0, (char *)NULL, NULL, 0, 0, NULL, NULL",
 			    $op->_save_common));
     }
     elsif ($PERL512) {
@@ -1577,18 +1589,31 @@ sub B::COP::save {
   my $file = $op->file;
   $file =~ s/\.pl$/.c/;
   if ($PERL512) {
-    if ($ITHREADS and $] >= 5.016) {
-      # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen
+    if ($ITHREADS and $] >= 5.017) {
+      $copsect->comment(
+	      "$opsect_common, line, stashoff, file, hints, seq, warnings, hints_hash");
+      $copsect->add(
+	sprintf(
+		"%s, %u, " . "%d, %s, 0, " . "%s, %s, NULL",
+		$op->_save_common, $op->line,
+		$op->stashoff, "(char*)".constpv( $file ), #hints=0
+		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+	       ));
+    } elsif ($ITHREADS and $] >= 5.016) {
+      # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen (5.16.0 only)
       $copsect->comment(
 	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
 		"%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
 		$op->_save_common, $op->line,
+
 		"(char*)".constpv( $op->stashpv ), # we can store this static
 		"(char*)".constpv( $file ),
-		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len)
-		$B::VERSION gt '1.34' ? $op->stashlen : length($op->stashpv),
+		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len),
+		# 5.16.0 B-1.35 has stashlen, 5.16.1 we will see.
+		$op->can('stashlen') ? $op->stashlen : length($op->stashpv),
+
 		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
@@ -5774,7 +5799,7 @@ sub save_context {
     "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
     "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
   if ($] < 5.017) {
-    my $amagic_generate = amagic_generation;
+    my $amagic_generate = B::amagic_generation;
     warn "amagic_generation = $amagic_generate\n" if $verbose;
     $init->add("PL_amagic_generation = $amagic_generate;");
   };
