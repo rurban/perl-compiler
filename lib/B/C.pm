@@ -224,7 +224,7 @@ our @EXPORT_OK =
 use B
   qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
-  threadsv_names main_cv init_av end_av opnumber amagic_generation cstring
+  threadsv_names main_cv init_av end_av opnumber cstring
   HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
 BEGIN {
@@ -5401,9 +5401,13 @@ sub save_context {
     "PL_curpad = AvARRAY($curpad_sym);",
     "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
     "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */",
-    "PL_amagic_generation = $amagic_generate;"
+    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */"
   );
+  if ($] < 5.017) {
+    my $amagic_generate = amagic_generation;
+    warn "amagic_generation = $amagic_generate\n" if $verbose;
+    $init->add("PL_amagic_generation = $amagic_generate;");
+  };
 }
 
 sub descend_marked_unused {

@@ -285,7 +285,7 @@ use Config;
 use strict;
 #use 5.008;
 use B qw(main_start main_root class comppadlist peekop svref_2object
-  timing_info init_av end_av sv_undef amagic_generation
+  timing_info init_av end_av sv_undef
   OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
   OPf_MOD OPf_STACKED OPf_SPECIAL OPpLVAL_DEFER OPpLVAL_INTRO
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
@@ -3128,7 +3128,6 @@ sub cc_main {
   return if $errors or $check;
 
   if ( !defined($module) ) {
-    my $amagic_generate = amagic_generation;
     # XXX TODO push BEGIN/END blocks to modules code.
     $init->add(
       sprintf( "PL_main_root = s\\_%x;", ${ main_root() } ),
@@ -3143,6 +3142,10 @@ sub cc_main {
       "PL_initav = (AV*)$init_av;",
       "PL_endav = (AV*)$end_av;"
     );
+    if ($] < 5.017) {
+      my $amagic_generate = B::amagic_generation;
+      $init->add("PL_amagic_generation = $amagic_generate;");
+    };
   }
 
   seek( STDOUT, 0, 0 );   #prevent print statements from BEGIN{} into the output
