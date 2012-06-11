@@ -242,7 +242,8 @@ my $anonsub_index = 0;
 my $initsub_index = 0;
 
 # exclude all not B::C:: prefixed subs
-my %all_bc_subs = map {$_=>1} qw(B::AV::save B::BINOP::save B::BM::save
+my %all_bc_subs = map { $_ => 1 } 
+   qw(B::AV::save B::BINOP::save B::BM::save
       B::COP::save B::CV::save B::FAKEOP::fake_ppaddr B::FAKEOP::flags
       B::FAKEOP::new B::FAKEOP::next B::FAKEOP::ppaddr B::FAKEOP::private
       B::FAKEOP::save B::FAKEOP::sibling B::FAKEOP::targ B::FAKEOP::type
@@ -253,11 +254,13 @@ my %all_bc_subs = map {$_=>1} qw(B::AV::save B::BINOP::save B::BM::save
       B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic
       B::PVNV::save B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save
       B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save
-      B::REGEXP::EXTFLAGS);
+      B::REGEXP::EXTFLAGS
+    );
 
 # Track all internally used packages. All others may not be deleted automatically
 # - hidden methods. -fdelete-pkg
-my %all_bc_pkg = map {$_=>1} qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
+my %all_bc_pkg = map { $_ => 1 }
+   qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
       B::GV B::HV B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV
       B::OBJECT B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV
       B::PVOP B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
@@ -265,7 +268,8 @@ my %all_bc_pkg = map {$_=>1} qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP
       warnings warnings::register DB next maybe maybe::next FileHandle fields
       AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils
       ExtUtils::Constant ExtUtils::Constant::ProxySubs threads base IO::File
-      IO::Seekable IO::Handle IO DynaLoader XSLoader O);
+      IO::Seekable IO::Handle IO DynaLoader XSLoader O
+    );
 
 # Note: BEGIN-time sideffect-only packages like strict, vars or constant even
 # without functions should not be deleted, so they are not listed here.
@@ -751,7 +755,7 @@ sub save_pv_or_rv {
 }
 
 # Shared global string in PL_strtab.
-# Mostly GvNAME and GvFILE but also CV prototypes or bareword hash keys.
+# Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
 sub save_hek {
   my $str = shift; # not cstring'ed
   my $len = length $str;
@@ -4046,7 +4050,7 @@ sub B::HV::save {
     $svsect->add(sprintf("&xpvhv_list[%d], %u, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
-    # Since 5.015?? RITER must be always set for hv_store
+    # Since 5.015? RITER must be always set for hv_store
     if ($] > 5.015 or ($hv->MAGICAL and !$is_stash)) { # riter,eiter only for magic required
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
@@ -4463,6 +4467,7 @@ EOT
 }
 
 sub output_declarations {
+
   print <<'EOT';
 #ifdef BROKEN_STATIC_REDECL
 #define Static extern
@@ -4584,6 +4589,7 @@ Perl_newGP(pTHX_ GV *const gv)
 }
 #endif
 __EOGP
+
 
   }
   # Need fresh re-hash of strtab. share_hek does not allow hash = 0
@@ -4819,11 +4825,11 @@ _EOT6
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
   elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow)) {
-    print <<'_EOT7';
+    print '
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
     /* set all our static pv and hek to &PL_sv_undef so perl_destruct() will not cry */
-_EOT7
+';
 
     for (0 .. $#static_free) {
       # set the sv/xpv to &PL_sv_undef, not the pv itself. 
