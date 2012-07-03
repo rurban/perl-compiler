@@ -1700,12 +1700,8 @@ sub B::COP::save {
   $init->add(
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
   ) if !$optimize_cop and !$ITHREADS;
-  if (!$ITHREADS) {
-    if ($]<5.016 or $]>=5.017) {
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
-    } else {
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s, 0);", constpv( $op->stashpv ) ));
-    }
+  if (!$ITHREADS) { # special only threaded
+    $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
   }
 
   # our root: store all packages from this file
