@@ -868,9 +868,13 @@ my $opsect_common =
     $static = '0, 1, 0';
     $opsect_common .= "opt, static, spare";
   }
-  else {
+  elsif ($] < 5.017002) {
     $static = '0, 1, 0, 0, 0';
     $opsect_common .= "opt, latefree, latefreed, attached, spare";
+  }
+  else {
+    $static = '0, 1, 0, 0, 0, 0, 0';
+    $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
   }
 
   sub B::OP::_save_common_middle {
@@ -1697,7 +1701,11 @@ sub B::COP::save {
     sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
   ) if !$optimize_cop and !$ITHREADS;
   if (!$ITHREADS) {
-    $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
+    if ($]<5.016 or $]>=5.017) {
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
+    } else {
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s, 0);", constpv( $op->stashpv ) ));
+    }
   }
 
   # our root: store all packages from this file
