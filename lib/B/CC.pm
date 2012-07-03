@@ -256,7 +256,7 @@ package B::CC;
 our $VERSION = '1.13';
 
 # Start registering the L<types> namespaces.
-$int::VERSION = $double::VERSION = $string::VERSION = '0.01';
+$main::int::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
 
 use Config;
 use strict;
