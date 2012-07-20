@@ -224,7 +224,10 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
-  if ($] >= 5.010) {require mro; mro->import;}
+  if ($] >= 5.010) {
+    require mro; mro->import;
+    sub SVf_OOK() { 0x02000000 }; # not exported
+  }
 }
 use B::Asmdata qw(@specialsv_name);
 
@@ -4054,8 +4057,7 @@ sub B::HV::save {
     $svsect->add(sprintf("&xpvhv_list[%d], %u, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
-    # Since 5.015? RITER must be always set for hv_store
-    if ($] > 5.015 or ($hv->MAGICAL and !$is_stash)) { # riter,eiter only for magic required
+    if (!$is_stash and ($] >= 5.010 and $hv->FLAGS & SVf_OOK)) {
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
