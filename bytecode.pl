@@ -1025,9 +1025,9 @@ __END__
 149 8 	signal		bstate->bs_sv			strconst	24x
 # formfeed is deprecated
 150 8 	formfeed	PL_formfeed			svindex
-151 9 	op_latefree	PL_op->op_latefree		U8
-152 9 	op_latefreed	PL_op->op_latefreed		U8
-153 9 	op_attached	PL_op->op_attached		U8
+151 9-17 op_latefree	PL_op->op_latefree		U8
+152 9-17 op_latefreed	PL_op->op_latefreed		U8
+153 9-17 op_attached	PL_op->op_attached		U8
 # 5.10.0 misses the RX_EXTFLAGS macro
 154 10-10.5 op_reflags  PM_GETRE(cPMOP)->extflags	U32
 154 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
