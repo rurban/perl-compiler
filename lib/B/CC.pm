@@ -42,6 +42,12 @@ Without extra arguments, it saves the main program.
 
 Output to filename instead of STDOUT
 
+=item B<-c>
+
+Check and abort.
+
+Compiles and prints only warnings, but does not emit C code.
+
 =item B<-v>
 
 Verbose compilation (prints a few compilation stages).
@@ -247,7 +253,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 # Start registering the L<types> namespaces.
 $int::VERSION = $double::VERSION = $string::VERSION = '0.01';
@@ -260,12 +266,11 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
   OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
   OPf_MOD OPf_STACKED OPf_SPECIAL
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
-  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY
-);
+  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY );
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
-  svop_or_padop_pv inc_cleanup);
+  inc_cleanup);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 use B::C::Flags;
@@ -314,7 +319,7 @@ my %need_curcop;	# ops which need PL_curcop
 my $package_pv;         # sv->pv of previous op for method_named
 
 my %lexstate;           # state of padsvs at the start of a bblock
-my $verbose;
+my ( $verbose, $check );
 my ( $entertry_defined, $vivify_ref_defined );
 my ( $init_name, %debug, $strict );
 
@@ -439,7 +444,7 @@ sub output_runtime {
   # Fixed in CORE with 5.11.4
   print'
 #undef PP_ENTERTRY
-#define PP_ENTERTRY(label)  	\
+#define PP_ENTERTRY(label)  	        \
 	STMT_START {                    \
 	    dJMPENV;			\
 	    int ret;			\
@@ -547,6 +552,7 @@ Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
 }
 
 __EOV
+
   }
 
   foreach $ppdata (@pp_list) {
@@ -905,20 +911,21 @@ sub init_type_attrs {
   }
 
   # pollute our callers namespace for attributes to be accepted with -MB::CC
-  sub main::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
-  sub main::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
+  *main::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
+  *main::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
 
   # my int $i : register : ro;
-  sub int::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
-  sub int::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
+  *int::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
+  *int::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
 
   # my double $d : ro;
-  sub double::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
-  sub double::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
+  *double::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
+  *double::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
 
-  sub string::MODIFY_SCALAR_ATTRIBUTES { B::CC::MODIFY_SCALAR_ATTRIBUTES(@_)}
-  sub string::FETCH_SCALAR_ATTRIBUTES { B::CC::FETCH_SCALAR_ATTRIBUTES(@_) };
+  *string::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
+  *string::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
   ];
+
 }
 
 =head2 load_pad
@@ -1348,14 +1355,6 @@ sub pp_const {
   else {
     $obj = $pad[ $op->targ ];
   }
-  # XXX looks like method_named has only const as prev op
-  if ($op->next
-      and $op->next->can('name')
-      and $op->next->name eq 'method_named'
-     ) {
-    $package_pv = svop_or_padop_pv($op);
-    debug "save package_pv \"$package_pv\" for method_name\n" if $debug{op};
-  }
   push( @stack, $obj );
   return $op->next;
 }
@@ -1388,7 +1387,6 @@ sub pp_nextstate {
 sub pp_dbstate { pp_nextstate(@_) }
 
 #default_pp will handle this:
-#sub pp_bless { $curcop->write_back; default_pp(@_) }
 #sub pp_repeat { $curcop->write_back; default_pp(@_) }
 # The following subs need $curcop->write_back if we decide to support arybase:
 # pp_pos, pp_substr, pp_index, pp_rindex, pp_aslice, pp_lslice, pp_splice
@@ -1465,16 +1463,11 @@ sub bad_pp_anoncode {
 }
 
 # coverage: 35
-# XXX TODO get prev op. For now saved in pp_const.
+# XXX TODO store package_pv in entersub and bless
 sub pp_method_named {
   my ( $op ) = @_;
-  my $name = svop_or_padop_pv($op);
-  # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PV.
-  my $stash = $package_pv ? $package_pv."::" : "main::";
-  $name = $stash . $name;
-  debug "save method_name \"$name\"\n" if $debug{op};
-  svref_2object( \&{$name} )->save;
-
+  my $cv = B::C::method_named(B::C::svop_pv($op));
+  $cv->save if $cv;
   default_pp(@_);
 }
 
@@ -2142,8 +2135,18 @@ sub pp_entersub {
           "\tSPAGAIN;}");
   $know_op = 0;
   invalidate_lexicals( REGISTER | TEMPORARY );
+  B::C::check_entersub($op);
   return $op->next;
 }
+
+# coverage: 16,26,35,51,72,73
+sub pp_bless {
+  my $op = shift;
+  $curcop->write_back if $curcop;
+  B::C::check_bless($op);
+  default_pp($op);
+}
+
 
 # coverage: ny
 sub pp_formline {
@@ -2278,6 +2281,7 @@ sub pp_require {
           "}");
   $know_op = 1;
   invalidate_lexicals( REGISTER | TEMPORARY );
+  B::C::check_require($op); # mark package
   return $op->next;
 }
 
@@ -2289,19 +2293,16 @@ sub pp_entertry {
   write_back_stack();
   my $sym = doop($op);
   $entertry_defined = 1;
-  if (!$op->can("other")) { # since 5.11.4
-    debug "ENTERTRY label \$op->next (no other)\n";
-    my $next = $op->next;
-    my $l = label( $next );
-    runtime(sprintf( "PP_ENTERTRY(%s);", $l));
-    push_label ($next, $next->isa('B::COP') ? 'nextstate' : 'leavetry');
+  my $next = $op->next; # broken in 5.12, fixed in B::C by upgrading BASEOP
+  # jump past leavetry
+  $next = $op->other->next if $op->can("other"); # before 5.11.4 and after 5.13.8
+  my $l = label( $next );
+  debug "ENTERTRY label=$l (".ref($op).") ->".$next->name."(".ref($next).")\n";
+  runtime(sprintf( "PP_ENTERTRY(%s);", $l));
+  if ($next->isa('B::COP')) {
+    push_label($next, 'nextstate');
   } else {
-    debug "ENTERTRY label \$op->other->next\n";
-    runtime(sprintf( "PP_ENTERTRY(%s);",
-		     label( $op->other->next ) ) );
-    invalidate_lexicals( REGISTER | TEMPORARY );
-    push_label ($op->other->next, 'leavetry');
-    #write_label( $op->other->next );
+    push_label($op->other, 'leavetry') if $op->can("other");
   }
   invalidate_lexicals( REGISTER | TEMPORARY );
   return $op->next;
@@ -2313,6 +2314,7 @@ sub pp_leavetry {
   pop_label 'leavetry' if $labels->{'leavetry'}->[-1] and $labels->{'leavetry'}->[-1] == $op;
   default_pp($op);
   runtime("PP_LEAVETRY;");
+  write_label($op->next);
   return $op->next;
 }
 
@@ -2909,7 +2911,7 @@ sub cc_main {
     $end_av  = end_av->save;
   }
   cc_recurse();
-  return if $errors;
+  return if $errors or $check;
 
   if ( !defined($module) ) {
     my $amagic_generate = amagic_generation;
@@ -3002,6 +3004,10 @@ OPTION:
     elsif ( $opt eq "o" ) {
       $arg ||= shift @options;
       open( STDOUT, ">$arg" ) or return "open '>$arg': $!\n";
+    }
+    elsif ( $opt eq "c" ) {
+      $check       = 1;
+      $B::C::check = 1;
     }
     elsif ( $opt eq "v" ) {
       $verbose       = 1;
@@ -3105,6 +3111,12 @@ OPTION:
           $debug{flags}++;
           $B::C::debug{flags}++;
         }
+	elsif ( exists $B::C::debug_map{$arg} ) {
+          $B::C::debug{ $B::C::debug_map{$arg} }++;
+	}
+	else {
+	  warn qq(ignoring unknown -D option "$arg"\n);
+	}
       }
     }
   }
@@ -3132,7 +3144,8 @@ OPTION:
 
   mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
 	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O', 'Opcodes',
-	    'B::Stackobj', 'B::Bblock');
+	    'B::Stackobj', 'B::Stackobj::Bool', 'B::Stackobj::Padsv', 'B::Stackobj::Const',
+	    'B::Bblock');
   mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
 
   # Set some B::C optimizations.
@@ -3178,6 +3191,7 @@ sub compile {
       my $warner = $SIG{__WARN__};
       save_sig($warner);
       fixup_ppaddr();
+      return if $check;
       output_boilerplate();
       print "\n";
       output_all( $init_name || "init_module" );

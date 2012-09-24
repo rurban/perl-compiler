@@ -13,7 +13,7 @@ BEGIN {
 my $script = <<'EOF';
 package my;
 our @a;
-sub f { 
+sub f {
   my($alias,$name)=@_;
   unshift(@a, $alias => $name);
   my $find = "ok"; 
@@ -44,17 +44,16 @@ EOF
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	$B::C::VERSION < 1.35
+	$B::C::VERSION lt "1.35"
         ? "TODO B:C reg_temp_copy from invalid r->offs"
         : ($]>5.008004 and $]<5.008009?'':"TODO ")
           ."alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 SKIP: {
-skip "hangs", 1 if !$DEBUGGING;
-use B::CC;
-ctestok(3, "CC", "ccode71i", $script,
-      $B::CC::VERSION < 1.13
-      ? "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
-      : undef);
+  my $msg = "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV),"
+    ." function Perl_pp_padhv";
+  skip "hangs", 1 if !$DEBUGGING or $] < 5.010 or $Config{useithreads};
+  use B::CC;
+  ctestok(3, "CC", "ccode71i", $script, $B::CC::VERSION < 1.14 ? $msg : undef);
 }

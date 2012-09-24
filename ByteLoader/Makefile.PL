@@ -27,12 +27,7 @@ WriteMakefile(
 
 sub MY::depend {
   my $up = File::Spec->updir;
-  my ($bytecode_pl);
-  if ($core) {
-    $bytecode_pl = File::Spec->catdir( 'ByteLoader', 'bytecode.pl' );
-  } else {
-    $bytecode_pl = File::Spec->catdir( '..', 'bytecode.pl' );
-  }
+  my $bytecode_pl = File::Spec->catdir( '..', 'bytecode.pl' );
   return "
 \$(INST_LIB)/ByteLoader.pm : ByteLoader.pm
 	\$(NOECHO) \$(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', '\''$(PM_FILTER)'\'')' -- \

@@ -3,27 +3,47 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2012-02-xx rurban
-	* C: Fixed more method not found. issue95 and t/perldoc.t -
-	  parent @File::Spec::ISA was not saved.
+1.43	2012-04-xx rurban
+	Improved package detection: methods, functions, require, new and bless.
+	Bigger compile sizes. Store all subs of dependent packages.
+	5.16 support
+
+	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
+	Detect typed lexicals objects to reliably find method packages.
+	Sanified package_pv default a bit when a method padsv was not
+	  found. Check for method_named as last argument of methods.
+	Added check_entersub, check_bless, check_require - bless and new caching of
+	  packages for methods
+	Recursively store all package subs in 2nd pass, not only the needed.
 	try_isa(): Desperate method finding attempt by trying all seen packages, which
 	  slows down the compiler a lot. Added internal ISA Caching.
+	Special case Carp calling threads and B methods.
 	Avoid saving not undefined CVs if possible. with Autoloading, i.e. POSIX
 	  the first is always saved as empty CV.
 	Fix -u<module> without file extension.
-	Special case Carp calling threads and B methods.
-	Sanified package_pv default a bit when a method padsv was not
-	  found. Check for method_named as last argument of methods.
 	Fixed wrong boot_ arg for the xs version check with --staticxs
 	Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
 	  loaded later.
-	With hek do not drop FAKE, only for const pv
+	With hek do not drop FAKE, only for const pv.
+	Broke __DATA__ (15), 91, 95, perldoc, Test::NoWarnings
+	Detect and skip GV->save in defined (issue 96).
+	Threaded use the right CV PADLIST for SVOP's, proper curcv for new and
+	  bless detection.
+	Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
+	  to get rid of the pesky Invalid version format error in xs_version_bootcheck
+	  if the $VERSION had already version magic attached. (no testcase, hard to repro)
+	* CC (1.13): added check_entersub, check_bless - bless and new caching
+	* Bytecode (1.14): fixed require and op_first, issue 97
+	Fixed regex_pad offset in threaded perls >= 5.11, issue 68
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
-	* perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
+	* perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v.
+	new option -f passthru to C and CC
 
 1.42	2012-02-01 rurban
+	stable up to 5.14
+
 	* C: Improved finding methods in parent classes, visible by the
 	warning: <method> not found with -Ds, try_isa now
 	Save @ISA of those child classes.
@@ -31,6 +51,7 @@
 	  PL_strtab hack gone. This fixed the shared_hek destruction
 	  problems.
 	Turn off CvDYNFILE needed since 5.15.4, use static CvFILE. (DateTime)
+	Changed option -DW to -Dw ("walk") for consistency
 	* t/e_perlcc.t: perlcc -stash does not hang anymore, renabled stash section
 	* Stash (1.02): '-xs' does not load B anymore.
 	  Now in seperate directory Stash

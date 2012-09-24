@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 52c6dfb 2012-02-07 | Update Todo
+# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -25,7 +25,6 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -40,7 +39,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+fail LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -83,7 +82,7 @@ pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
-pass CGI
+fail CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
@@ -102,8 +101,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.42 - perl-5.008005d-nt
-# pass  99 /  99 (100.0%)
-# fail   0 /  99 (0.0%)
-# todo   1 /   0 ()
-# skip   1 / 100 (1.0% not installed)
+# 98 / 99 modules tested with B-C-1.43 - perl-5.008005d-nt
+# pass  96 /  98 (98.0%)
+# fail   2 /  98 (2.0%)
+# todo   1 /   2 (50.0%)
+# skip   1 /  99 (1.0% not installed)

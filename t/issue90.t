@@ -16,7 +16,7 @@ sub test3 {
   $todo = 'TODO %+ setting regdata magic crashes' if $name eq 'ccode90i_c';
   plctestok($i*3+1, $name, $script, $todo);
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
-  ctestok($i*3+3, "CC", $name, $script, "TODO CC $cmt");
+  ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
   $i++;
 }
 

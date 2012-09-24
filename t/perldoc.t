@@ -18,8 +18,8 @@ my $Mblib = "-Iblib/arch -Iblib/lib";
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = "$X $Mblib blib/script/perlcc";
 $perlcc .= " -Wb=-fno-fold,-fno-warnings" if $] > 5.013;
-$perlcc .= " -UB";
-#        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo";
+$perlcc .= " -UB -uPod::Perldoc::BaseTo";
+#        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText";
 my $exe = $Config{exe_ext};
 my $perldocexe = $^O eq 'MSWin32' ? "perldoc$exe" : "./perldoc$exe";
 # XXX bother File::Which?

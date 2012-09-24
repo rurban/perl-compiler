@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.42 52c6dfb 2012-02-07 | Update Todo
+# B::C::VERSION = 1.43 1049b74 2012-05-03 | status_upd: protect against an empty list
 # perlversion = 5.014002d
 # path = /usr/local/bin/perl5.14.2d
 # platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -23,9 +23,9 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build #TODO overlong linking time
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -37,8 +37,8 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-fail Compress::Raw::Zlib
-fail Compress::Raw::Bzip2
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
 pass Storable
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+pass Test::NoWarnings #TODO print() on unopened filehandle $Testout
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -96,14 +96,14 @@ pass YAML
 pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
-fail DateTime
+fail DateTime::Locale
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.014002d
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   0 /   5 (0.0%)
+# 100 / 100 modules tested with B-C-1.43 - perl-5.014002d
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   2 /   2 (100.0%)
 # skip   0 / 100 (0.0% not installed)

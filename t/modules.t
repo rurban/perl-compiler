@@ -185,9 +185,9 @@ for my $module (@modules) {
         $opt .= " $keep" if $keep;
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
-	  $runperl,$Mblib,"blib/script/perlcc",$opt,$staticxs,"-o$out","-r",$out_pl;
+	  $runperl,split(/ /,$Mblib),"blib/script/perlcc",split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
         my $cmd = "$runperl $Mblib blib/script/perlcc $opt $staticxs -o$out -r"; # only for the msg
-	# Esp. darwin-2level has insane link times
+	# My Macbook Air with gcc-mp and with 1GB RAM has insane compile times
         ($result, $stdout, $err) = run_cmd(\@cmd, 720); # in secs.
         ok(-s $out,
            "$module_count: use $module  generates non-zero binary")
@@ -254,9 +254,12 @@ sub is_todo {
   my $module = shift or die;
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
   # ---------------------------------------
-  #foreach(qw(
-  #  ExtUtils::CBuilder
-  #)) { return 'overlong linking time' if $_ eq $module; }
+  foreach(qw(
+    Module::Build
+  )) { return 'overlong linking time' if $_ eq $module; }
+  foreach(qw(
+      Test::NoWarnings
+  )) { return 'print() on unopened filehandle $Testout' if $_ eq $module; }
   #if ($] < 5.007) { foreach(qw(
   #  ExtUtils::CBuilder
   #)) { return '5.6' if $_ eq $module; }}

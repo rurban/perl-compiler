@@ -1,13 +1,25 @@
 #!/usr/bin/perl -w
-# status_upd [-suqftad] [ 1.26 | path ]
+# status_upd [-suqftad] [ 1.32 | path ]
 # process perlall maketest logfiles:
 #  `perl$ver Makefile.PL && make test > log.test-$platform-$ver; make clean`
-# and find and sort by FAIL/TODO and platform+version
+# and find, sort by FAIL/TODO and platform+version
 
 use strict;
-use Data::Dumper;
 use Getopt::Long;
-use Set::Object qw(reftype);
+
+BEGIN {
+  sub _auto_use { # autoinstall the non-core modules, and use them
+    my @m;
+    for (@_) { push @m, $_ unless eval "require $_;" }
+    if (@m) { # Checked the API back to 1.76_01 (v5.8.4)
+      require CPAN; CPAN->import;
+      warn "CPAN::Shell->install(qw(@m))\n"; CPAN::Shell->install(@m); }
+    #$_->import for @m;
+  }
+  _auto_use qw(Data::Dumper Set::Object);
+  Set::Object->import('reftype');
+  Data::Dumper->import;
+}
 
 sub help {
   print <<EOF;
@@ -71,10 +83,11 @@ sub status {
     my $file = shift @g;
     my $failed = shift @g;
     my $ctime = 0;
+    chomp $file;
     unless ($prefix) {
       my ($f) = $file =~ m{(log.test-.*?)-t/};
       ($prefix) = $file =~ m{log.test-(.*?)-t/};
-      if ($prefix and $oldprefix ne $prefix) {
+      if ($prefix and $oldprefix ne $prefix and $prefix !~ /\.\d+$/) {
 	#$prefix =~ s/ATGRZ.+?-/cygwin-/;
         $ctime = -f $f ? sprintf("%0.3f", -C $f) : 0;
 	print "\n$prefix: age=$ctime" unless $quiet;
@@ -88,16 +101,16 @@ sub status {
         }
         print "\n" unless $quiet;
       }
+      next if $f and $f =~ /\.\d+/;
     }
     next unless $prefix;
     next unless $file;
+    next if $file and $file =~ m{\.\d+-t/};
     chomp $file;
     ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
-    if ($file) {
-      $file =~ s{\s*$}{};
-      $file =~ s{^\s*}{};
-    }
-    $file = "" unless $file;
+    next unless $file;
+    $file =~ s{\s*$}{};
+    $file =~ s{^\s*}{};
     $failed =~ s{^.+(Failed tests?:?)}{$1}i;
     $failed =~ s{^.+TODO passed:}{TODO passed:};
     chomp $failed;
@@ -109,8 +122,8 @@ sub status {
     my $c = "$file\t" if $failed;
     $c .= "\t" if length($file) < 8;
     $c .= "$failed\n";
-    $h{$prefix}->{$file} = $f;
     next if $skipped;
+    $h{$prefix}->{$file} = $f;
     print "$c" unless $quiet;
     $s .= $c;
   }
@@ -122,8 +135,8 @@ sub status {
 # debian-squeeze-amd64-5.10.1-nt => ("debian-squeeze-amd64", "5.10", "nt")
 sub platform_version_split {
   local $_ = shift;
-  my ($p,$v,$f) = m/^(.+)-(5\.[\d\.]+)([-dnt]+)?$/;
-  $f =~ s/^-// if $f; # d, d-nt, nt or empty
+  my ($p,$v,$f) = m/^(.+)-(5\.[\d\.]+)([-dntm]+)?$/;
+  $f =~ s/^-// if $f; # d, d-nt, nt, m or empty
   $v =~ s/(\d\.\d+)\.\d+/$1/ if $v;
   return ($p,$v,$f);
 }
@@ -156,13 +169,17 @@ sub all_common {
   my $h = shift;		# platform_version -> test_file -> test_no_failed
   my $result = shift;		# skip already deleted results, initially empty
   my (%tests);
-  if (@_ == 1) {
+  if (@_ == 1) { # shortcut: only one feature
     delete $h->{$_[0]}->{''};
     return $h->{$_[0]};
   }
+  return {} unless @_;
   # init with shortest list, sort hash by least number of keys
   my @p = sort { h_size($h->{$a}) <=> h_size($h->{$b}) } @_;
   my $pivot = $p[0];
+  if (keys %{$h->{$pivot}} == 1 and exists $h->{$pivot}->{''}) { # shortcut: empty result
+    return {};
+  }
   my $pivotset = Set::Object->new(keys %{$h->{$pivot}});
   for ($pivotset->members) {
     if (my $k = $h->{$pivot}->{$_}) {
@@ -176,7 +193,7 @@ sub all_common {
 	$result->{$_} = $result->{$_} ? $tests{$_} * $result->{$_} : $tests{$_};
         $result->{$_} = $result->{$_} * Set::Object->new( split_tests($h->{$p}->{$_}) )
           if $result->{$_}->members;
-        $result->{$_} = $result->{$_}->members;# status_upd -f -q -d
+        $result->{$_} = $result->{$_}->members;# status_upd -fqd
       }
       delete $result->{$_} unless $result->{$_};
     }
@@ -222,7 +239,7 @@ sub unify_results {
     push @{$versions{$v}}, ($_) if $v;
   }
   for my $v (sort keys %versions) {
-    if ($v !~ /^5\.(7|9|11)$/) { # skip 5.11, 5.9, 5.7, but not blead (5.13 currently)
+    if ($v !~ /^5\.(7|9|11|13)$/) { # skip 5.11, 5.9, 5.7, but not blead (5.15 currently)
       my $v1 = all_common($h, $result, @{$versions{$v}});
       if (%$v1) {
         print Data::Dumper->Dump([$v1],["v$v $name"]);
@@ -246,9 +263,10 @@ sub unify_results {
   }
 }
 
-my $dlogs = '`ls '.($dir eq '.'?$logs:"$dir/$logs").'|egrep -v \'\.[1-9]$\'`';
-my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE | grep -v '\.[19]'";
-#print "$cmd\n" unless $quiet;
+my $dlogs = '`ls '.($dir eq '.'?$logs:"$dir/$logs").'|egrep -v \'\.[1-9]+$\'`';
+#warn $dlogs."\n" unless $quiet; #`
+my $cmd = 'grep -a -i "tests" ' . $dlogs . " | grep -v t/CORE";
+warn "$cmd\n" unless $quiet;
 my %h;
 my %h_sav = %h;
 if (my @g = `$cmd`) {

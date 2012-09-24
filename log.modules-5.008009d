@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 52c6dfb 2012-02-07 | Update Todo
+# B::C::VERSION = 1.43 ceead94 2012-04-30 | implement -c for B::C and B::CC - fixes issue 99
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
@@ -7,53 +7,53 @@ pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
 pass Pod::Escapes
-pass Pod::Simple
+fail Pod::Simple
 pass IO
 pass Scalar::Util
-pass Getopt::Long
-pass Pod::Parser
-pass ExtUtils::MakeMaker
-pass Test::Simple
+fail Getopt::Long
+fail Pod::Parser
+fail ExtUtils::MakeMaker
+fail Test::Simple
 pass ExtUtils::Manifest
-pass Pod::Text
+fail Pod::Text
 pass constant
 pass Test
-pass Data::Dumper
+fail Data::Dumper
 pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build #TODO overlong linking time
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
-pass Digest::MD5
+fail Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-pass HTML::Parser
-pass Test::Exception
+fail HTML::Parser
+fail Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
+fail Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+fail LWP
 pass Storable
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
+fail Test::Tester
 pass Sub::Install
-pass Attribute::Handlers
+fail Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
-pass version
+pass Test::NoWarnings #TODO print() on unopened filehandle $Testout
+fail version
 pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
@@ -65,9 +65,9 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
+fail Class::MOP
 pass Moose
-pass Test::Deep
+fail Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -77,17 +77,17 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
 pass Path::Class
-pass Test::Warn
+fail Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
+fail Test::Pod
+fail Digest::SHA1
+fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
@@ -95,15 +95,15 @@ pass XML::SAX
 pass YAML
 pass MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
+fail DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-pass AppConfig
+fail AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.008009d
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+fail Template::Stash
+# 100 / 100 modules tested with B-C-1.43 - perl-5.008009d
+# pass  74 / 100 (74.0%)
+# fail  26 / 100 (26.0%)
+# todo   2 /  26 (7.7%)
 # skip   0 / 100 (0.0% not installed)

@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.43 f23c07a 2012-04-27 | oops, mixed up length and scalar
-# perlversion = 5.008004d-nt
-# path = /usr/local/bin/perl5.8.4d-nt
-# platform = linux 64bit non-threaded debug
+# B::C::VERSION = 1.42_07 6354acf 2012-03-02 | .gdbinit: better generic macros, even with help
+# perlversion = 5.015008-nt
+# path = /usr/local/bin/perl5.15.8-nt
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -23,8 +23,9 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
+fail Module::Build #TODO > 5.15 without threads
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -39,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -64,14 +65,14 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
-fail Moose
+pass Class::MOP
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
@@ -82,7 +83,7 @@ pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
-fail CGI
+pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
@@ -92,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
-fail DateTime::TimeZone
+pass DateTime::TimeZone #TODO > 5.15 without threads
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 99 modules tested with B-C-1.43 - perl-5.008004d-nt
-# pass  89 /  98 (90.8%)
-# fail   9 /  98 (9.2%)
-# todo   0 /   9 (0.0%)
-# skip   1 /  99 (1.0% not installed)
+# 100 / 100 modules tested with B-C-1.42_07 - perl-5.015008-nt
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   2 /   1 (200.0%)
+# skip   0 / 100 (0.0% not installed)

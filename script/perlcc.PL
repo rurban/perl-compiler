@@ -52,7 +52,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.11, Reini Urban, 2011-04-11 20:16:00
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
 # Version 2.13, Reini Urban, 2012-01-10 13:03:00
-# Version 2.14, Reini Urban, 2012-02-01 20:00:00
+# Version 2.14, Reini Urban, 2012-02-28 09:04:07
 
 use strict;
 use warnings;
@@ -108,15 +108,15 @@ sub main {
 sub choose_backend {
     # Choose the backend.
     $Backend = 'C';
-    if (opt(B)) {
+    if (opt('B')) {
         checkopts_byte();
         $Backend = 'Bytecode';
     }
-    if (opt(S) && opt(c)) {
+    if (opt('S') && opt('c')) {
         # die "$0: Do you want me to compile this or not?\n";
         delete $Options->{S};
     }
-    $Backend = 'CC' if opt(O);
+    $Backend = 'CC' if opt('O');
 }
 
 sub generate_code {
@@ -145,7 +145,7 @@ sub run_code {
             $Output = "$BinPerl $Output";
         }
     }
-    if (opt(staticxs) and $extra_libs) {
+    if (opt('staticxs') and $extra_libs) {
         my $path = '';
         my $PATHSEP = $^O eq 'MSWin32' ? ';' : ':';
         for (split / /, $extra_libs) {
@@ -246,17 +246,18 @@ sub parse_argv {
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
-        'u:s@',         # use packages (new since 2.13)
-        'U:s@',         # skip packages (new since 2.13)
+        'u=s@',         # use packages (new since 2.13)
+        'U=s@',         # skip packages (new since 2.13)
         'static',       # Link to static libperl (default, new since 2.11)
         'shared',       # Link to shared libperl (new since 2.07)
         'staticxs',     # Link static XSUBs (new since 2.07)
         'sharedxs',     # Link shared XSUBs (default, new since 2.07))
         'stash',        # Detect external packages via B::Stash
 	'log:s',        # where to log compilation process information
-        'Wb:s',         # pass (comma-seperated) options to backend
-        'Wc:s',         # pass (comma-seperated) options to cc (new since 2.13)
-        'Wl:s',         # pass (comma-seperated) options to ld (new since 2.13)
+        'Wb=s',         # pass (comma-seperated) options to backend
+        'f=s@',         # pass compiler option(s) to backend (new since 2.14)
+        'Wc=s',         # pass (comma-seperated) options to cc (new since 2.13)
+        'Wl=s',         # pass (comma-seperated) options to ld (new since 2.13)
         'testsuite',    # try to be nice to testsuite (STDOUT, STDERR handles)
         'spawn!',	# --no-spawn (new since 2.12)
         'time',         # print benchmark timings (new since 2.08)
@@ -265,21 +266,21 @@ sub parse_argv {
 
     $Options->{v} += 0;
 
-    if( opt(t) && opt(T) ) {
+    if( opt('t') && opt('T') ) {
         warn "Can't specify both -T and -t, -t ignored";
         $Options->{t} = 0;
     }
 
-    helpme() if opt(h); # And exit
-    if (opt(version)) {
+    helpme() if opt('h'); # And exit
+    if (opt('version')) {
       require B::C;
       die "perlcc $VERSION, B-C-${B::C::VERSION}\n";
     }
 
-    $Options->{Wb} .= ",-O1" if opt(O1);
-    $Options->{Wb} .= ",-O2" if opt(O2);
-    $Options->{Wb} .= ",-O3" if opt(O3);
-    $Options->{Wb} .= ",-O4" if opt(O4);
+    $Options->{Wb} .= ",-O1" if opt('O1');
+    $Options->{Wb} .= ",-O2" if opt('O2');
+    $Options->{Wb} .= ",-O3" if opt('O3');
+    $Options->{Wb} .= ",-O4" if opt('O4');
 
     if( $Options->{time} ) {
       eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
@@ -292,13 +293,13 @@ sub parse_argv {
     }
     $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
 
-    if (opt(e)) {
+    if (opt('e')) {
         warn "$0: using -e 'code' as input file, ignoring @ARGV\n" if @ARGV;
         # We don't use a temporary file here; why bother?
         # XXX: this is not bullet proof -- spaces or quotes in name!
         $Input = is_win32() ? # Quotes eaten by shell
-            '-e "'.opt(e).'"' :
-            "-e '".opt(e)."'";
+            '-e "'.opt('e').'"' :
+            "-e '".opt('e')."'";
     } else {
         $Input = shift @ARGV;  # XXX: more files?
         _usage_and_die("No input file specified\n") unless $Input;
@@ -309,10 +310,10 @@ sub parse_argv {
         check_perl($Input);
     }
 
-    if (opt(o)) {
-        $Output = opt(o);
-    } elsif (opt(B)) {
-        if (opt(e)) {
+    if (opt('o')) {
+        $Output = opt('o');
+    } elsif (opt('B')) {
+        if (opt('e')) {
             my $suffix = '.plc';
             $suffix = '.pmc' if exists $Options->{m};
             (undef, $Output) = tempfile("plcXXXXX", SUFFIX => $suffix);
@@ -349,19 +350,19 @@ sub compile_byte {
     if (@_ == 1) {
         $opts .= $_[0].",";
     }
-    my $addoptions = opt(Wb);
+    my $addoptions = opt('Wb');
     if( $addoptions ) {
-        $opts .= '-v,' if opt(v) > 4;
-        $opts .= '-DM,-DG,-DA,-DComment,' if opt(v) > 5;
+        $opts .= '-v,' if opt('v') > 4;
+        $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
         $opts .= "$addoptions,";
-    } elsif (opt(v) > 4) {
+    } elsif (opt('v') > 4) {
         $opts .= '-v,';
-        $opts .= '-DM,-DG,-DA,-DComment,' if opt(v) > 5;
+        $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
     }
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
     vprint 5, "Compiling...";
-    vprint 1, "Calling $command";
+    vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
     my ($output_r, $error_r) = spawnit($command);
@@ -372,23 +373,23 @@ sub compile_byte {
 	_die("$Input did not compile:\n@$error_r\n");
     } else {
 	my @error = grep { !/^$Input syntax OK$/o } @$error_r;
-	warn "$0: Unexpected compiler output\n@error" if @error and opt(v)<5;
-	warn "@error" if @error and opt(v)>4;
+	warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
+	warn "@error" if @error and opt('v')>4;
     }
 
-    unless (opt(dryrun)) {
+    unless (opt('dryrun')) {
       chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!\n");
     }
 }
 
 sub compile_cstyle {
-    my $stash = opt(stash) ? grab_stash() : "";
+    my $stash = opt('stash') ? grab_stash() : "";
     $stash .= "," if $stash; #stash can be empty
     $stash .= "-u$_," for @{$Options->{u}};
     $stash .= "-U$_," for @{$Options->{U}};
 
-    my $taint = opt(T) ? ' -T' :
-                       opt(t) ? ' -t' : '';
+    my $taint = opt('T') ? ' -T' :
+                       opt('t') ? ' -t' : '';
 
     # What are we going to call our output C file?
     my $lose = 0;
@@ -398,20 +399,23 @@ sub compile_cstyle {
     if (@_ == 1) {
         $addoptions .= $_[0].",";
     }
-    $addoptions .= opt(Wb);
+    $addoptions .= opt('Wb');
     if( $addoptions ) {
-        $addoptions .= ',-Dfull' if opt(v) >= 6;
-        $addoptions .= ',-Dsp,-v' if opt(v) == 5;
+        $addoptions .= ',-Dfull' if opt('v') >= 6;
+        $addoptions .= ',-Dsp,-v' if opt('v') == 5;
         $addoptions .= ',';
-    } elsif (opt(v) > 4) {
+    } elsif (opt('v') > 4) {
         $addoptions = '-Dsp,-v,';
-        $addoptions = '-Dfull,-v,' if opt(v) >= 6;
+        $addoptions = '-Dfull,-v,' if opt('v') >= 6;
+    }
+    if (opt('f')) {
+        $addoptions .= "-f$_," for @{$Options->{f}};
     }
 
-    my $staticxs = opt(staticxs) ? "-staticxs," : '';
+    my $staticxs = opt('staticxs') ? "-staticxs," : '';
     warn "--staticxs on darwin does not work yet\n"
         if $staticxs and $^O eq 'darwin';
-    if (opt(testsuite)) {
+    if (opt('testsuite')) {
         my $bo = join '', @begin_output;
         $bo =~ s/\\/\\\\\\\\/gs;
         $bo =~ s/\n/\\n/gs;
@@ -422,18 +426,18 @@ sub compile_cstyle {
             q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} .
             q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
     }
-    if (opt(o)) {
-        $cfile = opt(o).".c";
-    } elsif (opt(S) || opt(c)) { # We need to keep it
-        if (opt(e)) {
-            $cfile = opt(o) ? opt(o).".c" : "a.out.c";
+    if (opt('o')) {
+        $cfile = opt('o').".c";
+    } elsif (opt('S') || opt('c')) { # We need to keep it
+        if (opt('e')) {
+            $cfile = opt('o') ? opt('o').".c" : "a.out.c";
         } else {
             $cfile = basename($Input);
             # File off extension if present
             # hold on: plx is executable; also, careful of ordering!
             $cfile =~ s/\.(?:p(?:lx|l|h)|m)\z//i;
             $cfile .= ".c";
-            $cfile = $Output if opt(c) && $Output =~ /\.c\z/i;
+            $cfile = $Output if opt('c') && $Output =~ /\.c\z/i;
         }
         check_write($cfile);
     } else { # Do not keep tempfiles (no -S nor -c nor -o)
@@ -453,7 +457,7 @@ sub compile_cstyle {
     # sucks.
     my $command = "$BinPerl$taint -MO=$Backend,$options"."-o$cfile $Input";
     vprint 5, "Compiling...";
-    vprint 1, "Calling $command";
+    vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
     my ($output_r, $error_r) = spawnit($command);
@@ -466,8 +470,8 @@ sub compile_cstyle {
     } else {
         my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
         @error = grep { !/^$i syntax OK$/o } @error;
-        warn "$0: Unexpected compiler output\n@error" if @error and opt(v)<5;
-        warn "@error" if @error and opt(v)>4;
+        warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
+        warn "@error" if @error and opt('v')>4;
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
@@ -518,7 +522,7 @@ sub compile_cstyle {
     $t0 = [gettimeofday] if opt('time');
     is_msvc ?
         cc_harness_msvc($cfile, $stash, $extra_libs) :
-        cc_harness($cfile, $stash, $extra_libs) unless opt(c);
+        cc_harness($cfile, $stash, $extra_libs) unless opt('c');
     $elapsed = tv_interval ( $t0 ) if opt('time');
     vprint -1, "cc time: $elapsed" if opt('time');
 
@@ -536,11 +540,11 @@ sub cc_harness_msvc {
     my $link = "-out:$Output $obj";
     $compile .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $compile .= $B::C::Flags::extra_cflags;
-    $compile .= " -I".$_ for split /\s+/, opt(I);
-    $compile .= " -DNO_DYNAMIC_LOADING" if opt(staticxs);
-    $compile .= " ".opt(Wc) if opt(Wc);
+    $compile .= " -I".$_ for split /\s+/, opt('I');
+    $compile .= " -DNO_DYNAMIC_LOADING" if opt('staticxs');
+    $compile .= " ".opt('Wc') if opt('Wc');
 
-    $link .= " -libpath:".$_ for split /\s+/, opt(L);
+    $link .= " -libpath:".$_ for split /\s+/, opt('L');
     # TODO: -shared,-static,-sharedxs
     if ($stash) {
         my @mods = split /,?-?u/, $stash; # XXX -U stashes
@@ -553,7 +557,7 @@ sub cc_harness_msvc {
     if ($Config{ccversion} eq '12.0.8804') {
         $link =~ s/ -opt:ref,icf//;
     }
-    $link .= " ".opt(Wl) if opt(Wl);
+    $link .= " ".opt('Wl') if opt('Wl');
     $link .= $extra_libs;
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     $link .= $B::C::Flags::extra_libs;
@@ -569,14 +573,14 @@ sub cc_harness {
     my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
     $command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $command .= $B::C::Flags::extra_cflags if $B::C::Flags::extra_cflags;
-    $command .= " -I".$_ for split /\s+/, opt(I);
-    $command .= " -L".$_ for split /\s+/, opt(L);
-    $command .= " -DNO_DYNAMIC_LOADING" if opt(staticxs);
-    $command .= " ".opt(Wc) if opt(Wc);
+    $command .= " -I".$_ for split /\s+/, opt('I');
+    $command .= " -L".$_ for split /\s+/, opt('L');
+    $command .= " -DNO_DYNAMIC_LOADING" if opt('staticxs');
+    $command .= " ".opt('Wc') if opt('Wc');
     my $ccflags = $command;
 
     my $useshrplib = $Config{useshrplib};
-    _die("--sharedxs with useshrplib=false\n") if !$useshrplib and opt(sharedxs);
+    _die("--sharedxs with useshrplib=false\n") if !$useshrplib and opt('sharedxs');
     my $ldopts;
     if ($stash) {
         my @mods = split /,?-?u/, $stash; # XXX -U stashes
@@ -584,7 +588,7 @@ sub cc_harness {
     } else {
         $ldopts = ExtUtils::Embed::ldopts("-std");
     }
-    $ldopts .= " ".opt(Wl) if opt(Wl);
+    $ldopts .= " ".opt('Wl') if opt('Wl');
 
     # gcc crashes with this duplicate -fstack-protector arg
     my $ldflags = $Config{ldflags};
@@ -605,7 +609,7 @@ sub cc_harness {
             $ldopts = $extra_libs." ".$ldopts;
         }
     }
-    if (opt(shared)) {
+    if (opt('shared')) {
         warn "--shared with useshrplib=false might not work\n" unless $useshrplib;
         my @plibs = ($libperl, "$coredir/$libperl", "$libdir/$libperl");
 	if ($libperl !~ /$Config{dlext}$/) {
@@ -625,7 +629,7 @@ sub cc_harness {
 	        last;
             }
         }
-    } elsif (opt(static)) {
+    } elsif (opt('static')) {
         for my $lib ($libperl, "$coredir/$libperl", "$coredir/$libperl",
                    "$coredir/libperl.a", "$libdir/libperl.a") {
             if (-e $lib) {
@@ -655,8 +659,8 @@ sub cc_harness {
 sub yclept {
     my $command = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     # DWIM the -I to be Perl, not C, include directories.
-    if (opt(I) && $Backend eq "Bytecode") {
-        for (split /\s+/, opt(I)) {
+    if (opt('I') && $Backend eq "Bytecode") {
+        for (split /\s+/, opt('I')) {
             if (-d $_) {
                 push @INC, $_;
             } else {
@@ -719,16 +723,17 @@ sub yclept {
 # To wit, (-B|-O) ==> no -shared, no -S, no -c
 sub checkopts_byte {
 
-    _die("Please choose one of either -B and -O.\n") if opt(O);
+    _die("Please choose one of either -B and -O.\n") if opt('O');
 
     for my $o ( qw[shared sharedxs static staticxs] ) {
-        if (opt($o)) {
+        if (exists($Options->{$o}) && $Options->{$o}) {
             warn "$0: --$o incompatible with -B\n";
             delete $Options->{$o};
         }
     }
+    # TODO make -S produce an .asm also?
     for my $o ( qw[c S] ) {
-        if (opt($o)) {
+        if (exists($Options->{$o}) && $Options->{$o}) {
             warn "$0: Compiling to bytecode is a one-pass process. ",
                   "-$o ignored\n";
             delete $Options->{$o};
@@ -823,7 +828,7 @@ sub spawnit {
 
 sub helpme {
     print "perlcc compiler frontend, version $VERSION\n\n";
-    if (opt(v)) {
+    if (opt('v')) {
 	pod2usage( -verbose => opt('v') );
     } else {
 	pod2usage( -verbose => 0 );
@@ -903,11 +908,11 @@ sub is_win32() { $^O =~ m/^MSWin/ }
 sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
-    if ($cfile && !opt(S) && !opt(c) && -e $cfile) {
+    if ($cfile && !opt('S') && !opt('c') && -e $cfile) {
         vprint 4, "Unlinking $cfile";
         unlink $cfile;
     }
-    if (opt(staticxs) and !opt(S)) {
+    if (opt('staticxs') and !opt('S')) {
         vprint 4, "Unlinking $cfile.lst";
         unlink "$cfile.lst";
     }
@@ -941,6 +946,7 @@ perlcc - generate executables from Perl programs
     perlcc -I /foo hello       # extra headers for C
     perlcc -L /foo hello       # extra libraries for C
     perlcc --Wb=-Dsp           # extra perl compiler options
+    perlcc -fno-delete-pkg     # extra perl compiler options
     perlcc --Wc=-fno-openmp    # extra C compiler options
     perlcc --Wl=-s             # extra C linker options
 
@@ -1030,9 +1036,14 @@ Run the resulting compiled script after compiling it.
 
 Log the output of compiling to a file rather than to stdout.
 
+=item -f<option> or --f=<option>
+
+Pass the options to the compiler backend, such as
+C<-fstash> or C<-fno-delete-pkg>.
+
 =item --Wb=I<options>
 
-Pass the options to the compiler backend, such as --Wb=-O2,-v
+Pass the options to the compiler backend, such as C<--Wb=-O2,-v>
 
 =item --Wc=I<options>
 

@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.42 52c6dfb 2012-02-07 | Update Todo
+# B::C::VERSION = 1.42_07 a9b3612 2012-04-13 | i71_3 hangs also with DEBUGGING <5.10
 # perlversion = 5.015007d
 # path = /usr/local/bin/perl5.15.7d
 # platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -23,9 +23,8 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -37,8 +36,8 @@ pass HTML::Tagset
 pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
-fail Compress::Raw::Zlib
-fail Compress::Raw::Bzip2
+pass Compress::Raw::Zlib
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
 pass Storable
@@ -97,13 +96,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.015007d
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   0 /   5 (0.0%)
-# skip   0 / 100 (0.0% not installed)
+# 99 / 99 modules tested with B-C-1.42_07 - perl-5.015007d
+# pass  99 /  99 (100.0%)
+# fail   0 /  99 (0.0%)
+# todo   0 /   0 ()
+# skip   0 /  99 (0.0% not installed)

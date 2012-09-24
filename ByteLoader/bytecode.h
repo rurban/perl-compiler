@@ -310,6 +310,10 @@ static int bget_swab = 0;
 #define BSET_pregcomp(o, arg)						\
     STMT_START {                                                        \
       if (arg) {							\
+	SV * const repointer = &PL_sv_undef;				\
+	av_push(PL_regex_padav, repointer);				\
+	cPMOPx(o)->op_pmoffset = av_len(PL_regex_padav);		\
+	PL_regex_pad = AvARRAY(PL_regex_padav);				\
         PM_SETRE(cPMOPx(o),						\
 	         CALLREGCOMP(newSVpvn(arg, strlen(arg)), cPMOPx(o)->op_pmflags)); \
       }									\
@@ -319,7 +323,7 @@ static int bget_swab = 0;
 /* see op.c:newPMOP
  * Must use a SV now. build it on the fly from the given pv. 
  * TODO: 5.11 could use newSVpvn_flags with SVf_TEMP
- * PM_SETRE adjust no PL_regex_pad, so repoint manually.
+ * PM_SETRE does not adjust PL_regex_pad, so repoint manually.
  */
 #define BSET_pregcomp(o, arg)						\
     STMT_START {                                                        \
@@ -516,7 +520,12 @@ static int bget_swab = 0;
 
 #ifdef USE_ITHREADS
 #define BSET_cop_file(cop, arg)		CopFILE_set(cop,arg)
+#if PERL_VERSION >= 16
+/* 3arg: 6379d4a9 Father Chrysostomos    2012-04-08 20:25:52 */
+#define BSET_cop_stashpv(cop, arg)	CopSTASHPV_set(cop,arg,strlen(arg))
+#else
 #define BSET_cop_stashpv(cop, arg)	CopSTASHPV_set(cop,arg)
+#endif
 /* only warn, not croak, because those are not really important. stash could be. */
 #define BSET_cop_filegv(cop, arg)	Perl_warn(aTHX_ "cop_filegv with ITHREADS not yet implemented")
 #define BSET_cop_stash(cop,arg)		Perl_warn(aTHX_ "cop_stash with ITHREADS not yet implemented")

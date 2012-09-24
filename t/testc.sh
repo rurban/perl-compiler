@@ -4,7 +4,7 @@
 # quiet c only: t/testc.sh -q -O0
 function help {
   echo "t/testc.sh [OPTIONS] [1-$ntests]"
-  echo " -D<debugflags>     for O=C or O=CC. Default: C,-DcOACMSGpu,-v resp. CC,-DoOscprSql,-v"
+  echo " -D<debugflags>     for O=C or O=CC. Default: C,-DspmF,-v resp. CC,-DOscpSql,-v"
   echo " -O<0-4>            optimization level"
   echo " -f<opt>            special optimization"
   echo " -B<static|dynamic> pass to cc_harness"
@@ -32,14 +32,14 @@ v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
 if [ -z "$Mblib" ]; then
     VERS="${VERS}_global"; 
-    OCMD="$PERL $Mblib -MO=C,${v513}-DcspF,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-Dcsp,"
     if [ $BASE = "testcc.sh" ]; then # DrOsplt 
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
-    OCMD="$PERL $Mblib -MO=C,${v513}-DspF,-v,"
+    OCMD="$PERL $Mblib -MO=C,${v513}-DspmF,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
-        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
+        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSqlm,-v,"
     fi
 fi
 CONT=
@@ -320,16 +320,28 @@ result[49]='ok'
 # @ISA issue 64
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
-# XXX TODO check if signals work, sigwarn and SIG{INT}
-tests[51]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
+# XXX TODO sigwarn $w = B::NULL without -v
+tests[51]='$w=0;BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
 result[51]='ok'
+# check if general signals work
+tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
+result[511]='ok'
 #-------------
-#issue 24
-tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
-result[224]='ok'
 # issue27
 tests[227]='require LWP::UserAgent;print q(ok);'
 result[227]='ok'
+#issue 24
+tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
+result[224]='ok'
+tests[68]='package A;
+sub test {
+  use Data::Dumper ();
+  /^(.*?)\d+$/;
+  "Some::Package"->new();
+}
+print "ok"'
+result[68]='ok'
+# issue71
 tests[71]='
 package my;
 our @a;
@@ -358,10 +370,9 @@ my $invoked_as_script = !caller();
 __PACKAGE__->script(@ARGV) if $invoked_as_script;
 sub script {my($package,@args)=@_;print "ok"}'
 result[74]='ok'
-# issue71
 # issue 71_2+3: cop_warnings issue76 and const destruction issue71 fixed
 # ok with "utf-8-strict"
-tests[75]='
+tests[75]='#TODO
 use Encode;
 my $x = "abc";
 print "ok" if "abc" eq Encode::decode("UTF-8", $x);'
@@ -402,7 +413,7 @@ tests[902]='my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};'
 result[902]='ok'
 # IO handles
-tests[91]='# issue59
+tests[91]='# issue59 TODO
 use strict;
 use warnings;
 use IO::Socket;
@@ -410,10 +421,9 @@ my $remote = IO::Socket::INET->new( Proto => "tcp", PeerAddr => "perl.org", Peer
 print $remote "GET / HTTP/1.0" . "\r\n\r\n";
 my $result = <$remote>;
 $result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
-close $remote;
-'
+close $remote;'
 result[91]='ok'
-tests[93]='
+tests[93]='#SKIP
 my ($pid, $out, $in);
 BEGIN {
   local(*FPID);
@@ -435,11 +445,14 @@ tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
 tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
-tests[95]='use IO::Socket::SSL();
+tests[95]='#TODO IO::Socket::SSL::DESTROY
+use IO::Socket::SSL();
 my IO::Socket::SSL $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";'
 result[95]='ok'
+tests[97]='use v5.12; print q(ok);'
+result[97]='ok'
 
 # from here on we test CC specifics only
 
@@ -502,6 +515,9 @@ result[122]='http'
 # issue52
 tests[123]='my $x;my $y = 1;$x and $y == 2;print $y == 1 ? "ok\n" : "fail\n";'
 result[123]='ok'
+# saving recursive functions sometimes recurses in the compiler. this not, but Moose stucks in Pod::Simple
+tests[99]='package my;sub recurse{my $i=shift;recurse(++$i)unless $i>5000;print"ok";exit};package main;my::recurse(1)'
+result[99]='ok'
 
 init
 

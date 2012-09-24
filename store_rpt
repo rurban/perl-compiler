@@ -3,7 +3,7 @@
 function do_cp {
     for r in $r
       do 
-      for f in $(grep -l "$grep$r" $m)
+      for f in $(grep -l "$grep$r" $m 2>/dev/null)
       do 
         mkdir -p t/reports/$v/$r
 	if test "$move" = "1"
@@ -44,6 +44,7 @@ if [ -n "$m" ]; then
     else
 	# git
 	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\d \\w+ /" $m)
+	test -z $r && r=$(perl -lane "print \$F[1] if /^commit \\w+$/" $m)
 	grep=" "
     fi
     do_cp

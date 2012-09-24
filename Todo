@@ -20,6 +20,8 @@ CvOUTSIDE for ordinary subs
 
 * Features
 
+Detect ExtUtils::Constant autoloaded "Your vendor has not defined"
+   functions stubs. E.g. "WARNING: &Socket::AF_DATAKIT not found"
 optimize static or typed method calls. How-perl-compiles-subs-and-methods.md
 detect typed objects (my Class $obj = new Class;)
 modularize (-m) for faster link times

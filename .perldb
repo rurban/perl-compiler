@@ -1,1 +1,3 @@
 $DB::deep=500;
+$SIG{__WARN__}='';
+# a 934 print $op->name

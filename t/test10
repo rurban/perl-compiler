@@ -4,7 +4,7 @@ DateTime
 DateTime::Locale
 Devel::GlobalDestruction
 ExtUtils::Install
-Module::Build
 Moose
 MooseX::Types
 Test::Tester
+Encode

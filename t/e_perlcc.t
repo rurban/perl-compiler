@@ -3,7 +3,7 @@
 # test most perlcc options
 
 use strict;
-use Test::More tests => 76;
+use Test::More tests => 80;
 use Config;
 
 my $usedl = $Config{usedl} eq 'define';
@@ -48,7 +48,7 @@ SKIP: {
   #skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
  TODO: {
     # fails 5.8,5.15 and darwin only
-    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
+    local $TODO = '--staticxs is experimental' if $^O =~ /^darwin|MSWin32$/ or $] < 5.010;
     is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
     ok(-e $exe, "keep executable"); #14
   }
@@ -196,6 +196,15 @@ TODO: {
   is(`$X -Iblib/arch -Iblib/lib a.plc`, "ok", "executable plc"); #76
 }
 cleanup;
+
+#-f directly
+{
+  like(`$perlcc -fstash -v1 $f -c $redir`, '/,-fstash,/', "-fstash");
+  like(`$perlcc --f stash -v1 $f -c $redir`, '/,-fstash,/', "--f stash");
+  my $out = `$perlcc -fstash -v1 -fno-delete-pkg $f -c $redir`;
+  like($out, '/,-fstash,/', "mult. -fstash");
+  like($out, '/,-fno-delete-pkg,/', "mult. -fno-delete-pkg");
+}
 
 #TODO: -m
 

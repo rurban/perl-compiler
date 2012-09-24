@@ -322,6 +322,12 @@ result[49]='ok'
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
 #-------------
+tests[68]='package A;
+sub test {
+  use Data::Dumper (); /^(.*?)\d+$/;
+  "Some::Package"->new();}
+print "ok"'
+result[68]='ok'
 # issue27
 tests[70]='require LWP::UserAgent;print q(ok);'
 result[70]='ok'
@@ -363,6 +369,8 @@ tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
 tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
+tests[97]='use v5.12; print q(ok);'
+result[97]='ok'
 
 init
 
