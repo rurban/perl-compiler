@@ -202,7 +202,7 @@ our @ISA        = qw(Exporter);
 our @EXPORT_OK =
   qw( output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
       init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
-      save_sig svop_pv inc_cleanup );
+      save_sig svop_pv inc_cleanup ivx nvx );
 
 # for 5.6 better use the native B::C
 # 5.6.2 works fine though.
@@ -801,7 +801,8 @@ sub ivx ($) {
   return $sval;
   #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
 }
- # protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]
+
+# protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]
 sub nvx ($) {
   my $nvx = shift;
   my $nvgformat = $Config{nvgformat};
