@@ -9,7 +9,7 @@
 #
 package B::Stackobj;
 
-our $VERSION = '1.00_03';
+our $VERSION = '1.10';
 
 use Exporter ();
 @ISA       = qw(Exporter);
@@ -26,6 +26,7 @@ use Exporter ();
 use Carp qw(confess);
 use strict;
 use B qw(class SVf_IOK SVf_NOK SVf_IVisUV SVf_ROK);
+use B::C qw(ivx nvx);
 use Config;
 
 # Types
@@ -167,6 +168,7 @@ sub set_int {
   # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
 
   $sval = $expr if $sval eq '0' and $expr;
+
   runtime("$obj->{iv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_DOUBLE );
   $obj->{flags} |= VALID_INT | SAVE_INT;
