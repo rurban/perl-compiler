@@ -3618,6 +3618,10 @@ if (0) {
 	$gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       }
+      if ($fullname eq 'main::$') { # $$ = PerlProc_getpid() issue #108
+        warn sprintf( "  GV $sym \$\$ perlpid\n") if $debug{gv};
+        $init->add( "sv_setiv(GvSV($sym), (IV)PerlProc_getpid());" );
+      }
       warn "GV::save \$$fullname\n" if $debug{gv};
     }
     my $gvav = $gv->AV;
