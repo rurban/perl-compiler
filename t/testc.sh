@@ -470,7 +470,7 @@ tests[104]='@a=(1..4);while($a=shift@a){print $a;}continue{$a=~/2/ and reset q(a
 result[104]='12'
 # CC -ftype-attr
 #tests[105]='$int::dummy=0;$double::dummy=0;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
-tests[105]='$int::dummy=0;$double::dummy=0;my int $r;my $i_i=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
+tests[105]='%int::;%double::;my int $r;my $i_i=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 result[105]='12'
 
 # issue35

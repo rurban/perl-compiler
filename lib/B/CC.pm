@@ -704,9 +704,10 @@ sub save_or_restore_lexical_state {
 }
 
 sub write_back_stack {
+  debug "write_back_stack() ".scalar(@stack)." called from @{[(caller(1))[3]]}\n"
+    if $debug{shadow};
   return unless @stack;
   runtime( sprintf( "EXTEND(sp, %d);", scalar(@stack) ) );
-  # return unless @stack;
   foreach my $obj (@stack) {
     runtime( sprintf( "PUSHs((SV*)%s);", $obj->as_sv ) );
   }

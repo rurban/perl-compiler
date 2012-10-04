@@ -166,7 +166,7 @@ sub set_int {
   my ( $obj, $expr, $unsigned ) = @_;
 
   my $sval = B::C::ivx($expr);
-  # bullshit detector: e.g. boolean expr = 'lnv0 == rnv0'
+  # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
   $sval = $expr if $sval eq '0' and $expr;
 
   runtime("$obj->{iv} = $sval;");
@@ -177,7 +177,14 @@ sub set_int {
 
 sub set_double {
   my ( $obj, $expr ) = @_;
-  my $sval = B::C::nvx($expr);
+  my $sval;
+  if ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
+     $sval = $expr;
+  } else {
+     $sval = B::C::nvx($expr);
+     # non numeric expr, expr 'lnv0 + rnv0'
+     $sval = $expr if $sval eq '0.00' and $expr;
+  }
 
   runtime("$obj->{nv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_INT );
