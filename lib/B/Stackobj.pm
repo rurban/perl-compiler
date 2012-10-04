@@ -163,16 +163,9 @@ sub minipeek {
 #
 sub set_int {
   my ( $obj, $expr, $unsigned ) = @_;
-  my $ivdformat = $Config{ivdformat};
-  $ivdformat =~ s/"//g; #" poor editor
-  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
-  # UL if > INT32_MAX = 2147483647
-  my $sval = sprintf("%${ivdformat}%s", $expr, $expr > $intmax  ? "UL" : "");
-  if ($expr < -$intmax) {
-    $sval = sprintf("%${ivdformat}%s", $expr, "L"); # DateTime
-  }
-  $sval = '0' if $sval =~ /(NAN|inf)$/i;
-  # bullshit detector: e.g. boolean expr = 'lnv0 == rnv0'
+  my $sval = B::C::ivx($expr);
+  # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
+
   $sval = $expr if $sval eq '0' and $expr;
   runtime("$obj->{iv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_DOUBLE );
@@ -182,7 +175,9 @@ sub set_int {
 
 sub set_double {
   my ( $obj, $expr ) = @_;
-  runtime("$obj->{nv} = $expr;");
+  my $sval = B::C::nvx($expr);
+
+  runtime("$obj->{nv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_INT );
   $obj->{flags} |= VALID_DOUBLE | SAVE_DOUBLE;
 }
