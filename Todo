@@ -15,7 +15,6 @@ allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
 list the same as X[IPR]V structures.
 ref counts
 perl_parse replacement
-NV overflow initialisation analog to ivx (ExtUtils::CBuilder)
 CvOUTSIDE for ordinary subs
 
 * Features
@@ -23,7 +22,7 @@ CvOUTSIDE for ordinary subs
 Detect ExtUtils::Constant autoloaded "Your vendor has not defined"
    functions stubs. E.g. "WARNING: &Socket::AF_DATAKIT not found"
 optimize static or typed method calls. How-perl-compiles-subs-and-methods.md
-detect typed objects (my Class $obj = new Class;)
+detect typed objects (my Class $obj = new Class;) (partially done)
 modularize (-m) for faster link times
 BEGIN goto optim: skip code after BEGIN goto
   usually Carp including B in some AUTOLOAD block, issue 61
@@ -52,3 +51,4 @@ demand-loaded bytecode (leader of each basic block replaced by an op
   which loads in bytecode for its block)
 fast sub calls for CC backend
 tailcall optimization (entersub -> leavesub => goto)
+inline functions and methods

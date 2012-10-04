@@ -465,3 +465,40 @@ optimized.
     for (1..$n){
       advance(0.01);
     }
+
+Increasing precision
+--------------------
+
+The casual reader might have noticed that the compiler result would
+not pass the shootout precision tests as it produced an invalid
+result.
+
+Wanted: +-1e-8 with arg 1000
+
+    -0.169075164
+    -0.169087605
+
+Have: with arg 1000
+
+    -0.169075214
+    -0.169087656
+
+That's not even close, it's a 6 digit precision. The perl afficionado
+might remember the Config settings `nvgformat` to print out NV, and
+`d_longdbl` to define if `long double` is defined.
+
+`long double` is however not used as NV, and worst `%g` is used as
+printf format for NV, not `%.16g` as it should be done to keep double
+precision. `%g` is just a pretty result to the casual reader, but not
+suitable to keep precision, e.g. for Data::Dumper, YAML, JSON,
+or the B::C or perlito compilers.
+
+So I changed the NV format to %.16g with commit [3fc61aa](https://github.com/rurban/perl-compiler/commit/3fc61aa69af24d438a2983a15996362207443f43)
+and the precision went up, passing the nbody shootout test with argument 1000.
+
+New result with arg 1000
+
+    -0.169075164
+    -0.169087605
+
+Exactly the same.

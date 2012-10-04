@@ -38,7 +38,10 @@
 	Fixed Null COP storage for 5.16 and 5.17
 	amagic_generation was removed with 5.17
 	Fixed $$ ($PID) to be dynamic, issue 108. Thanks to flexvault for reporting this.
-	* CC (1.13): added check_entersub, check_bless - bless and new caching
+        Fixed double precision to 16 digits. The nbody shootout test passes now
+	* CC (1.13): added check_entersub, check_bless - bless and new caching.
+        Use the B::C integer and double precision logic (ivx, nvx).
+        Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
