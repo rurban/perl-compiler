@@ -716,6 +716,28 @@ sub ivx ($) {
   #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
 }
 
+# protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]
+sub nvx ($) {
+  my $nvx = shift;
+  my $nvgformat = $Config{nvgformat};
+  $nvgformat =~ s/"//g; #" poor editor
+  my $dblmax = "1.79769313486232e+308";
+  # my $ldblmax = "1.18973149535723176502e+4932L"
+  my $ll = $Config{d_longdbl} ? "LL" : "L";
+  if ($nvgformat eq 'g') { # a very poor choice to keep precision
+    # on intel 17-18, on ppc 31, on sparc64/s390 34
+    # $nvgformat = $Config{d_longdbl} ? '.17Lg' : '.16g';
+    $nvgformat = '.16g'; # typedef double NV
+  }
+  my $sval = sprintf("%${nvgformat}%s", $nvx, $nvx > $dblmax ? $ll : "");
+  if ($nvx < -$dblmax) {
+    $sval = sprintf("%${nvgformat}%s", $nvx, $ll);
+  }
+  $sval = '0' if $sval =~ /(NAN|inf)$/i;
+  $sval .= '.00' if $sval =~ /^-?\d+$/;
+  return $sval;
+}
+
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment

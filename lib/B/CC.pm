@@ -1041,10 +1041,10 @@ sub declare_pad {
     declare( "IV",
       $type == T_INT ? sprintf( "%s=0", $pad[$ix]->{iv} ) : $pad[$ix]->{iv} )
       if $pad[$ix]->save_int;
-    declare( "double",
+    declare( "NV",
       $type == T_DOUBLE
-      ? sprintf( "%s = 0", $pad[$ix]->{nv} )
-      : $pad[$ix]->{nv} )
+        ? sprintf( "%s = 0", $pad[$ix]->{nv} )
+        : $pad[$ix]->{nv} )
       if $pad[$ix]->save_double;
 
   }
@@ -1746,7 +1746,7 @@ sub numeric_binop {
         );
       }
       else {
-        my $rightruntime = B::Pseudoreg->new( "double", "rnv" );
+        my $rightruntime = B::Pseudoreg->new( "NV", "rnv" );
         runtime( sprintf( "$$rightruntime = %s;\t/* %s */", $right, $op->name ) );
         runtime(
           sprintf(
@@ -1768,8 +1768,8 @@ sub numeric_binop {
       $targ->set_int( &$operator( $$left, $$right ) );
     }
     else {
-      my $right = B::Pseudoreg->new( "double", "rnv" );
-      my $left  = B::Pseudoreg->new( "double", "lnv" );
+      my $right = B::Pseudoreg->new( "NV", "rnv" );
+      my $left  = B::Pseudoreg->new( "NV", "lnv" );
       runtime(
         sprintf( "$$right = %s; $$left = %s;\t/* %s */",
                  pop_numeric(), pop_numeric, $op->name ) );
@@ -1801,7 +1801,7 @@ sub pp_ncmp {
       runtime "}";
     }
     else {
-      my $rightruntime = B::Pseudoreg->new( "double", "rnv" );
+      my $rightruntime = B::Pseudoreg->new( "NV", "rnv" );
       runtime( sprintf( "$$rightruntime = %s;\t/* %s */", $right, $op->name ) );
       runtime sprintf( qq/if ("TOPn" > %s){/, $rightruntime );
       runtime sprintf("  sv_setiv(TOPs,1);");
@@ -1816,8 +1816,8 @@ sub pp_ncmp {
   }
   else {
     my $targ  = $pad[ $op->targ ];
-    my $right = B::Pseudoreg->new( "double", "rnv" );
-    my $left  = B::Pseudoreg->new( "double", "lnv" );
+    my $right = B::Pseudoreg->new( "NV", "rnv" );
+    my $left  = B::Pseudoreg->new( "NV", "lnv" );
     runtime(
       sprintf( "$$right = %s; $$left = %s;\t/* %s */",
                pop_numeric(), pop_numeric, $op->name ) );
@@ -1912,8 +1912,8 @@ sub bool_int_binop {
 # coverage: ?
 sub bool_numeric_binop {
   my ( $op, $operator ) = @_;
-  my $right = B::Pseudoreg->new( "double", "rnv" );
-  my $left  = B::Pseudoreg->new( "double", "lnv" );
+  my $right = B::Pseudoreg->new( "NV", "rnv" );
+  my $left  = B::Pseudoreg->new( "NV", "lnv" );
   runtime(
     sprintf( "$$right = %s; $$left = %s;\t/* %s */",
              pop_numeric(), pop_numeric(), $op->name ) );
