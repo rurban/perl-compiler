@@ -264,7 +264,7 @@ use strict;
 use B qw(main_start main_root class comppadlist peekop svref_2object
   timing_info init_av end_av sv_undef amagic_generation
   OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
-  OPf_MOD OPf_STACKED OPf_SPECIAL
+  OPf_MOD OPf_STACKED OPf_SPECIAL OPpLVAL_DEFER OPpLVAL_INTRO
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
   OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY );
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
@@ -554,6 +554,39 @@ Perl_vivify_ref(pTHX_ SV *sv, U32 to_what)
 __EOV
 
   }
+
+    print '
+
+OP *Perl_pp_aelem_nolval(aTHX);
+#ifndef SVfARG
+# define SVfARG(x) (void *)x
+#endif
+#ifndef MUTABLE_AV
+# define MUTABLE_AV(av) av
+#endif
+PP(pp_aelem_nolval)
+{
+    dSP;
+    SV** svp;
+    SV* const elemsv = POPs;
+    IV elem = SvIV(elemsv);
+    AV *const av = MUTABLE_AV(POPs);
+    SV *sv;
+
+#if PERL_VERSION > 6
+    if (SvROK(elemsv) && !SvGAMAGIC(elemsv) && ckWARN(WARN_MISC))
+        Perl_warner(aTHX_ packWARN(WARN_MISC),
+                    "Use of reference \"%"SVf"\" as array index",
+                    SVfARG(elemsv));
+#endif
+    if (SvTYPE(av) != SVt_PVAV)	RETPUSHUNDEF;
+    svp = av_fetch(av, elem, 0);
+    sv = (svp ? *svp : &PL_sv_undef);
+    if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);
+    PUSHs(sv);
+    RETURN;
+}
+';
 
   foreach $ppdata (@pp_list) {
     my ( $name, $runtime, $declare ) = @$ppdata;
@@ -1685,6 +1718,29 @@ sub pp_aelemfast {
 }
 
 # coverage: ?
+# optimize on pp_aelem_nolval
+sub bad_pp_aelem {
+  my $op = shift;
+  if ($op->flags & (OPf_MOD || LVRET) or $op->private & (OPpLVAL_DEFER || OPpLVAL_INTRO)) {
+    return default_pp($op);
+  } else {
+    my $ppname = 'pp_aelem_nolval';
+    write_back_lexicals();
+    write_back_stack();
+    if ($inline_ops) {
+      my $ppaddr = "Perl_".$ppname;
+      runtime("PUTBACK; PL_op = $ppaddr(aTHX); SPAGAIN;");
+    } else {
+      my $ppaddr = 'Perl_pp_aelem_nolval';
+      runtime("DOOP($ppaddr);");
+    }
+    $know_op = 1;
+    invalidate_lexicals();
+    return $op->next;
+  }
+}
+
+# coverage: ?
 sub int_binop {
   my ( $op, $operator, $unsigned ) = @_;
   if ( $op->flags & OPf_STACKED ) {
@@ -1777,6 +1833,34 @@ sub numeric_binop {
     }
     push( @stack, $targ );
   }
+  return $op->next;
+}
+
+sub numeric_unop {
+  my ( $op, $operator, $flags ) = @_;
+  my $force_int = 0;
+  $force_int ||= ( $flags & INT_RESULT );
+  $force_int ||=
+    (    $flags & INTS_CLOSED
+      && @stack >= 1
+      && valid_int( $stack[-1] ) );
+  my $targ = $pad[ $op->targ ];
+  $force_int ||= ( $targ->{type} == T_INT );
+  if ($force_int) {
+    my $arg  = B::Pseudoreg->new( "IV", "liv" );
+    runtime(sprintf( "$$arg = %s;\t/* %s */",
+                     pop_numeric, $op->name ) );
+    # XXX set targ?
+    $targ->set_int( &$operator( $$arg ) );
+  }
+  else {
+    my $arg  = B::Pseudoreg->new( "NV", "lnv" );
+    runtime(sprintf( "$$arg = %s;\t/* %s */",
+                     pop_numeric, $op->name ) );
+    # XXX set targ?
+    $targ->set_numeric( &$operator( $$arg ) );
+  }
+  push( @stack, $targ );
   return $op->next;
 }
 
@@ -2012,6 +2096,20 @@ BEGIN {
   sub pp_sge { bool_sv_binop( $_[0], $sge_op ) }
   sub pp_seq { bool_sv_binop( $_[0], $seq_op ) }
   sub pp_sne { bool_sv_binop( $_[0], $sne_op ) }
+
+#  sub pp_sin  { numeric_unop( $_[0], prefix_op("Perl_sin"), NUMERIC_RESULT ) }
+#  sub pp_cos  { numeric_unop( $_[0], prefix_op("Perl_cos"), NUMERIC_RESULT ) }
+#  sub pp_exp  { numeric_unop( $_[0], prefix_op("Perl_exp"), NUMERIC_RESULT ) }
+#  sub pp_abs  { numeric_unop( $_[0], prefix_op("abs") ) }
+#  sub pp_negate { numeric_unop( $_[0], sub { "- $_[0]" }; ) }
+
+# pow has special perl logic
+##  sub pp_pow  { numeric_binop( $_[0], prefix_op("Perl_pow"), NUMERIC_RESULT ) }
+#XXX log and sqrt need to check negative args
+#  sub pp_sqrt { numeric_unop( $_[0], prefix_op("Perl_sqrt"), NUMERIC_RESULT ) }
+#  sub pp_log  { numeric_unop( $_[0], prefix_op("Perl_log"), NUMERIC_RESULT ) }
+#  sub pp_atan2 { numeric_binop( $_[0], prefix_op("Perl_atan2"), NUMERIC_RESULT ) }
+
 }
 
 # coverage: 3,4,9,10,11,12,17,18,20,21,23
