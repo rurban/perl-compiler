@@ -812,8 +812,7 @@ sub nvx ($) {
   my $ll = $Config{d_longdbl} ? "LL" : "L";
   if ($nvgformat eq 'g') { # a very poor choice to keep precision
     # on intel 17-18, on ppc 31, on sparc64/s390 34
-    # $nvgformat = $Config{d_longdbl} ? '.17Lg' : '.16g';
-    $nvgformat = '.16g'; # typedef double NV
+    $nvgformat = $Config{uselongdouble} ? '.17Lg' : '.16g';
   }
   my $sval = sprintf("%${nvgformat}%s", $nvx, $nvx > $dblmax ? $ll : "");
   if ($nvx < -$dblmax) {
