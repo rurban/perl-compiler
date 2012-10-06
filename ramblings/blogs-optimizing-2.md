@@ -1,3 +1,6 @@
+nbody - unboxed inlined arithmetic 2x faster
+=============================================
+
 In the [first part](http://blogs.perl.org/users/rurban/2012/09/optimizing-compiler-benchmarks-part-1.html) I showed some problems and possibilities of the B::C compiler and B::CC optimizing compiler with an example which was very bad to optimize, and promised for the next day an improvement with "stack smashing", avoiding copy overhead between the compiler stacks and global perl data.
 
 The next days I went to Austin to meet with the [perl11.org](http://perl11.org/) group, which has as one of the goals an optimizing compiler for perl5, and to replace all three main parts of perl: the parser, the compiler/optimizer and the vm (the runtime) at will. You can do most of it already, esp. replace the runloop, but the 3 parts are too intermingled and undocumented.
@@ -5,7 +8,7 @@ The next days I went to Austin to meet with the [perl11.org](http://perl11.org/)
 So I discussed the "stack smashing" problem with Will and my idea on the solution.
 
 1. The "stack smashing" problem
-------------------------------------------
+-------------------------------
 
 B::CC keeps two internal stacks to be able to optimize arithmetic and boolean operations on numbers, int IV and double NV.
 
@@ -34,7 +37,7 @@ In practice only numeric and boolean optimizations operate on private c variable
 So only on unboxed numbers we need to copy the values back and force, before and after, as B::CC inlines most of these ops.
 
 2. Benchmarks
--------------------
+-------------
 
 I'll take a benchmark in which Perl is very slow compared to other scripting
 languages, and which does a lot of arithmetic. Because I expect the
@@ -540,3 +543,5 @@ New result with arg 1000
     -0.169087605
 
 Exactly the same. Also for other n cmdline arguments.
+
+See [part 3](http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-3.html) which finds more optimizations, being 2x times faster on top of this.
