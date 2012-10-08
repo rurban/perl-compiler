@@ -420,14 +420,16 @@ B<my vs our>: Note that only B<our> attributes are resolved at B<compile-time>,
 B<my> attributes are resolved at B<run-time>. So the compiler will only see
 type attributes for our variables.
 
-See L<B::CC/load_pad> and L<Ctypes>.
+See L<B::CC/load_pad> and L<types>.
 
-TODO: To represent on this stack not only PADs,SV,IV,PV,NV,BOOL,Special
-and a SV const, but also GV,CV,RV,AV,HV use B::Stackobj::Const.
+TODO: Represent on this stack not only PADs,SV,IV,PV,NV,BOOL,Special
+and a SV const, but also GV,CV,RV,AV,HV, esp. AELEM and HELEM.
+Use B::Stackobj::Const.
 
 =head1 AUTHOR
 
-Malcolm Beattie C<MICB at cpan.org> I<(retired)>
+Malcolm Beattie C<MICB at cpan.org> I<(retired)>,
+Reini Urban C<rurban at cpan.org>
 
 =cut
 

@@ -362,6 +362,11 @@ sub CxTYPE_no_LOOP  {
     ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 )
     : $_[0]->{type} != 3
 }
+if ($PERL510) {
+  sub SVs_RMG {0x00800000}
+} else {
+  sub SVs_RMG {0x8000}
+}
 
 # Could rewrite push_runtime() and output_runtime() to use a
 # temporary file if memory is at a premium.
@@ -841,6 +846,10 @@ sub reload_lexicals {
     $obj->[0] = $newval;
   }
 
+  sub value {
+    return $_[0]->[0];
+  }
+
   sub write_back {
     my $obj = shift;
     if ( !( $obj->[1] ) ) {
@@ -853,7 +862,8 @@ sub reload_lexicals {
 
 my $curcop = B::Shadow->new(
   sub {
-    my $opsym = shift->save;
+    my $op = shift;
+    my $opsym = $op->save;
     runtime("PL_curcop = (COP*)$opsym;");
   }
 );
@@ -1407,7 +1417,7 @@ sub pp_nextstate {
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
   runtime("TAINT_NOT;") unless $omit_taint;
-  runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;");
+  runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;"); # TODO reset sp not needed always
   if ( $freetmps_each_bblock || $freetmps_each_loop ) {
     $need_freetmps = 1;
   }
@@ -1664,13 +1674,28 @@ sub pp_gvsv {
   return $op->next;
 }
 
+# check for faster fetch calls, returns 0 if no is in effect.
+sub autovivification {
+  if ($INC{'autovivification.pm'}) {
+    return _autovivification($curcop->[0]);
+  } else {
+    return 1;
+  }
+}
+
 # coverage: 16, issue44
 sub pp_aelemfast {
   my $op = shift;
-  my $av;
+  my ($av, $rmg);
   if ($op->flags & OPf_SPECIAL) {
     my $sv = $pad[ $op->targ ]->as_sv;
-    $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
+    my @c = comppadlist->ARRAY;
+    my @p = $c[1]->ARRAY;
+    my $lex = $p[ $op->targ ];
+    $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
+    # MUTABLE_AV is only needed to catch compiler const loss
+    # $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
+    $av = "(AV*)$sv";
   } else {
     my $gvsym;
     if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
@@ -1685,21 +1710,28 @@ sub pp_aelemfast {
       }
     }
     else { #svop
-      $gvsym = $op->gv->save;
+      my $gv = $op->gv;
+      $gvsym = $gv->save;
+      my $gvav = $gv->AV;
+      $rmg  = ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
     }
     $av = "GvAV($gvsym)";
   }
   my $ix   = $op->private;
   my $lval = $op->flags & OPf_MOD;
-  write_back_stack();
-  runtime(
-    "{ AV* av = $av;",
-    "  SV** const svp = av_fetch(av, $ix, $lval);",
-    "  SV *sv = (svp ? *svp : &PL_sv_undef);",
-    !$lval ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : "",
-    "  PUSHs(sv);",
-    "}"
-  );
+  if (!$rmg and !autovivification()) {
+      runtime("PUSHs(AvARRAY($av)[$ix]);\t/* no autovivification */");
+  } else {
+    write_back_stack();
+    runtime(
+      "{ AV* av = $av;",
+      "  SV** const svp = av_fetch(av, $ix, $lval);",
+      "  SV *sv = (svp ? *svp : &PL_sv_undef);",
+      (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : "",
+      "  PUSHs(sv);",
+      "}"
+    );
+  }
   return $op->next;
 }
 
@@ -3152,9 +3184,9 @@ OPTION:
       foreach my $ref ( values %optimise ) {
         $$ref = 0;
       }
+      $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
-        $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       }
       if ( $arg >= 1 ) {
         $type_attr = 1;

@@ -1,6 +1,8 @@
 #directory /usr/src/perl/perl-5.10.1/perl-5.10.1
 #directory /usr/src/perl/perl-5.6.2
 
+set breakpoint pending on
+break XS_B__CC__autovivification
 break __asan_report_error
 
 define run10plc

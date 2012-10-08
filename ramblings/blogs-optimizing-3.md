@@ -126,10 +126,11 @@ Unrolled:
 
 So we went from **3.6s** down to **2.4s** and compiled to **1.3s**.
 
-With N=50,000,000 we got **12m36.517s** uncompiled and **9m33.9213s**
-compiled.  Close to jruby, even if the array accesses still goes
+With N=50,000,000 we got **14m12.653s** uncompiled and **7m11.3597s**
+compiled. Close to jruby, even if the array accesses still goes
 through the `av_fetch` function, magic is checked and undefined indices
 are autovivified.
+
 
 Generalization
 --------------
@@ -137,7 +138,7 @@ Generalization
 The above macro-code code looks pretty unreadable, similar to lisp
 macros, with its mix of quoted and unquoted variables.  The compiler
 needs to detect unrollable loop code which will lead to more
-constants and AELEMFAST ops. And we need to define a helper function
+constants and AELEMFAST ops. And we better define a helper function
 for easier generation of such unrolled loops.
 
     # unquote local vars
@@ -192,7 +193,7 @@ A naive optimization would check the index ranges beforehand, and access
 the array values directly. Something the type optimizer for arrays would
 do.
 
-    my (num @xs[4], num @ys[4], num @zs[4]);
+    my (num @xs[4],  num @ys[4],  num @zs[4]);
     my (num @vxs[4], num @vys[4], num @vzs[4]);
     my num @mass[4];
 
@@ -221,22 +222,22 @@ It should compile to:
 
 With the size declaration you can omit the `av_fetch()` call and undef
 check ("autovivification"), with the type `num` you do not need to get
-to the `SvNVX` of the array element, the value is stored directly, and
+to the `SvNV` of the array element, the value is stored directly, and
 the type also guarantees that there is no magic to be checked.  So
-`AvARRAY(PL_curpad[6])[0]` returns a double.
+`AvARRAY(PL_curpad[6])[0]` would return a double.
 
 And the stack handling (PUSH, PUSH, POP, POP) can also be optimized
 away, since the ops are inlined already.  That would get us close to
 an optimizing compiler as with Haskell, Lua, PyPy or LISP. Not close
 to Go or Java, as their languages are stricter.
 
-I tried a simple B::CC AELEMFAST optimization together with "no autovificication"
+I tried a simple B::CC AELEMFAST optimization together with "no autovivification"
 which does not yet eliminate superfluous PUSH/POP pairs but could be applied
 for typed arrays and leads to another 2x times win.
 
-2.80s down to 1.67s on a slower PC with N=50000.
+2.80s down to 1.67s on a slower PC with N=50,000.
 
-Compiled to:
+Compiled to *(perlcc /2a)*:
 
     PUSHs(AvARRAY(PL_curpad[6])[0]));
     PUSHs(AvARRAY(PL_curpad[6])[1]));
@@ -244,8 +245,10 @@ Compiled to:
     d30_tmp = rnv0 * lnv0;
 
 Without superfluous PUSH/POP pairs I suspect another 2x times win. But this
-is not implemented yet.
-It should look like:
+is not implemented yet. With typed arrays maybe another 50% win, and we don't
+need the no autovivification overhead.
+
+It should look like *(perlcc /2b)*:
 
     rnv0 = SvNV(AvARRAY(PL_curpad[6])[0]);
     lnv0 = SvNV(AvARRAY(PL_curpad[6])[1]);
@@ -253,3 +256,32 @@ It should look like:
 
 I'm just implementing the check for the 'no autovivification' pragma and
 the stack optimizations.
+
+Summary
+-------
+
+[u64q nbody](http://shootout.alioth.debian.org/u64q/performance.php?test=nbody)
+
+Original numbers with N=50,000,000:
+
+    * Fortran       14.09s
+    * C             20.72s
+    * Go            32.11s
+    * SBCL          42.75s
+    * JRuby       8m
+    * PHP        11m
+    * Python 3   16m
+    * Perl       23m
+    * Ruby 1.9   26m
+
+My numbers with N=50,000,000:
+
+    * Perl       22m14s
+    * Perl 1     21m48s         (inline sub advance, no ENTERSUB/LEAVESUB)
+    * perlcc      9m52s
+    * Perl 2    14m13s          (unrolled loop + AELEM => AELEMFAST)
+    * perlcc 2   7m11s
+    * perlcc 2a  4m52s          (no autovivification, 4.5x faster)
+    * perlcc 2b  ? (~2m30)      (no autovivification + stack opt)
+    * perlcc 2c  ? (~1m25s)     (typed arrays + stack opt)
+
