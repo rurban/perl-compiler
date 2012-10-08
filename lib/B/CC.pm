@@ -1720,7 +1720,8 @@ sub pp_aelemfast {
   my $ix   = $op->private;
   my $lval = $op->flags & OPf_MOD;
   if (!$rmg and !autovivification()) {
-      runtime("PUSHs(AvARRAY($av)[$ix]);\t/* no autovivification */");
+    push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
+    # runtime("PUSHs(AvARRAY($av)[$ix]);\t/* no autovivification */");
   } else {
     write_back_stack();
     runtime(

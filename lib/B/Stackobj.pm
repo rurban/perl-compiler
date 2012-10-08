@@ -380,6 +380,30 @@ sub B::Stackobj::Bool::invalidate { }
 
 1;
 
+#
+# Stackobj::Aelem
+#
+
+@B::Stackobj::Aelem::ISA = 'B::Stackobj';
+
+sub B::Stackobj::Aelem::new {
+  my ( $class, $av, $ix, $lvalue ) = @_;
+  # TODO: check flags: OPf_MOD, DEFER, SVs_RMG
+  #       check no autovivification
+  my $obj = bless {
+    type  => T_UNKNOWN,
+    flags => VALID_INT | VALID_DOUBLE | VALID_SV,
+    iv    => "SvIV(AvARRAY($av)[$ix])",
+    nv    => $lvalue ? "SvNVX(AvARRAY($av)[$ix])" : "SvNV(AvARRAY($av)[$ix])",
+    sv    => "AvARRAY($av)[$ix]"
+  }, $class;
+  return $obj;
+}
+
+sub B::Stackobj::Aelem::write_back { }
+
+sub B::Stackobj::Aelem::invalidate { }
+
 __END__
 
 =head1 NAME
