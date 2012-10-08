@@ -1,5 +1,5 @@
 nbody - Unrolling AELEM loops to AELEMFAST
-==========================================
+------------------------------------------
 
 In the [first
 part](http://blogs.perl.org/users/rurban/2012/09/optimizing-compiler-benchmarks-part-1.html)
@@ -132,14 +132,15 @@ through the `av_fetch` function, magic is checked and undefined indices
 are autovivified.
 
 Generalization
-==============
+--------------
 
 The above macro-code code looks pretty unreadable, similar to lisp
 macros, with its mix of quoted and unquoted variables.  The compiler
-needs to detected unrollable loop code which will lead to more
-constants, and we need to define a helper function.
+needs to detect unrollable loop code which will lead to more
+constants and AELEMFAST ops. And we need to define a helper function
+for easier generation of such unrolled loops.
 
-    # quote vars
+    # unquote local vars
     sub qv {
       my ($s, $env) = @_;
       # expand our local loop vars
@@ -174,7 +175,7 @@ constants, and we need to define a helper function.
     }';
     eval $energy; die if $@;
 
-This looks now much better and leads in a BEGIN blocks to only neglectible
+This looks now much better and leads in a BEGIN block to only neglectible
 run-time penalty.
 Full code here: [nbody.perl-2a.perl](https://github.com/rurban/shootout/commit/c35bb85ed84941157eb01b7ca844d3b4472e0df3)
 
@@ -184,8 +185,8 @@ unstable finding the end of the loop blocks on the source level, and
 optimization.
 
 
-Types
-=====
+Types and autovivification
+--------------------------
 
 A naive optimization would check the index ranges beforehand, and access
 the array values directly. Something the type optimizer for arrays would
@@ -229,9 +230,9 @@ away, since the ops are inlined already.  That would get us close to
 an optimizing compiler as with Haskell, Lua, PyPy or LISP. Not close
 to Go or Java, as their languages are stricter.
 
-I tried a simple B::CC AELEMFAST optimization which does not yet eliminate
-superfluous PUSH/POP pairs but could be applied for typed arrays and
-leads to another 2x times win.
+I tried a simple B::CC AELEMFAST optimization together with "no autovificication"
+which does not yet eliminate superfluous PUSH/POP pairs but could be applied
+for typed arrays and leads to another 2x times win.
 
 2.80s down to 1.67s on a slower PC with N=50000.
 
@@ -244,3 +245,11 @@ Compiled to:
 
 Without superfluous PUSH/POP pairs I suspect another 2x times win. But this
 is not implemented yet.
+It should look like:
+
+    rnv0 = SvNV(AvARRAY(PL_curpad[6])[0]);
+    lnv0 = SvNV(AvARRAY(PL_curpad[6])[1]);
+    d30_tmp = rnv0 * lnv0;          /* multiply */
+
+I'm just implementing the check for the 'no autovivification' pragma and
+the stack optimizations.
