@@ -285,3 +285,5 @@ My numbers with N=50,000,000:
     * perlcc 2b  ? (~2m30)      (no autovivification + stack opt)
     * perlcc 2c  ? (~1m25s)     (typed arrays + stack opt)
 
+Continued at [part 4](http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-4.html)
+with stack and nextstate optimisations. But I only reached 3m30s, not 2m30s so far.

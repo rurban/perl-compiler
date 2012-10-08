@@ -108,7 +108,7 @@ range of p5p micro-optimizations and not considered high-priority for now.
 
 Let's rather check out more stack optimizations.
 
-I added a new [`B::Stackobj::Aelem`]() object to B::Stackobj to track aelemfast accesses
+I added a new [B::Stackobj::Aelem](https://github.com/rurban/perl-compiler/commit/edda0c5ca8cd8fd072e425977dd3a1f80d34857c) object to B::Stackobj to track aelemfast accesses
 to array indices, and do the PUSH/POP optimizations on them.
 
 The generated code now looks like:
@@ -136,9 +136,8 @@ Performance went from **4m53.073s** to **3m58.249s**, 55s or 18.7% faster. Much 
 with the nextstate optimizations. 30s less on top of this would be **3m30s**, still slower
 than Erlang, Racket or C#. And my goal was 2m30s.
 
-But there's still a lot to optimize and adding the 'no
-autovivification' check was also costly. Several dependant packages
-were added, like autovivification, Tie::Hash::NamedCapture, mro,
+But there's still a lot to optimize and adding the [no autovivification check](https://github.com/rurban/perl-compiler/commit/cc90753d69000453856f4746fd885e058c30ff4b) was also costly. 
+Several dependant packages were added to the generated code, like autovivification, Tie::Hash::NamedCapture, mro,
 Fcntl, IO, Exporter, Cwd, File::Spec, Config, FileHandle, IO::Handle,
 IO::Seekable, IO::File, Symbol, Exporter::Heavy, ...
 But you don't see this cost in the binary size, and neither in the run-time.
