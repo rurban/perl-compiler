@@ -17,9 +17,14 @@ typedef struct magic  *B__MAGIC;
 #if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
 #endif
-#if PERL_VERSION >= 15
 typedef COP  *B__COP;
-#endif
+
+STATIC U32 a_hash = 0;
+
+typedef struct {
+  U32 bits;
+  IV  require_tag;
+} a_hint_t;
 
 static int
 my_runops(pTHX)
@@ -132,8 +137,43 @@ COP_stashflags(o)
 
 #endif
 
+MODULE = B__CC	PACKAGE = B::CC
 
-MODULE=B__C 	PACKAGE=B::C
+PROTOTYPES: DISABLE
+
+U32
+_autovivification(cop)
+	B::COP	cop
+CODE:
+    {
+      SV *hint;
+      IV h;
+
+      RETVAL = 1;
+      if (PL_check[OP_PADSV] != MEMBER_TO_FPTR(Perl_ck_null)) {
+	char *package = CopSTASHPV(cop);
+#ifdef cop_hints_fetch_pvn
+	hint = cop_hints_fetch_pvn(cop, "autovivification", strlen("autovivification"), a_hash, 0);
+#elif PERL_VERSION > 9
+	hint = Perl_refcounted_he_fetch(aTHX_ cop->cop_hints_hash,
+					NULL, "autovivification", strlen("autovivification"), 0, a_hash);
+#else
+	SV **val = hv_fetch(GvHV(PL_hintgv), "autovivification", strlen("autovivification"), 0);
+	if (!val)
+	  return;
+	hint = *val;
+#endif
+	if (!(hint && SvIOK(hint)))
+	  return;
+	h = SvIVX(hint);
+	if (h & 4)  /* A_HINT_FETCH  4 */
+	  RETVAL = 0;
+      }
+    }
+OUTPUT:
+  RETVAL
+
+MODULE = B__C	PACKAGE = B::C
 
 PROTOTYPES: DISABLE
 
