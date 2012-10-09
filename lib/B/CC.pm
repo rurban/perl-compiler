@@ -107,7 +107,15 @@ B<-O1> sets B<-ffreetmps-each-bblock>.
 
 B<-O2> adds B<-ffreetmps-each-loop> and B<-fno-destruct> from L<B::C>.
 
-B<-fomit-taint> and B<-fslow-signals> must be set explicitly.
+The following options must be set explicitly:
+
+  B<-fno-taint> or B<-fomit-taint>,
+
+  B<-fslow-signals>,
+
+  B<-no-autovivify>,
+
+  B<-fno-magic>.
 
 =item B<-f>C<OPTIM>
 
@@ -351,6 +359,7 @@ my %optimise = (
   freetmps_each_loop   => \$freetmps_each_loop,	  # -O2
   inline_ops 	       => \$inline_ops,	  	  # not on Win32
   omit_taint           => \$omit_taint,
+  taint                => \$omit_taint,
   slow_signals         => \$slow_signals,
   name_magic           => \$name_magic,
   type_attr            => \$type_attr,
@@ -1476,7 +1485,7 @@ sub pp_regcreset {
     warn "inlining regcreset\n" if $debug{op};
     $curcop->write_back if $curcop;
     runtime 'PL_reginterp_cnt = 0;	/* pp_regcreset */';
-    runtime 'TAINT_NOT;';
+    runtime 'TAINT_NOT;' unless $omit_taint;
     return $op->next;
   } else {
     default_pp(@_);
@@ -2187,7 +2196,7 @@ sub pp_sassign {
     if ($backwards) {
       my $src  = pop @stack;
       my $type = $src->{type};
-      runtime("if (PL_tainting && PL_tainted) TAINT_NOT;");
+      runtime("if (PL_tainting && PL_tainted) TAINT_NOT;") unless $omit_taint;
       if ( $type == T_INT ) {
         if ( $src->{flags} & VALID_UNSIGNED ) {
           runtime sprintf( "sv_setuv(TOPs, %s);", $src->as_int );
@@ -2202,13 +2211,13 @@ sub pp_sassign {
       else {
         runtime sprintf( "sv_setsv(TOPs, %s);", $src->as_sv );
       }
-      runtime("SvSETMAGIC(TOPs);");
+      runtime("SvSETMAGIC(TOPs);") if $magic;
     }
     else {
       my $dst  = $stack[-1];
       my $type = $dst->{type};
       runtime("sv = POPs;");
-      runtime("MAYBE_TAINT_SASSIGN_SRC(sv);");
+      runtime("MAYBE_TAINT_SASSIGN_SRC(sv);") unless $omit_taint;
       if ( $type == T_INT ) {
         $dst->set_int("SvIV(sv)");
       }
@@ -2216,7 +2225,9 @@ sub pp_sassign {
         $dst->set_double("SvNV(sv)");
       }
       else {
-        runtime("SvSetMagicSV($dst->{sv}, sv);");
+	$magic
+	  ? runtime("SvSetMagicSV($dst->{sv}, sv);")
+	  : runtime("SvSetSV($dst->{sv}, sv);");
         $dst->invalidate;
       }
     }
@@ -2230,8 +2241,10 @@ sub pp_sassign {
       runtime("dst = POPs; src = TOPs;");
     }
     runtime(
-      "MAYBE_TAINT_SASSIGN_SRC(src);", "SvSetSV(dst, src);",
-      "SvSETMAGIC(dst);",              "SETs(dst);"
+      $omit_taint ? "" : "MAYBE_TAINT_SASSIGN_SRC(src);",
+      "SvSetSV(dst, src);",
+       $magic ? "SvSETMAGIC(dst);" : "",
+      "SETs(dst);"
     );
   }
   return $op->next;
