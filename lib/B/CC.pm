@@ -1757,7 +1757,7 @@ sub pp_aelemfast {
 
 sub _aelem {
   my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
-  if (!$rmg and !$vifify) {
+  if (!$rmg and !$vifify and $ix >= 0) {
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
