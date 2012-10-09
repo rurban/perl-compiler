@@ -108,4 +108,76 @@ range of p5p micro-optimizations and not considered high-priority for now.
 
 Let's rather check out more stack optimizations.
 
+<<<<<<< HEAD
+||||||| parent of 0076fb5... CC: optimize aelem, add -fno-autovivify, add Stackobj::as_obj
+I added a new [B::Stackobj::Aelem](https://github.com/rurban/perl-compiler/commit/edda0c5ca8cd8fd072e425977dd3a1f80d34857c) object to B::Stackobj to track aelemfast accesses
+to array indices, and do the PUSH/POP optimizations on them.
+
+The generated code now looks like:
+
+      lab_116f270:
+    	TAINT_NOT;
+    	sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;
+    	FREETMPS;
+    	rnv0 = d9_mag; lnv0 = SvNV(AvARRAY((AV*)PL_curpad[25])[1]);	/* multiply */
+    	d3_mm2 = lnv0 * rnv0;
+      lab_116be90:
+    	TAINT_NOT;
+    	sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;
+    	FREETMPS;
+    	d5_dx = SvNV(PL_curpad[5]);
+    	rnv0 = d3_mm2; lnv0 = d5_dx;	/* multiply */
+    	d29_tmp = lnv0 * rnv0;
+    	SvNVX(AvARRAY((AV*)PL_curpad[28])[0]) = SvNVX(AvARRAY((AV*)PL_curpad[28])[0]) - d29_tmp;
+
+Lvalue assignments need SvNVX, right-value can keep SvNV.
+The multiply op for `PL_curpad[28])[0]` has the OPf_MOD flag since the first arg is modified.
+nextstate with TAINT, FREETMPS and sp reset is still not optimized.
+
+Performance went from **4m53.073s** to **3m58.249s**, 55s or 18.7% faster. Much better than
+with the nextstate optimizations. 30s less on top of this would be **3m30s**, still slower
+than Erlang, Racket or C#. And my goal was 2m30s.
+
+But there's still a lot to optimize and adding the [no autovivification check](https://github.com/rurban/perl-compiler/commit/cc90753d69000453856f4746fd885e058c30ff4b) was also costly. 
+Several dependant packages were added to the generated code, like autovivification, Tie::Hash::NamedCapture, mro,
+Fcntl, IO, Exporter, Cwd, File::Spec, Config, FileHandle, IO::Handle,
+IO::Seekable, IO::File, Symbol, Exporter::Heavy, ...
+But you don't see this cost in the binary size, and neither in the run-time.
+
+=======
+I added a new [B::Stackobj::Aelem](https://github.com/rurban/perl-compiler/commit/edda0c5ca8cd8fd072e425977dd3a1f80d34857c) object to B::Stackobj to track aelemfast accesses
+to array indices, and do the PUSH/POP optimizations on them.
+
+The generated code now looks like:
+
+      lab_116f270:
+    	TAINT_NOT;
+    	sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;
+    	FREETMPS;
+    	rnv0 = d9_mag; lnv0 = SvNV(AvARRAY((AV*)PL_curpad[25])[1]);	/* multiply */
+    	d3_mm2 = lnv0 * rnv0;
+      lab_116be90:
+    	TAINT_NOT;
+    	sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;
+    	FREETMPS;
+    	d5_dx = SvNV(PL_curpad[5]);
+    	rnv0 = d3_mm2; lnv0 = d5_dx;	/* multiply */
+    	d29_tmp = lnv0 * rnv0;
+    	SvNVX(AvARRAY((AV*)PL_curpad[28])[0]) = SvNVX(AvARRAY((AV*)PL_curpad[28])[0]) - d29_tmp;
+
+Lvalue assignments need SvNVX, right-value can keep SvNV.
+The multiply op for `PL_curpad[28])[0]` has the OPf_MOD flag since the first arg is modified.
+nextstate with TAINT, FREETMPS and sp reset is still not optimized.
+
+Performance went from **4m53.073s** to **3m58.249s**, 55s or 18.7% faster. Much better than
+with the nextstate optimizations. 30s less on top of this would be **3m30s**, still slower
+than Erlang, Racket or C#. And my goal was 2m30s.
+
+But there's still a lot to optimize (loop unrolling, aelem, helem, ...) and adding the [no autovivification check](https://github.com/rurban/perl-compiler/commit/cc90753d69000453856f4746fd885e058c30ff4b) was also costly. 
+Several dependant packages were added to the generated code, like autovivification, Tie::Hash::NamedCapture, mro,
+Fcntl, IO, Exporter, Cwd, File::Spec, Config, FileHandle, IO::Handle,
+IO::Seekable, IO::File, Symbol, Exporter::Heavy, ...
+But you don't see this cost in the binary size, and neither in the run-time.
+
+>>>>>>> 0076fb5... CC: optimize aelem, add -fno-autovivify, add Stackobj::as_obj
 *TBC...*

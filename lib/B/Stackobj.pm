@@ -56,6 +56,10 @@ sub runtime { &$runtime_callback(@_) }
 # Methods
 #
 
+# The stack holds generally only the string ($sv->save) representation of the B object,
+# for the types sv, int, double, numeric and sometimes bool.
+# Special subclasses keep the B obj, like Const
+
 sub write_back { confess "stack object does not implement write_back" }
 
 sub invalidate {
@@ -77,6 +81,10 @@ sub as_sv {
     $obj->{flags} |= VALID_SV;
   }
   return $obj->{sv};
+}
+
+sub as_obj {
+  return shift->{obj};
 }
 
 sub as_int {
@@ -214,10 +222,18 @@ sub B::Stackobj::Padsv::new {
   bless {
     type  => $type,
     flags => VALID_SV | $extra_flags,
+    targ  => $ix,
     sv    => "PL_curpad[$ix]",
     iv    => "$iname",
     nv    => "$dname"
   }, $class;
+}
+
+sub B::Stackobj::Padsv::as_obj {
+  my $obj = shift;
+  my @c = comppadlist->ARRAY;
+  my @p = $c[1]->ARRAY;
+  return $p[ $obj->{targ} ];
 }
 
 sub B::Stackobj::Padsv::load_int {
@@ -279,7 +295,8 @@ sub B::Stackobj::Const::new {
   my ( $class, $sv ) = @_;
   my $obj = bless {
     flags => 0,
-    sv    => $sv    # holds the SV object until write_back happens
+    sv    => $sv,    # holds the SV object until write_back happens
+    obj   => $sv
   }, $class;
   if ( ref($sv) eq "B::SPECIAL" ) {
     $obj->{type} = T_SPECIAL;
@@ -314,28 +331,28 @@ sub B::Stackobj::Const::write_back {
   return if $obj->{flags} & VALID_SV;
 
   # Save the SV object and replace $obj->{sv} by its C source code name
-  $obj->{sv} = $obj->{sv}->save;
+  $obj->{sv} = $obj->{obj}->save;
   $obj->{flags} |= VALID_SV | VALID_INT | VALID_DOUBLE;
 }
 
 sub B::Stackobj::Const::load_int {
   my $obj = shift;
-  if ( ref( $obj->{sv} ) eq "B::RV" or ($] >= 5.011 and $obj->{sv}->FLAGS & SVf_ROK)) {
-    $obj->{iv} = int( $obj->{sv}->RV->PV );
+  if ( ref( $obj->{obj} ) eq "B::RV" or ($] >= 5.011 and $obj->{obj}->FLAGS & SVf_ROK)) {
+    $obj->{iv} = int( $obj->{obj}->RV->PV );
   }
   else {
-    $obj->{iv} = int( $obj->{sv}->PV );
+    $obj->{iv} = int( $obj->{obj}->PV );
   }
   $obj->{flags} |= VALID_INT;
 }
 
 sub B::Stackobj::Const::load_double {
   my $obj = shift;
-  if ( ref( $obj->{sv} ) eq "B::RV" ) {
-    $obj->{nv} = $obj->{sv}->RV->PV + 0.0;
+  if ( ref( $obj->{obj} ) eq "B::RV" ) {
+    $obj->{nv} = $obj->{obj}->RV->PV + 0.0;
   }
   else {
-    $obj->{nv} = $obj->{sv}->PV + 0.0;
+    $obj->{nv} = $obj->{obj}->PV + 0.0;
   }
   $obj->{flags} |= VALID_DOUBLE;
 }
@@ -355,7 +372,7 @@ sub B::Stackobj::Bool::new {
     flags => VALID_INT | VALID_DOUBLE,
     iv    => $$preg,
     nv    => $$preg,
-    preg  => $preg                       # this holds our ref to the pseudo-reg
+    obj   => $preg                       # this holds our ref to the pseudo-reg
   }, $class;
   return $obj;
 }
@@ -371,8 +388,29 @@ sub B::Stackobj::Bool::write_back {
 
 sub B::Stackobj::Bool::invalidate { }
 
-1;
+#
+# Stackobj::Aelem
+#
 
+@B::Stackobj::Aelem::ISA = 'B::Stackobj';
+
+sub B::Stackobj::Aelem::new {
+  my ( $class, $av, $ix, $lvalue ) = @_;
+  my $obj = bless {
+    type  => T_UNKNOWN,
+    flags => VALID_INT | VALID_DOUBLE | VALID_SV,
+    iv    => $lvalue ? "SvIVX(AvARRAY($av)[$ix])" : "SvIV(AvARRAY($av)[$ix])",
+    nv    => $lvalue ? "SvNVX(AvARRAY($av)[$ix])" : "SvNV(AvARRAY($av)[$ix])",
+    sv    => "AvARRAY($av)[$ix]"
+  }, $class;
+  return $obj;
+}
+
+sub B::Stackobj::Aelem::write_back { }
+
+sub B::Stackobj::Aelem::invalidate { }
+
+1;
 __END__
 
 =head1 NAME

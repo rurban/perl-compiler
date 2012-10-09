@@ -201,6 +201,16 @@ within core or use types.
 
 Enabled with B<-O2>. See L<TYPES> and </load_pad>.
 
+=item B<-fno-autovivify>
+
+Do not vivify array and soon also hash elements when accessing them.
+Beware: Vivified elements default to undef, unvivified elements are
+invalid.
+
+This is the same as the pragma "no autovivification" and allows
+very fast array accesses, 4-6 times faster, without the overhead of
+autovivification.pm
+
 =item B<-D>
 
 Debug options (concatenated or separate flags like C<perl -D>).
@@ -328,7 +338,7 @@ my ( $init_name, %debug, $strict );
 # underscores here because they are OK in (strict) barewords.
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint,
-     $slow_signals, $name_magic, $type_attr, %c_optimise );
+     $slow_signals, $name_magic, $type_attr, $autovivify, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $name_magic = 1;
 my %optimise = (
@@ -338,7 +348,8 @@ my %optimise = (
   omit_taint           => \$omit_taint,
   slow_signals         => \$slow_signals,
   name_magic           => \$name_magic,
-  type_attr            => \$type_attr
+  type_attr            => \$type_attr,
+  autovivify           => \$autovivify,
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
@@ -1688,9 +1699,11 @@ sub pp_gvsv {
   return $op->next;
 }
 
-# check for faster fetch calls, returns 0 if no is in effect.
+# check for faster fetch calls, returns 0 if the fast 'no' is in effect.
 sub autovivification {
-  if ($INC{'autovivification.pm'}) {
+  if (!$autovivify) {
+    return 0;
+  } elsif ($INC{'autovivification.pm'}) {
     return _autovivification($curcop->[0]);
   } else {
     return 1;
@@ -1733,8 +1746,14 @@ sub pp_aelemfast {
   }
   my $ix   = $op->private;
   my $lval = $op->flags & OPf_MOD;
-  if (!$rmg and !autovivification()) {
-      runtime("PUSHs(AvARRAY($av)[$ix]);\t/* no autovivification */");
+  my $vifify = autovivification();
+  return _aelem($op, $av, $ix, $lval, $rmg, $vifify);
+}
+
+sub _aelem {
+  my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
+  if (!$rmg and !$vifify) {
+    push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
     runtime(
@@ -1750,25 +1769,26 @@ sub pp_aelemfast {
 }
 
 # coverage: ?
-# optimize on pp_aelem_nolval
-sub bad_pp_aelem {
+sub pp_aelem {
   my $op = shift;
-  if ($op->flags & (OPf_MOD || LVRET) or $op->private & (OPpLVAL_DEFER || OPpLVAL_INTRO)) {
-    return default_pp($op);
-  } else {
-    my $ppname = 'pp_aelem_nolval';
-    write_back_lexicals();
-    write_back_stack();
-    if ($inline_ops) {
-      my $ppaddr = "Perl_".$ppname;
-      runtime("PUTBACK; PL_op = $ppaddr(aTHX); SPAGAIN;");
-    } else {
-      my $ppaddr = 'Perl_pp_aelem_nolval';
-      runtime("DOOP($ppaddr);");
+  my ($ix, $av);
+  my $lval = ($op->flags & OPf_MOD or $op->private & (OPpLVAL_DEFER || OPpLVAL_INTRO)) ? 1 : 0;
+  my $vifivy = autovivification();
+  my $rmg = 1; # pessimize, need some 'no magic' pragma for the av (2nd stack arg)
+  if (@stack >= 1) { # at least ix
+    $ix = pop_int(); # TODO: substract CopARYBASE from ix
+    if (@stack >= 1) {
+      my $avobj = $stack[-1]->as_obj;
+      $rmg  = ($avobj and $avobj->MAGICAL & SVs_RMG) ? 1 : 0;
     }
-    $know_op = 1;
-    invalidate_lexicals();
-    return $op->next;
+    $av = pop_sv();
+    return _aelem($op, $av, $ix, $lval, $rmg, $vifivy);
+  } else {
+    if ($lval or $rmg) { # always
+      return default_pp($op);
+    } else {
+      return _aelem($op, $av, $ix, $lval, $rmg, $vifivy);
+    }
   }
 }
 
@@ -3121,6 +3141,7 @@ sub import {
   }
   $B::C::fold     = 0 if $] >= 5.013009; # utf8::Cased tables
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
+  $autovivify = 1; # only makes sense with -fno-autovivify
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
