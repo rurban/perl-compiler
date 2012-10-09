@@ -211,6 +211,11 @@ This is the same as the pragma "no autovivification" and allows
 very fast array accesses, 4-6 times faster, without the overhead of
 autovivification.pm
 
+=item B<-fno-magic>
+
+Assume certain data being optimized is never tied or is holding other magic.
+This mainly holds for arrays being optimized, but in the future hashes also.
+
 =item B<-D>
 
 Debug options (concatenated or separate flags like C<perl -D>).
@@ -338,7 +343,7 @@ my ( $init_name, %debug, $strict );
 # underscores here because they are OK in (strict) barewords.
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint,
-     $slow_signals, $name_magic, $type_attr, $autovivify, %c_optimise );
+     $slow_signals, $name_magic, $type_attr, $autovivify, $magic, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $name_magic = 1;
 my %optimise = (
@@ -350,6 +355,7 @@ my %optimise = (
   name_magic           => \$name_magic,
   type_attr            => \$type_attr,
   autovivify           => \$autovivify,
+  magic                => \$magic,
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
@@ -1729,6 +1735,10 @@ sub pp_aelemfast {
       if ($op->can('padix')) {
         #warn "padix\n";
         $gvsym = $pad[ $op->padix ]->as_sv;
+	my @c = comppadlist->ARRAY;
+	my @p = $c[1]->ARRAY;
+	my $lex = $p[ $op->padix ];
+	$rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
       } else {
         $gvsym = 'PL_incgv'; # XXX passes, but need to investigate why. cc test 43 5.10.1
         #write_back_stack();
@@ -1757,7 +1767,7 @@ sub _aelem {
   } else {
     write_back_stack();
     runtime(
-      "{ AV* av = $av;",
+      "{ AV* av = (AV*)$av;",
       "  SV** const svp = av_fetch(av, $ix, $lval);",
       "  SV *sv = (svp ? *svp : &PL_sv_undef);",
       (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : "",
@@ -1774,7 +1784,7 @@ sub pp_aelem {
   my ($ix, $av);
   my $lval = ($op->flags & OPf_MOD or $op->private & (OPpLVAL_DEFER || OPpLVAL_INTRO)) ? 1 : 0;
   my $vifivy = autovivification();
-  my $rmg = 1; # pessimize, need some 'no magic' pragma for the av (2nd stack arg)
+  my $rmg = $magic;  # use -fno-magic for the av (2nd stack arg)
   if (@stack >= 1) { # at least ix
     $ix = pop_int(); # TODO: substract CopARYBASE from ix
     if (@stack >= 1) {
@@ -3141,6 +3151,7 @@ sub import {
   }
   $B::C::fold     = 0 if $] >= 5.013009; # utf8::Cased tables
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
+  $magic = 1;      # only makes sense with -fno-magic
   $autovivify = 1; # only makes sense with -fno-autovivify
 OPTION:
   while ( $option = shift @options ) {
