@@ -136,7 +136,7 @@ Performance went from **4m53.073s** to **3m58.249s**, 55s or 18.7% faster. Much 
 with the nextstate optimizations. 30s less on top of this would be **3m30s**, still slower
 than Erlang, Racket or C#. And my goal was 2m30s.
 
-But there's still a lot to optimize and adding the [no autovivification check](https://github.com/rurban/perl-compiler/commit/cc90753d69000453856f4746fd885e058c30ff4b) was also costly. 
+But there's still a lot to optimize (loop unrolling, aelem, helem, ...) and adding the [no autovivification check](https://github.com/rurban/perl-compiler/commit/cc90753d69000453856f4746fd885e058c30ff4b) was also costly. 
 Several dependant packages were added to the generated code, like autovivification, Tie::Hash::NamedCapture, mro,
 Fcntl, IO, Exporter, Cwd, File::Spec, Config, FileHandle, IO::Handle,
 IO::Seekable, IO::File, Symbol, Exporter::Heavy, ...
