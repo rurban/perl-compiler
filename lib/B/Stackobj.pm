@@ -362,7 +362,7 @@ sub B::Stackobj::Const::invalidate { }
 #
 # Stackobj::Bool
 #
-
+;
 @B::Stackobj::Bool::ISA = 'B::Stackobj';
 
 sub B::Stackobj::Bool::new {
@@ -408,9 +408,41 @@ sub B::Stackobj::Aelem::new {
 
 sub B::Stackobj::Aelem::write_back { }
 
+# pop ix before av
+sub B::Stackobj::Aelem::as_sv {
+  my $obj = shift;
+  my $s = B::Stackobj::as_sv($obj);
+  if ($s eq 'AvARRAY(POPs)[POPi]') {
+    return '({ oldsave = POPi; AvARRAY(POPs)[oldsave]; })'
+  } else {
+    return $s;
+  }
+}
+
+sub B::Stackobj::Aelem::as_int {
+  my $obj = shift;
+  my $s = B::Stackobj::as_int($obj);
+  if ($s =~ /^(SvIVX?)\(AvARRAY\(POPs\)\[POPi\]\)/) {
+    return "({ oldsave = POPi; $1(AvARRAY(POPs)[oldsave]); })";
+  } else {
+    return $s;
+  }
+}
+
+sub B::Stackobj::Aelem::as_double {
+  my $obj = shift;
+  my $s = B::Stackobj::as_double($obj);
+  if ($s =~ /^(SvNVX?)\(AvARRAY\(POPs\)\[POPi\]\)/) {
+    return "({ oldsave = POPi; $1(AvARRAY(POPs)[oldsave]); })";
+  } else {
+    return $s;
+  }
+}
+
 sub B::Stackobj::Aelem::invalidate { }
 
 1;
+
 __END__
 
 =head1 NAME
