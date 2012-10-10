@@ -1816,6 +1816,8 @@ sub pp_aelem {
     if ($lval or $rmg) { # always
       return default_pp($op);
     } else {
+      $ix = pop_int(); # TODO: substract CopARYBASE from ix
+      $av = pop_sv();
       return _aelem($op, $av, $ix, $lval, $rmg, $vifivy);
     }
   }
