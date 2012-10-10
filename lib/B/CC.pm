@@ -350,21 +350,22 @@ my ( $init_name, %debug, $strict );
 # underscores for compatibility with gcc-style options. We use
 # underscores here because they are OK in (strict) barewords.
 # Disable with -fno-
-my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $omit_taint,
-     $slow_signals, $name_magic, $type_attr, $autovivify, $magic, %c_optimise );
+my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $opt_taint, $opt_omit_taint,
+     $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_autovivify, $opt_magic,
+     %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
-$name_magic = 1;
+$opt_name_magic = 1;
 my %optimise = (
   freetmps_each_bblock => \$freetmps_each_bblock, # -O1
   freetmps_each_loop   => \$freetmps_each_loop,	  # -O2
   inline_ops 	       => \$inline_ops,	  	  # not on Win32
-  omit_taint           => \$omit_taint,
-  taint                => \$omit_taint,
-  slow_signals         => \$slow_signals,
-  name_magic           => \$name_magic,
-  type_attr            => \$type_attr,
-  autovivify           => \$autovivify,
-  magic                => \$magic,
+  omit_taint           => \$opt_omit_taint,
+  taint                => \$opt_taint,
+  slow_signals         => \$opt_slow_signals,
+  name_magic           => \$opt_name_magic,
+  type_attr            => \$opt_type_attr,
+  autovivify           => \$opt_autovivify,
+  magic                => \$opt_magic,
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
@@ -1068,7 +1069,7 @@ sub load_pad {
       # Note: PVMG from above also.
       # Typed arrays and hashes later.
       if (0 and $class =~ /^(I|P|S|N)V/
-	  and $type_attr
+	  and $opt_type_attr
 	  and UNIVERSAL::can($class,"CHECK_SCALAR_ATTRIBUTES")) # with 5.18
       {
         require attributes;
@@ -1082,7 +1083,7 @@ sub load_pad {
       # XXX We should try Devel::TypeCheck for type inference also
 
       # magic names: my $i_ir, my $d_d. without -fno-name-magic cmdline option only
-      if ( $type == T_UNKNOWN and $name_magic and $name =~ /^(.*)_([di])(r?)$/ ) {
+      if ( $type == T_UNKNOWN and $opt_name_magic and $name =~ /^(.*)_([di])(r?)$/ ) {
         $name = $1;
         if ( $2 eq "i" ) {
           $type  = T_INT;
@@ -1266,11 +1267,14 @@ sub pp_and {
     my $bool = $obj->as_bool;
     write_back_stack();
     save_or_restore_lexical_state($$next);
-    runtime(
-      sprintf(
-        "if (!$bool) { PUSHs((SV*)%s); goto %s;}", $obj->as_sv, label($next)
-      )
-    );
+    if ($bool =~ /POPs/) {
+      runtime("sv = $bool;",
+	      sprintf("if (!sv) { PUSHs(sv); goto %s;}", label($next)));
+    } else {
+      runtime(sprintf(
+		"if (!$bool) { PUSHs((SV*)%s); goto %s;}", $obj->as_sv, label($next)
+	      ));
+    }
   }
   else {
     save_or_restore_lexical_state($$next);
@@ -1291,11 +1295,15 @@ sub pp_andassign {
     my $bool = $obj->as_bool;
     write_back_stack();
     save_or_restore_lexical_state($$next);
-    runtime(
-      sprintf(
-        "PUSHs((SV*)%s); if (!$bool) { goto %s;}", $obj->as_sv, label($next)
-      )
-    );
+    if ($bool =~ /POPs/) {
+      runtime("sv = $bool;",
+	      sprintf("PUSHs((SV*)%s); if (!$bool) { goto %s;}",
+		      $obj->as_sv, label($next)));
+    } else {
+      runtime(
+	sprintf("PUSHs((SV*)%s); if (!$bool) { goto %s;}",
+		$obj->as_sv, label($next)));
+    }
   }
   else {
     save_or_restore_lexical_state($$next);
@@ -1315,11 +1323,13 @@ sub pp_or {
     my $bool = $obj->as_bool;
     write_back_stack();
     save_or_restore_lexical_state($$next);
-    runtime(
-      sprintf(
-        "if ($bool) { PUSHs((SV*)%s); goto %s; }", $obj->as_sv, label($next)
-      )
-    );
+    if ($bool =~ /POPs/) {
+      runtime("sv = $bool;",
+	      sprintf("if (sv) { PUSHs(sv); goto %s;}", label($next)));
+    } else {
+      runtime(
+	sprintf("if ($bool) { PUSHs((SV*)%s); goto %s; }", $obj->as_sv, label($next)));
+    }
   }
   else {
     save_or_restore_lexical_state($$next);
@@ -1450,7 +1460,7 @@ sub pp_nextstate {
   @stack = ();
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
-  runtime("TAINT_NOT;") unless $omit_taint;
+  runtime("TAINT_NOT;") if $opt_taint;
   runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;"); # TODO reset sp not needed always
   if ( $freetmps_each_bblock || $freetmps_each_loop ) {
     $need_freetmps = 1;
@@ -1494,7 +1504,7 @@ sub pp_regcreset {
     warn "inlining regcreset\n" if $debug{op};
     $curcop->write_back if $curcop;
     runtime 'PL_reginterp_cnt = 0;	/* pp_regcreset */';
-    runtime 'TAINT_NOT;' unless $omit_taint;
+    runtime 'TAINT_NOT;' if $opt_taint;
     return $op->next;
   } else {
     default_pp(@_);
@@ -1716,7 +1726,7 @@ sub pp_gvsv {
 
 # check for faster fetch calls, returns 0 if the fast 'no' is in effect.
 sub autovivification {
-  if (!$autovivify) {
+  if (!$opt_autovivify) {
     return 0;
   } elsif ($INC{'autovivification.pm'}) {
     return _autovivification($curcop->[0]);
@@ -1793,7 +1803,7 @@ sub pp_aelem {
   my ($ix, $av);
   my $lval = ($op->flags & OPf_MOD or $op->private & (OPpLVAL_DEFER || OPpLVAL_INTRO)) ? 1 : 0;
   my $vifivy = autovivification();
-  my $rmg = $magic;  # use -fno-magic for the av (2nd stack arg)
+  my $rmg = $opt_magic;  # use -fno-magic for the av (2nd stack arg)
   if (@stack >= 1) { # at least ix
     $ix = pop_int(); # TODO: substract CopARYBASE from ix
     if (@stack >= 1) {
@@ -2210,7 +2220,7 @@ sub pp_sassign {
     if ($backwards) {
       my $src  = pop @stack;
       my $type = $src->{type};
-      runtime("if (PL_tainting && PL_tainted) TAINT_NOT;") unless $omit_taint;
+      runtime("if (PL_tainting && PL_tainted) TAINT_NOT;") if $opt_taint;
       if ( $type == T_INT ) {
         if ( $src->{flags} & VALID_UNSIGNED ) {
           runtime sprintf( "sv_setuv(TOPs, %s);", $src->as_int );
@@ -2225,13 +2235,13 @@ sub pp_sassign {
       else {
         runtime sprintf( "sv_setsv(TOPs, %s);", $src->as_sv );
       }
-      runtime("SvSETMAGIC(TOPs);") if $magic;
+      runtime("SvSETMAGIC(TOPs);") if $opt_magic;
     }
     else {
       my $dst  = $stack[-1];
       my $type = $dst->{type};
       runtime("sv = POPs;");
-      runtime("MAYBE_TAINT_SASSIGN_SRC(sv);") unless $omit_taint;
+      runtime("MAYBE_TAINT_SASSIGN_SRC(sv);") if $opt_taint;
       if ( $type == T_INT ) {
         $dst->set_int("SvIV(sv)");
       }
@@ -2239,7 +2249,7 @@ sub pp_sassign {
         $dst->set_double("SvNV(sv)");
       }
       else {
-	$magic
+	$opt_magic
 	  ? runtime("SvSetMagicSV($dst->{sv}, sv);")
 	  : runtime("SvSetSV($dst->{sv}, sv);");
         $dst->invalidate;
@@ -2255,9 +2265,9 @@ sub pp_sassign {
       runtime("dst = POPs; src = TOPs;");
     }
     runtime(
-      $omit_taint ? "" : "MAYBE_TAINT_SASSIGN_SRC(src);",
+      $opt_taint ? "MAYBE_TAINT_SASSIGN_SRC(src);" : "",
       "SvSetSV(dst, src);",
-       $magic ? "SvSETMAGIC(dst);" : "",
+      $opt_magic ? "SvSETMAGIC(dst);" : "",
       "SETs(dst);"
     );
   }
@@ -2946,7 +2956,7 @@ sub compile_bblock {
   $know_op = 0;
   do {
     $op = compile_op($op);
-    if ($] < 5.013 and ($slow_signals or ($$op and $async_signals{$op->name}))) {
+    if ($] < 5.013 and ($opt_slow_signals or ($$op and $async_signals{$op->name}))) {
       runtime("PERL_ASYNC_CHECK();");
     }
   } while ( defined($op) && $$op && !exists( $leaders->{$$op} ) );
@@ -3164,8 +3174,9 @@ sub import {
   }
   $B::C::fold     = 0 if $] >= 5.013009; # utf8::Cased tables
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
-  $magic = 1;      # only makes sense with -fno-magic
-  $autovivify = 1; # only makes sense with -fno-autovivify
+  $opt_taint = 1;
+  $opt_magic = 1;      # only makes sense with -fno-magic
+  $opt_autovivify = 1; # only makes sense with -fno-autovivify
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
@@ -3235,7 +3246,7 @@ OPTION:
         $freetmps_each_loop = 1;
       }
       if ( $arg >= 1 ) {
-        $type_attr = 1;
+        $opt_type_attr = 1;
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
     }
@@ -3300,6 +3311,7 @@ OPTION:
     }
   }
   $strict++ if !$strict and $Config{ccflags} !~ m/-DDEBUGGING/;
+  $opt_taint = 0 if $opt_omit_taint;
 
   # rgs didn't want opcodes to be added to Opcode. So I had to add it to a
   # seperate Opcodes package.
@@ -3343,7 +3355,7 @@ OPTION:
     $B::C::av_init = 0 unless $c_optimise{av_init};
     $B::C::av_init2 = 1 unless $c_optimise{av_init2};
   }
-  init_type_attrs() if $type_attr; # but too late for -MB::CC=-O2 on import. attrs are checked before
+  init_type_attrs() if $opt_type_attr; # but too late for -MB::CC=-O2 on import. attrs are checked before
   @options;
 }
 
