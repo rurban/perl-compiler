@@ -47,7 +47,7 @@ most of the arithmetic.
 [nbody](http://shootout.alioth.debian.org/u32/performance.php?test=nbody)
 performs a simple N-body simulation of the Jovian planets.
 Perl is currently by far the slowest scripting language for nbody,
-26 min compared to 9-18 min for ruby, php or python with n=500000.
+26 min compared to 9-18 min for ruby, php or python with n=50,000,000.
 
 perl = perl5.14.2-nt (non-threaded, -Os -msse4.2 -march=corei7)
 
