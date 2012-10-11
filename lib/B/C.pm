@@ -4943,14 +4943,11 @@ EOT
 
     }
 
+    my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
     print <<"EOT";
     if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
-#ifdef WIN32
-        sv_setpv(tmpsv,"perl.exe");
-#else
-        sv_setpv(tmpsv,"perl");
-#endif
+        sv_setpv(tmpsv,"$X");
         SvSETMAGIC(tmpsv);
     }
 
