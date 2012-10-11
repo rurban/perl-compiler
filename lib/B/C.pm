@@ -5221,10 +5221,11 @@ EOT
 
     }
 
+    my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
     print <<"EOT";
     if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
-        sv_setpv(tmpsv,"$^X");
+        sv_setpv(tmpsv,"$X");
         SvSETMAGIC(tmpsv);
     }
 
