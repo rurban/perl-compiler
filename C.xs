@@ -152,11 +152,7 @@ CODE:
       IV h;
 
       RETVAL = 1;
-#ifndef _WIN32
-      if (PL_check[OP_PADSV] != MEMBER_TO_FPTR(Perl_ck_null)) {
-#else
-      if (0) {
-#endif
+      if (PL_check[OP_PADSV] != PL_check[0]) {
 	char *package = CopSTASHPV(cop);
 #ifdef cop_hints_fetch_pvn
 	hint = cop_hints_fetch_pvn(cop, "autovivification", strlen("autovivification"), a_hash, 0);
