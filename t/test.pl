@@ -2,6 +2,7 @@
 # t/test.pl - from CORE
 
 use Test::More;
+use File::Spec;
 
 sub _where {
     my @caller = caller($Level);
@@ -433,6 +434,7 @@ sub run_cc_test {
     open T, ">", $test; print T $script; close T;
     # Being able to test also the CORE B in older perls
     my $Mblib = $] >= 5.009005 ? Mblib() : "";
+    my $useshrplib = $Config{useshrplib} eq 'true';
     unless ($Mblib) {           # check for -Mblib from the testsuite
         if (grep { m{blib(/|\\)arch$} } @INC) {
             $Mblib = Mblib();  # forced -Mblib via cmdline without
@@ -456,14 +458,19 @@ sub run_cc_test {
 	$command .= " -DHAVE_INDEPENDENT_COMALLOC "
 	  if $B::C::Flags::have_independent_comalloc;
 	$command .= " -o $exe $cfile ".$B::C::Flags::extra_cflags . " ";
-	my $coredir = $ENV{PERL_SRC} || "$Config{installarchlib}/CORE";
-	my $libdir  = "$Config{prefix}/lib";
-	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.(dll|so)$/ ) {
-	    $command .= ExtUtils::Embed::ldopts('-std');
-	} elsif ( $Config{useshrplib} and -e "$libdir/$Config{libperl}" ) {
-	    # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
+	my $coredir = $ENV{PERL_SRC} || File::Spec->catdir($Config{installarchlib}, "CORE");
+	my $libdir  = File::Spec->catdir($Config{prefix}, "lib");
+        my $so = $Config{so};
+	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.$so$/) {
+	    $linkargs = ExtUtils::Embed::ldopts('-std');
+	    $command .= $linkargs;
+	} elsif ( $useshrplib and -e "$libdir/$Config{libperl}" ) {
+            # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
 	    my $linkargs = ExtUtils::Embed::ldopts('-std');
-	    $linkargs =~ s|-lperl |$libdir/$Config{libperl} |;
+            if ($Config{libperl} =~ /\.$so$/) {
+                my $libperl = File::Spec->catfile($coredir, $Config{libperl});
+                $linkargs =~ s|-lperl |$libperl |; # link directly
+            }
             $linkargs =~ s/-fstack-protector//
               if $command =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/;
 	    $command .= $linkargs;
