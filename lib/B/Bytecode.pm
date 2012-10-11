@@ -233,6 +233,22 @@ sub B::SV::ix {
   }
 }
 
+sub B::PADLIST::ix {
+  my $sv = shift;
+  my $ix = $svtab{$$sv};
+  defined($ix) ? $ix : do {
+    nice '[' . class($sv) . " $tix]";
+    B::Assembler::maxsvix($tix) if $debug{A};
+    my $type = 0xff; # SVTYPEMASK
+    asm "newsvx", 0,
+     $debug{Comment} ? sprintf("type=%d", $type) : "";
+    asm "stsv", $tix if $PERL56;
+    $svtab{$$sv} = $varix = $ix = $tix++;
+    $sv->bsave($ix);
+    $ix;
+  }
+}
+
 sub B::GV::ix {
   my ( $gv, $desired ) = @_;
   my $ix = $svtab{$$gv};
@@ -664,6 +680,19 @@ sub B::AV::bsave {
   }
   asm "sv_refcnt", $av->REFCNT;
   asm "xmg_stash", $stashix;
+}
+
+sub B::PADLIST::bsave {
+  my ( $av, $ix ) = @_;
+  my @array = $av->ARRAY;
+  $_ = $_->ix for @array; # hack. walks the ->ix methods to save the elements
+  # my $stashix = $av->SvSTASH->ix;
+  nice "-AV-",
+    asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
+  asm "av_extend", $av->MAX if $av->MAX >= 0;
+  asm "av_pushx", $_ for @array;
+  asm "sv_refcnt", $av->REFCNT;
+  # asm "xmg_stash", $stashix;
 }
 
 sub B::GV::desired {
