@@ -911,7 +911,7 @@ __END__
 50 13	xcv_stash	bstate->bs_sv			svindex		x
 51 0 	xcv_start	CvSTART(bstate->bs_sv)		opindex
 52 0 	xcv_root	CvROOT(bstate->bs_sv)		opindex
-53 0 	xcv_gv		bstate->bs_sv			svindex		x
+53 0	xcv_gv		bstate->bs_sv			svindex		x
 #  <8   xcv_filegv	*(SV**)&CvFILEGV(bstate->bs_sv)	svindex
 54 0 	xcv_file	CvFILE(bstate->bs_sv)		pvindex
 55 0 	xcv_depth	CvDEPTH(bstate->bs_sv)		long
@@ -1024,7 +1024,7 @@ __END__
 148 8 	xgv_stash	*(SV**)&GvSTASH(bstate->bs_sv)	svindex
 149 8 	signal		bstate->bs_sv			strconst	24x
 # formfeed is deprecated
-150 8 	formfeed	PL_formfeed			svindex
+150 8-17 formfeed	PL_formfeed			svindex
 151 9-17 op_latefree	PL_op->op_latefree		U8
 152 9-17 op_latefreed	PL_op->op_latefreed		U8
 153 9-17 op_attached	PL_op->op_attached		U8

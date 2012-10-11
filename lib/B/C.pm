@@ -4862,10 +4862,10 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
-	  print "    CopFILE_set(&$s, NULL);";
+	  print "    CopFILE_set(&$s, NULL);\n";
 	  print !$ITHREADS or $]<5.016 or $]>=5.017
-	    ? " CopSTASHPV_set(&$s, NULL);\n"
-	    : " CopSTASHPV_set(&$s, NULL, 0);\n";
+	    ?   "    CopSTASHPV_set(&$s, NULL);\n"
+	    :   "    CopSTASHPV_set(&$s, NULL, 0);\n";
 	}
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
