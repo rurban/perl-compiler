@@ -9,8 +9,10 @@ my $libs = $Config{libs};
 my $so = $Config{so};
 my $linkargs;
 my $quiet++ if $ARGV[0] eq '-q';
+$quiet++ if $ARGV[0] eq '--quiet';
 shift if $quiet;
 my $debug++ if $ARGV[0] eq '-d';
+$debug++ if $ARGV[0] eq '--debug';
 shift if $debug;
 eval { require B::C::Flags; };
 
@@ -52,18 +54,28 @@ sub cc_harness_msvc {
     my @ARGV = @_;
     my $obj = "${Output}.obj";
     my $compile = ccopts." -c -Fo$obj @ARGV ";
-    my $link = "-out:$Output $obj";
-    $compile .= " -DHAVE_INDEPENDENT_COMALLOC " if $B::C::Flags::have_independent_comalloc;
+    my $link = "-out:$Output $obj ";
+    if ($debug) {
+      $compile .= "/Wall " if !$quiet;
+      # remove conflicting flags
+      $compile .= "-g ";
+      $compile =~ s/ -O.? / -Od /;
+      $compile =~ s/ -DNDEBUG / -DDEBUG /;
+    }
+    $compile .= "-DHAVE_INDEPENDENT_COMALLOC " if $B::C::Flags::have_independent_comalloc;
     $compile .= $B::C::Flags::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs,-staticxs
-    $link .= $B::C::Flags::extra_libs;
+    $link .= (" ".$B::C::Flags::extra_libs);
     if ($stash) {
         my @mods = split /-?u /, $stash;
         $link .= " ".ldopts("-std", \@mods);
     } else {
         $link .= " ".ldopts("-std");
+    }
+    if ($debug) {
+        $link .= " /DEBUG";
     }
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
     print "running $Config{cc} $compile" unless $quiet;
@@ -87,8 +99,15 @@ if ($ccflags =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/) {
   $linkargs =~ s/-fstack-protector//;
 }
 #-pedantic -Wextra -Wconversion
-$ccflags .= " -ansi -Wall -Wshadow -Wcast-qual -Wwrite-strings"
-  if $debug and $Config{cc} =~ /gcc/ and !$quiet;
+if ($debug and $Config{cc} =~ /gcc/) {
+  $ccflags .= " -ansi -Wall -Wshadow -Wcast-qual -Wwrite-strings"
+    if !$quiet;
+  # remove conflicting flags, esp. -s for strip
+  $ccflags =~ s/ -O.? / /;
+  $ccflags =~ s/ -s / /;
+  $linkargs =~ s/-s / /;
+}
+
 $ccflags .= " --no-warn -Wl,--warn-once"
   if $Config{cc} =~ /gcc/ and $quiet and $^O ne 'darwin';
 $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
