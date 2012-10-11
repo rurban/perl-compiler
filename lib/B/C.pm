@@ -4251,15 +4251,16 @@ EOT0
     print "#endif\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
-  if ($^O eq 'MSWin32' and $PERL510) {
-    # mingw and msvc declare, but do not export Perl_newGP
+  if ($PERL510 and $^O eq 'MSWin32') {
+    # mingw and msvc does not export Perl_newGP despite its prefix
+    # worse: proto.h defines Perl_newGP as being imported, so _imp_Perl_newGP is enforced
     print << '__EOGP';
 
-#ifndef newGP
-GP * Perl_newGP(pTHX_ GV *const gv);
+STATIC GP *
+my_newGP(pTHX_ GV *const gv);
 
-GP *
-Perl_newGP(pTHX_ GV *const gv)
+STATIC GP *
+my_newGP(pTHX_ GV *const gv)
 {
     GP *gp;
     U32 hash;
@@ -4300,7 +4301,8 @@ Perl_newGP(pTHX_ GV *const gv)
 
     return gp;
 }
-#endif
+#define Perl_newGP my_newGP
+
 __EOGP
 
   }
