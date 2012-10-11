@@ -117,7 +117,7 @@ E.g. without -U the numbers are:
 
 **-DOscpSqlm** are some debugging options, which add interesting information into the generated C code. B::CC adds debugging output as comments into the C code, to be able to inspect the optimizer result, B::C prints debugging output to STDOUT.
 
-Let's have a look into the generated C code.
+Let's have a look into the [code](http://shootout.alioth.debian.org/u32/program.php?test=nbody&lang=perl&id=1).
 
 `cat ../shootout/bench/nbody/nbody.perl`
 
@@ -231,7 +231,7 @@ Let's have a look into the generated C code.
     printf ("%.9f\n", energy());
 
 
-A lot of arithmetic, only three functions, advance is called 50000 times, the others only once.
+A lot of arithmetic, only three functions, advance is called 50,000 times, the others only once.
 
 The generated C code for some inlined arithmetic looks like:
 
@@ -485,9 +485,8 @@ Reference value, uncompiled:
 So we bypassed python 3 (18m), php (12min) and ruby 1.9 (23m), but not jruby (9m).
 jruby uses 585,948KB memory though, and at least php has a better algo.
 
-Function calls and more optimisations are inspected in part 3, with
-the
-[binarytrees](http://shootout.alioth.debian.org/u32/performance.php?test=binarytrees)
+Function calls and more optimisations are inspected in part 3, hopefully with
+the [binarytrees](http://shootout.alioth.debian.org/u32/performance.php?test=binarytrees)
 benchmark.  I will also analyse the calls to the `sub analyse` loop
 here, as `sub analyse` can be easily optimized automatically. This
 function does not throw exceptions, has a prototype defining one
@@ -502,7 +501,7 @@ The uncompiled, inlined version for `sub analyse` needs 21m48.015s, 25s less.
 Compiled and inlined manually: 612.395542s (10m12s), a bit slower than not inlined.
 So the biggest performance hit is the unoptimized slow AELEM op, which accesses
 array elements. With an immediate AELEM the run-time should be 8-10x faster,
-such as the AELEMFAST op, which is already inlined. I'm going for LVAL optimization
+such as the AELEMFAST op, which is already inlined. I'm going for LVAL optimizations
 in AELEM.
 Typed arrays would also help a lot here.
 

@@ -403,47 +403,27 @@ sub B::Stackobj::Bool::invalidate { }
 
 sub B::Stackobj::Aelem::new {
   my ( $class, $av, $ix, $lvalue ) = @_;
+  my $sv;
+  # pop ix before av
+  if ($av eq 'POPs' and $ix eq 'POPi') {
+    $sv = "({ oldsave = SvIVX(POPs); AvARRAY(POPs)[oldsave]; })";
+  } else {
+    $sv = "AvARRAY($av)[$ix]";
+  }
   my $obj = bless {
     type  => T_UNKNOWN,
     flags => VALID_INT | VALID_DOUBLE | VALID_SV,
-    iv    => $lvalue ? "SvIVX(AvARRAY($av)[$ix])" : "SvIV(AvARRAY($av)[$ix])",
-    nv    => $lvalue ? "SvNVX(AvARRAY($av)[$ix])" : "SvNV(AvARRAY($av)[$ix])",
-    sv    => "AvARRAY($av)[$ix]"
+    iv    => "SvIVX($sv)",
+    nv    => "SvNVX($sv)",
+    sv    => "$sv",
+    lvalue => $lvalue,
   }, $class;
   return $obj;
 }
 
-sub B::Stackobj::Aelem::write_back { }
-
-# pop ix before av
-sub B::Stackobj::Aelem::as_sv {
+sub B::Stackobj::Aelem::write_back {
   my $obj = shift;
-  my $s = B::Stackobj::as_sv($obj);
-  if ($s eq 'AvARRAY(POPs)[POPi]') {
-    return '({ oldsave = POPi; AvARRAY(POPs)[oldsave]; })'
-  } else {
-    return $s;
-  }
-}
-
-sub B::Stackobj::Aelem::as_int {
-  my $obj = shift;
-  my $s = B::Stackobj::as_int($obj);
-  if ($s =~ /^(SvIVX?)\(AvARRAY\(POPs\)\[POPi\]\)/) {
-    return "({ oldsave = POPi; $1(AvARRAY(POPs)[oldsave]); })";
-  } else {
-    return $s;
-  }
-}
-
-sub B::Stackobj::Aelem::as_double {
-  my $obj = shift;
-  my $s = B::Stackobj::as_double($obj);
-  if ($s =~ /^(SvNVX?)\(AvARRAY\(POPs\)\[POPi\]\)/) {
-    return "({ oldsave = POPi; $1(AvARRAY(POPs)[oldsave]); })";
-  } else {
-    return $s;
-  }
+  $obj->{flags} |= VALID_SV | VALID_INT | VALID_DOUBLE;
 }
 
 sub B::Stackobj::Aelem::invalidate { }

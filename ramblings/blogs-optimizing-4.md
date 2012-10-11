@@ -143,12 +143,12 @@ IO::Seekable, IO::File, Symbol, Exporter::Heavy, ...
 But you don't see this cost in the binary size, and neither in the run-time.
 
 
-I also tested the fannkuchredux benchmark, which outlined a bad LISP
-compiler in 1994, also with array accessors.
+I also tested the [fannkuchredux](http://shootout.alioth.debian.org/u32/benchmark.php?test=fannkuchredux&lang=all) benchmark, which was created for 
+a bad [LISP compiler](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.35.5124) in 1994, also with array accessors.
 
 Uncompiled with N=10 I got 16.093s, compiled 9.1222s, almost 2x times
 faster (1.75x).  And this code has the same aelem problem as nbody, so
 a loop unrolling to aelemfast and better direct accessors with
-no-autovivification would lead to a 4x times faster run-time.
+no-autovivification would lead to a ~4x times faster run-time.
 
 *TBC...*
