@@ -10,6 +10,7 @@
 # Reviving 5.6 support here is work in progress, and not yet enabled.
 # So far the original is used instead, even if the list of failed tests
 # is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
+# 5.17.5 is also not supported yet (new PADLIST type)
 
 package B::Bytecode;
 
@@ -124,13 +125,17 @@ sub sv_flags {
   return '' unless $debug{Comment};
   return 'B::SPECIAL' if $_[0]->isa('B::SPECIAL');
   return 'B::PADLIST' if $_[0]->isa('B::PADLIST');
+  return 'B::NULL'    if $_[0]->isa('B::NULL');
   my ($sv) = @_;
   my %h;
 
   # TODO: Check with which Concise and B versions this works. 5.10.0 fails.
   # B::Concise 0.66 fails also
   sub B::Concise::fmt_line { return shift; }
-  %h = B::Concise::concise_op( $ops{ $tix - 1 } ) if ref $ops{ $tix - 1 };
+  my $op = $ops{ $tix - 1 };
+  if (ref $op and !$op->targ) { # targ assumes a valid curcv
+    %h = B::Concise::concise_op( $op );
+  }
   B::Concise::concise_sv( $_[0], \%h, 0 );
 }
 
@@ -235,17 +240,14 @@ sub B::SV::ix {
 }
 
 sub B::PADLIST::ix {
-  my $sv = shift;
-  my $ix = $svtab{$$sv};
+  my $padl = shift;
+  my $ix = $svtab{$$padl};
   defined($ix) ? $ix : do {
-    nice '[' . class($sv) . " $tix]";
+    nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    my $type = 0xff; # SVTYPEMASK
-    asm "newsvx", 0,
-     $debug{Comment} ? sprintf("type=%d", $type) : "";
-    asm "stsv", $tix if $PERL56;
-    $svtab{$$sv} = $varix = $ix = $tix++;
-    $sv->bsave($ix);
+    asm "padl_new", 0;
+    $svtab{$$padl} = $varix = $ix = $tix++;
+    $padl->bsave($ix);
     $ix;
   }
 }
@@ -684,16 +686,13 @@ sub B::AV::bsave {
 }
 
 sub B::PADLIST::bsave {
-  my ( $av, $ix ) = @_;
-  my @array = $av->ARRAY;
-  $_ = $_->ix for @array; # hack. walks the ->ix methods to save the elements
-  # my $stashix = $av->SvSTASH->ix;
-  nice "-AV-",
-    asm "ldsv", $varix = $ix, sv_flags($av) unless $ix == $varix;
-  asm "av_extend", $av->MAX if $av->MAX >= 0;
-  asm "av_pushx", $_ for @array;
-  asm "sv_refcnt", $av->REFCNT;
-  # asm "xmg_stash", $stashix;
+  my ( $padl, $ix ) = @_;
+  my @array = $padl->ARRAY;
+  $_ = $_->ix for @array; # hack. call ->ix methods to save the pad array elements
+  nice "-PADLIST-",
+    asm "ldsv", $varix = $ix unless $ix == $varix;
+  asm "padl_name", $array[0]; # comppad_name
+  asm "padl_set",  $array[1]; # comppad
 }
 
 sub B::GV::desired {
@@ -1494,7 +1493,7 @@ modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
 
-Enhanced by Reini Urban <rurban@cpan.org>, 2008-2011
+Enhanced by Reini Urban <rurban@cpan.org>, 2008-2012
 
 =cut
 
