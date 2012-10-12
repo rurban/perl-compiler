@@ -243,6 +243,7 @@ my $cv_index      = 0;
 my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
+my $padlist_index = 0;
 
 # exclude all not B::C:: prefixed subs
 my %all_bc_subs = map { $_ => 1 } 
@@ -253,7 +254,7 @@ my %all_bc_subs = map { $_ => 1 }
       B::GV::save B::GV::savecv B::HV::save B::IO::save B::IO::save_data
       B::IV::save B::LISTOP::save B::LOGOP::save B::LOOP::save B::NULL::save
       B::NV::save B::OBJECT::save B::OP::_save_common B::OP::fake_ppaddr
-      B::OP::isa B::OP::save B::PADOP::save B::PMOP::save B::PV::save
+      B::OP::isa B::OP::save B::PADLIST::save B::PADOP::save B::PMOP::save B::PV::save
       B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic
       B::PVNV::save B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save
       B::SPECIAL::savecv B::SV::save B::SVOP::save B::UNOP::save B::UV::save
@@ -448,7 +449,8 @@ my (
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
   $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
   $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free
+  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
+  $padlistsect
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -880,9 +882,13 @@ my $opsect_common =
     $static = '0, 1, 0, 0, 0';
     $opsect_common .= "opt, latefree, latefreed, attached, spare";
   }
-  else {
+  elsif ($] < 5.017004) {
     $static = '0, 1, 0, 0, 0, 0, 0';
     $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
+  }
+  else {
+    $static = '0, 0, 0, 0';
+    $opsect_common .= "opt, slabbed, savefree, spare";
   }
 
   sub B::OP::_save_common_middle {
@@ -3809,8 +3815,18 @@ sub B::AV::save {
   # cornercase: tied array without FETCHSIZE
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
+  my $ispadlist = ref($av) eq 'B::PADLIST';
 
-  if ($PERL514) {
+  if ($] >= 5.017004 and $ispadlist) {
+    $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
+    my @array = $av->ARRAY;
+    $fill = scalar @array;
+    $padlistsect->add("$fill, NULL, 0, 0"); # Perl_pad_new(0)
+    # $init->add("pad_list[$padlist_index] = Perl_pad_new(0);");
+    $padlist_index = $padlistsect->index;
+    $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+  }
+  elsif ($PERL514) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
     my $line = "Nullhv, {0}, -1, -1, 0";
     $line = "Nullhv, {0}, $fill, $fill, 0" if $B::C::av_init or $B::C::av_init2;
@@ -3841,12 +3857,12 @@ sub B::AV::save {
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS));
   }
-  $svsect->debug($av->flagspv) if $debug{flags};
+  $svsect->debug($av->flagspv) if $debug{flags} and !$ispadlist;
   my $sv_list_index = $svsect->index;
   my $av_index = $xpvavsect->index;
   # protect against recursive self-references (Getopt::Long)
-  $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
-  my $magic = $av->save_magic;
+  $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" ) unless $sym;
+  my $magic = $av->save_magic if !$ispadlist;
 
   if ( $debug{av} ) {
     my $line = sprintf( "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, class($av));
@@ -4011,6 +4027,11 @@ sub B::AV::save {
       if $max > -1;
   }
   return $sym;
+}
+
+sub B::PADLIST::save {
+  my ($av, $fullname) = @_;
+  return B::AV::save($av, $fullname);
 }
 
 sub B::HV::save {
@@ -4400,7 +4421,8 @@ sub output_all {
     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
     $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
     $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
-    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect
+    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
+    $padlistsect,
   );
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
   $symsect->output( \*STDOUT, "#define %s\n" );
@@ -5803,9 +5825,14 @@ sub save_context {
     "GvHV(PL_incgv) = $inc_hv;",
     "GvAV(PL_incgv) = $inc_av;",
     "PL_curpad = AvARRAY($curpad_sym);",
-    "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
-    "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+    "PL_comppad = $curpad_sym;");    # fixed "panic: illegal pad"
+  if ($] < 5.017004) {
+    $init->add(
+      "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
+      "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+  } else {
+    # $init->add("CvPADLIST(PL_main_cv) = 0;");
+  }
   if ($] < 5.017) {
     my $amagic_generate = B::amagic_generation;
     warn "amagic_generation = $amagic_generate\n" if $verbose;
@@ -6030,7 +6057,8 @@ sub init_sections {
     xpvlv  => \$xpvlvsect,
     xrv    => \$xrvsect,
     xpvbm  => \$xpvbmsect,
-    xpvio  => \$xpviosect
+    xpvio  => \$xpviosect,
+    padlist => \$padlistsect,
   );
   my ( $name, $sectref );
   while ( ( $name, $sectref ) = splice( @sections, 0, 2 ) ) {
