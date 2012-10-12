@@ -742,7 +742,7 @@ static int bget_swab = 0;
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
- * equivalent. However, since the header includes checks required an exact match in
+ * equivalent. However, since the header includes checks for a match in
  * ByteLoader versions (we can't guarantee forward compatibility), you don't 
  * need to specify one.
  * 	use ByteLoader;

@@ -1036,3 +1036,6 @@ __END__
 # restore dup to stdio handles 0-2
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
 159 10 	xpvshared	bstate->bs_sv			none		x
+160 17.005 padl_new	bstate->bs_sv			U8		x
+161 17.005 padl_name	PadlistARRAY((PADLIST*)bstate->bs_sv)[0]  svindex
+162 17.005 padl_set	PadlistARRAY((PADLIST*)bstate->bs_sv)[1]  svindex
