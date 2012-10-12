@@ -99,7 +99,7 @@ BEGIN {
   die $@ if $@;
 }
 
-sub ashex {$quiet ? undef : sprintf("0x%x",shift)}
+sub as_hex {$quiet ? undef : sprintf("0x%x",shift)}
 
 #################################################
 
@@ -287,9 +287,9 @@ sub B::GV::ix {
       asm "gv_fetchpvx", cstring $name;
       asm "stsv", $tix if $PERL56;
       $svtab{$$gv} = $varix = $ix = $tix++;
-      asm "sv_flags",  $gv->FLAGS, ashex($gv->FLAGS);
+      asm "sv_flags",  $gv->FLAGS, as_hex($gv->FLAGS);
       asm "sv_refcnt", $gv->REFCNT;
-      asm "xgv_flags", $gv->GvFLAGS, ashex($gv->GvFLAGS);
+      asm "xgv_flags", $gv->GvFLAGS, as_hex($gv->GvFLAGS);
 
       asm "gp_refcnt", $gv->GvREFCNT;
       asm "load_glob", $ix if $name eq "CORE::GLOBAL::glob";
@@ -357,7 +357,7 @@ sub B::HV::ix {
       B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_stashpvx", cstring $name;
       asm "ldsv", $tix if $PERL56;
-      asm "sv_flags", $hv->FLAGS, ashex($hv->FLAGS);
+      asm "sv_flags", $hv->FLAGS, as_hex($hv->FLAGS);
       $svtab{$$hv} = $varix = $ix = $tix++;
       asm "xhv_name", pvix $name;
 
@@ -419,7 +419,7 @@ sub B::RV::bsave {
   my $rvix = $sv->RV->ix;
   $sv->B::NULL::bsave($ix);
   # RV with DEBUGGING already requires sv_flags before SvRV_set
-  asm "sv_flags", $sv->FLAGS, ashex($sv->FLAGS);
+  asm "sv_flags", $sv->FLAGS, as_hex($sv->FLAGS);
   asm "xrv", $rvix;
 }
 
@@ -675,9 +675,9 @@ sub B::AV::bsave {
 
   if ($PERL56) {
     # SvREADONLY_off($av) w PADCONST
-    asm "sv_flags", $av->FLAGS & ~SVf_READONLY, ashex($av->FLAGS);
+    asm "sv_flags", $av->FLAGS & ~SVf_READONLY, as_hex($av->FLAGS);
     $av->domagic($ix) if MAGICAL56($av);
-    asm "xav_flags", $av->AvFLAGS, ashex($av->AvFLAGS);
+    asm "xav_flags", $av->AvFLAGS, as_hex($av->AvFLAGS);
     asm "xav_max", -1;
     asm "xav_fill", -1;
     if ($av->FILL > -1) {
@@ -691,7 +691,7 @@ sub B::AV::bsave {
     asm "av_extend", $av->MAX if $av->MAX >= 0;
     asm "av_pushx", $_ for @array;
     if ( !$PERL510 ) {        # VERSION < 5.009
-      asm "xav_flags", $av->AvFLAGS, ashex($av->AvFLAGS);
+      asm "xav_flags", $av->AvFLAGS, as_hex($av->AvFLAGS);
     }
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
@@ -752,7 +752,7 @@ sub B::HV::bwalk {
       asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
       $svtab{$$v} = $varix = $tix;
       # we need the sv_flags before, esp. for DEBUGGING asserts
-      asm "sv_flags",  $v->FLAGS, ashex($v->FLAGS);
+      asm "sv_flags",  $v->FLAGS, as_hex($v->FLAGS);
       $v->bsave( $tix++ );
     }
   }
