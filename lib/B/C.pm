@@ -67,6 +67,10 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
+    if ($B::C::verbose and m/(s\\_[0-9a-f]+)/) {
+      warn "Warning: unresolved ".$section->name." symbol $1\n"
+        if !exists($sym->{$1}) and $1 ne 's\_0';
+    }
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
@@ -6699,6 +6703,10 @@ Critical problem. This must be fixed in the source.
 =item Warning: -o argument ignored with -c
 
 -c does only check, but not accumulate C output lines.
+
+=item Warning: unresolved $section symbol s\\xxx
+
+This symbol was not resolved during compilation, and replaced by 0.
 
 =back
 
