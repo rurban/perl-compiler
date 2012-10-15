@@ -6713,8 +6713,10 @@ Critical problem. This must be fixed in the source.
 
 This symbol was not resolved during compilation, and replaced by 0.
 
-This is most likely a critical internal compiler bug, esp. if in
+With B::C this is most likely a critical internal compiler bug, esp. if in
 an op section. See [issue #110].
+With B::CC it can be caused by valid optimizations, e.g. when op->next
+pointers were inlined or inlined GV or CONST ops were optimized away.
 
 =back
 
