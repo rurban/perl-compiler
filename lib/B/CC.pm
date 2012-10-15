@@ -1451,7 +1451,6 @@ sub pp_const {
 # coverage: 1-39, fails in 33
 sub pp_nextstate {
   my $op = shift;
-  my $sym = loadop($op);
   if ($labels->{'nextstate'}->[-1] and $labels->{'nextstate'}->[-1] == $op) {
     debug sprintf("pop_label nextstate: cxstack label %s\n", $curcop->[0]->label) if $debug{cxstack};
     pop_label 'nextstate';
@@ -2333,6 +2332,8 @@ sub pp_entersub {
   write_back_lexicals( REGISTER | TEMPORARY );
   write_back_stack();
   my $sym = doop($op);
+  $op->next->save if ${$op->next};
+  $op->first->save if ${$op->first} and $op->first->type;
   # sometimes needs an additional check
   my $ck_next = ${$op->next} ? "PL_op != ($sym)->op_next && " : "";
   runtime("while ($ck_next PL_op != (OP*)0 ){",
@@ -3179,7 +3180,8 @@ EOT
 
 sub compile_stats {
    my $s = "Total number of OPs processed: $op_count\n";
-   $s .= "Total number of unresolved symbols: $B::C::unresolved_count\n" if $B::C::unresolved_count;
+   $s .= "Total number of unresolved symbols: $B::C::unresolved_count\n"
+     if $B::C::unresolved_count;
    return $s;
 }
 
