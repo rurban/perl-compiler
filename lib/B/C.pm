@@ -71,6 +71,10 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
+    if ($B::C::verbose and m/(s\\_[0-9a-f]+)/) {
+      warn "Warning: unresolved ".$section->name." symbol $1\n"
+        if !exists($sym->{$1}) and $1 ne 's\_0';
+    }
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
@@ -6112,6 +6116,61 @@ help make use of this compiler.
     perlcc foo.pl
 
     perl -MO=C,-v,-DcA,-l2048 bar.pl > /dev/null
+
+=head1 CAVEAT
+
+With 5.6 it is not possible to use the __DATA__ filehandle, because
+compatible access via PerlIO::scalar was added with 5.8.1
+
+It is generally not possible to restore all of the compiled BEGIN-time state.
+Esp. problematic are non-standard filehandles (i.e. fd>2), process ids,
+environment specific knowledge, because only with the compiler BEGIN blocks
+are not executed in the client environment.
+
+The compiler produces some warnings, which might need source code changes
+or changed compiler options.
+
+=over
+
+=item Warning: Problem with require "$name" - $INC{file.pm}
+
+Dynamic load of $name did not add the expected %INC key.
+
+=item Warning: C.xs PMOP missing for QR
+
+In an initial C.xs runloop all QR regex ops are stored, so that they
+can matched later to PMOPs.
+
+=item Warning: DynaLoader broken with 5.15.2-5.15.3.
+
+[perl #100138] DynaLoader symbols were XS_INTERNAL. Strict linking
+could not resolve it. Usually libperl was patched to overcome this
+for these two versions.
+Setting the environment variable NO_DL_WARN=1 omits this warning.
+
+=item Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.
+
+Since processing the __DATA__ filehandle involves some overhead, requiring
+PerlIO::scalar with all its dependencies, you must use -O2 or -fsave-data.
+
+=item Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd
+
+Critical problem. This must be fixed in the source.
+
+=item Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd
+
+Critical problem. This must be fixed in the source.
+
+=item Warning: -o argument ignored with -c
+
+-c does only check, but not accumulate C output lines.
+
+=item Warning: unresolved $section symbol s\\xxx
+
+This symbol was not resolved during compilation, and replaced by 0.
+This is a typical and harmless warning with CC, but should not happen with C.
+
+=back
 
 =head1 BUGS
 

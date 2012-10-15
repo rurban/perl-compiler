@@ -618,7 +618,7 @@ PP(pp_aelem_nolval)
     PUSHs(sv);
     RETURN;
 }
-';
+' if 0;
 
   foreach $ppdata (@pp_list) {
     my ( $name, $runtime, $declare ) = @$ppdata;
@@ -2331,13 +2331,25 @@ sub pp_entersub {
   write_back_lexicals( REGISTER | TEMPORARY );
   write_back_stack();
   my $sym = doop($op);
-  runtime("while (PL_op != ($sym)->op_next && PL_op != (OP*)0 ){",
+  # sometimes needs an additional check
+  my $ck_next = ${$op->next} ? "PL_op != ($sym)->op_next && " : "";
+  runtime("while ($ck_next PL_op != (OP*)0 ){",
           "\tPL_op = (*PL_op->op_ppaddr)(aTHX);",
           "\tSPAGAIN;}");
   $know_op = 0;
   invalidate_lexicals( REGISTER | TEMPORARY );
+  # B::C::check_entersub($op);
   return $op->next;
 }
+
+# coverage: 16,26,35,51,72,73
+sub pp_bless {
+  my $op = shift;
+  $curcop->write_back if $curcop;
+  # B::C::check_bless($op);
+  default_pp($op);
+}
+
 
 # coverage: ny
 sub pp_formline {
@@ -2465,13 +2477,15 @@ sub pp_require {
   write_back_lexicals( REGISTER | TEMPORARY );
   write_back_stack();
   my $sym = doop($op);
-  runtime("while (PL_op != ($sym)->op_next && PL_op != (OP*)0 ) {",
-          #(test 28).
+  # sometimes needs an additional check
+  my $ck_next = ${$op->next} ? "PL_op != ($sym)->op_next && " : "";
+  runtime("while ($ck_next PL_op != (OP*)0 ) {", #(test 28).
           "  PL_op = (*PL_op->op_ppaddr)(aTHX);",
           "  SPAGAIN;",
           "}");
   $know_op = 1;
   invalidate_lexicals( REGISTER | TEMPORARY );
+  # B::C::check_require($op); # mark package
   return $op->next;
 }
 
