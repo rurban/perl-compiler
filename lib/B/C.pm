@@ -6708,6 +6708,9 @@ Critical problem. This must be fixed in the source.
 
 This symbol was not resolved during compilation, and replaced by 0.
 
+This is most likely a critical internal compiler bug, esp. if in
+an op section. See [issue #110].
+
 =back
 
 =head1 BUGS
