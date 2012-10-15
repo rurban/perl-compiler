@@ -5739,7 +5739,7 @@ sub save_unused_subs {
   # With -fno-warnings we don't insist on initializing warnings::register_categories and Carp.
   # Until it is compile-time required.
   # 68KB exe size 32-bit
-  if ($] >= 5.013005 and ($B::C::warnings or exists($INC{'Carp.pm'}))) {
+  if ($] >= 5.013005 and ($B::C::warnings or (exists($INC{'Carp.pm'}) and !$skip_package{Carp}))) {
     svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
     add_hashINC("warnings");
     add_hashINC("warnings::register");
