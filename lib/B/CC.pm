@@ -1154,6 +1154,7 @@ sub label {
 
 sub write_label {
   my $op = shift;
+  $op->save if $$op;
   # debug sprintf("lab_%x:?\n", $$op) if $debug{cxstack};
   unless ($labels->{label}->{$$op}) {
     my $l = label($op);
@@ -1442,6 +1443,7 @@ sub pp_const {
 # coverage: 1-39, fails in 33
 sub pp_nextstate {
   my $op = shift;
+  my $sym = loadop($op);
   if ($labels->{'nextstate'}->[-1] and $labels->{'nextstate'}->[-1] == $op) {
     debug sprintf("pop_label nextstate: cxstack label %s\n", $curcop->[0]->label) if $debug{cxstack};
     pop_label 'nextstate';
@@ -3303,6 +3305,9 @@ OPTION:
         }
         elsif ( $arg eq "t" ) {
           $debug{timings}++;
+        }
+        elsif ( $arg eq "b" ) {
+          $debug{bblock}++;
         }
         elsif ( $arg eq "F" and eval "require B::Flags;" ) {
           $debug{flags}++;

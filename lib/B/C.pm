@@ -67,17 +67,19 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
+    my $ref = "";
     if (m/(s\\_[0-9a-f]+)/) {
       if (!exists($sym->{$1}) and $1 ne 's\_0') {
+        $ref = $1;
         $B::C::unresolved_count++;
-        warn "Warning: unresolved ".$section->name." symbol $1\n" if $B::C::verbose;
+        warn "Warning: unresolved ".$section->name." symbol $ref\n" if $B::C::verbose;
       }
     }
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
-      $dbg = " /* ".$section->[-1]{dbg}->[$i]." */";
+      $dbg = " /* ".$section->[-1]{dbg}->[$i]." ".$ref." */";
     }
-    printf $fh $format, $_, $section->name, $i, $dbg;
+    printf $fh $format, $_, $section->name, $i, $ref, $dbg;
     ++$i;
   }
 }
@@ -4497,7 +4499,7 @@ EOT
       printf "Static %s %s_list[%u] = {\n", $typename, $name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
-      $section->output( \*STDOUT, "\t{ %s }, /* %s_list[%d] */%s\n" );
+      $section->output( \*STDOUT, "\t{ %s }, /* %s_list[%d] %s */%s\n" );
       print "};\n\n";
     }
   }
