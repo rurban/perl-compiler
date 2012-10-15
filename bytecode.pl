@@ -846,7 +846,7 @@ __END__
 #   requires PERL_VERSION>==10 only.
 # lvalue is the (statemachine) value to read or write.
 # argtype specifies the reader or writer method.
-# flags x specifies a special reader method named by BSET_$insn in bytecode.h
+# flags x specifies a special writer method BSET_$insn in bytecode.h
 # flags s store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
 # flags \d+ specifies the maximal length.
 #
