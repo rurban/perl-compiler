@@ -3164,7 +3164,9 @@ EOT
 }
 
 sub compile_stats {
-    return "Total number of OPs processed: $op_count\n";
+   my $s = "Total number of OPs processed: $op_count\n";
+   $s .= "Total number of unresolved symbols: $B::C::unresolved_count\n" if $B::C::unresolved_count;
+   return $s;
 }
 
 # Accessible via use B::CC '-ftype-attr'; in user code, or -MB::CC=-O2 on the cmdline

@@ -67,9 +67,11 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
-    if ($B::C::verbose and m/(s\\_[0-9a-f]+)/) {
-      warn "Warning: unresolved ".$section->name." symbol $1\n"
-        if !exists($sym->{$1}) and $1 ne 's\_0';
+    if (m/(s\\_[0-9a-f]+)/) {
+      if (!exists($sym->{$1}) and $1 ne 's\_0') {
+        $B::C::unresolved_count++;
+        warn "Warning: unresolved ".$section->name." symbol $1\n" if $B::C::verbose;
+      }
     }
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
@@ -312,6 +314,7 @@ my (%include_package, %skip_package, %saved, %isa_cache, %method_cache);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
+my $unresolved_count     = 0;
 # options and optimizations shared with B::CC
 our ($curcv, $module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
