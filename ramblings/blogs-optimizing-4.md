@@ -12,9 +12,9 @@ I got 2 times faster run-times with the B::CC compiler with the
 
 In the [third part](http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-3.html)
 I got 4.5 times faster run-times with perl-level AELEMFAST optimizations, and discussed optimising array accesses
-via no autovifification or types.
+via no autovivification or types.
 
-Optimising array accesses showed the need for autovifification detection in B::CC and better stack
+Optimising array accesses showed the need for autovivification detection in B::CC and better stack
 handling for more ops and datatypes, esp. aelem and helem. 
 
 But first let's study more easier goals to accomplish. If we look at
@@ -150,5 +150,29 @@ Uncompiled with N=10 I got 16.093s, compiled 9.1222s, almost 2x times
 faster (1.75x).  And this code has the same aelem problem as nbody, so
 a loop unrolling to aelemfast and better direct accessors with
 no-autovivification would lead to a ~4x times faster run-time.
+
+nextstate optimisations
+-----------------------
+
+nextstate and its COP brother dbstate are mainly used to store the line
+number of the current op for debugging.
+I wrote an [oplines patch](https://github.com/rurban/perl/commits/oplines)
+already to move the line info to all OPs, which reduced the need for
+90% nextstate ops, which would overcome the problem we are facing here:
+
+    PL_op = &curcop_list[0];                 /* set file and line number */
+    TAINT_NOT;                                       /* only needed once */
+    sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp; /* rarely needed */
+    FREETMPS;                           /* rarely needed, only with TMPs */
+
+oplines is not yet usable because it only reduces the number of nextstate ops,
+but I haven't written the needed change to warnings and error handling which
+would be needed to search for the current cop with warn or die, to be able to
+display the file name together with the line number.
+
+A different strategy would be to create simplier state COPs, without TAINT check,
+without stack reset and without FREETMPS.
+Like `state, state_t, state_s, state_f, state_ts, state_sf, state_tsf == nextstate`.
+
 
 *TBC...*
