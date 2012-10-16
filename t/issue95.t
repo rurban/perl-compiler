@@ -29,7 +29,7 @@ EOF1
 
 my $typed = <<'EOF2';
 use IO::Socket::SSL();
-my IO::Socket::SSL $handle = new IO::Socket::SSL;
+my IO::Handle $handle = new IO::Socket::SSL;
 $handle->blocking(0);
 print "ok";
 EOF2
