@@ -172,10 +172,14 @@ sub minipeek {
 #
 sub set_int {
   my ( $obj, $expr, $unsigned ) = @_;
-  my $sval = B::C::ivx($expr);
+  my $sval;
   # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
-
-  $sval = $expr if $sval eq '0' and $expr;
+  if ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
+    $sval = $expr;
+  } else {
+    $sval = B::C::ivx($expr);
+    $sval = $expr if $sval eq '0' and $expr;
+  }
 
   runtime("$obj->{iv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_DOUBLE );

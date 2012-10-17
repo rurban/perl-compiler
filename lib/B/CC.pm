@@ -815,8 +815,8 @@ sub reload_lexicals {
   # This class allocates pseudo-registers (OK, so they're C variables).
   #
   my %alloc;   # Keyed by variable name. A value of 1 means the
-                # variable has been declared. A value of 2 means
-                # it's in use.
+               # variable has been declared. A value of 2 means
+               # it's in use.
 
   sub new_scope { %alloc = () }
 
@@ -828,10 +828,10 @@ sub reload_lexicals {
     $i   = 0;
     do {
       $varname = "$prefix$i";
-      $status  = $alloc{$varname};
+      $status  = exists $alloc{$varname} ? $alloc{$varname} : 0;
     } while $status == 2;
-    if ( $status != 1 ) {
 
+    if ( $status != 1 ) {
       # Not declared yet
       B::CC::declare( $type, "$ptr$varname" );
       $alloc{$varname} = 2;    # declared and in use
@@ -1859,6 +1859,7 @@ sub NUMERIC_RESULT () { 0x4 }
 sub numeric_binop {
   my ( $op, $operator, $flags ) = @_;
   my $force_int = 0;
+  $flags = 0 unless $flags;
   $force_int ||= ( $flags & INT_RESULT );
   $force_int ||=
     (    $flags & INTS_CLOSED
