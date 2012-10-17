@@ -3622,7 +3622,8 @@ if (0) {
   elsif ( $fullname eq 'main::!' ) { #Errno
     $savefields = Save_HV;
   }
-  $savefields &= ~$filter if ($filter and $filter !~ / :pad/ and $filter > 0 and $filter < 64);
+  $savefields &= ~$filter if ($filter and $filter !~ / :pad/
+                              and $filter =~ /^\d+$/ and $filter > 0 and $filter < 64);
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.
