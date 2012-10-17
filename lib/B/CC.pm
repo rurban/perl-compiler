@@ -1450,16 +1450,17 @@ sub pp_nextstate {
     write_label($op);
   }
   $curcop->load($op);
+  loadop($op);
   @stack = ();
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
-  runtime("TAINT_NOT;") if $opt_taint;
+  runtime("TAINT_NOT;") if $opt_taint; # TODO Not always needed (resets PL_taint = 0)
   runtime("sp = PL_stack_base + cxstack[cxstack_ix].blk_oldsp;"); # TODO reset sp not needed always
   if ( $freetmps_each_bblock || $freetmps_each_loop ) {
     $need_freetmps = 1;
   }
   else {
-    runtime("FREETMPS;");
+    runtime("FREETMPS;"); # TODO Not always needed
   }
   return $op->next;
 }
