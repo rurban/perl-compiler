@@ -299,8 +299,9 @@ use B::Stackobj qw(:types :flags);
 use B::C::Flags;
 # use attributes qw(get reftype);
 
-@B::OP::ISA = qw(B::NULLOP B);           # support -Do
+@B::OP::ISA = qw(B);                    # support -Do
 @B::LISTOP::ISA = qw(B::BINOP B);       # support -Do
+push @B::OP::ISA, 'B::NULLOP' if exists $main::B::{'NULLOP'};
 
 # These should probably be elsewhere
 # Flags for $op->flags
