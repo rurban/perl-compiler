@@ -268,6 +268,7 @@ Original numbers with N=50,000,000:
     * C             20.72s
     * Go            32.11s
     * SBCL          42.75s
+    * Javascript V8 44.78s - 82.49s
     * JRuby       8m
     * PHP        11m
     * Python 3   16m
