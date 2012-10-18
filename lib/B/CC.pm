@@ -370,6 +370,8 @@ my %optimise = (
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
+$async_signals{$_} = 1 for # more 5.16 ops which do PERL_ASYNC_CHECK
+  qw(substcont next redo goto leavewhen);
 # perl patchlevel to generate code for (defaults to current patchlevel)
 my $patchlevel = int( 0.5 + 1000 * ( $] - 5 ) );    # XXX unused?
 my $MULTI      = $Config{usemultiplicity};
