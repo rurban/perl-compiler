@@ -45,3 +45,4 @@ log.modules-*.err
 log.modules-5*-201*-*
 .DS_Store
 B-C-*.tar.gz
+.commit
