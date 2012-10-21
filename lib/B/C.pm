@@ -5840,8 +5840,10 @@ sub save_context {
     $init->add(
       "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
       "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
-  } else {
-    # $init->add("CvPADLIST(PL_main_cv) = 0;");
+  } else { # dynamic ARRAY
+      "CvPADLIST(PL_main_cv) = pad_new(0);",
+      "PadlistNAMES(CvPADLIST(PL_main_cv)) = $curpad_nam; /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = $curpad_sym; /* curpad */",
   }
   if ($] < 5.017) {
     my $amagic_generate = B::amagic_generation;
