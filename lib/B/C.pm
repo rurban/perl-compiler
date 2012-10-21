@@ -3956,8 +3956,20 @@ sub B::AV::save {
     }
     $init->no_split;
 
+    if (ref $av eq 'B::PADLIST') {
+      my $fill1 = $fill+1;
+      $init->add("{", "\tPAD **svp;");
+      $init->add("\tregister int gcount;") if $count;
+      $init->add(
+                 "\tPADLIST *padl = $sym;",
+                 "\tNewx(svp, $fill, PAD *);",
+                 "\tPadlistARRAY(padl) = svp;",
+                );
+      $init->add( substr( $acc, 0, -2 ) );
+      $init->add("}");
+    }
     # With -fav-init2 use independent_comalloc()
-    if ($B::C::av_init2) {
+    elsif ($B::C::av_init2) {
       my $i = $av_index;
       $xpvav_sizes[$i] = $fill;
       my $init_add = "{ SV **svp = avchunks[$i]; AV *av = $sym;\n";
