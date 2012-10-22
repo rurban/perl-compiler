@@ -472,6 +472,10 @@ result[104]='12'
 #tests[105]='$int::dummy=0;$double::dummy=0;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 tests[105]='%int::;%double::;my int $r;my $i_i=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 result[105]='12'
+tests[106]='my @a=(0..20);for my $i (1..10){$a[$i]++;};print @a;'
+result[106]='023456789101111121314151617181920';
+tests[1061]='my @a=(0..20);for my $i (1..10){$s.=qq(\$a[$i]++;)};eval $s; print @a;'
+result[1061]='023456789101111121314151617181920';
 
 # issue35
 tests[110]='sub new{}sub test{{my $x=1;my $y=$x+1;}my $x=2;if($x!=3){4;}}'
