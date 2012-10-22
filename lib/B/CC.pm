@@ -113,7 +113,7 @@ The following options must be set explicitly:
 
   B<-fslow-signals>,
 
-  B<-no-autovivify>,
+  B<-fno-autovivify>,
 
   B<-fno-magic>.
 
@@ -136,6 +136,20 @@ of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
 
 Enabled with B<-O2>.
+
+=item B<-funroll-loops>
+
+Perform loop unrolling when iteration count is known.
+Changes AELEM to AELEMFAST with known indices when:
+
+* The iteration count is known at compile-time,
+
+* The maximum iteration count is lower than 256,
+
+* AELEM accesses are detected inside the loop, and the benefit of AELEMFAST outweighs
+  the cost of the unrolling.
+
+Enabled with B<-O1>.
 
 =item B<-fno-inline-ops>
 
@@ -353,7 +367,7 @@ my ( $init_name, %debug, $strict );
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $opt_taint, $opt_omit_taint,
      $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_autovivify, $opt_magic,
-     %c_optimise );
+     $opt_unroll_loops, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $opt_name_magic = 1;
 my %optimise = (
@@ -367,6 +381,7 @@ my %optimise = (
   type_attr            => \$opt_type_attr,
   autovivify           => \$opt_autovivify,
   magic                => \$opt_magic,
+  unroll_loops         => \$opt_unroll_loops,     # -O1
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
@@ -3263,6 +3278,7 @@ OPTION:
       }
       if ( $arg >= 1 ) {
         $opt_type_attr = 1;
+        $opt_unroll_loops = 1;
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
     }
