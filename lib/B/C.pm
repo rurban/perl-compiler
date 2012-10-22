@@ -896,7 +896,7 @@ my $opsect_common =
     $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
   }
   else {
-    $static = '0, 0, 0, 0';
+    $static = '0, 0, 0, 1';
     $opsect_common .= "opt, slabbed, savefree, spare";
   }
 
@@ -3826,6 +3826,7 @@ sub B::AV::save {
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
   my $ispadlist = ref($av) eq 'B::PADLIST';
+  my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
 
   if ($] >= 5.017004 and $ispadlist) {
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
@@ -3907,7 +3908,7 @@ sub B::AV::save {
     # single string cuts runtime from 6min20sec to 40sec
 
     # you want to keep this out of the no_split/split
-    # map("\t*svp++ = (SV*)$_;", @names),
+    # map("\t*svp++ = $svpcast$_;", @names),
     my $acc = '';
     # Init optimization by Nick Koston
     # The idea is to create loops so there is less C code. In the real world this seems
@@ -3931,7 +3932,7 @@ sub B::AV::save {
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=" . $1 . "; gcount<" . ($1+$count+1) . "; gcount++) {"
-	  ." *svp++ = (SV*)&sv_list[gcount]; };\n\t";
+	  ." *svp++ = $svpcast&sv_list[gcount]; };\n\t";
 	$i += $count;
       } elsif ($use_av_undef_speedup
 	       && defined $values[$i]
@@ -3948,10 +3949,10 @@ sub B::AV::save {
 	  $count++;
 	}
 	$acc .= "\tfor (gcount=0; gcount<" . ($count+1) . "; gcount++) {"
-	  ." *svp++ = (SV*)&PL_sv_undef; };\n\t";
+	  ." *svp++ = $svpcast&PL_sv_undef; };\n\t";
 	$i += $count;
       } else { # XXX 5.8.9d Test::NoWarnings has empty values
-	$acc .= "\t*svp++ = (SV*)" . ($values[$i] ? $values[$i] : '&PL_sv_undef') . ";\n\t";
+	$acc .= "\t*svp++ = $svpcast" . ($values[$i] ? $values[$i] : '&PL_sv_undef') . ";\n\t";
       }
     }
     $init->no_split;
@@ -5854,8 +5855,8 @@ sub save_context {
       "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
   } else { # dynamic ARRAY
       "CvPADLIST(PL_main_cv) = pad_new(0);",
-      "PadlistNAMES(CvPADLIST(PL_main_cv)) = $curpad_nam; /* namepad */",
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = $curpad_sym; /* curpad */",
+      "PadlistNAMES(CvPADLIST(PL_main_cv)) = SvREFCNT_inc($curpad_nam); /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = SvREFCNT_inc($curpad_sym); /* curpad */",
   }
   if ($] < 5.017) {
     my $amagic_generate = B::amagic_generation;
