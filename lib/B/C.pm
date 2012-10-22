@@ -3910,9 +3910,9 @@ sub B::AV::save {
     # you want to keep this out of the no_split/split
     # map("\t*svp++ = $svpcast$_;", @names),
     my $acc = '';
-    # Init optimization by Nick Koston
+    # Init optimization by Nick Koston.
     # The idea is to create loops so there is less C code. In the real world this seems
-    # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
+    # to reduce the memory usage ~3% and speed up startup time by about 8%.
     my $count;
     my @values = map { $_->save($fullname."[".$count++."]") || () } @array;
     $count = 0;

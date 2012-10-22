@@ -2699,6 +2699,22 @@ sub enterloop {
   my $nextop = $op->nextop;
   my $lastop = $op->lastop;
   my $redoop = $op->redoop;
+
+  if ($opt_unroll_loops) {
+    # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
+    if ($op->name eq 'enteriter' and
+        scalar(@stack) >= 2 and
+	ref $stack[-1] eq 'B::Stackobj::Const' and
+	ref $stack[-2] eq 'B::Stackobj::Const') {
+      warn "do -funroll-loops (not yet)";
+    }
+    # for (;;;) enterloop; puts on the stack ctr and to
+    if ($op->name eq 'enterloop' and
+        $op->next->type == OP_CONST and
+        $op->next->next->type == OP_CONST) {
+      warn "do -funroll-loops (not yet)";
+    }
+  }
   $curcop->write_back if $curcop;
   debug "enterloop: pushing on cxstack\n" if $debug{cxstack};
   push(
