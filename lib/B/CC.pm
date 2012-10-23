@@ -366,8 +366,8 @@ my ( $init_name, %debug, $strict );
 # underscores here because they are OK in (strict) barewords.
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $opt_taint, $opt_omit_taint,
-     $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_autovivify, $opt_magic,
-     $opt_unroll_loops, %c_optimise );
+     $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_aelem, $opt_autovivify,
+     $opt_magic, $opt_unroll_loops, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $opt_name_magic = 1;
 my %optimise = (
@@ -378,8 +378,9 @@ my %optimise = (
   taint                => \$opt_taint,
   slow_signals         => \$opt_slow_signals,
   name_magic           => \$opt_name_magic,
-  type_attr            => \$opt_type_attr,
+  type_attr            => \$opt_type_attr,        # -O1
   autovivify           => \$opt_autovivify,
+  aelem                => \$opt_aelem,            # -O1
   magic                => \$opt_magic,
   unroll_loops         => \$opt_unroll_loops,     # -O1
 );
@@ -1787,7 +1788,7 @@ sub pp_aelemfast {
 
 sub _aelem {
   my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
-  if (!$rmg and !$vifify and $ix >= 0) {
+  if (!$rmg and !$vifify and $ix >= 0 and $opt_aelem) {
     # TODO ix needs to be POPed before av
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
@@ -2702,17 +2703,24 @@ sub enterloop {
 
   if ($opt_unroll_loops) {
     # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
+    my ($pad, $i, $cnt);
     if ($op->name eq 'enteriter' and
         scalar(@stack) >= 2 and
 	ref $stack[-1] eq 'B::Stackobj::Const' and
 	ref $stack[-2] eq 'B::Stackobj::Const') {
-      warn "do -funroll-loops (not yet)";
+      $i = $stack[-2]->{iv};
+      $cnt = $stack[-1]->{iv};
+      warn "do -funroll-loops enteriter with $i..$cnt (not yet)";
     }
-    # for (;;;) enterloop; puts on the stack ctr and to
+    # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond
     if ($op->name eq 'enterloop' and
-        $op->next->type == OP_CONST and
-        $op->next->next->type == OP_CONST) {
-      warn "do -funroll-loops (not yet)";
+        $op->next->name eq 'padsv' and
+        $op->next->next->name eq 'const' and
+        $op->next->next->next->name =~ /^[lg][te]$/) {
+      my ($stash,$i,$sv) = B::C::padop_name($op->next);
+      # $i = $pv;
+      $cnt = $op->next->next->sv->IV;
+      warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name." $cnt (not yet)";
     }
   }
   $curcop->write_back if $curcop;
@@ -3223,6 +3231,7 @@ sub import {
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
   $opt_taint = 1;
   $opt_magic = 1;      # only makes sense with -fno-magic
+  # $opt_aelem = 0;
   $opt_autovivify = 1; # only makes sense with -fno-autovivify
 OPTION:
   while ( $option = shift @options ) {
