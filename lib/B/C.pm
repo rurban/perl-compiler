@@ -5434,8 +5434,11 @@ sub compile {
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
-  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
-	       B::Section B::Pseudoreg B::Shadow);
+  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::C::Section
+	       B::Section B::Pseudoreg B::Shadow B::C::InitSection
+               B::C::Section::SUPER B::C::InitSection::SUPER
+	       B::Stackobj B::Bblock
+	      );
   #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
 
 OPTION:
