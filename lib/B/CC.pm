@@ -2720,7 +2720,8 @@ sub enterloop {
       my ($stash,$i,$sv) = B::C::padop_name($op->next);
       # $i = $pv;
       $cnt = $op->next->next->sv->IV;
-      warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name." $cnt (not yet)";
+      warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name.
+	" $cnt (not yet)";
     }
   }
   $curcop->write_back if $curcop;
