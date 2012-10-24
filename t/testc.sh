@@ -474,7 +474,7 @@ tests[105]='%int::;%double::;my int $r;my $i_i=2;our double $d=3.0; $r=$i*$i; $r
 result[105]='12'
 tests[106]='my @a=(0..20);for my $i (1..10){$a[$i]++;};print @a;'
 result[106]='023456789101111121314151617181920';
-tests[1061]='my @a=(0..20);for my $i (1..10){$s.=qq(\$a[$i]++;)};eval $s; print @a;'
+tests[1061]='my @a=(0..20);;BEGIN{$s=q(sub test{);for my $i (1..10){$s.=qq(\$a[$i]++;)};$s.=q(});eval $s;} test(); print @a;'
 result[1061]='023456789101111121314151617181920';
 tests[1062]='my @a=(0..20);for (my $i=1;$i<10;$i++){$a[$i]++};print @a;'
 result[1062]='023456789101111121314151617181920';
