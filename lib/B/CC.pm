@@ -1689,13 +1689,13 @@ sub pp_gv {
   my $gvsym;
   if ($ITHREADS) {
     $gvsym = $pad[ $op->padix ]->as_sv;
-    #push @stack, ($pad[$op->padix]);
+    push @stack, ($pad[$op->padix]);
   }
   else {
     $gvsym = $op->gv->save;
     # XXX
-    #my $obj = new B::Stackobj::Const($op->gv);
-    #push( @stack, $obj );
+    my $obj = new B::Stackobj::Const($op->gv);
+    push( @stack, $obj );
   }
   write_back_stack();
   runtime("XPUSHs((SV*)$gvsym);");
@@ -2703,14 +2703,45 @@ sub enterloop {
 
   if ($opt_unroll_loops) {
     # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
-    my ($pad, $i, $cnt);
-    if ($op->name eq 'enteriter' and
-        scalar(@stack) >= 2 and
-	ref $stack[-1] eq 'B::Stackobj::Const' and
-	ref $stack[-2] eq 'B::Stackobj::Const') {
-      $i = $stack[-2]->{iv};
-      $cnt = $stack[-1]->{iv};
-      warn "do -funroll-loops enteriter with $i..$cnt (not yet)";
+    my ($i, $cnt, $itername, $itervar, $qualified);
+    if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
+      # case 1: gv itervar on stack
+      if (!$op->targ and @stack >= 3) {
+	$itername = $stack[-1]->{obj}->NAME;
+	$itervar = pop_sv;
+      }
+      # both cases
+      if (ref $stack[-1] eq 'B::Stackobj::Const' and
+	  ref $stack[-2] eq 'B::Stackobj::Const') {
+        $i = $stack[-2]->{iv};  # iterator value
+        $cnt = $stack[-1]->{iv};
+        warn "do -funroll-loops enteriter with $i..$cnt (not yet)";
+
+        # case 2: lexical itervar (not on stack)
+        $itername = B::C::padop_name($op) unless $itername;
+        # both cases
+        my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
+        while ($iterop->name ne 'leaveloop') {  # analyze loop body
+          $iterop = $op->next;
+       	  # case 2
+	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
+            my $ckname = B::C::padop_name($iterop);
+	    if ($ckname eq $itername) {
+	      $qualified = 1;
+	      warn "qualified enteriter lexical (aka case 2 loop)";
+	    }
+	  }
+	  # case 1
+	  if ($iterop->name eq 'gvsv' and $iterop->next->name eq 'aelem') {
+            my $ckname = $iterop->sv->PV;
+	    if ($ckname eq $itername) {
+	      $qualified = 1;
+	      warn "qualified enteriter gv (aka case 1 loop)";
+	    }
+	  }
+        }
+      # if loop qualifies, create $cnt copies of loop body
+      }
     }
     # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond
     if ($op->name eq 'enterloop' and
