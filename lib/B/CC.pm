@@ -1445,15 +1445,16 @@ sub pp_const {
   my $sv = $op->sv;
   my $obj;
 
-  # constant could be in the pad (under useithreads)
   if ($$sv) {
     $obj = $constobj{$$sv};
     if ( !defined($obj) ) {
       $obj = $constobj{$$sv} = B::Stackobj::Const->new($sv);
     }
   }
+  # constant could be in the pad (under useithreads)
   else {
     $obj = $pad[ $op->targ ];
+    $obj->{obj} = $sv;
   }
   push( @stack, $obj );
   return $op->next;
@@ -2711,8 +2712,10 @@ sub enterloop {
 	$itervar = pop_sv;
       }
       # both cases
-      if (ref $stack[-1] eq 'B::Stackobj::Const' and
-	  ref $stack[-2] eq 'B::Stackobj::Const') {
+      if (($ITHREADS and ref $stack[-1] eq 'B::Stackobj::Padsv'
+	             and ref $stack[-2] eq 'B::Stackobj::Padsv')
+       or (!$ITHREADS and ref $stack[-1] eq 'B::Stackobj::Const'
+	              and ref $stack[-2] eq 'B::Stackobj::Const')) {
         $i = $stack[-2]->{iv};  # iterator value
         $cnt = $stack[-1]->{iv};
         warn "do -funroll-loops enteriter with $i..$cnt (not yet)";
@@ -2721,8 +2724,8 @@ sub enterloop {
         $itername = B::C::padop_name($op) unless $itername;
         # both cases
         my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
-        while ($iterop->name ne 'leaveloop') {  # analyze loop body
-          $iterop = $op->next;
+        while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
+          $iterop = $iterop->next;
        	  # case 2
 	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
             my $ckname = B::C::padop_name($iterop);
