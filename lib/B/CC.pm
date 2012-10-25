@@ -2724,8 +2724,9 @@ sub enterloop {
         $itername = B::C::padop_name($op) unless $itername;
         # both cases
         my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
+	$iterop = $iterop->next->other;
         while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
-          $iterop = $iterop->next;
+	  warn "have \$iterop->name = '" . $iterop->name . "'";
        	  # case 2
 	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
             my $ckname = B::C::padop_name($iterop);
@@ -2742,6 +2743,7 @@ sub enterloop {
 	      warn "qualified enteriter gv (aka case 1 loop)";
 	    }
 	  }
+          $iterop = $iterop->next;
         }
       # if loop qualifies, create $cnt copies of loop body
       }
