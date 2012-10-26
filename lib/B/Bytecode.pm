@@ -42,6 +42,9 @@ BEGIN {
   } else {
     B->import(qw(walkoptree walksymtable));
   }
+  if ( $] >= 5.017005 ) {
+    @B::PAD::ISA = ('B::AV');
+  }
 }
 use strict;
 use Config;
@@ -245,7 +248,7 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "padl_new", 0;
+    asm "padl_new";
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
@@ -669,26 +672,30 @@ sub B::AV::bsave {
     if ($av->FILL > -1) {
       asm "av_push", $_ for @array;
     } else {
-      asm "av_extend", $av->MAX if $av->MAX >= 0;
+      asm "av_extend", $av->MAX if $av->MAX >= 0 and $av->{ref} ne 'PAD';
     }
     asm "sv_flags", $av->FLAGS if $av->FLAGS & SVf_READONLY; # restore flags
   } else {
     #$av->domagic($ix) if $av->MAGICAL; # XXX need tests for magic arrays
-    asm "av_extend", $av->MAX if $av->MAX >= 0;
+    # check for 5.17.5 PADLIST
+    asm "av_extend", $av->MAX if $av->MAX >= 0 and ref($av) ne 'B::PAD';
     asm "av_pushx", $_ for @array;
     if ( !$PERL510 ) {        # VERSION < 5.009
       asm "xav_flags", $av->AvFLAGS, ashex($av->AvFLAGS);
     }
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
-  asm "sv_refcnt", $av->REFCNT;
-  asm "xmg_stash", $stashix;
+  asm "sv_refcnt", $av->REFCNT unless ref($av) eq 'B::PAD';
+  asm "xmg_stash", $stashix unless ref($av) eq 'B::PAD';
 }
 
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
-  $_ = $_->ix for @array; # hack. call ->ix methods to save the pad array elements
+  for (@array) {
+    bless $_, 'B::PAD'; # skip av_extend
+    $_ = $_->ix; # hack. call ->ix methods to save the pad array elements
+  }
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
   asm "padl_name", $array[0]; # comppad_name
