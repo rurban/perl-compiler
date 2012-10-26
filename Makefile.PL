@@ -315,6 +315,9 @@ $byterun_c : Makefile bytecode.pl @headers
 
 $byterun_h : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
+
+TAGS : $asmdata
+	etags --language=perl lib/B/*.pm
 ";
     if ($] > 5.009) {
         $result .= "\ntest :: subdirs-test\n\n";
