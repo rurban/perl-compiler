@@ -895,9 +895,13 @@ my $opsect_common =
     $static = '0, 1, 0, 0, 0, 0, 0';
     $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
   }
-  else {
-    $static = '0, 0, 0, 1';
-    $opsect_common .= "opt, slabbed, savefree, spare";
+  elsif ($] < 5.017006) {
+    $static = '0, 1, 0, 0, 0, 0, 0';
+    $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
+  }
+  else { # 90840c5d1d 5.17.6
+    $static = '0, 0, 0, 1, 0';
+    $opsect_common .= "opt, slabbed, savefree, static, spare";
   }
 
   sub B::OP::_save_common_middle {
