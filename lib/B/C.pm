@@ -3146,14 +3146,15 @@ sub B::CV::save {
         $cvxsub = $cv->XSUB;
 	$gv = $cv->GV;
 	if ($$gv) {
+          my $newname = $gv->STASH->NAME."::".$gv->NAME;
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME. remove old cv\n" if $verbose;
+	    warn "Recalculated root and xsub $newname. remove old cv\n" if $verbose;
 	    unless ($new_cv_fw) {
 	      $svsect->remove;
 	      $xpvcvsect->remove;
 	    }
 	    delsym($cv);
-	    return $cv->save;
+	    return $cv->save($newname);
 	  }
 	}
       }
@@ -3388,6 +3389,13 @@ sub B::CV::save {
   if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
     $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
 		"SvREFCNT_inc(PL_main_cv);" );
+    if ($] >= 5.017005) {
+      $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+    }
+  }
+  elsif ($] >= 5.017005 and ${ $cv->OUTSIDE }) {
+    $init->add( sprintf("CvPADLIST($sym)->xpadl_outid = PadlistNAMES(%s);",
+                        $cv->OUTSIDE->PADLIST->save));
   }
   if ($$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
@@ -3832,7 +3840,16 @@ sub B::AV::save {
   my $ispadlist = ref($av) eq 'B::PADLIST';
   my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
 
-  if ($] >= 5.017004 and $ispadlist) {
+  if ($] >= 5.017006 and $ispadlist) {
+    $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_outid");
+    my @array = $av->ARRAY;
+    $fill = scalar @array;
+    $padlistsect->add("$fill, NULL, 0"); # Perl_pad_new(0)
+    # $init->add("pad_list[$padlist_index] = Perl_pad_new(0);");
+    $padlist_index = $padlistsect->index;
+    $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+  }
+  elsif ($] >= 5.017004 and $ispadlist) {
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
     my @array = $av->ARRAY;
     $fill = scalar @array;
