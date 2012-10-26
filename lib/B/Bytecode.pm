@@ -672,7 +672,7 @@ sub B::AV::bsave {
     if ($av->FILL > -1) {
       asm "av_push", $_ for @array;
     } else {
-      asm "av_extend", $av->MAX if $av->MAX >= 0 and $av->{ref} ne 'PAD';
+      asm "av_extend", $av->MAX if $av->MAX >= 0;
     }
     asm "sv_flags", $av->FLAGS if $av->FLAGS & SVf_READONLY; # restore flags
   } else {
