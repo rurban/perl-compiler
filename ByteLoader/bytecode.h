@@ -750,9 +750,9 @@ static int bget_swab = 0;
     } STMT_END
 
 #if PERL_VERSION >= 17
-#define BSET_padl_new(padlist,flag)					\
+#define BSET_padl_new(padlist)						\
     STMT_START {							\
-      bstate->bs_sv = (SV*)Perl_pad_new(flag);				\
+      bstate->bs_sv = (SV*)Perl_pad_new(0);				\
     } STMT_END
 #endif
 
