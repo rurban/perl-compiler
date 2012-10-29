@@ -2718,7 +2718,7 @@ sub enterloop {
 	              and ref $stack[-2] eq 'B::Stackobj::Const')) {
         $i = $stack[-2]->{iv};  # iterator value
         $cnt = $stack[-1]->{iv};
-        warn "do -funroll-loops enteriter with $i..$cnt (not yet)";
+        warn "DBG: do -funroll-loops enteriter with $i..$cnt (not yet)" if $verbose;
 
         # case 2: lexical itervar (not on stack)
         $itername = B::C::padop_name($op) unless $itername;
@@ -2726,26 +2726,34 @@ sub enterloop {
         my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
 	$iterop = $iterop->next->other;
         while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
-	  warn "have \$iterop->name = '" . $iterop->name . "'";
-       	  # case 2
-	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
-            my $ckname = B::C::padop_name($iterop);
-	    if ($ckname eq $itername) {
-	      $qualified = 1;
-	      warn "qualified enteriter lexical (aka case 2 loop)";
-	    }
-	  }
+	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
 	  # case 1
 	  if ($iterop->name eq 'gvsv' and $iterop->next->name eq 'aelem') {
             my $ckname = $iterop->sv->PV;
 	    if ($ckname eq $itername) {
 	      $qualified = 1;
-	      warn "qualified enteriter gv (aka case 1 loop)";
+	      warn "DBG: qualified enteriter gv (aka case 1 loop)\n" if $verbose;
+	    }
+	  }
+          # case 2
+	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
+            my $ckname = B::C::padop_name($iterop);
+	    if ($ckname eq $itername) {
+	      $qualified = 1;
+	      warn "DBG: qualified enteriter lexical (aka case 2 loop)\n" if $verbose;
+              $itername = $iterop->targ;
 	    }
 	  }
           $iterop = $iterop->next;
         }
+      }
       # if loop qualifies, create $cnt copies of loop body
+      if ($qualified) {
+        #$itervar ? unroll_loop_gv($op, $itername, $cnt)
+        #         : unroll_loop_padsv($op, $itername, $cnt);
+        for my $idx ($i..$cnt) {
+          ;
+        }
       }
     }
     # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond

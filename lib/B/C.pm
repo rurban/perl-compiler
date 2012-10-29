@@ -500,7 +500,7 @@ sub padop_name {
   my $cv = shift;
   if ($op->can('name')
       and ($op->name eq 'padsv' or $op->name eq 'method_named'
-	   or ref($op) eq 'B::SVOP')) #threaded
+	   or ref($op) eq 'B::SVOP' or ref($op) eq 'B::LOOP')) #threaded
   {
     return () if $cv and ref($cv->PADLIST) eq 'B::SPECIAL';
     my @c = $cv ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
