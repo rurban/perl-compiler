@@ -806,9 +806,9 @@ sub spawnit {
     my ($command) = shift;
     my (@error,@output,$errname);
     if (opt('dryrun')) {
-        print "$command\n"; return (\@output, \@error);
+        print "$command\n";;
     }
-    if ($Options->{spawn}) {
+    elsif ($Options->{spawn}) {
         (undef, $errname) = tempfile("pccXXXXX");
         {
 	    open (S_OUT, "$command 2>$errname |")
@@ -820,10 +820,10 @@ sub spawnit {
         close S_ERROR;
         close S_OUT;
         unlink $errname or _die("Can't unlink error file $errname\n");
-        return (\@output, \@error);
     } else {
         @output = split /\n/, `$command`;
     }
+    return (\@output, \@error);
 }
 
 sub helpme {
