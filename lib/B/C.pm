@@ -3487,6 +3487,8 @@ if (0) {
   }
   if ($fullname eq 'main::ENV') {
     $init->add(qq[$sym = PL_envgv;]);
+    my $refcnt = $gv->REFCNT;
+    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
   # defer to the end because we remove compiler-internal and skipped stuff
