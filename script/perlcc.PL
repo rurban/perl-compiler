@@ -819,6 +819,7 @@ sub spawnit {
         @error = <S_ERROR>;
         close S_ERROR;
         close S_OUT;
+        sleep(0.1); # child cleanup
         unlink $errname or _die("Can't unlink error file $errname\n");
     } else {
         @output = split /\n/, `$command`;
