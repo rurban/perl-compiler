@@ -35,10 +35,24 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
 #    }
 #}
 sub write_b_c_flags {
+    my $version = shift;
     mkdir "lib/B/C" unless -d "lib/B/C";
     open PH, ">", "lib/B/C/Flags.pm";
     print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
     print PH "package B::C::Flags;\n\n";
+    my $devnull = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
+    print PH "\$VERSION = '$version';\n";
+    my $REV = '';
+    if (my $sha1 = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit 2>$devnull`) {
+        chomp $sha1;
+        # POSIX systems only with wc
+        if (my $num = `git rev-list --abbrev-commit HEAD | wc -l 2>$devnull`) {
+            chomp $num;
+            $REV .= "-$num";
+        }
+        $REV .= '-g'.$sha1;
+        print PH "\$B::C::REVISION = '$REV';\n\n";
+    }
     print PH "# -fav-init optimization\n";
     print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
     print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
@@ -49,7 +63,9 @@ sub write_b_c_flags {
     close PH;
     chmod (0644, "lib/B/C/Flags.pm");
 }
-write_b_c_flags;
+
+# XXX Check for 5.16.0 B-1.34 and offer to patch it? 
+# Or not needed as we do not want to support utf8 and \0 in stashes there
 
 WriteMakefile(
     NAME	 => "B::C",
@@ -251,6 +267,8 @@ sub const_config {
 }
 
 sub post_constants {
+    my $mm = shift;
+    main::write_b_c_flags($mm->{VERSION});
     my $libs = "\nLIBS = $Config::Config{libs}";
     $libs .= $extra_libs if $extra_libs;
     #XXX PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
