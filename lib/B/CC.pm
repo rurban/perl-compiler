@@ -2736,6 +2736,7 @@ sub enterloop {
         my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
 	$iterop = $iterop->next->other;
         write_label($iterop);
+      BODY:
         while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
 	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
 	  # slower global case 1
@@ -2758,6 +2759,10 @@ sub enterloop {
               # TODO change aelem to aelemfast
 	    }
 	  }
+          if ($iterop->name =~ /^last|next|redo$/) {
+            $qualified = 0;
+            last BODY;
+          }
           doop($iterop);
           $iterop = $iterop->next;
         }
