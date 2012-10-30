@@ -73,11 +73,9 @@ sub write_b_c_flags {
 }
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
-# Or not needed as we do not want to support utf8 and \0 in stashes there
+# We do not want to support binary stashes
 if ($] > 5.017003) {
-    unless (-d '.git' and `git symbolic-ref -q HEAD` eq "refs/heads/master\n") {
-        #die "Perl 5.18 PADLIST changes are currently not supported. You can try git master.\n";
-    }
+    warn "Warning: Bad perl version $].\nBinary stashes and symbols are considered a security risc and not fully supported.\nCheck your code to strip \\0 from packagenames.";
 }
 
 WriteMakefile(
