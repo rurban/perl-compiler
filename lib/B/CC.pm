@@ -1798,7 +1798,7 @@ sub pp_aelemfast {
 sub _aelem {
   my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
   if (!$rmg and !$vifify and $ix >= 0 and $opt_aelem) {
-    # TODO ix needs to be POPed before av
+    # Beware: ix needs to be POPed before av
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
@@ -2779,7 +2779,8 @@ sub enterloop {
 	$iterop = $iterop->next->other;
         write_label($iterop);
       BODY:
-        while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
+        warn "DBG: analyze body\n" if $verbose;
+        while ($$iterop and $iterop->name ne 'unstack') {  # analyze loop body
 	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
 	  # slower global case 1
 	  if ($iterop->name eq 'gvsv' and $iterop->next->name eq 'aelem') {
@@ -2787,8 +2788,6 @@ sub enterloop {
 	    if ($ckname eq $itername) {
 	      $qualified = 1;
 	      warn "DBG: qualified enteriter gv (aka case 1 loop)\n" if $verbose;
-              # TODO change aelem to aelemfast
-              # prevop was padav, skip it and use the targ for aelemfast
 	    }
 	  }
           # faster lexical case 2
@@ -2798,17 +2797,16 @@ sub enterloop {
 	      $qualified = 1;
 	      warn "DBG: qualified enteriter lexical (aka case 2 loop)\n" if $verbose;
               $itername = $iterop->targ;
-              # TODO change aelem to aelemfast
 	    }
 	  }
-          if ($iterop->name =~ /^last|next|redo$/) {
+          if ($iterop->name =~ /^(last|next|redo)$/) {
             $qualified = 0;
             last BODY;
           }
-          doop($iterop);
           $iterop = $iterop->next;
         }
-        $nextop = $iterop->next if $$iterop;
+        $nextop = $iterop->next->next->next->next if $$iterop;
+        warn "DBG: nextop = ",$iterop->next->next->next->next->name,"\n" if $verbose;
       }
     }
     # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond
@@ -2825,31 +2823,75 @@ sub enterloop {
     }
     # if loop qualifies, create $cnt copies of loop body
     if ($qualified) {
+      warn "DBG: copy body\n" if $verbose;
       # optimize aelem to aelemfast
-
-      # create copies
-      # check which sections changed
+      my $iterop = $op->next->next->other;
+      runtime("/* unrolled-loop $i (template) */");
+      while ($$iterop and $iterop->name ne 'unstack') {
+        warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
+        if ($iterop->name eq 'padav') {
+          if ($iterop->next->name eq 'padsv' and $iterop->next->next->name eq 'aelem') {
+            warn "DBG: change padav/padsv/aelem to aelemfast\n" if $verbose;
+            # change padav to aelemfast, skip the rest
+            my $sv = $pad[ $iterop->targ ]->as_sv;
+            my @c = comppadlist->ARRAY;
+            my @p = $c[1]->ARRAY;
+            my $lex = $p[ $op->targ ];
+            my $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
+            my $av = "(AV*)$sv";
+            my $ix   = $i; # from
+            my $lval = $iterop->flags & OPf_MOD;
+            my $vifify = autovivification();
+            _aelem($iterop, $av, $ix, $lval, $rmg, $vifify);
+            $iterop = $iterop->next->next;
+          }
+          elsif ($iterop->next->name eq 'gvsv' and $iterop->next->next->name eq 'aelem') {
+            warn "DBG: change padav/gvsv/aelem to aelemfast\n" if $verbose;
+            my $gv = $op->gv;
+            $gv->save;
+            my $gvav = $gv->AV;
+            my $rmg  = ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
+            my $gvsym = $gv->save;
+            my $av = "GvAV($gvsym)";
+            my $ix   = $i; # from
+            my $lval = $iterop->flags & OPf_MOD;
+            my $vifify = autovivification();
+            _aelem($iterop, $av, $ix, $lval, $rmg, $vifify);
+            $iterop = $iterop->next->next;
+          }
+        } else {
+          compile_op($iterop);
+        }
+        $iterop = $iterop->next;
+      }
+      warn "DBG: check which sections changed\n" if $verbose;
       my @new_idx = map {$_->index} @sections;
       my @changed_sections;
       for my $i (0..$#sections) {
         if ($new_idx[$i] > $section_idx[$i]) {
+          my $name = $sections[$i]->name;
           push @changed_sections, [$i, $section_idx[$i]+1, $new_idx[$i]];
+          warn "DBG: $name $i, ",$section_idx[$i]+1,", ",$new_idx[$i],"\n" if $verbose;
         }
       }
-      for my $idx ($i..$cnt) {
+      for my $idx ($i+1 .. $cnt) {
         # copy all section changes
         for my $c (@changed_sections) {
           my ($i, $from, $new) = @$c;
-          for my $j ($from..$new) {
+          my $name = $sections[$i]->name;
+          warn "DBG: copy $name","sect $i $from..$new\n" if $verbose;
+          for my $j ($from .. $new) {
+            runtime("/* unrolled-loop $idx */");
+            # TODO change the aelemfast idx
             $sections[$i]->add( $sections[$i]->elt($j) );
+            write_back_stack();
             # TODO relink it
           }
         }
       }
-
+      $curcop->write_back if $curcop;
+      return $nextop;
     }
-    $curcop->write_back if $curcop;
-    return $nextop;
   }
   $curcop->write_back if $curcop;
   debug "enterloop: pushing on cxstack\n" if $debug{cxstack};
