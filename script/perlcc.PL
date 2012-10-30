@@ -53,6 +53,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
 # Version 2.13, Reini Urban, 2012-01-10 13:03:00
 # Version 2.14, Reini Urban, 2012-02-28 09:04:07
+# Version 2.15, Reini Urban, 2012-10-10 14:57:49
 
 use strict;
 use warnings;
@@ -67,7 +68,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.14;
+our $VERSION = 2.15;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -365,12 +366,12 @@ sub compile_byte {
     vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
-    my ($output_r, $error_r) = spawnit($command);
+    my ($output_r, $error_r, $errcode) = spawnit($command);
     my $elapsed = tv_interval ( $t0 ) if opt('time');
     vprint -1, "c time: $elapsed" if opt('time');
 
-    if (@$error_r && $? != 0) {
-	_die("$Input did not compile:\n@$error_r\n");
+    if (@$error_r && $errcode != 0) {
+	_die("$Input did not compile $errcode:\n@$error_r\n");
     } else {
 	my @error = grep { !/^$Input syntax OK$/o } @$error_r;
 	warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
@@ -460,13 +461,13 @@ sub compile_cstyle {
     vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
-    my ($output_r, $error_r) = spawnit($command);
+    my ($output_r, $error_r, $errcode) = spawnit($command);
     my $elapsed = tv_interval ( $t0 ) if opt('time');
     my @output = @$output_r;
     my @error = @$error_r;
 
-    if (@error && $? != 0) {
-        _die("$Input did not compile, which can't happen:\n@error\n");
+    if (@error && $errcode != 0) {
+        _die("$Input did not compile, which can't happen $errcode:\n@error\n");
     } else {
         my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
         @error = grep { !/^$i syntax OK$/o } @error;
@@ -697,12 +698,12 @@ sub yclept {
         # Filename here is perfectly sanitised.
         vprint 3, "Calling $command\n";
 
-        my ($stash_r, $error_r) = spawnit($command);
+        my ($stash_r, $error_r, $errcode) = spawnit($command);
         my @stash = @$stash_r;
         my @error = @$error_r;
 
-        if (@error && $? != 0) {
-            _die("$Input did not compile:\n@error\n");
+        if (@error && $errcode != 0) {
+            _die("$Input did not compile $errcode:\n@error\n");
         }
 
         # band-aid for modules with noisy BEGIN {}
@@ -803,28 +804,32 @@ sub check_perl {
 
 # File spawning and error collecting
 sub spawnit {
-    my ($command) = shift;
-    my (@error,@output,$errname);
+    my $command = shift;
+    my (@error,@output,$errname,$errcode);
     if (opt('dryrun')) {
         print "$command\n";;
     }
     elsif ($Options->{spawn}) {
         (undef, $errname) = tempfile("pccXXXXX");
         {
-	    open (S_OUT, "$command 2>$errname |")
+	    my $pid = open (S_OUT, "$command 2>$errname |")
 	      or _die("Couldn't spawn the compiler.\n");
+            $errcode = $?;
+            my $kid;
+            do {
+              $kid = waitpid($pid, 0);
+            } while $kid > 0;
             @output = <S_OUT>;
         }
         open (S_ERROR, $errname) or _die("Couldn't read the error file.\n");
         @error = <S_ERROR>;
         close S_ERROR;
         close S_OUT;
-        sleep(0.1); # child cleanup
         unlink $errname or _die("Can't unlink error file $errname\n");
     } else {
         @output = split /\n/, `$command`;
     }
-    return (\@output, \@error);
+    return (\@output, \@error, $errcode);
 }
 
 sub helpme {
