@@ -282,13 +282,13 @@ sub parse_argv {
     $Options->{Wb} .= ",-O3" if opt('O3');
     $Options->{Wb} .= ",-O4" if opt('O4');
 
-    if( $Options->{time} ) {
+    if( $Options->{time} or $Options->{spawn} ) {
       eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
       if ($@) {
-        warn "--time ignored. No Time::HiRes\n";
+        warn "--time ignored. No Time::HiRes\n" if $Options->{time};
         $Options->{time} = 0;
       } else {
-        Time::HiRes->import('gettimeofday','tv_interval');
+        Time::HiRes->import('gettimeofday','tv_interval','sleep');
       }
     }
     $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
