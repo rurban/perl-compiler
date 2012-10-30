@@ -45,6 +45,12 @@ sub index {
   return scalar( @{ $section->[-1]{values} } ) - 1;
 }
 
+sub elt {
+  my $section = shift;
+  return $section->[-1]{values}->[ shift ];
+}
+
+
 sub comment {
   my $section = shift;
   $section->[-1]{comment} = join( "", @_ ) if @_;
@@ -456,8 +462,8 @@ my (
   $init,      $decl,      $symsect,    $binopsect, $condopsect,
   $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
-  $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
-  $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+  $svsect,    $xpvsect,   $xpvavsect,  $xpvhvsect, $xpvcvsect,
+  $xpvivsect, $xpvuvsect, $xpvnvsect,  $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
   $padlistsect
 );

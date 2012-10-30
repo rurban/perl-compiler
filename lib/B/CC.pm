@@ -2704,7 +2704,18 @@ sub enterloop {
 
   if ($opt_unroll_loops) {
     # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
-    my ($i, $cnt, $itername, $itervar, $qualified);
+    my ($i, $cnt, $itername, $itervar, $qualified, $nextop);
+    # store all section indices to record one body->save. (do not copy decl I guess)
+    my @sections = (
+                    $init, $decl, $free, $symsect, $heksect,
+                    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
+                    $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
+                    $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
+                    $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
+                    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
+                    $padlistsect,
+                   );
+    my @section_idx = map {$_->index} @sections;
     if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
       # case 1: gv itervar on stack
       if (!$op->targ and @stack >= 3) {
@@ -2720,38 +2731,37 @@ sub enterloop {
 
         # case 2: lexical itervar (not on stack)
         $itername = B::C::padop_name($op) unless $itername;
-        # both cases
+
+        # walk and save the body for both cases
         my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
 	$iterop = $iterop->next->other;
+        write_label($iterop);
         while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
 	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
-	  # case 1
+	  # slower global case 1
 	  if ($iterop->name eq 'gvsv' and $iterop->next->name eq 'aelem') {
             my $ckname = $iterop->sv->PV;
 	    if ($ckname eq $itername) {
 	      $qualified = 1;
 	      warn "DBG: qualified enteriter gv (aka case 1 loop)\n" if $verbose;
+              # TODO change aelem to aelemfast
+              # prevop was padav, skip it and use the targ for aelemfast
 	    }
 	  }
-          # case 2
+          # faster lexical case 2
 	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
             my $ckname = B::C::padop_name($iterop);
 	    if ($ckname eq $itername) {
 	      $qualified = 1;
 	      warn "DBG: qualified enteriter lexical (aka case 2 loop)\n" if $verbose;
               $itername = $iterop->targ;
+              # TODO change aelem to aelemfast
 	    }
 	  }
+          doop($iterop);
           $iterop = $iterop->next;
         }
-      }
-      # if loop qualifies, create $cnt copies of loop body
-      if ($qualified) {
-        #$itervar ? unroll_loop_gv($op, $itername, $cnt)
-        #         : unroll_loop_padsv($op, $itername, $cnt);
-        for my $idx ($i..$cnt) {
-          ;
-        }
+        $nextop = $iterop->next if $$iterop;
       }
     }
     # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond
@@ -2764,7 +2774,35 @@ sub enterloop {
       $cnt = $op->next->next->sv->IV;
       warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name.
 	" $cnt (not yet)";
+      # ...
     }
+    # if loop qualifies, create $cnt copies of loop body
+    if ($qualified) {
+      # optimize aelem to aelemfast
+
+      # create copies
+      # check which sections changed
+      my @new_idx = map {$_->index} @sections;
+      my @changed_sections;
+      for my $i (0..$#sections) {
+        if ($new_idx[$i] > $section_idx[$i]) {
+          push @changed_sections, [$i, $section_idx[$i]+1, $new_idx[$i]];
+        }
+      }
+      for my $idx ($i..$cnt) {
+        # copy all section changes
+        for my $c (@changed_sections) {
+          my ($i, $from, $new) = @$c;
+          for my $j ($from..$new) {
+            $sections[$i]->add( $sections[$i]->elt($j) );
+            # TODO relink it
+          }
+        }
+      }
+
+    }
+    $curcop->write_back if $curcop;
+    return $nextop;
   }
   $curcop->write_back if $curcop;
   debug "enterloop: pushing on cxstack\n" if $debug{cxstack};
