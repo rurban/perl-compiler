@@ -4,6 +4,7 @@
 #      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
 #      Copyright (c) 2012 cPanel Inc
+#      Copyright (c) 2012 Will Braswell
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -113,7 +114,7 @@ The following options must be set explicitly:
 
   B<-fslow-signals>,
 
-  B<-no-autovivify>,
+  B<-fno-autovivify>,
 
   B<-fno-magic>.
 
@@ -136,6 +137,20 @@ of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
 
 Enabled with B<-O2>.
+
+=item B<-funroll-loops>
+
+Perform loop unrolling when iteration count is known.
+Changes AELEM to AELEMFAST with known indices when:
+
+* The iteration count is known at compile-time,
+
+* The maximum iteration count is lower than 256,
+
+* AELEM accesses are detected inside the loop, and the benefit of AELEMFAST outweighs
+  the cost of the unrolling.
+
+Enabled with B<-O1>.
 
 =item B<-fno-inline-ops>
 
@@ -352,8 +367,8 @@ my ( $init_name, %debug, $strict );
 # underscores here because they are OK in (strict) barewords.
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $opt_taint, $opt_omit_taint,
-     $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_autovivify, $opt_magic,
-     %c_optimise );
+     $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_aelem, $opt_autovivify,
+     $opt_magic, $opt_unroll_loops, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $opt_name_magic = 1;
 my %optimise = (
@@ -364,9 +379,11 @@ my %optimise = (
   taint                => \$opt_taint,
   slow_signals         => \$opt_slow_signals,
   name_magic           => \$opt_name_magic,
-  type_attr            => \$opt_type_attr,
+  type_attr            => \$opt_type_attr,        # -O1
   autovivify           => \$opt_autovivify,
+  aelem                => \$opt_aelem,            # -O1
   magic                => \$opt_magic,
+  unroll_loops         => \$opt_unroll_loops,     # -O1
 );
 my %async_signals = map { $_ => 1 } # 5.14 ops which do PERL_ASYNC_CHECK
   qw(wait waitpid nextstate and cond_expr unstack or subst dorassign);
@@ -407,7 +424,14 @@ my $declare_ref;     # Hash ref keyed by C variable type of declarations.
 my @pp_list;        # list of [$ppname, $runtime_list_ref, $declare_ref]
 		     # tuples to be written out.
 
-my ( $init, $decl );
+my ( $init,       $decl,      $free,      $symsect,   $heksect,
+     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
+     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
+     $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
+     $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
+     $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
+     $padlistsect,
+   );
 
 sub init_hash {
   map { $_ => 1 } @_;
@@ -1429,15 +1453,16 @@ sub pp_const {
   my $sv = $op->sv;
   my $obj;
 
-  # constant could be in the pad (under useithreads)
   if ($$sv) {
     $obj = $constobj{$$sv};
     if ( !defined($obj) ) {
       $obj = $constobj{$$sv} = B::Stackobj::Const->new($sv);
     }
   }
+  # constant could be in the pad (under useithreads)
   else {
     $obj = $pad[ $op->targ ];
+    $obj->{obj} = $sv;
   }
   push( @stack, $obj );
   return $op->next;
@@ -1673,13 +1698,13 @@ sub pp_gv {
   my $gvsym;
   if ($ITHREADS) {
     $gvsym = $pad[ $op->padix ]->as_sv;
-    #push @stack, ($pad[$op->padix]);
+    push @stack, ($pad[$op->padix]);
   }
   else {
     $gvsym = $op->gv->save;
     # XXX
-    #my $obj = new B::Stackobj::Const($op->gv);
-    #push( @stack, $obj );
+    my $obj = new B::Stackobj::Const($op->gv);
+    push( @stack, $obj );
   }
   write_back_stack();
   runtime("XPUSHs((SV*)$gvsym);");
@@ -1772,7 +1797,7 @@ sub pp_aelemfast {
 
 sub _aelem {
   my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
-  if (!$rmg and !$vifify and $ix >= 0) {
+  if (!$rmg and !$vifify and $ix >= 0 and $opt_aelem) {
     # TODO ix needs to be POPed before av
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
@@ -1781,7 +1806,7 @@ sub _aelem {
       "{ AV* av = (AV*)$av;",
       "  SV** const svp = av_fetch(av, $ix, $lval);",
       "  SV *sv = (svp ? *svp : &PL_sv_undef);",
-      (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : "",
+      (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : (),
       "  PUSHs(sv);",
       "}"
     );
@@ -2684,6 +2709,148 @@ sub enterloop {
   my $nextop = $op->nextop;
   my $lastop = $op->lastop;
   my $redoop = $op->redoop;
+
+  if ($opt_unroll_loops) {
+    # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
+    my ($i, $cnt, $itername, $itervar, $qualified, $nextop);
+
+    # get() copies of all the sections,
+    # except for $init and $decl, which are already retrieved in compile()
+    $free = B::Section->get('free');
+    $symsect = B::Section->get('sym');
+    $heksect = B::Section->get('hek');
+    $opsect = B::Section->get('op');
+    $unopsect = B::Section->get('unop');
+    $binopsect = B::Section->get('binop');
+    $logopsect = B::Section->get('logop');
+    $condopsect = B::Section->get('condop');
+    $listopsect = B::Section->get('listop');
+    $pmopsect = B::Section->get('pmop');
+    $svopsect = B::Section->get('svop');
+    $padopsect = B::Section->get('padop');
+    $pvopsect = B::Section->get('pvop');
+    $loopsect = B::Section->get('loop');
+    $copsect = B::Section->get('cop');
+    $svsect = B::Section->get('sv');
+    $xpvsect = B::Section->get('xpv');
+    $xpvavsect = B::Section->get('xpvav');
+    $xpvhvsect = B::Section->get('xpvhv');
+    $xpvcvsect = B::Section->get('xpvcv');
+    $xpvivsect = B::Section->get('xpviv');
+    $xpvuvsect = B::Section->get('xpvuv');
+    $xpvnvsect = B::Section->get('xpvnv');
+    $xpvmgsect = B::Section->get('xpvmg');
+    $xpvlvsect = B::Section->get('xpvlv');
+    $xrvsect = B::Section->get('xrv');
+    $xpvbmsect = B::Section->get('xpvbm');
+    $xpviosect = B::Section->get('xpvio');
+    $padlistsect = B::Section->get('padlist');
+
+    # store all section indices to record one body->save. (do not copy decl I guess)
+    my @sections = (
+                    $init, $decl, $free, $symsect, $heksect,
+                    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
+                    $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
+                    $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
+                    $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
+                    $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
+                    $padlistsect,
+                   );
+
+    my @section_idx = map {$_->index} @sections;
+    if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
+      # case 1: gv itervar on stack
+      if (!$op->targ and @stack >= 3) {
+	$itername = $stack[-1]->{obj}->NAME;
+	$itervar = pop_sv;
+      }
+      # both cases
+      my $constref = $ITHREADS ? 'B::Stackobj::Padsv' : 'B::Stackobj::Const';
+      if (ref $stack[-1] eq $constref and ref $stack[-2] eq $constref) {
+        $i = $stack[-2]->{iv};  # iterator value
+        $cnt = $stack[-1]->{iv};
+        warn "DBG: do -funroll-loops enteriter with $i..$cnt (not yet)" if $verbose;
+
+        # case 2: lexical itervar (not on stack)
+        $itername = B::C::padop_name($op) unless $itername;
+
+        # walk and save the body for both cases
+        my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
+	$iterop = $iterop->next->other;
+        write_label($iterop);
+      BODY:
+        while ($$iterop and $iterop->name ne 'leaveloop') {  # analyze loop body
+	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
+	  # slower global case 1
+	  if ($iterop->name eq 'gvsv' and $iterop->next->name eq 'aelem') {
+            my $ckname = $iterop->sv->PV;
+	    if ($ckname eq $itername) {
+	      $qualified = 1;
+	      warn "DBG: qualified enteriter gv (aka case 1 loop)\n" if $verbose;
+              # TODO change aelem to aelemfast
+              # prevop was padav, skip it and use the targ for aelemfast
+	    }
+	  }
+          # faster lexical case 2
+	  if ($iterop->name eq 'padsv' and $iterop->next->name eq 'aelem') {
+            my $ckname = B::C::padop_name($iterop);
+	    if ($ckname eq $itername) {
+	      $qualified = 1;
+	      warn "DBG: qualified enteriter lexical (aka case 2 loop)\n" if $verbose;
+              $itername = $iterop->targ;
+              # TODO change aelem to aelemfast
+	    }
+	  }
+          if ($iterop->name =~ /^last|next|redo$/) {
+            $qualified = 0;
+            last BODY;
+          }
+          doop($iterop);
+          $iterop = $iterop->next;
+        }
+        $nextop = $iterop->next if $$iterop;
+      }
+    }
+    # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond
+    if ($op->name eq 'enterloop' and
+        $op->next->name eq 'padsv' and
+        $op->next->next->name eq 'const' and
+        $op->next->next->next->name =~ /^[lg][te]$/) {
+      my ($stash,$i,$sv) = B::C::padop_name($op->next);
+      # $i = $pv;
+      $cnt = $op->next->next->sv->IV;
+      warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name.
+	" $cnt (not yet)";
+      # ...
+    }
+    # if loop qualifies, create $cnt copies of loop body
+    if ($qualified) {
+      # optimize aelem to aelemfast
+
+      # create copies
+      # check which sections changed
+      my @new_idx = map {$_->index} @sections;
+      my @changed_sections;
+      for my $i (0..$#sections) {
+        if ($new_idx[$i] > $section_idx[$i]) {
+          push @changed_sections, [$i, $section_idx[$i]+1, $new_idx[$i]];
+        }
+      }
+      for my $idx ($i..$cnt) {
+        # copy all section changes
+        for my $c (@changed_sections) {
+          my ($i, $from, $new) = @$c;
+          for my $j ($from..$new) {
+            $sections[$i]->add( $sections[$i]->elt($j) );
+            # TODO relink it
+          }
+        }
+      }
+
+    }
+    $curcop->write_back if $curcop;
+    return $nextop;
+  }
   $curcop->write_back if $curcop;
   debug "enterloop: pushing on cxstack\n" if $debug{cxstack};
   push(
@@ -3192,6 +3359,7 @@ sub import {
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
   $opt_taint = 1;
   $opt_magic = 1;      # only makes sense with -fno-magic
+  # $opt_aelem = 0;
   $opt_autovivify = 1; # only makes sense with -fno-autovivify
 OPTION:
   while ( $option = shift @options ) {
@@ -3263,6 +3431,7 @@ OPTION:
       }
       if ( $arg >= 1 ) {
         $opt_type_attr = 1;
+        $opt_unroll_loops = 1;
         $freetmps_each_bblock = 1 unless $freetmps_each_loop;
       }
     }

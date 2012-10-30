@@ -18,6 +18,7 @@ typedef struct magic  *B__MAGIC;
 typedef struct p5rx  *B__REGEXP;
 #endif
 typedef COP  *B__COP;
+typedef OP   *B__OP;
 
 STATIC U32 a_hash = 0;
 
@@ -172,6 +173,69 @@ CODE:
     }
 OUTPUT:
   RETVAL
+
+#      Copy the iter body cnt times by replacing aelem(i) with aelemfast(i).
+#       We could use Perl_rpeep() for that part.
+#       i (itername) is either padsv or gv
+#    
+#    b  <$> const(IV 1) s
+#    c  <$> const(IV 10) s
+#    d  <{> enteriter(next->j last->m redo->e)[$i:2,4] lKS/LVINTRO
+#    k  <0> iter s
+#    l  <|> and(other->e) vK/1
+#    e      <;> nextstate(main 3 cccode106.pl:1) v
+#    f      <0> padav[@a:1,5] sR
+#    g      <0> padsv[$i:2,4] s
+#    h      <2> aelem sKRM/2
+#    i      <1> preinc[t8] vK/1
+#    j      <0> unstack v
+#               goto k
+#    m  <2> leaveloop vK/2
+#    
+#    =>
+#    
+#    b  <$> ex-const(IV 1) s
+#    c  <$> ex-const(IV 10) s
+#    d  <{> ex-enteriter(next->j last->m redo->e)[$i:2,4] lKS/LVINTRO
+#    k  <0> ex-iter s
+#    l  <|> ex-and(other->e) vK/1
+#    e      <;> nextstate(main 3 cccode106.pl:1) v
+#    f      <0> aelemfast[@a:FAKE:] sRM * /1
+#    i      <1> preinc[t8] vK/1
+#    e      <;> nextstate(main 3 cccode106.pl:1) v
+#    f      <0> aelemfast[@a:FAKE:] sRM * /2
+#    i      <1> preinc[t8] vK/1
+#           ...
+#    j      <0> unstack v
+#               goto k
+#    m  <2> ex-leaveloop vK/2
+
+IV
+unroll_loop_padsv(op, tix, cnt)
+  B::OP	op
+  IV	tix
+  IV    cnt
+CODE:
+  {
+    PerlIO_printf(Perl_debug_log, "unroll_loop_padsv(%s, %d, %d)\n",
+		  OP_NAME(op), tix, cnt);
+  }
+OUTPUT:
+  RETVAL
+
+IV
+unroll_loop_gv(op, itername, cnt)
+  B::OP	op
+  char *itername
+  IV    cnt
+CODE:
+  {
+    PerlIO_printf(Perl_debug_log, "unroll_loop_gv(%s, %s, %d)\n",
+		  OP_NAME(op), itername, cnt);
+  }
+OUTPUT:
+  RETVAL
+
 
 MODULE = B__C	PACKAGE = B::C
 

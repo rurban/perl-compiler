@@ -45,6 +45,12 @@ sub index {
   return scalar( @{ $section->[-1]{values} } ) - 1;
 }
 
+sub elt {
+  my $section = shift;
+  return $section->[-1]{values}->[ shift ];
+}
+
+
 sub comment {
   my $section = shift;
   $section->[-1]{comment} = join( "", @_ ) if @_;
@@ -456,8 +462,8 @@ my (
   $init,      $decl,      $symsect,    $binopsect, $condopsect,
   $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
-  $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
-  $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+  $svsect,    $xpvsect,   $xpvavsect,  $xpvhvsect, $xpvcvsect,
+  $xpvivsect, $xpvuvsect, $xpvnvsect,  $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
   $padlistsect
 );
@@ -466,6 +472,7 @@ my @op_sections = \(
   $listopsect, $logopsect,  $loopsect, $opsect,
   $pmopsect,   $pvopsect,   $svopsect, $unopsect
 );
+
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
@@ -500,7 +507,7 @@ sub padop_name {
   my $cv = shift;
   if ($op->can('name')
       and ($op->name eq 'padsv' or $op->name eq 'method_named'
-	   or ref($op) eq 'B::SVOP')) #threaded
+	   or ref($op) eq 'B::SVOP' or ref($op) eq 'B::LOOP')) #threaded
   {
     return () if $cv and ref($cv->PADLIST) eq 'B::SPECIAL';
     my @c = $cv ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
@@ -512,7 +519,8 @@ sub padop_name {
     if (defined($t) and ref($t) ne 'B::SPECIAL') {
       my $pv = $sv->can("PV") ? $sv->PV : ($t->can('PVX') ? $t->PVX : '');
       # need to fix B for SVpad_TYPEDI without formal STASH
-      my $stash = (ref($t) eq 'B::PVMG' and ref($t->SvSTASH) ne 'B::SPECIAL') ? $t->SvSTASH->NAME : '';
+      my $stash = (ref($t) eq 'B::PVMG' and ref($t->SvSTASH) ne 'B::SPECIAL')
+        ? $t->SvSTASH->NAME : '';
       return wantarray ? ($stash,$pv,$sv) : $pv;
     } elsif ($sv) {
       my $pv = $sv->PV if $sv->can("PV");
@@ -3933,9 +3941,9 @@ sub B::AV::save {
     # you want to keep this out of the no_split/split
     # map("\t*svp++ = $svpcast$_;", @names),
     my $acc = '';
-    # Init optimization by Nick Koston
+    # Init optimization by Nick Koston.
     # The idea is to create loops so there is less C code. In the real world this seems
-    # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
+    # to reduce the memory usage ~3% and speed up startup time by about 8%.
     my $count;
     my @values = map { $_->save($fullname."[".$count++."]") || () } @array;
     $count = 0;
@@ -4475,7 +4483,7 @@ sub output_all {
   print "\n";
   output_declarations();
   # XXX add debug versions with ix=opindex if $debug{flags}
-  foreach $section (@sections) {
+  foreach my $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
       my $name = $section->name;
