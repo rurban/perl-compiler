@@ -2757,15 +2757,6 @@ sub enterloop {
                     $padlistsect,
                    );
 
-# WILL'S DEBUGGING
-eval 'use Data::Dumper;';
-warn "in CC.pm, have \@sections = \n" . Dumper(\@sections) . "\n\n";
-#warn "in CC.pm, have \$free = \n" . Dumper($free) . "\n\n";
-#warn "in CC.pm, have \$symsect = \n" . Dumper($symsect) . "\n\n";
-
-
-
-
     my @section_idx = map {$_->index} @sections;
     if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
       # case 1: gv itervar on stack
