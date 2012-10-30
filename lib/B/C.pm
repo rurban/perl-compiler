@@ -466,6 +466,7 @@ my @op_sections = \(
   $listopsect, $logopsect,  $loopsect, $opsect,
   $pmopsect,   $pvopsect,   $svopsect, $unopsect
 );
+
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
@@ -4453,7 +4454,7 @@ sub output_all {
   print "\n";
   output_declarations();
   # XXX add debug versions with ix=opindex if $debug{flags}
-  foreach $section (@sections) {
+  foreach my $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
       my $name = $section->name;

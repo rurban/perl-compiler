@@ -1798,7 +1798,7 @@ sub _aelem {
       "{ AV* av = (AV*)$av;",
       "  SV** const svp = av_fetch(av, $ix, $lval);",
       "  SV *sv = (svp ? *svp : &PL_sv_undef);",
-      (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : "",
+      (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : (),
       "  PUSHs(sv);",
       "}"
     );
@@ -2712,10 +2712,8 @@ sub enterloop {
 	$itervar = pop_sv;
       }
       # both cases
-      if (($ITHREADS and ref $stack[-1] eq 'B::Stackobj::Padsv'
-	             and ref $stack[-2] eq 'B::Stackobj::Padsv')
-       or (!$ITHREADS and ref $stack[-1] eq 'B::Stackobj::Const'
-	              and ref $stack[-2] eq 'B::Stackobj::Const')) {
+      my $constref = $ITHREADS ? 'B::Stackobj::Padsv' : 'B::Stackobj::Const';
+      if (ref $stack[-1] eq $constref and ref $stack[-2] eq $constref) {
         $i = $stack[-2]->{iv};  # iterator value
         $cnt = $stack[-1]->{iv};
         warn "DBG: do -funroll-loops enteriter with $i..$cnt (not yet)" if $verbose;

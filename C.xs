@@ -209,7 +209,6 @@ OUTPUT:
 #    j      <0> unstack v
 #               goto k
 #    m  <2> ex-leaveloop vK/2
-#    
 
 IV
 unroll_loop_padsv(op, tix, cnt)
