@@ -4,6 +4,7 @@
 #      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
 #      Copyright (c) 2012 cPanel Inc
+#      Copyright (c) 2012 Will Braswell
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -423,7 +424,14 @@ my $declare_ref;     # Hash ref keyed by C variable type of declarations.
 my @pp_list;        # list of [$ppname, $runtime_list_ref, $declare_ref]
 		     # tuples to be written out.
 
-my ( $init, $decl );
+my ( $init,       $decl,      $free,      $symsect,   $heksect,
+     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
+     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
+     $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
+     $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
+     $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
+     $padlistsect,
+   );
 
 sub init_hash {
   map { $_ => 1 } @_;
@@ -2705,6 +2713,39 @@ sub enterloop {
   if ($opt_unroll_loops) {
     # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
     my ($i, $cnt, $itername, $itervar, $qualified, $nextop);
+
+    # get() copies of all the sections,
+    # except for $init and $decl, which are already retrieved in compile()
+    $free = B::Section->get('free');
+    $symsect = B::Section->get('sym');
+    $heksect = B::Section->get('hek');
+    $opsect = B::Section->get('op');
+    $unopsect = B::Section->get('unop');
+    $binopsect = B::Section->get('binop');
+    $logopsect = B::Section->get('logop');
+    $condopsect = B::Section->get('condop');
+    $listopsect = B::Section->get('listop');
+    $pmopsect = B::Section->get('pmop');
+    $svopsect = B::Section->get('svop');
+    $padopsect = B::Section->get('padop');
+    $pvopsect = B::Section->get('pvop');
+    $loopsect = B::Section->get('loop');
+    $copsect = B::Section->get('cop');
+    $svsect = B::Section->get('sv');
+    $xpvsect = B::Section->get('xpv');
+    $xpvavsect = B::Section->get('xpvav');
+    $xpvhvsect = B::Section->get('xpvhv');
+    $xpvcvsect = B::Section->get('xpvcv');
+    $xpvivsect = B::Section->get('xpviv');
+    $xpvuvsect = B::Section->get('xpvuv');
+    $xpvnvsect = B::Section->get('xpvnv');
+    $xpvmgsect = B::Section->get('xpvmg');
+    $xpvlvsect = B::Section->get('xpvlv');
+    $xrvsect = B::Section->get('xrv');
+    $xpvbmsect = B::Section->get('xpvbm');
+    $xpviosect = B::Section->get('xpvio');
+    $padlistsect = B::Section->get('padlist');
+
     # store all section indices to record one body->save. (do not copy decl I guess)
     my @sections = (
                     $init, $decl, $free, $symsect, $heksect,
@@ -2715,6 +2756,16 @@ sub enterloop {
                     $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
                     $padlistsect,
                    );
+
+# WILL'S DEBUGGING
+eval 'use Data::Dumper;';
+warn "in CC.pm, have \@sections = \n" . Dumper(\@sections) . "\n\n";
+#warn "in CC.pm, have \$free = \n" . Dumper($free) . "\n\n";
+#warn "in CC.pm, have \$symsect = \n" . Dumper($symsect) . "\n\n";
+
+
+
+
     my @section_idx = map {$_->index} @sections;
     if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
       # case 1: gv itervar on stack
