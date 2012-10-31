@@ -748,12 +748,12 @@ static int bget_swab = 0;
     } STMT_END
 
 #if PERL_VERSION >= 17
-#define BSET_newpadl(padl, arg)  STMT_START {		\
+#define BSET_newpadlx(padl, arg)  STMT_START {		\
 	    padl = (SV*)Perl_pad_new(arg);		\
 	    BSET_OBJ_STOREX(padl);			\
 	} STMT_END
-#define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad;
-#define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad;
+#define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad
+#define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad
 #endif
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about

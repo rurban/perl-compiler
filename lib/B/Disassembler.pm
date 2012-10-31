@@ -318,7 +318,7 @@ sub print_insn {
       $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type ) if $comment;
       printf "\n# [%s %d]\n", $opname[$type], $ix++;
     }
-    elsif ( $insn eq 'newpadl' ) {
+    elsif ( $insn eq 'newpadlx' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
       printf "\n# [%s %d]\n", "PADLIST", $ix++;
     }
