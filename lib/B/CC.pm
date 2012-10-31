@@ -1766,7 +1766,7 @@ sub pp_aelemfast {
     $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
     # MUTABLE_AV is only needed to catch compiler const loss
     # $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
-    $av = "(AV*)$sv";
+    $av = substr($sv,0,5) eq '(AV*)' ? $sv : "(AV*)$sv";
   } else {
     my $gvsym;
     if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
@@ -1805,8 +1805,9 @@ sub _aelem {
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
+    $av = substr($av,0,5) eq '(AV*)' ? $av : "(AV*)$av";
     runtime(
-      "{ AV* av = (AV*)$av;",
+      "{ AV* av = $av;",
       "  SV** const svp = av_fetch(av, $ix, $lval);",
       "  SV *sv = (svp ? *svp : &PL_sv_undef);",
       (!$lval and $rmg) ? "  if (SvRMAGICAL(av) && SvGMAGICAL(sv)) mg_get(sv);" : (),
@@ -2833,6 +2834,7 @@ sub enterloop {
       warn "DBG: copy body. unroll loop $i\n" if $verbose;
       # optimize aelem to aelemfast
       my $iterop = $op->next->next->other;
+      my $av;
       while ($$iterop and $iterop->name ne 'unstack') {
         warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
         if ($iterop->name eq 'padav') {
@@ -2844,7 +2846,7 @@ sub enterloop {
             my @p = $c[1]->ARRAY;
             my $lex = $p[ $op->targ ];
             my $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
-            my $av = "(AV*)$sv";
+            $av = "(AV*)$sv";
             my $ix   = $i; # from
             my $lval = $iterop->flags & OPf_MOD;
             my $vifify = autovivification();
@@ -2858,7 +2860,7 @@ sub enterloop {
             my $gvav = $gv->AV;
             my $rmg  = ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
             my $gvsym = $gv->save;
-            my $av = "GvAV($gvsym)";
+            $av = "GvAV($gvsym)";
             my $ix   = $i; # from
             my $lval = $iterop->flags & OPf_MOD;
             my $vifify = autovivification();
