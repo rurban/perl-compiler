@@ -2719,6 +2719,7 @@ sub enterloop {
 
     # get() copies of all the sections,
     # except for $init and $decl, which are already retrieved in compile()
+    # store all section indices to record one body->save. do not copy decl
     $free = B::Section->get('free');
     $symsect = B::Section->get('sym');
     $heksect = B::Section->get('hek');
@@ -2748,10 +2749,7 @@ sub enterloop {
     $xpvbmsect = B::Section->get('xpvbm');
     $xpviosect = B::Section->get('xpvio');
     $padlistsect = B::Section->get('padlist');
-
-    # store all section indices to record one body->save. (do not copy decl I guess)
     my @sections = (
-#                    $init,       $decl,      $free,      $symsect,   $heksect,
                     $init,       $free,      $symsect,   $heksect,
                     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
                     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
@@ -2774,7 +2772,7 @@ sub enterloop {
         $stack[-2]->load_int if $ITHREADS;
         $cnt = $ITHREADS ? $pad[ $stack[-1]->{targ} ]->{obj}->IVX : $stack[-1]->{iv};
         $stack[-1]->load_int if $ITHREADS;
-        warn "DBG: do -funroll-loops enteriter with $i..$cnt" if $verbose;
+        warn "DBG: do -funroll-loops enteriter with $i..$cnt" if $verbose and $debug{opt};
 
         # case 2: lexical itervar (not on stack)
         $itername = B::C::padop_name($op) unless $itername;
@@ -2784,9 +2782,9 @@ sub enterloop {
 	$iterop = $iterop->next->other;
         write_label($iterop);
       BODY:
-        warn "DBG: analyze body\n" if $verbose;
+        warn "DBG: analyze body\n" if $verbose and $debug{opt};
         while ($$iterop and $iterop->name ne 'unstack') {  # analyze loop body
-	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
+	  warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose and $debug{opt};
 	  # slower global case 1
 	  if ($iterop->name eq 'gvsv' and $iterop->next->name eq 'aelem') {
             my $ckname = $iterop->sv->PV;
@@ -2800,7 +2798,7 @@ sub enterloop {
             my $ckname = B::C::padop_name($iterop);
 	    if ($ckname eq $itername) {
 	      $qualified = 1;
-	      warn "DBG: qualified enteriter lexical (aka case 2 loop)\n" if $verbose;
+	      warn "DBG: qualified enteriter lexical (aka case 2 loop)\n" if $verbose and $debug{opt};
               $itername = $iterop->targ;
 	    }
 	  }
@@ -2811,7 +2809,7 @@ sub enterloop {
           $iterop = $iterop->next;
         }
         $nextop = $iterop->next->next->next->next if $$iterop;
-        warn "DBG: nextop = ",$iterop->next->next->next->next->name,"\n" if $verbose;
+        warn "DBG: nextop = ",$iterop->next->next->next->next->name,"\n" if $verbose and $debug{opt};
       }
     }
     # for (my $i;$i<MAX;$i++) enterloop; before: init; next: 2nd cond
@@ -2823,22 +2821,22 @@ sub enterloop {
       # $i = $pv;
       $cnt = $op->next->next->sv->IV;
       warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name.
-	" $cnt (not yet)";
+	" $cnt (not yet)" and $debug{opt};
       # ...
     }
     # if loop qualifies, create $cnt copies of loop body
     if ($qualified) {
       runtime("/* unrolled-loop $i (template) */");
       my @section_idx = map {$_->index} @sections;
-      warn "DBG: copy body. unroll loop $i\n" if $verbose;
+      warn "DBG: copy body. unroll loop $i\n" if $verbose and $debug{opt};
       # optimize aelem to aelemfast
       my $iterop = $op->next->next->other;
       my $av;
       while ($$iterop and $iterop->name ne 'unstack') {
-        warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
+        warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose and $debug{opt};
         if ($iterop->name eq 'padav') {
           if ($iterop->next->name eq 'padsv' and $iterop->next->next->name eq 'aelem') {
-            warn "DBG: change padav/padsv/aelem to aelemfast\n" if $verbose;
+            warn "DBG: change padav/padsv/aelem to aelemfast\n" if $verbose and $debug{opt};
             # change padav to aelemfast, skip the rest
             my $sv = $pad[ $iterop->targ ]->as_sv;
             my @c = comppadlist->ARRAY;
@@ -2853,7 +2851,7 @@ sub enterloop {
             $iterop = $iterop->next->next;
           }
           elsif ($iterop->next->name eq 'gvsv' and $iterop->next->next->name eq 'aelem') {
-            warn "DBG: change padav/gvsv/aelem to aelemfast\n" if $verbose;
+            warn "DBG: change padav/gvsv/aelem to aelemfast\n" if $verbose and $debug{opt};
             my $gv = $op->gv;
             $gv->save;
             my $gvav = $gv->AV;
@@ -2871,7 +2869,7 @@ sub enterloop {
         }
         $iterop = $iterop->next;
       }
-      warn "DBG: check which sections changed\n" if $verbose;
+      warn "DBG: check which sections changed\n" if $verbose and $debug{opt};
       my @new_idx = map {$_->index} @sections;
       # push @new_idx, scalar @$runtime_list_ref;
       my @changed_sections;
@@ -2879,11 +2877,11 @@ sub enterloop {
         if ($new_idx[$i] > $section_idx[$i]) {
           my $name = $sections[$i]->name;
           push @changed_sections, [$i, $section_idx[$i]+1, $new_idx[$i]];
-          warn "DBG: $name $i, ",$section_idx[$i]+1,", ",$new_idx[$i],"\n" if $verbose;
+          warn "DBG: $name $i, ",$section_idx[$i]+1,", ",$new_idx[$i],"\n" if $verbose and $debug{opt};
         }
       }
       write_back_stack();
-      warn "DBG: unroll ",$i+1," .. ",$cnt+0,"\n" if $verbose;
+      warn "DBG: unroll ",$i+1," .. ",$cnt+0,"\n" if $verbose and $debug{opt};
       # temp strings for pattern matching
       my $av_assign_string = 'AV* av = ' . $av;
       my $av_fetch_string = 'av_fetch(av, ';
@@ -2893,7 +2891,7 @@ sub enterloop {
         for my $c (@changed_sections) {
           my ($j, $from, $new) = @$c;
           my $name = $sections[$j]->name;
-          warn "DBG: copy $name","sect $j $from..$new\n" if $verbose;
+          warn "DBG: copy $name","sect $j $from..$new\n" if $verbose and $debug{opt};
           for my $k ($from .. $new) {
             warn "/* unrolled-loop $idx */\n" if $debug{runtime};
             # change the aelemfast idx
@@ -2901,28 +2899,22 @@ sub enterloop {
             my $prevline = $sections[$j]->elt($k - 1);
             if ($name eq 'runtime') {
               $curline =~ s/^\s+lab_.*://sg;  # remove duplicated labels
-#              warn "DBG: have \$av = '" . $av . "'\n" if $verbose;
-#              warn "DBG: have \$sect = \n" . $sect . "\n" if $verbose;
 	      # 2-line av_fetch() case
-              if ($prevline =~ m/\Q$av_assign_string\E/ 
-               and $curline =~ m/\Q$av_fetch_string\E/) {
-#                warn "DBG: have matching \$av_assign_string = '$av_assign_string' as part of \$sect = \n$sect\n" if $verbose;
-#                warn "DBG: have MATCHING \$av_fetch_string = '$av_fetch_string' as part of \$sect2 = \n$sect2\n" if $verbose;
+              if ($prevline =~ m/\Q$av_assign_string\E/
+                  and $curline =~ m/\Q$av_fetch_string\E/) {
 		# actually update the index
                 $curline =~ s/\Q$av_fetch_string\E(\w+)(, 0\))/$av_fetch_string$idx$2/;
-                warn "DBG: changed index in new \$curline = \n$curline\n" if $verbose;
+                warn "DBG: changed av index in \"$curline\"\n" if $verbose and $debug{opt};
               }
 	      # 1-line AvARRAY() case
-#	      else { $curline =~ s/\Q$av_array_string\E\w+/$av_array_string$idx/; }
-	      elsif ( $curline =~ m/\Q$av_array_string\E/ )
-	      {
+	      elsif ( $curline =~ m/\Q$av_array_string\E/ ) {
  		$curline =~ s/\Q$av_array_string\E\w+/$av_array_string$idx/;
-                warn "DBG: changed index in new \$curline = \n$curline\n" if $verbose;
+                warn "DBG: changed AvARRAY index in \"$curline\"\n" if $verbose and $debug{opt};
 	      }
             }
             $sections[$j]->add( $curline );
-            # write_back_stack();
-            # TODO relink it
+            # TODO relink it if required (sv <=> xpv*, op => sv)
+            # XXX possibly scope it if new lexicals are introduced
           }
         }
       }
@@ -3565,6 +3557,9 @@ OPTION:
         }
         elsif ( $arg eq "b" ) {
           $debug{bblock}++;
+        }
+        elsif ( $arg eq "1" ) {
+          $debug{opt}++;
         }
         elsif ( $arg eq "F" and eval "require B::Flags;" ) {
           $debug{flags}++;
