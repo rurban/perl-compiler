@@ -232,7 +232,7 @@ sub B::SV::ix {
     nice '[' . class($sv) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
     my $type = $sv->FLAGS & 0xff; # SVTYPEMASK
-    asm "newsvx", $sv->FLAGS, 
+    asm "newsvx", $sv->FLAGS,
      $debug{Comment} ? sprintf("type=%d,flags=0x%x,%s", $type, $sv->FLAGS,sv_flags($sv)) : '';
     asm "stsv", $tix if $PERL56;
     $svtab{$$sv} = $varix = $ix = $tix++;
@@ -248,7 +248,7 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "padl_new";
+    asm "newpadl", 0;
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
@@ -647,6 +647,15 @@ sub B::FM::bsave {
   asm "xfm_lines", $form->LINES;
 }
 
+sub B::PAD::bsave {
+  my ( $av, $ix ) = @_;
+  my @array = $av->ARRAY;
+  $_ = $_->ix for @array; # save the elements
+  $av->B::NULL::bsave($ix);
+  asm "av_extend", scalar @array if @array;
+  asm "av_pushx", $_ for @array;
+}
+
 sub B::AV::bsave {
   my ( $av, $ix ) = @_;
   if (!$PERL56 and $av->MAGICAL) {
@@ -677,29 +686,29 @@ sub B::AV::bsave {
     asm "sv_flags", $av->FLAGS if $av->FLAGS & SVf_READONLY; # restore flags
   } else {
     #$av->domagic($ix) if $av->MAGICAL; # XXX need tests for magic arrays
-    # check for 5.17.5 PADLIST
-    asm "av_extend", $av->MAX if $av->MAX >= 0 and ref($av) ne 'B::PAD';
+    asm "av_extend", $av->MAX if $av->MAX >= 0;
     asm "av_pushx", $_ for @array;
     if ( !$PERL510 ) {        # VERSION < 5.009
       asm "xav_flags", $av->AvFLAGS, ashex($av->AvFLAGS);
     }
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
-  asm "sv_refcnt", $av->REFCNT unless ref($av) eq 'B::PAD';
-  asm "xmg_stash", $stashix unless ref($av) eq 'B::PAD';
+  asm "sv_refcnt", $av->REFCNT;
+  asm "xmg_stash", $stashix;
 }
 
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
-  for (@array) {
-    bless $_, 'B::PAD'; # skip av_extend
-    $_ = $_->ix; # hack. call ->ix methods to save the pad array elements
-  }
+  bless $array[0], 'B::PAD';
+  bless $array[1], 'B::PAD';
+  my $ix0 = $array[0]->ix; # comppad_name
+  my $ix1 = $array[1]->ix; # comppad syms
+
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padl_name", $array[0]; # comppad_name
-  asm "padl_set",  $array[1]; # comppad
+  asm "padl_name", $ix0;
+  asm "padl_sym",  $ix1;
 }
 
 sub B::GV::desired {

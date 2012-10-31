@@ -715,9 +715,7 @@ static int bget_swab = 0;
 #endif
 
 /* old reading new + new reading old */
-#define BSET_op_pmflags(r, arg)	STMT_START {		\
-	r = arg;					\
-	} STMT_END
+#define BSET_op_pmflags(r, arg)		r = arg
 
 /* restore dups for stdin, stdout and stderr */
 #define BSET_xio_ifp(sv,fd)						\
@@ -733,7 +731,7 @@ static int bget_swab = 0;
 
 #if PERL_VERSION >= 17
 #define BSET_newpadlx(padl, arg)  STMT_START {		\
-	    padl = (SV*)pad_new(arg);		\
+	    padl = (SV*)pad_new(arg);			\
 	    BSET_OBJ_STOREX(padl);			\
 	} STMT_END
 #define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad
