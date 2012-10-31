@@ -2772,10 +2772,9 @@ sub enterloop {
         $stack[-2]->load_int if $ITHREADS;
         $cnt = $ITHREADS ? $pad[ $stack[-1]->{targ} ]->{obj}->IVX : $stack[-1]->{iv};
         $stack[-1]->load_int if $ITHREADS;
-        warn "DBG: do -funroll-loops enteriter with $i..$cnt" if $verbose and $debug{opt};
-
         # case 2: lexical itervar (not on stack)
         $itername = B::C::padop_name($op) unless $itername;
+        warn "check -funroll-loops $itername with $i..$cnt\n" if $verbose;
 
         # walk and save the body for both cases
         my $iterop = $op->next;  # skip enteriter, iter, and leaveloop
@@ -2790,7 +2789,7 @@ sub enterloop {
             my $ckname = $iterop->sv->PV;
 	    if ($ckname eq $itername) {
 	      $qualified = 1;
-	      warn "DBG: qualified enteriter gv (aka case 1 loop)\n" if $verbose;
+	      warn "DBG: qualified enteriter gv (aka case 1 loop)\n" if $verbose and $debug{opt};
 	    }
 	  }
           # faster lexical case 2
@@ -2821,14 +2820,14 @@ sub enterloop {
       # $i = $pv;
       $cnt = $op->next->next->sv->IV;
       warn "do -funroll-loops enterloop with $i ".$op->next->next->next->name.
-	" $cnt (not yet)" and $debug{opt};
+	" $cnt (not yet)";
       # ...
     }
     # if loop qualifies, create $cnt copies of loop body
     if ($qualified) {
       runtime("/* unrolled-loop $i (template) */");
       my @section_idx = map {$_->index} @sections;
-      warn "DBG: copy body. unroll loop $i\n" if $verbose and $debug{opt};
+      warn "do -funroll-loops $itername with $i..$cnt\n" if $verbose;
       # optimize aelem to aelemfast
       my $iterop = $op->next->next->other;
       my $av;

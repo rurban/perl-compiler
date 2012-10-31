@@ -39,7 +39,7 @@ if [ -z "$Mblib" ]; then
 else
     OCMD="$PERL $Mblib -MO=C,${v513}-DspmF,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
-        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSqlm,-v,"
+        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSqlm1,-v,"
     fi
 fi
 CONT=
