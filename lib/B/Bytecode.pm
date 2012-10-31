@@ -652,6 +652,7 @@ sub B::PAD::bsave {
   my @array = $av->ARRAY;
   $_ = $_->ix for @array; # save the elements
   $av->B::NULL::bsave($ix);
+  # av_extend always allocs 3
   asm "av_extend", scalar @array if @array;
   asm "av_pushx", $_ for @array;
 }

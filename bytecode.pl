@@ -42,7 +42,7 @@ my $c_header = <<"EOT";
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2008,2009,2010,2011 Reini Urban
+ *      Copyright (c) 2008,2009,2010,2011,2012 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
  *      License or the Artistic License, as specified in the README file.
@@ -465,7 +465,7 @@ EOT
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, $printarg%s));\n",
 	  $argfmt, ($argtype =~ /index$/ ? ', (int)ix' : '');
 	if ($insn eq 'newopx' or $insn eq 'newop') {
-	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s]\\n\", PL_op_name[arg>>7]));\n";
+	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s %d]\\n\", PL_op_name[arg>>7], bstate->bs_ix));\n";
 	}
 	if ($fundtype eq 'PV') {
 	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
@@ -482,9 +482,14 @@ EOT
 	print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
 	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
 	my $optargcast = $optarg eq ", arg" ? ", $printarg" : '';
+	$optargcast .= ($insn =~ /x$/ and $optarg eq ", arg" ? ", bstate->bs_ix-1" : '');
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
-	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ", ".($argtype =~ /index$/ ? '0x%'.$UVxf : $argfmt))
+	    ? ($fundtype =~ /(strconst|pvcontents)/
+	       ? ($insn =~ /x$/ ? ', \"%s\" ix:%d' : ', \"%s\"')
+	       : (", " .($argtype =~ /index$/ ? '0x%'.$UVxf : $argfmt)
+	               .($insn =~ /x$/ ? ' ix:%d' : ''))
+	    )
 	      : '';
     } elsif ($flags =~ /s/) {
 	# Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
