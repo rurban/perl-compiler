@@ -2774,7 +2774,7 @@ sub enterloop {
         $stack[-2]->load_int if $ITHREADS;
         $cnt = $ITHREADS ? $pad[ $stack[-1]->{targ} ]->{obj}->IVX : $stack[-1]->{iv};
         $stack[-1]->load_int if $ITHREADS;
-        warn "DBG: do -funroll-loops enteriter with $i..$cnt (not yet)" if $verbose;
+        warn "DBG: do -funroll-loops enteriter with $i..$cnt" if $verbose;
 
         # case 2: lexical itervar (not on stack)
         $itername = B::C::padop_name($op) unless $itername;
