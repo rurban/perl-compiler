@@ -230,21 +230,22 @@ sub B::Stackobj::Padsv::new {
   my ( $class, $type, $extra_flags, $ix, $iname, $dname ) = @_;
   $extra_flags |= SAVE_INT    if $extra_flags & VALID_INT;
   $extra_flags |= SAVE_DOUBLE if $extra_flags & VALID_DOUBLE;
+  my @c = B::comppadlist->ARRAY;
+  my @p = $c[1]->ARRAY;
   bless {
     type  => $type,
     flags => VALID_SV | $extra_flags,
     targ  => $ix,
     sv    => "PL_curpad[$ix]",
     iv    => "$iname",
-    nv    => "$dname"
+    nv    => "$dname",
+    obj   => $p[ $ix ]
   }, $class;
 }
 
 sub B::Stackobj::Padsv::as_obj {
   my $obj = shift;
-  my @c = comppadlist->ARRAY;
-  my @p = $c[1]->ARRAY;
-  return $p[ $obj->{targ} ];
+  return $obj->{obj};
 }
 
 sub B::Stackobj::Padsv::load_int {

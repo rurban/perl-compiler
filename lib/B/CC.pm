@@ -418,19 +418,18 @@ if ($PERL510) {
 # Could rewrite push_runtime() and output_runtime() to use a
 # temporary file if memory is at a premium.
 my $ppname;    	     # name of current fake PP function
-my $runtime_list_ref;
 my $declare_ref;     # Hash ref keyed by C variable type of declarations.
 
 my @pp_list;        # list of [$ppname, $runtime_list_ref, $declare_ref]
 		     # tuples to be written out.
-
+# our copies of the sections (stored in a B::Section hash)
 my ( $init,       $decl,      $free,      $symsect,   $heksect,
      $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
      $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
      $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
      $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
      $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
-     $padlistsect,
+     $padlistsect, $runtime
    );
 
 sub init_hash {
@@ -486,11 +485,13 @@ sub declare {
 }
 
 sub push_runtime {
-  push( @$runtime_list_ref, @_ );
+  $runtime->add(@_);
+  # push( @$runtime_list_ref, @_ );
   warn join( "\n", @_ ) . "\n" if $debug{runtime};
 }
 
 sub save_runtime {
+  my $runtime_list_ref = $runtime->[-1]{values};
   push( @pp_list, [ $ppname, $runtime_list_ref, $declare_ref ] );
 }
 
@@ -648,13 +649,13 @@ PP(pp_aelem_nolval)
 ' if 0;
 
   foreach $ppdata (@pp_list) {
-    my ( $name, $runtime, $declare ) = @$ppdata;
+    my ( $name, $rt, $declare ) = @$ppdata;
     print "\nstatic\nCCPP($name)\n{\n";
     my ( $type, $varlist, $line );
     while ( ( $type, $varlist ) = each %$declare ) {
       print "\t$type ", join( ", ", @$varlist ), ";\n";
     }
-    foreach $line (@$runtime) {
+    foreach $line (@$rt) {
       print $line, "\n";
     }
     print "}\n";
@@ -670,7 +671,6 @@ sub runtime {
 
 sub init_pp {
   $ppname           = shift;
-  $runtime_list_ref = [];
   $declare_ref      = {};
   runtime("dSP;");
   declare( "I32", "oldsave" );
@@ -1462,7 +1462,7 @@ sub pp_const {
   # constant could be in the pad (under useithreads)
   else {
     $obj = $pad[ $op->targ ];
-    $obj->{obj} = $sv;
+    $obj->{obj} = $sv unless $obj->{obj};
   }
   push( @stack, $obj );
   return $op->next;
@@ -2754,10 +2754,9 @@ sub enterloop {
                     $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
                     $xpvhvsect,  $xpvcvsect, $xpvivsect, $xpvuvsect, $xpvnvsect,
                     $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
-                    $padlistsect,
+                    $padlistsect, $runtime
                    );
 
-    my @section_idx = map {$_->index} @sections;
     if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
       # case 1: gv itervar on stack
       if (!$op->targ and @stack >= 3) {
@@ -2767,8 +2766,10 @@ sub enterloop {
       # both cases
       my $constref = $ITHREADS ? 'B::Stackobj::Padsv' : 'B::Stackobj::Const';
       if (ref $stack[-1] eq $constref and ref $stack[-2] eq $constref) {
-        $i = $stack[-2]->{iv};  # iterator value
-        $cnt = $stack[-1]->{iv};
+        $i = $ITHREADS ? $pad[ $stack[-2]->{targ} ]->{obj}->IVX : $stack[-2]->{iv};  # iterator value
+        $stack[-2]->load_int if $ITHREADS;
+        $cnt = $ITHREADS ? $pad[ $stack[-1]->{targ} ]->{obj}->IVX : $stack[-1]->{iv};
+        $stack[-1]->load_int if $ITHREADS;
         warn "DBG: do -funroll-loops enteriter with $i..$cnt (not yet)" if $verbose;
 
         # case 2: lexical itervar (not on stack)
@@ -2823,10 +2824,11 @@ sub enterloop {
     }
     # if loop qualifies, create $cnt copies of loop body
     if ($qualified) {
-      warn "DBG: copy body\n" if $verbose;
+      runtime("/* unrolled-loop $i (template) */");
+      my @section_idx = map {$_->index} @sections;
+      warn "DBG: copy body. unroll loop $i\n" if $verbose;
       # optimize aelem to aelemfast
       my $iterop = $op->next->next->other;
-      runtime("/* unrolled-loop $i (template) */");
       while ($$iterop and $iterop->name ne 'unstack') {
         warn "DBG: have \$iterop=" . $iterop->name . " with $itername\n" if $verbose;
         if ($iterop->name eq 'padav') {
@@ -2866,6 +2868,7 @@ sub enterloop {
       }
       warn "DBG: check which sections changed\n" if $verbose;
       my @new_idx = map {$_->index} @sections;
+      # push @new_idx, scalar @$runtime_list_ref;
       my @changed_sections;
       for my $i (0..$#sections) {
         if ($new_idx[$i] > $section_idx[$i]) {
@@ -2874,6 +2877,8 @@ sub enterloop {
           warn "DBG: $name $i, ",$section_idx[$i]+1,", ",$new_idx[$i],"\n" if $verbose;
         }
       }
+      write_back_stack();
+      warn "DBG: unroll ",$i+1," .. ",$cnt+0,"\n" if $verbose;
       for my $idx ($i+1 .. $cnt) {
         # copy all section changes
         for my $c (@changed_sections) {
@@ -2881,10 +2886,14 @@ sub enterloop {
           my $name = $sections[$i]->name;
           warn "DBG: copy $name","sect $i $from..$new\n" if $verbose;
           for my $j ($from .. $new) {
-            runtime("/* unrolled-loop $idx */");
+            warn "/* unrolled-loop $idx */\n" if $debug{runtime};
             # TODO change the aelemfast idx
-            $sections[$i]->add( $sections[$i]->elt($j) );
-            write_back_stack();
+            my $sect = $sections[$i]->elt($j);
+            if ($name eq 'runtime') {
+              $sect =~ s/^\s+lab_.*://sg;
+            }
+            $sections[$i]->add( $sect );
+            # write_back_stack();
             # TODO relink it
           }
         }
@@ -3283,7 +3292,9 @@ sub cc_obj {
 
 sub cc_main {
   my @comppadlist = comppadlist->ARRAY;
+  runtime ("/* curpad_names */");
   my $curpad_nam  = $comppadlist[0]->save;
+  runtime ("/* curpad_syms */");
   my $curpad_sym  = $comppadlist[1]->save;
   my $init_av     = init_av->save;
   my $start = cc_recurse( "pp_main", main_root, main_start, @comppadlist );
@@ -3595,6 +3606,7 @@ sub compile {
   @options = import(@options);
 
   init_sections();
+  $runtime = new B::C::Section 'runtime', {}, 0;
   $init = B::Section->get("init");
   $decl = B::Section->get("decl");
 
