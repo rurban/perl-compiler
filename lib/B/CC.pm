@@ -2748,7 +2748,8 @@ sub enterloop {
 
     # store all section indices to record one body->save. (do not copy decl I guess)
     my @sections = (
-                    $init, $decl, $free, $symsect, $heksect,
+#                    $init,       $decl,      $free,      $symsect,   $heksect,
+                    $init,       $free,      $symsect,   $heksect,
                     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
                     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
                     $loopsect,   $copsect,   $svsect,    $xpvsect,   $xpvavsect,
@@ -2882,17 +2883,18 @@ sub enterloop {
       for my $idx ($i+1 .. $cnt) {
         # copy all section changes
         for my $c (@changed_sections) {
-          my ($i, $from, $new) = @$c;
-          my $name = $sections[$i]->name;
-          warn "DBG: copy $name","sect $i $from..$new\n" if $verbose;
-          for my $j ($from .. $new) {
+          my ($j, $from, $new) = @$c;
+          my $name = $sections[$j]->name;
+          warn "DBG: copy $name","sect $j $from..$new\n" if $verbose;
+          for my $k ($from .. $new) {
             warn "/* unrolled-loop $idx */\n" if $debug{runtime};
             # TODO change the aelemfast idx
-            my $sect = $sections[$i]->elt($j);
+            my $sect = $sections[$j]->elt($k);
             if ($name eq 'runtime') {
               $sect =~ s/^\s+lab_.*://sg;
+              $sect =~ s/^\s+av_fetch(//sg;
             }
-            $sections[$i]->add( $sect );
+            $sections[$j]->add( $sect );
             # write_back_stack();
             # TODO relink it
           }
