@@ -462,7 +462,7 @@ EOT
 	} else {
 	    printf BYTERUN_C "\t\tBGET_%s(arg);\n", $fundtype;
 	}
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, $printarg%s));\n",
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\",\n\t\t\t\tinsn, $printarg%s));\n",
 	  $argfmt, ($argtype =~ /index$/ ? ', (int)ix' : '');
 	if ($insn eq 'newopx' or $insn eq 'newop') {
 	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s %d]\\n\", PL_op_name[arg>>7], bstate->bs_ix));\n";
@@ -481,7 +481,7 @@ EOT
 	# Special setter method named after insn
 	print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
 	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
-	my $optargcast = $optarg eq ", arg" ? ", $printarg" : '';
+	my $optargcast = $optarg eq ", arg" ? ",\n\t\t\t\t$printarg" : '';
 	$optargcast .= ($insn =~ /x$/ and $optarg eq ", arg" ? ", bstate->bs_ix-1" : '');
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
