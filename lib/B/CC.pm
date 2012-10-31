@@ -1766,7 +1766,7 @@ sub pp_aelemfast {
     $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
     # MUTABLE_AV is only needed to catch compiler const loss
     # $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
-    $av = substr($sv,0,5) eq '(AV*)' ? $sv : "(AV*)$sv";
+    $av = substr($sv,0,5) eq '(AV*)' ? $sv : "(AV*)$sv";  # remove double casting
   } else {
     my $gvsym;
     if ($ITHREADS) { #padop XXX if it's only a OP, no PADOP? t/CORE/op/ref.t test 36
@@ -1805,7 +1805,6 @@ sub _aelem {
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
-    $av = substr($av,0,5) eq '(AV*)' ? $av : "(AV*)$av";
     runtime(
       "{ AV* av = $av;",
       "  SV** const svp = av_fetch(av, $ix, $lval);",
@@ -2846,7 +2845,7 @@ sub enterloop {
             my @p = $c[1]->ARRAY;
             my $lex = $p[ $op->targ ];
             my $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
-            $av = "(AV*)$sv";
+            $av = substr($sv,0,5) eq '(AV*)' ? $sv : "(AV*)$sv";  # remove double casting
             my $ix   = $i; # from
             my $lval = $iterop->flags & OPf_MOD;
             my $vifify = autovivification();
@@ -2896,7 +2895,7 @@ sub enterloop {
             # TODO change the aelemfast idx
             my $sect = $sections[$j]->elt($k);
             if ($name eq 'runtime') {
-              $sect =~ s/^\s+lab_.*://sg;
+              $sect =~ s/^\s+lab_.*://sg;  # remove duplicated labels
               $sect =~ s/^\s+av_fetch(//sg;
             }
             $sections[$j]->add( $sect );
