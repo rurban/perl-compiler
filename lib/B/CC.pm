@@ -672,6 +672,9 @@ sub runtime {
 sub init_pp {
   $ppname           = shift;
   $declare_ref      = {};
+  if ($runtime) {
+    $runtime->[-1]{values} = $runtime->[-1]{dbg} = [];
+  }
   runtime("dSP;");
   declare( "I32", "oldsave" );
   map { declare( "SV", "*$_" ) } qw(sv src dst left right);
