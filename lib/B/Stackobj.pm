@@ -411,7 +411,7 @@ sub B::Stackobj::Aelem::new {
   my $sv;
   # pop ix before av
   if ($av eq 'POPs' and $ix eq 'POPi') {
-    $sv = "({ oldsave = SvIVX(POPs); AvARRAY(POPs)[oldsave]; })";
+    $sv = "({ ix = POPi; AvARRAY(POPs)[ix]; })";
   } else {
     $sv = "AvARRAY($av)[$ix]";
   }
