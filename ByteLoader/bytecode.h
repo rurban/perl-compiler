@@ -733,9 +733,7 @@ static int bget_swab = 0;
 #endif
 
 /* old reading new + new reading old */
-#define BSET_op_pmflags(r, arg)	STMT_START {		\
-	r = arg;					\
-	} STMT_END
+#define BSET_op_pmflags(r, arg)		r = arg
 
 /* restore dups for stdin, stdout and stderr */
 #define BSET_xio_ifp(sv,fd)						\
@@ -750,12 +748,13 @@ static int bget_swab = 0;
     } STMT_END
 
 #if PERL_VERSION >= 17
-#define BSET_padl_new(padlist)						\
-    STMT_START {							\
-      bstate->bs_sv = (SV*)Perl_pad_new(0);				\
-    } STMT_END
+#define BSET_newpadl(padl, arg)  STMT_START {		\
+	    padl = (SV*)Perl_pad_new(arg);		\
+	    BSET_OBJ_STOREX(padl);			\
+	} STMT_END
+#define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad;
+#define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad;
 #endif
-
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
