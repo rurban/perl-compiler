@@ -2884,6 +2884,10 @@ sub enterloop {
       }
       write_back_stack();
       warn "DBG: unroll ",$i+1," .. ",$cnt+0,"\n" if $verbose;
+      # temp strings for pattern matching
+      my $av_assign_string = 'AV* av = ' . $av;
+      my $av_fetch_string = 'av_fetch(av, ';
+      my $av_array_string = 'AvARRAY(' . $av . ')[';
       for my $idx ($i+1 .. $cnt) {
         # copy all section changes
         for my $c (@changed_sections) {
@@ -2892,13 +2896,31 @@ sub enterloop {
           warn "DBG: copy $name","sect $j $from..$new\n" if $verbose;
           for my $k ($from .. $new) {
             warn "/* unrolled-loop $idx */\n" if $debug{runtime};
-            # TODO change the aelemfast idx
-            my $sect = $sections[$j]->elt($k);
+            # change the aelemfast idx
+            my $curline = $sections[$j]->elt($k);
+            my $prevline = $sections[$j]->elt($k - 1);
             if ($name eq 'runtime') {
-              $sect =~ s/^\s+lab_.*://sg;  # remove duplicated labels
-              $sect =~ s/^\s+av_fetch(//sg;
+              $curline =~ s/^\s+lab_.*://sg;  # remove duplicated labels
+#              warn "DBG: have \$av = '" . $av . "'\n" if $verbose;
+#              warn "DBG: have \$sect = \n" . $sect . "\n" if $verbose;
+	      # 2-line av_fetch() case
+              if ($prevline =~ m/\Q$av_assign_string\E/ 
+               and $curline =~ m/\Q$av_fetch_string\E/) {
+#                warn "DBG: have matching \$av_assign_string = '$av_assign_string' as part of \$sect = \n$sect\n" if $verbose;
+#                warn "DBG: have MATCHING \$av_fetch_string = '$av_fetch_string' as part of \$sect2 = \n$sect2\n" if $verbose;
+		# actually update the index
+                $curline =~ s/\Q$av_fetch_string\E(\w+)(, 0\))/$av_fetch_string$idx$2/;
+                warn "DBG: changed index in new \$curline = \n$curline\n" if $verbose;
+              }
+	      # 1-line AvARRAY() case
+#	      else { $curline =~ s/\Q$av_array_string\E\w+/$av_array_string$idx/; }
+	      elsif ( $curline =~ m/\Q$av_array_string\E/ )
+	      {
+ 		$curline =~ s/\Q$av_array_string\E\w+/$av_array_string$idx/;
+                warn "DBG: changed index in new \$curline = \n$curline\n" if $verbose;
+	      }
             }
-            $sections[$j]->add( $sect );
+            $sections[$j]->add( $curline );
             # write_back_stack();
             # TODO relink it
           }
