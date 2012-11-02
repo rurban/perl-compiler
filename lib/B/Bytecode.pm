@@ -216,6 +216,7 @@ sub B::OP::ix {
 sub B::SPECIAL::ix {
   my $spec = shift;
   my $ix   = $spectab{$$spec};
+  # ix=0: Nullsv
   defined($ix) ? $ix : do {
     B::Assembler::maxsvix($tix) if $debug{A};
     nice "[SPECIAL $tix]";
@@ -658,6 +659,7 @@ sub B::PAD::bsave {
   $_ = $_->ix for @array; # save the elements
   if ($debug{P}) {
     warn "  ix $ix: ",join(" ",@array),"\n";
+    # ix=0: Nullsv
   }
   $av->B::NULL::bsave($ix);
   # av_extend always allocs 3
