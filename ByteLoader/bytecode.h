@@ -125,14 +125,14 @@ static int bget_swab = 0;
 #define BGET_PV(arg)	STMT_START {					\
 	BGET_U32(arg);							\
 	if (arg) {							\
-	    New(666, bstate->bs_pv.xpv_pv, (U32)arg, char);		\
-	    bl_read(bstate->bs_fdata, bstate->bs_pv.xpv_pv, (U32)arg, 1); \
-	    bstate->bs_pv.xpv_len = (U32)arg;				\
-	    bstate->bs_pv.xpv_cur = (U32)arg - 1;			\
+	    New(666, bstate->bs_pv.pv, (U32)arg, char);		\
+	    bl_read(bstate->bs_fdata, bstate->bs_pv.pv, (U32)arg, 1); \
+	    bstate->bs_pv.len = (U32)arg;				\
+	    bstate->bs_pv.cur = (U32)arg - 1;			\
 	} else {							\
-	    bstate->bs_pv.xpv_pv = 0;					\
-	    bstate->bs_pv.xpv_len = 0;					\
-	    bstate->bs_pv.xpv_cur = 0;					\
+	    bstate->bs_pv.pv = 0;					\
+	    bstate->bs_pv.len = 0;					\
+	    bstate->bs_pv.cur = 0;					\
 	}								\
     } STMT_END
 
@@ -161,7 +161,7 @@ static int bget_swab = 0;
 	arg = (char *) ary;				\
     } while (0)
 
-#define BGET_pvcontents(arg)	arg = bstate->bs_pv.xpv_pv
+#define BGET_pvcontents(arg)	arg = bstate->bs_pv.pv
 /* read until \0. optionally limit the max stringsize for buffer overflow attempts */
 #define BGET_strconst(arg, maxsize) STMT_START {	\
 	char *end = NULL; 				\
@@ -234,7 +234,7 @@ static int bget_swab = 0;
     } STMT_END
 #define BSET_gv_fetchpvn_flags(sv, arg) STMT_START {	 \
         int flags = (arg & 0xff80) >> 7; int type = arg & 0x7f; \
-	sv = (SV*)gv_fetchpv(savepv(bstate->bs_pv.xpv_pv), flags, type); \
+	sv = (SV*)gv_fetchpv(savepv(bstate->bs_pv.pv), flags, type); \
 	BSET_OBJ_STOREX(sv);				 \
     } STMT_END
 
@@ -246,7 +246,7 @@ static int bget_swab = 0;
 
 #define BSET_sv_magic(sv, arg)	sv_magic(sv, Nullsv, arg, 0, 0)
 /* mg_name was previously called mg_pv. we keep the new name and the old index */
-#define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.xpv_cur
+#define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.cur
 #define BSET_mg_namex(mg, arg)			\
 	(mg->mg_ptr = (char*)SvREFCNT_inc((SV*)arg),	\
 	 mg->mg_len = HEf_SVKEY)
@@ -254,16 +254,16 @@ static int bget_swab = 0;
 #define BSET_sv_upgrade(sv, arg)	(void)SvUPGRADE(sv, arg)
 #define BSET_xrv(sv, arg) SvRV_set(sv, arg)
 #define BSET_xpv(sv)	do {	\
-	SvPV_set(sv, bstate->bs_pv.xpv_pv);	\
-	SvCUR_set(sv, bstate->bs_pv.xpv_cur);	\
-	SvLEN_set(sv, bstate->bs_pv.xpv_len);	\
+	SvPV_set(sv, bstate->bs_pv.pv);	\
+	SvCUR_set(sv, bstate->bs_pv.cur);	\
+	SvLEN_set(sv, bstate->bs_pv.len);	\
     } while (0)
 #if PERL_VERSION > 8
 #define BSET_xpvshared(sv)	do {					\
         U32 hash;							\
-        PERL_HASH(hash, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur);	\
-        SvPV_set(sv, HEK_KEY(share_hek(bstate->bs_pv.xpv_pv,bstate->bs_pv.xpv_cur,hash))); \
-	SvCUR_set(sv, bstate->bs_pv.xpv_cur);				\
+        PERL_HASH(hash, bstate->bs_pv.pv, bstate->bs_pv.cur);	\
+        SvPV_set(sv, HEK_KEY(share_hek(bstate->bs_pv.pv,bstate->bs_pv.cur,hash))); \
+	SvCUR_set(sv, bstate->bs_pv.cur);				\
 	SvLEN_set(sv, 0);						\
     } while (0)
 #else
@@ -279,8 +279,8 @@ static int bget_swab = 0;
 #define BSET_av_push(sv, arg)	av_push((AV*)sv, arg)
 #define BSET_av_pushx(sv, arg)	(AvARRAY(sv)[++AvFILLp(sv)] = arg)
 #define BSET_hv_store(sv, arg)	\
-	hv_store((HV*)sv, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur, arg, 0)
-#define BSET_pv_free(pv)	Safefree(pv.xpv_pv)
+	hv_store((HV*)sv, bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0)
+#define BSET_pv_free(sv)	Safefree(sv.pv)
 
 /* ignore backref and refcount checks */
 #if PERL_VERSION > 13 || defined(CvGV_set)
@@ -349,7 +349,7 @@ static int bget_swab = 0;
     STMT_START {                                \
         SV* repointer;                          \
 	REGEXP* rx = arg                                                \
-	    ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)) \
+	    ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.cur, cPMOPx(o)) \
 	    : Null(REGEXP*);                                            \
         if(av_len((AV*)PL_regex_pad[0]) > -1) {                         \
             repointer = av_pop((AV*)PL_regex_pad[0]);                   \
@@ -373,7 +373,7 @@ static int bget_swab = 0;
 #define BSET_pregcomp(o, arg) \
     STMT_START {                        \
 	(((PMOP*)o)->op_pmregexp = (arg \
-            ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, cPMOPx(o)) \
+            ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.cur, cPMOPx(o)) \
             : Null(REGEXP*)));          \
     } STMT_END
 #endif
@@ -392,7 +392,7 @@ static int bget_swab = 0;
 #if PERL_VERSION < 8
 #define BSET_pregcomp(o, arg)	    \
     ((PMOP*)o)->op_pmregexp = arg   \
-        ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.xpv_cur, ((PMOP*)o)) : 0
+        ? CALLREGCOMP(aTHX_ arg, arg + bstate->bs_pv.cur, ((PMOP*)o)) : 0
 #endif
 
 
