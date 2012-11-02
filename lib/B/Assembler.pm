@@ -425,7 +425,7 @@ sub asm ($;$$) {
   if ( defined $_[1] ) {
     return
       if $_[1] eq "0"
-        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|newpadlx|av_pushx?|av_extend|xav_flags)$/;
+        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|newpadlx|av_extend|xav_flags)$/;
     return if $_[1] eq "1" and $]>5.007 and $_[0] =~ /^(?:sv_refcnt)$/;
   }
   my ( $insn, $arg, $comment ) = @_;

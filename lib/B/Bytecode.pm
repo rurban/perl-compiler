@@ -632,9 +632,10 @@ sub B::CV::bsave {
   asm "xcv_outside",     $outsideix;
   asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
   asm "xcv_depth",       $cv->DEPTH;
-  # add the RC flag if there's no backref magic. eg END (48)
+  # 5.13-5.17.5 add the RC flag if there's no backref magic. eg END (48)
   my $cvflags = $cv->CvFLAGS;
-  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
+  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC and $] < 5.017005;
+  $cvflags &= ~0x400 if $] >= 5.017005; # but delete RC flag from closures as we create them afresh
   asm "xcv_flags",       $cvflags;
   asm "xcv_gv",          $gvix;
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
@@ -650,10 +651,18 @@ sub B::FM::bsave {
 sub B::PAD::bsave {
   my ( $av, $ix ) = @_;
   my @array = $av->ARRAY;
+  if ($debug{P}) {
+    warn ("PAD $ix: ",scalar @array,"\n");
+    warn "  ",ref $_,"\n" for @array;
+  }
   $_ = $_->ix for @array; # save the elements
+  if ($debug{P}) {
+    warn "  ix $ix: ",join(" ",@array),"\n";
+  }
   $av->B::NULL::bsave($ix);
   # av_extend always allocs 3
   asm "av_extend", scalar @array if @array;
+  warn "PAD $ix after: ",scalar @array,"\n\n" if $debug{P};
   asm "av_pushx", $_ for @array;
 }
 
@@ -1461,6 +1470,10 @@ B<M> for Magic and Matches.
 =item B<-DG>
 
 Debug GV's
+
+=item B<-DP>
+
+Debug PAD's
 
 =item B<-DA>
 
