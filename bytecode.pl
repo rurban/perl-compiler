@@ -468,7 +468,7 @@ EOT
 	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s %d]\\n\", PL_op_name[arg>>7], bstate->bs_ix));\n";
 	}
 	if ($fundtype eq 'PV') {
-	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
+	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.pv));\n";
 	}
     } else {
 	if ($unsupp and $holes{$insn_num}) {
@@ -607,9 +607,9 @@ struct byteloader_fdata {
 
 #if PERL_VERSION > 8
 struct byteloader_xpv {
-    char *xpv_pv;
-    int   xpv_cur;
-    int	  xpv_len;
+    char *pv;
+    int   cur;
+    int	  len;
 };
 #endif
 
@@ -865,7 +865,7 @@ __END__
 2  0 	ldop		PL_op				opindex
 3  0 	stsv		bstate->bs_sv			U32		s
 4  0 	stop		PL_op				U32		s
-5  6.001 stpv		bstate->bs_pv.xpv_pv		U32		x
+5  6.001 stpv		bstate->bs_pv.pv		U32		x
 6  0 	ldspecsv	bstate->bs_sv			U8		x
 7  8 	ldspecsvx	bstate->bs_sv			U8		x
 8  0 	newsv		bstate->bs_sv			U8		x
@@ -875,7 +875,7 @@ __END__
 12 8	newopx		PL_op				U16		x
 13 0 	newopn		PL_op				U8		x
 14 0 	newpv		none				U32/PV
-15 0 	pv_cur		bstate->bs_pv.xpv_cur		STRLEN
+15 0 	pv_cur		bstate->bs_pv.cur		STRLEN
 16 0 	pv_free		bstate->bs_pv			none		x
 17 0 	sv_upgrade	bstate->bs_sv			U8		x
 18 0 	sv_refcnt	SvREFCNT(bstate->bs_sv)		U32
