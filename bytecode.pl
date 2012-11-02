@@ -42,7 +42,7 @@ my $c_header = <<"EOT";
 /* -*- buffer-read-only: t -*-
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
- *      Copyright (c) 2008,2009,2010,2011 Reini Urban
+ *      Copyright (c) 2008,2009,2010,2011,2012 Reini Urban
  *
  *      You may distribute under the terms of either the GNU General Public
  *      License or the Artistic License, as specified in the README file.
@@ -462,13 +462,13 @@ EOT
 	} else {
 	    printf BYTERUN_C "\t\tBGET_%s(arg);\n", $fundtype;
 	}
-	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\", insn, $printarg%s));\n",
+	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"(insn %%3d) $insn $argtype:%s\\n\",\n\t\t\t\tinsn, $printarg%s));\n",
 	  $argfmt, ($argtype =~ /index$/ ? ', (int)ix' : '');
 	if ($insn eq 'newopx' or $insn eq 'newop') {
-	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s]\\n\", PL_op_name[arg>>7]));\n";
+	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   [%s %d]\\n\", PL_op_name[arg>>7], bstate->bs_ix));\n";
 	}
 	if ($fundtype eq 'PV') {
-	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.xpv_pv));\n";
+	    print BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BGET_PV(arg) => \\\"%s\\\"\\n\", bstate->bs_pv.pv));\n";
 	}
     } else {
 	if ($unsupp and $holes{$insn_num}) {
@@ -481,10 +481,15 @@ EOT
 	# Special setter method named after insn
 	print BYTERUN_C "\t\tif (force)\n\t" if $unsupp;
 	print BYTERUN_C "\t\tBSET_$insn($lvalue$optarg);\n";
-	my $optargcast = $optarg eq ", arg" ? ", $printarg" : '';
+	my $optargcast = $optarg eq ", arg" ? ",\n\t\t\t\t$printarg" : '';
+	$optargcast .= ($insn =~ /x$/ and $optarg eq ", arg" ? ", bstate->bs_ix-1" : '');
 	printf BYTERUN_C "\t\tDEBUG_v(Perl_deb(aTHX_ \"\t   BSET_$insn($lvalue%s)\\n\"$optargcast));\n",
 	  $optarg eq ", arg"
-	    ? ($fundtype =~ /(strconst|pvcontents)/ ? ', \"%s\"' : ", ".($argtype =~ /index$/ ? '0x%'.$UVxf : $argfmt))
+	    ? ($fundtype =~ /(strconst|pvcontents)/
+	       ? ($insn =~ /x$/ ? ', \"%s\" ix:%d' : ', \"%s\"')
+	       : (", " .($argtype =~ /index$/ ? '0x%'.$UVxf : $argfmt)
+	               .($insn =~ /x$/ ? ' ix:%d' : ''))
+	    )
 	      : '';
     } elsif ($flags =~ /s/) {
 	# Store instructions to bytecode_obj_list[arg]. "lvalue" field is rvalue.
@@ -602,9 +607,9 @@ struct byteloader_fdata {
 
 #if PERL_VERSION > 8
 struct byteloader_xpv {
-    char *xpv_pv;
-    int   xpv_cur;
-    int	  xpv_len;
+    char *pv;
+    int   cur;
+    int	  len;
 };
 #endif
 
@@ -860,7 +865,7 @@ __END__
 2  0 	ldop		PL_op				opindex
 3  0 	stsv		bstate->bs_sv			U32		s
 4  0 	stop		PL_op				U32		s
-5  6.001 stpv		bstate->bs_pv.xpv_pv		U32		x
+5  6.001 stpv		bstate->bs_pv.pv		U32		x
 6  0 	ldspecsv	bstate->bs_sv			U8		x
 7  8 	ldspecsvx	bstate->bs_sv			U8		x
 8  0 	newsv		bstate->bs_sv			U8		x
@@ -870,7 +875,7 @@ __END__
 12 8	newopx		PL_op				U16		x
 13 0 	newopn		PL_op				U8		x
 14 0 	newpv		none				U32/PV
-15 0 	pv_cur		bstate->bs_pv.xpv_cur		STRLEN
+15 0 	pv_cur		bstate->bs_pv.cur		STRLEN
 16 0 	pv_free		bstate->bs_pv			none		x
 17 0 	sv_upgrade	bstate->bs_sv			U8		x
 18 0 	sv_refcnt	SvREFCNT(bstate->bs_sv)		U32
@@ -1037,6 +1042,6 @@ __END__
 # restore dup to stdio handles 0-2
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
 159 10 	xpvshared	bstate->bs_sv			none		x
-160 17.005 padl_new	bstate->bs_sv			none		x
-161 17.005 padl_name	PadlistARRAY((PADLIST*)bstate->bs_sv)[0]  svindex
-162 17.005 padl_set	PadlistARRAY((PADLIST*)bstate->bs_sv)[1]  svindex
+160 17.005 newpadlx	bstate->bs_sv			U8		x
+161 17.005 padl_name	bstate->bs_sv			svindex		x
+162 17.005 padl_sym	bstate->bs_sv			svindex		x

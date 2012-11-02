@@ -9,7 +9,7 @@
 
 # Reviving 5.6 support here is work in progress, and not yet enabled.
 # So far the original is used instead, even if the list of failed tests
-# is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
+# is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken on 5.6.
 # 5.17.5 is also not supported yet (new PADLIST type)
 
 package B::Bytecode;
@@ -232,7 +232,7 @@ sub B::SV::ix {
     nice '[' . class($sv) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
     my $type = $sv->FLAGS & 0xff; # SVTYPEMASK
-    asm "newsvx", $sv->FLAGS, 
+    asm "newsvx", $sv->FLAGS,
      $debug{Comment} ? sprintf("type=%d,flags=0x%x,%s", $type, $sv->FLAGS,sv_flags($sv)) : '';
     asm "stsv", $tix if $PERL56;
     $svtab{$$sv} = $varix = $ix = $tix++;
@@ -248,7 +248,7 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "padl_new";
+    asm "newpadlx", 0;
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
@@ -632,9 +632,10 @@ sub B::CV::bsave {
   asm "xcv_outside",     $outsideix;
   asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
   asm "xcv_depth",       $cv->DEPTH;
-  # add the RC flag if there's no backref magic. eg END (48)
+  # 5.13-5.17.5 add the RC flag if there's no backref magic. eg END (48)
   my $cvflags = $cv->CvFLAGS;
-  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
+  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC and $] < 5.017005;
+  $cvflags &= ~0x400 if $] >= 5.017005; # but delete RC flag from closures as we create them afresh
   asm "xcv_flags",       $cvflags;
   asm "xcv_gv",          $gvix;
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
@@ -645,6 +646,24 @@ sub B::FM::bsave {
 
   $form->B::CV::bsave($ix);
   asm "xfm_lines", $form->LINES;
+}
+
+sub B::PAD::bsave {
+  my ( $av, $ix ) = @_;
+  my @array = $av->ARRAY;
+  if ($debug{P}) {
+    warn ("PAD $ix: ",scalar @array,"\n");
+    warn "  ",ref $_,"\n" for @array;
+  }
+  $_ = $_->ix for @array; # save the elements
+  if ($debug{P}) {
+    warn "  ix $ix: ",join(" ",@array),"\n";
+  }
+  $av->B::NULL::bsave($ix);
+  # av_extend always allocs 3
+  asm "av_extend", scalar @array if @array;
+  warn "PAD $ix after: ",scalar @array,"\n\n" if $debug{P};
+  asm "av_pushx", $_ for @array;
 }
 
 sub B::AV::bsave {
@@ -677,29 +696,29 @@ sub B::AV::bsave {
     asm "sv_flags", $av->FLAGS if $av->FLAGS & SVf_READONLY; # restore flags
   } else {
     #$av->domagic($ix) if $av->MAGICAL; # XXX need tests for magic arrays
-    # check for 5.17.5 PADLIST
-    asm "av_extend", $av->MAX if $av->MAX >= 0 and ref($av) ne 'B::PAD';
+    asm "av_extend", $av->MAX if $av->MAX >= 0;
     asm "av_pushx", $_ for @array;
     if ( !$PERL510 ) {        # VERSION < 5.009
       asm "xav_flags", $av->AvFLAGS, as_hex($av->AvFLAGS);
     }
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
-  asm "sv_refcnt", $av->REFCNT unless ref($av) eq 'B::PAD';
-  asm "xmg_stash", $stashix unless ref($av) eq 'B::PAD';
+  asm "sv_refcnt", $av->REFCNT;
+  asm "xmg_stash", $stashix;
 }
 
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
-  for (@array) {
-    bless $_, 'B::PAD'; # skip av_extend
-    $_ = $_->ix; # hack. call ->ix methods to save the pad array elements
-  }
+  bless $array[0], 'B::PAD';
+  bless $array[1], 'B::PAD';
+  my $ix0 = $array[0]->ix; # comppad_name
+  my $ix1 = $array[1]->ix; # comppad syms
+
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padl_name", $array[0]; # comppad_name
-  asm "padl_set",  $array[1]; # comppad
+  asm "padl_name", $ix0;
+  asm "padl_sym",  $ix1;
 }
 
 sub B::GV::desired {
@@ -1451,6 +1470,10 @@ B<M> for Magic and Matches.
 =item B<-DG>
 
 Debug GV's
+
+=item B<-DP>
+
+Debug PAD's
 
 =item B<-DA>
 
