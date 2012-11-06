@@ -232,12 +232,18 @@ sub B::SV::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($sv) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    my $type = $sv->FLAGS & 0xff; # SVTYPEMASK
-    asm "newsvx", $sv->FLAGS,
-     $debug{Comment} ? sprintf("type=%d,flags=0x%x,%s", $type, $sv->FLAGS,sv_flags($sv)) : '';
+    my $flags = $sv->FLAGS;
+    my $type = $flags & 0xff; # SVTYPEMASK
+    # Set TMP_on, MY_off, not to be tidied (test 48),
+    # otherwise pad_tidy will set PADSTALE_on and assert. Since 5.16 TMP and STALE share the same bit.
+    #if (ref $sv eq 'B::NULL' and $sv->REFCNT > 1 and $] >= 5.016) {
+      # $flags |= 0x00020000;  # SvPADTMP_on
+      # $flags &= ~0x00040000; # SvPADMY_off
+    #}
+    asm "newsvx", $flags,
+     $debug{Comment} ? sprintf("type=%d,flags=0x%x,%s", $type, $flags, sv_flags($sv)) : '';
     asm "stsv", $tix if $PERL56;
     $svtab{$$sv} = $varix = $ix = $tix++;
-    #nice "\tsvtab ".$$sv." => bsave(".$ix.");
     $sv->bsave($ix);
     $ix;
   }
@@ -249,7 +255,7 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadlx", 0;
+    asm "newpadlx", 1;
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
@@ -1237,7 +1243,7 @@ use ByteLoader '$ByteLoader::VERSION';
       # Maybe: Fix the plc reader, if 'perl -MByteLoader <.plc>' is called
     }
     elsif (/^-k/) {
-      keep_syn;
+      keep_syn unless $PERL510;
     }
     elsif (/^-m/) {
       $module = 1;
@@ -1325,6 +1331,11 @@ use ByteLoader '$ByteLoader::VERSION';
       }
       walkoptree( main_root, "bsave" ) unless ref(main_root) eq "B::NULL";
     }
+
+    asm "signal", cstring "__WARN__"    # XXX
+      if !$PERL56 and warnhook->ix;
+    save_init_end;
+
     unless ($module) {
       nice '<main_start>';
       asm "main_start", $PERL56 ? main_start->ix : main_start->opwalk;
@@ -1336,10 +1347,6 @@ use ByteLoader '$ByteLoader::VERSION';
       nice '<curpad>';
       asm "curpad",     ( comppadlist->ARRAY )[1]->ix;
     }
-
-    asm "signal", cstring "__WARN__"    # XXX
-      if !$PERL56 and warnhook->ix;
-    save_init_end;
     asm "dowarn", dowarn unless $PERL56;
 
     {
