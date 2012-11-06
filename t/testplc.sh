@@ -338,7 +338,7 @@ sub x(int,int) { @_ } #cvproto
 print "o" if prototype \&x eq "int,int";
 sub y($) { @_ } #cvproto
 print "k" if prototype \&y eq "\$";'
-result[81]='12'
+result[81]='ok'
 tests[90]='my $s = q(test string);
 $s =~ s/(?<first>test) (?<second>string)/\2 \1/g;
 print q(o) if $s eq q(string test);
