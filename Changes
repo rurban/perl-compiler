@@ -4,21 +4,48 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.43	2013-02-xx rurban
-        * C: Avoid saving not undefined CVs if possible. with Autoloading, i.e. POSIX
-	  the first is always saved as empty CV.
-	Fix -u<module> without file extension.
+	5.16 support, some fixed
+
+        * C: Fix -u<module> without file extension.
 	With hek do not drop FAKE, only for const pv.
 	Fixed $$ ($PID) to be dynamic, issue 108. Thanks to flexvault for reporting this.
+        Fixed double precision to 16 digits. The nbody shootout test passes now.
         Fixed refcounts of *ENV, issue 111.
         Fixed wrong boot_ arg for the xs version check with --staticxs
+ -      Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
+ -        loaded later.
+ -      Broke __DATA__ (15), 91, 95, perldoc, Test::NoWarnings
+ -      Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
+ -        to get rid of the pesky Invalid version format error in xs_version_bootcheck
+ -        if the $VERSION had already version magic attached. (no testcase, hard to repro)
+ -      perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
+ -        we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
+ -        5.17 thr introduced a yet unsupported cop->stashoff (alloccopstash not exported).
+ -      Fixed Null COP storage for 5.16 and 5.17
+ -      Fix amagic_generation which was removed with 5.17
+
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
-        fixed --no-spawn
         fixed warning Prototype mismatch: sub main::gettimeofday: none vs () at perlcc line 261
         improved --version
+	* CC (1.13): Use the B::C integer and double precision logic (ivx, nvx).
+        Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl
+        Added optimizations: -fno-magic, -fno-autovivify
+        Detect "no autovivification;" pragma
+        New -fno-taint, deprecate -fomit_taint
+	* Bytecode (1.14): fixed require and op_first, issue 97
+	Fixed regex_pad offset in threaded perls >= 5.11, issue 68.
+-       New type B::PAD isa B::AV (PADLIST for 5.17.5),
+-       New bytecodes newpadl, padl_name, padl_sym (PADLIST for 5.17.5)
+        * Assembler (1.11): allow "newpadl 0"
+	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
+	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
+	  fragile method package finder for File::Spec. Use cc_harness.
 
 1.42	2012-02-01 rurban
+        stable up to 5.14
+
 	* C: Improved finding methods in parent classes (Warning: method not found),
 	Save @ISA of those child classes.
 	Re-implement and simplify my_share_hek, now in terms of share_hek.
