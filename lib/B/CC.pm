@@ -3574,7 +3574,10 @@ OPTION:
     }
   }
   $strict++ if !$strict and $Config{ccflags} !~ m/-DDEBUGGING/;
-  $opt_taint = 0 if $opt_omit_taint;
+  if ($opt_omit_taint) {
+    $opt_taint = 0;
+    warn "-fomit_taint is deprecated. Use -fno-taint instead.\n";
+  }
 
   # rgs didn't want opcodes to be added to Opcode. So I had to add it to a
   # seperate Opcodes package.

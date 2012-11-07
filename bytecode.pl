@@ -383,7 +383,7 @@ for (@data) {
 	    $unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
 	}
     }
-    if (!$unsupp or $] >= 5.007) {
+    if (!$unsupp or ($] >= 5.007 and $insn !~ /padl/)) {
 	$insn_name[$insn_num] = $insn;
 	push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
 	# Find the next unused instruction number
