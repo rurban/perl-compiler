@@ -4910,7 +4910,7 @@ _EOT6
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
-  elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow)) {
+  elsif ( $PERL510 and (@static_free or $free->index) ) {
     print '
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
@@ -4931,9 +4931,11 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);\n";
-	  print !$ITHREADS or $]<5.016 or $]>=5.017
-	    ?   "    CopSTASHPV_set(&$s, NULL);\n"
-	    :   "    CopSTASHPV_set(&$s, NULL, 0);\n";
+	  if (!$ITHREADS or $]<5.016 or $]>=5.017) {
+            print "    CopSTASHPV_set(&$s, NULL);\n"
+          } else {
+	    print "    CopSTASHPV_set(&$s, NULL, 0);\n";
+          }
 	}
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
@@ -5323,7 +5325,7 @@ EOT
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    } elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow) ) {
+    } elsif ( $PERL510 and (@static_free or $free->index) ) {
       warn "my_perl_destruct (-fcog)\n" if $verbose;
       print "    my_perl_destruct( my_perl );\n";
     } elsif ( $] >= 5.007003 ) {
