@@ -1,7 +1,7 @@
 #      Assembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008,2009,2010,2011 Reini Urban
+#      Copyright (c) 2008,2009,2010,2011,2012 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -17,7 +17,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '1.10';
+$VERSION   = '1.11';
 
 use strict;
 my %opnumber;
@@ -425,7 +425,7 @@ sub asm ($;$$) {
   if ( defined $_[1] ) {
     return
       if $_[1] eq "0"
-        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|av_pushx?|av_extend|xav_flags)$/;
+        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|newpadlx|av_pushx?|av_extend|xav_flags)$/;
     return if $_[1] eq "1" and $]>5.007 and $_[0] =~ /^(?:sv_refcnt)$/;
   }
   my ( $insn, $arg, $comment ) = @_;

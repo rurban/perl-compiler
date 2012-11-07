@@ -1,10 +1,11 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
-Our Bytecode compiler disabled for 5.6, we keep the old. The old core compiler
-fails 50% but in mine is a 5.6 blocker.
+Our Bytecode compiler disabled for 5.6, we keep the old. The old core
+compiler fails 50% but in mine is a 5.6 blocker.
 Bytecode is only stable for >=5.8, non-debugging, threaded.
 
-C is used in production, but a bit unstable, not all methods packages are detected.
+C is used in production, but a bit unstable, not all methods packages
+are detected.
 
 CC is very unstable and slow, work in progress.
 
@@ -95,7 +96,7 @@ t/bytecode 	27,46
 t/c 		-
 t/cc 		14,21,30,46,50,103,105
 
-5.15.7:
+5.16.1:
 t/bytecode 	27,46
 t/c 		-
 t/cc 		14,21,30,46,50,103,105
@@ -114,9 +115,15 @@ generally: pass 100%
 5.10.1     pass 100%
 5.12.4     pass 100%
 5.14.2     pass 100%
-5.15.7     fail 4% (unshare_hek) Moose MooseX::Types DateTime DateTime::TimeZone
+5.16.1     fail 4% (unshare_hek) Moose MooseX::Types DateTime DateTime::TimeZone
+5.17.6     ??
 
 Run-time tests not yet fully done
+
+5.17.x status
+-----------
+PADLIST support not yet stable.
+op_static fixed since 5.17.6, 5.17.2-5.17.5 are unusable without -fno-destruct
 
 5.16 status
 -----------

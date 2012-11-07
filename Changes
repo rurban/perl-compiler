@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2012-06-xx rurban
+1.43	2012-10-xx rurban
 	Improved package detection: methods, functions, require, new and bless.
 	Bigger compile sizes. Store all subs of dependent packages.
 	5.16 support
@@ -39,16 +39,22 @@
 	amagic_generation was removed with 5.17
 	Fixed $$ ($PID) to be dynamic, issue 108. Thanks to flexvault for reporting this.
         Fixed double precision to 16 digits. The nbody shootout test passes now
+        Fixed refcounts of *ENV, issue 111.
 	* CC (1.13): added check_entersub, check_bless - bless and new caching.
         Use the B::C integer and double precision logic (ivx, nvx).
         Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl
 	* Bytecode (1.14): fixed require and op_first, issue 97
-	Fixed regex_pad offset in threaded perls >= 5.11, issue 68
+	Fixed regex_pad offset in threaded perls >= 5.11, issue 68.
+        new type B::PAD isa B::AV (PADLIST for 5.17.5),
+        new bytecodes newpadl, padl_name, padl_sym (PADLIST for 5.17.5)
+        * Assembler (1.11): allow "newpadl 0"
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
 	* perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v.
 	new option -f passthru to C and CC
+	* perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
+        fixed --no-spawn
 
 1.42	2012-02-01 rurban
 	stable up to 5.14

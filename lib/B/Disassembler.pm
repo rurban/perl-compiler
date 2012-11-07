@@ -1,12 +1,12 @@
 #      Disassembler.pm
 #
 #      Copyright (c) 1996 Malcolm Beattie
-#      Copyright (c) 2008,2009,2010,2011 Reini Urban
+#      Copyright (c) 2008,2009,2010,2011,2012 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.10';
+$B::Disassembler::VERSION = '1.11';
 
 package B::Disassembler::BytecodeStream;
 
@@ -316,7 +316,11 @@ sub print_insn {
       my $type = $arg >> 7;
       my $size = $arg - ( $type << 7 );
       $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type ) if $comment;
-      printf "\n# [%s %d]\n", $opname[$type], $ix++ if $comment;
+      printf "\n# [%s %d]\n", $opname[$type], $ix++;
+    }
+    elsif ( $insn eq 'newpadlx' ) {
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s %d]\n", "PADLIST", $ix++;
     }
     elsif ( !$comment ) {
       ;
