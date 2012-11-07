@@ -289,6 +289,7 @@ sub parse_argv {
         warn "--time ignored. No Time::HiRes\n" if $Options->{time};
         $Options->{time} = 0;
       } else {
+        sub main::gettimeofday () {};
         Time::HiRes->import('gettimeofday','tv_interval','sleep');
       }
     }
