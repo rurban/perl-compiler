@@ -605,13 +605,11 @@ struct byteloader_fdata {
     int	 idx;
 };
 
-#if PERL_VERSION > 8
 struct byteloader_xpv {
     char *pv;
     int   cur;
     int	  len;
 };
-#endif
 
 struct byteloader_header {
     char 	archname[80];
@@ -630,11 +628,7 @@ struct byteloader_state {
     void			**bs_obj_list;
     int				bs_obj_list_fill;
     int				bs_ix;
-#if PERL_VERSION > 8
     struct byteloader_xpv	bs_pv;
-#else
-    XPV				bs_pv;
-#endif
     int				bs_iv_overflows;
 };
 
