@@ -2717,65 +2717,19 @@ sub enterloop {
     # for (from..to) (enteriter) has on the stack from(-2) to (-1) already:
     my ($i, $cnt, $itername, $itervar, $qualified, $nextop);
 
-
     # get() copies of all the sections,
     # except for $init and $decl, which are already retrieved in compile()
     # store all section indices to record one body->save. do not copy decl
-    my @section_names = 
-      qw(sym hek op unop binop 
-        logop condop listop pmop 
-        svop padop pvop loop cop 
-        sv xpv xpvav xpvhv xpvcv 
-        xpviv xpvuv xpvnv xpvmg 
-        xpvlv xrv xpvbm xpvio padlist);
-
-    $free = B::Section->get('free');  # special case, not really a section
-
-    foreach my $section_name (@section_names) {
-      my $eval_string = 
-        '$' . $section_name . "sect = B::Section->get('" . $section_name . "');";
-#      warn("DBG: have \$eval_string = '$eval_string'\n") if $verbose;
-      eval($eval_string);
-
+    my @section_names = qw(sym hek op unop binop logop condop listop pmop svop
+      padop pvop loop cop sv xpv xpvav xpvhv xpvcv xpviv xpvuv xpvnv xpvmg
+      xpvlv xrv xpvbm xpvio padlist);
+    $free = B::Section->get('free');  # init and runtime are created earlier
+    foreach my $name (@section_names) {
+      my $eval = '$' . $name . "sect = B::Section->get('" . $name . "');";
+      eval($eval);
       # the following code does not access lexicals, must use eval() instead
-#      no strict 'refs';
-#      ${$section_name . 'sect'} = B::Section->get($section_name);
+      #${$name.'sect'} = B::Section->get($name);
     }
-
-=pod
-
-    $free = B::Section->get('free');
-    $symsect = B::Section->get('sym');
-    $heksect = B::Section->get('hek');
-    $opsect = B::Section->get('op');
-    $unopsect = B::Section->get('unop');
-    $binopsect = B::Section->get('binop');
-    $logopsect = B::Section->get('logop');
-    $condopsect = B::Section->get('condop');
-    $listopsect = B::Section->get('listop');
-    $pmopsect = B::Section->get('pmop');
-    $svopsect = B::Section->get('svop');
-    $padopsect = B::Section->get('padop');
-    $pvopsect = B::Section->get('pvop');
-    $loopsect = B::Section->get('loop');
-    $copsect = B::Section->get('cop');
-    $svsect = B::Section->get('sv');
-    $xpvsect = B::Section->get('xpv');
-    $xpvavsect = B::Section->get('xpvav');
-    $xpvhvsect = B::Section->get('xpvhv');
-    $xpvcvsect = B::Section->get('xpvcv');
-    $xpvivsect = B::Section->get('xpviv');
-    $xpvuvsect = B::Section->get('xpvuv');
-    $xpvnvsect = B::Section->get('xpvnv');
-    $xpvmgsect = B::Section->get('xpvmg');
-    $xpvlvsect = B::Section->get('xpvlv');
-    $xrvsect = B::Section->get('xrv');
-    $xpvbmsect = B::Section->get('xpvbm');
-    $xpviosect = B::Section->get('xpvio');
-    $padlistsect = B::Section->get('padlist');
-
-=cut
-
     my @sections = (
                     $init,       $free,      $symsect,   $heksect,
                     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
@@ -2785,10 +2739,6 @@ sub enterloop {
                     $xpvmgsect,  $xpvlvsect, $xrvsect,   $xpvbmsect, $xpviosect,
                     $padlistsect, $runtime
                    );
-
-#    use Data::Dumper;
-#    warn("have \@sections =\n" . Dumper(\@sections) . "\n") if $verbose;
-
     if ($op->name eq 'enteriter' and scalar(@stack) >= 2) {
       # case 1: gv itervar on stack
       if (!$op->targ and @stack >= 3) {
@@ -3552,7 +3502,7 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       $verbose++;
-      $arg = 'oOscprSqlt' if $arg eq 'full';
+      $arg = 'oOscprSqlt1' if $arg eq 'full';
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
           B->debug(1);
