@@ -5875,17 +5875,20 @@ sub save_context {
   }
   $init->add(
     "GvHV(PL_incgv) = $inc_hv;",
-    "GvAV(PL_incgv) = $inc_av;",
-    "PL_curpad = AvARRAY($curpad_sym);",
-    "PL_comppad = $curpad_sym;");    # fixed "panic: illegal pad"
+    "GvAV(PL_incgv) = $inc_av;");
   if ($] < 5.017004) {
     $init->add(
-      "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-      "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+               "PL_curpad = AvARRAY($curpad_sym);",
+               "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
+               "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
+               "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
   } else { # dynamic ARRAY
-      "CvPADLIST(PL_main_cv) = pad_new(0);",
-      "PadlistNAMES(CvPADLIST(PL_main_cv)) = SvREFCNT_inc($curpad_nam); /* namepad */",
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = SvREFCNT_inc($curpad_sym); /* curpad */",
+    $init->add(
+               "CvPADLIST(PL_main_cv) = pad_new(0);", # sets PL_comppad
+               "PadlistNAMES(CvPADLIST(PL_main_cv)) = SvREFCNT_inc($curpad_nam); /* namepad */",
+               "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = SvREFCNT_inc($curpad_sym); /* curpad */",
+               "PL_curpad = AvARRAY($curpad_sym);",
+               "PL_comppad = $curpad_sym;");    # fixed "panic: illegal pad"
   }
   if ($] < 5.017) {
     my $amagic_generate = B::amagic_generation;
