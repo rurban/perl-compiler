@@ -411,7 +411,9 @@ sub XSLoader::load_file {
   my $modpname = join('/',@modparts);
   my $c = @modparts;
   $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
-  my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config->{dlext};
+  die "missing module filepath" unless $modlibname;
+  die "missing dlext" unless $Config::Config{dlext};
+  my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config{dlext};
 
   # skip the .bs "bullshit" part, needed for some old solaris ages ago
 
@@ -1550,7 +1552,10 @@ sub B::PADOP::save {
     my @pad = $c[1]->ARRAY;
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
     my $sv = $pad[$ix];
-    $sv->save("padop ".padop_name($op->name, $B::C::curcv)) if $sv and $$sv;
+    if ($sv and $$sv) {
+      my $name = padop_name($op->name, $B::C::curcv);
+      $sv->save("padop ".$name ? $name : '');
+    }
   }
   $padopsect->comment("$opsect_common, padix");
   $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
