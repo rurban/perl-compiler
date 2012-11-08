@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.43 6ccde71 2012-11-07 | BC: fix 5.8 (XPV conflict)
-# perlversion = 5.008005d-nt
-# path = /usr/local/bin/perl5.8.5d-nt
-# platform = linux 64bit non-threaded debug
+# B::C::VERSION = 1.43 c7e9a4a 2012-11-07 | C: Fix CopSTASH free
+# perlversion = 5.014003-nt
+# path = /usr/local/bin/perl5.14.3-nt
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-fail LWP
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -83,7 +83,7 @@ pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
-fail CGI
+pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO 5.8.5 without threads
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.43 - perl-5.008005d-nt
-# pass  97 /  99 (98.0%)
-# fail   2 /  99 (2.0%)
-# todo   3 /   2 (150.0%)
-# skip   1 / 100 (1.0% not installed)
+# 100 / 100 modules tested with B-C-1.43 - perl-5.014003-nt
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   2 /   0 ()
+# skip   0 / 100 (0.0% not installed)
