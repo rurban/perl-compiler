@@ -165,7 +165,7 @@ sub output {
   foreach my $i ( @{ $section->[-1]{chunks} } ) {
     # dTARG and dSP unused -nt
     print $fh <<"EOT";
-static int perl_init_${name}(pTHX)
+static int ${init_name}_${name}(pTHX)
 {
 EOT
     foreach my $i ( @{ $section->[-1]{initav} } ) {
@@ -178,9 +178,10 @@ EOT
     }
     print $fh "\treturn 0;\n}\n";
 
-    $section->SUPER::add("perl_init_${name}(aTHX);");
+    $section->SUPER::add("${init_name}_${name}(aTHX);");
     ++$name;
   }
+  $section->SUPER::add("perl_init2(aTHX);") unless $init_name eq 'perl_init2';
   # We need to output evals after dl_init.
   foreach my $s ( @{ $section->[-1]{evals} } ) {
     ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
@@ -460,7 +461,7 @@ my (
   $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
   $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-  $padlistsect
+  $padlistsect, $init2
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -3396,8 +3397,11 @@ sub B::CV::save {
     }
   }
   elsif ($] >= 5.017005 and ${ $cv->OUTSIDE }) {
-    $init->add( sprintf("CvPADLIST($sym)->xpadl_outid = PadlistNAMES(%s);",
-                        $cv->OUTSIDE->PADLIST->save));
+    # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
+    my $out = $cv->OUTSIDE;
+    my $padl = $out->PADLIST->save;
+    # This needs to be postponed (test 227)
+    $init2->add( sprintf( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
   }
   if ($$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
@@ -4542,6 +4546,9 @@ EOT
       print "};\n\n";
     }
   }
+  my $init2_name = 'perl_init2';
+  printf "\t/* %s */\n", $init2->comment if $init2->comment and $verbose;
+  $init2->output( \*STDOUT, "\t%s\n", $init2_name );
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
   if ($verbose) {
@@ -6123,6 +6130,7 @@ sub init_sections {
     $$sectref = new B::C::Section $name, \%symtable, 0;
   }
   $init = new B::C::InitSection 'init', \%symtable, 0;
+  $init2 = new B::C::InitSection 'init2', \%symtable, 0;
 }
 
 sub mark_unused {
