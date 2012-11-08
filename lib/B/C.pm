@@ -322,7 +322,7 @@ our ($curcv, $module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $walkall);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -332,8 +332,9 @@ our %option_map = (
     'warn-sv'         => \$B::C::optimize_warn_sv,
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
-    'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
+    'delete-pkg'      => \$B::C::can_delete_pkg,
+    'walkall'         => \$B::C::walkall,
     'stash'           => \$B::C::stash,    # disable with -fno-stash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
@@ -5739,7 +5740,7 @@ sub save_unused_subs {
   }
   my $main = $module ? $module."::" : "main::";
 
-  # Better strategy for compile-time added and required packages:
+  # -fwalkall: Better strategy for compile-time added and required packages.
   # loop savecv and check pkg cache for new pkgs.
   # if so loop again with those new pkgs only, until the list of new pkgs is empty
   my (@init_unused, @unused);
@@ -5760,6 +5761,9 @@ sub save_unused_subs {
     @unused = grep { $include_package{$_} } keys %include_package;
     if ($verbose) {
       warn sprintf("old unused: %d, new: %d\n", scalar @init_unused, scalar @unused);
+    }
+    if (!$B::C::walkall) {
+      @unused = @init_unused = ();
     }
   } while @unused > @init_unused;
 
@@ -6140,13 +6144,14 @@ sub compile {
   $B::C::stash    = 1;
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
+  $B::C::walkall  = 1;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings -fno-walkall)],
     4 => [qw(-fcop)],
   );
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::C::Section
@@ -6391,16 +6396,17 @@ Force end of options
 
 Force all subs from Package to be compiled.
 
-This allows programs to use eval "foo()" even when sub foo is never
-seen to be used at compile time. The down side is that any subs which
-really are never used also have code generated. This option is
-necessary, for example, if you have a signal handler foo which you
-initialise with C<$SIG{BAR} = "foo">.  A better fix, though, is just
-to change it to C<$SIG{BAR} = \&foo>. You can have multiple B<-u>
-options. The compiler tries to figure out which packages may possibly
-have subs in which need compiling but the current version doesn't do
-it very well. In particular, it is confused by nested packages (i.e.
-of the form C<A::B>) where package C<A> does not contain any subs.
+This allows programs to use eval "Package::foo()" even when sub foo is never
+seen to be used at compile time. The down side is that any subs which really
+are never used also have code generated. This option is necessary, for
+example, if you have a signal handler foo which you initialise with
+C<$SIG{BAR} = "Package::foo">.  A better fix, though, is just to change it to
+C<$SIG{BAR} = \&Package::foo>. You can have multiple B<-u> options.
+
+The compiler tries to figure out which packages may possibly have subs in
+which need compiling but the current version doesn't do it very well. In
+particular, it is confused by nested packages (i.e.  of the form C<A::B>)
+where package C<A> does not contain any subs.
 
 =item B<-U>I<Package> "unuse" skip Package
 
@@ -6560,10 +6566,13 @@ Enabled with C<-O2>.
 
 Delete packages which appear to be nowhere used automatically.  This creates
 smaller executables but might miss run-time called methods.  Note that you can
-always use -u to add automatically deleted packages.
+always use C<-u> to add automatically deleted packages.
 
-Without -fdelete-pkg - i.e. with -O0,-O1 - only packages which are defined by
-the compiler and its dependencies itself and are apparently unused are deleted.
+Without C<-fdelete-pkg> - i.e. with C<-O0> and C<-O1> - only packages which
+are defined by the compiler and its dependencies itself and are apparently
+unused are deleted.
+
+See also C<-fno-walkall>.
 
 Enabled with C<-O2>.
 
@@ -6622,6 +6631,20 @@ startup-time.
 
 C<-fno-stash> is the default.
 
+=item B<-fno-walkall>
+
+Skip the new (1.43) recursive package walker steps, not to include
+too many new packages.
+
+-fwalkall has an improved package detection, which stores all subs of
+all dependent packages, which results in much bigger compile sizes.
+This was introduced to catch previously uncompiled packages for computed
+methods or undetected run-time dependencies.
+
+See also C<-fdelete-pkg>.
+
+Enabled with C<-O3>.
+
 =item B<-fuse-script-name>
 
 Use the script name instead of the program name as C<$0>.
@@ -6634,7 +6657,8 @@ DO NOT USE YET!
 
 Omit COP info (nextstate without labels, unneeded NULL ops,
 files, linenumbers) for ~10% faster execution and less space,
-but warnings and errors will have no file and line infos.
+but warnings and errors will have no file and line infos, and
+might even segfault.
 
 It will most likely not work yet. I<(was -fbypass-nullops in earlier
 compilers)>

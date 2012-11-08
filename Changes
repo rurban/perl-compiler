@@ -5,8 +5,8 @@
 
 1.43	2012-11-xx rurban
 	Improved package detection: methods, functions, require, new and bless.
-	Bigger compile sizes. Store all subs of dependent packages.
-	5.16 support
+	Bigger compile sizes with -O0,-O1,-O2: Store all subs of dependent packages.
+	Added 5.16 support
 
 	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
 	Detect typed lexicals objects to reliably find method packages.
@@ -14,8 +14,9 @@
 	  found. Check for method_named as last argument of methods.
 	Added check_entersub, check_bless, check_require - bless and new caching of
 	  packages for methods
-	Recursively store all package subs in 2nd pass, not only the needed, to be able to
-          call computed methods.
+	Recursively store all directly unused package subs and packages in a new 2nd pass,
+          not only the needed, to be able to call computed methods. Disable with -fno-walkall.
+        Delete packages which appear to be nowhere used automatically with -fdelete-pkg or -O2.
 	try_isa(): Desperate method finding attempt by trying all seen packages, which
 	  slows down the compiler a lot. Added internal ISA Caching.
 	Special case Carp calling threads and B methods.
