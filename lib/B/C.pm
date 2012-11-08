@@ -169,7 +169,7 @@ sub output {
   foreach my $i ( @{ $section->[-1]{chunks} } ) {
     # dTARG and dSP unused -nt
     print $fh <<"EOT";
-static int perl_init_${name}(pTHX)
+static int ${init_name}_${name}(pTHX)
 {
 EOT
     foreach my $i ( @{ $section->[-1]{initav} } ) {
@@ -182,9 +182,10 @@ EOT
     }
     print $fh "\treturn 0;\n}\n";
 
-    $section->SUPER::add("perl_init_${name}(aTHX);");
+    $section->SUPER::add("${init_name}_${name}(aTHX);");
     ++$name;
   }
+  $section->SUPER::add("perl_init2(aTHX);") unless $init_name eq 'perl_init2';
   # We need to output evals after dl_init.
   foreach my $s ( @{ $section->[-1]{evals} } ) {
     ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
@@ -4066,6 +4067,9 @@ EOT
       print "};\n\n";
     }
   }
+  my $init2_name = 'perl_init2';
+  printf "\t/* %s */\n", $init2->comment if $init2->comment and $verbose;
+  $init2->output( \*STDOUT, "\t%s\n", $init2_name );
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
   if ($verbose) {
@@ -5582,6 +5586,7 @@ sub init_sections {
     $$sectref = new B::C::Section $name, \%symtable, 0;
   }
   $init = new B::C::InitSection 'init', \%symtable, 0;
+  $init2 = new B::C::InitSection 'init2', \%symtable, 0;
 }
 
 sub mark_unused {
