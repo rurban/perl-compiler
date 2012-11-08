@@ -504,7 +504,8 @@ sub padop_name {
 	   or ref($op) eq 'B::SVOP')) #threaded
   {
     return () if $cv and ref($cv->PADLIST) eq 'B::SPECIAL';
-    my @c = $cv ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
+    my @c = ($cv and ref($cv) eq 'B::CV' and ref($cv->PADLIST) ne 'B::NULL')
+             ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
     my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
