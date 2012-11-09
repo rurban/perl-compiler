@@ -1618,7 +1618,6 @@ sub B::COP::save {
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
     $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
     $free->add( sprintf( "    cop_list[%d].cop_warnings = NULL;", $ix ) );
-    #push @static_free, sprintf("cop_list[%d]", $ix);
   }
 
   # Trim the .pl extension, to print the executable name only.
@@ -1732,11 +1731,10 @@ sub B::COP::save {
     unless $B::C::optimize_warn_sv;
 
   push @static_free, "cop_list[$ix]" if $ITHREADS;
-  $init->add(
-    sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
-  ) if !$optimize_cop and !$ITHREADS;
   if (!$ITHREADS) { # special only threaded
-    $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ));
+    $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file )),
+               sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ))
+              );
   }
 
   # our root: store all packages from this file
@@ -4924,7 +4922,7 @@ _EOT6
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
-  elsif ( $PERL510 and (@static_free or $free->index) ) {
+  elsif ( $PERL510 and (@static_free or $free->index > -1) ) {
     print '
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
@@ -4944,13 +4942,13 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
-	  print "    CopFILE_set(&$s, NULL);\n";
-	  if (!$ITHREADS or $]<5.016 or $]>=5.017) {
+          print "    CopFILE_set(&$s, NULL);\n";
+          if ($]<5.016 or $]>=5.017) {
             print "    CopSTASHPV_set(&$s, NULL);\n"
           } else {
-	    print "    CopSTASHPV_set(&$s, NULL, 0);\n";
+            print "    CopSTASHPV_set(&$s, NULL, 0);\n";
           }
-	}
+        }
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
@@ -5339,7 +5337,7 @@ EOT
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    } elsif ( $PERL510 and (@static_free or $free->index) ) {
+    } elsif ( $PERL510 and (@static_free or $free->index > -1) ) {
       warn "my_perl_destruct (-fcog)\n" if $verbose;
       print "    my_perl_destruct( my_perl );\n";
     } elsif ( $] >= 5.007003 ) {
