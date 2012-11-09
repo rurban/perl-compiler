@@ -641,7 +641,7 @@ sub B::CV::bsave {
   asm "xcv_depth",       $cv->DEPTH;
   # 5.13-5.17.5 add the RC flag if there's no backref magic. eg END (48)
   my $cvflags = $cv->CvFLAGS;
-  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC and $] < 5.017005;
+  $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC and $] < 5.016;
   $cvflags &= ~0x400 if $] >= 5.017005; # but delete RC flag from closures as we create them afresh
   asm "xcv_flags",       $cvflags;
   asm "xcv_gv",          $gvix;
