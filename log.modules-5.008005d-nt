@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 6ccde71 2012-11-07 | BC: fix 5.8 (XPV conflict)
+# B::C::VERSION = 1.43 7c5d5fb 2012-11-08 | C: improve XSLoader::load_file Config::Config->{dlext} and padop_name returning undef
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug

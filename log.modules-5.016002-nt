@@ -1,6 +1,6 @@
 # B::C::VERSION = 1.43 7c5d5fb 2012-11-08 | C: improve XSLoader::load_file Config::Config->{dlext} and padop_name returning undef
-# perlversion = 5.014003-nt
-# path = /usr/local/bin/perl5.14.3-nt
+# perlversion = 5.016002-nt
+# path = /usr/local/bin/perl5.16.2-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -95,15 +95,15 @@ pass XML::SAX
 pass YAML
 pass MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
+pass DateTime::TimeZone #TODO > 5.15 without threads
 pass DateTime::Locale
 pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.43 - perl-5.014003-nt
+# 100 / 100 modules tested with B-C-1.43 - perl-5.016002-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   2 /   0 ()
+# todo   3 /   0 ()
 # skip   0 / 100 (0.0% not installed)
