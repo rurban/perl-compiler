@@ -30,7 +30,7 @@ BEGIN {
     eval q[
       sub SVp_NOK() {}; # unused
       sub SVf_NOK() {}; # unused
-   ];
+     ];
   }
   else {
     B->import(qw(SVp_NOK SVf_NOK @specialsv_name @optype));
@@ -41,6 +41,13 @@ BEGIN {
 		 SVf_FAKE));
   } else {
     B->import(qw(walkoptree walksymtable));
+  }
+  if ($] > 5.017) {
+    B->import('SVf_IsCOW') ;
+  } else {
+    eval q[
+      sub SVf_IsCOW() {}; # unused
+     ];
   }
   if ( $] >= 5.017005 ) {
     @B::PAD::ISA = ('B::AV');
@@ -56,6 +63,7 @@ my $PERL56  = ( $] <  5.008001 );
 my $PERL510 = ( $] >= 5.009005 );
 my $PERL512 = ( $] >= 5.011 );
 #my $PERL514 = ( $] >= 5.013002 );
+my $PERL518 = ( $] >= 5.017006 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 our ($quiet, $includeall, $savebegins, $T_inhinc);
 my ( $varix, $opix, %debug, %walked, %files, @cloop );
@@ -439,7 +447,10 @@ sub B::PV::bsave {
       asm  "newpv", pvstring $sv->PV ;
       asm  "xpv";
     }
-  } elsif ($PERL510 and $sv and ($sv->FLAGS & 0x09000000) == 0x09000000) { # 42
+  } elsif ($PERL518 and $sv and ($sv->FLAGS & SVf_IsCOW) == SVf_IsCOW) { # COW
+    asm "newpv", pvstring $sv->PV;
+    asm "xpvshared";
+  } elsif ($PERL510 and $sv and ($sv->FLAGS & 0x09000000) == 0x09000000) { # SHARED
     asm "newpv", pvstring $sv->PVBM;
     asm "xpvshared";
   } else {

@@ -3,7 +3,7 @@
 
 set breakpoint pending on
 #break XS_B__CC__autovivification
-#break __asan_report_error
+break __asan_report_error
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc
