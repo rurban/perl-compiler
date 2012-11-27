@@ -1,32 +1,47 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
-Our Bytecode compiler disabled for 5.6, we keep the old. The old core
-compiler fails 50% but in mine is a 5.6 blocker.
-Bytecode is only stable for >=5.8, non-debugging, threaded.
+B::C is stable and used in production for -O0 and -O3. For bigger programs
+not all methods in certain packages are detected, you'd need to add them via
+-u<packagename>.
 
-C is used in production, but a bit unstable, not all methods packages
-are detected.
+B::CC is very unstable, work is in progress. Certain alioth benchmarks are 6x faster.
+Recursive function calls and certain dynamic ops are not yet supported.
 
-CC is very unstable and slow, work in progress.
+The Bytecode compiler is only stable for >=5.8, non-debugging, threaded. The
+CPAN Bytecode compiler is disabled for 5.6, we keep the old. The old core
+compiler fails for 50% of the testcases.
+
+Windows and other OS with strict linking will fail to install due to some
+not exported libperl symbols. Looks at the patches in ramblings.
+
+Windows: Bad luck. perl 5.16 has finally all needed symbols exported, but the 
+5.16 perl releases are considered too insecure to be recommended for production.
+
+Security: The latest released compiler version 1.42 is only supported up to 5.14.2.
+5.16.x, 5.14.3 and 5.12.5 are too insecure to be recommended for production.
 
 C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
 new CPAN compiler and the CORE compiler. See below.
 
 Most B::C and B::CC bugs fixed.
-5.10 + 5.12 + 5.14 + 5.16 compatibility added.
+5.10 + 5.12 + 5.14 + 5.16 + 5.18 compatibility added.
 
 Open Problems for B::C:
-  shared_hek cleanup esp. since 5.15
-  see google issues
+  See google issues.
+  5.16 not yet supported in the stable 1.42 release, only git master.
 
-See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14 status
+See below at the detailed 5.6, 5.8, 5.10, 5.12, 5.14, 5.16, 5.17.6 status
 
 TEST STATUS
 -----------
-Tested on cygwin1.7, centos4, centos5.6, centos6, 
-debian5, freebsd7, solaris10 intel sunpro, openbsd49
-Not so regurarily on strawberry-5.10.1, strawberry-5.12.2, activeperl-5.10.1
+Regularily tested on cygwin1.7, darwin 10.8/intel, centos4, centos5, centos6,
+debian5, debian6, freebsd7, freebsd8, solaris10/intel sunpro, openbsd49, netbsd.
+With the respective default gcc and clang compilers, with the latest address-sanitizer
+versions.
+
+Not so regurarily on darwin 10.4/ppc, strawberry-5.10.1, strawberry-5.12.2,
+strawberry-5.14, strawberry-5.16 and activeperl-5.10.1/msvc8
 
 List of failed tests.
 
