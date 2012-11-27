@@ -3515,7 +3515,9 @@ if (0) {
   my $package  = $gv->STASH->NAME;
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
-  return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
+  # Never skip symbols from skipped packages, as they may lead to NULL ptrs in the stack, when
+  # gv_fetch will need to create them. (i.e. @DB::args). Only skip CVs.
+  return $sym if $package =~ /^B::C(C?)::/;
   my $fancyname;
   if ( $filter and $filter =~ / :pad/ ) {
     $fancyname = cstring($filter);
@@ -3749,7 +3751,8 @@ if (0) {
       $gvcv = $gv->CV; # try again
     }
     if ( $$gvcv && $savefields & Save_CV
-	 and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
+         and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
+         and !$skip_package{$package} ) {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB CONSTSUB alias
