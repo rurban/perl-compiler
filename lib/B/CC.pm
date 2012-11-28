@@ -382,20 +382,22 @@ my $PERL512    = ( $] >= 5.011 );
 my $SVt_PVLV = $PERL510 ? 10 : 9;
 my $SVt_PVAV = $PERL510 ? 11 : 10;
 # use sub qw(CXt_LOOP_PLAIN CXt_LOOP);
-if ($PERL512) {
-  sub CXt_LOOP_PLAIN {5} # CXt_LOOP_FOR CXt_LOOP_LAZYSV CXt_LOOP_LAZYIV
-} else {
-  sub CXt_LOOP {3}
-}
-sub CxTYPE_no_LOOP  {
-  $PERL512 
-    ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 )
-    : $_[0]->{type} != 3
-}
-if ($PERL510) {
-  sub SVs_RMG {0x00800000}
-} else {
-  sub SVs_RMG {0x8000}
+BEGIN {
+  if ($PERL512) {
+    sub CXt_LOOP_PLAIN {5} # CXt_LOOP_FOR CXt_LOOP_LAZYSV CXt_LOOP_LAZYIV
+  } else {
+    sub CXt_LOOP {3}
+  }
+  sub CxTYPE_no_LOOP  {
+    $PERL512
+      ? ( $_[0]->{type} < 4 or $_[0]->{type} > 7 )
+        : $_[0]->{type} != 3
+      }
+  if ($PERL510) {
+    sub SVs_RMG {0x00800000}
+  } else {
+    sub SVs_RMG {0x8000}
+  }
 }
 
 # Could rewrite push_runtime() and output_runtime() to use a
@@ -1729,7 +1731,7 @@ sub pp_gvsv {
   return $op->next;
 }
 
-# check for faster fetch calls, returns 0 if the fast 'no' is in effect.
+# Check for faster fetch calls. Returns 0 if the fast 'no' is in effect.
 sub autovivification {
   if (!$opt_autovivify) {
     return 0;
@@ -1773,21 +1775,20 @@ sub pp_aelemfast {
     else { #svop
       my $gv = $op->gv;
       $gvsym = $gv->save;
-      my $gvav = $gv->AV;
+      my $gvav = $gv->AV; # test 16, tied gvav
       $rmg  = ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
     }
     $av = "GvAV($gvsym)";
   }
   my $ix   = $op->private;
   my $lval = $op->flags & OPf_MOD;
-  my $vifify = autovivification();
+  my $vifify = $rmg ? autovivification() : 1; # not needed to call if !$rmg
   return _aelem($op, $av, $ix, $lval, $rmg, $vifify);
 }
 
 sub _aelem {
   my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
   if (!$rmg and !$vifify and $ix >= 0) {
-    # TODO ix needs to be POPed before av
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
