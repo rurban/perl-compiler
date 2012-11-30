@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 7c5d5fb 2012-11-08 | C: improve XSLoader::load_file Config::Config->{dlext} and padop_name returning undef
+# B::C::VERSION = 1.43 7b40b25 2012-11-29 | CC: Avoid SVs_RMG redefinition warning M
 # perlversion = 5.014003
 # path = /usr/local/bin/perl5.14.3
 # platform = linux 64bit threaded

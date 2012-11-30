@@ -1554,7 +1554,7 @@ sub B::PADOP::save {
     my $sv = $pad[$ix];
     if ($sv and $$sv) {
       my $name = padop_name($op->name, $B::C::curcv);
-      $sv->save("padop ".$name ? $name : '');
+      $sv->save("padop ". ($name ? $name : ''));
     }
   }
   $padopsect->comment("$opsect_common, padix");
