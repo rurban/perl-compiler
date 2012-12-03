@@ -99,7 +99,7 @@ my @fail = map { "t/CORE/$_" }
 
 my @tests = $ARGV[0] eq '-fail' ? @fail :
   (@ARGV ? @ARGV : <t/CORE/*/*.t>);
-my $Mblib = Mblib;
+my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 
 sub run_c {
   my ($t, $backend) = @_;
