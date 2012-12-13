@@ -3114,11 +3114,22 @@ sub cc_main {
     # XXX TODO push BEGIN/END blocks to modules code.
     $init->add(
       sprintf( "PL_main_root = s\\_%x;", ${ main_root() } ),
-      "PL_main_start = $start;",
-      "PL_curpad = AvARRAY($curpad_sym);",
-      "PL_comppad = $curpad_sym;",
-      "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
-      "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
+      "PL_main_start = $start;");
+    if ($] < 5.017004) {
+      $init->add(
+                 "PL_curpad = AvARRAY($curpad_sym);",
+                 "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
+                 "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
+                 "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+    } else { # dynamic ARRAY
+      $init->add(
+                 "CvPADLIST(PL_main_cv) = pad_new(0);", # sets PL_comppad
+                 "PadlistNAMES(CvPADLIST(PL_main_cv)) = (AV*)SvREFCNT_inc($curpad_nam); /* namepad */",
+                 "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (AV*)SvREFCNT_inc($curpad_sym); /* curpad */",
+                 "PL_curpad = AvARRAY($curpad_sym);",
+                 "PL_comppad = $curpad_sym;");    # fixed "panic: illegal pad"
+    }
+    $init->add(
       "GvHV(PL_incgv) = $inc_hv;",
       "GvAV(PL_incgv) = $inc_av;",
       "PL_initav = (AV*)$init_av;",
