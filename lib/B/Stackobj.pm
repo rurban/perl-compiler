@@ -189,7 +189,14 @@ sub set_int {
 
 sub set_double {
   my ( $obj, $expr ) = @_;
-  my $sval = B::C::nvx($expr);
+  my $sval;
+  # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
+  if ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
+    $sval = $expr;
+  } else {
+    $sval = B::C::nvx($expr);
+    $sval = $expr if $sval eq '0' and $expr;
+  }
 
   runtime("$obj->{nv} = $sval;");
   $obj->{flags} &= ~( VALID_SV | VALID_INT );

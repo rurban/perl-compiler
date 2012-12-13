@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
-#      Copyright (c) 2011, 2012 cPanel Inc
+#      Copyright (c) 2011, 2012, 2013 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -415,10 +415,10 @@ my (
   $init,      $decl,      $symsect,    $binopsect, $condopsect,
   $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
   $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
-  $svsect,    $resect,    $xpvsect,    $xpvavsect, $xpvhvsect,
-  $xpvcvsect, $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $orangesect,
-  $free
+  $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
+  $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
+  $padlistsect, $init2
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -564,21 +564,6 @@ sub savere {
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
                            0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", $svsect->index );
-  }
-  elsif ( 0 and $PERL512 ) {
-    # TODO Fill in at least the engine pointer? Or let CALLREGCOMP do that?
-    $orangesect->add(
-      sprintf(
-              "0,%u,%u, 0,0,NULL, NULL,NULL,"
-              . "0,0,0,0,NULL,0,0,NULL,0,0, NULL,NULL,NULL,0,0,0",
-              $cur, $len
-             )
-    );
-    $resect->add(sprintf("&orange_list[%d], 1, %d, %s",
-                         $orangesect->index, $flags, cstring($re) ));
-    $sym = sprintf( "re_list[%d]", $resect->index );
-    warn sprintf( "Saving RE $sym->orangesect[%d] $re\n", $orangesect->index )
-      if $debug{sv};
   }
   elsif ($PERL510) {
     # BUG! Should be the same as newSVpvn($resym, $relen) but is not
@@ -2865,6 +2850,16 @@ sub B::CV::save {
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
   my ( $pvsym, $cur, $len ) = ('NULL',0,0);
   my $CvFLAGS = $cv->CvFLAGS;
+  # GV cannot be initialized statically
+  my $xcv_outside = ${ $cv->OUTSIDE };
+  if ($xcv_outside == ${ main_cv() }) {
+    # Provide a temp. debugging hack for CvOUTSIDE. The address of the symbol &PL_main_cv
+    # is known to the linker, the address of the value PL_main_cv not. This is set later
+    # (below) at run-time.
+    $xcv_outside = '&PL_main_cv';
+  } elsif (ref($cv->OUTSIDE) eq 'B::CV') {
+    $xcv_outside = 0; # just a placeholder for a run-time GV
+  }
   if ($PERL510) {
     ( $pvsym, $cur ) = save_hek($pv);
     # XXX issue 84: we need to check the cv->PV ptr not the value.
@@ -2880,16 +2875,18 @@ sub B::CV::save {
       my $CvFLAGS = $cv->CvFLAGS & ~0x1000; # CVf_DYNFILE
       my $xpvc = sprintf
 	# stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
-	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)s\\_%x, %s, 0x%x, %d",
+	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)%s, %s, 0x%x, %d",
 	 $cur, $len, "Nullhv",#CvSTASH later
 	 $startfield, $$root,
 	 "0",    #GV later
 	 "NULL", #cvfile later (now a HEK)
 	 $padlistsym,
-	 ${ $cv->OUTSIDE }, #if main_cv set later
-	 $cv->OUTSIDE_SEQ,
+	 $xcv_outside, #if main_cv set later
+	 ivx($cv->OUTSIDE_SEQ),
 	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
+      # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
+      warn "lexwarnsym in XPVCV OUTSIDE: $xpvc" if $xpvc =~ /, \(CV\*\)iv\d/; # t/testc.sh -q -O3 227
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
@@ -2913,7 +2910,7 @@ sub B::CV::save {
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
-	 ." (CV*)s\\_%x, %s, 0x%x",
+	 ." (CV*)%s, %s, 0x%x",
 	 0, # GvSTASH later. test 29 or Test::Harness
 	 $cur, $len,
 	 $cv->DEPTH,
@@ -2924,7 +2921,7 @@ sub B::CV::save {
 	 "0",    #GV later
 	 "NULL", #cv_file later (now a HEK)
 	 $padlistsym,
-	 ${ $cv->OUTSIDE }, #if main_cv set later
+	 $xcv_outside, #if main_cv set later
 	 $cv->OUTSIDE_SEQ,
 	 $cv->CvFLAGS
 	);
@@ -2958,13 +2955,15 @@ sub B::CV::save {
   }
   elsif ($PERL56) {
     $cur = length ( pack "a*", $pv );
-    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
-	       cstring($pv), length($pv), length($pv), $cv->IVX,
-	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
-	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
+    my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
+		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)%s, 0x%x",
+	       cstring($pv), length($pv), length($pv), ivx($cv->IVX),
+	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
+	       $$padlist, $xcv_outside, $cv->CvFLAGS
 	      );
     if ($new_cv_fw) {
-      $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
+      $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub '
+                          .'xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
       $xpvcvsect->add($xpvc);
       $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
 		   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
@@ -2975,13 +2974,16 @@ sub B::CV::save {
   }
   else { #5.8
     $cur = length ( pack "a*", $pv );
-    my $xpvc = sprintf("%s, %u, %u, %d, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-	       cstring($pv),      length($pv), length($pv), $cv->IVX,
-	       $cv->NVX,  $startfield,       $$root, $cv->DEPTH,
-	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
+    my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub,"
+		       ." $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
+	       cstring($pv),      length($pv), length($pv), ivx($cv->IVX),
+	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
+	       $$padlist, $xcv_outside, $cv->CvFLAGS, $cv->OUTSIDE_SEQ
 	      );
     if ($new_cv_fw) {
-      $xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash start root xsub xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags outside_seq');
+      $xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash '
+                         .'start root xsub xsubany cv_gv cv_file cv_depth cv_padlist '
+                         .'cv_outside cv_flags outside_seq');
       $xpvcvsect->add($xpvc);
       $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
 		   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
@@ -2991,9 +2993,24 @@ sub B::CV::save {
     }
   }
 
-  if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
-    $init->add( sprintf( "CvOUTSIDE(s\\_%x) = PL_main_cv;", $$cv ) );
-    $init->add( sprintf( "SvREFCNT_inc(PL_main_cv);") );
+  $xcv_outside = ${ $cv->OUTSIDE };
+  if ($xcv_outside == ${ main_cv() } or ref($cv->OUTSIDE) eq 'B::CV') {
+    # patch CvOUTSIDE at run-time
+    if ( $xcv_outside == ${ main_cv() } ) {
+      $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
+                  "SvREFCNT_inc(PL_main_cv);" );
+      if ($] >= 5.017005) {
+        $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+      }
+    } else {
+      $init->add( sprintf("CvOUTSIDE($sym) = (CV*)s\\_%x;", $xcv_outside) );
+    }
+  }
+  elsif ($] >= 5.017005 and $xcv_outside) {
+    # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
+    my $padl = $cv->OUTSIDE->PADLIST->save;
+    # This needs to be postponed (test 227)
+    $init2->add( sprintf( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
   }
   if ($$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
@@ -3974,8 +3991,8 @@ sub output_all {
   my @sections = (
     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
-    $loopsect,   $copsect,   $svsect,    $xpvsect,   $orangesect,
-    $resect,     $xpvavsect, $xpvhvsect, $xpvcvsect, $xpvivsect,
+    $loopsect,   $copsect,   $svsect,    $xpvsect,
+    $xpvavsect,  $xpvhvsect, $xpvcvsect, $xpvivsect,
     $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect, $xrvsect,
     $xpvbmsect,  $xpviosect
   );
@@ -5547,8 +5564,6 @@ sub init_sections {
     svop   => \$svopsect,
     unop   => \$unopsect,
     sv     => \$svsect,
-    orange => \$orangesect,
-    re     => \$resect,
     xpv    => \$xpvsect,
     xpvav  => \$xpvavsect,
     xpvhv  => \$xpvhvsect,

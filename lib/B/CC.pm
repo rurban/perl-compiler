@@ -394,7 +394,7 @@ BEGIN {
         : $_[0]->{type} != 3
   }
   if ($] < 5.008) {
-    sub SVs_RMG {0x8000}
+    eval "sub SVs_RMG {0x8000};";
   }
 }
 
@@ -1857,7 +1857,7 @@ sub INTS_CLOSED ()    { 0x1 }
 sub INT_RESULT ()     { 0x2 }
 sub NUMERIC_RESULT () { 0x4 }
 
-# coverage: ?
+# coverage: 101
 sub numeric_binop {
   my ( $op, $operator, $flags ) = @_;
   my $force_int = 0;
@@ -1909,7 +1909,7 @@ sub numeric_binop {
       my $left  = B::Pseudoreg->new( "IV", "liv" );
       runtime(
         sprintf( "$$right = %s; $$left = %s;\t/* %s */",
-                 pop_numeric(), pop_numeric, $op->name ) );
+                 pop_numeric(), pop_numeric(), $op->name ) );
       $targ->set_int( &$operator( $$left, $$right ) );
     }
     else {
@@ -1917,7 +1917,7 @@ sub numeric_binop {
       my $left  = B::Pseudoreg->new( "NV", "lnv" );
       runtime(
         sprintf( "$$right = %s; $$left = %s;\t/* %s */",
-                 pop_numeric(), pop_numeric, $op->name ) );
+                 pop_numeric(), pop_numeric(), $op->name ) );
       $targ->set_numeric( &$operator( $$left, $$right ) );
     }
     push( @stack, $targ );
