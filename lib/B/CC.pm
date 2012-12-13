@@ -394,7 +394,7 @@ BEGIN {
         : $_[0]->{type} != 3
   }
   if ($] < 5.008) {
-    sub SVs_RMG {0x8000}
+    eval "sub SVs_RMG {0x8000};";
   }
 }
 

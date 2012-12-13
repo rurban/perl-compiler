@@ -3258,6 +3258,16 @@ sub B::CV::save {
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
   my ( $pvsym, $cur, $len ) = ('NULL',0,0);
   my $CvFLAGS = $cv->CvFLAGS;
+  # GV cannot be initialized statically
+  my $xcv_outside = ${ $cv->OUTSIDE };
+  if ($xcv_outside == ${ main_cv() }) {
+    # Provide a temp. debugging hack for CvOUTSIDE. The address of the symbol &PL_main_cv
+    # is known to the linker, the address of the value PL_main_cv not. This is set later
+    # (below) at run-time.
+    $xcv_outside = '&PL_main_cv';
+  } elsif (ref($cv->OUTSIDE) eq 'B::CV') {
+    $xcv_outside = 0; # just a placeholder for a run-time GV
+  }
   if ($PERL510) {
     ( $pvsym, $cur ) = save_hek($pv);
     # XXX issue 84: we need to check the cv->PV ptr not the value.
@@ -3273,13 +3283,13 @@ sub B::CV::save {
       my $CvFLAGS = $cv->CvFLAGS & ~0x1000; # CVf_DYNFILE
       my $xpvc = sprintf
 	# stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
-	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)s\\_%x, %s, 0x%x, %d",
+	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s, (CV*)%s, %s, 0x%x, %d",
 	 $cur, $len, "Nullhv",#CvSTASH later
 	 $startfield, $$root,
 	 "0",    #GV later
 	 "NULL", #cvfile later (now a HEK)
 	 $padlistsym,
-	 ${ $cv->OUTSIDE }, #if main_cv set later
+	 $xcv_outside, #if main_cv set later
 	 ivx($cv->OUTSIDE_SEQ),
 	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
@@ -3309,7 +3319,7 @@ sub B::CV::save {
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, (PADLIST *)%s,"
-	 ." (CV*)s\\_%x, %s, 0x%x",
+	 ." (CV*)%s, %s, 0x%x",
 	 0, # GvSTASH later. test 29 or Test::Harness
 	 $cur, $len,
 	 $cv->DEPTH,
@@ -3320,7 +3330,7 @@ sub B::CV::save {
 	 "0",    #GV later
 	 "NULL", #cv_file later (now a HEK)
 	 $padlistsym,
-	 ${ $cv->OUTSIDE }, #if main_cv set later
+	 $xcv_outside, #if main_cv set later
 	 $cv->OUTSIDE_SEQ,
 	 $cv->CvFLAGS
 	);
@@ -3355,10 +3365,10 @@ sub B::CV::save {
   elsif ($PERL56) {
     $cur = length ( pack "a*", $pv );
     my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
-		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x",
+		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)%s, 0x%x",
 	       cstring($pv), length($pv), length($pv), ivx($cv->IVX),
 	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
-	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS
+	       $$padlist, $xcv_outside, $cv->CvFLAGS
 	      );
     if ($new_cv_fw) {
       $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub'
@@ -3377,7 +3387,7 @@ sub B::CV::save {
 		       ." $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
 	       cstring($pv),      length($pv), length($pv), ivx($cv->IVX),
 	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
-	       $$padlist, ${ $cv->OUTSIDE }, $cv->CvFLAGS,   $cv->OUTSIDE_SEQ
+	       $$padlist, $xcv_outside, $cv->CvFLAGS, $cv->OUTSIDE_SEQ
 	      );
     if ($new_cv_fw) {
       $xpvcvsect->comment('pv cur len off nv           magic mg_stash cv_stash '
@@ -3392,17 +3402,22 @@ sub B::CV::save {
     }
   }
 
-  if ( ${ $cv->OUTSIDE } == ${ main_cv() } ) {
-    $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
-		"SvREFCNT_inc(PL_main_cv);" );
-    if ($] >= 5.017005) {
-      $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+  $xcv_outside = ${ $cv->OUTSIDE };
+  if ($xcv_outside == ${ main_cv() } or ref($cv->OUTSIDE) eq 'B::CV') {
+    # patch CvOUTSIDE at run-time
+    if ( $xcv_outside == ${ main_cv() } ) {
+      $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
+                  "SvREFCNT_inc(PL_main_cv);" );
+      if ($] >= 5.017005) {
+        $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+      }
+    } else {
+      $init->add( sprintf("CvOUTSIDE($sym) = (CV*)s\\_%x;", $xcv_outside) );
     }
   }
-  elsif ($] >= 5.017005 and ${ $cv->OUTSIDE }) {
+  elsif ($] >= 5.017005 and $xcv_outside) {
     # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
-    my $out = $cv->OUTSIDE;
-    my $padl = $out->PADLIST->save;
+    my $padl = $cv->OUTSIDE->PADLIST->save;
     # This needs to be postponed (test 227)
     $init2->add( sprintf( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
   }
