@@ -4961,7 +4961,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
           print "    CopFILE_set(&$s, NULL);\n";
-          if (!$THREADS) {
+          if (!$ITHREADS) {
             if ($]<5.016 or $]>=5.017) {
               print "    CopSTASHPV_set(&$s, NULL);\n"
             } else {
