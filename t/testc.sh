@@ -79,7 +79,11 @@ function runopt {
     if [ "$o" = "ccode46" -o "$o" = "cccode46" ]; then
 	CMD="$CMD-fstash,"
     fi
-    vcmd ${CMD}-o${o}${suff}.c $o.pl
+    if [ -z $qq ]; then
+	vcmd ${CMD}-o${o}${suff}.c $o.pl 2>&1 | grep -v "$o.pl syntax OK"
+    else
+	vcmd ${CMD}-o${o}${suff}.c $o.pl
+    fi
     test -z $CPP || vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
     vcmd $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
     test -x ${o}${suff} || (test -z $CONT && exit)
