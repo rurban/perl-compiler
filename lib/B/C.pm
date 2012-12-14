@@ -3260,7 +3260,7 @@ sub B::CV::save {
   my $CvFLAGS = $cv->CvFLAGS;
   # GV cannot be initialized statically
   my $xcv_outside = ${ $cv->OUTSIDE };
-  if ($xcv_outside == ${ main_cv() }) {
+  if ($xcv_outside == ${ main_cv() } and !$MULTI) {
     # Provide a temp. debugging hack for CvOUTSIDE. The address of the symbol &PL_main_cv
     # is known to the linker, the address of the value PL_main_cv not. This is set later
     # (below) at run-time.
@@ -4961,10 +4961,12 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
           print "    CopFILE_set(&$s, NULL);\n";
-          if ($]<5.016 or $]>=5.017) {
-            print "    CopSTASHPV_set(&$s, NULL);\n"
-          } else {
-            print "    CopSTASHPV_set(&$s, NULL, 0);\n";
+          if (!$THREADS) {
+            if ($]<5.016 or $]>=5.017) {
+              print "    CopSTASHPV_set(&$s, NULL);\n"
+            } else {
+              print "    CopSTASHPV_set(&$s, NULL, 0);\n";
+            }
           }
         }
       } elsif ($s ne 'ptr_undef') {
@@ -5914,8 +5916,8 @@ sub save_context {
   } else { # dynamic ARRAY
     $init->add(
                "CvPADLIST(PL_main_cv) = pad_new(0);", # sets PL_comppad
-               "PadlistNAMES(CvPADLIST(PL_main_cv)) = SvREFCNT_inc($curpad_nam); /* namepad */",
-               "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = SvREFCNT_inc($curpad_sym); /* curpad */",
+               "PadlistNAMES(CvPADLIST(PL_main_cv)) = (AV*)SvREFCNT_inc($curpad_nam); /* namepad */",
+               "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (AV*)SvREFCNT_inc($curpad_sym); /* curpad */",
                "PL_curpad = AvARRAY($curpad_sym);",
                "PL_comppad = $curpad_sym;");    # fixed "panic: illegal pad"
   }
