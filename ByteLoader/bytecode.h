@@ -749,7 +749,7 @@ static int bget_swab = 0;
 
 #if PERL_VERSION >= 17
 #define BSET_newpadlx(padl, arg)  STMT_START {		\
-	    padl = (SV*)Perl_pad_new(arg);		\
+	    padl = (SV*)pad_new(arg);		\
 	    BSET_OBJ_STOREX(padl);			\
 	} STMT_END
 #define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad
