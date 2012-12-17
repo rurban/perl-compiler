@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
-#      Copyright (c) 2011, 2012 cPanel Inc
+#      Copyright (c) 2011, 2012, 2013 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43';
+our $VERSION = '1.42_07';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1304,11 +1304,14 @@ sub B::PVOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $loopsect->comment("$opsect_common, pv");
-  $pvopsect->add( sprintf( "%s, %s", $op->_save_common, cstring( $op->pv ) ) );
+  # op_pv must be dynamic
+  $pvopsect->add( sprintf( "%s, NULL", $op->_save_common ) );
   $pvopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $pvopsect->index;
   $init->add( sprintf( "pvop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
+  my $pv = pack "a*", $op->pv;
+  $init->add( sprintf( "pvop_list[$ix].op_pv = savepvn(%s, %u);", cstring( $pv ), length($pv) ) );
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
@@ -4826,9 +4829,15 @@ _EOT7
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
-	  print "    CopFILE_set(&$s, NULL);";
-	  print $] <5.016 ? " CopSTASHPV_set(&$s, NULL);\n" : " CopSTASHPV_set(&$s, NULL, 0);\n";
-	}
+          print "    CopFILE_set(&$s, NULL);\n";
+        }
+        if (!$ITHREADS) {
+          if ($]<5.016 or $]>=5.017) {
+            print "    CopSTASHPV_set(&$s, NULL);\n"
+          } else {
+            print "    CopSTASHPV_set(&$s, NULL, 0);\n";
+          }
+        }
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
