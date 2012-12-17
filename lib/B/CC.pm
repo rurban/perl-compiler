@@ -2846,10 +2846,10 @@ sub pp_last {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
       warn("Warning: \"last\" used outside loop\n");
-      #return default_pp($op); # no optimization
+      return default_pp($op); # no optimization
     }
   }
-  else {
+  elsif (ref($op) eq 'B::PVOP') { # !OPf_STACKED
     my $label = $op->pv;
     if ($label) {
       $cxix = dopoptolabel( $label );
@@ -2862,7 +2862,6 @@ sub pp_last {
 	return $op->next;
       }
     }
-
     # Add support to leave non-loop blocks. label fixed with 1.11
     if ( CxTYPE_no_LOOP( $cxstack[$cxix] ) ) {
       if (!$cxstack[$cxix]->{'lastop'} or !$cxstack[$cxix]->{'label'}) {
