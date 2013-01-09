@@ -72,7 +72,8 @@ ramblings/flip-flop
 ramblings/frozenperl_2010.pod
 ramblings/magic
 ramblings/reg.alloc
-ramblings/revert-B-load-BEGIN.patch
+ramblings/revert-B-load-BEGIN-514.patch
+ramblings/revert-B-load-BEGIN-516.patch
 ramblings/runtime.porting
 ramblings/yapc_bratislava08.pod
 ramblings/yapceu_2010.pod
