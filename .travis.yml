@@ -1,7 +1,9 @@
 language: "perl"
 perl:
+    - "5.10"
     - "5.12"
     - "5.14"
+    - "5.16"
 install: "echo"
 before_script:
 #   - sudo apt-get install libffi-dev libicu-dev libgmp3-dev clang llvm-dev zlib1g-dev gcc-multilib
