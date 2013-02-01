@@ -5,6 +5,14 @@ use 5.006;
 use Carp;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
+mkdir "lib/B/C" unless -d "lib/B/C";
+unless (-e 'lib/B/C/Flags.pm') {
+    open PH, ">", "lib/B/C/Flags.pm";
+    print PH "package B::C::Flags;\n\n";
+    print PH "\n1;\n";
+    close PH;
+    chmod 0644, "lib/B/C/Flags.pm";
+}
 
 # generate lib/B/Asmdata.pm beforehand
 # my $X = $^X =~ / / ? qq("$^X") : $^X;
@@ -61,7 +69,7 @@ sub write_b_c_flags {
     print PH "\$extra_libs = \"$extra_libs\";\n";
     print PH "\n1;\n";
     close PH;
-    chmod (0644, "lib/B/C/Flags.pm");
+    chmod 0644, "lib/B/C/Flags.pm";
 }
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it?
