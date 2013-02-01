@@ -53,7 +53,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.12, Reini Urban, 2011-10-02 05:19:00
 # Version 2.13, Reini Urban, 2012-01-10 13:03:00
 # Version 2.14, Reini Urban, 2012-02-28 09:04:07
-# Version 2.15, Reini Urban, 2012-10-10 14:57:49
+# Version 2.15, Reini Urban, 2013-02-01 10:41:54
 
 use strict;
 use warnings;
@@ -243,7 +243,7 @@ sub parse_argv {
          #'O1-4'        # alias for -Wb=-O1 (new since 2.13)
         'dryrun|n',     # only print commands, do not execute
         'c',            # Compile only
-        'h',            # Help me
+        'help|h',       # Help me
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
@@ -272,11 +272,9 @@ sub parse_argv {
         $Options->{t} = 0;
     }
 
-    helpme() if opt('h'); # And exit
+    helpme() if opt('help'); # And exit
     if (opt('version')) {
-      require B::C::Flags;
-      my $BC_VERSION = $B::C::Flags::VERSION . $B::C::REVISION;
-      die "perlcc $VERSION, B-C-${BC_VERSION}\n";
+      die version();
     }
 
     $Options->{Wb} .= ",-O1" if opt('O1');
@@ -834,10 +832,15 @@ sub spawnit {
     return (\@output, \@error, $errcode);
 }
 
-sub helpme {
+sub version {
     require B::C::Flags;
+    no warnings 'once';
     my $BC_VERSION = $B::C::Flags::VERSION . $B::C::REVISION;
-    print "perlcc compiler frontend, version $VERSION, B-C-${BC_VERSION}\n\n";
+    return "perlcc $VERSION, B-C-${BC_VERSION} built for $Config{perlpath} $Config{archname}\n";
+}
+
+sub helpme {
+    print version(),"\n";
     if (opt('v')) {
 	pod2usage( -verbose => opt('v') );
     } else {
