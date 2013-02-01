@@ -274,9 +274,7 @@ sub parse_argv {
 
     helpme() if opt('help'); # And exit
     if (opt('version')) {
-      require B::C::Flags;
-      my $BC_VERSION = $B::C::Flags::VERSION . $B::C::REVISION;
-      die "perlcc $VERSION, B-C-${BC_VERSION}\n";
+      die version();
     }
 
     $Options->{Wb} .= ",-O1" if opt('O1');
@@ -842,9 +840,7 @@ sub version {
 }
 
 sub helpme {
-    require B::C::Flags;
-    my $BC_VERSION = $B::C::Flags::VERSION . $B::C::REVISION;
-    print "perlcc compiler frontend, version $VERSION, B-C-${BC_VERSION}\n\n";
+    print version(),"\n";
     if (opt('v')) {
 	pod2usage( -verbose => opt('v') );
     } else {
