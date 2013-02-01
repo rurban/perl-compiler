@@ -320,8 +320,8 @@ result[49]='ok'
 # @ISA issue 64
 tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main;print Next->top();'
 result[50]='ok'
-# XXX TODO check if signals work, sigwarn and SIG{INT}
-tests[51]='BEGIN{$SIG{__WARN__}=sub{$w++;};}$a="abcdefxyz";eval{substr($a,999,999)="";};print q(ok) if $w'
+# XXX TODO sigwarn $w = B::NULL without -v
+tests[51]='$SIG{__WARN__}=sub{print "ok"};warn 1;'
 result[51]='ok'
 #-------------
 # issue27
