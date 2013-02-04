@@ -1135,7 +1135,6 @@ shells might not be able to kill its children.
 #   fill-column: 100
 # End:
 # vim: expandtab shiftwidth=4:
-q
 !NO!SUBS!
 
 close OUT or die "Can't close $file: $!";
