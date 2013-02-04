@@ -5,7 +5,7 @@
 
 1.43	2013-xx-xx rurban
 	Improved package detection: methods, functions, require, new and bless.
-	Bigger compile sizes with -O0,-O1,-O2: Store all subs of dependent packages.
+	Bigger compile sizes with -O[0-2]: Store all subs of dependent packages.
 	Added 5.16 support
 
 	* C: issue95 and t/perldoc.t: parent @File::Spec::ISA was not saved.
