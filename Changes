@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2012-11-xx rurban
+1.43	2013-xx-xx rurban
 	Improved package detection: methods, functions, require, new and bless.
 	Bigger compile sizes with -O0,-O1,-O2: Store all subs of dependent packages.
 	Added 5.16 support
@@ -19,6 +19,8 @@
         Delete packages which appear to be nowhere used automatically with -fdelete-pkg or -O2.
 	try_isa(): Desperate method finding attempt by trying all seen packages, which
 	  slows down the compiler a lot. Added internal ISA Caching.
+        Add -fobj_candidates=num option, 10 with -O3.
+          Restrict the search for objects for an unknown method to max. num packages.
 	Special case Carp calling threads and B methods.
 	Avoid saving not undefined CVs if possible. with Autoloading, i.e. POSIX
 	  the first is always saved as empty CV.

@@ -323,7 +323,7 @@ our ($curcv, $module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($pv_copy_on_grow, $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $walkall);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $walkall, $obj_candidates);
 our $verbose = 0;
 our %option_map = (
     'cog'             => \$B::C::pv_copy_on_grow,
@@ -340,6 +340,7 @@ our %option_map = (
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
     'warnings'        => \$B::C::warnings, # disable with -fno-warnings
+    'obj_candidates'  => \$B::C::obj_candidates,
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'cop'             => \$optimize_cop, # XXX very unsafe!
@@ -1422,10 +1423,12 @@ sub method_named {
   for my $p ( $package_pv, @package_pv, 'main',
 	      grep{$include_package{$_}} keys %include_package,
 	      map{packname_inc($_)} keys %INC ) {
+    next if $skip_package{$p}; #
     push @candidates, $p unless grep {$p eq $_} @candidates;
   }
  CAND:
-  for my $p (@candidates) {
+  # only the first 10 cand to improve B::C performance
+  for my $p ($B::C::obj_candidates ? splice(@candidates,0,$B::C::obj_candidates) : @candidates) {
     next if $skip_package{$p}; # forced to skip
     no strict 'refs';
     $method = $p . '::' . $name;
@@ -1449,19 +1452,6 @@ sub method_named {
 	last CAND;
       }
       $method = $p.'::'.$name;
-      #warn "2nd round to find the package for \"$method\"\n" if $debug{cv};
-      #for (keys %include_package) {
-	#if ($method = find_method($_, $name)) {
-	 # last CAND;
-	#}
-      #}
-      #$method = $p.'::'.$name;
-      #warn "3rd desperate round to find the package for \"$method\" in \%INC \n" if $debug{cv};
-      #for (map{packname_inc($_)} keys %INC) {
-	#if ($method = find_method($_, $name)) {
-	#  last CAND;
-	#}
-      #}
     }
   }
   if (defined(&{$method})) {
@@ -6183,6 +6173,7 @@ sub compile {
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
   $B::C::walkall  = 1;
+  $B::C::obj_candidates = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   my %optimization_map = (
@@ -6310,6 +6301,9 @@ OPTION:
           if exists $optimization_map{$i};
       }
       unshift @options, @opt;
+      if ($arg >= 3 and !$B::C::obj_candidates) {
+        $B::C::obj_candidates = 10;
+      }
       warn "options : ".(join " ",@opt)."\n" if $verbose;
     }
     elsif ( $opt eq "e" ) {
@@ -6535,11 +6529,12 @@ do not print B<-D> information when parsing for the unused subs.
 Writes debugging output to STDERR and to the program's generated C file.
 Otherwise writes debugging info to STDERR only.
 
-=item B<-f>I<OPTIM>
+=item B<-f>I<OPTIM> I<[argument]>
 
 Force options/optimisations on or off one at a time. You can explicitly
-disable an option using B<-fno-option>. All options default to
-B<disabled>.
+disable an option using B<-fno-option>, which sets the argument to I<0>.
+All options initially default to B<disabled>, the optional argument defaults
+to I<1>.
 
 =over 4
 
@@ -6683,6 +6678,16 @@ See also C<-fdelete-pkg>.
 
 Enabled with C<-O3>.
 
+=item B<-fobj_candidates> I<num>
+
+Restrict the search for objects for an unknown method to max. I<num> packages.
+
+The order of packages to be looked at is an internal compiler heuristic.
+If the compiler is not able to find a package for a method, rather use
+B<-u>I<Package> instead.
+
+Set with C<-O3> to C<10>.
+
 =item B<-fuse-script-name>
 
 Use the script name instead of the program name as C<$0>.
@@ -6698,8 +6703,8 @@ files, linenumbers) for ~10% faster execution and less space,
 but warnings and errors will have no file and line infos, and
 might even segfault.
 
-It will most likely not work yet. I<(was -fbypass-nullops in earlier
-compilers)>
+It will most likely not work yet.
+I<(was -fbypass-nullops in earlier compilers)>
 
 Enabled with C<-O4>.
 
