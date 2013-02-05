@@ -4868,9 +4868,6 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
     HV *hv;
-#ifdef DEBUG_LEAKING_SCALARS_FORK_DUMP
-    pid_t child;
-#endif
 
 #ifndef MULTIPLICITY
 #   ifndef PERL_UNUSED_ARG
@@ -4926,6 +4923,9 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #endif
     }
     PerlIO_destruct(aTHX);
+#if defined(PERLIO_LAYERS)
+    PerlIO_cleanup(aTHX);
+#endif
     return 0;
 }
 _EOT6
@@ -6180,8 +6180,8 @@ sub compile {
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings -fno-walkall)],
-    4 => [qw(-fcop)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    4 => [qw(-fcop -fno-walkall)],
   );
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::C::Section
 	       B::Section B::Pseudoreg B::Shadow B::C::InitSection
@@ -6676,7 +6676,7 @@ methods or undetected run-time dependencies.
 
 See also C<-fdelete-pkg>.
 
-Enabled with C<-O3>.
+Enabled with C<-O4>.
 
 =item B<-fobj_candidates> I<num>
 
