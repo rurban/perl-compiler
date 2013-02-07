@@ -447,7 +447,7 @@ tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
 tests[95]='#TODO IO::Socket::SSL::DESTROY
 use IO::Socket::SSL();
-my IO::Socket::SSL $handle = new IO::Socket::SSL;
+my IO::Handle $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";'
 result[95]='ok'
