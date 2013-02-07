@@ -21,14 +21,14 @@ use Net::SSLeay        ();
 use IO                 ();
 use Socket             ();
 
-my $handle = new IO::Socket::SSL;
+my $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";
 EOF
 
 my $typed = <<'EOF';
 use IO::Socket::SSL();
-my IO::Handle $handle = new IO::Socket::SSL;
+my IO::Handle $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";
 EOF
