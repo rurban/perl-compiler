@@ -3,6 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.43	2013-02-xx rurban
+        * C: Avoid saving not undefined CVs if possible. with Autoloading, i.e. POSIX
+	  the first is always saved as empty CV.
+	Fix -u<module> without file extension.
+	With hek do not drop FAKE, only for const pv.
+	Fixed $$ ($PID) to be dynamic, issue 108. Thanks to flexvault for reporting this.
+        Fixed refcounts of *ENV, issue 111.
+
 1.42	2012-02-01 rurban
 	* C: Improved finding methods in parent classes (Warning: method not found),
 	Save @ISA of those child classes.

@@ -2662,15 +2662,32 @@ sub B::CV::save {
         $root   = $auto->ROOT;
         $cvxsub = $auto->XSUB;
 	if ($$auto) {
+	  # XXX This has now created a wrong GV name!
+	  my $oldcv = $cv;
 	  $cv  = $auto ; # This is new. i.e. via AUTOLOAD or UNIVERSAL, in another stash
-	  my $gv = $cv->GV;
-	  if ($$gv) {
-	    if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	      warn "New ".$gv->STASH->NAME."::".$gv->NAME."\n" if $verbose;
-	      $svsect->remove;
-	      $xpvcvsect->remove;
-	      delsym($cv);
-	      return $cv->save($gv->STASH->NAME."::".$gv->NAME);
+	  my $gvnew = $cv->GV;
+	  if ($$gvnew) {
+	    if ($cvstashname ne $gvnew->STASH->NAME or $cvname ne $gvnew->NAME) { # UNIVERSAL or AUTOLOAD
+	      my $newname = $gvnew->STASH->NAME."::".$gvnew->NAME;
+	      warn " New $newname autoloaded. remove old cv\n" if $debug{sub}; # and wrong GV?
+	      unless ($new_cv_fw) {
+		$svsect->remove;
+		$xpvcvsect->remove;
+	      }
+	      delsym($oldcv);
+	      return $cv->save($newname) if !$PERL510;
+
+	      no strict 'refs';
+	      my $newsym = svref_2object( \*{$newname} )->save;
+	      my $cvsym = defined objsym($cv) ? objsym($cv) : $cv->save($newname);
+	      if (my $oldsym = objsym($gv)) {
+		warn "Alias polluted $oldsym to $newsym\n" if $debug{gv};
+		$init->add("$oldsym = $newsym;");
+		delsym($gv);
+	      }# else {
+		#$init->add("GvCV_set(gv_fetchpv(\"$fullname\", TRUE, SVt_PV), (CV*)NULL);");
+	      #}
+	      return $cvsym;
 	    }
 	  }
 	  $sym = savesym( $cv, "&sv_list[$sv_ix]" ); # GOTO
