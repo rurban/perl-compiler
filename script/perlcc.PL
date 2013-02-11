@@ -789,6 +789,10 @@ sub check_perl {
 sub spawnit {
     my ($command) = shift;
     my (@error,@output,$errname);
+    if (opt('dryrun')) {
+        print "$command\n";
+        return (\@output, \@error);
+    }
     if ($Options->{spawn}) {
         (undef, $errname) = tempfile("pccXXXXX");
         {
@@ -801,10 +805,10 @@ sub spawnit {
         close S_ERROR;
         close S_OUT;
         unlink $errname or _die("Can't unlink error file $errname\n");
-        return (\@output, \@error);
     } else {
         @output = split /\n/, `$command`;
     }
+    return (\@output, \@error);
 }
 
 sub helpme {
