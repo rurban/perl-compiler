@@ -1058,11 +1058,14 @@ sub B::PVOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $loopsect->comment("$opsect_common, pv");
-  $pvopsect->add( sprintf( "%s, %s", $op->_save_common, cstring( $op->pv ) ) );
+  # op_pv must be dynamic
+  $pvopsect->add( sprintf( "%s, NULL", $op->_save_common ) );
   $pvopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $pvopsect->index;
   $init->add( sprintf( "pvop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
+  my $pv = pack "a*", $op->pv;
+  $init->add( sprintf( "pvop_list[$ix].op_pv = savepvn(%s, %u);", cstring( $pv ), length($pv) ) );
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
