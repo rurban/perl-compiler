@@ -2713,6 +2713,27 @@ sub B::CV::save {
       }
     }
   }
+  if (!$$root) {
+    if ($fullname ne 'threads::tid' and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"}))) {
+      warn "Warning: &".$fullname." not found\n" if $verbose or $debug{sub};
+    }
+    $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
+    if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
+      warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
+	if $debug{cv};
+      $svsect->remove;
+      $xpvcvsect->remove;
+      delsym( $cv );
+      # Empty CV (methods) must be skipped not to disturb method resolution
+      # (e.g. t/testm.sh POSIX)
+      return '0';
+    } else {
+      # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
+      warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
+	if $debug{cv} or $verbose;
+      # continue, must save the 2 symbols from above
+    }
+  }
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
