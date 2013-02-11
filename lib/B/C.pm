@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42';
+our $VERSION = '1.42_01';
 my %debug;
 my $eval_pvs = '';
 
@@ -5615,7 +5615,11 @@ OPTION:
     }
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
-      require $arg;
+      if ($arg =~ /\.p[lm]$/) {
+	eval "require(\"$arg\");";  # path as string
+      } else {
+	eval "require $arg;";      # package as bareword with ::
+      }
       mark_unused( $arg, 1 );
     }
     elsif ( $opt eq "U" ) {
