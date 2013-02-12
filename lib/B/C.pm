@@ -3078,6 +3078,10 @@ if (0) {
       }
     }
   }
+  if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
+    $init->add(qq[$sym = &PL_sv_undef;]);
+    return $sym;
+  }
   if ($fullname eq 'main::ENV') {
     $init->add(qq[$sym = PL_envgv;]);
     my $refcnt = $gv->REFCNT;
@@ -4516,16 +4520,15 @@ _EOT9
 	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
         if ( $xsub{$stashname} eq 'Dynamic' ) {
 	  print "\tPUTBACK;\n";
-	  print "#ifdef USE_DYNAMIC_LOADING\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
+	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  if ($] >= 5.015003) {
 	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
 	  }
 	  print "\tPUTBACK;\n";
-	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]
@@ -4550,8 +4553,8 @@ _EOT9
           $path .= "/" if $path; # can be empty
           $laststash = $stashname unless $laststash; # without ::
           my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
-          warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
-            if $verbose and $debug{pkg};
+          #warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
+          #  if $verbose and $debug{pkg};
           for (@DynaLoader::dl_shared_objects) {
             if (m{^(.+/)$sofile$}) {
               print XS $stashname,"\t",$_,"\n";
@@ -4564,6 +4567,7 @@ _EOT9
           warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and $verbose;
         }
         print "#else\n";
+        print "\tPUTBACK;\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
