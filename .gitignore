@@ -6,6 +6,7 @@ MYMETA.yml
 C.bs
 C.c
 C.o
+Stash/Stash.c
 Makefile
 Makefile.old
 ByteLoader/ByteLoader.c
@@ -36,3 +37,7 @@ blib
 lib/B/C/Flags.pm
 MANIFEST.files
 TAGS
+log.*
+.DS_Store
+B-C-*.tar.gz
+.commit
