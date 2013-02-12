@@ -31,7 +31,7 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
-Mblib=-Mblib
+Mblib="-Iblib/arch -Iblib/lib"
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings))'`"
 
 function vcmd {
@@ -76,11 +76,13 @@ do
       fi
       exit
   fi
-  if [ "$opt" = "F" ]; then 
+  if [ "$opt" = "F" ]; then
       v=$($PERL -It -Mmodules -e'print perlversion')
       if [ -f log.modules-$v ]; then # and not older than a few days
 	  echo t/testm.sh `grep ^fail log.modules-$v | perl -anle 'print $F[1]'`
           for m in $(grep ^fail log.modules-$v | perl -anle 'print $F[1]'); do t/testm.sh -q $m; done
+      else
+	  echo "Error: log.modules-$v not found"
       fi
       exit
   fi
@@ -105,7 +107,7 @@ if [ -n "$1" ]; then
         [ -z "$QUIET" ] && PERLCC_OPTS="$PERLCC_OPTS -v4"
 	while [ -n "$1" ]; do
 	    # single module. update,setup,install are UAC terms
-	    name="$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
+	    name=pcc"$(perl -e'$a=shift;$a=~s{::}{_}g;$a=~s{(install|setup|update)}{substr($1,0,4)}ie;print lc($a)' $1)"
 	    if [ "${COPTS/,-D/}" != "$COPTS" ]; then
               COPTS="${COPTS:1}"
 	      echo $PERL $Mblib -MO=C,$COPTS,-o$name.c -e "\"use $1; print qq(ok\\n)\""
