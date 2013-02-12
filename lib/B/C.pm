@@ -2718,7 +2718,8 @@ sub B::CV::save {
       warn "Warning: &".$fullname." not found\n" if $verbose or $debug{sub};
     }
     $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
-    if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
+    # This block broke test 15, disabled
+    if (0 and $sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
       warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
 	if $debug{cv};
       $svsect->remove;
