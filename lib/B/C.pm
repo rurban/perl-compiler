@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_01';
+our $VERSION = '1.43';
 my %debug;
 my $eval_pvs = '';
 
@@ -4413,7 +4413,6 @@ _EOT8
   print("/* XS bootstrapping code*/\n");
   print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
-  #print "#ifdef USE_DYNAMIC_LOADING\n";
   foreach my $stashname ( keys %static_ext ) {
     my $stashxsub = $stashname;
     $stashxsub =~ s/::/__/g;
@@ -4422,7 +4421,6 @@ _EOT8
     warn "bootstrapping static $stashname added to xs_init\n" if $verbose;
     print "\tnewXS(\"$stashname\::bootstrap\", boot_$stashxsub, file);\n";
   }
-  #print "#endif\n";
   print "#ifdef USE_DYNAMIC_LOADING\n";
   print "\tPUSHMARK(sp);\n";
   printf "\tXPUSHp(\"DynaLoader\", %d);\n", length("DynaLoader");
@@ -4519,6 +4517,7 @@ _EOT9
 	printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
 	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
         if ( $xsub{$stashname} eq 'Dynamic' ) {
+	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  print "\tPUTBACK;\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
         }
