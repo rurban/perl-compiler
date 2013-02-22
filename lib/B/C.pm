@@ -302,6 +302,7 @@ my %static_core_pkg; # = map {$_ => 1} static_core_packages();
 my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
@@ -1488,7 +1489,7 @@ sub B::NULL::save {
   warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
   $svsect->add( sprintf( "0, %lu, 0x%x".($PERL510?', {(char*)ptr_undef}':''), $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
-  if ($debug{flags} and $]>5.009 and $DEBUGGING) { # add index to sv_debug_file to easily find the Nullsv
+  if ($debug{flags} and $]>5.009 and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
     # $svsect->debug( "ix added to sv_debug_file" );
     $init->add(sprintf(qq(sv_list[%d].sv_debug_file = "NULL sv_list[%d] 0x%x";), 
 		       $svsect->index, $svsect->index, $sv->FLAGS));
@@ -1931,7 +1932,7 @@ sub B::PV::save {
     if ( defined($pv) and !$B::C::pv_copy_on_grow ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv ) );
     }
-    if ($debug{flags} and $DEBUGGING) { # add sv_debug_file
+    if ($debug{flags} and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
 			 $svsect->index, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
 			 $svsect->index, $sv->FLAGS));
@@ -4146,7 +4147,7 @@ _EOT0
 
 sub output_boilerplate {
   # Store the sv_list index in sv_debug_file when debugging
-  print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUGGING;
+  print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUG_LEAKING_SCALARS;
   if ($B::C::Flags::have_independent_comalloc) {
     print <<'_EOT1';
 #ifdef NEED_MALLOC_283
