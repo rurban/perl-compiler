@@ -3148,7 +3148,7 @@ if (0) {
     }
   }
   if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
-    $init->add(qq[$sym = &PL_sv_undef;]);
+    $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
     return $sym;
   }
   if ($fullname eq 'main::ENV') {
