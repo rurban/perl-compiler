@@ -353,12 +353,13 @@ my ( $init_name, %debug, $strict );
 # Disable with -fno-
 my ( $freetmps_each_bblock, $freetmps_each_loop, $inline_ops, $opt_taint, $opt_omit_taint,
      $opt_slow_signals, $opt_name_magic, $opt_type_attr, $opt_autovivify, $opt_magic,
-     %c_optimise );
+     $opt_aelem, %c_optimise );
 $inline_ops = 1 unless $^O eq 'MSWin32'; # Win32 cannot link to unexported pp_op() XXX
 $opt_name_magic = 1;
 my %optimise = (
   freetmps_each_bblock => \$freetmps_each_bblock, # -O1
   freetmps_each_loop   => \$freetmps_each_loop,	  # -O2
+  aelem                => \$opt_aelem,	          # -O2
   inline_ops 	       => \$inline_ops,	  	  # not on Win32
   omit_taint           => \$opt_omit_taint,
   taint                => \$opt_taint,
@@ -1786,7 +1787,7 @@ sub pp_aelemfast {
 
 sub _aelem {
   my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
-  if (!$rmg and !$vifify and $ix >= 0) {
+  if ($opt_aelem and !$rmg and !$vifify and $ix >= 0) {
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
@@ -3271,6 +3272,7 @@ OPTION:
       $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
+        $opt_aelem = 1; # unstable, test: 68 pp_padhv targ assert
       }
       if ( $arg >= 1 ) {
         $opt_type_attr = 1;
