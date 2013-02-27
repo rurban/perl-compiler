@@ -4462,7 +4462,7 @@ _EOT6
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
-  elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow)) {
+  elsif ( $PERL510 and (@static_free or $free->index > -1)) {
     print <<'_EOT7';
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
@@ -4483,10 +4483,10 @@ _EOT7
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
-	  print $]<5.016 or $]>=5.017
-	    ? " CopSTASHPV_set(&$s, NULL);\n"
-	    : " CopSTASHPV_set(&$s, NULL, 0);\n";
-	}
+        }
+        print ($]<5.016 or $]>=5.017
+               ? " CopSTASHPV_set(&$s, NULL);\n"
+               : " CopSTASHPV_set(&$s, NULL, 0);\n");
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
