@@ -562,7 +562,7 @@ __EOV
 
     print '
 
-OP *Perl_pp_aelem_nolval(aTHX);
+OP *Perl_pp_aelem_nolval(pTHXx);
 #ifndef SVfARG
 # define SVfARG(x) (void *)x
 #endif
