@@ -2852,7 +2852,7 @@ sub B::CV::save {
   my $CvFLAGS = $cv->CvFLAGS;
   # GV cannot be initialized statically
   my $xcv_outside = ${ $cv->OUTSIDE };
-  if ($xcv_outside == ${ main_cv() }) {
+  if ($xcv_outside == ${ main_cv() } and !$MULTI) {
     # Provide a temp. debugging hack for CvOUTSIDE. The address of the symbol &PL_main_cv
     # is known to the linker, the address of the value PL_main_cv not. This is set later
     # (below) at run-time.
