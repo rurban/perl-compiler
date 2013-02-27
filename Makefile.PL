@@ -72,8 +72,14 @@ sub write_b_c_flags {
     chmod 0644, "lib/B/C/Flags.pm";
 }
 
-# XXX Check for 5.16.0 B-1.34 and offer to patch it?
+# XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
 # Or not needed as we do not want to support utf8 and \0 in stashes there
+
+if ($] > 5.017003) {
+    unless (-d '.git' and `git symbolic-ref -q HEAD` eq "refs/heads/master\n") {
+        die "Perl 5.18 PADLIST changes are currently not supported. You can try git master.\n";
+    }
+}
 
 WriteMakefile(
     NAME	 => "B::C",
