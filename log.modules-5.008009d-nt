@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42 c8d240e 2012-02-01 | Merge branch 'master' of github.com:rurban/perl-compiler
+# B::C::VERSION = 1.43 f36f018 2013-02-22 | fix threading bugs resp. DEBUG_LEAKING_SCALARS M
 # perlversion = 5.008009d-nt
 # path = /usr/local/bin/perl5.8.9d-nt
 # platform = linux 64bit non-threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.008009d-nt
+# 100 / 100 modules tested with B-C-1.43 - perl-5.008009d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
