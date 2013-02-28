@@ -818,6 +818,7 @@ sub todo_tests_default {
 
 	push @todo, (14)    if $] >= 5.012;
 	push @todo, (10,16) if $what eq 'cc_o2';
+	push @todo, (27,41..45,49) if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
 	push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $] < 5.015);

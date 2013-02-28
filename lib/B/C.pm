@@ -256,6 +256,7 @@ my $cv_index      = 0;
 my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
+my $padlist_index = 0;
 
 # exclude all not B::C:: prefixed subs
 my %all_bc_subs = map {$_=>1}
@@ -1300,7 +1301,7 @@ sub B::COP::save {
               $op->_save_common, $op->line,
 	      "(char*)".constpv( $op->stashpv ), # we can store this static
 	      "(char*)".constpv( $file ), $op->stashflags,
-              $op->cop_seq, $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+              ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } else {
       # cop_label now in hints_hash (Change #33656)
@@ -1312,7 +1313,7 @@ sub B::COP::save {
               $op->_save_common, $op->line,
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
-              $op->cop_seq,
+              ivx($op->cop_seq),
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
 	       ));
     }
@@ -1357,7 +1358,7 @@ sub B::COP::save {
 	      $op->_save_common, cstring( $op->label ),
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-	      $op->cop_seq,      $op->arybase,
+	      ivx($op->cop_seq),      $op->arybase,
 	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
 	      ( $PERL56 ? "" : ", 0" )
 	     )
@@ -1371,13 +1372,17 @@ sub B::COP::save {
     unless $B::C::optimize_warn_sv;
 
   push @static_free, "cop_list[$ix]" if $ITHREADS;
-  $init->add(
-    sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv( $file ) ),
-  ) if !$optimize_cop and !$ITHREADS;
-  $init->add(
-    sprintf( "CopSTASHPV_set(&cop_list[$ix], %s%s);", constpv( $op->stashpv ),
-             $]<5.016 or $]>=5.017 ? "" : ", ".length($op->stashpv))
-  ) if !$ITHREADS;
+  if (!$ITHREADS) {
+    $init->add(
+      sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) )
+    ) if !$B::C::optimize_cop;
+    my $stpv = constpv( $op->stashpv );
+    my $stlen = "";
+    if ($] >= 5.016 and $] <= 5.017) {
+      $stlen = ", ".length($op->stashpv);
+    }
+    $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", $stpv));
+  }
 
   # our root: store all packages from this file
   if (!$mainfile) {
@@ -4484,9 +4489,11 @@ _EOT7
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
         }
-        print ($]<5.016 or $]>=5.017
-               ? " CopSTASHPV_set(&$s, NULL);\n"
-               : " CopSTASHPV_set(&$s, NULL, 0);\n");
+        if ($]<5.016 or $]>=5.017) {
+          print " CopSTASHPV_set(&$s, NULL);\n";
+        } else {
+          print " CopSTASHPV_set(&$s, NULL, 0);\n";
+        }
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
@@ -4877,7 +4884,7 @@ EOT
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    } elsif ( $PERL510 and (%strtable or $B::C::pv_copy_on_grow) ) {
+    } elsif ( $PERL510 and (@static_free or $free->index > -1) ) {
       warn "my_perl_destruct (-fcog)\n" if $verbose;
       print "    my_perl_destruct( my_perl );\n";
     } elsif ( $] >= 5.007003 ) {
