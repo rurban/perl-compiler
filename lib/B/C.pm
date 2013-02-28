@@ -3189,6 +3189,12 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
+  if ($fullname eq 'main::ARGV') {
+    $init->add(qq[$sym = PL_argvgv;]);
+    my $refcnt = $gv->REFCNT;
+    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
+    return $sym;
+  }
   # defer to the end because we remove compiler-internal and skipped stuff
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
@@ -3205,28 +3211,24 @@ if (0) {
 
   my $gp;
   if ( $PERL510 and $gv->isGV_with_GP ) {
-    if ($fullname eq 'main::ARGV') {
-      warn "Skip overwriting main::ARGV GP\n" if $debug{gv};
-    } else {
-      $gp = $gv->GP;    # B limitation
-      if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
-	# Shared glob *foo = *bar
-	$init->add( "GvGP_set($sym, GvGP($egvsym));" );
-	$is_empty = 1;
-      }
-      elsif ( $gp and !$is_empty ) {
-        warn(sprintf(
-                     "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
-                     $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
-                     $gv->FILE, $gp
-                    )) if $debug{gv};
-        # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-        $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
-        $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
-      }
-      else {
-        $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
-      }
+    $gp = $gv->GP;    # B limitation
+    if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
+      # Shared glob *foo = *bar
+      $init->add( "GvGP_set($sym, GvGP($egvsym));" );
+      $is_empty = 1;
+    }
+    elsif ( $gp and !$is_empty ) {
+      warn(sprintf(
+                   "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
+                   $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
+                   $gv->FILE, $gp
+                  )) if $debug{gv};
+      # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
+      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
+      $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
+    }
+    else {
+      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
     }
   }
   $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,

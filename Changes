@@ -12,6 +12,7 @@
         Fixed double precision to 16 digits. The nbody shootout test passes now.
         Fixed refcounts of *ENV, issue 111.
         Fixed wrong boot_ arg for the xs version check with --staticxs
+        Better fix for overwriting of @ARGV <O3, test c_argv:1 and c_allow_opts.t:1
  -      Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
  -        loaded later.
  -      Broke __DATA__ (15), 91, 95, perldoc, Test::NoWarnings
