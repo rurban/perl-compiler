@@ -33,10 +33,9 @@ unlink("$name.db*");
 
 $Mblib = $] < 5.007 ? "-Iblib/arch -Iblib/lib" : "-Mblib";
 TODO: { #2
-  local $TODO = "B::C issue 24 dbm >=5.12thr or 5.10.0 or 5.6"
-    if ($] >= 5.012 and $ITHREADS) or $] < 5.007 or $] eq '5.010000';
-  my $stderr = " 2>&1" if ($^O !~ /^MSWin32|VMS/);
-  $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl $stderr`;
+  local $TODO = "B::C issue 24 dbm 5.10.0 or 5.6"
+    if $] < 5.007 or $] eq '5.010000';
+  $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
 
   if ($result =~ /No dbm on this machine/m) {
     ok(1, 'skip - No dbm on this machine');
