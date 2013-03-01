@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2013-02-xx rurban
+1.43	2013-03-02 rurban
 	5.16 support, some fixes
 
         * C: Fix -u<module> without file extension.
@@ -13,18 +13,15 @@
         Fixed refcounts of *ENV, issue 111.
         Fixed wrong boot_ arg for the xs version check with --staticxs
         Better fix for overwriting of @ARGV <O3, test c_argv:1 and c_allow_opts.t:1
- -      Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
- -        loaded later.
- -      Broke __DATA__ (15), 91, 95, perldoc, Test::NoWarnings
- -      Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
- -        to get rid of the pesky Invalid version format error in xs_version_bootcheck
- -        if the $VERSION had already version magic attached. (no testcase, hard to repro)
- -      perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
- -        we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
- -        5.17 thr introduced a yet unsupported cop->stashoff (alloccopstash not exported).
- -      Fixed Null COP storage for 5.16 and 5.17
- -      Fix amagic_generation which was removed with 5.17
-
+        Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
+          loaded later.
+        Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
+          to get rid of the pesky Invalid version format error in xs_version_bootcheck
+          if the $VERSION had already version magic attached. (no testcase, hard to repro)
+        perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
+          we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
+        Fixed Null COP storage for 5.16 and 5.17
+        Fix amagic_generation which was removed with 5.17
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.

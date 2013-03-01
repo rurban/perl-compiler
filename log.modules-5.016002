@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.42 bf47869 2012-01-31 | Merge branch 'master' of github.com:rurban/perl-compiler
-# perlversion = 5.015007d
-# path = /usr/local/bin/perl5.15.7d
-# platform = linux 64bit threaded debug
+# B::C::VERSION = 1.43 3cf7047 2013-02-28 | t/bytecode.t: 41-43 fixed >5.10 M
+# perlversion = 5.016002
+# path = /usr/local/bin/perl5.16.2
+# platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
+pass Test::Tester #TODO non-debugging with threads
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42 - perl-5.015007d
+# 100 / 100 modules tested with B-C-1.43 - perl-5.016002
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# todo   1 /   0 ()
 # skip   0 / 100 (0.0% not installed)
