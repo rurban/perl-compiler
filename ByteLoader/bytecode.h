@@ -608,7 +608,7 @@ static int bget_swab = 0;
             LEAVE;					\
 	} STMT_END
 #endif
-#if (PERL_VERSION >= 10) && (PERL_VERSION < 17)
+#if (PERL_VERSION >= 10) && !defined(CvGV_set)
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\
@@ -625,7 +625,7 @@ static int bget_swab = 0;
             LEAVE;					\
 	} STMT_END
 #endif
-#if (PERL_VERSION >= 17)
+#if (PERL_VERSION >= 10) && defined(CvGV_set)
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\
