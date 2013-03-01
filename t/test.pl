@@ -811,13 +811,14 @@ sub todo_tests_default {
 	#15,21,27,30,41-45,50,103,105
 	push @todo, (21,30,46,50,103,105);
 	push @todo, (15)    if $] < 5.008008;
-	push @todo, (15)    if $] >= 5.012 and $] < 5.015 and $ITHREADS;
+	push @todo, (15)    if $] >= 5.012 and $ITHREADS;
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
 	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
 	push @todo, (14)    if $] >= 5.012;
 	push @todo, (10,16) if $what eq 'cc_o2';
+	push @todo, (29)    if $] >= 5.013 and $what eq 'cc_o2';
 	push @todo, (27,41..45,49) if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
