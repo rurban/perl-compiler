@@ -70,7 +70,6 @@ sub write_b_c_flags {
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
 # Or not needed as we do not want to support utf8 and \0 in stashes there
-
 if ($] > 5.017003) {
     unless (-d '.git' and `git symbolic-ref -q HEAD` eq "refs/heads/master\n") {
         die "Perl 5.18 PADLIST changes are currently not supported. You can try git master.\n";
@@ -86,6 +85,7 @@ WriteMakefile(
 		   'IPC::Run' => '0',    # optional
 		   'B::Flags' => '0.04', # optional
 		   'Time::HiRes' => '0', # optional
+		   'ExtUtils::Embed' => '1.25' # mandatory (missing on redhat)
                    #'B'        => '1.0901' # required but in CORE
                   },
     'AUTHOR'   => 'Malcolm Beattie (retired), '
