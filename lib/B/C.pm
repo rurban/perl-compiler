@@ -2635,48 +2635,54 @@ sub B::CV::save {
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       #mark_package($stashname); # not needed
       return qq/get_cv("$fullname", TRUE)/;
-    } else {
-      my $xsstash = $stashname;
-      $xsstash =~ s/::/_/g;
-      my $xs = "XS_${xsstash}_${cvname}";
-      if ($stashname eq 'version') { # exceptions see universal.c:struct xsub_details details[]
-        my %vtrans = (
-                      'parse' => 'new',
-                      '(""'   => 'stringify',
-                      '(0+'   => 'numify',
-                      '(cmp'  => 'vcmp',
-                      '(<=>'  => 'vcmp',
-                      '(bool' => 'boolean',
-                      'declare'   => 'qv',
-                     );
-        if ($vtrans{$cvname}) {
-          $xs = "XS_version_".$vtrans{$cvname};
-        } elsif ($cvname =~ /^\(/ ) {
-          $xs = "XS_version_noop";
-	}
-      }
-      elsif ($fullname eq 'Internals::hv_clear_placeholders') {
-	$xs = 'XS_Internals_hv_clear_placehold';
-      }
-      elsif ($fullname eq 'Tie::Hash::NamedCapture::FIRSTKEY') {
-	$xs = 'XS_Tie_Hash_NamedCapture_FIRSTK';
-      }
-      elsif ($fullname eq 'Tie::Hash::NamedCapture::NEXTKEY') {
-	$xs = 'XS_Tie_Hash_NamedCapture_NEXTK';
-      }
-      warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
+    } else { # Those cvs are already booted. Reuse their GP.
+      # Esp. on windows it is impossible to get at the XS function ptr
+      warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv )
     	if $debug{cv};
-      if (!$ENV{DL_NOWARN} and $stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
-	# [perl #100138] DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45).
-	# Not die because the patched libperl is hard to detect (nm libperl|egrep "_XS_Dyna.* t "),
-	# and we want to allow a patched libperl.
-	warn "Warning: DynaLoader broken with 5.15.2-5.15.3.\n".
-	  "  Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
-	    unless $B::C::DynaLoader_warn;
-	$B::C::DynaLoader_warn++;
-      }
-      $decl->add("XS($xs);");
-      return qq/newXS("$fullname", $xs, (char*)xsfile)/;
+      return qq/get_cv("$fullname", 0)/;
+
+      # XXX: This was broken on Windows
+#      my $xsstash = $stashname;
+#      $xsstash =~ s/::/_/g;
+#      my $xs = "XS_${xsstash}_${cvname}";
+#      if ($stashname eq 'version') { # exceptions see universal.c:struct xsub_details details[]
+#        my %vtrans = (
+#                      'parse' => 'new',
+#                      '(""'   => 'stringify',
+#                      '(0+'   => 'numify',
+#                      '(cmp'  => 'vcmp',
+#                      '(<=>'  => 'vcmp',
+#                      '(bool' => 'boolean',
+#                      'declare'   => 'qv',
+#                     );
+#        if ($vtrans{$cvname}) {
+#          $xs = "XS_version_".$vtrans{$cvname};
+#        } elsif ($cvname =~ /^\(/ ) {
+#          $xs = "XS_version_noop";
+#	}
+#      }
+#      elsif ($fullname eq 'Internals::hv_clear_placeholders') {
+#	$xs = 'XS_Internals_hv_clear_placehold';
+#      }
+#      elsif ($fullname eq 'Tie::Hash::NamedCapture::FIRSTKEY') {
+#	$xs = 'XS_Tie_Hash_NamedCapture_FIRSTK';
+#      }
+#      elsif ($fullname eq 'Tie::Hash::NamedCapture::NEXTKEY') {
+#	$xs = 'XS_Tie_Hash_NamedCapture_NEXTK';
+#      }
+#      warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
+#    	if $debug{cv};
+#      if (!$ENV{DL_NOWARN} and $stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
+#	# [perl #100138] DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45).
+#	# Not die because the patched libperl is hard to detect (nm libperl|egrep "_XS_Dyna.* t "),
+#	# and we want to allow a patched libperl.
+#	warn "Warning: DynaLoader broken with 5.15.2-5.15.3.\n".
+#	  "  Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
+#	    unless $B::C::DynaLoader_warn;
+#	$B::C::DynaLoader_warn++;
+#      }
+#      $decl->add("XS($xs);");
+#      return qq/newXS("$fullname", $xs, (char*)xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3219,6 +3225,17 @@ if (0) {
       # Shared glob *foo = *bar
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
+    }
+    elsif ( in_static_core($package, $gvname) ) {
+      # TODO: There's a small theoretical hole here:
+      # We skip internal XS CV's becausde we do not want to override the existing good GP
+      # because we are not able to get the CV function ptr on windows.
+      # Someone could set a SV,AV,HV slot for this name, which would be lost then.
+      # But it is very unlikely. The old code which recreated the XS GV+GP worked
+      # for some time okay (sans Win32) and I never saw such a case.
+      # Need to check the $savefields
+      warn("Skip internal XS $fullname\n") if $debug{gv};
+      return $sym;
     }
     elsif ( $gp and !$is_empty ) {
       warn(sprintf(
@@ -4186,12 +4203,12 @@ EOT0
     print "#endif\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
-  if ($PERL510 and $^O eq 'MSWin32') {
-    # mingw and msvc does not export newGP
+  if ($^O eq 'MSWin32' and $PERL510) {
+    # mingw and msvc declare, but do not export Perl_newGP
     print << '__EOGP';
 
 #ifndef newGP
-PERL_CALLCONV GP * Perl_newGP(pTHX_ GV *const gv);
+GP * Perl_newGP(pTHX_ GV *const gv);
 
 GP *
 Perl_newGP(pTHX_ GV *const gv)
@@ -4865,13 +4882,7 @@ EOT
       CvUNIQUE_on(PL_compcv);
       CvPADLIST(PL_compcv) = pad_new(0);
     #endif
-    #if PERL_VERSION > 7
-      boot_core_PerlIO();
-    #endif
-    boot_core_UNIVERSAL();
-    #if PERL_VERSION > 9
-      boot_core_mro();
-    #endif
+
     #if PERL_VERSION < 11
       boot_core_xsutils(); /* attributes::bootstrap */
     #endif
@@ -4958,6 +4969,10 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
+  if ( $$cv and in_static_core($package, $name) ) {
+    warn("Skip internal XS $fullname\n") if $debug{gv};
+    return;
+  }
   if ($package eq 'B::C') {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
@@ -5041,11 +5056,12 @@ sub in_static_core {
   %static_core_pkg = map {$_ => 1} static_core_packages()
     unless %static_core_pkg;
   return 1 if $static_core_pkg{$stashname};
+  # return 0 if $^O eq 'MSWin32'; # provided but not exported
   if ($stashname eq 'mro') {
     return $cvname eq 'method_changed_in';
   }
   if ($stashname eq 're') {
-    return $cvname =~ /^(is_regexp|regname|regnames_count|regexp_pattern)$/;;
+    return $cvname =~ /^(is_regexp|regname|regnames|regnames_count|regexp_pattern)$/;;
   }
   if ($stashname eq 'PerlIO') {
     return $cvname eq 'get_layers';
@@ -5061,15 +5077,15 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
-  push @pkg, 'attributes'             if $] <  5.011; # partially static and dynamic
-  push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
+  push @pkg, 'attributes'       if $] <  5.011; # partially static and dynamic
+  push @pkg, 'version'          if $] >= 5.010; # partially static and dynamic
   push @pkg, 'Tie::Hash::NamedCapture' if $] < 5.014; # dynamic since 5.14
-  push @pkg, 'DynaLoader'		if $Config{usedl};
+  push @pkg, 'DynaLoader'	if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
-  push @pkg, 'Cygwin'			if $^O eq 'cygwin';
+  push @pkg, 'Cygwin'		if $^O eq 'cygwin';
   push @pkg, 'NetWare'		if $^O eq 'NetWare';
-  push @pkg, 'OS2'			if $^O eq 'os2';
+  push @pkg, 'OS2'		if $^O eq 'os2';
   push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
   #push @pkg, 'PerlIO' if $] >= 5.008006; # get_layers only
   return @pkg;
