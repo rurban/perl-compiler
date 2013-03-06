@@ -23,9 +23,6 @@ static int bget_swab = 0;
 #include "ppport.h"
 #endif
 
-#ifndef GvCV_set
-#  define GvCV_set(gv,cv)   (GvCV(gv) = (cv))
-#endif
 #ifndef GvGP_set
 #  define GvGP_set(gv,gp)   (GvGP(gv) = (gp))
 #endif
@@ -285,8 +282,10 @@ static int bget_swab = 0;
 	hv_store((HV*)sv, bstate->bs_pv.xpv_pv, bstate->bs_pv.xpv_cur, arg, 0)
 #define BSET_pv_free(pv)	Safefree(pv.xpv_pv)
 
+/* ignore backref and refcount checks */
 #if PERL_VERSION > 13 || defined(CvGV_set)
-#define BSET_xcv_gv(sv, arg)	(CvGV_set((CV*)bstate->bs_sv, (GV*)arg))
+#define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv = (GV*)arg)
+/*                              (CvGV_set((CV*)bstate->bs_sv, (GV*)arg)) */
 #else
 #define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
 #endif
@@ -299,6 +298,10 @@ static int bget_swab = 0;
 #define BSET_xcv_stash(sv, arg)	(CvSTASH_set((CV*)bstate->bs_sv, (HV*)arg))
 #else
 #define BSET_xcv_stash(sv, arg)	(*(SV**)&CvSTASH(bstate->bs_sv) = arg)
+#endif
+
+#ifndef GvCV_set
+#  define GvCV_set(gv,cv)   (GvCV(gv) = (cv))
 #endif
 
 #ifdef USE_ITHREADS
@@ -608,7 +611,7 @@ static int bget_swab = 0;
             LEAVE;					\
 	} STMT_END
 #endif
-#if (PERL_VERSION >= 10) && !defined(CvGV_set)
+#if (PERL_VERSION >= 10)
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\
@@ -618,24 +621,7 @@ static int bget_swab = 0;
             if (!PL_beginav)				\
                 PL_beginav = newAV();			\
             av_push(PL_beginav, (SV*)cv);		\
-            GvCV(CvGV(cv)) = 0;               /* cv has been hijacked */\
-            call_list(oldscope, PL_beginav);		\
-            PL_curcop = &PL_compiling;			\
-            CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
-            LEAVE;					\
-	} STMT_END
-#endif
-#if (PERL_VERSION >= 10) && defined(CvGV_set)
-#define BSET_push_begin(ary,cv)				\
-	STMT_START {					\
-            I32 oldscope = PL_scopestack_ix;		\
-            ENTER;					\
-            SAVECOPFILE(&PL_compiling);			\
-            SAVECOPLINE(&PL_compiling);			\
-            if (!PL_beginav)				\
-                PL_beginav = newAV();			\
-            av_push(PL_beginav, (SV*)cv);		\
-            CvGV_set((CV*)cv, NULL);/* cv has been hijacked */	\
+            SvANY((CV*)cv)->xcv_gv = 0; /* cv has been hijacked */\
             call_list(oldscope, PL_beginav);		\
             PL_curcop = &PL_compiling;			\
             CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
