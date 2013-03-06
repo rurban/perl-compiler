@@ -248,7 +248,7 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadl", 0;
+    asm "newpadlx", 0;
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;

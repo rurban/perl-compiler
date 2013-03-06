@@ -76,7 +76,7 @@ sub write_b_c_flags {
 # Or not needed as we do not want to support utf8 and \0 in stashes there
 if ($] > 5.017003) {
     unless (-d '.git' and `git symbolic-ref -q HEAD` eq "refs/heads/master\n") {
-        die "Perl 5.18 PADLIST changes are currently not supported. You can try git master.\n";
+        #die "Perl 5.18 PADLIST changes are currently not supported. You can try git master.\n";
     }
 }
 
@@ -255,6 +255,7 @@ sub install_independent_comalloc {
 
 package MY;
 
+# Ignore certain files
 sub libscan {
     # Ignore temp testing files
     return 0 if $_[1] =~ /^(\.git|\.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl)$/;
@@ -262,6 +263,8 @@ sub libscan {
     # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
     # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
     return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
+    # On windows the C compiler would work if DynaLoader.lib would be provided.
+    # return 0 if $^O eq 'MSWin32' and !-d ".git" and $_[1] =~ /C\.pm|C\.xs|Stackobj\.pm/;
     return $_[1];
 }
 
