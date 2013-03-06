@@ -141,6 +141,8 @@ MODULE = B__CC	PACKAGE = B::CC
 
 PROTOTYPES: DISABLE
 
+# Perl_ck_null is not exported on Windows, so disable autovivification optimizations there
+
 U32
 _autovivification(cop)
 	B::COP	cop
@@ -150,7 +152,11 @@ CODE:
       IV h;
 
       RETVAL = 1;
+#ifndef _WIN32
       if (PL_check[OP_PADSV] != MEMBER_TO_FPTR(Perl_ck_null)) {
+#else
+      if (0) {
+#endif
 	char *package = CopSTASHPV(cop);
 #ifdef cop_hints_fetch_pvn
 	hint = cop_hints_fetch_pvn(cop, "autovivification", strlen("autovivification"), a_hash, 0);
