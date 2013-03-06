@@ -1036,5 +1036,5 @@ __END__
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
 159 10 	xpvshared	bstate->bs_sv			none		x
 160 17.005 newpadlx	bstate->bs_sv			U8		x
-161 17.005 padl_name	PadlistARRAY((PADLIST*)bstate->bs_sv)[0]  svindex	x
-162 17.005 padl_sym	PadlistARRAY((PADLIST*)bstate->bs_sv)[1]  svindex	x
+161 17.005 padl_name	bstate->bs_sv			svindex		x
+162 17.005 padl_sym	bstate->bs_sv			svindex		x

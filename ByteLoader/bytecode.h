@@ -283,11 +283,14 @@ static int bget_swab = 0;
 #define BSET_pv_free(sv)	Safefree(sv.pv)
 
 /* ignore backref and refcount checks */
-#if PERL_VERSION > 13 || defined(CvGV_set)
+#if PERL_VERSION > 16 || defined(CvGV_set)
+#define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv_u.xcv_gv = (GV*)arg)
+#else
+#if PERL_VERSION > 13
 #define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv = (GV*)arg)
-/*                              (CvGV_set((CV*)bstate->bs_sv, (GV*)arg)) */
 #else
 #define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
+#endif
 #endif
 #if PERL_VERSION > 13 || defined(GvCV_set)
 #define BSET_gp_cv(sv, arg)	GvCV_set(bstate->bs_sv, (CV*)arg)
@@ -611,7 +614,7 @@ static int bget_swab = 0;
             LEAVE;					\
 	} STMT_END
 #endif
-#if (PERL_VERSION >= 10)
+#if (PERL_VERSION >= 10) && !defined(CvGV_set)
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
             I32 oldscope = PL_scopestack_ix;		\
@@ -622,6 +625,23 @@ static int bget_swab = 0;
                 PL_beginav = newAV();			\
             av_push(PL_beginav, (SV*)cv);		\
             SvANY((CV*)cv)->xcv_gv = 0; /* cv has been hijacked */\
+            call_list(oldscope, PL_beginav);		\
+            PL_curcop = &PL_compiling;			\
+            CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
+            LEAVE;					\
+	} STMT_END
+#endif
+#if (PERL_VERSION >= 10) && defined(CvGV_set)
+#define BSET_push_begin(ary,cv)				\
+	STMT_START {					\
+            I32 oldscope = PL_scopestack_ix;		\
+            ENTER;					\
+            SAVECOPFILE(&PL_compiling);			\
+            SAVECOPLINE(&PL_compiling);			\
+            if (!PL_beginav)				\
+                PL_beginav = newAV();			\
+            av_push(PL_beginav, (SV*)cv);		\
+            CvGV_set((CV*)cv, NULL); /* cv has been hijacked */	\
             call_list(oldscope, PL_beginav);		\
             PL_curcop = &PL_compiling;			\
             CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
