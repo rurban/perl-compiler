@@ -5381,7 +5381,6 @@ sub save_context {
   {
     local $B::C::pv_copy_on_grow;
     $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-    local $B::C::const_strings;
     $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
@@ -5393,8 +5392,6 @@ sub save_context {
     # $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
-  my $amagic_generate = amagic_generation;
-  warn "amagic_generation = $amagic_generate\n" if $verbose;
   $init->add(
     "GvHV(PL_incgv) = $inc_hv;",
     "GvAV(PL_incgv) = $inc_av;",
@@ -5404,7 +5401,7 @@ sub save_context {
     "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */"
   );
   if ($] < 5.017) {
-    my $amagic_generate = amagic_generation;
+    my $amagic_generate = B::amagic_generation();
     warn "amagic_generation = $amagic_generate\n" if $verbose;
     $init->add("PL_amagic_generation = $amagic_generate;");
   };
