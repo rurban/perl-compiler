@@ -4,7 +4,9 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.43	2013-?? rurban
-	5.16 + partial 5.18 support, some more fixes
+	5.16 + partial 5.18 support, some more fixes.
+	some new B::CC optimizations and perlcc options.
+        Windows is now doable if you provide a DynaLoader.lib in <archlib>/auto/DynaLoader/
 
         * C: Fix -u<module> without file extension.
 	With hek do not drop FAKE, only for const pv.
