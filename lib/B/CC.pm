@@ -289,7 +289,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
   OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
   OPf_MOD OPf_STACKED OPf_SPECIAL OPpLVAL_DEFER OPpLVAL_INTRO
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
-  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY SVs_RMG);
+  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY);
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
@@ -396,6 +396,8 @@ BEGIN {
   }
   if ($] < 5.008) {
     eval "sub SVs_RMG {0x8000};";
+  } else {
+    B->import('SVs_RMG');
   }
 }
 
