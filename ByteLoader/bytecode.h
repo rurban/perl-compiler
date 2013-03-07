@@ -283,24 +283,24 @@ static int bget_swab = 0;
 #define BSET_pv_free(sv)	Safefree(sv.pv)
 
 /* ignore backref and refcount checks */
-#if PERL_VERSION > 16 || defined(CvGV_set)
-#define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv_u.xcv_gv = (GV*)arg)
+#if PERL_VERSION > 16 && defined(CvGV_set)
+# define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv_u.xcv_gv = (GV*)arg)
 #else
-#if PERL_VERSION > 13
-#define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv = (GV*)arg)
-#else
-#define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
-#endif
+# if PERL_VERSION > 13
+#  define BSET_xcv_gv(sv, arg)	((SvANY((CV*)bstate->bs_sv))->xcv_gv = (GV*)arg)
+# else
+#  define BSET_xcv_gv(sv, arg)	(*(SV**)&CvGV(bstate->bs_sv) = arg)
+# endif
 #endif
 #if PERL_VERSION > 13 || defined(GvCV_set)
-#define BSET_gp_cv(sv, arg)	GvCV_set(bstate->bs_sv, (CV*)arg)
+# define BSET_gp_cv(sv, arg)	GvCV_set(bstate->bs_sv, (CV*)arg)
 #else
-#define BSET_gp_cv(sv, arg)	(*(SV**)&GvCV(bstate->bs_sv) = arg)
+# define BSET_gp_cv(sv, arg)	(*(SV**)&GvCV(bstate->bs_sv) = arg)
 #endif
 #if PERL_VERSION > 13 || defined(CvSTASH_set)
-#define BSET_xcv_stash(sv, arg)	(CvSTASH_set((CV*)bstate->bs_sv, (HV*)arg))
+# define BSET_xcv_stash(sv, arg)	(CvSTASH_set((CV*)bstate->bs_sv, (HV*)arg))
 #else
-#define BSET_xcv_stash(sv, arg)	(*(SV**)&CvSTASH(bstate->bs_sv) = arg)
+# define BSET_xcv_stash(sv, arg)	(*(SV**)&CvSTASH(bstate->bs_sv) = arg)
 #endif
 
 #ifndef GvCV_set
