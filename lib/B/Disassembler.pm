@@ -318,10 +318,6 @@ sub print_insn {
       $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type ) if $comment;
       printf "\n# [%s %d]\n", $opname[$type], $ix++;
     }
-    elsif ( $insn eq 'newpadlx' ) {
-      $arg .= "\t# " . $comment if $comment ne '1';
-      printf "\n# [%s %d]\n", "PADLIST", $ix++;
-    }
     elsif ( !$comment ) {
       ;
     }
@@ -334,6 +330,10 @@ sub print_insn {
       $arg .= sprintf("\t# type=%d,flags=0x%x", $type, $arg);
       $arg .= $comment if $comment ne '1';
       printf "\n# [%s %d]\n", $svnames[$type], $ix++;
+    }
+    elsif ( $insn eq 'newpadlx' ) {
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s %d]\n", "PADLIST", $ix++;
     }
     elsif ( $insn eq 'gv_stashpvx' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
