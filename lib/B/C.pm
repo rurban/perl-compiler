@@ -3567,7 +3567,7 @@ sub B::AV::save {
   my $av_index = $xpvavsect->index;
   # protect against recursive self-references (Getopt::Long)
   $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
-  my $magic = $av->save_magic;
+  my $magic = $av->save_magic unless $ispadlist;
 
   if ( $debug{av} ) {
     my $line = sprintf( "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, class($av));
