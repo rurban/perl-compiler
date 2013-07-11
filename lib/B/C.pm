@@ -2575,7 +2575,7 @@ sub B::CV::save {
   }
   my $gv = $cv->GV;
   my ( $cvname, $cvstashname, $fullname );
-  if ($$gv) {
+  if ($$gv and ref($gv) ne 'B::NULL') {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
     $fullname    = $cvstashname.'::'.$cvname;
@@ -2851,7 +2851,7 @@ sub B::CV::save {
                   $$cv, $$root )
       if $debug{cv} and $debug{gv};
     my $ppname = "";
-    if ($$gv) {
+    if ($$gv and ref($gv) ne 'B::NULL') {
       my $stashname = $gv->STASH->NAME;
       my $gvname    = $gv->NAME;
       $fullname = $stashname.'::'.$gvname;
@@ -3006,14 +3006,19 @@ sub B::CV::save {
 	$svsect->debug( $cv->flagspv ) if $debug{flags};
       }
     }
-    my $gvstash = $gv->STASH;
-    if ($$gvstash and $$cv) {
-      # do not use GvSTASH because with DEBUGGING it checks for GP but
-      # there's no GP yet.
-      $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
-			   $$cv, $$gvstash ) );
-      warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
-	if $debug{cv} and $debug{gv};
+    if (ref($gv) ne 'B::NULL') {
+      my $gvstash = $gv->STASH;
+      if ($$gvstash and $$cv) {
+        # do not use GvSTASH because with DEBUGGING it checks for GP but
+        # there's no GP yet.
+        $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
+                             $$cv, $$gvstash ) );
+        warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
+          if $debug{cv} and $debug{gv};
+      }
+    } elsif ($] > 5.017) {
+      warn "lexsub name CvNAME_HEK() TODO";
+      $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, s\\_%x);", $$cv, ${$cv->GV} ));
     }
     if ( $cv->OUTSIDE_SEQ ) {
       my $cop = $symtable{ sprintf( "s\\_%x", $cv->OUTSIDE_SEQ ) };
