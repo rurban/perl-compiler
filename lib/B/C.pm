@@ -2575,7 +2575,7 @@ sub B::CV::save {
   }
   my $gv = $cv->GV;
   my ( $cvname, $cvstashname, $fullname );
-  if ($$gv and ref($gv) ne 'B::NULL') {
+  if ($$gv and ref($gv) ne 'B::HEK') {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
     $fullname    = $cvstashname.'::'.$cvname;
@@ -2851,14 +2851,23 @@ sub B::CV::save {
                   $$cv, $$root )
       if $debug{cv} and $debug{gv};
     my $ppname = "";
-    if ($$gv and ref($gv) ne 'B::NULL') {
-      my $stashname = $gv->STASH->NAME;
-      my $gvname    = $gv->NAME;
-      $fullname = $stashname.'::'.$gvname;
-      if ( $gvname ne "__ANON__" ) {
+    if ($$gv) {
+      my ($stashname, $gvname);
+      if (ref($gv) ne 'B::HEK') {
+        $stashname = $gv->STASH->NAME;
+        $gvname    = $gv->NAME;
+        $fullname = $stashname.'::'.$gvname;
         $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
+      } else {
+        $stashname = "main";
+        $gvname    = $$gv;
+        $fullname = $gvname;
+        $ppname = "pp_lexsub_";
+      }
+      if ( $gvname ne "__ANON__" ) {
         $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
         $ppname =~ s/::/__/g;
+        $ppname =~ s/(\W)/sprintf("0x%x", ord($1))/ge;
         if ( $gvname eq "INIT" ) {
           $ppname .= "_$initsub_index";
           $initsub_index++;
@@ -3006,7 +3015,7 @@ sub B::CV::save {
 	$svsect->debug( $cv->flagspv ) if $debug{flags};
       }
     }
-    if (ref($gv) ne 'B::NULL') {
+    if ($$gv and ref($gv) ne 'B::HEK') {
       my $gvstash = $gv->STASH;
       if ($$gvstash and $$cv) {
         # do not use GvSTASH because with DEBUGGING it checks for GP but
@@ -3016,9 +3025,9 @@ sub B::CV::save {
         warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
           if $debug{cv} and $debug{gv};
       }
-    } elsif ($] > 5.017) {
-      warn "lexsub name CvNAME_HEK() TODO";
-      $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, s\\_%x);", $$cv, ${$cv->GV} ));
+    } elsif ($$gv and $] > 5.017) {
+      warn "Untested lexsub name $$gv" if $debug{gv};
+      $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, %s);", $$cv, save_hek($$gv) ));
     }
     if ( $cv->OUTSIDE_SEQ ) {
       my $cop = $symtable{ sprintf( "s\\_%x", $cv->OUTSIDE_SEQ ) };
@@ -3084,7 +3093,7 @@ sub B::CV::save {
     # This needs to be postponed (test 227)
     $init2->add( sprintf( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
   }
-  if ($$gv) {
+  if ($$gv and ref($gv) ne "B::HEK") {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv} and $debug{gv};
     $gv->save;
