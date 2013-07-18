@@ -784,6 +784,8 @@ my $opsect_common =
 # 5.8: U16 op_seq;
 # 5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
 # 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
+# 5.18: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_spare:3;
+# 5.19: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_folded:1; unsigned op_spare:2;
   my $static;
   if ( $] < 5.009004 ) {
     $static = sprintf "%u", 65535;
@@ -805,9 +807,13 @@ my $opsect_common =
     $static = '0, 1, 0, 0, 0, 0, 0';
     $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
   }
-  else { # 90840c5d1d 5.17.6
+  elseif ($] < 5.019002) { # 90840c5d1d 5.17.6
     $static = '0, 0, 0, 1, 0';
     $opsect_common .= "opt, slabbed, savefree, static, spare";
+  }
+  else {
+    $static = '0, 0, 0, 1, 0, 0';
+    $opsect_common .= "opt, slabbed, savefree, static, folded, spare";
   }
 
   sub B::OP::_save_common_middle {
