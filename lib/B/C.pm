@@ -3582,12 +3582,18 @@ sub B::AV::save {
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS));
   }
-  $svsect->debug($av->flagspv) if $debug{flags};
-  my $sv_list_index = $svsect->index;
-  my $av_index = $xpvavsect->index;
-  # protect against recursive self-references (Getopt::Long)
-  $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
-  my $magic = $av->save_magic unless $ispadlist;
+
+  my ($av_index, $magic);
+  if (!$ispadlist) {
+    $svsect->debug($av->flagspv) if $debug{flags};
+    my $sv_list_index = $svsect->index;
+    $av_index = $xpvavsect->index;
+    # protect against recursive self-references (Getopt::Long)
+    $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
+    $magic = $av->save_magic unless $ispadlist;
+  } else {
+    $sym = savesym( $av, "(PADLIST*)&sv_list[$padlist_index]" );
+  }
 
   if ( $debug{av} ) {
     my $line = sprintf( "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, class($av));
@@ -5503,9 +5509,16 @@ sub save_context {
     "GvAV(PL_incgv) = $inc_av;",
     "PL_curpad = AvARRAY($curpad_sym);",
     "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
-    "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-    "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */"
   );
+  if ($] < 5.017005) {
+    $init->add(
+      "av_store((AV*)CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
+      "av_store((AV*)CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+  } else {
+    $init->add(
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
+  }
   if ($] < 5.017) {
     my $amagic_generate = B::amagic_generation();
     warn "amagic_generation = $amagic_generate\n" if $verbose;
