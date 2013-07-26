@@ -4,6 +4,8 @@
 set breakpoint pending on
 #break XS_B__CC__autovivification
 break __asan_report_error
+break B.xs:1398
+break B.c:2044
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc
@@ -63,7 +65,7 @@ end
 
 # stack dump, sp or PL_sp or my_perl->Istack_sp?
 define sp_dump
-  if my_perl
+  if (my_perl && my_perl->broiled)
     p/x **my_perl->Istack_sp
     call Perl_sv_dump(my_perl, *my_perl->Istack_sp)
   else
@@ -76,7 +78,7 @@ document sp_dump
 end
 
 define op_dump
-  if my_perl
+  if (my_perl && my_perl->broiled)
     p/x *my_perl->Iop
     call Perl_op_dump(my_perl, my_perl->Iop)
   else
@@ -91,7 +93,7 @@ end
 
 define sv_dump
   p/x *sv
-  if my_perl
+  if (my_perl && my_perl->broiled)
     call Perl_sv_dump(my_perl, sv)
   else
     call Perl_sv_dump(sv)
@@ -104,7 +106,7 @@ end
 
 define odump
   p/x *$arg0
-  if my_perl
+  if (my_perl && my_perl->broiled)
     call Perl_op_dump(my_perl, $arg0)
   else
     call Perl_op_dump($arg0)
@@ -117,7 +119,7 @@ end
 
 define sdump
   p/x *$arg0
-  if my_perl
+  if (my_perl && my_perl->broiled)
     call Perl_sv_dump(my_perl, $arg0)
   else
     call Perl_sv_dump($arg0)
