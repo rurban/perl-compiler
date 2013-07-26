@@ -807,7 +807,7 @@ my $opsect_common =
     $static = '0, 1, 0, 0, 0, 0, 0';
     $opsect_common .= "opt, latefree, latefreed, attached, slabbed, savefree, spare";
   }
-  elseif ($] < 5.019002) { # 90840c5d1d 5.17.6
+  elsif ($] < 5.019002) { # 90840c5d1d 5.17.6
     $static = '0, 0, 0, 1, 0';
     $opsect_common .= "opt, slabbed, savefree, static, spare";
   }
