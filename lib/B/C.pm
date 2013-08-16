@@ -5264,7 +5264,8 @@ sub walkpackages {
   $prefix = '' unless defined $prefix;
   # check if already deleted - failed since 5.15.2
   return if $savINC{inc_packname(substr($prefix,0,-2))};
-  while ( ( $sym, $ref ) = each %$symref ) {
+  for my $sym (keys %$symref) {
+    my $ref = $symref->{$sym};
     next unless $ref;
     local (*glob);
     *glob = $ref;
