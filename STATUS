@@ -120,7 +120,11 @@ generally: pass 100%
 
 Run-time tests not yet fully done
 
-5.17.x status
+5.19.x status
+-----------
+PADLIST support not yet stable.
+
+5.18 status
 -----------
 PADLIST support not yet stable.
 op_static fixed since 5.17.6, 5.17.2-5.17.5 are unusable without -fno-destruct
