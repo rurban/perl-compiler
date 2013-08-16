@@ -18,7 +18,7 @@ unlink("a", "a.out");
 
 open F, ">", $pl;
 my $d2 = $d;
-$d2 =~ s/nok 1/nok 2/;
+$d2 =~ s/ ok 1/ ok 2/;
 print F $d2;
 close F;
 is(`$runperl $Mblib blib/script/perlcc -O -r $pl ok 2`, "ok 2\n",
@@ -27,7 +27,7 @@ unlink("a", "a.out");
 
 open F, ">", $pl;
 my $d3 = $d;
-$d3 =~ s/nok 1/nok 3/;
+$d3 =~ s/ ok 1/ ok 3/;
 print F $d3;
 close F;
 is(`$runperl $Mblib blib/script/perlcc -B -r $pl ok 3`, "ok 3\n",
@@ -55,4 +55,4 @@ END {
 }
 
 __DATA__
-print @ARGV?join(" ",@ARGV):"nok 1 # empty \@ARGV","\n";
+print @ARGV?join(" ",@ARGV):"not ok 1 # empty \@ARGV","\n";

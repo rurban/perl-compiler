@@ -22,11 +22,14 @@ unless (-e 'a' or -e 'a.out') {
   exit;
 }
 my $ok = `$exe -s -- -abc=2 -def`;
-print $ok ne '21-' ? "n" : "", "ok 1\n";
+chomp $ok;
+# TODO: issue 121, fails threaded
+print $ok ne '21-' ? "not " : "", "ok 1", $ok ne '21-' ? " # want: 21- got: $ok\n" : "\n";
 
 system "$X -Mblib script/cc_harness -q a.c -o a";
 $ok = `$exe -s -- -abc=2 -def`;
-print $ok ne '---' ? "n" : "", "ok 2\n";
+chomp $ok;
+print $ok ne '---' ? "not " : "", "ok 2", $ok ne '---' ? " # want: --- got: $ok\n" : "\n";;
 
 END {
   unlink($exe, "a.out", "a.c", $pl);
