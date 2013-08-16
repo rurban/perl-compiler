@@ -1,7 +1,7 @@
 #! /usr/bin/env perl
 # test -DALLOW_PERL_OPTIONS
 BEGIN {
-  print "1..2\n";
+  print "1..4\n";
 }
 use strict;
 
@@ -21,15 +21,24 @@ unless (-e 'a' or -e 'a.out') {
   print "ok 2 #skip ditto\n";
   exit;
 }
+my $ok = `$exe -s -abc=2 -def 2>&1`;
+chomp $ok;
+print "not " if $ok !~ /Unrecognized switch: -bc=2/;
+print "ok 1\n";
+
 my $ok = `$exe -s -- -abc=2 -def`;
 chomp $ok;
-# TODO: issue 121, fails threaded
-print $ok ne '21-' ? "not " : "", "ok 1", $ok ne '21-' ? " # want: 21- got: $ok\n" : "\n";
+my $exp = "21-";
+print $ok ne $exp ? "not " : "", "ok 2", $ok ne $exp ? " # want: $exp got: $ok\n" : "\n";
 
 system "$X -Mblib script/cc_harness -q a.c -o a";
 $ok = `$exe -s -- -abc=2 -def`;
+$exp = "---";
 chomp $ok;
-print $ok ne '---' ? "not " : "", "ok 2", $ok ne '---' ? " # want: --- got: $ok\n" : "\n";;
+print $ok ne $exp ? "not " : "", "ok 3", $ok ne $exp ? " # want: $exp got: $ok\n" : "\n";
+$ok = `$exe -s -abc=2 -def 2>&1`;
+chomp $ok;
+print $ok ne $exp ? "not " : "", "ok 4", $ok ne $exp ? " # want: $exp got: $ok\n" : "\n";
 
 END {
   unlink($exe, "a.out", "a.c", $pl);

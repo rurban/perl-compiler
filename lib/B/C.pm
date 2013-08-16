@@ -4780,39 +4780,30 @@ _EOT11
 _EOT12
     }
 
-    # XXX With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
-    print <<'_EOT13';
-#ifdef ALLOW_PERL_OPTIONS
-#define EXTRA_OPTIONS 3
-#else
-#define EXTRA_OPTIONS 4
-#endif /* ALLOW_PERL_OPTIONS */
-    Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
+    my $options_count = 3;
+    $options_count++ if !$PERL56 and ${^TAINT};
+    print <<"_EOT13";
+    Newx(fakeargv, argc + $options_count, char *);
     fakeargv[0] = argv[0];
-    fakeargv[1] = "-e";
-    fakeargv[2] = "";
-    options_count = 3;
+    options_count = 0;
 _EOT13
-
     # honour -T
     if (!$PERL56 and ${^TAINT}) {
-      print <<'_EOT14';
-    fakeargv[options_count] = "-T";
-    ++options_count;
-_EOT14
-
+      print "    fakeargv[++options_count] = \"-T\";\n";
     }
+    # With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
+    # Allow all perl options (with -perlcc --perlopts) before --
     print <<'_EOT15';
+    fakeargv[++options_count] = "-e";
+    fakeargv[++options_count] = "";
 #ifndef ALLOW_PERL_OPTIONS
-    fakeargv[options_count] = "--";
-    ++options_count;
-#endif /* ALLOW_PERL_OPTIONS */
+    fakeargv[++options_count] = "--";
+#endif
     for (i = 1; i < argc; i++)
-	fakeargv[i + options_count - 1] = argv[i];
-    fakeargv[argc + options_count - 1] = 0;
+	fakeargv[++options_count] = argv[i];
+    fakeargv[++options_count] = 0;
 
-    exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
-			    fakeargv, env);
+    exitstatus = perl_parse(my_perl, xs_init, options_count, fakeargv, env);
     if (exitstatus)
 	exit( exitstatus );
 

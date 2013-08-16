@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2013-03-02 rurban
+1.43	2013-?? rurban
 	5.16 support, some fixes
 
         * C: Fix -u<module> without file extension.
@@ -22,15 +22,17 @@
           we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
         Fixed Null COP storage for 5.16 and 5.17
         Fix amagic_generation which was removed with 5.17
+        Fix ALLOW_PERL_OPTIONS: add -e behind all processed options, not before
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
         fixed warning Prototype mismatch: sub main::gettimeofday: none vs () at perlcc line 261
         improved --version
+        added --perlopts to handle -DALLOW_PERL_OPTIONS
 	* CC (1.13): Use the B::C integer and double precision logic (ivx, nvx).
-        Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl
+        Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl.
         Added optimizations: -fno-magic, -fno-autovivify
-        Detect "no autovivification;" pragma
+        Detect "no autovivification;" pragma.
         New -fno-taint, deprecate -fomit_taint
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68.
