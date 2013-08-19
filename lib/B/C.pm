@@ -239,7 +239,12 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
-  if ($] >= 5.010) {require mro; mro->import;}
+  if ($] >= 5.010) {
+    require mro; mro->import;
+    eval q[
+      sub SVf_OOK() {0x02000000};
+    ];
+  }
 }
 use B::Asmdata qw(@specialsv_name);
 
@@ -3715,7 +3720,9 @@ sub B::HV::save {
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
-    if ($hv->MAGICAL and !$is_stash) { # riter,eiter only for magic required
+    # HvAUX only for riter,eiter required, i.e OOK set
+    if ($hv->FLAGS & SVf_OOK and !$is_stash) {
+      warn "saving HvAUX for $fullname\n" if $debug{hv};
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
@@ -3738,8 +3745,8 @@ sub B::HV::save {
   }
   $svsect->debug($hv->flagspv) if $debug{flags};
   my $sv_list_index = $svsect->index;
-  warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
-                $$hv, $hv->MAX ) if $debug{hv};
+  warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x FLAGS=%x MAX=%d\n",
+                $$hv, $hv->FLAGS, $hv->MAX ) if $debug{hv};
   my @contents     = $hv->ARRAY;
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
@@ -3768,8 +3775,9 @@ sub B::HV::save {
 	  # warn "(length=$length)\n" if $debug{hv};
 	}
       } else {
-	warn "saving HV $fullname".'{'.$key."}\n" if $debug{hv};
+	print STDERR "saving HV $fullname".'{'.$key."} " if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
+	warn "as ".$contents[$i]."\n" if $debug{hv};
       }
     }
     if ($length) { # there may be skipped STASH symbols
@@ -3782,7 +3790,7 @@ sub B::HV::save {
 	  $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
 			      cstring($key), length( pack "a*", $key ),
 			      "(SV*)$value", 0 )); # !! randomized hash keys
-	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
+	  # warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
 	}
       }
       $init->add("}");
