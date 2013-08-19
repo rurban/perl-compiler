@@ -26,7 +26,7 @@ chomp $ok;
 print "not " if $ok !~ /Unrecognized switch: -bc=2/;
 print "ok 1\n";
 
-my $ok = `$exe -s -- -abc=2 -def`;
+$ok = `$exe -s -- -abc=2 -def`;
 chomp $ok;
 my $exp = "21-";
 print $ok ne $exp ? "not " : "", "ok 2", $ok ne $exp ? " # want: $exp got: $ok\n" : "\n";
