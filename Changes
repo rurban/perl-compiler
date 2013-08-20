@@ -23,6 +23,8 @@
         Fixed Null COP storage for 5.16 and 5.17
         Fix amagic_generation which was removed with 5.17
         Fix ALLOW_PERL_OPTIONS: add -e behind all processed options, not before
+        Fixed HvAUX init. Previously only with magic hashes, now on all OOK hashes (OOK+SHAREKEYS)
+          e.g. %warning::Bits
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.

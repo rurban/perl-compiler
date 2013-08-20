@@ -237,9 +237,7 @@ BEGIN {
   }
   if ($] >= 5.010) {
     require mro; mro->import;
-    eval q[
-      sub SVf_OOK() { 0x02000000 }; # not exported
-    ];
+    sub SVf_OOK() { 0x02000000 }; # not exported
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -3254,8 +3252,6 @@ if (0) {
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
-<<<<<<< HEAD
-||||||| parent of 9f1fd87... C: quasi Config into XSLoader::load_file, special-case attributes
     elsif ( in_static_core($package, $gvname) ) {
       # TODO: There's a small theoretical hole here:
       # We skip internal XS CV's becausde we do not want to override the existing good GP
@@ -3267,19 +3263,6 @@ if (0) {
       warn("Skip internal XS $fullname\n") if $debug{gv};
       return $sym;
     }
-=======
-    elsif ( in_static_core($package, $gvname) ) {
-      # TODO: There's a small theoretical hole here:
-      # We skip internal XS CV's becausde we do not want to override the existing good GP
-      # because we are not able to get the CV function ptr on windows.
-      # Someone could set a SV,AV,HV slot for this name, which would be lost then.
-      # But it is very unlikely. The old code which recreated the XS GV+GP worked
-      # for some time okay (sans Win32) and I never saw such a case.
-      # TODO Need to check all the non-CV GP fields
-      warn("Skip internal XS $fullname\n") if $debug{gv};
-      return $sym;
-    }
->>>>>>> 9f1fd87... C: quasi Config into XSLoader::load_file, special-case attributes
     elsif ( $gp and !$is_empty ) {
       warn(sprintf(
                    "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
@@ -3817,9 +3800,7 @@ sub B::HV::save {
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
-    # HvAUX only for riter,eiter required, i.e OOK set
-    if ($hv->FLAGS & SVf_OOK and !$is_stash) {
-      warn "saving HvAUX for $fullname\n" if $debug{hv};
+    if (!$is_stash and ($] >= 5.010 and $hv->FLAGS & SVf_OOK)) {
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
@@ -3842,8 +3823,8 @@ sub B::HV::save {
   }
   $svsect->debug($hv->flagspv) if $debug{flags};
   my $sv_list_index = $svsect->index;
-  warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x FLAGS=%x MAX=%d\n",
-                $$hv, $hv->FLAGS, $hv->MAX ) if $debug{hv};
+  warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
+                $$hv, $hv->MAX ) if $debug{hv};
   my @contents     = $hv->ARRAY;
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
@@ -3872,9 +3853,8 @@ sub B::HV::save {
 	  # warn "(length=$length)\n" if $debug{hv};
 	}
       } else {
-	print STDERR "saving HV $fullname".'{'.$key."} " if $debug{hv};
+	warn "saving HV $fullname".'{'.$key."}\n" if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
-	warn "as ".$contents[$i]."\n" if $debug{hv};
       }
     }
     if ($length) { # there may be skipped STASH symbols
@@ -3887,7 +3867,7 @@ sub B::HV::save {
 	  $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
 			      cstring($key), length( pack "a*", $key ),
 			      "(SV*)$value", 0 )); # !! randomized hash keys
-	  # warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
+	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
 	}
       }
       $init->add("}");
@@ -4885,30 +4865,39 @@ _EOT11
 _EOT12
     }
 
-    my $options_count = 3;
-    $options_count++ if !$PERL56 and ${^TAINT};
-    print <<"_EOT13";
-    Newx(fakeargv, argc + $options_count, char *);
+    # XXX With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
+    print <<'_EOT13';
+#ifdef ALLOW_PERL_OPTIONS
+#define EXTRA_OPTIONS 3
+#else
+#define EXTRA_OPTIONS 4
+#endif /* ALLOW_PERL_OPTIONS */
+    Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
     fakeargv[0] = argv[0];
-    options_count = 0;
+    fakeargv[1] = "-e";
+    fakeargv[2] = "";
+    options_count = 3;
 _EOT13
+
     # honour -T
     if (!$PERL56 and ${^TAINT}) {
-      print "    fakeargv[++options_count] = \"-T\";\n";
-    }
-    # With -e "" we need to fake parse_body() scriptname = BIT_BUCKET
-    # Allow all perl options (with -perlcc --perlopts) before --
-    print <<'_EOT15';
-    fakeargv[++options_count] = "-e";
-    fakeargv[++options_count] = "";
-#ifndef ALLOW_PERL_OPTIONS
-    fakeargv[++options_count] = "--";
-#endif
-    for (i = 1; i < argc; i++)
-	fakeargv[++options_count] = argv[i];
-    fakeargv[++options_count] = 0;
+      print <<'_EOT14';
+    fakeargv[options_count] = "-T";
+    ++options_count;
+_EOT14
 
-    exitstatus = perl_parse(my_perl, xs_init, options_count, fakeargv, env);
+    }
+    print <<'_EOT15';
+#ifndef ALLOW_PERL_OPTIONS
+    fakeargv[options_count] = "--";
+    ++options_count;
+#endif /* ALLOW_PERL_OPTIONS */
+    for (i = 1; i < argc; i++)
+	fakeargv[i + options_count - 1] = argv[i];
+    fakeargv[argc + options_count - 1] = 0;
+
+    exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
+			    fakeargv, env);
     if (exitstatus)
 	exit( exitstatus );
 
@@ -5345,8 +5334,7 @@ sub walkpackages {
   $prefix = '' unless defined $prefix;
   # check if already deleted - failed since 5.15.2
   return if $savINC{inc_packname(substr($prefix,0,-2))};
-  for my $sym (keys %$symref) {
-    my $ref = $symref->{$sym};
+  while ( ( $sym, $ref ) = each %$symref ) {
     next unless $ref;
     local (*glob);
     *glob = $ref;
