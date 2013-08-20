@@ -91,7 +91,7 @@ for ( my $i = 0 ; $i < @optype ; $i++ ) {
 }
 
 BEGIN {
-  my $ithreads = $Config{'useithreads'} eq 'define';
+  my $ithreads = $Config::Config{'useithreads'} eq 'define';
   eval qq{
 	sub ITHREADS() { $ithreads }
 	sub VERSION() { $] }
@@ -615,7 +615,7 @@ sub B::IO::bsave {
 sub B::CV::bsave {
   my ( $cv, $ix ) = @_;
   my $stashix   = $cv->STASH->ix;
-  my $gvix      = $cv->GV->ix;
+  my $gvix      = $cv->GV ? $cv->GV->ix : 0;
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
   my $startix   = $cv->START->opwalk;
@@ -636,7 +636,8 @@ sub B::CV::bsave {
   my $cvflags = $cv->CvFLAGS;
   $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
   asm "xcv_flags",       $cvflags;
-  asm "xcv_gv",          $gvix;
+  asm "xcv_gv",          $gvix if $cv->GV;
+  #TODO 5.18.1 set name_hek for lexsub
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
 }
 
