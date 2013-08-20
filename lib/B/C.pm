@@ -2576,12 +2576,12 @@ sub B::CV::save {
   my ($cv) = @_;
   my $sym = objsym($cv);
   if ( defined($sym) ) {
-    warn sprintf( "CV 0x%x already saved as $sym\n", $$cv ) if $debug{cv};
+    warn sprintf( "CV 0x%x already saved as $sym\n", $$cv ) if $$cv and $debug{cv};
     return $sym;
   }
   my $gv = $cv->GV;
   my ( $cvname, $cvstashname, $fullname );
-  if ($$gv and ref($gv) ne 'B::HEK') {
+  if ($gv and $$gv) {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
     $fullname    = $cvstashname.'::'.$cvname;
@@ -2592,6 +2592,9 @@ sub B::CV::save {
     #return if $fullname eq 'utf8::AUTOLOAD';
     return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
     mark_package($cvstashname, 1) unless $include_package{$cvstashname};
+  }
+  elsif (!$gv and $cv->can('NAME_HEK')) {
+    $fullname = $cv->NAME_HEK;
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -2857,19 +2860,17 @@ sub B::CV::save {
                   $$cv, $$root )
       if $debug{cv} and $debug{gv};
     my $ppname = "";
-    if ($$gv) {
+    if (!$gv and $cv->can('NAME_HEK')) {
+      my $gvname    = $cv->NAME_HEK;
+      $ppname = "pp_lexsub_";
+      $fullname = "<lex>".$gvname;
+    }
+    elsif ($gv and $$gv) {
       my ($stashname, $gvname);
-      if (ref($gv) ne 'B::HEK') {
-        $stashname = $gv->STASH->NAME;
-        $gvname    = $gv->NAME;
-        $fullname = $stashname.'::'.$gvname;
-        $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
-      } else {
-        $stashname = "main";
-        $gvname    = $$gv;
-        $fullname = $gvname;
-        $ppname = "pp_lexsub_";
-      }
+      $stashname = $gv->STASH->NAME;
+      $gvname    = $gv->NAME;
+      $fullname = $stashname.'::'.$gvname;
+      $ppname = ( ${ $gv->FORM } == $$cv ) ? "pp_form_" : "pp_sub_";
       if ( $gvname ne "__ANON__" ) {
         $ppname .= ( $stashname eq "main" ) ? $gvname : "$stashname\::$gvname";
         $ppname =~ s/::/__/g;
@@ -2965,7 +2966,7 @@ sub B::CV::save {
 	 $padlistsym,
 	 $xcv_outside, #if main_cv set later
 	 ivx($cv->OUTSIDE_SEQ),
-	 ($$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
+	 ($gv and $$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
 	 $cv->DEPTH);
       # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
       warn "lexwarnsym in XPVCV OUTSIDE: $xpvc" if $xpvc =~ /, \(CV\*\)iv\d/; # t/testc.sh -q -O3 227
@@ -3021,19 +3022,20 @@ sub B::CV::save {
 	$svsect->debug( $cv->flagspv ) if $debug{flags};
       }
     }
-    if ($$gv and ref($gv) ne 'B::HEK') {
-      my $gvstash = $gv->STASH;
-      if ($$gvstash and $$cv) {
-        # do not use GvSTASH because with DEBUGGING it checks for GP but
+    if ($$cv) {
+      if (!$gv) {
+        my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
+        warn "lexsub name $lexsub" if $debug{gv};
+        $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, %s);", $$cv, save_hek($lexsub) ));
+      } else {
+        my $gvstash = $gv->STASH;
+        # defer GvSTASH because with DEBUGGING it checks for GP but
         # there's no GP yet.
         $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
-                             $$cv, $$gvstash ) );
+                             $$cv, $$gvstash ) ) if $gvstash;
         warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
-          if $debug{cv} and $debug{gv};
+          if $gvstash and $debug{cv} and $debug{gv};
       }
-    } elsif ($$gv and $] > 5.017) {
-      warn "Untested lexsub name $$gv" if $debug{gv};
-      $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, %s);", $$cv, save_hek($$gv) ));
     }
     if ( $cv->OUTSIDE_SEQ ) {
       my $cop = $symtable{ sprintf( "s\\_%x", $cv->OUTSIDE_SEQ ) };
@@ -3099,11 +3101,11 @@ sub B::CV::save {
     # This needs to be postponed (test 227)
     $init2->add( sprintf( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
   }
-  if ($$gv and ref($gv) ne "B::HEK") {
+  if ($gv and $$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
     warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $debug{cv} and $debug{gv};
     $gv->save;
-    if ($PERL514) {
+    if ($PERL514) { # FIXME 5.18.0 with lexsubs
       # XXX gvcv might be PVMG
       $init->add( sprintf( "CvGV_set((CV*)%s, (GV*)%s);", $sym, objsym($gv) ) );
       # since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted)
