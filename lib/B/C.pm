@@ -2750,7 +2750,7 @@ sub B::CV::save {
   if ($new_cv_fw) {
     $sym = savesym( $cv, "CVIX$sv_ix" );
   } else {
-    $svsect->add("SVIX$sv_ix");
+    $svsect->add("CVIX$sv_ix");
     $xpvcv_ix = $xpvcvsect->index + 1;
     $xpvcvsect->add("XPVCVIX$xpvcv_ix");
     # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
@@ -2899,7 +2899,7 @@ sub B::CV::save {
         if $debug{cv} and $debug{gv};
       # XXX avlen 2
       $padlistsym = $padlist->save($fullname.' :pad');
-      warn sprintf( "done saving PADLIST %s 0x%x for CV 0x%x\n",
+      warn sprintf( "done saving %s 0x%x for CV 0x%x\n",
 		    $padlistsym, $$padlist, $$cv )
         if $debug{cv} and $debug{gv};
       # do not record a forward for the pad only
@@ -2973,7 +2973,7 @@ sub B::CV::save {
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
-	#  (sprintf("SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}"),
+	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}"),
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
 	#	  ));
       } else {
@@ -3011,7 +3011,7 @@ sub B::CV::save {
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
-	#  (sprintf("SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}",
+	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}",
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
 	#	  ));
       } else {
@@ -3147,7 +3147,7 @@ sub B::CV::save {
   }
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
-      "SVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
+      "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $cv->FLAGS
       )
     );
@@ -3588,13 +3588,11 @@ sub B::AV::save {
   my ($av_index, $magic);
   if (!$ispadlist) {
     $svsect->debug($av->flagspv) if $debug{flags};
-    my $sv_list_index = $svsect->index;
+    my $sv_ix = $svsect->index;
     $av_index = $xpvavsect->index;
     # protect against recursive self-references (Getopt::Long)
-    $sym = savesym( $av, "(AV*)&sv_list[$sv_list_index]" );
-    $magic = $av->save_magic unless $ispadlist;
-  } else {
-    $sym = savesym( $av, "(PADLIST*)&sv_list[$padlist_index]" );
+    $sym = savesym( $av, "(AV*)&sv_list[$sv_ix]" );
+    $magic = $av->save_magic;
   }
 
   if ( $debug{av} ) {
@@ -3771,8 +3769,7 @@ sub B::AV::save {
 }
 
 sub B::PADLIST::save {
-  my ($av, $fullname) = @_;
-  return B::AV::save($av, $fullname);
+  return B::AV::save(@_);
 }
 
 sub B::HV::save {
@@ -4142,9 +4139,9 @@ sub output_all {
     $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
     $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
     $loopsect,   $copsect,   $svsect,    $xpvsect,
-    $xpvavsect,  $xpvhvsect, $xpvcvsect, $xpvivsect,
-    $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect, $xrvsect,
-    $xpvbmsect,  $xpviosect
+    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect,
+    $xpvivsect,  $xpvuvsect, $xpvnvsect, $xpvmgsect, $xpvlvsect,
+    $xrvsect,    $xpvbmsect,  $xpviosect,
   );
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
   $symsect->output( \*STDOUT, "#define %s\n" );
