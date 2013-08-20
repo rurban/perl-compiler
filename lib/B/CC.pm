@@ -3133,14 +3133,21 @@ sub cc_main {
       sprintf( "PL_main_root = s\\_%x;", ${ main_root() } ),
       "PL_main_start = $start;",
       "PL_curpad = AvARRAY($curpad_sym);",
-      "PL_comppad = $curpad_sym;",
-      "av_store(CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam));",
-      "av_store(CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym));",
+      "PL_comppad = $curpad_sym;");
+    if ($] < 5.017005) {
+      $init->add(
+	"av_store((AV*)CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
+	"av_store((AV*)CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+    } else {
+      $init->add(
+	"PadlistARRAY(CvPADLIST(PL_main_cv))[0] = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+	"PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
+    }
+    $init->add(
       "GvHV(PL_incgv) = $inc_hv;",
       "GvAV(PL_incgv) = $inc_av;",
       "PL_initav = (AV*)$init_av;",
-      "PL_endav = (AV*)$end_av;"
-    );
+      "PL_endav = (AV*)$end_av;");
     if ($] < 5.017) {
       my $amagic_generate = B::amagic_generation;
       $init->add("PL_amagic_generation = $amagic_generate;");

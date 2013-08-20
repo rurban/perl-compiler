@@ -12,7 +12,7 @@ my $d = <DATA>;
 open F, ">", $pl;
 print F $d;
 close F;
-is(`$runperl $Mblib blib/script/perlcc -r $pl ok 1`, "ok 1\n",
+is(`$runperl $Mblib blib/script/perlcc -O3 -r $pl ok 1`, "ok 1\n",
    "perlcc -r file args");
 unlink("a", "a.out");
 
