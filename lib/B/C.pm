@@ -354,19 +354,15 @@ sub DynaLoader::croak {die @_}
 
 # 5.15.3 workaround [perl #101336], without .bs support
 # XSLoader::load_file($module, $modlibname, ...)
+eval q{
 sub XSLoader::load_file {
   #package DynaLoader;
-  use Config ();
   my $module = shift or die "missing module name";
   my $modlibname = shift or die "missing module filepath";
   print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n"
       if ${DynaLoader::dl_debug};
 
   push @_, $module;
-  #if (my $ver = ${$module."::VERSION"}) {
-  #  # XXX Ensure that there is no v-magic attached,. Else xs_version_bootcheck will fail.
-  #  push @_, $ver;
-  #}
   # works with static linking too
   my $boots = "$module\::bootstrap";
   goto &$boots if defined &$boots;
@@ -377,8 +373,7 @@ sub XSLoader::load_file {
   my $c = @modparts;
   $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
   die "missing module filepath" unless $modlibname;
-  die "missing dlext" unless $Config::Config{dlext};
-  my $file = "$modlibname/auto/$modpname/$modfname.".$Config::Config{dlext};
+  my $file = "$modlibname/auto/$modpname/$modfname."}.$Config::Config{dlext}.q{;
 
   # skip the .bs "bullshit" part, needed for some old solaris ages ago
 
@@ -419,6 +414,7 @@ sub XSLoader::load_file {
   push(@DynaLoader::dl_shared_objects, $file); # record files loaded
   return &$xs(@_);
 }
+} if $] >= 5.015003;
 
 # Code sections
 my (
@@ -2618,8 +2614,8 @@ sub B::CV::save {
       }
       # if it not isa('DynaLoader'), it should hopefully be XSLoaded
       # ( attributes being an exception, of course )
-      elsif ( $stashname ne 'attributes'
-        && !UNIVERSAL::isa( $stashname, 'DynaLoader' ) )
+      elsif ( !UNIVERSAL::isa( $stashname, 'DynaLoader' )
+              and ($stashname ne 'attributes' || $] >= 5.011))
       {
 	my $stashfile = $stashname;
         $stashfile =~ s/::/\//g;
@@ -2667,11 +2663,11 @@ sub B::CV::save {
     warn $fullname."\n" if $debug{sub};
     unless ( in_static_core($stashname, $cvname) ) {
       no strict 'refs';
-      warn sprintf( "stub for XSUB $fullname CV 0x%x\n", $$cv )
+      warn sprintf( "XSUB $fullname CV 0x%x\n", $$cv )
     	if $debug{cv};
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
-      #mark_package($stashname); # not needed
+      # delsym($cv);
       return qq/get_cv("$fullname", TRUE)/;
     } else {
       my $xsstash = $stashname;
@@ -3258,6 +3254,32 @@ if (0) {
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
+<<<<<<< HEAD
+||||||| parent of 9f1fd87... C: quasi Config into XSLoader::load_file, special-case attributes
+    elsif ( in_static_core($package, $gvname) ) {
+      # TODO: There's a small theoretical hole here:
+      # We skip internal XS CV's becausde we do not want to override the existing good GP
+      # because we are not able to get the CV function ptr on windows.
+      # Someone could set a SV,AV,HV slot for this name, which would be lost then.
+      # But it is very unlikely. The old code which recreated the XS GV+GP worked
+      # for some time okay (sans Win32) and I never saw such a case.
+      # Need to check the $savefields
+      warn("Skip internal XS $fullname\n") if $debug{gv};
+      return $sym;
+    }
+=======
+    elsif ( in_static_core($package, $gvname) ) {
+      # TODO: There's a small theoretical hole here:
+      # We skip internal XS CV's becausde we do not want to override the existing good GP
+      # because we are not able to get the CV function ptr on windows.
+      # Someone could set a SV,AV,HV slot for this name, which would be lost then.
+      # But it is very unlikely. The old code which recreated the XS GV+GP worked
+      # for some time okay (sans Win32) and I never saw such a case.
+      # TODO Need to check all the non-CV GP fields
+      warn("Skip internal XS $fullname\n") if $debug{gv};
+      return $sym;
+    }
+>>>>>>> 9f1fd87... C: quasi Config into XSLoader::load_file, special-case attributes
     elsif ( $gp and !$is_empty ) {
       warn(sprintf(
                    "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
@@ -3324,6 +3346,10 @@ if (0) {
   # Saving it would overwrite it, because perl_init() is
   # called after perl_parse(). But we need to xsload it.
   if ($fullname eq 'attributes::bootstrap') {
+    unless ( defined( &{ $package . '::bootstrap' } ) ) {
+      warn "Forcing bootstrap of $package\n" if $verbose;
+      eval { $package->bootstrap };
+    }
     mark_package('attributes', 1);
     if ($] >= 5.011) {
       $savefields &= ~Save_CV;
@@ -3396,6 +3422,7 @@ if (0) {
     }
     my $gvcv = $gv->CV;
     if ( !$$gvcv && $savefields & Save_CV ) {
+      warn "Empty CV $fullname, AUTOLOAD and try again\n" if $debug{gv};
       no strict 'refs';
       # Fix test 31, catch unreferenced AUTOLOAD. The downside:
       # It stores the whole optree and all its children.
@@ -5024,6 +5051,7 @@ sub B::GV::savecv {
   warn sprintf( "Used GV \&$fullname 0x%x\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
   if ($$cv and $name eq 'bootstrap' and $cv->XSUB) {
+    #return $cv->save($fullname);
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
