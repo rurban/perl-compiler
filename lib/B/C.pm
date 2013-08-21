@@ -2812,11 +2812,12 @@ sub B::CV::save {
 	my $gv = $cv->GV;
 	if ($$gv) {
 	  if ($cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME) { # UNIVERSAL or AUTOLOAD
-	    warn "Recalculated root and xsub $gv->STASH->NAME\::$gv->NAME\n" if $verbose;
+	    my $newname = $gv->STASH->NAME."::".$gv->NAME;
+	    warn "Recalculated root and xsub $newname. remove old cv\n" if $verbose;
 	    $svsect->remove;
 	    $xpvcvsect->remove;
 	    delsym($cv);
-	    return $cv->save;
+	    return $cv->save($newname);
 	  }
 	}
       }
