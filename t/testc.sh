@@ -519,6 +519,9 @@ result[122]='http'
 # issue52
 tests[123]='my $x;my $y = 1;$x and $y == 2;print $y == 1 ? "ok\n" : "fail\n";'
 result[123]='ok'
+# issue125 DynaLoader::bootstrap_inherit
+tests[125]='use Net::LibIDN; print q(ok);'
+result[125]='ok'
 # saving recursive functions sometimes recurses in the compiler. this not, but Moose stucks in Pod::Simple
 tests[99]='package my;sub recurse{my $i=shift;recurse(++$i)unless $i>5000;print"ok";exit};package main;my::recurse(1)'
 result[99]='ok'

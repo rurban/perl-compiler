@@ -2680,49 +2680,6 @@ sub B::CV::save {
       warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv )
     	if $debug{cv};
       return qq/get_cv("$fullname", 0)/;
-
-      # XXX: This was broken on Windows
-#      my $xsstash = $stashname;
-#      $xsstash =~ s/::/_/g;
-#      my $xs = "XS_${xsstash}_${cvname}";
-#      if ($stashname eq 'version') { # exceptions see universal.c:struct xsub_details details[]
-#        my %vtrans = (
-#                      'parse' => 'new',
-#                      '(""'   => 'stringify',
-#                      '(0+'   => 'numify',
-#                      '(cmp'  => 'vcmp',
-#                      '(<=>'  => 'vcmp',
-#                      '(bool' => 'boolean',
-#                      'declare'   => 'qv',
-#                     );
-#        if ($vtrans{$cvname}) {
-#          $xs = "XS_version_".$vtrans{$cvname};
-#        } elsif ($cvname =~ /^\(/ ) {
-#          $xs = "XS_version_noop";
-#	}
-#      }
-#      elsif ($fullname eq 'Internals::hv_clear_placeholders') {
-#	$xs = 'XS_Internals_hv_clear_placehold';
-#      }
-#      elsif ($fullname eq 'Tie::Hash::NamedCapture::FIRSTKEY') {
-#	$xs = 'XS_Tie_Hash_NamedCapture_FIRSTK';
-#      }
-#      elsif ($fullname eq 'Tie::Hash::NamedCapture::NEXTKEY') {
-#	$xs = 'XS_Tie_Hash_NamedCapture_NEXTK';
-#      }
-#      warn sprintf( "core XSUB $xs CV 0x%x\n", $$cv )
-#    	if $debug{cv};
-#      if (!$ENV{DL_NOWARN} and $stashname eq 'DynaLoader' and $] >= 5.015002 and $] < 5.015004) {
-#	# [perl #100138] DynaLoader symbols are XS_INTERNAL since 5.15.2 (16,29,44,45).
-#	# Not die because the patched libperl is hard to detect (nm libperl|egrep "_XS_Dyna.* t "),
-#	# and we want to allow a patched libperl.
-#	warn "Warning: DynaLoader broken with 5.15.2-5.15.3.\n".
-#	  "  Use 0001-Export-DynaLoader-symbols-from-libperl-again.patch in [perl #100138]"
-#	    unless $B::C::DynaLoader_warn;
-#	$B::C::DynaLoader_warn++;
-#      }
-#      $decl->add("XS($xs);");
-#      return qq/newXS("$fullname", $xs, (char*)xsfile)/;
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3291,7 +3248,7 @@ if (0) {
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
     }
     else {
-      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
+      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
     }
   }
   $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,
@@ -4804,7 +4761,6 @@ _EOT9
 	}
         print "#endif\n";
         print "\tSPAGAIN;\n";
-        #print "\tPUTBACK;\n";
       } else {
         warn "no dl_init for $stashname, ".
           (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n")
