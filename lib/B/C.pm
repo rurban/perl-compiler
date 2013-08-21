@@ -3274,17 +3274,6 @@ if (0) {
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
-    elsif ( in_static_core($package, $gvname) ) {
-      # TODO: There's a small theoretical hole here:
-      # We skip internal XS CV's becausde we do not want to override the existing good GP
-      # because we are not able to get the CV function ptr on windows.
-      # Someone could set a SV,AV,HV slot for this name, which would be lost then.
-      # But it is very unlikely. The old code which recreated the XS GV+GP worked
-      # for some time okay (sans Win32) and I never saw such a case.
-      # Need to check the $savefields
-      warn("Skip internal XS $fullname\n") if $debug{gv};
-      return $sym;
-    }
     elsif ( $gp and !$is_empty ) {
       warn(sprintf(
                    "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
