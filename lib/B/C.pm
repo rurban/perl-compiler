@@ -3427,7 +3427,10 @@ if (0) {
         if $package and exists ${"$package\::"}{CLONE};
       $gvcv = $gv->CV; # try again
     }
-    if ( $$gvcv && $savefields & Save_CV and ref($gvcv->GV->EGV) ne 'B::SPECIAL') {
+    if ( $$gvcv and $savefields & Save_CV
+         and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
+         and !$skip_package{$package} )
+    {
       my $origname =
         cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
       if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB CONSTSUB alias
