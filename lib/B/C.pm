@@ -4567,6 +4567,9 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #endif
     }
     PerlIO_destruct(aTHX);
+#if defined(PERLIO_LAYERS)
+    PerlIO_cleanup(aTHX);
+#endif
     return 0;
 }
 _EOT6
