@@ -37,7 +37,7 @@ sub add {
 
 sub remove {
   my $section = shift;
-  pop  @{ $section->[-1]{values} };
+  pop @{ $section->[-1]{values} };
 }
 
 sub index {
@@ -3256,7 +3256,6 @@ if (0) {
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
   #}
-  $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
   sub Save_HV()   { 1 }
@@ -3271,6 +3270,7 @@ if (0) {
     $gp = $gv->GP;    # B limitation
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
       # Shared glob *foo = *bar
+      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
@@ -3281,11 +3281,13 @@ if (0) {
                    $gv->FILE, $gp
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
+      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
       $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
     }
     else {
-      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
+      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
+      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
     }
   }
   $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,
@@ -3415,7 +3417,7 @@ if (0) {
       }
     }
     my $gvcv = $gv->CV;
-    if ( !$$gvcv && $savefields & Save_CV ) {
+    if ( !$$gvcv and $savefields & Save_CV ) {
       warn "Empty CV $fullname, AUTOLOAD and try again\n" if $debug{gv};
       no strict 'refs';
       # Fix test 31, catch unreferenced AUTOLOAD. The downside:
@@ -3463,7 +3465,39 @@ if (0) {
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
-	$init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $gvcv->save($fullname) ) );
+        my $cvsym = $gvcv->save($fullname);
+        # backpatch "$sym = gv_fetchpv($name, TRUE, SVt_PV)" to FALSE and SVt_PVCV
+        if ($cvsym =~ /get_cv\("/) {
+	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
+	    my $in_gv;
+	    for (@{ $init->[-1]{current} }) {
+	      if ($in_gv) {
+		s/^.*\Q$sym\E.*=.*;//;
+		s/GvGP_set\(\Q$sym\E.*;//;
+	      }
+	      if (/^\Q$sym = gv_fetchpv($name, TRUE, SVt_PV);\E/) {
+		s/^\Q$sym = gv_fetchpv($name, TRUE, SVt_PV);\E/$sym = gv_fetchpv($name, 0, SVt_PVCV);/;
+		$in_gv++;
+		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
+	      }
+	    }
+	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+	  }
+	  elsif ($xsub{$package}) {
+	    # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
+	    warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
+	    $init->add("{\tCV *cv;
+		cv = get_cv($origname,TRUE);
+		GvCV_set($sym, cv);
+		SvREFCNT_inc((SV *)cv);","}");
+	  }
+	  else {
+	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+	  }
+	}
+	else {
+	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+	}
       }
     }
     if (!$PERL510 or $gp) {
