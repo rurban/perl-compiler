@@ -4267,6 +4267,17 @@ EOT0
     print "#endif\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
+  # Need fresh re-hash of strtab. share_hek does not allow hash = 0
+  if ( $PERL510 ) {
+    print <<'_EOT0';
+HEK *
+my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
+
+#undef share_hek
+#define share_hek(str,len,hash) my_share_hek( aTHX_ str,len,hash );
+_EOT0
+
+  }
   if ($PERL510 and $^O eq 'MSWin32') {
     # mingw and msvc does not export Perl_newGP despite its prefix
     # worse: proto.h defines Perl_newGP as being imported, so _imp_Perl_newGP is enforced
@@ -4320,18 +4331,6 @@ my_newGP(pTHX_ GV *const gv)
 #define Perl_newGP my_newGP
 
 __EOGP
-
-  }
-
-  # Need fresh re-hash of strtab. share_hek does not allow hash = 0
-  if ( $PERL510 ) {
-    print <<'_EOT0';
-HEK *
-my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
-
-#undef share_hek
-#define share_hek(str,len,hash) my_share_hek( aTHX_ str,len,hash );
-_EOT0
 
   }
   print "\n";
@@ -4930,7 +4929,7 @@ EOT
 
     }
 
-    my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
+    my $X = $^X =~ /[\s\\]/ ? (join '', map { substr(B::cchar($_),1,-1) } split //, $^X) : $^X;
     print <<"EOT";
     if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
