@@ -5015,7 +5015,9 @@ sub dump_symtable {
   # For debugging
   my ( $sym, $val );
   warn "----Symbol table:\n";
-  while ( ( $sym, $val ) = each %symtable ) {
+  #while ( ( $sym, $val ) = each %symtable )
+  for $sym (keys %symtable) {
+    $val = $symtable{$sym};
     warn "$sym => $val\n";
   }
   warn "---End of symbol table\n";
@@ -5346,12 +5348,14 @@ sub add_hashINC {
 
 sub walkpackages {
   my ( $symref, $recurse, $prefix ) = @_;
-  my ($sym, $ref);
   no strict 'vars';
+  my $sym;
   $prefix = '' unless defined $prefix;
   # check if already deleted - failed since 5.15.2
   return if $savINC{inc_packname(substr($prefix,0,-2))};
-  while ( ( $sym, $ref ) = each %$symref ) {
+  #while ( ( $sym, $ref ) = each %$symref )
+  for $sym (keys %$symref) {
+    my $ref = $symref->{$sym};
     next unless $ref;
     local (*glob);
     *glob = $ref;

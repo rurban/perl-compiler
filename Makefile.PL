@@ -73,9 +73,9 @@ sub write_b_c_flags {
 }
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
-# We do not want to support binary stashes
-if ($] > 5.017003) {
-    warn "Warning: Bad perl version $].\nBinary stashes and symbols are considered a security risc and not fully supported.\nCheck your code to strip \\0 from packagenames.";
+if ($] > 5.015005) {
+    # We do not want to support binary stashes
+    warn "Warning: Bad perl version $].\n  Binary stashes and symbols are considered a security risc and not fully supported.\n  Check your code to strip \\0 from packagenames.\n";
 }
 
 WriteMakefile(
