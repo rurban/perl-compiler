@@ -450,6 +450,17 @@ sub run_cc_test {
 	$command .= " -DHAVE_INDEPENDENT_COMALLOC "
 	  if $B::C::Flags::have_independent_comalloc;
 	$command .= " -o $exe $cfile ".$B::C::Flags::extra_cflags . " ";
+        if ($Config{cc} eq 'cl') {
+            if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
+                $command =~ s/ -opt:ref,icf//;
+            }
+            my $obj = $obj[0];
+            $command =~ s/ \Q-o $exe\E / -c -Fo$obj /;
+            my $cmdline = "$Config{cc} $command";
+            diag ($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
+            run_cmd($cmdline, 20);
+            $command = '';
+        }
 	my $coredir = $ENV{PERL_SRC} || File::Spec->catdir($Config{installarchlib}, "CORE");
 	my $libdir  = File::Spec->catdir($Config{prefix}, "lib");
         my $so = $Config{so};
@@ -476,10 +487,10 @@ sub run_cc_test {
 	}
 	$command .= $B::C::Flags::extra_libs;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
-	if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
-	    $command =~ s/ -opt:ref,icf//;
-	}
         my $cmdline = "$Config{cc} $command $NULL";
+        if ($Config{cc} eq 'cl') {
+            $cmdline = "$Config{ld} $linkargs -out:$exe $obj[0] $command";
+        }
 	diag ($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
         run_cmd($cmdline, 20);
         unless (-e $exe) {
