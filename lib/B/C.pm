@@ -1538,7 +1538,7 @@ sub B::PMOP::save {
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-        require "utf8_heavy.pl"; # bypass AUTOLOAD
+        require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
       }
       $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
@@ -2512,7 +2512,7 @@ sub try_autoload {
   }
   if ($fullname eq 'utf8::SWASHNEW') {
     # utf8_heavy was loaded so far, so defer to a demand-loading stub
-    my $stub = sub { require 'utf8_heavy.pl'; goto &utf8::SWASHNEW; };
+    my $stub = sub { require 'utf8_heavy.pl' unless $INC{"utf8_heavy.pl"}; goto &utf8::SWASHNEW; };
     return svref_2object( $stub );
   }
 
@@ -2526,7 +2526,7 @@ sub try_autoload {
     my $dir = $cvstashname;
     $dir =~ s(::)(/)g;
     warn "require \"auto/$dir/$cvname.al\"\n" if $debug{cv};
-    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" };
+    eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" unless $INC{"auto/$dir/$cvname.al"} };
     unless ($@) {
       warn "Forced load of \"auto/$dir/$cvname.al\"\n" if $verbose;
       return svref_2object( \&$fullname )
@@ -2726,7 +2726,7 @@ sub B::CV::save {
     push_package($package_pv);
   }
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
-    require "utf8_heavy.pl";
+    require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"};
     # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
     # already polluted. See issue 61.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
@@ -5294,6 +5294,7 @@ sub delete_unsaved_hashINC {
   return if $package =~ /^DynaLoader|XSLoader$/
     and defined $use_xsloader
     and $use_xsloader == 0;
+  return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
   $include_package{$package} = 0;
   if ($INC{$incpack}) {
     warn "Deleting $package from \%INC\n" if $debug{pkg};
