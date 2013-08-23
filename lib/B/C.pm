@@ -1711,7 +1711,7 @@ sub savepvn {
   # work with byte offsets/lengths
   $pv = pack "a*", $pv;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
-    push @init, sprintf( "New(0,%s,%u,char);", $dest, length($pv) + 1 );
+    push @init, sprintf( "Newx(%s,%u,char);", $dest, length($pv) + 1 );
     my $offset = 0;
     while ( length $pv ) {
       my $str = substr $pv, 0, $max_string_len, '';
