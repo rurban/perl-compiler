@@ -31,7 +31,7 @@ $result =~ s/\n$//;
 
 SKIP: {
   # skip "no v-objects on 5.6", 1 if $] < 5.008;
-  ok($result eq $expected, "issue97 - require v5.12");
+  ok($result eq $expected, "issue97 - BC require v5.12");
 }
 
 END {
