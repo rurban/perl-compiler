@@ -33,7 +33,6 @@ use File::Temp;
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
 my $staticxs = '';
-my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 
 BEGIN {
   $staticxs = '--staticxs';
@@ -42,17 +41,20 @@ BEGIN {
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
   my $tmp = File::Temp->new(TEMPLATE => 'pccXXXXX');
   my $out = $tmp->filename;
+  my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
   my $result = `$X $Mblib blib/script/perlcc -O3 --staticxs -o$out -e"use Data::Dumper;"`;
   my $exe = $^O eq 'MSWin32' ? "$out.exe" : $out;
   unless (-e $exe or -e 'a.out') {
     my $result = `$X $Mblib blib/script/perlcc -O3 -o$out -e"use Data::Dumper;"`;
     unless (-e $out or -e 'a.out') {
       plan skip_all => "perlcc cannot link XS module Data::Dumper. Most likely wrong ldopts.";
-      unlk$out
+      unlink $out;
       exit;
     } else {
       $staticxs = '';
     }
+  } else {
+    diag "-O3 --staticxs ok";
   }
  BEGIN_END:
   unshift @INC, 't';
@@ -134,6 +136,7 @@ unless (is_subset) {
 
 my $module_count = 0;
 my ($skip, $pass, $fail, $todo) = (0,0,0,0);
+my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 
 MODULE:
 for my $module (@modules) {
@@ -185,7 +188,7 @@ for my $module (@modules) {
         $opt .= " $keep" if $keep;
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
-	  $runperl,$Mblib,"blib/script/perlcc",$opt,$staticxs,"-o$out","-r",$out_pl;
+	  $runperl,split(/ /,$Mblib),"blib/script/perlcc",split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
         my $cmd = "$runperl $Mblib blib/script/perlcc $opt $staticxs -o$out -r"; # only for the msg
 	# Esp. darwin-2level has insane link times
         ($result, $stdout, $err) = run_cmd(\@cmd, 720); # in secs.

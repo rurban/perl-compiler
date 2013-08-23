@@ -12,7 +12,7 @@ BEGIN {
 }
 use strict;
 #my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-my $ITHREADS  = ($Config{useithreads});
+#my $ITHREADS  = ($Config{useithreads});
 
 prepare_c_tests();
 

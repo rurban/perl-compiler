@@ -1,0 +1,4 @@
+# B::C::VERSION = 1.43 0a2eeba 2013-08-23 | t/issue97.t: add BC diag M
+# perlversion = 5.012005-nt
+# path = /usr/local/bin/perl5.12.5-nt
+# platform = linux 64bit non-threaded

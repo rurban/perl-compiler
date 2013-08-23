@@ -410,14 +410,6 @@ sub run_cc_test {
     my ($out,$result,$stderr) = ('');
     my $fnbackend = lc($backend); #C,-O2
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
-#    if ($cnt == 28 and $backend eq 'C,-O3') {
-#	print "ok $cnt # skip $backend SIGSEGV or hangs\n";
-#	return 0;
-#    }
-#    if ($todo and $cnt =~ /^(103)$/ and $] eq '5.010001') {
-#	print "ok $cnt # skip $backend hangs\n";
-#	return 0;
-#    }
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
     use Config;
@@ -426,8 +418,8 @@ sub run_cc_test {
     my $cfile = $fnbackend."code".$cnt.$opt.".c";
     my @obj;
     @obj = ($fnbackend."code".$cnt.$opt.".obj",
-               $fnbackend."code".$cnt.$opt.".ilk",
-               $fnbackend."code".$cnt.$opt.".pdb")
+            $fnbackend."code".$cnt.$opt.".ilk",
+            $fnbackend."code".$cnt.$opt.".pdb")
       if $Config{cc} =~ /^cl/i; # MSVC uses a lot of intermediate files
     my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
     unlink ($test, $cfile, $exe, @obj);
