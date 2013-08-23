@@ -229,7 +229,7 @@ sub parse_argv {
         $Options->{stash}++;
         @ARGV = grep !/^-stash$/, @ARGV;
     }
-    $Options->{spawn} = 1;
+    $Options->{spawn} = 1 unless $^O eq 'MSWin32';
     Getopt::Long::GetOptions( $Options,
         'L=s',          # lib directory
         'I=s',          # include directories (FOR C, NOT FOR PERL)
