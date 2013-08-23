@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 f36f018 2013-02-22 | fix threading bugs resp. DEBUG_LEAKING_SCALARS M
+# B::C::VERSION = 1.43 6d777bf 2013-08-23 | update module log.modules-5.014004 M
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -74,7 +74,7 @@ pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
 pass Time::Local
-skip IO::Scalar
+pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.43 - perl-5.008004d-nt
-# pass  98 /  98 (100.0%)
-# fail   0 /  98 (0.0%)
+# 99 / 100 modules tested with B-C-1.43 - perl-5.008004d-nt
+# pass  99 /  99 (100.0%)
+# fail   0 /  99 (0.0%)
 # todo   0 /   0 ()
-# skip   2 / 100 (2.0% not installed)
+# skip   1 / 100 (1.0% not installed)
