@@ -1674,7 +1674,7 @@ sub pp_sort {
     $op->first->sibling->save; #null->first to leave
     $root->save;               #ex-leave
     my $sym = $start->save;    #enter
-    my $fakeop = cc_queue( "pp_sort" . $$op, $root, $start );
+    my $fakeop = cc_queue( "pp_sort" . sprintf("%x",abs($$op)), $root, $start );
     $init->add( sprintf( "(%s)->op_next = %s;", $sym, $fakeop ) );
   }
   $curcop->write_back;
