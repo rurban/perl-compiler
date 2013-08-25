@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.43 4ee30fe 2013-08-26 | fix ctest 4 for >5.17.5 (regexec eval changes)
+# B::C::VERSION = 1.43 4f7471d 2013-08-23 | win: Subroutine ... redefined warnings on windows for Carp and File::Basename
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -18,27 +18,27 @@ pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 pass Test
-pass Data::Dumper
+fail Data::Dumper
 pass File::Spec
-pass File::Temp
+fail File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build #TODO 5.8.4-5 shared_scalar n-magic (\156)
+fail Module::Build #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
-pass Digest::MD5
+fail Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-pass HTML::Parser
+fail HTML::Parser
 pass Test::Exception #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Net::Cmd
 pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
+fail Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
 pass Storable
@@ -49,11 +49,11 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Sub::Install
-pass Attribute::Handlers
+fail Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings #TODO 5.8.4-5 shared_scalar n-magic (\156)
-pass version
+fail version
 pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
@@ -65,8 +65,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+fail Class::MOP
+fail Moose
 pass Test::Deep #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Carp::Clan
 pass Module::Pluggable
@@ -77,17 +77,17 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn #TODO 5.8.4-5 shared_scalar n-magic (\156)
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod #TODO 5.8.1-5.8.8 with threads
-pass Digest::SHA1
-pass namespace::clean
+fail Digest::SHA1
+fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
@@ -95,7 +95,7 @@ pass XML::SAX
 pass YAML
 skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
+fail DateTime::TimeZone
 pass DateTime::Locale
 skip DateTime
 pass IO::String
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 98 / 100 modules tested with B-C-1.43 - perl-5.008005d
-# pass  98 /  98 (100.0%)
-# fail   0 /  98 (0.0%)
-# todo   8 /   0 ()
+# pass  81 /  98 (82.7%)
+# fail  17 /  98 (17.3%)
+# todo   8 /  17 (47.1%)
 # skip   2 / 100 (2.0% not installed)
