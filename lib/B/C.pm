@@ -2592,7 +2592,7 @@ sub B::CV::save {
     return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
     mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
-  elsif (!$gv and $cv->can('NAME_HEK')) {
+  elsif ((!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
     $fullname = $cv->NAME_HEK;
   }
 
@@ -2860,7 +2860,7 @@ sub B::CV::save {
                   $$cv, $$root )
       if $debug{cv} and $debug{gv};
     my $ppname = "";
-    if (!$gv and $cv->can('NAME_HEK')) {
+    if ((!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
       my $gvname    = $cv->NAME_HEK;
       $ppname = "pp_lexsub_";
       $fullname = "<lex>".$gvname;
@@ -3023,7 +3023,7 @@ sub B::CV::save {
       }
     }
     if ($$cv) {
-      if (!$gv) {
+      if (!$gv or ref($gv) eq 'B::SPECIAL') {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
         warn "lexsub name $lexsub" if $debug{gv};
         $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, %s);", $$cv, save_hek($lexsub) ));
