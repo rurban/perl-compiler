@@ -637,6 +637,9 @@ CCTESTS
         } else {
             my ($script, $expect) = split />>>+\n/;
 	    die "Invalid empty t/TESTS" if !$script or $expect eq '';
+            if ($cnt == 4 and $] >= 5.017005) {
+                $expect = 'zzz2y2y2';
+            }
             run_cc_test($cnt, $backend.($cnt == 46 ? ',-fstash' : ''),
 			$script, $expect, $keep_c, $keep_c_fail, $todo);
         }
