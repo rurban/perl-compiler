@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 ec0074e 2013-08-23 | fix t/modules.t: split @cmd args on space
+# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
 # perlversion = 5.012005-nt
 # path = /usr/local/bin/perl5.12.5-nt
 # platform = linux 64bit non-threaded
@@ -64,9 +64,9 @@ pass MRO::Compat
 pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-skip Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
+pass Devel::GlobalDestruction
+pass Class::MOP
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -75,25 +75,25 @@ pass Text::Balanced
 pass DBI
 pass Time::Local
 pass IO::Scalar
-skip Sub::Identify
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
 pass Encode
-skip Variable::Magic
+pass Variable::Magic
 pass CGI
-skip B::Hooks::EndOfScope
+pass B::Hooks::EndOfScope
 pass Test::Pod
-skip Digest::SHA1
+pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
-skip Clone
+pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -101,9 +101,9 @@ pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-skip Template::Stash
-# 89 / 100 modules tested with B-C-1.43 - perl-5.012005-nt
-# pass  89 /  89 (100.0%)
-# fail   0 /  89 (0.0%)
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.43 - perl-5.012005-nt
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
-# skip  11 / 100 (11.0% not installed)
+# skip   0 / 100 (0.0% not installed)

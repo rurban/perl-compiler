@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 f36f018 2013-02-22 | fix threading bugs resp. DEBUG_LEAKING_SCALARS M
+# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug

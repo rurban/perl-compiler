@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 fb1260b 2013-08-23 | fix t/modules.t: split @cmd args on space
+# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
 # perlversion = 5.014004
 # path = /usr/local/bin/perl5.14.4
 # platform = linux 64bit threaded

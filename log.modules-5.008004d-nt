@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 6d777bf 2013-08-23 | update module log.modules-5.014004 M
+# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug

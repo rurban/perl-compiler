@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 e487bf2 2013-08-22 | t/modules.t: use -O3 for prelim BEGIN checks
+# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
