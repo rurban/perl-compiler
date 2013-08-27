@@ -125,10 +125,10 @@ static int bget_swab = 0;
 #define BGET_PV(arg)	STMT_START {					\
 	BGET_U32(arg);							\
 	if (arg) {							\
-	    New(666, bstate->bs_pv.pv, (U32)arg, char);		\
-	    bl_read(bstate->bs_fdata, bstate->bs_pv.pv, (U32)arg, 1); \
+            New(666, bstate->bs_pv.pv, (U32)arg, char);                 \
+	    bl_read(bstate->bs_fdata, bstate->bs_pv.pv, (U32)arg, 1);   \
 	    bstate->bs_pv.len = (U32)arg;				\
-	    bstate->bs_pv.cur = (U32)arg - 1;			\
+	    bstate->bs_pv.cur = (U32)arg - 1;			        \
 	} else {							\
 	    bstate->bs_pv.pv = 0;					\
 	    bstate->bs_pv.len = 0;					\

@@ -6,7 +6,7 @@
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.11';
+$B::Disassembler::VERSION = '1.12';
 
 package B::Disassembler::BytecodeStream;
 
@@ -240,10 +240,12 @@ our (
 );
 						# >=5.12
 our  @svnames = ("NULL");			# 0
-push @svnames, "BIND"   if $] >= 5.009;	# 1
+push @svnames, "BIND"   if $] >= 5.009 and $] < 5.019002; # 1
 push @svnames, ("IV", "NV");			# 2,3
 push @svnames, "RV"     if $] < 5.011;		#
-push @svnames, ("PV", "PVIV", "PVNV", "PVMG");	# 4-7
+push @svnames, "PV";
+push @svnames, "INVLIST" if $] >= 5.019002;     # 4
+push @svnames, ("PVIV", "PVNV", "PVMG");	# 4-7
 push @svnames, "BM"     if $] < 5.009;
 push @svnames, "REGEXP" if $] >= 5.011;	# 8
 push @svnames, "GV"     if $] >= 5.009;	# 9

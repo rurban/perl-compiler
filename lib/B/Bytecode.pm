@@ -64,6 +64,7 @@ my $PERL510 = ( $] >= 5.009005 );
 my $PERL512 = ( $] >= 5.011 );
 #my $PERL514 = ( $] >= 5.013002 );
 my $PERL518 = ( $] >= 5.017006 );
+my $PERL520 = ( $] >= 5.019002 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 our ($quiet, $includeall, $savebegins, $T_inhinc);
 my ( $varix, $opix, %debug, %walked, %files, @cloop );
@@ -80,17 +81,15 @@ sub nice ($) { }
 sub nice1 ($) { }
 
 my %optype_enum;
-my ($SVt_PV, $SVt_PVGV, $SVf_FAKE, $POK);
+my ($SVt_PVGV, $SVf_FAKE, $POK);
 if ($PERL56) {
   sub dowarn {};
-  $SVt_PV = 4;
   $SVt_PVGV = 13;
   $SVf_FAKE = 0x00100000;
   $POK = 0x00040000 | 0x04000000;
   sub MAGICAL56 { $_[0]->FLAGS & 0x000E000 } #(SVs_GMG|SVs_SMG|SVs_RMG)
 } else {
   no strict 'subs';
-  $SVt_PV = 4;
   $SVt_PVGV = SVt_PVGV;
   $SVf_FAKE = SVf_FAKE;
 }
