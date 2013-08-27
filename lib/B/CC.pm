@@ -217,7 +217,7 @@ invalid.
 
 This is the same as the pragma "no autovivification" and allows
 very fast array accesses, 4-6 times faster, without the overhead of
-autovivification.pm
+L<autovivification>.
 
 =item B<-fno-magic>
 
@@ -1783,13 +1783,14 @@ sub pp_aelemfast {
   }
   my $ix   = $op->private;
   my $lval = $op->flags & OPf_MOD;
-  my $vifify = $rmg ? autovivification() : 1; # not needed to call if !$rmg
-  return _aelem($op, $av, $ix, $lval, $rmg, $vifify);
+  my $vivify = !$rmg ? autovivification() : 1; # no need to call if $rmg
+  debug "aelemfast: vivify=$vivify, rmg=$rmg, lval=$lval, -fautovivify=$opt_autovivify -faelem=$opt_aelem\n" if $debug{pad};
+  return _aelem($op, $av, $ix, $lval, $rmg, $vivify);
 }
 
 sub _aelem {
-  my ($op, $av, $ix, $lval, $rmg, $vifify) = @_;
-  if ($opt_aelem and !$rmg and !$vifify and $ix >= 0) {
+  my ($op, $av, $ix, $lval, $rmg, $vivify) = @_;
+  if ($opt_aelem and !$rmg and !$vivify and $ix >= 0) {
     push @stack, B::Stackobj::Aelem->new($av, $ix, $lval);
   } else {
     write_back_stack();
@@ -1810,7 +1811,7 @@ sub pp_aelem {
   my $op = shift;
   my ($ix, $av);
   my $lval = ($op->flags & OPf_MOD or $op->private & (OPpLVAL_DEFER || OPpLVAL_INTRO)) ? 1 : 0;
-  my $vifivy = autovivification();
+  my $vivify = autovivification();
   my $rmg = $opt_magic;  # use -fno-magic for the av (2nd stack arg)
   if (@stack >= 1) { # at least ix
     $ix = pop_int(); # TODO: substract CopARYBASE from ix
@@ -1819,14 +1820,16 @@ sub pp_aelem {
       $rmg  = ($avobj and $avobj->MAGICAL & SVs_RMG) ? 1 : 0;
     }
     $av = pop_sv();
-    return _aelem($op, $av, $ix, $lval, $rmg, $vifivy);
+    debug "aelem: vivify = $vivify, rmg = $rmg, lval = $lval\n" if $debug{pad};
+    return _aelem($op, $av, $ix, $lval, $rmg, $vivify);
   } else {
     if ($lval or $rmg) { # always
       return default_pp($op);
     } else {
       $ix = pop_int(); # TODO: substract CopARYBASE from ix
       $av = pop_sv();
-      return _aelem($op, $av, $ix, $lval, $rmg, $vifivy);
+      debug "aelem: vivify = $vivify, rmg = $rmg, lval = $lval\n" if $debug{pad};
+      return _aelem($op, $av, $ix, $lval, $rmg, $vivify);
     }
   }
 }
@@ -1911,16 +1914,16 @@ sub numeric_binop {
       my $right = B::Pseudoreg->new( "IV", "riv" );
       my $left  = B::Pseudoreg->new( "IV", "liv" );
       runtime(
-        sprintf( "$$right = %s; $$left = %s;\t/* %s */",
-                 pop_numeric(), pop_numeric(), $op->name ) );
+        sprintf( "$$right = %s;", pop_numeric()),
+        sprintf( "$$left = %s;\t/* %s */", pop_numeric(), pop_numeric(), $op->name ) );
       $targ->set_int( &$operator( $$left, $$right ) );
     }
     else {
       my $right = B::Pseudoreg->new( "NV", "rnv" );
       my $left  = B::Pseudoreg->new( "NV", "lnv" );
       runtime(
-        sprintf( "$$right = %s; $$left = %s;\t/* %s */",
-                 pop_numeric(), pop_numeric(), $op->name ) );
+        sprintf( "$$right = %s;", pop_numeric()),
+        sprintf( "$$left = %s;\t/* %s */", pop_numeric(), $op->name ) );
       $targ->set_numeric( &$operator( $$left, $$right ) );
     }
     push( @stack, $targ );
