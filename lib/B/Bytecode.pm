@@ -450,13 +450,13 @@ sub B::PV::bsave {
     asm "newpv", pvstring $sv->PV;
     asm "xpvshared";
   } elsif ($PERL510 and $sv->FLAGS & 0x09000000) { # SHARED
-    if ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00040000)) { # pbm_VALID, !pad_OUR
+    if ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00008000)) { # pbm_VALID, !SCREAM
       asm "newpv", pvstring $sv->PVBM;
     } else {
       asm "newpv", pvstring $sv->PV;
     }
     asm "xpvshared";
-  } elsif ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00040000)) { # pbm_VALID, !pad_OUR
+  } elsif ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00008000)) { # pbm_VALID, !SCREAM
     asm "newpv", pvstring $sv->PVBM;
     asm "xpv";
   } else {
