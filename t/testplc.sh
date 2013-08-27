@@ -19,6 +19,7 @@ PERL=${PERL:-perl}
 #PERL=perl5.11.0
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
+v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 
 function init {
 # test what? core or our module?
@@ -175,7 +176,11 @@ result[2]='123';
 tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 result[3]='zzz2y2y2';
 tests[4]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-result[4]='z2y2y2';
+if [[ $v518 -gt 0 ]]; then
+  result[4]='zzz2y2y2'
+else
+  result[4]='z2y2y2'
+fi
 tests[5]='print split /a/,"bananarama"'
 result[5]='bnnrm';
 tests[6]="{package P; sub x {print 'ya'} x}"

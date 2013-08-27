@@ -22,6 +22,7 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
+v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 
 function init {
 BASE=`basename $0`
@@ -165,66 +166,69 @@ ncctests=23
 declare -a cctests[$((100+$ncctests))]
 declare -a ccresult[$((100+$ncctests))]
 tests[1]='print "hi"'
-result[1]='hi';
+result[1]='hi'
 tests[2]='for (1,2,3) { print if /\d/ }'
-result[2]='123';
+result[2]='123'
 tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
-result[3]='zzz2y2y2';
+result[3]='zzz2y2y2'
 tests[4]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-result[4]='z2y2y2';
-#5.18: zzz2y2y2
+if [[ $v518 -gt 0 ]]; then
+  result[4]='zzz2y2y2'
+else
+  result[4]='z2y2y2'
+fi
 tests[5]='print split /a/,"bananarama"'
-result[5]='bnnrm';
+result[5]='bnnrm'
 tests[6]="{package P; sub x {print 'ya'} x}"
-result[6]='ya';
+result[6]='ya'
 tests[7]='@z = split /:/,"b:r:n:f:g"; print @z'
-result[7]='brnfg';
+result[7]='brnfg'
 tests[8]='sub AUTOLOAD { print 1 } &{"a"}()'
-result[8]='1';
+result[8]='1'
 tests[9]='my $l_i = 3; $x = sub { print $l_i }; &$x'
-result[9]='3';
+result[9]='3'
 tests[10]='my $i_i = 1; 
 my $foo = sub {
   $i_i = shift if @_
 }; print $i_i; 
 print &$foo(3),$i_i;'
-result[10]='133';
+result[10]='133'
 # index: do fbm_compile or not
 tests[11]='$x="Cannot use"; print index $x, "Can"'
-result[11]='0';
+result[11]='0'
 tests[12]='my $i_i=6; eval "print \$i_i\n"; print ""'
-result[12]='6';
+result[12]='6'
 tests[13]='BEGIN { %h=(1=>2,3=>4) } print $h{3}'
-result[13]='4';
+result[13]='4'
 tests[14]='open our $T,"a"; print "ok";'
-result[14]='ok';
+result[14]='ok'
 # __DATA__ handles still broken non-threaded 5.10
 tests[15]='print <DATA>
 __DATA__
 a
 b'
 result[15]='a
-b';
+b'
 tests[16]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
-result[16]='1';
+result[16]='1'
 tests[17]='my $i_ir=3; print 1 .. $i_ir'
-result[17]='123';
+result[17]='123'
 # custom key sort
 tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
-result[18]='ba';
+result[18]='ba'
 # fool the sort optimizer by my $p, pp_sort works ok on CC
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
-result[19]='431';
+result[19]='431'
 # not repro: something like this is broken in original 5.6 (Net::DNS::ZoneFile::Fast)
 # see new test 33
 tests[20]='$a="abcd123";my $r=qr/\d/;print $a =~ $r;'
-result[20]='1';
+result[20]='1'
 # broken on early alpha and 5.10: run-time labels.
 tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
-result[21]='024';
+result[21]='024'
 # broken in original perl 5.6
 tests[22]='my $fh; BEGIN { open($fh,"<","/dev/null"); } print "ok";';
-result[22]='ok';
+result[22]='ok'
 # broken in perl 5.8
 tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
 result[23]='ok'
@@ -235,10 +239,10 @@ result[24]='ok'
 # <=5.6 qsort needs two more passes here than >=5.8 merge_sort
 # 5.12 got it backwards and added 4 more passes.
 tests[25]='print sort { $i++; $b <=> $a } 1..4'
-result[25]="4321";
+result[25]="4321"
 # lvalue sub
 tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
-result[26]="26";
+result[26]="26"
 # xsub constants (constant folded). newlib: 0x200, glibc: 0x100
 tests[27]='use Fcntl ();my $a=Fcntl::O_CREAT(); print "ok" if ( $a >= 64 && &Fcntl::O_CREAT >= 64 );'
 result[27]='ok'
