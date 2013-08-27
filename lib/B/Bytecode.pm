@@ -440,20 +440,28 @@ sub B::RV::bsave {
 sub B::PV::bsave {
   my ( $sv, $ix ) = @_;
   $sv->B::NULL::bsave($ix);
+  return unless $sv;
   if ($PERL56) {
     #$sv->B::SV::bsave;
     if ($sv->FLAGS & $POK) {
-      asm  "newpv", pvstring $sv->PV ;
+      asm  "newpv", pvstring $sv->PV;
       asm  "xpv";
     }
-  } elsif ($PERL518 and $sv and ($sv->FLAGS & SVf_IsCOW) == SVf_IsCOW) { # COW
+  } elsif ($PERL518 and ($sv->FLAGS & SVf_IsCOW) == SVf_IsCOW) { # COW
     asm "newpv", pvstring $sv->PV;
     asm "xpvshared";
-  } elsif ($PERL510 and $sv and ($sv->FLAGS & 0x09000000) == 0x09000000) { # SHARED
-    asm "newpv", pvstring $sv->PVBM;
+  } elsif ($PERL510 and $sv->FLAGS & 0x09000000) { # SHARED
+    if ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00040000)) { # pbm_VALID, !pad_OUR
+      asm "newpv", pvstring $sv->PVBM;
+    } else {
+      asm "newpv", pvstring $sv->PV;
+    }
     asm "xpvshared";
-  } else {
+  } elsif ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00040000)) { # pbm_VALID, !pad_OUR
     asm "newpv", pvstring $sv->PVBM;
+    asm "xpv";
+  } else {
+    asm "newpv", pvstring $sv->PV;
     asm "xpv";
   }
 }
