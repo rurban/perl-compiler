@@ -10,20 +10,7 @@ WriteMakefile(
     'AUTHOR'   => 'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
-    ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
-      ('META_MERGE'  =>
-       {
-	resources =>
-	{
-	 license     => 'http://dev.perl.org/licenses/',
-	 homepage    => 'http://www.perl-compiler.org',
-	 bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
-	 repository  => 'http://perl-compiler.googlecode.com/',
-	 MailingList => 'http://groups.google.com/group/perl-compiler',
-	},
-       }
-      ) : ()),
-    SIGN  => 1,
+    'SIGN'     => 1,
 );
 
 # Local Variables:
