@@ -1575,7 +1575,7 @@ sub B::SPECIAL::save {
   # special case: $$sv is not the address but an index into specialsv_list
   #   warn "SPECIAL::save specialsv $$sv\n"; # debug
   @specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE)
-    unless @specialsv_name; # 5.6.2 Exporter quirks
+    unless @specialsv_name; # 5.6.2 Exporter quirks. pWARN_STD was added to B with 5.8.9
   my $sym = $specialsv_name[$$sv];
   if ( !defined($sym) ) {
     warn "unknown specialsv index $$sv passed to B::SPECIAL::save";
@@ -4158,7 +4158,11 @@ sub output_all {
   if ($MULTI) {
     print "#define ptr_undef 0\n";
   } else {
-    print "#define ptr_undef &PL_sv_undef\n";
+    if ($] > 5.01903) {
+      print "#define ptr_undef NULL\n";
+    } else {
+      print "#define ptr_undef &PL_sv_undef\n";
+    }
     if ($PERL510) { # XXX const sv SIGSEGV
       print "#undef CopFILE_set\n";
       print "#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))\n";
