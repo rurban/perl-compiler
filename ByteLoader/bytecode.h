@@ -522,7 +522,7 @@ static int bget_swab = 0;
 
 #ifdef USE_ITHREADS
 #define BSET_cop_file(cop, arg)		CopFILE_set(cop,arg)
-#if PERL_VERSION >= 16
+#if PERL_VERSION == 16
 /* 3arg: 6379d4a9 Father Chrysostomos    2012-04-08 20:25:52 */
 #define BSET_cop_stashpv(cop, arg)	CopSTASHPV_set(cop,arg,strlen(arg))
 #else
