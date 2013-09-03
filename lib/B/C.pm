@@ -2362,8 +2362,8 @@ CODE2
         }
       }
     }
-    elsif ( $type eq 'D' ) { # XXX regdata AV - coverage?
-      if ($obj = $mg->OBJ) {
+    elsif ( $type eq 'D' ) { # XXX regdata AV - coverage? i95
+      if ($mg->OBJ and !($sv_flags & SVf_READONLY)) {
 	# see Perl_mg_copy() in mg.c
 	$init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
 			   $$sv, $$sv, "'D'", cstring($ptr), $len ));
