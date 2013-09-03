@@ -541,8 +541,10 @@ sub B::PVMG::domagic {
   my @mglist = $sv->MAGIC;
   my ( @mgix, @namix );
   for (@mglist) {
+    my $mg = $_;
     push @mgix, $_->OBJ->ix;
-    push @namix, $_->PTR->ix if $_->LENGTH == B::HEf_SVKEY;
+    push @namix, $mg->PTR->ix if $mg->LENGTH == B::HEf_SVKEY;
+    $_ = $mg;
   }
 
   nice1 '-' . class($sv) . '-', asm "ldsv", $varix = $ix unless $ix == $varix;

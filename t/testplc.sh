@@ -381,6 +381,10 @@ print q(ok);'
 result[98]='ok'
 tests[105]='package A; use Storable qw/dclone/; my $a = \""; dclone $a; print q(ok);'
 result[105]='ok'
+if [[ $v518 -gt 0 ]]; then
+  tests[130]='no warnings "experimental::lexical_subs";use feature "lexical_subs";my sub p{q(ok)}; my $a=\&p;print p;'
+  result[130]='ok'
+fi
 
 init
 
