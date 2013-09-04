@@ -641,7 +641,7 @@ static int bget_swab = 0;
             if (!PL_beginav)				\
                 PL_beginav = newAV();			\
             av_push(PL_beginav, (SV*)cv);		\
-            CvGV_set((CV*)cv, NULL); /* cv has been hijacked */	\
+            SvANY((CV*)cv)->xcv_gv_u.xcv_gv = 0; /* cv has been hijacked */\
             call_list(oldscope, PL_beginav);		\
             PL_curcop = &PL_compiling;			\
             CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
