@@ -578,7 +578,57 @@ static int bget_swab = 0;
 #define PL_HINTS_PRIVATE (PL_hints)
 #endif
 
-#if (PERL_VERSION < 8)
+#if (PERL_VERSION > 16)
+#define BSET_push_begin(ary,cv)				\
+	STMT_START {					\
+            I32 oldscope = PL_scopestack_ix;		\
+            ENTER;					\
+            SAVECOPFILE(&PL_compiling);			\
+            SAVECOPLINE(&PL_compiling);			\
+            if (!PL_beginav)				\
+                PL_beginav = newAV();			\
+            av_push(PL_beginav, (SV*)cv);		\
+            SvANY((CV*)cv)->xcv_gv_u.xcv_gv = 0; /* cv has been hijacked */\
+            call_list(oldscope, PL_beginav);		\
+            PL_curcop = &PL_compiling;			\
+            CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
+            LEAVE;					\
+	} STMT_END
+#else
+#if (PERL_VERSION >= 10)
+#define BSET_push_begin(ary,cv)				\
+	STMT_START {					\
+            I32 oldscope = PL_scopestack_ix;		\
+            ENTER;					\
+            SAVECOPFILE(&PL_compiling);			\
+            SAVECOPLINE(&PL_compiling);			\
+            if (!PL_beginav)				\
+                PL_beginav = newAV();			\
+            av_push(PL_beginav, (SV*)cv);		\
+            SvANY((CV*)cv)->xcv_gv = 0; /* cv has been hijacked */\
+            call_list(oldscope, PL_beginav);		\
+            PL_curcop = &PL_compiling;			\
+            CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
+            LEAVE;					\
+	} STMT_END
+#else
+#if (PERL_VERSION >= 8)
+#define BSET_push_begin(ary,cv)				\
+	STMT_START {					\
+            I32 oldscope = PL_scopestack_ix;		\
+            ENTER;					\
+            SAVECOPFILE(&PL_compiling);			\
+            SAVECOPLINE(&PL_compiling);			\
+            if (!PL_beginav)				\
+                PL_beginav = newAV();			\
+            av_push(PL_beginav, (SV*)cv);		\
+	    GvCV(CvGV(cv)) = 0;               /* cv has been hijacked */\
+            call_list(oldscope, PL_beginav);		\
+            PL_curcop = &PL_compiling;			\
+            PL_compiling.op_private = (U8)(PL_hints & HINT_PRIVATE_MASK);\
+            LEAVE;					\
+	} STMT_END
+#else
 /* this is simply stolen from the code in newATTRSUB() */
 #define BSET_push_begin(ary,cv)				\
 	STMT_START {					\
@@ -597,57 +647,9 @@ static int bget_swab = 0;
 	    LEAVE;					\
 	} STMT_END
 #endif
-#if (PERL_VERSION >= 8) && (PERL_VERSION < 10)
-#define BSET_push_begin(ary,cv)				\
-	STMT_START {					\
-            I32 oldscope = PL_scopestack_ix;		\
-            ENTER;					\
-            SAVECOPFILE(&PL_compiling);			\
-            SAVECOPLINE(&PL_compiling);			\
-            if (!PL_beginav)				\
-                PL_beginav = newAV();			\
-            av_push(PL_beginav, (SV*)cv);		\
-	    GvCV(CvGV(cv)) = 0;               /* cv has been hijacked */\
-            call_list(oldscope, PL_beginav);		\
-            PL_curcop = &PL_compiling;			\
-            PL_compiling.op_private = (U8)(PL_hints & HINT_PRIVATE_MASK);\
-            LEAVE;					\
-	} STMT_END
 #endif
-#if (PERL_VERSION >= 10) && !defined(CvGV_set)
-#define BSET_push_begin(ary,cv)				\
-	STMT_START {					\
-            I32 oldscope = PL_scopestack_ix;		\
-            ENTER;					\
-            SAVECOPFILE(&PL_compiling);			\
-            SAVECOPLINE(&PL_compiling);			\
-            if (!PL_beginav)				\
-                PL_beginav = newAV();			\
-            av_push(PL_beginav, (SV*)cv);		\
-            SvANY((CV*)cv)->xcv_gv = 0; /* cv has been hijacked */\
-            call_list(oldscope, PL_beginav);		\
-            PL_curcop = &PL_compiling;			\
-            CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
-            LEAVE;					\
-	} STMT_END
 #endif
-#if (PERL_VERSION >= 10) && defined(CvGV_set)
-#define BSET_push_begin(ary,cv)				\
-	STMT_START {					\
-            I32 oldscope = PL_scopestack_ix;		\
-            ENTER;					\
-            SAVECOPFILE(&PL_compiling);			\
-            SAVECOPLINE(&PL_compiling);			\
-            if (!PL_beginav)				\
-                PL_beginav = newAV();			\
-            av_push(PL_beginav, (SV*)cv);		\
-            SvANY((CV*)cv)->xcv_gv_u.xcv_gv = 0; /* cv has been hijacked */\
-            call_list(oldscope, PL_beginav);		\
-            PL_curcop = &PL_compiling;			\
-            CopHINTS_set(&PL_compiling, (U8)PL_HINTS_PRIVATE);	\
-            LEAVE;					\
-	} STMT_END
-#endif
+
 #define BSET_push_init(ary,cv)				\
 	STMT_START {					\
 	    av_unshift((PL_initav ? PL_initav : 	\

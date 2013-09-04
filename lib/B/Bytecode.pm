@@ -203,12 +203,23 @@ sub B::OP::ix {
 	  my $class = Opcodes::opclass($op->type);
 	  if ($class > 0) {
 	    my $classname = $optype[$class];
-	    my $name = $op->name;
-            warn "Upgrading $name BASEOP to $classname...\n" if $classname and !$quiet;
-	    bless $op, "B::".$classname if $classname;
+            if ($classname) {
+              my $name = $op->name;
+              warn "Upgrading $name BASEOP to $classname...\n"  unless $quiet;
+              bless $op, "B::".$classname;
+            }
 	  }
 	}
       }
+    }
+    if ($op->name eq 'anoncode') { #crash in test 11 5.18.1d-nt
+      my $class = 'PADOP';
+      my $type  = $optype_enum{PADOP};
+      $opsize = $op->size + $Config{ptrsize};
+      $arg = $PERL56 ? $type : $opsize | $type << 7;
+      warn "Patching anoncode from SVOP to PADOP...\n"
+        unless $quiet;
+      bless $op, "B::$class";
     }
     B::Assembler::maxopix($tix) if $debug{A};
     asm "newopx", $arg, sprintf( "$arg=size:%s,type:%d", $opsize, $op->type );
