@@ -5,7 +5,7 @@ use strict;
 my $name = "ccode97i";
 use Test::More tests => 1;
 
-my $source = $] < 5.012 ? "use v5.6; print q(ok);" : "use v5.12; print q(ok);";
+my $source = $] < 5.012 ? "use 5.006; print q(ok);" : "use v5.12; print q(ok);";
 
 open F, ">", "$name.pl";
 print F $source;

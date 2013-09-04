@@ -8,8 +8,7 @@ BEGIN {
 }
 use Test::More;
 #plan tests => 3;
-plan skip_all => 'defined &gv optimization temp. disabled';
-exit;
+plan skip_all => 'defined &gv optimization temp. disabled'; exit;
 
 my $script = 'defined(&B::OP::name) && print q(ok)';
 
