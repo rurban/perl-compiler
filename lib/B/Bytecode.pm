@@ -1100,10 +1100,10 @@ sub B::OP::opwalk {
   }
 }
 
-# Do run-time requires with -s savebegin and without -i includeall.
+# Do run-time requires with -b savebegin and without -i includeall.
 # Otherwise all side-effects of BEGIN blocks are already in the current
 # compiled code.
-# -s or !-i will have smaller code, but run-time access of dependent modules
+# -b or !-i will have smaller code, but run-time access of dependent modules
 # such as with python, where all modules are byte-compiled.
 # With -i the behaviour is similar to the C or CC compiler, where everything
 # is packed into one file.
@@ -1414,6 +1414,8 @@ BEGIN blocks (C<use> package).
 
 This creates bigger and more independent code, but is more error prone and
 does not support pre-compiled C<.pmc> modules.
+
+It is highly recommended to use C<-i> together with C<-b> I<safebegin>.
 
 =item B<-b> savebegin
 
