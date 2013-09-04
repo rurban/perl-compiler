@@ -185,8 +185,7 @@ sub B::OP::ix {
       if ($op->name eq 'entertry') {
 	$opsize = $op->size + (2*$Config{ptrsize});
 	$arg = $PERL56 ? $optype_enum{LOGOP} : $opsize | $optype_enum{LOGOP} << 7;
-        warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n"
-	  unless $quiet;
+        warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n" unless $quiet;
         bless $op, 'B::LOGOP';
       } elsif ($op->name eq 'aelemfast') {
         if (0) {
@@ -194,8 +193,7 @@ sub B::OP::ix {
           my $type  = ITHREADS ? $optype_enum{PADOP} : $optype_enum{SVOP};
           $opsize = $op->size + $Config{ptrsize};
           $arg = $PERL56 ? $type : $opsize | $type << 7;
-          warn "Upgrading aelemfast from BASEOP to $class...\n"
-            unless $quiet;
+          warn "Upgrading aelemfast from BASEOP to $class...\n" unless $quiet;
           bless $op, "B::$class";
         }
       } elsif ($DEBUGGING) { # only needed when we want to check for new wrong BASEOP's
@@ -211,15 +209,6 @@ sub B::OP::ix {
 	  }
 	}
       }
-    }
-    if ($op->name eq 'anoncode') { #crash in test 11 5.18.1d-nt
-      my $class = 'PADOP';
-      my $type  = $optype_enum{PADOP};
-      $opsize = $op->size + $Config{ptrsize};
-      $arg = $PERL56 ? $type : $opsize | $type << 7;
-      warn "Patching anoncode from SVOP to PADOP...\n"
-        unless $quiet;
-      bless $op, "B::$class";
     }
     B::Assembler::maxopix($tix) if $debug{A};
     asm "newopx", $arg, sprintf( "$arg=size:%s,type:%d", $opsize, $op->type );
