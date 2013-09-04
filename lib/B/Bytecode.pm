@@ -10,11 +10,10 @@
 # Reviving 5.6 support here is work in progress, and not yet enabled.
 # So far the original is used instead, even if the list of failed tests
 # is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
-# 5.17.5 is also not fully supported yet (new PADLIST type)
 
 package B::Bytecode;
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 #use 5.008;
 use B qw( class main_cv main_root main_start
@@ -854,7 +853,7 @@ sub B::BINOP::bsave {
 
 sub B::LISTOP::bsave {
   my ( $op, $ix ) = @_;
-  bwarn( $op->peekop, ", ix: $ix" ) if $debug{o};
+  bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
   my $name = $op->name;
   sub blocksort() { OPf_SPECIAL | OPf_STACKED }
   if ( $name eq 'sort' && ( $op->flags & blocksort ) == blocksort ) {
@@ -1259,7 +1258,7 @@ use ByteLoader '$ByteLoader::VERSION';
     elsif (/^-o(.*)$/) {
       open STDOUT, ">$1" or die "open $1: $!";
     }
-    elsif (/^-f(.*)$/) {
+    elsif (/^-F(.*)$/) {
       $files{$1} = 1;
     }
     elsif (/^-i/) {
@@ -1455,10 +1454,11 @@ C<main_root>, C<main_cv> and C<curpad> are omitted.
 
 "use package." Might be needed of the package is not automatically detected.
 
-=item B<-f>I<file>
+=item B<-F>I<file>
 
 Include file. If not C<-i> define all symbols in the given included
-source file. C<-i> would all included files, C<-f> only a certain file - full path needed.
+source file. C<-i> would all included files,
+C<-F> only a certain file - full path needed.
 
 =item B<-q>
 

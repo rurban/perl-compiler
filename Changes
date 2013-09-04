@@ -43,6 +43,9 @@
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68.
         New type B::PAD isa B::AV (PADLIST for 5.17.5),
         New bytecodes newpadlx, padl_name, padl_sym (PADLIST for 5.17.5)
+        Fixed CvGV_set causing Attempt to free unreferenced scalar in push_begin (42,43)
+        Fixed -Do (peek ops)
+        Renamed option -f to -F for files.
         * Assembler (1.11): allow "newpadlx 0"
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the

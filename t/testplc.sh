@@ -16,24 +16,19 @@ function help {
 
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
-#PERL=perl5.11.0
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 
 function init {
-# test what? core or our module?
-Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Iblib/arch -Iblib/lib))'`"
-#Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
-OCMD="$PERL $Mblib -MO=Bytecode,"
-QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
-ICMD="$PERL $Mblib -MByteLoader"
-if [ "$D" = "256" ]; then QOCMD=$OCMD; fi
-if [ "$Mblib" = " " ]; then VERS="${VERS}_global"; fi
-v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
-OCMD=${OCMD}${v513}
-QOCMD=${QOCMD}${v513}
-
+    # test what? core or our module?
+    Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Iblib/arch -Iblib/lib))'`"
+    #Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
+    OCMD="$PERL $Mblib -MO=Bytecode,"
+    QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
+    ICMD="$PERL $Mblib -MByteLoader"
+    if [ "$D" = "256" ]; then QOCMD=$OCMD; fi
+    if [ "$Mblib" = " " ]; then VERS="${VERS}_global"; fi
 }
 
 function pass {
