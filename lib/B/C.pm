@@ -3289,6 +3289,8 @@ if (0) {
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
       $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
     }
+  } else {
+    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
   }
   $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,
                        $debug{flags}?" /* ".$gv->flagspv." */":"" ));
