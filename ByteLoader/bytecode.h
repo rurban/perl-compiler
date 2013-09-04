@@ -244,7 +244,15 @@ static int bget_swab = 0;
 	BSET_OBJ_STOREX(sv);			\
     } STMT_END
 
-#define BSET_sv_magic(sv, arg)	sv_magic(sv, Nullsv, arg, 0, 0)
+#define BSET_sv_magic(sv, arg)	 STMT_START {	  \
+      if (SvREADONLY(sv) && !PERL_MAGIC_TYPE_READONLY_ACCEPTABLE(arg)) { \
+        SvREADONLY_off(sv);                                             \
+        sv_magic(sv, Nullsv, arg, 0, 0);                                \
+        SvREADONLY_on(sv);                                              \
+      } else {                                                          \
+        sv_magic(sv, Nullsv, arg, 0, 0);                                \
+      }                                                                 \
+    } STMT_END
 /* mg_name was previously called mg_pv. we keep the new name and the old index */
 #define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.cur
 #define BSET_mg_namex(mg, arg)			\
@@ -278,8 +286,16 @@ static int bget_swab = 0;
 
 #define BSET_av_push(sv, arg)	av_push((AV*)sv, arg)
 #define BSET_av_pushx(sv, arg)	(AvARRAY(sv)[++AvFILLp(sv)] = arg)
-#define BSET_hv_store(sv, arg)	\
-	hv_store((HV*)sv, bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0)
+#define BSET_hv_store(sv, arg)                                          \
+    STMT_START {                                                        \
+      if (SvREADONLY(sv)) {                                             \
+        SvREADONLY_off(sv);                                             \
+	hv_store((HV*)sv, bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0); \
+        SvREADONLY_on(sv);                                              \
+      } else {                                                          \
+        hv_store((HV*)sv, bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0); \
+      }                                                                 \
+    } STMT_END
 #define BSET_pv_free(sv)	Safefree(sv.pv)
 
 /* ignore backref and refcount checks */
