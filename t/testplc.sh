@@ -72,7 +72,7 @@ function btest {
     if [ "$Mblib" != " " ]; then 
 	bcall ${o} S,-s asm 1
 	bcall ${o} S,-k asm 1
-	bcall ${o} S,-i asm 1
+	bcall ${o} S,-i,-b asm 1
     fi
   fi
   if [ "$Mblib" != " " -a -z "$SKIP" ]; then 
@@ -100,8 +100,8 @@ function btest {
     [ -n "$Q" ] || echo $PERL $Mblib script/disassemble ${md}.plc \> ${o}SDS_${VERS}.disasm
     $PERL $Mblib script/disassemble ${md}.plc > ${o}SDS_${VERS}.disasm
 
-    bcall ${o} i
-    m=${o}i_${VERS}
+    bcall ${o} i,-b
+    m=${o}ib_${VERS}
     $PERL $Mblib script/disassemble ${m}.plc > ${m}.disasm
     [ -n "$Q" ] || echo ${ICMD} ${m}.plc
     res=$(${ICMD} ${m}.plc)
