@@ -661,8 +661,13 @@ sub B::CV::bsave {
   my $cvflags = $cv->CvFLAGS;
   $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
   asm "xcv_flags",       $cvflags;
-  asm "xcv_gv",          $gvix if $cv->GV and ref($cv->GV) ne 'B::SPECIAL';
-  #TODO 5.18.1 set name_hek for lexsub
+  if ($cv->GV and ref($cv->GV) ne 'B::SPECIAL') {
+    asm "xcv_gv",        $gvix;
+  } elsif ($] >= 5.018001 and $cv->NAME_HEK) { # ignore main_cv
+    asm "xcv_name_hek",  pvix $cv->NAME_HEK;   # set name_hek for lexsub (#130)
+  #} elsif ($] >= 5.017004) {                   # 5.18.0 empty name, missing B API
+  #  asm "xcv_name_hek",  pvix "_";
+  }
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
 }
 

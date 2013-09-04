@@ -760,6 +760,17 @@ static int bget_swab = 0;
 #define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad
 #endif
 
+#ifdef CvNAME_HEK_set
+#define BSET_xcv_name_hek(cv, arg)                                      \
+  STMT_START {                                                          \
+    U32 hash; I32 len = strlen(arg);                                    \
+    PERL_HASH(hash, arg, len);                                          \
+    ((XPVCV*)MUTABLE_PTR(SvANY(cv)))->xcv_gv_u.xcv_hek = share_hek(arg,len,hash); \
+    CvNAMED_on(cv);                                                     \
+  } STMT_END
+#endif
+
+
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
  * equivalent. However, since the header includes checks for a match in

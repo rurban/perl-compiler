@@ -1038,3 +1038,4 @@ __END__
 160 17.005 newpadlx	bstate->bs_sv			U8		x
 161 17.005 padl_name	bstate->bs_sv			svindex		x
 162 17.005 padl_sym	bstate->bs_sv			svindex		x
+163 17.004 xcv_name_hek	bstate->bs_sv			pvindex		x
