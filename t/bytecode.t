@@ -61,14 +61,13 @@ push @todo, (21,24..26,28,33,38..39) if $^O eq 'solaris' and $] eq '5.008008';
 #push @todo, (10,18,22,24,27..28,30,45) if $^O eq 'linux' and $] eq '5.008008';
 push @todo, (43)   if $] >= 5.008004 and $] <= 5.008008;
 push @todo, (7)    if $] >= 5.008004 and $] < 5.008008 and $ITHREADS;
-push @todo, (27)   if $] >= 5.010 and $] < 5.013008;
+push @todo, (27)   if $] >= 5.010;
 push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
 #push @todo, (48)  if $] > 5.013; # END block del_backref fixed with r1004
 #push @todo, (41)  if !$ITHREADS;
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
-push @todo, (46) if $] >= 5.012;
-push @todo, (27) if $] >= 5.014;
+#push @todo, (46) if $] >= 5.012;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
 
 my @skip = ();
