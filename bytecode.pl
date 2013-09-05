@@ -367,7 +367,7 @@ for (@data) {
 	# perl version 5.010000 => 10.000, 5.009003 => 9.003
 	# Have to round the float: 5.010 - 5 = 0.00999999999999979
 	my $pver = 0.0+(substr($],2,3).".".substr($],5));
-	if ($ver =~ /8(\-)?/) {
+	if ($ver =~ /^<?8\-?/) {
 	    $ver =~ s/8/8.001/; # as convenience for a shorter table.
 	}
 	# Add these misses to ASMDATA. TODO: To BYTERUN maybe with a translator, as the
@@ -383,7 +383,7 @@ for (@data) {
 	    $unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
 	}
     }
-    if (!$unsupp or ($] >= 5.007 and $insn !~ /padl/)) {
+    if (!$unsupp or ($] >= 5.007 and $insn !~ /padl|xcv_name_hek/)) {
 	$insn_name[$insn_num] = $insn;
 	push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
 	# Find the next unused instruction number
@@ -1034,8 +1034,8 @@ __END__
 157 8	gv_fetchpvn_flags bstate->bs_sv			U32		x
 # restore dup to stdio handles 0-2
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
-159 10 	xpvshared	bstate->bs_sv			none		x
-160 17.005 newpadlx	bstate->bs_sv			U8		x
-161 17.005 padl_name	bstate->bs_sv			svindex		x
-162 17.005 padl_sym	bstate->bs_sv			svindex		x
-163 17.004 xcv_name_hek	bstate->bs_sv			pvindex		x
+159 10	xpvshared	bstate->bs_sv			none		x
+160 18	newpadlx	bstate->bs_sv			U8		x
+161 18	padl_name	bstate->bs_sv			svindex		x
+162 18	padl_sym	bstate->bs_sv			svindex		x
+163 18	xcv_name_hek	bstate->bs_sv			pvindex		x

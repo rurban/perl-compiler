@@ -244,15 +244,27 @@ static int bget_swab = 0;
 	BSET_OBJ_STOREX(sv);			\
     } STMT_END
 
+#ifdef PERL_MAGIC_TYPE_READONLY_ACCEPTABLE
 #define BSET_sv_magic(sv, arg)	 STMT_START {	  \
       if (SvREADONLY(sv) && !PERL_MAGIC_TYPE_READONLY_ACCEPTABLE(arg)) { \
-        SvREADONLY_off(sv);                                             \
-        sv_magic(sv, Nullsv, arg, 0, 0);                                \
-        SvREADONLY_on(sv);                                              \
-      } else {                                                          \
-        sv_magic(sv, Nullsv, arg, 0, 0);                                \
-      }                                                                 \
+        SvREADONLY_off(sv);                                       \
+        sv_magic(sv, Nullsv, arg, 0, 0);                          \
+        SvREADONLY_on(sv);                                        \
+      } else {                                                    \
+        sv_magic(sv, Nullsv, arg, 0, 0);                          \
+      }                                                           \
     } STMT_END
+#else
+#define BSET_sv_magic(sv, arg)	 STMT_START {	  \
+      if (SvREADONLY(sv)) {			  \
+        SvREADONLY_off(sv);			  \
+        sv_magic(sv, Nullsv, arg, 0, 0);          \
+        SvREADONLY_on(sv);                        \
+      } else {                                    \
+        sv_magic(sv, Nullsv, arg, 0, 0);          \
+      }                                           \
+    } STMT_END
+#endif
 /* mg_name was previously called mg_pv. we keep the new name and the old index */
 #define BSET_mg_name(mg, arg)	mg->mg_ptr = arg; mg->mg_len = bstate->bs_pv.cur
 #define BSET_mg_namex(mg, arg)			\
@@ -774,9 +786,6 @@ static int bget_swab = 0;
 	} STMT_END
 #define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad
 #define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad
-#endif
-
-#ifdef CvNAME_HEK_set
 #define BSET_xcv_name_hek(cv, arg)                                      \
   STMT_START {                                                          \
     U32 hash; I32 len = strlen(arg);                                    \
