@@ -640,7 +640,7 @@ sub B::IO::bsave {
 sub B::CV::bsave {
   my ( $cv, $ix ) = @_;
   my $stashix   = $cv->STASH->ix;
-  my $gvix      = $cv->GV ? $cv->GV->ix : 0;
+  my $gvix      = ($cv->GV and ref($cv->GV) ne 'B::SPECIAL') ? $cv->GV->ix : 0;
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
   my $startix   = $cv->START->opwalk;
@@ -661,7 +661,7 @@ sub B::CV::bsave {
   my $cvflags = $cv->CvFLAGS;
   $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
   asm "xcv_flags",       $cvflags;
-  if ($cv->GV and ref($cv->GV) ne 'B::SPECIAL') {
+  if ($gvix) {
     asm "xcv_gv",        $gvix;
   } elsif ($] >= 5.018001 and $cv->NAME_HEK) { # ignore main_cv
     asm "xcv_name_hek",  pvix $cv->NAME_HEK;   # set name_hek for lexsub (#130)

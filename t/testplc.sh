@@ -43,7 +43,7 @@ function bcall {
     o=$1
     opt=${2:-s}
     ext=${3:-plc}
-    optf=$(echo $opt|sed 's/,-//')
+    optf=$(echo $opt|sed 's/,-//g')
     [ -n "$Q" ] || echo ${QOCMD}-$opt,-o${o}${optf}_${VERS}.${ext} ${o}.pl
     ${QOCMD}-$opt,-o${o}${optf}_${VERS}.${ext} ${o}.pl
 }
