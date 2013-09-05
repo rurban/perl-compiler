@@ -27,6 +27,7 @@
           e.g. %warning::Bits
         Added support for new PADLIST type since 5.17.4 (with xpadl_id) and 5.17.6 (without)
         $^X returns now the real executable name, not just perl or perl.exe
+        Adjust COW string lengths to hold the COW_REFCNT byte at the end
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.

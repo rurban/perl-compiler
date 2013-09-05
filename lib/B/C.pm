@@ -523,6 +523,10 @@ sub svop_or_padop_pv {
   }
 }
 
+sub IsCOW {
+  return $] >= 5.017008 and $_[0]->FLAGS & 0x00010000; # since 5.17.8
+}
+
 sub savesym {
   my ( $obj, $value ) = @_;
   my $sym = sprintf( "s\\_%x", $$obj );
@@ -562,7 +566,7 @@ sub savere {
   my $sym;
   my $pv    = $re;
   my $cur   = length $pv;
-  my $len = 0; # length( pack "a*", $pv ) + 1;
+  my $len = 0; # length( pack "a*", $pv ) + 2;
   if ($PERL514) {
     $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {(char*)%s}", $xpvsect->index,
@@ -663,8 +667,10 @@ sub save_pv_or_rv {
       if ($B::C::pv_copy_on_grow) {
 	( $savesym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
 	  ? constpv($pv) : savepv($pv);
+        $len++ if IsCOW($sv) and $cur;
       } else {
 	( $savesym, $len ) = ( 'ptr_undef', $cur+1 );
+        $len++ if IsCOW($sv) and $cur;
       }
     } else {
       ( $savesym, $len ) = ( 'ptr_undef', 0 );
@@ -1711,7 +1717,7 @@ sub savepvn {
   # work with byte offsets/lengths
   $pv = pack "a*", $pv;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
-    push @init, sprintf( "Newx(%s,%u,char);", $dest, length($pv) + 1 );
+    push @init, sprintf( "Newx(%s,%u,char);", $dest, length($pv) + 2 );
     my $offset = 0;
     while ( length $pv ) {
       my $str = substr $pv, 0, $max_string_len, '';
@@ -1752,11 +1758,12 @@ sub B::PVLV::save {
     return $sym;
   }
   my $pv  = $sv->PV;
-  my $cur = length($pv);
+  my $cur = length( pack "a*", $pv );
   my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
   my ( $pvsym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY and !$shared_hek)
     ? constpv($pv) : savepv($pv);
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
+  $len++ if $len and IsCOW($sv);
   $pvsym = "(char*)$pvsym";# if $B::C::const_strings and $sv->FLAGS & SVf_READONLY;
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL514) {
@@ -1948,7 +1955,7 @@ sub B::BM::save {
   return $sym if !$PERL510 and defined $sym;
   $sv = bless $sv, "B::BM" if $PERL510;
   my $pv  = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
-  my $len = length($sv->PV);
+  my $len = length(pack "a*", $sv->PV);
   if ($PERL510) {
     warn "Saving FBM for GV $sym\n" if $debug{gv};
     $init->add( sprintf( "$sym = (GV*)newSV_type(SVt_PVGV);" ),
@@ -2088,9 +2095,9 @@ sub B::REGEXP::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $pv = $sv->PV;
-  my $len = length(pack("a*", $pv));
+  my $cur = length(pack("a*", $pv));
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
-  $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $len, 0 ) );
+  $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
   $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
   		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, cstring($pv)));
   my $ix = $svsect->index;
@@ -3966,11 +3973,17 @@ sub B::IO::save {
   return $sym if defined $sym;
   my $pv = $io->PV;
   $pv = '' unless defined $pv;
-  my ( $pvsym, $len );
+  my ( $pvsym, $len, $cur );
   if ($pv) {
-    ( $pvsym, $len ) = savepv($pv);
+    ( $pvsym, $cur ) = savepv($pv);
   } else {
     $pvsym = 'NULL';
+    $cur = 0;
+  }
+  if ($cur) {
+    $len = $cur + 1;
+    $len++ if IsCOW($io);
+  } else {
     $len = 0;
   }
   if ($PERL514) {
@@ -3982,7 +3995,7 @@ sub B::IO::save {
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
       sprintf($tmpl,
-        $len,                     $len + 1,
+        $cur,                     $len,
 	$io->LINES, 		  # moved to IVX with 5.11.1
         $io->PAGE,                $io->PAGE_LEN,
         $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
@@ -4002,7 +4015,7 @@ sub B::IO::save {
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
       sprintf($tmpl,
-        $len,                     $len + 1,
+        $cur,                     $len,
 	$io->LINES, 		  # moved to IVX with 5.11.1
         $io->PAGE,                $io->PAGE_LEN,
         $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
@@ -4022,7 +4035,7 @@ sub B::IO::save {
     $tmpl =~ s{ /\*flags\*/$}{} unless $verbose;
     $xpviosect->add(
       sprintf($tmpl,
-        $len,                     $len + 1,
+        $cur,                     $len,
         $io->IVX,
 	$io->LINES,
         $io->PAGE,                $io->PAGE_LEN,
@@ -4039,7 +4052,7 @@ sub B::IO::save {
     $xpviosect->comment("xpv_pv, cur, len, iv, nv, magic, stash, xio_ifp, xio_ofp, xio_dirpu, ..., subprocess, type, flags");
     $xpviosect->add(
       sprintf("%s, %u, %u, %ld, %s, 0, 0, 0, 0, {0}, %d, %d, %d, %d, %s, Nullgv, %s, Nullgv, %s, Nullgv, %d, %s, 0x%x",
-              $pvsym, 			   $len, $len + 1,
+              $pvsym, 			   $cur, $len,
               $io->IVX,                    $io->NVX,
               $io->LINES,                  $io->PAGE,
               $io->PAGE_LEN,               $io->LINES_LEFT,
@@ -4054,7 +4067,7 @@ sub B::IO::save {
   $svsect->debug($io->flagspv) if $debug{flags};
   $sym = savesym( $io, sprintf( "(IO*)&sv_list[%d]", $svsect->index ) );
 
-  if ($PERL510 and !$B::C::pv_copy_on_grow and $len) {
+  if ($PERL510 and !$B::C::pv_copy_on_grow and $cur) {
     $init->add(sprintf("SvPVX(sv_list[%d]) = $pvsym;", $svsect->index));
   }
   my ( $field, $fsym );
