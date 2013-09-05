@@ -4652,9 +4652,13 @@ _EOT7
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
         }
-        if ($]<5.016 or $]>=5.017) {
-          print " CopSTASHPV_set(&$s, NULL);\n";
-        } else {
+        if ($] >= 5.017) {
+          print " CopSTASH_set(&$s, NULL);\n";
+        } elsif ($] < 5.016 and $ITHREADS) {
+          print " CopSTASHPV(&$s) = NULL;\n";
+        } elsif ($] < 5.016 and !$ITHREADS) {
+          print " CopSTASH(&$s) = NULL;\n";
+        } else { # 5.16 experiment
           print " CopSTASHPV_set(&$s, NULL, 0);\n";
         }
       } elsif ($s ne 'ptr_undef') {
