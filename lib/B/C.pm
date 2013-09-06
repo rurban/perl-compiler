@@ -2112,9 +2112,11 @@ sub B::REGEXP::save {
       $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
     }
   }
-  $init->add(# replace XVP with struct regexp. need pv and extflags
-	     sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(&sv_list[$ix], 0x%x));",
+  if ($] > 5.011) {
+    $init->add(# replace XVP with struct regexp. need pv and extflags
+               sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(&sv_list[$ix], 0x%x));",
 		     $sv->EXTFLAGS));
+  }
   $svsect->debug( $sv->flagspv ) if $debug{flags};
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
   $sv->save_magic;
