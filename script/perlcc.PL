@@ -259,7 +259,7 @@ sub parse_argv {
         'f=s@',         # pass compiler option(s) to backend (new since 2.14)
         'Wc=s',         # pass (comma-seperated) options to cc (new since 2.13)
         'Wl=s',         # pass (comma-seperated) options to ld (new since 2.13)
-        'testsuite',    # try to be nice to testsuite (STDOUT, STDERR handles)
+        'testsuite',    # try to be nice to testsuite modules (STDOUT, STDERR handles)
         'spawn!',	# --no-spawn (new since 2.12)
         'time',         # print benchmark timings (new since 2.08)
         'version',      # (new since 2.13)
@@ -1112,6 +1112,9 @@ Create a module, resp. a shared library.
 Currently only enabled for Bytecode and CC. I<(not yet tested)>
 
 =item --testsuite
+
+Tries be nice to Test:: modules, like preallocating the file
+handles 4 and 5, and munge the output of BEGIN.
 
   perlcc -r --testsuite t/harness
 

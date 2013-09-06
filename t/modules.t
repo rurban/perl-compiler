@@ -12,6 +12,7 @@
 #  -no-date - no date added at the logfile
 #  -t       - run also tests
 #  -log     - save log file. default on test10 and without subset
+#  -keep    - keep the source, perlcc -S
 #
 # The list in t/mymodules comes from two bigger projects.
 # Recommended general lists are Task::Kensho and http://ali.as/top100/
@@ -61,7 +62,6 @@ BEGIN {
 }
 
 our %modules;
-our $keep = '';
 our $log = 0;
 use modules;
 require "test.pl";
@@ -93,6 +93,7 @@ $log = 0 if @ARGV;
 $log = 1 if grep /top100$/, @ARGV;
 $log = 1 if grep /-log/, @ARGV or $ENV{TEST_LOG};
 my $nodate = 1 if grep /-no-date/, @ARGV;
+my $keep = 1 if grep /-keep/, @ARGV;
 
 if ($log) {
   $log = (@ARGV and !$nodate)
@@ -184,8 +185,10 @@ for my $module (@modules) {
       my ($result, $stdout, $err);
       my $module_passed = 1;
       my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-      foreach my $opt (@opts) {
-        $opt .= " $keep" if $keep;
+      foreach (0..$#opts) {
+        my $opt = $opts[$_];
+        $opt .= " --testsuite --no-spawn" if $module =~ /^Test::/ and $opt !~ / --testsuite/;
+        $opt .= " -S" if $keep and $opt !~ / -S\b/;
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
 	  $runperl,split(/ /,$Mblib),"blib/script/perlcc",split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
