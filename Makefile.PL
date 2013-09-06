@@ -326,6 +326,25 @@ TAGS : $asmdata
     $result;
 }
 
+sub test {
+    shift->SUPER::test(@_) . q(
+testmod :: pure_all
+	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t
+testmodall :: pure_all
+	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100
+testc :: pure_all
+	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c.t
+testbc :: pure_all
+	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/bytecode.t
+testcritical :: pure_all
+	t/critical.sh
+teststatus :: pure_all
+	./status_upd -fqd
+testrelease :: pure_all
+	${ECHO} run t/release-testing.sh and perlall testvm --all
+)
+}
+
 sub install {
     my $result = shift->SUPER::install(@_);
     if ($] > 5.013007 and !-e File::Spec->catfile($headerpath, 'cc_runtime.h')) {
