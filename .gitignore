@@ -19,10 +19,13 @@ ccode*
 cccode*
 a.plc
 *.log
+log.*.err
 pm_to_blib
 nohup.out
 t/reports
 t/_CORE
+t/test-*.sh
+t/*.c
 script/perlcc
 ramblings/How-perl-compiles-subs-and-methods.md
 ramblings/cp_light.pod
