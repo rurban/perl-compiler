@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 4ee30fe 2013-08-26 | fix ctest 4 for >5.17.5 (regexec eval changes)
+# B::C::VERSION = 1.43 bfd966c 2013-09-05 | BC: simplify $cv->GV main_cv+lexsub code
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug

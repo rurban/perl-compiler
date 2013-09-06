@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
+# B::C::VERSION = 1.43 bfd966c 2013-09-05 | BC: simplify $cv->GV main_cv+lexsub code
 # perlversion = 5.010001d-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded debug
