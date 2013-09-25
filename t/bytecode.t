@@ -99,6 +99,9 @@ for (@tests) {
   }
   my ($script, $expect) = split />>>+\n/;
   $expect =~ s/\n$//;
+  if ($cnt == 4 and $] >= 5.018) {
+    $expect =~ s/^zz//;
+  }
   $test = "bytecode$cnt.pl";
   open T, ">$test"; print T $script; close T;
   unlink "${test}c" if -e "${test}c";

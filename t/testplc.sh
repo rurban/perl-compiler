@@ -165,63 +165,59 @@ ntests=50
 declare -a tests[$ntests]
 declare -a result[$ntests]
 tests[1]="print 'hi'"
-result[1]='hi';
+result[1]='hi'
 tests[2]="for (1,2,3) { print if /\d/ }"
-result[2]='123';
+result[2]='123'
 tests[3]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/ge; print $_'
 result[3]='zzz2y2y2';
 tests[4]='$_ = "xyxyx"; %j=(1,2); s/x/$j{print("z")}/g; print $_'
-if [[ $v518 -gt 0 ]]; then
-  result[4]='zzz2y2y2'
-else
-  result[4]='z2y2y2'
-fi
+if [[ $v518 -gt 0 ]]; then result[4]='zzz2y2y2'; else result[4]='z2y2y2'; fi
 tests[5]='print split /a/,"bananarama"'
-result[5]='bnnrm';
+result[5]='bnnrm'
 tests[6]="{package P; sub x {print 'ya'} x}"
-result[6]='ya';
+result[6]='ya'
 tests[7]='@z = split /:/,"b:r:n:f:g"; print @z'
-result[7]='brnfg';
+result[7]='brnfg'
 tests[8]='sub AUTOLOAD { print 1 } &{"a"}()'
-result[8]='1';
+result[8]='1'
 tests[9]='my $l = 3; $x = sub { print $l }; &$x'
-result[9]='3';
+result[9]='3'
 tests[10]='my $i = 1; 
 my $foo = sub {
   $i = shift if @_
 }; print $i; 
 print &$foo(3),$i;'
-result[10]='133';
+result[10]='133'
 tests[11]='$x="Cannot use"; print index $x, "Can"'
-result[11]='0';
+result[11]='0'
 tests[12]='my $i=6; eval "print \$i\n"'
-result[12]='6';
+result[12]='6'
 tests[13]='BEGIN { %h=(1=>2,3=>4) } print $h{3}'
-result[13]='4';
+result[13]='4'
 tests[14]='open our $T,"a"; print "ok";'
-result[14]='ok';
+result[14]='ok'
 tests[15]='print <DATA>
 __DATA__
 a
 b'
 result[15]='a
-b';
+b'
 tests[16]='BEGIN{tie @a, __PACKAGE__;sub TIEARRAY {bless{}} sub FETCH{1}}; print $a[1]'
-result[16]='1';
+result[16]='1'
 tests[17]='my $i=3; print 1 .. $i'
-result[17]='123';
+result[17]='123'
 tests[18]='my $h = { a=>3, b=>1 }; print sort {$h->{$a} <=> $h->{$b}} keys %$h'
-result[18]='ba';
+result[18]='ba'
 tests[19]='print sort { my $p; $b <=> $a } 1,4,3'
-result[19]='431';
+result[19]='431'
 tests[20]='$a="abcd123";$r=qr/\d/;print $a=~$r;'
-result[20]='1';
+result[20]='1'
 # broken on early alpha and 5.10
 tests[21]='sub skip_on_odd{next NUMBER if $_[0]% 2}NUMBER:for($i=0;$i<5;$i++){skip_on_odd($i);print $i;}'
-result[21]='024';
+result[21]='024'
 # broken in original perl 5.6
-tests[22]='my $fh; BEGIN { open($fh,"<","/dev/null"); } print "ok";';
-result[22]='ok';
+tests[22]='my $fh; BEGIN { open($fh,"<","/dev/null"); } print "ok";'
+result[22]='ok'
 # broken in perl 5.8
 tests[23]='package MyMod; our $VERSION = 1.3; print "ok";'
 result[23]='ok'
@@ -233,7 +229,7 @@ result[24]='ok'
 tests[25]='print sort { print $i++," "; $b <=> $a } 1..4'
 result[25]="0 1 2 3`$PERL -e'print (($] < 5.007) ? q( 4 5) : q())'` 4321";
 # lvalue fails with CC -O1, and with -O2 differently
-tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}';
+tests[26]='sub a:lvalue{my $a=26; ${\(bless \$a)}}sub b:lvalue{${\shift}}; print ${a(b)}'
 result[26]="26";
 # import test
 tests[27]='use Fcntl (); print "ok" if ( Fcntl::O_CREAT() >= 64 && &Fcntl::O_CREAT >= 64 );'
@@ -324,7 +320,7 @@ result[50]='ok'
 tests[51]='$SIG{__WARN__}=sub{print "ok"};warn 1;'
 result[51]='ok'
 # check if general signals work
-tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
+tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w'
 result[511]='ok'
 #-------------
 # issue27
