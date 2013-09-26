@@ -803,6 +803,14 @@ sub B::OP::bsave_thin {
   asm "op_next",    $nextix;
   asm "op_targ",    $op->targ if $op->type;             # tricky
   asm "op_private", $op->private;                       # private concise flags?
+  if ($] >= 5.017) {
+    asm "op_slabbed", $op->slabbed if $op->slabbed;
+    asm "op_savefree", $op->savefree if $op->savefree;
+    asm "op_static", $op->static if $op->static;
+    if ($] >= 5.019) {
+      asm "op_folded", $op->folded if $op->folded;
+    }
+  }
 }
 
 sub B::OP::bsave;

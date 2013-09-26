@@ -182,10 +182,10 @@ tests[8]='sub AUTOLOAD { print 1 } &{"a"}()'
 result[8]='1'
 tests[9]='my $l = 3; $x = sub { print $l }; &$x'
 result[9]='3'
-tests[10]='my $i = 1; 
+tests[10]='my $i = 1;
 my $foo = sub {
   $i = shift if @_
-}; print $i; 
+}; print $i;
 print &$foo(3),$i;'
 result[10]='133'
 tests[11]='$x="Cannot use"; print index $x, "Can"'

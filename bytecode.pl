@@ -1039,3 +1039,7 @@ __END__
 161 18	padl_name	bstate->bs_sv			svindex		x
 162 18	padl_sym	bstate->bs_sv			svindex		x
 163 18	xcv_name_hek	bstate->bs_sv			pvindex		x
+164 18	op_slabbed	PL_op->op_slabbed		U8
+165 18	op_savefree	PL_op->op_savefree		U8
+166 18	op_static	PL_op->op_static		U8
+167 19	op_folded	PL_op->op_folded		U8
