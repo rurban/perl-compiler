@@ -4,31 +4,17 @@ perl:
     - "5.12"
     - "5.14"
     - "5.16"
+    - "5.18"
 install: "echo"
 before_script:
-#   - sudo apt-get install libffi-dev libicu-dev libgmp3-dev clang llvm-dev zlib1g-dev gcc-multilib
-# No, we are not going to run the tests for all these dependencies on every commit
     - cpanm -n IPC::Run B::Flags Opcodes IO::Socket::SSL LWP::UserAgent 
-# This stuff used to be required, but was rolled into the Travis CI perl support.
-#    - curl -L http://cpanmin.us | sudo perl - --self-upgrade
-#    - export CI_USER=$USER
-#    - mkdir ~/perl5 && perl -Mlocal::lib >> /tmp/local_lib_junk.sh && source /tmp/local_lib_junk.sh
-#    - sudo chown -R $CI_USER ~/.cpanm
-#    - sudo chown -R $CI_USER ~/perl5
-
-# Don't run Configure.pl tests, for now
-#script: "perl Configure.pl --test=build $PARROT_CONFIG_ARGS $PARROT_OPTIMIZE --cc=\"$CC\" --link=\"$CC\" --ld=\"$CC\" --ccflags='-g' ; make $PARROT_TEST"
 
 script: "perl Makefile.PL && make && make test"
 
 notifications:
+  irc: "irc.perl.org#compiler"
   recipients:
     - perl-compiler@googlegroups.com
   email:
     on_success: change
     on_failure: always
-  irc:
-    channels:
-      - "irc.perl.org#compiler"
-    on_success: change
-    on_failure: change
