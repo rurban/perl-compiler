@@ -6,6 +6,8 @@ set breakpoint pending on
 break __asan_report_error
 #break B.xs:1398
 #break B.c:2044
+break B.xs:1858
+break oplist
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc

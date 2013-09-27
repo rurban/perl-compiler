@@ -13,11 +13,19 @@
 # define RX_EXTFLAGS(prog) ((prog)->extflags)
 #endif
 
+#if PERL_VERSION > 17 && (PERL_VERSION < 19 || (PERL_VERSION == 19 && PERL_SUBVERSION < 4))
+#define need_op_slabbed
+#endif
+#if PERL_VERSION == 19 && (PERL_SUBVERSION >=2 && PERL_SUBVERSION <= 4)
+#define need_op_folded
+#endif
+
 typedef struct magic  *B__MAGIC;
 #if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
 #endif
 typedef COP  *B__COP;
+typedef OP   *B__OP;
 
 STATIC U32 a_hash = 0;
 
@@ -175,6 +183,42 @@ CODE:
 OUTPUT:
   RETVAL
 
+
+MODULE = B__OP	PACKAGE = B::OP		PREFIX = op_
+
+#ifdef need_op_slabbed
+
+I32
+op_slabbed(op)
+        B::OP        op
+    PPCODE:
+	PUSHi(op->op_slabbed);
+
+I32
+op_savefree(op)
+        B::OP        op
+    PPCODE:
+	PUSHi(op->op_savefree);
+
+I32
+op_static(op)
+        B::OP        op
+    PPCODE:
+	PUSHi(op->op_static);
+
+#endif
+
+#ifdef need_op_folded
+
+I32
+op_folded(op)
+        B::OP        op
+    PPCODE:
+	PUSHi(op->op_folded);
+
+#endif
+
+
 MODULE = B__C	PACKAGE = B::C
 
 PROTOTYPES: DISABLE
@@ -212,7 +256,6 @@ method_cv(meth, packname)
         RETVAL
 
 #endif
-
 
 BOOT:
     PL_runops = my_runops;

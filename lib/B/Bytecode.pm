@@ -92,6 +92,15 @@ if ($PERL56) {
   $SVt_PVGV = SVt_PVGV;
   $SVf_FAKE = SVf_FAKE;
 }
+
+{ # block necessary for caller to work
+  my $caller = caller;
+  if ( $] > 5.017 and $] > 5.019004 and ($caller eq 'O' or $caller eq 'Od' )) {
+    require XSLoader;
+    XSLoader::load('B::C'); # for op->slabbed... workarounds
+  }
+}
+
 for ( my $i = 0 ; $i < @optype ; $i++ ) {
   $optype_enum{ $optype[$i] } = $i;
 }
@@ -803,11 +812,11 @@ sub B::OP::bsave_thin {
   asm "op_next",    $nextix;
   asm "op_targ",    $op->targ if $op->type;             # tricky
   asm "op_private", $op->private;                       # private concise flags?
-  if ($] >= 5.017) {
+  if ($] >= 5.017 and $op->can('slabbed')) {
     asm "op_slabbed", $op->slabbed if $op->slabbed;
     asm "op_savefree", $op->savefree if $op->savefree;
     asm "op_static", $op->static if $op->static;
-    if ($] >= 5.019) {
+    if ($] >= 5.019002 and $op->can('folded')) {
       asm "op_folded", $op->folded if $op->folded;
     }
   }
