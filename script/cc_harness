@@ -95,8 +95,9 @@ if ($^O =~ m/^MSWin/ && $Config{cc} =~ m/^cl/i) {
 #}
 
 my $ccflags = $Config{ccflags};
-if ($ccflags =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/) {
-  $linkargs =~ s/-fstack-protector//;
+# crashes on cygwin
+if ($^O eq 'cygwin' and $ccflags =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/) {
+  $linkargs =~ s/-fstack-protector\b//;
 }
 #-pedantic -Wextra -Wconversion
 if ($debug and $Config{cc} =~ /gcc/) {

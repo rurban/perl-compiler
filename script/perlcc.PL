@@ -593,9 +593,9 @@ sub cc_harness {
 
     # gcc crashes with this duplicate -fstack-protector arg
     my $ldflags = $Config{ldflags};
-    if ($ccflags =~ /-fstack-protector/ and $ldopts =~ /-fstack-protector/) {
-        $ldopts =~ s/-fstack-protector//;
-        $ldflags =~ s/-fstack-protector// if $extra_libs;
+    if ($^O eq 'cygwin' and $ccflags =~ /-fstack-protector\b/ and $ldopts =~ /-fstack-protector\b/) {
+        $ldopts =~ s/-fstack-protector\b//;
+        $ldflags =~ s/-fstack-protector\b// if $extra_libs;
     }
     my $libperl = $Config{libperl};
     my $libdir  = $Config{prefix} . "/lib";

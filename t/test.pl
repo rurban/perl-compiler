@@ -474,14 +474,14 @@ sub run_cc_test {
                 my $libperl = File::Spec->catfile($coredir, $Config{libperl});
                 $linkargs =~ s|-lperl |$libperl |; # link directly
             }
-            $linkargs =~ s/-fstack-protector//
-              if $command =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/;
+            $linkargs =~ s/-fstack-protector\b//
+              if $^O eq 'cygwin' and $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
 	    $command .= $linkargs;
 	} else {
 	    my $linkargs = ExtUtils::Embed::ldopts('-std');
             # cygwin gcc-4.3 crashes with -fstack-protector 2x
-            $linkargs =~ s/-fstack-protector//
-              if $command =~ /-fstack-protector/ and $linkargs =~ /-fstack-protector/;
+            $linkargs =~ s/-fstack-protector\b//
+              if $^O eq 'cygwin' and $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
 	    $command .= $linkargs;
 	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
 	}
