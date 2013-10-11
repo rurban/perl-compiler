@@ -341,7 +341,7 @@ testcritical :: pure_all
 teststatus :: pure_all
 	./status_upd -fqd
 testrelease :: pure_all
-	${ECHO} run t/release-testing.sh and perlall testvm --all
+	$(ECHO) run t/release-testing.sh and perlall testvm --all
 )
 }
 
