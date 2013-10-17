@@ -534,6 +534,9 @@ if [[ $v518 -gt 0 ]]; then
   tests[130]='no warnings "experimental::lexical_subs";use feature "lexical_subs";my sub p{q(ok)}; my $a=\&p;print p;'
   result[130]='ok'
 fi
+#issue 138
+tests[138]='print map { chr $_ } qw/97 98 99/;'
+result[138]='abc'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''
