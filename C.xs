@@ -2,6 +2,10 @@
 #include <perl.h>
 #include <XSUB.h>
 
+#if defined(DEBUG_LEAKING_SCALARS) && defined(__GLIBC__) && __GLIBC__ >= 2
+#include <mcheck.h>
+#endif
+
 #ifndef PM_GETRE
 # if defined(USE_ITHREADS) && (PERL_VERSION > 8)
 #  define PM_GETRE(o)     (INT2PTR(REGEXP*,SvIVX(PL_regex_pad[(o)->op_pmoffset])))
@@ -259,3 +263,11 @@ method_cv(meth, packname)
 
 BOOT:
     PL_runops = my_runops;
+#if defined(DEBUG_LEAKING_SCALARS) && defined(__GLIBC__) && __GLIBC__ >= 2
+    if (mcheck(NULL) != 0) {
+      fprintf(stderr, "C.xs: mcheck() failed\n");
+      exit(EXIT_FAILURE);
+    }
+    /* Requires MALLOC_TRACE=mtrace.log */
+    mtrace();
+#endif
