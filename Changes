@@ -48,6 +48,8 @@
         Fixed -Do (peek ops)
         Renamed option -f to -F for files.
         Fixed READONLY magic and restricted hashes, issue 98
+        Support IsCOW xpvshared strings (>=5.18)
+        Fixed wrong xpvshared logic (5.10-5.17), issue 138
         * Assembler (1.11): allow "newpadlx 0"
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the

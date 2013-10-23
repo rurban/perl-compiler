@@ -349,8 +349,7 @@ sub B::GV::ix {
       asm "stsv", $tix if $PERL56;
       $svtab{$$gv} = $varix = $ix = $tix++;
       if ( !$PERL510 ) {
-        #GV_without_GP has no GvFlags
-        asm "xgv_flags", $gv->GvFLAGS;
+        asm "xgv_flags", $gv->GvFLAGS;  # GV_without_GP has no GvFlags
       }
       if ( !$PERL510 and !$PERL56 and $gv->STASH ) {
         my $stashix = $gv->STASH->ix;
@@ -454,11 +453,11 @@ sub B::PV::bsave {
       asm  "newpv", pvstring $sv->PV;
       asm  "xpv";
     }
-  } elsif ($PERL518 and ($sv->FLAGS & SVf_IsCOW) == SVf_IsCOW) { # COW
+  } elsif ($PERL518 and (($sv->FLAGS & SVf_IsCOW) == SVf_IsCOW)) { # COW
     asm "newpv", pvstring $sv->PV;
     asm "xpvshared";
-  } elsif ($PERL510 and $sv->FLAGS & 0x09000000) { # SHARED
-    if ($PERL510 and $sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00008000)) { # pbm_VALID, !SCREAM
+  } elsif ($PERL510 and (($sv->FLAGS & 0x09000000) == 0x09000000)) { # SHARED
+    if ($sv->FLAGS & 0x40000000 and !($sv->FLAGS & 0x00008000)) { # pbm_VALID, !SCREAM
       asm "newpv", pvstring $sv->PVBM;
     } else {
       asm "newpv", pvstring $sv->PV;
@@ -517,7 +516,8 @@ sub B::PVIV::bsave {
   } else {
     # PVIV GV 8009, GV flags & (4000|8000) illegal (SVpgv_GP|SVp_POK)
     asm "xiv", !ITHREADS
-      && $sv->FLAGS & ( $SVf_FAKE | SVf_READONLY ) ? "0 # but true" : $sv->IVX;
+      && (($sv->FLAGS & ($SVf_FAKE|SVf_READONLY)) == ($SVf_FAKE|SVf_READONLY))
+         ? "0 # but true" : $sv->IVX;
   }
 }
 
