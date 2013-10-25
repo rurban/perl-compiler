@@ -15,7 +15,7 @@ package B::Bytecode;
 
 our $VERSION = '1.14';
 
-#use 5.008;
+use 5.008;
 use B qw( class main_cv main_root main_start
 	  begin_av init_av end_av cstring comppadlist
 	  OPf_SPECIAL OPf_STACKED OPf_MOD
@@ -95,7 +95,7 @@ if ($PERL56) {
 
 { # block necessary for caller to work
   my $caller = caller;
-  if ( $] > 5.017 and $] > 5.019004 and ($caller eq 'O' or $caller eq 'Od' )) {
+  if ( $] > 5.017 and $] < 5.019004 and ($caller eq 'O' or $caller eq 'Od' )) {
     require XSLoader;
     XSLoader::load('B::C'); # for op->slabbed... workarounds
   }
@@ -331,13 +331,13 @@ sub B::GV::ix {
       # }}}} XXX
 
       nice1 "-GP-", asm "ldsv", $varix = $ix, sv_flags($gv) unless $ix == $varix;
-      asm "gp_sv", $svix, sv_flags( $gv->SV );
-      asm "gp_av", $avix, sv_flags( $gv->AV );
-      asm "gp_hv", $hvix, sv_flags( $gv->HV );
-      asm "gp_cv", $cvix, sv_flags( $gv->CV );
-      asm "gp_io", $ioix;
-      asm "gp_cvgen", $gv->CVGEN;
-      asm "gp_form",  $formix;
+      asm "gp_sv", $svix, sv_flags( $gv->SV ) if $svix;
+      asm "gp_av", $avix, sv_flags( $gv->AV ) if $avix;
+      asm "gp_hv", $hvix, sv_flags( $gv->HV ) if $hvix;
+      asm "gp_cv", $cvix, sv_flags( $gv->CV ) if $cvix;
+      asm "gp_io", $ioix if $ioix;
+      asm "gp_cvgen", $gv->CVGEN if $gv->CVGEN;
+      asm "gp_form",  $formix if $formix;
       asm "gp_file",  pvix $gv->FILE;
       asm "gp_line",  $gv->LINE;
       asm "formfeed", $svix if $name eq "main::\cL";
@@ -808,10 +808,10 @@ sub B::OP::bsave_thin {
   if ( $ix != $opix ) {
     nice '-' . $op->name . '-', asm "ldop", $opix = $ix;
   }
-  asm "op_flags",   $op->flags, op_flags( $op->flags );
+  asm "op_flags",   $op->flags, op_flags( $op->flags ) if $op->flags;
   asm "op_next",    $nextix;
-  asm "op_targ",    $op->targ if $op->type;             # tricky
-  asm "op_private", $op->private;                       # private concise flags?
+  asm "op_targ",    $op->targ if $op->type and $op->targ;  # tricky
+  asm "op_private", $op->private if $op->private;          # private concise flags?
   if ($] >= 5.017 and $op->can('slabbed')) {
     asm "op_slabbed", $op->slabbed if $op->slabbed;
     asm "op_savefree", $op->savefree if $op->savefree;
