@@ -9,6 +9,7 @@ function help {
   echo " -c                 continue on errors"
   echo " -o                 orig. no -Mblib. only for 5.6 and 5.8"
   echo " -q                 quiet"
+  echo " -v                 avoid -MO,-qq"
   echo " -h                 help"
   echo "t/testplc.sh -q -s -c <=> perl -Mblib t/bytecode.t"
   echo "Without arguments try all $ntests tests. Else the given test numbers."
@@ -387,13 +388,18 @@ result[138]='abc'
 
 init
 
-while getopts "qsScoh" opt
+while getopts "qsScohv" opt
 do
   if [ "$opt" = "q" ]; then
       Q=1
       OCMD="$QOCMD"
       qq="-qq,"
       if [ "$VERS" = "5.6.2" ]; then QOCMD=$OCMD; qq=""; fi
+  fi
+  if [ "$opt" = "v" ]; then
+      Q=
+      QOCMD="$OCMD"
+      qq=""
   fi
   if [ "$opt" = "s" ]; then SKIP=1; fi
   if [ "$opt" = "o" ]; then Mblib=" "; SKIP=1; SKI=1; init; fi

@@ -222,6 +222,7 @@ use strict;
 use B::Asmdata qw(%insn_data @insn_name);
 use Opcode qw(opset_to_ops full_opset);
 use Config qw(%Config);
+use B::Concise;
 
 BEGIN {
   if ( $] < 5.009 ) {
@@ -233,6 +234,7 @@ BEGIN {
 }
 
 my $ix;
+my $opname;
 our @opname = opset_to_ops(full_opset);
 our (
   $magic,   $archname, $blversion, $ivsize,
@@ -317,8 +319,9 @@ sub print_insn {
     if ( $insn eq 'newopx' or $insn eq 'ldop' and $] > 5.007) {
       my $type = $arg >> 7;
       my $size = $arg - ( $type << 7 );
-      $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type ) if $comment;
-      printf "\n# [%s %d]\n", $opname[$type], $ix++;
+      $arg .= sprintf( " \t# size:%d, type:%d %s", $size, $type) if $comment;
+      $opname = $opname[$type];
+      printf "\n# [%s %d]\n", $opname, $ix++;
     }
     elsif ( !$comment ) {
       ;
@@ -358,7 +361,14 @@ sub print_insn {
       $arg .= sprintf( "\t# '%s'", chr($arg) );
     }
     elsif ( $insn =~ /_flags/ ) {
-      $arg .= sprintf( "\t# 0x%x", $arg );
+      my $f = $arg;
+      $arg .= sprintf( "\t# 0x%x", $f ) if $comment;
+      $arg .= " ".B::Concise::op_flags($f) if $insn eq 'op_flags' and $comment;
+    }
+    elsif ( $comment and $insn eq 'op_private' ) {
+      my $f = $arg;
+      $arg .= sprintf( "\t# 0x%x", $f );
+      $arg .= " ".B::Concise::private_flags($opname, $f);
     }
     elsif ( $insn eq 'op_type' and $] < 5.007 ) {
       my $type = $arg;
@@ -413,6 +423,7 @@ sub disassemble_fh {
       warn "Illegal instruction code $c at stream offset $pos.\n";
     }
     $getmeth = $insn_data{$insn}->[2];
+    #warn "EOF at $insn $getmeth" if $fh->eof();
     $arg     = $fh->$getmeth();
     if ( defined($arg) ) {
       &$out( $insn, $arg, $verbose );

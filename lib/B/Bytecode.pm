@@ -743,12 +743,12 @@ sub B::PADLIST::bsave {
   my @array = $padl->ARRAY;
   bless $array[0], 'B::PAD';
   bless $array[1], 'B::PAD';
-  my $ix0 = $array[0]->ix; # comppad_name
-  my $ix1 = $array[1]->ix; # comppad syms
 
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
+  my $ix0 = $array[0]->ix; # comppad_name
   asm "padl_name", $ix0;
+  my $ix1 = $array[1]->ix; # comppad syms
   asm "padl_sym",  $ix1;
 }
 
