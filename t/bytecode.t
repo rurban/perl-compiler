@@ -67,7 +67,7 @@ push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with 
 #push @todo, (41)  if !$ITHREADS;
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
-#push @todo, (46) if $] >= 5.012;
+push @todo, (46) if $] >= 5.012;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
 
 my @skip = ();
