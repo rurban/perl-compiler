@@ -284,6 +284,10 @@ sub is_todo {
   #    MooseX::Types
   #    DateTime
   #)) { return '> 5.15 (unshare_hek)' if $_ eq $module; }}
+  if ($] >= 5.018) { foreach(qw(
+      ExtUtils::ParseXS
+      Module::Build
+    )) { return '>= 5.18' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
@@ -321,6 +325,9 @@ sub is_todo {
       Storable
       Sub::Name
     )) { return '5.12.0 with threads' if $_ eq $module; }}
+    if ($] >= 5.018) { foreach(qw(
+      ExtUtils::CBuilder
+    )) { return '>= 5.18 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
     # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
     if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(

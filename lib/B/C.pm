@@ -3935,8 +3935,8 @@ sub B::HV::save {
       $init->add("}");
       $init->split;
     }
-  } elsif ($] >= 5.015) { # empty contents still needs to set keys=0
-    # test 36
+  } elsif ($] >= 5.014) { # empty contents still needs to set keys=0
+    # test 36, 140
     $init->add( "HvTOTALKEYS($sym) = 0;");
     $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   }

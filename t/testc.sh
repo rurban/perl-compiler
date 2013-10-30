@@ -537,6 +537,9 @@ fi
 #issue 138
 tests[138]='print map { chr $_ } qw/97 98 99/;'
 result[138]='abc'
+#issue 140
+tests[140]='my %a;print "ok" if !%a;'
+result[140]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''
