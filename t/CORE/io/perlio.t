@@ -6,7 +6,7 @@ BEGIN {
 	    print "1..0 # Skip: PerlIO not used\n";
 	    exit 0;
 	}
-	use lib CORE; require 'test.pl';
+	unshift @INC, ("t"); require 'test.pl';
 }
 
 plan tests => 42;

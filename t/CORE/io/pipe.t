@@ -4,7 +4,7 @@ BEGIN {
     chdir 't/CORE' if -d 't';
 #     @INC = '../lib';
     require Config; import Config;
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 
     if (!$Config{'d_fork'}) {
         skip_all("fork required to pipe");

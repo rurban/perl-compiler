@@ -19,7 +19,7 @@ BEGIN {
         exit 0;
     }
 
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 }
 
 use strict;

@@ -5,7 +5,7 @@ my $PERLIO;
 BEGIN {
     chdir 't/CORE' if -d 't';
 #     @INC = '../lib';
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
     unless (find PerlIO::Layer 'perlio') {
 	print "1..0 # Skip: not perlio\n";
 	exit 0;

@@ -1,6 +1,7 @@
 #!./perl
 use strict;
-use lib CORE; require 'test.pl';
+unshift @INC, ("t");
+require 'test.pl';
 
 $^I = $^O eq 'VMS' ? '_bak' : '.bak';
 

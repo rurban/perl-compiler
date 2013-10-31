@@ -110,7 +110,7 @@ BEGIN {
 }
 
 # Add new tests above this require, in case it fails.
-use lib CORE; require 'test.pl';
+unshift @INC, ("t"); require 'test.pl';
 
 # bug #27040: hints hash was being double-freed
 my $result = runperl(

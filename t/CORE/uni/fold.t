@@ -1,13 +1,11 @@
 BEGIN {
     chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+    unshift @INC, qw(../lib .);
 }
 
 use File::Spec;
 
-my $CF = File::Spec->catfile(File::Spec->catdir(File::Spec->updir,
-					       "lib", "unicore"),
-			    "CaseFolding.txt");
+my $CF = File::Spec->catfile("lib", "unicore", "CaseFolding.txt");
 
 use constant EBCDIC => ord 'A' == 193;
 

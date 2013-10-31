@@ -6,7 +6,7 @@ BEGIN {
     require Config; import Config;
 }
 
-use lib CORE; require 'test.pl';
+unshift @INC, ("t"); require 'test.pl';
 plan( tests => 142 );
 
 $x = 'foo';

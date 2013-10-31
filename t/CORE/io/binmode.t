@@ -2,8 +2,9 @@
 
 BEGIN {
     chdir 't/CORE' if -d 't';
-#     @INC = qw(. ../lib);
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t");
+#   @INC = qw(. ../lib);
+    require 'test.pl';
 }
 
 use Config;

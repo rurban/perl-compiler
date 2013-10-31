@@ -5,7 +5,7 @@ print "1..37\n";
 # optimized
 
 $_ = 'abc';
-$c = do foo();
+$c = &foo();
 if ($c . $_ eq 'cab') {print "ok 1\n";} else {print "not ok 1 $c$_\n";}
 
 # unoptimized

@@ -3,7 +3,7 @@
 BEGIN {
     chdir 't';
 #     @INC = '../lib';
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 }
 
 plan(tests => 215);

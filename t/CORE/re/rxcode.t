@@ -3,7 +3,7 @@
 BEGIN {
     chdir 't/CORE' if -d 't';
 #     @INC = '../lib';
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 }
 
 plan tests => 38;

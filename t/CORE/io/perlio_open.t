@@ -16,7 +16,7 @@ BEGIN {
 	print "1..0 # Skip: no Fcntl (how did you get this far?)\n";
 	exit 0;
     }
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 }
 
 use strict;

@@ -5,7 +5,7 @@
 # http://rt.perl.org/rt3/Ticket/Display.html?id=39060
 
 use strict;
-use lib CORE; require 'test.pl';
+unshift @INC, ("t"); require 'test.pl';
 
 plan( tests => 16 );
 

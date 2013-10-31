@@ -1,7 +1,7 @@
 #!perl -w
 
 BEGIN {
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 }
 
 plan (tests => 9);

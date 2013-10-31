@@ -10,7 +10,7 @@ BEGIN {
 }
 
 use strict;
-use lib CORE; require 'test.pl';
+unshift @INC, ("t"); require 'test.pl';
 
 my $Perl = which_perl();
 

@@ -3,7 +3,7 @@
 BEGIN {
     chdir 't/CORE' if -d 't';
 #     @INC = '../lib';
-    use lib CORE; require 'test.pl';
+    unshift @INC, ("t"); require 'test.pl';
 }
 
 # Script to test auto flush on fork/exec/system/qx.  The idea is to

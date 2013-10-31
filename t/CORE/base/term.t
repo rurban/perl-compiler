@@ -16,11 +16,11 @@ elsif ($x eq chr(21)) { print "ok 1 # EBCDIC\n"; }
 else {print "not ok 1\n";}
 
 # check `` processing
-
+#my $X = "$^X -Mblib script/perlcc -r";
 $x = `$^X -le "print 'hi there'"`;
 if ($x eq "hi there\n") {print "ok 2\n";} else {print "not ok 2\n";}
 
-# check $#array
+# check $#array (C issue 141)
 
 $x[0] = 'foo';
 $x[1] = 'foo';
