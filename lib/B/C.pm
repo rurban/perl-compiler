@@ -279,10 +279,11 @@ my %all_bc_pkg = map {$_=>1}
      B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
      B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
      AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
-     warnings warnings::register DB next maybe maybe::next FileHandle fields vars
+     warnings warnings::register DB next maybe maybe::next fields vars
      AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
      ExtUtils::Constant::ProxySubs threads base IO::File
     );
+# keep: FileHandle
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
 # -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
