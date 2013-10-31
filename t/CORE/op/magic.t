@@ -2,9 +2,9 @@
 
 BEGIN {
     $| = 1;
-    chdir 't' if -d 't';
+    chdir 't/CORE' if -d 't/CORE';
     # @INC = '../lib';
-    $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
+    # $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
 }
 
 use warnings;
@@ -25,9 +25,9 @@ $Is_VMS     = $^O eq 'VMS';
 $Is_Dos   = $^O eq 'dos';
 $Is_os2   = $^O eq 'os2';
 $Is_Cygwin   = $^O eq 'cygwin';
-$PERL = ($Is_MSWin32 ? '.\perl' : './perl');
+# $PERL = ($Is_MSWin32 ? '.\perl' : './perl');
 
-print "1..35\n";
+print "1..18\n";
 
 eval '$ENV{"FOO"} = "hi there";';	# check that ENV is inited inside eval
 if ($Is_MSWin32) { ok 1, `cmd /x /c set FOO` eq "FOO=hi there\n"; }
@@ -39,7 +39,7 @@ open(FOO,'ajslkdfpqjsjfk');
 ok 2, $!, $!;
 close FOO; # just mention it, squelch used-only-once
 
-if ($Is_MSWin32 || $Is_Dos) {
+if (1) { #$Is_MSWin32 || $Is_Dos) {
     ok "3 # skipped",1;
     ok "4 # skipped",1;
 }
@@ -99,15 +99,19 @@ ok 13, (keys %h)[0] eq "foo\034bar", (keys %h)[0];
 }
 
 # $?, $@, $$
-system qq[$PERL -e "exit(0)"];
+#system qq[$PERL -e "exit(0)"];
+system 'true';
 ok 15, $? == 0, $?;
-system qq[$PERL -e "exit(1)"];
+#system qq[$PERL -e "exit(1)"];
+system 'false';
 ok 16, $? != 0, $?;
 
 eval { die "foo\n" };
 ok 17, $@ eq "foo\n", $@;
 
 ok 18, $$ > 0, $$;
+
+exit;
 
 # $^X and $0
 {
