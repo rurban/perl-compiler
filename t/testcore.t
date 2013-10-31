@@ -1,6 +1,11 @@
 # -*- cperl -*-
 # t/testcore.t - run the core testsuite with the compilers C, CC and ByteCode
+# Usage:
+#   t/testcore.t -fail             known failing tests only
+#   t/testcore.t -c                run C compiler tests only (also -bc or -cc)
+#   t/testcore.t t/CORE/op/goto.t  run this test only
 #
+# Prereq:
 # Copy your matching CORE t dirs into t/CORE.
 # For now we test qw(base comp lib op run)
 # Then fixup the @INC setters, and various require ./test.pl calls.
@@ -8,7 +13,6 @@
 #   perl -pi -e 's/^(\s*\@INC = )/# $1/' t/CORE/*/*.t
 #   perl -pi -e "s|^(\s*)chdir 't' if -d|\$1chdir 't/CORE' if -d|" t/CORE/*/*.t
 #   perl -pi -e "s|require './|use lib "CORE"; require '|" `grep -l "require './" t/CORE/*/*.t`
-#
 #
 # See TESTS for recent results
 
@@ -97,8 +101,12 @@ my @fail = map { "t/CORE/$_" }
      op/write.t
    };
 
-my @tests = $ARGV[0] eq '-fail' ? @fail :
-  (@ARGV ? @ARGV : <t/CORE/*/*.t>);
+my @tests = $ARGV[0] eq '-fail'
+  ? @fail
+  : ((@ARGV and $ARGV[0] !~ /^-/)
+     ? @ARGV
+     : <t/CORE/*/*.t>);
+shift if $ARGV[0] eq '-fail';
 my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 
 sub run_c {
@@ -135,22 +143,33 @@ sub prove {
   }
 }
 
-print "1..", @tests * 3, "\n";
+my @runtests = qw(C CC BC);
+if ($ARGV[0] and $ARGV[0] =~ /^-(c|cc|bc)$/i) {
+  @runtests = ( uc(substr($ARGV[0],1) ) );
+}
+my $numtests = scalar @tests * scalar @runtests;
+my %runtests = map {$_ => 1} @runtests;
+
+print "1..", $numtests, "\n";
 my $i = 1;
+
 for my $t (@tests) {
- C: {
+ C:
+  if ($runtests{C}) {
     (print "ok $i #skip $SKIP->{C}->{$t}\n" and goto CC)
       if exists $SKIP->{C}->{$t};
     run_c($t, "C");
-  }
+    }
 
- CC: {
+ CC:
+  if ($runtests{CC}) {
     (print "ok $i #skip $SKIP->{CC}->{$t}\n" and goto BC)
       if exists $SKIP->{CC}->{$t};
     run_c($t, "CC");
   }
 
- BC: {
+ BC:
+  if ($runtests{BC}) {
     (print "ok $i #skip $SKIP->{BC}->{$t}\n" and next)
       if exists $SKIP->{BC}->{$t};
 
