@@ -5859,6 +5859,7 @@ sub compile {
   $DB::single=1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
+  $B::C::can_delete_pkg = 1;
   $B::C::destruct = 1;
   $B::C::stash    = 1;
   $B::C::save_sig = 1;
@@ -5868,7 +5869,7 @@ sub compile {
   my %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fcog -fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
+    2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
