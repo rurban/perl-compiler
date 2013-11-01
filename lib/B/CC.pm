@@ -3130,14 +3130,14 @@ sub cc_main {
     $inc_hv    = $inc_gv->HV->save('main::INC');
     $init->add( sprintf( "GvHV(%s) = s\\_%x;",
 			 $inc_gv->save('main::INC'), $inc_gv->HV ) );
-    local ($B::C::pv_copy_on_grow, $B::C::const_strings);
-    $B::C::pv_copy_on_grow = $B::C::const_strings = 1 if $B::C::ro_inc;
+    local ($B::C::const_strings);
+    $B::C::const_strings = 1 if $B::C::ro_inc;
     $inc_hv          = $inc_gv->HV->save('main::INC');
     $inc_av          = $inc_gv->AV->save('main::INC');
   }
   {
     # >=5.10 needs to defer nullifying of all vars in END, not only new ones.
-    local ($B::C::pv_copy_on_grow, $B::C::const_strings);
+    local ($B::C::const_strings);
     $B::C::in_endav = 1;
     $end_av  = end_av->save;
   }
