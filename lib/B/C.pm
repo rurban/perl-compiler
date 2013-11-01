@@ -6263,11 +6263,11 @@ Enabled with C<-O2>.
 =item B<-fdelete-pkg>
 
 Delete packages which appear to be nowhere used automatically.
-This creates smaller executables but might miss run-time called
-methods. Note that you can always use -u to add automatically
-deleted packages.
+This might miss run-time called stringified methods.
+Note that you can always use C<-u> to add automatically deleted
+packages.
 
-Enabled with C<-O2>.
+Needs to be used with C<-fno-delete-pkg>.
 
 =item B<-fconst-strings>
 
