@@ -686,7 +686,11 @@ sub cc_queue {
   } else {
     push( @cc_todo, [ $name, $root, $start, ( @pl ? @pl : @padlist ) ] );
   }
-  my $fakeop = B::FAKEOP->new( "next" => 0, sibling => 0, ppaddr => $name,
+  my $fakeop_next = 0;
+  if ($name =~ /^pp_sub_IO_.*DESTROY$/) {
+    $fakeop_next = $start->next->save;
+  }
+  my $fakeop = B::FAKEOP->new( "next" => $fakeop_next, sibling => 0, ppaddr => $name,
                                targ=>0, type=>0, flags=>0, private=>0);
   $start = $fakeop->save;
   debug "cc_queue: name $name returns $start\n" if $debug{queue};
@@ -3389,9 +3393,7 @@ OPTION:
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
-  for (qw(optimize_warn_sv save_data_fh av_init save_sig destruct),
-       $PERL510 ? () : "pv_copy_on_grow")
-  {
+  for (qw(optimize_warn_sv save_data_fh av_init save_sig destruct const_strings)) {
     no strict 'refs';
     ${"B::C::$_"} = 1 unless $c_optimise{$_};
   }

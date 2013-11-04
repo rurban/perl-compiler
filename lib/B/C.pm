@@ -5081,7 +5081,7 @@ EOT
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
     } elsif ( $PERL510 and (@static_free or $free->index > -1) ) {
-      warn "my_perl_destruct (-fcog)\n" if $verbose;
+      warn "my_perl_destruct static strings\n" if $verbose;
       print "    my_perl_destruct( my_perl );\n";
     } elsif ( $] >= 5.007003 ) {
       print "    perl_destruct( my_perl );\n";
