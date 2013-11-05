@@ -534,12 +534,26 @@ if [[ $v518 -gt 0 ]]; then
   tests[130]='no warnings "experimental::lexical_subs";use feature "lexical_subs";my sub p{q(ok)}; my $a=\&p;print p;'
   result[130]='ok'
 fi
-#issue 138
 tests[138]='print map { chr $_ } qw/97 98 99/;'
 result[138]='abc'
-#issue 140
 tests[140]='my %a;print "ok" if !%a;'
 result[140]='ok'
+tests[141]='print "ok" if "1" > 0'
+result[141]='ok'
+tests[142]='$_ = "abc\x{1234}";chop;print "ok" if $_ eq "abc"'
+result[142]='ok'
+tests[143]='use Net::IDN::Encode (); Net::IDN::Encode::domain_to_ascii(42);'
+result[143]='ok'
+tests[144]='print index("long message\0xx","\0")'
+result[144]='12'
+tests[145]='my $bits = 0; for (my $i = ~0; $i; $i >>= 1) { ++$bits; }; print $bits'
+result[145]='64'
+tests[146]='my $a = v120.300; my $b = v200.400; $a ^= $b; print sprintf("%vd", $a);'
+result[146]='176.188'
+tests[148]='open(FH, ">", "ccode148i.tmp"); print FH "1\n"; close FH; print -s "ccode148i.tmp"'
+result[148]='2'
+tests[150]='use Errno; $! = 0; no warnings "unopened"; print NONEXISTENT "foo"; print "ok" if ($! == &Errno::EBADF);'
+result[150]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''
