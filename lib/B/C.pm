@@ -3286,6 +3286,10 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
+  if ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
+    $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PV);]);
+    return $sym;
+  }
   # defer to the end because we remove compiler-internal and skipped stuff
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
