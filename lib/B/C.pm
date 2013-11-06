@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43';
+our $VERSION = '1.42_50';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1983,13 +1983,15 @@ sub B::BM::save {
   return $sym if !$PERL510 and defined $sym;
   $sv = bless $sv, "B::BM" if $PERL510;
   my $pv  = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
-  my $len = length(pack "a*", $sv->PV);
+  my $cur = length(pack "a*", $sv->PV);
+  my $len = length($pv);
   if ($PERL510) {
     warn "Saving FBM for GV $sym\n" if $debug{gv};
     $init->add( sprintf( "$sym = (GV*)newSV_type(SVt_PVGV);" ),
 		sprintf( "SvFLAGS($sym) = 0x%x;", $sv->FLAGS),
 		sprintf( "SvREFCNT($sym) = %u;", $sv->REFCNT + 1 ),
 		sprintf( "SvPVX($sym) = %s;", cstring($pv) ),
+		sprintf( "SvCUR_set($sym, %d);", $cur ),
 		sprintf( "SvLEN_set($sym, %d);", $len ),
                 sprintf( "BmRARE($sym) = %d;", $sv->RARE ),
                 sprintf( "BmPREVIOUS($sym) = %d;", $sv->PREVIOUS ),
@@ -2003,7 +2005,7 @@ sub B::BM::save {
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %s, %s, 0, 0, %d, %u, 0x%x",
 	       defined($pv) && $B::C::pv_copy_on_grow ? cstring($pv) : "(char*)ptr_undef",
-	       $len,        $len + 258,    ivx($sv->IVX), nvx($sv->NVX),
+	       $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
 	      ));
     $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
