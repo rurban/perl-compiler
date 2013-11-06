@@ -555,6 +555,8 @@ tests[148]='open(FH, ">", "ccode148i.tmp"); print FH "1\n"; close FH; print -s "
 result[148]='2'
 tests[150]='use Errno; $! = 0; no warnings "unopened"; print NONEXISTENT "foo"; print "ok" if ($! == &Errno::EBADF);'
 result[150]='ok'
+tests[152]='print "ok" if find PerlIO::Layer "perlio"'
+result[152]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''
