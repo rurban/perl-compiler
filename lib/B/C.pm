@@ -1643,12 +1643,15 @@ sub B::UV::save {
   my ($sv) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
+  my $uvuformat = $Config{uvuformat};
+  $uvuformat =~ s/"//g; #" poor editor
   if ($PERL514) {
-    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%luU}", $sv->UVX ) );
+    # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
+    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
   } elsif ($PERL510) {
-    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%luU}", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
   } else {
-    $xpvuvsect->add( sprintf( "0, 0, 0, %luU", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "0, 0, 0, %".$uvuformat."U", $sv->UVX ) );
   }
   $svsect->add(
     sprintf(
