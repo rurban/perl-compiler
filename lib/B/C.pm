@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_50';
+our $VERSION = '1.42_51';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1201,6 +1201,7 @@ sub method_named {
   my $method;
   for ($package_pv, @package_pv, 'main') {
     no strict 'refs';
+    next unless defined $_;
     $method = $_ . '::' . $name;
     if (defined(&$method)) {
       warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
@@ -2490,6 +2491,7 @@ sub get_isa ($) {
 # XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
   my ( $cvstashname, $cvname ) = @_;
+  return 0 unless defined $cvstashname;
   if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
     return $found;
   }
@@ -3295,6 +3297,10 @@ if (0) {
     $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PV);]);
     return $sym;
   }
+  #if ($fullname =~ /^main::std(in|out|err)$/) { # stdio already initialized
+  #  $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
+  #  return $sym;
+  #}
   # defer to the end because we remove compiler-internal and skipped stuff
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
@@ -4125,7 +4131,7 @@ sub B::IO::save {
     # my $fd = IO::Handle::fileno($o);
     my $i = 0;
     foreach (qw(stdin stdout stderr)) {
-      if ($io->IsSTD($_) or $fd == -$i) {
+      if ($io->IsSTD($_) or (defined($fd) and $fd == -$i)) {
 	$perlio_func = $_;
       }
       $i++;
@@ -5719,6 +5725,11 @@ sub save_main_rest {
   # honour -w
   $init->add( "/* honor -w */",
     sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W );
+  if ($^{TAINT}) {
+    $init->add( "/* honor -Tt */",
+                "PL_tainting = TRUE;",
+                "PL_taint_warn = ".($^{TAINT} < 0 ? "FALSE" : "TRUE").";"); # -T -1 false, -t 1 true
+  }
 
   # startpoints: XXX TODO push BEGIN/END blocks to modules code.
   warn "Writing initav\n" if $debug{av};
