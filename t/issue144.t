@@ -8,8 +8,4 @@ BEGIN {
   require "test.pl";
 }
 
-#use B::C;
-#my $todo = ($B::C::VERSION < '1.43' ? "TODO " : "");
-#$todo = "" if $] >= 5.016 or $] < 5.010;
-my $todo = "";
-ctestok(1, "C", 'ccode144i', 'print "ok" if 12 == index("long message\0xx","\0")', "${todo}BM search for \\0");
+ctestok(1, "C", 'ccode144i', 'print "ok" if 12 == index("long message\0xx","\0")', "BM search for \\0");

@@ -738,7 +738,7 @@ sub ctest {
             my $out1 = `$runperl $name.pl`;
             unless ($out1 =~ /$expected/) {
                 ok(1, "skip also fails uncompiled $todo");
-                return;
+                return 1;
             }
         }
 	if ($todo and $todo =~ /TODO/) {
@@ -763,7 +763,7 @@ sub ctest {
 	    my $out1 = `$runperl $name.pl`;
             unless ($out1 =~ /$expected/) {
                 ok(1, "skip also fails uncompiled");
-                return;
+                return $ok;
             }
 	    ok (undef, $todo);
 	}
@@ -772,6 +772,7 @@ sub ctest {
     if ($ok) {
         unlink($name, "$name.c", "$name.exe");
     }
+    $ok
 }
 
 sub ccompileok {
