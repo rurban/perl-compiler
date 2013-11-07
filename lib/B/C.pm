@@ -1181,7 +1181,14 @@ sub B::PVOP::save {
   $init->add( sprintf( "pvop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   my $pv = pack "a*", $op->pv;
-  $init->add( sprintf( "pvop_list[$ix].op_pv = savepvn(%s, %u);", cstring( $pv ), length($pv) ) );
+  my $cur = length($pv);
+  if (!$PERL56) {
+    if (utf8::is_utf8($pv)) {
+      utf8::encode($pv);
+      $cur = length $pv;
+    }
+  }
+  $init->add( sprintf( "pvop_list[$ix].op_pv = savepvn(%s, %u);", cstring( $pv ), $cur ) );
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
@@ -1780,7 +1787,7 @@ sub savepvn {
       }
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), length($pv) );
+      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), $sv->CUR );
     }
   }
   return @init;
