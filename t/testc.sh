@@ -557,6 +557,16 @@ tests[150]='use Errno; $! = 0; no warnings "unopened"; print NONEXISTENT "foo"; 
 result[150]='ok'
 tests[152]='print "ok" if find PerlIO::Layer "perlio"'
 result[152]='ok'
+tests[162]='my $ok = 1;
+foreach my $chr (60, 200, 600, 6000, 60000) {
+  my ($key, $value) = (chr ($chr) . "\x{ABCD}", "$chr\x{ABCD}");
+  chop($key, $value);
+  my %utf8c = ( $key => $value );
+  my $tempval = sprintf q($utf8c{"\x{%x}"}), $chr;
+  my $ev = eval $tempval;
+  $ok = 0 if !$ev or $ev ne $value;
+} print "ok" if $ok'
+result[162]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''

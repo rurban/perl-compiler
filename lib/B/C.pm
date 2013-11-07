@@ -342,6 +342,7 @@ our %debug_map = (
     'R' => 'rx',
     'G' => 'gv',
     'S' => 'sv',
+    'P' => 'pv',
     'W' => 'walk',
     'c' => 'cops',
     's' => 'sub',
@@ -684,14 +685,19 @@ sub save_pv_or_rv {
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
   }
   else {
-    $pv = $pok ? ( pack "a*", $sv->PV ) : undef;
-    $cur = $pok ? length($pv) : 0;
+    if ($pok) {
+      $pv = pack "a*", $sv->PV;
+      $cur = $sv->CUR;
+    } else {
+      ($pv,$cur) = (undef,0);
+    }
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
     local $B::C::pv_copy_on_grow if $shared_hek;
     if ($pok) {
       if ($B::C::pv_copy_on_grow) {
-	( $savesym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
+	( $savesym, ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
 	  ? constpv($pv) : savepv($pv);
+        $len = $cur + 1;
         $len++ if IsCOW($sv) and $cur;
       } else {
 	( $savesym, $len ) = ( 'ptr_undef', $cur+1 );
@@ -701,6 +707,8 @@ sub save_pv_or_rv {
       ( $savesym, $len ) = ( 'ptr_undef', 0 );
     }
   }
+  warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
+               $B::C::pv_copy_on_grow, $fullname) if $debug{pv};
   return ( $savesym, $cur, $len, $pv );
 }
 
@@ -720,6 +728,8 @@ sub save_hek {
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;",$sym));
+  warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
+    if $debug{pv};
   # randomized global shared hash keys:
   #   share_hek needs a non-zero hash parameter, unlike hv_store.
   #   Vulnerable to oCERT-2011-003 style DOS attacks?
@@ -1757,7 +1767,7 @@ sub savepvn {
     }
     push @init, sprintf( "%s[%u] = '\\0';", $dest, $offset );
     warn sprintf( "Copying overlong PV %s to %s\n", cstring($pv), $dest )
-      if $debug{sv};
+      if $debug{sv} or $debug{pv};
   }
   else {
     # If READONLY and FAKE use newSVpvn_share instead. (test 75)
@@ -1786,10 +1796,10 @@ sub B::PVLV::save {
     }
     return $sym;
   }
-  my $pv  = $sv->PV;
-  my $cur = length( pack "a*", $pv );
+  my ($pv, $cur)  = ($sv->PV, $sv->CUR);
+  my $len = $cur + 1;
   my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-  my ( $pvsym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY and !$shared_hek)
+  my ( $pvsym, ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY and !$shared_hek)
     ? constpv($pv) : savepv($pv);
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   $len++ if $len and IsCOW($sv);
@@ -1984,8 +1994,8 @@ sub B::BM::save {
   return $sym if !$PERL510 and defined $sym;
   $sv = bless $sv, "B::BM" if $PERL510;
   my $pv  = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
-  my $cur = length(pack "a*", $sv->PV);
-  my $len = length($pv);
+  my $cur = $sv->CUR;
+  my $len = $cur + 258;
   if ($PERL510) {
     warn "Saving FBM for GV $sym\n" if $debug{gv};
     $init->add( sprintf( "$sym = (GV*)newSV_type(SVt_PVGV);" ),
@@ -2059,8 +2069,9 @@ sub B::PV::save {
   $len = 0 if $B::C::pv_copy_on_grow or $shared_hek;
   if ($PERL510) {
     if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
-      #=> constpv: turnoff SVf_FAKE
       $flags &= ~0x01000000;
+      warn sprintf("constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname)
+        if $debug{pv};
     }
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
@@ -2126,7 +2137,7 @@ sub B::REGEXP::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $pv = $sv->PV;
-  my $cur = length(pack("a*", $pv));
+  my $cur = $sv->CUR;
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
   $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
   $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
@@ -2972,7 +2983,10 @@ sub B::CV::save {
   }
 
   $pv = '' unless defined $pv;    # Avoid use of undef warnings
-  my ( $pvsym, $cur, $len ) = ('NULL',0,0);
+  my $pvsym = 'NULL';
+  my $cur = $cv->CUR;
+  my $len = $cur + 1;
+  $len = 0 if $B::C::pv_copy_on_grow;
   my $CvFLAGS = $cv->CvFLAGS;
   # GV cannot be initialized statically
   my $xcv_outside = ${ $cv->OUTSIDE };
@@ -2985,12 +2999,9 @@ sub B::CV::save {
     $xcv_outside = 0; # just a placeholder for a run-time GV
   }
   if ($PERL510) {
-    ( $pvsym, $cur ) = save_hek($pv);
+    $pvsym = save_hek($pv);
     # XXX issue 84: we need to check the cv->PV ptr not the value.
     # "" is different to NULL for prototypes
-    if ($cur) {
-      $len = $B::C::pv_copy_on_grow ? 0 : $cur+1;
-    }
     # TODO:
     # my $ourstash = "0";  # TODO stash name to bless it (test 16: "main::")
     if ($PERL514) {
@@ -3025,12 +3036,6 @@ sub B::CV::save {
 	$svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
       }
     } else {
-      $cur = length ( pack "a*", $pv );
-      if ($cur) {
-	# XXX issue 84: we need to check the cv->PV ptr not the value.
-	# "" is different to NULL for prototypes
-	$len = $B::C::pv_copy_on_grow ? 0 : $cur+1;
-      }
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, %s,"
@@ -3084,10 +3089,9 @@ sub B::CV::save {
     }
   }
   elsif ($PERL56) {
-    $cur = length ( pack "a*", $pv );
     my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
 		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)%s, 0x%x",
-	       cstring($pv), length($pv), length($pv), ivx($cv->IVX),
+	       cstring($pv), $cur, $len, ivx($cv->IVX),
 	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, $xcv_outside, $cv->CvFLAGS
 	      );
@@ -3103,10 +3107,9 @@ sub B::CV::save {
     }
   }
   else { #5.8
-    $cur = length ( pack "a*", $pv );
     my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub,"
 		       ." $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-	       cstring($pv),      length($pv), length($pv), ivx($cv->IVX),
+	       cstring($pv),   $cur, $len, ivx($cv->IVX),
 	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, $xcv_outside, $cv->CvFLAGS, $cv->OUTSIDE_SEQ
 	      );
@@ -4017,7 +4020,8 @@ sub B::IO::save {
   $pv = '' unless defined $pv;
   my ( $pvsym, $len, $cur );
   if ($pv) {
-    ( $pvsym, $cur ) = savepv($pv);
+    $pvsym = savepv($pv);
+    $cur = $io->CUR;
   } else {
     $pvsym = 'NULL';
     $cur = 0;
@@ -5918,10 +5922,10 @@ OPTION:
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       if ($arg eq 'full') {
-        $arg = 'OcAHCMGSpWF';
+        $arg = 'OcAHCMGSPpsWF';
       }
       elsif ($arg eq 'ufull') {
-        $arg = 'uOcAHCMGSpWF';
+        $arg = 'uOcAHCMGSPpsWF';
       }
       foreach my $arg ( split( //, $arg ) ) {
         if (exists $debug_map{$arg}) {
@@ -6163,6 +6167,10 @@ OP Type,Flags,Private
 =item B<-DS>
 
 Scalar SVs, prints B<SV/RE/RV> information on saving.
+
+=item B<-DP>
+
+Extra PV information on saving. (static, len, hek, fake_off, ...)
 
 =item B<-Dc>
 
