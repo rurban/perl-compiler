@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 bfd966c 2013-09-05 | BC: simplify $cv->GV main_cv+lexsub code
+# B::C::VERSION = 1.42_52 99c0eff 2013-11-08 | C: fix #178, hash TOTALKEYS of BEGIN-time initialized hashes
 # perlversion = 5.018001d
 # path = /usr/local/bin/perl5.18.1d
 # platform = linux 64bit threaded debug
@@ -23,9 +23,9 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
-fail ExtUtils::ParseXS
-fail Module::Build
+pass ExtUtils::CBuilder #TODO >= 5.18 with threads
+fail ExtUtils::ParseXS #TODO >= 5.18
+fail Module::Build #TODO >= 5.18
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.43 - perl-5.018001d
-# pass  97 / 100 (97.0%)
-# fail   3 / 100 (3.0%)
-# todo   0 /   3 (0.0%)
+# 100 / 100 modules tested with B-C-1.42_52 - perl-5.018001d
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   3 /   2 (150.0%)
 # skip   0 / 100 (0.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 bfd966c 2013-09-05 | BC: simplify $cv->GV main_cv+lexsub code
+# B::C::VERSION = 1.42_52 99c0eff 2013-11-08 | C: fix #178, hash TOTALKEYS of BEGIN-time initialized hashes
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.43 - perl-5.016003
+# 100 / 100 modules tested with B-C-1.42_52 - perl-5.016003
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   1 /   0 ()
