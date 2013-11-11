@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_52';
+our $VERSION = '1.42_53';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1533,10 +1533,11 @@ sub B::PMOP::save {
         "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",
         $op->_save_common, ${ $op->first },
         ${ $op->last }, ( $ITHREADS ? $op->pmoffset : 0 ),
-        $op->pmflags, $replrootfield,
-        $replstartfield
+        $op->pmflags, $replrootfield, 'NULL'
       )
     );
+    $init->add(sprintf("pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)$replstartfield;",
+                       $pmopsect->index));
   }
   elsif ($PERL56) {
     # pmdynflags does not exist as B method. It is only used for PMdf_UTF8 dynamically,
