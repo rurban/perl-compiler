@@ -323,6 +323,8 @@ result[51]='ok'
 # check if general signals work
 tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w'
 result[511]='ok'
+tests[68]='package A;sub test{use Data::Dumper();$_ =~ /^(.*?)\d+$/;"Some::Package"->new();}print q(ok);'
+result[68]='ok'
 #-------------
 # issue27
 tests[70]='require LWP::UserAgent;print q(ok);'

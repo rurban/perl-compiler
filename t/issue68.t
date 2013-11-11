@@ -41,7 +41,7 @@ $result =~ s/\n$//;
 
 TODO: {
   use B::Bytecode;
-  local $TODO = "threaded >= 5.010" if $] >= 5.010 and $Config{useithreads} and $B::Bytecode::VERSION lt "1.14";
+  local $TODO = "threaded >= 5.010" if $] >= 5.010 and $Config{useithreads}; # and $B::Bytecode::VERSION lt "1.14";
   ok($result eq $expected, "issue68 - newPMOP assert");
 }
 
