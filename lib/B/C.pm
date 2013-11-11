@@ -3292,20 +3292,24 @@ if (0) {
     $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
     return $sym;
   }
-  if ($fullname eq 'main::ENV') {
+  elsif ($fullname eq 'main::ENV') {
     $init->add(qq[$sym = PL_envgv;]);
     my $refcnt = $gv->REFCNT;
     $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
-  if ($fullname eq 'main::ARGV') {
+  elsif ($fullname eq 'main::ARGV') {
     $init->add(qq[$sym = PL_argvgv;]);
     my $refcnt = $gv->REFCNT;
     $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
-  if ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
+  elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
     $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PV);]);
+    return $sym;
+  }
+  elsif ( $fullname eq 'main::!' ) { #let gv_fetchpvn_flags do the Errno loading
+    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
     return $sym;
   }
   #if ($fullname =~ /^main::std(in|out|err)$/) { # stdio already initialized
@@ -3388,9 +3392,10 @@ if (0) {
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  elsif ( $fullname eq 'main::!' ) { #Errno
-    $savefields = Save_HV;
-  }
+  #elsif ( $fullname eq 'main::!' ) { #Errno
+  #  $savefields = Save_HV;
+  #  return $sym;
+  #}
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.
@@ -3463,8 +3468,8 @@ if (0) {
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
-	  $init->add("/* \%! force saving of Errno */");
-	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
+	  #$init->add("/* \%! force saving of Errno */");
+	  #mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
 	  mark_package('Tie::Hash::NamedCapture', 1);
@@ -5569,7 +5574,7 @@ sub save_context {
 
   if ($PERL510) {
     # Tie::Hash::NamedCapture is added for *main::+ or *main::-
-    # Errno is added for *main::!
+    # Errno is added for *main::! at run-time
     no strict 'refs';
     if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
       use strict 'refs';
@@ -5581,17 +5586,17 @@ sub save_context {
       use strict 'refs';
       delete_unsaved_hashINC('Tie::Hash::NamedCapture');
     }
-    no strict 'refs';
-    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
-      use strict 'refs';
-      if (!$include_package{'Errno'}) {
-	$init->add("/* force saving of Errno */");
-	mark_package('Errno', 1);
-      } # else already included
-    } else {
-      use strict 'refs';
-      delete_unsaved_hashINC('Errno');
-    }
+#    no strict 'refs';
+#    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
+#      use strict 'refs';
+#      if (!$include_package{'Errno'}) {
+#	$init->add("/* force saving of Errno */");
+#	mark_package('Errno', 1);
+#      } # else already included
+#    } else {
+#      use strict 'refs';
+#      delete_unsaved_hashINC('Errno');
+#    }
   }
 
   $init->add("/* curpad names */");

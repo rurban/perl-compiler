@@ -553,7 +553,7 @@ tests[146]='my $a = v120.300; my $b = v200.400; $a ^= $b; print sprintf("%vd", $
 result[146]='176.188'
 tests[148]='open(FH, ">", "ccode148i.tmp"); print FH "1\n"; close FH; print -s "ccode148i.tmp"'
 result[148]='2'
-tests[150]='use Errno; $! = 0; no warnings "unopened"; print NONEXISTENT "foo"; print "ok" if ($! == &Errno::EBADF);'
+tests[150]='print NONEXISTENT "foo"; print "ok" if $! == 9'
 result[150]='ok'
 tests[152]='print "ok" if find PerlIO::Layer "perlio"'
 result[152]='ok'

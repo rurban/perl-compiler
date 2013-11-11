@@ -6,7 +6,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 8;
+use Test::More tests => 11;
 my $i=0;
 sub test3 {
   my $name = shift;
@@ -42,4 +42,8 @@ EOF
 test3('ccode90i_er', <<'EOF', 'TODO may require -uErrno');
 my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};
+EOF
+
+test3('ccode90i_ep', <<'EOF', 'TODO %! pure IV');
+print FH "foo"; print "ok" if $! == 9;
 EOF
