@@ -1855,7 +1855,7 @@ sub B::PVLV::save {
       push @static_free, $s if $len and !$in_endav;
     }
   }
-  $sv->save_magic;
+  $sv->save_magic($fullname);
   savesym( $sv, "&".$s );
 }
 
@@ -2038,7 +2038,7 @@ sub B::BM::save {
     }
   }
   # Restore possible additional magic. fbm_compile adds just 'B'.
-  $sv->save_magic;
+  $sv->save_magic($fullname);
 
   if ($PERL510) {
     return $sym;
@@ -2169,7 +2169,7 @@ sub B::REGEXP::save {
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
-  $sv->save_magic;
+  $sv->save_magic($fullname);
   return $sym;
 }
 
@@ -3195,7 +3195,7 @@ sub B::CV::save {
   }
   my $magic = $cv->MAGIC;
   if ($magic and $$magic) {
-    $cv->save_magic; # XXX will this work?
+    $cv->save_magic($fullname); # XXX will this work?
   }
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
@@ -3370,8 +3370,6 @@ if (0) {
     $init->add("if (SvPOK($sym) && !SvPVX($sym)) SvPVX($sym) = (char*)emptystring;");
   }
 
-  # Shouldn't need to do save_magic since gv_fetchpv handles that
-  #$gv->save_magic if $PERL510;
   # Will always be > 1
   my $refcnt = $gv->REFCNT;
   $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
@@ -3606,6 +3604,8 @@ if (0) {
       $init->add("");
     }
   }
+  # Shouldn't need to do save_magic since gv_fetchpv handles that. Esp. < not
+  # $gv->save_magic($fullname) if $PERL510;
   warn "GV::save *$fullname done\n" if $debug{gv};
   return $sym;
 }
@@ -3680,7 +3680,7 @@ sub B::AV::save {
     $av_index = $xpvavsect->index;
     # protect against recursive self-references (Getopt::Long)
     $sym = savesym( $av, "(AV*)&sv_list[$sv_ix]" );
-    $magic = $av->save_magic;
+    $magic = $av->save_magic($fullname);
   }
 
   if ( $debug{av} ) {
