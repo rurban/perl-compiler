@@ -20,7 +20,7 @@ ok(1, "bytecode LEXWARN skip");
 
 use B::C;
 ctestok(2, "C", "ccode76i", $script,
-	($B::C::VERSION < 1.36 ? "TODO " : "")."C LEXWARN implemented with B-C-1.36"
+	($B::C::VERSION lt '1.36' ? "TODO " : "")."C LEXWARN implemented with B-C-1.36"
        );
 
 use B::CC;

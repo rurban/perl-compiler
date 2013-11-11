@@ -622,7 +622,7 @@ CCTESTS
             next;
         }
         # only once. skip subsequent tests 29 on MSVC. 7:30min!
-        if ($cnt == 29 and $Config{cc} =~ /^cl/i and $backend ne 'C') {
+        if ($cnt == 29 and !$AUTHOR) {
             $todo{$cnt} = $skip{$cnt} = 1;
         }
         if ($todo{$cnt} and $skip{$cnt} and
