@@ -555,6 +555,8 @@ tests[148]='open(FH, ">", "ccode148i.tmp"); print FH "1\n"; close FH; print -s "
 result[148]='2'
 tests[150]='print NONEXISTENT "foo"; print "ok" if $! == 9'
 result[150]='ok'
+tests[1501]='$! = 0; print NONEXISTENT "foo"; print "ok" if $! == 9'
+result[1501]='ok'
 tests[152]='print "ok" if find PerlIO::Layer "perlio"'
 result[152]='ok'
 tests[159]='@X::ISA = "Y"; sub Y::z {"Y::z"} print "ok\n" if  X->z eq "Y::z"; delete $X::{z}; exit'
@@ -571,6 +573,10 @@ foreach my $chr (60, 200, 600, 6000, 60000) {
 result[166]='ok'
 tests[178]='BEGIN { $hash  = { pi => 3.14, e => 2.72, i => -1 } ;} print scalar keys $hash;'
 result[178]='3'
+tests[188]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zlopp {reset;}
+package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
+aiieee::reset_zlopp(); print aiieee::zlopp("zlopp")'
+result[188]='01001'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''

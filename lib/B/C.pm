@@ -238,6 +238,15 @@ BEGIN {
   if ($] >= 5.010) {
     require mro; mro->import;
     sub SVf_OOK() { 0x02000000 }; # not exported
+    if ($] >= 5.018) {  # PMf_ONCE also not exported
+      eval q[sub PMf_ONCE(){ 0x10000 }];
+    } elsif ($] >= 5.014) {
+      eval q[sub PMf_ONCE(){ 0x8000 }];
+    } elsif ($] >= 5.012) {
+      eval q[sub PMf_ONCE(){ 0x0080 }];
+    } else { # 5.10. not used with <= 5.8
+      eval q[sub PMf_ONCE(){ 0x0002 }];
+    }
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -1595,6 +1604,12 @@ sub B::PMOP::save {
         "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
         sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
       );
+      # See toke.c:8964
+      # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
+      if ($op->pmflags & PMf_ONCE) {
+        my $stash = $MULTI ? $op->pmstashpv : $op->pmstash->NAME;
+        warn "TODO #188: restore PMf_ONCE, set PERL_MAGIC_symtab in $stash";
+      }
     }
     elsif ($PERL56) {
       my ( $resym, $relen ) = savere( $re, 0 );
@@ -2349,7 +2364,7 @@ sub B::PVMG::save_magic {
     $len  = $mg->LENGTH;
     $magic .= $type;
     if ( $debug{mg} ) {
-      warn sprintf( "%s magic\n", cchar($type) );
+      warn sprintf( "%s %s magic\n", $fullname, cchar($type) );
       #eval {
       #  warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
       #                class($sv), $$sv, class($obj), $$obj, cchar($type),
@@ -3884,9 +3899,9 @@ sub B::HV::save {
     my $adpmroot = 0;
     $decl->add("Static HV *hv$hv_index;");
 
-    # Fix weird package names containing double-quotes, \n analog to gv_fetchpv
     my $cname = cstring($name);
-    $init->add(qq[hv$hv_index = gv_stashpv($cname, TRUE);]);
+    my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
+    $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, TRUE);]);
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );
@@ -3899,7 +3914,11 @@ sub B::HV::save {
     # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
-    return $sym if !$B::C::stash or skip_pkg($name);
+    if (!$B::C::stash) {
+      # $hv->save_magic('%'.$fullname.'::'); #symtab magic set in PMOP #188
+      return $sym;
+    }
+    return $sym if skip_pkg($name);
     warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
 
