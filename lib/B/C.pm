@@ -3321,10 +3321,14 @@ if (0) {
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
     $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PV);]);
+    my $refcnt = $gv->REFCNT;
+    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
   elsif ( $fullname eq 'main::!' ) { #let gv_fetchpvn_flags do the Errno loading
     $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
+    my $refcnt = $gv->REFCNT;
+    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
     return $sym;
   }
   #if ($fullname =~ /^main::std(in|out|err)$/) { # stdio already initialized
