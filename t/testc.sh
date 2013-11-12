@@ -577,6 +577,10 @@ tests[188]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zl
 package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
 aiieee::reset_zlopp(); print aiieee::zlopp("zlopp")'
 result[188]='01001'
+tests[200]='%u=("\x{123}"=>"fo"); print "ok" if $u{"\x{123}"} eq "fo"'
+result[200]='ok'
+tests[2001]='BEGIN{%u=("\x{123}"=>"fo");} print "ok" if $u{"\x{123}"} eq "fo";'
+result[2001]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''

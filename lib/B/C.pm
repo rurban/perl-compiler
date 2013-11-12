@@ -733,6 +733,13 @@ sub save_hek {
       : $hektable{$str};
   }
   my $cur = length( pack "a*", $str );
+  if (!$PERL56) {
+    if (utf8::is_utf8($str)) {
+      my $pv = $str;
+      utf8::encode($pv);
+      $cur = - length $pv;
+    }
+  }
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
@@ -745,7 +752,7 @@ sub save_hek {
   #   user-input (object fields) does not affect strtab, it is pretty safe.
   # But we need to randomize them to avoid run-time conflicts
   #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
-  $init->add(sprintf("%s = share_hek(%s, %u, %s);",
+  $init->add(sprintf("%s = share_hek(%s, %d, %s);",
 		     $sym, $cstr, $cur, '0'));
   wantarray ? ( $sym, $cur ) : $sym;
 }
@@ -3962,7 +3969,7 @@ sub B::HV::save {
   my $sv_list_index = $svsect->index;
   warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
                 $$hv, $hv->MAX ) if $debug{hv};
-  my @contents     = $hv->ARRAY;
+  my @contents = $hv->ARRAY;
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
   # value => rv => cv => ... => rv => same hash
@@ -4001,9 +4008,17 @@ sub B::HV::save {
       while (@contents) {
 	my ( $key, $value ) = splice( @contents, 0, 2 );
 	if ($value) {
-	  $init->add(sprintf( "\thv_store(hv, %s, %u, %s, %s);",
-			      cstring($key), length( pack "a*", $key ),
-			      "(SV*)$value", 0 )); # !! randomized hash keys
+          $value = "(SV*)$value" unless $value =~ /^&sv_list/;
+          my $cur = length( pack "a*", $key );
+          if (!$PERL56) {
+            my $pv = $key;
+            if (utf8::is_utf8($pv)) {
+              utf8::encode($pv);
+              $cur = 0 - length($pv);
+            }
+          }
+	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, %s);",
+			      cstring($key), $cur, "$value", 0 )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
 	}
       }
@@ -4613,7 +4628,7 @@ sub output_main_rest {
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
-      PERL_HASH(hash, str, len);
+      PERL_HASH(hash, str, abs(len));
     }
     return Perl_share_hek(aTHX_ str, len, hash);
 }
@@ -5063,7 +5078,7 @@ _EOT15
       $dollar_0 = '"' . $dollar_0 . '"';
 
       print <<"EOT";
-    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
+    if ((tmpgv = gv_fetchpv("0", GV_ADD, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, ${dollar_0});
         SvSETMAGIC(tmpsv);
@@ -5073,7 +5088,7 @@ EOT
     }
     else {
       print <<"EOT";
-    if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
+    if ((tmpgv = gv_fetchpv("0", GV_ADD, SVt_PV))) {/* $0 */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv, argv[0]);
         SvSETMAGIC(tmpsv);
