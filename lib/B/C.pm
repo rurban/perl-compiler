@@ -1607,7 +1607,8 @@ sub B::PMOP::save {
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
       if ($op->pmflags & PMf_ONCE) {
-        my $stash = $MULTI ? $op->pmstashpv : $op->pmstash->NAME;
+        my $stash = $MULTI ? $op->pmstashpv
+          : ref $op->pmstash eq 'B::HV' ? $op->pmstash->NAME : '__ANON__';
         warn "TODO #188: restore PMf_ONCE, set PERL_MAGIC_symtab in $stash";
       }
     }
