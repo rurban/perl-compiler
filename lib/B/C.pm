@@ -3310,30 +3310,27 @@ if (0) {
   }
   elsif ($fullname eq 'main::ENV') {
     $init->add(qq[$sym = PL_envgv;]);
-    my $refcnt = $gv->REFCNT;
-    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
+    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
   elsif ($fullname eq 'main::ARGV') {
     $init->add(qq[$sym = PL_argvgv;]);
-    my $refcnt = $gv->REFCNT;
-    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
+    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
     $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PV);]);
-    my $refcnt = $gv->REFCNT;
-    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
+    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
   elsif ( $fullname eq 'main::!' ) { #let gv_fetchpvn_flags do the Errno loading
     $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
-    my $refcnt = $gv->REFCNT;
-    $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
+    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
   #if ($fullname =~ /^main::std(in|out|err)$/) { # stdio already initialized
   #  $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
+  #  $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
   #  return $sym;
   #}
   # defer to the end because we remove compiler-internal and skipped stuff
@@ -3395,9 +3392,7 @@ if (0) {
   }
 
   # Will always be > 1
-  my $refcnt = $gv->REFCNT;
-  $init->add( sprintf( "SvREFCNT($sym) += %u;", $refcnt ) ) if $refcnt > 0;
-
+  $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
   return $sym if $is_empty;
 
   # B::walksymtable creates an extra reference to the GV
