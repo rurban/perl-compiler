@@ -3330,7 +3330,12 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
-  elsif ( $fullname eq 'main::!' ) { #let gv_fetchpvn_flags do the Errno loading
+  elsif ( $fullname eq 'main::!' ) { #let gv_fetchpvn_flags do the Errno loading #90
+    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
+    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+    return $sym;
+  }
+  elsif ( $fullname eq 'main::+' or $fullname eq 'main::-' ) { #gv_fetchpvn_flags does magic #90
     $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
@@ -4012,7 +4017,7 @@ sub B::HV::save {
           my $cur = length( pack "a*", $key );
           if (!$PERL56) {
             my $pv = $key;
-            if (utf8::is_utf8($pv)) {
+            if (utf8::is_utf8($pv)) { #FIXME: B does not keep the UTF8 flag here (#200)
               utf8::encode($pv);
               $cur = 0 - length($pv);
             }
@@ -5609,17 +5614,17 @@ sub save_context {
   if ($PERL510) {
     # Tie::Hash::NamedCapture is added for *main::+ or *main::-
     # Errno is added for *main::! at run-time
-    no strict 'refs';
-    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
-      use strict 'refs';
-      if (!$include_package{'Tie::Hash::NamedCapture'}) {
-	$init->add("/* force saving of Tie::Hash::NamedCapture */");
-	mark_package('Tie::Hash::NamedCapture', 1);
-      } # else already included
-    } else {
-      use strict 'refs';
-      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
-    }
+#    no strict 'refs';
+#    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
+#      use strict 'refs';
+#      if (!$include_package{'Tie::Hash::NamedCapture'}) {
+#	$init->add("/* force saving of Tie::Hash::NamedCapture */");
+#	mark_package('Tie::Hash::NamedCapture', 1);
+#      } # else already included
+#    } else {
+#      use strict 'refs';
+#      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
+#    }
 #    no strict 'refs';
 #    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
 #      use strict 'refs';

@@ -6,17 +6,17 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 11;
+use Test::More tests => 15;
 my $i=0;
 sub test3 {
   my $name = shift;
   my $script = shift;
   my $cmt = join('',@_);
-  my $todo;
-  $todo = 'TODO %+ setting regdata magic crashes' if $name eq 'ccode90i_c';
+  my $todo = "";
+  $todo = 'TODO ' if $name eq 'ccode90i_c' or $] > 5.015;
   plctestok($i*3+1, $name, $script, $todo);
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
-  ctestok($i*3+3, "CC", $name, $script, "TODO CC $cmt") if $name ne 'ccode90i_c';
+  ctestok($i*3+3, "CC", $name, $script, $todo."CC $cmt");
   $i++;
 }
 
@@ -30,8 +30,11 @@ print q(o) if $s eq 'string test';
 'test string' =~ /(?<first>\w+) (?<second>\w+)/;
 print q(k) if $+{first} eq 'test';
 EOF
-
 }
+
+test3('ccode90i_ca', <<'EOF', '@+');
+"abc" =~ /(.)./; print "ok" if "21" eq join"",@+;
+EOF
 
 test3('ccode90i_es', <<'EOF', '%! magic');
 my %errs = %!; # t/op/magic.t Errno compiled in
@@ -39,11 +42,11 @@ print q(ok) if defined ${"!"}{ENOENT};
 EOF
 
 # this fails so far, %{"!"} is not detected at compile-time. requires -uErrno
-test3('ccode90i_er', <<'EOF', 'TODO may require -uErrno');
+test3('ccode90i_er', <<'EOF', 'Errno loaded automagically');
 my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};
 EOF
 
-test3('ccode90i_ep', <<'EOF', 'TODO %! pure IV');
+test3('ccode90i_ep', <<'EOF', '%! pure IV');
 print FH "foo"; print "ok" if $! == 9;
 EOF

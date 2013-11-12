@@ -34,6 +34,7 @@
         op_pmreplstart is now run-time initialized >= 5.10 (#160)
         Fix UTF8 hashkeys (HEK) mostly (#200), but not yet testc.sh 2001 (compile-time
           stored utf8 heks)
+        Fixed special usage of magic vars @-,@+,%+,$-,$! (#90)
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
