@@ -733,7 +733,7 @@ sub ctest {
     if (defined($out) and !$result) {
         chomp $out;
         $ok = $out =~ /$expected/;
-	diag($out);
+	diag($out) if $ENV{TEST_VERBOSE};
 	unless ($ok) { #crosscheck uncompiled
             my $out1 = `$runperl $name.pl`;
             unless ($out1 =~ /$expected/) {
@@ -746,7 +746,7 @@ sub ctest {
           TODO: {
                 local $TODO = $todo;
                 ok ($out =~ /$expected/);
-		diag($out);
+		diag($out) if $ENV{TEST_VERBOSE};
             }
         } else {
             ok ($out =~ /$expected/, $todo);
