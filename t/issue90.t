@@ -14,7 +14,7 @@ sub test3 {
   my $cmt = join('',@_);
   my $todo = "";
   $todo = 'TODO ' if $name eq 'ccode90i_c' or $] > 5.015;
-  plctestok($i*3+1, $name, $script, $todo);
+  plctestok($i*3+1, $name, $script, $todo." BC ".$cmt);
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, $todo."CC $cmt");
   $i++;
