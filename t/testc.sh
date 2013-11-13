@@ -159,7 +159,7 @@ function ctest {
     fi
 }
 
-ntests=166
+ntests=200
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=23
@@ -573,6 +573,9 @@ foreach my $chr (60, 200, 600, 6000, 60000) {
 result[166]='ok'
 tests[178]='BEGIN { $hash  = { pi => 3.14, e => 2.72, i => -1 } ;} print scalar keys $hash;'
 result[178]='3'
+# usage: t/testc.sh -O3 -Dp,-UCarp 185
+tests[185]='my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" && bytes::length($a) == 2; print "ok\n";'
+result[185]='ok'
 tests[188]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zlopp {reset;}
 package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
 aiieee::reset_zlopp(); print aiieee::zlopp("zlopp")'

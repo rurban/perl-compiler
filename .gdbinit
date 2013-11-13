@@ -96,7 +96,7 @@ end
 
 define sv_dump
   p/x *sv
-  if (my_perl && my_perl->broiled)
+  if my_perl
     call Perl_sv_dump(my_perl, sv)
   else
     call Perl_sv_dump(sv)
@@ -107,9 +107,18 @@ document sv_dump
 see `sdump sv`
 end
 
+define tsv_dump
+  p/x *sv
+  call Perl_sv_dump(my_perl, sv)
+end
+document tsv_dump
+ => Perl_sv_dump(sv)
+see `sdump sv`
+end
+
 define odump
   p/x *$arg0
-  if (my_perl && my_perl->broiled)
+  if my_perl
     call Perl_op_dump(my_perl, $arg0)
   else
     call Perl_op_dump($arg0)
@@ -120,15 +129,29 @@ odump op => p/x *op; Perl_op_dump(op)
 see `help op_dump` for PL_op
 end
 
+define todump
+  p/x *$arg0
+  call Perl_op_dump(my_perl, $arg0)
+end
+document todump
+todump op => p/x *op; Perl_op_dump(op)
+see `help op_dump` for PL_op
+end
+
 define sdump
   p/x *$arg0
-  if (my_perl && my_perl->broiled)
-    call Perl_sv_dump(my_perl, $arg0)
-  else
-    call Perl_sv_dump($arg0)
-  end
+  call Perl_sv_dump($arg0)
 end
 document sdump
 sdump sv => p/x *sv; Perl_sv_dump(sv)
-see `help sv_dump`
+see `help tsdump`
+end
+
+define tsdump
+  p/x *$arg0
+  call Perl_sv_dump(my_perl, $arg0)
+end
+document tsdump
+tsdump sv => p/x *sv; Perl_sv_dump(my_perl, sv)
+see `help sdump`
 end

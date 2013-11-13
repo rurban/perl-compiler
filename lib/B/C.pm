@@ -3340,11 +3340,11 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
-  #if ($fullname =~ /^main::std(in|out|err)$/) { # stdio already initialized
-  #  $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
-  #  $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-  #  return $sym;
-  #}
+  if ($fullname =~ /^main::std(in|out|err)$/ or /^main::STD(IN|OUT|ERR)$/) { # stdio already initialized
+    $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
+    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+    return $sym;
+  }
   # defer to the end because we remove compiler-internal and skipped stuff
   #if ($fullname eq 'main::INC' and !$_[2]) {
   #  return $sym;
