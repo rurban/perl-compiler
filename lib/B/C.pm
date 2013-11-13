@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_53';
+our $VERSION = '1.42_54';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -3974,7 +3974,8 @@ sub B::HV::save {
   my $sv_list_index = $svsect->index;
   warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
                 $$hv, $hv->MAX ) if $debug{hv};
-  my @contents = $hv->ARRAY;
+  # XXX B does not keep the UTF8 flag [RT 120535] #200
+  my @contents = $hv->can('ARRAY_utf8') ? $hv->ARRAY_utf8 : $hv->ARRAY; # our fixed C.xs variant
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
   # value => rv => cv => ... => rv => same hash
@@ -4016,8 +4017,8 @@ sub B::HV::save {
           $value = "(SV*)$value" unless $value =~ /^&sv_list/;
           my $cur = length( pack "a*", $key );
           if (!$PERL56) {
-            my $pv = $key;
-            if (utf8::is_utf8($pv)) { #FIXME: B does not keep the UTF8 flag here (#200)
+            if (utf8::is_utf8($key)) {
+              my $pv = $key;
               utf8::encode($pv);
               $cur = 0 - length($pv);
             }

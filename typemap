@@ -2,6 +2,7 @@ B::MAGIC	T_MG_OBJ
 B::REGEXP	T_RX_OBJ
 B::COP		T_OP_OBJ
 B::OP		T_OP_OBJ
+B::HV		T_SV_OBJ
 
 INPUT
 T_RX_OBJ
@@ -25,6 +26,14 @@ T_MG_OBJ
 	    croak(\"$var is not a reference\")
 
 T_OP_OBJ
+	if (SvROK($arg)) {
+	    IV tmp = SvIV((SV*)SvRV($arg));
+	    $var = INT2PTR($type,tmp);
+	}
+	else
+	    croak(\"$var is not a reference\")
+
+T_SV_OBJ
 	if (SvROK($arg)) {
 	    IV tmp = SvIV((SV*)SvRV($arg));
 	    $var = INT2PTR($type,tmp);

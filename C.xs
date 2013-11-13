@@ -1,3 +1,4 @@
+#define PERL_NO_GET_CONTEXT
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -26,6 +27,7 @@ typedef struct p5rx  *B__REGEXP;
 #endif
 typedef COP  *B__COP;
 typedef OP   *B__OP;
+typedef HV   *B__HV;
 
 STATIC U32 a_hash = 0;
 
@@ -33,6 +35,69 @@ typedef struct {
   U32 bits;
   IV  require_tag;
 } a_hint_t;
+
+static const char* const svclassnames[] = {
+    "B::NULL",
+#if PERL_VERSION < 19
+    "B::BIND",
+#endif
+    "B::IV",
+    "B::NV",
+#if PERL_VERSION <= 10
+    "B::RV",
+#endif
+    "B::PV",
+#if PERL_VERSION >= 19
+    "B::INVLIST",
+#endif
+    "B::PVIV",
+    "B::PVNV",
+    "B::PVMG",
+#if PERL_VERSION >= 11
+    "B::REGEXP",
+#endif
+    "B::GV",
+    "B::PVLV",
+    "B::AV",
+    "B::HV",
+    "B::CV",
+    "B::FM",
+    "B::IO",
+};
+
+#define MY_CXT_KEY "B::C::_guts" XS_VERSION
+
+typedef struct {
+    int		x_walkoptree_debug;	/* Flag for walkoptree debug hook */
+    SV *	x_specialsv_list[7];
+} my_cxt_t;
+
+START_MY_CXT
+
+#define walkoptree_debug	(MY_CXT.x_walkoptree_debug)
+#define specialsv_list		(MY_CXT.x_specialsv_list)
+
+static SV *
+make_sv_object(pTHX_ SV *sv)
+{
+    SV *const arg = sv_newmortal();
+    const char *type = 0;
+    IV iv;
+    dMY_CXT;
+
+    for (iv = 0; iv < (IV)(sizeof(specialsv_list)/sizeof(SV*)); iv++) {
+	if (sv == specialsv_list[iv]) {
+	    type = "B::SPECIAL";
+	    break;
+	}
+    }
+    if (!type) {
+	type = svclassnames[SvTYPE(sv)];
+	iv = PTR2IV(sv);
+    }
+    sv_setiv(newSVrv(arg, type), iv);
+    return arg;
+}
 
 static int
 my_runops(pTHX)
@@ -218,6 +283,27 @@ op_folded(op)
 
 #endif
 
+MODULE = B	PACKAGE = B::HV		PREFIX = Hv
+
+void
+HvARRAY_utf8(hv)
+	B::HV	hv
+    PPCODE:
+	if (HvKEYS(hv) > 0) {
+	    HE *he;
+	    (void)hv_iterinit(hv);
+	    EXTEND(sp, HvKEYS(hv) * 2);
+	    while ((he = hv_iternext(hv))) {
+                if (HeSVKEY(he)) {
+                    mPUSHs(HeSVKEY(he));
+                } else if (HeKUTF8(he)) {
+                    PUSHs(newSVpvn_flags(HeKEY(he), HeKLEN(he), SVf_UTF8|SVs_TEMP));
+                } else {
+                    mPUSHp(HeKEY(he), HeKLEN(he));
+                }
+		PUSHs(make_sv_object(aTHX_ HeVAL(he)));
+	    }
+	}
 
 MODULE = B__C	PACKAGE = B::C
 
@@ -258,4 +344,12 @@ method_cv(meth, packname)
 #endif
 
 BOOT:
+    MY_CXT_INIT;
     PL_runops = my_runops;
+    specialsv_list[0] = Nullsv;
+    specialsv_list[1] = &PL_sv_undef;
+    specialsv_list[2] = &PL_sv_yes;
+    specialsv_list[3] = &PL_sv_no;
+    specialsv_list[4] = (SV *) pWARN_ALL;
+    specialsv_list[5] = (SV *) pWARN_NONE;
+    specialsv_list[6] = (SV *) pWARN_STD;
