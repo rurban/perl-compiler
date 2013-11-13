@@ -3932,6 +3932,7 @@ sub B::HV::save {
       return $sym;
     }
     return $sym if skip_pkg($name);
+    $init->add( "SvREFCNT_inc($sym);" );
     warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
 
