@@ -2814,7 +2814,7 @@ sub pp_redo {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      warn("Warning: \"redo\" used outside loop\n");
+      #warn("Warning: \"redo\" used outside loop\n");
       return default_pp($op); # no optimization
     }
   }
@@ -2852,7 +2852,7 @@ sub pp_last {
   if ( $op->flags & OPf_SPECIAL ) {
     $cxix = dopoptoloop();
     if ( $cxix < 0 ) {
-      warn("Warning: \"last\" used outside loop\n");
+      #warn("Warning: \"last\" used outside loop\n");
       return default_pp($op); # no optimization
     }
   }

@@ -9,7 +9,7 @@ use Config;
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : 'a.out';
-my $a   = $^O eq 'MSWin32' ? 'a.exe' : 'a';
+my $a   = $^O eq 'MSWin32' ? 'a.exe' : './a';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 my $devnull = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 #my $o = '';
@@ -36,7 +36,7 @@ cleanup;
 
 system(qq($perlcc -o a -e $e $devnull));
 ok(-e $a, '-o => -e a');
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok"); #11
+is(`$a`, "ok", "./a => ok"); #11
 cleanup;
 
 # Try a simple XS module which exists in 5.6.2 and blead (test 45)
@@ -91,12 +91,12 @@ cleanup;
 is(`$perlcc -o a $f $devnull`, "", "-o file");
 ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "executable");
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
+is(`$a`, "ok", "./a => ok");
 cleanup;
 
 is(`$perlcc -S -o a $f $devnull`, "", "-S -o file");
 ok(-e $a, "executable");
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
+is(`$a`, "ok", "./a => ok");
 cleanup;
 
 is(`$perlcc -Sc -o a $f $devnull`, "", "-Sc -o file");
@@ -120,17 +120,17 @@ TODO: {
   cleanup;
 }#}
 
-is(`$perlcc -t -o a $f $devnull`, "", "-t -o file"); #44
+is(`$perlcc -t -O3 -o a $f $devnull`, "", "-t -o file"); #44
 TODO: {
   local $TODO = '-t unsupported with 5.6' if $] < 5.007;
   ok(-e $a, "executable"); #45
-  is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok"); #46
+  is(`$a`, "ok", "./a => ok"); #46
 }
 cleanup;
 
-is(`$perlcc -T -o a $f $devnull`, "", "-T -o file");
+is(`$perlcc -T -O3 -o a $f $devnull`, "", "-T -o file");
 ok(-e $a, "executable");
-is($^O eq 'MSWin32' ? `a` : `./a`, "ok", "./a => ok");
+is(`$a`, "ok", "./a => ok");
 cleanup;
 
 # compiler verboseness
