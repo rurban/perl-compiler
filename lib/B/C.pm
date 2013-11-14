@@ -3340,7 +3340,8 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
-  if ($fullname =~ /^main::std(in|out|err)$/ or /^main::STD(IN|OUT|ERR)$/) { # stdio already initialized
+  if ($fullname =~ /^main::std(in|out|err)$/
+  or $fullname =~ /^main::STD(IN|OUT|ERR)$/) { # stdio already initialized
     $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
