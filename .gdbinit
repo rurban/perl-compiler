@@ -8,7 +8,11 @@ break __asan_report_error
 #break B.c:2044
 #break B.xs:1858
 #break oplist
-break Perl_do_openn
+#break Perl_do_openn
+# require %INC
+#break pp_ctl.c:3599
+#run
+#p/x sv_list[3299]
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc
@@ -96,11 +100,7 @@ end
 
 define sv_dump
   p/x *sv
-  if my_perl
-    call Perl_sv_dump(my_perl, sv)
-  else
-    call Perl_sv_dump(sv)
-  end
+  call Perl_sv_dump(sv)
 end
 document sv_dump
  => Perl_sv_dump(sv)
@@ -118,11 +118,7 @@ end
 
 define odump
   p/x *$arg0
-  if my_perl
-    call Perl_op_dump(my_perl, $arg0)
-  else
-    call Perl_op_dump($arg0)
-  end
+  call Perl_op_dump($arg0)
 end
 document odump
 odump op => p/x *op; Perl_op_dump(op)

@@ -421,6 +421,16 @@ result[901]='ok'
 tests[902]='my %errs = %{"!"}; # t/op/magic.t Errno to be loaded at run-time
 print q(ok) if defined ${"!"}{ENOENT};'
 result[902]='ok'
+# issue #199
+tests[903]='"abc" =~ /(.)./; print "ok" if "21" eq join"",@+;'
+result[903]='ok'
+# issue #220
+tests[904]='my $content = "ok\n";
+while ( $content =~ m{\w}g ) {
+    $_ .= "$-[0]$+[0]";
+}
+print "ok" if $_ eq "0112";'
+result[904]='ok'
 # IO handles
 tests[91]='# issue59
 use strict;
@@ -586,6 +596,11 @@ tests[2001]='BEGIN{%u=("\x{123}"=>"fo");} print "ok" if $u{"\x{123}"} eq "fo";'
 result[2001]='ok'
 tests[201]='use Storable;*Storable::CAN_FLOCK=sub{1};print qq{ok\n}'
 result[201]='ok'
+tests[2011]='sub can {require Config; import Config;return $Config{d_flock}}
+use IO::File;
+can();
+print "ok\n";'
+result[2011]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''

@@ -2444,11 +2444,15 @@ CODE2
         }
       }
     }
-    elsif ( $type eq 'D' ) { # XXX regdata AV - coverage? i95
-      if ($mg->OBJ and !($sv_flags & SVf_READONLY)) {
-	# see Perl_mg_copy() in mg.c
-	$init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
-			   $$sv, $$sv, "'D'", cstring($ptr), $len ));
+    elsif ( $type eq 'D' ) { # XXX regdata AV - coverage? i95, 903
+      if ($sv_flags & SVf_READONLY) {
+        $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv));
+      }
+      # see Perl_mg_copy() in mg.c
+      $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
+                         $$sv, $$sv, "'D'", cstring($ptr), $len ));
+      if ($sv_flags & SVf_READONLY) {
+        $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv));
       }
     }
     elsif ( $type eq 'n' ) { # shared_scalar is from XS dist/threads-shared
@@ -3286,7 +3290,7 @@ if (0) {
 
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
-  my $name     = cstring($fullname);
+  my $name     = $package eq 'main' ? cstring($gvname) : cstring($fullname);
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
@@ -3315,13 +3319,37 @@ if (0) {
     $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
     return $sym;
   }
+  # those are already initialized in init_predump_symbols()
   elsif ($fullname eq 'main::ENV') {
-    $init->add(qq[$sym = PL_envgv;]);
-    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-    return $sym;
+    return savesym( $gv, "PL_envgv" );
   }
   elsif ($fullname eq 'main::ARGV') {
-    $init->add(qq[$sym = PL_argvgv;]);
+    return savesym( $gv, "PL_argvgv" );
+  }
+  elsif ($fullname eq 'main::INC') {
+    return savesym( $gv, "PL_incgv" );
+  }
+  elsif ($fullname eq 'main::STDIN') {
+    return savesym( $gv, "PL_stdingv" );
+  }
+  elsif ($fullname eq 'main::STDERR') {
+    return savesym( $gv, "PL_stderrgv" );
+  }
+  # initialized in init_main_stash()
+  elsif ($fullname eq "main::\010") { # ^H
+    return savesym( $gv, "PL_hintgv" );
+  }
+  elsif ($fullname eq "main::_") {
+    return savesym( $gv, "PL_defgv" );
+  }
+  elsif ($fullname eq "main::@") {
+    return savesym( $gv, "PL_errgv" );
+  }
+  elsif ($fullname eq "main::\022") { # ^R
+    return savesym( $gv, "PL_replgv" );
+  }
+  elsif ($fullname =~ /^main::std(in|out|err)$/ or $fullname eq 'main::STDOUT') {
+    $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
@@ -3330,24 +3358,10 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
-  elsif ( $fullname eq 'main::!' ) { #let gv_fetchpvn_flags do the Errno loading #90
-    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
-    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-    return $sym;
-  }
-  elsif ( $fullname eq 'main::+' or $fullname eq 'main::-' ) { #gv_fetchpvn_flags does magic #90
-    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
-    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-    return $sym;
-  }
-  if ($fullname =~ /^main::std(in|out|err)$/
-  or $fullname =~ /^main::STD(IN|OUT|ERR)$/) { # stdio already initialized
-    $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
-    $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-    return $sym;
-  }
-  # defer to the end because we remove compiler-internal and skipped stuff
-  #if ($fullname eq 'main::INC' and !$_[2]) {
+  # gv_fetchpv loads Errno resp. Tie::Named::Capture, but needs *INC #90
+  #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
+  #  $init2->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
+  #  $init2->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
   #  return $sym;
   #}
   my $svflags    = $gv->FLAGS;
@@ -3478,10 +3492,10 @@ if (0) {
     }
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
-      if ($PERL510 and $fullname eq 'main::ARGV') {
-        $init->add( '/* Skip overwriting @main::ARGV */' );
-        warn "Skipping GV::save \@$fullname\n" if $debug{gv};
-      } else {
+      #if ($PERL510 and $fullname eq 'main::ARGV') {
+      #  $init->add( '/* Skip overwriting @main::ARGV */' );
+      #  warn "Skipping GV::save \@$fullname\n" if $debug{gv};
+      #} else {
         warn "GV::save \@$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
@@ -3489,15 +3503,15 @@ if (0) {
 	}
         $gvav->save($fullname);
         $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
-      }
+      #}
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
-	  #$init->add("/* \%! force saving of Errno */");
-	  #mark_package('Errno', 1);   # B::C needs Errno but does not import $!
+	  $init->add("/* \%! force saving of Errno */");
+	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
 	  mark_package('Tie::Hash::NamedCapture', 1);
@@ -3649,11 +3663,12 @@ sub B::AV::save {
   return $sym if defined $sym;
 
   $fullname = '' unless $fullname;
-  my ($fill, $avreal);
+  my ($fill, $avreal, $max);
   # cornercase: tied array without FETCHSIZE
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
   my $ispadlist = ref($av) eq 'B::PADLIST';
+  $max = $fill;
   my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
 
   if ($] >= 5.017006 and $ispadlist) {
@@ -3677,7 +3692,7 @@ sub B::AV::save {
   elsif ($PERL514) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
     my $line = "Nullhv, {0}, -1, -1, 0";
-    $line = "Nullhv, {0}, $fill, $fill, 0" if $B::C::av_init or $B::C::av_init2;
+    $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
@@ -3687,8 +3702,8 @@ sub B::AV::save {
   elsif ($PERL510) {
     # 5.9.4+: nvu fill max iv MG STASH
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
-    $line = "{0}, $fill, $fill, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
-    $line = "Nullhv, {0}, $fill, $fill, NULL" if $PERL514;
+    $line = "{0}, $fill, $max, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
+    $line = "Nullhv, {0}, $fill, $max, NULL" if $PERL514;
     $xpvavsect->add($line);
     $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
@@ -3698,7 +3713,7 @@ sub B::AV::save {
   else {
     # 5.8: ARRAY fill max off nv MG STASH ALLOC arylen flags
     my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
-    $line = "0, $fill, $fill, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init or $B::C::av_init2;
+    $line = "0, $fill, $max, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init or $B::C::av_init2;
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
     #$avreal = $av->AvFLAGS & 1; # AVf_REAL
     $xpvavsect->add($line);
@@ -3713,7 +3728,7 @@ sub B::AV::save {
     $av_index = $xpvavsect->index;
     # protect against recursive self-references (Getopt::Long)
     $sym = savesym( $av, "(AV*)&sv_list[$sv_ix]" );
-    $magic = $av->save_magic($fullname);
+    $magic = $av->save_magic($fullname) unless $ispadlist;
   }
 
   if ( $debug{av} ) {
@@ -3866,11 +3881,9 @@ sub B::AV::save {
       my $fill1 = $fill < 3 ? 3 : $fill+1;
       $init->add("{", "\tSV **svp;");
       $init->add("\tregister int gcount;") if $count;
-      $init->add(
-                 "\tAV *av = $sym;",
+      $init->add("\tAV *av = $sym;",
                  "\tav_extend(av, $fill1);",
-                 "\tsvp = AvARRAY(av);"
-                );
+                 "\tsvp = AvARRAY(av);");
       $init->add( substr( $acc, 0, -2 ) );
       $init->add( "\tAvFILLp(av) = $fill;", "}" );
     }
@@ -5616,30 +5629,29 @@ sub save_context {
   warn "save context:\n" if $verbose;
 
   if ($PERL510) {
-    # Tie::Hash::NamedCapture is added for *main::+ or *main::-
-    # Errno is added for *main::! at run-time
-#    no strict 'refs';
-#    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
-#      use strict 'refs';
-#      if (!$include_package{'Tie::Hash::NamedCapture'}) {
-#	$init->add("/* force saving of Tie::Hash::NamedCapture */");
-#	mark_package('Tie::Hash::NamedCapture', 1);
-#      } # else already included
-#    } else {
-#      use strict 'refs';
-#      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
-#    }
-#    no strict 'refs';
-#    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
-#      use strict 'refs';
-#      if (!$include_package{'Errno'}) {
-#	$init->add("/* force saving of Errno */");
-#	mark_package('Errno', 1);
-#      } # else already included
-#    } else {
-#      use strict 'refs';
-#      delete_unsaved_hashINC('Errno');
-#    }
+    # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!
+    no strict 'refs';
+    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
+      use strict 'refs';
+      if (!$include_package{'Tie::Hash::NamedCapture'}) {
+	$init->add("/* force saving of Tie::Hash::NamedCapture */");
+	mark_package('Tie::Hash::NamedCapture', 1);
+      } # else already included
+    } else {
+      use strict 'refs';
+      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
+    }
+    no strict 'refs';
+    if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
+      use strict 'refs';
+      if (!$include_package{'Errno'}) {
+	$init->add("/* force saving of Errno */");
+	mark_package('Errno', 1);
+      } # else already included
+    } else {
+      use strict 'refs';
+      delete_unsaved_hashINC('Errno');
+    }
   }
 
   $init->add("/* curpad names */");
@@ -5662,9 +5674,6 @@ sub save_context {
     inc_cleanup();
     my $inc_gv = svref_2object( \*main::INC );
     $inc_hv    = $inc_gv->HV->save('main::INC');
-    $init->add( sprintf( "GvHV(%s) = s\\_%x;",
-			 $inc_gv->save('main::INC'), $inc_gv->HV ) );
-    # $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
   $init->add(
