@@ -6,7 +6,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 15;
+use Test::More tests => 16;
 my $i=0;
 sub test3 {
   my $name = shift;
@@ -49,4 +49,12 @@ EOF
 
 test3('ccode90i_ep', <<'EOF', '%! pure IV');
 print FH "foo"; print "ok" if $! == 9;
+EOF
+
+ctestok(16, 'C', 'ccode90i_ce', <<'EOF', 'C more @+');
+my $content = "ok\n";
+while ( $content =~ m{\w}g ) {
+    $_ .= "$-[0]$+[0]";
+}
+print "ok" if $_ eq "0112";
 EOF
