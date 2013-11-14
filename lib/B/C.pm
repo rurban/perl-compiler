@@ -4862,11 +4862,11 @@ _EOT9
   @DynaLoader::dl_modules = @dl_modules;
   foreach my $stashname (@dl_modules) {
     my $incpack = inc_packname($stashname);
-    unless (exists $INC{$incpack}) { # skip deleted packages
-      warn "XXX skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
-      delete $xsub{$stashname};
-      @dl_modules = grep { $_ ne $stashname } @dl_modules;
-    }
+    #unless (exists $INC{$incpack}) { # skip deleted packages
+    #  warn "XXX skip dl_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+    #  delete $xsub{$stashname};
+    #  @dl_modules = grep { $_ ne $stashname } @dl_modules;
+    #}
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
