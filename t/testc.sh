@@ -584,6 +584,8 @@ tests[200]='%u=("\x{123}"=>"fo"); print "ok" if $u{"\x{123}"} eq "fo"'
 result[200]='ok'
 tests[2001]='BEGIN{%u=("\x{123}"=>"fo");} print "ok" if $u{"\x{123}"} eq "fo";'
 result[2001]='ok'
+tests[201]='use Storable;*Storable::CAN_FLOCK=sub{1};print qq{ok\n}'
+result[201]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''
