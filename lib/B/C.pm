@@ -3319,36 +3319,27 @@ if (0) {
     $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
     return $sym;
   }
+  my $core_syms = {ENV    => 'PL_envgv',
+                   ARGV   => 'PL_argvgv',
+                   INC    => 'PL_incgv',
+                   STDIN  => 'PL_stdingv',
+                   STDERR => 'PL_stderrgv',
+                   "\010" => 'PL_hintgv',  # ^H
+                   "_"    => 'PL_defgv',
+                   "@"    => 'PL_errgv',
+                   "\022" => 'PL_replgv',  # ^R
+                  };
   # those are already initialized in init_predump_symbols()
-  elsif ($fullname eq 'main::ENV') {
-    return savesym( $gv, "PL_envgv" );
+  # and init_main_stash()
+  for my $s (keys %$core_syms) {
+    if ($fullname eq 'main::'.$s) {
+      $sym = savesym( $gv, $core_syms->{$s} );
+      # $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_GVPV);]);
+      $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+      return $sym;
+    }
   }
-  elsif ($fullname eq 'main::ARGV') {
-    return savesym( $gv, "PL_argvgv" );
-  }
-  elsif ($fullname eq 'main::INC') {
-    return savesym( $gv, "PL_incgv" );
-  }
-  elsif ($fullname eq 'main::STDIN') {
-    return savesym( $gv, "PL_stdingv" );
-  }
-  elsif ($fullname eq 'main::STDERR') {
-    return savesym( $gv, "PL_stderrgv" );
-  }
-  # initialized in init_main_stash()
-  elsif ($fullname eq "main::\010") { # ^H
-    return savesym( $gv, "PL_hintgv" );
-  }
-  elsif ($fullname eq "main::_") {
-    return savesym( $gv, "PL_defgv" );
-  }
-  elsif ($fullname eq "main::@") {
-    return savesym( $gv, "PL_errgv" );
-  }
-  elsif ($fullname eq "main::\022") { # ^R
-    return savesym( $gv, "PL_replgv" );
-  }
-  elsif ($fullname =~ /^main::std(in|out|err)$/ or $fullname eq 'main::STDOUT') {
+  if ($fullname =~ /^main::std(in|out|err)$/ or $fullname eq 'main::STDOUT') {
     $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;

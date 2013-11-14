@@ -213,7 +213,7 @@ sub parse_argv {
     $Options = {};
     # support single dash -Wb. GetOptions requires --Wb with bundling enabled.
     if (my ($wb) = grep /^-Wb=(.+)/, @ARGV) {
-        $Options->{Wb} = substr($wb,4);
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",$wb" : $wb;
         @ARGV = grep !/^-Wb=(.+)/, @ARGV;
     }
     # -O2 i.e. -Wb=-O1 (new since 2.13)
@@ -277,10 +277,10 @@ sub parse_argv {
       die version();
     }
 
-    $Options->{Wb} .= ",-O1" if opt('O1');
-    $Options->{Wb} .= ",-O2" if opt('O2');
-    $Options->{Wb} .= ",-O3" if opt('O3');
-    $Options->{Wb} .= ",-O4" if opt('O4');
+    # $Options->{Wb} .= ",-O1" if opt('O1');
+    # $Options->{Wb} .= ",-O2" if opt('O2');
+    # $Options->{Wb} .= ",-O3" if opt('O3');
+    # $Options->{Wb} .= ",-O4" if opt('O4');
 
     if( $Options->{time} or $Options->{spawn} ) {
       eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
