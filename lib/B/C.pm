@@ -731,8 +731,10 @@ sub save_pv_or_rv {
 	($pv,$cur) = (undef,0);
       }
     }
+    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY);
+    $static = 0 if $fullname =~ /^XSLoader::load /
+      or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-    $static = $B::C::const_strings;
     if ($shared_hek) {
       $len = $static = 0;
     }
@@ -746,8 +748,8 @@ sub save_pv_or_rv {
         $static = 0;
       }
       if ($static) {
-	( $savesym, $len ) = ($B::C::const_strings and $sv->FLAGS & SVf_READONLY)
-	  ? constpv($pv) : savepv($pv);
+	$savesym = constpv($pv);
+        $len = $cur+1;
         $len++ if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
