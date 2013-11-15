@@ -653,38 +653,27 @@ sub savere {
 }
 
 sub constpv {
+  return savepv(shift, 1);
+}
+
+sub savepv {
   my $pv    = pack "a*", shift;
+  my $const = shift;
   return $strtable{$pv} if defined $strtable{$pv};
   my $pvsym = sprintf( "pv%d", $pv_index++ );
-  $strtable{$pv} = "$pvsym";
-  my $const = $B::C::const_strings ? " const" : "";
+  my $const = " const" if $const;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
+    $strtable{$pv} = "$pvsym";
   } else {
     my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
       $decl->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
+      $strtable{$pv} = "$pvsym";
     }
   }
   return wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
-}
-
-sub savepv {
-  return constpv($_[0]) if $B::C::const_strings; # or readonly
-  my $pv    = pack "a*", shift;
-  my $pvsym = sprintf( "pv%d", $pv_index++ );
-  if ( defined $max_string_len && length($pv) > $max_string_len ) {
-    my $chars = join ', ', map { cchar $_ } split //, $pv;
-    $decl->add( sprintf( "Static char %s[] = { %s };", $pvsym, $chars ) );
-  } else {
-    my $cstring = cstring($pv);
-    if ( $cstring ne "0" ) {    # sic
-      $decl->add( sprintf( "Static char %s[] = %s;", $pvsym, $cstring ) );
-    }
-  }
-  my $len = length( pack "a*", $pv ) + 1;
-  return ( $pvsym, $len );
 }
 
 sub save_rv {
@@ -731,13 +720,9 @@ sub save_pv_or_rv {
 	($pv,$cur) = (undef,0);
       }
     }
-    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY);
-    $static = 0 if $fullname =~ /^XSLoader::load /
-      or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-    if ($shared_hek) {
-      $len = $static = 0;
-    }
+    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) and !$shared_hek;
+    $static = 0 if $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
     if ($pok) {
       my $s = "sv_list[" . ($svsect->index + 1) . "]";
       # static pv (!SvLEN) only valid since cd84013aab030da47b76a44fb3 (sv.c: !SvLEN does not mean undefined)
@@ -748,14 +733,17 @@ sub save_pv_or_rv {
         $static = 0;
       }
       if ($static) {
-	$savesym = constpv($pv);
-        $len = $cur+1;
-        $len++ if IsCOW($sv) and $cur;
+	$savesym = IsCOW($sv) ? savepv($pv) : constpv($pv);
+        $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
 	( $savesym, $len ) = ( '(char*)ptr_undef', $cur+1 );
-        $len++ if IsCOW($sv) and $cur;
-        $free->add("    SvFAKE_off(&$s);") if $shared_hek;
+        if ($shared_hek) {
+          $len = 0;
+          $free->add("    SvFAKE_off(&$s);");
+        } else {
+          $len++ if IsCOW($sv) and $cur;
+        }
       }
     } else {
       ( $savesym, $len ) = ( '(char*)ptr_undef', 0 );
