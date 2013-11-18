@@ -3264,7 +3264,7 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  warn sprintf( "  GV $sym type=%d, flags=0x%x\n", B::SV::SvTYPE($gv), $gv->FLAGS )
+  warn sprintf( "  GV $sym type=%d, flags=0x%x %s\n", B::SV::SvTYPE($gv), $gv->FLAGS)
     if $debug{gv} and !$PERL56; # B::SV::SvTYPE not with 5.6
   if ($PERL510 and $gv->FLAGS & 0x40000000) { # SVpbm_VALID
     warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
@@ -3286,7 +3286,7 @@ if (0) {
 }
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
-  return $sym if $skip_package{$package} or $package =~ /^B::C(C?)::/;
+  return $sym if $skip_package{$package}; # or $package =~ /^B::C(C?)::/;
 
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
@@ -3304,14 +3304,6 @@ if (0) {
                       $estash . "::" . $egv->NAME )
             ) if $debug{gv};
         $egvsym = $egv->save;
-        #{
-          #no strict 'refs';
-          # catch imported AUTOLOAD (unused)
-          #svref_2object( \*{"$estash\::AUTOLOAD"} )->save
-          #  if $estash and defined ${"$estash\::"}{AUTOLOAD};
-          #svref_2object( \*{"$estash\::CLONE"} )->save
-          #  if $estash and defined ${"$estash\::"}{CLONE};
-        #}
       }
     }
   }
@@ -3367,6 +3359,7 @@ if (0) {
   my $gp;
   if ( $PERL510 and $gv->isGV_with_GP ) {
     $gp = $gv->GP;    # B limitation
+    # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
       # Shared glob *foo = *bar
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
@@ -3374,8 +3367,7 @@ if (0) {
       $is_empty = 1;
     }
     elsif ( $gp and !$is_empty ) {
-      warn(sprintf(
-                   "New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
+      warn(sprintf("New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
@@ -3502,6 +3494,8 @@ if (0) {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
 	  $init->add("/* \%! force saving of Errno */");
+	  mark_package('Config', 1);  # Errno needs Config to set the EGV
+          walk_syms('Config');
 	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
@@ -3966,7 +3960,7 @@ sub B::HV::save {
 		 "\tNewx(aux, 1, struct xpvhv_aux);",
 		 sprintf("\tHvARRAY($sym)[%d] = (HE*)aux;", $hv_max),
 		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),
-		 "\tHvEITER_set($sym, NULL); }");
+		 "\tHvEITER_set($sym, NULL);","}");
     }
   } # !5.10
   else {
@@ -5206,7 +5200,7 @@ sub B::GV::savecv {
   my $hv      = $gv->HV;
 
   my $fullname = $package . "::" . $name;
-  warn sprintf( "Checking GV &%s 0x%x\n", cstring($fullname), $$gv )
+  warn sprintf( "Checking GV *%s 0x%x\n", cstring($fullname), $$gv )
     if $debug{gv};
 
   # We may be looking at this package just because it is a branch in the
@@ -5217,7 +5211,7 @@ sub B::GV::savecv {
   return if ( $package eq 'main' and
   	      $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
-  warn sprintf( "Used GV \&$fullname 0x%x\n", $$gv ) if $debug{gv};
+  warn sprintf( "Used GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv );
   if ($$cv and $name eq 'bootstrap' and $cv->XSUB) {
     #return $cv->save($fullname);
@@ -5236,15 +5230,23 @@ sub B::GV::savecv {
   if ($name eq 'Config') {
     mark_package('Config', 1) if !$include_package{'Config'};
   }
-  warn sprintf( "Saving GV &$fullname 0x%x\n", $$gv ) if $debug{gv};
+  warn sprintf( "Saving GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save($fullname);
+}
+
+sub walk_syms {
+  my $package = shift;
+  no strict 'refs';
+  walksymtable( \%{$package.'::'}, "savecv",
+                sub { should_save( $_[0] ); return 1 },
+                $package.'::' );
 }
 
 sub mark_package {
   my $package = shift;
   my $force = shift;
   $force = 0 if $] < 5.010;
-  return if $skip_package{$package} or $package =~ /^B::C(C?)::/;
+  return if $skip_package{$package}; # or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
@@ -5259,9 +5261,7 @@ sub mark_package {
 		   $force?" (forced)":"") if $verbose;
       # $include_package{$package} = 1;
       add_hashINC( $package );
-      walksymtable( \%{$package.'::'}, "savecv",
-		    sub { should_save( $_[0] ); return 1 },
-		    $package.'::' );
+      walk_syms( $package );
     } else {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
@@ -5285,7 +5285,7 @@ sub mark_package {
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
 	    mark_package($isa);
-	    walksymtable( \%{$isa.'::'}, "savecv", \&should_save, $isa.'::' );
+            walk_syms($isa);
           } else {
 	    #warn "isa $isa save\n" if $verbose;
             mark_package($isa);
@@ -5637,6 +5637,8 @@ sub save_context {
       use strict 'refs';
       if (!$include_package{'Errno'}) {
 	$init->add("/* force saving of Errno */");
+	mark_package('Config', 1);
+        walk_syms('Config');
 	mark_package('Errno', 1);
       } # else already included
     } else {

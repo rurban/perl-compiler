@@ -1,5 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=27
+# run-time require fails at *DynaLoader::Config = *Config::Config
 use strict;
 BEGIN {
   unless (eval "require LWP::UserAgent;") {
