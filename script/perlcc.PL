@@ -212,8 +212,8 @@ sub parse_argv {
 
     $Options = {};
     # support single dash -Wb. GetOptions requires --Wb with bundling enabled.
-    if (my ($wb) = grep /^-Wb=(.+)/, @ARGV) {
-        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",$wb" : $wb;
+    if (my ($wb) = grep /^-Wb=.+/, @ARGV) {
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",".substr($wb,4) : substr($wb,4);
         @ARGV = grep !/^-Wb=(.+)/, @ARGV;
     }
     # -O2 i.e. -Wb=-O1 (new since 2.13)
