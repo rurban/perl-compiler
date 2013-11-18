@@ -3249,8 +3249,9 @@ sub B::CV::save {
   return $sym;
 }
 
+package B::C;
 my @_v = Internals::V() if $] >= 5.011;
-sub B::_V { @_v };
+sub __ANON__::_V { @_v };
 
 sub B::GV::save {
   my ($gv) = @_;
@@ -3341,7 +3342,7 @@ if (0) {
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
-  # gv_fetchpv loads Errno resp. Tie::Named::Capture, but needs *INC #90
+  # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
   #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
   #  $init2->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
   #  $init2->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
@@ -3482,6 +3483,10 @@ if (0) {
         warn "GV::save \@$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
+          if ($] >= 5.014) {
+            mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
+            walk_syms('Config');
+          }
 	  mark_package('Tie::Hash::NamedCapture', 1);
 	}
         $gvav->save($fullname);
@@ -3499,6 +3504,10 @@ if (0) {
 	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
+          if ($] >= 5.014) {
+            mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
+            walk_syms('Config');
+          }
 	  mark_package('Tie::Hash::NamedCapture', 1);
 	}
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
@@ -3552,7 +3561,7 @@ if (0) {
       }
       elsif (!$PERL510 or $gp) {
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
-	  $gvcv = svref_2object( \&B::_V );
+	  $gvcv = svref_2object( \&__ANON__::_V );
 	}
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
@@ -5626,6 +5635,10 @@ sub save_context {
       use strict 'refs';
       if (!$include_package{'Tie::Hash::NamedCapture'}) {
 	$init->add("/* force saving of Tie::Hash::NamedCapture */");
+        if ($] >= 5.014) {
+          mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
+          walk_syms('Config');
+        }
 	mark_package('Tie::Hash::NamedCapture', 1);
       } # else already included
     } else {
