@@ -2176,15 +2176,6 @@ sub B::REGEXP::save {
   my $ix = $svsect->index;
   warn "Saving RX \"".$sv->PV."\" to sv_list[$ix], called from @{[(caller(1))[3]]}, "
     ."@{[(caller(2))[3]]}, @{[(caller(3))[3]]}, @{[(caller(4))[3]]}\n" if $debug{rx} or $debug{sv};
-  if (0) {
-    my $pkg = $sv->SvSTASH;
-    if ($$pkg) {
-      warn sprintf("stash isa class($pkg) 0x%x\n", $$pkg) if $debug{mg} or $debug{gv};
-      $pkg->save;
-      $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
-      $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-    }
-  }
   if ($] > 5.011) {
     $init->add(# replace XVP with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(&sv_list[$ix], 0x%x));",
@@ -6268,6 +6259,10 @@ prints B<GV> information on saving.
 =item B<-DM>
 
 prints B<MAGIC> information on saving.
+
+=item B<-DR>
+
+prints B<REGEXP> information on saving.
 
 =item B<-Dp>
 

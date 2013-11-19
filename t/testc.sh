@@ -555,12 +555,11 @@ tests[142]='$_ = "abc\x{1234}";chop;print "ok" if $_ eq "abc"'
 result[142]='ok'
 tests[143]='BEGIN {
   package Net::IDN::Encode;
-  use utf8;
-  our $DOT	= qr/[\.]/;
-  my $RE  = qr/\p{Ccc:Virama}/;
+  our $DOT = qr/[\.]/; #works with my!
+  my $RE  = qr/xx/;
   sub domain_to_ascii {
     my $x = shift || "";
-    $x =~ m/$RE/xo;
+    $x =~ m/$RE/o;
     return split( qr/($DOT)/o, $x);
   }
 }
