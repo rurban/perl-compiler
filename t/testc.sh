@@ -553,7 +553,20 @@ tests[141]='@x=(0..1);print "ok" if $#x == "1"'
 result[141]='ok'
 tests[142]='$_ = "abc\x{1234}";chop;print "ok" if $_ eq "abc"'
 result[142]='ok'
-tests[143]='use Net::IDN::Encode (); Net::IDN::Encode::domain_to_ascii(42);'
+tests[143]='BEGIN {
+  package Net::IDN::Encode;
+  use utf8;
+  our $DOT	= qr/[\.]/;
+  my $RE  = qr/\p{Ccc:Virama}/;
+  sub domain_to_ascii {
+    my $x = shift || "";
+    $x =~ m/$RE/xo;
+    return split( qr/($DOT)/o, $x);
+  }
+}
+package main;
+Net::IDN::Encode::domain_to_ascii(42);
+print "ok\n";'
 result[143]='ok'
 tests[144]='print index("long message\0xx","\0")'
 result[144]='12'
