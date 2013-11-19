@@ -35,6 +35,7 @@
         Fix UV uvuformat on 32bit -Duse64bitint (#145)
         op_pmreplstart is now run-time initialized >= 5.10 (#160)
         Fixed special usage of magic vars @-,@+,%+,$-,$! (#90)
+        Fixed wrong REGEXP length for compiled QR data (#143)
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.

@@ -2178,8 +2178,10 @@ sub B::REGEXP::save {
     ."@{[(caller(2))[3]]}, @{[(caller(3))[3]]}, @{[(caller(4))[3]]}\n" if $debug{rx} or $debug{sv};
   if ($] > 5.011) {
     $init->add(# replace XVP with struct regexp. need pv and extflags
-               sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(&sv_list[$ix], 0x%x));",
-		     $sv->EXTFLAGS));
+               sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
+                       cstring($pv), $cur, $sv->EXTFLAGS),
+               sprintf("SvCUR(&sv_list[$ix]) = %d;", $cur),
+               "SvLEN(&sv_list[$ix]) = 0;");
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
@@ -3926,7 +3928,7 @@ sub B::HV::save {
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
     if (!$B::C::stash) {
-      # $hv->save_magic('%'.$fullname.'::'); #symtab magic set in PMOP #188
+      $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188
       return $sym;
     }
     return $sym if skip_pkg($name);
