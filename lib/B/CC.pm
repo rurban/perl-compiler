@@ -399,6 +399,17 @@ BEGIN {
   } else {
     B->import('SVs_RMG');
   }
+  if ($] <= 5.010) {
+    eval "sub PMf_ONCE() {0xff}; # unused";
+  } elsif ($] >= 5.018) { # PMf_ONCE not exported
+    eval q[sub PMf_ONCE(){ 0x10000 }];
+  } elsif ($] >= 5.014) {
+    eval q[sub PMf_ONCE(){ 0x8000 }];
+  } elsif ($] >= 5.012) {
+    eval q[sub PMf_ONCE(){ 0x0080 }];
+  } else { # 5.10. not used with <= 5.8
+    eval q[sub PMf_ONCE(){ 0x0002 }];
+  }
 }
 
 # Could rewrite push_runtime() and output_runtime() to use a
@@ -1781,7 +1792,7 @@ sub pp_aelemfast {
       my $gv = $op->gv;
       $gvsym = $gv->save;
       my $gvav = $gv->AV; # test 16, tied gvav
-      $rmg  = ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
+      $rmg  = $] < 5.007 ? 0 : ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
     }
     $av = "GvAV($gvsym)";
   }

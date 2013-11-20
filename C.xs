@@ -36,6 +36,8 @@ typedef struct {
   IV  require_tag;
 } a_hint_t;
 
+#if PERL_VERSION >= 10
+
 static const char* const svclassnames[] = {
     "B::NULL",
 #if PERL_VERSION < 19
@@ -98,6 +100,8 @@ make_sv_object(pTHX_ SV *sv)
     sv_setiv(newSVrv(arg, type), iv);
     return arg;
 }
+
+#endif
 
 static int
 my_runops(pTHX)
@@ -285,6 +289,8 @@ op_folded(op)
 
 MODULE = B	PACKAGE = B::HV		PREFIX = Hv
 
+#if PERL_VERSION >= 10
+
 void
 HvARRAY_utf8(hv)
 	B::HV	hv
@@ -304,6 +310,8 @@ HvARRAY_utf8(hv)
 		PUSHs(make_sv_object(aTHX_ HeVAL(he)));
 	    }
 	}
+
+#endif
 
 MODULE = B__C	PACKAGE = B::C
 
@@ -344,8 +352,9 @@ method_cv(meth, packname)
 #endif
 
 BOOT:
-    MY_CXT_INIT;
     PL_runops = my_runops;
+#if PERL_VERSION >= 10
+    MY_CXT_INIT;
     specialsv_list[0] = Nullsv;
     specialsv_list[1] = &PL_sv_undef;
     specialsv_list[2] = &PL_sv_yes;
@@ -353,3 +362,4 @@ BOOT:
     specialsv_list[4] = (SV *) pWARN_ALL;
     specialsv_list[5] = (SV *) pWARN_NONE;
     specialsv_list[6] = (SV *) pWARN_STD;
+#endif

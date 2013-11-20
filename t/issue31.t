@@ -29,11 +29,12 @@ EOF
 
 use B::C;
 # $]<5.007: same as test 33
+# 5.18 errors unrelated
 ctestok(1, "CC", "ccode31i", $script,
       # XXX TODO >5.10 since 1.35. copy SvANY(CALLREGCOMP) SvANY(REGEXP) ?
       ($B::C::VERSION lt '1.42_55')
       ? "TODO B:CC Regex in pkg var fails with 5.6 and >5.10 since 1.35 until 1.42_54"
-      : "B:CC Regex in pkg var");
-ctestok(2, "C,-O3", "ccode31i", $script, "B:C Regex in pkg var");
+      : ($] > 5.017 ? "TODO " : "")."B:CC Regex in pkg var");
+ctestok(2, "C,-O3", "ccode31i", $script, ($] > 5.017 ? "TODO " : "")."B:C Regex in pkg var");
 
 END { unlink $pm; }

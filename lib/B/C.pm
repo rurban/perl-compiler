@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_55';
+our $VERSION = '1.42_56';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -205,7 +205,7 @@ our %Regexp;
   my $caller = caller;
   if ( $caller eq 'O' or $caller eq 'Od' ) {
     require XSLoader;
-    XSLoader::load('B::C'); # for r-magic only
+    XSLoader::load('B::C'); # for r-magic and for utf8-keyed B::HV->ARRAY
   }
 }
 
@@ -215,8 +215,8 @@ our @EXPORT_OK =
      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
      save_sig svop_or_padop_pv inc_cleanup ivx nvx);
 
-# for 5.6 better use the native B::C
-# 5.6.2 works fine though.
+# for 5.6.[01] better use the native B::C
+# but 5.6.2 works fine
 use B
   qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
@@ -232,6 +232,7 @@ BEGIN {
       sub SVp_NOK() {0}; # unused
       sub SVp_IOK() {0};
       sub CVf_ANON() {4};
+      sub PMf_ONCE() {0xff}; # unused
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
@@ -1613,7 +1614,7 @@ sub B::PMOP::save {
       );
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
-      if ($op->pmflags & PMf_ONCE) {
+      if ($PERL510 and $op->pmflags & PMf_ONCE()) {
         my $stash = $MULTI ? $op->pmstashpv
           : ref $op->pmstash eq 'B::HV' ? $op->pmstash->NAME : '__ANON__';
         warn "TODO #188: restore PMf_ONCE, set PERL_MAGIC_symtab in $stash";
@@ -3982,7 +3983,8 @@ sub B::HV::save {
   warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
                 $$hv, $hv->MAX ) if $debug{hv};
   # XXX B does not keep the UTF8 flag [RT 120535] #200
-  my @contents = $hv->can('ARRAY_utf8') ? $hv->ARRAY_utf8 : $hv->ARRAY; # our fixed C.xs variant
+  # shared heks only since 5.10
+  my @contents = ($PERL510 && $hv->can('ARRAY_utf8')) ? $hv->ARRAY_utf8 : $hv->ARRAY; # our fixed C.xs variant
   # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
   # value => rv => cv => ... => rv => same hash
@@ -4037,7 +4039,7 @@ sub B::HV::save {
       }
       $init->add("}");
       $init->split;
-      $init->add( sprintf("HvTOTALKEYS($sym) = %d;", $length / 2));
+      $init->add( sprintf("HvTOTALKEYS($sym) = %d;", $length / 2)) if !$PERL56;
       $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
     }
   } elsif ($] >= 5.014) { # empty contents still needs to set keys=0
