@@ -686,6 +686,8 @@ sub save_pv_or_rv {
 
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
+  my $SVs_GMG = $PERL510 ? 0x00200000 : 0x00002000;
+  my $gmg = $sv->FLAGS & $SVs_GMG;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 0 );
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
@@ -696,10 +698,17 @@ sub save_pv_or_rv {
   }
   else {
     if ($pok) {
-      $pv = pack "a*", $sv->PV;
+      $pv = pack "a*", $gmg ? $sv->PV : $sv->PVX;
       $cur = $sv->CUR;
     } else {
-      ($pv,$cur) = (undef,0);
+      if ($gmg && $fullname) {
+	no strict 'refs';
+	$pv = "${$fullname}";
+	$cur = length (pack "a*", $pv);
+	$pok = 1;
+      } else {
+	($pv,$cur) = (undef,0);
+      }
     }
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
     local $B::C::pv_copy_on_grow if $shared_hek;

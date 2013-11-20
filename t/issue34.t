@@ -60,4 +60,4 @@ line2
 2:
 EOF1
 
-test(1, $script, $expected, 'B::C,-O4 issue 34 $/=undef ignored');
+test(1, $script, $expected, 'B::CC issue 34 $/=undef ignored');
