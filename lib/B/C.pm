@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_54';
+our $VERSION = '1.42_55';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -2169,17 +2169,21 @@ sub B::REGEXP::save {
   return $sym if defined $sym;
   my $pv = $sv->PV;
   my $cur = $sv->CUR;
+  # construct original PV
+  $pv =~ s/^\(\?\^[adluimsx-]*\://;
+  $pv =~ s/\)$//;
+  $cur -= length($sv->PV) - length($pv);
+  my $cstr = cstring($pv);
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
   $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
   $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
-  		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, cstring($pv)));
+		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, $cstr));
   my $ix = $svsect->index;
-  warn "Saving RX \"".$sv->PV."\" to sv_list[$ix], called from @{[(caller(1))[3]]}, "
-    ."@{[(caller(2))[3]]}, @{[(caller(3))[3]]}, @{[(caller(4))[3]]}\n" if $debug{rx} or $debug{sv};
+  warn "Saving RX \"$cstr\" to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
   if ($] > 5.011) {
     $init->add(# replace XVP with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
-                       cstring($pv), $cur, $sv->EXTFLAGS),
+                       $cstr, $cur, $sv->EXTFLAGS),
                sprintf("SvCUR(&sv_list[$ix]) = %d;", $cur),
                "SvLEN(&sv_list[$ix]) = 0;");
   }
