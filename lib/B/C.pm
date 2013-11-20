@@ -1811,7 +1811,8 @@ sub savepvn {
       }
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), $sv->CUR );
+      my $cur = $sv ? $sv->CUR : length(pack "a*", $pv);
+      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), $cur );
     }
   }
   return @init;
