@@ -492,6 +492,10 @@ result[104]='12'
 tests[105]='%int::;%double::;my int $r;my int $i=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 result[105]='12'
 
+# issue31
+tests[131]='package Ccode31i;my $regex = qr/\w+/;sub test {print ("word" =~ m/^$regex$/o ? "ok\n" : "not ok\n");}
+package main; &Ccode31i::test();'
+result[131]='ok'
 # issue35
 tests[110]='sub new{}sub test{{my $x=1;my $y=$x+1;}my $x=2;if($x!=3){4;}}'
 result[110]=''
