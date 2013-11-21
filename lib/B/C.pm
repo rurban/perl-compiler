@@ -426,8 +426,9 @@ sub XSLoader::load_file {
   # skip the .bs "bullshit" part, needed for some old solaris ages ago
 
   goto \&DynaLoader::bootstrap_inherit if not -f $file;
-  my $bootname = "boot_$module";
-  $bootname =~ s/\W/_/g;
+  my $modxsname = $module;
+  $modxsname =~ s/\W/_/g;
+  my $bootname = "boot_".$modxsname;
   @DynaLoader::dl_require_symbols = ($bootname);
 
   my $boot_symbol_ref;
@@ -4307,12 +4308,11 @@ sub output_all {
   return if $check;
 
   my @sections = (
-    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
-    $listopsect, $pmopsect,  $svopsect,  $padopsect, $pvopsect,
-    $loopsect,   $copsect,   $svsect,    $xpvsect,
-    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect,
-    $xpvivsect,  $xpvuvsect, $xpvnvsect, $xpvmgsect, $xpvlvsect,
-    $xrvsect,    $xpvbmsect,  $xpviosect,
+    $copsect,    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
+    $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
+    $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect,
+    $xpvivsect,  $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+    $xrvsect,    $xpvbmsect,  $xpviosect, $svsect
   );
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
   $symsect->output( \*STDOUT, "#define %s\n" );
@@ -4376,7 +4376,6 @@ EOT
   foreach $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
-      my $name = $section->name;
       printf "Static %s %s_list[%u] = {\n", $section->typename, $section->name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
