@@ -248,7 +248,9 @@ BEGIN {
   }
   if ($] >= 5.010) {
     require mro; mro->import;
-    sub SVf_OOK() { 0x02000000 }; # not exported
+    # not exported:
+    sub SVf_OOK { 0x02000000 }
+    sub SVs_GMG { 0x00200000 }
     if ($] >= 5.018) {  # PMf_ONCE also not exported
       eval q[sub PMf_ONCE(){ 0x10000 }];
     } elsif ($] >= 5.014) {
@@ -258,6 +260,8 @@ BEGIN {
     } else { # 5.10. not used with <= 5.8
       eval q[sub PMf_ONCE(){ 0x0002 }];
     }
+  } else {
+    sub SVs_GMG { 0x00002000 }
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -696,8 +700,7 @@ sub save_pv_or_rv {
 
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
-  my $SVs_GMG = $PERL510 ? 0x00200000 : 0x00002000;
-  my $gmg = $sv->FLAGS & $SVs_GMG;
+  my $gmg = $sv->FLAGS & SVs_GMG;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 0 );
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
