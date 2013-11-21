@@ -45,6 +45,16 @@ sub index {
   return scalar( @{ $section->[-1]{values} } ) - 1;
 }
 
+sub typename {
+  my $section = shift;
+  my $name = $section->name;
+  my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
+  # -fcog hack to statically initialize PVs (SVPV for 5.10-5.11 only)
+  $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012;
+  # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
+  return $typename;
+}
+
 sub comment {
   my $section = shift;
   $section->[-1]{comment} = join( "", @_ ) if @_;
@@ -4310,9 +4320,7 @@ sub output_all {
     my $lines = $section->index + 1;
     if ($lines) {
       my $name = $section->name;
-      my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-      # -fcog hack to statically initialize PVs (SVPV for 5.10-5.11 only)
-      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $] < 5.012;
+      my $typename = $section->typename;
       print "Static $typename ${name}_list[$lines];\n";
     }
   }
@@ -4366,9 +4374,7 @@ EOT
     my $lines = $section->index + 1;
     if ($lines) {
       my $name = $section->name;
-      my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-      $typename = 'SVPV' if $typename eq 'SV' and $PERL510 and $] < 5.012;
-      printf "Static %s %s_list[%u] = {\n", $typename, $name, $lines;
+      printf "Static %s %s_list[%u] = {\n", $section->typename, $section->name, $lines;
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
       $section->output( \*STDOUT, "\t{ %s }, /* %s_list[%d] %s */%s\n" );
