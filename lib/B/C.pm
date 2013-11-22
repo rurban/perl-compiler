@@ -723,6 +723,10 @@ sub save_pv_or_rv {
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY);
     $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
+    if ($PERL510) { # force dynamic PADNAME strings
+      if ($] < 5.016) { $static = 0 if $sv->FLAGS & 0x40000000; }      # SVpad_NAME
+      else { $static = 0 if ($sv->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
+    }
     if ($pok) {
       my $s = "sv_list[" . ($svsect->index + 1) . "]";
       # static pv (!SvLEN) only valid since cd84013aab030da47b76a44fb3 (sv.c: !SvLEN does not mean undefined)
@@ -737,7 +741,7 @@ sub save_pv_or_rv {
         $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
-	( $savesym, $len ) = ( '(char*)ptr_undef', $cur+1 );
+	( $savesym, $len ) = ( 'ptr_undef', $cur+1 );
         if ($shared_hek) {
           $len = 0;
           $free->add("    SvFAKE_off(&$s);");
@@ -746,7 +750,7 @@ sub save_pv_or_rv {
         }
       }
     } else {
-      ( $savesym, $len ) = ( '(char*)ptr_undef', 0 );
+      ( $savesym, $len ) = ( 'ptr_undef', 0 );
     }
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
@@ -1927,7 +1931,7 @@ sub B::PVIV::save {
   }
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
-            $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {(char*)ptr_undef}' : '' ) );
+            $xpvivsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ", {(char*)$savesym}" : '' ) );
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
@@ -1997,7 +2001,7 @@ sub B::PVNV::save {
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
-            $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {(char*)ptr_undef}' : '' ) );
+            $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ", {(char*)$savesym}" : '' ) );
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
@@ -2092,8 +2096,7 @@ sub B::PV::save {
     }
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
-                           $xpvsect->index, $refcnt, $flags,
-                           defined($pv) && $static ? "(char*)$savesym" : "(char*)ptr_undef"));
+                           $xpvsect->index, $refcnt, $flags, "(char*)$savesym" ));
     if ( defined($pv) and !$static ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv ) );
     }
@@ -2200,7 +2203,7 @@ sub B::PVMG::save {
 	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
 				 $svsect->index+1 ) );
 	  } else {
-	    $savesym = '(char*)&PL_sv_undef';
+	    $savesym = '&PL_sv_undef';
 	  }
 	}
       }
@@ -2224,7 +2227,7 @@ sub B::PVMG::save {
 			    $nvx, $cur, $len, $ivx));
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
-                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, "(char*)".$savesym));
+                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, "(char*)$savesym"));
   }
   else {
     # cannot initialize this pointer static
@@ -3731,8 +3734,15 @@ sub B::AV::save {
     # Init optimization by Nick Koston
     # The idea is to create loops so there is less C code. In the real world this seems
     # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
-    my $count;
-    my @values = map { $_->save($fullname."[".$count++."]") || () } @array;
+    my ($count, @values);
+    {
+      local $B::C::const_strings = $B::C::const_strings;
+      if ($PERL510) { # force dynamic PADNAME strings
+        if ($] < 5.016) { $B::C::const_strings = 0 if $av->FLAGS & 0x40000000; }      # SVpad_NAME
+        else { $B::C::const_strings = 0 if ($av->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
+      }
+      @values = map { $_->save($fullname."[".$count++."]") || () } @array;
+    }
     $count = 0;
     for (my $i=0;$i<=$#array;$i++) {
       if ( $use_svpop_speedup
@@ -3959,8 +3969,13 @@ sub B::HV::save {
   # value => rv => cv => ... => rv => same hash
   $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
   if (@contents) {
+    local $B::C::const_strings = $B::C::const_strings;
     my ($i, $length);
     $length = scalar(@contents);
+    #if ($PERL510) { # force dynamic PADNAME strings
+    #  if ($] < 5.016) { $B::C::const_strings = 0 if $hv->FLAGS & 0x40000000; }      # SVpad_NAME
+    #  else { $B::C::const_strings = 0 if ($hv->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
+    #}
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
       my $key = $contents[$i - 1];
       my $sv = $contents[$i];
@@ -5623,16 +5638,17 @@ sub save_context {
     }
   }
 
-  $init->add("/* curpad names */");
-  warn "curpad names:\n" if $verbose;
-  # Record comppad sv's names, may not be static
-  local $B::C::const_strings;
-  #my $svi = $svsect->index;
-  my $curpad_nam      = ( comppadlist->ARRAY )[0]->save('curpad_name');
-  # XXX from $svi to $svsect->index we have new sv's
-  warn "curpad syms:\n" if $verbose;
-  $init->add("/* curpad syms */");
-  my $curpad_sym      = ( comppadlist->ARRAY )[1]->save('curpad_syms');
+  my ($curpad_nam, $curpad_sym);
+  {
+    # Record comppad sv's names, may not be static
+    local $B::C::const_strings = 0;
+    $init->add("/* curpad names */");
+    warn "curpad names:\n" if $verbose;
+    $curpad_nam      = ( comppadlist->ARRAY )[0]->save('curpad_name');
+    warn "curpad syms:\n" if $verbose;
+    $init->add("/* curpad syms */");
+    $curpad_sym      = ( comppadlist->ARRAY )[1]->save('curpad_syms');
+  }
   my ($inc_hv, $inc_av);
   {
     local $B::C::const_strings = 1 if $B::C::ro_inc;
