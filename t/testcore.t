@@ -21,7 +21,7 @@ use Cwd;
 use File::Copy;
 
 BEGIN {
-  unless (-d "t/CORE") {
+  unless (-d "t/CORE" or $ENV{NO_AUTHOR}) {
     print "1..0 #skip t/CORE missing. Read t/testcore.t how to setup.\n";
     exit 0;
   }

@@ -290,7 +290,7 @@ sub ccflags {
     my $ccflags = shift->SUPER::ccflags(@_);
     $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $have_independent_comalloc;
     $ccflags .= $extra_cflags if $extra_cflags;
-    return $ccflags unless -d ".svn" or -d ".git";
+    return $ccflags if !-d ".git" or $ENV{NO_AUTHOR};
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
     $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
