@@ -3737,7 +3737,7 @@ sub B::AV::save {
     my ($count, @values);
     {
       local $B::C::const_strings = $B::C::const_strings;
-      if ($PERL510) { # force dynamic PADNAME strings
+      if ($PERL510 and !$ispadlist) { # force dynamic PADNAME strings
         if ($] < 5.016) { $B::C::const_strings = 0 if $av->FLAGS & 0x40000000; }      # SVpad_NAME
         else { $B::C::const_strings = 0 if ($av->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
       }
