@@ -721,8 +721,8 @@ sub save_pv_or_rv {
       }
     }
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) and !$shared_hek;
-    $static = 0 if $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
+    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY);
+    $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
     if ($pok) {
       my $s = "sv_list[" . ($svsect->index + 1) . "]";
       # static pv (!SvLEN) only valid since cd84013aab030da47b76a44fb3 (sv.c: !SvLEN does not mean undefined)
