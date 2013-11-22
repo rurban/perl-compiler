@@ -5626,7 +5626,7 @@ sub save_context {
   $init->add("/* curpad names */");
   warn "curpad names:\n" if $verbose;
   # Record comppad sv's names, may not be static
-  local $B::C::pv_copy_on_grow;
+  local $B::C::const_strings;
   #my $svi = $svsect->index;
   my $curpad_nam      = ( comppadlist->ARRAY )[0]->save('curpad_name');
   # XXX from $svi to $svsect->index we have new sv's
@@ -5635,9 +5635,7 @@ sub save_context {
   my $curpad_sym      = ( comppadlist->ARRAY )[1]->save('curpad_syms');
   my ($inc_hv, $inc_av);
   {
-    #local $B::C::pv_copy_on_grow;
-    #$B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-    $B::C::const_strings = 1 if $B::C::ro_inc;
+    local $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
     inc_cleanup();
