@@ -250,7 +250,7 @@ BEGIN {
     require mro; mro->import;
     # not exported:
     sub SVf_OOK { 0x02000000 }
-    sub SVs_GMG { 0x00200000 }
+    eval q[sub SVs_GMG { 0x00200000 }];
     if ($] >= 5.018) {  # PMf_ONCE also not exported
       eval q[sub PMf_ONCE(){ 0x10000 }];
     } elsif ($] >= 5.014) {
@@ -261,7 +261,7 @@ BEGIN {
       eval q[sub PMf_ONCE(){ 0x0002 }];
     }
   } else {
-    sub SVs_GMG { 0x00002000 }
+    eval q[sub SVs_GMG { 0x00002000 }];
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -661,7 +661,7 @@ sub savepv {
   my $const = shift;
   return $strtable{$pv} if defined $strtable{$pv};
   my $pvsym = sprintf( "pv%d", $pv_index++ );
-  my $const = " const" if $const;
+  my $const = " const" if $B::C::const_strings;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
@@ -721,7 +721,7 @@ sub save_pv_or_rv {
       }
     }
     my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
-    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY);
+    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
     $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
     if ($PERL510) { # force dynamic PADNAME strings
       if ($] < 5.016) { $static = 0 if $sv->FLAGS & 0x40000000; }      # SVpad_NAME
