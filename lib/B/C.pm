@@ -1873,7 +1873,7 @@ sub B::PVLV::save {
        sprintf("Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %s, %u, %u, Nullsv, %s",
 	       $cur, $len, nvx($sv->NVX),
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
-    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {(char*)%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } elsif ($PERL510) {
     $xpvlvsect->comment('xnv_u, CUR, LEN, GvNAME, MAGIC, STASH, TARGOFF, TARGLEN, TARG, TYPE');
@@ -1886,7 +1886,7 @@ sub B::PVLV::save {
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TARG, TYPE');
     $xpvlvsect->add(
-       sprintf("%s, %u, %u, %s, %s, 0, 0, %u, %u, Nullsv, %s",
+       sprintf("(char*)%s, %u, %u, %s, %s, 0, 0, %u, %u, Nullsv, %s",
 	       $pvsym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
@@ -1926,7 +1926,7 @@ sub B::PVIV::save {
   } else {
     #$iv = 0 if $sv->FLAGS & (SVf_IOK|SVp_IOK);
     $xpvivsect->comment('PVX, cur, len, IVX');
-    $xpvivsect->add( sprintf( "%s, %u, %u, %s",
+    $xpvivsect->add( sprintf( "(char*)%s, %u, %u, %s",
 			      $savesym, $cur, $len, ivx($sv->IVX) ) ); # IVTYPE long
   }
   $svsect->add(
@@ -1996,7 +1996,7 @@ sub B::PVNV::save {
       $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", 'NULL', $cur, $len, $ivx, $nvx ) );
       $init->add(sprintf("xpvnv_list[%d].xpv_pv = %s;", $xpvnvsect->index, $savesym));
     } else {
-      $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
+      $xpvnvsect->add(sprintf( "(char*)%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
     }
   }
   $svsect->add(
@@ -2226,8 +2226,8 @@ sub B::PVMG::save {
       $xpvmgsect->add(sprintf("{%s}, %u, %u, {%s}, {0}, Nullhv",
 			    $nvx, $cur, $len, $ivx));
     }
-    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
-                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, "(char*)$savesym"));
+    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {(char*)%s}",
+                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS, $savesym));
   }
   else {
     # cannot initialize this pointer static
@@ -2237,7 +2237,7 @@ sub B::PVMG::save {
       $init->add( sprintf( "xpvmg_list[%d].xpv_pv = $savesym;",
 			   $xpvmgsect->index ) );
     } else {
-      $xpvmgsect->add(sprintf("%s, %u, %u, %s, %s, 0, 0",
+      $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
 			      $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
       #push @static_free, sprintf("sv_list[%d]", $svsect->index+1)
       #  if $len and $B::C::pv_copy_on_grow and !$in_endav;
