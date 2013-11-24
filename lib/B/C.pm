@@ -661,7 +661,7 @@ sub savepv {
   my $const = shift;
   return $strtable{$pv} if defined $strtable{$pv};
   my $pvsym = sprintf( "pv%d", $pv_index++ );
-  my $const = " const" if $B::C::const_strings;
+  $const = " const" if $const;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
