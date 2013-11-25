@@ -3348,11 +3348,6 @@ if (0) {
   my $gp;
   if ( $PERL510 and $gv->isGV_with_GP ) {
     $gp = $gv->GP;    # B limitation
-    my $gpp;
-    {
-      no strict 'refs';
-      $gpp = $$gp if $gp;
-    }
     # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
       # Shared glob *foo = *bar
@@ -3360,13 +3355,13 @@ if (0) {
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
-    elsif ( $gp and $gpp and exists $gptable{$gpp} ) {
+    elsif ( $gp and exists $gptable{0+$gp} ) {
       warn(sprintf("Shared GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
       $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
-      $init->add( sprintf("GvGP_set($sym, %s);", $gptable{$gpp}) );
+      $init->add( sprintf("GvGP_set($sym, %s);", $gptable{0+$gp}) );
       $is_empty = 1;
     }
     elsif ( $gp and !$is_empty and $gvname =~ /::$/) {
@@ -3375,7 +3370,7 @@ if (0) {
                    $gv->FILE, $gp
                   )) if $debug{gv};
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVHV);]);
-      $gptable{$gpp} = "GvGP($sym)" if $gpp;
+      $gptable{0+$gp} = "GvGP($sym)" if 0+$gp;
       $is_empty = 1;
     }
     elsif ( $gp and !$is_empty ) {
@@ -3387,7 +3382,7 @@ if (0) {
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
       $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
-      $gptable{$gpp} = "GvGP($sym)" if $gpp;
+      $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
