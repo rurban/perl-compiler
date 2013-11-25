@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_52 99c0eff 2013-11-08 | C: fix #178, hash TOTALKEYS of BEGIN-time initialized hashes
+# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_52 - perl-5.014004-nt
+# 100 / 100 modules tested with B-C-1.42_57 - perl-5.014004-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 3255cac 2013-08-23 | update log.modules-5.008004d-nt (pass IO::Scalar)
+# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 99 / 100 modules tested with B-C-1.43 - perl-5.008004d-nt
-# pass  99 /  99 (100.0%)
-# fail   0 /  99 (0.0%)
-# todo   0 /   0 ()
-# skip   1 / 100 (1.0% not installed)
+# 100 / 100 modules tested with B-C-1.42_57 - perl-5.008004d-nt
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   0 /   1 (0.0%)
+# skip   0 / 100 (0.0% not installed)

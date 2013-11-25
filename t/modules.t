@@ -86,8 +86,8 @@ my $have_IPC_Run = defined $IPC::Run::VERSION;
 log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
   unless $have_IPC_Run;
 
-my @opts = ("");				  # only B::C
-@opts = ("", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
+my @opts = ("-O3");				  # only B::C
+@opts = ("-O3", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
 my $perlversion = perlversion();
 $log = 0 if @ARGV;
 $log = 1 if grep /top100$/, @ARGV;

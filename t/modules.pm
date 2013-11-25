@@ -21,11 +21,10 @@ our $keep = '';
 
 sub perlversion {
   my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-  return sprintf("%1.6f%s%s",
-		 $],
+  return sprintf("%1.6f%s%s", $],
 		 ($DEBUGGING ? 'd' : ''),
-		 ($Config{useithreads} ? '' 
-		    : $Config{usemultiplicity} ? '-m' 
+		 ($Config{useithreads} ? ''
+		    : $Config{usemultiplicity} ? '-m'
 		      : '-nt'));
 }
 

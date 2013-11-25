@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_52 99c0eff 2013-11-08 | C: fix #178, hash TOTALKEYS of BEGIN-time initialized hashes
+# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-pass Module::Build
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-pass Moose
+fail Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_52 - perl-5.016003-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# 100 / 100 modules tested with B-C-1.42_57 - perl-5.016003-nt
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   0 /   3 (0.0%)
 # skip   0 / 100 (0.0% not installed)

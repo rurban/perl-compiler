@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.42_52 99c0eff 2013-11-08 | C: fix #178, hash TOTALKEYS of BEGIN-time initialized hashes
+# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
 # perlversion = 5.012005-nt
 # path = /usr/local/bin/perl5.12.5-nt
 # platform = linux 64bit non-threaded
 pass Exporter
-pass Text::Tabs
-pass Text::Wrap
-pass Test::Harness
+fail Text::Tabs
+fail Text::Wrap
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -15,32 +15,32 @@ pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
-pass Pod::Text
+fail Pod::Text
 pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
 pass File::Temp
-pass ExtUtils::Install
+fail ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
-pass ExtUtils::ParseXS
-pass Module::Build
+fail ExtUtils::CBuilder
+fail ExtUtils::ParseXS
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
 pass Digest::MD5
-pass Sub::Uplevel
-pass URI
+fail Sub::Uplevel
+fail URI
 pass HTML::Tagset
 pass HTML::Parser
-pass Test::Exception
+fail Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+fail LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -49,11 +49,11 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-pass Attribute::Handlers
+fail Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
-pass version
+fail version
 pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
@@ -65,11 +65,11 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
+fail Class::MOP
 fail Moose
 pass Test::Deep
-pass Carp::Clan
-pass Module::Pluggable
+fail Carp::Clan
+fail Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
@@ -81,29 +81,29 @@ pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 fail Test::Warn
-pass Encode
+fail Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope
+fail B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
-pass namespace::clean
+fail namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+fail MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
+fail DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_52 - perl-5.012005-nt
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   0 /   2 (0.0%)
+fail Template::Stash
+# 100 / 100 modules tested with B-C-1.42_57 - perl-5.012005-nt
+# pass  74 / 100 (74.0%)
+# fail  26 / 100 (26.0%)
+# todo   0 /  26 (0.0%)
 # skip   0 / 100 (0.0% not installed)
