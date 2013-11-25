@@ -323,7 +323,7 @@ my %all_bc_pkg = map {$_=>1}
 
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %hektable, @static_free);
+my (%strtable, %hektable, @static_free, %gptable);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
@@ -589,6 +589,7 @@ sub IsCOW {
 
 sub savesym {
   my ( $obj, $value ) = @_;
+  no strict 'refs';
   my $sym = sprintf( "s\\_%x", $$obj );
   $symtable{$sym} = $value;
   return $value;
@@ -596,6 +597,7 @@ sub savesym {
 
 sub objsym {
   my $obj = shift;
+  no strict 'refs';
   return $symtable{ sprintf( "s\\_%x", $$obj ) };
 }
 
@@ -3346,11 +3348,34 @@ if (0) {
   my $gp;
   if ( $PERL510 and $gv->isGV_with_GP ) {
     $gp = $gv->GP;    # B limitation
+    my $gpp;
+    {
+      no strict 'refs';
+      $gpp = $$gp if $gp;
+    }
     # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
       # Shared glob *foo = *bar
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
+      $is_empty = 1;
+    }
+    elsif ( $gp and $gpp and exists $gptable{$gpp} ) {
+      warn(sprintf("Shared GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
+                   $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
+                   $gv->FILE, $gp
+                  )) if $debug{gv};
+      $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
+      $init->add( sprintf("GvGP_set($sym, %s);", $gptable{$gpp}) );
+      $is_empty = 1;
+    }
+    elsif ( $gp and !$is_empty and $gvname =~ /::$/) {
+      warn(sprintf("Shared GvGP for stash %$fullname 0x%x%s %s GP:0x%x\n",
+                   $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
+                   $gv->FILE, $gp
+                  )) if $debug{gv};
+      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVHV);]);
+      $gptable{$gpp} = "GvGP($sym)" if $gpp;
       $is_empty = 1;
     }
     elsif ( $gp and !$is_empty ) {
@@ -3362,6 +3387,7 @@ if (0) {
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
       $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
+      $gptable{$gpp} = "GvGP($sym)" if $gpp;
     }
     else {
       $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
@@ -5204,8 +5230,7 @@ sub B::GV::savecv {
 
   my $fullname = $package . "::" . $name;
   warn sprintf( "Checking GV *%s 0x%x\n", cstring($fullname), $$gv )
-    if $debug{gv};
-
+    if $debug{gv} and $verbose;
   # We may be looking at this package just because it is a branch in the
   # symbol table which is on the path to a package which we need to save
   # e.g. this is 'Getopt' and we need to save 'Getopt::Long'
