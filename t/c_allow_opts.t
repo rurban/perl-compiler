@@ -19,6 +19,8 @@ system "$X script/cc_harness -q -DALLOW_PERL_OPTIONS a.c -o a";
 unless (-e 'a' or -e 'a.out') {
   print "ok 1 #skip wrong ldopts for cc_harness. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   print "ok 2 #skip ditto\n";
+  print "ok 3 #skip\n";
+  print "ok 4 #skip\n";
   exit;
 }
 my $ok = `$exe -s -abc=2 -def 2>&1`;
