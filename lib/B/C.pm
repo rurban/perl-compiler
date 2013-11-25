@@ -719,7 +719,7 @@ sub save_pv_or_rv {
     } else {
       if ($gmg && $fullname) {
 	no strict 'refs';
-	$pv = $fullname ? "${$fullname}" : '';
+	$pv = ref $fullname ? "${$fullname}" : '';
 	$cur = length (pack "a*", $pv);
 	$pok = 1;
       } else {
