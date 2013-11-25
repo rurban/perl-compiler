@@ -4007,7 +4007,7 @@ sub B::HV::save {
       while (@contents) {
 	my ( $key, $value ) = splice( @contents, 0, 2 );
 	if ($value) {
-          $value = "(SV*)$value" unless $value =~ /^&sv_list/;
+          $value = "(SV*)$value" if $value !~ /^&sv_list/ or ($PERL510 and $] < 5.012);
           my $cur = length( pack "a*", $key );
           if (!$PERL56) {
             if (utf8::is_utf8($key)) {
@@ -4017,7 +4017,7 @@ sub B::HV::save {
             }
           }
 	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, %s);",
-			      cstring($key), $cur, "$value", 0 )); # !! randomized hash keys
+			      cstring($key), $cur, $value, 0 )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
 	}
       }
