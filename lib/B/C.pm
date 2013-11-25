@@ -705,6 +705,11 @@ sub save_pv_or_rv {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
     warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
+    if ($savesym =~ /^get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+      $static = 0;
+      $pv = $savesym;
+      $savesym = 'NULL';
+    }
   }
   else {
     if ($pok) {
@@ -738,6 +743,11 @@ sub save_pv_or_rv {
       }
       if ($static) {
 	$savesym = IsCOW($sv) ? savepv($pv) : constpv($pv);
+        if ($savesym =~ /^get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+          $static = 0;
+          $pv = $savesym;
+          $savesym = 'NULL';
+        }
         $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
@@ -1881,7 +1891,7 @@ sub B::PVLV::save {
        sprintf("%s, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, Nullsv, %s",
 	       nvx($sv->NVX), $cur, $len,
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
-    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {(char*)%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TARG, TYPE');
@@ -1992,12 +2002,7 @@ sub B::PVNV::save {
   }
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
-    if ($savesym =~ /^\(char\*\)get_cv\("/) { #" Moose 5.8.9d Moose::Util::TypeConstraints::OptimizedConstraints::RegexpRef
-      $xpvnvsect->add(sprintf( "%s, %u, %u, %d, %s", 'NULL', $cur, $len, $ivx, $nvx ) );
-      $init->add(sprintf("xpvnv_list[%d].xpv_pv = %s;", $xpvnvsect->index, $savesym));
-    } else {
-      $xpvnvsect->add(sprintf( "(char*)%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
-    }
+    $xpvnvsect->add(sprintf( "(char*)%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
