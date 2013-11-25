@@ -9,6 +9,6 @@ BEGIN {
 }
 
 use B::C;
-my $todo = ($B::C::VERSION lt '1.43' ? "TODO " : "");
+my $todo = ($B::C::VERSION lt '1.42_57' ? "TODO " : "");
 $todo = "" if $] > 5.017005;
 ctestok(1, "C,-O3", 'ccode141i', '@x=(0..1);print "ok" if $#x == "1"', "${todo}C,-O3 pv2iv conversion with static strings");

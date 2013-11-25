@@ -13,7 +13,7 @@ sub test3 {
   my $script = shift;
   my $cmt = join('',@_);
   my $todo = "";
-  $todo = 'TODO ' if $name eq 'ccode200i_c';
+  $todo = 'TODO BC ' if $name eq 'ccode200i_c';
   plctestok($i*3+1, $name, $script, $todo.$cmt);
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, "CC $cmt");

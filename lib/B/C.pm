@@ -719,7 +719,7 @@ sub save_pv_or_rv {
     } else {
       if ($gmg && $fullname) {
 	no strict 'refs';
-	$pv = "${$fullname}";
+	$pv = $fullname ? "${$fullname}" : '';
 	$cur = length (pack "a*", $pv);
 	$pok = 1;
       } else {
@@ -739,6 +739,7 @@ sub save_pv_or_rv {
       # i.e. since v5.17.6. because conversion to IV would fail.
       # But a "" or "0" or "[a-z]+" string can have SvLEN=0
       # since its is converted to 0
+      no warnings 'numeric';
       if ($static and $] < 5.017006 and $pv > 0) {
         $static = 0;
       }
@@ -1453,7 +1454,7 @@ sub B::COP::save {
 	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, %d, 0, " . "%u, %s, NULL",
+              "%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
               $op->_save_common, $op->line,
 	      "(char*)".constpv( $op->stashpv ), # we can store this static
 	      "(char*)".constpv( $file ), $op->stashflags,
@@ -1465,7 +1466,7 @@ sub B::COP::save {
 	      "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, 0, " . "%u, %s, NULL",
+              "%s, %u, " . "%s, %s, 0, " . "%s, %s, NULL",
               $op->_save_common, $op->line,
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
@@ -1510,7 +1511,7 @@ sub B::COP::save {
     $copsect->comment("$opsect_common, label, stash, file, seq, arybase, line, warn_sv, io");
     $copsect->add(
       sprintf(
-	      "%s, %s, %s, %s, %u, %d, %u, %s %s",
+	      "%s, %s, %s, %s, %s, %d, %u, %s %s",
 	      $op->_save_common, cstring( $op->label ),
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
@@ -1973,7 +1974,7 @@ sub B::PVNV::save {
   }
   my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
   my $nvx;
-  my $ivx = $sv->IVX; # here must be IVX!
+  my $ivx = ivx($sv->IVX); # here must be IVX!
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
     $nvx = nvx($sv->NV);
@@ -1990,10 +1991,10 @@ sub B::PVNV::save {
     # For some time the stringification works of NVX double to two ints worked ok.
     if ($PERL514) {
       $xpvnvsect->comment('STASH, MAGIC, cur, len, IVX, NVX');
-      $xpvnvsect->add(sprintf( "Nullhv, {0}, %u, %u, {%ld}, {%s}", $cur, $len, $ivx, $nvx) );
+      $xpvnvsect->add(sprintf( "Nullhv, {0}, %u, %u, {%s}, {%s}", $cur, $len, $ivx, $nvx) );
     } else {
       $xpvnvsect->comment('NVX, cur, len, IVX');
-      $xpvnvsect->add(sprintf( "{%s}, %u, %u, {%ld}", $nvx, $cur, $len, $ivx ) );
+      $xpvnvsect->add(sprintf( "{%s}, %u, %u, {%s}", $nvx, $cur, $len, $ivx ) );
     }
     unless ($C99 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
@@ -2007,7 +2008,7 @@ sub B::PVNV::save {
   }
   else {
     $xpvnvsect->comment('PVX, cur, len, IVX, NVX');
-    $xpvnvsect->add(sprintf( "(char*)%s, %u, %u, %d, %s", $savesym, $cur, $len, $ivx, $nvx ) );
+    $xpvnvsect->add(sprintf( "(char*)%s, %u, %u, %s, %s", $savesym, $cur, $len, $ivx, $nvx ) );
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %lu, 0x%x %s",

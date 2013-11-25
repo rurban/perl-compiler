@@ -1,5 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=95
+# IO::Socket::blocking method found in \@ISA
 # methods not found. see t/testc.sh -DCsP,-v -O0 95
 use strict;
 BEGIN {
@@ -54,15 +55,12 @@ sub compile_check {
     $stderr = $out;
   }
   my $notfound = $stderr =~ /blocking not found/;
-  ok(!$notfound, $cmt);
+  ok(!$notfound, $cmt.', no "blocking not found" warning');
   # check stderr for "save package_pv "blocking" for method_name"
   my $found = $stderr =~ /save package_pv "blocking" for method_name/;
- TODO: {
-   local $TODO = "wrong package_pv blocking";
-   ok(!$found, $cmt);
-  }
+  ok(!$found, $cmt.', blocking as method_name saved');
 }
 
-compile_check(1,'C,-O3,-UB','ccode95i',$issue,"IO::Socket::blocking method found in \@ISA");
+compile_check(1,'C,-O3,-UB','ccode95i',$issue,"untyped");
 compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
 ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');
