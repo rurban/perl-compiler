@@ -621,6 +621,8 @@ use IO::File;
 can();
 print "ok\n";'
 result[2011]='ok'
+tests[229]='sub yyy () { "yyy" } print "ok\n" if( eval q{yyy} eq "yyy");'
+result[229]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''

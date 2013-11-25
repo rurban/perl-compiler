@@ -3005,7 +3005,8 @@ sub B::CV::save {
   my $pvsym = 'NULL';
   my $cur = $cv->CUR;
   my $len = $cur + 1;
-  $len = 0 if $B::C::pv_copy_on_grow;
+  $len++ if IsCOW($cv);
+  $len = 0 if $B::C::const_strings;
   my $CvFLAGS = $cv->CvFLAGS;
   # GV cannot be initialized statically
   my $xcv_outside = ${ $cv->OUTSIDE };
@@ -3519,10 +3520,10 @@ if (0) {
          and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
          and !$skip_package{$package} )
     {
-      my $origname =
-        cstring( $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME );
-      if ( $gvcv->XSUB and $name ne $origname ) {    #XSUB CONSTSUB alias
+      my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
+      if ( $gvcv->XSUB and $fullname ne $origname ) {    #XSUB CONSTSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
+        $origname = cstring( $origname );
         warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n" if $debug{pkg};
         mark_package($package, 1);
         {
@@ -3545,6 +3546,7 @@ if (0) {
 		SvREFCNT_inc((SV *)cv);","}");
       }
       elsif (!$PERL510 or $gp) {
+        $origname = cstring( $origname );
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
 	  $gvcv = svref_2object( \&__ANON__::_V );
 	}
@@ -3570,7 +3572,7 @@ if (0) {
 	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
 	  }
 	  elsif ($xsub{$package}) {
-	    # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
+            # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
 	    warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
 	    $init->add("{\tCV *cv;
 		cv = get_cv($origname,TRUE);
