@@ -717,7 +717,7 @@ sub save_pv_or_rv {
   else {
     if ($pok) {
       $pv = pack "a*", $gmg ? $sv->PV : $sv->PVX;
-      $cur = $sv->CUR;
+      $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length(pack "a*", $pv);
     } else {
       if ($gmg && $fullname) {
 	no strict 'refs';
@@ -1864,7 +1864,7 @@ sub savepvn {
       }
     } else {
       warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-      my $cur = $sv ? $sv->CUR : length(pack "a*", $pv);
+      my $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length(pack "a*", $pv);
       push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), $cur );
     }
   }
@@ -3003,9 +3003,12 @@ sub B::CV::save {
     $sym = savesym( $cv, "&sv_list[$sv_ix]" );
   }
 
-  $pv = '' unless defined $pv;    # Avoid use of undef warnings
+  # $pv = '' unless defined $pv;    # Avoid use of undef warnings
+  warn sprintf( "CV prototype %s for CV 0x%x\n", $pv, $$cv )
+    if $debug{cv};
+  my $proto = defined $pv ? cstring($pv) : 'NULL';
   my $pvsym = 'NULL';
-  my $cur = $cv->CUR;
+  my $cur = defined $pv ? $cv->CUR : 0;
   my $len = $cur + 1;
   $len++ if IsCOW($cv);
   $len = 0 if $B::C::const_strings;
@@ -3114,7 +3117,7 @@ sub B::CV::save {
   elsif ($PERL56) {
     my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub, "
 		       ."$xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)%s, 0x%x",
-	       cstring($pv), $cur, $len, ivx($cv->IVX),
+	       $proto, $cur, $len, ivx($cv->IVX),
 	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, $xcv_outside, $cv->CvFLAGS
 	      );
@@ -3132,7 +3135,7 @@ sub B::CV::save {
   else { #5.8
     my $xpvc = sprintf("%s, %u, %u, %s, %s, 0, Nullhv, Nullhv, %s, s\\_%x, $xsub,"
 		       ." $xsubany, Nullgv, \"\", %d, s\\_%x, (CV*)s\\_%x, 0x%x, 0x%x",
-	       cstring($pv),   $cur, $len, ivx($cv->IVX),
+	       $proto, $cur, $len, ivx($cv->IVX),
 	       nvx($cv->NVX),  $startfield,       $$root, $cv->DEPTH,
 	       $$padlist, $xcv_outside, $cv->CvFLAGS, $cv->OUTSIDE_SEQ
 	      );
@@ -3223,15 +3226,15 @@ sub B::CV::save {
     warn sprintf( "Saving CV proto %s for CV 0x%x\n", $pv, $$cv ) if $debug{cv};
   }
   # issue 84: empty prototypes sub xx(){} vs sub xx{}
-  if ($PERL510) {
+  if ($PERL510 and defined $pv) {
     if ($cur) {
       $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
-    } elsif (!$B::C::pv_copy_on_grow) { # not static, they are freed when redefined
+    } elsif (!$B::C::const_strings) { # not static, they are freed when redefined
       $init->add( sprintf("SvPVX(&sv_list[%d]) = savepvn(%s, %u);",
-			  $sv_ix, cstring($pv), $cur));
+			  $sv_ix, $proto, $cur));
     } else {
       $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;",
-			  $sv_ix, cstring($pv)));
+			  $sv_ix, $proto));
     }
   }
   return $sym;
