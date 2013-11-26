@@ -5,7 +5,7 @@ BEGIN {
 }
 use strict;
 
-my $pl = "ccode00.pl";
+my $pl = "allow.pl";
 my $d = <DATA>;
 open F, ">", $pl;
 print F $d;
