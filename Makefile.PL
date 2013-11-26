@@ -340,8 +340,13 @@ testmodall :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100
 testc :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c.t
+	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c_o3.t
+testcc :: pure_all
+	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/cc.t
 testbc :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/bytecode.t
+testfast :: pure_all
+	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10
 testcritical :: pure_all
 	t/critical.sh
 teststatus :: pure_all
