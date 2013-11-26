@@ -350,7 +350,7 @@ our %option_map = (
     'av-init2'        => \$B::C::av_init2,
     'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
-    'stash'           => \$B::C::stash,    # disable with -fno-stash
+    'stash'           => \$B::C::stash,    # enable with -fstash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
     'warnings'        => \$B::C::warnings, # disable with -fno-warnings
@@ -3273,7 +3273,7 @@ if (0) {
 }
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
-  return $sym if $skip_package{$package}; # or $package =~ /^B::C(C?)::/;
+  return $sym if $skip_package{$package};
 
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
@@ -3923,7 +3923,7 @@ sub B::HV::save {
     $sym = savesym( $hv, "hv$hv_index" );
     $hv_index++;
 
-    # issue 79: save stashes to check for packages.
+    # issue 79, test 46: save stashes to check for packages.
     # and via B::STASHGV we only save stashes for stashes.
     # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
@@ -5215,7 +5215,7 @@ sub B::GV::savecv {
   	      $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
   warn sprintf( "Used GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
-  return unless ( $$cv || $$av || $$sv || $$hv );
+  return unless ( $$cv || $$av || $$sv || $$hv || $gv->IO );
   if ($$cv and $name eq 'bootstrap' and $cv->XSUB) {
     #return $cv->save($fullname);
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
@@ -5949,7 +5949,6 @@ sub compile {
   my @eval_at_startup;
   $B::C::can_delete_pkg = 1;
   $B::C::destruct = 1;
-  $B::C::stash    = 1;
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
@@ -6407,9 +6406,13 @@ Enabled with C<-O3>.
 
 Add dynamic creation of stashes, which are nested hashes of symbol tables,
 names ending with C<::>, starting at C<%main::>.
+
 These are rarely needed, sometimes for checking of existance of packages,
 which could be better done by checking C<%INC>, and cost about 10% space and
 startup-time.
+
+If an explicit stash member or the stash itself C<%package::> is used in
+the source code, the requested stash member(s) is/are automatically created.
 
 C<-fno-stash> is the default.
 
