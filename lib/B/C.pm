@@ -3352,6 +3352,9 @@ if (0) {
     $gp = $gv->GP;    # B limitation
     # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
+      warn(sprintf("Shared GV alias for *$fullname 0x%x%s %s to $egvsym\n",
+                   $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
+                  )) if $debug{gv};
       # Shared glob *foo = *bar
       $init->add(qq[$sym = gv_fetchpv($name, $gvadd|GV_ADDMULTI, SVt_PVGV);]);
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
@@ -3371,12 +3374,11 @@ if (0) {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVHV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, GV_ADD, SVt_PVHV);]);
       $gptable{0+$gp} = "GvGP($sym)" if 0+$gp;
-      $is_empty = 1;
     }
     elsif ( $gp and !$is_empty ) {
-      warn(sprintf("New GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
+      warn(sprintf("New GV for *$fullname 0x%x%s %s GP:0x%x\n",
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
