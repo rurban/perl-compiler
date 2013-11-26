@@ -3278,6 +3278,9 @@ if (0) {
   return $sym if $skip_package{$package};
 
   my $is_empty = $gv->is_empty;
+  if (!defined $gvname and $is_empty) { # 5.8 curpad name
+    return q/(SV*)&PL_sv_undef/;
+  }
   my $fullname = $package . "::" . $gvname;
   my $name     = $package eq 'main' ? cstring($gvname) : cstring($fullname);
   my $notqual  = ($] >= 5.008009 and $package eq 'main') ? 'GV_NOTQUAL' : '0';
