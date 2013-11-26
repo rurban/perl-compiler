@@ -3347,13 +3347,13 @@ if (0) {
   sub Save_IO()   { 32 }
 
   my $gp;
-  my $gvadd = $notqual ? "$notqual|GV_ADD|GV_ADDMULTI" : "GV_ADD|GV_ADDMULTI";
+  my $gvadd = $notqual ? "$notqual|GV_ADD" : "GV_ADD";
   if ( $PERL510 and $gv->isGV_with_GP ) {
     $gp = $gv->GP;    # B limitation
     # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
       # Shared glob *foo = *bar
-      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, $gvadd|GV_ADDMULTI, SVt_PVGV);]);
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
@@ -3382,13 +3382,13 @@ if (0) {
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
       $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
-      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
+      #$init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
       $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
-      $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
+      #$init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
     }
   } else {
     $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
