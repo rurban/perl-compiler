@@ -3,26 +3,26 @@ use strict;
 use Test::More tests => 4;
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
-my $a = $^O eq 'MSWin32' ? 'a' : './a'; 
-my $pl = "ccode00.pl";
+my $exe = $^O eq 'MSWin32' ? 'c_argv.exe' : './c_argv';
+my $pl = "c_argv.pl";
 my $plc = $pl . "c";
 my $d = <DATA>;
 
 open F, ">", $pl;
 print F $d;
 close F;
-is(`$runperl $Mblib blib/script/perlcc -O3 -r $pl ok 1`, "ok 1\n",
+is(`$runperl $Mblib blib/script/perlcc -O3 -o $exe -r $pl ok 1`, "ok 1\n",
    "perlcc -r file args");
-unlink("a", "a.out");
+unlink($exe);
 
 open F, ">", $pl;
 my $d2 = $d;
 $d2 =~ s/ ok 1/ ok 2/;
 print F $d2;
 close F;
-is(`$runperl $Mblib blib/script/perlcc -O -r $pl ok 2`, "ok 2\n",
+is(`$runperl $Mblib blib/script/perlcc -O -o $exe -r $pl ok 2`, "ok 2\n",
    "perlcc -O -r file args");
-unlink("a", "a.out");
+unlink($exe);
 
 open F, ">", $pl;
 my $d3 = $d;
@@ -45,12 +45,12 @@ print "@ARGV\n";';
 open F, ">", $pl;
 print F $d;
 close F;
-`$runperl $Mblib blib/script/perlcc -o a $pl`;
+`$runperl $Mblib blib/script/perlcc -o $exe $pl`;
 is (`$a a b c`, "a b c\n",
-   "issue 30: perlcc -o a; ./a args");
+   "issue 30: perlcc -o $exe; $exe args");
 
 END {
-  unlink("a", "a.out", $pl, $plc);
+  unlink($exe, $pl, $plc);
 }
 
 __DATA__

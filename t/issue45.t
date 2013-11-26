@@ -1,6 +1,11 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=45
 # dorassign //= failed until B::CC 1.09 (B-C-1.30)
+BEGIN {
+  unless (-d ".git" and !$ENV{NO_AUTHOR}) {
+    print "1..0 #SKIP Only if -d .git\n"; exit;
+  }
+}
 use Test::More tests => 4;
 use strict;
 BEGIN {
