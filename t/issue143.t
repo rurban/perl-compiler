@@ -8,7 +8,10 @@ BEGIN {
   require "test.pl";
 }
 
-ctestok(1, "C,-O3", 'ccode143i', <<'EOS', "wrong length after double regex compilation");
+my $todo = $]>=5.018?"TODO ":"";
+$todo = "TODO " if $]>=5.012 and $]<5.014;
+
+ctestok(1, "C,-O3", 'ccode143i', <<'EOS', $todo."wrong length after double regex compilation");
 BEGIN {
   package Net::IDN::Encode;
   our $DOT = qr/[\.]/;
@@ -24,7 +27,9 @@ Net::IDN::Encode::domain_to_ascii(42);
 print q(ok);
 EOS
 
-ctestok(2, "C,-O3", 'ccode143i', 'BEGIN{package Foo;our $DOT=qr/[.]/;};package main;print "ok\n" if "dot.dot" =~ m/($Foo::DOT)/',
-        $]<5.014?"TODO":"");
+$todo = ($]<5.014 or $]>=5.018)?"TODO ":"";
+$todo = "" if $]<5.010;
+
+ctestok(2, "C,-O3", 'ccode143i', 'BEGIN{package Foo;our $DOT=qr/[.]/;};package main;print "ok\n" if "dot.dot" =~ m/($Foo::DOT)/', $todo."our qr");
 ctestok(3, "C,-O3", 'ccode143i', 'BEGIN{$DOT=qr/[.]/}print "ok\n" if "dot.dot" =~ m/($DOT)/',
-        $]<5.014?"TODO":"");
+        $todo."global qr");
