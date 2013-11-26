@@ -3280,6 +3280,7 @@ if (0) {
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   my $name     = $package eq 'main' ? cstring($gvname) : cstring($fullname);
+  my $notqual = $] >= 5.008009 and $package eq 'main' ? 'GV_NOTQUAL' : '0';
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
@@ -3321,12 +3322,12 @@ if (0) {
     }
   }
   if ($fullname =~ /^main::std(in|out|err)$/ or $fullname eq 'main::STDOUT') {
-    $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
+    $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
-    $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PV);]);
+    $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
@@ -3346,12 +3347,13 @@ if (0) {
   sub Save_IO()   { 32 }
 
   my $gp;
+  my $gvadd = $notqual ? "$notqual|GV_ADD|GV_ADDMULTI" : "GV_ADD|GV_ADDMULTI";
   if ( $PERL510 and $gv->isGV_with_GP ) {
     $gp = $gv->GP;    # B limitation
     # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
       # Shared glob *foo = *bar
-      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
@@ -3360,7 +3362,7 @@ if (0) {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_PVGV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
       $init->add( sprintf("GvGP_set($sym, %s);", $gptable{0+$gp}) );
       $is_empty = 1;
     }
@@ -3369,7 +3371,7 @@ if (0) {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVHV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVHV);]);
       $gptable{0+$gp} = "GvGP($sym)" if 0+$gp;
       $is_empty = 1;
     }
@@ -3379,17 +3381,17 @@ if (0) {
                    $gv->FILE, $gp
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
       $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
-      $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]);
+      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
       $init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
     }
   } else {
-    $init->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PV);]);
+    $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
   }
   $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,
                        $debug{flags}?" /* ".$gv->flagspv." */":"" ));
