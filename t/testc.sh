@@ -621,6 +621,13 @@ use IO::File;
 can();
 print "ok\n";'
 result[2011]='ok'
+tests[208]='sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh;
+sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;'
+if [[ $v513 -gt 0 ]]; then
+  result[208]='RUN MyKooh DESTRUCT OurKooh'
+else
+  result[208]=' MyKooh  OurKooh'
+fi
 tests[229]='sub yyy () { "yyy" } print "ok\n" if( eval q{yyy} eq "yyy");'
 result[229]='ok'
 #issue 30
