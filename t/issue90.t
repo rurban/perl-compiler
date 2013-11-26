@@ -15,7 +15,7 @@ sub test3 {
   my $todo = "";
   $todo = 'TODO ' if $name eq 'ccode90i_c' or $] > 5.015;
   plctestok($i*3+1, $name, $script, $todo." BC ".$cmt);
-  ctestok($i*3+2, "C", $name, $script, "C $cmt");
+  ctestok($i*3+2, "C,-O3", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, $todo."CC $cmt");
   $i++;
 }
@@ -51,7 +51,7 @@ test3('ccode90i_ep', <<'EOF', '%! pure IV');
 print FH "foo"; print "ok" if $! == 9;
 EOF
 
-ctestok(16, 'C', 'ccode90i_ce', <<'EOF', 'TODO C more @+');
+ctestok(16, 'C,-O3', 'ccode90i_ce', <<'EOF', 'TODO C more @+');
 my $content = "ok\n";
 while ( $content =~ m{\w}g ) {
     $_ .= "$-[0]$+[0]";
