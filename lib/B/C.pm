@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_58';
+our $VERSION = '1.42_59';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -3280,7 +3280,7 @@ if (0) {
   my $is_empty = $gv->is_empty;
   my $fullname = $package . "::" . $gvname;
   my $name     = $package eq 'main' ? cstring($gvname) : cstring($fullname);
-  my $notqual = $] >= 5.008009 and $package eq 'main' ? 'GV_NOTQUAL' : '0';
+  my $notqual  = ($] >= 5.008009 and $package eq 'main') ? 'GV_NOTQUAL' : '0';
   warn "  GV name is $name\n" if $debug{gv};
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
@@ -3382,13 +3382,11 @@ if (0) {
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
       $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
-      #$init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym));") );
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
       $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
-      #$init->add( sprintf("GvGP_set($sym, Perl_newGP(aTHX_ $sym)); /* empty GP */") );
     }
   } else {
     $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
@@ -4466,59 +4464,6 @@ EOT0
     print "#endif\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
-  if ($PERL510 and $^O eq 'MSWin32') {
-    # mingw and msvc does not export newGP
-    print << '__EOGP';
-
-#ifndef newGP
-PERL_CALLCONV GP * Perl_newGP(pTHX_ GV *const gv);
-
-GP *
-Perl_newGP(pTHX_ GV *const gv)
-{
-    GP *gp;
-    U32 hash;
-#ifdef USE_ITHREADS
-    const char *const file
-	= (PL_curcop && CopFILE(PL_curcop)) ? CopFILE(PL_curcop) : "";
-    const STRLEN len = strlen(file);
-#else
-    SV *const temp_sv = CopFILESV(PL_curcop);
-    const char *file;
-    STRLEN len;
-
-    PERL_ARGS_ASSERT_NEWGP;
-
-    if (temp_sv) {
-	file = SvPVX(temp_sv);
-	len = SvCUR(temp_sv);
-    } else {
-	file = "";
-	len = 0;
-    }
-#endif
-
-    PERL_HASH(hash, file, len);
-
-    Newxz(gp, 1, GP);
-
-#ifndef PERL_DONT_CREATE_GVSV
-    gp->gp_sv = newSV(0);
-#endif
-
-    gp->gp_line = PL_curcop ? CopLINE(PL_curcop) : 0;
-    /* XXX Ideally this cast would be replaced with a change to const char*
-       in the struct.  */
-    gp->gp_file_hek = share_hek(file, len, hash);
-    gp->gp_egv = gv;
-    gp->gp_refcnt = 1;
-
-    return gp;
-}
-#endif
-__EOGP
-
-  }
 
   # Need fresh re-hash of strtab. share_hek does not allow hash = 0
   if ( $PERL510 ) {
