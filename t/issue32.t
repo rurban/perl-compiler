@@ -1,8 +1,13 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=32
 # use open and @ARGV
-use Test::More tests => 1;
 use strict;
+BEGIN {
+  if ($] < 5.008) {
+    print "1..1\nok 1 #skip 5.6 has no IO discipline\n"; exit;
+  }
+}
+use Test::More tests => 1;
 BEGIN {
   unshift @INC, 't';
   require "test.pl";

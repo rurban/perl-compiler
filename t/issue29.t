@@ -38,7 +38,7 @@ my $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 TODO: {
   local $TODO = "B::C issue 29 utf8 perlio";
-  ok($result eq $expected, "'$result' ne '$expected'");
+  ok($result eq $expected, "C '$result' ne '$expected'");
 }
 
 system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
@@ -52,7 +52,7 @@ $result =~ s/\n$//;
 TODO: {
   local $TODO = "B::Bytecode issue 29 utf8 perlio"
     if $] >= 5.011004 and $ITHREADS;
-  ok($result eq $expected, "'$result' eq '$expected'");
+  ok($result eq $expected, "BC '$result' eq '$expected'");
 }
 
 END {
