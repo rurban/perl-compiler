@@ -46,7 +46,7 @@ open F, ">", $pl;
 print F $d;
 close F;
 `$runperl $Mblib blib/script/perlcc -o $exe $pl`;
-is (`$a a b c`, "a b c\n",
+is (`$exe a b c`, "a b c\n",
    "issue 30: perlcc -o $exe; $exe args");
 
 END {
