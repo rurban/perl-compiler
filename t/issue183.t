@@ -8,4 +8,4 @@ BEGIN {
 }
 use Test::More tests => 1;
 
-ctestok(1,'C,-O3','ccode183i','main->import();print q(ok)','#183 ->import should fail silently');
+ctestok(1,'C,-O3','ccode183i','main->import();print q(ok)','TODO #183 ->import should fail silently');
