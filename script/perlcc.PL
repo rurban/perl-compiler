@@ -54,6 +54,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.13, Reini Urban, 2012-01-10 13:03:00
 # Version 2.14, Reini Urban, 2012-02-28 09:04:07
 # Version 2.15, Reini Urban, 2013-02-01 10:41:54
+# Version 2.16, Reini Urban, 2013-11-27 11:36:13
 
 use strict;
 use warnings;
@@ -68,7 +69,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.15;
+our $VERSION = 2.16;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -323,7 +324,9 @@ sub parse_argv {
             $Output = basename($Input) . "c";
         }
     } else {
-        $Output = (is_win32() or $^O eq 'cygwin') ? 'a.exe' : 'a.out';
+        $Output = opt('e') ? 'a.out' : $Input;
+        $Output =~ s/\.(p[lm]|t)$//;
+        $Output .= 'exe' if is_win32() or $^O eq 'cygwin';
     }
     $Output = relativize($Output) unless is_win32();
     sanity_check();
@@ -860,7 +863,7 @@ sub helpme {
 sub relativize {
     my ($args) = @_;
 
-    return() if ($args =~ m"^[/\\]");
+    return("./".basename($args)) if ($args =~ m"^[/\\]");
     return("./$args");
 }
 
@@ -926,7 +929,7 @@ sub interruptrun {
     return($text);
 }
 
-sub is_win32() { $^O =~ m/^MSWin/ }
+sub is_win32() { $^O =~ m/^(MSWin32|msys)/ }
 sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
@@ -1015,6 +1018,12 @@ given directories to Perl's include path.
 =item -o I<output file name>
 
 Specifies the file name for the final compiled executable.
+
+Without given output file name we use the base of the input file,
+or with C<-e> F<a.out> resp. F<a.exe> and a randomized intermediate
+C filename.
+If the input file is an absolute path on a non-windows system use
+the basename.
 
 =item -c I<C file name>
 

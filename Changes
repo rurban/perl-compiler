@@ -47,6 +47,10 @@
         fixed warning Prototype mismatch: sub main::gettimeofday: none vs () at perlcc line 261
         improved --version
         added --perlopts to handle -DALLOW_PERL_OPTIONS
+        * perlcc (2.16): changed output name rules:
+        Without given output file name we use the name of the input file (in the subdir)
+        or with -e a.out resp. a.exe and a randomized intermediate C filename.
+        If the input file is an absolute path on non-windows systems use the basename.
 	* CC (1.13): Use the B::C integer and double precision logic (ivx, nvx).
         Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl.
         Added optimizations: -fno-magic, -fno-autovivify

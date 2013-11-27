@@ -9,7 +9,7 @@ use Config;
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 # TODO: no global output 'a' and 'a.c' to enable parallel testing (test speedup)
-my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : 'a.out';
+my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : './a.out';
 my $a   = $^O eq 'MSWin32' ? 'a.exe' : './a';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 my $devnull = $^O eq 'MSWin32' ? '' : '2>/dev/null';
@@ -30,14 +30,16 @@ ok(! -e 'a.c', "no a.c file");
 ok(-e $a, "keep a executable"); # 6
 cleanup;
 
+my @c = <*.c>;
 is(`$perlcc -r -e $e $devnull`, "ok", "-r -e"); #7
-ok(! -e 'a.out.c', "no a.out.c file");
+my @c1 = <*.c>;
+is(length @c, length @c1, "no temp cfile");
 ok(-e $exe, "keep default executable"); #9
 cleanup;
 
 system(qq($perlcc -o a -e $e $devnull));
-ok(-e $a, '-o => -e a');
-is(`$a`, "ok", "./a => ok"); #11
+ok(-e $a, '-o a -e');
+is(`$a`, "ok", "$a => ok"); #11
 cleanup;
 
 # Try a simple XS module which exists in 5.6.2 and blead (test 45)
