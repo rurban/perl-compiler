@@ -113,8 +113,8 @@ sub run_c {
   my ($t, $backend) = @_;
   chdir $dir;
   my $result = $t; $result =~ s/\.t$/-c.result/;
-  my $a = $backend eq 'C' ? 'a' : 'aa';
   $result =~ s/-c.result$/-cc.result/ if $backend eq 'CC';
+  my $a = $result; $a =~ s/\.result$//;
   unlink ($a, "$a.c", "t/$a.c", "t/CORE/$a.c", $result);
   # perlcc 2.06 should now work also: omit unneeded B::Stash -u<> and fixed linking
   # see t/c_argv.t
