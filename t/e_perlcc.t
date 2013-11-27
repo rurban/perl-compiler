@@ -8,6 +8,7 @@ use Config;
 
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+# TODO: no global output 'a' and 'a.c' to enable parallel testing (test speedup)
 my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : 'a.out';
 my $a   = $^O eq 'MSWin32' ? 'a.exe' : './a';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';

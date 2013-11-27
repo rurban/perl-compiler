@@ -323,7 +323,7 @@ sub parse_argv {
             $Output = basename($Input) . "c";
         }
     } else {
-        $Output = ( is_win32() or $^O eq 'cygwin' ) ? 'a.exe' : 'a.out';
+        $Output = (is_win32() or $^O eq 'cygwin') ? 'a.exe' : 'a.out';
     }
     $Output = relativize($Output) unless is_win32();
     sanity_check();
@@ -430,9 +430,16 @@ sub compile_cstyle {
     }
     if (opt('o')) {
         $cfile = opt('o').".c";
+        if ((is_win32() or $^O eq 'cygwin') and $Output =~ /\.exe.c$/) {
+          $cfile =~ s/\.exe\.c$/.c/,
+        }
     } elsif (opt('S') || opt('c')) { # We need to keep it
         if (opt('e')) {
-            $cfile = opt('o') ? opt('o').".c" : "a.out.c";
+            $cfile = $Output;
+            if ((is_win32() or $^O eq 'cygwin') and $Output =~ /\.exe$/) {
+                $cfile =~ s/\.exe$//,
+            }
+            $cfile .= '.c';
         } else {
             $cfile = basename($Input);
             # File off extension if present
@@ -751,9 +758,10 @@ sub sanity_check {
             _die("Compiling a.out is probably not what you want to do.\n");
             # You fully deserve what you get now. No you *don't*. typos happen.
         } else {
+            my $suffix = (is_win32() or $^O eq 'cygwin') ? '.exe' : '';
+            (undef, $Output) = tempfile("plcXXXXX", SUFFIX => $suffix);
             warn "$0: Will not write output on top of input file, ",
-                "compiling to a.out instead\n";
-            $Output = (is_win32 or $^O eq 'cygwin') ? 'a.exe' : 'a.out';
+                "compiling to $Output instead\n";
         }
     }
 }
