@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
+# B::C::VERSION = 1.42_59 21693e3 2013-11-26 | Makefile: add targets testfast testcc
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_57 - perl-5.016003
+# 100 / 100 modules tested with B-C-1.42_59 - perl-5.016003
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)

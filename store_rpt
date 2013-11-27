@@ -29,7 +29,7 @@ if [ -n "$m" ]; then
     if [ -n "$r" ]; then
 	grep="VERSION = $v r"
     else
-	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\d \\w+ /" $m)
+	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\w+ \\w+ /" $m)
 	grep="VERSION = $v "
     fi
     do_cp
@@ -43,7 +43,7 @@ if [ -n "$m" ]; then
 	grep="Revision: "
     else
 	# git
-	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\d \\w+ /" $m)
+	r=$(perl -lane "print \$F[4] if /^# B::C::VERSION = 1.\\d\\w+ \\w+ /" $m)
 	grep=" "
     fi
     do_cp

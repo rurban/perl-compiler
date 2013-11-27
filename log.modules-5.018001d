@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
+# B::C::VERSION = 1.42_59 21693e3 2013-11-26 | Makefile: add targets testfast testcc
 # perlversion = 5.018001d
 # path = /usr/local/bin/perl5.18.1d
 # platform = linux 64bit threaded debug
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO >= 5.18 with threads
+pass ExtUtils::CBuilder #TODO >= 5.18 with threads
 fail ExtUtils::ParseXS #TODO >= 5.18
 fail Module::Build #TODO >= 5.18
 pass File::Path
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_57 - perl-5.018001d
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo   3 /   7 (42.9%)
+# 100 / 100 modules tested with B-C-1.42_59 - perl-5.018001d
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo   3 /   6 (50.0%)
 # skip   0 / 100 (0.0% not installed)
