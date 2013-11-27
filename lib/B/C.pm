@@ -910,6 +910,28 @@ sub nvx ($) {
   return $sval;
 }
 
+# for bytes and utf8 only
+# TODO: Carp::Heavy, Exporter::Heavy
+# special case: warnings::register via -fno-warnings
+sub force_heavy {
+  my $pkg = shift;
+  my $pkg_heavy = $pkg."_heavy.pl";
+  no strict 'refs';
+  if (!$include_package{$pkg_heavy}) { # omit Carp
+    eval qq[sub $pkg\::AUTOLOAD {
+        require '$pkg_heavy';
+        goto &\$AUTOLOAD if defined &\$AUTOLOAD;
+        warn("Undefined subroutine \$AUTOLOAD called");
+      }];
+    warn "Redefined $pkg\::AUTOLOAD to omit Carp\n" if $debug{gv};
+    warn "Forcing early $pkg_heavy\n" if $debug{pkg};
+    require $pkg_heavy;
+    mark_package($pkg_heavy, 1);
+    walk_syms($pkg); #before we stub unloaded CVs
+  }
+  return svref_2object( \*{$pkg."::AUTOLOAD"} );
+}
+
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
@@ -2916,7 +2938,7 @@ sub B::CV::save {
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
     require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"};
     # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
-    # already polluted. See issue 61.
+    # already polluted. See issue 61 and force_heavy()
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
   }
   if ( !$$root && !$cvxsub ) {
@@ -3373,6 +3395,10 @@ sub B::GV::save {
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
 
+  if ($fullname =~ /^(bytes|utf8)::AUTOLOAD$/) {
+    $gv = force_heavy($package);
+    $sym = savesym( $gv, $sym ); # override new gv ptr to sym
+  }
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
     unless (ref($egv) eq 'B::SPECIAL' or ref($egv->STASH) eq 'B::SPECIAL') {
@@ -5318,6 +5344,9 @@ sub B::GV::savecv {
   if ($package eq 'B::C') {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
+  }
+  if ($fullname =~ /^(bytes|utf8)::AUTOLOAD$/) {
+    $gv = force_heavy($package);
   }
   # we should not delete already saved packages
   $saved{$package}++;

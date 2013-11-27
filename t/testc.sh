@@ -712,7 +712,7 @@ Constant subroutine BEGIN redefined at ./ccode173.pl line 2.
 ok 1
 ok 2
 ok 3'
-tests[174]='#TODO bytes-heavy
+tests[174]='#TODO bytes_heavy
 my $str = "\x{10000}\x{800}";
 no warnings "utf8";
 { use bytes; $str =~ s/\C\C\z//; }
@@ -785,7 +785,7 @@ exit;
 '
 result[184]='ok'
 # usage: t/testc.sh -O3 -Dp,-UCarp 185
-tests[185]='#TODO bytes-heavy
+tests[185]='#TODO bytes_heavy
 my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" && bytes::length($a) == 2; print "ok\n";'
 result[185]='ok'
 tests[186]='eval q/require B/; my $sub = do { package one; \&{"one"}; }; delete $one::{one}; my $x = "boom"; print "ok\n";'
@@ -1052,7 +1052,7 @@ sub  X::DESTROY { $flag = 1 }
 }
 print "ok\n" if $flag;'
 result[254]='ok'
-# duplicate of 185, bytes-heavy
+# duplicate of 185, bytes_heavy
 tests[255]='#TODO
 $a = chr(300);
 my $l = length($a);
