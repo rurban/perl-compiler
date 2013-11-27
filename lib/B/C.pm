@@ -708,7 +708,7 @@ sub save_pv_or_rv {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
     warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
-    if ($savesym =~ /^get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+    if ($savesym =~ /(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
       $savesym = 'NULL';
@@ -747,7 +747,7 @@ sub save_pv_or_rv {
       }
       if ($static) {
 	$savesym = IsCOW($sv) ? savepv($pv) : constpv($pv);
-        if ($savesym =~ /^get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+        if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
           $pv = $savesym;
           $savesym = 'NULL';
@@ -2494,7 +2494,7 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # one more: bootstrapped XS CVs (test Class::MOP, no simple testcase yet)
-    elsif ( $rv =~ /get_cv\(/ ) {
+    elsif ( $rv =~ /(\(char\*\))?get_cv\(/ ) {
       $xrvsect->add("(SV*)Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
@@ -3584,7 +3584,7 @@ if (0) {
 	warn "GV::save &$fullname...\n" if $debug{gv};
         my $cvsym = $gvcv->save($fullname);
         # backpatch "$sym = gv_fetchpv($name, TRUE, SVt_PV)" to FALSE and SVt_PVCV
-        if ($cvsym =~ /get_cv\("/) {
+        if ($cvsym =~ /(\(char\*\))?get_cv\("/) {
 	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
 	    my $in_gv;
 	    for (@{ $init->[-1]{current} }) {
