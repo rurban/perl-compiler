@@ -38,6 +38,7 @@
         Fixed wrong REGEXP length for compiled QR data (#143)
         Fixed wrong -O3 comparison of strings to numbers (#138,#141, branch new-cog), unified
           PV handling, disabled -fcog replaced by -O3 -fconst-strings
+        Fixed NUL-byte handling in strings by using B::SV->PV instead of PVX (#237)
         Storing now bareword filehandles (#148,#149)
         Do not create GvGP at all
         use Config does not include B anymore, Internals::V now in __ANON__ package

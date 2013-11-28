@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_59';
+our $VERSION = '1.42_60';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -716,8 +716,8 @@ sub save_pv_or_rv {
   }
   else {
     if ($pok) {
-      $pv = pack "a*", $gmg ? $sv->PV : $sv->PVX;
-      $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length(pack "a*", $pv);
+      $pv = pack "a*", $sv->PV;
+      $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length($pv);
     } else {
       if ($gmg && $fullname) {
 	no strict 'refs';
@@ -2153,8 +2153,8 @@ sub B::LEXWARN::save {
   my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my $iv = $] >= 5.008009 ? length($sv->PVX) : $sv->IV;
-  if ($] < 5.009004 and $] >= 5.009) { $iv = length($sv->PVX); }
+  my $iv = $] >= 5.008009 ? length($sv->PV) : $sv->IV;
+  if ($] < 5.009004 and $] >= 5.009) { $iv = length($sv->PV); }
   my $ivsym = lexwarnsym($iv); # look for shared const int's
   return savesym($sv, $ivsym);
 }
@@ -3757,7 +3757,7 @@ sub B::AV::save {
 	# if SvIOK print iv, POK pv
 	if ($el->can('FLAGS')) {
 	  $val = $el->IVX if $el->FLAGS & SVf_IOK;
-	  $val = '"'.$el->PVX.'"' if $el->FLAGS & SVf_POK;
+	  $val = cstring($el->PV) if $el->FLAGS & SVf_POK;
 	}
         warn sprintf( "AV 0x%x[%d] = %s 0x%x $val\n", $$av, $i++, class($el), $$el );
       }
