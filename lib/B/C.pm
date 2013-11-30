@@ -3327,7 +3327,7 @@ if (0) {
       return $sym;
     }
   }
-  if ($fullname =~ /^main::std(in|out|err)$/ or $fullname eq 'main::STDOUT') {
+  if ($fullname =~ /^main::std(in|out|err)$/) {
     $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
