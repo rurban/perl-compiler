@@ -657,6 +657,12 @@ $x
 .
 write;print "\n";'
 result[239]='ok 1'
+tests[242]='$xyz = ucfirst("\x{3C2}"); # no problem without that line
+$a = "\x{3c3}foo.bar";
+($c = $a) =~ s/(\p{IsWord}+)/ucfirst($1)/ge;
+print "ok\n" if $c eq "\x{3a3}foo.Bar";
+__END__'
+result[242]='ok'
 
 init
 
