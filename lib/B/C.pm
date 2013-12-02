@@ -742,7 +742,7 @@ sub save_pv_or_rv {
       # But a "" or "0" or "[a-z]+" string can have SvLEN=0
       # since its is converted to 0
       no warnings 'numeric';
-      if ($static and $] < 5.017006 and $pv > 0) {
+      if ($static and $] < 5.017006 and abs($pv) > 0) {
         $static = 0;
       }
       if ($static) {
