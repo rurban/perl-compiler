@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_59 21693e3 2013-11-26 | Makefile: add targets testfast testcc
+# B::C::VERSION = 1.42_61 afd333a 2013-12-02 | add t/issue159.t, TODO t/perldoc.t timings
 # perlversion = 5.018001-nt
 # path = /usr/local/bin/perl5.18.1-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_59 - perl-5.018001-nt
+# 100 / 100 modules tested with B-C-1.42_61 - perl-5.018001-nt
 # pass  94 / 100 (94.0%)
 # fail   6 / 100 (6.0%)
 # todo   2 /   6 (33.3%)
