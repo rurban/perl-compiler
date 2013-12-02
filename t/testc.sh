@@ -665,6 +665,17 @@ $a = "\x{3c3}foo.bar";
 print "ok\n" if $c eq "\x{3a3}foo.Bar";
 __END__'
 result[242]='ok'
+# fails -O3 only
+tests[245]='
+sub foo {
+    my ( $a, $b ) = @_;
+    print "a: ".ord($a)." ; b: ".ord($b)." [ from foo ]\n";
+}
+print "a: ". ord(lc("\x{1E9E}"))." ; ";
+print "b: ". ord("\x{df}")."\n";
+foo(lc("\x{1E9E}"), "\x{df}");'
+result[245]='a: 223 ; b: 223
+a: 223 ; b: 223 [ from foo ]'
 
 init
 
