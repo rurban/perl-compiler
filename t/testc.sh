@@ -633,6 +633,8 @@ result[229]='ok'
 #issue 30
 tests[230]='sub f1 { my($self) = @_; $self->f2;} sub f2 {} sub new {} print "@ARGV\n";'
 result[230]=''
+tests[232]='use Carp (); exit unless Carp::longmess(); print qq{ok\n}'
+result[232]='ok'
 tests[234]='$c = 0; for ("-3" .. "0") { $c++ } ; print "$c"'
 result[234]='4'
 # t/testc.sh -O3 -Dp,-UCarp,-v 235
