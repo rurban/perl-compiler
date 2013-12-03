@@ -47,7 +47,8 @@ TODO: { #2
 
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
 TODO: { #3
-  local $TODO = "B::CC issue 24 dbm >5.10" if $] >= 5.010;
+  use B::C ();
+  local $TODO = "B::CC issue 24 dbm >5.10" if $] >= 5.010 and $B::C::VERSION lt '1.42_61';
   if ($skipped) {
     ok(1, 'skip - No dbm on this machine');
   } else {

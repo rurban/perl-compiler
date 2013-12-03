@@ -7,16 +7,19 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 16;
+use B::C ();
+
 my $i=0;
 sub test3 {
   my $name = shift;
   my $script = shift;
   my $cmt = join('',@_);
-  my $todo = "";
-  $todo = 'TODO ' if $name eq 'ccode90i_c' or $] > 5.015;
-  plctestok($i*3+1, $name, $script, $todo." BC ".$cmt);
+  my ($todobc,$todocc) = ("","");
+  $todobc = 'TODO ' if $name eq 'ccode90i_c'or $] > 5.015;
+  $todocc = 'TODO ' if ($name eq 'ccode90i_c' and $B::C::VERSION lt '1.42_61') or $] > 5.015;
+  plctestok($i*3+1, $name, $script, $todobc." BC ".$cmt);
   ctestok($i*3+2, "C,-O3", $name, $script, "C $cmt");
-  ctestok($i*3+3, "CC", $name, $script, $todo."CC $cmt");
+  ctestok($i*3+3, "CC", $name, $script, $todocc."CC $cmt");
   $i++;
 }
 

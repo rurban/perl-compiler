@@ -8,8 +8,8 @@ BEGIN {
 }
 use Test::More tests => 1;
 
-use B::C;
-my $when = "1.42_62";
+use B::C ();
+my $when = "1.42_61";
 ctestok(1,'C,-O0','ccode232i','use Carp (); exit unless Carp::longmess(); print qq{ok\n}',
       ($B::C::VERSION lt $when ? "TODO " : "").
       '#234 Carp::longmess with C,-O0');

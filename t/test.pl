@@ -682,7 +682,7 @@ sub plctest {
 	    ok($ok);
 	}
     } else {
-	ok($ok, "Bytecode $base".($todo ? " $todo" : ''));
+	ok($ok, $todo ? "$todo " : '');
     }
     if ($ok) {
         unlink("$name.plc", "$base.pl");
@@ -815,6 +815,7 @@ sub todo_tests_default {
 
     my @todo  = ();
     push @todo, (15)  if $] < 5.007;
+    push @todo, (10)  if $ITHREADS;
     if ($what =~ /^c(|_o[1-4])$/) {
         push @todo, (7)     if $] == 5.008005;
         push @todo, (21)    if $] >= 5.012 and $] < 5.014;
@@ -830,7 +831,8 @@ sub todo_tests_default {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
 	#15,21,27,30,41-45,50,103,105
-	push @todo, (15,21,30,46,50,103,105);
+        #15,46,50,103 fixed with 1.42_61
+	push @todo, (21,30,105);
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
 	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
@@ -841,7 +843,7 @@ sub todo_tests_default {
 	push @todo, (27,41..45,49) if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
-	push @todo, (29)    if $] < 5.008006 or ($] > 5.013 and $] < 5.015);
+	push @todo, (29)    if $] < 5.009; # or ($] > 5.013 and $] < 5.015);
 	push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;

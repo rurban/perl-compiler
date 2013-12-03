@@ -63,4 +63,7 @@ sub compile_check {
 
 compile_check(1,'C,-O3,-UB','ccode95i',$issue,"untyped");
 compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
-ctestok(3,'C,-O3,-UB','ccode95i',$issue,'TODO run');
+
+use B::C ();
+ctestok(3,'C,-O3,-UB','ccode95i',$issue,
+      ($B::C::VERSION lt '1.42_61' ? "TODO " : "").'run');

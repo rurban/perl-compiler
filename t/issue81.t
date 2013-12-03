@@ -18,6 +18,7 @@ EOF
 
 use B::C;
 my $todo = ($B::C::VERSION lt '1.37' ? "TODO " : "");
+my $todocc = ($B::C::VERSION lt '1.42_61' ? "TODO " : "");
 plctestok(1, $name, $script, "${todo}BC cvproto");
 ctestok(2, "C", $name, $script, "${todo}C cvproto");
-ctestok(3, "CC", $name, $script, "TODO CC cvproto");
+ctestok(3, "CC", $name, $script, "${todocc}CC cvproto");

@@ -8,4 +8,7 @@ BEGIN {
 }
 use Test::More tests => 1;
 
-ctestok(1,'C,-O3','ccode183i','main->import();print q(ok)','TODO #183 ->import should fail silently');
+use B::C;
+my $when = "1.42_61";
+ctestok(1,'C,-O3','ccode183i','main->import();print q(ok)',
+        ($B::C::VERSION lt $when ? "TODO " : "").'#183 ->import should fail silently');
