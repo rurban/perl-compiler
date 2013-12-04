@@ -159,7 +159,7 @@ function ctest {
     fi
 }
 
-ntests=250
+ntests=300
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=23
@@ -997,7 +997,7 @@ result[244]='(-2)
 (-1)
 (0)'
 # fails -O3 only
-tests[245]='
+tests[245]='#TODO -O3
 sub foo {
     my ( $a, $b ) = @_;
     print "a: ".ord($a)." ; b: ".ord($b)." [ from foo ]\n";
@@ -1010,27 +1010,34 @@ a: 223 ; b: 223 [ from foo ]'
 # see t/issue235.t test 2
 tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
 result[246]='Not enough arguments for main::foo at (eval 1) line 2, at EOF'
-tests[247]='no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
+tests[247]='# WontFix
+no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
 result[247]='ok'
-tests[248]='{my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
+tests[248]='# TODO
+{my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
 result[248]='-titi-toto-'
-tests[249]='use version; print version::is_strict(q{01}) ? 1 : 0'
+tests[249]='# TODO
+use version; print version::is_strict(q{01}) ? 1 : 0'
 result[249]='0'
-tests[250]='use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
+tests[250]='# TODO
+use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
 result[250]='Misplaced _ in number at (eval 1) line 1.
 Invalid version format (no underscores) at (eval 1) line 1, near "package withversion "
 syntax error at (eval 1) line 1, near "package withversion 1.1_"'
-tests[251]='sub f;print "ok" if exists &f'
+tests[251]='# TODO
+sub f;print "ok" if exists &f'
 result[251]='ok'
 # duplicate of 234
 tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
 result[252]='4'
-tests[253]='INIT { require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+tests[253]='# TODO
+INIT { require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[253]='1..2
 ok 1
 ok 2
 '
-tests[254]='my $flag = 0;
+tests[254]='# TODO
+my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
 {my $x; # x only exists in that scope
  BEGIN {$x = 42 } # initialize variable during compilation
@@ -1047,7 +1054,8 @@ my $lb;
 { use bytes; $lb = length($a); }
 print( ( $l == 1 && $lb == 2 ) ? "ok\n" : "l -> $l ; lb -> $lb\n" );'
 result[255]='ok'
-tests[256]='BEGIN{ $| = 1; } print "ok\n" if $| == 1'
+tests[256]='# TODO
+BEGIN{ $| = 1; } print "ok\n" if $| == 1'
 result[256]='ok'
 #tests[257]=''
 #result[257]='ok'
