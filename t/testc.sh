@@ -612,6 +612,23 @@ tests[188]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zl
 package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
 aiieee::reset_zlopp(); print aiieee::zlopp("zlopp")'
 result[188]='01001'
+tests[192]='use warnings;
+{
+ no warnings qw "once void";
+ my %h; # We pass a key of this hash to the subroutine to get a PVLV.
+ sub { for(shift) {
+  # Set up our glob-as-PVLV
+  $_ = *hon;
+  # Assigning undef to the glob should not overwrite it...
+  {
+   my $w;
+   local $SIG{__WARN__} = sub { $w = shift };
+   *$_ = undef;
+   print ( $w =~ m/Undefined value assigned to typeglob/ ? "ok" : "not ok");
+  }
+ }}->($h{k});
+}'
+result[192]='ok'
 tests[200]='%u=("\x{123}"=>"fo"); print "ok" if $u{"\x{123}"} eq "fo"'
 result[200]='ok'
 tests[2001]='BEGIN{%u=("\x{123}"=>"fo");} print "ok" if $u{"\x{123}"} eq "fo";'
@@ -623,6 +640,18 @@ use IO::File;
 can();
 print "ok\n";'
 result[2011]='ok'
+tests[207]='use warnings;
+sub asub { }
+asub(tests => 48);
+my $str = q{0};
+$str =~ /^[ET1]/i;
+{
+    no warnings qw<io deprecated>;
+    print "ok 1\n" if opendir(H, "t");
+    print "ok 2" if open(H, "<", "TESTS");
+}'
+result[207]='ok 1
+ok 2'
 tests[208]='#TODO
 sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;'
@@ -671,6 +700,8 @@ $a = "\x{3c3}foo.bar";
 print "ok\n" if $c eq "\x{3a3}foo.Bar";
 __END__'
 result[242]='ok'
+tests[243]='use warnings "deprecated"; print hex(${^WARNINGS}) . " "; print hex(${^H})'
+result[243]='0 598'
 # fails -O3 only
 tests[245]='
 sub foo {

@@ -3413,11 +3413,13 @@ if (0) {
   } else {
     $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
   }
-  $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,
-                       $debug{flags}?" /* ".$gv->flagspv." */":"" ));
   my $gvflags = $gv->GvFLAGS;
-  if ($gvflags > 256) { $gvflags = $gvflags && 256 }; # $gv->GvFLAGS as U8
-  $init->add( sprintf( "GvFLAGS($sym) = 0x%x; %s", $gvflags,
+  if ($gvflags > 256 and !$PERL510) { # $gv->GvFLAGS as U8 single byte only
+    $gvflags = $gvflags & 255;
+  }
+  $init->add( sprintf( "SvFLAGS($sym) = 0x%x;%s", $svflags,
+                     $debug{flags}?" /* ".$gv->flagspv." */":"" ),
+	           sprintf( "GvFLAGS($sym) = 0x%x; %s", $gvflags,
                      $debug{flags}?"/* ".$gv->flagspv(SVt_PVGV)." */":"" ));
   $init->add( sprintf( "GvLINE($sym) = %d;",
 		       ($gv->LINE > 2147483647  # S32 INT_MAX
@@ -3593,7 +3595,7 @@ if (0) {
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
         my $cvsym = $gvcv->save($fullname);
-        # backpatch "$sym = gv_fetchpv($name, TRUE, SVt_PV)" to FALSE and SVt_PVCV
+        # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to FALSE and SVt_PVCV
         if ($cvsym =~ /(\(char\*\))?get_cv\("/) {
 	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
 	    my $in_gv;
@@ -3602,8 +3604,8 @@ if (0) {
 		s/^.*\Q$sym\E.*=.*;//;
 		s/GvGP_set\(\Q$sym\E.*;//;
 	      }
-	      if (/^\Q$sym = gv_fetchpv($name, TRUE, SVt_PV);\E/) {
-		s/^\Q$sym = gv_fetchpv($name, TRUE, SVt_PV);\E/$sym = gv_fetchpv($name, 0, SVt_PVCV);/;
+	      if (/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/) {
+		s/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/$sym = gv_fetchpv($name, 0, SVt_PVCV);/;
 		$in_gv++;
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
@@ -4533,6 +4535,9 @@ _EOT1
 #define Nullgv Null(GV*)
 #define Nullop Null(OP*)
 #endif
+#ifndef GV_NOTQUAL
+#define GV_NOTQUAL 0
+#endif
 
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
 EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
@@ -5093,10 +5098,12 @@ EOT
 EOT
 
     }
-
+    if ($^H) {
+      print "    PL_hints = $^H;\n";
+    }
     my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
     print <<"EOT";
-    if ((tmpgv = gv_fetchpv("\030", TRUE, SVt_PV))) {/* $^X */
+    if ((tmpgv = gv_fetchpv("\030", GV_ADD|GV_NOTQUAL, SVt_PV))) {/* $^X */
         tmpsv = GvSVn(tmpgv);
         sv_setpv(tmpsv,"$X");
         SvSETMAGIC(tmpsv);
