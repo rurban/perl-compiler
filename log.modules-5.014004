@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_61 c2f3e09 2013-12-02 | module tests for 1.42_61: ExtUtils::CBuilder perl5.18.1d regression
+# B::C::VERSION = 1.42_61 c1af0b2 2013-12-03 | Add Changelog line for the last commit
 # perlversion = 5.014004
 # path = /usr/local/bin/perl5.14.4
 # platform = linux 64bit threaded

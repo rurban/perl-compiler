@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_61 afd333a 2013-12-02 | add t/issue159.t, TODO t/perldoc.t timings
+# B::C::VERSION = 1.42_61 c1af0b2 2013-12-03 | Add Changelog line for the last commit
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded

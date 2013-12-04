@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_57 2134cb5 2013-11-24 | C: better fix for uninitialized const M
+# B::C::VERSION = 1.42_61 c1af0b2 2013-12-03 | Add Changelog line for the last commit
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_57 - perl-5.008009d
+# 100 / 100 modules tested with B-C-1.42_61 - perl-5.008009d
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
