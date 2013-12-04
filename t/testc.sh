@@ -587,7 +587,8 @@ tests[150]='print NONEXISTENT "foo"; print "ok" if $! == 9'
 result[150]='ok'
 tests[1501]='$! = 0; print NONEXISTENT "foo"; print "ok" if $! == 9'
 result[1501]='ok'
-tests[152]='print "ok" if find PerlIO::Layer "perlio"'
+tests[152]='#TODO
+print "ok" if find PerlIO::Layer "perlio"'
 result[152]='ok'
 tests[159]='@X::ISA = "Y"; sub Y::z {"Y::z"} print "ok\n" if  X->z eq "Y::z"; delete $X::{z}; exit'
 result[159]='ok'
@@ -604,7 +605,8 @@ result[166]='ok'
 tests[178]='BEGIN { $hash  = { pi => 3.14, e => 2.72, i => -1 } ;} print scalar keys $hash;'
 result[178]='3'
 # usage: t/testc.sh -O3 -Dp,-UCarp 185
-tests[185]='my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" && bytes::length($a) == 2; print "ok\n";'
+tests[185]='#TODO bytes_heavy
+my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" && bytes::length($a) == 2; print "ok\n";'
 result[185]='ok'
 tests[188]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zlopp {reset;}
 package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
@@ -621,7 +623,8 @@ use IO::File;
 can();
 print "ok\n";'
 result[2011]='ok'
-tests[208]='sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh;
+tests[208]='#TODO
+sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;'
 if [[ $v513 -gt 0 ]]; then
   result[208]='RUN MyKooh DESTRUCT OurKooh'
@@ -640,7 +643,8 @@ result[234]='4'
 # t/testc.sh -O3 -Dp,-UCarp,-v 235
 tests[235]='BEGIN{$INC{Carp.pm}++} $d = pack("U*", 0xe3, 0x81, 0xAF); { use bytes; $ol = bytes::length($d) } print $ol'
 result[235]='6'
-tests[238]='sub f ($);
+tests[238]='#TODO
+sub f ($);
 sub f ($) {
   my $test = $_[0];
   write;
@@ -652,14 +656,16 @@ sub f ($) {
 f("");
 '
 result[238]='ok'
-tests[239]='my $x="1";
+tests[239]='#TODO
+my $x="1";
 format STDOUT =
 ok @<<<<<<<
 $x
 .
 write;print "\n";'
 result[239]='ok 1'
-tests[242]='$xyz = ucfirst("\x{3C2}"); # no problem without that line
+tests[242]='#TODO
+$xyz = ucfirst("\x{3C2}"); # no problem without that line
 $a = "\x{3c3}foo.bar";
 ($c = $a) =~ s/(\p{IsWord}+)/ucfirst($1)/ge;
 print "ok\n" if $c eq "\x{3a3}foo.Bar";
