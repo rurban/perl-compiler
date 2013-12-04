@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_61';
+our $VERSION = '1.42_62';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -5098,9 +5098,38 @@ EOT
 EOT
 
     }
-    if ($^H) {
-      print "    PL_hints = $^H;\n";
+    # more global vars
+    print "    PL_hints = $^H;\n" if $^H;
+    print "    PL_unicode = ${^UNICODE};\n" if ${^UNICODE};
+    print "    PL_utf8locale = ${^UTF8LOCALE};\n" if ${^UTF8LOCALE};
+    # nomg
+    print sprintf(qq{    sv_setpvs(get_sv(";",0), %s);\n}, cstring($;)) if $; ne "\34";
+    print sprintf(qq{    sv_setpvs(get_sv("\"", 0), %s);\n}, cstring($")) if $" ne " ";
+    # global IO vars
+    print sprintf(qq{    {SV* s = GvSVn(PL_ofsgv); sv_setpv(s, %s); mg_set(s);}\n}, cstring($,)) if $,;
+    print sprintf(qq{    {SV* s = get_sv("/", 0); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($/)) if $/ ne "\n"; #RS
+    print sprintf(qq{    {SV* s = get_sv("\\",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($\)) if $\; #ORS
+    print         qq{    {SV* s = get_sv("|",GV_ADD); sv_setiv(s, $|); mg_set(s);}\n} if $|; #OUTPUT_AUTOFLUSH
+    # global format vars
+    print sprintf(qq{    {SV* s = get_sv("^A",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($^A)) if $^A; #ACCUMULATOR
+    print sprintf(qq{    {SV* s = get_sv("^L",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($^L)) if $^L ne "\f"; #FORMFEED
+    print sprintf(qq{    {SV* s = get_sv(":",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($:)) if $: ne " \n-"; #LINE_BREAK_CHARACTERS
+    print sprintf(qq{    {SV* s = get_sv("^",0); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($^)) if $^ ne "STDOUT_TOP";
+    print sprintf(qq{    {SV* s = get_sv("~",0); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($~)) if $~ ne "STDOUT";
+    print         qq{    {SV* s = get_sv("%",GV_ADD); sv_setiv(s, $%); mg_set(s);}\n} if $%; #PAGE_NUMBER
+    print         qq{    {SV* s = get_sv("-",GV_ADD); sv_setiv(s, $-); mg_set(s);}\n} if $-; #LINES_LEFT
+    print         qq{    {SV* s = get_sv("=",0); sv_setiv(s, $=); mg_set(s);}\n} if $= != 60; #LINES_PER_PAGE
+
+    # deprecated global vars
+    print qq{    {SV* s = get_sv("[",0); sv_setiv(s, $[); mg_set(s);}\n} if $[; #ARRAY_BASE
+    if ($] < 5.010) { # OFMT and multiline matching
+      eval q[
+            print sprintf(qq{    sv_setpv(GvSVn(gv_fetchpv("\$#",GV_ADD|GV_NOTQUAL, SVt_PV)), %s);\n},
+                          cstring($#)) if $#;
+            print sprintf(qq{    sv_setiv(GvSVn(gv_fetchpv("\$*",GV_ADD|GV_NOTQUAL, SVt_IV)), %d);\n}, $*) if $*;
+           ];
     }
+
     my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
     print <<"EOT";
     if ((tmpgv = gv_fetchpv("\030", GV_ADD|GV_NOTQUAL, SVt_PV))) {/* $^X */

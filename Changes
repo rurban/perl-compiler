@@ -45,6 +45,9 @@
         Fixed handling of empty - not successfully autoloaded - CVs (#235, #159, ...)
           by storing the SV and XPVCV but ignoring it and defer to run-time get_cv()
         Restore $^H, the numeric value of global warnings flags (#193,#207,#243)
+        Restore more missing globals: ${^UNICODE} ${^UTF8LOCALE} $; $\ $, $/ $" $|
+          $^A $^L $: $^ $^ $^ $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
+        Restore even deprecated vars $] $# $* (#171)
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
