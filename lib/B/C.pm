@@ -249,6 +249,11 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
+  if ($] >=  5.008001) {
+    B->import(qw(SVt_PVGV)); # added with 5.8.1
+  } else {
+    eval q[sub SVt_PVGV() {13}];
+  }
   if ($] >= 5.010) {
     require mro; mro->import;
     # not exported:
@@ -3193,7 +3198,8 @@ sub B::CV::save {
         warn sprintf( "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
                       $cv->FLAGS, $debug{flags}?$cv->flagspv:"", $CvFLAGS & ~0x400)
           if $debug{cv};
-        $init->add( sprintf( "CvFLAGS((CV*)%s) = %u;", $sym, $CvFLAGS ) );
+        $init->add( sprintf( "CvFLAGS((CV*)%s) = 0x%x; %s", $sym, $CvFLAGS,
+                             $debug{flags}?"/* ".$cv->flagspv." */":"" ) );
       }
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
@@ -3411,7 +3417,8 @@ if (0) {
                        $debug{flags}?" /* ".$gv->flagspv." */":"" ));
   my $gvflags = $gv->GvFLAGS;
   if ($gvflags > 256) { $gvflags = $gvflags && 256 }; # $gv->GvFLAGS as U8
-  $init->add( sprintf( "GvFLAGS($sym) = %d;",   $gvflags ));
+  $init->add( sprintf( "GvFLAGS($sym) = 0x%x; %s", $gvflags,
+                     $debug{flags}?"/* ".$gv->flagspv(SVt_PVGV)." */":"" ));
   $init->add( sprintf( "GvLINE($sym) = %d;",
 		       ($gv->LINE > 2147483647  # S32 INT_MAX
 			? 4294967294 - $gv->LINE
@@ -3499,22 +3506,17 @@ if (0) {
     }
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
-      #if ($PERL510 and $fullname eq 'main::ARGV') {
-      #  $init->add( '/* Skip overwriting @main::ARGV */' );
-      #  warn "Skipping GV::save \@$fullname\n" if $debug{gv};
-      #} else {
-        warn "GV::save \@$fullname\n" if $debug{gv};
-	if ($fullname eq 'main::+' or $fullname eq 'main::-') {
-	  $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
-          if ($] >= 5.014) {
-            mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
-            walk_syms('Config');
-          }
-	  mark_package('Tie::Hash::NamedCapture', 1);
-	}
-        $gvav->save($fullname);
-        $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
-      #}
+      warn "GV::save \@$fullname\n" if $debug{gv};
+      if ($fullname eq 'main::+' or $fullname eq 'main::-') {
+        $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
+        if ($] >= 5.014) {
+          mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
+          walk_syms('Config');
+        }
+        mark_package('Tie::Hash::NamedCapture', 1);
+      }
+      $gvav->save($fullname);
+      $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
@@ -3632,7 +3634,7 @@ if (0) {
 	#$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
 	$init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
 	  unless $optimize_cop;
-	$init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
+	# $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
       } else {
 	# XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
 	# GvFILE is at gp+1
@@ -5656,6 +5658,7 @@ sub save_context {
     inc_cleanup();
     my $inc_gv = svref_2object( \*main::INC );
     $inc_hv    = $inc_gv->HV->save('main::INC');
+    $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
   $init->add(
