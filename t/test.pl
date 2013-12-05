@@ -706,9 +706,11 @@ sub ctest {
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
+    my $post = '';
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
-    $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005;
-    system "$runperl ".Mblib." -MO=$b,-o$name.c $name.pl";
+    ($b, $post) = split(" ", $b);
+    $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-O3/;
+    system "$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl";
     unless (-e "$name.c") {
         print "not ok $num #B::$backend failed\n";
         exit;

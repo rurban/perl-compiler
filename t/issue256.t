@@ -19,12 +19,12 @@ my $pv_vars = {';' => "\34",
 my $iv_vars = {'^H' => 0,
                '|' => 0,
                '%' => 0,
-               '-' => 0,
+               '-' => 60,
                '=' => 60,
                #'{^UNICODE}' => 0,
                #'{^UTF8LOCALE}' => 1
                };
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 my $script = '';
 $script .= sprintf('BEGIN{ $%s = "a"} $%s = "a"; print qq{not ok - \$%s = $%s\n} if $%s ne "a";'."\n", 
@@ -39,10 +39,15 @@ ctestok(2,'C,-O3','ccode256i',
         'BEGIN{$, = " "; } $, = " "; print $, eq " " ? "ok\n" : qq{not ok - \$, = $,\n}',
         '#256 initialize $,');
 
-# TODO: need -C switches to set the rest
-#ctestok(3,'C,-O3','ccode256i',
-#        'BEGIN{ ${^UNICODE} = 15; } ${^UNICODE} = 15; print qq{not ok - \${^UNICODE} = ${^UNICODE}\n} if ${^UNICODE} != 15;',
-#        '#256 initialize ${^UNICODE}');
-#ctestok(4,'C,-O3','ccode256i',
-#        'BEGIN{ ${^UTF8LOCALE} = 2; } ${^UTF8LOCALE} = 2; print ${^UTF8LOCALE} == 2 ? "ok\n" : qq{not ok - \${^UTF8LOCALE} = ${^UTF8LOCALE}\n};',
-#        '#256 initialize ${^UTF8LOCALE}');
+# need -C -CL switches to set UNICODE
+if ($] >= 5.010001) {
+  ctestok(3,'C,-O3 -C','ccode231i',
+        'print ${^UNICODE} ? "ok" : "not ok",  " - \${^UNICODE} = ${^UNICODE}\n";',
+        '#231 initialize ${^UNICODE}');
+  ctestok(4,'C,-O3 -CL','ccode231i',
+        'print ${^UTF8LOCALE} == 1 ? "ok\n" : qq{not ok - \${^UTF8LOCALE} = ${^UTF8LOCALE}\n};',
+        '#231 initialize ${^UTF8LOCALE}');
+} else {
+  print "ok 3 - skip -C with <5.10.1\n";
+  print "ok 4 - skip -CL with <5.10.1\n";
+}
