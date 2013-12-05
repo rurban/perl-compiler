@@ -953,7 +953,7 @@ result[232]='ok'
 tests[234]='$c = 0; for ("-3" .. "0") { $c++ } ; print "$c"'
 result[234]='4'
 # t/testc.sh -O3 -Dp,-UCarp,-v 235
-tests[235]='BEGIN{$INC{Carp.pm}++} $d = pack("U*", 0xe3, 0x81, 0xAF); { use bytes; $ol = bytes::length($d) } print $ol'
+tests[235]='BEGIN{$INC{"Carp.pm"}="/dev/null"} $d = pack("U*", 0xe3, 0x81, 0xAF); { use bytes; $ol = bytes::length($d) } print $ol'
 result[235]='6'
 # -O3
 tests[236]='sub t { if ($_[0] == $_[1]) { print "ok\n"; } else { print "not ok - $_[0] == $_[1]\n"; } } t(-1.2, " -1.2");'

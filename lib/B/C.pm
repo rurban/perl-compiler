@@ -1429,7 +1429,7 @@ sub B::COP::save {
 
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
-  $file =~ s/\.pl$/.c/;
+  # $file =~ s/\.pl$/.c/;
   if ($PERL512) {
     if ($ITHREADS and $] >= 5.017) {
       $copsect->comment(
@@ -5074,70 +5074,49 @@ _EOT14
 _EOT15
 
     if ($use_perl_script_name) {
-      my $dollar_0 = $0;
-      $dollar_0 =~ s/\\/\\\\/g;
-      $dollar_0 = '"' . $dollar_0 . '"';
-
-      print <<"EOT";
-    if ((tmpgv = gv_fetchpv("0", GV_ADD, SVt_PV))) {/* $0 */
-        tmpsv = GvSVn(tmpgv);
-        sv_setpv(tmpsv, ${dollar_0});
-        SvSETMAGIC(tmpsv);
-    }
-EOT
-
+      my $dollar_0 = cstring($0);
+      print sprintf(qq{    sv_setpv_mg(get_sv("0", GV_ADD|GV_NOTQUAL), %s);\n}, $dollar_0);
+      print sprintf(qq{    CopFILE_set(&PL_compiling, %s);\n}, $dollar_0);
     }
     else {
-      print <<"EOT";
-    if ((tmpgv = gv_fetchpv("0", GV_ADD, SVt_PV))) {/* $0 */
-        tmpsv = GvSVn(tmpgv);
-        sv_setpv(tmpsv, argv[0]);
-        SvSETMAGIC(tmpsv);
-        CopFILE_set(&PL_compiling, argv[0]);
-    }
-EOT
-
+      print qq{    sv_setpv_mg(get_sv("0", GV_ADD|GV_NOTQUAL), argv[0]);\n};
+      print qq{    CopFILE_set(&PL_compiling, argv[0]);\n};
     }
     # more global vars
     print "    PL_hints = $^H;\n" if $^H;
     print "    PL_unicode = ${^UNICODE};\n" if ${^UNICODE};
     print "    PL_utf8locale = ${^UTF8LOCALE};\n" if ${^UTF8LOCALE};
     # nomg
-    print sprintf(qq{    sv_setpvs(get_sv(";",0), %s);\n}, cstring($;)) if $; ne "\34";
-    print sprintf(qq{    sv_setpvs(get_sv("\"", 0), %s);\n}, cstring($")) if $" ne " ";
+    print sprintf(qq{    sv_setpv(get_sv(";", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($;)) if $; ne "\34";
+    print sprintf(qq{    sv_setpv(get_sv("\"", GV_NOTQUAL), %s);\n}, cstring($")) if $" ne " ";
     # global IO vars
-    print sprintf(qq{    {SV* s = GvSVn(PL_ofsgv); sv_setpv(s, %s); mg_set(s);}\n}, cstring($,)) if $,;
-    print sprintf(qq{    {SV* s = get_sv("/", 0); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($/)) if $/ ne "\n"; #RS
-    print sprintf(qq{    {SV* s = get_sv("\\",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($\)) if $\; #ORS
-    print         qq{    {SV* s = get_sv("|",GV_ADD); sv_setiv(s, $|); mg_set(s);}\n} if $|; #OUTPUT_AUTOFLUSH
+    print sprintf(qq{    sv_setpv_mg(GvSVn(PL_ofsgv), %s);\n}, cstring($,)) if $,;
+    print sprintf(qq{    sv_setpv_mg(get_sv("/", GV_NOTQUAL), %s);\n}, cstring($/)) if $/ ne "\n"; #RS
+    print sprintf(qq{    sv_setpv_mg(get_sv("\\", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($\)) if $\; #ORS
+    print         qq{    sv_setiv_mg(get_sv("|", GV_ADD|GV_NOTQUAL), $|);\n} if $|; #OUTPUT_AUTOFLUSH
     # global format vars
-    print sprintf(qq{    {SV* s = get_sv("^A",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($^A)) if $^A; #ACCUMULATOR
-    print sprintf(qq{    {SV* s = get_sv("^L",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($^L)) if $^L ne "\f"; #FORMFEED
-    print sprintf(qq{    {SV* s = get_sv(":",GV_ADD); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($:)) if $: ne " \n-"; #LINE_BREAK_CHARACTERS
-    print sprintf(qq{    {SV* s = get_sv("^",0); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($^)) if $^ ne "STDOUT_TOP";
-    print sprintf(qq{    {SV* s = get_sv("~",0); sv_setpvs(s, %s); mg_set(s);}\n}, cstring($~)) if $~ ne "STDOUT";
-    print         qq{    {SV* s = get_sv("%",GV_ADD); sv_setiv(s, $%); mg_set(s);}\n} if $%; #PAGE_NUMBER
-    print         qq{    {SV* s = get_sv("-",GV_ADD); sv_setiv(s, $-); mg_set(s);}\n} if $-; #LINES_LEFT
-    print         qq{    {SV* s = get_sv("=",0); sv_setiv(s, $=); mg_set(s);}\n} if $= != 60; #LINES_PER_PAGE
+    print sprintf(qq{    sv_setpv_mg(get_sv("^A", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^A)) if $^A; #ACCUMULATOR
+    print sprintf(qq{    sv_setpv_mg(get_sv("^L", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^L)) if $^L ne "\f"; #FORMFEED
+    print sprintf(qq{    sv_setpv_mg(get_sv(":", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($:)) if $: ne " \n-"; #LINE_BREAK_CHARACTERS
+    print sprintf(qq{    sv_setpv_mg(get_sv("^", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^)) if $^ ne "STDOUT_TOP";
+    print sprintf(qq{    sv_setpv_mg(get_sv("~", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($~)) if $~ ne "STDOUT";
+    print         qq{    sv_setiv_mg(get_sv("%", GV_ADD|GV_NOTQUAL), $%);\n} if $%; #PAGE_NUMBER
+    print         qq{    sv_setiv_mg(get_sv("-", GV_ADD|GV_NOTQUAL), $-);\n} if $-; #LINES_LEFT
+    print         qq{    sv_setiv_mg(get_sv("=", GV_ADD|GV_NOTQUAL), $=);\n} if $= != 60; #LINES_PER_PAGE
 
     # deprecated global vars
-    print qq{    {SV* s = get_sv("[",0); sv_setiv(s, $[); mg_set(s);}\n} if $[; #ARRAY_BASE
+    print qq{    {SV* s = get_sv("[",GV_NOTQUAL); sv_setiv(s, $[); mg_set(s);}\n} if $[; #ARRAY_BASE
     if ($] < 5.010) { # OFMT and multiline matching
       eval q[
-            print sprintf(qq{    sv_setpv(GvSVn(gv_fetchpv("\$#",GV_ADD|GV_NOTQUAL, SVt_PV)), %s);\n},
+            print sprintf(qq{    sv_setpv(GvSVn(gv_fetchpv("\$#", GV_ADD|GV_NOTQUAL, SVt_PV)), %s);\n},
                           cstring($#)) if $#;
-            print sprintf(qq{    sv_setiv(GvSVn(gv_fetchpv("\$*",GV_ADD|GV_NOTQUAL, SVt_IV)), %d);\n}, $*) if $*;
+            print sprintf(qq{    sv_setiv(GvSVn(gv_fetchpv("\$*", GV_ADD|GV_NOTQUAL, SVt_IV)), %d);\n}, $*) if $*;
            ];
     }
 
     my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
+    print sprintf(qq{    sv_setpv_mg(get_sv("\030", GV_ADD|GV_NOTQUAL), "%s"); /* $^X */\n}, $X);
     print <<"EOT";
-    if ((tmpgv = gv_fetchpv("\030", GV_ADD|GV_NOTQUAL, SVt_PV))) {/* $^X */
-        tmpsv = GvSVn(tmpgv);
-        sv_setpv(tmpsv,"$X");
-        SvSETMAGIC(tmpsv);
-    }
-
     TAINT_NOT;
 
     #if PERL_VERSION < 10 || ((PERL_VERSION == 10) && (PERL_SUBVERSION < 1))
