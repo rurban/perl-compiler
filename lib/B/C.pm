@@ -5114,8 +5114,7 @@ _EOT15
            ];
     }
 
-    my $X = $^X =~ /[\s\\]/ ? B::cchar($^X) : $^X;
-    print sprintf(qq{    sv_setpv_mg(get_sv("\030", GV_ADD|GV_NOTQUAL), "%s"); /* $^X */\n}, $X);
+    print sprintf(qq{    sv_setpv_mg(get_sv("\030", GV_ADD|GV_NOTQUAL), %s); /* \$^X */\n}, cstring($^X));
     print <<"EOT";
     TAINT_NOT;
 
