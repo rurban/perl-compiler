@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_61 c1af0b2 2013-12-03 | Add Changelog line for the last commit
+# B::C::VERSION = 1.42_62 335620b 2013-12-05 | C: make B::C taint-safe again, -T
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_61 - perl-5.014004-nt
+# 100 / 100 modules tested with B-C-1.42_62 - perl-5.014004-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

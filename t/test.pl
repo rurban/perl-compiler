@@ -840,21 +840,22 @@ sub todo_tests_default {
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
 	push @todo, (14)    if $] >= 5.012;
-	push @todo, (10,16) if $what eq 'cc_o2';
-	push @todo, (29)    if $] >= 5.013 and $what eq 'cc_o2';
-	push @todo, (27,41..45,49) if $what eq 'cc_o2'; # -faelem
+	push @todo, (10,16,50) if $what eq 'cc_o2';
+	#push @todo, (29)    if $] >= 5.013 and $what eq 'cc_o2';
+	push @todo, (43)     if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
+	push @todo, (27)    if $] <= 5.008008;
+	push @todo, (49)    if $] >= 5.007 and $] < 5.008008;
 	push @todo, (29)    if $] < 5.009; # or ($] > 5.013 and $] < 5.015);
 	push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
 	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
-	push @todo, (27)    if $] <= 5.008008;
 	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
-	#push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
+	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
