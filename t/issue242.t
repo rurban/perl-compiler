@@ -16,5 +16,5 @@ print "ok\n" if $c eq "\x{3a3}foo.Bar";
 __END__
 EOF
 
-ctestok(1,'C','ccode242i',$script,'#242 Using s///e to change unicode case');
-ctestok(2,'C,-O3','ccode242i',$script,'#242 Using s///e to change unicode case');
+ctestok(1,'C','ccode242i',$script,'#242 C,-O0 Using s///e to change unicode case');
+ctestok(2,'C,-O3','ccode242i',$script,'#242 -O3');
