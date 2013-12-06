@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_62';
+our $VERSION = '1.42_63';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -342,7 +342,7 @@ our ($module, $init_name, %savINC, $mainfile);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow);
+    $fold, $warnings, $carp, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow);
 our $verbose = 0;
 our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
@@ -359,6 +359,7 @@ our %option_map = (
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
     'warnings'        => \$B::C::warnings, # disable with -fno-warnings
+    'carp'            => \$B::C::carp,     # stub carp with warn/die
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'cop'             => \$optimize_cop, # XXX very unsafe!
@@ -369,7 +370,7 @@ our %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings -fno-carp)],
     4 => [qw(-fcop)],
   );
 our %debug_map = (
@@ -3305,6 +3306,11 @@ if (0) {
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
 
+  if ($package eq 'Carp' and !$B::C::carp and !$include_package{$package}) {
+    no strict 'refs';
+    stub_carp();
+    $gv = svref_2object( \*{$fullname} );
+  }
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
     unless (ref($egv) eq 'B::SPECIAL') {
@@ -5188,6 +5194,27 @@ sub save_object {
 
 sub Dummy_BootStrap { }
 
+sub stub_carp {
+  warn "Stub Carp" if $debug{pkg};
+  my $package = 'Carp';
+  %Carp:: = ();
+  $include_package{$package} = 1;
+  $skip_package{$package} = 1;
+  eval q[
+sub Carp::croak   { die @_ }
+sub Carp::confess { die @_ }
+sub Carp::carp    { warn @_ }
+sub Carp::cluck   { warn @_ }
+sub Carp::verbose  { $Carp::Verbose }
+sub Carp::longmess  { @_ }
+sub Carp::shortmess { @_ }
+$Carp::VERSION = '1.0_pcc';
+@Carp::ISA = ();
+];
+  $INC{'Carp.pm'} = 'stubbed';
+  $INC{'Carp/Heavy.pm'} = 'stubbed';
+}
+
 #ignore nullified cv
 sub B::SPECIAL::savecv {}
 
@@ -5222,6 +5249,9 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
+  if ($package eq 'Carp' and !$B::C::carp and !$include_package{$package}) {
+    stub_carp();
+  }
   # we should not delete already saved packages
   $saved{$package}++;
   return if $fullname eq 'B::walksymtable'; # XXX fails and should not be needed
@@ -5249,6 +5279,7 @@ sub mark_package {
   return if $skip_package{$package}; # or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
+    return 0 if !$B::C::carp and $package eq 'Carp';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
     mark_package('IO') if grep { $package eq $_ } @IO;
     $use_xsloader = 1 if $package =~ /^B|Carp$/; # to help CC a bit (49)
@@ -5951,6 +5982,7 @@ sub compile {
   $B::C::stash    = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
+  $B::C::carp     = 1; # disable with -fno-carp
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
 	       B::Section B::Pseudoreg B::Shadow);
   #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
@@ -6397,6 +6429,18 @@ in memory, which is about 68kB on 32-bit. In CORE this is demand-loaded
 from F<warnings.pm>.
 
 You can strip this table from memory with C<-fno-warnings>.
+
+Enabled with C<-O3>.
+
+=item B<-fno-carp>
+
+You can stub the Carp module with simplier die and warn calls with C<-fno-carp>,
+which does not show the backtrace, until CORE provides a native backtrace op.
+You can run-time detect those stubs by checking one of those values:
+
+    $Carp::VERSION = '1.0_pcc'
+    $INC{'Carp.pm'} = 'stubbed'
+    $INC{'Carp/Heavy.pm'} = 'stubbed'
 
 Enabled with C<-O3>.
 
