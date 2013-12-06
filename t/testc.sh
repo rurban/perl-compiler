@@ -337,8 +337,8 @@ tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
 result[511]='ok'
 #-------------
 # issue27
-tests[227]='require LWP::UserAgent;print q(ok);'
-result[227]='ok'
+tests[527]='require LWP::UserAgent;print q(ok);'
+result[527]='ok'
 #issue 24
 tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
 result[224]='ok'

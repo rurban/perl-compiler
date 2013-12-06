@@ -25,7 +25,7 @@ TODO: {
   # 5.15: Undefined subroutine &utf8::SWASHNEW called at /usr/local/lib/perl5/5.15.3/constant.pm line 36
   # old: &Config::AUTOLOAD failed on Config::launcher at Config.pm line 72.
   is(`$X blib/script/perlcc -O2 -occodei27_o2 -r -e"require LWP::UserAgent;print q(ok);"`, 'ok',
-     "-O2 require LWP::UserAgent $opt");
+     "-O2 require LWP::UserAgent");
 }
 # fine with -fno-warnings
 is(`$X blib/script/perlcc $opt -occodei27 -r -e"require LWP::UserAgent;print q(ok);"`, 'ok',
