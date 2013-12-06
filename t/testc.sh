@@ -889,7 +889,7 @@ $str =~ /^[ET1]/i;
 }'
 result[207]='ok 1
 ok 2'
-tests[208]='#TODO
+tests[208]='#TODO 197
 sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;'
 if [[ $v513 -gt 0 ]]; then
@@ -1041,7 +1041,7 @@ result[253]='1..2
 ok 1
 ok 2
 '
-tests[254]='# TODO
+tests[254]='# TODO 197 destroy lexvar
 my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
 {my $x; # x only exists in that scope
