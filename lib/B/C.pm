@@ -5100,7 +5100,7 @@ _EOT15
     print sprintf(qq{    sv_setpv_mg(get_sv("^", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^)) if $^ ne "STDOUT_TOP";
     print sprintf(qq{    sv_setpv_mg(get_sv("~", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($~)) if $~ ne "STDOUT";
     print         qq{    sv_setiv_mg(get_sv("%", GV_ADD|GV_NOTQUAL), $%);\n} if $%; #PAGE_NUMBER
-    print         qq{    sv_setiv_mg(get_sv("-", GV_ADD|GV_NOTQUAL), $-);\n} if !$- or $- != 60; #LINES_LEFT
+    print         qq{    sv_setiv_mg(get_sv("-", GV_ADD|GV_NOTQUAL), $-);\n} unless ($- == 0 or $- == 60); #LINES_LEFT
     print         qq{    sv_setiv_mg(get_sv("=", GV_ADD|GV_NOTQUAL), $=);\n} if $= != 60; #LINES_PER_PAGE
 
     # deprecated global vars
