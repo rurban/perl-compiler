@@ -38,13 +38,13 @@ system("$X $Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
 ok(-s $perldocexe, "$perldocexe compiled"); #1
 
 diagv "see if $perldoc -T works";
-my $T_opt = "-T -f wait";
+my $T_opt = "-- -T -f wait";
 my $ori;
 my $PAGER = '';
 my ($result, $out, $err);
 my $t0 = [gettimeofday];
 if ($^O eq 'MSWin32') {
-  $T_opt = "-t -f wait";
+  $T_opt = "-- -t -f wait";
   $PAGER = "PERLDOC_PAGER=type ";
   ($result, $ori, $err) = run_cmd("$PAGER$X -S $perldoc $T_opt", 20);
 } else {
@@ -52,7 +52,7 @@ if ($^O eq 'MSWin32') {
 }
 my $t1 = tv_interval( $t0 );
 if ($ori =~ /Unknown option/) {
-  $T_opt = "-t -f wait";
+  $T_opt = "-- -t -f wait";
   $PAGER = "PERLDOC_PAGER=cat " if $^O ne 'MSWin32';
   diagv "No, use $PAGER instead";
   $t0 = [gettimeofday];
