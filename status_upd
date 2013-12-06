@@ -93,6 +93,7 @@ sub status {
     next unless $file;
     chomp $file;
     ($file) = $file =~ m{log.test-.*-(t/[\w\.]+\s?)};
+    next unless $file;
     $file =~ s{\s*$}{};
     $file =~ s{^\s*}{};
     $failed =~ s{^.+(Failed tests?:?)}{$1}i;
