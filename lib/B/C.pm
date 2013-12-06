@@ -5085,7 +5085,6 @@ _EOT15
     # more global vars
     print "    PL_hints = $^H;\n" if $^H;
     print "    PL_unicode = ${^UNICODE};\n" if ${^UNICODE};
-    print "    PL_utf8locale = ${^UTF8LOCALE};\n" if ${^UTF8LOCALE};
     # nomg
     print sprintf(qq{    sv_setpv(get_sv(";", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($;)) if $; ne "\34";
     print sprintf(qq{    sv_setpv(get_sv("\"", GV_NOTQUAL), %s);\n}, cstring($")) if $" ne " ";
