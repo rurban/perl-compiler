@@ -3310,6 +3310,8 @@ if (0) {
     no strict 'refs';
     stub_carp();
     $gv = svref_2object( \*{$fullname} );
+    warn sprintf( "Replaced GV 0x%x as $sym\n", $$gv ) if $debug{gv};
+    savesym( $gv, $sym );
   }
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
@@ -3565,6 +3567,7 @@ if (0) {
     }
     if ( $$gvcv and $savefields & Save_CV
          and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
+         and ref($gvcv->GV->EGV->STASH) ne 'B::SPECIAL'
          and !$skip_package{$package} )
     {
       my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
