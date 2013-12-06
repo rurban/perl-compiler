@@ -5000,7 +5000,6 @@ main(int argc, char **argv, char **env)
 	PL_perl_destruct_level = 0;
     }
 _EOT10
-
     if ($ITHREADS and $] > 5.007) {
       # XXX init free elems!
       my $pad_len = regex_padav->FILL;    # first is an empty avref
@@ -5024,7 +5023,7 @@ _EOT10
 _EOT11
 
     }
-
+    print "    PL_exit_flags |= PERL_EXIT_DESTRUCT_END;\n" unless $PERL56;
     if (!$PERL510) {
       print <<'_EOT12';
 #if defined(CSH)
