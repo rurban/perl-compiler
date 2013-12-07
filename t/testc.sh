@@ -470,10 +470,19 @@ my IO::Handle $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";'
 result[95]='ok'
+# defined should not load the package
+tests[96]='if ($INC{Carp.pm} and !defined($Carp::VERSION)) {
+  print q(not ok - INC{Carp} but !$Carp::VERSION)
+} elsif (defined($Carp::VERSION)) {
+  print q(not ok - !INC{Carp} but $Carp::VERSION)
+} else {
+  print q(ok)
+}'
+result[96]='ok'
 tests[97]='use v5.12; print q(ok);'
 result[97]='ok'
 
-# from here on we test CC specifics only
+# from here on we test CC specifics
 
 # CC types and arith
 tests[101]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;'
