@@ -3292,6 +3292,8 @@ if (0) {
   }
 }
   my $gvname   = $gv->NAME;
+  return qq(/*no stash $gvname*/&PL_sv_undef)
+    if ref($gv->STASH) eq 'B::SPECIAL'; #-O3 Carp::Clan
   my $package  = $gv->STASH->NAME;
   return $sym if $skip_package{$package};
 
@@ -5212,6 +5214,7 @@ sub Carp::verbose  { $Carp::Verbose }
 sub Carp::longmess  { @_ }
 sub Carp::shortmess { @_ }
 $Carp::VERSION = '1.0_pcc';
+$Carp::MaxArgLen  = 64;
 @Carp::ISA = ();
 ];
   $INC{'Carp.pm'} = 'stubbed';
