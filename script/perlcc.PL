@@ -164,7 +164,7 @@ sub run_code {
         }
     }
     vprint 0, "Running code $Output @ARGV";
-    run("$Output @ARGV");
+    system($Output, join(" ",@ARGV));
     exit(0);
 }
 
@@ -890,8 +890,11 @@ sub run {
     my (@commands) = @_;
 
     my $t0 = [gettimeofday] if opt('time');
-    print interruptrun(@commands) if (!opt('log'));
-    $logfh->print(interruptrun(@commands)) if (opt('log'));
+    if (!opt('log')) {
+        print interruptrun(@commands);
+    } else {
+        $logfh->print(interruptrun(@commands));
+    }
     my $elapsed = tv_interval ( $t0 ) if opt('time');
     vprint -1, "r time: $elapsed" if opt('time');
 }
