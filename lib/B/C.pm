@@ -370,8 +370,8 @@ our %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings -fno-carp)],
-    4 => [qw(-fcop)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    4 => [qw(-fcop -fno-carp)],
   );
 our %debug_map = (
     'O' => 'op',
@@ -6440,15 +6440,16 @@ Enabled with C<-O3>.
 
 =item B<-fno-carp>
 
-You can stub the Carp module with simplier die and warn calls with C<-fno-carp>,
-which does not show the backtrace, until CORE provides a native backtrace op.
+With C<-fno-carp> you can stub the Carp module with simplier die and warn calls
+which do not show the backtrace. C<-fno-carp> is useful until CORE perl5 provides
+a native backtrace op.
 You can run-time detect those stubs by checking one of those values:
 
     $Carp::VERSION = '1.0_pcc'
     $INC{'Carp.pm'} = 'stubbed'
     $INC{'Carp/Heavy.pm'} = 'stubbed'
 
-Enabled with C<-O3>.
+Enabled with C<-O4>.
 
 =item B<-fstash>
 
