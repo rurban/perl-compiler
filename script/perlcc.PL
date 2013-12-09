@@ -164,7 +164,7 @@ sub run_code {
         }
     }
     vprint 0, "Running code $Output @ARGV";
-    system($Output, join(" ",@ARGV));
+    system(join(" ",$Output,@ARGV));
     exit(0);
 }
 
