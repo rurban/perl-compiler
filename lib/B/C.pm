@@ -3276,20 +3276,7 @@ sub B::GV::save {
     warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
     return B::BM::save($gv);
   }
-if (0) {
-  if ($PERL512 and $gv->FLAGS & 0x2) { # IV
-    warn sprintf( "  Skip GV $sym isa IV (RV)\n") if $debug{gv};
-    return $sym;
-  }
-  elsif (!$PERL510 and $gv->FLAGS & 0x3) { # RV
-    warn sprintf( "  Skip GV $sym isa RV\n") if $debug{gv};
-    return $sym;
-  }
-  elsif ($PERL510 and $]< 5.012 and $gv->FLAGS & 0x4) { # 510 RV
-    warn sprintf( "  Skip GV $sym isa RV\n") if $debug{gv};
-    return $sym;
-  }
-}
+
   my $gvname   = $gv->NAME;
   my $package  = $gv->STASH->NAME;
   return $sym if $skip_package{$package};
@@ -3336,6 +3323,7 @@ if (0) {
   for my $s (keys %$core_syms) {
     if ($fullname eq 'main::'.$s) {
       $sym = savesym( $gv, $core_syms->{$s} );
+      #$sym = savesym( $gv, "SvREFCNT_inc(".$core_syms->{$s}.")" );
       # $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_GVPV);]);
       $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
       return $sym;
@@ -3344,11 +3332,13 @@ if (0) {
   if ($fullname =~ /^main::std(in|out|err)$/) {
     $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+    #$init->add( "SvREFCNT_inc($sym);" );
     return $sym;
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
     $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+    #$init->add( "SvREFCNT_inc($sym);" );
     return $sym;
   }
   # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
@@ -3998,13 +3988,14 @@ sub B::HV::save {
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
       $init->add("{\tHE **a; struct xpvhv_aux *aux;",
-		 sprintf("\tNewx(a, %d, HE*);", $hv_max+1),
+                 "#ifdef PERL_USE_LARGE_HV_ALLOC",
+                 sprintf("\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
+                         $hv_max),
+                 "#else",
+                 sprintf("\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max),
+                 "#endif",
 		 "\tHvARRAY($sym) = a;",
-		 sprintf("\tZero(HvARRAY($sym), %d, HE*);", $hv_max+1),
-		 "\tNewx(aux, 1, struct xpvhv_aux);",
-		 sprintf("\tHvARRAY($sym)[%d] = (HE*)aux;", $hv_max),
-		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),
-		 "\tHvEITER_set($sym, NULL);","}");
+		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),"}");
     }
   } # !5.10
   else {
@@ -4368,6 +4359,9 @@ sub output_all {
     print <<'EOT';
 #ifndef SvSTASH_set
 #  define SvSTASH_set(sv,hv) SvSTASH((sv)) = (hv)
+#endif
+#ifndef Newxz
+#  define Newxz(v,n,t) Newz(0,v,n,t)
 #endif
 EOT
   }

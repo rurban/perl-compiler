@@ -48,6 +48,8 @@
         Restore more missing globals: ${^UNICODE} ${^UTF8LOCALE} $; $\ $, $/ $" $|
           $^A $^L $: $^ $^ $^ $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
         Restore even deprecated vars $] $# $* (#171)
+        Fix HvAUX memory corruption, accessing HvAUX beyond HE fields, esp. with threaded perls.
+          Initialize now HvAUX backref and mro_meta fields.
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
