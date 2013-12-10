@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_61 c1af0b2 2013-12-03 | Add Changelog line for the last commit
+# B::C::VERSION = 1.42_62 96b4797 2013-12-09 | t/issue27.t TODO without -fno-warnings
 # perlversion = 5.012005-nt
 # path = /usr/local/bin/perl5.12.5-nt
 # platform = linux 64bit non-threaded
@@ -84,7 +84,7 @@ fail Test::Warn
 fail Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope
+pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
 fail namespace::clean
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash
-# 100 / 100 modules tested with B-C-1.42_61 - perl-5.012005-nt
-# pass  74 / 100 (74.0%)
-# fail  26 / 100 (26.0%)
-# todo   0 /  26 (0.0%)
+# 100 / 100 modules tested with B-C-1.42_62 - perl-5.012005-nt
+# pass  75 / 100 (75.0%)
+# fail  25 / 100 (25.0%)
+# todo   0 /  25 (0.0%)
 # skip   0 / 100 (0.0% not installed)

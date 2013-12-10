@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_61 c1af0b2 2013-12-03 | Add Changelog line for the last commit
+# B::C::VERSION = 1.42_62 96b4797 2013-12-09 | t/issue27.t TODO without -fno-warnings
 # perlversion = 5.018001
 # path = /usr/local/bin/perl5.18.1
 # platform = linux 64bit threaded
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_61 - perl-5.018001
-# pass  94 / 100 (94.0%)
-# fail   6 / 100 (6.0%)
-# todo   4 /   6 (66.7%)
+# 100 / 100 modules tested with B-C-1.42_62 - perl-5.018001
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
+# todo   4 /   5 (80.0%)
 # skip   0 / 100 (0.0% not installed)

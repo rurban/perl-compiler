@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_62 335620b 2013-12-05 | C: make B::C taint-safe again, -T
+# B::C::VERSION = 1.42_62 96b4797 2013-12-09 | t/issue27.t TODO without -fno-warnings
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
