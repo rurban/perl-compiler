@@ -194,7 +194,6 @@ EOT
     $section->SUPER::add("${init_name}_${name}(aTHX);");
     ++$name;
   }
-  $section->SUPER::add("perl_init2(aTHX);") unless $init_name eq 'perl_init2';
   # We need to output evals after dl_init.
   foreach my $s ( @{ $section->[-1]{evals} } ) {
     ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
@@ -3533,7 +3532,7 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-        $init->add("{\tCV *cv;
+        $init2->add("{\tCV *cv;
 		cv = get_cv($origname,TRUE);
 		GvCV_set($sym, cv);
 		SvREFCNT_inc((SV *)cv);","}");
@@ -3557,7 +3556,7 @@ sub B::GV::save {
 		s/GvGP_set\(\Q$sym\E.*;//;
 	      }
 	      if (/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/) {
-		s/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/$sym = gv_fetchpv($name, 0, SVt_PVCV);/;
+		s/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/$sym = gv_fetchpv($name, GV_ADD, SVt_PVCV);/;
 		$in_gv++;
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
@@ -3567,13 +3566,13 @@ sub B::GV::save {
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
 	    warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
-	    $init->add("{\tCV *cv;
+	    $init2->add("{\tCV *cv;
 		cv = get_cv($origname,TRUE);
 		GvCV_set($sym, cv);
 		SvREFCNT_inc((SV *)cv);","}");
 	  }
 	  else {
-	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+	    $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
 	  }
 	}
 	else {
@@ -4357,11 +4356,11 @@ EOT
       print "};\n\n";
     }
   }
+  printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
+  $init->output( \*STDOUT, "\t%s\n", $init_name );
   my $init2_name = 'perl_init2';
   printf "\t/* %s */\n", $init2->comment if $init2->comment and $verbose;
   $init2->output( \*STDOUT, "\t%s\n", $init2_name );
-  printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
-  $init->output( \*STDOUT, "\t%s\n", $init_name );
   if ($verbose) {
     my $caller = caller;
     warn $caller eq 'B::CC' ? B::CC::compile_stats() : compile_stats();
@@ -5085,6 +5084,7 @@ _EOT15
     if (exitstatus)
 	exit( exitstatus );
     dl_init(aTHX);
+    perl_init2(aTHX);
 EOT
 
     print $B::C::eval_pvs if $B::C::eval_pvs;
