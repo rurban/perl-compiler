@@ -3803,7 +3803,7 @@ sub B::AV::save {
       $init->add("\tregister int gcount;") if $count;
       $init->add(
                  "\tPADLIST *padl = $sym;",
-                 "\tNewx(svp, $fill, PAD *);",
+                 sprintf("\tNewxz(svp, %d, PAD *);", $fill+1),
                  "\tPadlistARRAY(padl) = svp;",
                 );
       $init->add( substr( $acc, 0, -2 ) );
