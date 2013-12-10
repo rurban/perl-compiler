@@ -3304,10 +3304,10 @@ sub B::GV::save {
       }
     }
   }
-  if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
-    $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
-    return $sym;
-  }
+  #if ($fullname eq 'threads::tid' and !$ITHREADS) { # checked for defined'ness in Carp
+  #  $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
+  #  return $sym;
+  #}
   my $core_syms = {ENV    => 'PL_envgv',
                    ARGV   => 'PL_argvgv',
                    INC    => 'PL_incgv',
