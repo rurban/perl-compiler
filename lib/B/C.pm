@@ -1731,7 +1731,7 @@ sub B::NULL::save {
                          ($PERL510?', {'.($C99?".svu_pv=":"").'(char*)ptr_undef}':''),
                          $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $fullname, $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
-  if ($debug{flags} and $]>5.009 and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
+  if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
     # $svsect->debug( "ix added to sv_debug_file" );
     $init->add(sprintf(qq(sv_list[%d].sv_debug_file = savepv("NULL sv_list[%d] 0x%x");),
 		       $svsect->index, $svsect->index, $sv->FLAGS));
@@ -2120,7 +2120,7 @@ sub B::PV::save {
     if ( defined($pv) and !$static ) {
       $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv ) );
     }
-    if ($debug{flags} and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
+    if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
 			 $svsect->index, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
 			 $svsect->index, $sv->FLAGS));

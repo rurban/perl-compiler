@@ -352,9 +352,9 @@ method_cv(meth, packname)
 #endif
 
 BOOT:
+    MY_CXT_INIT;
     PL_runops = my_runops;
 #if PERL_VERSION >= 10
-    MY_CXT_INIT;
     specialsv_list[0] = Nullsv;
     specialsv_list[1] = &PL_sv_undef;
     specialsv_list[2] = &PL_sv_yes;
