@@ -2151,9 +2151,10 @@ sub lexwarnsym {
   if ($lexwarnsym{$iv}) {
     return $lexwarnsym{$iv};
   } else {
-    warn "internal warning: lexwarn value $iv looks wrong\n" if $iv > 66000;
+    #warn "internal warning: lexwarn value $iv looks wrong\n" if $iv > 66000;
     my $sym = sprintf( "iv%d", $pv_index++ );
-    $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $iv ) );
+    $decl->add( sprintf( "Static char %s[sizeof(STRLEN) + (WARNsize)] = WARN_NONEstring;", $sym ));
+    $init->add( sprintf( "memset(%s, %d, sizeof(STRLEN));", $sym, $iv ) );
     $lexwarnsym{$iv} = $sym;
     return $sym;
   }
