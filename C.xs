@@ -352,7 +352,10 @@ method_cv(meth, packname)
 #endif
 
 BOOT:
+#if PERL_VERSION >= 10
+{
     MY_CXT_INIT;
+#endif
     PL_runops = my_runops;
 #if PERL_VERSION >= 10
     specialsv_list[0] = Nullsv;
@@ -362,4 +365,5 @@ BOOT:
     specialsv_list[4] = (SV *) pWARN_ALL;
     specialsv_list[5] = (SV *) pWARN_NONE;
     specialsv_list[6] = (SV *) pWARN_STD;
+}
 #endif
