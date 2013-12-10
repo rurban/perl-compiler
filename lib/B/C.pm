@@ -3554,7 +3554,7 @@ sub B::GV::save {
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
         my $cvsym = $gvcv->save($fullname);
-        # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to FALSE and SVt_PVCV
+        # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
         if ($cvsym =~ /(\(char\*\))?get_cv\("/) {
 	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
 	    my $in_gv;

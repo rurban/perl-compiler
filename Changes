@@ -52,6 +52,7 @@
           Initialize now HvAUX backref and mro_meta fields.
         Do not boot internal core XS packages twice, refer to internal XS functions dynamically
           and do not link to them. Fixes fix Windows/AIX with strict linking.
+        Defer dynaloaded GvCV initialization after dl_init()
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
