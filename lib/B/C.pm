@@ -1838,7 +1838,7 @@ sub B::NV::save {
 }
 
 sub savepvn {
-  my ( $dest, $pv, $sv ) = @_;
+  my ( $dest, $pv, $sv, $cur ) = @_;
   my @init;
 
   # work with byte offsets/lengths
@@ -1867,9 +1867,17 @@ sub savepvn {
 	push @static_free, $dest;
       }
     } else {
-      warn sprintf( "Saving PV %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-      my $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length(pack "a*", $pv);
-      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, cstring($pv), $cur );
+      my $cstr = cstring($pv);
+      my $cur = $cur ? $cur
+        : ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV')
+          ? $sv->CUR : length(pack "a*", $pv);
+      if ($sv and IsCOW($sv)) {
+        $pv .= "\0\001";
+        $cstr = cstring($pv);
+        $cur += 2;
+      }
+      warn sprintf( "Saving PV %s:%d to %s\n", $cstr, $cur, $dest ) if $debug{sv};
+      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
     }
   }
   return @init;
@@ -1917,10 +1925,10 @@ sub B::PVLV::save {
   my $s = "sv_list[".$svsect->index."]";
   if ( !$static ) {
     if ($PERL510) {
-      $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
+      $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
     }
     else {
-      $init->add( savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv ) );
+      $init->add( savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv, $cur ) );
     }
   }
   $sv->save_magic($fullname);
@@ -1959,9 +1967,9 @@ sub B::PVIV::save {
   if ( defined($pv) ) {
     if ( !$static ) {
       if ($PERL510) {
-	$init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
+	$init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
       } else {
-	$init->add( savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv ) );
+	$init->add( savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv, $cur ) );
       }
     }
   }
@@ -2025,10 +2033,10 @@ sub B::PVNV::save {
   if ( defined($pv) ) {
     if ( !$static ) {
       if ($PERL510) {
-	$init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
+	$init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
       }
       else {
-        $init->add( savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv ) );
+        $init->add( savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv, $cur ) );
       }
     }
   }
@@ -2070,7 +2078,7 @@ sub B::BM::save {
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     $s = "sv_list[".$svsect->index."]";
     if (!$static) {
-      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv ) );
+      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv, 0, $cur ) );
     } else {
       push @static_free, $s if defined($pv) and !$in_endav;
     }
@@ -2117,7 +2125,7 @@ sub B::PV::save {
                            $xpvsect->index, $refcnt, $flags,
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
     if ( defined($pv) and !$static ) {
-      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv ) );
+      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv, $cur ) );
     }
     if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
@@ -2130,7 +2138,7 @@ sub B::PV::save {
     $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
 			 $xpvsect->index, $refcnt, $flags));
     if ( defined($pv) and !$static ) {
-      $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv ) );
+      $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv, 0, $cur ) );
     }
   }
   my $s = "sv_list[".$svsect->index."]";
@@ -2274,7 +2282,7 @@ sub B::PVMG::save {
 	if (!$pv or $savesym eq 'NULL') {
 	  $init->add( "$s.sv_u.svu_pv = (char*)&PL_sv_undef;" );
 	} else {
-	  $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv ) );
+	  $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
 	}
       }
     } else {
@@ -2283,7 +2291,7 @@ sub B::PVMG::save {
 			     $xpvmgsect->index ) );
       } else {
         $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
-			    $pv ) );
+			    $pv, 0, $cur ) );
       }
     }
   }
@@ -3172,7 +3180,7 @@ sub B::CV::save {
   }
   unless ($optimize_cop) {
     if ($MULTI) {
-      $init->add( savepvn( "CvFILE($sym)", $cv->FILE, $gv ) );
+      $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
     } else {
       $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
     }
