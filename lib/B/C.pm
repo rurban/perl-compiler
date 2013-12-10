@@ -5117,16 +5117,6 @@ _EOT15
       CvUNIQUE_on(PL_compcv);
       CvPADLIST(PL_compcv) = pad_new(0);
     #endif
-    #if PERL_VERSION > 7
-      boot_core_PerlIO();
-    #endif
-    boot_core_UNIVERSAL();
-    #if PERL_VERSION > 9
-      boot_core_mro();
-    #endif
-    #if PERL_VERSION < 11
-      boot_core_xsutils(); /* attributes::bootstrap */
-    #endif
 
     /* our special compiled init */
     exitstatus = perl_init(aTHX);
