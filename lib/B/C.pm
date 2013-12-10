@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_62';
+our $VERSION = '1.42_63';
 my %debug;
 our $check;
 my $eval_pvs = '';
