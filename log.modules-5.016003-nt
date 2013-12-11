@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_62 96b4797 2013-12-09 | t/issue27.t TODO without -fno-warnings
+# B::C::VERSION = 1.42_63 911c59c 2013-12-10 | C 5.18: fix dynamic COW strings
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_62 - perl-5.016003-nt
+# 100 / 100 modules tested with B-C-1.42_63 - perl-5.016003-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   0 /   1 (0.0%)

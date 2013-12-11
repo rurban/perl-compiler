@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_61 afd333a 2013-12-02 | add t/issue159.t, TODO t/perldoc.t timings
+# B::C::VERSION = 1.42_63 911c59c 2013-12-10 | C 5.18: fix dynamic COW strings
 # perlversion = 5.018001d
 # path = /usr/local/bin/perl5.18.1d
 # platform = linux 64bit threaded debug
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO >= 5.18 with threads
+pass ExtUtils::CBuilder #TODO >= 5.18 with threads
 fail ExtUtils::ParseXS #TODO >= 5.18
 fail Module::Build #TODO >= 5.18
 pass File::Path
@@ -96,13 +96,13 @@ pass YAML
 fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-pass DateTime::Locale
+fail DateTime::Locale
 pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_61 - perl-5.018001d
+# 100 / 100 modules tested with B-C-1.42_63 - perl-5.018001d
 # pass  93 / 100 (93.0%)
 # fail   7 / 100 (7.0%)
 # todo   3 /   7 (42.9%)
