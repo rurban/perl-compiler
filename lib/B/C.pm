@@ -2156,11 +2156,13 @@ sub lexwarnsym {
       $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $pv ));
     }
     else {
-      my ($iv) = unpack("I", $pv);
+      # if 8 use UVSIZE, if 4 use LONGSIZE
+      my $t = ($Config{longsize} == 8) ? "J" : "L";
+      my ($iv) = unpack($t, $pv); # unsigned longsize
       if ($iv >= 0 and $iv <= 2) { # specialWARN: single STRLEN
         $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $iv ));
       } else { # sizeof(STRLEN) + (WARNsize)
-        my $packedpv = pack("I a*",length($pv), $pv);
+        my $packedpv = pack("$t a*",length($pv), $pv);
         $decl->add( sprintf( "Static char %s[] = %s;", $sym, cstring($packedpv) ));
       }
     }
