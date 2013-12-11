@@ -2147,15 +2147,24 @@ sub B::PV::save {
 }
 
 sub lexwarnsym {
-  my $iv = shift;
-  if ($lexwarnsym{$iv}) {
-    return $lexwarnsym{$iv};
+  my $pv = shift;
+  if ($lexwarnsym{$pv}) {
+    return $lexwarnsym{$pv};
   } else {
-    #warn "internal warning: lexwarn value $iv looks wrong\n" if $iv > 66000;
-    my $sym = sprintf( "iv%d", $pv_index++ );
-    $decl->add( sprintf( "Static char %s[sizeof(STRLEN) + (WARNsize)] = WARN_NONEstring;", $sym ));
-    $init->add( sprintf( "memset(%s, %d, sizeof(STRLEN));", $sym, $iv ) );
-    $lexwarnsym{$iv} = $sym;
+    my $sym = sprintf( "lexwarn%d", $pv_index++ );
+    if ($] < 5.009) {
+      $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $pv ));
+    }
+    else {
+      my ($iv) = unpack("I", $pv);
+      if ($iv >= 0 and $iv <= 2) { # specialWARN: single STRLEN
+        $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $iv ));
+      } else { # sizeof(STRLEN) + (WARNsize)
+        my $packedpv = pack("I a*",length($pv), $pv);
+        $decl->add( sprintf( "Static char %s[] = %s;", $sym, cstring($packedpv) ));
+      }
+    }
+    $lexwarnsym{$pv} = $sym;
     return $sym;
   }
 }
@@ -2166,9 +2175,8 @@ sub B::LEXWARN::save {
   my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
   return $sym if defined $sym;
-  my $iv = $] >= 5.008009 ? length($sv->PV) : $sv->IV;
-  if ($] < 5.009004 and $] >= 5.009) { $iv = length($sv->PV); }
-  my $ivsym = lexwarnsym($iv); # look for shared const int's
+  my $pv = $] >= 5.008009 ? $sv->PV : $sv->IV;
+  my $ivsym = lexwarnsym($pv); # look for shared const int's
   return savesym($sv, $ivsym);
 }
 
