@@ -590,6 +590,9 @@ sub svop_or_padop_pv {
 sub IsCOW {
   return $] >= 5.017008 and $_[0]->FLAGS & 0x00010000; # since 5.17.8
 }
+sub IsCOW_hek {
+  return IsCOW($_[0]) && !$_[0]->LEN;
+}
 
 sub savesym {
   my ( $obj, $value ) = @_;
@@ -705,7 +708,7 @@ sub save_pv_or_rv {
   my $pok = $sv->FLAGS & SVf_POK;
   my $gmg = $sv->FLAGS & SVs_GMG;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 0 );
-  my $static;
+  my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
   if ($rok and !$PERL56) {
@@ -732,7 +735,8 @@ sub save_pv_or_rv {
 	($pv,$cur) = (undef,0);
       }
     }
-    my $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
+    $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
+    $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
     $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
     if ($PERL510) { # force dynamic PADNAME strings
@@ -772,7 +776,7 @@ sub save_pv_or_rv {
     }
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
-               $static, $fullname) if $debug{pv};
+               $static, $shared_hek ? "shared, $fullname" : $fullname) if $debug{pv};
   return ( $savesym, $cur, $len, $pv, $static );
 }
 
@@ -2110,6 +2114,7 @@ sub B::PV::save {
   }
   my $flags = $sv->FLAGS;
   my $shared_hek = $PERL510 ? (($flags & 0x09000000) == 0x09000000) : undef;
+  $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
   my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
   $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
@@ -2125,7 +2130,13 @@ sub B::PV::save {
                            $xpvsect->index, $refcnt, $flags,
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
     if ( defined($pv) and !$static ) {
-      $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv, $cur ) );
+      if ($shared_hek) {
+        my $hek = save_hek($pv);
+        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svsect->index, $hek ))
+                    unless $hek eq 'NULL';
+      } else {
+        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv, $cur ) );
+      }
     }
     if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
