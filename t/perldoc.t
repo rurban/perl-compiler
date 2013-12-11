@@ -71,13 +71,19 @@ TODO: {
   is($out, $ori, "same result"); #2
 }
 
+sub todofaster {
+  my ($t1, $t2, $cmt) = @_;
+  if (faster($t1,$t2)) {
+    ok(1, $cmt);
+  } else {
+    # esp. with $ENV{HARNESS_ACTIVE}
+    ok(0, "TODO ".$cmt . " (unreliable timings with parallel testing)");
+  }
+}
+
 SKIP: {
   skip "cannot compare times", 1 if $out ne $ori;
-  if (faster($t1,$t2)) {
-    ok(1, "compiled faster than uncompiled: $t2 < $t1"); #3
-  } else {
-    ok(0, "TODO compiled faster than uncompiled: $t2 < $t1 (unreliable with parallel testing)"); #3
-  }
+  todofaster($t1,$t2,"compiled faster than uncompiled: $t2 < $t1"); #3
 }
 
 unlink $perldocexe if -e $perldocexe;
@@ -100,12 +106,8 @@ TODO: {
 
 SKIP: {
   skip "cannot compare times", 2 if $out ne $ori;
-  ok(faster($t2,$t3), "compiled -O3 not slower than -O0: $t3 <= $t2"); #6
-  if (faster($t1,$t3)) {
-    ok(1, "compiled -O3 faster than uncompiled: $t3 < $t1"); #7
-  } else { # unreliable with parallel testing
-    ok(0, "TODO compiled -O3 faster than uncompiled: $t3 < $t1 (unreliable with parallel testing)"); #7
-  }
+  todofaster($t2,$t3,"compiled -O3 not slower than -O0: $t3 <= $t2"); #6
+  todofaster($t1,$t3,"compiled -O3 faster than uncompiled: $t3 < $t1"); #7
 }
 
 END {
