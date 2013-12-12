@@ -55,6 +55,7 @@
         Defer dynaloaded GvCV initialization after dl_init()
         Fixed storage of non-special lexical warnings (#258 warnsize-i258)
 	Fixed storage of shared heks, support IsCOW_hek (i.e. method names)
+        Support new ReANY since 5.17.6 (#258 reg_temp_copy)
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.

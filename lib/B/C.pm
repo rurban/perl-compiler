@@ -2208,15 +2208,18 @@ sub B::REGEXP::save {
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
   $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
   $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
-		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, $cstr));
+		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, $] > 5.017006 ? "NULL" : $cstr));
   my $ix = $svsect->index;
   warn "Saving RX \"$cstr\" to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
   if ($] > 5.011) {
-    $init->add(# replace XVP with struct regexp. need pv and extflags
+    $init->add(# replace sv_any->XPV with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
                        $cstr, $cur, $sv->EXTFLAGS),
                sprintf("SvCUR(&sv_list[$ix]) = %d;", $cur),
                "SvLEN(&sv_list[$ix]) = 0;");
+  }
+  if ($] >= 5.017006) {
+    $init->add("sv_list[$ix].sv_u.svu_rx = (struct regexp*)sv_list[$ix].sv_any;");
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
