@@ -1675,7 +1675,7 @@ sub B::PMOP::save {
       if ($PERL510 and $op->pmflags & PMf_ONCE()) {
         my $stash = $MULTI ? $op->pmstashpv
           : ref $op->pmstash eq 'B::HV' ? $op->pmstash->NAME : '__ANON__';
-        warn "TODO #188: restore PMf_ONCE, set PERL_MAGIC_symtab in $stash";
+        $Regexp{$$op} = $op; #188: restore PMf_ONCE, set PERL_MAGIC_symtab in $stash
       }
     }
     elsif ($PERL56) {
@@ -2487,12 +2487,23 @@ CODE2
           "/* AMT overload table for the stash s\\_%x is generated dynamically */",
           $$sv ));
     }
+    elsif ( $type eq ':' ) { # symtab magic
+      # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
+      my $pmop_ptr = unpack("J", $mg->PTR);
+      my $pmop = $Regexp{$pmop_ptr};
+      warn sprintf("pmop 0x%x not found in \%Regexp", $pmop_ptr) unless $pmop;
+      my $pmsym = $pmop ? $pmop->save($fullname) : '&pmop_list[0]';
+      $init->add("{\tU32 elements;", # toke.c: PL_multi_open == '?'
+                 sprintf("\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv),
+                 "\telements = mg->mg_len / sizeof(PMOP**);",
+                 "\tRenewc(mg->mg_ptr, elements + 1, PMOP*, char);",
+                 sprintf("\t((OP**)mg->mg_ptr) [elements++] = %s;", $pmsym),
+                 "\tmg->mg_len = elements * sizeof(PMOP**);", "}");
+    }
     else {
       $init->add(sprintf(
           "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
-          $$sv, $$obj, cchar($type), cstring($ptr), $len
-        )
-      )
+          $$sv, $$obj, cchar($type), cstring($ptr), $len))
     }
   }
   $magic;
