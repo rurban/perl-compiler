@@ -660,7 +660,7 @@ result[166]='ok'
 tests[167]='$a = "a\xFF\x{100}";
 eval {$b = crypt($a, "cd")};
 print $@;'
-result[167]='Wide character in crypt at ccode167.c line 2.'
+result[167]='Wide character in crypt at ccode167.pl line 2.'
 tests[168]='my $start_time = time;
 eval {
     local $SIG{ALRM} = sub { die "ALARM !\n" };
@@ -966,9 +966,9 @@ sub f ($) {
   my $test = $_[0];
   write;
   format STDOUT =
-  ok @<<<<<<<
-  $test
-  .
+ok @<<<<<<<
+$test
+.
 }
 f("");
 '
