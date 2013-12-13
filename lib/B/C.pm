@@ -917,17 +917,17 @@ sub force_heavy {
   my $pkg = shift;
   my $pkg_heavy = $pkg."_heavy.pl";
   no strict 'refs';
-  if (!$include_package{$pkg_heavy}) { # omit Carp
-    eval qq[sub $pkg\::AUTOLOAD {
-        require '$pkg_heavy';
-        goto &\$AUTOLOAD if defined &\$AUTOLOAD;
-        warn("Undefined subroutine \$AUTOLOAD called");
-      }];
-    warn "Redefined $pkg\::AUTOLOAD to omit Carp\n" if $debug{gv};
+  if (!$include_package{$pkg_heavy}) {
+    #eval qq[sub $pkg\::AUTOLOAD {
+    #    require '$pkg_heavy';
+    #    goto &\$AUTOLOAD if defined &\$AUTOLOAD;
+    #    warn("Undefined subroutine \$AUTOLOAD called");
+    #  }];
+    #warn "Redefined $pkg\::AUTOLOAD to omit Carp\n" if $debug{gv};
     warn "Forcing early $pkg_heavy\n" if $debug{pkg};
     require $pkg_heavy;
     mark_package($pkg_heavy, 1);
-    walk_syms($pkg); #before we stub unloaded CVs
+    #walk_syms($pkg); #before we stub unloaded CVs
   }
   return svref_2object( \*{$pkg."::AUTOLOAD"} );
 }
@@ -2941,6 +2941,16 @@ sub B::CV::save {
     # already polluted. See issue 61 and force_heavy()
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
   }
+  if (!$$root && !$cvxsub and $cvstashname =~ /^(bytes|utf8)$/) { # no autoload, force compile-time
+    force_heavy($cvstashname);
+    $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
+    $gv = $cv->GV;
+    warn sprintf( "Redefined CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
+                  $$cv, $$gv, $fullname, $CvFLAGS ) if $debug{cv};
+    $sym = savesym( $cv, $sym );
+    $root    = $cv->ROOT;
+    $cvxsub  = $cv->XSUB;
+  }
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
       if (ref $auto eq 'B::CV') { # explicit goto or UNIVERSAL
@@ -3396,7 +3406,7 @@ sub B::GV::save {
   my $is_special = ref($gv) eq 'B::SPECIAL';
 
   if ($fullname =~ /^(bytes|utf8)::AUTOLOAD$/) {
-    $gv = force_heavy($package);
+    $gv = force_heavy($package); # defer to run-time autoload, or compile it in?
     $sym = savesym( $gv, $sym ); # override new gv ptr to sym
   }
   if ( !$is_empty ) {
