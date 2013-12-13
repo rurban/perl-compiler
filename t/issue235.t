@@ -13,9 +13,9 @@ use Test::More tests => 2;
 
 use B::C;
 my $when = "1.42_61";
-ctest(1,'6','C,-O3,-UCarp','ccode235i',<<'EOF',($B::C::VERSION lt $when ? "TODO " : "").'#235 assert !CvCVGV_RC(cv)');
+ctest(1,'6','C,-O3,-UCarp','ccode235i',<<'EOF',($B::C::VERSION lt $when ? "TODO #235 assert !CvCVGV_RC(cv)" : "#235 bytes::length"));
 BEGIN{$INC{Carp.pm}++}
-$d = pack("U*", 0xe3, 0x81, 0xAF); { use bytes; $ol = bytes::length($d) } print $ol
+my ($d,$ol); $d = pack("U*", 0xe3, 0x81, 0xAF); { use bytes; $ol = bytes::length($d) } print $ol
 EOF
 
 ctest(2,'^Not enough arguments for main','C,-O3','ccode235i',<<'EOF',"TODO #246 WontFix: missing proto decl for empty subs");
