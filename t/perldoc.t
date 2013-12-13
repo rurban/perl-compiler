@@ -15,6 +15,18 @@ sub faster { ($_[1] - $_[0]) < 0.05 }
 sub diagv {
   diag @_ if $ENV{TEST_VERBOSE};
 }
+sub todofaster {
+  my ($t1, $t2, $cmt) = @_;
+  if (faster($t1,$t2)) {
+    ok(1, $cmt);
+  } else {
+  TODO: {
+    # esp. with $ENV{HARNESS_ACTIVE}
+    local $TODO = " (unreliable timings with parallel testing)";
+    ok(0, $cmt);
+    }
+  }
+}
 
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $Mblib = Mblib();
@@ -69,16 +81,6 @@ TODO: {
   # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
   local $TODO = "compiled does not print yet" if $] >= 5.016 or $] < 5.010 or $Config{useithreads};
   is($out, $ori, "same result"); #2
-}
-
-sub todofaster {
-  my ($t1, $t2, $cmt) = @_;
-  if (faster($t1,$t2)) {
-    ok(1, $cmt);
-  } else {
-    # esp. with $ENV{HARNESS_ACTIVE}
-    ok(0, "TODO ".$cmt . " (unreliable timings with parallel testing)");
-  }
 }
 
 SKIP: {
