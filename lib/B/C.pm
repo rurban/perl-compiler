@@ -2214,11 +2214,13 @@ sub B::REGEXP::save {
   if ($] > 5.011) {
     $init->add(# replace sv_any->XPV with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
-                       $cstr, $cur, $sv->EXTFLAGS),
-               sprintf("SvCUR(&sv_list[$ix]) = %d;", $cur),
-               "SvLEN(&sv_list[$ix]) = 0;");
+                       $cstr, $cur, $sv->EXTFLAGS));
   }
-  if ($] >= 5.017006) {
+  if ($] < 5.017006) {
+    # since 5.17.6 the SvLEN stores RX_WRAPPED(rx)
+    $init->add(sprintf("SvCUR(&sv_list[$ix]) = %d;", $cur),
+               "SvLEN(&sv_list[$ix]) = 0;");
+  } else {
     $init->add("sv_list[$ix].sv_u.svu_rx = (struct regexp*)sv_list[$ix].sv_any;");
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
