@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_62 96b4797 2013-12-09 | t/issue27.t TODO without -fno-warnings
+# B::C::VERSION = 1.42_65 1705de2 2013-12-13 | t/issue229.t stabilize
 # perlversion = 5.012005-nt
 # path = /usr/local/bin/perl5.12.5-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 fail Template::Stash
-# 100 / 100 modules tested with B-C-1.42_62 - perl-5.012005-nt
+# 100 / 100 modules tested with B-C-1.42_65 - perl-5.012005-nt
 # pass  75 / 100 (75.0%)
 # fail  25 / 100 (25.0%)
 # todo   0 /  25 (0.0%)
