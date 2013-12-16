@@ -691,7 +691,7 @@ ok
 tests[170]='# TODO
 eval "sub xyz (\$) : bad ;"; print "~~~~\n$@~~~~\n"'
 result[170]='~~~~
-Invalid CODE attribute: bad at (eval 1) line 1
+Invalid CODE attribute: bad at (eval 1) line 1.
 BEGIN failed--compilation aborted at (eval 1) line 1.
 ~~~~'
 tests[172]='# TODO
