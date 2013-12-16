@@ -1064,6 +1064,8 @@ BEGIN{ $| = 1; } print "ok\n" if $| == 1'
 result[256]='ok'
 #tests[257]=''
 #result[257]='ok'
+tests[260]='sub FETCH_SCALAR_ATTRIBUTES {''} sub MODIFY_SCALAR_ATTRIBUTES {''}; my $a :x=1; print $a'
+result[260]='1'
 
 init
 
