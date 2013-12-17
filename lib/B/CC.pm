@@ -105,7 +105,7 @@ pv_copy_on_grow
 
 B<-O1> sets B<-ffreetmps-each-bblock>.
 
-B<-O2> adds B<-ffreetmps-each-loop> and B<-fno-destruct> from L<B::C>.
+B<-O2> adds B<-ffreetmps-each-loop>, C<-faelem> and B<-fno-destruct> from L<B::C>.
 
 The following options must be set explicitly:
 
@@ -134,6 +134,13 @@ Enabled with B<-O1>.
 Delays FREETMPS from the end of each statement to the end of the group
 of basic blocks forming a loop. At most one of the freetmps-each-*
 options can be used.
+
+Enabled with B<-O2>.
+
+=item B<-faelem>
+
+Enable array element access optimizations, allowing unchecked
+fast access under certain circumstances.
 
 Enabled with B<-O2>.
 
