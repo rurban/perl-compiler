@@ -3010,7 +3010,7 @@ sub B::CV::save {
     $symsect->add(sprintf(
       "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $CvFLAGS));
-    return qq/get_cv("$fullname", TRUE)/;
+    return qq/get_cv("$fullname", GV_ADD)/;
   }
 
   # Now it is time to record the CV
@@ -3579,7 +3579,7 @@ sub B::GV::save {
         }
         # must save as a 'stub' so newXS() has a CV to populate
         $init2->add("{\tCV *cv;
-		cv = get_cv($origname,TRUE);
+		cv = get_cv($origname, GV_ADD);
 		GvCV_set($sym, cv);
 		SvREFCNT_inc((SV *)cv);","}");
       }
@@ -3613,7 +3613,7 @@ sub B::GV::save {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
 	    warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
 	    $init2->add("{\tCV *cv;
-		cv = get_cv($origname,TRUE);
+		cv = get_cv($origname, GV_ADD);
 		GvCV_set($sym, cv);
 		SvREFCNT_inc((SV *)cv);","}");
 	  }
@@ -4945,7 +4945,7 @@ _EOT9
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
 	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
-	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", TRUE));\n";
+	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
 	}
