@@ -2798,7 +2798,7 @@ sub B::CV::save {
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       # delsym($cv);
-      return qq/get_cv("$fullname", TRUE)/;
+      return qq/get_cv("$fullname", GV_ADD)/;
     } else {  # Those cvs are already booted. Reuse their GP.
       # Esp. on windows it is impossible to get at the XS function ptr
       warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv ) if $debug{cv};
@@ -4862,6 +4862,9 @@ _EOT9
     #  delete $xsub{$stashname};
     #  @dl_modules = grep { $_ ne $stashname } @dl_modules;
     #}
+    if ($stashname eq 'attributes' and $] > 5.011) {
+      $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
+    }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
@@ -4879,7 +4882,7 @@ _EOT9
     print "\t/* assert(cxstack_ix == 0); */\n" if $xs;
     print "\tSAVETMPS;\n";
     print "\ttarg = sv_newmortal();\n" if $] < 5.008008;
-    foreach my $stashname (@dl_modules) {
+    foreach my $stashname (reverse @dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
 	$use_xsloader = 1;
         warn "dl_init $stashname\n" if $verbose;
@@ -5375,6 +5378,10 @@ sub should_save {
     } else {
       warn "ext/mro already loaded\n" if $debug{pkg};
     }
+  }
+  if ($package eq 'attributes' and $] > 5.011 and grep /attributes/, @DynaLoader::dl_modules) {
+    mark_package($package, 1);
+    return 1;
   }
   foreach my $u ( grep( $include_package{$_}, keys %include_package ) )
   {
