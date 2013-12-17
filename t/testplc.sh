@@ -389,6 +389,8 @@ tests[138]='print map { chr $_ } qw/97 98 99/;'
 result[138]='abc'
 tests[261]='q(12-feb-2015) =~ m#(\d\d?)([\-\./])(feb|jan)(?:\2(\d\d+))?#; print $4'
 result[261]='2015'
+tests[264]='no warnings; warn "$a.\n"'
+result[264]='.'
 
 init
 
