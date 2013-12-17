@@ -822,12 +822,21 @@ sub ivx ($) {
   $ivdformat =~ s/"//g; #" poor editor
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
   my $L = 'L';
-  # LL for 32bit -2147483648L
+  # LL for 32bit -2147483648L or 64bit -9223372036854775808L
   $L = 'LL' if $Config{ivsize} == 2*$Config{ptrsize};
   # UL if > INT32_MAX = 2147483647
   my $sval = sprintf("%${ivdformat}%s", $ivx, $ivx > $intmax ? "U$L" : "");
   if ($ivx < -$intmax) {
-    $sval = sprintf("%${ivdformat}%s", $ivx, $L); # DateTime
+    $sval = sprintf("%${ivdformat}%s", $ivx, 'LL'); # DateTime
+  }
+  if ($INC{'POSIX.pm'}) {
+    # i262: LONG_MIN -9223372036854775808L integer constant is so large that it is unsigned
+    if ($ivx == POSIX::LONG_MIN()) {
+      $sval = "LONG_MIN";
+    }
+    elsif ($ivx == POSIX::LONG_MAX()) {
+      $sval = "LONG_MAX";
+    }
   }
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   return $sval;
@@ -849,6 +858,14 @@ sub nvx ($) {
   my $sval = sprintf("%${nvgformat}%s", $nvx, $nvx > $dblmax ? $ll : "");
   if ($nvx < -$dblmax) {
     $sval = sprintf("%${nvgformat}%s", $nvx, $ll);
+  }
+  if ($INC{'POSIX.pm'}) {
+    if ($nvx == POSIX::DBL_MIN()) {
+      $sval = "DBL_MIN";
+    }
+    elsif ($nvx == POSIX::DBL_MAX()) { #1.797693134862316e+308
+      $sval = "DBL_MAX";
+    }
   }
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   $sval .= '.00' if $sval =~ /^-?\d+$/;
@@ -2798,7 +2815,7 @@ sub B::CV::save {
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       # delsym($cv);
-      return qq/get_cv("$fullname", GV_ADD)/;
+      return qq/get_cv("$fullname", 0)/;
     } else {  # Those cvs are already booted. Reuse their GP.
       # Esp. on windows it is impossible to get at the XS function ptr
       warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv ) if $debug{cv};
@@ -3010,7 +3027,7 @@ sub B::CV::save {
     $symsect->add(sprintf(
       "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $CvFLAGS));
-    return qq/get_cv("$fullname", GV_ADD)/;
+    return qq/get_cv("$fullname", 0)/;
   }
 
   # Now it is time to record the CV

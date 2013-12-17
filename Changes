@@ -57,6 +57,7 @@
 	Fixed storage of shared heks, support IsCOW_hek (i.e. method names)
         Support new ReANY since 5.17.6 (#258 reg_temp_copy)
         Support stash symtab magic for PMf_ONCE m?? and reset (#188)
+        Fixed POSIX overflow constants warnings for DBL_MAX,DBL_MIN,LONG_MIN,LONG_MAX (#262)
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
         * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
