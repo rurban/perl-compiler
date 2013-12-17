@@ -1066,6 +1066,8 @@ result[256]='ok'
 #result[257]='ok'
 tests[260]='sub FETCH_SCALAR_ATTRIBUTES {''} sub MODIFY_SCALAR_ATTRIBUTES {''}; my $a :x=1; print $a'
 result[260]='1'
+tests[261]='q(12-feb-2015) =~ m#(\d\d?)([\-\./])(feb|jan)(?:\2(\d\d+))?#; print $4'
+result[261]='2015'
 
 init
 
