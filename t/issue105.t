@@ -4,6 +4,8 @@
 use strict;
 my $name = "ccode105i";
 use Test::More tests => 1;
+use Config;
+my $ITHREADS  = ($Config{useithreads});
 
 my $source = 'package A;
 use Storable qw/dclone/;
@@ -34,8 +36,9 @@ my $runexe = $] < 5.008
 my $result = `$runexe`;
 $result =~ s/\n$//;
 
-SKIP: {
-  # skip "no features on 5.6", 1 if $] < 5.008;
+
+TODO: {
+  local $TODO = "BC dclone missing import 5.16thr" if $] > 5.015 and $] < 5.018 and $ITHREADS;
   ok($result eq $expected, "issue105 - 5.16 missing import");
 }
 

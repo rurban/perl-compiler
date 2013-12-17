@@ -44,7 +44,7 @@ EOF
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	$B::C::VERSION lt '1.35'
+	($B::C::VERSION lt '1.35' or $] > 5.016)
         ? "TODO B:C reg_temp_copy from invalid r->offs"
         : "alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 

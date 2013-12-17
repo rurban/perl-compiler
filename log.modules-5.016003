@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_65 1705de2 2013-12-13 | t/issue229.t stabilize
+# B::C::VERSION = 1.42_65 4372d46 2013-12-17 | t/testplc.sh,testc: add testcases for 263, 264 M
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded

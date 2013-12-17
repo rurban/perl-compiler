@@ -40,6 +40,7 @@ SKIP: {
     if $] > 5.014 and $] < 5.015 and $Config{'useithreads'} and (!-d ".git" or $ENV{NO_AUTHOR});
   $cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
   $cmt = "TODO 5.6.2"   if $] < 5.007;
+  $cmt = "TODO >=5.16" if $] >= 5.016;
   ctestok(2, "C", $name, $script, "C $name $cmt");
   ctestok(3, "CC", $name, $script, "TODO CC $name $cmt");
 }

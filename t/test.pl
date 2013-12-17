@@ -818,6 +818,7 @@ sub todo_tests_default {
     my @todo  = ();
     push @todo, (15)  if $] < 5.007;
     push @todo, (10)  if $ITHREADS;
+    push @todo, (42,43) if $] >= 5.012 and $] < 5.014;
     if ($what =~ /^c(|_o[1-4])$/) {
         push @todo, (7)     if $] == 5.008005;
         push @todo, (21)    if $] >= 5.012 and $] < 5.014;
@@ -829,6 +830,7 @@ sub todo_tests_default {
         push @todo, (48)  if $] >= 5.008009 and $] < 5.010 and $what eq 'c_o4';
 	# DynaLoader::dl_load_file()
         push @todo, (15,27,29,41..45,49) if $] > 5.015 and $what eq 'c_o4';
+        push @todo, (15,42..45) if $] >= 5.016;
     } elsif ($what =~ /^cc/) {
 	# 8,11,14..16,18..19 fail on 5.00505 + 5.6, old core failures (max 20)
 	# on cygwin 29 passes
@@ -856,6 +858,8 @@ sub todo_tests_default {
 	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
 	push @todo, (3,4)   if $] >= 5.011004 and $ITHREADS;
 	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
+        push @todo, (15,42..45,103) if $] >= 5.016;
+        push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;

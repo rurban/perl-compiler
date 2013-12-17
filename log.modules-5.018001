@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_65 1705de2 2013-12-13 | t/issue229.t stabilize
+# B::C::VERSION = 1.42_65 0f66a12 2013-12-16 | C: get_cv TRUE => GV_ADD
 # perlversion = 5.018001
 # path = /usr/local/bin/perl5.18.1
 # platform = linux 64bit threaded
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42_65 - perl-5.018001
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   4 /   5 (80.0%)
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo   4 /   6 (66.7%)
 # skip   0 / 100 (0.0% not installed)
