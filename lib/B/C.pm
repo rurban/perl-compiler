@@ -2071,7 +2071,7 @@ sub B::BM::save {
   $sv = bless $sv, "B::BM" if $PERL510;
   my $pv  = pack "a*", ( $sv->PV . "\0" . $sv->TABLE );
   my $cur = $sv->CUR;
-  my $len = $cur + 258;
+  my $len = $cur + length($sv->TABLE) + 1;
   my $s;
   if ($PERL510) {
     warn "Saving FBM for GV $sym\n" if $debug{gv};
