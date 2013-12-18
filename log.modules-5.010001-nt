@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_65 1705de2 2013-12-13 | t/issue229.t stabilize
+# B::C::VERSION = 1.42_65 3fb317c 2013-12-17 | more todo tests >=5.16
 # perlversion = 5.010001-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded
