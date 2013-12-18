@@ -2099,7 +2099,7 @@ sub B::BM::save {
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     $s = "sv_list[".$svsect->index."]";
     if (!$static) {
-      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv, 0, $cur ) );
+      $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv, 0, $len ) );
     } else {
       push @static_free, $s if defined($pv) and !$in_endav;
     }
