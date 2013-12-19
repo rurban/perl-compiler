@@ -7,6 +7,9 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
+use Config ();
+my $DEBUGGING = ($Config::Config{ccflags} =~ m/-DDEBUGGING/);
+my $ITHREADS  = $Config::Config{useithreads};
 
 # Simplification of Encode::Alias to test SvANY(REGEXP)=SvANY(CALLREGCOMP)
 # e.g. Encode::Alias define_alias( qr/^(.*)$/ => '"\L$1"' ) creates REGEXP refs without PMOP's.
@@ -44,16 +47,15 @@ EOF
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	($B::C::VERSION lt '1.35' or $] > 5.016)
+	($B::C::VERSION lt '1.35' or $] > 5.016 or $ITHREADS  or $] < 5.010)
         ? "TODO B:C reg_temp_copy from invalid r->offs"
         : "alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 
-my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 SKIP: {
 skip "hangs", 1 if !$DEBUGGING;
 #use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
-      $B::C::VERSION lt '1.42_57'
+      ($B::C::VERSION lt '1.42_57' or $] > 5.016 or $ITHREADS or $] < 5.010)
       ? "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
       : undef);
 }

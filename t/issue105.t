@@ -4,8 +4,8 @@
 use strict;
 my $name = "ccode105i";
 use Test::More tests => 1;
-use Config;
-my $ITHREADS  = ($Config{useithreads});
+use Config ();
+my $ITHREADS  = $Config::Config{useithreads};
 
 my $source = 'package A;
 use Storable qw/dclone/;
