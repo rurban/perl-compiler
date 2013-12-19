@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_65';
+our $VERSION = '1.42_66';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -415,7 +415,8 @@ sub DynaLoader::croak {die @_}
 
 # 5.15.3 workaround [perl #101336], without .bs support
 # XSLoader::load_file($module, $modlibname, ...)
-eval q{
+my $dlext = $Config::Config{dlext};
+eval q|
 sub XSLoader::load_file {
   #package DynaLoader;
   my $module = shift or die "missing module name";
@@ -434,10 +435,12 @@ sub XSLoader::load_file {
   my $c = @modparts;
   $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
   die "missing module filepath" unless $modlibname;
-  my $file = "$modlibname/auto/$modpname/$modfname."}.$Config::Config{dlext}.q{;
+  my $file = "$modlibname/auto/$modpname/$modfname."|.qq(."$dlext").q|;
 
   # skip the .bs "bullshit" part, needed for some old solaris ages ago
 
+  print STDOUT "goto DynaLoader::bootstrap_inherit\n"
+      if ${DynaLoader::dl_debug} and not -f $file;
   goto \&DynaLoader::bootstrap_inherit if not -f $file;
   my $modxsname = $module;
   $modxsname =~ s/\W/_/g;
@@ -446,6 +449,8 @@ sub XSLoader::load_file {
 
   my $boot_symbol_ref;
   if ($boot_symbol_ref = DynaLoader::dl_find_symbol(0, $bootname)) {
+    print STDOUT "dl_find_symbol($bootname) ok => goto boot\n"
+      if ${DynaLoader::dl_debug};
     goto boot; #extension library has already been loaded, e.g. darwin
   }
   # Many dynamic extension loading problems will appear to come from
@@ -468,15 +473,19 @@ sub XSLoader::load_file {
   $boot_symbol_ref = DynaLoader::dl_find_symbol($libref, $bootname) or do {
     die("Can't find '$bootname' symbol in $file\n");
   };
+  print STDOUT "dl_find_symbol($libref, $bootname) ok => goto boot\n"
+    if ${DynaLoader::dl_debug};
   push(@DynaLoader::dl_modules, $module); # record loaded module
 
  boot:
   my $xs = DynaLoader::dl_install_xsub($boots, $boot_symbol_ref, $file);
+  print STDOUT "dl_install_xsub($boots, $boot_symbol_ref, $file)\n"
+    if ${DynaLoader::dl_debug};
   # See comment block above
   push(@DynaLoader::dl_shared_objects, $file); # record files loaded
   return &$xs(@_);
 }
-} if $] >= 5.015003;
+| if $] >= 5.015003;
 
 # Code sections
 my (
@@ -1327,9 +1336,13 @@ sub method_named {
       warn "no definition for method_name \"$method\"\n" if $debug{cv};
     }
   }
-  $method = $name unless $method;
-  warn "save method_name \"$method\"\n" if $debug{cv};
-  return svref_2object( \&{$method} );
+  if (1) { # TODO => 0. Do not try to save non-existing methods
+    $method = $name unless $method;
+    warn "save method_name \"$method\"\n" if $debug{cv};
+    return svref_2object( \&{$method} );
+  } else {
+    return 0;
+  }
 }
 
 # return the next COP for file and line info
@@ -2899,7 +2912,7 @@ sub B::CV::save {
 		$init->add("$oldsym = $newsym;");
 		delsym($gv);
 	      }# else {
-		#$init->add("GvCV_set(gv_fetchpv(\"$fullname\", TRUE, SVt_PV), (CV*)NULL);");
+		#$init->add("GvCV_set(gv_fetchpv(\"$fullname\", GV_ADD, SVt_PV), (CV*)NULL);");
 	      #}
 	      return $cvsym;
 	    }
@@ -3594,10 +3607,7 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-        $init2->add("{\tCV *cv;
-		cv = get_cv($origname, GV_ADD);
-		GvCV_set($sym, cv);
-		SvREFCNT_inc((SV *)cv);","}");
+	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
       }
       elsif (!$PERL510 or $gp) {
         $origname = cstring( $origname );
@@ -3627,18 +3637,15 @@ sub B::GV::save {
 	  }
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
-	    warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
-	    $init2->add("{\tCV *cv;
-		cv = get_cv($origname, GV_ADD);
-		GvCV_set($sym, cv);
-		SvREFCNT_inc((SV *)cv);","}");
+            warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
+            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
 	  }
 	  else {
-	    $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
 	  }
 	}
 	else {
-	  $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
 	}
       }
     }
@@ -4385,6 +4392,13 @@ sub output_all {
 #endif
 #ifndef Newxz
 #  define Newxz(v,n,t) Newz(0,v,n,t)
+#endif
+EOT
+  }
+  if ($] < 5.008009 ) {
+    print <<'EOT';
+#ifndef SvREFCNT_inc_simple_NN
+#  define SvREFCNT_inc_simple_NN(sv)     (++SvREFCNT(sv), (SV*)(sv))
 #endif
 EOT
   }
@@ -5345,14 +5359,15 @@ sub static_core_packages {
   push @pkg, 'attributes'             if $] <  5.011; # partially static and dynamic
   push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
   push @pkg, 'Tie::Hash::NamedCapture' if $] < 5.014; # dynamic since 5.14
-  push @pkg, 'DynaLoader'		if $Config{usedl};
+  #push @pkg, 'DynaLoader'	      if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
-  push @pkg, 'Cygwin'			if $^O eq 'cygwin';
+  push @pkg, 'Cygwin'		if $^O eq 'cygwin';
   push @pkg, 'NetWare'		if $^O eq 'NetWare';
-  push @pkg, 'OS2'			if $^O eq 'os2';
+  push @pkg, 'OS2'		if $^O eq 'os2';
   push @pkg, qw(VMS VMS::Filespec vmsish) if $^O eq 'VMS';
   #push @pkg, 'PerlIO' if $] >= 5.008006; # get_layers only
+  push @pkg, split(/ /,$Config{static_ext});
   return @pkg;
 }
 
