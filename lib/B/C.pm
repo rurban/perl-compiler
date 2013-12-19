@@ -2218,8 +2218,7 @@ sub B::REGEXP::save {
   my $pv = $sv->PV;
   my $cur = $sv->CUR;
   # construct original PV
-  $pv =~ s/^\(\?\^[adluimsx-]*\://;
-  $pv =~ s/\)$//;
+  $pv =~ s/^(\(\?\^[adluimsx-]*\:)(.*)\)$/\2/;
   $cur -= length($sv->PV) - length($pv);
   my $cstr = cstring($pv);
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
@@ -2227,7 +2226,7 @@ sub B::REGEXP::save {
   $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
 		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, $] > 5.017006 ? "NULL" : $cstr));
   my $ix = $svsect->index;
-  warn "Saving RX \"$cstr\" to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
+  warn "Saving RX $cstr to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
   if ($] > 5.011) {
     $init->add(# replace sv_any->XPV with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
