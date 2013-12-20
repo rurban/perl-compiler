@@ -410,11 +410,11 @@ sub B::Stackobj::Aelem::new {
   my $sv;
   # pop ix before av
   if ($av eq 'POPs' and $ix eq 'POPi') {
-    $sv = "({ int _ix = SvIVX(POPs); _ix >= 0 ? AvARRAY(POPs)[_ix] : av_fetch($av, $ix, $lvalue); })";
+    $sv = "({ int _ix = POPi; _ix >= 0 ? AvARRAY(POPs)[_ix] : *av_fetch((AV*)POPs, _ix, $lvalue); })";
   } elsif ($ix =~ /^-?[\d\.]+$/) {
     $sv = "AvARRAY($av)[$ix]";
   } else {
-    $sv = "($ix >= 0 ? AvARRAY($av)[$ix] : av_fetch((AV*)$av, $ix, $lvalue))";
+    $sv = "($ix >= 0 ? AvARRAY($av)[$ix] : *av_fetch((AV*)$av, $ix, $lvalue))";
   }
   my $obj = bless {
     type  => T_UNKNOWN,
