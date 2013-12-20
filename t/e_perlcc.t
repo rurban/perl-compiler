@@ -50,8 +50,8 @@ cleanup;
 SKIP: {
   #skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
  TODO: {
-    # fails 5.8,5.15 and darwin only
-    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
+    # fails 5.8 and darwin, msvc also
+    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
     is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
     ok(-e $exe, "keep executable"); #14
   }
@@ -60,7 +60,7 @@ SKIP: {
   cleanup;
 
  TODO: {
-    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010 or $] > 5.015;
+    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
     is(`$perlcc --staticxs -S -o a -r -e $e  $devnull`, "ok",
        "-S -o -r --staticxs xs"); #17
     ok(-e $a, "keep executable"); #18

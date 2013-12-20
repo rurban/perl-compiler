@@ -19,5 +19,5 @@ EOF
 
 my $todo = $ITHREADS ? "TODO " : "";
 
-ctestok(1,'C','ccode242i',$script, $todo.'#242 C,-O0 Using s///e to change unicode case');
+ctestok(1,'C','ccode242i',$script, '#242 C,-O0 Using s///e to change unicode case');
 ctestok(2,'C,-O3','ccode242i',$script, $todo.'#242 -O3');

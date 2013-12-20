@@ -33,8 +33,8 @@ unlink("$name.db*");
 
 $Mblib = "-Iblib/arch -Iblib/lib" if $] < 5.007;
 TODO: { #2
-  local $TODO = "B::C issue 24 dbm 5.10.0 or 5.6 or >=5.16"
-    if $] < 5.007 or $] eq '5.010000' or $] > 5.015;
+  local $TODO = "B::C issue 24 dbm 5.10.0 or 5.6"
+    if $] < 5.007 or $] eq '5.010000';
   $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
 
   if ($result =~ /No dbm on this machine/m) {
@@ -48,7 +48,7 @@ TODO: { #2
 $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
 TODO: { #3
   use B::C ();
-  local $TODO = "B::CC issue 24 dbm >5.10" if ($] >= 5.010 and $B::C::VERSION lt '1.42_61') or $] > 5.015;
+  local $TODO = "B::CC issue 24 dbm >5.10" if ($] >= 5.010 and $B::C::VERSION lt '1.42_61');
   if ($skipped) {
     ok(1, 'skip - No dbm on this machine');
   } else {

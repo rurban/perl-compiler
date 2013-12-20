@@ -7,9 +7,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-
-my $todo = $]>=5.018?"TODO ":"";
-$todo = "TODO " if $]>=5.012 and $]<5.014;
+my $todo = "TODO #143 " if $]>=5.012 and $]<5.014;
 
 ctestok(1, "C,-O3", 'ccode143i', <<'EOS', $todo."wrong length after double regex compilation");
 BEGIN {
@@ -27,7 +25,7 @@ Net::IDN::Encode::domain_to_ascii(42);
 print q(ok);
 EOS
 
-$todo = ($]<5.014 or $]>=5.018)?"TODO ":"";
+$todo = $]<5.014 ? "TODO #143 ":"";
 $todo = "" if $]<5.010;
 
 ctestok(2, "C,-O3", 'ccode143i', 'BEGIN{package Foo;our $DOT=qr/[.]/;};package main;print "ok\n" if "dot.dot" =~ m/($Foo::DOT)/', $todo."our qr");
