@@ -4170,8 +4170,8 @@ sub B::IO::save {
         $cur,                     $len,
 	$io->LINES, 		  # moved to IVX with 5.11.1
         $io->PAGE,                $io->PAGE_LEN,
-        $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
-        cstring( $io->FMT_NAME ), cstring( $io->BOTTOM_NAME ),
+        $io->LINES_LEFT,          "NULL",
+        "NULL",                   "NULL",
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
@@ -4189,8 +4189,8 @@ sub B::IO::save {
         $cur,                     $len,
 	$io->LINES, 		  # moved to IVX with 5.11.1
         $io->PAGE,                $io->PAGE_LEN,
-        $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
-        cstring( $io->FMT_NAME ), cstring( $io->BOTTOM_NAME ),
+        $io->LINES_LEFT,          "NULL",
+        "NULL",                   "NULL",
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
@@ -4209,8 +4209,8 @@ sub B::IO::save {
         $io->IVX,
 	$io->LINES,
         $io->PAGE,                $io->PAGE_LEN,
-        $io->LINES_LEFT,          cstring( $io->TOP_NAME ),
-        cstring( $io->FMT_NAME ), cstring( $io->BOTTOM_NAME ),
+        $io->LINES_LEFT,          "NULL",
+        "NULL",                   "NULL",
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
@@ -4226,8 +4226,8 @@ sub B::IO::save {
               $io->IVX,                    $io->NVX,
               $io->LINES,                  $io->PAGE,
               $io->PAGE_LEN,               $io->LINES_LEFT,
-              cstring( $io->TOP_NAME ),    cstring( $io->FMT_NAME ),
-              cstring( $io->BOTTOM_NAME ), $io->SUBPROCESS,
+              "NULL",                      "NULL",
+              "NULL",                      $io->SUBPROCESS,
               cchar( $io->IoTYPE ),        $io->IoFLAGS
       )
     );
@@ -4240,13 +4240,18 @@ sub B::IO::save {
   if ($PERL510 and !$B::C::pv_copy_on_grow and $cur) {
     $init->add(sprintf("SvPVX(sv_list[%d]) = $pvsym;", $svsect->index));
   }
-  my ( $field, $fsym );
+  my ( $field );
   foreach $field (qw(TOP_GV FMT_GV BOTTOM_GV)) {
-    $fsym = $io->$field();
+    my $fsym = $io->$field();
     if ($$fsym) {
       $init->add( sprintf( "Io$field($sym) = (GV*)s\\_%x;", $$fsym ) );
       $fsym->save;
     }
+  }
+  foreach $field (qw(TOP_NAME FMT_NAME BOTTOM_NAME)) {
+    my $fsym = $io->$field;
+    $init->add(sprintf("Io$field($sym) = savepvn(%s, %u);",
+                       cstring( $fsym ), length $fsym)) if $fsym;
   }
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
   if (!$PERL56 and $fullname ne 'main::DATA') { # PerlIO
@@ -5132,8 +5137,10 @@ _EOT15
     print sprintf(qq{    sv_setpv_mg(get_sv("^A", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^A)) if $^A; #ACCUMULATOR
     print sprintf(qq{    sv_setpv_mg(get_sv("^L", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^L)) if $^L ne "\f"; #FORMFEED
     print sprintf(qq{    sv_setpv_mg(get_sv(":", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($:)) if $: ne " \n-"; #LINE_BREAK_CHARACTERS
-    print sprintf(qq{    sv_setpv_mg(get_sv("^", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^)) if $^ ne "STDOUT_TOP";
-    print sprintf(qq{    sv_setpv_mg(get_sv("~", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($~)) if $~ ne "STDOUT";
+    print sprintf(qq/    sv_setpv_mg(get_sv("^", GV_ADD|GV_NOTQUAL), savepvn(%s, %u));\n/, cstring($^), length($^))
+      if $^ ne "STDOUT_TOP";
+    print sprintf(qq/    sv_setpv_mg(get_sv("~", GV_ADD|GV_NOTQUAL), savepvn(%s, %u));\n/, cstring($~), length($~))
+      if $~ ne "STDOUT";
     print         qq{    sv_setiv_mg(get_sv("%", GV_ADD|GV_NOTQUAL), $%);\n} if $%; #PAGE_NUMBER
     print         qq{    sv_setiv_mg(get_sv("-", GV_ADD|GV_NOTQUAL), $-);\n} unless ($- == 0 or $- == 60); #LINES_LEFT
     print         qq{    sv_setiv_mg(get_sv("=", GV_ADD|GV_NOTQUAL), $=);\n} if $= != 60; #LINES_PER_PAGE
