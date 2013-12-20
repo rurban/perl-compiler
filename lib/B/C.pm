@@ -387,11 +387,11 @@ our %option_map = (
 );
 our %optimization_map = (
     0 => [qw()],                # special case
-    1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
+    1 => [qw(-fppaddr -fav-init2 -fno-walkall)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings -fno-walkall)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
-  );
+);
 our %debug_map = (
     'O' => 'op',
     'A' => 'av',
@@ -7364,14 +7364,12 @@ Enabled with C<-O3>.
 
 =item B<-fno-walkall>
 
-C<-fwalkall> is enabled with C<-O0> to C<-O2>.
+C<-fwalkall> is enabled without any optimization level only, i.e. C<-O0>.
 
 C<-fwalkall> has an improved package detection, which stores all subs of
 all dependent packages, which results in much bigger compile sizes.
 This was introduced to catch previously uncompiled packages for computed
 methods or undetected deeper run-time dependencies.
-
-Enabled with C<-O3>.
 
 =item B<-fno-save-sig-hash>
 
