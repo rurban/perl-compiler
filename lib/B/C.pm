@@ -372,6 +372,7 @@ our %option_map = (
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
     'delete-pkg'      => \$B::C::can_delete_pkg,
+    'walkall'         => \$B::C::walkall,
     'ro-inc'          => \$B::C::ro_inc,
     'stash'           => \$B::C::stash,    # enable with -fstash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
@@ -388,7 +389,7 @@ our %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings -fno-walkall)],
     4 => [qw(-fcop -fno-dyn-padlist)],
   );
 our %debug_map = (
@@ -6178,12 +6179,13 @@ sub mark_package {
 		   $force?" (forced)":"") if $verbose;
       # $include_package{$package} = 1;
       add_hashINC( $package );
-      walk_syms( $package );
+      walk_syms( $package );  # XXX Maybe need to avoid deep recursion
     } else {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
+      walk_syms( $package );  # XXX Maybe need to avoid deep recursion. fixes i27-1
     }
     my @isa = get_isa($package);
     if ( @isa ) {
@@ -6204,7 +6206,7 @@ sub mark_package {
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
 	    mark_package($isa);
-            walk_syms($isa);
+            walk_syms($isa);  # XXX Maybe need to avoid deep recursion
           } else {
 	    #warn "isa $isa save\n" if $verbose;
             mark_package($isa);
@@ -6493,20 +6495,31 @@ sub save_unused_subs {
     %debug = ();
   }
   my $main = $module ? $module."::" : "main::";
-  if ($verbose) {
-    warn "Prescan for unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
-  }
-  # XXX TODO better strategy for compile-time added and required packages:
+
+  # -fwalkall: better strategy for compile-time added and required packages:
   # loop savecv and check pkg cache for new pkgs.
   # if so loop again with those new pkgs only, until the list of new pkgs is empty
-  descend_marked_unused();
-  walkpackages( \%{$main},
-                sub { should_save( $_[0] ); return 1 },
-                $main eq 'main::' ? undef : $main );
-  if ($verbose) {
-    warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
-  }
-  walksymtable( \%{$main}, "savecv", \&should_save );
+  my (@init_unused, @unused);
+  do {
+    @init_unused = grep { $include_package{$_} } keys %include_package;
+    if ($verbose) {
+      warn "Prescan ".scalar(@init_unused)." packages for unused subs in $main"
+	. ($sav_debug{unused} ? " (silent)\n" : "\n");
+    }
+    descend_marked_unused();
+    walkpackages( \%{$main},
+                  sub { should_save( $_[0] ); return 1 },
+                  $main eq 'main::' ? undef : $main );
+    warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n")
+      if $verbose;
+    walksymtable( \%{$main}, "savecv", \&should_save );
+    @unused = grep { $include_package{$_} } keys %include_package;
+    warn sprintf("old unused: %d, new: %d\n", scalar @init_unused, scalar @unused)
+      if $verbose;
+    if (!$B::C::walkall) {
+      @unused = @init_unused = ();
+    }
+  } while @unused > @init_unused;
 
   if ( $sav_debug{unused} ) {
     %debug = %sav_debug;
@@ -6916,7 +6929,7 @@ sub mark_skip {
 
 sub compile {
   my @options = @_;
-  # Allow debugging in CHECK blocks without Od
+  # Allow debugging in CHECK blocks without -MOd=C
   $DB::single = 1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
@@ -6924,13 +6937,17 @@ sub compile {
   $B::C::save_sig = 1;
   $B::C::destruct = 1;
   $B::C::stash    = 0;
+  $B::C::walkall  = 1;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
   $B::C::dyn_padlist = 1 if $] >= 5.017; # default is dynamic and safe, disable with -O4
 
-  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
-	       B::Section B::Pseudoreg B::Shadow);
+  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O B::Section
+               B::Pseudoreg B::Shadow B::C::InitSection
+               B::C::Section::SUPER B::C::InitSection::SUPER
+	       B::Stackobj B::Bblock
+             );
   #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
 
 OPTION:
@@ -7342,6 +7359,17 @@ but not in long-running processes.
 
 This helps with destruction problems of static data in the
 default perl destructor, and enables C<-fcog> since 5.10.
+
+Enabled with C<-O3>.
+
+=item B<-fno-walkall>
+
+C<-fwalkall> is enabled with C<-O0> to C<-O2>.
+
+C<-fwalkall> has an improved package detection, which stores all subs of
+all dependent packages, which results in much bigger compile sizes.
+This was introduced to catch previously uncompiled packages for computed
+methods or undetected deeper run-time dependencies.
 
 Enabled with C<-O3>.
 

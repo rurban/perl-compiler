@@ -9,6 +9,8 @@ BEGIN {
   }
 }
 use Test::More tests => 3;
+use Config ();
+my $ITHREADS  = ($Config::Config{useithreads});
 
 my $X = $^X =~ m/\s/ ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
 my $perlcc = $^O eq 'MSWin32' ? "blib\\script\\perlcc" : 'blib/script/perlcc';
