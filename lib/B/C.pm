@@ -327,7 +327,7 @@ my %all_bc_pkg = map {$_=>1}
 
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %hektable, @static_free, %gptable);
+my (%strtable, %hektable, %gptable);
 my %xsub;
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
@@ -337,7 +337,7 @@ my ($use_xsloader);
 my $nullop_count         = 0;
 my $unresolved_count     = 0;
 # options and optimizations shared with B::CC
-our ($module, $init_name, %savINC, $mainfile);
+our ($module, $init_name, %savINC, $mainfile, @static_free);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
@@ -1457,7 +1457,7 @@ sub B::COP::save {
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
     $warn_sv = "($warnsvcast)&".$warn_sv.($verbose ?' /*lexwarn*/':'');
     $free->add( sprintf( "    cop_list[%d].cop_warnings = NULL;", $ix ) );
-    #push @static_free, sprintf("cop_list[%d]", $ix);
+    #push @B::C::static_free, sprintf("cop_list[%d]", $ix);
   }
 
   # Trim the .pl extension, to print the executable name only.
@@ -1568,7 +1568,7 @@ sub B::COP::save {
   $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
     unless $B::C::optimize_warn_sv;
 
-  push @static_free, "cop_list[$ix]" if $ITHREADS;
+  push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$ITHREADS) {
     $init->add(
       sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) )
@@ -1898,7 +1898,7 @@ sub savepvn {
       my $hek = save_hek($pv);
       push @init, sprintf( "%s = HEK_KEY($hek);", $dest ) unless $hek eq 'NULL';
       if ($DEBUGGING) { # we have to bypass a wrong HE->HEK assert in hv.c
-	push @static_free, $dest;
+	push @B::C::static_free, $dest;
       }
     } else {
       my $cstr = cstring($pv);
@@ -1923,7 +1923,7 @@ sub B::PVLV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @static_free = grep {!/$sym/} @static_free;
+      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -1975,7 +1975,7 @@ sub B::PVIV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @static_free = grep {!/$sym/} @static_free;
+      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2016,7 +2016,7 @@ sub B::PVNV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @static_free = grep {!/$sym/} @static_free;
+      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2114,7 +2114,7 @@ sub B::BM::save {
     if (!$static) {
       $init->add(savepvn( sprintf( "xpvbm_list[%d].xpv_pv", $xpvbmsect->index ), $pv, 0, $len ) );
     } else {
-      push @static_free, $s if defined($pv) and !$in_endav;
+      push @B::C::static_free, $s if defined($pv) and !$in_endav;
     }
   }
   # Restore possible additional magic. fbm_compile adds just 'B'.
@@ -2138,7 +2138,7 @@ sub B::PV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @static_free = grep {!/$sym/} @static_free;
+      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2264,7 +2264,7 @@ sub B::PVMG::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @static_free = grep {!/$sym/} @static_free;
+      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2323,7 +2323,7 @@ sub B::PVMG::save {
     } else {
       $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
 			      $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
-      #push @static_free, sprintf("sv_list[%d]", $svsect->index+1)
+      #push @B::C::static_free, sprintf("sv_list[%d]", $svsect->index+1)
       #  if $len and $B::C::pv_copy_on_grow and !$in_endav;
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
@@ -2475,7 +2475,7 @@ sub B::PVMG::save_magic {
 	}
 	my $pmsym = $pmop->save($fullname);
 	if ($PERL510) {
-          push @static_free, $resym;
+          push @B::C::static_free, $resym;
 	  $init->add( split /\n/,
 		    sprintf <<CODE1, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
@@ -4752,23 +4752,25 @@ _EOT6
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
-  elsif ( $PERL510 and (@static_free or $free->index > -1)) {
+  elsif ( $PERL510 and (@B::C::static_free or $free->index > -1)) {
     print <<'_EOT7';
 int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
     /* set all our static pv and hek to &PL_sv_undef so perl_destruct() will not cry */
 _EOT7
 
-    for (0 .. $#static_free) {
+    for (0 .. $#B::C::static_free) {
       # set the sv/xpv to &PL_sv_undef, not the pv itself. 
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
       # XXX Another idea >5.10 is SvFLAGS(pv) = SVTYPEMASK
-      my $s = $static_free[$_];
+      my $s = $B::C::static_free[$_];
       if ($s =~ /^sv_list\[\d+\]\./) { # pv directly (unused)
 	print "    $s = NULL;\n";
       } elsif ($s =~ /^sv_list/) {
+       print "    SvLEN(&$s) = 0;\n";
        print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^&sv_list/) {
+       print "    SvLEN($s) = 0;\n";
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
@@ -5172,7 +5174,7 @@ EOT
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    } elsif ( $PERL510 and (@static_free or $free->index > -1) ) {
+    } elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
       warn "my_perl_destruct static strings\n" if $verbose;
       print "    my_perl_destruct( my_perl );\n";
     } elsif ( $] >= 5.007003 ) {

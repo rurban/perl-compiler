@@ -3455,7 +3455,7 @@ sub compile {
       print "\n";
       output_all( $init_name || "init_module" );
       output_runtime();
-      # output_main_rest();
+      output_main_rest();
     }
   }
   else {
