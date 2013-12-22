@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_63 911c59c 2013-12-10 | C 5.18: fix dynamic COW strings
+# B::C::VERSION = 1.42_66 b131736 2013-12-20 | C: #256 fix free of static IO names
 # perlversion = 5.018001d
 # path = /usr/local/bin/perl5.18.1d
 # platform = linux 64bit threaded debug
@@ -96,14 +96,14 @@ pass YAML
 fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
-fail DateTime::Locale
+pass DateTime::Locale
 pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_63 - perl-5.018001d
-# pass  93 / 100 (93.0%)
-# fail   7 / 100 (7.0%)
-# todo   3 /   7 (42.9%)
+# 100 / 100 modules tested with B-C-1.42_66 - perl-5.018001d
+# pass  94 / 100 (94.0%)
+# fail   6 / 100 (6.0%)
+# todo   3 /   6 (50.0%)
 # skip   0 / 100 (0.0% not installed)
