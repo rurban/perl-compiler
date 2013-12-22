@@ -3631,15 +3631,16 @@ In doubt B::CC code behaves more like with C<use integer>.
 
 Features of standard perl such as C<$[> which have been deprecated
 in standard perl since Perl5 was released have not been implemented
-in the compiler.
+in the optimizing compiler.
 
 =head1 AUTHORS
 
 Malcolm Beattie C<MICB at cpan.org> I<(1996-1998, retired)>,
 Vishal Bhatia <vishal at deja.com> I(1999),
-Gurusamy Sarathy <gsar@cpan.org> I(1998-2001),
-Reini Urban C<perl-compiler@googlegroups.com> I(2008-),
+Gurusamy Sarathy <gsar at cpan.org> I(1998-2001),
+Reini Urban C<perl-compiler at googlegroups.com> I(2008-now),
 Heinz Knutzen C<heinz.knutzen at gmx.de> I(2010)
+Will Braswell C<wbraswell at hush.com> I(2013)
 
 =cut
 
