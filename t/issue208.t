@@ -9,7 +9,7 @@ BEGIN {
 use Test::More tests => 2;
 my $expected = $] >= 5.014 ? 'RUN MyKooh DESTRUCT OurKooh' : ' MyKooh  OurKooh';
 
-# fixed with 1.42_66
+# fixed with 1.42_66, 5.18
 ctest(1, $expected,'C','ccode208i',<<'EOF','#208 missing DESTROY call at DESTRUCT time');
 sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }   my $k=bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" } our $k=bless {}, OurKooh;
