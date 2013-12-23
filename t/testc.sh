@@ -990,12 +990,10 @@ result[240]='ok'
 tests[241]='#TODO
 package Pickup; use UNIVERSAL qw( can ); if (can( "Pickup", "can" ) != \&UNIVERSAL::can) { print "not " } print "ok\n";'
 result[241]='ok'
-tests[242]='#TODO
-$xyz = ucfirst("\x{3C2}"); # no problem without that line
+tests[242]='$xyz = ucfirst("\x{3C2}"); # no problem without that line
 $a = "\x{3c3}foo.bar";
 ($c = $a) =~ s/(\p{IsWord}+)/ucfirst($1)/ge;
-print "ok\n" if $c eq "\x{3a3}foo.Bar";
-__END__'
+print "ok\n" if $c eq "\x{3a3}foo.Bar";'
 result[242]='ok'
 tests[243]='use warnings "deprecated"; print hex(${^WARNINGS}) . " "; print hex(${^H})'
 result[243]='0 598'

@@ -60,6 +60,7 @@
         Fixed POSIX overflow constants warnings for DBL_MAX,DBL_MIN,LONG_MIN,LONG_MAX (#262)
         Support user-defined static_ext modules, which are already booted from core.
         Add more DynaLoader::dl_debug output (set PERL_DL_DEBUG=1)
+        Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
 
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC

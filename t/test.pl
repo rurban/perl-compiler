@@ -709,7 +709,7 @@ sub ctest {
     my $post = '';
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
     ($b, $post) = split(" ", $b);
-    $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-O3/;
+    $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-(O3|ffold|fwarnings)/;
     diag("$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl") if $ENV{TEST_VERBOSE} > 1;
     system "$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl";
     unless (-e "$name.c") {

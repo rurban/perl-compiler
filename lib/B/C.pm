@@ -523,6 +523,7 @@ sub walk_and_save_optree {
 # rather than looking up the name of every BASEOP in B::OP
 my $OP_THREADSV = opnumber('threadsv');
 my $OP_DBMOPEN = opnumber('dbmopen');
+my $OP_UCFIRST = opnumber('ucfirst');
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
@@ -1017,10 +1018,17 @@ sub B::OP::save {
   $nullop_count++ unless $type;
   if ( $type == $OP_THREADSV ) {
     # saves looking up ppaddr but it's a bit naughty to hard code this
-    $init->add(
-      sprintf( "(void)find_threadsv(%s);",
-        cstring( $threadsv_names[ $op->targ ] ) )
-    );
+    $init->add(sprintf( "(void)find_threadsv(%s);", cstring( $threadsv_names[ $op->targ ])));
+  }
+  if ( $type == $OP_UCFIRST ) {
+    $B::C::fold = 1;
+    if ($] >= 5.013009) {
+      warn "enabling -ffold with ucfirst\n" if $verbose;
+      require "utf8.pm" unless $INC{"utf8.pm"};
+      require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+      mark_package("utf8");
+      mark_package("utf8_heavy.pl");
+    }
   }
   if (ref($op) eq 'B::OP') { # check wrong BASEOPs
     # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
@@ -5616,7 +5624,10 @@ sub save_unused_subs {
   # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
   # With -fno-fold we don't insist on loading utf8_heavy and Carp.
   # Until it is compile-time required.
-  if ($] >= 5.013009 and $INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'}))) {
+  if ($] >= 5.013009 and (exists($INC{'unicore/To/Title.pl'})
+                          or ($INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'}))))) {
+    require "utf8.pm" unless $INC{"utf8.pm"};
+    require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB exe size 32-bit.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;

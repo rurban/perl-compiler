@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=242
-# 
+# -fno-fold and OP_UCFIRST
 use strict;
 BEGIN {
   unshift @INC, 't';
@@ -10,6 +10,7 @@ use Test::More tests => 2;
 use Config ();
 my $ITHREADS  = $Config::Config{useithreads};
 
+# need -uDynaLoader or -ffold
 my $script = <<'EOF';
 $xyz = ucfirst("\x{3C2}"); # no problem without that line
 $a = "\x{3c3}foo.bar";
