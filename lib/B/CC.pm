@@ -3640,7 +3640,7 @@ Vishal Bhatia <vishal at deja.com> I(1999),
 Gurusamy Sarathy <gsar at cpan.org> I(1998-2001),
 Reini Urban C<perl-compiler at googlegroups.com> I(2008-now),
 Heinz Knutzen C<heinz.knutzen at gmx.de> I(2010)
-Will Braswell C<wbraswell at hush.com> I(2013)
+Will Braswell C<wbraswell at hush.com> I(2012)
 
 =cut
 
