@@ -86,6 +86,7 @@ function runopt {
 	vcmd ${CMD}-o${o}${suff}.c $o.pl
     fi
     test -z $CPP || vcmd $CCMD ${o}${suff}.c -c -E -o ${o}${suff}_E.c
+    test -n "$QUIET" || echo ${CMD}-o${o}${suff}.c $o.pl
     vcmd $CCMD ${o}${suff}.c $LCMD -o ${o}${suff}
     test -x ${o}${suff} || (test -z $CONT && exit)
     if [ -z "$QUIET" ]; then echo "./${o}${suff}"
@@ -132,6 +133,7 @@ function ctest {
 	vcmd ${OCMD}-o$o.c $o.pl
         test -s $o.c || (echo "empty $o.c"; test -z $CONT && exit 2)
 	test -z $CPP || vcmd $CCMD $o.c -c -E -o ${o}_E.c
+        test -n "$QUIET" || echo ${OCMD}-o$o.c $o.pl
 	vcmd $CCMD $o.c $LCMD -o $o
 	test -x $o || (test -z $CONT && exit)
 	if [ -z "$QUIET" ]; then echo "./$o"
