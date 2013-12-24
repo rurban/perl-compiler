@@ -1,10 +1,15 @@
 #! /usr/bin/env perl
 # better use testcc.sh -O2 for debugging
 BEGIN {
+  use Config;
   unless (-d '.git' and !$ENV{NO_AUTHOR}) {
     print "1..0 #SKIP Only if -d .git\n";
     exit;
   }
+  #if ($Config{useithreads}) {
+  #  print "1..0 #SKIP -faelem broken for threaded perl\n";
+  #  exit;
+  #}
   if ($ENV{PERL_CORE}){
     chdir('t') if -d 't';
     @INC = ('.', '../lib');

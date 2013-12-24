@@ -819,17 +819,18 @@ sub todo_tests_default {
 
     my @todo  = ();
     push @todo, (15)  if $] < 5.007;
+    # broken by fbb32b8bebe8ad C: revert *-,*+,*! fetch magic, assign all core GVs to their global symbols
     push @todo, (10)  if $ITHREADS;
-    push @todo, (42,43) if $] >= 5.012 and $] < 5.014;
+    push @todo, (42..43) if $] < 5.012;
     if ($what =~ /^c(|_o[1-4])$/) {
-        push @todo, (7)     if $] == 5.008005;
+        #push @todo, (7)     if $] == 5.008005;
         push @todo, (21)    if $] >= 5.012 and $] < 5.014;
         #push @todo, (15)    if $] > 5.010 and $] < 5.016 and $ITHREADS;
-        push @todo, (27)    if $] >= 5.012 and $] < 5.014 and $ITHREADS and $DEBUGGING;
+        #push @todo, (27)    if $] >= 5.012 and $] < 5.014 and $ITHREADS and $DEBUGGING;
 
 	# @ISA issue 64
         push @todo, (10,12,19,25,42,43,50)  if $what eq 'c_o4';
-        push @todo, (48)  if $] >= 5.008009 and $] < 5.010 and $what eq 'c_o4';
+        #push @todo, (48)  if $] >= 5.008009 and $] < 5.010 and $what eq 'c_o4';
 	# DynaLoader::dl_load_file()
         #push @todo, (42..43) if $] > 5.015 and $what eq 'c_o4';
         #push @todo, (15,42..45) if $] >= 5.016; #1.42_66
@@ -846,7 +847,7 @@ sub todo_tests_default {
 	push @todo, (14)    if $] >= 5.012;
 	push @todo, (10,16,50) if $what eq 'cc_o2';
 	#push @todo, (29)    if $] >= 5.013 and $what eq 'cc_o2';
-	push @todo, (43)     if $what eq 'cc_o2'; # -faelem
+	#push @todo, (43)     if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
 	push @todo, (27)    if $] <= 5.008008;
@@ -857,9 +858,9 @@ sub todo_tests_default {
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
 	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
-	push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
-	push @todo, (3,4)   if $] >= 5.011004 and $] < 5.016 and $ITHREADS;
-	push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
+	#push @todo, (25)    if $] >= 5.011004 and $DEBUGGING and $ITHREADS;
+	#push @todo, (3,4)   if $] >= 5.011004 and $] < 5.016 and $ITHREADS;
+	#push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
         #push @todo, (15,42..45,103) if $] >= 5.016;
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
     }

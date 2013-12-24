@@ -142,7 +142,7 @@ Enabled with B<-O2>.
 Enable array element access optimizations, allowing unchecked
 fast access under certain circumstances.
 
-Enabled with B<-O2>.
+Enabled with B<-O2> and not-threaded perls only.
 
 =item B<-fno-inline-ops>
 
@@ -1784,7 +1784,7 @@ sub pp_aelemfast {
       if ($op->can('padix')) {
         #warn "padix\n";
         $gvsym = $pad[ $op->padix ]->as_sv;
-	my @c = comppadlist->ARRAY;
+	my @c = comppadlist->ARRAY; # XXX curpad, not comppad!!
 	my @p = $c[1]->ARRAY;
 	my $lex = $p[ $op->padix ];
 	$rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
@@ -2639,7 +2639,7 @@ sub pp_return {
 
 sub nyi {
   my $op = shift;
-  warn sprintf( "%s not yet implemented properly\n", $op->ppaddr );
+  warn sprintf( "Warning: %s not yet implemented properly\n", $op->ppaddr );
   return default_pp($op);
 }
 
@@ -2651,7 +2651,7 @@ sub pp_range {
     if ($strict) {
       error("context of range unknown at compile-time\n");
     } else {
-      warn("context of range unknown at compile-time\n");
+      warn("Warning: context of range unknown at compile-time\n");
       runtime('warn("context of range unknown at compile-time");');
     }
     return default_pp($op);
@@ -2678,7 +2678,7 @@ sub pp_flip {
     if ($strict) {
       error("context of flip unknown at compile-time\n");
     } else {
-      warn("context of flip unknown at compile-time\n");
+      warn("Warning: context of flip unknown at compile-time\n");
       runtime('warn("context of flip unknown at compile-time");');
     }
     return default_pp($op);
@@ -3295,7 +3295,7 @@ OPTION:
 	  $c_optimise{$ref}++;
         }
         else {
-          warn qq(ignoring unknown optimisation option "$arg"\n);
+          warn qq(Warning: ignoring unknown optimisation "$arg"\n);
         }
       }
     }
@@ -3307,7 +3307,10 @@ OPTION:
       $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
-        $opt_aelem = 1; # unstable, test: 68 pp_padhv targ assert
+        if (!$ITHREADS) {
+          #warn qq(Warning: ignoring -faelem with threaded perl\n);
+          $opt_aelem = 1; # unstable, test: 68 pp_padhv targ assert
+        }
       }
       if ( $arg >= 1 ) {
         $opt_type_attr = 1;
@@ -3372,7 +3375,7 @@ OPTION:
           $B::C::debug{ $B::C::debug_map{$arg} }++;
 	}
 	else {
-	  warn qq(ignoring unknown -D option "$arg"\n);
+	  warn qq(Warning: ignoring unknown -D option "$arg"\n);
 	}
       }
     }
@@ -3380,7 +3383,7 @@ OPTION:
   $strict++ if !$strict and $Config{ccflags} !~ m/-DDEBUGGING/;
   if ($opt_omit_taint) {
     $opt_taint = 0;
-    warn "-fomit_taint is deprecated. Use -fno-taint instead.\n";
+    warn "Warning: -fomit_taint is deprecated. Use -fno-taint instead.\n";
   }
 
   # rgs didn't want opcodes to be added to Opcode. So I had to add it to a
