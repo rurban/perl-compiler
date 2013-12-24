@@ -4,7 +4,7 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.43	2013-?? rurban
-	partial 5.16, 5.18, 5.20 and windows support, some more fixes
+	new 5.16, 5.18, 5.20 and partial windows support, many more fixes and testcases
 
         * C: Fix -u<module> without file extension.
 	With hek do not drop FAKE, only for const pv.

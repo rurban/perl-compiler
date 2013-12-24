@@ -894,7 +894,7 @@ ok 2'
 tests[208]='#TODO 197
 sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;'
-if [[ $v513 -gt 0 ]]; then
+if [[ `$PERL -e'print (($] < 5.014)?0:1)'` -gt 0 ]]; then
   result[208]='RUN MyKooh DESTRUCT OurKooh'
 else
   result[208]=' MyKooh  OurKooh'
