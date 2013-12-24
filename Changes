@@ -61,6 +61,7 @@
         Support user-defined static_ext modules, which are already booted from core.
         Add more DynaLoader::dl_debug output (set PERL_DL_DEBUG=1)
         Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
+        Mark empty but overloaded packages (#172). This is merely workaround for reduced testcases.
 
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC

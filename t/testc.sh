@@ -696,16 +696,13 @@ result[170]='~~~~
 Invalid CODE attribute: bad at (eval 1) line 1.
 BEGIN failed--compilation aborted at (eval 1) line 1.
 ~~~~'
-tests[172]='# TODO
-package Foo;
+tests[172]='package Foo;
 use overload q("") => sub { "Foo" };
-
 package main;
 my $foo = bless {}, "Foo";
-print "ok\n" if "$foo" eq "Foo";
+print "ok " if "$foo" eq "Foo";
 print "$foo\n";'
-result[172]='ok
-Foo'
+result[172]='ok Foo'
 tests[173]='# WontFix
 use constant BEGIN   => 42; print "ok 1\n" if BEGIN == 42;
 use constant INIT   => 42; print "ok 2\n" if INIT == 42;
