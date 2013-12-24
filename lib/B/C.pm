@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_66';
+our $VERSION = '1.42_67';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -5464,7 +5464,12 @@ sub should_save {
       }
     }
   }
-
+  # add overloaded but otherwise empty packages (#172)
+  if ($savINC{'overload.pm'} and exists ${$package.'::'}{OVERLOAD} and exists ${$package.'::'}{'()'}) {
+    mark_package($package, 1);
+    mark_package('overload', 1);
+    return 1;
+  }
   # Omit the packages which we use (and which cause grief
   # because of fancy "goto &$AUTOLOAD" stuff).
   # XXX Surely there must be a nicer way to do this.
