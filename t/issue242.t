@@ -18,7 +18,7 @@ $a = "\x{3c3}foo.bar";
 print "ok\n" if $c eq "\x{3a3}foo.Bar";
 EOF
 
-my $todo = $ITHREADS ? "TODO " : "";
+my $todo = ($ITHREADS or $] < 5.014) ? "TODO threads or <5.14 " : "";
 
 ctestok(1,'C','ccode242i',$script, '#242 C,-O0 Using s///e to change unicode case');
 ctestok(2,'C,-O3','ccode242i',$script, $todo.'#242 -O3');
