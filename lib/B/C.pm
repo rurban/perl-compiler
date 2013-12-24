@@ -5629,8 +5629,8 @@ sub save_unused_subs {
   # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
   # With -fno-fold we don't insist on loading utf8_heavy and Carp.
   # Until it is compile-time required.
-  if ($] >= 5.013009 and (exists($INC{'unicore/To/Title.pl'})
-                          or ($INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'}))))) {
+  if (exists($INC{'unicore/To/Title.pl'})
+      or ($INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'})))) {
     require "utf8.pm" unless $INC{"utf8.pm"};
     require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
