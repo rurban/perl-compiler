@@ -7,7 +7,8 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-my $todo = "TODO #143 " if $]>=5.012 and $]<5.014;
+use Config ();
+my $todo = "TODO #143 " if $]>=5.010 and $]<5.012 and $Config::Config{useithreads};
 
 ctestok(1, "C,-O3", 'ccode143i', <<'EOS', $todo."wrong length after double regex compilation");
 BEGIN {
@@ -25,8 +26,7 @@ Net::IDN::Encode::domain_to_ascii(42);
 print q(ok);
 EOS
 
-$todo = $]<5.014 ? "TODO #143 ":"";
-$todo = "" if $]<5.010;
+$todo = ($]>=5.010 and $]<5.012) ? "TODO #143 ":"";
 
 ctestok(2, "C,-O3", 'ccode143i', 'BEGIN{package Foo;our $DOT=qr/[.]/;};package main;print "ok\n" if "dot.dot" =~ m/($Foo::DOT)/', $todo."our qr");
 ctestok(3, "C,-O3", 'ccode143i', 'BEGIN{$DOT=qr/[.]/}print "ok\n" if "dot.dot" =~ m/($DOT)/',
