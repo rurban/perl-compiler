@@ -5630,9 +5630,13 @@ sub save_unused_subs {
   # With -fno-fold we don't insist on loading utf8_heavy and Carp.
   # Until it is compile-time required.
   if (exists($INC{'unicore/To/Title.pl'})
-      or ($INC{'utf8_heavy.pl'} and ($B::C::fold or exists($INC{'utf8.pm'})))) {
+      or exists($INC{'unicore/To/Tc.pl'}) #242
+      or exists($INC{'unicore/Heavy.pl'}) #242
+      or ($savINC{'utf8_heavy.pl'} and ($B::C::fold or exists($savINC{'utf8.pm'})))) {
     require "utf8.pm" unless $INC{"utf8.pm"};
+    mark_package('utf8');
     require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+    mark_package('utf8_heavy.pl');
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB exe size 32-bit.
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
