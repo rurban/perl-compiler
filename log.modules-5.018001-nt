@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 e08b1b7 2013-12-25 | untodo test 143
+# B::C::VERSION = 1.42_67 0cbc49a 2013-12-26 | C: fix #267 no SvSTASH on 5.18 overloaded %version:: stash
 # perlversion = 5.018001-nt
 # path = /usr/local/bin/perl5.18.1-nt
 # platform = linux 64bit non-threaded
@@ -10,7 +10,7 @@ pass Pod::Escapes
 pass Pod::Simple
 pass IO
 pass Scalar::Util
-fail Getopt::Long
+pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
 pass Test::Simple
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42_67 - perl-5.018001-nt
-# pass  94 / 100 (94.0%)
-# fail   6 / 100 (6.0%)
-# todo   2 /   6 (33.3%)
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
+# todo   2 /   5 (40.0%)
 # skip   0 / 100 (0.0% not installed)

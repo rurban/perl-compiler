@@ -294,15 +294,15 @@ sub is_todo {
     if (!$DEBUGGING) { foreach(qw(
       Test::Tester
     )) { return 'non-debugging with threads' if $_ eq $module; }}
-    if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
-      Module::Build
-      Test::NoWarnings
-      Test::Warn
-      Test::Simple
-      Test::Exception
-      Test::Tester
-      Test::Deep
-    )) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
+    #if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
+    #  Module::Build
+    #  Test::NoWarnings
+    #  Test::Warn
+    #  Test::Simple
+    #  Test::Exception
+    #  Test::Tester
+    #  Test::Deep
+    #)) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
       Test::Pod
     )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
@@ -325,14 +325,14 @@ sub is_todo {
       Storable
       Sub::Name
     )) { return '5.12.0 with threads' if $_ eq $module; }}
-    if ($] >= 5.018) { foreach(qw(
-      ExtUtils::CBuilder
-    )) { return '>= 5.18 with threads' if $_ eq $module; }}
+    #if ($] >= 5.018) { foreach(qw(
+    #  ExtUtils::CBuilder
+    #)) { return '>= 5.18 with threads' if $_ eq $module; }}
   } else { #no threads --------------------------------
     # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
-    if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
-      DateTime
-    )) { return '5.8.5 without threads' if $_ eq $module; }}
+    #if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
+    #  DateTime
+    #)) { return '5.8.5 without threads' if $_ eq $module; }}
     #if ($] > 5.015) { foreach(qw(
     #  DateTime::TimeZone
     #)) { return '> 5.15 without threads' if $_ eq $module; }}

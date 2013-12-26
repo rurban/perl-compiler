@@ -1365,7 +1365,6 @@ sub B::SVOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   my $svsym = 'Nullsv';
-  my $sv;
   # XXX moose1 crash with 5.8.5-nt, Cwd::_perl_abs_path also
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
     $svsym = '&PL_sv_undef'; # pad does not need to be saved
