@@ -2399,22 +2399,30 @@ sub B::PVMG::save_magic {
 		@{[(caller(1))[3]]}, @{[(caller(1))[2]]});
   }
 
-  my $pkg = $sv->SvSTASH;
-  if ($$pkg) {
-    warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
-      if $debug{mg} or $debug{gv};
+  # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
+  # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
+  if (ref($sv) eq 'B::HV' and $sv->MAGICAL and $fullname =~ /::$/
+      and $] > 5.018 and ($sv->FLAGS & 0x10000000)) {
+    warn sprintf("skip SvSTASH for overloaded HV $fullname flags=0x%x\n", $sv->FLAGS)
+      if $verbose;
+  } else {
+    my $pkg = $sv->SvSTASH;
+    if ($$pkg) {
+      warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
+        if $debug{mg} or $debug{gv};
 
-    $pkg->save($fullname);
+      $pkg->save($fullname);
 
-    no strict 'refs';
-    warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
-      if $debug{mg} or $debug{gv};
-    # Q: Who is initializing our stash from XS? ->save is missing that.
-    # A: We only need to init it when we need a CV
-    $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
-    $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-    # XXX
-    #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+      no strict 'refs';
+      warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
+        if $debug{mg} or $debug{gv};
+      # Q: Who is initializing our stash from XS? ->save is missing that.
+      # A: We only need to init it when we need a CV
+      $init->add( sprintf( "SvSTASH_set(s\\_%x, s\\_%x);", $$sv, $$pkg ) );
+      $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+      # XXX
+      #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+    }
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
   if ($PERL510 and !$sv->MAGICAL) {
@@ -3998,7 +4006,7 @@ sub B::HV::save {
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
     if (!$B::C::stash) {
-      $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188
+      $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
       return $sym;
     }
     return $sym if skip_pkg($name);
