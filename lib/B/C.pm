@@ -2400,8 +2400,8 @@ sub B::PVMG::save_magic {
 
   # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
   # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
-  if (ref($sv) eq 'B::HV' and $sv->MAGICAL and $fullname =~ /::$/
-      and $] > 5.018 and ($sv->FLAGS & 0x10000000)) {
+  if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/
+      and ($sv->FLAGS & 0x10000000)) {
     warn sprintf("skip SvSTASH for overloaded HV $fullname flags=0x%x\n", $sv->FLAGS)
       if $verbose;
   } else {
