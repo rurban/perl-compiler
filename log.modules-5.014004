@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_65 3fb317c 2013-12-17 | more todo tests >=5.16
+# B::C::VERSION = 1.42_67 e08b1b7 2013-12-25 | untodo test 143
 # perlversion = 5.014004
 # path = /usr/local/bin/perl5.14.4
 # platform = linux 64bit threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+fail ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_65 - perl-5.014004
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# 100 / 100 modules tested with B-C-1.42_67 - perl-5.014004
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)

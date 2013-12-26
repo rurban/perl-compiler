@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_65 3fb317c 2013-12-17 | more todo tests >=5.16
+# B::C::VERSION = 1.42_67 e08b1b7 2013-12-25 | untodo test 143
 # perlversion = 5.018001-nt
 # path = /usr/local/bin/perl5.18.1-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_65 - perl-5.018001-nt
+# 100 / 100 modules tested with B-C-1.42_67 - perl-5.018001-nt
 # pass  94 / 100 (94.0%)
 # fail   6 / 100 (6.0%)
 # todo   2 /   6 (33.3%)
