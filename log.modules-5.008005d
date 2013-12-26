@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43 4ee30fe 2013-08-26 | fix ctest 4 for >5.17.5 (regexec eval changes)
+# B::C::VERSION = 1.42_67 99e9701 2013-12-24 | C: save utf8::SWASHNEW even <5.14 on unicore/To/Title.pl or utf8_heavy.pl
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-skip DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 98 / 100 modules tested with B-C-1.43 - perl-5.008005d
-# pass  98 /  98 (100.0%)
-# fail   0 /  98 (0.0%)
+# 100 / 100 modules tested with B-C-1.42_67 - perl-5.008005d
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
 # todo   8 /   0 ()
-# skip   2 / 100 (2.0% not installed)
+# skip   0 / 100 (0.0% not installed)

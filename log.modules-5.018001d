@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_66 b131736 2013-12-20 | C: #256 fix free of static IO names
+# B::C::VERSION = 1.42_67 e08b1b7 2013-12-25 | untodo test 143
 # perlversion = 5.018001d
 # path = /usr/local/bin/perl5.18.1d
 # platform = linux 64bit threaded debug
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_66 - perl-5.018001d
-# pass  94 / 100 (94.0%)
-# fail   6 / 100 (6.0%)
-# todo   3 /   6 (50.0%)
+# 100 / 100 modules tested with B-C-1.42_67 - perl-5.018001d
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
+# todo   3 /   5 (60.0%)
 # skip   0 / 100 (0.0% not installed)
