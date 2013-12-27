@@ -2762,6 +2762,11 @@ sub B::CV::save {
   }
   elsif ((!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
     $fullname = $cv->NAME_HEK;
+    warn sprintf( "CV NAME_HEK $fullname\n") if $debug{cv};
+    if ($fullname =~ /^(.*)::(.*?)$/) {
+      $cvstashname = $1;
+      $cvname      = $2;
+    }
   }
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -3329,7 +3334,13 @@ sub B::GV::save {
   }
 
   my $gvname   = $gv->NAME;
-  my $package  = $gv->STASH->NAME;
+  my $package;
+  if (ref($gv->STASH) eq 'B::SPECIAL') {
+    $package = '__ANON__';
+    warn sprintf( "GV STASH = SPECIAL $gvname\n") if $debug{gv};
+  } else {
+    $package = $gv->STASH->NAME;
+  }
   return $sym if $skip_package{$package};
 
   my $is_empty = $gv->is_empty;
@@ -3345,7 +3356,7 @@ sub B::GV::save {
 
   if ( !$is_empty ) {
     my $egv = $gv->EGV;
-    unless (ref($egv) eq 'B::SPECIAL') {
+    unless (ref($egv) eq 'B::SPECIAL' or ref($egv->STASH) eq 'B::SPECIAL') {
       my $estash = $egv->STASH->NAME;
       if ( $$gv != $$egv ) {
         warn(sprintf( "EGV name is %s, saving it now\n",
