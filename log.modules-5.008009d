@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 e08b1b7 2013-12-25 | untodo test 143
+# B::C::VERSION = 1.42_67 74d12f6 2013-12-26 | module test updates: 1.42_67 c248eeb
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug

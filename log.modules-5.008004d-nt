@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 0cbc49a 2013-12-26 | C: fix #267 no SvSTASH on 5.18 overloaded %version:: stash
+# B::C::VERSION = 1.42_67 74d12f6 2013-12-26 | module test updates: 1.42_67 c248eeb
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
