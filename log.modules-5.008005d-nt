@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 8aa9187 2013-12-26 | module tests updated: all good
+# B::C::VERSION = 1.42_67 74d12f6 2013-12-26 | module test updates: 1.42_67 c248eeb
 # perlversion = 5.008005d-nt
 # path = /usr/local/bin/perl5.8.5d-nt
 # platform = linux 64bit non-threaded debug
@@ -97,7 +97,7 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO 5.8.5 without threads
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
@@ -105,5 +105,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42_67 - perl-5.008005d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)
