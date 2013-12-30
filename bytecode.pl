@@ -1042,4 +1042,4 @@ __END__
 164 18	op_slabbed	PL_op->op_slabbed		U8
 165 18	op_savefree	PL_op->op_savefree		U8
 166 18	op_static	PL_op->op_static		U8
-167 19	op_folded	PL_op->op_folded		U8
+167 19.003 op_folded	PL_op->op_folded		U8
