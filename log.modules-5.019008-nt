@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 0918736 2013-12-28 | C: fix 5.18 segv with SvSTASH of magic stashes even without OVERLOAD flag
+# B::C::VERSION = 1.42_67 003cddb 2013-12-29 | 5.19.8 modules 1.42_67 0918736
 # perlversion = 5.019008-nt
 # path = /usr/local/bin/perl5.19.8
 # platform = linux 64bit non-threaded
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
-fail Module::Build
+fail Module::Build #TODO >= 5.18
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -75,9 +75,9 @@ pass Text::Balanced
 pass DBI
 pass Time::Local
 pass IO::Scalar
-skip Sub::Identify
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -89,7 +89,7 @@ pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
-skip Clone
+pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 97 / 100 modules tested with B-C-1.42_67 - perl-5.019008-nt
-# pass  94 /  97 (96.9%)
-# fail   3 /  97 (3.1%)
-# todo   1 /   3 (33.3%)
-# skip   3 / 100 (3.0% not installed)
+# 100 / 100 modules tested with B-C-1.42_67 - perl-5.019008-nt
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   2 /   3 (66.7%)
+# skip   0 / 100 (0.0% not installed)
