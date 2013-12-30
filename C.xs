@@ -17,7 +17,7 @@
 #if PERL_VERSION > 17 && (PERL_VERSION < 19 || (PERL_VERSION == 19 && PERL_SUBVERSION < 4))
 #define need_op_slabbed
 #endif
-#if PERL_VERSION == 19 && (PERL_SUBVERSION >=2 && PERL_SUBVERSION <= 4)
+#if PERL_VERSION == 19 && (PERL_SUBVERSION > 2 && PERL_SUBVERSION <= 4)
 #define need_op_folded
 #endif
 
