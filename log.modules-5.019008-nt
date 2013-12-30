@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 6859f70 2013-12-27 | BC: fix newopx gv assertion
+# B::C::VERSION = 1.42_67 0918736 2013-12-28 | C: fix 5.18 segv with SvSTASH of magic stashes even without OVERLOAD flag
 # perlversion = 5.019008-nt
 # path = /usr/local/bin/perl5.19.8
 # platform = linux 64bit non-threaded
@@ -24,8 +24,8 @@ pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
-fail ExtUtils::ParseXS #TODO >= 5.18
-fail Module::Build #TODO >= 5.18
+fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
+fail Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -75,9 +75,9 @@ pass Text::Balanced
 pass DBI
 pass Time::Local
 pass IO::Scalar
-pass Sub::Identify
+skip Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -89,11 +89,11 @@ pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
-pass Clone
+skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_67 - perl-5.019008-nt
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   2 /   5 (40.0%)
-# skip   0 / 100 (0.0% not installed)
+# 97 / 100 modules tested with B-C-1.42_67 - perl-5.019008-nt
+# pass  94 /  97 (96.9%)
+# fail   3 /  97 (3.1%)
+# todo   1 /   3 (33.3%)
+# skip   3 / 100 (3.0% not installed)
