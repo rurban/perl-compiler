@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_67';
+our $VERSION = '1.42_68';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -5764,9 +5764,14 @@ sub save_context {
     $init->add(
       "av_store((AV*)CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
       "av_store((AV*)CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+  } elsif ($] < 5.019003) {
+    $init->add(
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
   } else {
     $init->add(
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+      "PadnamelistMAXNAMED(PL_comppad_name) = AvFILL($curpad_nam);",
       "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
   }
   if ($] < 5.017) {

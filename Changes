@@ -62,6 +62,7 @@
         Add more DynaLoader::dl_debug output (set PERL_DL_DEBUG=1)
         Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
         Mark empty but overloaded packages (#172). This is merely workaround for reduced testcases.
+        Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
 
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
