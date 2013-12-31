@@ -3,7 +3,7 @@ must be forced where necessary at the end of each basic block):
 
 The shadow stack @stack is empty.
 For each lexical object in @pad, VALID_IV holds for each T_INT,
-VALID_DOUBLE holds for each T_DOUBLE and VALID_SV holds otherwise.
+VALID_NUM holds for each T_NUM and VALID_SV holds otherwise.
 The C shadow variable sp holds the stack pointer (not necessarily stack_sp).
 
 write_back_stack
@@ -20,13 +20,13 @@ write_back_lexicals
     flags set is also skipped and not written back to its SV.
 
 invalidate_lexicals($avoid)
-    The VALID_INT and VALID_DOUBLE flags are turned off for each lexical
+    The VALID_INT and VALID_NUM flags are turned off for each lexical
     object in @pad whose flags field doesn't overlap with $avoid.
 
 reload_lexicals
     For each necessary lexical object in @pad, makes sure that VALID_IV
-    holds for objects of type T_INT, VALID_DOUBLE holds for objects for
-    type T_DOUBLE, and VALID_SV holds for other objects. An object is
+    holds for objects of type T_INT, VALID_NUM holds for objects for
+    type T_NUM, and VALID_SV holds for other objects. An object is
     considered for reloading if its flags field does not overlap with the
     (optional) argument passed to reload_lexicals.
 

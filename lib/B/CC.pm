@@ -201,14 +201,14 @@ Arithmetic and comparison is inlined. Scalar magic is bypassed.
 
 With C<-fno-name-magic> do not infer a local variable type from its name:
 
-  B<_i> suffix for int, B<_d> for double, B<_ir> for register int
+  B<_i> suffix for int, B<_d> for double/num, B<_ir> for register int
 
 See the experimental C<-ftype-attr> type attributes.
-Currently supported are B<int> and B<double> only. See </load_pad>.
+Currently supported are B<int> and B<num> only. See </load_pad>.
 
 =item B<-ftype-attr> (DOES NOT WORK YET)
 
-Experimentally support B<type attributes> for B<int> and B<double>,
+Experimentally support B<type attributes> for B<int> and B<num>,
 SCALAR only so far.
 For most ops new C vars are used then, not the fat perl vars.
 Very awkward to use until the basic type classes are supported from
@@ -283,10 +283,10 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 # Start registering the L<types> namespaces.
-$main::int::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
+$main::int::B_CC = $main::num::B_CC = $main::str::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
 
 use Config;
 use strict;
@@ -717,19 +717,22 @@ sub cc_queue {
 BEGIN { B::C::set_callback( \&cc_queue ) }
 
 sub valid_int     { $_[0]->{flags} & VALID_INT }
-sub valid_double  { $_[0]->{flags} & VALID_DOUBLE }
-sub valid_numeric { $_[0]->{flags} & ( VALID_INT | VALID_DOUBLE ) }
+sub valid_double  { $_[0]->{flags} & VALID_NUM }
+sub valid_numeric { $_[0]->{flags} & ( VALID_INT | VALID_NUM ) }
+sub valid_str     { $_[0]->{flags} & VALID_STR }
 sub valid_sv      { $_[0]->{flags} & VALID_SV }
 
 sub top_int     { @stack ? $stack[-1]->as_int     : "TOPi" }
 sub top_double  { @stack ? $stack[-1]->as_double  : "TOPn" }
 sub top_numeric { @stack ? $stack[-1]->as_numeric : "TOPn" }
 sub top_sv      { @stack ? $stack[-1]->as_sv      : "TOPs" }
+sub top_str     { @stack ? $stack[-1]->as_str     : "TOPs" }
 sub top_bool    { @stack ? $stack[-1]->as_bool    : "SvTRUE(TOPs)" }
 
 sub pop_int     { @stack ? ( pop @stack )->as_int     : "POPi" }
 sub pop_double  { @stack ? ( pop @stack )->as_double  : "POPn" }
 sub pop_numeric { @stack ? ( pop @stack )->as_numeric : "POPn" }
+sub pop_str     { @stack ? ( pop @stack )->as_str      : "POPs" }
 sub pop_sv      { @stack ? ( pop @stack )->as_sv      : "POPs" }
 
 sub pop_bool {
@@ -786,11 +789,14 @@ sub save_or_restore_lexical_state {
       if ( $changed & VALID_SV ) {
         ( $old_flags & VALID_SV ) ? $lex->write_back : $lex->invalidate;
       }
-      if ( $changed & VALID_DOUBLE ) {
-        ( $old_flags & VALID_DOUBLE ) ? $lex->load_double : $lex->invalidate_double;
+      if ( $changed & VALID_NUM ) {
+        ( $old_flags & VALID_NUM ) ? $lex->load_double : $lex->invalidate_double;
       }
       if ( $changed & VALID_INT ) {
         ( $old_flags & VALID_INT ) ? $lex->load_int : $lex->invalidate_int;
+      }
+      if ( $changed & VALID_STR ) {
+        ( $old_flags & VALID_STR ) ? $lex->load_str : $lex->invalidate_str;
       }
     }
   }
@@ -826,8 +832,11 @@ sub reload_lexicals {
     if ( $type == T_INT ) {
       $lex->as_int;
     }
-    elsif ( $type == T_DOUBLE ) {
+    elsif ( $type == T_NUM ) {
       $lex->as_double;
+    }
+    elsif ( $type == T_STR ) {
+      $lex->as_str;
     }
     else {
       $lex->as_sv;
@@ -989,7 +998,7 @@ sub error {
 sub init_type_attrs {
   eval q[
 
-  our $valid_attr = '^(int|double|string|unsigned|register|temporary|ro|readonly|const)$';
+  our $valid_attr = '^(int|num|str|double|string|unsigned|register|temporary|ro|readonly|const)$';
   sub MODIFY_SCALAR_ATTRIBUTES {
     my $pkg = shift;
     my $v = shift;
@@ -1018,9 +1027,14 @@ sub init_type_attrs {
   *int::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
 
   # my double $d : ro;
+  *num::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
+  *num::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
+  *str::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
+  *str::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
+
+  # deprecated:
   *double::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
   *double::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
-
   *string::MODIFY_SCALAR_ATTRIBUTES = \&B::CC::MODIFY_SCALAR_ATTRIBUTES;
   *string::FETCH_SCALAR_ATTRIBUTES  = \&B::CC::FETCH_SCALAR_ATTRIBUTES;
   ];
@@ -1067,33 +1081,37 @@ sub load_pad {
       my ($nametry) = $namesv->PV =~ /^\$(.+)$/ if $namesv->PV;
       $name = $nametry if $nametry;
 
-      # my int $i; my double $d; compiled code only, unless the source provides the int and double packages.
+      # my int $i; my num $d; compiled code only, unless the source provides the int and num packages.
       # With Ctypes it is easier. my c_int $i; defines an external Ctypes int, which can be efficiently
       # compiled in Perl also.
-      # XXX Better use attributes, like my $i:int; my $d:double; which works un-compiled also.
+      # XXX Better use attributes, like my $i:int; my $d:num; which works un-compiled also.
       if (ref($namesv) eq 'B::PVMG' and ref($namesv->SvSTASH) eq 'B::HV') { # my int
         $class = $namesv->SvSTASH->NAME;
         if ($class eq 'int') {
           $type  = T_INT;
           $flags = VALID_SV | VALID_INT;
         }
-        elsif ($class eq 'double') { # my double
-          $type  = T_DOUBLE;
-          $flags = VALID_SV | VALID_DOUBLE;
+        elsif ($class eq 'num' or $class eq 'double') { # my num
+          $type  = T_NUM;
+          $flags = VALID_SV | VALID_NUM;
+        }
+        elsif ($class eq 'str' or $class eq 'string') { # my str
+          $type  = T_STR;
+          $flags = VALID_SV | VALID_STR;
         }
         #elsif ($class eq 'c_int') {  # use Ctypes;
         #  $type  = T_INT;
         #  $flags = VALID_SV | VALID_INT;
         #}
         #elsif ($class eq 'c_double') {
-        #  $type  = T_DOUBLE;
-        #  $flags = VALID_SV | VALID_DOUBLE;
+        #  $type  = T_NUM;
+        #  $flags = VALID_SV | VALID_NUM;
         #}
         # TODO: MooseX::Types
       }
 
       # Valid scalar type attributes:
-      #   int double string ro readonly const unsigned
+      #   int num str ro readonly const unsigned
       # Note: PVMG from above also.
       # Typed arrays and hashes later.
       if (0 and $class =~ /^(I|P|S|N)V/
@@ -1111,15 +1129,19 @@ sub load_pad {
       # XXX We should try Devel::TypeCheck for type inference also
 
       # magic names: my $i_ir, my $d_d. without -fno-name-magic cmdline option only
-      if ( $type == T_UNKNOWN and $opt_name_magic and $name =~ /^(.*)_([di])(r?)$/ ) {
+      if ( $type == T_UNKNOWN and $opt_name_magic and $name =~ /^(.*)_([dis])(r?)$/ ) {
         $name = $1;
         if ( $2 eq "i" ) {
           $type  = T_INT;
           $flags = VALID_SV | VALID_INT;
         }
         elsif ( $2 eq "d" ) {
-          $type  = T_DOUBLE;
-          $flags = VALID_SV | VALID_DOUBLE;
+          $type  = T_NUM;
+          $flags = VALID_SV | VALID_NUM;
+        }
+        elsif ( $2 eq "s" ) {
+          $type  = T_STR;
+          $flags = VALID_SV | VALID_STR;
         }
         $flags |= REGISTER if $3;
       }
@@ -1140,11 +1162,15 @@ sub declare_pad {
       $type == T_INT ? sprintf( "%s=0", $pad[$ix]->{iv} ) : $pad[$ix]->{iv} )
       if $pad[$ix]->save_int;
     declare( "NV",
-      $type == T_DOUBLE
+      $type == T_NUM
         ? sprintf( "%s = 0", $pad[$ix]->{nv} )
         : $pad[$ix]->{nv} )
       if $pad[$ix]->save_double;
-
+    declare( "PV",
+      $type == T_STR
+        ? sprintf( "%s = 0", $pad[$ix]->{sv} )
+        : $pad[$ix]->{sv} )
+      if $pad[$ix]->save_str;
   }
 }
 
@@ -2244,7 +2270,7 @@ sub pp_sassign {
     if ( $type == T_INT ) {
       $dst->set_int( $src->as_int, $src->{flags} & VALID_UNSIGNED );
     }
-    elsif ( $type == T_DOUBLE ) {
+    elsif ( $type == T_NUM ) {
       $dst->set_numeric( $src->as_numeric );
     }
     else {
@@ -2265,7 +2291,7 @@ sub pp_sassign {
           runtime sprintf( "sv_setiv(TOPs, %s);", $src->as_int );
         }
       }
-      elsif ( $type == T_DOUBLE ) {
+      elsif ( $type == T_NUM ) {
         runtime sprintf( "sv_setnv(TOPs, %s);", $src->as_double );
       }
       else {
@@ -2281,7 +2307,7 @@ sub pp_sassign {
       if ( $type == T_INT ) {
         $dst->set_int("SvIV(sv)");
       }
-      elsif ( $type == T_DOUBLE ) {
+      elsif ( $type == T_NUM ) {
         $dst->set_double("SvNV(sv)");
       }
       else {
@@ -2316,7 +2342,7 @@ sub pp_preinc {
   if ( @stack >= 1 ) {
     my $obj  = $stack[-1];
     my $type = $obj->{type};
-    if ( $type == T_INT || $type == T_DOUBLE ) {
+    if ( $type == T_INT || $type == T_NUM ) {
       $obj->set_int( $obj->as_int . " + 1" );
     }
     else {
@@ -3488,29 +3514,29 @@ help make use of this compiler.
 
 =head1 TYPES
 
-Implemented type classes are B<int> and B<double>.
-Planned is B<string> also.
-Implemented are only SCALAR types yet. 
-Typed arrays and hashes and perfect hashes need CORE and L<types> support first.
+Implemented type classes are B<int> and B<num>.
+Planned is B<str> also.
+Implemented are only SCALAR types yet.
+Typed arrays and hashes and perfect hashes need L<coretypes>, L<types> and
+proper C<const> support first.
 
 Deprecated are inferred types via the names of locals, with '_i', '_d' suffix
 and an optional 'r' suffix for register allocation.
 
   C<my ($i_i, $j_ir, $num_d);>
 
-Planned type attributes are B<int>, B<double>, B<string>,
-B<unsigned>, B<ro> / B<const>.
+Planned type attributes are B<int>, B<num>, B<str>, B<unsigned>, B<ro> / B<const>.
 
-The attributes are perl attributes, and int|double|string are either
+The attributes are perl attributes, and C<int|num|str> are either
 compiler classes or hints for more allowed types.
 
-  C<my int $i :double;>  declares a NV with SVf_IOK. Same as C<my $i:int:double;>
+  C<my int $i :num;>  declares a NV with SVf_IOK. Same as C<my $i:int:double;>
   C<my int $i;>          declares an IV. Same as C<my $i:int;>
-  C<my int $i :string;>  declares a PVIV. Same as C<my $i:int:string;>
+  C<my int $i :str;>  declares a PVIV. Same as C<my $i:int:string;>
 
   C<my int @array :unsigned = (0..4);> will be used as c var in faster arithmetic and cmp.
                                        With :const or :ro even more.
-  C<my string %hash :const
+  C<my str %hash :const
     = (foo => 'foo', bar => 'bar');> declare string values,
                                      generate as read-only perfect hash.
 
@@ -3530,7 +3556,7 @@ STATUS
 OK (classes only):
 
   my int $i;
-  my double $d;
+  my num $d;
 
 NOT YET OK (attributes):
 
@@ -3551,27 +3577,26 @@ functions, even if they are used at compile time only.
 
 Using attributes adds an import block to your code.
 
-Only B<our> variable attributes are checked at compile-time,
+Up until 5.20 only B<our> variable attributes are checked at compile-time,
 B<my> variables attributes at run-time only, which is too late for the compiler.
-But only my variables can be typed, our not as they are typed automatically with
-the defined package.
-Perl attributes need to be fixed for types hints.
+Perl attributes need to be fixed for types hints by adding C<CHECK_SCALAR_ATTRIBUTES>.
 
 FUTURE
 
 We should be able to support types on ARRAY and HASH.
+For arrays also sizes to omit bounds-checking.
 
   my int @array; # array of ints, faster magic-less access esp. in inlined arithmetic and cmp.
-  my string @array : readonly = qw(foo bar); # compile-time error on write. no lexical write_back
+  my str @array : const = qw(foo bar);   # compile-time error on write. no lexical write_back
 
-  my int $hash = {"1" => 1, "2" => 2}; # int values, type-checked on write my
-  string %hash1 : readonly = (foo => 'bar');# string keys only => maybe gperf
-                                            # compile-time error on write
+  my int $hash = {"1" => 1, "2" => 2};   # int values, type-checked on write my
+  str %hash1 : const = (foo => 'bar');   # string keys only => maybe gperf
+                                         # compile-time error on write
 
-Typed hash keys are always strings, values are typed.
+Typed hash keys are always strings, as array keys are always int. Only the values are typed.
 
 We should be also able to add type attributes for functions and methods,
-i.e. for argument and return types. See L<types> and 
+i.e. for argument and return types. See L<types> and
 L<http://blogs.perl.org/users/rurban/2011/02/use-types.html>
 
 =head1 BUGS
