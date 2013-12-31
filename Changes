@@ -91,6 +91,10 @@
         Support IsCOW xpvshared strings (>=5.18)
         Fixed wrong xpvshared logic (5.10-5.17), issue 138
         Optimized away 0=default op and gp flags and pointers
+        Optimized away default sv_refcnt=1 (GV not), and skip redundant bytecodes
+        Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
+        
+	* ByteLoader (0.10): set sv_refcnt to 1 in newsv
         * Assembler (1.11): allow "newpadlx 0"
         * Disassembler (1.12): use B::Concise op_flags and private_flags
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing

@@ -69,7 +69,7 @@ push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with 
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
 push @todo, (46) if $] >= 5.012 and $] < 5.018;
-push @todo, (8,25,27,29,36,41,48) if $] >= 5.018;
+#push @todo, (27,29) if $] >= 5.018;
 push @todo, (16) if $] >= 5.018 and $ITHREADS;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
 
