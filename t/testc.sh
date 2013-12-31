@@ -876,6 +876,11 @@ use IO::File;
 can();
 print "ok\n";'
 result[2011]='ok'
+tests[203]='use open(IN => ":crlf", OUT => ":encoding(cp1252)");
+open F, "<", "/dev/null";
+my %l = map {$_=>1} PerlIO::get_layers(F, input  => 1);
+print $l{crlf} ? q(ok) : keys(%l);'
+result[203]='ok'
 tests[207]='use warnings;
 sub asub { }
 asub(tests => 48);
