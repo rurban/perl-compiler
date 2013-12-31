@@ -63,6 +63,7 @@
         Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
         Mark empty but overloaded packages (#172). This is merely workaround for reduced testcases.
         Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
+        Add new option -fdelete-pkg included with -O2 to control if to ignore compiler dependent packages.
 
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
@@ -76,10 +77,11 @@
         If the input file is an absolute path on non-windows systems use the basename.
 	* CC (1.13): Use the B::C integer and double precision logic (ivx, nvx).
         Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl.
-        Added optimizations: -fno-magic, -fno-autovivify
+        Added optimizations: -fno-magic, -fno-autovivify, -faelem
         Detect "no autovivification;" pragma.
-        New -fno-taint, deprecate -fomit_taint
+        New -fno-taint, -fomit_taint is deprecated
         Fix amagic_generation which was removed with 5.17
+        Use new perl6 type names: int, num, str. double and string are deprecated.
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68.
         New type B::PAD isa B::AV (PADLIST for 5.17.5),
