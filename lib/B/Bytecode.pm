@@ -405,7 +405,7 @@ sub B::HV::ix {
       asm "xmg_stash", $stashix;
       asm( "xhv_riter", $hv->RITER ) if VERSION < 5.009;
     }
-    asm "sv_refcnt", $hv->REFCNT;
+    asm "sv_refcnt", $hv->REFCNT if $hv->REFCNT != 1;
     $ix;
   }
 }
@@ -427,7 +427,7 @@ sub B::NULL::bsave {
   if ($PERL56) {
     asm "stsv", $ix;
   } else {
-    asm "sv_refcnt", $sv->REFCNT;
+    asm "sv_refcnt", $sv->REFCNT if $sv->REFCNT != 1;
   }
 }
 
@@ -734,7 +734,7 @@ sub B::AV::bsave {
     }
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
-  asm "sv_refcnt", $av->REFCNT;
+  asm "sv_refcnt", $av->REFCNT if $av->REFCNT != 1;
   asm "xmg_stash", $stashix;
 }
 

@@ -438,7 +438,8 @@ static int bget_swab = 0;
 	    default:					\
 		sv = newSV(0);				\
 		SvUPGRADE(sv, (arg));			\
-	    }
+	    }                                           \
+	    SvREFCNT(sv) = 1
 #define BSET_newsvx(sv, arg) STMT_START {		\
 	    BSET_newsv(sv, arg & SVTYPEMASK);		\
 	    SvFLAGS(sv) = arg;				\
