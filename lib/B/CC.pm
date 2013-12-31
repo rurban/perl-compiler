@@ -1774,7 +1774,7 @@ sub pp_aelemfast {
     my @c = comppadlist->ARRAY;
     my @p = $c[1]->ARRAY;
     my $lex = $p[ $op->targ ];
-    $rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
+    $rmg  = ($lex and ref $lex eq 'B::AV' and ($lex->MAGICAL & SVs_RMG or !$lex->ARRAY)) ? 1 : 0;
     # MUTABLE_AV is only needed to catch compiler const loss
     # $av = $] > 5.01000 ? "MUTABLE_AV($sv)" : $sv;
     $av = "(AV*)$sv";
@@ -1787,7 +1787,7 @@ sub pp_aelemfast {
 	my @c = comppadlist->ARRAY; # XXX curpad, not comppad!!
 	my @p = $c[1]->ARRAY;
 	my $lex = $p[ $op->padix ];
-	$rmg  = ($lex and ref $lex eq 'B::AV' and $lex->MAGICAL & SVs_RMG) ? 1 : 0;
+	$rmg  = ($lex and ref $lex eq 'B::AV' and ($lex->MAGICAL & SVs_RMG or !$lex->ARRAY)) ? 1 : 0;
       } else {
         $gvsym = 'PL_incgv'; # XXX passes, but need to investigate why. cc test 43 5.10.1
         #write_back_stack();
@@ -1799,7 +1799,7 @@ sub pp_aelemfast {
       my $gv = $op->gv;
       $gvsym = $gv->save;
       my $gvav = $gv->AV; # test 16, tied gvav
-      $rmg  = $] < 5.007 ? 0 : ($gvav and $gvav->MAGICAL & SVs_RMG) ? 1 : 0;
+      $rmg  = $] < 5.007 ? 0 : ($gvav and ($gvav->MAGICAL & SVs_RMG  or !$gvav->ARRAY)) ? 1 : 0;
     }
     $av = "GvAV($gvsym)";
   }
