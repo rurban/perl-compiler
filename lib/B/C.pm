@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.42_68';
+our $VERSION = '1.42_69';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -303,16 +303,11 @@ my %all_bc_subs = map {$_=>1}
 
 # track all internally used packages. all other may not be deleted automatically
 # - hidden methods
-my %all_bc_pkg = map {$_=>1}
-  qw(B B::AV B::BINOP B::BM B::COP B::CV B::FAKEOP B::GV B::HV
-     B::IO B::IV B::LISTOP B::LOGOP B::LOOP B::NULL B::NV B::OBJECT
-     B::OP B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP
-     B::REGEXP B::RV B::SPECIAL B::SV B::SVOP B::UNOP B::UV
-     AnyDBM_File Fcntl Regexp overload Errno Exporter Exporter::Heavy Config
-     warnings warnings::register DB next maybe maybe::next FileHandle fields vars
-     AutoLoader Carp Symbol PerlIO PerlIO::scalar SelectSaver ExtUtils ExtUtils::Constant
-     ExtUtils::Constant::ProxySubs threads base IO::File
-    );
+# uses now @B::C::Flags::deps
+my %all_bc_deps = map {$_=>1}
+  @B::C::Flags::deps ? @B::C::Flags::deps
+  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register );
+
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
 # -umain,-ure,-umro,-ustrict,-uAnyDBM_File,-uFcntl,-uRegexp,-uoverload,-uErrno,-uExporter,-uExporter::Heavy,-uConfig,-uwarnings,-uwarnings::register,-uDB,-unext,-umaybe,-umaybe::next,-uFileHandle,-ufields,-uvars,-uAutoLoader,-uCarp,-uSymbol,-uPerlIO,-uPerlIO::scalar,-uSelectSaver,-uExtUtils,-uExtUtils::Constant,-uExtUtils::Constant::ProxySubs,-uthreads,-ubase
@@ -367,7 +362,7 @@ our %option_map = (
 our %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data)],
+    2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
@@ -5306,6 +5301,29 @@ sub walk_syms {
                 $package.'::' );
 }
 
+# simplified walk_syms
+# needed to populate @B::C::Flags::deps from Makefile.PL from within this %INC context
+sub walk_stashes {
+  my ($symref, $prefix) = @_;
+  no strict 'refs';
+  $prefix = '' unless defined $prefix;
+  foreach my $sym ( sort keys %$symref ) {
+    if ($sym =~ /::$/) {
+      $sym = $prefix . $sym;
+      $B::C::deps{ substr($sym,0,-2) }++;
+      if ($sym ne "main::" && $sym ne "<none>::") {
+        walk_stashes(\%$sym, $sym);
+      }
+    }
+  }
+}
+
+sub collect_deps {
+  %B::C::deps = ();
+  walk_stashes(\%main::);
+  print join " ",(sort keys %B::C::deps);
+}
+
 sub mark_package {
   my $package = shift;
   my $force = shift;
@@ -5420,10 +5438,10 @@ sub skip_pkg {
   return 0;
 }
 
-# with -O0 or -O1 do not delete packages which were brought in from
+# with -O0 to -O2 do not delete/ignore packages which were brought in from
 # the script, i.e. not defined in B::C or O. Just to be on the safe side.
 sub can_delete {
-  return $B::C::can_delete_pkg or $all_bc_pkg{$_{0}};
+  return $B::C::can_delete_pkg or $all_bc_deps{$_{0}};
 }
 
 sub should_save {
@@ -5497,15 +5515,15 @@ sub should_save {
   }
 
   if ( exists $include_package{$package} ) {
-    if ($debug{pkg}) {
-      if (exists $include_package{$package} and $include_package{$package}) {
-        warn "$package is cached\n";
-      } else {
-        warn "Cached $package is already deleted\n";
-      }
+    if (!can_delete($package) and $B::C::can_delete_pkg) {
+      $include_package{$package} = 1;
+      warn "Cached $package is kept\n" if $debug{pkg};
     }
-    if (!$include_package{$package} and can_delete($package)) {
+    elsif (!$include_package{$package}) {
       delete_unsaved_hashINC($package);
+      warn "Cached $package is already deleted\n" if $debug{pkg};
+    } else {
+      warn "Cached $package is cached\n" if $debug{pkg};
     }
     return $include_package{$package};
   }
@@ -5529,7 +5547,16 @@ sub should_save {
   if ($package !~ /^PerlIO/ and can_delete($package)) {
     delete_unsaved_hashINC($package);
   }
-  return $include_package{$package} = 0;
+  if (can_delete($package)) {
+    warn "Delete $package\n" if $debug{pkg};
+    return $include_package{$package} = 0;
+  } elsif (!$B::C::can_delete_pkg) { # and not in @deps
+    warn "Keep $package\n" if $debug{pkg};
+    return $include_package{$package} = 1;
+  } else { # in @deps
+    # warn "Ignore $package\n" if $debug{pkg};
+    return;
+  }
 }
 
 sub inc_packname {
@@ -6031,7 +6058,7 @@ sub compile {
   $DB::single=1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
-  $B::C::can_delete_pkg = 1;
+  $B::C::can_delete_pkg = 0;
   $B::C::destruct = 1;
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
@@ -6434,12 +6461,12 @@ Enabled with C<-O2>.
 
 =item B<-fdelete-pkg>
 
-Delete packages which appear to be nowhere used automatically.
-This might miss run-time called stringified methods.
+Delete compiler-internal and dependent packages which appear to be
+nowhere used automatically. This might miss run-time called stringified methods.
 Note that you can always use C<-u> to add automatically deleted
-packages.
+packages. See L<B::C::Flags> for C<@deps> which packages are affected.
 
-Needs to be used with C<-fno-delete-pkg>.
+Enabled with C<-O2>.
 
 =item B<-fconst-strings>
 
