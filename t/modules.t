@@ -284,13 +284,13 @@ sub is_todo {
   #    MooseX::Types
   #    DateTime
   #)) { return '> 5.15 (unshare_hek)' if $_ eq $module; }}
+  # SvSTASH of magic stashes?
+  if ($] >= 5.016) { foreach(qw(
+      Module::Build
+  )) { return '>= 5.16' if $_ eq $module; }}
   if ($] >= 5.018) { foreach(qw(
       ExtUtils::ParseXS
     )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
-  # SvSTASH of magic stashes
-  if ($] >= 5.018) { foreach(qw(
-      Module::Build
-  )) { return '>= 5.18' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
