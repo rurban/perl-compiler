@@ -81,15 +81,19 @@ sub write_b_c_flags {
 }
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
+my $unicode_warning =
+         "  Perl handling of new unicode identifiers - package and symbol names - \n".
+	 "  without proper TR39 handling is considered a security risc and is not fully supported.\n".
+	 "  See http://websec.github.io/unicode-security-guide/\n";
 if ($] > 5.015005 and $] < 5.019004) {
-    # We do not want to support binary stashes. safesyscalls with 5.019004 should be enabled
-    warn "Warning: Bad perl version $].\n".
-	 "  Binary package and symbol names are considered a security risc and not fully supported.\n".
-	 "  Check your code to strip \\0 from package names.\n";
+    # We do not want to support binary identifiers. safesyscalls with 5.019004 should be enabled
+    warn "Warning: Bad perl version $]\n".
+	 $unicode_warning.
+	 "  Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.\n";
 } elsif ($] >= 5.019004) {
     warn "Warning:\n".
-	 "  Binary package and symbol names are considered a security risc and only partially supported.\n".
-	 "  Check your code to strip \\0 from package names and enable use warnings 'syscalls'.\n";
+	 $unicode_warning.
+	 "  Check your code for syntax spoofs, confusables, strip \\0 from package names and enable use warnings 'syscalls'.\n";
 }
 
 WriteMakefile(
