@@ -13,7 +13,7 @@ use strict;
 use Test::More tests => 1;
 
 use B::C ();
-my $when = "1.42_69";
+my $when = "1.42_70";
 ctestok(1,'C,-O0','ccode203i',<<'EOF',($B::C::VERSION lt $when ? "TODO " : "").'#203 perlio layers via use open');
 use open(IN => ":crlf", OUT => ":encoding(cp1252)");
 open F, "<", "/dev/null"; 
