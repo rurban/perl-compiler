@@ -5438,10 +5438,12 @@ sub skip_pkg {
   return 0;
 }
 
-# with -O0 to -O2 do not delete/ignore packages which were brought in from
-# the script, i.e. not defined in B::C or O. Just to be on the safe side.
+# Do not delete/ignore packages which were brought in from the script,
+# i.e. not defined in B::C or O. Just to be on the safe side.
 sub can_delete {
-  return $B::C::can_delete_pkg or $all_bc_deps{$_{0}};
+  my $pkg = shift;
+  if (exists $all_bc_deps{$pkg} and $B::C::can_delete_pkg) { return 1 };
+  return undef;
 }
 
 sub should_save {
@@ -5515,7 +5517,7 @@ sub should_save {
   }
 
   if ( exists $include_package{$package} ) {
-    if (!$all_bc_deps{$package}) {
+    if (! exists $all_bc_deps{$package}) {
       $include_package{$package} = 1;
       warn "Cached new $package is kept\n" if $debug{pkg};
     }
@@ -5550,7 +5552,7 @@ sub should_save {
   if (can_delete($package)) {
     warn "Delete $package\n" if $debug{pkg};
     return $include_package{$package} = 0;
-  } elsif (!$B::C::can_delete_pkg) { # and not in @deps
+  } elsif (! exists $all_bc_deps{$package}) { # and not in @deps
     warn "Keep $package\n" if $debug{pkg};
     return $include_package{$package} = 1;
   } else { # in @deps
@@ -6055,7 +6057,7 @@ sub mark_skip {
 sub compile {
   my @options = @_;
   # Allow debugging in CHECK blocks without Od
-  $DB::single=1 if defined &DB::DB;
+  $DB::single = 1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::can_delete_pkg = 1;
