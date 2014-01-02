@@ -362,7 +362,7 @@ our %option_map = (
 our %optimization_map = (
     0 => [qw()],                # special case
     1 => [qw(-fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data -fdelete-pkg)],
+    2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
   );
@@ -5515,9 +5515,9 @@ sub should_save {
   }
 
   if ( exists $include_package{$package} ) {
-    if (!can_delete($package) and $B::C::can_delete_pkg) {
+    if (!$all_bc_deps{$package}) {
       $include_package{$package} = 1;
-      warn "Cached $package is kept\n" if $debug{pkg};
+      warn "Cached new $package is kept\n" if $debug{pkg};
     }
     elsif (!$include_package{$package}) {
       delete_unsaved_hashINC($package);
@@ -6058,7 +6058,7 @@ sub compile {
   $DB::single=1 if defined &DB::DB;
   my ( $option, $opt, $arg );
   my @eval_at_startup;
-  $B::C::can_delete_pkg = 0;
+  $B::C::can_delete_pkg = 1;
   $B::C::destruct = 1;
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
@@ -6459,15 +6459,6 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O2>.
 
-=item B<-fdelete-pkg>
-
-Delete compiler-internal and dependent packages which appear to be
-nowhere used automatically. This might miss run-time called stringified methods.
-Note that you can always use C<-u> to add automatically deleted
-packages. See L<B::C::Flags> for C<@deps> which packages are affected.
-
-Enabled with C<-O2>.
-
 =item B<-fconst-strings>
 
 Declares static readonly strings as const.
@@ -6527,6 +6518,14 @@ the source code, the requested stash member(s) is/are automatically created.
 
 C<-fno-stash> is the default.
 
+=item B<-fno-delete-pkg>
+
+Do not delete compiler-internal and dependent packages which appear to be
+nowhere used automatically. This might miss run-time called stringified methods.
+See L<B::C::Flags> for C<@deps> which packages are affected.
+
+C<-fdelete-pkg> is the default.
+
 =item B<-fuse-script-name>
 
 Use the script name instead of the program name as C<$0>.
@@ -6566,7 +6565,7 @@ Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<-fdelete-pkg>.
+Enable B<-O1> plus B<-fro-inc> and B<-fsave-data>.
 
 =item B<-O3>
 
