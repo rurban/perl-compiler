@@ -18,14 +18,15 @@ $opt .= ",-fno-fold" if $] >= 5.013009;
 $opt = "-Wb=".substr($opt,1) if $opt;
 
 TODO: {
-  local $TODO = 'require LWP::UserAgent fails without -fno-warnings';
+  local $TODO = 'some system perls attach Config to DynaLoader only' if $] > 5.017;
   # Attempt to reload Config.pm aborted.
   # Global symbol "%Config" requires explicit package name at 5.8.9/Time/Local.pm line 36
   # 5.15: Undefined subroutine &utf8::SWASHNEW called at /usr/local/lib/perl5/5.15.3/constant.pm line 36
   # old: &Config::AUTOLOAD failed on Config::launcher at Config.pm line 72.
   is(`$X $perlcc -O2 -occodei27_o2 -r -e"require LWP::UserAgent;print q(ok);"`, 'ok',
-     "-O2 require LWP::UserAgent");
+     "-O2 require LWP::UserAgent without -fno-warnings");
 }
+
 # fine with -fno-warnings
 is(`$X $perlcc $opt -occodei27 -r -e"require LWP::UserAgent;print q(ok);"`, 'ok',
    "require LWP::UserAgent $opt");
