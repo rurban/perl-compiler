@@ -733,7 +733,7 @@ sub save_pv_or_rv {
     } else {
       if ($gmg && $fullname) {
 	no strict 'refs';
-	$pv = $fullname and ref($fullname) ? "${$fullname}" : '';
+	$pv = ($fullname and ref($fullname)) ? "${$fullname}" : '';
 	$cur = length (pack "a*", $pv);
 	$pok = 1;
       } else {
@@ -2233,7 +2233,7 @@ sub B::REGEXP::save {
   my $pv = $sv->PV;
   my $cur = $sv->CUR;
   # construct original PV
-  $pv =~ s/^(\(\?\^[adluimsx-]*\:)(.*)\)$/\2/;
+  $pv =~ s/^(\(\?\^[adluimsx-]*\:)(.*)\)$/$2/;
   $cur -= length($sv->PV) - length($pv);
   my $cstr = cstring($pv);
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
