@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 74d12f6 2013-12-26 | module test updates: 1.42_67 c248eeb
+# B::C::VERSION = 1.42_69 895548c 2014-01-01 | test issues 169, 203: postpone fixed with 1.42_69 to _70
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_67 - perl-5.014004-nt
+# 100 / 100 modules tested with B-C-1.42_69 - perl-5.014004-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
