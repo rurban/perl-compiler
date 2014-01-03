@@ -7,8 +7,10 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 3;
+use Config ();
+my $ITHREADS = $Config::Config{useithreads};
 
-ctestok(1,'C,-O3,-UB','ccode212i',<<'EOF','#212 shared GP');
+ctestok(1,'C,-O3,-UB','ccode212i',<<'EOF',($]>=5.018 and $ITHREADS ?"TODO 5.18thr ":"").'#212 shared GP');
 $blurfl = 123;
 {
     package abc;
