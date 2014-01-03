@@ -723,7 +723,8 @@ sub save_pv_or_rv {
     if ($savesym =~ /(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
-      $savesym = 'NULL';
+      #$savesym = 'NULL';
+      $savesym = 'ptr_undef';
     }
   }
   else {
@@ -763,7 +764,8 @@ sub save_pv_or_rv {
         if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
           $pv = $savesym;
-          $savesym = 'NULL';
+          $savesym = 'ptr_undef';
+          #$savesym = 'NULL';
         }
         $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
@@ -2277,20 +2279,11 @@ sub B::PVMG::save {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
       $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
 	if $savesym ne '';
-      $savesym = '0';
+      $savesym = "ptr_undef"; # was "0"
     } else {
       if ( $static ) {
         # comppadnames needs &PL_sv_undef instead of 0
-	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
-	if (!$pv or !$savesym or $savesym eq 'NULL') {
-	  if ($MULTI) {
-	    $savesym = "NULL";
-	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
-				 $svsect->index+1 ) );
-	  } else {
-	    $savesym = '&PL_sv_undef';
-	  }
-	}
+        $savesym = "ptr_undef" unless $pv;
       }
     }
     my ($ivx,$nvx) = (0, "0");
@@ -2336,16 +2329,12 @@ sub B::PVMG::save {
   if ( !$static ) {
     # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
-      if ($savesym) {
-	if (!$pv or $savesym eq 'NULL') {
-	  $init->add( "$s.sv_u.svu_pv = (char*)&PL_sv_undef;" );
-	} else {
-	  $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-	}
+      if ($savesym and $pv) {
+        $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
       }
     } else {
-      if (!$pv or !$savesym or $savesym eq 'NULL') {
-        $init->add( sprintf( "xpvmg_list[%d].xpv_pv = (char*)&PL_sv_undef;",
+      if (!$pv) {
+        $init->add( sprintf( "xpvmg_list[%d].xpv_pv = (char*)ptr_undef;",
 			     $xpvmgsect->index ) );
       } else {
         $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
