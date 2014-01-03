@@ -464,24 +464,20 @@ sub run_cc_test {
 	my $coredir = $ENV{PERL_SRC} || File::Spec->catdir($Config{installarchlib}, "CORE");
 	my $libdir  = File::Spec->catdir($Config{prefix}, "lib");
         my $so = $Config{so};
+        my $linkargs = ExtUtils::Embed::ldopts('-std');
+        # At least cygwin gcc-4.3 crashes with 2x -fstack-protector
+        $linkargs =~ s/-fstack-protector\b//
+          if $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
 	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.$so$/) {
-	    $linkargs = ExtUtils::Embed::ldopts('-std');
 	    $command .= $linkargs;
-	} elsif ( $useshrplib and -e "$libdir/$Config{libperl}" ) {
+	} elsif ( $useshrplib and (-e "$libdir/$Config{libperl}" or -e "/usr/lib/$Config{libperl}")) {
             # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
-	    my $linkargs = ExtUtils::Embed::ldopts('-std');
             if ($Config{libperl} =~ /\.$so$/) {
                 my $libperl = File::Spec->catfile($coredir, $Config{libperl});
                 $linkargs =~ s|-lperl |$libperl |; # link directly
             }
-            $linkargs =~ s/-fstack-protector\b//
-              if $^O eq 'cygwin' and $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
 	    $command .= $linkargs;
 	} else {
-	    my $linkargs = ExtUtils::Embed::ldopts('-std');
-            # cygwin gcc-4.3 crashes with -fstack-protector 2x
-            $linkargs =~ s/-fstack-protector\b//
-              if $^O eq 'cygwin' and $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
 	    $command .= $linkargs;
 	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
 	}
