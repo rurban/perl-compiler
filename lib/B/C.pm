@@ -3364,27 +3364,25 @@ sub B::GV::save {
                    "@"    => 'PL_errgv',
                    "\022" => 'PL_replgv',  # ^R
                   };
+  my $is_coresym;
   # those are already initialized in init_predump_symbols()
   # and init_main_stash()
   for my $s (keys %$core_syms) {
     if ($fullname eq 'main::'.$s) {
       $sym = savesym( $gv, $core_syms->{$s} );
-      #$sym = savesym( $gv, "SvREFCNT_inc(".$core_syms->{$s}.")" );
-      # $init->add(qq[$sym = gv_fetchpv($name, FALSE, SVt_GVPV);]);
-      $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-      return $sym;
+      # $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+      # return $sym;
+      $is_coresym++;
     }
   }
   if ($fullname =~ /^main::std(in|out|err)$/) {
     $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-    #$init->add( "SvREFCNT_inc($sym);" );
     return $sym;
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
     $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-    #$init->add( "SvREFCNT_inc($sym);" );
     return $sym;
   }
   # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
@@ -3404,7 +3402,7 @@ sub B::GV::save {
 
   my $gp;
   my $gvadd = $notqual ? "$notqual|GV_ADD" : "GV_ADD";
-  if ( $PERL510 and $gv->isGV_with_GP ) {
+  if ( $PERL510 and $gv->isGV_with_GP and !$is_coresym) {
     $gp = $gv->GP;    # B limitation
     # warn "XXX EGV='$egvsym' for IMPORTED_HV" if $gv->GvFLAGS & 0x40;
     if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
@@ -3446,7 +3444,7 @@ sub B::GV::save {
     else {
       $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
     }
-  } else {
+  } elsif (!$is_coresym) {
     $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
   }
   my $gvflags = $gv->GvFLAGS;
@@ -3486,10 +3484,15 @@ sub B::GV::save {
   if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  #elsif ( $fullname eq 'main::!' ) { #Errno
-  #  $savefields = Save_HV;
-  #  return $sym;
-  #}
+  elsif ( $fullname eq 'main::!' ) { #Errno
+    $savefields = Save_HV | Save_SV | Save_CV;
+  }
+  elsif ( $fullname eq 'main::ENV' or $fullname eq 'main::SIG' ) {
+    $savefields = Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
+  }
+  elsif ( $fullname eq 'main::ARGV' ) {
+    $savefields = Save_HV | Save_SV | Save_CV | Save_FORM | Save_IO;
+  }
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.
@@ -3572,7 +3575,7 @@ sub B::GV::save {
             walk_syms('Config');
           }
 	  mark_package('Tie::Hash::NamedCapture', 1);
-	}
+        }
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
 	if ($fullname ne 'main::INC') {
 	  $gvhv->save($fullname);
