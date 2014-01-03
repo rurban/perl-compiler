@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2013-?? rurban
+1.43	2014-?? rurban
 	new 5.16, 5.18, 5.20 and partial windows support, many more fixes and testcases
 
         * C: Fix -u<module> without file extension.
@@ -44,6 +44,8 @@
         use Config does not include B anymore, Internals::V now in __ANON__ package
         Fixed handling of empty - not successfully autoloaded - CVs (#235, #159, ...)
           by storing the SV and XPVCV but ignoring it and defer to run-time get_cv()
+        Unify handling of static and dynamic strings, use ptr_undef throughout instead
+          of NULL vs &PL_sv_undef (save_pv_or_rv => savesym, cur, len, pv, static)
         Restore $^H, the numeric value of global warnings flags (#193,#207,#243)
         Restore more missing globals: ${^UNICODE} ${^UTF8LOCALE} $; $\ $, $/ $" $|
           $^A $^L $: $^ $^ $^ $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
@@ -63,7 +65,9 @@
         Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
         Mark empty but overloaded packages (#172). This is merely workaround for reduced testcases.
         Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
-        Add new option -fdelete-pkg included with -O2 to control if to ignore compiler dependent packages.
+        Add new option -fno-delete-pkg to control if to ignore compiler-only dependent packages,
+          compiler-independent packages are now always saved. Save those package names at Makefile.PL
+          in @B::C::Flags::deps.
 
         * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
          new option -f passthru to C and CC
