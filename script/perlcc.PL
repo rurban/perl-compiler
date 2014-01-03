@@ -669,7 +669,7 @@ sub cc_harness {
 	    $ldopts =~ s|-lperl |$libdir/$Config{libperl} |;
         }
         if ( $useshrplib and -e $coredir."/".$Config{libperl}) {
-            # help cygwin debugging
+            # help cygwin debugging, and workaround wrong debian linker prefs (/usr/lib before given -L)
 	    $ldopts =~ s|-lperl |$coredir/$Config{libperl} |;
         }
     }

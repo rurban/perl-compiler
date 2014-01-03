@@ -39,7 +39,7 @@ $result =~ s/\n$//;
 
 TODO: {
   local $TODO = "BC dclone missing import 5.16thr" if $] > 5.015 and $] < 5.018 and $ITHREADS;
-  ok($result eq $expected, "issue105 - 5.16 missing import");
+  ok($result eq $expected, "issue105 - 5.16 BC missing import");
 }
 
 END {
