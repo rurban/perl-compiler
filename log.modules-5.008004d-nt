@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 74d12f6 2013-12-26 | module test updates: 1.42_67 c248eeb
+# B::C::VERSION = 1.42_70 1151850 2014-01-03 | C: fix threaded test 10, store more coresyms properties
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_67 - perl-5.008004d-nt
+# 100 / 100 modules tested with B-C-1.42_70 - perl-5.008004d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

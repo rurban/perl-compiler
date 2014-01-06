@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_69 895548c 2014-01-01 | test issues 169, 203: postpone fixed with 1.42_69 to _70
+# B::C::VERSION = 1.42_70 1151850 2014-01-03 | C: fix threaded test 10, store more coresyms properties
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
@@ -20,7 +20,7 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp
+fail File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_69 - perl-5.016003
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   2 /   1 (200.0%)
+# 100 / 100 modules tested with B-C-1.42_70 - perl-5.016003
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   2 /   3 (66.7%)
 # skip   0 / 100 (0.0% not installed)
