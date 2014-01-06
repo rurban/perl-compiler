@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 c248eeb 2013-12-26 | modules: add 5.008008 5.008008-nt
+# B::C::VERSION = 1.42_70 351d1f3 2014-01-03 | Revert "todo more failing 5.18 bc tests"
 # perlversion = 5.008008
 # path = /usr/bin/perl
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 97 / 100 modules tested with B-C-1.42_67 - perl-5.008008
+# 97 / 100 modules tested with B-C-1.42_70 - perl-5.008008
 # pass  96 /  97 (99.0%)
 # fail   1 /  97 (1.0%)
 # todo   2 /   1 (200.0%)

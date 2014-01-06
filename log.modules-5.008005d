@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_67 8411db3 2013-12-26 | C: more #267. hv->MAGICAL is not defined with 5.6.2, check for version before
+# B::C::VERSION = 1.42_70 351d1f3 2014-01-03 | Revert "todo more failing 5.18 bc tests"
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_67 - perl-5.008005d
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# 100 / 100 modules tested with B-C-1.42_70 - perl-5.008005d
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)
