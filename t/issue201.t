@@ -13,7 +13,8 @@ use Test::More tests => 2;
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
 
-my $result = `$perlcc -O3 -UB -r -e 'sub can {require Config; Config->import;return \$Config{d_flock}}use IO::File;can();print "ok\n"' 2>err`;
-my $err = do { local $/; open my $fh, "err"; <$fh> };
+my $result = `$perlcc -O3 -UB -r -e 'sub can {require Config; Config->import;return \$Config{d_flock}}use IO::File;can();print "ok\n"' 2>pccerr`;
+my $err = do { local $/; open my $fh, "pccerr"; <$fh> };
 is($err, "", "stderr");
 is($result, "ok\n");
+END { unlink "pccerr" }
