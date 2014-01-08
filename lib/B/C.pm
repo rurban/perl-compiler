@@ -257,7 +257,8 @@ BEGIN {
     require mro; mro->import;
     # not exported:
     sub SVf_OOK { 0x02000000 }
-    eval q[sub SVs_GMG { 0x00200000 }];
+    eval q[sub SVs_GMG { 0x00200000 }
+               sub SVs_SMG { 0x00400000 }];
     if ($] >= 5.018) {  # PMf_ONCE also not exported
       eval q[sub PMf_ONCE(){ 0x10000 }];
     } elsif ($] >= 5.014) {
@@ -268,7 +269,8 @@ BEGIN {
       eval q[sub PMf_ONCE(){ 0x0002 }];
     }
   } else {
-    eval q[sub SVs_GMG { 0x00002000 }];
+    eval q[sub SVs_GMG { 0x00002000 }
+               sub SVs_SMG { 0x00004000 }];
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -698,8 +700,17 @@ sub save_rv {
   }
   # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
   # 5.6: Can't locate object method "RV" via package "B::PVMG"
-  my $rv = $sv->RV->save($fullname);
-
+  # since 5.11 it must be a PV, the RV was removed from the IV
+  my $rv;
+  #if ($] >= 5.011 and ref($sv) =~ /^B::[IP]V$/) {
+  #  warn "$sv is no IV nor PV\n" if $debug{sv};
+  #  $sv = bless $sv, 'B::PV'; # only observed with DB::args[0]
+  #}
+  #elsif ($] < 5.011 and ref($sv) =~ /^B::[RP]V$/) {
+  #  warn "$sv is no RV nor PV\n" if $debug{sv};
+  #  $sv = bless $sv, 'B::RV';
+  #}
+  $rv = $sv->RV->save($fullname);
   $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
 
   return $rv;
@@ -723,7 +734,6 @@ sub save_pv_or_rv {
     if ($savesym =~ /(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
-      #$savesym = 'NULL';
       $savesym = 'ptr_undef';
     }
   }
@@ -759,18 +769,21 @@ sub save_pv_or_rv {
       if ($static and $] < 5.017006 and abs($pv) > 0) {
         $static = 0;
       }
+      # but we can optimize to static mg ISA entries. #263, #91
+      if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG) {
+        $static = 1;
+      }
       if ($static) {
 	$savesym = IsCOW($sv) ? savepv($pv) : constpv($pv);
         if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
           $pv = $savesym;
           $savesym = 'ptr_undef';
-          #$savesym = 'NULL';
         }
         $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
-	( $savesym, $len ) = ( 'ptr_undef', $cur+1 );
+	( $savesym, $len ) = ( '0', $cur+1 );
         if ($shared_hek) {
           $len = 0;
           $free->add("    SvFAKE_off(&$s);");
@@ -779,7 +792,7 @@ sub save_pv_or_rv {
         }
       }
     } else {
-      ( $savesym, $len ) = ( 'ptr_undef', 0 );
+      ( $savesym, $len ) = ( '0', 0 );
     }
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
@@ -2279,11 +2292,20 @@ sub B::PVMG::save {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
       $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
 	if $savesym ne '';
-      $savesym = "ptr_undef"; # was "0"
+      $savesym = 'NULL';
     } else {
       if ( $static ) {
         # comppadnames needs &PL_sv_undef instead of 0
-        $savesym = "ptr_undef" unless $pv;
+	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
+	if (!$cur or $savesym eq "ptr_undef") {
+	  if ($MULTI) {
+	    $savesym = "NULL";
+	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
+				 $svsect->index+1 ) );
+	  } else {
+	    $savesym = '&PL_sv_undef';
+	  }
+	}
       }
     }
     my ($ivx,$nvx) = (0, "0");
@@ -2329,12 +2351,14 @@ sub B::PVMG::save {
   if ( !$static ) {
     # comppadnames need &PL_sv_undef instead of 0
     if ($PERL510) {
-      if ($savesym and $pv) {
+      if (!$cur or $savesym eq 'NULL') {
+        $init->add( "$s.sv_u.svu_pv = (char*)&PL_sv_undef;" );
+      } else {
         $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
       }
     } else {
-      if (!$pv) {
-        $init->add( sprintf( "xpvmg_list[%d].xpv_pv = (char*)ptr_undef;",
+      if (!$cur or $savesym eq 'NULL') {
+        $init->add( sprintf( "xpvmg_list[%d].xpv_pv = (char*)&PL_sv_undef;",
 			     $xpvmgsect->index ) );
       } else {
         $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
