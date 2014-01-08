@@ -2,7 +2,7 @@
 # http://code.google.com/p/perl-compiler/issues/detail?id=201
 # broken %INC. Subroutine import redefined at .../Config.pm line 38
 BEGIN {
-  unless (-d '.git') {
+  unless (-d '.git' and !$ENV{NO_AUTHOR}) {
     print "1..0 #SKIP Only if -d .git\n";
     exit;
   }
