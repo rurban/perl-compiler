@@ -12,5 +12,5 @@ use Test::More tests => 1;
 
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
-is(`$perlcc --no-spawn -O3 -UB -r -e 'sub yyy () { "yyy" } print "ok" if( eval q{yyy} eq "yyy");'`,
+is(`$perlcc --no-spawn -O3 -UB -r -occode229i -e 'sub yyy () { "yyy" } print "ok" if( eval q{yyy} eq "yyy");'`,
    "ok", "walker misses &main::yyy");
