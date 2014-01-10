@@ -2294,20 +2294,6 @@ sub B::PVMG::save {
       $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
 	if $savesym ne '';
       $savesym = 'NULL';
-    } else {
-      if ( $static ) {
-        # XXX comppadnames needs &PL_sv_undef instead of 0
-	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
-	if (!$cur or $savesym eq "NULL") {
-	  if ($MULTI) {
-	    $savesym = "NULL";
-	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
-				 $svsect->index+1 ) );
-	  } else {
-	    $savesym = '&PL_sv_undef';
-	  }
-	}
-      }
     }
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
@@ -2333,39 +2319,20 @@ sub B::PVMG::save {
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym));
   }
   else {
-    # cannot initialize this pointer static
-    if ($savesym =~ /&(PL|sv)/) { # (char*)&PL_sv_undef | (char*)&sv_list[%d]
-      $xpvmgsect->add(sprintf("%d, %u, %u, %s, %s, 0, 0",
-			      0, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
-      $init->add( sprintf( "xpvmg_list[%d].xpv_pv = $savesym;",
-			   $xpvmgsect->index ) );
-    } else {
-      $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
-			      $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
-      #push @B::C::static_free, sprintf("sv_list[%d]", $svsect->index+1)
-      #  if $len and $B::C::pv_copy_on_grow and !$in_endav;
-    }
+    $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
+                            $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( !$static ) {
-    # comppadnames need &PL_sv_undef instead of 0
+    # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
     if ($PERL510) {
-      if (!$cur or $savesym eq 'NULL') {
-        $init->add( "$s.sv_u.svu_pv = (char*)&PL_sv_undef;" );
-      } else {
-        $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-      }
+      $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
     } else {
-      if (!$cur or $savesym eq 'NULL') {
-        $init->add( sprintf( "xpvmg_list[%d].xpv_pv = (char*)&PL_sv_undef;",
-			     $xpvmgsect->index ) );
-      } else {
-        $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
-			    $pv, 0, $cur ) );
-      }
+      $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
+                          $pv, $sv, $cur ) );
     }
   }
   $sym = savesym( $sv, "&".$s );
@@ -3809,7 +3776,7 @@ sub B::AV::save {
     $av_index = $xpvavsect->index;
     # protect against recursive self-references (Getopt::Long)
     $sym = savesym( $av, "(AV*)&sv_list[$sv_ix]" );
-    $magic = $av->save_magic($fullname) unless $ispadlist;
+    $magic = $av->save_magic($fullname);
   }
 
   if ( $debug{av} ) {
