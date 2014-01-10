@@ -734,7 +734,7 @@ sub save_pv_or_rv {
     if ($savesym =~ /(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
-      $savesym = 'ptr_undef';
+      $savesym = 'NULL';
     }
   }
   else {
@@ -769,7 +769,7 @@ sub save_pv_or_rv {
       if ($static and $] < 5.017006 and abs($pv) > 0) {
         $static = 0;
       }
-      # but we can optimize to static mg ISA entries. #263, #91
+      # but we can optimize static set-magic ISA entries. #263, #91
       if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG) {
         $static = 1;
       }
@@ -778,12 +778,12 @@ sub save_pv_or_rv {
         if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
           $pv = $savesym;
-          $savesym = 'ptr_undef';
+          $savesym = 'NULL';
         }
         $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
-	( $savesym, $len ) = ( '0', $cur+1 );
+	( $savesym, $len ) = ( 'NULL', $cur+1 );
         if ($shared_hek) {
           $len = 0;
           $free->add("    SvFAKE_off(&$s);");
@@ -792,7 +792,7 @@ sub save_pv_or_rv {
         }
       }
     } else {
-      ( $savesym, $len ) = ( '0', 0 );
+      ( $savesym, $len ) = ( 'NULL', 0 );
     }
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
@@ -1778,7 +1778,7 @@ sub B::NULL::save {
   my $i = $svsect->index + 1;
   warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
   $svsect->add( sprintf( "0, %lu, 0x%x".
-                         ($PERL510?', {'.($C99?".svu_pv=":"").'(char*)ptr_undef}':''),
+                         ($PERL510?", {0}":''),
                          $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $fullname, $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
   if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
@@ -1805,7 +1805,7 @@ sub B::UV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpvuv_list[%d], %lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'(char*)ptr_undef}':''),
+      "&xpvuv_list[%d], %lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
       $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
@@ -1845,7 +1845,7 @@ sub B::IV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpviv_list[%d], %lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'(char*)ptr_undef}':''),
+      "&xpviv_list[%d], %lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
       $xpvivsect->index, $sv->REFCNT, $svflags
     )
   );
@@ -2012,7 +2012,7 @@ sub B::PVIV::save {
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
             $xpvivsect->index, $sv->REFCNT, $sv->FLAGS,
-            $PERL510 ? ", {".($C99?".svu_pv=":"")."(char*)$savesym}" : '' ) );
+	    $PERL510 ? ", {".($C99?".svu_pv=":"")."(char*)$savesym}" : '' ) );
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
   if ( defined($pv) ) {
@@ -2120,7 +2120,7 @@ sub B::BM::save {
     $xpvbmsect->comment('pvx,cur,len(+258),IVX,NVX,MAGIC,STASH,USEFUL,PREVIOUS,RARE');
     $xpvbmsect->add(
        sprintf("%s, %u, %u, %s, %s, 0, 0, %d, %u, 0x%x",
-	       defined($pv) && $static ? cstring($pv) : "(char*)ptr_undef",
+	       defined($pv) && $static ? cstring($pv) : "NULL",
 	       $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
 	      ));
@@ -2175,7 +2175,8 @@ sub B::PV::save {
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
-                           ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
+			   $savesym eq 'NULL' ? '0' :
+                             ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
     if ( defined($pv) and !$static ) {
       if ($shared_hek) {
         my $hek = save_hek($pv);
@@ -2295,9 +2296,9 @@ sub B::PVMG::save {
       $savesym = 'NULL';
     } else {
       if ( $static ) {
-        # comppadnames needs &PL_sv_undef instead of 0
+        # XXX comppadnames needs &PL_sv_undef instead of 0
 	# But threaded PL_sv_undef => my_perl->Isv_undef, and my_perl is not available static
-	if (!$cur or $savesym eq "ptr_undef") {
+	if (!$cur or $savesym eq "NULL") {
 	  if ($MULTI) {
 	    $savesym = "NULL";
 	    $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = (char*)&PL_sv_undef;",
@@ -2328,7 +2329,8 @@ sub B::PVMG::save {
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS,
-                         ($C99?".svu_pv=(char*)":"(char*)").$savesym));
+			 $savesym eq 'NULL' ? '0' :
+                           ($C99?".svu_pv=(char*)":"(char*)").$savesym));
   }
   else {
     # cannot initialize this pointer static
