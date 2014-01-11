@@ -19,7 +19,7 @@ $opt = "-Wb=".substr($opt,1) if $opt;
 
 # -fno-warnings order: Carp requires DynaLoader
 TODO: {
-  local $TODO = 'some system perls attach Config to DynaLoader only' if $] >= 5.013005;
+  local $TODO = 'use -fno-warnings, always and save 550KB for small scripts' if $] >= 5.013005;
   # Attempt to reload Config.pm aborted.
   # Global symbol "%Config" requires explicit package name at 5.8.9/Time/Local.pm line 36
   # 5.15: Undefined subroutine &utf8::SWASHNEW called at /usr/local/lib/perl5/5.15.3/constant.pm line 36
