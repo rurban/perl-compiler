@@ -15,6 +15,8 @@ unless (-e 'lib/B/C/Flags.pm') {
 }
 
 # generate lib/B/Asmdata.pm beforehand
+my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
+unlink $asmdata if -f $asmdata;
 # my $X = $^X =~ / / ? qq("$^X") : $^X;
 if ($core) {
     system($^X,"-I../../lib/auto","-I../../lib","bytecode.pl");
