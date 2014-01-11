@@ -40,7 +40,13 @@ blib
 lib/B/C/Flags.pm
 MANIFEST.files
 TAGS
-log.*
+log.test-*
+log.make-*
+log.do-*
+log.critical-*
+status.1*
 .DS_Store
 B-C-*.tar.gz
 .commit
+*.patch
+x*.p
