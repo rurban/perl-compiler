@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 1151850 2014-01-03 | C: fix threaded test 10, store more coresyms properties
+# B::C::VERSION = 1.42_70 ceb11e6 2014-01-10 | test 10 threaded fixed by 1.42_70 82a4fb139f
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
