@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 1151850 2014-01-03 | C: fix threaded test 10, store more coresyms properties
+# B::C::VERSION = 1.42_70 ceb11e6 2014-01-10 | test 10 threaded fixed by 1.42_70 82a4fb139f
 # perlversion = 5.008009d
 # path = /usr/local/bin/perl5.8.9d
 # platform = linux 64bit threaded debug
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-pass Moose
+fail Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42_70 - perl-5.008009d
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   0 /   1 (0.0%)
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   0 /   3 (0.0%)
 # skip   0 / 100 (0.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 1151850 2014-01-03 | C: fix threaded test 10, store more coresyms properties
+# B::C::VERSION = 1.42_70 ceb11e6 2014-01-10 | test 10 threaded fixed by 1.42_70 82a4fb139f
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -20,10 +20,10 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
+pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 fail Module::Build #TODO >= 5.16
 pass File::Path
@@ -72,14 +72,14 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class
+pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # 100 / 100 modules tested with B-C-1.42_70 - perl-5.016003-nt
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   1 /   5 (20.0%)
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)
