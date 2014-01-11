@@ -817,7 +817,8 @@ sub todo_tests_default {
     my @todo  = ();
     push @todo, (15)  if $] < 5.007;
     # broken by fbb32b8bebe8ad C: revert *-,*+,*! fetch magic, assign all core GVs to their global symbols
-    push @todo, (10)  if $ITHREADS;
+    # fixed by 1.42_70 82a4fb139f
+    # push @todo, (10)  if $ITHREADS;
     push @todo, (42..43) if $] < 5.012;
     if ($what =~ /^c(|_o[1-4])$/) {
         #push @todo, (7)     if $] == 5.008005;
