@@ -992,7 +992,7 @@ result[240]='ok'
 tests[241]='#TODO
 package Pickup; use UNIVERSAL qw( can ); if (can( "Pickup", "can" ) != \&UNIVERSAL::can) { print "not " } print "ok\n";'
 result[241]='ok'
-tests[242]='$xyz = ucfirst("\x{3C2}"); # no problem without that line
+tests[242]='$xyz = ucfirst("\x{3C2}");
 $a = "\x{3c3}foo.bar";
 ($c = $a) =~ s/(\p{IsWord}+)/ucfirst($1)/ge;
 print "ok\n" if $c eq "\x{3a3}foo.Bar";'

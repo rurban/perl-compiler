@@ -7,8 +7,6 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 2;
-use Config ();
-my $ITHREADS  = ($Config::Config{useithreads});
 
 # need -uDynaLoader or -ffold
 my $script = <<'EOF';
@@ -18,7 +16,5 @@ $a = "\x{3c3}foo.bar";
 print "ok\n" if $c eq "\x{3a3}foo.Bar";
 EOF
 
-my $todo = $ITHREADS ? "TODO threads " : "";
-
-ctestok(1,'C','ccode242i',$script, $todo.'#242 C,-O0 ucfirst demandloads unicore/To/Title.pl');
-ctestok(2,'C,-O3','ccode242i',$script, $todo.'#242 -O3');
+ctestok(1,'C','ccode242i',$script, '#242 C,-O0 ucfirst demandloads unicore/To/Title.pl');
+ctestok(2,'C,-O3','ccode242i',$script, '#242 -O3');
