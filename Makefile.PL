@@ -360,7 +360,7 @@ testcc :: pure_all
 testbc :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/bytecode.t
 testfast :: pure_all
-	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10
+	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10 -f
 testcritical :: pure_all
 	t/critical.sh
 teststatus :: pure_all
