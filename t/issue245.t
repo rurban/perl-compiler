@@ -9,16 +9,16 @@ BEGIN {
 use Test::More tests => 1;
 
 use B::C;
-my $when = "1.42_62";
-ctest(1,"a: 223 ; b: 223
-a: 223 ; b: 223 [ from foo ]",
-      'C,-O3','ccode232i',
-      <<'EOF', ($B::C::VERSION lt $when ? "TODO " : "").'#245 unicode value not preserved when passed to a function with -O3');
+# passes threaded and <5.10
+my $fixed_with = "1.42_71";
+my $TODO = "TODO " if $B::C::VERSION lt $fixed_with;
+$TODO = "" if $Config{useithreads};
+$TODO = "" if $] < 5.010;
+my $todomsg = '#245 unicode arg not-threaded -O3';
+ctest(1,"b: 223", 'C,-O3','ccode245i', <<'EOF', $TODO.$todomsg);
 sub foo {
     my ( $a, $b ) = @_;
-    print "a: ".ord($a)." ; b: ".ord($b)." [ from foo ]\n";
+    print "b: ".ord($b);
 }
-print "a: ". ord(lc("\x{1E9E}"))." ; ";
-print "b: ". ord("\x{df}")."\n";
 foo(lc("\x{1E9E}"), "\x{df}");
 EOF
