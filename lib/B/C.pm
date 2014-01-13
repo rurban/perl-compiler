@@ -3552,6 +3552,7 @@ sub B::GV::save {
         if ($] >= 5.014) {
           mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
           walk_syms('Config');
+          svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
         }
         mark_package('Tie::Hash::NamedCapture', 1);
       }
@@ -3572,6 +3573,7 @@ sub B::GV::save {
           if ($] >= 5.014) {
             mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
             walk_syms('Config');
+            svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
           }
 	  mark_package('Tie::Hash::NamedCapture', 1);
         }
@@ -4904,6 +4906,7 @@ _EOT9
     @dl_modules = grep { $_ ne $c } @dl_modules;
   }
   @DynaLoader::dl_modules = @dl_modules;
+  warn "\@dl_modules: ",join(" ",@dl_modules),"\n" if $verbose;
   foreach my $stashname (@dl_modules) {
     my $incpack = inc_packname($stashname);
     #unless (exists $INC{$incpack}) { # skip deleted packages
@@ -4921,6 +4924,7 @@ _EOT9
       $dl++;
     }
   }
+  warn "\%xsub: ",join(" ",keys %xsub),"\n" if $verbose and $debug{cv};
   force_saving_xsloader() if $use_xsloader and ($dl or $xs);
   if ($dl) {
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
@@ -4934,12 +4938,12 @@ _EOT9
     foreach my $stashname (reverse @dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
 	$use_xsloader = 1;
-        warn "dl_init $stashname\n" if $verbose;
-        print "\tPUSHMARK(sp);\n";
+        print "\n\tPUSHMARK(sp);\n";
 	# XXX -O1 or -O2 needs XPUSHs with dynamic pv
 	printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
 	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
         if ( $xsub{$stashname} eq 'Dynamic' ) {
+          warn "dl_init $stashname\n" if $verbose;
 	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  print "\tPUTBACK;\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
@@ -4951,7 +4955,7 @@ _EOT9
 	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
 	  }
 	  print "\tPUTBACK;\n";
-	  warn "bootstrapping $stashname added to dl_init\n" if $verbose;
+	  warn "bootstrapping $stashname added to XSLoader dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]
 	  if ($] >= 5.015003) {
@@ -5730,6 +5734,7 @@ sub save_context {
         if ($] >= 5.014) {
           mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
           walk_syms('Config');
+          svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
         }
 	mark_package('Tie::Hash::NamedCapture', 1);
       } # else already included
@@ -5745,6 +5750,7 @@ sub save_context {
 	mark_package('Config', 1);
         walk_syms('Config');
 	mark_package('Errno', 1);
+        svref_2object(\&{'Errno::bootstrap'})->save;
       } # else already included
     } else {
       use strict 'refs';
