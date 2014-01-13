@@ -9,36 +9,37 @@ use Config;
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 # TODO: no global output 'a' and 'a.c' to enable parallel testing (test speedup)
-my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : './a.out';
-my $a   = $^O eq 'MSWin32' ? 'a.exe' : './a';
+my $exe = $^O =~ /MSWin32|cygwin|msys/ ? 'pcc.exe' : './pcc';
+my $a_exe = $^O =~ /MSWin32|cygwin|msys/ ? 'a.exe' : './a.out';
+my $a   = $^O eq 'MSWin32' ? 'pcc.exe' : './pcc';
 my $redir = $^O eq 'MSWin32' ? '' : '2>&1';
 my $devnull = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 #my $o = '';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
 #$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
 my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
-sub cleanup { unlink ('a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
+sub cleanup { unlink ('pcc.c','pcc.c.lst','a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 
-is(`$perlcc -S -o a -r -e $e $devnull`, "ok", "-S -o a -r -e");
-ok(-e 'a.c', "-S => a.c file");
-ok(-e $a, "keep a executable"); #3
+is(`$perlcc -S -o pcc -r -e $e $devnull`, "ok", "-S -o pcc -r -e");
+ok(-e 'pcc.c', "-S => pcc.c file");
+ok(-e $a, "keep pcc executable"); #3
 cleanup;
 
-is(`$perlcc -o a -r -e $e $devnull`, "ok", "-o a r -e");
-ok(! -e 'a.c', "no a.c file");
-ok(-e $a, "keep a executable"); # 6
+is(`$perlcc -o pcc -r -e $e $devnull`, "ok", "-o pcc r -e");
+ok(! -e 'pcc.c', "no pcc.c file");
+ok(-e $a, "keep pcc executable"); # 6
 cleanup;
 
 my @c = <*.c>;
 is(`$perlcc -r -e $e $devnull`, "ok", "-r -e"); #7
 my @c1 = <*.c>;
 is(length @c, length @c1, "no temp cfile");
-ok(-e $exe, "keep default executable"); #9
+ok(-e $a_exe, "keep default executable"); #9
 cleanup;
 
-system(qq($perlcc -o a -e $e $devnull));
-ok(-e $a, '-o a -e');
+system(qq($perlcc -o pcc -e $e $devnull));
+ok(-e $a, '-o pcc -e');
 is(`$a`, "ok", "$a => ok"); #11
 cleanup;
 
@@ -53,7 +54,7 @@ SKIP: {
     # fails 5.8 and darwin, msvc also
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
     is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
-    ok(-e $exe, "keep executable"); #14
+    ok(-e $a_exe, "keep default executable"); #14
   }
   ok(! -e 'a.out.c', "delete a.out.c file without -S");
   ok(! -e 'a.out.c.lst', "delete a.out.c.lst without -S");
@@ -61,54 +62,54 @@ SKIP: {
 
  TODO: {
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
-    is(`$perlcc --staticxs -S -o a -r -e $e  $devnull`, "ok",
+    is(`$perlcc --staticxs -S -o pcc -r -e $e  $devnull`, "ok",
        "-S -o -r --staticxs xs"); #17
     ok(-e $a, "keep executable"); #18
   }
-  ok(-e 'a.c', "keep a.c file with -S");
-  ok(-e 'a.c.lst', "keep a.c.lst with -S");
+  ok(-e 'pcc.c', "keep pcc.c file with -S");
+  ok(-e 'pcc.c.lst', "keep pcc.c.lst with -S");
   cleanup;
 
-  is(`$perlcc --staticxs -S -o a -O3 -r -e "print q(ok)"  $devnull`, "ok",
+  is(`$perlcc --staticxs -S -o pcc -O3 -r -e "print q(ok)"  $devnull`, "ok",
      "-S -o -r --staticxs without xs");
-  ok(! -e 'a.c.lst', "no a.c.lst without xs"); #22
+  ok(! -e 'pcc.c.lst', "no pcc.c.lst without xs"); #22
   cleanup;
 }
 
-my $f = "a.pl";
+my $f = "pcc.pl";
 open F,">",$f;
 print F q(print q(ok));
 close F;
 $e = q("print q(ok)");
 
-is(`$perlcc -S -o a -r $f $devnull`, "ok", "-S -o -r file");
-ok(-e 'a.c', "-S => a.c file");
+is(`$perlcc -S -o pcc -r $f $devnull`, "ok", "-S -o -r file");
+ok(-e 'pcc.c', "-S => pcc.c file");
 cleanup;
 
-is(`$perlcc -o a -r $f $devnull`, "ok", "-r -o file");
-ok(! -e 'a.c', "no a.c file");
+is(`$perlcc -o pcc -r $f $devnull`, "ok", "-r -o file");
+ok(! -e 'pcc.c', "no pcc.c file");
 ok(-e $a, "keep executable");
 cleanup;
 
 
-is(`$perlcc -o a $f $devnull`, "", "-o file");
-ok(! -e 'a.c', "no a.c file");
+is(`$perlcc -o pcc $f $devnull`, "", "-o file");
+ok(! -e 'pcc.c', "no pcc.c file");
 ok(-e $a, "executable");
-is(`$a`, "ok", "./a => ok");
+is(`$a`, "ok", "./pcc => ok");
 cleanup;
 
-is(`$perlcc -S -o a $f $devnull`, "", "-S -o file");
+is(`$perlcc -S -o pcc $f $devnull`, "", "-S -o file");
 ok(-e $a, "executable");
-is(`$a`, "ok", "./a => ok");
+is(`$a`, "ok", "./pcc => ok");
 cleanup;
 
-is(`$perlcc -Sc -o a $f $devnull`, "", "-Sc -o file");
-ok(-e 'a.c', "a.c file");
+is(`$perlcc -Sc -o pcc $f $devnull`, "", "-Sc -o file");
+ok(-e 'pcc.c', "pcc.c file");
 ok(! -e $a, "-Sc no executable, compile only");
 cleanup;
 
-is(`$perlcc -c -o a $f $devnull`, "", "-c -o file");
-ok(-e 'a.c', "a.c file");
+is(`$perlcc -c -o pcc $f $devnull`, "", "-c -o file");
+ok(-e 'pcc.c', "pcc.c file");
 ok(! -e $a, "-c no executable, compile only"); #40
 cleanup;
 
@@ -117,42 +118,42 @@ TODO: {
   #skip "--stash hangs < 5.12", 3 if $] < 5.012; #because of DB?
   #skip "--stash hangs >= 5.14", 3 if $] >= 5.014; #because of DB?
   local $TODO = "B::Stash imports too many";
-  is(`$perlcc -stash -r -o a $f $devnull`, "ok", "old-style -stash -o file"); #41
-  is(`$perlcc --stash -r -oa $f $devnull`, "ok", "--stash -o file");
+  is(`$perlcc -stash -r -o pcc $f $devnull`, "ok", "old-style -stash -o file"); #41
+  is(`$perlcc --stash -r -opcc $f $devnull`, "ok", "--stash -o file");
   ok(-e $a, "executable");
   cleanup;
 }#}
 
-is(`$perlcc -t -O3 -o a $f $devnull`, "", "-t -o file"); #44
+is(`$perlcc -t -O3 -o pcc $f $devnull`, "", "-t -o file"); #44
 TODO: {
   local $TODO = '-t unsupported with 5.6' if $] < 5.007;
   ok(-e $a, "executable"); #45
-  is(`$a`, "ok", "./a => ok"); #46
+  is(`$a`, "ok", "./pcc => ok"); #46
 }
 cleanup;
 
-is(`$perlcc -T -O3 -o a $f $devnull`, "", "-T -o file");
+is(`$perlcc -T -O3 -o pcc $f $devnull`, "", "-T -o file");
 ok(-e $a, "executable");
-is(`$a`, "ok", "./a => ok");
+is(`$a`, "ok", "./pcc => ok");
 cleanup;
 
 # compiler verboseness
-isnt(`$perlcc --Wb=-fno-fold,-v -o a $f $redir`, '/Writing output/m',
+isnt(`$perlcc --Wb=-fno-fold,-v -o pcc $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
 TODO: {
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
-  like(`$perlcc -B --Wb=-DG,-v -o a $f $redir`, "/-PV-/m",
+  like(`$perlcc -B --Wb=-DG,-v -o pcc $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
 }
 cleanup;
 is(`$perlcc -Wb=-O1 -r $f $devnull`, "ok", "old-style -Wb=-O1");
 
 # perlcc verboseness
-isnt(`$perlcc -v 1 -o a $f $devnull`, "", "-v 1 -o file");
-isnt(`$perlcc -v1 -o a $f $devnull`, "", "-v1 -o file");
-isnt(`$perlcc -v2 -o a $f $devnull`, "", "-v2 -o file");
-isnt(`$perlcc -v3 -o a $f $devnull`, "", "-v3 -o file");
-isnt(`$perlcc -v4 -o a $f $devnull`, "", "-v4 -o file");
+isnt(`$perlcc -v 1 -o pcc $f $devnull`, "", "-v 1 -o file");
+isnt(`$perlcc -v1 -o pcc $f $devnull`, "", "-v1 -o file");
+isnt(`$perlcc -v2 -o pcc $f $devnull`, "", "-v2 -o file");
+isnt(`$perlcc -v3 -o pcc $f $devnull`, "", "-v3 -o file");
+isnt(`$perlcc -v4 -o pcc $f $devnull`, "", "-v4 -o file");
 TODO: {
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   like(`$perlcc -v5 $f $redir`, '/Writing output/m',
@@ -171,32 +172,32 @@ is(`$perlcc -r -e$e $devnull`, "ok", "-e$e");
 cleanup;
 like(`$perlcc -v1 -r -e$e $devnull`, '/ok$/m', "-v1");
 cleanup;
-is(`$perlcc -oa -r -e$e $devnull`, "ok", "-oa");
+is(`$perlcc -opcc -r -e$e $devnull`, "ok", "-opcc");
 cleanup;
 
-is(`$perlcc -OSr -oa $f $devnull`, "ok", "-OSr -o file");
-ok(-e 'a.c', "-S => a.c file");
+is(`$perlcc -OSr -opcc $f $devnull`, "ok", "-OSr -o file");
+ok(-e 'pcc.c', "-S => pcc.c file");
 cleanup;
 
-is(`$perlcc -Or -oa $f $devnull`, "ok", "-Or -o file");
-ok(! -e 'a.c', "no a.c file");
+is(`$perlcc -Or -opcc $f $devnull`, "ok", "-Or -o file");
+ok(! -e 'pcc.c', "no pcc.c file");
 ok(-e $a, "keep executable");
 cleanup;
 
 # -BS: ignore -S
-like(`$perlcc -BSr -oa.plc -e $e $redir`, '/-S ignored/', "-BSr -o -e");
-ok(-e 'a.plc', "a.plc file");
+like(`$perlcc -BSr -opcc.plc -e $e $redir`, '/-S ignored/', "-BSr -o -e");
+ok(-e 'pcc.plc', "pcc.plc file");
 cleanup;
 
-is(`$perlcc -Br -oa.plc $f $devnull`, "ok", "-Br -o file");
-ok(-e 'a.plc', "a.plc file");
+is(`$perlcc -Br -opcc.plc $f $devnull`, "ok", "-Br -o file");
+ok(-e 'pcc.plc', "pcc.plc file");
 cleanup;
 
-is(`$perlcc -B -oa.plc -e$e $devnull`, "", "-B -o -e");
-ok(-e 'a.plc', "a.plc");
+is(`$perlcc -B -opcc.plc -e$e $devnull`, "", "-B -o -e");
+ok(-e 'pcc.plc', "pcc.plc");
 TODO: {
   local $TODO = 'yet unsupported 5.6' if $] < 5.007;
-  is(`$X -Iblib/arch -Iblib/lib a.plc`, "ok", "executable plc"); #76
+  is(`$X -Iblib/arch -Iblib/lib pcc.plc`, "ok", "executable plc"); #76
 }
 cleanup;
 
