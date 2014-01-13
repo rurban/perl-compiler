@@ -383,6 +383,7 @@ for (@data) {
 	    $unsupp++ if $pver < $ver; # ver 10: skip if pvar lower than 10;
 	}
     }
+    # warn "unsupported $idx\t$ver\t$insn\n" if $unsupp;
     if (!$unsupp or ($] >= 5.007 and $insn !~ /padl|xcv_name_hek/)) {
 	$insn_name[$insn_num] = $insn;
 	push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
