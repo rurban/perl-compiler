@@ -30,7 +30,7 @@ if [ -n "$logs" ]; then
     mkdir -p $rdir
     cp $logs $rdir/
     rename 's/log\.make-/log\.test-/' $rdir/log.make-*
-    ./status_upd $rdir -qd >> status.$V-$R
+    ./status_upd -ad $rdir >> status.$V-$R
     git diff >> status.$V-$R
     cp status.$V-$R $rdir/
 fi
