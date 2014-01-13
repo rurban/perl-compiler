@@ -2289,6 +2289,10 @@ sub B::PVMG::save {
     return $sym;
   }
   my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
+  if ($] > 5.017 and $static) { # 242: e.g. $1
+    $static = 0;
+    $len = $cur+1 unless $len;
+  }
   #warn sprintf( "PVMG %s (0x%x) $savesym, $len, $cur, $pv\n", $sym, $$sv ) if $debug{mg};
 
   if ($PERL510) {
@@ -2333,7 +2337,7 @@ sub B::PVMG::save {
     if ($PERL510) {
       $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
     } else {
-      $init->add(savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
+      $init->add( savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
                           $pv, $sv, $cur ) );
     }
   }
