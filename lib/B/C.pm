@@ -674,23 +674,25 @@ sub constpv {
 }
 
 sub savepv {
-  my $pv    = pack "a*", shift;
+  my $pv    = shift;
   my $const = shift;
-  return $strtable{$pv} if defined $strtable{$pv};
+  my $cstring = cstring($pv);
+  # $decl->add( sprintf( "/* %s */", $cstring) ) if $debug{pv};
+  return $strtable{$cstring} if defined $strtable{$cstring};
+  $pv    = pack "a*", $pv;
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $const = " const" if $const;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
-    $strtable{$pv} = "$pvsym";
+    $strtable{$cstring} = "$pvsym";
   } else {
-    my $cstring = cstring($pv);
     if ( $cstring ne "0" ) {    # sic
       $decl->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
-      $strtable{$pv} = "$pvsym";
+      $strtable{$cstring} = "$pvsym";
     }
   }
-  return wantarray ? ( $pvsym, length( pack "a*", $pv ) ) : $pvsym;
+  return wantarray ? ( $pvsym, length($pv) ) : $pvsym;
 }
 
 sub save_rv {
