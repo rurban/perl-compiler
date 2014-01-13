@@ -19,5 +19,5 @@ EOF
 # fixed with 1.42_67 but not in 5.19
 use B::C ();
 my $todo = ($B::C::VERSION ge '1.42_67' and $] < 5.019) ? "" : "TODO ";
-ctest(1, "ok\nFoo",'C','ccode208i',$script,$todo.'#172 miss to mark empty overloaded package');
-ctest(2, "ok\nFoo",'C,-uFoo','ccode208i',$script,($] < 5.018 ? '':"TODO 5.18 ").'#172 -uFoo includes overloaded package');
+ctest(1, "ok\nFoo",'C','ccode172i',$script,$todo.'#172 miss to mark empty overloaded package');
+ctest(2, "ok\nFoo",'C,-uFoo','ccode172i',$script,($] < 5.018 ? '':"TODO 5.18 ").'#172 -uFoo includes overloaded package');
