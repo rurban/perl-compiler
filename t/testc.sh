@@ -383,7 +383,7 @@ sub script {my($package,@args)=@_;print "ok"}'
 result[74]='ok'
 # issue 71_2+3: cop_warnings issue76 and const destruction issue71 fixed
 # ok with "utf-8-strict"
-tests[75]='#TODO
+tests[75]='#TODO 5.8.8-5.10
 use Encode;
 my $x = "abc";
 print "ok" if "abc" eq Encode::decode("UTF-8", $x);'
