@@ -848,9 +848,9 @@ sub todo_tests_default {
 	#push @todo, (43)     if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
 	# only tested 5.8.4 and .5
-	push @todo, (27)    if $] <= 5.008008;
+	push @todo, (27)    if $] <= 5.008005;
 	push @todo, (49)    if $] >= 5.007 and $] < 5.008008;
-	push @todo, (29)    if $] < 5.009; # or ($] > 5.013 and $] < 5.015);
+	push @todo, (29)    if $] < 5.008008;
 	push @todo, (14)    if $] >= 5.010 and $^O !~ /MSWin32|cygwin/i;
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;

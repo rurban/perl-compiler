@@ -47,15 +47,16 @@ EOF
 # rx: (?^i:^(?:US-?)ascii$)"
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
-	($B::C::VERSION lt '1.35' or $] > 5.016 or $ITHREADS  or $] < 5.010)
-        ? "TODO B:C reg_temp_copy from invalid r->offs"
-        : "alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
+	($B::C::VERSION lt '1.35' or ($] > 5.008005 and $] < 5.011))
+        ? "TODO C reg_temp_copy from invalid r->offs"
+        : "C alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 
 SKIP: {
-skip "hangs", 1 if !$DEBUGGING;
+#skip "hangs", 1 if !$DEBUGGING;
+skip "asserts", 1 if $DEBUGGING and $] < 5.011;
 #use B::CC;
 ctestok(3, "CC", "ccode71i", $script,
-      ($B::C::VERSION lt '1.42_57' or $] > 5.016 or $ITHREADS or $] < 5.010)
-      ? "TODO Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
-      : undef);
+      (($B::C::VERSION lt '1.42_57') or $] < 5.011 or ($ITHREADS and $] > 5.013))
+      ? "TODO CC Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
+      : "CC");
 }
