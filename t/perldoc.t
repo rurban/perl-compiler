@@ -80,6 +80,8 @@ TODO: {
   # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
   # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
   local $TODO = "compiled does not print yet" if $] >= 5.016 or $] < 5.010 or $Config{useithreads};
+  $ori =~ s{ /\S*perldoc }{ perldoc };
+  $out =~ s{ ./perldoc }{ perldoc };
   is($out, $ori, "same result"); #2
 }
 
@@ -103,6 +105,7 @@ $t0 = [gettimeofday];
 my $t3 = tv_interval( $t0 );
 TODO: {
   local $TODO = "compiled does not print yet" if $] >= 5.016 or $] < 5.010 or $Config{useithreads};
+  $out =~ s{ ./perldoc_O3 }{ perldoc };
   is($out, $ori, "same result"); #5
 }
 
