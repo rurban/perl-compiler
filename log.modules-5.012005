@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 ceb11e6 2014-01-10 | test 10 threaded fixed by 1.42_70 82a4fb139f
+# B::C::VERSION = 1.42_70 103ab13 2014-01-14 | Merge remote-tracking branch 'origin/master' into release
 # perlversion = 5.012005
 # path = /usr/local/bin/perl5.12.5
 # platform = linux 64bit threaded
@@ -34,7 +34,7 @@ pass Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-skip HTML::Parser
+pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
@@ -43,19 +43,19 @@ pass IO::Compress::Base
 pass LWP
 pass Storable
 pass base
-skip List::MoreUtils
-skip Params::Util
+pass List::MoreUtils
+pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester #TODO non-debugging with threads
 pass Sub::Install
 pass Attribute::Handlers
-skip Data::OptList
-skip Sub::Exporter
+pass Data::OptList
+pass Sub::Exporter
 pass Test::NoWarnings
 pass version
 pass Params::Validate
-skip Sub::Name
+pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
@@ -65,45 +65,45 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
+pass Class::MOP
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-skip DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
-skip Sub::Identify
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
 pass Encode
-skip Variable::Magic
+pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-skip Digest::SHA1
-skip namespace::clean
+pass Digest::SHA1
+pass namespace::clean
 pass Class::Inspector
-skip Clone
+pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-skip MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
+pass DateTime::TimeZone
+pass DateTime::Locale
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 81 / 100 modules tested with B-C-1.42_70 - perl-5.012005
-# pass  80 /  81 (98.8%)
-# fail   1 /  81 (1.2%)
+# 100 / 100 modules tested with B-C-1.42_70 - perl-5.012005
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)
-# skip  19 / 100 (19.0% not installed)
+# skip   0 / 100 (0.0% not installed)

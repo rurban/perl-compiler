@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 aad9377 2014-01-11 | t/issue27.t: improve TODO message
+# B::C::VERSION = 1.42_70 103ab13 2014-01-14 | Merge remote-tracking branch 'origin/master' into release
 # perlversion = 5.018002-nt
 # path = /usr/local/bin/perl5.18.2-nt
 # platform = linux 64bit non-threaded
