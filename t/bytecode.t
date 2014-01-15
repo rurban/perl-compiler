@@ -23,10 +23,10 @@ BEGIN {
     print "1..0 # Skip -- Perl configured without B module\n";
     exit 0;
   }
-  #if ($Config{ccflags} =~ /-DPERL_COPY_ON_WRITE/) {
-  #  print "1..0 # skip - no COW for now\n";
-  #  exit 0;
-  #}
+  if ((!-d '.git' or $ENV{NO_AUTHOR}) and $] >= 5.018 and $Config{useithreads}) {
+    print "1..0 # skip - bytecode 5.18 threaded broken\n";
+    exit 0;
+  }
   require 'test.pl'; # for run_perl()
 }
 use strict;
