@@ -8,6 +8,7 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 9;
+use Config;
 my $i=0;
 
 my $todo = <<'EOF';
@@ -42,8 +43,9 @@ sub test3 {
   my $name = shift;
   my $script = shift;
   my $cmt = shift;
-  plctestok($i*3+1, $name, $script,
-	    (($name eq 'ccode93iw' and $] < 5.014)?"TODO needs 5.14 ":"")."BC $cmt");
+  my $todobc = (($name eq 'ccode93iw' and $] < 5.014)?"TODO needs 5.14 ":"");
+  $todobc = 'TODO 5.18thr ' if $] >= 5.018 and $Config{useithreads};
+  plctestok($i*3+1, $name, $script,$todobc."BC $cmt");
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
   $i++;

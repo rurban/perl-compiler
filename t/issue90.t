@@ -8,6 +8,7 @@ BEGIN {
 }
 use Test::More tests => 16;
 use B::C ();
+use Config;
 
 my $i=0;
 sub test3 {
@@ -15,8 +16,14 @@ sub test3 {
   my $script = shift;
   my $cmt = join('',@_);
   my ($todobc,$todocc) = ("","");
-  $todobc = 'TODO ' if $name eq 'ccode90i_c';
-  $todocc = 'TODO ' if ($name eq 'ccode90i_c' and ($B::C::VERSION lt '1.42_61' or $] > 5.018));
+  $todobc = 'TODO ' if $name eq 'ccode90i_c' or ($] >= 5.018 and $Config{'useithreads'});
+  if ($name eq 'ccode90i_c' and ($B::C::VERSION lt '1.42_61' or $] >= 5.018)) {
+    $todocc = 'TODO '; #3 CC %+ includes Tie::Hash::NamedCapture
+  } elsif ($name eq 'ccode90i_ca' and $] >= 5.010) {
+    $todocc = 'TODO '; #6 CC @+
+  } elsif ($name eq 'ccode90i_er' and $] >= 5.010 and $Config{'useithreads'}) {
+    $todocc = 'TODO '; #12 CC Errno loaded automagically
+  }
   plctestok($i*3+1, $name, $script, $todobc." BC ".$cmt);
   ctestok($i*3+2, "C,-O3", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, $todocc."CC $cmt");
