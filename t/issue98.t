@@ -4,6 +4,7 @@
 use strict;
 my $name = "ccode98i";
 use Test::More tests => 1;
+use Config;
 
 # New bug reported by Zloysystem
 # This is common-sense.pm
@@ -43,7 +44,10 @@ $result =~ s/\n$//;
 
 SKIP: {
   skip "no features on 5.6", 1 if $] < 5.008;
-  ok($result eq $expected, "issue98 - set feature hash");
+ TODO: {
+    local $TODO = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
+    ok($result eq $expected, "issue98 - set feature hash");
+  }
 }
 
 END {

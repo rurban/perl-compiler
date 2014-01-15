@@ -12,6 +12,7 @@ if ($] < 5.018) {
   exit;
 }
 plan tests => 4;
+use Config;
 
 my $issue = <<'EOF';
 no warnings "experimental::lexical_subs";
@@ -44,8 +45,10 @@ sub compile_check {
   my $notfound = $stderr =~ /Can't locate object method/;
   ok(!$notfound, $cmt);
 }
+my $todobc = "";
+$todobc = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
 
 compile_check(1,'C,-O3,-UB','ccode130i',$issue,"lexsubs compile ok");
 ctestok(2,'C,-O3,-UB','ccode130i',$issue,"TODO lexsubs run C ok");
 ctestok(3,'CC,-UB','cccode130i',$issue,"TODO lexsubs run CC ok");
-plctestok(4,'ccode130i',$issue,"lexsubs run BC ok"); # needs xcv_name_hek
+plctestok(4,'ccode130i',$issue,$todobc."lexsubs run BC ok"); # needs xcv_name_hek
