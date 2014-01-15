@@ -263,12 +263,13 @@ sub is_todo {
   #foreach(qw(
   #  ExtUtils::CBuilder
   #)) { return 'overlong linking time' if $_ eq $module; }
-  #if ($] < 5.007) { foreach(qw(
-  #  ExtUtils::CBuilder
-  #)) { return '5.6' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.0080006) { foreach(qw(
     Module::Pluggable
   )) { return '5.8.5 CopFILE_set' if $_ eq $module; }}
+  # ??
+  if ($] < 5.010) { foreach(qw(
+    DateTime
+  )) { return '<5.10' if $_ eq $module; }}
   # restricted v_string hash?
   if ($] eq '5.010000') { foreach(qw(
    IO
@@ -279,11 +280,6 @@ sub is_todo {
   if ($] > 5.015 and $] < 5.015006) { foreach(qw(
    B::Hooks::EndOfScope
   )) { return '> 5.15' if $_ eq $module; }}
-  #if ($] > 5.015) { foreach(qw(
-  #    Moose
-  #    MooseX::Types
-  #    DateTime
-  #)) { return '> 5.15 (unshare_hek)' if $_ eq $module; }}
   # SvSTASH of magic stashes?
   if ($] >= 5.016) { foreach(qw(
       Module::Build
@@ -297,15 +293,6 @@ sub is_todo {
     if (!$DEBUGGING) { foreach(qw(
       Test::Tester
     )) { return 'non-debugging with threads' if $_ eq $module; }}
-    #if ($] >= 5.008005 and $] < 5.008006) { foreach(qw(
-    #  Module::Build
-    #  Test::NoWarnings
-    #  Test::Warn
-    #  Test::Simple
-    #  Test::Exception
-    #  Test::Tester
-    #  Test::Deep
-    #)) { return '5.8.4-5 shared_scalar n-magic (\156)' if $_ eq $module; }}
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
       Test::Pod
     )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
@@ -319,15 +306,6 @@ sub is_todo {
       Pod::Text
       Template::Stash
     )) { return '5.10 with threads' if $_ eq $module; }}
-    # XXX 5.12.0 not tested recently
-    if ($] eq 5.012000) { foreach(qw(
-      DBI
-      DateTime
-      DateTime::Locale
-      Filter::Util::Call
-      Storable
-      Sub::Name
-    )) { return '5.12.0 with threads' if $_ eq $module; }}
     #if ($] >= 5.018) { foreach(qw(
     #  ExtUtils::CBuilder
     #)) { return '>= 5.18 with threads' if $_ eq $module; }}
