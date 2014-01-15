@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 ceb11e6 2014-01-10 | test 10 threaded fixed by 1.42_70 82a4fb139f
+# B::C::VERSION = 1.42_70 103ab13 2014-01-14 | Merge remote-tracking branch 'origin/master' into release
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded

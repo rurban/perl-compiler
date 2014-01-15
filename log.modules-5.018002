@@ -1,7 +1,7 @@
 # B::C::VERSION = 1.42_70 103ab13 2014-01-14 | Merge remote-tracking branch 'origin/master' into release
-# perlversion = 5.008009-nt
-# path = /usr/local/bin/perl5.8.9-nt
-# platform = linux 64bit non-threaded
+# perlversion = 5.018002
+# path = /usr/local/bin/perl5.18.2
+# platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -23,9 +23,9 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
-pass ExtUtils::ParseXS
-pass Module::Build
+pass ExtUtils::CBuilder
+fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
+fail Module::Build #TODO >= 5.16
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
+pass Test::Tester #TODO non-debugging with threads
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_70 - perl-5.008009-nt
+# 100 / 100 modules tested with B-C-1.42_70 - perl-5.018002
 # pass  98 / 100 (98.0%)
 # fail   2 / 100 (2.0%)
-# todo   0 /   2 (0.0%)
+# todo   3 /   2 (150.0%)
 # skip   0 / 100 (0.0% not installed)
