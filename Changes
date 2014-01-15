@@ -3,8 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.43	2014-?? rurban
-	new 5.16, 5.18, 5.20 and partial windows support, many more fixes and testcases
+1.43	2014-01-15 rurban
+	new 5.16, and partial 5.18, 5.20 and windows support.
+        Many more fixes and testcases.
+        Bytecode is still broken on 5.18 threaded.
 
         * C: Fix -u<module> without file extension.
 	With hek do not drop FAKE, only for const pv.
