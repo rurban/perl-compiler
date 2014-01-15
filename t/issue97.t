@@ -4,6 +4,7 @@
 use strict;
 my $name = "ccode97i";
 use Test::More tests => 1;
+use Config;
 
 my $source = $] < 5.012 ? "use 5.006; print q(ok);" : "use v5.12; print q(ok);";
 
@@ -29,8 +30,8 @@ my $runexe = $] < 5.008
 my $result = `$runexe`;
 $result =~ s/\n$//;
 
-SKIP: {
-  # skip "no v-objects on 5.6", 1 if $] < 5.008;
+TODO: {
+  local $TODO = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
   ok($result eq $expected, "issue97 - BC require v5.12");
 }
 

@@ -7,13 +7,15 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 6;
+use Config;
+
 my $i=0;
 sub test3 {
   my $name = shift;
   my $script = shift;
   my $cmt = join('',@_);
   my $todo = "";
-  $todo = 'TODO BC ' if $name eq 'ccode200i_c';
+  $todo = 'TODO BC ' if $name eq 'ccode200i_c' or ($] >= 5.018 and $] < 5.019005 and $Config{useithreads});
   plctestok($i*3+1, $name, $script, $todo.$cmt);
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
