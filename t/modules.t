@@ -263,6 +263,9 @@ sub is_todo {
   #foreach(qw(
   #  ExtUtils::CBuilder
   #)) { return 'overlong linking time' if $_ eq $module; }
+  if ($] < 5.007) { foreach(qw(
+    Sub::Name
+  )) { return '5.6' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.0080006) { foreach(qw(
     Module::Pluggable
   )) { return '5.8.5 CopFILE_set' if $_ eq $module; }}
@@ -296,16 +299,31 @@ sub is_todo {
     if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
       Test::Pod
     )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
-    if ($] >= 5.009 and $] < 5.012) { foreach(qw(
-      Carp::Clan
-      DateTime
-      Encode
-      ExtUtils::Install
-      Module::Build
-      MooseX::Types
-      Pod::Text
-      Template::Stash
-    )) { return '5.10 with threads' if $_ eq $module; }}
+    # $op->precomp assertions _svivx != SVt_PVAV at rx = PM_GETRE(o)
+    #if ($] >= 5.009 and $] < 5.012) { foreach(qw(
+    #   Encode
+    #   ExtUtils::Install
+    #   Module::Build
+    #   MooseX::Types
+    #   Pod::Text
+    #   Template::Stash
+    #   Test::Harness
+    #   ExtUtils::CBuilder
+    #   ExtUtils::ParseXS
+    #   Sub::Uplevel
+    #   URI
+    #   Test::Exception
+    #   LWP
+    #   Attribute::Handlers
+    #   version
+    #   Class::MOP
+    #   Moose
+    #   Module::Pluggable
+    #   Test::Warn
+    #)) { return '5.10 with threads' if $_ eq $module; }}
+    if ($] >= 5.012 and $] < 5.014) { foreach(qw(
+      ExtUtils::CBuilder
+    )) { return '5.12 with threads' if $_ eq $module; }}
     #if ($] >= 5.018) { foreach(qw(
     #  ExtUtils::CBuilder
     #)) { return '>= 5.18 with threads' if $_ eq $module; }}

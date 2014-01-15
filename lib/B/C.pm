@@ -1705,7 +1705,14 @@ sub B::PMOP::save {
   my $pm = sprintf( "pmop_list[%d]", $pmopsect->index );
   $init->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  my $re = $op->precomp; #out of memory: Module::Pluggable, Carp::Clan - threaded
+  my $re;
+  if ($] >= 5.010 and $] < 5.011 and $ITHREADS) { # XXX lots of module fails with 5.10.1d
+    if (ref($op) eq 'B::PMOP') {
+      eval { $re = $op->precomp; } #out of memory: Module::Pluggable, Carp::Clan - threaded
+    }
+  } else {
+    $re = $op->precomp;
+  }
   if ( defined($re) ) {
     $Regexp{$$op} = $op;
     if ($PERL510) {
