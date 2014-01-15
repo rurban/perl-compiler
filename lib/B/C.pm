@@ -85,7 +85,11 @@ sub output {
       if (!exists($sym->{$1}) and $1 ne 's\_0') {
         $ref = $1;
         $B::C::unresolved_count++;
-        warn "Warning: unresolved ".$section->name." symbol $ref\n" if $B::C::verbose;
+        if ($B::C::verbose) {
+          my $caller = caller(1);
+          warn "Warning: unresolved ".$section->name." symbol $ref\n"
+            if $caller eq 'B::C';
+        }
       }
     }
     s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
