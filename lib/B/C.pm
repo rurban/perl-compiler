@@ -2949,7 +2949,10 @@ sub B::CV::save {
     }
   }
   if (!$$root) {
-    if ($fullname ne 'threads::tid' and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"}))) {
+    if ($fullname ne 'threads::tid'
+        and $fullname ne 'main::main::'
+        and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"})))
+    {
       warn "Warning: &".$fullname." not found\n" if $verbose or $debug{sub};
     }
     $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
