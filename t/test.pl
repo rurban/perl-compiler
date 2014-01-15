@@ -707,13 +707,15 @@ sub ctest {
     ($b, $post) = split(" ", $b);
     $post = '' unless $post;
     $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-(O3|ffold|fwarnings)/;
-    diag("$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl") if $ENV{TEST_VERBOSE} > 1;
+    diag("$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl")
+      if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
     system "$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl";
     unless (-e "$name.c") {
         print "not ok $num #B::$backend failed\n";
         exit;
     }
-    diag("$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c") if $ENV{TEST_VERBOSE} > 1;
+    diag("$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c")
+      if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
     system "$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {

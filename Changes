@@ -6,7 +6,7 @@
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.
         Many more fixes and testcases.
-        Bytecode is still broken on 5.18 threaded.
+        Bytecode is still broken on 5.18, esp non-threaded. 5.20 looks pretty good though.
 
         * C: Fix -u<module> without file extension.
 	With hek do not drop FAKE, only for const pv.
@@ -101,8 +101,8 @@
         Optimized away 0=default op and gp flags and pointers
         Optimized away default sv_refcnt=1 (GV not), and skip redundant bytecodes
         Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
-        
-	* ByteLoader (0.10): set sv_refcnt to 1 in newsv
+
+	* ByteLoader (0.10): set sv_refcnt to 1 in newsv to skip most defaults
         * Assembler (1.11): allow "newpadlx 0"
         * Disassembler (1.12): use B::Concise op_flags and private_flags
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
