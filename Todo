@@ -1,40 +1,31 @@
 * Fixes
 
-'n' magic (shared_scalar) e.g. t/testm.sh Test::Tester
-del_backref cvgv since 5.13
-run-time label lookup (fixed all tests, need more tests)
-store_cop_label for 5.12 windows/AIX only (=> p5p; needs CORE patch)
-
-CC backend: goto (needs test), 
-
-check failing modules: Test::Tester with threads
-check perlcc failing with File::Temp
-proper destruction of vars in END blocks on -O2
-improve XSUB handling (perlcc, both static and dynamic, needs tests)
-sv_magic can do SvREFCNT_inc(obj) which messes up precalculated refcounts
-allocation of XPV[INAHC]V structures needs fixing: Perl tries to free
-  them, whereas the compiler expects them to be linked to a xpv[inahc]v_root
-list the same as X[IPR]V structures.
-ref counts
-perl_parse replacement
-signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
+bytecode for 5.18 threaded and 5.20 (suspect: walkoptree upstream)
+empty CVs are no proper coderefs
+use bytes AUTOLOAD handling
 CvOUTSIDE for ordinary subs
-DATA filehandle for C-compiled program (almost done)
-method_named packagepv quirks at compile-time. Are run-time pkg names tested?
+-fwalk-all for recursive deep inspection
+method_named packagepv quirks at compile-time. Are run-time pkg names
+
+CC backend: goto (needs test)
 
 * Features
 
-modularize (-m) for faster link times
+modularize (-m) for faster link times, buiildcc, rperl intergration
+backport improvements from oldmaster:
+  do not define symbols which are arguments of define (destructive
+   check)
+  store static bless packagenames
 run-time label lookup (fixed)
 skip code after BEGIN goto (usually Carp including B in some AUTOLOAD block, issue 61)
 type checking: Devel::TypeCheck
-compile time v. runtime initialisation (mostly done):
+compile time v. runtime initialisation (done):
   execute run-time BEGIN blocks for side-effects such as print or chdir, 
   use and require not.
-save PMOPs in compiled form
+save PMOPs in compiled form (5.10thr missing)
 selection of what to dump (done)
-options for cutting out line info (COP elimination) etc. (-fcop)
-shared constants: share_hek, constpv (mostly done)
+options for cutting out line info (COP elimination) etc. (-fcop, sortcv's)
+shared constants: share_hek, constpv (done)
 check module dependencies, vs. link libs static, not via DynaLoader (done)
 check Bytecode op coverage in the tests, should cover all ops 0-142
 ByteLoader compatibility: version, platform. eventually Bytecode version 
@@ -46,10 +37,12 @@ check CC op coverage, add tests
 -fro-inc read-only INC paths. not the AV, run-time savepvn (done)
 -fno-destruct skip optree and sv destruction at all, leave it to the OS (done)
 collect static strings beforehand, such as GvNAMEs, COP FILENAME (for pre 5.10)
-  and GV method names package::name. (partially done)
+  and GV method names package::name. (done)
 proper static init of PMOP SV's (only works dynamic >= 5.10)
-proper static init of PVBM/FBM (almost done, just 5.8.9 not)
-compile-time initialisation of AvARRAYs (improved with -fav-init and -fav-init2)
+proper static init of PVBM/FBM (done)
+compile-time initialisation of AvARRAYs (improved with -fav-init and
+   -fav-init2)
+
 collapse LISTOPs to UNOPs or BASEOPs
 compile-time qw(), constant subs
 variable types: global analysis of variables, type hints etc.
