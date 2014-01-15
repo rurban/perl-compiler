@@ -2,13 +2,12 @@
 
 	Copyright (c) 1996, 1997, Malcolm Beattie
 	Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
+	Copyright (c) 2012, 2013, 2014 cPanel Inc
 
 Homepage: http://www.perl-compiler.org/
 Releases: http://search.cpan.org/dist/B-C/
-Code: http://code.google.com/p/perl-compiler/
-  git clone https://code.google.com/p/perl-compiler/
-was previously:
-  svn checkout http://perl-compiler.googlecode.com/svn/trunk/ perl-compiler
+Code:     http://github.com/rurban/perl-compiler/
+  and mirrored at http://code.google.com/p/perl-compiler/
 
 INSTALL
 
@@ -28,11 +27,11 @@ USAGE
 
 The Bytecode, C and CC backends are now all functional
 enough to compile almost the whole of the main perl test
-suite and 97-100% of the top100 modules.
+suite and 99-100% of the top100 modules.
 
 In the case of the CC backend, any failures are all
-due to differences and/or known bugs documented below. See
-the file TESTS.
+due to differences and/or known bugs documented below.
+See the file TESTS.
 
 (1) To compile perl program foo.pl with the C backend, do
 
@@ -160,6 +159,8 @@ cc linking. Then add the appropriate -L and -l options to your
 You may also need to fix up some platform-dependent environment variable
 to ensure that linked-against .so files are found at runtime too.
 
+Read about perlcc --staticxs
+
 DIFFERENCES
 
 The result of running a CC compiled Perl program can sometimes be different
@@ -223,8 +224,8 @@ Deprecated features
 
 STATUS
 
-C and Bytecode works fine, best with non-threaded perls. 3-4% fails on the top100 modules.
-CC fails on some tests. See Todo.
+C is stable, CC is unstable.
+Bytecode stable until 5.16
 The Bytecode compiler is disabled for 5.6.2, use the default instead.
 
 See STATUS for details.
@@ -235,12 +236,6 @@ Here are some things which may cause the compiler problems.
 
 The following render the compiler useless (without serious hacking):
 
-* Use of the DATA filehandle (via __END__ or __DATA__ tokens) on earlier 
-  Perl versions withotu IO::Scalar. See test 15.
-* Operator overloading with %OVERLOAD
-* The (deprecated) magic array-offset variable $[ does not work
-* For -O1 and -O2 copy-on-grow of static pvs and heks since 5.10 is disabled. 
-  Fixes of the destruction failures there is work in progress.
 * The following operators are not yet implemented for CC
     goto
     continue/next/last to a outer LABEL
@@ -253,12 +248,9 @@ The following may give significant problems:
   and NOT executed at run-time.
 * Code which is only ever referred to at runtime (e.g. via eval "..." or
   via method calls): see the -u option for the C and CC backends.
-* Run-time lookups of lexical variables in "outside" closures
 
 The following may cause problems (not thoroughly tested):
 
-* Dependencies on whether values of some "magic" Perl variables are
-  determined at compile-time or runtime.
 * For the C and CC backends: compile-time strings which are longer than
   your C compiler can cope with in a single line or definition.
 * Reliance on intimate details of global destruction
@@ -294,7 +286,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2011-04-21
+2014-01-15
 
 Malcolm Beattie
 2 September 1996

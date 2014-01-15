@@ -50,7 +50,7 @@
           of NULL vs &PL_sv_undef (save_pv_or_rv => savesym, cur, len, pv, static)
         Restore $^H, the numeric value of global warnings flags (#193,#207,#243)
         Restore more missing globals: ${^UNICODE} ${^UTF8LOCALE} $; $\ $, $/ $" $|
-          $^A $^L $: $^ $^ $^ $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
+          $^A $^L $: $^H $^R $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
         Restore even deprecated vars $] $# $* (#171)
         Fix HvAUX memory corruption, accessing HvAUX beyond HE fields, esp. with threaded perls.
           Initialize now HvAUX backref and mro_meta fields.
