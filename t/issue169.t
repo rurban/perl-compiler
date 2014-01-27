@@ -8,7 +8,7 @@ BEGIN {
 }
 use Test::More tests => 1;
 use B::C ();
-my $todo = ($B::C::VERSION ge '1.42_71') ? "" : "TODO ";
+my $todo = ($B::C::VERSION gt '1.43') ? "" : "TODO ";
 
 ctestok(1,'C,-O3','ccode169i',<<'EOF',$todo.'#169 Attribute::Handlers');
 package MyTest;
@@ -25,4 +25,20 @@ sub a_sub :Check(qw/a b c/) {
 }
 
 print a_sub()."\n";
+EOF
+
+ctestok(2,'C,-O3','ccode169i',<<'EOF',$todo.'#278 run-time attributes::get');
+our $anon1;
+eval q/$anon1 = sub : method { $_[0]++ }/;
+use attributes;
+@attrs = eval q/attributes::get $anon1/;
+print qq{ok\n} if "@attrs" eq "method";
+#print "@attrs"
+EOF
+
+ctestok(3,'C,-O3','ccode169i',<<'EOF','#278 compile-time attributes::get');
+use attributes;
+our $anon = sub : method { $_[0]++ };
+@attrs = attributes::get $anon;
+print qq{ok\n} if "@attrs" eq "method";
 EOF
