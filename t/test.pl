@@ -863,6 +863,7 @@ sub todo_tests_default {
 	#push @todo, (49)    if $] >= 5.013009 and !$ITHREADS;
         #push @todo, (15,42..45,103) if $] >= 5.016;
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
+        push @todo, (12)    if $] >= 5.019;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
