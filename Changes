@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.44	2014-?? rurban
+
+        * C: Fix -O3 with ~ and ~~ formatstrings (#277)
+
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.
         Many more fixes and testcases.
