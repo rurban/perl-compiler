@@ -1075,6 +1075,8 @@ tests[263]='use JSON::XS; print encode_json []'
 result[263]='[]'
 tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
+tests[272]='$d = q{ok}; $d{""} = qq{ok\n}; print $d{""};'
+result[272]='ok'
 tests[277]='#TODO -O3
 format OUT =
 bar ~~
