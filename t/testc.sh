@@ -823,9 +823,9 @@ tests[192]='use warnings;
 result[192]='ok'
 tests[193]='unlink q{not.a.file}; $! = 0; open($FOO, q{not.a.file}); print( $! ne 0 ? "ok" : q{error: $! should not be 0}."\n"); close $FOO;'
 result[193]='ok'
-tests[194]='$0 = q{good morning, Dave}; #print "pid: $$\n";
-$s=`ps auxw | grep "$$" | grep ", Dave"|grep -v grep`;
-print q(ok) if $s =~ /good morning, Dave/'
+tests[194]='$0 = q{ccdave}; #print "pid: $$\n";
+$s=`ps auxw | grep "$$" | grep "ccdave"|grep -v grep`;
+print q(ok) if $s =~ /ccdave/'
 result[194]='ok'
 # duplicate of 152
 tests[195]='use PerlIO;  eval { require PerlIO::scalar }; find PerlIO::Layer "scalar"'
@@ -1038,11 +1038,10 @@ result[251]='ok'
 tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
 result[252]='4'
 tests[253]='# TODO
-INIT { require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[253]='1..2
 ok 1
-ok 2
-'
+ok 2'
 tests[254]='# TODO 197 destroy lexvar
 my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
