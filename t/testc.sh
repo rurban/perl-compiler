@@ -1075,10 +1075,22 @@ tests[263]='use JSON::XS; print encode_json []'
 result[263]='[]'
 tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
+tests[277]='#TODO -O3
+format OUT =
+bar ~~
+.
+open(OUT, ">/dev/null"); write(OUT); close OUT;'
+result[277]=''
 tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
 tests[282]='use vars qw($glook $smek $foof); $glook = 3; $smek = 4; $foof = "halt and cool down"; my $rv = \*smek; *glook = $rv; my $pv = ""; $pv = \*smek; *foof = $pv; print "ok\n";'
 result[282]='ok'
+tests[283]='#TODO #238
+format =
+ok
+.
+write'
+result[283]='ok'
 
 init
 
