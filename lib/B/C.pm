@@ -1242,9 +1242,12 @@ sub B::LISTOP::save {
   } elsif ($op->type == $OP_FORMLINE) {
     my $svop = $op->last;
     if ($svop->name == 'const' and $B::C::const_strings) {
-      #TODO non-static only when the const string contains ~ #277
-      local $B::C::const_strings;
-      do_labels ($op, 'last');
+      # non-static only when the const string contains ~ #277
+      my $sv = $svop->sv;
+      if ($sv->PV =~ /~/) {
+	local $B::C::const_strings;
+	$svop->save("svop const");
+      }
     }
   }
   do_labels ($op, 'first', 'last');
