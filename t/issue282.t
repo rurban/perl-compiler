@@ -7,9 +7,10 @@ BEGIN {
 }
 use Test::More tests => 1;
 use B::C ();
+# passes on linux non-DEBUGGING
 my $todo = ($B::C::VERSION ge '1.44' or $] > 5.019008) ? "" : "TODO ";
 
-ctestok(1,'C,-O3','ccode282i',<<'EOF',$todo.'#282 ref assign');
+ctestok(1,'C,-O3','ccode282i',<<'EOF',$todo.'#282 ref assign hek assert');
 use vars qw($glook $smek $foof);
 $glook = 3;
 $smek = 4;
