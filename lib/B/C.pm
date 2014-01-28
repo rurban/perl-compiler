@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43';
+our $VERSION = '1.43_01';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -524,6 +524,7 @@ sub walk_and_save_optree {
 # rather than looking up the name of every BASEOP in B::OP
 my $OP_THREADSV = opnumber('threadsv');
 my $OP_DBMOPEN = opnumber('dbmopen');
+my $OP_FORMLINE = opnumber('formline');
 my $OP_UCFIRST = opnumber('ucfirst');
 
 # special handling for nullified COP's.
@@ -1238,6 +1239,13 @@ sub B::LISTOP::save {
     require AnyDBM_File;
     my $dbm = $AnyDBM_File::ISA[0];
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
+  } elsif ($op->type == $OP_FORMLINE) {
+    my $svop = $op->last;
+    if ($svop->name == 'const' and $B::C::const_strings) {
+      #TODO non-static only when the const string contains ~ #277
+      local $B::C::const_strings;
+      do_labels ($op, 'last');
+    }
   }
   do_labels ($op, 'first', 'last');
   $sym;

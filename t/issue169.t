@@ -8,7 +8,7 @@ BEGIN {
 }
 use Test::More tests => 3;
 use B::C ();
-my $todo = ($B::C::VERSION gt '1.43') ? "" : "TODO ";
+my $todo = ($B::C::VERSION ge '1.44') ? "" : "TODO ";
 
 ctestok(1,'C,-O3','ccode169i',<<'EOF',$todo.'Attribute::Handlers #169');
 package MyTest;

@@ -7,7 +7,7 @@ BEGIN {
 }
 use Test::More tests => 1;
 use B::C ();
-my $todo = ($B::C::VERSION gt '1.43' or $] > 5.019008) ? "" : "TODO ";
+my $todo = ($B::C::VERSION ge '1.44' or $] > 5.019008) ? "" : "TODO ";
 
 ctestok(1,'C,-O3','ccode282i',<<'EOF',$todo.'#282 ref assign');
 use vars qw($glook $smek $foof);
