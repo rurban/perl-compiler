@@ -4554,7 +4554,7 @@ EOT0
     print <<'_EOT0';
 HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
 #undef share_hek
-#define share_hek(str,len,hash) my_share_hek( aTHX_ str,len,hash );
+#define share_hek(str, len, hash) my_share_hek( aTHX_ str, len, hash );
 _EOT0
 
   }
