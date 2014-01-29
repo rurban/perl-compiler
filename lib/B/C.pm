@@ -4961,6 +4961,11 @@ _EOT9
   warn "\%xsub: ",join(" ",keys %xsub),"\n" if $verbose and $debug{cv};
   force_saving_xsloader() if $use_xsloader and ($dl or $xs);
   if ($dl) {
+    if (grep {$_ eq 'attributes'} @dl_modules) {
+      # enforce attributes at the front of dl_init, #259
+      @dl_modules = grep { $_ ne 'attributes' } @dl_modules;
+      unshift @dl_modules, 'attributes';
+    }
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
     print "/* DynaLoader bootstrapping */\n";
@@ -4969,7 +4974,7 @@ _EOT9
     print "\t/* assert(cxstack_ix == 0); */\n" if $xs;
     print "\tSAVETMPS;\n";
     print "\ttarg = sv_newmortal();\n" if $] < 5.008008;
-    foreach my $stashname (reverse @dl_modules) {
+    foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
 	$use_xsloader = 1;
         print "\n\tPUSHMARK(sp);\n";
