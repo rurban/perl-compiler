@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_01';
+our $VERSION = '1.43_02';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -730,7 +730,7 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my $gmg = $sv->FLAGS & SVs_GMG;
-  my ( $cur, $len, $savesym, $pv ) = ( 0, 0 );
+  my ( $cur, $len, $savesym, $pv ) = ( 0, 1 );
   my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
@@ -762,6 +762,11 @@ sub save_pv_or_rv {
     $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
     $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
+    if ($shared_hek and $pok and !$cur) { #272
+      $shared_hek = 0;
+      $static = 0;
+      $len = 1;
+    }
     if ($PERL510) { # force dynamic PADNAME strings
       if ($] < 5.016) { $static = 0 if $sv->FLAGS & 0x40000000; }      # SVpad_NAME
       else { $static = 0 if ($sv->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
@@ -781,9 +786,11 @@ sub save_pv_or_rv {
         $static = 1;
       }
       if ($static) {
+	$len = 0;
 	$savesym = IsCOW($sv) ? savepv($pv) : constpv($pv);
         if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
+	  $len = $cur +1;
           $pv = $savesym;
           $savesym = 'NULL';
         }
@@ -1241,7 +1248,7 @@ sub B::LISTOP::save {
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
   } elsif ($op->type == $OP_FORMLINE) {
     my $svop = $op->last;
-    if ($svop->name == 'const' and $B::C::const_strings) {
+    if ($svop->name == 'const' and $B::C::const_strings and $svop->can('sv')) {
       # non-static only when the const string contains ~ #277
       my $sv = $svop->sv;
       if ($sv->PV =~ /~/) {
@@ -4050,7 +4057,8 @@ sub B::HV::save {
 			       0, $hv->MAX, 0 ));
     }
     $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
-			 $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS & ~SVf_READONLY));
+			 $xpvhvsect->index, $hv->REFCNT,
+			 $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
     if (!$is_stash and ($] >= 5.010 and $hv->FLAGS & SVf_OOK)) {
       $sym = sprintf("&sv_list[%d]", $svsect->index);
@@ -4076,12 +4084,11 @@ sub B::HV::save {
   }
   $svsect->debug($fullname, $hv->flagspv) if $debug{flags};
   my $sv_list_index = $svsect->index;
-  warn sprintf( "saving HV $fullname &sv_list[$sv_list_index] 0x%x MAX=%d\n",
-                $$hv, $hv->MAX ) if $debug{hv};
+  warn sprintf( "saving HV %".$fullname." &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
+                $$hv, $hv->MAX, $hv->KEYS ) if $debug{hv};
   # XXX B does not keep the UTF8 flag [RT 120535] #200
-  # shared heks only since 5.10
-  my @contents = ($PERL510 && $hv->can('ARRAY_utf8')) ? $hv->ARRAY_utf8 : $hv->ARRAY; # our fixed C.xs variant
-  # protect against recursive self-reference
+  # shared heks only since 5.10, our fixed C.xs variant
+  my @contents = ($PERL510 && $hv->can('ARRAY_utf8')) ? $hv->ARRAY_utf8 : $hv->ARRAY;    # protect against recursive self-reference
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
   # value => rv => cv => ... => rv => same hash
   $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
@@ -4089,12 +4096,8 @@ sub B::HV::save {
     local $B::C::const_strings = $B::C::const_strings;
     my ($i, $length);
     $length = scalar(@contents);
-    #if ($PERL510) { # force dynamic PADNAME strings
-    #  if ($] < 5.016) { $B::C::const_strings = 0 if $hv->FLAGS & 0x40000000; }      # SVpad_NAME
-    #  else { $B::C::const_strings = 0 if ($hv->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
-    #}
     for ( $i = 1 ; $i < @contents ; $i += 2 ) {
-      my $key = $contents[$i - 1];
+      my $key = $contents[$i - 1]; # string only
       my $sv = $contents[$i];
       warn sprintf("HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV)
         if ref($sv) eq 'B::RV'
@@ -4113,8 +4116,12 @@ sub B::HV::save {
 	  # warn "(length=$length)\n" if $debug{hv};
 	}
       } else {
-	warn "saving HV $fullname".'{'.$key."}\n" if $debug{hv};
+	warn "saving HV \$".$fullname.'{'.$key."}\n" if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
+	if ($key eq "" and $] >= 5.010) {
+	  warn "  turn off HvSHAREKEYS with empty keysv\n" if $debug{hv};
+	  $init->add("HvSHAREKEYS_off(&sv_list[$sv_list_index]);");
+	}
       }
     }
     if ($length) { # there may be skipped STASH symbols
@@ -4133,6 +4140,8 @@ sub B::HV::save {
               $cur = 0 - length($pv);
             }
           }
+	  # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
+	  # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
 	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, %s);",
 			      cstring($key), $cur, $value, 0 )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
