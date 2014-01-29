@@ -6,6 +6,7 @@
 1.44	2014-?? rurban
 
         * C: Fix -O3 with ~ and ~~ formatstrings (#277)
+	Fix SvLEN for empty hash keys (#272)
 
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.

@@ -305,7 +305,7 @@ HvARRAY_utf8(hv)
                 } else if (HeKUTF8(he)) {
                     PUSHs(newSVpvn_flags(HeKEY(he), HeKLEN(he), SVf_UTF8|SVs_TEMP));
                 } else {
-                    mPUSHp(HeKEY(he), HeKLEN(he));
+                    PUSHs(newSVpvn_flags(HeKEY(he), HeKLEN(he), SVs_TEMP));
                 }
 		PUSHs(make_sv_object(aTHX_ HeVAL(he)));
 	    }
