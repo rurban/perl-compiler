@@ -730,7 +730,7 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my $gmg = $sv->FLAGS & SVs_GMG;
-  my ( $cur, $len, $savesym, $pv ) = ( 0, 1 );
+  my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL' );
   my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
@@ -762,10 +762,10 @@ sub save_pv_or_rv {
     $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
     $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
-    if ($shared_hek and $pok and !$cur) { #272
-      $shared_hek = 0;
+    if ($shared_hek and $pok and !$cur) { #272 empty key
+      warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
+      $savesym = "emptystring";
       $static = 0;
-      $len = 1;
     }
     if ($PERL510) { # force dynamic PADNAME strings
       if ($] < 5.016) { $static = 0 if $sv->FLAGS & 0x40000000; }      # SVpad_NAME
@@ -797,16 +797,20 @@ sub save_pv_or_rv {
         $len = $cur+2 if IsCOW($sv) and $cur;
         push @B::C::static_free, $s if $len and !$B::C::in_endav;
       } else {
-	( $savesym, $len ) = ( 'NULL', $cur+1 );
+	$len = $cur+1;
         if ($shared_hek) {
-          $len = 0;
+          if ($savesym eq "emptystring") {
+            $free->add("    SvLEN(&$s) = 0;") ;
+          } else {
+            $len = 0;
+          }
           $free->add("    SvFAKE_off(&$s);");
         } else {
           $len++ if IsCOW($sv) and $cur;
         }
       }
     } else {
-      ( $savesym, $len ) = ( 'NULL', 0 );
+      $len = 0;
     }
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
@@ -4118,10 +4122,10 @@ sub B::HV::save {
       } else {
 	warn "saving HV \$".$fullname.'{'.$key."}\n" if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
-	if ($key eq "" and $] >= 5.010) {
-	  warn "  turn off HvSHAREKEYS with empty keysv\n" if $debug{hv};
-	  $init->add("HvSHAREKEYS_off(&sv_list[$sv_list_index]);");
-	}
+	#if ($key eq "" and $] >= 5.010) {
+	#  warn "  turn off HvSHAREKEYS with empty keysv\n" if $debug{hv};
+	#  $init->add("HvSHAREKEYS_off(&sv_list[$sv_list_index]);");
+	#}
       }
     }
     if ($length) { # there may be skipped STASH symbols
