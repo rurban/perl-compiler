@@ -10,7 +10,7 @@
         Use the natural @dl_modules boot order, just put attributes to the front (#259)
 	Store cop_hints to support lexical numeric hints pragmas,
           esp. use bytes and use open attributes
-          (fixes #152 #174 #176 #180 #185 #224 #235 #238 #241 #245 #253 #255 #256 #277)
+          (fixes #81 #152 #174 #176 #180 #185 #224 #235 #238 #241 #245 #253 #255 #256 #277)
 
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.
