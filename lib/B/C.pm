@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_02';
+our $VERSION = '1.43_03';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1536,9 +1536,10 @@ sub B::COP::save {
 	      "$opsect_common, line, stashoff, file, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
-		"%s, %u, " . "%d, %s, 0, " . "%s, %s, NULL",
+		"%s, %u, " . "%d, %s, %u, " . "%s, %s, NULL",
 		$op->_save_common, $op->line,
 		$op->stashoff, "(char*)".constpv( $file ), #hints=0
+                $op->hints,
 		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.016) {
@@ -1547,13 +1548,14 @@ sub B::COP::save {
 	      "$opsect_common, line, stashpv, file, stashlen, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
-		"%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
+		"%s, %u, " . "%s, %s, %d, %u, " . "%s, %s, NULL",
 		$op->_save_common, $op->line,
 		"(char*)".constpv( $op->stashpv ), # we can store this static
 		"(char*)".constpv( $file ),
 		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len),
 		# 5.16.0 B-1.35 has stashlen, 5.16.1 we will see.
 		$op->can('stashlen') ? $op->stashlen : length($op->stashpv),
+                $op->hints,
 		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
@@ -1561,11 +1563,13 @@ sub B::COP::save {
 	      "$opsect_common, line, stashpv, file, stashflags, hints, seq, warnings, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, %d, 0, " . "%s, %s, NULL",
-              $op->_save_common, $op->line,
-	      "(char*)".constpv( $op->stashpv ), # we can store this static
-	      "(char*)".constpv( $file ), $op->stashflags,
-              ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+                "%s, %u, " . "%s, %s, %d, %u, " . "%s, %s, NULL",
+                $op->_save_common, $op->line,
+                "(char*)".constpv( $op->stashpv ), # we can store this static
+                "(char*)".constpv( $file ),
+                $op->stashflags, $op->hints,
+                ivx($op->cop_seq),
+                $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } else {
       # cop_label now in hints_hash (Change #33656)
@@ -1573,11 +1577,11 @@ sub B::COP::save {
 	      "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, 0, " . "%s, %s, NULL",
+              "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
               $op->_save_common, $op->line,
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
-              ivx($op->cop_seq),
+              $op->hints, ivx($op->cop_seq),
               ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
 	       ));
     }
@@ -1602,11 +1606,11 @@ sub B::COP::save {
   }
   elsif ($PERL510) {
     $copsect->comment("$opsect_common, line, label, stash, file, hints, seq, warnings, hints_hash");
-    $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, 0, " . "%u, %s, NULL",
+    $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, %u, " . "%u, %s, NULL",
 			  $op->_save_common,     $op->line, 'NULL',
 			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-			  $op->cop_seq,
+                          $op->hints, $op->cop_seq,
 			  ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )));
     if ($op->label) {
       $init->add(sprintf( "CopLABEL_set(&cop_list[%d], CopLABEL_alloc(%s));",
@@ -1622,7 +1626,7 @@ sub B::COP::save {
 	      $op->_save_common, cstring( $op->label ),
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-	      ivx($op->cop_seq),      $op->arybase,
+	      ivx($op->cop_seq), $op->arybase,
 	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
 	      ( $PERL56 ? "" : ", 0" )
 	     )

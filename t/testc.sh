@@ -589,8 +589,7 @@ tests[150]='print NONEXISTENT "foo"; print "ok" if $! == 9'
 result[150]='ok'
 tests[1501]='$! = 0; print NONEXISTENT "foo"; print "ok" if $! == 9'
 result[1501]='ok'
-tests[152]='#TODO
-print "ok" if find PerlIO::Layer "perlio"'
+tests[152]='print "ok" if find PerlIO::Layer "perlio"'
 result[152]='ok'
 tests[154]='$SIG{__WARN__} = sub { die "warning: $_[0]" }; opendir(DIR, ".");closedir(DIR);print q(ok)'
 result[154]='ok'
@@ -690,7 +689,7 @@ result[169]='called
 ok
 42'
 # works fine with -O3
-tests[170]='# TODO
+tests[170]='#TODO non-O3
 eval "sub xyz (\$) : bad ;"; print "~~~~\n$@~~~~\n"'
 result[170]='~~~~
 Invalid CODE attribute: bad at (eval 1) line 1.
@@ -712,7 +711,7 @@ Constant subroutine BEGIN redefined at ./ccode173.pl line 2.
 ok 1
 ok 2
 ok 3'
-tests[174]='#TODO bytes_heavy
+tests[174]='
 my $str = "\x{10000}\x{800}";
 no warnings "utf8";
 { use bytes; $str =~ s/\C\C\z//; }
@@ -734,8 +733,7 @@ tests[175]='#TODO
 }'
 result[175]='ok - expected warning
 ok'
-tests[176]='#TODO
-use Math::BigInt; print Math::BigInt::->new(5000000000);'
+tests[176]='use Math::BigInt; print Math::BigInt::->new(5000000000);'
 result[176]='5000000000'
 tests[177]='use version; print "ok\n" if version::is_strict("4.2");'
 result[177]='ok'
@@ -752,8 +750,7 @@ our $bar = $foor; # required to generate the wrong behavior
 my $match = eval q($foo ~~ undef) ? 1 : 0;
 print "match ? $match\n";'
 result[179]='match ? 0'
-tests[180]='#TODO
-use feature "switch"; use integer; given(3.14159265) { when(3) { print "ok\n"; } }'
+tests[180]='use feature "switch"; use integer; given(3.14159265) { when(3) { print "ok\n"; } }'
 result[180]='ok'
 tests[181]='sub End::DESTROY { $_[0]->() };
 my $inx = "OOOO";
@@ -785,8 +782,7 @@ exit;
 '
 result[184]='ok'
 # usage: t/testc.sh -O3 -Dp,-UCarp 185
-tests[185]='#TODO bytes_heavy
-my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" && bytes::length($a) == 2; print "ok\n";'
+tests[185]='my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" && bytes::length($a) == 2; print "ok\n";'
 result[185]='ok'
 tests[186]='eval q/require B/; my $sub = do { package one; \&{"one"}; }; delete $one::{one}; my $x = "boom"; print "ok\n";'
 result[186]='ok'
@@ -964,8 +960,7 @@ tests[236]='sub t { if ($_[0] == $_[1]) { print "ok\n"; } else { print "not ok -
 result[236]='ok'
 tests[237]='print "\000\000\000\000_"'
 result[237]='_'
-tests[238]='#TODO
-sub f ($);
+tests[238]='sub f ($);
 sub f ($) {
   my $test = $_[0];
   write;
@@ -989,8 +984,7 @@ tests[240]='my $a = "\x{100}\x{101}Aa";
 print "ok\n" if "\U$a" eq "\x{100}\x{100}AA";
 my $b = "\U\x{149}cD"; # no pb without that line'
 result[240]='ok'
-tests[241]='#TODO
-package Pickup; use UNIVERSAL qw( can ); if (can( "Pickup", "can" ) != \&UNIVERSAL::can) { print "not " } print "ok\n";'
+tests[241]='package Pickup; use UNIVERSAL qw( can ); if (can( "Pickup", "can" ) != \&UNIVERSAL::can) { print "not " } print "ok\n";'
 result[241]='ok'
 tests[242]='$xyz = ucfirst("\x{3C2}");
 $a = "\x{3c3}foo.bar";
@@ -1003,9 +997,7 @@ tests[244]='print "($_)\n" for q{-2}..undef;'
 result[244]='(-2)
 (-1)
 (0)'
-# fails -O3 only
-tests[245]='#TODO -O3
-sub foo {
+tests[245]='sub foo {
     my ( $a, $b ) = @_;
     print "a: ".ord($a)." ; b: ".ord($b)." [ from foo ]\n";
 }
@@ -1037,8 +1029,7 @@ result[251]='ok'
 # duplicate of 234
 tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
 result[252]='4'
-tests[253]='# TODO
-INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+tests[253]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[253]='1..2
 ok 1
 ok 2'
@@ -1053,15 +1044,13 @@ sub  X::DESTROY { $flag = 1 }
 print "ok\n" if $flag;'
 result[254]='ok'
 # duplicate of 185, bytes_heavy
-tests[255]='#TODO
-$a = chr(300);
+tests[255]='$a = chr(300);
 my $l = length($a);
 my $lb;
 { use bytes; $lb = length($a); }
 print( ( $l == 1 && $lb == 2 ) ? "ok\n" : "l -> $l ; lb -> $lb\n" );'
 result[255]='ok'
-tests[256]='# TODO
-BEGIN{ $| = 1; } print "ok\n" if $| == 1'
+tests[256]='BEGIN{ $| = 1; } print "ok\n" if $| == 1'
 result[256]='ok'
 tests[259]='use JSON::XS; print encode_json([\0])'
 result[259]='[false]'
@@ -1075,14 +1064,11 @@ tests[263]='use JSON::XS; print encode_json []'
 result[263]='[]'
 tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
-tests[272]='#TODO
-$d{""} = qq{ok\n}; print $d{""};'
+tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 result[272]='ok'
-tests[2721]='#TODO
-BEGIN{$d{""} = qq{ok\n};} print $d{""};'
+tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
 result[2721]='ok'
-tests[277]='#TODO -O3
-format OUT =
+tests[277]='format OUT =
 bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT;'
