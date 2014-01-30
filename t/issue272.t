@@ -11,14 +11,16 @@ BEGIN {
 }
 use Test::More tests => 2;
 use B::C ();
-my $todo = ($B::C::VERSION ge '1.43_02' or $] < 5.009) ? "" : "TODO ";
-$todo = "TODO 5.10 " if $] =~ /^5\.010/;
-my $rtodo = $todo;
-if ($Config{ccflags} =~ /DEBUGGING/ and $] > 5.009) {
-  $rtodo = "TODO hek assertion ";
-}
+#use Config;
 
-ctestok(1,'C,-O3','ccode272i',<<'EOF',$rtodo.'empty run-time HV key #272');
+my $todo = ($B::C::VERSION ge '1.43_02' or $] < 5.009) ? "" : "TODO ";
+#$todo = "TODO 5.10 " if $] =~ /^5\.010/;
+#my $rtodo = $todo;
+#if ($Config{ccflags} =~ /DEBUGGING/ and $] > 5.009) {
+#  $rtodo = "TODO hek assertion ";
+#}
+
+ctestok(1,'C,-O3','ccode272i',<<'EOF',$todo.'empty run-time HV key #272');
 $d{""} = qq{ok\n}; print $d{""}
 EOF
 
