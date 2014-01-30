@@ -1277,7 +1277,7 @@ sub B::LISTOP::save {
     if ($svop->name == 'const' and $B::C::const_strings and $svop->can('sv')) {
       # non-static only when the const string contains ~ #277
       my $sv = $svop->sv;
-      if ($sv->PV =~ /~/) {
+      if ($sv->can("PV") and $sv->PV =~ /~/) {
 	local $B::C::const_strings;
 	$svop->save("svop const");
       }
