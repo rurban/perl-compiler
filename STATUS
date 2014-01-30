@@ -1,15 +1,15 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
 B::C is stable and used in production for -O0 and -O3. For bigger programs
-not all methods in certain packages might be detected, you'd need to add them
-manually via -u<packagename>.
+not all methods in certain packages or eval strings might be detected,
+you'd need to add them manually via -u<packagename>.
 
 B::CC is very unstable, work is in progress. Certain alioth benchmarks are 6x faster.
 Recursive function calls and certain dynamic ops are not yet supported.
 
-The Bytecode compiler is only stable for >=5.8 except 5.18 threaded. The
-CPAN Bytecode compiler is disabled for 5.6, we keep the old. The old core
-compiler fails for 50% of the testcases.
+The Bytecode compiler is only stable for >=5.8 except 5.18 threaded.
+The CPAN Bytecode compiler is disabled for 5.6, we keep the old.
+The old core compiler fails for 50% of the testcases.
 
 Windows and other OS with strict linking <5.16 will fail to install due to some
 not exported libperl symbols. Looks at the patches in ramblings.
@@ -126,6 +126,11 @@ Fix CC
 
 DONE
 ----
+fixed with 1.44:
+  -O3 with ~ and ~~ formatstrings
+  SvLEN and PV ptr for empty shared hash keys
+  cop_hints to support lexical numeric hints pragmas (use bytes, use open, ...)
+
 fixed with 1.43:
   static strings and heks with LEN=0
   restore of many more dynamic magic variables: @+,@-,$$,${^UNICODE} ${^UTF8LOCALE}
