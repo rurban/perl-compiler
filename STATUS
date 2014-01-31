@@ -127,9 +127,11 @@ Fix CC
 DONE
 ----
 fixed with 1.44:
-  -O3 with ~ and ~~ formatstrings
   SvLEN and PV ptr for empty shared hash keys
   cop_hints to support lexical numeric hints pragmas (use bytes, use open, ...)
+  -O3 with ~ and ~~ formatstrings
+  skip saving a cv on defined(&cv)
+  format STDOUT/STDERR
 
 fixed with 1.43:
   static strings and heks with LEN=0

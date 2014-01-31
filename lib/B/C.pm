@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_04';
+our $VERSION = '1.43_05';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -3125,7 +3125,7 @@ sub B::CV::save {
         and $fullname ne 'main::main::'
         and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"})))
     {
-      warn "Warning: &".$fullname." not found\n" if $verbose or $debug{sub};
+      warn "Warning: &".$fullname." not found\n" if $debug{sub};
     }
     $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
     # This block broke test 15, disabled
@@ -3687,6 +3687,9 @@ sub B::GV::save {
   }
   elsif ( $fullname eq 'main::ARGV' ) {
     $savefields = Save_HV | Save_SV | Save_CV | Save_FORM | Save_IO;
+  }
+  elsif ( $fullname =~ /^main::STD(OUT|ERR)$/ ) {
+    $savefields = Save_FORM | Save_IO;
   }
   $savefields &= ~$filter if ($filter and $filter !~ / :pad/
                               and $filter =~ /^\d+$/ and $filter > 0 and $filter < 64);
@@ -5464,10 +5467,10 @@ sub B::GV::savecv {
   #
   return if ( $package ne 'main' and !$include_package{$package} );
   return if ( $package eq 'main' and
-  	      $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|STDIN|STDOUT|STDERR|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
+	      $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
   warn sprintf( "Used GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
-  return unless ( $$cv || $$av || $$sv || $$hv || $gv->IO );
+  return unless ( $$cv || $$av || $$sv || $$hv || $gv->IO || $gv->FORM );
   if ($$cv and $name eq 'bootstrap' and $cv->XSUB) {
     #return $cv->save($fullname);
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
@@ -6868,6 +6871,7 @@ This symbol was not resolved during compilation, and replaced by 0.
 
 With B::C this is most likely a critical internal compiler bug, esp. if in
 an op section. See [issue #110].
+
 With B::CC it can be caused by valid optimizations, e.g. when op->next
 pointers were inlined or inlined GV or CONST ops were optimized away.
 
@@ -6875,17 +6879,16 @@ pointers were inlined or inlined GV or CONST ops were optimized away.
 
 =head1 BUGS
 
-Current status: A few known bugs.
+Current status: A few known bugs, but usable in production
 
 5.6:
     reading from __DATA__ handles (15)
     AUTOLOAD xsubs (27)
 
 >=5.10:
-    &XSLoader::load sometimes missing
-    reading from __DATA__ handles (15) non-threaded
-    handling npP magic for shared threaded variables (41-43)
-    destruction of variables in END blocks
+    Attribute::Handlers and run-time attributes
+    package destruction
+    handling of empty functions, esp. sig handlers: $SIG{__WARN__}=sub{}
 
 =head1 AUTHOR
 
