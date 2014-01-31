@@ -132,6 +132,9 @@ fixed with 1.44:
   -O3 with ~ and ~~ formatstrings
   skip saving a cv on defined(&cv)
   format STDOUT/STDERR
+  Save empty bodyless subs if they exist, for signal handlers, prototypes declarations
+    and cvrefs
+
 
 fixed with 1.43:
   static strings and heks with LEN=0
