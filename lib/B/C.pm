@@ -738,6 +738,7 @@ sub save_pv_or_rv {
     # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
     warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
+    $static = 1; # avoid run-time overwrite of the PV/RV slot (#273)
     if ($savesym =~ /(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
@@ -2466,6 +2467,7 @@ sub B::PVMG::save {
       $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
 	if $savesym ne '';
       $savesym = 'NULL';
+      $static = 1;
     }
     my ($ivx,$nvx) = (0, "0");
     # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
@@ -2498,7 +2500,7 @@ sub B::PVMG::save {
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
-  if ( !$static and !$sv->FLAGS & SVf_ROK) { # do not overwrite RV slot (#273)
+  if ( !$static ) { # do not overwrite RV slot (#273)
     # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
     if ($PERL510) {
       $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
