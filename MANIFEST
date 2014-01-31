@@ -147,6 +147,7 @@ t/issue169.t
 t/issue172.t
 t/issue183.t
 t/issue184.t
+t/issue185.t
 t/issue197.t
 t/issue200.t
 t/issue201.t
@@ -163,7 +164,11 @@ t/issue238.t
 t/issue240.t
 t/issue242.t
 t/issue245.t
+t/issue251.t
 t/issue256.t
+t/issue259.t
+t/issue272.t
+t/issue282.t
 t/modules.pm
 t/modules.t
 t/mymodules
