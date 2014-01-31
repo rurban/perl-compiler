@@ -877,6 +877,14 @@ open F, "<", "/dev/null";
 my %l = map {$_=>1} PerlIO::get_layers(F, input  => 1);
 print $l{crlf} ? q(ok) : keys(%l);'
 result[203]='ok'
+# issue 29
+tests[2900]='use open qw(:std :utf8);
+BEGIN{ `echo ö > xx.bak`; }
+open X, "xx.bak";
+$_ = <X>;
+print unpack("U*", $_), " ";
+print $_ if /\w/;'
+result[2900]='24610 ö'
 tests[207]='use warnings;
 sub asub { }
 asub(tests => 48);
