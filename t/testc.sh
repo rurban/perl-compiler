@@ -1034,6 +1034,18 @@ syntax error at (eval 1) line 1, near "package withversion 1.1_"'
 tests[251]='# TODO
 sub f;print "ok" if exists &f'
 result[251]='ok'
+tests[2511]='# TODO
+sub f :lvalue;print "ok" if exists &f'
+result[2511]='ok'
+tests[2512]='# TODO
+sub f ();print "ok" if exists &f'
+result[2512]='ok'
+tests[2513]='# TODO
+sub f ($);print "ok" if exists &f'
+result[2513]='ok'
+tests[2514]='# TODO
+sub f;print "ok" if exists &f'
+result[2514]='ok'
 # duplicate of 234
 tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
 result[252]='4'

@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_05';
+our $VERSION = '1.43_06';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1416,8 +1416,8 @@ sub method_named {
   #if ($name !~ /^tid|can|isa|pmreplroot$/ and $loc !~ m/$b line / and $package_pv !~ /^B::/) {
   #  return undef if $ITHREADS;
   #}
-  if (1) { # TODO => 0. Do not try to save non-existing methods
-    $method = $name unless $method;
+  $method = $name unless $method;
+  if (exists &$method) { # Do not try to save non-existing methods
     warn "save method_name \"$method\"$loc\n" if $debug{cv};
     return svref_2object( \&{$method} );
   } else {
@@ -3125,24 +3125,29 @@ sub B::CV::save {
         and $fullname ne 'main::main::'
         and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"})))
     {
-      warn "Warning: &".$fullname." not found\n" if $debug{sub};
     }
-    $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
-    # This block broke test 15, disabled
-    if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
-      warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
-	if $debug{cv};
-      $svsect->remove;
-      $xpvcvsect->remove;
-      delsym( $cv );
-      # Empty CV (methods) must be skipped not to disturb method resolution
-      # (e.g. t/testm.sh POSIX)
-      return '0';
+    if (exists &$fullname) {
+      warn "Warning: Empty &".$fullname."\n" if $debug{sub};
+      $init->add( "/* empty CV $fullname */" ) if $verbose or $debug{sub};
     } else {
-      # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
-      warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
-	if $debug{cv} or $verbose;
-      # continue, must save the 2 symbols from above
+      warn "Warning: &".$fullname." not found\n" if $debug{sub};
+      $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
+      # This block broke test 15, disabled
+      if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
+        warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
+          if $debug{cv};
+        $svsect->remove;
+        $xpvcvsect->remove;
+        delsym( $cv );
+        # Empty CV (methods) must be skipped not to disturb method resolution
+        # (e.g. t/testm.sh POSIX)
+        return '0';
+      } else {
+        # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
+        warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
+          if $debug{cv} or $verbose;
+        # continue, must save the 2 symbols from above
+      }
     }
   }
 
@@ -3205,7 +3210,7 @@ sub B::CV::save {
     }
     warn $fullname."\n" if $debug{sub};
   }
-  else {
+  elsif (!exists &$fullname) {
     warn $fullname." not found\n" if $debug{sub};
     warn "No definition for sub $fullname (unable to autoload)\n"
       if $debug{cv};

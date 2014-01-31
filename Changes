@@ -12,6 +12,8 @@
           esp. use bytes and use open attributes
           (fixes #81 #152 #174 #176 #180 #185 #224 #235 #238 #241 #245 #253 #255 #256 #277)
         Skip saving defined(&cv) subs (#96)
+        Save now empty bodyless subs if they exist, for signal handlers,
+          prototypes declarations and cvrefs (#251, #159, #235, #246, #270, #271, #275, #279)
 
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.
