@@ -15,6 +15,7 @@
         Fix format STDOUT/STDERR (#238, #239, #277, #284, #285, #283)
         Save now empty bodyless subs if they exist, for signal handlers,
           prototypes declarations and cvrefs (#251, #159, #235, #246, #270, #271, #275, #279)
+        Fix PVMG PV overwriting the RV, overload sub (#273)
 
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.

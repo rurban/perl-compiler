@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_06';
+our $VERSION = '1.43_07';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -2498,7 +2498,7 @@ sub B::PVMG::save {
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
-  if ( !$static ) {
+  if ( !$static and !$sv->FLAGS & SVf_ROK) { # do not overwrite RV slot (#273)
     # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
     if ($PERL510) {
       $init->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
