@@ -1272,15 +1272,21 @@ sub B::LISTOP::save {
     require AnyDBM_File;
     my $dbm = $AnyDBM_File::ISA[0];
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
-  } elsif ($op->type == $OP_FORMLINE) {
-    my $svop = $op->last;
-    if ($svop->name == 'const' and $B::C::const_strings and $svop->can('sv')) {
-      # non-static only when the const string contains ~ #277
-      my $sv = $svop->sv;
-      if ($sv->can("PV") and $sv->PV =~ /~/) {
-	local $B::C::const_strings;
-	$svop->save("svop const");
+  } elsif ($op->type == $OP_FORMLINE and $B::C::const_strings) { # -O3 ~
+    # non-static only for all const strings containing ~ #277
+    my $sv;
+    my $fop = $op;
+    my $svop = $op->first;
+    while ($svop != $op and ref($svop) ne 'B::NULL') {
+      if ($svop->name == 'const' and $svop->can('sv')) {
+        $sv = $svop->sv;
       }
+      if ($sv and $sv->can("PV") and $sv->PV =~ /~/m) {
+        local $B::C::const_strings;
+        warn "force non-static formline arg ",cstring($sv->PV),"\n" if $debug{pv};
+        $svop->save("svop const");
+      }
+      $svop = $svop->next;
     }
   }
   do_labels ($op, 'first', 'last');

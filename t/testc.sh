@@ -1077,12 +1077,25 @@ tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};
 result[280]='Farewell M'
 tests[282]='use vars qw($glook $smek $foof); $glook = 3; $smek = 4; $foof = "halt and cool down"; my $rv = \*smek; *glook = $rv; my $pv = ""; $pv = \*smek; *foof = $pv; print "ok\n";'
 result[282]='ok'
-tests[283]='#TODO #238
+tests[283]='#TODO #238 Undefined format "STDOUT"
 format =
 ok
 .
 write'
 result[283]='ok'
+tests[284]='#-O3 only
+my $x="123456789";
+format OUT =
+^<<~~
+$x
+.
+open OUT, ">ccode.tmp";
+write(OUT);
+close(OUT);
+print `cat "ccode.tmp"`'
+result[284]='123
+456
+789'
 
 init
 
