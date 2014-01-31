@@ -1088,6 +1088,8 @@ tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 result[272]='ok'
 tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
 result[2721]='ok'
+tests[273]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
+result[273]='11'
 tests[277]='format OUT =
 bar ~~
 .

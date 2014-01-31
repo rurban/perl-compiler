@@ -134,7 +134,7 @@ fixed with 1.44:
   format STDOUT/STDERR
   Save empty bodyless subs if they exist, for signal handlers, prototypes declarations
     and cvrefs
-
+  PVMG PV overwriting the RV, overload sub
 
 fixed with 1.43:
   static strings and heks with LEN=0
