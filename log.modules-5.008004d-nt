@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 103ab13 2014-01-14 | Merge remote-tracking branch 'origin/master' into release
+# B::C::VERSION = 1.43_07 3ce6b09 2014-01-31 | #273: fix various regressions
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+pass DateTime #TODO <5.10
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_70 - perl-5.008004d-nt
+# 100 / 100 modules tested with B-C-1.43_07 - perl-5.008004d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# todo   1 /   0 ()
 # skip   0 / 100 (0.0% not installed)
