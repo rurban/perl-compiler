@@ -1,8 +1,21 @@
 #!./perl
 
-# $RCSfile: sleep.t,v $$Revision: 4.1 $$Date: 92/08/07 18:28:23 $
+INIT {
+    unshift @INC, "./lib";
+    require 't/CORE/test.pl';
+}
 
-print "1..1\n";
+plan( tests => 4 );
 
-$x = sleep 3;
-if ($x >= 2 && $x <= 10) {print "ok 1\n";} else {print "not ok 1 $x\n";}
+use strict;
+use warnings;
+
+my $start = time;
+my $sleep_says = sleep 3;
+my $diff = time - $start;
+
+cmp_ok( $sleep_says, '>=', 2,  'Sleep says it slept at least 2 seconds' );
+cmp_ok( $sleep_says, '<=', 10, '... and no more than 10' );
+
+cmp_ok( $diff, '>=', 2,  'Actual time diff is at least 2 seconds' );
+cmp_ok( $diff, '<=', 10, '... and no more than 10' );

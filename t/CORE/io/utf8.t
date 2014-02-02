@@ -1,17 +1,11 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-    unless (find PerlIO::Layer 'perlio') {
-	print "1..0 # Skip: not perlio\n";
-	exit 0;
-    }
+    require 't/CORE/test.pl';
 }
 
 no utf8; # needed for use utf8 not griping about the raw octets
 
-BEGIN { require "./test.pl"; }
 
 plan(tests => 55);
 
@@ -185,7 +179,7 @@ close F;
 unlink($a_file);
 
 open F, ">:utf8", $a_file;
-@a = map { chr(1 << ($_ << 2)) } 0..5; # 0x1, 0x10, .., 0x100000
+@a = map { chr(1 << 0 + ($_ << 2)) } 0..5; # 0x1, 0x10, .., 0x100000 # 0 + is required for some poor editors
 unshift @a, chr(0); # ... and a null byte in front just for fun
 print F @a;
 close F;

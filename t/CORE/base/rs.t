@@ -10,10 +10,11 @@ $teststring2 = "1234567890123456789012345678901234567890";
 # Create our test datafile
 1 while unlink 'foo';                # in case junk left around
 rmdir 'foo';
-open TESTFILE, ">./foo" or die "error $! $^E opening";
-binmode TESTFILE;
-print TESTFILE $teststring;
-close TESTFILE or die "error $! $^E closing";
+my $TESTFILE;
+open $TESTFILE, ">./foo" or die "error $! $^E opening";
+binmode $TESTFILE;
+print $TESTFILE $teststring;
+close $TESTFILE or die "error $! $^E closing";
 
 $test_count_start = $test_count;  # Needed to know how many tests to skip
 open TESTFILE, "<./foo";
@@ -24,10 +25,10 @@ unlink "./foo";
 
 # try the record reading tests. New file so we don't have to worry about
 # the size of \n.
-open TESTFILE, ">./foo";
-print TESTFILE $teststring2;
-binmode TESTFILE;
-close TESTFILE;
+open $TESTFILE, ">./foo";
+print $TESTFILE $teststring2;
+binmode $TESTFILE;
+close $TESTFILE;
 open TESTFILE, "<./foo";
 binmode TESTFILE;
 test_record(*TESTFILE);
@@ -39,20 +40,21 @@ $test_count_end = $test_count;  # Needed to know how many tests to skip
 if ($^O eq 'VMS') {
   # Create a temp file. We jump through these hoops 'cause CREATE really
   # doesn't like our methods for some reason.
-  open FDLFILE, "> ./foo.fdl";
-  print FDLFILE "RECORD\n FORMAT VARIABLE\n";
-  close FDLFILE;
-  open CREATEFILE, "> ./foo.com";
-  print CREATEFILE '$ DEFINE/USER SYS$INPUT NL:', "\n";
-  print CREATEFILE '$ DEFINE/USER SYS$OUTPUT NL:', "\n";
-  print CREATEFILE '$ OPEN YOW []FOO.BAR/WRITE', "\n";
-  print CREATEFILE '$ CLOSE YOW', "\n";
-  print CREATEFILE "\$EXIT\n";
-  close CREATEFILE;
+  my $FDLFILE;
+  open $FDLFILE, "> ./foo.fdl";
+  print $FDLFILE "RECORD\n FORMAT VARIABLE\n";
+  close $FDLFILE;
+  open my $CREATEFILE, "> ./foo.com";
+  print $CREATEFILE '$ DEFINE/USER SYS$INPUT NL:', "\n";
+  print $CREATEFILE '$ DEFINE/USER SYS$OUTPUT NL:', "\n";
+  print $CREATEFILE '$ OPEN YOW []FOO.BAR/WRITE', "\n";
+  print $CREATEFILE '$ CLOSE YOW', "\n";
+  print $CREATEFILE "\$EXIT\n";
+  close $CREATEFILE;
   $throwaway = `\@\[\]foo`, "\n";
-  open(TEMPFILE, ">./foo.bar") or print "# open failed $! $^E\n";
-  print TEMPFILE "foo\nfoobar\nbaz\n";
-  close TEMPFILE;
+  open(my $TEMPFILE, ">./foo.bar") or print "# open failed $! $^E\n";
+  print $TEMPFILE "foo\nfoobar\nbaz\n";
+  close $TEMPFILE;
 
   open TESTFILE, "<./foo.bar";
   $/ = \10;
@@ -115,7 +117,11 @@ $/ = "\n";
 }
 
 
-if (not eval q/use PerlIO::scalar; use PerlIO::via::scalar; 1/) {
+{
+ # If we do not include the lib directories, we may end up picking up a
+ # binary-incompatible previously-installed version. The eval won’t help in
+ # intercepting a SIGTRAP.
+ if (not eval q/use PerlIO::scalar; use PerlIO::via::scalar; 1/) {
   # In-memory files necessitate PerlIO::via::scalar, thus a perl with
   # perlio and dynaloading enabled. miniperl won't be able to run this
   # test, so skip it
@@ -127,8 +133,8 @@ if (not eval q/use PerlIO::scalar; use PerlIO::via::scalar; 1/) {
     print "ok $test # skipped - Can't test in memory file with miniperl/without PerlIO::Scalar\n";
     $test_count++;
   }
-}
-else {
+ }
+ else {
   # Test if a file in memory behaves the same as a real file (= re-run the test with a file in memory)
   open TESTFILE, "<", \$teststring;
   test_string(*TESTFILE);
@@ -137,6 +143,7 @@ else {
   open TESTFILE, "<", \$teststring2;
   test_record(*TESTFILE);
   close TESTFILE;
+ }
 }
 
 # Get rid of the temp file

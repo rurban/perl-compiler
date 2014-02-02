@@ -1,14 +1,12 @@
 #!./perl
 
+use Errno;
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-    unshift @INC, ("t"); require 'test.pl';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 use strict;
-eval 'use Errno';
-die $@ if $@ and !$ENV{PERL_CORE_MINITEST};
 
 plan tests => 2;
 
@@ -27,11 +25,7 @@ close(A);
 
 is($b,"\000\000\000\000_"); # otherwise probably "\000bcd_"
 
-SKIP: {
-    skip "no EBADF", 1 if (!exists &Errno::EBADF);
-
-    $! = 0;
-    no warnings 'unopened';
-    read(B,$b,1);
-    ok($! == &Errno::EBADF);
-}
+$! = 0;
+no warnings 'unopened';
+read(B,$b,1);
+ok($! == &Errno::EBADF);

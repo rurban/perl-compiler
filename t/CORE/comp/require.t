@@ -1,8 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '.';
+    unshift @INC, '';
     push @INC, '../lib';
 }
 
@@ -22,7 +21,7 @@ krunch.pm krunch.pmc whap.pm whap.pmc);
 
 my $Is_EBCDIC = (ord('A') == 193) ? 1 : 0;
 my $Is_UTF8   = (${^OPEN} || "") =~ /:utf8/;
-my $total_tests = 49;
+my $total_tests = 51;
 if ($Is_EBCDIC || $Is_UTF8) { $total_tests -= 3; }
 print "1..$total_tests\n";
 
@@ -96,6 +95,9 @@ print "ok ",$i++,"\n";
 # "use 5.11.0" (and higher) loads strictures.
 # check that this doesn't happen with require
 eval 'require 5.11.0; ${"foo"} = "bar";';
+print "# $@\nnot " if $@;
+print "ok ",$i++,"\n";
+eval 'BEGIN {require 5.11.0} ${"foo"} = "bar";';
 print "# $@\nnot " if $@;
 print "ok ",$i++,"\n";
 
@@ -255,6 +257,20 @@ EOT
 	print "not ok $pmc_dies\n";
     }
 }
+
+# Test "require func()" with abs path when there is no .pmc file.
+++$::i;
+require Cwd;
+require File::Spec::Functions;
+eval {
+ CORE::require(File::Spec::Functions::catfile(Cwd::getcwd(),"bleah.pm"));
+};
+if ($@ =~ /^This is an expected error/) {
+    print "ok $i\n";
+} else {
+    print "not ok $i\n";
+}
+
 
 ##########################################
 # What follows are UTF-8 specific tests. #

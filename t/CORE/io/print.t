@@ -1,13 +1,12 @@
 #!./perl
 
-BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+use Errno;
+INIT {
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 use strict 'vars';
-eval 'use Errno';
-die $@ if $@ and !$ENV{PERL_CORE_MINITEST};
 
 print "1..21\n";
 
@@ -17,8 +16,8 @@ print $foo "ok 1\n";
 print "ok 2\n","ok 3\n","ok 4\n";
 print STDOUT "ok 5\n";
 
-open(foo,">-");
-print foo "ok 6\n";
+open(my $foo_fh,">-");
+print $foo_fh "ok 6\n";
 
 printf "ok %d\n",7;
 printf("ok %d\n",8);
@@ -44,15 +43,11 @@ print @x,"14\nok",@y;
 
 $\ = '';
 
-if (!exists &Errno::EBADF) {
-    print "ok 19 # skipped: no EBADF\n";
-} else {
-    $! = 0;
-    no warnings 'unopened';
-    print NONEXISTENT "foo";
-    print "not " if ($! != &Errno::EBADF);
-    print "ok 19\n";
-}
+$! = 0;
+no warnings 'unopened';
+print NONEXISTENT "foo";
+print "not " if ($! != &Errno::EBADF);
+print "ok 19\n";
 
 {
     # Change 26009: pp_print didn't extend the stack

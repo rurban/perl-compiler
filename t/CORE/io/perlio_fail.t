@@ -1,12 +1,11 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-    require "../t/test.pl";
-    skip_all("No perlio") unless (find PerlIO::Layer 'perlio');
-    plan (15);
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
+
+plan (15);
 
 use warnings 'layer';
 my $warn;

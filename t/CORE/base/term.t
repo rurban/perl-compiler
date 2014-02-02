@@ -1,8 +1,6 @@
 #!./perl
 
-BEGIN {
-    chdir 't/CORE' if -d 't';
-}
+
 
 print "1..7\n";
 
@@ -16,11 +14,11 @@ elsif ($x eq chr(21)) { print "ok 1 # EBCDIC\n"; }
 else {print "not ok 1\n";}
 
 # check `` processing
-#my $X = "$^X -Mblib script/perlcc -r";
+
 $x = `$^X -le "print 'hi there'"`;
 if ($x eq "hi there\n") {print "ok 2\n";} else {print "not ok 2\n";}
 
-# check $#array (C issue 141)
+# check $#array
 
 $x[0] = 'foo';
 $x[1] = 'foo';
@@ -38,9 +36,9 @@ if (($x | 1) == 101) {print "ok 5\n";} else {print "not ok 5\n";}
 
 # check <> pseudoliteral
 
-open(try, "/dev/null") || open(try,"nla0:") || (die "Can't open /dev/null.");
+open($try, "/dev/null") || open($try,"nla0:") || (die "Can't open /dev/null.");
 
-if (<try> eq '') {
+if (<$try> eq '') {
     print "ok 6\n";
 }
 else {
@@ -48,5 +46,5 @@ else {
     die "/dev/null IS NOT A CHARACTER SPECIAL FILE!!!!\n" unless -c '/dev/null';
 }
 
-open(try, "harness") || (die "Can't open harness.");
-if (<try> ne '') {print "ok 7\n";} else {print "not ok 7\n";}
+open($try, "Makefile.PL") || (die "Can't open Makefile.PL.");
+if (<$try> ne '') {print "ok 7\n";} else {print "not ok 7\n";}

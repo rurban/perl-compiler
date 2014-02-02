@@ -4,8 +4,7 @@
 #
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
 }
 
 print "1..10\n";

@@ -6,7 +6,7 @@
 # we've not yet verified that use works.
 # use strict;
 
-print "1..65\n";
+print "1..73\n";
 my $test = 0;
 
 sub failed {
@@ -44,6 +44,7 @@ sub is {
 
 $^P = 0xA;
 
+# perlcc issue 209 - https://code.google.com/p/perl-compiler/issues/detail?id=209
 my @before = grep { /eval/ } keys %::;
 
 is ((scalar @before), 0, "No evals");
@@ -130,4 +131,31 @@ foreach my $flags (0x0, 0x800, 0x1000, 0x1800) {
 	is (scalar @after, 0 + keys %seen,
 	    "evals that fail are correctly cleaned up");
     }
+}
+
+# BEGIN blocks that die
+for (0xA, 0) {
+  local $^P = $_;
+
+  eval (my $prog = "BEGIN{die}\n");
+
+  if ($_) {
+    check_retained_lines($prog, 'eval that defines BEGIN that dies');
+  }
+  else {
+    my @after = grep { /eval/ } keys %::;
+
+    is (scalar @after, 0 + keys %seen,
+       "evals with BEGIN{die} are correctly cleaned up");
+  }
+}
+
+# [perl #79442] A #line "foo" directive in a string eval was not updating
+# *{"_<foo"} in threaded perls, and was not putting the right lines into
+# the right elements of @{"_<foo"} in non-threaded perls.
+{
+  local $^P = 0x400|0x100|0x10;
+  eval qq{#line 42 "hash-line-eval"\n labadalabada()\n};
+  is $::{"_<hash-line-eval"}[42], " labadalabada()\n",
+   '#line 42 "foo" in a string eval updates @{"_<foo"}';
 }

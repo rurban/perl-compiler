@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-    require "./test.pl";
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 print "1..5\n";
@@ -71,4 +70,4 @@ sub mkfiles {
     return wantarray ? @results : @results[-1];
 }
 
-END { unlink map { ($_, "$_.bak") } mkfiles(1..5) }
+END { unlink_all map { ($_, "$_.bak") } mkfiles(1..5) }

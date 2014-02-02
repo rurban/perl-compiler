@@ -96,6 +96,7 @@ g($expected);
 $_ = $expected;
 g();
 g;
+# perlcc issue 214 - https://code.google.com/p/perl-compiler/issues/detail?id=214
 undef $expected; &g; # $_ not passed
 { $expected = my $_ = "bar"; g() }
 

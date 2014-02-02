@@ -2,9 +2,7 @@
 # ioleaks.t
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-    unshift @INC, ("t"); require 'test.pl';
+    require 't/CORE/test.pl';
 }
 
 use strict;

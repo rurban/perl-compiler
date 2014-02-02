@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-    unshift @INC, ("t"); require 'test.pl';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 # Script to test auto flush on fork/exec/system/qx.  The idea is to
@@ -23,16 +22,10 @@ my $d_sfio = defined $Config{d_sfio} ? $Config{d_sfio} eq 'define' ? 1 : 0 : 0;
 my $fflushall = defined $Config{fflushall} ? $Config{fflushall} eq 'define' ? 1 : 0 : 0;
 my $d_fork = defined $Config{d_fork} ? $Config{d_fork} eq 'define' ? 1 : 0 : 0;
 
-if ($useperlio || $fflushNULL || $d_sfio) {
-    print "1..7\n";
-} else {
-    if ($fflushall) {
-	print "1..7\n";
-    } else {
-	print "1..0 # Skip: fflush(NULL) or equivalent not available\n";
-        exit;
-    }
-}
+skip_all('fflush(NULL) or equivalent not available')
+    unless $useperlio || $fflushNULL || $d_sfio || $fflushall;
+
+plan(tests => 7);
 
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 $runperl .= qq{ "-I../lib"};
@@ -135,3 +128,4 @@ while (<$CMD>) {
 }
 close $CMD;
 $t += 3;
+curr_test($t);

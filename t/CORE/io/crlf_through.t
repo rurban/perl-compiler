@@ -1,10 +1,13 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+	require 't/CORE/test.pl';
 }
 
 no warnings 'once';
 $main::use_crlf = 1;
-do './io/through.t' or die "no kid script";
+
+my $script = './t/CORE/io/through.t';
+
+die "No script: $script" unless -f $script;
+do './t/CORE/io/through.t' or die "no kid script";

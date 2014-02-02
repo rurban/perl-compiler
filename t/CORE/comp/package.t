@@ -21,28 +21,24 @@ $ABC'dyick = 6;
 
 $xyz = 2;
 
+# perlcc issue 209 + 210 - https://code.google.com/p/perl-compiler/issues/detail?id=210
 $main = join(':', sort(keys %main::));
 $xyz = join(':', sort(keys %xyz::));
 $ABC = join(':', sort(keys %ABC::));
 
-#?b::c  2 todo "-fstash required"
-#?b::cc 2 todo "-fstash required"
 if ('a' lt 'A') {
     print $xyz eq 'bar:main:new:xyz:ABC' ? "ok 1\n" : "not ok 1 '$xyz'\n";
 } else {
-    print $xyz eq 'ABC:bar:main:new:xyz' ? "ok 1\n" : "not ok 1 '$xyz' #TODO C -fstash missing\n";
+    print $xyz eq 'ABC:bar:main:new:xyz' ? "ok 1\n" : "not ok 1 '$xyz'\n";
 }    
-print $ABC eq 'blurfl:dyick' ? "ok 2\n" : "not ok 2 '$ABC' #TODO C -fstash missing\n";
+print $ABC eq 'blurfl:dyick' ? "ok 2\n" : "not ok 2 '$ABC'\n";
 print $main'blurfl == 123 ? "ok 3\n" : "not ok 3\n";
 
 package ABC;
 
 print $blurfl == 5 ? "ok 4\n" : "not ok 4\n";
-
-#?b::c  todo "-fstash required"
-#?b::cc todo "-fstash required"
-eval 'print $blurfl == 5 ? "ok 5\n" : "not ok 5 #TODO C -fstash missing\n";';
-
+# perlcc issue 212 - https://code.google.com/p/perl-compiler/issues/detail?id=212
+eval 'print $blurfl == 5 ? "ok 5\n" : "not ok 5\n";';
 eval 'package main; print $blurfl == 123 ? "ok 6\n" : "not ok 6\n";';
 print $blurfl == 5 ? "ok 7\n" : "not ok 7\n";
 

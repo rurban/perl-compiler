@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = qw(. ../lib);
-    require "./test.pl";
+    unshift @INC, "./lib";
+    require 't/CORE/test.pl';
 }
 
 use Config;

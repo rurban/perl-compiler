@@ -1,16 +1,16 @@
 #!./perl
 
 BEGIN {
-    if ($^O eq 'VMS') {
-        print "1..0 # Skip on VMS -- too picky about line endings for record-oriented pipes\n";
-        exit;
-    }
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
+skip_all("VMS too picky about line endings for record-oriented pipes")
+	if $^O eq 'VMS';
+
+plan(942);
+
 use strict;
-unshift @INC, ("t"); require 'test.pl';
 
 my $Perl = which_perl();
 
@@ -35,7 +35,7 @@ $c *= 3*2*2;	# $how_w, file/pipe, 2 reports
 
 $c += 6;	# Tests with sleep()...
 
-print "1..$c\n";
+#print "1..$c\n";
 
 my $set_out = '';
 $set_out = "binmode STDOUT, ':crlf'"

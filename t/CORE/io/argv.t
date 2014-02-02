@@ -1,21 +1,17 @@
 #!./perl
 
-BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
-}
-
-BEGIN { require "./test.pl"; }
+require 't/CORE/test.pl';
 
 plan(tests => 23);
 
-use File::Spec;
+my ($devnull, $no_devnull);
 
-my $devnull = File::Spec->devnull;
+require File::Spec;
+$devnull = File::Spec->devnull;
 
-open(TRY, '>Io_argv1.tmp') || (die "Can't open temp file: $!");
-print TRY "a line\n";
-close TRY or die "Could not close: $!";
+open($TRY, '>Io_argv1.tmp') || (die "Can't open temp file: $!");
+print $TRY "a line\n";
+close $TRY or die "Could not close: $!";
 
 $x = runperl(
     prog	=> 'while (<>) { print $., $_; }',
@@ -105,21 +101,23 @@ ok( eof(),      'eof() true after closing ARGV' );
 
 {
     local $/;
-    open F, 'Io_argv1.tmp' or die "Could not open Io_argv1.tmp: $!";
-    <F>;	# set $. = 1
-    is( <F>, undef );
+    open my $fh, 'Io_argv1.tmp' or die "Could not open Io_argv1.tmp: $!";
+    <$fh>;	# set $. = 1
+    is( <$fh>, undef );
 
-    open F, $devnull or die;
-    ok( defined(<F>) );
+    open $fh, $devnull or die;
+    ok( defined(<$fh>) );
 
-    is( <F>, undef );
-    is( <F>, undef );
+    is( <$fh>, undef );
+    is( <$fh>, undef );
 
-    open F, $devnull or die;	# restart cycle again
-    ok( defined(<F>) );
-    is( <F>, undef );
-    close F or die "Could not close: $!";
+    open $fh, $devnull or die;	# restart cycle again
+    ok( defined(<$fh>) );
+    is( <$fh>, undef );
+    close $fh or die "Could not close: $!";
 }
+
+# perlcc issue 227 - https://code.google.com/p/perl-compiler/issues/detail?id=227
 
 # This used to dump core
 fresh_perl_is( <<'**PROG**', "foobar", {}, "ARGV aliasing and eof()" ); 
@@ -136,7 +134,8 @@ close IN;
 unlink "Io_argv3.tmp";
 **PROG**
 
+__END__
 END {
-    1 while unlink 'Io_argv1.tmp', 'Io_argv1.tmp_bak',
+    unlink_all 'Io_argv1.tmp', 'Io_argv1.tmp_bak',
 	'Io_argv2.tmp', 'Io_argv2.tmp_bak', 'Io_argv3.tmp';
 }

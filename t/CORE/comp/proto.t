@@ -10,15 +10,16 @@
 #
 
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
 }
 
 # We need this, as in places we're testing the interaction of prototypes with
 # strict
 use strict;
 
-print "1..153\n";
+$| = 1;
+
+print "1..172\n";
 
 my $i = 1;
 
@@ -416,15 +417,16 @@ print "ok ", $i++, "\n";
 # correctly note too-short parameter lists that don't end with '$',
 #  a possible regression.
 
+
 sub foo1 ($\@);
 eval q{ foo1 "s" };
 print "not " unless $@ =~ /^Not enough/;
-print "ok ", $i++, "\n";
+print "ok ", $i++, " # TODO: Not a big deal in B::C that this doesn't work (perlcc #246)\n";
 
 sub foo2 ($\%);
 eval q{ foo2 "s" };
 print "not " unless $@ =~ /^Not enough/;
-print "ok ", $i++, "\n";
+print "ok ", $i++, " # TODO: Not a big deal in B::C that this doesn't work (perlcc #246)\n";
 
 sub X::foo3;
 *X::foo3 = sub {'ok'};
@@ -546,6 +548,25 @@ sub sreftest (\$$) {
     sreftest $aelem[0], $i++;
 }
 
+# test single term
+sub lazy (+$$) {
+    print "not " unless @_ == 3 && ref $_[0] eq $_[1];
+    print "ok $_[2] - non container test\n";
+}
+sub quietlazy (+) { return shift(@_) }
+sub give_aref { [] }
+sub list_or_scalar { wantarray ? (1..10) : [] }
+{
+    my @multiarray = ("a".."z");
+    my %bighash = @multiarray;
+    lazy(\@multiarray, 'ARRAY', $i++);
+    lazy(\%bighash, 'HASH', $i++);
+    lazy({}, 'HASH', $i++);
+    lazy(give_aref, 'ARRAY', $i++);
+    lazy(3, '', $i++); # allowed by prototype, even if runtime error
+    lazy(list_or_scalar, 'ARRAY', $i++); # propagate scalar context
+}
+
 # test prototypes when they are evaled and there is a syntax error
 # Byacc generates the string "syntax error".  Bison gives the
 # string "parse error".
@@ -651,3 +672,73 @@ print "ok ", $i++, "\n";
 eval 'sub bug (\[%@]) {  } my $array = [0 .. 1]; bug %$array;';
 print "not " unless $@ =~ /Not a HASH reference/;
 print "ok ", $i++, "\n";
+
+# [perl #75904]
+# Test that the following prototypes make subs parse as unary functions:
+#  * \sigil \[...] ;$ ;* ;\sigil ;\[...]
+sub eval_ok {
+    my ( $code ) = @_;
+
+    print "not "
+     unless eval ''.$code or warn $@;
+    print "ok ", $i++, " # ".$code."\n";
+}
+
+my @tests = (
+    'sub uniproto1 (*) {} uniproto1 $_, 1',
+    'sub uniproto2 (\$) {} uniproto2 $_, 1',
+    'sub uniproto3 (\[$%]) {} uniproto3 %_, 1',
+    'sub uniproto4 (;$) {} uniproto4 $_, 1',
+    'sub uniproto5 (;*) {} uniproto5 $_, 1',
+    'sub uniproto6 (;\@) {} uniproto6 @_, 1',
+    'sub uniproto7 (;\[$%@]) {} uniproto7 @_, 1',
+    'sub uniproto8 (+) {} uniproto8 $_, 1',
+    'sub uniproto9 (;+) {} uniproto9 $_, 1',
+);
+
+foreach my $t ( @tests ) {
+    eval_ok($t);
+}
+
+{
+  # Lack of prototype on a subroutine definition should override any prototype
+  # on the declaration.
+  sub z_zwap (&);
+
+  my $thiswarn;
+  local $SIG{__WARN__} = sub {
+    $thiswarn = join "", @_;
+  };
+
+  # https://code.google.com/p/perl-compiler/issues/detail?id=279
+  eval q{sub z_zwap {return @_}};
+
+  # fix a bad plan when the warning is not raised
+  if ($thiswarn =~ /^Prototype mismatch: sub main::z_zwap/) {
+      print 'ok ', $i++, " # Prototype mismatch\n";
+  } else {
+      print 'not ok ', $i++, " # $thiswarn\n";
+  }
+
+  if ($@) {
+    print "not ok ", $i++, "# $@";
+  } else {
+    print "ok ", $i++, " # sub z_zwap \n";
+  }
+
+
+  my @a = (6,4,2);
+  my @got  = eval q{z_zwap(@a)};
+
+  if ($@) {
+    print "not ok ", $i++, " # $@";
+  } else {
+    print "ok ", $i++, " # z_zwap\n";
+  }
+
+  if ("@got" eq "@a") {
+    print "ok ", $i++, " # >@got\n";
+  } else {
+    print "not ok ", $i++, " # >@got<\n";
+  }
+}

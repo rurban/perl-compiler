@@ -3,17 +3,17 @@
 package Foo;
 
 BEGIN {
-    # @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
-use Test;
-
-plan tests => 7;
+plan 7;
 
 use constant MyClass => 'Foo::Bar::Biz::Baz';
 
 {
     package Foo::Bar::Biz::Baz;
+    1;
 }
 
 for (qw(Foo Foo:: MyClass __PACKAGE__)) {

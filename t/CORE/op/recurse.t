@@ -4,19 +4,29 @@
 # test recursive functions.
 #
 
-print "1..25\n";
+BEGIN {
+    *main::curr_test = sub { die "undef" };
+}
 
-sub gcd ($$) {
+INIT {
+    unshift @INC, "./lib";
+    require 't/CORE/test.pl';
+    plan(tests => 28);
+}
+
+use strict;
+
+sub gcd {
     return gcd($_[0] - $_[1], $_[1]) if ($_[0] > $_[1]);
     return gcd($_[0], $_[1] - $_[0]) if ($_[0] < $_[1]);
     $_[0];
 }
 
-sub factorial ($) {
+sub factorial {
     $_[0] < 2 ? 1 : $_[0] * factorial($_[0] - 1);
 }
 
-sub fibonacci ($) {
+sub fibonacci {
     $_[0] < 2 ? 1 : fibonacci($_[0] - 2) + fibonacci($_[0] - 1);
 }
 
@@ -26,7 +36,7 @@ sub fibonacci ($) {
 # For example ackermann(4,1) will take quite a long time.
 # It will simply eat away your memory. Trust me.
 
-sub ackermann ($$) {
+sub ackermann {
     return $_[1] + 1               if ($_[0] == 0);
     return ackermann($_[0] - 1, 1) if ($_[1] == 0);
     ackermann($_[0] - 1, ackermann($_[0], $_[1] - 1));
@@ -34,7 +44,7 @@ sub ackermann ($$) {
 
 # Highly recursive, highly boring.
 
-sub takeuchi ($$$) {
+sub takeuchi {
     $_[1] < $_[0] ?
 	takeuchi(takeuchi($_[0] - 1, $_[1], $_[2]),
 		 takeuchi($_[1] - 1, $_[2], $_[0]),
@@ -42,48 +52,30 @@ sub takeuchi ($$$) {
 	    : $_[2];
 }
 
-print 'not ' unless (($d = gcd(1147, 1271)) == 31);
-print "ok 1\n";
-print "# gcd(1147, 1271) = $d\n";
+is(gcd(1147, 1271), 31, "gcd(1147, 1271) == 31");
 
-print 'not ' unless (($d = gcd(1908, 2016)) == 36);
-print "ok 2\n";
-print "# gcd(1908, 2016) = $d\n";
+is(gcd(1908, 2016), 36, "gcd(1908, 2016) == 36");
 
-print 'not ' unless (($f = factorial(10)) == 3628800);
-print "ok 3\n";
-print "# factorial(10) = $f\n";
+is(factorial(10), 3628800, "factorial(10) == 3628800");
 
-print 'not ' unless (($f = factorial(factorial(3))) == 720);
-print "ok 4\n";
-print "# factorial(factorial(3)) = $f\n";
+is(factorial(factorial(3)), 720, "factorial(factorial(3)) == 720");
 
-print 'not ' unless (($f = fibonacci(10)) == 89);
-print "ok 5\n";
-print "# fibonacci(10) = $f\n";
+is(fibonacci(10), 89, "fibonacci(10) == 89");
 
-print 'not ' unless (($f = fibonacci(fibonacci(7))) == 17711);
-print "ok 6\n";
-print "# fibonacci(fibonacci(7)) = $f\n";
+is(fibonacci(fibonacci(7)), 17711, "fibonacci(fibonacci(7)) == 17711");
 
-$i = 7;
+my @ack = qw(1 2 3 4 2 3 4 5 3 5 7 9 5 13 29 61);
 
-@ack = qw(1 2 3 4 2 3 4 5 3 5 7 9 5 13 29 61);
-
-for $x (0..3) { 
-    for $y (0..3) {
-	$a = ackermann($x, $y);
-	print 'not ' unless ($a == shift(@ack));
-	print "ok ", $i++, "\n";
-	print "# ackermann($x, $y) = $a\n";
+for my $x (0..3) { 
+    for my $y (0..3) {
+	my $a = ackermann($x, $y);
+	is($a, shift(@ack), "ackermann($x, $y) == $a");
     }
 }
 
-($x, $y, $z) = (18, 12, 6);
+my ($x, $y, $z) = (18, 12, 6);
 
-print 'not ' unless (($t = takeuchi($x, $y, $z)) == $z + 1);
-print "ok ", $i++, "\n";
-print "# takeuchi($x, $y, $z) = $t\n";
+is(takeuchi($x, $y, $z), $z + 1, "takeuchi($x, $y, $z) == $z + 1");
 
 {
     sub get_first1 {
@@ -91,12 +83,12 @@ print "# takeuchi($x, $y, $z) = $t\n";
     }
 
     sub get_list1 {
-	return [24] unless $_[0];
+	return [curr_test] unless $_[0];
 	my $u = get_first1(0);
 	[$u];
     }
     my $x = get_first1(1);
-    print "ok $x\n";
+    ok($x, "premature FREETMPS (change 5699)");
 }
 
 {
@@ -105,12 +97,49 @@ print "# takeuchi($x, $y, $z) = $t\n";
     }
 
     sub get_list2 {
-	return [25] unless $_[0];
+	return [curr_test] unless $_[0];
 	my $u = get_first2(0);
 	return [$u];
     }
     my $x = get_first2(1);
-    print "ok $x\n";
+    ok($x, "premature FREETMPS (change 5699)");
 }
 
-$i = 26;
+{
+    local $^W = 0; # We do not need recursion depth warning.
+
+    sub sillysum {
+	return $_[0] + ($_[0] > 0 ? sillysum($_[0] - 1) : 0);
+    }
+
+    is(sillysum(1000), 1000*1001/2, "recursive sum of 1..1000");
+}
+
+# check ok for recursion depth > 65536
+{
+    my $r;
+    eval { 
+	$r = runperl(
+		     nolib => 1,
+		     stderr => 1,
+		     prog => q{$d=0; $e=1; sub c { ++$d; if ($d > 66000) { $e=0 } else { c(); c() unless $d % 32768 } --$d } c(); exit $e});
+    };
+
+    if ($@) {
+        # $@ will be undef in this case so the is $r, '' will red-herringly fail, so catch that here and give a more usful error
+
+        # [issue 211]
+        # we could die *but* then the compiled $@ is somehow magically output and then this output happens, sometimes before the TAP starts when the binary is run under prove
+        # If we just print to STDERR the $@ does not magically get output but this output still happens before TAP starts when the binary is run under prove
+        # thus we print (so that the output we expect happens where we expect it all the time) and exit 1 (so that we'll know the test needs attention)
+        print "\n# could not test recursion since runperl() failed:\n#\t$@\n";
+        exit 1;
+    }
+
+  SKIP: {
+      skip("Out of memory -- increase your data/heap?", 2) if $r =~ /Out of memory/i;
+      is($r, '', "64K deep recursion - no output expected");
+      is($?, 0, "64K deep recursion - no coredump expected");
+  }
+}
+

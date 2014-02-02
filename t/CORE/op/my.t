@@ -1,8 +1,6 @@
 #!./perl
 
-# $RCSfile: my.t,v $
-
-print "1..31\n";
+print "1..36\n";
 
 sub foo {
     my($a, $b) = @_;
@@ -98,4 +96,37 @@ for my $full (keys %fonts) {
     $full =~ s/^n//;
     # Supposed to be copy-on-write via force_normal after a THINKFIRST check.
     print "$full $fonts{nok}\n";
+}
+
+#  [perl #29340] optimising away the = () left the padav returning the
+# array rather than the contents, leading to 'Bizarre copy of array' error
+
+sub opta { my @a=() }
+sub opth { my %h=() }
+eval { my $x = opta };
+print "not " if $@;
+print "ok 32\n";
+eval { my $x = opth };
+print "not " if $@;
+print "ok 33\n";
+
+
+sub foo3 {
+    ++my $x->{foo};
+    print "not " if defined $x->{bar};
+    ++$x->{bar};
+}
+eval { foo3(); foo3(); };
+print "not " if $@;
+print "ok 34\n";
+
+# my $foo = undef should always assign [perl #37776]
+{
+    my $count = 35;
+    loop:
+    my $test = undef;
+    print "not " if defined $test;
+    print "ok $count\n";
+    $test = 42;
+    goto loop if ++$count < 37;
 }

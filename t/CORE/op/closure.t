@@ -4,40 +4,33 @@
 #   Original written by Ulrich Pfeifer on 2 Jan 1997.
 #   Greatly extended by Tom Phoenix <rootbeer@teleport.com> on 28 Jan 1997.
 #
+#   Run with -debug for debugging output.
 
 BEGIN {
-    chdir 't' if -d 't';
-    # @INC = '../lib';
+    require 't/CORE/test.pl';
 }
 
 use Config;
-
-print "1..171\n";
-
-my $test = 1;
-sub test (&) {
-  print ((&{$_[0]})?"ok $test\n":"not ok $test\n");
-  $test++;
-}
 
 my $i = 1;
 sub foo { $i = shift if @_; $i }
 
 # no closure
-test { foo == 1 };
+is(foo, 1);
 foo(2);
-test { foo == 2 };
+is(foo, 2);
 
 # closure: lexical outside sub
 my $foo = sub {$i = shift if @_; $i };
 my $bar = sub {$i = shift if @_; $i };
-test {&$foo() == 2 };
+is(&$foo(), 2);
 &$foo(3);
-test {&$foo() == 3 };
+is(&$foo(), 3);
 # did the lexical change?
-test { foo == 3 and $i == 3};
+is(foo, 3, 'lexical changed');
+is($i, 3, 'lexical changed');
 # did the second closure notice?
-test {&$bar() == 3 };
+is(&$bar(), 3, 'second closure noticed');
 
 # closure: lexical inside sub
 sub bar {
@@ -47,10 +40,10 @@ sub bar {
 
 $foo = bar(4);
 $bar = bar(5);
-test {&$foo() == 4 };
+is(&$foo(), 4);
 &$foo(6);
-test {&$foo() == 6 };
-test {&$bar() == 5 };
+is(&$foo(), 6);
+is(&$bar(), 5);
 
 # nested closures
 sub bizz {
@@ -65,14 +58,14 @@ sub bizz {
 }
 $foo = bizz();
 $bar = bizz();
-test {&$foo() == 7 };
+is(&$foo(), 7);
 &$foo(8);
-test {&$foo() == 8 };
-test {&$bar() == 7 };
+is(&$foo(), 8);
+is(&$bar(), 7);
 
 $foo = bizz(9);
 $bar = bizz(10);
-test {&$foo(11)-1 == &$bar()};
+is(&$foo(11)-1, &$bar());
 
 my @foo;
 for (qw(0 1 2 3 4)) {
@@ -80,25 +73,21 @@ for (qw(0 1 2 3 4)) {
   $foo[$_] = sub {$i = shift if @_; $i };
 }
 
-test {
-  &{$foo[0]}() == 0 and
-  &{$foo[1]}() == 1 and
-  &{$foo[2]}() == 2 and
-  &{$foo[3]}() == 3 and
-  &{$foo[4]}() == 4
-  };
+is(&{$foo[0]}(), 0);
+is(&{$foo[1]}(), 1);
+is(&{$foo[2]}(), 2);
+is(&{$foo[3]}(), 3);
+is(&{$foo[4]}(), 4);
 
 for (0 .. 4) {
   &{$foo[$_]}(4-$_);
 }
 
-test {
-  &{$foo[0]}() == 4 and
-  &{$foo[1]}() == 3 and
-  &{$foo[2]}() == 2 and
-  &{$foo[3]}() == 1 and
-  &{$foo[4]}() == 0
-  };
+is(&{$foo[0]}(), 4);
+is(&{$foo[1]}(), 3);
+is(&{$foo[2]}(), 2);
+is(&{$foo[3]}(), 1);
+is(&{$foo[4]}(), 0);
 
 sub barf {
   my @foo;
@@ -110,25 +99,21 @@ sub barf {
 }
 
 @foo = barf();
-test {
-  &{$foo[0]}() == 0 and
-  &{$foo[1]}() == 1 and
-  &{$foo[2]}() == 2 and
-  &{$foo[3]}() == 3 and
-  &{$foo[4]}() == 4
-  };
+is(&{$foo[0]}(), 0);
+is(&{$foo[1]}(), 1);
+is(&{$foo[2]}(), 2);
+is(&{$foo[3]}(), 3);
+is(&{$foo[4]}(), 4);
 
 for (0 .. 4) {
   &{$foo[$_]}(4-$_);
 }
 
-test {
-  &{$foo[0]}() == 4 and
-  &{$foo[1]}() == 3 and
-  &{$foo[2]}() == 2 and
-  &{$foo[3]}() == 1 and
-  &{$foo[4]}() == 0
-  };
+is(&{$foo[0]}(), 4);
+is(&{$foo[1]}(), 3);
+is(&{$foo[2]}(), 2);
+is(&{$foo[3]}(), 1);
+is(&{$foo[4]}(), 0);
 
 # test if closures get created in optimized for loops
 
@@ -137,25 +122,21 @@ for my $n ('A'..'E') {
     $foo{$n} = sub { $n eq $_[0] };
 }
 
-test {
-  &{$foo{A}}('A') and
-  &{$foo{B}}('B') and
-  &{$foo{C}}('C') and
-  &{$foo{D}}('D') and
-  &{$foo{E}}('E')
-};
+ok(&{$foo{A}}('A'));
+ok(&{$foo{B}}('B'));
+ok(&{$foo{C}}('C'));
+ok(&{$foo{D}}('D'));
+ok(&{$foo{E}}('E'));
 
 for my $n (0..4) {
     $foo[$n] = sub { $n == $_[0] };
 }
 
-test {
-  &{$foo[0]}(0) and
-  &{$foo[1]}(1) and
-  &{$foo[2]}(2) and
-  &{$foo[3]}(3) and
-  &{$foo[4]}(4)
-};
+ok(&{$foo[0]}(0));
+ok(&{$foo[1]}(1));
+ok(&{$foo[2]}(2));
+ok(&{$foo[3]}(3));
+ok(&{$foo[4]}(4));
 
 for my $n (0..4) {
     $foo[$n] = sub {
@@ -164,19 +145,17 @@ for my $n (0..4) {
 		   };
 }
 
-test {
-  $foo[0]->()->(0) and
-  $foo[1]->()->(1) and
-  $foo[2]->()->(2) and
-  $foo[3]->()->(3) and
-  $foo[4]->()->(4)
-};
+ok($foo[0]->()->(0));
+ok($foo[1]->()->(1));
+ok($foo[2]->()->(2));
+ok($foo[3]->()->(3));
+ok($foo[4]->()->(4));
 
 {
     my $w;
     $w = sub {
 	my ($i) = @_;
-	test { $i == 10 };
+	is($i, 10);
 	sub { $w };
     };
     $w->(10);
@@ -217,6 +196,7 @@ test {
 	# a naked block, or another named sub
 	for $within (qw!foreach naked other_sub!) {
 
+	  my $test = curr_test();
 	  # Here are a number of variables which show what's
 	  # going on, in a way.
 	  $nc_attempt = 0+		# Named closure attempted
@@ -234,14 +214,14 @@ test {
 
 	  $code = "# This is a test script built by t/op/closure.t\n\n";
 
-	  $code .= <<"DEBUG_INFO" if $debugging;
-# inner_type: $inner_type 
+	  print <<"DEBUG_INFO" if $debugging;
+# inner_type:     $inner_type 
 # where_declared: $where_declared 
-# within: $within
-# nc_attempt: $nc_attempt
-# call_inner: $call_inner
-# call_outer: $call_outer
-# undef_outer: $undef_outer
+# within:         $within
+# nc_attempt:     $nc_attempt
+# call_inner:     $call_inner
+# call_outer:     $call_outer
+# undef_outer:    $undef_outer
 DEBUG_INFO
 
 	  $code .= <<"END_MARK_ONE";
@@ -252,22 +232,15 @@ END_MARK_ONE
 
 	  $code .=  <<"END_MARK_TWO" if $nc_attempt;
     return if index(\$msg, 'will not stay shared') != -1;
-    return if index(\$msg, 'may be unavailable') != -1;
+    return if index(\$msg, 'is not available') != -1;
 END_MARK_TWO
 
 	  $code .= <<"END_MARK_THREE";		# Backwhack a lot!
     print "not ok: got unexpected warning \$msg\\n";
 } }
 
-{
-    my \$test = $test;
-    sub test (&) {
-      my \$result = &{\$_[0]};
-      print "not " unless \$result;
-      print "ok \$test\\n";
-      \$test++;
-    }
-}
+require 't/CORE/test.pl';
+curr_test($test);
 
 # some of the variables which the closure will access
 \$global_scalar = 1000;
@@ -421,15 +394,16 @@ END
 	    }
 
 	    # Here's the test:
+	    my $desc = "$inner_type $where_declared $within $inner_sub_test";
 	    if ($inner_type eq 'anon') {
-	      $code .= "test { &\$anon_$test == $expected };\n"
+	      $code .= "is(&\$anon_$test, $expected, '$desc');\n"
 	    } else {
-	      $code .= "test { &named_$test == $expected };\n"
+	      $code .= "is(&named_$test, $expected, '$desc');\n"
 	    }
 	    $test++;
 	  }
 
-	  if ($Config{d_fork} and $^O ne 'VMS' and $^O ne 'MSWin32') {
+	  if ($Config{d_fork} and $^O ne 'VMS' and $^O ne 'MSWin32' and $^O ne 'NetWare') {
 	    # Fork off a new perl to run the tests.
 	    # (This is so we can catch spurious warnings.)
 	    $| = 1; print ""; $| = 0; # flush output before forking
@@ -443,8 +417,8 @@ END
 	      close READ2;
 	      open STDOUT, ">&WRITE"  or die "Can't redirect STDOUT: $!";
 	      open STDERR, ">&WRITE2" or die "Can't redirect STDERR: $!";
-	      exec './perl', '-w', '-'
-		or die "Can't exec ./perl: $!";
+	      exec which_perl(), '-w', '-'
+		or die "Can't exec perl: $!";
 	    } else {
 	      # Parent process here.
 	      close WRITE;
@@ -459,15 +433,12 @@ END
 	    }
 	  } else {
 	    # No fork().  Do it the hard way.
-	    my $cmdfile = "tcmd$$";  $cmdfile++ while -e $cmdfile;
-	    my $errfile = "terr$$";  $errfile++ while -e $errfile;
-	    my @tmpfiles = ($cmdfile, $errfile);
+	    my $cmdfile = tempfile();
+	    my $errfile = tempfile();
 	    open CMD, ">$cmdfile"; print CMD $code; close CMD;
-	    my $cmd = (($^O eq 'VMS') ? "MCR $^X"
-		       : ($^O eq 'MSWin32') ? '.\perl'
-		       : './perl');
+	    my $cmd = which_perl();
 	    $cmd .= " -w $cmdfile 2>$errfile";
-	    if ($^O eq 'VMS' or $^O eq 'MSWin32') {
+	    if ($^O eq 'VMS' or $^O eq 'MSWin32' or $^O eq 'NetWare') {
 	      # Use pipe instead of system so we don't inherit STD* from
 	      # this process, and then foul our pipe back to parent by
 	      # redirecting output in the child.
@@ -475,29 +446,32 @@ END
 	      { local $/; $output = join '', <PERL> }
 	      close PERL;
 	    } else {
-	      my $outfile = "tout$$";  $outfile++ while -e $outfile;
-	      push @tmpfiles, $outfile;
+	      my $outfile = tempfile();
 	      system "$cmd >$outfile";
 	      { local $/; open IN, $outfile; $output = <IN>; close IN }
 	    }
 	    if ($?) {
 	      printf "not ok: exited with error code %04X\n", $?;
-	      $debugging or do { 1 while unlink @tmpfiles };
 	      exit;
 	    }
 	    { local $/; open IN, $errfile; $errors = <IN>; close IN }
-	    1 while unlink @tmpfiles;
 	  }
 	  print $output;
+	  curr_test($test);
 	  print STDERR $errors;
+	  # This has the side effect of alerting *our* test.pl to the state of
+	  # what has just been passed to STDOUT, so that if anything there has
+	  # failed, our test.pl will print a diagnostic and exit uncleanly.
+	  unlike($output, qr/not ok/, 'All good');
+	  is($errors, '', 'STDERR is silent');
 	  if ($debugging && ($errors || $? || ($output =~ /not ok/))) {
 	    my $lnum = 0;
 	    for $line (split '\n', $code) {
 	      printf "%3d:  %s\n", ++$lnum, $line;
 	    }
 	  }
-	  printf "not ok: exited with error code %04X\n", $? if $?;
-	  print "-" x 30, "\n" if $debugging;
+	  is($?, 0, 'exited cleanly') or diag(sprintf "Error code $? = 0x%X", $?);
+	  print '#', "-" x 30, "\n" if $debugging;
 
 	}	# End of foreach $within
       }	# End of foreach $where_declared
@@ -505,3 +479,207 @@ END
 
 }
 
+# The following dumps core with perl <= 5.8.0 (bugid 9535) ...
+BEGIN { $vanishing_pad = sub { eval $_[0] } }
+$some_var = 123;
+is($vanishing_pad->('$some_var'), 123, 'RT #9535');
+
+# ... and here's another coredump variant - this time we explicitly
+# delete the sub rather than using a BEGIN ...
+
+sub deleteme { $a = sub { eval '$newvar' } }
+deleteme();
+*deleteme = sub {}; # delete the sub
+$newvar = 123; # realloc the SV of the freed CV
+is($a->(), 123, 'RT #9535');
+
+# ... and a further coredump variant - the fixup of the anon sub's
+# CvOUTSIDE pointer when the middle eval is freed, wasn't good enough to
+# survive the outer eval also being freed.
+
+$x = 123;
+$a = eval q(
+    eval q[
+	sub { eval '$x' }
+    ]
+);
+@a = ('\1\1\1\1\1\1\1') x 100; # realloc recently-freed CVs
+is($a->(), 123, 'RT #9535');
+
+# this coredumped on <= 5.8.0 because evaling the closure caused
+# an SvFAKE to be added to the outer anon's pad, which was then grown.
+my $outer;
+sub {
+    my $x;
+    $x = eval 'sub { $outer }';
+    $x->();
+    $a = [ 99 ];
+    $x->();
+}->();
+pass();
+
+# [perl #17605] found that an empty block called in scalar context
+# can lead to stack corruption
+{
+    my $x = "foooobar";
+    $x =~ s/o//eg;
+    is($x, 'fbar', 'RT #17605');
+}
+
+# DAPM 24-Nov-02
+# SvFAKE lexicals should be visible thoughout a function.
+# On <= 5.8.0, the third test failed,  eg bugid #18286
+
+{
+    my $x = 1;
+    sub fake {
+		is(sub {eval'$x'}->(), 1, 'RT #18286');
+	{ $x;	is(sub {eval'$x'}->(), 1, 'RT #18286'); }
+		is(sub {eval'$x'}->(), 1, 'RT #18286');
+    }
+}
+fake();
+
+{
+    $x = 1;
+    my $x = 2;
+    sub tmp { sub { eval '$x' } }
+    my $a = tmp();
+    undef &tmp;
+    is($a->(), 2,
+       "undefining a sub shouldn't alter visibility of outer lexicals");
+}
+
+# handy class: $x = Watch->new(\$foo,'bar')
+# causes 'bar' to be appended to $foo when $x is destroyed
+sub Watch::new { bless [ $_[1], $_[2] ], $_[0] }
+sub Watch::DESTROY { ${$_[0][0]} .= $_[0][1] }
+
+# bugid 1028:
+# nested anon subs (and associated lexicals) not freed early enough
+
+sub linger {
+    my $x = Watch->new($_[0], '2');
+    sub {
+	$x;
+	my $y;
+	sub { $y; };
+    };
+}
+{
+    my $watch = '1';
+    linger(\$watch);
+    is($watch, '12', 'RT #1028');
+}
+
+# bugid 10085
+# obj not freed early enough
+
+sub linger2 { 
+    my $obj = Watch->new($_[0], '2');
+    sub { sub { $obj } };
+}   
+{
+    my $watch = '1';
+    linger2(\$watch);
+    is($watch, 12, 'RT #10085');
+}
+
+# bugid 16302 - named subs didn't capture lexicals on behalf of inner subs
+
+{
+    my $x = 1;
+    sub f16302 {
+	sub {
+	    is($x, 1, 'RT #16302');
+	}->();
+    }
+}
+f16302();
+
+# The presence of an eval should turn cloneless anon subs into clonable
+# subs - otherwise the CvOUTSIDE of that sub may be wrong
+
+{
+    my %a;
+    for my $x (7,11) {
+	$a{$x} = sub { $x=$x; sub { eval '$x' } };
+    }
+    is($a{7}->()->() + $a{11}->()->(), 18);
+}
+
+{
+   # bugid #23265 - this used to coredump during destruction of PL_maincv
+   # and its children
+
+    fresh_perl_is(<< '__EOF__', "yxx\n", {stderr => 1}, 'RT #23265');
+        print
+            sub {$_[0]->(@_)} -> (
+                sub {
+                    $_[1]
+                        ?  $_[0]->($_[0], $_[1] - 1) .  sub {"x"}->()
+                        : "y"
+                },   
+                2
+            )
+            , "\n"
+        ;
+__EOF__
+}
+
+{
+    # bugid #24914 = used to coredump restoring PL_comppad in the
+    # savestack, due to the early freeing of the anon closure
+
+    fresh_perl_is('sub d {die} my $f; $f = sub {my $x=1; $f = 0; d}; eval{$f->()}; print qq(ok\n)',
+		  "ok\n", {stderr => 1}, 'RT #24914');
+}
+
+
+# After newsub is redefined outside the BEGIN, its CvOUTSIDE should point
+# to main rather than BEGIN, and BEGIN should be freed.
+
+# perl bug #163 https://code.google.com/p/perl-compiler/issues/detail?id=163
+{
+    my $flag = 0;
+    sub  X::DESTROY { $flag = 1 }
+    {
+	my $x;
+	BEGIN {$x = \&newsub }
+	sub newsub {};
+	$x = bless {}, 'X';
+    }
+    is($flag, 1);
+}
+
+sub f {
+    my $x if $_[0];
+    sub { \$x }
+}
+
+{
+    f(1);
+    my $c1= f(0);
+    my $c2= f(0);
+
+    my $r1 = $c1->();
+    my $r2 = $c2->();
+    isnt($r1, $r2,
+	 "don't copy a stale lexical; crate a fresh undef one instead");
+}
+
+# [perl #63540] Don’t treat sub { if(){.....}; "constant" } as a constant
+
+BEGIN {
+  my $x = 7;
+  *baz = sub() { if($x){ () = "tralala"; blonk() }; 0 }
+}
+{
+  my $blonk_was_called;
+  *blonk = sub { ++$blonk_was_called };
+  my $ret = baz();
+  is($ret, 0, 'RT #63540');
+  is($blonk_was_called, 1, 'RT #63540');
+}
+
+done_testing();

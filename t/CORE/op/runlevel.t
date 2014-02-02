@@ -6,50 +6,14 @@
 ## Adapted and expanded by Gurusamy Sarathy <gsar@activestate.com>
 ##
 
-chdir 't' if -d 't';
-# @INC = '../lib';
-$Is_VMS = $^O eq 'VMS';
-$Is_MSWin32 = $^O eq 'MSWin32';
-$ENV{PERL5LIB} = "../lib" unless $Is_VMS;
+unshift @INC, 't/CORE/lib';
+require 't/CORE/test.pl';
 
 $|=1;
 
-undef $/;
-@prgs = split "\n########\n", <DATA>;
-print "1..", scalar @prgs, "\n";
+run_multiple_progs('', \*DATA);
 
-$tmpfile = "runltmp000";
-1 while -f ++$tmpfile;
-END { if ($tmpfile) { 1 while unlink $tmpfile; } }
-
-for (@prgs){
-    my $switch = "";
-    if (s/^\s*(-\w+)//){
-       $switch = $1;
-    }
-    my($prog,$expected) = split(/\nEXPECT\n/, $_);
-    open TEST, ">$tmpfile";
-    print TEST "$prog\n";
-    close TEST;
-    my $results = $Is_VMS ?
-                  `MCR $^X "-I[-.lib]" $switch $tmpfile 2>&1` :
-		      $Is_MSWin32 ?  
-			  `.\\perl -I../lib $switch $tmpfile 2>&1` :
-			      `./perl $switch $tmpfile 2>&1`;
-    my $status = $?;
-    $results =~ s/\n+$//;
-    # allow expected output to be written as if $prog is on STDIN
-    $results =~ s/runltmp\d+/-/g;
-    $results =~ s/\n%[A-Z]+-[SIWEF]-.*$// if $Is_VMS;  # clip off DCL status msg
-    $expected =~ s/\n+$//;
-    if ($results ne $expected) {
-       print STDERR "PROG: $switch\n$prog\n";
-       print STDERR "EXPECTED:\n$expected\n";
-       print STDERR "GOT:\n$results\n";
-       print "not ";
-    }
-    print "ok ", ++$i, "\n";
-}
+done_testing();
 
 __END__
 @a = (1, 2, 3);
@@ -176,19 +140,19 @@ print "bar reached\n";
 EXPECT
 Can't "goto" out of a pseudo block at - line 2.
 ########
+%seen = ();
 sub sortfn {
   (split(/./, 'x'x10000))[0];
   my (@y) = ( 4, 6, 5);
   @y = sort { $a <=> $b } @y;
-  print "sortfn ".join(', ', @y)."\n";
+  my $t = "sortfn ".join(', ', @y)."\n";
+  print $t if ($seen{$t}++ == 0);
   return $_[0] <=> $_[1];
 }
 @x = ( 3, 2, 1 );
 @x = sort { &sortfn($a, $b) } @x;
 print "---- ".join(', ', @x)."\n";
 EXPECT
-sortfn 4, 5, 6
-sortfn 4, 5, 6
 sortfn 4, 5, 6
 ---- 1, 2, 3
 ########
@@ -306,6 +270,7 @@ $SIG{__DIE__} = sub {
 eval { die };
 &{sub { eval 'die' }}();
 sub foo { eval { die } } foo();
+{package rmb; sub{ eval{die} } ->() };	# check __ANON__ knows package	
 EXPECT
 In DIE
 main|-|8|(eval)
@@ -315,6 +280,9 @@ main|-|9|main::__ANON__
 In DIE
 main|-|10|(eval)
 main|-|10|main::foo
+In DIE
+rmb|-|11|(eval)
+rmb|-|11|rmb::__ANON__
 ########
 package TEST;
  
@@ -364,3 +332,36 @@ sub d {
 }
 EXPECT
 0
+########
+sub TIEHANDLE { bless {} }
+sub PRINT { next }
+
+tie *STDERR, '';
+{ map ++$_, 1 }
+
+EXPECT
+Can't "next" outside a loop block at - line 2.
+########
+sub TIEHANDLE { bless {} }
+sub PRINT { print "[TIE] $_[1]" }
+
+tie *STDERR, '';
+die "DIE\n";
+
+EXPECT
+[TIE] DIE
+########
+sub TIEHANDLE { bless {} }
+sub PRINT { 
+    (split(/./, 'x'x10000))[0];
+    eval('die("test\n")');
+    warn "[TIE] $_[1]";
+}
+open OLDERR, '>&STDERR';
+tie *STDERR, '';
+
+use warnings FATAL => qw(uninitialized);
+print undef;
+
+EXPECT
+[TIE] Use of uninitialized value in print at - line 11.

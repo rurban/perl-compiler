@@ -1,8 +1,9 @@
 #!./perl
 
+use Errno;
 BEGIN {
-    chdir 't/CORE' if -d 't';
-#     @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 # Just a few very basic tests cribbed from t/io/print.t,
@@ -11,9 +12,6 @@ BEGIN {
 # the same way as print in any case.
 
 use strict 'vars';
-eval 'use Errno';
-die $@ if $@ and !$ENV{PERL_CORE_MINITEST};
-
 use feature "say";
 
 say "1..12";
@@ -32,15 +30,11 @@ say $bar "ok 7";
 
 say {"STDOUT"} "ok 8";
 
-if (!exists &Errno::EBADF) {
-    print "ok 9 # skipped: no EBADF\n";
-} else {
-    $! = 0;
-    no warnings 'unopened';
-    say NONEXISTENT "foo";
-    print "not " if ($! != &Errno::EBADF);
-    say "ok 9";
-}
+$! = 0;
+no warnings 'unopened';
+say NONEXISTENT "foo";
+print "not " if ($! != &Errno::EBADF);
+say "ok 9";
 
 $_ = "ok 10";
 say;

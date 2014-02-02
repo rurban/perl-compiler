@@ -1,26 +1,31 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    # @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
 }
 
-print "1..11\n";
+# This ok() function is specially written to avoid any concatenation.
+my $test = 1;
+sub ok {
+    my($ok, $name) = @_;
+
+    printf "%sok %d - %s\n", ($ok ? "" : "not "), $test, $name;
+
+    printf "# Failed test at line %d\n", (caller)[2] unless $ok;
+
+    $test++;
+    return $ok;
+}
+
+print "1..30\n";
 
 ($a, $b, $c) = qw(foo bar);
 
-print "not " unless "$a" eq "foo";
-print "ok 1\n";
-
-print "not " unless "$a$b" eq "foobar";
-print "ok 2\n";
-
-print "not " unless "$c$a$c" eq "foo";
-print "ok 3\n";
+ok("$a"     eq "foo",    "verifying assign");
+ok("$a$b"   eq "foobar", "basic concatenation");
+ok("$c$a$c" eq "foo",    "concatenate undef, fore and aft");
 
 # Okay, so that wasn't very challenging.  Let's go Unicode.
-
-my $test = 4;
 
 {
     # bug id 20000819.004 
@@ -28,29 +33,21 @@ my $test = 4;
     $_ = $dx = "\x{10f2}";
     s/($dx)/$dx$1/;
     {
-	use bytes;
-	print "not " unless $_ eq "$dx$dx";
-	print "ok $test\n";
-	$test++;
+        ok($_ eq  "$dx$dx","bug id 20000819.004, back");
     }
 
+    # perlcc issue 225 - https://code.google.com/p/perl-compiler/issues/detail?id=225
     $_ = $dx = "\x{10f2}";
     s/($dx)/$1$dx/;
     {
-	use bytes;
-	print "not " unless $_ eq "$dx$dx";
-	print "ok $test\n";
-	$test++;
+        ok($_ eq  "$dx$dx","bug id 20000819.004, front");
     }
 
     $dx = "\x{10f2}";
     $_  = "\x{10f2}\x{10f2}";
     s/($dx)($dx)/$1$2/;
     {
-	use bytes;
-	print "not " unless $_ eq "$dx$dx";
-	print "ok $test\n";
-	$test++;
+        ok($_ eq  "$dx$dx","bug id 20000819.004, front and back");
     }
 }
 
@@ -60,9 +57,9 @@ my $test = 4;
 
     my $a;
     $a .= "\x{1ff}";
-    print "not " unless $a eq "\x{1ff}";
-    print "ok $test\n";
-    $test++;
+    ok($a eq  "\x{1ff}", "bug id 20000901.092, undef left");
+    $a .= undef;
+    ok($a eq  "\x{1ff}", "bug id 20000901.092, undef right");
 }
 
 {
@@ -72,29 +69,94 @@ my $test = 4;
 
     # Without the fix this 5.7.0 would croak:
     # Modification of a read-only value attempted at ...
-    "$2\x{1234}";
-
-    print "ok $test\n";
-    $test++;
+    eval {"$2\x{1234}"};
+    ok(!$@, "bug id 20001020.006, left");
 
     # For symmetry with the above.
-    "\x{1234}$2";
-
-    print "ok $test\n";
-    $test++;
+    eval {"\x{1234}$2"};
+    ok(!$@, "bug id 20001020.006, right");
 
     *pi = \undef;
     # This bug existed earlier than the $2 bug, but is fixed with the same
     # patch. Without the fix this 5.7.0 would also croak:
     # Modification of a read-only value attempted at ...
-    "$pi\x{1234}";
-
-    print "ok $test\n";
-    $test++;
+    eval{"$pi\x{1234}"};
+    ok(!$@, "bug id 20001020.006, constant left");
 
     # For symmetry with the above.
-    "\x{1234}$pi";
+    eval{"\x{1234}$pi"};
+    ok(!$@, "bug id 20001020.006, constant right");
+}
 
-    print "ok $test\n";
-    $test++;
+sub beq { use bytes; $_[0] eq $_[1]; }
+
+{
+    # concat should not upgrade its arguments.
+    my($l, $r, $c);
+
+    ($l, $r, $c) = ("\x{101}", "\x{fe}", "\x{101}\x{fe}");
+    ok(beq($l.$r, $c), "concat utf8 and byte");
+    ok(beq($l, "\x{101}"), "right not changed after concat u+b");
+    ok(beq($r, "\x{fe}"), "left not changed after concat u+b");
+
+    ($l, $r, $c) = ("\x{fe}", "\x{101}", "\x{fe}\x{101}");
+    ok(beq($l.$r, $c), "concat byte and utf8");
+    ok(beq($l, "\x{fe}"), "right not changed after concat b+u");
+    ok(beq($r, "\x{101}"), "left not changed after concat b+u");
+}
+
+{
+    my $a; ($a .= 5) . 6;
+    ok($a == 5, '($a .= 5) . 6 - present since 5.000');
+}
+
+{
+    # [perl #24508] optree construction bug
+    sub strfoo { "x" }
+    my ($x, $y);
+    $y = ($x = '' . strfoo()) . "y";
+    ok( "$x,$y" eq "x,xy", 'figures out correct target' );
+}
+
+{
+    # [perl #26905] "use bytes" doesn't apply byte semantics to concatenation
+
+    my $p = "\xB6"; # PILCROW SIGN (ASCII/EBCDIC), 2bytes in UTF-X
+    my $u = "\x{100}";
+    my $b = pack 'a*', "\x{100}";
+    my $pu = "\xB6\x{100}";
+    my $up = "\x{100}\xB6";
+    my $x1 = $p;
+    my $y1 = $u;
+
+    use bytes;
+    ok(beq($p.$u, $p.$b), "perl #26905, left eq bytes");
+    ok(beq($u.$p, $b.$p), "perl #26905, right eq bytes");
+    # perlcc issue 224 - https://code.google.com/p/perl-compiler/issues/detail?id=224
+    ok(!beq($p.$u, $pu),  "perl #26905, left ne unicode");
+    ok(!beq($u.$p, $up),  "perl #26905, right ne unicode");
+
+    $x1 .= $u;
+    $x2 = $p . $u;
+    $y1 .= $p;
+    $y2 = $u . $p;
+
+    no bytes;
+    ok(beq($x1, $x2), "perl #26905, left,  .= vs = . in bytes");
+    ok(beq($y1, $y2), "perl #26905, right, .= vs = . in bytes");
+    ok(($x1 eq $x2),  "perl #26905, left,  .= vs = . in chars");
+    ok(($y1 eq $y2),  "perl #26905, right, .= vs = . in chars");
+}
+
+{
+    # Concatenation needs to preserve UTF8ness of left oper.
+    my $x = eval"qr/\x{fff}/";
+    ok( ord chop($x .= "\303\277") == 191, "UTF8ness preserved" );
+}
+
+{
+    my $x;
+    $x = "a" . "b";
+    $x .= "-append-";
+    ok($x eq "ab-append-", "Appending to something initialized using constant folding");
 }

@@ -4,17 +4,16 @@
 #
 
 BEGIN {
-    chdir 't' if -d 't';
-    # @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
     $| = 1;
+    require 't/CORE/test.pl';
 }
 
-print "1..80\n";
+plan tests => 125;
 
 $a = {};
 bless $a, "Bob";
-print "not " unless $a->isa("Bob");
-print "ok 1\n";
+ok $a->isa("Bob");
 
 package Human;
 sub eat {}
@@ -24,7 +23,8 @@ package Female;
 
 package Alice;
 @ISA=qw(Bob Female);
-sub drink {}
+sub sing;
+sub drink { return "drinking " . $_[1]  }
 sub new { bless {} }
 
 $Alice::VERSION = 2.718;
@@ -44,99 +44,273 @@ $Alice::VERSION = 2.718;
 
 package main;
 
-my $i = 2;
-sub test { print "not " unless shift; print "ok $i\n"; $i++; }
+
 
 $a = new Alice;
 
-test $a->isa("Alice");
+ok $a->isa("Alice");
+ok $a->isa("main::Alice");    # check that alternate class names work
 
-test $a->isa("Bob");
+ok(("main::Alice"->new)->isa("Alice"));
 
-test $a->isa("Female");
+ok $a->isa("Bob");
+ok $a->isa("main::Bob");
 
-test $a->isa("Human");
+ok $a->isa("Female");
 
-test ! $a->isa("Male");
+ok $a->isa("Human");
 
-test ! $a->isa('Programmer');
+ok ! $a->isa("Male");
 
-test $a->can("drink");
+ok ! $a->isa('Programmer');
 
-test $a->can("eat");
+ok $a->isa("HASH");
 
-test ! $a->can("sleep");
+ok $a->can("eat");
+ok ! $a->can("sleep");
+ok my $ref = $a->can("drink");        # returns a coderef
+is $a->$ref("tea"), "drinking tea"; # ... which works
+ok $ref = $a->can("sing");
+eval { $a->$ref() };
+ok $@;                                # ... but not if no actual subroutine
 
-test (!Cedric->isa('Programmer'));
+ok (!Cedric->isa('Programmer'));
 
-test (Cedric->isa('Human'));
+ok (Cedric->isa('Human'));
 
 push(@Cedric::ISA,'Programmer');
 
-test (Cedric->isa('Programmer'));
+ok (Cedric->isa('Programmer'));
 
 {
     package Alice;
     base::->import('Programmer');
 }
 
-test $a->isa('Programmer');
-test $a->isa("Female");
+ok $a->isa('Programmer');
+ok $a->isa("Female");
 
 @Cedric::ISA = qw(Bob);
 
-test (!Cedric->isa('Programmer'));
+ok (!Cedric->isa('Programmer'));
 
 my $b = 'abc';
 my @refs = qw(SCALAR SCALAR     LVALUE      GLOB ARRAY HASH CODE);
 my @vals = (  \$b,   \3.14, \substr($b,1,1), \*b,  [],  {}, sub {} );
 for ($p=0; $p < @refs; $p++) {
     for ($q=0; $q < @vals; $q++) {
-        test UNIVERSAL::isa($vals[$p], $refs[$q]) eq ($p==$q or $p+$q==1);
+        is UNIVERSAL::isa($vals[$p], $refs[$q]), ($p==$q or $p+$q==1);
     };
 };
 
-test ! UNIVERSAL::can(23, "can");
+ok ! UNIVERSAL::can(23, "can");
 
-test $a->can("VERSION");
+ok $a->can("VERSION");
 
-test $a->can("can");
-test ! $a->can("export_tags");	# a method in Exporter
+ok $a->can("can");
+ok ! $a->can("export_tags");	# a method in Exporter
 
-test (eval { $a->VERSION }) == 2.718;
+cmp_ok eval { $a->VERSION }, '==', 2.718;
 
-test ! (eval { $a->VERSION(2.719) }) &&
-         $@ =~ /^Alice version 2.71(?:9|8999\d+) required--this is only version 2.718 at /;
+ok ! (eval { $a->VERSION(2.719) });
+like $@, qr/^Alice version 2.719 required--this is only version 2.718 at /;
 
-test (eval { $a->VERSION(2.718) }) && ! $@;
+ok (eval { $a->VERSION(2.718) });
+is $@, '';
 
 my $subs = join ' ', sort grep { defined &{"UNIVERSAL::$_"} } keys %UNIVERSAL::;
+## The test for import here is *not* because we want to ensure that UNIVERSAL
+## can always import; it is an historical accident that UNIVERSAL can import.
 if ('a' lt 'A') {
-    test $subs eq "can isa VERSION";
+    is $subs, "can import isa DOES VERSION";
 } else {
-    test $subs eq "VERSION can isa";
+    is $subs, "DOES VERSION can import isa";
 }
 
-test $a->isa("UNIVERSAL");
+ok $a->isa("UNIVERSAL");
+
+ok ! UNIVERSAL::isa([], "UNIVERSAL");
+
+ok ! UNIVERSAL::can({}, "can");
+
+ok UNIVERSAL::isa(Alice => "UNIVERSAL");
+
+cmp_ok UNIVERSAL::can(Alice => "can"), '==', \&UNIVERSAL::can;
 
 # now use UNIVERSAL.pm and see what changes
 eval "use UNIVERSAL";
 
-test $a->isa("UNIVERSAL");
+ok $a->isa("UNIVERSAL");
 
 my $sub2 = join ' ', sort grep { defined &{"UNIVERSAL::$_"} } keys %UNIVERSAL::;
 # XXX import being here is really a bug
 if ('a' lt 'A') {
-    test $sub2 eq "can import isa VERSION";
+    is $sub2, "can import isa DOES VERSION";
 } else {
-    test $sub2 eq "VERSION can import isa";
+    is $sub2, "DOES VERSION can import isa";
 }
 
 eval 'sub UNIVERSAL::sleep {}';
-test $a->can("sleep");
+ok $a->can("sleep");
 
-test ! UNIVERSAL::can($b, "can");
+ok ! UNIVERSAL::can($b, "can");
 
-test ! $a->can("export_tags");	# a method in Exporter
+ok ! $a->can("export_tags");	# a method in Exporter
 
-test ! UNIVERSAL::isa("\xff\xff\xff\0", 'HASH');
+ok ! UNIVERSAL::isa("\xff\xff\xff\0", 'HASH');
+
+{
+    package Pickup;
+    use UNIVERSAL qw( isa can VERSION );
+
+    ::ok isa "Pickup", UNIVERSAL;
+    ::cmp_ok can( "Pickup", "can" ), '==', \&UNIVERSAL::can;
+    ::ok VERSION "UNIVERSAL" ;
+}
+
+{
+    # test isa() and can() on magic variables
+    "Human" =~ /(.*)/;
+    ok $1->isa("Human");
+    ok $1->can("eat");
+    package HumanTie;
+    sub TIESCALAR { bless {} }
+    sub FETCH { "Human" }
+    tie my($x), "HumanTie";
+    ::ok $x->isa("Human");
+    ::ok $x->can("eat");
+}
+
+# bugid 3284
+# a second call to isa('UNIVERSAL') when @ISA is null failed due to caching
+
+@X::ISA=();
+my $x = {}; bless $x, 'X';
+ok $x->isa('UNIVERSAL');
+ok $x->isa('UNIVERSAL');
+
+
+# Check that the "historical accident" of UNIVERSAL having an import()
+# method doesn't effect anyone else.
+eval { Some::Package->import("bar") };
+is $@, '';
+
+
+# This segfaulted in a blead.
+fresh_perl_is('package Foo; Foo->VERSION;  print "ok"', 'ok');
+
+# So did this.
+fresh_perl_is('$:; UNIVERSAL::isa(":","Unicode::String");print "ok"','ok');
+
+package Foo;
+
+sub DOES { 1 }
+
+package Bar;
+
+@Bar::ISA = 'Foo';
+
+package Baz;
+
+package main;
+ok( Foo->DOES( 'bar' ), 'DOES() should call DOES() on class' );
+ok( Bar->DOES( 'Bar' ), '... and should fall back to isa()' );
+ok( Bar->DOES( 'Foo' ), '... even when inherited' );
+ok( Baz->DOES( 'Baz' ), '... even without inheriting any other DOES()' );
+ok( ! Baz->DOES( 'Foo' ), '... returning true or false appropriately' );
+
+package Pig;
+package Bodine;
+Bodine->isa('Pig');
+*isa = \&UNIVERSAL::isa;
+eval { isa({}, 'HASH') };
+::is($@, '', "*isa correctly found");
+
+package main;
+eval { UNIVERSAL::DOES([], "foo") };
+like( $@, qr/Can't call method "DOES" on unblessed reference/,
+    'DOES call error message says DOES, not isa' );
+
+# Tests for can seem to be split between here and method.t
+# Add the verbatim perl code mentioned in the comments of
+# http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2001-05/msg01710.html
+# but never actually tested.
+is(UNIVERSAL->can("NoSuchPackage::foo"), undef);
+
+@splatt::ISA = 'zlopp';
+ok (splatt->isa('zlopp'));
+ok (!splatt->isa('plop'));
+
+# This should reset the ->isa lookup cache
+@splatt::ISA = 'plop';
+# And here is the new truth.
+ok (!splatt->isa('zlopp'));
+ok (splatt->isa('plop'));
+
+use warnings "deprecated";
+{
+    my $m;
+    local $SIG{__WARN__} = sub { $m = $_[0] };
+    eval "use UNIVERSAL 'can'";
+    like($m, qr/^UNIVERSAL->import is deprecated/,
+	"deprecation warning for UNIVERSAL->import('can')");
+
+	  undef $m;
+    eval "use UNIVERSAL";
+    is($m, undef,
+	"no deprecation warning for UNIVERSAL->import");
+}
+
+# Test: [perl #66112]: change @ISA inside  sub isa
+{
+    package RT66112::A;
+
+    package RT66112::B;
+
+    sub isa {
+	my $self = shift;
+	@ISA = qw/RT66112::A/;
+	return $self->SUPER::isa(@_);
+    }
+
+    package RT66112::C;
+
+    package RT66112::D;
+
+    sub isa {
+	my $self = shift;
+	@RT66112::E::ISA = qw/RT66112::A/;
+	return $self->SUPER::isa(@_);
+    }
+
+    package RT66112::E;
+
+    package main;
+
+    @RT66112::B::ISA = qw//;
+    @RT66112::C::ISA = qw/RT66112::B/;
+    @RT66112::T1::ISA = qw/RT66112::C/;
+    ok(RT66112::T1->isa('RT66112::C'), "modify \@ISA in isa (RT66112::T1 isa RT66112::C)");
+
+    @RT66112::B::ISA = qw//;
+    @RT66112::C::ISA = qw/RT66112::B/;
+    @RT66112::T2::ISA = qw/RT66112::C/;
+    ok(RT66112::T2->isa('RT66112::B'), "modify \@ISA in isa (RT66112::T2 isa RT66112::B)");
+
+    @RT66112::B::ISA = qw//;
+    @RT66112::C::ISA = qw/RT66112::B/;
+    @RT66112::T3::ISA = qw/RT66112::C/;
+    ok(RT66112::T3->isa('RT66112::A'), "modify \@ISA in isa (RT66112::T3 isa RT66112::A)") or require mro, diag "@{mro::get_linear_isa('RT66112::T3')}";
+
+    @RT66112::E::ISA = qw/RT66112::D/;
+    @RT66112::T4::ISA = qw/RT66112::E/;
+    ok(RT66112::T4->isa('RT66112::E'), "modify \@ISA in isa (RT66112::T4 isa RT66112::E)");
+
+    @RT66112::E::ISA = qw/RT66112::D/;
+    @RT66112::T5::ISA = qw/RT66112::E/;
+    ok(! RT66112::T5->isa('RT66112::D'), "modify \@ISA in isa (RT66112::T5 not isa RT66112::D)");
+
+    @RT66112::E::ISA = qw/RT66112::D/;
+    @RT66112::T6::ISA = qw/RT66112::E/;
+    ok(RT66112::T6->isa('RT66112::A'), "modify \@ISA in isa (RT66112::T6 isa RT66112::A)");
+}

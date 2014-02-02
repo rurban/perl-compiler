@@ -4,7 +4,7 @@
 # Ensure that syntax using colons (:) is parsed correctly.
 # The tests are done on the following tokens (by default):
 # ABC LABEL XYZZY m q qq qw qx s tr y AUTOLOAD and alarm 
-#	-- Robin Barker <rmb@cise.npl.co.uk>
+#	-- Robin Barker 
 #
 
 # Uncomment this for testing, but don't leave it in for "production", as
@@ -122,14 +122,14 @@ ok 22, (not eval "y:1" and
 	not eval "y:echo: eq y|echo|" and
 	eval "y:echo:ohce: >= 0");
 
-ok 23, (not eval "AUTOLOAD:1" and
+ok 23, (eval "AUTOLOAD:1" and
 	not eval "AUTOLOAD:echo: eq AUTOLOAD|echo|" and
 	not eval "AUTOLOAD:echo:ohce: >= 0");
 
-ok 24, (not eval "and:1" and
+ok 24, (eval "and:1" and
 	not eval "and:echo: eq and|echo|" and
 	not eval "and:echo:ohce: >= 0");
 
-ok 25, (not eval "alarm:1" and
+ok 25, (eval "alarm:1" and
 	not eval "alarm:echo: eq alarm|echo|" and
 	not eval "alarm:echo:ohce: >= 0");

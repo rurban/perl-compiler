@@ -1,9 +1,8 @@
 #!./perl
 
-
 BEGIN {
-    chdir 't' if -d 't';
-    # @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 my %seen;
@@ -99,112 +98,202 @@ sub SPLICE
  return splice(@$ob,$off,$len,@_);
 }
 
-package main;
+package NegIndex;               # 20020220 MJD
+@ISA = 'Implement';
 
-print "1..31\n";                   
-my $test = 1;
+# simulate indices -2 .. 2
+my $offset = 2;
+$NegIndex::NEGATIVE_INDICES = 1;
+
+sub FETCH {
+  my ($ob,$id) = @_;
+#  print "# FETCH @_\n";
+  $id += $offset;
+  $ob->[$id];
+}
+
+sub STORE {
+  my ($ob,$id,$value) = @_;
+#  print "# STORE @_\n";
+  $id += $offset;
+  $ob->[$id] = $value;
+}
+
+sub DELETE {
+  my ($ob,$id) = @_;
+#  print "# DELETE @_\n";
+  $id += $offset;
+  delete $ob->[$id];
+}
+
+sub EXISTS {
+  my ($ob,$id) = @_;
+#  print "# EXISTS @_\n";
+  $id += $offset;
+  exists $ob->[$id];
+}
+
+#
+# Returning -1 from FETCHSIZE used to get casted to U32 causing a
+# segfault
+#
+
+package NegFetchsize;
+
+sub TIEARRAY  { bless [] }
+sub FETCH     { }
+sub FETCHSIZE { -1 }
+
+package main;
+  
+plan(tests => 69);
 
 {my @ary;
 
 { my $ob = tie @ary,'Implement',3,2,1;
-  print "not " unless $ob;
-  print "ok ", $test++,"\n";
-  print "not " unless tied(@ary) == $ob;
-  print "ok ", $test++,"\n";
+  ok($ob);
+  is(tied(@ary), $ob);
 }
 
-
-print "not " unless @ary == 3;
-print "ok ", $test++,"\n";
-
-print "not " unless $#ary == 2;
-print "ok ", $test++,"\n";
-
-print "not " unless join(':',@ary) eq '3:2:1';
-print "ok ", $test++,"\n";         
-
-print "not " unless $seen{'FETCH'} >= 3;
-print "ok ", $test++,"\n";
+is(@ary, 3);
+is($#ary, 2);
+is(join(':',@ary), '3:2:1');
+cmp_ok($seen{'FETCH'}, '>=', 3);
 
 @ary = (1,2,3);
 
-print "not " unless $seen{'STORE'} >= 3;
-print "ok ", $test++,"\n";
-print "not " unless join(':',@ary) eq '1:2:3';
-print "ok ", $test++,"\n";         
+cmp_ok($seen{'STORE'}, '>=', 3);
+is(join(':',@ary), '1:2:3');
 
 {my @thing = @ary;
-print "not " unless join(':',@thing) eq '1:2:3';
-print "ok ", $test++,"\n";         
+is(join(':',@thing), '1:2:3');
 
 tie @thing,'Implement';
 @thing = @ary;
-print "not " unless join(':',@thing) eq '1:2:3';
-print "ok ", $test++,"\n";
+is(join(':',@thing), '1:2:3');
 } 
 
-print "not " unless pop(@ary) == 3;
-print "ok ", $test++,"\n";
-print "not " unless $seen{'POP'} == 1;
-print "ok ", $test++,"\n";
-print "not " unless join(':',@ary) eq '1:2';
-print "ok ", $test++,"\n";
+is(pop(@ary), 3);
+is($seen{'POP'}, 1);
+is(join(':',@ary), '1:2');
 
-push(@ary,4);
-print "not " unless $seen{'PUSH'} == 1;
-print "ok ", $test++,"\n";
-print "not " unless join(':',@ary) eq '1:2:4';
-print "ok ", $test++,"\n";
+is(push(@ary,4), 3);
+is($seen{'PUSH'}, 1);
+is(join(':',@ary), '1:2:4');
 
 my @x = splice(@ary,1,1,7);
 
+is($seen{'SPLICE'}, 1);
+is(@x, 1);
+is($x[0], 2);
+is(join(':',@ary), '1:7:4');
 
-print "not " unless $seen{'SPLICE'} == 1;
-print "ok ", $test++,"\n";
-
-print "not " unless @x == 1;
-print "ok ", $test++,"\n";
-print "not " unless $x[0] == 2;
-print "ok ", $test++,"\n";
-print "not " unless join(':',@ary) eq '1:7:4';
-print "ok ", $test++,"\n";             
-
-print "not " unless shift(@ary) == 1;
-print "ok ", $test++,"\n";
-print "not " unless $seen{'SHIFT'} == 1;
-print "ok ", $test++,"\n";
-print "not " unless join(':',@ary) eq '7:4';
-print "ok ", $test++,"\n";             
+is(shift(@ary), 1);
+is($seen{'SHIFT'}, 1);
+is(join(':',@ary), '7:4');
 
 my $n = unshift(@ary,5,6);
-print "not " unless $seen{'UNSHIFT'} == 1;
-print "ok ", $test++,"\n";
-print "not " unless $n == 4;
-print "ok ", $test++,"\n";
-print "not " unless join(':',@ary) eq '5:6:7:4';
-print "ok ", $test++,"\n";
+is($seen{'UNSHIFT'}, 1);
+is($n, 4);
+is(join(':',@ary), '5:6:7:4');
 
 @ary = split(/:/,'1:2:3');
-print "not " unless join(':',@ary) eq '1:2:3';
-print "ok ", $test++,"\n";         
-  
+is(join(':',@ary), '1:2:3');
+
 my $t = 0;
 foreach $n (@ary)
  {
-  print "not " unless $n == ++$t;
-  print "ok ", $test++,"\n";         
+     is($n, ++$t);
  }
 
+# (30-33) 20020303 mjd-perl-patch+@plover.com
+@ary = ();
+$seen{POP} = 0;
+pop @ary;                       # this didn't used to call POP at all
+is($seen{POP}, 1);
+$seen{SHIFT} = 0;
+shift @ary;                     # this didn't used to call SHIFT at  all
+is($seen{SHIFT}, 1);
+$seen{PUSH} = 0;
+my $got = push @ary;            # this didn't used to call PUSH at all
+is($got, 0);
+is($seen{PUSH}, 1);
+$seen{UNSHIFT} = 0;
+$got = unshift @ary;            # this didn't used to call UNSHIFT at all
+is($got, 0);
+is($seen{UNSHIFT}, 1);
+
 @ary = qw(3 2 1);
-print "not " unless join(':',@ary) eq '3:2:1';
-print "ok ", $test++,"\n";         
+is(join(':',@ary), '3:2:1');
+
+$#ary = 1;
+is($seen{'STORESIZE'}, 1, 'seen STORESIZE');
+is(join(':',@ary), '3:2');
+
+sub arysize :lvalue { $#ary }
+arysize()--;
+is($seen{'STORESIZE'}, 2, 'seen STORESIZE');
+is(join(':',@ary), '3');
 
 untie @ary;   
 
 }
-                           
-print "not " unless $seen{'DESTROY'} == 2;
-print "ok ", $test++,"\n";         
 
+# 20020401 mjd-perl-patch+@plover.com
+# Thanks to Dave Mitchell for the small test case and the fix
+{
+  my @a;
+  
+  sub X::TIEARRAY { bless {}, 'X' }
 
+  sub X::SPLICE {
+    do '/dev/null';
+    die;
+  }
 
+  tie @a, 'X';
+  eval { splice(@a) };
+  # If we survived this far.
+  pass();
+}
+
+{ # 20020220 mjd-perl-patch+@plover.com
+  my @n;
+  tie @n => 'NegIndex', ('A' .. 'E');
+
+  # FETCH
+  is($n[0], 'C');
+  is($n[1], 'D');
+  is($n[2], 'E');
+  is($n[-1], 'B');
+  is($n[-2], 'A');
+
+  # STORE
+  $n[-2] = 'a';
+  is($n[-2], 'a');
+  $n[-1] = 'b';
+  is($n[-1], 'b');
+  $n[0] = 'c';
+  is($n[0], 'c');
+  $n[1] = 'd';
+  is($n[1], 'd');
+  $n[2] = 'e';
+  is($n[2], 'e');
+
+  # DELETE and EXISTS
+  for (-2 .. 2) {
+    ok($n[$_]);
+    delete $n[$_];
+    is(defined($n[$_]), '');
+    is(exists($n[$_]), '');
+  }
+}
+
+{
+    tie my @dummy, "NegFetchsize";
+    eval { "@dummy"; };
+    like($@, qr/^FETCHSIZE returned a negative value/,
+	 " - croak on negative FETCHSIZE");
+}
+
+is($seen{'DESTROY'}, 3);

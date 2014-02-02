@@ -1,6 +1,6 @@
 #!./perl
 use strict;
-unshift @INC, ("t"); require 'test.pl';
+require 't/CORE/test.pl';
 
 $^I = 'bak.*';
 

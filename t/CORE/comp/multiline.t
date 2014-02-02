@@ -46,7 +46,7 @@ END {
     1 while unlink $filename;
 }
 
-open(TRY,'>',$filename) || (die "Can't open $filename: $!");
+open($TRY,'>',$filename) || (die "Can't open $filename: $!");
 
 $x = 'now is the time
 for all good men
@@ -63,8 +63,8 @@ $y = 'now is the time' . "\n" .
 
 is($x, $y,  'test data is sane');
 
-print TRY $x;
-close TRY or die "Could not close: $!";
+print $TRY $x;
+close $TRY or die "Could not close: $!";
 
 open(TRY,$filename) || (die "Can't reopen $filename: $!");
 $count = 0;

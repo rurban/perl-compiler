@@ -1,36 +1,68 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    # @INC = '../lib';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
-print "1..7\n";
+plan 15;
 
 # compile time evaluation
 
-if (int(1.234) == 1) {print "ok 1\n";} else {print "not ok 1\n";}
+if (int(1.234) == 1) {pass()} else {fail()}
 
-if (int(-1.234) == -1) {print "ok 2\n";} else {print "not ok 2\n";}
+if (int(-1.234) == -1) {pass()} else {fail()}
 
 # run time evaluation
 
 $x = 1.234;
-if (int($x) == 1) {print "ok 3\n";} else {print "not ok 3\n";}
-if (int(-$x) == -1) {print "ok 4\n";} else {print "not ok 4\n";}
+cmp_ok(int($x), '==', 1);
+cmp_ok(int(-$x), '==', -1);
 
 $x = length("abc") % -10;
-print $x == -7 ? "ok 5\n" : "# expected -7, got $x\nnot ok 5\n";
+cmp_ok($x, '==', -7);
 
 {
+    my $fail;
     use integer;
     $x = length("abc") % -10;
     $y = (3/-10)*-10;
-    print $x+$y == 3 && abs($x) < 10 ? "ok 6\n" : "not ok 6\n";
+    ok($x+$y == 3) or ++$fail;
+    ok(abs($x) < 10) or ++$fail;
+    if ($fail) {
+	diag("\$x == $x", "\$y == $y");
+    }
 }
 
-# check bad strings still get converted
-
 @x = ( 6, 8, 10);
-print "not " if $x["1foo"] != 8;
-print "ok 7\n";
+cmp_ok($x["1foo"], '==', 8, 'check bad strings still get converted');
+
+$x = 4294967303.15;
+$y = int ($x);
+is($y, "4294967303", 'check values > 32 bits work');
+
+$y = int (-$x);
+
+is($y, "-4294967303");
+
+$x = 4294967294.2;
+$y = int ($x);
+
+is($y, "4294967294");
+
+$x = 4294967295.7;
+$y = int ($x);
+
+is($y, "4294967295");
+
+$x = 4294967296.11312;
+$y = int ($x);
+
+is($y, "4294967296");
+
+$y = int(279964589018079/59);
+cmp_ok($y, '==', 4745162525730);
+
+$y = 279964589018079;
+$y = int($y/59);
+cmp_ok($y, '==', 4745162525730);
