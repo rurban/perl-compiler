@@ -38,7 +38,7 @@ sub vcmd {
 
 my $dir = getcwd();
 
-unlink ("t/perl", "t/CORE/perl", "t/CORE/test.pl", "t/CORE/harness");
+#unlink ("t/perl", "t/CORE/perl", "t/CORE/test.pl", "t/CORE/harness");
 #symlink "t/perl", $^X;
 #symlink "t/CORE/perl", $^X;
 #symlink "t/CORE/test.pl", "t/test.pl" unless -e "t/CORE/test.pl";
@@ -47,9 +47,9 @@ unlink ("t/perl", "t/CORE/perl", "t/CORE/test.pl", "t/CORE/harness");
 `ln -sf $^X t/CORE/perl`;
 # CORE t/test.pl would be better, but this fails only on 2 tests
 -e "t/CORE/test.pl" or `ln -s $dir/t/test.pl t/CORE/test.pl`;
--e "t/CORE/harness" or `ln -s $dir/t/test.pl t/CORE/harness`; # better than nothing
-`ln -s $dir/t/test.pl harness`; # base/term
-`ln -s $dir/t/test.pl TEST`;    # cmd/mod 8
+-e "t/CORE/harness" or `ln -s test.pl t/CORE/harness`; # better than nothing
+#`ln -s $dir/t/test.pl harness`; # base/term
+#`ln -s $dir/t/test.pl TEST`;    # cmd/mod 8
 
 my %ALLOW_PERL_OPTIONS;
 for (qw(

@@ -8,8 +8,8 @@ use IO::Scalar;
 
 use Test::More;
 
-#my @optimizations = ( '-O3,-fno-fold', '-O1' );
-my @optimizations = ('-O3,-fno-fold');
+#my @optimizations = ( '-O2,-fno-fold', '-O1' );
+my @optimizations = ('-O3');
 my $todo          = '';
 
 # Setup file_to_test to be the file we actually want to test.
@@ -28,8 +28,8 @@ if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
 $file_to_test =~ s{--}{/}g;
 $file_to_test =~ s{C-COMPILED/}{};    # Strip the BINARY dir off to look for this test elsewhere.
 
-if ( $] != '5.014004' && $file_to_test =~ m{^t/CORE/} ) {
-    plan skip_all => "Perl CORE tests only supported in 5.14.4 right now.";
+if ( $] < 5.014 && $file_to_test =~ m{^t/CORE/} ) {
+    plan skip_all => "Perl CORE tests only supported since 5.14 right now.";
 }
 else {
     plan tests => 3 + 10 * scalar @optimizations;
@@ -62,9 +62,9 @@ foreach my $optimization (@optimizations) {
         local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
 
         # Generate the C code at $optimization level
-        my $cmd = "$PERL $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+        my $cmd = "$PERL -Iblib/arch -Iblib/lib $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
 
-        diag $cmd if $ENV{VERBOSE};
+        diag $cmd if $ENV{TEST_VERBOSE};
         my $BC_output = `$cmd`;
         note $BC_output if ($BC_output);
         ok( !-z $c_file, "$c_file is generated ($optimization)" );
@@ -77,8 +77,8 @@ foreach my $optimization (@optimizations) {
         # gcc the c code.
         local $TODO = $todo if ( $todo =~ /gcc cannot compile generated c code/ );
 
-        $cmd = "$PERL script/cc_harness -q $c_file -o $bin_file 2>&1";
-        diag $cmd if $ENV{VERBOSE};
+        $cmd = "$PERL -Iblib/arch -Iblib/lib script/cc_harness -q $c_file -o $bin_file 2>&1";
+        diag $cmd if $ENV{TEST_VERBOSE};
         my $compile_output = `$cmd`;
         note $compile_output if ($compile_output);
 
