@@ -3,9 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.44	2014-?? rurban
+1.44	2014-02-?? rurban
+        added adjusted CORE testsuite for 5.14. passes for 5.14.4-nt, not for 5.18.2-nt
 
-        added adjusted CORE testsuite for 5.14, passes for 5.14.4-nt, not for 5.18.2-nt
         * C: Fix -O3 with ~ and ~~ formatstrings (#277)
 	Fix SvLEN and PV ptr for empty shared hash keys (#272)
         Use the natural @dl_modules boot order, just put attributes to the front (#259)
@@ -17,6 +17,7 @@
         Save now empty bodyless subs if they exist, for signal handlers,
           prototypes declarations and cvrefs (#251, #159, #235, #246, #270, #271, #275, #279)
         Fix PVMG PV overwriting the RV, overload sub (#273)
+	* CC (1.14): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.

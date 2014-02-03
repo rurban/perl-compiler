@@ -283,7 +283,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 # Start registering the L<types> namespaces.
 $main::int::B_CC = $main::num::B_CC = $main::str::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
@@ -1615,9 +1615,12 @@ sub pp_method_named {
   # The pkg PV is at [PL_stack_base+TOPMARK+1], the previous op->sv->PV.
   my $stash = $package_pv ? $package_pv."::" : "main::";
   $name = $stash . $name;
-  debug "save method_name \"$name\"\n" if $debug{op};
-  svref_2object( \&{$name} )->save;
-
+  if (exists &$name) {
+    debug "save method_name \"$name\"\n" if $debug{op};
+    svref_2object( \&{$name} )->save;
+  } else {
+    debug "skip saving non-existing method_name \"$name\"\n" if $debug{op}; #CC 50
+  }
   default_pp(@_);
 }
 
