@@ -38,7 +38,7 @@ sub vcmd {
 
 my $dir = getcwd();
 
-unlink ("t/perl", "t/CORE/perl");
+#unlink ("t/perl", "t/CORE/perl", "t/CORE/test.pl", "t/CORE/harness");
 #symlink "t/perl", $^X;
 #symlink "t/CORE/perl", $^X;
 #symlink "t/CORE/test.pl", "t/test.pl" unless -e "t/CORE/test.pl";
@@ -46,10 +46,10 @@ unlink ("t/perl", "t/CORE/perl");
 `ln -sf $^X t/perl`;
 `ln -sf $^X t/CORE/perl`;
 # CORE t/test.pl would be better, but this fails only on 2 tests
--e "t/CORE/test.pl" or `ln -s t/test.pl t/CORE/test.pl`;
--e "t/CORE/harness" or `ln -s t/test.pl t/CORE/harness`; # better than nothing
-`ln -s t/test.pl harness`; # base/term
-`ln -s t/test.pl TEST`;  # cmd/mod 8
+-e "t/CORE/test.pl" or `ln -s $dir/t/test.pl t/CORE/test.pl`;
+-e "t/CORE/harness" or `ln -s test.pl t/CORE/harness`; # better than nothing
+#`ln -s $dir/t/test.pl harness`; # base/term
+#`ln -s $dir/t/test.pl TEST`;    # cmd/mod 8
 
 my %ALLOW_PERL_OPTIONS;
 for (qw(
@@ -66,39 +66,110 @@ my $SKIP = { "CC" =>
 
 my @fail = map { "t/CORE/$_" }
   qw{
-     base/lex.t
      base/rs.t
      base/term.t
+     cmd/for.t
+     cmd/subval.t
      cmd/while.t
-     comp/bproto.t
      comp/colon.t
-     comp/decl.t
-     comp/fold.t
-     comp/form_scope.t
-     comp/line_debug.t
      comp/hints.t
-     comp/our.t
-     comp/package.t
+     comp/multiline.t
      comp/packagev.t
      comp/parser.t
-     comp/proto.t
      comp/require.t
      comp/retainedlines.t
      comp/script.t
+     comp/uproto.t
      comp/use.t
+     io/argv.t
+     io/binmode.t
+     io/crlf.t
+     io/crlf_through.t
+     io/errno.t
+     io/fflush.t
+     io/fs.t
+     io/inplace.t
+     io/iprefix.t
+     io/layers.t
+     io/nargv.t
+     io/open.t
+     io/openpid.t
+     io/perlio.t
+     io/perlio_fail.t
+     io/perlio_leaks.t
+     io/perlio_open.t
+     io/pipe.t
+     io/print.t
+     io/pvbm.t
+     io/read.t
+     io/say.t
+     io/tell.t
+     io/through.t
+     io/utf8.t
      op/anonsub.t
+     op/array.t
+     op/attrs.t
      op/avhv.t
      op/bop.t
      op/chop.t
+     op/closure.t
+     op/concat.t
+     op/defins.t
+     op/do.t
      op/eval.t
+     op/filetest.t
+     op/flip.t
+     op/fork.t
      op/goto.t
-     op/overload.t
-     op/pat.t
-     op/ref.t
+     op/goto_xs.t
+     op/grent.t
+     op/gv.t
+     op/hashwarn.t
+     op/index.t
+     op/join.t
+     op/length.t
+     op/local.t
+     op/lfs.t
+     op/magic.t
+     op/method.t
+     op/misc.t
+     op/mkdir.t
+     op/my_stash.t
+     op/numconvert.t
+     op/pwent.t
+     op/regmesg.t
+     op/runlevel.t
      op/sort.t
+     op/split.t
+     op/sprintf.t
+     op/stat.t
+     op/study.t
+     op/subst.t
      op/substr.t
-     op/undef.t
-     op/write.t
+     op/tie.t
+     op/tr.t
+     op/universal.t
+     op/utf8decode.t
+     op/vec.t
+     op/ver.t
+     uni/cache.t
+     uni/chomp.t
+     uni/chr.t
+     uni/class.t
+     uni/fold.t
+     uni/greek.t
+     uni/latin2.t
+     uni/lex_utf8.t
+     uni/lower.t
+     uni/sprintf.t
+     uni/tie.t
+     uni/title.t
+     uni/tr_7jis.t
+     uni/tr_eucjp.t
+     uni/tr_sjis.t
+     uni/tr_utf8.t
+     uni/upper.t
+     uni/write.t
    };
 
 my @tests = $ARGV[0] eq '-fail'

@@ -368,6 +368,8 @@ teststatus :: pure_all
 	./status_upd -fqd
 testrelease :: pure_all
 	$(ECHO) run t/release-testing.sh and perlall testvm --all
+testcore :: pure_all
+	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED
 )
 }
 
