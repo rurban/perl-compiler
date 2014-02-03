@@ -749,7 +749,7 @@ EOF
   # glob having been removed from the symbol table, so a stringified form
   # of it does not work. This checks that sv_2io does not stringify a PVLV.
   $_ = *quin;
-  open *quin, "test.pl"; # test.pl is as good a file as any
+  open *quin, "t/test.pl"; # test.pl is as good a file as any
   delete $::{quin};
   ok eval { open my $zow, "<&", $_ }, 'PVLV: sv_2io stringifieth not'
    or diag $@;
@@ -798,7 +798,7 @@ EOF
   my $pass;
   ok
     eval {
-     open my $quile, "<", 'test.pl';
+     open my $quile, "<", 't/test.pl';
      $_ = *$quile;
      $pass = -T $_;
      1

@@ -62,7 +62,7 @@ foreach my $optimization (@optimizations) {
         local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
 
         # Generate the C code at $optimization level
-        my $cmd = "$PERL -Iblib/arch -Iblib/lib $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+        my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
 
         diag $cmd if $ENV{TEST_VERBOSE};
         my $BC_output = `$cmd`;
@@ -131,22 +131,28 @@ foreach my $optimization (@optimizations) {
 
         ok( $parser->{exit} == 0, "Exit code is $parser->{exit}" );
 
-        local $TODO = "Tests don't pass at the moment - $todo" if ( $todo =~ /Fails tests when compiled with perlcc/ );
+        local $TODO = "Tests don't pass at the moment - $todo"
+          if ( $todo =~ /Fails tests when compiled with perlcc/ );
         ok( !scalar @{ $parser->{failed} }, "Test results:" );
         print "    $_\n" foreach ( split( "\n", $out ) );
 
-        ok( !scalar @{ $parser->{failed} }, "No test failures" )
-          or note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
+        if (!ok( !scalar @{ $parser->{failed} }, "No test failures" )) {
+          note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
+          $ENV{BC_DEVELOPING} = 1; # keep temp files
+        }
 
-        skip( "Don't care about test sequence if tests are failing", 2 ) if ( $todo =~ /Fails tests when compiled with perlcc/ );
+        skip( "Don't care about test sequence if tests are failing", 2 )
+          if ( $todo =~ /Fails tests when compiled with perlcc/ );
 
         local $TODO = $todo if ( $todo =~ m/Tests out of sequence/ );
         ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )
           or note explain $parser->{parse_errors};
 
         local $TODO = $todo if ( $todo =~ m/TODO test unexpectedly failing/ );
-        ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )
-          or note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
+        if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )) {
+          note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
+          $ENV{BC_DEVELOPING} = 1; # keep temp files
+        }
     }
 }
 unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};

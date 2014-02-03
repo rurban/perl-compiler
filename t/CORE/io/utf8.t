@@ -116,7 +116,7 @@ close(F);
     open F, ">", $a_file or die $!;
     binmode(F, ":bytes:");
 
-    # Now let's make it suffer.
+    # Now let's make it suffer. TODO: perlcc will abort here
     my $w;
     {
 	use warnings 'utf8';

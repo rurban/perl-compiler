@@ -620,6 +620,7 @@ ok  defined *{$::{CmT}}{FORMAT}, "glob assign";
     is $buf, "ok $test\n", "write to duplicated format";
 }
 
+# TODO perlcc fails
 fresh_perl_like(<<'EOP', qr/^Format STDOUT redefined at/, {stderr => 1}, '#64562 - Segmentation fault with redefined formats and warnings');
 #!./perl
 
@@ -692,6 +693,7 @@ if ($opened) {
 	}
 	s/^/$s/;
 	my $exp = shift @data;
+        # TODO perlcc fails with \f\n instead of \n
 	is $_, $exp;
     }
     close FROM_CHILD;

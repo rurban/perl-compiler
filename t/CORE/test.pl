@@ -702,7 +702,7 @@ sub unlink_all {
 }
 
 my %tmpfiles;
-END { unlink_all keys %tmpfiles }
+END { unlink_all keys %tmpfiles unless $ENV{BC_DEVELOPING}}
 
 # A regexp that matches the tempfile names
 $::tempfile_regexp = 'tmp\d+[A-Z][A-Z]?';
@@ -748,7 +748,7 @@ sub _fresh_perl {
         ($tmpfile) = $tmpfile =~ m/(.*)/;
         $tmpfile =~ s/\.bin$/.subtest.$test.t/;
         $tmpfiles{$tmpfile} = 1;
-        unlink $tmpfile if -e $tmpfile;
+        unlink $tmpfile if -e $tmpfile and !$ENV{BC_DEVELOPING};
     }
 
     # Given the choice of the mis-parsable {}
@@ -838,14 +838,18 @@ sub runperl_binary {
     my ( $test, $opts ) = @_;
 
     $opts ||= {};
+    #print STDERR @{$opts->{'switches'}},"\n";
     my $error = $opts->{'stderr'} ? '2>&1' : '';
+    my $taint = $opts->{'switches'} ? join(' ',grep /-[tT]/, @{$opts->{'switches'}}) : '';
     my $bin = $test;
     $bin =~ s/\.t$/\.bin/;
     unlink $bin if -e $bin;
-    print STDERR "# running: make $bin ===\n";
-
     ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
-    my $make = `blib/script/perlcc -O3 -o $bin $test $error`;
+    my $cmd = "$^X -Iblib/arch -Iblib/lib script/perlcc $taint -O3 -o $bin $test $error";
+    ( $cmd ) = $cmd =~ m/(.*)/;
+    print STDERR "# running: make $bin\n";
+    print STDERR "# $cmd\n" if $ENV{TEST_VERBOSE};
+    my $make = `$cmd`;
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
 
@@ -859,7 +863,7 @@ sub runperl_binary {
     else {
         $output = `./$bin $error`;
     }
-    unlink $bin;
+    unlink $bin unless $ENV{BC_DEVELOPING};
     return $output;
 }
 
@@ -1057,11 +1061,13 @@ sub run_multiple_progs {
 
         ok($ok);
 
-        foreach (@temps) {
+        if (!$ENV{BC_DEVELOPING}) {
+          foreach (@temps) {
             unlink $_ if $_;
-        }
-        foreach (@temp_path) {
+          }
+          foreach (@temp_path) {
             File::Path::rmtree $_ if -d $_;
+          }
         }
     }
 }

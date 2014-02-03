@@ -421,12 +421,12 @@ print "ok ", $i++, "\n";
 sub foo1 ($\@);
 eval q{ foo1 "s" };
 print "not " unless $@ =~ /^Not enough/;
-print "ok ", $i++, " # TODO: Not a big deal in B::C that this doesn't work (perlcc #246)\n";
+print "ok ", $i++, " # Fixed perlcc #246 with B::C 1.43_06\n";
 
 sub foo2 ($\%);
 eval q{ foo2 "s" };
 print "not " unless $@ =~ /^Not enough/;
-print "ok ", $i++, " # TODO: Not a big deal in B::C that this doesn't work (perlcc #246)\n";
+print "ok ", $i++, " # Fixed perlcc #246 with B::C 1.43_06\n";
 
 sub X::foo3;
 *X::foo3 = sub {'ok'};
