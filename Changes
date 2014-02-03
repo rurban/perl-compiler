@@ -5,6 +5,7 @@
 
 1.44	2014-?? rurban
 
+        added adjusted CORE testsuite for 5.14, passes for 5.14.4-nt, not for 5.18.2-nt
         * C: Fix -O3 with ~ and ~~ formatstrings (#277)
 	Fix SvLEN and PV ptr for empty shared hash keys (#272)
         Use the natural @dl_modules boot order, just put attributes to the front (#259)
