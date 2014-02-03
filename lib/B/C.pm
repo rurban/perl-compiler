@@ -3670,14 +3670,13 @@ sub B::GV::save {
     $init->add("if (SvPOK($sym) && !SvPVX($sym)) SvPVX($sym) = (char*)emptystring;");
   }
 
-  # Will always be > 1
-  $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+  # B::walksymtable creates an extra reference to the GV (#197)
+  $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT - 1) );
   return $sym if $is_empty;
 
-  # B::walksymtable creates an extra reference to the GV
   my $gvrefcnt = $gv->GvREFCNT;
   if ( $gvrefcnt > 1 ) {
-    $init->add( sprintf( "GvREFCNT($sym) += %u;", $gvrefcnt - 1 ) );
+    $init->add( sprintf( "GvREFCNT($sym) = %u;", $gvrefcnt ) );
   }
 
   warn "check which savefields for \"$gvname\"\n" if $debug{gv};
