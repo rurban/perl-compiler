@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_08';
+our $VERSION = '1.43_09';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -30,6 +30,11 @@ sub new {
   my $class = shift;
   my $o     = $class->SUPER::new(@_);
   push @$o, { values => [] };
+  # if sv add a dummy sv_arenaroot
+  if ($_[0] eq 'sv') {
+    $o->add( "0, 0, SVTYPEMASK|0x01000000".($] >= 5.009005?", {0}":'')); # SVf_FAKE
+    $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
+  }
   return $o;
 }
 
@@ -78,6 +83,10 @@ sub output {
   return if $B::C::check;
   my $i = 0;
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
+  if ($section->name eq 'sv') { #fixup arenaroot refcnt
+    my $len = scalar @{ $section->[-1]{values} };
+    $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
+  }
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
     my $ref = "";
@@ -2570,6 +2579,7 @@ sub B::PVMG::save_magic {
       # A: We only need to init it when we need a CV
       $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
       $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+      $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
       # XXX
       #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
     }
@@ -3671,12 +3681,14 @@ sub B::GV::save {
   }
 
   # B::walksymtable creates an extra reference to the GV (#197)
-  $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT - 1) );
+  if ( $gv->REFCNT > 2 ) {
+    $init->add( sprintf( "SvREFCNT($sym) = %u; /* GV->REFCNT */", $gv->REFCNT - 1) );
+  }
   return $sym if $is_empty;
 
   my $gvrefcnt = $gv->GvREFCNT;
   if ( $gvrefcnt > 1 ) {
-    $init->add( sprintf( "GvREFCNT($sym) = %u;", $gvrefcnt ) );
+    $init->add( sprintf( "GvREFCNT($sym) += %u;", $gvrefcnt - 1) );
   }
 
   warn "check which savefields for \"$gvname\"\n" if $debug{gv};
@@ -3828,7 +3840,8 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
+	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));",
+		    "/*SvREFCNT_dec($sym);*/" );
       }
       elsif (!$PERL510 or $gp) {
         $origname = cstring( $origname );
@@ -3854,20 +3867,24 @@ sub B::GV::save {
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
 	    }
-	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ),
+			"SvREFCNT_dec($sym);" );
 	  }
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
             warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
-            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
+            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));",
+			"/*SvREFCNT_dec($sym);*/");
 	  }
 	  else {
-            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ),
+			"/*SvREFCNT_dec($sym);*/" );
 	  }
 	}
 	else {
-          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
-	}
+          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ),
+		      "SvREFCNT_dec($sym);" );
+        }
       }
     }
     if (!$PERL510 or $gp) {
@@ -4956,6 +4973,8 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
+    PL_main_start = NULL;
+    PL_main_cv = NULL;
 #if PERL_VERSION >= 11 && defined(PERL_PHASE_DESTRUCT)
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
@@ -4973,6 +4992,14 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
 #endif
+    if (PL_sv_objcount) {
+	sv_clean_objs();
+	PL_sv_objcount = 0;
+    }
+    PL_warnhook = NULL;
+    PL_diehook = NULL;
+    while (PL_exitlistlen-- > 0)
+	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
     return 0;
 }
 _EOT6
@@ -6022,6 +6049,11 @@ sub save_context {
     warn "amagic_generation = $amagic_generate\n" if $verbose;
     $init->add("PL_amagic_generation = $amagic_generate;");
   };
+  # needed for -DD DEBUG_D_TEST and sv_clean_objs (global destruction)
+  $init->add("PL_sv_arenaroot = &sv_list[0];",
+             "PL_sv_root = &sv_list[1];",
+             "DEBUG_D(PerlIO_printf(Perl_debug_log, \"PL_sv_arena: 0x%x - 0x%x\\n\",",
+             "          PL_sv_arenaroot, PL_sv_arenaroot+SvREFCNT(PL_sv_arenaroot)));");
 }
 
 sub descend_marked_unused {

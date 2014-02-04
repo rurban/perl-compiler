@@ -7,12 +7,13 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 5;
+use B::C ();
 
 my $exp = "ok - dynamic destruction
 ok - lexical destruction
 ok - package destruction";
 
-my $todo = $] >= 5.018 ? "" : "TODO ";
+my $todo = ($] >= 5.018 or $B::C::VERSION ge '1.43_08') ? "" : "TODO ";
 my $script197 = <<'EOF';
 package FINALE;
 {
@@ -36,7 +37,7 @@ sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;
 EOF
 
-ctest(3,$exp,'C,-O2','ccode197i',$script208,$todo.'missing package DESTROY #197');
+ctest(3,$exp,'C,-O2','ccode197i',$script208,$todo.'missing our DESTROY #208');
 ctest(4,$exp,'C,-O3','ccode197i',$script208,'TODO missing our -O3 DESTROY #208');
 
 # if the bless happens inside BEGIN: wontfix
