@@ -7,13 +7,15 @@ my $libdir  = "$Config{prefix}/lib";
 my $useshrplib = $Config{useshrplib} eq 'true';
 my $libs = $Config{libs};
 my $so = $Config{so};
-my $linkargs;
-my $quiet++ if $ARGV[0] eq '-q';
-$quiet++ if $ARGV[0] eq '--quiet';
-shift if $quiet;
-my $debug++ if $ARGV[0] eq '-d';
-$debug++ if $ARGV[0] eq '--debug';
-shift if $debug;
+my ($linkargs, $quiet, $debug);
+if (grep {$_ eq '-q' or $_ eq '--quiet'} @ARGV) {
+  $quiet++;
+  @ARGV = grep {$_ ne '-q' and $_ ne '--quiet'} @ARGV;
+}
+if (grep {$_ eq '-d' or $_ eq '--debug'} @ARGV) {
+  $debug++;
+  @ARGV = grep {$_ ne '-d' and $_ ne '--debug'} @ARGV;
+}
 eval { require B::C::Flags; };
 
 if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
