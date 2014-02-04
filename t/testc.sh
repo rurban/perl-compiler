@@ -14,6 +14,7 @@ function help {
   echo " -E                 dump preprocessed source file with cc -E as _E.c"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
+  echo " -A                 -DALLOW_PERL_OPTIONS"
   echo " -q                 quiet"
   echo " -h                 help"
   echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O3 optimizations."
@@ -1150,7 +1151,7 @@ init
 
 # 
 # getopts for -q -k -E -Du,-q -v -O2, -a -c -fro-inc
-while getopts "hackoED:B:O:f:q" opt
+while getopts "haAckoED:B:O:f:q" opt
 do
   if [ "$opt" = "q" ]; then 
     QUIET=1
@@ -1181,6 +1182,9 @@ do
   fi
   if [ "$opt" = "a" ]; then # replace -Du, by -Do
     OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')" 
+  fi
+  if [ "$opt" = "A" ]; then
+      CCMD="$CCMD -DALLOW_PERL_OPTIONS"
   fi
 done
 
