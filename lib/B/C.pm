@@ -6051,7 +6051,7 @@ sub save_context {
   };
   # needed for -DD DEBUG_D_TEST and sv_clean_objs (global destruction)
   $init->add("PL_sv_arenaroot = &sv_list[0];",
-             "PL_sv_root = &sv_list[1];",
+             "/*PL_sv_root = &sv_list[1];*/",
              "DEBUG_D(PerlIO_printf(Perl_debug_log, \"PL_sv_arena: 0x%x - 0x%x\\n\",",
              "          PL_sv_arenaroot, PL_sv_arenaroot+SvREFCNT(PL_sv_arenaroot)));");
 }
