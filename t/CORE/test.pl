@@ -842,10 +842,11 @@ sub runperl_binary {
     my $error = $opts->{'stderr'} ? '2>&1' : '';
     my $taint = $opts->{'switches'} ? join(' ',grep /-[tT]/, @{$opts->{'switches'}}) : '';
     my $bin = $test;
+    my $opt = $ENV{BC_OPT};
     $bin =~ s/\.t$/\.bin/;
     unlink $bin if -e $bin;
     ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
-    my $cmd = "$^X -Iblib/arch -Iblib/lib script/perlcc $taint -O3 -o $bin $test $error";
+    my $cmd = "$^X -Iblib/arch -Iblib/lib script/perlcc $taint $opt -o $bin $test $error";
     ( $cmd ) = $cmd =~ m/(.*)/;
     print STDERR "# running: make $bin\n";
     print STDERR "# $cmd\n" if $ENV{TEST_VERBOSE};
