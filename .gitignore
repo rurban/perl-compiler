@@ -23,7 +23,8 @@ log.*.err
 pm_to_blib
 nohup.out
 t/reports
-t/_CORE
+t/CORE/*/*.bin
+t/CORE/*/*.c
 t/test-*.sh
 t/*.c
 script/perlcc
