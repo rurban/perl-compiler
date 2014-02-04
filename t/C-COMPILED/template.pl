@@ -9,8 +9,8 @@ use IO::Scalar;
 use Test::More;
 
 #my @optimizations = ( '-O2,-fno-fold', '-O1' );
-my @optimizations = ('-O3');
-my $todo          = '';
+my @optimizations = $ENV{BC_OPT} ? split(/\s+/,$ENV{BC_OPT}) : ('-O0','-O3');
+my $todo       = '';
 
 # Setup file_to_test to be the file we actually want to test.
 my $file_to_test = $0;
@@ -60,6 +60,7 @@ $SIGNALS{0} = '';
 foreach my $optimization (@optimizations) {
   TODO: SKIP: {
         local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
+        local $ENV{BC_OPT} = $optimization;
 
         # Generate the C code at $optimization level
         my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
