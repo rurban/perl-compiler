@@ -705,7 +705,8 @@ sub cc_queue {
     push( @cc_todo, [ $name, $root, $start, ( @pl ? @pl : @padlist ) ] );
   }
   my $fakeop_next = 0;
-  if ($name =~ /^pp_sub_IO_.*DESTROY$/) {
+  if ($name =~ /^pp_sub_.*DESTROY$/) {
+    # curse in sv_clean_objs() checks for ->op_next->op_type
     $fakeop_next = $start->next->save;
   }
   my $fakeop = B::FAKEOP->new( "next" => $fakeop_next, sibling => 0, ppaddr => $name,
@@ -3266,6 +3267,7 @@ sub import {
   }
   $B::C::fold     = 0 if $] >= 5.013009; # utf8::Cased tables
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
+  $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
   $opt_taint = 1;
   $opt_magic = 1;      # only makes sense with -fno-magic
   $opt_autovivify = 1; # only makes sense with -fno-autovivify
@@ -3333,7 +3335,6 @@ OPTION:
       foreach my $ref ( values %optimise ) {
         $$ref = 0;
       }
-      $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
         if (!$ITHREADS) {
@@ -3447,6 +3448,7 @@ OPTION:
     no strict 'refs';
     ${"B::C::$_"} = 1 unless $c_optimise{$_};
   }
+  $B::C::destruct = 0 unless $c_optimise{destruct} and $] > 5.008;
   $B::C::stash = 0 unless $c_optimise{stash};
   if (!$B::C::Flags::have_independent_comalloc) {
     $B::C::av_init = 1 unless $c_optimise{av_init};

@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.43_08';
+our $VERSION = '1.43_09';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -30,6 +30,11 @@ sub new {
   my $class = shift;
   my $o     = $class->SUPER::new(@_);
   push @$o, { values => [] };
+  # if sv add a dummy sv_arenaroot
+  if ($_[0] eq 'sv') {
+    $o->add( "0, 0, SVTYPEMASK|0x01000000".($] >= 5.009005?", {0}":'')); # SVf_FAKE
+    $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
+  }
   return $o;
 }
 
@@ -78,6 +83,10 @@ sub output {
   return if $B::C::check;
   my $i = 0;
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
+  if ($section->name eq 'sv') { #fixup arenaroot refcnt
+    my $len = scalar @{ $section->[-1]{values} };
+    $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
+  }
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
     my $ref = "";
@@ -2570,6 +2579,7 @@ sub B::PVMG::save_magic {
       # A: We only need to init it when we need a CV
       $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
       $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+      $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
       # XXX
       #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
     }
@@ -3856,7 +3866,7 @@ sub B::GV::save {
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
 	    }
-	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
 	  }
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
@@ -3864,12 +3874,12 @@ sub B::GV::save {
             $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
 	  }
 	  else {
-            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
 	  }
 	}
 	else {
-          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
-	}
+          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
+        }
       }
     }
     if (!$PERL510 or $gp) {
@@ -4835,6 +4845,25 @@ _EOT2
       $init->add_initav("    Perl_die(aTHX_ \"panic: AV alloc failed\");");
     }
   }
+  if ( !$B::C::destruct and $^O ne 'MSWin32') {
+    print <<'__EOT';
+int fast_perl_destruct( PerlInterpreter *my_perl );
+
+#ifndef dVAR
+# ifdef PERL_GLOBAL_STRUCT
+#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
+# else
+#  define dVAR		dNOOP
+# endif
+#endif
+__EOT
+
+  } else {
+    print <<'__EOT';
+int my_perl_destruct( PerlInterpreter *my_perl );
+__EOT
+
+  }
 }
 
 sub init_op_addr {
@@ -4900,16 +4929,6 @@ _EOT5
   # -fno-destruct only >5.8
   if ( !$B::C::destruct and $^O ne 'MSWin32') {
     print <<'_EOT6';
-int fast_perl_destruct( PerlInterpreter *my_perl );
-
-#ifndef dVAR
-# ifdef PERL_GLOBAL_STRUCT
-#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
-# else
-#  define dVAR		dNOOP
-# endif
-#endif
-
 int fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
@@ -4958,6 +4977,8 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
+    PL_main_start = NULL;
+    PL_main_cv = NULL;
 #if PERL_VERSION >= 11 && defined(PERL_PHASE_DESTRUCT)
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
@@ -4971,10 +4992,41 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         return STATUS_NATIVE_EXPORT;
 #endif
     }
+
+    PL_in_clean_all = 1;
+    /* B::C -O3 specific: first curse all static svs */
+    if (PL_sv_objcount) {
+        int i = 1;
+        DEBUG_D(PerlIO_printf(Perl_debug_log, "\nCleaning named global static sv_arena:\n"));
+        for (; i < SvREFCNT(&sv_list[0]); i++) {
+            SV *sv = &sv_list[i];
+            if (SvREFCNT(sv) && SvTYPE(sv) != SVt_PVIO) {
+	        SvREFCNT(sv) = 0;
+	        sv_clear(sv);
+            }
+        }
+    }
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
+        for (sva = PL_sv_arenaroot; sva; sva = MUTABLE_SV(SvANY(sva))) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
+              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+        }
+    }
+
     PerlIO_destruct(aTHX);
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
 #endif
+    if (PL_sv_objcount) {
+	sv_clean_objs();
+	PL_sv_objcount = 0;
+    }
+    PL_warnhook = NULL;
+    PL_diehook = NULL;
+    while (PL_exitlistlen-- > 0)
+	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
     return 0;
 }
 _EOT6
@@ -4982,11 +5034,11 @@ _EOT6
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
-  elsif ( $PERL510 and (@B::C::static_free or $free->index > -1)) {
+  # if ( $PERL510 and (@B::C::static_free or $free->index > -1))
+  else {
     print <<'_EOT7';
-int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
-    /* set all our static pv and hek to &PL_sv_undef so perl_destruct() will not cry */
+    /* set all our static pv and hek to &PL_sv_undef for perl_destruct() */
 _EOT7
 
     for (0 .. $#B::C::static_free) {
@@ -5020,7 +5072,22 @@ _EOT7
       }
     }
     $free->output( \*STDOUT, "%s\n" );
-    print "\n    return perl_destruct( my_perl );\n}\n\n";
+    print <<'_EOT7a';
+
+    /* B::C specific: prepend static svs to arena for sv_clean_objs */
+    SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
+    PL_sv_arenaroot = &sv_list[0];
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
+        for (sva = PL_sv_arenaroot; sva; sva = MUTABLE_SV(SvANY(sva))) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
+              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+        }
+    }
+    return perl_destruct( my_perl );
+}
+_EOT7a
   }
 
   print <<'_EOT8';
@@ -5413,11 +5480,14 @@ EOT
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    } elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
-      warn "my_perl_destruct static strings\n" if $verbose;
+    #} elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
+    #  warn "my_perl_destruct static strings\n" if $verbose;
+    #  print "    my_perl_destruct( my_perl );\n";
+    #} elsif ( $] >= 5.007003 ) {
+    #  print "    perl_destruct( my_perl );\n";
+    }
+    else {
       print "    my_perl_destruct( my_perl );\n";
-    } elsif ( $] >= 5.007003 ) {
-      print "    perl_destruct( my_perl );\n";
     }
     # XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless
     #print "    PL_dirty = 1;\n" unless $B::C::pv_copy_on_grow; # protect against pad undef in END block
