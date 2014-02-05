@@ -4998,9 +4998,10 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
     PL_sv_arenaroot = &sv_list[0];
     if (DEBUG_D_TEST) {
         SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
         for (sva = PL_sv_arenaroot; sva; sva = MUTABLE_SV(SvANY(sva))) {
-            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%x - 0x%x (%u)\n",
-                          sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
+              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
         }
     }
 
@@ -5068,9 +5069,10 @@ _EOT7
     PL_sv_arenaroot = &sv_list[0];
     if (DEBUG_D_TEST) {
         SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
         for (sva = PL_sv_arenaroot; sva; sva = MUTABLE_SV(SvANY(sva))) {
-            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%x - 0x%x (%u)\n",
-                          sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
+              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
         }
     }
     return perl_destruct( my_perl );
