@@ -3676,7 +3676,7 @@ sub B::GV::save {
 
   my $gvrefcnt = $gv->GvREFCNT;
   if ( $gvrefcnt > 1 ) {
-    $init->add( sprintf( "GvREFCNT($sym) = %u;", $gvrefcnt ) );
+    $init->add( sprintf( "GvREFCNT($sym) += %u;", $gvrefcnt - 1) );
   }
 
   warn "check which savefields for \"$gvname\"\n" if $debug{gv};
