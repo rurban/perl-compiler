@@ -4850,6 +4850,25 @@ _EOT2
       $init->add_initav("    Perl_die(aTHX_ \"panic: AV alloc failed\");");
     }
   }
+  if ( !$B::C::destruct and $^O ne 'MSWin32') {
+    print <<'__EOT';
+int fast_perl_destruct( PerlInterpreter *my_perl );
+
+#ifndef dVAR
+# ifdef PERL_GLOBAL_STRUCT
+#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
+# else
+#  define dVAR		dNOOP
+# endif
+#endif
+__EOT
+
+  } else {
+    print <<'__EOT';
+int my_perl_destruct( PerlInterpreter *my_perl );
+__EOT
+
+  }
 }
 
 sub init_op_addr {
@@ -4915,16 +4934,6 @@ _EOT5
   # -fno-destruct only >5.8
   if ( !$B::C::destruct and $^O ne 'MSWin32') {
     print <<'_EOT6';
-int fast_perl_destruct( PerlInterpreter *my_perl );
-
-#ifndef dVAR
-# ifdef PERL_GLOBAL_STRUCT
-#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
-# else
-#  define dVAR		dNOOP
-# endif
-#endif
-
 int fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
@@ -4988,6 +4997,18 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         return STATUS_NATIVE_EXPORT;
 #endif
     }
+
+    /* B::C specific: prepend static svs to arena for sv_clean_objs */
+    SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
+    PL_sv_arenaroot = &sv_list[0];
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        for (sva = PL_sv_arenaroot; sva; sva = MUTABLE_SV(SvANY(sva))) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%x - 0x%x (%u)\n",
+                          sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+        }
+    }
+
     PerlIO_destruct(aTHX);
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
@@ -5007,11 +5028,11 @@ _EOT6
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
   # XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15
-  elsif ( $PERL510 and (@B::C::static_free or $free->index > -1)) {
+  # if ( $PERL510 and (@B::C::static_free or $free->index > -1))
+  else {
     print <<'_EOT7';
-int my_perl_destruct( PerlInterpreter *my_perl );
 int my_perl_destruct( PerlInterpreter *my_perl ) {
-    /* set all our static pv and hek to &PL_sv_undef so perl_destruct() will not cry */
+    /* set all our static pv and hek to &PL_sv_undef for perl_destruct() */
 _EOT7
 
     for (0 .. $#B::C::static_free) {
@@ -5045,7 +5066,21 @@ _EOT7
       }
     }
     $free->output( \*STDOUT, "%s\n" );
-    print "\n    return perl_destruct( my_perl );\n}\n\n";
+    print <<'_EOT7a';
+
+    /* B::C specific: prepend static svs to arena for sv_clean_objs */
+    SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
+    PL_sv_arenaroot = &sv_list[0];
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        for (sva = PL_sv_arenaroot; sva; sva = MUTABLE_SV(SvANY(sva))) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%x - 0x%x (%u)\n",
+                          sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+        }
+    }
+    return perl_destruct( my_perl );
+}
+_EOT7a
   }
 
   print <<'_EOT8';
@@ -5438,11 +5473,14 @@ EOT
     if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    } elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
-      warn "my_perl_destruct static strings\n" if $verbose;
+    #} elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
+    #  warn "my_perl_destruct static strings\n" if $verbose;
+    #  print "    my_perl_destruct( my_perl );\n";
+    #} elsif ( $] >= 5.007003 ) {
+    #  print "    perl_destruct( my_perl );\n";
+    }
+    else {
       print "    my_perl_destruct( my_perl );\n";
-    } elsif ( $] >= 5.007003 ) {
-      print "    perl_destruct( my_perl );\n";
     }
     # XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless
     #print "    PL_dirty = 1;\n" unless $B::C::pv_copy_on_grow; # protect against pad undef in END block
@@ -6049,11 +6087,6 @@ sub save_context {
     warn "amagic_generation = $amagic_generate\n" if $verbose;
     $init->add("PL_amagic_generation = $amagic_generate;");
   };
-  # needed for -DD DEBUG_D_TEST and sv_clean_objs (global destruction)
-  $init->add("PL_sv_arenaroot = &sv_list[0];",
-             "/*PL_sv_root = &sv_list[1];*/",
-             "DEBUG_D(PerlIO_printf(Perl_debug_log, \"PL_sv_arena: 0x%x - 0x%x\\n\",",
-             "          PL_sv_arenaroot, PL_sv_arenaroot+SvREFCNT(PL_sv_arenaroot)));");
 }
 
 sub descend_marked_unused {
