@@ -37,7 +37,7 @@ sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $k=bless {}, MyKooh
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKooh;
 EOF
 
-ctest(3,$exp,'C,-O2','ccode197i',$script208,$todo.'missing our DESTROY #208');
+ctest(3,$exp,'C,-O2','ccode197i',$script208,'TODO missing our DESTROY #208');
 ctest(4,$exp,'C,-O3','ccode197i',$script208,'TODO missing our -O3 DESTROY #208');
 
 # if the bless happens inside BEGIN: wontfix
