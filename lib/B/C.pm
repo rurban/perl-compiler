@@ -3840,8 +3840,7 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));",
-		    "/*SvREFCNT_dec($sym);*/" );
+	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
       }
       elsif (!$PERL510 or $gp) {
         $origname = cstring( $origname );
@@ -3867,23 +3866,19 @@ sub B::GV::save {
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
 	    }
-	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ),
-			"SvREFCNT_dec($sym);" );
+	    $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
 	  }
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
             warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
-            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));",
-			"/*SvREFCNT_dec($sym);*/");
+            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
 	  }
 	  else {
-            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ),
-			"/*SvREFCNT_dec($sym);*/" );
+            $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
 	  }
 	}
 	else {
-          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ),
-		      "SvREFCNT_dec($sym);" );
+          $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
         }
       }
     }
