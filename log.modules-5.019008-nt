@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.43_07 0c17ff5 2014-02-02 | update module tests for 1.43_07 3ce6b09, no changes
+# B::C::VERSION = 1.43_08 7f33fee 2014-02-05 | log.modules-5.019008-nt update for 1.43_07 0c17ff5 (worse)
 # perlversion = 5.019008-nt
 # path = /usr/local/bin/perl5.19.8
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.43_07 - perl-5.019008-nt
+# 100 / 100 modules tested with B-C-1.43_08 - perl-5.019008-nt
 # pass  95 / 100 (95.0%)
 # fail   5 / 100 (5.0%)
 # todo   2 /   5 (40.0%)
