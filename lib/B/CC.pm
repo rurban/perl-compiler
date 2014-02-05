@@ -705,7 +705,8 @@ sub cc_queue {
     push( @cc_todo, [ $name, $root, $start, ( @pl ? @pl : @padlist ) ] );
   }
   my $fakeop_next = 0;
-  if ($name =~ /^pp_sub_IO_.*DESTROY$/) {
+  if ($name =~ /^pp_sub_.*DESTROY$/) {
+    # curse in sv_clean_objs() checks for ->op_next->op_type
     $fakeop_next = $start->next->save;
   }
   my $fakeop = B::FAKEOP->new( "next" => $fakeop_next, sibling => 0, ppaddr => $name,
