@@ -40,13 +40,15 @@ ctest(3,$exp,'C,-O2','ccode197i',$script208,$todo.'missing package DESTROY #197'
 ctest(4,$exp,'C,-O3','ccode197i',$script208,'TODO missing our -O3 DESTROY #208');
 
 # if the bless happens inside BEGIN: wontfix
-ctestok(5,'C,-O3','ccode197i',<<'EOF','TODO destroy a lexvar #254');
+ctestok(5,'C,-O3','ccode197i',<<'EOF','TODO: destroy a lexvar #254');
 my $flag = 0;
-sub  X::DESTROY { $flag = 1 }
-{my $x; # x only exists in that scope
- BEGIN {$x = 42 } # initialize variable during compilation
- { $x = bless {}, "X" }
- # undef($x); # value should be free when exiting scope
+sub X::DESTROY { $flag = 1 }
+{
+  my $x;              # x only exists in that scope
+  BEGIN { $x = 42 }   # initialize this lexvar during compilation
+  $x = bless {}, "X"; # run-time bless to call DESTROY
+  # undef($x);        # value should be freed when exiting scope
 }
 print "ok\n" if $flag;
 EOF
+
