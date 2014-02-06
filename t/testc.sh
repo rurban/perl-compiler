@@ -1058,10 +1058,11 @@ ok 2'
 tests[254]='# TODO 197 destroy lexvar
 my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
-{my $x; # x only exists in that scope
- BEGIN {$x = 42 } # initialize variable during compilation
- { $x = bless {}, "X" }
- # undef($x); # value should be free when exiting scope
+{
+  my $x;           # x only exists in that scope
+  BEGIN {$x = 42 } # initialize variable during compilation
+  $x = bless {}, "X";
+  # undef($x); # value should be free when exiting scope
 }
 print "ok\n" if $flag;'
 result[254]='ok'

@@ -3681,8 +3681,8 @@ sub B::GV::save {
   }
 
   # B::walksymtable creates an extra reference to the GV (#197)
-  if ( $gv->REFCNT > 2 ) {
-    $init->add( sprintf( "SvREFCNT($sym) = %u; /* GV->REFCNT */", $gv->REFCNT - 1) );
+  if ( $gv->REFCNT > 1 ) {
+    $init->add( sprintf( "SvREFCNT($sym) = %u; /* GV->REFCNT */", $gv->REFCNT) );
   }
   return $sym if $is_empty;
 
