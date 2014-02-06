@@ -4994,15 +4994,24 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
     }
 
     PL_in_clean_all = 1;
-    /* B::C -O3 specific: first curse all static svs */
+    /* B::C -O3 specific: first curse (i.e. call DESTROY) all static svs */
     if (PL_sv_objcount) {
         int i = 1;
-        DEBUG_D(PerlIO_printf(Perl_debug_log, "\nCleaning named global static sv_arena:\n"));
+        DEBUG_D(PerlIO_printf(Perl_debug_log, "\nCursing named global static sv_arena:\n"));
         for (; i < SvREFCNT(&sv_list[0]); i++) {
             SV *sv = &sv_list[i];
-            if (SvREFCNT(sv) && SvTYPE(sv) != SVt_PVIO) {
-	        SvREFCNT(sv) = 0;
-	        sv_clear(sv);
+            if (SvREFCNT(sv)) {
+#if PERL_VERSION > 11
+                if (SvTYPE(sv) == SVt_IV && SvROK(sv))
+#else
+                if (SvTYPE(sv) == SVt_RV)
+#endif
+                    sv = SvRV(sv);
+                if (SvOBJECT(sv) && SvTYPE(sv) >= SVt_PVMG
+                 && SvSTASH(sv)  && SvTYPE(sv) != SVt_PVCV && SvTYPE(sv) != SVt_PVIO) {
+	            SvREFCNT(sv) = 0;
+	            sv_clear(sv);
+                }
             }
         }
     }
