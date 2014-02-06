@@ -69,7 +69,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.16;
+our $VERSION = 2.17;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -248,6 +248,7 @@ sub parse_argv {
         'S',            # Dump C files
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
+        'A',            # -DALLOW_PERL_OPTIONS like -D?
         'u=s@',         # use packages (new since 2.13)
         'U=s@',         # skip packages (new since 2.13)
         'static',       # Link to static libperl (default, new since 2.11)
@@ -282,6 +283,7 @@ sub parse_argv {
     # $Options->{Wb} .= ",-O2" if opt('O2');
     # $Options->{Wb} .= ",-O3" if opt('O3');
     # $Options->{Wb} .= ",-O4" if opt('O4');
+    $Options->{Wc} .= " -DALLOW_PERL_OPTIONS" if opt('A');
 
     if( $Options->{time} or $Options->{spawn} ) {
       eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
@@ -1104,13 +1106,21 @@ Pass comma-seperated options to ld.
 
 run the backend using perl -T or -t
 
+=item -A
+
+Allow perl options to be passed to the executable first,
+like -D...
+
+Adds C<-DALLOW_PERL_OPTIONS> which omits C<--> from being added
+to the options handler.
+
 =item -u package
 
 Add package(s) to compiler and force linking to it.
 
 =item -U package
 
-Skip package(s). Do not compile and link.
+Skip package(s). Do not compile and link the package and its sole dependencies.
 
 =item --stash
 
