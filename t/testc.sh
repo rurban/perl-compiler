@@ -1147,6 +1147,9 @@ print `cat "ccode.tmp"`'
 result[284]='123
 456
 789'
+tests[289]='#debugging CvCVGV_RC assert only
+no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
+result[284]='ok'
 
 init
 
