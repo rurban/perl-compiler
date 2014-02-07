@@ -146,7 +146,7 @@ WriteMakefile(
                "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
-               "t/CORE/*/*.bin t/CORE/*/*.c Io_argv*"
+               "t/CORE/*/*.bin t/CORE/*/*.c Io_argv* t/CORE/*/*.subtest.*.t t/CORE/tmp* tmp*"
              },
 );
 
