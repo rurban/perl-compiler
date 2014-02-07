@@ -15,6 +15,7 @@ break __asan_report_error
 #p/x sv_list[3299]
 # panic free from wrong pool 5.18.1
 #b util.c:252
+b sv.c:3737 if (GV*)dstr->sv_u.svu_gp
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc

@@ -3263,6 +3263,8 @@ sub B::CV::save {
   my $len = $cur + 1;
   $len++ if IsCOW($cv);
   $len = 0 if $B::C::const_strings;
+  # need to survive cv_undef as there is no protection against static CVs
+  my $refcnt = $cv->REFCNT + ($PERL510 ? 1 : 0);
   # GV cannot be initialized statically
   my $xcv_outside = ${ $cv->OUTSIDE };
   if ($xcv_outside == ${ main_cv() } and !$MULTI) {
@@ -3756,8 +3758,8 @@ sub B::GV::save {
 	svref_2object(\${$fullname})->save($fullname);
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       } else {
-	$gvsv->save($fullname); #mostly NULL
-	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) ) unless $gvsv->isa("B::NULL");
+	$gvsv->save($fullname); #even NULL save it, because of gp_free nonsense
+	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       }
       if ($fullname eq 'main::$') { # $$ = PerlProc_getpid() issue #108
         warn sprintf( "  GV $sym \$\$ perlpid\n") if $debug{gv};
@@ -3914,7 +3916,9 @@ sub B::GV::save {
       if ( $$gvform && $savefields & Save_FORM ) {
 	warn "GV::save GvFORM(*$fullname) ...\n" if $debug{gv};
 	$gvform->save($fullname);
-	$init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
+	$init->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ));
+        # glob_assign_glob analog to CV
+	$init->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform )) if $PERL510;
 	warn "GV::save GvFORM(*$fullname) done\n" if $debug{gv};
       }
       my $gvio = $gv->IO;
