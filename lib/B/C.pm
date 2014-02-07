@@ -3885,7 +3885,7 @@ sub B::GV::save {
         }
       }
       # special handling for backref magic
-      if ($PERL514 and $cvsym and $cvsym !~ /(get_cv\("|NULL)/ and $gv->MAGICAL) {
+      if ($PERL514 and $cvsym and $cvsym !~ /(get_cv\("|NULL|lexwarn)/ and $gv->MAGICAL) {
         my @magic = $gv->MAGIC;
         foreach my $mg (@magic) {
           $init->add( "sv_magic((SV*)$sym, (SV*)$cvsym, '<', 0, 0);",
