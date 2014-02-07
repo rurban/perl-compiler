@@ -771,7 +771,7 @@ sub save_pv_or_rv {
     $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
     $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
-    $static = 0 if $shared_hek or $fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/);
+    $static = 0 if $shared_hek or ($fullname and ($fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/)));
     if ($shared_hek and $pok and !$cur) { #272 empty key
       warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
       $savesym = "emptystring";
@@ -2071,7 +2071,7 @@ sub savepvn {
   my @init;
 
   # work with byte offsets/lengths
-  $pv = pack "a*", $pv;
+  $pv = pack "a*", $pv if defined $pv;
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     push @init, sprintf( "Newx(%s,%u,char);", $dest, length($pv) + 2 );
     my $offset = 0;
