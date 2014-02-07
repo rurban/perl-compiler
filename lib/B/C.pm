@@ -2919,6 +2919,7 @@ sub B::CV::save {
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
     return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    $CvFLAGS &= ~0x400 if $PERL514; # no CVf_CVGV_RC otherwise we cannot set the GV
     mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
   elsif ((!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
@@ -3238,7 +3239,7 @@ sub B::CV::save {
     $CvFLAGS &= ~0x400 if $gv and $$gv and $PERL514; #CVf_CVGV_RC
     $symsect->add(sprintf(
       "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
-      $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $CvFLAGS));
+      $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS));
     return qq/get_cv("$fullname", 0)/;
   }
 
@@ -3254,8 +3255,8 @@ sub B::CV::save {
   }
 
   # $pv = '' unless defined $pv;    # Avoid use of undef warnings
-  warn sprintf( "CV prototype %s for CV 0x%x\n", $pv, $$cv )
-    if $debug{cv};
+  #warn sprintf( "CV prototype %s for CV 0x%x\n", cstring($pv), $$cv )
+  #  if $pv and $debug{cv};
   my $proto = defined $pv ? cstring($pv) : 'NULL';
   my $pvsym = 'NULL';
   my $cur = defined $pv ? $cv->CUR : 0;
@@ -3282,7 +3283,7 @@ sub B::CV::save {
     if ($PERL514) {
       # cv_undef wants to free it when CvDYNFILE(cv) is true.
       # E.g. DateTime: boot_POSIX. newXS reuses cv if autoloaded. So turn it off globally.
-      $CvFLAGS = $cv->CvFLAGS & ~0x1000; # CVf_DYNFILE
+      $CvFLAGS &= ~0x1000; # CVf_DYNFILE off
       my $xpvc = sprintf
 	# stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
 	("Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, %s, (CV*)%s, %s, 0x%x, %d",
@@ -3293,7 +3294,7 @@ sub B::CV::save {
 	 $padlistsym,
 	 $xcv_outside, #if main_cv set later
 	 ivx($cv->OUTSIDE_SEQ),
-	 ($gv and $$gv and $CvFLAGS & 0x400) ? 0 : $CvFLAGS, # no CVf_CVGV_RC otherwise we cannot set the GV
+	 $CvFLAGS,
 	 $cv->DEPTH);
       # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
       warn "lexwarnsym in XPVCV OUTSIDE: $xpvc" if $xpvc =~ /, \(CV\*\)iv\d/; # t/testc.sh -q -O3 227
@@ -3301,7 +3302,7 @@ sub B::CV::save {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
 	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}"),
-	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
+	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
 	#	  ));
       } else {
 	$xpvcvsect->comment('STASH mg_u cur len CV_STASH START_U ROOT_U GV file PADLIST OUTSIDE outside_seq flags depth');
@@ -3310,7 +3311,7 @@ sub B::CV::save {
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
 	$svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
       }
-    } else {
+    } else { # 5.10-5.13
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, %s,"
@@ -3327,13 +3328,13 @@ sub B::CV::save {
 	 $padlistsym,
 	 $xcv_outside, #if main_cv set later
 	 $cv->OUTSIDE_SEQ,
-	 $cv->CvFLAGS
+	 $CvFLAGS
 	);
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
 	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}",
-	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT + 1 * 0, $cv->FLAGS
+	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
 	#	  ));
       } else {
 	$xpvcvsect->comment('GvSTASH cur len  depth mg_u MG_STASH CV_STASH START_U ROOT_U CV_GV cv_file PADLIST OUTSIDE outside_seq cv_flags');
@@ -3426,10 +3427,10 @@ sub B::CV::save {
     $gv->save;
     if ($PERL514) { # FIXME 5.18.0 with lexsubs
       # XXX gvcv might be PVMG
-      $init->add( sprintf( "CvGV_set((CV*)%s, (GV*)%s);", $sym, objsym($gv) ) );
-      # since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted)
-      # assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
-      # we init with CvFLAGS = 0 and set it later, as successfully done in the Bytecode compiler
+      $init->add( sprintf( "CvGV_set((CV*)%s, (GV*)%s);", $sym, objsym($gv)) );
+      # Since 5.13.3 and CvGV_set there are checks that the CV is not RC (refcounted).
+      # Assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
+      # We init with CvFLAGS = 0 and set it later, as successfully done in the Bytecode compiler
       if ($CvFLAGS & 0x0400) { # CVf_CVGV_RC
         warn sprintf( "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
                       $cv->FLAGS, $debug{flags}?$cv->flagspv:"", $CvFLAGS & ~0x400)
@@ -3468,12 +3469,12 @@ sub B::CV::save {
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
       "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
-      $sv_ix, $xpvcv_ix, $cv->REFCNT + ($PERL510 ? 1 : 0), $cv->FLAGS
+      $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
       )
     );
   }
   if ($cur) {
-    warn sprintf( "Saving CV proto %s for CV 0x%x\n", $pv, $$cv ) if $debug{cv};
+    warn sprintf( "Saving CV proto %s for CV $sym 0x%x\n", cstring($pv), $$cv ) if $debug{cv};
   }
   # issue 84: empty prototypes sub xx(){} vs sub xx{}
   if ($PERL510 and defined $pv) {
@@ -3736,10 +3737,11 @@ sub B::GV::save {
     }
   }
 
+  my $gvsv;
   if ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
-    my $gvsv = $gv->SV;
+    $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save \$".$sym." $gvsv\n" if $debug{gv};
       if ($fullname eq 'main::@') { # $@ = PL_errors
@@ -3754,8 +3756,8 @@ sub B::GV::save {
 	svref_2object(\${$fullname})->save($fullname);
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       } else {
-	$gvsv->save($fullname); #mostly NULL. $gvsv->isa("B::NULL");
-	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
+	$gvsv->save($fullname); #mostly NULL
+	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) ) unless $gvsv->isa("B::NULL");
       }
       if ($fullname eq 'main::$') { # $$ = PerlProc_getpid() issue #108
         warn sprintf( "  GV $sym \$\$ perlpid\n") if $debug{gv};
@@ -3821,6 +3823,7 @@ sub B::GV::save {
          and !$skip_package{$package} )
     {
       my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
+      my $cvsym;
       if ( $gvcv->XSUB and $fullname ne $origname ) {    #XSUB CONSTSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
         $origname = cstring( $origname );
@@ -3850,7 +3853,7 @@ sub B::GV::save {
 	# TODO: may need fix CvGEN if >0 to re-validate the CV methods
 	# on PERL510 (>0 + <subgeneration)
 	warn "GV::save &$fullname...\n" if $debug{gv};
-        my $cvsym = $gvcv->save($fullname);
+        $cvsym = $gvcv->save($fullname);
         # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
         if ($cvsym =~ /(\(char\*\))?get_cv\("/) {
 	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
@@ -3879,6 +3882,15 @@ sub B::GV::save {
 	}
 	else {
           $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
+        }
+      }
+      # special handling for backref magic
+      if ($PERL514 and $cvsym and $cvsym !~ /(get_cv\("|NULL)/ and $gv->MAGICAL) {
+        my @magic = $gv->MAGIC;
+        foreach my $mg (@magic) {
+          $init->add( "sv_magic((SV*)$sym, (SV*)$cvsym, '<', 0, 0);",
+                      "CvCVGV_RC_off($cvsym);"
+                    ) if $mg->TYPE eq '<';
         }
       }
     }
