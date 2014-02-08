@@ -5023,7 +5023,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
                 if (SvTYPE(sv) == SVt_RV)
 #endif
                     sv = SvRV(sv);
-                if (SvOBJECT(sv) && SvTYPE(sv) >= SVt_PVMG
+                if (sv && SvOBJECT(sv) && SvTYPE(sv) >= SVt_PVMG
                  && SvSTASH(sv)  && SvTYPE(sv) != SVt_PVCV && SvTYPE(sv) != SVt_PVIO) {
 	            SvREFCNT(sv) = 0;
 	            sv_clear(sv);
