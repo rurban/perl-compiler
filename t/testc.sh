@@ -474,6 +474,8 @@ my IO::Handle $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";'
 result[95]='ok'
+tests[96]='defined(&B::OP::name) || print q(ok)'
+result[96]='ok'
 tests[97]='use v5.12; print q(ok);'
 result[97]='ok'
 
