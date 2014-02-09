@@ -1565,9 +1565,14 @@ sub B::PADOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  my $skip_defined;
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_or_padop_pv($op), nextcop($op));
     $cv->save if $cv;
+  } elsif ($op->name eq 'gv' and $op->next and $op->next->name eq 'rv2cv'
+	   and $op->next->next and $op->next->next->name eq 'defined' ) {
+    # 96 do not save a gvsv->cv if just checked for defined'ness
+    $skip_defined++;
   }
   # This is saved by curpad syms at the end. But with __DATA__ handles it is better to save earlier
   if ($op->name eq 'padsv' or $op->name eq 'gvsv' or $op->name eq 'gv') {
@@ -1576,8 +1581,12 @@ sub B::PADOP::save {
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
     my $sv = $pad[$ix];
     if ($sv and $$sv) {
-      my $name = padop_name($op->name, $B::C::curcv);
-      $sv->save("padop ". ($name ? $name : ''));
+      my $name = padop_name($op, $B::C::curcv);
+      if ($skip_defined and $name !~ /^DynaLoader::/) {
+	warn "skip saving defined(&$name)\n" if $debug{gv}; # defer to run-time
+      } else {
+	$sv->save("padop ". ($name ? $name : ''));
+      }
     }
   }
   $padopsect->comment("$opsect_common, padix");

@@ -8,6 +8,7 @@ BEGIN {
   require "test.pl";
 }
 use Test::More;
+use Config;
 eval "use IO::Socket::SSL";
 if ($@) {
   plan skip_all => "IO::Socket::SSL required for testing issue95" ;
@@ -33,6 +34,8 @@ my IO::Handle $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";
 EOF
+
+my $ITHREADS = $Config{useithreads};
 
 sub compile_check {
   my ($num,$b,$base,$script,$cmt) = @_;
@@ -66,4 +69,4 @@ compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
 
 use B::C ();
 ctestok(3,'C,-O3,-UB','ccode95i',$issue,
-      (($B::C::VERSION lt '1.42_61' or $] > 5.015 or $] < 5.014) ? "TODO " : "").'run');
+      (($B::C::VERSION lt '1.42_61' or $ITHREADS or $] > 5.015 or $] < 5.014) ? "TODO " : "").'run');
