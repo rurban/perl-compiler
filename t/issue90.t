@@ -16,11 +16,15 @@ sub test3 {
   my $script = shift;
   my $cmt = join('',@_);
   my ($todobc,$todocc) = ("","");
-  $todobc = 'TODO ' if $name eq 'ccode90i_c' or ($] >= 5.018 and $Config{'useithreads'});
+  $todobc = 'TODO ' if $name eq 'ccode90i_c'
+    or ($] >= 5.018 and $Config{'useithreads'});
+  # passes BC threaded 5.10-16
+  $todobc = '' if $name eq 'ccode90i_c'
+    and $] >= 5.010 and $] < 5.018 and $Config{'useithreads'};
   if ($name eq 'ccode90i_c' and ($B::C::VERSION lt '1.42_61' or $] >= 5.018)) {
     $todocc = 'TODO '; #3 CC %+ includes Tie::Hash::NamedCapture
   } elsif ($name eq 'ccode90i_ca' and $] >= 5.010) {
-    $todocc = 'TODO '; #6 CC @+
+    $todocc = ''; #6 CC @+ fixed with 1.44
   } elsif ($name eq 'ccode90i_er' and $] >= 5.010 and $Config{'useithreads'}) {
     $todocc = 'TODO '; #12 CC Errno loaded automagically
   }

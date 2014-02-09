@@ -18,6 +18,6 @@ BEGIN{$INC{Carp.pm}++}
 my ($d,$ol); $d = pack("U*", 0xe3, 0x81, 0xAF); { use bytes; $ol = bytes::length($d) } print $ol
 EOF
 
-ctest(2,'^Not enough arguments for main','C,-O3','ccode235i',<<'EOF',"TODO #246 WontFix: missing proto decl for empty subs");
+ctest(2,'^Not enough arguments for main','C,-O3','ccode235i',<<'EOF',"#246 missing proto decl for empty subs");
 sub foo($\@); eval q/foo "s"/; print $@
 EOF
