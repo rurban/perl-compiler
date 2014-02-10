@@ -6006,6 +6006,7 @@ sub save_context {
     "GvAV(PL_incgv) = $inc_av;",
     "PL_curpad = AvARRAY($curpad_sym);",
     "PL_comppad = $curpad_sym;",    # fixed "panic: illegal pad"
+    "PL_stack_sp = PL_stack_base;"  # reset stack (was 1++)
   );
   if ($] < 5.017005) {
     $init->add(
