@@ -13,8 +13,8 @@ use strict;
 use Test::More tests => 1;
 
 use B::C ();
-my $when = "1.44";
-ctestok(1,'C,-O0','ccode203i',<<'EOF',($B::C::VERSION le $when ? "TODO " : "").'#203 perlio layers via use open');
+my $when = "1.46";
+ctestok(1,'C,-O0','ccode203i',<<'EOF',($B::C::VERSION lt $when ? "TODO " : "").'#203 perlio layers via use open');
 use open(IN => ":crlf", OUT => ":encoding(cp1252)");
 open F, "<", "/dev/null"; 
 my %l = map {$_=>1} PerlIO::get_layers(F, input  => 1);
