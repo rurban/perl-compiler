@@ -23,7 +23,10 @@ plan (tests => $tests);
 
 use tests 2; # First make sure that %! %- %+ do not load extra modules.
 map %{"foo::$_"}, qw< ! - + >;
-ok !exists $INC{'Errno.pm'}, '$swext::! does not load Errno';
+TODO: {
+  local $TODO = 'with perlcc';
+  ok !exists $INC{'Errno.pm'}, '$swext::! does not load Errno';
+}
 ok !exists $INC{'Tie/Hash/NamedCapture.pm'},
   '$foo::+ and $foo::- do not load Tie::Hash::NamedCapture';
 
