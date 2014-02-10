@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.44 707faf3 2014-02-09 | module updates 1.44 >5.10 (no changes)
-# perlversion = 5.008009-nt
-# path = /usr/local/bin/perl5.8.9-nt
-# platform = linux 64bit non-threaded
+# B::C::VERSION = 1.42_70 351d1f3 2014-01-03 | Revert "todo more failing 5.18 bc tests"
+# perlversion = 5.008005d
+# path = /usr/local/bin/perl5.8.5d
+# platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -85,7 +85,7 @@ pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod
+pass Test::Pod #TODO 5.8.1-5.8.8 with threads
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime #TODO <5.10
+fail DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008009-nt
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   1 /   2 (50.0%)
+# 100 / 100 modules tested with B-C-1.42_70 - perl-5.008005d
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)
