@@ -863,7 +863,7 @@ sub plctest {
 	    ok($ok);
 	}
     } else {
-	ok($ok, $todo ? "$todo " : '');
+	ok($ok, $todo ? "$todo" : '');
     }
     if ($ok) {
         unlink("$name.plc", "$base.pl");
