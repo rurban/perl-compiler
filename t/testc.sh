@@ -1128,6 +1128,11 @@ open(OUT, ">/dev/null"); write(OUT); close OUT;'
 result[277]=''
 tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
+tests[281]='#TODO
+"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\n"'
+result[281]='ok
+@- = 0 0 2 7
+@+ = 10 1 6 10'
 tests[282]='use vars qw($glook $smek $foof); $glook = 3; $smek = 4; $foof = "halt and cool down"; my $rv = \*smek; *glook = $rv; my $pv = ""; $pv = \*smek; *foof = $pv; print "ok\n";'
 result[282]='ok'
 tests[283]='#238 Undefined format "STDOUT"
@@ -1149,8 +1154,12 @@ print `cat "ccode.tmp"`'
 result[284]='123
 456
 789'
-tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
+tests[289]='debugging CvCVGV_RC assert only
+no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 result[289]='ok'
+tests[295]='#TODO
+"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
+result[295]='2 2 5 : 8 5 8'
 
 init
 

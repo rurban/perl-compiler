@@ -2493,6 +2493,9 @@ sub B::PVMG::save {
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym));
   }
   else {
+    if ($savesym =~ /PL_sv_undef/ and $ITHREADS) {
+      $savesym = 'NULL'; # Moose 5.8.9d
+    }
     $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
                             $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",

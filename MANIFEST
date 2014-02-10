@@ -75,8 +75,8 @@ log.modules-5.008005d
 log.modules-5.008005d-nt
 log.modules-5.008008
 log.modules-5.008008-nt
+log.modules-5.008009
 log.modules-5.008009-nt
-log.modules-5.008009d
 log.modules-5.010001-nt
 log.modules-5.010001d
 log.modules-5.012005
@@ -666,6 +666,7 @@ t/issue27.t
 t/issue272.t
 t/issue273.t
 t/issue274.t
+t/issue281.t
 t/issue282.t
 t/issue29.t
 t/issue31.t
