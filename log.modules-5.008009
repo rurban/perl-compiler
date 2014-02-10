@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 c85f829 2014-01-08 | C: revert parts of the ptr_undef changes, fixes 91,263 missing stashnames
+# B::C::VERSION = 1.44 4a38d27 2014-02-08 | C 1.44: bump version
 # perlversion = 5.008009
 # path = /usr/local/bin/perl5.8.9
 # platform = linux 64bit threaded
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-pass Moose
+fail Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+fail MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+pass DateTime #TODO <5.10
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.42_70 - perl-5.008009
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# 100 / 100 modules tested with B-C-1.44 - perl-5.008009
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   2 /   2 (100.0%)
 # skip   0 / 100 (0.0% not installed)
