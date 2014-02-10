@@ -1126,7 +1126,8 @@ bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT;'
 result[277]=''
-tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
+tests[280]='#TODO -O3 #280
+package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
 tests[281]='#TODO
 "I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\n"'
