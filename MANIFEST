@@ -307,7 +307,7 @@ t/C-COMPILED/CORE--op--read.t
 t/C-COMPILED/CORE--op--readdir.t
 t/C-COMPILED/CORE--op--readline.t
 t/C-COMPILED/CORE--op--recurse.t
-t/C-COMPILED/CORE--op--ref==BADTEST-197-285-286.t
+t/C-COMPILED/CORE--op--ref==BADPLAN-197-285-286.t
 t/C-COMPILED/CORE--op--repeat.t
 t/C-COMPILED/CORE--op--require_errors.t
 t/C-COMPILED/CORE--op--reset.t
