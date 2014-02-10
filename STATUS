@@ -1,5 +1,11 @@
 5.8, 5.6 and earlier had a good core perl compiler, but we are much better.
 
+Still missing in general are:
+
+  - global destruction (use lexicals!),
+  - attribute handlers (i.e. run-time attributes)
+  - compile-time perlio layers
+
 B::C is stable and used in production for -O0 and -O3. For bigger programs
 not all methods in certain packages or eval strings might be detected,
 you'd need to add them manually via -u<packagename>.
@@ -94,7 +100,7 @@ Compile-time status from top100:
 5.6.2      fail 1%  Sub::Name
 5.8.5      fail 1%  DateTime
 5.8.8      fail 1%  Test::Tester
-5.8.9      fail 3%  Moose MooseX::Types DateTime
+5.8.9      fail 2%  ExtUtils::CBuilder DateTime
 5.10.1     pass 100% (but PMOP->pregcomp is broken)
 5.12.5     fail 1%  ExtUtils::CBuilder
 5.14.4     pass 100%
@@ -116,6 +122,9 @@ Bytecode is broken for threaded perls, B::CC worse than with 5.14
 TODO for B::C
   see google issues https://code.google.com/p/perl-compiler/issues/
   Most of them have either easy workarounds or are not fixable.
+  - global destruction (use lexicals!),
+  - attribute handlers (i.e. run-time attributes)
+  - compile-time perlio layers
 
 Fix CC 
   several other issues detected (and mostly fixed) by Heinz Knutzen

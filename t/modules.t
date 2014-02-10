@@ -296,9 +296,10 @@ sub is_todo {
     if (!$DEBUGGING) { foreach(qw(
       Test::Tester
     )) { return 'non-debugging with threads' if $_ eq $module; }}
-    if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
-      Test::Pod
-    )) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
+    # fixed with 1.44
+    #if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
+    #  Test::Pod
+    #)) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
     # $op->precomp assertions _svivx != SVt_PVAV at rx = PM_GETRE(o)
     #if ($] >= 5.009 and $] < 5.012) { foreach(qw(
     #   Encode
@@ -332,9 +333,17 @@ sub is_todo {
     #if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
     #  DateTime
     #)) { return '5.8.5 without threads' if $_ eq $module; }}
+    if ($] > 5.008008 and $] <= 5.009) { foreach(qw(
+      ExtUtils::CBuilder
+    )) { return '5.8.9 without threads' if $_ eq $module; }}
     #if ($] > 5.015) { foreach(qw(
     #  DateTime::TimeZone
     #)) { return '> 5.15 without threads' if $_ eq $module; }}
+    if ($] > 5.019) { foreach(qw(
+      B::Hooks::EndOfScope
+      namespace::clean
+      MooseX::Types
+    )) { return '5.19 without threads' if $_ eq $module; }}
   }
   # ---------------------------------------
 }
