@@ -28,7 +28,7 @@ DESTROY {
 EOF
 
 ctest(1,$exp,'C,-O2','ccode197i',$script197,$todo.'missing package DESTROY #197');
-ctest(2,$exp,'C,-O3','ccode197i',$script197,$todo.'missing -O3 DESTROY #208');
+ctest(2,$exp,'C,-O3','ccode197i',$script197,$todo.'missing -O3 package DESTROY #197');
 
 $exp = $] > 5.013005 ? "RUN MyKooh DESTRUCT OurKooh" : " MyKooh  OurKooh";
 
@@ -41,13 +41,13 @@ ctest(3,$exp,'C,-O2','ccode197i',$script208,$todo.'missing our DESTROY #208');
 ctest(4,$exp,'C,-O3','ccode197i',$script208,'TODO missing our -O3 DESTROY #208');
 
 # if the bless happens inside BEGIN: wontfix
-ctestok(5,'C,-O3','ccode197i',<<'EOF','TODO destroy a lexvar #254');
+ctestok(5,'C,-O3','ccode197i',<<'EOF','TODO destroy upgraded lexvar #254');
 my $flag = 0;
 sub X::DESTROY { $flag = 1 }
 {
   my $x;              # x only exists in that scope
-  BEGIN { $x = 42 }   # initialize this lexvar during compilation
-  $x = bless {}, "X"; # run-time bless to call DESTROY
+  BEGIN { $x = 42 }   # pre-initialized as IV
+  $x = bless {}, "X"; # run-time upgrade and bless to call DESTROY
   # undef($x);        # value should be freed when exiting scope
 }
 print "ok\n" if $flag;
