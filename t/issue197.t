@@ -7,13 +7,13 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 5;
-use B::C ();
 
 my $exp = "ok - dynamic destruction
 ok - lexical destruction
 ok - package destruction";
 
-my $todo = ($] >= 5.018 or $B::C::VERSION ge '1.43_08') ? "" : "TODO ";
+my $todo = $] >= 5.018 ? "" : "TODO ";
+my $todo280 = "TODO ";
 my $script197 = <<'EOF';
 package FINALE;
 {
@@ -28,7 +28,7 @@ DESTROY {
 EOF
 
 ctest(1,$exp,'C,-O2','ccode197i',$script197,$todo.'missing package DESTROY #197');
-ctest(2,$exp,'C,-O3','ccode197i',$script197,$todo.'missing -O3 package DESTROY #197');
+ctest(2,$exp,'C,-O3','ccode197i',$script197,$todo280.'missing -O3 package DESTROY #280');
 
 $exp = $] > 5.013005 ? "RUN MyKooh DESTRUCT OurKooh" : " MyKooh  OurKooh";
 
@@ -38,7 +38,7 @@ sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $k=bless {}, OurKoo
 EOF
 
 ctest(3,$exp,'C,-O2','ccode197i',$script208,$todo.'missing our DESTROY #208');
-ctest(4,$exp,'C,-O3','ccode197i',$script208,'TODO missing our -O3 DESTROY #208');
+ctest(4,$exp,'C,-O3','ccode197i',$script208,$todo280.'missing our -O3 DESTROY #208, #280');
 
 # if the bless happens inside BEGIN: wontfix
 ctestok(5,'C,-O3','ccode197i',<<'EOF','TODO destroy upgraded lexvar #254');
