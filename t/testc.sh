@@ -876,7 +876,8 @@ use IO::File;
 can();
 print "ok\n";'
 result[2011]='ok'
-tests[203]='use open(IN => ":crlf", OUT => ":encoding(cp1252)");
+tests[203]='#TODO perlio layers
+use open(IN => ":crlf", OUT => ":encoding(cp1252)");
 open F, "<", "/dev/null";
 my %l = map {$_=>1} PerlIO::get_layers(F, input  => 1);
 print $l{crlf} ? q(ok) : keys(%l);'
@@ -1155,7 +1156,7 @@ print `cat "ccode.tmp"`'
 result[284]='123
 456
 789'
-tests[289]='debugging CvCVGV_RC assert only
+tests[289]='#debugging CvCVGV_RC assert only
 no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 result[289]='ok'
 tests[295]='#TODO
