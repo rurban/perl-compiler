@@ -22,7 +22,7 @@ if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
     $todo = "Test crashes before completion. Issues: $1"        if ( $options =~ /BADPLAN-([\d-]+)/ );
     $todo = "Fails tests when compiled with perlcc. Issues: $1" if ( $options =~ /BADTEST-([\d-]+)/ );
     $todo = "Tests out of sequence. Issues: $1"                 if ( $options =~ /SEQ-([\d-]+)/ );
-    $todo = "TODO test unexpectedly failing. Issues: $1"        if ( $options =~ /TODO-([\d-]+)/ );
+    $todo = "TODO test unexpectedly passing. Issues: $1"        if ( $options =~ /TODO-([\d-]+)/ );
 }
 
 $file_to_test =~ s{--}{/}g;
@@ -146,14 +146,17 @@ foreach my $optimization (@optimizations) {
           if ( $todo =~ /Fails tests when compiled with perlcc/ );
 
         local $TODO = $todo if ( $todo =~ m/Tests out of sequence/ );
-        ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )
-          or note explain $parser->{parse_errors};
+        if (!ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )) {
+          note explain $parser->{parse_errors};
+          $ENV{BC_DEVELOPING} = 1; # keep temp files
+        }
 
-        local $TODO = $todo if ( $todo =~ m/TODO test unexpectedly failing/ );
+        local $TODO = "tests unexpectedly passing";
         if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )) {
           note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
           $ENV{BC_DEVELOPING} = 1; # keep temp files
         }
+        $TODO = '';
     }
 }
 unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
