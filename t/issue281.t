@@ -10,7 +10,7 @@ use Test::More tests => 3;
 use B::C ();
 use Config;
 my $cmt = 'wrong @- values';
-$cmt = "TODO ".$cmt if $[ >= 5.010;
+$cmt = "TODO ".$cmt if $] >= 5.010;
 
 # was previously issue90.t test 16
 ctestok(1, 'C,-O3', 'ccode281i', <<'EOF', $cmt." #220");
