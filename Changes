@@ -4,7 +4,7 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.45	2014-02-11 rurban
-        * C: reset PL_stack_sp on init (was one too far)
+        * C: reset PL_stack_sp on init (was one too far). no effects on code.
         * t/issue281.t: fix wrong test ($[ vs $])
 
 1.44	2014-02-10 rurban

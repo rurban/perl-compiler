@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# http://code.google.com/p/perl-compiler/issues/detail?id=183
+# http://code.google.com/p/perl-compiler/issues/detail?id=169
 # Attribute::Handlers
 use strict;
 BEGIN {
@@ -8,7 +8,8 @@ BEGIN {
 }
 use Test::More tests => 3;
 use B::C ();
-my $todo = ($B::C::VERSION ge '1.45') ? "" : "TODO ";
+#my $todo = ($B::C::VERSION ge '1.46') ? "" : "TODO ";
+my $todo = "TODO ";
 
 ctestok(1,'C,-O3','ccode169i',<<'EOF',$todo.'Attribute::Handlers #169');
 package MyTest;
@@ -36,7 +37,7 @@ print qq{ok\n} if "@attrs" eq "method";
 #print "@attrs"
 EOF
 
-ctestok(3,'C,-O3','ccode169i',<<'EOF','compile-time attributes::get #278');
+ctestok(3,'C,-O3','ccode169i',<<'EOF',($] >= 5.012 ? "" : "TODO 5.10 ").'compile-time attributes::get #278');
 use attributes;
 our $anon = sub : method { $_[0]++ };
 @attrs = attributes::get $anon;
