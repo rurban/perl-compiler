@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.45	2014-02-11 rurban
+        * C: reset PL_stack_sp on init (was one too far). no effects on code.
+        * t/issue281.t: fix wrong test ($[ vs $])
+
 1.44	2014-02-10 rurban
         added adjusted CORE testsuite for 5.14. passes for 5.14.4-nt, not for 5.18.2-nt
 	(cPanel code_monkeys)
@@ -22,8 +26,6 @@
         Save now empty bodyless subs if they exist, for signal handlers,
           prototypes declarations and cvrefs (#251, #159, #235, #246, #270, #271, #275, #279)
         Fix PVMG PV overwriting the RV, overload sub (#273)
-        The GV refcount was one to high (B::walksymtable) which prevented
-          package destruction methods from being called (#197, #208, #254, #280)
 	* CC (1.14): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	* perlcc (2.17): Accept -A for -DALLOW_PERL_OPTIONS
 	* t/testc.sh: Accept -A for -DALLOW_PERL_OPTIONS

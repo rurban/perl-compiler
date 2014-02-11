@@ -1029,6 +1029,7 @@ sub todo_tests_default {
 	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
+	push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
 	push @todo, (14)    if $] >= 5.012;
 	push @todo, (10,16,50) if $what eq 'cc_o2';
 	#push @todo, (29)    if $] >= 5.013 and $what eq 'cc_o2';
