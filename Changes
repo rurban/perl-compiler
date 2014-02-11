@@ -3,6 +3,13 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.46	2014-?-? rurban
+
+        * C: Implement global destruction via sv_clean_objs and a PL_sv_arenaroot
+          as sv_list[0] (#197, #208, #254, #280)
+        Increment GV->FORM refcounts as they cannot be destructed, analog to CV
+        Call PL_exitlist functions with -O3
+
 1.45	2014-02-11 rurban
         * C: reset PL_stack_sp on init (was one too far). no effects on code.
         * t/issue281.t: fix wrong test ($[ vs $])
