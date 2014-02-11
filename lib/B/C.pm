@@ -739,6 +739,7 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my $gmg = $sv->FLAGS & SVs_GMG;
+  my $iscow = IsCOW($sv);
   my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
   my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
@@ -797,15 +798,15 @@ sub save_pv_or_rv {
       }
       if ($static) {
 	$len = 0;
-	$savesym = IsCOW($sv) ? savepv($pv) : constpv($pv);
+	$savesym = $iscow ? savepv($pv) : constpv($pv);
         if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
 	  $len = $cur +1;
           $pv = $savesym;
           $savesym = 'NULL';
         }
-        $len = $cur+2 if IsCOW($sv) and $cur;
-        push @B::C::static_free, $s if $len and !$B::C::in_endav;
+        $len = $cur+2 if $iscow and $cur;
+        push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
       } else {
 	$len = $cur+1;
         if ($shared_hek) {
@@ -816,15 +817,15 @@ sub save_pv_or_rv {
           }
           $free->add("    SvFAKE_off(&$s);");
         } else {
-          $len++ if IsCOW($sv) and $cur;
+          $len++ if $iscow and $cur;
         }
       }
     } else {
       $len = 0;
     }
   }
-  warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d %s\n", $savesym, cstring($pv), $cur, $len,
-               $static, $shared_hek ? "shared, $fullname" : $fullname) if $debug{pv};
+  warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s\n", $savesym, cstring($pv), $cur, $len,
+               $static, $iscow, $shared_hek ? "shared, $fullname" : $fullname) if $debug{pv};
   return ( $savesym, $cur, $len, $pv, $static );
 }
 
@@ -4874,9 +4875,10 @@ _EOT2
       $init->add_initav("    Perl_die(aTHX_ \"panic: AV alloc failed\");");
     }
   }
-  if ( !$B::C::destruct and $^O ne 'MSWin32') {
+  if ( !$B::C::destruct) {
     print <<'__EOT';
 int fast_perl_destruct( PerlInterpreter *my_perl );
+static void my_curse( aTHX_ SV* const sv );
 
 #ifndef dVAR
 # ifdef PERL_GLOBAL_STRUCT
@@ -4956,8 +4958,94 @@ _EOT5
   }
 
   # -fno-destruct only >5.8
-  if ( !$B::C::destruct and $^O ne 'MSWin32') {
+  if ( !$B::C::destruct) {
     print <<'_EOT6';
+
+static void
+my_curse( pTHX_ SV* const sv ) {
+    dSP;
+    dVAR;
+    HV* stash;
+
+    assert(SvOBJECT(sv));
+    do {
+	  stash = SvSTASH(sv);
+	  assert(SvTYPE(stash) == SVt_PVHV);
+	  if (HvNAME(stash)) {
+	    CV* destructor = NULL;
+	    assert (SvOOK(stash));
+	    if (!SvOBJECT(stash)) destructor = (CV *)SvSTASH(stash);
+	    if (!destructor
+#if PERL_VERSION > 17
+                || HvMROMETA(stash)->destroy_gen != PL_sub_generation
+#endif
+	    ) {
+		GV * const gv =
+		    gv_fetchmeth_autoload(stash, "DESTROY", 7, 0);
+		if (gv) destructor = GvCV(gv);
+		if (!SvOBJECT(stash))
+		{
+		    SvSTASH(stash) =
+			destructor ? (HV *)destructor : ((HV *)0)+1;
+#if PERL_VERSION > 17
+		    HvAUX(stash)->xhv_mro_meta->destroy_gen =
+			PL_sub_generation;
+#endif
+		}
+	    }
+	    assert(!destructor || destructor == ((CV *)0)+1
+		|| SvTYPE(destructor) == SVt_PVCV);
+	    if (destructor && destructor != ((CV *)0)+1
+		/* A constant subroutine can have no side effects, so
+		   don't bother calling it.  */
+		&& !CvCONST(destructor)
+		/* Don't bother calling an empty destructor or one that
+		   returns immediately. */
+		&& (CvISXSUB(destructor)
+		|| (CvSTART(destructor)
+		    && (CvSTART(destructor)->op_next->op_type
+					!= OP_LEAVESUB)
+		    && (CvSTART(destructor)->op_next->op_type
+					!= OP_PUSHMARK
+			|| CvSTART(destructor)->op_next->op_next->op_type
+					!= OP_RETURN
+		       )
+		   ))
+	       )
+	    {
+                DEBUG_D(PerlIO_printf(Perl_debug_log, "Calling %s::DESTROY\n", HvNAME(stash)));
+		SV* const tmpref = newRV(sv);
+		SvREADONLY_on(tmpref); /* DESTROY() could be naughty */
+		ENTER;
+		PUSHSTACKi(PERLSI_DESTROY);
+		EXTEND(SP, 2);
+		PUSHMARK(SP);
+		PUSHs(tmpref);
+		PUTBACK;
+		call_sv(MUTABLE_SV(destructor),
+			    G_DISCARD|G_EVAL|G_KEEPERR|G_VOID);
+		POPSTACK;
+		SPAGAIN;
+		LEAVE;
+		if(SvREFCNT(tmpref) < 2) {
+		    /* tmpref is not kept alive! */
+		    SvREFCNT(sv)--;
+		    SvRV_set(tmpref, NULL);
+		    SvROK_off(tmpref);
+		}
+		SvREFCNT_dec(tmpref);
+	    }
+	  }
+    } while (SvOBJECT(sv) && SvSTASH(sv) != stash);
+
+    if (SvOBJECT(sv)) {
+	/* Curse before freeing the stash, as freeing the stash could cause
+	   a recursive call into S_curse. */
+	SvOBJECT_off(sv);	/* Curse the object. */
+	SvSTASH_set(sv,0);	/* SvREFCNT_dec may try to read this */
+    }
+}
+
 int fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
@@ -5036,10 +5124,13 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
                 if (SvTYPE(sv) == SVt_RV)
 #endif
                     sv = SvRV(sv);
-                if (sv && SvOBJECT(sv) && SvTYPE(sv) >= SVt_PVMG
-                 && SvSTASH(sv)  && SvTYPE(sv) != SVt_PVCV && SvTYPE(sv) != SVt_PVIO) {
+                if (sv && SvOBJECT(sv) && SvTYPE(sv) >= SVt_PVMG && SvSTASH(sv)
+                    && SvTYPE(sv) != SVt_PVCV && SvTYPE(sv) != SVt_PVIO
+                    && PL_defstash /* Still have a symbol table? */
+                    && SvDESTROYABLE(sv))
+                {
 	            SvREFCNT(sv) = 0;
-	            sv_clear(sv);
+                    my_curse(sv);
                 }
             }
         }
