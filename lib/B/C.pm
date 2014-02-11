@@ -730,7 +730,7 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my $gmg = $sv->FLAGS & SVs_GMG;
-  my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL' );
+  my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
   my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
   # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
@@ -756,7 +756,7 @@ sub save_pv_or_rv {
 	$cur = length (pack "a*", $pv);
 	$pok = 1;
       } else {
-	($pv,$cur) = (undef,0);
+	($pv,$cur) = ("",0);
       }
     }
     $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
@@ -4385,7 +4385,8 @@ sub B::IO::save {
   } else {
     $len = 0;
   }
-  warn sprintf( "IO $fullname sv_list[%d] 0x%x (%s) = '%s'\n", $svsect->index+1, $$io, $io->SvTYPE, $pv ) if $debug{sv};
+  warn sprintf( "IO $fullname sv_list[%d] 0x%x (%s) = '%s'\n", $svsect->index+1, $$io, $io->SvTYPE, $pv )
+    if $debug{sv} and $] > 5.008; # no method "SvTYPE" via package "B::IO"
   if ($PERL514) {
     # IFP in sv.sv_u.svu_fp
     $xpviosect->comment("STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, page_len, ..., type, flags");
