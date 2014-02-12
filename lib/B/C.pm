@@ -1769,17 +1769,21 @@ sub B::COP::save {
   push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
-      $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
-      my $stpv = constpv( $op->stashpv );
-      my $stlen = "";
-      if ($] >= 5.016 and $] <= 5.017) {
-        $stlen = ", ".length($op->stashpv);
+      if ($B::C::const_strings) {
+        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
+        $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv($op->stashpv) ));
+      } else {
+        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
+        $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
       }
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", $stpv));
     } elsif (!$B::C::const_strings) { # cv_undef e.g. in bproto.t and many more core tests
       # with -O3 avoid cv_undef with threads
+      my $stlen = "";
+      if ($] >= 5.016 and $] <= 5.017) { # 5.16 special-case API
+        $stlen = ", ".length($op->stashpv);
+      }
       $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv).$stlen ));
     }
   }
 
