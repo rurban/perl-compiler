@@ -1776,7 +1776,8 @@ sub B::COP::save {
         $stlen = ", ".length($op->stashpv);
       }
       $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", $stpv));
-    } else { # cv_undef e.g. in bproto.t and many more core tests
+    } elsif (!$B::C::const_strings) { # cv_undef e.g. in bproto.t and many more core tests
+      # with -O3 avoid cv_undef with threads
       $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
       $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
     }
