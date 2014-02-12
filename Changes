@@ -10,10 +10,19 @@
         Increment GV->FORM refcounts as they cannot be destructed, analog to CV
         Call PL_exitlist functions with -O3
 
-1.45	2014-02-11 rurban
+1.46	2014-02-11 rurban
         * C: reset PL_stack_sp on init (was one too far). no effects on code.
         Call DESTROY methods for all our global static SVs (i.e. "global destruction"),
           fixes #197, #280, #282
+        Make the lexical cop_warnings pointer dynamic, because on cv_undef (scope exit,
+          assign, exit, die, ...) CvROOT and all its kids are freed, ignoring op_latefreed.
+          The content of the warning is still a static string - and leaks on perl, but
+          we don't care.
+        -fwarn-sv is now always set, just not with MSVC on Windows. The warnings are then
+          directly set, not in a tight loop afterwards, because the value is needed for
+          the dynamic init.
+
+1.45	2014-02-11 rurban
         * t/issue281.t: fix wrong test ($[ vs $])
 
 1.44	2014-02-10 rurban

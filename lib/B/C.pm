@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_01';
+our $VERSION = '1.45_02';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -376,7 +376,7 @@ our %option_map = (
 );
 our %optimization_map = (
     0 => [qw()],                # special case
-    1 => [qw(-fppaddr -fwarn-sv -fav-init2)], # falls back to -fav-init
+    1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop)],
@@ -1620,26 +1620,14 @@ sub B::COP::save {
   my $warnings   = $op->warnings;
   my $is_special = ref($warnings) eq 'B::SPECIAL';
   my $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
-  if ( $is_special && $$warnings == 4 ) {
-    # use warnings 'all';
-    $warn_sv =
-      $B::C::optimize_warn_sv
-      ? "INT2PTR($warnsvcast,1)".($verbose ?' /*pWARN_ALL*/':'')
-      : 'pWARN_ALL';
+  if ( $is_special && $$warnings == 4 ) { # use warnings 'all';
+    $warn_sv = 'pWARN_ALL';
   }
-  elsif ( $is_special && $$warnings == 5 ) {
-    # no warnings 'all';
-    $warn_sv =
-      $B::C::optimize_warn_sv
-      ? "INT2PTR($warnsvcast,2)".($verbose ?' /*pWARN_NONE*/':'')
-      : 'pWARN_NONE';
+  elsif ( $is_special && $$warnings == 5 ) { # no warnings 'all';
+    $warn_sv = 'pWARN_NONE';
   }
-  elsif ($is_special) {
-    # use warnings;
-    $warn_sv =
-      $B::C::optimize_warn_sv
-      ? "INT2PTR($warnsvcast,3)".($verbose ?' /*pWARN_STD*/':'')
-      : 'pWARN_STD';
+  elsif ($is_special) { # use warnings;
+    $warn_sv = 'pWARN_STD';
   }
   else {
     # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong,
@@ -1650,7 +1638,8 @@ sub B::COP::save {
     # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
     $warn_sv = "($warnsvcast)&".$warn_sv;
-    $free->add( sprintf( "    cop_list[%d].cop_warnings = NULL;", $ix ) );
+    $free->add( sprintf( "    cop_list[%d].cop_warnings = NULL;", $ix ) )
+      if !$B::C::optimize_warn_sv or !$PERL510;
     #push @B::C::static_free, sprintf("cop_list[%d]", $ix);
   }
 
@@ -1695,8 +1684,7 @@ sub B::COP::save {
                 "(char*)".constpv( $op->stashpv ), # we can store this static
                 "(char*)".constpv( $file ),
                 $op->stashflags, $op->hints,
-                ivx($op->cop_seq),
-                $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+                ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     } else {
       # cop_label now in hints_hash (Change #33656)
@@ -1704,12 +1692,11 @@ sub B::COP::save {
 	      "$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
       $copsect->add(
 	sprintf(
-              "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
-              $op->_save_common, $op->line,
-	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
-	      $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
-              $op->hints, ivx($op->cop_seq),
-              ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )
+                "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
+                $op->_save_common, $op->line,
+                $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
+                $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
+                $op->hints, ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
 	       ));
     }
     if ( $op->label ) {
@@ -1737,8 +1724,8 @@ sub B::COP::save {
 			  $op->_save_common,     $op->line, 'NULL',
 			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-                          $op->hints, $op->cop_seq,
-			  ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' )));
+                          $op->hints, $op->cop_seq, $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+                         ));
     if ($op->label) {
       $init->add(sprintf( "CopLABEL_set(&cop_list[%d], CopLABEL_alloc(%s));",
 			  $copsect->index, cstring( $op->label ) ));
@@ -1754,7 +1741,7 @@ sub B::COP::save {
 	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
 	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
 	      ivx($op->cop_seq), $op->arybase,
-	      $op->line, ( $B::C::optimize_warn_sv ? $warn_sv : 'NULL' ),
+	      $op->line, $B::C::optimize_warn_sv ? $warn_sv : 'NULL',
 	      ( $PERL56 ? "" : ", 0" )
 	     )
     );
@@ -1765,6 +1752,18 @@ sub B::COP::save {
     unless $B::C::optimize_ppaddr;
   $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
     unless $B::C::optimize_warn_sv;
+  if ($PERL510 and !$is_special) {
+    my $copw = $warn_sv;
+    $copw =~ s/^\(STRLEN\*\)&//;
+    # on cv_undef (scope exit, die, ...) CvROOT and all its kids are freed.
+    # lexical cop_warnings need to be dynamic, but just the ptr to the static string.
+    $init->add("{", # allocate new ptr
+               "  STRLEN *lexwarn;",
+               "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
+               "  Copy($copw, lexwarn, sizeof($copw), char);",
+               "  cop_list[$ix].cop_warnings = lexwarn;",
+               "}");
+  }
 
   push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
@@ -3463,10 +3462,21 @@ sub B::CV::save {
       }
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
-      if ($startfield and $startfield =~ /cop_list/) {
+      if ($startfield and $startfield =~ /cop_list/) { # XXX comp/decl.t comp/bproto.t threaded
         my $cop = $startfield;
         $cop =~ s/^\(OP\*\)&//;
-        $init->add("{", # allocate new ptr
+        # on cv_undef the CvROOT is freed which is a COP
+        # lexical cop_warnings need to be dynamic then.
+        $init->add("if (!specialWARN($cop.cop_warnings)) {",
+                   "  STRLEN *lexwarn;",
+                   "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
+                   "  Copy($cop.cop_warnings, lexwarn, sizeof($cop.cop_warnings), char);",
+                   "  $cop.cop_warnings = lexwarn;",
+                   "}");
+      } elsif ($$root and ref($root) eq 'B::COP') {
+        my $cop = $root->save;
+        $cop =~ s/^\(OP\*\)&//;
+        $init->add("{",
                    "  char *lexwarn = savepvn((char*)&".$cop.".cop_warnings, sizeof(STRLEN *));",
                    "  $cop.cop_warnings = (STRLEN*)lexwarn;",
                    "}");
@@ -4928,36 +4938,6 @@ _EOT3
 
 }
 
-sub init_op_warn {
-  my ( $op_type, $num ) = @_;
-  my $op_list = $op_type . "_list";
-
-  # for reasons beyond imagination, MSVC5 considers pWARN_ALL non-const
-  $init->add( split /\n/, <<_EOT4 );
-{
-    register int i;
-    for( i = 0; i < ${num}; ++i )
-    {
-        switch( PTR2IV(${op_list}\[i].cop_warnings) )
-        {
-        case 1:
-            ${op_list}\[i].cop_warnings = pWARN_ALL;
-            break;
-        case 2:
-            ${op_list}\[i].cop_warnings = pWARN_NONE;
-            break;
-        case 3:
-            ${op_list}\[i].cop_warnings = pWARN_STD;
-            break;
-        default:
-            break;
-        }
-    }
-}
-_EOT4
-
-}
-
 sub output_main_rest {
 
   if ( $PERL510 ) {
@@ -6272,9 +6252,6 @@ sub fixup_ppaddr {
       init_op_addr( $section->name, $section->index + 1 );
     }
   }
-
-  init_op_warn( $copsect->name, $copsect->index + 1 )
-    if $B::C::optimize_warn_sv && $copsect->index >= 0;
 }
 
 # save %SIG ( in case it was set in a BEGIN block )
@@ -6499,6 +6476,7 @@ sub compile {
   $B::C::stash    = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
+  $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
 	       B::Section B::Pseudoreg B::Shadow);
   #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
@@ -6872,9 +6850,9 @@ Enabled with C<-O1>.
 
 =item B<-fwarn-sv>
 
-Optimize the initialization of cop_warnings.
+Use static initialization for cop_warnings. Automatically disabled for MSVC 5.
 
-Enabled with C<-O1>.
+Disable with C<-fno-warn-sv>.
 
 =item B<-fro-inc>
 
