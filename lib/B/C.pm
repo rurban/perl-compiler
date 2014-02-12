@@ -1767,16 +1767,19 @@ sub B::COP::save {
     unless $B::C::optimize_warn_sv;
 
   push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
-  if (!$ITHREADS) {
-    $init->add(
-      sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) )
-    ) if !$B::C::optimize_cop;
-    my $stpv = constpv( $op->stashpv );
-    my $stlen = "";
-    if ($] >= 5.016 and $] <= 5.017) {
-      $stlen = ", ".length($op->stashpv);
+  if (!$B::C::optimize_cop) {
+    if (!$ITHREADS) {
+      $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
+      my $stpv = constpv( $op->stashpv );
+      my $stlen = "";
+      if ($] >= 5.016 and $] <= 5.017) {
+        $stlen = ", ".length($op->stashpv);
+      }
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", $stpv));
+    } else { # cv_undef e.g. in bproto.t and many more core tests
+      $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
+      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
     }
-    $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", $stpv));
   }
 
   # our root: store all packages from this file
