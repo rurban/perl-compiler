@@ -879,6 +879,12 @@ sub ctestok {
 sub ctest {
     my ($num, $expected, $backend, $base, $script, $todo) =  @_;
     my $name = $base."_$num";
+    my $b = $backend; # protect against parallel test name clashes
+    $b =~ s/-(D.*|f.*|v),//g;
+    $b =~ s/-/_/g;
+    $b =~ s/[, ]//g;
+    $b = lc($b);
+    $name .= $b;
     unlink($name, "$name.c", "$name.pl", "$name.exe");
     open F, ">", "$name.pl";
     print F $script;
