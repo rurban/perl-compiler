@@ -3463,6 +3463,14 @@ sub B::CV::save {
       }
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
+      if ($startfield and $startfield =~ /cop_list/) {
+        my $cop = $startfield;
+        $cop =~ s/^\(OP\*\)&//;
+        $init->add("{", # allocate new ptr
+                   "  char *lexwarn = savepvn((char*)&".$cop.".cop_warnings, sizeof(STRLEN *));",
+                   "  $cop.cop_warnings = (STRLEN*)lexwarn;",
+                   "}");
+      }
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
     }
