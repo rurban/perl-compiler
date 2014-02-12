@@ -4878,7 +4878,7 @@ _EOT2
   if ( !$B::C::destruct) {
     print <<'__EOT';
 int fast_perl_destruct( PerlInterpreter *my_perl );
-static void my_curse( aTHX_ SV* const sv );
+static void my_curse( pTHX_ SV* const sv );
 
 #ifndef dVAR
 # ifdef PERL_GLOBAL_STRUCT
@@ -5130,7 +5130,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
                     && SvDESTROYABLE(sv))
                 {
 	            SvREFCNT(sv) = 0;
-                    my_curse(sv);
+                    my_curse(aTHX_ sv);
                 }
             }
         }
