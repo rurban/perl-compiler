@@ -4957,6 +4957,14 @@ _EOT5
   if ( !$B::C::destruct) {
     print <<'_EOT6';
 
+#ifndef SvDESTROYABLE
+#define SvDESTROYABLE(sv) 1
+#endif
+/* 5.8 */
+#ifndef CvISXSUB
+#define CvISXSUB(sv) CvXSUB(sv)
+#endif
+
 static void
 my_curse( pTHX_ SV* const sv ) {
     dSP;
@@ -4965,19 +4973,17 @@ my_curse( pTHX_ SV* const sv ) {
 
     assert(SvOBJECT(sv));
     do {
-	  stash = SvSTASH(sv);
-	  assert(SvTYPE(stash) == SVt_PVHV);
-	  if (HvNAME(stash)) {
+        stash = SvSTASH(sv);
+        assert(SvTYPE(stash) == SVt_PVHV);
+	if (HvNAME(stash)) {
 	    CV* destructor = NULL;
-	    assert (SvOOK(stash));
 	    if (!SvOBJECT(stash)) destructor = (CV *)SvSTASH(stash);
 	    if (!destructor
 #if PERL_VERSION > 17
                 || HvMROMETA(stash)->destroy_gen != PL_sub_generation
 #endif
 	    ) {
-		GV * const gv =
-		    gv_fetchmeth_autoload(stash, "DESTROY", 7, 0);
+		GV * const gv = gv_fetchmeth_autoload(stash, "DESTROY", 7, 0);
 		if (gv) destructor = GvCV(gv);
 		if (!SvOBJECT(stash))
 		{
@@ -4990,7 +4996,7 @@ my_curse( pTHX_ SV* const sv ) {
 		}
 	    }
 	    assert(!destructor || destructor == ((CV *)0)+1
-		|| SvTYPE(destructor) == SVt_PVCV);
+		   || SvTYPE(destructor) == SVt_PVCV);
 	    if (destructor && destructor != ((CV *)0)+1
 		/* A constant subroutine can have no side effects, so
 		   don't bother calling it.  */
@@ -4999,18 +5005,15 @@ my_curse( pTHX_ SV* const sv ) {
 		   returns immediately. */
 		&& (CvISXSUB(destructor)
 		|| (CvSTART(destructor)
-		    && (CvSTART(destructor)->op_next->op_type
-					!= OP_LEAVESUB)
-		    && (CvSTART(destructor)->op_next->op_type
-					!= OP_PUSHMARK
-			|| CvSTART(destructor)->op_next->op_next->op_type
-					!= OP_RETURN
+		    && (CvSTART(destructor)->op_next->op_type != OP_LEAVESUB)
+		    && (CvSTART(destructor)->op_next->op_type != OP_PUSHMARK
+			|| CvSTART(destructor)->op_next->op_next->op_type != OP_RETURN
 		       )
 		   ))
 	       )
 	    {
-                DEBUG_D(PerlIO_printf(Perl_debug_log, "Calling %s::DESTROY\n", HvNAME(stash)));
 		SV* const tmpref = newRV(sv);
+		DEBUG_D(PerlIO_printf(Perl_debug_log, "Calling %s::DESTROY\n", HvNAME(stash)));
 		SvREADONLY_on(tmpref); /* DESTROY() could be naughty */
 		ENTER;
 		PUSHSTACKi(PERLSI_DESTROY);
@@ -5018,8 +5021,7 @@ my_curse( pTHX_ SV* const sv ) {
 		PUSHMARK(SP);
 		PUSHs(tmpref);
 		PUTBACK;
-		call_sv(MUTABLE_SV(destructor),
-			    G_DISCARD|G_EVAL|G_KEEPERR|G_VOID);
+		call_sv((SV*)destructor, G_DISCARD|G_EVAL|G_KEEPERR|G_VOID);
 		POPSTACK;
 		SPAGAIN;
 		LEAVE;
@@ -5031,7 +5033,7 @@ my_curse( pTHX_ SV* const sv ) {
 		}
 		SvREFCNT_dec(tmpref);
 	    }
-	  }
+	}
     } while (SvOBJECT(sv) && SvSTASH(sv) != stash);
 
     if (SvOBJECT(sv)) {
