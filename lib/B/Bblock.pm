@@ -127,7 +127,11 @@ sub B::LISTOP::mark_if_leader {
 
 sub B::PMOP::mark_if_leader {
   my $op = shift;
-  if ( $op->name ne "pushre" ) {
+  if (  $op->type
+    and $op->name ne "pushre"
+    and ($] > 5.008005 or $op->name ne "substcont") )
+  {
+    #warn $op->name, $op->type if $] == 5.008004;
     my $replroot = $op->pmreplroot;
     if ($$replroot) {
       mark_leader( $replroot );

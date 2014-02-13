@@ -2,8 +2,9 @@
 #directory /usr/src/perl/perl-5.6.2
 
 set breakpoint pending on
-#break XS_B__CC__autovivification
 break __asan_report_error
+
+#break XS_B__CC__autovivification
 #break B.xs:1398
 #break B.c:2044
 #break B.xs:1858
@@ -15,7 +16,7 @@ break __asan_report_error
 #p/x sv_list[3299]
 # panic free from wrong pool 5.18.1
 #b util.c:252
-b sv.c:3737 if (GV*)dstr->sv_u.svu_gp
+#b sv.c:3737 if (GV*)dstr->sv_u.svu_gp
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc

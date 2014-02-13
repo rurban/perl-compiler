@@ -4912,7 +4912,7 @@ _EOT2
       $init->add_initav("    Perl_die(aTHX_ \"panic: AV alloc failed\");");
     }
   }
-  if ( !$B::C::destruct) {
+  if ( !$B::C::destruct ) {
     print <<'__EOT';
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
@@ -4964,8 +4964,8 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
 _EOT5
   }
 
-  # -fno-destruct only >5.8
-  if ( !$B::C::destruct) {
+  # -fno-destruct only >=5.8
+  if ( !$B::C::destruct ) {
     print <<'_EOT6';
 
 #ifndef SvDESTROYABLE
@@ -4974,6 +4974,13 @@ _EOT5
 /* 5.8 */
 #ifndef CvISXSUB
 #define CvISXSUB(sv) CvXSUB(sv)
+#endif
+#ifndef SvRV_set
+#define SvRV_set(a,b) SvRV(a) = (b)
+#endif
+/* 5.6 */
+#ifndef PERL_EXIT_DESTRUCT_END
+#define PERL_EXIT_DESTRUCT_END 2
 #endif
 
 static void
@@ -5144,6 +5151,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
             }
         }
     }
+#if PERL_VERSION > 7
     if (DEBUG_D_TEST) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "\n");
@@ -5152,6 +5160,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
               sva, sva+SvREFCNT(sva), SvREFCNT(sva));
         }
     }
+#endif
 
     PerlIO_destruct(aTHX);
 #if defined(PERLIO_LAYERS)
@@ -5615,7 +5624,7 @@ EOT
     print $B::C::eval_pvs if $B::C::eval_pvs;
     print "    exitstatus = perl_run( my_perl );\n";
 
-    if ( !$B::C::destruct and $^O ne 'MSWin32' ) {
+    if ( !$B::C::destruct ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
     #} elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
@@ -6484,7 +6493,6 @@ sub compile {
   my ( $option, $opt, $arg );
   my @eval_at_startup;
   $B::C::can_delete_pkg = 1;
-  $B::C::destruct = 1;
   $B::C::save_sig = 1;
   $B::C::stash    = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables

@@ -1034,9 +1034,13 @@ sub todo_tests_default {
 	# on cygwin 29 passes
 	#15,21,27,30,41-45,50,103,105
         #15,46,50,103 fixed with 1.42_61
-	push @todo, (21,30,105);
+	push @todo, (21,30,105,106);
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
-	push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
+        # fixed with 1.45_02
+	#push @todo, (3,7,15,41,44,45) if $] > 5.008 and $] <= 5.008005;
+	# only tested 5.8.4 and .5
+	#push @todo, (27)    if $] <= 5.008005;
+	#push @todo, (49)    if $] >= 5.007 and $] < 5.008008;
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
 	push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
@@ -1046,9 +1050,6 @@ sub todo_tests_default {
 	#push @todo, (29)    if $] >= 5.013 and $what eq 'cc_o2';
 	#push @todo, (43)     if $what eq 'cc_o2'; # -faelem
 	#push @todo, (103)   if $] > 5.007 and $] < 5.009 and $what eq 'cc_o1';
-	# only tested 5.8.4 and .5
-	push @todo, (27)    if $] <= 5.008005;
-	push @todo, (49)    if $] >= 5.007 and $] < 5.008008;
 	push @todo, (29)    if $] < 5.008008;
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
