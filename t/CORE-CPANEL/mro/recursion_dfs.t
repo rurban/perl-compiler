@@ -5,11 +5,11 @@ use warnings;
 BEGIN {
     unless (-d 'blib') {
         chdir 't' if -d 't';
-        @INC = '../lib';
+        @INC = 't/CORE-CPANEL/lib';
     }
 }
 
-require './test.pl';
+require 't/CORE-CPANEL/test.pl';
 
 plan(skip_all => "Your system has no SIGALRM") if !exists $SIG{ALRM};
 plan(tests => 8);

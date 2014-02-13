@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 chdir 't' if -d 't';
-require q(./test.pl); plan(tests => 7);
+require q(t/CORE-CPANEL/test.pl); plan(tests => 7);
 
 require mro;
 

@@ -2,8 +2,8 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = '../lib';
-    require "./test.pl";
+    @INC = 't/CORE-CPANEL/lib';
+    require "t/CORE-CPANEL/test.pl";
 }
 
 use strict;

@@ -3,9 +3,9 @@
 BEGIN {
     unless (-d 'blib') {
         chdir 't' if -d 't';
-        @INC = '../lib';
+        @INC = 't/CORE-CPANEL/lib';
     }
-    require q(./test.pl);
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 use strict;

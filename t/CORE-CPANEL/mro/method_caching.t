@@ -8,11 +8,11 @@ no warnings 'prototype'; # we do a lot of this
 BEGIN {
     unless (-d 'blib') {
         chdir 't' if -d 't';
-        @INC = '../lib';
+        @INC = 't/CORE-CPANEL/lib';
     }
 }
 
-require './test.pl';
+require 't/CORE-CPANEL/test.pl';
 
 {
     package MCTest::Base;

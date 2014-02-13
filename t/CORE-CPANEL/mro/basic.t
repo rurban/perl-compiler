@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-BEGIN { require q(./test.pl); } plan(tests => 52);
+BEGIN { require q(t/CORE-CPANEL/test.pl); } plan(tests => 52);
 
 require mro;
 

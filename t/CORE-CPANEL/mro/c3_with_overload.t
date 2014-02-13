@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-require q(./test.pl); plan(tests => 7);
+require q(t/CORE-CPANEL/test.pl); plan(tests => 7);
 
 {
     package BaseTest;

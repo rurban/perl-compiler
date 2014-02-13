@@ -1,6 +1,6 @@
 #!./perl
 
-BEGIN { chdir 't'; @INC = '../lib'; require './test.pl' }
+BEGIN { require 't/CORE-CPANEL/test.pl' }
 
 plan 12;
 

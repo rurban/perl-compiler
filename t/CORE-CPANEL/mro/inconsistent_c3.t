@@ -5,11 +5,11 @@ use warnings;
 BEGIN {
     unless (-d 'blib') {
         chdir 't' if -d 't';
-        @INC = '../lib';
+        @INC = 't/CORE-CPANEL/lib';
     }
 }
 
-require q(./test.pl); plan(tests => 1);
+require q(t/CORE-CPANEL/test.pl); plan(tests => 1);
 
 require mro;
 
