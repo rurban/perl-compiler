@@ -28,12 +28,7 @@ if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
 $file_to_test =~ s{--}{/}g;
 $file_to_test =~ s{C-COMPILED-CPANEL/}{};    # Strip the BINARY dir off to look for this test elsewhere.
 
-if ( $] != '5.014003' && $file_to_test =~ m{^t/CORE-CPANEL/} ) {
-    plan skip_all => "Perl CORE tests only supported in 5.14.4 right now.";
-}
-else {
-    plan tests => 3 + 10 * scalar @optimizations;
-}
+plan tests => 3 + 10 * scalar @optimizations;
 
 ok( !-z $file_to_test, "$file_to_test exists" );
 
