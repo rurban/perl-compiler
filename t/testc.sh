@@ -385,8 +385,7 @@ sub script {my($package,@args)=@_;print "ok"}'
 result[74]='ok'
 # issue 71_2+3: cop_warnings issue76 and const destruction issue71 fixed
 # ok with "utf-8-strict"
-tests[75]='#TODO 5.8.8-5.10
-use Encode;
+tests[75]='use Encode;
 my $x = "abc";
 print "ok" if "abc" eq Encode::decode("UTF-8", $x);'
 result[75]='ok'
@@ -468,8 +467,7 @@ tests[931]='my $f;BEGIN{open($f,"<README");}read $f,my $in, 2; print "ok"'
 result[931]='ok'
 tests[932]='my $f;BEGIN{open($f,">&STDOUT");}print $f "ok"'
 result[932]='ok'
-tests[95]='#TODO IO::Handle
-use IO::Socket::SSL();
+tests[95]='use IO::Socket::SSL();
 my IO::Handle $handle = IO::Socket::SSL->new(SSL_verify_mode =>0);
 $handle->blocking(0);
 print "ok";'
@@ -695,9 +693,7 @@ print a_sub()."\n";'
 result[169]='called
 ok
 42'
-# works fine with -O3
-tests[170]='#TODO non-O3
-eval "sub xyz (\$) : bad ;"; print "~~~~\n$@~~~~\n"'
+tests[170]='eval "sub xyz (\$) : bad ;"; print "~~~~\n$@~~~~\n"'
 result[170]='~~~~
 Invalid CODE attribute: bad at (eval 1) line 1.
 BEGIN failed--compilation aborted at (eval 1) line 1.
@@ -730,8 +726,7 @@ my $ref = "\x{10000}\0\0\0\0";
 print "ok 2\n" if ~~$str eq $ref;'
 result[174]='ok 1
 ok 2'
-tests[175]='#TODO
-{
+tests[175]='{
   # note that moving the use in an eval block solve the problem
   use warnings NONFATAL => all;
   $SIG{__WARN__} = sub { "ok - expected warning\n" };
@@ -843,8 +838,7 @@ $SIG{__DIE__} = sub { $m = shift };
 { my $f = Foo->new }
 print "m: $m\n";'
 result[196]='m: Modification of a read-only value attempted at ccode196.pl line 3.'
-tests[197]='# TODO
-package FINALE;
+tests[197]='package FINALE;
 {
     $ref3 = bless ["ok - package destruction"];
     my $ref2 = bless ["ok - lexical destruction\n"];
@@ -905,7 +899,7 @@ $str =~ /^[ET1]/i;
 }'
 result[207]='ok 1
 ok 2'
-tests[208]='#TODO 197
+tests[208]='#TODO 208 our refcount
 sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $my =bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $our=bless {}, OurKooh;'
 if [[ `$PERL -e'print (($] < 5.014)?0:1)'` -gt 0 ]]; then
@@ -941,7 +935,7 @@ result[215]=':t3
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
 result[216]='ok'
 # also at 904
-tests[220]='#TODO
+tests[220]='#TODO @-
 my $content = "ok\n";
 while ( $content =~ m{\w}g ) {
     $_ .= "$-[0]$+[0]";
@@ -1028,31 +1022,27 @@ result[246]='Not enough arguments for main::foo at (eval 1) line 2, at EOF'
 tests[247]='# WontFix
 no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
 result[247]='ok'
-tests[248]='# TODO
+tests[248]='#TODO
 {my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
 result[248]='-titi-toto-'
-tests[249]='# TODO
+tests[249]='#TODO
 use version; print version::is_strict(q{01}) ? 1 : 0'
 result[249]='0'
-tests[250]='# TODO
+tests[250]='#TODO
 use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
 result[250]='Misplaced _ in number at (eval 1) line 1.
 Invalid version format (no underscores) at (eval 1) line 1, near "package withversion "
 syntax error at (eval 1) line 1, near "package withversion 1.1_"'
-tests[251]='# TODO
-sub f;print "ok" if exists &f'
+tests[251]='sub f;print "ok" if exists &f'
 result[251]='ok'
-tests[2511]='# TODO
+tests[2511]='#TODO 5.18
 sub f :lvalue;print "ok" if exists &f'
 result[2511]='ok'
-tests[2512]='# TODO
-sub f ();print "ok" if exists &f'
+tests[2512]='sub f ();print "ok" if exists &f'
 result[2512]='ok'
-tests[2513]='# TODO
-sub f ($);print "ok" if exists &f'
+tests[2513]='sub f ($);print "ok" if exists &f'
 result[2513]='ok'
-tests[2514]='# TODO
-sub f;print "ok" if exists &f'
+tests[2514]='sub f;print "ok" if exists &f'
 result[2514]='ok'
 # duplicate of 234
 tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
@@ -1061,7 +1051,7 @@ tests[253]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v98
 result[253]='1..2
 ok 1
 ok 2'
-tests[254]='# TODO 197 destroy upgraded lexvar
+tests[254]='#TODO destroy upgraded lexvar
 my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
 {
@@ -1130,10 +1120,9 @@ bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT;'
 result[277]=''
-tests[280]='#TODO -O3 #280
-package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
+tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
-tests[281]='#TODO
+tests[281]='#TODO @-
 "I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\n"'
 result[281]='ok
 @- = 0 0 2 7
@@ -1159,10 +1148,9 @@ print `cat "ccode.tmp"`'
 result[284]='123
 456
 789'
-tests[289]='#debugging CvCVGV_RC assert only
-no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
+tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 result[289]='ok'
-tests[295]='#TODO
+tests[295]='#TODO @-
 "zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
 
