@@ -1,8 +1,7 @@
 #!perl -w
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = 't/CORE-CPANEL/lib';
+    unshift @INC, 't/CORE-CPANEL/lib';
     require "t/CORE-CPANEL/test.pl";
 }
 
