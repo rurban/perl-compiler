@@ -3239,7 +3239,18 @@ sub B::CV::save {
 		    $padlistsym, $$padlist, $$cv )
         if $debug{cv} and $debug{gv};
       # do not record a forward for the pad only
-      $init->add( "CvPADLIST($sym) = $padlistsym;" );
+
+      # issue 298: dynamic CvPADLIST(&END) since 5.18 - END{} blocks
+      if ($] > 5.017 and $fullname eq 'main::END') {
+        $init->add("{ /* &END needs a dynamic padlist */",
+                   "  PADLIST *pad;",
+                   "  Newxz(pad, sizeof(PADLIST), PADLIST);",
+                   "  Copy($padlistsym, pad, sizeof(PADLIST), char);",
+                   "  CvPADLIST($sym) = pad;",
+                   "}");
+      } else {
+        $init->add( "CvPADLIST($sym) = $padlistsym;" );
+      }
     }
     warn $fullname."\n" if $debug{sub};
   }
