@@ -1512,8 +1512,14 @@ sub pp_nextstate {
   } else {
     write_label($op);
   }
+  #testcc 48: protect CopFILE_free and CopSTASH_free in END block (#296)
   $curcop->load($op);
   loadop($op);
+  if ($ppname =~ /^pp_sub_END(_\d+)?$/) {
+    runtime("#ifdef USE_ITHREADS",
+            "CopFILE((COP*)PL_op) = NULL; CopSTASHPV((COP*)PL_op) = NULL;",
+            "#endif");
+  }
   @stack = ();
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
