@@ -58,9 +58,20 @@ my %SIGNALS = qw( 11 SEGV 6 SIGABRT 1 SIGHUP 13 SIGPIPE);
 $SIGNALS{0} = '';
 
 foreach my $optimization (@optimizations) {
-  TODO: SKIP: {
+TODO: {
+  SKIP: {
         local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
         local $ENV{BC_OPT} = $optimization;
+
+        my $b = $optimization; # protect against parallel test name clashes
+        $b =~ s/-(D.*|f.*|v),//g;
+        $b =~ s/-/_/g;
+        $b =~ s/[, ]//g;
+        $b = lc($b);
+        $b =~ s/_o0$//;
+        ( $c_file   = $file_to_test ) =~ s/\.t$/$b.c/;
+        ( $bin_file = $file_to_test ) =~ s/\.t$/$b/;
+        unlink $bin_file, $c_file;
 
         # Generate the C code at $optimization level
         my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
@@ -87,7 +98,7 @@ foreach my $optimization (@optimizations) {
         ok( -x $bin_file, "$bin_file is compiled and ready to run." );
 
         if ( !-x $bin_file ) {
-            unlink $c_file, $bin_file;
+            unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
             skip( "Can't test further due to failure to create a binary file.", 8 );
         }
 
@@ -158,5 +169,6 @@ foreach my $optimization (@optimizations) {
         }
         $TODO = '';
     }
+  }
+  unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
 }
-unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
