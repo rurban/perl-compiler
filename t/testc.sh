@@ -497,6 +497,9 @@ result[104]='12'
 #tests[105]='$int::dummy=0;$double::dummy=0;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 tests[105]='%int::;%double::;my int $r;my int $i=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;'
 result[105]='12'
+# issue 296
+tests[106]='my $s=q{ok};END{print $s}END{$x = 0}'
+result[106]='ok'
 
 # issue31
 tests[131]='package Ccode31i;my $regex = qr/\w+/;sub test {print ("word" =~ m/^$regex$/o ? "ok\n" : "not ok\n");}

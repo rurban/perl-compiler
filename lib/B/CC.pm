@@ -3128,9 +3128,21 @@ sub cc_recurse {
       warn "cc $ccinfo->[0] skipped (debugging)\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo skipped (debugging)\n" if $debug{queue};
     }
-    elsif ($cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
+    elsif (exists $cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
       warn "cc $ccinfo->[0] already defined\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo already defined\n" if $debug{queue};
+      while (exists $cc_pp_sub{$ccinfo->[0]}) {
+        if ($ccinfo->[0] =~ /^(pp_sub_.*_)(\d*)$/) {
+          my $s = $2;
+          $s++;
+          $ccinfo->[0] = $1 . $s;
+        } else {
+          $ccinfo->[0] .= '_0';
+        }
+      }
+      warn "cc renamed to $ccinfo->[0]\n" if $verbose;
+      cc(@$ccinfo);
+      $cc_pp_sub{$ccinfo->[0]}++;
     } else {
       debug "cc(ccinfo): @$ccinfo\n" if $debug{queue};
       cc(@$ccinfo);
