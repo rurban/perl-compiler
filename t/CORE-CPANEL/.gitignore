@@ -1,0 +1,8 @@
+*.bin
+*.subtest.t
+*.c
+*.tmp
+*.tmp_bak
+tmp*
+a.out
+/utf*.pl

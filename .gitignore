@@ -51,3 +51,10 @@ B-C-*.tar.gz
 .commit
 *.patch
 x*.p
+/Io_argv*
+/t/CORE-CPANEL/base/*.bin
+/t/CORE-CPANEL/cmd/*.bin
+/t/CORE-CPANEL/comp/*.bin
+/t/CORE-CPANEL/io/*.bin
+/t/CORE-CPANEL/lib/*.bin
+/t/CORE-CPANEL/op/*.bin
