@@ -47,7 +47,7 @@ pass( $taint ? "Taint mode!" : "Not in taint mode" );
 ( my $bin_file = $file_to_test ) =~ s/\.t$/.bin/;
 unlink $bin_file, $c_file;
 
-my $PERL = $^X;
+my $PERL = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 
 my $check = `$PERL -c $taint '$file_to_test' 2>&1`;
 like( $check, qr/syntax OK/, "$PERL -c $taint $file_to_test" );
@@ -67,8 +67,8 @@ TODO: {
         $b =~ s/-(D.*|f.*|v),//g;
         $b =~ s/-/_/g;
         $b =~ s/[, ]//g;
+        $b =~ s/_O0$//;
         $b = lc($b);
-        $b =~ s/_o0$//;
         ( $c_file   = $file_to_test ) =~ s/\.t$/$b.c/;
         ( $bin_file = $file_to_test ) =~ s/\.t$/$b/;
         unlink $bin_file, $c_file;
