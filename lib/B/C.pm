@@ -1775,8 +1775,7 @@ sub B::COP::save {
         $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
         $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
       }
-    } elsif (!$B::C::const_strings) { # cv_undef e.g. in bproto.t and many more core tests
-      # with -O3 avoid cv_undef with threads
+    } else { # cv_undef e.g. in bproto.t and many more core tests with threads
       my $stlen = "";
       if ($] >= 5.016 and $] <= 5.017) { # 5.16 special-case API
         $stlen = ", ".length($op->stashpv);
