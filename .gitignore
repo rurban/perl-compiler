@@ -53,3 +53,4 @@ B-C-*.tar.gz
 *.patch
 x*.p
 /Io_argv*
+/a.out
