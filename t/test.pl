@@ -781,6 +781,10 @@ use blib;use B::CC;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; pr
 >>>>
 12
 ######### 105 CC attrs ###############################
+my $s=q{ok};END{print $s}END{$x = 0}
+>>>>
+ok
+######### 106 CC 296/297 ###############################
 CCTESTS
 
         my $i = 100;

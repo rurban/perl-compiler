@@ -283,7 +283,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.14';
+our $VERSION = '1.15';
 
 # Start registering the L<types> namespaces.
 $main::int::B_CC = $main::num::B_CC = $main::str::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;

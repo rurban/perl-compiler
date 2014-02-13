@@ -3,17 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.46	2014-?-? rurban
-
-        * C: Implement global destruction via sv_clean_objs and a PL_sv_arenaroot
-          as sv_list[0] (#197, #208, #254, #280)
-        Increment GV->FORM refcounts as they cannot be destructed, analog to CV
-        Call PL_exitlist functions with -O3
-
-1.46	2014-02-11 rurban
+1.46	2014-02-?? rurban
         * C: reset PL_stack_sp on init (was one too far). no effects on code.
+        Implement global destruction via sv_clean_objs and a PL_sv_arenaroot
+          as sv_list[0] (#197, #208, #254, #280)
         Call DESTROY methods for all our global static SVs (i.e. "global destruction"),
           fixes #197, #280, #282
+        Increment GV->FORM refcounts as they cannot be destructed, analog to CV
+        Call PL_exitlist functions with -O3
         Make the lexical cop_warnings pointer dynamic, because on cv_undef (scope exit,
           assign, exit, die, ...) CvROOT and all its kids are freed, ignoring op_latefreed.
           The content of the warning is still a static string - and leaks on perl, but
@@ -21,6 +18,9 @@
         -fwarn-sv is now always set, just not with MSVC on Windows. The warnings are then
           directly set, not in a tight loop afterwards, because the value is needed for
           the dynamic init.
+	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
+        Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
+        Handle duplicate names, like multiple END blocks or anon functions (#297)
 
 1.45	2014-02-11 rurban
         * t/issue281.t: fix wrong test ($[ vs $])
