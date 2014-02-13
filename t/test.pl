@@ -894,7 +894,7 @@ sub ctest {
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
     my $post = '';
-    my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
+    $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
     ($b, $post) = split(" ", $b);
     $post = '' unless $post;
     $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-(O3|ffold|fwarnings)/;
