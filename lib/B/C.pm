@@ -3471,7 +3471,7 @@ sub B::CV::save {
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
       if ($startfield and $startfield =~ /cop_list/) { # XXX comp/decl.t comp/bproto.t threaded
-        if (objsym($root->next) != $startfield) {
+        if (objsym($root->next) and objsym($root->next) ne $startfield) {
           my $cop = $startfield;
           $cop =~ s/^\(OP\*\)&//;
           # on cv_undef the CvROOT is freed which is a COP
