@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage: t/fast-testing.sh [--coproc]
+# usage: t/fast-testing.sh
 
 test -f Makefile || perl Makefile.PL
 V=`perl -ane'print $F[2] if /^VERSION =/' Makefile`
@@ -10,13 +10,15 @@ trap "rm $lock; exit 255" SIGINT SIGTERM
 
 # need to kill rogue processes since we cannot use run_cmd. it disturbs stdout/err order #
 # bash-4 only
-if [ x$1 = x--coproc ]; then
-  coproc (while true; do
+if ((BASH_VERSINFO[0] < 4)); then
+  echo "no coproc watchdog processkiller"
+else
+  eval "coproc (while true; do
     sleep 1;
     code=`ps axw|egrep ' \./(ccode|cccode|a |aa |a.out|perldoc)'|grep -v grep`
     pid=`echo $code|perl -ane'print $F[0]'`
-    test -n "$pid" && (echo $code; sleep 1s; kill $pid 2>/dev/null);
-    sleep 5; done)
+    test -n \"$pid\" && (echo $code; sleep 1s; kill $pid 2>/dev/null);
+    sleep 5; done)"
   w=${COPROC_PID}
 fi
 
@@ -41,4 +43,3 @@ if [ -n "$logs" ]; then
     cp status.$V-$R $rdir/
 fi
 rm $lock
-
