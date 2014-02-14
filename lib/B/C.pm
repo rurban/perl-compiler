@@ -1759,7 +1759,8 @@ sub B::COP::save {
     $init->add("{", # allocate new ptr
                "  STRLEN *lexwarn;",
                "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
-               "  Copy($copw, lexwarn, sizeof($copw), char);",
+               "  if ($copw)",
+               "    Copy($copw, lexwarn, sizeof($copw), char);",
                "  cop_list[$ix].cop_warnings = lexwarn;",
                "}");
   }
@@ -3477,11 +3478,12 @@ sub B::CV::save {
           # on cv_undef the CvROOT is freed which is a COP
           # lexical cop_warnings need to be dynamic then.
           $init->add("if (!specialWARN($cop.cop_warnings)) {",
-                   "  STRLEN *lexwarn;",
-                   "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
-                   "  Copy($cop.cop_warnings, lexwarn, sizeof($cop.cop_warnings), char);",
-                   "  $cop.cop_warnings = lexwarn;",
-                   "}");
+                     "  STRLEN *lexwarn;",
+                     "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
+                     "  if ($cop.cop_warnings)",
+                     "    Copy($cop.cop_warnings, lexwarn, sizeof($cop.cop_warnings), char);",
+                     "  $cop.cop_warnings = lexwarn;",
+                     "}");
         }
       } elsif ($$root and ref($root) eq 'B::COP' and !objsym($root)) {
         my $cop = $root->save;
