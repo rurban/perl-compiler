@@ -6499,6 +6499,7 @@ sub compile {
   my @eval_at_startup;
   $B::C::can_delete_pkg = 1;
   $B::C::save_sig = 1;
+  $B::C::destruct = 1;
   $B::C::stash    = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
@@ -6639,7 +6640,7 @@ OPTION:
     $B::C::av_init = 0;
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
-  $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32';
+  $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32'; # skip -ffast-destruct there
 
   init_sections();
   foreach my $i (@eval_at_startup) {
