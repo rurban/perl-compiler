@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_02';
+our $VERSION = '1.45_03';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -5703,6 +5703,8 @@ sub B::GV::savecv {
   }
   if ( $$cv and in_static_core($package, $name) and $cv->XSUB ) {
     warn("Skip internal XS $fullname\n") if $debug{gv};
+    # but prevent it from being deleted
+    mark_package($package, 1);
     return;
   }
   if ($package eq 'B::C') {
@@ -5894,9 +5896,12 @@ sub should_save {
       return;
     } else {
       warn "ext/mro already loaded\n" if $debug{pkg};
+      return $include_package{mro};
     }
   }
-  if ($package eq 'attributes' and $] > 5.011 and grep /attributes/, @DynaLoader::dl_modules) {
+  if ($package eq 'attributes' and $] > 5.011
+      and grep { $_ eq 'attributes' } @DynaLoader::dl_modules)
+  {
     mark_package($package, 1);
     return 1;
   }
