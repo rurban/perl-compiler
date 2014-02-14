@@ -158,6 +158,7 @@ sub check_env {
 
         my $program_name = $0;
         $program_name =~ s/\.bin$/.t/;
+        $program_name =~ s{^\./}{};
 
         is( $warning, <<WARNING,   '  got uninit & deprecation warning' );
 Use of uninitialized value in chdir at $program_name line 64.

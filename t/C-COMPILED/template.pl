@@ -64,12 +64,14 @@ TODO: {
         local $ENV{BC_OPT} = $optimization;
 
         my $b = $optimization; # protect against parallel test name clashes
-        $b =~ s/-(D.*|f.*|v),//g;
-        $b =~ s/-/_/g;
-        $b =~ s/[, ]//g;
-        $b =~ s/_O0$//;
-        $b = lc($b);
+        #$b =~ s/-(D.*|f.*|v),//g;
+        #$b =~ s/-/_/g;
+        #$b =~ s/[, ]//g;
+        #$b =~ s/_O0$//;
+        #$b = lc($b);
+        $b = ''; # need to check $0 diagnostics
         ( $c_file   = $file_to_test ) =~ s/\.t$/$b.c/;
+        $b = '.bin'; # need to check $0 diagnostics
         ( $bin_file = $file_to_test ) =~ s/\.t$/$b/;
         unlink $bin_file, $c_file;
 
@@ -148,8 +150,8 @@ TODO: {
         ok( !scalar @{ $parser->{failed} }, "Test results:" );
         print "    $_\n" foreach ( split( "\n", $out ) );
 
-        if (!ok( !scalar @{ $parser->{failed} }, "No test failures" )) {
-          note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
+        if (!ok( !scalar @{ $parser->{failed} }, "No test failures $optimization" )) {
+          note( "Failed $optimization tests: " . join( ", ", @{ $parser->{failed} } ) );
           $ENV{BC_DEVELOPING} = 1; # keep temp files
         }
 
@@ -163,7 +165,7 @@ TODO: {
         }
 
         local $TODO = "tests unexpectedly passing" if scalar @{ $parser->{todo_passed} };
-        if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )) {
+        if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed $optimization" )) {
           note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
           $ENV{BC_DEVELOPING} = 1; # keep temp files
         }
