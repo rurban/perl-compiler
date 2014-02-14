@@ -806,7 +806,7 @@ sub save_pv_or_rv {
           $savesym = 'NULL';
         }
         $len = $cur+2 if $iscow and $cur;
-        push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
+        #push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
       } else {
 	$len = $cur+1;
         if ($shared_hek) {
@@ -5215,10 +5215,10 @@ _EOT7
           print " CopSTASHPV_set(&$s, NULL, 0);\n";
         }
       # end dead code ---
-      } elsif ($s =~ /^pv\d/) {
-	print "    $s = NULL;\n";
+      #} elsif ($s =~ /^pv\d/) {
+      #	print "    $s = \"\";\n";
       } elsif ($s ne 'ptr_undef') {
-	warn("unknown static_free: $s at index $_");
+	warn("unknown $s at \@static_free[$_]");
       }
     }
     $free->output( \*STDOUT, "%s\n" );
