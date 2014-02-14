@@ -5229,6 +5229,7 @@ _EOT7
     /* B::C specific: prepend static svs to arena for sv_clean_objs */
     SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
     PL_sv_arenaroot = &sv_list[0];
+#if PERL_VERSION > 7
     if (DEBUG_D_TEST) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "\n");
@@ -5238,6 +5239,10 @@ _EOT7
         }
     }
     return perl_destruct( my_perl );
+else
+    perl_destruct( my_perl );
+    return 0;
+#endif
 }
 _EOT7a
   }
