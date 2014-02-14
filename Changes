@@ -18,6 +18,7 @@
         -fwarn-sv is now always set, just not with MSVC on Windows. The warnings are then
           directly set, not in a tight loop afterwards, because the value is needed for
           the dynamic init.
+	Improve -O4 by keeping all CvSTART cops
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
         Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
         Handle duplicate names, like multiple END blocks or anon functions (#297)

@@ -1604,7 +1604,8 @@ sub B::COP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
 
-  if ($optimize_cop and !$op->label) { # XXX very unsafe!
+  # we need to keep CvSTART cops, so check $level == 0
+  if ($optimize_cop and $level and !$op->label) { # XXX very unsafe!
     my $sym = savesym( $op, $op->next->save );
     warn sprintf( "Skip COP (0x%x) => %s (0x%x), line %d file %s\n",
                   $$op, $sym, $op->next, $op->line, $op->file ) if $debug{cops};
