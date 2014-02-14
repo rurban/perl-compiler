@@ -1644,6 +1644,8 @@ sub B::COP::save {
     #push @B::C::static_free, sprintf("cop_list[%d]", $ix);
   }
 
+  my $dynamic_copwarn = ($PERL510 and !$is_special) ? 1 : $B::C::optimize_warn_sv;
+
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
   # $file =~ s/\.pl$/.c/;
@@ -1655,9 +1657,9 @@ sub B::COP::save {
 	sprintf(
 		"%s, %u, " . "%d, %s, %u, " . "%s, %s, NULL",
 		$op->_save_common, $op->line,
-		$op->stashoff, "(char*)".constpv( $file ), #hints=0
+		$op->stashoff, "NULL", #hints=0
                 $op->hints,
-		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+		ivx($op->cop_seq), !$dynamic_copwarn ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.016) {
       # [perl #113034] [PATCH] 2d8d7b1 replace B::COP::stashflags by B::COP::stashlen (5.16.0 only)
@@ -1667,13 +1669,12 @@ sub B::COP::save {
 	sprintf(
 		"%s, %u, " . "%s, %s, %d, %u, " . "%s, %s, NULL",
 		$op->_save_common, $op->line,
-		"(char*)".constpv( $op->stashpv ), # we can store this static
-		"(char*)".constpv( $file ),
+		"NULL", "NULL",
 		# XXX at broken 5.16.0 with B-1.34 we do non-utf8, non-null only (=> negative len),
 		# 5.16.0 B-1.35 has stashlen, 5.16.1 we will see.
 		$op->can('stashlen') ? $op->stashlen : length($op->stashpv),
                 $op->hints,
-		ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+		ivx($op->cop_seq), !$dynamic_copwarn ? $warn_sv : 'NULL'
 	       ));
     } elsif ($ITHREADS and $] >= 5.015004 and $] < 5.016) {
       $copsect->comment(
@@ -1682,10 +1683,9 @@ sub B::COP::save {
 	sprintf(
                 "%s, %u, " . "%s, %s, %d, %u, " . "%s, %s, NULL",
                 $op->_save_common, $op->line,
-                "(char*)".constpv( $op->stashpv ), # we can store this static
-                "(char*)".constpv( $file ),
+                "NULL", "NULL",
                 $op->stashflags, $op->hints,
-                ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+                ivx($op->cop_seq), !$dynamic_copwarn ? $warn_sv : 'NULL'
 	       ));
     } else {
       # cop_label now in hints_hash (Change #33656)
@@ -1695,9 +1695,9 @@ sub B::COP::save {
 	sprintf(
                 "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
                 $op->_save_common, $op->line,
-                $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "Nullhv",# we can store this static
-                $ITHREADS ? "(char*)".constpv( $file ) : "Nullgv",
-                $op->hints, ivx($op->cop_seq), $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+                $ITHREADS ? "NULL" : "Nullhv",# we cannot store this static (attribute exit)
+                $ITHREADS ? "NULL" : "Nullgv",
+                $op->hints, ivx($op->cop_seq), !$dynamic_copwarn ? $warn_sv : 'NULL'
 	       ));
     }
     if ( $op->label ) {
@@ -1723,9 +1723,8 @@ sub B::COP::save {
     $copsect->comment("$opsect_common, line, label, stash, file, hints, seq, warnings, hints_hash");
     $copsect->add(sprintf("%s, %u, %s, " . "%s, %s, %u, " . "%u, %s, NULL",
 			  $op->_save_common,     $op->line, 'NULL',
-			  $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-			  $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
-                          $op->hints, $op->cop_seq, $B::C::optimize_warn_sv ? $warn_sv : 'NULL'
+			  "NULL", "NULL",
+                          $op->hints, $op->cop_seq, !$dynamic_copwarn ? $warn_sv : 'NULL'
                          ));
     if ($op->label) {
       $init->add(sprintf( "CopLABEL_set(&cop_list[%d], CopLABEL_alloc(%s));",
@@ -1739,10 +1738,9 @@ sub B::COP::save {
       sprintf(
 	      "%s, %s, %s, %s, %s, %d, %u, %s %s",
 	      $op->_save_common, cstring( $op->label ),
-	      $ITHREADS ? "(char*)".constpv( $op->stashpv ) : "NULL", # we can store this static
-	      $ITHREADS ? "(char*)".constpv( $file ) : "NULL",
+	      "NULL", "NULL",
 	      ivx($op->cop_seq), $op->arybase,
-	      $op->line, $B::C::optimize_warn_sv ? $warn_sv : 'NULL',
+	      $op->line, !$dynamic_copwarn ? $warn_sv : 'NULL',
 	      ( $PERL56 ? "" : ", 0" )
 	     )
     );
@@ -1765,8 +1763,7 @@ sub B::COP::save {
                "  cop_list[$ix].cop_warnings = lexwarn;",
                "}");
   }
-
-  push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
+  #push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
@@ -3474,19 +3471,21 @@ sub B::CV::save {
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
       if ($startfield and $startfield =~ /cop_list/) { # XXX comp/decl.t comp/bproto.t threaded
-        my $cop = $startfield;
-        $cop =~ s/^\(OP\*\)&//;
-        # on cv_undef the CvROOT is freed which is a COP
-        # lexical cop_warnings need to be dynamic then.
-        $init->add("if (!specialWARN($cop.cop_warnings)) {",
+        if (objsym($root->next) != $startfield) {
+          my $cop = $startfield;
+          $cop =~ s/^\(OP\*\)&//;
+          # on cv_undef the CvROOT is freed which is a COP
+          # lexical cop_warnings need to be dynamic then.
+          $init->add("if (!specialWARN($cop.cop_warnings)) {",
                    "  STRLEN *lexwarn;",
                    "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
                    "  Copy($cop.cop_warnings, lexwarn, sizeof($cop.cop_warnings), char);",
                    "  $cop.cop_warnings = lexwarn;",
                    "}");
-      } elsif ($$root and ref($root) eq 'B::COP') {
+        }
+      } elsif ($$root and ref($root) eq 'B::COP' and !objsym($root)) {
         my $cop = $root->save;
-        $cop =~ s/^\(OP\*\)&//;
+        $cop =~ s/^\(OP\*\)&//; # TODO: check dupl. and same code as above
         $init->add("{",
                    "  char *lexwarn = savepvn((char*)&".$cop.".cop_warnings, sizeof(STRLEN *));",
                    "  $cop.cop_warnings = (STRLEN*)lexwarn;",
@@ -5201,6 +5200,7 @@ _EOT7
       } elsif ($s =~ /^&sv_list/) {
        print "    SvLEN($s) = 0;\n";
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
+      # dead code ---
       } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
@@ -5214,6 +5214,9 @@ _EOT7
         } else { # 5.16 experiment
           print " CopSTASHPV_set(&$s, NULL, 0);\n";
         }
+      # end dead code ---
+      } elsif ($s =~ /^pv\d/) {
+	print "    $s = NULL;\n";
       } elsif ($s ne 'ptr_undef') {
 	warn("unknown static_free: $s at index $_");
       }
