@@ -5239,7 +5239,7 @@ _EOT7
         }
     }
     return perl_destruct( my_perl );
-else
+#else
     perl_destruct( my_perl );
     return 0;
 #endif
