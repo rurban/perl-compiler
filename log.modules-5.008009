@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 57f3ee3 2014-02-09 | 1.44 release: more log.modules updates M
+# B::C::VERSION = 1.45_03 79fa3ed 2014-02-14 | C: oops, fixup syntax error in previous commit
 # perlversion = 5.008009
 # path = /usr/local/bin/perl5.8.9
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008009
+# 100 / 100 modules tested with B-C-1.45_03 - perl-5.008009
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   2 /   0 ()

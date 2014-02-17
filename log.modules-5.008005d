@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 4a38d27 2014-02-08 | C 1.44: bump version
+# B::C::VERSION = 1.45_03 79fa3ed 2014-02-14 | C: oops, fixup syntax error in previous commit
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -85,7 +85,7 @@ pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod #TODO 5.8.1-5.8.8 with threads
+pass Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008005d
-# pass  97 / 100 (97.0%)
-# fail   3 / 100 (3.0%)
-# todo   2 /   3 (66.7%)
+# 100 / 100 modules tested with B-C-1.45_03 - perl-5.008005d
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)

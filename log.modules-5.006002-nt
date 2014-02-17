@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.42_70 aad9377 2014-01-11 | t/issue27.t: improve TODO message
+# B::C::VERSION = 1.45_03 79fa3ed 2014-02-14 | C: oops, fixup syntax error in previous commit
 # perlversion = 5.006002-nt
 # path = /usr/local/bin/perl5.6.2-nt
 # platform = linux 64bit non-threaded
@@ -6,10 +6,10 @@ pass Exporter
 pass Text::Tabs
 pass Text::Wrap
 pass Test::Harness
-pass Pod::Escapes
-pass Pod::Simple
+skip Pod::Escapes
+skip Pod::Simple
 pass IO
-pass Scalar::Util
+skip Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
@@ -18,66 +18,66 @@ pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 pass Test
-pass Data::Dumper
+fail Data::Dumper
 pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
-pass ExtUtils::ParseXS
-pass Module::Build
+skip ExtUtils::CBuilder
+skip ExtUtils::ParseXS
+skip Module::Build
 pass File::Path
 pass XSLoader
-pass MIME::Base64
-pass Digest
-pass Digest::MD5
+skip MIME::Base64
+skip Digest
+skip Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-pass HTML::Parser
+skip HTML::Parser
 pass Test::Exception
-pass Net::Cmd
+skip Net::Cmd
 pass Compress::Raw::Zlib
-pass Compress::Raw::Bzip2
-pass IO::Compress::Base
-pass LWP
-pass Storable
+skip Compress::Raw::Bzip2
+skip IO::Compress::Base
+skip LWP
+skip Storable
 pass base
 pass List::MoreUtils
-pass Params::Util
+skip Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
-pass Sub::Install
-pass Attribute::Handlers
-pass Data::OptList
-pass Sub::Exporter
-pass Test::NoWarnings
-pass version
-pass Params::Validate
-fail Sub::Name
-pass Filter::Util::Call
+skip Test::Tester
+skip Sub::Install
+skip Attribute::Handlers
+skip Data::OptList
+skip Sub::Exporter
+fail Test::NoWarnings
+skip version
+skip Params::Validate
+fail Sub::Name #TODO 5.6
+skip Filter::Util::Call
 pass Algorithm::C3
-pass Class::C3
+skip Class::C3
 pass Scope::Guard
-pass MRO::Compat
+fail MRO::Compat
 skip Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
-pass Test::Deep
+skip Devel::GlobalDestruction
+skip Class::MOP
+skip Moose
+skip Test::Deep
 pass Carp::Clan
-pass Module::Pluggable
+skip Module::Pluggable
 pass if(1) => "Sys::Hostname"
-pass Text::Balanced
-pass DBI
+skip Text::Balanced
+skip DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 skip Path::Class
 pass Test::Warn
@@ -85,25 +85,25 @@ skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
+skip Test::Pod
+skip Digest::SHA1
+skip namespace::clean
 pass Class::Inspector
-pass Clone
+skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 skip YAML
-pass MooseX::Types
+skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
-# 94 / 100 modules tested with B-C-1.42_70 - perl-5.006002-nt
-# pass  93 /  94 (98.9%)
-# fail   1 /  94 (1.1%)
-# todo   0 /   1 (0.0%)
-# skip   6 / 100 (6.0% not installed)
+skip Template::Stash
+# 52 / 100 modules tested with B-C-1.45_03 - perl-5.006002-nt
+# pass  48 /  52 (92.3%)
+# fail   4 /  52 (7.7%)
+# todo   1 /   4 (25.0%)
+# skip  48 / 100 (48.0% not installed)
