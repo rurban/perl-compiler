@@ -3641,7 +3641,7 @@ sub B::GV::save {
       $is_coresym++;
     }
   }
-  if ($fullname =~ /^main::std(in|out|err)$/) {
+  if ($fullname =~ /^main::std(in|out|err)$/) { # same as uppercase above
     $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
@@ -3760,7 +3760,7 @@ sub B::GV::save {
   elsif ( $fullname eq 'main::ARGV' ) {
     $savefields = Save_HV | Save_SV | Save_CV | Save_FORM | Save_IO;
   }
-  elsif ( $fullname =~ /^main::STD(OUT|ERR)$/ ) {
+  elsif ( $fullname =~ /^main::STD(IN|OUT|ERR)$/ ) {
     $savefields = Save_FORM | Save_IO;
   }
   $savefields &= ~$filter if ($filter and $filter !~ / :pad/
@@ -3993,7 +3993,7 @@ sub B::GV::save {
       $init->add("");
     }
   }
-  # Shouldn't need to do save_magic since gv_fetchpv handles that. Esp. < not
+  # Shouldn't need to do save_magic since gv_fetchpv handles that. Esp. < and IO not
   # $gv->save_magic($fullname) if $PERL510;
   warn "GV::save *$fullname done\n" if $debug{gv};
   return $sym;

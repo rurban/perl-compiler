@@ -907,6 +907,16 @@ if [[ `$PERL -e'print (($] < 5.014)?0:1)'` -gt 0 ]]; then
 else
   result[208]=' MyKooh  OurKooh'
 fi
+tests[210]='
+$a = 123;
+package xyz;
+sub xsub {bless [];}
+$x1 = 1; $x2 = 2;
+$s = join(":", sort(keys %xyz::));
+package abc;
+my $foo;
+print q(ok) if $xyz::s eq "s:x1:x2:xsub";'
+result[210]='ok'
 tests[212]='$blurfl = 123;
 {
     package abc;
