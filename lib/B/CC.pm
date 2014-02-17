@@ -1512,13 +1512,20 @@ sub pp_nextstate {
   } else {
     write_label($op);
   }
-  #testcc 48: protect CopFILE_free and CopSTASH_free in END block (#296)
   $curcop->load($op);
   loadop($op);
-  if ($ppname =~ /^pp_sub_END(_\d+)?$/) {
+  #testcc 48: protect CopFILE_free and CopSTASH_free in END block (#296)
+  if ($ppname =~ /^pp_sub_END(_\d+)?$/ and $ITHREADS) {
     runtime("#ifdef USE_ITHREADS",
-            "CopFILE((COP*)PL_op) = NULL; CopSTASHPV((COP*)PL_op) = NULL;",
-            "#endif");
+            "CopFILE((COP*)PL_op) = NULL;");
+    if ($] >= 5.018) {
+      runtime("CopSTASH_set((COP*)PL_op, NULL);");
+    } elsif ($] >= 5.016 and $] <= 5.017) {
+      runtime("CopSTASHPV_set((COP*)PL_op, NULL, 0);");
+    } else {
+      runtime("CopSTASHPV_set((COP*)PL_op, NULL);");
+    }
+    runtime("#endif");
   }
   @stack = ();
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
