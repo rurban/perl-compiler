@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_03';
+our $VERSION = '1.45_04';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -2788,7 +2788,16 @@ sub B::RV::save {
 
 sub get_isa ($) {
   no strict 'refs';
-  return $PERL510 ? @{mro::get_linear_isa($_[0])} : @{ $_[0] . '::ISA' };
+  if ($PERL510) {
+    return @{mro::get_linear_isa($_[0])};
+  } else {
+    my $s = $_[0].'::';
+    if (exists(${$s}{ISA})) {
+      if (exists(${$s}{ISA}{ARRAY})) {
+	return @{ $s . '::ISA' };
+      }
+    }
+  }
 }
 
 # try_isa($pkg,$name) returns the found $pkg for the method $pkg::$name
@@ -2811,7 +2820,9 @@ sub try_isa {
     next if $_ eq $cvstashname;
     warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
     if (defined(&{$_ .'::'. $cvname})) {
-      svref_2object( \@{$cvstashname . '::ISA'} )->save("$cvstashname\::ISA");
+      if (exists(${$cvstashname.'::'}{ISA})) {
+        svref_2object( \@{$cvstashname . '::ISA'} )->save("$cvstashname\::ISA");
+      }
       $isa_cache{"$cvstashname\::$cvname"} = $_;
       mark_package($_, 1); # force
       return $_;
@@ -2822,11 +2833,15 @@ sub try_isa {
 	if ($parent) {
 	  $isa_cache{"$_\::$cvname"} = $parent;
 	  $isa_cache{"$cvstashname\::$cvname"} = $parent;
-	  warn sprintf( "Found &%s::%s\n", $parent, $cvname ) if $debug{meth};
-	  warn "save \@$parent\::ISA\n" if $debug{pkg};
-	  svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
-	  warn "save \@$_\::ISA\n" if $debug{pkg};
-	  svref_2object( \@{$_ . '::ISA'} )->save("$_\::ISA");
+	  warn sprintf( "Found &%s::%s\n", $parent, $cvname ) if $debug{gv};
+	  if (exists(${$parent.'::'}{ISA})) {
+	    warn "save \@$parent\::ISA\n" if $debug{pkg};
+	    svref_2object( \@{$parent . '::ISA'} )->save("$parent\::ISA");
+          }
+	  if (exists(${$_.'::'}{ISA})) {
+            warn "save \@$_\::ISA\n" if $debug{pkg};
+	    svref_2object( \@{$_ . '::ISA'} )->save("$_\::ISA");
+          }
 	  return $parent;
 	}
       }
@@ -2864,7 +2879,7 @@ sub try_autoload {
 
   # Handle AutoLoader classes. Any more general AUTOLOAD
   # use should be handled by the class itself.
-  my @isa = $PERL510 ? @{mro::get_linear_isa($cvstashname)} : @{ $cvstashname . '::ISA' };
+  my @isa = get_isa($cvstashname);
   if ( $cvstashname =~ /^POSIX|Storable|DynaLoader|Net::SSLeay|Class::MethodMaker$/
     or (exists ${$cvstashname.'::'}{AUTOLOAD} and grep( $_ eq "AutoLoader", @isa ) ) )
   {
@@ -2911,7 +2926,7 @@ sub try_autoload {
 
   # XXX TODO Check Selfloader (test 31?)
   svref_2object( \*{$cvstashname.'::AUTOLOAD'} )->save
-    if $cvstashname and exists ${"$cvstashname\::"}{AUTOLOAD};
+    if $cvstashname and exists ${$cvstashname.'::'}{AUTOLOAD};
   svref_2object( \*{$cvstashname.'::CLONE'} )->save
     if $cvstashname and exists ${$cvstashname.'::'}{CLONE};
 }
@@ -5400,7 +5415,7 @@ _EOT9
 	  # 5.15.3 workaround for [perl #101336]
 	  if ($] >= 5.015003) {
 	    no strict 'refs';
-	    unless (grep /^DynaLoader$/, @{$stashname."::ISA"}) {
+	    unless (grep /^DynaLoader$/, get_isa($stashname)) {
 	      push @{$stashname."::ISA"}, 'DynaLoader';
 	      B::svref_2object( \@{$stashname."::ISA"} ) ->save;
 	    }
@@ -5793,7 +5808,7 @@ sub mark_package {
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
     }
-    my @isa = $PERL510 ? @{mro::get_linear_isa($package)} : @{ $package . '::ISA' };
+    my @isa = get_isa($package);
     if ( @isa ) {
       # XXX walking the ISA is often not enough.
       # we should really check all new packages since the last full scan.
