@@ -8,7 +8,7 @@ BEGIN {
 }
 use Test::More tests => 4;
 # fails 5.10 only
-my $todo = ($] =~ /^5\.10/) ? "TODO " : "";
+my $todo = ($] =~ /^5\.010/) ? "TODO " : "";
 
 ctestok(1,'C,-O3','ccode238i',<<'EOF',$todo.'#238 format f::STDOUT');
 sub f ($);
