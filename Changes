@@ -4,6 +4,8 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.46	2014-02-?? rurban
+        Added global destruction
+
         * C: reset PL_stack_sp on init (was one too far). no effects on code.
         Implement global destruction via sv_clean_objs and a PL_sv_arenaroot
           as sv_list[0] (#197, #208, #254, #280)
@@ -22,7 +24,7 @@
 	Keep internal packages if used in the source code, e.g. mro (#300)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
         Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
-        Handle duplicate names, like multiple END blocks or anon functions (#297)
+        Handle duplicate function names, like multiple END blocks or anon functions (#297)
 
 1.45	2014-02-11 rurban
         * t/issue281.t: fix wrong test ($[ vs $])
