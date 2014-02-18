@@ -1644,7 +1644,7 @@ sub B::COP::save {
     #push @B::C::static_free, sprintf("cop_list[%d]", $ix);
   }
 
-  my $dynamic_copwarn = ($PERL510 and !$is_special) ? 1 : $B::C::optimize_warn_sv;
+  my $dynamic_copwarn = ($PERL510 and !$is_special) ? 1 : !$B::C::optimize_warn_sv;
 
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
@@ -1749,8 +1749,6 @@ sub B::COP::save {
   my $ix = $copsect->index;
   $init->add( sprintf( "cop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
-    unless $B::C::optimize_warn_sv;
   if ($PERL510 and !$is_special) {
     my $copw = $warn_sv;
     $copw =~ s/^\(STRLEN\*\)&//;
@@ -1763,6 +1761,9 @@ sub B::COP::save {
                "    Copy($copw, lexwarn, sizeof($copw), char);",
                "  cop_list[$ix].cop_warnings = lexwarn;",
                "}");
+  } else {
+    $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
+      unless $B::C::optimize_warn_sv;
   }
   #push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
@@ -3486,28 +3487,6 @@ sub B::CV::save {
       }
       # XXX TODO someone is overwriting CvSTART also
       $init->add("CvSTART($sym) = $startfield;");
-      if ($startfield and $startfield =~ /cop_list/) { # XXX comp/decl.t comp/bproto.t threaded
-        if (objsym($root->next) and objsym($root->next) ne $startfield) {
-          my $cop = $startfield;
-          $cop =~ s/^\(OP\*\)&//;
-          # on cv_undef the CvROOT is freed which is a COP
-          # lexical cop_warnings need to be dynamic then.
-          $init->add("if (!specialWARN($cop.cop_warnings)) {",
-                     "  STRLEN *lexwarn;",
-                     "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
-                     "  if ($cop.cop_warnings)",
-                     "    Copy($cop.cop_warnings, lexwarn, sizeof($cop.cop_warnings), char);",
-                     "  $cop.cop_warnings = lexwarn;",
-                     "}");
-        }
-      } elsif ($$root and ref($root) eq 'B::COP' and !objsym($root)) {
-        my $cop = $root->save;
-        $cop =~ s/^\(OP\*\)&//; # TODO: check dupl. and same code as above
-        $init->add("{",
-                   "  char *lexwarn = savepvn((char*)&".$cop.".cop_warnings, sizeof(STRLEN *));",
-                   "  $cop.cop_warnings = (STRLEN*)lexwarn;",
-                   "}");
-      }
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
     }
