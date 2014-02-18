@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_04 b1e949a 2014-02-17 | C 1.43_04: non-destructive get_isa for 5.8
+# B::C::VERSION = 1.45_04 c61065d 2014-02-18 | log.modules-5.006002-nt 1.45_04 b1e949a
 # perlversion = 5.006002-nt
 # path = /usr/local/bin/perl5.6.2-nt
 # platform = linux 64bit non-threaded
