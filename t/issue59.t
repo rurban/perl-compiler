@@ -36,11 +36,11 @@ plctestok(1, $name, $script, $cmt);
 
 SKIP: {
   skip "eats memory on 5.6", 2 if $] <= 5.008001;
-  skip "fails 5.14 threaded", 2
-    if $] > 5.014 and $] < 5.015 and $Config{'useithreads'} and (!-d ".git" or $ENV{NO_AUTHOR});
-  $cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
-  $cmt = "TODO 5.6.2"   if $] < 5.007;
-  $cmt = "TODO >=5.16" if $] >= 5.016;
+  #skip "fails 5.14 threaded", 2
+  #  if $] > 5.014 and $] < 5.015 and $Config{'useithreads'} and (!-d ".git" or $ENV{NO_AUTHOR});
+  #$cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
+  #$cmt = "TODO >=5.16" if $] >= 5.016; # fixed with 1.45_04
+  $cmt = "TODO <5.10"   if $] < 5.010;
   ctestok(2, "C", $name, $script, "C $name $cmt");
   ctestok(3, "CC", $name, $script, "TODO CC $name $cmt");
 }
