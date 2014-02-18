@@ -191,7 +191,7 @@ t/C-COMPILED/CORE--io--read.t
 t/C-COMPILED/CORE--io--say.t
 t/C-COMPILED/CORE--io--tell.t
 t/C-COMPILED/CORE--io--through.t
-t/C-COMPILED/CORE--io--utf8==BADPLAN-255.t
+t/C-COMPILED/CORE--io--utf8==BADTEST-255.t
 t/C-COMPILED/CORE--op--64bitint.t
 t/C-COMPILED/CORE--op--alarm.t
 t/C-COMPILED/CORE--op--anonsub.t
