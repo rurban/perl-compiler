@@ -1754,13 +1754,10 @@ sub B::COP::save {
     $copw =~ s/^\(STRLEN\*\)&//;
     # on cv_undef (scope exit, die, ...) CvROOT and all its kids are freed.
     # lexical cop_warnings need to be dynamic, but just the ptr to the static string.
-    $init->add("{", # allocate new ptr
-               "  STRLEN *lexwarn;",
-               "  Newxz(lexwarn, sizeof(STRLEN *), STRLEN);",
-               "  if ($copw)",
-               "    Copy($copw, lexwarn, sizeof($copw), char);",
-               "  cop_list[$ix].cop_warnings = lexwarn;",
-               "}");
+    if ($copw) {
+      my $cop = "cop_list[$ix]";
+      $init->add("$cop.cop_warnings = (STRLEN*)savepvn((char*)&".$copw.", sizeof($copw));");
+    }
   } else {
     $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
       unless $B::C::optimize_warn_sv;
@@ -3485,8 +3482,7 @@ sub B::CV::save {
         $init->add( sprintf( "CvFLAGS((CV*)%s) = 0x%x; %s", $sym, $CvFLAGS,
                              $debug{flags}?"/* ".$cv->flagspv." */":"" ) );
       }
-      # XXX TODO someone is overwriting CvSTART also
-      $init->add("CvSTART($sym) = $startfield;");
+      $init->add("CvSTART($sym) = $startfield;"); # XXX TODO someone is overwriting CvSTART also
     } else {
       $init->add( sprintf( "CvGV(%s) = %s;", $sym, objsym($gv) ) );
     }

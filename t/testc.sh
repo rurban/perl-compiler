@@ -1162,7 +1162,8 @@ result[289]='ok'
 tests[295]='#TODO @-
 "zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
-tests[299]='package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
+tests[299]='#TODO
+package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
 result[299]='ok'
 tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'

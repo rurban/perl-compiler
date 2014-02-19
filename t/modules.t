@@ -289,7 +289,11 @@ sub is_todo {
   )) { return '>= 5.16' if $_ eq $module; }}
   if ($] >= 5.018) { foreach(qw(
       ExtUtils::ParseXS
-    )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
+  )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
+
+  if ($] >= 5.018) { foreach(qw(
+      Attribute::Handlers
+  )) { return '>= 5.18 #169 early my_exit + SEGV' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
@@ -322,6 +326,9 @@ sub is_todo {
     #   Module::Pluggable
     #   Test::Warn
     #)) { return '5.10 with threads' if $_ eq $module; }}
+    if ($] >= 5.010 and $] < 5.012 and $DEBUGGING) { foreach(qw(
+      Attribute::Handlers
+    )) { return '5.10 DEBUGGING #169 early my_exit + SEGV' if $_ eq $module; }}
     if ($] >= 5.012 and $] < 5.014) { foreach(qw(
       ExtUtils::CBuilder
     )) { return '5.12 with threads' if $_ eq $module; }}
