@@ -179,7 +179,7 @@ t/C-COMPILED/CORE--io--iprefix.t
 t/C-COMPILED/CORE--io--layers==BADTEST-203.t
 t/C-COMPILED/CORE--io--nargv.t
 t/C-COMPILED/CORE--io--open.t
-t/C-COMPILED/CORE--io--openpid==SIG-302.t
+t/C-COMPILED/CORE--io--openpid.t
 t/C-COMPILED/CORE--io--perlio.t
 t/C-COMPILED/CORE--io--perlio_fail.t
 t/C-COMPILED/CORE--io--perlio_leaks.t
@@ -267,7 +267,7 @@ t/C-COMPILED/CORE--op--lc_user.t
 t/C-COMPILED/CORE--op--leaky-magic.t
 t/C-COMPILED/CORE--op--length.t
 t/C-COMPILED/CORE--op--lex.t
-t/C-COMPILED/CORE--op--lex_assign==SIG-302.t
+t/C-COMPILED/CORE--op--lex_assign.t
 t/C-COMPILED/CORE--op--lfs.t
 t/C-COMPILED/CORE--op--list.t
 t/C-COMPILED/CORE--op--local.t
@@ -350,7 +350,7 @@ t/C-COMPILED/CORE--op--undef.t
 t/C-COMPILED/CORE--op--universal==BADTEST-275.t
 t/C-COMPILED/CORE--op--unshift.t
 t/C-COMPILED/CORE--op--upgrade.t
-t/C-COMPILED/CORE--op--utf8cache==SIG-302.t
+t/C-COMPILED/CORE--op--utf8cache.t
 t/C-COMPILED/CORE--op--utf8decode.t
 t/C-COMPILED/CORE--op--utf8magic.t
 t/C-COMPILED/CORE--op--utfhash.t
