@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_05';
+our $VERSION = '1.45_06';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -714,19 +714,8 @@ sub save_rv {
   if (!$fullname) {
     $fullname = '(unknown)';
   }
-  # confess "Can't save RV: not ROK" unless $sv->FLAGS & SVf_ROK;
-  # 5.6: Can't locate object method "RV" via package "B::PVMG"
   # since 5.11 it must be a PV, the RV was removed from the IV
-  my $rv;
-  #if ($] >= 5.011 and ref($sv) =~ /^B::[IP]V$/) {
-  #  warn "$sv is no IV nor PV\n" if $debug{sv};
-  #  $sv = bless $sv, 'B::PV'; # only observed with DB::args[0]
-  #}
-  #elsif ($] < 5.011 and ref($sv) =~ /^B::[RP]V$/) {
-  #  warn "$sv is no RV nor PV\n" if $debug{sv};
-  #  $sv = bless $sv, 'B::RV';
-  #}
-  $rv = $sv->RV->save($fullname);
+  my $rv = $sv->RV->save($fullname);
   $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
 
   return $rv;
@@ -4717,6 +4706,13 @@ EOT
 #endif
 EOT
   }
+  if ($] < 5.018 ) {
+    print <<'EOT';
+#ifndef SvREFCNT_dec_NN
+#  define SvREFCNT_dec_NN(sv) SvREFCNT_dec(sv)
+#endif
+EOT
+  }
   printf "\t/* %s */\n", $decl->comment if $decl->comment and $verbose;
   $decl->output( \*STDOUT, "%s\n" );
   print "\n";
@@ -4867,12 +4863,24 @@ _EOT1
 #ifndef GV_NOTQUAL
 #define GV_NOTQUAL 0
 #endif
+#ifndef dVAR
+# ifdef PERL_GLOBAL_STRUCT
+#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
+# else
+#  define dVAR		dNOOP
+# endif
+#endif
 
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
 EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 
 static void xs_init (pTHX);
 static void dl_init (pTHX);
+static void my_leave_scope(pTHX_ I32);
+static void my_run_body(pTHX_ I32 oldscope);
+static int my_perl_run(pTHX);
+
+
 _EOT2
 
   if ($] < 5.008008) {
@@ -4905,21 +4913,14 @@ _EOT2
   }
   if ( !$B::C::destruct ) {
     print <<'__EOT';
-int fast_perl_destruct( PerlInterpreter *my_perl );
+static int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
-#ifndef dVAR
-# ifdef PERL_GLOBAL_STRUCT
-#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
-# else
-#  define dVAR		dNOOP
-# endif
-#endif
 __EOT
 
   } else {
     print <<'__EOT';
-int my_perl_destruct( PerlInterpreter *my_perl );
+static int my_perl_destruct( PerlInterpreter *my_perl );
 __EOT
 
   }
@@ -5052,7 +5053,8 @@ my_curse( pTHX_ SV* const sv ) {
     }
 }
 
-int fast_perl_destruct( PerlInterpreter *my_perl ) {
+static int
+fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
     HV *hv;
@@ -5094,9 +5096,13 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
             call_list(PL_scopestack_ix, PL_endav);
         JMPENV_POP;
     }
+#if 1
+    my_leave_scope(aTHX_ 0);
+#else
     LEAVE;
     FREETMPS;
     assert(PL_scopestack_ix == 0);
+#endif
 
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
@@ -5174,7 +5180,8 @@ _EOT6
   # if ( $PERL510 and (@B::C::static_free or $free->index > -1))
   else {
     print <<'_EOT7';
-int my_perl_destruct( PerlInterpreter *my_perl ) {
+static int
+my_perl_destruct( PerlInterpreter *my_perl ) {
     /* set all our static pv and hek to &PL_sv_undef for perl_destruct() */
 _EOT7
 
@@ -5235,6 +5242,721 @@ _EOT7
 }
 _EOT7a
   }
+
+  # clean the scope stack manually (i.e. leave_scope without free)
+  print <<'_EOT_C';
+#ifndef MUTABLE_SV
+# define MUTABLE_SV(sv)  (SV*)(sv)
+# define MUTABLE_GV(sv)  (GV*)(sv)
+# define MUTABLE_AV(sv)  (AV*)(sv)
+# define MUTABLE_HV(sv)  (HV*)(sv)
+#endif
+#define SvREFCNT_dec_ign(sv)
+#ifndef SvREFCNT_inc_void_NN
+# define SvREFCNT_inc_void_NN(sv) SvREFCNT_inc(sv)
+# define SvREFCNT_inc_void(sv)    SvREFCNT_inc(sv)
+#endif
+
+static void
+my_leave_scope(pTHX_ I32 base) {
+    register SV *sv;
+    register SV *value;
+    register GV *gv;
+    register AV *av;
+    register HV *hv;
+    void* ptr;
+    register char* str;
+    I32 i;
+#ifdef dVAR
+    dVAR;
+#endif
+    /* Localise the effects of the TAINT_NOT inside the loop.  */
+    const bool was = PL_tainted;
+
+    if (base) { LEAVE_SCOPE(base); }
+    DEBUG_l(Perl_deb(aTHX_ "Cleanup final scope stack\n"));
+
+    if (base < -1)
+	Perl_croak(aTHX_ "panic: corrupt saved stack index %ld", (long) base);
+    DEBUG_l(Perl_deb(aTHX_ "savestack: releasing items %ld -> %ld\n",
+			(long)PL_savestack_ix, (long)base));
+    while (PL_savestack_ix > base) {
+#ifdef SSPOPUV
+	UV uv = SSPOPUV;
+#else
+        IV uv = SSPOPINT;
+#endif
+#ifdef SAVE_MASK
+	const U8 type = (U8)uv & SAVE_MASK;
+#else
+	const U8 type = (U8)uv;
+#endif
+        SV** svp;
+        SV *refsv;
+
+	TAINT_NOT;
+
+	switch (type) {
+	case SAVEt_ITEM:			/* normal string */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    sv = MUTABLE_SV(SSPOPPTR);
+	    sv_replace(sv,value);
+	    PL_localizing = 2;
+	    SvSETMAGIC(sv);
+	    PL_localizing = 0;
+	    break;
+
+	    /* This would be a mathom, but Perl_save_svref() calls a static
+	       function, S_save_scalar_at(), so has to stay in this file.  */
+	case SAVEt_SVREF:			/* scalar reference */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    ptr = SSPOPPTR;
+	    av = NULL; /* what to refcnt_dec */
+	    goto restore_sv;
+
+	case SAVEt_SV:				/* scalar reference */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    gv = MUTABLE_GV(SSPOPPTR);
+	    ptr = &GvSV(gv);
+	    av = MUTABLE_AV(gv); /* what to refcnt_dec */
+	restore_sv:
+	    sv = *(SV**)ptr;
+#if PERL_VERSION >= 18
+	    DEBUG_S(PerlIO_printf(Perl_debug_log,
+				  "restore svref: %p %p:%s -> %p:%s\n",
+				  ptr, sv, SvPEEK(sv), value, SvPEEK(value)));
+#endif
+	    *(SV**)ptr = value;
+	    SvREFCNT_dec(sv);
+	    PL_localizing = 2;
+	    SvSETMAGIC(value);
+	    PL_localizing = 0;
+	    SvREFCNT_dec(value);
+	    if (av) /* actually an av, hv or gv */
+		SvREFCNT_dec(av);
+	    break;
+	case SAVEt_GENERIC_PVREF:		/* generic pv */
+	case SAVEt_SHARED_PVREF:		/* shared pv */
+	    str = (char*)SSPOPPTR;
+	    ptr = SSPOPPTR;
+	    if (*(char**)ptr != str) {
+		*(char**)ptr = str;
+            }
+	    break;
+#ifdef SAVEt_GVSV
+	case SAVEt_GVSV:			/* scalar slot in GV */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    gv = MUTABLE_GV(SSPOPPTR);
+	    ptr = &GvSV(gv);
+	    goto restore_svp;
+#endif
+	case SAVEt_GENERIC_SVREF:		/* generic sv */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    ptr = SSPOPPTR;
+	restore_svp:
+	    sv = *(SV**)ptr;
+	    *(SV**)ptr = value;
+	    SvREFCNT_dec(sv);
+	    SvREFCNT_dec(value);
+            break;
+#if PERL_VERSION >= 18
+	case SAVEt_GVSLOT:			/* any slot in GV */
+        {
+	    SV *cv = MUTABLE_SV(SSPOPPTR);
+	    svp = SSPOPPTR;
+            gv = MUTABLE_GV(SSPOPPTR);
+            HV *const hv = GvSTASH(gv);
+	    if (hv && HvENAME(hv) && (
+		    (cv && SvTYPE(cv) == SVt_PVCV)
+		 || (*svp && SvTYPE(*svp) == SVt_PVCV)
+	       ))
+	    {
+		if ((char *)svp < (char *)GvGP(gv)
+		 || (char *)svp > (char *)GvGP(gv) + sizeof(struct gp)
+		 || GvREFCNT(gv) > 1)
+		    PL_sub_generation++;
+		else mro_method_changed_in(hv);
+	    }
+	    goto restore_svp;
+        }
+#endif
+	break;
+	case SAVEt_AV:				/* array reference */
+	    av = MUTABLE_AV(SSPOPPTR);
+	    gv = MUTABLE_GV(SSPOPPTR);
+	    SvREFCNT_dec(GvAV(gv));
+	    GvAV(gv) = av;
+	    if (SvMAGICAL(av)) {
+		PL_localizing = 2;
+		SvSETMAGIC(MUTABLE_SV(av));
+		PL_localizing = 0;
+	    }
+	    break;
+	case SAVEt_HV:				/* hash reference */
+	    hv = MUTABLE_HV(SSPOPPTR);
+	    gv = MUTABLE_GV(SSPOPPTR);
+	    SvREFCNT_dec(GvHV(gv));
+	    GvHV(gv) = hv;
+	    if (SvMAGICAL(hv)) {
+		PL_localizing = 2;
+		SvSETMAGIC(MUTABLE_SV(hv));
+		PL_localizing = 0;
+	    }
+	    break;
+#if PERL_VERSION >= 14
+	case SAVEt_INT_SMALL:
+	    ptr = SSPOPPTR;
+	    *(int*)ptr = (int)(uv >> SAVE_TIGHT_SHIFT);
+	    break;
+#endif
+	case SAVEt_INT:				/* int reference */
+	    ptr = SSPOPPTR;
+	    *(int*)ptr = (int)SSPOPINT;
+	    break;
+	case SAVEt_BOOL:			/* bool reference */
+	    ptr = SSPOPPTR;
+	    *(bool*)ptr = (bool)SSPOPBOOL;
+	    break;
+#if PERL_VERSION >= 14
+	case SAVEt_I32_SMALL:
+	    ptr = SSPOPPTR;
+	    *(I32*)ptr = (I32)(uv >> SAVE_TIGHT_SHIFT);
+	    break;
+#endif
+	case SAVEt_I32:				/* I32 reference */
+	    ptr = SSPOPPTR;
+	    *(SV**)ptr = MUTABLE_SV(SSPOPPTR);
+	    break;
+	case SAVEt_SPTR:			/* SV* reference */
+	    ptr = SSPOPPTR;
+	    *(SV**)ptr = MUTABLE_SV(SSPOPPTR);
+	    break;
+	case SAVEt_VPTR:			/* random* reference */
+	case SAVEt_PPTR:			/* char* reference */
+	    ptr = SSPOPPTR;
+	    *(char**)ptr = (char*)SSPOPPTR;
+	    break;
+	case SAVEt_HPTR:			/* HV* reference */
+	    ptr = SSPOPPTR;
+	    *(HV**)ptr = MUTABLE_HV(SSPOPPTR);
+	    break;
+	case SAVEt_APTR:			/* AV* reference */
+	    ptr = SSPOPPTR;
+	    *(AV**)ptr = MUTABLE_AV(SSPOPPTR);
+	    break;
+#if PERL_VERSION >= 10
+	case SAVEt_GP:				/* scalar reference */
+        {
+            HV *hv;
+	    ptr = SSPOPPTR;
+	    gv = MUTABLE_GV(SSPOPPTR);
+            /* possibly taking a method out of circulation */
+	    const bool had_method = !!GvCVu(gv);
+            /* gp_free(gv); */
+	    GvGP_set(gv, (GP*)ptr);
+#if PERL_VERSION >= 18
+	    if ((hv=GvSTASH(gv)) && HvENAME_get(hv)) {
+	        if (   GvNAMELEN(gv) == 3
+                    && strnEQ(GvNAME(gv), "ISA", 3)
+                )
+	            mro_isa_changed_in(hv);
+                else if (had_method || GvCVu(gv))
+                    /* putting a method back into circulation ("local")*/
+                    gv_method_changed(gv);
+	    }
+#endif
+	    SvREFCNT_dec_ign(gv);
+	    break;
+        }
+#endif
+	case SAVEt_FREESV:
+	    ptr = SSPOPPTR;
+	    SvREFCNT_dec(MUTABLE_SV(ptr));
+            SvTYPE(MUTABLE_SV(ptr)) == SVTYPEMASK;
+	    break;
+#ifdef SAVEt_FREECOPHH
+	case SAVEt_FREECOPHH:
+	    /* cophh_free((COPHH *)SSPOPPTR); */
+	    break;
+#endif
+	case SAVEt_MORTALIZESV:
+	     /* sv_2mortal(MUTABLE_SV(SSPOPPTR)); */
+	    break;
+	case SAVEt_FREEOP:
+	    ASSERT_CURPAD_LEGAL("SAVEt_FREEOP");
+	    ptr = SSPOPPTR;
+	    /* op_free((OP*)ptr); */
+            ((OP*)ptr)->op_type = OP_NULL;
+            ((OP*)ptr)->op_targ = OP_NULL;
+	    break;
+	case SAVEt_FREEPV:
+	    ptr = SSPOPPTR;
+	    /* Safefree(ptr); */
+            ptr = NULL;
+	    break;
+
+        {
+          I32 i;
+          SV *sv;
+#if PERL_VERSION >= 18
+        case SAVEt_CLEARPADRANGE:
+            i = (I32)((uv >> SAVE_TIGHT_SHIFT) & OPpPADRANGE_COUNTMASK);
+	    svp = &PL_curpad[uv >>
+                    (OPpPADRANGE_COUNTSHIFT + SAVE_TIGHT_SHIFT)] + i - 1;
+            goto clearsv;
+#endif
+	case SAVEt_CLEARSV:
+	    svp = (void*)&PL_curpad[SSPOPLONG];
+            i = 1;
+          clearsv:
+            for (; i; i--, svp--) {
+                sv = *svp;
+
+                DEBUG_Xv(PerlIO_printf(Perl_debug_log,
+             "Pad 0x%"UVxf"[0x%"UVxf"] clearsv: %ld sv=0x%"UVxf"<%"IVdf"> %s\n",
+                    PTR2UV(PL_comppad), PTR2UV(PL_curpad),
+                    (long)(svp-PL_curpad), PTR2UV(sv), (IV)SvREFCNT(sv),
+                    (SvREFCNT(sv) <= 1 && !SvOBJECT(sv)) ? "clear" : "abandon"
+                ));
+
+                /* Can clear pad variable in place? */
+                if (SvREFCNT(sv) <= 1 && !SvOBJECT(sv)) {
+                    /*
+                     * if a my variable that was made readonly is going out of
+                     * scope, we want to remove the readonlyness so that it can
+                     * go out of scope quietly
+                     */
+                    if (SvPADMY(sv) && !SvFAKE(sv))
+                        SvREADONLY_off(sv);
+
+                    if (SvTHINKFIRST(sv))
+                        sv_force_normal_flags(sv, SV_IMMEDIATE_UNREF
+                                                 |SV_COW_DROP_PV);
+#if PERL_VERSION >= 10
+                    if (SvTYPE(sv) == SVt_PVHV)
+                        Perl_hv_kill_backrefs(aTHX_ (HV*)(sv));
+#endif
+                    if (SvMAGICAL(sv))
+                    {
+                      sv_unmagic(sv, PERL_MAGIC_backref);
+                      if (SvTYPE(sv) != SVt_PVCV)
+                        mg_free(sv);
+                    }
+
+                    switch (SvTYPE(sv)) {
+                    case SVt_NULL:
+                        break;
+                    case SVt_PVAV:
+                        av_clear((AV*)(sv));
+                        break;
+                    case SVt_PVHV:
+                        hv_clear((HV*)(sv));
+                        break;
+                    case SVt_PVCV:
+                    {
+/*
+                        HEK * const hek = CvNAME_HEK((CV *)sv);
+                        assert(hek);
+                        share_hek_hek(hek);
+                        cv_undef((CV *)sv);
+                        CvNAME_HEK_set(sv, hek);
+*/
+                        sv = NULL;
+                        break;
+                    }
+                    default:
+                        SvOK_off(sv);
+                        break;
+                    }
+#ifdef SVs_PADSTALE
+                    SvPADSTALE_on(sv); /* mark as no longer live */
+#endif
+                }
+                else {	/* Someone has a claim on this, so abandon it. */
+                    assert(  SvFLAGS(sv) & SVs_PADMY);
+                    assert(!(SvFLAGS(sv) & SVs_PADTMP));
+                    switch (SvTYPE(sv)) {	/* Console ourselves with a new value */
+                    case SVt_PVAV:	*svp = (SV*)(newAV());	break;
+                    case SVt_PVHV:	*svp = (SV*)(newHV());	break;
+                    case SVt_PVCV:
+#if 1
+                    *svp = newSV(0); sv_upgrade(*svp, SVt_PVCV); break;
+#else
+                    {
+                        /* Create a stub */
+                        *svp = newSV_type(SVt_PVCV);
+                        /* Share name */
+                        assert(CvNAMED(sv));
+                        CvNAME_HEK_set(*svp,
+                            share_hek_hek(CvNAME_HEK((CV *)sv)));
+                        break;
+                    }
+#endif
+                    default:	*svp = newSV(0);		break;
+                    }
+                    SvREFCNT_dec_ign(sv); /* Cast current value to the winds. */
+                    /* preserve pad nature, but also mark as not live
+                     * for any closure capturing */
+#ifdef SVs_PADSTALE
+                    SvFLAGS(*svp) |= (SVs_PADMY|SVs_PADSTALE);
+#else
+                    SvFLAGS(*svp) |= SVs_PADMY;
+#endif
+                }
+            }
+	    break;
+        }
+	case SAVEt_DELETE:
+	    ptr = SSPOPPTR;
+	    hv = MUTABLE_HV(ptr);
+	    i = SSPOPINT;
+	    ptr = SSPOPPTR;
+	    (void)hv_delete(hv, (char*)ptr, i, G_DISCARD);
+	    SvREFCNT_dec_ign(hv);
+	    /* Safefree(ptr); */
+	    break;
+#ifdef SAVEt_ADELETE
+	case SAVEt_ADELETE:
+	    ptr = SSPOPPTR;
+	    av = MUTABLE_AV(ptr);
+	    i = SSPOPINT;
+	    (void)av_delete(av, i, G_DISCARD);
+	    SvREFCNT_dec_ign(av);
+	    break;
+#endif
+	case SAVEt_DESTRUCTOR_X:
+	    ptr = SSPOPPTR;
+	    (*SSPOPDXPTR)(aTHX_ ptr);
+	    break;
+	case SAVEt_REGCONTEXT:
+	    /* regexp must have croaked */
+	case SAVEt_ALLOC:
+#if PERL_VERSION >= 14
+	    PL_savestack_ix -= uv >> SAVE_TIGHT_SHIFT;
+#else
+	    i = SSPOPINT;
+	    PL_savestack_ix -= i;  	/* regexp must have croaked */
+#endif
+	    break;
+	case SAVEt_STACK_POS:		/* Position on Perl stack */
+	    i = SSPOPINT;
+	    PL_stack_sp = PL_stack_base + i;
+	    break;
+#ifdef SAVEt_STACK_CXPOS
+	case SAVEt_STACK_CXPOS:         /* blk_oldsp on context stack */
+	    i = SSPOPINT;
+	    cxstack[i].blk_oldsp = SSPOPINT;
+	    break;
+#endif
+	case SAVEt_AELEM:		/* array element */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    i = SSPOPINT;
+	    av = MUTABLE_AV(SSPOPPTR);
+	    ptr = av_fetch(av,i,1);
+	    if (!AvREAL(av) && AvREIFY(av)) /* undo reify guard */
+		SvREFCNT_dec(value);
+	    if (ptr) {
+		sv = *(SV**)ptr;
+		if (sv && sv != &PL_sv_undef) {
+		    if (SvTIED_mg((SV*)av, PERL_MAGIC_tied))
+			SvREFCNT_inc_void_NN(sv);
+		    goto restore_sv;
+		}
+	    }
+	    SvREFCNT_dec(av);
+	    SvREFCNT_dec(value);
+	    break;
+	case SAVEt_HELEM:		/* hash element */
+	    value = MUTABLE_SV(SSPOPPTR);
+	    sv = MUTABLE_SV(SSPOPPTR);
+	    hv = MUTABLE_HV(SSPOPPTR);
+	    ptr = hv_fetch_ent(hv, sv, 1, 0);
+	    SvREFCNT_dec_ign(sv);
+	    if (ptr) {
+		const SV * const oval = HeVAL((HE*)ptr);
+		if (oval && oval != &PL_sv_undef) {
+		    ptr = &HeVAL((HE*)ptr);
+		    if (SvTIED_mg((SV*)hv, PERL_MAGIC_tied))
+			SvREFCNT_inc_void(*(SV**)ptr);
+		    SvREFCNT_dec(sv);
+		    av = MUTABLE_AV(hv); /* what to refcnt_dec */
+		    goto restore_sv;
+		}
+	    }
+	    SvREFCNT_dec_ign(hv);
+	    SvREFCNT_dec_ign(value);
+	    break;
+	case SAVEt_OP:
+	    PL_op = (OP*)SSPOPPTR;
+	    break;
+	case SAVEt_HINTS:
+	    if ((PL_hints & HINT_LOCALIZE_HH) && GvHV(PL_hintgv)) {
+		SvREFCNT_dec_ign(MUTABLE_SV(GvHV(PL_hintgv)));
+		GvHV(PL_hintgv) = NULL;
+	    }
+	    *(I32*)&PL_hints = (I32)SSPOPINT;
+#if PERL_VERSION >= 10
+	    PL_compiling.cop_hints_hash = (struct refcounted_he *) SSPOPPTR;
+#endif
+	    if (PL_hints & HINT_LOCALIZE_HH) {
+		SvREFCNT_dec_ign((SV*)(GvHV(PL_hintgv)));
+		GvHV(PL_hintgv) = (HV*)(SSPOPPTR);
+	    }
+	    break;
+	case SAVEt_COMPPAD:
+	    PL_comppad = (PAD*)ptr;
+	    if (PL_comppad)
+		PL_curpad = AvARRAY(PL_comppad);
+	    else
+		PL_curpad = NULL;
+	    break;
+#if PERL_VERSION >= 14
+	case SAVEt_PADSV_AND_MORTALIZE:
+	    {
+		const PADOFFSET off = (PADOFFSET)SSPOPLONG;
+		SV **svp;
+		ptr = SSPOPPTR;
+		assert (ptr);
+		svp = AvARRAY((PAD*)ptr) + off;
+		/* This mortalizing used to be done by POPLOOP() via itersave.
+		   But as we have all the information here, we can do it here,
+		   save even having to have itersave in the struct.  */
+		sv_2mortal(*svp);
+		*svp = MUTABLE_SV(SSPOPPTR);
+	    }
+	    break;
+#endif
+#ifdef SAVEt_SAVESWITCHSTACK
+	case SAVEt_SAVESWITCHSTACK:
+	    {
+		dSP;
+		AV *const t = MUTABLE_AV(SSPOPPTR);
+		AV *const f = MUTABLE_AV(SSPOPPTR);
+		SWITCHSTACK(t,f);
+		PL_curstackinfo->si_stack = f;
+	    }
+	    break;
+#endif
+#ifdef SAVEt_SET_SVFLAGS
+	case SAVEt_SET_SVFLAGS:
+            {
+		const U32 val  = (U32)SSPOPINT;
+		const U32 mask = (U32)SSPOPINT;
+		sv = MUTABLE_SV(SSPOPPTR);
+		SvFLAGS(sv) &= ~mask;
+		SvFLAGS(sv) |= val;
+            }
+	    break;
+#endif
+
+	    /* These are only saved in mathoms.c */
+	case SAVEt_NSTAB:
+	    gv = MUTABLE_GV(SSPOPPTR);
+	    (void)sv_clear(MUTABLE_SV(gv));
+	    break;
+	case SAVEt_LONG:			/* long reference */
+	    ptr = SSPOPPTR;
+	    *(long*)ptr = (long)SSPOPLONG;
+	    break;
+	case SAVEt_IV:				/* IV reference */
+	    ptr = SSPOPPTR;
+	    *(IV*)ptr = (IV)SSPOPIV;
+	    break;
+
+	case SAVEt_I16:				/* I16 reference */
+	    ptr = SSPOPPTR;
+	    *(I16*)ptr = (I16)(uv >> 8);
+	    break;
+	case SAVEt_I8:				/* I8 reference */
+	    ptr = SSPOPPTR;
+	    *(I8*)ptr = (I8)(uv >> 8);
+	    break;
+	case SAVEt_DESTRUCTOR:
+	    ptr = SSPOPPTR;
+	    (*SSPOPDPTR)(ptr);
+	    break;
+#if PERL_VERSION >= 10
+	case SAVEt_COMPILE_WARNINGS:
+	    ptr = SSPOPPTR;
+	    /* if (!specialWARN(PL_compiling.cop_warnings))
+		PerlMemShared_free(PL_compiling.cop_warnings); */
+
+	    PL_compiling.cop_warnings = (STRLEN*)ptr;
+	    break;
+#endif
+#ifdef SAVEt_RE_STATE
+	case SAVEt_RE_STATE:
+	    {
+		const struct re_save_state *const state
+		    = (struct re_save_state *)
+		    (PL_savestack + PL_savestack_ix
+		     - SAVESTACK_ALLOC_FOR_RE_SAVE_STATE);
+		PL_savestack_ix -= SAVESTACK_ALLOC_FOR_RE_SAVE_STATE;
+
+		/* if (PL_reg_poscache != state->re_state_reg_poscache) {
+		    Safefree(PL_reg_poscache);
+		} */
+#if PERL_VERSION >= 10
+		Copy(state, &PL_reg_state, 1, struct re_save_state);
+#endif
+	    }
+	    break;
+#endif
+#if PERL_VERSION >= 10
+	case SAVEt_PARSER:
+	    parser_free((yy_parser *)SSPOPPTR);
+	    break;
+#endif
+	default:
+	    Perl_croak(aTHX_ "panic: my_leave_scope inconsistency %u", type);
+	}
+    }
+    PL_tainted = was;
+    /* PERL_ASYNC_CHECK(); */
+}
+
+static int
+my_perl_run(pTHX)
+{
+#ifdef dVAR
+    dVAR;
+#endif
+    I32 oldscope;
+    int ret = 0;
+    dJMPENV;
+
+    oldscope = PL_scopestack_ix;
+#ifdef VMS
+    VMSISH_HUSHED = 0;
+#endif
+
+    JMPENV_PUSH(ret);
+    switch (ret) {
+    case 1:
+	cxstack_ix = -1;		/* start context stack again */
+	goto redo_body;
+    case 0:				/* normal completion */
+ redo_body:
+	my_run_body(aTHX_ oldscope);
+	/* FALL THROUGH */
+    case 2:				/* my_exit() */
+	while (PL_scopestack_ix > oldscope)
+	    LEAVE;
+	FREETMPS;
+	PL_curstash = PL_defstash;
+	if (!(PL_exit_flags & PERL_EXIT_DESTRUCT_END) &&
+	    PL_endav && !PL_minus_c) {
+#if PERL_VERSION >= 14
+	    PL_phase = PERL_PHASE_END;
+#endif
+	    call_list(oldscope, PL_endav);
+	}
+#ifdef MYMALLOC
+	if (PerlEnv_getenv("PERL_DEBUG_MSTATS"))
+	    dump_mstats("after execution:  ");
+#endif
+#ifdef STATUS_EXIT
+	ret = STATUS_EXIT;
+#else
+	ret = STATUS_NATIVE_EXPORT;
+#endif
+	break;
+    case 3:
+	if (PL_restartop) {
+	    POPSTACK_TO(PL_mainstack);
+	    goto redo_body;
+	}
+	PerlIO_printf(Perl_error_log, "panic: restartop\n");
+	FREETMPS;
+	ret = 1;
+	break;
+    }
+
+    JMPENV_POP;
+    return ret;
+}
+
+static void
+my_run_body(pTHX_ I32 oldscope)
+{
+#ifdef dVAR
+    dVAR;
+#endif
+    DEBUG_r(PerlIO_printf(Perl_debug_log, "%s $` $& $' support.\n",
+                    PL_sawampersand ? "Enabling" : "Omitting"));
+
+    if (!PL_restartop) {
+#ifdef PERL_MAD
+	if (PL_xmlfp) {
+	    xmldump_all();
+	    exit(0);	/* less likely to core dump than my_exit(0) */
+	}
+#endif
+#ifdef DEBUGGING
+# ifdef DEBUG_B_TEST
+	if (DEBUG_x_TEST || DEBUG_B_TEST)
+	    dump_all_perl(!DEBUG_B_TEST);
+# else
+	DEBUG_x(dump_all());
+# endif
+# ifdef DEBUG_q_TEST
+	if (!DEBUG_q_TEST)
+# endif
+	  PERL_DEBUG(PerlIO_printf(Perl_debug_log, "\nEXECUTING...\n\n"));
+#endif
+
+	if (PL_minus_c) {
+	    PerlIO_printf(Perl_error_log, "%s syntax OK\n", PL_origfilename);
+	    my_exit(0);
+	}
+	if (PERLDB_SINGLE && PL_DBsingle)
+	    sv_setiv(PL_DBsingle, 1);
+	if (PL_initav) {
+#if PERL_VERSION >= 14
+	    PL_phase = PERL_PHASE_INIT;
+#endif
+	    call_list(oldscope, PL_initav);
+	}
+#ifdef PERL_DEBUG_READONLY_OPS
+	Perl_pending_Slabs_to_ro(aTHX);
+#endif
+    }
+
+    /* do it */
+
+#if PERL_VERSION >= 14
+    PL_phase = PERL_PHASE_RUN;
+#endif
+
+    if (PL_restartop) {
+#if PERL_VERSION >= 14
+	PL_restartjmpenv = NULL;
+#endif
+	PL_op = PL_restartop;
+	PL_restartop = 0;
+	CALLRUNOPS(aTHX);
+    }
+    else if (PL_main_start) {
+	CvDEPTH(PL_main_cv) = 1;
+	PL_op = PL_main_start;
+	CALLRUNOPS(aTHX);
+    }
+    /* my_exit(0); */
+    STATUS_ALL_SUCCESS;
+    /* my_exit_jump(); */
+    POPSTACK_TO(PL_mainstack);
+    dounwind(-1);
+#if 1
+    my_leave_scope(aTHX_ 0);
+#else
+    LEAVE_SCOPE(0);
+#endif
+
+    JMPENV_JUMP(2);
+    /* NOTREACHED */
+}
+
+_EOT_C
 
   print <<'_EOT8';
 
@@ -5621,16 +6343,11 @@ _EOT15
 EOT
 
     print $B::C::eval_pvs if $B::C::eval_pvs;
-    print "    exitstatus = perl_run( my_perl );\n";
+    print "    exitstatus = my_perl_run( aTHX );\n";
 
     if ( !$B::C::destruct ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
       print "    fast_perl_destruct( my_perl );\n";
-    #} elsif ( $PERL510 and (@B::C::static_free or $free->index > -1) ) {
-    #  warn "my_perl_destruct static strings\n" if $verbose;
-    #  print "    my_perl_destruct( my_perl );\n";
-    #} elsif ( $] >= 5.007003 ) {
-    #  print "    perl_destruct( my_perl );\n";
     }
     else {
       print "    my_perl_destruct( my_perl );\n";
@@ -6425,7 +7142,7 @@ XS(boot_$cmodule)
     PL_op = $start;
     perl_run( aTHX ); /* Perl_runops_standard(aTHX); */
     FREETMPS;
-    LEAVE;
+    LEAVE; /* needed for modules, but we might need to filter cv_undef via my_leave_scope */
     ST(0) = &PL_sv_yes;
     XSRETURN(1);
 }
