@@ -699,6 +699,7 @@ t/issue95.t
 t/issue96.t
 t/issue97.t
 t/issue98.t
+t/manifest.t
 t/mock
 t/modules.pm
 t/modules.t
