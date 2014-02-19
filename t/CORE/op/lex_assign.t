@@ -1,6 +1,6 @@
 #!./perl
 
-BEGIN {
+INIT {
     unshift @INC, 't/CORE/lib';
 }
 
