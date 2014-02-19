@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_03 79fa3ed 2014-02-14 | C: oops, fixup syntax error in previous commit
+# B::C::VERSION = 1.45_04 922ddb8 2014-02-18 | untodo coretests
 # perlversion = 5.018002
 # path = /usr/local/bin/perl5.18.2
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_03 - perl-5.018002
+# 100 / 100 modules tested with B-C-1.45_04 - perl-5.018002
 # pass  92 / 100 (92.0%)
 # fail   8 / 100 (8.0%)
 # todo   3 /   8 (37.5%)

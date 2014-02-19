@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_03 79fa3ed 2014-02-14 | C: oops, fixup syntax error in previous commit
+# B::C::VERSION = 1.45_04 922ddb8 2014-02-18 | untodo coretests
 # perlversion = 5.008009
 # path = /usr/local/bin/perl5.8.9
 # platform = linux 64bit threaded
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO <5.10
+fail DateTime #TODO <5.10
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_03 - perl-5.008009
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   2 /   0 ()
+# 100 / 100 modules tested with B-C-1.45_04 - perl-5.008009
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   2 /   2 (100.0%)
 # skip   0 / 100 (0.0% not installed)

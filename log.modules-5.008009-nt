@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_03 79fa3ed 2014-02-14 | C: oops, fixup syntax error in previous commit
+# B::C::VERSION = 1.45_04 922ddb8 2014-02-18 | untodo coretests
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit non-threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder #TODO 5.8.9 without threads
+fail ExtUtils::CBuilder #TODO 5.8.9 without threads
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO <5.10
+fail DateTime #TODO <5.10
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_03 - perl-5.008009-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   2 /   0 ()
+# 100 / 100 modules tested with B-C-1.45_04 - perl-5.008009-nt
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   2 /   2 (100.0%)
 # skip   0 / 100 (0.0% not installed)
