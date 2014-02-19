@@ -11,7 +11,8 @@ use Config ();
 use B::C ();
 my $ITHREADS = $Config::Config{useithreads};
 my $todo1 = ($B::C::VERSION lt '1.45_03' and ($]>=5.018 and $ITHREADS)) ? "TODO 5.18thr ": "";
-my $todo3 = ($] < 5.010) ? "TODO 5.8 ": "";
+# fixed with 1.45_04: non-destructive get_isa for 5.8
+my $todo3 = ($] < 5.007) ? "TODO 5.6 ": "";
 
 ctestok(1,'C,-O3,-UB','ccode212i',<<'EOF',$todo1.'#212 shared GP');
 $blurfl = 123;
