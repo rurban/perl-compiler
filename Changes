@@ -22,9 +22,10 @@
           the dynamic init.
 	Improve -O4 by keeping all CvSTART cops
 	Keep internal packages if used in the source code, e.g. mro (#300)
+	Special-case io_close() on -O3 or B::CC for 5.8 (#303)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
-        Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
-        Handle duplicate function names, like multiple END blocks or anon functions (#297)
+	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
+	Handle duplicate function names, like multiple END blocks or anon functions (#297)
 
 1.45	2014-02-11 rurban
         * t/issue281.t: fix wrong test ($[ vs $])

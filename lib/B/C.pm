@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_04';
+our $VERSION = '1.45_05';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -4534,6 +4534,11 @@ sub B::IO::save {
   $svsect->debug($fullname, $io->flagspv) if $debug{flags};
   $sym = savesym( $io, sprintf( "(IO*)&sv_list[%d]", $svsect->index ) );
 
+  if (!$PERL510 and $io->SvSTASH) { # issue 303: test 22
+    # still need to close filehandles and dirs
+    # and then protect del_XPVIO(SvANY(sv)) for fast_perl_destruct() before sv_clean_objs()
+    push @B::C::static_free, $sym;
+  }
   if ($PERL510 and !$B::C::pv_copy_on_grow and $cur) {
     $init->add(sprintf("SvPVX(sv_list[%d]) = $pvsym;", $svsect->index));
   }
@@ -4907,6 +4912,9 @@ _EOT2
       $init->add_initav("    Perl_die(aTHX_ \"panic: AV alloc failed\");");
     }
   }
+  if (!$PERL510) {
+    print "static void my_io_close( pTHX_ SV* const sv );\n";
+  }
   if ( !$B::C::destruct ) {
     print <<'__EOT';
 int fast_perl_destruct( PerlInterpreter *my_perl );
@@ -4957,6 +4965,26 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
 }
 
 _EOT5
+  } else {
+    print <<'_EOT5a';
+static void
+my_io_close( pTHX_ SV* const sv ) {
+    if (IoIFP(sv) &&
+        IoIFP(sv) != PerlIO_stdin() &&
+	IoIFP(sv) != PerlIO_stdout() &&
+	IoIFP(sv) != PerlIO_stderr())
+    {
+        bool b = io_close((IO*)sv, FALSE);
+    }
+    if (IoDIRP(sv) && !(IoFLAGS(sv) & IOf_FAKE_DIRP))
+        PerlDir_close(IoDIRP(sv));
+    IoDIRP(sv) = (DIR*)NULL;
+    /* and now kill it off */
+    SvREFCNT(sv) = 0;
+    SvFLAGS(sv)= SVTYPEMASK;
+}
+_EOT5a
+
   }
 
   # -fno-destruct only >=5.8
@@ -5161,6 +5189,19 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
 #endif
+_EOT6
+
+    if (!$PERL510) {
+      for (0 .. $#B::C::static_free) {
+        my $s = $B::C::static_free[$_];
+        if ($s =~ /^\(IO\*\)&sv_list/) {
+          $s =~ s/^\(IO\*\)//;
+          print "    my_io_close(aTHX_ $s);\n";
+        }
+      }
+    }
+
+    print <<'_EOT6a';
     if (PL_sv_objcount) {
 	sv_clean_objs();
 	PL_sv_objcount = 0;
@@ -5171,7 +5212,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
     return 0;
 }
-_EOT6
+_EOT6a
 
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
