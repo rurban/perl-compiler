@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_05';
+our $VERSION = '1.45_06';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -351,7 +351,7 @@ our ($module, $init_name, %savINC, $mainfile, @static_free);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist);
 our $verbose = 0;
 our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
@@ -370,6 +370,7 @@ our %option_map = (
     'warnings'        => \$B::C::warnings, # disable with -fno-warnings
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
+    'dyn-padlist'     => \$B::C::dyn_padlist, # with -O4, needed for cv cleanup with non-local exits since 5.18
     'cop'             => \$optimize_cop, # XXX very unsafe!
 					 # Better do it in CC, but get rid of
 					 # NULL cops also there.
@@ -379,7 +380,7 @@ our %optimization_map = (
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
-    4 => [qw(-fcop)],
+    4 => [qw(-fcop -fno-dyn-padlist)],
   );
 our %debug_map = (
     'O' => 'op',
@@ -3252,8 +3253,9 @@ sub B::CV::save {
       # do not record a forward for the pad only
 
       # issue 298: dynamic CvPADLIST(&END) since 5.18 - END{} blocks
-      if ($] > 5.017 and $fullname eq 'main::END') {
-        $init->add("{ /* &END needs a dynamic padlist */",
+      # and #303 Attribute::Handlers
+      if ($] > 5.017 and ($B::C::dyn_padlist or $fullname =~ /^(main::END|Attribute::Handlers)/)) {
+        $init->add("{ /* &$fullname needs a dynamic padlist */",
                    "  PADLIST *pad;",
                    "  Newxz(pad, sizeof(PADLIST), PADLIST);",
                    "  Copy($padlistsym, pad, sizeof(PADLIST), char);",
@@ -4008,7 +4010,6 @@ sub B::AV::save {
     my @array = $av->ARRAY;
     $fill = scalar @array;
     $padlistsect->add("$fill, NULL, 0"); # Perl_pad_new(0)
-    # $init->add("pad_list[$padlist_index] = Perl_pad_new(0);");
     $padlist_index = $padlistsect->index;
     $sym = savesym( $av, "&padlist_list[$padlist_index]" );
   }
@@ -6503,6 +6504,8 @@ sub compile {
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
+  $B::C::dyn_padlist = 1 if $] >= 5.017; # default is dynamic and safe, disable with -O4
+
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
 	       B::Section B::Pseudoreg B::Shadow);
   #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
@@ -6971,6 +6974,17 @@ Use the script name instead of the program name as C<$0>.
 
 Not enabled with any C<-O> option.
 
+=item B<-fno-dyn-padlist>
+
+Disable dynamic padlists since 5.17.6.  Dynamic padlists are needed to prevent
+from C<cv_undef> crashes when cleaning up the stack on non-local exits, like
+C<die> or C<exit>.
+
+All functions in END blocks and all Attribute::Handler function padlists
+are automatically dynamic.
+
+Enabled with C<-O4>.
+
 =item B<-fcop>
 
 DO NOT USE YET!
@@ -7012,8 +7026,8 @@ Enable B<-O2> plus B<-fno-destruct> and B<-fconst-strings>.
 
 =item B<-O4>
 
-Enable B<-O3> plus B<-fcop>. Very unsafe, rarely works,
-10% faster, 10% smaller.
+Enable B<-O3> plus B<-fcop> and B<-fno-dyn-padlist>.
+Very unsafe, rarely works, 10% faster, 10% smaller.
 
 =back
 
