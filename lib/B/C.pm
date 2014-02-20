@@ -6977,8 +6977,8 @@ Not enabled with any C<-O> option.
 =item B<-fno-dyn-padlist>
 
 Disable dynamic padlists since 5.17.6.  Dynamic padlists are needed to prevent
-from C<cv_undef> crashes when cleaning up the stack on non-local exits, like
-C<die> or C<exit>.
+from C<cv_undef> crashes on static padlists when cleaning up the stack on non-local
+exits, like C<die> or C<exit>.
 
 All functions in END blocks and all Attribute::Handler function padlists
 are automatically dynamic.
