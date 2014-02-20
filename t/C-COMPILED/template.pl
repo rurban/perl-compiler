@@ -151,7 +151,7 @@ foreach my $optimization (@optimizations) {
           $ENV{BC_DEVELOPING} = 1; # keep temp files
         }
 
-        local $TODO = "tests unexpectedly passing";
+        local $TODO = "tests unexpectedly passing" if scalar @{ $parser->{todo_passed} };
         if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )) {
           note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
           $ENV{BC_DEVELOPING} = 1; # keep temp files
