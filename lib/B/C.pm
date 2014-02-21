@@ -3253,7 +3253,7 @@ sub B::CV::save {
       # do not record a forward for the pad only
 
       # issue 298: dynamic CvPADLIST(&END) since 5.18 - END{} blocks
-      # and #303 Attribute::Handlers
+      # and #169 and #304 Attribute::Handlers
       if ($] > 5.017 and ($B::C::dyn_padlist or $fullname =~ /^(main::END|Attribute::Handlers)/)) {
         $init->add("{ /* &$fullname needs a dynamic padlist */",
                    "  PADLIST *pad;",

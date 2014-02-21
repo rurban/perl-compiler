@@ -23,6 +23,12 @@
 	Improve -O4 by keeping all CvSTART cops
 	Keep internal packages if used in the source code, e.g. mro (#300)
 	Special-case io_close() on -O3 or B::CC for 5.8 (#303)
+        Since 5.18 padlists are now all dynamic, due to undef issues in non-local exits (#304)
+        Add -fno-dyn-padlist to -O4 to keep static padlists on 5.18.
+          Dynamic padlists are needed to prevent from cv_undef crashes on static padlists
+          when cleaning up the stack on non-local exits, like die or exit or subs on the
+          compile stack as with Attribute::Handler (#169, #304). Previously only END block
+          function padlists were dynamic (#298).
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
