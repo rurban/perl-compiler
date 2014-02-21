@@ -4,169 +4,170 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.46	2014-02-?? rurban
-        Added global destruction
+	Added global destruction
 
-        * C: reset PL_stack_sp on init (was one too far). no effects on code.
-        Implement global destruction via sv_clean_objs and a PL_sv_arenaroot
-          as sv_list[0] (#197, #208, #254, #280)
-        Call DESTROY methods for all our global static SVs (i.e. "global destruction"),
-          fixes #197, #280, #282
-        Increment GV->FORM refcounts as they cannot be destructed, analog to CV
-        Call PL_exitlist functions with -O3
-        Make the lexical cop_warnings pointer dynamic, because on cv_undef (scope exit,
-          assign, exit, die, ...) CvROOT and all its kids are freed, ignoring op_latefreed.
-          The content of the warning is still a static string - and leaks on perl, but
-          we don't care.
-        -fwarn-sv is now always set, just not with MSVC on Windows. The warnings are then
-          directly set, not in a tight loop afterwards, because the value is needed for
-          the dynamic init.
+	* C: reset PL_stack_sp on init (was one too far). no effects on code.
+	Implement global destruction via sv_clean_objs and my_curse on -O3, resp.
+	  prepend static svs PL_sv_arenaroot for sv_clean_objs with a fake sv_list[0].
+	  (#197, #208, #254, #280)
+	Call DESTROY methods for all our global static SVs (i.e. "global destruction"),
+	  fixes #197, #280, #282
+	Increment GV->FORM refcounts as they cannot be destructed, analog to CV
+	Call PL_exitlist functions with -O3
+	Make the lexical cop_warnings pointer dynamic, because on cv_undef (scope exit,
+	  assign, exit, die, ...) CvROOT and all its kids are freed, ignoring op_latefreed.
+	  The content of the warning is still a static string - and leaks on perl, but
+	  we don't care.
+	-fwarn-sv is now always set, just not with MSVC on Windows. The warnings are then
+	  directly set, not in a tight loop afterwards, because the value is needed for
+	  the dynamic init.
 	Improve -O4 by keeping all CvSTART cops
 	Keep internal packages if used in the source code, e.g. mro (#300)
-	Special-case io_close() on -O3 or B::CC for 5.8 (#303)
-        Since 5.18 padlists are now all dynamic, due to undef issues in non-local exits (#304)
-        Add -fno-dyn-padlist to -O4 to keep static padlists on 5.18.
-          Dynamic padlists are needed to prevent from cv_undef crashes on static padlists
-          when cleaning up the stack on non-local exits, like die or exit or subs on the
-          compile stack as with Attribute::Handler (#169, #304). Previously only END block
-          function padlists were dynamic (#298).
+	Fix the order of PerlIO_cleanup, after global destruction (#302, #303)
+	Since 5.18 padlists are now all dynamic, due to undef issues in non-local exits (#304)
+	Add -fno-dyn-padlist to -O4 to keep static padlists on 5.18.
+	  Dynamic padlists are needed to prevent from cv_undef crashes on static padlists
+	  when cleaning up the stack on non-local exits, like die or exit or subs on the
+	  compile stack as with Attribute::Handler (#169, #304). Previously only END block
+	  function padlists were dynamic (#298).
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
 
 1.45	2014-02-11 rurban
-        * t/issue281.t: fix wrong test ($[ vs $])
+	* t/issue281.t: fix wrong test ($[ vs $])
 
 1.44	2014-02-10 rurban
-        added adjusted CORE testsuite for 5.14. passes for 5.14.4-nt, not for 5.18.2-nt
+	added adjusted CORE testsuite for 5.14. passes for 5.14.4-nt, not for 5.18.2-nt
 	(cPanel code_monkeys)
 	still missing in general are:
 	  - global destruction (use lexicals!),
 	  - attribute handlers,
 	  - compile-time perlio layers
 
-        * C: Fix -O3 with ~ and ~~ formatstrings (#277)
+	* C: Fix -O3 with ~ and ~~ formatstrings (#277)
 	Fix SvLEN and PV ptr for empty shared hash keys (#272)
-        Use the natural @dl_modules boot order, just put attributes to the front (#259)
+	Use the natural @dl_modules boot order, just put attributes to the front (#259)
 	Store cop_hints to support lexical numeric hints pragmas,
-          esp. use bytes and use open attributes
-          (fixes #81 #152 #174 #176 #180 #185 #224 #235 #238 #241 #245 #253 #255 #256 #277)
-        Skip saving defined(&cv) subs (#96)
-        Fix format STDOUT/STDERR (#238, #239, #277, #284, #285, #283)
-        Save now empty bodyless subs if they exist, for signal handlers,
-          prototypes declarations and cvrefs (#251, #159, #235, #246, #270, #271, #275, #279)
-        Fix PVMG PV overwriting the RV, overload sub (#273)
+	  esp. use bytes and use open attributes
+	  (fixes #81 #152 #174 #176 #180 #185 #224 #235 #238 #241 #245 #253 #255 #256 #277)
+	Skip saving defined(&cv) subs (#96)
+	Fix format STDOUT/STDERR (#238, #239, #277, #284, #285, #283)
+	Save now empty bodyless subs if they exist, for signal handlers,
+	  prototypes declarations and cvrefs (#251, #159, #235, #246, #270, #271, #275, #279)
+	Fix PVMG PV overwriting the RV, overload sub (#273)
 	* CC (1.14): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	* perlcc (2.17): Accept -A for -DALLOW_PERL_OPTIONS
 	* t/testc.sh: Accept -A for -DALLOW_PERL_OPTIONS
 
 1.43	2014-01-15 rurban
 	new 5.16, and partial 5.18, 5.20 and windows support.
-        Many more fixes and testcases.
-        Bytecode is still broken on 5.18, esp non-threaded. 5.20 looks pretty good though.
+	Many more fixes and testcases.
+	Bytecode is still broken on 5.18, esp non-threaded. 5.20 looks pretty good though.
 
-        * C: Fix -u<module> without file extension.
+	* C: Fix -u<module> without file extension.
 	With hek do not drop FAKE, only for const pv.
 	Fixed $$ ($PID) to be dynamic, issue 108. Thanks to flexvault for reporting this.
-        Fixed double precision to 16 digits. The nbody shootout test passes now.
-        Fixed refcounts of *ENV, issue 111.
-        Fixed wrong boot_ arg for the xs version check with --staticxs
-        Better fix for overwriting of @ARGV <O3, test c_argv:1 and c_allow_opts.t:1
-        Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
-          loaded later.
-        Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
-          to get rid of the pesky Invalid version format error in xs_version_bootcheck
-          if the $VERSION had already version magic attached. (no testcase, hard to repro)
-        perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
-          we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
-        Fixed Null COP storage for 5.16 and 5.17
-        Fix amagic_generation which was removed with 5.17
-        Fix ALLOW_PERL_OPTIONS: add -e behind all processed options, not before
-        Fixed HvAUX init. Previously only with magic hashes, now on all OOK hashes (OOK+SHAREKEYS)
-          e.g. %warning::Bits
-        Added support for new PADLIST type since 5.17.4 (with xpadl_id) and 5.17.6 (without)
-        $^X returns now the real executable name, not just perl or perl.exe
-        Adjust COW string lengths to hold the COW_REFCNT byte at the end
-        Fix unicode string CUR and LEN (#142, #162)
-        Fix unicode hashkeys (HEK) mostly (#200), but not yet testc.sh 2001 (compile-time
-          stored utf8 heks)
-        Save HvTOTALKEYS at run-time as max added to the number of run-time added keys (#178)
-        Fix UV uvuformat on 32bit -Duse64bitint (#145)
-        op_pmreplstart is now run-time initialized >= 5.10 (#160)
-        Fixed special usage of magic vars @-,@+,%+,$-,$! (#90)
-        Fixed wrong REGEXP length for compiled QR data (#143)
-        Fixed wrong -O3 comparison of strings to numbers (#138,#141, branch new-cog), unified
-          PV handling, disabled -fcog replaced by -O3 -fconst-strings
-        Fixed NUL-byte handling in strings by using B::SV->PV instead of PVX (#237)
-        Storing now bareword filehandles (#148,#149)
-        Do not create GvGP at all. This also removes the need for newGP() (Windows/AIX)
-        use Config does not include B anymore, Internals::V now in __ANON__ package
-        Fixed handling of empty - not successfully autoloaded - CVs (#235, #159, ...)
-          by storing the SV and XPVCV but ignoring it and defer to run-time get_cv()
-        Unify handling of static and dynamic strings, use ptr_undef throughout instead
-          of NULL vs &PL_sv_undef (save_pv_or_rv => savesym, cur, len, pv, static)
-        Restore $^H, the numeric value of global warnings flags (#193,#207,#243)
-        Restore more missing globals: ${^UNICODE} ${^UTF8LOCALE} $; $\ $, $/ $" $|
-          $^A $^L $: $^H $^R $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
-        Restore even deprecated vars $] $# $* (#171)
-        Fix HvAUX memory corruption, accessing HvAUX beyond HE fields, esp. with threaded perls.
-          Initialize now HvAUX backref and mro_meta fields.
-        Do not boot internal core XS packages twice, refer to internal XS functions dynamically
-          and do not link to them. Fixes fix Windows/AIX with strict linking.
-        Defer dynaloaded GvCV initialization after dl_init()
-        Fixed storage of non-special lexical warnings (#258 warnsize-i258)
+	Fixed double precision to 16 digits. The nbody shootout test passes now.
+	Fixed refcounts of *ENV, issue 111.
+	Fixed wrong boot_ arg for the xs version check with --staticxs
+	Better fix for overwriting of @ARGV <O3, test c_argv:1 and c_allow_opts.t:1
+	Fixed refinition warnings of XS CONSTSUB. Ignore them as they are
+	  loaded later.
+	Add $dlmodule::VERSION as 2nd arg to boot_$dlmodule resp. $dlmodule::bootstrap
+	  to get rid of the pesky Invalid version format error in xs_version_bootcheck
+	  if the $VERSION had already version magic attached. (no testcase, hard to repro)
+	perl 5.16.0 shipped a slightly broken B without cop_stashlen. As workaround
+	  we do not support utf8 stashes nor null bytes in stashes on 5.16.0 threaded.
+	Fixed Null COP storage for 5.16 and 5.17
+	Fix amagic_generation which was removed with 5.17
+	Fix ALLOW_PERL_OPTIONS: add -e behind all processed options, not before
+	Fixed HvAUX init. Previously only with magic hashes, now on all OOK hashes (OOK+SHAREKEYS)
+	  e.g. %warning::Bits
+	Added support for new PADLIST type since 5.17.4 (with xpadl_id) and 5.17.6 (without)
+	$^X returns now the real executable name, not just perl or perl.exe
+	Adjust COW string lengths to hold the COW_REFCNT byte at the end
+	Fix unicode string CUR and LEN (#142, #162)
+	Fix unicode hashkeys (HEK) mostly (#200), but not yet testc.sh 2001 (compile-time
+	  stored utf8 heks)
+	Save HvTOTALKEYS at run-time as max added to the number of run-time added keys (#178)
+	Fix UV uvuformat on 32bit -Duse64bitint (#145)
+	op_pmreplstart is now run-time initialized >= 5.10 (#160)
+	Fixed special usage of magic vars @-,@+,%+,$-,$! (#90)
+	Fixed wrong REGEXP length for compiled QR data (#143)
+	Fixed wrong -O3 comparison of strings to numbers (#138,#141, branch new-cog), unified
+	  PV handling, disabled -fcog replaced by -O3 -fconst-strings
+	Fixed NUL-byte handling in strings by using B::SV->PV instead of PVX (#237)
+	Storing now bareword filehandles (#148,#149)
+	Do not create GvGP at all. This also removes the need for newGP() (Windows/AIX)
+	use Config does not include B anymore, Internals::V now in __ANON__ package
+	Fixed handling of empty - not successfully autoloaded - CVs (#235, #159, ...)
+	  by storing the SV and XPVCV but ignoring it and defer to run-time get_cv()
+	Unify handling of static and dynamic strings, use ptr_undef throughout instead
+	  of NULL vs &PL_sv_undef (save_pv_or_rv => savesym, cur, len, pv, static)
+	Restore $^H, the numeric value of global warnings flags (#193,#207,#243)
+	Restore more missing globals: ${^UNICODE} ${^UTF8LOCALE} $; $\ $, $/ $" $|
+	  $^A $^L $: $^H $^R $% $- $= if set in a BEGIN block or via cmdline (#256,#231)
+	Restore even deprecated vars $] $# $* (#171)
+	Fix HvAUX memory corruption, accessing HvAUX beyond HE fields, esp. with threaded perls.
+	  Initialize now HvAUX backref and mro_meta fields.
+	Do not boot internal core XS packages twice, refer to internal XS functions dynamically
+	  and do not link to them. Fixes fix Windows/AIX with strict linking.
+	Defer dynaloaded GvCV initialization after dl_init()
+	Fixed storage of non-special lexical warnings (#258 warnsize-i258)
 	Fixed storage of shared heks, support IsCOW_hek (i.e. method names)
-        Support new ReANY since 5.17.6 (#258 reg_temp_copy)
-        Support stash symtab magic for PMf_ONCE m?? and reset (#188)
-        Fixed POSIX overflow constants warnings for DBL_MAX,DBL_MIN,LONG_MIN,LONG_MAX (#262)
-        Support user-defined static_ext modules, which are already booted from core.
-        Add more DynaLoader::dl_debug output (set PERL_DL_DEBUG=1)
-        Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
-        Mark empty but overloaded packages (#172). This is merely workaround for reduced testcases.
-        Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
-        Add new option -fno-delete-pkg to control if to ignore compiler-only dependent packages,
-          compiler-independent packages are now always saved. Save those package names at Makefile.PL
-          in @B::C::Flags::deps.
+	Support new ReANY since 5.17.6 (#258 reg_temp_copy)
+	Support stash symtab magic for PMf_ONCE m?? and reset (#188)
+	Fixed POSIX overflow constants warnings for DBL_MAX,DBL_MIN,LONG_MIN,LONG_MAX (#262)
+	Support user-defined static_ext modules, which are already booted from core.
+	Add more DynaLoader::dl_debug output (set PERL_DL_DEBUG=1)
+	Enforce -ffold on an ucfirst op or $INC{'unicore/To/Title.pl'} (#242)
+	Mark empty but overloaded packages (#172). This is merely workaround for reduced testcases.
+	Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
+	Add new option -fno-delete-pkg to control if to ignore compiler-only dependent packages,
+	  compiler-independent packages are now always saved. Save those package names at Makefile.PL
+	  in @B::C::Flags::deps.
 
-        * perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
-         new option -f passthru to C and CC
-        * perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
-        fixed warning Prototype mismatch: sub main::gettimeofday: none vs () at perlcc line 261
-        improved --version
-        added --perlopts to handle -DALLOW_PERL_OPTIONS
-        * perlcc (2.16): changed output name rules:
-        Without given output file name we use the name of the input file (in the subdir)
-        or with -e a.out resp. a.exe and a randomized intermediate C filename.
-        If the input file is an absolute path on non-windows systems use the basename.
+	* perlcc (2.14): new option --dryrun, -v5 does not -Dsp,-v
+	 new option -f passthru to C and CC
+	* perlcc (2.15): fixed default --spawn: use waitpid which was broken for parallel builds.
+	fixed warning Prototype mismatch: sub main::gettimeofday: none vs () at perlcc line 261
+	improved --version
+	added --perlopts to handle -DALLOW_PERL_OPTIONS
+	* perlcc (2.16): changed output name rules:
+	Without given output file name we use the name of the input file (in the subdir)
+	or with -e a.out resp. a.exe and a randomized intermediate C filename.
+	If the input file is an absolute path on non-windows systems use the basename.
 	* CC (1.13): Use the B::C integer and double precision logic (ivx, nvx).
-        Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl.
-        Added optimizations: -fno-magic, -fno-autovivify, -faelem
-        Detect "no autovivification;" pragma.
-        New -fno-taint, -fomit_taint is deprecated
-        Fix amagic_generation which was removed with 5.17
-        Use new perl6 type names: int, num, str. double and string are deprecated.
+	Fixed double precision to 16 digits. The nbody shootout is now 2x faster than perl.
+	Added optimizations: -fno-magic, -fno-autovivify, -faelem
+	Detect "no autovivification;" pragma.
+	New -fno-taint, -fomit_taint is deprecated
+	Fix amagic_generation which was removed with 5.17
+	Use new perl6 type names: int, num, str. double and string are deprecated.
 	* Bytecode (1.14): fixed require and op_first, issue 97
 	Fixed regex_pad offset in threaded perls >= 5.11, issue 68.
-        New type B::PAD isa B::AV (PADLIST for 5.17.5),
-        New bytecodes newpadlx, padl_name, padl_sym (PADLIST for 5.17.5)
-        Fixed CvGV_set causing Attempt to free unreferenced scalar in push_begin (42,43)
-        Fixed -Do (peek ops)
-        Renamed option -f to -F for files.
-        Fixed READONLY magic and restricted hashes, issue 98
-        Support IsCOW xpvshared strings (>=5.18)
-        Fixed wrong xpvshared logic (5.10-5.17), issue 138
-        Optimized away 0=default op and gp flags and pointers
-        Optimized away default sv_refcnt=1 (GV not), and skip redundant bytecodes
-        Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
+	New type B::PAD isa B::AV (PADLIST for 5.17.5),
+	New bytecodes newpadlx, padl_name, padl_sym (PADLIST for 5.17.5)
+	Fixed CvGV_set causing Attempt to free unreferenced scalar in push_begin (42,43)
+	Fixed -Do (peek ops)
+	Renamed option -f to -F for files.
+	Fixed READONLY magic and restricted hashes, issue 98
+	Support IsCOW xpvshared strings (>=5.18)
+	Fixed wrong xpvshared logic (5.10-5.17), issue 138
+	Optimized away 0=default op and gp flags and pointers
+	Optimized away default sv_refcnt=1 (GV not), and skip redundant bytecodes
+	Set PadnamelistMAXNAMED(comppad_name) needed since 5.19.3 for eval string (#268)
 
 	* ByteLoader (0.10): set sv_refcnt to 1 in newsv to skip most defaults
-        * Assembler (1.11): allow "newpadlx 0"
-        * Disassembler (1.12): use B::Concise op_flags and private_flags
+	* Assembler (1.11): allow "newpadlx 0"
+	* Disassembler (1.12): use B::Concise op_flags and private_flags
 	* Stash (1.03): fix compilation for 5.8.8 and below: gv_fetchsv missing
 	* t/perldoc.t: perlcc fails with 5.8 because Cwd disturbs the
 	  fragile method package finder for File::Spec. Use cc_harness.
 
 1.42	2012-02-01 rurban
-        stable up to 5.14
+	stable up to 5.14
 
 	* C: Improved finding methods in parent classes (Warning: method not found),
 	Save @ISA of those child classes.
@@ -263,7 +264,7 @@
 	Fixed magic -> PTR when SV (>5.6)
 	Moved -fsave-sig-hash from -O3 to -O0. You need -fno-save-sig-hash
 	  to disable it.
-        Removed -fno-stash from -O2, -fno-stash is now the default. You
+	Removed -fno-stash from -O2, -fno-stash is now the default. You
 	  need -fstash to add stashes. It caused not understood problems.
 	Fixed saving %SIG signals and more -2 SV magic (issue 92)
 	Adjusted IO logic, was erronously skipped (issue 59)
@@ -379,7 +380,7 @@
 	* stash.t: fixed freebsd test 4
 
 1.32	2011-06-10 rurban
-        more darwin and package scan fixes, Bytecode -i includeall.
+	more darwin and package scan fixes, Bytecode -i includeall.
 	all top100 modules can be now be compiled on most perls
 
 	* Bytecode.pm (1.11): fixed const xsub xsubany ptr >=5.10 <5.14 (27).
@@ -433,11 +434,11 @@
 
 	* C.pm (1.31): replace $ITHREADS by $MULTI (darwin),
 	my_perl_destruct: disable CopFILE_set NULL and CopSTASHPV_set NULL
-        on $MULTI, PL_sv_yes|no special on MULTI
+	on $MULTI, PL_sv_yes|no special on MULTI
 	* CC.pm (1.10): replace $ITHREADS by $MULTI (darwin)
 	* t/test.pl, issue34.t, issue35.t: -ofile => -o file (darwin cc)
-        * cc_harness: -Wl,--warn-once invalid on darwin gcc
-        * log.modules: encode MULTI without threads as -m
+	* cc_harness: -Wl,--warn-once invalid on darwin gcc
+	* log.modules: encode MULTI without threads as -m
 
 1.30	2011-03-06 rurban
 	dbmopen, cc_runtime.h, perlcc, --staticxs
@@ -686,7 +687,7 @@
 	  used anymore. read and set av_flags only until 5.12, compile only before 5.10
 	Check CVv_ANON when setting cv->GV. Fixes anon subs
 	* bytecode.h: do not PM_SETRE with empty arg. fails since 5.13 debugging
-        * t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
+	* t/testc.sh, t/TESTS: fail test 44, change threads tests 41-43 to TODO
 	* perlcc (2.07), cc_harness, t/test.pl: debian specific fixes for their broken
 	  -lperl linker args for ExtUtils::Embed::ldopts.
 	* t/test.pl: Have complete c/cc TODO/SKIP status in one place.
@@ -694,7 +695,7 @@
 	Fixed new cc TODO.
 	Run CC test 18 even not as AUTHOR
 	* t/c*.t: make test 27 easier to debug (Nick Koston)
-        Added test 45 (Nick Koston)
+	Added test 45 (Nick Koston)
 
 1.25	2010-04-11 rurban
 	* C.pm: remove global my_perl, pass it properly around.
@@ -1249,7 +1250,7 @@
 	commented disassembler output. PVGV and new REGEX still broken.
 	Fixes for no ithreads.
 
-        * Fixed verbose Bytecode for old B::Concise (5.8.8). t/testplc.sh
+	* Fixed verbose Bytecode for old B::Concise (5.8.8). t/testplc.sh
 	  failed before.
 	* ByteLoader: Work on portability (different arch, version and sizes).
 	  Added bl_header.
@@ -1282,22 +1283,22 @@
 
 1.04_14 2008-03-24 rurban
 
-        * Fixed some 1.04_13 +x executable permissions in docs. Windows habits.
+	* Fixed some 1.04_13 +x executable permissions in docs. Windows habits.
 
 1.04_13 2008-03-24 rurban
 
 	* Fixed B::C pv init in 5.10. Forgot refcnt and flags.
 	* Added "Other perl to exe compilers" section to perlcompile.pod.
-  	  This is even a FAQ.
+	  This is even a FAQ.
 	* Added the NOTES to perlcompile.pod
 	* Added temp. perloptreeguts.pod. In work, also at the wiki.
 	* Fixed Bytecode op_pmflags assertions.
-        * Added orangesect for enough regexp space in RE's sv_any.
+	* Added orangesect for enough regexp space in RE's sv_any.
 	  Engine not initialized though.
 	* Hangs in C/CC executables at an op_free(PL_main_root) trying to free
-          the static op structs because the earlier op_seq -1 hack is gone now,
+	  the static op structs because the earlier op_seq -1 hack is gone now,
 	  and opt_static was replaced by opt_latefree. Set now opt_latefree = 1.
-          This fixed tests 1 and 13. Slowly making progress step by step.
+	  This fixed tests 1 and 13. Slowly making progress step by step.
 
 1.04_12 2008-03-16 rurban (first upload)
 
@@ -1318,8 +1319,8 @@
 	* added STATUS
 	* added old Changes from the new git clone repo by Sam Vilain
 	* fix C cop
-        * fix C savepvn apparently
-        * work on HV init - crashes at invalid entry
+	* fix C savepvn apparently
+	* work on HV init - crashes at invalid entry
 	* use run_cc_test
 
 1.04_10 2008-02-26 rurban
@@ -1414,11 +1415,11 @@
 
 B::C was at 1.05 when removed from core with 5.9.4.
 
-Nicholas Clark <nwc10+p5p4@colon.colondot.net>  2007-05-07 15:35:56
-    bytecode.pl:        Exterminate!
+Nicholas Clark <nwc10+p5p4@colon.colondot.net>	2007-05-07 15:35:56
+    bytecode.pl:	Exterminate!
     ext/B/B/Asmdata.pm: Exterminate!
 
-Nicholas Clark <nwc10+p5p4@colon.colondot.net>  2007-05-07 14:53:05
+Nicholas Clark <nwc10+p5p4@colon.colondot.net>	2007-05-07 14:53:05
     Given that @optype and @specialsv_name are hard coded tables, it seems
     more logical for them to be in B.pm, rather than in the "boilerplate"
     for the machine generated B/Asmdata.pm
@@ -1429,12 +1430,12 @@ Marcus Holland-Moritz <mhx-perl@gmx.net>  2004-08-29 13:22:48
 Marcus Holland-Moritz <mhx-perl@gmx.net>  2004-08-29 13:21:50
     Skip ext/B/t/assembler.t when configured without B.
 
-Rafael Garcia-Suarez <rgarciasuarez@gmail.com>  2003-08-09 21:13:27
+Rafael Garcia-Suarez <rgarciasuarez@gmail.com>	2003-08-09 21:13:27
     Remove ByteLoader from the list of modules whose compilability should
     be tested : it's loaded (at runtime) by ext/B/t/bytecode.t (as Enache
     pointed out.)
 
-chromatic <chromatic@rmci.net>  2002-05-10 07:43:25
+chromatic <chromatic@rmci.net>	2002-05-10 07:43:25
     added ext/B/t/o.t
 
 Mattia Barbon <mbarbon@dsi.unive.it>  2002-01-12 00:29:48
@@ -1446,48 +1447,48 @@ Mattia Barbon <mbarbon@dsi.unive.it>  2002-01-06 12:44:30
     @14104 B, B::C, perlcc, t/TEST
     Message-ID: <3C38389E.7831.493570@localhost>
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-12-21 14:42:31
+Jarkko Hietaniemi <jhi@iki.fi>	2001-12-21 14:42:31
     @13830 packing I32 with L is not nice, need l; from Wolfgang Laun.
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-12-19 16:59:02
+Jarkko Hietaniemi <jhi@iki.fi>	2001-12-19 16:59:02
     @13807 One more embedded (?sx) de-embedded, from Wolfgang Laun.
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-12-19 15:25:27
+Jarkko Hietaniemi <jhi@iki.fi>	2001-12-19 15:25:27
     @13802 B::Assembler/B::Disassembler patches and test;
     from Wolfgang Laun.
     TODO: getting perlcc working.
 
-Michael G. Schwern <schwern@pobox.com>  2001-12-14 20:59:13
+Michael G. Schwern <schwern@pobox.com>	2001-12-14 20:59:13
     @13697 BBlock: Some weak docs
     Message-ID: <20011215005913.GC28596@blackrider>
 
-Michael G. Schwern <schwern@pobox.com>  2001-12-14 20:14:14
+Michael G. Schwern <schwern@pobox.com>	2001-12-14 20:14:14
     @13695 Adding B::Asmdata docs
     Message-ID: <20011215001414.GA25077@blackrider>
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-11-29 02:22:02
+Jarkko Hietaniemi <jhi@iki.fi>	2001-11-29 02:22:02
     @13346 Change $=, $., $*, $%, and $- to be IVs instead of longs.
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-11-16 01:38:41
+Jarkko Hietaniemi <jhi@iki.fi>	2001-11-16 01:38:41
     @13034 Add the fruits of Larry Shatzer's version verifying script.
     (There are some straddlers, but they will be fixed in the
     upcoming releases of the modules.)
 
     (Stamped with v1.00)
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-09-16 22:36:58
+Jarkko Hietaniemi <jhi@iki.fi>	2001-09-16 22:36:58
     @12040 Stamp B::Assembler with v0.03
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-07-01 17:20:38
+Jarkko Hietaniemi <jhi@iki.fi>	2001-07-01 17:20:38
     @11061 Make 'compile' target a little less broken.
     Still very broken, though: -Wall warnings from
     the generated code, boot_Foo prototypes missing,
     can't autoload Fcntl::SEEK_CUR et alia, ...
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-06-27 13:36:40
+Jarkko Hietaniemi <jhi@iki.fi>	2001-06-27 13:36:40
     @10979 "lose the looses", from Abhijit Menon-Sen
 
-Richard Soderberg <p5-authors@crystalflame.net>  2001-06-21 09:01:22
+Richard Soderberg <p5-authors@crystalflame.net>	 2001-06-21 09:01:22
     @10780 Step 2: Use the new PM_GETRE/SETRE macros everywhere.
     Message-ID: <Pine.LNX.4.21.0106210657400.1693-100000@oregonnet.com>
 
@@ -1498,9 +1499,9 @@ Gurusamy Sarathy <gsar@cpan.org>  2001-03-19 08:07:09
 Mark-Jason Dominus <mjd@plover.com>  2001-01-16 14:43:18
     Subject: [PATCH @8436] Eliminate op_children
 
-    (Replaced by #8448)  Traces of op_children (cleanup of #8442)
+    (Replaced by #8448)	 Traces of op_children (cleanup of #8442)
 
-    (Replaced by #8448)  More op_children traces (cleanup of #8442).
+    (Replaced by #8448)	 More op_children traces (cleanup of #8442).
 
     Subject: [PATCH #3 @8436] Re: Eliminate op_children
     Replace #8444 and #8445.
@@ -1539,11 +1540,11 @@ Gurusamy Sarathy <gsar@cpan.org>  2000-11-27 18:11:21
 Gurusamy Sarathy <gsar@cpan.org>  2000-11-27 13:53:18
 	U8->U16 CvFLAGS(cv)
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-10-25 18:07:58
+Jarkko Hietaniemi <jhi@iki.fi>	2001-10-25 18:07:58
    * make re, Opcode, File::Glob and B threadsafe
    * include XS_VERSION in MY_CXT_KEY (tweak for change#12652)
 
-Jarkko Hietaniemi <jhi@iki.fi>  2001-04-05 04:00:33
+Jarkko Hietaniemi <jhi@iki.fi>	2001-04-05 04:00:33
     Integrate changes #9544,9547,9549(perlio),9550,9551 from
     maintperl into mainline.
     "double" should be "NV"; standard typemap is missing entry
@@ -1610,7 +1611,7 @@ Gurusamy Sarathy <gsar@cpan.org>  1999-10-29 05:00:21
     @4484 usurp GVOP slot for new PADOP (one small step to making optree
     shareable across interpreters)
 
-Vishal Bhatia <vishal@deja.com>  1999-09-30 01:27:28
+Vishal Bhatia <vishal@deja.com>	 1999-09-30 01:27:28
     @4254 [patch _61] Minor corrections in C.pm
     Message-ID: <Pine.LNX.4.10.9909292326280.5599-100000@localhost.localdomain>
 
@@ -1618,7 +1619,7 @@ Charles Bailey <bailey@newman.upenn.edu>  1999-09-29 04:21:31
     @4249 resync with mainline 5.05_61
     ($handle_VC_problem, @4198: $sv->REFCNT - 1)
 
-Vishal Bhatia <vishal@deja.com>  1999-08-25 02:31:33
+Vishal Bhatia <vishal@deja.com>	 1999-08-25 02:31:33
     @4198 add arenas for managing allocations of remaining xpv*v structures
     Message-ID: <Pine.LNX.4.10.9908250031000.11727-100000@localhost.localdomain>
     Subject: [PATCH 5.005_60] removing extra ref count (compiler)
@@ -1626,7 +1627,7 @@ Vishal Bhatia <vishal@deja.com>  1999-08-25 02:31:33
 Doug MacEachern <dougm@covalent.net>  1999-07-25 17:49:00
     @4129 B::clearsym
 
-Vishal Bhatia <vishal@deja.com>  1999-08-11 03:43:28
+Vishal Bhatia <vishal@deja.com>	 1999-08-11 03:43:28
     @4095  applied suggested patch with suitable test to detect MSVC
     Message-ID: <GFCJELIOGEENAAAA@my-deja.com>
     Subject: compiler on  win32
@@ -1661,7 +1662,7 @@ Nathan Torkington <gnat@frii.com>  1999-08-05 23:25:47
 Nathan Torkington <gnat@frii.com>  1999-08-04 13:24:56
     @3920 [5.005_60 PATCH] Make B::Bytecode work
 
-Vishal Bhatia <vishal@deja.com>  1999-07-31 21:08:33
+Vishal Bhatia <vishal@deja.com>	 1999-07-31 21:08:33
     @3869 "use constant" in the compiler
 
 Nathan Torkington <gnat@frii.com>  1999-08-01 11:23:35
@@ -1684,26 +1685,26 @@ Gurusamy Sarathy <gsar@cpan.org>  1999-07-17 22:43:27
     @3687 make CC.pm use a distinct CCPP() macro rather than PP()
     (suggested by Vishal Bhatia <vishalb@my-deja.com>)
 
-Vishal Bhatia <vishal@deja.com>  1999-06-30 16:02:42
+Vishal Bhatia <vishal@deja.com>	 1999-06-30 16:02:42
     @3644 Compiler and XSUBS
 
-Stephen McCamant <smcc@mit.edu>  1999-06-25 15:38:44
+Stephen McCamant <smcc@mit.edu>	 1999-06-25 15:38:44
     @3637 Eliminate CONDOPs
 
-Vishal Bhatia <vishal@deja.com>  1999-06-20 19:17:17
+Vishal Bhatia <vishal@deja.com>	 1999-06-20 19:17:17
     @3630 Minor bug fix in pp_require
 
-Vishal Bhatia <vishal@deja.com>  1999-06-12 10:23:59
+Vishal Bhatia <vishal@deja.com>	 1999-06-12 10:23:59
     @3622 applied patch after demunging headers with appropriate paths
-    	Message-ID: <JIHEJPFDFKIBDAAA@my-deja.com>
-    	Subject: [Patch 5.005_57] unsigned arithmetic (Compiler)
+	Message-ID: <JIHEJPFDFKIBDAAA@my-deja.com>
+	Subject: [Patch 5.005_57] unsigned arithmetic (Compiler)
 
-Vishal Bhatia <vishal@deja.com>  1999-06-05 10:42:17
+Vishal Bhatia <vishal@deja.com>	 1999-06-05 10:42:17
     @3593 applied parts not duplicated by previous patches
-    	Message-ID: <JAMCAJKJEJDPAAAA@my-deja.com>
-    	Subject: Fwd: [PATCH 5.005_57] consolidated compiler changes
+	Message-ID: <JAMCAJKJEJDPAAAA@my-deja.com>
+	Subject: Fwd: [PATCH 5.005_57] consolidated compiler changes
 
-Vishal Bhatia <vishal@deja.com>  1999-06-03 02:57:48
+Vishal Bhatia <vishal@deja.com>	 1999-06-03 02:57:48
     @3584 [PATCH 5.005_57] pp_sort sorted out
 
 Gurusamy Sarathy <gsar@cpan.org>  1999-06-10 10:38:00
@@ -1732,140 +1733,140 @@ Gurusamy Sarathy <gsar@cpan.org>  1999-05-11 11:34:13
 
 Gurusamy Sarathy <gsar@cpan.org>  1999-05-10 09:49:26
     @3359 more Compiler patches from Vishal Bhatia <vishalb@my-dejanews.com>
-    	Date: Tue, 27 Apr 1999 23:47:24 PDT
-    	Message-ID: <19990428064724.95244.qmail@hotmail.com>
-    	Subject: [PATCH 5.005_56] Saving Tied hashes ( C.pm)
-    	--
-    	Date: Thu, 29 Apr 1999 18:21:06 -0700
-    	Message-ID: <GEFPBFDJADFJBAAA@my-dejanews.com>
-    	Subject: [PATCH 5.005_56] double constants ( C.pm)
-    	--
-    	Date: Mon, 03 May 1999 20:21:31 PDT
-    	Message-ID: <19990504032131.81113.qmail@hotmail.com>
-    	Subject: [PATCH 5.005_56] Overloading implementation ( Compiler)
-    	--
-    	Date: Thu, 06 May 1999 17:57:09 -0700
-    	Message-ID: <FCJELBLAJBOBAAAA@my-dejanews.com>
-    	Subject: Stash.pm
+	Date: Tue, 27 Apr 1999 23:47:24 PDT
+	Message-ID: <19990428064724.95244.qmail@hotmail.com>
+	Subject: [PATCH 5.005_56] Saving Tied hashes ( C.pm)
+	--
+	Date: Thu, 29 Apr 1999 18:21:06 -0700
+	Message-ID: <GEFPBFDJADFJBAAA@my-dejanews.com>
+	Subject: [PATCH 5.005_56] double constants ( C.pm)
+	--
+	Date: Mon, 03 May 1999 20:21:31 PDT
+	Message-ID: <19990504032131.81113.qmail@hotmail.com>
+	Subject: [PATCH 5.005_56] Overloading implementation ( Compiler)
+	--
+	Date: Thu, 06 May 1999 17:57:09 -0700
+	Message-ID: <FCJELBLAJBOBAAAA@my-dejanews.com>
+	Subject: Stash.pm
 
 Tom Hughes <tom@compton.nu>  1999-04-24 20:11:59
     @3356 applied suggested patch, with win32 and PERL_OBJECT additions
-    	Message-ID: <609bdff748.tom@compton.compton.nu>
-    	Subject: ByteLoader patch
+	Message-ID: <609bdff748.tom@compton.compton.nu>
+	Subject: ByteLoader patch
 
 Gurusamy Sarathy <gsar@cpan.org>  1999-05-06 10:01:23
     @3314 compiler fixes from Vishal Bhatia <vishalb@hotmail.com>
-    	Date: Tue, 30 Mar 1999 23:40:34 PST
-    	Message-ID: <19990331074034.6117.qmail@hotmail.com>
-    	Subject: [PATCH 5.005_56] pp_entersub and pp_leavewrite(CC.pm)
-    	--
-    	Date: Wed, 07 Apr 1999 00:28:23 -0800
-    	Message-ID: <FGBNLNPOEELFAAAA@my-dejanews.com>
-    	Subject: [PATCH 5.005_56] function prototypes(B.pm)
-    	--
-    	Date: Thu, 22 Apr 1999 23:40:52 -0700
-    	Message-ID: <OEAOMKBMLDADCAAA@my-dejanews.com>
-    	Subject: [PATCH 5.005_56 ] discarding worthless padsvs
-    	--
-    	Date: Tue, 27 Apr 1999 01:14:49 PDT
-    	Message-ID: <19990427081449.28615.qmail@hotmail.com>
-    	Subject: [PATCH 5.005_56] pp_ncmp implementation ( CC.pm)
+	Date: Tue, 30 Mar 1999 23:40:34 PST
+	Message-ID: <19990331074034.6117.qmail@hotmail.com>
+	Subject: [PATCH 5.005_56] pp_entersub and pp_leavewrite(CC.pm)
+	--
+	Date: Wed, 07 Apr 1999 00:28:23 -0800
+	Message-ID: <FGBNLNPOEELFAAAA@my-dejanews.com>
+	Subject: [PATCH 5.005_56] function prototypes(B.pm)
+	--
+	Date: Thu, 22 Apr 1999 23:40:52 -0700
+	Message-ID: <OEAOMKBMLDADCAAA@my-dejanews.com>
+	Subject: [PATCH 5.005_56 ] discarding worthless padsvs
+	--
+	Date: Tue, 27 Apr 1999 01:14:49 PDT
+	Message-ID: <19990427081449.28615.qmail@hotmail.com>
+	Subject: [PATCH 5.005_56] pp_ncmp implementation ( CC.pm)
 
-Vishal Bhatia <vishal@deja.com>  1999-03-23 17:21:43
+Vishal Bhatia <vishal@deja.com>	 1999-03-23 17:21:43
     @3168 applied needful parts of suggested patch
-    	Message-ID: <OOOKJGFMLFLHBAAA@my-dejanews.com>
-    	Subject: [PATCH 5.005_56] pp_formline correction
+	Message-ID: <OOOKJGFMLFLHBAAA@my-dejanews.com>
+	Subject: [PATCH 5.005_56] pp_formline correction
 
 Gurusamy Sarathy <gsar@cpan.org>  1999-03-25 07:21:05
     @3165 fix refcnt on PL_main_cv (variant of suggestion by Vishal Bhatia
     <vishalb@hotmail.com>)
 
-Vishal Bhatia <vishal@deja.com>  1999-03-11 08:40:27
+Vishal Bhatia <vishal@deja.com>	 1999-03-11 08:40:27
     @3142 applied suggested patch, modulo bogus hunk
-    	Message-ID: <19990311154027.25891.qmail@hotmail.com>
-    	Subject: [PATCH 5.005_56] Minor fixes in perlcc
+	Message-ID: <19990311154027.25891.qmail@hotmail.com>
+	Subject: [PATCH 5.005_56] Minor fixes in perlcc
 
-Vishal Bhatia <vishal@deja.com>  1999-03-03 00:27:25
+Vishal Bhatia <vishal@deja.com>	 1999-03-03 00:27:25
     @3066 updates to compiler modules
-    	Message-ID: <19990303072725.779.qmail@hotmail.com>
-    	Subject: PATCH 5.005_56 + Test procedure
+	Message-ID: <19990303072725.779.qmail@hotmail.com>
+	Subject: PATCH 5.005_56 + Test procedure
 
-Vishal Bhatia <vishal@deja.com>  1999-02-08 02:14:41
+Vishal Bhatia <vishal@deja.com>	 1999-02-08 02:14:41
     @2940 enable dynaloading in C.pm-compiled programs (non-conflicting part
     of suggested patch)
-    	Message-ID: <DHIDFFOPMEFDBAAA@my-dejanews.com>
-    	Subject: [PATCH 5.005_54] some pending C.pm stuff
+	Message-ID: <DHIDFFOPMEFDBAAA@my-dejanews.com>
+	Subject: [PATCH 5.005_54] some pending C.pm stuff
 
 Gurusamy Sarathy <gsar@cpan.org>  1999-02-12 12:09:27
     @2894 add missing hunk in change#2657 from Vishal Bhatia <vishal@deja.com>
 
-Vishal Bhatia <vishal@deja.com>  1999-01-18 02:32:31
+Vishal Bhatia <vishal@deja.com>	 1999-01-18 02:32:31
     @2657 pp_mapstart & pp_grepstart return val (CC.pm)
     To: perl5-porters@perl.org
     Message-ID: <19990118093231.18443.qmail@hotmail.com>
 
-Vishal Bhatia <vishal@deja.com>  1999-01-17 17:41:10
+Vishal Bhatia <vishal@deja.com>	 1999-01-17 17:41:10
     @2639 Duplicate saved ops (CC.pm)
     Message-Id: <19990118004111.29667.qmail@hotmail.com>
 
 Gurusamy Sarathy <gsar@cpan.org>  1999-01-17 10:12:42
     @2621 fix change#2602 to not used hard coded constants
 
-Vishal Bhatia <vishal@deja.com>  1999-01-11 09:02:41
+Vishal Bhatia <vishal@deja.com>	 1999-01-11 09:02:41
     @2602 B::MAGIC::PTR doesnot check for valid length.
     Lines: 134
     Message-ID: <MLIST_19990111052126.27966.qmail@hotmail.com>
 
-Vishal Bhatia <vishal@deja.com>  1999-01-08 13:43:36
+Vishal Bhatia <vishal@deja.com>	 1999-01-08 13:43:36
     @2600 B::CC::pp_rv2cv problem
     To: perl5-porters@perl.org
     Message-ID: <MLIST_19990108101557.4481.qmail@hotmail.com>
 
-Vishal Bhatia <vishal@deja.com>  1998-12-16 04:17:03
+Vishal Bhatia <vishal@deja.com>	 1998-12-16 04:17:03
     @2525 More minor  Fixes in CC.pm/C.pm
     To: perl5-porters@perl.org
     Message-ID: <MLIST_199812160055.QAA06272@f10.hotmail.com>
 
-Vishal Bhatia <vishal@deja.com>  1998-12-10 09:30:02
+Vishal Bhatia <vishal@deja.com>	 1998-12-10 09:30:02
     @2524 Re:perlcc -e 'my $x = shift; print +($x ?...' failure
     To: perl5-porters@perl.org
     Cc: rmb1@cise.npl.co.uk, nick@ni-s.u-net.com
     Message-ID: <MLIST_19981210061651.29891.qmail@hotmail.com>
     (Nick's part was applied earlier, in change #2460)
 
-Vishal Bhatia <vishal@deja.com>  1998-12-09 07:50:30
+Vishal Bhatia <vishal@deja.com>	 1998-12-09 07:50:30
     @2523 return value of perlcc/B::CC generated functions.
     To: nick@ni-s.u-net.com
     Cc: perl5-porters@perl.org
     Message-ID: <MLIST_19981209043146.16829.qmail@hotmail.com>
 
-Vishal Bhatia <vishal@deja.com>  1998-12-20 20:03:25
+Vishal Bhatia <vishal@deja.com>	 1998-12-20 20:03:25
     @2492 pp_next/pp_last/pp_redo problems
     To: perl5-porters@perl.org
     Message-ID: <19981221030326.27660.qmail@hotmail.com>
     (slightly reformatted)
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1999-01-02 14:06:30
+Nick Ing-Simmons <nick@ing-simmons.net>	 1999-01-02 14:06:30
     @2551 Export constant subs from B.xs for op.h, cop.h and a few others.
     Use them in various B::* rather than have local defs.
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1999-01-02 10:04:02
+Nick Ing-Simmons <nick@ing-simmons.net>	 1999-01-02 10:04:02
     @2550 Integrate ext/B changes from //depot/cfgperl
     'copy in' ext/B/B.xs
-    	(@2460..) 'merge in' ext/B/B/C.pm ext/B/B/CC.pm
-    	ext/B/B/Stackobj.pm (@2524..)
+	(@2460..) 'merge in' ext/B/B/C.pm ext/B/B/CC.pm
+	ext/B/B/Stackobj.pm (@2524..)
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1999-01-02 10:04:02
+Nick Ing-Simmons <nick@ing-simmons.net>	 1999-01-02 10:04:02
     @2491 Integrate ext/B changes from //depot/cfgperl
 
 Gurusamy Sarathy <gsar@cpan.org>  1998-09-23 09:52:46
     B::Asmdata define PUT_svindex(), PUT_opindex()
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1998-12-20 14:21:29
+Nick Ing-Simmons <nick@ing-simmons.net>	 1998-12-20 14:21:29
     @2491 Save _all_ GV's which have SV, AV or HV set.
 
-Vishal Bhatia <vishal@deja.com>  1998-12-09 23:16:50
-    @2461 1. Fixes the bug  reported by  Robin Barker <rmb1@cise.npl.co.uk>
+Vishal Bhatia <vishal@deja.com>	 1998-12-09 23:16:50
+    @2461 1. Fixes the bug  reported by	 Robin Barker <rmb1@cise.npl.co.uk>
     2. Fixes the bug  regarding return value of c-functions generated out
     of perl subs. ( Just includes the patch I sent earlier)
     3. Incorporates the other changes that need to be done to get CC.pm
@@ -1888,7 +1889,7 @@ Nick Ing-Simmons <nik@tiuk.ti.com>  1998-12-04 22:58:49
     @2451 Snapshot of re-worked B::C which compiles Tk apps at least as
     well as _54, but with pre-scan for classes and save the ISA scheme.
 
-Vishal Bhatia <vishal@deja.com>  1998-12-04 18:58:44
+Vishal Bhatia <vishal@deja.com>	 1998-12-04 18:58:44
     @2450 Vishal Bhatia's patch as a basis.
 
 Nick Ing-Simmons <nik@tiuk.ti.com>  1998-11-28 23:46:57
@@ -1918,22 +1919,22 @@ Nick Ing-Simmons <nik@tiuk.ti.com>  1998-11-27 22:10:27
 Gurusamy Sarathy <gsar@cpan.org>  1998-11-27 15:41:38
     @2324 B::C tweaks to allow Tk compiles from Nick Ing-Simmons
 
-Vishal Bhatia <vishal@deja.com>  1998-10-29 00:45:32
+Vishal Bhatia <vishal@deja.com>	 1998-10-29 00:45:32
     @2146 hand-apply whitespace-mutiliated patch
-    	Message-ID: <19981029074534.2334.qmail@hotmail.com>
-    	Subject: [PATCH 5.005_52]Compiling modules,more bugfixes for B
+	Message-ID: <19981029074534.2334.qmail@hotmail.com>
+	Subject: [PATCH 5.005_52]Compiling modules,more bugfixes for B
 
-Vishal Bhatia <vishal@deja.com>  1998-10-22 00:59:03
+Vishal Bhatia <vishal@deja.com>	 1998-10-22 00:59:03
     @2072 implement C<goto &func> and other fixes (via private mail)
     Message-Id: <19981022055904.20083.qmail@hotmail.com>
     Subject: [PATCH 5.005_52] More fixes for B
 
-Vishal Bhatia <vishal@deja.com>  1998-10-11 20:41:38
+Vishal Bhatia <vishal@deja.com>	 1998-10-11 20:41:38
     @1993 fix bug in B::CC::pp_sassign()
     Message-ID: <19981012014139.19614.qmail@hotmail.com>
     Subject: B::CC problems with pp_sassign routine
 
-Jarkko Hietaniemi <jhi@iki.fi>  1998-10-17 15:17:19
+Jarkko Hietaniemi <jhi@iki.fi>	1998-10-17 15:17:19
     @2005 Integrate mainperl.
 
 Gurusamy Sarathy <gsar@cpan.org>  1998-09-23 11:52:46
@@ -1965,10 +1966,10 @@ Gurusamy Sarathy <gsar@cpan.org>  1998-07-21 05:29:10
 
 Gurusamy Sarathy <gsar@cpan.org>  1998-07-20 09:38:39
     @1578 complete s/foo/PL_foo/ changes (all escaped cases identified with
-    brute force search script).  Result builds and passes all tests on
+    brute force search script).	 Result builds and passes all tests on
     Solaris.  win32 and PERL_OBJECT are still untested.
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1998-07-18 13:53:03
+Nick Ing-Simmons <nick@ing-simmons.net>	 1998-07-18 13:53:03
     PL_ prefix to all perlvars, part1
        Builds and passes all tests at one limit i.e. -DPERL_GLOBAL_STRUCT
 
@@ -1995,11 +1996,11 @@ Gurusamy Sarathy <gsar@cpan.org>  1998-06-19 17:22:23
 Gurusamy Sarathy <gsar@cpan.org>  1998-06-11 02:59:23
     @1113 fix outdated bytecode.pl
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1998-05-14 18:09:01
+Nick Ing-Simmons <nick@ing-simmons.net>	 1998-05-14 18:09:01
     @972 Changes to allow compiler with gcc-2.8.1 in C++ mode,
     Remove K&R style functions, avoid struct/typedef clash.
 
-Ed Peschko <epeschko@den-mdev1>  1998-04-29 21:02:36
+Ed Peschko <epeschko@den-mdev1>	 1998-04-29 21:02:36
     @963 [ PATCH 5.004_64 ] Integrated regression tests for compiler
     added perlcc.PL
 
@@ -2020,7 +2021,7 @@ Andrew Cohen <cohen@andy.bu.edu>  1998-02-27 20:03:29
     Change getc/fread to PerlIO_getc/fread in bytecode.h:
     Subject: [PATCH 5.004_61] bunch of small patches
 
-Nick Ing-Simmons <nick@ing-simmons.net>  1998-02-28 11:31:15
+Nick Ing-Simmons <nick@ing-simmons.net>	 1998-02-28 11:31:15
     Missed FREAD in bytecode.h
     Cannot export svref_mutex in non-threaded perl
 
