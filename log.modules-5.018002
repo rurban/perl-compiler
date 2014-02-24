@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.45_05 d576ef0 2014-02-19 | module updates for 1.45_04 922ddb8 (-2, +2)
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.018002
 # path = /usr/local/bin/perl5.18.2
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -20,10 +20,10 @@ pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-fail File::Temp
+pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
 fail Module::Build #TODO >= 5.16
 pass File::Path
@@ -49,7 +49,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester #TODO non-debugging with threads
 pass Sub::Install
-fail Attribute::Handlers #TODO >= 5.18 #169 early my_exit + SEGV
+pass Attribute::Handlers #TODO >= 5.18 #169 early my_exit + SEGV
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -72,14 +72,14 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class
+pass Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_05 - perl-5.018002
-# pass  92 / 100 (92.0%)
-# fail   8 / 100 (8.0%)
-# todo   4 /   8 (50.0%)
+# 100 / 100 modules tested with B-C-1.45_06 - perl-5.018002
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   4 /   2 (200.0%)
 # skip   0 / 100 (0.0% not installed)

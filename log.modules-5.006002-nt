@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.45_04 c61065d 2014-02-18 | log.modules-5.006002-nt 1.45_04 b1e949a
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.006002-nt
-# path = /usr/local/bin/perl5.6.2-nt
+# path = perl5.6.2-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 88 / 100 modules tested with B-C-1.45_04 - perl-5.006002-nt
+# 88 / 100 modules tested with B-C-1.45_06 - perl-5.006002-nt
 # pass  72 /  88 (81.8%)
 # fail  16 /  88 (18.2%)
 # todo   2 /  16 (12.5%)
