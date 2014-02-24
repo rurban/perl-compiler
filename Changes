@@ -3,8 +3,8 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.46	2014-02-23 rurban
-	Added global destruction
+1.45_06	2014-02-24 rurban
+	Added global destruction, improved -O4 and CC
 
 	* C: reset PL_stack_sp on init (was one too far). no effects on code.
 	Implement global destruction via sv_clean_objs and my_curse on -O3, resp.
