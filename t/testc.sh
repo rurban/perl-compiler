@@ -1167,8 +1167,10 @@ package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSA
 result[299]='ok'
 tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'
-tests[305]='use constant ASCII => eval { require Encode; Encode::find_encoding("ASCII"); } || 0; print ASCII->encode("www.google.com")'
+tests[305]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
 result[305]='www.google.com'
+tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
+result[3051]='www.google.com'
 
 init
 

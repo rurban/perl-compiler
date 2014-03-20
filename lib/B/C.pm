@@ -2498,6 +2498,9 @@ sub B::PVMG::save {
       return B::REGEXP::save($sv, $fullname);
     }
     else {
+      # See #305 Encode::XS: XS objects are often stored there SvIV(SvRV(obj)), The real
+      # address needs to be patched after the XS object is initialized. But how detect them?
+      # How to detect XS stashes?
       $ivx = ivx($sv->IVX); # XXX How to detect HEK* namehek?
       $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
     }
@@ -2595,8 +2598,8 @@ sub B::PVMG::save_magic {
       # Q: Who is initializing our stash from XS? ->save is missing that.
       # A: We only need to init it when we need a CV
       # defer for XS loaded stashes with AMT magic
-      $init2->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-      $init2->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+      $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+      $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
       $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
       # XXX
       #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
@@ -4287,7 +4290,7 @@ sub B::HV::save {
       $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
       if ($magic =~ /c/) {
         # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-        $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+        #$init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
       }
       return $sym;
     }
