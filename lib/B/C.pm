@@ -2594,8 +2594,9 @@ sub B::PVMG::save_magic {
         if $debug{mg} or $debug{gv};
       # Q: Who is initializing our stash from XS? ->save is missing that.
       # A: We only need to init it when we need a CV
-      $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-      $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+      # defer for XS loaded stashes with AMT magic
+      $init2->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+      $init2->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
       $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
       # XXX
       #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
@@ -4254,6 +4255,7 @@ sub B::HV::save {
   return $sym if defined $sym;
   my $name = $hv->NAME;
   my $is_stash = $name;
+  my $magic;
   if ($name) {
     # It's a stash. See issue 79 + test 46
     warn sprintf( "Saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
@@ -4268,7 +4270,7 @@ sub B::HV::save {
 
     my $cname = cstring($name);
     my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
-    $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, TRUE);]);
+    $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );
@@ -4282,7 +4284,11 @@ sub B::HV::save {
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
     if (!$B::C::stash) {
-      $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
+      $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
+      if ($magic =~ /c/) {
+        # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
+        $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+      }
       return $sym;
     }
     return $sym if skip_pkg($name);
@@ -4403,7 +4409,13 @@ sub B::HV::save {
     $init->add( "HvTOTALKEYS($sym) = 0;");
     $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   }
-  $hv->save_magic($fullname);
+  $magic = $hv->save_magic($fullname);
+  if ($magic =~ /c/) {
+    # defer AMT magic of XS loaded hashes
+    my $cname = cstring($name);
+    my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
+    $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+  }
   return $sym;
 }
 
@@ -4736,7 +4748,8 @@ EOT
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
   my $init2_name = 'perl_init2';
-  printf "\t/* %s */\n", $init2->comment if $init2->comment and $verbose;
+  printf "/* deferred init of XS/Dyna loaded modules */\n" if $verbose;
+  printf "/* %s */\n", $init2->comment if $init2->comment and $verbose;
   $init2->output( \*STDOUT, "\t%s\n", $init2_name );
   if ($verbose) {
     my $caller = caller;
