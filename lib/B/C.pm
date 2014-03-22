@@ -4814,7 +4814,7 @@ EOT
   printf "/* %s */\n", $init2->comment if $init2->comment and $verbose;
   my $remap = 0;
   for my $pkg (keys %init2_remap) {
-    if (exists $xsub{$pkg}) {
+    if (exists $xsub{$pkg}) { # check if not removed in between
       my ($stashfile) = $xsub{$pkg} =~ /^Dynamic-(.+)$/;
       # get so file from pm. Note: could switch prefix from vendor/site//
       $init2_remap{$pkg}{FILE} = dl_module_to_sofile($pkg, $stashfile);
@@ -4830,6 +4830,7 @@ EOT
             $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
                                  cstring($init2_remap{$pkg}{FILE})));
           } else {
+            # Oops. Needed for Encode at least which is pretty common
             die "Error: Unknown dynaloader architecture !d_dlopen.".
                 " Cannot remap ".(keys %init2_remap)." XS symbols. Fix your src";
           }

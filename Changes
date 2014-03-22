@@ -30,7 +30,8 @@
 	  when cleaning up the stack on non-local exits, like die or exit or subs on the
 	  compile stack as with Attribute::Handler (#169, #304). Previously only END block
 	  function padlists were dynamic (#298).
-	Add run-time remap of a Net::DNS compile-time XS symbol via dlsym (#305, RT #94069)
+	Add run-time remap of compile-time XS symbols via dlsym (#305, RT #94069)
+	  Net::DNS includes Encode::XS ascii_encoding, but also init the 3 other encoding ptrs.
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
