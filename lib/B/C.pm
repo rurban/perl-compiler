@@ -2483,10 +2483,10 @@ sub B::REGEXP::save {
 }
 
 sub save_remap {
-  my ($key, $pkg, $name, $ivx) = @_;
+  my ($key, $pkg, $name, $ivx, $mandatory) = @_;
   my $id = $svsect->index + 1;
   warn "init remap for $key\: $name in sv_list[$id]\n" if $verbose;
-  my $props = { NAME => $name, ID   => $id };
+  my $props = { NAME => $name, ID   => $id, MANDATORY => $mandatory };
   $init2_remap{$key}{MG} = [] unless $init2_remap{$key}{'MG'};
   push @{$init2_remap{$key}{MG}}, $props;
 }
@@ -2536,24 +2536,25 @@ sub B::PVMG::save {
       my $stash = $sv->SvSTASH;
       my $pkg = $stash->NAME;
       if ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{iso-8859-1}') {
-        save_remap('Encode', $pkg, "iso8859_1_encoding", $ivx);
+        save_remap('Encode', $pkg, "iso8859_1_encoding", $ivx, 0);
       }
       elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{null}') {
-        save_remap('Encode', $pkg, "null_encoding", $ivx);
+        save_remap('Encode', $pkg, "null_encoding", $ivx, 0);
       }
       elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{ascii-ctrl}') {
-        save_remap('Encode', $pkg, "ascii_ctrl_encoding", $ivx);
+        save_remap('Encode', $pkg, "ascii_ctrl_encoding", $ivx, 0);
       }
+      # now that is a weak heuristic, which misses #305
       elsif (defined ($Net::DNS::VERSION)
           and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
         if ($pkg eq 'Encode::XS' and $fullname eq 'svop const') {
           my $name = "ascii_encoding";
           warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
-          save_remap('Encode', $pkg, $name, $ivx);
+          save_remap('Encode', $pkg, $name, $ivx, 1);
         }
         elsif ($pkg eq 'Net::LibIDN') {
           my $name = "idn_to_ascii"; # ??
-          save_remap('Net::LibIDN', $pkg, $name, $ivx);
+          save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
         }
         else {
           warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
@@ -4829,22 +4830,46 @@ EOT
           if ($Config{d_dlopen}) {
             $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
                                  cstring($init2_remap{$pkg}{FILE})));
-          } else {
-            # Oops. Needed for Encode at least which is pretty common
-            die "Error: Unknown dynaloader architecture !d_dlopen.".
-                " Cannot remap ".(keys %init2_remap)." XS symbols. Fix your src";
           }
-          for (keys @{$init2_remap{$pkg}{MG}}) {
-            my $mg = $init2_remap{$pkg}{MG}->[$_];
+          else {
+            my ($mandatory, @names);
+            for my $mg (@{$init2_remap{$pkg}{MG}}) {
+              $mandatory++ if $mg->{MANDATORY};
+              push @names, $mg->{NAME};
+            }
+            if ($mandatory) {
+              die "Error: Unknown dynaloader architecture !d_dlopen.".
+                " Cannot remap ".(keys %init2_remap)." XS symbols @names. Fix your src";
+            }
+            else {
+              warn "Warning: Unknown dynaloader architecture !d_dlopen.".
+                " Could not remap ".(keys %init2_remap)." XS symbols @names\n";
+            }
+          }
+          for my $mg (@{$init2_remap{$pkg}{MG}}) {
             warn "init2 remap SvIV(sv_list[$mg->{ID}]) to dlsym of $pkg\: $mg->{NAME}\n" if $verbose;
             $init2->add(sprintf("  ptr = dlsym(handle, %s);", cstring($mg->{NAME})));
             $init2->add(sprintf("  SvIV_set(&sv_list[%d], PTR2IV(ptr));", $mg->{ID}));
           }
         }
       }
-    } else {
-      die "Error: Unknown dynaloader architecture !i_dlfcn.".
-          " Cannot remap ".(keys %init2_remap)." XS symbols. Fix your src";
+    }
+    else {
+      my ($mandatory, @names);
+      # there is a mandatory remap die, else just warn
+      for my $pkg (keys %init2_remap) {
+        for my $mg (@{$init2_remap{$pkg}{MG}}) {
+          $mandatory++ if $mg->{MANDATORY};
+          push @names, $mg->{NAME};
+        }
+      }
+      if ($mandatory) {
+        die "Error: Unknown dynaloader architecture !i_dlfcn.".
+          " Cannot remap ".(keys %init2_remap)." XS symbols @names. Fix your src";
+      } else {
+        warn "Warning: Unknown dynaloader architecture !i_dlfcn.".
+          " Could not remap ".(keys %init2_remap)." XS symbols @names\n";
+      }
     }
     $init2->add("}");
   }
