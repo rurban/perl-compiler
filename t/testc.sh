@@ -1171,6 +1171,8 @@ tests[305]='use constant ASCII => eval { require Encode; Encode::find_encoding("
 result[305]='www.google.com'
 tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
 result[3051]='www.google.com'
+tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
+result[3052]='ok'
 
 init
 

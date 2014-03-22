@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_06';
+our $VERSION = '1.45_07';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -338,7 +338,7 @@ my %all_bc_deps = map {$_=>1}
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, %gptable);
-my %xsub;
+my (%xsub, %init2_remap);
 my $warn_undefined_syms;
 my ($staticxs, $outfile);
 my (%include_package, %skip_package, %saved, %isa_cache);
@@ -423,6 +423,20 @@ BEGIN {
 
 # This the Carp free workaround for DynaLoader::bootstrap
 sub DynaLoader::croak {die @_}
+
+# needed for init2 remap and Dynamic annotation
+sub dl_module_to_sofile {
+  my $module = shift or die "missing module name";
+  my $modlibname = shift or die "missing module filepath";
+  my @modparts = split(/::/,$module);
+  my $modfname = $modparts[-1];
+  my $modpname = join('/',@modparts);
+  my $c = @modparts;
+  $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
+  die "missing module filepath" unless $modlibname;
+  my $sofile = "$modlibname/auto/$modpname/$modfname.".$Config{dlext};
+  return $sofile;
+}
 
 # 5.15.3 workaround [perl #101336], without .bs support
 # XSLoader::load_file($module, $modlibname, ...)
@@ -2503,6 +2517,29 @@ sub B::PVMG::save {
       # How to detect XS stashes?
       $ivx = ivx($sv->IVX); # XXX How to detect HEK* namehek?
       $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
+    }
+    # issue 305: detect ptr to extern symbol in shared library and remap it in init2
+    # currently only Net-DNS-0.67 - 0.74
+    # svop const OBJECT,IOK
+    if ($fullname =~ /^svop const/ and $ivx =~ /UL$/) {
+      no strict 'refs';
+      my $pkg = $sv->SvSTASH;
+      my $name = $pkg->NAME;
+      # warn "checking remap candidate $name\n" if $verbose;
+      if ($name eq 'Encode::XS'
+          # and exists $Net::{DNS::}
+          and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/)
+      {
+        warn "Warning: Patch Net::DNS encoding XS ptr for RT #94069 $name $ivx\n";
+        # XXX which one?
+        my $name = "ascii_encoding";
+        my $id = $svsect->index + 1;
+        warn "  init remap for Encocde::XS::$name in sv_list[$id]\n" if $verbose;
+        my $props = { NAME => "ascii_encoding",
+                      ID   => $id };
+        $init2_remap{'Encode'}{MG} = [] unless $init2_remap{'Encode'}{'MG'};
+        push $init2_remap{'Encode'}{MG}, $props;
+      }
     }
     if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
@@ -4753,6 +4790,41 @@ EOT
   my $init2_name = 'perl_init2';
   printf "/* deferred init of XS/Dyna loaded modules */\n" if $verbose;
   printf "/* %s */\n", $init2->comment if $init2->comment and $verbose;
+  my $remap = 0;
+  for my $pkg (keys %init2_remap) {
+    if (exists $xsub{$pkg}) {
+      my ($stashfile) = $xsub{$pkg} =~ /^Dynamic-(.+)$/;
+      # get so file from pm. Note: could switch prefix from vendor/site//
+      $init2_remap{$pkg}{FILE} = dl_module_to_sofile($pkg, $stashfile);
+      $remap++;
+    }
+  }
+  if ($remap) {
+    if ($Config{i_dlfcn}) { # XXX now emit arch-specific dlsym code
+      $init2->add("{","  #include <dlfcn.h>","  void *handle, *ptr;");
+      for my $pkg (keys %init2_remap) {
+        if (exists $xsub{$pkg}) {
+          if ($Config{d_dlopen}) {
+            $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
+                                 cstring($init2_remap{$pkg}{FILE})));
+          } else {
+            die "Error: Unknown dynaloader architecture !d_dlopen.".
+                " Cannot remap ".(keys %init2_remap)." XS symbols. Fix your src";
+          }
+          for (keys @{$init2_remap{$pkg}{MG}}) {
+            my $mg = $init2_remap{$pkg}{MG}->[$_];
+            warn "init2 remap SvIV(sv_list[$mg->{ID}]) to dlsym(handle, $mg->{NAME})\n" if $verbose;
+            $init2->add(sprintf("  ptr = dlsym(handle, %s);", cstring($mg->{NAME})));
+            $init2->add(sprintf("  SvIV_set(&sv_list[%d], PTR2IV(ptr));", $mg->{ID}));
+          }
+        }
+      }
+    } else {
+      die "Error: Unknown dynaloader architecture !i_dlfcn.".
+          " Cannot remap ".(keys %init2_remap)." XS symbols. Fix your src";
+    }
+    $init2->add("}");
+  }
   $init2->output( \*STDOUT, "\t%s\n", $init2_name );
   if ($verbose) {
     my $caller = caller;

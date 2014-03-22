@@ -4,7 +4,7 @@
 	and worked quite fine with Perl 5.6 and 5.8
 
 1.45_06	2014-02-24 rurban
-	Added global destruction, improved -O4 and CC
+	Added global destruction, improved -O4 and CC, fixed Net::DNS
 
 	* C: reset PL_stack_sp on init (was one too far). no effects on code.
 	Implement global destruction via sv_clean_objs and my_curse on -O3, resp.
@@ -30,6 +30,7 @@
 	  when cleaning up the stack on non-local exits, like die or exit or subs on the
 	  compile stack as with Attribute::Handler (#169, #304). Previously only END block
 	  function padlists were dynamic (#298).
+	Add run-time remap of a Net::DNS compile-time XS symbol via dlsym (#305, RT #94069)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
