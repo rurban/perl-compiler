@@ -2538,7 +2538,7 @@ sub B::PVMG::save {
         my $props = { NAME => "ascii_encoding",
                       ID   => $id };
         $init2_remap{'Encode'}{MG} = [] unless $init2_remap{'Encode'}{'MG'};
-        push $init2_remap{'Encode'}{MG}, $props;
+        push @{$init2_remap{'Encode'}{MG}}, $props;
       }
     }
     if ($PERL514) {
