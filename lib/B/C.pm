@@ -2482,6 +2482,15 @@ sub B::REGEXP::save {
   return $sym;
 }
 
+sub save_remap {
+  my ($key, $pkg, $name, $ivx) = @_;
+  my $id = $svsect->index + 1;
+  warn "init remap for $key\: $name in sv_list[$id]\n" if $verbose;
+  my $props = { NAME => $name, ID   => $id };
+  $init2_remap{$key}{MG} = [] unless $init2_remap{$key}{'MG'};
+  push @{$init2_remap{$key}{MG}}, $props;
+}
+
 sub B::PVMG::save {
   my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
@@ -2518,27 +2527,40 @@ sub B::PVMG::save {
       $ivx = ivx($sv->IVX); # XXX How to detect HEK* namehek?
       $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
     }
+
     # issue 305: detect ptr to extern symbol in shared library and remap it in init2
     # currently only Net-DNS-0.67 - 0.74
     # svop const OBJECT,IOK
-    if ($fullname =~ /^svop const/ and $ivx =~ /UL$/) {
+    if ($fullname =~ /^(svop const|Encode::Encoding)/ and $ivx =~ /UL$/) {
       no strict 'refs';
-      my $pkg = $sv->SvSTASH;
-      my $name = $pkg->NAME;
-      # warn "checking remap candidate $name\n" if $verbose;
-      if ($name eq 'Encode::XS'
-          # and exists $Net::{DNS::}
-          and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/)
-      {
-        warn "Warning: Patch Net::DNS encoding XS ptr for RT #94069 $name $ivx\n";
-        # XXX which one?
-        my $name = "ascii_encoding";
-        my $id = $svsect->index + 1;
-        warn "  init remap for Encocde::XS::$name in sv_list[$id]\n" if $verbose;
-        my $props = { NAME => "ascii_encoding",
-                      ID   => $id };
-        $init2_remap{'Encode'}{MG} = [] unless $init2_remap{'Encode'}{'MG'};
-        push @{$init2_remap{'Encode'}{MG}}, $props;
+      my $stash = $sv->SvSTASH;
+      my $pkg = $stash->NAME;
+      if ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{iso-8859-1}') {
+        save_remap('Encode', $pkg, "iso8859_1_encoding", $ivx);
+      }
+      elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{null}') {
+        save_remap('Encode', $pkg, "null_encoding", $ivx);
+      }
+      elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{ascii-ctrl}') {
+        save_remap('Encode', $pkg, "ascii_ctrl_encoding", $ivx);
+      }
+      elsif (defined ($Net::DNS::VERSION)
+          and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
+        if ($pkg eq 'Encode::XS' and $fullname eq 'svop const') {
+          my $name = "ascii_encoding";
+          warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
+          save_remap('Encode', $pkg, $name, $ivx);
+        }
+        elsif ($pkg eq 'Net::LibIDN') {
+          my $name = "idn_to_ascii"; # ??
+          save_remap('Net::LibIDN', $pkg, $name, $ivx);
+        }
+        else {
+          warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+        }
+      }
+      else {
+        warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
       }
     }
     if ($PERL514) {
@@ -4813,7 +4835,7 @@ EOT
           }
           for (keys @{$init2_remap{$pkg}{MG}}) {
             my $mg = $init2_remap{$pkg}{MG}->[$_];
-            warn "init2 remap SvIV(sv_list[$mg->{ID}]) to dlsym(handle, $mg->{NAME})\n" if $verbose;
+            warn "init2 remap SvIV(sv_list[$mg->{ID}]) to dlsym of $pkg\: $mg->{NAME}\n" if $verbose;
             $init2->add(sprintf("  ptr = dlsym(handle, %s);", cstring($mg->{NAME})));
             $init2->add(sprintf("  SvIV_set(&sv_list[%d], PTR2IV(ptr));", $mg->{ID}));
           }
