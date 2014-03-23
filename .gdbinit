@@ -155,3 +155,15 @@ document tsdump
 tsdump sv => p/x *sv; Perl_sv_dump(my_perl, sv)
 see `help sdump`
 end
+
+define addr2sym
+    if $argc == 1
+        printf "[%u]: ", $arg0
+        #whatis/ptype EXPR
+        #info frame ADDR
+        info symbol $arg0
+    end
+end
+document addr2sym
+Resolve the address (e.g. of one stack frame). Usage: addr2sym addr0
+end
