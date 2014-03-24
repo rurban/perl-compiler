@@ -1,15 +1,18 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=282
-# glob_assign_glob: gp_free
+# glob_assign_glob: gp_free of the gp->FILE hek
 use strict;
 BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
 use Test::More tests => 1;
-use B::C ();
-# passes on linux non-DEBUGGING
-my $todo = ($B::C::VERSION ge '1.44' or $] > 5.019008) ? "" : "TODO ";
+use Config;
+#my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+#use B::C ();
+# passes on linux non-DEBUGGING, but fails on other system with better malloc libraries
+# use after free
+my $todo = ($] > 5.019008) ? "" : "TODO ";
 
 ctestok(1,'C,-O3','ccode282i',<<'EOF',$todo.'#282 ref assign hek assert');
 use vars qw($glook $smek $foof);
