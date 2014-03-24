@@ -1211,7 +1211,7 @@ done
 
 if [ "$(perl -V:gccversion)" != "gccversion='';" ]; then
     if [ "$(uname)" = "Darwin" ]; then
-	CCMD="$CCMD -g -fno-openmp -fno-var-tracking"
+	CCMD="$CCMD -g -fno-var-tracking"
     else
 	CCMD="$CCMD -g3"
     fi
