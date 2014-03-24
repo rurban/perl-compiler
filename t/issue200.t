@@ -6,8 +6,13 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 6;
+use Test::More;
 use Config;
+if ( $] =~ /^5\.00800[45]/ ) {
+  plan skip_all => "compile-time utf8 hek hack NYI for $]";
+  exit;
+}
+plan tests => 6;
 
 my $i=0;
 sub test3 {
