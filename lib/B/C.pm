@@ -4988,7 +4988,7 @@ my_curse( pTHX_ SV* const sv ) {
 	    CV* destructor = NULL;
 	    if (!SvOBJECT(stash)) destructor = (CV *)SvSTASH(stash);
 	    if (!destructor
-#if PERL_VERSION > 17
+#if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
                 || HvMROMETA(stash)->destroy_gen != PL_sub_generation
 #endif
 	    ) {
@@ -4998,9 +4998,8 @@ my_curse( pTHX_ SV* const sv ) {
 		{
 		    SvSTASH(stash) =
 			destructor ? (HV *)destructor : ((HV *)0)+1;
-#if PERL_VERSION > 17
-		    HvAUX(stash)->xhv_mro_meta->destroy_gen =
-			PL_sub_generation;
+#if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
+		    HvAUX(stash)->xhv_mro_meta->destroy_gen = PL_sub_generation;
 #endif
 		}
 	    }
