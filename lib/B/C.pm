@@ -3864,6 +3864,7 @@ sub B::GV::save {
       $gvcv = $gv->CV; # try again
     }
     if ( $$gvcv and $savefields & Save_CV
+         and ref($gvcv) eq 'B::CV'
          and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
          and !$skip_package{$package} )
     {
@@ -4605,7 +4606,8 @@ sub B::IO::save {
 	  if $fd >= 3 or $verbose; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
 		   "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"r\");");
-	if (my $tell = $o->tell()) {
+	my $tell;
+	if ($io->can("tell") and $tell = $io->tell()) {
 	  $init->add("PerlIO_seek(IoIFP($sym), $tell, SEEK_SET);")
 	}
       } else {
@@ -5700,7 +5702,8 @@ sub B::GV::savecv {
     warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
     return;
   }
-  if ( $$cv and in_static_core($package, $name) and $cv->XSUB ) {
+  if ( $$cv and in_static_core($package, $name) and ref($cv) eq 'B::CV' # 5.8,4 issue32
+       and $cv->XSUB ) {
     warn("Skip internal XS $fullname\n") if $debug{gv};
     # but prevent it from being deleted
     mark_package($package, 1);
@@ -5930,7 +5933,7 @@ sub should_save {
       if (defined &{$package.'::'.$sym}) {
 	# compare cv->FILE to $mainfile
 	my $cv = svref_2object(\&{$package.'::'.$sym});
-	if ($cv and $cv->FILE) {
+	if ($cv and $cv->can('FILE') and $cv->FILE) {
 	  $include_package{$package} = 1 if $mainfile eq $cv->FILE;
 	  last;
 	}
