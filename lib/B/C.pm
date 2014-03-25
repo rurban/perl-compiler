@@ -2484,8 +2484,9 @@ sub B::REGEXP::save {
 
 sub save_remap {
   my ($key, $pkg, $name, $ivx, $mandatory) = @_;
-  my $id = $svsect->index + 1;
-  warn "init remap for $key\: $name in sv_list[$id]\n" if $verbose;
+  my $id = $xpvmgsect->index + 1;
+  #my $svid = $svsect->index + 1;
+  warn "init remap for $key\: $name in xpvmg_list[$id]\n" if $verbose;
   my $props = { NAME => $name, ID   => $id, MANDATORY => $mandatory };
   $init2_remap{$key}{MG} = [] unless $init2_remap{$key}{'MG'};
   push @{$init2_remap{$key}{MG}}, $props;
@@ -2508,53 +2509,53 @@ sub B::PVMG::save {
   }
   #warn sprintf( "PVMG %s (0x%x) $savesym, $len, $cur, $pv\n", $sym, $$sv ) if $debug{mg};
 
-  if ($PERL510) {
-    if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
-      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
-	if $savesym ne '';
-      $savesym = 'NULL';
-      $static = 1;
-    }
-    my ($ivx,$nvx) = (0, "0");
-    # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
-    if ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
-      return B::REGEXP::save($sv, $fullname);
-    }
-    else {
-      # See #305 Encode::XS: XS objects are often stored there SvIV(SvRV(obj)), The real
-      # address needs to be patched after the XS object is initialized. But how detect them?
-      # How to detect XS stashes?
-      $ivx = ivx($sv->IVX); # XXX How to detect HEK* namehek?
-      $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
-    }
+  my ($ivx,$nvx);
+  # since 5.11 REGEXP isa PVMG, but has no IVX and NVX methods
+  if ($] >= 5.011 and ref($sv) eq 'B::REGEXP') {
+    return B::REGEXP::save($sv, $fullname);
+  }
+  else {
+    $ivx = ivx($sv->IVX); # XXX How to detect HEK* namehek?
+    $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
 
-    # issue 305: detect ptr to extern symbol in shared library and remap it in init2
-    # currently only Net-DNS-0.67 - 0.74
-    # svop const OBJECT,IOK
-    if ($fullname =~ /^(svop const|Encode::Encoding)/ and $ivx =~ /UL$/) {
+    # See #305 Encode::XS: XS objects are often stored as SvIV(SvRV(obj)). The real
+    # address needs to be patched after the XS object is initialized. But how detect them properly?
+    # Detect ptr to extern symbol in shared library and remap it in init2
+    # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
+    # svop const or pad OBJECT,IOK
+    if ($fullname =~ /^svop const|^Encode::Encoding| :pad\[1\]/ and $ivx =~ /UL$/) {
       no strict 'refs';
       my $stash = $sv->SvSTASH;
       my $pkg = $stash->NAME;
       if ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{iso-8859-1}') {
         save_remap('Encode', $pkg, "iso8859_1_encoding", $ivx, 0);
+        $ivx = "0UL /* $ivx */";
       }
       elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{null}') {
         save_remap('Encode', $pkg, "null_encoding", $ivx, 0);
+        $ivx = "0UL /* $ivx */";
       }
       elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{ascii-ctrl}') {
         save_remap('Encode', $pkg, "ascii_ctrl_encoding", $ivx, 0);
+        $ivx = "0UL /* $ivx */";
+      }
+      elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{ascii}') {
+        save_remap('Encode', $pkg, "ascii_encoding", $ivx, 0);
+        $ivx = "0UL /* $ivx */";
       }
       # now that is a weak heuristic, which misses #305
       elsif (defined ($Net::DNS::VERSION)
-          and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
+             and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
         if ($pkg eq 'Encode::XS' and $fullname eq 'svop const') {
           my $name = "ascii_encoding";
           warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
-          save_remap('Encode', $pkg, $name, $ivx, 1);
+          save_remap('Encode', $pkg, $name, $ivx, 1); # mandatory
+          $ivx = "0UL /* $ivx */";
         }
         elsif ($pkg eq 'Net::LibIDN') {
           my $name = "idn_to_ascii"; # ??
           save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
+          $ivx = "0UL /* $ivx */";
         }
         else {
           warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
@@ -2564,6 +2565,16 @@ sub B::PVMG::save {
         warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
       }
     }
+  }
+
+  if ($PERL510) {
+    if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
+      $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
+	if $savesym ne '';
+      $savesym = 'NULL';
+      $static = 1;
+    }
+
     if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
       $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%s}, {%s}",
@@ -2583,7 +2594,7 @@ sub B::PVMG::save {
       $savesym = 'NULL'; # Moose 5.8.9d
     }
     $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
-                            $savesym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX)));
+                            $savesym, $cur, $len, $ivx, $nvx));
     $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
@@ -4795,6 +4806,12 @@ EOT
 #endif
 EOT
   }
+  if (%init2_remap and !($Config{i_dlfcn} and $Config{d_dlopen})) {
+    print <<'EOT';
+XS(XS_DynaLoader_dl_load_file);
+XS(XS_DynaLoader_dl_find_symbol);
+EOT
+  }
   printf "\t/* %s */\n", $decl->comment if $decl->comment and $verbose;
   $decl->output( \*STDOUT, "%s\n" );
   print "\n";
@@ -4823,52 +4840,48 @@ EOT
     }
   }
   if ($remap) {
-    if ($Config{i_dlfcn}) { # XXX now emit arch-specific dlsym code
-      $init2->add("{","  #include <dlfcn.h>","  void *handle, *ptr;");
-      for my $pkg (keys %init2_remap) {
-        if (exists $xsub{$pkg}) {
-          if ($Config{d_dlopen}) {
-            $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
-                                 cstring($init2_remap{$pkg}{FILE})));
-          }
-          else {
-            my ($mandatory, @names);
-            for my $mg (@{$init2_remap{$pkg}{MG}}) {
-              $mandatory++ if $mg->{MANDATORY};
-              push @names, $mg->{NAME};
-            }
-            if ($mandatory) {
-              die "Error: Unknown dynaloader architecture !d_dlopen.".
-                " Cannot remap ".(keys %init2_remap)." XS symbols @names. Fix your src";
-            }
-            else {
-              warn "Warning: Unknown dynaloader architecture !d_dlopen.".
-                " Could not remap ".(keys %init2_remap)." XS symbols @names\n";
-            }
-          }
-          for my $mg (@{$init2_remap{$pkg}{MG}}) {
-            warn "init2 remap SvIV(sv_list[$mg->{ID}]) to dlsym of $pkg\: $mg->{NAME}\n" if $verbose;
-            $init2->add(sprintf("  ptr = dlsym(handle, %s);", cstring($mg->{NAME})));
-            $init2->add(sprintf("  SvIV_set(&sv_list[%d], PTR2IV(ptr));", $mg->{ID}));
-          }
-        }
-      }
+    # XXX now emit arch-specific dlsym code
+    $init2->add("{","  void *handle, *ptr;");
+    my $can_native = ($Config{i_dlfcn} and $Config{d_dlopen}) ? 1 : 0;
+    if ($can_native) {
+      $init2->add("  #include <dlfcn.h>");
+    } else {
+      $init2->add("  dTARG; dSP;",
+                  "  targ=sv_newmortal();");
     }
-    else {
-      my ($mandatory, @names);
-      # there is a mandatory remap die, else just warn
-      for my $pkg (keys %init2_remap) {
-        for my $mg (@{$init2_remap{$pkg}{MG}}) {
-          $mandatory++ if $mg->{MANDATORY};
-          push @names, $mg->{NAME};
+    for my $pkg (keys %init2_remap) {
+      if (exists $xsub{$pkg}) {
+        if ($can_native) {
+          $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
+                               cstring($init2_remap{$pkg}{FILE})));
         }
-      }
-      if ($mandatory) {
-        die "Error: Unknown dynaloader architecture !i_dlfcn.".
-          " Cannot remap ".(keys %init2_remap)." XS symbols @names. Fix your src";
-      } else {
-        warn "Warning: Unknown dynaloader architecture !i_dlfcn.".
-          " Could not remap ".(keys %init2_remap)." XS symbols @names\n";
+        else {
+          $init2->add("  PUSHMARK(SP);",
+              sprintf("  XPUSHs(newSVpvs(%s));", cstring($init2_remap{$pkg}{FILE})),
+                      "  PUTBACK;",
+                      "  XS_DynaLoader_dl_load_file(aTHX);",
+                      "  SPAGAIN;",
+                      "  handle = INT2PTR(void*,POPi);",
+                      "  PUTBACK;",
+                     );
+        }
+        for my $mg (@{$init2_remap{$pkg}{MG}}) {
+          warn "init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}\n" if $verbose;
+          if ($can_native) {
+            $init2->add(sprintf("  ptr = dlsym(handle, %s);", cstring($mg->{NAME})));
+          } else {
+            $init2->add("  PUSHMARK(SP);",
+                        "  XPUSHi(PTR2IV(handle));",
+                sprintf("  XPUSHs(newSVpvs(%s));", cstring($mg->{NAME})),
+                        "  PUTBACK;",
+                        "  XS_DynaLoader_dl_find_symbol(aTHX);",
+                        "  SPAGAIN;",
+                        "  ptr = INT2PTR(void*,POPi);",
+                        "  PUTBACK;",
+                       );
+          }
+          $init2->add(sprintf("  xpvmg_list[%d].xiv_iv = PTR2IV(ptr);", $mg->{ID}));
+        }
       }
     }
     $init2->add("}");
