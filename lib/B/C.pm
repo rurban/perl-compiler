@@ -2554,6 +2554,9 @@ sub B::PVMG::save {
             warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
           }
         }
+        if ($fullname eq 'svop const') {
+          mark_package('Encode');
+        }
         if ($name) {
           save_remap('Encode', $pkg, $name, $ivx, 0); # mandatory
           $ivx = "0UL /* $ivx => $name */";
@@ -2567,6 +2570,9 @@ sub B::PVMG::save {
         warn "Remap IOK|POK $pkg with $name";
         save_remap($pkg, $pkg, $name, $ivx, 0);
         $ivx = "0UL /* $ivx => $name */";
+        if ($fullname eq 'svop const') {
+          mark_package($pkg);
+        }
       }
       elsif ($pkg eq 'Net::LibIDN') {
         my $name = "idn_to_ascii"; # ??
