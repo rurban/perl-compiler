@@ -246,7 +246,7 @@ use B
   qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
   threadsv_names main_cv init_av end_av opnumber cstring
-  HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
+  HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
 BEGIN {
   if ($] >=  5.008) {
@@ -2528,39 +2528,50 @@ sub B::PVMG::save {
       no strict 'refs';
       my $stash = $sv->SvSTASH;
       my $pkg = $stash->NAME;
-      if ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{iso-8859-1}') {
-        save_remap('Encode', $pkg, "iso8859_1_encoding", $ivx, 0);
-        $ivx = "0UL /* $ivx */";
-      }
-      elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{null}') {
-        save_remap('Encode', $pkg, "null_encoding", $ivx, 0);
-        $ivx = "0UL /* $ivx */";
-      }
-      elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{ascii-ctrl}') {
-        save_remap('Encode', $pkg, "ascii_ctrl_encoding", $ivx, 0);
-        $ivx = "0UL /* $ivx */";
-      }
-      elsif ($pkg eq 'Encode::XS' and $fullname eq 'Encode::Encoding{ascii}') {
-        save_remap('Encode', $pkg, "ascii_encoding", $ivx, 0);
-        $ivx = "0UL /* $ivx */";
-      }
-      # now that is a weak heuristic, which misses #305
-      elsif (defined ($Net::DNS::VERSION)
-             and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
-        if ($pkg eq 'Encode::XS' and $fullname eq 'svop const') {
-          my $name = "ascii_encoding";
-          warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
-          save_remap('Encode', $pkg, $name, $ivx, 1); # mandatory
-          $ivx = "0UL /* $ivx */";
+      my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
+      if ($pkg eq 'Encode::XS') {
+        if ($fullname eq 'Encode::Encoding{iso-8859-1}') {
+          $name = "iso8859_1_encoding";
         }
-        elsif ($pkg eq 'Net::LibIDN') {
-          my $name = "idn_to_ascii"; # ??
-          save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
-          $ivx = "0UL /* $ivx */";
+        elsif ($fullname eq 'Encode::Encoding{null}') {
+          $name = "null_encoding";
+        }
+        elsif ($fullname eq 'Encode::Encoding{ascii-ctrl}') {
+          $name = "ascii_ctrl_encoding";
+        }
+        elsif ($fullname eq 'Encode::Encoding{ascii}') {
+          $name = "ascii_encoding";
+        }
+        # Encode RT #94xxx $Encode::VERSION ge '2.48'
+        elsif ($name =~ /encoding$/) {
+          warn "XXX Patched Encode helping remap $name";
+        }
+        # now that is a weak heuristic, which misses #305
+        elsif (defined ($Net::DNS::VERSION)
+               and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
+          if ($fullname eq 'svop const') {
+            $name = "ascii_encoding";
+            warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
+          }
+        }
+        if ($name) {
+          save_remap('Encode', $pkg, $name, $ivx, 0); # mandatory
+          $ivx = "0UL /* $ivx => $name */";
         }
         else {
           warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
         }
+      }
+      # new API
+      elsif ($name and $name =~ /^[a-zA-Z_]+$/) { # valid symbol name
+        warn "Remap IOK|POK $pkg with $name";
+        save_remap($pkg, $pkg, $name, $ivx, 0);
+        $ivx = "0UL /* $ivx => $name */";
+      }
+      elsif ($pkg eq 'Net::LibIDN') {
+        my $name = "idn_to_ascii"; # ??
+        save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
+        $ivx = "0UL /* $ivx => $name */";
       }
       else {
         warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
