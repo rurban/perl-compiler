@@ -415,6 +415,7 @@ my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
 #my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
+my $HAVE_DLFCN_DLOPEN = $Config{i_dlfcn} and $Config{d_dlopen};
 my @threadsv_names;
 
 BEGIN {
@@ -4806,7 +4807,7 @@ EOT
 #endif
 EOT
   }
-  if (%init2_remap and !($Config{i_dlfcn} and $Config{d_dlopen})) {
+  if (%init2_remap and !$HAVE_DLFCN_DLOPEN) {
     print <<'EOT';
 XS(XS_DynaLoader_dl_load_file);
 XS(XS_DynaLoader_dl_find_symbol);
@@ -4842,8 +4843,7 @@ EOT
   if ($remap) {
     # XXX now emit arch-specific dlsym code
     $init2->add("{","  void *handle, *ptr;");
-    my $can_native = ($Config{i_dlfcn} and $Config{d_dlopen}) ? 1 : 0;
-    if ($can_native) {
+    if ($HAVE_DLFCN_DLOPEN) {
       $init2->add("  #include <dlfcn.h>");
     } else {
       $init2->add("  dTARG; dSP;",
@@ -4851,7 +4851,7 @@ EOT
     }
     for my $pkg (keys %init2_remap) {
       if (exists $xsub{$pkg}) {
-        if ($can_native) {
+        if ($HAVE_DLFCN_DLOPEN) {
           $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
                                cstring($init2_remap{$pkg}{FILE})));
         }
@@ -4867,7 +4867,7 @@ EOT
         }
         for my $mg (@{$init2_remap{$pkg}{MG}}) {
           warn "init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}\n" if $verbose;
-          if ($can_native) {
+          if ($HAVE_DLFCN_DLOPEN) {
             $init2->add(sprintf("  ptr = dlsym(handle, %s);", cstring($mg->{NAME})));
           } else {
             $init2->add("  PUSHMARK(SP);",
