@@ -2419,7 +2419,12 @@ sub lexwarnsym {
   } else {
     my $sym = sprintf( "lexwarn%d", $pv_index++ );
     if ($] < 5.009) {
-      $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $pv ));
+      my $warn = 'pWARN_STD';
+      # t/testc.sh 75
+      if ($pv == 1) { $warn = 'pWARN_ALL'; }
+      elsif ($pv == 2) { $warn = 'pWARN_NONE'; }
+      else { $warn = "(Nullsv+".$pv.")"; }
+      $decl->add( sprintf( "Static SV* %s = %s;", $sym, $warn));
     }
     else {
       # if 8 use UVSIZE, if 4 use LONGSIZE

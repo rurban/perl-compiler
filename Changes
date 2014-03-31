@@ -21,6 +21,7 @@
 	-fwarn-sv is now always set, just not with MSVC on Windows. The warnings are then
 	  directly set, not in a tight loop afterwards, because the value is needed for
 	  the dynamic init.
+        Fixed lexical warnings on 5.8 (pWARN_STD .. pWARN_NONE)
 	Improve -O4 by keeping all CvSTART cops
 	Keep internal packages if used in the source code, e.g. mro (#300)
 	Fix the order of PerlIO_cleanup, after global destruction (#302, #303)
