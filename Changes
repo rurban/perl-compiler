@@ -32,6 +32,9 @@
 	  function padlists were dynamic (#298).
 	Add run-time remap of compile-time XS symbols via dlsym (#305, RT #94069)
 	  Net::DNS includes Encode::XS ascii_encoding, but also init the 3 other encoding ptrs.
+          Add a fast path for d_dlopen + i_dlfcn systems (i.e. Windows goes the slow init2 route)
+	Detect new Encode-2.58 which stores encodings better to handle proper
+          compile-time usage (#305, RT #94221)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
