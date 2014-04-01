@@ -1636,7 +1636,7 @@ sub B::COP::save {
   my $warn_sv;
   my $warnings   = $op->warnings;
   my $is_special = ref($warnings) eq 'B::SPECIAL';
-  my $warnsvcast = $PERL510 ? "STRLEN*" : "SV*";
+  my $warnsvcast = $PERL510 ? "(STRLEN*)" : "(SV*)";
   if ( $is_special && $$warnings == 4 ) { # use warnings 'all';
     $warn_sv = 'pWARN_ALL';
   }
@@ -1654,7 +1654,7 @@ sub B::COP::save {
     my $ix = $copsect->index + 1;
     # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
-    $warn_sv = "($warnsvcast)&".$warn_sv;
+    $warn_sv = $warnsvcast.'&'.$warn_sv;
     $free->add( sprintf( "    cop_list[%d].cop_warnings = NULL;", $ix ) )
       if !$B::C::optimize_warn_sv or !$PERL510;
     #push @B::C::static_free, sprintf("cop_list[%d]", $ix);
@@ -2418,23 +2418,18 @@ sub lexwarnsym {
     return $lexwarnsym{$pv};
   } else {
     my $sym = sprintf( "lexwarn%d", $pv_index++ );
-    if ($] < 5.009) {
-      my $warn = 'pWARN_STD';
-      # t/testc.sh 75
-      if ($pv == 1) { $warn = 'pWARN_ALL'; }
-      elsif ($pv == 2) { $warn = 'pWARN_NONE'; }
-      else { $warn = "(Nullsv+".$pv.")"; }
-      $decl->add( sprintf( "Static SV* %s = %s;", $sym, $warn));
-    }
-    else {
+    if ($] < 5.009) { # need a SV->PV
+      $decl->add( sprintf( "Static SV* %s;", $sym ));
+      $init->add( sprintf( "$sym = newSVpvn(%s, %d);", cstring($pv), length $pv));
+    } else {
       # if 8 use UVSIZE, if 4 use LONGSIZE
       my $t = ($Config{longsize} == 8) ? "J" : "L";
       my ($iv) = unpack($t, $pv); # unsigned longsize
       if ($iv >= 0 and $iv <= 2) { # specialWARN: single STRLEN
-        $decl->add( sprintf( "Static const STRLEN %s = %d;", $sym, $iv ));
+        $decl->add( sprintf( "Static const STRLEN* %s = %d;", $sym, $iv ));
       } else { # sizeof(STRLEN) + (WARNsize)
         my $packedpv = pack("$t a*",length($pv), $pv);
-        $decl->add( sprintf( "Static char %s[] = %s;", $sym, cstring($packedpv) ));
+        $decl->add( sprintf( "Static const char %s[] = %s;", $sym, cstring($packedpv) ));
       }
     }
     $lexwarnsym{$pv} = $sym;
