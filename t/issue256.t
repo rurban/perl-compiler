@@ -48,6 +48,6 @@ if ($] >= 5.010001) {
         'print ${^UTF8LOCALE} == 1 ? "ok\n" : qq{not ok - \${^UTF8LOCALE} = ${^UTF8LOCALE}\n};',
         '#231 initialize ${^UTF8LOCALE}');
 } else {
-  print "ok 3 - skip -C with <5.10.1\n";
-  print "ok 4 - skip -CL with <5.10.1\n";
+  ok 1, "skip -C with <5.10.1";
+  ok 1, "skip -CL with <5.10.1";
 }
