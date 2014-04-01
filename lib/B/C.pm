@@ -3615,15 +3615,15 @@ sub B::CV::save {
     warn sprintf( "Saving CV proto %s for CV $sym 0x%x\n", cstring($pv), $$cv ) if $debug{cv};
   }
   # issue 84: empty prototypes sub xx(){} vs sub xx{}
-  if ($PERL510 and defined $pv) {
-    if ($cur) {
+  if (defined $pv) {
+    if ($PERL510 and  $cur) {
       $init->add( sprintf("SvPVX(&sv_list[%d]) = HEK_KEY(%s);", $sv_ix, $pvsym));
     } elsif (!$B::C::const_strings) { # not static, they are freed when redefined
       $init->add( sprintf("SvPVX(&sv_list[%d]) = savepvn(%s, %u);",
-			  $sv_ix, $proto, $cur));
+                          $sv_ix, $proto, $cur));
     } else {
       $init->add( sprintf("SvPVX(&sv_list[%d]) = %s;",
-			  $sv_ix, $proto));
+                          $sv_ix, $proto));
     }
   }
   return $sym;
