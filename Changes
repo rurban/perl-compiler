@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.45_06	2014-02-24 rurban
+1.45_08	2014-04-02 rurban
 	Added global destruction, improved -O4 and CC, fixed Net::DNS
 
 	* C: reset PL_stack_sp on init (was one too far). no effects on code.
@@ -37,10 +37,13 @@
 	Detect new Encode-2.58 which stores encodings better to handle proper
           compile-time usage (#305, RT #94221)
 	Add special SV associations for $/, $@ and $\ (#306, #256)
-	Save @ISA for more packages, esp. DynaLoader dependencies (#308)
+	Save @ISA for all included packages, esp. DynaLoader dependencies (#308)
+        Replace each %hash with foreach sort keys (#307)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
+        Replace each %hash with foreach sort keys (#307)
+        * Bytecode (1.15): Replace each %hash with foreach keys (#307)
 	* Bblock (1.04): Do not pollute B::CC (find_leaders) with B::Concise
 
 1.45	2014-02-11 rurban
