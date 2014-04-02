@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_07';
+our $VERSION = '1.45_08';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -248,7 +248,7 @@ our @EXPORT_OK =
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
 use B
-  qw(minus_c sv_undef walkoptree walkoptree_slow walksymtable main_root main_start peekop
+  qw(minus_c sv_undef walkoptree walkoptree_slow main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
   threadsv_names main_cv init_av end_av opnumber cstring
   HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
@@ -3828,7 +3828,7 @@ sub B::GV::save {
     $init->add("if (SvPOK($sym) && !SvPVX($sym)) SvPVX($sym) = (char*)emptystring;");
   }
 
-  # B::walksymtable creates an extra reference to the GV (#197)
+  # walksymtable creates an extra reference to the GV (#197)
   if ( $gv->REFCNT > 1 ) {
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT) );
   }
@@ -5915,6 +5915,30 @@ sub B::GV::savecv {
   }
   warn sprintf( "Saving GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save($fullname);
+}
+
+# Fixes bug #307: use foreach, not each
+# each is not safe to use (at all). walksymtable is called recursively which might add
+# symbols to the stash, which might cause re-ordered rehashes, which will fool the hash
+# iterator, leading to missing symbols in the binary.
+# Old perl5 bug: The iterator should really be stored in the op, not the hash.
+sub walksymtable {
+  my ($symref, $method, $recurse, $prefix) = @_;
+  my ($sym, $ref, $fullname);
+  $prefix = '' unless defined $prefix;
+  foreach my $sym ( sort keys %$symref ) {
+    no strict 'refs';
+    $ref = $symref->{$sym};
+    $fullname = "*main::".$prefix.$sym;
+    if ($sym =~ /::$/) {
+      $sym = $prefix . $sym;
+      if (svref_2object(\*$sym)->NAME ne "main::" && $sym ne "<none>::" && &$recurse($sym)) {
+        walksymtable(\%$fullname, $method, $recurse, $sym);
+      }
+    } else {
+      svref_2object(\*$fullname)->$method();
+    }
+  }
 }
 
 sub walk_syms {

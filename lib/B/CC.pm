@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
-#      Copyright (c) 2012 cPanel Inc
+#      Copyright (c) 2012-2014 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -648,7 +648,9 @@ PP(pp_aelem_nolval)
     my ( $name, $runtime, $declare ) = @$ppdata;
     print "\nstatic\nCCPP($name)\n{\n";
     my ( $type, $varlist, $line );
-    while ( ( $type, $varlist ) = each %$declare ) {
+    # while ( ( $type, $varlist ) = each %$declare )
+    foreach $type (sort keys %$declare) {
+      $varlist = $declare->{$type};
       print "\t$type ", join( ", ", @$varlist ), ";\n";
     }
     foreach $line (@$runtime) {
@@ -995,7 +997,7 @@ sub error {
 
 # run-time eval is too late for attrs being checked by perlcore. BEGIN does not help.
 # use types is the right approach. But until types is fixed we use this hack.
-# Note that we also need a new CHECK_SCALAR_ATTRIBUTES hook, starting with v5.18.
+# Note that we also need a new CHECK_SCALAR_ATTRIBUTES hook, starting with v5.22.
 sub init_type_attrs {
   eval q[
 
