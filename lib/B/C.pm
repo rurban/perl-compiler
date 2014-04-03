@@ -3882,10 +3882,17 @@ sub B::GV::save {
     $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save \$".$sym." $gvsv\n" if $debug{gv};
-      if ($fullname eq 'main::@') { # $@ = PL_errors
-	$init->add( "GvSVn($sym) = (SV*)PL_errors;" );
+      my $core_svs = { # special SV syms to assign to the right GvSV
+         "\\"   => 'PL_ors_sv',
+         "/"    => 'PL_rs',
+         "@"    => 'PL_errors',
+      };
+      for my $s (keys %$core_svs) {
+        if ($fullname eq 'main::'.$s) {
+          savesym( $gvsv, $core_svs->{$s} ); # TODO: This could bypass BEGIN settings (->save is ignored)
+        }
       }
-      elsif ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK and !$PERL56) {
+      if ($gvname eq 'VERSION' and $xsub{$package} and $gvsv->FLAGS & SVf_ROK and !$PERL56) {
 	warn "Strip overload from $package\::VERSION, fails to xs boot (issue 91)\n" if $debug{gv};
 	my $rv = $gvsv->object_2svref();
 	my $origsv = $$rv;

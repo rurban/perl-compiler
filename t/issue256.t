@@ -24,7 +24,7 @@ my $iv_vars = {'^H' => 0,
                #'{^UNICODE}' => 0,
                #'{^UTF8LOCALE}' => 1
                };
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 my $script = '';
 $script .= sprintf('BEGIN{ $%s = "a"} $%s = "a"; print qq{not ok - \$%s = $%s\n} if $%s ne "a";'."\n", 
@@ -51,3 +51,7 @@ if ($] >= 5.010001) {
   ok 1, "skip -C with <5.10.1";
   ok 1, "skip -CL with <5.10.1";
 }
+
+ctestok(5,'C,-O3','ccode306i',<<'EOF', '#306 localize $/');
+package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();
+EOF

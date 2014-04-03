@@ -1173,6 +1173,8 @@ tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASC
 result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
 result[3052]='ok'
+tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
+result[306]='ok'
 
 init
 
