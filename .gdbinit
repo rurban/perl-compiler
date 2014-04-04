@@ -1,5 +1,6 @@
 #directory /usr/src/perl/perl-5.10.1/perl-5.10.1
 #directory /usr/src/perl/perl-5.6.2
+add-auto-load-safe-path /lib/x86_64-linux-gnu/libthread_db-1.0.so
 
 set breakpoint pending on
 break __asan_report_error
