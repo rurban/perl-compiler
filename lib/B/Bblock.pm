@@ -1,22 +1,15 @@
 # Maintained now in B::C by Reini Urban <rurban@x-ray.at>
 package B::Bblock;
 
-our $VERSION = '1.03_02';
+our $VERSION = '1.04';
 
 use Exporter ();
 @ISA       = "Exporter";
 @EXPORT_OK = qw(find_leaders);
-my $have_B_Concise;
 
 use B qw(peekop walkoptree walkoptree_exec
   main_root main_start svref_2object
   OPf_SPECIAL OPf_STACKED );
-
-BEGIN {
-  eval { require B::Concise; 1 } and $have_B_Concise = 1;
-  B::Concise->import(qw(concise_cv concise_main set_style_standard))
-    if $have_B_Concise;
-}
 
 use strict;
 
@@ -145,7 +138,13 @@ sub B::PMOP::mark_if_leader {
 
 sub compile {
   my @options = @_;
+  my $have_B_Concise;
   B::clearsym();
+
+  eval { require B::Concise; 1 } and $have_B_Concise = 1;
+  B::Concise->import(qw(concise_cv concise_main set_style_standard))
+      if $have_B_Concise;
+
   if ( @options and $have_B_Concise ) {
     return sub {
       my $objname;
