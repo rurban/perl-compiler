@@ -23,6 +23,24 @@ For 5.14 and 5.15 I recommend also the following patches:
   ramblings/revert-B-load-BEGIN.patch (The 5.14.1 version)
   ramblings/Carp-wo-B.patch
 
+We generally discourage the use of 5.16 and 5.18 for unhandled and
+unacknowledged security problems with the implementation of "unicode"
+symbols and packagenames, where they really implemented binary names
+for all symbols without any checks and further support of such binary
+names. See the warning at perl Makefile.PL.
+5.20 improved support for binary names for most syscalls, dumpers and
+APIs, but TR39 and strict names are still not handled, the problems
+are not understood and reactions are generally hostile.
+
+Summarized:
+Perl handling of new unicode identifiers - package and symbol names since 5.16 -
+without proper TR39 handling is considered a security risc and is not fully supported.
+See http://websec.github.io/unicode-security-guide/
+Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.
+Enable use warnings 'syscalls'. There is no use strict 'names' yet. You cannot disable
+binary symbolname support with a configure option.
+
+
 USAGE
 
 The Bytecode, C and CC backends are now all functional
@@ -240,25 +258,31 @@ The following render the compiler useless (without serious hacking):
     goto
     continue/next/last to a outer LABEL
 * You can't use "last" to exit from a non-loop block.
+* use Attribute::Handlers, or run-time usage of attributes. Usage of
+  Attribute::Handlers is discouraged generally for security reasons, as it
+  evals all attributes. (#169)
+* Accessing @- values from compiled regular expressions are currently broken (#281)
 
 The following may give significant problems:
 
-* BEGIN blocks containing complex initialisation code, 
+* BEGIN blocks containing complex initialisation code,
   esp. sideeffects. All the BEGIN code is evaluated once at compile-time,
   and NOT executed at run-time.
 * Code which is only ever referred to at runtime (e.g. via eval "..." or
   via method calls): see the -u option for the C and CC backends.
+* compile-time perlio layers. Use them at run-time instead.
+  i.e. use open qw(:std :utf8) does not work yet on STDIN.
+* run-time loading of DynaLoader packages which use AutoLoad (i.e. BSD::Resource).
+  Compile them in, e.g. with use package. (#308)
+* format STDOUT or STDERR (#285)
+
 
 The following may cause problems (not thoroughly tested):
 
 * For the C and CC backends: compile-time strings which are longer than
   your C compiler can cope with in a single line or definition.
-* Reliance on intimate details of global destruction
-* Any "-w" option in the first line of your perl program is seen and
-  acted on by perl itself before the compiler starts. The compiler
-  itself then runs with warnings turned on. This may cause perl to
-  print out warnings about the compiler itself since I haven't tested
-  it thoroughly with warnings turned on.
+  Use perlcc to workaround MSVC problems.
+* Reliance on intimate details of global destruction. Implemented only with 1.46
 
 There is a terser but more complete list in the Todo file.
 
@@ -286,7 +310,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2014-02-11
+2014-04-05
 
 Malcolm Beattie
 2 September 1996
