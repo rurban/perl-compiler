@@ -5556,7 +5556,10 @@ _EOT9
 	printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
 	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
         if ( $xsub{$stashname} eq 'Dynamic' ) {
+          no strict 'refs';
           warn "dl_init $stashname\n" if $verbose;
+          # just in case we missed it. DynaLoader really needs the @ISA (#308)
+          B::svref_2object( \@{$stashname."::ISA"} ) ->save;
 	  print "#ifdef USE_DYNAMIC_LOADING\n";
 	  print "\tPUTBACK;\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
@@ -5983,7 +5986,9 @@ sub mark_package {
           }
         }
 	if ( !$include_package{$isa} and !$skip_package{$isa} ) {
+          no strict 'refs';
 	  warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
+          B::svref_2object( \@{$isa."::ISA"} ) ->save; #308
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
 	    mark_package($isa);

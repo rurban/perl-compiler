@@ -37,6 +37,7 @@
 	Detect new Encode-2.58 which stores encodings better to handle proper
           compile-time usage (#305, RT #94221)
 	Add special SV associations for $/, $@ and $\ (#306, #256)
+	Save @ISA for more packages, esp. DynaLoader dependencies (#308)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
