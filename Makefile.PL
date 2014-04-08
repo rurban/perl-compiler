@@ -282,7 +282,7 @@ sub libscan {
     return 0 if $_[1] =~ /\.svn|~/; # needed for msys perl5.6
     # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
     # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
-    return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
+    #return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
     # On windows the C compiler would work if DynaLoader.lib would be provided.
     # return 0 if $^O eq 'MSWin32' and !-d ".git" and $_[1] =~ /C\.pm|C\.xs|Stackobj\.pm/;
     return $_[1];

@@ -94,11 +94,13 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
 
     data.next_out = 0;
     data.datasv = FILTER_DATA(idx);
+    #if (PERL_VERSION > 6)
     /* [perl #86186] Using tell(DATA) within __DATA__ file buffer is broken on Win32:
        Source filters were changed with 5.14 to read DATA in textmode, so \r\n are
        changed to \n on Windows only in our binary data.
      */
     PerlIO_binmode(aTHX_ PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0);
+    #endif
     data.idx = idx;
 
     bstate.bs_fdata = &data;

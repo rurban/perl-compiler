@@ -15,7 +15,7 @@ package B::Bytecode;
 
 our $VERSION = '1.14';
 
-use 5.008;
+use 5.008; # 5.6 support in work. use Bytecode56 instead
 use B qw( class main_cv main_root main_start
 	  begin_av init_av end_av cstring comppadlist
 	  OPf_SPECIAL OPf_STACKED OPf_MOD
@@ -655,7 +655,7 @@ sub B::CV::bsave {
   my $startix   = $cv->START->opwalk;
   my $rootix    = $cv->ROOT->ix;
   # TODO 5.14 will need CvGV_set to add backref magic
-  my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0;
+  my $xsubanyix  = (!$PERL56 and $cv->CONST) ? $cv->XSUBANY->ix : 0;
 
   $cv->B::PVMG::bsave($ix);
   asm "xcv_stash",       $stashix;

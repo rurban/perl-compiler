@@ -267,15 +267,19 @@ sub gen_header {
 sub gen_header_hash {
   my $header  = {};
   my $blversion = "$ByteLoader::VERSION";
+  my $cmpversion = $blversion;
   #if ($] < 5.009 and $blversion eq '0.06_01') {
   #  $blversion = '0.06';# fake the old backwards compatible version
   #}
+  if ($] < 5.007 and $blversion eq '4.e-02') {
+    $cmpversion = '0.04';
+  }
   $header->{magic}     = 0x43424c50;
   $header->{archname}  = $Config{archname};
   $header->{blversion} = $blversion;
   $header->{ivsize}    = $Config{ivsize};
   $header->{ptrsize}   = $Config{ptrsize};
-  if ( $blversion ge "0.06_03" ) {
+  if ( $cmpversion ge "0.06_03" ) {
     $header->{longsize} = $Config{longsize};
   }
   my $byteorder = $Config{byteorder};
@@ -294,13 +298,13 @@ sub gen_header_hash {
     }
   }
   $header->{byteorder}   = $byteorder;
-  if ( $blversion ge "0.06_05" ) {
+  if ( $cmpversion ge "0.06_05" ) {
     my $archflag = 0;
     $archflag += 1 if $Config{useithreads};
     $archflag += 2 if $Config{usemultiplicity};
     $header->{archflag} = $archflag;
   }
-  if ( $blversion ge "0.06_06" ) {
+  if ( $cmpversion ge "0.06_06" ) {
     $header->{perlversion} = $];
   }
   $header;

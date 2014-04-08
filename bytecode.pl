@@ -87,7 +87,7 @@ use B qw(@optype @specialsv_name);
 @specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE);
 ';
 } else {
-    print ASMDATA_PM 'my(%insn_data, @insn_name, @optype, @specialsv_name);
+    print ASMDATA_PM 'our(%insn_data, @insn_name, @optype, @specialsv_name);
 
 @optype = qw(OP UNOP BINOP LOGOP LISTOP PMOP SVOP PADOP PVOP LOOP COP);
 @specialsv_name = qw(Nullsv &PL_sv_undef &PL_sv_yes &PL_sv_no pWARN_ALL pWARN_NONE);
@@ -155,6 +155,7 @@ bset_obj_store(pTHX_ struct byteloader_state *bstate, void *obj, I32 ix)
 int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
     U32 sz = 0;
     strconst str;
+    char *version;
 
     BGET_U32(sz); /* Magic: 'PLBC' or 'PLJC' */
     if (sz != 0x43424c50) {
@@ -176,10 +177,16 @@ int bytecode_header_check(pTHX_ struct byteloader_state *bstate, U32 *isjit) {
        0.07 should be able to load 0.5 (5.8.1 CORE) */
     BGET_strconst(str,16);
     strcpy(bl_header.version, str);
-    if (strNE(str, VERSION)) {
+    /*
+    if (strEQ(VERSION, "4.e-02"))
+        version = "0.04";
+    else
+        version = VERSION;
+    */
+    if (strNE(str, version)) {
         if ((strGT(str, "0.06") && strLT(str, "0.06_06")) /*|| strLT(str, "0.05")*/) {
 	    HEADER_FAIL2("Incompatible bytecode version %s, you have %s",
-		         str, VERSION);
+		         str, version);
         }
     }
 
@@ -328,7 +335,7 @@ EOT
 
 my ($idx, @insn_name, $insn_num, $ver, $insn, $lvalue, $argtype, $flags, $fundtype, $unsupp);
 my $ITHREADS = $Config{useithreads} eq 'define';
-my $MULTI = $Config{useithreads} eq 'define';
+my $MULTI = $Config{usemultiplicity} eq 'define';
 
 $insn_num = 0;
 my @data = <DATA>;

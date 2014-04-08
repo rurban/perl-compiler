@@ -7,7 +7,8 @@
 #
 package B::Bytecode56;
 
-# The original 5.6 Bytecode compiler. Unused, not installed. Just for reference.
+# The original 5.6 Bytecode compiler with a few minor bugfixes. (Not yet)
+# Should only be used for 5.6
 
 use strict;
 use Carp;
@@ -25,6 +26,15 @@ my %optype_enum;
 my $i;
 for ( $i = 0 ; $i < @optype ; $i++ ) {
   $optype_enum{ $optype[$i] } = $i;
+}
+
+BEGIN {
+  my $ithreads = $Config::Config{'useithreads'} eq 'define';
+  eval qq{
+	sub ITHREADS() { $ithreads }
+	sub VERSION() { $] }
+    };
+  die $@ if $@;
 }
 
 # Following is SVf_POK|SVp_POK
@@ -259,7 +269,7 @@ sub B::OP::bytecode {
   ldop($ix);
   asm "op_next $nextix\n";
   asm "op_sibling $sibix\n" unless $strip_syntree;
-  asmf "op_type %s\t# %d\n", "pp_" . $op->name, $type;
+  asmf "op_type %d\t# %s\n", $type, "pp_" . $op->name;
   asmf( "op_seq %d\n", $op->seq ) unless $omit_seq;
   if ( $type || !$compress_nullops ) {
     asmf "op_targ %d\nop_flags 0x%x\nop_private 0x%x\n",
@@ -350,12 +360,23 @@ sub B::COP::bytecode {
   my $fileix     = pvix($file);
   $warnings->bytecode;
   $op->B::OP::bytecode;
-  asmf <<"EOT", $labelix, $stashix, $op->cop_seq, $fileix, $op->arybase;
+  asmf <<'EOT', $labelix, $op->cop_seq, $op->arybase;
 cop_label %d
-cop_stashpv %d
 cop_seq %d
-cop_file %d
 cop_arybase %d
+EOT
+  if (ITHREADS) {
+    asmf <<'EOT', $stashix, $fileix;
+cop_stashpv %d
+cop_file %d
+EOT
+  } else {
+    asmf <<'EOT', $stashix, $fileix;
+cop_stash %d
+cop_filegv %d
+EOT
+  }
+  asm <<"EOT";
 cop_line $line
 cop_warnings $warningsix
 EOT
@@ -828,6 +849,7 @@ sub compile {
   open( OUT, ">&STDOUT" );
   binmode OUT;
   select OUT;
+  $DB::single=1 if defined &DB::DB;
 OPTION:
   while ( $option = shift @options ) {
     if ( $option =~ /^-(.)(.*)/ ) {
@@ -911,7 +933,7 @@ OPTION:
     }
   }
   if ( !@packages ) {
-    warn "No package specified for compilation, assuming main::\n";
+    warn "No package specified for compilation, assuming main::\n" if $verbose;
     @packages = qw(main);
   }
   if (@options) {

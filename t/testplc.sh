@@ -23,12 +23,15 @@ v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 
 function init {
     # test what? core or our module?
-    Mblib="`$PERL -e'print (($] < 5.008) ? q() : q(-Iblib/arch -Iblib/lib))'`"
+    Mblib="-Iblib/arch -Iblib/lib"
     #Mblib=${Mblib:--Mblib} # B::C is now fully 5.6+5.8 backwards compatible
     OCMD="$PERL $Mblib -MO=Bytecode,"
     QOCMD="$PERL $Mblib -MO=-qq,Bytecode,"
     ICMD="$PERL $Mblib -MByteLoader"
-    if [ "$D" = "256" ]; then QOCMD=$OCMD; fi
+    if [ "$D" = "256" ]; then
+        OCMD="$PERL $Mblib -MO=Bytecode56,"
+        QOCMD=$OCMD;
+    fi
     if [ "$Mblib" = " " ]; then VERS="${VERS}_global"; fi
 }
 
@@ -65,13 +68,13 @@ function btest {
   
   # annotated assembler
   if [ -z "$SKIP" -o -n "$SKI" ]; then
-    if [ "$Mblib" != " " ]; then 
+    if [ "$D" != "256" ]; then
 	bcall ${o} S,-s asm 1
 	bcall ${o} S,-k asm 1
 	bcall ${o} S,-i,-b asm 1
     fi
   fi
-  if [ "$Mblib" != " " -a -z "$SKIP" ]; then 
+  if [ "$D" != "256" -a -z "$SKIP" ]; then
     m=${o}s_${VERS}
     rm ${m}.disasm ${o}_${VERS}.concise ${o}_${VERS}.dbg 2>/dev/null
     bcall ${o} s
@@ -125,7 +128,7 @@ function btest {
     $PERL $Mblib -MO=${qq}Concise,-exec ${o}.pl > ${o}_${VERS}.concise
   fi
   if [ -z "$SKIP" ]; then
-    if [ "$Mblib" != " " ]; then 
+    if [ "$D" != "256" ]; then
       #bcall ${o} TI
       bcall ${o} H
       m="${o}H_${VERS}"
@@ -136,7 +139,7 @@ function btest {
       fi
     fi
   fi
-  if [ "$Mblib" != " " ]; then
+  if [ "$D" != "256" ]; then
     # -s ("scan") should be the new default
     [ -n "$Q" ] || echo ${OCMD}-s,-o${o}.plc ${o}.pl
     ${OCMD}-s,-o${o}.plc ${o}.pl || (test -z $CONT && exit)
