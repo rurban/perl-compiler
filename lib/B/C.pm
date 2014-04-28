@@ -5578,7 +5578,7 @@ _EOT9
 	    no strict 'refs';
 	    unless (grep /^DynaLoader$/, get_isa($stashname)) {
 	      push @{$stashname."::ISA"}, 'DynaLoader';
-	      B::svref_2object( \@{$stashname."::ISA"} ) ->save;
+	      svref_2object( \@{$stashname."::ISA"} ) ->save;
 	    }
 	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
 	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
@@ -5906,7 +5906,8 @@ sub B::GV::savecv {
   }
   # we should not delete already saved packages
   $saved{$package}++;
-  return if $fullname eq 'B::walksymtable'; # XXX fails and should not be needed
+   # XXX fails and should not be needed
+  return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
   if ($name eq 'Config') {
