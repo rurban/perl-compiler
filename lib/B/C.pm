@@ -3727,7 +3727,7 @@ sub B::GV::save {
   my $is_coresym;
   # those are already initialized in init_predump_symbols()
   # and init_main_stash()
-  for my $s (keys %$core_syms) {
+  for my $s (sort keys %$core_syms) {
     if ($fullname eq 'main::'.$s) {
       $sym = savesym( $gv, $core_syms->{$s} );
       # $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
@@ -3896,7 +3896,7 @@ sub B::GV::save {
          "/"    => 'PL_rs',
          "@"    => 'PL_errors',
       };
-      for my $s (keys %$core_svs) {
+      for my $s (sort keys %$core_svs) {
         if ($fullname eq 'main::'.$s) {
           savesym( $gvsv, $core_svs->{$s} ); # TODO: This could bypass BEGIN settings (->save is ignored)
         }
@@ -4869,7 +4869,7 @@ EOT
   printf "/* deferred init of XS/Dyna loaded modules */\n" if $verbose;
   printf "/* %s */\n", $init2->comment if $init2->comment and $verbose;
   my $remap = 0;
-  for my $pkg (keys %init2_remap) {
+  for my $pkg (sort keys %init2_remap) {
     if (exists $xsub{$pkg}) { # check if not removed in between
       my ($stashfile) = $xsub{$pkg} =~ /^Dynamic-(.+)$/;
       # get so file from pm. Note: could switch prefix from vendor/site//
@@ -4886,7 +4886,7 @@ EOT
       $init2->add("  dTARG; dSP;",
                   "  targ=sv_newmortal();");
     }
-    for my $pkg (keys %init2_remap) {
+    for my $pkg (sort keys %init2_remap) {
       if (exists $xsub{$pkg}) {
         if ($HAVE_DLFCN_DLOPEN) {
           $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
@@ -5445,7 +5445,7 @@ _EOT8
   print("/* XS bootstrapping code*/\n");
   print("\tSAVETMPS;\n");
   print("\ttarg=sv_newmortal();\n");
-  foreach my $stashname ( keys %static_ext ) {
+  foreach my $stashname ( sort keys %static_ext ) {
     my $stashxsub = $stashname;
     $stashxsub =~ s/::/__/g;
     #if ($stashxsub =~ m/\/(\w+)\.\w+$/ {$stashxsub = $1;}
@@ -5463,7 +5463,7 @@ _EOT8
   print "#endif\n";
 
   # my %core = map{$_ => 1} core_packages();
-  foreach my $stashname ( keys %xsub ) {
+  foreach my $stashname ( sort keys %xsub ) {
     my $incpack = inc_packname($stashname);
     unless (exists $INC{$incpack}) { # skip deleted packages
       warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
@@ -5510,7 +5510,7 @@ _EOT9
       # XXX Be sure to store the new @dl_modules
     }
   }
-  for my $c (keys %skip_package) {
+  for my $c (sort keys %skip_package) {
     warn "no dl_init for $c, skipped\n" if $verbose and $xsub{$c};
     delete $xsub{$c};
     $include_package{$c} = undef;
@@ -5535,7 +5535,7 @@ _EOT9
       $dl++;
     }
   }
-  warn "\%xsub: ",join(" ",keys %xsub),"\n" if $verbose and $debug{cv};
+  warn "\%xsub: ",join(" ",sort keys %xsub),"\n" if $verbose and $debug{cv};
   force_saving_xsloader() if $use_xsloader and ($dl or $xs);
   if ($dl) {
     if (grep {$_ eq 'attributes'} @dl_modules) {
@@ -5845,7 +5845,7 @@ sub dump_symtable {
   my ( $sym, $val );
   warn "----Symbol table:\n";
   #while ( ( $sym, $val ) = each %symtable )
-  for $sym (keys %symtable) {
+  for $sym (sort keys %symtable) {
     $val = $symtable{$sym};
     warn "$sym => $val\n";
   }
@@ -5907,7 +5907,7 @@ sub B::GV::savecv {
   }
   # we should not delete already saved packages
   $saved{$package}++;
-   # XXX fails and should not be needed
+   # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
   return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
@@ -6123,7 +6123,7 @@ sub should_save {
     mark_package($package, 1);
     return 1;
   }
-  foreach my $u ( grep( $include_package{$_}, keys %include_package ) )
+  foreach my $u ( grep( $include_package{$_}, sort keys %include_package ) )
   {
     # If this package is a prefix to something we are saving, traverse it
     # but do not mark it for saving if it is not already
@@ -6145,7 +6145,7 @@ sub should_save {
   if ($mainfile) {
     # Find the first cv in this package for CV->FILE
     no strict 'refs';
-    for my $sym (keys %{$package.'::'}) {
+    for my $sym (sort keys %{$package.'::'}) {
       if (defined &{$package.'::'.$sym}) {
 	# compare cv->FILE to $mainfile
 	my $cv = svref_2object(\&{$package.'::'.$sym});
@@ -6278,12 +6278,11 @@ sub add_hashINC {
 sub walkpackages {
   my ( $symref, $recurse, $prefix ) = @_;
   no strict 'vars';
-  my $sym;
   $prefix = '' unless defined $prefix;
   # check if already deleted - failed since 5.15.2
   return if $savINC{inc_packname(substr($prefix,0,-2))};
   #while ( ( $sym, $ref ) = each %$symref )
-  for $sym (keys %$symref) {
+  for my $sym (sort keys %$symref) {
     my $ref = $symref->{$sym};
     next unless $ref;
     local (*glob);
@@ -6361,7 +6360,7 @@ sub save_unused_subs {
 sub inc_cleanup {
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
-  for my $package (keys %INC) {
+  for my $package (sort keys %INC) {
     my $pkg = packname_inc($package);
     if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
       delete $INC{$package};
@@ -6476,10 +6475,10 @@ sub save_context {
 }
 
 sub descend_marked_unused {
-  warn "\%skip_package: ".join(" ",keys %skip_package)."\n" if $debug{pkg};
+  warn "\%skip_package: ".join(" ",sort keys %skip_package)."\n" if $debug{pkg};
   warn "descend_marked_unused: "
-    .join(" ",grep{!$skip_package{$_}} keys %include_package)."\n" if $debug{pkg};
-  foreach my $pack ( keys %include_package ) {
+    .join(" ",grep{!$skip_package{$_}} sort keys %include_package)."\n" if $debug{pkg};
+  foreach my $pack ( sort keys %include_package ) {
     mark_package($pack) unless $skip_package{$pack};
   }
 }
@@ -6512,7 +6511,7 @@ sub save_sig {
   # local $SIG{__WARN__} = shift;
   $init->no_split;
   my @save_sig;
-  foreach my $k ( keys %SIG ) {
+  foreach my $k ( sort keys %SIG ) {
     next unless ref $SIG{$k};
     my $cvref = svref_2object( \$SIG{$k} );
     next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|; # ignore B::C SIG warn handler
