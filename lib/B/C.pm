@@ -30,7 +30,7 @@ sub new {
   my $class = shift;
   my $o     = $class->SUPER::new(@_);
   push @$o, { values => [] };
-  # if sv add a dummy sv_arenaroot
+  # if sv add a dummy sv_arenaroot to support global destruction
   if ($_[0] eq 'sv') {
     $o->add( "0, 0, SVTYPEMASK|0x01000000".($] >= 5.009005?", {0}":'')); # SVf_FAKE
     $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
@@ -4538,11 +4538,11 @@ sub B::IO::save_data {
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
     require PerlIO;
     require PerlIO::scalar;
-    $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
     mark_package("PerlIO", 1);
-    $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
-    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
+    # $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
     mark_package("PerlIO::scalar", 1);
+    # $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
+    $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
   }
 }
 
