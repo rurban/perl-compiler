@@ -3271,6 +3271,7 @@ sub B::CV::save {
         and $fullname ne 'main::main::'
         and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"})))
     {
+      # XXX What was here?
     }
     if (exists &$fullname) {
       warn "Warning: Empty &".$fullname."\n" if $debug{sub};
@@ -4053,6 +4054,9 @@ sub B::GV::save {
 	# TODO implement heksect to place all heks at the beginning
 	#$heksect->add($gv->FILE);
 	#$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
+
+        # XXX Maybe better leave it NULL or asis, than fighting broken
+        # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
 	$init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
 	  unless $optimize_cop;
 	# $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
@@ -4390,12 +4394,12 @@ sub B::HV::save {
     # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
-    if (!$B::C::stash) {
+    if (!$B::C::stash) { # -fno-stash: do not save stashes
       $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
-      if ($magic =~ /c/) {
-        # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-        #$init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
-      }
+      #if ($magic =~ /c/) {
+         # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
+      #  $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+      #}
       return $sym;
     }
     return $sym if skip_pkg($name);
@@ -7326,8 +7330,11 @@ Current status: A few known bugs, but usable in production
 
 >=5.10:
     Attribute::Handlers and run-time attributes
-    package destruction
-    handling of empty functions, esp. sig handlers: $SIG{__WARN__}=sub{}
+    @- (#281)
+    compile-time perlio layers
+    run-time loading of DynaLoader packages which use AutoLoad
+      i.e. BSD::Resource. (#308)
+    format STDOUT or STDERR (#285)
 
 =head1 AUTHOR
 
