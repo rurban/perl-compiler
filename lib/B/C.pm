@@ -6413,6 +6413,13 @@ sub save_context {
     $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
+  # ensure all included @ISA's are stored (#308)
+  for my $p (sort keys %include_package) {
+    no strict 'refs';
+    if (exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
+      svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
+    }
+  }
   $init->add(
     "GvHV(PL_incgv) = $inc_hv;",
     "GvAV(PL_incgv) = $inc_av;",
