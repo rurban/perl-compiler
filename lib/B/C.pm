@@ -175,6 +175,11 @@ sub add_eval {
   push @{ $section->[-1]{evals} }, @strings;
 }
 
+sub pre_destruct {
+  my $section = shift;
+  push @{ $section->[-1]{pre_destruct} }, @_;
+}
+
 sub add_initav {
   my $section = shift;
   push @{ $section->[-1]{initav} }, @_;
@@ -4533,8 +4538,9 @@ sub B::IO::save_data {
     # Pseudo FileHandle
     $init->add_eval( sprintf 'open(%s, \'<\', $%s)', $globname, $globname );
   } else { # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
-    $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s)', $globname, $globname );
-    # => eval_pv("open(main::DATA, '<:scalar', $main::DATA)",1); DATA being a ref to $data
+    $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s);', $globname, $globname );
+    # => eval_pv("open(main::DATA, '<:scalar', $main::DATA);",1); DATA being a ref to $data
+    $init->pre_destruct( sprintf 'eval_pv("close %s;", 1);', $globname );
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
     require PerlIO;
     require PerlIO::scalar;
@@ -5800,6 +5806,9 @@ EOT
 
     print $B::C::eval_pvs if $B::C::eval_pvs;
     print "    exitstatus = perl_run( my_perl );\n";
+    foreach my $s ( @{ $init->[-1]{pre_destruct} } ) {
+      print "    ".$s."\n";
+    }
 
     if ( !$B::C::destruct ) {
       warn "fast_perl_destruct (-fno-destruct)\n" if $verbose;
