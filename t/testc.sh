@@ -821,9 +821,9 @@ tests[192]='use warnings;
 result[192]='ok'
 tests[193]='unlink q{not.a.file}; $! = 0; open($FOO, q{not.a.file}); print( $! ne 0 ? "ok" : q{error: $! should not be 0}."\n"); close $FOO;'
 result[193]='ok'
-tests[194]='$0 = q{ccdave}; #print "pid: $$\n";
-$s=`ps auxw | grep "$$" | grep "ccdave"|grep -v grep`;
-print q(ok) if $s =~ /ccdave/'
+tests[194]='$0 = q{cc good morning dave and some more chars}; #print "pid: $$\n";
+$s=`ps auxw | grep "$$" | grep "cc good" | grep -v grep`;
+print $s =~ /cc good morning dave and some more chars/ ? q(ok) : $s;'
 result[194]='ok'
 # duplicate of 152
 tests[195]='use PerlIO;  eval { require PerlIO::scalar }; find PerlIO::Layer "scalar"'

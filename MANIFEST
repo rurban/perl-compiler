@@ -642,6 +642,7 @@ t/issue172.t
 t/issue183.t
 t/issue184.t
 t/issue185.t
+t/issue194.t
 t/issue197.t
 t/issue200.t
 t/issue201.t
