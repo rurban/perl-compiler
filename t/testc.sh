@@ -1177,6 +1177,8 @@ tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not o
 result[306]='ok'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
 result[308]='ok'
+tests[312]='require Scalar::Util; eval "require List::Util"; print "ok"'
+result[312]='ok'
 
 init
 

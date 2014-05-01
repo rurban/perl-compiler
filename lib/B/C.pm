@@ -5026,9 +5026,6 @@ _EOT1
 #define PERL_CORE
 #include "EXTERN.h"
 #include "perl.h"
-#ifdef NO_DYNAMIC_LOADING
-# undef USE_DYNAMIC_LOADING
-#endif
 #include "XSUB.h"
 
 /* Workaround for mapstart: the only op which needs a different ppaddr */
@@ -5560,13 +5557,13 @@ _EOT9
           warn "dl_init $stashname\n" if $verbose;
           # just in case we missed it. DynaLoader really needs the @ISA (#308)
           B::svref_2object( \@{$stashname."::ISA"} ) ->save;
-	  print "#ifdef USE_DYNAMIC_LOADING\n";
+	  print "#ifndef STATICXS\n";
 	  print "\tPUTBACK;\n";
           print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
-	  print "#ifdef USE_DYNAMIC_LOADING\n";
+	  print "#ifndef STATICXS\n";
 	  if ($] >= 5.015003) {
 	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
 	  }

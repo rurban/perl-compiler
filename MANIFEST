@@ -672,6 +672,7 @@ t/issue29.t
 t/issue305.t
 t/issue308.t
 t/issue31.t
+t/issue312.t
 t/issue32.t
 t/issue34.t
 t/issue35.t
