@@ -6416,7 +6416,8 @@ sub save_context {
   # ensure all included @ISA's are stored (#308)
   for my $p (sort keys %include_package) {
     no strict 'refs';
-    if (exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
+    if ($include_package{$p} and exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
+      warn "save @".$p."::ISA\n" if $verbose;
       svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
     }
   }
