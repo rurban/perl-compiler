@@ -5718,7 +5718,10 @@ _EOT12
 #define EXTRA_OPTIONS 4
 #endif /* ALLOW_PERL_OPTIONS */
     Newx(fakeargv, argc + EXTRA_OPTIONS + 1, char *);
-    fakeargv[0] = argv[0];
+    /* Overallocate argv[0] to allow setting $0 to max 80 chars (#194) */
+    i = 80 - strlen(argv[0]);
+    Newx(fakeargv[0], i , char *);
+    Copy(argv[0], fakeargv[0], i, char);
     fakeargv[1] = "-e";
     fakeargv[2] = "";
     options_count = 3;
@@ -5743,6 +5746,9 @@ _EOT14
 
     exitstatus = perl_parse(my_perl, xs_init, argc + options_count - 1,
 			    fakeargv, env);
+    /* PL_origalen is calculated in perl_parse but this calculation misses the padded \0
+       we added before. So override. */
+    PL_origalen = 80;
     if (exitstatus)
 	exit( exitstatus );
 

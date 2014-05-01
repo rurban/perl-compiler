@@ -5,6 +5,8 @@ add-auto-load-safe-path /lib/x86_64-linux-gnu/libthread_db-1.0.so
 set breakpoint pending on
 break __asan_report_error
 
+b mg.c:2952
+
 #break XS_B__CC__autovivification
 #break B.xs:1398
 #break B.c:2044
