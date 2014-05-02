@@ -69,6 +69,7 @@ compile_check(2,'C,-O3,-UB','ccode95i',$typed,'typed');
 
 use B::C ();
 # see #310: Warning: unable to close filehandle DATA properly
+# also: Constant subroutine HUGE_VAL redefined
 my $qr = '^(ok|Warning: unable to close filehandle.*\nok)$';
-ctest(3,$qr,'C,-O3,-UB','ccode95i',$issue,
+ctest(5,$qr,'C,-O3,-UB','ccode95i',$issue,
       (($B::C::VERSION lt '1.42_61') ? "TODO " : "").'run');
