@@ -5274,7 +5274,6 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         int x = 0;
 
         JMPENV_PUSH(x);
-	PERL_UNUSED_VAR(x);
         if (PL_endav && !PL_minus_c)
             call_list(PL_scopestack_ix, PL_endav);
         JMPENV_POP;
