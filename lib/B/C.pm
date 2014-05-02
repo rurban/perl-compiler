@@ -5655,8 +5655,6 @@ main(int argc, char **argv, char **env)
     int exitstatus;
     int i;
     char **fakeargv;
-    GV* tmpgv;
-    SV* tmpsv;
     int options_count;
     PerlInterpreter *my_perl;
 
