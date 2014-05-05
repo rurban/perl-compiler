@@ -4035,8 +4035,11 @@ sub B::GV::save {
             $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
 	  }
 	}
-	else {
+	elsif ($cvsym =~ /^(cv|&sv_list)/) {
           $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
+        }
+	else {
+            warn "wrong CvGV for $sym $origname: $cvsym\n" if $debug{gv} or $verbose;
         }
       }
       # special handling for backref magic
