@@ -94,7 +94,7 @@ TODO: {
         $cmd = "$PERL -Iblib/arch -Iblib/lib script/cc_harness -q $c_file -o $bin_file 2>&1";
         diag $cmd if $ENV{TEST_VERBOSE};
         my $compile_output = `$cmd`;
-        note $compile_output if ($compile_output);
+        note $compile_output if $compile_output;
 
         # Validate compiles
         ok( -x $bin_file, "$bin_file is compiled and ready to run." );
