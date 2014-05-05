@@ -5291,7 +5291,6 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #if PERL_VERSION >= 11 && defined(PERL_PHASE_DESTRUCT)
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
-    PL_in_clean_all = 1;
 
 #if PERL_VERSION > 7
     if (PL_threadhook(aTHX)) {
@@ -5303,11 +5302,13 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         return STATUS_NATIVE_EXPORT;
 #endif
     }
+    PerlIO_destruct(aTHX);
 
-    /* B::C -O3 specific: first curse (i.e. call DESTROY) all static svs */
+    /* B::C -O3 specific: first curse (i.e. call DESTROY) all our static SVs */
     if (PL_sv_objcount) {
         int i = 1;
         DEBUG_D(PerlIO_printf(Perl_debug_log, "\nCursing named global static sv_arena:\n"));
+        PL_in_clean_all = 1;
         for (; i < SvREFCNT(&sv_list[0]); i++) {
             SV *sv = &sv_list[i];
             if (SvREFCNT(sv)) {
@@ -5336,12 +5337,11 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
               sva, sva+SvREFCNT(sva), SvREFCNT(sva));
         }
     }
-
-    PerlIO_destruct(aTHX);
 #endif
 
     if (PL_sv_objcount) {
-	sv_clean_objs();
+	PL_in_clean_all = 1;
+	sv_clean_objs(); /* and now curse the rest */
 	PL_sv_objcount = 0;
     }
 #if defined(PERLIO_LAYERS)
