@@ -5165,6 +5165,7 @@ my_curse( pTHX_ SV* const sv ) {
     dVAR;
     HV* stash;
 
+#if PERL_VERSION > 7
     assert(SvOBJECT(sv));
     do {
         stash = SvSTASH(sv);
@@ -5235,6 +5236,7 @@ my_curse( pTHX_ SV* const sv ) {
 	SvOBJECT_off(sv);	/* Curse the object. */
 	SvSTASH_set(sv,0);	/* SvREFCNT_dec may try to read this */
     }
+#endif
 }
 
 int fast_perl_destruct( PerlInterpreter *my_perl ) {
@@ -5289,7 +5291,9 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #if PERL_VERSION >= 11 && defined(PERL_PHASE_DESTRUCT)
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
+    PL_in_clean_all = 1;
 
+#if PERL_VERSION > 7
     if (PL_threadhook(aTHX)) {
         /* Threads hook has vetoed further cleanup */
 #if (PERL_VERSION > 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION > 8))
@@ -5300,7 +5304,6 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #endif
     }
 
-    PL_in_clean_all = 1;
     /* B::C -O3 specific: first curse (i.e. call DESTROY) all static svs */
     if (PL_sv_objcount) {
         int i = 1;
@@ -5325,7 +5328,6 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
             }
         }
     }
-#if PERL_VERSION > 7
     if (DEBUG_D_TEST) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "\n");
@@ -5333,10 +5335,11 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
             PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
               sva, sva+SvREFCNT(sva), SvREFCNT(sva));
         }
-   }
-#endif
+    }
 
     PerlIO_destruct(aTHX);
+#endif
+
     if (PL_sv_objcount) {
 	sv_clean_objs();
 	PL_sv_objcount = 0;
