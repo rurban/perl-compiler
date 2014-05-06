@@ -20,9 +20,9 @@ sub test3 {
   my $script = shift;
   my $cmt = join('',@_);
   my $todo = "";
-  $todo = 'TODO BC ' if $name eq 'ccode200i_c' or ($] >= 5.018 and $] < 5.019005 and $Config{useithreads});
-  my $todoc = $[ < 5.010 ? "TODO 5.8 " : "";
-  plctestok($i*3+1, $name, $script, $todo.$cmt);
+  $todo = 'TODO ' if $name eq 'ccode200i_c' or ($] >= 5.018 and $] < 5.019005 and $Config{useithreads});
+  my $todoc = $] < 5.010 ? "TODO 5.8 " : "";
+  plctestok($i*3+1, $name, $script, $todo." BC $cmt");
   ctestok($i*3+2, "C", $name, $script, $todoc."C $cmt");
   ctestok($i*3+3, "CC", $name, $script, $todoc."CC $cmt");
   $i++;
