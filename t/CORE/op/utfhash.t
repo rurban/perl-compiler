@@ -180,7 +180,7 @@ foreach ("\x7f","\xff")
 	eval $utfebcdic;
     }
 }
-__END__
+#_#_END__
 {
   # See if utf8 barewords work [perl #22969]
   use utf8;
