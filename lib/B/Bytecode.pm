@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.14';
+our $VERSION = '1.15';
 
 use 5.008;
 use B qw( class main_cv main_root main_start
@@ -770,7 +770,9 @@ sub B::HV::bwalk {
   my $hv = shift;
   return if $walked{$$hv}++;
   my %stash = $hv->ARRAY;
-  while ( my ( $k, $v ) = each %stash ) {
+  #while ( my ( $k, $v ) = each %stash )
+  foreach my $k (keys %stash) {
+    my $v = $stash{$k};
     if ( !$PERL56 and $v->SvTYPE == $SVt_PVGV ) {
       my $hash = $v->HV;
       if ( $$hash && $hash->NAME ) {

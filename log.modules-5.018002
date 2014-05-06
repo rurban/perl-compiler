@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 4a38d27 2014-02-08 | C 1.44: bump version
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.018002
 # path = /usr/local/bin/perl5.18.2
 # platform = linux 64bit threaded
@@ -49,7 +49,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester #TODO non-debugging with threads
 pass Sub::Install
-pass Attribute::Handlers
+pass Attribute::Handlers #TODO >= 5.18 #169 early my_exit + SEGV
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.018002
+# 100 / 100 modules tested with B-C-1.45_06 - perl-5.018002
 # pass  98 / 100 (98.0%)
 # fail   2 / 100 (2.0%)
-# todo   3 /   2 (150.0%)
+# todo   4 /   2 (200.0%)
 # skip   0 / 100 (0.0% not installed)

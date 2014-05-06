@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 707faf3 2014-02-09 | module updates 1.44 >5.10 (no changes)
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit non-threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder #TODO 5.8.9 without threads
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime #TODO <5.10
+pass DateTime #TODO <5.10
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008009-nt
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   1 /   2 (50.0%)
+# 100 / 100 modules tested with B-C-1.45_06 - perl-5.008009-nt
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   2 /   0 ()
 # skip   0 / 100 (0.0% not installed)

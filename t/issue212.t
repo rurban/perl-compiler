@@ -8,9 +8,13 @@ BEGIN {
 }
 use Test::More tests => 3;
 use Config ();
+use B::C ();
 my $ITHREADS = $Config::Config{useithreads};
+my $todo1 = ($B::C::VERSION lt '1.45_03' and ($]>=5.018 and $ITHREADS)) ? "TODO 5.18thr ": "";
+# fixed with 1.45_04: non-destructive get_isa for 5.8
+my $todo3 = ($] < 5.007) ? "TODO 5.6 ": "";
 
-ctestok(1,'C,-O3,-UB','ccode212i',<<'EOF',($]>=5.018 and $ITHREADS ?"TODO 5.18thr ":"").'#212 shared GP');
+ctestok(1,'C,-O3,-UB','ccode212i',<<'EOF',$todo1.'#212 shared GP');
 $blurfl = 123;
 {
     package abc;
@@ -28,7 +32,7 @@ $s = join(":", sort(keys %::));
 print q(ok) if $s;
 EOF
 
-ctestok(3,'C,-O3,-UB','ccode210i',<<'EOF','#210 keys %package return an invalid list');
+ctestok(3,'C,-O3,-UB','ccode210i',<<'EOF',$todo3.'#210 keys %package return an invalid list');
 $a = 123;
 package xyz;
 sub xsub {bless [];}

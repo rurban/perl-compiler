@@ -1,6 +1,6 @@
 #!./perl
 
-BEGIN {
+INIT {
     require 't/CORE/test.pl';
 }
 

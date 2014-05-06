@@ -47,7 +47,7 @@ pass( $taint ? "Taint mode!" : "Not in taint mode" );
 ( my $bin_file = $file_to_test ) =~ s/\.t$/.bin/;
 unlink $bin_file, $c_file;
 
-my $PERL = $^X;
+my $PERL = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 
 my $check = `$PERL -c $taint '$file_to_test' 2>&1`;
 like( $check, qr/syntax OK/, "$PERL -c $taint $file_to_test" );
@@ -58,9 +58,22 @@ my %SIGNALS = qw( 11 SEGV 6 SIGABRT 1 SIGHUP 13 SIGPIPE);
 $SIGNALS{0} = '';
 
 foreach my $optimization (@optimizations) {
-  TODO: SKIP: {
+TODO: {
+  SKIP: {
         local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
         local $ENV{BC_OPT} = $optimization;
+
+        my $b = $optimization; # protect against parallel test name clashes
+        #$b =~ s/-(D.*|f.*|v),//g;
+        #$b =~ s/-/_/g;
+        #$b =~ s/[, ]//g;
+        #$b =~ s/_O0$//;
+        #$b = lc($b);
+        $b = ''; # need to check $0 diagnostics
+        ( $c_file   = $file_to_test ) =~ s/\.t$/$b.c/;
+        $b = '.bin'; # need to check $0 diagnostics
+        ( $bin_file = $file_to_test ) =~ s/\.t$/$b/;
+        unlink $bin_file, $c_file;
 
         # Generate the C code at $optimization level
         my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
@@ -81,13 +94,13 @@ foreach my $optimization (@optimizations) {
         $cmd = "$PERL -Iblib/arch -Iblib/lib script/cc_harness -q $c_file -o $bin_file 2>&1";
         diag $cmd if $ENV{TEST_VERBOSE};
         my $compile_output = `$cmd`;
-        note $compile_output if ($compile_output);
+        note $compile_output if $compile_output;
 
         # Validate compiles
         ok( -x $bin_file, "$bin_file is compiled and ready to run." );
 
         if ( !-x $bin_file ) {
-            unlink $c_file, $bin_file;
+            unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
             skip( "Can't test further due to failure to create a binary file.", 8 );
         }
 
@@ -137,8 +150,8 @@ foreach my $optimization (@optimizations) {
         ok( !scalar @{ $parser->{failed} }, "Test results:" );
         print "    $_\n" foreach ( split( "\n", $out ) );
 
-        if (!ok( !scalar @{ $parser->{failed} }, "No test failures" )) {
-          note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
+        if (!ok( !scalar @{ $parser->{failed} }, "No test failures $optimization" )) {
+          note( "Failed $optimization tests: " . join( ", ", @{ $parser->{failed} } ) );
           $ENV{BC_DEVELOPING} = 1; # keep temp files
         }
 
@@ -152,11 +165,12 @@ foreach my $optimization (@optimizations) {
         }
 
         local $TODO = "tests unexpectedly passing" if scalar @{ $parser->{todo_passed} };
-        if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )) {
+        if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed $optimization" )) {
           note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
           $ENV{BC_DEVELOPING} = 1; # keep temp files
         }
         $TODO = '';
     }
+  }
+  unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
 }
-unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};

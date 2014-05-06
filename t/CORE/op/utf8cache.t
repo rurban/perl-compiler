@@ -1,7 +1,7 @@
 #!./perl -w
 # Test for malfunctions of utf8 cache
 
-BEGIN {
+INIT {
     unshift @INC, 't/CORE/lib';
     require 't/CORE/test.pl';
 }

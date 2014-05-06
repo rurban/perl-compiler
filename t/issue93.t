@@ -44,7 +44,7 @@ sub test3 {
   my $script = shift;
   my $cmt = shift;
   my $todobc = (($name eq 'ccode93iw' and $] < 5.014)?"TODO needs 5.14 ":"");
-  $todobc = 'TODO 5.18thr ' if $] >= 5.018 and $Config{useithreads};
+  $todobc = 'TODO 5.18 ' if $] >= 5.018;
   plctestok($i*3+1, $name, $script,$todobc."BC $cmt");
   ctestok($i*3+2, "C", $name, $script, "C $cmt");
   ctestok($i*3+3, "CC", $name, $script, "CC $cmt");

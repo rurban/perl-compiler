@@ -12,8 +12,9 @@ my $exp = "ok - dynamic destruction
 ok - lexical destruction
 ok - package destruction";
 
-my $todo = $] >= 5.018 ? "" : "TODO ";
-my $todo280 = "TODO ";
+use B::C ();
+my $todo = ($] >= 5.018 or $B::C::VERSION ge "1.45_01") ? "" : "TODO ";
+my $todo280 = ($B::C::VERSION ge "1.45_08") ? "" : "TODO "; #-O3 fixed with 49bd030
 my $script197 = <<'EOF';
 package FINALE;
 {
@@ -28,7 +29,7 @@ DESTROY {
 EOF
 
 ctest(1,$exp,'C,-O2','ccode197i',$script197,$todo.'missing package DESTROY #197');
-ctest(2,$exp,'C,-O3','ccode197i',$script197,$todo280.'missing -O3 package DESTROY #280');
+ctest(2,$exp,'C,-O3','ccode197i',$script197,$todo280.'missing -O3 package DESTROY #197, #280');
 
 $exp = $] > 5.013005 ? "RUN MyKooh DESTRUCT OurKooh" : " MyKooh  OurKooh";
 

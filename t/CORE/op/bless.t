@@ -1,6 +1,6 @@
 #!./perl
 
-BEGIN {
+INIT {
     require 't/CORE/test.pl';
 }
 
@@ -99,17 +99,17 @@ expected(bless([]), 'main', "ARRAY");
 
     $m = bless [];
     expected($m, 'main', "ARRAY");
-    is (scalar @w, 0);
+    is (scalar @w, 0, "array 0");
 
     @w = ();
     $m = bless [], '';
     expected($m, 'main', "ARRAY");
-    is (scalar @w, 1);
+    is (scalar @w, 1, "array 1");
 
     @w = ();
     $m = bless [], undef;
     expected($m, 'main', "ARRAY");
-    is (scalar @w, 2);
+    is (scalar @w, 2, "array 2");
 }
 
 # class is a ref

@@ -1,29 +1,35 @@
 #!/bin/bash
-# usage: t/fast-testing.sh [--coproc]
+# usage: t/fast-testing.sh [--watch]
 
 test -f Makefile || perl Makefile.PL
 V=`perl -ane'print $F[2] if /^VERSION =/' Makefile`
 R=`git log -1 --pretty=format:"%h"`
 lock=fast-testing.lock
+w=
 echo $$ > $lock
 trap "rm $lock; exit 255" SIGINT SIGTERM
 
 # need to kill rogue processes since we cannot use run_cmd. it disturbs stdout/err order #
 # bash-4 only
-if [ x$1 = x--coproc ]; then
-  coproc (while true; do
-    sleep 1;
-    code=`ps axw|egrep ' \./(ccode|cccode|a |aa |a.out|perldoc)'|grep -v grep`
-    pid=`echo $code|perl -ane'print $F[0]'`
-    test -n "$pid" && (echo $code; sleep 1s; kill $pid 2>/dev/null);
-    sleep 5; done)
-  w=${COPROC_PID}
+if [ x$1 = x--watch ]; then
+    if ((BASH_VERSINFO[0] < 4)); then
+        echo "only bash-3: no coproc watchdog processkiller"
+    else
+        #TODO check our tty
+        eval "coproc (while true; do
+sleep 1;
+code=`ps axw|egrep ' \./(ccode|cccode|a |aa |a.out|perldoc)'|grep -v grep`
+pid=`echo $code|perl -ane'print $F[0]'`
+test -n \"$pid\" && (echo $code; sleep 1s; kill $pid 2>/dev/null);
+sleep 5; done)"
+        w=${COPROC_PID}
+    fi
 fi
 
 # test locally, ~5:45hr (17*20min)
 PERLCC_TIMEOUT=15 NO_AUTHOR=1 perlall -mq make '-S prove -b -j4'
 
-if [ x$1 = x--coproc ]; then
+if [ x$1 = x--watch ]; then
   kill -9 $w
 fi
 
@@ -41,4 +47,3 @@ if [ -n "$logs" ]; then
     cp status.$V-$R $rdir/
 fi
 rm $lock
-

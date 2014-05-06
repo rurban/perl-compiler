@@ -57,9 +57,17 @@ EOC
 
 $prog =~ s/\@\@\@\@/$filename/;
 
-# perlcc issue 226 - https://code.google.com/p/perl-compiler/issues/detail?id=226
-fresh_perl_like($prog, qr/No dbm on this machine/, {},
-		'implicit require fails');
+# perlcc wontfix issue 226 - https://code.google.com/p/perl-compiler/issues/detail?id=226
+# dbmopen is resolved at compile-time (require "AnyDBM_File.pm"), not run-time
+# So this dbmopen error - can("TIEHASH") - does not trigger.
+SKIP: {
+  if (exists $::{'B::'}{'C::'}) { # test if runnning compiled
+    skip "wontfix issue 226 in perlcc";
+  } else {
+    fresh_perl_like($prog, qr/No dbm on this machine/, {},
+                    'implicit require fails');
+  }
+}
 fresh_perl_like('delete $::{"AnyDBM_File::"}; ' . $prog,
 		qr/No dbm on this machine/, {},
 		'implicit require and no stash fails');

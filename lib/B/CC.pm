@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
-#      Copyright (c) 2012 cPanel Inc
+#      Copyright (c) 2012-2014 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -283,7 +283,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.14';
+our $VERSION = '1.15';
 
 # Start registering the L<types> namespaces.
 $main::int::B_CC = $main::num::B_CC = $main::str::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
@@ -649,6 +649,7 @@ PP(pp_aelem_nolval)
     print "\nstatic\nCCPP($name)\n{\n";
     my ( $type, $varlist, $line );
     while ( ( $type, $varlist ) = each %$declare ) {
+      $varlist = $declare->{$type};
       print "\t$type ", join( ", ", @$varlist ), ";\n";
     }
     foreach $line (@$runtime) {
@@ -705,7 +706,8 @@ sub cc_queue {
     push( @cc_todo, [ $name, $root, $start, ( @pl ? @pl : @padlist ) ] );
   }
   my $fakeop_next = 0;
-  if ($name =~ /^pp_sub_IO_.*DESTROY$/) {
+  if ($name =~ /^pp_sub_.*DESTROY$/) {
+    # curse in sv_clean_objs() checks for ->op_next->op_type
     $fakeop_next = $start->next->save;
   }
   my $fakeop = B::FAKEOP->new( "next" => $fakeop_next, sibling => 0, ppaddr => $name,
@@ -994,7 +996,7 @@ sub error {
 
 # run-time eval is too late for attrs being checked by perlcore. BEGIN does not help.
 # use types is the right approach. But until types is fixed we use this hack.
-# Note that we also need a new CHECK_SCALAR_ATTRIBUTES hook, starting with v5.18.
+# Note that we also need a new CHECK_SCALAR_ATTRIBUTES hook, starting with v5.22.
 sub init_type_attrs {
   eval q[
 
@@ -1513,6 +1515,19 @@ sub pp_nextstate {
   }
   $curcop->load($op);
   loadop($op);
+  #testcc 48: protect CopFILE_free and CopSTASH_free in END block (#296)
+  if ($ppname =~ /^pp_sub_END(_\d+)?$/ and $ITHREADS) {
+    runtime("#ifdef USE_ITHREADS",
+            "CopFILE((COP*)PL_op) = NULL;");
+    if ($] >= 5.018) {
+      runtime("CopSTASH_set((COP*)PL_op, NULL);");
+    } elsif ($] >= 5.016 and $] <= 5.017) {
+      runtime("CopSTASHPV_set((COP*)PL_op, NULL, 0);");
+    } else {
+      runtime("CopSTASHPV_set((COP*)PL_op, NULL);");
+    }
+    runtime("#endif");
+  }
   @stack = ();
   debug( sprintf( "%s:%d\n", $op->file, $op->line ) ) if $debug{lineno};
   debug( sprintf( "CopLABEL %s\n", $op->label ) ) if $op->label and $debug{cxstack};
@@ -3121,9 +3136,21 @@ sub cc_recurse {
       warn "cc $ccinfo->[0] skipped (debugging)\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo skipped (debugging)\n" if $debug{queue};
     }
-    elsif ($cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
+    elsif (exists $cc_pp_sub{$ccinfo->[0]}) { # skip duplicates
       warn "cc $ccinfo->[0] already defined\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo already defined\n" if $debug{queue};
+      while (exists $cc_pp_sub{$ccinfo->[0]}) {
+        if ($ccinfo->[0] =~ /^(pp_sub_.*_)(\d*)$/) {
+          my $s = $2;
+          $s++;
+          $ccinfo->[0] = $1 . $s;
+        } else {
+          $ccinfo->[0] .= '_0';
+        }
+      }
+      warn "cc renamed to $ccinfo->[0]\n" if $verbose;
+      cc(@$ccinfo);
+      $cc_pp_sub{$ccinfo->[0]}++;
     } else {
       debug "cc(ccinfo): @$ccinfo\n" if $debug{queue};
       cc(@$ccinfo);
@@ -3266,6 +3293,7 @@ sub import {
   }
   $B::C::fold     = 0 if $] >= 5.013009; # utf8::Cased tables
   $B::C::warnings = 0 if $] >= 5.013005; # Carp warnings categories and B
+  $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
   $opt_taint = 1;
   $opt_magic = 1;      # only makes sense with -fno-magic
   $opt_autovivify = 1; # only makes sense with -fno-autovivify
@@ -3333,7 +3361,6 @@ OPTION:
       foreach my $ref ( values %optimise ) {
         $$ref = 0;
       }
-      $B::C::destruct = 0 unless $] < 5.008; # fast_destruct
       if ($arg >= 2) {
         $freetmps_each_loop = 1;
         if (!$ITHREADS) {
@@ -3447,6 +3474,7 @@ OPTION:
     no strict 'refs';
     ${"B::C::$_"} = 1 unless $c_optimise{$_};
   }
+  $B::C::destruct = 0 unless $c_optimise{destruct} and $] > 5.008;
   $B::C::stash = 0 unless $c_optimise{stash};
   if (!$B::C::Flags::have_independent_comalloc) {
     $B::C::av_init = 1 unless $c_optimise{av_init};

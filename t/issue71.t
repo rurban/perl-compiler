@@ -45,6 +45,7 @@ EOF
 # These 2 tests failed until 1.35 because of stale QR Regexp (see test 1), 
 # issue71 (const destruction) and issue76 (invalid cop_warnings).
 # rx: (?^i:^(?:US-?)ascii$)"
+# 5.8 failed until 1.45_07-3a25dfd at SvTEMP_off(lexwarn0) for lexwarn0=0 instead of Nullsv
 use B::C;
 ctestok(2, "C", "ccode71i", $script,
 	($B::C::VERSION lt '1.35' or ($] > 5.008005 and $] < 5.011))

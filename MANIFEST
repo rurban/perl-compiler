@@ -191,7 +191,7 @@ t/C-COMPILED/CORE--io--read.t
 t/C-COMPILED/CORE--io--say.t
 t/C-COMPILED/CORE--io--tell.t
 t/C-COMPILED/CORE--io--through.t
-t/C-COMPILED/CORE--io--utf8==BADPLAN-255.t
+t/C-COMPILED/CORE--io--utf8==BADTEST-255.t
 t/C-COMPILED/CORE--op--64bitint.t
 t/C-COMPILED/CORE--op--alarm.t
 t/C-COMPILED/CORE--op--anonsub.t
@@ -220,7 +220,7 @@ t/C-COMPILED/CORE--op--cond.t
 t/C-COMPILED/CORE--op--context.t
 t/C-COMPILED/CORE--op--cproto.t
 t/C-COMPILED/CORE--op--crypt.t
-t/C-COMPILED/CORE--op--dbm==BADTEST-208-226.t
+t/C-COMPILED/CORE--op--dbm.t
 t/C-COMPILED/CORE--op--defins.t
 t/C-COMPILED/CORE--op--delete.t
 t/C-COMPILED/CORE--op--die.t
@@ -276,7 +276,7 @@ t/C-COMPILED/CORE--op--loopctl.t
 t/C-COMPILED/CORE--op--lop.t
 t/C-COMPILED/CORE--op--magic-27839==BC-271.t
 t/C-COMPILED/CORE--op--magic==BADTEST-281.t
-t/C-COMPILED/CORE--op--magic_phase==BADPLAN-208.t
+t/C-COMPILED/CORE--op--magic_phase.t
 t/C-COMPILED/CORE--op--method.t
 t/C-COMPILED/CORE--op--mkdir.t
 t/C-COMPILED/CORE--op--my.t
@@ -307,7 +307,7 @@ t/C-COMPILED/CORE--op--read.t
 t/C-COMPILED/CORE--op--readdir.t
 t/C-COMPILED/CORE--op--readline.t
 t/C-COMPILED/CORE--op--recurse.t
-t/C-COMPILED/CORE--op--ref==BADPLAN-197-285-286.t
+t/C-COMPILED/CORE--op--ref==BADTEST-197-285-286.t
 t/C-COMPILED/CORE--op--repeat.t
 t/C-COMPILED/CORE--op--require_errors.t
 t/C-COMPILED/CORE--op--reset.t
@@ -360,7 +360,7 @@ t/C-COMPILED/CORE--op--ver.t
 t/C-COMPILED/CORE--op--wantarray.t
 t/C-COMPILED/CORE--op--warn.t
 t/C-COMPILED/CORE--op--while_readdir.t
-t/C-COMPILED/CORE--op--write===BADTEST-238.t
+t/C-COMPILED/CORE--op--write==BADTEST-238.t
 t/C-COMPILED/CORE--op--yadayada.t
 t/C-COMPILED/template.pl
 t/CORE/TEST
@@ -669,7 +669,10 @@ t/issue274.t
 t/issue281.t
 t/issue282.t
 t/issue29.t
+t/issue305.t
+t/issue308.t
 t/issue31.t
+t/issue312.t
 t/issue32.t
 t/issue34.t
 t/issue35.t
@@ -699,6 +702,7 @@ t/issue95.t
 t/issue96.t
 t/issue97.t
 t/issue98.t
+t/manifest.t
 t/mock
 t/modules.pm
 t/modules.t

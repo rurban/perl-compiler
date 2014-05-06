@@ -13,5 +13,5 @@ my $ITHREADS = $Config::Config{useithreads};
 use B::C ();
 my $when = "1.42_61";
 ctestok(1,'C,-O0','ccode232i','use Carp (); exit unless Carp::longmess(); print qq{ok\n}',
-      (($B::C::VERSION lt $when or ($]>=5.018 and $ITHREADS))? "TODO " : "").
+      (($B::C::VERSION lt $when) ? "TODO " : "").
       '#234 Carp::longmess with C,-O0');

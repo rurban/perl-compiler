@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 4a38d27 2014-02-08 | C 1.44: bump version
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.012005
 # path = /usr/local/bin/perl5.12.5
 # platform = linux 64bit threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder #TODO 5.12 with threads
+pass ExtUtils::CBuilder #TODO 5.12 with threads
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -78,9 +78,9 @@ pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI
-pass Tree::DAG_Node
+fail Tree::DAG_Node
 pass Path::Class
-pass Test::Warn
+fail Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.012005
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   2 /   1 (200.0%)
+# 100 / 100 modules tested with B-C-1.45_06 - perl-5.012005
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   2 /   2 (100.0%)
 # skip   0 / 100 (0.0% not installed)

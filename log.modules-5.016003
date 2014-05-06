@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 4a38d27 2014-02-08 | C 1.44: bump version
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.016003
+# 100 / 100 modules tested with B-C-1.45_06 - perl-5.016003
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   2 /   1 (200.0%)

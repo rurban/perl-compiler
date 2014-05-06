@@ -3,6 +3,7 @@
 # Fix lexical warnings: warn->sv
 use Test::More tests => 3;
 use strict;
+use Config;
 BEGIN {
   unshift @INC, 't';
   require "test.pl";
@@ -20,7 +21,8 @@ ok(1, "bytecode LEXWARN skip");
 
 use B::C;
 ctestok(2, "C", "ccode76i", $script,
-	($B::C::VERSION lt '1.36' ? "TODO " : "")."C LEXWARN implemented with B-C-1.36"
+	(($B::C::VERSION lt '1.36' or ($] =~ /^5\.010/ and $Config{useithreads})) ? "TODO " : "").
+        "C LEXWARN implemented with B-C-1.36"
        );
 
 use B::CC;

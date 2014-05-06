@@ -2,9 +2,9 @@
 
 Still missing in general are:
 
-  - global destruction (use lexicals!),
   - attribute handlers (i.e. run-time attributes)
   - compile-time perlio layers
+  - wrong @- values
 
 B::C is stable and used in production for -O0 and -O3. For bigger programs
 not all methods in certain packages or eval strings might be detected,
@@ -135,6 +135,9 @@ Fix CC
 
 DONE
 ----
+fixed with 1.46:
+  global destruction of our static objects
+
 fixed with 1.44:
   SvLEN and PV ptr for empty shared hash keys
   cop_hints to support lexical numeric hints pragmas (use bytes, use open, ...)

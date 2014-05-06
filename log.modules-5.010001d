@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 9d130d6 2014-02-09 | C: adjust defined &gv optimiziation for threads
+# B::C::VERSION = 1.45_05 d576ef0 2014-02-19 | module updates for 1.45_04 922ddb8 (-2, +2)
 # perlversion = 5.010001d
 # path = /usr/local/bin/perl5.10.1d
 # platform = linux 64bit threaded debug
@@ -49,7 +49,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-pass Attribute::Handlers
+fail Attribute::Handlers #TODO 5.10 DEBUGGING #169 early my_exit + SEGV
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.010001d
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# 100 / 100 modules tested with B-C-1.45_05 - perl-5.010001d
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)

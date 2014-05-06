@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.44 57f3ee3 2014-02-09 | 1.44 release: more log.modules updates M
+# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
 # perlversion = 5.008009
 # path = /usr/local/bin/perl5.8.9
 # platform = linux 64bit threaded
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008009
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   2 /   0 ()
+# 100 / 100 modules tested with B-C-1.45_06 - perl-5.008009
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   2 /   1 (200.0%)
 # skip   0 / 100 (0.0% not installed)

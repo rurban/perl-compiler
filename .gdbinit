@@ -1,9 +1,11 @@
 #directory /usr/src/perl/perl-5.10.1/perl-5.10.1
 #directory /usr/src/perl/perl-5.6.2
+add-auto-load-safe-path /lib/x86_64-linux-gnu/libthread_db-1.0.so
 
 set breakpoint pending on
-#break XS_B__CC__autovivification
 break __asan_report_error
+
+#break XS_B__CC__autovivification
 #break B.xs:1398
 #break B.c:2044
 #break B.xs:1858
@@ -15,6 +17,7 @@ break __asan_report_error
 #p/x sv_list[3299]
 # panic free from wrong pool 5.18.1
 #b util.c:252
+#b sv.c:3737 if (GV*)dstr->sv_u.svu_gp
 
 define run10plc
   run -Mblib -MByteLoader -Dtv bytecode10.plc
@@ -152,4 +155,16 @@ end
 document tsdump
 tsdump sv => p/x *sv; Perl_sv_dump(my_perl, sv)
 see `help sdump`
+end
+
+define addr2sym
+    if $argc == 1
+        printf "[%u]: ", $arg0
+        #whatis/ptype EXPR
+        #info frame ADDR
+        info symbol $arg0
+    end
+end
+document addr2sym
+Resolve the address (e.g. of one stack frame). Usage: addr2sym addr0
 end
