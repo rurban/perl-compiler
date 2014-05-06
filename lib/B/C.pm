@@ -5279,8 +5279,12 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         int x = 0;
 
         JMPENV_PUSH(x);
-        if (PL_endav && !PL_minus_c)
+        if (PL_endav && !PL_minus_c) {
+#if PERL_VERSION > 13
+	    PL_phase = PERL_PHASE_END;
+#endif
             call_list(PL_scopestack_ix, PL_endav);
+        }
         JMPENV_POP;
     }
     LEAVE;
@@ -5291,7 +5295,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
     my_fflush_all();
     PL_main_start = NULL;
     PL_main_cv = NULL;
-#if PERL_VERSION >= 11 && defined(PERL_PHASE_DESTRUCT)
+#if PERL_VERSION >= 13
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
 
