@@ -14,7 +14,7 @@ ok - package destruction";
 
 use B::C ();
 my $todo = ($] >= 5.018 or $B::C::VERSION ge "1.45_01") ? "" : "TODO ";
-my $todo280 = ($B::C::VERSION ge "1.45_03" and $] < 5.014) ? "" : "TODO ";
+my $todo280 = ($B::C::VERSION ge "1.45_08") ? "" : "TODO "; #-O3 fixed with 49bd030
 my $script197 = <<'EOF';
 package FINALE;
 {
