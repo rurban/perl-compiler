@@ -3460,13 +3460,16 @@ sub B::CV::save {
 	$svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
       }
     } else { # 5.10-5.13
+      # Note: GvFORM ends also here. #149 (B::FM), t/testc.sh -O3 -DGCF,-v 149
+      my $depth = ref($cv) eq 'B::CV' ? $cv->DEPTH : 0;
+      my $outside_seq = ref($cv) eq 'B::CV' ? $cv->OUTSIDE_SEQ : '0'; # XXX? #238
       my $xpvc = sprintf
 	("{%d}, %u, %u, {%s}, {%s}, %s,"
 	 ." %s, {%s}, {s\\_%x}, %s, %s, %s,"
 	 ." (CV*)%s, %s, 0x%x",
 	 0, # GvSTASH later. test 29 or Test::Harness
 	 $cur, $len,
-	 $cv->DEPTH,
+	 $depth,
 	 "NULL", "Nullhv", #MAGIC + STASH later
 	 "Nullhv",#CvSTASH later
 	 $startfield,
@@ -3475,7 +3478,7 @@ sub B::CV::save {
 	 "NULL", #cv_file later (now a HEK)
 	 $padlistsym,
 	 $xcv_outside, #if main_cv set later
-	 $cv->OUTSIDE_SEQ,
+	 $outside_seq,
 	 $CvFLAGS
 	);
       if (!$new_cv_fw) {
