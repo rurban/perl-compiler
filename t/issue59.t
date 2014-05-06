@@ -42,5 +42,5 @@ SKIP: {
   #$cmt = "TODO >=5.16" if $] >= 5.016; # fixed with 1.45_04
   $cmt = "TODO <5.10"   if $] < 5.010;
   ctestok(2, "C", $name, $script, "C $name $cmt");
-  ctestok(3, "CC", $name, $script, "TODO CC $name $cmt");
+  ctestok(3, "CC", $name, $script, "CC $name $cmt");
 }
