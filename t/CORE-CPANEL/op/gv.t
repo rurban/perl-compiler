@@ -95,10 +95,9 @@ is(ref(\$baa), 'GLOB');
 #        fact that %X::Y:: is stored in %X:: isn't documented.
 #        (I hope.)
 
-# perlcc issue 191 - https://code.google.com/p/perl-compiler/issues/detail?id=191
 { package Foo::Bar; no warnings 'once'; $test=1; }
-ok(exists $Foo::{'Bar::'}, '$Foo::{Bar::} exists');
-is($Foo::{'Bar::'}, '*Foo::Bar::', '$Foo::{Bar::}');
+ok(exists $Foo::{'Bar::'});
+is($Foo::{'Bar::'}, '*Foo::Bar::');
 
 
 # test undef operator clearing out entire glob
@@ -107,8 +106,8 @@ $foo = 'stuff';
 %foo = qw(even more random stuff);
 undef *foo;
 is ($foo, undef);
-is (scalar @foo, 0, 'scalar @foo');
-is (scalar %foo, 0, 'scalar %foo');
+is (scalar @foo, 0);
+is (scalar %foo, 0);
 
 {
     # test warnings from assignment of undef to glob
@@ -267,7 +266,7 @@ is($j[0], 1);
     is ($w, '');
     sub abc3 ();
     *abc3 = sub { };
-    like ($w, qr/Prototype mismatch/, 'Prototype mismatch');
+    like ($w, qr/Prototype mismatch/);
 }
 
 {
@@ -276,7 +275,7 @@ is($j[0], 1);
     my $x = "not ";
     $x  = undef;
     $x .= <DATA>;
-    is ($x, "Rules\n", 'Rules');
+    is ($x, "Rules\n");
 }
 
 {
@@ -286,7 +285,7 @@ is($j[0], 1);
     my %v;
     sub f { $_[0] = 0; $_[0] = "a"; $_[0] = *DATA }
     f($v{v});
-    is ($v{v}, '*main::DATA', '*main::DATA');
+    is ($v{v}, '*main::DATA');
     is (ref\$v{v}, 'GLOB', 'lvalue assignment preserves globs');
     my $x = readline $v{v};
     is ($x, "perl\n");
@@ -647,7 +646,6 @@ foreach my $type (qw(integer number string)) {
 ok(exists($RT72740a::{s1}), "RT72740a::s1 exists");
 ok(!exists($RT72740a::{s2}), "RT72740a::s2 does not exist");
 ok(exists($RT72740a::{s3}), "RT72740a::s3 exists");
-# perlcc issue 191 - https://code.google.com/p/perl-compiler/issues/detail?id=191
 ok(exists($RT72740a::{s4}), "RT72740a::s4 exists");
 is(RT72740a::s1(), "RT72740b::s2", "RT72740::s1 parsed correctly");
 is(RT72740a::s3(), "RT72740b::s4", "RT72740::s3 parsed correctly");
@@ -699,7 +697,6 @@ EOF
 
 # [perl #77362] various bugs related to globs as PVLVs
 {
- # perlcc issue 192 - https://code.google.com/p/perl-compiler/issues/detail?id=192
  no warnings qw 'once void';
  my %h; # We pass a key of this hash to the subroutine to get a PVLV.
  sub { for(shift) {
@@ -749,7 +746,7 @@ EOF
   # glob having been removed from the symbol table, so a stringified form
   # of it does not work. This checks that sv_2io does not stringify a PVLV.
   $_ = *quin;
-  open *quin, "test.pl"; # test.pl is as good a file as any
+  open *quin, "t/CORE-CPANEL/test.pl"; # test.pl is as good a file as any
   delete $::{quin};
   ok eval { open my $zow, "<&", $_ }, 'PVLV: sv_2io stringifieth not'
    or diag $@;
@@ -781,7 +778,7 @@ EOF
    'PVLV: coderef assignment when the glob is detached from the symtab'
     or diag $@;
 
-  {
+SKIP: {
     # open should accept a PVLV as its first argument
     $_ = *hon;
     ok eval { open $_,'<', \my $thlext }, 'PVLV can be the first arg to open'
@@ -798,7 +795,7 @@ EOF
   my $pass;
   ok
     eval {
-     open my $quile, "<", 'test.pl';
+     open my $quile, "<", 't/CORE-CPANEL/test.pl';
      $_ = *$quile;
      $pass = -T $_;
      1
