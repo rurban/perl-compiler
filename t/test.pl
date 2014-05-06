@@ -1024,7 +1024,7 @@ sub todo_tests_default {
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
-	push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
+	#push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
 	push @todo, (10,16,50) if $what eq 'cc_o2';
 	push @todo, (29)    if $] < 5.008008;
 	# solaris also. I suspected nvx<=>cop_seq_*
