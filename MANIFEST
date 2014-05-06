@@ -220,7 +220,7 @@ t/C-COMPILED/CORE--op--cond.t
 t/C-COMPILED/CORE--op--context.t
 t/C-COMPILED/CORE--op--cproto.t
 t/C-COMPILED/CORE--op--crypt.t
-t/C-COMPILED/CORE--op--dbm==BADTEST-208-226.t
+t/C-COMPILED/CORE--op--dbm.t
 t/C-COMPILED/CORE--op--defins.t
 t/C-COMPILED/CORE--op--delete.t
 t/C-COMPILED/CORE--op--die.t

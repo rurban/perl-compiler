@@ -6824,7 +6824,7 @@ OPTION:
     elsif ( $opt eq "u" ) {
       $arg ||= shift @options;
       if ($arg =~ /\.p[lm]$/) {
-	eval "require(\"$arg\");";  # path as string
+	eval "require(\"$arg\");"; # path as string
       } else {
 	eval "require $arg;";      # package as bareword with ::
       }
