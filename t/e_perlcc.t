@@ -35,7 +35,7 @@ my @c = <*.c>;
 is(`$perlcc -r -e $e $devnull`, "ok", "-r -e"); #7
 my @c1 = <*.c>;
 if ($ENV{HARNESS_ACTIVE}) {
-  is(1, "skip temp cfile test on parallel tests"); #8
+  ok(1, "skip temp cfile test on parallel tests"); #8
 } else {
   is(length @c, length @c1, "no temp cfile");
 }
