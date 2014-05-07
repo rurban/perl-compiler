@@ -380,6 +380,7 @@ sub compile_byte {
 	_die("$Input did not compile $errcode:\n@$error_r\n");
     } else {
 	my @error = grep { !/^$Input syntax OK$/o } @$error_r;
+	@error = grep { !/^No package specified for compilation, assuming main::$/o } @error;
 	warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
 	warn "@error" if @error and opt('v')>4;
     }
