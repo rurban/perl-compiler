@@ -2140,6 +2140,7 @@ sub savepvn {
         $cur += 2;
       }
       warn sprintf( "Saving PV %s:%d to %s\n", $cstr, $cur, $dest ) if $debug{sv};
+      $cur = 0 if $cstr eq "" and $cur == 7; # 317
       push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
     }
   }
