@@ -3717,6 +3717,9 @@ sub B::GV::save {
   #  $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
   #  return $sym;
   #}
+  if ($fullname =~ /^main::STDOUT$/i and $PERL56) {
+    return 'Nullgv'; # perl.c: setdefout(Nullgv)
+  }
   my $core_syms = {ENV    => 'PL_envgv',
                    ARGV   => 'PL_argvgv',
                    INC    => 'PL_incgv',
