@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=200
-# utf8 hash keys
+# utf8 hash keys. still broken compile-time on 5.8
 use strict;
 BEGIN {
   unshift @INC, 't';
@@ -22,6 +22,7 @@ sub test3 {
   my $todo = "";
   $todo = 'TODO ' if $name eq 'ccode200i_c' or ($] >= 5.018 and $] < 5.019005 and $Config{useithreads});
   my $todoc = $] < 5.010 ? "TODO 5.8 " : "";
+  $todoc = "" if $name eq 'ccode200i_r';
   plctestok($i*3+1, $name, $script, $todo." BC $cmt");
   ctestok($i*3+2, "C", $name, $script, $todoc."C $cmt");
   ctestok($i*3+3, "CC", $name, $script, $todoc."CC $cmt");
