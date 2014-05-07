@@ -1057,8 +1057,8 @@ tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->se
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
 tests[312]='require Scalar::Util; eval "require List::Util"; print "ok"'
-tests[315]='open FOO, ">", "ccode315.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode315.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode315.tmp"'
-tests[3151]='open FOO, ">", "ccode315.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode315.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode315.tmp"'
+tests[314]='open FOO, ">", "ccode315.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode315.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode315.tmp"'
+tests[3141]='open FOO, ">", "ccode315.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode315.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode315.tmp"'
 
 init
 
