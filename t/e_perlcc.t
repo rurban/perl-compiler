@@ -34,7 +34,11 @@ cleanup;
 my @c = <*.c>;
 is(`$perlcc -r -e $e $devnull`, "ok", "-r -e"); #7
 my @c1 = <*.c>;
-is(length @c, length @c1, "no temp cfile");
+if ($ENV{HARNESS_ACTIVE}) {
+  ok(1, "skip temp cfile test on parallel tests"); #8
+} else {
+  is(length @c, length @c1, "no temp cfile");
+}
 ok(-e $a_exe, "keep default executable"); #9
 cleanup;
 
@@ -145,6 +149,7 @@ isnt(`$perlcc --Wb=-fno-fold,-v -o pcc $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
 TODO: {
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
+  local $TODO = "5.6 BC does not understand -DG yet" if $] < 5.007;
   like(`$perlcc -B --Wb=-DG,-v -o pcc $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
 }
@@ -198,8 +203,12 @@ cleanup;
 
 is(`$perlcc -B -opcc.plc -e$e $devnull`, "", "-B -o -e");
 ok(-e 'pcc.plc', "pcc.plc");
-TODO: {
-  local $TODO = 'yet unsupported 5.6' if $] < 5.007;
+if ($] < 5.007) {
+ TODO: {
+    local $TODO = 'yet unsupported';
+    is(`$X -MByteLoader pcc.plc`, "ok", "executable 5.6 plc"); #76
+  }
+} else {
   is(`$X -Iblib/arch -Iblib/lib pcc.plc`, "ok", "executable plc"); #76
 }
 cleanup;

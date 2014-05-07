@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_08';
+our $VERSION = '1.45_09';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -3717,6 +3717,9 @@ sub B::GV::save {
   #  $init->add(qq[$sym = (GV*)&PL_sv_undef;]);
   #  return $sym;
   #}
+  if ($fullname =~ /^main::STDOUT$/i and $PERL56) {
+    return 'Nullgv'; # perl.c: setdefout(Nullgv)
+  }
   my $core_syms = {ENV    => 'PL_envgv',
                    ARGV   => 'PL_argvgv',
                    INC    => 'PL_incgv',
@@ -3914,6 +3917,11 @@ sub B::GV::save {
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       } else {
 	$gvsv->save($fullname); #even NULL save it, because of gp_free nonsense
+        # we need sv magic for the core_svs (PL_rs -> gv) (#314)
+        if (exists $core_svs->{$gvname} and $gvname ne "\\") { # PL_ors_sv = NULL
+          $gvsv->save_magic($fullname) if ref($gvsv) eq 'B::PVMG';
+          $init->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
+        }
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       }
       if ($fullname eq 'main::$') { # $$ = PerlProc_getpid() issue #108
