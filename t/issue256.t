@@ -10,7 +10,7 @@ my $pv_vars = {';' => "\34",
                '"' => " ",
                #"\\" => undef,
                #',' => undef,
-               '/' => "/n",
+               #'/' => "/n",
                '^A'  => undef,
                '^L'  => "\f",
                ':'  => " \n-",
@@ -24,7 +24,7 @@ my $iv_vars = {'^H' => 0,
                #'{^UNICODE}' => 0,
                #'{^UTF8LOCALE}' => 1
                };
-use Test::More tests => 5;
+use Test::More tests => 7;
 
 my $script = '';
 $script .= sprintf('BEGIN{ $%s = "a"} $%s = "a"; print qq{not ok - \$%s = $%s\n} if $%s ne "a";'."\n", 
@@ -52,6 +52,14 @@ if ($] >= 5.010001) {
   ok 1, "skip -CL with <5.10.1";
 }
 
-ctestok(5,'C,-O3','ccode306i',<<'EOF', '#306 localize $/');
+ctestok(5,'C,-O3','ccode306i',<<'EOF', '#306 localize $/'); # see also #314
 package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();
+EOF
+
+ctestok(6,'C,-O3','ccode314i',<<'EOF', '#314 localize and set $/ = "b" (sv->gv magic)');
+open FOO, ">", "ccode314.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode314.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode314.tmp";
+EOF
+
+ctestok(7,'C,-O3','ccode306i',<<'EOF', '#256 initialize $/');
+BEGIN{ $/ = "1"; } print "ok\n" if $/ == "1"
 EOF

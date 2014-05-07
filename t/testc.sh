@@ -969,6 +969,7 @@ my $lb;
 { use bytes; $lb = length($a); }
 print( ( $l == 1 && $lb == 2 ) ? "ok\n" : "l -> $l ; lb -> $lb\n" );'
 tests[256]='BEGIN{ $| = 1; } print "ok\n" if $| == 1'
+tests[2561]='BEGIN{ $/ = "1"; } print "ok\n" if $/ == "1"'
 tests[259]='use JSON::XS; print encode_json([\0])'
 result[259]='[false]'
 tests[260]='sub FETCH_SCALAR_ATTRIBUTES {''} sub MODIFY_SCALAR_ATTRIBUTES {''}; my $a :x=1; print $a'
@@ -1057,8 +1058,8 @@ tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->se
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
 tests[312]='require Scalar::Util; eval "require List::Util"; print "ok"'
-tests[314]='open FOO, ">", "ccode315.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode315.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode315.tmp"'
-tests[3141]='open FOO, ">", "ccode315.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode315.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode315.tmp"'
+tests[314]='open FOO, ">", "ccode314.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode314.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode314.tmp"'
+tests[3141]='open FOO, ">", "ccode3141.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode3141.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode3141.tmp"'
 
 init
 
