@@ -3199,6 +3199,14 @@ sub B::CV::save {
     # already polluted. See issue 61 and force_heavy()
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
   }
+
+  if ($fullname eq 'IO::Socket::SSL::SSL_Context::new') {
+    if ($IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984') {
+      warn "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n".
+           "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]\n";
+    }
+  }
+
   if (!$$root && !$cvxsub and $cvstashname =~ /^(bytes|utf8)$/) { # no autoload, force compile-time
     force_heavy($cvstashname);
     $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
