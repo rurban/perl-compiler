@@ -1055,8 +1055,7 @@ result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
-tests[310]='#TODO Warning: unable to close filehandle DATA properly
-package foo;
+tests[310]='package foo;
 sub dada { my $line = <DATA> }
 print dada;
 __DATA__

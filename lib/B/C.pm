@@ -4106,8 +4106,6 @@ sub B::GV::save {
       my $gvio = $gv->IO;
       if ( $$gvio && $savefields & Save_IO ) {
 	warn "GV::save GvIO(*$fullname)...\n" if $debug{gv};
-	$gvio->save($fullname);
-	$init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	if ( $fullname =~ m/::DATA$/ &&
 	     ( $fullname eq 'main::DATA' or $B::C::save_data_fh) ) # -O2 or 5.8
 	{
@@ -4115,10 +4113,17 @@ sub B::GV::save {
 	  my $fh = *{$fullname}{IO};
 	  use strict 'refs';
 	  warn "GV::save_data $sym, $fullname ...\n" if $debug{gv};
+          $gvio->save($fullname, 'is_DATA');
+          $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	  $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
 	} elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
+          $gvio->save($fullname, 'is_DATA');
+          $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	  warn "Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.\n";
-	}
+	} else {
+          $gvio->save($fullname);
+          $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
+        }
 	warn "GV::save GvIO(*$fullname) done\n" if $debug{gv};
       }
       $init->add("");
@@ -4583,7 +4588,7 @@ sub B::IO::save_data {
 }
 
 sub B::IO::save {
-  my ($io, $fullname) = @_;
+  my ($io, $fullname, $is_DATA) = @_;
   my $sym = objsym($io);
   return $sym if defined $sym;
   my $pv = $io->PV;
@@ -4699,7 +4704,7 @@ sub B::IO::save {
                        cstring( $fsym ), length $fsym)) if $fsym;
   }
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
-  if (!$PERL56 and $fullname ne 'main::DATA') { # PerlIO
+  if (!$PERL56 and !$is_DATA) { # PerlIO
     # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
     my $perlio_func;
     # Note: all single-direction fp use IFP, just bi-directional pipes and
@@ -4752,6 +4757,7 @@ sub B::IO::save {
 			    $fd<3?'':'/*',$fd,cstring($mode),$fd<3?'':'*/'));
       }
       elsif ($iotype =~ /[<#\+]/) {
+        # skips warning if it's one of our PerlIO::scalar __DATA__ handles
 	warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"
 	  if $fd >= 3 or $verbose; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
