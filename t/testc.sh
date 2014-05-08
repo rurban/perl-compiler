@@ -808,8 +808,7 @@ $str =~ /^[ET1]/i;
 }'
 result[207]='ok 1
 ok 2'
-tests[208]='#TODO 208 our refcount
-sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $my =bless {}, MyKooh;
+tests[208]='sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $my =bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $our=bless {}, OurKooh;'
 if [[ `$PERL -e'print (($] < 5.014)?0:1)'` -gt 0 ]]; then
   result[208]='RUN MyKooh DESTRUCT OurKooh'
@@ -892,8 +891,7 @@ $test
 }
 f("");
 '
-tests[239]='#TODO
-my $x="1";
+tests[239]='my $x="1";
 format STDOUT =
 ok @<<<<<<<
 $x
