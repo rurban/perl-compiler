@@ -347,7 +347,7 @@ t/C-COMPILED/CORE--op--time_loop.t
 t/C-COMPILED/CORE--op--tr.t
 t/C-COMPILED/CORE--op--turkish.t
 t/C-COMPILED/CORE--op--undef.t
-t/C-COMPILED/CORE--op--universal==BADTEST-275.t
+t/C-COMPILED/CORE--op--universal==BADTEST-299.t
 t/C-COMPILED/CORE--op--unshift.t
 t/C-COMPILED/CORE--op--upgrade.t
 t/C-COMPILED/CORE--op--utf8cache.t
