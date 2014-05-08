@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_09';
+our $VERSION = '1.45_10';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1560,6 +1560,7 @@ sub B::SVOP::save {
   } else {
     my $sv    = $op->sv;
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
+    warn "Error: SVOP: ".$op->name." $sv $svsym" if $svsym =~ /^\(SV\*\)lexwarn/; #322
   }
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_or_padop_pv($op), nextcop($op));
@@ -1654,8 +1655,8 @@ sub B::COP::save {
   else {
     # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong,
     # DUP_WARNINGS copied length PVX bytes.
-    $warnings = bless $warnings, "B::LEXWARN";
-    $warn_sv = $warnings->save;
+    my $warn = bless $warnings, "B::LEXWARN";
+    $warn_sv = $warn->save;
     my $ix = $copsect->index + 1;
     # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
@@ -2140,6 +2141,7 @@ sub savepvn {
         $cur += 2;
       }
       warn sprintf( "Saving PV %s:%d to %s\n", $cstr, $cur, $dest ) if $debug{sv};
+      $cur = 0 if $cstr eq "" and $cur == 7; # 317
       push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
     }
   }
@@ -2446,11 +2448,8 @@ sub lexwarnsym {
 @B::LEXWARN::ISA = qw(B::PV B::IV);
 sub B::LEXWARN::save {
   my ($sv, $fullname) = @_;
-  my $sym = objsym($sv);
-  return $sym if defined $sym;
   my $pv = $] >= 5.008009 ? $sv->PV : $sv->IV;
-  my $ivsym = lexwarnsym($pv); # look for shared const int's
-  return savesym($sv, $ivsym);
+  return lexwarnsym($pv); # look for shared const int's
 }
 
 # post 5.11: When called from save_rv not from PMOP::save precomp
@@ -2529,7 +2528,8 @@ sub B::PVMG::save {
     # Detect ptr to extern symbol in shared library and remap it in init2
     # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
     # svop const or pad OBJECT,IOK
-    if ($fullname && $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/
+    if ($fullname
+        and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/
         and $ivx =~ /U?L+$/
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
@@ -3198,6 +3198,14 @@ sub B::CV::save {
     # already polluted. See issue 61 and force_heavy()
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
   }
+
+  if ($fullname eq 'IO::Socket::SSL::SSL_Context::new') {
+    if ($IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984') {
+      warn "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n".
+           "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]\n";
+    }
+  }
+
   if (!$$root && !$cvxsub and $cvstashname =~ /^(bytes|utf8)$/) { # no autoload, force compile-time
     force_heavy($cvstashname);
     $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
@@ -3918,9 +3926,13 @@ sub B::GV::save {
       } else {
 	$gvsv->save($fullname); #even NULL save it, because of gp_free nonsense
         # we need sv magic for the core_svs (PL_rs -> gv) (#314)
-        if (exists $core_svs->{$gvname} and $gvname ne "\\") { # PL_ors_sv = NULL
-          $gvsv->save_magic($fullname) if ref($gvsv) eq 'B::PVMG';
-          $init->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
+        if (exists $core_svs->{$gvname}) {
+          if ($gvname eq "\\") {  # ORS special case #318 (initially NULL)
+            return $sym;
+          } else {
+            $gvsv->save_magic($fullname) if ref($gvsv) eq 'B::PVMG';
+            $init->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
+          }
         }
 	$init->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
       }
@@ -4094,8 +4106,6 @@ sub B::GV::save {
       my $gvio = $gv->IO;
       if ( $$gvio && $savefields & Save_IO ) {
 	warn "GV::save GvIO(*$fullname)...\n" if $debug{gv};
-	$gvio->save($fullname);
-	$init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	if ( $fullname =~ m/::DATA$/ &&
 	     ( $fullname eq 'main::DATA' or $B::C::save_data_fh) ) # -O2 or 5.8
 	{
@@ -4103,10 +4113,17 @@ sub B::GV::save {
 	  my $fh = *{$fullname}{IO};
 	  use strict 'refs';
 	  warn "GV::save_data $sym, $fullname ...\n" if $debug{gv};
+          $gvio->save($fullname, 'is_DATA');
+          $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	  $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
 	} elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
+          $gvio->save($fullname, 'is_DATA');
+          $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
 	  warn "Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.\n";
-	}
+	} else {
+          $gvio->save($fullname);
+          $init->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
+        }
 	warn "GV::save GvIO(*$fullname) done\n" if $debug{gv};
       }
       $init->add("");
@@ -4571,7 +4588,7 @@ sub B::IO::save_data {
 }
 
 sub B::IO::save {
-  my ($io, $fullname) = @_;
+  my ($io, $fullname, $is_DATA) = @_;
   my $sym = objsym($io);
   return $sym if defined $sym;
   my $pv = $io->PV;
@@ -4687,7 +4704,7 @@ sub B::IO::save {
                        cstring( $fsym ), length $fsym)) if $fsym;
   }
   $io->save_magic($fullname); # This handle the stash also (we need to inc the refcnt)
-  if (!$PERL56 and $fullname ne 'main::DATA') { # PerlIO
+  if (!$PERL56 and !$is_DATA) { # PerlIO
     # deal with $x = *STDIN/STDOUT/STDERR{IO} and aliases
     my $perlio_func;
     # Note: all single-direction fp use IFP, just bi-directional pipes and
@@ -4740,6 +4757,7 @@ sub B::IO::save {
 			    $fd<3?'':'/*',$fd,cstring($mode),$fd<3?'':'*/'));
       }
       elsif ($iotype =~ /[<#\+]/) {
+        # skips warning if it's one of our PerlIO::scalar __DATA__ handles
 	warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"
 	  if $fd >= 3 or $verbose; # need to setup it up before
 	$init->add("/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
@@ -5778,11 +5796,16 @@ _EOT15
     print "    PL_unicode = ${^UNICODE};\n" if ${^UNICODE};
     # nomg
     print sprintf(qq{    sv_setpv(get_sv(";", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($;)) if $; ne "\34";
-    print sprintf(qq{    sv_setpv(get_sv("\"", GV_NOTQUAL), %s);\n}, cstring($")) if $" ne " ";
+    print sprintf(qq{    sv_setpv(get_sv("\\"", GV_NOTQUAL), %s); /* \$" */\n}, cstring($")) if $" ne " ";
     # global IO vars
-    print sprintf(qq{    sv_setpv_mg(GvSVn(PL_ofsgv), %s);\n}, cstring($,)) if $,;
+    if ($PERL56) {
+      print sprintf(qq{    PL_ofs = %s; PL_ofslen = %u; /* \$, */\n}, cstring($,), length $,) if $,;
+      print sprintf(qq{    PL_ors = %s; PL_orslen = %u; /* \$\\ */\n}, cstring($\), length $\) if $\;
+    } else {
+      print sprintf(qq{    sv_setpv_mg(GvSVn(PL_ofsgv), %s); /* \$, */\n}, cstring($,)) if $,;
+      print sprintf(qq{    sv_setpv_mg(get_sv("\\\\", GV_ADD|GV_NOTQUAL), %s); /* \$\\ */\n}, cstring($\)) if $\; #ORS
+    }
     print sprintf(qq{    sv_setpv_mg(get_sv("/", GV_NOTQUAL), %s);\n}, cstring($/)) if $/ ne "\n"; #RS
-    print sprintf(qq{    sv_setpv_mg(get_sv("\\", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($\)) if $\; #ORS
     print         qq{    sv_setiv_mg(get_sv("|", GV_ADD|GV_NOTQUAL), $|);\n} if $|; #OUTPUT_AUTOFLUSH
     # global format vars
     print sprintf(qq{    sv_setpv_mg(get_sv("^A", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^A)) if $^A; #ACCUMULATOR

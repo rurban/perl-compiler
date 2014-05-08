@@ -21,6 +21,7 @@ if ($] < 5.015) {
   $todo = ($B::C::VERSION gt '1.45_01') ? "" : "TODO ";
 }
 my $todo_o3 = ($] < 5.013 and $B::C::VERSION gt '1.45_01') ? "" : "TODO ";
+$todo_o3 = "" if $B::C::VERSION gt '1.45_08';
 #if ($B::C::VERSION gt '1.45_03') { #broken with 1c5062f53 which enabled -ffast-destruct on -O0
 #  $todo = $todo_o3 = $] > 5.013 ? "TODO " : "";
 #}

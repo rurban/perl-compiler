@@ -808,8 +808,7 @@ $str =~ /^[ET1]/i;
 }'
 result[207]='ok 1
 ok 2'
-tests[208]='#TODO 208 our refcount
-sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $my =bless {}, MyKooh;
+tests[208]='sub MyKooh::DESTROY { print "${^GLOBAL_PHASE} MyKooh " }  my $my =bless {}, MyKooh;
 sub OurKooh::DESTROY { print "${^GLOBAL_PHASE} OurKooh" }our $our=bless {}, OurKooh;'
 if [[ `$PERL -e'print (($] < 5.014)?0:1)'` -gt 0 ]]; then
   result[208]='RUN MyKooh DESTRUCT OurKooh'
@@ -892,8 +891,7 @@ $test
 }
 f("");
 '
-tests[239]='#TODO
-my $x="1";
+tests[239]='my $x="1";
 format STDOUT =
 ok @<<<<<<<
 $x
@@ -1057,9 +1055,19 @@ result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
+tests[310]='package foo;
+sub dada { my $line = <DATA> }
+print dada;
+__DATA__
+ok
+b
+c
+'
 tests[312]='require Scalar::Util; eval "require List::Util"; print "ok"'
 tests[314]='open FOO, ">", "ccode314.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode314.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode314.tmp"'
 tests[3141]='open FOO, ">", "ccode3141.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode3141.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode3141.tmp"'
+tests[317]='use Net::SSLeay();use IO::Socket::SSL();Net::SSLeay::OpenSSL_add_ssl_algorithms(); my $ssl_ctx = IO::Socket::SSL::SSL_Context->new(SSL_server => 1); print q(ok)'
+tests[318]='{ local $\ = "ok" ; print "" }'
 
 init
 
