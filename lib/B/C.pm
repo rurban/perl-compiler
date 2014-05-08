@@ -1560,6 +1560,7 @@ sub B::SVOP::save {
   } else {
     my $sv    = $op->sv;
     $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
+    warn "Error: SVOP: ".$op->name." $sv $svsym" if $svsym =~ /^\(SV\*\)lexwarn/; #322
   }
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_or_padop_pv($op), nextcop($op));
@@ -1654,8 +1655,8 @@ sub B::COP::save {
   else {
     # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong,
     # DUP_WARNINGS copied length PVX bytes.
-    $warnings = bless $warnings, "B::LEXWARN";
-    $warn_sv = $warnings->save;
+    my $warn = bless $warnings, "B::LEXWARN";
+    $warn_sv = $warn->save;
     my $ix = $copsect->index + 1;
     # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
@@ -2447,11 +2448,8 @@ sub lexwarnsym {
 @B::LEXWARN::ISA = qw(B::PV B::IV);
 sub B::LEXWARN::save {
   my ($sv, $fullname) = @_;
-  my $sym = objsym($sv);
-  return $sym if defined $sym;
   my $pv = $] >= 5.008009 ? $sv->PV : $sv->IV;
-  my $ivsym = lexwarnsym($pv); # look for shared const int's
-  return savesym($sv, $ivsym);
+  return lexwarnsym($pv); # look for shared const int's
 }
 
 # post 5.11: When called from save_rv not from PMOP::save precomp
