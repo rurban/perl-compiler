@@ -44,6 +44,7 @@
 	Support GvFORM pseudo CVs (B::FM objects) on 5.10 (#149)
 	Support local $/ = "somestring" (only used empty values before) (#314),
           A regression from 1.43
+	Fix special 5.6. associations for $, $\ as they are no SVs there (#306)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)

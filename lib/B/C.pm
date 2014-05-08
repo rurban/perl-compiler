@@ -5788,11 +5788,16 @@ _EOT15
     print "    PL_unicode = ${^UNICODE};\n" if ${^UNICODE};
     # nomg
     print sprintf(qq{    sv_setpv(get_sv(";", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($;)) if $; ne "\34";
-    print sprintf(qq{    sv_setpv(get_sv("\"", GV_NOTQUAL), %s);\n}, cstring($")) if $" ne " ";
+    print sprintf(qq{    sv_setpv(get_sv("\\"", GV_NOTQUAL), %s); /* \$" */\n}, cstring($")) if $" ne " ";
     # global IO vars
-    print sprintf(qq{    sv_setpv_mg(GvSVn(PL_ofsgv), %s);\n}, cstring($,)) if $,;
+    if ($PERL56) {
+      print sprintf(qq{    PL_ofs = %s; PL_ofslen = %u; /* \$, */\n}, cstring($,), length $,) if $,;
+      print sprintf(qq{    PL_ors = %s; PL_orslen = %u; /* \$\\ */\n}, cstring($\), length $\) if $\;
+    } else {
+      print sprintf(qq{    sv_setpv_mg(GvSVn(PL_ofsgv), %s); /* \$, */\n}, cstring($,)) if $,;
+      print sprintf(qq{    sv_setpv_mg(get_sv("\\\\", GV_ADD|GV_NOTQUAL), %s); /* \$\\ */\n}, cstring($\)) if $\; #ORS
+    }
     print sprintf(qq{    sv_setpv_mg(get_sv("/", GV_NOTQUAL), %s);\n}, cstring($/)) if $/ ne "\n"; #RS
-    print sprintf(qq{    sv_setpv_mg(get_sv("\\", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($\)) if $\; #ORS
     print         qq{    sv_setiv_mg(get_sv("|", GV_ADD|GV_NOTQUAL), $|);\n} if $|; #OUTPUT_AUTOFLUSH
     # global format vars
     print sprintf(qq{    sv_setpv_mg(get_sv("^A", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($^A)) if $^A; #ACCUMULATOR
