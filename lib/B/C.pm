@@ -3928,7 +3928,10 @@ sub B::GV::save {
       } else {
 	$gvsv->save($fullname); #even NULL save it, because of gp_free nonsense
         # we need sv magic for the core_svs (PL_rs -> gv) (#314)
-        if (exists $core_svs->{$gvname} and $gvname ne "\\") { # PL_ors_sv = NULL
+        if (exists $core_svs->{$gvname}) {
+          if ($gvname eq "\\") {  # ORS special case #318 (initially NULL)
+            $init->add( "if (!PL_ors_sv) PL_ors_sv = newSVsv(PL_rs);" );
+          }
           $gvsv->save_magic($fullname) if ref($gvsv) eq 'B::PVMG';
           $init->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
         }
