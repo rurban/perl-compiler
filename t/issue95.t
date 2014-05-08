@@ -71,5 +71,8 @@ use B::C ();
 # see #310: Warning: unable to close filehandle DATA properly
 # also: Constant subroutine HUGE_VAL redefined
 my $qr = '^(ok|Warning: unable to close filehandle.*\nok)$';
-ctest(5,$qr,'C,-O3,-UB','ccode95i',$issue,
-      (($B::C::VERSION lt '1.42_61') ? "TODO " : "").'run');
+my $todo = ($B::C::VERSION lt '1.42_61') ? "TODO " : "";
+if ($IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984') {
+  $todo = "TODO [cpan #95452] bad IO::Socket::SSL $IO::Socket::SSL::VERSION, ";
+}
+ctest(5,$qr,'C,-O3,-UB','ccode95i',$issue, $todo.' run');
