@@ -2530,7 +2530,8 @@ sub B::PVMG::save {
     # Detect ptr to extern symbol in shared library and remap it in init2
     # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
     # svop const or pad OBJECT,IOK
-    if ($fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/ 
+    if ($fullname
+        and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/
         and $ivx =~ /U?L+$/
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
