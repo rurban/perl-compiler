@@ -3957,17 +3957,12 @@ sub B::GV::save {
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
       warn "GV::save \@$fullname\n" if $debug{gv};
-      if ($fullname eq 'main::+' or $fullname eq 'main::-') {
-        $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
-        if ($] >= 5.014) {
-          mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
-          walk_syms('Config');
-          svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
-        }
-        mark_package('Tie::Hash::NamedCapture', 1);
-      }
       $gvav->save($fullname);
       $init->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
+      if ($fullname eq 'main::-') {
+        $init->add( sprintf("AvFILLp(s\\_%x) = -1;", $$gvav),
+                    sprintf("AvMAX(s\\_%x) = -1;", $$gvav));
+      }
     }
     my $gvhv = $gv->HV;
     if ( $$gvhv && $savefields & Save_HV ) {
@@ -6456,22 +6451,22 @@ sub save_context {
       $init->add_eval( 'mro::set_mro("main", "c3");' );
     }
     # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!
-    no strict 'refs';
-    if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
-      use strict 'refs';
-      if (!$include_package{'Tie::Hash::NamedCapture'}) {
-	$init->add("/* force saving of Tie::Hash::NamedCapture */");
-        if ($] >= 5.014) {
-          mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
-          walk_syms('Config');
-          svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
-        }
-	mark_package('Tie::Hash::NamedCapture', 1);
-      } # else already included
-    } else {
-      use strict 'refs';
-      delete_unsaved_hashINC('Tie::Hash::NamedCapture');
-    }
+    #no strict 'refs';
+    #if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
+    #  use strict 'refs';
+    #  if (!$include_package{'Tie::Hash::NamedCapture'}) {
+    #	$init->add("/* force saving of Tie::Hash::NamedCapture */");
+    #    if ($] >= 5.014) {
+    #      mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
+    #      walk_syms('Config');
+    #      svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
+    #    }
+    #	mark_package('Tie::Hash::NamedCapture', 1);
+    #  } # else already included
+    #} else {
+    #  use strict 'refs';
+    #  delete_unsaved_hashINC('Tie::Hash::NamedCapture');
+    #}
     no strict 'refs';
     if ( defined(objsym(svref_2object(\*{'main::!'}))) ) {
       use strict 'refs';
