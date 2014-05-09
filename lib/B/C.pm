@@ -356,8 +356,7 @@ our ($module, $init_name, %savINC, $mainfile, @static_free);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist,
-    $opt_standalone);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist);
 our $verbose = 0;
 our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
@@ -377,7 +376,6 @@ our %option_map = (
     'use-script-name' => \$use_perl_script_name,
     'save-sig-hash'   => \$B::C::save_sig,
     'dyn-padlist'     => \$B::C::dyn_padlist, # with -O4, needed for cv cleanup with non-local exits since 5.18
-    'standalone'      => \$B::C::opt_standalone, # esp. on windows
     'cop'             => \$optimize_cop, # XXX very unsafe!
 					 # Better do it in CC, but get rid of
 					 # NULL cops also there.
@@ -3959,8 +3957,7 @@ sub B::GV::save {
     my $gvav = $gv->AV;
     if ( $$gvav && $savefields & Save_AV ) {
       warn "GV::save \@$fullname\n" if $debug{gv};
-      # Tie::Hash::NamedCapture is only needed for the HV no the AV
-      if ($opt_standalone and ($fullname eq 'main::+' or $fullname eq 'main::-')) {
+      if ($fullname eq 'main::+' or $fullname eq 'main::-') {
         $init->add("/* \@$gvname force saving of Tie::Hash::NamedCapture */");
         if ($] >= 5.014) {
           mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
@@ -3976,12 +3973,12 @@ sub B::GV::save {
     if ( $$gvhv && $savefields & Save_HV ) {
       if ($fullname ne 'main::ENV') {
 	warn "GV::save \%$fullname\n" if $debug{gv};
-	if ($opt_standalone and $fullname eq 'main::!') { # force loading Errno
+	if ($fullname eq 'main::!') { # force loading Errno
 	  $init->add("/* \%! force saving of Errno */");
 	  mark_package('Config', 1);  # Errno needs Config to set the EGV
           walk_syms('Config');
 	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
-	} elsif ($opt_standalone and ($fullname eq 'main::+' or $fullname eq 'main::-')) {
+	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
           if ($] >= 5.014) {
             mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
@@ -6248,7 +6245,7 @@ sub should_save {
     if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
       next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
       # we load Errno by ourself to avoid double Config warnings [perl #]
-      next if $opt_standalone and $package eq 'Errno' and $m eq 'TIEHASH';
+      next if $package eq 'Errno' and $m eq 'TIEHASH';
       # XXX Config and FileHandle should not just return. If unneeded skip em.
       return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
       return 0 if $package eq 'FileHandle' and $m eq 'new';
@@ -6438,10 +6435,8 @@ sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   warn "save context:\n" if $verbose;
 
-  # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!, but gv_fetch should do it for us.
-  # There should be an option if to include everything (-fstandalone, esp on Windows) or rely
-  # on installed core modules.
-  if ($PERL510 and $opt_standalone) {
+  if ($PERL510) {
+    # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!
     no strict 'refs';
     if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
       use strict 'refs';
@@ -7267,13 +7262,6 @@ All functions in END blocks and all Attribute::Handler function padlists
 are automatically dynamic.
 
 Enabled with C<-O4>.
-
-=item B<-fstandalone>
-
-Include as many as possible core modules, which would be normally left out,
-such as Errno or Tie::Hash::NamedCapture or unicore, which is esp. needed on
-Windows to produce freestanding executables.
-Note that all eval string loaded modules still need to be added manually via -u<module>.
 
 =item B<-fcop>
 
