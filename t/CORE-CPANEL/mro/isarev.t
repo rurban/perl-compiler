@@ -1,10 +1,6 @@
 #!./perl
 
 BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = 't/CORE-CPANEL/lib';
-    }
     require q(t/CORE-CPANEL/test.pl);
 }
 
