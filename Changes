@@ -51,6 +51,7 @@
         Support __DATA__ blocks in packages without printing wrong warnings (#310)
         Add -fstandalone option to include as many as possible core modules, which are
           only needed on target systems without any perl installation.
+	Support ->(maybe|next)::(method|can) mro method calls (#324, #301)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)

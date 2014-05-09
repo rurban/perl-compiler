@@ -1256,6 +1256,18 @@ sub B::UNOP::save {
   $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
+  if ($op->name eq 'method' and $op->first and $op->first->name eq 'const') {
+    my $method = svop_name($op->first);
+    if (!$method and $ITHREADS) {
+      $method = padop_name($op->first, $B::C::curcv); # XXX (curpad[targ])
+    }
+    warn "method -> const $method\n" if $debug{pkg} and $ITHREADS;
+    #324 need to detect ->(maybe|next)::(method|can) and also old NEXT|EVERY
+    if ($method =~ /^(next|NEXT|EVERY|maybe)::/) {
+      warn "mark \"$1\" for method $method\n" if $debug{pkg};
+      mark_package($1, 1);
+    }
+  }
   do_labels ($op, 'first');
   $sym;
 }
