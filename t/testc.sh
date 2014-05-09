@@ -1056,6 +1056,7 @@ result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
+tests[309]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
 tests[310]='package foo;
 sub dada { my $line = <DATA> }
 print dada;
@@ -1067,8 +1068,19 @@ c
 tests[312]='require Scalar::Util; eval "require List::Util"; print "ok"'
 tests[314]='open FOO, ">", "ccode314.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode314.tmp"; { local $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode314.tmp"'
 tests[3141]='open FOO, ">", "ccode3141.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode3141.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode3141.tmp"'
+tests[316]='
+package Diamond_A; sub foo {};
+package Diamond_B; use base "Diamond_A";
+package Diamond_C; use base "Diamond_A";
+package Diamond_D; use base ("Diamond_B", "Diamond_C"); use mro "c3";
+package main; my $order = mro::get_linear_isa("Diamond_D");
+              print $order->[3] eq "Diamond_A" ? "ok" : "not ok"; print "\n"'
 tests[317]='use Net::SSLeay();use IO::Socket::SSL();Net::SSLeay::OpenSSL_add_ssl_algorithms(); my $ssl_ctx = IO::Socket::SSL::SSL_Context->new(SSL_server => 1); print q(ok)'
 tests[318]='{ local $\ = "ok" ; print "" }'
+tests[319]='#TODO Wide character warnings missing (bytes layer ignored)
+use warnings q{utf8}; my $w; local $SIG{__WARN__} = sub { $w = $_[0] }; my $c = chr(300); open F, ">", "a"; binmode(F, ":bytes:"); print F $c,"\n"; close F; print $w'
+tests[320]='#TODO No warnings reading in invalid utf8 stream (utf8 layer ignored)
+use warnings "utf8"; local $SIG{__WARN__} = sub { $@ = shift }; open F, ">", "a"; binmode F; my ($chrE4, $chrF6) = (chr(0xE4), chr(0xF6)); print F "foo", $chrE4, "\n"; print F "foo", $chrF6, "\n"; close F; open F, "<:utf8", "a";  undef $@; my $line = <F>; print q(ok) if $@ =~ /utf8 "\xE4" does not map to Unicode/;'
 tests[324]='package Master;
 use mro "c3";
 sub me { "Master" }
