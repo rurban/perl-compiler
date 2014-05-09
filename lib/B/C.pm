@@ -2083,6 +2083,7 @@ sub B::IV::save {
   if ($svflags & SVf_IVisUV) {
     return $sv->B::UV::save;
   }
+  my $ivx = ivx($sv->IVX);
   my $i = $svsect->index + 1;
   if ($svflags & 0xff and !($svflags & (SVf_IOK|SVp_IOK))) { # Not nullified
     unless (($PERL510 and $svflags & 0x00010000) # PADSTALE - out of scope lexical is !IOK
@@ -2092,11 +2093,11 @@ sub B::IV::save {
     }
   }
   if ($PERL514) {
-    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", ivx($sv->IVX) ) );
+    $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", $ivx ) );
   } elsif ($PERL510) {
-    $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", ivx($sv->IVX) ) );
+    $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", $ivx ) );
   } else {
-    $xpvivsect->add( sprintf( "0, 0, 0, %s", ivx($sv->IVX) ) );
+    $xpvivsect->add( sprintf( "0, 0, 0, %s", $ivx ) );
   }
   $svsect->add(
     sprintf(
@@ -2539,6 +2540,90 @@ sub save_remap {
   push @{$init2_remap{$key}{MG}}, $props;
 }
 
+sub patch_dlsym {
+  my ($sv, $fullname, $ivx) = @_;
+  my $pkg = '';
+  if (ref($sv) eq 'B::PVMG') {
+    my $stash = $sv->SvSTASH;
+    $pkg = $stash->can('NAME') ? $stash->NAME : '';
+  }
+  my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
+  # Encode RT #94xxx $Encode::VERSION ge '2.48'
+  if ($name =~ /encoding$/ and $Encode::VERSION ge '2.58') {
+    mark_package('Encode');
+    warn "Patched Encode $Encode::VERSION helping remap $name" if $verbose;
+  }
+  elsif ($pkg eq 'Encode::XS') {
+    if ($fullname eq 'Encode::Encoding{iso-8859-1}') {
+      $name = "iso8859_1_encoding";
+    }
+    elsif ($fullname eq 'Encode::Encoding{null}') {
+      $name = "null_encoding";
+    }
+    elsif ($fullname eq 'Encode::Encoding{ascii-ctrl}') {
+      $name = "ascii_ctrl_encoding";
+    }
+    elsif ($fullname eq 'Encode::Encoding{ascii}') {
+      $name = "ascii_encoding";
+    }
+    mark_package('Encode') if $fullname =~ /^(svop const|padop)/; # actually used for sure
+
+    if ($name) {
+      save_remap('Encode', $pkg, $name, $ivx, 0); # mandatory
+      $ivx = "0UL /* $ivx => $name */";
+    }
+    else {
+      mark_package('Encode', 1);
+      for my $n (Encode::encodings()) { # >=5.16 constsub without name
+        my $enc = Encode::find_encoding($n);
+        if ($enc and $sv->IVX == $$enc) {
+          $name = $n;
+          $name .= "_encoding" if $name !~ /_encoding$/;
+          last
+        }
+      }
+      if ($name) {
+        warn "Encode $Encode::VERSION remap constant $name" if $verbose;
+        save_remap('Encode', $pkg, $name, $ivx, 0);
+        $ivx = "0UL /* $ivx => $name */";
+      } else {
+        warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+      }
+    }
+  }
+  # Encode-2.59 uses a different name without _encoding
+  elsif ($name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
+    warn "Patched Encode $Encode::VERSION helping remap $name" if $verbose;
+    $name .= "_encoding";
+  }
+  # now that is a weak heuristic, which misses #305
+  elsif (defined ($Net::DNS::VERSION)
+         and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
+    if ($fullname eq 'svop const') {
+      $name = "ascii_encoding";
+      warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
+    }
+  }
+  elsif ($pkg eq 'Net::LibIDN') {
+    my $name = "idn_to_ascii"; # ??
+    save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
+    $ivx = "0UL /* $ivx => $name */";
+  }
+  # new API (only Encode so far)
+  elsif ($name and $name =~ /^[a-zA-Z_]+$/) { # valid symbol name
+    warn "Remap IOK|POK $pkg with $name";
+    save_remap($pkg, $pkg, $name, $ivx, 0);
+    $ivx = "0UL /* $ivx => $name */";
+    if ($fullname =~ /^(svop const|padop)/) {
+      mark_package($pkg) if $pkg;
+    }
+  }
+  else {
+    warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+  }
+  return $ivx;
+}
+
 sub B::PVMG::save {
   my ($sv, $fullname) = @_;
   my $sym = objsym($sv);
@@ -2575,63 +2660,7 @@ sub B::PVMG::save {
         and $ivx =~ /U?L+$/
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
-      no strict 'refs';
-      my $stash = $sv->SvSTASH;
-      my $pkg = $stash->NAME;
-      my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
-      if ($pkg eq 'Encode::XS') {
-        if ($fullname eq 'Encode::Encoding{iso-8859-1}') {
-          $name = "iso8859_1_encoding";
-        }
-        elsif ($fullname eq 'Encode::Encoding{null}') {
-          $name = "null_encoding";
-        }
-        elsif ($fullname eq 'Encode::Encoding{ascii-ctrl}') {
-          $name = "ascii_ctrl_encoding";
-        }
-        elsif ($fullname eq 'Encode::Encoding{ascii}') {
-          $name = "ascii_encoding";
-        }
-        # Encode RT #94xxx $Encode::VERSION ge '2.48'
-        elsif ($name =~ /encoding$/) {
-          warn "XXX Patched Encode helping remap $name";
-        }
-        # now that is a weak heuristic, which misses #305
-        elsif (defined ($Net::DNS::VERSION)
-               and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
-          if ($fullname eq 'svop const') {
-            $name = "ascii_encoding";
-            warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
-          }
-        }
-        if ($fullname eq 'svop const') {
-          mark_package('Encode');
-        }
-        if ($name) {
-          save_remap('Encode', $pkg, $name, $ivx, 0); # mandatory
-          $ivx = "0UL /* $ivx => $name */";
-        }
-        else {
-          warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
-        }
-      }
-      # new API
-      elsif ($name and $name =~ /^[a-zA-Z_]+$/) { # valid symbol name
-        warn "Remap IOK|POK $pkg with $name";
-        save_remap($pkg, $pkg, $name, $ivx, 0);
-        $ivx = "0UL /* $ivx => $name */";
-        if ($fullname eq 'svop const') {
-          mark_package($pkg);
-        }
-      }
-      elsif ($pkg eq 'Net::LibIDN') {
-        my $name = "idn_to_ascii"; # ??
-        save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
-        $ivx = "0UL /* $ivx => $name */";
-      }
-      else {
-        warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
-      }
+      $ivx = patch_dlsym($sv, $fullname, $ivx);
     }
   }
 
@@ -2884,6 +2913,7 @@ sub B::RV::save {
   warn sprintf( "Saving RV %s (0x%x) - called from %s:%s\n",
 		class($sv), $$sv, @{[(caller(1))[3]]}, @{[(caller(1))[2]]})
     if $debug{sv};
+
   my $rv = save_rv($sv, $fullname);
   return '0' unless $rv;
   if ($PERL510) {
@@ -3204,7 +3234,17 @@ sub B::CV::save {
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
-    my $vsym  = $cv->XSUBANY->save;
+    my $sv  = $cv->XSUBANY;
+    if ($] >= 5.016) { # need to check 'Encode::XS' constant encodings
+      # warn "$sv CONSTSUB $name";
+      if ((ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG') and $sv->FLAGS & SVf_ROK) {
+        my $rv = $sv->RV;
+        if ($rv->FLAGS & (SVp_POK|SVf_IOK) and ivx($rv->IVX) =~ /U?L+$/) {
+          patch_dlsym($rv, $fullname, $rv->IVX);
+        }
+      }
+    }
+    my $vsym  = $sv->save;
     my $cvi = "cv".$cv_index;
     $decl->add("Static CV* $cvi;");
     $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
@@ -4989,8 +5029,9 @@ EOT
     for my $pkg (sort keys %init2_remap) {
       if (exists $xsub{$pkg}) {
         if ($HAVE_DLFCN_DLOPEN) {
-          $init2->add( sprintf("  handle = dlopen(%s, RTLD_NOW|RTLD_NOLOAD);",
-                               cstring($init2_remap{$pkg}{FILE})));
+          $init2->add( sprintf("  handle = dlopen(%s,", cstring($init2_remap{$pkg}{FILE})),
+                               "                  RTLD_NOW|RTLD_NOLOAD);",
+                               );
         }
         else {
           $init2->add("  PUSHMARK(SP);",

@@ -13,11 +13,14 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 2;
+use Encode;
+my $todo = $Encode::VERSION lt '2.58' ? "TODO Encode-$Encode::VERSION < 2.58 " : "";
+
 my $cmt = '#305 compile-time Encode::XS encodings';
 my $script = 'use constant ASCII => eval { require Encode; Encode::find_encoding("ASCII"); } || 0;
 print ASCII->encode("www.google.com")';
 my $exp = "www.google.com";
-ctest(1, $exp, 'C,-O3', 'ccode305i', $script, 'TODO C '.$cmt);
+ctest(1, $exp, 'C,-O3', 'ccode305i', $script, $todo.'C '.$cmt);
 
 $script = 'INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }}
 print ASCII->encode("www.google.com")';
