@@ -22,7 +22,7 @@ $SIG{__WARN__} = sub {
      }
 };
 
-plan(362);
+plan(355);
 
 run_tests() unless caller;
 
@@ -42,6 +42,8 @@ like ($@, $FATAL_MSG);
 is(substr($a,0,-6), 'abc');  # P=Q R S
 is(substr($a,-3,1), 'x');    # P Q R S
 
+# unsupported $[
+=pod
 $[ = 1;
 
 is(substr($a,1,3), 'abc' );  # P=Q R S
@@ -55,6 +57,7 @@ is(substr($a,1,-6), 'abc' );# P=Q R S
 is(substr($a,-3,1), 'x' );  # P Q R S
 
 $[ = 0;
+=cut
 
 substr($a,3,3) = 'XYZ';
 is($a, 'abcXYZxyz' );
