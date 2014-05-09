@@ -1,10 +1,8 @@
 #!./perl -w
 
 BEGIN {
-	chdir 't' if -d 't';
-	@INC = '../lib';
-	require './test.pl';
-	eval 'require Config'; # assume defaults if this fails
+    require q(t/CORE-CPANEL/test.pl);
+	use Config;
 }
 
 use strict;

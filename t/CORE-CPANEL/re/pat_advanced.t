@@ -15,10 +15,7 @@ $| = 1;
 
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib','.');
-    require './test.pl';
-    skip_all_if_miniperl("miniperl can't load Tie::Hash::NamedCapture, need for %+ and %-");
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 run_tests() unless caller;
@@ -975,7 +972,7 @@ sub run_tests {
 
     {
     BEGIN {
-        unshift @INC, 'lib';
+        unshift @INC, 't/CORE-CPANEL/';
     }
         use Cname;
 

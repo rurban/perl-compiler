@@ -3,8 +3,8 @@
 #P = start of string  Q = start of substr  R = end of substr  S = end of string
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+require q(t/CORE-CPANEL/test.pl);
+
 }
 use warnings ;
 no warnings 'deprecated';
@@ -21,8 +21,6 @@ $SIG{__WARN__} = sub {
           warn $_[0];
      }
 };
-
-BEGIN { require './test.pl'; }
 
 plan(362);
 

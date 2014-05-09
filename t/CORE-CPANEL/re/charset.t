@@ -1,9 +1,7 @@
 # Test the /a, /d, etc regex modifiers
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+      require q(t/CORE-CPANEL/test.pl);
 }
 
 use strict;
@@ -35,7 +33,7 @@ $testcases{'[:space:]'} = $testcases{'\s'};
 $testcases{'[:word:]'} = $testcases{'\w'};
 
 my @charsets = qw(a d u aa);
-if (! is_miniperl()) {
+if (1) {
     require POSIX;
     my $current_locale = POSIX::setlocale( &POSIX::LC_ALL, "C") // "";
     if ($current_locale eq 'C') {

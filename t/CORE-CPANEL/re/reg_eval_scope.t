@@ -3,10 +3,7 @@
 # Test scoping issues with embedded code in regexps.
 
 BEGIN {
-    chdir 't';
-    @INC = qw(lib ../lib);
-    require './test.pl';
-    skip_all_if_miniperl("no dynamic loading on miniperl, no re");
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 plan 17;

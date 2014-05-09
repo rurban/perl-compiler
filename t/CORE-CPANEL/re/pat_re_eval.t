@@ -15,10 +15,7 @@ $| = 1;
 
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib','.');
-    require './test.pl';
-    skip_all_if_miniperl("no dynamic loading on miniperl, no re");
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 

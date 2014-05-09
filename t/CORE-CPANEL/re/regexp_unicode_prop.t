@@ -9,8 +9,7 @@ use warnings;
 use 5.010;
 
 BEGIN {
-    require './test.pl';
-    skip_all_if_miniperl("no dynamic loading on miniperl, no File::Spec (used by charnames)");
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 sub run_tests;

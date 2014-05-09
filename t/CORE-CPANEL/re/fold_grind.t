@@ -3,10 +3,7 @@
 binmode STDOUT, ":utf8";
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
-    skip_all_if_miniperl("no dynamic loading on miniperl, no Encode nor POSIX");
+      require q(t/CORE-CPANEL/test.pl);
 }
 
 use charnames ":full";
@@ -76,7 +73,7 @@ my %multi_folds;
 
 # First, analyze the current Unicode's folding rules
 my %folded_from;
-my $file="../lib/unicore/CaseFolding.txt";
+my $file="t/CORE-CPANEL/re/CaseFolding.txt";
 open my $fh, "<", $file or die "Failed to read '$file': $!";
 while (<$fh>) {
     chomp;

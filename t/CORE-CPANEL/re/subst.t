@@ -1,12 +1,10 @@
 #!./perl -w
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require Config; import Config;
+    require q(t/CORE-CPANEL/test.pl);
+    use Config;
 }
 
-require './test.pl';
 plan( tests => 176 );
 
 $_ = 'david';

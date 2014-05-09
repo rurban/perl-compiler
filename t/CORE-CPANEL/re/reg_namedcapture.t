@@ -1,12 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    unless (defined &DynaLoader::boot_DynaLoader) {
-      print "1..0 # Skip: no dynamic loading on miniperl, no Tie::Hash::NamedCapture\n";
-      exit 0;
-    }
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 # WARNING: Do not directly use any modules as part of this test code.
