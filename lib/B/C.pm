@@ -2808,7 +2808,7 @@ CODE2
       }
       # see Perl_mg_copy() in mg.c
       $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
-                         $$sv, $$sv, "'D'", cstring($ptr), $len ));
+                         $$sv, $fullname eq 'main::-' ? 0 : $$sv, "'D'", cstring($ptr), $len ));
       if ($sv_flags & SVf_READONLY) {
         $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv));
       }
