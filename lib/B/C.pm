@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_10';
+our $VERSION = '1.45_11';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -1254,6 +1254,18 @@ sub B::UNOP::save {
   $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
+  if ($op->name eq 'method' and $op->first and $op->first->name eq 'const') {
+    my $method = svop_name($op->first);
+    if (!$method and $ITHREADS) {
+      $method = padop_name($op->first, $B::C::curcv); # XXX (curpad[targ])
+    }
+    warn "method -> const $method\n" if $debug{pkg} and $ITHREADS;
+    #324 need to detect ->(maybe|next)::(method|can) and also old NEXT|EVERY
+    if ($method =~ /^(next|NEXT|EVERY|maybe)::/) {
+      warn "mark \"$1\" for method $method\n" if $debug{pkg};
+      mark_package($1, 1);
+    }
+  }
   do_labels ($op, 'first');
   $sym;
 }
@@ -4383,6 +4395,13 @@ sub B::AV::save {
     $init->add("av_extend($sym, $max);")
       if $max > -1;
   }
+
+  #XXX Not sure if this is really needed. gv_fetch should be smart enough
+  if (0 and $PERL510 and $fullname =~ /^(.*)::ISA$/) {
+    my $stashname = $1;
+    $init2->add( sprintf("mro_method_changed_in(GvHV(gv_fetchpv(%s, GV_NOTQUAL, SVt_PVHV)));",
+                         cstring($stashname.'::')));
+  }
   return $sym;
 }
 
@@ -4427,6 +4446,9 @@ sub B::HV::save {
     # $fullname !~ /::$/ or
     if (!$B::C::stash) { # -fno-stash: do not save stashes
       $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
+      if ($PERL510 and mro::get_mro($name) eq 'c3') {
+        mark_package('mro', 1);
+      }
       #if ($magic =~ /c/) {
          # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
       #  $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
@@ -4558,6 +4580,9 @@ sub B::HV::save {
     my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
     $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
   }
+  if ($PERL510 and $name and mro::get_mro($name) eq 'c3') {
+    mark_package('mro', 1);
+  }
   return $sym;
 }
 
@@ -4571,7 +4596,7 @@ sub B::IO::save_data {
 
   if ($PERL56) {
     # Pseudo FileHandle
-    $init->add_eval( sprintf 'open(%s, \'<\', $%s)', $globname, $globname );
+    $init->add_eval( sprintf 'open(%s, \'<\', $%s);', $globname, $globname );
   } else { # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
     $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s);', $globname, $globname );
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA);",1); DATA being a ref to $data
@@ -6424,6 +6449,12 @@ sub save_context {
   warn "save context:\n" if $verbose;
 
   if ($PERL510) {
+    # need to mark assign c3 to %main::. no need to assign the default dfs
+    if (mro::get_mro("main") eq 'c3') {
+      mark_package('mro', 1);
+      warn "set c3 for main\n" if $debug{pkg};
+      $init->add_eval( 'mro::set_mro("main", "c3");' );
+    }
     # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!
     no strict 'refs';
     if ( defined(objsym(svref_2object(\*{'main::+'}))) or defined(objsym(svref_2object(\*{'main::-'}))) ) {
@@ -6479,12 +6510,17 @@ sub save_context {
     $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
-  # ensure all included @ISA's are stored (#308)
+  # ensure all included @ISA's are stored (#308), and also assign c3 (#325)
   for my $p (sort keys %include_package) {
     no strict 'refs';
     if ($include_package{$p} and exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
-      warn "save @".$p."::ISA\n" if $verbose;
+      warn "save @".$p."::ISA\n" if $verbose or $debug{pkg};
       svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
+      if ($PERL510 and mro::get_mro($p) eq 'c3') {
+        # for mro c3 set the algo. there's no C api, only XS
+        warn "set c3 for $p\n" if $debug{pkg};
+        $init->add_eval( sprintf('mro::set_mro(%s, "c3");', cstring($p)) );
+      }
     }
   }
   $init->add(

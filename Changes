@@ -49,6 +49,8 @@
         Fix wrong caching of internal LEXWARN symbols (#322)
         Warn on bad IO::Socket::SSL versions 1.956-1.983 which would SEGV if used as server (#317)
         Support __DATA__ blocks in packages without printing wrong warnings (#310)
+	Support ->(maybe|next)::(method|can) mro method calls (#324, #301)
+	Support mro c3 (#316)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)

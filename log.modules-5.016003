@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
+# B::C::VERSION = 1.45_10 ae1eda9 2014-05-08 | t/issue95.t: TODO test 5 on bad IO::Socket::SSL VERSIONs
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester #TODO non-debugging with threads
+pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_06 - perl-5.016003
+# 100 / 100 modules tested with B-C-1.45_10 - perl-5.016003
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
-# todo   2 /   1 (200.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)
