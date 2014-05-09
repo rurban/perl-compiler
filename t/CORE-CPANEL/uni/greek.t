@@ -1,10 +1,7 @@
 #!./perl -w
 
 BEGIN {
-    require './test.pl';
-    skip_all_without_dynamic_extension('Encode');
-    skip_all("EBCDIC") if $::IS_EBCDIC;
-    skip_all_without_perlio();
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 plan tests => 72;

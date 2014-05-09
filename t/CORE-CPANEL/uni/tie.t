@@ -1,7 +1,7 @@
 #!perl -w
 
 BEGIN {
-    require './test.pl';
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 plan (tests => 9);

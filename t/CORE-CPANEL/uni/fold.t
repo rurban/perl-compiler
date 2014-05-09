@@ -4,9 +4,7 @@ use warnings;
 # re/fold_grind.t has more complex tests, but doesn't test every fold
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+      require q(t/CORE-CPANEL/test.pl);
 }
 
 binmode *STDOUT, ":utf8";
@@ -16,7 +14,7 @@ our $TODO;
 plan("no_plan");
 
 # Read in the official case folding definitions.
-my $CF = '../lib/unicore/CaseFolding.txt';
+my $CF = 't/CORE-CPANEL/CaseFolding.txt';
 
 die qq[$0: failed to open "$CF": $!\n] if ! open(my $fh, "<", $CF);
 

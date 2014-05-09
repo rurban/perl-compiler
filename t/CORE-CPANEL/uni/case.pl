@@ -1,4 +1,6 @@
-require "test.pl";
+BEGIN {
+    require q(t/CORE-CPANEL/test.pl);
+}
 
 sub unidump {
     join " ", map { sprintf "%04X", $_ } unpack "U*", $_[0];
@@ -20,8 +22,7 @@ sub casetest {
 		    },
 		   )} @funcs;
 
-    my $file = "../lib/unicore/To/$base.pl";
-    my $simple = do $file or die $@;
+    require "unicore/To/$base.pl"; # Use what perl installed.
     my %simple;
     for my $i (split(/\n/, $simple)) {
 	my ($k, $v) = split(' ', $i);

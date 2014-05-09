@@ -2,9 +2,7 @@
 use strict;
 
 BEGIN {
-    require './test.pl';
-    skip_all("EBCDIC porting needed") if $::IS_EBCDIC;
-    skip_all_without_perlio();
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 plan tests => 6;

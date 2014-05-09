@@ -1,9 +1,7 @@
 #!perl -w
 
 BEGIN {
-    chdir 't';
-    @INC = '../lib';
-    require './test.pl';
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 plan(tests => 215);

@@ -73,7 +73,7 @@ my %multi_folds;
 
 # First, analyze the current Unicode's folding rules
 my %folded_from;
-my $file="t/CORE-CPANEL/re/CaseFolding.txt";
+my $file="t/CORE-CPANEL/CaseFolding.txt";
 open my $fh, "<", $file or die "Failed to read '$file': $!";
 while (<$fh>) {
     chomp;

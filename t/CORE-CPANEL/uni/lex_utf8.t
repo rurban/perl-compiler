@@ -4,10 +4,7 @@
 
 BEGIN {
     $| = 1;
-
-    require './test.pl';
-    skip_all_if_miniperl("no dynamic loading on miniperl, no re");
-    skip_all('EBCDIC') if $::IS_EBCDIC;
+    require q(t/CORE-CPANEL/test.pl);
 }
 
 use strict;

@@ -1,6 +1,5 @@
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(../lib uni .);
+    unshift @INC, 't/CORE-CPANEL/uni';
     require "case.pl";
 }
 

@@ -11,7 +11,7 @@ my @tests;
 my %todo_pass = map { $_ => 1 }
 	    qw(00DF 1E9E FB00 FB01 FB02 FB03 FB04 FB05 FB06);
 
-my $file="t/CORE-CPANEL/re/CaseFolding.txt";
+my $file="t/CORE-CPANEL/CaseFolding.txt";
 open my $fh,"<",$file or die "Failed to read '$file': $!";
 while (<$fh>) {
     chomp;
