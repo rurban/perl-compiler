@@ -2548,12 +2548,17 @@ sub patch_dlsym {
     $pkg = $stash->can('NAME') ? $stash->NAME : '';
   }
   my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
-  # Encode RT #94xxx $Encode::VERSION ge '2.48'
-  if ($name =~ /encoding$/ and $Encode::VERSION ge '2.58') {
-    mark_package('Encode');
-    warn "Patched Encode $Encode::VERSION helping remap $name" if $verbose;
+
+  # Encode RT #94221
+  if ($name =~ /encoding$/ and $Encode::VERSION eq '2.58') {
+    $name = lc($name);
+    $name =~ s/-/_/g;
+    $pkg = 'Encode' if $pkg eq 'Encode::XS'; # TODO foreign classes
+    mark_package($pkg) if $fullname eq '(unknown)' and $ITHREADS;
+    warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
   }
   elsif ($pkg eq 'Encode::XS') {
+    $pkg = 'Encode';
     if ($fullname eq 'Encode::Encoding{iso-8859-1}') {
       $name = "iso8859_1_encoding";
     }
@@ -2566,26 +2571,32 @@ sub patch_dlsym {
     elsif ($fullname eq 'Encode::Encoding{ascii}') {
       $name = "ascii_encoding";
     }
-    mark_package('Encode') if $fullname =~ /^(svop const|padop)/; # actually used for sure
 
-    if ($name) {
-      save_remap('Encode', $pkg, $name, $ivx, 0); # mandatory
-      $ivx = "0UL /* $ivx => $name */";
+    if ($name and $name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
+      my $enc = Encode::find_encoding($name);
+      $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
+      $name = lc($name)."_encoding";
+      $name =~ s/-/_/g;
+      warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
+      mark_package($pkg, 1) if $fullname eq '(unknown)' and $ITHREADS;
     }
     else {
-      mark_package('Encode', 1);
       for my $n (Encode::encodings()) { # >=5.16 constsub without name
         my $enc = Encode::find_encoding($n);
-        if ($enc and $sv->IVX == $$enc) {
-          $name = $n;
+        if ($enc and ref($enc) ne 'Encode::XS') { # resolve alias such as Encode::JP::JIS7=HASH(0x292a9d0)
+          $pkg = ref($enc);
+          $enc = Encode->find_alias($n);
+        }
+        if ($enc and ref($enc) eq 'Encode::XS' and $sv->IVX == $$enc) {
+          $name = lc($n);
+          $name =~ s/-/_/g;
           $name .= "_encoding" if $name !~ /_encoding$/;
-          last
+          mark_package($pkg, 1) if $fullname eq '(unknown)' and $ITHREADS;
+          last;
         }
       }
       if ($name) {
-        warn "Encode $Encode::VERSION remap constant $name" if $verbose;
-        save_remap('Encode', $pkg, $name, $ivx, 0);
-        $ivx = "0UL /* $ivx => $name */";
+        warn "$pkg $Encode::VERSION remap found constant $name\n" if $verbose;
       } else {
         warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
       }
@@ -2593,30 +2604,30 @@ sub patch_dlsym {
   }
   # Encode-2.59 uses a different name without _encoding
   elsif ($name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
-    warn "Patched Encode $Encode::VERSION helping remap $name" if $verbose;
-    $name .= "_encoding";
+    $name = lc($name)."_encoding";
+    $name =~ s/-/_/g;
+    $pkg = 'Encode' unless $pkg;
+    warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
   }
   # now that is a weak heuristic, which misses #305
   elsif (defined ($Net::DNS::VERSION)
          and $Net::DNS::VERSION =~ /^0\.(6[789]|7[1234])/) {
     if ($fullname eq 'svop const') {
       $name = "ascii_encoding";
+      $pkg = 'Encode' unless $pkg;
       warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
     }
   }
   elsif ($pkg eq 'Net::LibIDN') {
-    my $name = "idn_to_ascii"; # ??
-    save_remap('Net::LibIDN', $pkg, $name, $ivx, 0);
-    $ivx = "0UL /* $ivx => $name */";
+    $name = "idn_to_ascii"; # ??
   }
+
   # new API (only Encode so far)
-  elsif ($name and $name =~ /^[a-zA-Z_]+$/) { # valid symbol name
-    warn "Remap IOK|POK $pkg with $name";
+  if ($pkg and $name and $name =~ /^[a-zA-Z_0-9-]+$/) { # valid symbol name
+    warn "Remap IOK|POK $pkg with $name\n" if $verbose;
     save_remap($pkg, $pkg, $name, $ivx, 0);
     $ivx = "0UL /* $ivx => $name */";
-    if ($fullname =~ /^(svop const|padop)/) {
-      mark_package($pkg) if $pkg;
-    }
+    mark_package($pkg, 1) if $fullname =~ /^(svop const|padop)/;
   }
   else {
     warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
@@ -2655,8 +2666,10 @@ sub B::PVMG::save {
     # Detect ptr to extern symbol in shared library and remap it in init2
     # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
     # svop const or pad OBJECT,IOK
-    if ($fullname
-        and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/
+    if (((!$ITHREADS
+          and $fullname
+          and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/)
+         or $ITHREADS)
         and $ivx =~ /U?L+$/
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
