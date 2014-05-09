@@ -1048,6 +1048,7 @@ tests[299]='#TODO
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
 tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'
+tests[301]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
 tests[305]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
 result[305]='www.google.com'
 tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
@@ -1068,6 +1069,19 @@ tests[314]='open FOO, ">", "ccode314.tmp"; print FOO "abc"; close FOO; open FOO,
 tests[3141]='open FOO, ">", "ccode3141.tmp"; print FOO "abc"; close FOO; open FOO, "<", "ccode3141.tmp"; { $/="b"; $in=<FOO>; if ($in eq "ab") { print "ok\n" } else { print qq(separator: "$/"\n\$/ is "$/"\nFAIL: "$in"\n)}}; unlink "ccode3141.tmp"'
 tests[317]='use Net::SSLeay();use IO::Socket::SSL();Net::SSLeay::OpenSSL_add_ssl_algorithms(); my $ssl_ctx = IO::Socket::SSL::SSL_Context->new(SSL_server => 1); print q(ok)'
 tests[318]='{ local $\ = "ok" ; print "" }'
+tests[324]='package Master;
+use mro "c3";
+sub me { "Master" }
+package Slave;
+use mro "c3";
+use base "Master";
+sub me { "Slave of ".(shift)->next::method }
+package main;
+print Master->me()."\n";
+print Slave->me()."\n";
+'
+result[324]='Master
+Slave of Master'
 
 init
 
