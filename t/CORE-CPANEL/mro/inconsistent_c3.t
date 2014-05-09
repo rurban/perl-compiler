@@ -2,14 +2,11 @@
 
 use strict;
 use warnings;
-BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = 't/CORE-CPANEL/lib';
-    }
-}
 
-require q(t/CORE-CPANEL/test.pl); plan(tests => 1);
+BEGIN {
+    require q(t/CORE-CPANEL/test.pl);
+}
+plan(tests => 1);
 
 require mro;
 

@@ -845,7 +845,7 @@ sub runperl_binary {
     print STDERR "# running: make $bin ===\n";
 
     ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
-    my $make = `blib/script/perlcc -O3 -o $bin $test $error`;
+    my $make = `perlcc -O3 -o $bin $test $error`;
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
 

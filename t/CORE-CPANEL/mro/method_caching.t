@@ -6,13 +6,8 @@ no warnings 'redefine'; # we do a lot of this
 no warnings 'prototype'; # we do a lot of this
 
 BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = 't/CORE-CPANEL/lib';
-    }
+    require 't/CORE-CPANEL/test.pl';
 }
-
-require 't/CORE-CPANEL/test.pl';
 
 {
     package MCTest::Base;
