@@ -33,7 +33,7 @@ my $Mblib = Mblib();
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = "$X $Mblib blib/script/perlcc";
 $perlcc .= " -Wb=-fno-fold,-fno-warnings" if $] > 5.013;
-$perlcc .= " -UB";
+$perlcc .= " -UB -uFile::Spec";
 #        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo";
 my $exe = $Config{exe_ext};
 my $perldocexe = $^O eq 'MSWin32' ? "perldoc$exe" : "./perldoc$exe";
@@ -92,7 +92,7 @@ SKIP: {
 
 unlink $perldocexe if -e $perldocexe;
 $perldocexe = $^O eq 'MSWin32' ? "perldoc_O3$exe" : "./perldoc_O3$exe";
-$compile = $]<5.010?"$X $Mblib -MO=C,-O3,-UB,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
+$compile = $]<5.010?"$X $Mblib -MO=C,-O3,-UB,-uFile::Spec,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
 diagv $compile;
 $res = `$compile`;
 system("$X $Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
