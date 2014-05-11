@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_11';
+our $VERSION = '1.45_12';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -413,6 +413,7 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+#my $PERL518 = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
@@ -3629,6 +3630,10 @@ sub B::CV::save {
     $stash->save($fullname);
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
+    # 5.18 bless does not inc sv_objcount anymore. broken by ddf23d4a1ae (#208)
+    # We workaround this 5.18 de-optimization by adding it if at least a DESTROY
+    # method exists.
+    $init->add("++PL_sv_objcount;") if $cvname eq 'DESTROY' and $] >= 5.017011;
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv} and $debug{gv};
   }

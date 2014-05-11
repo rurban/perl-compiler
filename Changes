@@ -52,6 +52,9 @@
 	Support ->(maybe|next)::(method|can) mro method calls (#324, #301)
 	Support mro c3 (#316)
 	Support @- @LAST_MATCH_START, the array of the last submatches (#281, #220, #295)
+	Workaround a 5.18 de-optimization which disabled ++PL_sv_objcount on bless
+	  by adding it if a DESTROY method exists. This will fail since 5.18 if DESTROY
+	  is added at run-time. (#208, #197)
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
