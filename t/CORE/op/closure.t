@@ -640,6 +640,8 @@ __EOF__
 # to main rather than BEGIN, and BEGIN should be freed.
 
 # perl bug #163 https://code.google.com/p/perl-compiler/issues/detail?id=163
+# wontfix for perlcc as the DESTROY will not be called for compile-time
+# declarations in the same phase
 {
     my $flag = 0;
     sub  X::DESTROY { $flag = 1 }
@@ -649,7 +651,11 @@ __EOF__
 	sub newsub {};
 	$x = bless {}, 'X';
     }
-    is($flag, 1);
+    if (exists $::{'B::'}{'C::'}) {
+      is($flag, 0, "compile-time redefined sub does not call DESTROY with perlcc");
+    } else {
+      is($flag, 1, "redefined sub calls DESTROY");
+    }
 }
 
 sub f {

@@ -212,7 +212,7 @@ t/C-COMPILED/CORE--op--chars.t
 t/C-COMPILED/CORE--op--chdir.t
 t/C-COMPILED/CORE--op--chop.t
 t/C-COMPILED/CORE--op--chr.t
-t/C-COMPILED/CORE--op--closure==BADTEST-254.t
+t/C-COMPILED/CORE--op--closure.t
 t/C-COMPILED/CORE--op--cmp.t
 t/C-COMPILED/CORE--op--concat.t
 t/C-COMPILED/CORE--op--concat2.t
