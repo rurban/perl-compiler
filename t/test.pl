@@ -1017,16 +1017,22 @@ sub todo_tests_default {
     # broken by fbb32b8bebe8ad C: revert *-,*+,*! fetch magic, assign all core GVs to their global symbols
     push @todo, (42..43) if $] < 5.012;
     if ($what =~ /^c(|_o[1-4])$/) {
+        # a regression
+        push @todo, (12)  if $what eq 'c_o3' and !$ITHREADS and $] >= 5.008009 and $] < 5.010;
+
         push @todo, (48)  if $what eq 'c_o4' and $ITHREADS;
         push @todo, (8,18,19,25,26,28)  if $what eq 'c_o4' and !$ITHREADS;
     } elsif ($what =~ /^cc/) {
 	push @todo, (21,30,105,106);
+	push @todo, (22,41,45,103) if $] < 5.007; #regressions
 	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
         push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
 	#push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
 	push @todo, (10,16,50) if $what eq 'cc_o2';
 	push @todo, (29)    if $] < 5.008008;
+	push @todo, (22)    if $] < 5.010 and !$ITHREADS;
+	push @todo, (46)    if $] < 5.010;
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
