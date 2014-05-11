@@ -5317,8 +5317,13 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 	const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
 	if (s) {
             const int i = atoi(s);
-	    if (destruct_level < i)
-		destruct_level = i;
+#ifdef DEBUGGING
+	    if (destruct_level < i) destruct_level = i;
+#endif
+#ifdef PERL_TRACK_MEMPOOL
+            /* RT #114496, for perl_free */
+            PL_perl_destruct_level = i;
+#endif
 	}
     }
 #endif
@@ -5342,8 +5347,10 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
+
     PL_main_start = NULL;
     PL_main_cv = NULL;
+    PL_curcop = &PL_compiling;
 #if PERL_VERSION >= 13
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
@@ -5400,13 +5407,16 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 	sv_clean_objs(); /* and now curse the rest */
 	PL_sv_objcount = 0;
     }
+    PL_warnhook = NULL;
+    PL_diehook = NULL;
+    /* call exit list functions */
+    while (PL_exitlistlen-- > 0)
+	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
+    PL_exitlist = NULL;
+
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
 #endif
-    PL_warnhook = NULL;
-    PL_diehook = NULL;
-    while (PL_exitlistlen-- > 0)
-	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
     return 0;
 }
 _EOT6
