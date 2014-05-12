@@ -1095,7 +1095,22 @@ print Slave->me()."\n";
 '
 result[324]='Master
 Slave of Master'
+
+tests[328]='#TODO re-eval
+my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'
+result[328]=45
+tests[329]='#TODO re-eval
+$_ = q{aaa}; my @res; pos = 1; s/\Ga(?{push @res, $_, $`})/xx/g; print "ok\n" if "$_ @res" eq "axxxx aaa a aaa aa"; print "$_ @res\n"'
+result[329]='ok
+axxxx aaa a aaa aa'
 tests[330]='"\x{101}a" =~ qr/\x{100}/i && print "ok\n"'
+tests[331]='use 5.010; use charnames ":full"; my $char = q/\N{LATIN CAPITAL LETTER A WITH MACRON}/; my $a = eval qq ["$char"]; print length($a) == 1 ? "ok\n" : "$a\n".length($a)."\n"'
+tests[332]='# TODO re-eval
+use re "eval"; our ( $x, $y, $z ) = 1..3; $x =~ qr/$x(?{ $y = $z++ })/; undef $@; print "ok\n"'
+tests[333]='#TODO re-utf8
+use encoding "utf8"; my @hiragana =  map {chr} ord("ぁ")..ord("ん"); my @katakana =  map {chr} ord("ァ")..ord("ン"); my $hiragana = join(q{} => @hiragana); my $katakana = join(q{} => @katakana); my %h2k; @h2k{@hiragana} = @katakana; $str = $hiragana; $str =~ s/([ぁ-ん])/$h2k{$1}/go; print $str eq $katakana ? "ok\n" " "$hiragana\n"$katakana\n";'
+tests[338]='#TODO re-utf8
+use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";'
 
 init
 
