@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
+# B::C::VERSION = 1.45_11 c517916 2014-05-09 | t/issue281.t: fixed with 1.45_11
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -97,12 +97,12 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-fail DateTime #TODO <5.10
+pass DateTime #TODO <5.10
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_06 - perl-5.008005d
+# 100 / 100 modules tested with B-C-1.45_11 - perl-5.008005d
 # pass  98 / 100 (98.0%)
 # fail   2 / 100 (2.0%)
 # todo   1 /   2 (50.0%)

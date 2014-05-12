@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
+# B::C::VERSION = 1.45_11 c517916 2014-05-09 | t/issue281.t: fixed with 1.45_11
 # perlversion = 5.006002-nt
 # path = perl5.6.2-nt
 # platform = linux 64bit non-threaded
@@ -18,14 +18,14 @@ pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
 pass Test
-fail Data::Dumper
+pass Data::Dumper
 pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 skip ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -34,11 +34,11 @@ skip Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-fail HTML::Parser
+pass HTML::Parser
 fail Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
-fail Compress::Raw::Bzip2
+pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
 fail Storable
@@ -65,7 +65,7 @@ skip Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-fail Class::MOP
+pass Class::MOP
 fail Moose
 skip Test::Deep
 pass Carp::Clan
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 88 / 100 modules tested with B-C-1.45_06 - perl-5.006002-nt
-# pass  72 /  88 (81.8%)
-# fail  16 /  88 (18.2%)
-# todo   2 /  16 (12.5%)
+# 88 / 100 modules tested with B-C-1.45_11 - perl-5.006002-nt
+# pass  77 /  88 (87.5%)
+# fail  11 /  88 (12.5%)
+# todo   2 /  11 (18.2%)
 # skip  12 / 100 (12.0% not installed)
