@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_13';
+our $VERSION = '1.45_14';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -269,6 +269,7 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
+  sub SVf_UTF8 { 0x20000000 }
   if ($] >=  5.008001) {
     B->import(qw(SVt_PVGV)); # added with 5.8.1
   } else {
@@ -279,7 +280,7 @@ BEGIN {
     # not exported:
     sub SVf_OOK { 0x02000000 }
     eval q[sub SVs_GMG { 0x00200000 }
-               sub SVs_SMG { 0x00400000 }];
+           sub SVs_SMG { 0x00400000 }];
     if ($] >= 5.018) {  # PMf_ONCE also not exported
       eval q[sub PMf_ONCE(){ 0x10000 }];
     } elsif ($] >= 5.014) {
@@ -291,7 +292,7 @@ BEGIN {
     }
   } else {
     eval q[sub SVs_GMG { 0x00002000 }
-               sub SVs_SMG { 0x00004000 }];
+           sub SVs_SMG { 0x00004000 }];
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -1933,19 +1934,37 @@ sub B::PMOP::save {
     $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
-      my $resym = cstring($re);
+      # TODO: precomp does not set the utf8 flag (#333, #338)
+      my $qre = cstring($re);
       my $relen = length($re);
+      #my $is_utf8 = eval { # do not want to add Encode
+      #  decode('UTF-8', $re, Encode::FB_CROAK|Encode::LEAVE_SRC);
+      #  1
+      #};
+      my $isutf8 = 0; # ($] > 5.008 and utf8::is_utf8($re)) ? SVf_UTF8 : 0;
+      for my $c (split//, $re) {
+        if (ord($c) > 127) { $isutf8 = 1; next }
+      }
       my $pmflags = $op->pmflags;
+      warn "pregcomp $pm $qre:$relen".($isutf8?" SFv_UTF8":"").sprintf(" 0x%x\n",$pmflags)
+        if $debug{gv};
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
         require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
       }
-      $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
-        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
-        sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
-      );
+      if ($] > 5.008008) { # can do utf8 qr
+        $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
+          "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, "
+                   .sprintf("SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags),
+          sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
+      } else {
+        $init->add(
+           "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
+           sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
+        $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $isutf8;
+      }
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
       if ($PERL510 and $op->pmflags & PMf_ONCE()) {
