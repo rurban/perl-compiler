@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_12';
+our $VERSION = '1.45_13';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -221,6 +221,9 @@ EOT
 static int ${init_name}(pTHX)
 {
 EOT
+  if ($section->name eq 'init') {
+    print $fh "\tperl_init0(aTHX);\n";
+  }
   $section->SUPER::output( $fh, $format );
   print $fh "\treturn 0;\n}\n";
 }
@@ -527,7 +530,7 @@ my (
   $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
   $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-  $padlistsect, $init2
+  $padlistsect, $init0, $init2
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -4910,6 +4913,7 @@ EOT
   printf "\t/* %s */\n", $decl->comment if $decl->comment and $verbose;
   $decl->output( \*STDOUT, "%s\n" );
   print "\n";
+
   foreach $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
@@ -4920,6 +4924,13 @@ EOT
       print "};\n\n";
     }
   }
+
+  fixup_ppaddr();
+  print "static int perl_init0(pTHX) /* fixup_ppaddr */
+{";
+  $init0->output( \*STDOUT, "\t%s\n" );
+  print "};\n\n";
+
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
   my $init2_name = 'perl_init2';
@@ -5172,7 +5183,7 @@ sub init_op_addr {
   my ( $op_type, $num ) = @_;
   my $op_list = $op_type . "_list";
 
-  $init->add( split /\n/, <<_EOT3 );
+  $init0->add( split /\n/, <<_EOT3 );
 {
     register int i;
     for( i = 0; i < ${num}; ++i ) {
@@ -6584,6 +6595,7 @@ sub save_main {
 sub fixup_ppaddr {
   # init op addrs must be the last action, otherwise
   # some ops might not be initialized
+  # but it needs to happen before CALLREGCOMP, as a /i calls a compiled utf8::SWASHNEW
   if ($B::C::optimize_ppaddr) {
     foreach my $i (@op_sections) {
       my $section = $$i;
@@ -6693,7 +6705,6 @@ sub save_main_rest {
   # warn "use_xsloader=$use_xsloader\n" if $verbose;
   # If XSLoader was forced later, e.g. in curpad, INIT or END block
   force_saving_xsloader() if $use_xsloader;
-  fixup_ppaddr();
 
   return if $check;
   warn "Writing output\n" if $verbose;
@@ -6752,6 +6763,7 @@ EOT
 sub init_sections {
   my @sections = (
     decl   => \$decl,
+    init0  => \$init0,
     free   => \$free,
     sym    => \$symsect,
     hek    => \$heksect,

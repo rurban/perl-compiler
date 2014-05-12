@@ -1095,6 +1095,7 @@ print Slave->me()."\n";
 '
 result[324]='Master
 Slave of Master'
+tests[330]='"\x{101}a" =~ qr/\x{100}/i && print "ok\n"'
 
 init
 
