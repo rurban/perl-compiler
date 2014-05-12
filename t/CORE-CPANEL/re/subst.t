@@ -8,29 +8,29 @@ BEGIN {
 plan( tests => 176 );
 
 $_ = 'david';
-$a = s/david/rules/r;
-ok( $_ eq 'david' && $a eq 'rules', 'non-destructive substitute' );
+$a = s/david/rules/r; # fix for poor editors /
+ok( $_ eq 'david' && $a eq 'rules', 'non-destructive substitute' ); 
 
-$a = "david" =~ s/david/rules/r;
+$a = "david" =~ s/david/rules/r; # fix for poor editors /
 ok( $a eq 'rules', 's///r with constant' );
 
-$a = "david" =~ s/david/"is"."great"/er;
+$a = "david" =~ s/david/"is"."great"/er; # fix for poor editors /
 ok( $a eq 'isgreat', 's///er' );
 
-$a = "daviddavid" =~ s/david/cool/gr;
+$a = "daviddavid" =~ s/david/cool/gr; # fix for poor editors /
 ok( $a eq 'coolcool', 's///gr' );
 
 $a = 'david';
-$b = $a =~ s/david/sucks/r =~ s/sucks/rules/r;
+$b = $a =~ s/david/sucks/r =~ s/sucks/rules/r; # fix for poor editors /
 ok( $a eq 'david' && $b eq 'rules', 'chained s///r' );
 
 $a = 'david';
-$b = $a =~ s/xxx/sucks/r;
+$b = $a =~ s/xxx/sucks/r; # fix for poor editors /
 ok( $a eq 'david' && $b eq 'david', 'non matching s///r' );
 
 $a = 'david';
 for (0..2) {
-    ok( 'david' =~ s/$a/rules/ro eq 'rules', 's///ro '.$_ );
+    ok( 'david' =~ s/$a/rules/ro eq 'rules', 's///ro '.$_ ); # fix for poor editors /
 }
 
 $a = 'david';
@@ -40,11 +40,11 @@ like( $@, qr{Using !~ with s///r doesn't make sense}, 's///r !~ operator gives e
 {
         no warnings 'uninitialized';
         $a = undef;
-        $b = $a =~ s/left/right/r;
+        $b = $a =~ s/left/right/r; # fix for poor editors /
         ok ( !defined $a && !defined $b, 's///r with undef input' );
 
         use warnings;
-        warning_like(sub { $b = $a =~ s/left/right/r },
+        warning_like(sub { $b = $a =~ s/left/right/r }, # fix for poor editors /
 		     qr/^Use of uninitialized value/,
 		     's///r Uninitialized warning');
 
@@ -55,29 +55,29 @@ like( $@, qr{Using !~ with s///r doesn't make sense}, 's///r !~ operator gives e
 }
 
 $a = '';
-$b = $a =~ s/david/rules/r;
+$b = $a =~ s/david/rules/r; # fix for poor editors /
 ok( $a eq '' && $b eq '', 's///r on empty string' );
 
 $_ = 'david';
-@b = s/david/rules/r;
+@b = s/david/rules/r; # fix for poor editors /
 ok( $_ eq 'david' && $b[0] eq 'rules', 's///r in list context' );
 
 # Magic value and s///r
 require Tie::Scalar;
 tie $m, 'Tie::StdScalar';  # makes $a magical
 $m = "david";
-$b = $m =~ s/david/rules/r;
+$b = $m =~ s/david/rules/r; # fix for poor editors /
 ok( $m eq 'david' && $b eq 'rules', 's///r with magic input' );
 
-$m = $b =~ s/rules/david/r;
+$m = $b =~ s/rules/david/r; # fix for poor editors /
 ok( defined tied($m), 's///r magic isn\'t lost' );
 
-$b = $m =~ s/xxx/yyy/r;
+$b = $m =~ s/xxx/yyy/r; # fix for poor editors /
 ok( ! defined tied($b), 's///r magic isn\'t contagious' );
 
-my $ref = \("aaa" =~ s/aaa/bbb/r);
+my $ref = \("aaa" =~ s/aaa/bbb/r); # fix for poor editors /
 is (Internals::SvREFCNT($$ref), 1, 's///r does not leak');
-$ref = \("aaa" =~ s/aaa/bbb/rg);
+$ref = \("aaa" =~ s/aaa/bbb/rg); # fix for poor editors /
 is (Internals::SvREFCNT($$ref), 1, 's///rg does not leak');
 
 $x = 'foo';
