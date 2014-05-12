@@ -37,6 +37,10 @@ EOF
 
 my $ITHREADS = $Config{useithreads};
 
+sub diagv {
+  diag @_ if $ENV{TEST_VERBOSE};
+}
+
 sub compile_check {
   my ($num,$b,$base,$script,$cmt) = @_;
   my $name = $base."_$num";
@@ -46,6 +50,7 @@ sub compile_check {
   close F;
   my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
   $b .= ',-DCsp,-v';
+  diagv "$X -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl";
   my ($result,$out,$stderr) =
     run_cmd("$X -Iblib/arch -Iblib/lib -MO=$b,-o$name.c $name.pl", 20);
   unless (-e "$name.c") {
@@ -61,6 +66,9 @@ sub compile_check {
   ok(!$notfound, $cmt.', no "blocking not found" warning');
   # check stderr for "save package_pv "blocking" for method_name"
   my $found = $stderr =~ /save package_pv "blocking" for method_name/;
+  if ($found) {
+    $found = $stderr !~ /save method_name "IO::Socket::blocking"/;
+  }
   ok(!$found, $cmt.', blocking as method_name saved');
 }
 
