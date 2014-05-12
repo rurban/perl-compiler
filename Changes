@@ -55,6 +55,8 @@
 	Workaround a 5.18 de-optimization which disabled ++PL_sv_objcount on bless
 	  by adding it if a DESTROY method exists. This will fail since 5.18 if DESTROY
 	  is added at run-time. (#208, #197)
+        Add new init0 section to initialize -fppaddr ops before init, not afterwards. #330)
+          Needed to call utf8::SWASHINIT at init with CALLREGCOMP and /i
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)
