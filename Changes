@@ -5,6 +5,7 @@
 
 1.46 2014-05-13 rurban
 	Added global destruction, improved -O4 and CC, fixed mro, @-, $/ $\, Net::DNS, ...
+        Added mro and re core testsuite
 
 	* C: reset PL_stack_sp on init (was one too far). no effects on code.
 	Implement global destruction via sv_clean_objs and my_curse on -O3, resp.

@@ -100,33 +100,42 @@ We only try B::C with -O3 so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 Compile-time status from top100:
-5.6.2      fail 1%  Sub::Name
-5.8.5      fail 1%  DateTime
-5.8.8      fail 1%  Test::Tester
+5.6.2      fail 12.5% Test::* Moose* DateTime*
+5.8.5      fail 2%  FCGI Test::Harness
+5.8.8      fail 3%  FCGI Test::Harness Test::Tester
 5.8.9      fail 2%  ExtUtils::CBuilder DateTime
-5.10.1     pass 100% (but PMOP->pregcomp is broken)
-5.12.5     fail 1%  ExtUtils::CBuilder
+5.10.1     pass 100%
+5.12.5     pass 100%
 5.14.4     pass 100%
-5.16.3     fail 1%  Module::Build
-5.18.2     fail 2%  ExtUtils::ParseXS Module::Build
+5.16.3     fail 1%  Module::Build (out of memory/use-after-free)
+5.18.2     fail 2%  ExtUtils::ParseXS Module::Build (re-eval, out of memory/use-after-free)
+5.20.0     fail 5%  ExtUtils::ParseXS    (re-eval)
+                    Module::Build        (out of memory/use-after-free)
+                    B::Hooks::EndOfScope namespace::clean MooseX::Types (Modification of a read-only value)
 
 Run-time tests not yet fully done
 
-5.19.11 status
+5.20 status
 -----------
 Bytecode is better than 5.18 but still unstable, B::CC also
+Some new compile-time Readonly states are not properly reset
 
 5.18 status
 -----------
 Bytecode is broken for threaded perls
+new re-eval feature not yet supported
 
 5.10, 5.12, 5.14, 5.16 status
 -----------------------
 TODO for B::C
   see google issues https://code.google.com/p/perl-compiler/issues/
   Most of them have either easy workarounds or are not fixable.
+
   - attribute handlers (i.e. run-time attributes)
   - compile-time perlio layers
+  - re-eval groups (?{})
+  - smartmatch subrefs
+  - compile-time stash-magic delete renames to ANON
 
 Fix CC 
   several other issues detected (and mostly fixed) by Heinz Knutzen
