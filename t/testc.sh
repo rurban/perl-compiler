@@ -440,7 +440,7 @@ tests[101]='my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_
 result[101]='12'
 # CC cond_expr, stub, scope
 tests[102]='if ($x eq "2"){}else{print "ok"}'
-# CC stringify, srefgen. TODO: use B; fails
+# CC stringify, srefgen
 tests[103]='require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)'
 result[103]='B::PV'
 # CC reset
@@ -609,7 +609,7 @@ print $@;
 print "ok\n" if $@ eq "ALARM !\n";'
 result[168]='ALARM !
 ok'
-tests[169]='# TODO
+tests[169]='#TODO Attribute::Handlers
 package MyTest;
 use Attribute::Handlers;
 sub Check :ATTR {
@@ -851,7 +851,7 @@ result[215]=':t3
 :'
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
 # also at 904
-tests[220]='#TODO @-
+tests[220]='
 my $content = "ok\n";
 while ( $content =~ m{\w}g ) {
     $_ .= "$-[0]$+[0]";
@@ -926,13 +926,13 @@ tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
 result[246]='Not enough arguments for main::foo at (eval 1) line 2, at EOF'
 tests[247]='# WontFix
 no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
-tests[248]='#TODO
+tests[248]='#TODO re-eval
 {my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
 result[248]='-titi-toto-'
-tests[249]='#TODO
+tests[249]='#TODO version
 use version; print version::is_strict(q{01}) ? 1 : 0'
 result[249]='0'
-tests[250]='#TODO
+tests[250]='#TODO version
 use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
 result[250]='Misplaced _ in number at (eval 1) line 1.
 Invalid version format (no underscores) at (eval 1) line 1, near "package withversion "
@@ -1016,8 +1016,7 @@ bar ~~
 open(OUT, ">/dev/null"); write(OUT); close OUT; print q(ok)'
 tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
-tests[281]='#TODO @-
-"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
+tests[281]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
 result[281]='ok
 @- = 0 0 2 7
 @+ = 10 1 6 10
@@ -1042,10 +1041,9 @@ result[284]='123
 456
 789'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
-tests[295]='#TODO @-
-"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
+tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
-tests[299]='#TODO
+tests[299]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
 tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'
@@ -1105,7 +1103,7 @@ result[329]='ok
 axxxx aaa a aaa aa'
 tests[330]='"\x{101}a" =~ qr/\x{100}/i && print "ok\n"'
 tests[331]='use 5.010; use charnames ":full"; my $char = q/\N{LATIN CAPITAL LETTER A WITH MACRON}/; my $a = eval qq ["$char"]; print length($a) == 1 ? "ok\n" : "$a\n".length($a)."\n"'
-tests[332]='# TODO re-eval
+tests[332]='#TODO re-eval
 use re "eval"; our ( $x, $y, $z ) = 1..3; $x =~ qr/$x(?{ $y = $z++ })/; undef $@; print "ok\n"'
 tests[333]='use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん"); my @katakana =  map {chr} ord("ァ")..ord("ン"); my $hiragana = join(q{} => @hiragana); my $katakana = join(q{} => @katakana); my %h2k; @h2k{@hiragana} = @katakana; $str = $hiragana; $str =~ s/([ぁ-ん])/$h2k{$1}/go; print $str eq $katakana ? "ok\n" : "not ok\n$hiragana\n$katakana\n";'
