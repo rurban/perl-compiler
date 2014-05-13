@@ -1937,13 +1937,14 @@ sub B::PMOP::save {
       # TODO: precomp does not set the utf8 flag (#333, #338)
       my $qre = cstring($re);
       my $relen = length($re);
-      #my $is_utf8 = eval { # do not want to add Encode
-      #  decode('UTF-8', $re, Encode::FB_CROAK|Encode::LEAVE_SRC);
-      #  1
-      #};
       my $isutf8 = 0; # ($] > 5.008 and utf8::is_utf8($re)) ? SVf_UTF8 : 0;
       for my $c (split//, $re) {
         if (ord($c) > 127) { $isutf8 = 1; next }
+      }
+      if (!$PERL56 and $isutf8) {
+        my $pv = $re;
+        utf8::encode($pv);
+        $relen = length $pv;
       }
       my $pmflags = $op->pmflags;
       warn "pregcomp $pm $qre:$relen".($isutf8?" SFv_UTF8":"").sprintf(" 0x%x\n",$pmflags)
