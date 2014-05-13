@@ -58,6 +58,8 @@
 	  is added at run-time. (#208, #197)
         Add new init0 section to initialize -fppaddr ops before init, not afterwards. #330)
           Needed to call utf8::SWASHINIT at init with CALLREGCOMP and /i
+        Since 5.18 dynamically initialize the utf8_tofold swash to avoid free on static errors
+          when assigned (#330). This does not save the folding tables into the binary.
 	* CC (1.15): Skip saving non-existing methods analog to B::C 1.43_06 (CC test 50)
 	Fix failing CopFILE_free and CopSTASH_free in END blocks with threads (#296, CC test 48)
 	Handle duplicate function names, like multiple END blocks or anon functions (#297)

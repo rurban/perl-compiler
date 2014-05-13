@@ -348,7 +348,7 @@ my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
-my $warn_undefined_syms;
+my ($warn_undefined_syms, $swash_init);
 my ($staticxs, $outfile);
 my (%include_package, %skip_package, %saved, %isa_cache);
 my %static_ext;
@@ -417,7 +417,7 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
-#my $PERL518 = ( $] >= 5.017010 );
+my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
@@ -1934,26 +1934,38 @@ sub B::PMOP::save {
     $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
-      # TODO: precomp does not set the utf8 flag (#333, #338)
       my $qre = cstring($re);
-      my $relen = length($re);
+      my $relen = length( pack "a*", $re );
+      # precomp does not set the utf8 flag (#333, #338)
       my $isutf8 = 0; # ($] > 5.008 and utf8::is_utf8($re)) ? SVf_UTF8 : 0;
       for my $c (split//, $re) {
         if (ord($c) > 127) { $isutf8 = 1; next }
       }
       if (!$PERL56 and $isutf8) {
-        my $pv = $re;
-        utf8::encode($pv);
-        $relen = length $pv;
+        if (utf8::is_utf8($re)) {
+          my $pv = $re;
+          utf8::encode($pv);
+          $relen = length $pv;
+        }
       }
       my $pmflags = $op->pmflags;
-      warn "pregcomp $pm $qre:$relen".($isutf8?" SFv_UTF8":"").sprintf(" 0x%x\n",$pmflags)
-        if $debug{gv};
+      warn "pregcomp $pm $qre:$relen".($isutf8?" SVf_UTF8":"").sprintf(" 0x%x\n",$pmflags)
+        if $debug{pv} or $debug{gv};
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-        require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
-        svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+        if ($PERL518 and !$swash_init) {
+          $init->add("{",
+                     "  STRLEN lenp; /* need to initialize the PL_utf8_tofold swash */",
+                   qq{  char dest[3];},
+                   qq{  to_utf8_case("Ā", dest, &lenp, &PL_utf8_tofold, "ToCf", NULL);},
+                     "}",
+                    );
+          $swash_init++;
+        } else {
+          require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+          my $swashnew = svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+        }
       }
       if ($] > 5.008008) { # can do utf8 qr
         $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
