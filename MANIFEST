@@ -287,7 +287,7 @@ t/C-COMPILED/CORE--op--goto.t
 t/C-COMPILED/CORE--op--grent.t
 t/C-COMPILED/CORE--op--grep.t
 t/C-COMPILED/CORE--op--groups.t
-t/C-COMPILED/CORE--op--gv==BADPLAN-280.t
+t/C-COMPILED/CORE--op--gv.t
 t/C-COMPILED/CORE--op--hash.t
 t/C-COMPILED/CORE--op--hashassign.t
 t/C-COMPILED/CORE--op--hashwarn.t
