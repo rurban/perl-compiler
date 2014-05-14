@@ -265,14 +265,25 @@ sub is_todo {
   #)) { return 'overlong linking time' if $_ eq $module; }
   if ($] < 5.007) { foreach(qw(
     Sub::Name
+    Test::Simple
+    Test::Exception
+    Storable
+    Test::Tester
+    Test::NoWarnings
+    Moose
+    Test::Warn
+    Test::Pod
+    MooseX::Types
+    DateTime::TimeZone
+    DateTime
   )) { return '5.6' if $_ eq $module; }}
   if ($] >= 5.008004 and $] < 5.0080006) { foreach(qw(
     Module::Pluggable
   )) { return '5.8.5 CopFILE_set' if $_ eq $module; }}
-  # ??
-  if ($] < 5.010) { foreach(qw(
-    DateTime
-  )) { return '<5.10' if $_ eq $module; }}
+  # PMOP quoting fixed with 1.45_14
+  #if ($] < 5.010) { foreach(qw(
+  #  DateTime
+  #)) { return '<5.10' if $_ eq $module; }}
   # restricted v_string hash?
   if ($] eq '5.010000') { foreach(qw(
    IO
@@ -280,71 +291,29 @@ sub is_todo {
    DateTime::TimeZone
   )) { return '5.10.0 restricted hash/...' if $_ eq $module; }}
   # fixed between v5.15.6-210-g5343a61 and v5.15.6-233-gfb7aafe
-  if ($] > 5.015 and $] < 5.015006) { foreach(qw(
-   B::Hooks::EndOfScope
-  )) { return '> 5.15' if $_ eq $module; }}
-  # SvSTASH of magic stashes?
-  if ($] >= 5.016) { foreach(qw(
-      Module::Build
-  )) { return '>= 5.16' if $_ eq $module; }}
+  #if ($] > 5.015 and $] < 5.015006) { foreach(qw(
+  # B::Hooks::EndOfScope
+  #)) { return '> 5.15' if $_ eq $module; }}
   if ($] >= 5.018) { foreach(qw(
       ExtUtils::ParseXS
   )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
-  #if ($] >= 5.018) { foreach(qw(
-  #    Attribute::Handlers
-  #)) { return '>= 5.18 #169 early my_exit + SEGV' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
-    #if (!$DEBUGGING) { foreach(qw(
-    #  Test::Tester
-    #)) { return 'non-debugging with threads' if $_ eq $module; }}
-    # fixed with 1.44
-    #if ($] > 5.008001 and $] < 5.008009) { foreach(qw(
-    #  Test::Pod
-    #)) { return '5.8.1-5.8.8 with threads' if $_ eq $module; }}
-    # $op->precomp assertions _svivx != SVt_PVAV at rx = PM_GETRE(o)
-    #if ($] >= 5.009 and $] < 5.012) { foreach(qw(
-    #   Encode
-    #   ExtUtils::Install
-    #   Module::Build
-    #   MooseX::Types
-    #   Pod::Text
-    #   Template::Stash
-    #   Test::Harness
-    #   ExtUtils::CBuilder
-    #   ExtUtils::ParseXS
-    #   Sub::Uplevel
-    #   URI
-    #   Test::Exception
-    #   LWP
-    #   Attribute::Handlers
-    #   version
-    #   Class::MOP
-    #   Moose
-    #   Module::Pluggable
-    #   Test::Warn
-    #)) { return '5.10 with threads' if $_ eq $module; }}
-    #if ($] >= 5.010 and $] < 5.012 and $DEBUGGING) { foreach(qw(
-    #  Attribute::Handlers
-    #)) { return '5.10 DEBUGGING #169 early my_exit + SEGV' if $_ eq $module; }}
     if ($] >= 5.012 and $] < 5.014) { foreach(qw(
       ExtUtils::CBuilder
     )) { return '5.12 with threads' if $_ eq $module; }}
-    #if ($] >= 5.018) { foreach(qw(
-    #  ExtUtils::CBuilder
-    #)) { return '>= 5.18 with threads' if $_ eq $module; }}
+    if ($] >= 5.016) { foreach(qw(
+      Module::Build
+    )) { return '>= 5.16 (out of memory)' if $_ eq $module; }}
   } else { #no threads --------------------------------
-    # This was related to aelemfast->sv with SPECIAL pads fixed with 033d200
-    #if ($] > 5.008004 and $] <= 5.008005) { foreach(qw(
-    #  DateTime
-    #)) { return '5.8.5 without threads' if $_ eq $module; }}
     if ($] > 5.008008 and $] <= 5.009) { foreach(qw(
       ExtUtils::CBuilder
     )) { return '5.8.9 without threads' if $_ eq $module; }}
-    #if ($] > 5.015) { foreach(qw(
-    #  DateTime::TimeZone
-    #)) { return '> 5.15 without threads' if $_ eq $module; }}
+    # invalid free
+    if ($] >= 5.016) { foreach(qw(
+        Module::Build
+    )) { return '>= 5.16 without threads (invalid free)' if $_ eq $module; }}
     if ($] > 5.019) { foreach(qw(
       B::Hooks::EndOfScope
       namespace::clean
