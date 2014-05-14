@@ -31,6 +31,7 @@ BEGIN {
 }
 use strict;
 my $PERL56  = ( $] <  5.008001 );
+my $PERL518 = ( $] >  5.017006 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = $Config{useithreads};
 my $MULTI     = $Config{usemultiplicity};
@@ -57,19 +58,13 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
   if $] < 5.007; # CORE failures, our Bytecode 56 compiler not yet backported
 #44 fixed by moving push_begin upfront
 push @todo, (21,24..26,28,33,38..39) if $^O eq 'solaris' and $] eq '5.008008';
-# fixed with 1.35
-#push @todo, (10,18,22,24,27..28,30,45) if $^O eq 'linux' and $] eq '5.008008';
 push @todo, (43)   if $] >= 5.008004 and $] <= 5.008008;
 push @todo, (7)    if $] >= 5.008004 and $] < 5.008008 and $ITHREADS;
 push @todo, (27)   if $] >= 5.010 and !$ITHREADS;
 push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
-#push @todo, (48)  if $] > 5.013; # END block del_backref fixed with r1004
-#push @todo, (41)  if !$ITHREADS;
 # cannot store labels on windows 5.12: 21
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
 push @todo, (46) if $] >= 5.012 and $] < 5.018;
-#push @todo, (27,29) if $] >= 5.018;
-push @todo, (16) if $] >= 5.018 and $ITHREADS;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
 
 my @skip = ();
@@ -89,6 +84,8 @@ else {
 }
 # $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
 $backend .= ",-H" unless $PERL56;
+# TODO: -H still unstable with 5.18 (filter issue #339)
+$backend = "Bytecode,-s" if $PERL518 and !$ITHREADS;
 
 #$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {
@@ -113,6 +110,7 @@ for (@tests) {
 		  stderr   => $PERL56 ? 1 : 0, # capture "bytecode.pl syntax ok"
 		  timeout  => 10,
 		  progfile => $test);
+  my $Byteloader = ($PERL56 or ($PERL518 and !$ITHREADS)) ? " -MByteLoader" : "";
   unless ($?) {
     # test coverage if -Dv is allowed
     if ($do_coverage and $DEBUGGING) {
@@ -120,7 +118,7 @@ for (@tests) {
 			 nolib    => $ENV{PERL_CORE} ? 0 : 1,
 			 stderr   => 1,
 			 timeout  => 20,
-			 switches => [ "$Mblib -Dv".($PERL56 ? " -MByteLoader" : "") ]);
+			 switches => [ "$Mblib -Dv $Byteloader" ]);
       for (map { /\(insn (\d+)\)/ ? $1 : undef }
 	     grep /\(insn (\d+)\)/, split(/\n/, $cov)) {
 	$insncov{$_}++;
@@ -132,7 +130,7 @@ for (@tests) {
 		    nolib    => $ENV{PERL_CORE} ? 0 : 1,
 		    stderr   => $PERL56 ? 1 : 0,
 		    timeout  => 5,
-                    switches => [ "$Mblib".($PERL56 ? " -MByteLoader" : "") ]);
+                    switches => [ "$Mblib $Byteloader" ]);
     unless ($?) {
       if ($got =~ /^$expect$/) {
 	print "ok $cnt", $todo eq '#' ? "\n" : "$todo\n";

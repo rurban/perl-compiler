@@ -3,6 +3,14 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
+1.47 ?? rurban
+        Fixed Bytecode for 5.18
+
+	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
+          Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
+          "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
+	* t/asmdata.t: signicant enhancements
+
 1.46 2014-05-14 rurban
 	Added global destruction, improved -O4 and CC, fixed mro, @-, $/ $\, Net::DNS, ...
         Added mro and re core testsuite.
