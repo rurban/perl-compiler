@@ -348,7 +348,7 @@ my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
-my ($warn_undefined_syms, $swash_init);
+my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
 my (%include_package, %skip_package, %saved, %isa_cache);
 my %static_ext;
@@ -1954,17 +1954,11 @@ sub B::PMOP::save {
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-        if ($PERL518 and !$swash_init) {
-          $init->add("{",
-                     "  STRLEN lenp; /* need to initialize the PL_utf8_tofold swash */",
-                   qq{  char dest[3];},
-                   qq{  to_utf8_case("Ā", dest, &lenp, &PL_utf8_tofold, "ToCf", NULL);},
-                     "}",
-                    );
+        require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+        svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+        if ($PERL518 and !$swash_init and $swash_ToCf) {
+          $init->add("PL_utf8_tofold = $swash_ToCf;");
           $swash_init++;
-        } else {
-          require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
-          my $swashnew = svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
         }
       }
       if ($] > 5.008008) { # can do utf8 qr
@@ -4596,6 +4590,12 @@ sub B::HV::save {
 	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, %s);",
 			      cstring($key), $cur, $value, 0 )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
+          if (!$swash_ToCf and $fullname =~ /^utf8::SWASHNEW/
+              and cstring($key) eq '"utf8\034unicore/To/Cf.pl\0340"' and $cur == 23)
+          {
+            $swash_ToCf = $value;
+            warn sprintf( "Found PL_utf8_tofold ToCf swash $value\n") if $verbose;
+          }
 	}
       }
       $init->add("}");
