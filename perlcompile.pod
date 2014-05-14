@@ -53,20 +53,29 @@ expressed as a number from 0 (outline for later implementation) to
 
 Stores the parse tree in a machine-independent format, suitable
 for later reloading through the L</"ByteLoader"> module.  
-Status: 5 (some things work until 5.8.x, some things don't, 
-some things are untested).
+
+Status: 7 (5.18 and higher is broken).
 
 =item The B::C backend
 
 Creates a C source file containing code to rebuild the parse tree
-and resume the interpreter.  
+and resume the interpreter.
 
-Status: 6 (many things work adequately until 5.8.x, including programs using Tk).
+Status: 9 (most applications work out of the box, some need cmdline flags)
 
-5.6: works perfectly
-5.8: minor bugs (qr//)
-5.10: two major bugs: autoloaded subs, magic GVs (sort $a, tie FETCH)
-5.11: order of evaluation in regex replacements, split
+5.14 works best. See L<STATUS>
+
+B::C is stable and used in production for -O0 and -O3. For some programs
+not all methods in certain packages or eval strings might be detected,
+you'd need to add them manually via -u<packagename>.
+
+Still missing in general are:
+
+  - attribute handlers (i.e. run-time attributes)
+  - compile-time perlio layers
+  - re-eval groups (?{})
+  - smartmatch subrefs
+  - compile-time stash-magic delete renames to ANON
 
 =item The B::CC backend
 
@@ -79,12 +88,7 @@ sufficient type information in the Perl program) some of the
 Perl data structure manipulations into manipulations of C-level
 ints, floats, etc.  
 
-Status: 5 (some things work until 5.8.x, including uncomplicated Tk examples).
-
-Same bugs as in B::C, plus
-5.6: none
-5.8: none
-5.10 and higher: eval (test 12)
+Status: 5 (some applications work).
 
 =item B::Lint
 
@@ -253,19 +257,24 @@ Without extra arguments, it saves the main program.
 
         -q 		Be quiet. STDOUT goes to $O::BEGIN_output
         -qq		Be very quiet. Also suppress "Syntax OK"
-	-ofilename	Output to filename instead of STDOUT
+	-o<filename>	Output to filename instead of STDOUT
 	-v		Be verbose. Currently gives a few compilation statistics.
 	--		Force end of options
-	-uPackname	Force apparently unused subs from package Packname to
-			be compiled. This allows programs to use eval "foo()"
-			even when sub foo is never seen to be used at compile
+	-u<package>	use package or filename. Force apparently unused subs from
+                        package to be compiled. This allows programs to use run-time
+                        eval "foo()" even when sub foo is never seen to be used at compile
 			time. The down side is that any subs which really are
 			never used also have code generated. This option is
 			necessary, for example, if you have a signal handler
 			foo which you initialise with $SIG{BAR} = "foo".
 			A better fix, though, is just to change it to
-			$SIG{BAR} = \&foo. You can have multiple -u options.
+			$SIG{BAR} = \&foo. You can have multiple -u or -U options.
+        -U<package>     Unuse package or filename. Ignore all subs from package to be compiled.
+                        Certain packages might not be needed at run-time, even if the
+                        pessimistic walker detects it. If required those packages will be
+                        run-time loaded then.
 	-e ARG		Eval ARG at startup
+        -c              Check and abort (used to print warnings)
 NYI	-w		Warn on undefined SYMs
 	-l LIMIT	Force max linelength to LIMIT (e.g. MSVC to 2048)
 	-D		Debug options (concat or separate flags like perl -D)
@@ -281,19 +290,28 @@ NYI	-w		Warn on undefined SYMs
 	-f		Force optimisations on or off one at a time.
 		cog		Copy-on-grow: PVs declared and initialised statically
 		no-cog		No copy-on-grow
-		save-data	Save package::DATA filehandles 
-				( only available with PerlIO )
+		save-data	Save package::DATA filehandles ( only available with PerlIO::scalar )
 		ppaddr		Optimize the initialization of op_ppaddr.
 		warn-sv		Optimize the initialization of cop_warnings.
-		av-init		Faster initialization of AVs
+		av-init		Faster initialization of AVs.
+		av-init2	Initialization of AVs via ptmalloc3 independent_comalloc().
 		use-script-name	Use the script name instead of the program name as $0.
+                ro-inc          Readonly @INC and %INC pathnames.
+                const-strings   Declares static readonly strings as const.
 		save-sig-hash	Save compile-time modifications to the %SIG hash.
+                no-destruct     Faster destruction.
+                no-fold         Do not compile unicode foldings tables, needed for m//i
+                no-warnings     Do not compile warnings hashes.
+                stash           Add all stash hashes even if not used.
+                no-delete-pkg   Do not delete compiler-internal and dependent packages.
+                no-dyn-padlist  Disable dynamic padlists (5.18). This is faster but might cause
+                                die and exit to crash.
 		cop		Omit COP, no file+line info for warnings
 	-On		Optimisation level (n = 0, 1, 2, ...). -O means -O1.
-	  	-O1	-fcog
-		-O2	-O1 -fcog -fppaddr -fwarn-sv -fav-init
-		-O3     -O2 -fsave-sig-hash -fsave-data 
-		-O4     -O3 -fcop
+	  	-O1	-fcog -fav-init2/-fav-init -fppaddr -fwarn-sv
+		-O2	-O1 -fro-inc -fsave-data
+		-O3     -O2 -fsave-sig-hash -fno-destruct fconst-strings
+		-O4     -O3 -fcop -fno-dyn-padlist
 
 =head3 C Examples
 	perl -MO=C foo.pl > foo.c
@@ -406,33 +424,8 @@ To produce a shared library from a Perl module (ending in C<.pm>):
 
 If there are any non-option arguments, they are taken to be names of
 subs to be saved. Without extra arguments, it saves the main program.
+B::C takes all B::C options plus a few new ones:
 
-        -q 		Be quiet. STDOUT goes to $O::BEGIN_output
-        -qq		Be very quiet. Also suppress "Syntax OK"
-	-ofilename	Output to filename instead of STDOUT
-	-v              Be verbose.
-	--		Force end of options
-NYI	-pn		Generate code for perl version n (e.g. 5.008007).
-			The default is to generate C code which will link
-			with the currently executing version of perl,
-			running the perl compiler.
-	-mModulename	Instead of generating source for a runnable executable,
-			generate source for an XSUB module. The
-			boot_Modulename function (which DynaLoader can look
-			for) does the appropriate initialisation and runs the
-			main part of the Perl source that is being compiled.
-	-uPackname	Force apparently unused subs from package Packname to
-			be compiled. This allows programs to use eval "foo()"
-			even when sub foo is never seen to be used at compile
-			time. The down side is that any subs which really are
-			never used also have code generated. This option is
-			necessary, for example, if you have a signal handler
-			foo which you initialise with $SIG{BAR} = "foo".
-			A better fix, though, is just to change it to
-			$SIG{BAR} = \&foo. You can have multiple -u options.
-	-e ARG		Eval ARG at startup
-NYI	-w		Warn on undefined SYMs
-	-l LIMIT	Force max linelength to LIMIT (e.g. MSVC to 2048)
 	-D		Debug options (concat or separate flags like perl -D)
 		o	Enable B debugging
 		r	Writes debugging output to STDERR just as it's about
@@ -464,9 +457,7 @@ NYI	-w		Warn on undefined SYMs
 	  	-O1	-ffreetmps-each-bblock
 		-O2	-O1 -ffreetmps-each-loop
 
-The following B::C optimisations are automatically used:
-C<-fwarn-sv> C<-fsave-data> C<-fav-init> C<-fsave-sig-hash>
-and for Perl < 5.10 C<-fcog>.
+All B::C -O3 optimisations are automatically used.
 
 =head3 CC Invocation Example
 
@@ -668,17 +659,15 @@ but after your program has finished being compiled.  Execution order:
 BEGIN{}, (possible save of state through compiler back-end), INIT{},
 program runs, END{}.
 
+Yet unsupported:
+
+  - attribute handlers (i.e. run-time attributes)
+  - compile-time perlio layers
+  - re-eval groups (?{})
+  - smartmatch subrefs
+  - compile-time stash-magic delete renames to ANON
+
 CC backend: goto, sort with non-default comparison. last for non-loop blocks.
-
-ref counts
-
-perl_parse replacement
-
-fix cstring for long strings
-
-signed/unsigned problems with NV (and IV?) initialisation and elsewhere?
-
-CvOUTSIDE for ordinary subs
 
 See F<STATUS>
 

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_10 ae1eda9 2014-05-08 | t/issue95.t: TODO test 5 on bad IO::Socket::SSL VERSIONs
+# B::C::VERSION = 1.46 1795749 2014-05-13 | 1.46 release prep M
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build #TODO >= 5.16
+fail Module::Build #TODO >= 5.16 without threads (invalid free)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_10 - perl-5.016003-nt
+# 100 / 100 modules tested with B-C-1.46 - perl-5.016003-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_05 d576ef0 2014-02-19 | module updates for 1.45_04 922ddb8 (-2, +2)
+# B::C::VERSION = 1.46 26ee157 2014-05-13 | 1.46 prep: docs and status updates M
 # perlversion = 5.008004d-nt
 # path = /usr/local/bin/perl5.8.4d-nt
 # platform = linux 64bit non-threaded debug
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO <5.10
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_05 - perl-5.008004d-nt
+# 100 / 100 modules tested with B-C-1.46 - perl-5.008004d-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

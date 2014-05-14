@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
+# B::C::VERSION = 1.45_11 c517916 2014-05-09 | t/issue281.t: fixed with 1.45_11
 # perlversion = 5.008008-nt
 # path = /usr/local/bin/perl5.8.8-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_06 - perl-5.008008-nt
+# 100 / 100 modules tested with B-C-1.45_11 - perl-5.008008-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   1 /   0 ()

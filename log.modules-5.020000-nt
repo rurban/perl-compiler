@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.43_08 7f33fee 2014-02-05 | log.modules-5.019008-nt update for 1.43_07 0c17ff5 (worse)
-# perlversion = 5.019008-nt
-# path = /usr/local/bin/perl5.19.8
+# B::C::VERSION = 1.46 0ca5ef0 2014-05-14 | module test updates (good)
+# perlversion = 5.020000-nt
+# path = /usr/local/bin/perl5.20.0-nt@cfe3322a
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
-fail Module::Build #TODO >= 5.16
+pass Module::Build #TODO >= 5.16 without threads (invalid free)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -84,16 +84,16 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-fail B::Hooks::EndOfScope
+fail B::Hooks::EndOfScope #TODO 5.19 without threads
 pass Test::Pod
 pass Digest::SHA1
-fail namespace::clean
+fail namespace::clean #TODO 5.19 without threads
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+fail MooseX::Types #TODO 5.19 without threads
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.43_08 - perl-5.019008-nt
-# pass  95 / 100 (95.0%)
-# fail   5 / 100 (5.0%)
-# todo   2 /   5 (40.0%)
+# 100 / 100 modules tested with B-C-1.46 - perl-5.020000-nt
+# pass  96 / 100 (96.0%)
+# fail   4 / 100 (4.0%)
+# todo   5 /   4 (125.0%)
 # skip   0 / 100 (0.0% not installed)

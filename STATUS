@@ -4,7 +4,9 @@ Still missing in general are:
 
   - attribute handlers (i.e. run-time attributes)
   - compile-time perlio layers
-  - wrong @- values
+  - re-eval groups (?{})
+  - smartmatch subrefs
+  - compile-time stash-magic delete renames to ANON
 
 B::C is stable and used in production for -O0 and -O3. For bigger programs
 not all methods in certain packages or eval strings might be detected,
@@ -20,8 +22,9 @@ The old core compiler fails for 50% of the testcases.
 Windows and other OS with strict linking <5.16 will fail to install due to some
 not exported libperl symbols. Looks at the patches in ramblings.
 
-Security: The latest released compiler version 1.43 is only supported up to 5.14.4.
-5.16.x and 5.18.x upstream are too insecure to be recommended for production.
+Security: The latest released compiler version 1.45 is only supported up to 5.14.4,
+Newer perl versions should work, but 5.16.x and 5.18.x upstream are too insecure
+to be recommended for production.
 5.20 will finally properly handle unicode names, but identifiers and package
 names are still handled as binary blobs, which could lead to TR39 issues.
 Check your code for syntax spoofs, confusables, strip \\0 from package names
@@ -97,34 +100,42 @@ We only try B::C with -O3 so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 Compile-time status from top100:
-5.6.2      fail 1%  Sub::Name
-5.8.5      fail 1%  DateTime
-5.8.8      fail 1%  Test::Tester
+5.6.2      fail 12.5% Test::* Moose* DateTime*
+5.8.5      fail 2%  FCGI Test::Harness
+5.8.8      fail 3%  FCGI Test::Harness Test::Tester
 5.8.9      fail 2%  ExtUtils::CBuilder DateTime
-5.10.1     pass 100% (but PMOP->pregcomp is broken)
-5.12.5     fail 1%  ExtUtils::CBuilder
+5.10.1     pass 100%
+5.12.5     pass 100%
 5.14.4     pass 100%
-5.16.3     fail 1%  Module::Build
-5.18.2     fail 2%  ExtUtils::ParseXS Module::Build
+5.16.3     fail 1%  Module::Build (out of memory/use-after-free)
+5.18.2     fail 2%  ExtUtils::ParseXS Module::Build (re-eval, out of memory/use-after-free)
+5.20.0     fail 5%  ExtUtils::ParseXS    (re-eval)
+                    Module::Build        (out of memory/use-after-free)
+                    B::Hooks::EndOfScope namespace::clean MooseX::Types (Modification of a read-only value)
 
 Run-time tests not yet fully done
 
-5.19.8 status
+5.20 status
 -----------
 Bytecode is better than 5.18 but still unstable, B::CC also
+Some new compile-time Readonly states are not properly reset
 
 5.18 status
 -----------
-Bytecode is broken for threaded perls, B::CC worse than with 5.14
+Bytecode is broken for threaded perls
+new re-eval feature not yet supported
 
 5.10, 5.12, 5.14, 5.16 status
 -----------------------
 TODO for B::C
   see google issues https://code.google.com/p/perl-compiler/issues/
   Most of them have either easy workarounds or are not fixable.
-  - global destruction (use lexicals!),
+
   - attribute handlers (i.e. run-time attributes)
   - compile-time perlio layers
+  - re-eval groups (?{})
+  - smartmatch subrefs
+  - compile-time stash-magic delete renames to ANON
 
 Fix CC 
   several other issues detected (and mostly fixed) by Heinz Knutzen
@@ -136,7 +147,18 @@ Fix CC
 DONE
 ----
 fixed with 1.46:
-  global destruction of our static objects
+  global destruction of our and global objects
+  utf8 qr and utf8 /i initialization with -fppaddr
+  @-
+  lexical warnings on 5.8
+  -O4 CvSTART cops
+  mro: c3 and maybe|next:: method calls
+  Encode dlsym patching of compile-time XS handles (Net::DNS, IO::Socket::SSL)
+  $/, $@ and $\, esp. when localized
+  dump all used @ISA's
+  GvFORM pseudo CVs (B::FM) on 5.10
+  __DATA__ blocks in packages without printing wrong warnings
+  Replace each %hash with foreach sort keys (no random misses of functions)
 
 fixed with 1.44:
   SvLEN and PV ptr for empty shared hash keys

@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
+# B::C::VERSION = 1.46 26ee157 2014-05-13 | 1.46 prep: docs and status updates M
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO <5.10
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_06 - perl-5.008009-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   2 /   0 ()
+# 100 / 100 modules tested with B-C-1.46 - perl-5.008009-nt
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)

@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.45_11';
+our $VERSION = '1.46';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -221,6 +221,9 @@ EOT
 static int ${init_name}(pTHX)
 {
 EOT
+  if ($section->name eq 'init') {
+    print $fh "\tperl_init0(aTHX);\n";
+  }
   $section->SUPER::output( $fh, $format );
   print $fh "\treturn 0;\n}\n";
 }
@@ -266,6 +269,7 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
+  sub SVf_UTF8 { 0x20000000 }
   if ($] >=  5.008001) {
     B->import(qw(SVt_PVGV)); # added with 5.8.1
   } else {
@@ -276,7 +280,7 @@ BEGIN {
     # not exported:
     sub SVf_OOK { 0x02000000 }
     eval q[sub SVs_GMG { 0x00200000 }
-               sub SVs_SMG { 0x00400000 }];
+           sub SVs_SMG { 0x00400000 }];
     if ($] >= 5.018) {  # PMf_ONCE also not exported
       eval q[sub PMf_ONCE(){ 0x10000 }];
     } elsif ($] >= 5.014) {
@@ -288,7 +292,7 @@ BEGIN {
     }
   } else {
     eval q[sub SVs_GMG { 0x00002000 }
-               sub SVs_SMG { 0x00004000 }];
+           sub SVs_SMG { 0x00004000 }];
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -344,7 +348,7 @@ my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
 my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
-my $warn_undefined_syms;
+my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
 my (%include_package, %skip_package, %saved, %isa_cache);
 my %static_ext;
@@ -413,6 +417,7 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
 my $PERL510  = ( $] >= 5.009005 );
@@ -526,7 +531,7 @@ my (
   $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
   $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-  $padlistsect, $init2
+  $padlistsect, $init0, $init2
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -1929,19 +1934,44 @@ sub B::PMOP::save {
     $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
-      my $resym = cstring($re);
-      my $relen = length($re);
+      my $qre = cstring($re);
+      my $relen = length( pack "a*", $re );
+      # precomp does not set the utf8 flag (#333, #338)
+      my $isutf8 = 0; # ($] > 5.008 and utf8::is_utf8($re)) ? SVf_UTF8 : 0;
+      for my $c (split//, $re) {
+        if (ord($c) > 127) { $isutf8 = 1; next }
+      }
+      if (!$PERL56 and $isutf8) {
+        if (utf8::is_utf8($re)) {
+          my $pv = $re;
+          utf8::encode($pv);
+          $relen = length $pv;
+        }
+      }
       my $pmflags = $op->pmflags;
+      warn "pregcomp $pm $qre:$relen".($isutf8?" SVf_UTF8":"").sprintf(" 0x%x\n",$pmflags)
+        if $debug{pv} or $debug{gv};
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
         require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
+        if ($PERL518 and !$swash_init and $swash_ToCf) {
+          $init->add("PL_utf8_tofold = $swash_ToCf;");
+          $swash_init++;
+        }
       }
-      $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
-        "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($resym, $relen), ".sprintf("0x%x));", $pmflags),
-        sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
-      );
+      if ($] > 5.008008) { # can do utf8 qr
+        $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
+          "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, "
+                   .sprintf("SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags),
+          sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
+      } else {
+        $init->add(
+           "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
+           sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
+        $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $isutf8;
+      }
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
       if ($PERL510 and $op->pmflags & PMf_ONCE()) {
@@ -3629,6 +3659,10 @@ sub B::CV::save {
     $stash->save($fullname);
     # $sym fixed test 27
     $init->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
+    # 5.18 bless does not inc sv_objcount anymore. broken by ddf23d4a1ae (#208)
+    # We workaround this 5.18 de-optimization by adding it if at least a DESTROY
+    # method exists.
+    $init->add("++PL_sv_objcount;") if $cvname eq 'DESTROY' and $] >= 5.017011;
     warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
       if $debug{cv} and $debug{gv};
   }
@@ -4556,6 +4590,12 @@ sub B::HV::save {
 	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, %s);",
 			      cstring($key), $cur, $value, 0 )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
+          if (!$swash_ToCf and $fullname =~ /^utf8::SWASHNEW/
+              and cstring($key) eq '"utf8\034unicore/To/Cf.pl\0340"' and $cur == 23)
+          {
+            $swash_ToCf = $value;
+            warn sprintf( "Found PL_utf8_tofold ToCf swash $value\n") if $verbose;
+          }
 	}
       }
       $init->add("}");
@@ -4905,6 +4945,7 @@ EOT
   printf "\t/* %s */\n", $decl->comment if $decl->comment and $verbose;
   $decl->output( \*STDOUT, "%s\n" );
   print "\n";
+
   foreach $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
@@ -4915,6 +4956,13 @@ EOT
       print "};\n\n";
     }
   }
+
+  fixup_ppaddr();
+  print "static int perl_init0(pTHX) /* fixup_ppaddr */
+{";
+  $init0->output( \*STDOUT, "\t%s\n" );
+  print "};\n\n";
+
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
   my $init2_name = 'perl_init2';
@@ -5167,7 +5215,7 @@ sub init_op_addr {
   my ( $op_type, $num ) = @_;
   my $op_list = $op_type . "_list";
 
-  $init->add( split /\n/, <<_EOT3 );
+  $init0->add( split /\n/, <<_EOT3 );
 {
     register int i;
     for( i = 0; i < ${num}; ++i ) {
@@ -5317,8 +5365,13 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 	const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
 	if (s) {
             const int i = atoi(s);
-	    if (destruct_level < i)
-		destruct_level = i;
+#ifdef DEBUGGING
+	    if (destruct_level < i) destruct_level = i;
+#endif
+#ifdef PERL_TRACK_MEMPOOL
+            /* RT #114496, for perl_free */
+            PL_perl_destruct_level = i;
+#endif
 	}
     }
 #endif
@@ -5342,8 +5395,10 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 
     /* Need to flush since END blocks can produce output */
     my_fflush_all();
+
     PL_main_start = NULL;
     PL_main_cv = NULL;
+    PL_curcop = &PL_compiling;
 #if PERL_VERSION >= 13
     PL_phase = PERL_PHASE_DESTRUCT;
 #endif
@@ -5400,13 +5455,16 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 	sv_clean_objs(); /* and now curse the rest */
 	PL_sv_objcount = 0;
     }
+    PL_warnhook = NULL;
+    PL_diehook = NULL;
+    /* call exit list functions */
+    while (PL_exitlistlen-- > 0)
+	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
+    PL_exitlist = NULL;
+
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
 #endif
-    PL_warnhook = NULL;
-    PL_diehook = NULL;
-    while (PL_exitlistlen-- > 0)
-	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
     return 0;
 }
 _EOT6
@@ -6569,6 +6627,7 @@ sub save_main {
 sub fixup_ppaddr {
   # init op addrs must be the last action, otherwise
   # some ops might not be initialized
+  # but it needs to happen before CALLREGCOMP, as a /i calls a compiled utf8::SWASHNEW
   if ($B::C::optimize_ppaddr) {
     foreach my $i (@op_sections) {
       my $section = $$i;
@@ -6678,7 +6737,6 @@ sub save_main_rest {
   # warn "use_xsloader=$use_xsloader\n" if $verbose;
   # If XSLoader was forced later, e.g. in curpad, INIT or END block
   force_saving_xsloader() if $use_xsloader;
-  fixup_ppaddr();
 
   return if $check;
   warn "Writing output\n" if $verbose;
@@ -6737,6 +6795,7 @@ EOT
 sub init_sections {
   my @sections = (
     decl   => \$decl,
+    init0  => \$init0,
     free   => \$free,
     sym    => \$symsect,
     hek    => \$heksect,

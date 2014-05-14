@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.45_06 d6ed932 2014-02-21 | prepare 1.46 release
+# B::C::VERSION = 1.45_11 c517916 2014-05-09 | t/issue281.t: fixed with 1.45_11
 # perlversion = 5.008008
 # path = /usr/bin/perl
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness
+fail Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO non-debugging with threads
+fail Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_06 - perl-5.008008
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   2 /   2 (100.0%)
+# 100 / 100 modules tested with B-C-1.45_11 - perl-5.008008
+# pass  97 / 100 (97.0%)
+# fail   3 / 100 (3.0%)
+# todo   1 /   3 (33.3%)
 # skip   0 / 100 (0.0% not installed)
