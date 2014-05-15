@@ -2551,7 +2551,6 @@ sub patch_dlsym {
 
   # Encode RT #94221
   if ($name =~ /encoding$/ and $Encode::VERSION eq '2.58') {
-    $name = lc($name);
     $name =~ s/-/_/g;
     $pkg = 'Encode' if $pkg eq 'Encode::XS'; # TODO foreign classes
     mark_package($pkg) if $fullname eq '(unknown)' and $ITHREADS;
@@ -2575,28 +2574,42 @@ sub patch_dlsym {
     if ($name and $name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
       my $enc = Encode::find_encoding($name);
       $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
-      $name = lc($name)."_encoding";
+      $pkg =~ s/^(Encode::\w+)(::.*)/$1/;
+      $name .= "_encoding";
       $name =~ s/-/_/g;
       warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
-      mark_package($pkg, 1) if $fullname eq '(unknown)' and $ITHREADS;
+      if ($fullname eq '(unknown)' and $ITHREADS) {
+        mark_package($pkg, 1);
+        if ($pkg ne 'Encode') {
+          svref_2object( \&{"$pkg\::bootstrap"} )->save;
+          mark_package('Encode', 1);
+        }
+      }
     }
     else {
       for my $n (Encode::encodings()) { # >=5.16 constsub without name
         my $enc = Encode::find_encoding($n);
         if ($enc and ref($enc) ne 'Encode::XS') { # resolve alias such as Encode::JP::JIS7=HASH(0x292a9d0)
           $pkg = ref($enc);
+          $pkg =~ s/^(Encode::\w+)(::.*)/$1/; # collapse to the @dl_module name
           $enc = Encode->find_alias($n);
         }
         if ($enc and ref($enc) eq 'Encode::XS' and $sv->IVX == $$enc) {
-          $name = lc($n);
+          $name = $n;
           $name =~ s/-/_/g;
           $name .= "_encoding" if $name !~ /_encoding$/;
-          mark_package($pkg, 1) if $fullname eq '(unknown)' and $ITHREADS;
+          if ($fullname eq '(unknown)' and $ITHREADS) {
+            mark_package($pkg, 1) ;
+            if ($pkg ne 'Encode') {
+              svref_2object( \&{"$pkg\::bootstrap"} )->save;
+              mark_package('Encode', 1);
+            }
+          }
           last;
         }
       }
       if ($name) {
-        warn "$pkg $Encode::VERSION remap found constant $name\n" if $verbose;
+        warn "$pkg $Encode::VERSION remap found for constant $name\n" if $verbose;
       } else {
         warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
       }
@@ -2604,7 +2617,7 @@ sub patch_dlsym {
   }
   # Encode-2.59 uses a different name without _encoding
   elsif ($name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
-    $name = lc($name)."_encoding";
+    $name .= "_encoding";
     $name =~ s/-/_/g;
     $pkg = 'Encode' unless $pkg;
     warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
