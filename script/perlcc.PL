@@ -55,6 +55,8 @@ print OUT <<'!NO!SUBS!';
 # Version 2.14, Reini Urban, 2012-02-28 09:04:07
 # Version 2.15, Reini Urban, 2013-02-01 10:41:54
 # Version 2.16, Reini Urban, 2013-11-27 11:36:13
+# Version 2.17, Reini Urban, Thu Feb 6 14:04:29 2014 -0600
+# Version 2.18, Reini Urban, 2014-05-15 11:23:28
 
 use strict;
 use warnings;
@@ -69,7 +71,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.17;
+our $VERSION = 2.18;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -141,7 +143,7 @@ sub generate_code {
 
 sub run_code {
     if ($Backend eq 'Bytecode') {
-        if ($] < 5.007) {
+        if ($] < 5.007 or $] >= 5.018) {
             $Output = "$BinPerl -MByteLoader $Output";
         } else {
             $Output = "$BinPerl $Output";
@@ -351,7 +353,8 @@ sub compile_byte {
 
     vprint 3, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
-    if ($] >= 5.007 and $Input =~ /^-e/) {
+    $opts = "-s," if $] >= 5.018;
+    if ($] >= 5.007 and $] < 5.018 and $Input =~ /^-e/) {
         $opts = "-H,";
     }
     if (@_ == 1) {
