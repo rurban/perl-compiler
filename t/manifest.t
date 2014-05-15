@@ -1,11 +1,15 @@
 # -*- perl -*-
 use Test::More;
-if ($^O != /^(linux|.*bsd|darwin|solaris|sunos)$/) {
-  plan skip_all => "requires a unix for git and diff";
+if (!-d ".git" or $^O != /^(linux|.*bsd|darwin|solaris|sunos)$/) {
+  plan skip_all => "requires a git checkout and a unix for git and diff";
 }
-plan tests => 2;
+plan tests => 1;
 
 system("git ls-tree -r --name-only HEAD >MANIFEST.git");
-ok(-e "MANIFEST.git", "MANIFEST.git created with git ls-tree");
-is(`diff -bu MANIFEST.git MANIFEST`, "", "MANIFEST.git compared to MANIFEST");
-unlink "MANIFEST.git";
+if (-e "MANIFEST.git") {
+  diag "MANIFEST.git created with git ls-tree";
+  is(`diff -bu MANIFEST.git MANIFEST`, "", "MANIFEST.git compared to MANIFEST");
+  unlink "MANIFEST.git";
+} else {
+  ok(1, "skip no git");
+}
