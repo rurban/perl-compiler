@@ -46,7 +46,7 @@ sub compile_check {
   ok(!$notfound, $cmt);
 }
 my $todobc = "";
-$todobc = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
+#$todobc = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
 
 compile_check(1,'C,-O3,-UB','ccode130i',$issue,"lexsubs compile ok");
 ctestok(2,'C,-O3,-UB','ccode130i',$issue,"TODO lexsubs run C ok");
