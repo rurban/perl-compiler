@@ -19,4 +19,4 @@ print q(ok)';
 
 my $cmt = "BC missing import 5.16";
 my $todo = "TODO BC dclone 5.16thr " if $] > 5.015 and $ITHREADS;
-plctest(1, "ok", "ccode105i", $source, $todo.$cmt);
+plctestok(1, "ccode105i", $source, $todo.$cmt);

@@ -10,4 +10,4 @@ use Test::More tests => 1;
 
 my $source = $] < 5.012 ? "use 5.006; print q(ok);" : "use v5.12; print q(ok);";
 
-plctest(1, "ok", "ccode97i", $source, "BC require v5.12");
+plctestok(1, "ccode97i", $source, "BC require v5.12");
