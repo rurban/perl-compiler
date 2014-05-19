@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_01';
+our $VERSION = '1.46_02';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -350,7 +350,7 @@ my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
-my (%include_package, %skip_package, %saved, %isa_cache);
+my (%include_package, %dumped_package, %skip_package, %isa_cache);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
@@ -6098,7 +6098,7 @@ sub B::GV::savecv {
     $gv = force_heavy($package);
   }
   # we should not delete already saved packages
-  $saved{$package}++;
+  $dumped_package{$package} = 1 unless $package =~ /::$/;
    # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
   return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
@@ -6129,6 +6129,7 @@ sub walksymtable {
         walksymtable(\%$fullname, $method, $recurse, $sym);
       }
     } else {
+      $dumped_package{$prefix} = 1 unless $prefix =~ /::$/;
       svref_2object(\*$fullname)->$method();
     }
   }
@@ -6432,7 +6433,7 @@ sub delete_unsaved_hashINC {
   my $package = shift;
   my $incpack = inc_packname($package);
   # Not already saved package, so it is not loaded again at run-time.
-  return if $saved{$package};
+  return if $dumped_package{$package};
   return if $package =~ /^DynaLoader|XSLoader$/
     and defined $use_xsloader
     and $use_xsloader == 0;
@@ -6550,6 +6551,7 @@ sub save_unused_subs {
 }
 
 sub inc_cleanup {
+  my $rec_cnt = shift;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $package (sort keys %INC) {
@@ -6564,10 +6566,25 @@ sub inc_cleanup {
     }
   }
   if ($debug{pkg} and $verbose) {
+    delete $dumped_package{main};
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
+    warn "\%dumped_package:  ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
+  #issue 340 -fwalkall?
+  my $again;
+  for my $p (sort keys %include_package) {
+    if ($include_package{$p} and !exists $dumped_package{$p} and $p ne 'threads') {
+      $again++;
+      warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
+      # mark_package( $p, 1);
+      eval { require(inc_packname($p)) && add_hashINC( $p ); } unless $savINC{inc_packname($p)};
+      $dumped_package{$p} = 1;
+      walk_syms( $p );
+    }
+  }
+  inc_cleanup($rec_cnt++) if $again and $rec_cnt < 3; # maximal 3 times
 }
 
 sub save_context {
