@@ -3155,7 +3155,7 @@ sub B::CV::save {
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
-    return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    return '0' if $all_bc_subs{$fullname} or skip_pkg($cvstashname);
     $CvFLAGS &= ~0x400 if $PERL514; # no CVf_CVGV_RC otherwise we cannot set the GV
     mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
@@ -3783,8 +3783,9 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  warn sprintf( "  GV $sym type=%d, flags=0x%x %s\n", B::SV::SvTYPE($gv), $gv->FLAGS)
-    if $debug{gv} and !$PERL56; # B::SV::SvTYPE not with 5.6
+  warn sprintf( "  GV %s $sym type=%d, flags=0x%x %s\n", $gv->NAME,
+                # B::SV::SvTYPE not with 5.6
+                B::SV::SvTYPE($gv), $gv->FLAGS) if $debug{gv} and !$PERL56;
   if ($PERL510 and $gv->FLAGS & 0x40000000) { # SVpbm_VALID
     warn sprintf( "  GV $sym isa FBM\n") if $debug{gv};
     return B::BM::save($gv);
@@ -3798,7 +3799,7 @@ sub B::GV::save {
   } else {
     $package = $gv->STASH->NAME;
   }
-  return $sym if $skip_package{$package};
+  return $sym if skip_pkg($package);
 
   my $fullname = $package . "::" . $gvname;
   my $fancyname;
@@ -4111,7 +4112,7 @@ sub B::GV::save {
     if ( $$gvcv and $savefields & Save_CV
          and ref($gvcv) eq 'B::CV'
          and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
-         and !$skip_package{$package} )
+         and !skip_pkg($package) )
     {
       my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
       my $cvsym;
@@ -6170,7 +6171,7 @@ sub mark_package {
   my $package = shift;
   my $force = shift;
   $force = 0 if $] < 5.010;
-  return if $skip_package{$package}; # or $package =~ /^B::C(C?)::/;
+  return if skip_pkg($package); # or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
@@ -6270,12 +6271,14 @@ sub static_core_packages {
 
 sub skip_pkg {
   my $package = shift;
-  if ( $package =~ /^(mro)$/
-       or $package =~ /^(main::)?(B|Internals|O)::/
+  if ( $package =~ /^(main::)?(Internals|O)::/
        or $package =~ /::::/
+       or $package =~ /^B::C::/
+       or $package eq '__ANON__'
        or index($package, " ") != -1 # XXX skip invalid package names
        or index($package, "(") != -1 # XXX this causes the compiler to abort
        or index($package, ")") != -1 # XXX this causes the compiler to abort
+       or exists $skip_package{$package}
        or ($DB::deep and $package =~ /^(DB|Term::ReadLine)/)) {
     return 1;
   }
@@ -6307,6 +6310,7 @@ sub should_save {
       return;
     } else {
       warn "ext/mro already loaded\n" if $debug{pkg};
+      $include_package{mro} = 1 if grep { $_ eq 'mro' } @DynaLoader::dl_modules;
       return $include_package{mro};
     }
   }
@@ -6568,7 +6572,7 @@ sub inc_cleanup {
   if ($debug{pkg} and $verbose) {
     delete $dumped_package{main};
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
-    warn "\%dumped_package:  ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
+    warn "\%dumped_package: ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
@@ -6577,8 +6581,14 @@ sub inc_cleanup {
   for my $p (sort keys %include_package) {
     $p =~ s/^main:://;
     if ($include_package{$p} and !exists $dumped_package{$p}
-        and !$static_core_pkg{$p} and $p !~ /^(threads|main|__ANON__|PerlIO)$/)
+        and !$static_core_pkg{$p}
+        and $p !~ /^(threads|main|__ANON__|PerlIO)$/
+       )
     {
+      if ($p eq 'warnings::register' and !$B::C::warnings) {
+        delete_unsaved_hashINC('warnings::register');
+        next;
+      }
       $again++;
       warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
       # mark_package( $p, 1);
@@ -6702,7 +6712,7 @@ sub descend_marked_unused {
   warn "descend_marked_unused: "
     .join(" ",grep{!$skip_package{$_}} sort keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( sort keys %include_package ) {
-    mark_package($pack) unless $skip_package{$pack};
+    mark_package($pack) unless skip_pkg($pack);
   }
 }
 
