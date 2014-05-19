@@ -6575,7 +6575,10 @@ sub inc_cleanup {
   #issue 340 -fwalkall?
   my $again;
   for my $p (sort keys %include_package) {
-    if ($include_package{$p} and !exists $dumped_package{$p} and $p ne 'threads') {
+    $p =~ s/^main:://;
+    if ($include_package{$p} and !exists $dumped_package{$p}
+        and !$static_core_pkg{$p} and $p !~ /^(threads|main|__ANON__|PerlIO)$/)
+    {
       $again++;
       warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
       # mark_package( $p, 1);
