@@ -2572,7 +2572,7 @@ sub B::PVMG::save {
     # svop const or pad OBJECT,IOK
     if ($fullname
         and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/
-        and $ivx =~ /U?L+$/
+        and $sv->IVX > 5000000 # some crazy heuristic for a so ptr (> image_base)
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
       no strict 'refs';
@@ -3204,6 +3204,16 @@ sub B::CV::save {
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
+    if ($] >= 5.016) { # need to check 'Encode::XS' constant encodings
+      my $sv = $cv->XSUBANY;
+      # warn "$sv CONSTSUB $name";
+      if ((ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG') and $sv->FLAGS & SVf_ROK) {
+        my $rv = $sv->RV;
+        if ($rv->FLAGS & (SVp_POK|SVf_IOK) and $rv->IVX > 5000000) {
+          patch_dlsym($rv, $fullname, $rv->IVX);
+        }
+      }
+    }
     my $vsym  = $cv->XSUBANY->save;
     my $cvi = "cv".$cv_index;
     $decl->add("Static CV* $cvi;");
