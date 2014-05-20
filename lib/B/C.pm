@@ -1811,19 +1811,19 @@ sub B::COP::save {
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
-        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
         $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv($op->stashpv) ));
+        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
       } else {
-        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
         $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
+        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
       }
     } else { # cv_undef e.g. in bproto.t and many more core tests with threads
       my $stlen = "";
       if ($] >= 5.016 and $] <= 5.017) { # 5.16 special-case API
         $stlen = ", ".length($op->stashpv);
       }
-      $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
       $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv).$stlen ));
+      $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
     }
   }
 
@@ -3626,8 +3626,9 @@ sub B::CV::save {
         my $gvstash = $gv->STASH;
         # defer GvSTASH because with DEBUGGING it checks for GP but
         # there's no GP yet.
+        # But with -fstash the gvstash is set later
         $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
-                             $$cv, $$gvstash ) ) if $gvstash;
+                             $$cv, $$gvstash ) ) if $gvstash and !$B::C::stash;
         warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
           if $gvstash and $debug{cv} and $debug{gv};
       }
@@ -4196,9 +4197,13 @@ sub B::GV::save {
 	#$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
 
         # XXX Maybe better leave it NULL or asis, than fighting broken
-        # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
-	$init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
-	  unless $optimize_cop;
+        if ($B::C::stash and $fullname =~ /::$/) {
+          # ignore stash hek asserts when adding the stash
+          # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
+        } else {
+          $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
+            if !$optimize_cop;
+        }
 	# $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
       } else {
 	# XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
@@ -4533,7 +4538,12 @@ sub B::HV::save {
 
     my $cname = cstring($name);
     my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
-    $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
+    # TODO utf8 stashes
+    if ($name eq 'main') {
+      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, 0);\t/* get main:: stash */]);
+    } else {
+      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
+    }
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );
@@ -4557,7 +4567,7 @@ sub B::HV::save {
       #}
       return $sym;
     }
-    return $sym if skip_pkg($name);
+    return $sym if skip_pkg($name) or $name eq 'main';
     $init->add( "SvREFCNT_inc($sym);" );
     warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
