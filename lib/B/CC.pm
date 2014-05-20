@@ -3462,11 +3462,11 @@ OPTION:
   #  warn "no_stack: ",join(" ",sort keys %no_stack),"\n";
   #}
 
-  mark_skip('B::C', 'B::C::Flags', 'B::CC', 'B::Asmdata', 'B::FAKEOP',
-	    'B::Section', 'B::Pseudoreg', 'B::Shadow', 'O', 'Opcodes',
-	    'B::Stackobj', 'B::Stackobj::Bool', 'B::Stackobj::Padsv',
-            'B::Stackobj::Const', 'B::Stackobj::Aelem', 'B::Bblock');
-  mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
+  mark_skip(qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP
+               B::Section B::Pseudoreg B::Shadow B::C::InitSection
+               O Opcodes B::Stackobj B::Stackobj::Bool B::Stackobj::Padsv
+               B::Stackobj::Const B::Stackobj::Aelem B::Bblock));
+  #mark_skip(qw(DB Term::ReadLine)) if defined &DB::DB;
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.

@@ -360,7 +360,8 @@ our ($module, $init_name, %savINC, $mainfile, @static_free);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
-    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist);
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist,
+    $walkall);
 our $verbose = 0;
 our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
@@ -368,6 +369,7 @@ our %option_map = (
     'const-strings'   => \$B::C::const_strings,
     'save-data'       => \$B::C::save_data_fh,
     'ppaddr'          => \$B::C::optimize_ppaddr,
+    'walkall'         => \$B::C::walkall,
     'warn-sv'         => \$B::C::optimize_warn_sv,
     'av-init'         => \$B::C::av_init,
     'av-init2'        => \$B::C::av_init2,
@@ -385,7 +387,7 @@ our %option_map = (
 					 # NULL cops also there.
 );
 our %optimization_map = (
-    0 => [qw()],                # special case
+    0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
@@ -6576,38 +6578,39 @@ sub inc_cleanup {
       delete $INC{$package};
       delete_unsaved_hashINC('utf8');
     } else {
-      delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
+      delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
     }
   }
   if ($debug{pkg} and $verbose) {
-    delete $dumped_package{main};
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
     warn "\%dumped_package: ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
-  #issue 340 -fwalkall?
-  my $again;
-  for my $p (sort keys %include_package) {
-    $p =~ s/^main:://;
-    if ($include_package{$p} and !exists $dumped_package{$p}
-        and !$static_core_pkg{$p}
-        and $p !~ /^(threads|main|__ANON__|PerlIO)$/
-       )
-    {
-      if ($p eq 'warnings::register' and !$B::C::warnings) {
-        delete_unsaved_hashINC('warnings::register');
-        next;
-      }
-      $again++;
-      warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
-      # mark_package( $p, 1);
-      eval { require(inc_packname($p)) && add_hashINC( $p ); } unless $savINC{inc_packname($p)};
-      $dumped_package{$p} = 1;
-      walk_syms( $p );
+  #issue 340: do only on -fwalkall? do it in the main walker step as in branch walkall?
+  if ($B::C::walkall) {
+    my $again;
+    for my $p (sort keys %include_package) {
+      $p =~ s/^main:://;
+      if ($include_package{$p} and !exists $dumped_package{$p}
+          and !$static_core_pkg{$p}
+          and $p !~ /^(threads|main|__ANON__|PerlIO)$/
+         )
+        {
+          if ($p eq 'warnings::register' and !$B::C::warnings) {
+            delete_unsaved_hashINC('warnings::register');
+            next;
+          }
+          $again++;
+          warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
+          # mark_package( $p, 1);
+          eval { require(inc_packname($p)) && add_hashINC( $p ); } unless $savINC{inc_packname($p)};
+          $dumped_package{$p} = 1;
+          walk_syms( $p );
+        }
     }
+    inc_cleanup($rec_cnt++) if $again and $rec_cnt < 3; # maximal 3 times
   }
-  inc_cleanup($rec_cnt++) if $again and $rec_cnt < 3; # maximal 3 times
 }
 
 sub save_context {
@@ -6976,8 +6979,8 @@ sub compile {
   $B::C::dyn_padlist = 1 if $] >= 5.017; # default is dynamic and safe, disable with -O4
 
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
-	       B::Section B::Pseudoreg B::Shadow);
-  #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
+	       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
+  #mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
 
 OPTION:
   while ( $option = shift @options ) {
@@ -7390,6 +7393,13 @@ This helps with destruction problems of static data in the
 default perl destructor, and enables C<-fcog> since 5.10.
 
 Enabled with C<-O3>.
+
+=item B<-fwalkall>
+
+C<-fwalkall> recursively walks all dependent packages, which results
+in much bigger compile sizes.
+This was introduced to catch previously uncompiled packages for computed
+methods or undetected deeper run-time dependencies.
 
 =item B<-fno-save-sig-hash>
 
