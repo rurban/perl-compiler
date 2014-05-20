@@ -76,7 +76,7 @@ TODO: {
         unlink $bin_file, $c_file;
 
         # Generate the C code at $optimization level
-        my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+        my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-fno-walkall,-o$c_file $file_to_test 2>&1";
 
         diag $cmd if $ENV{TEST_VERBOSE};
         my $BC_output = `$cmd`;
