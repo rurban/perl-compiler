@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_01';
+our $VERSION = '1.46_02';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -350,7 +350,7 @@ my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
-my (%include_package, %skip_package, %saved, %isa_cache);
+my (%include_package, %dumped_package, %skip_package, %isa_cache);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
@@ -3150,7 +3150,7 @@ sub B::CV::save {
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
     #return if $fullname eq 'utf8::AUTOLOAD';
-    return '0' if $all_bc_subs{$fullname} or $skip_package{$cvstashname};
+    return '0' if $all_bc_subs{$fullname} or skip_pkg($cvstashname);
     $CvFLAGS &= ~0x400 if $PERL514; # no CVf_CVGV_RC otherwise we cannot set the GV
     mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
@@ -3621,8 +3621,9 @@ sub B::CV::save {
         my $gvstash = $gv->STASH;
         # defer GvSTASH because with DEBUGGING it checks for GP but
         # there's no GP yet.
+        # But with -fstash the gvstash is set later
         $init->add( sprintf( "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
-                             $$cv, $$gvstash ) ) if $gvstash;
+                             $$cv, $$gvstash ) ) if $gvstash and !$B::C::stash;
         warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
           if $gvstash and $debug{cv} and $debug{gv};
       }
@@ -3793,7 +3794,7 @@ sub B::GV::save {
   } else {
     $package = $gv->STASH->NAME;
   }
-  return $sym if $skip_package{$package};
+  return $sym if skip_pkg($package);
 
   my $fullname = $package . "::" . $gvname;
   my $fancyname;
@@ -4106,7 +4107,7 @@ sub B::GV::save {
     if ( $$gvcv and $savefields & Save_CV
          and ref($gvcv) eq 'B::CV'
          and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
-         and !$skip_package{$package} )
+         and !skip_pkg($package) )
     {
       my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
       my $cvsym;
@@ -4190,9 +4191,13 @@ sub B::GV::save {
 	#$init->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", $heksect->index));
 
         # XXX Maybe better leave it NULL or asis, than fighting broken
-        # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
-	$init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
-	  unless $optimize_cop;
+        if ($B::C::stash and $fullname =~ /::$/) {
+          # ignore stash hek asserts when adding the stash
+          # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
+        } else {
+          $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
+            if !$optimize_cop;
+        }
 	# $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
       } else {
 	# XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
@@ -4527,7 +4532,12 @@ sub B::HV::save {
 
     my $cname = cstring($name);
     my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
-    $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
+    # TODO utf8 stashes
+    if ($name eq 'main') {
+      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, 0);\t/* get main:: stash */]);
+    } else {
+      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
+    }
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );
@@ -4551,7 +4561,7 @@ sub B::HV::save {
       #}
       return $sym;
     }
-    return $sym if skip_pkg($name);
+    return $sym if skip_pkg($name) or $name eq 'main';
     $init->add( "SvREFCNT_inc($sym);" );
     warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
@@ -6082,7 +6092,7 @@ sub B::GV::savecv {
        and $cv->XSUB ) {
     warn("Skip internal XS $fullname\n") if $debug{gv};
     # but prevent it from being deleted
-    mark_package($package, 1);
+    $include_package{$package} = 1;
     return;
   }
   if ($package eq 'B::C') {
@@ -6093,7 +6103,7 @@ sub B::GV::savecv {
     $gv = force_heavy($package);
   }
   # we should not delete already saved packages
-  $saved{$package}++;
+  $dumped_package{$package} = 1 unless $package =~ /::$/;
    # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
   return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
@@ -6124,6 +6134,7 @@ sub walksymtable {
         walksymtable(\%$fullname, $method, $recurse, $sym);
       }
     } else {
+      $dumped_package{$prefix} = 1 unless $prefix =~ /::$/;
       svref_2object(\*$fullname)->$method();
     }
   }
@@ -6131,6 +6142,7 @@ sub walksymtable {
 
 sub walk_syms {
   my $package = shift;
+  return if exists($dumped_package{$package});
   no strict 'refs';
   walksymtable( \%{$package.'::'}, "savecv",
                 sub { should_save( $_[0] ); return 1 },
@@ -6164,7 +6176,7 @@ sub mark_package {
   my $package = shift;
   my $force = shift;
   $force = 0 if $] < 5.010;
-  return if $skip_package{$package}; # or $package =~ /^B::C(C?)::/;
+  return if skip_pkg($package); # or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
@@ -6179,13 +6191,15 @@ sub mark_package {
 		   $force?" (forced)":"") if $verbose;
       # $include_package{$package} = 1;
       add_hashINC( $package );
-      walk_syms( $package );  # XXX Maybe need to avoid deep recursion
+      walk_syms( $package )
+        if !$B::C::walkall; # Not needed with -fwalkall
     } else {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
-      walk_syms( $package );  # XXX Maybe need to avoid deep recursion. fixes i27-1
+      walk_syms( $package )
+        if !$B::C::walkall; # fixes i27-1
     }
     my @isa = get_isa($package);
     if ( @isa ) {
@@ -6206,7 +6220,7 @@ sub mark_package {
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
 	    mark_package($isa);
-            walk_syms($isa);  # XXX Maybe need to avoid deep recursion
+            walk_syms($isa) if !exists($dumped_package{$package}); # XXX Maybe need to avoid deep recursion
           } else {
 	    #warn "isa $isa save\n" if $verbose;
             mark_package($isa);
@@ -6265,12 +6279,14 @@ sub static_core_packages {
 
 sub skip_pkg {
   my $package = shift;
-  if ( $package =~ /^(mro)$/
-       or $package =~ /^(main::)?(B|Internals|O)::/
+  if ( $package =~ /^(main::)?(Internals|O)::/
        or $package =~ /::::/
+       or $package =~ /^B::C::/
+       or $package eq '__ANON__'
        or index($package, " ") != -1 # XXX skip invalid package names
        or index($package, "(") != -1 # XXX this causes the compiler to abort
        or index($package, ")") != -1 # XXX this causes the compiler to abort
+       or exists $skip_package{$package}
        or ($DB::deep and $package =~ /^(DB|Term::ReadLine)/)) {
     return 1;
   }
@@ -6302,6 +6318,8 @@ sub should_save {
       return;
     } else {
       warn "ext/mro already loaded\n" if $debug{pkg};
+      # used by B::C
+      # $include_package{mro} = 1 if grep { $_ eq 'mro' } @DynaLoader::dl_modules;
       return $include_package{mro};
     }
   }
@@ -6428,7 +6446,7 @@ sub delete_unsaved_hashINC {
   my $package = shift;
   my $incpack = inc_packname($package);
   # Not already saved package, so it is not loaded again at run-time.
-  return if $saved{$package};
+  return if $dumped_package{$package};
   return if $package =~ /^DynaLoader|XSLoader$/
     and defined $use_xsloader
     and $use_xsloader == 0;
@@ -6499,7 +6517,7 @@ sub save_unused_subs {
   # -fwalkall: better strategy for compile-time added and required packages:
   # loop savecv and check pkg cache for new pkgs.
   # if so loop again with those new pkgs only, until the list of new pkgs is empty
-  my (@init_unused, @unused);
+  my (@init_unused, @unused, $walkall_cnt);
   do {
     @init_unused = grep { $include_package{$_} } keys %include_package;
     if ($verbose) {
@@ -6518,6 +6536,8 @@ sub save_unused_subs {
       if $verbose;
     if (!$B::C::walkall) {
       @unused = @init_unused = ();
+    } else {
+      last if $walkall_cnt++ > 5;
     }
   } while @unused > @init_unused;
 
@@ -6571,7 +6591,9 @@ sub inc_cleanup {
     }
   }
   if ($debug{pkg} and $verbose) {
+    delete $dumped_package{main};
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
+    warn "\%dumped_package: ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
@@ -6689,7 +6711,7 @@ sub descend_marked_unused {
   warn "descend_marked_unused: "
     .join(" ",grep{!$skip_package{$_}} sort keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( sort keys %include_package ) {
-    mark_package($pack) unless $skip_package{$pack};
+    mark_package($pack) unless skip_pkg($pack);
   }
 }
 
@@ -6948,7 +6970,7 @@ sub compile {
                B::C::Section::SUPER B::C::InitSection::SUPER
 	       B::Stackobj B::Bblock
              );
-  #mark_skip('DB', 'Term::ReadLine') if $DB::deep;
+  mark_skip('DB', 'Term::ReadLine') if $DB::deep;
 
 OPTION:
   while ( $option = shift @options ) {
