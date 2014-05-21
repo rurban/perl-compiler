@@ -6381,7 +6381,8 @@ sub should_save {
       next if $package eq 'Errno' and $m eq 'TIEHASH';
       # XXX Config and FileHandle should not just return. If unneeded skip em.
       return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
-      return 0 if $package eq 'FileHandle' and $m eq 'new';
+      # skip our own dreck. use only if used explicitly
+      return 0 if $all_bc_deps{$package} and $m eq 'new';
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
