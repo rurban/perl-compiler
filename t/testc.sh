@@ -1095,7 +1095,8 @@ print Slave->me()."\n";
 '
 result[324]='Master
 Slave of Master'
-
+tests[326]='#TODO method const maybe::next::method
+package Diamond_C; sub maybe { "Diamond_C::maybe" } package Diamond_D; use base "Diamond_C"; use mro "c3"; sub maybe { "Diamond_D::maybe => " . ((shift)->maybe::next::method() || 0) } package main; print "ok\n" if Diamond_D->maybe;'
 tests[328]='#TODO re-eval
 my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'
 result[328]=45

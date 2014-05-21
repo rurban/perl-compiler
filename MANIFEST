@@ -220,7 +220,7 @@ t/C-COMPILED/CORE--mro--next_goto.t
 t/C-COMPILED/CORE--mro--next_inanon.t
 t/C-COMPILED/CORE--mro--next_ineval.t
 t/C-COMPILED/CORE--mro--next_method.t
-t/C-COMPILED/CORE--mro--next_skip==BADPLAN-326.t
+t/C-COMPILED/CORE--mro--next_skip.t
 t/C-COMPILED/CORE--mro--overload_c3.t
 t/C-COMPILED/CORE--mro--overload_dfs.t
 t/C-COMPILED/CORE--mro--package_aliases.t

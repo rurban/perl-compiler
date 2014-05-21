@@ -7,6 +7,7 @@
         Fixed Bytecode for 5.18
 
 	* C: detect new Encode >2.58 compile-time usage (#305, RT #94221)
+        Fix mro maybe::next:: detection (#326)
 	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
           Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
           "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
