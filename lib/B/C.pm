@@ -13,7 +13,7 @@ package B::C;
 use strict;
 
 our $VERSION = '1.46_02';
-my %debug;
+our %debug;
 our $check;
 my $eval_pvs = '';
 use Config;
@@ -6404,7 +6404,8 @@ sub should_save {
       next if $package eq 'Errno' and $m eq 'TIEHASH';
       # XXX Config and FileHandle should not just return. If unneeded skip em.
       return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
-      return 0 if $package eq 'FileHandle' and $m eq 'new';
+      # IO::File|IO::Handle added for B::CC only
+      return 0 if $package =~ /^(FileHandle|IO::File|IO::Handle)/ and $m eq 'new';
       warn "$package has method $m: saving package\n" if $debug{pkg};
       return mark_package($package);
     }
@@ -6721,7 +6722,10 @@ sub save_context {
 }
 
 sub descend_marked_unused {
-  warn "\%skip_package: ".join(" ",sort keys %skip_package)."\n" if $debug{pkg};
+  if ($debug{pkg} and $verbose) {
+    warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
+    warn "\%skip_package: ".join(" ",sort keys %skip_package)."\n";
+  }
   warn "descend_marked_unused: "
     .join(" ",grep{!$skip_package{$_}} sort keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( sort keys %include_package ) {
@@ -6959,7 +6963,7 @@ sub mark_skip {
   for (@_) {
     delete_unsaved_hashINC($_);
     # $include_package{$_} = 0;
-    $skip_package{$_} = 1;
+    $skip_package{$_} = 1 unless $include_package{$_};
   }
 }
 

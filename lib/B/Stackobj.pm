@@ -23,7 +23,6 @@ use Exporter ();
   ]
 );
 
-use Carp qw(confess);
 use strict;
 use B qw(class SVf_IOK SVf_NOK SVf_IVisUV SVf_ROK SVf_POK);
 use B::C qw(ivx nvx);
@@ -48,9 +47,20 @@ sub SAVE_INT ()       { 0x80 }    # if int part needs to be saved at all
 sub SAVE_NUM ()       { 0x100 }   # if num part needs to be saved at all
 sub SAVE_STR ()       { 0x200 }   # if str part needs to be saved at all
 
+# no backtraces to avoid compiler pollution
+#use Carp qw(confess);
+sub confess {
+  if (exists &Carp::confess) {
+    goto &Carp::confess;
+  } else {
+    die @_."\n";
+  }
+}
+
 #
 # Callback for runtime code generation
 #
+
 my $runtime_callback = sub { confess "set_callback not yet called" };
 sub set_callback (&) { $runtime_callback = shift }
 sub runtime { &$runtime_callback(@_) }

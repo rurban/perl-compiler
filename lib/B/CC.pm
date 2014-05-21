@@ -1470,7 +1470,7 @@ sub pp_padsv {
 			 $ix, $private & OPpDEREF ));
       }
       $vivify_ref_defined++;
-      $pad[$ix]->invalidate;
+      $pad[$ix]->invalidate if $pad[$ix];
     }
   }
   return $op->next;
@@ -3068,6 +3068,7 @@ sub cc {
     $decl->add( sprintf( "#define $name  %s", $done{$$start} ) );
     return;
   }
+  return if ref($padlist[0]) ne 'B::AV' or ref($padlist[1]) ne 'B::AV';
   warn "cc $name\n" if $verbose;
   init_pp($name);
   load_pad(@padlist);
@@ -3132,6 +3133,14 @@ sub cc_recurse {
   my $start = cc_queue(@_) if @_;
 
   while ( $ccinfo = shift @cc_todo ) {
+    if ($ccinfo->[0] eq 'pp_sub_warnings__register_categories') {
+      # patch broken PADLIST
+      #warn "cc $ccinfo->[0] patch broken PADLIST (inc-i340)\n" if $verbose;
+      #debug "cc(ccinfo): @$ccinfo skipped (inc-i340)\n" if $debug{queue};
+      #$ccinfo->[0] = 'NULL';
+      my @empty = ();
+      #$ccinfo->[3] = $ccinfo->[4] = svref_2object(\@empty);
+    }
     if ($DB::deep and $ccinfo->[0] =~ /^pp_sub_(DB|Term__ReadLine)_/) {
       warn "cc $ccinfo->[0] skipped (debugging)\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo skipped (debugging)\n" if $debug{queue};
@@ -3381,53 +3390,39 @@ OPTION:
       $module = $arg;
       mark_unused( $arg, undef );
     }
-    elsif ( $opt eq "p" ) {
-      $arg ||= shift @options;
-      $patchlevel = $arg;
-    }
+    #elsif ( $opt eq "p" ) {
+    #  $arg ||= shift @options;
+    #  $patchlevel = $arg;
+    #}
     elsif ( $opt eq "D" ) {
       $arg ||= shift @options;
       $verbose++;
-      $arg = 'oOscprSqlt' if $arg eq 'full';
+      # note that we should not clash too much with the B::C debug map
+      # because we set theirs also
+      my %debug_map = (O => 'op',
+                       T => 'stack',    # was S
+                       c => 'cxstack',
+                       a => 'pad',      # was p
+                       r => 'runtime',
+                       w => 'shadow',   # was s
+                       q => 'queue',
+                       l => 'lineno',
+                       t => 'timings',
+                       b => 'bblock');
+      $arg = join('',keys %debug_map).'Fsp' if $arg eq 'full';
       foreach $arg ( split( //, $arg ) ) {
         if ( $arg eq "o" ) {
           B->debug(1);
         }
-        elsif ( $arg eq "O" ) {
-          $debug{op}++;
-        }
-        elsif ( $arg eq "s" ) {
-          $debug{stack}++;
-        }
-        elsif ( $arg eq "c" ) {
-          $debug{cxstack}++;
-        }
-        elsif ( $arg eq "p" ) {
-          $debug{pad}++;
-        }
-        elsif ( $arg eq "r" ) {
-          $debug{runtime}++;
-        }
-        elsif ( $arg eq "S" ) {
-          $debug{shadow}++;
-        }
-        elsif ( $arg eq "q" ) {
-          $debug{queue}++;
-        }
-        elsif ( $arg eq "l" ) {
-          $debug{lineno}++;
-        }
-        elsif ( $arg eq "t" ) {
-          $debug{timings}++;
-        }
-        elsif ( $arg eq "b" ) {
-          $debug{bblock}++;
+        elsif ( $debug_map{$arg} ) {
+          $debug{ $debug_map{$arg} }++;
         }
         elsif ( $arg eq "F" and eval "require B::Flags;" ) {
           $debug{flags}++;
           $B::C::debug{flags}++;
         }
 	elsif ( exists $B::C::debug_map{$arg} ) {
+          $B::C::verbose++;
           $B::C::debug{ $B::C::debug_map{$arg} }++;
 	}
 	else {
