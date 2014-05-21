@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_01';
+our $VERSION = '1.46_02';
 my %debug;
 our $check;
 my $eval_pvs = '';
@@ -350,7 +350,7 @@ my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
-my (%include_package, %skip_package, %saved, %isa_cache);
+my (%include_package, %skip_package, %saved_package, %isa_cache);
 my %static_ext;
 my ($use_xsloader);
 my $nullop_count         = 0;
@@ -6092,7 +6092,7 @@ sub B::GV::savecv {
     $gv = force_heavy($package);
   }
   # we should not delete already saved packages
-  $saved{$package}++;
+  $saved_package{$package}++;
    # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
   return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
@@ -6426,7 +6426,7 @@ sub delete_unsaved_hashINC {
   my $package = shift;
   my $incpack = inc_packname($package);
   # Not already saved package, so it is not loaded again at run-time.
-  return if $saved{$package};
+  return if $saved_package{$package};
   return if $package =~ /^DynaLoader|XSLoader$/
     and defined $use_xsloader
     and $use_xsloader == 0;
@@ -6548,17 +6548,18 @@ sub inc_cleanup {
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $package (sort keys %INC) {
     my $pkg = packname_inc($package);
-    if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
+    if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$saved_package{'Config'}) {
       delete $INC{$package};
-    } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
+    } elsif ($package eq 'utf8_heavy.pl' and !$saved_package{'utf8'}) {
       delete $INC{$package};
       delete_unsaved_hashINC('utf8');
     } else {
-      delete_unsaved_hashINC($pkg) unless $include_package{$pkg};
+      delete_unsaved_hashINC($pkg) unless $saved_package{$pkg};
     }
   }
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
+    warn "\%saved_package:   ".join(" ", sort keys %saved_package)."\n";
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
