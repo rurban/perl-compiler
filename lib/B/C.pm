@@ -1265,11 +1265,16 @@ sub B::UNOP::save {
       $method = padop_name($op->first, $B::C::curcv); # XXX (curpad[targ])
     }
     warn "method -> const $method\n" if $debug{pkg} and $ITHREADS;
-    #324 need to detect ->(maybe::next|maybe|next)::(method|can) and also old NEXT|EVERY
-    #326: maybe::next::method
-    if ($method =~ /^(maybe::next|maybe|next|NEXT|EVERY)::(method|can)/) {
+    #324,#326 need to detect ->(maybe::next|maybe|next)::(method|can)
+    if ($method =~ /^(maybe::next|maybe|next)::(method|can)$/) {
       warn "mark \"$1\" for method $method\n" if $debug{pkg};
       mark_package($1, 1);
+      mark_package("mro", 1);
+    } # and also the old 5.8 NEXT|EVERY with non-fixed method names und subpackages
+    elsif ($method =~ /^(NEXT|EVERY)::/) {
+      warn "mark \"$1\" for method $method\n" if $debug{pkg};
+      mark_package($1, 1);
+      mark_package("NEXT", 1) if $1 ne "NEXT";
     }
   }
   do_labels ($op, 'first');
