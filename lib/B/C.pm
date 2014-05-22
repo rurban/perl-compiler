@@ -6142,7 +6142,13 @@ sub walksymtable {
         walksymtable(\%$fullname, $method, $recurse, $sym);
       }
     } else {
-      $dumped_package{$prefix} = 1 unless $prefix =~ /::$/;
+      if (substr($prefix,-2) eq '::') {
+        my $package = substr($prefix,0,-2);
+        if (!exists $dumped_package{$package}) {
+          #warn "set dumped_package $package\n" if $debug{pkg} and $verbose;
+          $dumped_package{$package} = 1;
+        }
+      }
       svref_2object(\*$fullname)->$method();
     }
   }
@@ -6151,6 +6157,7 @@ sub walksymtable {
 sub walk_syms {
   my $package = shift;
   no strict 'refs';
+  warn "walk_syms $package\n" if $debug{pkg} and $verbose;
   walksymtable( \%{$package.'::'}, "savecv",
                 sub { should_save( $_[0] ); return 1 },
                 $package.'::' );
@@ -6587,7 +6594,7 @@ sub inc_cleanup {
   }
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
-    warn "\%dumped_package: ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
+    warn "\%dumped_package:  ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
@@ -6725,6 +6732,11 @@ sub save_context {
 }
 
 sub descend_marked_unused {
+  #if ($B::C::walkall) {
+  #  for my $pack (keys %all_bc_deps) {
+  #    mark_unused($pack, 0) if !exists $include_package{$pack} and !skip_pkg($pack);
+  #  }
+  #}
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
     warn "\%skip_package: ".join(" ",sort keys %skip_package)."\n";
