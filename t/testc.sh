@@ -1113,6 +1113,8 @@ my @hiragana =  map {chr} ord("ぁ")..ord("ん"); my @katakana =  map {chr} ord(
 tests[338]='use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";'
 tests[340]='#TODO 5.18
 eval q/use Net::DNS/; my $new = "IO::Socket::INET6"->can("new") or die "die at new"; my $inet = $new->("IO::Socket::INET6", LocalAddr => q/localhost/, Proto => "udp", LocalPort => undef); print q(ok) if ref($inet) eq "IO::Socket::INET6";'
+# used to fail in the inc-i340 branches CORE/base/lex.t 54
+tests[3401]='sub foo::::::bar { print "ok\n"; } foo::::::bar;'
 
 init
 

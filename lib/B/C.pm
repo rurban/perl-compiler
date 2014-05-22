@@ -6284,7 +6284,7 @@ sub static_core_packages {
 sub skip_pkg {
   my $package = shift;
   if ( $package =~ /^(main::)?(Internals|O)::/
-       or $package =~ /::::/
+       #or $package =~ /::::/ #  CORE/base/lex.t 54
        or $package =~ /^B::C::/
        or $package eq '__ANON__'
        or index($package, " ") != -1 # XXX skip invalid package names
