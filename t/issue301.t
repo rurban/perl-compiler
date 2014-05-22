@@ -7,7 +7,8 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 2;
+use Test::More;
+plan ($] > 5.007003 ? (tests => 2) : (skip_all => "no NEXT on $]"));
 
 my $script = <<EOF;
 use mro;
