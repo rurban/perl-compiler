@@ -6099,6 +6099,7 @@ sub B::GV::savecv {
   if ( $$cv and in_static_core($package, $name) and ref($cv) eq 'B::CV' # 5.8,4 issue32
        and $cv->XSUB ) {
     warn("Skip internal XS $fullname\n") if $debug{gv};
+    $dumped_package{$package} = 1 if !exists $dumped_package{$package};
     # but prevent it from being deleted
     mark_package($package, 1);
     return;
@@ -6110,15 +6111,14 @@ sub B::GV::savecv {
   if ($fullname =~ /^(bytes|utf8)::AUTOLOAD$/) {
     $gv = force_heavy($package);
   }
-  # we should not delete already saved packages
-  $dumped_package{$package} = 1 unless $package =~ /::$/;
-   # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
+  # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
   return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
   # used by the compiler itself
   if ($name eq 'Config') {
     mark_package('Config', 1) if !$include_package{'Config'};
   }
+  $dumped_package{$package} = 1 if !exists $dumped_package{$package} and $package !~ /::$/;
   warn sprintf( "Saving GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
   $gv->save($fullname);
 }
@@ -6142,13 +6142,6 @@ sub walksymtable {
         walksymtable(\%$fullname, $method, $recurse, $sym);
       }
     } else {
-      if (substr($prefix,-2) eq '::') {
-        my $package = substr($prefix,0,-2);
-        if (!exists $dumped_package{$package}) {
-          #warn "set dumped_package $package\n" if $debug{pkg} and $verbose;
-          $dumped_package{$package} = 1;
-        }
-      }
       svref_2object(\*$fullname)->$method();
     }
   }
@@ -6329,7 +6322,7 @@ sub should_save {
       return;
     } else {
       warn "ext/mro already loaded\n" if $debug{pkg};
-      $include_package{mro} = 1 if grep { $_ eq 'mro' } @DynaLoader::dl_modules;
+      # $include_package{mro} = 1 if grep { $_ eq 'mro' } @DynaLoader::dl_modules;
       return $include_package{mro};
     }
   }
@@ -6566,7 +6559,7 @@ sub save_unused_subs {
   # With -fno-warnings we don't insist on initializing warnings::register_categories and Carp.
   # Until it is compile-time required.
   # 68KB exe size 32-bit
-  if ($] >= 5.013005 and ($B::C::warnings or exists($INC{'Carp.pm'}))) {
+  if ($] >= 5.013005 and ($B::C::warnings and exists $dumped_package{Carp})) {
     svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
     add_hashINC("warnings");
     add_hashINC("warnings::register");
@@ -6583,7 +6576,7 @@ sub inc_cleanup {
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   for my $package (sort keys %INC) {
     my $pkg = packname_inc($package);
-    if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$include_package{'Config'}) {
+    if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'}) {
       delete $INC{$package};
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $INC{$package};
@@ -6808,9 +6801,14 @@ sub force_saving_xsloader {
   if ($] < 5.015003) {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
+    # does this really save the whole packages?
+    $dumped_package{XSLoader} = 1;
+    $dumped_package{DynaLoader} = 1;
     svref_2object( \&XSLoader::load )->save;
   } else {
     $init->add("/* custom XSLoader::load_file */");
+    # does this really save the whole packages?
+    $dumped_package{DynaLoader} = 1;
     svref_2object( \&XSLoader::load_file )->save;
     svref_2object( \&DynaLoader::dl_load_flags )->save; # not saved as XSUB constant?
   }
