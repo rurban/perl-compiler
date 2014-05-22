@@ -319,7 +319,7 @@ tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
 # issue27
 tests[527]='require LWP::UserAgent;print q(ok);'
 #issue 24
-tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
+tests[124]='dbmopen(%H,q(f),0644);print q(ok);'
 tests[68]='package A;
 sub test {
   use Data::Dumper ();
