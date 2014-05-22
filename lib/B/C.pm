@@ -6394,20 +6394,23 @@ sub should_save {
   }
 
   # Now see if current package looks like an OO class. This is probably too strong.
-  foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
-    # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
-    # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
-    # The walker deserves a rewrite.
-    if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
-      next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
-      # we load Errno by ourself to avoid double Config warnings [perl #]
-      next if $package eq 'Errno' and $m eq 'TIEHASH';
-      # XXX Config and FileHandle should not just return. If unneeded skip em.
-      return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
-      # IO::File|IO::Handle added for B::CC only
-      return 0 if $package =~ /^(FileHandle|IO::File|IO::Handle)/ and $m eq 'new';
-      warn "$package has method $m: saving package\n" if $debug{pkg};
-      return mark_package($package);
+  if (!$all_bc_deps{$package}) {
+    foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
+      # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
+      # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
+      # The walker deserves a rewrite.
+      if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
+        next if $package eq 'utf8' and $m eq 'DESTROY'; # utf8::DESTROY is empty
+        # we load Errno by ourself to avoid double Config warnings [perl #]
+        # and we have special logic to detect and include it
+        next if $package =~ /^(Errno|Tie::Hash::NamedCapture)$/ and $m eq 'TIEHASH';
+        # XXX Config and FileHandle should not just return. If unneeded skip em.
+        return 0 if $package eq 'Config' and $m =~ /DESTROY|TIEHASH/; # Config detected in GV
+        # IO::File|IO::Handle added for B::CC only
+        return 0 if $package =~ /^(FileHandle|IO::File|IO::Handle)/ and $m eq 'new';
+        warn "$package has method $m: saving package\n" if $debug{pkg};
+        return mark_package($package);
+      }
     }
   }
   if ($package !~ /^PerlIO/ and can_delete($package)) {
