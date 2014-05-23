@@ -8,6 +8,13 @@
 
 	* C: detect new Encode >2.58 compile-time usage (#305, RT #94221)
         Fix mro maybe::next:: detection (#326)
+        Fix %INC cleanup logic. Delete packages from %INC only if they were really not saved,
+          and add packages to %INC which were saved and not just marked for saving. (#340)
+          Fix lot of skip package logic and consistency parts. Much less packages are now saved
+          in general which leads to smaller and faster code.
+        Special-case %warning::Bits on -O3 to not SEGV when changing warnings on run-time loads
+          on compile-time saved -fconst-string warnings.
+        Add -fwalkall to add all wanted packages recursively with maxdepth 3.
 	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
           Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
           "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
