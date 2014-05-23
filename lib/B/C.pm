@@ -800,7 +800,9 @@ sub save_pv_or_rv {
     $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
     $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
-    $static = 0 if $shared_hek or ($fullname and ($fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/)));
+    $static = 0 if $shared_hek
+      or ($fullname and ($fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/)));
+    $static = 0 if $B::C::const_strings and $fullname =~ /^warnings::(Dead)?Bits/;
     if ($shared_hek and $pok and !$cur) { #272 empty key
       warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
       $savesym = "emptystring";
@@ -822,7 +824,7 @@ sub save_pv_or_rv {
       }
       # but we can optimize static set-magic ISA entries. #263, #91
       if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG) {
-        $static = 1;
+        $static = 1; # warn "static $fullname";
       }
       if ($static) {
 	$len = 0;
