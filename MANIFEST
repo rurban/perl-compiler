@@ -813,6 +813,7 @@ t/issue32.t
 t/issue330.t
 t/issue338.t
 t/issue34.t
+t/issue340.t
 t/issue35.t
 t/issue36.t
 t/issue37.t
