@@ -1327,10 +1327,12 @@ sub B::LISTOP::save {
   $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
   if ($op->type == $OP_DBMOPEN) {
     # resolves it at compile-time, not at run-time
-    # mark_package('AnyDBM_File') does too much, just bootstrap the single ISA
+    mark_package('AnyDBM_File'); # to save $INC{AnyDBM_File}
     require AnyDBM_File;
-    my $dbm = $AnyDBM_File::ISA[0];
+    AnyDBM_File->import;            # strip the @ISA
+    my $dbm = $AnyDBM_File::ISA[0]; # take the winner (only)
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
+    svref_2object( \&{"$dbm\::TIEHASH"} )->save; # called by pp_dbmopen
   } elsif ($op->type == $OP_FORMLINE and $B::C::const_strings) { # -O3 ~
     # non-static only for all const strings containing ~ #277
     my $sv;
