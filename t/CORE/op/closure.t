@@ -651,7 +651,7 @@ __EOF__
 	sub newsub {};
 	$x = bless {}, 'X';
     }
-    if (exists $::{'B::'}{'C::'}) {
+    if (is_perlcc_compiled()) {
       is($flag, 0, "compile-time redefined sub does not call DESTROY with perlcc");
     } else {
       is($flag, 1, "redefined sub calls DESTROY");
