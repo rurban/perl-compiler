@@ -434,7 +434,6 @@ sub init_hash {
   map { $_ => 1 } @_;
 }
 
-#
 # Initialise the hashes for the default PP functions where we can avoid
 # either stack save/restore,write_back_stack, write_back_lexicals or invalidate_lexicals.
 # XXX We should really take some of this info from Opcodes (was: CORE opcode.pl)
@@ -3459,8 +3458,9 @@ OPTION:
 
   mark_skip(qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP
                B::Section B::Pseudoreg B::Shadow B::C::InitSection
-               O Opcodes B::Stackobj B::Stackobj::Bool B::Stackobj::Padsv
+               O B::Stackobj B::Stackobj::Bool B::Stackobj::Padsv
                B::Stackobj::Const B::Stackobj::Aelem B::Bblock));
+  $B::C::all_bc_deps{$_}++ for qw(Opcodes Opcode B::Concise attributes double int num str string subs);
   #mark_skip(qw(DB Term::ReadLine)) if defined &DB::DB;
 
   # Set some B::C optimizations.
