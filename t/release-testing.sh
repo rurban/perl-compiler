@@ -8,9 +8,8 @@ else
   else
     perlall -m maketest -v
   fi
-
   # creates log.modules files with date added
-  perlall --nolog -m make '-Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100'
+  #perlall --nolog -m make '-Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100'
 fi
 
 # t/todomod.pl
