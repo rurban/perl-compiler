@@ -13,6 +13,7 @@
           and add packages to %INC which were saved and not just marked for saving. (#340)
           Fix lot of skip package logic and consistency parts. Much less packages are now saved
           in general which leads to smaller and faster code.
+          Avoid compile-time compiler internal reloads and redefinitions.
         Special-case %warning::Bits on -O3 to not SEGV when changing warnings on run-time loads
           on compile-time saved -fconst-string warnings.
         Add -fwalkall to add all wanted packages recursively with maxdepth 3.

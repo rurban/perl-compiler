@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_02';
+our $VERSION = '1.46_03';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -276,7 +276,7 @@ BEGIN {
     eval q[sub SVt_PVGV() {13}];
   }
   if ($] >= 5.010) {
-    require mro; mro->import;
+    require mro; # mro->import();
     # not exported:
     sub SVf_OOK { 0x02000000 }
     eval q[sub SVs_GMG { 0x00200000 }
@@ -356,7 +356,7 @@ my ($use_xsloader);
 my $nullop_count         = 0;
 my $unresolved_count     = 0;
 # options and optimizations shared with B::CC
-our ($module, $init_name, %savINC, $mainfile, @static_free);
+our ($module, $init_name, %savINC, %curINC, $mainfile, @static_free);
 our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
@@ -958,7 +958,7 @@ sub force_heavy {
   my $pkg = shift;
   my $pkg_heavy = $pkg."_heavy.pl";
   no strict 'refs';
-  if (!$include_package{$pkg_heavy}) {
+  if (!$include_package{$pkg_heavy} and !exists $savINC{$pkg_heavy}) {
     #eval qq[sub $pkg\::AUTOLOAD {
     #    require '$pkg_heavy';
     #    goto &\$AUTOLOAD if defined &\$AUTOLOAD;
@@ -1115,8 +1115,8 @@ sub B::OP::save {
     $B::C::fold = 1;
     if ($] >= 5.013009) {
       warn "enabling -ffold with ucfirst\n" if $verbose;
-      require "utf8.pm" unless $INC{"utf8.pm"};
-      require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+      require "utf8.pm" unless $savINC{"utf8.pm"};
+      require "utf8_heavy.pl" unless $savINC{"utf8_heavy.pl"}; # bypass AUTOLOAD
       mark_package("utf8");
       mark_package("utf8_heavy.pl");
     }
@@ -1328,11 +1328,13 @@ sub B::LISTOP::save {
   if ($op->type == $OP_DBMOPEN) {
     # resolves it at compile-time, not at run-time
     mark_package('AnyDBM_File'); # to save $INC{AnyDBM_File}
-    require AnyDBM_File;
+    require AnyDBM_File unless $savINC{'AnyDBM_File.pm'};
+    $curINC{'AnyDBM_File.pm'} = $INC{'AnyDBM_File.pm'};
     AnyDBM_File->import;            # strip the @ISA
     my $dbm = $AnyDBM_File::ISA[0]; # take the winner (only)
     svref_2object( \&{"$dbm\::bootstrap"} )->save;
     svref_2object( \&{"$dbm\::TIEHASH"} )->save; # called by pp_dbmopen
+    $curINC{$dbm.".pm"} = $INC{$dbm.".pm"};
   } elsif ($op->type == $OP_FORMLINE and $B::C::const_strings) { # -O3 ~
     # non-static only for all const strings containing ~ #277
     my $sv;
@@ -1966,7 +1968,7 @@ sub B::PMOP::save {
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
         # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-        require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+        require "utf8_heavy.pl" unless $savINC{"utf8_heavy.pl"}; # bypass AUTOLOAD
         svref_2object( \&{"utf8\::SWASHNEW"} )->save; # for swash_init(), defined in lib/utf8_heavy.pl
         if ($PERL518 and !$swash_init and $swash_ToCf) {
           $init->add("PL_utf8_tofold = $swash_ToCf;");
@@ -3083,7 +3085,7 @@ sub try_autoload {
   }
   if ($fullname eq 'utf8::SWASHNEW') {
     # utf8_heavy was loaded so far, so defer to a demand-loading stub
-    my $stub = sub { require 'utf8_heavy.pl' unless $INC{"utf8_heavy.pl"}; goto &utf8::SWASHNEW; };
+    my $stub = sub { require 'utf8_heavy.pl' unless $savINC{"utf8_heavy.pl"}; goto &utf8::SWASHNEW; };
     return svref_2object( $stub );
   }
 
@@ -3313,7 +3315,7 @@ sub B::CV::save {
     push_package($package_pv);
   }
   if ($fullname eq 'utf8::SWASHNEW') { # bypass utf8::AUTOLOAD, a new 5.13.9 mess
-    require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"};
+    require "utf8_heavy.pl" unless $savINC{"utf8_heavy.pl"};
     # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
     # already polluted. See issue 61 and force_heavy()
     svref_2object( \&{"utf8\::SWASHNEW"} )->save;
@@ -4726,8 +4728,8 @@ sub B::IO::save_data {
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA);",1); DATA being a ref to $data
     $init->pre_destruct( sprintf 'eval_pv("close %s;", 1);', $globname );
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
-    require PerlIO;
-    require PerlIO::scalar;
+    require PerlIO unless $savINC{'PerlIO.pm'};
+    require PerlIO::scalar unless $savINC{'PerlIO/Scalar.pm'};
     mark_package("PerlIO", 1);
     # $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
     mark_package("PerlIO::scalar", 1);
@@ -5672,7 +5674,7 @@ _EOT8
   # my %core = map{$_ => 1} core_packages();
   foreach my $stashname ( sort keys %xsub ) {
     my $incpack = inc_packname($stashname);
-    unless (exists $INC{$incpack}) { # skip deleted packages
+    unless (exists $curINC{$incpack}) { # skip deleted packages
       warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
       delete $xsub{$stashname} unless $static_ext{$stashname};
       next;
@@ -6355,7 +6357,7 @@ sub should_save {
   }
   # Needed since 5.12.2: Check already if deleted
   if ( $] > 5.015001 and
-       !exists $INC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
+       !exists $curINC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
     $include_package{$package} = 0;
     warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
@@ -6465,11 +6467,11 @@ sub delete_unsaved_hashINC {
     and $use_xsloader == 0;
   return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
   $include_package{$package} = 0;
-  if ($INC{$incpack}) {
+  if ($curINC{$incpack}) {
     warn "Deleting $package from \%INC\n" if $debug{pkg};
-    $savINC{$incpack} = $INC{$incpack} if !$savINC{$incpack};
-    $INC{$incpack} = undef;
-    delete $INC{$incpack};
+    $savINC{$incpack} = $curINC{$incpack} if !$savINC{$incpack};
+    $curINC{$incpack} = undef;
+    delete $curINC{$incpack};
   }
 }
 
@@ -6477,19 +6479,19 @@ sub add_hashINC {
   my $package = shift;
   my $incpack = inc_packname($package);
   $include_package{$package} = 1;
-  unless ($INC{$incpack}) {
+  unless ($curINC{$incpack}) {
     if ($savINC{$incpack}) {
       warn "Adding $package to \%INC (again)\n" if $debug{pkg};
-      $INC{$incpack} = $savINC{$incpack};
+      $curINC{$incpack} = $savINC{$incpack};
       # need to check xsub
       $use_xsloader = 1 if $package =~ /^DynaLoader|XSLoader$/;
     } else {
       warn "Adding $package to \%INC\n" if $debug{pkg};
       for (@INC) {
         my $p = $_.'/'.$incpack;
-        if (-e $p) { $INC{$incpack} = $p; last; }
+        if (-e $p) { $curINC{$incpack} = $p; last; }
       }
-      $INC{$incpack} = $incpack unless $INC{$incpack};
+      $curINC{$incpack} = $incpack unless $curINC{$incpack};
     }
   }
 }
@@ -6552,9 +6554,9 @@ sub save_unused_subs {
       or exists($INC{'unicore/To/Tc.pl'}) #242
       or exists($INC{'unicore/Heavy.pl'}) #242
       or ($savINC{'utf8_heavy.pl'} and ($B::C::fold or exists($savINC{'utf8.pm'})))) {
-    require "utf8.pm" unless $INC{"utf8.pm"};
+    require "utf8.pm" unless $savINC{"utf8.pm"};
     mark_package('utf8');
-    require "utf8_heavy.pl" unless $INC{"utf8_heavy.pl"}; # bypass AUTOLOAD
+    require "utf8_heavy.pl" unless $savINC{"utf8_heavy.pl"}; # bypass AUTOLOAD
     mark_package('utf8_heavy.pl');
     # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
     # It adds about 1.6MB exe size 32-bit.
@@ -6580,15 +6582,23 @@ sub inc_cleanup {
   my $rec_cnt = shift;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
+
   for my $package (sort keys %INC) {
     my $pkg = packname_inc($package);
     if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'}) {
-      delete $INC{$package};
+      delete $curINC{$package};
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
-      delete $INC{$package};
+      delete $curINC{$package};
       delete_unsaved_hashINC('utf8');
     } else {
       delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
+    }
+  }
+  # sync %curINC deletions back to %INC
+  for my $p (sort keys %INC) {
+    if (!exists $curINC{$p}) {
+      delete $INC{$p};
+      warn "Deleting $p from %INC\n" if $debug{pkg};
     }
   }
   if ($debug{pkg} and $verbose) {
@@ -6614,12 +6624,18 @@ sub inc_cleanup {
           $again++;
           warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
           # mark_package( $p, 1);
-          eval { require(inc_packname($p)) && add_hashINC( $p ); } unless $savINC{inc_packname($p)};
+          eval {
+            require(inc_packname($p)) && add_hashINC( $p );
+          } unless $savINC{inc_packname($p)};
           $dumped_package{$p} = 1;
           walk_syms( $p );
         }
     }
     inc_cleanup($rec_cnt++) if $again and $rec_cnt < 3; # maximal 3 times
+  }
+  # sync %curINC deletions back to %INC
+  for my $p (sort keys %INC) {
+    delete $INC{$p} if !exists $curINC{$p};
   }
 }
 
@@ -6971,6 +6987,7 @@ sub init_sections {
   }
   $init = new B::C::InitSection 'init', \%symtable, 0;
   $init2 = new B::C::InitSection 'init2', \%symtable, 0;
+  %savINC = %curINC = %INC;
 }
 
 sub mark_unused {
