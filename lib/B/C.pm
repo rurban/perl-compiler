@@ -5206,6 +5206,9 @@ _EOT0
 }
 
 sub output_boilerplate {
+  my $creator = "created at ".scalar localtime()." with B::C $B::C::VERSION";
+  $creator .= $B::C::REVISION if $B::C::REVISION;
+  print "/* $creator */\n";
   # Store the sv_list index in sv_debug_file when debugging
   print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUG_LEAKING_SCALARS;
   if ($B::C::Flags::have_independent_comalloc) {

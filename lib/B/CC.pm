@@ -3244,6 +3244,7 @@ sub cc_main {
 
   seek( STDOUT, 0, 0 );   #prevent print statements from BEGIN{} into the output
   fixup_ppaddr();
+  print "/* using B::CC $B::CC::VERSION backend */\n";
   output_boilerplate();
   print "\n";
   output_all("perl_init");
