@@ -23,10 +23,10 @@ BEGIN {
     print "1..0 # Skip -- Perl configured without B module\n";
     exit 0;
   }
-  if ((!-d '.git' or $ENV{NO_AUTHOR}) and $] >= 5.018 and $Config{useithreads}) {
-    print "1..0 # skip - bytecode 5.18 threaded broken\n";
-    exit 0;
-  }
+  #if ((!-d '.git' or $ENV{NO_AUTHOR}) and $] >= 5.018 and $Config{useithreads}) {
+  #  print "1..0 # skip - bytecode 5.18 threaded broken\n";
+  #  exit 0;
+  #}
   require 'test.pl'; # for run_perl()
 }
 use strict;
@@ -66,6 +66,7 @@ push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with 
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
 push @todo, (46) if $] >= 5.012 and $] < 5.018;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
+push @todo, (7, 17..18, 21, 30, 35) if $] >= 5.018 and $ITHREADS;
 
 my @skip = ();
 #push @skip, (27,32,42..43) if !$ITHREADS;
@@ -85,7 +86,7 @@ else {
 # $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
 $backend .= ",-H" unless $PERL56;
 # TODO: -H still unstable with 5.18 (filter issue #339)
-$backend = "Bytecode,-s" if $PERL518 and !$ITHREADS;
+$backend = "Bytecode,-s" if $PERL518;
 
 #$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {
@@ -101,7 +102,7 @@ for (@tests) {
     $expect = "zz" . $expect;
   }
   $test = "bytecode$cnt.pl";
-  open T, ">$test"; print T $script; close T;
+  open T, ">", $test; print T $script; close T;
   unlink "${test}c" if -e "${test}c";
   $? = 0;
   $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${test}c" ],
@@ -110,7 +111,7 @@ for (@tests) {
 		  stderr   => $PERL56 ? 1 : 0, # capture "bytecode.pl syntax ok"
 		  timeout  => 10,
 		  progfile => $test);
-  my $Byteloader = ($PERL56 or ($PERL518 and !$ITHREADS)) ? " -MByteLoader" : "";
+  my $Byteloader = ($PERL56 or $PERL518) ? " -MByteLoader" : "";
   unless ($?) {
     # test coverage if -Dv is allowed
     if ($do_coverage and $DEBUGGING) {
