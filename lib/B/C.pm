@@ -7462,6 +7462,9 @@ in much bigger compile sizes.
 This was introduced to catch previously uncompiled packages for computed
 methods or undetected deeper run-time dependencies.
 
+This flag is very experimental and might be re-implemented differently
+or taken away or changed to take a depth argument.
+
 =item B<-fno-save-sig-hash>
 
 Disable compile-time modifications to the %SIG hash.
