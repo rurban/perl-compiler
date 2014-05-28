@@ -3148,7 +3148,7 @@ sub cc_recurse {
       warn "cc $ccinfo->[0] already defined\n" if $verbose;
       debug "cc(ccinfo): @$ccinfo already defined\n" if $debug{queue};
       while (exists $cc_pp_sub{$ccinfo->[0]}) {
-        if ($ccinfo->[0] =~ /^(pp_sub_.*_)(\d*)$/) {
+        if ($ccinfo->[0] =~ /^(pp_(?:lex)?sub_.*_)(\d*)$/) {
           my $s = $2;
           $s++;
           $ccinfo->[0] = $1 . $s;

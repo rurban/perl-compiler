@@ -3147,7 +3147,9 @@ sub Dummy_initxs { }
 
 sub B::CV::is_lexsub {
   my ($cv, $gv) = @_;
-  return $PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK');
+  # logical shortcut perl5 bug since ~ 5.19: testcc.sh 42
+  # return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK'));
+  return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) ? 1 : 0;
 }
 
 sub B::CV::save {
@@ -3452,9 +3454,9 @@ sub B::CV::save {
       if $debug{cv} and $debug{gv};
     my $ppname = "";
     if ($cv->is_lexsub($gv)) {
-      my $gvname    = $cv->NAME_HEK;
-      $ppname = "pp_lexsub_";
-      $fullname = "<lex>".$gvname;
+      my $name = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "anonlex";
+      $ppname = "pp_lexsub_".$name;
+      $fullname = "<lex>".$name;
     }
     elsif ($gv and $$gv) {
       my ($stashname, $gvname);
