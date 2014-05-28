@@ -311,7 +311,7 @@ t/C-COMPILED/CORE--op--local.t
 t/C-COMPILED/CORE--op--localref.t
 t/C-COMPILED/CORE--op--loopctl.t
 t/C-COMPILED/CORE--op--lop.t
-t/C-COMPILED/CORE--op--magic-27839==BC-271.t
+t/C-COMPILED/CORE--op--magic-27839.t
 t/C-COMPILED/CORE--op--magic.t
 t/C-COMPILED/CORE--op--magic_phase.t
 t/C-COMPILED/CORE--op--method.t
