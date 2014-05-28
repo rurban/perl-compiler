@@ -56,7 +56,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.15, Reini Urban, 2013-02-01 10:41:54
 # Version 2.16, Reini Urban, 2013-11-27 11:36:13
 # Version 2.17, Reini Urban, Thu Feb 6 14:04:29 2014 -0600
-# Version 2.18, Reini Urban, 2014-05-15 11:23:28
+# Version 2.18, Reini Urban, 2014-05-28
 
 use strict;
 use warnings;
@@ -245,9 +245,10 @@ sub parse_argv {
         'O',            # Optimised C backend B::CC
          #'O1-4'        # alias for -Wb=-O1 (new since 2.13)
         'dryrun|n',     # only print commands, do not execute
-        'c',            # Compile only
+        'c',            # Compile to C only, no linking
+        'check',        # pass -c to B::C and exit
         'help|h',       # Help me
-        'S',            # Dump C files
+        'S',            # Keep generated C file
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
         'A',            # -DALLOW_PERL_OPTIONS like -D?
@@ -422,6 +423,9 @@ sub compile_cstyle {
     if (opt('f')) {
         $addoptions .= "-f$_," for @{$Options->{f}};
     }
+    if (opt('check')) {
+        $addoptions .= "-c,";
+    }
 
     my $staticxs = opt('staticxs') ? "-staticxs," : '';
     warn "--staticxs on darwin does not work yet\n"
@@ -437,7 +441,10 @@ sub compile_cstyle {
             q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} .
             q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
     }
-    if (opt('o')) {
+    if (opt('check')) {
+        $cfile = "";
+        $staticxs = "";
+    } elsif (opt('o')) {
         $cfile = opt('o').".c";
         if ((is_win32() or $^O eq 'cygwin') and $Output =~ /\.exe.c$/) {
           $cfile =~ s/\.exe\.c$/.c/,
@@ -463,7 +470,7 @@ sub compile_cstyle {
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below
     }
-    vprint 3, "Writing C on $cfile";
+    vprint 3, "Writing C on $cfile" unless opt('check');
 
     my $max_line_len = '';
     if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/i) {
@@ -471,9 +478,12 @@ sub compile_cstyle {
     }
 
     my $options = "$addoptions$testsuite$max_line_len$staticxs$stash";
+    $options .= "-o$cfile" unless opt('check');
+    $options = substr($options,0,-1) if substr($options,-1,1) eq ",";
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
-    my $command = "$BinPerl$taint -MO=$Backend,$options"."-o$cfile $Input";
+
+    my $command = "$BinPerl$taint -MO=$Backend,$options $Input";
     vprint 5, "Compiling...";
     vprint 0, "Calling $command";
 
@@ -536,6 +546,7 @@ sub compile_cstyle {
         # $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
         vprint 4, "staticxs: $stash $extra_libs";
     }
+    exit if opt('check');
 
     $t0 = [gettimeofday] if opt('time');
     is_msvc ?
@@ -1049,11 +1060,16 @@ the basename.
 
 =item -c I<C file name>
 
-Create C code only; do not compile to a standalone binary.
+Create C file only; do not compile and link to a standalone binary.
 
 =item -e I<perl code>
 
 Compile a one-liner, much the same as C<perl -e '...'>
+
+=item --check
+
+Pass -c flag to backend and exit. Used to see compiler warnings.
+Does not generate C code.
 
 =item -S
 
