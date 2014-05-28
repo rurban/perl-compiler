@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_03';
+our $VERSION = '1.46_04';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -863,6 +863,7 @@ sub save_pv_or_rv {
 # Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
 sub save_hek {
   my $str = shift; # not cstring'ed
+  my $dynamic = shift; # not yet implemented. see lexsub CvNAME in CV::save
   my $len = length $str;
   # force empty string for CV prototypes
   if (!$len and !@_) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
@@ -881,7 +882,7 @@ sub save_hek {
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = $sym;
   my $cstr = cstring($str);
-  $decl->add(sprintf("Static HEK *%s;",$sym));
+  $decl->add(sprintf("Static HEK *%s;", $sym));
   warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
     if $debug{pv};
   # randomized global shared hash keys:
@@ -3302,6 +3303,7 @@ sub B::CV::save {
     $sym = savesym( $cv, "CVIX$sv_ix" );
   } else {
     $svsect->add("CVIX$sv_ix");
+    $svsect->debug( "&".$fullname, $cv->flagspv ) if $debug{flags};
     $xpvcv_ix = $xpvcvsect->index + 1;
     $xpvcvsect->add("XPVCVIX$xpvcv_ix");
     # Save symbol now so that GvCV() doesn't recurse back to us via CvGV()
@@ -3406,6 +3408,10 @@ sub B::CV::save {
     if (exists &$fullname) {
       warn "Warning: Empty &".$fullname."\n" if $debug{sub};
       $init->add( "/* empty CV $fullname */" ) if $verbose or $debug{sub};
+    } elsif ($ITHREADS and $PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
+      # if threaded need to find the attached lexical sub (#130 + #341)
+      # in the PadNAMES array. So keep the empty PVCV
+      warn "threaded lexsub &".$fullname." saved as empty $sym\n" if $debug{sub};
     } else {
       warn "Warning: &".$fullname." not found\n" if $debug{sub};
       $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
@@ -3498,6 +3504,9 @@ sub B::CV::save {
       }
     }
     warn $fullname."\n" if $debug{sub};
+  }
+  elsif ($ITHREADS and $PERL518) {
+    ;
   }
   elsif (!exists &$fullname) {
     warn $fullname." not found\n" if $debug{sub};
@@ -3622,14 +3631,26 @@ sub B::CV::save {
 	$xpvcvsect->add($xpvc);
 	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
-	$svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
+        $svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
       }
     }
     if ($$cv) {
       if (!$gv or ref($gv) eq 'B::SPECIAL') {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
         warn "lexsub name $lexsub" if $debug{gv};
-        $init->add( sprintf( "CvNAME_HEK_set(s\\_%x, %s);", $$cv, save_hek($lexsub) ));
+        my $cur = length( pack "a*", $lexsub );
+        if (!$PERL56) {
+          if (utf8::is_utf8($lexsub)) {
+            my $pv = $lexsub;
+            utf8::encode($pv);
+            $cur = - length $pv;
+          }
+        }
+        $init->add( "{ /* need a dynamic name hek */",
+                    sprintf("  HEK *lexhek = share_hek(savepvn(%s, %d), %d, 0);",
+                            cstring($lexsub), abs($cur), $cur),
+                    sprintf("  CvNAME_HEK_set(s\\_%x, lexhek);", $$cv),
+                    "}");
       } else {
         my $gvstash = $gv->STASH;
         # defer GvSTASH because with DEBUGGING it checks for GP but
