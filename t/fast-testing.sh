@@ -2,9 +2,9 @@
 # usage: t/fast-testing.sh [--watch]
 
 test -f Makefile || perl Makefile.PL
-V=`perl -ane'print $F[2] if /^VERSION =/' Makefile`
-R=`git log -1 --pretty=format:"%h"`
-D=`git describe --long --tags --dirty --always`
+V=$(perl -ane'print $F[2] if /^VERSION =/' Makefile)
+R=$(git log -1 --pretty=format:"%h")
+D=$(git describe --long --tags --dirty --always)
 lock=fast-testing.lock
 w=
 echo $$ > $lock
