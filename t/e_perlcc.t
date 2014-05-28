@@ -3,7 +3,7 @@
 # test most perlcc options
 
 use strict;
-use Test::More tests => 76;
+use Test::More tests => 79;
 use Config;
 
 my $usedl = $Config{usedl} eq 'define';
@@ -213,6 +213,12 @@ if ($] < 5.007) {
 } else {
   is(`$X -Iblib/arch -Iblib/lib pcc.plc`, "ok", "executable plc"); #76
 }
+cleanup;
+
+like(`$perlcc -o pcc --check -e"BEGIN{open(F,q(<xx))}" 2>&1`, #77
+     qr/^Warning: Read BEGIN-block main::F from FileHandle/, "--check");
+ok(!-e "pcc.c", "no C file"); #78
+ok(!-e $a, "no executable"); #79
 cleanup;
 
 #TODO: -m
