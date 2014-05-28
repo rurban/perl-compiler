@@ -3145,6 +3145,11 @@ sub try_autoload {
 }
 sub Dummy_initxs { }
 
+sub B::CV::is_lexsub {
+  my ($cv, $gv) = @_;
+  return $PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK');
+}
+
 sub B::CV::save {
   my ($cv) = @_;
   my $sym = objsym($cv);
@@ -3408,10 +3413,10 @@ sub B::CV::save {
     if (exists &$fullname) {
       warn "Warning: Empty &".$fullname."\n" if $debug{sub};
       $init->add( "/* empty CV $fullname */" ) if $verbose or $debug{sub};
-    } elsif ($ITHREADS and $PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
-      # if threaded need to find the attached lexical sub (#130 + #341)
+    } elsif ($cv->is_lexsub($gv)) {
+      # need to find the attached lexical sub (#130 + #341) at run-time
       # in the PadNAMES array. So keep the empty PVCV
-      warn "threaded lexsub &".$fullname." saved as empty $sym\n" if $debug{sub};
+      warn "lexsub &".$fullname." saved as empty $sym\n" if $debug{sub};
     } else {
       warn "Warning: &".$fullname." not found\n" if $debug{sub};
       $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
@@ -3446,7 +3451,7 @@ sub B::CV::save {
                   $$cv, $$root )
       if $debug{cv} and $debug{gv};
     my $ppname = "";
-    if ((!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
+    if ($cv->is_lexsub($gv)) {
       my $gvname    = $cv->NAME_HEK;
       $ppname = "pp_lexsub_";
       $fullname = "<lex>".$gvname;
@@ -3505,7 +3510,7 @@ sub B::CV::save {
     }
     warn $fullname."\n" if $debug{sub};
   }
-  elsif ($ITHREADS and $PERL518) {
+  elsif ($cv->is_lexsub($gv)) {
     ;
   }
   elsif (!exists &$fullname) {
@@ -3635,7 +3640,7 @@ sub B::CV::save {
       }
     }
     if ($$cv) {
-      if (!$gv or ref($gv) eq 'B::SPECIAL') {
+      if ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL')) {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
         warn "lexsub name $lexsub" if $debug{gv};
         my $cur = length( pack "a*", $lexsub );
