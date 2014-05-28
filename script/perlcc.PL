@@ -498,8 +498,12 @@ sub compile_cstyle {
     } else {
         my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
         @error = grep { !/^$i syntax OK$/o } @error;
-        warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
-        warn "@error" if @error and opt('v')>4;
+        if (opt('check')) {
+            warn "@error" if @error;
+        } else {
+            warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
+            warn "@error" if @error and opt('v')>4;
+        }
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
