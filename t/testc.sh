@@ -1041,6 +1041,7 @@ result[284]='123
 456
 789'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
+tests[293]='use Coro; print q(ok)'
 tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
 tests[299]='#TODO version

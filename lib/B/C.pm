@@ -3176,7 +3176,7 @@ sub B::CV::save {
     $CvFLAGS &= ~0x400 if $PERL514; # no CVf_CVGV_RC otherwise we cannot set the GV
     mark_package($cvstashname, 1) unless $include_package{$cvstashname};
   }
-  elsif ((!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) {
+  elsif ($cv->is_lexsub($gv)) {
     $fullname = $cv->NAME_HEK;
     warn sprintf( "CV NAME_HEK $fullname\n") if $debug{cv};
     if ($fullname =~ /^(.*)::(.*?)$/) {
@@ -3338,15 +3338,30 @@ sub B::CV::save {
     }
   }
 
-  if (!$$root && !$cvxsub and $cvstashname =~ /^(bytes|utf8)$/) { # no autoload, force compile-time
-    force_heavy($cvstashname);
-    $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
-    $gv = $cv->GV;
-    warn sprintf( "Redefined CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
-                  $$cv, $$gv, $fullname, $CvFLAGS ) if $debug{cv};
-    $sym = savesym( $cv, $sym );
-    $root    = $cv->ROOT;
-    $cvxsub  = $cv->XSUB;
+  if (!$$root && !$cvxsub) {
+    my $reloaded;
+    if ($cvstashname =~ /^(bytes|utf8)$/) { # no autoload, force compile-time
+      force_heavy($cvstashname);
+      $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
+      $reloaded = 1;
+    } elsif ($fullname eq 'Coro::State::_jit') { # 293
+      # need to force reload the jit src
+      my ($pl) = grep { m|^Coro/jit-| } keys %INC;
+      if ($pl) {
+        delete $INC{$pl};
+        require $pl;
+        $cv = svref_2object( \&{$fullname} );
+        $reloaded = 1;
+      }
+    }
+    if ($reloaded) {
+      $gv = $cv->GV;
+      warn sprintf( "Redefined CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
+                    $$cv, $$gv, $fullname, $CvFLAGS ) if $debug{cv};
+      $sym = savesym( $cv, $sym );
+      $root    = $cv->ROOT;
+      $cvxsub  = $cv->XSUB;
+    }
   }
   if ( !$$root && !$cvxsub ) {
     if ( my $auto = try_autoload( $cvstashname, $cvname ) ) {
