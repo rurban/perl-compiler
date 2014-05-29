@@ -499,7 +499,7 @@ sub compile_cstyle {
         my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
         @error = grep { !/^$i syntax OK$/o } @error;
         if (opt('check')) {
-            warn "@error" if @error;
+            print "@error" if @error;
         } else {
             warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
             warn "@error" if @error and opt('v')>4;
@@ -1072,8 +1072,8 @@ Compile a one-liner, much the same as C<perl -e '...'>
 
 =item --check
 
-Pass -c flag to backend and exit. Used to see compiler warnings.
-Does not generate C code.
+Pass -c flag to the backend, prints all backend warnings to STDOUT
+and exits before generating and compiling code. Similar to perl -c.
 
 =item -S
 
