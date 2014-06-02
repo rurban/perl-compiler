@@ -20,6 +20,7 @@
           No tests yet.
         Add time and version on top of C source code. Also for CC.
         Fix lexical subs for threaded perls (#130, #341)
+        Add special fixes for Coro: reload Coro jit and SvREADONLY_off some of its XS symbols (#293)
 	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
           Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
           "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
