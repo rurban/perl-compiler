@@ -5804,6 +5804,18 @@ _EOT9
     print "\t/* assert(cxstack_ix == 0); */\n" if $xs;
     print "\tSAVETMPS;\n";
     print "\ttarg = sv_newmortal();\n" if $] < 5.008008;
+
+    if (exists $xsub{"Coro::State"} and grep { $_ eq "Coro::State" } @dl_modules) {
+      # needed before dl_init, and after init
+      print "\t{\n\t  GV *sym;\n";
+      for my $s (qw(Coro Coro::API Coro::current)) {
+        print "\t  sym = gv_fetchpv(\"$s\",0,SVt_PV);\n";
+        print "\t  if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));\n";
+      }
+      print "\t  sym = gv_fetchpv(\"Coro::pool_handler)\",0,SVt_PVCV);\n";
+      print "\t  if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));\n";
+      print "\t}\n";
+    }
     foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
 	$use_xsloader = 1;
