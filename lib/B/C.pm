@@ -2928,7 +2928,8 @@ CODE2
       # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
       my $pmop_ptr = unpack("J", $mg->PTR);
       my $pmop = $Regexp{$pmop_ptr};
-      warn sprintf("pmop 0x%x not found in \%Regexp", $pmop_ptr) unless $pmop;
+      warn sprintf("pmop 0x%x not found in our B::C Regexp hash", $pmop_ptr)
+        unless $pmop;
       my $pmsym = $pmop ? $pmop->save($fullname) : '&pmop_list[0]';
       $init->add("{\tU32 elements;", # toke.c: PL_multi_open == '?'
                  sprintf("\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv),
