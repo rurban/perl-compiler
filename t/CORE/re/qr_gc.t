@@ -5,6 +5,7 @@ BEGIN {
     undef &Regexp::DESTROY;
 }
 
+skip_all "perlcc re-eval doesnt call Regexp::DESTROY #328" if is_perlcc_compiled;
 plan tests => 2;
 
 my $destroyed;

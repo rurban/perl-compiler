@@ -1098,10 +1098,10 @@ result[324]='Master
 Slave of Master'
 tests[326]='#TODO method const maybe::next::method
 package Diamond_C; sub maybe { "Diamond_C::maybe" } package Diamond_D; use base "Diamond_C"; use mro "c3"; sub maybe { "Diamond_D::maybe => " . ((shift)->maybe::next::method() || 0) } package main; print "ok\n" if Diamond_D->maybe;'
-tests[328]='#TODO re-eval
+tests[328]='#WONTFIX re-eval lex/global mixup
 my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'
 result[328]=45
-tests[329]='#TODO re-eval
+tests[329]='#WONTFIX re-eval lex/global mixup
 $_ = q{aaa}; my @res; pos = 1; s/\Ga(?{push @res, $_, $`})/xx/g; print "ok\n" if "$_ @res" eq "axxxx aaa a aaa aa"; print "$_ @res\n"'
 result[329]='ok
 axxxx aaa a aaa aa'

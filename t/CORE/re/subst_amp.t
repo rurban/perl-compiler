@@ -4,6 +4,10 @@ BEGIN {
     require q(t/CORE/test.pl);
 }
 
+if (is_perlcc_compiled()) {
+  skip_all "re-eval lex/global miscompiled #328";
+} else {
+
 use strict;
 
 $_ = 'x' x 20; 
@@ -88,4 +92,5 @@ pos ($a) = 1;
 $a =~ s/\Ga(?{push @res, $_, $`})/x1/e;
 is("$a @res", 'axa aaa a');
 
+}
 done_testing();

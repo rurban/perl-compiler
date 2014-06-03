@@ -406,7 +406,13 @@ sub run_tests {
         $_ = "x"; s/x/func "in subst"/e;
         $_ = "x"; s/x/func "in multiline subst"/em;
         $_ = "x"; /x(?{func "in regexp"})/;
-        $_ = "x"; /x(?{func "in multiline regexp"})/m;
+      SKIP: {
+        if (is_perlcc_compiled()) {
+          skip "re-eval func() miscompiled via perlcc", 2;
+        } else {
+          $_ = "x"; /x(?{func "in multiline regexp"})/m;
+        }
+      }
     }
 
     {
@@ -1004,6 +1010,7 @@ sub run_tests {
     }
     {
 	no warnings 'closure';
+        local $::TODO = "pmop 0x0 inside re-eval not found, issue #274" if is_perlcc_compiled();
 	my $re = qr/A(??{"1"})/;
 	ok "A1B" =~ m/^((??{ $re }))((??{"B"}))$/;
 	ok $1 eq "A1";

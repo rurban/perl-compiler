@@ -92,6 +92,7 @@ sub run_tests {
             my $r = m?(.*)?;
             is($r, $e, "?(.*)?");
             /not/ && reset;
+            # TODO perlcc #274 issue (2nd reset)
             if (/not ok 2/) {
                 if ($^O eq 'VMS') {
                     $_ = shift(@XXX);
@@ -458,9 +459,14 @@ sub run_tests {
 
         $code = '{$blah = 45}';
         $blah = 12;
-        eval "/(?$code)/";
-        is($blah, 45, $message);
-
+    SKIP: {
+        if (is_perlcc_compiled()) { # test if runnning compiled
+          skip "wontfix issue 328 lexicals miscompiled in re-eval via perlcc";
+        } else {
+          eval "/(?$code)/";
+          is($blah, 45, $message);
+        }
+      }
         $blah = 12;
         /(?{$blah = 45})/;
         is($blah, 45, $message);
@@ -574,7 +580,11 @@ sub run_tests {
         ok $1 && /$1/, "Capture a quote";
     }
 
-    {
+    if (is_perlcc_compiled()) { # test if runnning compiled
+      SKIP: {
+        skip "wontfix issue 328 lexicals miscompiled in re-eval via perlcc", 2;
+      }
+    } else {
         no warnings 'closure';
         my $message = '(?{ $var } refers to package vars';
         package aa;
@@ -827,7 +837,13 @@ sub run_tests {
         my @c = qw [foo bar];
         my @d = ();
         s/(\w)(?{push @d, $1})/,$1,/g for @c;
-        is("@d", "f o o b a r", $message);
+    SKIP: {
+        if (is_perlcc_compiled()) { # test if runnning compiled
+          skip "wontfix issue 328 lexicals miscompiled in re-eval via perlcc";
+        } else {
+          is("@d", "f o o b a r", $message);
+        }
+        }
         is("@c", ",f,,o,,o, ,b,,a,,r,", $message);
     }
 

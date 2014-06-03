@@ -93,10 +93,13 @@ CODE
 
 off;
 
-"a" =~ do { package foo; qr/(?{ $::pack = __PACKAGE__ })a/ };
-is $pack, 'foo', 'qr// inherits package';
-"a" =~ do { use re "/x"; qr/(?{ $::re = qr-- })a/ };
-is $re, '(?^x:)', 'qr// inherits pragmata';
+{
+  local $::TODO = "re-eval #328" if is_perlcc_compiled;
+  "a" =~ do { package foo; qr/(?{ $::pack = __PACKAGE__ })a/ };
+  is $pack, 'foo', 'qr// inherits package';
+  "a" =~ do { use re "/x"; qr/(?{ $::re = qr-- })a/ };
+  is $re, '(?^x:)', 'qr// inherits pragmata';
+}
 
 on;
 
@@ -116,7 +119,10 @@ is $pack, 'bar', '/$text/ containing (?{}) inherits package';
   use re 'eval', "/m";
   "ba" =~ /${\'(?{ $::re = qr -- })a'}/;
 }
-is $re, '(?^m:)', '/$text/ containing (?{}) inherits pragmata';
+{
+  local $::TODO = "re-eval #328" if is_perlcc_compiled;
+  is $re, '(?^m:)', '/$text/ containing (?{}) inherits pragmata';
+}
 
 on;
 
