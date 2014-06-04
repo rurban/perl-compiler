@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.44 03fcc19 2014-02-09 | 1.44 release
-# perlversion = 5.008005d-nt
-# path = /usr/local/bin/perl5.8.5d-nt
-# platform = linux 64bit non-threaded debug
+# B::C::VERSION = 1.45_05 d576ef0 2014-02-19 | module updates for 1.45_04 922ddb8 (-2, +2)
+# perlversion = 5.008005-nt
+# path = /usr/local/bin/perl5.8.5-nt
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-pass FCGI
+fail FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008005d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# 100 / 100 modules tested with B-C-1.45_05 - perl-5.008005-nt
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)
