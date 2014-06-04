@@ -496,6 +496,7 @@ tests[99]='package my;sub recurse{my $i=shift;recurse(++$i)unless $i>5000;print"
 if [[ $v518 -gt 0 ]]; then
   tests[130]='no warnings "experimental::lexical_subs";use feature "lexical_subs";my sub p{q(ok)}; my $a=\&p;print p;'
 fi
+tests[135]='"to" =~ /t(?{ print "ok"})o/;'
 tests[138]='print map { chr $_ } qw/97 98 99/;'
 result[138]='abc'
 tests[140]='my %a;print "ok" if !%a;'
@@ -926,7 +927,7 @@ tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
 result[246]='Not enough arguments for main::foo at (eval 1) line 2, at EOF'
 tests[247]='# WontFix
 no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
-tests[248]='#TODO re-eval
+tests[248]='#WONTFIX lexical $_ in re-eval
 {my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
 result[248]='-titi-toto-'
 tests[249]='#TODO version
@@ -1107,7 +1108,7 @@ result[329]='ok
 axxxx aaa a aaa aa'
 tests[330]='"\x{101}a" =~ qr/\x{100}/i && print "ok\n"'
 tests[331]='use 5.010; use charnames ":full"; my $char = q/\N{LATIN CAPITAL LETTER A WITH MACRON}/; my $a = eval qq ["$char"]; print length($a) == 1 ? "ok\n" : "$a\n".length($a)."\n"'
-tests[332]='#TODO re-eval
+tests[332]='#TODO re-eval no_modify, probably WONTFIX
 use re "eval"; our ( $x, $y, $z ) = 1..3; $x =~ qr/$x(?{ $y = $z++ })/; undef $@; print "ok\n"'
 tests[333]='use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん"); my @katakana =  map {chr} ord("ァ")..ord("ン"); my $hiragana = join(q{} => @hiragana); my $katakana = join(q{} => @katakana); my %h2k; @h2k{@hiragana} = @katakana; $str = $hiragana; $str =~ s/([ぁ-ん])/$h2k{$1}/go; print $str eq $katakana ? "ok\n" : "not ok\n$hiragana\n$katakana\n";'

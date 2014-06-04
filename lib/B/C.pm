@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_04';
+our $VERSION = '1.46_05';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -281,8 +281,9 @@ BEGIN {
     sub SVf_OOK { 0x02000000 }
     eval q[sub SVs_GMG { 0x00200000 }
            sub SVs_SMG { 0x00400000 }];
-    if ($] >= 5.018) {  # PMf_ONCE also not exported
-      eval q[sub PMf_ONCE(){ 0x10000 }];
+    if ($] >= 5.018) {
+      B->import(qw(PMf_EVAL RXf_EVAL_SEEN));
+      eval q[sub PMf_ONCE(){ 0x10000 }]; # PMf_ONCE also not exported
     } elsif ($] >= 5.014) {
       eval q[sub PMf_ONCE(){ 0x8000 }];
     } elsif ($] >= 5.012) {
@@ -293,6 +294,11 @@ BEGIN {
   } else {
     eval q[sub SVs_GMG { 0x00002000 }
            sub SVs_SMG { 0x00004000 }];
+  }
+  if ($] < 5.018) {
+    eval q[sub RXf_EVAL_SEEN { 0x0 }
+           sub PMf_EVAL      { 0x0 }
+           ]; # unneeded
   }
 }
 use B::Asmdata qw(@specialsv_name);
@@ -1976,6 +1982,12 @@ sub B::PMOP::save {
           $swash_init++;
         }
       }
+      if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL on
+        $pmflags |= PMf_EVAL;
+        $init->add("{",
+                   "  U32 hints_sav = PL_hints;",
+                   "  PL_hints |= HINT_RE_EVAL;");
+      }
       if ($] > 5.008008) { # can do utf8 qr
         $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
           "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, "
@@ -1986,6 +1998,10 @@ sub B::PMOP::save {
            "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
            sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
         $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $isutf8;
+      }
+      if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL off
+        $init->add("  PL_hints = hints_sav;",
+                   "}");
       }
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
