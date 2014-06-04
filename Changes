@@ -21,12 +21,17 @@
         Add time and version on top of C source code. Also for CC.
         Fix lexical subs for threaded perls (#130, #341)
         Add special fixes for Coro: reload Coro jit and SvREADONLY_off some of its XS symbols (#293)
+        Fix "Eval-group not allowed at runtime" errors since 5.18 (#135),
+          by settting HINT_RE_EVAL for re-eval groups when compiling the QR
+        Fix readonly magic hashes, usually found since 5.20 (#273)
 	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
           Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
           "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
 	* perlcc (2.18): Avoid -H for bytecode > 5.18
 	New --check option
 	* t/asmdata.t: signicant enhancements
+        * t/CORE: add mro and re core tests, only mro/isarev.t is unstable, and several re-eval
+          tests using variables are skipped and unsupported.
 
 1.46 2014-05-14 rurban
 	Added global destruction, improved -O4 and CC, fixed mro, @-, $/ $\, Net::DNS, ...
