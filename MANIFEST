@@ -419,7 +419,7 @@ t/C-COMPILED/CORE--re--reg_eval.t
 t/C-COMPILED/CORE--re--reg_eval_scope.t
 t/C-COMPILED/CORE--re--reg_fold.t
 t/C-COMPILED/CORE--re--reg_mesg.t
-t/C-COMPILED/CORE--re--reg_namedcapture==SIG-344.t
+t/C-COMPILED/CORE--re--reg_namedcapture.t
 t/C-COMPILED/CORE--re--reg_nc_tie.t
 t/C-COMPILED/CORE--re--reg_pmod.t
 t/C-COMPILED/CORE--re--reg_posixcc.t
