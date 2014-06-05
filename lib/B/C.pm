@@ -4754,17 +4754,13 @@ sub B::HV::save {
       $init->add("}");
       $init->split;
       $init->add( sprintf("HvTOTALKEYS($sym) = %d;", $length / 2)) if !$PERL56;
-      $magic = $hv->save_magic($fullname);
-      $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
-    } else {
-      $magic = $hv->save_magic($fullname);
     }
   } elsif ($] >= 5.014) { # empty contents still needs to set keys=0
     # test 36, 140
     $init->add( "HvTOTALKEYS($sym) = 0;");
-    $magic = $hv->save_magic($fullname);
-    $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   }
+  $magic = $hv->save_magic($fullname);
+  $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   if ($magic =~ /c/) {
     # defer AMT magic of XS loaded hashes
     my $cname = cstring($name);
