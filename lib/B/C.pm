@@ -1991,13 +1991,13 @@ sub B::PMOP::save {
       if ($] > 5.008008) { # can do utf8 qr
         $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
           "PM_SETRE(&$pm,",
-          "         CALLREGCOMP(newSVpvn_flags($qre, $relen, "
+          "  CALLREGCOMP(newSVpvn_flags($qre, $relen, "
           .sprintf("SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags),
           sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
       } else {
         $init->add
           ("PM_SETRE(&$pm,",
-           "        CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
+           "  CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
            sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
         $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $isutf8;
       }
