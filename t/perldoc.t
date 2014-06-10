@@ -33,8 +33,10 @@ my $Mblib = Mblib();
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = "$X $Mblib blib/script/perlcc";
 $perlcc .= " -Wb=-fno-fold,-fno-warnings" if $] > 5.013;
+# $perlcc .= ",-fwalkall" if $] > 5.019;
 $perlcc .= " -UB -uFile::Spec";
-#        .  " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo";
+#$perlcc .= " -uFile::Spec::Unix" if $] > 5.019;
+#$perlcc .= " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo" if $] > 5.019;
 my $exe = $Config{exe_ext};
 my $perldocexe = $^O eq 'MSWin32' ? "perldoc$exe" : "./perldoc$exe";
 # XXX bother File::Which?

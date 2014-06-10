@@ -20,6 +20,7 @@ close F;
 my $result;
 my $Mblib = $] < 5.007 ? "" : "-Iblib/arch -Iblib/lib"; # 5.6 Bytecode not yet released
 my $O = $] >= 5.013005 ? "-Wb=-fno-fold,-fno-warnings" : ""; # reduce bloat
+# $O = "-Wb,-fno-walkall" if $] < 5.009;
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $expected = `$runperl $name.pl`;
 

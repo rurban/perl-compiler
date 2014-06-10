@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.46_05';
+our $VERSION = '1.46_06';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -6429,8 +6429,9 @@ sub should_save {
     return 1 if ( $u =~ /^$p\:\:/ );
   }
   # Needed since 5.12.2: Check already if deleted
+  my $incpack = inc_packname($package);
   if ( $] > 5.015001 and
-       !exists $curINC{inc_packname($package)} and $savINC{inc_packname($package)} ) {
+       !exists $curINC{$incpack} and $savINC{$incpack} ) {
     $include_package{$package} = 0;
     warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
@@ -6463,6 +6464,7 @@ sub should_save {
   if ( exists $include_package{$package} ) {
     if (! exists $all_bc_deps{$package}) {
       $include_package{$package} = 1;
+      $curINC{$incpack} = $savINC{$incpack};
       warn "Cached new $package is kept\n" if $debug{pkg};
     }
     elsif (!$include_package{$package}) {
