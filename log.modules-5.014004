@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.46_02 51e46d9 2014-05-23 | Changes: document changes from inc-i340-CC branch
+# B::C::VERSION = 1.47 b49ac89 2014-06-10 | 1.47: new release
 # perlversion = 5.014004
 # path = /usr/local/bin/perl5.14.4
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.46_02 - perl-5.014004
+# 100 / 100 modules tested with B-C-1.47 - perl-5.014004
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

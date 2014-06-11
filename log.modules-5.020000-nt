@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.46 0ca5ef0 2014-05-14 | module test updates (good)
+# B::C::VERSION = 1.47 b49ac89 2014-06-10 | 1.47: new release
 # perlversion = 5.020000-nt
-# path = /usr/local/bin/perl5.20.0-nt@cfe3322a
+# path = /usr/local/bin/perl5.20.0-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -89,7 +89,7 @@ pass Test::Pod
 pass Digest::SHA1
 fail namespace::clean #TODO 5.19 without threads
 pass Class::Inspector
-pass Clone
+fail Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.46 - perl-5.020000-nt
-# pass  96 / 100 (96.0%)
-# fail   4 / 100 (4.0%)
-# todo   5 /   4 (125.0%)
+# 100 / 100 modules tested with B-C-1.47 - perl-5.020000-nt
+# pass  95 / 100 (95.0%)
+# fail   5 / 100 (5.0%)
+# todo   5 /   5 (100.0%)
 # skip   0 / 100 (0.0% not installed)
