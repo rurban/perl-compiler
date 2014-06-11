@@ -3246,10 +3246,13 @@ sub B::CV::save {
 	  }
 	}
 	$xsub{$stashname} = 'Dynamic-'.$file;
-        $use_xsloader = 1;
+        force_saving_xsloader();
       }
       else {
         $xsub{$stashname} = 'Dynamic';
+        # DynaLoader was for sure loaded, before so we execute the branch which
+        # does walk_syms and add_hashINC
+        mark_package('DynaLoader', 1);
       }
 
       # INIT is removed from the symbol table, so this call must come
@@ -5806,7 +5809,12 @@ _EOT9
     }
   }
   warn "\%xsub: ",join(" ",sort keys %xsub),"\n" if $verbose and $debug{cv};
-  force_saving_xsloader() if $use_xsloader and ($dl or $xs);
+  # XXX This is too late here! init is already dumped (#125)
+  if ($dl and ! $INC{'DynaLoader.pm'}) {
+    die "Error: DynaLoader required but not dumped. Too late to add it.\n";
+  } elsif ($xs and ! $INC{'XSLoader.pm'}) {
+    die "Error: XSLoader required but not dumped. Too late to add it.\n";
+  }
   if ($dl) {
     if (grep {$_ eq 'attributes'} @dl_modules) {
       # enforce attributes at the front of dl_init, #259

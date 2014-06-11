@@ -3,9 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.47 ?? rurban
-        Fixed Bytecode for 5.18. Greatly reduce code size for C and esp. CC,
-        by including less unneeded dependencies.
+1.47 2014-06-11 rurban
+        Fixed Bytecode for 5.18.
+        Greatly reduce code size for C and esp. CC, by including less unneeded dependencies.
 
 	* C: detect new Encode >2.58 compile-time usage (#305, RT #94221)
         Fix mro maybe::next:: detection (#326)
@@ -24,6 +24,9 @@
         Fix "Eval-group not allowed at runtime" errors since 5.18 (#135),
           by settting HINT_RE_EVAL for re-eval groups when compiling the QR
         Fix readonly magic hashes, usually found since 5.20 (#273)
+        Fix Can't locate object method "bootstrap_inherit" via package "DynaLoader" (#125)
+          again, as the improved walker now strips DynaLoader from simple one-liners like
+          'use Clone' and the DynaLoader detection was too late. Do it now earlier.
 	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
           Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
           "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
