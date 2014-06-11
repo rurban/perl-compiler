@@ -918,11 +918,14 @@ sub ivx ($) {
   if ($INC{'POSIX.pm'}) {
     # i262: LONG_MIN -9223372036854775808L integer constant is so large that it is unsigned
     if ($ivx == POSIX::LONG_MIN()) {
-      $sval = "LONG_MIN";
+      $sval = "PERL_LONG_MIN";
     }
     elsif ($ivx == POSIX::LONG_MAX()) {
-      $sval = "LONG_MAX";
+      $sval = "PERL_LONG_MAX";
     }
+    #elsif ($ivx == POSIX::HUGE_VAL()) {
+    #  $sval = "HUGE_VAL";
+    #}
   }
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   return $sval;
@@ -5802,10 +5805,10 @@ _EOT9
     }
   }
   warn "\%xsub: ",join(" ",sort keys %xsub),"\n" if $verbose and $debug{cv};
-  # XXX This is too late here! init is already dumped
-  if ($dl and ! $INC{'DynaLoader.pm'}) {
+  # XXX Adding DynaLoader is too late here! The sections like $init are already dumped (#125)
+  if ($dl and ! $curINC{'DynaLoader.pm'}) {
     die "Error: DynaLoader required but not dumped. Too late to add it.\n";
-  } elsif ($xs and ! $INC{'XSLoader.pm'}) {
+  } elsif ($xs and ! $curINC{'XSLoader.pm'}) {
     die "Error: XSLoader required but not dumped. Too late to add it.\n";
   }
   if ($dl) {
@@ -6237,6 +6240,7 @@ sub walk_syms {
   walksymtable( \%{$package.'::'}, "savecv",
                 sub { should_save( $_[0] ); return 1 },
                 $package.'::' );
+  $dumped_package{$package} = 1;
 }
 
 # simplified walk_syms
@@ -6271,6 +6275,7 @@ sub mark_package {
     no strict 'refs';
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
     mark_package('IO') if grep { $package eq $_ } @IO;
+    mark_package("DynaLoader") if $package eq 'XSLoader';
     $use_xsloader = 1 if $package =~ /^B|Carp$/; # to help CC a bit (49)
     # i.e. if force
     if (exists $include_package{$package}
@@ -6896,12 +6901,13 @@ sub save_sig {
 }
 
 sub force_saving_xsloader {
+  mark_package("XSLoader", 1);
+  # mark_package("DynaLoader", 1);
   if ($] < 5.015003) {
     $init->add("/* force saving of XSLoader::load */");
     eval { XSLoader::load; };
     # does this really save the whole packages?
     $dumped_package{XSLoader} = 1;
-    $dumped_package{DynaLoader} = 1;
     svref_2object( \&XSLoader::load )->save;
   } else {
     $init->add("/* custom XSLoader::load_file */");
