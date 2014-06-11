@@ -2839,6 +2839,8 @@ sub B::PVMG::save_magic {
       if $debug{mg};
     return '';
   }
+  $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv)) if $sv_flags & SVf_READONLY;
+
   my @mgchain = $sv->MAGIC;
   my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
   my $magic = '';
@@ -2875,12 +2877,8 @@ sub B::PVMG::save_magic {
 	$ptrsv = $ptr->save($fullname);
       }
       warn "MG->PTR is an SV*\n" if $debug{mg};
-      $init->add(
-        sprintf(
-          "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, (char *)%s, %d);",
-          $$sv, $$obj, cchar($type), $ptrsv, $len
-        )
-      );
+      $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, (char *)%s, %d);",
+                         $$sv, $$obj, cchar($type), $ptrsv, $len));
     }
     # coverage $Template::Stash::PRIVATE
     elsif ( $type eq 'r' ) { # qr magic, for 5.6 done in C.xs. test 20
@@ -2921,15 +2919,9 @@ CODE2
       }
     }
     elsif ( $type eq 'D' ) { # XXX regdata AV - coverage? i95, 903
-      if ($sv_flags & SVf_READONLY) {
-        $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv));
-      }
       # see Perl_mg_copy() in mg.c
       $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
                          $$sv, $fullname eq 'main::-' ? 0 : $$sv, "'D'", cstring($ptr), $len ));
-      if ($sv_flags & SVf_READONLY) {
-        $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv));
-      }
     }
     elsif ( $type eq 'n' ) { # shared_scalar is from XS dist/threads-shared
       # XXX check if threads is loaded also? otherwise it is only stubbed
@@ -2962,6 +2954,7 @@ CODE2
           $$sv, $$obj, cchar($type), cstring($ptr), $len))
     }
   }
+  $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv)) if $sv_flags & SVf_READONLY;
   $magic;
 }
 
@@ -5809,7 +5802,7 @@ _EOT9
     }
   }
   warn "\%xsub: ",join(" ",sort keys %xsub),"\n" if $verbose and $debug{cv};
-  # XXX This is too late here! init is already dumped (#125)
+  # XXX This is too late here! init is already dumped
   if ($dl and ! $INC{'DynaLoader.pm'}) {
     die "Error: DynaLoader required but not dumped. Too late to add it.\n";
   } elsif ($xs and ! $INC{'XSLoader.pm'}) {

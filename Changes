@@ -23,7 +23,7 @@
         Add special fixes for Coro: reload Coro jit and SvREADONLY_off some of its XS symbols (#293)
         Fix "Eval-group not allowed at runtime" errors since 5.18 (#135),
           by settting HINT_RE_EVAL for re-eval groups when compiling the QR
-        Fix readonly magic hashes, usually found since 5.20 (#273)
+        Fix for readonly magic hashes, usually found since 5.20 (#273)
         Fix Can't locate object method "bootstrap_inherit" via package "DynaLoader" (#125)
           again, as the improved walker now strips DynaLoader from simple one-liners like
           'use Clone' and the DynaLoader detection was too late. Do it now earlier.
