@@ -70,7 +70,7 @@ lib/B/CC.pm
 lib/B/Disassembler.pm
 lib/B/Stackobj.pm
 log.modules-5.006002-nt
-log.modules-5.008004d-nt
+log.modules-5.008004-nt
 log.modules-5.008005-nt
 log.modules-5.008005d
 log.modules-5.008008
@@ -87,6 +87,7 @@ log.modules-5.016003
 log.modules-5.016003-nt
 log.modules-5.018002
 log.modules-5.018002-nt
+log.modules-5.020000
 log.modules-5.020000-nt
 perlcompile.pod
 perloptree.pod

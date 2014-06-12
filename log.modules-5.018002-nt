@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.47 b49ac89 2014-06-10 | 1.47: new release
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
 # perlversion = 5.018002-nt
 # path = /usr/local/bin/perl5.18.2-nt
 # platform = linux 64bit non-threaded
