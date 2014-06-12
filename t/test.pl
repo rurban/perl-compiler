@@ -1038,7 +1038,7 @@ sub todo_tests_default {
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
 	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
-        push @todo, (12)    if $] >= 5.019;
+        push @todo, (12,19,25) if $] >= 5.019;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
