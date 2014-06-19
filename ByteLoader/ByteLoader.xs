@@ -98,7 +98,9 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
        Source filters were changed with 5.14 to read DATA in textmode, so \r\n are
        changed to \n on Windows only in our binary data.
      */
+#if PERL_VERSION < 17
     PerlIO_binmode(aTHX_ PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0);
+#endif
     data.idx = idx;
 
     bstate.bs_fdata = &data;

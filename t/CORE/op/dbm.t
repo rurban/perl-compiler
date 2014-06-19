@@ -61,7 +61,7 @@ $prog =~ s/\@\@\@\@/$filename/;
 # dbmopen is resolved at compile-time (require "AnyDBM_File.pm"), not run-time
 # So this dbmopen error - can("TIEHASH") - does not trigger.
 SKIP: {
-  if (exists $::{'B::'}{'C::'}) { # test if runnning compiled
+  if (is_perlcc_compiled()) { # test if runnning compiled
     skip "wontfix issue 226 in perlcc";
   } else {
     fresh_perl_like($prog, qr/No dbm on this machine/, {},

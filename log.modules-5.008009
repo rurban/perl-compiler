@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.46 26ee157 2014-05-13 | 1.46 prep: docs and status updates M
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
 # perlversion = 5.008009
 # path = /usr/local/bin/perl5.8.9
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.46 - perl-5.008009
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   0 /   2 (0.0%)
+# 100 / 100 modules tested with B-C-1.47 - perl-5.008009
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

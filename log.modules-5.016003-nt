@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.46 1795749 2014-05-13 | 1.46 release prep M
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.46 - perl-5.016003-nt
+# 100 / 100 modules tested with B-C-1.47 - perl-5.016003-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)

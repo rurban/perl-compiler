@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.46 26ee157 2014-05-13 | 1.46 prep: docs and status updates M
+# B::C::VERSION = 1.46_02 51e46d9 2014-05-23 | Changes: document changes from inc-i340-CC branch
 # perlversion = 5.006002-nt
-# path = /usr/local/bin/perl5.6.2-nt
+# path = perl5.6.2-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 94 / 100 modules tested with B-C-1.46 - perl-5.006002-nt
+# 94 / 100 modules tested with B-C-1.46_02 - perl-5.006002-nt
 # pass  82 /  94 (87.2%)
 # fail  12 /  94 (12.8%)
 # todo  12 /  12 (100.0%)

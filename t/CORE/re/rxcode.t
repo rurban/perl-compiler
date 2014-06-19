@@ -41,9 +41,12 @@ cmp_ok( $^R, '==', 15, '..$^R after ac =~ ab?' );
 
 my @ar;
 like( 'ab', qr/^a(?{push @ar,101})(?:b(?{push @ar,102}))?/, 'ab =~ ab? with code push' );
-cmp_ok( scalar(@ar), '==', 2, '..@ar pushed' );
-cmp_ok( $ar[0], '==', 101, '..first element pushed' );
-cmp_ok( $ar[1], '==', 102, '..second element pushed' );
+{
+  local $::TODO = "re-eval lex/global miscompiled #328" if is_perlcc_compiled;
+  cmp_ok( scalar(@ar), '==', 2, '..@ar pushed' );
+  cmp_ok( $ar[0], '==', 101, '..first element pushed' );
+  cmp_ok( $ar[1], '==', 102, '..second element pushed' );
+}
 
 $^R = undef;
 unlike( 'a', qr/^a(?{103})b(?{104})/, 'a !~ ab with code push' );

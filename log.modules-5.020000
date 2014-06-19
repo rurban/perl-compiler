@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.46 26ee157 2014-05-13 | 1.46 prep: docs and status updates M
-# perlversion = 5.008004d-nt
-# path = /usr/local/bin/perl5.8.4d-nt
-# platform = linux 64bit non-threaded debug
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
+# perlversion = 5.020000
+# path = /usr/local/bin/perl5.20.0
+# platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -24,8 +24,8 @@ pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
-pass ExtUtils::ParseXS
-pass Module::Build
+fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
+pass Module::Build #TODO >= 5.16 (out of memory)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.46 - perl-5.008004d-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
+# 100 / 100 modules tested with B-C-1.47 - perl-5.020000
+# pass  99 / 100 (99.0%)
+# fail   1 / 100 (1.0%)
+# todo   2 /   1 (200.0%)
 # skip   0 / 100 (0.0% not installed)

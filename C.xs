@@ -133,6 +133,7 @@ my_runops(pTHX)
 #endif
 	}
 
+        /* Need to store the rx all for QR PMOPs in a global %Regexp hash */
         if( PL_op->op_type == OP_QR ) {
             PMOP* op;
             REGEXP* rx = PM_GETRE( (PMOP*)PL_op );

@@ -42,7 +42,7 @@ if [ -z "$Mblib" ]; then
 else
     OCMD="$PERL $Mblib -MO=C,${v513}-DspF,-v,"
     if [ $BASE = "testcc.sh" ]; then # DoOscprSql
-        OCMD="$PERL $Mblib -MO=CC,${v513}-DOscpSql,-v,"
+        OCMD="$PERL $Mblib -MO=CC,${v513}-DOpscpTql,-v,"
     fi
 fi
 CONT=
@@ -319,7 +319,7 @@ tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
 # issue27
 tests[527]='require LWP::UserAgent;print q(ok);'
 #issue 24
-tests[224]='dbmopen(%H,q(f),0644);print q(ok);'
+tests[124]='dbmopen(%H,q(f),0644);print q(ok);'
 tests[68]='package A;
 sub test {
   use Data::Dumper ();
@@ -496,6 +496,7 @@ tests[99]='package my;sub recurse{my $i=shift;recurse(++$i)unless $i>5000;print"
 if [[ $v518 -gt 0 ]]; then
   tests[130]='no warnings "experimental::lexical_subs";use feature "lexical_subs";my sub p{q(ok)}; my $a=\&p;print p;'
 fi
+tests[135]='"to" =~ /t(?{ print "ok"})o/;'
 tests[138]='print map { chr $_ } qw/97 98 99/;'
 result[138]='abc'
 tests[140]='my %a;print "ok" if !%a;'
@@ -926,7 +927,7 @@ tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
 result[246]='Not enough arguments for main::foo at (eval 1) line 2, at EOF'
 tests[247]='# WontFix
 no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
-tests[248]='#TODO re-eval
+tests[248]='#WONTFIX lexical $_ in re-eval
 {my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
 result[248]='-titi-toto-'
 tests[249]='#TODO version
@@ -1041,6 +1042,8 @@ result[284]='123
 456
 789'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
+tests[290]='sub f;print "ok" if exists &f && not defined &f;'
+tests[293]='use Coro; print q(ok)'
 tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
 tests[299]='#TODO version
@@ -1053,6 +1056,8 @@ result[305]='www.google.com'
 tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
 result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
+tests[3053]='use constant JP => eval { require Encode; Encode::find_encoding("euc-jp"); } || 0; print JP->encode("www.google.com")'
+result[3053]='www.google.com'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
 tests[309]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
@@ -1095,20 +1100,28 @@ result[324]='Master
 Slave of Master'
 tests[326]='#TODO method const maybe::next::method
 package Diamond_C; sub maybe { "Diamond_C::maybe" } package Diamond_D; use base "Diamond_C"; use mro "c3"; sub maybe { "Diamond_D::maybe => " . ((shift)->maybe::next::method() || 0) } package main; print "ok\n" if Diamond_D->maybe;'
-tests[328]='#TODO re-eval
+tests[328]='#WONTFIX re-eval lex/global mixup
 my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'
 result[328]=45
-tests[329]='#TODO re-eval
+tests[329]='#WONTFIX re-eval lex/global mixup
 $_ = q{aaa}; my @res; pos = 1; s/\Ga(?{push @res, $_, $`})/xx/g; print "ok\n" if "$_ @res" eq "axxxx aaa a aaa aa"; print "$_ @res\n"'
 result[329]='ok
 axxxx aaa a aaa aa'
 tests[330]='"\x{101}a" =~ qr/\x{100}/i && print "ok\n"'
 tests[331]='use 5.010; use charnames ":full"; my $char = q/\N{LATIN CAPITAL LETTER A WITH MACRON}/; my $a = eval qq ["$char"]; print length($a) == 1 ? "ok\n" : "$a\n".length($a)."\n"'
-tests[332]='#TODO re-eval
+tests[332]='#TODO re-eval no_modify, probably WONTFIX
 use re "eval"; our ( $x, $y, $z ) = 1..3; $x =~ qr/$x(?{ $y = $z++ })/; undef $@; print "ok\n"'
 tests[333]='use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん"); my @katakana =  map {chr} ord("ァ")..ord("ン"); my $hiragana = join(q{} => @hiragana); my $katakana = join(q{} => @katakana); my %h2k; @h2k{@hiragana} = @katakana; $str = $hiragana; $str =~ s/([ぁ-ん])/$h2k{$1}/go; print $str eq $katakana ? "ok\n" : "not ok\n$hiragana\n$katakana\n";'
 tests[338]='use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";'
+tests[340]='eval q/use Net::DNS/; my $new = "IO::Socket::INET6"->can("new") or die "die at new"; my $inet = $new->("IO::Socket::INET6", LocalAddr => q/localhost/, Proto => "udp", LocalPort => undef); print q(ok) if ref($inet) eq "IO::Socket::INET6";'
+# used to fail in the inc-i340 branches CORE/base/lex.t 54
+tests[3401]='sub foo::::::bar { print "ok\n"; } foo::::::bar;'
+# wontfix on -O3: static string *end for "main::bar"
+tests[345]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; subname("main::bar", sub { 42 } ); print "ok\n";'
+# those work fine:
+tests[3451]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; subname("bar", sub { 42 } ); print "ok\n";'
+tests[3452]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; $bar="main::bar"; subname($bar, sub { 42 } ); print "ok\n";'
 
 init
 

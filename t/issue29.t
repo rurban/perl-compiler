@@ -41,7 +41,11 @@ TODO: {
   ok($result eq $expected, "C '$result' ne '$expected'");
 }
 
-system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
+if ($] < 5.008) {
+  system "$runperl -MO=Bytecode56,-o$name.plc $name.pl";
+} else {
+  system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
+}
 unless (-e "$name.plc") {
   print "ok 2 #skip perlcc -B failed.\n";
   exit;

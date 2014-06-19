@@ -205,7 +205,8 @@ for my $module (@modules) {
         unless ($stdout =~ /ok$/ms) { # crosscheck for a perlcc problem (XXX not needed anymore)
           my ($r, $err1);
           $module_passed = 0;
-          @cmd = ($runperl,$Mblib,"-MO=C,-o$out_c",$out_pl);
+          my $c_opt = $opts[$_];
+          @cmd = ($runperl,$Mblib,"-MO=C,$c_opt,-o$out_c",$out_pl);
           ($r, $stdout, $err1) = run_cmd(\@cmd, 60); # in secs
           @cmd = ($runperl,$Mblib,"script/cc_harness","-o$out",$out_c);
           ($r, $stdout, $err1) = run_cmd(\@cmd, 360); # in secs

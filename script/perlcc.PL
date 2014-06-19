@@ -55,6 +55,8 @@ print OUT <<'!NO!SUBS!';
 # Version 2.14, Reini Urban, 2012-02-28 09:04:07
 # Version 2.15, Reini Urban, 2013-02-01 10:41:54
 # Version 2.16, Reini Urban, 2013-11-27 11:36:13
+# Version 2.17, Reini Urban, Thu Feb 6 14:04:29 2014 -0600
+# Version 2.18, Reini Urban, 2014-05-28
 
 use strict;
 use warnings;
@@ -69,7 +71,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.17;
+our $VERSION = 2.18;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -141,7 +143,7 @@ sub generate_code {
 
 sub run_code {
     if ($Backend eq 'Bytecode') {
-        if ($] < 5.007) {
+        if ($] < 5.007 or $] >= 5.018) {
             $Output = "$BinPerl -MByteLoader $Output";
         } else {
             $Output = "$BinPerl $Output";
@@ -243,9 +245,10 @@ sub parse_argv {
         'O',            # Optimised C backend B::CC
          #'O1-4'        # alias for -Wb=-O1 (new since 2.13)
         'dryrun|n',     # only print commands, do not execute
-        'c',            # Compile only
+        'c',            # Compile to C only, no linking
+        'check',        # pass -c to B::C and exit
         'help|h',       # Help me
-        'S',            # Dump C files
+        'S',            # Keep generated C file
         'T',            # run the backend using perl -T
         't',            # run the backend using perl -t
         'A',            # -DALLOW_PERL_OPTIONS like -D?
@@ -351,7 +354,8 @@ sub compile_byte {
 
     vprint 3, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
-    if ($] >= 5.007 and $Input =~ /^-e/) {
+    $opts = "-s," if $] >= 5.018;
+    if ($] >= 5.007 and $] < 5.018 and $Input =~ /^-e/) {
         $opts = "-H,";
     }
     if (@_ == 1) {
@@ -419,6 +423,9 @@ sub compile_cstyle {
     if (opt('f')) {
         $addoptions .= "-f$_," for @{$Options->{f}};
     }
+    if (opt('check')) {
+        $addoptions .= "-c,";
+    }
 
     my $staticxs = opt('staticxs') ? "-staticxs," : '';
     warn "--staticxs on darwin does not work yet\n"
@@ -434,7 +441,10 @@ sub compile_cstyle {
             q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} .
             q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
     }
-    if (opt('o')) {
+    if (opt('check')) {
+        $cfile = "";
+        $staticxs = "";
+    } elsif (opt('o')) {
         $cfile = opt('o').".c";
         if ((is_win32() or $^O eq 'cygwin') and $Output =~ /\.exe.c$/) {
           $cfile =~ s/\.exe\.c$/.c/,
@@ -460,7 +470,7 @@ sub compile_cstyle {
         ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
         close $cfh; # See comment just below
     }
-    vprint 3, "Writing C on $cfile";
+    vprint 3, "Writing C on $cfile" unless opt('check');
 
     my $max_line_len = '';
     if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/i) {
@@ -468,9 +478,12 @@ sub compile_cstyle {
     }
 
     my $options = "$addoptions$testsuite$max_line_len$staticxs$stash";
+    $options .= "-o$cfile" unless opt('check');
+    $options = substr($options,0,-1) if substr($options,-1,1) eq ",";
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
-    my $command = "$BinPerl$taint -MO=$Backend,$options"."-o$cfile $Input";
+
+    my $command = "$BinPerl$taint -MO=$Backend,$options $Input";
     vprint 5, "Compiling...";
     vprint 0, "Calling $command";
 
@@ -485,8 +498,12 @@ sub compile_cstyle {
     } else {
         my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
         @error = grep { !/^$i syntax OK$/o } @error;
-        warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
-        warn "@error" if @error and opt('v')>4;
+        if (opt('check')) {
+            print "@error" if @error;
+        } else {
+            warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
+            warn "@error" if @error and opt('v')>4;
+        }
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
@@ -533,6 +550,7 @@ sub compile_cstyle {
         # $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
         vprint 4, "staticxs: $stash $extra_libs";
     }
+    exit if opt('check');
 
     $t0 = [gettimeofday] if opt('time');
     is_msvc ?
@@ -1046,11 +1064,16 @@ the basename.
 
 =item -c I<C file name>
 
-Create C code only; do not compile to a standalone binary.
+Create C file only; do not compile and link to a standalone binary.
 
 =item -e I<perl code>
 
 Compile a one-liner, much the same as C<perl -e '...'>
+
+=item --check
+
+Pass -c flag to the backend, prints all backend warnings to STDOUT
+and exits before generating and compiling code. Similar to perl -c.
 
 =item -S
 

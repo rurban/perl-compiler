@@ -1,13 +1,15 @@
 language: "perl"
 perl:
 #   - "5.10"
-    - "5.12"
+#   - "5.12"
     - "5.14"
     - "5.16"
     - "5.18"
+    - "5.20"
 install: "echo"
 before_script:
-    - cpanm -n IPC::Run B::Flags Opcodes IO::Socket::SSL LWP::UserAgent Net::SSLeay Net::LibIDN Net::IDN::Encode
+    - perl -S cpanm -n IPC::Run B::Flags Opcodes IO::Socket::SSL JSON::XS
+    - perl -S cpanm -n LWP::UserAgent Net::SSLeay Net::LibIDN Net::IDN::Encode Net::DNS
 
 script: "perl Makefile.PL && make && make testfast"
 
@@ -22,3 +24,4 @@ notifications:
 matrix:
   allow_failures:
     - perl: "5.18"
+    - perl: "5.20"

@@ -18,10 +18,10 @@ sub test3 {
   my $cmt = join('',@_);
   my ($todobc,$todocc) = ("","");
   $todobc = 'TODO ' if $name eq 'ccode90i_c'
-    or ($] >= 5.018 and $Config{'useithreads'});
+    or ($] >= 5.018);
   # passes BC threaded 5.10-16
   $todobc = '' if $name eq 'ccode90i_c'
-    and $] >= 5.010 and $] < 5.018 and $Config{'useithreads'};
+    and $] >= 5.010 and $Config{'useithreads'};
   if ($name eq 'ccode90i_c' and ($B::C::VERSION lt '1.42_61' or $] >= 5.018)) {
     $todocc = 'TODO '; #3 CC %+ includes Tie::Hash::NamedCapture
   } elsif ($name eq 'ccode90i_ca' and $] >= 5.010) {

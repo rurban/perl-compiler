@@ -1527,4 +1527,8 @@ sub ord_native_to_latin1 {
     return ord native_to_latin1( chr $ord );
 }
 
+sub is_perlcc_compiled {
+  return grep /^B::C$/, @DynaLoader::dl_modules;
+}
+
 1;

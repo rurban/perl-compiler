@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.47 ec89ba3 2014-06-11 | C: improve force DynaLoader handling
-# perlversion = 5.020000-nt
-# path = /usr/local/bin/perl5.20.0-nt
-# platform = darwin 64bit non-threaded
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
+# perlversion = 5.008005-nt
+# path = /usr/local/bin/perl5.8.5-nt
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -24,8 +24,8 @@ pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
-fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
-pass Module::Build #TODO >= 5.16 without threads (invalid free)
+pass ExtUtils::ParseXS
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -84,16 +84,16 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope #TODO 5.19 without threads
+pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
-pass namespace::clean #TODO 5.19 without threads
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types #TODO 5.19 without threads
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.47 - perl-5.020000-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   5 /   1 (500.0%)
+# 100 / 100 modules tested with B-C-1.47 - perl-5.008005-nt
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

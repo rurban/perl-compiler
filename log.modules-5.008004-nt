@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.44 03fcc19 2014-02-09 | 1.44 release
-# perlversion = 5.008005d-nt
-# path = /usr/local/bin/perl5.8.5d-nt
-# platform = linux 64bit non-threaded debug
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
+# perlversion = 5.008004-nt
+# path = /usr/local/bin/perl5.8.4-nt
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO <5.10
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.44 - perl-5.008005d-nt
+# 100 / 100 modules tested with B-C-1.47 - perl-5.008004-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
-# todo   1 /   0 ()
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

@@ -3,16 +3,38 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8
 
-1.47 ?? rurban
-        Fixed Bytecode for 5.18
+1.47 2014-06-11 rurban
+        Fixed Bytecode for 5.18.
+        Greatly reduce code size for C and esp. CC, by including less unneeded dependencies.
 
 	* C: detect new Encode >2.58 compile-time usage (#305, RT #94221)
         Fix mro maybe::next:: detection (#326)
+        Fix %INC cleanup logic. Delete packages from %INC only if they were really not saved,
+          and add packages to %INC which were saved and not just marked for saving. (#340)
+          Fix lot of skip package logic and consistency parts. Much less packages are now saved
+          in general which leads to smaller and faster code.
+          Avoid compile-time compiler internal reloads and redefinitions.
+        Special-case %warning::Bits on -O3 to not SEGV when changing warnings on run-time loads
+          on compile-time saved -fconst-string warnings.
+        Add experimental -fwalkall to add all wanted packages recursively with maxdepth 3.
+          No tests yet.
+        Add time and version on top of C source code. Also for CC.
+        Fix lexical subs for threaded perls (#130, #341)
+        Add special fixes for Coro: reload Coro jit and SvREADONLY_off some of its XS symbols (#293)
+        Fix "Eval-group not allowed at runtime" errors since 5.18 (#135),
+          by settting HINT_RE_EVAL for re-eval groups when compiling the QR
+        Fix for readonly magic hashes, usually found since 5.20 (#273)
+        Fix Can't locate object method "bootstrap_inherit" via package "DynaLoader" (#125)
+          again, as the improved walker now strips DynaLoader from simple one-liners like
+          'use Clone' and the DynaLoader detection was too late. Do it now earlier.
 	* ByteLoader (0.11): fixed filter -H problem with 5.18 (#339)
           Disabling the PerlIO_binmode(PL_RSFP, IoTYPE_RDONLY, O_BINARY, 0); hack for [perl #86186]
           "Changing filters to be textmode, not binary" fixed the Bytecode problems since 5.18
 	* perlcc (2.18): Avoid -H for bytecode > 5.18
+	New --check option
 	* t/asmdata.t: signicant enhancements
+        * t/CORE: add mro and re core tests, only mro/isarev.t is unstable, and several re-eval
+          tests using variables are skipped and unsupported.
 
 1.46 2014-05-14 rurban
 	Added global destruction, improved -O4 and CC, fixed mro, @-, $/ $\, Net::DNS, ...

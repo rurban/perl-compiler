@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.46 0ca5ef0 2014-05-14 | module test updates (good)
+# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
 # perlversion = 5.018002
 # path = /usr/local/bin/perl5.18.2
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.46 - perl-5.018002
+# 100 / 100 modules tested with B-C-1.47 - perl-5.018002
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   2 /   1 (200.0%)

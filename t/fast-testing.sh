@@ -2,8 +2,9 @@
 # usage: t/fast-testing.sh [--watch]
 
 test -f Makefile || perl Makefile.PL
-V=`perl -ane'print $F[2] if /^VERSION =/' Makefile`
-R=`git log -1 --pretty=format:"%h"`
+V=$(perl -ane'print $F[2] if /^VERSION =/' Makefile)
+R=$(git log -1 --pretty=format:"%h")
+D=$(git describe --long --tags --dirty --always)
 lock=fast-testing.lock
 w=
 echo $$ > $lock
@@ -26,7 +27,7 @@ sleep 5; done)"
     fi
 fi
 
-# test locally, ~5:45hr (17*20min)
+# test locally, ~5:45hr (17*20min). with 1.46: 2:20hr-3hr
 PERLCC_TIMEOUT=15 NO_AUTHOR=1 perlall -mq make '-S prove -b -j4'
 
 if [ x$1 = x--watch ]; then
@@ -38,12 +39,12 @@ fi
 
 logs=`find . -maxdepth 1 -newer $lock -name log.make-\*`
 if [ -n "$logs" ]; then
-    rdir=t/reports/$V/$R
+    rdir=t/reports/$V/$D
     mkdir -p $rdir
-    cp $logs $rdir/
+    cp -p $logs $rdir/
     rename 's/log\.make-/log\.test-/' $rdir/log.make-*
-    ./status_upd -ad $rdir >> status.$V-$R
-    git diff >> status.$V-$R
-    cp status.$V-$R $rdir/
+    ./status_upd -ad $rdir >> status.$D
+    git diff >> status.$D
+    cp -p status.$D $rdir/
 fi
 rm $lock

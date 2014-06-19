@@ -12,7 +12,7 @@ my $d = <DATA>;
 open F, ">", $pl;
 print F $d;
 close F;
-is(`$runperl $Mblib $perlcc -O3 -o $exe -r $pl ok 1`, "ok 1\n",
+is(`$runperl $Mblib $perlcc -O3 -o $exe -r $pl ok 1`, "ok 1\n", #1
    "perlcc -r file args");
 unlink($exe);
 
@@ -26,7 +26,7 @@ close F;
   my $expected = "ok 2\n";
   my $cmt = "perlcc -O -r file args";
   if ($result eq $expected) {
-    is ($result, $expected, $cmt);
+    is ($result, $expected, $cmt); #2
   } else {
   TODO: {
     local $TODO = "unreliable CC testcase";
@@ -41,7 +41,7 @@ my $d3 = $d;
 $d3 =~ s/ ok 1/ ok 3/;
 print F $d3;
 close F;
-is(`$runperl $Mblib $perlcc -B -r $pl ok 3`, "ok 3\n",
+is(`$runperl $Mblib $perlcc -B -r $pl ok 3`, "ok 3\n", #3
    "perlcc -B -r file args");
 
 # issue 30
@@ -59,7 +59,7 @@ print F $d;
 close F;
 `$runperl $Mblib $perlcc -o $exe $pl`;
 is (`$exe a b c`, "a b c\n",
-   "issue 30: perlcc -o $exe; $exe args");
+   "issue 30: perlcc -o $exe; $exe args"); #4
 
 END {
   unlink($exe, $pl, $plc);

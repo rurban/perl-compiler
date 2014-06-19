@@ -1032,13 +1032,13 @@ sub todo_tests_default {
 	push @todo, (10,16,50) if $what eq 'cc_o2';
 	push @todo, (29)    if $] < 5.008008;
 	push @todo, (22)    if $] < 5.010 and !$ITHREADS;
-	push @todo, (46)    if $] < 5.010;
+	push @todo, (46); # HvKEYS(%Exporter::) is 0 unless Heavy is included also
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
 	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
-        push @todo, (12)    if $] >= 5.019;
+        push @todo, (12,19,25) if $] >= 5.019;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;

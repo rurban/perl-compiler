@@ -1432,6 +1432,9 @@ the sourcecode in memory.
 Prepend a C<use ByteLoader VERSION;> line to the produced bytecode.
 This way you will not need to add C<-MByteLoader> to your perl command-line.
 
+Beware: This option does not yet work with 5.18 and higher. You need to use
+C<-MByteLoader> still.
+
 =item B<-i> includeall
 
 Include all used packages and its symbols. Does no run-time require from

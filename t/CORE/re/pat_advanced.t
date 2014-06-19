@@ -1364,7 +1364,12 @@ sub run_tests {
         is($x, "aabbccddee", $message);
     }
 
-    {
+     if (is_perlcc_compiled) {
+     SKIP: {
+       skip "perlcc wontfix re-eval using curpm #328, #330", 2;
+       }
+     } else {
+
         sub kt {
             return '4' if $_[0] eq '09028623';
         }
@@ -1374,8 +1379,7 @@ sub run_tests {
         $re = qr/^ ( (??{ $grabit }) ) $ /x;
         my @res = '0902862349' =~ $re;
         is(join ("-", @res), "0902862349",
-	   'PL_curpm is set properly on nested eval');
-
+           'PL_curpm is set properly on nested eval');
         our $qr = qr/ (o) (??{ $1 }) /x;
         ok 'boob'=~/( b (??{ $qr }) b )/x && 1, "PL_curpm, nested eval";
     }
@@ -1697,7 +1701,12 @@ EOP
         is($b, $a, "Copy of scalar used for postponed subexpression");
     }
 
-    {
+    if (is_perlcc_compiled) {
+      SKIP: {
+       skip "perlcc wontfix re-eval lex/global mixup #328", 3;
+      }
+     } else {
+
         our @ctl_n = ();
         our @plus = ();
         our $nested_tags;
