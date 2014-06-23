@@ -7101,6 +7101,7 @@ sub compile {
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
   $B::C::dyn_padlist = 1 if $] >= 5.017; # default is dynamic and safe, disable with -O4
+  $B::C::walkall  = 1;
 
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
 	       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
@@ -7518,15 +7519,12 @@ default perl destructor, and enables C<-fcog> since 5.10.
 
 Enabled with C<-O3>.
 
-=item B<-fwalkall>
+=item B<-fno-walkall>
 
-C<-fwalkall> recursively walks all dependent packages, which results
-in much bigger compile sizes.
-This was introduced to catch previously uncompiled packages for computed
-methods or undetected deeper run-time dependencies.
-
-This flag is very experimental and might be re-implemented differently
-or taken away or changed to take a depth argument.
+C<-fno-walkall> uses the simple old algorithm to detect which packages
+needs to be stored.
+C<-fwalkall> was introduced to catch previously uncompiled packages for
+computed methods or undetected deeper run-time dependencies.
 
 =item B<-fno-save-sig-hash>
 
