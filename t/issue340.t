@@ -16,7 +16,7 @@ unless (eval{require Net::DNS;} and eval{require IO::Socket::INET6;}) {
 }
 plan tests => 1;
 
-# prints compile-time Carp reloading cruft
+# TODO: still prints compile-time Carp reloading cruft
 ctestok(1, 'C,-O3', 'ccode340i', <<'EOF', 'C #340 inc cleanup');
 eval q/use Net::DNS/;
 my $new = "IO::Socket::INET6"->can("new") or die "die at new";
