@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.47';
+our $VERSION = '1.47_01';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -6442,6 +6442,8 @@ sub should_save {
     warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
   }
+  # issue348: only drop B::C packages, not any from user code.
+  return 1 if exists $INC{$incpack} and !exists $all_bc_deps{$package};
   return 1 if $package =~ /^DynaLoader|XSLoader$/ and $use_xsloader;
   # If this package is in the same file as main:: or our source, save it. (72, 73)
   if ($mainfile) {

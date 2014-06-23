@@ -1122,6 +1122,13 @@ tests[345]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; subname("main::bar",
 # those work fine:
 tests[3451]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; subname("bar", sub { 42 } ); print "ok\n";'
 tests[3452]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; $bar="main::bar"; subname($bar, sub { 42 } ); print "ok\n";'
+tests[348]='package Foo::Bar; sub baz { 1 }
+package Foo; sub new { bless {}, shift } sub method { print "ok\n"; }
+package main; Foo::Bar::baz();
+my $foo = sub {
+  Foo->new
+}->();
+$foo->method;'
 
 init
 
