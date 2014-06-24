@@ -1,5 +1,6 @@
 #! /usr/bin/perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=348
+# walker: missing packages
 
 use strict;
 BEGIN {
