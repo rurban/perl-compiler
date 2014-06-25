@@ -5800,6 +5800,10 @@ _EOT9
     if ($stashname eq 'attributes' and $] > 5.011) {
       $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
     }
+    # TODO: special Moose bootstrap quirks (XS since which version?)
+    if ($stashname eq 'Moose' and $include_package{Moose} and $Moose::VERSION gt '2.0') {
+      $xsub{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
+    }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
