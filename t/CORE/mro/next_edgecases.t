@@ -46,10 +46,11 @@ plan(tests => 12);
         skip("Sub::Name is required for this test", 3) if $@;
     
         my $m = sub { (shift)->next::method() };
-        Sub::Name::subname('Bar::bar', $m);
+        my $name = 'Bar::bar';
+        Sub::Name::subname($name, $m);
         {
             no strict 'refs';
-            *{'Bar::bar'} = $m;
+            *{$name} = $m;
         }
 
         can_ok($bar, 'bar');
