@@ -6824,7 +6824,7 @@ sub save_context {
     local $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
-    inc_cleanup();
+    inc_cleanup(0);
     my $inc_gv = svref_2object( \*main::INC );
     $inc_hv    = $inc_gv->HV->save('main::INC');
     $init->add('/* @INC */');
