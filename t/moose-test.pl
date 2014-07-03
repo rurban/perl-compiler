@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
-# while compiling out of memory
+# proof that moose types suck, they do only checks but no optimizations.
+# see also #350
+#
+# with an older B::C < ~1.40 out of memory while compiling.
 # endless recursion with B::HV::save
 #  7  0x521293e4 in Perl_pp_entersub () at pp_hot.c:2806
 #    GVGV::GV = 0x14c3ad0  "B::HV" :: "save",  DEPTH = 44817
@@ -8,13 +11,13 @@
     package Foo::Moose;
     use Moose;
     has bar => (is => 'rw');
-    # __PACKAGE__->meta->make_immutable;
+     __PACKAGE__->meta->make_immutable;
 }
 {
     package TypedFoo::Moose;
     use Moose;
     has bar => (is => 'rw', isa => 'Int');
-    # __PACKAGE__->meta->make_immutable;
+     __PACKAGE__->meta->make_immutable;
 }
 {
     package Foo::Manual;

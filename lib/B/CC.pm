@@ -3462,7 +3462,7 @@ OPTION:
                O B::Stackobj B::Stackobj::Bool B::Stackobj::Padsv
                B::Stackobj::Const B::Stackobj::Aelem B::Bblock));
   $B::C::all_bc_deps{$_}++ for qw(Opcodes Opcode B::Concise attributes double int num str string subs);
-  #mark_skip(qw(DB Term::ReadLine)) if defined &DB::DB;
+  mark_skip(qw(DB Term::ReadLine)) if defined &DB::DB;
 
   # Set some B::C optimizations.
   # optimize_ppaddr is not needed with B::CC as CC does it even better.
