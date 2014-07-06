@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.47 c630497 2014-06-11 | log.modules-5.020000-nt on darwin
+# B::C::VERSION = 1.47_03 11ad780 2014-07-03 | C: fix remaining t/CORE/op/magic-27839.t regression
 # perlversion = 5.010001-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.47 - perl-5.010001-nt
+# 100 / 100 modules tested with B-C-1.47_03 - perl-5.010001-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
