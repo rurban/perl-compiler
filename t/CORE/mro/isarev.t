@@ -61,8 +61,8 @@ i Collar=>qw[ Another::Collar Tike::Collar::Leather ],
 @Weird::Thing::ISA = "g";
 # Warning: glob_assign_glob is generally unsafe to do with perlcc. (#282)
 # just assigning the stashes and @ISA is safer.
-# %g:: = %Goat::; @g::ISA = @Goat::ISA;
-*g:: = *Goat::;
+%g:: = %Goat::; @g::ISA = @Goat::ISA;
+#*g:: = *Goat::;
 i Goat => qw[ Goat::Dairy Goat::Dairy::Toggenburg Weird::Thing ],
  "isarev includes subclasses of aliases";
 delete $::{"g::"};
@@ -79,8 +79,10 @@ i g => qw [ Weird::Thing ],
 @Caprine::Dairy::ISA = "Caprine";
 @Caprine::Dairy::Oberhasli::ISA = "Caprine::Dairy";
 @Whatever::ISA = "Caprine";
-*Caprid:: = *Caprine::;
-*Caprine:: = *Chevre::;
+#*Caprid:: = *Caprine::;
+%Caprid:: = %Caprine::; @Caprid::ISA = @Caprine::ISA;
+#*Caprine:: = *Chevre::;
+%Caprine:: = %Chevre::; @Caprine::ISA = @Chevre::ISA;
 i"Hoofed::Mammal" => qw[ Caprid ],
  "replacing a stash updates isarev entries";
 i Chevre => qw[ Caprid::Dairy Whatever ],
@@ -112,11 +114,11 @@ i"Zilch::Empty" => qw[ Null::Null ],
 
 # Classes inheriting from multiple classes that get moved in a single
 # assignment.
-@foo::ISA = ("B", "B::B");
+@foo::ISA = ("xB", "xB::B");
 {package A::B}
 my $A = \%A::;     # keep a ref
 *A:: = 'whatever'; # clobber it
-*B:: = $A;         # assign to two superclasses of foo at the same time
+*xB:: = $A;         # assign to two superclasses of foo at the same time
 # There should be no A::B isarev entry.
 i"A::B" => qw [], 'assigning to two superclasses at the same time';
 ok !foo->isa("A::B"),
@@ -137,7 +139,8 @@ i buki => qw [], "undeffing a package glob deletes isarev entries";
 @bar::ISA = 'phoo';
 @subclassA::ISA = "subclassB";
 @subclassB::ISA = "bar";
-*bar:: = *baz::;
+#*bar:: = *baz::;
+%bar:: = %baz::; @bar::ISA = @baz::ISA;
 i phoo => qw [],
  'clobbering a class w/multiple layers of subclasses updates its parent';
 
