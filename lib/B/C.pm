@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.47';
+our $VERSION = '1.47_03';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -433,7 +433,7 @@ my $PERL56   = ( $] <  5.008001 ); # yes. 5.8.0 is a 5.6.x
 #my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 my $MAD      = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
-my $HAVE_DLFCN_DLOPEN = $Config{i_dlfcn} and $Config{d_dlopen};
+my $HAVE_DLFCN_DLOPEN = $Config{i_dlfcn} && $Config{d_dlopen};
 my @threadsv_names;
 
 BEGIN {
@@ -5140,8 +5140,10 @@ EOT
     for my $pkg (sort keys %init2_remap) {
       if (exists $xsub{$pkg}) {
         if ($HAVE_DLFCN_DLOPEN) {
+          my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
+          $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i; # 351 (only on solaris and linux, not any bsd)
           $init2->add( sprintf("  handle = dlopen(%s,", cstring($init2_remap{$pkg}{FILE})),
-                               "                  RTLD_NOW|RTLD_NOLOAD);",
+                               "                  $ldopt);",
                                );
         }
         else {
@@ -5252,6 +5254,9 @@ EOT0
     print "#ifndef RX_EXTFLAGS\n";
     print "# define RX_EXTFLAGS(rx) ((rx)->extflags)\n";
     print "#endif\n";
+  }
+  if ($] >= 5.021001) {
+    print "Static IV PL_sv_objcount; /* deprecated with 5.21.1 but still needed and used */\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
 
@@ -5797,6 +5802,10 @@ _EOT9
     if ($stashname eq 'attributes' and $] > 5.011) {
       $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
     }
+    # TODO: special Moose bootstrap quirks (XS since which version?)
+    if ($stashname eq 'Moose' and $include_package{Moose} and $Moose::VERSION gt '2.0') {
+      $xsub{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
+    }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
       # otherwise we only have -e
@@ -6185,9 +6194,11 @@ sub B::GV::savecv {
   if ( $$cv and in_static_core($package, $name) and ref($cv) eq 'B::CV' # 5.8,4 issue32
        and $cv->XSUB ) {
     warn("Skip internal XS $fullname\n") if $debug{gv};
-    $dumped_package{$package} = 1 if !exists $dumped_package{$package};
     # but prevent it from being deleted
-    mark_package($package, 1);
+    unless ($dumped_package{$package}) {
+      $dumped_package{$package} = 1;
+      mark_package($package, 1);
+    }
     return;
   }
   if ($package eq 'B::C') {
@@ -6236,11 +6247,10 @@ sub walksymtable {
 sub walk_syms {
   my $package = shift;
   no strict 'refs';
+  return if $dumped_package{$package};
   warn "walk_syms $package\n" if $debug{pkg} and $verbose;
-  walksymtable( \%{$package.'::'}, "savecv",
-                sub { should_save( $_[0] ); return 1 },
-                $package.'::' );
   $dumped_package{$package} = 1;
+  walksymtable( \%{$package.'::'}, "savecv", sub { 1 }, $package.'::' );
 }
 
 # simplified walk_syms
@@ -6292,6 +6302,7 @@ sub mark_package {
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
       push_package($package) if $] < 5.010;
+      walk_syms( $package ) if !$B::C::walkall; # fixes i27-1
     }
     my @isa = get_isa($package);
     if ( @isa ) {
@@ -6312,7 +6323,7 @@ sub mark_package {
 	  if (exists $include_package{$isa} ) {
 	    warn "$isa previously deleted, save now\n" if $verbose; # e.g. Sub::Name
 	    mark_package($isa);
-            walk_syms($isa);
+            walk_syms($isa); # avoid deep recursion
           } else {
 	    #warn "isa $isa save\n" if $verbose;
             mark_package($isa);
@@ -6424,25 +6435,29 @@ sub should_save {
     mark_package($package, 1);
     return 1;
   }
-  foreach my $u ( grep( $include_package{$_}, sort keys %include_package ) )
-  {
-    # If this package is a prefix to something we are saving, traverse it
-    # but do not mark it for saving if it is not already
-    # e.g. to get to Getopt::Long we need to traverse Getopt but need
-    # not save Getopt
-    my $p = $package;
-    $p =~ s/(\W)/\\$1/g;
-    return 1 if ( $u =~ /^$p\:\:/ );
+  if (exists $all_bc_deps{$package}) {
+    foreach my $u ( grep( $include_package{$_}, sort keys %include_package ) ) {
+      # If this package is a prefix to something we are saving, traverse it
+      # but do not mark it for saving if it is not already
+      # e.g. to get to B::OP we need to traverse B:: but need not save B
+      my $p = $package;
+      $p =~ s/(\W)/\\$1/g;
+      return 1 if ( $u =~ /^$p\:\:/ ) && $include_package{$package};
+    }
   }
   # Needed since 5.12.2: Check already if deleted
   my $incpack = inc_packname($package);
-  if ( $] > 5.015001 and
-       !exists $curINC{$incpack} and $savINC{$incpack} ) {
+  if ( $] > 5.015001 and exists $all_bc_deps{$package}
+       and !exists $curINC{$incpack} and $savINC{$incpack} ) {
     $include_package{$package} = 0;
     warn "Cached $package not in \%INC, already deleted (early)\n" if $debug{pkg};
     return 0;
   }
-  return 1 if $package =~ /^DynaLoader|XSLoader$/ and $use_xsloader;
+  # issue348: only drop B::C packages, not any from user code.
+  if (($package =~ /^DynaLoader|XSLoader$/ and $use_xsloader)
+      or (!exists $all_bc_deps{$package})) {
+    $include_package{$package} = 1;
+  }
   # If this package is in the same file as main:: or our source, save it. (72, 73)
   if ($mainfile) {
     # Find the first cv in this package for CV->FILE
@@ -6474,7 +6489,7 @@ sub should_save {
       warn "Cached new $package is kept\n" if $debug{pkg};
     }
     elsif (!$include_package{$package}) {
-      delete_unsaved_hashINC($package);
+      delete_unsaved_hashINC($package) if can_delete($package);
       warn "Cached $package is already deleted\n" if $debug{pkg};
     } else {
       warn "Cached $package is cached\n" if $debug{pkg};
@@ -6543,6 +6558,7 @@ sub delete_unsaved_hashINC {
   my $incpack = inc_packname($package);
   # Not already saved package, so it is not loaded again at run-time.
   return if $dumped_package{$package};
+  # Never delete external packages, but this check is done before
   return if $package =~ /^DynaLoader|XSLoader$/
     and defined $use_xsloader
     and $use_xsloader == 0;
@@ -6583,7 +6599,6 @@ sub walkpackages {
   $prefix = '' unless defined $prefix;
   # check if already deleted - failed since 5.15.2
   return if $savINC{inc_packname(substr($prefix,0,-2))};
-  #while ( ( $sym, $ref ) = each %$symref )
   for my $sym (sort keys %$symref) {
     my $ref = $symref->{$sym};
     next unless $ref;
@@ -6609,20 +6624,40 @@ sub save_unused_subs {
     %debug = ();
   }
   my $main = $module ? $module."::" : "main::";
+
+  # -fwalkall: better strategy for compile-time added and required packages:
+  # loop savecv and check pkg cache for new pkgs.
+  # if so loop again with those new pkgs only, until the list of new pkgs is empty
+  my ($walkall_cnt, @init_unused, @unused, @dumped) = (0);
+  #do
+  @init_unused = grep { $include_package{$_} } keys %include_package;
   if ($verbose) {
-    warn "Prescan for unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
+    warn "Prescan for unused subs in $main " . ($sav_debug{unused} ? " (silent)\n" : "\n");
   }
   # XXX TODO better strategy for compile-time added and required packages:
   # loop savecv and check pkg cache for new pkgs.
   # if so loop again with those new pkgs only, until the list of new pkgs is empty
   descend_marked_unused();
-  walkpackages( \%{$main},
-                sub { should_save( $_[0] ); return 1 },
-                $main eq 'main::' ? undef : $main );
-  if ($verbose) {
-    warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n");
-  }
+  walkpackages( \%{$main}, \&should_save, $main eq 'main::' ? undef : $main );
+  warn "Saving unused subs in $main" . ($sav_debug{unused} ? " (silent)\n" : "\n")
+    if $verbose;
   walksymtable( \%{$main}, "savecv", \&should_save );
+  @unused = grep { $include_package{$_} } keys %include_package;
+  @dumped = grep { $dumped_package{$_} and $_ ne 'main' } keys %dumped_package;
+  warn sprintf("old unused: %d, new: %d, dumped: %d\n", scalar @init_unused, scalar @unused, scalar @dumped)
+    if $verbose;
+  if (!$B::C::walkall) {
+    @unused = @init_unused = ();
+  } else {
+    my $done;
+    do {
+      $done = dump_rest();
+      @unused = grep { $include_package{$_} } keys %include_package;
+      @dumped = grep { $dumped_package{$_} and $_ ne 'main' } keys %dumped_package;
+    } while @unused > @dumped and $done;
+    last if $walkall_cnt++ > 3;
+  }
+  #} while @unused > @init_unused;
 
   if ( $sav_debug{unused} ) {
     %debug = %sav_debug;
@@ -6671,7 +6706,7 @@ sub inc_cleanup {
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $curINC{$package};
       delete_unsaved_hashINC('utf8');
-    } else {
+    } elsif (!$B::C::walkall) {
       delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
     }
   }
@@ -6688,36 +6723,47 @@ sub inc_cleanup {
     my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
     warn "\%INC: ".join(" ",@inc)."\n";
   }
-  #issue 340: do only on -fwalkall? do it in the main walker step as in branch walkall?
+  # issue 340,350: do only on -fwalkall? do it in the main walker step
+  # as in branch walkall-early?
   if ($B::C::walkall) {
-    my $again;
-    for my $p (sort keys %include_package) {
-      $p =~ s/^main:://;
-      if ($include_package{$p} and !exists $dumped_package{$p}
-          and !$static_core_pkg{$p}
-          and $p !~ /^(threads|main|__ANON__|PerlIO)$/
-         )
-        {
-          if ($p eq 'warnings::register' and !$B::C::warnings) {
-            delete_unsaved_hashINC('warnings::register');
-            next;
-          }
-          $again++;
-          warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
-          # mark_package( $p, 1);
-          eval {
-            require(inc_packname($p)) && add_hashINC( $p );
-          } unless $savINC{inc_packname($p)};
-          $dumped_package{$p} = 1;
-          walk_syms( $p );
-        }
-    }
-    inc_cleanup($rec_cnt++) if $again and $rec_cnt < 3; # maximal 3 times
+    my $again = dump_rest();
+    inc_cleanup($rec_cnt++) if $again and $rec_cnt < 2; # maximal 3 times
   }
-  # sync %curINC deletions back to %INC
+  # final cleanup
   for my $p (sort keys %INC) {
+    my $pkg = packname_inc($p);
+    delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
+    # sync %curINC deletions back to %INC
     delete $INC{$p} if !exists $curINC{$p};
   }
+}
+
+sub dump_rest {
+  my $again;
+  warn "dump_rest\n" if $verbose or $debug{pkg};
+  for my $p (sort keys %INC) {
+  }
+  for my $p (sort keys %include_package) {
+    $p =~ s/^main:://;
+    if ($include_package{$p} and !exists $dumped_package{$p}
+        and !$static_core_pkg{$p}
+        and $p !~ /^(threads|main|__ANON__|PerlIO)$/
+       )
+    {
+      if ($p eq 'warnings::register' and !$B::C::warnings) {
+        delete_unsaved_hashINC('warnings::register');
+        next;
+      }
+      $again++;
+      warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
+      # mark_package( $p, 1);
+      #eval {
+      #  require(inc_packname($p)) && add_hashINC( $p );
+      #} unless $savINC{inc_packname($p)};
+      walk_syms( $p );
+    }
+  }
+  $again;
 }
 
 sub save_context {
@@ -6780,17 +6826,18 @@ sub save_context {
     local $B::C::const_strings = 1 if $B::C::ro_inc;
     warn "\%INC and \@INC:\n" if $verbose;
     $init->add('/* %INC */');
-    inc_cleanup();
+    inc_cleanup(0);
     my $inc_gv = svref_2object( \*main::INC );
     $inc_hv    = $inc_gv->HV->save('main::INC');
     $init->add('/* @INC */');
     $inc_av    = $inc_gv->AV->save('main::INC');
   }
   # ensure all included @ISA's are stored (#308), and also assign c3 (#325)
+  my @saved_isa;
   for my $p (sort keys %include_package) {
     no strict 'refs';
     if ($include_package{$p} and exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
-      warn "save @".$p."::ISA\n" if $verbose or $debug{pkg};
+      push @saved_isa, $p;
       svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
       if ($PERL510 and mro::get_mro($p) eq 'c3') {
         # for mro c3 set the algo. there's no C api, only XS
@@ -6799,6 +6846,7 @@ sub save_context {
       }
     }
   }
+  warn "Saved \@ISA for: ".join(" ",@saved_isa)."\n" if @saved_isa and ($verbose or $debug{pkg});
   $init->add(
     "GvHV(PL_incgv) = $inc_hv;",
     "GvAV(PL_incgv) = $inc_av;",
@@ -6833,15 +6881,19 @@ sub descend_marked_unused {
   #    mark_unused($pack, 0) if !exists $include_package{$pack} and !skip_pkg($pack);
   #  }
   #}
+  foreach my $pack ( sort keys %INC ) {
+    my $p = packname_inc($pack);
+    mark_package($p) if !skip_pkg($p) and !$all_bc_deps{$p};
+  }
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
     warn "\%skip_package: ".join(" ",sort keys %skip_package)."\n";
   }
-  warn "descend_marked_unused: "
-    .join(" ",grep{!$skip_package{$_}} sort keys %include_package)."\n" if $debug{pkg};
   foreach my $pack ( sort keys %include_package ) {
     mark_package($pack) unless skip_pkg($pack);
   }
+  warn "descend_marked_unused: "
+    .join(" ",sort keys %include_package)."\n" if $debug{pkg};
 }
 
 sub save_main {
@@ -7099,6 +7151,7 @@ sub compile {
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
   $B::C::dyn_padlist = 1 if $] >= 5.017; # default is dynamic and safe, disable with -O4
+  $B::C::walkall  = 1;
 
   mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
 	       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
@@ -7128,9 +7181,11 @@ OPTION:
       $arg ||= shift @options;
       if ($arg eq 'full') {
         $arg = 'OcAHCMGSPpsWF';
+        $all_bc_deps{'B::Flags'}++;
       }
       elsif ($arg eq 'ufull') {
         $arg = 'uOcAHCMGSPpsWF';
+        $all_bc_deps{'B::Flags'}++;
       }
       foreach my $arg ( split( //, $arg ) ) {
         if (exists $debug_map{$arg}) {
@@ -7142,6 +7197,7 @@ OPTION:
         }
         elsif ( $arg eq "F" ) {
           $debug{flags}++ if $] > 5.008 and eval "require B::Flags;";
+          $all_bc_deps{'B::Flags'}++;
           # $debug{flags}++ if require B::Flags;
         }
         elsif ( $arg eq "r" ) {
@@ -7516,15 +7572,12 @@ default perl destructor, and enables C<-fcog> since 5.10.
 
 Enabled with C<-O3>.
 
-=item B<-fwalkall>
+=item B<-fno-walkall>
 
-C<-fwalkall> recursively walks all dependent packages, which results
-in much bigger compile sizes.
-This was introduced to catch previously uncompiled packages for computed
-methods or undetected deeper run-time dependencies.
-
-This flag is very experimental and might be re-implemented differently
-or taken away or changed to take a depth argument.
+C<-fno-walkall> uses the simple old algorithm to detect which packages
+needs to be stored.
+C<-fwalkall> was introduced to catch previously uncompiled packages for
+computed methods or undetected deeper run-time dependencies.
 
 =item B<-fno-save-sig-hash>
 

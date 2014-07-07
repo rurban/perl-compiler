@@ -274,6 +274,8 @@ sub is_todo {
     Moose
     Test::Warn
     Test::Pod
+    Test::Deep
+    FCGI
     MooseX::Types
     DateTime::TimeZone
     DateTime
@@ -301,18 +303,24 @@ sub is_todo {
 
   # ---------------------------------------
   if ($Config{useithreads}) {
-    if ($] >= 5.012 and $] < 5.014) { foreach(qw(
-      ExtUtils::CBuilder
-    )) { return '5.12 with threads' if $_ eq $module; }}
-    if ($] >= 5.016) { foreach(qw(
+    if ($] >= 5.008008 and $] < 5.008009) { foreach(qw(
+      Test::Tester
+    )) { return '5.8.8 with threads' if $_ eq $module; }}
+    if ($] >= 5.010 and $] < 5.011 and $DEBUGGING) { foreach(qw(
+      Attribute::Handlers
+    )) { return '5.10.1d with threads' if $_ eq $module; }}
+    #if ($] >= 5.012 and $] < 5.014) { foreach(qw(
+    #  ExtUtils::CBuilder
+    #)) { return '5.12 with threads' if $_ eq $module; }}
+    if ($] >= 5.016 and $] < 5.020) { foreach(qw(
       Module::Build
-    )) { return '>= 5.16 (out of memory)' if $_ eq $module; }}
+    )) { return '5.16-5.20 (out of memory)' if $_ eq $module; }}
   } else { #no threads --------------------------------
-    if ($] > 5.008008 and $] <= 5.009) { foreach(qw(
-      ExtUtils::CBuilder
-    )) { return '5.8.9 without threads' if $_ eq $module; }}
+    #if ($] > 5.008008 and $] <= 5.009) { foreach(qw(
+    #  ExtUtils::CBuilder
+    #)) { return '5.8.9 without threads' if $_ eq $module; }}
     # invalid free
-    if ($] >= 5.016) { foreach(qw(
+    if ($] >= 5.016 and $] < 5.020) { foreach(qw(
         Module::Build
     )) { return '>= 5.16 without threads (invalid free)' if $_ eq $module; }}
     if ($] > 5.019) { foreach(qw(

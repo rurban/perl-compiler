@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.47 ec89ba3 2014-06-11 | C: improve force DynaLoader handling
+# B::C::VERSION = 1.47_03 11ad780 2014-07-03 | C: fix remaining t/CORE/op/magic-27839.t regression
 # perlversion = 5.020000-nt
-# path = /usr/local/bin/perl5.20.0-nt
-# platform = darwin 64bit non-threaded
+# path = /usr/local/bin/perl5.20.0
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.47 - perl-5.020000-nt
+# 100 / 100 modules tested with B-C-1.47_03 - perl-5.020000-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   5 /   1 (500.0%)

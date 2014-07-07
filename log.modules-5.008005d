@@ -1,11 +1,11 @@
-# B::C::VERSION = 1.45_11 c517916 2014-05-09 | t/issue281.t: fixed with 1.45_11
+# B::C::VERSION = 1.47_03 11ad780 2014-07-03 | C: fix remaining t/CORE/op/magic-27839.t regression
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-fail Test::Harness
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+pass FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
@@ -97,13 +97,13 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO <5.10
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.45_11 - perl-5.008005d
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   1 /   2 (50.0%)
+# 100 / 100 modules tested with B-C-1.47_03 - perl-5.008005d
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
 # skip   0 / 100 (0.0% not installed)

@@ -165,7 +165,7 @@ function ctest {
     fi
 }
 
-ntests=300
+ntests=350
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=23
@@ -1122,6 +1122,15 @@ tests[345]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; subname("main::bar",
 # those work fine:
 tests[3451]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; subname("bar", sub { 42 } ); print "ok\n";'
 tests[3452]='eval q/use Sub::Name; 1/ or die "no Sub::Name"; $bar="main::bar"; subname($bar, sub { 42 } ); print "ok\n";'
+tests[348]='package Foo::Bar; sub baz { 1 }
+package Foo; sub new { bless {}, shift } sub method { print "ok\n"; }
+package main; Foo::Bar::baz();
+my $foo = sub {
+  Foo->new
+}->();
+$foo->method;'
+tests[350]='package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int"); 
+package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
 
 init
 
