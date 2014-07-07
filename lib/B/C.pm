@@ -5140,8 +5140,10 @@ EOT
     for my $pkg (sort keys %init2_remap) {
       if (exists $xsub{$pkg}) {
         if ($HAVE_DLFCN_DLOPEN) {
+          my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
+          $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i; # 351 (only on solaris and linux, not any bsd)
           $init2->add( sprintf("  handle = dlopen(%s,", cstring($init2_remap{$pkg}{FILE})),
-                               "                  RTLD_NOW|RTLD_NOLOAD);",
+                               "                  $ldopt);",
                                );
         }
         else {
