@@ -10,6 +10,10 @@
 #  define PM_GETRE(o)     ((o)->op_pmregexp)
 # endif
 #endif
+/* hack for 5.6.2: just want to know if PMf_ONCE or 0 */
+#ifndef PmopSTASHPV
+# define PmopSTASHPV(o) ((o)->op_pmflags & PMf_ONCE)
+#endif
 #ifndef RX_EXTFLAGS
 # define RX_EXTFLAGS(prog) ((prog)->extflags)
 #endif
@@ -106,7 +110,7 @@ make_sv_object(pTHX_ SV *sv)
 static int
 my_runops(pTHX)
 {
-    HV* regexp_hv = get_hv( "B::C::Regexp", 0 );
+    HV* regexp_hv = get_hv( "B::C::Regexp", GV_ADD );
     SV* key = newSViv( 0 );
 
     DEBUG_l(Perl_deb(aTHX_ "Entering new RUNOPS level (B::C)\n"));
@@ -133,8 +137,17 @@ my_runops(pTHX)
 #endif
 	}
 
-        /* Need to store the rx all for QR PMOPs in a global %Regexp hash */
-        if( PL_op->op_type == OP_QR ) {
+        /* Need to store the rx all for QR PMOPs in a global %Regexp hash. MATCH once also */
+#if 1
+        if ((PL_op->op_type == OP_QR)
+        || ((PL_op->op_type == OP_MATCH) && PmopSTASHPV((PMOP*)PL_op)))
+#else
+        if ((PL_op->op_type == OP_QR)
+         || (PL_op->op_type == OP_MATCH)
+         || (PL_op->op_type == OP_PUSHRE)
+         || (PL_op->op_type == OP_SUBST))
+#endif
+        {
             PMOP* op;
             REGEXP* rx = PM_GETRE( (PMOP*)PL_op );
             SV* rv = newSViv( 0 );
@@ -160,7 +173,9 @@ my_runops(pTHX)
 
             sv_setiv( key, PTR2IV( rx ) );
             sv_setref_iv( rv, "B::PMOP", PTR2IV( op ) );
-
+#if defined(DEBUGGING) && (PERL_VERSION > 7)
+	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop 0x%x => rx 0x%x\n", PTR2IV(op), PTR2IV(rx));
+#endif
             hv_store_ent( regexp_hv, key, rv, 0 );
         }
     } while ((PL_op = CALL_FPTR(PL_op->op_ppaddr)(aTHX)));
