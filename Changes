@@ -4,6 +4,8 @@
 	and worked quite fine with Perl 5.6 and 5.8.
 
 1.48 2014-07-11 rurban
+        Fixed C walker and more 5.18 Bytecode fixes
+
         * C: Make -fwalkall the default. Fixes missing dumped method-only packages (#348)
 	Always save all user-loaded packages. Skip only compiler-loaded packages if
 	  not used by user code. The compiler loads and dumps now additionally only the
@@ -14,6 +16,7 @@
           XS symbols via dlsym (#351)
         Special-case XS loading of Moose.xs from Class::MOP (#350)
         * Bytecode (1.16): Replace each %hash with foreach keys in walksymtable also (#307)
+        Do not store empty main_cv->START, can be empty since 5.18
 
 1.47 2014-06-11 rurban
         Fixed Bytecode for 5.18.

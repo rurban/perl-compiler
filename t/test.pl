@@ -844,6 +844,7 @@ sub plctest {
     unlink($name, "$name.plc", "$name.pl", "$name.exe");
     open F, ">", "$base.pl";
     print F $script;
+    print F "\n";
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;

@@ -73,7 +73,7 @@ my @skip = ();
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
-my $Mblib = $] >= 5.008 ? "-Mblib" : ""; # test also the CORE B in older perls?
+my $Mblib = $] >= 5.008 ? "-Iblib/arch -Iblib/lib" : ""; # test also the CORE B in older perls?
 my $backend = $PERL56 ? 'Bytecode56' : 'Bytecode';
 unless ($Mblib) { # check for -Mblib from the testsuite
   if (grep { m{blib(/|\\)arch$} } @INC) {
@@ -84,9 +84,9 @@ else {
   $backend = "-qq,$backend" if !$ENV{TEST_VERBOSE} and !$PERL56;
 }
 # $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
-$backend .= ",-H" unless $PERL56;
 # TODO: -H still unstable with 5.18 (filter issue #339)
-$backend = "Bytecode,-s" if $PERL518;
+$backend .= ",-H" if !$PERL56 and $] < 5.018;
+$backend .= ',-s' if $] >= 5.018;
 
 #$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {
@@ -102,7 +102,7 @@ for (@tests) {
     $expect = "zz" . $expect;
   }
   $test = "bytecode$cnt.pl";
-  open T, ">", $test; print T $script; close T;
+  open T, ">", $test; print T $script; print T "\n"; close T;
   unlink "${test}c" if -e "${test}c";
   $? = 0;
   $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${test}c" ],

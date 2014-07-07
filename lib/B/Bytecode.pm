@@ -676,14 +676,14 @@ sub B::CV::bsave {
   my $gvix      = ($cv->GV and ref($cv->GV) ne 'B::SPECIAL') ? $cv->GV->ix : 0;
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
-  my $startix   = $cv->START->opwalk;
+  my $startix   = $cv->START->opwalk if $cv->START;
   my $rootix    = $cv->ROOT->ix;
   # TODO 5.14 will need CvGV_set to add backref magic
   my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0;
 
   $cv->B::PVMG::bsave($ix);
   asm "xcv_stash",       $stashix;
-  asm "xcv_start",       $startix;
+  asm "xcv_start",       $startix if $startix; # e.g. main_cv 5.18
   asm "xcv_root",        $rootix;
   asm "xcv_xsubany",     $xsubanyix unless $PERL56;
   asm "xcv_padlist",     $padlistix;
@@ -765,15 +765,15 @@ sub B::AV::bsave {
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
-  bless $array[0], 'B::PAD';
-  bless $array[1], 'B::PAD';
+  bless $array[0], 'B::PAD' if ref $array[0] eq 'B::AV';
+  bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
   my $ix0 = $array[0]->ix; # comppad_name
   my $ix1 = $array[1]->ix; # comppad syms
 
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padl_name", $ix0;
-  asm "padl_sym",  $ix1;
+  asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
+  asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
 }
 
 sub B::GV::desired {
