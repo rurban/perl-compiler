@@ -850,14 +850,19 @@ sub plctest {
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,Bytecode" : "Bytecode";
+    $b .= ',-s' if $] >= 5.018; # just guessing why testplc works ok, but this not
     my $Mblib = Mblib;
-    system "$runperl $Mblib -MO=$b,-o$name.plc $base.pl";
+    my $cmd = "$runperl $Mblib -MO=$b,-o$name.plc $base.pl";
+    diag($cmd) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
+    system $cmd;
     # $out =~ s/^$base.pl syntax OK\n//m;
     unless (-e "$name.plc") {
         print "not ok $num #B::Bytecode failed\n";
         exit;
     }
-    my $out = qx($runperl $Mblib -MByteLoader $name.plc);
+    $cmd = "$runperl $Mblib -MByteLoader $name.plc";
+    diag($cmd) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
+    my $out = qx($cmd);
     chomp $out;
     my $ok = $out =~ /$expected/;
     if ($todo and $todo =~ /TODO/) {

@@ -13,6 +13,7 @@
         Fix for missing RTLD_NOLOAD on BSD, needed for run-time remap of compile-time
           XS symbols via dlsym (#351)
         Special-case XS loading of Moose.xs from Class::MOP (#350)
+        * Bytecode (1.16): Replace each %hash with foreach keys in walksymtable also (#307)
 
 1.47 2014-06-11 rurban
         Fixed Bytecode for 5.18.

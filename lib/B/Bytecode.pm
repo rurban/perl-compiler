@@ -3,7 +3,7 @@
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
 # Copyright (c) 2008-2011 Reini Urban <rurban@cpan.org>. All rights reserved.
-# Copyright (c) 2011-2013 cPanel Inc. All rights reserved.
+# Copyright (c) 2011-2014 cPanel Inc. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.15';
+our $VERSION = '1.16';
 
 use 5.008;
 use B qw( class main_cv main_root main_start
@@ -39,7 +39,7 @@ BEGIN {
 		 warnhook diehook SVt_PVGV
 		 SVf_FAKE));
   } else {
-    B->import(qw(walkoptree walksymtable));
+    B->import(qw(walkoptree));
   }
   if ($] > 5.017) {
     B->import('SVf_IsCOW') ;
@@ -115,6 +115,30 @@ BEGIN {
 }
 
 sub as_hex {$quiet ? undef : sprintf("0x%x",shift)}
+
+# Fixes bug #307: use foreach, not each
+# each is not safe to use (at all). walksymtable is called recursively which might add
+# symbols to the stash, which might cause re-ordered rehashes, which will fool the hash
+# iterator, leading to missing symbols.
+# Old perl5 bug: The iterator should really be stored in the op, not the hash.
+sub walksymtable {
+  my ($symref, $method, $recurse, $prefix) = @_;
+  my ($sym, $ref, $fullname);
+  $prefix = '' unless defined $prefix;
+  foreach my $sym ( sort keys %$symref ) {
+    no strict 'refs';
+    $ref = $symref->{$sym};
+    $fullname = "*main::".$prefix.$sym;
+    if ($sym =~ /::$/) {
+      $sym = $prefix . $sym;
+      if (svref_2object(\*$sym)->NAME ne "main::" && $sym ne "<none>::" && &$recurse($sym)) {
+        walksymtable(\%$fullname, $method, $recurse, $sym);
+      }
+    } else {
+      svref_2object(\*$fullname)->$method();
+    }
+  }
+}
 
 #################################################
 
@@ -1203,8 +1227,8 @@ sub B::GV::bytecodecv {
   my $cv = $gv->CV;
   if ( $$cv && !( $gv->FLAGS & 0x80 ) ) { # GVf_IMPORTED_CV / && !saved($cv)
     if ($debug{cv}) {
-      warn sprintf( "saving extra CV &%s::%s (0x%x) from GV 0x%x\n",
-        $gv->STASH->NAME, $gv->NAME, $$cv, $$gv );
+      bwarn(sprintf( "saving extra CV &%s::%s (0x%x) from GV 0x%x\n",
+        $gv->STASH->NAME, $gv->NAME, $$cv, $$gv ));
     }
     $gv->bsave;
   }
@@ -1217,7 +1241,7 @@ sub symwalk {
   if ( grep { /^$_[0]/; } @packages ) {
     walksymtable( \%{"$_[0]"}, "desired", \&symwalk, $_[0] );
   }
-  warn "considering $_[0] ... " . ( $ok ? "accepted\n" : "rejected\n" )
+  bwarn("considering $_[0] ... " . ( $ok ? "accepted\n" : "rejected\n" ))
     if $debug{b};
   $ok;
 }
