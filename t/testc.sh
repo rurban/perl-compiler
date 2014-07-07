@@ -1061,6 +1061,8 @@ result[3053]='www.google.com'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
 tests[309]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
+result[309]='Net::LibIDN: ok
+Net::SSLeay: ok'
 tests[310]='package foo;
 sub dada { my $line = <DATA> }
 print dada;

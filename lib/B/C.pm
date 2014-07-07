@@ -2719,7 +2719,7 @@ sub B::PVMG::save {
           and $fullname
           and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/)
          or $ITHREADS)
-        and $sv->IVX > 5000000 # some crazy heuristic for a so ptr (> image_base)
+        and $sv->IVX > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
       $ivx = patch_dlsym($sv, $fullname, $ivx);
@@ -3305,7 +3305,7 @@ sub B::CV::save {
       # warn "$sv CONSTSUB $name";
       if ((ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG') and $sv->FLAGS & SVf_ROK) {
         my $rv = $sv->RV;
-        if ($rv->FLAGS & (SVp_POK|SVf_IOK) and $rv->IVX > 5000000) {
+        if ($rv->FLAGS & (SVp_POK|SVf_IOK) and $rv->IVX > 0x400000) {
           patch_dlsym($rv, $fullname, $rv->IVX);
         }
       }
