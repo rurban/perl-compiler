@@ -56,6 +56,7 @@ sub limcheck($$$$) {
 #
 
 sub B::Asmdata::PUT_U8 {
+  error "Missing argument to PUT_U8" if @_ < 1;
   my $arg = shift;
   my $c   = uncstring($arg);
   if ( defined($c) ) {
@@ -72,26 +73,31 @@ sub B::Asmdata::PUT_U8 {
 }
 
 sub B::Asmdata::PUT_U16 {
+  error "Missing argument to PUT_U16" if @_ < 1;
   my $arg = limcheck( $_[0], 0, 0xffff, 'U16' );
   pack( "S", $arg );
 }
 
 sub B::Asmdata::PUT_U32 {
+  error "Missing argument to PUT_U32" if @_ < 1;
   my $arg = limcheck( $_[0], 0, 0xffffffff, 'U32' );
   pack( "L", $arg );
 }
 
 sub B::Asmdata::PUT_I32 {
+  error "Missing argument to PUT_I32" if @_ < 1;
   my $arg = limcheck( $_[0], -0x80000000, 0x7fffffff, 'I32' );
   pack( "l", $arg );
 }
 
 sub B::Asmdata::PUT_NV {
+  error "Missing argument to PUT_NV" if @_ < 1;
   sprintf( "%s\0", $_[0] );
 }    # "%lf" looses precision and pack('d',...)
      # may not even be portable between compilers
 
 sub B::Asmdata::PUT_objindex {    # could allow names here
+  error "Missing argument to PUT_objindex" if @_ < 1;
   my $maxidx = $_[1] || 0xffffffff;
   my $what = $_[2] || 'ix';
   my $arg = limcheck( $_[0], 0, $maxidx, $what );
@@ -103,6 +109,7 @@ sub B::Asmdata::PUT_pvindex { B::Asmdata::PUT_objindex( @_, $maxsvix, 'pvix' ) }
 sub B::Asmdata::PUT_hekindex { B::Asmdata::PUT_objindex( @_ ) }
 
 sub B::Asmdata::PUT_strconst {
+  error "Missing argument to PUT_strconst" if @_ < 1;
   my $arg = shift;
   my $str = uncstring($arg);
   if ( !defined($str) ) {
@@ -119,12 +126,14 @@ sub B::Asmdata::PUT_strconst {
 }
 
 sub B::Asmdata::PUT_pvcontents {
+  error "Missing argument to PUT_pvcontents" if @_ < 1;
   my $arg = shift;
   error "extraneous argument: $arg" if defined $arg;
   return "";
 }
 
 sub B::Asmdata::PUT_PV {
+  error "Missing argument to PUT_PV" if @_ < 1;
   my $arg = shift;
   my $str = uncstring($arg);
   if ( !defined($str) ) {
@@ -143,7 +152,10 @@ sub B::Asmdata::PUT_comment_t {
   }
   return $arg . "\n";
 }
-sub B::Asmdata::PUT_double { sprintf( "%s\0", $_[0] ) }    # see PUT_NV above
+sub B::Asmdata::PUT_double {
+  error "Missing argument to PUT_double" if @_ < 1;
+  sprintf( "%s\0", $_[0] )
+}    # see PUT_NV above
 
 sub B::Asmdata::PUT_none {
   my $arg = shift;
@@ -152,11 +164,13 @@ sub B::Asmdata::PUT_none {
 }
 
 sub B::Asmdata::PUT_op_tr_array {
+  error "Missing argument to PUT_tr_array" if @_ < 1;
   my @ary = split /\s*,\s*/, shift;
   return pack "S*", @ary;
 }
 
 sub B::Asmdata::PUT_IV64 {
+  error "Missing argument to PUT_IV64" if @_ < 1;
   return pack "Q", shift;
 }
 

@@ -66,7 +66,7 @@ push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with 
 push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
 push @todo, (46) if $] >= 5.012 and $] < 5.018;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
-push @todo, (7, 17..18, 21, 30, 35) if $] >= 5.018 and $ITHREADS;
+#push @todo, (7, 17..18, 21, 30, 35) if $] >= 5.018 and $ITHREADS;
 
 my @skip = ();
 #push @skip, (27,32,42..43) if !$ITHREADS;
@@ -86,7 +86,7 @@ else {
 # $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
 # TODO: -H still unstable with 5.18 (filter issue #339)
 $backend .= ",-H" if !$PERL56 and $] < 5.018;
-$backend .= ',-s' if $] >= 5.018;
+#$backend .= ',-s' if $] >= 5.018;
 
 #$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {

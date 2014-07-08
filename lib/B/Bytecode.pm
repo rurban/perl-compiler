@@ -676,7 +676,8 @@ sub B::CV::bsave {
   my $gvix      = ($cv->GV and ref($cv->GV) ne 'B::SPECIAL') ? $cv->GV->ix : 0;
   my $padlistix = $cv->PADLIST->ix;
   my $outsideix = $cv->OUTSIDE->ix;
-  my $startix   = $cv->START->opwalk if $cv->START;
+  # there's no main_cv->START optree since 5.18
+  my $startix   = $cv->START->opwalk if $] < 5.018 or $$cv != ${main_cv()};
   my $rootix    = $cv->ROOT->ix;
   # TODO 5.14 will need CvGV_set to add backref magic
   my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0;
