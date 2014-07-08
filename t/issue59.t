@@ -32,7 +32,7 @@ my $result = qx($runperl $name.pl);
 my $canconnect = $result eq $expected ? 1 : 0;
 
 my $cmt = ($canconnect ? "" : "TODO ") ."connect to http://perl.org:80 via IO::Socket";
-plctestok(1, $name, $script, $cmt.($]>=5.018?" TODO 5.18 bc":""));
+plctestok(1, $name, $script, $cmt);
 
 SKIP: {
   #skip "eats memory on 5.6", 2 if $] <= 5.008001;

@@ -44,10 +44,7 @@ $result =~ s/\n$//;
 
 SKIP: {
   skip "no features on 5.6", 1 if $] < 5.008;
- TODO: {
-    local $TODO = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
-    ok($result eq $expected, "issue98 - set feature hash");
-  }
+  ok($result eq $expected, "issue98 - set feature hash");
 }
 
 END {

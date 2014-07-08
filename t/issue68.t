@@ -26,8 +26,6 @@ my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $Mblib = "-Iblib/arch -Iblib/lib";
 if ($] < 5.008) {
   system "$runperl -MO=Bytecode,-o$name.plc $name.pl";
-} elsif ($] >= 5.018) {
-  system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
 } else {
   system "$runperl $Mblib -MO=-qq,Bytecode,-H,-o$name.plc $name.pl";
 }
@@ -35,7 +33,7 @@ unless (-e "$name.plc") {
   print "not ok 1 #B::Bytecode failed.\n";
   exit;
 }
-my $runexe = ($] < 5.008 or $] >= 5.018)
+my $runexe = ($] < 5.008)
   ? "$runperl -MByteLoader $name.plc"
   : "$runperl $Mblib $name.plc";
 my $result = `$runexe`;
@@ -44,7 +42,6 @@ $result =~ s/\n$//;
 TODO: {
   use B::Bytecode;
   local $TODO = "threaded >= 5.010" if $] >= 5.010 and $Config{useithreads}; # and $B::Bytecode::VERSION lt "1.14";
-  $TODO = "5.18" if $] >= 5.018;
   ok($result eq $expected, "issue68 - newPMOP assert");
 }
 

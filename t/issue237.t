@@ -11,4 +11,4 @@ my $cmt = '#237 NULL in strings';
 my $script = 'print "\000\000\000\000_"';
 my $exp = "^\000\000\000\000_\$";
 ctest(1, $exp, 'C,-O3', 'ccode237i', $script, 'C '.$cmt);
-plctest(2, $exp, 'ccode237i', $script, "BC ".$cmt.($]>=5.018?" TODO 5.18 bc":""));
+plctest(2, $exp, 'ccode237i', $script, "BC ".$cmt);

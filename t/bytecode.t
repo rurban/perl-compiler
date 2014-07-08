@@ -23,10 +23,6 @@ BEGIN {
     print "1..0 # Skip -- Perl configured without B module\n";
     exit 0;
   }
-  #if ((!-d '.git' or $ENV{NO_AUTHOR}) and $] >= 5.018 and $Config{useithreads}) {
-  #  print "1..0 # skip - bytecode 5.18 threaded broken\n";
-  #  exit 0;
-  #}
   require 'test.pl'; # for run_perl()
 }
 use strict;
@@ -84,9 +80,6 @@ else {
   $backend = "-qq,$backend" if !$ENV{TEST_VERBOSE} and !$PERL56;
 }
 # $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
-# TODO: -H still unstable with 5.18 (filter issue #339)
-$backend .= ",-H" if !$PERL56 and $] < 5.018;
-#$backend .= ',-s' if $] >= 5.018;
 
 #$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {

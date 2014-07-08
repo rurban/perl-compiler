@@ -851,7 +851,6 @@ sub plctest {
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
     my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,Bytecode" : "Bytecode";
-    $b .= ',-s' if $] >= 5.018; # just guessing why testplc works ok, but this not
     my $Mblib = Mblib;
     my $cmd = "$runperl $Mblib -MO=$b,-o$name.plc $base.pl";
     diag($cmd) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
