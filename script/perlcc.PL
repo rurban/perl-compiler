@@ -143,7 +143,7 @@ sub generate_code {
 
 sub run_code {
     if ($Backend eq 'Bytecode') {
-        if ($] < 5.007 or $] >= 5.018) {
+        if ($] < 5.007) {
             $Output = "$BinPerl -MByteLoader $Output";
         } else {
             $Output = "$BinPerl $Output";
@@ -354,8 +354,7 @@ sub compile_byte {
 
     vprint 3, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
-    $opts = "-s," if $] >= 5.018;
-    if ($] >= 5.007 and $] < 5.018 and $Input =~ /^-e/) {
+    if ($] >= 5.007 and $Input =~ /^-e/) {
         $opts = "-H,";
     }
     if (@_ == 1) {
