@@ -2,6 +2,7 @@
 #
 #      Copyright (c) 1996 Malcolm Beattie
 #      Copyright (c) 2008,2009,2010,2011,2012 Reini Urban
+#      Copyright (c) 2014 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -17,7 +18,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '1.11';
+$VERSION   = '1.12';
 
 use strict;
 my %opnumber;

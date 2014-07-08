@@ -9,7 +9,7 @@
 
 # Reviving 5.6 support here is work in progress, and not yet enabled.
 # So far the original is used instead, even if the list of failed tests
-# is impressive: 3,6,8..10,12,15,16,18,25..28. Pretty broken.
+# with the old 5.6. compiler is impressive: 3,6,8..10,12,15,16,18,25..28.
 
 package B::Bytecode;
 
