@@ -80,8 +80,10 @@ use B::C ();
 # also: Constant subroutine HUGE_VAL redefined
 my $qr = '^(ok|Warning: unable to close filehandle.*\nok)$';
 my $todo = ($B::C::VERSION lt '1.42_61') ? "TODO" : "";
+# bad: 1.956 - 1.984
 if ($IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984') {
   $todo = "TODO [cpan #95452] bad IO::Socket::SSL $IO::Socket::SSL::VERSION, ";
 }
 $todo = "TODO 5.20" if $] > 5.019;
+$todo = "TODO <5.8.8" if $] < 5.008008;
 ctest(5,$qr,'C,-O3,-UB','ccode95i',$issue, $todo.' run');

@@ -7,6 +7,7 @@ BEGIN {
   require "test.pl";
 }
 use Test::More;
+use Config;
 eval "use Coro;";
 if ($@) {
   plan skip_all => "Coro required for testing issue #293";
@@ -17,7 +18,8 @@ if ($@) {
 use B::C ();
 my $cmt = '#293 boot Coro::State';
 my $todo = $B::C::VERSION ge '1.46_04' ? "" : "TODO ";
+$todo = "TODO 5.10thr " if $] =~ /^5\.010001/ and $Config{useithreads};
 my $script = 'use Coro; print q(ok)';
+
 ctestok(1, 'C,-O3', 'ccode293i', $script, $todo.'C '.$cmt);
-# ctestok(2, 'C,-O3,-fwalkall', 'ccode293i', $script, $todo.'C -fwalkall '.$cmt);
 

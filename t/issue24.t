@@ -27,7 +27,7 @@ my $expected = `$runperl $name.pl`;
 $result = `$runperl $Mblib blib/script/perlcc -r -B $name.pl`;
 TODO: { #1
   local $TODO = "Bytecode issue 24 dbm (still original compiler)"
-    if $] < 5.008001 or $result =~ /No dbm on this machine/ or ($] > 5.018 and !$ITHREADS);
+    if $] < 5.008001 or $result =~ /No dbm on this machine/;
   is($result, $expected, "Bytecode dbm fixed with r882, 1.30");
 }
 unlink("$name.db*");

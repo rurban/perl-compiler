@@ -7,8 +7,8 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 4;
-# fails 5.10 only
-my $todo = ($] =~ /^5\.010/) ? "TODO " : "";
+# 5.10 fixed with 1.48
+my $todo = ""; # ($] =~ /^5\.010/) ? "TODO " : "";
 
 ctestok(1,'C,-O3','ccode238i',<<'EOF',$todo.'#238 format f::STDOUT');
 sub f ($);

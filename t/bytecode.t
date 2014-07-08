@@ -56,6 +56,7 @@ my @todo = (); # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
 push @todo, (21,24..26,28,33,38..39) if $^O eq 'solaris' and $] eq '5.008008';
 push @todo, (43)   if $] >= 5.008004 and $] <= 5.008008;
 push @todo, (7)    if $] >= 5.008004 and $] < 5.008008 and $ITHREADS;
+push @todo, (11)   if $] > 5.008005 and $] < 5.010;
 push @todo, (27)   if $] >= 5.010 and !$ITHREADS;
 push @todo, (32)   if $] > 5.011 and $] < 5.013008; # 2x del_backref fixed with r790
 # cannot store labels on windows 5.12: 21

@@ -23,9 +23,9 @@ if ($] < 5.007) {
 use Config;
 my $ITHREADS = $Config{useithreads};
 
-my $todo = $Encode::VERSION lt '2.58' ? "Old Encode-$Encode::VERSION < 2.58 " : "New Encode-$Encode::VERSION > 2.58 ";
+my $todo = $Encode::VERSION lt '2.58' ? "Old Encode-$Encode::VERSION < 2.58 " : "New Encode-$Encode::VERSION >= 2.58 ";
 if ($ITHREADS and ($] > 5.015 or $] < 5.01)) {
-  $todo = "TODO $] thr ".$todo;
+  $todo = "TODO $] thr ".$todo if $] < 5.020;
 }
 
 my $cmt = '#305 compile-time Encode::XS encodings';

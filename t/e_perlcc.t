@@ -208,8 +208,6 @@ if ($] < 5.007) {
     local $TODO = 'yet unsupported';
     is(`$X -MByteLoader pcc.plc`, "ok", "executable 5.6 plc"); #76
   }
-} elsif ($] >= 5.018) {
-  is(`$X -Iblib/arch -Iblib/lib -MByteLoader pcc.plc`, "ok", "executable 5.18 plc"); #76
 } else {
   is(`$X -Iblib/arch -Iblib/lib pcc.plc`, "ok", "executable plc"); #76
 }
