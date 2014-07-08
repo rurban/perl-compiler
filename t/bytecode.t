@@ -70,7 +70,7 @@ my @skip = ();
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
 my $Mblib = $] >= 5.008 ? "-Iblib/arch -Iblib/lib" : ""; # test also the CORE B in older perls?
-my $backend = $PERL56 ? 'Bytecode56' : 'Bytecode';
+my $backend = $PERL56 ? 'Bytecode56' : 'Bytecode,-H';
 unless ($Mblib) { # check for -Mblib from the testsuite
   if (grep { m{blib(/|\\)arch$} } @INC) {
     $Mblib = "-Iblib/arch -Iblib/lib";  # force -Mblib via cmdline, but silent!
@@ -104,7 +104,7 @@ for (@tests) {
 		  stderr   => $PERL56 ? 1 : 0, # capture "bytecode.pl syntax ok"
 		  timeout  => 10,
 		  progfile => $test);
-  my $Byteloader = ($PERL56 or $PERL518) ? " -MByteLoader" : "";
+  my $Byteloader = $PERL56 ? " -MByteLoader" : "";
   unless ($?) {
     # test coverage if -Dv is allowed
     if ($do_coverage and $DEBUGGING) {
