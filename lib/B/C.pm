@@ -6565,7 +6565,7 @@ sub delete_unsaved_hashINC {
   return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
   $include_package{$package} = 0;
   if ($curINC{$incpack}) {
-    warn "Deleting $package from \%INC\n" if $debug{pkg};
+    #warn "Deleting $package from \%INC\n" if $debug{pkg};
     $savINC{$incpack} = $curINC{$incpack} if !$savINC{$incpack};
     $curINC{$incpack} = undef;
     delete $curINC{$incpack};
@@ -6698,7 +6698,7 @@ sub inc_cleanup {
   my $rec_cnt = shift;
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
-
+  my @deleted_inc;
   for my $package (sort keys %INC) {
     my $pkg = packname_inc($package);
     if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'}) {
@@ -6706,22 +6706,21 @@ sub inc_cleanup {
     } elsif ($package eq 'utf8_heavy.pl' and !$include_package{'utf8'}) {
       delete $curINC{$package};
       delete_unsaved_hashINC('utf8');
-    } elsif (!$B::C::walkall) {
-      delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
+    } elsif (!$B::C::walkall and !exists $dumped_package{$pkg}) {
+      delete_unsaved_hashINC($pkg);
+      push @deleted_inc, $pkg;
     }
   }
   # sync %curINC deletions back to %INC
   for my $p (sort keys %INC) {
     if (!exists $curINC{$p}) {
       delete $INC{$p};
-      warn "Deleting $p from %INC\n" if $debug{pkg};
+      push @deleted_inc, $p;
     }
   }
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
     warn "\%dumped_package:  ".join(" ",grep{$dumped_package{$_}} sort keys %dumped_package)."\n";
-    my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
-    warn "\%INC: ".join(" ",@inc)."\n";
   }
   # issue 340,350: do only on -fwalkall? do it in the main walker step
   # as in branch walkall-early?
@@ -6734,15 +6733,23 @@ sub inc_cleanup {
     my $pkg = packname_inc($p);
     delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
     # sync %curINC deletions back to %INC
-    delete $INC{$p} if !exists $curINC{$p};
+    if (!exists $curINC{$p} and exists $INC{$p}) {
+      delete $INC{$p};
+      push @deleted_inc, $p;
+    }
+  }
+  if ($debug{pkg} and $verbose) {
+    warn "Deleted from \%INC: ".join(" ",@deleted_inc)."\n" if @deleted_inc;
+    my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
+    warn "\%INC: ".join(" ",@inc)."\n";
   }
 }
 
 sub dump_rest {
   my $again;
-  warn "dump_rest\n" if $verbose or $debug{pkg};
-  for my $p (sort keys %INC) {
-  }
+  warn "dump_rest:\n" if $verbose or $debug{pkg};
+  #for my $p (sort keys %INC) {
+  #}
   for my $p (sort keys %include_package) {
     $p =~ s/^main:://;
     if ($include_package{$p} and !exists $dumped_package{$p}
