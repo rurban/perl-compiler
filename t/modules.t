@@ -323,11 +323,9 @@ sub is_todo {
     if ($] >= 5.016 and $] < 5.020) { foreach(qw(
         Module::Build
     )) { return '>= 5.16 without threads (invalid free)' if $_ eq $module; }}
-    if ($] > 5.019) { foreach(qw(
-      B::Hooks::EndOfScope
-      namespace::clean
-      MooseX::Types
-    )) { return '5.19 without threads' if $_ eq $module; }}
+    #if ($] > 5.019) { foreach(qw(
+    #  MooseX::Types
+    #)) { return '5.19 without threads' if $_ eq $module; }}
   }
   # ---------------------------------------
 }
