@@ -33,10 +33,8 @@ my $Mblib = Mblib();
 my $perldoc = File::Spec->catfile($Config{installbin}, 'perldoc');
 my $perlcc = "$X $Mblib blib/script/perlcc";
 $perlcc .= " -Wb=-fno-fold,-fno-warnings" if $] > 5.013;
-# $perlcc .= ",-fwalkall" if $] > 5.019;
-$perlcc .= " -UB -uFile::Spec";
-#$perlcc .= " -uFile::Spec::Unix" if $] > 5.019;
-#$perlcc .= " -uPod::Perldoc::ToMan -uPod::Perldoc::ToText -uPod::Perldoc::BaseTo" if $] > 5.019;
+$perlcc .= " -UB -uFile::Spec -uCwd";
+$perlcc .= " -uExporter" if $] < 5.010;
 my $exe = $Config{exe_ext};
 my $perldocexe = $^O eq 'MSWin32' ? "perldoc$exe" : "./perldoc$exe";
 # XXX bother File::Which?
@@ -45,10 +43,9 @@ plan tests => 7;
 
 # XXX interestingly 5.8 perlcc cannot compile perldoc because Cwd disturbs the method finding
 # vice versa 5.14 cannot be compile perldoc manually because File::Temp is not included
-my $compile = $]<5.010?"$X $Mblib -MO=C,-UB,-operldoc.c $perldoc":"$perlcc -o $perldocexe $perldoc";
+my $compile = "$perlcc -o $perldocexe $perldoc";
 diagv $compile;
 my $res = `$compile`;
-system("$X $Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
 ok(-s $perldocexe, "$perldocexe compiled"); #1
 
 diagv "see if $perldoc -T works";
@@ -78,14 +75,11 @@ if ($ori =~ /Unknown option/) {
 $t0 = [gettimeofday];
 ($result, $out, $err) = run_cmd("$PAGER $perldocexe $T_opt", 20);
 my $t2 = tv_interval( $t0 );
-TODO: {
-  # old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
-  # dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
-  local $TODO = "compiled does not print yet" if $] < 5.010;
-  $ori =~ s{ /\S*perldoc }{ perldoc };
-  $out =~ s{ ./perldoc }{ perldoc };
-  is($out, $ori, "same result"); #2
-}
+# old perldoc 3.14_04-3.15_04: Can't locate object method "can" via package "Pod::Perldoc" at /usr/local/lib/perl5/5.14.1/Pod/Perldoc/GetOptsOO.pm line 34
+# dev perldoc 3.15_13: Can't locate object method "_is_mandoc" via package "Pod::Perldoc::ToMan"
+$ori =~ s{ /\S*perldoc }{ perldoc };
+$out =~ s{ ./perldoc }{ perldoc };
+is($out, $ori, "same result"); #2
 
 SKIP: {
   skip "cannot compare times", 1 if $out ne $ori;
@@ -94,10 +88,9 @@ SKIP: {
 
 unlink $perldocexe if -e $perldocexe;
 $perldocexe = $^O eq 'MSWin32' ? "perldoc_O3$exe" : "./perldoc_O3$exe";
-$compile = $]<5.010?"$X $Mblib -MO=C,-O3,-UB,-uFile::Spec,-operldoc.c $perldoc":"$perlcc -O3 -o $perldocexe $perldoc";
+$compile = "$perlcc -O3 -o $perldocexe $perldoc";
 diagv $compile;
 $res = `$compile`;
-system("$X $Mblib script/cc_harness -o $perldocexe perldoc.c") if $] < 5.010;
 ok(-s $perldocexe, "perldoc compiled"); #4
 unlink "perldoc.c" if $] < 5.10;
 diagv $res unless -s $perldocexe;
@@ -105,11 +98,8 @@ diagv $res unless -s $perldocexe;
 $t0 = [gettimeofday];
 ($result, $out, $err) = run_cmd("$PAGER $perldocexe $T_opt", 20);
 my $t3 = tv_interval( $t0 );
-TODO: {
-  local $TODO = "compiled does not print yet" if $] < 5.010;
-  $out =~ s{ ./perldoc_O3 }{ perldoc };
-  is($out, $ori, "same result"); #5
-}
+$out =~ s{ ./perldoc_O3 }{ perldoc };
+is($out, $ori, "same result"); #5
 
 SKIP: {
   skip "cannot compare times", 2 if $out ne $ori;
