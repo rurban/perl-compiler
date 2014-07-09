@@ -7,19 +7,20 @@
         Fixed C walker and 5.18-5.20 Bytecode
 
         * C: Make -fwalkall the default. Fixes missing dumped method-only packages (#348)
-	Always save all user-loaded packages. Skip only compiler-loaded packages if
-	  not used by user code. The compiler loads and dumps now additionally only the
-	  heavy parts for utf8 and bytes, and utf8 for m///i, and AnyDBM for dbmopen,
-	  PerlIO::Scalar for __DATA__ handles, and Coro::State::_jit if required, but
-	  nothing else.
+        Always save all user-loaded packages. Skip only compiler-loaded packages if
+          not used by user code. The compiler loads and dumps now additionally only the
+          heavy parts for utf8 and bytes, and utf8 for m///i, and AnyDBM for dbmopen,
+          PerlIO::Scalar for __DATA__ handles, and Coro::State::_jit if required, but
+          nothing else.
         Fix for missing RTLD_NOLOAD on BSD, needed for run-time remap of compile-time
           XS symbols via dlsym (#351)
         Special-case XS loading of Moose.xs from Class::MOP (#350)
         Better fix for mult. match once by checking OP_MATCH with ONCE flags in C.xs also (#274)
+        * Stackobj (1.12): Harmonize RV checks (fixes cc 105 -O1 and -O2)
         * Bytecode (1.16): Replace each %hash with foreach keys in walksymtable also (#307)
         Do not store main_cv->START, empty optree since 5.18
-	* Assembler (1.12): error if a PUT method misses an argument
-	* perlcc: -B produces again -H bytecode, runnable without -MByteLoader.
+        * Assembler (1.12): error if a PUT method misses an argument
+        * perlcc: -B produces again -H bytecode, runnable without -MByteLoader.
 
 1.47 2014-06-11 rurban
         Fixed Bytecode for 5.18.

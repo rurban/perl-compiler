@@ -2,14 +2,14 @@
 #
 #      Copyright (c) 1996 Malcolm Beattie
 #      Copyright (c) 2010 Reini Urban
-#      Copyright (c) 2012, 2013 cPanel Inc
+#      Copyright (c) 2012, 2013, 2014 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 #
 package B::Stackobj;
 
-our $VERSION = '1.11';
+our $VERSION = '1.12';
 
 use Exporter ();
 @ISA       = qw(Exporter);
