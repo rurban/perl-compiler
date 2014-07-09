@@ -599,7 +599,9 @@ sub run_cc_test {
     $opt = '' unless $opt;
     use Config;
     require B::C::Flags;
-    my $test = $fnbackend."code".$cnt.".pl";
+    # note that the smokers run the c.t and c_o3.t tests in parallel, with possible
+    # interleaving file writes even for the .pl.
+    my $test = $fnbackend."code".$cnt.$opt.".pl";
     my $cfile = $fnbackend."code".$cnt.$opt.".c";
     my @obj;
     @obj = ($fnbackend."code".$cnt.$opt.".obj",
