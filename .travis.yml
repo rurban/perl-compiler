@@ -21,7 +21,7 @@ notifications:
     on_success: change
     on_failure: always
 
-#matrix:
-#  allow_failures:
-#    - perl: "5.18"
-#    - perl: "5.20"
+matrix:
+  allow_failures:
+    - perl: "5.20"
+# perlbrew use 5.20 ERROR: The installation "5.20" is unknown.
