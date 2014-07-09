@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.47_03 11ad780 2014-07-03 | C: fix remaining t/CORE/op/magic-27839.t regression
+# B::C::VERSION = 1.48 6d90ed2 2014-07-08 | C: bump to 1.48 M
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.47_03 - perl-5.016003-nt
+# 100 / 100 modules tested with B-C-1.48 - perl-5.016003-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)
