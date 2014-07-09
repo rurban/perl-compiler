@@ -20,7 +20,8 @@
         * Bytecode (1.16): Replace each %hash with foreach keys in walksymtable also (#307)
         Do not store main_cv->START, empty optree since 5.18
         * Assembler (1.12): error if a PUT method misses an argument
-        * perlcc: -B produces again -H bytecode, runnable without -MByteLoader.
+        * perlcc (2.19): -B produces again -H bytecode, runnable without -MByteLoader.
+        Fix default output name from a.outexe to a.exe on a windows-based OS.
 
 1.47 2014-06-11 rurban
         Fixed Bytecode for 5.18.

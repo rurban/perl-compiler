@@ -57,6 +57,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.16, Reini Urban, 2013-11-27 11:36:13
 # Version 2.17, Reini Urban, Thu Feb 6 14:04:29 2014 -0600
 # Version 2.18, Reini Urban, 2014-05-28
+# Version 2.19, Reini Urban, 2014-07-09
 
 use strict;
 use warnings;
@@ -71,7 +72,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.18;
+our $VERSION = 2.19;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -331,7 +332,13 @@ sub parse_argv {
     } else {
         $Output = opt('e') ? 'a.out' : $Input;
         $Output =~ s/\.(p[lm]|t)$//;
-        $Output .= 'exe' if is_win32() or $^O eq 'cygwin';
+        if (is_win32() or $^O eq 'cygwin') {
+            if ($Output eq 'a.out') {
+                $Output = 'a.exe';
+            } else {
+                $Output .= 'exe';
+            }
+        }
     }
     $Output = relativize($Output) unless is_win32();
     sanity_check();
