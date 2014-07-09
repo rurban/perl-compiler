@@ -84,6 +84,6 @@ my $todo = ($B::C::VERSION lt '1.42_61') ? "TODO" : "";
 if ($IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984') {
   $todo = "TODO [cpan #95452] bad IO::Socket::SSL $IO::Socket::SSL::VERSION, ";
 }
-$todo = "TODO 5.20" if $] > 5.019;
+$todo = "TODO 5.18 \#356" if $] >= 5.018; # double free or corruption
 $todo = "TODO <5.8.8" if $] < 5.008008;
 ctest(5,$qr,'C,-O3,-UB','ccode95i',$issue, $todo.' run');
