@@ -1099,7 +1099,7 @@ sub B::OP::_save_common {
       push_package($package_pv);
     } else {
       # mostly optimized-away padsv NULL pads with 5.8
-      warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
+      warn "package_pv for method_name not found\n" if $debug{cv};
     }
   }
   # $prev_op = $op;
@@ -2584,7 +2584,7 @@ sub patch_dlsym {
     $pkg = $stash->can('NAME') ? $stash->NAME : '';
   }
   my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
-
+  my $ivxhex = sprintf("0x%x", $ivx);
   # Encode RT #94221
   if ($name =~ /encoding$/ and $Encode::VERSION eq '2.58') {
     $name =~ s/-/_/g;
@@ -2647,7 +2647,7 @@ sub patch_dlsym {
       if ($name) {
         warn "$pkg $Encode::VERSION remap found for constant $name\n" if $verbose;
       } else {
-        warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+        warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivxhex [#305]\n";
       }
     }
   }
@@ -2664,7 +2664,7 @@ sub patch_dlsym {
     if ($fullname eq 'svop const') {
       $name = "ascii_encoding";
       $pkg = 'Encode' unless $pkg;
-      warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
+      warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivxhex [RT #94069]\n";
     }
   }
   elsif ($pkg eq 'Net::LibIDN') {
@@ -2675,11 +2675,11 @@ sub patch_dlsym {
   if ($pkg and $name and $name =~ /^[a-zA-Z_0-9-]+$/) { # valid symbol name
     warn "Remap IOK|POK $pkg with $name\n" if $verbose;
     save_remap($pkg, $pkg, $name, $ivx, 0);
-    $ivx = "0UL /* $ivx => $name */";
+    $ivx = "0UL /* $ivxhex => $name */";
     mark_package($pkg, 1) if $fullname =~ /^(svop const|padop)/;
   }
   else {
-    warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+    warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivxhex [#305]\n";
   }
   return $ivx;
 }
