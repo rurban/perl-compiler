@@ -11,7 +11,7 @@ use Test::More tests => 9;
 use Config;
 my $i=0;
 
-my $todo = <<'EOF';
+my $todo = <<'EOS';
 # === compiled ===
 my ($pid, $out, $in);
 BEGIN {
@@ -29,7 +29,7 @@ kill 0, $pid; 			     # BAD! warn? die? how?
 read $in, my $x, 4;
 print 'k' if 'test' eq $x;
 unlink 'pcc.tmp';
-EOF
+EOS
 
 my $ok = <<'EOF';
 my $out;open($out,'>&STDOUT');print $out qq(ok\n);
