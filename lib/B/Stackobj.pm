@@ -408,7 +408,7 @@ sub B::Stackobj::Const::load_int {
 
 sub B::Stackobj::Const::load_double {
   my $obj = shift;
-  if ( ref( $obj->{obj} ) eq "B::RV" ) {
+  if ( ref( $obj->{obj} ) eq "B::RV" or ($] >= 5.011 and $obj->{obj}->FLAGS & SVf_ROK)) {
     $obj->{nv} = $obj->{obj}->RV->PV + 0.0;
   }
   else {
@@ -419,7 +419,7 @@ sub B::Stackobj::Const::load_double {
 
 sub B::Stackobj::Const::load_str {
   my $obj = shift;
-  if ( ref( $obj->{obj} ) eq "B::RV" ) {
+  if ( ref( $obj->{obj} ) eq "B::RV" or ($] >= 5.011 and $obj->{obj}->FLAGS & SVf_ROK)) {
     $obj->{sv} = $obj->{obj}->RV;
   }
   else {
