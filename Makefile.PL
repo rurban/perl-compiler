@@ -84,9 +84,9 @@ sub write_b_c_flags {
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
 my $unicode_warning =
-         "  Perl handling of new unicode identifiers - package and symbol names - \n".
-	 "  without proper TR39 handling is considered a security risc and is not fully supported.\n".
-	 "  See http://websec.github.io/unicode-security-guide/\n\n";
+         "  Perl handling of new unicode and binary identifiers - package and symbol names - \n".
+	 "  without proper \0 and TR39 handling is considered a security risc and is not fully\n".
+	 "  supported upstream. See http://websec.github.io/unicode-security-guide/\n\n";
 if ($] > 5.015005 and $] < 5.019004) {
     # We do not want to support binary identifiers. safesyscalls with 5.019004 should be enabled
     warn "Warning: Bad perl version $]\n".
@@ -115,6 +115,8 @@ WriteMakefile(
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
+    (($] < 5.010) ? # was in core until 5.10, need to update it there
+     ('INSTALLDIRS' => 'perl') : ()),
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
         "    B::Flags:  0.04\n".
