@@ -1025,6 +1025,7 @@ sub todo_tests_default {
     push @todo, (42..43) if $] < 5.012;
     if ($what =~ /^c(|_o[1-4])$/) {
         # a regression
+	push @todo, (41)  if $] < 5.007; #regressions
         push @todo, (12)  if $what eq 'c_o3' and !$ITHREADS and $] >= 5.008009 and $] < 5.010;
 
         push @todo, (48)  if $what eq 'c_o4' and $ITHREADS;
@@ -1043,6 +1044,7 @@ sub todo_tests_default {
 	# solaris also. I suspected nvx<=>cop_seq_*
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
+        push @todo, (27)    if $] > 5.008008 and $] < 5.009 and !$ITHREADS;
 	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
         push @todo, (12,19,25) if $] >= 5.019;
