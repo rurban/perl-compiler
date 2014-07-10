@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.47_03 f8020ad 2014-07-04 | C: &&/and against a minor linting warning
+# B::C::VERSION = 1.48 ba82e13 2014-07-09 | C: add 5.21.2 op_lastsib support without -DPERL_OP_PARENT yet
 # perlversion = 5.006002-nt
 # path = /usr/local/bin/perl5.6.2-nt
 # platform = linux 64bit non-threaded
@@ -67,7 +67,7 @@ pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
 fail Moose #TODO 5.6
-fail Test::Deep
+fail Test::Deep #TODO 5.6
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -77,7 +77,7 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-fail FCGI
+fail FCGI #TODO 5.6
 pass Tree::DAG_Node
 skip Path::Class
 fail Test::Warn #TODO 5.6
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 94 / 100 modules tested with B-C-1.47_03 - perl-5.006002-nt
+# 94 / 100 modules tested with B-C-1.48 - perl-5.006002-nt
 # pass  82 /  94 (87.2%)
 # fail  12 /  94 (12.8%)
-# todo  12 /  12 (100.0%)
+# todo  14 /  12 (116.7%)
 # skip   6 / 100 (6.0% not installed)
