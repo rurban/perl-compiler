@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 c3d550f 2014-07-09 | perlcc 2.19: fix default output name to a.exe
+# B::C::VERSION = 1.48 c066c38 2014-07-10 | another module update run
 # perlversion = 5.010001-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded

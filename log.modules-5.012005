@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 af83529 2014-07-09 | t CORE--mro--isarev==BADTEST-353.t
+# B::C::VERSION = 1.48 c066c38 2014-07-10 | another module update run
 # perlversion = 5.012005
 # path = /usr/local/bin/perl5.12.5
 # platform = linux 64bit threaded

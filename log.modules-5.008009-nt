@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 eb6e7a3 2014-07-09 | t/test.pl: protect even c*.t .pl source files
+# B::C::VERSION = 1.48 c066c38 2014-07-10 | another module update run
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit non-threaded

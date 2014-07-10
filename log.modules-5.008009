@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 4f3ba9c 2014-07-09 | TODO t/issue274.t. also reappeared with the default cygwin perl5.14.2
+# B::C::VERSION = 1.48 c066c38 2014-07-10 | another module update run
 # perlversion = 5.008009
 # path = /usr/local/bin/perl5.8.9
 # platform = linux 64bit threaded
