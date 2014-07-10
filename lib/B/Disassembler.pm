@@ -326,6 +326,10 @@ sub print_insn {
     elsif ( !$comment ) {
       ;
     }
+    elsif ( $insn eq 'comment' ) {
+      $arg .= "comment $arg";
+      $arg .= " \t#" . $comment if $comment ne '1';
+    }
     elsif ( $insn eq 'stpv' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
       printf "# -%s- %d\n", 'PV', $ix++;

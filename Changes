@@ -4,9 +4,12 @@
 	and worked quite fine with Perl 5.6 and 5.8.
 
 1.48 2014-07-11 rurban
-        Fixed C walker and 5.18-5.20 Bytecode
+        Fixed C walker and 5.18-5.20 Bytecode.
+        This is the major version which cPanel will use for 5.14.4. With the next
+        versions we'll start working on -m and buildcc, to split packages into shared libs.
+        And use B::CC and/or rperl compiled modules selectively.
 
-        * C: Make -fwalkall the default. Fixes missing dumped method-only packages (#348)
+        * C: Make revised -fwalkall the default. Fixes missing dumped method-only packages (#348)
         Always save all user-loaded packages. Skip only compiler-loaded packages if
           not used by user code. The compiler loads and dumps now additionally only the
           heavy parts for utf8 and bytes, and utf8 for m///i, and AnyDBM for dbmopen,
@@ -16,9 +19,12 @@
           XS symbols via dlsym (#351)
         Special-case XS loading of Moose.xs from Class::MOP (#350)
         Better fix for mult. match once by checking OP_MATCH with ONCE flags in C.xs also (#274)
+          but there are still some platforms without pmop->op_pmregexp in the C.xs detection runloop
+        Add op_lastsib bit for 5.21.2
         * Stackobj (1.12): Harmonize RV checks (fixes cc 105 -O1 and -O2)
         * Bytecode (1.16): Replace each %hash with foreach keys in walksymtable also (#307)
         Do not store main_cv->START, empty optree since 5.18
+        Add op_lastsib for 5.21.2, but sort still broken with PERL_OP_PARENT
         * Assembler (1.12): error if a PUT method misses an argument
         * perlcc (2.19): -B produces again -H bytecode, runnable without -MByteLoader.
         Fix default output name from a.outexe to a.exe on a windows-based OS.

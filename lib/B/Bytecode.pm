@@ -846,6 +846,9 @@ sub B::OP::bsave_thin {
     if ($] >= 5.019002 and $op->can('folded')) {
       asm "op_folded", $op->folded if $op->folded;
     }
+    if ($] >= 5.021002 and $op->can('lastsib')) {
+      asm "op_lastsib", $op->lastsib if $op->lastsib;
+    }
   }
 }
 
@@ -908,24 +911,29 @@ sub B::LISTOP::bsave {
   my $name = $op->name;
   sub blocksort() { OPf_SPECIAL | OPf_STACKED }
   if ( $name eq 'sort' && ( $op->flags & blocksort ) == blocksort ) {
+    # Note: 5.21.2 PERL_OP_PARENT support work in progress
     my $first    = $op->first;
     my $pushmark = $first->sibling;
     my $rvgv     = $pushmark->first;
     my $leave    = $rvgv->first;
 
     my $leaveix = $leave->ix;
+    #asm "comment", "leave" unless $quiet;
 
     my $rvgvix = $rvgv->ix;
     asm "ldop", $rvgvix unless $rvgvix == $opix;
+    #asm "comment", "rvgv" unless $quiet;
     asm "op_first", $leaveix;
 
     my $pushmarkix = $pushmark->ix;
     asm "ldop", $pushmarkix unless $pushmarkix == $opix;
+    #asm "comment", "pushmark" unless $quiet;
     asm "op_first", $rvgvix;
 
     my $firstix = $first->ix;
     asm "ldop", $firstix unless $firstix == $opix;
-    asm "op_sibling", $pushmarkix;
+    #asm "comment", "first" unless $quiet;
+    asm "op_sibling", $pushmarkix; # if !$first->can('lastsib') or !$first->lastsib;
 
     $op->B::OP::bsave($ix);
     asm "op_first", $firstix;
@@ -946,11 +954,15 @@ sub B::LISTOP::bsave {
 
 sub B::OP::bsave_fat {
   my ( $op, $ix ) = @_;
-  my $siblix = $op->sibling->ix;
 
-  $op->B::OP::bsave_thin($ix);
-  asm "op_sibling", $siblix;
-
+  my $sibling = $op->sibling;
+  #if (!$op->can('lastsib') or !$op->lastsib) { # PERL_OP_PARENT
+    my $siblix = $sibling->ix;
+    $op->B::OP::bsave_thin($ix);
+    asm "op_sibling", $siblix;
+  #} else {
+  #  $op->B::OP::bsave_thin($ix);
+  #}
   # asm "op_seq", -1;			XXX don't allocate OPs piece by piece
 }
 
