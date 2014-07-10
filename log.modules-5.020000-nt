@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 6d90ed2 2014-07-08 | C: bump to 1.48
+# B::C::VERSION = 1.48 8bd023b 2014-07-09 | module test updates for 1.48
 # perlversion = 5.020000-nt
 # path = /usr/local/bin/perl5.20.0-nt
 # platform = linux 64bit non-threaded
@@ -84,16 +84,16 @@ pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope #TODO 5.19 without threads
+pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
-pass namespace::clean #TODO 5.19 without threads
+pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types #TODO 5.19 without threads
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -105,5 +105,5 @@ pass Template::Stash
 # 100 / 100 modules tested with B-C-1.48 - perl-5.020000-nt
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
-# todo   4 /   1 (400.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)

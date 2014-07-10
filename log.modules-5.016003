@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 6d90ed2 2014-07-08 | C: bump to 1.48 M
+# B::C::VERSION = 1.48 8bd023b 2014-07-09 | module test updates for 1.48
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
