@@ -5930,7 +5930,7 @@ _EOT9
         #print "\tPUTBACK;\n";
       } else {
         warn "no dl_init for $stashname, ".
-          (!$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n")
+          (!$xsub{$stashname} ? "not bootstrapped\n" : "bootstrapped as $xsub{$stashname}\n")
 	    if $verbose;
 	# XXX Too late. This might fool run-time DynaLoading.
 	# We really should remove this via init from @DynaLoader::dl_modules
