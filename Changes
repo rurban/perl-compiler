@@ -21,6 +21,9 @@
         Better fix for mult. match once by checking OP_MATCH with ONCE flags in C.xs also (#274)
           but there are still some platforms without pmop->op_pmregexp in the C.xs detection runloop
         Add op_lastsib bit for 5.21.2
+        Changed IO::Socket::SSL warning as our patch was rejected upstream.
+          Need to maintain now a fork cPanel::IO::Socket::SSL to be able to use compiled
+          IO::Socket::SSL servers. (#317)
         * Stackobj (1.12): Harmonize RV checks (fixes cc 105 -O1 and -O2)
         * Bytecode (1.16): Replace each %hash with foreach keys in walksymtable also (#307)
         Do not store main_cv->START, empty optree since 5.18
