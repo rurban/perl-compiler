@@ -3354,13 +3354,11 @@ sub B::CV::save {
   }
 
   if ($fullname eq 'IO::Socket::SSL::SSL_Context::new') {
-    if ($IO::Socket::SSL::VERSION ge '1.956') {
-      # Unhelpful upstream maintainer. Needed to fork it.
+    if ($IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.995') {
       # See https://code.google.com/p/perl-compiler/issues/detail?id=317
       # https://rt.cpan.org/Ticket/Display.html?id=95452
-      # https://github.com/noxxi/p5-io-socket-ssl/pull/13
       warn "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is unsupported to create\n".
-           "  a server. You need to use cPanel::IO::Socket::SSL instead [CPAN #95452]\n";
+           "  a server. You need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]\n";
     }
   }
 
