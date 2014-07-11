@@ -140,7 +140,7 @@ WriteMakefile(
                        },
                       }
     ) : ()),
-    SIGN  => 1,
+    SIGN  => 0,
     clean => { FILES =>
                "bytecode[0-9]* ".
                "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* ".
