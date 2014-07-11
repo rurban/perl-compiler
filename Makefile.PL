@@ -84,9 +84,9 @@ sub write_b_c_flags {
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
 my $unicode_warning =
-         "  Perl handling of new unicode and binary identifiers - package and symbol names - \n".
-	 "  without proper \0 and TR39 handling is considered a security risc and is not fully\n".
-	 "  supported upstream. See http://websec.github.io/unicode-security-guide/\n\n";
+         "  Perl handling of new unicode identifiers - package and symbol names - \n".
+	 "  without proper TR39 handling is considered a security risc and is not fully supported.\n".
+	 "  See http://websec.github.io/unicode-security-guide/\n\n";
 if ($] > 5.015005 and $] < 5.019004) {
     # We do not want to support binary identifiers. safesyscalls with 5.019004 should be enabled
     warn "Warning: Bad perl version $]\n".
@@ -115,8 +115,6 @@ WriteMakefile(
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
-    (($] < 5.010) ? # was in core until 5.10, need to update it there
-     ('INSTALLDIRS' => 'perl') : ()),
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
         "    B::Flags:  0.04\n".
@@ -327,7 +325,6 @@ sub depend {
     my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
     my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
-    my $cc_runtime_h = File::Spec->catfile($headerpath, 'cc_runtime.h');
     my $result = "
 $asmdata : Makefile bytecode.pl @headers
 	\$(PERL) bytecode.pl
@@ -380,16 +377,15 @@ testcore-log :: pure_all
 
 sub install {
     my $result = shift->SUPER::install(@_);
-    if ($] > 5.013007 and !-e File::Spec->catfile($headerpath, 'cc_runtime.h')) {
+    my $headerpath = main::headerpath();
+    my $cc_runtime_h = File::Spec->catfile($headerpath, 'cc_runtime.h');
+    if ($] > 5.013007 and !-e $cc_runtime.h) {
         $result =~ s/install :: pure_install doc_install/install :: pure_install doc_install ccinc_install/;
 	$result .= '
 ccinc_install :: $(PERL_INC)/cc_runtime.h
 
 $(PERL_INC)/cc_runtime.h : cc_runtime.h
-	$(NOECHO) $(MOD_INSTALL) \
-	    	read $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist \
-		write $(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist \
-		cc_runtime.h $@
+	$(NOECHO) $(CP) cc_runtime.h $@
 ';
     }
     $result

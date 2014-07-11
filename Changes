@@ -28,6 +28,7 @@
         * Assembler (1.12): error if a PUT method misses an argument
         * perlcc (2.19): -B produces again -H bytecode, runnable without -MByteLoader.
         Fix default output name from a.outexe to a.exe on a windows-based OS.
+        * Makefile.PL: fix installation of cc_runtime.h for B::CC
 
 1.47 2014-06-11 rurban
         Fixed Bytecode for 5.18. Fully support 5.18 and 5.20 now.
