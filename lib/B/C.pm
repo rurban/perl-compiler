@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.48_01';
+our $VERSION = '1.48_02';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -4796,11 +4796,11 @@ sub B::IO::save_data {
     $init->pre_destruct( sprintf 'eval_pv("close %s;", 1);', $globname );
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
     require PerlIO unless $savINC{'PerlIO.pm'};
-    require PerlIO::scalar unless $savINC{'PerlIO/Scalar.pm'};
+    require PerlIO::scalar unless $savINC{'PerlIO/scalar.pm'};
     mark_package("PerlIO", 1);
-    # $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
+    $curINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
     mark_package("PerlIO::scalar", 1);
-    # $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
+    $curINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
     $xsub{'PerlIO::scalar'} = 'Dynamic-'.$INC{'PerlIO/scalar.pm'}; # force dl_init boot
   }
 }
