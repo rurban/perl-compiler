@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.49 2014-07-?? rurban
+1.49 2014-07-12 rurban
         * C: Changed IO::Socket::SSL warning to recommend >= 1.995.
           1.996 even has some perlcc specific usage documentation (#317)
 	Fix PerlIO::scalar XS bootstrap forced by __DATA__ (#360)
