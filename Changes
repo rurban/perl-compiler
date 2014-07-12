@@ -3,6 +3,10 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.49 2014-07-?? rurban
+        * C: Changed IO::Socket::SSL warning to recommend >= 1.995.
+        1.996 even has some perlcc specific usage documentation (#317)
+
 1.48 2014-07-11 rurban
         Fixed C walker and 5.18-5.20 Bytecode.
         This is the major version which cPanel will use for 5.14.4. With the next

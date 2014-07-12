@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.48';
+our $VERSION = '1.48_01';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -3358,7 +3358,7 @@ sub B::CV::save {
       # See https://code.google.com/p/perl-compiler/issues/detail?id=317
       # https://rt.cpan.org/Ticket/Display.html?id=95452
       warn "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is unsupported to create\n".
-           "  a server. You need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]\n";
+           "  a server. You need to upgrade IO::Socket::SSL to at least 1.995 [CPAN #95452]\n";
     }
   }
 
