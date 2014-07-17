@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49';
+our $VERSION = '1.49_01';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -3298,7 +3298,7 @@ sub B::CV::save {
     return svref_2object( \&Dummy_initxs )->save;
   }
 
-  if ($isconst and !($CvFLAGS & CVf_ANON)) {
+  if ($isconst and !($CvFLAGS & CVf_ANON)) { # XXX how is ANON with CONST handled? CONST uses XSUBANY
     my $stash = $gv->STASH;
     warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
       if $debug{cv};
@@ -3524,7 +3524,7 @@ sub B::CV::save {
     #  if $debug{cv};
     # XXX missing cv_start for AUTOLOAD on 5.8
     $startfield = objsym($root->next) unless $startfield; # 5.8 autoload has only root
-    $startfield = "0" unless $startfield;
+    $startfield = "0" unless $startfield; # XXX either CONST ANON or empty body
     if ($$padlist) {
       # XXX readonly comppad names and symbols invalid
       #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
@@ -4248,6 +4248,33 @@ sub B::GV::save {
 	  else {
             $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
 	  }
+          if ($gvcv->XSUBANY) {
+            # some XSUB's set this field. but which part?
+            my $xsubany = $gvcv->XSUBANY;
+            if ($package =~ /^DBI::(common|db|dr|st)/) {
+              # DBI uses the any_ptr for dbi_ima_t *ima, and all dr,st,db,fd,xx handles
+              # for which several ptrs need to be patched. #359
+              # the ima is internal only
+              my $dr = $1;
+              warn sprintf("eval_pv: DBI->_install_method(%s-) (XSUBANY=0x%x)\n",
+                           $fullname, $xsubany) if $verbose and $debug{cv};
+              $init2->add_eval(sprintf("DBI->_install_method('%s', 'DBI.pm', \$DBI::DBI_methods{%s}{%s})",
+                                       $fullname, $dr, $fullname));
+            } else {
+              # try if it points to an already registered symbol
+              my $anyptr = $symtable{ sprintf( "s\\_%x", $xsubany ) };
+              if ($anyptr) {
+                $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &s;", $anyptr ));
+              } # some heuristics TODO. long or ptr?
+              elsif ($xsubany > 0x100000 and ($xsubany < 0xffffff00 or $xsubany > 0x1ffffffff))
+              {
+                warn sprintf("TODO: Skipping %s->XSUBANY = 0x%x\n", $fullname, $xsubany ) if $verbose;
+                $init2->add( sprintf( "/* TODO CvXSUBANY(GvCV($sym)).any_ptr = 0x%lx; */", $xsubany ));
+              } else {
+                $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_long = 0x%lx;", $xsubany ));
+              }
+            }
+          }
 	}
 	elsif ($cvsym =~ /^(cv|&sv_list)/) {
           $init->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));

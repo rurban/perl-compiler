@@ -854,6 +854,7 @@ t/mymodules
 t/o.t
 t/perlall-modules.sh
 t/perldoc.t
+t/pg.pl
 t/qr_loaded_module.pm
 t/regex-dna.pl
 t/release-testing.sh
