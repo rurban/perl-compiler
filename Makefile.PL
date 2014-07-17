@@ -115,6 +115,8 @@ WriteMakefile(
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
+    (($] < 5.010) ? # was in core until 5.10, need to update it there
+     ('INSTALLDIRS' => 'perl') : ()),
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
         "    B::Flags:  0.04\n".
