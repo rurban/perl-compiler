@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 c066c38 2014-07-10 | another module update run
+# B::C::VERSION = 1.49_01 ef491cb 2014-07-17 | C 1.49_01: fix DBI #359
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.48 - perl-5.014004-nt
+# 100 / 100 modules tested with B-C-1.49_01 - perl-5.014004-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

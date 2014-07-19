@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 8bd023b 2014-07-09 | module test updates for 1.48
+# B::C::VERSION = 1.49_01 ef491cb 2014-07-17 | C 1.49_01: fix DBI #359
 # perlversion = 5.020000-nt
 # path = /usr/local/bin/perl5.20.0-nt
 # platform = linux 64bit non-threaded
@@ -65,7 +65,7 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
+fail Class::MOP
 pass Moose
 pass Test::Deep
 pass Carp::Clan
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.48 - perl-5.020000-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
+# 100 / 100 modules tested with B-C-1.49_01 - perl-5.020000-nt
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   1 /   2 (50.0%)
 # skip   0 / 100 (0.0% not installed)
