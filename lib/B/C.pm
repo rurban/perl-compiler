@@ -808,7 +808,8 @@ sub save_pv_or_rv {
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
     $static = 0 if $shared_hek
       or ($fullname and ($fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/)));
-    $static = 0 if $B::C::const_strings and $fullname and $fullname =~ /^warnings::(Dead)?Bits/;
+    $static = 0 if $B::C::const_strings and $fullname and
+      ($fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/);
     if ($shared_hek and $pok and !$cur) { #272 empty key
       warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
       $savesym = "emptystring";
