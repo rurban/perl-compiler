@@ -74,8 +74,11 @@ SKIP: {
   ok(-e 'pcc.c.lst', "keep pcc.c.lst with -S");
   cleanup;
 
-  is(`$perlcc --staticxs -S -o pcc -O3 -r -e "print q(ok)"  $devnull`, "ok",
-     "-S -o -r --staticxs without xs");
+ TODO: {
+    local $TODO = '5.18 darwin' if $] >= 5.018 and $^O eq 'darwin';
+    is(`$perlcc --staticxs -S -o pcc -O3 -r -e "print q(ok)"  $devnull`, "ok", #21
+       "-S -o -r --staticxs without xs");
+  }
  TODO: {
     local $TODO = '5.18' if $] >= 5.018;
     ok(! -e 'pcc.c.lst', "no pcc.c.lst without xs"); #22
