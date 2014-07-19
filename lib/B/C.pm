@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_02';
+our $VERSION = '1.49_03';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -4269,7 +4269,7 @@ sub B::GV::save {
               if ($anyptr) {
                 $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &s;", $anyptr ));
               } # some heuristics TODO. long or ptr?
-              elsif ($xsubany > 0x100000 and ($xsubany < 0xffffff00 or $xsubany > 0x1ffffffff))
+              elsif ($xsubany > 0x100000 and ($xsubany < 0xffffff00 or $xsubany > 0x100000000))
               {
                 warn sprintf("TODO: Skipping %s->XSUBANY = 0x%x\n", $fullname, $xsubany ) if $verbose;
                 $init2->add( sprintf( "/* TODO CvXSUBANY(GvCV($sym)).any_ptr = 0x%lx; */", $xsubany ));
@@ -5839,9 +5839,11 @@ _EOT9
     if ($stashname eq 'attributes' and $] > 5.011) {
       $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
     }
-    # TODO: special Moose bootstrap quirks (XS since which version?)
-    if ($stashname eq 'Moose' and $include_package{Moose} and $Moose::VERSION gt '2.0') {
-      $xsub{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
+    # XXX special Moose bootstrap quirks (XS since which version?)
+    if ($stashname eq 'Moose'
+        and ($include_package{Moose} or $include_package{'Class::MOP'}))
+    {
+      $xsub{$stashname} = 'Dynamic-' . $savINC{'Moose.pm'};
     }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
