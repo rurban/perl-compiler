@@ -15,10 +15,12 @@ use strict;
 use warnings;
 use IO::Socket;
 my $remote = IO::Socket::INET->new( Proto => "tcp", PeerAddr => "perl.org", PeerPort => "80" );
-print $remote "GET / HTTP/1.0" . "\r\n\r\n";
-my $result = <$remote>;
-$result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
-close $remote;
+if ($remote) {
+  print $remote "GET / HTTP/1.0" . "\r\n\r\n";
+  my $result = <$remote>;
+  $result =~ m|HTTP/1.1 200 OK| ? print "ok" : print $result;
+  close $remote;
+}
 EOF
 
 open F, "> $name.pl";
@@ -31,7 +33,7 @@ my $q = $] < 5.008001 ? "" : "-qq,";
 my $result = qx($runperl $name.pl);
 my $canconnect = $result eq $expected ? 1 : 0;
 
-my $cmt = ($canconnect ? "" : "TODO ") ."connect to http://perl.org:80 via IO::Socket";
+my $cmt = ($canconnect ? "" : "TODO ") ."BC connect to http://perl.org:80 via IO::Socket";
 plctestok(1, $name, $script, $cmt);
 
 SKIP: {
