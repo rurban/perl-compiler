@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_01';
+our $VERSION = '1.49_02';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -2824,20 +2824,23 @@ sub B::PVMG::save_magic {
     if ($$pkg) {
       warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
         if $debug{mg} or $debug{gv};
+      # 361 do not force dynaloading IO via IO::Handle upon us
+      # core already initialized this stash for us
+      unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
+        $pkg->save($fullname) ;
 
-      $pkg->save($fullname);
-
-      no strict 'refs';
-      warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
-        if $debug{mg} or $debug{gv};
-      # Q: Who is initializing our stash from XS? ->save is missing that.
-      # A: We only need to init it when we need a CV
-      # defer for XS loaded stashes with AMT magic
-      $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-      $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-      $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-      # XXX
-      #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+        no strict 'refs';
+        warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
+          if $debug{mg} or $debug{gv};
+        # Q: Who is initializing our stash from XS? ->save is missing that.
+        # A: We only need to init it when we need a CV
+        # defer for XS loaded stashes with AMT magic
+        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+        $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+        $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+        # XXX
+        #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+      }
     }
   }
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
@@ -6317,6 +6320,7 @@ sub mark_package {
   return if skip_pkg($package); # or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
+    warn "mark_package($package, $force)\n" if $verbose and $debug{pkg};
     my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
     mark_package('IO') if grep { $package eq $_ } @IO;
     mark_package("DynaLoader") if $package eq 'XSLoader';
