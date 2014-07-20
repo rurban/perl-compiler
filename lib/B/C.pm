@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_03';
+our $VERSION = '1.49_04';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -1442,7 +1442,8 @@ sub B::PVOP::save {
       $cur = length $pv;
     }
   }
-  $init->add( sprintf( "pvop_list[$ix].op_pv = savepvn(%s, %u);", cstring( $pv ), $cur ) );
+  # do not use savepvn here #362
+  $init->add( sprintf( "pvop_list[$ix].op_pv = savesharedpvn(%s, %u);", cstring($pv), $cur ));
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
@@ -1821,11 +1822,15 @@ sub B::COP::save {
   if ($PERL510 and !$is_special) {
     my $copw = $warn_sv;
     $copw =~ s/^\(STRLEN\*\)&//;
-    # on cv_undef (scope exit, die, ...) CvROOT and all its kids are freed.
-    # lexical cop_warnings need to be dynamic, but just the ptr to the static string.
+    # on cv_undef (scope exit, die, Attribute::Handler, ...) CvROOT and kids are freed.
+    # so lexical cop_warnings need to be dynamic.
     if ($copw) {
-      my $cop = "cop_list[$ix]";
-      $init->add("$cop.cop_warnings = (STRLEN*)savepvn((char*)&".$copw.", sizeof($copw));");
+      my $dest = "cop_list[$ix].cop_warnings";
+      # with DEBUGGING savepvn returns ptr + PERL_MEMORY_DEBUG_HEADER_SIZE
+      # which is not the address which will be freed in S_cop_free.
+      # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
+      # lexwarn<n> might be also be STRLEN* 0
+      $init->add("if ($copw) $dest = (STRLEN*)savesharedpvn((const char*)$copw, sizeof($copw));");
     }
   } else {
     $init->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
@@ -2080,7 +2085,7 @@ sub B::NULL::save {
   #$svsect->debug( $fullname, $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
   if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
     # $svsect->debug( "ix added to sv_debug_file" );
-    $init->add(sprintf(qq(sv_list[%d].sv_debug_file = savepv("NULL sv_list[%d] 0x%x");),
+    $init->add(sprintf(qq(sv_list[%d].sv_debug_file = savesharedpv("NULL sv_list[%d] 0x%x");),
 		       $svsect->index, $svsect->index, $sv->FLAGS));
   }
   savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
@@ -5336,32 +5341,35 @@ _EOT1
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
 
-/* Since 5.8.8 */
-#ifndef Newx
-#define Newx(v,n,t)    New(0,v,n,t)
-#endif
 /* No longer available when C<PERL_CORE> is defined. */
 #ifndef Nullsv
-#define Null(type) ((type)NULL)
-#define Nullsv Null(SV*)
-#define Nullhv Null(HV*)
-#define Nullgv Null(GV*)
-#define Nullop Null(OP*)
+#  define Null(type) ((type)NULL)
+#  define Nullsv Null(SV*)
+#  define Nullhv Null(HV*)
+#  define Nullgv Null(GV*)
+#  define Nullop Null(OP*)
 #endif
 #ifndef GV_NOTQUAL
-#define GV_NOTQUAL 0
+#  define GV_NOTQUAL 0
 #endif
-
-#define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
-EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
-
-static void xs_init (pTHX);
-static void dl_init (pTHX);
+/* Since 5.8.8 */
+#ifndef Newx
+#  define Newx(v,n,t)    New(0,v,n,t)
+#endif
 _EOT2
 
   if ($] < 5.008008) {
     print "#define GvSVn(s) GvSV(s)\n";
   }
+
+  print <<'_EOT4';
+#define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
+EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
+
+static void xs_init (pTHX);
+static void dl_init (pTHX);
+_EOT4
+
   if ($B::C::av_init2 and $B::C::Flags::use_declare_independent_comalloc) {
     print "void** dlindependent_comalloc(size_t, size_t*, void**);\n";
   }
@@ -5388,7 +5396,7 @@ _EOT2
     }
   }
   if ( !$B::C::destruct ) {
-    print <<'__EOT';
+    print <<'_EOT4';
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
@@ -5399,12 +5407,20 @@ static void my_curse( pTHX_ SV* const sv );
 #  define dVAR		dNOOP
 # endif
 #endif
-__EOT
+_EOT4
 
   } else {
-    print <<'__EOT';
+    print <<'_EOT5';
 int my_perl_destruct( PerlInterpreter *my_perl );
-__EOT
+_EOT5
+
+  }
+  if ($] < 5.008009) {
+    print <<'_EOT3';
+#ifndef savesharedpvn
+char *savesharedpvn(const char *const s, const STRLEN len);
+#endif
+_EOT3
 
   }
 }
@@ -5413,21 +5429,21 @@ sub init_op_addr {
   my ( $op_type, $num ) = @_;
   my $op_list = $op_type . "_list";
 
-  $init0->add( split /\n/, <<_EOT3 );
+  $init0->add( split /\n/, <<_EOT6 );
 {
     register int i;
     for( i = 0; i < ${num}; ++i ) {
         ${op_list}\[i].op_ppaddr = PL_ppaddr[PTR2IV(${op_list}\[i].op_ppaddr)];
     }
 }
-_EOT3
+_EOT6
 
 }
 
 sub output_main_rest {
 
   if ( $PERL510 ) {
-    print <<'_EOT5';
+    print <<'_EOT7';
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
@@ -5436,11 +5452,25 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     return Perl_share_hek(aTHX_ str, len, hash);
 }
 
-_EOT5
+_EOT7
+  }
+
+  if ($] < 5.008009) {
+    print <<'_EOT7a';
+#ifndef savesharedpvn
+char *savesharedpvn(const char *const s, const STRLEN len) {
+  char *const d = (char*)PerlMemShared_malloc(len + 1);
+  if (!d) { exit(1); }
+  d[len] = '\0';
+  return (char *)memcpy(d, s, len);
+}
+#endif
+_EOT7a
+
   }
   # -fno-destruct only >=5.8
   if ( !$B::C::destruct ) {
-    print <<'_EOT6';
+    print <<'_EOT8';
 
 #ifndef SvDESTROYABLE
 #define SvDESTROYABLE(sv) 1
@@ -5665,7 +5695,7 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #endif
     return 0;
 }
-_EOT6
+_EOT8
 
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
