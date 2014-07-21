@@ -247,11 +247,20 @@ its C output).
 
 Outputs each OP as it's compiled
 
-=item B<-Ds>
+=item B<-DT>
 
-Outputs the contents of the shadow stack at each OP
+Outputs the contents of the B<stack> at each OP.
+Values are B::Stackobj objects.
 
-=item B<-Dp>
+=item B<-Dc>
+
+Outputs the contents of the loop B<context stack>, the @cxstack.
+
+=item B<-Dw>
+
+Outputs the contents of the B<shadow> stack at each OP.
+
+=item B<-Da>
 
 Outputs the contents of the shadow pad of lexicals as it's loaded for
 each sub or the main program.
@@ -283,7 +292,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.15';
+our $VERSION = '1.16';
 
 # Start registering the L<types> namespaces.
 $main::int::B_CC = $main::num::B_CC = $main::str::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
@@ -1148,6 +1157,11 @@ sub load_pad {
       }
     }
     $name = "${ix}_$name";
+    # comppadname bug with overlong strings
+    if ($] < 5.008008 and length($name) > 100 and $name =~ /\0\0/) {
+      my $i = index($name,"\0");
+      $name = substr($name,0,$i) if $i > -1;
+    }
     $pad[$ix] =
       B::Stackobj::Padsv->new( $type, $flags, $ix, "i$name", "d$name" );
 

@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_04';
+our $VERSION = '1.49_05';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -793,6 +793,16 @@ sub save_pv_or_rv {
     if ($pok) {
       $pv = pack "a*", $sv->PV;
       $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length($pv);
+      # comppadname bug with overlong strings
+      if ($] < 5.008008 and $cur > 100 and $fullname =~ / :pad\[0\]/ and $pv =~ /\0\0/) {
+        my $i = index($pv,"\0");
+        if ($i > -1) {
+          $pv = substr($pv,0,$i);
+          $cur = $i;
+          warn "Warning: stripped wrong comppad name for $fullname to ".cstring($pv)."\n"
+            if $verbose;
+        }
+      }
     } else {
       if ($gmg && $fullname) {
 	no strict 'refs';

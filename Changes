@@ -3,14 +3,16 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.50 2014-07-?? rurban
+1.50 2014-07-23 rurban
         * C: fix DBI, special case DBI_MAGIC, call DBI->_install_method to
 	  re-initialize compile-time internal ima pointers (#359)
 	Skip saving %IO::Handle for *STDOUT, which bloated 5.18 (#361)
-+ 	Fix XS boot of Class::MOP without Moose
+ 	Fix XS boot of Class::MOP without Moose
 	Use the system malloc for data being system free'd: cop_warnings,
 	  PMOP->op_pv, sv_debug_file, needed for certain DEBUGGING options.
 	  Fixes Attribute::Handler free errors (#362)
+ 	Strip binary BM chunk from comppad names < 5.8.8 (#363)
+        * CC (1.16): Strip binary BM chunk from comppad names (CC names) < 5.8.8 (#363)
         * Makefile.PL: Install into archlib on 5.8 and 5.6 (#358)
 
 1.49 2014-07-12 rurban
