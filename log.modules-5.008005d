@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.47_03 11ad780 2014-07-03 | C: fix remaining t/CORE/op/magic-27839.t regression
+# B::C::VERSION = 1.49_03 e895b26 2014-07-19 | Fix invalid free of Net::SSLeay::ERROR_WANT_WRITE (95)
 # perlversion = 5.008005d
 # path = /usr/local/bin/perl5.8.5d
 # platform = linux 64bit threaded debug
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.47_03 - perl-5.008005d
+# 100 / 100 modules tested with B-C-1.49_03 - perl-5.008005d
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
