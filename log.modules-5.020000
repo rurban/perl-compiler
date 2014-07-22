@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 6d90ed2 2014-07-08 | C: bump to 1.48
+# B::C::VERSION = 1.49_05 b9247a3 2014-07-21 | C 1.49_05/CC 1.16: strip binary BM chunk from bad comppad names
 # perlversion = 5.020000
 # path = /usr/local/bin/perl5.20.0
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.48 - perl-5.020000
+# 100 / 100 modules tested with B-C-1.49_05 - perl-5.020000
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
 # todo   1 /   1 (100.0%)

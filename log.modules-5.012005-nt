@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 c3d550f 2014-07-09 | perlcc 2.19: fix default output name to a.exe
+# B::C::VERSION = 1.49_05 b9247a3 2014-07-21 | C 1.49_05/CC 1.16: strip binary BM chunk from bad comppad names M
 # perlversion = 5.012005-nt
 # path = /usr/local/bin/perl5.12.5-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.48 - perl-5.012005-nt
+# 100 / 100 modules tested with B-C-1.49_05 - perl-5.012005-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()

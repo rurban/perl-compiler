@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.48 c3d550f 2014-07-09 | perlcc 2.19: fix default output name to a.exe
+# B::C::VERSION = 1.49_05 b9247a3 2014-07-21 | C 1.49_05/CC 1.16: strip binary BM chunk from bad comppad names M
 # perlversion = 5.010001d
 # path = /usr/local/bin/perl5.10.1d
 # platform = linux 64bit threaded debug
@@ -49,7 +49,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-fail Attribute::Handlers #TODO 5.10.1d with threads
+pass Attribute::Handlers #TODO 5.10.1d with threads
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.48 - perl-5.010001d
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
+# 100 / 100 modules tested with B-C-1.49_05 - perl-5.010001d
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   1 /   0 ()
 # skip   0 / 100 (0.0% not installed)

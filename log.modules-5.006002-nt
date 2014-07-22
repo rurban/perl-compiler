@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.49_03 e895b26 2014-07-19 | Fix invalid free of Net::SSLeay::ERROR_WANT_WRITE (95)
+# B::C::VERSION = 1.49_05 b9247a3 2014-07-21 | C 1.49_05/CC 1.16: strip binary BM chunk from bad comppad names M
 # perlversion = 5.006002-nt
 # path = perl5.6.2-nt
 # platform = linux 64bit non-threaded
@@ -13,7 +13,7 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-fail Test::Simple #TODO 5.6
+pass Test::Simple #TODO 5.6
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
@@ -23,36 +23,36 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
-skip ExtUtils::ParseXS
+fail ExtUtils::CBuilder
+pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
-skip Digest::MD5
+pass Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-fail Test::Exception #TODO 5.6
+pass Test::Exception #TODO 5.6
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
 pass LWP
-fail Storable #TODO 5.6
+pass Storable #TODO 5.6
 pass base
 pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-fail Test::Tester #TODO 5.6
+pass Test::Tester #TODO 5.6
 pass Sub::Install
 pass Attribute::Handlers
-pass Data::OptList
-pass Sub::Exporter
-fail Test::NoWarnings #TODO 5.6
+fail Data::OptList
+fail Sub::Exporter
+pass Test::NoWarnings #TODO 5.6
 pass version
 pass Params::Validate
 pass Sub::Name #TODO 5.6
@@ -67,9 +67,9 @@ pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
 fail Moose #TODO 5.6
-skip Test::Deep
+pass Test::Deep #TODO 5.6
 pass Carp::Clan
-skip Module::Pluggable
+pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
 pass DBI
@@ -77,21 +77,21 @@ pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
-skip FCGI
+fail FCGI #TODO 5.6
 pass Tree::DAG_Node
-pass Path::Class
-fail Test::Warn #TODO 5.6
+skip Path::Class
+pass Test::Warn #TODO 5.6
 skip Encode
 skip Variable::Magic
 pass CGI
 skip B::Hooks::EndOfScope
-fail Test::Pod #TODO 5.6
-skip Digest::SHA1
+pass Test::Pod #TODO 5.6
+pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
 pass Clone
 pass XML::NamespaceSupport
-skip XML::SAX
+pass XML::SAX
 skip YAML
 fail MooseX::Types #TODO 5.6
 pass Class::Singleton
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 88 / 100 modules tested with B-C-1.49_03 - perl-5.006002-nt
-# pass  77 /  88 (87.5%)
-# fail  11 /  88 (12.5%)
-# todo  12 /  11 (109.1%)
-# skip  12 / 100 (12.0% not installed)
+# 94 / 100 modules tested with B-C-1.49_05 - perl-5.006002-nt
+# pass  86 /  94 (91.5%)
+# fail   8 /  94 (8.5%)
+# todo  14 /   8 (175.0%)
+# skip   6 / 100 (6.0% not installed)
