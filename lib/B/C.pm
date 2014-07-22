@@ -5892,11 +5892,14 @@ _EOT9
     if ($stashname eq 'attributes' and $] > 5.011) {
       $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
     }
-    # XXX special Moose bootstrap quirks (XS since which version?)
+    # XXX special Moose bootstrap quirks (XS since which version?) (#350, see #364 for a more general solution)
     if ($stashname eq 'Moose'
         and ($include_package{Moose} or $include_package{'Class::MOP'}))
     {
       $xsub{$stashname} = 'Dynamic-' . $savINC{'Moose.pm'};
+    }
+    if ($stashname eq 'List::MoreUtils' and $include_package{'List::MoreUtils'}) { # 364 hackish workaround
+      $xsub{$stashname} = 'Dynamic-' . $savINC{'List/MoreUtils.pm'};
     }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
@@ -5971,10 +5974,12 @@ _EOT9
 	      svref_2object( \@{$stashname."::ISA"} ) ->save;
 	    }
 	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
+            # TODO #364: if a VERSION was provided need to add it here
 	    print qq/\tcall_pv("XSLoader::load_file", G_VOID|G_DISCARD);\n/;
 	  } else {
 	    printf qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/,
 	      $stashfile if $stashfile;
+            # TODO #364: if a VERSION was provided need to add it here
 	    print qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
 	  }
         }
