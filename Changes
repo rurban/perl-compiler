@@ -7,7 +7,8 @@
         * C: fix DBI, special case DBI_MAGIC, call DBI->_install_method to
           re-initialize compile-time internal ima pointers (#359)
         Skip saving %IO::Handle for *STDOUT, which bloated 5.18 (#361)
-        Fix XS boot of Class::MOP without Moose
+        Fix XS boot of Class::MOP without Moose, and generalize it to other
+          xs-loaded modules, which just call bootstrap Module. (#350, #364)
         Use the system malloc for data being system free'd: cop_warnings,
           PMOP->op_pv, sv_debug_file, needed for certain DEBUGGING options.
           Fixes Attribute::Handler free errors (#362)

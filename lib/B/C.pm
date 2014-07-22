@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_05';
+our $VERSION = '1.49_06';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -5893,13 +5893,18 @@ _EOT9
       $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
     }
     # XXX special Moose bootstrap quirks (XS since which version?) (#350, see #364 for a more general solution)
-    if ($stashname eq 'Moose'
-        and ($include_package{Moose} or $include_package{'Class::MOP'}))
-    {
-      $xsub{$stashname} = 'Dynamic-' . $savINC{'Moose.pm'};
-    }
-    if ($stashname eq 'List::MoreUtils' and $include_package{'List::MoreUtils'}) { # 364 hackish workaround
-      $xsub{$stashname} = 'Dynamic-' . $savINC{'List/MoreUtils.pm'};
+    #if ($stashname eq 'Moose'
+    #    and ($include_package{Moose} or $include_package{'Class::MOP'}))
+    #{
+    #  $xsub{$stashname} = 'Dynamic-' . $savINC{'Moose.pm'};
+    #}
+    #if ($stashname eq 'List::MoreUtils' and $include_package{'List::MoreUtils'}) { # 364 hackish workaround
+    #  $xsub{$stashname} = 'Dynamic-' . $savINC{'List/MoreUtils.pm'};
+    #}
+    # actually boot all non-b-c dependent modules here. we assume XSLoader
+    if (!exists( $xsub{$stashname} ) and $include_package{$stashname}) {
+      warn "Assuming xs loaded $stashname\n" if $verbose;
+      $xsub{$stashname} = 'Dynamic-' . $savINC{$incpack};
     }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
