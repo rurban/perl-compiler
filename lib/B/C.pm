@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_06';
+our $VERSION = '1.49_07';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -2628,19 +2628,15 @@ sub patch_dlsym {
       $name = "ascii_encoding";
     }
 
-    if ($name and $name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
+    if ($name and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION gt '2.58') {
       my $enc = Encode::find_encoding($name);
-      $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
-      $pkg =~ s/^(Encode::\w+)(::.*)/$1/;
-      $name .= "_encoding";
+      $name .= "_encoding" unless $name =~ /_encoding$/;
       $name =~ s/-/_/g;
-      warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
-      if ($fullname eq '(unknown)' and $ITHREADS) {
-        mark_package($pkg, 1);
-        if ($pkg ne 'Encode') {
-          svref_2object( \&{"$pkg\::bootstrap"} )->save;
-          mark_package('Encode', 1);
-        }
+      warn "$pkg $Encode::VERSION with remap support for $name (find 1)\n" if $verbose;
+      mark_package($pkg);
+      if ($pkg ne 'Encode') {
+        svref_2object( \&{"$pkg\::bootstrap"} )->save;
+        mark_package('Encode');
       }
     }
     else {
@@ -2655,12 +2651,10 @@ sub patch_dlsym {
           $name = $n;
           $name =~ s/-/_/g;
           $name .= "_encoding" if $name !~ /_encoding$/;
-          if ($fullname eq '(unknown)' and $ITHREADS) {
-            mark_package($pkg, 1) ;
-            if ($pkg ne 'Encode') {
-              svref_2object( \&{"$pkg\::bootstrap"} )->save;
-              mark_package('Encode', 1);
-            }
+          mark_package($pkg) ;
+          if ($pkg ne 'Encode') {
+            svref_2object( \&{"$pkg\::bootstrap"} )->save;
+            mark_package('Encode');
           }
           last;
         }
@@ -2673,11 +2667,13 @@ sub patch_dlsym {
     }
   }
   # Encode-2.59 uses a different name without _encoding
-  elsif ($name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
+  elsif ($Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
+    my $enc = Encode::find_encoding($name);
+    $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
     $name .= "_encoding";
     $name =~ s/-/_/g;
     $pkg = 'Encode' unless $pkg;
-    warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
+    warn "$pkg $Encode::VERSION with remap support for $name (find 2)\n" if $verbose;
   }
   # now that is a weak heuristic, which misses #305
   elsif (defined ($Net::DNS::VERSION)
@@ -5831,6 +5827,7 @@ _EOT8
     my $incpack = inc_packname($stashname);
     unless (exists $curINC{$incpack}) { # skip deleted packages
       warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+      delete $include_package{$stashname};
       delete $xsub{$stashname} unless $static_ext{$stashname};
       next;
     }
@@ -5892,16 +5889,7 @@ _EOT9
     if ($stashname eq 'attributes' and $] > 5.011) {
       $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
     }
-    # XXX special Moose bootstrap quirks (XS since which version?) (#350, see #364 for a more general solution)
-    #if ($stashname eq 'Moose'
-    #    and ($include_package{Moose} or $include_package{'Class::MOP'}))
-    #{
-    #  $xsub{$stashname} = 'Dynamic-' . $savINC{'Moose.pm'};
-    #}
-    #if ($stashname eq 'List::MoreUtils' and $include_package{'List::MoreUtils'}) { # 364 hackish workaround
-    #  $xsub{$stashname} = 'Dynamic-' . $savINC{'List/MoreUtils.pm'};
-    #}
-    # actually boot all non-b-c dependent modules here. we assume XSLoader
+    # actually boot all non-b-c dependent modules here. we assume XSLoader (Moose, List::MoreUtils)
     if (!exists( $xsub{$stashname} ) and $include_package{$stashname}) {
       warn "Assuming xs loaded $stashname\n" if $verbose;
       $xsub{$stashname} = 'Dynamic-' . $savINC{$incpack};
