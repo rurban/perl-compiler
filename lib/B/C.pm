@@ -4279,18 +4279,30 @@ sub B::GV::save {
                            $fullname, $xsubany) if $verbose and $debug{cv};
               $init2->add_eval(sprintf("DBI->_install_method('%s', 'DBI.pm', \$DBI::DBI_methods{%s}{%s})",
                                        $fullname, $dr, $fullname));
+            } elsif ($package eq 'Tie::Hash::NamedCapture') {
+              # pretty high _ALIAS CvXSUBANY.any_i32 values
             } else {
               # try if it points to an already registered symbol
               my $anyptr = $symtable{ sprintf( "s\\_%x", $xsubany ) };
-              if ($anyptr) {
-                $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &s;", $anyptr ));
-              } # some heuristics TODO. long or ptr?
+              if ($anyptr and $xsubany > 1000) { # not a XsubAliases
+                $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &%s;", $anyptr ));
+              } # some heuristics TODO. long or ptr? TODO 32bit
               elsif ($xsubany > 0x100000 and ($xsubany < 0xffffff00 or $xsubany > 0x100000000))
               {
-                warn sprintf("TODO: Skipping %s->XSUBANY = 0x%x\n", $fullname, $xsubany ) if $verbose;
-                $init2->add( sprintf( "/* TODO CvXSUBANY(GvCV($sym)).any_ptr = 0x%lx; */", $xsubany ));
+                if ($package eq 'POSIX' and $gvname =~ /^is/) {
+                  # need valid XSANY.any_dptr
+                  $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_dptr = (void*)&%s;", $gvname));
+                } elsif ($package eq 'List::MoreUtils' and $gvname =~ /_iterator$/) { # should be only the 2 iterators
+                  $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = (void*)&%s;", "XS_List__MoreUtils__".$gvname));
+                } else {
+                  warn sprintf("TODO: Skipping %s->XSUBANY = 0x%x\n", $fullname, $xsubany ) if $verbose;
+                  $init2->add( sprintf( "/* TODO CvXSUBANY(GvCV($sym)).any_ptr = 0x%lx; */", $xsubany ));
+                }
+              } elsif ($package eq 'Fcntl') {
+                # S_ macro values
               } else {
-                $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_long = 0x%lx;", $xsubany ));
+                # most likely any_i32 values for the XsubAliases provided by xsubpp
+                $init2->add( sprintf( "/* CvXSUBANY(GvCV($sym)).any_i32 = 0x%x; XSUB Alias */", $xsubany ));
               }
             }
           }
