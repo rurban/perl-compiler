@@ -34,7 +34,7 @@ EOF
 
 # similar but not same as test 1
 # passes now threaded >= 5.8.9
-my $todo6 = ($]<5.008009 or !$Config{useithreads} ? "TODO " : "");
+my $todo6 = ($] < 5.008009 or !$Config{useithreads}) ? "TODO " : "";
 ctestok(6,'C,-O3','ccode290i',<<'EOF', $todo6.'#290 empty sub exists && not defined');
 sub f; print "ok" if exists &f && not defined &f;
 EOF
