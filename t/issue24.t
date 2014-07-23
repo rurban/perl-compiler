@@ -34,6 +34,7 @@ unlink("$name.db*");
 
 $Mblib = "-Iblib/arch -Iblib/lib" if $] < 5.007;
 TODO: { #2
+  # also fails now with my perl5.8.9-nt, missing on File::Spec::Unix::rel2abs
   local $TODO = "B::C issue 24 dbm 5.10.0 or 5.6"
     if $] < 5.007 or $] eq '5.010000';
   $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;

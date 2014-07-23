@@ -6984,7 +6984,7 @@ sub descend_marked_unused {
   #}
   foreach my $pack ( sort keys %INC ) {
     my $p = packname_inc($pack);
-    mark_package($p) if !skip_pkg($p) and !$all_bc_deps{$p};
+    mark_package($p) if !skip_pkg($p) and !$all_bc_deps{$p} and $pack !~ /(autosplit\.ix|\.al)$/;
   }
   if ($debug{pkg} and $verbose) {
     warn "\%include_package: ".join(" ",grep{$include_package{$_}} sort keys %include_package)."\n";
