@@ -58,6 +58,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.17, Reini Urban, Thu Feb 6 14:04:29 2014 -0600
 # Version 2.18, Reini Urban, 2014-05-28
 # Version 2.19, Reini Urban, 2014-07-09
+# Version 2.20, Reini Urban, 2014-07-23
 
 use strict;
 use warnings;
@@ -72,7 +73,7 @@ use File::Basename qw(basename dirname);
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.19;
+our $VERSION = 2.20;
 $| = 1;
 eval { require B::C::Flags; };
 

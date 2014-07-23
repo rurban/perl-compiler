@@ -20,6 +20,7 @@
         Fixed initialization of foreign Encodings (#365),
           fixed initialization of old Encode versions < 2.58 also (#305)
         * CC (1.16): Strip binary BM chunk from comppad names (CC names) < 5.8.8 (#363)
+        * perlcc (2.20): Strip wrong version-less -I<site_perl> (#366)
         * Makefile.PL: Install into archlib on 5.8 and 5.6 (#358)
 
 1.49 2014-07-12 rurban
