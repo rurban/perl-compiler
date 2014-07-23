@@ -1,17 +1,18 @@
 * Fixes
 
-bytecode for 5.18 threaded and 5.20 (suspect: walkoptree upstream)
-empty CVs are no proper coderefs
+attribute handlers (i.e. run-time attributes)
+compile-time perlio layers (e.g. use open ...)
+compile-time re-eval groups (?{})
+smartmatch subrefs
+compile-time stash-magic delete renames to ANON
 use bytes AUTOLOAD handling
 CvOUTSIDE for ordinary subs
--fwalk-all for recursive deep inspection
-method_named packagepv quirks at compile-time. Are run-time pkg names
 
-CC backend: goto (needs test)
+CC backend: goto (needs test), some recursive calls fail
 
 * Features
 
-modularize (-m) for faster link times, buiildcc, rperl intergration
+modularize (-m) for faster link times, buildcc, rperl intergration
 backport improvements from oldmaster:
   do not define symbols which are arguments of define (destructive
    check)
