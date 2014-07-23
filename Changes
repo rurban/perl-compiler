@@ -9,6 +9,7 @@
         Skip saving %IO::Handle for *STDOUT, which bloated 5.18 (#361)
         Fix XS boot of Class::MOP without Moose, and generalize it to other
           xs-loaded modules, which just call bootstrap Module. (#350, #364)
+        Earlier xs_init for Encode similar to attributes (hack, fixes #32 regression)
         Use the system malloc for data being system free'd: cop_warnings,
           PMOP->op_pv, sv_debug_file, needed for certain DEBUGGING options.
           Fixes Attribute::Handler free errors (#362)
@@ -16,7 +17,8 @@
         Save some CvXSUBANY values, esp. relocate any_ptr if possible:
           POSIX::is*, DBI, List::MoreUtils::*_iterator.
           The any_i32 values are already set in the boot section of the XS.
-        Fix initialization of foreign Encodings (#365)
+        Fixed initialization of foreign Encodings (#365),
+          fixed initialization of old Encode versions < 2.58 also (#305)
         * CC (1.16): Strip binary BM chunk from comppad names (CC names) < 5.8.8 (#363)
         * Makefile.PL: Install into archlib on 5.8 and 5.6 (#358)
 
