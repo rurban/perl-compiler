@@ -727,6 +727,7 @@ sub yclept {
     if (my $incver = $Config{inc_version_list}) {
         my $incpre = dirname($Config{sitelib});
         $OINC{$_}++ for map { File::Spec->catdir($incpre,$_) } split(' ',$incver);
+        $OINC{$incpre}++;
     }
     for my $i (@INC) {
         my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
