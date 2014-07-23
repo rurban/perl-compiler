@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.49_07';
+our $VERSION = '1.50';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -2607,7 +2607,7 @@ sub patch_dlsym {
   my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
   my $ivxhex = sprintf("0x%x", $ivx);
   # Encode RT #94221
-  if ($name =~ /encoding$/ and $Encode::VERSION eq '2.58') {
+  if ($name =~ /encoding$/ and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION eq '2.58') {
     $name =~ s/-/_/g;
     $pkg = 'Encode' if $pkg eq 'Encode::XS'; # TODO foreign classes
     mark_package($pkg) if $fullname eq '(unknown)' and $ITHREADS;
@@ -2667,7 +2667,7 @@ sub patch_dlsym {
     }
   }
   # Encode-2.59 uses a different name without _encoding
-  elsif ($Encode::VERSION gt '2.58' and Encode::find_encoding($name)) {
+  elsif ($Encode::VERSION ge '2.58' and Encode::find_encoding($name)) {
     my $enc = Encode::find_encoding($name);
     $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
     $name .= "_encoding";
