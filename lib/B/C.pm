@@ -5909,10 +5909,13 @@ _EOT9
     die "Error: XSLoader required but not dumped. Too late to add it.\n";
   }
   if ($dl) {
-    if (grep {$_ eq 'attributes'} @dl_modules) {
-      # enforce attributes at the front of dl_init, #259
-      @dl_modules = grep { $_ ne 'attributes' } @dl_modules;
-      unshift @dl_modules, 'attributes';
+    # enforce attributes at the front of dl_init, #259
+    # also Encode should be booted before PerlIO::encoding
+    for my $front (qw(Encode attributes)) {
+      if (grep { $_ eq $front } @dl_modules) {
+        @dl_modules = grep { $_ ne $front } @dl_modules;
+        unshift @dl_modules, $front;
+      }
     }
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
     print "\tdTARG; dSP;\n";
