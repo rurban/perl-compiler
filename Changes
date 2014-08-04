@@ -3,6 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.51 2014-08-04 rurban
+        * C: boot_EV (analog to Coro) SvREADONLY_off its XS symbols (#368)
+
 1.50 2014-07-23 rurban
         * C: fix DBI, special case DBI_MAGIC, call DBI->_install_method to
           re-initialize compile-time internal ima pointers (#359)

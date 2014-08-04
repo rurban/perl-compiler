@@ -820,6 +820,7 @@ t/issue348.t
 t/issue35.t
 t/issue350.t
 t/issue36.t
+t/issue368.t
 t/issue37.t
 t/issue38.t
 t/issue39.t

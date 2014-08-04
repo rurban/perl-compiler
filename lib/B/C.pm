@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.50';
+our $VERSION = '1.51';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -5927,6 +5927,7 @@ _EOT9
     print "\ttarg = sv_newmortal();\n" if $] < 5.008008;
 
     if (exists $xsub{"Coro::State"} and grep { $_ eq "Coro::State" } @dl_modules) {
+      # Coro readonly symbols in BOOT (#293)
       # needed before dl_init, and after init
       print "\t{\n\t  GV *sym;\n";
       for my $s (qw(Coro Coro::API Coro::current)) {
@@ -5935,6 +5936,15 @@ _EOT9
       }
       print "\t  sym = gv_fetchpv(\"Coro::pool_handler)\",0,SVt_PVCV);\n";
       print "\t  if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));\n";
+      print "\t}\n";
+    }
+    if (exists $xsub{"EV"} and grep { $_ eq "EV" } @dl_modules) {
+      # EV readonly symbols in BOOT (#368)
+      print "\t{\n\t  GV *sym;\n";
+      for my $s (qw(EV::API)) {
+        print "\t  sym = gv_fetchpv(\"$s\",0,SVt_PV);\n";
+        print "\t  if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));\n";
+      }
       print "\t}\n";
     }
     foreach my $stashname (@dl_modules) {
