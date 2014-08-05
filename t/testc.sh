@@ -1134,6 +1134,25 @@ $foo->method;'
 tests[350]='package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int"); 
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
 tests[368]='use EV; print q(ok)'
+tests[369]='
+use EV;
+use Coro;
+use Coro::Timer;
+my @a;
+push @a, async {
+  while() {
+    warn $c++;
+    Coro::Timer::sleep 1;
+  };
+};
+push @a, async {
+  while() {
+    warn $d++;
+    Coro::Timer::sleep 0.5;
+  };
+};
+schedule;
+print q(ok)'
 
 init
 

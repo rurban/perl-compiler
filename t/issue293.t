@@ -22,4 +22,3 @@ $todo = "TODO 5.10thr " if $] =~ /^5\.010001/ and $Config{useithreads};
 my $script = 'use Coro; print q(ok)';
 
 ctestok(1, 'C,-O3', 'ccode293i', $script, $todo.'C '.$cmt);
-
