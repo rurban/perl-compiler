@@ -1,7 +1,8 @@
 language: "perl"
 perl:
-#   - "5.10"
-#   - "5.12"
+    - "5.8"
+    - "5.10"
+    - "5.12"
     - "5.14"
     - "5.16"
     - "5.18"
@@ -21,10 +22,14 @@ notifications:
     on_success: change
     on_failure: always
 
+# fast_finish: http://blog.travis-ci.com/2013-11-27-fast-finishing-builds/
 matrix:
+  fast_finish: true
   allow_failures:
+    - perl: "5.8"
     - perl: "5.20"
 # perlbrew use 5.20 ERROR: The installation "5.20" is unknown.
+
 # See https://blog.afoolishmanifesto.com/posts/use-travis-et-al/
 #before_install:
 #     - git clone git://github.com/haarg/perl-travis-helper
