@@ -2896,8 +2896,10 @@ sub B::PVMG::save_magic {
       # XXX On 5.6 ptr might be a SCALAR ref to the PV, which was fixed later
       if (ref($ptr) eq 'SCALAR') {
 	$ptrsv = svref_2object($ptr)->save($fullname);
-      } else {
+      } elsif ($ptr and ref $ptr) {
 	$ptrsv = $ptr->save($fullname);
+      } else {
+	$ptrsv = 'NULL';
       }
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, (char *)%s, %d);",
