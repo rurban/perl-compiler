@@ -31,7 +31,7 @@ if (${^UNICODE} & 1) {
 } else {
     $UTF8_STDIN = 0;
 }
-my $NTEST = 55 - (($DOSISH || !$FASTSTDIO) ? 7 : 0) - ($DOSISH ? 7 : 0)
+my $NTEST = 60 - (($DOSISH || !$FASTSTDIO) ? 7 : 0) - ($DOSISH ? 7 : 0)
     + $UTF8_STDIN;
 
 sub PerlIO::F_UTF8 () { 0x00008000 } # from perliol.h
@@ -205,7 +205,7 @@ __EOH__
 	open F, '<', $afile;
 	open G, '>', $afile;
 
-	# issue 203 - https://code.google.com/p/perl-compiler/issues/detail?id=203
+	diag ("perlcc issue 203"); # https://code.google.com/p/perl-compiler/issues/detail?id=203
 	check([ PerlIO::get_layers(F, input  => 1) ],
 	      [ qw(stdio crlf) ],
 	      "use open IN");
@@ -224,4 +224,35 @@ __EOH__
 open(UTF, "<:raw:encoding(utf8)", '$afile') or die \$!;
 print ref *PerlIO::Layer::NoWarnings{CODE};
 EOT
+
+    # TODO: not with 5.14
+    # [perl #97956] Not calling FETCH all the time on tied variables
+    my $f;
+    sub TIESCALAR { bless [] }
+    sub FETCH { ++$f; $_[0][0] = $_[1] }
+    sub STORE { $_[0][0] }
+    tie my $t, "";
+    SKIP: {
+      skip("requires 5.16", 3) if $] < 5.016;
+
+      $t = *f;
+      $f = 0; PerlIO::get_layers $t;
+      is $f, 1, '1 fetch on tied glob';
+      $t = \*f;
+      $f = 0; PerlIO::get_layers $t;
+      is $f, 1, '1 fetch on tied globref';
+      $t = *f;
+      $f = 0; PerlIO::get_layers \$t;
+      is $f, 1, '1 fetch on referenced tied glob';
+    }
+    $t = '';
+    $f = 0; PerlIO::get_layers $t;
+    is $f, 1, '1 fetch on tied string';
+
+    SKIP: {
+      skip("requires 5.16", 3) if $] < 5.016;
+      # No distinction between nums and strings
+      open "12", "<:crlf", "t/test.pl" or die "$0 cannot open t/test.pl: $!";
+      ok PerlIO::get_layers(12), 'str/num arguments are treated identically';
+    }
 }
