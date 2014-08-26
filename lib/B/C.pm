@@ -4220,9 +4220,11 @@ sub B::GV::save {
           svref_2object( \&{"$package\::bootstrap"} )->save
             if $package and defined &{"$package\::bootstrap"};
         }
-        # XXX issue 57: incomplete xs dependency detection
-        my %hack_xs_detect =
-          ('Scalar::Util'  => 'List::Util',
+        # XXX issue 57: incomplete xs dependency detection.
+        my %hack_xs_detect = (
+           # Scalar::Util only require's its XS in List::Util, same for the new Sub::Util.
+           'Scalar::Util'  => 'List::Util',
+           # Params::Util only require's Scalar::Util (to support PP?)
            'Sub::Exporter' => 'Params::Util',
           );
         if (my $dep = $hack_xs_detect{$package}) {
