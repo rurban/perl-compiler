@@ -63,48 +63,47 @@ my $SKIP =
       "t/CORE/op/die.t" => "hangs",
     },
     "C" =>
-    { "t/CORE/op/eval.t" => "hangs in endless recursion",
+    { ($] >= 5.020 ? ("t/CORE/op/eval.t" => "hangs in endless recursion since 5.20") : ()),
     },
   };
 
-# for C only
+# for C only, tested with 5.21.3d-nt
 my @fail = map { "t/CORE/$_" }
-  qw{
-     comp/colon.t
-     comp/hints.t
-     comp/packagev.t
-     comp/parser.t
-     comp/retainedlines.t
-     comp/script.t
-     io/layers.t
-     op/array.t
-     op/attrs.t
-     op/bop.t
-     op/closure.t
-     op/do.t
-     op/eval.t
-     op/filetest.t
-     op/goto_xs.t
-     op/gv.t
-     op/length.t
-     op/local.t
-     op/magic.t
-     op/method.t
-     op/misc.t
-     op/pwent.t
-     op/regmesg.t
-     op/sort.t
-     op/sprintf.t
-     op/subst.t
-     op/substr.t
-     op/tie.t
-     op/universal.t
-     uni/cache.t
-     uni/chr.t
-     uni/greek.t
-     uni/latin2.t
-     uni/write.t
-   };
+  ('comp/colon.t', # ok with 5.14, 5.18
+   'comp/hints.t',
+   'comp/packagev.t',
+   'comp/parser.t',# ok with 5.14, fails with 5.18
+   'comp/retainedlines.t',# ok with 5.14
+   'comp/script.t',
+   'io/layers.t',
+   'op/array.t',   # ok with 5.14, 5.18
+   'op/attrs.t',
+   'op/bop.t',     # ok with 5.14, fails with 5.18
+   'op/closure.t', # ok with 5.14, fails with 5.18
+   'op/do.t',      # ok with 5.14, 5.18
+   'op/eval.t',    # hangs since 5.20.0
+   'op/filetest.t',# ok with 5.14, fails with 5.18
+   'op/goto_xs.t',
+   'op/gv.t',
+   'op/length.t',  # ok with 5.14, fails with 5.18
+   'op/local.t',   # ok with 5.14, fails with 5.18
+   'op/magic.t',   # ok with 5.14, fails with 5.18
+   'op/method.t',  # ok with 5.14, 5.18
+   'op/misc.t',
+   'op/pwent.t',   # ok with 5.14, 5.18
+   'op/regmesg.t',
+   'op/sort.t',    # ok with 5.14, fails with 5.18
+   'op/sprintf.t', # ok with 5.14, 5.18
+   'op/subst.t',
+   'op/substr.t',
+   'op/tie.t',     # ok with 5.14, fails with 5.18
+   'op/universal.t',
+   'uni/cache.t',  # ok with 5.14, fails with 5.18
+   'uni/chr.t',    # ok with 5.14, 5.18
+   'uni/greek.t',
+   'uni/latin2.t',
+   'uni/write.t',
+   );
 
 my @tests = $ARGV[0] eq '-fail'
   ? @fail
