@@ -1944,7 +1944,6 @@ sub B::PMOP::save {
       if ($code_list and $$code_list) {
         warn sprintf("saving pmop_list[%d] code_list $code_list (?{})\n", $pmopsect->index)
           if $debug{gv};
-        # my $code_start = saveoptree( "*ignore*", $code_list, $replstart );
         my $code_op = $code_list->save;
         $init->add(sprintf("pmop_list[%d].op_code_list = %s;", # (?{}) code blocks
                            $pmopsect->index, $code_op)) if $code_op;

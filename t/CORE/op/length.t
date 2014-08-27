@@ -1,11 +1,11 @@
 #!./perl
 
-BEGIN {
+INIT {
     require 't/CORE/test.pl';
     unshift @INC, 't/CORE/lib';
 }
  
-plan (37);
+plan (38);
 
 print "not " unless length("")    == 0;
 print "ok 1\n";
@@ -190,7 +190,17 @@ is($u, undef);
 
 my $uo = bless [], 'U';
 
-is(length($uo), undef, "Length of overloaded reference");
+{
+    my $w = '';
+    local $SIG{__WARN__} = sub { $w = shift };
+    my $expected = $] < 5.018 ? undef : 0;
+    is(length($uo), $expected, "Length of string overloaded reference");
+    if ($] < 5.018) {
+      is($w, '', 'no warning for stringifying as undef');
+    } else {
+      like($w, qr/uninitialized/, 'uninit warning for stringifying as undef');
+    }
+}
 
 my $ul = 3;
 is(($ul = length(undef)), undef, 

@@ -84,8 +84,10 @@ my @fail = map { "t/CORE/$_" }
    'op/eval.t',    # hangs since 5.20.0
    'op/filetest.t',# ok with 5.14, fails since 5.18
    'op/goto_xs.t',
+   # S_unshare_hek_or_pvn assert with glob assign'ed free,
+   # >=5.18 runtime SEGV at \IO SvAMAGIC(TEMP,ROK) in rv2gv at test 51, print {*x{IO}}
    'op/gv.t',
-   'op/length.t',  # ok with 5.14, fails since 5.18
+   'op/length.t',  # ok with 5.14, fails since 5.18 (string overload #373)
    'op/local.t',   # ok with 5.14, fails test 269 since 5.18
    'op/magic.t',   # ok with 5.14, fails since 5.18
    'op/method.t',  # ok with 5.14, 5.18, 5.20, fails with 5.21

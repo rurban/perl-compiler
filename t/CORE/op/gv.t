@@ -167,9 +167,9 @@ XXX This text isn't used. Should it be?
 .
 curr_test($test);
 
-is (ref *x{FORMAT}, "FORMAT");
+is (ref *x{FORMAT}, "FORMAT", "FORMAT glob assign");
 *x = *STDOUT;
-is (*{*x{GLOB}}, "*main::STDOUT");
+is (*{*x{GLOB}}, "*main::STDOUT", "IO glob assign");
 
 {
     my $test = curr_test();
