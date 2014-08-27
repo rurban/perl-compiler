@@ -105,7 +105,11 @@ sub output {
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." ".$ref." */";
     }
-    printf $fh $format, $_, $section->name, $i, $ref, $dbg;
+    if ($format eq "\t{ %s }, /* %s_list[%d] %s */%s\n") {
+      printf $fh $format, $_, $section->name, $i, $ref, $dbg;
+    } else {
+      printf $fh $format, $_;
+    }
     ++$i;
   }
 }
@@ -729,7 +733,7 @@ sub savepv {
   return $strtable{$cstring} if defined $strtable{$cstring};
   $pv    = pack "a*", $pv;
   my $pvsym = sprintf( "pv%d", $pv_index++ );
-  $const = " const" if $const;
+  $const = $const ? " const" : "";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
@@ -1861,11 +1865,15 @@ sub B::COP::save {
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
-        $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv($op->stashpv) ));
-        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
+        $init->add(sprintf( "CopSTASHPV_set(&cop_list[%d], %s);",
+                            $ix, constpv($op->stashpv) ),
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);",
+                            $ix, constpv( $file ) ));
       } else {
-        $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv) ));
-        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
+        $init->add(sprintf( "CopSTASHPV_set(&cop_list[%d], %s);",
+                            $ix, cstring($op->stashpv) ),
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);",
+                            $ix, cstring($file) ));
       }
     } else { # cv_undef e.g. in bproto.t and many more core tests with threads
       my $stlen = "";
@@ -4356,14 +4364,14 @@ sub B::GV::save {
           # ignore stash hek asserts when adding the stash
           # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
         } else {
-          $init->add(sprintf("GvFILE_HEK($sym) = %s;", save_hek($gv->FILE)))
+          $init->add(sprintf("GvFILE_HEK(%s) = %s;", $sym, save_hek($gv->FILE)))
             if !$optimize_cop;
         }
 	# $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
       } else {
 	# XXX ifdef USE_ITHREADS and PL_curcop->op_flags & OPf_COP_TEMP
 	# GvFILE is at gp+1
-	$init->add( sprintf( "GvFILE($sym) = %s;", cstring( $gv->FILE ) ))
+	$init->add( sprintf( "GvFILE(%s) = %s;", $sym, cstring( $gv->FILE ) ))
 	  unless $optimize_cop;
 	warn "GV::save GvFILE(*$fullname) " . cstring( $gv->FILE ) . "\n"
 	  if $debug{gv} and !$ITHREADS;
