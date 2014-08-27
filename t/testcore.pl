@@ -102,6 +102,9 @@ my @fail = map { "t/CORE/$_" }
    'op/universal.t',
    'uni/cache.t',  # ok with 5.14, fails since 5.18
    'uni/chr.t',    # ok with 5.14, 5.18, fails since 5.20
+   # use encoding is deprecated: #354
+   'uni/tr_7jis.t', # fails with 5.14, ok with 5.20
+   'uni/tr_sjis.t', # fails with 5.14, ok with 5.20
    'uni/greek.t',
    'uni/latin2.t',
    'uni/write.t',
