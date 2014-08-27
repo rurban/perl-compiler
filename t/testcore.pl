@@ -69,7 +69,7 @@ my $SKIP =
 
 # for C only, tested with 5.21.3d-nt
 my @fail = map { "t/CORE/$_" }
-  ('comp/colon.t', # ok with 5.14, 5.18, fails with 5.20
+  ('comp/colon.t', # ok with 5.14, 5.18, fails since 5.20
    'comp/hints.t',
    'comp/packagev.t',
    'comp/parser.t',# ok with 5.14, fails since 5.18

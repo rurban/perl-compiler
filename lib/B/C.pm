@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.51_01';
+our $VERSION = '1.51_02';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -852,7 +852,10 @@ sub save_pv_or_rv {
           $pv = $savesym;
           $savesym = 'NULL';
         }
-        $len = $cur+2 if $iscow and $cur;
+        # align to next wordsize
+        if ($iscow and $cur) {
+          $len = $cur+2;
+        }
         #push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
       } else {
 	$len = $cur+1;
@@ -864,11 +867,19 @@ sub save_pv_or_rv {
           }
           $free->add("    SvFAKE_off(&$s);");
         } else {
-          $len++ if $iscow and $cur;
+          if ($iscow and $cur) {
+            $len++;
+          }
         }
       }
     } else {
       $len = 0;
+    }
+  }
+  if ($len and $PERL518) {
+    my $ptrsize = $Config{ptrsize};
+    while ($len % $ptrsize) {
+      $len++;
     }
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s\n", $savesym, cstring($pv), $cur, $len,
@@ -1928,6 +1939,15 @@ sub B::PMOP::save {
     );
     $init->add(sprintf("pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)$replstartfield;",
                        $pmopsect->index));
+    if ($] >= 5.017) {
+      my $code_list = $op->code_list;
+      if ($code_list and $$code_list) {
+        warn "saving PMOP code_list $code_list (?{}) optree\n" if $debug{gv};
+        $code_list = saveoptree( "*ignore*", $code_list, $replstart );
+        $init->add(sprintf("pmop_list[%d].op_code_list = (OP*)$code_list;", # list of (?{}) code blocks
+                           $pmopsect->index));
+      }
+    }
   }
   elsif ($PERL56) {
     # pmdynflags does not exist as B method. It is only used for PMdf_UTF8 dynamically,
@@ -4220,11 +4240,9 @@ sub B::GV::save {
           svref_2object( \&{"$package\::bootstrap"} )->save
             if $package and defined &{"$package\::bootstrap"};
         }
-        # XXX issue 57: incomplete xs dependency detection.
-        my %hack_xs_detect = (
-           # Scalar::Util only require's its XS in List::Util, same for the new Sub::Util.
-           'Scalar::Util'  => 'List::Util',
-           # Params::Util only require's Scalar::Util (to support PP?)
+        # XXX issue 57: incomplete xs dependency detection
+        my %hack_xs_detect =
+          ('Scalar::Util'  => 'List::Util',
            'Sub::Exporter' => 'Params::Util',
           );
         if (my $dep = $hack_xs_detect{$package}) {
