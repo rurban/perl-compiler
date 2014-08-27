@@ -69,7 +69,7 @@ my $SKIP =
 
 # for C only, tested with 5.21.3d-nt
 my @fail = map { "t/CORE/$_" }
-  ('comp/colon.t', # ok with 5.14, 5.18, fails since 5.20
+  ('comp/colon.t', # ok with 5.14, 5.18, fails since 5.20 (fixed with #372)
    'comp/hints.t',
    'comp/packagev.t',
    'comp/parser.t',# ok with 5.14, fails since 5.18
@@ -79,14 +79,14 @@ my @fail = map { "t/CORE/$_" }
    'op/array.t',   # ok with 5.14, 5.18, 5.20, fails with 5.21
    'op/attrs.t',
    'op/bop.t',     # ok with 5.14, fails since 5.18
-   'op/closure.t', # ok with 5.14, fails since 5.18
+   'op/closure.t', # ok with 5.14, fails test 271 since 5.18
    'op/do.t',      # ok with 5.14, 5.18, fails since 5.20
    'op/eval.t',    # hangs since 5.20.0
    'op/filetest.t',# ok with 5.14, fails since 5.18
    'op/goto_xs.t',
    'op/gv.t',
    'op/length.t',  # ok with 5.14, fails since 5.18
-   'op/local.t',   # ok with 5.14, fails since 5.18
+   'op/local.t',   # ok with 5.14, fails test 269 since 5.18
    'op/magic.t',   # ok with 5.14, fails since 5.18
    'op/method.t',  # ok with 5.14, 5.18, 5.20, fails with 5.21
    'op/misc.t',
