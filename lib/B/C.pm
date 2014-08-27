@@ -1942,10 +1942,14 @@ sub B::PMOP::save {
     if ($] >= 5.017) {
       my $code_list = $op->code_list;
       if ($code_list and $$code_list) {
-        warn "saving PMOP code_list $code_list (?{}) optree\n" if $debug{gv};
-        $code_list = saveoptree( "*ignore*", $code_list, $replstart );
-        $init->add(sprintf("pmop_list[%d].op_code_list = (OP*)$code_list;", # list of (?{}) code blocks
-                           $pmopsect->index));
+        warn sprintf("saving pmop_list[%d] code_list $code_list (?{})\n", $pmopsect->index)
+          if $debug{gv};
+        # my $code_start = saveoptree( "*ignore*", $code_list, $replstart );
+        my $code_op = $code_list->save;
+        $init->add(sprintf("pmop_list[%d].op_code_list = %s;", # (?{}) code blocks
+                           $pmopsect->index, $code_op)) if $code_op;
+        warn sprintf("done saving pmop_list[%d] code_list $code_list (?{})\n", $pmopsect->index)
+          if $debug{gv};
       }
     }
   }

@@ -3,7 +3,7 @@
 # Checks if the parser behaves correctly in edge cases
 # (including weird syntax errors)
 
-print "1..123\n";
+print "1..121\n";
 
 sub failed {
     my ($got, $expected, $name) = @_;
@@ -125,11 +125,11 @@ is( $@, '', 'PL_lex_brackstack' );
     is("${a}[", "A[", "interpolation, qq//");
     my @b=("B");
     is("@{b}{", "B{", "interpolation, qq//");
-    is(qr/${a}{/, '(?^:A{)', "interpolation, qr//");
+    is(qr/${a}\{/, '(?^:A\{)', "interpolation, qr//");
     my $c = "A{";
-    $c =~ /${a}{/;
+    $c =~ /${a}\{/;
     is($&, 'A{', "interpolation, m//");
-    $c =~ s/${a}{/foo/;
+    $c =~ s/${a}\{/foo/;
     is($c, 'foo', "interpolation, s/...//");
     $c =~ s/foo/${a}{/;
     is($c, 'A{', "interpolation, s//.../");
@@ -311,8 +311,9 @@ like($@, qr/BEGIN failed--compilation aborted/, 'BEGIN 7' );
   eval qq[ %$xFC ];
   like($@, qr/Identifier too long/, "too long id in % sigil ctx");
 
-  eval qq[ \\&$xFC ]; # take a ref since I don't want to call it
-  is($@, "", "252 character & sigil ident ok");
+  # This is too long since 5.18
+  #eval qq[ \\&$xFC ]; # take a ref since I don't want to call it
+  #is($@, "", "252 character & sigil ident ok");
   eval qq[ \\&$xFD ];
   like($@, qr/Identifier too long/, "too long id in & sigil ctx");
 
@@ -321,9 +322,10 @@ like($@, qr/BEGIN failed--compilation aborted/, 'BEGIN 7' );
   eval qq[ *$xFD ];
   like($@, qr/Identifier too long/, "too long id in glob ctx");
 
-  eval qq[ for $xFD ];
-  like($@, qr/Missing \$ on loop variable/,
-       "253 char id ok, but a different error");
+  # This fails since 5.18
+  #eval qq[ for $xFD ];
+  #like($@, qr/Missing \$ on loop variable/,
+  #     "253 char id ok, but a different error");
   eval qq[ for $xFE; ];
   like($@, qr/Identifier too long/, "too long id in for ctx");
 
@@ -357,7 +359,7 @@ is($@, "", "multiline whitespace inside substitute expression");
 
 # bug #74022: Loop on characters in \p{OtherIDContinue}
 # This test hangs if it fails.
-eval chr 0x387;
+eval chr 0x387;   # forces loading of utf8.pm
 is(1,1, '[perl #74022] Parser looping on OtherIDContinue chars');
 
 # More awkward tests for #line. Keep these at the end, as they will screw
