@@ -70,11 +70,10 @@ my $SKIP =
 # for C only, tested with 5.21.3d-nt
 my @fail = map { "t/CORE/$_" }
   (#'comp/colon.t', # ok with 5.14, 5.18, failed since 5.20 (fixed with #372)
-   #'comp/hints.t',
+   'comp/hints.t',  # fails sv_magic assert with <= 5.14, ok since 5.16
    #'comp/package.t', # fails only with -O0
    #'comp/parser.t',# ok with 5.14, failed since 5.18, updated with 1.51_02
    #'comp/retainedlines.t',# ok with 5.14, failed since 5.18. fixed test
-   'comp/script.t',
    'io/layers.t',
    'op/array.t',   # ok with 5.14, 5.18, 5.20, fails with 5.21
    'op/attrs.t',
