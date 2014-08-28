@@ -1868,7 +1868,7 @@ sub B::COP::save {
         $init->add(sprintf( "CopSTASHPV_set(&cop_list[%d], %s);",
                             $ix, constpv($op->stashpv) ),
                    sprintf( "CopFILE_set(&cop_list[%d], %s);",
-                            $ix, constpv( $file ) ));
+                            $ix, constpv($file) ));
       } else {
         $init->add(sprintf( "CopSTASHPV_set(&cop_list[%d], %s);",
                             $ix, cstring($op->stashpv) ),
@@ -4364,8 +4364,9 @@ sub B::GV::save {
           # ignore stash hek asserts when adding the stash
           # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
         } else {
-          $init->add(sprintf("GvFILE_HEK(%s) = %s;", $sym, save_hek($gv->FILE)))
-            if !$optimize_cop;
+          my $file = save_hek($gv->FILE);
+          $init->add(sprintf("GvFILE_HEK(%s) = %s;", $sym, $file))
+            if $file ne 'NULL' and !$optimize_cop;
         }
 	# $init->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
       } else {
@@ -4480,7 +4481,7 @@ sub B::AV::save {
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS));
   }
 
-  my ($av_index, $magic);
+  my ($magic, $av_index) = ('');
   if (!$ispadlist) {
     $svsect->debug($fullname, $av->flagspv) if $debug{flags};
     my $sv_ix = $svsect->index;
