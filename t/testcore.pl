@@ -75,7 +75,8 @@ my @fail = map { "t/CORE/$_" }
    #'comp/parser.t',# ok with 5.14, failed since 5.18, updated with 1.51_02
    #'comp/retainedlines.t',# ok with 5.14, failed since 5.18. fixed test
    'io/layers.t',
-   'op/array.t',   # ok with 5.14, 5.18, 5.20, fails with 5.21
+   # eval workaround fails with perlcc even with 5.14
+   #'op/array.t',   # ok with 5.14, 5.18, 5.20, fails with 5.21 (push on glob deprecation)
    'op/attrs.t',
    'op/bop.t',     # ok with 5.14, fails since 5.18
    'op/closure.t', # ok with 5.14, fails test 271 since 5.18

@@ -101,8 +101,17 @@ is($foo, 'b');
 
 @foo = ( 'foo', 'bar', 'burbl');
 {
-    no warnings 'deprecated';
-    push(foo, 'blah');
+    # eval workaround fails with perlcc
+    # syntax fails since 5.21
+    push(@foo, 'blah');
+
+    #if ($] < 5.021) {
+    #  no warnings 'deprecated';
+    #  push(foo, 'blah');
+    #  eval "push(foo, 'blah');"; # fails with perlcc
+    #} else {
+    #  push(@foo, 'blah');
+    #}
 }
 is($#foo, 3);
 
