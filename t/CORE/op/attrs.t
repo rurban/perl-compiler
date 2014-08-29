@@ -95,8 +95,10 @@ sub X::foo { 1 }
 eval 'package Z; sub Y::bar : foo';
 like $@, qr/^X at /;
 
-@attrs = eval 'attributes::get $anon1';
-is "@attrs", "method";
+@attrs = attributes::get $anon1;
+#@attrs = eval 'attributes::get $anon1'; # perlcc issue ... anon sub :method within eval
+#use Devel::Peek; Dump($anon1);
+is "@attrs", "method", "perlcc eval our anon sub :method access";
 
 sub Z::DESTROY { }
 sub Z::FETCH_CODE_ATTRIBUTES { return 'Z' }
