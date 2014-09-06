@@ -738,7 +738,10 @@ tests[192]='use warnings;
  }}->($h{k});
 }'
 tests[193]='unlink q{not.a.file}; $! = 0; open($FOO, q{not.a.file}); print( $! ne 0 ? "ok" : q{error: $! should not be 0}."\n"); close $FOO;'
-tests[194]='$0 = q{ccdave}; #print "pid: $$\n";
+tests[194]='$0 = q{ccdave with long name}; #print "pid: $$\n";
+$s=`ps w | grep "$$" | grep "[c]cdave"`;
+print ($s =~ /ccdave with long name/ ? q(ok) : $s);'
+tests[1941]='$0 = q{ccdave}; #print "pid: $$\n";
 $s=`ps auxw | grep "$$" | grep "ccdave"|grep -v grep`;
 print q(ok) if $s =~ /ccdave/'
 # duplicate of 152

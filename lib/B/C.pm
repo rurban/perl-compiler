@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.51_02';
+our $VERSION = '1.51_03';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -6130,6 +6130,13 @@ _EOT11
 
     }
     print "    PL_exit_flags |= PERL_EXIT_DESTRUCT_END;\n" unless $PERL56;
+    if (!$PERL56) {
+      print <<'_SAFE_PUTENV';
+#ifndef PERL_USE_SAFE_PUTENV
+    PL_use_safe_putenv = 0;
+#endif
+_SAFE_PUTENV
+    }
     if (!$PERL510) {
       print <<'_EOT12';
 #if defined(CSH)
@@ -6184,6 +6191,7 @@ _EOT15
       print sprintf(qq{    CopFILE_set(&PL_compiling, %s);\n}, $dollar_0);
     }
     else {
+      #print q{    warn("PL_origalen=%d\n", PL_origalen);},"\n";
       print qq{    sv_setpv_mg(get_sv("0", GV_ADD|GV_NOTQUAL), argv[0]);\n};
       print qq{    CopFILE_set(&PL_compiling, argv[0]);\n};
     }
