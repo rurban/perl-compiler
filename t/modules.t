@@ -46,7 +46,9 @@ BEGIN {
   my $result = `$X $Mblib blib/script/perlcc -O3 --staticxs -o$out -e"use Data::Dumper;"`;
   my $exe = $^O eq 'MSWin32' ? "$out.exe" : $out;
   unless (-e $exe or -e 'a.out') {
-    my $result = `$X $Mblib blib/script/perlcc -O3 -o$out -e"use Data::Dumper;"`;
+    my $cmd = qq($X $Mblib blib/script/perlcc -O3 -o$out -e"use Data::Dumper;");
+    warn $cmd."\n" if $ENV{TEST_VERBOSE};
+    my $result = `$cmd`;
     unless (-e $out or -e 'a.out') {
       plan skip_all => "perlcc cannot link XS module Data::Dumper. Most likely wrong ldopts.";
       unlink $out;
@@ -192,7 +194,8 @@ for my $module (@modules) {
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
 	  $runperl,split(/ /,$Mblib),"blib/script/perlcc",split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
-        my $cmd = "$runperl $Mblib blib/script/perlcc $opt $staticxs -o$out -r"; # only for the msg
+        my $cmd = join(" ", @cmd);
+        #warn $cmd."\n" if $ENV{TEST_VERBOSE};
 	# Esp. darwin-2level has insane link times
         ($result, $stdout, $err) = run_cmd(\@cmd, 720); # in secs.
         ok(-s $out,
@@ -202,15 +205,21 @@ for my $module (@modules) {
           or $module_passed = 0;
 	$err =~ s/^Using .+blib\n//m if $] < 5.007;
         like($stdout, qr/ok$/ms, "$module_count: use $module $opt gives expected 'ok' output");
+        #warn $stdout."\n" if $ENV{TEST_VERBOSE};
+        #warn $err."\n" if $ENV{TEST_VERBOSE};
         unless ($stdout =~ /ok$/ms) { # crosscheck for a perlcc problem (XXX not needed anymore)
+          warn "crosscheck without perlcc\n" if $ENV{TEST_VERBOSE};
           my ($r, $err1);
           $module_passed = 0;
           my $c_opt = $opts[$_];
-          @cmd = ($runperl,$Mblib,"-MO=C,$c_opt,-o$out_c",$out_pl);
+          @cmd = ($runperl,split(/ /,$Mblib),"-MO=C,$c_opt,-o$out_c",$out_pl);
+          #warn join(" ",@cmd."\n") if $ENV{TEST_VERBOSE};
           ($r, $stdout, $err1) = run_cmd(\@cmd, 60); # in secs
-          @cmd = ($runperl,$Mblib,"script/cc_harness","-o$out",$out_c);
+          @cmd = ($runperl,split(/ /,$Mblib),"script/cc_harness","-o$out",$out_c);
+          #warn join(" ",@cmd."\n") if $ENV{TEST_VERBOSE};
           ($r, $stdout, $err1) = run_cmd(\@cmd, 360); # in secs
           @cmd = ($^O eq 'MSWin32' ? "$out" : "./$out");
+          #warn join(" ",@cmd."\n") if $ENV{TEST_VERBOSE};
           ($r, $stdout, $err1) = run_cmd(\@cmd, 20); # in secs
           if ($stdout =~ /ok$/ms) {
             $module_passed = 1;

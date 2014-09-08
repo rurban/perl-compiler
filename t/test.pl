@@ -535,13 +535,16 @@ sub run_cmd {
         }
 	# No real way to trap STDERR?
         $cmd .= " 2>&1" if ($^O !~ /^MSWin32|VMS/);
+        warn $cmd."\n" if $ENV{TEST_VERBOSE};
 	$out = `$cmd`;
+        warn $out."\n" if $ENV{TEST_VERBOSE};
 	$result = $?;
     }
     else {
 	my $in;
         # XXX TODO this fails with spaces in path. pass and check ARRAYREF then
 	my @cmd = ref($cmd) eq 'ARRAY' ? @$cmd : split /\s+/, $cmd;
+        warn join(" ", @cmd)."\n" if $ENV{TEST_VERBOSE};
 
 	eval {
             # XXX TODO hanging or stacktrace'd children are not killed on cygwin
@@ -566,7 +569,9 @@ sub run_cmd {
 	    $h->finish or die "cmd returned $?";
 	    $result = $h->result(0);
 	};
+        warn $out."\n" if $ENV{TEST_VERBOSE};
 	$err .= "\$\@ = $@" if($@);
+        warn $err."\n" if $ENV{TEST_VERBOSE};
     }
     return ($result, $out, $err);
 }

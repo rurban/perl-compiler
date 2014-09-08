@@ -10,6 +10,7 @@
 	  which fixes setting long a $0 string (#194)
         Force Moose when only Class::MOP is loaded to give the needed path hint to XSLoader,
           when "Assuming xs loaded $stashname".
+        * t/test.pl: print @cmd with TEST_VERBOSE
 
 1.51 2014-08-04 rurban
         * C: boot_EV (analog to Coro) SvREADONLY_off its XS symbols (#368)
