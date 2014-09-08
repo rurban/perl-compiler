@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.49_05 b9247a3 2014-07-21 | C 1.49_05/CC 1.16: strip binary BM chunk from bad comppad names M
+# B::C::VERSION = 1.51_03 bc5c8e3 2014-09-06 | 1.51_03: fix #194, setting a long $0
 # perlversion = 5.016003
 # path = /usr/local/bin/perl5.16.3
 # platform = linux 64bit threaded
@@ -65,7 +65,7 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
+fail Class::MOP
 pass Moose
 pass Test::Deep
 pass Carp::Clan
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.49_05 - perl-5.016003
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
+# 100 / 100 modules tested with B-C-1.51_03 - perl-5.016003
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   1 /   2 (50.0%)
 # skip   0 / 100 (0.0% not installed)
