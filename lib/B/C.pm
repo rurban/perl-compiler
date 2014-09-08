@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.51_03';
+our $VERSION = '1.52';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -5925,8 +5925,14 @@ _EOT9
     }
     # actually boot all non-b-c dependent modules here. we assume XSLoader (Moose, List::MoreUtils)
     if (!exists( $xsub{$stashname} ) and $include_package{$stashname}) {
-      warn "Assuming xs loaded $stashname\n" if $verbose;
-      $xsub{$stashname} = 'Dynamic-' . $savINC{$incpack};
+      $xsub{$stashname} = 'Dynamic-' . $INC{$incpack};
+      # Class::MOP without Moose: find Moose.pm
+      $xsub{$stashname} = 'Dynamic-' . $savINC{$incpack} unless $INC{$incpack};
+      if (!$savINC{$incpack}) {
+        eval "require $stashname;";
+        $xsub{$stashname} = 'Dynamic-' . $INC{$incpack};
+      }
+      warn "Assuming xs loaded $stashname with $xsub{$stashname}\n" if $verbose;
     }
     if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
       # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
