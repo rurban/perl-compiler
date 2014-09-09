@@ -31,7 +31,7 @@ if (${^UNICODE} & 1) {
 } else {
     $UTF8_STDIN = 0;
 }
-my $NTEST = 60 - (($DOSISH || !$FASTSTDIO) ? 7 : 0) - ($DOSISH ? 7 : 0)
+my $NTEST = 62 - (($DOSISH || !$FASTSTDIO) ? 7 : 0) - ($DOSISH ? 7 : 0)
     + $UTF8_STDIN;
 
 sub PerlIO::F_UTF8 () { 0x00008000 } # from perliol.h
