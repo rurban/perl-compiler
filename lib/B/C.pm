@@ -6136,7 +6136,7 @@ _EOT11
 
     }
     print "    PL_exit_flags |= PERL_EXIT_DESTRUCT_END;\n" unless $PERL56;
-    if ($] > 5.008006) {
+    if ($] >= 5.008009) {
       print <<'_SAFE_PUTENV';
 #ifndef PERL_USE_SAFE_PUTENV
     PL_use_safe_putenv = 0;
