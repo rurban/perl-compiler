@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.51_03 bc5c8e3 2014-09-06 | 1.51_03: fix #194, setting a long $0
+# B::C::VERSION = 1.52 c9b5ca6 2014-09-08 | t/test.pl: print @cmd with TEST_VERBOSE
 # perlversion = 5.014004
 # path = /usr/local/bin/perl5.14.4
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.51_03 - perl-5.014004
+# 100 / 100 modules tested with B-C-1.52 - perl-5.014004
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
