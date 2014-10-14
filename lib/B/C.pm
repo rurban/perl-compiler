@@ -4202,14 +4202,18 @@ sub B::GV::save {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
 	  $init->add("/* \%! force saving of Errno */");
-	  mark_package('Config', 1);  # Errno needs Config to set the EGV
-          walk_syms('Config');
+          unless ($ENV{CPANEL_BUILD}) { # cPanel patched Errno to exclude Config check
+            mark_package('Config', 1);  # Errno needs Config to set the EGV
+            walk_syms('Config');
+          }
 	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
           if ($] >= 5.014) {
-            mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
-            walk_syms('Config');
+            unless ($ENV{CPANEL_BUILD}) { # cPanel built DynaLoader to exclude Config
+              mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
+              walk_syms('Config');
+            }
             svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
           }
 	  mark_package('Tie::Hash::NamedCapture', 1);
@@ -6362,8 +6366,9 @@ sub B::GV::savecv {
   # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
   return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
   # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
-  # used by the compiler itself
-  if ($name eq 'Config') {
+  # used by the compiler itself. TODO: -fno-config to compile Config values in directly
+  # This will only work on the same machine with the very same Config.
+  if ($fullname eq 'Config::Config') {
     mark_package('Config', 1) if !$include_package{'Config'};
   }
   $dumped_package{$package} = 1 if !exists $dumped_package{$package} and $package !~ /::$/;
@@ -6842,7 +6847,9 @@ sub save_unused_subs {
   }
   if ($use_xsloader) {
     force_saving_xsloader();
-    mark_package('Config', 1); # required by Dynaloader and special cased previously
+    unless ($ENV{CPANEL_BUILD}) { # cPanel built DynaLoader to exclude Config
+      mark_package('Config', 1); # required by Dynaloader and special cased previously
+    }
   }
 }
 
@@ -6958,8 +6965,10 @@ sub save_context {
       use strict 'refs';
       if (!$include_package{'Errno'}) {
 	$init->add("/* force saving of Errno */");
-	mark_package('Config', 1);
-        walk_syms('Config');
+        unless ($ENV{CPANEL_BUILD}) { # cPanel patched Errno to exclude Config check
+          mark_package('Config', 1);
+          walk_syms('Config');
+        }
 	mark_package('Errno', 1);
         svref_2object(\&{'Errno::bootstrap'})->save;
       } # else already included
