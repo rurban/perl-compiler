@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52';
+our $VERSION = '1.52_01';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -4202,7 +4202,7 @@ sub B::GV::save {
 	warn "GV::save \%$fullname\n" if $debug{gv};
 	if ($fullname eq 'main::!') { # force loading Errno
 	  $init->add("/* \%! force saving of Errno */");
-          unless ($ENV{CPANEL_BUILD}) { # cPanel patched Errno to exclude Config check
+          unless ($ENV{CPANEL_PERL}) {  # patched Errno to exclude Config check
             mark_package('Config', 1);  # Errno needs Config to set the EGV
             walk_syms('Config');
           }
@@ -4210,7 +4210,7 @@ sub B::GV::save {
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
           if ($] >= 5.014) {
-            unless ($ENV{CPANEL_BUILD}) { # cPanel built DynaLoader to exclude Config
+            unless ($ENV{CPANEL_PERL}) { # cPanel built DynaLoader to exclude Config
               mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
               walk_syms('Config');
             }
@@ -6847,7 +6847,7 @@ sub save_unused_subs {
   }
   if ($use_xsloader) {
     force_saving_xsloader();
-    unless ($ENV{CPANEL_BUILD}) { # cPanel built DynaLoader to exclude Config
+    unless ($ENV{CPANEL_PERL}) { # patched DynaLoader to exclude Config
       mark_package('Config', 1); # required by Dynaloader and special cased previously
     }
   }
@@ -6965,7 +6965,7 @@ sub save_context {
       use strict 'refs';
       if (!$include_package{'Errno'}) {
 	$init->add("/* force saving of Errno */");
-        unless ($ENV{CPANEL_BUILD}) { # cPanel patched Errno to exclude Config check
+        unless ($ENV{CPANEL_PERL}) { # patched Errno to exclude Config check
           mark_package('Config', 1);
           walk_syms('Config');
         }
