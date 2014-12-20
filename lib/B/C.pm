@@ -647,7 +647,7 @@ sub svop_or_padop_pv {
 }
 
 sub IsCOW {
-  return $] >= 5.017008 and $_[0]->FLAGS & 0x00010000; # since 5.17.8
+  return ($] >= 5.017008 and $_[0]->FLAGS & 0x00010000); # since 5.17.8
 }
 sub IsCOW_hek {
   return IsCOW($_[0]) && !$_[0]->LEN;
