@@ -6,7 +6,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More tests => 1;
+use Test::More tests => 2;
 use Config;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 #use B::C ();
@@ -24,5 +24,17 @@ my $rv = \*smek;
 my $pv = "";
 $pv = \*smek;
 *foof = $pv; 
+print "ok\n";
+EOF
+
+ctestok(2,'C,-O3','ccode282i',<<'EOF',$todo.'#282 glob=glob assign hek assert/use-after-free');
+{
+  $glook = 3;
+  $smek = 4;
+  *rv = *smek;
+  *glook = *smek;
+  $pv = "";
+  *foof = *pv; 
+}
 print "ok\n";
 EOF

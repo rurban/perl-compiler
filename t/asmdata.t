@@ -80,8 +80,12 @@ for my $opname (@opnames) {
 }
 
 # I'm going to assume that op types will all be named /OP$/.
-# If this changes in the future, change this test.
-is( grep(/OP$/, @optype), @optype,  '@optype is all /OP$/' );
+# Just 5.22 added a UNOP_AUX
+if ($] >= 5.021007) {
+  is( grep(/OP$/, @optype), scalar(@optype) - 1,  '@optype is almost all /OP$/' );
+} else {
+  is( grep(/OP$/, @optype), @optype,  '@optype is all /OP$/' );
+}
 
 # comment in bytecode.pl says "Nullsv *must come first so that the 
 # condition ($$sv == 0) can continue to be used to test (sv == Nullsv)."
