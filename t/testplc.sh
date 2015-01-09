@@ -17,7 +17,7 @@ function help {
 
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
-PERL=`echo $PERL|sed -e's,",,g'`
+PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 VERS=`echo $PERL|sed -e's,.*perl,,' -e's,.exe$,,'`
 D="`$PERL -e'print (($] < 5.007) ? q(256) : q(v))'`"
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
