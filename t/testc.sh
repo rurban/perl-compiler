@@ -24,6 +24,7 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
+PERL=`echo $PERL|sed -e's,",,g'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 
 function init {
