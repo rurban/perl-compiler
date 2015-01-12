@@ -167,6 +167,7 @@ sub sv_flags {
   return '' unless $debug{Comment};
   return 'B::SPECIAL' if $_[0]->isa('B::SPECIAL');
   return 'B::PADLIST' if $_[0]->isa('B::PADLIST');
+  return 'B::PADNAMELIST' if $_[0]->isa('B::PADNAMELIST');
   return 'B::NULL'    if $_[0]->isa('B::NULL');
   my ($sv) = @_;
   my %h;
@@ -298,6 +299,10 @@ sub B::PADLIST::ix {
     $padl->bsave($ix);
     $ix;
   }
+}
+
+sub B::PADNAMELIST::ix {
+  goto &B::PADLIST::ix;
 }
 
 sub B::GV::ix {
@@ -775,6 +780,17 @@ sub B::PADLIST::bsave {
     asm "ldsv", $varix = $ix unless $ix == $varix;
   asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
   asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
+}
+
+sub B::PADNAMELIST::bsave {
+  my ( $padl, $ix ) = @_;
+  my $array = $padl->ARRAY;
+  bless $array, 'B::PAD' if ref $array eq 'B::PADNAME';
+  my $ix = $array->ix; # comppad_name
+
+  nice "-PADNAMELIST-",
+    asm "ldsv", $varix = $ix unless $ix == $varix;
+  asm "padl_name", $ix if ref $array eq 'B::PAD';
 }
 
 sub B::GV::desired {
