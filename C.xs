@@ -174,7 +174,7 @@ my_runops(pTHX)
             sv_setiv( key, PTR2IV( rx ) );
             sv_setref_iv( rv, "B::PMOP", PTR2IV( op ) );
 #if defined(DEBUGGING) && (PERL_VERSION > 7)
-	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop 0x%x => rx 0x%x\n", PTR2IV(op), PTR2IV(rx));
+	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop %p => rx %p\n", op, rx);
 #endif
             hv_store_ent( regexp_hv, key, rv, 0 );
         }

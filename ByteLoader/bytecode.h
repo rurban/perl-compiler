@@ -731,6 +731,10 @@ static int bget_swab = 0;
 
 #if PERL_VERSION < 10
 #define BSET_gp_sv(gv, arg)		GvSV((GV*)gv) = arg
+#elif PERL_VERSION >= 21 /* v5.21.7-259-g819b139 2015-01-04 */
+#define BSET_gp_sv(gv, arg)		\
+    isGV_with_GP_on((GV*)gv);		\
+    GvGP((GV*)gv)->gp_sv = arg
 #else
 #define BSET_gp_sv(gv, arg)		\
     isGV_with_GP_on((GV*)gv);		\
