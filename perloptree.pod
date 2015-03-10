@@ -44,7 +44,7 @@ of the following to be called (oversimplifying a bit):
      newBINOP(OP_MULTIPLY, flags, newSVREF($b), newSVREF($c))
   )
 
-See also L<perlhack#Op Trees>
+See also L<perlintern/"OP TREES">
 
 The simpliest type of an op structure is C<OP>, a L</BASEOP>: this
 has no children. Unary operators, L</UNOP>s, have one child, and
@@ -325,7 +325,7 @@ L<B::C> module. Then we are not allowed to free those static
 ops. For a short time, from 5.9.0 until 5.9.4, until the B::C
 module was removed from CORE, we had another field here for this
 reason: B<op_static>.  On 1 it didn't free the static op. Before
-5.9.0 the L</op_seq> field was used with the magic value B<-1> to
+5.9.0 the C<op_seq> field was used with the magic value B<-1> to
 indicate a static op, not to be freed.  Note: Trying to free a
 static struct is considered harmful.
 
@@ -429,6 +429,7 @@ The full list of all BASEOP's is:
 null ops are skipped during the runloop, and are created by the peephole optimizer.
 
 =head2 UNOP
+X<op_first>
 
 The unary op class signifier is B<1>, for one child, pointed to
 by C<op_first>.
@@ -437,7 +438,7 @@ by C<op_first>.
 		BASEOP
 	        OP *	op_first;
 	}
-  
+
 	$ perl -F"/\cI+/" -ane 'print if $F[3] =~ /1$/' opcode.pl
         rv2gv           ref-to-glob cast        ck_rvconst      ds1
         rv2sv           scalar dereference      ck_rvconst      ds1
@@ -475,6 +476,7 @@ by C<op_first>.
         #evalonce       eval constant string    ck_null         d1      S
 
 =head2 BINOP
+X<op_last>
 
 The BINOP class signifier is B<2>, for two children, pointed to by
 C<op_first> and C<op_last>.
@@ -533,8 +535,9 @@ C<op_first> and C<op_last>.
         lslice          list slice              ck_null         2       H L L
         xor             logical xor             ck_null         fs2     S S
         leaveloop       loop exit               ck_null         2
-  
+
 =head2 LOGOP
+X<op_other>
 
 The LOGOP class signifier is B<|>.
 
@@ -584,6 +587,7 @@ If true returns the op at C<op_other>, if false C<op_next>.
 Note: A simple B<if> without else is done by L<and>.
 
 =head2 LISTOP
+X<op_last>
 
 The LISTOP class signifier is B<@>.
 
