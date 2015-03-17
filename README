@@ -2,12 +2,49 @@
 
 	Copyright (c) 1996, 1997, Malcolm Beattie
 	Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
-	Copyright (c) 2012, 2013, 2014 cPanel Inc
+	Copyright (c) 2012, 2013, 2014, 2015 cPanel Inc
 
 Homepage: http://www.perl-compiler.org/
 Releases: http://search.cpan.org/dist/B-C/
 Code:     http://github.com/rurban/perl-compiler/
-  and mirrored at http://code.google.com/p/perl-compiler/
+  and mirrored until 2016 at http://code.google.com/p/perl-compiler/
+
+OVERVIEW
+
+Malcom Beattie's perl compiler ("perlcc") updated to 5.10 - 5.21.3,
+with most bugs fixed (also for 5.6. and 5.8) and new features
+added. It compiles to C or platform-compatible Bytecode.
+
+Releases are at http://search.cpan.org/dist/B-C/
+
+Development is in the master branch at https://github.com/rurban/perl-compiler,
+the stable branch is called 'release', the newest perl releases usually don't work
+immediately. I typically need 6 months to catch up.
+
+Known issues:
+              See https://code.google.com/p/perl-compiler/issues/
+              (Soon at http://github.com/rurban/perl-compiler/issues)
+
+* run-time attributes (e.g. use open attributes, Attribute::Handlers, ...),
+  but ok at compile-time.
+
+* compile-time perlio layers are not restored
+
+* some compile-time side-effects can not be reproduced when running a compiled
+  binary, such as BEGIN { chdir $dir }, i.e. most system and IO calls. use
+  INIT {} instead.
+
+* Certain XS module using compile-time pointers need special workarounds:
+
+  * DBI patched by the compiler (#359)
+  * Encode > 2.58 (#71, #305, RT 94221), patched by the compiler
+  * Net::DNS > 0.67 (#305, RT 94069)
+  * IO::Socket::SSL > 1.995 (#317, RT 95452)
+  * DBD::mysql > 4.027 (RT 97625)
+  * Todo: FCGI, Coro, Moose with meta->make_immutable
+
+Mailinglist:
+  http://groups.google.com/group/perl-compiler perl-compiler@googlegroups.com
 
 INSTALL
 
@@ -310,7 +347,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2014-07-12
+2015-03-17
 
 Malcolm Beattie
 2 September 1996
