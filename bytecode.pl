@@ -43,6 +43,7 @@ my $c_header = <<"EOT";
  *
  *      Copyright (c) 1996-1999 Malcolm Beattie
  *      Copyright (c) 2008,2009,2010,2011,2012 Reini Urban
+ *      Copyright (c) 2011-2015 cPanel Inc
  *
  *      You may distribute under the terms of either the GNU General Public
  *      License or the Artistic License, as specified in the README file.
@@ -957,7 +958,7 @@ __END__
 92 0 	gp_share	bstate->bs_sv				svindex		x
 93 0 	xgv_flags	GvFLAGS(bstate->bs_sv)			U8
 94 0 	op_next		PL_op->op_next				opindex
-95 0 	op_sibling	PL_op->op_sibling			opindex
+95 0 	op_sibling      PL_op					opindex		x
 96 0 	op_ppaddr	PL_op->op_ppaddr			strconst	24x
 97 0 	op_targ		PL_op->op_targ				PADOFFSET
 98 0 	op_type		PL_op					OPCODE		x
@@ -1044,5 +1045,4 @@ __END__
 165 18	op_savefree	PL_op->op_savefree		U8
 166 18	op_static	PL_op->op_static		U8
 167 19.003 op_folded	PL_op->op_folded		U8
-168 21.002-21.010 op_lastsib	PL_op->op_lastsib		U8
-169 >21.011 op_moresib	PL_op->op_moresib		U8
+168 22 op_moresib	PL_op->op_moresib		U8

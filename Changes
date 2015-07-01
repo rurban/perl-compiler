@@ -3,7 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.52_01
+
+1.53
+       * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
        * C: fix B::PMOP::precomp for UTF8 (#333, #338, GH#50)
 
 1.52 2014-09-09 rurban

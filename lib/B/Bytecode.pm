@@ -3,7 +3,7 @@
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
 # Copyright (c) 2008-2011 Reini Urban <rurban@cpan.org>. All rights reserved.
-# Copyright (c) 2011-2014 cPanel Inc. All rights reserved.
+# Copyright (c) 2011-2015 cPanel Inc. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.16';
+our $VERSION = '1.17';
 
 use 5.008;
 use B qw( class main_cv main_root main_start
@@ -863,9 +863,9 @@ sub B::OP::bsave_thin {
       asm "op_folded", $op->folded if $op->folded;
     }
     if ($] >= 5.021002 and $[ < 5.021011 and $op->can('lastsib')) {
-      asm "op_lastsib", $op->lastsib if $op->lastsib;
+      asm "op_moresib", $op->lastsib if $op->lastsib;
     }
-    if ($] >= 5.021011 and $op->can('moresib')) {
+    elsif ($] >= 5.021011 and $op->can('moresib')) {
       asm "op_moresib", $op->moresib if $op->moresib;
     }
   }
@@ -952,7 +952,7 @@ sub B::LISTOP::bsave {
     my $firstix = $first->ix;
     asm "ldop", $firstix unless $firstix == $opix;
     #asm "comment", "first" unless $quiet;
-    asm "op_sibling", $pushmarkix; # if !$first->can('lastsib') or !$first->lastsib;
+    asm "op_sibling", $pushmarkix if !$first->can('moresib') or !$first->moresib;
 
     $op->B::OP::bsave($ix);
     asm "op_first", $firstix;
