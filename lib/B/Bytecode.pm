@@ -862,8 +862,11 @@ sub B::OP::bsave_thin {
     if ($] >= 5.019002 and $op->can('folded')) {
       asm "op_folded", $op->folded if $op->folded;
     }
-    if ($] >= 5.021002 and $op->can('lastsib')) {
+    if ($] >= 5.021002 and $[ < 5.021011 and $op->can('lastsib')) {
       asm "op_lastsib", $op->lastsib if $op->lastsib;
+    }
+    if ($] >= 5.021011 and $op->can('moresib')) {
+      asm "op_moresib", $op->moresib if $op->moresib;
     }
   }
 }
