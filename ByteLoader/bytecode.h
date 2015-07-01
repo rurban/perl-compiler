@@ -814,6 +814,15 @@ static int bget_swab = 0;
   } STMT_END
 #endif
 
+#ifndef OpSIBLING
+#  define OpSIBLING(o)        (o)->op_sibling
+#  define OpSIBLING_set(o, v) (o)->op_sibling = (v)
+#else
+#  ifndef OpSIBLING_set
+#    define OpSIBLING_set(o, v) OpMORESIB_set((o), (v))
+#  endif
+#endif
+#define BSET_op_sibling(o, v)  OpSIBLING_set(o, v)
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
