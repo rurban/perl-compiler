@@ -863,7 +863,7 @@ sub B::OP::bsave_thin {
       asm "op_folded", $op->folded if $op->folded;
     }
     if ($] >= 5.021002 and $[ < 5.021011 and $op->can('lastsib')) {
-      asm "op_moresib", $op->lastsib if $op->lastsib;
+      asm "op_lastsib", $op->lastsib if $op->lastsib;
     }
     elsif ($] >= 5.021011 and $op->can('moresib')) {
       asm "op_moresib", $op->moresib if $op->moresib;
@@ -932,7 +932,7 @@ sub B::LISTOP::bsave {
   if ( $name eq 'sort' && ( $op->flags & blocksort ) == blocksort ) {
     # Note: 5.21.2 PERL_OP_PARENT support work in progress
     my $first    = $op->first;
-    my $pushmark = $first->sibling;
+    my $pushmark = $first->sibling; # XXX may be B::NULL
     my $rvgv     = $pushmark->first;
     my $leave    = $rvgv->first;
 
@@ -952,7 +952,7 @@ sub B::LISTOP::bsave {
     my $firstix = $first->ix;
     asm "ldop", $firstix unless $firstix == $opix;
     #asm "comment", "first" unless $quiet;
-    asm "op_sibling", $pushmarkix if !$first->can('moresib') or !$first->moresib;
+    asm "op_sibling", $pushmarkix if $first->has_sibling;
 
     $op->B::OP::bsave($ix);
     asm "op_first", $firstix;
@@ -971,17 +971,33 @@ sub B::LISTOP::bsave {
 
 # fat versions
 
+# or parent since 5.22
+sub B::OP::has_sibling {
+  my $op = shift;
+  return $op->moresib if $op->can('moresib'); #5.22
+  return $op->lastsib if $op->can('lastsib'); #5.21
+  return 1;
+}
+
 sub B::OP::bsave_fat {
   my ( $op, $ix ) = @_;
 
-  my $sibling = $op->sibling;
-  #if (!$op->can('lastsib') or !$op->lastsib) { # PERL_OP_PARENT
+  if ($op->has_sibling) {
+    my $sibling = $op->sibling; # might be B::NULL with 5.22 and PERL_OP_PARENT
     my $siblix = $sibling->ix;
     $op->B::OP::bsave_thin($ix);
+    if ($] >= 5.021002) {
+      asm "op_moresib", 1;
+    }
     asm "op_sibling", $siblix;
-  #} else {
-  #  $op->B::OP::bsave_thin($ix);
-  #}
+  } elsif ($] > 5.021011 and ref($op->parent) ne 'B::NULL') {
+    my $parent = $op->parent;
+    my $pix = $parent->ix;
+    $op->B::OP::bsave_thin($ix);
+    asm "op_sibling", $pix; # but renamed to op_sibparent
+  } else {
+    $op->B::OP::bsave_thin($ix);
+  }
   # asm "op_seq", -1;			XXX don't allocate OPs piece by piece
 }
 
