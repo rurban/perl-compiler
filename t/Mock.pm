@@ -1,8 +1,8 @@
-package
-  Mock; # do not index
+package Mock;    # do not index
 use strict;
+
 BEGIN {
-  unshift @INC, 't';
+    unshift @INC, 't';
 }
 
 =head1 NAME
@@ -49,85 +49,92 @@ use Config;
 use Cwd;
 use Exporter;
 our $details;
-our @ISA     = qw(Exporter);
+our @ISA    = qw(Exporter);
 our @EXPORT = qw(find_modules_report find_test_report
-                 mock_harness run_cc_test ctest ctestok ccompileok
+  mock_harness run_cc_test ctest ctestok ccompileok
 );
 
 # log.test or log.modules
 # check only the latest version, and match revision and perlversion
 sub find_test_report ($;$) {
-  my $logdir = shift;
-  my $arch = shift || `uname -s`;
-  #log.test-$arch-$versuffix
-  my $tmpl = "$logdir/log.test-*-5.*";
-  my @f = latest_files($tmpl);
+    my $logdir = shift;
+    my $arch = shift || `uname -s`;
+
+    #log.test-$arch-$versuffix
+    my $tmpl = "$logdir/log.test-*-5.*";
+    my @f    = latest_files($tmpl);
 }
 
 sub find_modules_report {
-  my $logdir = shift;
-  #log.modules-$ver$suffix
-  latest_files("$logdir/log.modules-5.*");
+    my $logdir = shift;
+
+    #log.modules-$ver$suffix
+    latest_files("$logdir/log.modules-5.*");
 }
 
 # check date, max diff one day from youngest
 sub latest_files {
-  my $tmpl = shift;
-  my @f = glob $tmpl;
-  my @fdates = sort{$a->[1]<=>$b->[1]} map { [$_ => -M $_] } @f;
-  my $latest = $fdates[0]->[1]; 
-  my @ret;
-  for (@fdates) {
-    if ($_->[1]-$latest < 1.2) {
-      push @ret, $_->[0]; 
-    } else {
-      last;
+    my $tmpl   = shift;
+    my @f      = glob $tmpl;
+    my @fdates = sort { $a->[1] <=> $b->[1] } map { [ $_ => -M $_ ] } @f;
+    my $latest = $fdates[0]->[1];
+    my @ret;
+    for (@fdates) {
+        if ( $_->[1] - $latest < 1.2 ) {
+            push @ret, $_->[0];
+        }
+        else {
+            last;
+        }
     }
-  }
-  @ret;
+    @ret;
 }
 
 sub parse_report {
-  my ($log, $t) = @_;
-  my $straps = Test::Harness::Straps->new;
-  open my $fh, "<", $log;
-  my $result = $straps->analyze_fh($t, $fh);
-  close $fh;
-  # XXX replay only the part for the given test
-  $result;
+    my ( $log, $t ) = @_;
+    my $straps = Test::Harness::Straps->new;
+    open my $fh, "<", $log;
+    my $result = $straps->analyze_fh( $t, $fh );
+    close $fh;
+
+    # XXX replay only the part for the given test
+    $result;
 }
 
 sub result ($) {
-  my $parse = shift;
+    my $parse = shift;
 }
 
 # 1, "C", "require LWP::UserAgent;\nprint q(ok);", "ok",0,1,"#TODO issue 27"
 sub run_cc_test {
-  my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
-  print @_;
+    my ( $cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo ) = @_;
+    print @_;
 }
+
 # 1, "ok", "CC", "ccode37i", $script, $todo
 sub ctest {
-  my ($num, $expected, $backend, $base, $script, $todo) =  @_;
-  print @_;
+    my ( $num, $expected, $backend, $base, $script, $todo ) = @_;
+    print @_;
 }
+
 # 1, "CC", "ccode37i", $script, $todo
 #sub ctestok {
 #}
 # 1, "CC", "ccode36i", $script, $todo
 sub ccompileok {
-  my ($num, $backend, $base, $script, $todo) =  @_;
-  print @_;
+    my ( $num, $backend, $base, $script, $todo ) = @_;
+    print @_;
 }
 
 sub mock_harness {
-  my ($log, $t) = @_;
-  my $rpt = parse_report($log, $t);
-  $details = $rpt->details;
-  # execute the real tests with mock_harness (overridden test)
-  my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-  my $dbg = $^P ? "-d" : "";
-  system("$X $dbg -It -MMock -MExtUtils::Command::MM -e\"test_harness(1, 'blib/lib', 'blib/arch')\" $t");
+    my ( $log, $t ) = @_;
+    my $rpt = parse_report( $log, $t );
+    $details = $rpt->details;
+
+    # execute the real tests with mock_harness (overridden test)
+    my $X   = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+    my $dbg = $^P          ? "-d"      : "";
+    system("$X $dbg -It -MMock -MExtUtils::Command::MM -e\"test_harness(1, 'blib/lib', 'blib/arch')\" $t");
 }
 
 1;

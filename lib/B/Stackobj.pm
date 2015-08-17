@@ -16,11 +16,11 @@ use Exporter ();
 @EXPORT_OK = qw(set_callback T_UNKNOWN T_NUM T_INT T_STR VALID_UNSIGNED
   VALID_INT VALID_NUM VALID_STR VALID_SV REGISTER TEMPORARY);
 %EXPORT_TAGS = (
-  types => [qw(T_UNKNOWN T_NUM T_INT T_STR)],
-  flags => [
-    qw(VALID_INT VALID_NUM VALID_STR VALID_SV
-      VALID_UNSIGNED REGISTER TEMPORARY)
-  ]
+    types => [qw(T_UNKNOWN T_NUM T_INT T_STR)],
+    flags => [
+        qw(VALID_INT VALID_NUM VALID_STR VALID_SV
+          VALID_UNSIGNED REGISTER TEMPORARY)
+    ]
 );
 
 use strict;
@@ -41,20 +41,21 @@ sub VALID_UNSIGNED () { 0x02 }
 sub VALID_NUM ()      { 0x04 }
 sub VALID_STR ()      { 0x08 }
 sub VALID_SV ()       { 0x10 }
-sub REGISTER ()       { 0x20 }    # no implicit write-back when calling subs
-sub TEMPORARY ()      { 0x40 }    # no implicit write-back needed at all
-sub SAVE_INT ()       { 0x80 }    # if int part needs to be saved at all
-sub SAVE_NUM ()       { 0x100 }   # if num part needs to be saved at all
-sub SAVE_STR ()       { 0x200 }   # if str part needs to be saved at all
+sub REGISTER ()       { 0x20 }     # no implicit write-back when calling subs
+sub TEMPORARY ()      { 0x40 }     # no implicit write-back needed at all
+sub SAVE_INT ()       { 0x80 }     # if int part needs to be saved at all
+sub SAVE_NUM ()       { 0x100 }    # if num part needs to be saved at all
+sub SAVE_STR ()       { 0x200 }    # if str part needs to be saved at all
 
 # no backtraces to avoid compiler pollution
 #use Carp qw(confess);
 sub confess {
-  if (exists &Carp::confess) {
-    goto &Carp::confess;
-  } else {
-    die @_."\n";
-  }
+    if ( exists &Carp::confess ) {
+        goto &Carp::confess;
+    }
+    else {
+        die @_ . "\n";
+    }
 }
 
 #
@@ -76,124 +77,126 @@ sub runtime { &$runtime_callback(@_) }
 sub write_back { confess "stack object does not implement write_back" }
 
 sub invalidate {
-  shift->{flags} &= ~( VALID_INT | VALID_UNSIGNED | VALID_NUM | VALID_STR );
+    shift->{flags} &= ~( VALID_INT | VALID_UNSIGNED | VALID_NUM | VALID_STR );
 }
 
 sub invalidate_int {
-  shift->{flags} &= ~( VALID_INT | VALID_UNSIGNED );
+    shift->{flags} &= ~( VALID_INT | VALID_UNSIGNED );
 }
 
 sub invalidate_double {
-  shift->{flags} &= ~( VALID_NUM );
+    shift->{flags} &= ~(VALID_NUM);
 }
 
 sub invalidate_str {
-  shift->{flags} &= ~( VALID_STR );
+    shift->{flags} &= ~(VALID_STR);
 }
 
 sub as_sv {
-  my $obj = shift;
-  if ( !( $obj->{flags} & VALID_SV ) ) {
-    $obj->write_back;
-    $obj->{flags} |= VALID_SV;
-  }
-  return $obj->{sv};
+    my $obj = shift;
+    if ( !( $obj->{flags} & VALID_SV ) ) {
+        $obj->write_back;
+        $obj->{flags} |= VALID_SV;
+    }
+    return $obj->{sv};
 }
 
 sub as_obj {
-  return shift->{obj};
+    return shift->{obj};
 }
 
 sub as_int {
-  my $obj = shift;
-  if ( !( $obj->{flags} & VALID_INT ) ) {
-    $obj->load_int;
-    $obj->{flags} |= VALID_INT | SAVE_INT;
-  }
-  return $obj->{iv};
+    my $obj = shift;
+    if ( !( $obj->{flags} & VALID_INT ) ) {
+        $obj->load_int;
+        $obj->{flags} |= VALID_INT | SAVE_INT;
+    }
+    return $obj->{iv};
 }
 
 sub as_double {
-  my $obj = shift;
-  if ( !( $obj->{flags} & VALID_NUM ) ) {
-    $obj->load_double;
-    $obj->{flags} |= VALID_NUM | SAVE_NUM;
-  }
-  return $obj->{nv};
+    my $obj = shift;
+    if ( !( $obj->{flags} & VALID_NUM ) ) {
+        $obj->load_double;
+        $obj->{flags} |= VALID_NUM | SAVE_NUM;
+    }
+    return $obj->{nv};
 }
 
 sub as_str {
-  my $obj = shift;
-  if ( !( $obj->{flags} & VALID_STR ) ) {
-    $obj->load_str;
-    $obj->{flags} |= VALID_STR | SAVE_STR;
-  }
-  return $obj->{sv};
+    my $obj = shift;
+    if ( !( $obj->{flags} & VALID_STR ) ) {
+        $obj->load_str;
+        $obj->{flags} |= VALID_STR | SAVE_STR;
+    }
+    return $obj->{sv};
 }
 
 sub as_numeric {
-  my $obj = shift;
-  return $obj->{type} == T_INT ? $obj->as_int : $obj->as_double;
+    my $obj = shift;
+    return $obj->{type} == T_INT ? $obj->as_int : $obj->as_double;
 }
 
 sub as_bool {
-  my $obj = shift;
-  if ( $obj->{flags} & VALID_INT ) {
-    return $obj->{iv};
-  }
-  if ( $obj->{flags} & VALID_NUM ) {
-    return $obj->{nv};
-  }
-  return sprintf( "(SvTRUE(%s))", $obj->as_sv );
+    my $obj = shift;
+    if ( $obj->{flags} & VALID_INT ) {
+        return $obj->{iv};
+    }
+    if ( $obj->{flags} & VALID_NUM ) {
+        return $obj->{nv};
+    }
+    return sprintf( "(SvTRUE(%s))", $obj->as_sv );
 }
 
 #
 # Debugging methods
 #
 sub peek {
-  my $obj   = shift;
-  my $type  = $obj->{type};
-  my $flags = $obj->{flags};
-  my @flags;
-  if ( $type == T_UNKNOWN ) {
-    $type = "T_UNKNOWN";
-  }
-  elsif ( $type == T_INT ) {
-    $type = "T_INT";
-  }
-  elsif ( $type == T_NUM ) {
-    $type = "T_NUM";
-  }
-  elsif ( $type == T_STR ) {
-    $type = "T_STR";
-  }
-  else {
-    $type = "(illegal type $type)";
-  }
-  push( @flags, "VALID_INT" )    if $flags & VALID_INT;
-  push( @flags, "VALID_NUM" )    if $flags & VALID_NUM;
-  push( @flags, "VALID_STR" )    if $flags & VALID_STR;
-  push( @flags, "VALID_SV" )     if $flags & VALID_SV;
-  push( @flags, "REGISTER" )     if $flags & REGISTER;
-  push( @flags, "TEMPORARY" )    if $flags & TEMPORARY;
-  @flags = ("none") unless @flags;
-  return sprintf( "%s type=$type flags=%s sv=$obj->{sv} iv=$obj->{iv} nv=$obj->{nv}",
-    class($obj), join( "|", @flags ) );
+    my $obj   = shift;
+    my $type  = $obj->{type};
+    my $flags = $obj->{flags};
+    my @flags;
+    if ( $type == T_UNKNOWN ) {
+        $type = "T_UNKNOWN";
+    }
+    elsif ( $type == T_INT ) {
+        $type = "T_INT";
+    }
+    elsif ( $type == T_NUM ) {
+        $type = "T_NUM";
+    }
+    elsif ( $type == T_STR ) {
+        $type = "T_STR";
+    }
+    else {
+        $type = "(illegal type $type)";
+    }
+    push( @flags, "VALID_INT" ) if $flags & VALID_INT;
+    push( @flags, "VALID_NUM" ) if $flags & VALID_NUM;
+    push( @flags, "VALID_STR" ) if $flags & VALID_STR;
+    push( @flags, "VALID_SV" )  if $flags & VALID_SV;
+    push( @flags, "REGISTER" )  if $flags & REGISTER;
+    push( @flags, "TEMPORARY" ) if $flags & TEMPORARY;
+    @flags = ("none") unless @flags;
+    return sprintf(
+        "%s type=$type flags=%s sv=$obj->{sv} iv=$obj->{iv} nv=$obj->{nv}",
+        class($obj), join( "|", @flags )
+    );
 }
 
 sub minipeek {
-  my $obj   = shift;
-  my $type  = $obj->{type};
-  my $flags = $obj->{flags};
-  if ( $type == T_INT || $flags & VALID_INT ) {
-    return $obj->{iv};
-  }
-  elsif ( $type == T_NUM || $flags & VALID_NUM ) {
-    return $obj->{nv};
-  }
-  else {
-    return $obj->{sv};
-  }
+    my $obj   = shift;
+    my $type  = $obj->{type};
+    my $flags = $obj->{flags};
+    if ( $type == T_INT || $flags & VALID_INT ) {
+        return $obj->{iv};
+    }
+    elsif ( $type == T_NUM || $flags & VALID_NUM ) {
+        return $obj->{nv};
+    }
+    else {
+        return $obj->{sv};
+    }
 }
 
 #
@@ -201,53 +204,57 @@ sub minipeek {
 # set_numeric and set_sv are only invoked on legal lvalues.
 #
 sub set_int {
-  my ( $obj, $expr, $unsigned ) = @_;
-  my $sval;
-  # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
-  if ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
-    $sval = $expr;
-  } else {
-    $sval = B::C::ivx($expr);
-    $sval = $expr if $sval eq '0' and $expr;
-  }
+    my ( $obj, $expr, $unsigned ) = @_;
+    my $sval;
 
-  runtime("$obj->{iv} = $sval;");
-  $obj->{flags} &= ~( VALID_SV | VALID_NUM );
-  $obj->{flags} |= VALID_INT | SAVE_INT;
-  $obj->{flags} |= VALID_UNSIGNED if $unsigned;
+    # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
+    if ( $expr =~ /[ a-dfzA-DF-Z]/ ) {    # looks not like number
+        $sval = $expr;
+    }
+    else {
+        $sval = B::C::ivx($expr);
+        $sval = $expr if $sval eq '0' and $expr;
+    }
+
+    runtime("$obj->{iv} = $sval;");
+    $obj->{flags} &= ~( VALID_SV | VALID_NUM );
+    $obj->{flags} |= VALID_INT | SAVE_INT;
+    $obj->{flags} |= VALID_UNSIGNED if $unsigned;
 }
 
 sub set_double {
-  my ( $obj, $expr ) = @_;
-  my $sval;
-  # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
-  if ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
-    $sval = $expr;
-  } else {
-    $sval = B::C::nvx($expr);
-    $sval = $expr if $sval eq '0' and $expr;
-  }
+    my ( $obj, $expr ) = @_;
+    my $sval;
 
-  runtime("$obj->{nv} = $sval;");
-  $obj->{flags} &= ~( VALID_SV | VALID_INT );
-  $obj->{flags} |= VALID_NUM | SAVE_NUM;
+    # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
+    if ( $expr =~ /[ a-dfzA-DF-Z]/ ) {    # looks not like number
+        $sval = $expr;
+    }
+    else {
+        $sval = B::C::nvx($expr);
+        $sval = $expr if $sval eq '0' and $expr;
+    }
+
+    runtime("$obj->{nv} = $sval;");
+    $obj->{flags} &= ~( VALID_SV | VALID_INT );
+    $obj->{flags} |= VALID_NUM | SAVE_NUM;
 }
 
 sub set_numeric {
-  my ( $obj, $expr ) = @_;
-  if ( $obj->{type} == T_INT ) {
-    $obj->set_int($expr);
-  }
-  else {
-    $obj->set_double($expr);
-  }
+    my ( $obj, $expr ) = @_;
+    if ( $obj->{type} == T_INT ) {
+        $obj->set_int($expr);
+    }
+    else {
+        $obj->set_double($expr);
+    }
 }
 
 sub set_sv {
-  my ( $obj, $expr ) = @_;
-  runtime("SvSetSV($obj->{sv}, $expr);");
-  $obj->invalidate;
-  $obj->{flags} |= VALID_SV;
+    my ( $obj, $expr ) = @_;
+    runtime("SvSetSV($obj->{sv}, $expr);");
+    $obj->invalidate;
+    $obj->{flags} |= VALID_SV;
 }
 
 #
@@ -257,87 +264,87 @@ sub set_sv {
 @B::Stackobj::Padsv::ISA = 'B::Stackobj';
 
 sub B::Stackobj::Padsv::new {
-  my ( $class, $type, $extra_flags, $ix, $iname, $dname ) = @_;
-  $extra_flags |= SAVE_INT    if $extra_flags & VALID_INT;
-  $extra_flags |= SAVE_NUM if $extra_flags & VALID_NUM;
-  bless {
-    type  => $type,
-    flags => VALID_SV | $extra_flags,
-    targ  => $ix,
-    sv    => "PL_curpad[$ix]",
-    iv    => "$iname",
-    nv    => "$dname",
-  }, $class;
+    my ( $class, $type, $extra_flags, $ix, $iname, $dname ) = @_;
+    $extra_flags |= SAVE_INT if $extra_flags & VALID_INT;
+    $extra_flags |= SAVE_NUM if $extra_flags & VALID_NUM;
+    bless {
+        type  => $type,
+        flags => VALID_SV | $extra_flags,
+        targ  => $ix,
+        sv    => "PL_curpad[$ix]",
+        iv    => "$iname",
+        nv    => "$dname",
+    }, $class;
 }
 
 sub B::Stackobj::Padsv::as_obj {
-  my $obj = shift;
-  my @c = comppadlist->ARRAY;
-  my @p = $c[1]->ARRAY;
-  return $p[ $obj->{targ} ];
+    my $obj = shift;
+    my @c   = comppadlist->ARRAY;
+    my @p   = $c[1]->ARRAY;
+    return $p[ $obj->{targ} ];
 }
 
 sub B::Stackobj::Padsv::load_int {
-  my $obj = shift;
-  if ( $obj->{flags} & VALID_NUM ) {
-    runtime("$obj->{iv} = $obj->{nv};");
-  }
-  else {
-    runtime("$obj->{iv} = SvIV($obj->{sv});");
-  }
-  $obj->{flags} |= VALID_INT | SAVE_INT;
+    my $obj = shift;
+    if ( $obj->{flags} & VALID_NUM ) {
+        runtime("$obj->{iv} = $obj->{nv};");
+    }
+    else {
+        runtime("$obj->{iv} = SvIV($obj->{sv});");
+    }
+    $obj->{flags} |= VALID_INT | SAVE_INT;
 }
 
 sub B::Stackobj::Padsv::load_double {
-  my $obj = shift;
-  $obj->write_back;
-  runtime("$obj->{nv} = SvNV($obj->{sv});");
-  $obj->{flags} |= VALID_NUM | SAVE_NUM;
+    my $obj = shift;
+    $obj->write_back;
+    runtime("$obj->{nv} = SvNV($obj->{sv});");
+    $obj->{flags} |= VALID_NUM | SAVE_NUM;
 }
 
 sub B::Stackobj::Padsv::load_str {
-  my $obj = shift;
-  $obj->write_back;
-  $obj->{flags} |= VALID_STR | SAVE_STR;
+    my $obj = shift;
+    $obj->write_back;
+    $obj->{flags} |= VALID_STR | SAVE_STR;
 }
 
 sub B::Stackobj::Padsv::save_int {
-  my $obj = shift;
-  return $obj->{flags} & SAVE_INT;
+    my $obj = shift;
+    return $obj->{flags} & SAVE_INT;
 }
 
 sub B::Stackobj::Padsv::save_double {
-  my $obj = shift;
-  return $obj->{flags} & SAVE_NUM;
+    my $obj = shift;
+    return $obj->{flags} & SAVE_NUM;
 }
 
 sub B::Stackobj::Padsv::save_str {
-  my $obj = shift;
-  return $obj->{flags} & SAVE_STR;
+    my $obj = shift;
+    return $obj->{flags} & SAVE_STR;
 }
 
 sub B::Stackobj::Padsv::write_back {
-  my $obj   = shift;
-  my $flags = $obj->{flags};
-  return if $flags & VALID_SV;
-  if ( $flags & VALID_INT ) {
-    if ( $flags & VALID_UNSIGNED ) {
-      runtime("sv_setuv($obj->{sv}, $obj->{iv});");
+    my $obj   = shift;
+    my $flags = $obj->{flags};
+    return if $flags & VALID_SV;
+    if ( $flags & VALID_INT ) {
+        if ( $flags & VALID_UNSIGNED ) {
+            runtime("sv_setuv($obj->{sv}, $obj->{iv});");
+        }
+        else {
+            runtime("sv_setiv($obj->{sv}, $obj->{iv});");
+        }
+    }
+    elsif ( $flags & VALID_NUM ) {
+        runtime("sv_setnv($obj->{sv}, $obj->{nv});");
+    }
+    elsif ( $flags & VALID_STR ) {
+        ;
     }
     else {
-      runtime("sv_setiv($obj->{sv}, $obj->{iv});");
+        confess "write_back failed for lexical @{[$obj->peek]}\n";
     }
-  }
-  elsif ( $flags & VALID_NUM ) {
-    runtime("sv_setnv($obj->{sv}, $obj->{nv});");
-  }
-  elsif ( $flags & VALID_STR ) {
-    ;
-  }
-  else {
-    confess "write_back failed for lexical @{[$obj->peek]}\n";
-  }
-  $obj->{flags} |= VALID_SV;
+    $obj->{flags} |= VALID_SV;
 }
 
 #
@@ -347,85 +354,85 @@ sub B::Stackobj::Padsv::write_back {
 @B::Stackobj::Const::ISA = 'B::Stackobj';
 
 sub B::Stackobj::Const::new {
-  my ( $class, $sv ) = @_;
-  my $obj = bless {
-    flags => 0,
-    sv    => $sv,    # holds the SV object until write_back happens
-    obj   => $sv
-  }, $class;
-  if ( ref($sv) eq "B::SPECIAL" ) {
-    $obj->{type} = T_SPECIAL;
-  }
-  else {
-    my $svflags = $sv->FLAGS;
-    if ( $svflags & SVf_IOK ) {
-      $obj->{flags} = VALID_INT | VALID_NUM;
-      $obj->{type}  = T_INT;
-      if ( $svflags & SVf_IVisUV ) {
-        $obj->{flags} |= VALID_UNSIGNED;
-        $obj->{nv} = $obj->{iv} = $sv->UVX;
-      }
-      else {
-        $obj->{nv} = $obj->{iv} = $sv->IV;
-      }
-    }
-    elsif ( $svflags & SVf_NOK ) {
-      $obj->{flags} = VALID_INT | VALID_NUM;
-      $obj->{type}  = T_NUM;
-      $obj->{iv}    = $obj->{nv} = $sv->NV;
-    }
-    elsif ( $svflags & SVf_POK ) {
-      $obj->{flags} = VALID_STR;
-      $obj->{type}  = T_STR;
-      $obj->{sv}    = $sv;
+    my ( $class, $sv ) = @_;
+    my $obj = bless {
+        flags => 0,
+        sv    => $sv,    # holds the SV object until write_back happens
+        obj   => $sv
+    }, $class;
+    if ( ref($sv) eq "B::SPECIAL" ) {
+        $obj->{type} = T_SPECIAL;
     }
     else {
-      $obj->{type} = T_UNKNOWN;
+        my $svflags = $sv->FLAGS;
+        if ( $svflags & SVf_IOK ) {
+            $obj->{flags} = VALID_INT | VALID_NUM;
+            $obj->{type}  = T_INT;
+            if ( $svflags & SVf_IVisUV ) {
+                $obj->{flags} |= VALID_UNSIGNED;
+                $obj->{nv} = $obj->{iv} = $sv->UVX;
+            }
+            else {
+                $obj->{nv} = $obj->{iv} = $sv->IV;
+            }
+        }
+        elsif ( $svflags & SVf_NOK ) {
+            $obj->{flags} = VALID_INT | VALID_NUM;
+            $obj->{type}  = T_NUM;
+            $obj->{iv}    = $obj->{nv} = $sv->NV;
+        }
+        elsif ( $svflags & SVf_POK ) {
+            $obj->{flags} = VALID_STR;
+            $obj->{type}  = T_STR;
+            $obj->{sv}    = $sv;
+        }
+        else {
+            $obj->{type} = T_UNKNOWN;
+        }
     }
-  }
-  return $obj;
+    return $obj;
 }
 
 sub B::Stackobj::Const::write_back {
-  my $obj = shift;
-  return if $obj->{flags} & VALID_SV;
+    my $obj = shift;
+    return if $obj->{flags} & VALID_SV;
 
-  # Save the SV object and replace $obj->{sv} by its C source code name
-  $obj->{sv} = $obj->{obj}->save;
-  $obj->{flags} |= VALID_SV | VALID_INT | VALID_NUM;
+    # Save the SV object and replace $obj->{sv} by its C source code name
+    $obj->{sv} = $obj->{obj}->save;
+    $obj->{flags} |= VALID_SV | VALID_INT | VALID_NUM;
 }
 
 sub B::Stackobj::Const::load_int {
-  my $obj = shift;
-  if ( ref( $obj->{obj} ) eq "B::RV" or ($] >= 5.011 and $obj->{obj}->FLAGS & SVf_ROK)) {
-    $obj->{iv} = int( $obj->{obj}->RV->PV );
-  }
-  else {
-    $obj->{iv} = int( $obj->{obj}->PV );
-  }
-  $obj->{flags} |= VALID_INT;
+    my $obj = shift;
+    if ( ref( $obj->{obj} ) eq "B::RV" or ( $] >= 5.011 and $obj->{obj}->FLAGS & SVf_ROK ) ) {
+        $obj->{iv} = int( $obj->{obj}->RV->PV );
+    }
+    else {
+        $obj->{iv} = int( $obj->{obj}->PV );
+    }
+    $obj->{flags} |= VALID_INT;
 }
 
 sub B::Stackobj::Const::load_double {
-  my $obj = shift;
-  if ( ref( $obj->{obj} ) eq "B::RV" ) {
-    $obj->{nv} = $obj->{obj}->RV->PV + 0.0;
-  }
-  else {
-    $obj->{nv} = $obj->{obj}->PV + 0.0;
-  }
-  $obj->{flags} |= VALID_NUM;
+    my $obj = shift;
+    if ( ref( $obj->{obj} ) eq "B::RV" ) {
+        $obj->{nv} = $obj->{obj}->RV->PV + 0.0;
+    }
+    else {
+        $obj->{nv} = $obj->{obj}->PV + 0.0;
+    }
+    $obj->{flags} |= VALID_NUM;
 }
 
 sub B::Stackobj::Const::load_str {
-  my $obj = shift;
-  if ( ref( $obj->{obj} ) eq "B::RV" ) {
-    $obj->{sv} = $obj->{obj}->RV;
-  }
-  else {
-    $obj->{sv} = $obj->{obj};
-  }
-  $obj->{flags} |= VALID_STR;
+    my $obj = shift;
+    if ( ref( $obj->{obj} ) eq "B::RV" ) {
+        $obj->{sv} = $obj->{obj}->RV;
+    }
+    else {
+        $obj->{sv} = $obj->{obj};
+    }
+    $obj->{flags} |= VALID_STR;
 }
 
 sub B::Stackobj::Const::invalidate { }
@@ -433,26 +440,25 @@ sub B::Stackobj::Const::invalidate { }
 #
 # Stackobj::Bool
 #
-;
 @B::Stackobj::Bool::ISA = 'B::Stackobj';
 
 sub B::Stackobj::Bool::new {
-  my ( $class, $preg ) = @_;
-  my $obj = bless {
-    type  => T_INT,
-    flags => VALID_INT | VALID_NUM,
-    iv    => $$preg,
-    nv    => $$preg,
-    obj   => $preg                       # this holds our ref to the pseudo-reg
-  }, $class;
-  return $obj;
+    my ( $class, $preg ) = @_;
+    my $obj = bless {
+        type  => T_INT,
+        flags => VALID_INT | VALID_NUM,
+        iv    => $$preg,
+        nv    => $$preg,
+        obj   => $preg                    # this holds our ref to the pseudo-reg
+    }, $class;
+    return $obj;
 }
 
 sub B::Stackobj::Bool::write_back {
-  my $obj = shift;
-  return if $obj->{flags} & VALID_SV;
-  $obj->{sv} = "($obj->{iv} ? &PL_sv_yes : &PL_sv_no)";
-  $obj->{flags} |= VALID_SV;
+    my $obj = shift;
+    return if $obj->{flags} & VALID_SV;
+    $obj->{sv} = "($obj->{iv} ? &PL_sv_yes : &PL_sv_no)";
+    $obj->{flags} |= VALID_SV;
 }
 
 # XXX Might want to handle as_double/set_double/load_double?
@@ -466,30 +472,33 @@ sub B::Stackobj::Bool::invalidate { }
 @B::Stackobj::Aelem::ISA = 'B::Stackobj';
 
 sub B::Stackobj::Aelem::new {
-  my ( $class, $av, $ix, $lvalue ) = @_;
-  my $sv;
-  # pop ix before av
-  if ($av eq 'POPs' and $ix eq 'POPi') {
-    $sv = "({ int _ix = POPi; _ix >= 0 ? AvARRAY(POPs)[_ix] : *av_fetch((AV*)POPs, _ix, $lvalue); })";
-  } elsif ($ix =~ /^-?[\d\.]+$/) {
-    $sv = "AvARRAY($av)[$ix]";
-  } else {
-    $sv = "($ix >= 0 ? AvARRAY($av)[$ix] : *av_fetch((AV*)$av, $ix, $lvalue))";
-  }
-  my $obj = bless {
-    type  => T_UNKNOWN,
-    flags => VALID_INT | VALID_NUM | VALID_SV,
-    iv    => "SvIVX($sv)",
-    nv    => "SvNVX($sv)",
-    sv    => "$sv",
-    lvalue => $lvalue,
-  }, $class;
-  return $obj;
+    my ( $class, $av, $ix, $lvalue ) = @_;
+    my $sv;
+
+    # pop ix before av
+    if ( $av eq 'POPs' and $ix eq 'POPi' ) {
+        $sv = "({ int _ix = POPi; _ix >= 0 ? AvARRAY(POPs)[_ix] : *av_fetch((AV*)POPs, _ix, $lvalue); })";
+    }
+    elsif ( $ix =~ /^-?[\d\.]+$/ ) {
+        $sv = "AvARRAY($av)[$ix]";
+    }
+    else {
+        $sv = "($ix >= 0 ? AvARRAY($av)[$ix] : *av_fetch((AV*)$av, $ix, $lvalue))";
+    }
+    my $obj = bless {
+        type   => T_UNKNOWN,
+        flags  => VALID_INT | VALID_NUM | VALID_SV,
+        iv     => "SvIVX($sv)",
+        nv     => "SvNVX($sv)",
+        sv     => "$sv",
+        lvalue => $lvalue,
+    }, $class;
+    return $obj;
 }
 
 sub B::Stackobj::Aelem::write_back {
-  my $obj = shift;
-  $obj->{flags} |= VALID_SV | VALID_INT | VALID_NUM | VALID_STR;
+    my $obj = shift;
+    $obj->{flags} |= VALID_SV | VALID_INT | VALID_NUM | VALID_STR;
 }
 
 sub B::Stackobj::Aelem::invalidate { }
