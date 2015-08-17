@@ -4,7 +4,7 @@
 #include <XSUB.h>
 
 #ifndef PM_GETRE
-# if defined(USE_ITHREADS) && (PERL_VERSION > 8)
+# if defined(USE_ITHREADS)
 #  define PM_GETRE(o)     (INT2PTR(REGEXP*,SvIVX(PL_regex_pad[(o)->op_pmoffset])))
 # else
 #  define PM_GETRE(o)     ((o)->op_pmregexp)
@@ -22,9 +22,7 @@
 #endif
 
 typedef struct magic  *B__MAGIC;
-#if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
-#endif
 typedef COP  *B__COP;
 typedef OP   *B__OP;
 typedef HV   *B__HV;
@@ -36,8 +34,6 @@ typedef struct {
   IV  require_tag;
 } a_hint_t;
 
-#if PERL_VERSION >= 10
-
 static const char* const svclassnames[] = {
     "B::NULL",
 #if PERL_VERSION < 19
@@ -45,9 +41,6 @@ static const char* const svclassnames[] = {
 #endif
     "B::IV",
     "B::NV",
-#if PERL_VERSION <= 10
-    "B::RV",
-#endif
     "B::PV",
 #if PERL_VERSION >= 19
     "B::INVLIST",
@@ -55,9 +48,6 @@ static const char* const svclassnames[] = {
     "B::PVIV",
     "B::PVNV",
     "B::PVMG",
-#if PERL_VERSION >= 11
-    "B::REGEXP",
-#endif
     "B::GV",
     "B::PVLV",
     "B::AV",
@@ -101,8 +91,6 @@ make_sv_object(pTHX_ SV *sv)
     return arg;
 }
 
-#endif
-
 static int
 my_runops(pTHX)
 {
@@ -111,9 +99,6 @@ my_runops(pTHX)
 
     DEBUG_l(Perl_deb(aTHX_ "Entering new RUNOPS level (B::C)\n"));
     do {
-#if (PERL_VERSION < 13) || ((PERL_VERSION == 13) && (PERL_SUBVERSION < 2))
-	PERL_ASYNC_CHECK();
-#endif
 
 	if (PL_debug) {
 	    if (PL_watchaddr && (*PL_watchaddr != PL_watchok))
@@ -123,13 +108,8 @@ my_runops(pTHX)
 			      PTR2UV(*PL_watchaddr));
 #if defined(DEBUGGING) \
    && !(defined(_WIN32) || (defined(__CYGWIN__) && (__GNUC__ > 3)) || defined(AIX))
-# if (PERL_VERSION > 7)
 	    if (DEBUG_s_TEST_) debstack();
 	    if (DEBUG_t_TEST_) debop(PL_op);
-# else
-	    DEBUG_s(debstack());
-	    DEBUG_t(debop(PL_op));
-# endif
 #endif
 	}
 
@@ -147,12 +127,7 @@ my_runops(pTHX)
             op->op_first = NULL;
             op->op_last = NULL;
 
-#if PERL_VERSION < 10
-            op->op_pmreplroot = NULL;
-            op->op_pmreplstart = NULL;
-            op->op_pmnext = NULL;
-#endif
-#if defined(USE_ITHREADS) && (PERL_VERSION > 7)
+#if defined(USE_ITHREADS)
             op->op_pmoffset = 0;
 #else
             op->op_pmregexp = 0;
@@ -173,35 +148,11 @@ my_runops(pTHX)
 
 MODULE = B__MAGIC	PACKAGE = B::MAGIC
 
-#if PERL_VERSION < 7
-
-SV*
-precomp(mg)
-        B::MAGIC        mg
-    CODE:
-        if (mg->mg_type == 'r') {
-            REGEXP* rx = (REGEXP*)mg->mg_obj;
-            RETVAL = Nullsv;
-            if (rx)
-                RETVAL = newSVpvn( rx->precomp, rx->prelen );
-        }
-        else {
-            croak( "precomp is only meaningful on r-magic" );
-        }
-    OUTPUT:
-        RETVAL
-
-#endif
-
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
-
-#if PERL_VERSION > 10
 
 U32
 RX_EXTFLAGS(rx)
 	  B::REGEXP rx
-
-#endif
 
 MODULE = B	PACKAGE = B::COP	PREFIX = COP_
 
@@ -234,14 +185,9 @@ CODE:
 	char *package = CopSTASHPV(cop);
 #ifdef cop_hints_fetch_pvn
 	hint = cop_hints_fetch_pvn(cop, "autovivification", strlen("autovivification"), a_hash, 0);
-#elif PERL_VERSION > 9
+#else
 	hint = Perl_refcounted_he_fetch(aTHX_ cop->cop_hints_hash,
 					NULL, "autovivification", strlen("autovivification"), 0, a_hash);
-#else
-	SV **val = hv_fetch(GvHV(PL_hintgv), "autovivification", strlen("autovivification"), 0);
-	if (!val)
-	  return;
-	hint = *val;
 #endif
 	if (!(hint && SvIOK(hint)))
 	  return;
@@ -290,8 +236,6 @@ op_folded(op)
 
 MODULE = B	PACKAGE = B::HV		PREFIX = Hv
 
-#if PERL_VERSION >= 10
-
 void
 HvARRAY_utf8(hv)
 	B::HV	hv
@@ -312,13 +256,9 @@ HvARRAY_utf8(hv)
 	    }
 	}
 
-#endif
-
 MODULE = B__C	PACKAGE = B::C
 
 PROTOTYPES: DISABLE
-
-#if PERL_VERSION >= 11
 
 CV*
 method_cv(meth, packname)
@@ -350,15 +290,10 @@ method_cv(meth, packname)
     OUTPUT:
         RETVAL
 
-#endif
-
 BOOT:
-#if PERL_VERSION >= 10
 {
     MY_CXT_INIT;
-#endif
     PL_runops = my_runops;
-#if PERL_VERSION >= 10
     {
       dMY_CXT;
       specialsv_list[0] = Nullsv;
@@ -370,4 +305,3 @@ BOOT:
       specialsv_list[6] = (SV *) pWARN_STD;
     }
 }
-#endif
