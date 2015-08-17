@@ -21,227 +21,19 @@ use Config;
 # Thanks to Mattia Barbon for the C99 tip to init any union members
 my $C99 = $Config{d_c99_variadic_macros};    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
-package B::C::Section;
-use strict;
+use B::C::Section     ();
+use B::C::InitSection ();
 
-use B ();
-use base 'B::Section';
-
-sub new {
-    my $class = shift;
-    my $o     = $class->SUPER::new(@_);
-    push @$o, { values => [] };
-
-    # if sv add a dummy sv_arenaroot to support global destruction
-    if ( $_[0] eq 'sv' ) {
-        $o->add("0, 0, SVTYPEMASK|0x01000000, {0}");    # SVf_FAKE
-        $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
-    }
-    return $o;
-}
-
-sub add {
-    my $section = shift;
-    push( @{ $section->[-1]{values} }, @_ );
-}
-
-sub remove {
-    my $section = shift;
-    pop @{ $section->[-1]{values} };
-}
-
-sub index {
-    my $section = shift;
-    return scalar( @{ $section->[-1]{values} } ) - 1;
-}
-
-sub typename {
-    my $section  = shift;
-    my $name     = $section->name;
-    my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-
-    # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
-    return $typename;
-}
-
-sub comment {
-    my $section = shift;
-    $section->[-1]{comment} = join( "", @_ ) if @_;
-    $section->[-1]{comment};
-}
-
-# add debugging info - stringified flags on -DF
-sub debug {
-    my $section = shift;
-    my $dbg = join( " ", @_ );
-    $section->[-1]{dbg}->[ $section->index ] = $dbg if $dbg;
-}
-
-sub output {
-    my ( $section, $fh, $format ) = @_;
-    my $sym = $section->symtable || {};
-    my $default = $section->default;
-    return if $B::C::check;
-    my $i = 0;
-    my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
-    if ( $section->name eq 'sv' ) {    #fixup arenaroot refcnt
-        my $len = scalar @{ $section->[-1]{values} };
-        $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
-    }
-    foreach ( @{ $section->[-1]{values} } ) {
-        my $dbg = "";
-        my $ref = "";
-        if (m/(s\\_[0-9a-f]+)/) {
-            if ( !exists( $sym->{$1} ) and $1 ne 's\_0' ) {
-                $ref = $1;
-                $B::C::unresolved_count++;
-                if ($B::C::verbose) {
-                    my $caller = caller(1);
-                    warn "Warning: unresolved " . $section->name . " symbol $ref\n"
-                      if $caller eq 'B::C';
-                }
-            }
-        }
-        s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
-        if ( $dodbg and $section->[-1]{dbg}->[$i] ) {
-            $dbg = " /* " . $section->[-1]{dbg}->[$i] . " " . $ref . " */";
-        }
-        printf $fh $format, $_, $section->name, $i, $ref, $dbg;
-        ++$i;
-    }
-}
-
-package B::C::InitSection;
-use strict;
-
-# avoid use vars
-@B::C::InitSection::ISA = qw(B::C::Section);
-
-sub new {
-    my $class     = shift;
-    my $max_lines = 10000;                    #pop;
-    my $section   = $class->SUPER::new(@_);
-
-    $section->[-1]{evals}     = [];
-    $section->[-1]{initav}    = [];
-    $section->[-1]{chunks}    = [];
-    $section->[-1]{nosplit}   = 0;
-    $section->[-1]{current}   = [];
-    $section->[-1]{count}     = 0;
-    $section->[-1]{max_lines} = $max_lines;
-
-    return $section;
-}
-
-sub split {
-    my $section = shift;
-    $section->[-1]{nosplit}--
-      if $section->[-1]{nosplit} > 0;
-}
-
-sub no_split {
-    shift->[-1]{nosplit}++;
-}
-
-sub inc_count {
-    my $section = shift;
-
-    $section->[-1]{count} += $_[0];
-
-    # this is cheating
-    $section->add();
-}
-
-sub add {
-    my $section = shift->[-1];
-    my $current = $section->{current};
-    my $nosplit = $section->{nosplit};
-
-    push @$current, @_;
-    $section->{count} += scalar(@_);
-    if ( !$nosplit && $section->{count} >= $section->{max_lines} ) {
-        push @{ $section->{chunks} }, $current;
-        $section->{current} = [];
-        $section->{count}   = 0;
-    }
-}
-
-sub add_eval {
-    my $section = shift;
-    my @strings = @_;
-
-    foreach my $i (@strings) {
-        $i =~ s/\"/\\\"/g;
-    }
-    push @{ $section->[-1]{evals} }, @strings;
-}
-
-sub pre_destruct {
-    my $section = shift;
-    push @{ $section->[-1]{pre_destruct} }, @_;
-}
-
-sub add_initav {
-    my $section = shift;
-    push @{ $section->[-1]{initav} }, @_;
-}
-
-sub output {
-    my ( $section, $fh, $format, $init_name ) = @_;
-    my $sym = $section->symtable || {};
-    my $default = $section->default;
-    return if $B::C::check;
-    push @{ $section->[-1]{chunks} }, $section->[-1]{current};
-
-    my $name = "aaaa";
-    foreach my $i ( @{ $section->[-1]{chunks} } ) {
-
-        # dTARG and dSP unused -nt
-        print $fh <<"EOT";
-static int ${init_name}_${name}(pTHX)
-{
-EOT
-        foreach my $i ( @{ $section->[-1]{initav} } ) {
-            print $fh "\t", $i, "\n";
-        }
-        foreach my $j (@$i) {
-            $j =~ s{(s\\_[0-9a-f]+)}
-                   { exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
-            print $fh "\t$j\n";
-        }
-        print $fh "\treturn 0;\n}\n";
-
-        $section->SUPER::add("${init_name}_${name}(aTHX);");
-        ++$name;
-    }
-
-    # We need to output evals after dl_init.
-    foreach my $s ( @{ $section->[-1]{evals} } ) {
-        ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
-    }
-
-    print $fh <<"EOT";
-static int ${init_name}(pTHX)
-{
-EOT
-    if ( $section->name eq 'init' ) {
-        print $fh "\tperl_init0(aTHX);\n";
-    }
-    $section->SUPER::output( $fh, $format );
-    print $fh "\treturn 0;\n}\n";
-}
-
-package B::C;
 use strict;
 use Exporter ();
-use Errno ();    #needed since 5.14
+use Errno    ();                             #needed since 5.14
 our %Regexp;
 
-{    # block necessary for caller to work
+{                                            # block necessary for caller to work
     my $caller = caller;
     if ( $caller eq 'O' or $caller eq 'Od' ) {
         require XSLoader;
-        XSLoader::load('B::C');    # for r-magic and for utf8-keyed B::HV->ARRAY
+        XSLoader::load('B::C');              # for r-magic and for utf8-keyed B::HV->ARRAY
     }
 }
 
@@ -3486,7 +3278,6 @@ sub B::CV::save {
     return $sym;
 }
 
-package B::C;
 my @_v = Internals::V();
 sub __ANON__::_V { @_v }
 
