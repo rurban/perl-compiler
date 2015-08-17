@@ -866,7 +866,7 @@ sub save_pv_or_rv {
         $static = $B::C::const_strings and ( $sv->FLAGS & SVf_READONLY ) ? 1 : 0;
         $static = 0
           if $shared_hek
-          or ( $fullname and ( $fullname =~ / :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
+          or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
         $static = 0 if $B::C::const_strings and $fullname and $fullname =~ /^warnings::(Dead)?Bits/;
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
             warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
@@ -981,8 +981,9 @@ sub ivx ($) {
     my $ivx       = shift;
     my $ivdformat = $Config{ivdformat};
     $ivdformat =~ s/"//g;    #" poor editor
-    my $intmax = ( 1 << ( $Config{ivsize} * 4 - 1 ) ) - 1;
-    my $L = 'L';
+    my $pow    = ( $Config{ivsize} * 4 - 1 );    # poor editor
+    my $intmax = ( 1 << $pow ) - 1;
+    my $L      = 'L';
 
     # LL for 32bit -2147483648L or 64bit -9223372036854775808L
     $L = 'LL' if $Config{ivsize} == 2 * $Config{ptrsize};
@@ -4397,7 +4398,7 @@ sub B::GV::save {
 
     my $fullname = $package . "::" . $gvname;
     my $fancyname;
-    if ( $filter and $filter =~ / :pad/ ) {
+    if ( $filter and $filter =~ m/ :pad/ ) {
         $fancyname = cstring($filter);
         $filter    = 0;
     }
@@ -4622,7 +4623,7 @@ sub B::GV::save {
         $savefields = Save_FORM | Save_IO;
     }
     $savefields &= ~$filter if ( $filter
-        and $filter !~ / :pad/
+        and $filter !~ m/ :pad/
         and $filter =~ /^\d+$/
         and $filter > 0
         and $filter < 64 );
