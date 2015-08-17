@@ -2,6 +2,8 @@ package B::C::Section;
 use strict;
 
 use B ();
+use B::Flags;
+
 use base 'B::Section';
 
 sub new {
@@ -49,8 +51,12 @@ sub comment {
 
 # add debugging info - stringified flags on -DF
 sub debug {
+    return if !$B::C::debug{'flags'};
+
     my $section = shift;
-    my $dbg = join( " ", @_ );
+    my $op      = shift;
+
+    my $dbg = $op->flagspv;
     $section->[-1]{dbg}->[ $section->index ] = $dbg if $dbg;
 }
 

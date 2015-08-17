@@ -21,6 +21,7 @@ use Config;
 # Thanks to Mattia Barbon for the C99 tip to init any union members
 my $C99 = $Config{d_c99_variadic_macros};    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
+use B::Flags;
 use B::C::Section     ();
 use B::C::InitSection ();
 
@@ -103,7 +104,7 @@ my %all_bc_subs = map { $_ => 1 } qw(B::AV::save B::BINOP::save B::BM::save B::C
 our %all_bc_deps =
   map { $_ => 1 } @B::C::Flags::deps
   ? @B::C::Flags::deps
-  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
+  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register B::Flags);
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -880,7 +881,7 @@ sub B::OP::save {
         $opsect->comment($opsect_common);
         $opsect->add( $op->_save_common );
 
-        $opsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+        $opsect->debug( $op->name, $op );
         my $ix = $opsect->index;
         $init->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
           unless $B::C::optimize_ppaddr;
@@ -950,7 +951,7 @@ sub B::UNOP::save {
     return $sym if defined $sym;
     $unopsect->comment("$opsect_common, first");
     $unopsect->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
-    $unopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $unopsect->debug( $op->name, $op );
     my $ix = $unopsect->index;
     $init->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -992,7 +993,7 @@ sub B::BINOP::save {
             ${ $op->last }
         )
     );
-    $binopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $binopsect->debug( $op->name, $op );
     my $ix = $binopsect->index;
     $init->add( sprintf( "binop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1014,7 +1015,7 @@ sub B::LISTOP::save {
             ${ $op->last }
         )
     );
-    $listopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $listopsect->debug( $op->name, $op );
     my $ix = $listopsect->index;
     $init->add( sprintf( "listop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1066,7 +1067,7 @@ sub B::LOGOP::save {
             ${ $op->other }
         )
     );
-    $logopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $logopsect->debug( $op->name, $op );
     my $ix = $logopsect->index;
     $init->add( sprintf( "logop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1095,7 +1096,7 @@ sub B::LOOP::save {
             ${ $op->lastop }
         )
     );
-    $loopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $loopsect->debug( $op->name, $op );
     my $ix = $loopsect->index;
     $init->add( sprintf( "loop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1112,7 +1113,7 @@ sub B::PVOP::save {
 
     # op_pv must be dynamic
     $pvopsect->add( sprintf( "%s, NULL", $op->_save_common ) );
-    $pvopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $pvopsect->debug( $op->name, $op );
     my $ix = $pvopsect->index;
     $init->add( sprintf( "pvop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1332,7 +1333,7 @@ sub B::SVOP::save {
             $op->_save_common, ( $is_const_addr ? $svsym : 'Nullsv' )
         )
     );
-    $svopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $svopsect->debug( $op->name, $op );
     my $ix = $svopsect->index;
     $init->add( sprintf( "svop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1378,7 +1379,7 @@ sub B::PADOP::save {
     }
     $padopsect->comment("$opsect_common, padix");
     $padopsect->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
-    $padopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $padopsect->debug( $op->name, $op );
     my $ix = $padopsect->index;
     $init->add( sprintf( "padop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1465,7 +1466,7 @@ sub B::COP::save {
         );
     }
 
-    $copsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $copsect->debug( $op->name, $op );
     my $ix = $copsect->index;
     $init->add( sprintf( "cop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1572,7 +1573,7 @@ sub B::PMOP::save {
         )
     );
 
-    $pmopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    $pmopsect->debug( $op->name, $op );
     my $pm = sprintf( "pmop_list[%d]", $pmopsect->index );
     $init->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )
       unless $B::C::optimize_ppaddr;
@@ -1666,7 +1667,7 @@ sub B::NULL::save {
     warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
     $svsect->add( sprintf( "0, %lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
 
-    #$svsect->debug( $fullname, $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
+    #$svsect->debug( $fullname, $sv ); # XXX where is this possible?
     if ( $debug{flags} and $DEBUG_LEAKING_SCALARS ) {    # add index to sv_debug_file to easily find the Nullsv
                                                          # $svsect->debug( "ix added to sv_debug_file" );
         $init->add(
@@ -1695,7 +1696,7 @@ sub B::UV::save {
             $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS
         )
     );
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     warn sprintf(
         "Saving IV(UV) 0x%x to xpvuv_list[%d], sv_list[%d], called from %s:%s\n",
         $sv->UVX, $xpvuvsect->index, $svsect->index, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(0) )[2] ] }
@@ -1732,7 +1733,7 @@ sub B::IV::save {
             $xpvivsect->index, $sv->REFCNT, $svflags
         )
     );
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     warn sprintf(
         "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
         $sv->IVX, $xpvivsect->index, $svsect->index, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(0) )[2] ] }
@@ -1759,7 +1760,7 @@ sub B::NV::save {
             $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS
         )
     );
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     warn sprintf(
         "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",
         $nv, $xpvnvsect->index, $svsect->index
@@ -1846,7 +1847,7 @@ sub B::PVLV::save {
         )
     );
 
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     my $s = "sv_list[" . $svsect->index . "]";
     if ( !$static ) {
 
@@ -1878,7 +1879,7 @@ sub B::PVIV::save {
             ", {" . ( $C99 ? ".svu_pv=" : "" ) . "(char*)$savesym}"
         )
     );
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     my $s = "sv_list[" . $svsect->index . "]";
     if ( defined($pv) ) {
 
@@ -1947,7 +1948,7 @@ sub B::PVNV::save {
             ", {" . ( $C99 ? ".svu_pv=" : "" ) . "(char*)$savesym}"
         )
     );
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     my $s = "sv_list[" . $svsect->index . "]";
     if ( defined($pv) ) {
         if ( !$static ) {
@@ -2041,7 +2042,7 @@ sub B::PV::save {
     }
 
     my $s = "sv_list[" . $svsect->index . "]";
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     savesym( $sv, "&" . $s );
 }
 
@@ -2114,7 +2115,7 @@ sub B::REGEXP::save {
         "SvLEN(&sv_list[$ix]) = 0;"
     );
 
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
     $sv->save_magic($fullname);
     return $sym;
@@ -2303,7 +2304,7 @@ sub B::PVMG::save {
         )
     );
 
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     my $s = "sv_list[" . $svsect->index . "]";
     if ( !$static ) {    # do not overwrite RV slot (#273)
                          # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
@@ -2532,7 +2533,7 @@ sub B::RV::save {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is computable at load time
     $svsect->add( sprintf( "ptr_undef, %lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
-    $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $sv );
     my $s = "sv_list[" . $svsect->index . "]";
     $init->add("$s.sv_u.svu_rv = (SV*)$rv;");
     return savesym( $sv, "&" . $s );
@@ -2820,7 +2821,7 @@ sub B::CV::save {
     }
     else {
         $svsect->add("CVIX$sv_ix");
-        $svsect->debug( "&" . $fullname, $cv->flagspv ) if $debug{flags};
+        $svsect->debug( "&" . $fullname, $cv );
         $xpvcv_ix = $xpvcvsect->index + 1;
         $xpvcvsect->add("XPVCVIX$xpvcv_ix");
 
@@ -3145,7 +3146,7 @@ sub B::CV::save {
                 $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS
             )
         );
-        $svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
+        $svsect->debug( $fullname, $cv );
     }
 
     if ($$cv) {
@@ -3843,7 +3844,7 @@ sub B::AV::save {
 
     my ( $av_index, $magic );
     if ( !$ispadlist ) {
-        $svsect->debug( $fullname, $av->flagspv ) if $debug{flags};
+        $svsect->debug( $fullname, $av );
         my $sv_ix = $svsect->index;
         $av_index = $xpvavsect->index;
 
@@ -4140,7 +4141,7 @@ sub B::HV::save {
         );
     }
 
-    $svsect->debug( $fullname, $hv->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $hv );
     my $sv_list_index = $svsect->index;
     warn sprintf(
         "saving HV %" . $fullname . " &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
@@ -4321,7 +4322,7 @@ sub B::IO::save {
         )
     );
 
-    $svsect->debug( $fullname, $io->flagspv ) if $debug{flags};
+    $svsect->debug( $fullname, $io );
     $sym = savesym( $io, sprintf( "(IO*)&sv_list[%d]", $svsect->index ) );
 
     if ( !$B::C::pv_copy_on_grow and $cur ) {
@@ -4475,7 +4476,7 @@ sub output_all {
     print "\n";
     output_declarations();
 
-    # XXX add debug versions with ix=opindex if $debug{flags}
+    # XXX add debug versions with ix=opindex
     foreach $section (@sections) {
         my $lines = $section->index + 1;
         if ($lines) {
@@ -6607,10 +6608,8 @@ sub compile {
                     B->debug(1);
                 }
                 elsif ( $arg eq "F" ) {
-                    $debug{flags}++ if eval "require B::Flags;";
+                    $debug{flags}++;
                     $all_bc_deps{'B::Flags'}++;
-
-                    # $debug{flags}++ if require B::Flags;
                 }
                 elsif ( $arg eq "r" ) {
                     $debug{runtime}++;
