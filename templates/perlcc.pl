@@ -27,31 +27,34 @@ use Config;
 use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use File::Basename qw(basename dirname);
+
 # use Cwd;
 use Pod::Usage;
+
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
 our $VERSION = 2.18;
 $| = 1;
 eval { require B::C::Flags; };
 
-$SIG{INT} = sub { exit(); } if exists $SIG{INT}; # exit gracefully and clean up after ourselves.
+$SIG{INT} = sub { exit(); }
+  if exists $SIG{INT};    # exit gracefully and clean up after ourselves.
 
 use subs qw{
-    cc_harness check_read check_write checkopts_byte choose_backend
-    compile_byte compile_cstyle compile_module generate_code
-    grab_stash parse_argv sanity_check vprint yclept spawnit
-    gettimeofday tv_interval vsystem
+  cc_harness check_read check_write checkopts_byte choose_backend
+  compile_byte compile_cstyle compile_module generate_code
+  grab_stash parse_argv sanity_check vprint yclept spawnit
+  gettimeofday tv_interval vsystem
 };
-sub opt(*); # imal quoting
+sub opt(*);               # imal quoting
 sub is_win32();
 sub is_msvc();
 
-our ($Options, $BinPerl, $Backend);
-our ($Input => $Output);
+our ( $Options, $BinPerl, $Backend );
+our ( $Input => $Output );
 our ($logfh);
 our ($cfile);
-our (@begin_output); # output from BEGIN {}, for testsuite
+our (@begin_output);      # output from BEGIN {}, for testsuite
 our ($extra_libs);
 
 # eval { main(); 1 } or die;
@@ -70,13 +73,15 @@ sub main {
 #######################################################################
 
 sub choose_backend {
+
     # Choose the backend.
     $Backend = 'C';
-    if (opt('B')) {
+    if ( opt('B') ) {
         checkopts_byte();
         $Backend = 'Bytecode';
     }
-    if (opt('S') && opt('c')) {
+    if ( opt('S') && opt('c') ) {
+
         # die "$0: Do you want me to compile this or not?\n";
         delete $Options->{S};
     }
@@ -87,77 +92,85 @@ sub generate_code {
 
     vprint 4, "Compiling $Input";
 
-    $BinPerl  = yclept();  # Calling convention for perl.
+    $BinPerl = yclept();    # Calling convention for perl.
 
-    if (exists $Options->{m}) {
+    if ( exists $Options->{m} ) {
         compile_module();
-    } else {
-        if ($Backend eq 'Bytecode') {
+    }
+    else {
+        if ( $Backend eq 'Bytecode' ) {
             compile_byte();
-        } else {
+        }
+        else {
             compile_cstyle();
         }
     }
-    exit(0) if (!opt('r'));
+    exit(0) if ( !opt('r') );
 }
 
 sub run_code {
-    if ($Backend eq 'Bytecode') {
-        if ($] < 5.007 or $] >= 5.018) {
+    if ( $Backend eq 'Bytecode' ) {
+        if ( $] < 5.007 or $] >= 5.018 ) {
             $Output = "$BinPerl -MByteLoader $Output";
-        } else {
+        }
+        else {
             $Output = "$BinPerl $Output";
         }
     }
-    if (opt('staticxs') and $extra_libs) {
+    if ( opt('staticxs') and $extra_libs ) {
         my $path = '';
         my $PATHSEP = $^O eq 'MSWin32' ? ';' : ':';
-        for (split / /, $extra_libs) {
+        for ( split / /, $extra_libs ) {
             s{/[^/]+$}{};
+
             # XXX qx quote?
-            $path .= $PATHSEP.$_ if $_;
+            $path .= $PATHSEP . $_ if $_;
         }
-        if ($^O =~ /^MSWin32|msys|cygwin$/) {
+        if ( $^O =~ /^MSWin32|msys|cygwin$/ ) {
             $ENV{PATH} .= $path;
             vprint 0, "PATH=\$PATH$path";
-        } elsif ($^O ne 'darwin') {
+        }
+        elsif ( $^O ne 'darwin' ) {
             $ENV{LD_LIBRARY_PATH} .= $path;
             vprint 0, "LD_LIBRARY_PATH=\$LD_LIBRARY_PATH$path";
         }
     }
     vprint 0, "Running code $Output @ARGV";
-    system(join(" ",$Output,@ARGV));
+    system( join( " ", $Output, @ARGV ) );
     exit(0);
 }
 
 # usage: vprint [level] msg args
 sub vprint {
     my $level;
-    if (@_ == 1) {
+    if ( @_ == 1 ) {
         $level = 1;
-    } elsif ($_[0] =~ /^-?\d$/) {
+    }
+    elsif ( $_[0] =~ /^-?\d$/ ) {
         $level = shift;
-    } else {
+    }
+    else {
         # well, they forgot to use a number; means >0
         $level = 0;
     }
     my $msg = "@_";
-    $msg .= "\n" unless substr($msg, -1) eq "\n";
-    if (opt('v') > $level)
-    {
-	if (opt('log')) {
-	    print $logfh "$0: $msg" ;
-	} else {
-	    print        "$0: $msg";
-	}
+    $msg .= "\n" unless substr( $msg, -1 ) eq "\n";
+    if ( opt('v') > $level ) {
+        if ( opt('log') ) {
+            print $logfh "$0: $msg";
+        }
+        else {
+            print "$0: $msg";
+        }
     }
 }
 
 sub vsystem {
-    if (opt('dryrun')) {
+    if ( opt('dryrun') ) {
         print "@_\n";
-    } else {
-       system(@_);
+    }
+    else {
+        system(@_);
     }
 }
 
@@ -174,72 +187,75 @@ sub parse_argv {
     unshift @ARGV, split ' ', $ENV{PERLCC_OPTS} if $ENV{PERLCC_OPTS};
 
     $Options = {};
+
     # support single dash -Wb. GetOptions requires --Wb with bundling enabled.
-    if (my ($wb) = grep /^-Wb=.+/, @ARGV) {
-        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",".substr($wb,4) : substr($wb,4);
+    if ( my ($wb) = grep /^-Wb=.+/, @ARGV ) {
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb} . "," . substr( $wb, 4 ) : substr( $wb, 4 );
         @ARGV = grep !/^-Wb=(.+)/, @ARGV;
     }
+
     # -O2 i.e. -Wb=-O1 (new since 2.13)
-    if (my ($o1) = grep /^-O(\d)$/, @ARGV) {
-        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb}.",$o1" : $o1;
+    if ( my ($o1) = grep /^-O(\d)$/, @ARGV ) {
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb} . ",$o1" : $o1;
         @ARGV = grep !/^-O\d$/, @ARGV;
     }
-    if (my ($v) = grep /^-v\d$/, @ARGV) {
-        $Options->{v} = 0+substr($v,2);
+    if ( my ($v) = grep /^-v\d$/, @ARGV ) {
+        $Options->{v} = 0 + substr( $v, 2 );
         @ARGV = grep !/^-v\d$/, @ARGV;
     }
-    if (grep /^-stash$/, @ARGV) {
+    if ( grep /^-stash$/, @ARGV ) {
         $Options->{stash}++;
         @ARGV = grep !/^-stash$/, @ARGV;
     }
     $Options->{spawn} = 1 unless $^O eq 'MSWin32';
-    Getopt::Long::GetOptions( $Options,
-        'L=s',          # lib directory
-        'I=s',          # include directories (FOR C, NOT FOR PERL)
-        'o=s',          # Output executable
-        'v:i',          # Verbosity level
-        'e=s',          # One-liner
-        'm|sharedlib:s',# as Module [name] (new since 2.11, not yet tested)
-	'r',            # run resulting executable
-        'B',            # Byte compiler backend
-        'O',            # Optimised C backend B::CC
-         #'O1-4'        # alias for -Wb=-O1 (new since 2.13)
-        'dryrun|n',     # only print commands, do not execute
-        'c',            # Compile to C only, no linking
-        'check',        # pass -c to B::C and exit
-        'help|h',       # Help me
-        'S',            # Keep generated C file
-        'T',            # run the backend using perl -T
-        't',            # run the backend using perl -t
-        'A',            # -DALLOW_PERL_OPTIONS like -D?
-        'u=s@',         # use packages (new since 2.13)
-        'U=s@',         # skip packages (new since 2.13)
-        'static',       # Link to static libperl (default, new since 2.11)
-        'shared',       # Link to shared libperl (new since 2.07)
-        'staticxs',     # Link static XSUBs (new since 2.07)
-        'sharedxs',     # Link shared XSUBs (default, new since 2.07))
-        'stash',        # Detect external packages via B::Stash
-	'log:s',        # where to log compilation process information
-        'Wb=s',         # pass (comma-seperated) options to backend
-        'f=s@',         # pass compiler option(s) to backend (new since 2.14)
-        'Wc=s',         # pass (comma-seperated) options to cc (new since 2.13)
-        'Wl=s',         # pass (comma-seperated) options to ld (new since 2.13)
-        'testsuite',    # try to be nice to testsuite modules (STDOUT, STDERR handles)
-        'spawn!',	# --no-spawn (new since 2.12)
-        'time',         # print benchmark timings (new since 2.08)
-        'version',      # (new since 2.13)
+    Getopt::Long::GetOptions(
+        $Options,
+        'L=s',              # lib directory
+        'I=s',              # include directories (FOR C, NOT FOR PERL)
+        'o=s',              # Output executable
+        'v:i',              # Verbosity level
+        'e=s',              # One-liner
+        'm|sharedlib:s',    # as Module [name] (new since 2.11, not yet tested)
+        'r',                # run resulting executable
+        'B',                # Byte compiler backend
+        'O',                # Optimised C backend B::CC
+                            #'O1-4'        # alias for -Wb=-O1 (new since 2.13)
+        'dryrun|n',         # only print commands, do not execute
+        'c',                # Compile to C only, no linking
+        'check',            # pass -c to B::C and exit
+        'help|h',           # Help me
+        'S',                # Keep generated C file
+        'T',                # run the backend using perl -T
+        't',                # run the backend using perl -t
+        'A',                # -DALLOW_PERL_OPTIONS like -D?
+        'u=s@',             # use packages (new since 2.13)
+        'U=s@',             # skip packages (new since 2.13)
+        'static',           # Link to static libperl (default, new since 2.11)
+        'shared',           # Link to shared libperl (new since 2.07)
+        'staticxs',         # Link static XSUBs (new since 2.07)
+        'sharedxs',         # Link shared XSUBs (default, new since 2.07))
+        'stash',            # Detect external packages via B::Stash
+        'log:s',            # where to log compilation process information
+        'Wb=s',             # pass (comma-seperated) options to backend
+        'f=s@',             # pass compiler option(s) to backend (new since 2.14)
+        'Wc=s',             # pass (comma-seperated) options to cc (new since 2.13)
+        'Wl=s',             # pass (comma-seperated) options to ld (new since 2.13)
+        'testsuite',        # try to be nice to testsuite modules (STDOUT, STDERR handles)
+        'spawn!',           # --no-spawn (new since 2.12)
+        'time',             # print benchmark timings (new since 2.08)
+        'version',          # (new since 2.13)
     );
 
     $Options->{v} += 0;
 
-    if( opt('t') && opt('T') ) {
+    if ( opt('t') && opt('T') ) {
         warn "Can't specify both -T and -t, -t ignored";
         $Options->{t} = 0;
     }
 
-    helpme() if opt('help'); # And exit
-    if (opt('version')) {
-      die version();
+    helpme() if opt('help');    # And exit
+    if ( opt('version') ) {
+        die version();
     }
 
     # $Options->{Wb} .= ",-O1" if opt('O1');
@@ -248,29 +264,34 @@ sub parse_argv {
     # $Options->{Wb} .= ",-O4" if opt('O4');
     $Options->{Wc} .= " -DALLOW_PERL_OPTIONS" if opt('A');
 
-    if( $Options->{time} or $Options->{spawn} ) {
-      eval { require Time::HiRes; }; # 5.6 has no Time::HiRes
-      if ($@) {
-        warn "--time ignored. No Time::HiRes\n" if $Options->{time};
-        $Options->{time} = 0;
-      } else {
-        *gettimeofday = *Time::HiRes::gettimeofday;
-        Time::HiRes::gettimeofday();
-        Time::HiRes->import('gettimeofday','tv_interval','sleep');
-      }
+    if ( $Options->{time} or $Options->{spawn} ) {
+        eval { require Time::HiRes; };    # 5.6 has no Time::HiRes
+        if ($@) {
+            warn "--time ignored. No Time::HiRes\n" if $Options->{time};
+            $Options->{time} = 0;
+        }
+        else {
+            *gettimeofday = *Time::HiRes::gettimeofday;
+            Time::HiRes::gettimeofday();
+            Time::HiRes->import( 'gettimeofday', 'tv_interval', 'sleep' );
+        }
     }
-    $logfh  = new FileHandle(">> " . opt('log')) if (opt('log'));
+    $logfh = new FileHandle( ">> " . opt('log') ) if ( opt('log') );
 
-    if (opt('e')) {
+    if ( opt('e') ) {
         warn "$0: using -e 'code' as input file, ignoring @ARGV\n" if @ARGV;
+
         # We don't use a temporary file here; why bother?
         # XXX: this is not bullet proof -- spaces or quotes in name!
-        $Input = is_win32() ? # Quotes eaten by shell
-            '-e "'.opt('e').'"' :
-            "-e '".opt('e')."'";
-    } else {
-        $Input = shift @ARGV;  # XXX: more files?
+        $Input = is_win32()
+          ?    # Quotes eaten by shell
+          '-e "' . opt('e') . '"'
+          : "-e '" . opt('e') . "'";
+    }
+    else {
+        $Input = shift @ARGV;    # XXX: more files?
         _usage_and_die("No input file specified\n") unless $Input;
+
         # DWIM modules. This is bad but necessary.
         $Options->{m} = '' if $Input =~ /\.pm\z/ and !opt('m');
         vprint 1, "$0: using $Input as input file, ignoring @ARGV\n" if @ARGV;
@@ -278,17 +299,20 @@ sub parse_argv {
         check_perl($Input);
     }
 
-    if (opt('o')) {
+    if ( opt('o') ) {
         $Output = opt('o');
-    } elsif (opt('B')) {
-        if (opt('e')) {
+    }
+    elsif ( opt('B') ) {
+        if ( opt('e') ) {
             my $suffix = '.plc';
             $suffix = '.pmc' if exists $Options->{m};
-            (undef, $Output) = tempfile("plcXXXXX", SUFFIX => $suffix);
-        } else {
+            ( undef, $Output ) = tempfile( "plcXXXXX", SUFFIX => $suffix );
+        }
+        else {
             $Output = basename($Input) . "c";
         }
-    } else {
+    }
+    else {
         $Output = opt('e') ? 'a.out' : $Input;
         $Output =~ s/\.(p[lm]|t)$//;
         $Output .= 'exe' if is_win32() or $^O eq 'cygwin';
@@ -299,14 +323,15 @@ sub parse_argv {
 
 sub opt(*) {
     my $opt = shift;
-    return exists($Options->{$opt}) && ($Options->{$opt} || 0);
+    return exists( $Options->{$opt} ) && ( $Options->{$opt} || 0 );
 }
 
 sub compile_module {
-    if ($Backend eq 'Bytecode') {
-        compile_byte('-m'.$Options->{m});
-    } else {
-        compile_cstyle("-m".$Options->{m});
+    if ( $Backend eq 'Bytecode' ) {
+        compile_byte( '-m' . $Options->{m} );
+    }
+    else {
+        compile_cstyle( "-m" . $Options->{m} );
     }
 }
 
@@ -315,18 +340,19 @@ sub compile_byte {
     vprint 3, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
     $opts = "-s," if $] >= 5.018;
-    if ($] >= 5.007 and $] < 5.018 and $Input =~ /^-e/) {
+    if ( $] >= 5.007 and $] < 5.018 and $Input =~ /^-e/ ) {
         $opts = "-H,";
     }
-    if (@_ == 1) {
-        $opts .= $_[0].",";
+    if ( @_ == 1 ) {
+        $opts .= $_[0] . ",";
     }
     my $addoptions = opt('Wb');
-    if( $addoptions ) {
-        $opts .= '-v,' if opt('v') > 4;
+    if ($addoptions) {
+        $opts .= '-v,'                    if opt('v') > 4;
         $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
         $opts .= "$addoptions,";
-    } elsif (opt('v') > 4) {
+    }
+    elsif ( opt('v') > 4 ) {
         $opts .= '-v,';
         $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
     }
@@ -336,88 +362,94 @@ sub compile_byte {
     vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
-    my ($output_r, $error_r, $errcode) = spawnit($command);
-    my $elapsed = tv_interval ( $t0 ) if opt('time');
+    my ( $output_r, $error_r, $errcode ) = spawnit($command);
+    my $elapsed = tv_interval($t0) if opt('time');
     vprint -1, "c time: $elapsed" if opt('time');
 
-    if (@$error_r && $errcode != 0) {
-	_die("$Input did not compile $errcode:\n@$error_r\n");
-    } else {
-	my @error = grep { !/^$Input syntax OK$/o } @$error_r;
-	@error = grep { !/^No package specified for compilation, assuming main::$/o } @error;
-	warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
-	warn "@error" if @error and opt('v')>4;
+    if ( @$error_r && $errcode != 0 ) {
+        _die("$Input did not compile $errcode:\n@$error_r\n");
+    }
+    else {
+        my @error = grep { !/^$Input syntax OK$/o } @$error_r;
+        @error = grep { !/^No package specified for compilation, assuming main::$/o } @error;
+        warn "$0: Unexpected compiler output\n@error" if @error and opt('v') < 5;
+        warn "@error" if @error and opt('v') > 4;
     }
 
-    unless (opt('dryrun')) {
-      chmod 0777 & ~umask, $Output    or _die("can't chmod $Output: $!\n");
+    unless ( opt('dryrun') ) {
+        chmod 0777 & ~umask, $Output or _die("can't chmod $Output: $!\n");
     }
 }
 
 sub compile_cstyle {
     my $stash = opt('stash') ? grab_stash() : "";
-    $stash .= "," if $stash; #stash can be empty
-    $stash .= "-u$_," for @{$Options->{u}};
-    $stash .= "-U$_," for @{$Options->{U}};
+    $stash .= "," if $stash;    #stash can be empty
+    $stash .= "-u$_," for @{ $Options->{u} };
+    $stash .= "-U$_," for @{ $Options->{U} };
 
-    my $taint = opt('T') ? ' -T' :
-                       opt('t') ? ' -t' : '';
+    my $taint =
+        opt('T') ? ' -T'
+      : opt('t') ? ' -t'
+      :            '';
 
     # What are we going to call our output C file?
     my $lose = 0;
     my ($cfh);
-    my $testsuite = '';
+    my $testsuite  = '';
     my $addoptions = '';
-    if (@_ == 1) {
-        $addoptions .= $_[0].",";
+    if ( @_ == 1 ) {
+        $addoptions .= $_[0] . ",";
     }
     $addoptions .= opt('Wb');
-    if( $addoptions ) {
-        $addoptions .= ',-Dfull' if opt('v') >= 6;
+    if ($addoptions) {
+        $addoptions .= ',-Dfull'  if opt('v') >= 6;
         $addoptions .= ',-Dsp,-v' if opt('v') == 5;
         $addoptions .= ',';
-    } elsif (opt('v') > 4) {
+    }
+    elsif ( opt('v') > 4 ) {
         $addoptions = '-Dsp,-v,';
         $addoptions = '-Dfull,-v,' if opt('v') >= 6;
     }
-    if (opt('f')) {
-        $addoptions .= "-f$_," for @{$Options->{f}};
+    if ( opt('f') ) {
+        $addoptions .= "-f$_," for @{ $Options->{f} };
     }
-    if (opt('check')) {
+    if ( opt('check') ) {
         $addoptions .= "-c,";
     }
 
     my $staticxs = opt('staticxs') ? "-staticxs," : '';
     warn "--staticxs on darwin does not work yet\n"
-        if $staticxs and $^O eq 'darwin';
-    if (opt('testsuite')) {
+      if $staticxs and $^O eq 'darwin';
+    if ( opt('testsuite') ) {
         my $bo = join '', @begin_output;
         $bo =~ s/\\/\\\\\\\\/gs;
         $bo =~ s/\n/\\n/gs;
         $bo =~ s/,/\\054/gs;
+
         # don't look at that: it hurts
-        $testsuite = q{-fuse-script-name,-fsave-data,-fsave-sig-hash,}.
-            qq[-e"print q{$bo}",] .
-            q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} .
-            q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
+        $testsuite = q{-fuse-script-name,-fsave-data,-fsave-sig-hash,} . qq[-e"print q{$bo}",] . q{-e"open(Test::Builder::TESTOUT\054 '>&STDOUT') or die $!",} . q{-e"open(Test::Builder::TESTERR\054 '>&STDERR') or die $!",};
     }
-    if (opt('check')) {
-        $cfile = "";
+    if ( opt('check') ) {
+        $cfile    = "";
         $staticxs = "";
-    } elsif (opt('o')) {
-        $cfile = opt('o').".c";
-        if ((is_win32() or $^O eq 'cygwin') and $Output =~ /\.exe.c$/) {
-          $cfile =~ s/\.exe\.c$/.c/,
+    }
+    elsif ( opt('o') ) {
+        $cfile = opt('o') . ".c";
+        if ( ( is_win32() or $^O eq 'cygwin' ) and $Output =~ /\.exe.c$/ ) {
+            $cfile =~ s/\.exe\.c$/.c/,;
         }
-    } elsif (opt('S') || opt('c')) { # We need to keep it
-        if (opt('e')) {
+    }
+    elsif ( opt('S') || opt('c') ) {    # We need to keep it
+        if ( opt('e') ) {
             $cfile = $Output;
-            if ((is_win32() or $^O eq 'cygwin') and $Output =~ /\.exe$/) {
-                $cfile =~ s/\.exe$//,
+            if ( ( is_win32() or $^O eq 'cygwin' ) and $Output =~ /\.exe$/ ) {
+                $cfile =~ s/\.exe$//,;
             }
             $cfile .= '.c';
-        } else {
+        }
+        else {
             $cfile = basename($Input);
+
             # File off extension if present
             # hold on: plx is executable; also, careful of ordering!
             $cfile =~ s/\.(?:p(?:lx|l|h)|m)\z//i;
@@ -425,21 +457,23 @@ sub compile_cstyle {
             $cfile = $Output if opt('c') && $Output =~ /\.c\z/i;
         }
         check_write($cfile);
-    } else { # Do not keep tempfiles (no -S nor -c nor -o)
+    }
+    else {    # Do not keep tempfiles (no -S nor -c nor -o)
         $lose = 1;
-        ($cfh, $cfile) = tempfile("pccXXXXX", SUFFIX => ".c");
-        close $cfh; # See comment just below
+        ( $cfh, $cfile ) = tempfile( "pccXXXXX", SUFFIX => ".c" );
+        close $cfh;    # See comment just below
     }
     vprint 3, "Writing C on $cfile" unless opt('check');
 
     my $max_line_len = '';
-    if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/i) {
+    if ( $^O eq 'MSWin32' && $Config{cc} =~ /^cl/i ) {
         $max_line_len = '-l2000,';
     }
 
     my $options = "$addoptions$testsuite$max_line_len$staticxs$stash";
     $options .= "-o$cfile" unless opt('check');
-    $options = substr($options,0,-1) if substr($options,-1,1) eq ",";
+    $options = substr( $options, 0, -1 ) if substr( $options, -1, 1 ) eq ",";
+
     # This has to do the write itself, so we can't keep a lock. Life
     # sucks.
 
@@ -448,121 +482,129 @@ sub compile_cstyle {
     vprint 0, "Calling $command";
 
     my $t0 = [gettimeofday] if opt('time');
-    my ($output_r, $error_r, $errcode) = spawnit($command);
-    my $elapsed = tv_interval ( $t0 ) if opt('time');
-    my @output = @$output_r;
-    my @error = @$error_r;
+    my ( $output_r, $error_r, $errcode ) = spawnit($command);
+    my $elapsed = tv_interval($t0) if opt('time');
+    my @output  = @$output_r;
+    my @error   = @$error_r;
 
-    if (@error && $errcode != 0) {
+    if ( @error && $errcode != 0 ) {
         _die("$Input did not compile, which can't happen $errcode:\n@error\n");
-    } else {
-        my $i = substr($Input,0,2) eq '-e' ? '-e' : $Input;
+    }
+    else {
+        my $i = substr( $Input, 0, 2 ) eq '-e' ? '-e' : $Input;
         @error = grep { !/^$i syntax OK$/o } @error;
-        if (opt('check')) {
+        if ( opt('check') ) {
             print "@error" if @error;
-        } else {
-            warn "$0: Unexpected compiler output\n@error" if @error and opt('v')<5;
-            warn "@error" if @error and opt('v')>4;
+        }
+        else {
+            warn "$0: Unexpected compiler output\n@error" if @error and opt('v') < 5;
+            warn "@error" if @error and opt('v') > 4;
         }
     }
     vprint -1, "c time: $elapsed" if opt('time');
     $extra_libs = '';
     my %rpath;
-    if ($staticxs and open(XS, "<", $cfile.".lst")) {
+    if ( $staticxs and open( XS, "<", $cfile . ".lst" ) ) {
         while (<XS>) {
-            my ($s, $l) = m/^([^\t]+)(.*)$/;
-            next if grep { $s eq $_ } @{$Options->{U}};
+            my ( $s, $l ) = m/^([^\t]+)(.*)$/;
+            next if grep { $s eq $_ } @{ $Options->{U} };
             $stash .= ",-u$s";
             if ($l) {
-                $l = substr($l,1);
-                if ($^O eq 'darwin' and $l =~/\.bundle$/) {
+                $l = substr( $l, 1 );
+                if ( $^O eq 'darwin' and $l =~ /\.bundle$/ ) {
                     my $ofile = $l;
                     $ofile =~ s/\.bundle$/.o/;
                     $ofile =~ s{^.*/auto/}{};
                     $ofile =~ s{(.*)/[^/]+\.o}{$1.o};
                     $ofile =~ s{/}{_}g;
-                    $ofile = 'pcc'.$ofile;
-                    if (-e $ofile) {
-                        vprint 3, "Using ".$ofile;
-                    } else {
-                        vprint 3, "Creating ".$ofile;
+                    $ofile = 'pcc' . $ofile;
+                    if ( -e $ofile ) {
+                        vprint 3, "Using " . $ofile;
+                    }
+                    else {
+                        vprint 3, "Creating " . $ofile;
+
                         # This fails sometimes
-                        my $cmd = "otool -tv $l | \"$^X\" -pe "
-        . q{'s{^/}{# .file /};s/^00[0-9a-f]+\s/\t/;s/^\(__(\w+)(,__.*?)?\) section/q(.).lc($1)/e'} 
-        . " | as -o \"$ofile\"";
+                        my $cmd = "otool -tv $l | \"$^X\" -pe " . q{'s{^/}{# .file /};s/^00[0-9a-f]+\s/\t/;s/^\(__(\w+)(,__.*?)?\) section/q(.).lc($1)/e'} . " | as -o \"$ofile\"";
                         vprint 3, $cmd;
                         vsystem($cmd);
                     }
-                    $extra_libs .= " ".$l if -e $ofile;
-                } else {
-                    $extra_libs .= " ".$l;
-                    $rpath{dirname($l)}++;
+                    $extra_libs .= " " . $l if -e $ofile;
+                }
+                else {
+                    $extra_libs .= " " . $l;
+                    $rpath{ dirname($l) }++;
                 }
             }
         }
         close XS;
         my ($rpath) = $Config{ccdlflags} =~ /^(.+rpath,)/;
         ($rpath) = $Config{ccdlflags} =~ m{^(.+-R,)/} unless $rpath;
-        if (!$rpath and $Config{gccversion}) {
+        if ( !$rpath and $Config{gccversion} ) {
             $rpath = '-Wl,-rpath,';
         }
-        $rpath =~ s/^-Wl,-E// if $rpath;         # already done via ccdlflags
-        # $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
+        $rpath =~ s/^-Wl,-E// if $rpath;    # already done via ccdlflags
+                                            # $extra_libs .= " $rpath".join(" ".$rpath,keys %rpath) if $rpath and %rpath;
         vprint 4, "staticxs: $stash $extra_libs";
     }
     exit if opt('check');
 
     $t0 = [gettimeofday] if opt('time');
-    is_msvc ?
-        cc_harness_msvc($cfile, $stash, $extra_libs) :
-        cc_harness($cfile, $stash, $extra_libs) unless opt('c');
-    $elapsed = tv_interval ( $t0 ) if opt('time');
+    is_msvc
+      ? cc_harness_msvc( $cfile, $stash, $extra_libs )
+      : cc_harness( $cfile, $stash, $extra_libs )
+      unless opt('c');
+    $elapsed = tv_interval($t0) if opt('time');
     vprint -1, "cc time: $elapsed" if opt('time');
 
-    if ($lose and -s $Output) {
+    if ( $lose and -s $Output ) {
         vprint 3, "Unlinking $cfile";
         unlink $cfile or _die("can't unlink $cfile: $!\n");
     }
 }
 
 sub cc_harness_msvc {
-    my ($cfile, $stash, $extra_libs) = @_;
+    my ( $cfile, $stash, $extra_libs ) = @_;
     use ExtUtils::Embed ();
-    my $obj = "${Output}.obj";
-    my $compile = ExtUtils::Embed::ccopts." -c -Fo$obj $cfile ";
-    my $link = "-out:$Output $obj";
+    my $obj     = "${Output}.obj";
+    my $compile = ExtUtils::Embed::ccopts . " -c -Fo$obj $cfile ";
+    my $link    = "-out:$Output $obj";
     $compile .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $compile .= $B::C::Flags::extra_cflags;
-    $compile .= " -I".$_ for split /\s+/, opt('I');
-    $compile .= " -DSTATICXS" if opt('staticxs');
-    $compile .= " ".opt('Wc') if opt('Wc');
+    $compile .= " -I" . $_ for split /\s+/, opt('I');
+    $compile .= " -DSTATICXS"   if opt('staticxs');
+    $compile .= " " . opt('Wc') if opt('Wc');
 
-    $link .= " -libpath:".$_ for split /\s+/, opt('L');
+    $link .= " -libpath:" . $_ for split /\s+/, opt('L');
+
     # TODO: -shared,-static,-sharedxs
     if ($stash) {
-        my @mods = split /,?-?u/, $stash; # XXX -U stashes
-        $link .= " ".ExtUtils::Embed::ldopts("-std", \@mods);
+        my @mods = split /,?-?u/, $stash;    # XXX -U stashes
+        $link .= " " . ExtUtils::Embed::ldopts( "-std", \@mods );
+
         # XXX staticxs need to check if the last mods for staticxs found a static lib.
         # XXX only if not use the extra_libs
-    } else {
-        $link .= " ".ExtUtils::Embed::ldopts("-std");
     }
-    if ($Config{ccversion} eq '12.0.8804') {
+    else {
+        $link .= " " . ExtUtils::Embed::ldopts("-std");
+    }
+    if ( $Config{ccversion} eq '12.0.8804' ) {
         $link =~ s/ -opt:ref,icf//;
     }
-    $link .= " ".opt('Wl') if opt('Wl');
-    if (opt('staticxs')) { # TODO: can msvc link to dll's directly? otherwise use dlltool
-        $extra_libs =~ s/^\s+|\s+$//g; # code by stengcode@gmail.com
-        foreach (split /\.dll(?:\s+|$)/, $extra_libs) {
+    $link .= " " . opt('Wl') if opt('Wl');
+    if ( opt('staticxs') ) {    # TODO: can msvc link to dll's directly? otherwise use dlltool
+        $extra_libs =~ s/^\s+|\s+$//g;    # code by stengcode@gmail.com
+        foreach ( split /\.dll(?:\s+|$)/, $extra_libs ) {
             $_ .= '.lib';
-            if (!-e $_) {
+            if ( !-e $_ ) {
                 die "--staticxs requires $_, you should copy it from build area";
             }
             else {
-              $link .= ' ' . $_;
+                $link .= ' ' . $_;
             }
         }
-    } else {
+    }
+    else {
         $link .= $extra_libs;
     }
     $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
@@ -574,88 +616,97 @@ sub cc_harness_msvc {
 }
 
 sub cc_harness {
-    my ($cfile, $stash, $extra_libs) = @_;
+    my ( $cfile, $stash, $extra_libs ) = @_;
     use ExtUtils::Embed ();
-    my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
+    my $command = ExtUtils::Embed::ccopts . " -o $Output $cfile ";
     $command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $command .= $B::C::Flags::extra_cflags if $B::C::Flags::extra_cflags;
-    $command .= " -I".$_ for split /\s+/, opt('I');
-    $command .= " -L".$_ for split /\s+/, opt('L');
-    $command .= " -DSTATICXS" if opt('staticxs');
-    $command .= " ".opt('Wc') if opt('Wc');
+    $command .= " -I" . $_ for split /\s+/, opt('I');
+    $command .= " -L" . $_ for split /\s+/, opt('L');
+    $command .= " -DSTATICXS"   if opt('staticxs');
+    $command .= " " . opt('Wc') if opt('Wc');
     my $ccflags = $command;
 
     my $useshrplib = $Config{useshrplib};
     _die("--sharedxs with useshrplib=false\n") if !$useshrplib and opt('sharedxs');
     my $ldopts;
     if ($stash) {
-        my @mods = split /,?-?u/, $stash; # XXX -U stashes
-        $ldopts = ExtUtils::Embed::ldopts("-std", \@mods);
-    } else {
+        my @mods = split /,?-?u/, $stash;    # XXX -U stashes
+        $ldopts = ExtUtils::Embed::ldopts( "-std", \@mods );
+    }
+    else {
         $ldopts = ExtUtils::Embed::ldopts("-std");
     }
-    $ldopts .= " ".opt('Wl') if opt('Wl');
+    $ldopts .= " " . opt('Wl') if opt('Wl');
 
     # gcc crashes with this duplicate -fstack-protector arg
     my $ldflags = $Config{ldflags};
-    if ($^O eq 'cygwin' and $ccflags =~ /-fstack-protector\b/ and $ldopts =~ /-fstack-protector\b/) {
+    if ( $^O eq 'cygwin' and $ccflags =~ /-fstack-protector\b/ and $ldopts =~ /-fstack-protector\b/ ) {
         $ldopts =~ s/-fstack-protector\b//;
         $ldflags =~ s/-fstack-protector\b// if $extra_libs;
     }
     my $libperl = $Config{libperl};
     my $libdir  = $Config{prefix} . "/lib";
-    my $coredir = $ENV{PERL_SRC} || $Config{archlib}."/CORE";
+    my $coredir = $ENV{PERL_SRC} || $Config{archlib} . "/CORE";
     if ($extra_libs) {
+
         # splice extra_libs after $Config{ldopts} before @archives
-        my $i_ldopts = index($ldopts, $ldflags);
-        if ($ldflags and $i_ldopts >= 0) {
+        my $i_ldopts = index( $ldopts, $ldflags );
+        if ( $ldflags and $i_ldopts >= 0 ) {
             my $l = $i_ldopts + length($ldflags);
-            $ldopts = substr($ldopts,0,$l).$extra_libs." ".substr($ldopts,$l);
-        } else {
-            $ldopts = $extra_libs." ".$ldopts;
+            $ldopts = substr( $ldopts, 0, $l ) . $extra_libs . " " . substr( $ldopts, $l );
+        }
+        else {
+            $ldopts = $extra_libs . " " . $ldopts;
         }
     }
-    if (opt('shared')) {
+    if ( opt('shared') ) {
         warn "--shared with useshrplib=false might not work\n" unless $useshrplib;
-        my @plibs = ($libperl, "$coredir/$libperl", "$libdir/$libperl");
-	if ($libperl !~ /$Config{dlext}$/) {
-            $libperl = "libperl.".$Config{dlext};
-            @plibs = ($libperl, "$coredir/$libperl", "$libdir/$libperl");
-            push @plibs, glob "$coredir/*perl5*".$Config{dlext};
-            push @plibs, glob "$coredir/*perl.".$Config{dlext};
-            push @plibs, glob $libdir."/*perl5*.".$Config{dlext};
-            push @plibs, glob $libdir."/*perl.".$Config{dlext};
-            push @plibs, glob $Config{bin}."/perl*.".$Config{dlext};
+        my @plibs = ( $libperl, "$coredir/$libperl", "$libdir/$libperl" );
+        if ( $libperl !~ /$Config{dlext}$/ ) {
+            $libperl = "libperl." . $Config{dlext};
+            @plibs = ( $libperl, "$coredir/$libperl", "$libdir/$libperl" );
+            push @plibs, glob "$coredir/*perl5*" . $Config{dlext};
+            push @plibs, glob "$coredir/*perl." . $Config{dlext};
+            push @plibs, glob $libdir . "/*perl5*." . $Config{dlext};
+            push @plibs, glob $libdir . "/*perl." . $Config{dlext};
+            push @plibs, glob $Config{bin} . "/perl*." . $Config{dlext};
         }
         for my $lib (@plibs) {
-            if (-e $lib) {
-	        $ldopts =~ s|-lperl |$lib |;
-	        $ldopts =~ s|\s+\S+libperl\w+\.a | $lib |;
-	        $ldopts = "$coredir/DynaLoader.o $ldopts" if -e "$coredir/DynaLoader.o";
-	        last;
+            if ( -e $lib ) {
+                $ldopts =~ s|-lperl |$lib |;
+                $ldopts =~ s|\s+\S+libperl\w+\.a | $lib |;
+                $ldopts = "$coredir/DynaLoader.o $ldopts" if -e "$coredir/DynaLoader.o";
+                last;
             }
         }
-    } elsif (opt('static')) {
-        for my $lib ($libperl, "$coredir/$libperl", "$coredir/$libperl",
-                   "$coredir/libperl.a", "$libdir/libperl.a") {
-            if (-e $lib) {
-	        $ldopts =~ s|-lperl |$lib |;
-	        $ldopts = "$coredir/DynaLoader.o $ldopts" if -e "$coredir/DynaLoader.o";
-	        last;
+    }
+    elsif ( opt('static') ) {
+        for my $lib (
+            $libperl,             "$coredir/$libperl", "$coredir/$libperl",
+            "$coredir/libperl.a", "$libdir/libperl.a"
+          ) {
+            if ( -e $lib ) {
+                $ldopts =~ s|-lperl |$lib |;
+                $ldopts = "$coredir/DynaLoader.o $ldopts" if -e "$coredir/DynaLoader.o";
+                last;
             }
         }
-    } else {
-        if ( $useshrplib and -e $libdir."/".$Config{libperl}) {
-	    # debian: only /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
-	    $ldopts =~ s|-lperl |$libdir/$Config{libperl} |;
+    }
+    else {
+        if ( $useshrplib and -e $libdir . "/" . $Config{libperl} ) {
+
+            # debian: only /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
+            $ldopts =~ s|-lperl |$libdir/$Config{libperl} |;
         }
-        if ( $useshrplib and -e $coredir."/".$Config{libperl}) {
+        if ( $useshrplib and -e $coredir . "/" . $Config{libperl} ) {
+
             # help cygwin debugging, and workaround wrong debian linker prefs (/usr/lib before given -L)
-	    $ldopts =~ s|-lperl |$coredir/$Config{libperl} |;
+            $ldopts =~ s|-lperl |$coredir/$Config{libperl} |;
         }
     }
     $ldopts .= " -lperl" unless $command =~ /perl/;
-    $command .= " ".$ldopts;
+    $command .= " " . $ldopts;
     $command .= $B::C::Flags::extra_libs if $B::C::Flags::extra_libs;
     vprint 3, "Calling $Config{cc} $command";
     vsystem("$Config{cc} $command");
@@ -664,27 +715,29 @@ sub cc_harness {
 # Where Perl is, and which include path to give it.
 sub yclept {
     my $command = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+
     # DWIM the -I to be Perl, not C, include directories.
-    if (opt('I') && $Backend eq "Bytecode") {
-        for (split /\s+/, opt('I')) {
-            if (-d $_) {
+    if ( opt('I') && $Backend eq "Bytecode" ) {
+        for ( split /\s+/, opt('I') ) {
+            if ( -d $_ ) {
                 push @INC, $_;
-            } else {
+            }
+            else {
                 warn "$0: Include directory $_ not found, skipping\n";
             }
         }
     }
     my %OINC;
-    $OINC{$Config{$_}}++ for (qw(privlib archlib sitelib sitearch vendorlib vendorarch));
+    $OINC{ $Config{$_} }++ for (qw(privlib archlib sitelib sitearch vendorlib vendorarch));
     $OINC{'.'}++ unless ${^TAINT};
     $OINC{$_}++ for split ':', $Config{otherlibdirs};
-    if (my $incver = $Config{inc_version_list}) {
-        my $incpre = dirname($Config{sitelib});
-        $OINC{$_}++ for map { File::Spec->catdir($incpre,$_) } split(' ',$incver);
+    if ( my $incver = $Config{inc_version_list} ) {
+        my $incpre = dirname( $Config{sitelib} );
+        $OINC{$_}++ for map { File::Spec->catdir( $incpre, $_ ) } split( ' ', $incver );
     }
     for my $i (@INC) {
         my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;
-        $command .= " -I$inc" unless $OINC{$i}; # omit internal @INC dirs
+        $command .= " -I$inc" unless $OINC{$i};    # omit internal @INC dirs
     }
 
     return $command;
@@ -693,26 +746,30 @@ sub yclept {
 # Use B::Stash to find additional modules and stuff.
 {
     my $_stash;
+
     sub grab_stash {
 
         warn "already called grab_stash once" if $_stash;
 
-        my $taint = opt('T') ? ' -T' :
-                    opt('t') ? ' -t' : '';
+        my $taint =
+            opt('T') ? ' -T'
+          : opt('t') ? ' -t'
+          :            '';
         my $command = "$BinPerl$taint -MB::Stash -c $Input";
+
         # Filename here is perfectly sanitised.
         vprint 3, "Calling $command\n";
 
-        my ($stash_r, $error_r, $errcode) = spawnit($command);
+        my ( $stash_r, $error_r, $errcode ) = spawnit($command);
         my @stash = @$stash_r;
         my @error = @$error_r;
 
-        if (@error && $errcode != 0) {
+        if ( @error && $errcode != 0 ) {
             _die("$Input did not compile $errcode:\n@error\n");
         }
 
         # band-aid for modules with noisy BEGIN {}
-        foreach my $i ( @stash ) {
+        foreach my $i (@stash) {
             $i =~ m/-[ux](?:[\w:]+|\<none\>)$/ and $stash[0] = $i and next;
             push @begin_output, $i;
         }
@@ -731,17 +788,17 @@ sub checkopts_byte {
 
     _die("Please choose one of either -B and -O.\n") if opt('O');
 
-    for my $o ( qw[shared sharedxs static staticxs] ) {
-        if (exists($Options->{$o}) && $Options->{$o}) {
+    for my $o (qw[shared sharedxs static staticxs]) {
+        if ( exists( $Options->{$o} ) && $Options->{$o} ) {
             warn "$0: --$o incompatible with -B\n";
             delete $Options->{$o};
         }
     }
+
     # TODO make -S produce an .asm also?
-    for my $o ( qw[c S] ) {
-        if (exists($Options->{$o}) && $Options->{$o}) {
-            warn "$0: Compiling to bytecode is a one-pass process. ",
-                  "-$o ignored\n";
+    for my $o (qw[c S]) {
+        if ( exists( $Options->{$o} ) && $Options->{$o} ) {
+            warn "$0: Compiling to bytecode is a one-pass process. ", "-$o ignored\n";
             delete $Options->{$o};
         }
     }
@@ -750,30 +807,33 @@ sub checkopts_byte {
 
 # Check the input and output files make sense, are read/writeable.
 sub sanity_check {
-    if ($Input eq $Output) {
-        if ($Input eq 'a.out') {
+    if ( $Input eq $Output ) {
+        if ( $Input eq 'a.out' ) {
             _die("Compiling a.out is probably not what you want to do.\n");
+
             # You fully deserve what you get now. No you *don't*. typos happen.
-        } else {
-            my $suffix = (is_win32() or $^O eq 'cygwin') ? '.exe' : '';
-            (undef, $Output) = tempfile("plcXXXXX", SUFFIX => $suffix);
-            warn "$0: Will not write output on top of input file, ",
-                "compiling to $Output instead\n";
+        }
+        else {
+            my $suffix = ( is_win32() or $^O eq 'cygwin' ) ? '.exe' : '';
+            ( undef, $Output ) = tempfile( "plcXXXXX", SUFFIX => $suffix );
+            warn "$0: Will not write output on top of input file, ", "compiling to $Output instead\n";
         }
     }
 }
 
 sub check_read {
     my $file = shift;
-    unless (-r $file) {
+    unless ( -r $file ) {
         _die("Input file $file is a directory, not a file\n") if -d _;
-        unless (-e _) {
+        unless ( -e _ ) {
             _die("Input file $file was not found\n");
-        } else {
+        }
+        else {
             _die("Cannot read input file $file: $!\n");
         }
     }
-    unless (-f _) {
+    unless ( -f _ ) {
+
         # XXX: die?  don't try this on /dev/tty
         warn "$0: WARNING: input $file is not a plain file\n";
     }
@@ -781,61 +841,62 @@ sub check_read {
 
 sub check_write {
     my $file = shift;
-    if (-d $file) {
+    if ( -d $file ) {
         _die("Cannot write on $file, is a directory\n");
     }
-    if (-e _) {
+    if ( -e _ ) {
         _die("Cannot write on $file: $!\n") unless -w _;
     }
-    unless (-w '.') {
+    unless ( -w '.' ) {
         _die("Cannot write in this directory: $!\n");
     }
 }
 
 sub check_perl {
     my $file = shift;
-    unless (-T $file) {
+    unless ( -T $file ) {
         warn "$0: Binary `$file' sure doesn't smell like perl source!\n";
         print "Checking file type... ";
-        vsystem("file", $file);
+        vsystem( "file", $file );
         _die("Please try a perlier file!\n");
     }
 
-    open(my $handle, "<", $file)    or _die("Can't open $file: $!\n");
+    open( my $handle, "<", $file ) or _die("Can't open $file: $!\n");
     local $_ = <$handle>;
-    if (/^#!/ && !/perl/) {
-        _die("$file is a ", /^#!\s*(\S+)/, " script, not perl\n");
+    if ( /^#!/ && !/perl/ ) {
+        _die( "$file is a ", /^#!\s*(\S+)/, " script, not perl\n" );
     }
 }
 
 # File spawning and error collecting
 sub spawnit {
     my $command = shift;
-    my (@error,@output,$errname,$errcode);
-    if (opt('dryrun')) {
-        print "$command\n";;
+    my ( @error, @output, $errname, $errcode );
+    if ( opt('dryrun') ) {
+        print "$command\n";
     }
-    elsif ($Options->{spawn}) {
-        (undef, $errname) = tempfile("pccXXXXX");
+    elsif ( $Options->{spawn} ) {
+        ( undef, $errname ) = tempfile("pccXXXXX");
         {
-	    my $pid = open (S_OUT, "$command 2>$errname |")
-	      or _die("Couldn't spawn the compiler.\n");
+            my $pid = open( S_OUT, "$command 2>$errname |" )
+              or _die("Couldn't spawn the compiler.\n");
             $errcode = $?;
             my $kid;
             do {
-              $kid = waitpid($pid, 0);
+                $kid = waitpid( $pid, 0 );
             } while $kid > 0;
             @output = <S_OUT>;
         }
-        open (S_ERROR, $errname) or _die("Couldn't read the error file.\n");
+        open( S_ERROR, $errname ) or _die("Couldn't read the error file.\n");
         @error = <S_ERROR>;
         close S_ERROR;
         close S_OUT;
         unlink $errname or _die("Can't unlink error file $errname\n");
-    } else {
+    }
+    else {
         @output = split /\n/, `$command`;
     }
-    return (\@output, \@error, $errcode);
+    return ( \@output, \@error, $errcode );
 }
 
 sub version {
@@ -846,27 +907,28 @@ sub version {
 }
 
 sub helpme {
-    print version(),"\n";
-    if (opt('v')) {
-	pod2usage( -verbose => opt('v') );
-    } else {
-	pod2usage( -verbose => 0 );
+    print version(), "\n";
+    if ( opt('v') ) {
+        pod2usage( -verbose => opt('v') );
+    }
+    else {
+        pod2usage( -verbose => 0 );
     }
 }
 
 sub relativize {
     my ($args) = @_;
 
-    return("./".basename($args)) if ($args =~ m"^[/\\]");
-    return("./$args");
+    return ( "./" . basename($args) ) if ( $args =~ m"^[/\\]" );
+    return ("./$args");
 }
 
 sub _die {
-    my @args = ("$0: ", @_);
+    my @args = ( "$0: ", @_ );
     $logfh->print(@args) if opt('log');
     print STDERR @args;
-    exit(); # should die eventually. However, needed so that a 'make compile'
-            # can compile all the way through to the end for standard dist.
+    exit();    # should die eventually. However, needed so that a 'make compile'
+               # can compile all the way through to the end for standard dist.
 }
 
 sub _usage_and_die {
@@ -884,37 +946,38 @@ sub run {
     my (@commands) = @_;
 
     my $t0 = [gettimeofday] if opt('time');
-    if (!opt('log')) {
+    if ( !opt('log') ) {
         print interruptrun(@commands);
-    } else {
-        $logfh->print(interruptrun(@commands));
     }
-    my $elapsed = tv_interval ( $t0 ) if opt('time');
+    else {
+        $logfh->print( interruptrun(@commands) );
+    }
+    my $elapsed = tv_interval($t0) if opt('time');
     vprint -1, "r time: $elapsed" if opt('time');
 }
 
 sub interruptrun {
     my (@commands) = @_;
 
-    my $command = join('', @commands);
-    local(*FD);
-    my $pid = open(FD, "$command |");
+    my $command = join( '', @commands );
+    local (*FD);
+    my $pid = open( FD, "$command |" );
     my $text;
 
-    local($SIG{HUP}, $SIG{INT}) if exists $SIG{HUP};
-    $SIG{HUP} = $SIG{INT} = sub { kill 9, $pid; exit } if exists $SIG{HUP};
+    local ( $SIG{HUP}, $SIG{INT} ) if exists $SIG{HUP};
+    $SIG{HUP} = $SIG{INT} = sub { kill 9, $pid; exit }
+      if exists $SIG{HUP};
 
     my $needalarm =
-          ($ENV{PERLCC_TIMEOUT} &&
-	   exists $SIG{ALRM} &&
-	  $Config{'osname'} ne 'MSWin32' &&
-	  $command =~ m"(^|\s)perlcc\s");
+      ( $ENV{PERLCC_TIMEOUT} && exists $SIG{ALRM} && $Config{'osname'} ne 'MSWin32' && $command =~ m"(^|\s)perlcc\s" );
 
     eval {
-         local($SIG{ALRM}) = sub { die "INFINITE LOOP"; } if exists $SIG{ALRM};
-         alarm($ENV{PERLCC_TIMEOUT}) if $needalarm;
-	 $text = join('', <FD>);
-	 alarm(0) if $needalarm;
+        local ( $SIG{ALRM} ) =
+          sub { die "INFINITE LOOP"; }
+          if exists $SIG{ALRM};
+        alarm( $ENV{PERLCC_TIMEOUT} ) if $needalarm;
+        $text = join( '', <FD> );
+        alarm(0) if $needalarm;
     };
 
     if ($@) {
@@ -923,18 +986,18 @@ sub interruptrun {
     }
 
     close(FD);
-    return($text);
+    return ($text);
 }
 
 sub is_win32() { $^O =~ m/^(MSWin32|msys)/ }
 sub is_msvc() { is_win32 && $Config{cc} =~ m/^cl/i }
 
 END {
-    if ($cfile && !opt('S') && !opt('c') && -e $cfile) {
+    if ( $cfile && !opt('S') && !opt('c') && -e $cfile ) {
         vprint 4, "Unlinking $cfile";
         unlink $cfile;
     }
-    if (opt('staticxs') and !opt('S')) {
+    if ( opt('staticxs') and !opt('S') ) {
         vprint 4, "Unlinking $cfile.lst";
         unlink "$cfile.lst";
     }
