@@ -14,13 +14,6 @@
 # define RX_EXTFLAGS(prog) ((prog)->extflags)
 #endif
 
-#if PERL_VERSION > 17 && (PERL_VERSION < 19 || (PERL_VERSION == 19 && PERL_SUBVERSION < 4))
-#define need_op_slabbed
-#endif
-#if PERL_VERSION == 19 && (PERL_SUBVERSION > 2 && PERL_SUBVERSION <= 4)
-#define need_op_folded
-#endif
-
 typedef struct magic  *B__MAGIC;
 typedef struct p5rx  *B__REGEXP;
 typedef COP  *B__COP;
@@ -36,15 +29,10 @@ typedef struct {
 
 static const char* const svclassnames[] = {
     "B::NULL",
-#if PERL_VERSION < 19
     "B::BIND",
-#endif
     "B::IV",
     "B::NV",
     "B::PV",
-#if PERL_VERSION >= 19
-    "B::INVLIST",
-#endif
     "B::PVIV",
     "B::PVNV",
     "B::PVMG",
@@ -155,16 +143,6 @@ RX_EXTFLAGS(rx)
 	  B::REGEXP rx
 
 MODULE = B	PACKAGE = B::COP	PREFIX = COP_
-
-#if (PERL_VERSION >= 15) && defined(USE_ITHREADS) && defined(CopSTASH_flags)
-
-#define COP_stashflags(o)	CopSTASH_flags(o)
-
-U32
-COP_stashflags(o)
-	B::COP	o
-
-#endif
 
 MODULE = B__CC	PACKAGE = B::CC
 
