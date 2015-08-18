@@ -76,7 +76,9 @@ use B::Asmdata qw(@specialsv_name);
 use B::C::Flags;
 use FileHandle;
 
-#use Carp;
+# plug save methods
+use B::C::Save::BINOP ();
+#use B::C::Save::UNOP ();
 
 my $hv_index      = 0;
 my $gv_index      = 0;
@@ -964,28 +966,6 @@ sub B::UNOP::save {
         }
     }
     do_labels( $op, 'first' );
-    $sym;
-}
-
-sub B::BINOP::save {
-    my ( $op, $level ) = @_;
-    my $sym = objsym($op);
-    return $sym if defined $sym;
-    binopsect()->comment("$opsect_common, first, last");
-    binopsect()->add(
-        sprintf(
-            "%s, s\\_%x, s\\_%x",
-            $op->_save_common,
-            ${ $op->first },
-            ${ $op->last }
-        )
-    );
-    binopsect()->debug( $op->name, $op );
-    my $ix = binopsect()->index;
-    init()->add( sprintf( "binop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-      unless $B::C::optimize_ppaddr;
-    $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
-    do_labels( $op, 'first', 'last' );
     $sym;
 }
 
