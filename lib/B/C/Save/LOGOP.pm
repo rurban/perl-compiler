@@ -1,5 +1,6 @@
 package B::LOGOP;
 
+use B::C ();
 use B::C::File qw/objsym logopsect init savesym do_labels/;
 
 sub save {
@@ -9,7 +10,7 @@ sub save {
 
     return $sym if defined $sym;
 
-    logopsect()->comment("$opsect_common, first, other");
+    logopsect()->comment( B::C::opsect_common() . ", first, other" );
     logopsect()->add(
         sprintf(
             "%s, s\\_%x, s\\_%x",
