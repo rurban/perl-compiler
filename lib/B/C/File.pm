@@ -21,7 +21,7 @@ sub code_section_names {
 
 sub init_section_names { return qw /init init2/ }
 
-sub to_move { return qw/objsym savesym svop_name padop_name mark_package do_labels/ }
+sub to_move { return qw/objsym savesym svop_name padop_name mark_package do_labels save_rv/ }
 
 sub op_sections {
     return qw { binop condop cop padop loop listop logop  op pmop pvop svop unop };
@@ -40,6 +40,7 @@ BEGIN {
 *padop_name   = \&B::C::padop_name;
 *mark_package = \&B::C::mark_package;
 *do_labels    = \&B::C::do_labels;
+*save_rv      = \&B::C::save_rv;
 
 sub new {
     $self and die("Re-initialized???");
