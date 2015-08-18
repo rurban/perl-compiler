@@ -41,7 +41,7 @@ sub save {
     if ( !$type and $OP_COP{ $op->targ } ) {
         warn sprintf( "Null COP: %d\n", $op->targ ) if $B::C::debug{cops};
 
-        copsect()->comment( B::C::opsect_common() . ", line, stash, file, hints, seq, warnings, hints_hash" );
+        copsect()->comment_common("line, stash, file, hints, seq, warnings, hints_hash");
         copsect()->add(
             sprintf(
                 "%s, 0, %s, NULL, 0, 0, NULL, NULL",
@@ -55,7 +55,7 @@ sub save {
         savesym( $op, "(OP*)&cop_list[$ix]" );
     }
     else {
-        opsect()->comment( B::C::opsect_common() );
+        opsect()->comment_common();
         opsect()->add( $op->_save_common );
 
         opsect()->debug( $op->name, $op );
@@ -130,6 +130,19 @@ sub _save_common {
         ${ $op->next },
         ${ $op->sibling },
         $op->_save_common_middle
+    );
+}
+
+use constant STATIC => '0, 1, 0, 0, 0';
+
+sub _save_common_middle {
+    my $op = shift;
+    my $madprop = $MAD ? "0," : "";
+
+    # XXX maybe add a ix=opindex string for debugging if $debug{flags}
+    sprintf(
+        "%s,%s %u, %u, " . STATIC . ", 0x%x, 0x%x",
+        $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private
     );
 }
 

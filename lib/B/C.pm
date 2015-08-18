@@ -44,7 +44,7 @@ our %Regexp;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
   set_callback save_unused_subs objsym save_context fixup_ppaddr
-  save_sig svop_or_padop_pv inc_cleanup ivx nvx);
+  save_sig svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
 
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
@@ -718,50 +718,43 @@ $isa_cache{'B::OBJECT::can'} = 'UNIVERSAL';
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
 # $op->next and $op->sibling
-my $opsect_common = "next, sibling, ppaddr, " . ( $MAD ? "madprop, " : "" ) . "targ, type, ";
-{
 
-    # For 5.8:
-    # Current workaround/fix for op_free() trying to free statically
-    # defined OPs is to set op_seq = -1 and check for that in op_free().
-    # Instead of hardwiring -1 in place of $op->seq, we use $op_seq
-    # so that it can be changed back easily if necessary. In fact, to
-    # stop compilers from moaning about a U16 being initialised with an
-    # uncast -1 (the printf format is %d so we can't tweak it), we have
-    # to "know" that op_seq is a U16 and use 65535. Ugh.
+# For 5.8:
+# Current workaround/fix for op_free() trying to free statically
+# defined OPs is to set op_seq = -1 and check for that in op_free().
+# Instead of hardwiring -1 in place of $op->seq, we use $op_seq
+# so that it can be changed back easily if necessary. In fact, to
+# stop compilers from moaning about a U16 being initialised with an
+# uncast -1 (the printf format is %d so we can't tweak it), we have
+# to "know" that op_seq is a U16 and use 65535. Ugh.
 
-    # For 5.9 the hard coded text is the values for op_opt and op_static in each
-    # op.  The value of op_opt is irrelevant, and the value of op_static needs to
-    # be 1 to tell op_free that this is a statically defined op and that is
-    # shouldn't be freed.
+# For 5.9 the hard coded text is the values for op_opt and op_static in each
+# op.  The value of op_opt is irrelevant, and the value of op_static needs to
+# be 1 to tell op_free that this is a statically defined op and that is
+# shouldn't be freed.
 
-    # For 5.10 op_seq = -1 is gone, the temp. op_static also, but we
-    # have something better, we can set op_latefree to 1, which frees the children
-    # (e.g. savepvn), but not the static op.
+# For 5.10 op_seq = -1 is gone, the temp. op_static also, but we
+# have something better, we can set op_latefree to 1, which frees the children
+# (e.g. savepvn), but not the static op.
 
-    # 5.8: U16 op_seq;
-    # 5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
-    # 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
-    # 5.18: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_spare:3;
-    # 5.19: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_folded:1; unsigned op_spare:2;
-    my $static = '0, 1, 0, 0, 0';
-    $opsect_common .= "opt, latefree, latefreed, attached, spare";
-
-    sub B::OP::_save_common_middle {
-        my $op = shift;
-        my $madprop = $MAD ? "0," : "";
-
-        # XXX maybe add a ix=opindex string for debugging if $debug{flags}
-        sprintf(
-            "%s,%s %u, %u, $static, 0x%x, 0x%x",
-            $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private
-        );
-    }
-    $opsect_common .= ", flags, private";
-}
+# 5.8: U16 op_seq;
+# 5.9.4: unsigned op_opt:1; unsigned op_static:1; unsigned op_spare:5;
+# 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
+# 5.18: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_spare:3;
+# 5.19: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_folded:1; unsigned op_spare:2;
 
 # fixme only use opsect common
-sub opsect_common { return $opsect_common }
+{
+    # should use a static variable
+    my $opsect_common;
+
+    sub opsect_common {
+        my $opsect_common ||= "next, sibling, ppaddr, " . ( $MAD ? "madprop, " : "" ) . "targ, type, " . "opt, latefree, latefreed, attached, spare" . ", flags, private";
+
+        return $opsect_common;
+    }
+
+}
 
 # dummy for B::C, only needed for B::CC
 sub label { }
@@ -784,7 +777,7 @@ sub B::LISTOP::save {
     my ( $op, $level ) = @_;
     my $sym = objsym($op);
     return $sym if defined $sym;
-    listopsect()->comment("$opsect_common, first, last");
+    listopsect()->comment_common("first, last");
     listopsect()->add(
         sprintf(
             "%s, s\\_%x, s\\_%x",
@@ -840,7 +833,7 @@ sub B::LOOP::save {
     #warn sprintf("LOOP: redoop %s, nextop %s, lastop %s\n",
     #		 peekop($op->redoop), peekop($op->nextop),
     #		 peekop($op->lastop)) if $debug{op};
-    loopsect()->comment("$opsect_common, first, last, redoop, nextop, lastop");
+    loopsect()->comment_common("first, last, redoop, nextop, lastop");
     loopsect()->add(
         sprintf(
             "%s, s\\_%x, s\\_%x, s\\_%x, s\\_%x, s\\_%x",
@@ -865,7 +858,7 @@ sub B::PVOP::save {
     my ( $op, $level ) = @_;
     my $sym = objsym($op);
     return $sym if defined $sym;
-    loopsect()->comment("$opsect_common, pv");
+    loopsect()->comment_common("pv");
 
     # op_pv must be dynamic
     pvopsect()->add( sprintf( "%s, NULL", $op->_save_common ) );
@@ -1082,7 +1075,7 @@ sub B::SVOP::save {
     if ( $MULTI and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/ ) {                                 # t/testm.sh Test::Pod
         $is_const_addr = 0;
     }
-    svopsect()->comment("$opsect_common, sv");
+    svopsect()->comment_common("sv");
     svopsect()->add(
         sprintf(
             "%s, %s",
@@ -1133,7 +1126,7 @@ sub B::PADOP::save {
             }
         }
     }
-    padopsect()->comment("$opsect_common, padix");
+    padopsect()->comment_common("padix");
     padopsect()->add( sprintf( "%s, %d", $op->_save_common, $op->padix ) );
     padopsect()->debug( $op->name, $op );
     my $ix = padopsect()->index;
@@ -1199,7 +1192,7 @@ sub B::COP::save {
     # $file =~ s/\.pl$/.c/;
 
     # cop_label now in hints_hash (Change #33656)
-    copsect()->comment("$opsect_common, line, stash, file, hints, seq, warn_sv, hints_hash");
+    copsect()->comment_common("line, stash, file, hints, seq, warn_sv, hints_hash");
     copsect()->add(
         sprintf(
             "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
@@ -1313,7 +1306,7 @@ sub B::PMOP::save {
     # fields aren't noticed in perl's runtime (unless you try reset) but we
     # segfault when trying to dereference it to find op->op_pmnext->op_type
 
-    pmopsect()->comment("$opsect_common, first, last, pmoffset, pmflags, pmreplroot, pmreplstart");
+    pmopsect()->comment_common("first, last, pmoffset, pmflags, pmreplroot, pmreplstart");
     pmopsect()->add(
         sprintf(
             "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",

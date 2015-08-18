@@ -43,6 +43,11 @@ sub typename {
     return $typename;
 }
 
+sub comment_common {
+    my $self = shift;
+    return $self->comment( B::C::opsect_common(), ', ', @_ );
+}
+
 sub comment {
     my $section = shift;
 

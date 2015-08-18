@@ -10,7 +10,7 @@ sub save {
 
     return $sym if defined $sym;
 
-    logopsect()->comment( B::C::opsect_common() . ", first, other" );
+    logopsect()->comment_common("first, other");
     logopsect()->add(
         sprintf(
             "%s, s\\_%x, s\\_%x",

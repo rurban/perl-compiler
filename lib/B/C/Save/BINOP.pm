@@ -9,7 +9,7 @@ sub save {
     my $sym = B::objsym($op);
     return $sym if defined $sym;
 
-    binopsect->comment( B::C::opsect_common() . ", first, last" );
+    binopsect->comment_common("first, last");
     binopsect->add(
         sprintf(
             "%s, s\\_%x, s\\_%x",
