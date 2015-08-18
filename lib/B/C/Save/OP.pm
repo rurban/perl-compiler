@@ -1,6 +1,6 @@
 package B::OP;
 
-use B qw/peekop/;
+use B qw/peekop cstring/;
 use B::C ();
 use B::C::File qw/objsym savesym svsect save_rv init copsect opsect/;
 
