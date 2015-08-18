@@ -78,6 +78,7 @@ use FileHandle;
 
 # plug save methods
 use B::C::Save::BINOP ();
+use B::C::Save::OP    ();
 use B::C::Save::RV    ();
 use B::C::Save::UNOP  ();
 
@@ -133,8 +134,10 @@ my ( $staticxs,            $outfile );
 my ( %include_package,     %dumped_package, %skip_package, %isa_cache );
 my %static_ext;
 my ($use_xsloader);
-my $nullop_count     = 0;
-my $unresolved_count = 0;
+
+# can be improved
+our $nullop_count     = 0;
+our $unresolved_count = 0;
 
 # options and optimizations shared with B::CC
 our ( $module, $init_name, %savINC, %curINC, $mainfile, @static_free );
@@ -200,8 +203,15 @@ my @xpvav_sizes;
 my ( $max_string_len, $in_endav );
 my %static_core_pkg;    # = map {$_ => 1} static_core_packages();
 
-my $MULTI                 = $Config{usemultiplicity};
-my $ITHREADS              = $Config{useithreads};
+my $MULTI = $Config{usemultiplicity};
+our $ITHREADS = $Config{useithreads};
+
+# switch to helper with static variable
+sub USE_ITHREADS {
+    my $cache = $Config{useithreads};
+    return $cache;
+}
+
 my $DEBUGGING             = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 
@@ -258,10 +268,11 @@ sub walk_and_save_optree {
 
 # Look this up here so we can do just a number compare
 # rather than looking up the name of every BASEOP in B::OP
-my $OP_THREADSV = opnumber('threadsv');
-my $OP_DBMOPEN  = opnumber('dbmopen');
-my $OP_FORMLINE = opnumber('formline');
-my $OP_UCFIRST  = opnumber('ucfirst');
+# maybe use contant
+our $OP_THREADSV = opnumber('threadsv');
+our $OP_DBMOPEN  = opnumber('dbmopen');
+our $OP_FORMLINE = opnumber('formline');
+our $OP_UCFIRST  = opnumber('ucfirst');
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
@@ -691,22 +702,7 @@ sub force_heavy {
     return svref_2object( \*{ $pkg . "::AUTOLOAD" } );
 }
 
-# See also init_op_ppaddr below; initializes the ppaddr to the
-# OpTYPE; init_op_ppaddr iterates over the ops and sets
-# op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
-# in perl_init ( ~10 bytes/op with GCC/i386 )
-sub B::OP::fake_ppaddr {
-    return "NULL" unless $_[0]->can('name');
-    return $B::C::optimize_ppaddr
-      ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
-      : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
-}
-sub B::FAKEOP::fake_ppaddr { "NULL" }
-
-# XXX HACK! duct-taping around compiler problems
-sub B::OP::isa      { UNIVERSAL::isa(@_) }    # walkoptree_slow misses that
-sub B::OP::can      { UNIVERSAL::can(@_) }
-sub B::OBJECT::name { "" }                    # B misses that
+sub B::OBJECT::name { "" }    # B misses that
 $isa_cache{'B::OBJECT::can'} = 'UNIVERSAL';
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
@@ -752,6 +748,9 @@ my $opsect_common = "next, sibling, ppaddr, " . ( $MAD ? "madprop, " : "" ) . "t
     }
     $opsect_common .= ", flags, private";
 }
+
+# fixme only use opsect common
+sub opsect_common { return $opsect_common }
 
 sub B::OP::_save_common {
     my $op = shift;
@@ -801,88 +800,6 @@ sub B::OP::_save_common {
         ${ $op->sibling },
         $op->_save_common_middle
     );
-}
-
-sub B::OP::save {
-    my ( $op, $level ) = @_;
-    my $sym = objsym($op);
-    return $sym if defined $sym;
-    my $type = $op->type;
-    $nullop_count++ unless $type;
-    if ( $type == $OP_THREADSV ) {
-
-        # saves looking up ppaddr but it's a bit naughty to hard code this
-        init()->add( sprintf( "(void)find_threadsv(%s);", cstring( $threadsv_names[ $op->targ ] ) ) );
-    }
-    if ( $type == $OP_UCFIRST ) {
-        $B::C::fold = 1;
-
-        warn "enabling -ffold with ucfirst\n" if $verbose;
-        require "utf8.pm" unless $savINC{"utf8.pm"};
-        require "utf8_heavy.pl" unless $savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
-        mark_package("utf8");
-        mark_package("utf8_heavy.pl");
-
-    }
-    if ( ref($op) eq 'B::OP' ) {    # check wrong BASEOPs
-                                    # [perl #80622] Introducing the entrytry hack, needed since 5.12, fixed with 5.13.8 a425677
-                                    #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
-                                    #   op->other points to the leavetry op, which is needed for the eval scope.
-        if ( $op->name eq 'entertry' ) {
-            warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n" if $verbose;
-            bless $op, 'B::LOGOP';
-            return $op->save($level);
-        }
-    }
-
-    # since 5.10 nullified cops free their additional fields
-    if ( !$type and $OP_COP{ $op->targ } ) {
-        warn sprintf( "Null COP: %d\n", $op->targ ) if $debug{cops};
-        if ( 0 and $optimize_cop ) {
-
-            # XXX when is the NULL COP save to skip?
-            # unsafe after entersub, entereval, anoncode, sort block (pushmark pushmark)
-            # Rather skip this with CC not with C because we need the context.
-            # XXX we dont have the prevop, it can be any op type.
-            if ( $verbose or $debug{cops} ) {
-                my $prevop = getsym( sprintf( "&op_list[%d]", opsect()->index ) );
-                warn sprintf(
-                    "Skip Null COP: %d, prev=\\s%x\n",
-                    $op->targ, $prevop
-                );
-            }
-            return savesym( $op, $op->next->save );
-        }
-
-        copsect()->comment("$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
-        copsect()->add(
-            sprintf(
-                "%s, 0, %s, NULL, 0, 0, NULL, NULL",
-                $op->_save_common, $ITHREADS ? "(char *)NULL" : "Nullhv"
-            )
-        );
-
-        my $ix = copsect()->index;
-        init()->add( sprintf( "cop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-          unless $B::C::optimize_ppaddr;
-        savesym( $op, "(OP*)&cop_list[$ix]" );
-    }
-    else {
-        opsect()->comment($opsect_common);
-        opsect()->add( $op->_save_common );
-
-        opsect()->debug( $op->name, $op );
-        my $ix = opsect()->index;
-        init()->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-          unless $B::C::optimize_ppaddr;
-        warn(
-            sprintf(
-                "  OP=%s targ=%d flags=0x%x private=0x%x\n",
-                peekop($op), $op->targ, $op->flags, $op->private
-            )
-        ) if $debug{op};
-        savesym( $op, "&op_list[$ix]" );
-    }
 }
 
 # needed for special GV logic: save only stashes for stashes

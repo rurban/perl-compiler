@@ -1,13 +1,14 @@
 package B::UNOP;
 
 use B::C::File qw/unopsect init objsym savesym svop_name padop_name mark_package do_labels/;
+use B::C q//;
 
 sub save {
     my ( $op, $level ) = @_;
 
     my $sym = objsym($op);
     return $sym if defined $sym;
-    unopsect()->comment("$opsect_common, first");
+    unopsect()->comment( B::C::opsect_common() . ", first" );
     unopsect()->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
     unopsect()->debug( $op->name, $op );
     my $ix = unopsect()->index;
