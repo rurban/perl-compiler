@@ -137,7 +137,7 @@ use constant STATIC => '0, 1, 0, 0, 0';
 
 sub _save_common_middle {
     my $op = shift;
-    my $madprop = $MAD ? "0," : "";
+    my $madprop = $B::C::MAD ? "0," : "";
 
     # XXX maybe add a ix=opindex string for debugging if $debug{flags}
     sprintf(
