@@ -1,7 +1,7 @@
 package B::UNOP;
 
 use B::C::File qw/unopsect init objsym savesym svop_name padop_name mark_package do_labels/;
-use B::C q//;
+use B::C ();
 
 sub save {
     my ( $op, $level ) = @_;

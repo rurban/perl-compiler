@@ -45,7 +45,7 @@ sub save {
         copsect()->add(
             sprintf(
                 "%s, 0, %s, NULL, 0, 0, NULL, NULL",
-                $op->_save_common, B::C::USE_ITHREADS ? "(char *)NULL" : "Nullhv"
+                $op->_save_common, B::C::USE_ITHREADS() ? "(char *)NULL" : "Nullhv"
             )
         );
 

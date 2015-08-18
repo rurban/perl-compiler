@@ -78,7 +78,7 @@ use FileHandle;
 use B::FAKEOP  ();
 use B::STASHGV ();
 
-BEGIN {
+{
     # could use File::Basename
     my $bc_path = $INC{'B/C.pm'};
     $bc_path =~ s{\.pm$}{};
@@ -234,6 +234,15 @@ my @threadsv_names;
 
 BEGIN {
     @threadsv_names = threadsv_names();
+}
+
+# used by B::OBJECT
+sub add_to_isa_cache {
+    my ( $k, $v ) = @_;
+    die unless defined $k;
+
+    $isa_cache{$k} = $v;
+    return;
 }
 
 # This the Carp free workaround for DynaLoader::bootstrap
@@ -712,9 +721,6 @@ sub force_heavy {
     }
     return svref_2object( \*{ $pkg . "::AUTOLOAD" } );
 }
-
-sub B::OBJECT::name { "" }    # B misses that
-$isa_cache{'B::OBJECT::can'} = 'UNIVERSAL';
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
 # $op->next and $op->sibling
@@ -1227,8 +1233,6 @@ sub B::PMOP::save {
     }
     savesym( $op, "(OP*)&$pm" );
 }
-
-sub B::OBJECT::save { }
 
 sub B::NULL::save {
     my ( $sv, $fullname ) = @_;
