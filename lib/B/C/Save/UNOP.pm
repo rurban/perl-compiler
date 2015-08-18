@@ -8,6 +8,7 @@ sub save {
 
     my $sym = objsym($op);
     return $sym if defined $sym;
+
     unopsect()->comment( B::C::opsect_common() . ", first" );
     unopsect()->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
     unopsect()->debug( $op->name, $op );

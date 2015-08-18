@@ -45,8 +45,11 @@ sub typename {
 
 sub comment {
     my $section = shift;
-    $section->[-1]{comment} = join( "", @_ ) if @_;
-    $section->[-1]{comment};
+
+    my @comments = grep { defined $_ } @_;
+    $section->[-1]{comment} = join( "", @comments ) if @comments;
+
+    return $section->[-1]{comment};
 }
 
 # add debugging info - stringified flags on -DF
