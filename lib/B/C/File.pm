@@ -21,14 +21,25 @@ sub code_section_names {
 
 sub init_section_names { return qw /init init2/ }
 
+sub to_move { return qw/objsym savesym svop_name padop_name mark_package do_labels/ }
+
 sub op_sections {
     return qw { binop condop cop padop loop listop logop  op pmop pvop svop unop };
 }
 
 BEGIN {
     our @EXPORT_OK = map { ( $_, "${_}sect" ) } code_section_names();
-    push @EXPORT_OK, init_section_names();
+    push @EXPORT_OK, init_section_names(), to_move();
+
 }
+
+# wip to be moved
+*objsym       = \&B::C::objsym;
+*savesym      = \&B::C::savesym;
+*svop_name    = \&B::C::svop_name;
+*padop_name   = \&B::C::padop_name;
+*mark_package = \&B::C::mark_package;
+*do_labels    = \&B::C::do_labels;
 
 sub new {
     $self and die("Re-initialized???");

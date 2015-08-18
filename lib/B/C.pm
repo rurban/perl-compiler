@@ -78,7 +78,7 @@ use FileHandle;
 
 # plug save methods
 use B::C::Save::BINOP ();
-#use B::C::Save::UNOP ();
+use B::C::Save::UNOP  ();
 
 my $hv_index      = 0;
 my $gv_index      = 0;
@@ -932,41 +932,6 @@ sub do_labels ($@) {
                 and !( $op->name eq 'const' and $op->flags & 64 ) );    #OPpCONST_BARE has no first
         }
     }
-}
-
-sub B::UNOP::save {
-    my ( $op, $level ) = @_;
-    my $sym = objsym($op);
-    return $sym if defined $sym;
-    unopsect()->comment("$opsect_common, first");
-    unopsect()->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
-    unopsect()->debug( $op->name, $op );
-    my $ix = unopsect()->index;
-    init()->add( sprintf( "unop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-      unless $B::C::optimize_ppaddr;
-    $sym = savesym( $op, "(OP*)&unop_list[$ix]" );
-
-    if ( $op->name eq 'method' and $op->first and $op->first->name eq 'const' ) {
-        my $method = svop_name( $op->first );
-        if ( !$method and $ITHREADS ) {
-            $method = padop_name( $op->first, $B::C::curcv );    # XXX (curpad[targ])
-        }
-        warn "method -> const $method\n" if $debug{pkg} and $ITHREADS;
-
-        #324,#326 need to detect ->(maybe::next|maybe|next)::(method|can)
-        if ( $method =~ /^(maybe::next|maybe|next)::(method|can)$/ ) {
-            warn "mark \"$1\" for method $method\n" if $debug{pkg};
-            mark_package( $1,    1 );
-            mark_package( "mro", 1 );
-        }    # and also the old 5.8 NEXT|EVERY with non-fixed method names und subpackages
-        elsif ( $method =~ /^(NEXT|EVERY)::/ ) {
-            warn "mark \"$1\" for method $method\n" if $debug{pkg};
-            mark_package( $1, 1 );
-            mark_package( "NEXT", 1 ) if $1 ne "NEXT";
-        }
-    }
-    do_labels( $op, 'first' );
-    $sym;
 }
 
 sub B::LISTOP::save {
@@ -6837,7 +6802,7 @@ of C<-fcog>, see C<-fconst-strings> instead.
 
 =item B<-fav-init>
 
-Faster pre-initialization of AVs (arrays and pads). 
+Faster pre-initialization of AVs (arrays and pads).
 Also used if -fav-init2 is used and independent_comalloc() is not detected.
 
 Enabled with C<-O1>.
