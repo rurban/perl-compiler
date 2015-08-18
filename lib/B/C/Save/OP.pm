@@ -1,6 +1,7 @@
 package B::OP;
 
 use B qw/peekop/;
+use B::C ();
 use B::C::File qw/objsym savesym svsect save_rv init copsect opsect/;
 
 sub save {
@@ -81,7 +82,56 @@ sub fake_ppaddr {
       ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
       : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
 }
-sub B::FAKEOP::fake_ppaddr { "NULL" }
+
+sub _save_common {
+    my $op = shift;
+
+    # compile-time method_named packages are always const PV sM/BARE, they should be optimized.
+    # run-time packages are in gvsv/padsv. This is difficult to optimize.
+    #   my Foo $obj = shift; $obj->bar(); # TODO typed $obj
+    # entersub -> pushmark -> package -> args...
+    # See perl -MO=Terse -e '$foo->bar("var")'
+    # See also http://www.perl.com/pub/2000/06/dougpatch.html
+    # XXX TODO 5.8 ex-gvsv
+    # XXX TODO Check for method_named as last argument
+    if (
+            $op->type > 0
+        and $op->name eq 'entersub'
+        and $op->first
+        and $op->first->can('name')
+        and $op->first->name eq 'pushmark'
+        and
+
+        # Foo->bar()  compile-time lookup, 34 = BARE in all versions
+        (
+            ( $op->first->next->name eq 'const' and $op->first->next->flags == 34 )
+            or $op->first->next->name eq 'padsv'    # or $foo->bar() run-time lookup
+        )
+      ) {
+        my $pkgop = $op->first->next;
+        if ( !$op->first->next->type ) {            # 5.8 ex-gvsv
+            $pkgop = $op->first->next->next;
+        }
+        warn "check package_pv " . $pkgop->name . " for method_name\n" if $debug{cv};
+        my $pv = B::C::svop_or_padop_pv($pkgop);    # 5.13: need to store away the pkg pv
+        if ( $pv and $pv !~ /[! \(]/ ) {
+            $package_pv = $pv;
+            B::C::push_package($package_pv);
+        }
+        else {
+            # mostly optimized-away padsv NULL pads with 5.8
+            warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
+        }
+    }
+
+    # $prev_op = $op;
+    return sprintf(
+        "s\\_%x, s\\_%x, %s",
+        ${ $op->next },
+        ${ $op->sibling },
+        $op->_save_common_middle
+    );
+}
 
 # XXX HACK! duct-taping around compiler problems
 sub isa { UNIVERSAL::isa(@_) }    # walkoptree_slow misses that
