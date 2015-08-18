@@ -13,4 +13,7 @@ sub save {
     return $sym;
 }
 
+#ignore nullified cv
+sub savecv { }
+
 1;
