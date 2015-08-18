@@ -1,14 +1,15 @@
 package B::BINOP;
 
+use B::C ();
 use B::C::File qw/binopsect/;
 
 sub save {
     my ( $op, $level ) = @_;
-    
+
     my $sym = B::objsym($op);
     return $sym if defined $sym;
 
-    binopsect->comment("$opsect_common, first, last");
+    binopsect->comment( B::C::opsect_common() . ", first, last" );
     binopsect->add(
         sprintf(
             "%s, s\\_%x, s\\_%x",

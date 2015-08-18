@@ -41,7 +41,7 @@ sub save {
     if ( !$type and $OP_COP{ $op->targ } ) {
         warn sprintf( "Null COP: %d\n", $op->targ ) if $B::C::debug{cops};
 
-        copsect()->comment("$opsect_common, line, stash, file, hints, seq, warnings, hints_hash");
+        copsect()->comment( B::C::opsect_common() . ", line, stash, file, hints, seq, warnings, hints_hash" );
         copsect()->add(
             sprintf(
                 "%s, 0, %s, NULL, 0, 0, NULL, NULL",
@@ -55,7 +55,7 @@ sub save {
         savesym( $op, "(OP*)&cop_list[$ix]" );
     }
     else {
-        opsect()->comment($opsect_common);
+        opsect()->comment( B::C::opsect_common() );
         opsect()->add( $op->_save_common );
 
         opsect()->debug( $op->name, $op );
