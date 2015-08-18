@@ -79,11 +79,19 @@ use FileHandle;
 use B::FAKEOP  ();
 use B::STASHGV ();
 
-# plug save methods
-use B::C::Save::BINOP ();
-use B::C::Save::OP    ();
-use B::C::Save::RV    ();
-use B::C::Save::UNOP  ();
+BEGIN {
+    # could use File::Basename
+    my $bc_path = $INC{'B/C.pm'};
+    $bc_path =~ s{\.pm$}{};
+    my $load_from_dir = $bc_path . '/Save';
+    die "Invalid dir for B/C/Save modules: $load_from_dir" unless -d $load_from_dir;
+
+    # load overload modules B::C::Save::* to plug save methods
+    foreach my $module ( sort glob qq{$load_from_dir/*.pm} ) {
+        ($module) = $module =~ m/(.*)/;    # untaint
+        eval qq{require "$module"; 1} or die "Cannot load $module";
+    }
+}
 
 my $hv_index      = 0;
 my $gv_index      = 0;
@@ -821,28 +829,6 @@ sub B::LISTOP::save {
         }
     }
     do_labels( $op, 'first', 'last' );
-    $sym;
-}
-
-sub B::LOGOP::save {
-    my ( $op, $level ) = @_;
-    my $sym = objsym($op);
-    return $sym if defined $sym;
-    logopsect()->comment("$opsect_common, first, other");
-    logopsect()->add(
-        sprintf(
-            "%s, s\\_%x, s\\_%x",
-            $op->_save_common,
-            ${ $op->first },
-            ${ $op->other }
-        )
-    );
-    logopsect()->debug( $op->name, $op );
-    my $ix = logopsect()->index;
-    init()->add( sprintf( "logop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-      unless $B::C::optimize_ppaddr;
-    $sym = savesym( $op, "(OP*)&logop_list[$ix]" );
-    do_labels( $op, 'first', 'other' );
     $sym;
 }
 
