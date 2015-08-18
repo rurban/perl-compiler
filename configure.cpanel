@@ -3,6 +3,6 @@
 
 set -e
 
-git clean -dxf
+#git clean -dxf
 perl Makefile.PL installdirs=vendor
 make install
