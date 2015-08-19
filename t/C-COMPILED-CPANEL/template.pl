@@ -68,7 +68,7 @@ foreach my $optimization (@optimizations) {
         diag $cmd if $ENV{VERBOSE};
         my $BC_output = `$cmd`;
         note $BC_output if ($BC_output);
-        ok( !-z $c_file, "$c_file is generated ($optimization)" );
+        ok( -e $c_file && !-z _, "$c_file is generated ($optimization)" );
 
         if ( -z $c_file ) {
             unlink $c_file;
