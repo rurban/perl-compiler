@@ -49,7 +49,7 @@ our @EXPORT_OK = qw(mark_unused mark_skip set_callback save_unused_subs objsym s
 # but 5.6.2 works fine
 use B qw(minus_c sv_undef walkoptree walkoptree_slow main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
-  threadsv_names main_cv init_av end_av opnumber cstring
+  main_cv init_av end_av opnumber cstring
   HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
 BEGIN {
@@ -228,11 +228,6 @@ my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 our $MAD = $Config{mad};
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
 our $HAVE_DLFCN_DLOPEN = $Config{i_dlfcn} && $Config{d_dlopen};
-my @threadsv_names;
-
-BEGIN {
-    @threadsv_names = threadsv_names();
-}
 
 # used by B::OBJECT
 sub add_to_isa_cache {
@@ -299,10 +294,6 @@ our $OP_THREADSV = opnumber('threadsv');
 our $OP_DBMOPEN  = opnumber('dbmopen');
 our $OP_FORMLINE = opnumber('formline');
 our $OP_UCFIRST  = opnumber('ucfirst');
-
-# special handling for nullified COP's.
-my %OP_COP = ( opnumber('nextstate') => 1 );
-warn %OP_COP if $debug{cops};
 
 # 1. called from method_named, so hashp should be defined
 # 2. called from svop before method_named to cache the $package_pv

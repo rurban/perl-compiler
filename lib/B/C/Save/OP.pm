@@ -1,8 +1,18 @@
 package B::OP;
 
-use B qw/peekop cstring/;
+use B qw/peekop cstring threadsv_names opnumber/;
 use B::C ();
-use B::C::File qw/objsym savesym svsect save_rv init copsect opsect/;
+use B::C::File qw/objsym savesym svsect save_rv init copsect opsect mark_package/;
+
+my @threadsv_names;
+
+BEGIN {
+    @threadsv_names = threadsv_names();
+}
+
+# special handling for nullified COP's.
+my %OP_COP = ( opnumber('nextstate') => 1 );
+warn %OP_COP if $B::C::debug{cops};
 
 sub save {
     my ( $op, $level ) = @_;
@@ -22,8 +32,8 @@ sub save {
         warn "enabling -ffold with ucfirst\n" if B::C::verbose();
         require "utf8.pm" unless $B::C::savINC{"utf8.pm"};
         require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
-        mark_package("utf8");
-        mark_package("utf8_heavy.pl");
+        B::C::mark_package("utf8");
+        B::C::mark_package("utf8_heavy.pl");
 
     }
     if ( ref($op) eq 'B::OP' ) {    # check wrong BASEOPs
@@ -55,7 +65,7 @@ sub save {
         savesym( $op, "(OP*)&cop_list[$ix]" );
     }
     else {
-        opsect()->comment_common();
+        opsect()->comment( B::C::opsect_common() );
         opsect()->add( $op->_save_common );
 
         opsect()->debug( $op->name, $op );
@@ -80,7 +90,7 @@ sub fake_ppaddr {
     return "NULL" unless $_[0]->can('name');
     return $B::C::optimize_ppaddr
       ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
-      : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
+      : ( B::C::verbose() ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
 }
 
 sub _save_common {

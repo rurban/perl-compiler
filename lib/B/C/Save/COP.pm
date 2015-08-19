@@ -16,13 +16,13 @@ sub save {
         warn sprintf(
             "Skip COP (0x%x) => %s (0x%x), line %d file %s\n",
             $$op, $sym, $op->next, $op->line, $op->file
-        ) if $debug{cops};
+        ) if $B::C::debug{cops};
         return $sym;
     }
 
     # TODO: if it is a nullified COP we must save it with all cop fields!
     warn sprintf( "COP: line %d file %s\n", $op->line, $op->file )
-      if $debug{cops};
+      if $B::C::debug{cops};
 
     # shameless cut'n'paste from B::Deparse
     my $warn_sv;
