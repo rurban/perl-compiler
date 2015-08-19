@@ -3,7 +3,6 @@ package B::PVOP;
 use B qw/cstring/;
 use B::C ();
 use B::C::File qw/objsym savesym loopsect pvopsect init /;
-use utf8 ();
 
 sub save {
     my ( $op, $level ) = @_;
