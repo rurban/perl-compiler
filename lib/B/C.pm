@@ -966,39 +966,6 @@ sub savepvn {
     return @init;
 }
 
-sub B::PVIV::save {
-    my ( $sv, $fullname ) = @_;
-    my $sym = objsym($sv);
-    if ( defined $sym ) {
-        if ($in_endav) {
-            warn "in_endav: static_free without $sym\n" if $debug{av};
-            @B::C::static_free = grep { !/$sym/ } @B::C::static_free;
-        }
-        return $sym;
-    }
-    my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv( $sv, $fullname );
-
-    xpvivsect()->comment('STASH, MAGIC, cur, len, IVX');
-    xpvivsect()->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $cur, $len, ivx( $sv->IVX ) ) );    # IVTYPE long
-
-    svsect()->add(
-        sprintf(
-            "&xpviv_list[%d], %u, 0x%x %s",
-            xpvivsect()->index, $sv->REFCNT, $sv->FLAGS,
-            ", {" . ( $C99 ? ".svu_pv=" : "" ) . "(char*)$savesym}"
-        )
-    );
-    svsect()->debug( $fullname, $sv );
-    my $s = "sv_list[" . svsect()->index . "]";
-    if ( defined($pv) ) {
-
-        if ( !$static ) {
-            init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-        }
-    }
-    savesym( $sv, "&" . $s );
-}
-
 sub B::PVNV::save {
     my ( $sv, $fullname ) = @_;
     my $sym = objsym($sv);
