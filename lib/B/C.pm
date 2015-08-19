@@ -222,8 +222,9 @@ sub USE_ITHREADS {
     return $cache;
 }
 
-my $DEBUGGING             = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
-my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+# fixme move to B::C::Debug
+my $DEBUGGING = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
+our $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 
 #my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 our $MAD = $Config{mad};
@@ -1034,34 +1035,6 @@ sub B::PMOP::save {
         init()->add("$pm.op_pmreplrootu.op_pmreplroot = (OP*)$gvsym;");
     }
     savesym( $op, "(OP*)&$pm" );
-}
-
-sub B::NULL::save {
-    my ( $sv, $fullname ) = @_;
-    my $sym = objsym($sv);
-    return $sym if defined $sym;
-
-    # debug
-    if ( $$sv == 0 ) {
-        warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n" if $verbose;
-        return savesym( $sv, "(void*)Nullsv /* XXX */" );
-    }
-
-    my $i = svsect()->index + 1;
-    warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
-    svsect()->add( sprintf( "0, %lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
-
-    #svsect()->debug( $fullname, $sv ); # XXX where is this possible?
-    if ( $debug{flags} and $DEBUG_LEAKING_SCALARS ) {    # add index to sv_debug_file to easily find the Nullsv
-                                                         # svsect()->debug( "ix added to sv_debug_file" );
-        init()->add(
-            sprintf(
-                qq(sv_list[%d].sv_debug_file = savepv("NULL sv_list[%d] 0x%x");),
-                svsect()->index, svsect()->index, $sv->FLAGS
-            )
-        );
-    }
-    savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
 }
 
 sub B::UV::save {
