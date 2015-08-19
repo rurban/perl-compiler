@@ -2,7 +2,7 @@ package B::IV;
 
 use B qw/SVf_ROK SVf_IOK SVp_IOK SVf_IVisUV/;
 use B::C ();
-use B::C::File qw/svsect svsect xpvivsect/;
+use B::C::File qw/svsect xpvivsect/;
 use B::C::Helpers qw/objsym savesym/;
 
 sub save {
