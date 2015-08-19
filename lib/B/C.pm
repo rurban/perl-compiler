@@ -212,7 +212,8 @@ my @xpvav_sizes;
 my ( $max_string_len, $in_endav );
 my %static_core_pkg;    # = map {$_ => 1} static_core_packages();
 
-my $MULTI = $Config{usemultiplicity};
+# get rid of them... B::C::Setup
+our $MULTI    = $Config{usemultiplicity};
 our $ITHREADS = $Config{useithreads};
 
 # switch to helper with static variable
@@ -912,63 +913,6 @@ sub nextcop {
     my $op = shift;
     while ( $op and ref($op) ne 'B::COP' and ref($op) ne 'B::NULL' ) { $op = $op->next; }
     return ( $op and ref($op) eq 'B::COP' ) ? $op : undef;
-}
-
-sub B::SVOP::save {
-    my ( $op, $level ) = @_;
-    my $sym = objsym($op);
-    return $sym if defined $sym;
-    my $svsym = 'Nullsv';
-
-    # XXX moose1 crash with 5.8.5-nt, Cwd::_perl_abs_path also
-    if ( $op->name eq 'aelemfast' and $op->flags & 128 ) {    #OPf_SPECIAL
-        $svsym = '&PL_sv_undef';                              # pad does not need to be saved
-        warn sprintf( "SVOP->sv aelemfast pad %d\n", $op->flags ) if $debug{sv};
-    }
-    elsif ( $op->name eq 'gv'
-        and $op->next
-        and $op->next->name eq 'rv2cv'
-        and $op->next->next
-        and $op->next->next->name eq 'defined' ) {
-
-        # 96 do not save a gvsv->cv if just checked for defined'ness
-        my $gv   = $op->sv;
-        my $gvsv = svop_name($op);
-        if ( $gvsv !~ /^DynaLoader::/ ) {
-            warn "skip saving defined(&$gvsv)\n" if $debug{gv};    # defer to run-time
-            $svsym = '(SV*)' . $gv->save(8);                       # ~Save_CV in B::GV::save
-        }
-        else {
-            $svsym = '(SV*)' . $gv->save();
-        }
-    }
-    else {
-        my $sv = $op->sv;
-        $svsym = '(SV*)' . $sv->save( "svop " . $op->name );
-        warn "Error: SVOP: " . $op->name . " $sv $svsym" if $svsym =~ /^\(SV\*\)lexwarn/;    #322
-    }
-    if ( $op->name eq 'method_named' ) {
-        my $cv = method_named( svop_or_padop_pv($op), nextcop($op) );
-        $cv->save if $cv;
-    }
-    my $is_const_addr = $svsym =~ m/Null|\&/;
-    if ( $MULTI and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/ ) {                                 # t/testm.sh Test::Pod
-        $is_const_addr = 0;
-    }
-    svopsect()->comment_common("sv");
-    svopsect()->add(
-        sprintf(
-            "%s, %s",
-            $op->_save_common, ( $is_const_addr ? $svsym : 'Nullsv' )
-        )
-    );
-    svopsect()->debug( $op->name, $op );
-    my $ix = svopsect()->index;
-    init()->add( sprintf( "svop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-      unless $B::C::optimize_ppaddr;
-    init()->add("svop_list[$ix].op_sv = $svsym;")
-      unless $is_const_addr;
-    savesym( $op, "(OP*)&svop_list[$ix]" );
 }
 
 sub B::PADOP::save {
