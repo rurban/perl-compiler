@@ -762,35 +762,6 @@ sub do_labels ($@) {
     }
 }
 
-sub B::LOOP::save {
-    my ( $op, $level ) = @_;
-    my $sym = objsym($op);
-    return $sym if defined $sym;
-
-    #warn sprintf("LOOP: redoop %s, nextop %s, lastop %s\n",
-    #		 peekop($op->redoop), peekop($op->nextop),
-    #		 peekop($op->lastop)) if $debug{op};
-    loopsect()->comment_common("first, last, redoop, nextop, lastop");
-    loopsect()->add(
-        sprintf(
-            "%s, s\\_%x, s\\_%x, s\\_%x, s\\_%x, s\\_%x",
-            $op->_save_common,
-            ${ $op->first },
-            ${ $op->last },
-            ${ $op->redoop },
-            ${ $op->nextop },
-            ${ $op->lastop }
-        )
-    );
-    loopsect()->debug( $op->name, $op );
-    my $ix = loopsect()->index;
-    init()->add( sprintf( "loop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
-      unless $B::C::optimize_ppaddr;
-    $sym = savesym( $op, "(OP*)&loop_list[$ix]" );
-    do_labels( $op, qw(first last redoop nextop lastop) );
-    $sym;
-}
-
 # XXX Until we know exactly the package name for a method_call
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
