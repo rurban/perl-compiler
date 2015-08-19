@@ -309,73 +309,7 @@ EOT
     my $init2_name = 'perl_init2';
     printf {$cfh} "/* deferred init of XS/Dyna loaded modules */\n" if verbose();
     printf {$cfh} "/* %s */\n", init2()->comment if verbose() and init2()->comment;
-    my $remap = 0;
-    for my $pkg ( sort keys %B::C::init2_remap ) {
-        if ( exists $B::C::xsub{$pkg} ) {    # check if not removed in between
-            my ($stashfile) = $B::C::xsub{$pkg} =~ /^Dynamic-(.+)$/;
 
-            # get so file from pm. Note: could switch prefix from vendor/site//
-            $B::C::init2_remap{$pkg}{FILE} = dl_module_to_sofile( $pkg, $stashfile );
-            $remap++;
-        }
-    }
-    if ($remap) {
-
-        # XXX now emit arch-specific dlsym code
-        init2()->add( "{", "  void *handle, *ptr;" );
-        if ($B::C::HAVE_DLFCN_DLOPEN) {
-            init2()->add("  #include <dlfcn.h>");
-        }
-        else {
-            init2()->add(
-                "  dTARG; dSP;",
-                "  targ=sv_newmortal();"
-            );
-        }
-        for my $pkg ( sort keys %B::C::init2_remap ) {
-            if ( exists $B::C::xsub{$pkg} ) {
-                if ($B::C::HAVE_DLFCN_DLOPEN) {
-                    my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
-                    $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i;    # 351 (only on solaris and linux, not any bsd)
-                    init2()->add(
-                        sprintf( "  handle = dlopen(%s,", cstring( $B::C::init2_remap{$pkg}{FILE} ) ),
-                        "                  $ldopt);",
-                    );
-                }
-                else {
-                    init2()->add(
-                        "  PUSHMARK(SP);",
-                        sprintf( "  XPUSHs(newSVpvs(%s));", cstring( $B::C::init2_remap{$pkg}{FILE} ) ),
-                        "  PUTBACK;",
-                        "  XS_DynaLoader_dl_load_file(aTHX);",
-                        "  SPAGAIN;",
-                        "  handle = INT2PTR(void*,POPi);",
-                        "  PUTBACK;",
-                    );
-                }
-                for my $mg ( @{ $B::C::init2_remap{$pkg}{MG} } ) {
-                    warn "init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}\n" if verbose();
-                    if ($B::C::HAVE_DLFCN_DLOPEN) {
-                        init2()->add( sprintf( "  ptr = dlsym(handle, %s);", cstring( $mg->{NAME} ) ) );
-                    }
-                    else {
-                        init2()->add(
-                            "  PUSHMARK(SP);",
-                            "  XPUSHi(PTR2IV(handle));",
-                            sprintf( "  XPUSHs(newSVpvs(%s));", cstring( $mg->{NAME} ) ),
-                            "  PUTBACK;",
-                            "  XS_DynaLoader_dl_find_symbol(aTHX);",
-                            "  SPAGAIN;",
-                            "  ptr = INT2PTR(void*,POPi);",
-                            "  PUTBACK;",
-                        );
-                    }
-                    init2()->add( sprintf( "  xpvmg_list[%d].xiv_iv = PTR2IV(ptr);", $mg->{ID} ) );
-                }
-            }
-        }
-        init2()->add("}");
-    }
     init2()->output( $cfh, "\t%s\n", $init2_name );
     if ( verbose() ) {
         my $caller = caller;
@@ -1170,20 +1104,6 @@ EOT
 EOT1
 
     }    # module
-}
-
-# needed for init2 remap and Dynamic annotation
-sub dl_module_to_sofile {
-    my $module     = shift or die "missing module name";
-    my $modlibname = shift or die "missing module filepath";
-    my @modparts = split( /::/, $module );
-    my $modfname = $modparts[-1];
-    my $modpname = join( '/', @modparts );
-    my $c        = @modparts;
-    $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
-    die "missing module filepath" unless $modlibname;
-    my $sofile = "$modlibname/auto/$modpname/$modfname." . $Config{dlext};
-    return $sofile;
 }
 
 # This is a redundant helper sub from B::C

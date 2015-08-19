@@ -4513,7 +4513,90 @@ sub save_main_rest {
         }
     }
 
+    my $remap = 0;
+    for my $pkg ( sort keys %init2_remap ) {
+        if ( exists $xsub{$pkg} ) {    # check if not removed in between
+            my ($stashfile) = $xsub{$pkg} =~ /^Dynamic-(.+)$/;
+
+            # get so file from pm. Note: could switch prefix from vendor/site//
+            $init2_remap{$pkg}{FILE} = dl_module_to_sofile( $pkg, $stashfile );
+            $remap++;
+        }
+    }
+
+    if ($remap) {
+
+        # XXX now emit arch-specific dlsym code
+        init2()->add( "{", "  void *handle, *ptr;" );
+        if ($HAVE_DLFCN_DLOPEN) {
+            init2()->add("  #include <dlfcn.h>");
+        }
+        else {
+            init2()->add(
+                "  dTARG; dSP;",
+                "  targ=sv_newmortal();"
+            );
+        }
+        for my $pkg ( sort keys %init2_remap ) {
+            if ( exists $xsub{$pkg} ) {
+                if ($HAVE_DLFCN_DLOPEN) {
+                    my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
+                    $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i;    # 351 (only on solaris and linux, not any bsd)
+                    init2()->add(
+                        sprintf( "  handle = dlopen(%s,", cstring( $init2_remap{$pkg}{FILE} ) ),
+                        "                  $ldopt);",
+                    );
+                }
+                else {
+                    init2()->add(
+                        "  PUSHMARK(SP);",
+                        sprintf( "  XPUSHs(newSVpvs(%s));", cstring( $init2_remap{$pkg}{FILE} ) ),
+                        "  PUTBACK;",
+                        "  XS_DynaLoader_dl_load_file(aTHX);",
+                        "  SPAGAIN;",
+                        "  handle = INT2PTR(void*,POPi);",
+                        "  PUTBACK;",
+                    );
+                }
+                for my $mg ( @{ $init2_remap{$pkg}{MG} } ) {
+                    warn "init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}\n" if verbose();
+                    if ($HAVE_DLFCN_DLOPEN) {
+                        init2()->add( sprintf( "  ptr = dlsym(handle, %s);", cstring( $mg->{NAME} ) ) );
+                    }
+                    else {
+                        init2()->add(
+                            "  PUSHMARK(SP);",
+                            "  XPUSHi(PTR2IV(handle));",
+                            sprintf( "  XPUSHs(newSVpvs(%s));", cstring( $mg->{NAME} ) ),
+                            "  PUTBACK;",
+                            "  XS_DynaLoader_dl_find_symbol(aTHX);",
+                            "  SPAGAIN;",
+                            "  ptr = INT2PTR(void*,POPi);",
+                            "  PUTBACK;",
+                        );
+                    }
+                    init2()->add( sprintf( "  xpvmg_list[%d].xiv_iv = PTR2IV(ptr);", $mg->{ID} ) );
+                }
+            }
+        }
+        init2()->add("}");
+    }
+
     B::C::File::write();
+}
+
+# needed for init2 remap and Dynamic annotation
+sub dl_module_to_sofile {
+    my $module     = shift or die "missing module name";
+    my $modlibname = shift or die "missing module filepath";
+    my @modparts = split( /::/, $module );
+    my $modfname = $modparts[-1];
+    my $modpname = join( '/', @modparts );
+    my $c        = @modparts;
+    $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
+    die "missing module filepath" unless $modlibname;
+    my $sofile = "$modlibname/auto/$modpname/$modfname." . $Config{dlext};
+    return $sofile;
 }
 
 sub init_op_addr {
