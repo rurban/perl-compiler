@@ -123,8 +123,6 @@ sub write {
         my $cmodule = $B::C::module ? $B::C::module : "main";
         $cmodule =~ s/::/__/g;
 
-        my $start = "op_list[0]";
-        warn "curpad syms:\n" if verbose();
         init()->add("/* curpad syms */");
         my $curpad_sym = ( comppadlist->ARRAY )[1]->save;
 
@@ -142,7 +140,7 @@ XS(boot_$cmodule)
     dl_init(aTHX);
     PL_curpad = AvARRAY($curpad_sym);
     PL_comppad = $curpad_sym;
-    PL_op = $start;
+    PL_op = op_list[0];
     perl_run( aTHX ); /* Perl_runops_standard(aTHX); */
     FREETMPS;
     LEAVE;
