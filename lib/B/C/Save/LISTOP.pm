@@ -2,7 +2,8 @@ package B::LISTOP;
 
 use B qw/cstring/;
 use B::C ();
-use B::C::File qw/objsym savesym init listopsect do_labels/;
+use B::C::File qw/init listopsect/;
+use B::C::Helpers qw/objsym savesym do_labels/;
 
 sub save {
     my ( $op, $level ) = @_;

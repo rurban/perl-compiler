@@ -2,7 +2,8 @@ package B::COP;
 
 use B qw/cstring/;
 use B::C qw();
-use B::C::File qw/objsym savesym init copsect/;
+use B::C::File qw/init copsect/;
+use B::C::Helpers qw/savesym objsym/;
 
 sub save {
     my ( $op, $level ) = @_;

@@ -1,7 +1,8 @@
 package B::LOGOP;
 
 use B::C ();
-use B::C::File qw/objsym logopsect init savesym do_labels/;
+use B::C::File qw/logopsect init/;
+use B::C::Helpers qw/objsym savesym do_labels/;
 
 sub save {
     my ( $op, $level ) = @_;

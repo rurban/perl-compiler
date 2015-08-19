@@ -2,6 +2,7 @@ package B::BINOP;
 
 use B::C ();
 use B::C::File qw/binopsect init/;
+use B::C::Helpers qw/savesym do_labels/;
 
 sub save {
     my ( $op, $level ) = @_;
@@ -22,8 +23,8 @@ sub save {
     my $ix = binopsect->index;
     init->add( sprintf( "binop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
-    $sym = B::C::savesym( $op, "(OP*)&binop_list[$ix]" );
-    B::C::do_labels( $op, 'first', 'last' );
+    $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
+    do_labels( $op, 'first', 'last' );
     $sym;
 }
 

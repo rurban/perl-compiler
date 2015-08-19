@@ -2,7 +2,8 @@ package B::PVOP;
 
 use B qw/cstring/;
 use B::C ();
-use B::C::File qw/objsym savesym loopsect pvopsect init /;
+use B::C::File qw/loopsect pvopsect init /;
+use B::C::Helpers qw/objsym savesym /;
 
 sub save {
     my ( $op, $level ) = @_;

@@ -1,6 +1,7 @@
 package B::UNOP;
 
-use B::C::File qw/unopsect init objsym savesym svop_name padop_name mark_package do_labels/;
+use B::C::File qw/unopsect init/;
+use B::C::Helpers qw/objsym savesym do_labels mark_package padop_name svop_name/;
 use B::C ();
 
 sub save {

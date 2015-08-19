@@ -2,7 +2,8 @@ package B::OP;
 
 use B qw/peekop cstring threadsv_names opnumber/;
 use B::C ();
-use B::C::File qw/objsym savesym svsect save_rv init copsect opsect mark_package/;
+use B::C::File qw/svsect init copsect opsect/;
+use B::C::Helpers qw/objsym savesym do_labels save_rv mark_package/;
 
 my @threadsv_names;
 

@@ -1,6 +1,7 @@
 package B::RV;
 
-use B::C::File qw/objsym savesym svsect save_rv init/;
+use B::C::File qw/svsect init/;
+use B::C::Helpers qw/objsym savesym save_rv/;
 
 # Since 5.11 also called by IV::save (SV -> IV)
 sub B::RV::save {
