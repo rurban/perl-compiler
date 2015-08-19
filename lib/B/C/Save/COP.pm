@@ -1,7 +1,9 @@
 package B::COP;
 
+use strict;
+
 use B qw/cstring/;
-use B::C qw();
+
 use B::C::File qw/init copsect/;
 use B::C::Helpers qw/savesym objsym/;
 
@@ -126,11 +128,11 @@ sub save {
     }
 
     # our root: store all packages from this file
-    if ( !$mainfile ) {
-        $mainfile = $op->file if $op->stashpv eq 'main';
+    if ( !$B::C::mainfile ) {
+        $B::C::mainfile = $op->file if $op->stashpv eq 'main';
     }
     else {
-        B::C::mark_package( $op->stashpv ) if $mainfile eq $op->file and $op->stashpv ne 'main';
+        B::C::mark_package( $op->stashpv ) if $B::C::mainfile eq $op->file and $op->stashpv ne 'main';
     }
     savesym( $op, "(OP*)&cop_list[$ix]" );
 }

@@ -2,7 +2,6 @@ package B::PVIV;
 
 use strict;
 
-#use B::C ();
 use B::C::File qw/xpvivsect svsect init/;
 use B::C::Helpers qw/objsym savesym/;
 

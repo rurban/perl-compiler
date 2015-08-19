@@ -1,6 +1,6 @@
 package B::OBJECT;
 
-use B::C ();
+use strict;
 
 sub save { }
 

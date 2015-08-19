@@ -1,6 +1,7 @@
 package B::NULL;
 
-use B::C ();
+use strict;
+
 use B::C::File qw/svsect init/;
 use B::C::Helpers qw/objsym savesym/;
 
@@ -12,7 +13,7 @@ sub save {
 
     # debug
     if ( $$sv == 0 ) {
-        warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n" if $verbose;
+        warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n" if B::C::verbose();
         return savesym( $sv, "(void*)Nullsv /* XXX */" );
     }
 

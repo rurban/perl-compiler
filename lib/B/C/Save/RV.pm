@@ -1,5 +1,7 @@
 package B::RV;
 
+use strict;
+
 use B::C::File qw/svsect init/;
 use B::C::Helpers qw/objsym savesym save_rv/;
 
@@ -12,7 +14,7 @@ sub B::RV::save {
     warn sprintf(
         "Saving RV %s (0x%x) - called from %s:%s\n",
         class($sv), $$sv, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
-    ) if $debug{sv};
+    ) if $B::C::debug{sv};
 
     my $rv = save_rv( $sv, $fullname );
     return '0' unless $rv;

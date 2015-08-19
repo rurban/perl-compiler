@@ -1,7 +1,8 @@
 package B::OP;
 
+use strict;
+
 use B qw/peekop cstring threadsv_names opnumber/;
-use B::C ();
 use B::C::File qw/svsect init copsect opsect/;
 use B::C::Helpers qw/objsym savesym do_labels save_rv mark_package/;
 
@@ -123,15 +124,15 @@ sub _save_common {
         if ( !$op->first->next->type ) {            # 5.8 ex-gvsv
             $pkgop = $op->first->next->next;
         }
-        warn "check package_pv " . $pkgop->name . " for method_name\n" if $debug{cv};
+        warn "check package_pv " . $pkgop->name . " for method_name\n" if $B::C::debug{cv};
         my $pv = B::C::svop_or_padop_pv($pkgop);    # 5.13: need to store away the pkg pv
         if ( $pv and $pv !~ /[! \(]/ ) {
-            $package_pv = $pv;
-            B::C::push_package($package_pv);
+            $B::C::package_pv = $pv;
+            B::C::push_package($B::C::package_pv);
         }
         else {
             # mostly optimized-away padsv NULL pads with 5.8
-            warn "package_pv for method_name not found\n" if $debug{cv} or $debug{pkg};
+            warn "package_pv for method_name not found\n" if $B::C::debug{cv} or $B::C::debug{pkg};
         }
     }
 

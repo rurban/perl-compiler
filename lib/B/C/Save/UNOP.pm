@@ -1,8 +1,9 @@
 package B::UNOP;
 
+use strict;
+
 use B::C::File qw/unopsect init/;
 use B::C::Helpers qw/objsym savesym do_labels mark_package padop_name svop_name/;
-use B::C ();
 
 sub save {
     my ( $op, $level ) = @_;
@@ -20,19 +21,19 @@ sub save {
 
     if ( $op->name eq 'method' and $op->first and $op->first->name eq 'const' ) {
         my $method = svop_name( $op->first );
-        if ( !$method and $ITHREADS ) {
+        if ( !$method and B::C::USE_ITHREADS() ) {
             $method = padop_name( $op->first, $B::C::curcv );    # XXX (curpad[targ])
         }
-        warn "method -> const $method\n" if $debug{pkg} and $ITHREADS;
+        warn "method -> const $method\n" if $B::C::debug{pkg} and B::C::USE_ITHREADS();
 
         #324,#326 need to detect ->(maybe::next|maybe|next)::(method|can)
         if ( $method =~ /^(maybe::next|maybe|next)::(method|can)$/ ) {
-            warn "mark \"$1\" for method $method\n" if $debug{pkg};
+            warn "mark \"$1\" for method $method\n" if $B::C::debug{pkg};
             mark_package( $1,    1 );
             mark_package( "mro", 1 );
         }    # and also the old 5.8 NEXT|EVERY with non-fixed method names und subpackages
         elsif ( $method =~ /^(NEXT|EVERY)::/ ) {
-            warn "mark \"$1\" for method $method\n" if $debug{pkg};
+            warn "mark \"$1\" for method $method\n" if $B::C::debug{pkg};
             mark_package( $1, 1 );
             mark_package( "NEXT", 1 ) if $1 ne "NEXT";
         }

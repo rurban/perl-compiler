@@ -1,5 +1,7 @@
 package SV;
 
+use strict;
+
 sub save {
     my $sv = shift;
 

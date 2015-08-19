@@ -3,7 +3,7 @@ package B::UV;
 use strict;
 
 use Config;
-use B::C ();
+
 use B::C::File qw/xpvuvsect svsect/;
 use B::C::Helpers qw/objsym savesym/;
 

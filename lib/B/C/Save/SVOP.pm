@@ -1,6 +1,7 @@
 package B::SVOP;
 
-use B::C ();
+use strict;
+
 use B::C::File qw/svopsect init/;
 use B::C::Helpers qw/objsym savesym do_labels/;
 

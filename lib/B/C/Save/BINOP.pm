@@ -1,6 +1,7 @@
 package B::BINOP;
 
-use B::C ();
+use strict;
+
 use B::C::File qw/binopsect init/;
 use B::C::Helpers qw/savesym do_labels/;
 

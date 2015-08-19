@@ -1,5 +1,6 @@
 package B::SPECIAL;
 
+use strict;
 use B::Asmdata qw(@specialsv_name);
 
 sub save {

@@ -1,8 +1,9 @@
 package B::PADOP;
 
+use strict;
+
 use B qw/comppadlist/;
 
-use B::C ();
 use B::C::File qw/padopsect init/;
 use B::C::Helpers qw/objsym savesym/;
 

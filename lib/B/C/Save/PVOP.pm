@@ -1,7 +1,9 @@
 package B::PVOP;
 
+use strict;
+
 use B qw/cstring/;
-use B::C ();
+
 use B::C::File qw/loopsect pvopsect init /;
 use B::C::Helpers qw/objsym savesym /;
 

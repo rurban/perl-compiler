@@ -134,7 +134,7 @@ our %all_bc_deps =
 # pb -MB::Stash -e0
 # -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
 
-my ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
+our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
 my ( %cvforward, %lexwarnsym );
 my ( %strtable, %hektable, %gptable );
 our ( %xsub, %init2_remap );

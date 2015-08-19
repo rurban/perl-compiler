@@ -1,6 +1,7 @@
 package B::LOGOP;
 
-use B::C ();
+use strict;
+
 use B::C::File qw/logopsect init/;
 use B::C::Helpers qw/objsym savesym do_labels/;
 

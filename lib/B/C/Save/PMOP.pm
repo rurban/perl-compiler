@@ -3,7 +3,7 @@ package B::PMOP;
 use strict;
 
 use B qw/cstring svref_2object/;
-use B::C ();
+
 use B::C::File qw/pmopsect init/;
 use B::C::Helpers qw/objsym savesym/;
 
