@@ -92,8 +92,8 @@ use B::STASHGV ();
 
 my $hv_index = 0;
 our $gv_index = 0;
-my $re_index      = 0;
-my $pv_index      = 0;
+my $re_index = 0;
+our $pv_index = 0;
 my $cv_index      = 0;
 my $hek_index     = 0;
 my $anonsub_index = 0;
@@ -135,7 +135,7 @@ our %all_bc_deps =
 # -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
 
 our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
-my ( %cvforward, %lexwarnsym );
+my (%cvforward);
 my ( %strtable, %hektable, %gptable );
 our ( %xsub, %init2_remap );
 my ( $warn_undefined_syms, $swash_init, $swash_ToCf );
@@ -964,39 +964,6 @@ sub savepvn {
         }
     }
     return @init;
-}
-
-sub lexwarnsym {
-    my $pv = shift;
-    if ( $lexwarnsym{$pv} ) {
-        return $lexwarnsym{$pv};
-    }
-    else {
-        my $sym = sprintf( "lexwarn%d", $pv_index++ );
-
-        # if 8 use UVSIZE, if 4 use LONGSIZE
-        my $t = ( $Config{longsize} == 8 ) ? "J" : "L";
-        my ($iv) = unpack( $t, $pv );    # unsigned longsize
-        if ( $iv >= 0 and $iv <= 2 ) {   # specialWARN: single STRLEN
-            decl()->add( sprintf( "Static const STRLEN* %s = %d;", $sym, $iv ) );
-        }
-        else {                           # sizeof(STRLEN) + (WARNsize)
-            my $packedpv = pack( "$t a*", length($pv), $pv );
-            decl()->add( sprintf( "Static const char %s[] = %s;", $sym, cstring($packedpv) ) );
-        }
-
-        $lexwarnsym{$pv} = $sym;
-        return $sym;
-    }
-}
-
-# pre vs. post 5.8.9/5.9.4 logic for lexical warnings
-@B::LEXWARN::ISA = qw(B::PV B::IV);
-
-sub B::LEXWARN::save {
-    my ( $sv, $fullname ) = @_;
-
-    return lexwarnsym( $sv->PV );    # look for shared const int's
 }
 
 # post 5.11: When called from save_rv not from PMOP::save precomp
