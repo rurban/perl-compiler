@@ -43,7 +43,7 @@ sub save {
     my $s = "sv_list[" . svsect()->index . "]";
     if ( !$static ) {
 
-        init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
+        init()->add( B::C::savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
     }
     $sv->save_magic($fullname);
 
