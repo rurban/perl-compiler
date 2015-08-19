@@ -4501,7 +4501,34 @@ sub save_main_rest {
         }
     }
 
+    # formerly sub fixup_ppaddr {
+    # init op addrs must be the last action, otherwise
+    # some ops might not be initialized
+    # but it needs to happen before CALLREGCOMP, as a /i calls a compiled utf8::SWASHNEW
+    if ($optimize_ppaddr) {
+        foreach my $op_section_name ( B::C::File::op_sections() ) {
+            my $section = B::C::File::get_sect($op_section_name);
+            next unless $section->index >= 0;
+            init_op_addr( $section->name, $section->index + 1 );
+        }
+    }
+
     B::C::File::write();
+}
+
+sub init_op_addr {
+    my ( $op_type, $num ) = @_;
+    my $op_list = $op_type . "_list";
+
+    init0()->add( split /\n/, <<_EOT3 );
+{
+    register int i;
+    for( i = 0; i < ${num}; ++i ) {
+        ${op_list}\[i].op_ppaddr = PL_ppaddr[PTR2IV(${op_list}\[i].op_ppaddr)];
+    }
+}
+_EOT3
+
 }
 
 sub mark_unused {
