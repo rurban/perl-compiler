@@ -11,7 +11,7 @@ B::C::File - Responsible for rendering generated C snippets into a C file for us
     B::C::File::new(); # Singleton.
     ...
     B::C::File::write() # C File to generate.
-    
+
     # In code that needs to contribute snippets
     use B::C::File qw/unopsect init objsym savesym svop_name padop_name mark_package do_labels/;
     ...
@@ -1212,6 +1212,20 @@ EOT
 EOT1
 
     }    # module
+}
+
+# needed for init2 remap and Dynamic annotation
+sub dl_module_to_sofile {
+    my $module     = shift or die "missing module name";
+    my $modlibname = shift or die "missing module filepath";
+    my @modparts = split( /::/, $module );
+    my $modfname = $modparts[-1];
+    my $modpname = join( '/', @modparts );
+    my $c        = @modparts;
+    $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
+    die "missing module filepath" unless $modlibname;
+    my $sofile = "$modlibname/auto/$modpname/$modfname." . $Config{dlext};
+    return $sofile;
 }
 
 # This is a redundant helper sub from B::C

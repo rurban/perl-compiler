@@ -249,20 +249,6 @@ sub add_to_currINC {
 # This the Carp free workaround for DynaLoader::bootstrap
 sub DynaLoader::croak { die @_ }
 
-# needed for init2 remap and Dynamic annotation
-sub dl_module_to_sofile {
-    my $module     = shift or die "missing module name";
-    my $modlibname = shift or die "missing module filepath";
-    my @modparts = split( /::/, $module );
-    my $modfname = $modparts[-1];
-    my $modpname = join( '/', @modparts );
-    my $c        = @modparts;
-    $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
-    die "missing module filepath" unless $modlibname;
-    my $sofile = "$modlibname/auto/$modpname/$modfname." . $Config{dlext};
-    return $sofile;
-}
-
 sub walk_and_save_optree;
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
