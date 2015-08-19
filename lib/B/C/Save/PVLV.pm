@@ -4,7 +4,7 @@ use strict;
 
 use B q/cchar/;
 use B::C ();
-use B::C::File qw/xpvlvsect svsect/;
+use B::C::File qw/xpvlvsect svsect init/;
 use B::C::Helpers qw/objsym savesym/;
 
 # Warning not covered by the (cpanel)core test suite...
