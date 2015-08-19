@@ -31,7 +31,7 @@ sub save {
 
     svsect()->add(
         sprintf(
-            "&xpviv_list[%d], %lu, 0x%x" . ', {' . ( $C99 ? ".svu_pv=" : "" ) . 'NULL}',
+            "&xpviv_list[%d], %lu, 0x%x" . ', {' . ( $B::C::C99 ? ".svu_pv=" : "" ) . 'NULL}',
             xpvivsect()->index, $sv->REFCNT, $svflags
         )
     );
