@@ -129,14 +129,7 @@ sub write {
 
     open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
 
-    # add static modules like " Win32CORE"
-    foreach my $stashname ( split /\s+/, $Config{static_ext} ) {
-        next if $stashname =~ /^\s*$/;    # often a leading space
-        $static_ext{$stashname}++;
-        my $stashxsub = $stashname;
-        $stashxsub =~ s/::/__/g;
-        print {$cfh} "EXTERN_C void boot_$stashxsub (pTHX_ CV* cv);\n";
-    }
+
     print {$cfh} "\n";
     output_all( $B::C::init_name || "perl_init" );
     print {$cfh} "\n";

@@ -61,3 +61,8 @@ static void my_curse( pTHX_ SV* const sv );
 [% ELSE -%]
 int my_perl_destruct( PerlInterpreter *my_perl );
 [% END %]
+
+[%# Add static modules like " Win32CORE". This data comes from $Config{static_ext} -%]
+[% FOREACH xsub IN stashxsubs -%]
+EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
+[% END -%]

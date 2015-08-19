@@ -4032,6 +4032,9 @@ sub save_main_rest {
         init2()->add("}");
     }
 
+    my %static_ext = map { ( $_ => 1 ) } grep { m/\S/ } split( /\s+/, $Config{static_ext} );
+    my @stashxsubs = map { s/::/__/g; $_ } keys %static_ext;
+
     my $c_file_stash = {
         'verbose'                          => $verbose,
         'debug'                            => \%debug,
@@ -4041,6 +4044,8 @@ sub save_main_rest {
         'use_declare_independent_comalloc' => $B::C::Flags::use_declare_independent_comalloc,
         'av_init2'                         => $av_init2,
         'destruct'                         => $destruct,
+        'static_ext'                       => \%static_ext,
+        'stashxsubs'                       => \@stashxsubs,
     };
 
     warn "Writing output\n" if $verbose;
