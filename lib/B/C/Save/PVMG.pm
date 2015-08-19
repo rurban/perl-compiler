@@ -40,7 +40,7 @@ sub save {
             and $sv->IVX > 5000000    # some crazy heuristic for a so ptr (> image_base)
             and ref( $sv->SvSTASH ) ne 'B::SPECIAL'
           ) {
-            $ivx = patch_dlsym( $sv, $fullname, $ivx );
+            $ivx = B::C::patch_dlsym( $sv, $fullname, $ivx );
         }
     }
 
