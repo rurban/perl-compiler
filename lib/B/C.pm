@@ -4032,7 +4032,19 @@ sub save_main_rest {
         init2()->add("}");
     }
 
-    B::C::File::write();
+    my $c_file_stash = {
+        'verbose'                          => $verbose,
+        'debug'                            => \%debug,
+        'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION",
+        'DEBUG_LEAKING_SCALARS'            => $DEBUG_LEAKING_SCALARS,
+        'have_independent_comalloc'        => $B::C::Flags::have_independent_comalloc,
+        'use_declare_independent_comalloc' => $B::C::Flags::use_declare_independent_comalloc,
+        'av_init2'                         => $av_init2,
+        'destruct'                         => $destruct,
+    };
+
+    warn "Writing output\n" if $verbose;
+    B::C::File::write($c_file_stash);
 }
 
 # needed for init2 remap and Dynamic annotation

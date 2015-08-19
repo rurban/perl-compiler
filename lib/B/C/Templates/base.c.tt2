@@ -1,0 +1,63 @@
+/* [% creator %] */
+
+[% IF debug.flags AND DEBUG_LEAKING_SCALARS -%]
+#define DEBUG_LEAKING_SCALARS 1
+[% END -%]
+
+[% IF have_independent_comalloc -%]
+#ifdef NEED_MALLOC_283
+# include "malloc-2.8.3.h"
+#endif
+[% END -%]
+
+#define PERL_CORE
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+
+/* Workaround for mapstart: the only op which needs a different ppaddr */
+#undef Perl_pp_mapstart
+#define Perl_pp_mapstart Perl_pp_grepstart
+#undef OP_MAPSTART
+#define OP_MAPSTART OP_GREPSTART
+
+/* Since 5.8.8 */
+#ifndef Newx
+#define Newx(v,n,t)    New(0,v,n,t)
+#endif
+/* No longer available when C<PERL_CORE> is defined. */
+#ifndef Nullsv
+#define Null(type) ((type)NULL)
+#define Nullsv Null(SV*)
+#define Nullhv Null(HV*)
+#define Nullgv Null(GV*)
+#define Nullop Null(OP*)
+#endif
+#ifndef GV_NOTQUAL
+#define GV_NOTQUAL 0
+#endif
+
+#define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
+EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
+
+static void xs_init (pTHX);
+static void dl_init (pTHX);
+
+[% IF av_init2 AND use_declare_independent_comalloc %]
+void** dlindependent_comalloc(size_t, size_t*, void**);
+[% END -%]
+
+[% IF destruct -%]
+int fast_perl_destruct( PerlInterpreter *my_perl );
+static void my_curse( pTHX_ SV* const sv );
+
+#ifndef dVAR
+# ifdef PERL_GLOBAL_STRUCT
+#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
+# else
+#  define dVAR		dNOOP
+# endif
+#endif
+[% ELSE -%]
+int my_perl_destruct( PerlInterpreter *my_perl );
+[% END %]

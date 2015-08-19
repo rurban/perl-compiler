@@ -68,7 +68,7 @@ sub new {
     $self and die("Re-initialized???");
 
     my $outfile = shift;
-    $self = bless { 'c_file_name' => $outfile, 'verbose' => $B::C::verbose, 'debug' => \%B::C::debug };
+    $self = bless { 'c_file_name' => $outfile };
 
     foreach my $section_name ( code_section_names() ) {
         $self->{$section_name} = B::C::Section->new( $section_name, \%symtable, 0 );
@@ -100,11 +100,34 @@ my $cfh;
 my %static_ext;
 
 sub write {
-    warn "Writing output\n" if verbose();
+    my $c_file_stash = shift or die;
+    $self->{'verbose'} = $c_file_stash->{'verbose'};    # So verbose() will work. TODO: Remove me when all verbose() are gone.
 
-    open( $cfh, '>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
+    my $template_dir = $B::C::savINC{'B/C.pm'};
+    $template_dir =~ s{\.pm$}{};
+    $template_dir .= "/Templates";
+    my $template_file = "$template_dir/base.c.tt2";
+    -e $template_file or die("Can't find or read $template_file for generating B::C C code.");
 
-    output_boilerplate();
+    # op/magic-27839.t sets SIG{WARN} in a begin block and then never releases it.
+    eval 'delete $INC{Template} if(!$INC{Template}); local $SIG{__WARN__} = sub {}; require Exporter::Heavy; require Template';
+    $INC{'Template.pm'} or die("Can't load Template Toolkit at run time to render the C file.");
+
+    # some useful options (see below for full list)
+    my $config = {
+        INCLUDE_PATH => $template_dir,
+        INTERPOLATE  => 0,               # expand "$var" in plain text
+        POST_CHOMP   => 1,               # cleanup whitespace
+        EVAL_PERL    => 0,               # evaluate Perl code blocks
+    };
+
+    # create Template object
+    my $template = Template->new($config);
+
+    # process input template, substituting variables
+    $template->process( 'base.c.tt2', $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
+
+    open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
 
     # add static modules like " Win32CORE"
     foreach my $stashname ( split /\s+/, $Config{static_ext} ) {
@@ -154,83 +177,6 @@ EOT
         output_main();
     }
     close $cfh;
-}
-
-sub output_boilerplate {
-    my $creator = "created at " . scalar localtime() . " with B::C $B::C::VERSION";
-    $creator .= $B::C::REVISION if $B::C::REVISION;
-    print {$cfh} "/* $creator */\n";
-
-    # Store the sv_list index in sv_debug_file when debugging
-    print {$cfh} "#define DEBUG_LEAKING_SCALARS 1\n" if $self->{'debug'}->{flags} and $B::C::DEBUG_LEAKING_SCALARS;
-    if ($B::C::Flags::have_independent_comalloc) {
-        print {$cfh} <<'_EOT1';
-#ifdef NEED_MALLOC_283
-# include "malloc-2.8.3.h"
-#endif
-_EOT1
-
-    }
-    print {$cfh} <<'_EOT2';
-#define PERL_CORE
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-
-/* Workaround for mapstart: the only op which needs a different ppaddr */
-#undef Perl_pp_mapstart
-#define Perl_pp_mapstart Perl_pp_grepstart
-#undef OP_MAPSTART
-#define OP_MAPSTART OP_GREPSTART
-
-/* Since 5.8.8 */
-#ifndef Newx
-#define Newx(v,n,t)    New(0,v,n,t)
-#endif
-/* No longer available when C<PERL_CORE> is defined. */
-#ifndef Nullsv
-#define Null(type) ((type)NULL)
-#define Nullsv Null(SV*)
-#define Nullhv Null(HV*)
-#define Nullgv Null(GV*)
-#define Nullop Null(OP*)
-#endif
-#ifndef GV_NOTQUAL
-#define GV_NOTQUAL 0
-#endif
-
-#define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
-EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
-
-static void xs_init (pTHX);
-static void dl_init (pTHX);
-_EOT2
-
-    if ( $B::C::av_init2 and $B::C::Flags::use_declare_independent_comalloc ) {
-        print {$cfh} "void** dlindependent_comalloc(size_t, size_t*, void**);\n";
-    }
-
-    if ( !$B::C::destruct ) {
-        print {$cfh} <<'__EOT';
-int fast_perl_destruct( PerlInterpreter *my_perl );
-static void my_curse( pTHX_ SV* const sv );
-
-#ifndef dVAR
-# ifdef PERL_GLOBAL_STRUCT
-#  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
-# else
-#  define dVAR		dNOOP
-# endif
-#endif
-__EOT
-
-    }
-    else {
-        print {$cfh} <<'__EOT';
-int my_perl_destruct( PerlInterpreter *my_perl );
-__EOT
-
-    }
 }
 
 sub output_all {
