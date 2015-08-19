@@ -1,6 +1,8 @@
 package B::LOOP;
 
-use B::C::File qw/loopsect/;
+use strict;
+
+use B::C::File qw/loopsect init/;
 use B::C::Helpers qw/objsym savesym do_labels/;
 
 sub save {
