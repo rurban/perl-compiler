@@ -208,7 +208,7 @@ our %debug_map = (
 );
 
 my @xpvav_sizes;
-my ( $max_string_len, $in_endav );
+our ( $max_string_len, $in_endav );
 my %static_core_pkg;    # = map {$_ => 1} static_core_packages();
 
 # get rid of them... B::C::Setup
@@ -964,44 +964,6 @@ sub savepvn {
         }
     }
     return @init;
-}
-
-sub B::PVLV::save {
-    my ( $sv, $fullname ) = @_;
-    my $sym = objsym($sv);
-    if ( defined $sym ) {
-        if ($in_endav) {
-            warn "in_endav: static_free without $sym\n" if $debug{av};
-            @B::C::static_free = grep { !/$sym/ } @B::C::static_free;
-        }
-        return $sym;
-    }
-    my ( $pvsym, $cur, $len, $pv, $static ) = save_pv_or_rv( $sv, $fullname );
-    my ( $lvtarg, $lvtarg_sym );    # XXX missing
-
-    xpvlvsect()->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
-    xpvlvsect()->add(
-        sprintf(
-            "Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %s, %u, %u, Nullsv, %s",
-            $cur,         $len,         nvx( $sv->NVX ),
-            $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE )
-        )
-    );
-    svsect()->add(
-        sprintf(
-            "&xpvlv_list[%d], %lu, 0x%x, {(char*)%s}",
-            xpvlvsect()->index, $sv->REFCNT, $sv->FLAGS, $pvsym
-        )
-    );
-
-    svsect()->debug( $fullname, $sv );
-    my $s = "sv_list[" . svsect()->index . "]";
-    if ( !$static ) {
-
-        init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-    }
-    $sv->save_magic($fullname);
-    savesym( $sv, "&" . $s );
 }
 
 sub B::PVIV::save {
