@@ -1,7 +1,7 @@
 package B::BINOP;
 
 use B::C ();
-use B::C::File qw/binopsect/;
+use B::C::File qw/binopsect init/;
 
 sub save {
     my ( $op, $level ) = @_;
