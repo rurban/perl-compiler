@@ -1417,10 +1417,6 @@ sub B::AV::save {
     return $sym;
 }
 
-sub B::PADLIST::save {
-    return B::AV::save(@_);
-}
-
 sub B::HV::save {
     my ( $hv, $fullname ) = @_;
     $fullname = '' unless $fullname;
