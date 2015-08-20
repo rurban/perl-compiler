@@ -1635,69 +1635,6 @@ sub save_object {
     }
 }
 
-sub B::GV::savecv {
-    my $gv      = shift;
-    my $package = $gv->STASH->NAME;
-    my $name    = $gv->NAME;
-    my $cv      = $gv->CV;
-    my $sv      = $gv->SV;
-    my $av      = $gv->AV;
-    my $hv      = $gv->HV;
-
-    my $fullname = $package . "::" . $name;
-    warn sprintf( "Checking GV *%s 0x%x\n", cstring($fullname), $$gv )
-      if $debug{gv} and $verbose;
-
-    # We may be looking at this package just because it is a branch in the
-    # symbol table which is on the path to a package which we need to save
-    # e.g. this is 'Getopt' and we need to save 'Getopt::Long'
-    #
-    return if ( $package ne 'main' and !$include_package{$package} );
-    return if ( $package eq 'main'
-        and $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
-
-    warn sprintf( "Used GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
-    return unless ( $$cv || $$av || $$sv || $$hv || $gv->IO || $gv->FORM );
-    if ( $$cv and $name eq 'bootstrap' and $cv->XSUB ) {
-
-        #return $cv->save($fullname);
-        warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
-        return;
-    }
-    if (
-        $$cv and in_static_core( $package, $name ) and ref($cv) eq 'B::CV'    # 5.8,4 issue32
-        and $cv->XSUB
-      ) {
-        warn("Skip internal XS $fullname\n") if $debug{gv};
-
-        # but prevent it from being deleted
-        unless ( $dumped_package{$package} ) {
-            $dumped_package{$package} = 1;
-            mark_package( $package, 1 );
-        }
-        return;
-    }
-    if ( $package eq 'B::C' ) {
-        warn sprintf( "Skip XS \&$fullname 0x%x\n", $$cv ) if $debug{gv};
-        return;
-    }
-    if ( $fullname =~ /^(bytes|utf8)::AUTOLOAD$/ ) {
-        $gv = force_heavy($package);
-    }
-
-    # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
-    return if $fullname eq 'B::walksymtable' or $fullname eq 'B::C::walksymtable';
-
-    # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
-    # used by the compiler itself
-    if ( $name eq 'Config' ) {
-        mark_package( 'Config', 1 ) if !$include_package{'Config'};
-    }
-    $dumped_package{$package} = 1 if !exists $dumped_package{$package} and $package !~ /::$/;
-    warn sprintf( "Saving GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
-    $gv->save($fullname);
-}
-
 # Fixes bug #307: use foreach, not each
 # each is not safe to use (at all). walksymtable is called recursively which might add
 # symbols to the stash, which might cause re-ordered rehashes, which will fool the hash
