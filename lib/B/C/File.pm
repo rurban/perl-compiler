@@ -31,6 +31,7 @@ use warnings;
 
 use Exporter ();
 
+use B::C::Helpers::Symtable qw(get_symtable_ref);
 use B::C::Section     ();
 use B::C::InitSection ();
 
@@ -41,7 +42,6 @@ our @ISA = qw(Exporter);
 
 my $self;
 
-our %symtable;
 our $AUTOLOAD;
 
 sub code_section_names {
@@ -71,11 +71,11 @@ sub new {
     $self = bless { 'c_file_name' => $outfile };
 
     foreach my $section_name ( code_section_names() ) {
-        $self->{$section_name} = B::C::Section->new( $section_name, \%symtable, 0 );
+        $self->{$section_name} = B::C::Section->new( $section_name, get_symtable_ref(), 0 );
     }
 
     foreach my $section_name ( init_section_names() ) {
-        $self->{$section_name} = B::C::InitSection->new( $section_name, \%symtable, 0 );
+        $self->{$section_name} = B::C::InitSection->new( $section_name, get_symtable_ref(), 0 );
     }
 }
 

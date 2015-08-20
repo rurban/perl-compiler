@@ -4,7 +4,7 @@ use strict;
 
 use B qw/cstring/;
 use B::C::File qw/init/;
-use B::C::Helpers qw/savesym objsym/;
+use B::C::Helpers::Symtable qw/savesym objsym/;
 
 sub save {
     my ( $sv, $fullname ) = @_;

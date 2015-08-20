@@ -2,6 +2,8 @@
 
 set -e
 
+find lib/B/C/Save/*.pm | xargs -n1 perl -Ilib -c
+
 #git clean -dxf
 perl Makefile.PL installdirs=vendor
 make -j4 install

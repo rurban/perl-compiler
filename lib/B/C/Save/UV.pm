@@ -5,7 +5,7 @@ use strict;
 use Config;
 
 use B::C::File qw/xpvuvsect svsect/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $sv, $fullname ) = @_;

@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar/;
 use B::C::File qw/init svsect xpvmgsect/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $sv, $fullname ) = @_;

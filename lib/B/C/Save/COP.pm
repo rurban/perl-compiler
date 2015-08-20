@@ -5,7 +5,7 @@ use strict;
 use B qw/cstring/;
 
 use B::C::File qw/init copsect/;
-use B::C::Helpers qw/savesym objsym/;
+use B::C::Helpers::Symtable qw/savesym objsym/;
 
 sub save {
     my ( $op, $level ) = @_;

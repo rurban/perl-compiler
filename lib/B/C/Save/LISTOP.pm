@@ -5,7 +5,8 @@ use strict;
 use B qw/cstring/;
 
 use B::C::File qw/init listopsect/;
-use B::C::Helpers qw/objsym savesym do_labels/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
+use B::C::Helpers qw/do_labels/;
 
 sub save {
     my ( $op, $level ) = @_;

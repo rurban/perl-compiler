@@ -5,7 +5,7 @@ use strict;
 use B qw/comppadlist/;
 
 use B::C::File qw/padopsect init/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $op, $level ) = @_;

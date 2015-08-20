@@ -3,7 +3,8 @@ package B::UNOP;
 use strict;
 
 use B::C::File qw/unopsect init/;
-use B::C::Helpers qw/objsym savesym do_labels mark_package padop_name svop_name/;
+use B::C::Helpers qw/do_labels mark_package padop_name svop_name/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $op, $level ) = @_;

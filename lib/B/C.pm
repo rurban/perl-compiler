@@ -29,6 +29,7 @@ use B::C::File qw( init2 init0 init decl free
   opsect pmopsect pvopsect svopsect unopsect svsect xpvsect xpvavsect xpvhvsect xpvcvsect xpvivsect xpvuvsect
   xpvnvsect xpvmgsect xpvlvsect xrvsect xpvbmsect xpviosect padlistsect loopsect
 );
+use B::C::Helpers::Symtable qw(objsym savesym);
 
 use strict;
 use Exporter ();
@@ -45,7 +46,7 @@ our %Regexp;
 
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(mark_unused mark_skip set_callback save_unused_subs objsym save_context save_sig svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
+our @EXPORT_OK = qw(mark_unused mark_skip set_callback save_unused_subs save_context save_sig svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
 
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
@@ -138,7 +139,7 @@ our %all_bc_deps =
 our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
 my ( %strtable, %hektable, %gptable );
 our ( %xsub, %init2_remap );
-my ( $warn_undefined_syms, $swash_init, $swash_ToCf );
+my ( $swash_init, $swash_ToCf );
 our ( $staticxs, $outfile );
 our ( %include_package, %dumped_package, %skip_package, %isa_cache );
 our ($use_xsloader);
@@ -366,36 +367,6 @@ sub IsCOW {
 
 sub IsCOW_hek {
     return IsCOW( $_[0] ) && !$_[0]->LEN;
-}
-
-# todo move all the sym to helper
-sub savesym {
-    my ( $obj, $value ) = @_;
-    no strict 'refs';
-    my $sym = sprintf( "s\\_%x", $$obj );
-    $B::C::File::symtable{$sym} = $value;
-    return $value;
-}
-
-sub objsym {
-    my $obj = shift;
-    no strict 'refs';
-    return $B::C::File::symtable{ sprintf( "s\\_%x", $$obj ) };
-}
-
-sub getsym {
-    my $sym = shift;
-    my $value;
-
-    return 0 if $sym eq "sym_0";    # special case
-    $value = $B::C::File::symtable{$sym};
-    if ( defined($value) ) {
-        return $value;
-    }
-    else {
-        warn "warning: undefined symbol $sym\n" if $warn_undefined_syms;
-        return "UNUSED";
-    }
 }
 
 sub savere {
@@ -2388,19 +2359,6 @@ sub B::IO::save {
     return $sym;
 }
 
-sub dump_symtable {
-
-    # For debugging
-    my ( $sym, $val );
-    warn "----Symbol table:\n";
-
-    for $sym ( sort keys %B::C::File::symtable ) {
-        $val = $B::C::File::symtable{$sym};
-        warn "$sym => $val\n";
-    }
-    warn "---End of symbol table\n";
-}
-
 sub save_object {
     my $sv;
     foreach $sv (@_) {
@@ -3505,7 +3463,7 @@ sub compile {
             last OPTION;
         }
         if ( $opt eq "w" ) {
-            $warn_undefined_syms = 1;
+            B::C::Helpers::Symtable::enable_warnings();
         }
         if ( $opt eq "c" ) {
             $check = 1;

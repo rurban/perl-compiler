@@ -4,7 +4,7 @@ use strict;
 
 use B qw/SVf_ROK SVf_READONLY cstring/;
 use B::C::File qw/xpvsect svsect init/;
-use B::C::Helpers qw/savesym objsym/;
+use B::C::Helpers::Symtable qw/savesym objsym/;
 
 sub save {
     my ( $sv, $fullname ) = @_;

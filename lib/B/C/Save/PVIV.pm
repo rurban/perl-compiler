@@ -3,7 +3,7 @@ package B::PVIV;
 use strict;
 
 use B::C::File qw/xpvivsect svsect init/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $sv, $fullname ) = @_;

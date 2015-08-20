@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B qw/cstring/;
 use B::C::File qw/init svsect xpvsect/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # post 5.11: When called from save_rv not from PMOP::save precomp
 sub save {

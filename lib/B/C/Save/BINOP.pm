@@ -3,7 +3,8 @@ package B::BINOP;
 use strict;
 
 use B::C::File qw/binopsect init/;
-use B::C::Helpers qw/savesym do_labels/;
+use B::C::Helpers qw/do_labels/;
+use B::C::Helpers::Symtable qw/savesym/;
 
 sub save {
     my ( $op, $level ) = @_;

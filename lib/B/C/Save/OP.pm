@@ -4,7 +4,8 @@ use strict;
 
 use B qw/peekop cstring threadsv_names opnumber/;
 use B::C::File qw/svsect init copsect opsect/;
-use B::C::Helpers qw/objsym savesym do_labels save_rv mark_package/;
+use B::C::Helpers qw/do_labels save_rv mark_package/;
+use B::C::Helpers::Symtable qw/savesym objsym/;
 
 my @threadsv_names;
 

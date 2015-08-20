@@ -5,7 +5,7 @@ use strict;
 use B q/cchar/;
 
 use B::C::File qw/xpvlvsect svsect init/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Warning not covered by the (cpanel)core test suite...
 # FIXME... add some test coverage for PVLV

@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
 use B::C::File qw/init decl svsect xpvcvsect symsect/;
-use B::C::Helpers qw/objsym savesym delsym/;
+use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 
 my (%cvforward);
 my $cv_index      = 0;

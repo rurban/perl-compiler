@@ -4,8 +4,8 @@ use strict;
 
 use B qw/cstring/;
 
-use B::C::File qw/loopsect pvopsect init /;
-use B::C::Helpers qw/objsym savesym /;
+use B::C::File qw/loopsect pvopsect init/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $op, $level ) = @_;

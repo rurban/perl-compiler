@@ -5,7 +5,7 @@ use strict;
 use B qw/cstring svref_2object/;
 
 use B::C::File qw/pmopsect init/;
-use B::C::Helpers qw/objsym savesym/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # FIXME really required ?
 BEGIN {

@@ -3,7 +3,8 @@ package B::RV;
 use strict;
 
 use B::C::File qw/svsect init/;
-use B::C::Helpers qw/objsym savesym save_rv/;
+use B::C::Helpers qw/save_rv/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Since 5.11 also called by IV::save (SV -> IV)
 sub B::RV::save {

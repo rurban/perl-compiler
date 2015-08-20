@@ -3,7 +3,8 @@ package B::LOOP;
 use strict;
 
 use B::C::File qw/loopsect init/;
-use B::C::Helpers qw/objsym savesym do_labels/;
+use B::C::Helpers qw/do_labels/;
+use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $op, $level ) = @_;
