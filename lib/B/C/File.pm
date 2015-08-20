@@ -99,8 +99,10 @@ sub AUTOLOAD {
 my $cfh;
 my %static_ext;
 
+use Carp qw/croak/;
+
 sub write {
-    my $c_file_stash = shift or die;
+    my $c_file_stash = shift or croak;
     $self->{'verbose'} = $c_file_stash->{'verbose'};    # So verbose() will work. TODO: Remove me when all verbose() are gone.
 
     my $template_dir = $B::C::savINC{'B/C.pm'};
@@ -128,7 +130,6 @@ sub write {
     $template->process( 'base.c.tt2', $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
 
     open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
-
 
     print {$cfh} "\n";
     output_all( $B::C::init_name || "perl_init" );
@@ -282,7 +283,9 @@ EOT
     # In core since 5.12
 
     print {$cfh} "typedef struct p5rx RE;\n";
-    print {$cfh} "Static GV *gv_list[$B::C::gv_index];\n" if $B::C::gv_index;
+    if ( my $ix = B::GV::get_index() ) {
+        print {$cfh} "Static GV *gv_list[$ix];\n";
+    }
 
     # Need fresh re-hash of strtab. share_hek does not allow hash = 0
 
