@@ -1,10 +1,10 @@
 /* [% creator %] */
 
-[% IF debug.flags AND DEBUG_LEAKING_SCALARS -%]
+[%- IF debug.flags AND DEBUG_LEAKING_SCALARS %]
 #define DEBUG_LEAKING_SCALARS 1
 [% END -%]
 
-[% IF have_independent_comalloc -%]
+[%- IF have_independent_comalloc %]
 #ifdef NEED_MALLOC_283
 # include "malloc-2.8.3.h"
 #endif
@@ -43,14 +43,14 @@ EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 static void xs_init (pTHX);
 static void dl_init (pTHX);
 
-[% IF av_init2 AND use_declare_independent_comalloc %]
+[%- IF av_init2 AND use_declare_independent_comalloc %]
 void** dlindependent_comalloc(size_t, size_t*, void**);
 [% END -%]
 
-[% IF destruct -%]
+[%- IF destruct %]
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
-
+    
 #ifndef dVAR
 # ifdef PERL_GLOBAL_STRUCT
 #  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
@@ -58,11 +58,129 @@ static void my_curse( pTHX_ SV* const sv );
 #  define dVAR		dNOOP
 # endif
 #endif
-[% ELSE -%]
+[% ELSE %]
 int my_perl_destruct( PerlInterpreter *my_perl );
-[% END %]
+[% END -%]
 
 [%# Add static modules like " Win32CORE". This data comes from $Config{static_ext} -%]
-[% FOREACH xsub IN stashxsubs -%]
+[%- FOREACH xsub IN stashxsubs %]
 EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
 [% END -%]
+
+/************************************************************************************************************
+*
+*       output_all()
+*
+*************************************************************************************************************/
+
+[%- IF verbose AND section.sym.comment() %]
+    /* [% section.sym.comment() %] */
+[% END -%]
+[% section.sym.output( "#define %s\n" ) %]
+
+/*  output_declarations() called by output_all() */
+
+#ifdef BROKEN_STATIC_REDECL
+#define Static extern
+#else
+#define Static static
+#endif /* BROKEN_STATIC_REDECL */
+
+#ifdef BROKEN_UNION_INIT
+#error BROKEN_UNION_INIT no longer needed, as Perl requires an ANSI compiler
+#endif
+
+#define XPVCV_or_similar XPVCV
+#define ANYINIT(i) {i}
+#define Nullany ANYINIT(0)
+
+#define UNUSED 0
+#define sym_0 0
+
+/*
+    Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
+    *first* sv_u element to be able to statically initialize it. A int does not allow it.
+    gcc error: initializer element is not computable at load time
+    We introduce a SVPV as SV.
+    In core since 5.12
+*/
+
+typedef struct p5rx RE;
+[%- IF gv_index %]
+Static GV *gv_list[[% gv_index %]];
+[% END -%]
+
+/* Need fresh re-hash of strtab. share_hek does not allow hash = 0 */
+HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
+#undef share_hek
+#define share_hek(str, len, hash) my_share_hek( aTHX_ str, len, hash );
+
+/* back in output_all() */
+
+[%- FOREACH sect IN section_list -%]
+[%- lines = section.$sect.index + 1 -%]
+[%- NEXT IF lines == 0 -%]
+Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %]];
+[% END %]
+
+/* hack for when Perl accesses PVX of GVs */
+Static const char emptystring[] = "\0";
+
+/* newXS for core XS needs a filename */
+Static const char xsfile[] = "universal.c";
+
+[% IF MULTI %]
+#define ptr_undef 0
+[% ELSE %]
+#define ptr_undef &PL_sv_undef
+#undef CopFILE_set
+#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))
+[% END %]
+
+[% IF init2_remap.size and !$HAVE_DLFCN_DLOPEN %]
+XS(XS_DynaLoader_dl_load_file);
+XS(XS_DynaLoader_dl_find_symbol);
+[% END %]
+
+[%- IF verbose AND section.decl.comment() %]
+    /* [% section.decl.comment() %] */
+[% END -%]
+[% section.decl.output( "%s\n" ) %]
+
+[% FOREACH sect IN section_list %]
+[%- lines = section.$sect.index + 1 -%]
+[%- NEXT IF lines == 0 -%]
+Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %]] = {
+[%- IF verbose AND section.$sect.comment() %]
+    /* [% section.$sect.comment() %] */
+[% END -%]
+[% section.$sect.output("    { %s }, /* %s_list[%d] %s */%s\n") %]
+};
+
+[% END -%]
+
+static int perl_init0(pTHX) { /* fixup_ppaddr */ 
+[% section.init0.output( "    %s\n" ) %]
+};
+
+[%- IF verbose AND section.init.comment() %]
+    /* [% section.init.comment() %] */
+[% END -%]
+[% section.init.output( "    %s\n", init_name ) %]
+
+[%- IF verbose %]
+/* deferred init of XS/Dyna loaded modules */
+[% END -%]
+
+[%- IF verbose AND section.init2.comment() %]
+    /* [% section.init2.comment() %] */
+[% END -%]
+[% section.init2.output( "    %s\n", 'perl_init2' ) %]
+
+[%- IF verbose %]
+/*
+    COMPILE STATS:  [% compile_stats %]
+     NULLOP count:  [% nullop_count %]
+*/
+[% END -%]
+

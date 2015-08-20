@@ -99,10 +99,15 @@ sub AUTOLOAD {
 my $cfh;
 my %static_ext;
 
-use Carp qw/croak/;
-
 sub write {
-    my $c_file_stash = shift or croak;
+    my $c_file_stash = shift or die;
+
+    $c_file_stash->{section_list} = [qw( cop op unop binop logop condop listop pmop svop padop pvop loop xpv xpvav xpvhv xpvcv padlist xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv )];
+
+    foreach my $section ( code_section_names(), init_section_names() ) {
+        $c_file_stash->{'section'}->{$section} = $self->{$section};
+    }
+
     $self->{'verbose'} = $c_file_stash->{'verbose'};    # So verbose() will work. TODO: Remove me when all verbose() are gone.
 
     my $template_dir = $B::C::savINC{'B/C.pm'};
@@ -119,8 +124,8 @@ sub write {
     my $config = {
         INCLUDE_PATH => $template_dir,
         INTERPOLATE  => 0,               # expand "$var" in plain text
-        POST_CHOMP   => 1,               # cleanup whitespace
-        EVAL_PERL    => 0,               # evaluate Perl code blocks
+        POST_CHOMP   => 0,               # Don't cleanup whitespace
+        EVAL_PERL    => 1,               # evaluate Perl code blocks
     };
 
     # create Template object
@@ -129,11 +134,13 @@ sub write {
     # process input template, substituting variables
     $template->process( 'base.c.tt2', $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
 
+    if ( $c_file_stash->{'verbose'} ) {
+        warn $c_file_stash->{'compile_stats'};
+        warn "NULLOP count: $c_file_stash->{nullop_count}";
+    }
+
     open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
 
-    print {$cfh} "\n";
-    output_all( $B::C::init_name || "perl_init" );
-    print {$cfh} "\n";
     output_main_rest();
 
     if ( defined($B::C::module) ) {
@@ -171,131 +178,6 @@ EOT
         output_main();
     }
     close $cfh;
-}
-
-sub output_all {
-    my $init_name = shift;
-    my $section;
-
-    # return if $check; # Who's calling this in a check block??
-
-    my @sections = (
-        copsect(),    opsect(),    unopsect(),  binopsect(), logopsect(), condopsect(),
-        listopsect(), pmopsect(),  svopsect(),  padopsect(), pvopsect(),  loopsect(),
-        xpvsect(),    xpvavsect(), xpvhvsect(), xpvcvsect(), padlistsect(),
-        xpvivsect(),  xpvuvsect(), xpvnvsect(), xpvmgsect(), xpvlvsect(),
-        xrvsect(),    xpvbmsect(), xpviosect(), svsect()
-    );
-    printf {$cfh} "\t/* %s */", symsect()->comment if ( verbose() and symsect()->comment );
-    print  {$cfh} symsect()->output("#define %s\n");
-    print  {$cfh} "\n";
-    output_declarations();
-
-    # XXX add debug versions with ix=opindex
-    foreach $section (@sections) {
-        my $lines = $section->index + 1;
-        if ($lines) {
-            my $name     = $section->name;
-            my $typename = $section->typename;
-            print {$cfh} "Static $typename ${name}_list[$lines];\n";
-        }
-    }
-
-    # hack for when Perl accesses PVX of GVs
-    print {$cfh} 'Static const char emptystring[] = "\0";', "\n";
-
-    # newXS for core XS needs a filename
-    print {$cfh} 'Static const char xsfile[] = "universal.c";', "\n";
-    if ($B::C::MULTI) {
-        print {$cfh} "#define ptr_undef 0\n";
-    }
-    else {
-        print {$cfh} "#define ptr_undef &PL_sv_undef\n";
-        print {$cfh} "#undef CopFILE_set\n";
-        print {$cfh} "#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))\n";
-
-    }
-
-    if ( %B::C::init2_remap and !$B::C::HAVE_DLFCN_DLOPEN ) {
-        print {$cfh} <<'EOT';
-XS(XS_DynaLoader_dl_load_file);
-XS(XS_DynaLoader_dl_find_symbol);
-EOT
-    }
-    printf {$cfh} "\t/* %s */\n", decl()->comment if ( verbose() and decl()->comment );
-    print  {$cfh} decl()->output("%s\n");
-    print  {$cfh} "\n";
-
-    foreach $section (@sections) {
-        my $lines = $section->index + 1;
-        if ($lines) {
-            printf {$cfh} "Static %s %s_list[%u] = {\n", $section->typename, $section->name, $lines;
-            if ( verbose() and $section->comment ) {
-                printf {$cfh} "\t/* %s */\n", $section->comment;
-            }
-            print {$cfh} $section->output("\t{ %s }, /* %s_list[%d] %s */%s\n");
-            print {$cfh} "};\n\n";
-        }
-    }
-
-    print {$cfh} "static int perl_init0(pTHX) /* fixup_ppaddr */\n{";
-    print {$cfh} init0()->output("\t%s\n");
-    print {$cfh} "};\n\n";
-
-    printf {$cfh} "\t/* %s */\n", init()->comment if verbose() and init()->comment;
-    print {$cfh} init()->output( "\t%s\n", $init_name );
-    my $init2_name = 'perl_init2';
-    printf {$cfh} "/* deferred init of XS/Dyna loaded modules */\n" if verbose();
-    printf {$cfh} "/* %s */\n", init2()->comment if verbose() and init2()->comment;
-
-    print {$cfh} init2()->output( "\t%s\n", $init2_name );
-    if ( verbose() ) {
-        my $caller = caller;
-        warn $caller eq 'B::CC' ? B::CC::compile_stats() : compile_stats();
-        warn "NULLOP count: $B::C::nullop_count\n";
-    }
-}
-
-sub output_declarations {
-    print {$cfh} <<'EOT';
-#ifdef BROKEN_STATIC_REDECL
-#define Static extern
-#else
-#define Static static
-#endif /* BROKEN_STATIC_REDECL */
-
-#ifdef BROKEN_UNION_INIT
-#error BROKEN_UNION_INIT no longer needed, as Perl requires an ANSI compiler
-#endif
-
-#define XPVCV_or_similar XPVCV
-#define ANYINIT(i) {i}
-#define Nullany ANYINIT(0)
-
-#define UNUSED 0
-#define sym_0 0
-EOT
-
-    # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
-    # *first* sv_u element to be able to statically initialize it. A int does not allow it.
-    # gcc error: initializer element is not computable at load time
-    # We introduce a SVPV as SV.
-    # In core since 5.12
-
-    print {$cfh} "typedef struct p5rx RE;\n";
-    if ( my $ix = B::GV::get_index() ) {
-        print {$cfh} "Static GV *gv_list[$ix];\n";
-    }
-
-    # Need fresh re-hash of strtab. share_hek does not allow hash = 0
-
-    print {$cfh} <<'_EOT0';
-HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
-#undef share_hek
-#define share_hek(str, len, hash) my_share_hek( aTHX_ str, len, hash );
-_EOT0
-
-    print {$cfh} "\n";
 }
 
 sub output_main_rest {
