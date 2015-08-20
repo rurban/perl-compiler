@@ -54,3 +54,4 @@ B-C-*.tar.gz
 x*.p
 /Io_argv*
 /a.out
+cover_db/*

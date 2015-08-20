@@ -64,40 +64,40 @@ sub debug {
     my $section = shift;
     my $op      = shift;
 
-    my $dbg = $op->flagspv;
+    warn ref $op;
+    my $dbg = ref $op ? $op->flagspv : undef;
     $section->[-1]{dbg}->[ $section->index ] = $dbg if $dbg;
 }
 
 sub output {
     my ( $section, $fh, $format ) = @_;
-    my $sym = $section->symtable || {};
+    my $sym     = $section->symtable;    # This should always be defined. see new
     my $default = $section->default;
-    return if $B::C::check;
+
     my $i = 0;
     my $dodbg = 1 if $B::C::debug{flags} and $section->[-1]{dbg};
-    if ( $section->name eq 'sv' ) {    #fixup arenaroot refcnt
+    if ( $section->name eq 'sv' ) {      #fixup arenaroot refcnt
         my $len = scalar @{ $section->[-1]{values} };
         $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
     }
     foreach ( @{ $section->[-1]{values} } ) {
+        my $val = $_;                    # Copy so we don't overwrite on successive calls.
         my $dbg = "";
         my $ref = "";
-        if (m/(s\\_[0-9a-f]+)/) {
+        if ( $val =~ m/(s\\_[0-9a-f]+)/ ) {
             if ( !exists( $sym->{$1} ) and $1 ne 's\_0' ) {
                 $ref = $1;
                 $B::C::unresolved_count++;
                 if ($B::C::verbose) {
-                    my $caller = caller(1);
-                    warn "Warning: unresolved " . $section->name . " symbol $ref\n"
-                      if $caller eq 'B::C';
+                    warn "Warning: unresolved " . $section->name . " symbol $ref\n";
                 }
             }
         }
-        s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
+        $val =~ s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
         if ( $dodbg and $section->[-1]{dbg}->[$i] ) {
             $dbg = " /* " . $section->[-1]{dbg}->[$i] . " " . $ref . " */";
         }
-        printf $fh $format, $_, $section->name, $i, $ref, $dbg;
+        printf $fh $format, $val, $section->name, $i, $ref, $dbg;
         ++$i;
     }
 }
