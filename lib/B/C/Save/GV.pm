@@ -9,14 +9,13 @@ use B::C::Helpers qw/mark_package/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 my %gptable;
-my $gv_index = 0;
 
 sub get_index {
-    return $gv_index;
+    return $B::C::gv_index;
 }
 
 sub inc_index {
-    return $gv_index++;
+    return $B::C::gv_index++;
 }
 
 sub Save_HV()   { 1 }

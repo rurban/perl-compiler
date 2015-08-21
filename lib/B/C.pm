@@ -94,6 +94,7 @@ use B::STASHGV ();
 }
 
 my $re_index = 0;
+our $gv_index = 0;
 our $pv_index = 0;
 
 my $hek_index     = 0;
@@ -2150,7 +2151,15 @@ sub save_main_rest {
         'destruct'                         => $destruct,
         'static_ext'                       => \%static_ext,
         'stashxsubs'                       => \@stashxsubs,
+        'init_name'                        => $init_name || "perl_init",
+        'gv_index'                         => $gv_index,
+        'MULTI'                            => $MULTI,
+        'init2_remap'                      => \%init2_remap,
+        'HAVE_DLFCN_DLOPEN'                => $HAVE_DLFCN_DLOPEN,
+        'compile_stats'                    => compile_stats(),
+        'nullop_count'                     => $nullop_count,
     };
+    chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
 
     warn "Writing output\n" if $verbose;
     B::C::File::write($c_file_stash);
