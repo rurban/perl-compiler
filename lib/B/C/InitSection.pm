@@ -1,94 +1,94 @@
 package B::C::InitSection;
 use strict;
+use warnings;
 
 # avoid use vars
-@B::C::InitSection::ISA = qw(B::C::Section);
+use parent 'B::C::Section';
 
 sub new {
-    my $class     = shift;
-    my $max_lines = 10000;                    #pop;
-    my $section   = $class->SUPER::new(@_);
+    my $class = shift;
+    my $self  = $class->SUPER::new(@_);
 
-    $section->[-1]{evals}     = [];
-    $section->[-1]{initav}    = [];
-    $section->[-1]{chunks}    = [];
-    $section->[-1]{nosplit}   = 0;
-    $section->[-1]{current}   = [];
-    $section->[-1]{count}     = 0;
-    $section->[-1]{max_lines} = $max_lines;
+    $self->{'evals'}     = [];
+    $self->{'initav'}    = [];
+    $self->{'chunks'}    = [];
+    $self->{'nosplit'}   = 0;
+    $self->{'current'}   = [];
+    $self->{'count'}     = 0;
+    $self->{'max_lines'} = 10000;
 
-    return $section;
+    return $self;
 }
 
 sub split {
-    my $section = shift;
-    $section->[-1]{nosplit}--
-      if $section->[-1]{nosplit} > 0;
+    my $self = shift;
+    $self->{'nosplit'}--
+      if $self->{'nosplit'} > 0;
 }
 
 sub no_split {
-    shift->[-1]{nosplit}++;
+    shift->{'nosplit'}++;
 }
 
 sub inc_count {
-    my $section = shift;
+    my $self = shift;
 
-    $section->[-1]{count} += $_[0];
+    $self->{'count'} += $_[0];
 
     # this is cheating
-    $section->add();
+    $self->add();
 }
 
 sub add {
-    my $section = shift->[-1];
-    my $current = $section->{current};
-    my $nosplit = $section->{nosplit};
+    my $self    = shift;
+    my $current = $self->{'current'};
+    my $nosplit = $self->{'nosplit'};
 
     push @$current, @_;
-    $section->{count} += scalar(@_);
-    if ( !$nosplit && $section->{count} >= $section->{max_lines} ) {
-        push @{ $section->{chunks} }, $current;
-        $section->{current} = [];
-        $section->{count}   = 0;
+    $self->{'count'} += scalar(@_);
+    if ( !$nosplit && $self->{'count'} >= $self->{'max_lines'} ) {
+        push @{ $self->{'chunks'} }, $current;
+        $self->{'current'} = [];
+        $self->{'count'}   = 0;
     }
 }
 
 sub add_eval {
-    my $section = shift;
+    my $self    = shift;
     my @strings = @_;
 
     foreach my $i (@strings) {
         $i =~ s/\"/\\\"/g;
     }
-    push @{ $section->[-1]{evals} }, @strings;
+    push @{ $self->{'evals'} }, @strings;
 }
 
 sub pre_destruct {
-    my $section = shift;
-    push @{ $section->[-1]{pre_destruct} }, @_;
+    my $self = shift;
+    push @{ $self->{'pre_destruct'} }, @_;
 }
 
 sub add_initav {
-    my $section = shift;
-    push @{ $section->[-1]{initav} }, @_;
+    my $self = shift;
+    push @{ $self->{'initav'} }, @_;
 }
 
 sub output {
-    my ( $section, $fh, $format, $init_name ) = @_;
-    my $sym = $section->symtable || {};
-    my $default = $section->default;
-    return if $B::C::check;
-    push @{ $section->[-1]{chunks} }, $section->[-1]{current};
+    my ( $self, $fh, $format, $init_name ) = @_;
+    my $sym = $self->symtable || {};
+    my $default = $self->default;
+
+    push @{ $self->{'chunks'} }, $self->{'current'};
 
     my $name = "aaaa";
-    foreach my $i ( @{ $section->[-1]{chunks} } ) {
+    foreach my $i ( @{ $self->{'chunks'} } ) {
 
         # dTARG and dSP unused -nt
         print $fh <<"EOT";
 static int ${init_name}_${name}(pTHX)
 {
 EOT
-        foreach my $i ( @{ $section->[-1]{initav} } ) {
+        foreach my $i ( @{ $self->{'initav'} } ) {
             print $fh "\t", $i, "\n";
         }
         foreach my $j (@$i) {
@@ -98,12 +98,12 @@ EOT
         }
         print $fh "\treturn 0;\n}\n";
 
-        $section->SUPER::add("${init_name}_${name}(aTHX);");
+        $self->SUPER::add("${init_name}_${name}(aTHX);");
         ++$name;
     }
 
     # We need to output evals after dl_init.
-    foreach my $s ( @{ $section->[-1]{evals} } ) {
+    foreach my $s ( @{ $self->{'evals'} } ) {
         ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
     }
 
@@ -111,10 +111,10 @@ EOT
 static int ${init_name}(pTHX)
 {
 EOT
-    if ( $section->name eq 'init' ) {
+    if ( $self->name eq 'init' ) {
         print $fh "\tperl_init0(aTHX);\n";
     }
-    $section->SUPER::output( $fh, $format );
+    $self->SUPER::output( $fh, $format );
     print $fh "\treturn 0;\n}\n";
 }
 

@@ -1020,7 +1020,7 @@ EOT
 
         print {$cfh} $B::C::eval_pvs if $B::C::eval_pvs;
         print {$cfh} "    exitstatus = perl_run( my_perl );\n";
-        foreach my $s ( @{ init()->[-1]{pre_destruct} } ) {
+        foreach my $s ( @{ init()->{pre_destruct} } ) {
             print {$cfh} "    " . $s . "\n";
         }
 

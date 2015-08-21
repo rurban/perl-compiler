@@ -72,13 +72,13 @@ $bbbsect->add('abcd');
 is( $bbbsect->debug($op), 'fff', "bbbsect->debug(op) returns flagspv()'s value from the op" );
 
 delete $op->{'flag'};
-is( $bbbsect->debug($op),                         undef, "bbbsect->debug(op) returns nothing if the op has nothing." );
-is( $bbbsect->[-1]->{'dbg'}->[ $bbbsect->index ], 'fff', "  ... but the old value is still stored." );
+is( $bbbsect->debug($op),                   undef, "bbbsect->debug(op) returns nothing if the op has nothing." );
+is( $bbbsect->{'dbg'}->[ $bbbsect->index ], 'fff', "  ... but the old value is still stored." );
 
 $bbbsect->add('defg');
 $op->{'flag'} = 'ggg';
 is( $bbbsect->debug($op), 'ggg', "bbbsect->debug(op) adds a debug to the second add." );
-cmp_deeply( $bbbsect->[-1]->{'dbg'}, [qw/fff ggg/], "  ... And stores it in slot 1 in the array not altering the first." );
+cmp_deeply( $bbbsect->{'dbg'}, [qw/fff ggg/], "  ... And stores it in slot 1 in the array not altering the first." );
 
 $B::C::debug{'flags'} = 0;
 is( $bbbsect->debug, undef, "bbbsect->debug does nothing when B::C::debug{flags} is off." );

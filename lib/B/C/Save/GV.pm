@@ -501,7 +501,7 @@ sub save {
                 if ( $cvsym =~ /(\(char\*\))?get_cv\("/ ) {
                     if ( !$B::C::xsub{$package} and B::C::in_static_core( $package, $gvname ) ) {
                         my $in_gv;
-                        for ( @{ init()->[-1]{current} } ) {
+                        for ( @{ init()->{current} } ) {
                             if ($in_gv) {
                                 s/^.*\Q$sym\E.*=.*;//;
                                 s/GvGP_set\(\Q$sym\E.*;//;
