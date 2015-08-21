@@ -74,29 +74,29 @@ sub add_initav {
 }
 
 sub output {
-    my ( $self, $fh, $format, $init_name ) = @_;
+    my ( $self, $format, $init_name ) = @_;
     my $sym = $self->symtable || {};
     my $default = $self->default;
 
     push @{ $self->{'chunks'} }, $self->{'current'};
 
+    my $return_string = '';
+
     my $name = "aaaa";
     foreach my $i ( @{ $self->{'chunks'} } ) {
 
         # dTARG and dSP unused -nt
-        print $fh <<"EOT";
-static int ${init_name}_${name}(pTHX)
-{
-EOT
+        $return_string .= "static int ${init_name}_${name}(pTHX)\n{\n";
+
         foreach my $i ( @{ $self->{'initav'} } ) {
-            print $fh "\t", $i, "\n";
+            $return_string .= "    $i\n";
         }
         foreach my $j (@$i) {
             $j =~ s{(s\\_[0-9a-f]+)}
                    { exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
-            print $fh "\t$j\n";
+            $return_string .= "    $j\n";
         }
-        print $fh "\treturn 0;\n}\n";
+        $return_string .= "    return 0;\n}\n";
 
         $self->SUPER::add("${init_name}_${name}(aTHX);");
         ++$name;
@@ -107,15 +107,13 @@ EOT
         ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
     }
 
-    print $fh <<"EOT";
-static int ${init_name}(pTHX)
-{
-EOT
+    $return_string .= "static int ${init_name}(pTHX)\n{\n";
+
     if ( $self->name eq 'init' ) {
-        print $fh "\tperl_init0(aTHX);\n";
+        $return_string .= "    perl_init0(aTHX);\n";
     }
-    $self->SUPER::output( $fh, $format );
-    print $fh "\treturn 0;\n}\n";
+    $return_string .= $self->SUPER::output($format);
+    $return_string .= "    return 0;\n}\n";
 }
 
 1;

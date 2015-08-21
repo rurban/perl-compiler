@@ -187,8 +187,8 @@ sub output_all {
         xrvsect(),    xpvbmsect(), xpviosect(), svsect()
     );
     printf {$cfh} "\t/* %s */", symsect()->comment if ( verbose() and symsect()->comment );
-    symsect()->output( $cfh, "#define %s\n" );
-    print {$cfh} "\n";
+    print  {$cfh} symsect()->output("#define %s\n");
+    print  {$cfh} "\n";
     output_declarations();
 
     # XXX add debug versions with ix=opindex
@@ -223,8 +223,8 @@ XS(XS_DynaLoader_dl_find_symbol);
 EOT
     }
     printf {$cfh} "\t/* %s */\n", decl()->comment if ( verbose() and decl()->comment );
-    decl()->output( $cfh, "%s\n" );
-    print {$cfh} "\n";
+    print  {$cfh} decl()->output("%s\n");
+    print  {$cfh} "\n";
 
     foreach $section (@sections) {
         my $lines = $section->index + 1;
@@ -233,22 +233,22 @@ EOT
             if ( verbose() and $section->comment ) {
                 printf {$cfh} "\t/* %s */\n", $section->comment;
             }
-            $section->output( $cfh, "\t{ %s }, /* %s_list[%d] %s */%s\n" );
+            print {$cfh} $section->output("\t{ %s }, /* %s_list[%d] %s */%s\n");
             print {$cfh} "};\n\n";
         }
     }
 
     print {$cfh} "static int perl_init0(pTHX) /* fixup_ppaddr */\n{";
-    init0()->output( $cfh, "\t%s\n" );
+    print {$cfh} init0()->output("\t%s\n");
     print {$cfh} "};\n\n";
 
     printf {$cfh} "\t/* %s */\n", init()->comment if verbose() and init()->comment;
-    init()->output( $cfh, "\t%s\n", $init_name );
+    print {$cfh} init()->output( "\t%s\n", $init_name );
     my $init2_name = 'perl_init2';
     printf {$cfh} "/* deferred init of XS/Dyna loaded modules */\n" if verbose();
     printf {$cfh} "/* %s */\n", init2()->comment if verbose() and init2()->comment;
 
-    init2()->output( $cfh, "\t%s\n", $init2_name );
+    print {$cfh} init2()->output( "\t%s\n", $init2_name );
     if ( verbose() ) {
         my $caller = caller;
         warn $caller eq 'B::CC' ? B::CC::compile_stats() : compile_stats();
@@ -591,7 +591,7 @@ _EOT7
                 warn("unknown $s at \@static_free[$_]");
             }
         }
-        free()->output( $cfh, "%s\n" );
+        print {$cfh} free()->output("%s\n");
         print {$cfh} <<'_EOT7a';
 
     /* B::C specific: prepend static svs to arena for sv_clean_objs */

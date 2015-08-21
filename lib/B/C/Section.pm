@@ -89,7 +89,7 @@ sub debug {
 }
 
 sub output {
-    my ( $self, $fh, $format ) = @_;
+    my ( $self, $format ) = @_;
     my $sym     = $self->symtable;    # This should always be defined. see new
     my $default = $self->default;
 
@@ -99,6 +99,9 @@ sub output {
         my $len = scalar @{ $self->{'values'} };
         $self->{'values'}->[0] =~ s/^0, 0/0, $len/;
     }
+
+    my $return_string = '';
+
     foreach ( @{ $self->{'values'} } ) {
         my $val = $_;                 # Copy so we don't overwrite on successive calls.
         my $dbg = "";
@@ -116,9 +119,11 @@ sub output {
         if ( $dodbg and $self->{'dbg'}->[$i] ) {
             $dbg = " /* " . $self->{'dbg'}->[$i] . " " . $ref . " */";
         }
-        printf $fh $format, $val, $self->name, $i, $ref, $dbg;
+        $return_string .= sprintf $format, $val, $self->name, $i, $ref, $dbg;
         ++$i;
     }
+
+    return $return_string;
 }
 
 1;
