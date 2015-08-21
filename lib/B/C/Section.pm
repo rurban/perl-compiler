@@ -4,19 +4,27 @@ use strict;
 use B ();
 use B::Flags;
 
-use base 'B::Section';
+my %sections;
+
+# This isn't really a method. It's used to find another section if you don't know it.
+sub get {
+    my ( $class, $section ) = @_;
+    return $sections{$section};
+}
 
 sub new {
-    my $class = shift;
-    my $o     = $class->SUPER::new(@_);
-    push @$o, { values => [] };
+    my ( $class, $section, $symtable, $default ) = @_;
+
+    my $obj = bless [ -1, $section, $symtable, $default, { values => [] } ], $class;
+    $sections{$section} = $obj;
 
     # if sv add a dummy sv_arenaroot to support global destruction
-    if ( $_[0] eq 'sv' ) {
-        $o->add("0, 0, SVTYPEMASK|0x01000000, {0}");    # SVf_FAKE
-        $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
+    if ( $section eq 'sv' ) {
+        $obj->add("0, 0, SVTYPEMASK|0x01000000, {0}");    # SVf_FAKE
+        $obj->[-1]{dbg}->[0] = "PL_sv_arenaroot";
     }
-    return $o;
+
+    return $obj;
 }
 
 sub add {
@@ -27,6 +35,21 @@ sub add {
 sub remove {
     my $section = shift;
     pop @{ $section->[-1]{values} };
+}
+
+sub name {
+    my $section = shift;
+    return $section->[1];
+}
+
+sub symtable {
+    my $section = shift;
+    return $section->[2];
+}
+
+sub default {
+    my $section = shift;
+    return $section->[3];
 }
 
 sub index {
@@ -64,7 +87,6 @@ sub debug {
     my $section = shift;
     my $op      = shift;
 
-    warn ref $op;
     my $dbg = ref $op ? $op->flagspv : undef;
     $section->[-1]{dbg}->[ $section->index ] = $dbg if $dbg;
 }

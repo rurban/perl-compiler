@@ -108,6 +108,9 @@ $B::C::unresolved_count = 0;
 $symtable{'s\_134bcef33'} = "resolved";
 $bbbsect->output( $fh, "%s\n" );
 is( $B::C::unresolved_count, 0, "unresolved count is logged" );
-is( $string, "abc\nxyzdefault_value_here\npdq\n", "Test output with complicated adds and resolvable symbol table." );
+is( $string, "abc\nxyzresolved\npdq\n", "Test output with complicated adds and resolvable symbol table." );
+
+is( $bbbsect->get('sv'),       $svsect,  "svsect can be found from \$bbsect->get" );
+is( B::C::Section->get('aaa'), $aaasect, "aaasect can be found from B::C::Section->get" );
 
 done_testing();
