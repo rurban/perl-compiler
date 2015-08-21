@@ -197,11 +197,6 @@ sub output_main_rest {
 
     my ( $dl, $xs );
     my @dl_modules = @DynaLoader::dl_modules;
-    my @PERLMODS = split( /\,/, $ENV{'PERLMODS'} ) if $ENV{'PERLMODS'};    # from cpanel
-    foreach my $perlmod (@PERLMODS) {
-        warn "Extra module ${perlmod}\n";
-        push @dl_modules, $perlmod unless grep { $_ ne $perlmod } @dl_modules;
-    }
 
     # filter out unused dynaloaded B modules, used within the compiler only.
     for my $c (qw(B B::C)) {
