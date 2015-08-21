@@ -845,7 +845,12 @@ sub runperl_binary {
     print STDERR "# running: make $bin ===\n";
 
     ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
-    my $make = `perlcc -O3 -o $bin $test $error`;
+    my $perlcc = qx{which perlcc};
+    chomp $perlcc;
+    _diag("# using perlcc: $perlcc");
+    die "no perlcc found" unless defined $perlcc || !-x $perlcc;
+    ($perlcc) = $perlcc =~ m/(.*)/;    # untaint
+    my $make = qx{$perlcc -O3 -o $bin $test $error};
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
 
