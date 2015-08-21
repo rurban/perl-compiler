@@ -47,7 +47,7 @@ static void dl_init (pTHX);
 void** dlindependent_comalloc(size_t, size_t*, void**);
 [% END -%]
 
-[%- IF destruct %]
+[%- IF ! destruct %]
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
     
@@ -184,3 +184,340 @@ static int perl_init0(pTHX) { /* fixup_ppaddr */
 */
 [% END -%]
 
+/* output_main_rest() */
+
+HEK * my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
+    if (!hash) {
+      PERL_HASH(hash, str, abs(len));
+    }
+    return Perl_share_hek(aTHX_ str, len, hash);
+}
+
+[%- IF ! destruct %]
+#ifndef SvDESTROYABLE
+#define SvDESTROYABLE(sv) 1
+#endif
+/* 5.8 */
+#ifndef CvISXSUB
+#define CvISXSUB(sv) CvXSUB(sv)
+#endif
+#ifndef SvRV_set
+#define SvRV_set(a,b) SvRV(a) = (b)
+#endif
+/* 5.6 */
+#ifndef PERL_EXIT_DESTRUCT_END
+#define PERL_EXIT_DESTRUCT_END 2
+#endif
+
+static void
+my_curse( pTHX_ SV* const sv ) {
+    dSP;
+    dVAR;
+    HV* stash;
+
+#if PERL_VERSION > 7
+    assert(SvOBJECT(sv));
+    do {
+        stash = SvSTASH(sv);
+        assert(SvTYPE(stash) == SVt_PVHV);
+	if (HvNAME(stash)) {
+	    CV* destructor = NULL;
+	    if (!SvOBJECT(stash)) destructor = (CV *)SvSTASH(stash);
+	    if (!destructor
+#if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
+                || HvMROMETA(stash)->destroy_gen != PL_sub_generation
+#endif
+	    ) {
+		GV * const gv = gv_fetchmeth_autoload(stash, "DESTROY", 7, 0);
+		if (gv) destructor = GvCV(gv);
+		if (!SvOBJECT(stash))
+		{
+		    SvSTASH(stash) =
+			destructor ? (HV *)destructor : ((HV *)0)+1;
+#if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
+		    HvAUX(stash)->xhv_mro_meta->destroy_gen = PL_sub_generation;
+#endif
+		}
+	    }
+	    assert(!destructor || destructor == ((CV *)0)+1
+		   || SvTYPE(destructor) == SVt_PVCV);
+	    if (destructor && destructor != ((CV *)0)+1
+		/* A constant subroutine can have no side effects, so
+		   don't bother calling it.  */
+		&& !CvCONST(destructor)
+		/* Don't bother calling an empty destructor or one that
+		   returns immediately. */
+		&& (CvISXSUB(destructor)
+		|| (CvSTART(destructor)
+		    && (CvSTART(destructor)->op_next->op_type != OP_LEAVESUB)
+		    && (CvSTART(destructor)->op_next->op_type != OP_PUSHMARK
+			|| CvSTART(destructor)->op_next->op_next->op_type != OP_RETURN
+		       )
+		   ))
+	       )
+	    {
+		SV* const tmpref = newRV(sv);
+		DEBUG_D(PerlIO_printf(Perl_debug_log, "Calling %s::DESTROY\n", HvNAME(stash)));
+		SvREADONLY_on(tmpref); /* DESTROY() could be naughty */
+		ENTER;
+		PUSHSTACKi(PERLSI_DESTROY);
+		EXTEND(SP, 2);
+		PUSHMARK(SP);
+		PUSHs(tmpref);
+		PUTBACK;
+		call_sv((SV*)destructor, G_DISCARD|G_EVAL|G_KEEPERR|G_VOID);
+		POPSTACK;
+		SPAGAIN;
+		LEAVE;
+		if(SvREFCNT(tmpref) < 2) {
+		    /* tmpref is not kept alive! */
+		    SvREFCNT(sv)--;
+		    SvRV_set(tmpref, NULL);
+		    SvROK_off(tmpref);
+		}
+		SvREFCNT_dec(tmpref);
+	    }
+	}
+    } while (SvOBJECT(sv) && SvSTASH(sv) != stash);
+
+    if (SvOBJECT(sv)) {
+	/* Curse before freeing the stash, as freeing the stash could cause
+	   a recursive call into S_curse. */
+	SvOBJECT_off(sv);	/* Curse the object. */
+	SvSTASH_set(sv,0);	/* SvREFCNT_dec may try to read this */
+    }
+#endif
+}
+
+int fast_perl_destruct( PerlInterpreter *my_perl ) {
+    dVAR;
+    VOL signed char destruct_level;  /* see possible values in intrpvar.h */
+    HV *hv;
+#ifdef DEBUG_LEAKING_SCALARS_FORK_DUMP
+    pid_t child;
+#endif
+
+#ifndef MULTIPLICITY
+#   ifndef PERL_UNUSED_ARG
+#     define PERL_UNUSED_ARG(x) ((void)x)
+#   endif
+    PERL_UNUSED_ARG(my_perl);
+#endif
+
+    assert(PL_scopestack_ix == 1);
+
+    /* wait for all pseudo-forked children to finish */
+    PERL_WAIT_FOR_CHILDREN;
+
+    destruct_level = PL_perl_destruct_level;
+#ifdef DEBUGGING
+    {
+	const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
+	if (s) {
+            const int i = atoi(s);
+#ifdef DEBUGGING
+	    if (destruct_level < i) destruct_level = i;
+#endif
+#ifdef PERL_TRACK_MEMPOOL
+            /* RT #114496, for perl_free */
+            PL_perl_destruct_level = i;
+#endif
+	}
+    }
+#endif
+
+    if (PL_exit_flags & PERL_EXIT_DESTRUCT_END) {
+        dJMPENV;
+        int x = 0;
+
+        JMPENV_PUSH(x);
+        if (PL_endav && !PL_minus_c) {
+#if PERL_VERSION > 13
+	    PL_phase = PERL_PHASE_END;
+#endif
+            call_list(PL_scopestack_ix, PL_endav);
+        }
+        JMPENV_POP;
+    }
+    LEAVE;
+    FREETMPS;
+    assert(PL_scopestack_ix == 0);
+
+    /* Need to flush since END blocks can produce output */
+    my_fflush_all();
+
+    PL_main_start = NULL;
+    PL_main_cv = NULL;
+    PL_curcop = &PL_compiling;
+#if PERL_VERSION >= 13
+    PL_phase = PERL_PHASE_DESTRUCT;
+#endif
+
+#if PERL_VERSION > 7
+    if (PL_threadhook(aTHX)) {
+        /* Threads hook has vetoed further cleanup */
+#if (PERL_VERSION > 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION > 8))
+	PL_veto_cleanup = TRUE;
+        return STATUS_EXIT;
+#else
+        return STATUS_NATIVE_EXPORT;
+#endif
+    }
+    PerlIO_destruct(aTHX);
+
+    /* B::C -O3 specific: first curse (i.e. call DESTROY) all our static SVs */
+    if (PL_sv_objcount) {
+        int i = 1;
+        DEBUG_D(PerlIO_printf(Perl_debug_log, "\nCursing named global static sv_arena:\n"));
+        PL_in_clean_all = 1;
+        for (; i < SvREFCNT(&sv_list[0]); i++) {
+            SV *sv = &sv_list[i];
+            if (SvREFCNT(sv)) {
+#if PERL_VERSION > 11
+                if (SvTYPE(sv) == SVt_IV && SvROK(sv))
+#else
+                if (SvTYPE(sv) == SVt_RV)
+#endif
+                    sv = SvRV(sv);
+                if (sv && SvOBJECT(sv) && SvTYPE(sv) >= SVt_PVMG && SvSTASH(sv)
+                    && SvTYPE(sv) != SVt_PVCV && SvTYPE(sv) != SVt_PVIO
+                    && PL_defstash /* Still have a symbol table? */
+                    && SvDESTROYABLE(sv))
+                {
+	            SvREFCNT(sv) = 0;
+                    my_curse(aTHX_ sv);
+                }
+            }
+        }
+    }
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
+        for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
+              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+        }
+    }
+#endif
+
+    if (PL_sv_objcount) {
+	PL_in_clean_all = 1;
+	sv_clean_objs(); /* and now curse the rest */
+	PL_sv_objcount = 0;
+    }
+    PL_warnhook = NULL;
+    PL_diehook = NULL;
+    /* call exit list functions */
+    while (PL_exitlistlen-- > 0)
+	PL_exitlist[PL_exitlistlen].fn(aTHX_ PL_exitlist[PL_exitlistlen].ptr);
+    PL_exitlist = NULL;
+
+#if defined(PERLIO_LAYERS)
+    PerlIO_cleanup(aTHX);
+#endif
+    return 0;
+}
+[% ELSE %][%# ELSE for the IF destruct #%]
+/* special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
+   XXX This fails in S_doeval SAVEFREEOP(PL_eval_root): test 15               */
+
+int my_perl_destruct( PerlInterpreter *my_perl ) {
+    /* set all our static pv and hek to &PL_sv_undef for perl_destruct() */
+
+[% FOREACH to_free IN static_free %]
+  [% IF to_free.match('^sv_list\[\d+\]\.') %]
+    [% to_free %] = NULL;
+  [% ELSIF to_free.match('^sv_list') %]
+    SvLEN(&[% to_free %]) = 0;
+    SvPV_set(&[% to_free %], (char*)&PL_sv_undef);
+  [% ELSIF to_free.match('^&sv_list') %]
+    SvLEN([% to_free %]) = 0;
+    SvPV_set([% to_free %], (char*)&PL_sv_undef);
+  /* was marked: dead code --- */
+  [% ELSIF to_free.match('^cop_list') %]
+    [% IF ITHREADS OR !$MULTI %]
+    CopFILE_set(&[% to_free %], NULL);
+    [% END %]
+    [% IF ITHREADS %]
+ CopSTASHPV(&[% to_free %]) = NULL;
+    [% ELSE %]
+ CopSTASH(&[% to_free %]) = NULL;
+    [% END %]
+  /* was marked: end of dead code --- */
+  [% END %]
+[% END %]
+[% section.free.output("%s\n") %]
+
+    /* B::C specific: prepend static svs to arena for sv_clean_objs */
+    SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
+    PL_sv_arenaroot = &sv_list[0];
+#if PERL_VERSION > 7
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
+        for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
+              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+        }
+    }
+    return perl_destruct( my_perl );
+#else
+    perl_destruct( my_perl );
+    return 0;
+#endif
+}
+[% END -%]
+
+/* yanked from perl.c */
+static void
+xs_init(pTHX)
+{
+	char *file = __FILE__;
+	dTARG; dSP;
+
+/*   Was commented out in code. not sure what the FIXME is about.
+if ($B::C::staticxs) { #FIXME!
+  print {$cfh} "\n#undef USE_DYNAMIC_LOADING
+}
+*/
+
+#ifdef USE_DYNAMIC_LOADING
+    newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
+#endif
+
+/* XS bootstrapping code*/
+    SAVETMPS;
+    targ=sv_newmortal();
+
+[%- FOREACH stashname IN static_ext.keys.sort %]
+    newXS("[% stashname %]\::bootstrap", boot_[% stashname.replace('::', '__') %], file);
+[% END -%]
+
+#ifdef USE_DYNAMIC_LOADING
+    PUSHMARK(sp);
+    XPUSHp("DynaLoader", 10);
+    PUTBACK;
+    boot_DynaLoader(aTHX_ NULL);
+    SPAGAIN;
+#endif
+
+[%- FOREACH stashname IN xsub.keys.sort %]
+[%- NEXT IF static_ext.$stashname OR xsub.$stashname.match('^Dynamic') -%]
+[%- stashxsub = stashname.replace('::', '__') -%]
+    PUSHMARK(sp);
+    XPUSHp("[% stashname %]", [% stashname.length %]); /* "::bootstrap" gets appended, TODO: "strdup($stashname)" */
+    PUTBACK;
+    boot_[% stashxsub %](aTHX_ NULL);
+    SPAGAIN;
+        }
+[% END -%]
+
+    FREETMPS;
+/* end XS bootstrapping code */
+}
+
+
+static void
+dl_init(pTHX)
+{
+	char *file = __FILE__;

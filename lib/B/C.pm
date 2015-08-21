@@ -2140,6 +2140,21 @@ sub save_main_rest {
     my %static_ext = map { ( $_ => 1 ) } grep { m/\S/ } split( /\s+/, $Config{static_ext} );
     my @stashxsubs = map { s/::/__/g; $_ } keys %static_ext;
 
+    # Used to be in output_main_rest(). Seems to be trying to clean up xsub
+    foreach my $stashname ( sort keys %xsub ) {
+        my $incpack = $stashname;
+        $incpack =~ s/\:\:/\//g;
+        $incpack .= '.pm';
+        unless ( exists $B::C::curINC{$incpack} ) {    # skip deleted packages
+            warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+            delete $xsub{$stashname} unless $static_ext{$stashname};
+        }
+    }
+
+    # Used to be buried in output_main_rest(); Seems to be more xsub cleanup.
+    delete $xsub{'DynaLoader'};
+    delete $xsub{'UNIVERSAL'};
+
     my $c_file_stash = {
         'verbose'                          => $verbose,
         'debug'                            => \%debug,
@@ -2154,10 +2169,14 @@ sub save_main_rest {
         'init_name'                        => $init_name || "perl_init",
         'gv_index'                         => $gv_index,
         'MULTI'                            => $MULTI,
+        'ITHREADS'                         => $ITHREADS,
         'init2_remap'                      => \%init2_remap,
         'HAVE_DLFCN_DLOPEN'                => $HAVE_DLFCN_DLOPEN,
         'compile_stats'                    => compile_stats(),
         'nullop_count'                     => $nullop_count,
+        'static_free'                      => \@static_free,
+        'xsub'                             => \%xsub,
+        'curINC'                           => \%curINC,
     };
     chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
 
