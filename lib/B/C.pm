@@ -65,12 +65,14 @@ BEGIN {
 
     require mro;                                                      # mro->import();
                                                                       # not exported:
-                                                                      # fixme: check if used & clean
+
+    # QUESTION: not sure it s still required  ( at least the two last )
+    #           check if used & clean
     eval q[sub SVs_GMG { 0x00200000 }
            sub SVs_SMG { 0x00400000 }];
     eval q[sub RXf_EVAL_SEEN { 0x0 }
            sub PMf_EVAL      { 0x0 }
-           ];                                                         # unneeded
+           ];    # unneeded
 }
 
 use B::C::Flags;
@@ -358,11 +360,12 @@ sub svop_or_padop_pv {
     }
 }
 
-# fixme: do we want to preserve it ?
+# QUESTION: do we want to preserve it ?
 sub IsCOW {
     return 0;
 }
 
+# QUESTION: do we want to preserve it ?
 sub IsCOW_hek {
     return IsCOW( $_[0] ) && !$_[0]->LEN;
 }
