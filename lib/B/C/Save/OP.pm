@@ -3,6 +3,8 @@ package B::OP;
 use strict;
 
 use B qw/peekop cstring threadsv_names opnumber/;
+
+use B::C::Config;
 use B::C::File qw/svsect init copsect opsect/;
 use B::C::Helpers qw/do_labels save_rv mark_package/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
@@ -58,7 +60,7 @@ sub save {
         copsect()->add(
             sprintf(
                 "%s, 0, %s, NULL, 0, 0, NULL, NULL",
-                $op->_save_common, B::C::USE_ITHREADS() ? "(char *)NULL" : "Nullhv"
+                $op->_save_common, USE_ITHREADS() ? "(char *)NULL" : "Nullhv"
             )
         );
 
@@ -150,7 +152,7 @@ use constant STATIC => '0, 1, 0, 0, 0';
 
 sub _save_common_middle {
     my $op = shift;
-    my $madprop = $B::C::MAD ? "0," : "";
+    my $madprop = MAD() ? "0," : "";
 
     # XXX maybe add a ix=opindex string for debugging if $debug{flags}
     sprintf(

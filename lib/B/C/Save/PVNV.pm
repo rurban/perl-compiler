@@ -3,6 +3,7 @@ package B::PVNV;
 use strict;
 
 use B qw/SVf_NOK SVp_NOK/;
+use B::C::Config;
 use B::C::File qw/xpvnvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -26,7 +27,7 @@ sub save {
         $nvx = B::C::nvx( $sv->NV );
     }
     else {
-        if ($B::C::C99) {
+        if ( C99() ) {
             $nvx = sprintf(
                 ".xpad_cop_seq.xlow = %s, .xpad_cop_seq.xhigh = %s",
                 B::C::ivx( $sv->COP_SEQ_RANGE_LOW ), B::C::ivx( $sv->COP_SEQ_RANGE_HIGH ),
@@ -41,7 +42,7 @@ sub save {
     xpvnvsect()->comment('STASH, MAGIC, cur, len, IVX, NVX');
     xpvnvsect()->add( sprintf( "Nullhv, {0}, %u, %u, {%s}, {%s}", $cur, $len, $ivx, $nvx ) );
 
-    unless ( $B::C::C99 or $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
+    unless ( C99() or $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
         warn "NV => run-time union xpad_cop_seq init\n" if $B::C::debug{sv};
         init()->add(
             sprintf(
@@ -62,7 +63,7 @@ sub save {
         sprintf(
             "&xpvnv_list[%d], %lu, 0x%x %s",
             xpvnvsect()->index, $sv->REFCNT, $sv->FLAGS,
-            ", {" . ( $B::C::C99 ? ".svu_pv=" : "" ) . "(char*)$savesym}"
+            ", {" . ( C99() ? ".svu_pv=" : "" ) . "(char*)$savesym}"
         )
     );
     svsect()->debug( $fullname, $sv );

@@ -3,6 +3,7 @@ package B::PVMG;
 use strict;
 
 use Config;
+use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar/;
 use B::C::File qw/init svsect xpvmgsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -36,7 +37,7 @@ sub save {
         # svop const or pad OBJECT,IOK
         if (
             # fixme simply the or logic
-            ( ( !B::C::USE_ITHREADS() and $fullname and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/ ) or B::C::USE_ITHREADS() )
+            ( ( !USE_ITHREADS() and $fullname and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/ ) or USE_ITHREADS() )
             and $sv->IVX > 5000000    # some crazy heuristic for a so ptr (> image_base)
             and ref( $sv->SvSTASH ) ne 'B::SPECIAL'
           ) {
@@ -65,7 +66,7 @@ sub save {
             xpvmgsect()->index, $sv->REFCNT, $sv->FLAGS,
             $savesym eq 'NULL'
             ? '0'
-            : ( $B::C::C99 ? ".svu_pv=(char*)" : "(char*)" ) . $savesym
+            : ( C99() ? ".svu_pv=(char*)" : "(char*)" ) . $savesym
         )
     );
 

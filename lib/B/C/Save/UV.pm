@@ -3,7 +3,7 @@ package B::UV;
 use strict;
 
 use Config;
-
+use B::C::Config;
 use B::C::File qw/xpvuvsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -21,7 +21,7 @@ sub save {
 
     svsect()->add(
         sprintf(
-            "&xpvuv_list[%d], %lu, 0x%x" . ', {' . ( $B::C::C99 ? ".svu_pv=" : "" ) . 'NULL}',
+            "&xpvuv_list[%d], %lu, 0x%x" . ', {' . ( C99() ? ".svu_pv=" : "" ) . 'NULL}',
             xpvuvsect()->index, $sv->REFCNT, $sv->FLAGS
         )
     );

@@ -4,6 +4,8 @@ use strict;
 
 use Config;
 use B qw/cstring svref_2object SVt_PVGV SVf_ROK/;
+
+use B::C::Config;
 use B::C::File qw/init init2/;
 use B::C::Helpers qw/mark_package/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -135,7 +137,7 @@ sub save {
     }
 
     # checked for defined'ness in Carp. So the GV must exist, the CV not
-    if ( $fullname =~ /^threads::(tid|AUTOLOAD)$/ and B::C::USE_ITHREADS() ) {
+    if ( $fullname =~ /^threads::(tid|AUTOLOAD)$/ and USE_ITHREADS() ) {
         $filter = 8;
     }
 

@@ -3,7 +3,7 @@ package B::COP;
 use strict;
 
 use B qw/cstring/;
-
+use B::C::Config;
 use B::C::File qw/init copsect/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -72,7 +72,7 @@ sub save {
             $op->_save_common, $op->line,
 
             # we cannot store this static (attribute exit)
-            B::C::USE_ITHREADS() ? ( "NULL", "NULL" ) : ( "Nullhv", "Nullgv" ),
+            USE_ITHREADS() ? ( "NULL", "NULL" ) : ( "Nullhv", "Nullgv" ),
             $op->hints, B::C::ivx( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
         )
     );
@@ -110,7 +110,7 @@ sub save {
     }
 
     if ( !$B::C::optimize_cop ) {
-        if ( !B::C::USE_ITHREADS() ) {
+        if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
                 init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", B::C::constpv( $op->stashpv ) ) );
                 init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",    B::C::constpv($file) ) );

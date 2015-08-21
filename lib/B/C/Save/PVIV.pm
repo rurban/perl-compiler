@@ -1,7 +1,7 @@
 package B::PVIV;
 
 use strict;
-
+use B::C::Config;
 use B::C::File qw/xpvivsect svsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -25,7 +25,7 @@ sub save {
         sprintf(
             "&xpviv_list[%d], %u, 0x%x %s",
             xpvivsect()->index, $sv->REFCNT, $sv->FLAGS,
-            ", {" . ( $B::C::C99 ? ".svu_pv=" : "" ) . "(char*)$savesym}"
+            ", {" . ( C99() ? ".svu_pv=" : "" ) . "(char*)$savesym}"
         )
     );
     svsect()->debug( $fullname, $sv );

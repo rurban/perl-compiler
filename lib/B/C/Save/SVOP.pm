@@ -3,6 +3,7 @@ package B::SVOP;
 use strict;
 
 use B::C::File qw/svopsect init/;
+use B::C::Config;
 use B::C::Helpers qw/do_labels/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -45,7 +46,7 @@ sub save {
         $cv->save if $cv;
     }
     my $is_const_addr = $svsym =~ m/Null|\&/;
-    if ( $B::C::MULTI and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/ ) {                           # t/testm.sh Test::Pod
+    if ( USE_MULTIPLICITY() and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/ ) {                     # t/testm.sh Test::Pod
         $is_const_addr = 0;
     }
     svopsect()->comment_common("sv");

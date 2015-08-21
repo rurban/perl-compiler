@@ -2,6 +2,7 @@ package B::UNOP;
 
 use strict;
 
+use B::C::Config;
 use B::C::File qw/unopsect init/;
 use B::C::Helpers qw/do_labels mark_package padop_name svop_name/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -22,10 +23,10 @@ sub save {
 
     if ( $op->name eq 'method' and $op->first and $op->first->name eq 'const' ) {
         my $method = svop_name( $op->first );
-        if ( !$method and B::C::USE_ITHREADS() ) {
+        if ( !$method and USE_ITHREADS() ) {
             $method = padop_name( $op->first, $B::C::curcv );    # XXX (curpad[targ])
         }
-        warn "method -> const $method\n" if $B::C::debug{pkg} and B::C::USE_ITHREADS();
+        warn "method -> const $method\n" if $B::C::debug{pkg} and USE_ITHREADS();
 
         #324,#326 need to detect ->(maybe::next|maybe|next)::(method|can)
         if ( $method =~ /^(maybe::next|maybe|next)::(method|can)$/ ) {

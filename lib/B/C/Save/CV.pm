@@ -4,6 +4,7 @@ use strict;
 
 use Config;
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
+use B::C::Config;
 use B::C::File qw/init decl svsect xpvcvsect symsect/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 
@@ -448,7 +449,7 @@ sub save {
 
     # GV cannot be initialized statically
     my $xcv_outside = ${ $cv->OUTSIDE };
-    if ( $xcv_outside == ${ main_cv() } and !$B::C::MULTI ) {
+    if ( $xcv_outside == ${ main_cv() } and !USE_MULTIPLICITY() ) {
 
         # Provide a temp. debugging hack for CvOUTSIDE. The address of the symbol &PL_main_cv
         # is known to the linker, the address of the value PL_main_cv not. This is set later
@@ -579,7 +580,7 @@ sub save {
         ) if $B::C::debug{cv} and $B::C::debug{gv};
     }
     unless ($B::C::optimize_cop) {
-        if ($B::C::MULTI) {
+        if ( USE_MULTIPLICITY() ) {
             init()->add( B::C::savepvn( "CvFILE($sym)", $cv->FILE ) );
         }
         else {

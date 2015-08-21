@@ -3,6 +3,7 @@ package B::PV;
 use strict;
 
 use B qw/SVf_ROK SVf_READONLY cstring/;
+use B::C::Config;
 use B::C::File qw/xpvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -38,7 +39,7 @@ sub save {
             xpvsect()->index, $refcnt, $flags,
             $savesym eq 'NULL'
             ? '0'
-            : ( $B::C::C99 ? ".svu_pv=(char*)" : "(char*)" ) . $savesym
+            : ( C99() ? ".svu_pv=(char*)" : "(char*)" ) . $savesym
         )
     );
     if ( defined($pv) and !$static ) {
@@ -51,7 +52,7 @@ sub save {
             init()->add( B::C::savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", svsect()->index ), $pv, $sv, $cur ) );
         }
     }
-    if ( $B::C::debug{flags} and $B::C::DEBUG_LEAKING_SCALARS ) {    # add sv_debug_file
+    if ( $B::C::debug{flags} and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
         init()->add(
             sprintf(
                 qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),

@@ -20,10 +20,10 @@ our $check;
 my $eval_pvs = '';
 use Config;
 
-# Thanks to Mattia Barbon for the C99 tip to init any union members
-our $C99 = $Config{d_c99_variadic_macros};    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
-
 use B::Flags;
+use B::C::Config;    # import everything
+use B::C::Config::Debug ();    # used for setting debug levels from cmdline
+
 use B::C::File qw( init2 init0 init decl free
   heksect binopsect condopsect copsect padopsect listopsect logopsect
   opsect pmopsect pvopsect svopsect unopsect svsect xpvsect xpvavsect xpvhvsect xpvcvsect xpvivsect xpvuvsect
@@ -33,14 +33,14 @@ use B::C::Helpers::Symtable qw(objsym savesym);
 
 use strict;
 use Exporter ();
-use Errno    ();                              #needed since 5.14
+use Errno    ();               #needed since 5.14
 our %Regexp;
 
-{                                             # block necessary for caller to work
+{                              # block necessary for caller to work
     my $caller = caller;
     if ( $caller eq 'O' or $caller eq 'Od' ) {
         require XSLoader;
-        XSLoader::load('B::C');               # for r-magic and for utf8-keyed B::HV->ARRAY
+        XSLoader::load('B::C');    # for r-magic and for utf8-keyed B::HV->ARRAY
     }
 }
 
@@ -248,22 +248,7 @@ our @xpvav_sizes;
 our ( $max_string_len, $in_endav );
 my %static_core_pkg;    # = map {$_ => 1} static_core_packages();
 
-# get rid of them... B::C::Setup
-our $MULTI    = $Config{usemultiplicity};
-our $ITHREADS = $Config{useithreads};
-
-# switch to helper with static variable
-sub USE_ITHREADS {
-    my $cache = $Config{useithreads};
-    return $cache;
-}
-
 # fixme move to B::C::Debug
-my $DEBUGGING = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
-our $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
-
-#my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
-our $MAD = $Config{mad};
 our $HAVE_DLFCN_DLOPEN = $Config{i_dlfcn} && $Config{d_dlopen};
 
 # used by B::OBJECT
@@ -356,7 +341,7 @@ sub svop_or_padop_pv {
         return $sv->PV if $sv->can("PV");
         if ( ref($sv) eq "B::SPECIAL" ) {    # DateTime::TimeZone
                                              # XXX null -> method_named
-            warn "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv\n" if $debug{gv};
+            debug( gv => "NYI S_method_common op->sv==B::SPECIAL, keep $package_pv" );
             return $package_pv;
         }
         if ( $sv->FLAGS & SVf_ROK ) {
@@ -417,7 +402,7 @@ sub savere {
     svsect()->add(
         sprintf(
             "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
-            0x4405, ( $C99 ? ".svu_pv=" : "" ) . '(char*)' . savepv($pv)
+            0x4405, ( C99() ? ".svu_pv=" : "" ) . '(char*)' . savepv($pv)
         )
     );
     $sym = sprintf( "&sv_list[%d]", svsect()->index );
@@ -434,7 +419,6 @@ sub savepv {
     my $const   = shift;
     my $cstring = cstring($pv);
 
-    # decl()->add( sprintf( "/* %s */", $cstring) ) if $debug{pv};
     return $strtable{$cstring} if defined $strtable{$cstring};
     $pv = pack "a*", $pv;
     my $pvsym = sprintf( "pv%d", $pv_index++ );
@@ -483,7 +467,7 @@ sub save_pv_or_rv {
     if ($rok) {
 
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
-        warn "save_pv_or_rv: save_rv(", $sv, ")\n" if $debug{sv};
+        debug( sv => "save_pv_or_rv: save_rv(" . ( $sv || '' ) );
         $savesym = save_rv( $sv, $fullname );
         $static = 1;    # avoid run-time overwrite of the PV/RV slot (#273)
         if ( $savesym =~ /(\(char\*\))?get_cv\("/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
@@ -516,7 +500,7 @@ sub save_pv_or_rv {
           or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
         $static = 0 if $B::C::const_strings and $fullname and $fullname =~ /^warnings::(Dead)?Bits/;
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
-            warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
+            debug( hv => "use emptystring for empty shared key $fullname" );
             $savesym = "emptystring";
             $static  = 0;
         }
@@ -568,10 +552,13 @@ sub save_pv_or_rv {
             $len = 0;
         }
     }
-    warn sprintf(
-        "Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s\n", $savesym, cstring($pv), $cur, $len,
+
+    debug(
+        pv => "Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s",
+        $savesym, cstring($pv), $cur, $len,
         $static, $iscow, $shared_hek ? "shared, $fullname" : $fullname
-    ) if $debug{pv};
+    );
+
     return ( $savesym, $cur, $len, $pv, $static );
 }
 
@@ -601,8 +588,8 @@ sub save_hek {
     $hektable{$str} = $sym;
     my $cstr = cstring($str);
     decl()->add( sprintf( "Static HEK *%s;", $sym ) );
-    warn sprintf( "Saving hek %s %s cur=%d\n", $sym, $cstr, $cur )
-      if $debug{pv};
+
+    debug( pv => "Saving hek %s %s cur=%d", $sym, $cstr, $cur );
 
     # randomized global shared hash keys:
     #   share_hek needs a non-zero hash parameter, unlike hv_store.
@@ -651,8 +638,6 @@ sub ivx ($) {
     }
     $sval = '0' if $sval =~ /(NAN|inf)$/i;
     return $sval;
-
-    #return $C99 ? ".xivu_uv = $sval" : $sval; # this is version dependent
 }
 
 # protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]
@@ -699,8 +684,7 @@ sub force_heavy {
         #    goto &\$AUTOLOAD if defined &\$AUTOLOAD;
         #    warn("Undefined subroutine \$AUTOLOAD called");
         #  }];
-        #warn "Redefined $pkg\::AUTOLOAD to omit Carp\n" if $debug{gv};
-        warn "Forcing early $pkg_heavy\n" if $debug{pkg};
+        debug( pkg => "Forcing early $pkg_heavy" );
         require $pkg_heavy;
         mark_package( $pkg_heavy, 1 );
 
@@ -742,7 +726,7 @@ sub force_heavy {
     my $opsect_common;
 
     sub opsect_common {
-        my $opsect_common ||= "next, sibling, ppaddr, " . ( $MAD ? "madprop, " : "" ) . "targ, type, " . "opt, latefree, latefreed, attached, spare" . ", flags, private";
+        my $opsect_common ||= "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, latefree, latefreed, attached, spare" . ", flags, private";
 
         return $opsect_common;
     }
@@ -771,8 +755,9 @@ sub do_labels ($@) {
 sub push_package ($) {
     my $p = shift or return;
     warn "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}\n"
-      if $debug{cv}
-      or $debug{pkg} and !grep { $p eq $_ } @package_pv;
+      if debug('cv')
+      or debug('pkg')
+      and !grep { $p eq $_ } @package_pv;
     @package_pv = grep { $p ne $_ } @package_pv if @package_pv;    # remove duplicates at the end
     unshift @package_pv, $p;                                       # prepend at the front
     mark_package($p);
@@ -799,25 +784,25 @@ sub method_named {
         next unless defined $_;
         $method = $_ . '::' . $name;
         if ( defined(&$method) ) {
-            warn sprintf( "Found &%s::%s\n", $_, $name ) if $debug{cv};
+            debug( cv => "Found &%s::%s\n", $_, $name );
             $include_package{$_} = 1;    # issue59
             mark_package( $_, 1 );
             last;
         }
         else {
             if ( my $parent = try_isa( $_, $name ) ) {
-                warn sprintf( "Found &%s::%s\n", $parent, $name ) if $debug{cv};
+                debug( cv => "Found &%s::%s\n", $parent, $name );
                 $method = $parent . '::' . $name;
                 $include_package{$parent} = 1;
                 last;
             }
-            warn "no definition for method_name \"$method\"\n" if $debug{cv};
+            debug( cv => "no definition for method_name \"$method\"" );
         }
     }
 
     $method = $name unless $method;
     if ( exists &$method ) {    # Do not try to save non-existing methods
-        warn "save method_name \"$method\"$loc\n" if $debug{cv};
+        debug( cv => "save method_name \"$method\"$loc" );
         return svref_2object( \&{$method} );
     }
     else {
@@ -938,15 +923,16 @@ sub savepvn {
         }
         push @init, sprintf( "%s[%u] = '\\0';", $dest, $offset );
         warn sprintf( "Copying overlong PV %s to %s\n", cstring($pv), $dest )
-          if $debug{sv} or $debug{pv};
+          if debug('sv')
+          or debug('pv');
     }
     else {
         # If READONLY and FAKE use newSVpvn_share instead. (test 75)
         if ( $sv and ( ( $sv->FLAGS & 0x09000000 ) == 0x09000000 ) ) {
-            warn sprintf( "Saving shared HEK %s to %s\n", cstring($pv), $dest ) if $debug{sv};
+            debug( sv => "Saving shared HEK %s to %s\n", cstring($pv), $dest );
             my $hek = save_hek($pv);
             push @init, sprintf( "%s = HEK_KEY($hek);", $dest ) unless $hek eq 'NULL';
-            if ($DEBUGGING) {    # we have to bypass a wrong HE->HEK assert in hv.c
+            if ( DEBUGGING() ) {    # we have to bypass a wrong HE->HEK assert in hv.c
                 push @B::C::static_free, $dest;
             }
         }
@@ -961,7 +947,7 @@ sub savepvn {
                 $cstr = cstring($pv);
                 $cur += 2;
             }
-            warn sprintf( "Saving PV %s:%d to %s\n", $cstr, $cur, $dest ) if $debug{sv};
+            debug( sv => "Saving PV %s:%d to %s", $cstr, $cur, $dest );
             $cur = 0 if $cstr eq "" and $cur == 7;    # 317
             push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
         }
@@ -993,7 +979,7 @@ sub patch_dlsym {
     if ( $name =~ /encoding$/ and $Encode::VERSION eq '2.58' ) {
         $name =~ s/-/_/g;
         $pkg = 'Encode' if $pkg eq 'Encode::XS';    # TODO foreign classes
-        mark_package($pkg) if $fullname eq '(unknown)' and $ITHREADS;
+        mark_package($pkg) if $fullname eq '(unknown)' and USE_ITHREADS();
         warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
     }
     elsif ( $pkg eq 'Encode::XS' ) {
@@ -1018,7 +1004,7 @@ sub patch_dlsym {
             $name .= "_encoding";
             $name =~ s/-/_/g;
             warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
-            if ( $fullname eq '(unknown)' and $ITHREADS ) {
+            if ( $fullname eq '(unknown)' and USE_ITHREADS() ) {
                 mark_package( $pkg, 1 );
                 if ( $pkg ne 'Encode' ) {
                     svref_2object( \&{"$pkg\::bootstrap"} )->save;
@@ -1038,7 +1024,7 @@ sub patch_dlsym {
                     $name = $n;
                     $name =~ s/-/_/g;
                     $name .= "_encoding" if $name !~ /_encoding$/;
-                    if ( $fullname eq '(unknown)' and $ITHREADS ) {
+                    if ( $fullname eq '(unknown)' and USE_ITHREADS() ) {
                         mark_package( $pkg, 1 );
                         if ( $pkg ne 'Encode' ) {
                             svref_2object( \&{"$pkg\::bootstrap"} )->save;
@@ -1098,10 +1084,10 @@ sub mark_threads {
         mark_package($stash);
         $use_xsloader = 1;
         $xsub{$stash} = 'Dynamic-' . $INC{'threads.pm'};
-        warn "mark threads for 'P' magic\n" if $debug{mg};
+        debug( mg => "mark threads for 'P' magic" );
     }
     else {
-        warn "ignore to mark threads for 'P' magic\n" if $debug{mg};
+        debug( mg => "ignore to mark threads for 'P' magic" );
     }
     if ( $INC{'threads/shared.pm'} ) {
         my $stash = 'threads::shared';
@@ -1110,10 +1096,10 @@ sub mark_threads {
         # XXX why is this needed? threads::shared should be initialized automatically
         $use_xsloader = 1;                                        # ensure threads::shared is initialized
         $xsub{$stash} = 'Dynamic-' . $INC{'threads/shared.pm'};
-        warn "mark threads::shared for 'P' magic\n" if $debug{mg};
+        debug( mg => "mark threads::shared for 'P' magic" );
     }
     else {
-        warn "ignore to mark threads::shared for 'P' magic\n" if $debug{mg};
+        debug( mg => "ignore to mark threads::shared for 'P' magic" );
     }
 }
 
@@ -1137,13 +1123,13 @@ sub try_isa {
     # XXX theoretically a valid shortcut. In reality it fails when $cvstashname is not loaded.
     # return 0 unless $cvstashname->can($cvname);
     my @isa = get_isa($cvstashname);
-    warn sprintf(
-        "No definition for sub %s::%s. Try \@%s::ISA=(%s)\n",
+    debug(
+        cv => "No definition for sub %s::%s. Try \@%s::ISA=(%s)",
         $cvstashname, $cvname, $cvstashname, join( ",", @isa )
-    ) if $debug{cv};
+    );
     for (@isa) {    # global @ISA or in pad
         next if $_ eq $cvstashname;
-        warn sprintf( "Try &%s::%s\n", $_, $cvname ) if $debug{cv};
+        debug( cv => "Try &%s::%s", $_, $cvname );
         if ( defined( &{ $_ . '::' . $cvname } ) ) {
             if ( exists( ${ $cvstashname . '::' }{ISA} ) ) {
                 svref_2object( \@{ $cvstashname . '::ISA' } )->save("$cvstashname\::ISA");
@@ -1159,13 +1145,13 @@ sub try_isa {
                 if ($parent) {
                     $isa_cache{"$_\::$cvname"}           = $parent;
                     $isa_cache{"$cvstashname\::$cvname"} = $parent;
-                    warn sprintf( "Found &%s::%s\n", $parent, $cvname ) if $debug{gv};
+                    debug( gv => "Found &%s::%s", $parent, $cvname );
                     if ( exists( ${ $parent . '::' }{ISA} ) ) {
-                        warn "save \@$parent\::ISA\n" if $debug{pkg};
+                        debug( pkg => "save \@$parent\::ISA" );
                         svref_2object( \@{ $parent . '::ISA' } )->save("$parent\::ISA");
                     }
                     if ( exists( ${ $_ . '::' }{ISA} ) ) {
-                        warn "save \@$_\::ISA\n" if $debug{pkg};
+                        debug( pkg => "save \@$_\::ISA\n" );
                         svref_2object( \@{ $_ . '::ISA' } )->save("$_\::ISA");
                     }
                     return $parent;
@@ -1187,14 +1173,14 @@ sub try_autoload {
 
     no strict 'refs';
     if ( defined( *{ 'UNIVERSAL::' . $cvname }{CODE} ) ) {
-        warn "Found UNIVERSAL::$cvname\n" if $debug{cv};
+        debug( cv => "Found UNIVERSAL::$cvname" );
         return svref_2object( \&{ 'UNIVERSAL::' . $cvname } );
     }
     my $fullname = $cvstashname . '::' . $cvname;
-    warn sprintf(
-        "No definition for sub %s. Try %s::AUTOLOAD\n",
+    debug(
+        cv => "No definition for sub %s. Try %s::AUTOLOAD",
         $fullname, $cvstashname
-    ) if $debug{cv};
+    );
 
     # First some exceptions, fooled by goto
     if ( $cvstashname eq 'Config' ) {
@@ -1216,7 +1202,7 @@ sub try_autoload {
         # Tweaked version of AutoLoader::AUTOLOAD
         my $dir = $cvstashname;
         $dir =~ s(::)(/)g;
-        warn "require \"auto/$dir/$cvname.al\"\n" if $debug{cv};
+        debug( cv => "require \"auto/$dir/$cvname.al\"" );
         eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" unless $INC{"auto/$dir/$cvname.al"} };
         unless ($@) {
             warn "Forced load of \"auto/$dir/$cvname.al\"\n" if $verbose;
@@ -1271,7 +1257,7 @@ sub walk_syms {
     my $package = shift;
     no strict 'refs';
     return if $dumped_package{$package};
-    warn "walk_syms $package\n" if $debug{pkg} and $verbose;
+    debug( pkg => "walk_syms $package" ) if verbose();
     $dumped_package{$package} = 1;
     walksymtable( \%{ $package . '::' }, "savecv", sub { 1 }, $package . '::' );
 }
@@ -1325,10 +1311,9 @@ sub mark_package {
             walk_syms($package);
         }
         else {
-            warn sprintf( "mark $package%s\n", $force ? " (forced)" : "" )
+            debug( pkg => "mark $package%s\n", $force ? " (forced)" : "" )
               if !$include_package{$package}
-              and $verbose
-              and $debug{pkg};
+              and $verbose;
             $include_package{$package} = 1;
 
             walk_syms($package) if !$B::C::walkall;    # fixes i27-1
@@ -1447,19 +1432,19 @@ sub should_save {
     }
     return $include_package{$package} = 0
       if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
-    warn "Considering $package\n" if $debug{pkg};    #$include_package{$package}
-    return if index( $package, " " ) != -1;          # XXX skip invalid package names
-    return if index( $package, "(" ) != -1;          # XXX this causes the compiler to abort
-    return if index( $package, ")" ) != -1;          # XXX this causes the compiler to abort
-                                                     # core static mro has exactly one member, ext/mro has more
+    debug( pkg => "Considering $package" );
+    return if index( $package, " " ) != -1;    # XXX skip invalid package names
+    return if index( $package, "(" ) != -1;    # XXX this causes the compiler to abort
+    return if index( $package, ")" ) != -1;    # XXX this causes the compiler to abort
+                                               # core static mro has exactly one member, ext/mro has more
     if ( $package eq 'mro' ) {
 
-        if ( keys %{mro::} == 1 ) {                  # core or ext?
-            warn "ext/mro not loaded - skip\n" if $debug{pkg};
+        if ( keys %{mro::} == 1 ) {            # core or ext?
+            debug( pkg => "ext/mro not loaded - skip" );
             return;
         }
         else {
-            warn "ext/mro already loaded\n" if $debug{pkg};
+            debug( pkg => "ext/mro already loaded" );
 
             # $include_package{mro} = 1 if grep { $_ eq 'mro' } @DynaLoader::dl_modules;
             return $include_package{mro};
@@ -1523,14 +1508,14 @@ sub should_save {
         if ( !exists $all_bc_deps{$package} ) {
             $include_package{$package} = 1;
             $curINC{$incpack}          = $savINC{$incpack};
-            warn "Cached new $package is kept\n" if $debug{pkg};
+            debug( pkg => "Cached new $package is kept" );
         }
         elsif ( !$include_package{$package} ) {
             delete_unsaved_hashINC($package) if can_delete($package);
-            warn "Cached $package is already deleted\n" if $debug{pkg};
+            debug( pkg => "Cached $package is already deleted" );
         }
         else {
-            warn "Cached $package is cached\n" if $debug{pkg};
+            debug( pkg => "Cached $package is cached" );
         }
         return $include_package{$package};
     }
@@ -1552,7 +1537,7 @@ sub should_save {
                 return 0 if $package eq 'Config'                            and $m =~ /DESTROY|TIEHASH/;    # Config detected in GV
                                                                                                             # IO::File|IO::Handle added for B::CC only
                 return 0 if $package =~ /^(FileHandle|IO::File|IO::Handle)/ and $m eq 'new';
-                warn "$package has method $m: saving package\n" if $debug{pkg};
+                debug( pkg => "$package has method $m: saving package" );
                 return mark_package($package);
             }
         }
@@ -1561,15 +1546,14 @@ sub should_save {
         delete_unsaved_hashINC($package);
     }
     if ( can_delete($package) ) {
-        warn "Delete $package\n" if $debug{pkg};
+        debug( pkg => "Delete $package" );
         return $include_package{$package} = 0;
     }
     elsif ( !exists $all_bc_deps{$package} ) {    # and not in @deps
-        warn "Keep $package\n" if $debug{pkg};
+        debug( pkg => "Keep $package" );
         return $include_package{$package} = 1;
     }
     else {                                        # in @deps
-                                                  # warn "Ignore $package\n" if $debug{pkg};
         return;
     }
 }
@@ -1611,7 +1595,7 @@ sub delete_unsaved_hashINC {
     return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
     $include_package{$package} = 0;
     if ( $curINC{$incpack} ) {
-        warn "Deleting $package from \%INC\n" if $debug{pkg};
+        debug( pkg => "Deleting $package from \%INC" );
         $savINC{$incpack} = $curINC{$incpack} if !$savINC{$incpack};
         $curINC{$incpack} = undef;
         delete $curINC{$incpack};
@@ -1624,14 +1608,14 @@ sub add_hashINC {
     $include_package{$package} = 1;
     unless ( $curINC{$incpack} ) {
         if ( $savINC{$incpack} ) {
-            warn "Adding $package to \%INC (again)\n" if $debug{pkg};
+            debug( pkg => "Adding $package to \%INC (again)" );
             $curINC{$incpack} = $savINC{$incpack};
 
             # need to check xsub
             $use_xsloader = 1 if $package =~ /^DynaLoader|XSLoader$/;
         }
         else {
-            warn "Adding $package to \%INC\n" if $debug{pkg};
+            debug( pkg => "Adding $package to \%INC" );
             for (@INC) {
                 my $p = $_ . '/' . $incpack;
                 if ( -e $p ) { $curINC{$incpack} = $p; last; }
@@ -1655,7 +1639,7 @@ sub walkpackages {
         *glob = $ref;
         if ( $sym =~ /::$/ ) {
             $sym = $prefix . $sym;
-            warn("Walkpackages $sym\n") if $debug{pkg} and $debug{walk};
+            debug( walk => "Walkpackages $sym" ) if debug('pkg');
 
             # This walker skips main subs to avoid recursion into O compiler subs again
             # and main syms are already handled
@@ -1669,7 +1653,7 @@ sub walkpackages {
 sub save_unused_subs {
     no strict qw(refs);
     my %sav_debug;
-    if ( $debug{unused} ) {
+    if ( debug('unused') ) {
         %sav_debug = %debug;
         %debug     = ();
     }
@@ -1777,10 +1761,10 @@ sub inc_cleanup {
     for my $p ( sort keys %INC ) {
         if ( !exists $curINC{$p} ) {
             delete $INC{$p};
-            warn "Deleting $p from %INC\n" if $debug{pkg};
+            debug( pkg => "Deleting $p from %INC" );
         }
     }
-    if ( $debug{pkg} and $verbose ) {
+    if ( debug('pkg') and verbose() ) {
         warn "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) . "\n";
         warn "\%dumped_package:  " . join( " ", grep { $dumped_package{$_} } sort keys %dumped_package ) . "\n";
         my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
@@ -1806,7 +1790,7 @@ sub inc_cleanup {
 
 sub dump_rest {
     my $again;
-    warn "dump_rest\n" if $verbose or $debug{pkg};
+    warn "dump_rest\n" if verbose() or $debug{pkg};
     for my $p ( sort keys %INC ) {
     }
     for my $p ( sort keys %include_package ) {
@@ -2007,10 +1991,9 @@ sub save_main_rest {
     # this is mainly for the test suite
     my $warner = $SIG{__WARN__};
 
-    # local $SIG{__WARN__} = sub { print STDERR @_ } unless $debug{runtime};
-
     warn "done main optree, walking symtable for extras\n"
-      if $verbose or $debug{cv};
+      if verbose()
+      or debug('cv');
     init()->add("");
     init()->add("/* done main optree, extra subs which might be unused */");
     save_unused_subs();
@@ -2032,14 +2015,14 @@ sub save_main_rest {
     }
 
     # startpoints: XXX TODO push BEGIN/END blocks to modules code.
-    warn "Writing initav\n" if $debug{av};
+    debug( av => "Writing initav" );
     my $init_av = init_av->save;
     my $end_av;
     {
         # >=5.10 need to defer nullifying of all vars in END, not only new ones.
         local ( $B::C::pv_copy_on_grow, $B::C::const_strings );
         $in_endav = 1;
-        warn "Writing endav\n" if $debug{av};
+        debug( 'av' => "Writing endav" );
         init()->add("/* END block */");
         $end_av   = end_av->save;
         $in_endav = 0;
@@ -2184,7 +2167,7 @@ sub save_main_rest {
         $incpack =~ s/\:\:/\//g;
         $incpack .= '.pm';
         unless ( exists $B::C::curINC{$incpack} ) {    # skip deleted packages
-            warn "skip xs_init for $stashname !\$INC{$incpack}\n" if $debug{pkg};
+            debug( pkg => "skip xs_init for $stashname !\$INC{$incpack}" );
             delete $xsub{$stashname} unless $static_ext{$stashname};
         }
     }
@@ -2197,7 +2180,7 @@ sub save_main_rest {
         'verbose'                          => $verbose,
         'debug'                            => \%debug,
         'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION",
-        'DEBUG_LEAKING_SCALARS'            => $DEBUG_LEAKING_SCALARS,
+        'DEBUG_LEAKING_SCALARS'            => DEBUG_LEAKING_SCALARS(),
         'have_independent_comalloc'        => $B::C::Flags::have_independent_comalloc,
         'use_declare_independent_comalloc' => $B::C::Flags::use_declare_independent_comalloc,
         'av_init2'                         => $av_init2,
@@ -2206,8 +2189,8 @@ sub save_main_rest {
         'stashxsubs'                       => \@stashxsubs,
         'init_name'                        => $init_name || "perl_init",
         'gv_index'                         => $gv_index,
-        'MULTI'                            => $MULTI,
-        'ITHREADS'                         => $ITHREADS,
+        'MULTI'                            => USE_MULTIPLICITY(),
+        'ITHREADS'                         => USE_ITHREADS(),
         'init2_remap'                      => \%init2_remap,
         'HAVE_DLFCN_DLOPEN'                => $HAVE_DLFCN_DLOPEN,
         'compile_stats'                    => compile_stats(),
@@ -2319,19 +2302,17 @@ sub compile {
                 $all_bc_deps{'B::Flags'}++;
             }
             foreach my $arg ( split( //, $arg ) ) {
-                if ( exists $debug_map{$arg} ) {
-                    $debug{ $debug_map{$arg} }++;
-                }
-                elsif ( $arg eq "o" ) {
+                next if B::C::Config::Debug::enable_debug_from_map($arg);
+                if ( $arg eq "o" ) {
                     $verbose++;
                     B->debug(1);
                 }
                 elsif ( $arg eq "F" ) {
-                    $debug{flags}++;
+                    B::C::Config::Debug::enable_debug_level('flags');
                     $all_bc_deps{'B::Flags'}++;
                 }
                 elsif ( $arg eq "r" ) {
-                    $debug{runtime}++;
+                    B::C::Config::Debug::enable_debug_level('runtime');
                     $SIG{__WARN__} = sub {
                         warn @_;
                         my $s = join( " ", @_ );
@@ -2422,16 +2403,16 @@ sub compile {
     elsif ( $B::C::av_init2 and $B::C::av_init ) {
         $B::C::av_init = 0;
     }
-    $B::C::save_data_fh = 1 if $MULTI;
-    $B::C::destruct     = 1 if $^O eq 'MSWin32';    # skip -ffast-destruct there
+    $B::C::save_data_fh = 1 if USE_MULTIPLICITY();
+    $B::C::destruct     = 1 if $^O eq 'MSWin32';     # skip -ffast-destruct there
 
-    B::C::File::new($output_file);                  # Singleton.
+    B::C::File::new($output_file);                   # Singleton.
     %curINC = %savINC = %INC;
 
     foreach my $i (@eval_at_startup) {
         init()->add_eval($i);
     }
-    if (@options) {                                 # modules or main?
+    if (@options) {                                  # modules or main?
         return sub {
             my $objname;
             foreach $objname (@options) {

@@ -3,7 +3,7 @@ package B::PMOP;
 use strict;
 
 use B qw/cstring svref_2object/;
-
+use B::C::Config;
 use B::C::File qw/pmopsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -19,7 +19,7 @@ sub save {
     return $sym if defined $sym;
 
     # 5.8.5-thr crashes here (7) at pushre
-    if ( B::C::USE_ITHREADS() and $$op < 256 ) {    # B bug. split->first->pmreplroot = 0x1
+    if ( USE_ITHREADS() and $$op < 256 ) {    # B bug. split->first->pmreplroot = 0x1
         die "Internal B::walkoptree error: invalid PMOP for pushre\n";
         return;
     }
@@ -32,7 +32,7 @@ sub save {
 
     # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
     $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
-    if ( B::C::USE_ITHREADS() && $op->name eq "pushre" ) {
+    if ( USE_ITHREADS() && $op->name eq "pushre" ) {
         warn "PMOP::save saving a pp_pushre as int ${replroot}\n" if $B::C::debug{gv};
         $replrootfield = "INT2PTR(OP*,${replroot})";
     }
@@ -60,7 +60,7 @@ sub save {
         sprintf(
             "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",
             $op->_save_common, ${ $op->first },
-            ${ $op->last }, ( B::C::USE_ITHREADS() ? $op->pmoffset : 0 ),
+            ${ $op->last }, ( USE_ITHREADS() ? $op->pmoffset : 0 ),
             $op->pmflags, $replrootfield, 'NULL'
         )
     );
@@ -122,7 +122,7 @@ sub save {
         # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
         if ( $op->pmflags & PMf_ONCE() ) {
             my $stash =
-                $B::C::MULTI                ? $op->pmstashpv
+                USE_MULTIPLICITY()          ? $op->pmstashpv
               : ref $op->pmstash eq 'B::HV' ? $op->pmstash->NAME
               :                               '__ANON__';
             $B::C::Regexp{$$op} = $op;    #188: restore PMf_ONCE, set PERL_MAGIC_symtab in $stash
