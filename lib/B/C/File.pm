@@ -155,8 +155,6 @@ sub write {
 
     open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
 
-    output_main_rest($c_file_stash);
-
     if ( defined($B::C::module) ) {
         my $cmodule = $B::C::module ? $B::C::module : "main";
         $cmodule =~ s/::/__/g;
@@ -192,81 +190,6 @@ EOT
         output_main();
     }
     close $cfh;
-}
-
-sub output_main_rest {
-    my $c_file_stash = shift or die;
-
-    my $dl         = $c_file_stash->{'dl'};
-    my $xs         = $c_file_stash->{'xs'};
-    my @dl_modules = @{ $c_file_stash->{'dl_modules'} };
-
-    if ($dl) {
-        print {$cfh} "\tdTARG; dSP;\n";
-        print {$cfh} "/* DynaLoader bootstrapping */\n";
-        print {$cfh} "\tENTER;\n";
-        print {$cfh} "\t++cxstack_ix; cxstack[cxstack_ix].blk_oldcop = PL_curcop;\n" if $xs;
-        print {$cfh} "\t/* assert(cxstack_ix == 0); */\n" if $xs;
-        print {$cfh} "\tSAVETMPS;\n";
-
-        if ( $c_file_stash->{'dl_fixups'}->{'coro'} ) {
-
-            # needed before dl_init, and after init
-            print {$cfh} "\t{\n\t  GV *sym;\n";
-            for my $s (qw(Coro Coro::API Coro::current)) {
-                print {$cfh} "\t  sym = gv_fetchpv(\"$s\",0,SVt_PV);\n";
-                print {$cfh} "\t  if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));\n";
-            }
-            print {$cfh} "\t  sym = gv_fetchpv(\"Coro::pool_handler)\",0,SVt_PVCV);\n";
-            print {$cfh} "\t  if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));\n";
-            print {$cfh} "\t}\n";
-        }
-        foreach my $stashname (@dl_modules) {
-            if ( exists( $B::C::xsub{$stashname} ) && $B::C::xsub{$stashname} =~ m/^Dynamic/ ) {
-                print {$cfh} "\n\tPUSHMARK(sp);\n";
-
-                # XXX -O1 or -O2 needs XPUSHs with dynamic pv
-                printf {$cfh} "\t%s(%s, %d);\n",    # "::bootstrap" gets appended
-                  "mXPUSHp", "\"$stashname\"", length($stashname);
-                if ( $B::C::xsub{$stashname} eq 'Dynamic' ) {
-                    print {$cfh} "#ifndef STATICXS\n";
-                    print {$cfh} "\tPUTBACK;\n";
-                    print {$cfh} qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
-                }
-                else {                              # XS: need to fix cx for caller[1] to find auto/...
-                    my ($stashfile) = $B::C::xsub{$stashname} =~ /^Dynamic-(.+)$/;
-                    print {$cfh} "#ifndef STATICXS\n";
-                    print {$cfh} "\tPUTBACK;\n";
-
-                    # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
-                    printf {$cfh} qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/, $stashfile if $stashfile;
-                    print {$cfh} qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
-                }
-
-                print {$cfh} "#else\n";
-                print {$cfh} "\tPUTBACK;\n";
-                my $stashxsub = $stashname;
-                $stashxsub =~ s/::/__/g;
-                if ($B::C::staticxs) {
-
-                    # CvSTASH(CvGV(cv)) is invalid without (issue 86)
-                    print {$cfh} "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
-                }
-                else {
-                    print {$cfh} "\tboot_$stashxsub(aTHX_ NULL);\n";
-                }
-                print {$cfh} "#endif\n";
-                print {$cfh} "\tSPAGAIN;\n";
-
-                #print {$cfh} "\tPUTBACK;\n";
-            }
-        }
-        print {$cfh} "\tFREETMPS;\n";
-        print {$cfh} "\tcxstack_ix--;\n" if $xs;               # i.e. POPBLOCK
-        print {$cfh} "\tLEAVE;\n";
-        print {$cfh} "/* end DynaLoader bootstrapping */\n";
-    }
-    print {$cfh} "}\n";
 }
 
 sub output_main {

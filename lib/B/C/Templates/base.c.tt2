@@ -184,7 +184,11 @@ static int perl_init0(pTHX) { /* fixup_ppaddr */
 */
 [% END -%]
 
-/* output_main_rest() */
+/************************************************************************************************************
+*
+*       output_main_rest()
+*
+*************************************************************************************************************/
 
 HEK * my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
@@ -521,3 +525,68 @@ static void
 dl_init(pTHX)
 {
 	char *file = __FILE__;
+[% IF dl %]
+    dTARG;
+    dSP;
+/* DynaLoader bootstrapping */
+    ENTER;
+  [%- IF xs %]
+    ++cxstack_ix;
+    cxstack[cxstack_ix].blk_oldcop = PL_curcop;
+    /* assert(cxstack_ix == 0); */
+  [% END %]
+    SAVETMPS;
+  [%- IF dl_fixups.coro %]
+ /* needed before dl_init, and after init */
+    {
+        GV *sym;
+
+        sym = gv_fetchpv("Coro",0,SVt_PV);
+        if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));
+
+        sym = gv_fetchpv("Coro::API",0,SVt_PV);
+        if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));
+
+        sym = gv_fetchpv("Coro::current",0,SVt_PV);
+        if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));
+
+        sym = gv_fetchpv("Coro::pool_handler)",0,SVt_PVCV);
+        if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));
+    }
+  [% END %]
+  [%- FOREACH stashname IN dl_modules %]
+    [%- NEXT IF ! xsub.$stashname.match('^Dynamic')  %]
+    PUSHMARK(sp);
+
+/* XXX -O1 or -O2 needs XPUSHs with dynamic pv */
+    mXPUSHp("[% stashname %]", [% stashname.length %]);
+
+/* XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object() */
+#ifndef STATICXS
+    PUTBACK;
+    [%- IF xsub.$stashname == 'Dynamic' %]
+    call_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);
+    [%- ELSIF (matches = xsub.$stashname.match('^Dynamic-(.+)$')) %]
+    CopFILE_set(cxstack[cxstack_ix].blk_oldcop, "[% matches.0 %]"); /*\n/, $stashfile if $stashfile;*/
+    call_pv("XSLoader::load", G_VOID|G_DISCARD);
+    [% END %]
+#else
+    PUTBACK;
+    [%- IF staticxs %]
+    /* CvSTASH(CvGV(cv)) is invalid without (issue 86) */
+    boot_[% stashname.replace('::', '__') %](aTHX_ get_cv("[% stashname %]::bootstrap", GV_ADD));
+    [% ELSE %]
+    boot_[% stashname.replace('::', '__') %](aTHX_ NULL);
+    [% END %]
+#endif
+    SPAGAIN;
+/*    PUTBACK;*/
+  [% END %]
+    FREETMPS;
+      [%- IF xs %]
+    cxstack_ix--; /* i.e. POPBLOCK */
+      [% END -%]
+    LEAVE;
+/* end DynaLoader bootstrapping */
+[% END %]
+}
