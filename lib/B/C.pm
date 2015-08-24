@@ -2177,7 +2177,7 @@ sub save_main_rest {
         'xsub'                             => \%xsub,
         'curINC'                           => \%curINC,
         'staticxs'                         => $staticxs,
-        fixup_dynaloader_array(),    # Returns 3 K/V pairs
+        fixup_dynaloader_array(),    # Returns 4 K/V pairs
     };
     chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
 
@@ -2305,7 +2305,14 @@ sub fixup_dynaloader_array {
     close $xsfh if $staticxs;
 
     # TODO: This is temporary mostly during the re-factor.
-    return ( 'dl' => \$dl, 'xs' => \$xs, 'dl_modules' => \@dl_modules );
+    return (
+        'dl'         => \$dl,
+        'xs'         => \$xs,
+        'dl_modules' => \@dl_modules,
+        'dl_fixups'  => {
+            'coro' => ( exists $xsub{"Coro::State"} and grep { $_ eq "Coro::State" } @dl_modules ) ? 1 : 0,
+        },
+    );
 }
 
 # needed for init2 remap and Dynamic annotation

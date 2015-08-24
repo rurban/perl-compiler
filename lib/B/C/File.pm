@@ -209,7 +209,7 @@ sub output_main_rest {
         print {$cfh} "\t/* assert(cxstack_ix == 0); */\n" if $xs;
         print {$cfh} "\tSAVETMPS;\n";
 
-        if ( exists $B::C::xsub{"Coro::State"} and grep { $_ eq "Coro::State" } @dl_modules ) {
+        if ( $c_file_stash->{'dl_fixups'}->{'coro'} ) {
 
             # needed before dl_init, and after init
             print {$cfh} "\t{\n\t  GV *sym;\n";
