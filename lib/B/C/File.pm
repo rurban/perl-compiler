@@ -156,34 +156,7 @@ sub write {
     open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
 
     if ( defined($B::C::module) ) {
-        my $cmodule = $B::C::module ? $B::C::module : "main";
-        $cmodule =~ s/::/__/g;
-
-        my $curpad_sym = $c_file_stash->{'module_curpad_sym'};
-
-        print {$cfh} <<"EOT";
-
-#include "XSUB.h"
-XS(boot_$cmodule)
-{
-    dXSARGS;
-    perl_init();
-    ENTER;
-    SAVETMPS;
-    SAVEVPTR(PL_curpad);
-    SAVEVPTR(PL_op);
-    dl_init(aTHX);
-    PL_curpad = AvARRAY($curpad_sym);
-    PL_comppad = $curpad_sym;
-    PL_op = op_list[0];
-    perl_run( aTHX ); /* Perl_runops_standard(aTHX); */
-    FREETMPS;
-    LEAVE;
-    ST(0) = &PL_sv_yes;
-    XSRETURN(1);
-}
-EOT
-
+        ;
     }
     else {
         output_main();

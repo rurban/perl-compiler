@@ -590,3 +590,31 @@ dl_init(pTHX)
 /* end DynaLoader bootstrapping */
 [% END %]
 }
+
+/************************************************************************************************************
+*
+*       output_main()
+*
+*************************************************************************************************************/
+
+[% IF module.defined %]
+#include "XSUB.h"
+XS(boot_$cmodule)
+{
+    dXSARGS;
+    perl_init();
+    ENTER;
+    SAVETMPS;
+    SAVEVPTR(PL_curpad);
+    SAVEVPTR(PL_op);
+    dl_init(aTHX);
+    PL_curpad = AvARRAY([% module_curpad_sym %]);
+    PL_comppad = [% module_curpad_sym %];
+    PL_op = op_list[0];
+    perl_run( aTHX ); /* Perl_runops_standard(aTHX); */
+    FREETMPS;
+    LEAVE;
+    ST(0) = &PL_sv_yes;
+    XSRETURN(1);
+}
+[% END %]
