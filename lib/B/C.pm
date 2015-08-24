@@ -211,31 +211,10 @@ our %optimization_map = (
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
 );
-our %debug_map = (
-    'O' => 'op',
-    'A' => 'av',
-    'H' => 'hv',
-    'C' => 'cv',
-    'M' => 'mg',
-    'R' => 'rx',
-    'G' => 'gv',
-    'S' => 'sv',
-    'P' => 'pv',
-    'W' => 'walk',
-    'c' => 'cops',
-    's' => 'sub',
-    'p' => 'pkg',
-
-    #   'm' => 'meth',
-    'u' => 'unused',
-);
 
 our @xpvav_sizes;
 our ( $max_string_len, $in_endav );
-my %static_core_pkg;    # = map {$_ => 1} static_core_packages();
-
-# fixme move to B::C::Debug
-our $HAVE_DLFCN_DLOPEN = $Config{i_dlfcn} && $Config{d_dlopen};
+my %static_core_pkg;                                                    # = map {$_ => 1} static_core_packages();
 
 # used by B::OBJECT
 sub add_to_isa_cache {
@@ -2080,7 +2059,7 @@ sub save_main_rest {
 
         # XXX now emit arch-specific dlsym code
         init2()->add( "{", "  void *handle, *ptr;" );
-        if ($HAVE_DLFCN_DLOPEN) {
+        if ( HAVE_DLFCN_DLOPEN() ) {
             init2()->add("  #include <dlfcn.h>");
         }
         else {
@@ -2091,7 +2070,7 @@ sub save_main_rest {
         }
         for my $pkg ( sort keys %init2_remap ) {
             if ( exists $xsub{$pkg} ) {
-                if ($HAVE_DLFCN_DLOPEN) {
+                if ( HAVE_DLFCN_DLOPEN() ) {
                     my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
                     $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i;    # 351 (only on solaris and linux, not any bsd)
                     init2()->add(
@@ -2112,7 +2091,7 @@ sub save_main_rest {
                 }
                 for my $mg ( @{ $init2_remap{$pkg}{MG} } ) {
                     verbose("init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}");
-                    if ($HAVE_DLFCN_DLOPEN) {
+                    if ( HAVE_DLFCN_DLOPEN() ) {
                         init2()->add( sprintf( "  ptr = dlsym(handle, %s);", cstring( $mg->{NAME} ) ) );
                     }
                     else {
@@ -2168,7 +2147,7 @@ sub save_main_rest {
         'MULTI'                            => USE_MULTIPLICITY(),
         'ITHREADS'                         => USE_ITHREADS(),
         'init2_remap'                      => \%init2_remap,
-        'HAVE_DLFCN_DLOPEN'                => $HAVE_DLFCN_DLOPEN,
+        'HAVE_DLFCN_DLOPEN'                => HAVE_DLFCN_DLOPEN(),
         'compile_stats'                    => compile_stats(),
         'nullop_count'                     => $nullop_count,
         'static_free'                      => \@static_free,

@@ -50,7 +50,7 @@ void** dlindependent_comalloc(size_t, size_t*, void**);
 [%- IF ! destruct %]
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
-    
+
 #ifndef dVAR
 # ifdef PERL_GLOBAL_STRUCT
 #  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
@@ -137,7 +137,7 @@ Static const char xsfile[] = "universal.c";
 #define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))
 [% END %]
 
-[% IF init2_remap.size and !$HAVE_DLFCN_DLOPEN %]
+[% IF init2_remap.size and !HAVE_DLFCN_DLOPEN %]
 XS(XS_DynaLoader_dl_load_file);
 XS(XS_DynaLoader_dl_find_symbol);
 [% END %]
@@ -159,7 +159,7 @@ Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %
 
 [% END -%]
 
-static int perl_init0(pTHX) { /* fixup_ppaddr */ 
+static int perl_init0(pTHX) { /* fixup_ppaddr */
 [% section.init0.output( "    %s\n" ) %]
 };
 
@@ -435,7 +435,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
     SvPV_set([% to_free %], (char*)&PL_sv_undef);
   /* was marked: dead code --- */
   [% ELSIF to_free.match('^cop_list') %]
-    [% IF ITHREADS OR !$MULTI %]
+    [% IF ITHREADS OR ! MULTI %]
     CopFILE_set(&[% to_free %], NULL);
     [% END %]
     [% IF ITHREADS %]

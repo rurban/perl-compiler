@@ -25,9 +25,9 @@ sub _autoload_map {
 
         MAD => $Config{mad},
 
-        #HAVE_DLFCN_DLOPEN => $Config{i_dlfcn} && $Config{d_dlopen},
-
     };
+
+    $map->{HAVE_DLFCN_DLOPEN} = $Config{i_dlfcn} && $Config{d_dlopen};
 
     # debugging variables
     $map->{'DEBUGGING'}             = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
