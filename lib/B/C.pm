@@ -2231,7 +2231,7 @@ sub fixup_dynaloader_array {
             $dl++;
         }
     }
-    warn "\%B::C::xsub: ", join( " ", sort keys %xsub ), "\n" if verbose() and $debug{'cv'};
+    debug( cv => "\%B::C::xsub: " . join( " ", sort keys %xsub ) ) if verbose();
 
     # XXX Adding DynaLoader is too late here! The sections like $init are already dumped (#125)
     # QUESTION: What do we need to alter? cause now we're uding template, it's not too late.
