@@ -162,6 +162,7 @@ my ( %strtable, %hektable, %gptable );
 our ( %xsub,            %init2_remap );
 our ( $staticxs,        $outfile );
 our ( %include_package, %dumped_package, %skip_package, %isa_cache );
+my $output_file;
 
 # fixme move to config
 our ($use_xsloader);
@@ -2175,6 +2176,7 @@ sub save_main_rest {
         'static_free'                      => \@static_free,
         'xsub'                             => \%xsub,
         'curINC'                           => \%curINC,
+        'staticxs'                         => $staticxs,
         fixup_dynaloader_array(),    # Returns 3 K/V pairs
     };
     chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
@@ -2242,6 +2244,7 @@ sub fixup_dynaloader_array {
         die "Error: XSLoader required but not dumped. Too late to add it.\n";
     }
 
+    my $xsfh;
     if ($dl) {
         if ( grep { $_ eq 'attributes' } @dl_modules ) {
 
@@ -2249,7 +2252,57 @@ sub fixup_dynaloader_array {
             @dl_modules = grep { $_ ne 'attributes' } @dl_modules;
             unshift @dl_modules, 'attributes';
         }
+
+        if ($staticxs) {
+            open( $xsfh, ">", "$output_file.lst" ) or die("Can't open $output_file.lst: $!");
+        }
+
+        foreach my $stashname (@dl_modules) {
+            if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
+                $use_xsloader = 1;
+                if ( $xsub{$stashname} eq 'Dynamic' ) {
+                    no strict 'refs';
+                    warn "dl_init $stashname\n" if verbose();
+
+                    # just in case we missed it. DynaLoader really needs the @ISA (#308)
+                    B::svref_2object( \@{ $stashname . "::ISA" } )->save;
+                }
+                else {    # XS: need to fix cx for caller[1] to find auto/...
+                    warn "bootstrapping $stashname added to XSLoader dl_init\n" if verbose();
+                }
+                if ($staticxs) {
+                    my ($laststash) = $stashname =~ /::([^:]+)$/;
+                    my $path = $stashname;
+                    $path =~ s/::/\//g;
+                    $path .= "/" if $path;    # can be empty
+                    $laststash = $stashname unless $laststash;    # without ::
+                    my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
+
+                    #warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
+                    #  if verbose() and $self->{'debug'}->{pkg};
+                    for (@DynaLoader::dl_shared_objects) {
+                        if (m{^(.+/)$sofile$}) {
+                            print $xsfh $stashname, "\t", $_, "\n";
+                            warn "staticxs $stashname\t$_\n" if verbose();
+                            $sofile = '';
+                            last;
+                        }
+                    }
+                    print XS $stashname, "\n" if $sofile;    # error case
+                    warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and verbose();
+                }
+            }
+            else {
+                warn "no dl_init for $stashname, " . ( !$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n" )
+                  if verbose();
+
+                # XXX Too late. This might fool run-time DynaLoading.
+                # We really should remove this via init from @DynaLoader::dl_modules
+                @DynaLoader::dl_modules = grep { $_ ne $stashname } @DynaLoader::dl_modules;
+            }
+        }
     }
+    close $xsfh if $staticxs;
 
     # TODO: This is temporary mostly during the re-factor.
     return ( 'dl' => \$dl, 'xs' => \$xs, 'dl_modules' => \@dl_modules );
@@ -2318,8 +2371,6 @@ sub compile {
       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
 
     #mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
-
-    my $output_file;
 
   OPTION:
     while ( $option = shift @options ) {

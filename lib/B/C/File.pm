@@ -202,9 +202,6 @@ sub output_main_rest {
     my @dl_modules = @{ $c_file_stash->{'dl_modules'} };
 
     if ($dl) {
-        if ($B::C::staticxs) {
-            open( XS, ">", $self->{'c_file_name'} . ".lst" ) or die("Can't open $self->{c_file_name}.lst: $!");
-        }
         print {$cfh} "\tdTARG; dSP;\n";
         print {$cfh} "/* DynaLoader bootstrapping */\n";
         print {$cfh} "\tENTER;\n";
@@ -226,18 +223,12 @@ sub output_main_rest {
         }
         foreach my $stashname (@dl_modules) {
             if ( exists( $B::C::xsub{$stashname} ) && $B::C::xsub{$stashname} =~ m/^Dynamic/ ) {
-                $B::C::use_xsloader = 1;
                 print {$cfh} "\n\tPUSHMARK(sp);\n";
 
                 # XXX -O1 or -O2 needs XPUSHs with dynamic pv
                 printf {$cfh} "\t%s(%s, %d);\n",    # "::bootstrap" gets appended
                   "mXPUSHp", "\"$stashname\"", length($stashname);
                 if ( $B::C::xsub{$stashname} eq 'Dynamic' ) {
-                    no strict 'refs';
-                    warn "dl_init $stashname\n" if verbose();
-
-                    # just in case we missed it. DynaLoader really needs the @ISA (#308)
-                    B::svref_2object( \@{ $stashname . "::ISA" } )->save;
                     print {$cfh} "#ifndef STATICXS\n";
                     print {$cfh} "\tPUTBACK;\n";
                     print {$cfh} qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
@@ -246,33 +237,12 @@ sub output_main_rest {
                     my ($stashfile) = $B::C::xsub{$stashname} =~ /^Dynamic-(.+)$/;
                     print {$cfh} "#ifndef STATICXS\n";
                     print {$cfh} "\tPUTBACK;\n";
-                    warn "bootstrapping $stashname added to XSLoader dl_init\n" if verbose();
 
                     # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
                     printf {$cfh} qq/\tCopFILE_set(cxstack[cxstack_ix].blk_oldcop, "%s");\n/, $stashfile if $stashfile;
                     print {$cfh} qq/\tcall_pv("XSLoader::load", G_VOID|G_DISCARD);\n/;
                 }
-                if ($B::C::staticxs) {
-                    my ($laststash) = $stashname =~ /::([^:]+)$/;
-                    my $path = $stashname;
-                    $path =~ s/::/\//g;
-                    $path .= "/" if $path;    # can be empty
-                    $laststash = $stashname unless $laststash;    # without ::
-                    my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
 
-                    #warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
-                    #  if verbose() and $self->{'debug'}->{pkg};
-                    for (@DynaLoader::dl_shared_objects) {
-                        if (m{^(.+/)$sofile$}) {
-                            print XS $stashname, "\t", $_, "\n";
-                            warn "staticxs $stashname\t$_\n" if verbose();
-                            $sofile = '';
-                            last;
-                        }
-                    }
-                    print XS $stashname, "\n" if $sofile;    # error case
-                    warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and verbose();
-                }
                 print {$cfh} "#else\n";
                 print {$cfh} "\tPUTBACK;\n";
                 my $stashxsub = $stashname;
@@ -290,21 +260,11 @@ sub output_main_rest {
 
                 #print {$cfh} "\tPUTBACK;\n";
             }
-            else {
-                warn "no dl_init for $stashname, " . ( !$B::C::xsub{$stashname} ? "not marked\n" : "marked as $B::C::xsub{$stashname}\n" )
-                  if verbose();
-
-                # XXX Too late. This might fool run-time DynaLoading.
-                # We really should remove this via init from @DynaLoader::dl_modules
-                @DynaLoader::dl_modules = grep { $_ ne $stashname } @DynaLoader::dl_modules;
-
-            }
         }
         print {$cfh} "\tFREETMPS;\n";
         print {$cfh} "\tcxstack_ix--;\n" if $xs;               # i.e. POPBLOCK
         print {$cfh} "\tLEAVE;\n";
         print {$cfh} "/* end DynaLoader bootstrapping */\n";
-        close XS if $B::C::staticxs;
     }
     print {$cfh} "}\n";
 }
