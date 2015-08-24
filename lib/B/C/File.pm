@@ -201,12 +201,6 @@ sub output_main_rest {
     my @dl_modules = @{ $c_file_stash->{'dl_modules'} };
 
     if ($dl) {
-        if ( grep { $_ eq 'attributes' } @dl_modules ) {
-
-            # enforce attributes at the front of dl_init, #259
-            @dl_modules = grep { $_ ne 'attributes' } @dl_modules;
-            unshift @dl_modules, 'attributes';
-        }
         if ($B::C::staticxs) {
             open( XS, ">", $self->{'c_file_name'} . ".lst" ) or die("Can't open $self->{c_file_name}.lst: $!");
         }

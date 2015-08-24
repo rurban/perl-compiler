@@ -2257,6 +2257,15 @@ sub fixup_dynaloader_array {
         die "Error: XSLoader required but not dumped. Too late to add it.\n";
     }
 
+    if ($dl) {
+        if ( grep { $_ eq 'attributes' } @dl_modules ) {
+
+            # enforce attributes at the front of dl_init, #259
+            @dl_modules = grep { $_ ne 'attributes' } @dl_modules;
+            unshift @dl_modules, 'attributes';
+        }
+    }
+
     # TODO: This is temporary mostly during the re-factor.
     return ( 'dl' => \$dl, 'xs' => \$xs, 'dl_modules' => \@dl_modules );
 }
