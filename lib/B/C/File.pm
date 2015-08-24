@@ -129,21 +129,21 @@ sub write {
         EVAL_PERL    => 1,               # evaluate Perl code blocks
     };
 
-    if ( $c_file_stash->{'verbose'} ) {
-        warn $c_file_stash->{'compile_stats'};
-        warn "NULLOP count: $c_file_stash->{nullop_count}";
+    if ( verbose() ) {
+        WARN $c_file_stash->{'compile_stats'};
+        WARN "NULLOP count: $c_file_stash->{nullop_count}";
     }
 
     # Used to be buried in output_main_rest();
     my @possible_static_free_errors = grep { $_ !~ m/^(cop_list|&sv_list|sv_list)|^ptr_undef$/ } @{ $c_file_stash->{'static_free'} };
     if (@possible_static_free_errors) {
-        warn("unknown $_ found in \@static_free") foreach @possible_static_free_errors;
+        WARN("unknown $_ found in \@static_free") foreach @possible_static_free_errors;
     }
 
     # Used to be buried in output_main_rest();
     if ( verbose() ) {
         foreach my $stashname ( sort keys %static_ext ) {
-            warn "bootstrapping static $stashname added to xs_init\n";
+            verbose("bootstrapping static $stashname added to xs_init");
         }
     }
 
@@ -432,7 +432,7 @@ EOT
         }
 
         if ( !$B::C::destruct ) {
-            warn "fast_perl_destruct (-fno-destruct)\n" if verbose();
+            verbose("fast_perl_destruct (-fno-destruct)");
             print {$cfh} "    fast_perl_destruct( my_perl );\n";
         }
         else {

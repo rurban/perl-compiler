@@ -231,8 +231,8 @@ sub save {
         }
         elsif ( $gp and exists $gptable{ 0 + $gp } ) {
             debug(
-                gv => "Shared GvGP for *$fullname 0x%x%s %s GP:0x%x\n",
-                $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
+                gv => "Shared GvGP for *%s 0x%x%s %s GP:0x%x",
+                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
                 $gv->FILE, $gp
             );
             init()->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
@@ -241,8 +241,8 @@ sub save {
         }
         elsif ( $gp and !$is_empty and $gvname =~ /::$/ ) {
             debug(
-                gv => "Shared GvGP for stash %$fullname 0x%x%s %s GP:0x%x\n",
-                $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
+                gv => "Shared GvGP for stash %%%s 0x%x%s %s GP:0x%x",
+                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
                 $gv->FILE, $gp
             );
             init()->add(qq[$sym = gv_fetchpv($name, GV_ADD, SVt_PVHV);]);
@@ -250,8 +250,8 @@ sub save {
         }
         elsif ( $gp and !$is_empty ) {
             debug(
-                gv => "New GV for *$fullname 0x%x%s %s GP:0x%x\n",
-                $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
+                gv => "New GV for *%s 0x%x%s %s GP:0x%x",
+                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
                 $gv->FILE, $gp
             );
 

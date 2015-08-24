@@ -344,9 +344,11 @@ sub svop_or_padop_pv {
                 return $package_pv;
             }
             elsif ( $sv->isa("B::IV") ) {
-                warn sprintf(
-                    "Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
-                    $sv->FLAGS
+                WARN(
+                    sprintf(
+                        "Experimentally try method_cv(sv=$sv,$package_pv) flags=0x%x",
+                        $sv->FLAGS
+                    )
                 );
 
                 # XXX untested!
@@ -735,10 +737,8 @@ sub do_labels ($@) {
 # we improve the method search heuristics by maintaining this mru list.
 sub push_package ($) {
     my $p = shift or return;
-    warn "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}\n"
-      if debug('cv')
-      or debug('pkg')
-      and !grep { $p eq $_ } @package_pv;
+    debug( pkg => "save package_pv \"$package_pv\" for method_name from @{[(caller(1))[3]]}" )
+      if !grep { $p eq $_ } @package_pv;
     @package_pv = grep { $p ne $_ } @package_pv if @package_pv;    # remove duplicates at the end
     unshift @package_pv, $p;                                       # prepend at the front
     mark_package($p);
@@ -756,7 +756,7 @@ sub method_named {
     # See L<perloptree/"Call a method">
     # We check it in op->_save_common
     if ( ref($name) eq 'B::CV' ) {
-        warn $name;
+        WARN $name;
         return $name;
     }
     my $method;
@@ -903,9 +903,7 @@ sub savepvn {
             $offset += length $str;
         }
         push @init, sprintf( "%s[%u] = '\\0';", $dest, $offset );
-        warn sprintf( "Copying overlong PV %s to %s\n", cstring($pv), $dest )
-          if debug('sv')
-          or debug('pv');
+        debug( pv => "Copying overlong PV %s to %s\n", cstring($pv), $dest );
     }
     else {
         # If READONLY and FAKE use newSVpvn_share instead. (test 75)
@@ -1038,7 +1036,7 @@ sub patch_dlsym {
         if ( $fullname eq 'svop const' ) {
             $name = "ascii_encoding";
             $pkg = 'Encode' unless $pkg;
-            warn "Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]\n";
+            WARN("Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]");
         }
     }
     elsif ( $pkg eq 'Net::LibIDN' ) {
@@ -1053,7 +1051,7 @@ sub patch_dlsym {
         mark_package( $pkg, 1 ) if $fullname =~ /^(svop const|padop)/;
     }
     else {
-        warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+        WARN("Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]");
     }
     return $ivx;
 }
@@ -1743,10 +1741,10 @@ sub inc_cleanup {
         }
     }
     if ( debug('pkg') and verbose() ) {
-        warn "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) . "\n";
-        warn "\%dumped_package:  " . join( " ", grep { $dumped_package{$_} } sort keys %dumped_package ) . "\n";
+        debug( pkg => "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) );
+        debug( pkg => "\%dumped_package:  " . join( " ", grep { $dumped_package{$_} } sort keys %dumped_package ) );
         my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
-        warn "\%INC: " . join( " ", @inc ) . "\n";
+        debug( pkg => "\%INC: " . join( " ", @inc ) );
     }
 
     # issue 340,350: do only on -fwalkall? do it in the main walker step
@@ -1969,7 +1967,7 @@ sub save_main_rest {
     # this is mainly for the test suite
     my $warner = $SIG{__WARN__};
 
-    warn "done main optree, walking symtable for extras\n"
+    WARN "done main optree, walking symtable for extras"
       if verbose()
       or debug('cv');
     init()->add("");
@@ -2113,7 +2111,7 @@ sub save_main_rest {
                     );
                 }
                 for my $mg ( @{ $init2_remap{$pkg}{MG} } ) {
-                    warn "init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}\n" if verbose();
+                    verbose("init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}");
                     if ($HAVE_DLFCN_DLOPEN) {
                         init2()->add( sprintf( "  ptr = dlsym(handle, %s);", cstring( $mg->{NAME} ) ) );
                     }
@@ -2194,7 +2192,7 @@ sub fixup_dynaloader_array {
         if ( !$xsub{$c} and !$include_package{$c} ) {
 
             # (hopefully, see test 103)
-            warn "no dl_init for $c, not marked\n" if verbose() and !$skip_package{$c};
+            verbose("no dl_init for $c, not marked") if !$skip_package{$c};
 
             # RT81332 pollute
             @dl_modules = grep { $_ ne $c } @dl_modules;
@@ -2205,7 +2203,7 @@ sub fixup_dynaloader_array {
     }
 
     for my $c ( sort keys %skip_package ) {
-        warn "no dl_init for $c, skipped\n" if verbose() and $xsub{$c};
+        verbose("no dl_init for $c, skipped") if $xsub{$c};
         delete $xsub{$c};
         $include_package{$c} = undef;
         @dl_modules = grep { $_ ne $c } @dl_modules;
@@ -2213,7 +2211,7 @@ sub fixup_dynaloader_array {
 
     # QUESTION: There's no readon to pump this back in if we're just rendering a template at this point.
     @DynaLoader::dl_modules = @dl_modules;
-    warn "\@dl_modules: ", join( " ", @dl_modules ), "\n" if verbose();
+    verbose( "\@dl_modules: " . join( " ", @dl_modules ) );
 
     foreach my $stashname (@dl_modules) {
         if ( $stashname eq 'attributes' ) {
@@ -2262,13 +2260,13 @@ sub fixup_dynaloader_array {
                 $use_xsloader = 1;
                 if ( $xsub{$stashname} eq 'Dynamic' ) {
                     no strict 'refs';
-                    warn "dl_init $stashname\n" if verbose();
+                    verbose("dl_init $stashname");
 
                     # just in case we missed it. DynaLoader really needs the @ISA (#308)
                     B::svref_2object( \@{ $stashname . "::ISA" } )->save;
                 }
                 else {    # XS: need to fix cx for caller[1] to find auto/...
-                    warn "bootstrapping $stashname added to XSLoader dl_init\n" if verbose();
+                    verbose("bootstrapping $stashname added to XSLoader dl_init");
                 }
                 if ($staticxs) {
                     my ($laststash) = $stashname =~ /::([^:]+)$/;
@@ -2283,18 +2281,17 @@ sub fixup_dynaloader_array {
                     for (@DynaLoader::dl_shared_objects) {
                         if (m{^(.+/)$sofile$}) {
                             print $xsfh $stashname, "\t", $_, "\n";
-                            warn "staticxs $stashname\t$_\n" if verbose();
+                            verbose("staticxs $stashname\t$_");
                             $sofile = '';
                             last;
                         }
                     }
                     print XS $stashname, "\n" if $sofile;    # error case
-                    warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and verbose();
+                    verbose("staticxs $stashname\t - $sofile not loaded") if $sofile;
                 }
             }
             else {
-                warn "no dl_init for $stashname, " . ( !$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}\n" )
-                  if verbose();
+                verbose( "no dl_init for $stashname, " . ( !$xsub{$stashname} ? "not marked\n" : "marked as $xsub{$stashname}" ) );
 
                 # XXX Too late. This might fool run-time DynaLoading.
                 # We really should remove this via init from @DynaLoader::dl_modules
@@ -2422,14 +2419,14 @@ sub compile {
                 elsif ( $arg eq "r" ) {
                     B::C::Config::Debug::enable_debug_level('runtime');
                     $SIG{__WARN__} = sub {
-                        warn @_;
+                        WARN(@_);
                         my $s = join( " ", @_ );
                         chomp $s;
                         init()->add( "/* " . $s . " */" ) if init();
                     };
                 }
                 else {
-                    warn "ignoring unknown debug option: $arg\n";
+                    WARN("ignoring unknown debug option: $arg");
                 }
             }
         }
@@ -2437,7 +2434,7 @@ sub compile {
             $arg ||= shift @options;
             $output_file = $arg;
             if ($check) {
-                warn "Warning: -o argument ignored with -c\n";
+                WARN("Warning: -o argument ignored with -c");
             }
         }
         elsif ( $opt eq "s" and $arg eq "taticxs" ) {
