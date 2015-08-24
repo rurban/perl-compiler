@@ -4,6 +4,7 @@ use strict;
 
 use Config;
 use B qw/cstring SVf_READONLY/;
+use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl/;
 use B::C::Helpers qw/mark_package/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -26,10 +27,10 @@ sub save {
     if ($name) {
 
         # It's a stash. See issue 79 + test 46
-        warn sprintf(
-            "Saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
+        debug(
+            hv => "Saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
             $name, $$hv, $hv->MAX
-        ) if $B::C::debug{hv};
+        );
 
         # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
         # the only symptom is that sv_reset tries to reset the PMf_USED flag of
@@ -77,7 +78,7 @@ sub save {
         }
         return $sym if skip_pkg($name) or $name eq 'main';
         init()->add("SvREFCNT_inc($sym);");
-        warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $B::C::debug{hv};
+        debug( hv => "Saving stash keys for HV \"$name\" from \"$fullname\"" );
     }
 
     # Ordinary HV or Stash
@@ -123,10 +124,10 @@ sub save {
 
     svsect()->debug( $fullname, $hv );
     my $sv_list_index = svsect()->index;
-    warn sprintf(
-        "saving HV %" . $fullname . " &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
+    debug(
+        hv => "saving HV %" . $fullname . " &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
         $$hv, $hv->MAX, $hv->KEYS
-    ) if $B::C::debug{hv};
+    );
 
     # XXX B does not keep the UTF8 flag [RT 120535] #200
     # shared heks only since 5.10, our fixed C.xs variant
@@ -141,28 +142,27 @@ sub save {
         for ( $i = 1; $i < @contents; $i += 2 ) {
             my $key = $contents[ $i - 1 ];                                       # string only
             my $sv  = $contents[$i];
-            warn sprintf( "HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV )
+            display_message( "HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV )
               if ref($sv) eq 'B::RV'
 
               #and $sv->RV->isa('B::CV')
               and defined objsym($sv)
-              and $B::C::debug{hv};
+              and debug('hv');
             if ($is_stash) {
                 if ( ref($sv) eq "B::GV" and $sv->NAME =~ /::$/ ) {
                     $sv = bless $sv, "B::STASHGV";                               # do not expand stash GV's only other stashes
-                    warn "saving STASH $fullname" . '{' . $key . "}\n" if $B::C::debug{hv};
+                    debug( hv => "saving STASH $fullname" . '{' . $key . "}" );
                     $contents[$i] = $sv->save( $fullname . '{' . $key . '}' );
                 }
                 else {
-                    warn "skip STASH symbol *", $fullname . $key, "\n" if $B::C::debug{hv};
+                    debug( hv => "skip STASH symbol *" . $fullname . $key );
                     $contents[$i] = undef;
                     $length -= 2;
 
-                    # warn "(length=$length)\n" if $B::C::debug{hv};
                 }
             }
             else {
-                warn "saving HV \$" . $fullname . '{' . $key . "}\n" if $B::C::debug{hv};
+                debug( hv => "saving HV \$" . $fullname . '{' . $key . "}" );
                 $contents[$i] = $sv->save( $fullname . '{' . $key . '}' );
             }
         }
@@ -192,13 +192,13 @@ sub save {
                             cstring($key), $cur, $value, 0
                         )
                     );    # !! randomized hash keys
-                    warn sprintf( "  HV key \"%s\" = %s\n", $key, $value ) if $B::C::debug{hv};
+                    debug( hv => "  HV key \"%s\" = %s\n", $key, $value );
                     if (   !$swash_ToCf
                         and $fullname =~ /^utf8::SWASHNEW/
                         and cstring($key) eq '"utf8\034unicore/To/Cf.pl\0340"'
                         and $cur == 23 ) {
                         $swash_ToCf = $value;
-                        warn sprintf("Found PL_utf8_tofold ToCf swash $value\n") if B::C::verbose();
+                        verbose("Found PL_utf8_tofold ToCf swash $value");
                     }
                 }
             }

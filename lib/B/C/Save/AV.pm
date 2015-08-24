@@ -4,6 +4,7 @@ use strict;
 
 use Config;
 use B qw/cstring SVf_IOK SVf_POK/;
+use B::C::Config;
 use B::C::File qw/init xpvavsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -50,15 +51,12 @@ sub save {
         $magic = $av->save_magic($fullname);
     }
 
-    if ( $B::C::debug{av} ) {
-        my $line = sprintf( "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, class($av) );
-        warn "$line\n";
-    }
+    debug( av => "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, ref($av) );
 
     # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
     if ( $fill > -1 and $magic !~ /D/ ) {
         my @array = $av->ARRAY;    # crashes with D magic (Getopt::Long)
-        if ( $B::C::debug{av} ) {
+        if ( debug('av') ) {
             my $i = 0;
             foreach my $el (@array) {
                 my $val = '';
@@ -68,7 +66,7 @@ sub save {
                     $val = $el->IVX           if $el->FLAGS & SVf_IOK;
                     $val = cstring( $el->PV ) if $el->FLAGS & SVf_POK;
                 }
-                warn sprintf( "AV $av \[%d] = %s $val\n", $i++, class($el) );
+                debug( av => "AV $av \[%d] = %s $val\n", $i++, class($el) );
             }
         }
 

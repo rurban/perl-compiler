@@ -17,7 +17,7 @@ BEGIN {
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
-warn %OP_COP if $B::C::debug{cops};
+debug( cops => %OP_COP );
 
 sub save {
     my ( $op, $level ) = @_;
@@ -34,7 +34,7 @@ sub save {
     if ( $type == $B::C::OP_UCFIRST ) {
         $B::C::fold = 1;
 
-        warn "enabling -ffold with ucfirst\n" if B::C::verbose();
+        verbose("enabling -ffold with ucfirst");
         require "utf8.pm" unless $B::C::savINC{"utf8.pm"};
         require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
         B::C::mark_package("utf8");
@@ -46,7 +46,7 @@ sub save {
                                     #   ck_eval upgrades the UNOP entertry to a LOGOP, but B gets us just a B::OP (BASEOP).
                                     #   op->other points to the leavetry op, which is needed for the eval scope.
         if ( $op->name eq 'entertry' ) {
-            warn "[perl #80622] Upgrading entertry from BASEOP to LOGOP...\n" if B::C::verbose();
+            verbose("[perl #80622] Upgrading entertry from BASEOP to LOGOP...");
             bless $op, 'B::LOGOP';
             return $op->save($level);
         }
@@ -54,7 +54,7 @@ sub save {
 
     # since 5.10 nullified cops free their additional fields
     if ( !$type and $OP_COP{ $op->targ } ) {
-        warn sprintf( "Null COP: %d\n", $op->targ ) if $B::C::debug{cops};
+        debug( cops => "Null COP: %d\n", $op->targ );
 
         copsect()->comment_common("line, stash, file, hints, seq, warnings, hints_hash");
         copsect()->add(
@@ -77,12 +77,10 @@ sub save {
         my $ix = opsect()->index;
         init()->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
           unless $B::C::optimize_ppaddr;
-        warn(
-            sprintf(
-                "  OP=%s targ=%d flags=0x%x private=0x%x\n",
-                peekop($op), $op->targ, $op->flags, $op->private
-            )
-        ) if $B::C::debug{op};
+        debug(
+            op => "  OP=%s targ=%d flags=0x%x private=0x%x\n",
+            peekop($op), $op->targ, $op->flags, $op->private
+        );
         savesym( $op, "&op_list[$ix]" );
     }
 }
@@ -95,7 +93,7 @@ sub fake_ppaddr {
     return "NULL" unless $_[0]->can('name');
     return $B::C::optimize_ppaddr
       ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
-      : ( B::C::verbose() ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
+      : ( verbose() ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
 }
 
 sub _save_common {
@@ -127,7 +125,7 @@ sub _save_common {
         if ( !$op->first->next->type ) {            # 5.8 ex-gvsv
             $pkgop = $op->first->next->next;
         }
-        warn "check package_pv " . $pkgop->name . " for method_name\n" if $B::C::debug{cv};
+        debug( cv => "check package_pv " . $pkgop->name . " for method_name" );
         my $pv = B::C::svop_or_padop_pv($pkgop);    # 5.13: need to store away the pkg pv
         if ( $pv and $pv !~ /[! \(]/ ) {
             $B::C::package_pv = $pv;
@@ -135,7 +133,7 @@ sub _save_common {
         }
         else {
             # mostly optimized-away padsv NULL pads with 5.8
-            warn "package_pv for method_name not found\n" if $B::C::debug{cv} or $B::C::debug{pkg};
+            display_message("package_pv for method_name not found") if debug('cv') or debug('pkg');
         }
     }
 

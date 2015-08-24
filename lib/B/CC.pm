@@ -3546,7 +3546,10 @@ sub import {
         }
         elsif ( $opt eq "v" ) {
             $verbose = 1;
-            B::C::verbose(1);    # crashed in C _save_common_middle(B::FAKEOP)
+            use B::C::Config::Debug;
+            B::C::Config::Debug::enabe_verbose();
+
+            #B::C::verbose(1);    # crashed in C _save_common_middle(B::FAKEOP)
         }
         elsif ( $opt eq "u" ) {
             $arg ||= shift @options;
@@ -3643,7 +3646,9 @@ sub import {
                     $B::C::debug{flags}++;
                 }
                 elsif ( exists $B::C::debug_map{$arg} ) {
-                    $B::C::verbose++;
+                    require B::C::Config::Debug;
+                    B::C::Config::Debug::enable_verbose();
+                    ++$verbose;
                     $B::C::debug{ $B::C::debug_map{$arg} }++;
                 }
                 else {

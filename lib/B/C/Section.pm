@@ -1,6 +1,7 @@
 package B::C::Section;
 use strict;
 
+use B::C::Config::Debug ();
 my %sections;
 
 # This isn't really a method. It's used to find another section if you don't know it.
@@ -40,6 +41,7 @@ sub remove {
 }
 
 sub name {
+
     return shift->{'name'};
 }
 
@@ -110,9 +112,7 @@ sub output {
             if ( !exists( $sym->{$1} ) and $1 ne 's\_0' ) {
                 $ref = $1;
                 $B::C::unresolved_count++;
-                if ($B::C::verbose) {
-                    warn "Warning: unresolved " . $self->name . " symbol $ref\n";
-                }
+                B::C::Config::Debug::verbose( "Warning: unresolved " . $self->name . " symbol $ref" );
             }
         }
         $val =~ s{(s\\_[0-9a-f]+)}{ exists($sym->{$1}) ? $sym->{$1} : $default; }ge;

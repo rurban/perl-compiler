@@ -4,6 +4,7 @@ use strict;
 
 use Config;
 use B qw/cstring cchar svref_2object/;
+use B::C::Config;
 use B::C::File qw/init svsect xpviosect/;
 
 use B::C::Helpers qw/mark_package/;
@@ -15,7 +16,7 @@ sub save_data {
 
     # XXX using $DATA might clobber it!
     my $ref = svref_2object( \\$data )->save;
-    init()->add("/* save $globname in RV ($ref) */") if B::C::verbose();
+    init()->add("/* save $globname in RV ($ref) */") if verbose();
     init()->add("GvSVn( $sym ) = (SV*)$ref;");
 
     # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
@@ -58,20 +59,21 @@ sub save {
     else {
         $len = 0;
     }
-    warn sprintf( "IO $fullname sv_list[%d] 0x%x (%s) = '%s'\n", svsect()->index + 1, $$io, $io->SvTYPE, $pv )
-      if $B::C::debug{sv};    # no method "SvTYPE" via package "B::IO"
+    debug( sv => "IO $fullname sv_list[%d] 0x%x (%s) = '%s'\n", svsect()->index + 1, $$io, $io->SvTYPE, $pv );
+
+    # no method "SvTYPE" via package "B::IO"
 
     # IFP in sv.sv_u.svu_fp
     xpviosect()->comment("STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, page_len, ..., type, flags");
     my $tmpl =
       "Nullhv, /*STASH later*/\n\t{0}, /*MAGIC later*/\n\t%u, /*cur*/\n\t%u, /*len*/\n\t{%d}, /*LINES*/\n\t0, /*OFP later*/\n\t{0}, /*dirp_u later*/\n\t%d, /*PAGE*/\n\t%d, /*PAGE_LEN*/\n\t%d, /*LINES_LEFT*/\n\t%s, /*TOP_NAME*/\n\tNullgv, /*top_gv later*/\n\t%s, /*fmt_name*/\n\tNullgv, /*fmt_gv later*/\n\t%s, /*bottom_name*/\n\tNullgv, /*bottom_gv later*/\n\t%s, /*type*/\n\t0x%x /*flags*/";
-    $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless B::C::verbose();
-    $tmpl =~ s{ /\*flags\*/$}{}   unless B::C::verbose();
+    $tmpl =~ s{ /\*.+?\*/\n\t}{}g unless verbose();
+    $tmpl =~ s{ /\*flags\*/$}{}   unless verbose();
     xpviosect()->add(
         sprintf(
             $tmpl,
             $cur, $len,
-            $io->LINES,       # moved to IVX with 5.11.1
+            $io->LINES,    # moved to IVX with 5.11.1
             $io->PAGE,            $io->PAGE_LEN,
             $io->LINES_LEFT,      "NULL",
             "NULL",               "NULL",
@@ -154,14 +156,14 @@ sub save {
             #  space closed             IGNORE
             #  \0   ex/closed?          IGNORE
             if ( $iotype eq "\c@" or $iotype eq " " ) {
-                warn sprintf(
-                    "Ignore closed IO Handle %s %s (%d)\n",
+                debug(
+                    gv => "Ignore closed IO Handle %s %s (%d)\n",
                     cstring($iotype), $fullname, $ioflags
-                ) if $B::C::debug{gv};
+                );
             }
             elsif ( $iotype =~ /[a>]/ ) {    # write-only
-                warn "Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd\n"
-                  if $fd >= 3 or B::C::verbose();
+                display_message("Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd")
+                  if $fd >= 3 or verbose();
                 my $mode = $iotype eq '>' ? 'w' : 'a';
 
                 #init()->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
@@ -176,8 +178,8 @@ sub save {
             elsif ( $iotype =~ /[<#\+]/ ) {
 
                 # skips warning if it's one of our PerlIO::scalar __DATA__ handles
-                warn "Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd\n"
-                  if $fd >= 3 or B::C::verbose();    # need to setup it up before
+                display_message("Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd")
+                  if $fd >= 3 or verbose();    # need to setup it up before
                 init()->add(
                     "/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
                     "IoIFP($sym) = IoOFP($sym) = PerlIO_fdopen($fd, \"r\");"
@@ -189,7 +191,7 @@ sub save {
             }
             else {
                 # XXX We should really die here
-                warn sprintf(
+                display_message(
                     "ERROR: Unhandled BEGIN-block IO Handle %s\&%d (%d) from %s\n",
                     cstring($iotype), $fd, $ioflags, $fullname
                 );
@@ -207,8 +209,7 @@ sub save {
     #  init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
     #  $stash->save;
     #  init()->add( sprintf( "IoSTASH(s\\_%x) = s\\_%x;", $$io, $$stash ) );
-    #  warn sprintf( "done saving STASH 0x%x for IO 0x%x\n", $$stash, $$io )
-    #    if $debug{gv};
+    #  debug( gv => "done saving STASH 0x%x for IO 0x%x\n", $$stash, $$io );
     #}
 
     return $sym;

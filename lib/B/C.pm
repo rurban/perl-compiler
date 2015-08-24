@@ -193,7 +193,7 @@ our (
     $fold,         $warnings, $const_strings, $stash,   $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist,
     $walkall
 );
-our $verbose    = 0;
+
 our %option_map = (
 
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
@@ -277,11 +277,6 @@ sub set_callback { $saveoptree_callback = shift }
 sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
 
-sub verbose {
-    if (@_) { $verbose = shift; }
-    else    { $verbose; }
-}
-
 sub module {
     if (@_) { $module = shift; }
     else    { $module; }
@@ -290,7 +285,7 @@ sub module {
 sub walk_and_save_optree {
     my ( $name, $root, $start ) = @_;
     if ($root) {
-        $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
+        verbose() ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
     }
     return objsym($start);
 }
@@ -960,7 +955,7 @@ sub save_remap {
     my $id = xpvmgsect()->index + 1;
 
     #my $svid = svsect()->index + 1;
-    warn "init remap for $key\: $name in xpvmg_list[$id]\n" if $verbose;
+    verbose("init remap for $key\: $name in xpvmg_list[$id]");
     my $props = { NAME => $name, ID => $id, MANDATORY => $mandatory };
     $init2_remap{$key}{MG} = [] unless $init2_remap{$key}{'MG'};
     push @{ $init2_remap{$key}{MG} }, $props;
@@ -980,7 +975,7 @@ sub patch_dlsym {
         $name =~ s/-/_/g;
         $pkg = 'Encode' if $pkg eq 'Encode::XS';    # TODO foreign classes
         mark_package($pkg) if $fullname eq '(unknown)' and USE_ITHREADS();
-        warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
+        verbose("$pkg $Encode::VERSION with remap support for $name");
     }
     elsif ( $pkg eq 'Encode::XS' ) {
         $pkg = 'Encode';
@@ -1003,7 +998,7 @@ sub patch_dlsym {
             $pkg =~ s/^(Encode::\w+)(::.*)/$1/;
             $name .= "_encoding";
             $name =~ s/-/_/g;
-            warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
+            verbose("$pkg $Encode::VERSION with remap support for $name");
             if ( $fullname eq '(unknown)' and USE_ITHREADS() ) {
                 mark_package( $pkg, 1 );
                 if ( $pkg ne 'Encode' ) {
@@ -1035,10 +1030,10 @@ sub patch_dlsym {
                 }
             }
             if ($name) {
-                warn "$pkg $Encode::VERSION remap found for constant $name\n" if $verbose;
+                verbose("$pkg $Encode::VERSION remap found for constant $name");
             }
             else {
-                warn "Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]\n";
+                verbose("Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]");
             }
         }
     }
@@ -1048,7 +1043,7 @@ sub patch_dlsym {
         $name .= "_encoding";
         $name =~ s/-/_/g;
         $pkg = 'Encode' unless $pkg;
-        warn "$pkg $Encode::VERSION with remap support for $name\n" if $verbose;
+        verbose("$pkg $Encode::VERSION with remap support for $name");
     }
 
     # now that is a weak heuristic, which misses #305
@@ -1066,7 +1061,7 @@ sub patch_dlsym {
 
     # new API (only Encode so far)
     if ( $pkg and $name and $name =~ /^[a-zA-Z_0-9-]+$/ ) {    # valid symbol name
-        warn "Remap IOK|POK $pkg with $name\n" if $verbose;
+        verbose("Remap IOK|POK $pkg with $name");
         save_remap( $pkg, $pkg, $name, $ivx, 0 );
         $ivx = "0UL /* $ivx => $name */";
         mark_package( $pkg, 1 ) if $fullname =~ /^(svop const|padop)/;
@@ -1205,7 +1200,7 @@ sub try_autoload {
         debug( cv => "require \"auto/$dir/$cvname.al\"" );
         eval { local $SIG{__DIE__}; require "auto/$dir/$cvname.al" unless $INC{"auto/$dir/$cvname.al"} };
         unless ($@) {
-            warn "Forced load of \"auto/$dir/$cvname.al\"\n" if $verbose;
+            verbose("Forced load of \"auto/$dir/$cvname.al\"");
             return svref_2object( \&$fullname )
               if defined &$fullname;
         }
@@ -1301,10 +1296,10 @@ sub mark_package {
         if (    exists $include_package{$package}
             and !$include_package{$package}
             and $savINC{ inc_packname($package) } ) {
-            warn sprintf(
+            verbose(
                 "$package previously deleted, save now%s\n",
                 $force ? " (forced)" : ""
-            ) if $verbose;
+            );
 
             # $include_package{$package} = 1;
             add_hashINC($package);
@@ -1313,7 +1308,7 @@ sub mark_package {
         else {
             debug( pkg => "mark $package%s\n", $force ? " (forced)" : "" )
               if !$include_package{$package}
-              and $verbose;
+              and verbose();
             $include_package{$package} = 1;
 
             walk_syms($package) if !$B::C::walkall;    # fixes i27-1
@@ -1327,21 +1322,21 @@ sub mark_package {
                 next if $isa eq $package;
                 if ( $isa eq 'DynaLoader' ) {
                     unless ( defined( &{ $package . '::bootstrap' } ) ) {
-                        warn "Forcing bootstrap of $package\n" if $verbose;
+                        verbose("Forcing bootstrap of $package");
                         eval { $package->bootstrap };
                     }
                 }
                 if ( !$include_package{$isa} and !$skip_package{$isa} ) {
                     no strict 'refs';
-                    warn "$isa saved (it is in $package\'s \@ISA)\n" if $verbose;
+                    verbose("$isa saved (it is in $package\'s \@ISA)");
                     B::svref_2object( \@{ $isa . "::ISA" } )->save;    #308
                     if ( exists $include_package{$isa} ) {
-                        warn "$isa previously deleted, save now\n" if $verbose;    # e.g. Sub::Name
+                        verbose("$isa previously deleted, save now");    # e.g. Sub::Name
                         mark_package($isa);
-                        walk_syms($isa);                                           # avoid deep recursion
+                        walk_syms($isa);                                 # avoid deep recursion
                     }
                     else {
-                        #warn "isa $isa save\n" if $verbose;
+                        #verbose( "isa $isa save" );
                         mark_package($isa);
                     }
                 }
@@ -1666,22 +1661,19 @@ sub save_unused_subs {
 
     #do
     @init_unused = grep { $include_package{$_} } keys %include_package;
-    if ($verbose) {
-        warn "Prescan for unused subs in $main " . ( $sav_debug{unused} ? " (silent)\n" : "\n" );
-    }
+
+    verbose( "Prescan for unused subs in $main " . ( $sav_debug{unused} ? " (silent)\n" : "\n" ) );
 
     # XXX TODO better strategy for compile-time added and required packages:
     # loop savecv and check pkg cache for new pkgs.
     # if so loop again with those new pkgs only, until the list of new pkgs is empty
     descend_marked_unused();
     walkpackages( \%{$main}, \&should_save, $main eq 'main::' ? undef : $main );
-    warn "Saving unused subs in $main" . ( $sav_debug{unused} ? " (silent)\n" : "\n" )
-      if $verbose;
+    verbose( "Saving unused subs in $main" . ( $sav_debug{unused} ? " (silent)\n" : "\n" ) );
     walksymtable( \%{$main}, "savecv", \&should_save );
     @unused = grep { $include_package{$_} } keys %include_package;
     @dumped = grep { $dumped_package{$_} and $_ ne 'main' } keys %dumped_package;
-    warn sprintf( "old unused: %d, new: %d, dumped: %d\n", scalar @init_unused, scalar @unused, scalar @dumped )
-      if $verbose;
+    verbose( "old unused: %d, new: %d, dumped: %d", scalar @init_unused, scalar @unused, scalar @dumped );
 
     if ( !$B::C::walkall ) {
         @unused = @init_unused = ();
@@ -1804,7 +1796,7 @@ sub dump_rest {
                 next;
             }
             $again++;
-            warn "$p marked but not saved, save now\n" if $verbose or $debug{pkg};
+            display_message("$p marked but not saved, save now") if verbose() or debug('pkg');
 
             # mark_package( $p, 1);
             #eval {
@@ -1819,12 +1811,12 @@ sub dump_rest {
 sub save_context {
 
     # forbid run-time extends of curpad syms, names and INC
-    warn "save context:\n" if $verbose;
+    verbose("save context:");
 
     # need to mark assign c3 to %main::. no need to assign the default dfs
     if ( mro::get_mro("main") eq 'c3' ) {
         mark_package( 'mro', 1 );
-        warn "set c3 for main\n" if $debug{pkg};
+        debug( pkg => "set c3 for main" );
         init()->add_eval('mro::set_mro("main", "c3");');
     }
 
@@ -1849,16 +1841,16 @@ sub save_context {
         # Record comppad sv's names, may not be static
         local $B::C::const_strings = 0;
         init()->add("/* curpad names */");
-        warn "curpad names:\n" if $verbose;
+        verbose("curpad names:");
         $curpad_nam = ( comppadlist->ARRAY )[0]->save('curpad_name');
-        warn "curpad syms:\n" if $verbose;
+        verbose("curpad syms:");
         init()->add("/* curpad syms */");
         $curpad_sym = ( comppadlist->ARRAY )[1]->save('curpad_syms');
     }
     my ( $inc_hv, $inc_av );
     {
         local $B::C::const_strings = 1 if $B::C::ro_inc;
-        warn "\%INC and \@INC:\n" if $verbose;
+        verbose("\%INC and \@INC:");
         init()->add('/* %INC */');
         inc_cleanup(0);
         my $inc_gv = svref_2object( \*main::INC );
@@ -1882,7 +1874,7 @@ sub save_context {
             }
         }
     }
-    warn "Saved \@ISA for: " . join( " ", @saved_isa ) . "\n" if @saved_isa and ( $verbose or $debug{pkg} );
+    display_message( "Saved \@ISA for: " . join( " ", @saved_isa ) ) if @saved_isa and ( verbose() or debug('pkg') );
     init()->add(
         "GvHV(PL_incgv) = $inc_hv;",
         "GvAV(PL_incgv) = $inc_av;",
@@ -1897,7 +1889,7 @@ sub save_context {
     );
 
     my $amagic_generate = B::amagic_generation();
-    warn "amagic_generation = $amagic_generate\n" if $verbose;
+    verbose("amagic_generation = $amagic_generate");
     init()->add("PL_amagic_generation = $amagic_generate;");
 }
 
@@ -1912,21 +1904,21 @@ sub descend_marked_unused {
         my $p = packname_inc($pack);
         mark_package($p) if !skip_pkg($p) and !$all_bc_deps{$p};
     }
-    if ( $debug{pkg} and $verbose ) {
-        warn "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) . "\n";
-        warn "\%skip_package: " . join( " ", sort keys %skip_package ) . "\n";
+    if ( verbose() ) {
+        debug( pkg => "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) );
+        debug( pkg => "\%skip_package: " . join( " ", sort keys %skip_package ) );
     }
     foreach my $pack ( sort keys %include_package ) {
         mark_package($pack) unless skip_pkg($pack);
     }
-    warn "descend_marked_unused: " . join( " ", sort keys %include_package ) . "\n" if $debug{pkg};
+    debug( pkg => "descend_marked_unused: " . join( " ", sort keys %include_package ) );
 }
 
 sub save_main {
-    warn "Starting compile\n" if $verbose;
-    warn "Walking tree\n"     if $verbose;
+    verbose("Starting compile");
+    verbose("Walking tree");
     $B::C::curcv = B::main_cv;
-    $verbose
+    verbose()
       ? walkoptree_slow( main_root, "save" )
       : walkoptree( main_root, "save" );
     save_main_rest();
@@ -1945,12 +1937,12 @@ sub save_sig {
         push @save_sig, [ $k, $cvref ];
     }
     unless (@save_sig) {
-        init()->add("/* no %SIG in BEGIN block */") if $verbose;
-        warn "no %SIG in BEGIN block\n" if $verbose;
+        verbose( init()->add("/* no %SIG in BEGIN block */") );
+        verbose("no %SIG in BEGIN block");
         return;
     }
-    init()->add("/* save %SIG */") if $verbose;
-    warn "save %SIG\n" if $verbose;
+    verbose( init()->add("/* save %SIG */") );
+    verbose("save %SIG");
     init()->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
     foreach my $x (@save_sig) {
         my ( $k, $cvref ) = @$x;
@@ -2046,7 +2038,7 @@ sub save_main_rest {
     }
     save_context() unless defined($module);
 
-    # warn "use_xsloader=$use_xsloader\n" if $verbose;
+    # verbose("use_xsloader=$use_xsloader");
     # If XSLoader was forced later, e.g. in curpad, INIT or END block
     force_saving_xsloader() if $use_xsloader;
 
@@ -2177,7 +2169,7 @@ sub save_main_rest {
     delete $xsub{'UNIVERSAL'};
 
     my $c_file_stash = {
-        'verbose'                          => $verbose,
+        'verbose'                          => verbose(),
         'debug'                            => \%debug,
         'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION",
         'DEBUG_LEAKING_SCALARS'            => DEBUG_LEAKING_SCALARS(),
@@ -2201,7 +2193,7 @@ sub save_main_rest {
     };
     chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
 
-    warn "Writing output\n" if $verbose;
+    verbose("Writing output");
     B::C::File::write($c_file_stash);
 }
 
@@ -2304,7 +2296,7 @@ sub compile {
             foreach my $arg ( split( //, $arg ) ) {
                 next if B::C::Config::Debug::enable_debug_from_map($arg);
                 if ( $arg eq "o" ) {
-                    $verbose++;
+                    B::C::Config::Debug::enabe_verbose();
                     B->debug(1);
                 }
                 elsif ( $arg eq "F" ) {
@@ -2346,7 +2338,7 @@ sub compile {
             mark_unused( $arg, 1 );
         }
         elsif ( $opt eq "v" ) {
-            $verbose = 1;
+            B::C::Config::Debug::enable_verbose();
         }
         elsif ( $opt eq "u" ) {
             $arg ||= shift @options;
@@ -2382,7 +2374,7 @@ sub compile {
                   if exists $optimization_map{$i};
             }
             unshift @options, @opt;
-            warn "options : " . ( join " ", @opt ) . "\n" if $verbose;
+            verbose( "options :", @opt );
         }
         elsif ( $opt eq "e" ) {
             push @eval_at_startup, $arg;

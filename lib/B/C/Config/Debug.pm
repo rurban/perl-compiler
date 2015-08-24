@@ -46,6 +46,31 @@ sub enable_debug_level {
     return;
 }
 
+my $verbose = 0;
+sub enable_verbose { $verbose++ }
+
+sub verbose {
+    return $verbose unless $verbose;
+    display_message(@_);
+    return $verbose;
+}
+
+# TODO:
+sub WARN  { ... }
+sub INFO  { ... }
+sub FATAL { ... }
+
+sub display_message {
+    return unless scalar @_;
+    my $txt = join( " ", map { defined $_ ? $_ : 'undef' } @_ );
+
+    # just safety to avoid double \n
+    chomp $txt;
+    warn "$txt\n";
+
+    return;
+}
+
 =pod
 =item debug( $level, @msg )
  always return the current status for the level
@@ -69,8 +94,7 @@ sub debug {
             $warn = sprintf( $str, @msg );
         }
         $warn = '' unless defined $warn;
-        chomp $warn;                # just safety to avoid double \n
-        warn "[$level] $warn\n";    # can be improved to a better loggin system
+        display_message("[$level] $warn");
     }
 
     return $debug{$level};

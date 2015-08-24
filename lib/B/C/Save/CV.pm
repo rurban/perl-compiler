@@ -23,7 +23,7 @@ sub save {
     my ($cv) = @_;
     my $sym = objsym($cv);
     if ( defined($sym) ) {
-        warn sprintf( "CV 0x%x already saved as $sym\n", $$cv ) if $$cv and $B::C::debug{cv};
+        debug( cv => "CV 0x%x already saved as $sym\n", $$cv ) if $$cv;
         return $sym;
     }
     my $gv = $cv->GV;
@@ -33,10 +33,10 @@ sub save {
         $cvstashname = $gv->STASH->NAME;
         $cvname      = $gv->NAME;
         $fullname    = $cvstashname . '::' . $cvname;
-        warn sprintf(
-            "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
+        debug(
+            cv => "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
             $$cv, $$gv, $fullname, $CvFLAGS
-        ) if $B::C::debug{cv};
+        );
 
         # XXX not needed, we already loaded utf8_heavy
         #return if $fullname eq 'utf8::AUTOLOAD';
@@ -46,7 +46,7 @@ sub save {
     }
     elsif ( $cv->is_lexsub($gv) ) {
         $fullname = $cv->NAME_HEK;
-        warn sprintf("CV NAME_HEK $fullname\n") if $B::C::debug{cv};
+        debug( cv => "CV NAME_HEK $fullname" );
         if ( $fullname =~ /^(.*)::(.*?)$/ ) {
             $cvstashname = $1;
             $cvname      = $2;
@@ -69,7 +69,7 @@ sub save {
         if ( $cvname eq "bootstrap" and !$B::C::xsub{$stashname} ) {
             my $file = $gv->FILE;
             decl()->add("/* bootstrap $file */");
-            warn "Bootstrap $stashname $file\n" if B::C::verbose();
+            verbose("Bootstrap $stashname $file");
             B::C::mark_package($stashname);
 
             # Without DynaLoader we must boot and link static
@@ -110,7 +110,7 @@ sub save {
             # INIT is removed from the symbol table, so this call must come
             # from PL_initav->save. Re-bootstrapping  will push INIT back in,
             # so nullop should be sent.
-            warn $fullname . "\n" if $B::C::debug{sub};
+            debug( sub => $fullname );
             return qq/NULL/;
         }
         else {
@@ -130,11 +130,10 @@ sub save {
                 #}
             }
         }
-        warn $fullname . "\n" if $B::C::debug{sub};
+        debug( 'sub' => $fullname );
         unless ( B::C::in_static_core( $stashname, $cvname ) ) {
             no strict 'refs';
-            warn sprintf( "XSUB $fullname CV 0x%x\n", $$cv )
-              if $B::C::debug{cv};
+            debug( cv => "XSUB $fullname CV 0x%x\n", $$cv );
             svref_2object( \*{"$stashname\::bootstrap"} )->save
               if $stashname;    # and defined ${"$stashname\::bootstrap"};
                                 # delsym($cv);
@@ -142,22 +141,21 @@ sub save {
         }
         else {                  # Those cvs are already booted. Reuse their GP.
                                 # Esp. on windows it is impossible to get at the XS function ptr
-            warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv ) if $B::C::debug{cv};
+            debug( cv => "core XSUB $fullname CV 0x%x\n", $$cv );
             return qq/get_cv("$fullname", 0)/;
         }
     }
     if ( $cvxsub && $cvname eq "INIT" ) {
         no strict 'refs';
-        warn $fullname . "\n" if $B::C::debug{sub};
+        debug( sub => $fullname );
         return svref_2object( \&Dummy_initxs )->save;
     }
 
     if ( $isconst and !( $CvFLAGS & CVf_ANON ) ) {
         my $stash = $gv->STASH;
-        warn sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname )
-          if $B::C::debug{cv};
+        debug( cv => sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname ) );
 
-        # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $B::C::debug{sub};
+        # debug( sub => "%s::%s\n", $cvstashname, $cvname);
         my $stsym = $stash->save;
         my $name  = cstring($cvname);
         my $sv    = $cv->XSUBANY;
@@ -188,8 +186,7 @@ sub save {
         $sym = savesym( $cv, "&sv_list[$sv_ix]" );
     }
 
-    warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
-      if $B::C::debug{cv};
+    debug( cv => "saving $fullname CV 0x%x as $sym\n", $$cv );
 
     # fixme: interesting have a look at it
     if ( $fullname eq 'utf8::SWASHNEW' ) {    # bypass utf8::AUTOLOAD, a new 5.13.9 mess
@@ -203,7 +200,7 @@ sub save {
     # fixme: can probably be removed
     if ( $fullname eq 'IO::Socket::SSL::SSL_Context::new' ) {
         if ( $IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984' ) {
-            warn "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n" . "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]\n";
+            display_message( "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n" . "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]" );
         }
     }
 
@@ -226,10 +223,10 @@ sub save {
         }
         if ($reloaded) {
             $gv = $cv->GV;
-            warn sprintf(
-                "Redefined CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
+            debug(
+                cv => "Redefined CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
                 $$cv, $$gv, $fullname, $CvFLAGS
-            ) if $B::C::debug{cv};
+            );
             $sym    = savesym( $cv, $sym );
             $root   = $cv->ROOT;
             $cvxsub = $cv->XSUB;
@@ -249,7 +246,7 @@ sub save {
                     if ($$gvnew) {
                         if ( $cvstashname ne $gvnew->STASH->NAME or $cvname ne $gvnew->NAME ) {    # UNIVERSAL or AUTOLOAD
                             my $newname = $gvnew->STASH->NAME . "::" . $gvnew->NAME;
-                            warn " New $newname autoloaded. remove old cv\n" if $B::C::debug{sub};    # and wrong GV?
+                            debug( sub => " New $newname autoloaded. remove old cv" );
                             unless ($new_cv_fw) {
                                 svsect()->remove;
                                 xpvcvsect()->remove;
@@ -260,7 +257,7 @@ sub save {
                             my $newsym = svref_2object( \*{$newname} )->save;
                             my $cvsym = defined objsym($cv) ? objsym($cv) : $cv->save($newname);
                             if ( my $oldsym = objsym($gv) ) {
-                                warn "Alias polluted $oldsym to $newsym\n" if $B::C::debug{gv};
+                                debug( gv => "Alias polluted $oldsym to $newsym" );
                                 init()->add("$oldsym = $newsym;");
                                 delsym($gv);
                             }    # else {
@@ -270,7 +267,7 @@ sub save {
                         }
                     }
                     $sym = savesym( $cv, "&sv_list[$sv_ix]" );    # GOTO
-                    warn "$fullname GOTO\n" if B::C::verbose();
+                    verbose("$fullname GOTO");
                 }
             }
             else {
@@ -281,7 +278,7 @@ sub save {
                 if ($$gv) {
                     if ( $cvstashname ne $gv->STASH->NAME or $cvname ne $gv->NAME ) {    # UNIVERSAL or AUTOLOAD
                         my $newname = $gv->STASH->NAME . "::" . $gv->NAME;
-                        warn "Recalculated root and xsub $newname. remove old cv\n" if B::C::verbose();
+                        verbose("Recalculated root and xsub $newname. remove old cv");
                         svsect()->remove;
                         xpvcvsect()->remove;
                         delsym($cv);
@@ -290,29 +287,28 @@ sub save {
                 }
             }
             if ( $$root || $cvxsub ) {
-                warn "Successful forced autoload\n" if B::C::verbose() and $B::C::debug{cv};
+                debug( cv => "Successful forced autoload" ) if verbose();
             }
         }
     }
     if ( !$$root ) {
         if ( exists &$fullname ) {
-            warn "Warning: Empty &" . $fullname . "\n" if $B::C::debug{sub};
-            init()->add("/* empty CV $fullname */") if B::C::verbose() or $B::C::debug{sub};
+            debug( sub => "Warning: Empty &" . $fullname );
+            init()->add("/* empty CV $fullname */") if verbose() or debug('sub');
         }
         elsif ( $cv->is_lexsub($gv) ) {
 
             # need to find the attached lexical sub (#130 + #341) at run-time
             # in the PadNAMES array. So keep the empty PVCV
-            warn "lexsub &" . $fullname . " saved as empty $sym\n" if $B::C::debug{sub};
+            debug( sub => "lexsub &" . $fullname . " saved as empty $sym" );
         }
         else {
-            warn "Warning: &" . $fullname . " not found\n" if $B::C::debug{sub};
-            init()->add("/* CV $fullname not found */") if B::C::verbose() or $B::C::debug{sub};
+            debug( sub => "Warning: &" . $fullname . " not found" );
+            init()->add("/* CV $fullname not found */") if verbose() or debug('sub');
 
             # This block broke test 15, disabled
             if ( $sv_ix == svsect()->index and !$new_cv_fw ) {    # can delete, is the last SV
-                warn "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]\n"
-                  if $B::C::debug{cv};
+                debug( cv => "No definition for sub $fullname (unable to autoload), skip CV[$sv_ix]" );
                 svsect()->remove;
                 xpvcvsect()->remove;
                 delsym($cv);
@@ -323,8 +319,9 @@ sub save {
             }
             else {
                 # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
-                warn "No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]\n"
-                  if $B::C::debug{cv} or B::C::verbose();
+                display_message("No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]")
+                  if debug('cv')
+                  or verbose();
 
                 # continue, must save the 2 symbols from above
             }
@@ -339,10 +336,10 @@ sub save {
     my $xsub       = 0;
     my $xsubany    = "Nullany";
     if ($$root) {
-        warn sprintf(
-            "saving op tree for CV 0x%x, root=0x%x\n",
+        debug(
+            gv => "saving op tree for CV 0x%x, root=0x%x\n",
             $$cv, $$root
-        ) if $B::C::debug{cv} and $B::C::debug{gv};
+        ) if debug('cv');
         my $ppname = "";
         if ( $cv->is_lexsub($gv) ) {
             my $name = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "anonlex";
@@ -371,9 +368,6 @@ sub save {
         }
         $startfield = B::C::saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
 
-        #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
-        #  $$cv, $B::C::debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
-        #  if $B::C::debug{cv};
         # XXX missing cv_start for AUTOLOAD on 5.8
         $startfield = objsym( $root->next ) unless $startfield;    # 5.8 autoload has only root
         $startfield = "0" unless $startfield;
@@ -381,30 +375,29 @@ sub save {
 
             # XXX readonly comppad names and symbols invalid
             #local $B::C::pv_copy_on_grow = 1 if $B::C::ro_inc;
-            warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
-              if $B::C::debug{cv} and $B::C::debug{gv};
+            debug( gv => "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
+              if debug('cv');
 
             # XXX avlen 2
             $padlistsym = $padlist->save( $fullname . ' :pad' );
-            warn sprintf(
-                "done saving %s 0x%x for CV 0x%x\n",
+            debug(
+                gv => "done saving %s 0x%x for CV 0x%x\n",
                 $padlistsym, $$padlist, $$cv
-            ) if $B::C::debug{cv} and $B::C::debug{gv};
+            ) if debug('cv');
 
             # do not record a forward for the pad only
 
             init()->add("CvPADLIST($sym) = $padlistsym;");
         }
-        warn $fullname . "\n" if $B::C::debug{sub};
+        debug( sub => $fullname );
     }
     elsif ( $cv->is_lexsub($gv) ) {
         ;
     }
     elsif ( !exists &$fullname ) {
-        warn $fullname . " not found\n" if $B::C::debug{sub};
-        warn "No definition for sub $fullname (unable to autoload)\n"
-          if $B::C::debug{cv};
-        init()->add("/* $fullname not found */") if B::C::verbose() or $B::C::debug{sub};
+        debug( sub => $fullname . " not found" );
+        debug( cv  => "No definition for sub $fullname (unable to autoload)" );
+        init()->add("/* $fullname not found */") if verbose() or debug('sub');
 
         # XXX empty CV should not be saved. #159, #235
         # svsect()->remove( $sv_ix );
@@ -434,9 +427,6 @@ sub save {
         $sym = savesym( $cv, "&sv_list[$sv_ix]" );
     }
 
-    # $pv = '' unless defined $pv;    # Avoid use of undef warnings
-    #warn sprintf( "CV prototype %s for CV 0x%x\n", cstring($pv), $$cv )
-    #  if $pv and $B::C::debug{cv};
     my $proto = defined $pv ? cstring($pv) : 'NULL';
     my $pvsym = 'NULL';
     my $cur   = defined $pv ? $cv->CUR : 0;
@@ -489,7 +479,7 @@ sub save {
       );
 
     # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
-    warn "lexwarnsym in XPVCV OUTSIDE: $xpvc" if $xpvc =~ /, \(CV\*\)iv\d/;    # t/testc.sh -q -O3 227
+    display_message("lexwarnsym in XPVCV OUTSIDE: $xpvc") if $xpvc =~ /, \(CV\*\)iv\d/;    # t/testc.sh -q -O3 227
     if ( !$new_cv_fw ) {
         symsect()->add("XPVCVIX$xpvcv_ix\t$xpvc");
 
@@ -523,10 +513,8 @@ sub save {
                 $$cv, $$gvstash
             )
         ) if $gvstash and !$B::C::stash;
-        warn sprintf( "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
-          if $gvstash
-          and $B::C::debug{cv}
-          and $B::C::debug{gv};
+        debug( gv => "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
+          if $gvstash and debug('cv');
 
     }
     if ( $cv->OUTSIDE_SEQ ) {
@@ -552,7 +540,7 @@ sub save {
     if ( $gv and $$gv ) {
 
         #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
-        warn sprintf( "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if $B::C::debug{cv} and $B::C::debug{gv};
+        debug( gv => "Saving GV 0x%x for CV 0x%x\n", $$gv, $$cv ) if debug('cv');
         $gv->save;
 
         init()->add( sprintf( "CvGV_set((CV*)%s, (GV*)%s);", $sym, objsym($gv) ) );
@@ -561,10 +549,10 @@ sub save {
         # Assertion "!CvCVGV_RC(cv)" failed: file "gv.c", line 219, function: Perl_cvgv_set
         # We init with CvFLAGS = 0 and set it later, as successfully done in the Bytecode compiler
         if ( $CvFLAGS & 0x0400 ) {    # CVf_CVGV_RC
-            warn sprintf(
-                "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
+            debug(
+                cv => "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
                 $cv->FLAGS, $B::C::debug{flags} ? $cv->flagspv : "", $CvFLAGS & ~0x400
-            ) if $B::C::debug{cv};
+            );
             init()->add(
                 sprintf(
                     "CvFLAGS((CV*)%s) = 0x%x; %s", $sym, $CvFLAGS,
@@ -574,10 +562,10 @@ sub save {
         }
         init()->add("CvSTART($sym) = $startfield;");    # XXX TODO someone is overwriting CvSTART also
 
-        warn sprintf(
-            "done saving GV 0x%x for CV 0x%x\n",
+        debug(
+            gv => "done saving GV 0x%x for CV 0x%x\n",
             $$gv, $$cv
-        ) if $B::C::debug{cv} and $B::C::debug{gv};
+        ) if debug('cv');
     }
     unless ($B::C::optimize_cop) {
         if ( USE_MULTIPLICITY() ) {
@@ -596,8 +584,8 @@ sub save {
         # $sym fixed test 27
         init()->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
 
-        warn sprintf( "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
-          if $B::C::debug{cv} and $B::C::debug{gv};
+        debug( gv => "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
+          if debug('cv');
     }
     my $magic = $cv->MAGIC;
     if ( $magic and $$magic ) {
@@ -612,7 +600,7 @@ sub save {
         );
     }
     if ($cur) {
-        warn sprintf( "Saving CV proto %s for CV $sym 0x%x\n", cstring($pv), $$cv ) if $B::C::debug{cv};
+        debug( cv => "Saving CV proto %s for CV $sym 0x%x\n", cstring($pv), $$cv );
     }
 
     # issue 84: empty prototypes sub xx(){} vs sub xx{}

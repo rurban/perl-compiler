@@ -9,7 +9,9 @@ use Exporter ();
 our @ISA = qw(Exporter);
 
 # alias
-*debug = \&B::C::Config::Debug::debug;
+*debug           = \&B::C::Config::Debug::debug;
+*verbose         = \&B::C::Config::Debug::verbose;
+*display_message = \&B::C::Config::Debug::display_message;
 
 sub _autoload_map {
     my $map = {
@@ -37,7 +39,7 @@ my $_autoload;
 BEGIN {
     $_autoload = _autoload_map();
     our @EXPORT_OK = keys %$_autoload;
-    push @EXPORT_OK, qw/debug/;
+    push @EXPORT_OK, qw/debug display_message verbose/;
     our @EXPORT = @EXPORT_OK;
 }
 
