@@ -103,15 +103,26 @@ sub debug {
 
     die "Unknown debug level $level" unless $level && defined $debug{$level};
 
-    my $cnt = @msg;
     if ( $debug{$level} && scalar @msg ) {
+        @msg = map { defined $_ ? $_ : 'undef' } @msg;
+        my $cnt = @msg;
         my $warn;
         if ( $cnt == 1 ) {
             $warn = $msg[0];
         }
         else {
             my $str = shift @msg;
-            $warn = sprintf( $str, @msg );
+            eval {
+                $warn = sprintf( $str, @msg );
+                1;
+            } or do {
+                my $error = $@;
+
+                # track the error source when possible
+                eval q/require Carp; 1/ or die $error;
+                Carp::croak( "Error: $error", "[level=$level] ", "STR:'$str' ; ", join( ', ', @msg ) );
+            };
+
         }
         $warn = '' unless defined $warn;
         display_message("[$level] $warn");

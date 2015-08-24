@@ -66,7 +66,7 @@ sub save {
                     $val = $el->IVX           if $el->FLAGS & SVf_IOK;
                     $val = cstring( $el->PV ) if $el->FLAGS & SVf_POK;
                 }
-                debug( av => "AV $av \[%d] = %s $val\n", $i++, ref($el) );
+                debug( av => "AV %s \[%d] = %s %s", $av, $i++, ref($el), $val );
             }
         }
 

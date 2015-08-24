@@ -125,8 +125,8 @@ sub save {
     svsect()->debug( $fullname, $hv );
     my $sv_list_index = svsect()->index;
     debug(
-        hv => "saving HV %" . $fullname . " &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
-        $$hv, $hv->MAX, $hv->KEYS
+        hv => "saving HV %%%s &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
+        $fullname, $$hv, $hv->MAX, $hv->KEYS
     );
 
     # XXX B does not keep the UTF8 flag [RT 120535] #200

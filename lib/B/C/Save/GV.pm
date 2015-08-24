@@ -103,7 +103,7 @@ sub save {
     }
 
     debug(
-        gv => "  GV %s $sym type=%d, flags=0x%x %s",
+        gv => "  GV %s $sym type=%d, flags=0x%x",
         $gv->name(),
 
         # B::SV::SvTYPE not with 5.6
@@ -220,8 +220,8 @@ sub save {
         $gp = $gv->GP;    # B limitation
         if ( defined($egvsym) && $egvsym !~ m/Null/ ) {
             debug(
-                gv => "Shared GV alias for *$fullname 0x%x%s %s to $egvsym",
-                $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
+                gv => "Shared GV alias for *%s 0x%x%s to %s",
+                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "", $egvsym
             );
 
             # Shared glob *foo = *bar
