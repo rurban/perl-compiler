@@ -154,7 +154,7 @@ sub write {
 
     open( $cfh, '>>', $self->{'c_file_name'} ) or die("Failed to open $self->{c_file_name} for write: $!");
 
-    output_main_rest();
+    output_main_rest($c_file_stash);
 
     if ( defined($B::C::module) ) {
         my $cmodule = $B::C::module ? $B::C::module : "main";
@@ -194,64 +194,12 @@ EOT
 }
 
 sub output_main_rest {
+    my $c_file_stash = shift or die;
 
-    my ( $dl, $xs );
-    my @dl_modules = @DynaLoader::dl_modules;
+    my $dl         = $c_file_stash->{'dl'};
+    my $xs         = $c_file_stash->{'xs'};
+    my @dl_modules = @{ $c_file_stash->{'dl_modules'} };
 
-    # filter out unused dynaloaded B modules, used within the compiler only.
-    for my $c (qw(B B::C)) {
-        if ( !$B::C::xsub{$c} and !$B::C::include_package{$c} ) {
-
-            # (hopefully, see test 103)
-            warn "no dl_init for $c, not marked\n" if verbose() and !$B::C::skip_package{$c};
-
-            # RT81332 pollute
-            @dl_modules = grep { $_ ne $c } @dl_modules;
-
-            # XXX Be sure to store the new @dl_modules
-        }
-    }
-    for my $c ( sort keys %B::C::skip_package ) {
-        warn "no dl_init for $c, skipped\n" if verbose() and $B::C::xsub{$c};
-        delete $B::C::xsub{$c};
-        $B::C::include_package{$c} = undef;
-        @dl_modules = grep { $_ ne $c } @dl_modules;
-    }
-    @DynaLoader::dl_modules = @dl_modules;
-    warn "\@dl_modules: ", join( " ", @dl_modules ), "\n" if verbose();
-    foreach my $stashname (@dl_modules) {
-        my $incpack = inc_packname($stashname);
-
-        #unless (exists $INC{$incpack}) { # skip deleted packages
-        #  warn "XXX skip dl_init for $stashname !\$INC{$incpack}\n" if $self->{'debug'}->{pkg};
-        #  delete $B::C::xsub{$stashname};
-        #  @dl_modules = grep { $_ ne $stashname } @dl_modules;
-        #}
-        if ( $stashname eq 'attributes' ) {
-            $B::C::xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
-        }
-
-        # TODO: special Moose bootstrap quirks (XS since which version?)
-        if ( $stashname eq 'Moose' and $B::C::include_package{Moose} and $Moose::VERSION gt '2.0' ) {
-            $B::C::xsub{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
-        }
-        if ( exists( $B::C::xsub{$stashname} ) && $B::C::xsub{$stashname} =~ m/^Dynamic/ ) {
-
-            # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
-            # otherwise we only have -e
-            $xs++ if $B::C::xsub{$stashname} ne 'Dynamic';
-            $dl++;
-        }
-    }
-    warn "\%B::C::xsub: ", join( " ", sort keys %B::C::xsub ), "\n" if verbose() and $self->{'debug'}->{cv};
-
-    # XXX Adding DynaLoader is too late here! The sections like $init are already dumped (#125)
-    if ( $dl and !$B::C::curINC{'DynaLoader.pm'} ) {
-        die "Error: DynaLoader required but not dumped. Too late to add it.\n";
-    }
-    elsif ( $xs and !$B::C::curINC{'XSLoader.pm'} ) {
-        die "Error: XSLoader required but not dumped. Too late to add it.\n";
-    }
     if ($dl) {
         if ( grep { $_ eq 'attributes' } @dl_modules ) {
 

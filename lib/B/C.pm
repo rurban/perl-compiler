@@ -2190,11 +2190,75 @@ sub save_main_rest {
         'static_free'                      => \@static_free,
         'xsub'                             => \%xsub,
         'curINC'                           => \%curINC,
+        fixup_dynaloader_array(),    # Returns 3 K/V pairs
     };
     chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
 
     verbose("Writing output");
     B::C::File::write($c_file_stash);
+}
+
+sub fixup_dynaloader_array {
+    my ( $dl, $xs );
+    my @dl_modules = @DynaLoader::dl_modules;
+
+    # filter out unused dynaloaded B modules, used within the compiler only.
+    for my $c (qw(B B::C)) {
+        if ( !$xsub{$c} and !$include_package{$c} ) {
+
+            # (hopefully, see test 103)
+            warn "no dl_init for $c, not marked\n" if verbose() and !$skip_package{$c};
+
+            # RT81332 pollute
+            @dl_modules = grep { $_ ne $c } @dl_modules;
+
+            # XXX Be sure to store the new @dl_modules
+            # QUESTION: WHY??? we're rendering already and done walking the code tree, right? There's no value
+        }
+    }
+
+    for my $c ( sort keys %skip_package ) {
+        warn "no dl_init for $c, skipped\n" if verbose() and $xsub{$c};
+        delete $xsub{$c};
+        $include_package{$c} = undef;
+        @dl_modules = grep { $_ ne $c } @dl_modules;
+    }
+
+    # QUESTION: There's no readon to pump this back in if we're just rendering a template at this point.
+    @DynaLoader::dl_modules = @dl_modules;
+    warn "\@dl_modules: ", join( " ", @dl_modules ), "\n" if verbose();
+
+    foreach my $stashname (@dl_modules) {
+        if ( $stashname eq 'attributes' ) {
+            $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
+        }
+
+        if ( $stashname eq 'Moose' and $include_package{'Moose'} and $Moose::VERSION gt '2.0' ) {
+            $xsub{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
+        }
+        if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
+
+            # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
+            # otherwise we only have -e
+            $xs++ if $xsub{$stashname} ne 'Dynamic';
+            $dl++;
+        }
+    }
+    warn "\%B::C::xsub: ", join( " ", sort keys %xsub ), "\n" if verbose() and $debug{'cv'};
+
+    # XXX Adding DynaLoader is too late here! The sections like $init are already dumped (#125)
+    # QUESTION: What do we need to alter? cause now we're uding template, it's not too late.
+    # (Though technically I've never seen this die.)
+    # Something to do with 5.20? https://code.google.com/p/perl-compiler/issues/detail?id=125
+    if ( $dl and !$curINC{'DynaLoader.pm'} ) {
+        die "Error: DynaLoader required but not dumped. Too late to add it.\n";
+    }
+    elsif ( $xs and !$curINC{'XSLoader.pm'} ) {
+        die "Error: XSLoader required but not dumped. Too late to add it.\n";
+    }
+
+    # TODO: This is temporary mostly during the re-factor.
+    return ( 'dl' => \$dl, 'xs' => \$xs, 'dl_modules' => \@dl_modules );
 }
 
 # needed for init2 remap and Dynamic annotation
