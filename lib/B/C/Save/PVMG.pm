@@ -90,7 +90,7 @@ sub save_magic {
         $flagspv = $sv->flagspv if debug('flags') and !$sv->MAGICAL;
         debug(
             mg => "saving magic for %s $fullname (0x%x) flags=0x%x%s  - called from %s:%s\n",
-            class($sv), $$sv, $sv_flags, debug('flags') ? "(" . $flagspv . ")" : "",
+            ref($sv), $$sv, $sv_flags, debug('flags') ? "(" . $flagspv . ")" : "",
             @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
         );
     }

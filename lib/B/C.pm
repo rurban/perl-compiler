@@ -2410,7 +2410,7 @@ sub compile {
                 $all_bc_deps{'B::Flags'}++;
             }
             foreach my $arg ( split( //, $arg ) ) {
-                next if B::C::Config::Debug::enable_debug_from_map($arg);
+                next if B::C::Config::Debug::enable_debug_with_map($arg);
                 if ( $arg eq "o" ) {
                     B::C::Config::Debug::enabe_verbose();
                     B->debug(1);

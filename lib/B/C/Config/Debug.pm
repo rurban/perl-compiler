@@ -86,7 +86,7 @@ sub display_message {
 
     # just safety to avoid double \n
     chomp $txt;
-    warn "$txt\n";
+    print STDERR "$txt\n";
 
     return;
 }
