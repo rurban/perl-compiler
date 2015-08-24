@@ -159,8 +159,7 @@ sub write {
         my $cmodule = $B::C::module ? $B::C::module : "main";
         $cmodule =~ s/::/__/g;
 
-        init()->add("/* curpad syms */");
-        my $curpad_sym = ( comppadlist->ARRAY )[1]->save;
+        my $curpad_sym = $c_file_stash->{'module_curpad_sym'};
 
         print {$cfh} <<"EOT";
 

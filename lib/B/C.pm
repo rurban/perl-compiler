@@ -2154,9 +2154,16 @@ sub save_main_rest {
         'xsub'                             => \%xsub,
         'curINC'                           => \%curINC,
         'staticxs'                         => $staticxs,
+        'module'                           => $module,
         fixup_dynaloader_array(),    # Returns 4 K/V pairs
     };
     chomp $c_file_stash->{'compile_stats'};    # Injects a new line when you call compile_stats()
+
+    # Was in a section that wrote some stuff out instead of main's subroutine.
+    if ( defined $module ) {
+        init()->add("/* curpad syms */");
+        $c_file_stash->{'module_curpad_sym'} = ( comppadlist->ARRAY )[1]->save;
+    }
 
     verbose("Writing output");
     B::C::File::write($c_file_stash);
