@@ -376,14 +376,4 @@ EOT1
     }    # module
 }
 
-# This is a redundant helper sub from B::C
-sub inc_packname {
-    my $package = shift;
-
-    # See below at the reverse packname_inc: utf8 => utf8.pm + utf8_heavy.pl
-    $package =~ s/\:\:/\//g;
-    $package .= '.pm';
-    return $package;
-}
-
 1;
