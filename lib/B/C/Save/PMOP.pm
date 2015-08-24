@@ -33,7 +33,7 @@ sub save {
     # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
     $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
     if ( USE_ITHREADS() && $op->name eq "pushre" ) {
-        warn "PMOP::save saving a pp_pushre as int ${replroot}\n" if $B::C::debug{gv};
+        debug( gv => "PMOP::save saving a pp_pushre as int ${replroot}" );
         $replrootfield = "INT2PTR(OP*,${replroot})";
     }
     elsif ($$replroot) {
@@ -42,7 +42,7 @@ sub save {
         # argument to a split) stores a GV in op_pmreplroot instead
         # of a substitution syntax tree. We don't want to walk that...
         if ( $op->name eq "pushre" ) {
-            warn "PMOP::save saving a pp_pushre with GV $gvsym\n" if $B::C::debug{gv};
+            debug( gv => "PMOP::save saving a pp_pushre with GV $gvsym" );
             $gvsym         = $replroot->save;
             $replrootfield = 0;
         }
@@ -100,8 +100,7 @@ sub save {
             }
         }
         my $pmflags = $op->pmflags;
-        warn "pregcomp $pm $qre:$relen" . ( $isutf8 ? " SVf_UTF8" : "" ) . sprintf( " 0x%x\n", $pmflags )
-          if $B::C::debug{pv} or $B::C::debug{gv};
+        debug( gv => "pregcomp $pm $qre:$relen" . ( $isutf8 ? " SVf_UTF8" : "" ) . sprintf( " 0x%x\n", $pmflags ) );
 
         # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
         if ( $pmflags & 4 ) {

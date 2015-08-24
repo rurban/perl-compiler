@@ -20,12 +20,32 @@ my %debug_map = (
 );
 
 # list all possible level of debugging
-my %debug = map { $_ => 0 } values %debug_map;
-%debug = (
-    %debug,
-    flags   => 0,
-    runtime => 0,
-);
+my %debug;
+
+sub init {
+    %debug = map { $_ => 0 } values %debug_map;
+    %debug = (
+        %debug,
+        flags   => 0,
+        runtime => 0,
+    );
+    return;
+}
+init();    # initialize
+
+my %saved;
+
+sub save {
+    my %copy = %debug;
+    return \%copy;
+}
+
+sub restore {
+    my $cfg = shift;
+    die unless ref $cfg;
+    %debug = %$cfg;
+    return;
+}
 
 # you can then enable them
 # $debug{sv} = 1;
@@ -55,10 +75,10 @@ sub verbose {
     return $verbose;
 }
 
-# TODO:
-sub WARN  { ... }
-sub INFO  { ... }
-sub FATAL { ... }
+# can be improved
+sub WARN { return display_message( "[WARN]", @_ ) }
+sub INFO { return enable_verbose( "[INFO]", @_ ) }
+sub FATAL { die display_message( "[FATAL]", @_ ) }
 
 sub display_message {
     return unless scalar @_;

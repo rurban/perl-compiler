@@ -4,6 +4,7 @@ use strict;
 
 use Config;
 use B qw/cstring/;
+use B::C::Config;
 use B::C::File qw/init svsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -30,7 +31,7 @@ sub save {
         )
     );
     my $ix = svsect()->index;
-    warn "Saving RX $cstr to sv_list[$ix]\n" if $B::C::debug{rx} or $B::C::debug{sv};
+    debug( rx => "Saving RX $cstr to sv_list[$ix]" );
 
     init()->add(    # replace sv_any->XPV with struct regexp. need pv and extflags
         sprintf(

@@ -38,10 +38,10 @@ sub save {
         )
     );
     svsect()->debug( $fullname, $sv );
-    warn sprintf(
-        "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
+    debug(
+        sv => "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
         $sv->IVX, xpvivsect()->index, svsect()->index, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(0) )[2] ] }
-    ) if $B::C::debug{sv};
+    );
     savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
 }
 

@@ -4,6 +4,7 @@ use strict;
 
 use B q/SVf_IOK/;
 
+use B::C::Config;
 use B::C::File qw/xpvnvsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -28,10 +29,10 @@ sub save {
         )
     );
     svsect()->debug( $fullname, $sv );
-    warn sprintf(
-        "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",
+    debug(
+        sv => "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",
         $nv, xpvnvsect()->index, svsect()->index
-    ) if $B::C::debug{sv};
+    );
     savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
 }
 

@@ -31,6 +31,7 @@ use warnings;
 
 use Exporter ();
 
+use B::C::Config;
 use B::C::Helpers::Symtable qw(get_symtable_ref);
 use B::C::Section     ();
 use B::C::InitSection ();
@@ -339,7 +340,7 @@ main(int argc, char **argv, char **env)
 	PL_perl_destruct_level = 0;
     }
 _EOT10
-        if ($B::C::ITHREADS) {
+        if ( USE_ITHREADS() ) {
 
             # XXX init free elems!
             my $pad_len = regex_padav->FILL;    # first is an empty avref

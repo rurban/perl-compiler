@@ -3,6 +3,7 @@ package B::BM;
 use strict;
 
 use B qw/cstring/;
+use B::C::Config;
 use B::C::File qw/init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -16,7 +17,7 @@ sub save {
     my $len = $cur + length( $sv->TABLE ) + 1;
     my $s;
 
-    warn "Saving FBM for GV $sym\n" if $B::C::debug{gv};
+    debug( gv => "Saving FBM for GV $sym" );
     init()->add(
         sprintf("$sym = (GV*)newSV_type(SVt_PVGV);"),
         sprintf( "SvFLAGS($sym) = 0x%x;",  $sv->FLAGS ),

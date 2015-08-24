@@ -519,7 +519,7 @@ sub save {
                     init()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
                 }
                 else {
-                    display_message("wrong CvGV for $sym $origname: $cvsym") if debug('gv') or verbose();
+                    WARN("wrong CvGV for $sym $origname: $cvsym") if debug('gv') or verbose();
                 }
             }
 
@@ -580,7 +580,7 @@ sub save {
                 elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
                     $gvio->save( $fullname, 'is_DATA' );
                     init()->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
-                    display_message("Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.");
+                    WARN("Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.");
                 }
                 else {
                     $gvio->save($fullname);

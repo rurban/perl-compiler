@@ -133,7 +133,7 @@ sub _save_common {
         }
         else {
             # mostly optimized-away padsv NULL pads with 5.8
-            display_message("package_pv for method_name not found") if debug('cv') or debug('pkg');
+            WARN("package_pv for method_name not found") if debug('cv') or debug('pkg');
         }
     }
 
@@ -152,7 +152,7 @@ sub _save_common_middle {
     my $op = shift;
     my $madprop = MAD() ? "0," : "";
 
-    # XXX maybe add a ix=opindex string for debugging if $debug{flags}
+    # XXX maybe add a ix=opindex string for debugging if debug('flags')
     sprintf(
         "%s,%s %u, %u, " . STATIC . ", 0x%x, 0x%x",
         $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private

@@ -13,7 +13,7 @@ sub save {
 
     if ( defined $sym ) {
         if ($B::C::in_endav) {
-            warn "in_endav: static_free without $sym\n" if $B::C::debug{av};
+            debug( av => "in_endav: static_free without $sym" );
             @B::C::static_free = grep { !/$sym/ } @B::C::static_free;
         }
         return $sym;
@@ -43,7 +43,7 @@ sub save {
     xpvnvsect()->add( sprintf( "Nullhv, {0}, %u, %u, {%s}, {%s}", $cur, $len, $ivx, $nvx ) );
 
     unless ( C99() or $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
-        warn "NV => run-time union xpad_cop_seq init\n" if $B::C::debug{sv};
+        debug( sv => "NV => run-time union xpad_cop_seq init" );
         init()->add(
             sprintf(
                 "xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %s;",

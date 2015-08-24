@@ -13,6 +13,8 @@ our @ISA = qw(Exporter);
 *verbose         = \&B::C::Config::Debug::verbose;
 *display_message = \&B::C::Config::Debug::display_message;
 
+*WARN = \&B::C::Config::Debug::WARN;
+
 sub _autoload_map {
     my $map = {
         USE_ITHREADS     => $Config{useithreads},
@@ -39,7 +41,7 @@ my $_autoload;
 BEGIN {
     $_autoload = _autoload_map();
     our @EXPORT_OK = keys %$_autoload;
-    push @EXPORT_OK, qw/debug display_message verbose/;
+    push @EXPORT_OK, qw/debug display_message verbose WARN/;
     our @EXPORT = @EXPORT_OK;
 }
 

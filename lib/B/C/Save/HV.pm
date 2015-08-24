@@ -142,7 +142,7 @@ sub save {
         for ( $i = 1; $i < @contents; $i += 2 ) {
             my $key = $contents[ $i - 1 ];                                       # string only
             my $sv  = $contents[$i];
-            display_message( "HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV )
+            WARN( "HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV )
               if ref($sv) eq 'B::RV'
 
               #and $sv->RV->isa('B::CV')

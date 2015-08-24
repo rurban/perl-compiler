@@ -4,13 +4,16 @@ use strict;
 
 use B qw/comppadlist/;
 
+use B::C::Config;
 use B::C::File qw/padopsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
     my ( $op, $level ) = @_;
 
-    die "xxxx";
+    # QUESTION: is it really used now ???
+    # not triggered by the core test suite
+    die "QUESTION: This looks like dead code ?";
 
     my $sym = objsym($op);
     return $sym if defined $sym;
@@ -38,7 +41,7 @@ sub save {
         if ( $sv and $$sv ) {
             my $name = B::C::padop_name( $op, $B::C::curcv );
             if ( $skip_defined and $name !~ /^DynaLoader::/ ) {
-                warn "skip saving defined(&$name)\n" if $B::C::debug{gv};    # defer to run-time
+                debug( gv => "skip saving defined(&$name)" );    # defer to run-time
             }
             else {
                 $sv->save( "padop " . ( $name ? $name : '' ) );

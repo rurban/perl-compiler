@@ -2,20 +2,21 @@ package B::RV;
 
 use strict;
 
+use B::C::Config;
 use B::C::File qw/svsect init/;
 use B::C::Helpers qw/save_rv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Since 5.11 also called by IV::save (SV -> IV)
-sub B::RV::save {
+sub save {
     my ( $sv, $fullname ) = @_;
 
     my $sym = objsym($sv);
     return $sym if defined $sym;
-    warn sprintf(
-        "Saving RV %s (0x%x) - called from %s:%s\n",
-        class($sv), $$sv, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
-    ) if $B::C::debug{sv};
+    debug(
+        sv => "Saving RV %s (0x%x) - called from %s:%s\n",
+        ref($sv), $$sv, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
+    );
 
     my $rv = save_rv( $sv, $fullname );
     return '0' unless $rv;

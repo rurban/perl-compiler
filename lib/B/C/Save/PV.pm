@@ -13,7 +13,7 @@ sub save {
 
     if ( defined $sym ) {
         if ($B::C::in_endav) {
-            warn "in_endav: static_free without $sym\n" if $B::C::debug{av};
+            debug( av => "in_endav: static_free without $sym" );
             @B::C::static_free = grep { !/$sym/ } @B::C::static_free;
         }
         return $sym;
@@ -29,8 +29,7 @@ sub save {
 
     if ( $B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len ) {
         $flags &= ~0x01000000;
-        warn sprintf( "constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname )
-          if $B::C::debug{pv};
+        debug( pv => "constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname );
     }
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
     svsect()->add(
@@ -52,7 +51,7 @@ sub save {
             init()->add( B::C::savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", svsect()->index ), $pv, $sv, $cur ) );
         }
     }
-    if ( $B::C::debug{flags} and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
+    if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
         init()->add(
             sprintf(
                 qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),

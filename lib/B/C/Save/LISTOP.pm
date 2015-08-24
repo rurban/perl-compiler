@@ -4,6 +4,7 @@ use strict;
 
 use B qw/cstring/;
 
+use B::C::Config;
 use B::C::File qw/init listopsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Helpers qw/do_labels/;
@@ -51,7 +52,7 @@ sub save {
             }
             if ( $sv and $sv->can("PV") and $sv->PV =~ /~/m ) {
                 local $B::C::const_strings;
-                warn "force non-static formline arg ", cstring( $sv->PV ), "\n" if $B::C::debug{pv};
+                debug( pv => "force non-static formline arg " . cstring( $sv->PV ) );
                 $svop->save("svop const");
             }
             $svop = $svop->next;

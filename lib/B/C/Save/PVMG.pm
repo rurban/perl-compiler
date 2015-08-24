@@ -13,7 +13,7 @@ sub save {
     my $sym = objsym($sv);
     if ( defined $sym ) {
         if ($B::C::in_endav) {
-            warn "in_endav: static_free without $sym\n" if $B::C::debug{av};
+            debug( av => "in_endav: static_free without $sym" );
             @B::C::static_free = grep { !/$sym/ } @B::C::static_free;
         }
         return $sym;
@@ -84,13 +84,13 @@ sub save {
 sub save_magic {
     my ( $sv, $fullname ) = @_;
     my $sv_flags = $sv->FLAGS;
-    if ( $B::C::debug{mg} ) {
+    if ( debug('mg') ) {
         my $flagspv = "";
         $fullname = '' unless $fullname;
-        $flagspv = $sv->flagspv if $B::C::debug{flags} and !$sv->MAGICAL;
-        warn sprintf(
-            "saving magic for %s $fullname (0x%x) flags=0x%x%s  - called from %s:%s\n",
-            class($sv), $$sv, $sv_flags, $B::C::debug{flags} ? "(" . $flagspv . ")" : "",
+        $flagspv = $sv->flagspv if debug('flags') and !$sv->MAGICAL;
+        debug(
+            mg => "saving magic for %s $fullname (0x%x) flags=0x%x%s  - called from %s:%s\n",
+            class($sv), $$sv, $sv_flags, debug('flags') ? "(" . $flagspv . ")" : "",
             @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
         );
     }
@@ -100,14 +100,12 @@ sub save_magic {
     # crashes with %Class::MOP::Instance:: flags=0x2280000c also
     my $pkg = $sv->SvSTASH;
     if ($$pkg) {
-        warn sprintf( "stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg )
-          if $B::C::debug{mg} or $B::C::debug{gv};
+        debug( mg => "stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg );
 
         $pkg->save($fullname);
 
         no strict 'refs';
-        warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
-          if $B::C::debug{mg} or $B::C::debug{gv};
+        debug( mg => "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg );
 
         # Q: Who is initializing our stash from XS? ->save is missing that.
         # A: We only need to init it when we need a CV
@@ -122,10 +120,10 @@ sub save_magic {
 
     # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
     if ( !$sv->MAGICAL ) {
-        warn sprintf(
-            "Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
-            $sv_flags && 0xff, $sv_flags, $B::C::debug{flags} ? "(" . $sv->flagspv . ")" : ""
-        ) if $B::C::debug{mg};
+        debug(
+            mg => "Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
+            $sv_flags && 0xff, $sv_flags, debug('flags') ? "(" . $sv->flagspv . ")" : ""
+        );
         return '';
     }
     init()->add( sprintf( "SvREADONLY_off((SV*)s\\_%x);", $$sv ) ) if $sv_flags & SVf_READONLY;
@@ -138,15 +136,14 @@ sub save_magic {
         $ptr  = $mg->PTR;
         $len  = $mg->LENGTH;
         $magic .= $type;
-        if ( $B::C::debug{mg} ) {
-            warn sprintf( "%s %s magic\n", $fullname, cchar($type) );
 
-            #eval {
-            #  warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
-            #                class($sv), $$sv, class($obj), $$obj, cchar($type),
-            #		      cstring($ptr) );
-            #};
-        }
+        debug( mg => "%s %s magic\n", $fullname, cchar($type) );
+
+        #eval {
+        #  warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
+        #                class($sv), $$sv, class($obj), $$obj, cchar($type),
+        #		      cstring($ptr) );
+        #};
 
         unless ( $type =~ /^[rDn]$/ ) {    # r - test 23 / D - Getopt::Long
                                            # 5.10: Can't call method "save" on unblessed reference
@@ -167,7 +164,7 @@ sub save_magic {
             else {
                 $ptrsv = $ptr->save($fullname);
             }
-            warn "MG->PTR is an SV*\n" if $B::C::debug{mg};
+            debug( mg => "MG->PTR is an SV*" );
             init()->add(
                 sprintf(
                     "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, (char *)%s, %d);",

@@ -162,7 +162,7 @@ sub save {
                 );
             }
             elsif ( $iotype =~ /[a>]/ ) {    # write-only
-                display_message("Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd")
+                WARN("Warning: Write BEGIN-block $fullname to FileHandle $iotype \&$fd")
                   if $fd >= 3 or verbose();
                 my $mode = $iotype eq '>' ? 'w' : 'a';
 
@@ -178,7 +178,7 @@ sub save {
             elsif ( $iotype =~ /[<#\+]/ ) {
 
                 # skips warning if it's one of our PerlIO::scalar __DATA__ handles
-                display_message("Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd")
+                WARN("Warning: Read BEGIN-block $fullname from FileHandle $iotype \&$fd")
                   if $fd >= 3 or verbose();    # need to setup it up before
                 init()->add(
                     "/* XXX WARNING: Read BEGIN-block $fullname from FileHandle */",
@@ -191,7 +191,7 @@ sub save {
             }
             else {
                 # XXX We should really die here
-                display_message(
+                FATAL(
                     "ERROR: Unhandled BEGIN-block IO Handle %s\&%d (%d) from %s\n",
                     cstring($iotype), $fd, $ioflags, $fullname
                 );

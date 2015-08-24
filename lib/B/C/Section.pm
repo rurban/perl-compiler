@@ -84,7 +84,7 @@ sub comment {
 sub debug {
     my ( $self, $op ) = @_;
 
-    return if !$B::C::debug{'flags'};
+    return if !B::C::Config::Debug::debug('flags');
 
     my $dbg = ref $op ? $op->flagspv : undef;
     $self->{'dbg'}->[ $self->index ] = $dbg if $dbg;
@@ -96,7 +96,7 @@ sub output {
     my $default = $self->default;
 
     my $i = 0;
-    my $dodbg = 1 if $B::C::debug{'flags'} and $self->{'dbg'};
+    my $dodbg = 1 if B::C::Config::Debug::debug('flags') and $self->{'dbg'};
     if ( $self->name eq 'sv' ) {      #fixup arenaroot refcnt
         my $len = scalar @{ $self->{'values'} };
         $self->{'values'}->[0] =~ s/^0, 0/0, $len/;

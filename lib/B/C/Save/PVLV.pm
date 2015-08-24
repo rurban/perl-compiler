@@ -4,6 +4,7 @@ use strict;
 
 use B q/cchar/;
 
+use B::C::Config;
 use B::C::File qw/xpvlvsect svsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -16,7 +17,7 @@ sub save {
     my $sym = objsym($sv);
     if ( defined $sym ) {
         if ($B::C::in_endav) {
-            warn "in_endav: static_free without $sym\n" if $B::C::debug{av};
+            debug( av => "in_endav: static_free without $sym" );
             @B::C::static_free = grep { !/$sym/ } @B::C::static_free;
         }
         return $sym;

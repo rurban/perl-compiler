@@ -26,16 +26,16 @@ sub save {
         if ( !$method and USE_ITHREADS() ) {
             $method = padop_name( $op->first, $B::C::curcv );    # XXX (curpad[targ])
         }
-        warn "method -> const $method\n" if $B::C::debug{pkg} and USE_ITHREADS();
+        debug( pkg => "method -> const $method" ) if USE_ITHREADS();
 
         #324,#326 need to detect ->(maybe::next|maybe|next)::(method|can)
         if ( $method =~ /^(maybe::next|maybe|next)::(method|can)$/ ) {
-            warn "mark \"$1\" for method $method\n" if $B::C::debug{pkg};
+            debug( pkg => "mark \"$1\" for method $method" );
             mark_package( $1,    1 );
             mark_package( "mro", 1 );
         }    # and also the old 5.8 NEXT|EVERY with non-fixed method names und subpackages
         elsif ( $method =~ /^(NEXT|EVERY)::/ ) {
-            warn "mark \"$1\" for method $method\n" if $B::C::debug{pkg};
+            debug( pkg => "mark \"$1\" for method $method" );
             mark_package( $1, 1 );
             mark_package( "NEXT", 1 ) if $1 ne "NEXT";
         }

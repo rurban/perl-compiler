@@ -14,8 +14,6 @@ use strict;
 
 our $VERSION = '1.47_03';
 
-# package B::C::Debug qw/all/;
-our %debug;
 our $check;
 my $eval_pvs = '';
 use Config;
@@ -82,19 +80,6 @@ use B::FAKEOP  ();
 use B::STASHGV ();
 
 {
-    # # could use File::Basename
-    # my $bc_path = $INC{'B/C.pm'};
-    # $bc_path =~ s{\.pm$}{};
-    # my $load_from_dir = $bc_path . '/Save';
-    # die "$load_from_dir";
-    # die "Invalid dir for B/C/Save modules: $load_from_dir" unless -d $load_from_dir;
-
-    # # load overload modules B::C::Save::* to plug save methods
-    # foreach my $module ( sort glob qq{$load_from_dir/*.pm} ) {
-    #     ($module) = $module =~ m/(.*)/;    # untaint
-    #     eval qq{require "$module"; 1} or die "Cannot load $module";
-    # }
-
     use B::C::Save::AV      ();
     use B::C::Save::BINOP   ();
     use B::C::Save::BM      ();
@@ -1647,10 +1632,10 @@ sub walkpackages {
 
 sub save_unused_subs {
     no strict qw(refs);
-    my %sav_debug;
+    my $sav_debug;
     if ( debug('unused') ) {
-        %sav_debug = %debug;
-        %debug     = ();
+        $sav_debug = B::C::Config::Debug::save();
+        B::C::Config::Debug::init();
     }
     my $main = $module ? $module . "::" : "main::";
 
@@ -1662,14 +1647,14 @@ sub save_unused_subs {
     #do
     @init_unused = grep { $include_package{$_} } keys %include_package;
 
-    verbose( "Prescan for unused subs in $main " . ( $sav_debug{unused} ? " (silent)\n" : "\n" ) );
+    verbose( "Prescan for unused subs in $main " . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
 
     # XXX TODO better strategy for compile-time added and required packages:
     # loop savecv and check pkg cache for new pkgs.
     # if so loop again with those new pkgs only, until the list of new pkgs is empty
     descend_marked_unused();
     walkpackages( \%{$main}, \&should_save, $main eq 'main::' ? undef : $main );
-    verbose( "Saving unused subs in $main" . ( $sav_debug{unused} ? " (silent)\n" : "\n" ) );
+    verbose( "Saving unused subs in $main" . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
     walksymtable( \%{$main}, "savecv", \&should_save );
     @unused = grep { $include_package{$_} } keys %include_package;
     @dumped = grep { $dumped_package{$_} and $_ ne 'main' } keys %dumped_package;
@@ -1690,8 +1675,8 @@ sub save_unused_subs {
 
     #} while @unused > @init_unused;
 
-    if ( $sav_debug{unused} ) {
-        %debug = %sav_debug;
+    if ( $sav_debug->{unused} ) {
+        B::C::Config::Debug::restore($sav_debug);
     }
 
     # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
@@ -1782,7 +1767,7 @@ sub inc_cleanup {
 
 sub dump_rest {
     my $again;
-    warn "dump_rest\n" if verbose() or $debug{pkg};
+    verbose("dump_rest");
     for my $p ( sort keys %INC ) {
     }
     for my $p ( sort keys %include_package ) {
@@ -1796,7 +1781,7 @@ sub dump_rest {
                 next;
             }
             $again++;
-            display_message("$p marked but not saved, save now") if verbose() or debug('pkg');
+            WARN("$p marked but not saved, save now") if verbose() or debug('pkg');
 
             # mark_package( $p, 1);
             #eval {
@@ -1869,12 +1854,12 @@ sub save_context {
             if ( mro::get_mro($p) eq 'c3' ) {
 
                 # for mro c3 set the algo. there's no C api, only XS
-                warn "set c3 for $p\n" if $debug{pkg};
+                debug( pkg => "set c3 for $p" );
                 init()->add_eval( sprintf( 'mro::set_mro(%s, "c3");', cstring($p) ) );
             }
         }
     }
-    display_message( "Saved \@ISA for: " . join( " ", @saved_isa ) ) if @saved_isa and ( verbose() or debug('pkg') );
+    WARN( "Saved \@ISA for: " . join( " ", @saved_isa ) ) if @saved_isa and ( verbose() or debug('pkg') );
     init()->add(
         "GvHV(PL_incgv) = $inc_hv;",
         "GvAV(PL_incgv) = $inc_av;",
@@ -2170,7 +2155,7 @@ sub save_main_rest {
 
     my $c_file_stash = {
         'verbose'                          => verbose(),
-        'debug'                            => \%debug,
+        'debug'                            => B::C::Config::Debug::save(),
         'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION",
         'DEBUG_LEAKING_SCALARS'            => DEBUG_LEAKING_SCALARS(),
         'have_independent_comalloc'        => $B::C::Flags::have_independent_comalloc,

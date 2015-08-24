@@ -200,7 +200,7 @@ sub save {
     # fixme: can probably be removed
     if ( $fullname eq 'IO::Socket::SSL::SSL_Context::new' ) {
         if ( $IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984' ) {
-            display_message( "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n" . "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]" );
+            WARN( "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n" . "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]" );
         }
     }
 
@@ -319,7 +319,7 @@ sub save {
             }
             else {
                 # interim &AUTOLOAD saved, cannot delete. e.g. Fcntl, POSIX
-                display_message("No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]")
+                WARN("No definition for sub $fullname (unable to autoload), stub CV[$sv_ix]")
                   if debug('cv')
                   or verbose();
 
@@ -479,7 +479,7 @@ sub save {
       );
 
     # repro only with 5.15.* threaded -q (70c0620) Encode::Alias::define_alias
-    display_message("lexwarnsym in XPVCV OUTSIDE: $xpvc") if $xpvc =~ /, \(CV\*\)iv\d/;    # t/testc.sh -q -O3 227
+    WARN("lexwarnsym in XPVCV OUTSIDE: $xpvc") if $xpvc =~ /, \(CV\*\)iv\d/;    # t/testc.sh -q -O3 227
     if ( !$new_cv_fw ) {
         symsect()->add("XPVCVIX$xpvcv_ix\t$xpvc");
 
@@ -551,12 +551,12 @@ sub save {
         if ( $CvFLAGS & 0x0400 ) {    # CVf_CVGV_RC
             debug(
                 cv => "CvCVGV_RC turned off. CV flags=0x%x %s CvFLAGS=0x%x \n",
-                $cv->FLAGS, $B::C::debug{flags} ? $cv->flagspv : "", $CvFLAGS & ~0x400
+                $cv->FLAGS, debug('flags') ? $cv->flagspv : "", $CvFLAGS & ~0x400
             );
             init()->add(
                 sprintf(
                     "CvFLAGS((CV*)%s) = 0x%x; %s", $sym, $CvFLAGS,
-                    $B::C::debug{flags} ? "/* " . $cv->flagspv . " */" : ""
+                    debug('flags') ? "/* " . $cv->flagspv . " */" : ""
                 )
             );
         }
@@ -578,7 +578,7 @@ sub save {
     my $stash = $cv->STASH;
     if ( $$stash and ref($stash) ) {
 
-        # init()->add("/* saving STASH $fullname */\n" if $B::C::debug{cv};
+        # init()->add("/* saving STASH $fullname */\n" if debug('cv');
         $stash->save($fullname);
 
         # $sym fixed test 27
