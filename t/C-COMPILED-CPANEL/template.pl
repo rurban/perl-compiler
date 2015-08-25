@@ -16,6 +16,7 @@ if ( $0 =~ m{/template\.pl$} ) {
 my @optimizations = $ENV{'BC_TEST_OPTIMIZATIONS'} || '-O3,-fno-fold';
 $optimizations[0] .= ',-v'     if ( $ENV{VERBOSE} );
 $optimizations[0] .= ',-Dwalk' if ( $ENV{BC_WALK} );
+
 my $todo = '';
 
 # Setup file_to_test to be the file we actually want to test.

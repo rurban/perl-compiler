@@ -158,8 +158,8 @@ our %all_bc_deps =
 
 our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
 my ( %strtable, %hektable, %gptable );
-our ( %xsub,            %init2_remap );
-our ( $staticxs,        $outfile );
+our ( %xsub, %init2_remap );
+our ($staticxs);
 our ( %include_package, %dumped_package, %skip_package, %isa_cache );
 my $output_file;
 
@@ -1880,6 +1880,15 @@ sub save_main {
     verbose("Starting compile");
     verbose("Walking tree");
     $B::C::curcv = B::main_cv;
+
+    if ( debug('walk') ) {
+        verbose("Enabling B::debug / B::walkoptree_debug");
+        B::debug(1);
+
+        # this is enabling walkoptree_debug
+        # which is useful when using walkoptree (not the slow version)
+    }
+
     verbose()
       ? walkoptree_slow( main_root, "save" )
       : walkoptree( main_root, "save" );
@@ -2426,6 +2435,9 @@ sub compile {
             elsif ( $arg eq 'ufull' ) {
                 $arg = 'uOcAHCMGSPpsWF';
                 $all_bc_deps{'B::Flags'}++;
+            }
+            elsif ( B::C::Config::Debug::enable_debug_with_map($arg) ) {
+                next;
             }
             foreach my $arg ( split( //, $arg ) ) {
                 next if B::C::Config::Debug::enable_debug_with_map($arg);

@@ -15,7 +15,7 @@ B::C::File - Responsible for rendering the C file from a provided stash and loca
 =head1 DESCRIPTION
 
 B<B::C::File> B::C::File is B::C's view. It uses Template Toolkit to render the C file using a passed in stash,
-combined with B::C::Section objects which it initializes and tree walkers update as they go. 
+combined with B::C::Section objects which it initializes and tree walkers update as they go.
 
 =cut
 
@@ -34,6 +34,7 @@ use Config;
 
 our @ISA = qw(Exporter);
 
+# singleton
 my $self;
 
 our $AUTOLOAD;
@@ -62,6 +63,7 @@ sub new {
     $self and die("Re-initialized???");
 
     my $outfile = shift;
+    debug( 'file' => "Write to c file: '$outfile'" );
     $self = bless { 'c_file_name' => $outfile };
 
     foreach my $section_name ( code_section_names() ) {
@@ -145,6 +147,7 @@ sub write {
 
     # process input template, substituting variables
     $template->process( 'base.c.tt2', $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
+
 }
 
 1;
