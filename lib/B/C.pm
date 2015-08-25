@@ -1904,6 +1904,9 @@ sub save_sig {
     foreach my $k ( sort keys %SIG ) {
         next unless ref $SIG{$k};
         my $cvref = svref_2object( \$SIG{$k} );
+
+        # QUESTION: where does it come from in B::C / why do we want to skip it
+        #   should we skip more ?
         next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|;    # ignore B::C SIG warn handler
         push @save_sig, [ $k, $cvref ];
     }
@@ -1967,7 +1970,7 @@ sub save_main_rest {
     # honour -w
     init()->add(
         "/* honor -w */",
-        sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W
+        sprintf "PL_dowarn = %s;", $^W ? 'G_WARN_ON' : 'G_WARN_OFF'
     );
     if ( $^{TAINT} ) {
         init()->add(
