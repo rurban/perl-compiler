@@ -21,6 +21,8 @@ use B::Flags;
 use B::C::Config;    # import everything
 use B::C::Config::Debug ();    # used for setting debug levels from cmdline
 
+use B::C::Optimizer::UnusedPackages qw(mark_unused mark_used is_used get_all_used mark_deleted);
+
 use B::C::File qw( init2 init0 init decl free
   heksect binopsect condopsect copsect padopsect listopsect logopsect
   opsect pmopsect pvopsect svopsect unopsect svsect xpvsect xpvavsect xpvhvsect xpvcvsect xpvivsect xpvuvsect
@@ -30,10 +32,10 @@ use B::C::Helpers::Symtable qw(objsym savesym);
 
 use strict;
 use Exporter ();
-use Errno    ();               #needed since 5.14
+use Errno ();    #needed since 5.14
 our %Regexp;
 
-{                              # block necessary for caller to work
+{    # block necessary for caller to work
     my $caller = caller;
     if ( $caller eq 'O' or $caller eq 'Od' ) {
         require XSLoader;
@@ -43,7 +45,7 @@ our %Regexp;
 
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(mark_unused mark_skip set_callback save_unused_subs save_context save_sig svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
+our @EXPORT_OK = qw(mark_skip set_callback save_context save_sig svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
 
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
@@ -157,7 +159,7 @@ our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 
 my ( %strtable, %hektable, %gptable );
 our ( %xsub, %init2_remap );
 our ($staticxs);
-our ( %include_package, %dumped_package, %skip_package, %isa_cache );
+our ( %dumped_package, %skip_package, %isa_cache );
 my $output_file;
 
 # fixme move to config
@@ -635,7 +637,7 @@ sub force_heavy {
     my $pkg       = shift;
     my $pkg_heavy = $pkg . "_heavy.pl";
     no strict 'refs';
-    if ( !$include_package{$pkg_heavy} and !exists $savINC{$pkg_heavy} ) {
+    if ( !is_used($pkg_heavy) and !exists $savINC{$pkg_heavy} ) {
 
         #eval qq[sub $pkg\::AUTOLOAD {
         #    require '$pkg_heavy';
@@ -741,7 +743,7 @@ sub method_named {
         $method = $_ . '::' . $name;
         if ( defined(&$method) ) {
             debug( cv => "Found &%s::%s\n", $_, $name );
-            $include_package{$_} = 1;    # issue59
+            mark_used($_);    # issue59
             mark_package( $_, 1 );
             last;
         }
@@ -749,7 +751,7 @@ sub method_named {
             if ( my $parent = try_isa( $_, $name ) ) {
                 debug( cv => "Found &%s::%s\n", $parent, $name );
                 $method = $parent . '::' . $name;
-                $include_package{$parent} = 1;
+                mark_used($parent);
                 last;
             }
             debug( cv => "no definition for method_name \"$method\"" );
@@ -1031,6 +1033,16 @@ sub patch_dlsym {
     return $ivx;
 }
 
+# Maybe move to the unused optimizer
+sub mark_skip {
+    for (@_) {
+        delete_unsaved_hashINC($_);
+
+        # $include_package{$_} = 0;
+        $skip_package{$_} = 1 unless is_used($_);
+    }
+}
+
 # mark threads::shared to be xs-loaded
 sub mark_threads {
     if ( $INC{'threads.pm'} ) {
@@ -1245,30 +1257,31 @@ sub mark_package {
     my $force   = shift;
 
     return if skip_pkg($package);    # or $package =~ /^B::C(C?)::/;
-    if ( !$include_package{$package} or $force ) {
+    if ( !is_used($package) or $force ) {
         no strict 'refs';
         my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
         mark_package('IO') if grep { $package eq $_ } @IO;
         mark_package("DynaLoader") if $package eq 'XSLoader';
         $use_xsloader = 1 if $package =~ /^B|Carp$/;    # to help CC a bit (49)
-                                                        # i.e. if force
-        if (    exists $include_package{$package}
-            and !$include_package{$package}
+
+        # i.e. if force
+        my $flag_as_unused = is_used($package);
+        if (    defined $flag_as_unused
+            and !$flag_as_unused
             and $savINC{ inc_packname($package) } ) {
             verbose(
                 "$package previously deleted, save now%s\n",
                 $force ? " (forced)" : ""
             );
 
-            # $include_package{$package} = 1;
             add_hashINC($package);
             walk_syms($package);
         }
         else {
             debug( pkg => "mark $package%s\n", $force ? " (forced)" : "" )
-              if !$include_package{$package}
+              if !is_used($package)
               and verbose();
-            $include_package{$package} = 1;
+            mark_used($package);
 
             walk_syms($package) if !$B::C::walkall;    # fixes i27-1
         }
@@ -1285,11 +1298,13 @@ sub mark_package {
                         eval { $package->bootstrap };
                     }
                 }
-                if ( !$include_package{$isa} and !$skip_package{$isa} ) {
+                my $is_used = is_used($isa);
+                if ( !$is_used and !$skip_package{$isa} ) {
                     no strict 'refs';
                     verbose("$isa saved (it is in $package\'s \@ISA)");
                     B::svref_2object( \@{ $isa . "::ISA" } )->save;    #308
-                    if ( exists $include_package{$isa} ) {
+
+                    if ( defined $is_used ) {
                         verbose("$isa previously deleted, save now");    # e.g. Sub::Name
                         mark_package($isa);
                         walk_syms($isa);                                 # avoid deep recursion
@@ -1376,142 +1391,6 @@ sub can_delete {
     return undef;
 }
 
-sub should_save {
-    no strict qw(vars refs);
-    my $package = shift;
-    $package =~ s/::$//;
-    if ( skip_pkg($package) ) {
-        delete_unsaved_hashINC($package) if can_delete($package);
-        return 0;
-    }
-    return $include_package{$package} = 0
-      if ( $package =~ /::::/ );    # skip ::::ISA::CACHE etc.
-    debug( pkg => "Considering $package" );
-    return if index( $package, " " ) != -1;    # XXX skip invalid package names
-    return if index( $package, "(" ) != -1;    # XXX this causes the compiler to abort
-    return if index( $package, ")" ) != -1;    # XXX this causes the compiler to abort
-                                               # core static mro has exactly one member, ext/mro has more
-    if ( $package eq 'mro' ) {
-
-        if ( keys %{mro::} == 1 ) {            # core or ext?
-            debug( pkg => "ext/mro not loaded - skip" );
-            return;
-        }
-        else {
-            debug( pkg => "ext/mro already loaded" );
-
-            # $include_package{mro} = 1 if grep { $_ eq 'mro' } @DynaLoader::dl_modules;
-            return $include_package{mro};
-        }
-    }
-    if ( $package eq 'attributes'
-        and grep { $_ eq 'attributes' } @DynaLoader::dl_modules ) {
-        mark_package( $package, 1 );
-        return 1;
-    }
-    if ( exists $all_bc_deps{$package} ) {
-        foreach my $u ( grep( $include_package{$_}, sort keys %include_package ) ) {
-
-            # If this package is a prefix to something we are saving, traverse it
-            # but do not mark it for saving if it is not already
-            # e.g. to get to B::OP we need to traverse B:: but need not save B
-            my $p = $package;
-            $p =~ s/(\W)/\\$1/g;
-            return 1 if ( $u =~ /^$p\:\:/ ) && $include_package{$package};
-        }
-    }
-
-    # Needed since 5.12.2: Check already if deleted
-    my $incpack = inc_packname($package);
-
-    # issue348: only drop B::C packages, not any from user code.
-    if (   ( $package =~ /^DynaLoader|XSLoader$/ and $use_xsloader )
-        or ( !exists $all_bc_deps{$package} ) ) {
-        $include_package{$package} = 1;
-    }
-
-    # If this package is in the same file as main:: or our source, save it. (72, 73)
-    if ($mainfile) {
-
-        # Find the first cv in this package for CV->FILE
-        no strict 'refs';
-        for my $sym ( sort keys %{ $package . '::' } ) {
-            if ( defined &{ $package . '::' . $sym } ) {
-
-                # compare cv->FILE to $mainfile
-                my $cv = svref_2object( \&{ $package . '::' . $sym } );
-                if ( $cv and $cv->can('FILE') and $cv->FILE ) {
-                    $include_package{$package} = 1 if $mainfile eq $cv->FILE;
-                    last;
-                }
-            }
-        }
-    }
-
-    # add overloaded but otherwise empty packages (#172)
-    if ( $savINC{'overload.pm'} and exists ${ $package . '::' }{OVERLOAD} and exists ${ $package . '::' }{'()'} ) {
-        mark_package( $package,   1 );
-        mark_package( 'overload', 1 );
-        return 1;
-    }
-
-    # Omit the packages which we use (and which cause grief
-    # because of fancy "goto &$AUTOLOAD" stuff).
-    # XXX Surely there must be a nicer way to do this.
-    if ( exists $include_package{$package} ) {
-        if ( !exists $all_bc_deps{$package} ) {
-            $include_package{$package} = 1;
-            $curINC{$incpack}          = $savINC{$incpack};
-            debug( pkg => "Cached new $package is kept" );
-        }
-        elsif ( !$include_package{$package} ) {
-            delete_unsaved_hashINC($package) if can_delete($package);
-            debug( pkg => "Cached $package is already deleted" );
-        }
-        else {
-            debug( pkg => "Cached $package is cached" );
-        }
-        return $include_package{$package};
-    }
-
-    # Now see if current package looks like an OO class. This is probably too strong.
-    if ( !$all_bc_deps{$package} ) {
-        foreach my $m (qw(new DESTROY TIESCALAR TIEARRAY TIEHASH TIEHANDLE)) {
-
-            # 5.10 introduced version and Regexp::DESTROY, which we dont want automatically.
-            # XXX TODO This logic here is wrong and unstable. Fixes lead to more failures.
-            # The walker deserves a rewrite.
-            if ( UNIVERSAL::can( $package, $m ) and $package !~ /^(B::C|version|Regexp|utf8|SelectSaver)$/ ) {
-                next if $package eq 'utf8'                              and $m eq 'DESTROY';    # utf8::DESTROY is empty
-                                                                                                # we load Errno by ourself to avoid double Config warnings [perl #]
-                                                                                                # and we have special logic to detect and include it
-                next if $package =~ /^(Errno|Tie::Hash::NamedCapture)$/ and $m eq 'TIEHASH';
-
-                # XXX Config and FileHandle should not just return. If unneeded skip em.
-                return 0 if $package eq 'Config'                            and $m =~ /DESTROY|TIEHASH/;    # Config detected in GV
-                                                                                                            # IO::File|IO::Handle added for B::CC only
-                return 0 if $package =~ /^(FileHandle|IO::File|IO::Handle)/ and $m eq 'new';
-                debug( pkg => "$package has method $m: saving package" );
-                return mark_package($package);
-            }
-        }
-    }
-    if ( $package !~ /^PerlIO/ and can_delete($package) ) {
-        delete_unsaved_hashINC($package);
-    }
-    if ( can_delete($package) ) {
-        debug( pkg => "Delete $package" );
-        return $include_package{$package} = 0;
-    }
-    elsif ( !exists $all_bc_deps{$package} ) {    # and not in @deps
-        debug( pkg => "Keep $package" );
-        return $include_package{$package} = 1;
-    }
-    else {                                        # in @deps
-        return;
-    }
-}
-
 sub inc_packname {
     my $package = shift;
 
@@ -1547,7 +1426,7 @@ sub delete_unsaved_hashINC {
       and defined $use_xsloader
       and $use_xsloader == 0;
     return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
-    $include_package{$package} = 0;
+    mark_unused($package);
     if ( $curINC{$incpack} ) {
         debug( pkg => "Deleting $package from \%INC" );
         $savINC{$incpack} = $curINC{$incpack} if !$savINC{$incpack};
@@ -1559,7 +1438,7 @@ sub delete_unsaved_hashINC {
 sub add_hashINC {
     my $package = shift;
     my $incpack = inc_packname($package);
-    $include_package{$package} = 1;
+    mark_used($package);
     unless ( $curINC{$incpack} ) {
         if ( $savINC{$incpack} ) {
             debug( pkg => "Adding $package to \%INC (again)" );
@@ -1604,89 +1483,6 @@ sub walkpackages {
     }
 }
 
-sub save_unused_subs {
-    no strict qw(refs);
-    my $sav_debug;
-    if ( debug('unused') ) {
-        $sav_debug = B::C::Config::Debug::save();
-        B::C::Config::Debug::init();
-    }
-    my $main = $module ? $module . "::" : "main::";
-
-    # -fwalkall: better strategy for compile-time added and required packages:
-    # loop savecv and check pkg cache for new pkgs.
-    # if so loop again with those new pkgs only, until the list of new pkgs is empty
-    my ( $walkall_cnt, @init_unused, @unused, @dumped ) = (0);
-
-    #do
-    @init_unused = grep { $include_package{$_} } keys %include_package;
-
-    verbose( "Prescan for unused subs in $main " . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
-
-    # XXX TODO better strategy for compile-time added and required packages:
-    # loop savecv and check pkg cache for new pkgs.
-    # if so loop again with those new pkgs only, until the list of new pkgs is empty
-    descend_marked_unused();
-    walkpackages( \%{$main}, \&should_save, $main eq 'main::' ? undef : $main );
-    verbose( "Saving unused subs in $main" . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
-    walksymtable( \%{$main}, "savecv", \&should_save );
-    @unused = grep { $include_package{$_} } keys %include_package;
-    @dumped = grep { $dumped_package{$_} and $_ ne 'main' } keys %dumped_package;
-    verbose( "old unused: %d, new: %d, dumped: %d", scalar @init_unused, scalar @unused, scalar @dumped );
-
-    if ( !$B::C::walkall ) {
-        @unused = @init_unused = ();
-    }
-    else {
-        my $done;
-        do {
-            $done   = dump_rest();
-            @unused = grep { $include_package{$_} } keys %include_package;
-            @dumped = grep { $dumped_package{$_} and $_ ne 'main' } keys %dumped_package;
-        } while @unused > @dumped and $done;
-        last if $walkall_cnt++ > 3;
-    }
-
-    #} while @unused > @init_unused;
-
-    if ( $sav_debug->{unused} ) {
-        B::C::Config::Debug::restore($sav_debug);
-    }
-
-    # If any m//i is run-time loaded we'll get a "Undefined subroutine utf8::SWASHNEW"
-    # With -fno-fold we don't insist on loading utf8_heavy and Carp.
-    # Until it is compile-time required.
-    if (
-           exists( $INC{'unicore/To/Title.pl'} )
-        or exists( $INC{'unicore/To/Tc.pl'} )    #242
-        or exists( $INC{'unicore/Heavy.pl'} )    #242
-        or ( $savINC{'utf8_heavy.pl'} and ( $B::C::fold or exists( $savINC{'utf8.pm'} ) ) )
-      ) {
-        require "utf8.pm" unless $savINC{"utf8.pm"};
-        mark_package('utf8');
-        require "utf8_heavy.pl" unless $savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
-        mark_package('utf8_heavy.pl');
-
-        # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-        # It adds about 1.6MB exe size 32-bit.
-        svref_2object( \&{"utf8\::SWASHNEW"} )->save;
-        add_hashINC("utf8");
-    }
-
-    # run-time Carp
-    # With -fno-warnings we don't insist on initializing warnings::register_categories and Carp.
-    # Until it is compile-time required.
-    # 68KB exe size 32-bit
-    if ( $B::C::warnings and exists $dumped_package{Carp} ) {
-        svref_2object( \&{"warnings\::register_categories"} )->save;    # 68Kb 32bit
-        add_hashINC("warnings");
-        add_hashINC("warnings::register");
-    }
-    if ($use_xsloader) {
-        force_saving_xsloader();
-    }
-}
-
 sub inc_cleanup {
     my $rec_cnt = shift;
 
@@ -1698,7 +1494,7 @@ sub inc_cleanup {
         if ( $package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'} ) {
             delete $curINC{$package};
         }
-        elsif ( $package eq 'utf8_heavy.pl' and !$include_package{'utf8'} ) {
+        elsif ( $package eq 'utf8_heavy.pl' and !is_used('utf8') ) {
             delete $curINC{$package};
             delete_unsaved_hashINC('utf8');
         }
@@ -1715,7 +1511,7 @@ sub inc_cleanup {
         }
     }
     if ( debug('pkg') and verbose() ) {
-        debug( pkg => "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) );
+        debug( pkg => "\%include_package: " . join( " ", get_all_used() ) );
         debug( pkg => "\%dumped_package:  " . join( " ", grep { $dumped_package{$_} } sort keys %dumped_package ) );
         my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
         debug( pkg => "\%INC: " . join( " ", @inc ) );
@@ -1738,14 +1534,15 @@ sub inc_cleanup {
     }
 }
 
+### ??? move to B::C::Optimizer::UnusedPackages
 sub dump_rest {
     my $again;
     verbose("dump_rest");
     for my $p ( sort keys %INC ) {
     }
-    for my $p ( sort keys %include_package ) {
+    for my $p ( get_all_used() ) {
         $p =~ s/^main:://;
-        if (    $include_package{$p}
+        if (    is_used($p)
             and !exists $dumped_package{$p}
             and !$static_core_pkg{$p}
             and $p !~ /^(threads|main|__ANON__|PerlIO)$/ ) {
@@ -1781,7 +1578,7 @@ sub save_context {
     no strict 'refs';
     if ( defined( objsym( svref_2object( \*{'main::!'} ) ) ) ) {
         use strict 'refs';
-        if ( !$include_package{'Errno'} ) {
+        if ( !is_used('Errno') ) {
             init()->add("/* force saving of Errno */");
             mark_package( 'Errno', 1 );
             svref_2object( \&{'Errno::bootstrap'} )->save;
@@ -1817,9 +1614,9 @@ sub save_context {
 
     # ensure all included @ISA's are stored (#308), and also assign c3 (#325)
     my @saved_isa;
-    for my $p ( sort keys %include_package ) {
+    for my $p ( get_all_used() ) {
         no strict 'refs';
-        if ( $include_package{$p} and exists( ${ $p . '::' }{ISA} ) and ${ $p . '::' }{ISA} ) {
+        if ( exists( ${ $p . '::' }{ISA} ) and ${ $p . '::' }{ISA} ) {
             push @saved_isa, $p;
             svref_2object( \@{ $p . '::ISA' } )->save( $p . '::ISA' );
             if ( mro::get_mro($p) eq 'c3' ) {
@@ -1847,27 +1644,6 @@ sub save_context {
     my $amagic_generate = B::amagic_generation();
     verbose("amagic_generation = $amagic_generate");
     init()->add("PL_amagic_generation = $amagic_generate;");
-}
-
-sub descend_marked_unused {
-
-    #if ($B::C::walkall) {
-    #  for my $pack (keys %all_bc_deps) {
-    #    mark_unused($pack, 0) if !exists $include_package{$pack} and !skip_pkg($pack);
-    #  }
-    #}
-    foreach my $pack ( sort keys %INC ) {
-        my $p = packname_inc($pack);
-        mark_package($p) if !skip_pkg($p) and !$all_bc_deps{$p};
-    }
-    if ( verbose() ) {
-        debug( pkg => "\%include_package: " . join( " ", grep { $include_package{$_} } sort keys %include_package ) );
-        debug( pkg => "\%skip_package: " . join( " ", sort keys %skip_package ) );
-    }
-    foreach my $pack ( sort keys %include_package ) {
-        mark_package($pack) unless skip_pkg($pack);
-    }
-    debug( pkg => "descend_marked_unused: " . join( " ", sort keys %include_package ) );
 }
 
 sub save_main {
@@ -1956,7 +1732,7 @@ sub save_main_rest {
       or debug('cv');
     init()->add("");
     init()->add("/* done main optree, extra subs which might be unused */");
-    save_unused_subs();
+    B::C::Optimizer::UnusedPackages::optimize();
     init()->add("/* done extras */");
 
     save_sig($warner) if $B::C::save_sig;
@@ -2216,7 +1992,7 @@ sub fixup_dynaloader_array {
 
     # filter out unused dynaloaded B modules, used within the compiler only.
     for my $c (qw(B B::C)) {
-        if ( !$xsub{$c} and !$include_package{$c} ) {
+        if ( !$xsub{$c} and !is_used($c) ) {
 
             # (hopefully, see test 103)
             verbose("no dl_init for $c, not marked") if !$skip_package{$c};
@@ -2232,7 +2008,7 @@ sub fixup_dynaloader_array {
     for my $c ( sort keys %skip_package ) {
         verbose("no dl_init for $c, skipped") if $xsub{$c};
         delete $xsub{$c};
-        $include_package{$c} = undef;
+        mark_deleted($c);
         @dl_modules = grep { $_ ne $c } @dl_modules;
     }
 
@@ -2245,7 +2021,7 @@ sub fixup_dynaloader_array {
             $xsub{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
         }
 
-        if ( $stashname eq 'Moose' and $include_package{'Moose'} and $Moose::VERSION gt '2.0' ) {
+        if ( $stashname eq 'Moose' and is_used('Moose') and $Moose::VERSION gt '2.0' ) {
             $xsub{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
         }
         if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
@@ -2368,20 +2144,6 @@ _EOT3
 
 }
 
-sub mark_unused {
-    my ( $pkg, $val ) = @_;
-    $include_package{$pkg} = $val;
-}
-
-sub mark_skip {
-    for (@_) {
-        delete_unsaved_hashINC($_);
-
-        # $include_package{$_} = 0;
-        $skip_package{$_} = 1 unless $include_package{$_};
-    }
-}
-
 sub compile {
     my @options = @_;
 
@@ -2478,7 +2240,7 @@ sub compile {
 
             # $arg ||= shift @options;
             $module = $arg;
-            mark_unused( $arg, 1 );
+            mark_used($arg);
         }
         elsif ( $opt eq "v" ) {
             B::C::Config::Debug::enable_verbose();
@@ -2491,7 +2253,7 @@ sub compile {
             else {
                 eval "require $arg;";         # package as bareword with ::
             }
-            mark_unused( $arg, 1 );
+            mark_used($arg);
         }
         elsif ( $opt eq "U" ) {
             $arg ||= shift @options;
