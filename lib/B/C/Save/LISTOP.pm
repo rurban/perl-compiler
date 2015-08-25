@@ -47,7 +47,7 @@ sub save {
         my $fop  = $op;
         my $svop = $op->first;
         while ( $svop != $op and ref($svop) ne 'B::NULL' ) {
-            if ( $svop->name == 'const' and $svop->can('sv') ) {
+            if ( $svop->name eq 'const' and $svop->can('sv') ) {
                 $sv = $svop->sv;
             }
             if ( $sv and $sv->can("PV") and $sv->PV =~ /~/m ) {
