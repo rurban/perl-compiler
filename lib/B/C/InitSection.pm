@@ -5,11 +5,13 @@ use warnings;
 # avoid use vars
 use parent 'B::C::Section';
 
+# All objects inject into this shared variable.
+our @all_eval_pvs;
+
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
 
-    $self->{'evals'}     = [];
     $self->{'initav'}    = [];
     $self->{'chunks'}    = [];
     $self->{'nosplit'}   = 0;
@@ -59,12 +61,17 @@ sub add_eval {
 
     foreach my $i (@strings) {
         $i =~ s/\"/\\\"/g;
+
+        # We need to output evals after dl_init.
+        push @all_eval_pvs, qq{eval_pv("$i",1);};    # The whole string.
     }
-    push @{ $self->{'evals'} }, @strings;
 }
 
 sub pre_destruct {
     my $self = shift;
+
+    return $self->{'pre_destruct'} if ( !@_ );       # Return the array to the template if nothing is passed in.
+
     push @{ $self->{'pre_destruct'} }, @_;
 }
 
@@ -100,11 +107,6 @@ sub output {
 
         $self->SUPER::add("${init_name}_${name}(aTHX);");
         ++$name;
-    }
-
-    # We need to output evals after dl_init.
-    foreach my $s ( @{ $self->{'evals'} } ) {
-        ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
     }
 
     $return_string .= "static int ${init_name}(pTHX)\n{\n";
