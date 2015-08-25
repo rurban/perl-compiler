@@ -1236,25 +1236,27 @@ sub walk_syms {
 # simplified walk_syms
 # needed to populate @B::C::Flags::deps from Makefile.PL from within this %INC context
 sub walk_stashes {
-    my ( $symref, $prefix ) = @_;
+    my ( $symref, $prefix, $dependencies ) = @_;
     no strict 'refs';
     $prefix = '' unless defined $prefix;
     foreach my $sym ( sort keys %$symref ) {
         if ( $sym =~ /::$/ ) {
             $sym = $prefix . $sym;
-            $B::C::deps{ substr( $sym, 0, -2 ) }++;
+            $dependencies->{ substr( $sym, 0, -2 ) }++;
             if ( $sym ne "main::" && $sym ne "<none>::" ) {
-                walk_stashes( \%$sym, $sym );
+                walk_stashes( \%$sym, $sym, $dependencies );
             }
         }
     }
 }
 
 # Used by Makefile.PL to autogenerate %INC deps.
+# QUESTION: why Moose and IO::Socket::SSL listed here
+# QUESTION: can we skip B::C::* here
 sub collect_deps {
-    %B::C::deps = ();
-    walk_stashes( \%main:: );
-    print join " ", ( sort keys %B::C::deps );
+    my %deps;
+    walk_stashes( \%main::, undef, \%deps );
+    print join " ", ( sort keys %deps );
 }
 
 sub mark_package {
