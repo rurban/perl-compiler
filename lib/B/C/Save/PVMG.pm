@@ -7,6 +7,7 @@ use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar/;
 use B::C::File qw/init svsect xpvmgsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
+use B::C::Save ();
 
 sub save {
     my ( $sv, $fullname ) = @_;
@@ -41,7 +42,7 @@ sub save {
             and $sv->IVX > 5000000    # some crazy heuristic for a so ptr (> image_base)
             and ref( $sv->SvSTASH ) ne 'B::SPECIAL'
           ) {
-            $ivx = B::C::patch_dlsym( $sv, $fullname, $ivx );
+            $ivx = B::C::Save::patch_dlsym( $sv, $fullname, $ivx );
         }
     }
 
