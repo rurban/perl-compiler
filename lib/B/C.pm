@@ -170,7 +170,7 @@ our $nullop_count     = 0;
 our $unresolved_count = 0;
 
 # options and optimizations shared with B::CC
-our ( $module, $init_name, %savINC, %curINC, $mainfile, @static_free );
+our ( $init_name, %savINC, %curINC, $mainfile, @static_free );
 our (
     $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop,  $av_init, $av_init2,       $ro_inc,          $destruct,
@@ -240,9 +240,13 @@ sub set_callback { $saveoptree_callback = shift }
 sub saveoptree { &$saveoptree_callback(@_) }
 sub save_main_rest;
 
-sub module {
-    if (@_) { $module = shift; }
-    else    { $module; }
+{
+    my $module;
+
+    sub module {
+        $module = shift if @_;
+        return $module;
+    }
 }
 
 sub walk_and_save_optree {
@@ -1763,7 +1767,7 @@ sub save_main_rest {
         $end_av   = end_av->save;
         $in_endav = 0;
     }
-    if ( !defined($module) ) {
+    if ( !defined( module() ) ) {
         init()->add(
             "/* startpoints */",
             sprintf( "PL_main_root = s\\_%x;",  ${ main_root() } ),
@@ -1780,7 +1784,7 @@ sub save_main_rest {
             : "PL_endav = (AV*)$end_av;"
         );
     }
-    save_context() unless defined($module);
+    save_context() unless defined( module() );
 
     # verbose("use_xsloader=$use_xsloader");
     # If XSLoader was forced later, e.g. in curpad, INIT or END block
@@ -1937,7 +1941,7 @@ sub save_main_rest {
         'xsub'                             => \%xsub,
         'curINC'                           => \%curINC,
         'staticxs'                         => $staticxs,
-        'module'                           => $module,
+        'module'                           => module(),
         'use_perl_script_name'             => $use_perl_script_name,
         'all_eval_pvs'                     => \@B::C::InitSection::all_eval_pvs,
         'TAINT'                            => ( ${^TAINT} ? 1 : 0 ),
@@ -1947,7 +1951,7 @@ sub save_main_rest {
     chomp $c_file_stash->{'compile_stats'};                                    # Injects a new line when you call compile_stats()
 
     # Was in a section that wrote some stuff out instead of main's subroutine.
-    if ( defined $module ) {
+    if ( defined module() ) {
         init()->add("/* curpad syms */");
         $c_file_stash->{'module_curpad_sym'} = ( comppadlist->ARRAY )[1]->save;
     }
@@ -2237,9 +2241,7 @@ sub compile {
             $init_name = $arg;
         }
         elsif ( $opt eq "m" ) {
-
-            # $arg ||= shift @options;
-            $module = $arg;
+            module($arg);
             mark_used($arg);
         }
         elsif ( $opt eq "v" ) {
