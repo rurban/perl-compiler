@@ -2,7 +2,7 @@ package B::C::File;
 
 =head1 NAME
 
-B::C::File - Responsible for rendering generated C snippets into a C file for use with perlcc
+B::C::File - Responsible for rendering the C file from a provided stash and locally tracked sections for use with perlcc
 
 =head1 SYNOPSIS
 
@@ -10,19 +10,12 @@ B::C::File - Responsible for rendering generated C snippets into a C file for us
     use B::C::File ();
     B::C::File::new(); # Singleton.
     ...
-    B::C::File::write() # C File to generate.
-
-    # In code that needs to contribute snippets
-    use B::C::File qw/unopsect init objsym savesym svop_name padop_name mark_package do_labels/;
-    ...
-    unopsect()->comment("$opsect_common, first");
-    unopsect()->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
-    unopsect()->debug( $op->name, $op );
+    B::C::File::write( 'file.c' ) # C File to generate.
 
 =head1 DESCRIPTION
 
-B<B::C::File> Is an attempt to provide a single interfce to all data that is deemed ready to go to the C file.
-It handles the snippets (sections) as they're determined. It also handles the final render of the C file.
+B<B::C::File> B::C::File is B::C's view. It uses Template Toolkit to render the C file using a passed in stash,
+combined with B::C::Section objects which it initializes and tree walkers update as they go. 
 
 =cut
 
