@@ -619,6 +619,7 @@ sub cc_harness {
     my ( $cfile, $stash, $extra_libs ) = @_;
     use ExtUtils::Embed ();
     my $command = ExtUtils::Embed::ccopts . " -o $Output $cfile ";
+    $command =~ s/\s-pipe\s/ /;    # Strip -pipe out of the compile flags so less memory is used building binaries
     $command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Flags::have_independent_comalloc;
     $command .= $B::C::Flags::extra_cflags if $B::C::Flags::extra_cflags;
     $command .= " -I" . $_ for split /\s+/, opt('I');
