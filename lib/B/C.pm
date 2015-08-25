@@ -1684,7 +1684,6 @@ sub save_unused_subs {
     }
     if ($use_xsloader) {
         force_saving_xsloader();
-        mark_package( 'Config', 1 );                                    # required by Dynaloader and special cased previously
     }
 }
 
@@ -1784,8 +1783,6 @@ sub save_context {
         use strict 'refs';
         if ( !$include_package{'Errno'} ) {
             init()->add("/* force saving of Errno */");
-            mark_package( 'Config', 1 );
-            walk_syms('Config');
             mark_package( 'Errno', 1 );
             svref_2object( \&{'Errno::bootstrap'} )->save;
         }    # else already included

@@ -412,15 +412,11 @@ sub save {
                 debug( gv => "GV::save \%$fullname" );
                 if ( $fullname eq 'main::!' ) {    # force loading Errno
                     init()->add("/* \%! force saving of Errno */");
-                    mark_package( 'Config', 1 );    # Errno needs Config to set the EGV
-                    B::C::walk_syms('Config');
-                    mark_package( 'Errno', 1 );     # B::C needs Errno but does not import $!
+                    mark_package( 'Errno', 1 );    # B::C needs Errno but does not import $!
                 }
                 elsif ( $fullname eq 'main::+' or $fullname eq 'main::-' ) {
                     init()->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
 
-                    mark_package( 'Config', 1 );    # DynaLoader needs Config to set the EGV
-                    B::C::walk_syms('Config');
                     svref_2object( \&{'Tie::Hash::NamedCapture::bootstrap'} )->save;
 
                     mark_package( 'Tie::Hash::NamedCapture', 1 );
