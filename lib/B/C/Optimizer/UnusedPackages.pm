@@ -9,7 +9,7 @@ use B::C::Config;    # import everything
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(mark_unused mark_used is_used get_all_used mark_deleted);
 
-my %include_package;
+our %include_package;
 
 # imports from B::C
 # todo: check & move these to a better place

@@ -525,18 +525,18 @@ static void
 dl_init(pTHX)
 {
 	char *file = __FILE__;
-[% IF dl %]
+[% IF optimizer.dynaloader.dl %]
     dTARG;
     dSP;
 /* DynaLoader bootstrapping */
     ENTER;
-  [%- IF xs %]
+  [%- IF optimizer.dynaloader.xs %]
     ++cxstack_ix;
     cxstack[cxstack_ix].blk_oldcop = PL_curcop;
     /* assert(cxstack_ix == 0); */
   [% END %]
     SAVETMPS;
-  [%- IF dl_fixups.coro %]
+  [%- IF optimizer.dynaloader.fixups.coro %]
  /* needed before dl_init, and after init */
     {
         GV *sym;
@@ -554,7 +554,7 @@ dl_init(pTHX)
         if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));
     }
   [% END %]
-  [%- FOREACH stashname IN dl_modules %]
+  [%- FOREACH stashname IN optimizer.dynaloader.dl_modules %]
     [%- NEXT IF ! xsub.$stashname.match('^Dynamic')  %]
     PUSHMARK(sp);
 
@@ -583,7 +583,7 @@ dl_init(pTHX)
 /*    PUTBACK;*/
   [% END %]
     FREETMPS;
-      [%- IF xs %]
+      [%- IF optimizer.dynaloader.xs %]
     cxstack_ix--; /* i.e. POPBLOCK */
       [% END -%]
     LEAVE;
