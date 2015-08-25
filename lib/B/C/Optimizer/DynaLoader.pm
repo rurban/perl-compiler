@@ -3,17 +3,17 @@ package B::C::Optimizer::DynaLoader;
 use B ();    # svref_2object
 use Config;
 use B::C::Config qw/verbose debug/;
+use B::C::Packages qw/is_package_used mark_package_deleted/;
 
 sub new {
     my $class = shift or die;
     my $self  = shift or die;
     ref $self eq 'HASH' or die( ref $self );
 
-    $self->{'xsub'}            or die;
-    $self->{'skip_package'}    or die;
-    $self->{'include_package'} or die;
-    $self->{'curINC'}          or die;
-    $self->{'output_file'}     or die;
+    $self->{'xsub'}         or die;
+    $self->{'skip_package'} or die;
+    $self->{'curINC'}       or die;
+    $self->{'output_file'}  or die;
 
     # Initialize in case there's no dynaloader and we return early.
     $self->{'stash'} = {
@@ -41,7 +41,7 @@ sub optimize {
 
     # filter out unused dynaloaded B modules, used within the compiler only.
     for my $c (qw(B B::C)) {
-        if ( !$self->{'xsub'}->{$c} and !$self->{'include_package'}->{$c} ) {
+        if ( !$self->{'xsub'}->{$c} and !is_package_used($c) ) {
 
             # (hopefully, see test 103)
             verbose("no dl_init for $c, not marked") if !$self->{'skip_package'}->{$c};
@@ -57,7 +57,7 @@ sub optimize {
     for my $c ( sort keys %{ $self->{'skip_package'} } ) {
         verbose("no dl_init for $c, skipped") if $self->{'xsub'}->{$c};
         delete $self->{'xsub'}->{$c};
-        $self->{'include_package'}->{$c} = undef;
+        mark_package_deleted($c);    # TODO: It's WAAAAY to late to do this?
         @dl_modules = grep { $_ ne $c } @dl_modules;
     }
 
@@ -70,7 +70,7 @@ sub optimize {
             $self->{'xsub'}->{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
         }
 
-        if ( $stashname eq 'Moose' and $self->{'include_package'}->{'Moose'} and $Moose::VERSION gt '2.0' ) {
+        if ( $stashname eq 'Moose' and is_package_used('Moose') and $Moose::VERSION gt '2.0' ) {
             $self->{'xsub'}->{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
         }
         if ( exists( $self->{'xsub'}->{$stashname} ) && $self->{'xsub'}->{$stashname} =~ m/^Dynamic/ ) {

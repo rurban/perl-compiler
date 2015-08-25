@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
 use B::C::Config;
-use B::C::Optimizer::UnusedPackages qw/is_used/;
+use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init decl svsect xpvcvsect symsect/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 
@@ -43,7 +43,7 @@ sub save {
         #return if $fullname eq 'utf8::AUTOLOAD';
         return '0' if $B::C::all_bc_subs{$fullname} or B::C::skip_pkg($cvstashname);
         $CvFLAGS &= ~0x400;    # no CVf_CVGV_RC otherwise we cannot set the GV
-        B::C::mark_package( $cvstashname, 1 ) unless is_used($cvstashname);
+        B::C::mark_package( $cvstashname, 1 ) unless is_package_used($cvstashname);
     }
     elsif ( $cv->is_lexsub($gv) ) {
         $fullname = $cv->NAME_HEK;

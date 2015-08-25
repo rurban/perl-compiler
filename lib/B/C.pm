@@ -114,8 +114,9 @@ use B::STASHGV ();
     use B::C::Save::UV      ();
 }
 
-use B::C::Optimizer::DynaLoader ();
-use B::C::Optimizer::UnusedPackages qw(mark_unused mark_used is_used get_all_used mark_deleted);
+use B::C::Packages qw/is_package_used mark_package_unused mark_package_used get_all_packages_used/;
+use B::C::Optimizer::DynaLoader     ();
+use B::C::Optimizer::UnusedPackages ();
 
 my $re_index = 0;
 our $gv_index = 0;
@@ -642,7 +643,7 @@ sub force_heavy {
     my $pkg       = shift;
     my $pkg_heavy = $pkg . "_heavy.pl";
     no strict 'refs';
-    if ( !is_used($pkg_heavy) and !exists $savINC{$pkg_heavy} ) {
+    if ( !is_package_used($pkg_heavy) and !exists $savINC{$pkg_heavy} ) {
 
         #eval qq[sub $pkg\::AUTOLOAD {
         #    require '$pkg_heavy';
@@ -748,7 +749,7 @@ sub method_named {
         $method = $_ . '::' . $name;
         if ( defined(&$method) ) {
             debug( cv => "Found &%s::%s\n", $_, $name );
-            mark_used($_);    # issue59
+            mark_package_used($_);    # issue59
             mark_package( $_, 1 );
             last;
         }
@@ -756,7 +757,7 @@ sub method_named {
             if ( my $parent = try_isa( $_, $name ) ) {
                 debug( cv => "Found &%s::%s\n", $parent, $name );
                 $method = $parent . '::' . $name;
-                mark_used($parent);
+                mark_package_used($parent);
                 last;
             }
             debug( cv => "no definition for method_name \"$method\"" );
@@ -1043,8 +1044,7 @@ sub mark_skip {
     for (@_) {
         delete_unsaved_hashINC($_);
 
-        # $include_package{$_} = 0;
-        $skip_package{$_} = 1 unless is_used($_);
+        $skip_package{$_} = 1 unless is_package_used($_);
     }
 }
 
@@ -1262,7 +1262,7 @@ sub mark_package {
     my $force   = shift;
 
     return if skip_pkg($package);    # or $package =~ /^B::C(C?)::/;
-    if ( !is_used($package) or $force ) {
+    if ( !is_package_used($package) or $force ) {
         no strict 'refs';
         my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
         mark_package('IO') if grep { $package eq $_ } @IO;
@@ -1270,7 +1270,7 @@ sub mark_package {
         $use_xsloader = 1 if $package =~ /^B|Carp$/;    # to help CC a bit (49)
 
         # i.e. if force
-        my $flag_as_unused = is_used($package);
+        my $flag_as_unused = is_package_used($package);
         if (    defined $flag_as_unused
             and !$flag_as_unused
             and $savINC{ inc_packname($package) } ) {
@@ -1284,9 +1284,9 @@ sub mark_package {
         }
         else {
             debug( pkg => "mark $package%s\n", $force ? " (forced)" : "" )
-              if !is_used($package)
+              if !is_package_used($package)
               and verbose();
-            mark_used($package);
+            mark_package_used($package);
 
             walk_syms($package) if !$B::C::walkall;    # fixes i27-1
         }
@@ -1303,13 +1303,13 @@ sub mark_package {
                         eval { $package->bootstrap };
                     }
                 }
-                my $is_used = is_used($isa);
-                if ( !$is_used and !$skip_package{$isa} ) {
+                my $is_package_used = is_package_used($isa);
+                if ( !$is_package_used and !$skip_package{$isa} ) {
                     no strict 'refs';
                     verbose("$isa saved (it is in $package\'s \@ISA)");
                     B::svref_2object( \@{ $isa . "::ISA" } )->save;    #308
 
-                    if ( defined $is_used ) {
+                    if ( defined $is_package_used ) {
                         verbose("$isa previously deleted, save now");    # e.g. Sub::Name
                         mark_package($isa);
                         walk_syms($isa);                                 # avoid deep recursion
@@ -1431,7 +1431,7 @@ sub delete_unsaved_hashINC {
       and defined $use_xsloader
       and $use_xsloader == 0;
     return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
-    mark_unused($package);
+    mark_package_unused($package);
     if ( $curINC{$incpack} ) {
         debug( pkg => "Deleting $package from \%INC" );
         $savINC{$incpack} = $curINC{$incpack} if !$savINC{$incpack};
@@ -1443,7 +1443,7 @@ sub delete_unsaved_hashINC {
 sub add_hashINC {
     my $package = shift;
     my $incpack = inc_packname($package);
-    mark_used($package);
+    mark_package_used($package);
     unless ( $curINC{$incpack} ) {
         if ( $savINC{$incpack} ) {
             debug( pkg => "Adding $package to \%INC (again)" );
@@ -1499,7 +1499,7 @@ sub inc_cleanup {
         if ( $package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'} ) {
             delete $curINC{$package};
         }
-        elsif ( $package eq 'utf8_heavy.pl' and !is_used('utf8') ) {
+        elsif ( $package eq 'utf8_heavy.pl' and !is_package_used('utf8') ) {
             delete $curINC{$package};
             delete_unsaved_hashINC('utf8');
         }
@@ -1516,7 +1516,7 @@ sub inc_cleanup {
         }
     }
     if ( debug('pkg') and verbose() ) {
-        debug( pkg => "\%include_package: " . join( " ", get_all_used() ) );
+        debug( pkg => "\%include_package: " . join( " ", get_all_packages_used() ) );
         debug( pkg => "\%dumped_package:  " . join( " ", grep { $dumped_package{$_} } sort keys %dumped_package ) );
         my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
         debug( pkg => "\%INC: " . join( " ", @inc ) );
@@ -1545,9 +1545,9 @@ sub dump_rest {
     verbose("dump_rest");
     for my $p ( sort keys %INC ) {
     }
-    for my $p ( get_all_used() ) {
+    for my $p ( get_all_packages_used() ) {
         $p =~ s/^main:://;
-        if (    is_used($p)
+        if (    is_package_used($p)
             and !exists $dumped_package{$p}
             and !$static_core_pkg{$p}
             and $p !~ /^(threads|main|__ANON__|PerlIO)$/ ) {
@@ -1583,7 +1583,7 @@ sub save_context {
     no strict 'refs';
     if ( defined( objsym( svref_2object( \*{'main::!'} ) ) ) ) {
         use strict 'refs';
-        if ( !is_used('Errno') ) {
+        if ( !is_package_used('Errno') ) {
             init()->add("/* force saving of Errno */");
             mark_package( 'Errno', 1 );
             svref_2object( \&{'Errno::bootstrap'} )->save;
@@ -1619,7 +1619,7 @@ sub save_context {
 
     # ensure all included @ISA's are stored (#308), and also assign c3 (#325)
     my @saved_isa;
-    for my $p ( get_all_used() ) {
+    for my $p ( get_all_packages_used() ) {
         no strict 'refs';
         if ( exists( ${ $p . '::' }{ISA} ) and ${ $p . '::' }{ISA} ) {
             push @saved_isa, $p;
@@ -1919,7 +1919,7 @@ sub save_main_rest {
 
     verbose("fast_perl_destruct (-fno-destruct)") if $destruct;
 
-    my $dynaloader_optimizer = B::C::Optimizer::DynaLoader->new( { 'xsub' => \%xsub, 'skip_package' => \%skip_package, 'include_package' => \%B::C::Optimizer::UnusedPackages::include_package, 'curINC' => \%curINC, 'output_file' => $output_file } );
+    my $dynaloader_optimizer = B::C::Optimizer::DynaLoader->new( { 'xsub' => \%xsub, 'skip_package' => \%skip_package, 'curINC' => \%curINC, 'output_file' => $output_file } );
     $dynaloader_optimizer->optimize();
 
     my $c_file_stash = {
@@ -2119,7 +2119,7 @@ sub compile {
         }
         elsif ( $opt eq "m" ) {
             module($arg);
-            mark_used($arg);
+            mark_package_used($arg);
         }
         elsif ( $opt eq "v" ) {
             B::C::Config::Debug::enable_verbose();
@@ -2132,7 +2132,7 @@ sub compile {
             else {
                 eval "require $arg;";         # package as bareword with ::
             }
-            mark_used($arg);
+            mark_package_used($arg);
         }
         elsif ( $opt eq "U" ) {
             $arg ||= shift @options;
@@ -2183,7 +2183,7 @@ sub compile {
     $B::C::destruct     = 1 if $^O eq 'MSWin32';     # skip -ffast-destruct there
 
     B::C::File::new($output_file);                   # Singleton.
-    %curINC = %savINC = %INC;
+    B::C::Packages::new();                           # Singleton.
 
     foreach my $i (@eval_at_startup) {
         init()->add_eval($i);

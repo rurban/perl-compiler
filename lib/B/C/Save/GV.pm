@@ -6,7 +6,7 @@ use Config;
 use B qw/cstring svref_2object SVt_PVGV SVf_ROK/;
 
 use B::C::Config;
-use B::C::Optimizer::UnusedPackages qw/is_used/;
+use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2/;
 use B::C::Helpers qw/mark_package/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -44,7 +44,7 @@ sub savecv {
     # symbol table which is on the path to a package which we need to save
     # e.g. this is 'Getopt' and we need to save 'Getopt::Long'
     #
-    return if ( $package ne 'main' and !is_used($package) );
+    return if ( $package ne 'main' and !is_package_used($package) );
     return if ( $package eq 'main'
         and $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
@@ -83,7 +83,7 @@ sub savecv {
     # Config is marked on any Config symbol. TIE and DESTROY are exceptions,
     # used by the compiler itself
     if ( $name eq 'Config' ) {
-        mark_package( 'Config', 1 ) if !is_used('Config');
+        mark_package( 'Config', 1 ) if !is_package_used('Config');
     }
     $B::C::dumped_package{$package} = 1 if !exists $B::C::dumped_package{$package} and $package !~ /::$/;
     debug( gv => "Saving GV \*$fullname 0x%x", ref $gv ? $$gv : 0 );

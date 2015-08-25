@@ -5,11 +5,7 @@ use Exporter ();
 
 use B qw/svref_2object/;
 use B::C::Config;    # import everything
-
-our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw(mark_unused mark_used is_used get_all_used mark_deleted);
-
-our %include_package;
+use B::C::Packages qw/mark_package_unused mark_package_used mark_package_deleted is_package_used get_all_packages_used include_package_list is_package_used/;
 
 # imports from B::C
 # todo: check & move these to a better place
@@ -25,38 +21,7 @@ our %include_package;
 *packname_inc           = \&B::C::packname_inc;
 *force_saving_xsloader  = \&B::C::force_saving_xsloader;
 
-# to export
-sub mark_unused {
-    return _mark_package( $_[0], 0 );
-}
-
-sub mark_used {
-    return _mark_package( $_[0], 1 );
-}
-
-sub mark_deleted {
-    return _mark_package( $_[0], undef );
-}
-
-# todo: should rename it to avoid confusion
-#	need to check if this cannot be merged
-sub _mark_package {
-    my ( $pkg, $val ) = @_;
-    $include_package{$pkg} = $val;
-
-    return 1;
-}
-
-# better name ? include_package
-sub is_used {
-    my $pkg = shift;
-    die unless defined $pkg;
-    return $include_package{$pkg};
-}
-
-sub get_all_used {
-    return grep( $include_package{$_}, sort keys %include_package );
-}
+# B::C::Packages Aliases
 
 sub descend_marked_unused {
 
@@ -66,19 +31,20 @@ sub descend_marked_unused {
     }
 
     if ( verbose() ) {
-        debug( pkg => "\%include_package: " . join( " ", get_all_used() ) );
+        debug( pkg => "\%include_package: " . join( " ", get_all_packages_used() ) );
         debug( pkg => "\%skip_package: " . join( " ", sort keys %B::C::skip_package ) );
     }
 
-    foreach my $pack ( sort keys %include_package ) {
+    foreach my $pack ( include_package_list() ) {
         mark_package($pack) unless skip_pkg($pack);
     }
-    debug( pkg => "descend_marked_unused: " . join( " ", sort keys %include_package ) );
+    debug( pkg => "descend_marked_unused: " . join( " ", include_package_list() ) );
 }
 
 # previously known as sub save_unused_subs
 sub optimize {
     no strict qw(refs);
+
     my $sav_debug;
     if ( debug('unused') ) {
         $sav_debug = B::C::Config::Debug::save();
@@ -93,7 +59,7 @@ sub optimize {
     my ( $walkall_cnt, @init_unused, @unused, @dumped ) = (0);
 
     #do
-    @init_unused = get_all_used();
+    @init_unused = get_all_packages_used();
 
     verbose( "Prescan for unused subs in $main " . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
 
@@ -104,7 +70,7 @@ sub optimize {
     walkpackages( \%{$main}, \&should_save, $main eq 'main::' ? undef : $main );
     verbose( "Saving unused subs in $main" . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
     walksymtable( \%{$main}, "savecv", \&should_save );
-    @unused = get_all_used();
+    @unused = get_all_packages_used();
     @dumped = grep { $B::C::dumped_package{$_} and $_ ne 'main' } keys %B::C::dumped_package;
     verbose( "old unused: %d, new: %d, dumped: %d", scalar @init_unused, scalar @unused, scalar @dumped );
 
@@ -113,9 +79,10 @@ sub optimize {
     }
     else {
         my $done;
+
         do {
             $done   = dump_rest();
-            @unused = grep { $include_package{$_} } keys %include_package;
+            @unused = get_all_packages_used();
             @dumped = grep { $B::C::dumped_package{$_} and $_ ne 'main' } keys %B::C::dumped_package;
         } while @unused > @dumped and $done;
         last if $walkall_cnt++ > 3;
@@ -173,7 +140,7 @@ sub should_save {
     if ( $package =~ /::::/ ) {
 
         # skip ::::ISA::CACHE etc.
-        mark_unused($package);
+        mark_package_unused($package);
         return 0;
     }
     debug( pkg => "Considering $package" );
@@ -190,23 +157,23 @@ sub should_save {
         else {
             debug( pkg => "ext/mro already loaded" );
 
-            return is_used('mro');
+            return is_package_used('mro');
         }
     }
     if ( $package eq 'attributes'
         and grep { $_ eq 'attributes' } @DynaLoader::dl_modules ) {
-        mark_package( $package, 1 );
+        B::C::mark_package( $package, 1 );
         return 1;
     }
     if ( exists $B::C::all_bc_deps{$package} ) {
-        foreach my $u ( get_all_used() ) {
+        foreach my $u ( get_all_packages_used() ) {
 
             # If this package is a prefix to something we are saving, traverse it
             # but do not mark it for saving if it is not already
             # e.g. to get to B::OP we need to traverse B:: but need not save B
             my $p = $package;
             $p =~ s/(\W)/\\$1/g;
-            return 1 if ( $u =~ /^$p\:\:/ ) && is_used($package);
+            return 1 if ( $u =~ /^$p\:\:/ ) && is_package_used($package);
         }
     }
 
@@ -216,7 +183,7 @@ sub should_save {
     # issue348: only drop B::C packages, not any from user code.
     if (   ( $package =~ /^DynaLoader|XSLoader$/ and $use_xsloader )
         or ( !exists $B::C::all_bc_deps{$package} ) ) {
-        mark_used($package);
+        mark_package_used($package);
     }
 
     # If this package is in the same file as main:: or our source, save it. (72, 73)
@@ -230,7 +197,7 @@ sub should_save {
                 # compare cv->FILE to $mainfile
                 my $cv = svref_2object( \&{ $package . '::' . $sym } );
                 if ( $cv and $cv->can('FILE') and $cv->FILE ) {
-                    mark_used($package) if $mainfile eq $cv->FILE;
+                    mark_package_used($package) if $mainfile eq $cv->FILE;
                     last;
                 }
             }
@@ -247,21 +214,21 @@ sub should_save {
     # Omit the packages which we use (and which cause grief
     # because of fancy "goto &$AUTOLOAD" stuff).
     # XXX Surely there must be a nicer way to do this.
-    my $is_used = is_used($package);
-    if ( defined $is_used ) {
+    my $is_package_used = is_package_used($package);
+    if ( defined $is_package_used ) {
         if ( !exists $B::C::all_bc_deps{$package} ) {
-            mark_used($package);
+            mark_package_used($package);
             $curINC{$incpack} = $savINC{$incpack};
             debug( pkg => "Cached new $package is kept" );
         }
-        elsif ( !$is_used ) {
+        elsif ( !$is_package_used ) {
             delete_unsaved_hashINC($package) if can_delete($package);
             debug( pkg => "Cached $package is already deleted" );
         }
         else {
             debug( pkg => "Cached $package is cached" );
         }
-        return is_used($package);
+        return is_package_used($package);
     }
 
     # Now see if current package looks like an OO class. This is probably too strong.
@@ -291,14 +258,14 @@ sub should_save {
     }
     if ( can_delete($package) ) {
         debug( pkg => "Delete $package" );
-        mark_unused($package);
+        mark_package_unused($package);
     }
     elsif ( !exists $B::C::all_bc_deps{$package} ) {    # and not in @deps
         debug( pkg => "Keep $package" );
-        mark_used($package);
+        mark_package_used($package);
     }
 
-    return is_used($package);                           # 1 / 0 or undef
+    return is_package_used($package);                   # 1 / 0 or undef
 }
 
 1;
