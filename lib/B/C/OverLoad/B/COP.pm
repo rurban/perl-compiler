@@ -6,6 +6,7 @@ use B qw/cstring/;
 use B::C::Config;
 use B::C::File qw/init copsect/;
 use B::C::Save qw(constpv);
+use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
 sub save {
@@ -73,7 +74,7 @@ sub save {
 
             # we cannot store this static (attribute exit)
             USE_ITHREADS() ? ( "NULL", "NULL" ) : ( "Nullhv", "Nullgv" ),
-            $op->hints, B::C::ivx( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
+            $op->hints, get_integer_value( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
         )
     );
 

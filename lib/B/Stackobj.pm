@@ -25,7 +25,7 @@ use Exporter ();
 
 use strict;
 use B qw(class SVf_IOK SVf_NOK SVf_IVisUV SVf_ROK SVf_POK);
-use B::C qw(ivx nvx);
+use B::C::Decimal qw/get_integer_value get_double_value/;
 use Config;
 
 # Types
@@ -212,7 +212,7 @@ sub set_int {
         $sval = $expr;
     }
     else {
-        $sval = B::C::ivx($expr);
+        $sval = get_integer_value($expr);
         $sval = $expr if $sval eq '0' and $expr;
     }
 
@@ -231,7 +231,7 @@ sub set_double {
         $sval = $expr;
     }
     else {
-        $sval = B::C::nvx($expr);
+        $sval = get_double_value($expr);
         $sval = $expr if $sval eq '0' and $expr;
     }
 

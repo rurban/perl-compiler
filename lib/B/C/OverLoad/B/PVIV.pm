@@ -4,6 +4,7 @@ use strict;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvivsect svsect init/;
+use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
@@ -20,7 +21,7 @@ sub save {
     my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
 
     xpvivsect()->comment('STASH, MAGIC, cur, len, IVX');
-    xpvivsect()->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $cur, $len, B::C::ivx( $sv->IVX ) ) );    # IVTYPE long
+    xpvivsect()->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $cur, $len, get_integer_value( $sv->IVX ) ) );    # IVTYPE long
 
     svsect()->add(
         sprintf(

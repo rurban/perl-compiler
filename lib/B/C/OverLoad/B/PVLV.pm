@@ -7,6 +7,7 @@ use B q/cchar/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvlvsect svsect init/;
+use B::C::Decimal qw/ get_double_value/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Warning not covered by the (cpanel)core test suite...
@@ -30,7 +31,7 @@ sub save {
     xpvlvsect()->add(
         sprintf(
             "Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %s, %u, %u, Nullsv, %s",
-            $cur,         $len,         B::C::nvx( $sv->NVX ),
+            $cur,         $len,         get_double_value( $sv->NVX ),
             $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE )
         )
     );

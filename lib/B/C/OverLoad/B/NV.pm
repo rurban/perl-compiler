@@ -6,6 +6,7 @@ use B q/SVf_IOK/;
 
 use B::C::Config;
 use B::C::File qw/xpvnvsect svsect/;
+use B::C::Decimal qw/get_double_value/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
@@ -13,7 +14,7 @@ sub save {
 
     my $sym = objsym($sv);
     return $sym if defined $sym;
-    my $nv = B::C::nvx( $sv->NV );
+    my $nv = get_double_value( $sv->NV );
     $nv .= '.00' if $nv =~ /^-?\d+$/;
 
     # IVX is invalid in B.xs and unused

@@ -5,6 +5,7 @@ use strict;
 use Config;
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
 use B::C::Config;
+use B::C::Decimal qw/get_integer_value/;
 use B::C::Packages qw/is_package_used/;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
@@ -476,7 +477,7 @@ sub save {
         "NULL",                         #cvfile later (now a HEK)
         $padlistsym,
         $xcv_outside,                   #if main_cv set later
-        B::C::ivx( $cv->OUTSIDE_SEQ ),
+        get_integer_value( $cv->OUTSIDE_SEQ ),
         $CvFLAGS,
         $cv->DEPTH
       );

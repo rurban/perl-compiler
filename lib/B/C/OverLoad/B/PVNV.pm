@@ -5,6 +5,7 @@ use strict;
 use B qw/SVf_NOK SVp_NOK/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
+use B::C::Decimal qw/get_integer_value get_double_value/;
 use B::C::File qw/xpvnvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -21,21 +22,21 @@ sub save {
     }
     my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
     my $nvx;
-    my $ivx = B::C::ivx( $sv->IVX );    # here must be IVX!
+    my $ivx = get_integer_value( $sv->IVX );    # here must be IVX!
     if ( $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
 
         # it could be a double, or it could be 2 ints - union xpad_cop_seq
-        $nvx = B::C::nvx( $sv->NV );
+        $nvx = get_double_value( $sv->NV );
     }
     else {
         if ( C99() ) {
             $nvx = sprintf(
                 ".xpad_cop_seq.xlow = %s, .xpad_cop_seq.xhigh = %s",
-                B::C::ivx( $sv->COP_SEQ_RANGE_LOW ), B::C::ivx( $sv->COP_SEQ_RANGE_HIGH ),
+                get_integer_value( $sv->COP_SEQ_RANGE_LOW ), get_integer_value( $sv->COP_SEQ_RANGE_HIGH ),
             );
         }
         else {
-            $nvx = B::C::nvx( $sv->NVX );
+            $nvx = get_double_value( $sv->NVX );
         }
     }
 
@@ -48,14 +49,14 @@ sub save {
         init()->add(
             sprintf(
                 "xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %s;",
-                xpvnvsect()->index, B::C::ivx( $sv->COP_SEQ_RANGE_LOW )
+                xpvnvsect()->index, get_integer_value( $sv->COP_SEQ_RANGE_LOW )
             ),
 
             # pad.c: PAD_MAX = I32_MAX (4294967295)
             # U suffix <= "warning: this decimal constant is unsigned only in ISO C90"
             sprintf(
                 "xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %s;",
-                xpvnvsect()->index, B::C::ivx( $sv->COP_SEQ_RANGE_HIGH )
+                xpvnvsect()->index, get_integer_value( $sv->COP_SEQ_RANGE_HIGH )
             )
         );
     }

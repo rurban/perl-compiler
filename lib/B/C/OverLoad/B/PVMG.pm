@@ -6,6 +6,7 @@ use Config;
 use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar SVp_POK/;
 use B::C::Save qw/savepvn savepv/;
+use B::C::Decimal qw/get_integer_value get_double_value/;
 use B::C::File qw/init svsect xpvmgsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -28,8 +29,8 @@ sub save {
         return B::REGEXP::save( $sv, $fullname );
     }
     else {
-        $ivx = B::C::ivx( $sv->IVX );    # XXX How to detect HEK* namehek?
-        $nvx = B::C::nvx( $sv->NVX );    # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
+        $ivx = get_integer_value( $sv->IVX );    # XXX How to detect HEK* namehek?
+        $nvx = get_double_value( $sv->NVX );     # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
 
         # See #305 Encode::XS: XS objects are often stored as SvIV(SvRV(obj)). The real
         # address needs to be patched after the XS object is initialized. But how detect them properly?

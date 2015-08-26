@@ -5,6 +5,7 @@ use strict;
 use B qw/SVf_ROK SVf_IOK SVp_IOK SVf_IVisUV/;
 use B::C::Config;
 use B::C::File qw/svsect xpvivsect/;
+use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
@@ -21,7 +22,7 @@ sub save {
     if ( $svflags & SVf_IVisUV ) {
         return $sv->B::UV::save;
     }
-    my $ivx = B::C::ivx( $sv->IVX );
+    my $ivx = get_integer_value( $sv->IVX );
     my $i   = svsect()->index + 1;
     if ( $svflags & 0xff and !( $svflags & ( SVf_IOK | SVp_IOK ) ) ) {    # Not nullified
         unless ( $svflags & 0x00010000 ) {                                # PADSTALE - out of scope lexical is !IOK
