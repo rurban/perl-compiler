@@ -324,20 +324,6 @@ sub IsCOW_hek {
     return IsCOW( $_[0] ) && !$_[0]->LEN;
 }
 
-sub save_rv {
-    my ( $sv, $fullname ) = @_;
-    if ( !$fullname ) {
-        $fullname = '(unknown)';
-    }
-
-    my $rv;
-
-    $rv = $sv->RV->save($fullname);
-    $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
-
-    return $rv;
-}
-
 # => savesym, cur, len, pv, static
 sub save_pv_or_rv {
     my ( $sv, $fullname ) = @_;
@@ -354,8 +340,8 @@ sub save_pv_or_rv {
     if ($rok) {
 
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
-        debug( sv => "save_pv_or_rv: save_rv(" . ( $sv || '' ) );
-        $savesym = save_rv( $sv, $fullname );
+        debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
+        $savesym = B::RV::save_op( $sv, $fullname );
         $static = 1;    # avoid run-time overwrite of the PV/RV slot (#273)
         if ( $savesym =~ /(\(char\*\))?get_cv\("/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
             $static  = 0;

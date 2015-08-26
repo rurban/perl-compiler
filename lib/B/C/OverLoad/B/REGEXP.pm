@@ -8,7 +8,7 @@ use B::C::Config;
 use B::C::File qw/init svsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
-# post 5.11: When called from save_rv not from PMOP::save precomp
+# post 5.11: When called from B::RV::save_op not from PMOP::save precomp
 sub save {
     my ( $sv, $fullname ) = @_;
 

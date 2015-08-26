@@ -4,7 +4,6 @@ use strict;
 
 use B::C::Config;
 use B::C::File qw/svsect init/;
-use B::C::Helpers qw/save_rv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Since 5.11 also called by IV::save (SV -> IV)
@@ -18,7 +17,7 @@ sub save {
         ref($sv), $$sv, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
     );
 
-    my $rv = save_rv( $sv, $fullname );
+    my $rv = save_op( $sv, $fullname );
     return '0' unless $rv;
 
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
@@ -29,6 +28,18 @@ sub save {
     init()->add("$s.sv_u.svu_rv = (SV*)$rv;");
 
     return savesym( $sv, "&" . $s );
+}
+
+# the save methods should probably be renamed visit
+sub save_op {
+    my ( $sv, $fullname ) = @_;
+
+    $fullname ||= '(unknown)';
+
+    my $rv = $sv->RV->save($fullname);
+    $rv =~ s/^\(([AGHS]V|IO)\s*\*\)\s*(\&sv_list.*)$/$2/;
+
+    return $rv;
 }
 
 1;
