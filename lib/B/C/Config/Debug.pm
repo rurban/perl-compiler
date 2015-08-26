@@ -8,6 +8,7 @@ my %debug_map = (
     'C' => 'cv',
     'f' => 'file',
     'G' => 'gv',
+    'g' => 'signals',
     'H' => 'hv',
     'M' => 'mg',
     'O' => 'op',
@@ -80,7 +81,7 @@ sub enable_debug_level {
 sub enable_all {
     enable_verbose() unless verbose();
     foreach my $level ( keys %debug ) {
-        next unless $debug{$level};
+        next if $debug{$level};
         enable_debug_level($level);
     }
     return;

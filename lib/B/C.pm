@@ -43,7 +43,7 @@ our %Regexp;
 
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(mark_skip set_callback save_context save_sig svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
+our @EXPORT_OK = qw(mark_skip set_callback save_context svop_or_padop_pv inc_cleanup ivx nvx opsect_common);
 
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
@@ -80,7 +80,8 @@ use B::STASHGV ();
 
 {
     use B::C::Save qw(constpv savepv set_max_string_len);
-    use B::C::OverLoad ();
+    use B::C::Save::Signals ();
+    use B::C::OverLoad      ();
 }
 
 use B::C::Packages qw/is_package_used mark_package_unused mark_package_used get_all_packages_used/;
@@ -142,8 +143,8 @@ our $unresolved_count = 0;
 our ( $init_name, %savINC, %curINC, $mainfile, @static_free );
 our (
     $optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
-    $save_data_fh, $save_sig, $optimize_cop,  $av_init, $av_init2,       $ro_inc,          $destruct,
-    $fold,         $warnings, $const_strings, $stash,   $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist,
+    $save_data_fh, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
+    $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist,
     $walkall
 );
 
@@ -160,16 +161,16 @@ our %option_map = (
     'av-init2'        => \$B::C::av_init2,
     'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
-    'stash'           => \$B::C::stash,              # enable with -fstash
-    'destruct'        => \$B::C::destruct,           # disable with -fno-destruct
-    'fold'            => \$B::C::fold,               # disable with -fno-fold
-    'warnings'        => \$B::C::warnings,           # disable with -fno-warnings
+    'stash'           => \$B::C::stash,                          # enable with -fstash
+    'destruct'        => \$B::C::destruct,                       # disable with -fno-destruct
+    'fold'            => \$B::C::fold,                           # disable with -fno-fold
+    'warnings'        => \$B::C::warnings,                       # disable with -fno-warnings
     'use-script-name' => \$use_perl_script_name,
-    'save-sig-hash'   => \$B::C::save_sig,
-    'dyn-padlist'     => \$B::C::dyn_padlist,        # with -O4, needed for cv cleanup with non-local exits since 5.18
-    'cop'             => \$optimize_cop,             # XXX very unsafe!
-                                                     # Better do it in CC, but get rid of
-                                                     # NULL cops also there.
+    'save-sig-hash'   => sub { B::C::Save::Signals::set(@_) },
+    'dyn-padlist'     => \$B::C::dyn_padlist,                    # with -O4, needed for cv cleanup with non-local exits since 5.18
+    'cop'             => \$optimize_cop,                         # XXX very unsafe!
+                                                                 # Better do it in CC, but get rid of
+                                                                 # NULL cops also there.
 );
 our %optimization_map = (
     0 => [qw()],                                                        # special case
@@ -1339,46 +1340,6 @@ sub save_main {
     save_main_rest();
 }
 
-# save %SIG ( in case it was set in a BEGIN block )
-sub save_sig {
-
-    # local $SIG{__WARN__} = shift;
-    init()->no_split;
-    my @save_sig;
-    foreach my $k ( sort keys %SIG ) {
-        next unless ref $SIG{$k};
-        my $cvref = svref_2object( \$SIG{$k} );
-
-        # QUESTION: where does it come from in B::C / why do we want to skip it
-        #   should we skip more ?
-        next if ref($cvref) eq 'B::CV' and $cvref->FILE =~ m|B/C\.pm$|;    # ignore B::C SIG warn handler
-        push @save_sig, [ $k, $cvref ];
-    }
-    unless (@save_sig) {
-        verbose( init()->add("/* no %SIG in BEGIN block */") );
-        verbose("no %SIG in BEGIN block");
-        return;
-    }
-    verbose( init()->add("/* save %SIG */") );
-    verbose("save %SIG");
-    init()->add( "{", "\tHV* hv = get_hv(\"main::SIG\",GV_ADD);" );
-    foreach my $x (@save_sig) {
-        my ( $k, $cvref ) = @$x;
-        my $sv = $cvref->save;
-        init()->add( '{', sprintf "\t" . 'SV* sv = (SV*)%s;', $sv );
-        init()->add(
-            sprintf(
-                "\thv_store(hv, %s, %u, %s, %s);",
-                cstring($k), length( pack "a*", $k ),
-                'sv',        0
-            )
-        );    # XXX randomized hash keys!
-        init()->add( "\t" . 'mg_set(sv);', '}' );
-    }
-    init()->add('}');
-    init()->split;
-}
-
 sub force_saving_xsloader {
     mark_package( "XSLoader", 1 );
 
@@ -1397,10 +1358,6 @@ sub force_saving_xsloader {
 }
 
 sub save_main_rest {
-
-    # this is mainly for the test suite
-    my $warner = $SIG{__WARN__};
-
     WARN "done main optree, walking symtable for extras"
       if verbose()
       or debug('cv');
@@ -1409,7 +1366,7 @@ sub save_main_rest {
     B::C::Optimizer::UnusedPackages::optimize();
     init()->add("/* done extras */");
 
-    save_sig($warner) if $B::C::save_sig;
+    B::C::Save::Signals::save();
 
     # honour -w
     init()->add(
@@ -1701,8 +1658,8 @@ sub compile {
     $DB::single = 1 if defined &DB::DB;
     my ( $option, $opt, $arg );
     my @eval_at_startup;
-    $B::C::can_delete_pkg   = 1;
-    $B::C::save_sig         = 1;
+    $B::C::can_delete_pkg = 1;
+    B::C::Save::Signals::enable();
     $B::C::destruct         = 1;
     $B::C::stash            = 0;
     $B::C::fold             = 1;                                                 # always include utf8::Cased tables
@@ -1813,7 +1770,12 @@ sub compile {
             my $no = defined($1) && $1 eq 'no-';
             $arg = $no ? $2 : $arg;
             if ( exists $option_map{$arg} ) {
-                ${ $option_map{$arg} } = !$no;
+                if ( ref $option_map{$arg} eq 'CODE' ) {
+                    $option_map{$arg}->( !$no );
+                }
+                else {
+                    ${ $option_map{$arg} } = !$no;
+                }
             }
             else {
                 die "Invalid optimization '$arg'";
