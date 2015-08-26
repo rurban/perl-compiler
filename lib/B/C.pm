@@ -79,7 +79,7 @@ use B::FAKEOP  ();
 use B::STASHGV ();
 
 {
-    use B::C::Save          ();
+    use B::C::Save qw(constpv savepv set_max_string_len);
     use B::C::Save::AV      ();
     use B::C::Save::BINOP   ();
     use B::C::Save::BM      ();
@@ -121,7 +121,6 @@ use B::C::Optimizer::UnusedPackages ();
 
 my $re_index = 0;
 our $gv_index = 0;
-our $pv_index = 0;
 
 my $padlist_index = 0;
 
@@ -158,7 +157,7 @@ our %all_bc_deps = map { $_ => 1 } @B::C::Flags::deps;
 # -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
 
 our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
-my ( %strtable, %gptable );
+my (%gptable);
 our ( %xsub, %init2_remap );
 our ($staticxs);
 our ( %dumped_package, %skip_package, %isa_cache );
@@ -213,7 +212,7 @@ our %optimization_map = (
 );
 
 our @xpvav_sizes;
-our ( $max_string_len, $in_endav );
+our ($in_endav);
 my %static_core_pkg;                                                    # = map {$_ => 1} static_core_packages();
 
 # used by B::OBJECT
@@ -355,33 +354,6 @@ sub IsCOW {
 # QUESTION: do we want to preserve it ?
 sub IsCOW_hek {
     return IsCOW( $_[0] ) && !$_[0]->LEN;
-}
-
-sub constpv {
-    return savepv( shift, 1 );
-}
-
-sub savepv {
-    my $pv      = shift;
-    my $const   = shift;
-    my $cstring = cstring($pv);
-
-    return $strtable{$cstring} if defined $strtable{$cstring};
-    $pv = pack "a*", $pv;
-    my $pvsym = sprintf( "pv%d", $pv_index++ );
-    $const = " const" if $const;
-    if ( defined $max_string_len && length($pv) > $max_string_len ) {
-        my $chars = join ', ', map { cchar $_ } split //, $pv;
-        decl()->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
-        $strtable{$cstring} = "$pvsym";
-    }
-    else {
-        if ( $cstring ne "0" ) {    # sic
-            decl()->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
-            $strtable{$cstring} = "$pvsym";
-        }
-    }
-    return wantarray ? ( $pvsym, length($pv) ) : $pvsym;
 }
 
 sub save_rv {
@@ -1907,7 +1879,7 @@ sub compile {
             push @eval_at_startup, $arg;
         }
         elsif ( $opt eq "l" ) {
-            $max_string_len = $arg;
+            set_max_string_len($arg);
         }
     }
     if ( !$B::C::Flags::have_independent_comalloc ) {

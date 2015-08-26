@@ -5,6 +5,7 @@ use strict;
 use Config;
 use B qw/cstring cchar svref_2object/;
 use B::C::Config;
+use B::C::Save qw(savepv);
 use B::C::File qw/init svsect xpviosect/;
 
 use B::C::Helpers qw/mark_package/;
@@ -45,7 +46,7 @@ sub save {
     $pv = '' unless defined $pv;
     my ( $pvsym, $len, $cur );
     if ($pv) {
-        $pvsym = B::C::savepv($pv);
+        $pvsym = savepv($pv);
         $cur   = $io->CUR;
     }
     else {

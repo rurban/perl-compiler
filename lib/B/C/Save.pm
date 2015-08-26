@@ -9,10 +9,55 @@ use B::C::File qw( xpvmgsect decl init );
 use Exporter ();
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw/savepvn save_hek/;
+our @EXPORT_OK = qw/savepvn constpv savepv save_hek inc_pv_index set_max_string_len/;
 
 my %hektable;
 my $hek_index = 0;
+
+my %strtable;
+
+# TODO: move save_hek outside of this package
+# FIXME: 2 different families of save functions
+#   save_* vs save*
+
+my $pv_index = -1;
+
+sub inc_pv_index {
+    return ++$pv_index;
+}
+
+sub constpv {
+    return savepv( shift, 1 );
+}
+
+my $max_string_len;
+
+sub set_max_string_len {
+    $max_string_len = shift;
+}
+
+sub savepv {
+    my $pv      = shift;
+    my $const   = shift;
+    my $cstring = cstring($pv);
+
+    return $strtable{$cstring} if defined $strtable{$cstring};
+    $pv = pack "a*", $pv;
+    my $pvsym = sprintf( "pv%d", inc_pv_index() );
+    $const = " const" if $const;
+    if ( defined $max_string_len && length($pv) > $max_string_len ) {
+        my $chars = join ', ', map { cchar $_ } split //, $pv;
+        decl()->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
+        $strtable{$cstring} = "$pvsym";
+    }
+    else {
+        if ( $cstring ne "0" ) {    # sic
+            decl()->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
+            $strtable{$cstring} = "$pvsym";
+        }
+    }
+    return wantarray ? ( $pvsym, length($pv) ) : $pvsym;
+}
 
 # Shared global string in PL_strtab.
 # Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.

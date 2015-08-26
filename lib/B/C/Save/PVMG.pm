@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar SVp_POK/;
-use B::C::Save qw/savepvn/;
+use B::C::Save qw/savepvn savepv/;
 use B::C::File qw/init svsect xpvmgsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -395,7 +395,7 @@ sub _savere {
     svsect()->add(
         sprintf(
             "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
-            0x4405, ( C99() ? ".svu_pv=" : "" ) . '(char*)' . B::C::savepv($pv)
+            0x4405, ( C99() ? ".svu_pv=" : "" ) . '(char*)' . savepv($pv)
         )
     );
     $sym = sprintf( "&sv_list[%d]", svsect()->index );

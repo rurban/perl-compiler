@@ -5,6 +5,7 @@ use strict;
 use B qw/cstring/;
 use B::C::Config;
 use B::C::File qw/init copsect/;
+use B::C::Save qw(constpv);
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
 sub save {
@@ -111,8 +112,8 @@ sub save {
     if ( !$B::C::optimize_cop ) {
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
-                init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", B::C::constpv( $op->stashpv ) ) );
-                init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",    B::C::constpv($file) ) );
+                init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ) );
+                init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv($file) ) );
             }
             else {
                 init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring( $op->stashpv ) ) );

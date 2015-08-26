@@ -5,6 +5,7 @@ use strict;
 use Config;
 use B qw/cstring/;
 use B::C::File qw/init decl/;
+use B::C::Save qw/inc_pv_index/;
 
 # pre vs. post 5.8.9/5.9.4 logic for lexical warnings
 our @ISA = qw(B::PV B::IV);
@@ -19,7 +20,7 @@ sub save {
     # check cache
     return $lexwarnsym{$pv} if $lexwarnsym{$pv};
 
-    my $sym = sprintf( "lexwarn%d", $B::C::pv_index++ );
+    my $sym = sprintf( "lexwarn%d", inc_pv_index() );
 
     # if 8 use UVSIZE, if 4 use LONGSIZE
     my $t = ( $Config{longsize} == 8 ) ? "J" : "L";
