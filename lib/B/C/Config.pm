@@ -25,9 +25,7 @@ sub _autoload_map {
         C99 => $Config{d_c99_variadic_macros},    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
         MAD => $Config{mad},
-
     };
-
     $map->{HAVE_DLFCN_DLOPEN} = $Config{i_dlfcn} && $Config{d_dlopen};
 
     # debugging variables
