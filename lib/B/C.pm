@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
-#      Copyright (c) 2011, 2012, 2013, 2014 cPanel Inc
+#      Copyright (c) 2011, 2012, 2013, 2014, 2015 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -204,11 +204,17 @@ sub add_to_currINC {
 # This the Carp free workaround for DynaLoader::bootstrap
 sub DynaLoader::croak { die @_ }
 
-sub walk_and_save_optree;
+sub walk_and_save_optree {
+    my ( $name, $root, $start ) = @_;
+    if ($root) {
+        verbose() ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
+    }
+    return objsym($start);
+}
+
 my $saveoptree_callback = \&walk_and_save_optree;
 sub set_callback { $saveoptree_callback = shift }
 sub saveoptree { &$saveoptree_callback(@_) }
-sub save_main_rest;
 
 {
     my $module;
@@ -217,14 +223,6 @@ sub save_main_rest;
         $module = shift if @_;
         return $module;
     }
-}
-
-sub walk_and_save_optree {
-    my ( $name, $root, $start ) = @_;
-    if ($root) {
-        verbose() ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
-    }
-    return objsym($start);
 }
 
 # Look this up here so we can do just a number compare
