@@ -78,20 +78,14 @@ use FileHandle;
 use B::FAKEOP  ();
 use B::STASHGV ();
 
-{
-    use B::C::Save qw(constpv savepv set_max_string_len);
-    use B::C::Save::Signals ();
-    use B::C::OverLoad      ();
-}
-
-use B::C::Packages qw/is_package_used mark_package_unused mark_package_used get_all_packages_used/;
 use B::C::Optimizer::DynaLoader     ();
 use B::C::Optimizer::UnusedPackages ();
+use B::C::OverLoad                  ();
+use B::C::Packages qw/is_package_used mark_package_unused mark_package_used get_all_packages_used/;
+use B::C::Save qw(constpv savepv set_max_string_len);
+use B::C::Save::Signals ();
 
-my $re_index = 0;
 our $gv_index = 0;
-
-my $padlist_index = 0;
 
 # FIXME: this part can now be dynamic
 # exclude all not B::C:: prefixed subs
@@ -125,9 +119,8 @@ our %all_bc_deps = map { $_ => 1 } @B::C::Flags::deps;
 # pb -MB::Stash -e0
 # -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
 
-our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
-my (%gptable);
-our ( %xsub, %init2_remap );
+our ( $package_pv, @package_pv );    # global stash for methods since 5.13
+our ( %xsub,       %init2_remap );
 our ($staticxs);
 our ( %dumped_package, %skip_package, %isa_cache );
 my $output_file;

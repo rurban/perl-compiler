@@ -138,7 +138,6 @@ sub _save_common {
         }
     }
 
-    # $prev_op = $op;
     return sprintf(
         "s\\_%x, s\\_%x, %s",
         ${ $op->next },
