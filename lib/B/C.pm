@@ -195,7 +195,10 @@ sub add_to_currINC {
 }
 
 # This the Carp free workaround for DynaLoader::bootstrap
-sub DynaLoader::croak { die @_ }
+{
+    no warnings 'redefine';
+    sub DynaLoader::croak { die @_ }
+}
 
 sub walk_and_save_optree {
     my ( $name, $root, $start ) = @_;
