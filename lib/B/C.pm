@@ -80,39 +80,7 @@ use B::STASHGV ();
 
 {
     use B::C::Save qw(constpv savepv set_max_string_len);
-    use B::C::Save::AV      ();
-    use B::C::Save::BINOP   ();
-    use B::C::Save::BM      ();
-    use B::C::Save::COP     ();
-    use B::C::Save::CV      ();
-    use B::C::Save::GV      ();
-    use B::C::Save::HV      ();
-    use B::C::Save::IO      ();
-    use B::C::Save::IV      ();
-    use B::C::Save::LEXWARN ();
-    use B::C::Save::LISTOP  ();
-    use B::C::Save::LOGOP   ();
-    use B::C::Save::LOOP    ();
-    use B::C::Save::NULL    ();
-    use B::C::Save::NV      ();
-    use B::C::Save::OBJECT  ();
-    use B::C::Save::OP      ();
-    use B::C::Save::PADLIST ();
-    use B::C::Save::PADOP   ();
-    use B::C::Save::PMOP    ();
-    use B::C::Save::PV      ();
-    use B::C::Save::PVIV    ();
-    use B::C::Save::PVLV    ();
-    use B::C::Save::PVMG    ();
-    use B::C::Save::PVNV    ();
-    use B::C::Save::PVOP    ();
-    use B::C::Save::REGEXP  ();
-    use B::C::Save::RV      ();
-    use B::C::Save::SPECIAL ();
-    use B::C::Save::SV      ();
-    use B::C::Save::SVOP    ();
-    use B::C::Save::UNOP    ();
-    use B::C::Save::UV      ();
+    use B::C::OverLoad ();
 }
 
 use B::C::Packages qw/is_package_used mark_package_unused mark_package_used get_all_packages_used/;
