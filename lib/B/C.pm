@@ -50,7 +50,7 @@ our @EXPORT_OK = qw(mark_skip set_callback save_context save_sig svop_or_padop_p
 use B qw(minus_c sv_undef walkoptree walkoptree_slow main_root main_start peekop
   class cchar svref_2object compile_stats comppadlist hash
   init_av end_av opnumber cstring
-  HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
+  HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
 BEGIN {
     @B::NV::ISA = 'B::IV';                                            # add IVX to nv. This fixes test 23 for Perl 5.8
@@ -866,56 +866,6 @@ sub nextcop {
     my $op = shift;
     while ( $op and ref($op) ne 'B::COP' and ref($op) ne 'B::NULL' ) { $op = $op->next; }
     return ( $op and ref($op) eq 'B::COP' ) ? $op : undef;
-}
-
-sub savepvn {
-    my ( $dest, $pv, $sv, $cur ) = @_;
-    my @init;
-
-    # work with byte offsets/lengths
-    $pv = pack "a*", $pv if defined $pv;
-    if ( defined $max_string_len && length($pv) > $max_string_len ) {
-        push @init, sprintf( "Newx(%s,%u,char);", $dest, length($pv) + 2 );
-        my $offset = 0;
-        while ( length $pv ) {
-            my $str = substr $pv, 0, $max_string_len, '';
-            push @init,
-              sprintf(
-                "Copy(%s,$dest+$offset,%u,char);",
-                cstring($str), length($str)
-              );
-            $offset += length $str;
-        }
-        push @init, sprintf( "%s[%u] = '\\0';", $dest, $offset );
-        debug( pv => "Copying overlong PV %s to %s\n", cstring($pv), $dest );
-    }
-    else {
-        # If READONLY and FAKE use newSVpvn_share instead. (test 75)
-        if ( $sv and ( ( $sv->FLAGS & 0x09000000 ) == 0x09000000 ) ) {
-            debug( sv => "Saving shared HEK %s to %s\n", cstring($pv), $dest );
-            my $hek = save_hek($pv);
-            push @init, sprintf( "%s = HEK_KEY($hek);", $dest ) unless $hek eq 'NULL';
-            if ( DEBUGGING() ) {    # we have to bypass a wrong HE->HEK assert in hv.c
-                push @B::C::static_free, $dest;
-            }
-        }
-        else {
-            my $cstr = cstring($pv);
-            my $cur =
-                $cur ? $cur
-              : ( $sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR
-              :                                                                    length( pack "a*", $pv );
-            if ( $sv and IsCOW($sv) ) {
-                $pv .= "\0\001";
-                $cstr = cstring($pv);
-                $cur += 2;
-            }
-            debug( sv => "Saving PV %s:%d to %s", $cstr, $cur, $dest );
-            $cur = 0 if $cstr eq "" and $cur == 7;    # 317
-            push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
-        }
-    }
-    return @init;
 }
 
 # Maybe move to the unused optimizer

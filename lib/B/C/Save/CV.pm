@@ -6,6 +6,7 @@ use Config;
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
 use B::C::Config;
 use B::C::Packages qw/is_package_used/;
+use B::C::Save qw/savepvn/;
 use B::C::File qw/init decl svsect xpvcvsect symsect/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 
@@ -570,7 +571,7 @@ sub save {
     }
     unless ($B::C::optimize_cop) {
         if ( USE_MULTIPLICITY() ) {
-            init()->add( B::C::savepvn( "CvFILE($sym)", $cv->FILE ) );
+            init()->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
         }
         else {
             init()->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );

@@ -5,6 +5,7 @@ use strict;
 use Config;
 use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar/;
+use B::C::Save qw/savepvn/;
 use B::C::File qw/init svsect xpvmgsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save ();
@@ -75,7 +76,7 @@ sub save {
     my $s = "sv_list[" . svsect()->index . "]";
     if ( !$static ) {    # do not overwrite RV slot (#273)
                          # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
-        init()->add( B::C::savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
+        init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
     }
     $sym = savesym( $sv, "&" . $s );
     $sv->save_magic($fullname);

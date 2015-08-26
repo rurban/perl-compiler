@@ -2,6 +2,7 @@ package B::PVIV;
 
 use strict;
 use B::C::Config;
+use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvivsect svsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -33,7 +34,7 @@ sub save {
     if ( defined($pv) ) {
 
         if ( !$static ) {
-            init()->add( B::C::savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
+            init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
         }
     }
     savesym( $sv, "&" . $s );

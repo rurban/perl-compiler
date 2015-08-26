@@ -5,6 +5,7 @@ use strict;
 use B q/cchar/;
 
 use B::C::Config;
+use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvlvsect svsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -44,7 +45,7 @@ sub save {
     my $s = "sv_list[" . svsect()->index . "]";
     if ( !$static ) {
 
-        init()->add( B::C::savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
+        init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
     }
     $sv->save_magic($fullname);
 

@@ -4,6 +4,7 @@ use strict;
 
 use B qw/SVf_NOK SVp_NOK/;
 use B::C::Config;
+use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvnvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -70,7 +71,7 @@ sub save {
     my $s = "sv_list[" . svsect()->index . "]";
     if ( defined($pv) ) {
         if ( !$static ) {
-            init()->add( B::C::savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
+            init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
         }
     }
     return savesym( $sv, "&" . $s );

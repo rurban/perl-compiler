@@ -4,6 +4,7 @@ use strict;
 
 use B qw/SVf_ROK SVf_READONLY cstring/;
 use B::C::Config;
+use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -48,7 +49,7 @@ sub save {
               unless $hek eq 'NULL';
         }
         else {
-            init()->add( B::C::savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", svsect()->index ), $pv, $sv, $cur ) );
+            init()->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", svsect()->index ), $pv, $sv, $cur ) );
         }
     }
     if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
