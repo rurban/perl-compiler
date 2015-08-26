@@ -6,7 +6,7 @@ use Config;
 use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar SVp_POK/;
 use B::C::Save qw/savepvn/;
-use B::C::File qw/init svsect xpvmgsect/;
+use B::C::File qw/init svsect xpvmgsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
@@ -186,7 +186,7 @@ sub save_magic {
             }
             else {
                 my ( $resym, $relen );
-                ( $resym, $relen ) = B::C::savere( $mg->precomp );
+                ( $resym, $relen ) = _savere( $mg->precomp );
 
                 my $pmsym = $pmop->save($fullname);
                 push @B::C::static_free, $resym;
@@ -379,4 +379,28 @@ sub _save_remap {
 
     return;
 }
+
+sub _savere {
+    my $re = shift;
+    my $flags = shift || 0;
+    my $sym;
+    my $pv  = $re;
+    my $cur = length $pv;
+    my $len = 0;            # length( pack "a*", $pv ) + 2;
+
+    # QUESTION: this code looks dead
+    #   at least not triggered by the core unit tests
+
+    xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
+    svsect()->add(
+        sprintf(
+            "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
+            0x4405, ( C99() ? ".svu_pv=" : "" ) . '(char*)' . B::C::savepv($pv)
+        )
+    );
+    $sym = sprintf( "&sv_list[%d]", svsect()->index );
+
+    return ( $sym, length( pack "a*", $re ) );
+}
+
 1;

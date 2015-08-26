@@ -357,26 +357,6 @@ sub IsCOW_hek {
     return IsCOW( $_[0] ) && !$_[0]->LEN;
 }
 
-sub savere {
-    my $re = shift;
-    my $flags = shift || 0;
-    my $sym;
-    my $pv  = $re;
-    my $cur = length $pv;
-    my $len = 0;            # length( pack "a*", $pv ) + 2;
-
-    xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
-    svsect()->add(
-        sprintf(
-            "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
-            0x4405, ( C99() ? ".svu_pv=" : "" ) . '(char*)' . savepv($pv)
-        )
-    );
-    $sym = sprintf( "&sv_list[%d]", svsect()->index );
-
-    return ( $sym, length( pack "a*", $re ) );
-}
-
 sub constpv {
     return savepv( shift, 1 );
 }
