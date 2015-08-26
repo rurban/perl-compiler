@@ -147,15 +147,15 @@ sub _save_common {
 }
 
 use constant STATIC => '0, 1, 0, 0, 0';
+my $PATTERN = "%s," . ( MAD() ? "0," : "" ) . " %u, %u, " . STATIC . ", 0x%x, 0x%x";
 
 sub _save_common_middle {
     my $op = shift;
-    my $madprop = MAD() ? "0," : "";
 
     # XXX maybe add a ix=opindex string for debugging if debug('flags')
-    sprintf(
-        "%s,%s %u, %u, " . STATIC . ", 0x%x, 0x%x",
-        $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private
+    return sprintf(
+        $PATTERN,
+        $op->fake_ppaddr, $op->targ, $op->type, $op->flags, $op->private
     );
 }
 
