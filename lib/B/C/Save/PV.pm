@@ -4,7 +4,7 @@ use strict;
 
 use B qw/SVf_ROK SVf_READONLY cstring/;
 use B::C::Config;
-use B::C::Save qw/savepvn/;
+use B::C::Save qw/savepvn save_hek/;
 use B::C::File qw/xpvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
@@ -44,7 +44,7 @@ sub save {
     );
     if ( defined($pv) and !$static ) {
         if ($shared_hek) {
-            my $hek = B::C::save_hek($pv);
+            my $hek = save_hek($pv);
             init()->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", svsect()->index, $hek ) )
               unless $hek eq 'NULL';
         }

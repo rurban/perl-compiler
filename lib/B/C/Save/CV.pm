@@ -6,7 +6,7 @@ use Config;
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
 use B::C::Config;
 use B::C::Packages qw/is_package_used/;
-use B::C::Save qw/savepvn/;
+use B::C::Save qw/savepvn save_hek/;
 use B::C::File qw/init decl svsect xpvcvsect symsect/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 
@@ -452,7 +452,7 @@ sub save {
         $xcv_outside = 0;    # just a placeholder for a run-time GV
     }
 
-    $pvsym = B::C::save_hek($pv);
+    $pvsym = save_hek($pv);
 
     # XXX issue 84: we need to check the cv->PV ptr not the value.
     # "" is different to NULL for prototypes

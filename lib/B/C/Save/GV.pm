@@ -6,6 +6,7 @@ use Config;
 use B qw/cstring svref_2object SVt_PVGV SVf_ROK/;
 
 use B::C::Config;
+use B::C::Save qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2/;
 use B::C::Helpers qw/mark_package/;
@@ -544,7 +545,7 @@ sub save {
                 # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
             }
             else {
-                init()->add( sprintf( "GvFILE_HEK($sym) = %s;", B::C::save_hek( $gv->FILE ) ) )
+                init()->add( sprintf( "GvFILE_HEK($sym) = %s;", save_hek( $gv->FILE ) ) )
                   if !$B::C::optimize_cop;
             }
 

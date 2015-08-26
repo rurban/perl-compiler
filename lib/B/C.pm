@@ -123,7 +123,6 @@ my $re_index = 0;
 our $gv_index = 0;
 our $pv_index = 0;
 
-my $hek_index     = 0;
 my $padlist_index = 0;
 
 # FIXME: this part can now be dynamic
@@ -159,7 +158,7 @@ our %all_bc_deps = map { $_ => 1 } @B::C::Flags::deps;
 # -umain,-ure,-umro,-uRegexp,-uPerlIO,-uExporter,-uDB
 
 our ( $prev_op, $package_pv, @package_pv );    # global stash for methods since 5.13
-my ( %strtable, %hektable, %gptable );
+my ( %strtable, %gptable );
 our ( %xsub, %init2_remap );
 our ($staticxs);
 our ( %dumped_package, %skip_package, %isa_cache );
@@ -527,50 +526,6 @@ sub save_pv_or_rv {
     );
 
     return ( $savesym, $cur, $len, $pv, $static );
-}
-
-# Shared global string in PL_strtab.
-# Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
-sub save_hek {
-    my $str     = shift;         # not cstring'ed
-    my $dynamic = shift;         # not yet implemented. see lexsub CvNAME in CV::save
-    my $len     = length $str;
-
-    # force empty string for CV prototypes
-    if ( !$len and !@_ ) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
-    if ( defined $hektable{$str} ) {
-        return wantarray
-          ? ( $hektable{$str}, length( pack "a*", $hektable{$str} ) )
-          : $hektable{$str};
-    }
-    my $cur = length( pack "a*", $str );
-
-    if ( utf8::is_utf8($str) ) {
-        my $pv = $str;
-        utf8::encode($pv);
-        $cur = -length $pv;
-    }
-
-    my $sym = sprintf( "hek%d", $hek_index++ );
-    $hektable{$str} = $sym;
-    my $cstr = cstring($str);
-    decl()->add( sprintf( "Static HEK *%s;", $sym ) );
-
-    debug( pv => "Saving hek %s %s cur=%d", $sym, $cstr, $cur );
-
-    # randomized global shared hash keys:
-    #   share_hek needs a non-zero hash parameter, unlike hv_store.
-    #   Vulnerable to oCERT-2011-003 style DOS attacks?
-    #   user-input (object fields) does not affect strtab, it is pretty safe.
-    # But we need to randomize them to avoid run-time conflicts
-    #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
-    init()->add(
-        sprintf(
-            "%s = share_hek(%s, %d, %s);",
-            $sym, $cstr, $cur, '0'
-        )
-    );
-    wantarray ? ( $sym, $cur ) : $sym;
 }
 
 sub ivx ($) {
