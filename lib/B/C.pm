@@ -977,8 +977,7 @@ my @_v = Internals::V();
 sub __ANON__::_V { @_v }
 
 sub save_object {
-    my $sv;
-    foreach $sv (@_) {
+    foreach my $sv (@_) {
         svref_2object($sv)->save;
     }
 }
@@ -1083,6 +1082,9 @@ sub mark_package {
             # we should really check all new packages since the last full scan.
             foreach my $isa (@isa) {
                 next if $isa eq $package;
+
+                # QUESTION: why forcing bootstrap when it s a DynaLoader like ?
+                #   is it to force the inclusion of XS code which is not called yet ?
                 if ( $isa eq 'DynaLoader' ) {
                     unless ( defined( &{ $package . '::bootstrap' } ) ) {
                         verbose("Forcing bootstrap of $package");
@@ -1093,7 +1095,7 @@ sub mark_package {
                 if ( !$is_package_used and !$skip_package{$isa} ) {
                     no strict 'refs';
                     verbose("$isa saved (it is in $package\'s \@ISA)");
-                    B::svref_2object( \@{ $isa . "::ISA" } )->save;    #308
+                    svref_2object( \@{ $isa . "::ISA" } )->save;    #308
 
                     if ( defined $is_package_used ) {
                         verbose("$isa previously deleted, save now");    # e.g. Sub::Name

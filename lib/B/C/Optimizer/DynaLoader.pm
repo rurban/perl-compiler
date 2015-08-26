@@ -1,6 +1,6 @@
 package B::C::Optimizer::DynaLoader;
 
-use B ();    # svref_2object
+use B qw(svref_2object);
 use Config;
 use B::C::Config qw/verbose debug/;
 use B::C::Packages qw/is_package_used mark_package_deleted/;
@@ -118,7 +118,7 @@ sub optimize {
                 verbose("dl_init $stashname");
 
                 # just in case we missed it. DynaLoader really needs the @ISA (#308)
-                B::svref_2object( \@{ $stashname . "::ISA" } )->save;
+                svref_2object( \@{ $stashname . "::ISA" } )->save;
             }
             else {                      # XS: need to fix cx for caller[1] to find auto/...
                 verbose("bootstrapping $stashname added to XSLoader dl_init");
