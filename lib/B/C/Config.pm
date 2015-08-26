@@ -10,6 +10,7 @@ our @ISA = qw(Exporter);
 
 # alias
 *debug           = \&B::C::Config::Debug::debug;
+*debug_all       = \&B::C::Config::Debug::enable_all;
 *verbose         = \&B::C::Config::Debug::verbose;
 *display_message = \&B::C::Config::Debug::display_message;
 
@@ -41,7 +42,7 @@ my $_autoload;
 BEGIN {
     $_autoload = _autoload_map();
     our @EXPORT_OK = keys %$_autoload;
-    push @EXPORT_OK, qw/debug display_message verbose WARN INFO FATAL/;
+    push @EXPORT_OK, qw/debug debug_all display_message verbose WARN INFO FATAL/;
     our @EXPORT = @EXPORT_OK;
 }
 

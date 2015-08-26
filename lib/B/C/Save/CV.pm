@@ -9,6 +9,7 @@ use B::C::Packages qw/is_package_used/;
 use B::C::Save qw/savepvn save_hek/;
 use B::C::File qw/init decl svsect xpvcvsect symsect/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
+use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
 my (%cvforward);
 my $cv_index      = 0;
@@ -208,8 +209,7 @@ sub save {
 
     if ( !$$root && !$cvxsub ) {
         my $reloaded;
-        if ( $cvstashname =~ /^(bytes|utf8)$/ ) {    # no autoload, force compile-time
-            B::C::force_heavy($cvstashname);
+        if ( force_heavy($cvstashname) ) {    # no autoload, force compile-time
             $cv       = svref_2object( \&{"$cvstashname\::$cvname"} );
             $reloaded = 1;
         }

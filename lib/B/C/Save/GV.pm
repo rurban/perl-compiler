@@ -11,6 +11,7 @@ use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2/;
 use B::C::Helpers qw/mark_package/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
+use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
 my %gptable;
 
@@ -74,8 +75,9 @@ sub savecv {
         debug( gv => "Skip XS \&$fullname 0x%x\n", ref $cv ? $$cv : 0 );
         return;
     }
+
     if ( $fullname =~ /^(bytes|utf8)::AUTOLOAD$/ ) {
-        $gv = B::C::force_heavy($package);
+        $gv = force_heavy($package);
     }
 
     # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
@@ -154,7 +156,7 @@ sub save {
     my $is_special = ref($gv) eq 'B::SPECIAL';
 
     if ( $fullname =~ /^(bytes|utf8)::AUTOLOAD$/ ) {
-        $gv = B::C::force_heavy($package);     # defer to run-time autoload, or compile it in?
+        $gv = force_heavy($package);           # defer to run-time autoload, or compile it in?
         $sym = savesym( $gv, $sym );           # override new gv ptr to sym
     }
     if ( !$is_empty ) {

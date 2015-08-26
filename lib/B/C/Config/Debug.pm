@@ -77,6 +77,15 @@ sub enable_debug_level {
     return;
 }
 
+sub enable_all {
+    enable_verbose() unless verbose();
+    foreach my $level ( keys %debug ) {
+        next unless $debug{$level};
+        enable_debug_level($level);
+    }
+    return;
+}
+
 my $verbose = 0;
 sub enable_verbose { $verbose++ }
 

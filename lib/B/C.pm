@@ -334,6 +334,7 @@ sub svop_or_padop_pv {
                     )
                 );
 
+                # QUESTION: really, how can we test it ?
                 # XXX untested!
                 return svref_2object( method_cv( $$sv, $package_pv ) );
             }
@@ -590,29 +591,6 @@ sub nvx ($) {
     $sval = '0' if $sval =~ /(NAN|inf)$/i;
     $sval .= '.00' if $sval =~ /^-?\d+$/;
     return $sval;
-}
-
-# for bytes and utf8 only
-# TODO: Carp::Heavy, Exporter::Heavy
-# special case: warnings::register via -fno-warnings
-sub force_heavy {
-    my $pkg       = shift;
-    my $pkg_heavy = $pkg . "_heavy.pl";
-    no strict 'refs';
-    if ( !is_package_used($pkg_heavy) and !exists $savINC{$pkg_heavy} ) {
-
-        #eval qq[sub $pkg\::AUTOLOAD {
-        #    require '$pkg_heavy';
-        #    goto &\$AUTOLOAD if defined &\$AUTOLOAD;
-        #    warn("Undefined subroutine \$AUTOLOAD called");
-        #  }];
-        debug( pkg => "Forcing early $pkg_heavy" );
-        require $pkg_heavy;
-        mark_package( $pkg_heavy, 1 );
-
-        #walk_syms($pkg); #before we stub unloaded CVs
-    }
-    return svref_2object( \*{ $pkg . "::AUTOLOAD" } );
 }
 
 # This pair is needed because B::FAKEOP::save doesn't scalar dereference
