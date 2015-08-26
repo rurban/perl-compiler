@@ -6,7 +6,7 @@ use Config;
 use B qw/cstring svref_2object SVt_PVGV SVf_ROK/;
 
 use B::C::Config;
-use B::C::Save qw/save_hek/;
+use B::C::Save::Hek qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2/;
 use B::C::Helpers qw/mark_package/;

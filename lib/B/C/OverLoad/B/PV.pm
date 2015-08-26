@@ -4,7 +4,8 @@ use strict;
 
 use B qw/SVf_ROK SVf_READONLY cstring/;
 use B::C::Config;
-use B::C::Save qw/savepvn save_hek/;
+use B::C::Save qw/savepvn/;
+use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/xpvsect svsect init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
