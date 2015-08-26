@@ -76,8 +76,8 @@ sub savecv {
         return;
     }
 
-    if ( $fullname =~ /^(bytes|utf8)::AUTOLOAD$/ ) {
-        $gv = force_heavy($package);
+    if ( my $newgv = force_heavy( $package, $fullname ) ) {
+        $gv = $newgv;
     }
 
     # XXX fails and should not be needed. The B::C part should be skipped 9 lines above, but be defensive
@@ -155,8 +155,8 @@ sub save {
     my $egvsym;
     my $is_special = ref($gv) eq 'B::SPECIAL';
 
-    if ( $fullname =~ /^(bytes|utf8)::AUTOLOAD$/ ) {
-        $gv = force_heavy($package);           # defer to run-time autoload, or compile it in?
+    if ( my $newgv = force_heavy( $package, $fullname ) ) {
+        $gv = $newgv;                          # defer to run-time autoload, or compile it in?
         $sym = savesym( $gv, $sym );           # override new gv ptr to sym
     }
     if ( !$is_empty ) {

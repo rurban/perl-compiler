@@ -12,15 +12,20 @@ our @EXPORT_OK = qw/force_heavy/;
 
 my %cache;
 
+my $RULE = q{(bytes|utf8)};
+
 # for bytes and utf8 only
 # TODO: Carp::Heavy, Exporter::Heavy
 # special case: warnings::register via -fno-warnings
 sub force_heavy {
-    my $pkg = shift;
+    my ( $pkg, $fullname ) = @_;
 
     # only for bytes and utf8
     # QUESTION: what about Config_heavy.pl ?
-    return unless $pkg =~ m/^(bytes|utf8)$/;
+    return unless $pkg =~ m/^$RULE$/;
+
+    # optional
+    return if $fullname && $fullname !~ /^${RULE}::AUTOLOAD$/;
 
     my $pkg_heavy = $pkg . "_heavy.pl";
     no strict 'refs';

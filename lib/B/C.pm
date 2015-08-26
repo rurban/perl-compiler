@@ -1037,16 +1037,13 @@ sub mark_package {
         if (    defined $flag_as_unused
             and !$flag_as_unused
             and $savINC{ inc_packname($package) } ) {
-            verbose(
-                "$package previously deleted, save now%s\n",
-                $force ? " (forced)" : ""
-            );
+            verbose( "$package previously deleted, save now ", $force ? " (forced)" : "" );
 
             add_hashINC($package);
             walk_syms($package);
         }
         else {
-            debug( pkg => "mark $package%s\n", $force ? " (forced)" : "" )
+            debug( pkg => "mark $package%s", $force ? " (forced)" : "" )
               if !is_package_used($package)
               and verbose();
             mark_package_used($package);
