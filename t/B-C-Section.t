@@ -8,7 +8,7 @@ use 5.14.0;    # Inline packages
 use B::C ();   # Before test::warnings;
 
 use Test::More;
-use Test::Warnings qw/warning/;
+use Test::Trap;
 use Test::Deep;
 
 use FileHandle;
@@ -50,35 +50,37 @@ package fakeop {
     sub flagspv { return shift->{'flag'} }
 };
 
-$B::C::debug{'flags'} = 1;
+B::C::Config::Debug::enable_debug_level('flags');
 my $op = fakeop->new;
 note "TODO: This is WAY overly specific behavior...";
 $bbbsect->add('abcd');
 is( $bbbsect->debug($op), 'fff', "bbbsect->debug(op) returns flagspv()'s value from the op" );
 
-delete $op->{'flag'};
+B::C::Config::Debug::init();
 is( $bbbsect->debug($op),                   undef, "bbbsect->debug(op) returns nothing if the op has nothing." );
 is( $bbbsect->{'dbg'}->[ $bbbsect->index ], 'fff', "  ... but the old value is still stored." );
 
+B::C::Config::Debug::enable_debug_level('flags');
 $bbbsect->add('defg');
 $op->{'flag'} = 'ggg';
 is( $bbbsect->debug($op), 'ggg', "bbbsect->debug(op) adds a debug to the second add." );
 cmp_deeply( $bbbsect->{'dbg'}, [qw/fff ggg/], "  ... And stores it in slot 1 in the array not altering the first." );
 
-$B::C::debug{'flags'} = 0;
+B::C::Config::Debug::init();
 is( $bbbsect->debug, undef, "bbbsect->debug does nothing when B::C::debug{flags} is off." );
 
 # Start over. Let's test output now.
-$B::C::verbose      = 1;
-$B::C::debug{flags} = 1;
-$bbbsect            = B::C::Section->new( 'bbb', \%symtable, 'default_value_here' );
+B::C::Config::Debug::enable_verbose();
+B::C::Config::Debug::enable_debug_level('flags');
+$bbbsect = B::C::Section->new( 'bbb', \%symtable, 'default_value_here' );
 $bbbsect->add("abc");
 $bbbsect->add("xyzs\\_134bcef33");
 $bbbsect->debug( fakeop->new("A test debug statement.") );
 $bbbsect->add("pdq");
 
 my $string;
-is( warning { $string = $bbbsect->output("%s\n") }, "Warning: unresolved bbb symbol s\\_134bcef33\n", "Output warns it saw an unexpected symbol" );
+trap { $string = $bbbsect->output("%s\n") };
+like( $trap->stderr, qr/Warning: unresolved bbb symbol s\\_134bcef33/, "Output warns it saw an unexpected symbol" );
 is( $B::C::unresolved_count, 1, "unresolved count is logged" );
 is( $string, "abc\nxyzdefault_value_here\npdq\n", "Test output with complicated adds" );
 
