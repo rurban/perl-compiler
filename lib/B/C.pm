@@ -1466,6 +1466,20 @@ sub save_main_rest {
     my $dynaloader_optimizer = B::C::Optimizer::DynaLoader->new( { 'xsub' => \%xsub, 'skip_package' => \%skip_package, 'curINC' => \%curINC, 'output_file' => $output_file } );
     $dynaloader_optimizer->optimize();
 
+    my $c_file_stash = build_template_stash( \%static_ext, \@stashxsubs, $dynaloader_optimizer );
+
+    verbose("Writing output");
+    B::C::File::write($c_file_stash);
+
+    # Can use NyTProf with B::C
+    if ( $INC{'Devel/NYTProf.pm'} ) {
+        eval q/DB::finish_profile()/;
+    }
+}
+
+sub build_template_stash {
+    my ( $static_ext, $stashxsubs, $dynaloader_optimizer ) = @_;
+
     my $c_file_stash = {
         'verbose'                          => verbose(),
         'debug'                            => B::C::Config::Debug::save(),
@@ -1475,8 +1489,8 @@ sub save_main_rest {
         'use_declare_independent_comalloc' => $B::C::Flags::use_declare_independent_comalloc,
         'av_init2'                         => $av_init2,
         'destruct'                         => $destruct,
-        'static_ext'                       => \%static_ext,
-        'stashxsubs'                       => \@stashxsubs,
+        'static_ext'                       => $static_ext,
+        'stashxsubs'                       => $stashxsubs,
         'init_name'                        => $init_name || "perl_init",
         'gv_index'                         => $gv_index,
         'MULTI'                            => USE_MULTIPLICITY(),
@@ -1536,13 +1550,7 @@ sub save_main_rest {
         $[ and die 'Since the variable is deprecated, B::C does not support setting $[ to anything other than 0';
     }
 
-    verbose("Writing output");
-    B::C::File::write($c_file_stash);
-
-    # Can use NyTProf with B::C
-    if ( $INC{'Devel/NYTProf.pm'} ) {
-        eval q/DB::finish_profile()/;
-    }
+    return $c_file_stash;
 }
 
 # init op addrs must be the last action, otherwise
