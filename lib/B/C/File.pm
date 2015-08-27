@@ -37,8 +37,6 @@ our @ISA = qw(Exporter);
 # singleton
 my $self;
 
-our $AUTOLOAD;
-
 sub code_section_names {
     return qw{
       decl init0 free sym hek binop condop cop padop listop logop
@@ -80,7 +78,14 @@ sub get_sect {
     return $self->{$section};
 }
 
+# Devel::NYTProf gives bad data when AUTOLOAD is in place. Just the same, we have no evidence that run times change when you replace it.
+# But in the interests of accurate data, you can replace the output of the below one liner and remove AUTOLOAD so you can get a useful
+# NYTProf report back.
+# perl -MB::C::File -E'foreach my $s ("", "sect") { foreach my $sect (B::C::File::code_section_names(), B::C::File::init_section_names()) {print "sub $sect$s { return \$self->{'\''$sect'\''} }\n"}; print "\n"}'
+
 sub DESTROY { }    # Because we're doing autoload.
+
+our $AUTOLOAD;     # Avoids warnings.
 
 sub AUTOLOAD {
     my $sect = $AUTOLOAD;
