@@ -360,8 +360,8 @@ sub save_pv_or_rv {
                 ( $pv, $cur ) = ( "", 0 );
             }
         }
-        $shared_hek = ( ( $sv->FLAGS & 0x09000000 ) == 0x09000000 );
-        $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
+        $shared_hek = ( ( $sv->FLAGS & 0x09000000 ) == 0x09000000 )
+            || IsCOW_hek($sv);
         $static = $B::C::const_strings and ( $sv->FLAGS & SVf_READONLY ) ? 1 : 0;
         $static = 0
           if $shared_hek
@@ -460,11 +460,9 @@ sub save_pv_or_rv {
 # fixme only use opsect common
 {
     # should use a static variable
-    my $opsect_common;
+    my $opsect_common = "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, latefree, latefreed, attached, spare" . ", flags, private";;
 
     sub opsect_common {
-        my $opsect_common ||= "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, latefree, latefreed, attached, spare" . ", flags, private";
-
         return $opsect_common;
     }
 
