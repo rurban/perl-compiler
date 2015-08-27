@@ -102,6 +102,7 @@ my %static_ext;
 
 sub write {
     my $c_file_stash = shift or die;
+    my $template_name_short = shift || 'base.c.tt2';
 
     $c_file_stash->{section_list} = [qw( cop op unop binop logop condop listop pmop svop padop pvop loop xpv xpvav xpvhv xpvcv padlist xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv )];
 
@@ -114,7 +115,7 @@ sub write {
     my $template_dir = $B::C::savINC{'B/C.pm'};
     $template_dir =~ s{\.pm$}{};
     $template_dir .= "/Templates";
-    my $template_file = "$template_dir/base.c.tt2";
+    my $template_file = "$template_dir/$template_name_short";
     -e $template_file or die("Can't find or read $template_file for generating B::C C code.");
 
     # op/magic-27839.t sets SIG{WARN} in a begin block and then never releases it.
@@ -151,7 +152,7 @@ sub write {
     my $template = Template->new($config);
 
     # process input template, substituting variables
-    $template->process( 'base.c.tt2', $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
+    $template->process( $template_name_short, $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
 
 }
 
