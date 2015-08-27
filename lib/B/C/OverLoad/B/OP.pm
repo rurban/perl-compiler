@@ -86,12 +86,18 @@ sub save {
     }
 }
 
+
+my %fake_cache;
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
 # in perl_init ( ~10 bytes/op with GCC/i386 )
 sub fake_ppaddr {
-    return "NULL" unless $_[0]->can('name');
+    my $type = ref $_[0] || '';
+    if ( !exists $fake_cache{$type} ) {
+        $fake_cache{$type} = $_[0]->can('name');
+    }
+    return "NULL" unless $fake_cache{$type};
     return $B::C::optimize_ppaddr
       ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
       : ( verbose() ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
