@@ -1546,13 +1546,13 @@ sub save_main_rest {
         $[ and die 'Since the variable is deprecated, B::C does not support setting $[ to anything other than 0';
     }
 
+    verbose("Writing output");
+    B::C::File::write($c_file_stash);
+
     # Can use NyTProf with B::C
     if ( $INC{'Devel/NYTProf.pm'} ) {
         eval q/DB::finish_profile()/;
     }
-
-    verbose("Writing output");
-    B::C::File::write($c_file_stash);
 }
 
 # needed for init2 remap and Dynamic annotation
