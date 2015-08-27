@@ -86,8 +86,8 @@ sub save {
     }
 }
 
-
 my %fake_cache;
+
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
@@ -98,9 +98,10 @@ sub fake_ppaddr {
         $fake_cache{$type} = $_[0]->can('name');
     }
     return "NULL" unless $fake_cache{$type};
+    my $name = uc( $_[0]->name );
     return $B::C::optimize_ppaddr
-      ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
-      : ( verbose() ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
+      ? "INT2PTR(void*,OP_$name)"
+      : ( verbose() ? "/*OP_$name*/NULL" : "NULL" );
 }
 
 sub _save_common {
@@ -118,8 +119,6 @@ sub _save_common {
             $op->type > 0
         and $op->name eq 'entersub'
         and $op->first
-        and $op->first->can('name')
-        and $op->first->name eq 'pushmark'
         and
 
         # Foo->bar()  compile-time lookup, 34 = BARE in all versions
@@ -127,6 +126,9 @@ sub _save_common {
             ( $op->first->next->name eq 'const' and $op->first->next->flags == 34 )
             or $op->first->next->name eq 'padsv'    # or $foo->bar() run-time lookup
         )
+        and $op->first->name eq 'pushmark'
+        and $op->first->can('name')
+
       ) {
         my $pkgop = $op->first->next;
         if ( !$op->first->next->type ) {            # 5.8 ex-gvsv
@@ -153,6 +155,8 @@ sub _save_common {
 }
 
 use constant STATIC => '0, 1, 0, 0, 0';
+my $PATTERN = "%s," . ( MAD() ? "0," : "" ) . " %u, %u, " . STATIC . ", 0x%x, 0x%x";
+
 my $PATTERN = "%s," . ( MAD() ? "0," : "" ) . " %u, %u, " . STATIC . ", 0x%x, 0x%x";
 
 sub _save_common_middle {
