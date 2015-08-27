@@ -43,7 +43,7 @@ our %Regexp;
 
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(mark_skip set_callback save_context svop_or_padop_pv inc_cleanup opsect_common);
+our @EXPORT_OK = qw(mark_skip set_callback save_context svop_or_padop_pv inc_cleanup opsect_common fixup_ppaddr);
 
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
@@ -1372,17 +1372,7 @@ sub save_main_rest {
         }
     }
 
-    # formerly sub fixup_ppaddr {
-    # init op addrs must be the last action, otherwise
-    # some ops might not be initialized
-    # but it needs to happen before CALLREGCOMP, as a /i calls a compiled utf8::SWASHNEW
-    if ($optimize_ppaddr) {
-        foreach my $op_section_name ( B::C::File::op_sections() ) {
-            my $section = B::C::File::get_sect($op_section_name);
-            next unless $section->index >= 0;
-            init_op_addr( $section->name, $section->index + 1 );
-        }
-    }
+    fixup_ppaddr() if ($optimize_ppaddr);
 
     my $remap = 0;
     for my $pkg ( sort keys %init2_remap ) {
@@ -1552,6 +1542,17 @@ sub save_main_rest {
     # Can use NyTProf with B::C
     if ( $INC{'Devel/NYTProf.pm'} ) {
         eval q/DB::finish_profile()/;
+    }
+}
+
+# init op addrs must be the last action, otherwise
+# some ops might not be initialized
+# but it needs to happen before CALLREGCOMP, as a /i calls a compiled utf8::SWASHNEW
+sub fixup_ppaddr {
+    foreach my $op_section_name ( B::C::File::op_sections() ) {
+        my $section = B::C::File::get_sect($op_section_name);
+        next unless $section->index >= 0;
+        init_op_addr( $section->name, $section->index + 1 );
     }
 }
 
