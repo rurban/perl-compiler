@@ -405,6 +405,8 @@ if ($] > 5.007) {
 }
 
 my $UVxf = substr($Config{uvxformat},1,-1);
+$UVxf =~ s/[\0"]//g;
+$UVxf = "lx" unless $UVxf;
 
 for (@insndata) {
     my ($unsupp, $rvalcast);
