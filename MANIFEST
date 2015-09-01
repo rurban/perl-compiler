@@ -105,7 +105,6 @@ lib/B/C/Save/UNOP.pm
 lib/B/C/Save/UV.pm
 lib/B/C/Section.pm
 lib/B/C/Templates/base.c.tt2
-lib/B/CC.pm
 lib/B/Disassembler.pm
 lib/B/FAKEOP.pm
 lib/B/Stackobj.pm

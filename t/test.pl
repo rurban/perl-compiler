@@ -798,51 +798,6 @@ sub run_c_tests {
     my %skip = map { $_ => 1 } @skip;
     my @tests = tests();
 
-    # add some CC specific tests after 100
-    # perl -lne "/^\s*sub pp_(\w+)/ && print \$1" lib/B/CC.pm > ccpp
-    # for p in `cat ccpp`; do echo -n "$p "; grep -m1 " $p[(\[ ]" *.concise; done
-    #
-    # grep -A1 "coverage: ny" lib/B/CC.pm|grep sub
-    # pp_stub pp_cond_expr pp_dbstate pp_reset pp_stringify pp_ncmp pp_preinc
-    # pp_formline pp_enterwrite pp_leavewrite pp_entergiven pp_leavegiven
-    # pp_dofile pp_grepstart pp_mapstart pp_grepwhile pp_mapwhile
-    if ( $backend =~ /^CC/ ) {
-        local $/;
-        my $cctests = <<'CCTESTS';
-my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;
->>>>
-12
-######### 101 - CC types and arith ###############
-if ($x eq "2"){}else{print "ok"}
->>>>
-ok
-######### 102 - CC cond_expr,stub,scope ############
-require B; my $x=1e1; my $s="$x"; print ref B::svref_2object(\$s)
->>>>
-B::PV
-######### 103 - CC stringify srefgen ############
-@a=(1..4);while($a=shift@a){print $a;}continue{$a=~/2/ and reset q(a);}
->>>>
-12
-######### 104 CC reset ###############################
-use blib;use B::CC;my int $r;my $i:int=2;our double $d=3.0; $r=$i*$i; $r*=$d; print $r;
->>>>
-12
-######### 105 CC attrs ###############################
-my $s=q{ok};END{print $s}END{$x = 0}
->>>>
-ok
-######### 106 CC 296/297 ###############################
-CCTESTS
-
-        my $i = 100;
-        for ( split /\n####+.*##\n/, $cctests ) {
-            next unless $_;
-            $tests[$i] = $_;
-            $i++;
-        }
-    }
-
     print "1.." . ( scalar @tests ) . "\n";
 
     my $cnt = 1;
@@ -870,7 +825,6 @@ CCTESTS
             (
                 !$AUTHOR
                 or ( $cnt == 15  and $backend eq 'C,-O1' )     # hanging
-                or ( $cnt == 103 and $backend eq 'CC,-O2' )    # hanging
             )
           ) {
             print sprintf( "ok %d # skip\n", $cnt );
