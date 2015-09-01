@@ -785,26 +785,29 @@ static int bget_swab = 0;
     } STMT_END
 
 #if PERL_VERSION >= 17
-#define BSET_newpadlx(padl, arg)  STMT_START {		\
-	    padl = (SV*)pad_new(arg);			\
-	    BSET_OBJ_STOREX(padl);			\
-	} STMT_END
-/* PADNAMELIST now a valid lvalue: v5.21.6-197-g0f94cb1 */
-#if (PERL_VERSION >= 22) || ( PERL_VERSION == 21 && PERL_SUBVERSION > 5)
-#define BSET_padl_name(padl, pad)                \
-    PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad; \
-    PadnamelistMAXNAMED((PADNAMELIST*)pad) = AvFILL((AV*)pad)
-#else
+#define BSET_newpadlx(padl, arg)  STMT_START {      \
+        padl = (SV*)pad_new(arg);                   \
+        BSET_OBJ_STOREX(padl);                      \
+    } STMT_END
+#define BSET_newpadnlx(padl, arg)  STMT_START {		\
+        padl = (SV*)Perl_newPADNAMELIST(arg);           \
+        BSET_OBJ_STOREX(padl);                          \
+    } STMT_END
+/* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1,
+   fixed with 5.22.1 and 5.23.0 */
+#if (PERL_VERSION == 22) || ( PERL_VERSION == 21 && PERL_SUBVERSION > 5)
+# define PadlistNAMES(pl)       *((PADNAMELIST **)PadlistARRAY(pl))
+#endif
 /* extra PADNAMELIST: v5.17.3-49-g36c300b */
 #if (PERL_VERSION >= 18) || ( PERL_VERSION == 17 && PERL_SUBVERSION > 3)
-#define BSET_padl_name(padl, pad)                \
-    PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad; \
-    PadnamelistMAXNAMED((PAD*)pad) = AvFILL((AV*)pad)
+#define BSET_padl_name(padl, pad)  \
+    Perl_padnamelist_store(aTHX_ (PADNAMELIST*)padl, PadnamelistMAX((PADNAMELIST*)padl), (PADNAME*)pad);
+#define BSET_padl_sym(padl, pad)   \
+    Perl_padlist_store(aTHX_ (PADLIST*)padl, PadlistMAX((PADLIST*)padl), (PAD*)pad);
 #else
 #define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad
-#endif
-#endif
 #define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad
+#endif
 #define BSET_xcv_name_hek(cv, arg)                                      \
   STMT_START {                                                          \
     U32 hash; I32 len = strlen(arg);                                    \

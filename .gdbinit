@@ -170,3 +170,8 @@ end
 document addr2sym
 Resolve the address (e.g. of one stack frame). Usage: addr2sym addr0
 end
+
+b XS_B__PADNAMELIST_ARRAY
+b XS_B__PADNAMELIST_ARRAYelt
+
+r

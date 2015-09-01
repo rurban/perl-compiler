@@ -64,6 +64,7 @@ my $PERL512 = ( $] >= 5.011 );
 #my $PERL514 = ( $] >= 5.013002 );
 my $PERL518 = ( $] >= 5.017006 );
 my $PERL520 = ( $] >= 5.019002 );
+my $PERL522 = ( $] >= 5.021005 );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 our ($quiet, $includeall, $savebegins, $T_inhinc);
 my ( $varix, $opix, %debug, %walked, %files, @cloop );
@@ -294,7 +295,7 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadlx", 1;
+    asm "newpadlx", 0;
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
@@ -302,7 +303,16 @@ sub B::PADLIST::ix {
 }
 
 sub B::PADNAMELIST::ix {
-  goto &B::PADLIST::ix;
+  my $padl = shift;
+  my $ix = $svtab{$$padl};
+  defined($ix) ? $ix : do {
+    nice '[' . class($padl) . " $tix]";
+    B::Assembler::maxsvix($tix) if $debug{A};
+    asm "newpadnlx", 1;
+    $svtab{$$padl} = $varix = $ix = $tix++;
+    $padl->bsave($ix);
+    $ix;
+  }
 }
 
 sub B::GV::ix {
@@ -785,6 +795,7 @@ sub B::PADLIST::bsave {
 sub B::PADNAMELIST::bsave {
   my ( $padl, $ix ) = @_;
   my $array = $padl->ARRAY;
+  #warn "B::PADNAMELIST $padl $ix ",ref $array;
   bless $array, 'B::PAD' if ref $array eq 'B::PADNAME';
   my $ix = $array->ix; # comppad_name
 
