@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+<TITLE></TITLE>
+<META NAME="generator" CONTENT="txt2html v1.35">
+</HEAD>
+<BODY >
+<h1>The B::C, B::CC, B::Bytecode Perl Compiler Kit</h1>
+
+<PRE>
+        Copyright (c) 1996, 1997, Malcolm Beattie
+        Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
+        Copyright (c) 2012, 2013, 2014, 2015 cPanel Inc
+</PRE>
+
+<P>
+Homepage: <A HREF="http://www.perl-compiler.org/">http://www.perl-compiler.org/</A><br>
+Releases: <A HREF="http://search.cpan.org/dist/B-C/">http://search.cpan.org/dist/B-C/</A><br>
+Code:     <A HREF="http://github.com/rurban/perl-compiler/">http://github.com/rurban/perl-compiler/</A>
+  and mirrored until 2016 at <A HREF="http://code.google.com/p/perl-compiler/">http://code.google.com/p/perl-compiler/</A>
+
+<h1>OVERVIEW</h1>
+
+<P>
+Malcom Beattie's perl compiler ("perlcc") updated to 5.10 - 5.21.3,
+with most bugs fixed (also for 5.6. and 5.8) and new features
+added. It compiles to C or platform-compatible Bytecode.
+
+<P>
+Releases are at <A HREF="http://search.cpan.org/dist/B-C/">http://search.cpan.org/dist/B-C/</A>
+
+<P>
+Development is in the master branch at <A HREF="https://github.com/rurban/perl-compiler,">https://github.com/rurban/perl-compiler,</A>
+the stable branch is called 'release', the newest perl releases usually don't work
+immediately. I typically need 6 months to catch up.
+
+<h2>Known issues:</h2>
+
+              Soon at <A HREF="http://github.com/rurban/perl-compiler/issues">http://github.com/rurban/perl-compiler/issues</A>.<br>
+              Old issue # numbers refer to <A HREF="https://code.google.com/p/perl-compiler/issues/">https://code.google.com/p/perl-compiler/issues/</A>
+</P>
+
+<UL>
+  <LI>run-time attributes (e.g. use open attributes, Attribute::Handlers, ...),
+  but ok at compile-time.
+
+  <LI>compile-time perlio layers are not restored
+
+  <LI>some compile-time side-effects can not be reproduced when running a compiled
+  binary, such as BEGIN { chdir $dir }, i.e. most system and IO calls. use
+  INIT {} instead.
+
+  <LI>Certain XS module using compile-time pointers need special workarounds:
+
+  <UL>
+    <LI>DBI patched by the compiler (#359)
+    <LI>Encode &gt; 2.58 (#71, #305, RT 94221), patched by the compiler
+    <LI>Net::DNS &gt; 0.67 (#305, RT 94069)
+    <LI>IO::Socket::SSL &gt; 1.995 (#317, RT 95452)
+    <LI>DBD::mysql &gt; 4.027 (RT 97625)
+    <LI>Todo: FCGI, Coro, Moose with meta-&gt;make_immutable
+
+  </UL>
+</UL>
+<P>
+Mailinglist:<BR>
+  <A HREF="http://groups.google.com/group/perl-compiler">http://groups.google.com/group/perl-compiler</A> <A HREF="mailto:perl-compiler@googlegroups.com">perl-compiler@googlegroups.com</A>
+
+<h1>INSTALL</h1>
+
+<P>
+cpan B::C
+
+<P>
+On strawberry I needed<BR>
+  perl Makefile.PL FIXIN="perl -S pl2bat.bat"
+
+<P>
+On Windows and AIX for 5.12 and 5.14 you need to patch and rebuild CORE perl:
+  ramblings/Export-store_cop_label-for-the-perl-compiler.patch
+
+<P>
+For 5.14 and 5.15 I recommend also the following patches:
+<ul>
+  <li>ramblings/revert-B-load-BEGIN.patch (The 5.14.1 version)
+  <li>ramblings/Carp-wo-B.patch
+</ul>
+<P>
+We generally discourage the use of 5.16 and 5.18 for unhandled and
+unacknowledged security problems with the implementation of "unicode"
+symbols and packagenames, where they really implemented binary names
+for all symbols without any checks and further support of such binary
+names. See the warning at perl Makefile.PL.<br>
+5.20 improved support for binary names for most syscalls, dumpers and
+APIs, but TR39 and strict names are still not handled, the problems
+are not understood and reactions are generally hostile.
+
+<P>
+Summarized:<BR>
+Perl handling of new unicode identifiers - package and symbol names since 5.16 -
+without proper TR39 handling is considered a security risc and is not fully supported.
+See <A HREF="http://websec.github.io/unicode-security-guide/">http://websec.github.io/unicode-security-guide/</A>
+Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.
+Enable use warnings 'syscalls'. There is no use strict 'names' yet. You cannot disable
+binary symbolname support with a configure option.
+
+
+<h1>USAGE</h1>
+
+<P>
+The Bytecode, C and CC backends are now all functional
+enough to compile almost the whole of the main perl test
+suite and 99-100% of the top100 modules.
+
+<P>
+In the case of the CC backend, any failures are all
+due to differences and/or known bugs documented below.
+See the file TESTS.
+
+<P>
+(1) To compile perl program foo.pl with the C backend, do
+
+<pre>
+    perl -MO=C,-ofoo.c foo.pl
+
+</pre>
+Then use the cc_harness perl program to compile the
+resulting C source:
+
+<pre>
+    perl cc_harness -O2 -o foo foo.c
+
+</pre>
+If you are using a non-ANSI pre-Standard C compiler that
+can't handle pre-declaring static arrays, then add
+-DBROKEN_STATIC_REDECL to the options you use:
+
+<pre>
+    perl cc_harness -O2 -o foo -DBROKEN_STATIC_REDECL foo.c
+
+</pre>
+If you are using a non-ANSI pre-Standard C compiler that
+can't handle static initialisation of structures with union
+members then add -DBROKEN_UNION_INIT to the options you
+use. If you want command line arguments passed to your
+executable to be interpreted by perl (e.g. -Dx) then compile
+foo.c with -DALLOW_PERL_OPTIONS. Otherwise, all command line
+arguments passed to foo will appear directly in @ARGV.  The
+resulting executable foo is the compiled version of
+foo.pl. See the file NOTES for extra options you can pass to
+-MO=C.
+
+<P>
+There are some constraints on the contents on foo.pl if you
+want to be able to compile it successfully. Some problems
+can be fixed fairly easily by altering foo.pl; some problems
+with the compiler are known to be straightforward to solve
+and I'll do so soon. The file Todo lists a number of known
+problems. See the XSUB section lower down for information
+about compiling programs which use XSUBs.
+
+<P>
+(2) To compile foo.pl with the CC backend (which generates
+actual optimised C code for the execution path of your perl
+program), use
+
+<pre>
+    perl -MO=CC,-ofoo.c foo.pl
+
+</pre>
+and proceed just as with the C backend. You should almost
+certainly use an option such as -O2 with the subsequent
+cc_harness invocation so that your C compiler uses
+optimisation. The C code generated by the Perl compiler's CC
+backend looks ugly to humans but is easily optimised by C
+compilers.
+
+<P>
+To make the most of this optimizing compiler backend, you need to tell
+the compiler when you're using int or double variables so that it can
+optimise appropriately. The old deprecated way do that was by naming
+lexical variables ending in "_i" for ints, "_d" for doubles, "_ir" for
+int "register" variables or "_dr" for double "register"
+variables. Here "register" is a promise that you won't pass a
+reference to the variable into a sub which then modifies the variable.
+The new way is to declare those lexicals with "my int" and "my
+double". The compiler ought to catch attempts to use "\$i" just as C
+compilers catch attempts to do "&amp;i" for a register int i, but it
+doesn't at the moment. Bugs in the CC backend may make your program
+fail in mysterious ways and give wrong answers rather than just crash
+in boring ways. CC is still on the experimental level. Please use your 
+test suite.
+
+<P>
+If your program uses classes which define methods (or other subs which
+are not exported and not apparently used until runtime) then you'll
+need to use -u compile-time options (see the NOTES file) to force the
+subs to be compiled. Future releases will probably default the other
+way, do more auto-detection and provide more fine-grained control.
+
+<P>
+Since compiled executables need linking with libperl, you
+may want to turn libperl.a into a shared library if your
+platform supports it, -Duseshrplib.<BR>
+You'll probably also want to link your main perl executable
+against libperl.so; it's nice having an 11K perl executable.
+
+<P>
+(3) To compile foo.pl into bytecode do
+
+<pre>
+    perl -MO=Bytecode,-ofoo.plc foo.pl
+
+</pre>
+To run the resulting bytecode file foo.plc, you use the
+ByteLoader module which should have been built along with
+the extensions.
+
+<pre>
+    perl -MByteLoader foo.plc
+
+</pre>
+Previous Perl releases had ByteLoader in CORE, so you can omit 
+-MByteLoader there.<BR>
+You can also do -H to automatically use ByteLoader
+
+<pre>
+    perl -MO=Bytecode,-H,-ofoo.plc foo.pl
+    perl foo.plc
+
+</pre>
+Any extra arguments are passed in as @ARGV; they are not interpreted
+as perl options.<BR>
+See the NOTES file for details of these and other options (including
+optimisation options and ways of getting at the intermediate "assembler"
+code that the Bytecode backend uses).
+
+<P>
+(3) There are little Bourne shell scripts and perl programs to aid with
+some common operations:
+
+<P>
+  perlcc, assemble, disassemble, cc_harness
+
+<h1>XSUBS</h1>
+
+<P>
+The C and CC backends can successfully compile some perl programs which
+make use of XSUB extensions. [I'll add more detail to this section in a
+later release.] As a prerequisite, such extensions must not need to do
+anything in their BOOT: section which needs to be done at runtime rather
+than compile time. Normally, the only code in the boot_Foo() function is
+a list of newXS() calls which xsubpp puts there and the compiler handles
+saving those XS subs itself. For each XSUB used, the C and CC compiler
+will generate an initialiser in their C output which refers to the name
+of the relevant C function (XS_Foo_somesub). What is not yet automated
+is the necessary commands and cc command-line options (e.g. via
+"perl cc_harness") which link against the extension libraries. For now,
+you need the XSUB extension to have installed files in the right format
+for using as C libraries (e.g. Foo.a or Foo.so). As the Foo.so files (or
+your platform's version) aren't suitable for linking against, you will
+have to reget the extension source and rebuild it as a static extension
+to force the generation of a suitable Foo.a file. Then you need to make
+a symlink (or copy or rename) of that file into a libFoo.a suitable for
+cc linking. Then add the appropriate -L and -l options to your
+"perl cc_harness" command line to find and link against those libraries.
+You may also need to fix up some platform-dependent environment variable
+to ensure that linked-against .so files are found at runtime too.
+
+<P>
+Read about perlcc --staticxs
+
+<h1>DIFFERENCES</h1>
+
+<P>
+The result of running a CC compiled Perl program can sometimes be different
+from running the same program with standard perl. Think of the compiler
+as having a slightly different implementation of the language Perl.
+
+<P>
+Unfortunately, since Perl has had a single implementation until now,
+there are no formal standards or documents defining what behaviour is
+guaranteed of Perl the language and what just "happens to work".
+Some of the differences below are almost impossible to change because of
+the way the compiler works. Others can be changed to produce "standard"
+perl behaviour if it's deemed proper and the resulting performance hit
+is accepted. I'll use "standard perl" to mean the result of running a
+Perl program using the perl executable from the perl distribution.
+I'll use "compiled Perl program" to mean running an executable produced
+by this compiler kit ("the compiler") with the CC backend.
+
+<h2>Loops</h2>
+
+<P>
+    Standard perl calculates the target of "next", "last", and "redo"
+    at run-time. The compiler calculates the targets at compile-time.
+    For example, the program
+
+<PRE>
+        sub skip_on_odd { next NUMBER if $_[0] % 2 }
+        NUMBER: for ($i = 0; $i &lt; 5; $i++) {
+            skip_on_odd($i);
+            print $i;
+        }
+</PRE>
+
+<P>
+    produces the output
+<P>
+        024<BR>
+    with standard perl but gives a compile-time error with the compiler.
+    See test 21.
+
+<h2>Context of ".."</h2>
+
+<P>
+    The context (scalar or array) of the ".." operator determines whether
+    it behaves as a range or a flip/flop. Standard perl delays until
+    runtime the decision of which context it is in but the compiler needs
+    to know the context at compile-time. For example,
+
+<PRE>
+        @a = (4,6,1,0,0,1);
+        sub range { (shift @a)..(shift @a) }
+        print range();
+        while (@a) { print scalar(range()) }
+</PRE>
+    generates the output
+<PRE>
+        456123E0
+</PRE>
+<P>
+    with standard Perl but gives a compile-time error with compiled Perl.
+    See test 30.
+
+<h2>Arithmetic</h2>
+
+<P>
+    Optimized compiled Perl programs use native C arithmetic
+    much more frequently than standard perl. So operations on
+    large numbers or on boundary cases may produce different behaviour.
+
+<h2>Deprecated features</h2>
+
+<P>
+    Features of standard perl such as $[ which have been deprecated
+    in standard perl since version 5 was released have not been
+    implemented in the compiler.
+
+<h1>STATUS</h1>
+
+<P>
+Supported until 5.20, 5.22 in work, 5.14.4 recommended<br>
+C is stable, CC is unstable.<BR>
+Bytecode stable until 5.16<BR>
+The Bytecode compiler is disabled for 5.6.2, use the default instead.
+
+<P>
+See <a href="http://github.com/rurban/perl-compiler/blob/master/STATUS">STATUS</a> for details.
+
+<h1>DOCUMENTATION</h1>
+<ul>
+  <li><a href="http://search.cpan.org/dist/B-C/">B::C</a>
+  <li><a href="yapceu2010/index.html">YAPC::EU 2010 Pisa presentation</a>
+  <li><a href="yapceu2015.html">YAPC::EU 2015 Granada presentation</a>
+</ul>
+
+
+<h1>BUGS</h1>
+
+<P>
+Here are some things which may cause the compiler problems.
+
+<P>
+The following render the compiler useless (without serious hacking):
+
+<UL>
+  <LI>The following operators are not yet implemented for CC
+    <pre>
+    goto
+    continue/next/last to a outer LABEL</pre>
+  <LI>You can't use "last" to exit from a non-loop block.
+  <LI>use Attribute::Handlers, or run-time usage of attributes. Usage of
+  Attribute::Handlers is discouraged generally for security reasons, as it
+  evals all attributes. (#169)
+  <LI>Accessing @- values from compiled regular expressions are currently broken (#281)
+
+</UL>
+<P>
+The following may give significant problems:
+
+<UL>
+  <LI>BEGIN blocks containing complex initialisation code,
+  esp. sideeffects. All the BEGIN code is evaluated once at compile-time,
+  and NOT executed at run-time.
+  <LI>Code which is only ever referred to at runtime (e.g. via eval "..." or
+  via method calls): see the -u option for the C and CC backends.
+  <LI>compile-time perlio layers. Use them at run-time instead.
+  i.e. use open qw(:std :utf8) does not work yet on STDIN.
+  <LI>run-time loading of DynaLoader packages which use AutoLoad (i.e. BSD::Resource).
+  Compile them in, e.g. with use package. (#308)
+  <LI>format STDOUT or STDERR (#285)
+
+
+</UL>
+<P>
+The following may cause problems (not thoroughly tested):
+
+<UL>
+  <LI>For the C and CC backends: compile-time strings which are longer than
+  your C compiler can cope with in a single line or definition.
+  Use perlcc to workaround MSVC problems.
+  <LI>Reliance on intimate details of global destruction. Implemented only with 1.46
+
+</UL>
+<P>
+There is a terser but more complete list in the Todo file.
+
+<h1>LICENSE</h1>
+
+<P>
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of either:
+
+<PRE>
+        a) the GNU General Public License as published by the Free
+        Software Foundation; either version 1, or (at your option) any
+        later version, or
+
+        b) the "Artistic License" which comes with this kit.
+</PRE>
+
+<P>
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See either
+    the GNU General Public License or the Artistic License for more details.
+
+<P>
+    You should have received a copy of the Artistic License with this kit,
+    in the file named "Artistic".  If not, you can get one from the Perl
+    distribution. You should also have received a copy of the GNU General
+    Public License, in the file named "Copying". If not, you can get one
+    from the Perl distribution or else write to the Free Software Foundation,
+    Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+<P>
+Reini Urban<BR>
+2015-03-17
+
+<P>
+Malcolm Beattie<BR>
+2 September 1996
+
+</BODY>
+</HTML>

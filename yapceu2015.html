@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Using the new compiler in production</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      /*@import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);*/
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <!-- Abstract:
+cPanel was using B::C with perl 5.6.2 for over 10 years successfully. Recently we switched to the new compiler and 5.14.4.
+During this work my team ported the perl core test suite to test the compiler with it. We successfully pass all core tests as well as our own tests (i.e. no 5.6.2 regressions). We use it now for over a year in production. Developers are happy all around and the internet didn't break.
+
+Some XS modules caused problems, and I will outline those briefly. I'll also outline briefly our further plans with 5.22, the next target. 
+    -->
+    <textarea id="source">
+
+# Using the new compiler in production
+
+    YAPC EU, Granada Sep 2, 2015, 14:30
+    20 min
+    Reini Urban, cPanel
+
+---
+# cPanel
+
+Running compiled perl binaries on 70% of the webhosters world-wide,
+with Centos 5-7.
+
+---
+# cPanel
+
+Running compiled perl binaries on 70% of the webhosters world-wide,
+with Centos 5-7. Centos 6 mostly.
+
+Providing the SW stack for them, on top of Centos.
+
+---
+# History
+
+System perl on centos usually 5.8.8 or 5.10.1
+
+cPanel perl 5.14.4
+
+cPanel compiled perl: 5.6.2 => 5.14.4 (since 2014)
+---
+# History
+
+Perl 5.6.2 2001 - 2014 compiled with hash randomization
+
+Stable B::C compiler, in core until 5.8.9, broken with 5.10.
+Custom patches, optimized linker, see my previous YAPC::EU 2010 in Pisa talk.
+---
+# Criteria for cPanel
+
+* **memory**
+
+  no memory hog on 500MB customer VMs
+
+* no utf8
+
+  just pass translations through, use bytes.
+
+* compiled
+
+  10-20% less memory, better startup, license
+---
+# Memory
+
+![](yapceu2015/B-C.m0.png)
+---
+# Memory
+
+![](yapceu2015/B-C.p0.png)
+---
+# Memory
+
+![](yapceu2015/B-C.p1.png)
+---
+# Characteristics
+
+A typical cPanel binary is 50MB
+
+has ~200 module dependencies
+
+has almost zero startup-time
+
+perl5 bound run-time
+
+and again almost zero destruction-time
+---
+# Characteristics
+
+* 10-30% less memory
+
+* 10-20% better startup time
+
+* 100% faster destruction time
+---
+# Characteristics
+
+Most modules are already compiled in
+
+Shared libs are loaded at startup
+
+Some bigger modules (XML) not constantly used
+are run-time loaded from source *(not via `.pmc` or `.so` yet)*
+
+No compilation to extra shared modules yet
+
+---
+# Characteristics
+
+##Before
+
+    Resident Size (perl 5.6)_____9756
+
+    Resident Size (perlcc 5.6)___9072  (7%)
+
+##After
+
+    Resident Size (perl 5.14)____18704
+
+    Resident Size (perlcc 5.14)__12091 (35%)
+---
+# Why 35% better?
+
+Aggressive string optimizations with -O3, from dynamic to static.
+
+---
+# Why 35% better?
+
+Aggressive string optimizations with -O3, from dynamic to static.
+
+The compiler is also now 2-3x faster than the old compiler. The
+build process was reduced from 2 hrs to 40 minutes.
+---
+# Why 35% better?
+
+Aggressive string optimizations with -O3, from dynamic to static.
+
+But the problem is more why 90% worse with 5.14
+
+---
+# Development
+
+First compiler version 1.42 (Feb 2012) with 5.14 could compile and run
+all cPanel code. 3 months work after moving to Texas.
+
+Worked on several optimizations and 5.18 support until 2014,
+when cPanel was ready to switch over. Still 5.14 (and 5.18 in test).
+
+1.44 (Feb 2014) added the full core testsuite, and passes it.
+Before we had ~20 fails.
+
+Problems:
+  - global destruction (please use lexicals)
+  - attribute handlers
+  - compile-time perlio layers
+
+---
+# Development
+
+Until 1.52, the final version Sep 2014, we fixed:
+
+- global destruction (rewrite)
+- Dynaloader/XSLoader handling
+- tons of corner cases detected in the testsuite
+  (added mro, utf8, re tests), and with modules
+- ~5 CPAN module fixes
+
+esp. DBI, Encode, Net::DNS, IO::Socket::SSL, DBD::mysql for
+compile-time stored pointers, being restored at run-time, boom!
+
+---
+# Beware
+
+Still the old golden rule for the compiler:
+
+**BEGIN for compile-time, INIT for run-time initializations.**
+
+Esp. do not compile pointers into your shared library, initialize them
+at **INIT**.
+---
+# Testing
+
+The core testsuite runs now all tests in *12:40min* fully parallel.
+With ccache *~5min*.
+
+Before it needed *16min* for 75% of it.
+
+---
+# Testing
+
+The core testsuite runs now all tests in *12:40min* fully parallel.
+With ccache *~5min*.
+
+Before it needed *16min* for 75% of it.
+
+* our uncompiled perl 5.22 variant needs *8m40m*,
+* a p5p perl 5.23 needs *11-13min*,
+* 5.14 *15-19min*
+
+---
+# Broken
+
+Moose, Coro, FCGI, v5.22
+
+We'll rather fix perl 5.22 and B::C first, and make the Moose bloat history.
+I maintain in p2/potion a perl6 like MOP in ~40 lines, which is 200x faster.
+
+Fixing Moose is not priority, fixing perl5 is.
+Coro next, when we'll start using it.
+
+---
+# Development
+
+Via perl11 in nearby Austin we formulated goals
+for perl6 feature integration.
+
+* types (YAPC::EU 2012 Riga talk)
+* B::CC optimizations (YAPC::EU 2013 Kiev talk, ~6x faster)
+* p2/potion development (YAPC 2014 talks, ~5-200x faster)
+* rperl (restrict the syntax, map to static C++ types, ~7-350x faster)
+* plan on shared modules, less memory, better arrays and hashes
+  and types (=> no magic, static optims and dispatch) and much more.
+
+---
+# Next goal
+
+We skipped all versions from 5.16 to 5.20, since they got worse
+in almost all aspects: memory, security, compiler API.
+
+But with the monomorphic inline cache patch by Oleg Pronin early 2015
+and the :const attribute in core (for anonsubs, but we took the syntax),
+5.22 became the next realistic target to aim for.
+---
+# Next goal
+
+Even with several major blocks (p5p, unicode bloat, COW,
+SVf\_PROTECT, @\_ in sigs), I started working on a fixed and improved
+perl version in Feb 2015. <!--  Starting with my early 2012 type system
+work which had no chance to get accepted or even discussed with p5p.-->
+
+:const made it possible.
+---
+# Next goal
+
+Compiling >5.14 with perl5 proper is not worthwhile. 5.22 maybe without COW.
+But targetting our improved version based on 5.22 and coretypes is.
+
+We can control memory bloat, overcome the broken p5p development
+status <!-- which is going on since 2002, add the needed features
+which were not added since 2002, --> and can use the improved compiler
+(op.c) and perl run-time in the B::C compiler to produce better code.
+
+Back to the 5.6.2 level hopefully. Memory-wise and initialization already
+there, but we still have some major improvements in not yet merged
+branches. You can expect a **perl11 (5+6=11)** soon. But we
+prototype and use it internally for a while first.
+
+---
+# Questions
+
+    </textarea>
+    <script src="remark.js" type="text/javascript">
+    <!-- script src="https://gnab.github.io/remark/downloads/remark-latest.min.js" -->
+    </script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>      

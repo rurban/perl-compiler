@@ -1,0 +1,602 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>Frozen Perl 2010</title>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<meta name="generator" content="pod2s5 0.08" />
+<meta name="generator" content="S5" />
+<meta name="version" content="S5 1.1" />
+<meta name="presdate" content="Minneapolis Sat Feb 7, 2010" />
+<meta name="author" content="URBANR" />
+<meta name="company" content="&nbsp;" />
+<!-- configuration parameters -->
+<meta name="defaultView" content="slideshow" />
+<meta name="controlVis" content="hidden" />
+<!-- style sheet links -->
+<link rel="stylesheet" href="ui/rurban/slides.css" type="text/css" media="projection" id="slideProj" />
+<link rel="stylesheet" href="ui/default/outline.css" type="text/css" media="screen" id="outlineStyle" />
+<link rel="stylesheet" href="ui/default/print.css" type="text/css" media="print" id="slidePrint" />
+<link rel="stylesheet" href="ui/default/opera.css" type="text/css" media="projection" id="operaFix" />
+
+<!-- embedded styles -->
+<style type="text/css" media="all">
+.imgcon {width: 525px; margin: 0 auto; padding: 0; text-align: center;}
+#anim {width: 270px; height: 320px; position: relative; margin-top: 0.5em;}
+#anim img {position: absolute; top: 42px; left: 24px;}
+img#me01 {top: 0; left: 0;}
+img#me02 {left: 23px;}
+img#me04 {top: 44px;}
+img#me05 {top: 43px;left: 36px;}
+</style>
+<!-- S5 JS -->
+<script src="ui/default/slides.js" type="text/javascript"></script>
+<!--
+   tom AT cpan.org:
+   this will not work, it's not contained
+   in the downloadable S5
+   <script src="/mint/?js" type="text/javascript"></script></head>
+-->
+<body>
+
+<div class="layout">
+
+<div id="controls"></div>
+<div id="currentSlide"></div>
+<div id="header"></div>
+<div id="footer">
+<h1>Reini Urban &#8226; Minneapolis Sat Feb 7, 2010</h1>
+<h2>Frozen Perl 2010</h2></div>
+</div><div class="slide">
+<h1>Frozen Perl 2010
+
+</h1><p>The Perl Compiler
+
+</p><p><b>rurban</b> - Reini Urban <br>
+Graz, Austria
+
+</p></div>
+<div class="slide">
+<h1>What's new?
+
+</h1><ul><li level="1">Fixed most bugs <i>(in work)</i> <br> bytecode: 12=>0, c: 7=>0, cc: 9=>5
+
+</li><li level="1">5.10 and 5.12, non-threaded favored <i>(faster)</i>
+
+</li><li level="1">.plc platform compatible, almost version compatible <i>(.plc header change)</i>
+
+</li><li level="1">added testsuite
+
+</li><li level="1">more and better optimisations <i>(in work)</i>
+
+</li><li level="1">removed B::Stash bloat from perlcc, -stash [optional]
+
+</li></ul></div>
+<div class="slide">
+<h1>Who am I
+
+</h1><p>rurban maintains <b>cygwin perl</b> since 5.8.8 
+and 3-4 modules, guts, <b>B::*</b> => 5.10
+
+</p><p>Mostly doing <b>LISP</b> <b>Perl</b> and <b>PHP</b>, and support for custom HW,
+windows + linux + real-time systems in real-life.
+Coding in winter, surfing in summer.
+
+</p><p>1995 first on CPAN with the <i>perl5.hlp</i> file and converter for Windows.
+
+</p></div>
+<div class="slide">
+<h1>Contents
+
+</h1><p>Started 1995 by Malcom Beattie, abandoned 2007 by p5p, revived 2008 by me
+
+</p><p>Very dynamic language. eval "require $foo;" -> which packages?
+
+</p><ul><li level="1">Overview 
+
+</li><li level="1">Status
+
+</li><li level="1">Plans
+
+</li></ul></div>
+<div class="slide">
+<h1>Why use B::C / perlcc?
+
+</h1><ul><li level="1">Improved startup time, esp. significant with larger code.  
+
+</li><li level="1">Reduced memory usage. <br><small> 9% less memory w/ 25000 lines</small>
+
+</li><li level="1">Distribute binary only versions
+
+<ul><li level="1">No need to ship an entire perl install
+
+</li><li level="1">Self contained application
+
+</li><li level="1">But you could also use a "Packager", like <a href="perl2exe">perl2exe</a>, <a href="perlapp">perlapp</a>, <a href="PAR">PAR</a> <br> <small>They are no compilers, slower startup </small>
+
+</li></ul></li><li level="1">And with B::CC - Improve run-time
+
+</li></ul></div>
+<div class="slide">
+<h1>Overview
+
+</h1><p>In the Perl Compiler suite <b>B::C</b> are three seperate compilers:
+
+</p><ul><li level="1">B::Bytecode / ByteLoader (<i>freeze/thaw</i> to <i>.plc</i> + <i>.pmc</i>)
+
+</li><li level="1">B::C  (<i>freeze/thaw</i> to <i>.c</i>)
+
+</li><li level="1">B::CC (<i>optimising</i> to <i>.c</i>)
+
+</li></ul><p>perl toke.c/op.c  -  B::C  - perl <b>op walker</b> run.c
+
+</p><p>Eliminate the whole parsing and dynamic allocation time.
+
+</p></div>
+<div class="slide">
+<h1>The Walker
+
+</h1><p>After compilation walk the "op tree" - <i>run.c</i>
+
+</p><code>&nbsp;&nbsp;<font color="#007f00">int</font><BR>
+&nbsp;&nbsp;Perl_runops_standard(pTHX)<BR>
+&nbsp;&nbsp;{<BR>
+&nbsp;&nbsp;&nbsp;dVAR;<BR>
+&nbsp;&nbsp;&nbsp;<b>while</b>&nbsp;((PL_op&nbsp;=&nbsp;CALL_FPTR(PL_op-&gt;op_ppaddr)(aTHX)))&nbsp;{<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PERL_ASYNC_CHECK();<BR>
+&nbsp;&nbsp;&nbsp;}<BR>
+&nbsp;&nbsp;&nbsp;TAINT_NOT;<BR>
+&nbsp;&nbsp;&nbsp;<b>return</b>&nbsp;0;<BR>
+&nbsp;&nbsp;}<BR>
+<BR>
+</code></div>
+<div class="slide">
+<h1>The Walker
+
+</h1><code>&nbsp;&nbsp;&nbsp;<b>while</b>&nbsp;((PL_op&nbsp;=&nbsp;CALL_FPTR(PL_op-&gt;op_ppaddr)(aTHX)))&nbsp;{<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PERL_ASYNC_CHECK();<BR>
+&nbsp;&nbsp;&nbsp;}<BR>
+<BR>
+</code><h2>Observation
+
+</h2><p>1. The op tree is not a <b>"tree"</b>, it is reduced to a simple <b>linked list</b> of ops.
+Every "op" (a <code>pp_&lt;opname&gt;</code> function) returns the next op.
+
+</p><p>2. PERL_ASYNC_CHECK is called after every single op.
+
+</p></div>
+<div class="slide">
+<h1>Perl Phases - the "Perl Compiler"
+
+</h1><ul><li level="1">=> <b>Parse + Compile</b> to op tree <i>(in three phases, see</i> <a href="perlguts">perlguts</a> and <a href="perloptree">perloptree</a>)
+<br>
+
+</li><li level="1">BEGIN <i>(use ...)</i>
+
+</li><li level="1">CHECK <i>(O modules)</i>
+
+</li><li level="1">INIT <i>(main phase)</i>
+
+</li><li level="1">END <i>(cleanup, perl destructors)</i>
+
+</li></ul><p>Normal Perl functions start at <b>INIT</b>, after BEGIN and CHECK. <br>
+The <b>O</b> modules start at <b>CHECK</b>, and skip INIT.
+
+</p></div>
+<div class="slide">
+<h1>Perl Phases - the "B Compilers"
+
+</h1><ul><li level="1">Parse + Compile to op tree <i>(in three phases)</i>
+
+</li><li level="1">BEGIN <i>(use ...)</i>
+
+</li><li level="1">=> <b>CHECK</b> (O) => freeze
+
+</li><li level="1">compiled <i>INIT (main phase)</i>
+
+</li><li level="1">compiled <i>END (cleanup, perl destructors)</i>
+
+</li></ul></div>
+<div class="slide">
+<h1>Perl Phases - the "B Compilers"
+
+</h1><p>The B Compilers, invoked via <b>O</b>, freeze the state in <b>CHECK</b>,
+and invoke then the walker.
+
+</p><code>  $ perl -MO=C,-omyprog.c myprog.pl <br>
+  $ cc_harness -o myprog myprog.c <br>
+  $ ./myprog </code></div>
+<div class="slide">
+<h1>B::CC - Unoptimised / the walker
+
+</h1><code>&nbsp;&nbsp;<b>while</b>&nbsp;((PL_op&nbsp;=&nbsp;CALL_FPTR(PL_op-&gt;op_ppaddr)(aTHX)))&nbsp;{<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PERL_ASYNC_CHECK();<BR>
+&nbsp;&nbsp;}<BR>
+<BR>
+</code></div>
+<div class="slide">
+<h1>B::CC - The optimiser / unrolled
+
+</h1><code>&nbsp;&nbsp;<b>while</b>&nbsp;((PL_op&nbsp;=&nbsp;CALL_FPTR(PL_op-&gt;op_ppaddr)(aTHX)))&nbsp;{<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PERL_ASYNC_CHECK();<BR>
+&nbsp;&nbsp;}<BR>
+&nbsp;&nbsp;is&nbsp;unrolled&nbsp;to:<BR>
+&nbsp;&nbsp;lab_15de5b8:<BR>
+&nbsp;&nbsp;&nbsp;PUSHMARK(sp);<BR>
+&nbsp;&nbsp;&nbsp;XPUSHs(GvSVn((GV*)PL_curpad[<font color="#00007f">1</font>]));<BR>
+&nbsp;&nbsp;&nbsp;PL_op&nbsp;=&nbsp;(OP*)&amp;listop_list[0];<BR>
+&nbsp;&nbsp;&nbsp;PUTBACK;&nbsp;PL_op&nbsp;=&nbsp;pp_print();&nbsp;SPAGAIN;<BR>
+&nbsp;&nbsp;lab_1248c18:<BR>
+&nbsp;&nbsp;&nbsp;PP_UNSTACK;<BR>
+&nbsp;&nbsp;&nbsp;PERL_ASYNC_CHECK();<BR>
+&nbsp;&nbsp;<font color="#7f7f7f"><i>/*&nbsp;next&nbsp;basic&nbsp;block&nbsp;*/</i></font><BR>
+<BR>
+</code><p></font>
+
+</p></div>
+<div class="slide">
+<h1>B::CC - The optimiser / unrolled 
+
+</h1><p><br><br><br>
+
+</p><ul><li level="1">no CALL_FPTR - call by ref
+
+</li><li level="1">static direct function call
+
+</li><li level="1">prefetched into CPU cache!
+
+</li><li level="1">no unneeded stack handling
+
+</li><li level="1">PERL_ASYNC_CHECK only after every basic block
+
+</li></ul></div>
+<div class="slide">
+<h1>Status
+
+</h1><p>5.6.2 and 5.8.9 non-threaded B::C are quite usable and have the
+least known bugs, but 5.10 and 5.12 became also pretty stable
+now.
+
+</p><h2>Targets:
+
+</h2><ul><li level="1">Bugfixes for <b>B::C</b>
+
+</li><li level="1">Test top100 CPAN modules <i>(3-4 fail)</i>
+
+</li><li level="1">Isolate bugs into simple tests <i>(35 cases)</i>
+
+</li><li level="1">Test the perl cores suite <i>(~20 fails)</i> <br> Estimated 3-4 more open bugs.
+
+</li></ul></div>
+<div class="slide">
+<h1>Status
+
+</h1><ul><li level="1">5.6.2 + 5.8.9 are almost bug free, with B::Bytecode and B::C
+
+</li><li level="1">B::C >=5.10 threaded (<i>pads</i>) in work <br> <i>2-3 minor bugs with certain modules</i>
+
+</li><li level="1">With debugging perls there seem to be less bugs than with releases. <small><i>Normally it 's the other way round</i></small>
+
+</li><li level="1">B::CC has some limitations and some known bugs
+
+<p><i>See testsuite and</i> <i>STATUS</i>
+
+</p></li></ul></div>
+<div class="slide">
+<h1>Projects
+
+</h1><p>Which software is compiler critical?
+
+</p></div>
+<div class="slide">
+<h1>Projects
+
+</h1><p>Which software is compiler critical?
+
+</p><p>Execution time is the same (sans B::CC)
+
+</p></div>
+<div class="slide">
+<h1>Projects
+
+</h1><p>Which software is compiler critical?
+
+</p><p>Execution time is the same (sans B::CC)
+
+</p><p>Startup time is radical faster
+
+</p></div>
+<div class="slide">
+<h1>Projects
+
+</h1><p>Which software is compiler critical?
+
+</p><p>Execution time is the same (sans B::CC)
+
+</p><p>Startup time is radical faster.
+
+</p><p>Web Apps with fast response times - 
+
+</p><p><b>1 sec more or less => good or bad software</b>
+
+</p></div>
+<div class="slide">
+<h1>Projects
+
+</h1><p>Which software is compiler critical?
+
+</p><p>Execution time is the same (sans B::CC)
+
+</p><p>Startup time is radical faster.
+
+</p><p>Web Apps with fast response times - 
+
+</p><p>Optimise static initialization - strings and arrays
+
+</p></div>
+<div class="slide">
+<h1>New Optimisations
+
+</h1><p>Optimise static initialization - strings and arrays
+
+</p><p>non-threaded ! +10-20% performance
+
+</p><p><code>ltrace</code> reveils <code>Gthr_key_ptr</code>, <code>gv_fetchpv</code>, <code>savepvn</code>,
+<code>av_extend</code> and <code>safesysmalloc</code> as major culprits, the later
+three at <b>startup-time</b>.
+
+</p></div>
+<div class="slide">
+<h1>New Optimisations
+
+</h1><p>Optimise static initialization - strings and arrays
+
+</p><p>non-threaded ! +10-20% performance
+
+</p><p>common constant strings with gcc -Os => automatically optimised
+
+</p></div>
+<div class="slide">
+<h1>New Optimisations
+
+</h1><p>Optimise static initialization - strings and arrays
+
+</p><p>non-threaded ! +10-20% performance
+
+</p><p>common constant strings with gcc -Os => automatically optimised
+
+</p><p>av_extend - run-time malloc => static arrays ?
+
+</p></div>
+<div class="slide">
+<h1>New Optimisations
+
+</h1><p>av_extend - run-time malloc => static arrays ?
+
+</p><p>static arrays are impossible if not <b>Readonly</b>
+
+</p><p>can not be extended at run-time, need to be realloc'ed into the heap.
+
+</p></div>
+<div class="slide">
+<h1>New Optimisations
+
+</h1><p>av_extend - run-time malloc => static arrays ?
+
+</p><p>pre-allocate faster with <b>-fav-init</b> or <b>-O3</b>
+
+</p><p><i>at least this is the idea</i>. Same for hashes <i>(nyi)</i>.
+
+</p></div>
+<div class="slide">
+<h1>Real Life Applications
+
+</h1><p><b>cPanel</b> has used B::C compiled 5.6 for a decade, 
+and wants to switch to 5.8.9 (or later).
+
+</p><p><b>cPanel</b> offers web hosting automation software that manages
+provider data, domains, emails, webspace. A typical large webapp.
+Perl startup time can be too slow for many AJAX calls which need 
+fast initial response times.
+
+</p></div>
+<div class="slide">
+<h1>Benchmarks (by cPanel)
+
+</h1><p>Larger code base => more significant startup improvements
+
+</p><ul><li level="1">18.78x faster startup for large production applications. (~ 70000 lines)
+
+</li><li level="1">3.52x faster startup on smaller applications.   (~8000 lines)
+
+</li><li level="1">3x faster startup on tiny applications < 1024 lines of code
+
+</li><li level="1">2x faster startup for very tiny applications
+
+</li><li level="1">Guessed: 2x-10x faster run-time for CC optimised code, esp. arithmetic.
+
+</li></ul></div>
+<div class="slide">
+<h1>Benchmarks (by cPanel)
+
+</h1><code>    Web Service Daemon <br>
+
+    Resident Size (perlcc)  9072 <br>
+    Resident Size (perl)    9756 <br> <br>
+
+    DNS Settings Client <br>
+
+    Startup Time (perl)   0.074 <br>
+    Startup Time (perlcc) 0.021 <br> <br>
+
+    HTML Template Processor <br>
+
+    Startup Time (perlcc) 0.037 <br>
+    Startup Time (perl)   0.695 <br> </code></div>
+<div class="slide">
+<h1>Plans
+
+</h1><p>2010: Find and fix all remaining bugs
+
+</p><p>2010: Faster testsuite (Now <code>8 min - 40min - 2 days</code>)
+
+</p><p>2011: CC type and sub optimisations
+
+</p><p>2012: CC unrolling => jit within perl (<code>perl -j</code>)
+
+</p><p>Emit parrot pir.
+
+</p></div>
+<div class="slide">
+<h1>B::CC Limitations
+
+</h1><p>run-time ops vs compile-time ...
+
+</p><p>dynamic range 1..$foo
+
+</p><p>goto/next/last $label
+
+</p><p>Undetected modules behind eval "require": <br>
+use <b>-uModule</b> to enforce scanning these
+
+</p></div>
+<div class="slide">
+<h1>B::CC Limitations
+
+</h1><p>run-time ops vs compile-time<br>
+BEGIN blocks only compile-time side-effects.
+
+</p><code>  BEGIN { <br>
+&nbsp;&nbsp;    use Package;   # okay <BR>
+&nbsp;&nbsp;    chdir "dir";   # not okay. <BR>
+&nbsp;&nbsp;                   # only done at compile-time, not at the user<BR>
+&nbsp;&nbsp;    print "stuff"; # okay, only at compile-time <BR>
+&nbsp;&nbsp;    eval "what";   # hmm; depends <br>
+  } </code><p>Move eval "require Package;" to BEGIN
+
+</p></div>
+<div class="slide">
+<h1>B::CC Bugs
+
+</h1><p>Custom sort BLOCK is buggy, <i>wrong queue implementation</i>
+
+</p></div>
+<div class="slide">
+<h1>B::CC Bugs
+
+</h1><p>Custom sort BLOCK is buggy, <i>wrong queue implementation, causing an endless loop</i>
+
+</p><code>  sort { $a <=> $b }  <br>
+  <small>is optimised away, ok</small><br><br>
+
+  sort { $hash{$a} <=> $hash{$b} } <br>
+  <small>maybe?</small><br><br>
+
+  sort { $hash{$a}->{field} <=> $hash{$b}->{field} }  <br>
+  <small>for sure not</small> </code></div>
+<div class="slide">
+<h1>Testsuite
+
+</h1><p><b>user</b> make test <i>(via cpan)</i>:
+
+</p><p>35x bytecode + c -O0 - O4 + cc -O0 - O2
+
+</p><p>=> <b>8 min</b>
+
+</p></div>
+<div class="slide">
+<h1>Testsuite
+
+</h1><p><b>author</b> make test:
+
+</p><p>35x bytecode + c -O0 - O4 + cc -O0 - O2 <i>(8 min)</i>
+
+</p><p><b>modules.t top100</b> <b>(16 min)</b>
+
+</p><p>+ <b>testcore.t</b> <b>(16 min)</b>
+
+</p><p>=> <b>~40 min</b>
+
+</p></div>
+<div class="slide">
+<h1>Testsuite
+
+</h1><p>author make test <b>40 min</b>
+
+</p><p>for <b>5-10</b> perls <i>(5.6, 5.8, 5.10, 5.11 / threaded + non-threaded)</i> 4*2=8
+
+</p><p>on <b>5 platforms</b> (cygwin, debian, centos, solaris, freebsd)
+
+</p><p>=> 26 h (8*5*40 = 1600min) = <b>1-2 days</b>, similar to the gcc testsuite.
+
+</p></div>
+<div class="slide">
+<h1>Testsuite
+
+</h1><p>top100 modules?
+
+</p><p>See webpage or svn repo for results for all tested perls / modules
+
+</p><p>With 5.8 non-threaded 3 fails <b>Attribute::Handlers</b> <b>B::Hooks::EndOfScope</b> <b>YAML</b> <b>MooseX::Types</b>
+
+</p><p>With blead non-threaded 4 fails <b>Attribute::Handlers</b> <b>File::Temp</b> <b>ExtUtils::Install</b>
+
+</p><p>unpredictable results: e.g. threaded 5.10 <b>39/98</b> (cygwin release) vs <b>3/80</b> (a test version) fails. Innocent change => fatal consequences.
+
+</p></div>
+<div class="slide">
+<h1>CC
+
+</h1><ul><li level="1">Sub calls - Opcodes
+
+<p>What can we statically leave out per pp_?
+
+</p><p>Now: arguments passing, return values for 50% ops
+
+</p><p>Planned: more + direct xsub calls.
+
+</p></li><li level="1">Types - understand declarations
+
+<p>Now: Unroll for known static types pp_opname completely into simple arithmetic.
+
+</p><p>Known static types at compile-time? User declarations or <a href="Devel::TypeCheck">Devel::TypeCheck</a>
+
+</p></li></ul></div>
+<div class="slide">
+<h1>CC - Type declarations
+
+</h1><p>Currently:
+
+</p><code>  my $E<lt>nameE<gt>_i;  IV integer <br>
+  my $E<lt>nameE<gt>_ir; IV integer in a pseudo register <br>
+  my $E<lt>nameE<gt>_d;  NV double </code><p><hr>
+
+</p><p>Future ideas are type qualifiers such as <br>
+	<code>my (int $foo, double $foo_d); </code>
+
+</p><p>or attributes such as <br>
+	<code>my ($foo:Cint, $foo:Cintr, $foo:Cdouble);</code>
+
+</p><p>or <a href="MooseX::Types">MooseX::Types</a>
+
+</p></div>
+<div class="slide">
+<h1>Code
+
+</h1><p><a href="http://search.cpan.org/dist/B-C/">http://search.cpan.org/dist/B-C/</a>
+
+</p><p><a href="http://code.google.com/p/perl-compiler/">http://code.google.com/p/perl-compiler/</a>
+
+</p><p>Planned:
+
+</p><p><a href="http://compiler.perl.org/">http://compiler.perl.org/</a>
+
+</p><p><a href="mailto:compiler@perl.org">mailto:compiler@perl.org</a>
+
+</p></div>
+<div class="slide">
+<h1>Questions?
+
+</h1></div></body></html>
