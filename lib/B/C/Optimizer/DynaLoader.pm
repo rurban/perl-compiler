@@ -1,5 +1,8 @@
 package B::C::Optimizer::DynaLoader;
 
+use strict;
+use warnings;
+
 use B qw(svref_2object);
 use Config;
 use B::C::Config qw/verbose debug/;
@@ -10,10 +13,11 @@ sub new {
     my $self  = shift or die;
     ref $self eq 'HASH' or die( ref $self );
 
-    $self->{'xsub'}         or die;
-    $self->{'skip_package'} or die;
-    $self->{'curINC'}       or die;
-    $self->{'output_file'}  or die;
+    $self->{'xsub'}            or die;
+    $self->{'skip_package'}    or die;
+    $self->{'curINC'}          or die;
+    $self->{'output_file'}     or die;
+    exists $self->{'staticxs'} or die;
 
     # Initialize in case there's no dynaloader and we return early.
     $self->{'stash'} = {
@@ -105,7 +109,7 @@ sub optimize {
         unshift @dl_modules, 'attributes';
     }
 
-    if ($staticxs) {
+    if ( $self->{'staticxs'} ) {
         my $file = $self->{'output_file'} . '.lst';
         open( $xsfh, ">", $file ) or die("Can't open $file: $!");
     }
@@ -123,7 +127,7 @@ sub optimize {
             else {                      # XS: need to fix cx for caller[1] to find auto/...
                 verbose("bootstrapping $stashname added to XSLoader dl_init");
             }
-            if ($staticxs) {
+            if ( $self->{'staticxs'} ) {
                 my ($laststash) = $stashname =~ /::([^:]+)$/;
                 my $path = $stashname;
                 $path =~ s/::/\//g;
@@ -141,7 +145,7 @@ sub optimize {
                         last;
                     }
                 }
-                print XS $stashname, "\n" if $sofile;    # error case
+                print {$xsfh} $stashname, "\n" if $sofile;    # error case
                 verbose("staticxs $stashname\t - $sofile not loaded") if $sofile;
             }
         }

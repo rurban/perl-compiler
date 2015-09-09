@@ -1463,7 +1463,7 @@ sub save_main_rest {
 
     verbose("fast_perl_destruct (-fno-destruct)") if $destruct;
 
-    my $dynaloader_optimizer = B::C::Optimizer::DynaLoader->new( { 'xsub' => \%xsub, 'skip_package' => \%skip_package, 'curINC' => \%curINC, 'output_file' => $output_file } );
+    my $dynaloader_optimizer = B::C::Optimizer::DynaLoader->new( { 'xsub' => \%xsub, 'skip_package' => \%skip_package, 'curINC' => \%curINC, 'output_file' => $output_file, 'staticxs' => $staticxs } );
     $dynaloader_optimizer->optimize();
 
     my $c_file_stash = build_template_stash( \%static_ext, \@stashxsubs, $dynaloader_optimizer );
