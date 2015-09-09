@@ -2,9 +2,10 @@
 # http://code.google.com/p/perl-compiler/issues/detail?id=242
 # -fno-fold and OP_UCFIRST
 use strict;
+
 BEGIN {
-  unshift @INC, 't';
-  require "test.pl";
+    unshift @INC, 't';
+    require "test.pl";
 }
 use Test::More tests => 2;
 
@@ -16,5 +17,5 @@ $a = "\x{3c3}foo.bar";
 print "ok\n" if $c eq "\x{3a3}foo.Bar";
 EOF
 
-ctestok(1,'C','ccode242i',$script, '#242 C,-O0 ucfirst demandloads unicore/To/Title.pl');
-ctestok(2,'C,-O3','ccode242i',$script, '#242 -O3');
+ctestok( 1, 'C',     'ccode242i', $script, '#242 C,-O0 ucfirst demandloads unicore/To/Title.pl' );
+ctestok( 2, 'C,-O3', 'ccode242i', $script, '#242 -O3' );

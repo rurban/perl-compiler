@@ -3,9 +3,10 @@
 # B::CC errors on nested if statement with test on multiple variables
 use Test::More tests => 1;
 use strict;
+
 BEGIN {
-  unshift @INC, 't';
-  require "test.pl";
+    unshift @INC, 't';
+    require "test.pl";
 }
 
 my $script = <<'EOF';
@@ -22,6 +23,7 @@ else {
 EOF
 
 use B::CC;
-ctest(1, '^http$', "CC", "ccode51i", $script,
-      ($B::CC::VERSION < 1.08 ? "TODO " : "")
-      . "CC nested if on multiple variables - issue51. Fixed with B-C-1.28 r659");
+ctest(
+    1, '^http$', "CC", "ccode51i", $script,
+    ( $B::CC::VERSION < 1.08 ? "TODO " : "" ) . "CC nested if on multiple variables - issue51. Fixed with B-C-1.28 r659"
+);

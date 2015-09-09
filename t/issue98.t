@@ -17,6 +17,7 @@ $^H |= 0x1c820ec0;
 @^H{qw(feature___SUB__ feature_fc feature_unicode feature_evalbytes feature_say feature_state feature_switch)} = (1) x 7;}
 sub test { eval(""); }
 print q(ok);';
+
 # old bug reported by Zloysystem
 #$source = "use strict; eval(\@_);print q(ok);";
 
@@ -25,32 +26,34 @@ print F $source;
 close F;
 
 my $expected = "ok";
-my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-my $Mblib = "-Iblib/arch -Iblib/lib";
-if ($] < 5.008) {
-  system "$runperl -MO=Bytecode,-o$name.plc $name.pl";
-} else {
-  system "$runperl $Mblib -MO=-qq,Bytecode,-H,-o$name.plc $name.pl";
+my $runperl  = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+my $Mblib    = "-Iblib/arch -Iblib/lib";
+if ( $] < 5.008 ) {
+    system "$runperl -MO=Bytecode,-o$name.plc $name.pl";
 }
-unless (-e "$name.plc") {
-  print "not ok 1 #B::Bytecode failed.\n";
-  exit;
+else {
+    system "$runperl $Mblib -MO=-qq,Bytecode,-H,-o$name.plc $name.pl";
 }
-my $runexe = $] < 5.008
+unless ( -e "$name.plc" ) {
+    print "not ok 1 #B::Bytecode failed.\n";
+    exit;
+}
+my $runexe =
+  $] < 5.008
   ? "$runperl -MByteLoader $name.plc"
   : "$runperl $Mblib $name.plc";
 my $result = `$runexe`;
 $result =~ s/\n$//;
 
 SKIP: {
-  skip "no features on 5.6", 1 if $] < 5.008;
- TODO: {
-    local $TODO = "5.18thr bytecode" if $] >= 5.018 and  $] < 5.019005 and $Config{useithreads};
-    ok($result eq $expected, "issue98 - set feature hash");
-  }
+    skip "no features on 5.6", 1 if $] < 5.008;
+  TODO: {
+        local $TODO = "5.18thr bytecode" if $] >= 5.018 and $] < 5.019005 and $Config{useithreads};
+        ok( $result eq $expected, "issue98 - set feature hash" );
+    }
 }
 
 END {
-  unlink($name, "$name.plc", "$name.pl")
-    if $result eq $expected;
+    unlink( $name, "$name.plc", "$name.pl" )
+      if $result eq $expected;
 }

@@ -3,16 +3,17 @@
 # PVMG RV should not overwrite PV slot
 
 use strict;
+
 BEGIN {
-  unshift @INC, 't';
-  require "test.pl";
+    unshift @INC, 't';
+    require "test.pl";
 }
 use Test::More tests => 1;
 use B::C ();
 
-my $todo = ($B::C::VERSION ge '1.43_07') ? "" : "TODO ";
+my $todo = ( $B::C::VERSION ge '1.43_07' ) ? "" : "TODO ";
 
-ctest(1,'11','C,-O3','ccode273i',<<'EOF',$todo.'#273 PVMG RV vs PV');
+ctest( 1, '11', 'C,-O3', 'ccode273i', <<'EOF', $todo . '#273 PVMG RV vs PV' );
 package Foo;
 use overload;
 sub import { overload::constant "integer" => sub { return shift }};

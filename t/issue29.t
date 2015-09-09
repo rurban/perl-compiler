@@ -1,18 +1,20 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=29
 use strict;
+
 BEGIN {
-  if ($] < 5.008) {
-    print "1..1\nok 1 #skip 5.6 has no IO discipline\n"; exit;
-  }
+    if ( $] < 5.008 ) {
+        print "1..1\nok 1 #skip 5.6 has no IO discipline\n";
+        exit;
+    }
 }
 use Test::More tests => 2;
 use Config;
 
-my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-my $ITHREADS  = ($Config{useithreads});
+my $DEBUGGING = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
+my $ITHREADS  = ( $Config{useithreads} );
 
-my $name = "ccode29i";
+my $name   = "ccode29i";
 my $script = <<'EOF';
 use open qw(:std :utf8);
 $_ = <>;
@@ -28,38 +30,39 @@ close F;
 my $expected = "24610 ö";
 my $runperl = $^X =~ m/\s/ ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
 system "$runperl blib/script/perlcc -o $name $name.pl";
-unless (-e $name or -e "$name.exe") {
-  print "ok 1 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
-  print "ok 2 #skip\n";
-  exit;
+unless ( -e $name or -e "$name.exe" ) {
+    print "ok 1 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
+    print "ok 2 #skip\n";
+    exit;
 }
 my $runexe = $^O eq 'MSWin32' ? "$name.exe" : "./$name";
 my $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 TODO: {
-  local $TODO = "B::C issue 29 utf8 perlio";
-  ok($result eq $expected, "C '$result' ne '$expected'");
+    local $TODO = "B::C issue 29 utf8 perlio";
+    ok( $result eq $expected, "C '$result' ne '$expected'" );
 }
 
-if ($] < 5.008) {
-  system "$runperl -MO=Bytecode56,-o$name.plc $name.pl";
-} else {
-  system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
+if ( $] < 5.008 ) {
+    system "$runperl -MO=Bytecode56,-o$name.plc $name.pl";
 }
-unless (-e "$name.plc") {
-  print "ok 2 #skip perlcc -B failed.\n";
-  exit;
+else {
+    system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
+}
+unless ( -e "$name.plc" ) {
+    print "ok 2 #skip perlcc -B failed.\n";
+    exit;
 }
 $runexe = "$runperl -MByteLoader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 TODO: {
-  local $TODO = "B::Bytecode issue 29 utf8 perlio"
-    if $] >= 5.011004 and $ITHREADS;
-  ok($result eq $expected, "BC '$result' eq '$expected'");
+    local $TODO = "B::Bytecode issue 29 utf8 perlio"
+      if $] >= 5.011004 and $ITHREADS;
+    ok( $result eq $expected, "BC '$result' eq '$expected'" );
 }
 
 END {
-  unlink($name, "$name.plc", "$name.pl", "$name.exe")
-    if $result eq $expected;
+    unlink( $name, "$name.plc", "$name.pl", "$name.exe" )
+      if $result eq $expected;
 }

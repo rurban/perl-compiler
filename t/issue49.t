@@ -3,9 +3,10 @@
 # B::CC Can't "last" outside a loop block
 use Test::More tests => 1;
 use strict;
+
 BEGIN {
-  unshift @INC, 't';
-  require "test.pl";
+    unshift @INC, 't';
+    require "test.pl";
 }
 
 # The op "leaveloop" is not handled by B::CC because it is dead code.
@@ -27,6 +28,7 @@ while (1) {
 EOF
 
 use B::CC;
-ccompileok(1, "CC", "ccode49i", $script, # fixed with B::CC 1.08 r625
-	   ($B::CC::VERSION < 1.08 ? "TODO " : "")
-	   . "CC Can't \"last\" outside a loop block, fixed with B-C-1.28");
+ccompileok(
+    1, "CC", "ccode49i", $script,    # fixed with B::CC 1.08 r625
+    ( $B::CC::VERSION < 1.08 ? "TODO " : "" ) . "CC Can't \"last\" outside a loop block, fixed with B-C-1.28"
+);

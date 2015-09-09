@@ -10,82 +10,82 @@ sub curr_test {
 }
 
 sub next_test {
-  my $retval = $test;
-  $test = $test + 1; # don't use ++
-  $retval;
+    my $retval = $test;
+    $test = $test + 1;    # don't use ++
+    $retval;
 }
 
-my $cp_0037 =   # EBCDIC code page 0037
-    '\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F' .
-    '\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F' .
-    '\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61' .
-    '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F' .
-    '\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6' .
-    '\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xBA\xE0\xBB\xB0\x6D' .
-    '\x79\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96' .
-    '\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xC0\x4F\xD0\xA1\x07' .
-    '\x20\x21\x22\x23\x24\x15\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B' .
-    '\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\xFF' .
-    '\x41\xAA\x4A\xB1\x9F\xB2\x6A\xB5\xBD\xB4\x9A\x8A\x5F\xCA\xAF\xBC' .
-    '\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB' .
-    '\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77' .
-    '\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xFD\xFE\xFB\xFC\xAD\xAE\x59' .
-    '\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57' .
-    '\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF';
+my $cp_0037 =             # EBCDIC code page 0037
+  '\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F'
+  . '\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F'
+  . '\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61'
+  . '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F'
+  . '\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6'
+  . '\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xBA\xE0\xBB\xB0\x6D'
+  . '\x79\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96'
+  . '\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xC0\x4F\xD0\xA1\x07'
+  . '\x20\x21\x22\x23\x24\x15\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B'
+  . '\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\xFF'
+  . '\x41\xAA\x4A\xB1\x9F\xB2\x6A\xB5\xBD\xB4\x9A\x8A\x5F\xCA\xAF\xBC'
+  . '\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB'
+  . '\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77'
+  . '\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xFD\xFE\xFB\xFC\xAD\xAE\x59'
+  . '\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57'
+  . '\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF';
 
-my $cp_1047 =   # EBCDIC code page 1047
-    '\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F' .
-    '\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F' .
-    '\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61' .
-    '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F' .
-    '\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6' .
-    '\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xAD\xE0\xBD\x5F\x6D' .
-    '\x79\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96' .
-    '\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xC0\x4F\xD0\xA1\x07' .
-    '\x20\x21\x22\x23\x24\x25\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B' .
-    '\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\xFF' .
-    '\x41\xAA\x4A\xB1\x9F\xB2\x6A\xB5\xBB\xB4\x9A\x8A\xB0\xCA\xAF\xBC' .
-    '\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB' .
-    '\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77' .
-    '\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xFD\xFE\xFB\xFC\xBA\xAE\x59' .
-    '\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57' .
-    '\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF';
+my $cp_1047 =    # EBCDIC code page 1047
+  '\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F'
+  . '\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F'
+  . '\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61'
+  . '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F'
+  . '\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6'
+  . '\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xAD\xE0\xBD\x5F\x6D'
+  . '\x79\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96'
+  . '\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xC0\x4F\xD0\xA1\x07'
+  . '\x20\x21\x22\x23\x24\x25\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B'
+  . '\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\xFF'
+  . '\x41\xAA\x4A\xB1\x9F\xB2\x6A\xB5\xBB\xB4\x9A\x8A\xB0\xCA\xAF\xBC'
+  . '\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB'
+  . '\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77'
+  . '\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xFD\xFE\xFB\xFC\xBA\xAE\x59'
+  . '\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57'
+  . '\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF';
 
-my $cp_bc = # EBCDIC code page POSiX-BC
-    '\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F' .
-    '\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F' .
-    '\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61' .
-    '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F' .
-    '\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6' .
-    '\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xBB\xBC\xBD\x6A\x6D' .
-    '\x4A\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96' .
-    '\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xFB\x4F\xFD\xFF\x07' .
-    '\x20\x21\x22\x23\x24\x25\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B' .
-    '\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\x5F' .
-    '\x41\xAA\xB0\xB1\x9F\xB2\xD0\xB5\x79\xB4\x9A\x8A\xBA\xCA\xAF\xA1' .
-    '\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB' .
-    '\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77' .
-    '\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xE0\xFE\xDD\xFC\xAD\xAE\x59' .
-    '\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57' .
-    '\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xC0\xDE\xDB\xDC\x8D\x8E\xDF';
+my $cp_bc =    # EBCDIC code page POSiX-BC
+  '\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F'
+  . '\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F'
+  . '\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61'
+  . '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F'
+  . '\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6'
+  . '\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xBB\xBC\xBD\x6A\x6D'
+  . '\x4A\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96'
+  . '\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xFB\x4F\xFD\xFF\x07'
+  . '\x20\x21\x22\x23\x24\x25\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B'
+  . '\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\x5F'
+  . '\x41\xAA\xB0\xB1\x9F\xB2\xD0\xB5\x79\xB4\x9A\x8A\xBA\xCA\xAF\xA1'
+  . '\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB'
+  . '\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77'
+  . '\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xE0\xFE\xDD\xFC\xAD\xAE\x59'
+  . '\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57'
+  . '\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xC0\xDE\xDB\xDC\x8D\x8E\xDF';
 
-my $straight =  # Avoid ranges
-    '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F' .
-    '\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F' .
-    '\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F' .
-    '\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F' .
-    '\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F' .
-    '\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5A\x5B\x5C\x5D\x5E\x5F' .
-    '\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F' .
-    '\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F' .
-    '\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F' .
-    '\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F' .
-    '\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF' .
-    '\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF' .
-    '\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF' .
-    '\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF' .
-    '\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF' .
-    '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF';
+my $straight =    # Avoid ranges
+  '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
+  . '\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F'
+  . '\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F'
+  . '\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F'
+  . '\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F'
+  . '\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5A\x5B\x5C\x5D\x5E\x5F'
+  . '\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F'
+  . '\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F'
+  . '\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F'
+  . '\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F'
+  . '\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF'
+  . '\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF'
+  . '\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF'
+  . '\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF'
+  . '\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF'
+  . '\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF';
 
 # The following 2 functions allow tests to work on both EBCDIC and
 # ASCII-ish platforms.  They convert string scalars between the native
@@ -97,15 +97,15 @@ my $straight =  # Avoid ranges
 sub native_to_latin1($) {
     my $string = shift;
 
-    return $string if ord('^') == 94;   # ASCII, Latin1
+    return $string if ord('^') == 94;    # ASCII, Latin1
     my $cp;
-    if (ord('^') == 95) {    # EBCDIC 1047
+    if ( ord('^') == 95 ) {              # EBCDIC 1047
         $cp = \$cp_1047;
     }
-    elsif (ord('^') == 106) {   # EBCDIC POSIX-BC
+    elsif ( ord('^') == 106 ) {          # EBCDIC POSIX-BC
         $cp = \$cp_bc;
     }
-    elsif (ord('^') == 176)  {   # EBCDIC 037 */
+    elsif ( ord('^') == 176 ) {          # EBCDIC 037 */
         $cp = \$cp_0037;
     }
     else {
@@ -119,15 +119,15 @@ sub native_to_latin1($) {
 sub latin1_to_native($) {
     my $string = shift;
 
-    return $string if ord('^') == 94;   # ASCII, Latin1
+    return $string if ord('^') == 94;    # ASCII, Latin1
     my $cp;
-    if (ord('^') == 95) {    # EBCDIC 1047
+    if ( ord('^') == 95 ) {              # EBCDIC 1047
         $cp = \$cp_1047;
     }
-    elsif (ord('^') == 106) {   # EBCDIC POSIX-BC
+    elsif ( ord('^') == 106 ) {          # EBCDIC POSIX-BC
         $cp = \$cp_bc;
     }
-    elsif (ord('^') == 176)  {   # EBCDIC 037 */
+    elsif ( ord('^') == 176 ) {          # EBCDIC 037 */
         $cp = \$cp_0037;
     }
     else {
@@ -139,21 +139,23 @@ sub latin1_to_native($) {
 }
 
 sub ord_latin1_to_native {
+
     # given an input code point, return the platform's native
     # equivalent value.  Anything above latin1 is itself.
 
     my $ord = shift;
     return $ord if $ord > 255;
-    return ord latin1_to_native(chr $ord);
+    return ord latin1_to_native( chr $ord );
 }
 
 sub ord_native_to_latin1 {
+
     # given an input platform code point, return the latin1 equivalent value.
     # Anything above latin1 is itself.
 
     my $ord = shift;
     return $ord if $ord > 255;
-    return ord native_to_latin1(chr $ord);
+    return ord native_to_latin1( chr $ord );
 }
 
 sub _where {
@@ -173,160 +175,168 @@ sub _where {
 #   args     => [ command-line arguments to the perl program ]
 #   verbose  => print the command line
 
-my $is_mswin    = $^O eq 'MSWin32';
-my $is_netware  = $^O eq 'NetWare';
-my $is_macos    = $^O eq 'MacOS';
-my $is_vms      = $^O eq 'VMS';
-my $is_cygwin   = $^O eq 'cygwin';
+my $is_mswin   = $^O eq 'MSWin32';
+my $is_netware = $^O eq 'NetWare';
+my $is_macos   = $^O eq 'MacOS';
+my $is_vms     = $^O eq 'VMS';
+my $is_cygwin  = $^O eq 'cygwin';
 
 sub _quote_args {
-    my ($runperl, $args) = @_;
+    my ( $runperl, $args ) = @_;
 
     foreach (@$args) {
-	# In VMS protect with doublequotes because otherwise
-	# DCL will lowercase -- unless already doublequoted.
-        $_ = q(").$_.q(") if $is_vms && !/^\"/ && length($_) > 0;
-	$$runperl .= ' ' . $_;
+
+        # In VMS protect with doublequotes because otherwise
+        # DCL will lowercase -- unless already doublequoted.
+        $_ = q(") . $_ . q(") if $is_vms && !/^\"/ && length($_) > 0;
+        $$runperl .= ' ' . $_;
     }
 }
 
-sub _create_runperl { # Create the string to qx in runperl().
+sub _create_runperl {    # Create the string to qx in runperl().
     my %args = @_;
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+
     #- this allows, for example, to set PERL_RUNPERL_DEBUG=/usr/bin/valgrind
-    if ($ENV{PERL_RUNPERL_DEBUG}) {
-	$runperl = "$ENV{PERL_RUNPERL_DEBUG} $runperl";
+    if ( $ENV{PERL_RUNPERL_DEBUG} ) {
+        $runperl = "$ENV{PERL_RUNPERL_DEBUG} $runperl";
     }
-    unless ($args{nolib}) {
-	if ($is_macos) {
-	    $runperl .= ' -I::lib';
-	    # Use UNIX style error messages instead of MPW style.
-	    $runperl .= ' -MMac::err=unix' if $args{stderr};
-	}
-	else {
-	    $runperl .= ' "-I../lib"'; # doublequotes because of VMS
-	}
+    unless ( $args{nolib} ) {
+        if ($is_macos) {
+            $runperl .= ' -I::lib';
+
+            # Use UNIX style error messages instead of MPW style.
+            $runperl .= ' -MMac::err=unix' if $args{stderr};
+        }
+        else {
+            $runperl .= ' "-I../lib"';    # doublequotes because of VMS
+        }
     }
-    if ($args{switches}) {
-	local $Level = 2;
-	die "test.pl:runperl(): 'switches' must be an ARRAYREF " . _where()
-	    unless ref $args{switches} eq "ARRAY";
-	_quote_args(\$runperl, $args{switches});
+    if ( $args{switches} ) {
+        local $Level = 2;
+        die "test.pl:runperl(): 'switches' must be an ARRAYREF " . _where()
+          unless ref $args{switches} eq "ARRAY";
+        _quote_args( \$runperl, $args{switches} );
     }
-    if (defined $args{prog}) {
-	die "test.pl:runperl(): both 'prog' and 'progs' cannot be used " . _where()
-	    if defined $args{progs};
-        $args{progs} = [$args{prog}]
+    if ( defined $args{prog} ) {
+        die "test.pl:runperl(): both 'prog' and 'progs' cannot be used " . _where()
+          if defined $args{progs};
+        $args{progs} = [ $args{prog} ];
     }
-    if (defined $args{progs}) {
-	die "test.pl:runperl(): 'progs' must be an ARRAYREF " . _where()
-	    unless ref $args{progs} eq "ARRAY";
-        foreach my $prog (@{$args{progs}}) {
-            if ($is_mswin || $is_netware || $is_vms) {
+    if ( defined $args{progs} ) {
+        die "test.pl:runperl(): 'progs' must be an ARRAYREF " . _where()
+          unless ref $args{progs} eq "ARRAY";
+        foreach my $prog ( @{ $args{progs} } ) {
+            if ( $is_mswin || $is_netware || $is_vms ) {
                 $runperl .= qq ( -e "$prog" );
             }
             else {
                 $runperl .= qq ( -e '$prog' );
             }
         }
-    } elsif (defined $args{progfile}) {
-	$runperl .= qq( "$args{progfile}");
-    } else {
-	# You probaby didn't want to be sucking in from the upstream stdin
-	die "test.pl:runperl(): none of prog, progs, progfile, args, "
-	    . " switches or stdin specified"
-	    unless defined $args{args} or defined $args{switches}
-		or defined $args{stdin};
     }
-    if (defined $args{stdin}) {
-	# so we don't try to put literal newlines and crs onto the
-	# command line.
-	$args{stdin} =~ s/\n/\\n/g;
-	$args{stdin} =~ s/\r/\\r/g;
+    elsif ( defined $args{progfile} ) {
+        $runperl .= qq( "$args{progfile}");
+    }
+    else {
+        # You probaby didn't want to be sucking in from the upstream stdin
+        die "test.pl:runperl(): none of prog, progs, progfile, args, " . " switches or stdin specified"
+          unless defined $args{args}
+          or defined $args{switches}
+          or defined $args{stdin};
+    }
+    if ( defined $args{stdin} ) {
 
-	if ($is_mswin || $is_netware || $is_vms) {
-	    $runperl = qq{$^X -e "print qq(} .
-		$args{stdin} . q{)" | } . $runperl;
-	}
-	elsif ($is_macos) {
-	    # MacOS can only do two processes under MPW at once;
-	    # the test itself is one; we can't do two more, so
-	    # write to temp file
-	    my $stdin = qq{$^X -e 'print qq(} . $args{stdin} . qq{)' > teststdin; };
-	    if ($args{verbose}) {
-		my $stdindisplay = $stdin;
-		$stdindisplay =~ s/\n/\n\#/g;
-		print STDERR "# $stdindisplay\n";
-	    }
-	    `$stdin`;
-	    $runperl .= q{ < teststdin };
-	}
-	else {
-	    $runperl = qq{$^X -e 'print qq(} .
-		$args{stdin} . q{)' | } . $runperl;
-	}
+        # so we don't try to put literal newlines and crs onto the
+        # command line.
+        $args{stdin} =~ s/\n/\\n/g;
+        $args{stdin} =~ s/\r/\\r/g;
+
+        if ( $is_mswin || $is_netware || $is_vms ) {
+            $runperl = qq{$^X -e "print qq(} . $args{stdin} . q{)" | } . $runperl;
+        }
+        elsif ($is_macos) {
+
+            # MacOS can only do two processes under MPW at once;
+            # the test itself is one; we can't do two more, so
+            # write to temp file
+            my $stdin = qq{$^X -e 'print qq(} . $args{stdin} . qq{)' > teststdin; };
+            if ( $args{verbose} ) {
+                my $stdindisplay = $stdin;
+                $stdindisplay =~ s/\n/\n\#/g;
+                print STDERR "# $stdindisplay\n";
+            }
+            `$stdin`;
+            $runperl .= q{ < teststdin };
+        }
+        else {
+            $runperl = qq{$^X -e 'print qq(} . $args{stdin} . q{)' | } . $runperl;
+        }
     }
-    if (defined $args{args}) {
-	_quote_args(\$runperl, $args{args});
+    if ( defined $args{args} ) {
+        _quote_args( \$runperl, $args{args} );
     }
-    $runperl .= ' 2>&1'          if  $args{stderr} && !$is_mswin && !$is_macos;
+    $runperl .= ' 2>&1' if $args{stderr} && !$is_mswin && !$is_macos;
     $runperl .= " \xB3 Dev:Null" if !$args{stderr} && $is_macos;
-    if ($args{verbose}) {
-	my $runperldisplay = $runperl;
-	$runperldisplay =~ s/\n/\n\#/g;
-	print STDERR "# $runperldisplay\n";
+    if ( $args{verbose} ) {
+        my $runperldisplay = $runperl;
+        $runperldisplay =~ s/\n/\n\#/g;
+        print STDERR "# $runperldisplay\n";
     }
     return $runperl;
 }
 
 sub runperl {
     die "test.pl:runperl() does not take a hashref"
-	if ref $_[0] and ref $_[0] eq 'HASH';
+      if ref $_[0] and ref $_[0] eq 'HASH';
     my $runperl = &_create_runperl;
+
     # ${^TAINT} is invalid in perl5.00505
     my $tainted;
     eval '$tainted = ${^TAINT};' if $] >= 5.006;
     my %args = @_;
-    exists $args{switches} && grep m/^-T$/, @{$args{switches}} and $tainted = $tainted + 1;
+    exists $args{switches} && grep m/^-T$/, @{ $args{switches} } and $tainted = $tainted + 1;
 
     if ($tainted) {
-	# We will assume that if you're running under -T, you really mean to
-	# run a fresh perl, so we'll brute force launder everything for you
-	my $sep;
 
-	eval "require Config; Config->import";
-	if ($@) {
-	    warn "test.pl had problems loading Config: $@";
-	    $sep = ':';
-	} else {
-	    $sep = $Config{path_sep};
-	}
+        # We will assume that if you're running under -T, you really mean to
+        # run a fresh perl, so we'll brute force launder everything for you
+        my $sep;
 
-	my @keys = grep {exists $ENV{$_}} qw(CDPATH IFS ENV BASH_ENV);
-	local @ENV{@keys} = ();
-	# Untaint, plus take out . and empty string:
-	local $ENV{'DCL$PATH'} = $1 if $is_vms && ($ENV{'DCL$PATH'} =~ /(.*)/s);
-	$ENV{PATH} =~ /(.*)/s;
-	local $ENV{PATH} =
-	    join $sep, grep { $_ ne "" and $_ ne "." and -d $_ and
-		($is_mswin or $is_vms or !(stat && (stat _)[2]&0022)) }
-		    split quotemeta ($sep), $1;
-	$ENV{PATH} .= "$sep/bin" if $is_cygwin;  # Must have /bin under Cygwin
+        eval "require Config; Config->import";
+        if ($@) {
+            warn "test.pl had problems loading Config: $@";
+            $sep = ':';
+        }
+        else {
+            $sep = $Config{path_sep};
+        }
 
-	$runperl =~ /(.*)/s;
-	$runperl = $1;
+        my @keys = grep { exists $ENV{$_} } qw(CDPATH IFS ENV BASH_ENV);
+        local @ENV{@keys} = ();
 
-        my ($err,$result,$stderr) = run_cmd($runperl, $args{timeout});
-	$result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
-	return $result;
-    } else {
-        my ($err,$result,$stderr) = run_cmd($runperl, $args{timeout});
-	$result =~ s/\n\n/\n/ if $is_vms; # XXX pipes sometimes double these
-	return $result;
+        # Untaint, plus take out . and empty string:
+        local $ENV{'DCL$PATH'} = $1 if $is_vms && ( $ENV{'DCL$PATH'} =~ /(.*)/s );
+        $ENV{PATH} =~ /(.*)/s;
+        local $ENV{PATH} = join $sep, grep { $_ ne "" and $_ ne "." and -d $_ and ( $is_mswin or $is_vms or !( stat && ( stat _ )[2] & 0022 ) ) }
+          split quotemeta($sep), $1;
+        $ENV{PATH} .= "$sep/bin" if $is_cygwin;    # Must have /bin under Cygwin
+
+        $runperl =~ /(.*)/s;
+        $runperl = $1;
+
+        my ( $err, $result, $stderr ) = run_cmd( $runperl, $args{timeout} );
+        $result =~ s/\n\n/\n/ if $is_vms;          # XXX pipes sometimes double these
+        return $result;
+    }
+    else {
+        my ( $err, $result, $stderr ) = run_cmd( $runperl, $args{timeout} );
+        $result =~ s/\n\n/\n/ if $is_vms;          # XXX pipes sometimes double these
+        return $result;
     }
 }
 
-*run_perl = \&runperl; # Nice alias.
+*run_perl = \&runperl;                             # Nice alias.
 
 sub DIE {
     print STDERR "# @_\n";
@@ -335,61 +345,66 @@ sub DIE {
 
 # A somewhat safer version of the sometimes wrong $^X.
 my $Perl;
+
 sub which_perl {
-    unless (defined $Perl) {
-	$Perl = $^X;
+    unless ( defined $Perl ) {
+        $Perl = $^X;
 
-	# VMS should have 'perl' aliased properly
-	return $Perl if $^O eq 'VMS';
+        # VMS should have 'perl' aliased properly
+        return $Perl if $^O eq 'VMS';
 
-	my $exe;
-	eval "require Config; Config->import";
-	if ($@) {
-	    warn "test.pl had problems loading Config: $@";
-	    $exe = '';
-	} else {
-	    $exe = $Config{exe_ext};
-	}
-       $exe = '' unless defined $exe;
+        my $exe;
+        eval "require Config; Config->import";
+        if ($@) {
+            warn "test.pl had problems loading Config: $@";
+            $exe = '';
+        }
+        else {
+            $exe = $Config{exe_ext};
+        }
+        $exe = '' unless defined $exe;
 
-	# This doesn't absolutize the path: beware of future chdirs().
-	# We could do File::Spec->abs2rel() but that does getcwd()s,
-	# which is a bit heavyweight to do here.
+        # This doesn't absolutize the path: beware of future chdirs().
+        # We could do File::Spec->abs2rel() but that does getcwd()s,
+        # which is a bit heavyweight to do here.
 
-	if ($Perl =~ /^perl\Q$exe\E$/i) {
-	    my $perl = "perl$exe";
-	    eval "require File::Spec";
-	    if ($@) {
-		warn "test.pl had problems loading File::Spec: $@";
-		$Perl = "./$perl";
-	    } else {
-		$Perl = File::Spec->catfile(File::Spec->curdir(), $perl);
-	    }
-	}
+        if ( $Perl =~ /^perl\Q$exe\E$/i ) {
+            my $perl = "perl$exe";
+            eval "require File::Spec";
+            if ($@) {
+                warn "test.pl had problems loading File::Spec: $@";
+                $Perl = "./$perl";
+            }
+            else {
+                $Perl = File::Spec->catfile( File::Spec->curdir(), $perl );
+            }
+        }
 
-	# Build up the name of the executable file from the name of
-	# the command.
+        # Build up the name of the executable file from the name of
+        # the command.
 
-	if ($Perl !~ /\Q$exe\E$/i) {
-	    $Perl .= $exe;
-	}
+        if ( $Perl !~ /\Q$exe\E$/i ) {
+            $Perl .= $exe;
+        }
 
-	warn "which_perl: cannot find $Perl from $^X" unless -f $Perl;
+        warn "which_perl: cannot find $Perl from $^X" unless -f $Perl;
 
-	# For subcommands to use.
-	$ENV{PERLEXE} = $Perl;
+        # For subcommands to use.
+        $ENV{PERLEXE} = $Perl;
     }
     return $Perl;
 }
+
 sub unlink_all {
     my $count = 0;
     foreach my $file (@_) {
         1 while unlink $file;
-	if( -f $file ){
-	    print STDERR "# Couldn't unlink '$file': $!\n";
-	}else{
-	    ++$count;
-	}
+        if ( -f $file ) {
+            print STDERR "# Couldn't unlink '$file': $!\n";
+        }
+        else {
+            ++$count;
+        }
     }
     $count;
 }
@@ -402,23 +417,26 @@ $::tempfile_regexp = 'tmp\d+[A-Z][A-Z]?';
 
 # Avoid ++, avoid ranges, avoid split //
 my @letters = qw(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z);
+
 sub tempfile {
     my $count = 0;
     do {
-	my $temp = $count;
-	my $try = "tmp$$";
-	do {
-	    $try = $try . $letters[$temp % 26];
-	    $temp = int ($temp / 26);
-	} while $temp;
-	# Need to note all the file names we allocated, as a second request may
-	# come before the first is created.
-	if (!-e $try && !$tmpfiles{$try}) {
-	    # We have a winner
-	    $tmpfiles{$try} = 1;
-	    return $try;
-	}
-	$count = $count + 1;
+        my $temp = $count;
+        my $try  = "tmp$$";
+        do {
+            $try  = $try . $letters[ $temp % 26 ];
+            $temp = int( $temp / 26 );
+        } while $temp;
+
+        # Need to note all the file names we allocated, as a second request may
+        # come before the first is created.
+        if ( !-e $try && !$tmpfiles{$try} ) {
+
+            # We have a winner
+            $tmpfiles{$try} = 1;
+            return $try;
+        }
+        $count = $count + 1;
     } while $count < 26 * 26;
     die "Can't find temporary file name starting 'tmp$$'";
 }
@@ -435,16 +453,16 @@ my $tmpfile = tempfile();
 #
 
 sub _fresh_perl {
-    my($prog, $resolve, $runperl_args, $name) = @_;
+    my ( $prog, $resolve, $runperl_args, $name ) = @_;
 
     $runperl_args ||= {};
     $runperl_args->{progfile} = $tmpfile;
-    $runperl_args->{stderr} = 1;
+    $runperl_args->{stderr}   = 1;
 
     open TEST, ">", $tmpfile or die "Cannot open $tmpfile: $!";
 
     # VMS adjustments
-    if( $^O eq 'VMS' ) {
+    if ( $^O eq 'VMS' ) {
         $prog =~ s#/dev/null#NL:#;
 
         # VMS file locking
@@ -456,7 +474,7 @@ sub _fresh_perl {
     close TEST or die "Cannot close $tmpfile: $!";
 
     my $results = runperl(%$runperl_args);
-    my $status = $?;
+    my $status  = $?;
 
     # Clean up the results into something a bit more predictable.
     $results =~ s/\n+$//;
@@ -467,7 +485,8 @@ sub _fresh_perl {
     # various yaccs may or may not capitalize 'syntax'.
     $results =~ s/^(syntax|parse) error/syntax error/mig;
 
-    if ($^O eq 'VMS') {
+    if ( $^O eq 'VMS' ) {
+
         # some tests will trigger VMS messages that won't be expected
         $results =~ s/\n?%[A-Z]+-[SIWEF]-[A-Z]+,.*//;
 
@@ -484,12 +503,12 @@ sub _fresh_perl {
     }
 
     # Use the first line of the program as a name if none was given
-    unless( $name ) {
-        ($first_line, $name) = $prog =~ /^((.{1,50}).*)/;
+    unless ($name) {
+        ( $first_line, $name ) = $prog =~ /^((.{1,50}).*)/;
         $name .= '...' if length $first_line > length $name;
     }
 
-    ok($pass, "fresh_perl - $name");
+    ok( $pass, "fresh_perl - $name" );
 }
 
 #
@@ -499,11 +518,13 @@ sub _fresh_perl {
 #
 
 sub fresh_perl_is {
-    my($prog, $expected, $runperl_args, $name) = @_;
+    my ( $prog, $expected, $runperl_args, $name ) = @_;
     local $Level = 2;
-    _fresh_perl($prog,
-		sub { @_ ? $_[0] eq $expected : $expected },
-		$runperl_args, $name);
+    _fresh_perl(
+        $prog,
+        sub { @_ ? $_[0] eq $expected : $expected },
+        $runperl_args, $name
+    );
 }
 
 #
@@ -513,66 +534,73 @@ sub fresh_perl_is {
 #
 
 sub fresh_perl_like {
-    my($prog, $expected, $runperl_args, $name) = @_;
+    my ( $prog, $expected, $runperl_args, $name ) = @_;
     local $Level = 2;
-    _fresh_perl($prog,
-		sub { @_ ?
-			  $_[0] =~ (ref $expected ? $expected : /$expected/) :
-		          $expected },
-		$runperl_args, $name);
+    _fresh_perl(
+        $prog,
+        sub {
+            @_
+              ? $_[0] =~ ( ref $expected ? $expected : /$expected/ )
+              : $expected;
+        },
+        $runperl_args,
+        $name
+    );
 }
 
 # now my new B::C functions
 
 sub run_cmd {
-    my ($cmd, $timeout) = @_;
+    my ( $cmd, $timeout ) = @_;
 
-    my ($result, $out, $err) = (0, '', '');
-    if ( ! defined $IPC::Run::VERSION ) {
-	local $@;
-	if (ref($cmd) eq 'ARRAY') {
+    my ( $result, $out, $err ) = ( 0, '', '' );
+    if ( !defined $IPC::Run::VERSION ) {
+        local $@;
+        if ( ref($cmd) eq 'ARRAY' ) {
             $cmd = join " ", @$cmd;
         }
-	# No real way to trap STDERR?
-        $cmd .= " 2>&1" if ($^O !~ /^MSWin32|VMS/);
-	$out = `$cmd`;
-	$result = $?;
+
+        # No real way to trap STDERR?
+        $cmd .= " 2>&1" if ( $^O !~ /^MSWin32|VMS/ );
+        $out    = `$cmd`;
+        $result = $?;
     }
     else {
-	my $in;
-        # XXX TODO this fails with spaces in path. pass and check ARRAYREF then
-	my @cmd = ref($cmd) eq 'ARRAY' ? @$cmd : split /\s+/, $cmd;
+        my $in;
 
-	eval {
+        # XXX TODO this fails with spaces in path. pass and check ARRAYREF then
+        my @cmd = ref($cmd) eq 'ARRAY' ? @$cmd : split /\s+/, $cmd;
+
+        eval {
             # XXX TODO hanging or stacktrace'd children are not killed on cygwin
-	    my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
-	    if ($timeout) {
-		my $secs10 = $timeout/10;
-		for (1..$secs10) {
-		    if(!$h->pumpable) {
-			last;
-		    }
-		    else {
-			$h->pump_nb;
-			diag sprintf("waiting %d[s]",$_*10) if $_ > 30;
-			sleep 10;
-		    }
-		}
-		if($h->pumpable) {
-		    $h->kill_kill;
-		    $err .= "Timed out waiting for process exit";
-		}
-	    }
-	    $h->finish or die "cmd returned $?";
-	    $result = $h->result(0);
-	};
-	$err .= "\$\@ = $@" if($@);
+            my $h = IPC::Run::start( \@cmd, \$in, \$out, \$err );
+            if ($timeout) {
+                my $secs10 = $timeout / 10;
+                for ( 1 .. $secs10 ) {
+                    if ( !$h->pumpable ) {
+                        last;
+                    }
+                    else {
+                        $h->pump_nb;
+                        diag sprintf( "waiting %d[s]", $_ * 10 ) if $_ > 30;
+                        sleep 10;
+                    }
+                }
+                if ( $h->pumpable ) {
+                    $h->kill_kill;
+                    $err .= "Timed out waiting for process exit";
+                }
+            }
+            $h->finish or die "cmd returned $?";
+            $result = $h->result(0);
+        };
+        $err .= "\$\@ = $@" if ($@);
     }
-    return ($result, $out, $err);
+    return ( $result, $out, $err );
 }
 
 sub Mblib {
-   $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
+    $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 }
 
 sub tests {
@@ -587,149 +615,169 @@ sub tests {
 }
 
 sub run_cc_test {
-    my ($cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo) = @_;
-    my ($opt, $got);
-    local($\, $,);   # guard against -l and other things that screw with
-                     # print
+    my ( $cnt, $backend, $script, $expect, $keep_c, $keep_c_fail, $todo ) = @_;
+    my ( $opt, $got );
+    local ( $\, $, );    # guard against -l and other things that screw with
+                         # print
     $expect =~ s/\n$//;
-    my ($out,$result,$stderr) = ('');
-    my $fnbackend = lc($backend); #C,-O2
-    ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
+    my ( $out, $result, $stderr ) = ('');
+    my $fnbackend = lc($backend);    #C,-O2
+    ( $fnbackend, $opt ) = $fnbackend =~ /^(cc?)(,-o.)?/;
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
     use Config;
     require B::C::Flags;
-    my $test = $fnbackend."code".$cnt.".pl";
-    my $cfile = $fnbackend."code".$cnt.$opt.".c";
+    my $test  = $fnbackend . "code" . $cnt . ".pl";
+    my $cfile = $fnbackend . "code" . $cnt . $opt . ".c";
     my @obj;
-    @obj = ($fnbackend."code".$cnt.$opt.".obj",
-            $fnbackend."code".$cnt.$opt.".ilk",
-            $fnbackend."code".$cnt.$opt.".pdb")
-      if $Config{cc} =~ /^cl/i; # MSVC uses a lot of intermediate files
-    my $exe = $fnbackend."code".$cnt.$opt.$Config{exe_ext};
-    unlink ($test, $cfile, $exe, @obj);
-    open T, ">", $test; print T $script; close T;
+    @obj = (
+        $fnbackend . "code" . $cnt . $opt . ".obj",
+        $fnbackend . "code" . $cnt . $opt . ".ilk",
+        $fnbackend . "code" . $cnt . $opt . ".pdb"
+    ) if $Config{cc} =~ /^cl/i;    # MSVC uses a lot of intermediate files
+    my $exe = $fnbackend . "code" . $cnt . $opt . $Config{exe_ext};
+    unlink( $test, $cfile, $exe, @obj );
+    open T, ">", $test;
+    print T $script;
+    close T;
+
     # Being able to test also the CORE B in older perls
     my $Mblib = $] >= 5.009005 ? Mblib() : "";
     my $useshrplib = $Config{useshrplib} eq 'true';
-    unless ($Mblib) {           # check for -Mblib from the testsuite
-        if (grep { m{blib(/|\\)arch$} } @INC) {
-            $Mblib = Mblib();  # forced -Mblib via cmdline without
-            					# printing to stderr
+    unless ($Mblib) {              # check for -Mblib from the testsuite
+        if ( grep { m{blib(/|\\)arch$} } @INC ) {
+            $Mblib   = Mblib();                                                   # forced -Mblib via cmdline without
+                                                                                  # printing to stderr
             $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
         }
-    } else {
+    }
+    else {
         $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
     }
     $backend .= ",-fno-warnings" if $] >= 5.013005;
-    $backend .= ",-fno-fold" if $] >= 5.013009;
-    $got = run_perl(switches => [ "$Mblib -MO=$backend,-o${cfile}" ],
-                    verbose  => $ENV{TEST_VERBOSE}, # for debugging
-                    nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-                    stderr   => 1, # to capture the "ccode.pl syntax ok"
-		    timeout  => 120,
-                    progfile => $test);
-    if (! $? and -s $cfile) {
-	use ExtUtils::Embed ();
-	my $command = ExtUtils::Embed::ccopts;
-	$command .= " -DHAVE_INDEPENDENT_COMALLOC "
-	  if $B::C::Flags::have_independent_comalloc;
-	$command .= " -o $exe $cfile ".$B::C::Flags::extra_cflags . " ";
-        if ($Config{cc} eq 'cl') {
-            if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
+    $backend .= ",-fno-fold"     if $] >= 5.013009;
+    $got = run_perl(
+        switches => ["$Mblib -MO=$backend,-o${cfile}"],
+        verbose  => $ENV{TEST_VERBOSE},                                           # for debugging
+        nolib    => $ENV{PERL_CORE} ? 0 : 1,                                      # include ../lib only in CORE
+        stderr   => 1,                                                            # to capture the "ccode.pl syntax ok"
+        timeout  => 120,
+        progfile => $test
+    );
+    if ( !$? and -s $cfile ) {
+        use ExtUtils::Embed ();
+        my $command = ExtUtils::Embed::ccopts;
+        $command .= " -DHAVE_INDEPENDENT_COMALLOC "
+          if $B::C::Flags::have_independent_comalloc;
+        $command .= " -o $exe $cfile " . $B::C::Flags::extra_cflags . " ";
+        if ( $Config{cc} eq 'cl' ) {
+            if ( $^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl' ) {
                 $command =~ s/ -opt:ref,icf//;
             }
             my $obj = $obj[0];
             $command =~ s/ \Q-o $exe\E / -c -Fo$obj /;
             my $cmdline = "$Config{cc} $command";
-            diag ($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
-            run_cmd($cmdline, 20);
+            diag($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
+            run_cmd( $cmdline, 20 );
             $command = '';
         }
-	my $coredir = $ENV{PERL_SRC} || File::Spec->catdir($Config{installarchlib}, "CORE");
-	my $libdir  = File::Spec->catdir($Config{prefix}, "lib");
-        my $so = $Config{so};
+        my $coredir = $ENV{PERL_SRC} || File::Spec->catdir( $Config{installarchlib}, "CORE" );
+        my $libdir   = File::Spec->catdir( $Config{prefix}, "lib" );
+        my $so       = $Config{so};
         my $linkargs = ExtUtils::Embed::ldopts('-std');
+
         # At least cygwin gcc-4.3 crashes with 2x -fstack-protector
         $linkargs =~ s/-fstack-protector\b//
           if $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
-	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.$so$/) {
-	    $command .= $linkargs;
-	} elsif ( $useshrplib and (-e "$libdir/$Config{libperl}" or -e "/usr/lib/$Config{libperl}")) {
+        if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.$so$/ ) {
+            $command .= $linkargs;
+        }
+        elsif ( $useshrplib and ( -e "$libdir/$Config{libperl}" or -e "/usr/lib/$Config{libperl}" ) ) {
+
             # debian: /usr/lib/libperl.so.5.10.1 and broken ExtUtils::Embed::ldopts
-            if ($Config{libperl} =~ /\.$so$/) {
-                my $libperl = File::Spec->catfile($coredir, $Config{libperl});
-                $linkargs =~ s|-lperl |$libperl |; # link directly
+            if ( $Config{libperl} =~ /\.$so$/ ) {
+                my $libperl = File::Spec->catfile( $coredir, $Config{libperl} );
+                $linkargs =~ s|-lperl |$libperl |;    # link directly
             }
-	    $command .= $linkargs;
-	} else {
-	    $command .= $linkargs;
-	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
-	}
-	$command .= $B::C::Flags::extra_libs;
+            $command .= $linkargs;
+        }
+        else {
+            $command .= $linkargs;
+            $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
+        }
+        $command .= $B::C::Flags::extra_libs;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
         my $cmdline = "$Config{cc} $command $NULL";
-        if ($Config{cc} eq 'cl') {
+        if ( $Config{cc} eq 'cl' ) {
             $cmdline = "$Config{ld} $linkargs -out:$exe $obj[0] $command";
         }
-	diag ($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
-        run_cmd($cmdline, 20);
-        unless (-e $exe) {
+        diag($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
+        run_cmd( $cmdline, 20 );
+        unless ( -e $exe ) {
             print "not ok $cnt $todo failed $cmdline\n";
-            print STDERR "# ",system("$Config{cc} $command"), "\n";
+            print STDERR "# ", system("$Config{cc} $command"), "\n";
+
             #unlink ($test, $cfile, $exe, @obj) unless $keep_c_fail;
             return 0;
         }
-        $exe = "./".$exe unless $^O eq 'MSWin32';
-	# system("/bin/bash -c ulimit -d 1000000") if -e "/bin/bash";
-        ($result,$out,$stderr) = run_cmd($exe, 5);
-        if (defined($out) and !$result) {
-            if ($out =~ /^$expect$/) {
+        $exe = "./" . $exe unless $^O eq 'MSWin32';
+
+        # system("/bin/bash -c ulimit -d 1000000") if -e "/bin/bash";
+        ( $result, $out, $stderr ) = run_cmd( $exe, 5 );
+        if ( defined($out) and !$result ) {
+            if ( $out =~ /^$expect$/ ) {
                 print "ok $cnt", $todo eq '#' ? "\n" : " $todo\n";
-                unlink ($test, $cfile, $exe, @obj) unless $keep_c;
+                unlink( $test, $cfile, $exe, @obj ) unless $keep_c;
                 return 1;
-            } else {
+            }
+            else {
                 # cc test failed, double check uncompiled
-                $got = run_perl(verbose  => $ENV{TEST_VERBOSE}, # for debugging
-                                nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-                                stderr   => 1, # to capture the "ccode.pl syntax ok"
-                                timeout  => 10,
-                                progfile => $test);
-                if (! $? and $got =~ /^$expect$/) {
+                $got = run_perl(
+                    verbose  => $ENV{TEST_VERBOSE},         # for debugging
+                    nolib    => $ENV{PERL_CORE} ? 0 : 1,    # include ../lib only in CORE
+                    stderr   => 1,                          # to capture the "ccode.pl syntax ok"
+                    timeout  => 10,
+                    progfile => $test
+                );
+                if ( !$? and $got =~ /^$expect$/ ) {
                     print "not ok $cnt $todo wanted: \"$expect\", got: \"$out\"\n";
-                } else {
+                }
+                else {
                     print "ok $cnt # skip also fails uncompiled\n";
                     return 1;
                 }
-                unlink ($test, $cfile, $exe, @obj) unless $keep_c_fail;
+                unlink( $test, $cfile, $exe, @obj ) unless $keep_c_fail;
                 return 0;
             }
-        } else {
+        }
+        else {
             $out = '';
         }
     }
     print "not ok $cnt $todo wanted: \"$expect\", \$\? = $?, got: \"$out\"\n";
     if ($stderr) {
-	$stderr =~ s/\n./\n# /xmsg;
-	print "# $stderr\n";
+        $stderr =~ s/\n./\n# /xmsg;
+        print "# $stderr\n";
     }
-    unlink ($test, $cfile, $exe, @obj) unless $keep_c_fail;
+    unlink( $test, $cfile, $exe, @obj ) unless $keep_c_fail;
     return 0;
 }
 
 sub prepare_c_tests {
+
     BEGIN {
         use Config;
-        if ($^O eq 'VMS') {
+        if ( $^O eq 'VMS' ) {
             print "1..0 # skip - B::C doesn't work on VMS\n";
             exit 0;
         }
-        if (($Config{'extensions'} !~ /\bB\b/) ) {
+        if ( ( $Config{'extensions'} !~ /\bB\b/ ) ) {
             print "1..0 # Skip -- Perl configured without B module\n";
             exit 0;
         }
+
         # with 5.10 and 5.8.9 PERL_COPY_ON_WRITE was renamed to PERL_OLD_COPY_ON_WRITE
-        if ($Config{ccflags} =~ /-DPERL_OLD_COPY_ON_WRITE/) {
+        if ( $Config{ccflags} =~ /-DPERL_OLD_COPY_ON_WRITE/ ) {
             print "1..0 # skip - no OLD COW for now\n";
             exit 0;
         }
@@ -738,13 +786,13 @@ sub prepare_c_tests {
 
 sub run_c_tests {
     my $backend = $_[0];
-    my @todo = @{$_[1]};
-    my @skip = @{$_[2]};
+    my @todo    = @{ $_[1] };
+    my @skip    = @{ $_[2] };
 
     use Config;
-    my $AUTHOR     = (-d ".git" and !$ENV{NO_AUTHOR}) ? 1 : 0;
-    my $keep_c      = 0;	  # set it to keep the pl, c and exe files
-    my $keep_c_fail = 1;          # keep on failures
+    my $AUTHOR      = ( -d ".git" and !$ENV{NO_AUTHOR} ) ? 1 : 0;
+    my $keep_c      = 0;                                            # set it to keep the pl, c and exe files
+    my $keep_c_fail = 1;                                            # keep on failures
 
     my %todo = map { $_ => 1 } @todo;
     my %skip = map { $_ => 1 } @skip;
@@ -758,7 +806,7 @@ sub run_c_tests {
     # pp_stub pp_cond_expr pp_dbstate pp_reset pp_stringify pp_ncmp pp_preinc
     # pp_formline pp_enterwrite pp_leavewrite pp_entergiven pp_leavegiven
     # pp_dofile pp_grepstart pp_mapstart pp_grepwhile pp_mapwhile
-    if ($backend =~ /^CC/) {
+    if ( $backend =~ /^CC/ ) {
         local $/;
         my $cctests = <<'CCTESTS';
 my ($r_i,$i_i,$d_d)=(0,2,3.0); $r_i=$i_i*$i_i; $r_i*=$d_d; print $r_i;
@@ -788,259 +836,283 @@ ok
 CCTESTS
 
         my $i = 100;
-        for (split /\n####+.*##\n/, $cctests) {
+        for ( split /\n####+.*##\n/, $cctests ) {
             next unless $_;
             $tests[$i] = $_;
             $i++;
         }
     }
 
-    print "1..".(scalar @tests)."\n";
+    print "1.." . ( scalar @tests ) . "\n";
 
     my $cnt = 1;
     for (@tests) {
         my $todo = $todo{$cnt} ? "#TODO" : "#";
+
         # skip empty CC holes to have the same test indices in STATUS and t/testcc.sh
         unless ($_) {
-            print sprintf("ok %d # skip hole for CC\n", $cnt);
+            print sprintf( "ok %d # skip hole for CC\n", $cnt );
             $cnt++;
             next;
         }
+
         # only once. skip subsequent tests 29 on MSVC. 7:30min!
-        if ($cnt == 29 and !$AUTHOR) {
+        if ( $cnt == 29 and !$AUTHOR ) {
             $todo{$cnt} = $skip{$cnt} = 1;
         }
-        if ($todo{$cnt} and $skip{$cnt} and
+        if (
+                $todo{$cnt}
+            and $skip{$cnt}
+            and
+
             # those are currently blocking the system
             # do not even run them at home if TODO+SKIP
-            (!$AUTHOR
-             or ($cnt==15 and $backend eq 'C,-O1')   # hanging
-             or ($cnt==103 and $backend eq 'CC,-O2') # hanging
-            ))
-        {
-            print sprintf("ok %d # skip\n", $cnt);
-        } else {
-            my ($script, $expect) = split />>>+\n/;
-	    die "Invalid empty t/TESTS" if !$script or $expect eq '';
-            if ($cnt == 4 and $] >= 5.017005) {
+            (
+                !$AUTHOR
+                or ( $cnt == 15  and $backend eq 'C,-O1' )     # hanging
+                or ( $cnt == 103 and $backend eq 'CC,-O2' )    # hanging
+            )
+          ) {
+            print sprintf( "ok %d # skip\n", $cnt );
+        }
+        else {
+            my ( $script, $expect ) = split />>>+\n/;
+            die "Invalid empty t/TESTS" if !$script or $expect eq '';
+            if ( $cnt == 4 and $] >= 5.017005 ) {
                 $expect = 'zzz2y2y2';
             }
-            run_cc_test($cnt, $backend.($cnt == 46 ? ',-fstash' : ''),
-			$script, $expect, $keep_c, $keep_c_fail, $todo);
+            run_cc_test(
+                $cnt, $backend . ( $cnt == 46 ? ',-fstash' : '' ),
+                $script, $expect, $keep_c, $keep_c_fail, $todo
+            );
         }
         $cnt++;
     }
 }
 
 sub plctestok {
-    my ($num, $base, $script, $todo) =  @_;
-    plctest($num,'^ok', $base, $script, $todo);
+    my ( $num, $base, $script, $todo ) = @_;
+    plctest( $num, '^ok', $base, $script, $todo );
 }
 
 sub plctest {
-    my ($num, $expected, $base, $script, $todo) =  @_;
+    my ( $num, $expected, $base, $script, $todo ) = @_;
 
-    my $name = $base."_$num";
-    unlink($name, "$name.plc", "$name.pl", "$name.exe");
+    my $name = $base . "_$num";
+    unlink( $name, "$name.plc", "$name.pl", "$name.exe" );
     open F, ">", "$base.pl";
     print F $script;
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
-    my $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,Bytecode" : "Bytecode";
-    my $Mblib = Mblib;
+    my $b               = ( $] > 5.008 and $nostdoutclobber ) ? "-qq,Bytecode" : "Bytecode";
+    my $Mblib           = Mblib;
     system "$runperl $Mblib -MO=$b,-o$name.plc $base.pl";
+
     # $out =~ s/^$base.pl syntax OK\n//m;
-    unless (-e "$name.plc") {
+    unless ( -e "$name.plc" ) {
         print "not ok $num #B::Bytecode failed\n";
         exit;
     }
     my $out = qx($runperl $Mblib -MByteLoader $name.plc);
     chomp $out;
     my $ok = $out =~ /$expected/;
-    if ($todo and $todo =~ /TODO/) {
-	$todo =~ s/TODO //;
+    if ( $todo and $todo =~ /TODO/ ) {
+        $todo =~ s/TODO //;
       TODO: {
-	    local $TODO = $todo;
-	    ok($ok);
-	}
-    } else {
-	ok($ok, $todo ? "$todo" : '');
+            local $TODO = $todo;
+            ok($ok);
+        }
+    }
+    else {
+        ok( $ok, $todo ? "$todo" : '' );
     }
     if ($ok) {
-        unlink("$name.plc", "$base.pl");
+        unlink( "$name.plc", "$base.pl" );
     }
 }
 
 sub ctestok {
-    my ($num, $backend, $base, $script, $todo) =  @_;
-    my $qr = '^ok'; # how lame
-    ctest($num, $qr, $backend, $base, $script, $todo);
+    my ( $num, $backend, $base, $script, $todo ) = @_;
+    my $qr = '^ok';    # how lame
+    ctest( $num, $qr, $backend, $base, $script, $todo );
 }
 
 sub ctest {
-    my ($num, $expected, $backend, $base, $script, $todo) =  @_;
-    my $name = $base."_$num";
-    my $b = $backend; # protect against parallel test name clashes
+    my ( $num, $expected, $backend, $base, $script, $todo ) = @_;
+    my $name = $base . "_$num";
+    my $b    = $backend;          # protect against parallel test name clashes
     $b =~ s/-(D.*|f.*|v),//g;
     $b =~ s/-/_/g;
     $b =~ s/[, ]//g;
     $b = lc($b);
     $name .= $b;
-    unlink($name, "$name.c", "$name.pl", "$name.exe");
+    unlink( $name, "$name.c", "$name.pl", "$name.exe" );
     open F, ">", "$name.pl";
     print F $script;
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
-    my $post = '';
-    $b = ($] > 5.008 and $nostdoutclobber) ? "-qq,$backend" : "$backend";
-    ($b, $post) = split(" ", $b);
+    my $post            = '';
+    $b = ( $] > 5.008 and $nostdoutclobber ) ? "-qq,$backend" : "$backend";
+    ( $b, $post ) = split( " ", $b );
     $post = '' unless $post;
     $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-(O3|ffold|fwarnings)/;
-    diag("$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl")
+    diag( "$runperl " . Mblib . " -MO=$b,-o$name.c $post $name.pl" )
       if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
-    system "$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl";
-    unless (-e "$name.c") {
+    system "$runperl " . Mblib . " -MO=$b,-o$name.c $post $name.pl";
+
+    unless ( -e "$name.c" ) {
         print "not ok $num #B::$backend failed\n";
         exit;
     }
-    diag("$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c")
+    diag( "$runperl " . Mblib . " blib/script/cc_harness -q -o $name $name.c" )
       if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
-    system "$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c";
-    my $exe = $name.$Config{exe_ext};
-    unless (-e $exe) {
-	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+    system "$runperl " . Mblib . " blib/script/cc_harness -q -o $name $name.c";
+    my $exe = $name . $Config{exe_ext};
+    unless ( -e $exe ) {
+        if ( $todo and $todo =~ /TODO/ ) {
+            $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
-                ok(undef, "failed to compile");
+                ok( undef, "failed to compile" );
             }
-        } else {
-            ok(undef, "failed to compile $todo");
+        }
+        else {
+            ok( undef, "failed to compile $todo" );
         }
         return;
     }
-    $exe = "./".$exe unless $^O eq 'MSWin32';
-    ($result,$out,$stderr) = run_cmd($exe, 5);
+    $exe = "./" . $exe unless $^O eq 'MSWin32';
+    ( $result, $out, $stderr ) = run_cmd( $exe, 5 );
     my $ok;
-    if (defined($out) and !$result) {
+    if ( defined($out) and !$result ) {
         chomp $out;
         $ok = $out =~ /$expected/;
-	diag($out) if $ENV{TEST_VERBOSE};
-	unless ($ok) { #crosscheck uncompiled
+        diag($out) if $ENV{TEST_VERBOSE};
+        unless ($ok) {    #crosscheck uncompiled
             my $out1 = `$runperl $name.pl`;
-            unless ($out1 =~ /$expected/) {
-                ok(1, "skip also fails uncompiled $todo");
+            unless ( $out1 =~ /$expected/ ) {
+                ok( 1, "skip also fails uncompiled $todo" );
                 return 1;
             }
         }
-	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+        if ( $todo and $todo =~ /TODO/ ) {
+            $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
-                ok ($out =~ /$expected/);
-		diag($out) if $ENV{TEST_VERBOSE};
+                ok( $out =~ /$expected/ );
+                diag($out) if $ENV{TEST_VERBOSE};
             }
-        } else {
-            ok ($out =~ /$expected/, $todo);
         }
-    } else {
-	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+        else {
+            ok( $out =~ /$expected/, $todo );
+        }
+    }
+    else {
+        if ( $todo and $todo =~ /TODO/ ) {
+            $todo =~ s/TODO //;
           TODO: {
                 local $TODO = $todo;
-                ok (undef);
+                ok(undef);
             }
-	} else {
-	    #crosscheck uncompiled
-	    my $out1 = `$runperl $name.pl`;
-            unless ($out1 =~ /$expected/) {
-                ok(1, "skip also fails uncompiled");
+        }
+        else {
+            #crosscheck uncompiled
+            my $out1 = `$runperl $name.pl`;
+            unless ( $out1 =~ /$expected/ ) {
+                ok( 1, "skip also fails uncompiled" );
                 return $ok;
             }
-	    ok (undef, $todo);
-	}
+            ok( undef, $todo );
+        }
     }
     unlink("$name.pl");
     if ($ok) {
-        unlink($name, "$name.c", "$name.exe");
+        unlink( $name, "$name.c", "$name.exe" );
     }
-    $ok
+    $ok;
 }
 
 sub ccompileok {
-    my ($num, $backend, $base, $script, $todo) =  @_;
-    my $name = $base."_$num";
-    unlink($name, "$name.c", "$name.pl", "$name.exe");
+    my ( $num, $backend, $base, $script, $todo ) = @_;
+    my $name = $base . "_$num";
+    unlink( $name, "$name.c", "$name.pl", "$name.exe" );
     open F, ">", "$name.pl";
     print F $script;
     close F;
 
-    my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    my $b = $] > 5.008 ? "-qq,$backend" : "$backend";
-    my $Mblib = Mblib;
+    my $runperl = $^X =~ m/\s/ ? qq{"$^X"}      : $^X;
+    my $b       = $] > 5.008   ? "-qq,$backend" : "$backend";
+    my $Mblib   = Mblib;
     system "$runperl $Mblib -MO=$b,-o$name.c $name.pl";
-    unless (-e "$name.c") {
+    unless ( -e "$name.c" ) {
         print "not ok 1 #B::$backend failed\n";
         exit;
     }
     system "$runperl $Mblib blib/script/cc_harness -q -o $name $name.c";
     my $ok = -e $name or -e "$name.exe";
-    if ($todo and $todo =~ /TODO/) {
+    if ( $todo and $todo =~ /TODO/ ) {
       TODO: {
-	    $todo =~ s/TODO //;
+            $todo =~ s/TODO //;
             local $TODO = $todo;
             ok($ok);
         }
-    } else {
-        ok($ok, $todo);
+    }
+    else {
+        ok( $ok, $todo );
     }
     unlink("$name.pl");
     if ($ok) {
-        unlink($name, "$name.c", "$name.exe");
+        unlink( $name, "$name.c", "$name.exe" );
     }
 }
 
 sub todo_tests_default {
-    my $what = shift;
-    my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-    my $ITHREADS  = ($Config{useithreads});
+    my $what      = shift;
+    my $DEBUGGING = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
+    my $ITHREADS  = ( $Config{useithreads} );
 
-    my @todo  = ();
+    my @todo = ();
+
     # no IO::Scalar
-    push @todo, (15)  if $] < 5.007;
+    push @todo, (15) if $] < 5.007;
+
     # broken by fbb32b8bebe8ad C: revert *-,*+,*! fetch magic, assign all core GVs to their global symbols
-    push @todo, (42..43) if $] < 5.012;
-    if ($what =~ /^c(|_o[1-4])$/) {
+    push @todo, ( 42 .. 43 ) if $] < 5.012;
+    if ( $what =~ /^c(|_o[1-4])$/ ) {
+
         # a regression
-        push @todo, (12)  if $what eq 'c_o3' and !$ITHREADS and $] >= 5.008009 and $] < 5.010;
+        push @todo, (12) if $what eq 'c_o3' and !$ITHREADS and $] >= 5.008009 and $] < 5.010;
 
-        push @todo, (48)  if $what eq 'c_o4' and $ITHREADS;
-        push @todo, (8,18,19,25,26,28)  if $what eq 'c_o4' and !$ITHREADS;
-    } elsif ($what =~ /^cc/) {
-	push @todo, (21,30,105,106);
-	push @todo, (22,41,45,103) if $] < 5.007; #regressions
-	push @todo, (104,105) if $] < 5.007; # leaveloop, no cxstack
-        push @todo, (42,43) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
-
-	#push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
-	push @todo, (10,16,50) if $what eq 'cc_o2';
-	push @todo, (29)    if $] < 5.008008;
-	push @todo, (22)    if $] < 5.010 and !$ITHREADS;
-	push @todo, (46); # HvKEYS(%Exporter::) is 0 unless Heavy is included also
-	# solaris also. I suspected nvx<=>cop_seq_*
-	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
-	push @todo, (26)    if $what =~ /^cc_o[12]/;
-	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
-        push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
-        push @todo, (12,19,25) if $] >= 5.019;
+        push @todo, (48) if $what eq 'c_o4' and $ITHREADS;
+        push @todo, ( 8, 18, 19, 25, 26, 28 ) if $what eq 'c_o4' and !$ITHREADS;
     }
-    push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
+    elsif ( $what =~ /^cc/ ) {
+        push @todo, ( 21, 30, 105, 106 );
+        push @todo, ( 22, 41, 45, 103 ) if $] < 5.007;    #regressions
+        push @todo, ( 104, 105 ) if $] < 5.007;                                   # leaveloop, no cxstack
+        push @todo, ( 42, 43 ) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
+
+        #push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
+        push @todo, ( 10, 16, 50 ) if $what eq 'cc_o2';
+        push @todo, (29) if $] < 5.008008;
+        push @todo, (22) if $] < 5.010 and !$ITHREADS;
+        push @todo, (46);                                                         # HvKEYS(%Exporter::) is 0 unless Heavy is included also
+                                                                                  # solaris also. I suspected nvx<=>cop_seq_*
+        push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
+        push @todo, (26)  if $what =~ /^cc_o[12]/;
+        push @todo, (27)  if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
+        push @todo, (103) if ( $] >= 5.012 and $] < 5.014 and !$ITHREADS );
+        push @todo, ( 12, 19, 25 ) if $] >= 5.019;
+    }
+    push @todo, (48) if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
 }
 

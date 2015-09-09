@@ -76,44 +76,46 @@ use strict;
 # Note: This is NOT a general purpose package. It implements
 # sequential text and binary file i/o in a rather simple form.
 
-sub TIEHANDLE($;$){
-    my( $class, $data ) = @_;
-    my $obj = { data => defined( $data ) ? $data : '',
-                pos => 0 };
+sub TIEHANDLE($;$) {
+    my ( $class, $data ) = @_;
+    my $obj = {
+        data => defined($data) ? $data : '',
+        pos => 0
+    };
     return bless( $obj, $class );
 }
 
-sub PRINT($@){
-    my( $self ) = shift;
+sub PRINT($@) {
+    my ($self) = shift;
     $self->{data} .= join( '', @_ );
 }
 
-sub WRITE($$;$$){
-    my( $self, $buf, $len, $offset ) = @_;
-    unless( defined( $len ) ){
-	$len = length( $buf );
+sub WRITE($$;$$) {
+    my ( $self, $buf, $len, $offset ) = @_;
+    unless ( defined($len) ) {
+        $len    = length($buf);
         $offset = 0;
     }
-    unless( defined( $offset ) ){
+    unless ( defined($offset) ) {
         $offset = 0;
     }
     $self->{data} .= substr( $buf, $offset, $len );
     return $len;
 }
 
-
-sub GETC($){
-    my( $self ) = @_;
+sub GETC($) {
+    my ($self) = @_;
     return undef() if $self->{pos} >= length( $self->{data} );
     return substr( $self->{data}, $self->{pos}++, 1 );
 }
 
-sub READLINE($){
-    my( $self ) = @_;
+sub READLINE($) {
+    my ($self) = @_;
     return undef() if $self->{pos} >= length( $self->{data} );
+
     # Todo; strip comments and empty lines
     my $lfpos = index( $self->{data}, "\n", $self->{pos} );
-    if( $lfpos < 0 ){
+    if ( $lfpos < 0 ) {
         $lfpos = length( $self->{data} );
     }
     my $pos = $self->{pos};
@@ -121,16 +123,17 @@ sub READLINE($){
     return substr( $self->{data}, $pos, $self->{pos} - $pos );
 }
 
-sub READ($@){
-    my $self = shift();
+sub READ($@) {
+    my $self   = shift();
     my $bufref = \$_[0];
-    my( undef, $len, $offset ) = @_;
-    if( $offset ){
-        die( "offset beyond end of buffer\n" )
-          if ! defined( $$bufref ) || $offset > length( $$bufref );
-    } else {
+    my ( undef, $len, $offset ) = @_;
+    if ($offset) {
+        die("offset beyond end of buffer\n")
+          if !defined($$bufref) || $offset > length($$bufref);
+    }
+    else {
         $$bufref = '';
-        $offset = 0;
+        $offset  = 0;
     }
     my $remlen = length( $self->{data} ) - $self->{pos};
     $len = $remlen if $remlen < $len;
@@ -141,13 +144,13 @@ sub READ($@){
     return $len;
 }
 
-sub TELL($){
+sub TELL($) {
     my $self = shift();
     return $self->{pos};
 }
 
-sub CLOSE($){
-    my( $self ) = @_;
+sub CLOSE($) {
+    my ($self) = @_;
     $self->{pos} = 0;
 }
 
@@ -160,32 +163,33 @@ use Test::More;
 use Config qw(%Config);
 
 BEGIN {
-  if ($ENV{PERL_CORE} and ($Config{'extensions'} !~ /\bB\b/) ){
-    print "1..0 # Skip -- Perl configured without B module\n";
-    exit 0;
-  }
-  if ($ENV{PERL_CORE} and ($Config{'extensions'} !~ /\bByteLoader\b/) ){
-    print "1..0 # Skip -- Perl configured without ByteLoader module\n";
-    exit 0;
-  }
-  if ($] < 5.007 ){
-    print "1..0 # Skip -- use the CORE Perl assembler instead, which cannot be tested like this.\n";
-    exit 0;
-  }
+    if ( $ENV{PERL_CORE} and ( $Config{'extensions'} !~ /\bB\b/ ) ) {
+        print "1..0 # Skip -- Perl configured without B module\n";
+        exit 0;
+    }
+    if ( $ENV{PERL_CORE} and ( $Config{'extensions'} !~ /\bByteLoader\b/ ) ) {
+        print "1..0 # Skip -- Perl configured without ByteLoader module\n";
+        exit 0;
+    }
+    if ( $] < 5.007 ) {
+        print "1..0 # Skip -- use the CORE Perl assembler instead, which cannot be tested like this.\n";
+        exit 0;
+    }
 }
 
-use B::Asmdata      qw( %insn_data );
-use B::Assembler    qw( &assemble_fh );
+use B::Asmdata qw( %insn_data );
+use B::Assembler qw( &assemble_fh );
 use B::Disassembler qw( &disassemble_fh &get_header );
 
-my( %opsByType, @code2name );
-my( $lineno, $dbg, $firstbadline, @descr );
-$dbg = 0; # debug switch
+my ( %opsByType, @code2name );
+my ( $lineno, $dbg, $firstbadline, @descr );
+$dbg = 0;    # debug switch
 
 # $SIG{__WARN__} handler to catch Assembler error messages
 #
 my $warnmsg;
-sub catchwarn($){
+
+sub catchwarn($) {
     $warnmsg = $_[0];
     print "# error: $warnmsg\n" if $dbg;
 }
@@ -193,25 +197,26 @@ sub catchwarn($){
 # Callback for writing assembled bytes. This is where we check
 # that we do get an error.
 #
-sub putobj($){
-    if( ++$lineno >= $firstbadline ){
+sub putobj($) {
+    if ( ++$lineno >= $firstbadline ) {
         ok( $warnmsg && $warnmsg =~ /^\d+:\s/, $descr[$lineno] );
-        undef( $warnmsg );
-    } else {
+        undef($warnmsg);
+    }
+    else {
         my $l = syswrite( OBJ, $_[0] );
     }
 }
 
 # Callback for writing a disassembled statement.
 # Fixed to support the new optional verbose argument, which we ignore here.
-sub putdis(@){
-    my ($insn, $arg, $verbose) = @_;
+sub putdis(@) {
+    my ( $insn, $arg, $verbose ) = @_;
     my $line = defined($arg) ? "$insn $arg" : $insn;
     ++$lineno;
     print DIS "$line\n";
     if ($dbg) {
-      $verbose = 0 unless $verbose; 
-      printf ("# %5d %s verbose:%d\n", $lineno, $line, $verbose);
+        $verbose = 0 unless $verbose;
+        printf( "# %5d %s verbose:%d\n", $lineno, $line, $verbose );
     }
 }
 
@@ -219,93 +224,91 @@ sub putdis(@){
 # existing entry contains a list of good or bad operand values. The
 # corresponding opcodes can be found in %opsByType.
 #
-sub gen_type($$$){
-    my( $href, $descref, $text ) = @_;
-    for my $odt ( sort( keys( %opsByType ) ) ){
+sub gen_type($$$) {
+    my ( $href, $descref, $text ) = @_;
+    for my $odt ( sort( keys(%opsByType) ) ) {
         my $opcode = $opsByType{$odt}->[0];
-	my $sel = $odt;
-	$sel =~ s/^GET_//;
-	die( "no operand list for $sel\n" ) unless exists( $href->{$sel} );
-        if( defined( $href->{$sel} ) ){
-            if( @{$href->{$sel}} ){
-		for my $od ( @{$href->{$sel}} ){
-		    ++$lineno;
+        my $sel    = $odt;
+        $sel =~ s/^GET_//;
+        die("no operand list for $sel\n") unless exists( $href->{$sel} );
+        if ( defined( $href->{$sel} ) ) {
+            if ( @{ $href->{$sel} } ) {
+                for my $od ( @{ $href->{$sel} } ) {
+                    ++$lineno;
                     $descref->[$lineno] = "$text: $code2name[$opcode] $od";
-		    print ASM "$code2name[$opcode] $od\n";
-		    printf "# %5d %s %s\n", $lineno, $code2name[$opcode], $od if $dbg;
-		}
-	    } else {
-		++$lineno;
+                    print ASM "$code2name[$opcode] $od\n";
+                    printf "# %5d %s %s\n", $lineno, $code2name[$opcode], $od if $dbg;
+                }
+            }
+            else {
+                ++$lineno;
                 $descref->[$lineno] = "$text: $code2name[$opcode]";
-		print ASM "$code2name[$opcode]\n";
-		printf "# %5d %s\n", $lineno, $code2name[$opcode] if $dbg;
-	    }
-	}
+                print ASM "$code2name[$opcode]\n";
+                printf "# %5d %s\n", $lineno, $code2name[$opcode] if $dbg;
+            }
+        }
     }
 }
 
 # Interesting operand values
 #
 my %goodlist = (
-comment_t   => [ '"a comment"' ],  # no \n
-none        => [],
-svindex     => [ 0x7fffffff, 0 ],
-opindex     => [ 0x7fffffff, 0 ],
-pvindex     => [ 0x7fffffff, 0 ],
-hekindex    => [ 0x7fffffff, 0 ],
-pmflags     => ($] < 5.013 ? [ 0xff, 0 ] : [ 0xffffffff, 0 ]),
-U32         => [ 0xffffffff, 0 ],
-U8          => [ 0xff, 0 ],
-PV          => [ '""', '"a string"', ],
-I32         => [ -0x80000000, 0x7fffffff ],
-IV64        => [ '0x000000000', '0x0ffffffff', '0x000000001' ], # disass formats  0x%09x
-IV          => $Config{ivsize} == 4 ?
-               [ -0x80000000, 0x7fffffff ] :
-               [ '0x000000000', '0x0ffffffff', '0x000000001' ],
-NV          => [ 1.23456789E3 ],
-U16         => [ 0xffff, 0 ],
-pvcontents  => [],
-strconst    => [ '""', '"another string"' ], # no NUL
-op_tr_array => [ join( ',', 256, 0..255 ) ],
-PADOFFSET   => undef,
-long        => undef,
-	      );
+    comment_t => ['"a comment"'],                                    # no \n
+    none      => [],
+    svindex   => [ 0x7fffffff, 0 ],
+    opindex   => [ 0x7fffffff, 0 ],
+    pvindex   => [ 0x7fffffff, 0 ],
+    hekindex  => [ 0x7fffffff, 0 ],
+    pmflags   => ( $] < 5.013 ? [ 0xff, 0 ] : [ 0xffffffff, 0 ] ),
+    U32  => [ 0xffffffff,    0 ],
+    U8   => [ 0xff,          0 ],
+    PV   => [ '""',          '"a string"', ],
+    I32  => [ -0x80000000,   0x7fffffff ],
+    IV64 => [ '0x000000000', '0x0ffffffff', '0x000000001' ],         # disass formats  0x%09x
+    IV => $Config{ivsize} == 4
+    ? [ -0x80000000, 0x7fffffff ]
+    : [ '0x000000000', '0x0ffffffff', '0x000000001' ],
+    NV          => [1.23456789E3],
+    U16         => [ 0xffff, 0 ],
+    pvcontents  => [],
+    strconst    => [ '""', '"another string"' ],                     # no NUL
+    op_tr_array => [ join( ',', 256, 0 .. 255 ) ],
+    PADOFFSET   => undef,
+    long        => undef,
+);
 
 # Erronous operand values
 #
 my %badlist = (
-comment_t   => [ '"multi-line\ncomment"' ],  # no \n
-none        => [ '"spurious arg"'  ],
-svindex     => [ 0xffffffff * 2, -1 ],
-opindex     => [ 0xffffffff * 2, -2 ],
-pvindex     => [ 0xffffffff * 2, -3 ],
-hekindex    => [ 0xffffffff * 2, -4 ],
-pmflags     => ($] < 5.013 ? [ 0x5ffff, -5 ] : [ 0xffffffff * 2, -5 ]),
-U32         => [ 0xffffffff * 2, -5 ],
-U16         => [ 0x5ffff, -5 ],
-U8          => [ 0x6ff, -6 ],
-PV          => [ 'no quote"' ],
-I32         => [ -0x80000001, 0x80000000 ],
-IV64        => undef, # PUT_IV64 doesn't check - no integrity there
-IV          => $Config{ivsize} == 4 ?
-               [ -0x80000001, 0x80000000 ] : undef,
-NV          => undef, # PUT_NV accepts anything - it shouldn't, real-ly
-pvcontents  => [ '"spurious arg"' ],
-strconst    => [  'no quote"',  '"with NUL '."\0".' char"' ], # no NUL
-op_tr_array => undef, # op_pv_tr is no longer exactly 256 shorts
-PADOFFSET   => undef,
-long	     => undef,
-	      );
-
+    comment_t => ['"multi-line\ncomment"'],                                   # no \n
+    none      => ['"spurious arg"'],
+    svindex   => [ 0xffffffff * 2, -1 ],
+    opindex   => [ 0xffffffff * 2, -2 ],
+    pvindex   => [ 0xffffffff * 2, -3 ],
+    hekindex  => [ 0xffffffff * 2, -4 ],
+    pmflags   => ( $] < 5.013 ? [ 0x5ffff, -5 ] : [ 0xffffffff * 2, -5 ] ),
+    U32  => [ 0xffffffff * 2, -5 ],
+    U16  => [ 0x5ffff,        -5 ],
+    U8   => [ 0x6ff,          -6 ],
+    PV   => ['no quote"'],
+    I32  => [ -0x80000001,    0x80000000 ],
+    IV64 => undef,            # PUT_IV64 doesn't check - no integrity there
+    IV => $Config{ivsize} == 4 ? [ -0x80000001, 0x80000000 ] : undef,
+    NV          => undef,                                                     # PUT_NV accepts anything - it shouldn't, real-ly
+    pvcontents  => ['"spurious arg"'],
+    strconst    => [ 'no quote"', '"with NUL ' . "\0" . ' char"' ],           # no NUL
+    op_tr_array => undef,                                                     # op_pv_tr is no longer exactly 256 shorts
+    PADOFFSET   => undef,
+    long        => undef,
+);
 
 # Determine all operand types from %Asmdata::insn_data
 #
-for my $opname ( keys( %insn_data ) ){
-    my ( $opcode, $put, $getname ) = @{$insn_data{$opname}};
-    push( @{$opsByType{$getname}}, $opcode ) if $put;
-    $code2name[$opcode] = $opname  if $put;
+for my $opname ( keys(%insn_data) ) {
+    my ( $opcode, $put, $getname ) = @{ $insn_data{$opname} };
+    push( @{ $opsByType{$getname} }, $opcode ) if $put;
+    $code2name[$opcode] = $opname if $put;
 }
-
 
 # Write instruction(s) for correct operand values each operand type class
 #
@@ -315,23 +318,24 @@ gen_type( \%goodlist, \@descr, 'round trip' );
 
 # Write one instruction for each opcode.
 #
-for my $opcode ( 0..$#code2name ){
+for my $opcode ( 0 .. $#code2name ) {
     next unless defined( $code2name[$opcode] );
-    my $sel = $insn_data{$code2name[$opcode]}->[2];
+    my $sel = $insn_data{ $code2name[$opcode] }->[2];
     $sel =~ s/^GET_//;
-    die( "no operand list for $sel\n" ) unless exists( $goodlist{$sel} );
-    if( defined( $goodlist{$sel} ) ){
+    die("no operand list for $sel\n") unless exists( $goodlist{$sel} );
+    if ( defined( $goodlist{$sel} ) ) {
         ++$lineno;
-        if( @{$goodlist{$sel}} ){
+        if ( @{ $goodlist{$sel} } ) {
             my $od = $goodlist{$sel}[0];
             $descr[$lineno] = "round trip: $code2name[$opcode] $od";
             print ASM "$code2name[$opcode] $od\n";
             printf "# %5d %s %s\n", $lineno, $code2name[$opcode], $od if $dbg;
-        } else {
+        }
+        else {
             $descr[$lineno] = "round trip: $code2name[$opcode]";
             print ASM "$code2name[$opcode]\n";
             printf "# %5d %s\n", $lineno, $code2name[$opcode] if $dbg;
-	}
+        }
     }
 }
 
@@ -347,7 +351,7 @@ $descr[$lineno] = "asm error: Gollum";
 print ASM "Gollum\n";
 printf "# %5d %s\n", $lineno, 'Gollum' if $dbg;
 
-close( ASM );
+close(ASM);
 
 # Now that we have defined all of our tests: plan
 #
@@ -358,12 +362,12 @@ print "# firstbadline=$firstbadline\n" if $dbg;
 #
 $SIG{'__WARN__'} = \&catchwarn;
 
-$lineno = -1; # account for the assembly header
+$lineno = -1;    # account for the assembly header
 tie( *OBJ, 'VirtFile' );
 eval { assemble_fh( \*ASM, \&putobj ); };
 print "# eval: $@" if $dbg;
-close( ASM );
-close( OBJ );
+close(ASM);
+close(OBJ);
 $SIG{'__WARN__'} = 'DEFAULT';
 
 # disassemble
@@ -372,44 +376,44 @@ print "# --- disassembling ---\n" if $dbg;
 $lineno = 0;
 tie( *DIS, 'VirtFile' );
 disassemble_fh( \*OBJ, \&putdis );
-close( OBJ );
-close( DIS );
+close(OBJ);
+close(DIS);
 
 # get header (for debugging only)
 #
-if( $dbg ){
-    my( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag ) =
-        get_header();
+if ($dbg) {
+    my ( $magic, $archname, $blversion, $ivsize, $ptrsize, $byteorder, $longsize, $archflag ) = get_header();
     printf "# Magic:        0x%08x\n", $magic;
-    print  "# Architecture: $archname\n";
-    print  "# Byteloader V: $blversion\n";
-    print  "# ivsize:       $ivsize\n";
-    print  "# ptrsize:      $ptrsize\n";
-    print  "# longsize:     $longsize\n";
+    print "# Architecture: $archname\n";
+    print "# Byteloader V: $blversion\n";
+    print "# ivsize:       $ivsize\n";
+    print "# ptrsize:      $ptrsize\n";
+    print "# longsize:     $longsize\n";
     printf "# Byteorder:    $byteorder\n";
-    print  "# archflag:     $archflag\n";
+    print "# archflag:     $archflag\n";
 }
 
 # check by comparing files line by line
 #
 print "# --- checking ---\n" if $dbg;
 $lineno = 0;
-our( $asmline, $disline );
-while( defined( $asmline = <ASM> ) ){
+our ( $asmline, $disline );
+while ( defined( $asmline = <ASM> ) ) {
     $disline = <DIS>;
     ++$lineno;
-    last if $lineno eq $firstbadline; # bail out where errors begin
-    if ($asmline ne $disline) {
-	# $asmline might be hex, if < 8 it will be disassembled as int
-	my ($op, $n) = $asmline =~ /(\w+) (0x\d+)/;
-	if ($n =~ /^0x/ and hex($n) < 8) {
-	    $asmline = "$op ".hex($n)."\n";	
-	}
+    last if $lineno eq $firstbadline;    # bail out where errors begin
+    if ( $asmline ne $disline ) {
+
+        # $asmline might be hex, if < 8 it will be disassembled as int
+        my ( $op, $n ) = $asmline =~ /(\w+) (0x\d+)/;
+        if ( $n =~ /^0x/ and hex($n) < 8 ) {
+            $asmline = "$op " . hex($n) . "\n";
+        }
     }
     ok( $asmline eq $disline, $descr[$lineno] );
     printf "# %5d %s#     = %s\n", $lineno, $asmline, $disline if $dbg;
 }
-close( ASM );
-close( DIS );
+close(ASM);
+close(DIS);
 
 __END__

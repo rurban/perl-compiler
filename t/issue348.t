@@ -3,14 +3,15 @@
 # walker: missing packages
 
 use strict;
+
 BEGIN {
-  unshift @INC, 't';
-  require "test.pl";
+    unshift @INC, 't';
+    require "test.pl";
 }
 use Test::More tests => 1;
 
-my $todo = ($] > 5.009 and $] < 5.011) ? "TODO " : "";
-ctestok(1, 'C,-O3', 'ccode348i', <<'EOF', $todo.'C #348 do not drop method-only user pkgs');
+my $todo = ( $] > 5.009 and $] < 5.011 ) ? "TODO " : "";
+ctestok( 1, 'C,-O3', 'ccode348i', <<'EOF', $todo . 'C #348 do not drop method-only user pkgs' );
 package Foo::Bar;
 sub baz { 1 }
 
@@ -25,5 +26,4 @@ my $foo = sub {
 }->();
 $foo->method;
 EOF
-
 

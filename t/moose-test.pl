@@ -8,20 +8,24 @@
 #    GVGV::GV = 0x14c3ad0  "B::HV" :: "save",  DEPTH = 44817
 
 {
+
     package Foo::Moose;
     use Moose;
-    has bar => (is => 'rw');
-     __PACKAGE__->meta->make_immutable;
+    has bar => ( is => 'rw' );
+    __PACKAGE__->meta->make_immutable;
 }
 {
+
     package TypedFoo::Moose;
     use Moose;
-    has bar => (is => 'rw', isa => 'Int');
-     __PACKAGE__->meta->make_immutable;
+    has bar => ( is => 'rw', isa => 'Int' );
+    __PACKAGE__->meta->make_immutable;
 }
 {
+
     package Foo::Manual;
     sub new { bless {} => shift }
+
     sub bar {
         my $self = shift;
         return $self->{bar} unless @_;
@@ -29,16 +33,19 @@
     }
 }
 my $foo1 = Foo::Moose->new;
+
 sub moose {
     $foo1->bar(32);
     my $x = $foo1->bar;
 }
 my $foo2 = TypedFoo::Moose->new;
+
 sub moosetyped {
     $foo2->bar(32);
     my $x = $foo2->bar;
 }
 my $foo = Foo::Manual->new;
+
 sub manual {
     $foo->bar(32);
     my $x = $foo->bar;
@@ -49,8 +56,8 @@ print "Testing Perl $]\n";
 timethese(
     50_000,
     {
-        moose 		=> \&moose,
-        moosetyped 	=> \&moosetyped,
-        manual 		=> \&manual,
+        moose      => \&moose,
+        moosetyped => \&moosetyped,
+        manual     => \&manual,
     }
 );

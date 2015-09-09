@@ -3,6 +3,7 @@
 # B::CC generated code aborts with "Bizarre copy of ARRAY in leavesub"
 use Test::More tests => 1;
 use strict;
+
 BEGIN {
     unshift @INC, 't';
     require "test.pl";
@@ -19,5 +20,7 @@ my @a = f2();
 print "ok";
 EOF
 
-ctestok(1, "CC", "ccode39i", $script,
-        "CC Bizarre copy of ARRAY in leavesub fixed with r596");
+ctestok(
+    1, "CC", "ccode39i", $script,
+    "CC Bizarre copy of ARRAY in leavesub fixed with r596"
+);
