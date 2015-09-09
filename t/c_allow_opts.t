@@ -11,7 +11,7 @@ open F, ">", $pl;
 print F $d;
 close F;
 my $exe = $^O eq 'MSWin32' ? 'ccallow.exe'                    : './ccallow';
-my $C   = $] > 5.007       ? "-qq,C"                          : "C";
+my $C   = "-qq,C";
 my $X   = $^X =~ m/\s/     ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
 system "$X -MO=$C,-O3,-occallow.c $pl";
 

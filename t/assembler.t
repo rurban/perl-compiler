@@ -171,10 +171,6 @@ BEGIN {
         print "1..0 # Skip -- Perl configured without ByteLoader module\n";
         exit 0;
     }
-    if ( $] < 5.007 ) {
-        print "1..0 # Skip -- use the CORE Perl assembler instead, which cannot be tested like this.\n";
-        exit 0;
-    }
 }
 
 use B::Asmdata qw( %insn_data );
@@ -259,7 +255,7 @@ my %goodlist = (
     opindex   => [ 0x7fffffff, 0 ],
     pvindex   => [ 0x7fffffff, 0 ],
     hekindex  => [ 0x7fffffff, 0 ],
-    pmflags   => ( $] < 5.013 ? [ 0xff, 0 ] : [ 0xffffffff, 0 ] ),
+    pmflags   => [ 0xffffffff, 0 ],
     U32  => [ 0xffffffff,    0 ],
     U8   => [ 0xff,          0 ],
     PV   => [ '""',          '"a string"', ],
@@ -286,7 +282,7 @@ my %badlist = (
     opindex   => [ 0xffffffff * 2, -2 ],
     pvindex   => [ 0xffffffff * 2, -3 ],
     hekindex  => [ 0xffffffff * 2, -4 ],
-    pmflags   => ( $] < 5.013 ? [ 0x5ffff, -5 ] : [ 0xffffffff * 2, -5 ] ),
+    pmflags   => [ 0xffffffff * 2, -5 ],
     U32  => [ 0xffffffff * 2, -5 ],
     U16  => [ 0x5ffff,        -5 ],
     U8   => [ 0x6ff,          -6 ],

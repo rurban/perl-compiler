@@ -16,9 +16,6 @@ my $a       = $^O eq 'MSWin32'             ? 'pcc.exe' : './pcc';
 my $redir   = $^O eq 'MSWin32'             ? ''        : '2>&1';
 my $devnull = $^O eq 'MSWin32'             ? ''        : '2>/dev/null';
 
-#my $o = '';
-#$o = "-Wb=-fno-warnings" if $] >= 5.013005;
-#$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
 my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
 sub cleanup { unlink( 'pcc.c', 'pcc.c.lst', 'a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst" ); }
 my $e = q("print q(ok)");
@@ -59,7 +56,7 @@ SKIP: {
     #skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
   TODO: {
         # fails 5.8 and darwin, msvc also
-        local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
+        local $TODO = '--staticxs is experimental' if $^O eq 'darwin';
         is( `$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs" );            #13
         ok( -e $a_exe, "keep default executable" );                                        #14
     }
@@ -68,7 +65,7 @@ SKIP: {
     cleanup;
 
   TODO: {
-        local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
+        local $TODO = '--staticxs is experimental' if $^O eq 'darwin';
         is(
             `$perlcc --staticxs -S -o pcc -r -e $e  $devnull`, "ok",
             "-S -o -r --staticxs xs"

@@ -33,7 +33,6 @@ BEGIN {
     require 'test.pl';    # for run_perl()
 }
 use strict;
-my $PERL56    = ( $] < 5.008001 );
 my $PERL518   = ( $] > 5.017006 );
 my $DEBUGGING = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
 my $ITHREADS  = $Config{useithreads};
@@ -61,16 +60,10 @@ my @todo = ();    # 33 fixed with r802, 44 <5.10 fixed later, 27 fixed with r989
 @todo = ( 3, 6, 8 .. 10, 12, 15, 16, 18, 26 .. 28, 31, 33, 35, 38, 41 .. 43, 46, 50 )
   if $] < 5.007;    # CORE failures, our Bytecode 56 compiler not yet backported
 
-#44 fixed by moving push_begin upfront
-push @todo, ( 21, 24 .. 26, 28, 33, 38 .. 39 ) if $^O eq 'solaris' and $] eq '5.008008';
-push @todo, (43) if $] >= 5.008004 and $] <= 5.008008;
-push @todo, (7)  if $] >= 5.008004 and $] < 5.008008 and $ITHREADS;
-push @todo, (27) if $] >= 5.010    and !$ITHREADS;
-push @todo, (32) if $] > 5.011     and $] < 5.013008;                 # 2x del_backref fixed with r790
+push @todo, (27) if !$ITHREADS;
 
 # cannot store labels on windows 5.12: 21
-push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013;
-push @todo, (46) if $] >= 5.012 and $] < 5.018;
+push @todo, (46) if $] < 5.018;
 
 #push @todo, (41..43) if $] >= 5.010; #freebsd
 push @todo, ( 7, 17 .. 18, 21, 30, 35 ) if $] >= 5.018 and $ITHREADS;
@@ -81,24 +74,22 @@ my @skip = ();
 
 my %todo = map { $_ => 1 } @todo;
 my %skip = map { $_ => 1 } @skip;
-my $Mblib   = $] >= 5.008 ? "-Mblib"     : "";           # test also the CORE B in older perls?
-my $backend = $PERL56     ? 'Bytecode56' : 'Bytecode';
+my $Mblib   = "-Mblib";           # test also the CORE B in older perls?
+my $backend = 'Bytecode';
 unless ($Mblib) {                                        # check for -Mblib from the testsuite
     if ( grep { m{blib(/|\\)arch$} } @INC ) {
         $Mblib = "-Iblib/arch -Iblib/lib";               # force -Mblib via cmdline, but silent!
     }
 }
 else {
-    $backend = "-qq,$backend" if !$ENV{TEST_VERBOSE} and !$PERL56;
+    $backend = "-qq,$backend" if !$ENV{TEST_VERBOSE};
 }
 
-# $backend .= ",-fno-fold,-fno-warnings" if $] >= 5.013005;
-$backend .= ",-H" unless $PERL56;
+$backend .= ",-H";
 
 # TODO: -H still unstable with 5.18 (filter issue #339)
 $backend = "Bytecode,-s" if $PERL518;
 
-#$Mblib = '' if $] < 5.007; # override harness on 5.6. No Bytecode for 5.6 for now.
 for (@tests) {
     my $todo = $todo{$cnt} ? "#TODO " : "#";
     my ( $got, @insn );
@@ -121,11 +112,11 @@ for (@tests) {
         switches => ["$Mblib -MO=$backend,-o${test}c"],
         verbose  => $verbose,                             # for DEBUGGING
         nolib    => $ENV{PERL_CORE} ? 0 : 1,              # include ../lib only in CORE
-        stderr   => $PERL56 ? 1 : 0,                      # capture "bytecode.pl syntax ok"
+        stderr   => 0,                      # capture "bytecode.pl syntax ok"
         timeout  => 10,
         progfile => $test
     );
-    my $Byteloader = ( $PERL56 or $PERL518 ) ? " -MByteLoader" : "";
+    my $Byteloader = ( $PERL518 ) ? " -MByteLoader" : "";
     unless ($?) {
 
         # test coverage if -Dv is allowed
@@ -149,7 +140,7 @@ for (@tests) {
             progfile => "${test}c",                # run the .plc
             verbose  => $ENV{TEST_VERBOSE},        # for debugging
             nolib    => $ENV{PERL_CORE} ? 0 : 1,
-            stderr   => $PERL56 ? 1 : 0,
+            stderr   => 0,
             timeout  => 5,
             switches => ["$Mblib $Byteloader"]
         );

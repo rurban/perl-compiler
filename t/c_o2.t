@@ -26,6 +26,4 @@ prepare_c_tests();
 my @todo = todo_tests_default("c_o2");
 my @skip;
 
-#push @skip, 29 if $] > 5.015; #hangs
-
 run_c_tests( "C,-O2", \@todo, \@skip );

@@ -15,17 +15,12 @@ BEGIN {
 
 use Test::More;
 if ( !-d '.git' or $ENV{NO_AUTHOR} ) {
-    plan tests => ( $] < 5.009 ) ? 15 : 16;
+    plan tests => 16;
 }
 
 use B ();
-if ( $] < 5.009 ) {
-    use_ok( 'B::Asmdata', qw(%insn_data @insn_name @optype @specialsv_name) );
-}
-else {
-    use_ok( 'B',          qw(@optype @specialsv_name) );
-    use_ok( 'B::Asmdata', qw(%insn_data @insn_name) );
-}
+use_ok( 'B',          qw(@optype @specialsv_name) );
+use_ok( 'B::Asmdata', qw(%insn_data @insn_name) );
 
 # see bytecode.pl (alias_to or argtype) and ByteLoader/bytecode.h
 my @valid_type = qw(comment_t none svindex pvindex opindex U32 U16 U8 I32 IV long NV

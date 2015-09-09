@@ -291,9 +291,8 @@ sub runperl {
       if ref $_[0] and ref $_[0] eq 'HASH';
     my $runperl = &_create_runperl;
 
-    # ${^TAINT} is invalid in perl5.00505
-    my $tainted;
-    eval '$tainted = ${^TAINT};' if $] >= 5.006;
+    my $tainted = ${^TAINT};
+
     my %args = @_;
     exists $args{switches} && grep m/^-T$/, @{ $args{switches} } and $tainted = $tainted + 1;
 
@@ -642,20 +641,19 @@ sub run_cc_test {
     close T;
 
     # Being able to test also the CORE B in older perls
-    my $Mblib = $] >= 5.009005 ? Mblib() : "";
+    my $Mblib = Mblib();
     my $useshrplib = $Config{useshrplib} eq 'true';
     unless ($Mblib) {              # check for -Mblib from the testsuite
         if ( grep { m{blib(/|\\)arch$} } @INC ) {
             $Mblib   = Mblib();                                                   # forced -Mblib via cmdline without
                                                                                   # printing to stderr
-            $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
+            $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE};
         }
     }
     else {
-        $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE} and $] > 5.007;
+        $backend = "-qq,$backend,-q" if !$ENV{TEST_VERBOSE};
     }
-    $backend .= ",-fno-warnings" if $] >= 5.013005;
-    $backend .= ",-fno-fold"     if $] >= 5.013009;
+    $backend .= ",-fno-warnings,-fno-fold";
     $got = run_perl(
         switches => ["$Mblib -MO=$backend,-o${cfile}"],
         verbose  => $ENV{TEST_VERBOSE},                                           # for debugging
@@ -862,7 +860,7 @@ sub plctest {
 
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
-    my $b               = ( $] > 5.008 and $nostdoutclobber ) ? "-qq,Bytecode" : "Bytecode";
+    my $b               = ( $nostdoutclobber ) ? "-qq,Bytecode" : "Bytecode";
     my $Mblib           = Mblib;
     system "$runperl $Mblib -MO=$b,-o$name.plc $base.pl";
 
@@ -914,10 +912,10 @@ sub ctest {
     # we don't want to change STDOUT/STDERR on STDOUT/STDERR tests, so no -qq
     my $nostdoutclobber = $base !~ /^ccode93i/;
     my $post            = '';
-    $b = ( $] > 5.008 and $nostdoutclobber ) ? "-qq,$backend" : "$backend";
+    $b = ( $nostdoutclobber ) ? "-qq,$backend" : "$backend";
     ( $b, $post ) = split( " ", $b );
     $post = '' unless $post;
-    $b .= q(,-fno-fold,-fno-warnings) if $] >= 5.013005 and $b !~ /-(O3|ffold|fwarnings)/;
+    $b .= q(,-fno-fold,-fno-warnings) if $b !~ /-(O3|ffold|fwarnings)/;
     diag( "$runperl " . Mblib . " -MO=$b,-o$name.c $post $name.pl" )
       if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
     system "$runperl " . Mblib . " -MO=$b,-o$name.c $post $name.pl";
@@ -1003,7 +1001,7 @@ sub ccompileok {
     close F;
 
     my $runperl = $^X =~ m/\s/ ? qq{"$^X"}      : $^X;
-    my $b       = $] > 5.008   ? "-qq,$backend" : "$backend";
+    my $b       = "-qq,$backend";
     my $Mblib   = Mblib;
     system "$runperl $Mblib -MO=$b,-o$name.c $name.pl";
     unless ( -e "$name.c" ) {
@@ -1035,38 +1033,12 @@ sub todo_tests_default {
 
     my @todo = ();
 
-    # no IO::Scalar
-    push @todo, (15) if $] < 5.007;
-
-    # broken by fbb32b8bebe8ad C: revert *-,*+,*! fetch magic, assign all core GVs to their global symbols
-    push @todo, ( 42 .. 43 ) if $] < 5.012;
     if ( $what =~ /^c(|_o[1-4])$/ ) {
-
-        # a regression
-        push @todo, (12) if $what eq 'c_o3' and !$ITHREADS and $] >= 5.008009 and $] < 5.010;
 
         push @todo, (48) if $what eq 'c_o4' and $ITHREADS;
         push @todo, ( 8, 18, 19, 25, 26, 28 ) if $what eq 'c_o4' and !$ITHREADS;
     }
-    elsif ( $what =~ /^cc/ ) {
-        push @todo, ( 21, 30, 105, 106 );
-        push @todo, ( 22, 41, 45, 103 ) if $] < 5.007;    #regressions
-        push @todo, ( 104, 105 ) if $] < 5.007;                                   # leaveloop, no cxstack
-        push @todo, ( 42, 43 ) if $] > 5.008 and $] <= 5.008005 and !$ITHREADS;
 
-        #push @todo, (33,45) if $] >= 5.010 and $] < 5.012;
-        push @todo, ( 10, 16, 50 ) if $what eq 'cc_o2';
-        push @todo, (29) if $] < 5.008008;
-        push @todo, (22) if $] < 5.010 and !$ITHREADS;
-        push @todo, (46);                                                         # HvKEYS(%Exporter::) is 0 unless Heavy is included also
-                                                                                  # solaris also. I suspected nvx<=>cop_seq_*
-        push @todo, (12) if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
-        push @todo, (26)  if $what =~ /^cc_o[12]/;
-        push @todo, (27)  if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
-        push @todo, (103) if ( $] >= 5.012 and $] < 5.014 and !$ITHREADS );
-        push @todo, ( 12, 19, 25 ) if $] >= 5.019;
-    }
-    push @todo, (48) if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
 }
 
