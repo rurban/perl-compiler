@@ -127,6 +127,16 @@ sub optimize {
             else {                      # XS: need to fix cx for caller[1] to find auto/...
                 verbose("bootstrapping $stashname added to XSLoader dl_init");
             }
+
+            # TODO: Why no strict refs? Also why are we doing a second save here?
+            no strict 'refs';
+            unless ( grep /^DynaLoader$/, B::C::get_isa($stashname) ) {
+                push @{ $stashname . "::ISA" }, 'DynaLoader';
+                svref_2object( \@{ $stashname . "::ISA" } )->save;
+            }
+
+            debug( gv => '@', $stashname, "::ISA=(", join( ",", @{ $stashname . "::ISA" } ), ")" );
+
             if ( $self->{'staticxs'} ) {
                 my ($laststash) = $stashname =~ /::([^:]+)$/;
                 my $path = $stashname;

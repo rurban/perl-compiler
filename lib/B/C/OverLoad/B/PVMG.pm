@@ -21,6 +21,10 @@ sub save {
         return $sym;
     }
     my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
+    if ($static) {    # 242: e.g. $1
+        $static = 0;
+        $len = $cur + 1 unless $len;
+    }
 
     my ( $ivx, $nvx );
 
@@ -101,24 +105,29 @@ sub save_magic {
     # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
     # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
     # crashes with %Class::MOP::Instance:: flags=0x2280000c also
-    my $pkg = $sv->SvSTASH;
-    if ($$pkg) {
-        debug( mg => "stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg );
+    if ( ref($sv) eq 'B::HV' and $sv->MAGICAL and $fullname =~ /::$/ ) {
+        WARN sprintf( "skip SvSTASH for overloaded HV $fullname flags=0x%x\n", $sv->FLAGS );
+    }
+    else {
+        my $pkg = $sv->SvSTASH;
+        if ($$pkg) {
+            debug( mg => "stash isa class(\"%s\") 0x%x\n", eval { $pkg->NAME }, $$pkg );
 
-        $pkg->save($fullname);
+            $pkg->save($fullname);
 
-        no strict 'refs';
-        debug( mg => "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg );
+            no strict 'refs';
+            debug( mg => "xmg_stash = \"%s\" (0x%x)\n", eval { $pkg->NAME }, $$pkg );
 
-        # Q: Who is initializing our stash from XS? ->save is missing that.
-        # A: We only need to init it when we need a CV
-        # defer for XS loaded stashes with AMT magic
-        init()->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-        init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-        init()->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+            # Q: Who is initializing our stash from XS? ->save is missing that.
+            # A: We only need to init it when we need a CV
+            # defer for XS loaded stashes with AMT magic
+            init()->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+            init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+            init()->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
 
-        # XXX
-        #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+            # XXX
+            #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+        }
     }
 
     # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
@@ -257,6 +266,8 @@ CODE1
     $magic;
 }
 
+# TODO: This was added to PVMG because we thought it was only used in this op but
+# as of 5.18, it's used in B::CV::save
 sub _patch_dlsym {
     my ( $sv, $fullname, $ivx ) = @_;
     my $pkg = '';

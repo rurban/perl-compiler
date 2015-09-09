@@ -11,6 +11,10 @@ use B::C::Helpers::Symtable qw/objsym savesym/;
 
 my ($swash_ToCf);
 
+sub swash_ToCf_value {
+    return $swash_ToCf;
+}
+
 my $hv_index = 0;
 
 sub SVf_OOK { 0x02000000 }

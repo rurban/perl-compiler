@@ -2,15 +2,16 @@ package B::PMOP;
 
 use strict;
 
-use B qw/cstring svref_2object/;
+use B qw/cstring svref_2object RXf_EVAL_SEEN PMf_EVAL/;
 use B::C::Config;
 use B::C::File qw/pmopsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
+# Global to this space?
+my ($swash_init);
+
 # FIXME really required ?
-BEGIN {
-    eval q[sub PMf_ONCE(){ 0x8000 }];
-}
+sub PMf_ONCE() { 0x10000 };    # PMf_ONCE also not exported
 
 sub save {
     my ( $op, $level ) = @_;
@@ -108,6 +109,20 @@ sub save {
             # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
             require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
             svref_2object( \&{"utf8\::SWASHNEW"} )->save;                     # for swash_init(), defined in lib/utf8_heavy.pl
+
+            my $swash_ToCf = B::HV::swash_ToCf_value();
+            if ( !$swash_init and $swash_ToCf ) {
+                init()->add("PL_utf8_tofold = $swash_ToCf;");
+                $swash_init++;
+            }
+        }
+        if ( $op->reflags & RXf_EVAL_SEEN ) {                                 # set HINT_RE_EVAL on
+            $pmflags |= PMf_EVAL;
+            init()->add(
+                "{",
+                "  U32 hints_sav = PL_hints;",
+                "  PL_hints |= HINT_RE_EVAL;"
+            );
         }
 
         init()->add(                                                          # XXX Modification of a read-only value attempted. use DateTime - threaded
@@ -116,6 +131,13 @@ sub save {
               . sprintf( "SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags ),
             sprintf( "RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
         );
+
+        if ( $op->reflags & RXf_EVAL_SEEN ) {                                 # set HINT_RE_EVAL off
+            init()->add(
+                "  PL_hints = hints_sav;",
+                "}"
+            );
+        }
 
         # See toke.c:8964
         # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;

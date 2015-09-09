@@ -26,8 +26,8 @@ sub save {
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, 0 ) );
     svsect()->add(
         sprintf(
-            "&xpv_list[%d], %lu, 0x%x, {%s}",
-            xpvsect()->index, $sv->REFCNT, $sv->FLAGS, $cstr
+            "&xpv_list[%d], %lu, 0x%x, {NULL}",
+            xpvsect()->index, $sv->REFCNT, $sv->FLAGS
         )
     );
     my $ix = svsect()->index;
@@ -40,10 +40,7 @@ sub save {
         )
     );
 
-    init()->add(
-        sprintf( "SvCUR(&sv_list[$ix]) = %d;", $cur ),
-        "SvLEN(&sv_list[$ix]) = 0;"
-    );
+    init()->add("sv_list[$ix].sv_u.svu_rx = (struct regexp*)sv_list[$ix].sv_any;");
 
     svsect()->debug( $fullname, $sv );
     $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );

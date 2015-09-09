@@ -65,29 +65,44 @@ sub save {
 
     # $file =~ s/\.pl$/.c/;
 
-    # cop_label now in hints_hash (Change #33656)
-    copsect()->comment_common("line, stash, file, hints, seq, warn_sv, hints_hash");
-    copsect()->add(
-        sprintf(
-            "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
-            $op->_save_common, $op->line,
-
-            # we cannot store this static (attribute exit)
-            USE_ITHREADS() ? ( "NULL", "NULL" ) : ( "Nullhv", "Nullgv" ),
-            $op->hints, get_integer_value( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
-        )
-    );
+    if (USE_ITHREADS()) {
+        copsect()->comment_common("line, stashoff, file, hints, seq, warnings, hints_hash");
+        copsect()->add(
+            sprintf(
+                "%s, %u, " . "%d, %s, %u, " . "%s, %s, NULL",
+                $op->_save_common, $op->line,
+                $op->stashoff,     "NULL",      #hints=0
+                $op->hints,
+                ivx( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
+            )
+        );
+    }
+    else {
+        # cop_label now in hints_hash (Change #33656)
+        copsect()->comment_common("line, stash, file, hints, seq, warn_sv, hints_hash");
+        copsect()->add(
+            sprintf(
+                "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
+                $op->_save_common, $op->line,
+    
+                # we cannot store this static (attribute exit)
+                "Nullhv", "Nullgv",
+                $op->hints, get_integer_value( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
+            )
+        );
+    }
 
     if ( $op->label ) {
 
         # test 29 and 15,16,21. 44,45
-        init()->add(
-            sprintf(
-                "Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
-                copsect()->index,  cstring( $op->label ),
-                length $op->label, 0
-            )
-        );
+            init()->add(
+                sprintf(
+                    "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
+                    copsect()->index,   cstring( $op->label ),
+                    length $op->label, 0
+                )
+            );
+
     }
 
     copsect()->debug( $op->name, $op );

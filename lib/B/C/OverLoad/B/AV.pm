@@ -5,12 +5,14 @@ use strict;
 use Config;
 use B qw/cstring SVf_IOK SVf_POK/;
 use B::C::Config;
-use B::C::File qw/init xpvavsect svsect/;
+use B::C::File qw/init xpvavsect svsect padlistsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # maybe need to move to setup/config
 my ( $use_av_undef_speedup, $use_svpop_speedup ) = ( 1, 1 );
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
+
+my $padlist_index = 0;
 
 sub save {
     my ( $av, $fullname ) = @_;
@@ -27,18 +29,28 @@ sub save {
     $max = $fill;
     my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
 
-    # 5.14
-    # 5.13.3: STASH, MAGIC, fill max ALLOC
-    my $line = "Nullhv, {0}, -1, -1, 0";
-    $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
-    xpvavsect()->add($line);
-    svsect()->add(
-        sprintf(
-            "&xpvav_list[%d], %lu, 0x%x, {%s}",
-            xpvavsect()->index, $av->REFCNT, $av->FLAGS,
-            '0'
-        )
-    );
+    if ($ispadlist) {
+        padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_outid");
+        my @array = $av->ARRAY;
+        $fill = scalar @array;
+        padlistsect()->add("$fill, NULL, 0");    # Perl_pad_new(0)
+        $padlist_index = padlistsect()->index;
+        $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+    }
+    else {
+        # 5.14
+        # 5.13.3: STASH, MAGIC, fill max ALLOC
+        my $line = "Nullhv, {0}, -1, -1, 0";
+        $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
+        xpvavsect()->add($line);
+        svsect()->add(
+            sprintf(
+                "&xpvav_list[%d], %lu, 0x%x, {%s}",
+                xpvavsect()->index, $av->REFCNT, $av->FLAGS,
+                '0'
+            )
+        );
+    }
 
     my ( $av_index, $magic );
     if ( !$ispadlist ) {
@@ -89,10 +101,9 @@ sub save {
         # to reduce the memory usage ~ 3% and speed up startup time by about 8%.
         my ( $count, @values );
         {
+            # TODO: This local may no longer be needed now we've removed the 5.16 conditional here.
             local $B::C::const_strings = $B::C::const_strings;
-            if ( !$ispadlist ) {    # force dynamic PADNAME strings
-                $B::C::const_strings = 0 if $av->FLAGS & 0x40000000;
-            }
+
             @values = map { $_->save( $fullname . "[" . $count++ . "]" ) || () } @array;
         }
         $count = 0;

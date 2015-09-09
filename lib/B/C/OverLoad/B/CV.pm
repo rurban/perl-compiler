@@ -3,13 +3,13 @@ package B::CV;
 use strict;
 
 use Config;
-use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv/;
+use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv SVf_ROK SVp_POK SVf_IOK/;
 use B::C::Config;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Packages qw/is_package_used/;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
-use B::C::File qw/init decl svsect xpvcvsect symsect/;
+use B::C::File qw/init init2 decl svsect xpvcvsect symsect/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
@@ -19,7 +19,10 @@ my $initsub_index = 0;
 my $anonsub_index = 0;
 
 sub is_lexsub {
-    return 0;
+    my ( $cv, $gv ) = @_;
+
+    # logical shortcut perl5 bug since ~ 5.19: testcc.sh 42
+    return ( ( !$gv or ref($gv) eq 'B::SPECIAL' ) and $cv->can('NAME_HEK') ) ? 1 : 0;
 }
 
 sub Dummy_initxs { }
@@ -164,8 +167,20 @@ sub save {
         my $stsym = $stash->save;
         my $name  = cstring($cvname);
         my $sv    = $cv->XSUBANY;
-        my $vsym  = $sv->save;
-        my $cvi   = "cv" . $cv_index;
+
+        # need to check 'Encode::XS' constant encodings
+        # warn "$sv CONSTSUB $name";
+        if ( ( ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG' ) and $sv->FLAGS & SVf_ROK ) {
+            my $rv = $sv->RV;
+            if ( $rv->FLAGS & ( SVp_POK | SVf_IOK ) and $rv->IVX > 5000000 ) {
+
+                # TODO: shouldn't be calling a private.
+                B::PVMG::_patch_dlsym( $rv, $fullname, $rv->IVX );
+            }
+        }
+
+        my $vsym = $sv->save;
+        my $cvi  = "cv" . $cv_index;
         decl()->add("Static CV* $cvi;");
         init()->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
         my $sym = savesym( $cv, $cvi );
@@ -391,7 +406,21 @@ sub save {
 
             # do not record a forward for the pad only
 
-            init()->add("CvPADLIST($sym) = $padlistsym;");
+            # issue 298: dynamic CvPADLIST(&END) since 5.18 - END{} blocks
+            # and #169 and #304 Attribute::Handlers
+            if ( $B::C::dyn_padlist or $fullname =~ /^(main::END|Attribute::Handlers)/ ) {
+                init()->add(
+                    "{ /* &$fullname needs a dynamic padlist */",
+                    "  PADLIST *pad;",
+                    "  Newxz(pad, sizeof(PADLIST), PADLIST);",
+                    "  Copy($padlistsym, pad, sizeof(PADLIST), char);",
+                    "  CvPADLIST($sym) = pad;",
+                    "}"
+                );
+            }
+            else {
+                init()->add("CvPADLIST($sym) = $padlistsym;");
+            }
         }
         debug( sub => $fullname );
     }
@@ -506,20 +535,43 @@ sub save {
 
     if ($$cv) {
 
-        my $gvstash = $gv->STASH;
+        if ( !$gv or ref($gv) eq 'B::SPECIAL' ) {
+            my $lexsub = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
+            debug( gv => "lexsub name $lexsub" );
+            my $cur = length( pack "a*", $lexsub );
 
-        # defer GvSTASH because with DEBUGGING it checks for GP but
-        # there's no GP yet.
-        # But with -fstash the gvstash is set later
-        init()->add(
-            sprintf(
-                "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
-                $$cv, $$gvstash
-            )
-        ) if $gvstash and !$B::C::stash;
-        debug( gv => "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
-          if $gvstash and debug('cv');
+            if ( utf8::is_utf8($lexsub) ) {
+                my $pv = $lexsub;
+                utf8::encode($pv);
+                $cur = -length $pv;
+            }
 
+            init()->add(
+                "{ /* need a dynamic name hek */",
+                sprintf(
+                    "  HEK *lexhek = share_hek(savepvn(%s, %d), %d, 0);",
+                    cstring($lexsub), abs($cur), $cur
+                ),
+                sprintf( "  CvNAME_HEK_set(s\\_%x, lexhek);", $$cv ),
+                "}"
+            );
+        }
+        else {
+            my $gvstash = $gv->STASH;
+
+            # defer GvSTASH because with DEBUGGING it checks for GP but
+            # there's no GP yet.
+            # But with -fstash the gvstash is set later
+            init()->add(
+                sprintf(
+                    "GvXPVGV(s\\_%x)->xnv_u.xgv_stash = s\\_%x;",
+                    $$cv, $$gvstash
+                )
+            ) if $gvstash and !$B::C::stash;
+            debug( gv => "done saving GvSTASH 0x%x for CV 0x%x\n", $$gvstash, $$cv )
+              if $gvstash and debug('cv');
+
+        }
     }
     if ( $cv->OUTSIDE_SEQ ) {
         my $cop = $B::C::File::symtable{ sprintf( "s\\_%x", $cv->OUTSIDE_SEQ ) };
@@ -535,10 +587,19 @@ sub save {
                 "CvOUTSIDE($sym) = PL_main_cv;",
                 "SvREFCNT_inc(PL_main_cv);"
             );
+            init()->add("CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
         }
         else {
             init()->add( sprintf( "CvOUTSIDE($sym) = (CV*)s\\_%x;", $xcv_outside ) );
         }
+    }
+    elsif ($xcv_outside) {
+
+        # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
+        my $padl = $cv->OUTSIDE->PADLIST->save;
+
+        # This needs to be postponed (test 227)
+        init2()->add( sprintf("CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
     }
 
     if ( $gv and $$gv ) {
@@ -588,8 +649,12 @@ sub save {
         # $sym fixed test 27
         init()->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
 
-        debug( gv => "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv )
-          if debug('cv');
+        # 5.18 bless does not inc sv_objcount anymore. broken by ddf23d4a1ae (#208)
+        # We workaround this 5.18 de-optimization by adding it if at least a DESTROY
+        # method exists.
+        init()->add("++PL_sv_objcount;") if $cvname eq 'DESTROY';
+
+        debug( gv => "done saving STASH 0x%x for CV 0x%x\n", $$stash, $$cv ) if debug('cv');
     }
     my $magic = $cv->MAGIC;
     if ( $magic and $$magic ) {

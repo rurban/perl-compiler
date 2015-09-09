@@ -25,7 +25,10 @@ sub save {
     my $ivx = get_integer_value( $sv->IVX );
     my $i   = svsect()->index + 1;
     if ( $svflags & 0xff and !( $svflags & ( SVf_IOK | SVp_IOK ) ) ) {    # Not nullified
-        unless ( $svflags & 0x00010000 ) {                                # PADSTALE - out of scope lexical is !IOK
+        unless (
+            ( $svflags & 0x00010000 )                                     # PADSTALE - out of scope lexical is !IOK
+            or ( $svflags & 0x60002 )
+          ) {
             warn sprintf( "Internal warning: IV !IOK $fullname sv_list[$i] 0x%x\n", $svflags );
         }
     }

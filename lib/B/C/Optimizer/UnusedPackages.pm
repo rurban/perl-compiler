@@ -179,6 +179,13 @@ sub should_save {
 
     # Needed since 5.12.2: Check already if deleted
     my $incpack = inc_packname($package);
+    if (    exists $B::C::all_bc_deps{$package}
+        and !exists $B::C::curINC{$incpack}
+        and $B::C::savINC{$incpack} ) {
+        mark_package_unused($package);
+        debug( 'pkg' => "Cached $package not in \%INC, already deleted (early)" );
+        return 0;
+    }
 
     # issue348: only drop B::C packages, not any from user code.
     if (   ( $package =~ /^DynaLoader|XSLoader$/ and $use_xsloader )
@@ -205,7 +212,7 @@ sub should_save {
     }
 
     # add overloaded but otherwise empty packages (#172)
-    if ( $savINC{'overload.pm'} and exists ${ $package . '::' }{OVERLOAD} and exists ${ $package . '::' }{'()'} ) {
+    if ( $B::C::savINC{'overload.pm'} and exists ${ $package . '::' }{OVERLOAD} and exists ${ $package . '::' }{'()'} ) {
         mark_package( $package,   1 );
         mark_package( 'overload', 1 );
         return 1;
@@ -218,7 +225,7 @@ sub should_save {
     if ( defined $is_package_used ) {
         if ( !exists $B::C::all_bc_deps{$package} ) {
             mark_package_used($package);
-            $curINC{$incpack} = $savINC{$incpack};
+            $B::C::curINC{$incpack} = $B::C::savINC{$incpack};
             debug( pkg => "Cached new $package is kept" );
         }
         elsif ( !$is_package_used ) {

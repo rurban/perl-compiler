@@ -29,10 +29,10 @@ typedef struct {
 
 static const char* const svclassnames[] = {
     "B::NULL",
-    "B::BIND",
     "B::IV",
     "B::NV",
     "B::PV",
+    "B::INVLIST",
     "B::PVIV",
     "B::PVNV",
     "B::PVMG",
@@ -143,6 +143,16 @@ RX_EXTFLAGS(rx)
 	  B::REGEXP rx
 
 MODULE = B	PACKAGE = B::COP	PREFIX = COP_
+
+#if defined(USE_ITHREADS) && defined(CopSTASH_flags)
+
+#define COP_stashflags(o)	CopSTASH_flags(o)
+
+U32
+COP_stashflags(o)
+	B::COP	o
+
+#endif
 
 MODULE = B__CC	PACKAGE = B::CC
 

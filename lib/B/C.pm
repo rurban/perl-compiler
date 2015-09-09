@@ -67,9 +67,6 @@ BEGIN {
     #           check if used & clean
     eval q[sub SVs_GMG { 0x00200000 }
            sub SVs_SMG { 0x00400000 }];
-    eval q[sub RXf_EVAL_SEEN { 0x0 }
-           sub PMf_EVAL      { 0x0 }
-           ];    # unneeded
 }
 
 use B::C::Flags;
@@ -309,12 +306,10 @@ sub svop_or_padop_pv {
     }
 }
 
-# QUESTION: do we want to preserve it ?
 sub IsCOW {
-    return 0;
+    return $_[0]->FLAGS & 0x00010000;    # since 5.17.8
 }
 
-# QUESTION: do we want to preserve it ?
 sub IsCOW_hek {
     return IsCOW( $_[0] ) && !$_[0]->LEN;
 }
@@ -373,24 +368,19 @@ sub save_pv_or_rv {
             $static  = 0;
         }
 
-        $static = 0 if $sv->FLAGS & 0x40000000;    # SVpad_NAME
+        $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID
 
         if ($pok) {
             my $s = "sv_list[" . ( svsect()->index + 1 ) . "]";
 
-            no warnings 'numeric';
-            if ( $static and abs($pv) > 0 ) {
-                $static = 0;
-            }
-
             # but we can optimize static set-magic ISA entries. #263, #91
             if ( $B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG ) {
-                $static = 1;                       # warn "static $fullname";
+                $static = 1;                                         # warn "static $fullname";
             }
             if ($static) {
                 $len = 0;
                 $savesym = $iscow ? savepv($pv) : constpv($pv);
-                if ( $savesym =~ /^(\(char\*\))?get_cv\("/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+                if ( $savesym =~ /^(\(char\*\))?get_cv\("/ ) {       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
                     $static  = 0;
                     $len     = $cur + 1;
                     $pv      = $savesym;
@@ -460,7 +450,7 @@ sub save_pv_or_rv {
 # fixme only use opsect common
 {
     # should use a static variable
-    my $opsect_common = "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, latefree, latefreed, attached, spare" . ", flags, private";
+    my $opsect_common = "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, slabbed, savefree, static, folded, spare" . ", flags, private";
 
     sub opsect_common {
         return $opsect_common;
@@ -1240,13 +1230,10 @@ sub save_context {
     );
 
     init()->add(
-        "av_store((AV*)CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-        "av_store((AV*)CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */"
+        "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+        "PadnamelistMAXNAMED(PL_comppad_name) = AvFILL($curpad_nam);",
+        "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */"
     );
-
-    my $amagic_generate = B::amagic_generation();
-    verbose("amagic_generation = $amagic_generate");
-    init()->add("PL_amagic_generation = $amagic_generate;");
 }
 
 sub save_main {
@@ -1273,16 +1260,15 @@ sub force_saving_xsloader {
 
     # mark_package("DynaLoader", 1);
 
-    init()->add("/* force saving of XSLoader::load */");
-    eval { XSLoader::load; };
+    init()->add("/* custom XSLoader::load_file */");
 
     # does this really save the whole packages?
-    $dumped_package{XSLoader} = 1;
-    svref_2object( \&XSLoader::load )->save;
+    $dumped_package{DynaLoader} = 1;
+    svref_2object( \&XSLoader::load_file )->save;
+    svref_2object( \&DynaLoader::dl_load_flags )->save;    # not saved as XSUB constant?
 
-    add_hashINC("XSLoader");
     add_hashINC("DynaLoader");
-    $use_xsloader = 0;    # do not load again
+    $use_xsloader = 0;                                     # do not load again
 }
 
 sub save_main_rest {
@@ -1578,6 +1564,80 @@ sub dl_module_to_sofile {
     return $sofile;
 }
 
+# 5.15.3 workaround [perl #101336], without .bs support
+# XSLoader::load_file($module, $modlibname, ...)
+my $dlext = $Config::Config{dlext};
+eval q|
+sub XSLoader::load_file {
+  #package DynaLoader;
+  my $module = shift or die "missing module name";
+  my $modlibname = shift or die "missing module filepath";
+  print STDOUT "XSLoader::load_file(\"$module\", \"$modlibname\" @_)\n"
+      if ${DynaLoader::dl_debug};
+
+  push @_, $module;
+  # works with static linking too
+  my $boots = "$module\::bootstrap";
+  goto &$boots if defined &$boots;
+
+  my @modparts = split(/::/,$module); # crashes threaded, issue 100
+  my $modfname = $modparts[-1];
+  my $modpname = join('/',@modparts);
+  my $c = @modparts;
+  $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
+  die "missing module filepath" unless $modlibname;
+  my $file = "$modlibname/auto/$modpname/$modfname."| . qq(."$dlext") . q|;
+
+  # skip the .bs "bullshit" part, needed for some old solaris ages ago
+
+  print STDOUT "goto DynaLoader::bootstrap_inherit\n"
+      if ${DynaLoader::dl_debug} and not -f $file;
+  goto \&DynaLoader::bootstrap_inherit if not -f $file;
+  my $modxsname = $module;
+  $modxsname =~ s/\W/_/g;
+  my $bootname = "boot_".$modxsname;
+  @DynaLoader::dl_require_symbols = ($bootname);
+
+  my $boot_symbol_ref;
+  if ($boot_symbol_ref = DynaLoader::dl_find_symbol(0, $bootname)) {
+    print STDOUT "dl_find_symbol($bootname) ok => goto boot\n"
+      if ${DynaLoader::dl_debug};
+    goto boot; #extension library has already been loaded, e.g. darwin
+  }
+  # Many dynamic extension loading problems will appear to come from
+  # this section of code: XYZ failed at line 123 of DynaLoader.pm.
+  # Often these errors are actually occurring in the initialisation
+  # C code of the extension XS file. Perl reports the error as being
+  # in this perl code simply because this was the last perl code
+  # it executed.
+
+  my $libref = DynaLoader::dl_load_file($file, 0) or do {
+    die("Can't load '$file' for module $module: " . DynaLoader::dl_error());
+  };
+  push(@DynaLoader::dl_librefs,$libref);  # record loaded object
+
+  my @unresolved = DynaLoader::dl_undef_symbols();
+  if (@unresolved) {
+    die("Undefined symbols present after loading $file: @unresolved\n");
+  }
+
+  $boot_symbol_ref = DynaLoader::dl_find_symbol($libref, $bootname) or do {
+    die("Can't find '$bootname' symbol in $file\n");
+  };
+  print STDOUT "dl_find_symbol($libref, $bootname) ok => goto boot\n"
+    if ${DynaLoader::dl_debug};
+  push(@DynaLoader::dl_modules, $module); # record loaded module
+
+ boot:
+  my $xs = DynaLoader::dl_install_xsub($boots, $boot_symbol_ref, $file);
+  print STDOUT "dl_install_xsub($boots, $boot_symbol_ref, $file)\n"
+    if ${DynaLoader::dl_debug};
+  # See comment block above
+  push(@DynaLoader::dl_shared_objects, $file); # record files loaded
+  return &$xs(@_);
+}
+|;
+
 sub init_op_addr {
     my ( $op_type, $num ) = @_;
     my $op_list = $op_type . "_list";
@@ -1607,6 +1667,7 @@ sub compile {
     $B::C::fold             = 1;                                                 # always include utf8::Cased tables
     $B::C::warnings         = 1;                                                 # always include Carp warnings categories and B
     $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
+    $B::C::dyn_padlist      = 1;                                                 # default is dynamic and safe, disable with -O4
     $B::C::walkall          = 1;
 
     mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O

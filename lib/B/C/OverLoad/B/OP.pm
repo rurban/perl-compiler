@@ -57,13 +57,24 @@ sub save {
     if ( !$type and $OP_COP{ $op->targ } ) {
         debug( cops => "Null COP: %d\n", $op->targ );
 
-        copsect()->comment_common("line, stash, file, hints, seq, warnings, hints_hash");
-        copsect()->add(
-            sprintf(
-                "%s, 0, %s, NULL, 0, 0, NULL, NULL",
-                $op->_save_common, USE_ITHREADS() ? "(char *)NULL" : "Nullhv"
-            )
-        );
+        if (USE_ITHREADS()) {
+            copsect()->comment_common("line, stashoff, file, hints, seq, warnings, hints_hash");
+            copsect()->add(
+                sprintf(
+                    "%s, 0, 0, (char *)NULL, 0, 0, NULL, NULL",
+                    $op->_save_common
+                )
+            );
+        }
+        else {
+            copsect()->comment_common("line, stash, file, hints, seq, warnings, hints_hash");
+            copsect()->add(
+                sprintf(
+                    "%s, 0, %s, NULL, 0, 0, NULL, NULL",
+                    $op->_save_common, "Nullhv"
+                )
+            );
+        }
 
         my $ix = copsect()->index;
         init()->add( sprintf( "cop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
@@ -154,9 +165,7 @@ sub _save_common {
     );
 }
 
-use constant STATIC => '0, 1, 0, 0, 0';
-my $PATTERN = "%s," . ( MAD() ? "0," : "" ) . " %u, %u, " . STATIC . ", 0x%x, 0x%x";
-
+use constant STATIC => '0, 0, 0, 1, 0, 0';
 my $PATTERN = "%s," . ( MAD() ? "0," : "" ) . " %u, %u, " . STATIC . ", 0x%x, 0x%x";
 
 sub _save_common_middle {
