@@ -57,6 +57,12 @@ BEGIN {
 
 }
 
+sub re_initialize {
+    my $outfile = $self->{'c_file_name'};
+    $self = undef;
+    return new($outfile);
+}
+
 sub new {
     $self and die("Re-initialized???");
 

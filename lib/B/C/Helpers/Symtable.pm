@@ -64,6 +64,10 @@ sub delsym {
     delete $SYMTABLE{$sym};
 }
 
+sub clearsym { #unit test helper
+    %SYMTABLE = ();
+}
+
 sub dump_symtable {
 
     # For debugging
