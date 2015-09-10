@@ -82,16 +82,19 @@ sub comment {
 
 # add debugging info - stringified flags on -DF
 my $debug_flags;
+
 sub debug {
+
     # disable the sub when unused
     if ( !defined $debug_flags ) {
-        $debug_flags = B::C::Config::Debug::debug('flags') ? 1 : 0;        
+        $debug_flags = B::C::Config::Debug::debug('flags') ? 1 : 0;
         if ( !$debug_flags ) {
-            no warnings 'redefine';        
+            no warnings 'redefine';
             *debug = sub { };
             return;
         }
     }
+
     # debug
     my ( $self, $op ) = @_;
 
