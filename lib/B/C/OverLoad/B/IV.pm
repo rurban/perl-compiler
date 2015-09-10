@@ -20,7 +20,7 @@ sub save {
         return $sv->B::RV::save($fullname);
     }
     if ( $svflags & SVf_IVisUV ) {
-        return $sv->B::UV::save;
+        return $sv->B::UV::save($fullname);
     }
     my $ivx = get_integer_value( $sv->IVX );
     my $i   = svsect()->index + 1;
