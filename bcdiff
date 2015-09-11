@@ -1,0 +1,12 @@
+#!/bin/env perl
+
+my ( $f1, $f2 ) = @ARGV;
+die "need 2 files as arguments" unless $f1 && $f2;
+die "at least one file is missing" unless -f $f1 && -f $f2;
+
+foreach my $f ( $f1, $f2 ) {
+    qx{ctidy $f >/dev/null};
+    die "Cannot tidy file $f" unless $? == 0;
+}
+
+exec qw{colordiff -y -Bbw}, "$f1.tdy", "$f2.tdy";
