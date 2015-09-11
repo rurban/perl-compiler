@@ -1,0 +1,20 @@
+#!/bin/env perl
+
+my $cfile = shift or die "need a c file";
+$cfile =~ qr{\.c$} or die "file extension is not .c";
+
+my $tidy = "$cfile.tdy";
+
+my @cmd = (
+    qq{gcc -fpreprocessed -dD -E $cfile > $tidy.tmp},
+    qq{indent -bap $tidy.tmp},
+    qq{grep '[^[:blank:]]' < $tidy.tmp > $tidy}
+);
+
+foreach my $exe (@cmd) {
+    print "> $exe\n";
+    qx{$exe};
+    die "exit with error code $?" unless $? == 0;
+}
+print "Done: $tidy\n";
+exit;
