@@ -1,8 +1,9 @@
 #!./perl
 
 BEGIN {
-    push @INC, ('./lib');
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = ('../lib');
+    require './test.pl';
 }
 
 my $vms_exit_mode = 0;
@@ -35,7 +36,7 @@ $ENV{LANGUAGE} = 'C';		# Ditto in GNU.
 my $Is_VMS   = $^O eq 'VMS';
 my $Is_Win32 = $^O eq 'MSWin32';
 
-plan(tests => 22);
+plan(tests => 24);
 
 my $Perl = which_perl();
 
@@ -123,8 +124,20 @@ $Perl -le "print 'ok'"
 END
 
 {
+    no warnings 'experimental::lexical_topic';
     my $_ = qq($Perl -le "print 'ok'");
     is( readpipe, "ok\n", 'readpipe default argument' );
+}
+
+package o {
+    use subs "readpipe";
+    sub readpipe { pop }
+    ::is `${\"hello"}`, 'hello',
+         'overridden `` interpolates [perl #115330]';
+    ::is <<`119827`, "ls\n",
+l${\"s"}
+119827
+        '<<`` respects overrides and interpolates [perl #119827]';
 }
 
 TODO: {

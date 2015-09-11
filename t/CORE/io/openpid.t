@@ -8,8 +8,9 @@
 #####################################################################
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 if ($^O eq 'dos') {

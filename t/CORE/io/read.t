@@ -1,9 +1,11 @@
 #!./perl
 
-use Errno;
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    eval 'use Errno';
+    die $@ if $@ and !is_miniperl();
 }
 
 use strict;
@@ -25,7 +27,11 @@ close(A);
 
 is($b,"\000\000\000\000_"); # otherwise probably "\000bcd_"
 
-$! = 0;
-no warnings 'unopened';
-read(B,$b,1);
-ok($! == &Errno::EBADF);
+SKIP: {
+    skip "no EBADF", 1 if (!exists &Errno::EBADF);
+
+    $! = 0;
+    no warnings 'unopened';
+    read(B,$b,1);
+    ok($! == &Errno::EBADF);
+}

@@ -3,17 +3,18 @@
 # Test that various IO functions don't try to treat PVBMs as
 # filehandles. Most of these will segfault perl if they fail.
 
-INIT {
-    unshift @INC, "./lib";
-    require 't/CORE/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+    require "./test.pl";
 }
 
-INIT { $| = 1 }
+BEGIN { $| = 1 }
 
 plan(28);
 
 sub PVBM () { 'foo' }
-#{ my $dummy = index 'foo', PVBM }
+{ my $dummy = index 'foo', PVBM }
 
 {
     my $which;
@@ -23,20 +24,20 @@ sub PVBM () { 'foo' }
         sub TIEHANDLE { $which = 'TIEHANDLE' }
         sub TIESCALAR { $which = 'TIESCALAR' }
     }
-    my $pvbm = PVBM();
+    my $pvbm = PVBM;
     
     tie $pvbm, 'Tie';
     is ($which, 'TIESCALAR', 'PVBM gets TIESCALAR');
 }
 
 {
-    my $pvbm = PVBM();
+    my $pvbm = PVBM;
     ok (scalar eval { untie $pvbm; 1 }, 'untie(PVBM) doesn\'t segfault');
     ok (scalar eval { tied $pvbm; 1  }, 'tied(PVBM) doesn\'t segfault');
 }
 
 {
-    my $pvbm = PVBM();
+    my $pvbm = PVBM;
 
     ok (scalar eval { pipe $pvbm, PIPE; }, 'pipe(PVBM, ) succeeds');
     close foo;

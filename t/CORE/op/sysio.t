@@ -1,23 +1,20 @@
 #!./perl
 
 BEGIN {
-  require 't/CORE/test.pl';
+  chdir 't' if -d 't';
+  @INC = '../lib';
+  require './test.pl';
 }
 
-INIT {
-  unshift @INC, 't/CORE/lib';
-}
+plan tests => 48;
 
-plan(tests => 48);
-
-open(I, 't/CORE/op/sysio.t') || die "sysio.t: cannot find myself: $!";
+open(I, 'op/sysio.t') || die "sysio.t: cannot find myself: $!";
 
 $reopen = ($^O eq 'VMS' ||
            $^O eq 'os2' ||
            $^O eq 'MSWin32' ||
            $^O eq 'NetWare' ||
-           $^O eq 'dos' ||
-	   $^O eq 'mpeix');
+           $^O eq 'dos');
 
 $x = 'abc';
 
@@ -211,7 +208,7 @@ ok(not defined sysseek(I, -1, 1));
 
 close(I);
 
-unlink_all($outfile);
+unlink_all $outfile;
 
 # Check that utf8 IO doesn't upgrade the scalar
 open(I, ">$outfile") || die "sysio.t: cannot write $outfile: $!";

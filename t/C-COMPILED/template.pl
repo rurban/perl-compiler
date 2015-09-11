@@ -8,9 +8,16 @@ use IO::Scalar;
 
 use Test::More;
 
-#my @optimizations = ( '-O2,-fno-fold', '-O1' );
-my @optimizations = $ENV{BC_OPT} ? split(/\s+/,$ENV{BC_OPT}) : ('-O0','-O3');
-my $todo       = '';
+if ( $0 =~ m{/template\.pl$} ) {
+    plan q{skip_all} => "This program is not designed to be called directly";
+    exit;
+}
+
+my @optimizations = $ENV{'BC_TEST_OPTIMIZATIONS'} || '-O3,-fno-fold';
+$optimizations[0] .= ',-v'     if ( $ENV{VERBOSE} );
+$optimizations[0] .= ',-Dwalk' if ( $ENV{BC_WALK} );
+
+my $todo = '';
 
 # Setup file_to_test to be the file we actually want to test.
 my $file_to_test = $0;
@@ -22,18 +29,13 @@ if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
     $todo = "Test crashes before completion. Issues: $1"        if ( $options =~ /BADPLAN-([\d-]+)/ );
     $todo = "Fails tests when compiled with perlcc. Issues: $1" if ( $options =~ /BADTEST-([\d-]+)/ );
     $todo = "Tests out of sequence. Issues: $1"                 if ( $options =~ /SEQ-([\d-]+)/ );
-    $todo = "TODO test unexpectedly passing. Issues: $1"        if ( $options =~ /TODO-([\d-]+)/ );
+    $todo = "TODO test unexpectedly failing. Issues: $1"        if ( $options =~ /TODO-([\d-]+)/ );
 }
 
 $file_to_test =~ s{--}{/}g;
 $file_to_test =~ s{C-COMPILED/}{};    # Strip the BINARY dir off to look for this test elsewhere.
 
-if ( $] < 5.014 && $file_to_test =~ m{^t/CORE/} ) {
-    plan skip_all => "Perl CORE tests only supported since 5.14 right now.";
-}
-else {
-    plan tests => 3 + 10 * scalar @optimizations;
-}
+plan tests => 3 + 10 * scalar @optimizations;
 
 ok( !-z $file_to_test, "$file_to_test exists" );
 
@@ -47,7 +49,7 @@ pass( $taint ? "Taint mode!" : "Not in taint mode" );
 ( my $bin_file = $file_to_test ) =~ s/\.t$/.bin/;
 unlink $bin_file, $c_file;
 
-my $PERL = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
+my $PERL = $^X;
 
 my $check = `$PERL -c $taint '$file_to_test' 2>&1`;
 like( $check, qr/syntax OK/, "$PERL -c $taint $file_to_test" );
@@ -58,43 +60,29 @@ my %SIGNALS = qw( 11 SEGV 6 SIGABRT 1 SIGHUP 13 SIGPIPE);
 $SIGNALS{0} = '';
 
 foreach my $optimization (@optimizations) {
-TODO: {
-  SKIP: {
+  TODO: SKIP: {
         local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
-        local $ENV{BC_OPT} = $optimization;
-
-        my $b = $optimization; # protect against parallel test name clashes
-        #$b =~ s/-(D.*|f.*|v),//g;
-        #$b =~ s/-/_/g;
-        #$b =~ s/[, ]//g;
-        #$b =~ s/_O0$//;
-        #$b = lc($b);
-        $b = ''; # need to check $0 diagnostics
-        ( $c_file   = $file_to_test ) =~ s/\.t$/$b.c/;
-        $b = '.bin'; # need to check $0 diagnostics
-        ( $bin_file = $file_to_test ) =~ s/\.t$/$b/;
-        unlink $bin_file, $c_file;
 
         # Generate the C code at $optimization level
-        my $cmd = "$PERL $taint -Iblib/arch -Iblib/lib -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+        my $cmd = "$PERL $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
 
-        diag $cmd if $ENV{TEST_VERBOSE};
+        diag $cmd if $ENV{VERBOSE};
         my $BC_output = `$cmd`;
         note $BC_output if ($BC_output);
-        ok( !-z $c_file, "$c_file is generated ($optimization)" );
+        ok( -e $c_file && !-z _, "$c_file is generated ($optimization)" );
 
         if ( -z $c_file ) {
-            unlink $c_file;
+            unlink $c_file unless $ENV{BC_DEVELOPING};
             skip( "Can't test further due to failure to create a c file.", 9 );
         }
 
         # gcc the c code.
         local $TODO = $todo if ( $todo =~ /gcc cannot compile generated c code/ );
 
-        $cmd = "$PERL -Iblib/arch -Iblib/lib script/cc_harness -q $c_file -o $bin_file 2>&1";
-        diag $cmd if $ENV{TEST_VERBOSE};
+        $cmd = "$PERL script/cc_harness -q $c_file -o $bin_file 2>&1";
+        diag $cmd if $ENV{VERBOSE};
         my $compile_output = `$cmd`;
-        note $compile_output if $compile_output;
+        note $compile_output if ($compile_output);
 
         # Validate compiles
         ok( -x $bin_file, "$bin_file is compiled and ready to run." );
@@ -145,32 +133,22 @@ TODO: {
 
         ok( $parser->{exit} == 0, "Exit code is $parser->{exit}" );
 
-        local $TODO = "Tests don't pass at the moment - $todo"
-          if ( $todo =~ /Fails tests when compiled with perlcc/ );
+        local $TODO = "Tests don't pass at the moment - $todo" if ( $todo =~ /Fails tests when compiled with perlcc/ );
         ok( !scalar @{ $parser->{failed} }, "Test results:" );
         print "    $_\n" foreach ( split( "\n", $out ) );
 
-        if (!ok( !scalar @{ $parser->{failed} }, "No test failures $optimization" )) {
-          note( "Failed $optimization tests: " . join( ", ", @{ $parser->{failed} } ) );
-          $ENV{BC_DEVELOPING} = 1; # keep temp files
-        }
+        ok( !scalar @{ $parser->{failed} }, "No test failures" )
+          or note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
 
-        skip( "Don't care about test sequence if tests are failing", 2 )
-          if ( $todo =~ /Fails tests when compiled with perlcc/ );
+        skip( "Don't care about test sequence if tests are failing", 2 ) if ( $todo =~ /Fails tests when compiled with perlcc/ );
 
         local $TODO = $todo if ( $todo =~ m/Tests out of sequence/ );
-        if (!ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )) {
-          note explain $parser->{parse_errors};
-          $ENV{BC_DEVELOPING} = 1; # keep temp files
-        }
+        ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )
+          or note explain $parser->{parse_errors};
 
-        local $TODO = "tests unexpectedly passing" if scalar @{ $parser->{todo_passed} };
-        if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed $optimization" )) {
-          note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
-          $ENV{BC_DEVELOPING} = 1; # keep temp files
-        }
-        $TODO = '';
+        local $TODO = $todo if ( $todo =~ m/TODO test unexpectedly failing/ );
+        ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )
+          or note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
     }
-  }
-  unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
 }
+unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};

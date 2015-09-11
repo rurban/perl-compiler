@@ -3,14 +3,13 @@
 # Regression tests for attributes.pm and the C< : attrs> syntax.
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_if_miniperl("miniperl can't load attributes");
 }
 
 use warnings;
-# force perlcc to compile the script with attributes
-#	this is not really a perlcc issue
-use attributes;
 
 $SIG{__WARN__} = sub { die @_ };
 
@@ -19,9 +18,11 @@ sub eval_ok ($;$) {
     is( $@, '', @_);
 }
 
+fresh_perl_is 'use attributes; print "ok"', 'ok', {},
+   'attributes.pm can load without warnings.pm already loaded';
+
 our $anon1; eval_ok '$anon1 = sub : method { $_[0]++ }';
 
-# perlcc issue 170 - https://code.google.com/p/perl-compiler/issues/detail?id=170
 eval 'sub e1 ($) : plugh ;';
 like $@, qr/^Invalid CODE attributes?: ["']?plugh["']? at/;
 
@@ -196,7 +197,7 @@ foreach my $value (\&foo, \$scalar, \@array, \%hash) {
 sub PVBM () { 'foo' }
 { my $dummy = index 'foo', PVBM }
 
-ok !defined(attributes::get(\PVBM)), 
+ok !defined(eval 'attributes::get(\PVBM)'), 
     'PVBMs don\'t segfault attributes::get';
 
 {
@@ -312,6 +313,16 @@ foreach my $test (@tests) {
      'Calling closure proto with no @_ that returns a lexical';
 }
 
+# Referencing closure prototypes
+{
+  package buckbuck;
+  my @proto;
+  sub MODIFY_CODE_ATTRIBUTES { push @proto, $_[1], \&{$_[1]}; _: }
+  my $id;
+  () = sub :buck {$id};
+  &::is(@proto, 'referencing closure prototype');
+}
+
 # [perl #68658] Attributes on stately variables
 {
   package thwext;
@@ -323,5 +334,53 @@ foreach my $test (@tests) {
   package main;
   is $x_values, '00', 'state with attributes';
 }
+
+{
+  package ningnangnong;
+  sub MODIFY_SCALAR_ATTRIBUTES{}
+  sub MODIFY_ARRAY_ATTRIBUTES{  }
+  sub MODIFY_HASH_ATTRIBUTES{    }
+  my ($cows, @go, %bong) : teapots = qw[ jibber jabber joo ];
+  ::is $cows, 'jibber', 'list assignment to scalar with attrs';
+  ::is "@go", 'jabber joo', 'list assignment to array with attrs';
+}
+
+{
+  my $w;
+  local $SIG{__WARN__} = sub { $w = shift };
+  sub  ent         {}
+  sub lent :lvalue {}
+  my $posmsg =
+      'lvalue attribute applied to already-defined subroutine at '
+     .'\(eval';
+  my $negmsg =
+      'lvalue attribute removed from already-defined subroutine at '
+     .'\(eval';
+  eval 'use attributes __PACKAGE__, \&ent, "lvalue"';
+  like $w, qr/^$posmsg/, 'lvalue attr warning on def sub';
+  is join("",&attributes::get(\&ent)), "lvalue",':lvalue applied anyway';
+  $w = '';
+  eval 'use attributes __PACKAGE__, \&lent, "lvalue"; 1' or die;
+  is $w, "", 'no lvalue warning on def lvalue sub';
+  eval 'use attributes __PACKAGE__, \&lent, "-lvalue"';
+  like $w, qr/^$negmsg/, '-lvalue attr warning on def sub';
+  is join("",&attributes::get(\&lent)), "",
+       'lvalue attribute removed anyway';
+  $w = '';
+  eval 'use attributes __PACKAGE__, \&lent, "-lvalue"; 1' or die;
+  is $w, "", 'no -lvalue warning on def non-lvalue sub';
+  no warnings 'misc';
+  eval 'use attributes __PACKAGE__, \&lent, "lvalue"';
+  is $w, "", 'no lvalue warnings under no warnings misc';
+  eval 'use attributes __PACKAGE__, \&ent, "-lvalue"';
+  is $w, "", 'no -lvalue warnings under no warnings misc';
+}
+
+unlike runperl(
+         prog => 'BEGIN {$^H{a}=b} sub foo:bar{1}',
+         stderr => 1,
+       ),
+       qr/Unbalanced/,
+      'attribute errors do not cause op trees to leak';
 
 done_testing();

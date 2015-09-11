@@ -5,8 +5,9 @@
 #
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require "./test.pl";
     require Config;
 }
 
@@ -14,7 +15,7 @@ BEGIN {
 # If you find tests are failing, please try adding names to tests to track
 # down where the failure is, and supply your new names as a patch.
 # (Just-in-time test naming)
-plan tests => 171 + (10*13*2) + 4;
+plan tests => 174 + (10*13*2) + 5;
 
 # numerics
 ok ((0xdead & 0xbeef) == 0x9ead);
@@ -31,14 +32,14 @@ ok ((~0 > 0 && do { use integer; ~0 } == -1));
 
 my $bits = 0;
 for (my $i = ~0; $i; $i >>= 1) { ++$bits; }
-my $cusp = eval qq{1 << ($bits - 1)}; # poor editor fix
+my $cusp = 1 << ($bits - 1);
 
 
 ok (($cusp & -1) > 0 && do { use integer; $cusp & -1 } < 0);
 ok (($cusp | 1) > 0 && do { use integer; $cusp | 1 } < 0);
 ok (($cusp ^ 1) > 0 && do { use integer; $cusp ^ 1 } < 0);
-ok ((eval qq{1 << ($bits - 1)}) == $cusp &&
-    do { use integer; eval qq{1 << ($bits - 1)} } == -$cusp);
+ok ((1 << ($bits - 1)) == $cusp &&
+    do { use integer; 1 << ($bits - 1) } == -$cusp);
 ok (($cusp >> 1) == ($cusp / 2) &&
     do { use integer; abs($cusp >> 1) } == ($cusp / 2));
 
@@ -75,6 +76,18 @@ is _oar "yit", '{yt', 'str var | const str again';
 is _xor "yit", 'RYt', 'str var ^ const str';
 is _xor  0,    '0',   'num var ^ const str';
 is _xor "yit", 'RYt', 'str var ^ const str again';
+
+# But don’t mistake a COW for a constant when assigning to it
+%h=(150=>1);
+$i=(keys %h)[0];
+$i |= 105;
+is $i, 255, '[perl #108480] $cow |= number';
+$i=(keys %h)[0];
+$i &= 105;
+is $i, 0, '[perl #108480] $cow &= number';
+$i=(keys %h)[0];
+$i ^= 105;
+is $i, 255, '[perl #108480] $cow ^= number';
 
 #
 is ("ok \xFF\xFF\n" & "ok 19\n", "ok 19\n");
@@ -437,8 +450,6 @@ SKIP: {
   no warnings "utf8";
   { use bytes; $str =~ s/\C\C\z//; }
 
-# perlcc issue 174 - https://code.google.com/p/perl-compiler/issues/detail?id=174
-
   # it's really bogus that (~~malformed) is \0.
   my $ref = "\x{10000}\0";
   is(~~$str, $ref);
@@ -540,7 +551,6 @@ my $strval;
 
 {
     package Bar;
-    # perlcc issue 172 - https://code.google.com/p/perl-compiler/issues/detail?id=172
     use overload q/""/ => sub { $strval };
 
     package Baz;
@@ -556,3 +566,7 @@ $strval = "x";
 eval { $obj |= "Q" };
 $strval = "z";
 is("$obj", "z", "|= doesn't break string overload");
+
+# [perl #29070]
+$^A .= new version ~$_ for "\xce", v205, "\xcc";
+is $^A, "123", '~v0 clears vstring magic on retval';

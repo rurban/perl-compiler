@@ -3,7 +3,12 @@
 # Checks if the parser behaves correctly in edge cases
 # (including weird syntax errors)
 
-print "1..123\n";
+BEGIN {
+    @INC = qw(. ../lib);
+    chdir 't';
+}
+
+print "1..169\n";
 
 sub failed {
     my ($got, $expected, $name) = @_;
@@ -69,6 +74,13 @@ eval q/"\Nfoo"/;
 like( $@, qr/^Missing braces on \\N/,
     'syntax error in string with incomplete \N' );
 
+eval q/"\o{"/;
+like( $@, qr/^Missing right brace on \\o/,
+    'syntax error in string with incomplete \o' );
+eval q/"\ofoo"/;
+like( $@, qr/^Missing braces on \\o/,
+    'syntax error in string with incomplete \o' );
+
 eval "a.b.c.d.e.f;sub";
 like( $@, qr/^Illegal declaration of anonymous subroutine/,
     'found by Markov chain stress testing' );
@@ -125,11 +137,11 @@ is( $@, '', 'PL_lex_brackstack' );
     is("${a}[", "A[", "interpolation, qq//");
     my @b=("B");
     is("@{b}{", "B{", "interpolation, qq//");
-    is(qr/${a}{/, '(?^:A{)', "interpolation, qr//");
+    is(qr/${a}\{/, '(?^:A\{)', "interpolation, qr//");
     my $c = "A{";
-    $c =~ /${a}{/;
+    $c =~ /${a}\{/;
     is($&, 'A{', "interpolation, m//");
-    $c =~ s/${a}{/foo/;
+    $c =~ s/${a}\{/foo/;
     is($c, 'foo', "interpolation, s/...//");
     $c =~ s/foo/${a}{/;
     is($c, 'A{', "interpolation, s//.../");
@@ -311,9 +323,9 @@ like($@, qr/BEGIN failed--compilation aborted/, 'BEGIN 7' );
   eval qq[ %$xFC ];
   like($@, qr/Identifier too long/, "too long id in % sigil ctx");
 
-  eval qq[ \\&$xFC ]; # take a ref since I don't want to call it
-  is($@, "", "252 character & sigil ident ok");
-  eval qq[ \\&$xFD ];
+  eval qq[ \\&$xFB ]; # take a ref since I don't want to call it
+  is($@, "", "251 character & sigil ident ok");
+  eval qq[ \\&$xFC ];
   like($@, qr/Identifier too long/, "too long id in & sigil ctx");
 
   eval qq[ *$xFC ];
@@ -321,10 +333,10 @@ like($@, qr/BEGIN failed--compilation aborted/, 'BEGIN 7' );
   eval qq[ *$xFD ];
   like($@, qr/Identifier too long/, "too long id in glob ctx");
 
-  eval qq[ for $xFD ];
+  eval qq[ for $xFC ];
   like($@, qr/Missing \$ on loop variable/,
-       "253 char id ok, but a different error");
-  eval qq[ for $xFE; ];
+       "252 char id ok, but a different error");
+  eval qq[ for $xFD; ];
   like($@, qr/Identifier too long/, "too long id in for ctx");
 
   # the specific case from the ticket
@@ -341,6 +353,12 @@ like($@, qr/BEGIN failed--compilation aborted/, 'BEGIN 7' );
   is(defined &zlonk, '', 'but no body defined');
 }
 
+# [perl #113016] CORE::print::foo
+sub CORE'print'foo { 43 } # apostrophes intentional; do not tempt fate
+sub CORE'foo'bar { 43 }
+is CORE::print::foo, 43, 'CORE::print::foo is not CORE::print ::foo';
+is scalar eval "CORE::foo'bar", 43, "CORE::foo'bar is not an error";
+
 # bug #71748
 eval q{
 	$_ = "";
@@ -353,11 +371,142 @@ eval q{
 };
 is($@, "", "multiline whitespace inside substitute expression");
 
-# Add new tests HERE:
+eval '@A =~ s/a/b/; # compilation error
+      sub tahi {}
+      sub rua;
+      sub toru ($);
+      sub wha :lvalue;
+      sub rima ($%&*$&*\$%\*&$%*&) :method;
+      sub ono :lvalue { die }
+      sub whitu (_) { die }
+      sub waru ($;) :method { die }
+      sub iwa { die }
+      BEGIN { }';
+is $::{tahi}, undef, 'empty sub decl ignored after compilation error';
+is $::{rua}, undef, 'stub decl ignored after compilation error';
+is $::{toru}, undef, 'stub+proto decl ignored after compilation error';
+is $::{wha}, undef, 'stub+attr decl ignored after compilation error';
+is $::{rima}, undef, 'stub+proto+attr ignored after compilation error';
+is $::{ono}, undef, 'sub decl with attr ignored after compilation error';
+is $::{whitu}, undef, 'sub decl w proto ignored after compilation error';
+is $::{waru}, undef, 'sub w attr+proto ignored after compilation error';
+is $::{iwa}, undef, 'non-empty sub decl ignored after compilation error';
+is *BEGIN{CODE}, undef, 'BEGIN leaves no stub after compilation error';
+
+$test = $test + 1;
+"ok $test - format inside re-eval" =~ /(?{
+    format =
+@<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+$_
+.
+write
+}).*/;
+
+eval '
+"${;
+
+=pod
+
+=cut
+
+}";
+';
+is $@, "", 'pod inside string in string eval';
+"${;
+
+=pod
+
+=cut
+
+}";
+print "ok ", ++$test, " - pod inside string outside of string eval\n";
+
+like "blah blah blah\n", qr/${\ <<END
+blah blah blah
+END
+ }/, 'here docs in multiline quoted construct';
+like "blah blah blah\n", eval q|qr/${\ <<END
+blah blah blah
+END
+ }/|, 'here docs in multiline quoted construct in string eval';
+
+# Unterminated here-docs in subst in eval; used to crash
+eval 's/${<<END}//';
+eval 's//${<<END}/';
+print "ok ", ++$test, " - unterminated here-docs in s/// in string eval\n";
+
+sub 'Hello'_he_said (_);
+is prototype "Hello::_he_said", '_', 'initial tick in sub declaration';
+
+{
+    my @x = 'string';
+    is(eval q{ "$x[0]->strung" }, 'string->strung',
+	'literal -> after an array subscript within ""');
+    @x = ['string'];
+    # this used to give "string"
+    like("$x[0]-> [0]", qr/^ARRAY\([^)]*\)-> \[0]\z/,
+	'literal -> [0] after an array subscript within ""');
+}
+
+eval 'no if $] >= 5.17.4 warnings => "deprecated"';
+is 1,1, ' no crash for "no ... syntax error"';
+
+for my $pkg(()){}
+$pkg = 3;
+is $pkg, 3, '[perl #114942] for my $foo()){} $foo';
+
+# Check that format 'Foo still works after removing the hack from
+# force_word
+$test++;
+format 'one =
+ok @<< - format 'foo still works
+$test
+.
+{
+    local $~ = "one";
+    write();
+}
+
+$test++;
+format ::two =
+ok @<< - format ::foo still works
+$test
+.
+{
+    local $~ = "two";
+    write();
+}
+
+for(__PACKAGE__) {
+    eval '$_=42';
+    is $_, 'main', '__PACKAGE__ is read-only';
+}
+
+$file = __FILE__;
+BEGIN{ ${"_<".__FILE__} = \1 }
+is __FILE__, $file,
+    'no __FILE__ corruption when setting CopFILESV to a ref';
+
+eval 'Fooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo'
+    .'oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo'
+    .'oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo'
+    .'oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo'
+    .'oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo'
+    .'ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo';
+like $@, "^Identifier too long at ", 'ident buffer overflow';
+
+eval 'for my a1b $i (1) {}';
+# ng: 'Missing $ on loop variable'
+like $@, "^No such class a1b at ", 'TYPE of my of for statement';
+
+# Used to crash [perl #123542]
+eval 's /${<>{}) //';
+
+# Add new tests HERE (above this line)
 
 # bug #74022: Loop on characters in \p{OtherIDContinue}
 # This test hangs if it fails.
-eval chr 0x387;
+eval chr 0x387;   # forces loading of utf8.pm
 is(1,1, '[perl #74022] Parser looping on OtherIDContinue chars');
 
 # More awkward tests for #line. Keep these at the end, as they will screw
@@ -371,6 +520,11 @@ sub check ($$$) {
 }
 
 my $this_file = qr/parser\.t(?:\.[bl]eb?)?$/;
+#line 3
+1 unless
+1;
+check($this_file, 5, "[perl #118931]");
+
 #line 3
 check($this_file, 3, "bare line");
 
@@ -437,15 +591,63 @@ eval <<'EOSTANZA'; die $@ if $@;
 check(qr/^Great hail!.*no more\.$/, 61, "Overflow both small buffer checks");
 EOSTANZA
 
-{
-    my @x = 'string';
-    is(eval q{ "$x[0]->strung" }, 'string->strung',
-	'literal -> after an array subscript within ""');
-    @x = ['string'];
-    # this used to give "string"
-    like("$x[0]-> [0]", qr/^ARRAY\([^)]*\)-> \[0]\z/,
-	'literal -> [0] after an array subscript within ""');
+sub check_line ($$) {
+    my ($line, $name) =  @_;
+    my (undef, undef, $got_line) = caller;
+    is ($got_line, $line, $name);
 }
+
+#line 531 parser.t
+<<EOU; check_line(531, 'on same line as heredoc');
+EOU
+s//<<EOV/e if 0;
+EOV
+check_line(535, 'after here-doc in quotes');
+<<EOW; <<EOX;
+${check_line(537, 'first line of interp in here-doc');;
+  check_line(538, 'second line of interp in here-doc');}
+EOW
+${check_line(540, 'first line of interp in second here-doc on same line');;
+  check_line(541, 'second line of interp in second heredoc on same line');}
+EOX
+eval <<'EVAL';
+#line 545
+"${<<EOY; <<EOZ}";
+${check_line(546, 'first line of interp in here-doc in quotes in eval');;
+  check_line(547, 'second line of interp in here-doc in quotes in eval');}
+EOY
+${check_line(549, '1st line of interp in 2nd hd, same line in q in eval');;
+  check_line(550, '2nd line of interp in 2nd hd, same line in q in eval');}
+EOZ
+EVAL
+
+time
+#line 42
+;check_line(42, 'line number after "nullary\n#line"');
+
+"${
+#line 53
+_}";
+check_line(54, 'line number after qq"${#line}"');
+
+#line 24
+"
+${check_line(25, 'line number inside qq/<newline>${...}/')}";
+
+<<"END";
+${;
+#line 625
+}
+END
+check_line(627, 'line number after heredoc containing #line');
+
+#line 638
+<<ENE . ${
+
+ENE
+"bar"};
+check_line(642, 'line number after ${expr} surrounding heredoc body');
+
 
 __END__
 # Don't add new tests HERE. See note above

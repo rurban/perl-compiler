@@ -5,12 +5,9 @@
 #
 
 BEGIN {
-    *main::curr_test = sub { die "undef" };
-}
-
-INIT {
-    unshift @INC, "./lib";
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+    require "test.pl";
     plan(tests => 28);
 }
 
@@ -124,20 +121,9 @@ is(takeuchi($x, $y, $z), $z + 1, "takeuchi($x, $y, $z) == $z + 1");
 		     stderr => 1,
 		     prog => q{$d=0; $e=1; sub c { ++$d; if ($d > 66000) { $e=0 } else { c(); c() unless $d % 32768 } --$d } c(); exit $e});
     };
-
-    if ($@) {
-        # $@ will be undef in this case so the is $r, '' will red-herringly fail, so catch that here and give a more usful error
-
-        # [issue 211]
-        # we could die *but* then the compiled $@ is somehow magically output and then this output happens, sometimes before the TAP starts when the binary is run under prove
-        # If we just print to STDERR the $@ does not magically get output but this output still happens before TAP starts when the binary is run under prove
-        # thus we print (so that the output we expect happens where we expect it all the time) and exit 1 (so that we'll know the test needs attention)
-        print "\n# could not test recursion since runperl() failed:\n#\t$@\n";
-        exit 1;
-    }
-
   SKIP: {
-      skip("Out of memory -- increase your data/heap?", 2) if $r =~ /Out of memory/i;
+      skip("Out of memory -- increase your data/heap?", 2)
+	  if $r =~ /Out of memory/i;
       is($r, '', "64K deep recursion - no output expected");
       is($?, 0, "64K deep recursion - no coredump expected");
   }

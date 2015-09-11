@@ -1,14 +1,16 @@
 #!./perl
 
-use Errno;
-INIT {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    eval 'use Errno';
+    die $@ if $@ and !is_miniperl();
 }
 
 use strict 'vars';
 
-print "1..21\n";
+print "1..24\n";
 
 my $foo = 'STDOUT';
 print $foo "ok 1\n";
@@ -16,8 +18,8 @@ print $foo "ok 1\n";
 print "ok 2\n","ok 3\n","ok 4\n";
 print STDOUT "ok 5\n";
 
-open(my $foo_fh,">-");
-print $foo_fh "ok 6\n";
+open(foo,">-");
+print foo "ok 6\n";
 
 printf "ok %d\n",7;
 printf("ok %d\n",8);
@@ -43,11 +45,15 @@ print @x,"14\nok",@y;
 
 $\ = '';
 
-$! = 0;
-no warnings 'unopened';
-print NONEXISTENT "foo";
-print "not " if ($! != &Errno::EBADF);
-print "ok 19\n";
+if (!exists &Errno::EBADF) {
+    print "ok 19 # skipped: no EBADF\n";
+} else {
+    $! = 0;
+    no warnings 'unopened';
+    print NONEXISTENT "foo";
+    print "not " if ($! != &Errno::EBADF);
+    print "ok 19\n";
+}
 
 {
     # Change 26009: pp_print didn't extend the stack
@@ -60,3 +66,13 @@ print "ok 19\n";
     map print(+()), ('')x68;
     print "ok 21\n";
 }
+
+# printf with %n
+my $n = "abc";
+printf "ok 22%n - not really a test; just printing\n", substr $n,1,1;
+print "not " x ($n ne "a5c") . "ok 23 - printf with %n (got $n)\n";
+
+# [perl #77094] printf with empty list
+() = ("not ");
+printf +();
+print "ok 24 - printf +() does not steal stack items\n";

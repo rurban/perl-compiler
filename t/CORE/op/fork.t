@@ -3,19 +3,39 @@
 # tests for both real and emulated fork()
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
     require Config;
     skip_all('no fork')
 	unless ($Config::Config{d_fork} or $Config::Config{d_pseudofork});
 }
 
-skip_all('fork/status problems on MPE/iX')
-    if $^O eq 'mpeix';
-
 $|=1;
 
 run_multiple_progs('', \*DATA);
+
+my $shell = $ENV{SHELL} || '';
+SKIP: {
+    skip "This test can only be run under bash or zsh"
+        unless $shell =~ m{/(?:ba|z)sh$};
+    my $probe = qx{
+        $shell -c 'ulimit -u 1 2>&1 && echo good'
+    };
+    chomp $probe;
+    skip "Can't set ulimit -u on this system: $probe"
+	unless $probe eq 'good';
+
+    my $out = qx{
+        $shell -c 'ulimit -u 1; exec $^X -e "
+            print((() = fork) == 1 ? q[ok] : q[not ok])
+        "'
+    };
+    # perl #117141
+    skip "fork() didn't fail, maybe you're running as root", 1
+      if $out eq "okok";
+    is($out, "ok", "bash/zsh-only test for 'fork' returning undef on failure");
+}
 
 done_testing();
 
@@ -271,6 +291,9 @@ parent got 10752
 $| = 1;
 $\ = "\n";
 my $echo = 'echo';
+if ($^O =~ /android/) {
+    $echo = q{sh -c 'echo $@' -- };
+}
 if ($pid = fork) {
     waitpid($pid,0);
     print "parent got $?"
@@ -474,7 +497,7 @@ if (my $pid = fork) {
 }
 else {
     $SIG{TERM} = sub { print "2\n" };
-    sleep 3;
+    sleep 10;
     print "3\n";
 }
 EXPECT
@@ -482,3 +505,17 @@ EXPECT
 2
 3
 4
+########
+# this used to SEGV. RT # 121721
+$|=1;
+&main;
+sub main {
+    if (my $pid = fork) {
+	waitpid($pid, 0);
+    }
+    else {
+        print "foo\n";
+    }
+}
+EXPECT
+foo

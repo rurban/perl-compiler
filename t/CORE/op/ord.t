@@ -1,11 +1,12 @@
 #!./perl
 
-INIT {
-    unshift @INC, "./lib";
-    require 't/CORE/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib); # ../lib needed for test.deparse
+    require "test.pl";
 }
 
-plan(tests => 35);
+plan tests => 35;
 
 # compile time evaluation
 
@@ -29,7 +30,6 @@ is(ord(chr($x)), $x, "runtime chr $x");
 
 is(ord("\x{1234}"), 0x1234, 'compile time ord \x{....}');
 
-# perlcc issue #162 https://code.google.com/p/perl-compiler/issues/detail?id=162
 $x = "\x{1234}";
 is(ord($x), 0x1234, 'runtime ord \x{....}');
 

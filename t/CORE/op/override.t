@@ -1,48 +1,48 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
-    # help B
-    use Tie::Hash::NamedCapture;
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    require Config; # load these before we mess with *CORE::GLOBAL::require
+    require 'Config_heavy.pl'; # since runperl will need them
 }
 
-plan tests => 26;
+plan tests => 35;
 
 #
 # This file tries to test builtin override using CORE::GLOBAL
 #
 my $dirsep = "/";
 
-INIT { package Foo; *main::getlogin = sub { "kilroy"; } }
+BEGIN { package Foo; *main::getlogin = sub { "kilroy"; } }
 
-eval q/is( getlogin, "kilroy" )/;
+is( getlogin, "kilroy" );
 
 my $t = 42;
-INIT { *CORE::GLOBAL::time = sub () { $t; } }
+BEGIN { *CORE::GLOBAL::time = sub () { $t; } }
 
-eval q/is( 45, time + 3 )/;
+is( 45, time + 3 );
 
 #
 # require has special behaviour
 #
 my $r;
-INIT { *CORE::GLOBAL::require = sub { $r = shift; 1; } }
+BEGIN { *CORE::GLOBAL::require = sub { $r = shift; 1; } }
 
-eval q/require Foo/;
-is( $r, "Foo.pm", 'Foo.pm' );
+require Foo;
+is( $r, "Foo.pm" );
 
-
-eval q/require Foo::Bar/;
+require Foo::Bar;
 is( $r, join($dirsep, "Foo", "Bar.pm") );
 
-eval q/require 'Foo'/;
-is( $r, "Foo", 'Foo' );
+require 'Foo';
+is( $r, "Foo" );
 
-eval q/require 5.006/;
-is( $r, "5.006", q/5.006/ );
+require 5.006;
+is( $r, "5.006" );
 
-eval q/require v5.6/;
+require v5.6;
 ok( abs($r - 5.006) < 0.001 && $r eq "\x05\x06" );
 
 eval "use Foo";
@@ -51,8 +51,29 @@ is( $r, "Foo.pm" );
 eval "use Foo::Bar";
 is( $r, join($dirsep, "Foo", "Bar.pm") );
 
-eval "use 5.006";
-is( $r, "5.006", q/5.006/ );
+{
+    my @r;
+    local *CORE::GLOBAL::require = sub { push @r, shift; 1; };
+    eval "use 5.006";
+    like( " @r ", qr " 5\.006 " );
+}
+
+{
+    local $_ = 'foo.pm';
+    require;
+    is( $r, 'foo.pm' );
+}
+
+{
+    BEGIN {
+        # Can’t do ‘no warnings’ with CORE::GLOBAL::require overridden. :-)
+        CORE::require warnings;
+        unimport warnings 'experimental::lexical_topic';
+    }
+    my $_ = 'bar.pm';
+    require;
+    is( $r, 'bar.pm' );
+}
 
 # localizing *CORE::GLOBAL::foo should revert to finding CORE::foo
 {
@@ -67,60 +88,52 @@ is( $r, "5.006", q/5.006/ );
 #
 
 $r = 11;
-INIT { *CORE::GLOBAL::readline = sub (;*) { ++$r }; }
-eval q/
-is( <FH>	, 12, 12 );
-is( <$fh>	, 13, 13 );
+BEGIN { *CORE::GLOBAL::readline = sub (;*) { ++$r }; }
+is( <FH>	, 12 );
+is( <$fh>	, 13 );
 my $pad_fh;
-is( <$pad_fh>	, 14, 14 );
-/;
+is( <$pad_fh>	, 14 );
 
 # Non-global readline() override
-INIT { *Rgs::readline = sub (;*) { --$r }; }
-eval q/{
+BEGIN { *Rgs::readline = sub (;*) { --$r }; }
+{
     package Rgs;
-    ::is( <FH>	, 13, 13 );
-    ::is( <$fh>	, 12, 12 );
-    ::is( <$pad_fh>	, 11, 11 );
-}/;
+    ::is( <FH>	, 13 );
+    ::is( <$fh>	, 12 );
+    ::is( <$pad_fh>	, 11 );
+}
 
 # Global readpipe() override
-INIT { *CORE::GLOBAL::readpipe = sub ($) { "$_[0] " . --$r }; }
-eval q|
+BEGIN { *CORE::GLOBAL::readpipe = sub ($) { "$_[0] " . --$r }; }
 is( `rm`,	    "rm 10", '``' );
 is( qx/cp/,	    "cp 9", 'qx' );
-|;
 
 # Non-global readpipe() override
-INIT { *Rgs::readpipe = sub ($) { ++$r . " $_[0]" }; }
-eval q|{
+BEGIN { *Rgs::readpipe = sub ($) { ++$r . " $_[0]" }; }
+{
     package Rgs;
     ::is( `rm`,		  "10 rm", '``' );
     ::is( qx/cp/,	  "11 cp", 'qx' );
-}|;
+}
 
 # Verify that the parsing of overridden keywords isn't messed up
 # by the indirect object notation
 {
     local $SIG{__WARN__} = sub {
-	::like( $_[0], qr/^ok overriden at/, "like" );
+	::like( $_[0], qr/^ok overriden at/ );
     };
-    INIT { *OverridenWarn::warn = sub { CORE::warn "@_ overriden"; }; }
+    BEGIN { *OverridenWarn::warn = sub { CORE::warn "@_ overriden"; }; }
     package OverridenWarn;
     sub foo { "ok" }
-    eval q|
     warn( OverridenWarn->foo() );
     warn OverridenWarn->foo();
-    |;
 }
-INIT { *OverridenPop::pop = sub { ::is( $_[0][0], "ok" ) }; }
+BEGIN { *OverridenPop::pop = sub { ::is( $_[0][0], "ok" ) }; }
 {
     package OverridenPop;
     sub foo { [ "ok" ] }
-    eval q|
     pop( OverridenPop->foo() );
     pop OverridenPop->foo();
-    |;
 }
 
 {
@@ -131,5 +144,41 @@ INIT { *OverridenPop::pop = sub { ::is( $_[0][0], "ok" ) }; }
         require 5;
         require Text::ParseWords;
     };
-    is $@, '', '$@ empty';
+    is $@, '';
 }
+
+# Constant inlining should not countermand "use subs" overrides
+BEGIN { package other; *::caller = \&::caller }
+sub caller() { 42 }
+caller; # inline the constant
+is caller, 42, 'constant inlining does not undo "use subs" on keywords';
+
+is runperl(prog => 'sub CORE::GLOBAL::do; do file; print qq-ok\n-'),
+  "ok\n",
+  'no crash with CORE::GLOBAL::do stub';
+is runperl(prog => 'sub CORE::GLOBAL::glob; glob; print qq-ok\n-'),
+  "ok\n",
+  'no crash with CORE::GLOBAL::glob stub';
+is runperl(prog => 'sub CORE::GLOBAL::require; require re; print qq-o\n-'),
+  "o\n",
+  'no crash with CORE::GLOBAL::require stub';
+
+like runperl(prog => 'use constant foo=>1; '
+                    .'BEGIN { *{q|CORE::GLOBAL::readpipe|} = \&{q|foo|};1}'
+                    .'warn ``',
+             stderr => 1),
+     qr/Too many arguments/,
+    '`` does not ignore &CORE::GLOBAL::readpipe aliased to a constant';
+like runperl(prog => 'use constant foo=>1; '
+                    .'BEGIN { *{q|CORE::GLOBAL::readline|} = \&{q|foo|};1}'
+                    .'warn <a>',
+             stderr => 1),
+     qr/Too many arguments/,
+    '<> does not ignore &CORE::GLOBAL::readline aliased to a constant';
+
+is runperl(prog => 'use constant t=>42; '
+                  .'BEGIN { *{q|CORE::GLOBAL::time|} = \&{q|t|};1}'
+                  .'print time, chr 10',
+          stderr => 1),
+   "42\n",
+   'keywords respect global constant overrides';

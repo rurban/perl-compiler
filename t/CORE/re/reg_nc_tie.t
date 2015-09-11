@@ -1,7 +1,10 @@
 #!./perl
 
 BEGIN {
-    require q(t/CORE/test.pl);
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_if_miniperl("no dynamic loading on miniperl, no Tie::Hash::NamedCapture");
 }
 
 # Do a basic test on all the tied methods of Tie::Hash::NamedCapture

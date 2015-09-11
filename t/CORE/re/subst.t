@@ -1,36 +1,38 @@
 #!./perl -w
 
 BEGIN {
-    require q(t/CORE/test.pl);
-    use Config;
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require Config; import Config;
+    require './test.pl';
 }
 
-plan( tests => 176 );
+plan( tests => 236 );
 
 $_ = 'david';
-$a = s/david/rules/r; # fix for poor editors /
-ok( $_ eq 'david' && $a eq 'rules', 'non-destructive substitute' ); 
+$a = s/david/rules/r;
+ok( $_ eq 'david' && $a eq 'rules', 'non-destructive substitute' );
 
-$a = "david" =~ s/david/rules/r; # fix for poor editors /
+$a = "david" =~ s/david/rules/r;
 ok( $a eq 'rules', 's///r with constant' );
 
-$a = "david" =~ s/david/"is"."great"/er; # fix for poor editors /
+$a = "david" =~ s/david/"is"."great"/er;
 ok( $a eq 'isgreat', 's///er' );
 
-$a = "daviddavid" =~ s/david/cool/gr; # fix for poor editors /
+$a = "daviddavid" =~ s/david/cool/gr;
 ok( $a eq 'coolcool', 's///gr' );
 
 $a = 'david';
-$b = $a =~ s/david/sucks/r =~ s/sucks/rules/r; # fix for poor editors /
+$b = $a =~ s/david/sucks/r =~ s/sucks/rules/r;
 ok( $a eq 'david' && $b eq 'rules', 'chained s///r' );
 
 $a = 'david';
-$b = $a =~ s/xxx/sucks/r; # fix for poor editors /
+$b = $a =~ s/xxx/sucks/r;
 ok( $a eq 'david' && $b eq 'david', 'non matching s///r' );
 
 $a = 'david';
 for (0..2) {
-    ok( 'david' =~ s/$a/rules/ro eq 'rules', 's///ro '.$_ ); # fix for poor editors /
+    ok( 'david' =~ s/$a/rules/ro eq 'rules', 's///ro '.$_ );
 }
 
 $a = 'david';
@@ -40,11 +42,11 @@ like( $@, qr{Using !~ with s///r doesn't make sense}, 's///r !~ operator gives e
 {
         no warnings 'uninitialized';
         $a = undef;
-        $b = $a =~ s/left/right/r; # fix for poor editors /
+        $b = $a =~ s/left/right/r;
         ok ( !defined $a && !defined $b, 's///r with undef input' );
 
         use warnings;
-        warning_like(sub { $b = $a =~ s/left/right/r }, # fix for poor editors /
+        warning_like(sub { $b = $a =~ s/left/right/r },
 		     qr/^Use of uninitialized value/,
 		     's///r Uninitialized warning');
 
@@ -55,29 +57,29 @@ like( $@, qr{Using !~ with s///r doesn't make sense}, 's///r !~ operator gives e
 }
 
 $a = '';
-$b = $a =~ s/david/rules/r; # fix for poor editors /
+$b = $a =~ s/david/rules/r;
 ok( $a eq '' && $b eq '', 's///r on empty string' );
 
 $_ = 'david';
-@b = s/david/rules/r; # fix for poor editors /
+@b = s/david/rules/r;
 ok( $_ eq 'david' && $b[0] eq 'rules', 's///r in list context' );
 
 # Magic value and s///r
 require Tie::Scalar;
 tie $m, 'Tie::StdScalar';  # makes $a magical
 $m = "david";
-$b = $m =~ s/david/rules/r; # fix for poor editors /
+$b = $m =~ s/david/rules/r;
 ok( $m eq 'david' && $b eq 'rules', 's///r with magic input' );
 
-$m = $b =~ s/rules/david/r; # fix for poor editors /
+$m = $b =~ s/rules/david/r;
 ok( defined tied($m), 's///r magic isn\'t lost' );
 
-$b = $m =~ s/xxx/yyy/r; # fix for poor editors /
+$b = $m =~ s/xxx/yyy/r;
 ok( ! defined tied($b), 's///r magic isn\'t contagious' );
 
-my $ref = \("aaa" =~ s/aaa/bbb/r); # fix for poor editors /
+my $ref = \("aaa" =~ s/aaa/bbb/r);
 is (Internals::SvREFCNT($$ref), 1, 's///r does not leak');
-$ref = \("aaa" =~ s/aaa/bbb/rg); # fix for poor editors /
+$ref = \("aaa" =~ s/aaa/bbb/rg);
 is (Internals::SvREFCNT($$ref), 1, 's///rg does not leak');
 
 $x = 'foo';
@@ -666,8 +668,96 @@ is($name, "cis", q[#22351 bug with 'e' substitution modifier]);
     }
 }
 
-fresh_perl_is( '$_=q(foo);s/(.)\G//g;print' => 'foo', '[perl #69056] positive GPOS regex segfault' );
-fresh_perl_is( '$_="abcef"; s/bc|(.)\G(.)/$1 ? "[$1-$2]" : "XX"/ge; print' => 'aXX[c-e][e-f]f', 'positive GPOS regex substitution failure' );
+fresh_perl_is( '$_=q(foo);s/(.)\G//g;print' => 'foo', {},
+                '[perl #69056] positive GPOS regex segfault' );
+fresh_perl_is( '$_="abcdef"; s/bc|(.)\G(.)/$1 ? "[$1-$2]" : "XX"/ge; print' => 'aXXdef', {},
+                'positive GPOS regex substitution failure (#69056, #114884)' );
+fresh_perl_is( '$_="abcdefg123456"; s/(?<=...\G)?(\d)/($1)/; print' => 'abcdefg(1)23456', {},
+                'positive GPOS lookbehind regex substitution failure #114884' );
+
+# s/..\G//g should stop after the first iteration, rather than working its
+# way backwards, or looping infinitely, or SEGVing (for example)
+{
+    my ($s, $count);
+
+    # use a function to disable constant folding
+    my $f = sub { substr("789", 0, $_[0]) };
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d\G/7/g;
+    is($count, 1, "..\\G count (short)");
+    is($s, "12756", "..\\G s (short)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d\G/78/g;
+    is($count, 1, "..\\G count (equal)");
+    is($s, "127856", "..\\G s (equal)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d\G/789/g;
+    is($count, 1, "..\\G count (long)");
+    is($s, "1278956", "..\\G s (long)");
+
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d\G/$f->(1)/eg;
+    is($count, 1, "..\\G count (short code)");
+    is($s, "12756", "..\\G s (short code)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d\G/$f->(2)/eg;
+    is($count, 1, "..\\G count (equal code)");
+    is($s, "127856", "..\\G s (equal code)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d\G/$f->(3)/eg;
+    is($count, 1, "..\\G count (long code)");
+    is($s, "1278956", "..\\G s (long code)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d(?=\d\G)/7/g;
+    is($count, 1, "..\\G count (lookahead short)");
+    is($s, "17456", "..\\G s (lookahead short)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d(?=\d\G)/78/g;
+    is($count, 1, "..\\G count (lookahead equal)");
+    is($s, "178456", "..\\G s (lookahead equal)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d(?=\d\G)/789/g;
+    is($count, 1, "..\\G count (lookahead long)");
+    is($s, "1789456", "..\\G s (lookahead long)");
+
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d(?=\d\G)/$f->(1)/eg;
+    is($count, 1, "..\\G count (lookahead short code)");
+    is($s, "17456", "..\\G s (lookahead short code)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d(?=\d\G)/$f->(2)/eg;
+    is($count, 1, "..\\G count (lookahead equal code)");
+    is($s, "178456", "..\\G s (lookahead equal code)");
+
+    $s = '123456';
+    pos($s) = 4;
+    $count = $s =~ s/\d\d(?=\d\G)/$f->(3)/eg;
+    is($count, 1, "..\\G count (lookahead long code)");
+    is($s, "1789456", "..\\G s (lookahead long code)");
+}
+
 
 # [perl #71470] $var =~ s/$qr//e calling get-magic on $_ as well as $var
 {
@@ -744,6 +834,8 @@ fresh_perl_is( '$_="abcef"; s/bc|(.)\G(.)/$1 ? "[$1-$2]" : "XX"/ge; print' => 'a
     # when substituted with a UTF8 replacement string, due to
     # magic getting called multiple times, and pointers now pointing
     # to stale/freed strings
+    # The original fix for this caused infinite loops for non- or cow-
+    # strings, so we test those, too.
     package FOO;
     my $fc;
     sub TIESCALAR { bless [ "abcdefgh" ] }
@@ -755,4 +847,158 @@ fresh_perl_is( '$_="abcef"; s/bc|(.)\G(.)/$1 ? "[$1-$2]" : "XX"/ge; print' => 'a
     $s =~ s/..../\x{101}/;
     ::is($fc, 1, "tied UTF8 stuff FETCH count");
     ::is("$s", "\x{101}efgh", "tied UTF8 stuff");
+
+    ::watchdog(300);
+    $fc = 0;
+    $s = *foo;
+    $s =~ s/..../\x{101}/;
+    ::is($fc, 1, '$tied_glob =~ s/non-utf8/utf8/ fetch count');
+    ::is("$s", "\x{101}::foo", '$tied_glob =~ s/non-utf8/utf8/ result');
+    $fc = 0;
+    $s = *foo;
+    $s =~ s/(....)/\x{101}/g;
+    ::is($fc, 1, '$tied_glob =~ s/(non-utf8)/utf8/g fetch count');
+    ::is("$s", "\x{101}\x{101}o",
+         '$tied_glob =~ s/(non-utf8)/utf8/g result');
+    $fc = 0;
+    $s = "\xff\xff\xff\xff\xff";
+    $s =~ s/..../\x{101}/;
+    ::is($fc, 1, '$tied_latin1 =~ s/non-utf8/utf8/ fetch count');
+    ::is("$s", "\x{101}\xff", '$tied_latin1 =~ s/non-utf8/utf8/ result');
+    $fc = 0;
+    { package package_name; tied($s)->[0] = __PACKAGE__ };
+    $s =~ s/..../\x{101}/;
+    ::is($fc, 1, '$tied_cow =~ s/non-utf8/utf8/ fetch count');
+    ::is("$s", "\x{101}age_name", '$tied_cow =~ s/non-utf8/utf8/ result');
+    $fc = 0;
+    $s = \1;
+    $s =~ s/..../\x{101}/;
+    ::is($fc, 1, '$tied_ref =~ s/non-utf8/utf8/ fetch count');
+    ::like("$s", qr/^\x{101}AR\(0x.*\)\z/,
+           '$tied_ref =~ s/non-utf8/utf8/ result');
 }
+
+# RT #97954
+{
+    my $count;
+
+    sub bam::DESTROY {
+	--$count;
+    }
+
+    my $z_zapp = bless [], 'bam';
+    ++$count;
+
+    is($count, 1, '1 object');
+    is($z_zapp =~ s/.*/R/r, 'R', 'substitution happens');
+    is(ref $z_zapp, 'bam', 'still 1 object');
+    is($count, 1, 'still 1 object');
+    undef $z_zapp;
+    is($count, 0, 'now 0 objects');
+
+    $z_zapp = bless [], 'bam';
+    ++$count;
+
+    is($count, 1, '1 object');
+    like($z_zapp =~ s/./R/rg, qr/\AR{8,}\z/, 'substitution happens');
+    is(ref $z_zapp, 'bam', 'still 1 object');
+    is($count, 1, 'still 1 object');
+    undef $z_zapp;
+    is($count, 0, 'now 0 objects');
+}
+
+is(*bam =~ s/\*//r, 'main::bam', 'Can s///r a tyepglob');
+is(*bam =~ s/\*//rg, 'main::bam', 'Can s///rg a tyepglob');
+
+{
+ sub cowBug::TIESCALAR { bless[], 'cowBug' }
+ sub cowBug::FETCH { __PACKAGE__ }
+ sub cowBug::STORE{}
+ tie my $kror, cowBug =>;
+ $kror =~ s/(?:)/""/e;
+}
+pass("s/// on tied var returning a cow");
+
+# a test for 6502e08109cd003b2cdf39bc94ef35e52203240b
+# previously this would segfault
+
+{
+    my $s = "abc";
+    eval { $s =~ s/(.)/die/e; };
+    like($@, qr/Died at/, "s//die/e");
+}
+
+
+# Test problems with constant replacement optimisation
+# [perl #26986] logop in repl resulting in incorrect optimisation
+"g" =~ /(.)/;
+@l{'a'..'z'} = 'A'..':';
+$_ = "hello";
+{ s/(.)/$l{my $a||$1}/g }
+is $_, "HELLO",
+  'logop in s/// repl does not result in "constant" repl optimisation';
+# Aliases to match vars
+"g" =~ /(.)/;
+$_ = "hello";
+{
+    local *a = *1;
+    s/(.)\1/$a/g;
+}
+is $_, 'helo', 's/pat/$alias_to_match_var/';
+"g" =~ /(.)/;
+$_ = "hello";
+{
+    local *a = *1;
+    s/e(.)\1/a$a/g;
+}
+is $_, 'halo', 's/pat/foo$alias_to_match_var/';
+# Last-used pattern containing re-evals that modify "constant" rhs
+{
+    local *a;
+    $x = "hello";
+    $x =~ /(?{*a = \"a"})./;
+    undef *a;
+    $x =~ s//$a/g;
+    is $x, 'aaaaa',
+	'last-used pattern disables constant repl optimisation';
+}
+
+
+$_ = "\xc4\x80";
+$a = "";
+utf8::upgrade $a;
+$_ =~ s/$/$a/;
+is $_, "\xc4\x80", "empty utf8 repl does not result in mangled utf8";
+
+$@ = "\x{30cb}eval 18";
+$@ =~ s/eval \d+/eval 11/;
+is $@, "\x{30cb}eval 11",
+  'loading utf8 tables does not interfere with matches against $@';
+
+$reftobe = 3;
+$reftobe =~ s/3/$reftobe=\ 3;4/e;
+is $reftobe, '4', 'clobbering target with ref in s//.../e';
+$locker{key} = 3;
+SKIP:{
+    skip "no Hash::Util under miniperl", 2 if is_miniperl;
+    require Hash::Util;
+    eval {
+	$locker{key} =~ s/3/
+	    $locker{key} = 3;
+	    &Hash::Util::lock_hash(\%locker);4
+	/e;
+    };
+    is $locker{key}, '3', 'locking target in $hash{key} =~ s//.../e';
+    like $@, qr/^Modification of a read-only value/, 'err msg';
+}
+delete $::{does_not_exist}; # just in case
+eval { no warnings; $::{does_not_exist}=~s/(?:)/*{"does_not_exist"}; 4/e };
+like $@, qr/^Modification of a read-only value/,
+    'vivifying stash elem in $that::{elem} =~ s//.../e';
+
+# COWs should not be exempt from read-only checks.  s/// croaks on read-
+# only values even when the pattern does not match, but it was not doing so
+# for COWs.
+eval { for (__PACKAGE__) { s/b/c/; } };
+like $@, qr/^Modification of a read-only value/,
+    'read-only COW =~ s/does not match// should croak';

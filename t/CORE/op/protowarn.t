@@ -1,11 +1,17 @@
 #!./perl
 
-BEGIN { require 't/CORE/test.pl' }
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+}
 
 use strict;
 use warnings;
 
-plan( tests => 12 );
+BEGIN {
+    require 'test.pl';
+    plan( tests => 12 );
+}
 
 use vars qw{ @warnings $sub $warn };
 
@@ -24,63 +30,81 @@ sub no_warnings_ok {
     @warnings = ();
 }
 
-$SIG{'__WARN__'} = sub { push @warnings, @_ };
-$| = 1;
+BEGIN {
+    $SIG{'__WARN__'} = sub { push @warnings, @_ };
+    $| = 1;
+}
 
-@warnings = ();
+BEGIN { @warnings = () }
 
-eval q/$sub = sub (x) { }/;
-one_warning_ok();
+$sub = sub (x) { };
 
+BEGIN {
+    one_warning_ok;
+}
 
-eval q{
+{
     no warnings 'syntax';
     $sub = sub (x) { };
-};
+}
 
-no_warnings_ok;
+BEGIN {
+    no_warnings_ok;
+}
 
-
-eval q{
+{
     no warnings 'illegalproto';
     $sub = sub (x) { };
-};
+}
 
-no_warnings_ok;
+BEGIN {
+    no_warnings_ok;
+}
 
-eval q{
+{
     no warnings 'syntax';
     use warnings 'illegalproto';
     $sub = sub (x) { };
-};
+}
 
-one_warning_ok;
+BEGIN {
+    one_warning_ok;
+}
 
-$warn = q{Prototype after '@' for};
-eval q/$sub = sub (@$) { }/;
+BEGIN {
+    $warn = q{Prototype after '@' for};
+}
 
-one_warning_ok;
+$sub = sub (@$) { };
 
-eval q{
+BEGIN {
+    one_warning_ok;
+}
+
+{
     no warnings 'syntax';
     $sub = sub (@$) { };
-};
+}
 
-no_warnings_ok;
+BEGIN {
+    no_warnings_ok;
+}
 
-
-eval q{
+{
     no warnings 'illegalproto';
     $sub = sub (@$) { };
-};
+}
 
-no_warnings_ok;
+BEGIN {
+    no_warnings_ok;
+}
 
-eval q{
+{
     no warnings 'syntax';
     use warnings 'illegalproto';
     $sub = sub (@$) { };
-};
+}
 
-one_warning_ok;
-
+BEGIN {
+    one_warning_ok;
+}

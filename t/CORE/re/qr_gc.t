@@ -1,11 +1,12 @@
 #!./perl -w
 
 BEGIN {
-    require q(t/CORE/test.pl);
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
     undef &Regexp::DESTROY;
 }
 
-skip_all "perlcc re-eval doesnt call Regexp::DESTROY #328" if is_perlcc_compiled;
 plan tests => 2;
 
 my $destroyed;

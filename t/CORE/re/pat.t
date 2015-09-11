@@ -2,9 +2,7 @@
 #
 # This is a home for regular expression tests that don't fit into
 # the format supported by re/regexp.t.  If you want to add a test
-# that does fit that format, add it to re/re_tests, not here.  Tests for \N
-# should be added here because they are treated as single quoted strings
-# there, which means they avoid the lexer which otherwise would look at them.
+# that does fit that format, add it to re/re_tests, not here.
 
 use strict;
 use warnings;
@@ -16,10 +14,13 @@ $| = 1;
 
 
 BEGIN {
-    require q(t/CORE/test.pl);
+    chdir 't' if -d 't';
+    @INC = ('../lib','.');
+    require Config; import Config;
+    require './test.pl';
 }
 
-plan tests => 452;  # Update this when adding/deleting tests.
+plan tests => 726;  # Update this when adding/deleting tests.
 
 run_tests() unless caller;
 
@@ -92,7 +93,6 @@ sub run_tests {
             my $r = m?(.*)?;
             is($r, $e, "?(.*)?");
             /not/ && reset;
-            # TODO perlcc #274 issue (2nd reset)
             if (/not ok 2/) {
                 if ($^O eq 'VMS') {
                     $_ = shift(@XXX);
@@ -153,7 +153,7 @@ sub run_tests {
 
     {
         $_ = 'now is the {time for all} good men to come to.';
-        / {([^}]*)}/;
+        / \{([^}]*)}/;
         is($1, 'time for all', "Match braces");
     }
 
@@ -459,14 +459,9 @@ sub run_tests {
 
         $code = '{$blah = 45}';
         $blah = 12;
-    SKIP: {
-        if (is_perlcc_compiled()) { # test if runnning compiled
-          skip "wontfix issue 328 lexicals miscompiled in re-eval via perlcc";
-        } else {
-          eval "/(?$code)/";
-          is($blah, 45, $message);
-        }
-      }
+        eval "/(?$code)/";
+        is($blah, 45, $message);
+
         $blah = 12;
         /(?{$blah = 45})/;
         is($blah, 45, $message);
@@ -522,24 +517,52 @@ sub run_tests {
         is(qr/(?u)\b\v$/, '(?^:(?u)\b\v$)', 'Verify (?u) compiles');
 
         my $dual = qr/\b\v$/;
-        use locale;
-        my $locale = qr/\b\v$/;
-        is($locale,    '(?^l:\b\v$)', 'Verify has l modifier when compiled under use locale');
-        no locale;
+        my $locale;
+
+      SKIP: {
+            skip 'No locale testing without d_setlocale', 1 if(!$Config{d_setlocale});
+
+            BEGIN {
+                if($Config{d_setlocale}) {
+                    require locale; import locale;
+                }
+            }
+            $locale = qr/\b\v$/;
+            is($locale,    '(?^l:\b\v$)', 'Verify has l modifier when compiled under use locale');
+            no locale;
+        }
 
         use feature 'unicode_strings';
         my $unicode = qr/\b\v$/;
         is($unicode,    '(?^u:\b\v$)', 'Verify has u modifier when compiled under unicode_strings');
         is(qr/abc$dual/,    '(?^u:abc(?^:\b\v$))', 'Verify retains d meaning when interpolated under locale');
-        is(qr/abc$locale/,    '(?^u:abc(?^l:\b\v$))', 'Verify retains l when interpolated under unicode_strings');
+
+      SKIP: {
+            skip 'No locale testing without d_setlocale', 1 if(!$Config{d_setlocale});
+
+            is(qr/abc$locale/,    '(?^u:abc(?^l:\b\v$))', 'Verify retains l when interpolated under unicode_strings');
+        }
 
         no feature 'unicode_strings';
-        is(qr/abc$locale/,    '(?^:abc(?^l:\b\v$))', 'Verify retains l when interpolated outside locale and unicode strings');
+      SKIP: {
+            skip 'No locale testing without d_setlocale', 1 if(!$Config{d_setlocale});
+
+            is(qr/abc$locale/,    '(?^:abc(?^l:\b\v$))', 'Verify retains l when interpolated outside locale and unicode strings');
+        }
+
         is(qr/def$unicode/,    '(?^:def(?^u:\b\v$))', 'Verify retains u when interpolated outside locale and unicode strings');
 
-        use locale;
-        is(qr/abc$dual/,    '(?^l:abc(?^:\b\v$))', 'Verify retains d meaning when interpolated under locale');
-        is(qr/abc$unicode/,    '(?^l:abc(?^u:\b\v$))', 'Verify retains u when interpolated under locale');
+      SKIP: {
+            skip 'No locale testing without d_setlocale', 2 if(!$Config{d_setlocale});
+
+             BEGIN {
+                if($Config{d_setlocale}) {
+                    require locale; import locale;
+                }
+            }
+            is(qr/abc$dual/,    '(?^l:abc(?^:\b\v$))', 'Verify retains d meaning when interpolated under locale');
+            is(qr/abc$unicode/,    '(?^l:abc(?^u:\b\v$))', 'Verify retains u when interpolated under locale');
+        }
     }
 
     {
@@ -580,11 +603,7 @@ sub run_tests {
         ok $1 && /$1/, "Capture a quote";
     }
 
-    if (is_perlcc_compiled()) { # test if runnning compiled
-      SKIP: {
-        skip "wontfix issue 328 lexicals miscompiled in re-eval via perlcc", 2;
-      }
-    } else {
+    {
         no warnings 'closure';
         my $message = '(?{ $var } refers to package vars';
         package aa;
@@ -684,12 +703,21 @@ sub run_tests {
         /.(a)(ba*)?/;
         is($#+, 2, $message);
         is($#-, 1, $message);
+
+        # Check that values don’t stick
+        "     "=~/()()()(.)(..)/;
+        my($m,$p) = (\$-[5], \$+[5]);
+        () = "$$_" for $m, $p; # FETCH (or eqv.)
+        " " =~ /()/;
+        is $$m, undef, 'values do not stick to @- elements';
+        is $$p, undef, 'values do not stick to @+ elements';
     }
 
-    foreach ('$+[0] = 13', '$-[0] = 13', '@+ = (7, 6, 5)', '@- = qw (foo bar)') {
+    foreach ('$+[0] = 13', '$-[0] = 13', '@+ = (7, 6, 5)',
+	     '@- = qw (foo bar)', '$^N = 42') {
 	is(eval $_, undef);
         like($@, qr/^Modification of a read-only value attempted/,
-	     'Elements of @- and @+ are read-only');
+	     '$^N, @- and @+ are read-only');
     }
 
     {
@@ -706,10 +734,38 @@ sub run_tests {
         like($str, qr/^..\G/, $message);
         unlike($str, qr/^...\G/, $message);
         ok($str =~ /\G../ && $& eq 'cd', $message);
-
-        local $::TODO = $::running_as_thread;
         ok($str =~ /.\G./ && $& eq 'bc', $message);
+
     }
+
+    {
+        my $message = '\G and intuit and anchoring';
+	$_ = "abcdef";
+	pos = 0;
+	ok($_ =~ /\Gabc/, $message);
+	ok($_ =~ /^\Gabc/, $message);
+
+	pos = 3;
+	ok($_ =~ /\Gdef/, $message);
+	pos = 3;
+	ok($_ =~ /\Gdef$/, $message);
+	pos = 3;
+	ok($_ =~ /abc\Gdef$/, $message);
+	pos = 3;
+	ok($_ =~ /^abc\Gdef$/, $message);
+	pos = 3;
+	ok($_ =~ /c\Gd/, $message);
+	pos = 3;
+	ok($_ =~ /..\GX?def/, $message);
+    }
+
+    {
+        my $s = '123';
+        pos($s) = 1;
+        my @a = $s =~ /(\d)\G/g; # this infinitely looped up till 5.19.1
+        is("@a", "1", '\G looping');
+    }
+
 
     {
         my $message = 'pos inside (?{ })';
@@ -779,22 +835,19 @@ sub run_tests {
         my $message = '\G anchor checks';
         my $foo = 'aabbccddeeffgg';
         pos ($foo) = 1;
-        {
-            local $::TODO = $::running_as_thread;
-            no warnings 'uninitialized';
-            ok($foo =~ /.\G(..)/g, $message);
-            is($1, 'ab', $message);
 
-            pos ($foo) += 1;
-            ok($foo =~ /.\G(..)/g, $message);
-            is($1, 'cc', $message);
+	ok($foo =~ /.\G(..)/g, $message);
+	is($1, 'ab', $message);
 
-            pos ($foo) += 1;
-            ok($foo =~ /.\G(..)/g, $message);
-            is($1, 'de', $message);
+	pos ($foo) += 1;
+	ok($foo =~ /.\G(..)/g, $message);
+	is($1, 'cc', $message);
 
-            ok($foo =~ /\Gef/g, $message);
-        }
+	pos ($foo) += 1;
+	ok($foo =~ /.\G(..)/g, $message);
+	is($1, 'de', $message);
+
+	ok($foo =~ /\Gef/g, $message);
 
         undef pos $foo;
         ok($foo =~ /\G(..)/g, $message);
@@ -806,6 +859,36 @@ sub run_tests {
         pos ($foo) = 5;
         ok($foo =~ /\G(..)/g, $message);
         is($1, 'cd', $message);
+    }
+
+    {
+        my $message = 'basic \G floating checks';
+        my $foo = 'aabbccddeeffgg';
+        pos ($foo) = 1;
+
+	ok($foo =~ /a+\G(..)/g, "$message: a+\\G");
+	is($1, 'ab', "$message: ab");
+
+	pos ($foo) += 1;
+	ok($foo =~ /b+\G(..)/g, "$message: b+\\G");
+	is($1, 'cc', "$message: cc");
+
+	pos ($foo) += 1;
+	ok($foo =~ /d+\G(..)/g, "$message: d+\\G");
+	is($1, 'de', "$message: de");
+
+	ok($foo =~ /\Gef/g, "$message: \\Gef");
+
+        pos ($foo) = 1;
+
+	ok($foo =~ /(?=a+\G)(..)/g, "$message: (?a+\\G)");
+	is($1, 'aa', "$message: aa");
+
+        pos ($foo) = 2;
+
+	ok($foo =~ /a(?=a+\G)(..)/g, "$message: a(?=a+\\G)");
+	is($1, 'ab', "$message: ab");
+
     }
 
     {
@@ -837,13 +920,7 @@ sub run_tests {
         my @c = qw [foo bar];
         my @d = ();
         s/(\w)(?{push @d, $1})/,$1,/g for @c;
-    SKIP: {
-        if (is_perlcc_compiled()) { # test if runnning compiled
-          skip "wontfix issue 328 lexicals miscompiled in re-eval via perlcc";
-        } else {
-          is("@d", "f o o b a r", $message);
-        }
-        }
+        is("@d", "f o o b a r", $message);
         is("@c", ",f,,o,,o, ,b,,a,,r,", $message);
     }
 
@@ -1000,7 +1077,7 @@ sub run_tests {
         my @space1 = sort grep {$space {$_} =~ /[[:space:]]/} keys %space;
         my @space2 = sort grep {$space {$_} =~ /[[:blank:]]/} keys %space;
 
-        is("@space0", "cr ff lf spc tab", $message);
+        is("@space0", "cr ff lf spc tab vt", $message);
         is("@space1", "cr ff lf spc tab vt", $message);
         is("@space2", "spc tab", $message);
     }
@@ -1084,51 +1161,6 @@ sub run_tests {
     }
 
     {
-        # Test that a regex followed by an operator and/or a statement modifier work
-        # These tests use string-eval so that it reports a clean error when it fails
-        # (without the string eval the test script might be unparseable)
-
-        # Note: these test check the behaviour that currently is valid syntax
-        # If a new regex modifier is added and a test fails then there is a backwards-compatibility issue
-        # Note-2: a new deprecate warning was added for this with commit e6897b1a5db0410e387ccbf677e89fc4a1d8c97a
-        # which indicate that this syntax will be removed in 5.16.
-        # When this happens the tests can be removed
-
-	foreach (['my $r = "a" =~ m/a/lt 2', 'm', 'lt'],
-		 ['my $r = "a" =~ m/a/le 1', 'm', 'le'],
-		 ['my $r = "a" =~ m/a/eq 1', 'm', 'eq'],
-		 ['my $r = "a" =~ m/a/ne 0', 'm', 'ne'],
-		 ['my $r = "a" =~ m/a/and 1', 'm', 'and'],
-		 ['my $r = "a" =~ m/a/unless 0', 'm', 'unless'],
-		 ['my $c = 1; my $r; $r = "a" =~ m/a/while $c--', 'm', 'while'],
-		 ['my $c = 0; my $r; $r = "a" =~ m/a/until $c++', 'm', 'until'],
-		 ['my $r; $r = "a" =~ m/a/for 1', 'm', 'for'],
-		 ['my $r; $r = "a" =~ m/a/foreach 1', 'm', 'foreach'],
-
-		 ['my $t = "a"; my $r = $t =~ s/a//lt 2', 's', 'lt'],
-		 ['my $t = "a"; my $r = $t =~ s/a//le 1', 's', 'le'],
-		 ['my $t = "a"; my $r = $t =~ s/a//ne 0', 's', 'ne'],
-		 ['my $t = "a"; my $r = $t =~ s/a//and 1', 's', 'and'],
-		 ['my $t = "a"; my $r = $t =~ s/a//unless 0', 's', 'unless'],
-
-		 ['my $c = 1; my $r; my $t = "a"; $r = $t =~ s/a//while $c--', 's', 'while'],
-		 ['my $c = 0; my $r; my $t = "a"; $r = $t =~ s/a//until $c++', 's', 'until'],
-		 ['my $r; my $t = "a"; $r = $t =~ s/a//for 1', 's', 'for'],
-		 ['my $r; my $t = "a"; $r = $t =~ s/a//for 1', 's', 'foreach'],
-		) {
-	    my $message = sprintf 'regex (%s) followed by $_->[2]',
-		$_->[1] eq 'm' ? 'm//' : 's///';
-	    my $code = "$_->[0]; 'eval_ok ' . \$r";
-	    my $result = do {
-		no warnings 'syntax';
-		eval $code;
-	    };
-	    is($@, '', $message);
-	    is($result, 'eval_ok 1', $message);
-	}
-    }
-
-    {
         my $str= "\x{100}";
         chop $str;
         my $qr= qr/$str/;
@@ -1181,6 +1213,45 @@ sub run_tests {
         is($got,$want,'RT #84294: check that "ab" =~ /((\w+)(?{ push @got, $2 })){2}/ leaves @got in the correct state');
     }
 
+    {
+        # Suppress warnings, as the non-unicode one comes out even if turn off
+        # warnings here (because the execution is done in another scope).
+        local $SIG{__WARN__} = sub {};
+        my $str = "\x{110000}";
+
+        unlike($str, qr/\p{ASCII_Hex_Digit=True}/, "Non-Unicode doesn't match \\p{AHEX=True}");
+        like($str, qr/\p{ASCII_Hex_Digit=False}/, "Non-Unicode matches \\p{AHEX=False}");
+        like($str, qr/\P{ASCII_Hex_Digit=True}/, "Non-Unicode matches \\P{AHEX=True}");
+        unlike($str, qr/\P{ASCII_Hex_Digit=False}/, "Non-Unicode matches \\P{AHEX=FALSE}");
+    }
+
+    {
+        # Test that IDstart works, but because the author (khw) knows
+        # regexes much better than the rest of the core, it is being done here
+        # in the context of a regex which relies on buffer names beginng with
+        # IDStarts.
+        use utf8;
+        my $str = "abc";
+        like($str, qr/(?<a>abc)/, "'a' is legal IDStart");
+        like($str, qr/(?<_>abc)/, "'_' is legal IDStart");
+        like($str, qr/(?<ß>abc)/, "U+00DF is legal IDStart");
+        like($str, qr/(?<ℕ>abc)/, "U+2115' is legal IDStart");
+
+        # This test works on Unicode 6.0 in which U+2118 and U+212E are legal
+        # IDStarts there, but are not Word characters, and therefore Perl
+        # doesn't allow them to be IDStarts.  But there is no guarantee that
+        # Unicode won't change things around in the future so that at some
+        # future Unicode revision these tests would need to be revised.
+        foreach my $char ("%", "×", chr(0x2118), chr(0x212E)) {
+            my $prog = <<"EOP";
+use utf8;;
+"abc" =~ qr/(?<$char>abc)/;
+EOP
+            utf8::encode($prog);
+            fresh_perl_like($prog, qr!Group name must start with a non-digit word character!, {},
+                        sprintf("'U+%04X not legal IDFirst'", ord($char)));
+        }
+    }
 
     { # [perl #101710]
         my $pat = "b";
@@ -1188,6 +1259,349 @@ sub run_tests {
         like("\xffb", qr/$pat/i, "/i: utf8 pattern, non-utf8 string, latin1-char preceding matching char in string");
     }
 
+    { # Crash with @a =~ // warning
+	local $SIG{__WARN__} = sub {
+             pass 'no crash for @a =~ // warning'
+        };
+	eval ' sub { my @a =~ // } ';
+    }
+
+    { # Concat overloading and qr// thingies
+	my @refs;
+	my $qr = qr//;
+        package Cat {
+            require overload;
+            overload->import(
+		'""' => sub { ${$_[0]} },
+		'.' => sub {
+		    push @refs, ref $_[1] if ref $_[1];
+		    bless $_[2] ? \"$_[1]${$_[0]}" : \"${$_[0]}$_[1]"
+		}
+            );
+	}
+	my $s = "foo";
+	my $o = bless \$s, Cat::;
+	/$o$qr/;
+	is "@refs", "Regexp", '/$o$qr/ passes qr ref to cat overload meth';
+    }
+
+    {
+        my $count=0;
+        my $str="\n";
+        $count++ while $str=~/.*/g;
+        is $count, 2, 'test that ANCH_MBOL works properly. We should get 2 from $count++ while "\n"=~/.*/g';
+        my $class_count= 0;
+        $class_count++ while $str=~/[^\n]*/g;
+        is $class_count, $count, 'while "\n"=~/.*/g and while "\n"=~/[^\n]*/g should behave the same';
+        my $anch_count= 0;
+        $anch_count++ while $str=~/^.*/mg;
+        is $anch_count, 1, 'while "\n"=~/^.*/mg should match only once';
+    }
+
+    { # [perl #111174]
+        use re '/u';
+        like "\xe0", qr/(?i:\xc0)/, "(?i: shouldn't lose the passed in /u";
+        use re '/a';
+        unlike "\x{100}", qr/(?i:\w)/, "(?i: shouldn't lose the passed in /a";
+        use re '/aa';
+        unlike 'k', qr/(?i:\N{KELVIN SIGN})/, "(?i: shouldn't lose the passed in /aa";
+    }
+
+    {
+	# the test for whether the pattern should be re-compiled should
+	# consider the UTF8ness of the previous and current pattern
+	# string, as well as the physical bytes of the pattern string
+
+	for my $s ("\xc4\x80", "\x{100}") {
+	    ok($s =~ /^$s$/, "re-compile check is UTF8-aware");
+	}
+    }
+
+    #  #113682 more overloading and qr//
+    # when doing /foo$overloaded/, if $overloaded returns
+    # a qr/(?{})/ via qr or "" overloading, then 'use re 'eval'
+    # shouldn't be required. Via '.', it still is.
+    {
+        package Qr0;
+	use overload 'qr' => sub { qr/(??{50})/ };
+
+        package Qr1;
+	use overload '""' => sub { qr/(??{51})/ };
+
+        package Qr2;
+	use overload '.'  => sub { $_[1] . qr/(??{52})/ };
+
+        package Qr3;
+	use overload '""' => sub { qr/(??{7})/ },
+		     '.'  => sub { $_[1] . qr/(??{53})/ };
+
+        package Qr_indirect;
+	use overload '""'  => sub { $_[0][0] };
+
+	package main;
+
+	for my $i (0..3) {
+	    my $o = bless [], "Qr$i";
+	    if ((0,0,1,1)[$i]) {
+		eval { "A5$i" =~ /^A$o$/ };
+		like($@, qr/Eval-group not allowed/, "Qr$i");
+		eval { "5$i" =~ /$o/ };
+		like($@, ($i == 3 ? qr/^$/ : qr/no method found,/),
+			"Qr$i bare");
+		{
+		    use re 'eval';
+		    ok("A5$i" =~ /^A$o$/, "Qr$i - with use re eval");
+		    eval { "5$i" =~ /$o/ };
+		    like($@, ($i == 3 ? qr/^$/ : qr/no method found,/),
+			    "Qr$i bare - with use re eval");
+		}
+	    }
+	    else {
+		ok("A5$i" =~ /^A$o$/, "Qr$i");
+		ok("5$i" =~ /$o/, "Qr$i bare");
+	    }
+	}
+
+	my $o = bless [ bless [], "Qr1" ], 'Qr_indirect';
+	ok("A51" =~ /^A$o/, "Qr_indirect");
+	ok("51" =~ /$o/, "Qr_indirect bare");
+    }
+
+    {   # Various flags weren't being set when a [] is optimized into an
+        # EXACTish node
+        ;
+        ;
+        ok("\x{017F}\x{017F}" =~ qr/^[\x{00DF}]?$/i, "[] to EXACTish optimization");
+    }
+
+    {
+        for my $char (":", "\x{f7}", "\x{2010}") {
+            my $utf8_char = $char;
+            utf8::upgrade($utf8_char);
+            my $display = $char;
+            $display = display($display);
+            my $utf8_display = "utf8::upgrade(\"$display\")";
+
+            like($char, qr/^$char?$/, "\"$display\" =~ /^$display?\$/");
+            like($char, qr/^$utf8_char?$/, "my \$p = \"$display\"; utf8::upgrade(\$p); \"$display\" =~ /^\$p?\$/");
+            like($utf8_char, qr/^$char?$/, "my \$c = \"$display\"; utf8::upgrade(\$c); \"\$c\" =~ /^$display?\$/");
+            like($utf8_char, qr/^$utf8_char?$/, "my \$c = \"$display\"; utf8::upgrade(\$c); my \$p = \"$display\"; utf8::upgrade(\$p); \"\$c\" =~ /^\$p?\$/");
+        }
+    }
+
+    {
+	# #116148: Pattern utf8ness sticks around globally
+	# the utf8 in the first match was sticking around for the second
+	# match
+
+	use feature 'unicode_strings';
+
+	my $x = "\x{263a}";
+	$x =~ /$x/;
+
+	my $text = "Perl";
+	ok("Perl" =~ /P.*$/i, '#116148');
+    }
+
+    { # 117327: Sequence (?#...) not recognized in regex
+      # The space between the '(' and '?' is now deprecated; this test should
+      # be removed when the deprecation is made fatal.
+        no warnings;
+        like("ab", qr/a( ?#foo)b/x);
+    }
+
+    { # 118297: Mixing up- and down-graded strings in regex
+        utf8::upgrade(my $u = "\x{e5}");
+        utf8::downgrade(my $d = "\x{e5}");
+        my $warned;
+        local $SIG{__WARN__} = sub { $warned++ if $_[0] =~ /\AMalformed UTF-8/ };
+        my $re = qr/$u$d/;
+        ok(!$warned, "no warnings when interpolating mixed up-/downgraded strings in pattern");
+        my $c = "\x{e5}\x{e5}";
+        utf8::downgrade($c);
+        like($c, $re, "mixed up-/downgraded pattern matches downgraded string");
+        utf8::upgrade($c);
+        like($c, $re, "mixed up-/downgraded pattern matches upgraded string");
+    }
+
+    {
+        # if we have 87 capture buffers defined then \87 should refer to the 87th.
+        # test that this is true for 1..100
+        # Note that this test causes the engine to recurse at runtime, and
+        # hence use a lot of C stack.
+        for my $i (1..100) {
+            my $capture= "a";
+            $capture= "($capture)" for 1 .. $i;
+            for my $mid ("","b") {
+                my $str= "a${mid}a";
+                my $backref= "\\$i";
+                eval {
+                    ok($str=~/$capture$mid$backref/,"\\$i works with $i buffers '$str'=~/...$mid$backref/");
+                    1;
+                } or do {
+                    is("$@","","\\$i works with $i buffers works with $i buffers '$str'=~/...$mid$backref/");
+                };
+            }
+        }
+    }
+
+    # this mixture of readonly (not COWable) and COWable strings
+    # messed up the capture buffers under COW. The actual test results
+    # are incidental; the issue is was an AddressSanitizer failure
+    {
+	my $c ='AB';
+	my $res = '';
+	for ($c, 'C', $c, 'DE') {
+	    ok(/(.)/, "COWable match");
+	    $res .= $1;
+	}
+	is($res, "ACAD");
+    }
+
+
+    {
+	# RT #45667
+	# /[#$x]/x didn't interpolate the var $x.
+	my $b = 'cd';
+	my $s = 'abcd$%#&';
+	$s =~ s/[a#$b%]/X/g;
+	is ($s, 'XbXX$XX&', 'RT #45667 without /x');
+	$s = 'abcd$%#&';
+	$s =~ s/[a#$b%]/X/gx;
+	is ($s, 'XbXX$XX&', 'RT #45667 with /x');
+    }
+
+    {
+	no warnings "uninitialized";
+	my @a;
+	$a[1]++;
+	/@a/;
+	pass('no crash with /@a/ when array has nonexistent elems');
+    }
+
+    {
+	is runperl(prog => 'delete $::{qq-\cR-}; //; print qq-ok\n-'),
+	   "ok\n",
+	   'deleting *^R does not result in crashes';
+	no warnings 'once';
+	*^R = *caretRglobwithnoscalar;
+	"" =~ /(?{42})/;
+	is $^R, 42, 'assigning to *^R does not result in a crash';
+	is runperl(
+	     stderr => 1,
+	     prog => 'eval q|'
+	            .' q-..- =~ /(??{undef *^R;q--})(?{42})/; '
+                    .' print qq-$^R\n-'
+	            .'|'
+	   ),
+	   "42\n",
+	   'undefining *^R within (??{}) does not result in a crash';
+    }
+
+    {
+        # [perl #120446]
+        # this code should be virtually instantaneous. If it takes 10s of
+        # seconds, there a bug in intuit_start.
+        # (this test doesn't actually test for slowness - that involves
+        # too much danger of false positives on loaded machines - but by
+        # putting it here, hopefully someone might notice if it suddenly
+        # runs slowly)
+        my $s = ('a' x 1_000_000) . 'b';
+        my $i = 0;
+        for (1..10_000) {
+            pos($s) = $_;
+            $i++ if $s =~/\Gb/g;
+        }
+        is($i, 0, "RT 120446: mustn't run slowly");
+    }
+
+    {
+        # [perl #120692]
+        # these tests should be virtually instantaneous. If they take 10s of
+        # seconds, there's a bug in intuit_start.
+
+        my $s = 'ab' x 1_000_000;
+        utf8::upgrade($s);
+        1 while $s =~ m/\Ga+ba+b/g;
+        pass("RT#120692 \\G mustn't run slowly");
+
+        $s=~ /^a{1,2}x/ for  1..10_000;
+        pass("RT#120692 a{1,2} mustn't run slowly");
+
+        $s=~ /ab.{1,2}x/;
+        pass("RT#120692 ab.{1,2} mustn't run slowly");
+
+        $s = "-a-bc" x 250_000;
+        $s .= "1a1bc";
+        utf8::upgrade($s);
+        ok($s =~ /\da\d{0,30000}bc/, "\\d{30000}");
+
+        $s = "-ab\n" x 250_000;
+        $s .= "abx";
+        ok($s =~ /^ab.*x/m, "distant float with /m");
+
+        my $r = qr/^abcd/;
+        $s = "abcd-xyz\n" x 500_000;
+        $s =~ /$r\d{1,2}xyz/m for 1..200;
+        pass("BOL within //m  mustn't run slowly");
+
+        $s = "abcdefg" x 1_000_000;
+        $s =~ /(?-m:^)abcX?fg/m for 1..100;
+        pass("BOL within //m  mustn't skip absolute anchored check");
+
+        $s = "abcdefg" x 1_000_000;
+        $s =~ /^XX\d{1,10}cde/ for 1..100;
+        pass("abs anchored float string should fail quickly");
+
+    }
+
+    # These are based on looking at the code in regcomp.c
+    # We don't look for specific code, just the existence of an SSC
+    foreach my $re (qw(     qr/a?c/
+                            qr/a?c/i
+                            qr/[ab]?c/
+                            qr/\R?c/
+                            qr/\d?c/d
+                            qr/\w?c/l
+                            qr/\s?c/a
+                            qr/[[:alpha:]]?c/u
+    )) {
+      SKIP: {
+        skip "no re-debug under miniperl" if is_miniperl;
+        my $prog = <<"EOP";
+use re qw(Debug COMPILE);
+$re;
+EOP
+        fresh_perl_like($prog, qr/synthetic stclass/, { stderr=>1 }, "$re generates a synthetic start class");
+      }
+    }
+
+    {
+        like "\x{AA}", qr/a?[\W_]/d, "\\W with /d synthetic start class works";
+    }
+
+
+
+    {   # Was getting optimized into EXACT (non-folding node)
+        my $x = qr/[x]/i;
+        utf8::upgrade($x);
+        like("X", qr/$x/, "UTF-8 of /[x]/i matches upper case");
+    }
+
+    {	# [perl #123539]
+        like("TffffffffffffTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT5TTTTTTTTTTTTTTTTTTTTTTTTT3TTgTTTTTTTTTTTTTTTTTTTTT2TTTTTTTTTTTTTTTTTTTTTTTHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHiHHHHHHHfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&ffff", qr/TffffffffffffTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT5TTTTTTTTTTTTTTTTTTTTTTTTT3TTgTTTTTTTTTTTTTTTTTTTTT2TTTTTTTTTTTTTTTTTTTTTTTHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHiHHHHHHHfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&ffff/il, "");
+        like("TffffffffffffT\x{100}TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT5TTTTTTTTTTTTTTTTTTTTTTTTT3TTgTTTTTTTTTTTTTTTTTTTTT2TTTTTTTTTTTTTTTTTTTTTTTHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHiHHHHHHHfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&ffff", qr/TffffffffffffT\x{100}TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT5TTTTTTTTTTTTTTTTTTTTTTTTT3TTgTTTTTTTTTTTTTTTTTTTTT2TTTTTTTTTTTTTTTTTTTTTTTHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHiHHHHHHHfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&ffff/il, "");
+    }
+
+	{	# [perl #123604]
+		my($s, $x, @x) = ('abc', 'a', 'd');
+		my $long = 'b' x 2000;
+		my $eval = q{$s =~ m{$x[bbb]c} ? 1 : 0};
+		$eval =~ s{bbb}{$long};
+		my $match = eval $eval;
+		ok(1, "did not crash");
+		ok($match, "[bbb...] resolved as character class, not subscript");
+	}
 } # End of sub run_tests
 
 1;

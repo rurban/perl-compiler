@@ -1,7 +1,8 @@
 #!./perl
 
-unshift @INC, "./lib";
-require 't/CORE/test.pl';
+chdir 't' if -d 't';
+@INC = qw(. ../lib);
+require "test.pl";
 plan( tests => 64 );
 
 $aa = 1;

@@ -1,9 +1,12 @@
 #!./perl
 
-BEGIN { require 't/CORE/test.pl' }
-
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+    require 'test.pl';
+}
 use warnings;
-plan( tests => 162 );
+plan( tests => 183 );
 
 # these shouldn't hang
 {
@@ -115,6 +118,12 @@ cmp_ok("@b",'eq','1 2 3 4','map then sort');
 @b = sort reverse (4,1,3,2);
 cmp_ok("@b",'eq','1 2 3 4','reverse then sort');
 
+
+@b = sort CORE::reverse (4,1,3,2);
+cmp_ok("@b",'eq','1 2 3 4','CORE::reverse then sort');
+
+eval  { @b = sort CORE::revers (4,1,3,2); };
+like($@, qr/^Undefined sort subroutine "CORE::revers" called at /);
 
 
 sub twoface { no warnings 'redefine'; *twoface = sub { $a <=> $b }; &twoface }
@@ -280,6 +289,8 @@ cmp_ok($x,'eq','123',q(optimized-away comparison block doesn't take any other ar
     cxt_two();
     sub cxt_three { sort &test_if_list() }
     cxt_three();
+    sub cxt_three_anna_half { sort 0, test_if_list() }
+    cxt_three_anna_half();
 
     sub test_if_scalar {
         my $gimme = wantarray;
@@ -763,11 +774,14 @@ cmp_ok($answer,'eq','good','sort subr called from other package');
 
     $fail_msg = q(Modification of a read-only value attempted);
     cmp_ok(substr($@,0,length($fail_msg)),'eq',$fail_msg,'bug 7567');
+    eval { @a=1..3 };
+    is $@, "", 'abrupt scope exit turns off readonliness';
 }
 
 {
     local $TODO = "sort should make sure elements are not freed in the sort block";
-    eval { @nomodify_x=(1..8); our @copy = sort { @nomodify_x = (0) } (@nomodify_x, 3); };
+    eval { @nomodify_x=(1..8);
+	   our @copy = sort { undef @nomodify_x; 1 } (@nomodify_x, 3); };
     is($@, "");
 }
 
@@ -935,3 +949,72 @@ fresh_perl_is
   like $output, qr/^(?:Win)+\z/,
    'Match vars do not leak from one $$ sort sub to the next';
 }
+
+# [perl #30661] autoloading
+AUTOLOAD { $b <=> $a }
+sub stubbedsub;
+is join("", sort stubbedsub split//, '04381091'), '98431100',
+    'stubborn AUTOLOAD';
+is join("", sort hopefullynonexistent split//, '04381091'), '98431100',
+    'AUTOLOAD without stub';
+my $stubref = \&givemeastub;
+is join("", sort $stubref split//, '04381091'), '98431100',
+    'AUTOLOAD with stubref';
+
+# [perl #90030] sort without arguments
+eval '@x = (sort); 1';
+is $@, '', '(sort) does not die';
+is @x, 0, '(sort) returns empty list';
+eval '@x = sort; 1';
+is $@, '', 'sort; does not die';
+is @x, 0, 'sort; returns empty list';
+eval '{@x = sort} 1';
+is $@, '', '{sort} does not die';
+is @x, 0, '{sort} returns empty list';
+
+# this happened while the padrange op was being added. Sort blocks
+# are executed in void context, and the padrange op was skipping pushing
+# the item in void cx. The net result was that the return value was
+# whatever was on the stack last.
+
+{
+    my @a = sort {
+	my $r = $a <=> $b;
+	if ($r) {
+	    undef; # this got returned by mistake
+	    return $r
+	}
+	return 0;
+    } 5,1,3,6,0;
+    is "@a", "0 1 3 5 6", "padrange and void context";
+}
+
+# Fatal warnings an sort sub returning a non-number
+# We need two evals, because the panic used to happen on scope exit.
+eval { eval { use warnings FATAL => 'all'; () = sort { undef } 1,2 } };
+is $@, "",
+  'no panic/crash with fatal warnings when sort sub returns undef';
+eval { eval { use warnings FATAL => 'all'; () = sort { "no thin" } 1,2 } };
+is $@, "",
+  'no panic/crash with fatal warnings when sort sub returns string';
+sub notdef($$) { undef }
+eval { eval { use warnings FATAL => 'all'; () = sort notdef 1,2 } };
+is $@, "",
+  'no panic/crash with fatal warnings when sort sub($$) returns undef';
+sub yarn($$) { "no thinking aloud" }
+eval { eval { use warnings FATAL => 'all'; () = sort yarn 1,2 } };
+is $@, "",
+  'no panic/crash with fatal warnings when sort sub($$) returns string';
+
+$#a = -1;
+() = [sort { $a = 10; $b = 10; 0 } $#a, $#a];
+is $#a, 10, 'sort block modifying $a and $b';
+
+() = sort {
+    is \$a, \$a, '[perl #78194] op return values passed to sort'; 0
+} "${\''}", "${\''}";
+
+package deletions {
+    @_=sort { delete $deletions::{a}; delete $deletions::{b}; 3 } 1..3;
+}
+pass "no crash when sort block deletes *a and *b";

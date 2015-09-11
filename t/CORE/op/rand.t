@@ -15,15 +15,16 @@
 # The Art of Computer Programming, Donald E. Knuth, volume 2,
 # chapter 3. ISBN 0-201-03822-6 (v. 2)
 
-INIT {
-    unshift @INC, "./lib";
-    require 't/CORE/test.pl';
+BEGIN {
+    chdir "t" if -d "t";
+    @INC = qw(. ../lib);
 }
 
 use strict;
 use Config;
 
-plan(tests => 8);
+require "test.pl";
+plan(tests => 10);
 
 
 my $reps = 15000;	# How many times to try rand each time.
@@ -241,3 +242,8 @@ DIAG
     ok($r < 1,        'rand() without args is under 1');
 }
 
+{ # [perl #115928] use a standard rand() implementation
+    srand(1);
+    is(int rand(1000), 41, "our own implementation behaves consistently");
+    is(int rand(1000), 454, "and still consistently");
+}

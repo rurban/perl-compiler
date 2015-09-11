@@ -1,17 +1,26 @@
 #!./perl
 
-require 't/CORE/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
+}
 
-plan(tests => 23);
+BEGIN { require "./test.pl"; }
+
+plan(tests => 24);
 
 my ($devnull, $no_devnull);
 
-require File::Spec;
-$devnull = File::Spec->devnull;
+if (is_miniperl()) {
+    $no_devnull = "no dynamic loading on miniperl, File::Spec not built, so can't determine /dev/null";
+} else {
+    require File::Spec;
+    $devnull = File::Spec->devnull;
+}
 
-open($TRY, '>Io_argv1.tmp') || (die "Can't open temp file: $!");
-print $TRY "a line\n";
-close $TRY or die "Could not close: $!";
+open(TRY, '>Io_argv1.tmp') || (die "Can't open temp file: $!");
+print TRY "a line\n";
+close TRY or die "Could not close: $!";
 
 $x = runperl(
     prog	=> 'while (<>) { print $., $_; }',
@@ -41,7 +50,8 @@ is($x, "1a line\n2a line\n", '<> from two files');
     is( 0+$?, 0, q(eof() doesn't segfault) );
 }
 
-@ARGV = ('Io_argv1.tmp', 'Io_argv1.tmp', $devnull, 'Io_argv1.tmp');
+@ARGV = is_miniperl() ? ('Io_argv1.tmp', 'Io_argv1.tmp', 'Io_argv1.tmp')
+    : ('Io_argv1.tmp', 'Io_argv1.tmp', $devnull, 'Io_argv1.tmp');
 while (<>) {
     $y .= $. . $_;
     if (eof()) {
@@ -86,24 +96,29 @@ ok( !eof(),     'STDIN has something' );
 
 is( <>, "ok 7\n" );
 
-open STDIN, $devnull or die $!;
-@ARGV = ();
-ok( eof(),      'eof() true with empty @ARGV' );
+SKIP: {
+    skip_if_miniperl($no_devnull, 4);
+    open STDIN, $devnull or die $!;
+    @ARGV = ();
+    ok( eof(),      'eof() true with empty @ARGV' );
 
-@ARGV = ('Io_argv1.tmp');
-ok( !eof() );
+    @ARGV = ('Io_argv1.tmp');
+    ok( !eof() );
 
-@ARGV = ($devnull, $devnull);
-ok( !eof() );
+    @ARGV = ($devnull, $devnull);
+    ok( !eof() );
 
-close ARGV or die $!;
-ok( eof(),      'eof() true after closing ARGV' );
+    close ARGV or die $!;
+    ok( eof(),      'eof() true after closing ARGV' );
+}
 
-{
+SKIP: {
     local $/;
     open my $fh, 'Io_argv1.tmp' or die "Could not open Io_argv1.tmp: $!";
     <$fh>;	# set $. = 1
     is( <$fh>, undef );
+
+    skip_if_miniperl($no_devnull, 5);
 
     open $fh, $devnull or die;
     ok( defined(<$fh>) );
@@ -117,8 +132,7 @@ ok( eof(),      'eof() true after closing ARGV' );
     close $fh or die "Could not close: $!";
 }
 
-# perlcc issue 227 - https://code.google.com/p/perl-compiler/issues/detail?id=227
-# This used to dump core. Fixed Nov 14, 2013
+# This used to dump core
 fresh_perl_is( <<'**PROG**', "foobar", {}, "ARGV aliasing and eof()" ); 
 open OUT, ">Io_argv3.tmp" or die "Can't open temp file: $!";
 print OUT "foo";
@@ -133,7 +147,16 @@ close IN;
 unlink "Io_argv3.tmp";
 **PROG**
 
-__END__
+# This used to fail an assertion.
+# The tricks with *x and $x are to make PL_argvgv point to a freed SV when
+# the readline op does SvREFCNT_inc on it.  undef *x clears the scalar slot
+# ++$x vivifies it, reusing the just-deleted GV that PL_argvgv still points
+# to.  The BEGIN block ensures it is freed late enough that nothing else
+# has reused it yet.
+is runperl(prog => 'undef *x; delete $::{ARGV}; $x++;'
+                  .'eval q-BEGIN{undef *x} readline-; print qq-ok\n-'),
+  "ok\n", 'deleting $::{ARGV}';
+
 END {
     unlink_all 'Io_argv1.tmp', 'Io_argv1.tmp_bak',
 	'Io_argv2.tmp', 'Io_argv2.tmp_bak', 'Io_argv3.tmp';

@@ -4,16 +4,10 @@
 # etc.) only applies to the globals, and not to similarly-named variables
 # in other packages (%Net::DNS::RR::SIG, ${"'Oh no'!"}, etc.).
 
-
 BEGIN {
-    *ok = sub ($@) { };
-    *fresh_perl_is = sub {};
-    *is = sub ($$@) {};
-}
-
-INIT {
-  require 't/CORE/test.pl';
-  unshift @INC, 't/CORE/lib';
+    chdir 't' if -d 't';
+    require './test.pl';
+    @INC = '../lib';
 }
 
 # Hack to allow test counts to be specified piecemeal
@@ -21,12 +15,10 @@ BEGIN { ++$INC{'tests.pm'} }
 sub tests::VERSION { $tests += pop };
 plan (tests => $tests);
 
+
 use tests 2; # First make sure that %! %- %+ do not load extra modules.
 map %{"foo::$_"}, qw< ! - + >;
-TODO: {
-  local $TODO = 'with perlcc';
-  ok !exists $INC{'Errno.pm'}, '$swext::! does not load Errno';
-}
+ok !exists $INC{'Errno.pm'}, '$swext::! does not load Errno';
 ok !exists $INC{'Tie/Hash/NamedCapture.pm'},
   '$foo::+ and $foo::- do not load Tie::Hash::NamedCapture';
 
@@ -111,11 +103,6 @@ for(qw< S V >) {
  my $name = eval "qq|\\c$_|";
  ok eval { ${"foo::$name"} = 'twor'}, "\$foo::^$_";
 }
-
-use tests 1; # $[
-# To avoid tests that are *too* weird, we’ll just check for definition.
-${"foo::["}; # touch
-ok !defined ${"foo::["}, '$foo::[';
 
 use tests 4; # user/group vars
 # These are rw, but setting them is obviously going to make the test much

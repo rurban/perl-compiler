@@ -7,8 +7,9 @@
 # it probably needs expanding at some point to cover other stuff.
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 plan tests => 16;

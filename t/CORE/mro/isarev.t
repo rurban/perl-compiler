@@ -1,7 +1,11 @@
 #!./perl
 
 BEGIN {
-    require q(t/CORE/test.pl);
+    unless (-d 'blib') {
+        chdir 't' if -d 't';
+        @INC = '../lib';
+    }
+    require q(./test.pl);
 }
 
 use strict;
@@ -59,9 +63,6 @@ i Collar=>qw[ Another::Collar Tike::Collar::Leather ],
 @Goat::Dairy::ISA = "Goat";
 @Goat::Dairy::Toggenburg::ISA = "Goat::Dairy";
 @Weird::Thing::ISA = "g";
-# Warning: glob_assign_glob is generally unsafe to do with perlcc. (#282)
-# just assigning the stashes and @ISA is safer.
-# %g:: = %Goat::; @g::ISA = @Goat::ISA;
 *g:: = *Goat::;
 i Goat => qw[ Goat::Dairy Goat::Dairy::Toggenburg Weird::Thing ],
  "isarev includes subclasses of aliases";

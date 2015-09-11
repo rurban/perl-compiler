@@ -1,15 +1,16 @@
 #!./perl -w
 
-INIT {
-    unshift @INC, "t/CORE/lib";
+BEGIN {
+    chdir "t" if -d "t";
+    @INC = qw(. ../lib);
 }
 
 # Test srand.
 
 use strict;
 
-require 't/CORE/test.pl';
-plan(tests => 9);
+require "test.pl";
+plan(tests => 10);
 
 # Generate a load of random numbers.
 # int() avoids possible floating point error.
@@ -77,4 +78,13 @@ cmp_ok( $seed, '==', 0, "numeric 0 return value for srand(0)");
     }
     is( $b, 0, "Quacks like a zero");
     is( "@warnings", "", "Does not warn");
+}
+
+# [perl #40605]
+{
+    use warnings;
+    my $w = '';
+    local $SIG{__WARN__} = sub { $w .= $_[0] };
+    srand(2**100);
+    like($w, qr/^Integer overflow in srand at /, "got a warning");
 }

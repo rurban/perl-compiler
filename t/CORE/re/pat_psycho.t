@@ -3,6 +3,9 @@
 # This is a home for regular expression tests that don't fit into
 # the format supported by re/regexp.t.  If you want to add a test
 # that does fit that format, add it to re/re_tests, not here.
+#
+# this file includes test that my burn a lot of CPU or otherwise be heavy
+# on resources. Set env var $PERL_SKIP_PSYCHO_TEST to skip this file
 
 use strict;
 use warnings;
@@ -15,11 +18,18 @@ $| = 1;
 
 
 BEGIN {
-    require q(t/CORE/test.pl);
+    chdir 't' if -d 't';
+    @INC = ('../lib','.');
+    require './test.pl';
+    if ($^O eq 'dec_osf') {
+        skip_all("$^O cannot handle this test");
+    }
 }
 
 
-plan tests => 11;  # Update this when adding/deleting tests.
+skip_all('$PERL_SKIP_PSYCHO_TEST set') if $ENV{PERL_SKIP_PSYCHO_TEST};
+
+plan tests => 15;  # Update this when adding/deleting tests.
 
 run_tests() unless caller;
 
@@ -27,16 +37,17 @@ run_tests() unless caller;
 # Tests start here.
 #
 sub run_tests {
+    print "# Set PERL_SKIP_PSYCHO_TEST to skip these tests\n";
 
-  SKIP:
     {
-        print "# Set PERL_SKIP_PSYCHO_TEST to skip this test\n";
-        my @normal = qw [the are some normal words];
 
-        skip "Skipped Psycho", 2 * @normal if $ENV {PERL_SKIP_PSYCHO_TEST};
+	# stress test tries
+
+        my @normal = qw [the are some normal words];
 
         local $" = "|";
 
+	note "setting up trie psycho vars ...";
         my @psycho = (@normal, map chr $_, 255 .. 20000);
         my $psycho1 = "@psycho";
         for (my $i = @psycho; -- $i;) {
@@ -46,13 +57,12 @@ sub run_tests {
         my $psycho2 = "@psycho";
 
         foreach my $word (@normal) {
-            ok $word =~ /($psycho1)/ && $1 eq $word, 'Psycho';
-            ok $word =~ /($psycho2)/ && $1 eq $word, 'Psycho';
+            ok $word =~ /($psycho1)/ && $1 eq $word, qq{"$word" =~ /\$psycho1/};
+            ok $word =~ /($psycho2)/ && $1 eq $word, qq{"$word" =~ /\$psycho1/};
         }
     }
 
 
-  SKIP:
     {
         # stress test CURLYX/WHILEM.
         #
@@ -61,8 +71,7 @@ sub run_tests {
         # CURLYX and WHILEM blocks, except those related to LONGJMP, the
         # super-linear cache and warnings. It executes about 0.5M regexes
 
-        skip "No psycho tests" if $ENV {PERL_SKIP_PSYCHO_TEST};
-        print "# Set PERL_SKIP_PSYCHO_TEST to skip this test\n";
+        no warnings 'regexp';   # Silence "has useless greediness modifier"
         my $r = qr/^
                     (?:
                         ( (?:a|z+)+ )
@@ -95,6 +104,7 @@ sub run_tests {
                     )*
                     ( (?:l|z+)+ )
               $/x;
+        use warnings 'regexp';
           
         my $ok = 1;
         my $msg = "CURLYX stress test";
@@ -155,6 +165,49 @@ sub run_tests {
             }
         }
         ok($ok, $msg);
+    }
+
+
+    {
+	# these bits of test code used to run quadratically. If we break
+	# anything, they'll start to take minutes to run, rather than
+	# seconds. We don't actually measure times or set alarms, since
+	# that tends to be very fragile and prone to false positives.
+	# Instead, just hope that if someone is messing with
+	# performance-related code, they'll re-run the test suite and
+	# notice it suddenly takes a lot longer.
+
+	my $x;
+
+	$x = 'x' x 1_000_000;
+	1 while $x =~ /(.)/g;
+	pass "ascii =~ /(.)/";
+
+	{
+	    local ${^UTF8CACHE} = 1; # defeat debugging
+	    $x = "\x{100}" x 1_000_000;
+	    1 while $x =~ /(.)/g;
+	    pass "utf8 =~ /(.)/";
+	}
+
+	# run these in separate processes, since they set $&
+
+        fresh_perl_is(<<'EOF', "ok\n", {}, 'ascii =~ /(.)/, mention $&');
+$&;
+$x = 'x' x 1_000_000;
+1 while $x =~ /(.)/g;
+print "ok\n";
+EOF
+
+        fresh_perl_is(<<'EOF', "ok\n", {}, 'utf8 =~ /(.)/, mention $&');
+$&;
+local ${^UTF8CACHE} = 1; # defeat debugging
+$x = "\x{100}" x 1_000_000;
+1 while $x =~ /(.)/g;
+print "ok\n";
+EOF
+
+
     }
 } # End of sub run_tests
 

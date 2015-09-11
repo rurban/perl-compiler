@@ -1,10 +1,11 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
+    chdir 't' if -d 't';
+    @INC = '../lib';
 }
 
-BEGIN { require 't/CORE/test.pl'; }
+BEGIN { require "./test.pl"; }
 
 plan(tests => 1);
 

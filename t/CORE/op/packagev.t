@@ -1,9 +1,10 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
-} 
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
+}
 
 # XXX remove this later -- dagolden, 2010-01-13
 # local *STDERR = *STDOUT;
@@ -20,7 +21,6 @@ plan tests => 7 * @syntax_cases + 7 * (grep { $_ !~ /^#/ } @version_cases)
             + 2 * 3;
 
 use warnings qw/syntax/;
-# perlcc issue 177 - https://code.google.com/p/perl-compiler/issues/detail?id=177
 use version;
 
 for my $string ( @syntax_cases ) {
@@ -59,7 +59,6 @@ for my $line (@version_cases) {
     foreach my $suffix (";", "{}") {
 	$withversion::VERSION = undef;
 	if ($package eq 'fail') {
-        note "package withversion $v$suffix";
 	    eval "package withversion $v$suffix";
 	    like($@, qr/$match/, "package withversion $v$suffix -> syntax error ($match)");
 	    ok(! version::is_strict($v), qq{... and "$v" should also fail STRICT regex});

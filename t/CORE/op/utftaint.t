@@ -2,7 +2,8 @@
 # tests whether tainting works with UTF-8
 
 BEGIN {
-    unshift @INC, ".";
+    chdir 't' if -d 't';
+    @INC = qw(../lib);
 }
 
 use strict;
@@ -10,14 +11,14 @@ use Config;
 
 # How to identify taint when you see it
 sub any_tainted (@) {
-    not eval { my $j=join("",@_);kill 0; 1 };
+    not eval { join("",@_), kill 0; 1 };
 }
 sub tainted ($) {
     any_tainted @_;
 }
 
-require 't/CORE/test.pl';
-plan(tests => 3*10 + 3*8 + 2*16 + 2);
+require './test.pl';
+plan(tests => 3*10 + 3*8 + 2*16 + 3);
 
 my $arg = $ENV{PATH}; # a tainted value
 use constant UTF8 => "\x{1234}";
@@ -75,7 +76,7 @@ for my $ary ([ascii => 'perl'], [latin1 => "\xB6"], [utf8 => "\x{100}"]) {
 
     is(tainted($taint), tainted($arg), "tainted: $encode, encode utf8");
 
-    $taint = $arg; substr($taint, 0) = $byte;
+    my $taint = $arg; substr($taint, 0) = $byte;
     utf8::decode($taint);
 
     is($taint, $utf8, "compare: $encode, decode byte");
@@ -105,7 +106,7 @@ for my $ary ([ascii => 'perl'], [latin1 => "\xB6"]) {
 
     is(tainted($taint), tainted($arg), "tainted: $encode, upgrade up");
 
-    $taint = $arg; substr($taint, 0) = $down;
+    my $taint = $arg; substr($taint, 0) = $down;
     utf8::upgrade($taint);
 
     is($taint, $up, "compare: $encode, upgrade down");
@@ -116,7 +117,7 @@ for my $ary ([ascii => 'perl'], [latin1 => "\xB6"]) {
 
     is(tainted($taint), tainted($arg), "tainted: $encode, upgrade down");
 
-    $taint = $arg; substr($taint, 0) = $up;
+    my $taint = $arg; substr($taint, 0) = $up;
     utf8::downgrade($taint);
 
     is($taint, $down, "compare: $encode, downgrade up");
@@ -127,7 +128,7 @@ for my $ary ([ascii => 'perl'], [latin1 => "\xB6"]) {
 
     is(tainted($taint), tainted($arg), "tainted: $encode, downgrade up");
 
-    $taint = $arg; substr($taint, 0) = $down;
+    my $taint = $arg; substr($taint, 0) = $down;
     utf8::downgrade($taint);
 
     is($taint, $down, "compare: $encode, downgrade down");
@@ -140,11 +141,20 @@ for my $ary ([ascii => 'perl'], [latin1 => "\xB6"]) {
 }
 
 {
-    fresh_perl_is('$a = substr $^X, 0, 0; /$a\x{100}/ || print q,ok,',
+    fresh_perl_is('$a = substr $^X, 0, 0; /\x{100}/i; /$a\x{100}/i || print q,ok,',
 		  'ok', {switches => ["-T", "-l"]},
 		  "matching a regexp is taint agnostic");
 
     fresh_perl_is('$a = substr $^X, 0, 0; /$a\x{100}/i || print q,ok,',
 		  'ok', {switches => ["-T", "-l"]},
 		  "therefore swash_init should be taint agnostic");
+}
+
+{
+    # RT #122148: s///e on tainted utf8 strings got pos() messed up in 5.20
+
+    my @p;
+    my $s = "\x{100}\x{100}\x{100}\x{100}". $^X;
+    $s =~ s/\x{100}/push @p, pos($s); "xxxx";/eg;
+    is("@p", "0 1 2 3", "RT #122148");
 }

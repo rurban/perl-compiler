@@ -3,8 +3,13 @@
 use strict;
 use warnings;
 BEGIN {
-    require 't/CORE/test.pl';
+    unless (-d 'blib') {
+        chdir 't' if -d 't';
+        @INC = '../lib';
+    }
 }
+
+require './test.pl';
 
 plan(skip_all => "Your system has no SIGALRM") if !exists $SIG{ALRM};
 plan(tests => 8);

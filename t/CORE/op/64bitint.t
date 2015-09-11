@@ -1,28 +1,20 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    eval { my $q = pack "q", 0 };
+    skip_all('no 64-bit types') if $@;
 }
-
-eval { my $q = pack "q", 0 };
-skip_all('no 64-bit types') if $@;
-
-# perlcc issues reported upstream at https://code.google.com/p/perl-compiler/issues/detail?id=157
 
 # This could use many more tests.
 
 # so that using > 0xfffffff constants and
 # 32+ bit integers don't cause noise
-# perlcc bug #156 https://code.google.com/p/perl-compiler/issues/detail?id=156
-
 use warnings;
 no warnings qw(overflow portable);
-
 use Config;
-
-# perlcc bug #156 https://code.google.com/p/perl-compiler/issues/detail?id=156
-# XSLoader is not loaded
 
 # as 6 * 6 = 36, the last digit of 6**n will always be six. Hence the last
 # digit of 16**n will always be six. Hence 16**n - 1 will always end in 5.
@@ -71,7 +63,6 @@ cmp_ok($x, '>', $f);
 
 
 $x = sprintf("%llx", $q);
-
 cmp_ok(hex $x, '==', 0x2dfdc1c35);
 cmp_ok(hex $x, '>', $f);
 

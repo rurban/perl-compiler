@@ -1,6 +1,6 @@
 #!./perl
 use strict;
-require 't/CORE/test.pl';
+require './test.pl';
 
 $^I = 'bak.*';
 

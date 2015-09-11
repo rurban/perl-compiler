@@ -3,8 +3,9 @@
 # tests for DATA filehandle operations
 
 BEGIN {
-    unshift @INC, 't/CORE/lib';
-    require 't/CORE/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 $|=1;
@@ -78,3 +79,12 @@ lotsa junk
 nothing
 EXPECT
 ok
+########
+# Which package is __DATA__ in?
+package foo;
+BEGIN{*foo::=*bar::}
+print <DATA>;
+__DATA__
+123
+EXPECT
+123

@@ -1,123 +1,12 @@
 #!./perl -w
 
-BEGIN { require 't/CORE/test.pl' }
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+}
+
 use strict;
-
-plan tests => 8;
-
-my %h;
-
-ok (!Internals::HvREHASH(%h), "hash doesn't start with rehash flag on");
-
-foreach (1..10) {
-  $h{"\0"x$_}++;
-}
-
-ok (!Internals::HvREHASH(%h), "10 entries doesn't trigger rehash");
-
-foreach (11..20) {
-  $h{"\0"x$_}++;
-}
-
-ok (Internals::HvREHASH(%h), "20 entries triggers rehash");
-
-
-
-
-# second part using an emulation of the PERL_HASH in perl, mounting an
-# attack on a pre-populated hash. This is also useful if you need normal
-# keys which don't contain \0 -- suitable for stashes
-
-use constant MASK_U32  => 2**32;
-use constant HASH_SEED => 0;
-use constant THRESHOLD => 14;
-use constant START     => "a";
-
-# some initial hash data
-my %h2;
-my $counter= "a";
-$h2{$counter++}++ while $counter ne 'cd';
-
-ok (!Internals::HvREHASH(%h2), 
-    "starting with pre-populated non-pathological hash (rehash flag if off)");
-
-my @keys = get_keys(\%h2);
-my $buckets= buckets(\%h2);
-$h2{$_}++ for @keys;
-$h2{$counter++}++ while buckets(\%h2) == $buckets; # force a split
-ok (Internals::HvREHASH(%h2), 
-    scalar(@keys) . " colliding into the same bucket keys are triggering rehash after split");
-
-# returns the number of buckets in a hash
-sub buckets {
-    my $hr = shift;
-    my $keys_buckets= scalar(%$hr);
-    if ($keys_buckets=~m!/([0-9]+)\z!) {
-        return 0+$1;
-    } else {
-        return 8;
-    }
-}
-
-sub get_keys {
-    my $hr = shift;
-
-    # the minimum of bits required to mount the attack on a hash
-    my $min_bits = log(THRESHOLD)/log(2);
-    # if the hash has already been populated with a significant amount
-    # of entries the number of mask bits can be higher
-    my $keys = scalar keys %$hr;
-    my $bits = $keys ? log($keys)/log(2) : 0;
-    $bits = $min_bits if $min_bits > $bits;
-
-    $bits = int($bits) < $bits ? int($bits) + 1 : int($bits);
-    # need to add 2 bits to cover the internal split cases
-    $bits += 2;
-    my $mask = 2**$bits-1;
-    print "# using mask: $mask ($bits)\n";
-
-    my @keys;
-    my $s = START;
-    my $c = 0;
-    # get 2 keys on top of the THRESHOLD
-    my $hash;
-    while (@keys < THRESHOLD+2) {
-        # next if exists $hash->{$s};
-        $hash = hash($s);
-        next unless ($hash & $mask) == 0;
-        $c++;
-        printf "# %2d: %5s, %10s\n", $c, $s, $hash;
-        push @keys, $s;
-    } continue {
-        $s++;
-    }
-
-    return @keys;
-}
-
-
-# trying to provide the fastest equivalent of C macro's PERL_HASH in
-# Perl - the main complication is that it uses U32 integer, which we
-# can't do it perl, without doing some tricks
-sub hash {
-    my $s = shift;
-    my @c = split //, $s;
-    my $u = HASH_SEED;
-    for (@c) {
-        # (A % M) + (B % M) == (A + B) % M
-        # This works because '+' produces a NV, which is big enough to hold
-        # the intermediate result. We only need the % before any "^" and "&"
-        # to get the result in the range for an I32.
-        # and << doesn't work on NV, so using 1 << 10
-        $u += ord;
-        $u += $u * (1 << 10); $u %= MASK_U32;
-        $u ^= $u >> 6;
-    }
-    $u += $u << 3;  $u %= MASK_U32;
-    $u ^= $u >> 11; $u %= MASK_U32;
-    $u += $u << 15; $u %= MASK_U32;
-    $u;
-}
 
 # This will crash perl if it fails
 
@@ -153,5 +42,169 @@ is($destroyed, 1, 'Timely hash destruction with lvalue keys');
     tie my %h, "bar";
     () = $h{\'foo'};
     is ref $key, SCALAR =>
-     'hash keys are not stringified during compilation';
+     'ref hash keys are not stringified during compilation';
+    use constant u => undef;
+    no warnings 'uninitialized'; # work around unfixed bug #105918
+    () = $h{+u};
+    is $key, undef,
+      'undef hash keys are not stringified during compilation, either';
 }
+
+# Part of RT #85026: Deleting the current iterator in void context does not
+# free it.
+{
+    my $gone;
+    no warnings 'once';
+    local *::DESTROY = sub { ++$gone };
+    my %a=(a=>bless[]);
+    each %a;   # make the entry with the obj the current iterator
+    delete $a{a};
+    ok $gone, 'deleting the current iterator in void context frees the val'
+}
+
+# [perl #99660] Deleted hash element visible to destructor
+{
+    my %h;
+    $h{k} = bless [];
+    my $normal_exit;
+    local *::DESTROY = sub { my $x = $h{k}; ++$normal_exit };
+    delete $h{k}; # must be in void context to trigger the bug
+    ok $normal_exit, 'freed hash elems are not visible to DESTROY';
+}
+
+# [perl #100340] Similar bug: freeing a hash elem during a delete
+sub guard::DESTROY {
+   ${$_[0]}->();
+};
+*guard = sub (&) {
+   my $callback = shift;
+   return bless \$callback, "guard"
+};
+{
+  my $ok;
+  my %t; %t = (
+    stash => {
+        guard => guard(sub{
+            $ok++;
+            delete $t{stash};
+        }),
+        foo => "bar",
+        bar => "baz",
+    },
+  );
+  ok eval { delete $t{stash}{guard}; # must be in void context
+            1 },
+    'freeing a hash elem from destructor called by delete does not die';
+  diag $@ if $@; # panic: free from wrong pool
+  is $ok, 1, 'the destructor was called';
+}
+
+# Weak references to pad hashes
+SKIP: {
+    skip_if_miniperl("No Scalar::Util::weaken under miniperl", 1);
+    my $ref;
+    require Scalar::Util;
+    {
+        my %hash;
+        Scalar::Util::weaken($ref = \%hash);
+        1;  # the previous statement must not be the last
+    }
+    is $ref, undef, 'weak refs to pad hashes go stale on scope exit';
+}
+
+# [perl #107440]
+sub A::DESTROY { $::ra = 0 }
+$::ra = {a=>bless [], 'A'};
+undef %$::ra;
+pass 'no crash when freeing hash that is being undeffed';
+$::ra = {a=>bless [], 'A'};
+%$::ra = ('a'..'z');
+pass 'no crash when freeing hash that is being exonerated, ahem, cleared';
+
+# If I have these correct then removing any part of the lazy hash fill handling
+# code in hv.c will cause some of these tests to start failing.
+sub validate_hash {
+  my ($desc, $h) = @_;
+  local $::Level = $::Level + 1;
+
+  my $scalar = %$h;
+  my $expect = qr!\A(\d+)/(\d+)\z!;
+  like($scalar, $expect, "$desc in scalar context matches pattern");
+  my ($used, $total) = $scalar =~ $expect;
+  cmp_ok($total, '>', 0, "$desc has >0 array size ($total)");
+  cmp_ok($used, '>', 0, "$desc uses >0 heads ($used)");
+  cmp_ok($used, '<=', $total,
+         "$desc doesn't use more heads than are available");
+  return ($used, $total);
+}
+
+sub torture_hash {
+  my $desc = shift;
+  # Intentionally use an anon hash rather than a lexical, as lexicals default
+  # to getting reused on subsequent calls
+  my $h = {};
+  ++$h->{$_} foreach @_;
+
+  my ($used0, $total0) = validate_hash($desc, $h);
+  # Remove half the keys each time round, until there are only 1 or 2 left
+  my @groups;
+  my ($h2, $h3, $h4);
+  while (keys %$h > 2) {
+    my $take = (keys %$h) / 2 - 1;
+    my @keys = (keys %$h)[0 .. $take];
+    my $scalar = %$h;
+    delete @$h{@keys};
+    push @groups, $scalar, \@keys;
+
+    my $count = keys %$h;
+    my ($used, $total) = validate_hash("$desc (-$count)", $h);
+    is($total, $total0, "$desc ($count) has same array size");
+    cmp_ok($used, '<=', $used0, "$desc ($count) has same or fewer heads");
+    ++$h2->{$_} foreach @keys;
+    my (undef, $total2) = validate_hash("$desc (+$count)", $h2);
+    cmp_ok($total2, '<=', $total0, "$desc ($count) array size no larger");
+
+    # Each time this will get emptied then repopulated. If the fill isn't reset
+    # when the hash is emptied, the used count will likely exceed the array
+    %$h3 = %$h2;
+    my (undef, $total3) = validate_hash("$desc (+$count copy)", $h3);
+    is($total3, $total2, "$desc (+$count copy) has same array size");
+
+    # This might use fewer buckets than the original
+    %$h4 = %$h;
+    my (undef, $total4) = validate_hash("$desc ($count copy)", $h4);
+    cmp_ok($total4, '<=', $total0, "$desc ($count copy) array size no larger");
+  }
+
+  my $scalar = %$h;
+  my @keys = keys %$h;
+  delete @$h{@keys};
+  is(scalar %$h, 0, "scalar keys for empty $desc");
+
+  # Rebuild the original hash, and build a copy
+  # These will fail if hash key addition and deletion aren't handled correctly
+  my $h1;
+  foreach (@keys) {
+    ++$h->{$_};
+    ++$h1->{$_};
+  }
+  is(scalar %$h, $scalar, "scalar keys restored when rebuilding");
+
+  while (@groups) {
+    my $keys = pop @groups;
+    ++$h->{$_} foreach @$keys;
+    my (undef, $total) = validate_hash("$desc " . keys %$h, $h);
+    is($total, $total0, "bucket count is constant when rebuilding");
+    is(scalar %$h, pop @groups, "scalar keys is identical when rebuilding");
+    ++$h1->{$_} foreach @$keys;
+    validate_hash("$desc copy " . keys %$h1, $h1);
+  }
+  # This will fail if the fill count isn't handled correctly on hash split
+  is(scalar %$h1, scalar %$h, "scalar keys is identical on copy and original");
+}
+
+torture_hash('a .. zz', 'a' .. 'zz');
+torture_hash('0 .. 9', 0 .. 9);
+torture_hash("'Perl'", 'Rules');
+
+done_testing();

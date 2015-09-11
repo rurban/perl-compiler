@@ -1,7 +1,5 @@
 #!./perl
 
-INIT {
-}
 print "1..13\n";
 
 print "ok 1\n" if 1;

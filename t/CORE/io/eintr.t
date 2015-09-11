@@ -6,15 +6,16 @@
 # read/write handles this gracefully (for some definition of 'graceful':
 # principally, don't segfault).
 
-INIT {
-    unshift @INC, 't/CORE/lib';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
 }
 
 use warnings;
 use strict;
 use Config;
 
-require 't/CORE/test.pl';
+require './test.pl';
 
 my $piped;
 eval {
@@ -48,9 +49,11 @@ if (exists $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/  ) {
 # Also skip on release builds, to avoid other possibly problematic
 # platforms
 
-if ($^O eq 'VMS' || $^O eq 'MSWin32' || $^O eq 'cygwin' || $^O eq 'freebsd' || 
-     ($^O eq 'solaris' && $Config{osvers} eq '2.8')
-	|| ((int($]*1000) & 1) == 0)
+my ($osmajmin) = $Config{osvers} =~ /^(\d+\.\d+)/;
+if ($^O eq 'VMS' || $^O eq 'MSWin32' || $^O eq 'cygwin' || $^O =~ /freebsd/ || $^O eq 'midnightbsd' ||
+     ($^O eq 'solaris' && $Config{osvers} eq '2.8') || $^O eq 'nto' ||
+     ($^O eq 'darwin' && $osmajmin < 9) ||
+    ((int($]*1000) & 1) == 0)
 ) {
 	skip_all('various portability issues');
 	exit 0;
@@ -92,11 +95,16 @@ alarm(0);
 ok(!$st, 'read/die: read status');
 ok(close($in), 'read/die: close status');
 
+# This used to be 1_000_000, but on Linux/ppc64 (POWER7) this kept
+# consistently failing. At exactly 0x100000 it started passing
+# again. We're hoping this number is bigger than any pipe buffer.
+my $surely_this_arbitrary_number_is_fine = 0x100000;
+
 # close during print
 
 fresh_io;
 $SIG{ALRM} = sub { $sigst = close($out) ? "ok" : "nok" };
-$buf = "a" x 1_000_000 . "\n"; # bigger than any pipe buffer hopefully
+$buf = "a" x $surely_this_arbitrary_number_is_fine . "\n";
 select $out; $| = 1; select STDOUT;
 alarm(1);
 $st = print $out $buf;
@@ -109,7 +117,7 @@ ok(!close($out), 'print/close: close status');
 
 fresh_io;
 $SIG{ALRM} = sub { die };
-$buf = "a" x 1_000_000 . "\n"; # bigger than any pipe buffer hopefully
+$buf = "a" x $surely_this_arbitrary_number_is_fine . "\n";
 select $out; $| = 1; select STDOUT;
 alarm(1);
 $st = eval { print $out $buf };

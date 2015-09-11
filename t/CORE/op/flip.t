@@ -1,7 +1,7 @@
 #!./perl
 
 BEGIN {
-    require 't/CORE/test.pl';
+    require "test.pl";
 }
 
 plan(11);
@@ -23,7 +23,7 @@ is($y, '12E0123E0');
 {
 local $.;
 
-open(of,'t/CORE/test.pl') or die "Can't open harness: $!";
+open(of,'harness') or die "Can't open harness: $!";
 while (<of>) {
     (3 .. 5) && ($foo .= $_);
 }
@@ -55,9 +55,8 @@ ok(scalar(0..2));
 like($warn, qr/uninitialized/);
 $warn = '';
 
-# if we want to catch the numeric warnings, we need to delay that line, 
-# 	as it s done during compilation ( this is not a bug by itself )
-$x = eval q/"foo".."bar"/;
+$x = "foo".."bar";
+
 ok((() = ($warn =~ /isn't numeric/g)) == 2);
 $warn = '';
 
