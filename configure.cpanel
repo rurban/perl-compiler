@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export PATH=/usr/local/cpanel/3rdparty/perl/520/bin:$PATH
+
 set -e
 
 find lib/B/C/ -name "*.pm" | xargs -n1 perl -Ilib -c

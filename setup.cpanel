@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# usage: . setup.cpanel --debug
+#    or  . setup.cpanel
+
+ARG="$1" # --debug
+PERL=$(which perl)
+BINPERL="/usr/local/cpanel/3rdparty/perl/520/bin"
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    echo "You need to source that file: 'source $0'"
+    exit 1;
+fi
+
+if [ "$PERL" != "$BINPERL/perl" ]; then
+    echo "Adding $BINPERL to your path"
+    export PATH=$BINPERL:$PATH
+fi
+
+DEBUG=0
+if [ "$ARG" == "--debug" ]; then
+    echo debug is ON
+    DEBUG=1
+fi
+
+export VERBOSE=$DEBUG
+export BC_DEVELOPING=$DEBUG
+
+echo -n 'Using perl: '
+which perl
