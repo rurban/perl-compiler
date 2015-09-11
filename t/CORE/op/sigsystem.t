@@ -1,7 +1,7 @@
 #!perl -w
 
 BEGIN {
-      require './test.pl';
+      require 't/CORE/test.pl';
       skip_all_if_miniperl();
       skip_all_without_config(qw(d_fork));
 }

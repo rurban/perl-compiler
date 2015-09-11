@@ -120,7 +120,7 @@ $/ = "\n";
  # If we do not include the lib directories, we may end up picking up a
  # binary-incompatible previously-installed version. The eval won’t help in
  # intercepting a SIGTRAP.
- local @INC = ("../lib", "lib", @INC);
+ local @INC = ("t/CORE/lib", @INC);
  if (not eval q/use PerlIO::scalar; use PerlIO::via::scalar; 1/) {
   # In-memory files necessitate PerlIO::via::scalar, thus a perl with
   # perlio and dynaloading enabled. miniperl won't be able to run this

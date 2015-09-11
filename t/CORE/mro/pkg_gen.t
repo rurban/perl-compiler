@@ -3,8 +3,7 @@
 use strict;
 use warnings;
 
-chdir 't' if -d 't';
-require q(./test.pl); plan(tests => 7);
+require 't/CORE/test.pl'; plan(tests => 7);
 
 require mro;
 

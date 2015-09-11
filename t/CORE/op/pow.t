@@ -2,9 +2,8 @@
 # Now they'll be wanting biff! and zap! tests too.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 }
 
 # This calculation ought to be within 0.001 of the right answer.

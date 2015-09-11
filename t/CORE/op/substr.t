@@ -3,8 +3,7 @@
 #P = start of string  Q = start of substr  R = end of substr  S = end of string
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    push @INC, "t/CORE/lib";
 }
 use warnings ;
 
@@ -21,7 +20,7 @@ $SIG{__WARN__} = sub {
      }
 };
 
-BEGIN { require './test.pl'; }
+BEGIN { require 't/CORE/test.pl'; }
 
 plan(387);
 

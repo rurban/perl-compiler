@@ -2,7 +2,7 @@
 
 $qr = 1;
 $qr_embed = 1;
-for $file ('./re/regexp.t', './t/re/regexp.t', ':re:regexp.t') {
+for $file ('t/CORE/re/regexp.t', './re/regexp.t', './t/re/regexp.t', ':re:regexp.t') {
     if (-r $file) {
 	do $file or die $@;
 	exit;

@@ -3,9 +3,8 @@
 # Test interaction of threads and directory handles.
 
 BEGIN {
-     chdir 't' if -d 't';
-     @INC = '../lib';
-     require './test.pl';
+     push @INC, "t/CORE/lib";
+     require 't/CORE/test.pl';
      $| = 1;
 
      require Config;

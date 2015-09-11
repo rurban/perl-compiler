@@ -1,13 +1,13 @@
 #!./perl
 
 BEGIN {
-  chdir 't' if -d 't';
-  @INC = '../lib';
-  require './test.pl';
+  push @INC, "t/CORE/lib";
+  require 't/CORE/test.pl';
 }
 
 plan tests => 48;
 
+chdir 't/CORE';
 open(I, 'op/sysio.t') || die "sysio.t: cannot find myself: $!";
 
 $reopen = ($^O eq 'VMS' ||

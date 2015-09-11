@@ -5,11 +5,10 @@
 #
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
+    push @INC, qw{t/CORE/lib};
     $SIG{__WARN__} = sub { $warns++; warn $_[0] };
 }
-require 'test.pl';
+require 't/CORE/test.pl';
 plan( tests => 27 );
 
 my $unix_mode = 1;

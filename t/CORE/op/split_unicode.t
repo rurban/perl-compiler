@@ -1,7 +1,7 @@
 #!./perl
 
 BEGIN {
-    require './test.pl';
+    require 't/CORE/test.pl';
     skip_all_if_miniperl("no dynamic loading on miniperl, no File::Spec (used by charnames)");
     plan(tests => 145);
 }

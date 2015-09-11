@@ -5,9 +5,8 @@
 # argument on the stack.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 }
 
 my @ops = split //, 'rwxoRWXOezsfdlpSbctugkTMBAC';

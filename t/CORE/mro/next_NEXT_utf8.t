@@ -6,7 +6,7 @@ use NEXT;
 use utf8;
 use open qw( :utf8 :std );
 
-require './test.pl';
+BEGIN { require 't/CORE/test.pl'}
 plan(tests => 4);
 
 {

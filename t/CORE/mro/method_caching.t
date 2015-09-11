@@ -6,13 +6,7 @@ use warnings;
 no warnings 'redefine'; # we do a lot of this
 no warnings 'prototype'; # we do a lot of this
 
-BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = '../lib';
-    }
-    require './test.pl';
-}
+BEGIN { require 't/CORE/test.pl' }
 
 {
     package MCTest::Base;

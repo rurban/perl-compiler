@@ -3,19 +3,19 @@
 my $PERLIO;
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
-    skip_all_without_perlio();
-    # FIXME - more of these could be tested without Encode or full perl
-    skip_all_without_dynamic_extension('Encode');
-
-    # Makes testing easier.
-    $ENV{PERLIO} = 'stdio' if exists $ENV{PERLIO} && $ENV{PERLIO} eq '';
-    skip_all("PERLIO='$ENV{PERLIO}' unknown")
-	if exists $ENV{PERLIO} && $ENV{PERLIO} !~ /^(stdio|perlio|mmap)$/;
-    $PERLIO = exists $ENV{PERLIO} ? $ENV{PERLIO} : "(undef)";
+    unshift @INC, 't/CORE', "t/CORE/lib";
+    require 'test.pl';
 }
+
+skip_all_without_perlio();
+# FIXME - more of these could be tested without Encode or full perl
+skip_all_without_dynamic_extension('Encode');
+
+# Makes testing easier.
+$ENV{PERLIO} = 'stdio' if exists $ENV{PERLIO} && $ENV{PERLIO} eq '';
+skip_all("PERLIO='$ENV{PERLIO}' unknown")
+if exists $ENV{PERLIO} && $ENV{PERLIO} !~ /^(stdio|perlio|mmap)$/;
+$PERLIO = exists $ENV{PERLIO} ? $ENV{PERLIO} : "(undef)";
 
 use Config;
 
@@ -248,6 +248,6 @@ EOT
     is $f, 1, '1 fetch on tied string';
 
     # No distinction between nums and strings
-    open "12", "<:crlf", "test.pl" or die "$0 cannot open test.pl: $!";
+    open "12", "<:crlf", "t/CORE/test.pl" or die "$0 cannot open test.pl: $!";
     ok PerlIO::get_layers(12), 'str/num arguments are treated identically';
 }

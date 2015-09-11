@@ -36,9 +36,8 @@
 # sub a5 { "$_[0]" }		# P
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 }
 
 use strict;

@@ -3,7 +3,7 @@
 # Check if eval correctly ignores the UTF-8 hint.
 
 BEGIN {
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 plan (tests => 5);

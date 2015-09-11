@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require "../t/test.pl";
+    push @INC, "t/CORE/lib";
+    require "t/CORE/test.pl";
     skip_all_without_perlio();
     plan (15);
 }

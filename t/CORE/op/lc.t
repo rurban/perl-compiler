@@ -3,9 +3,9 @@
 # This file is intentionally encoded in latin-1.
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
-    require 't/CORE-CPANEL/loc_tools.pl';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
+    require 't/CORE/loc_tools.pl';
     require Config;
     import Config;
 }

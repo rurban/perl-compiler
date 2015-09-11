@@ -2,7 +2,7 @@
 
 # Tests 51 onwards are intentionally not all-warnings-clean
 
-require './test.pl';
+require 't/CORE/test.pl';
 use strict;
 
 plan(tests => 77);

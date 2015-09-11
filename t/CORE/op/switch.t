@@ -1,9 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 use strict;
@@ -440,7 +438,7 @@ sub check_outside1 { is($_, "inside", "\$_ is not lexically scoped") }
 
 {
     my ($ok_d, $ok_f, $ok_r);
-    given("op") {
+    given("t/CORE/op") {
 	when(-d)  {$ok_d = 1; continue}
 	when(!-f) {$ok_f = 1; continue}
 	when(-r)  {$ok_r = 1; continue}

@@ -3,10 +3,7 @@
 # Checks if the parser behaves correctly in edge cases
 # (including weird syntax errors)
 
-BEGIN {
-    @INC = qw(. ../lib);
-    chdir 't';
-}
+chdir 't/CORE';
 
 print "1..169\n";
 

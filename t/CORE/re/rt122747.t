@@ -6,9 +6,8 @@ $| = 1;
 
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib','.','../ext/re');
-    require './test.pl';
+    unshift @INC, 't/CORE/lib', 't/CORE/ext/re';
+    require 't/CORE/test.pl';
 }
 
 plan tests => 3;

@@ -1,7 +1,6 @@
 #!./perl
 
-BEGIN { chdir 't'; @INC = '../lib'; require './test.pl' }
-
+BEGIN { require 't/CORE/test.pl'; }
 use utf8;
 use open qw( :utf8 :std );
 

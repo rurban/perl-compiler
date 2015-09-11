@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 
     eval { require AnyDBM_File }; # not all places have dbm* functions
     skip_all("No dbm functions") if $@;

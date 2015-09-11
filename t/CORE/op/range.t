@@ -1,11 +1,10 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib', '.');
+    unshift @INC, 't/CORE/lib';
 }   
 # Avoid using eq_array below as it uses .. internally.
-require 'test.pl';
+require 't/CORE/test.pl';
 
 use Config;
 

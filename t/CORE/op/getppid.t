@@ -8,14 +8,13 @@
 # the same. (and not ours)
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(../lib);
+    unshift @INC, 't/CORE/lib';
 }
 
 use strict;
 
 BEGIN {
-    require './test.pl';
+    require 't/CORE/test.pl';
     skip_all_without_config(qw(d_pipe d_fork d_waitpid d_getppid));
     plan (8);
 }

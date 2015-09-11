@@ -6,9 +6,8 @@
 ## Adapted and expanded by Gurusamy Sarathy <gsar@activestate.com>
 ##
 
-chdir 't' if -d 't';
-@INC = '../lib';
-require './test.pl';
+push @INC, "t/CORE/lib";
+require 't/CORE/test.pl';
 
 $|=1;
 

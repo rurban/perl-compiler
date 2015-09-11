@@ -3,15 +3,15 @@
 binmode STDOUT, ":utf8";
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
     require Config; import Config;
     skip_all_if_miniperl("no dynamic loading on miniperl, no Encode nor POSIX");
     if ($^O eq 'dec_osf') {
       skip_all("$^O cannot handle this test");
     }
-    require './loc_tools.pl';
+    require 't/CORE/loc_tools.pl';
 }
 
 use charnames ":full";

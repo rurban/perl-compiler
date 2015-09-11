@@ -1,8 +1,7 @@
 BEGIN {
-	chdir 't' if -d 't';
-	@INC = '../lib';
+	push @INC, "t/CORE/lib";
 	require Config; import Config;
-	require './test.pl';
+	require 'test.pl';
 	skip_all_without_perlio();
 }
 

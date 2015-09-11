@@ -3,9 +3,8 @@
 # If you modify/add tests here, remember to update also ext/Fcntl/t/syslfs.t.
 
 BEGIN {
-	chdir 't' if -d 't';
-	@INC = '../lib';
-	require './test.pl';
+	push @INC, "t/CORE/lib";
+	require 't/CORE/test.pl';
 	require Config;
 	# Don't bother if there are no quad offsets.
 	skip_all('no 64-bit file offsets')

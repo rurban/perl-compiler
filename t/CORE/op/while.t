@@ -1,10 +1,6 @@
 #!./perl
 
-BEGIN {
-    chdir 't';
-    @INC = "../lib";
-    require "./test.pl";
-}
+require 't/CORE/test.pl';
 
 plan(26);
 
@@ -215,9 +211,9 @@ sub save_context { $_[0] = wantarray; $_[1] }
     ok($a[0] ne $a[1]);
 }
 
-fresh_perl_is <<'72406', "foobar\n", {},
+fresh_perl_is(<<'72406', "foobar\n", {}, "[perl #72406] segv with do{}until CONST where const is not folded");
 { package o; use overload bool => sub { die unless $::ok++; return 1 } }
 use constant OK => bless [], o::;
 do{print("foobar\n");}until OK;
 72406
-    "[perl #72406] segv with do{}until CONST where const is not folded";
+    

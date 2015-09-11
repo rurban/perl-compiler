@@ -5,9 +5,8 @@
 # in other packages (%Net::DNS::RR::SIG, ${"'Oh no'!"}, etc.).
 
 BEGIN {
-    chdir 't' if -d 't';
-    require './test.pl';
-    @INC = '../lib';
+    require 't/CORE/test.pl';
+    push @INC, "t/CORE/lib";
 }
 
 # Hack to allow test counts to be specified piecemeal

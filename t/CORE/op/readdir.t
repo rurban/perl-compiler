@@ -1,14 +1,14 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 use strict;
 use warnings;
 use vars qw($fh @fh %fh);
+
+chdir 't/CORE';
 
 eval 'opendir(NOSUCH, "no/such/directory");';
 skip_all($@) if $@;
@@ -23,16 +23,7 @@ is(opendir(OP, "op"), 1);
 my @D = grep(/^[^\.].*\.t$/i, readdir(OP));
 closedir(OP);
 
-my $expect;
-{
-    open my $man, '<', '../MANIFEST' or die "Can't open ../MANIFEST: $!";
-    while (<$man>) {
-	++$expect if m!^t/op/[^/]+\t!;
-    }
-}
-
-my ($min, $max) = ($expect - 10, $expect + 10);
-within(scalar @D, $expect, 10, 'counting op/*.t');
+within(scalar @D, 180, 200, 'counting op/*.t');
 
 my @R = sort @D;
 my @G = sort <op/*.t>;

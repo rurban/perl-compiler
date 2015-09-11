@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 }
 
 # XXX remove this later -- dagolden, 2010-01-13

@@ -4,15 +4,17 @@ BEGIN {
     # We're not going to chdir() into 't' because we don't know if
     # chdir() works!  Instead, we'll hedge our bets and put both
     # possibilities into @INC.
-    @INC = qw(t . lib ../lib);
-    require "test.pl";
+    require "t/CORE/test.pl";
     # Really want to know if chdir is working, as the build process will all go
     # wrong if it is not.
     if (is_miniperl() && !eval {require File::Spec::Functions; 1}) {
 	push @INC, qw(dist/Cwd/lib dist/Cwd ../dist/Cwd/lib ../dist/Cwd);
     }
-    plan(tests => 48);
 }
+
+chdir 't/CORE';
+
+plan(tests => 48);
 
 use Config;
 
@@ -52,7 +54,7 @@ my $Cwd = abs_path;
 # Let's get to a known position
 SKIP: {
     my ($vol,$dir) = splitpath(abs_path,1);
-    my $test_dir = 't';
+    my $test_dir = 'CORE';
     my $compare_dir = (splitdir($dir))[-1];
 
     # VMS is case insensitive but will preserve case in EFS mode.

@@ -4,9 +4,8 @@ use strict;
 use warnings;
 
 BEGIN {
-    chdir 't';
-    @INC = '../lib';
-    require q(./test.pl);
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 }
 plan(tests => 61);
 

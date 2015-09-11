@@ -2,7 +2,7 @@
 use strict;
 
 BEGIN {
-    require './test.pl';
+    require 't/CORE/test.pl';
     skip_all("EBCDIC porting needed") if $::IS_EBCDIC;
     skip_all_without_perlio();
 }

@@ -1,10 +1,7 @@
 #!./perl
 
-BEGIN {
-    chdir 't' if -d 't';
-    @INC = '.';
-    push @INC, '../lib';
-}
+chdir 't/CORE';
+unshift @INC, '.', 't/CORE/lib';
 
 sub do_require {
     %INC = ();

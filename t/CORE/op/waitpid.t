@@ -3,9 +3,8 @@
 # tests for (possibly emulated) waitpid
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
     require Config;
     skip_all('no Errno')
 	unless eval 'use Errno qw(EINVAL); 1';

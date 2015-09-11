@@ -2,7 +2,7 @@
 use strict;
 
 BEGIN {
- require './test.pl';
+ require 't/CORE/test.pl';
 
  plan (tests => my $tests = 11);
 

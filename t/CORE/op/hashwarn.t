@@ -1,11 +1,10 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
+    push @INC, qw{t/CORE/lib};
 }
 
-require 'test.pl';
+require 't/CORE/test.pl';
 plan( tests => 16 );
 
 use strict;

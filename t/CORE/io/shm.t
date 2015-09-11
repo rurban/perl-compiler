@@ -16,11 +16,9 @@
 
 BEGIN {
   if ($ENV{'PERL_CORE'}) {
-    chdir 't' if -d 't';
-    @INC = '../lib' if -d '../lib' && -d '../ext';
   }
-
-  require "./test.pl";
+  push @INC, 't/CORE/lib';
+  require 'test.pl';
   require Config; import Config;
 
   if ($ENV{'PERL_CORE'} && $Config{'extensions'} !~ m[\bIPC/SysV\b]) {

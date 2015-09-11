@@ -3,12 +3,11 @@
 # Test // and friends.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    push @INC, "t/CORE/lib";
 }
 
 package main;
-require './test.pl';
+require 't/CORE/test.pl';
 
 plan( tests => 34 );
 

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-require q(./test.pl); plan(tests => 10);
+require 't/CORE/test.pl'; plan(tests => 10);
 
 =pod
 

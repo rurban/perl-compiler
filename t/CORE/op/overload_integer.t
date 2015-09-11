@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    push @INC, '../lib';
-    require './test.pl';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 use strict;

@@ -1,5 +1,9 @@
 #!perl
 
+BEGIN {
+    require 't/CORE/test.pl';
+}
+
 # Complicated enough to get its own test file.
 
 # When a subroutine is called recursively, it gets a new pad indexed by its
@@ -22,7 +26,6 @@
 # outer sub.  Then we test a lexical directly inside the sub that DESTROY
 # calls.  Then we repeat with formats.
 
-BEGIN { chdir 't'; require './test.pl' }
 plan 22;
 
 sub foo {

@@ -2,14 +2,8 @@
 
 use strict;
 use warnings;
-BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = '../lib';
-    }
-}
 
-require './test.pl';
+require 't/CORE/test.pl';
 
 plan(skip_all => "Your system has no SIGALRM") if !exists $SIG{ALRM};
 plan(tests => 8);

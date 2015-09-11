@@ -4,9 +4,8 @@
 # filehandles. Most of these will segfault perl if they fail.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
-    require "./test.pl";
+    push @INC, qw{t/CORE/lib};
+    require 'test.pl';
 }
 
 BEGIN { $| = 1 }

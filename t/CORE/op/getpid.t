@@ -3,9 +3,8 @@
 # Tests if $$ and getppid return consistent values across threads
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(../lib);
-    require './test.pl';
+    unshift @INC, 't/CORE/lib';
+    require 't/CORE/test.pl';
 }
 
 use strict;

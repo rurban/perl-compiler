@@ -1,14 +1,14 @@
 #!./perl
 
 BEGIN {
-    chdir 't';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 plan reverse 9;
 
+my $test_pl = 't/CORE/test.pl';
 
-open my $fh, "test.pl" or die "$0 unfortunately cannot open test.pl: $!";
+open my $fh, $test_pl or die "$0 unfortunately cannot open $test_pl: $!";
 
 is select, 'main::STDOUT', 'select retval';
 is select($fh), 'main::STDOUT', 'select retval when called with argument';
@@ -18,7 +18,7 @@ is select(STDOUT), $fh, 'select previous ref when setting to bareword';
 is select, 'main::STDOUT', 'switching back to STDOUT';
 is ref\select, 'SCALAR', 'and STDOUT is a plain string';
 
-open foo::bar, "test.pl" or die "$0 sadly cannot open test.pl: $!";
+open foo::bar, "$test_pl" or die "$0 sadly cannot open $test_pl: $!";
 select foo::bar;
 $handle = \*foo::bar;
 $stash = \%foo::;
@@ -26,7 +26,7 @@ $stash = \%foo::;
 is select, $handle,
     'select returns ref for glob whose stash has been detached';
 
-open thwat::snin, "test.pl" or die "$0 is unable to open test.pl: $!";
+open thwat::snin, "$test_pl" or die "$0 is unable to open $test_pl: $!";
 select thwat::snin;
 $handle = \*thwat::snin;
 *thwat:: = *snin::; # gv is now *__ANON__::snin

@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
     require Config; # load these before we mess with *CORE::GLOBAL::require
     require 'Config_heavy.pl'; # since runperl will need them
 }
