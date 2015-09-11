@@ -1,11 +1,12 @@
 #!./perl
 
-INIT {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
 }
 
-plan(tests => 42);
+require './test.pl';
+plan(tests => 43);
 
 # compile time
 
@@ -153,3 +154,10 @@ is(77, scalar ((1,7)x2),    'stack truncation');
 
 # [perl #35885]
 is( (join ',', (qw(a b c) x 3)), 'a,b,c,a,b,c,a,b,c', 'x on qw produces list' );
+
+# [perl #78194] x aliasing op return values
+sub {
+    is(\$_[0], \$_[1],
+      '[perl #78194] \$_[0] == \$_[1] when @_ aliases elems repeated by x')
+}
+ ->(("${\''}")x2);

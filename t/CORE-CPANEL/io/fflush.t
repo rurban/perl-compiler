@@ -1,8 +1,9 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 # Script to test auto flush on fork/exec/system/qx.  The idea is to
@@ -18,12 +19,11 @@ use strict;
 # it here too or expect test gratuitous test failures.
 my $useperlio = defined $Config{useperlio} ? $Config{useperlio} eq 'define' ? 1 : 0 : 0;
 my $fflushNULL = defined $Config{fflushNULL} ? $Config{fflushNULL} eq 'define' ? 1 : 0 : 0;
-my $d_sfio = defined $Config{d_sfio} ? $Config{d_sfio} eq 'define' ? 1 : 0 : 0;
 my $fflushall = defined $Config{fflushall} ? $Config{fflushall} eq 'define' ? 1 : 0 : 0;
 my $d_fork = defined $Config{d_fork} ? $Config{d_fork} eq 'define' ? 1 : 0 : 0;
 
 skip_all('fflush(NULL) or equivalent not available')
-    unless $useperlio || $fflushNULL || $d_sfio || $fflushall;
+    unless $useperlio || $fflushNULL || $fflushall;
 
 plan(tests => 7);
 

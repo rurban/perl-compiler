@@ -1,7 +1,7 @@
 #!./perl
 # Test $!
 
-print "1..28\n";
+print "1..48\n";
 
 $test_count = 1;
 $teststring = "1\n12\n123\n1234\n1234\n12345\n\n123456\n1234567\n";
@@ -10,11 +10,10 @@ $teststring2 = "1234567890123456789012345678901234567890";
 # Create our test datafile
 1 while unlink 'foo';                # in case junk left around
 rmdir 'foo';
-my $TESTFILE;
-open $TESTFILE, ">./foo" or die "error $! $^E opening";
-binmode $TESTFILE;
-print $TESTFILE $teststring;
-close $TESTFILE or die "error $! $^E closing";
+open TESTFILE, ">./foo" or die "error $! $^E opening";
+binmode TESTFILE;
+print TESTFILE $teststring;
+close TESTFILE or die "error $! $^E closing";
 
 $test_count_start = $test_count;  # Needed to know how many tests to skip
 open TESTFILE, "<./foo";
@@ -25,14 +24,15 @@ unlink "./foo";
 
 # try the record reading tests. New file so we don't have to worry about
 # the size of \n.
-open $TESTFILE, ">./foo";
-print $TESTFILE $teststring2;
-binmode $TESTFILE;
-close $TESTFILE;
+open TESTFILE, ">./foo";
+print TESTFILE $teststring2;
+binmode TESTFILE;
+close TESTFILE;
 open TESTFILE, "<./foo";
 binmode TESTFILE;
 test_record(*TESTFILE);
 close TESTFILE;
+test_bad_setting();
 $test_count_end = $test_count;  # Needed to know how many tests to skip
 
 
@@ -40,21 +40,20 @@ $test_count_end = $test_count;  # Needed to know how many tests to skip
 if ($^O eq 'VMS') {
   # Create a temp file. We jump through these hoops 'cause CREATE really
   # doesn't like our methods for some reason.
-  my $FDLFILE;
-  open $FDLFILE, "> ./foo.fdl";
-  print $FDLFILE "RECORD\n FORMAT VARIABLE\n";
-  close $FDLFILE;
-  open my $CREATEFILE, "> ./foo.com";
-  print $CREATEFILE '$ DEFINE/USER SYS$INPUT NL:', "\n";
-  print $CREATEFILE '$ DEFINE/USER SYS$OUTPUT NL:', "\n";
-  print $CREATEFILE '$ OPEN YOW []FOO.BAR/WRITE', "\n";
-  print $CREATEFILE '$ CLOSE YOW', "\n";
-  print $CREATEFILE "\$EXIT\n";
-  close $CREATEFILE;
+  open FDLFILE, "> ./foo.fdl";
+  print FDLFILE "RECORD\n FORMAT VARIABLE\n";
+  close FDLFILE;
+  open CREATEFILE, "> ./foo.com";
+  print CREATEFILE '$ DEFINE/USER SYS$INPUT NL:', "\n";
+  print CREATEFILE '$ DEFINE/USER SYS$OUTPUT NL:', "\n";
+  print CREATEFILE '$ OPEN YOW []FOO.BAR/WRITE', "\n";
+  print CREATEFILE '$ CLOSE YOW', "\n";
+  print CREATEFILE "\$EXIT\n";
+  close CREATEFILE;
   $throwaway = `\@\[\]foo`, "\n";
-  open(my $TEMPFILE, ">./foo.bar") or print "# open failed $! $^E\n";
-  print $TEMPFILE "foo\nfoobar\nbaz\n";
-  close $TEMPFILE;
+  open(TEMPFILE, ">./foo.bar") or print "# open failed $! $^E\n";
+  print TEMPFILE "foo\nfoobar\nbaz\n";
+  close TEMPFILE;
 
   open TESTFILE, "<./foo.bar";
   $/ = \10;
@@ -121,6 +120,7 @@ $/ = "\n";
  # If we do not include the lib directories, we may end up picking up a
  # binary-incompatible previously-installed version. The eval won’t help in
  # intercepting a SIGTRAP.
+ local @INC = ("../lib", "lib", @INC);
  if (not eval q/use PerlIO::scalar; use PerlIO::via::scalar; 1/) {
   # In-memory files necessitate PerlIO::via::scalar, thus a perl with
   # perlio and dynaloading enabled. miniperl won't be able to run this
@@ -243,3 +243,52 @@ sub test_record {
   $test_count++;
 }
 
+sub test_bad_setting {
+  if (eval {$/ = []; 1}) {
+    print "not ok ",$test_count++," # \$/ = []; should die\n";
+    print "not ok ",$test_count++," # \$/ = []; produced expected error message\n";
+  } else {
+    my $msg= $@ || "Zombie Error";
+    print "ok ",$test_count++," # \$/ = []; should die\n";
+    if ($msg!~m!Setting \$\/ to an ARRAY reference is forbidden!) {
+      print "not ";
+    }
+    print "ok ",$test_count++," # \$/ = []; produced expected error message\n";
+  }
+  if (eval {$/ = {}; 1}) {
+    print "not ok ",$test_count++," # \$/ = {}; should die\n";
+    print "not ok ",$test_count++," # \$/ = {}; produced expected error message\n";
+  } else {
+    my $msg= $@ || "Zombie Error";
+    print "ok ",$test_count++," # \$/ = {}; should die\n";
+    if ($msg!~m!Setting \$\/ to a HASH reference is forbidden!) {print "not ";}
+    print "ok ",$test_count++," # \$/ = {}; produced expected error message\n";
+  }
+  if (eval {$/ = \\1; 1}) {
+    print "not ok ",$test_count++," # \$/ = \\\\1; should die\n";
+    print "not ok ",$test_count++," # \$/ = \\\\1; produced expected error message\n";
+  } else {
+    my $msg= $@ || "Zombie Error";
+    print "ok ",$test_count++," # \$/ = \\\\1; should die\n";
+    if ($msg!~m!Setting \$\/ to a REF reference is forbidden!) {print "not ";}
+    print "ok ",$test_count++," # \$/ = \\\\1; produced expected error message\n";
+  }
+  if (eval {$/ = qr/foo/; 1}) {
+    print "not ok ",$test_count++," # \$/ = qr/foo/; should die\n";
+    print "not ok ",$test_count++," # \$/ = qr/foo/; produced expected error message\n";
+  } else {
+    my $msg= $@ || "Zombie Error";
+    print "ok ",$test_count++," # \$/ = qr/foo/; should die\n";
+    if ($msg!~m!Setting \$\/ to a REGEXP reference is forbidden!) {print "not ";}
+    print "ok ",$test_count++," # \$/ = qr/foo/; produced expected error message\n";
+  }
+  if (eval {$/ = \*STDOUT; 1}) {
+    print "not ok ",$test_count++," # \$/ = \\*STDOUT; should die\n";
+    print "not ok ",$test_count++," # \$/ = \\*STDOUT; produced expected error message\n";
+  } else {
+    my $msg= $@ || "Zombie Error";
+    print "ok ",$test_count++," # \$/ = \\*STDOUT; should die\n";
+    if ($msg!~m!Setting \$\/ to a GLOB reference is forbidden!) {print "not ";}
+    print "ok ",$test_count++," # \$/ = \\*STDOUT; produced expected error message\n";
+  }
+}

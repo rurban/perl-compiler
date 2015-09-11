@@ -1,12 +1,17 @@
 #!./perl
 
-BEGIN { require 't/CORE-CPANEL/test.pl' }
+BEGIN {
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
+}
 
-plan tests => 24;
+plan tests => 30;
 
 # [perl #19566]: sv_gets writes directly to its argument via
 # TARG. Test that we respect SvREADONLY.
-eval { for (\2) { $_ = <FH> } };
+use constant roref => \2;
+eval { for (roref) { $_ = <FH> } };
 like($@, 'Modification of a read-only value attempted', '[perl #19566]');
 
 # [perl #21628]
@@ -77,6 +82,10 @@ SKIP: {
     close F;
   }
 }
+
+fresh_perl_is('BEGIN{<>}', '',
+              { switches => ['-w'], stdin => '', stderr => 1 },
+              'No ARGVOUT used only once warning');
 
 fresh_perl_is('print readline', 'foo',
               { switches => ['-w'], stdin => 'foo', stderr => 1 },
@@ -236,6 +245,30 @@ $one .= <DATA>;
 $two .= <DATA>;
 is( $one, "A: One\n", "rcatline works with tied scalars" );
 is( $two, "B: Two\n", "rcatline works with tied scalars" );
+
+# mentioned in bug #97482
+# <$foo> versus readline($foo) should not affect vivification.
+my $yunk = "brumbo";
+if (exists $::{$yunk}) {
+     die "Name $yunk already used. Please adjust this test."
+}
+<$yunk>;
+ok !defined *$yunk, '<> does not autovivify';
+readline($yunk);
+ok !defined *$yunk, "readline does not autovivify";
+
+# [perl #97988] PL_last_in_gv could end up pointing to junk.
+#               Now glob copies set PL_last_in_gv to null when unglobbed.
+open *foom,'test.pl';
+my %f;
+$f{g} = *foom;
+readline $f{g};
+$f{g} = 3; # PL_last_in_gv should be cleared now
+is tell, -1, 'tell returns -1 after last gv is unglobbed';
+$f{g} = *foom; # since PL_last_in_gv is null, this should have no effect
+is tell, -1, 'unglobbery of last gv nullifies PL_last_in_gv';
+readline *{$f{g}};
+is tell, tell *foom, 'readline *$glob_copy sets PL_last_in_gv';
 
 __DATA__
 moo

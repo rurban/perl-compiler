@@ -6,8 +6,9 @@
 ## Adapted and expanded by Gurusamy Sarathy <gsar@activestate.com>
 ##
 
-unshift @INC, 't/CORE-CPANEL/lib';
-require 't/CORE-CPANEL/test.pl';
+chdir 't' if -d 't';
+@INC = '../lib';
+require './test.pl';
 
 $|=1;
 

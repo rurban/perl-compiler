@@ -1,6 +1,6 @@
 #!./perl
 
-print "1..57\n";
+print "1..91\n";
 
 $x = 'x';
 
@@ -120,26 +120,18 @@ print $foo;
 # Tests for new extended control-character variables
 # MJD 19990227
 
+my $test = 31;
+
 { my $CX = "\cX";
   my $CXY  ="\cXY";
   $ {$CX} = 17;
   $ {$CXY} = 23;
   if ($ {^XY} != 23) { print "not "  }
-  print "ok 31\n";
+  print "ok $test\n"; $test++;
  
-# Does the syntax where we use the literal control character still work?
-  if (eval "\$ {\cX}" != 17 or $@) { print "not "  }
-  print "ok 32\n";
-
-  eval "\$\cQ = 24";                 # Literal control character
-  if ($@ or ${"\cQ"} != 24) {  print "not "  }
-  print "ok 33\n";
-  if ($^Q != 24) {  print "not "  }  # Control character escape sequence
-  print "ok 34\n";
-
 # Does the old UNBRACED syntax still do what it used to?
   if ("$^XY" ne "17Y") { print "not " }
-  print "ok 35\n";
+  print "ok $test\n"; $test++;
 
   sub XX () { 6 }
   $ {"\cQ\cXX"} = 119; 
@@ -147,22 +139,22 @@ print $foo;
   $N = 5;
   # The second caret here should be interpreted as an xor
   if (($^Q^XX) != 3) { print "not " } 
-  print "ok 36\n";
+  print "ok $test\n"; $test++;
 #  if (($N  ^  XX()) != 3) { print "not " } 
-#  print "ok 32\n";
+#  print "ok $test\n"; $test++;
 
   # These next two tests are trying to make sure that
-  # $^FOO is always global; it doesn't make sense to `my' it.
+  # $^FOO is always global; it doesn't make sense to 'my' it.
   # 
 
   eval 'my $^X;';
   print "not " unless index ($@, 'Can\'t use global $^X in "my"') > -1;
-  print "ok 37\n";
+  print "ok $test\n"; $test++;
 #  print "($@)\n" if $@;
 
   eval 'my $ {^XYZ};';
   print "not " unless index ($@, 'Can\'t use global $^XYZ in "my"') > -1;
-  print "ok 38\n";
+  print "ok $test\n"; $test++;
 #  print "($@)\n" if $@;
 
 # Now let's make sure that caret variables are all forced into the main package.
@@ -172,11 +164,11 @@ print $foo;
   $ {^M} = 'Someother 3';
   package main;
   print "not " unless $^Q eq 'Someother';
-  print "ok 39\n";
+  print "ok $test\n"; $test++;
   print "not " unless $ {^Quixote} eq 'Someother 2';
-  print "ok 40\n";
+  print "ok $test\n"; $test++;
   print "not " unless $ {^M} eq 'Someother 3';
-  print "ok 41\n";
+  print "ok $test\n"; $test++;
 
   
 }
@@ -190,14 +182,12 @@ sub T {
     print "ok $num\n";
 }
 
-my $test = 42;
-
 {
 # line 42 "plink"
     local $_ = "not ok ";
     eval q{
 	s/^not /<<EOT/e and T '^main:\(eval \d+\):2$', $test++;
-# fuggedaboudit
+# uggedaboudit
 EOT
         print $_, $test++, "\n";
 	T('^main:\(eval \d+\):6$', $test++);
@@ -213,7 +203,6 @@ EOT
 # arrays now *always* interpolate into "..." strings.
 # 20000522 MJD (mjd@plover.com)
 {
-  my $test = 47;
   eval(q(">@nosuch<" eq "><")) || print "# $@", "not ";
   print "ok $test\n";
   ++$test;
@@ -257,7 +246,6 @@ my %str = (
     xyz::bar => 1,
 );
 
-my $test = 52;
 print ((exists $str{foo}      ? "" : "not ")."ok $test\n"); ++$test;
 print ((exists $str{bar}      ? "" : "not ")."ok $test\n"); ++$test;
 print ((exists $str{xyz::bar} ? "" : "not ")."ok $test\n"); ++$test;
@@ -272,4 +260,177 @@ $test++;
 # Is "[~" scanned correctly?
 @a = (1,2,3);
 print "not " unless($a[~~2] == 3);
-print "ok 57\n";
+print "ok $test\n"; $test++;
+
+$_ = "";
+eval 's/(?:)/"ok $test" . "${\q||}".<<\END/e;
+ - heredoc after "" in s/// in eval
+END
+';
+print $_ || "not ok $test\n"; $test++;
+
+$_ = "";
+eval 's|(?:)|"ok $test" . "${\<<\END}"
+ - heredoc in "" in multiline s///e in eval
+END
+|e
+';
+print $_ || "not ok $test\n"; $test++;
+
+$_ = "";
+eval "s/(?:)/<<foo/e #\0
+ok $test - null on same line as heredoc in s/// in eval
+foo
+";
+print $_ || "not ok $test\n"; $test++;
+
+$_ = "";
+eval ' s/(?:)/"${\<<END}"/e;
+ok $test - heredoc in "" in single-line s///e in eval
+END
+';
+print $_ || "not ok $test\n"; $test++;
+
+$_ = "";
+s|(?:)|"${\<<END}"
+ok $test - heredoc in "" in multiline s///e outside eval
+END
+|e;
+print $_ || "not ok $test\n"; $test++;
+
+$_ = "not ok $test - s/// in s/// pattern\n";
+s/${s|||;\""}not //;
+print; $test++;
+
+/(?{print <<END
+ok $test - here-doc in re-eval
+END
+})/; $test++;
+
+eval '/(?{print <<END
+ok $test - here-doc in re-eval in string eval
+END
+})/'; $test++;
+
+eval 'print qq ;ok $test - eval ending with semicolon\n;'
+  or print "not ok $test - eval ending with semicolon\n"; $test++;
+
+print "not " unless qr/(?{<<END})/ eq '(?^:(?{<<END}))';
+foo
+END
+print "ok $test - here-doc in single-line re-eval\n"; $test++;
+
+$_ = qr/(?{"${<<END}"
+foo
+END
+})/;
+print "not " unless /foo/;
+print "ok $test - here-doc in quotes in multiline re-eval\n"; $test++;
+
+eval 's//<<END/e if 0; $_ = "a
+END
+b"';
+print "not " if $_ =~ /\n\n/;
+print "ok $test - eval 's//<<END/' does not leave extra newlines\n"; $test++;
+
+$_ = a;
+eval "s/a/'b\0'#/e";
+print 'not ' unless $_ eq "b\0";
+print "ok $test - # after null in s/// repl\n"; $test++;
+
+s//"#" . <<END/e;
+foo
+END
+print "ok $test - s//'#' . <<END/e\n"; $test++;
+
+eval "s//3}->{3/e";
+print "not " unless $@;
+print "ok $test - s//3}->{3/e\n"; $test++;
+
+$_ = "not ok $test";
+$x{3} = "not ";
+eval 's/${\%x}{3}//e';
+print "$_ - s//\${\\%x}{3}/e\n"; $test++;
+
+eval 's/${foo#}//e';
+print "not " unless $@;
+print "ok $test - s/\${foo#}//e\n"; $test++;
+
+eval 'warn ({$_ => 1} + 1) if 0';
+print "not " if $@;
+print "ok $test - listop({$_ => 1} + 1)\n"; $test++;
+print "# $@" if $@;
+
+for(qw< require goto last next redo dump >) {
+    eval "sub { $_ foo << 2 }";
+    print "not " if $@;
+    print "ok ", $test++, " - [perl #105924] $_ WORD << ...\n";
+    print "# $@" if $@;
+}
+
+# http://rt.perl.org/rt3/Ticket/Display.html?id=56880
+my $counter = 0;
+eval 'v23: $counter++; goto v23 unless $counter == 2';
+print "not " unless $counter == 2;
+print "ok $test - Use v[0-9]+ as a label\n"; $test++;
+$counter = 0;
+eval 'v23 : $counter++; goto v23 unless $counter == 2';
+print "not " unless $counter == 2;
+print "ok $test - Use v[0-9]+ as a label with space before colon\n"; $test++;
+ 
+my $output = "";
+eval "package v10::foo; sub test2 { return 'v10::foo' }
+      package v10; sub test { return v10::foo::test2(); }
+      package main; \$output = v10::test(); "; 
+print "not " unless $output eq 'v10::foo';
+print "ok $test - call a function in package v10::foo\n"; $test++;
+
+print "not " unless (1?v65:"bar") eq 'A';
+print "ok $test - colon detection after vstring does not break ? vstring :\n"; $test++;
+
+# Test pyoq ops with comments before the first delim
+q # comment
+ "b"#
+  eq 'b' or print "not ";
+print "ok $test - q <comment> <newline> ...\n"; $test++;
+qq # comment
+ "b"#
+  eq 'b' or print "not ";
+print "ok $test - qq <comment> <newline> ...\n"; $test++;
+qw # comment
+ "b"#
+  [0] eq 'b' or print "not ";
+print "ok $test - qw <comment> <newline> ...\n"; $test++;
+"b" =~ m # comment
+ "b"#
+   or print "not ";
+print "ok $test - m <comment> <newline> ...\n"; $test++;
+qr # comment
+ "b"#
+   eq qr/b/ or print "not ";
+print "ok $test - qr <comment> <newline> ...\n"; $test++;
+$_ = "a";
+s # comment
+ [a] #
+ [b] #
+ ;
+print "not " unless $_ eq 'b';
+print "ok $test - s <comment> <newline> ...\n"; $test++;
+$_ = "a";
+tr # comment
+ [a] #
+ [b] #
+ ;
+print "not " unless $_ eq 'b';
+print "ok $test - tr <comment> <newline> ...\n"; $test++;
+$_ = "a";
+y # comment
+ [a] #
+ [b] #
+ ;
+print "not " unless $_ eq 'b';
+print "ok $test - y <comment> <newline> ...\n"; $test++;
+
+print "not " unless (time
+                     =>) eq time=>;
+print "ok $test - => quotes keywords across lines\n"; $test++;

@@ -1,17 +1,17 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 use strict;
 use warnings;
 no warnings 'uninitialized';
+no warnings 'experimental::smartmatch';
 
 use Tie::Array;
 use Tie::Hash;
-
-# perlcc issue 179 - https://code.google.com/p/perl-compiler/issues/detail?id=179
 
 # Predeclare vars used in the tests:
 my @empty;
@@ -62,9 +62,11 @@ our $obj = Test::Object::NoOverload->new;
 our $str_obj = Test::Object::StringOverload->new;
 
 my %refh;
-require Tie::RefHash;
-tie %refh, 'Tie::RefHash';
-$refh{$ov_obj} = 1;
+unless (is_miniperl()) {
+    require Tie::RefHash;
+    tie %refh, 'Tie::RefHash';
+    $refh{$ov_obj} = 1;
+}
 
 my @keyandmore = qw(key and more);
 my @fooormore = qw(foo or more);
@@ -92,6 +94,8 @@ while (<DATA>) {
 	$res = eval "no warnings; $tstr";
     }
     else {
+	skip_if_miniperl("Doesn't work with miniperl", $yn =~ /=/ ? 2 : 1)
+	    if $note =~ /MINISKIP/;
 	$res = eval $tstr;
     }
 

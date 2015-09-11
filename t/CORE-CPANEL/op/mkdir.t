@@ -1,8 +1,9 @@
 #!./perl -w
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 plan tests => 22;
@@ -21,9 +22,9 @@ unless (eval {
 $ENV{'LC_ALL'} = 'C';
 $ENV{LANGUAGE} = 'C'; # GNU locale extension
 
-ok(mkdir('blurfl',0777), 'mkdir blurfl');
-ok(!mkdir('blurfl',0777), 'mkdir blurfl a second time');
-ok($!{EEXIST} || $! =~ /cannot move|exist|denied|unknown/i, '$!{EEXIST} or $!');
+ok(mkdir('blurfl',0777));
+ok(!mkdir('blurfl',0777));
+ok($!{EEXIST} || $! =~ /cannot move|exist|denied|unknown/i);
 ok(-d 'blurfl');
 ok(rmdir('blurfl'));
 ok(!rmdir('blurfl'));
@@ -32,10 +33,10 @@ ok(mkdir('blurfl'));
 ok(rmdir('blurfl'));
 
 # trailing slashes will be removed before the system call to mkdir
-ok(mkdir('blurfl///'), 'mkdir blurfl///');
-ok(-d 'blurfl', '-d blurfl');
-ok(rmdir('blurfl///'), 'rmdir blurfl///');
-ok(!-d 'blurfl', '!-d blurfl');
+ok(mkdir('blurfl///'));
+ok(-d 'blurfl');
+ok(rmdir('blurfl///'));
+ok(!-d 'blurfl');
 
 # test default argument
 
@@ -47,6 +48,7 @@ ok(!-d);
 $_ = 'lfrulb';
 
 {
+    no warnings 'experimental::lexical_topic';
     my $_ = 'blurfl';
     ok(mkdir);
     ok(-d);

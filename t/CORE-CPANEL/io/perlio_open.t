@@ -1,8 +1,11 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_without_perlio();
+    skip_all_without_dynamic_extension('Fcntl'); # how did you get this far?
 }
 
 use strict;

@@ -1,8 +1,9 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 use strict;
@@ -73,6 +74,10 @@ if (!defined $where && $Config::Config{useperlio}) {
 	    chomp;
 	    if ($_ eq '-') {
 		if (@rec) {
+		    # Some records do not have all items. In particular,
+		    # the macports user has no real name. Here it's an undef,
+		    # in the password file it becomes an empty string.
+		    no warnings 'uninitialized';
 		    push @lines, join (':', @rec) . "\n";
 		    @rec = ();
 		}
@@ -91,6 +96,8 @@ if (!defined $where && $Config::Config{useperlio}) {
 	    }
 	}
 	if (@rec) {
+        # see above
+        no warnings 'uninitialized';
 	    push @lines, join (':', @rec) . "\n";
 	}
 	my $data = join '', @lines;
@@ -210,7 +217,7 @@ SKIP: {
 EOEX
     }
 
-    cmp_ok(keys %perfect, '>', 0)
+    cmp_ok(keys %perfect, '>', 0, "pwent test satisfactory")
 	or note("(not necessarily serious: run t/op/pwent.t by itself)");
 }
 
@@ -236,6 +243,7 @@ for (1..$max) {
 }
 endpwent();
 
-is("@pw1", "@pw2");
+is("@pw1", "@pw2",
+    "getpwent() produced identical results in list and scalar contexts");
 
 close(PW);

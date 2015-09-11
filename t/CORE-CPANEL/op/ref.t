@@ -1,10 +1,14 @@
 #!./perl
 
-BEGIN { require 't/CORE-CPANEL/test.pl' }
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+    require 'test.pl';
+}
 
 use strict qw(refs subs);
 
-plan(217);
+plan(235);
 
 # Test glob operations.
 
@@ -115,6 +119,7 @@ is (join(':',@{$spring2{"foo"}}), "1:2:3:4");
     &$subref;
     is ($called, 1);
 }
+is ref eval {\&{""}}, "CODE", 'reference to &{""} [perl #94476]';
 
 # Test references to return values of operators (TARGs/PADTMPs)
 {
@@ -131,7 +136,8 @@ sub mysub2 { lc shift }
 
 # Test REGEXP assignment
 
-{
+SKIP: {
+    skip_if_miniperl("no dynamic loading on miniperl, so can't load re", 5);
     require re;
     my $x = qr/x/;
     my $str = "$x"; # regex stringification may change
@@ -169,7 +175,6 @@ my $x;
 #   tied lvalue => SCALAR, as we haven't tested tie yet
 #   BIND, 'cos we can't create them yet
 #   REGEXP, 'cos that requires overload or Scalar::Util
-#   LVALUE ref, 'cos I can't work out how to create one :)
 
 for (
     [ 'undef',          SCALAR  => \undef               ],
@@ -181,9 +186,13 @@ for (
     [ 'PVNV',           SCALAR  => \$pvnv               ],
     [ 'PVMG',           SCALAR  => \$0                  ],
     [ 'PVBM',           SCALAR  => \PVBM                ],
+    [ 'scalar @array',  SCALAR  => \scalar @array       ],
+    [ 'scalar %hash',   SCALAR  => \scalar %hash        ],
     [ 'vstring',        VSTRING => \v1                  ],
     [ 'ref',            REF     => \\1                  ],
-    [ 'lvalue',         LVALUE  => \substr($x, 0, 0)    ],
+    [ 'substr lvalue',  LVALUE  => \substr($x, 0, 0)    ],
+    [ 'pos lvalue',     LVALUE  => \pos                 ],
+    [ 'vec lvalue',     LVALUE  => \vec($x,0,1)         ],     
     [ 'named array',    ARRAY   => \@ary                ],
     [ 'anon array',     ARRAY   => [ 1 ]                ],
     [ 'named hash',     HASH    => \%whatever           ],
@@ -191,7 +200,7 @@ for (
     [ 'named sub',      CODE    => \&mysub,             ],
     [ 'anon sub',       CODE    => sub { 1; }           ],
     [ 'glob',           GLOB    => \*foo                ],
-    [ 'format',         FORMAT  => *STDERR{FORMAT}      ], # issue 285
+    [ 'format',         FORMAT  => *STDERR{FORMAT}      ],
 ) {
     my ($desc, $type, $ref) = @$_;
     is (ref $ref, $type, "ref() for ref to $desc");
@@ -201,6 +210,15 @@ for (
 is (ref *STDOUT{IO}, 'IO::File', 'IO refs are blessed into IO::File');
 like (*STDOUT{IO}, qr/^IO::File=IO\(0x[0-9a-f]+\)$/,
     'stringify for IO refs');
+
+{ # Test re-use of ref's TARG [perl #101738]
+  my $obj = bless [], '____';
+  my $uniobj = bless [], chr 256;
+  my $get_ref = sub { ref shift };
+  my $dummy = &$get_ref($uniobj);
+     $dummy = &$get_ref($obj);
+  ok exists { ____ => undef }->{$dummy}, 'ref sets UTF8 flag correctly';
+}
 
 # Test anonymous hash syntax.
 
@@ -354,30 +372,27 @@ curr_test($test + 2);
 {
     my $test = curr_test();
     my $i = 0;
-    # perlcc issue 196 - https://code.google.com/p/perl-compiler/issues/detail?id=196
-    # eval block solve that
     local $SIG{'__DIE__'} = sub {
 	my $m = shift;
 	if ($i++ > 4) {
 	    print "# infinite recursion, bailing\nnot ok $test\n";
 	    exit 1;
-        }	
-        like ($m, qr{^Modification of a read-only});
+        }
+	like ($m, qr/^Modification of a read-only/);
     };
-    package C2;
+    package C;
     sub new { bless {}, shift }
     DESTROY { $_[0] = 'foo' }
     {
 	print "# should generate an error...\n";
-	my $c = C2->new;
-    }    
-    print "# good, didn't recurse\n";    
+	my $c = C->new;
+    }
+    print "# good, didn't recurse\n";
 }
 
 # test that DESTROY is called on all objects during global destruction,
 # even those without hard references [perl #36347]
 
-$TODO = 'bug #36347';
 is(
   runperl(
    stderr => 1, prog => 'sub DESTROY { print qq-aaa\n- } bless \$a[0]'
@@ -392,7 +407,14 @@ is(
  "aaa\n",
  'DESTROY called on closure variable'
 );
-$TODO = undef;
+
+# But cursing objects must not result in double frees
+# This caused "Attempt to free unreferenced scalar" in 5.16.
+fresh_perl_is(
+  'bless \%foo::, bar::; bless \%bar::, foo::; print "ok\n"', "ok\n",
+   { stderr => 1 },
+  'no double free when stashes are blessed into each other');
+
 
 # test if refgen behaves with autoviv magic
 {
@@ -475,7 +497,7 @@ TODO: {
           ), qr/^(ok)+$/, 'STDOUT destructor');
 }
 
-TODO: {
+{
     no strict 'refs';
     $name8 = chr 163;
     $name_utf8 = $name8 . chr 256;
@@ -485,11 +507,10 @@ TODO: {
     is ($$name_utf8, undef, 'Nothing before we start');
     $$name8 = "Pound";
     is ($$name8, "Pound", 'Accessing via 8 bit symref works');
-    local $TODO = "UTF8 mangled in symrefs";
     is ($$name_utf8, "Pound", 'Accessing via UTF8 symref works');
 }
 
-TODO: {
+{
     no strict 'refs';
     $name_utf8 = $name = chr 9787;
     utf8::encode $name_utf8;
@@ -501,7 +522,6 @@ TODO: {
     is ($$name_utf8, undef, 'Nothing before we start');
     $$name = "Face";
     is ($$name, "Face", 'Accessing via Unicode symref works');
-    local $TODO = "UTF8 mangled in symrefs";
     is ($$name_utf8, undef,
 	'Accessing via the UTF8 byte sequence gives nothing');
 }
@@ -606,7 +626,7 @@ is ( (sub {"bar"})[0]->(), "bar", 'code deref from list slice w/ ->' );
     format STDERR =
 .
     my $ref;
-    foreach $ref (*STDOUT{IO}, *STDERR{FORMAT}) { # issue 286
+    foreach $ref (*STDOUT{IO}, *STDERR{FORMAT}) {
 	eval q/ $$ref /;
 	like($@, qr/Not a SCALAR reference/, "Scalar dereference");
 	eval q/ @$ref /;
@@ -694,7 +714,9 @@ is (runperl(
 # it doesn't trigger a panic with multiple rounds of global cleanup
 # (Perl_sv_clean_all).
 
-{
+SKIP: {
+    skip_if_miniperl('no Scalar::Util under miniperl', 4);
+
     local $ENV{PERL_DESTRUCT_LEVEL} = 2;
 
     # we do all permutations of array/hash, 1ref/2ref, to account
@@ -742,6 +764,54 @@ EOF
 
 }
 
+SKIP:{
+    skip_if_miniperl "no Scalar::Util on miniperl", 1;
+    my $error;
+    *hassgropper::DESTROY = sub {
+        require Scalar::Util;
+        eval { Scalar::Util::weaken($_[0]) };
+        $error = $@;
+        # This line caused a crash before weaken refused to weaken a
+        # read-only reference:
+        $do::not::overwrite::this = $_[0];
+    };
+    my $xs = bless [], "hassgropper";
+    undef $xs;
+    like $error, qr/^Modification of a read-only/,
+       'weaken refuses to weaken a read-only ref';
+    # Now that the test has passed, avoid sabotaging global destruction:
+    undef *hassgropper::DESTROY;
+    undef $do::not::overwrite::this;
+}
+
+
+is ref( bless {}, "nul\0clean" ), "nul\0clean", "ref() is nul-clean";
+
+# Test constants and references thereto.
+for (3) {
+    eval { $_ = 4 };
+    like $@, qr/^Modification of a read-only/,
+       'assignment to value aliased to literal number';
+    require Config;
+    eval { ${\$_} = 4 };
+    like $@, qr/^Modification of a read-only/,
+       'refgen does not allow assignment to value aliased to literal number';
+}
+for ("4eounthouonth") {
+    eval { $_ = 4 };
+    like $@, qr/^Modification of a read-only/,
+       'assignment to value aliased to literal string';
+    require Config;
+    eval { ${\$_} = 4 };
+    like $@, qr/^Modification of a read-only/,
+       'refgen does not allow assignment to value aliased to literal string';
+}
+{
+    my $aref = \123;
+    is \$$aref, $aref,
+	'[perl #109746] referential identity of \literal under threads+mad'
+}
+
 # Bit of a hack to make test.pl happy. There are 3 more tests after it leaves.
 $test = curr_test();
 curr_test($test + 3);
@@ -750,19 +820,16 @@ curr_test($test + 3);
 my $test1 = $test + 1;
 my $test2 = $test + 2;
 
-{
 package FINALE;
 
 {
-    # perlcc issue 197 - https://code.google.com/p/perl-compiler/issues/detail?id=197
-    $ref3 = bless ["ok $test2 - package destruction\n"];	# package destruction
-    my $ref2 = bless ["ok $test1 - lexical destruction\n"];	# lexical destruction
-    local $ref1 = bless ["ok $test - dynamic destruction\n"];	# dynamic destruction
+    $ref3 = bless ["ok $test2\n"];	# package destruction
+    my $ref2 = bless ["ok $test1\n"];	# lexical destruction
+    local $ref1 = bless ["ok $test\n"];	# dynamic destruction
     1;					# flush any temp values on stack
 }
 
 DESTROY {
     print $_[0][0];
-}
 }
 

@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 
 BEGIN {
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_if_miniperl("miniperl can't load attributes");
 }
-
-# Attribute::Handlers are currently not supported
-# perlcc issue 169 https://code.google.com/p/perl-compiler/issues/detail?id=169
 
 plan tests => 4;
 

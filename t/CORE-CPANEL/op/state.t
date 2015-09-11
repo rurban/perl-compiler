@@ -2,14 +2,21 @@
 # tests state variables
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 use strict;
+
+plan tests => 137;
+
+# Before loading feature.pm, test it with CORE::
+ok eval 'CORE::state $x = 1;', 'CORE::state outside of feature.pm scope';
+
+
 use feature ":5.10";
 
-plan tests => 130;
 
 ok( ! defined state $uninit, q(state vars are undef by default) );
 
@@ -204,6 +211,7 @@ my $first  = $stones [0];
 my $First  = ucfirst $first;
 $_ = "bambam";
 foreach my $flint (@stones) {
+    no warnings 'experimental::lexical_topic';
     state $_ = $flint;
     is $_, $first, 'state $_';
     ok /$first/, '/.../ binds to $_';
@@ -304,6 +312,7 @@ foreach my $x (0 .. 4) {
 #
 my @spam = qw [spam ham bacon beans];
 foreach my $spam (@spam) {
+    no warnings 'experimental::smartmatch';
     given (state $spam = $spam) {
         when ($spam [0]) {ok 1, "given"}
         default          {ok 0, "given"}
@@ -396,6 +405,55 @@ foreach my $forbidden (<DATA>) {
 
 }
 
+
+# [perl #117095] state var initialisation getting skipped
+# the 'if 0' code below causes a call to op_free at compile-time,
+# which used to inadvertently mark the state var as initialised.
+
+{
+    state $f = 1;
+    foo($f) if 0; # this calls op_free on padmy($f)
+    ok(defined $f, 'state init not skipped');
+}
+
+# [perl #121134] Make sure padrange doesn't mess with these
+{
+    sub thing {
+	my $expect = shift;
+        my ($x, $y);
+        state $z;
+
+        is($z, $expect, "State variable is correct");
+
+        $z = 5;
+    }
+
+    thing(undef);
+    thing(5);
+
+    sub thing2 {
+        my $expect = shift;
+        my $x;
+        my $y;
+        state $z;
+
+        is($z, $expect, "State variable is correct");
+
+        $z = 6;
+    }
+
+    thing2(undef);
+    thing2(6);
+}
+
+# [perl #123029] regression in "state" under PERL_NO_COW
+sub rt_123029 {
+    state $s;
+    $s = 'foo'x500;
+    my $c = $s;
+    return defined $s;
+}
+ok(rt_123029(), "state variables don't surprisingly disappear when accessed");
 
 __DATA__
 state ($a) = 1;

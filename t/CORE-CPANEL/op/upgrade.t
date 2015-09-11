@@ -5,8 +5,9 @@
 # build or testsuite that upgraded an NV to an RV
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 use strict;

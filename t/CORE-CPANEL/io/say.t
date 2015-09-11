@@ -1,9 +1,11 @@
 #!./perl
 
-use Errno;
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    eval 'use Errno';
+    die $@ if $@ and !is_miniperl();
 }
 
 # Just a few very basic tests cribbed from t/io/print.t,
@@ -14,7 +16,7 @@ BEGIN {
 use strict 'vars';
 use feature "say";
 
-say "1..12";
+say "1..13";
 
 my $foo = 'STDOUT';
 say $foo "ok 1";
@@ -30,11 +32,15 @@ say $bar "ok 7";
 
 say {"STDOUT"} "ok 8";
 
-$! = 0;
-no warnings 'unopened';
-say NONEXISTENT "foo";
-print "not " if ($! != &Errno::EBADF);
-say "ok 9";
+if (!exists &Errno::EBADF) {
+    print "ok 9 # skipped: no EBADF\n";
+} else {
+    $! = 0;
+    no warnings 'unopened';
+    say NONEXISTENT "foo";
+    print "not " if ($! != &Errno::EBADF);
+    say "ok 9";
+}
 
 $_ = "ok 10";
 say;
@@ -46,4 +52,9 @@ say STDOUT;
     # test that $, doesn't show up before the trailing \n
     local $, = "\nnot ok 13"; # how to fool Test::Harness
     say "ok 12";
+}
+
+{
+    no feature 'say';
+    CORE::say "ok 13 - CORE::say without feature.pm";
 }

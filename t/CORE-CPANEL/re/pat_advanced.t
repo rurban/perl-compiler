@@ -1,6 +1,6 @@
 #!./perl
 #
-# This is a home for regular expression tests that don't fit into
+# This is a home for regular expression tests that do not fit into
 # the format supported by re/regexp.t.  If you want to add a test
 # that does fit that format, add it to re/re_tests, not here.
 
@@ -15,7 +15,10 @@ $| = 1;
 
 
 BEGIN {
-    require q(t/CORE-CPANEL/test.pl);
+    chdir 't' if -d 't';
+    @INC = ('../lib','.');
+    require './test.pl';
+    skip_all_if_miniperl("miniperl can't load Tie::Hash::NamedCapture, need for %+ and %-");
 }
 
 run_tests() unless caller;
@@ -86,6 +89,7 @@ sub run_tests {
         # should not match.
         ok "\x8e" =~ /[\x89-\x91]/, '"\x8e" =~ /[\x89-\x91]/';
         ok "\xce" =~ /[\xc9-\xd1]/, '"\xce" =~ /[\xc9-\xd1]/';
+        ok "\xd0" =~ /[\xc9-\xd1]/, '"\xd0" =~ /[\xc9-\xd1]/';
 
         skip "Not an EBCDIC platform", 2 unless ord ('i') == 0x89 &&
                                                 ord ('J') == 0xd1;
@@ -96,6 +100,7 @@ sub run_tests {
         # the good of EBCDIC, so let's test these only there.
         unlike("\x8e", qr/[i-j]/, '"\x8e" !~ /[i-j]/');
         unlike("\xce", qr/[I-J]/, '"\xce" !~ /[I-J]/');
+        unlike("\xd0", qr/[I-J]/, '"\xd0" !~ /[I-J]/');
     }
 
     {
@@ -631,14 +636,14 @@ sub run_tests {
           ok "<\x{100}\x{00A0}>" =~ /<\x{100}\s>/, '\x{00A0} in \s';
           ok        "<\x{00A0}>" =~        /<\h>/, '\x{00A0} in \h';
         }
-        my @h = map {sprintf "%05x" => $_} 0x01680, 0x0180E, 0x02000 .. 0x0200A,
+        my @h = map {sprintf "%05x" => $_} 0x01680, 0x02000 .. 0x0200A,
                                            0x0202F, 0x0205F, 0x03000;
         my @v = map {sprintf "%05x" => $_} 0x02028, 0x02029;
 
         my @H = map {sprintf "%05x" => $_} 0x01361,   0x0200B, 0x02408, 0x02420,
-                                           0x0303F,   0xE0020;
+                                           0x0303F,   0xE0020, 0x180E;
         my @V = map {sprintf "%05x" => $_} 0x0008A .. 0x0008D, 0x00348, 0x10100,
-                                           0xE005F,   0xE007C;
+                                           0xE005F,   0xE007C, 0x180E;
 
         for my $hex (@h) {
             my $str = eval qq ["<\\x{$hex}>"];
@@ -786,6 +791,12 @@ sub run_tests {
     }
 
     {
+        # The second half of RT #114808
+        warning_is(sub {'aa' =~ /.+\x{100}/}, undef,
+                   'utf8-only floating substr, non-utf8 target, no warning');
+    }
+
+    {
         my $message = "qr /.../x";
         my $R = qr / A B C # D E/x;
         ok("ABCDE" =~    $R   && $& eq "ABC", $message);
@@ -823,15 +834,6 @@ sub run_tests {
         is($x, "b k", $message);
 
         like("\x{2019}", qr/\S/, $message);
-    }
-
-    {
-        # XXX DAPM 13-Apr-06. Recursive split is still broken. It's only luck it
-        # hasn't been crashing. Disable this test until it is fixed properly.
-        # XXX also check what it returns rather than just doing ok(1,...)
-        # split /(?{ split "" })/, "abc";
-        local $::TODO = "Recursive split is still broken";
-        ok 0, 'cache_re & "(?{": it dumps core in 5.6.1 & 5.8.0';
     }
 
     {
@@ -879,16 +881,16 @@ sub run_tests {
     }
 
     {
-        for (120 .. 130) {
+        for (120 .. 130, 240 .. 260) {
             my $head = 'x' x $_;
             my $message = q [Don't misparse \x{...} in regexp ] .
-                             q [near 127 char EXACT limit];
+                             q [near EXACT char count limit];
             for my $tail ('\x{0061}', '\x{1234}', '\x61') {
                 eval qq{like("$head$tail", qr/$head$tail/, \$message)};
 		is($@, '', $message);
             }
             $message = q [Don't misparse \N{...} in regexp ] .
-                             q [near 127 char EXACT limit];
+                             q [near EXACT char count limit];
             for my $tail ('\N{SNOWFLAKE}') {
                 eval qq {use charnames ':full';
                          like("$head$tail", qr/$head$tail/, \$message)};
@@ -972,23 +974,36 @@ sub run_tests {
 
     {
     BEGIN {
-        unshift @INC, 't/CORE-CPANEL/';
+        unshift @INC, 'lib';
     }
         use Cname;
 
         ok 'fooB'  =~ /\N{foo}[\N{B}\N{b}]/, "Passthrough charname";
+        my $name = "foo\xDF";
+        my $result = eval "'A${name}B'  =~ /^A\\N{$name}B\$/";
+        ok !$@ && $result,  "Passthrough charname of non-ASCII, Latin1";
         #
         # Why doesn't must_warn work here?
         #
         my $w;
         local $SIG {__WARN__} = sub {$w .= "@_"};
         eval 'q(xxWxx) =~ /[\N{WARN}]/';
-        ok $w && $w =~ /Using just the first character returned by \\N{} in character class/,
+        ok $w && $w =~ /Using just the first character returned by \\N\{} in character class/,
                  "single character in [\\N{}] warning";
 
         undef $w;
         eval q [ok "\0" !~ /[\N{EMPTY-STR}XY]/,
                    "Zerolength charname in charclass doesn't match \\\\0"];
+        ok $w && $w =~ /Ignoring zero length/,
+                 'Ignoring zero length \N{} in character class warning';
+        undef $w;
+        eval q [ok 'xy' =~ /x[\N{EMPTY-STR} y]/x,
+                    'Empty string charname in [] is ignored; finds a following character'];
+        ok $w && $w =~ /Ignoring zero length/,
+                 'Ignoring zero length \N{} in character class warning';
+        undef $w;
+        eval q [ok 'x ' =~ /x[\N{EMPTY-STR} y]/,
+                    'Empty string charname in [] is ignored; finds a following blank under /x'];
         ok $w && $w =~ /Ignoring zero length/,
                  'Ignoring zero length \N{} in character class warning';
 
@@ -1001,27 +1016,128 @@ sub run_tests {
         ok "\N{LONG-STR}" =~ /^\N{LONG-STR}$/, 'Verify that long string works';
         ok "\N{LONG-STR}" =~ /^\N{LONG-STR}$/i, 'Verify under folding that long string works';
 
+        eval '/(?[[\N{EMPTY-STR}]])/';
+        ok $@ && $@ =~ /Zero length \\N\{}/;
+
+        undef $w;
+        eval q [is("\N{TOO  MANY SPACES}", "TOO  MANY SPACES", "Multiple spaces in character name works")];
+        like ($w, qr/A sequence of multiple spaces in a charnames alias definition is deprecated/, "... but returns a deprecation warning");
+        undef $w;
+        eval q [use utf8; is("\N{TOO  MANY SPACES}", "TOO  MANY SPACES", "Same under 'use utf8': they work")];
+        like ($w, qr/A sequence of multiple spaces in a charnames alias definition is deprecated/, "... but return a deprecation warning");
+        {
+            # disable lexical warnings
+            BEGIN { ${^WARNING_BITS} = undef; $^W = 0 }
+            undef $w;
+            () = eval q ["\N{TOO  MANY SPACES}"];
+            like ($w, qr/A sequence of multiple spaces in a charnames alias definition is deprecated/, "... and returns a deprecation warning outside of lexical warnings");
+            undef $w;
+            eval q [use utf8; () = "\N{TOO  MANY SPACES}"];
+            like ($w, qr/A sequence of multiple spaces in a charnames alias definition is deprecated/, "... same under utf8");
+        }
+        {
+            no warnings 'deprecated';
+            undef $w;
+            eval q ["\N{TOO  MANY SPACES}"];
+            ok (! defined $w, "... and no warning if warnings are off");
+            eval q [use utf8; "\N{TOO  MANY SPACES}"];
+            ok (! defined $w, "... same under 'use utf8'");
+        }
+        {
+            use warnings FATAL=> 'deprecated';
+            () = eval q ["\N{TOO  MANY SPACES}"];
+            like ($@, qr/A sequence of multiple spaces in a charnames alias definition is deprecated/, "... the deprecation warning can be fatal");
+            eval q [use utf8; () = "\N{TOO  MANY SPACES}"];
+            like ($@, qr/A sequence of multiple spaces in a charnames alias definition is deprecated/, "... same under utf8");
+        }
+
+        undef $w;
+        eval q [is("\N{TRAILING SPACE }", "TRAILING SPACE ", "Trailing space in character name works")];
+        like ($w, qr/Trailing white-space in a charnames alias definition is deprecated/, "... but returns a deprecation warning");
+        undef $w;
+        eval q [use utf8; is("\N{TRAILING SPACE }", "TRAILING SPACE ", "Same under 'use utf8': they work")];
+        like ($w, qr/Trailing white-space in a charnames alias definition is deprecated/, "... but returns a deprecation warning");
+        {
+            # disable lexical warnings
+            BEGIN { ${^WARNING_BITS} = undef; $^W = 0 }
+            undef $w;
+            () = eval q ["\N{TRAILING SPACE }"];
+            like ($w, qr/Trailing white-space in a charnames alias definition is deprecated/, "... and returns a deprecation warning outside of lexical warnings");
+            undef $w;
+            eval q [use utf8; () = "\N{TRAILING SPACE }"];
+            like ($w, qr/Trailing white-space in a charnames alias definition is deprecated/, "... same under utf8");
+        }
+        {
+            no warnings 'deprecated';
+            undef $w;
+            eval q ["\N{TRAILING SPACE }"];
+            ok (! defined $w, "... and no warning if warnings are off");
+            eval q [use utf8; "\N{TRAILING SPACE }"];
+            ok (! defined $w, "... same under 'use utf8'");
+        }
+        {
+            use warnings FATAL=>'deprecated';
+            () = eval q ["\N{TRAILING SPACE }"];
+            like ($@, qr/Trailing white-space in a charnames alias definition is deprecated/, "... the warning can be fatal");
+            eval q [use utf8; () = "\N{TRAILING SPACE }"];
+            like ($@, qr/Trailing white-space in a charnames alias definition is deprecated/, "... same under utf8");
+        }
+
+        {
+            BEGIN { no strict; *CnameTest:: = *{"_charnames\0A::" } }
+            package CnameTest { sub translator { pop } }
+            BEGIN { $^H{charnames} = \&CnameTest::translator }
+            undef $w;
+            () = eval q ["\N{TOO  MANY SPACES}"];
+            like ($w, qr/A sequence of multiple spaces/,
+                 'translators in _charnames\0* packages get validated');
+        }
+
         # If remove the limitation in regcomp code these should work
         # differently
         undef $w;
         eval q [ok "\N{TOO-LONG-STR}" =~ /^\N{TOO-LONG-STR}$/, 'Verify that what once was too long a string works'];
         eval 'q(syntax error) =~ /\N{MALFORMED}/';
         ok $@ && $@ =~ /Malformed/, 'Verify that malformed utf8 gives an error';
-        undef $w;
         eval 'q() =~ /\N{4F}/';
-        ok $w && $w =~ /Deprecated/, 'Verify that leading digit in name gives warning';
-        undef $w;
+        ok $@ && $@ =~ /Invalid character/, 'Verify that leading digit in name gives error';
         eval 'q() =~ /\N{COM,MA}/';
-        ok $w && $w =~ /Deprecated/, 'Verify that comma in name gives warning';
-        undef $w;
-        my $name = "A\x{D7}O";
+        ok $@ && $@ =~ /Invalid character/, 'Verify that comma in name gives error';
+        $name = "A\x{D7}O";
         eval "q(W) =~ /\\N{$name}/";
-        ok $w && $w =~ /Deprecated/, 'Verify that latin1 symbol in name gives warning';
+        ok $@ && $@ =~ /Invalid character/, 'Verify that latin1 symbol in name gives error';
+        my $utf8_name = "7 CITIES OF GOLD";
+        utf8::upgrade($utf8_name);
+        eval "use utf8; q(W) =~ /\\N{$utf8_name}/";
+        ok $@ && $@ =~ /Invalid character/, 'Verify that leading digit in utf8 name gives error';
+        $utf8_name = "SHARP #";
+        utf8::upgrade($utf8_name);
+        eval "use utf8; q(W) =~ /\\N{$utf8_name}/";
+        ok $@ && $@ =~ /Invalid character/, 'Verify that ASCII symbol in utf8 name gives error';
+        $utf8_name = "A HOUSE \xF7 AGAINST ITSELF";
+        utf8::upgrade($utf8_name);
+        eval "use utf8; q(W) =~ /\\N{$utf8_name}/";
+        ok $@ && $@ =~ /Invalid character/, 'Verify that latin1 symbol in utf8 name gives error';
+        $utf8_name = "\x{664} HORSEMEN}";
+        eval "use utf8; q(W) =~ /\\N{$utf8_name}/";
+        ok $@ && $@ =~ /Invalid character/, 'Verify that leading above Latin1 digit in utf8 name gives error';
+        $utf8_name = "A \x{1F4A9} WOULD SMELL AS SWEET}";
+        eval "use utf8; q(W) =~ /\\N{$utf8_name}/";
+        ok $@ && $@ =~ /Invalid character/, 'Verify that above Latin1 symbol in utf8 name gives error';
+
         undef $w;
         $name = "A\x{D1}O";
         eval "q(W) =~ /\\N{$name}/";
         ok ! $w, 'Verify that latin1 letter in name doesnt give warning';
 
+        # This tests the code path that restarts the parse when the recursive
+        # call to S_reg() from within S_grok_bslash_N() discovers that the
+        # pattern needs to be recalculated as UTF-8.  use eval to avoid
+        # needing literal Unicode in this source file:
+        my $r = eval "qr/\\N{\x{100}\x{100}}/";
+        isnt $r, undef, "Generated regex for multi-char UTF-8 charname"
+	    or diag($@);
+        ok "\x{100}\x{100}" =~ $r, "which matches";
     }
 
     {
@@ -1229,6 +1345,8 @@ sub run_tests {
         1 while /(a+b?)(*COMMIT)(?{$count++; push @res,$1})(*FAIL)/g;
         is($count, 1, "Expect 1 with (*COMMIT)");
         is("@res", "aaab", "Adjacent (*COMMIT) works as expected");
+
+	ok("1\n2a\n" !~ /^\d+(*COMMIT)\w+/m, "COMMIT and anchors");
     }
 
     {
@@ -1505,7 +1623,7 @@ sub run_tests {
 
     {
         # Various whitespace special patterns
-        my @h = map {chr $_}   0x09,   0x20,   0xa0, 0x1680, 0x180e, 0x2000,
+        my @h = map {chr $_}   0x09,   0x20,   0xa0, 0x1680, 0x2000,
                              0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006,
                              0x2007, 0x2008, 0x2009, 0x200a, 0x202f, 0x205f,
                              0x3000;
@@ -1518,11 +1636,14 @@ sub run_tests {
             my $ary = shift @$t;
             foreach my $pat (@$t) {
                 foreach my $str (@$ary) {
-                    ok $str =~ /($pat)/, $pat;
-                    is($1, $str, $pat);
+                    my $temp_str = $str;
+                    $temp_str = display($temp_str);
+                    ok $str =~ /($pat)/, $temp_str . " =~ /($pat)";
+                    my $temp_1 = $1;
+                    is($1, $str, "\$1='" . display($temp_1) . "' eq '" . $temp_str . "' after ($pat)");
                     utf8::upgrade ($str);
-                    ok $str =~ /($pat)/, "Upgraded string - $pat";
-                    is($1, $str, "Upgraded string - $pat");
+                    ok $str =~ /($pat)/, "Upgraded " . $temp_str . " =~ /($pat)/";
+                    is($1, $str, "\$1='" . display($temp_1) . "' eq '" . $temp_str . "'(upgraded) after ($pat)");
                 }
             }
         }
@@ -1582,7 +1703,7 @@ sub run_tests {
     {
         # Test for keys in %+ and %-
         my $message = 'Test keys in %+ and %-';
-        no warnings 'uninitialized';
+        no warnings 'uninitialized', 'deprecated', 'experimental::lexical_topic';
         my $_ = "abcdef";
         /(?<foo>a)|(?<foo>b)/;
         is((join ",", sort keys %+), "foo", $message);
@@ -1603,6 +1724,7 @@ sub run_tests {
 
     {
         # length() on captures, the numbered ones end up in Perl_magic_len
+        no warnings 'deprecated', 'experimental::lexical_topic';
         my $_ = "aoeu \xe6var ook";
         /^ \w+ \s (?<eek>\S+)/x;
 
@@ -1652,7 +1774,6 @@ $x='123';
 print ">$1<\n";
 EOP
 
-        local $::TODO = 'RT #86042';
         fresh_perl_is(<<'EOP', ">abc<\n", {}, 'no mention of $&');
 my $x; 
 ($x='abc')=~/(abc)/g; 
@@ -1737,10 +1858,11 @@ EOP
 
         my @isPunct = grep {/[[:punct:]]/ != /\p{IsPunct}/}
                             map {chr} 0x80 .. 0xff;
-        is(join ('', @isPunct), "\xa1\xab\xb7\xbb\xbf",    # ¡ « · » ¿
+        is(join ('', @isPunct), "\xa1\xa7\xab\xb6\xb7\xbb\xbf",    # ¡ « · » ¿
 	   'IsPunct disagrees with [:punct:] outside ASCII');
 
         my @isPunctLatin1 = eval q {
+            no warnings 'deprecated';
             use encoding 'latin1';
             grep {/[[:punct:]]/ != /\p{IsPunct}/} map {chr} 0x80 .. 0xff;
         };
@@ -2051,7 +2173,7 @@ EOP
                  (?<=[=&]) (?=.)
             )}iox';
 	is($@, '', $message);
-	isa_ok($r, 'Regexp', $message);
+	object_ok($r, 'Regexp', $message);
     }
 
     # RT #82610
@@ -2061,6 +2183,129 @@ EOP
         my $p = qr/[\xE0_]/i;
         utf8::upgrade($p);
         like("\xC0", $p, "Verify \"\\xC0\" =~ /[\\xE0_]/i; pattern in utf8");
+    }
+
+    ok "x" =~ /\A(?>(?:(?:)A|B|C?x))\z/,
+        "Check TRIE does not overwrite EXACT following NOTHING at start - RT #111842";
+
+    {
+        my $single = ":";
+        my $upper = "\x{390}";  # Fold is 3 chars.
+        my $multi = CORE::fc($upper);
+
+        my $failed = 0;
+
+        # Try forcing a node to be split, with a multi-char fold at the
+        # boundary
+        for my $repeat (1 .. 300) {
+            my $string = $single x $repeat;
+            my $lhs = $string . $upper;
+            if ($lhs !~ m/$string$multi/i) {
+                $failed = $repeat;
+                last;
+            }
+        }
+        ok(! $failed, "Matched multi-char fold across EXACTFish node boundaries; if failed, was at count $failed");
+
+        $failed = 0;
+        for my $repeat (1 .. 300) {
+            my $string = $single x $repeat;
+            my $lhs = $string . "\N{LATIN SMALL LIGATURE FFI}";
+            if ($lhs !~ m/${string}ff\N{LATIN SMALL LETTER I}/i) {
+                $failed = $repeat;
+                last;
+            }
+        }
+        ok(! $failed, "Matched multi-char fold across EXACTFish node boundaries; if failed, was at count $failed");
+
+        $failed = 0;
+        for my $repeat (1 .. 300) {
+            my $string = $single x $repeat;
+            my $lhs = $string . "\N{LATIN SMALL LIGATURE FFL}";
+            if ($lhs !~ m/${string}ff\N{U+6c}/i) {
+                $failed = $repeat;
+                last;
+            }
+        }
+        ok(! $failed, "Matched multi-char fold across EXACTFish node boundaries; if failed, was at count $failed");
+
+        # This tests that under /d matching that an 'ss' split across two
+        # parts of a node doesn't end up turning into something that matches
+        # \xDF unless it is in utf8.
+        $failed = 0;
+        $single = 'a';  # Is non-terminal multi-char fold char
+        for my $repeat (1 .. 300) {
+            my $string = $single x $repeat;
+            my $lhs = "$string\N{LATIN SMALL LETTER SHARP S}";
+            utf8::downgrade($lhs);
+            $string .= "s";
+            if ($lhs =~ m/${string}s/di) {
+                $failed = $repeat;
+                last;
+            }
+        }
+        ok(! $failed, "Matched multi-char fold 'ss' across EXACTF node boundaries; if failed, was at count $failed");
+    }
+
+    {
+        fresh_perl_is('print eval "\"\x{101}\" =~ /[[:lower:]]/", "\n"; print eval "\"\x{100}\" =~ /[[:lower:]]/i", "\n";',
+                      "1\n1",   # Both re's should match
+                      {},
+                      "get [:lower:] swash in first eval; test under /i in second");
+    }
+
+    {
+        #' RT #119075
+        no warnings 'regexp';   # Silence "has useless greediness modifier"
+        local $@;
+        eval { /a{0}?/; };
+        ok(! $@,
+            "PCRE regression test: No 'Quantifier follows nothing in regex' warning");
+
+    }
+
+    {
+        unlike("\xB5", qr/^_?\p{IsMyRuntimeProperty}\z/, "yadayada");
+        like("\xB6", qr/^_?\p{IsMyRuntimeProperty}\z/, "yadayada");
+        unlike("\xB7", qr/^_?\p{IsMyRuntimeProperty}\z/, "yadayada");
+        like("\xB5", qr/^_?\P{IsMyRuntimeProperty}\z/, "yadayada");
+        unlike("\xB6", qr/^_?\P{IsMyRuntimeProperty}\z/, "yadayada");
+        like("\xB7", qr/^_?\P{IsMyRuntimeProperty}\z/, "yadayada");
+
+        unlike("_\xB5", qr/^_?\p{IsMyRuntimeProperty}\z/, "yadayada");
+        like("_\xB6", qr/^_?\p{IsMyRuntimeProperty}\z/, "yadayada");
+        unlike("_\xB7", qr/^_?\p{IsMyRuntimeProperty}\z/, "yadayada");
+        like("_\xB5", qr/^_?\P{IsMyRuntimeProperty}\z/, "yadayada");
+        unlike("_\xB6", qr/^_?\P{IsMyRuntimeProperty}\z/, "yadayada");
+        like("_\xB7", qr/^_?\P{IsMyRuntimeProperty}\z/, "yadayada");
+    }
+
+    # These are defined later, so won't be known at regex compile time above
+    sub IsMyRuntimeProperty {
+        return "B6\n";
+    }
+
+    sub IsntMyRuntimeProperty {
+        return "!B6\n";
+    }
+
+    {   # From Lingua::Stem::UniNE; no ticket filed but related to #121778
+        use utf8;
+        my $word = 'рабта';
+        $word =~ s{ (?:
+                          ия  # definite articles for nouns:
+                        | ът  # ∙ masculine
+                        | та  # ∙ feminine
+                        | то  # ∙ neutral
+                        | те  # ∙ plural
+                    ) $ }{}x;
+        is($word, 'раб', "Handles UTF8 trie correctly");
+    }
+
+    { # [perl #122460]
+        my $a = "rdvark";
+        $a =~ /(?{})(?=[A-Za-z0-9_])a*?/g;
+        is (pos $a, 0, "optimizer correctly thinks (?=...) is 0-length");
     }
 
     #
@@ -2107,6 +2352,62 @@ EOP
 
     {   # Bug #90536, caused failed assertion
         unlike("s\N{U+DF}", qr/^\x{00DF}/i, "\"s\\N{U+DF}\", qr/^\\x{00DF}/i");
+    }
+
+    # User-defined Unicode properties to match above-Unicode code points
+    sub Is_32_Bit_Super { return "110000\tFFFFFFFF\n" }
+    sub Is_Portable_Super { return '!utf8::Any' }   # Matches beyond 32 bits
+
+    {   # Assertion was failing on on 64-bit platforms; just didn't work on 32.
+        no warnings qw(non_unicode portable);
+        use Config;
+
+        # We use 'ok' instead of 'like' because the warnings are lexically
+        # scoped, and want to turn them off, so have to do the match in this
+        # scope
+        if ($Config{uvsize} < 8) {
+            ok(chr(0xFFFF_FFFE) =~ /\p{Is_32_Bit_Super}/,
+                            "chr(0xFFFF_FFFE) can match a Unicode property");
+            ok(chr(0xFFFF_FFFF) =~ /\p{Is_32_Bit_Super}/,
+                            "chr(0xFFFF_FFFF) can match a Unicode property");
+            my $p = qr/^[\x{FFFF_FFFF}]$/;
+            ok(chr(0xFFFF_FFFF) =~ $p,
+                    "chr(0xFFFF_FFFF) can match itself in a [class]");
+            ok(chr(0xFFFF_FFFF) =~ $p, # Tests any caching
+                    "chr(0xFFFF_FFFF) can match itself in a [class] subsequently");
+        }
+        else {
+            no warnings 'overflow';
+            ok(chr(0xFFFF_FFFF_FFFF_FFFE) =~ qr/\p{Is_Portable_Super}/,
+                    "chr(0xFFFF_FFFF_FFFF_FFFE) can match a Unicode property");
+            ok(chr(0xFFFF_FFFF_FFFF_FFFF) =~ qr/^\p{Is_Portable_Super}$/,
+                    "chr(0xFFFF_FFFF_FFFF_FFFF) can match a Unicode property");
+
+            my $p = qr/^[\x{FFFF_FFFF_FFFF_FFFF}]$/;
+            ok(chr(0xFFFF_FFFF_FFFF_FFFF) =~ $p,
+                    "chr(0xFFFF_FFFF_FFFF_FFFF) can match itself in a [class]");
+            ok(chr(0xFFFF_FFFF_FFFF_FFFF) =~ $p, # Tests any caching
+                    "chr(0xFFFF_FFFF_FFFF_FFFF) can match itself in a [class] subsequently");
+
+            # This test is because something was declared as 32 bits, but
+            # should have been cast to 64; only a problem where
+            # sizeof(STRLEN) != sizeof(UV)
+            ok(chr(0xFFFF_FFFF_FFFF_FFFE) !~ qr/\p{Is_32_Bit_Super}/, "chr(0xFFFF_FFFF_FFFF_FFFE) shouldn't match a range ending in 0xFFFF_FFFF");
+        }
+    }
+
+    { # [perl #112530], the code below caused a panic
+        sub InFoo { "a\tb\n9\ta\n" }
+        like("\n", qr/\p{InFoo}/,
+                            "Overlapping ranges in user-defined properties");
+    }
+
+    { # Regexp:Grammars was broken:
+  # http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2013-06/msg01290.html
+        fresh_perl_like('use warnings; "abc" =~ qr{(?&foo){0}abc(?<foo>)}',
+                        'Quantifier unexpected on zero-length expression',
+                        {},
+                        'No segfault on qr{(?&foo){0}abc(?<foo>)}');
     }
 
     # !!! NOTE that tests that aren't at all likely to crash perl should go

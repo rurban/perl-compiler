@@ -2,12 +2,10 @@
 
 BEGIN {
     $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
+    require './test.pl';
+    skip_all_if_miniperl("no dynamic loading on miniperl, no Tie::Hash::NamedCapture");
+    plan(tests => 2);
 }
-
-# need fix from issue 292 to work
-require 't/CORE-CPANEL/test.pl'; # moved outside of a BEGIN block when using -w to avoid a B issue
-
-plan(tests => 2);
 
 use strict;
 
@@ -21,7 +19,7 @@ use strict;
     };
     "pqrstuvwxyz" =~ /..(....)../; # prime @+ etc in this scope
     my @y = f();
-    is($x, "@y", "return a magic array ($x) vs (@y)");
+    is $x, "@y", "return a magic array ($x) vs (@y)";
 
     sub f2 {
 	"abc" =~ /(?<foo>.)./;
@@ -30,6 +28,6 @@ use strict;
 	return %+;
     };
     @y = f();
-    is($x, "@y", "return a magic hash ($x) vs (@y)");
+    is $x, "@y", "return a magic hash ($x) vs (@y)";
 }
 

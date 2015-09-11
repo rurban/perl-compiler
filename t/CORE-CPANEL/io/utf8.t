@@ -1,13 +1,16 @@
 #!./perl
 
 BEGIN {
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_without_perlio();
 }
 
 no utf8; # needed for use utf8 not griping about the raw octets
 
 
-plan(tests => 55);
+plan(tests => 63);
 
 $| = 1;
 
@@ -179,7 +182,7 @@ close F;
 unlink($a_file);
 
 open F, ">:utf8", $a_file;
-@a = map { chr(1 << 0 + ($_ << 2)) } 0..5; # 0x1, 0x10, .., 0x100000 # 0 + is required for some poor editors
+@a = map { chr(1 << ($_ << 2)) } 0..5; # 0x1, 0x10, .., 0x100000
 unshift @a, chr(0); # ... and a null byte in front just for fun
 print F @a;
 close F;
@@ -344,4 +347,55 @@ is($failed, undef);
     like( $@, qr/utf8 "\\x$chrF6" does not map to Unicode .+ <F> line 2/,
 	  "<:utf8 rcatline must warn about bad utf8");
     close F;
+}
+
+{
+    # fixed record reads
+    open F, ">:utf8", $a_file;
+    print F "foo\xE4";
+    print F "bar\xFE";
+    print F "\xC0\xC8\xCC\xD2";
+    print F "a\xE4ab";
+    print F "a\xE4a";
+    close F;
+    open F, "<:utf8", $a_file;
+    local $/ = \4;
+    my $line = <F>;
+    is($line, "foo\xE4", "readline with \$/ = \\4");
+    $line .= <F>;
+    is($line, "foo\xE4bar\xFE", "rcatline with \$/ = \\4");
+    $line = <F>;
+    is($line, "\xC0\xC8\xCC\xD2", "readline with several encoded characters");
+    $line = <F>;
+    is($line, "a\xE4ab", "readline with another boundary condition");
+    $line = <F>;
+    is($line, "a\xE4a", "readline with boundary condition");
+    close F;
+
+    # badly encoded at EOF
+    open F, ">:raw", $a_file;
+    print F "foo\xEF\xAC"; # truncated \x{FB04} small ligature ffl
+    close F;
+
+    use warnings 'utf8';
+    open F, "<:utf8", $a_file;
+    undef $@;
+    local $SIG{__WARN__} = sub { $@ = shift };
+    $line = <F>;
+
+    like( $@, qr/utf8 "\\xEF" does not map to Unicode .+ <F> chunk 1/,
+	  "<:utf8 readline (fixed) must warn about bad utf8");
+    close F;
+}
+
+# getc should reset the utf8 flag and not be affected by previous
+# return values
+SKIP: {
+    skip "no PerlIO::scalar on miniperl", 2, if is_miniperl();
+    open my $fh, "<:raw",  \($buf = chr 255);
+    open my $uh, "<:utf8", \($uuf = "\xc4\x80");
+    for([$uh,chr 256], [$fh,chr 255]) {
+	is getc $$_[0], $$_[1],
+	  'getc returning non-utf8 after utf8';
+    }
 }

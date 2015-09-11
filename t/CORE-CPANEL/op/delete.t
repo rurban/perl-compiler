@@ -1,10 +1,11 @@
 #!./perl
 
-INIT {
-    unshift @INC, "./lib";
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
 }
 
+require "test.pl";
 plan( tests => 38 );
 
 # delete() on hash elements

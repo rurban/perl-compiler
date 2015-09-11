@@ -2,9 +2,10 @@
 use strict;
 
 BEGIN {
-    require q(t/CORE-CPANEL/test.pl);
+    require './test.pl';
+    skip_all_if_miniperl("no dynamic loading on miniperl, no Scalar::Util");
+    plan(tests => 14);
 }
-plan(tests => 14);
 
 # [perl 72922]: A 'copy' of a Regex object which has magic should not crash
 # When a Regex object was copied and the copy weaken then the original regex object

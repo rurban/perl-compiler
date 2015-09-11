@@ -1,14 +1,15 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
+
+    eval { require AnyDBM_File }; # not all places have dbm* functions
+    skip_all("No dbm functions") if $@;
 }
 
-eval q{ require AnyDBM_File }; # not all places have dbm* functions
-skip_all("No dbm functions") if $@;
-
-plan tests => 4;
+plan tests => 5;
 
 # This is [20020104.007] "coredump on dbmclose"
 
@@ -37,17 +38,14 @@ sub DESTROY {
 }
 package main;
 $test = Foo->new(); # must be package var
-# $test = undef; # this force the DESTROY method on compiled binary
 EOC
 
 $prog =~ s/\@\@\@\@/$filename/;
 
 fresh_perl_is("require AnyDBM_File;\n$prog", 'ok', {}, 'explicit require');
-# perlcc issue 208 - https://code.google.com/p/perl-compiler/issues/detail?id=208
 fresh_perl_is($prog, 'ok', {}, 'implicit require');
 
 $prog = <<'EOC';
-$filename = '@@@@';
 @INC = ();
 dbmopen(%LT, $filename, 0666);
 1 while unlink $filename;
@@ -55,11 +53,15 @@ dbmopen(%LT, $filename, 0666);
 die "Failed to fail!";
 EOC
 
-$prog =~ s/\@\@\@\@/$filename/;
-
-# perlcc issue 226 - https://code.google.com/p/perl-compiler/issues/detail?id=226
 fresh_perl_like($prog, qr/No dbm on this machine/, {},
 		'implicit require fails');
 fresh_perl_like('delete $::{"AnyDBM_File::"}; ' . $prog,
 		qr/No dbm on this machine/, {},
 		'implicit require and no stash fails');
+
+{ # undef 3rd arg
+    local $^W = 1;
+    local $SIG{__WARN__} = sub { ++$w };
+    dbmopen(%truffe, 'pleaseletthisfilenotexist', undef);
+    is $w, 1, '1 warning from dbmopen with undef third arg';
+}

@@ -1,8 +1,9 @@
 #!./perl -w
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 # This is truth in an if statement, and could be a skip message
@@ -11,7 +12,7 @@ my $no_endianness = $] > 5.009 ? '' :
 my $no_signedness = $] > 5.009 ? '' :
   "Signed/unsigned pack modifiers not available on this perl";
 
-plan tests => 14700;
+plan tests => 14704;
 
 use strict;
 use warnings qw(FATAL all);
@@ -164,17 +165,15 @@ sub list_eq ($$) {
     is(scalar(@y), 2);
     is($y[1], 130);
     $x = pack('w*', 5000000000); $y = '';
-    # Math::BigInt::Calc skipped  - perlcc issue 176
-    # https://code.google.com/p/perl-compiler/issues/detail?id=176
     eval {
     use Math::BigInt;
     $y = pack('w*', Math::BigInt::->new(5000000000));
     };
-    is($x, $y, "5000000000 x: $x ; y: $y");
+    is($x, $y);
 
     $x = pack 'w', ~0;
     $y = pack 'w', (~0).'';
-    is($x, $y, '~0 int scalar');
+    is($x, $y);
     is(unpack ('w',$x), ~0);
     is(unpack ('w',$y), ~0);
 
@@ -301,8 +300,6 @@ sub list_eq ($$) {
 
     skip("-- $^O has serious fp indigestion on w-packed infinities", 1)
        if (
-	   ($^O eq 'mpeix')
-	   ||
 	   ($^O eq 'ultrix')
 	   ||
 	   ($^O =~ /^svr4/ && -f "/etc/issue" && -f "/etc/.relid") # NCR MP-RAS
@@ -370,7 +367,7 @@ SKIP: {
 # temps
 sub foo { my $a = "a"; return $a . $a++ . $a++ }
 {
-  use warnings qw(NONFATAL all);
+  use warnings qw(NONFATAL all);;
   my $warning;
   local $SIG{__WARN__} = sub {
       $warning = $_[0];
@@ -817,12 +814,20 @@ SKIP: {
 {
   # /
 
-  my ($x, $y, $z);
+  my ($x, $y, $z, @a);
   eval { ($x) = unpack '/a*','hello' };
   like($@, qr!'/' must follow a numeric type!);
   undef $x;
   eval { $x = unpack '/a*','hello' };
   like($@, qr!'/' must follow a numeric type!);
+
+  # [perl #60204] Unhelpful error message from unpack
+  eval { @a = unpack 'v/a*','h' };
+  is($@, '');
+  is(scalar @a, 0);
+  eval { $x = unpack 'v/a*','h' };
+  is($@, '');
+  is($x, undef);
 
   undef $x;
   eval { ($z,$x,$y) = unpack 'a3/A C/a* C/Z', "003ok \003yes\004z\000abc" };
@@ -945,7 +950,7 @@ SKIP: {
 
     # does unpack U0U on byte data warn?
     {
-	     use warnings qw(NONFATAL all);
+	use warnings qw(NONFATAL all);;
 
         my $bad = pack("U0C", 255);
         local $SIG{__WARN__} = sub { $@ = "@_" };
@@ -1233,7 +1238,7 @@ SKIP: {
 }
 
 { # syntax checks (W.Laun)
-  use warnings qw(NONFATAL all);
+  use warnings qw(NONFATAL all);;
   my @warning;
   local $SIG{__WARN__} = sub {
       push( @warning, $_[0] );
@@ -1405,7 +1410,7 @@ is(scalar unpack('A /A /A Z20', '3004bcde'), 'bcde');
   $b =~ s/(?:17000+|16999+)\d+(e-45) /17$1 /gi; # stringification is gamble
   is($b, "@a @a");
 
-  use warnings qw(NONFATAL all);
+  use warnings qw(NONFATAL all);;
   my $warning;
   local $SIG{__WARN__} = sub {
       $warning = $_[0];
@@ -1497,7 +1502,7 @@ is(unpack('c'), 65, "one-arg unpack (change #18751)"); # defaulting to $_
 }
 
 {
-    use warnings qw(NONFATAL all);
+    use warnings qw(NONFATAL all);;
     my $warning;
     local $SIG{__WARN__} = sub {
         $warning = $_[0];

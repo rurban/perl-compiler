@@ -1,8 +1,9 @@
 #!./perl
 
-INIT {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require "./test.pl";
 }
 
 use Config;
@@ -15,10 +16,17 @@ if (($^O eq 'MSWin32') || ($^O eq 'NetWare')) {
 elsif ($^O eq 'VMS') {
     $wd = `show default`;
 }
+elsif ( $^O =~ /android/ || $^O eq 'nto' ) {
+    # On Android and Blackberry 10, pwd is a shell builtin, so plain `pwd`
+    # won't cut it
+    $wd = `sh -c pwd`;
+}
 else {
     $wd = `pwd`;
 }
 chomp($wd);
+
+die "Can't get current working directory" if(!$wd);
 
 my $has_link            = $Config{d_link};
 my $accurate_timestamps =
@@ -33,6 +41,9 @@ if (defined &Win32::IsWinNT && Win32::IsWinNT()) {
         $has_link            = 1;
         $accurate_timestamps = 1;
     }
+    else {
+        $has_link            = 0;
+    }
 }
 
 my $needs_fh_reopen =
@@ -45,7 +56,7 @@ $needs_fh_reopen = 1 if (defined &Win32::IsWin95 && Win32::IsWin95());
 my $skip_mode_checks =
     $^O eq 'cygwin' && $ENV{CYGWIN} !~ /ntsec/;
 
-plan(51);
+plan tests => 55;
 
 my $tmpdir = tempfile();
 my $tmpdir1 = tempfile();
@@ -71,7 +82,7 @@ chdir $tmpdir;
 umask(022);
 
 SKIP: {
-    skip("bogus umask", 1) if ($^O eq 'MSWin32') || ($^O eq 'NetWare') || ($^O eq 'epoc');
+    skip "bogus umask", 1 if ($^O eq 'MSWin32') || ($^O eq 'NetWare');
 
     is((umask(0)&0777), 022, 'umask'),
 }
@@ -96,14 +107,14 @@ SKIP: {
      $blksize,$blocks) = stat('c');
 
     SKIP: {
-        skip("no nlink", 1) if $Config{dont_use_nlink};
+        skip "no nlink", 1 if $Config{dont_use_nlink};
 
         is($nlink, 3, "link count of triply-linked file");
     }
 
     SKIP: {
-        skip("hard links not that hard in $^O", 1) if $^O eq 'amigaos';
-	skip("no mode checks", 1) if $skip_mode_checks;
+        skip "hard links not that hard in $^O", 1 if $^O eq 'amigaos';
+	skip "no mode checks", 1 if $skip_mode_checks;
 
 #      if ($^O eq 'cygwin') { # new files on cygwin get rwx instead of rw-
 #          is($mode & 0777, 0777, "mode of triply-linked file");
@@ -126,7 +137,7 @@ SKIP: {
      $blksize,$blocks) = stat('c');
 
     SKIP: {
-	skip("no mode checks", 1) if $skip_mode_checks;
+	skip "no mode checks", 1 if $skip_mode_checks;
 
         is($mode & 0777, $newmode, "chmod going through");
     }
@@ -141,7 +152,7 @@ SKIP: {
      $blksize,$blocks) = stat('c');
 
     SKIP: {
-	skip("no mode checks", 1) if $skip_mode_checks;
+	skip "no mode checks", 1 if $skip_mode_checks;
 
         is($mode & 0777, $newmode, "chmod going through to c");
     }
@@ -150,7 +161,7 @@ SKIP: {
      $blksize,$blocks) = stat('x');
 
     SKIP: {
-	skip("no mode checks", 1) if $skip_mode_checks;
+	skip "no mode checks", 1 if $skip_mode_checks;
 
         is($mode & 0777, $newmode, "chmod going through to x");
     }
@@ -169,37 +180,37 @@ SKIP: {
 }
 
 SKIP: {
-    skip("no fchmod", 5) unless ($Config{d_fchmod} || "") eq "define";
+    skip "no fchmod", 5 unless ($Config{d_fchmod} || "") eq "define";
     ok(open(my $fh, "<", "a"), "open a");
     is(chmod(0, $fh), 1, "fchmod");
     $mode = (stat "a")[2];
     SKIP: {
-        skip("no mode checks", 1) if $skip_mode_checks;
+        skip "no mode checks", 1 if $skip_mode_checks;
         is($mode & 0777, 0, "perm reset");
     }
     is(chmod($newmode, "a"), 1, "fchmod");
     $mode = (stat $fh)[2];
     SKIP: { 
-        skip("no mode checks", 1) if $skip_mode_checks;
+        skip "no mode checks", 1 if $skip_mode_checks;
         is($mode & 0777, $newmode, "perm restored");
     }
 }
 
 SKIP: {
-    skip("no fchown", 1) unless ($Config{d_fchown} || "") eq "define";
+    skip "no fchown", 1 unless ($Config{d_fchown} || "") eq "define";
     open(my $fh, "<", "a");
     is(chown(-1, -1, $fh), 1, "fchown");
 }
 
 SKIP: {
-    skip("has fchmod", 1) if ($Config{d_fchmod} || "") eq "define";
+    skip "has fchmod", 1 if ($Config{d_fchmod} || "") eq "define";
     open(my $fh, "<", "a");
     eval { chmod(0777, $fh); };
     like($@, qr/^The fchmod function is unimplemented at/, "fchmod is unimplemented");
 }
 
 SKIP: {
-    skip("has fchown", 1) if ($Config{d_fchown} || "") eq "define";
+    skip "has fchown", 1 if ($Config{d_fchown} || "") eq "define";
     open(my $fh, "<", "a");
     eval { chown(0, 0, $fh); };
     like($@, qr/^The f?chown function is unimplemented at/, "fchown is unimplemented");
@@ -226,7 +237,7 @@ isnt($atime, 500000000, 'atime');
 isnt($mtime, 500000000 + $delta, 'mtime');
 
 SKIP: {
-    skip("no futimes", 4) unless ($Config{d_futimes} || "") eq "define";
+    skip "no futimes", 4 unless ($Config{d_futimes} || "") eq "define";
     open(my $fh, "<", 'b');
     $foo = (utime 500000000,500000000 + $delta, $fh);
     is($foo, 1, "futime");
@@ -239,14 +250,18 @@ sub check_utime_result {
      $blksize,$blocks) = stat('b');
 
  SKIP: {
-	skip("bogus inode num", 1) if ($^O eq 'MSWin32') || ($^O eq 'NetWare');
+	skip "bogus inode num", 1 if ($^O eq 'MSWin32') || ($^O eq 'NetWare');
 
 	ok($ino,    'non-zero inode num');
     }
 
  SKIP: {
-	skip("filesystem atime/mtime granularity too low", 2)
+	skip "filesystem atime/mtime granularity too low", 2
 	    unless $accurate_timestamps;
+
+     if ($^O eq 'vos') {
+	    skip ("# TODO - hit VOS bug posix-2055 - access time does not follow POSIX rules for an open file.", 2);
+     }
 
 	print "# atime - $atime  mtime - $mtime  delta - $delta\n";
 	if($atime == 500000000 && $mtime == 500000000 + $delta) {
@@ -274,9 +289,9 @@ sub check_utime_result {
 		is( $atime, 500000001,          'atime' );
 		is( $mtime, 500000000 + $delta, 'mtime' );
 	    }
-	    elsif ($^O eq 'beos' || $^O eq 'haiku') {
+	    elsif ($^O eq 'haiku') {
             SKIP: {
-		    skip("atime not updated", 1);
+		    skip "atime not updated", 1;
 		}
 		is($mtime, 500000001, 'mtime');
 	    }
@@ -289,7 +304,7 @@ sub check_utime_result {
 }
 
 SKIP: {
-    skip("has futimes", 1) if ($Config{d_futimes} || "") eq "define";
+    skip "has futimes", 1 if ($Config{d_futimes} || "") eq "define";
     open(my $fh, "<", "b") || die;
     eval { utime(undef, undef, $fh); };
     like($@, qr/^The futimes function is unimplemented at/, "futimes is unimplemented");
@@ -302,16 +317,16 @@ is(unlink('b'), 1, "unlink b");
 is($ino, undef, "ino of unlinked file b should be undef");
 unlink 'c';
 
-chdir $wd || die "Can't cd back to $wd";
+chdir $wd || die "Can't cd back to '$wd' ($!)";
 
 # Yet another way to look for links (perhaps those that cannot be
 # created by perl?).  Hopefully there is an ls utility in your
 # %PATH%. N.B. that $^O is 'cygwin' on Cygwin.
 
 SKIP: {
-    skip("Win32/Netware specific test", 2)
+    skip "Win32/Netware specific test", 2
       unless ($^O eq 'MSWin32') || ($^O eq 'NetWare');
-    skip("No symbolic links found to test with", 2)
+    skip "No symbolic links found to test with", 2
       unless  `ls -l perl 2>nul` =~ /^l.*->/;
 
     system("cp TEST TEST$$");
@@ -369,11 +384,6 @@ SKIP: {
 	close (FH); open (FH, ">>$tmpfile") or die "Can't reopen $tmpfile";
     }
 
-    SKIP: {
-        if ($^O eq 'vos') {
-	    skip ("# TODO - hit VOS bug posix-973 - cannot resize an open file below the current file pos.", 5);
-	}
-
 	is(-s $tmpfile, 200, "fh resize to 200 working (filename check)");
 
 	ok(truncate(FH, 0), "fh resize to zero");
@@ -406,12 +416,19 @@ SKIP: {
 	is(-s $tmpfile, 100, "fh resize by IO slot working");
 
 	close FH;
-    }
+
+	my $n = "for_fs_dot_t$$";
+	open FH, ">$n" or die "open $n: $!";
+	print FH "bloh blah bla\n";
+	close FH or die "close $n: $!";
+	eval "truncate $n, 0; 1" or die;
+	ok !-z $n, 'truncate(word) does not fall back to file name';
+	unlink $n;
 }
 
 # check if rename() can be used to just change case of filename
 SKIP: {
-    skip("Works in Cygwin only if check_case is set to relaxed", 1)
+    skip "Works in Cygwin only if check_case is set to relaxed", 1
       if ($ENV{'CYGWIN'} && ($ENV{'CYGWIN'} =~ /check_case:(?:adjust|strict)/));
 
     chdir "./$tmpdir";
@@ -422,7 +439,7 @@ SKIP: {
     # this works on win32 only, because fs isn't casesensitive
     ok(-e 'X', "rename working");
 
-    unlink_all('X');
+    unlink_all 'X';
     chdir $wd || die "Can't cd back to $wd";
 }
 
@@ -448,6 +465,35 @@ ok(-d $tmpdir1, "rename on directories working");
 
     map chown(+()), ('')x68;
     ok(1, "extend sp in pp_chown");
+}
+
+# Calling unlink on a directory without -U and privileges will always fail, but
+# it should set errno to EISDIR even though unlink(2) is never called.
+{
+    require Errno;
+
+    my $tmpdir = tempfile();
+    if (($^O eq 'MSWin32') || ($^O eq 'NetWare')) {
+        `mkdir $tmpdir`;
+    }
+    elsif ($^O eq 'VMS') {
+        `create/directory [.$tmpdir]`;
+    }
+    else {
+        `mkdir $tmpdir 2>/dev/null`;
+    }
+
+    # errno should be set even though unlink(2) is not called
+    local $!;
+    is(unlink($tmpdir), 0, "can't unlink directory without -U and privileges");
+    is(0+$!, Errno::EISDIR(), "unlink directory without -U sets errno");
+
+    rmdir $tmpdir;
+
+    # errno should be set by failed lstat(2) call
+    $! = 0;
+    unlink($tmpdir);
+    is(0+$!, Errno::ENOENT(), "unlink non-existent directory without -U sets ENOENT");
 }
 
 # need to remove $tmpdir if rename() in test 28 failed!

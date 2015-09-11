@@ -4,12 +4,15 @@ BEGIN {
     # We're not going to chdir() into 't' because we don't know if
     # chdir() works!  Instead, we'll hedge our bets and put both
     # possibilities into @INC.
-    require 't/CORE-CPANEL/test.pl';
+    @INC = qw(t . lib ../lib);
+    require "test.pl";
     # Really want to know if chdir is working, as the build process will all go
     # wrong if it is not.
+    if (is_miniperl() && !eval {require File::Spec::Functions; 1}) {
+	push @INC, qw(dist/Cwd/lib dist/Cwd ../dist/Cwd/lib ../dist/Cwd);
+    }
+    plan(tests => 48);
 }
-
-plan(tests => 48);
 
 use Config;
 
@@ -49,7 +52,7 @@ my $Cwd = abs_path;
 # Let's get to a known position
 SKIP: {
     my ($vol,$dir) = splitpath(abs_path,1);
-    my $test_dir = -d 't/CORE-CPANEL' ? 't/CORE-CPANEL' : '.';
+    my $test_dir = 't';
     my $compare_dir = (splitdir($dir))[-1];
 
     # VMS is case insensitive but will preserve case in EFS mode.
@@ -100,7 +103,6 @@ SKIP: {
     {
 	no warnings qw<io deprecated>;
 	ok(opendir(H, "op"), "opendir op") or diag $!;
-    # perlcc issue 207 - https://code.google.com/p/perl-compiler/issues/detail?id=207
 	ok(open(H, "<", "base"), "open base") or diag $!;
     }
     if ($has_dirfd) {
@@ -155,13 +157,9 @@ sub check_env {
 #line 64
         ok( chdir(undef),           "chdir(undef) w/ only \$ENV{$key} set" );
         is( abs_path, $ENV{$key},   '  abs_path() agrees' );
-
-        my $program_name = $0;
-        $program_name =~ s/\.bin$/.t/;
-
-        is( $warning, <<WARNING,   '  got uninit & deprecation warning' );
-Use of uninitialized value in chdir at $program_name line 64.
-Use of chdir('') or chdir(undef) as chdir() is deprecated at $program_name line 64.
+        is( $warning,  <<WARNING,   '  got uninit & deprecation warning' );
+Use of uninitialized value in chdir at $0 line 64.
+Use of chdir('') or chdir(undef) as chdir() is deprecated at $0 line 64.
 WARNING
 
         chdir($Cwd);
@@ -171,8 +169,8 @@ WARNING
 #line 76
         ok( chdir(''),              "chdir('') w/ only \$ENV{$key} set" );
         is( abs_path, $ENV{$key},   '  abs_path() agrees' );
-	is( $warning, <<WARNING,   '  got deprecation warning' );
-Use of chdir('') or chdir(undef) as chdir() is deprecated at $program_name line 76.
+        is( $warning,  <<WARNING,   '  got deprecation warning' );
+Use of chdir('') or chdir(undef) as chdir() is deprecated at $0 line 76.
 WARNING
 
         chdir($Cwd);

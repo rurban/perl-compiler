@@ -5,7 +5,9 @@
 # --Schwern
 
 BEGIN {
-    require q(t/CORE-CPANEL/test.pl);
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 use utf8;

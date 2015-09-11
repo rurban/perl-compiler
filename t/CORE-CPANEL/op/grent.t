@@ -1,13 +1,14 @@
 #!./perl
 
-INIT {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 eval {my @n = getgrgid 0};
 if ($@ =~ /(The \w+ function is unimplemented)/) {
-    skip_all("getgrgid unimplemented");
+    skip_all "getgrgid unimplemented";
 }
 
 eval { require Config; import Config; };
@@ -27,11 +28,11 @@ if (not defined $where) {	# Try NIS.
         {
             print "# `ypcat group` worked\n";
 
-            # Check to make sure we're really using NIS.
+            # Check to make sure we are really using NIS.
             if( open(NSSW, "/etc/nsswitch.conf" ) ) {
                 my($group) = grep /^\s*group:/, <NSSW>;
 
-                # If there's no group line, assume it default to compat.
+                # If there is no group line, assume it default to compat.
                 if( !$group || $group !~ /(nis|compat)/ ) {
                     print "# Doesn't look like you're using NIS in ".
                           "/etc/nsswitch.conf\n";
@@ -67,13 +68,13 @@ if (not defined $where) {	# Try local.
 }
 
 if ($reason) {
-    skip_all($reason);
+    skip_all $reason;
 }
 
 
 # By now the GR filehandle should be open and full of juicy group entries.
 
-plan(tests => 3);
+plan tests => 3;
 
 # Go through at most this many groups.
 # (note that the first entry has been read away by now)
@@ -90,7 +91,7 @@ ok( setgrent(), 'setgrent' ) || print "# $!\n";
 
 while (<GR>) {
     chomp;
-    # LIMIT -1 so that groups with no users don't fall off
+    # LIMIT -1 so that groups with no users do not fall off
     my @s = split /:/, $_, -1;
     my ($name_s,$passwd_s,$gid_s,$members_s) = @s;
     if (@s) {
@@ -157,7 +158,7 @@ EOEX
     fail();
     print "#\t (not necessarily serious: run t/op/grent.t by itself)\n";
 } else {
-    pass();
+    pass("getgrgid and getgrnam performed as expected");
 }
 
 # Test both the scalar and list contexts.
@@ -182,6 +183,6 @@ for (1..$max) {
 }
 endgrent();
 
-is("@gr1", "@gr2");
+is("@gr1", "@gr2", "getgrent gave same results in scalar and list contexts");
 
 close(GR);

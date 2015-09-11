@@ -21,7 +21,6 @@ $ABC'dyick = 6;
 
 $xyz = 2;
 
-# perlcc issue 209 + 210 - https://code.google.com/p/perl-compiler/issues/detail?id=210
 $main = join(':', sort(keys %main::));
 $xyz = join(':', sort(keys %xyz::));
 $ABC = join(':', sort(keys %ABC::));
@@ -37,7 +36,6 @@ print $main'blurfl == 123 ? "ok 3\n" : "not ok 3\n";
 package ABC;
 
 print $blurfl == 5 ? "ok 4\n" : "not ok 4\n";
-# perlcc issue 212 - https://code.google.com/p/perl-compiler/issues/detail?id=212
 eval 'print $blurfl == 5 ? "ok 5\n" : "not ok 5\n";';
 eval 'package main; print $blurfl == 123 ? "ok 6\n" : "not ok 6\n";';
 print $blurfl == 5 ? "ok 7\n" : "not ok 7\n";

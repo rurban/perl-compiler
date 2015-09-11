@@ -1,11 +1,15 @@
 #!./perl -w
 
 BEGIN {
-    require q(t/CORE-CPANEL/test.pl);
+    require './test.pl';
+    skip_all_without_dynamic_extension('Encode');
+    skip_all("EBCDIC") if $::IS_EBCDIC;
+    skip_all_without_perlio();
 }
 
 plan tests => 94;
 
+no warnings 'deprecated';
 use encoding "latin2"; # iso 8859-2
 
 # U+00C1, \xC1, \301, LATIN CAPITAL LETTER A WITH ACUTE

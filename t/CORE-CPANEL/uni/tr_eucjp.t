@@ -4,11 +4,15 @@
 # -- dankogai
 
 BEGIN {
-    require q(t/CORE-CPANEL/test.pl);
+    require './test.pl';
+    skip_all_without_dynamic_extension('Encode');
+    skip_all("EBCDIC") if $::IS_EBCDIC;
+    skip_all_without_perlio();
 }
 
 use strict;
 plan(tests => 6);
+no warnings 'deprecated';
 use encoding 'euc-jp';
 
 my @hiragana =  map {chr} ord("¤¡")..ord("¤ó");

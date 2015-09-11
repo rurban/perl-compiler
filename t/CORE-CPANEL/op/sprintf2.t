@@ -1,11 +1,14 @@
 #!./perl -w
 
+# Tests for sprintf that do not fit the format of sprintf.t.
+
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }   
 
-plan tests => 1368;
+plan tests => 1370;
 
 use strict;
 use Config;
@@ -42,7 +45,7 @@ for my $i (1, 3, 5, 10) {
 # Used to mangle PL_sv_undef
 fresh_perl_like(
     'print sprintf "xxx%n\n"; print undef',
-    'Modification of a read-only value attempted at',
+    'Modification of a read-only value attempted at - line 1\.',
     { switches => [ '-w' ] },
     q(%n should not be able to modify read-only constants),
 );
@@ -179,3 +182,12 @@ for my $width (1,2,3,4,5,6,7) {
         );
     }
 }
+
+# Overload count
+package o { use overload '""', sub { ++our $count; $_[0][0]; } }
+my $o = bless ["\x{100}"], o::;
+() = sprintf "%1s", $o;
+is $o::count, '1', 'sprinf %1s overload count';
+$o::count = 0;
+() = sprintf "%.1s", $o;
+is $o::count, '1', 'sprinf %.1s overload count';

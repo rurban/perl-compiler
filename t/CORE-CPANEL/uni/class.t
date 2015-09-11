@@ -1,8 +1,15 @@
 BEGIN {
-      require q(t/CORE-CPANEL/test.pl);
+    chdir 't' if -d 't';
+    @INC = qw(../lib .);
+    require "test.pl";
 }
 
-plan tests => 10;
+plan tests => 11;
+
+my $str = join "", map latin1_to_native(chr($_)), 0x20 .. 0x6F;
+
+is(($str =~ /(\p{IsMyUniClass}+)/)[0], '0123456789:;<=>?@ABCDEFGHIJKLMNO',
+                                'user-defined class compiled before defined');
 
 sub IsMyUniClass {
   <<END;
@@ -47,8 +54,6 @@ sub test_regexp ($$) {
 }
 
 use strict;
-
-my $str = join "", map latin1_to_native(chr($_)), 0x20 .. 0x6F;
 
 # make sure it finds built-in class
 is(($str =~ /(\p{Letter}+)/)[0], 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');

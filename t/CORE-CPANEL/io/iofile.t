@@ -1,8 +1,10 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_if_miniperl("miniperl can't load IO::File");
 }
 
 $|  = 1;

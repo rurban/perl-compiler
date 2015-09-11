@@ -3,7 +3,12 @@
 use strict;
 use warnings;
 
-BEGIN { require q(t/CORE-CPANEL/test.pl); } plan(tests => 52);
+BEGIN {
+    chdir 't';
+    @INC = '../lib';
+    require q(./test.pl);
+}
+plan(tests => 61);
 
 require mro;
 
@@ -327,4 +332,66 @@ is(eval { MRO_N->testfunc() }, 123);
     @Thwit::ISA = "Sile";
     undef %Thwit::;
     ok !Thrext->isa('Sile'), 'undef %package:: updates subclasses';
+}
+
+{
+    # Obliterating @ISA via glob assignment
+    # Broken in 5.14.0; fixed in 5.17.2
+    @Gwythaint::ISA = "Fantastic::Creature";
+    undef *This_glob_haD_better_not_exist; # paranoia; must have no array
+    *Gwythaint::ISA = *This_glob_haD_better_not_exist;
+    ok !Gwythaint->isa("Fantastic::Creature"),
+       'obliterating @ISA via glob assignment';
+}
+
+{
+    # Autovivifying @ISA via @{*ISA}
+    no warnings;
+    undef *fednu::ISA;
+    @{*fednu::ISA} = "pyfg";
+    ok +fednu->isa("pyfg"), 'autovivifying @ISA via *{@ISA}';
+}
+
+{
+    sub Detached::method;
+    my $h = delete $::{"Detached::"};
+    eval { local *Detached::method };
+    is $@, "", 'localising gv-with-cv belonging to detached package';
+}
+
+{
+    # *ISA localisation
+    @il::ISA = "ilsuper";
+    sub ilsuper::can { "puree" }
+    sub il::tomatoes;
+    {
+        local *il::ISA;
+        is +il->can("tomatoes"), \&il::tomatoes, 'local *ISA';
+    }
+    is "il"->can("tomatoes"), "puree", 'local *ISA unwinding';
+    {
+        local *il::ISA = [];
+        is +il->can("tomatoes"), \&il::tomatoes, 'local *ISA = []';
+    }
+    is "il"->can("tomatoes"), "puree", 'local *ISA=[] unwinding';
+}
+
+# Changes to UNIVERSAL::DESTROY should not leave stale DESTROY caches
+# (part of #114864)
+our $destroy_output;
+sub UNIVERSAL::DESTROY { $destroy_output = "old" }
+my $x = bless[];
+undef $x; # cache the DESTROY method
+undef *UNIVERSAL::DESTROY;
+*UNIVERSAL::DESTROY = sub { $destroy_output = "new" };
+$x = bless[];
+undef $x; # should use the new DESTROY
+is $destroy_output, "new",
+    'Changes to UNIVERSAL::DESTROY invalidate DESTROY caches';
+undef *UNIVERSAL::DESTROY;
+
+{
+    no warnings 'uninitialized';
+    $#_119433::ISA++;
+    pass "no crash when ISA contains nonexistent elements";
 }

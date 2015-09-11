@@ -1,9 +1,22 @@
 #!./perl -w
 
-use Config;
-BEGIN { require 't/CORE-CPANEL/test.pl' }
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+}
 
-plan(tests => 4);
+BEGIN {
+    use Config;
+
+    require "test.pl";
+
+    if( !$Config{d_crypt} ) {
+        skip_all("crypt unimplemented");
+    }
+    else {
+        plan(tests => 4);
+    }
+}
 
 # Can't assume too much about the string returned by crypt(),
 # and about how many bytes of the encrypted (really, hashed)

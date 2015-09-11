@@ -3,8 +3,9 @@
 # Tests for the coderef-in-@INC feature
 
 BEGIN {
-    unshift @INC, "./lib";
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+    require './test.pl';
 }
 
 use Config;
@@ -12,13 +13,15 @@ use Config;
 my $can_fork   = 0;
 my $has_perlio = $Config{useperlio};
 
-if ($Config{d_fork} && eval 'require POSIX; 1') {
+unless (is_miniperl()) {
+    if ($Config{d_fork} && eval 'require POSIX; 1') {
 	$can_fork = 1;
+    }
 }
 
 use strict;
 
-plan(tests => 49 + (3 + 14 * $can_fork));
+plan(tests => 68 + !is_miniperl() * (3 + 14 * $can_fork));
 
 sub get_temp_fh {
     my $f = tempfile();
@@ -191,12 +194,27 @@ $ret ||= do 'abc.pl';
 is( $ret, 'abc', 'do "abc.pl" sees return value' );
 
 {
-    my $filename = './Foo.pm';
+    my $got;
     #local @INC; # local fails on tied @INC
     my @old_INC = @INC; # because local doesn't work on tied arrays
-    @INC = sub { $filename = 'seen'; return undef; };
-    eval { require $filename; };
-    is( $filename, 'seen', 'the coderef sees fully-qualified pathnames' );
+    @INC = ('lib', 'lib/Devel', sub { $got = $_[1]; return undef; });
+    foreach my $filename ('/test_require.pm', './test_require.pm',
+			  '../test_require.pm') {
+	local %INC;
+	undef $got;
+	undef $test_require::loaded;
+	eval { require $filename; };
+	is($got, $filename, "the coderef sees the pathname $filename");
+	is($test_require::loaded, undef, 'no module is loaded' );
+    }
+
+    local %INC;
+    undef $got;
+    undef $test_require::loaded;
+
+    eval { require 'test_require.pm'; };
+    is($got, undef, 'the directory is scanned for test_require.pm');
+    is($test_require::loaded, 1, 'the module is loaded');
     @INC = @old_INC;
 }
 
@@ -222,6 +240,82 @@ ok( 1, 'returning PVBM ref doesn\'t segfault require' );
 eval 'use foo';
 ok( 1, 'returning PVBM ref doesn\'t segfault use' );
 shift @INC;
+
+# [perl #92252]
+{
+    my $die = sub { die };
+    my $data = [];
+    unshift @INC, sub { $die, $data };
+
+    my $initial_sub_refcnt = &Internals::SvREFCNT($die);
+    my $initial_data_refcnt = &Internals::SvREFCNT($data);
+
+    do "foo";
+    is(&Internals::SvREFCNT($die), $initial_sub_refcnt, "no leaks");
+    is(&Internals::SvREFCNT($data), $initial_data_refcnt, "no leaks");
+
+    do "bar";
+    is(&Internals::SvREFCNT($die), $initial_sub_refcnt, "no leaks");
+    is(&Internals::SvREFCNT($data), $initial_data_refcnt, "no leaks");
+
+    shift @INC;
+}
+
+unshift @INC, sub { \(my $tmp = '$_ = "are temps freed prematurely?"') };
+eval { require foom };
+is $_||$@, "are temps freed prematurely?",
+           "are temps freed prematurely when returned from inc filters?";
+shift @INC;
+
+# [perl #120657]
+sub fake_module {
+    my (undef,$module_file) = @_;
+    !1
+}
+{
+    local @INC = @INC;
+    unshift @INC, (\&fake_module)x2;
+    eval { require "${\'bralbalhablah'}" };
+    like $@, qr/^Can't locate/,
+        'require PADTMP passing freed var when @INC has multiple subs';
+}    
+
+SKIP: {
+    skip ("Not applicable when run from inccode-tie.t", 6) if tied @INC;
+    require Tie::Scalar;
+    package INCtie {
+        sub TIESCALAR { bless \my $foo }
+        sub FETCH { study; our $count++; ${$_[0]} }
+    }
+    local @INC = undef;
+    my $t = tie $INC[0], 'INCtie';
+    my $called;
+    $$t = sub { $called ++; !1 };
+    delete $INC{'foo.pm'}; # in case another test uses foo
+    eval { require foo };
+    is $INCtie::count, 2, # 2nd time for "Can't locate" -- XXX correct?
+        'FETCH is called once on undef scalar-tied @INC elem';
+    is $called, 1, 'sub in scalar-tied @INC elem is called';
+    () = "$INC[0]"; # force a fetch, so the SV is ROK
+    $INCtie::count = 0;
+    eval { require foo };
+    is $INCtie::count, 2,
+        'FETCH is called once on scalar-tied @INC elem holding ref';
+    is $called, 2, 'sub in scalar-tied @INC elem holding ref is called';
+    $$t = [];
+    $INCtie::count = 0;
+    eval { require foo };
+    is $INCtie::count, 1,
+       'FETCH called once on scalar-tied @INC elem returning array';
+    $$t = "string";
+    $INCtie::count = 0;
+    eval { require foo };
+    is $INCtie::count, 2,
+       'FETCH called once on scalar-tied @INC elem returning string';
+}
+
+
+exit if is_miniperl();
 
 SKIP: {
     skip( "No PerlIO available", 3 ) unless $has_perlio;

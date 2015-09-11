@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use NEXT;
 
-require 't/CORE-CPANEL/test.pl';
+require './test.pl';
 plan(tests => 4);
 
 {

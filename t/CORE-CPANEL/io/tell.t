@@ -1,11 +1,12 @@
 #!./perl
 
-INIT {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
-print "1..28\n";
+print "1..35\n";
 
 $TST = 'TST';
 
@@ -13,7 +14,7 @@ $Is_Dosish = ($^O eq 'MSWin32' or $^O eq 'NetWare' or $^O eq 'dos' or
               $^O eq 'os2' or $^O eq 'cygwin' or
               $^O =~ /^uwin/);
 
-open($TST, 't/CORE-CPANEL/test.pl') || (die "Can't open harness");
+open($TST, 'harness') || (die "Can't open harness");
 binmode $TST if $Is_Dosish;
 if (eof(TST)) { print "not ok 1\n"; } else { print "ok 1\n"; }
 
@@ -53,7 +54,7 @@ unless (eof) { print "not ok 13\n"; } else { print "ok 13\n"; }
 if ($. == 0) { print "not ok 14\n"; } else { print "ok 14\n"; }
 
 $curline = $.;
-open(OTHER, 't/CORE-CPANEL/test.pl') || (die "Can't open harness: $!");
+open(OTHER, 'harness') || (die "Can't open harness: $!");
 binmode OTHER if (($^O eq 'MSWin32') || ($^O eq 'NetWare'));
 
 {
@@ -151,11 +152,44 @@ open($tst,">>$written")  || die "Cannot open $written:$!";
 
 # This test makes a questionable assumption that the file pointer will
 # be at eof after opening a file but before seeking, reading, or writing.
-# Only known failure is on cygwin.
-my $todo = $^O eq "cygwin" && &PerlIO::get_layers($tst) eq 'stdio'
-    && ' # TODO: file pointer not at eof';
+# The POSIX standard is vague on this point.
+# Cygwin and VOS differ from other implementations.
 
-if (tell($tst) == 6)
-{ print "ok 28$todo\n"; } else { print "not ok 28$todo\n"; }
+if (tell ($tst) == 6) {
+  print "ok 28\n";
+}
+else {
+  if (($^O eq "cygwin") && (&PerlIO::get_layers($tst) eq 'stdio')) {
+    print "not ok 28 # TODO: file pointer not at eof\n";
+  }
+  elsif ($^O eq "vos") {
+    print "not ok 28 # TODO: Hit bug posix-2056. file pointer not at eof\n";
+  }
+  else {
+    print "not ok 28 - file pointer not at eof\n";
+  }
+}
+
 close $tst;
 
+open FH, "test.pl";
+$fh = *FH; # coercible glob
+$not = "not " x! (tell $fh == 0);
+print "${not}ok 29 - tell on coercible glob\n";
+$not = "not " x! (tell == 0);
+print "${not}ok 30 - argless tell after tell \$coercible\n";
+tell *$fh;
+$not = "not " x! (tell == 0);
+print "${not}ok 31 - argless tell after tell *\$coercible\n";
+eof $fh;
+$not = "not " x! (tell == 0);
+print "${not}ok 32 - argless tell after eof \$coercible\n";
+eof *$fh;
+$not = "not " x! (tell == 0);
+print "${not}ok 33 - argless tell after eof *\$coercible\n";
+seek $fh,0,0;
+$not = "not " x! (tell == 0);
+print "${not}ok 34 - argless tell after seek \$coercible...\n";
+seek *$fh,0,0;
+$not = "not " x! (tell == 0);
+print "${not}ok 35 - argless tell after seek *\$coercible...\n";

@@ -6,13 +6,12 @@
 #
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 use strict;
-
-skip_all('broken on MPE/iX') if $^O eq 'mpeix';
 
 $| = 1;
 

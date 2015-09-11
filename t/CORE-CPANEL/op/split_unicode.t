@@ -1,10 +1,10 @@
 #!./perl
 
 BEGIN {
-    require 't/CORE-CPANEL/test.pl';
+    require './test.pl';
+    skip_all_if_miniperl("no dynamic loading on miniperl, no File::Spec (used by charnames)");
+    plan(tests => 145);
 }
-
-plan(tests => 150);
 
 {
     # check the special casing of split /\s/ and unicode
@@ -28,7 +28,6 @@ plan(tests => 150);
 	ord("\N{NO-BREAK SPACE}"),
 			# Zs       NO-BREAK SPACE
         0x1680,         # Zs       OGHAM SPACE MARK
-        0x180E,         # Zs       MONGOLIAN VOWEL SEPARATOR
         0x2000..0x200A, # Zs  [11] EN QUAD..HAIR SPACE
         0x2028,         # Zl       LINE SEPARATOR
         0x2029,         # Zp       PARAGRAPH SEPARATOR
@@ -61,4 +60,18 @@ plan(tests => 150);
         ok(@r3 == 3 && join('-', @r3) eq "-:A:-:B", "$msg - /\\s+/ No.2");
 	is($c3, scalar(@r3), "$msg - /\\s+/ No.2 (count)");
     }
+
+    { # RT #114808
+        warning_is(
+            sub {
+                $p=chr(0x100);
+                for (".","ab\x{101}def") {
+                    @q = split /$p/
+                }
+            },
+            undef,
+            'no warnings when part of split cant match non-utf8'
+        );
+    }
+
 }

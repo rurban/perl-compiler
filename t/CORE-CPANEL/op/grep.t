@@ -4,12 +4,13 @@
 # grep() and map() tests
 #
 
-INIT {
-    unshift @INC, "./lib";
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = qw(. ../lib);
+    require "test.pl";
 }
 
-plan( tests => 61 );
+plan( tests => 66 );
 
 {
     my @lol = ([qw(a b c)], [], [qw(1 2 3)]);
@@ -213,3 +214,17 @@ plan( tests => 61 );
     like($@, qr/Missing comma after first argument to grep function/,
          "proper error on variable as block. [perl #37314]");
 }
+
+# [perl #78194] grep/map aliasing op return values
+grep is(\$_, \$_, '[perl #78194] \$_ == \$_ inside grep ..., "$x"'),
+     "${\''}", "${\''}";
+map is(\$_, \$_, '[perl #78194] \$_ == \$_ inside map ..., "$x"'),
+     "${\''}", "${\''}";
+
+# [perl #92254] freeing $_ in gremap block
+{
+    my $y;
+    grep { undef *_ } $y;
+    map { undef *_ } $y;
+}
+pass 'no double frees with grep/map { undef *_ }';

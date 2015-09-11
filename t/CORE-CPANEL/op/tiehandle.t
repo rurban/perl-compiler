@@ -1,15 +1,16 @@
 #!./perl -w
 
-INIT {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+BEGIN {
+    chdir 't' if -d 't';
+    @INC = '../lib';
 }
 
 my @expect;
 my $data = "";
 my @data = ();
 
-plan(tests => 63);
+require './test.pl';
+plan(tests => 67);
 
 sub compare {
     local $Level = $Level + 1;
@@ -198,6 +199,11 @@ is($r, 1);
     ::ok( say $fh @expect[2..4] );
     ::is( $ors, "\n",        'say sets $\ to \n in PRINT' );
     ::is( $\,   "something", "  and it's localized" );
+
+    local $\;
+    ::ok( say $fh @expect[2..4] );
+    ::is( $ors, "\n",        'say sets $\ to \n in PRINT' );
+    ::is( $\,   undef, "  and it's localized, even for undef \$\\" );
 }
 
 {
@@ -230,19 +236,19 @@ is($r, 1);
 	local *foo;
 	tie %foo, 'Blah';
     }
-    ok(!tied %foom, 'foom not tied');
+    ok(!tied %foo);
 
     {
 	local *bar;
 	tie @bar, 'Blah';
     }
-    ok(!tied @bar, 'bar not tied');
+    ok(!tied @bar);
 
     {
 	local *BAZ;
 	tie *BAZ, 'Blah';
     }
-    ok(!tied *BAZ, 'BAZ not tied');
+    ok(!tied *BAZ);
 
     package Blah;
 
@@ -251,7 +257,7 @@ is($r, 1);
     sub TIEARRAY  {bless {}}
 }
 
-eval q{
+{
     # warnings should pass to the PRINT method of tied STDERR
     my @received;
 
@@ -261,12 +267,14 @@ eval q{
 
     $r = warn("some", "text", "\n");
     @expect = (PRINT => $ob,"sometext\n");
+
     compare(PRINT => @received);
+
     use warnings;
     print undef;
 
-    like($received[1], qr/Use of uninitialized value/, 'recevied uninitialized value');
-};
+    like($received[1], qr/Use of uninitialized value/);
+}
 
 {
     # [ID 20020713.001] chomp($data=<tied_fh>)

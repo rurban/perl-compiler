@@ -1,5 +1,5 @@
 #!./perl
-INIT {
+BEGIN {
     if ( $^O eq 'VMS' ) {
         my $p = "/bin:/usr/bin:/usr/xpg4/bin:/usr/ucb";
         if ( $ENV{PATH} ) {
@@ -10,8 +10,10 @@ INIT {
     $ENV{LC_ALL} = "C"; # so that external utilities speak English
     $ENV{LANGUAGE} = 'C'; # GNU locale extension
 
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
+    skip_all_if_miniperl("no dynamic loading on miniperl, no POSIX");
 }
 use 5.010;
 use strict;
@@ -404,4 +406,4 @@ sub uniq {
 # indent-tabs-mode: nil
 # End:
 #
-# ex: set ts=8 sts=4 sw=4 noet:
+# ex: set ts=8 sts=4 sw=4 et:

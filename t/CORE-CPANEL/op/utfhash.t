@@ -1,9 +1,13 @@
 #!./perl -w
 
 BEGIN {
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
+
+    plan(tests => 99);
 }
-plan(tests => 99);
+
 use strict;
 
 # Two hashes one will all keys 8-bit possible (initially), other

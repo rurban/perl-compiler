@@ -6,7 +6,7 @@
 # we've not yet verified that use works.
 # use strict;
 
-print "1..73\n";
+print "1..75\n";
 my $test = 0;
 
 sub failed {
@@ -24,7 +24,7 @@ sub failed {
     return;
 }
 
-sub is {
+sub is($$$) {
     my ($got, $expect, $name) = @_;
     $test = $test + 1;
     if (defined $expect) {
@@ -44,7 +44,6 @@ sub is {
 
 $^P = 0xA;
 
-# perlcc issue 209 - https://code.google.com/p/perl-compiler/issues/detail?id=209
 my @before = grep { /eval/ } keys %::;
 
 is ((scalar @before), 0, "No evals");
@@ -158,4 +157,20 @@ for (0xA, 0) {
   eval qq{#line 42 "hash-line-eval"\n labadalabada()\n};
   is $::{"_<hash-line-eval"}[42], " labadalabada()\n",
    '#line 42 "foo" in a string eval updates @{"_<foo"}';
+  eval qq{#line 42 "figgle"\n#line 85 "doggo"\n labadalabada()\n};
+  is $::{"_<doggo"}[85], " labadalabada()\n",
+   'subsequent #line 42 "foo" in a string eval updates @{"_<foo"}';
+}
+
+# Modifying ${"_<foo"} should not stop lines from being retained.
+{
+  local $^P = 0x400|0x100|0x10;
+  eval <<'end';
+#line 42 "copfilesv-modification"
+    BEGIN{ ${"_<copfilesv-modification"} = \1 }
+#line 52 "copfilesv-modified"
+    abcdefg();
+end
+  is $::{"_<copfilesv-modified"}[52], "    abcdefg();\n",
+   '#line 42 "foo" in a str eval is not confused by ${"_<foo"} changing';
 }

@@ -1,11 +1,12 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require "../t/test.pl";
+    skip_all_without_perlio();
+    plan (15);
 }
-
-plan (15);
 
 use warnings 'layer';
 my $warn;

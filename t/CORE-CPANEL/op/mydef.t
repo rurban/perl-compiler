@@ -1,12 +1,13 @@
 #!./perl -w
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't' if -d 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 
 use strict;
-no warnings 'misc';
+no warnings 'misc', 'experimental::lexical_topic';
 
 $_ = 'global';
 is($_, 'global', '$_ initial value');
@@ -152,7 +153,7 @@ $_ = "global";
     my $_ = "titi";
     my $r;
     {
-	local $::TODO = 'Marked as todo since test was added in 59f00321bbc2d046' unless $0 =~ m{.bin$}; # fixed in perlcc
+	local $::TODO = 'Marked as todo since test was added in 59f00321bbc2d046';
 	$r = $s =~ /to(?{ is($_, 'toto', 'my $_ in code-match' ) })to/;
     }
     ok($r, "\$s=$s should match!");

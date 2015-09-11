@@ -1,7 +1,11 @@
 #!./perl
 
 BEGIN {
-    require q(t/CORE-CPANEL/test.pl);
+    unless (-d 'blib') {
+        chdir 't' if -d 't';
+        @INC = '../lib';
+    }
+    require q(./test.pl);
 }
 
 use strict;

@@ -1,14 +1,15 @@
 #!./perl
 
 BEGIN {
-    unshift @INC, 't/CORE-CPANEL/lib';
-    require 't/CORE-CPANEL/test.pl';
+    chdir 't';
+    @INC = '../lib';
+    require './test.pl';
 }
 use strict;
 
 plan tests => 2564;
 
-open(FOO,'t/CORE-CPANEL/op/read.t') || open(FOO,'t/op/read.t') || open(FOO,':op:read.t') || die "Can't open op.read";
+open(FOO,'op/read.t') || open(FOO,'t/op/read.t') || open(FOO,':op:read.t') || die "Can't open op.read";
 seek(FOO,4,0) or die "Seek failed: $!";
 my $buf;
 my $got = read(FOO,$buf,4);
