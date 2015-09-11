@@ -159,7 +159,7 @@ Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %
 
 [%- END %]
 
-static int perl_init0(pTHX) { /* fixup_ppaddr */
+static void perl_init0(pTHX) { /* fixup_ppaddr */
 [% section.init0.output( "    %s\n" ) %]
 };
 
