@@ -66,7 +66,7 @@ sub save {
     debug( av => "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, ref($av) );
 
     # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
-    if ( $fill > -1 and $magic !~ /D/ ) {
+    if ( $fill > -1 and defined $magic and $magic !~ /D/ ) {
         my @array = $av->ARRAY;    # crashes with D magic (Getopt::Long)
         if ( debug('av') ) {
             my $i = 0;

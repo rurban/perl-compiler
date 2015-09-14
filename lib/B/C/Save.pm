@@ -49,7 +49,7 @@ sub savepv {
     }
     else {
         if ( $cstring ne "0" ) {    # sic
-            decl()->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
+            decl()->add( sprintf( "Static%s char %s[] = %s;", $const || '', $pvsym, $cstring ) );
             $strtable{$cstring} = "$pvsym";
         }
     }

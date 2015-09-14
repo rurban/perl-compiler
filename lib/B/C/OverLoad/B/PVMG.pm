@@ -106,7 +106,7 @@ sub save_magic {
     # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
     # crashes with %Class::MOP::Instance:: flags=0x2280000c also
     if ( ref($sv) eq 'B::HV' and $sv->MAGICAL and $fullname =~ /::$/ ) {
-        WARN sprintf( "skip SvSTASH for overloaded HV $fullname flags=0x%x\n", $sv->FLAGS );
+        WARN sprintf( "skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS || 0 );
     }
     else {
         my $pkg = $sv->SvSTASH;
