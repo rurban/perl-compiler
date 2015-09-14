@@ -125,7 +125,7 @@ sub write {
     -e $template_file or die("Can't find or read $template_file for generating B::C C code.");
 
     # op/magic-27839.t sets SIG{WARN} in a begin block and then never releases it.
-    eval 'delete $INC{Template} if(!$INC{Template}); local $SIG{__WARN__} = sub {}; require Exporter::Heavy; require Template';
+    eval q{local $SIG{__WARN__} = 'IGNORE'; require Config; require Exporter::Heavy; require Template};
     $INC{'Template.pm'} or die("Can't load Template Toolkit at run time to render the C file.");
 
     # some useful options (see below for full list)

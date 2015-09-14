@@ -1325,6 +1325,8 @@ sub save_main_rest {
             : "PL_endav = (AV*)$end_av;"
         );
     }
+
+    my %INC_BACKUP = %INC;
     save_context() unless defined( module() );
 
     # verbose("use_xsloader=$use_xsloader");
@@ -1455,6 +1457,7 @@ sub save_main_rest {
     my $c_file_stash = build_template_stash( \%static_ext, \@stashxsubs, $dynaloader_optimizer );
 
     verbose("Writing output");
+    %INC = %INC_BACKUP;    # Put back %INC now we've saved everything so Template can be loaded properly.
     B::C::File::write($c_file_stash);
 
     # Can use NyTProf with B::C
