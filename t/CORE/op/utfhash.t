@@ -2,11 +2,10 @@
 
 BEGIN {
     push @INC, "t/CORE/lib";
-    require 't/CORE/test.pl';
-
-    plan(tests => 99);
+    require 't/CORE/test.pl';    
 }
 
+plan(tests => 99);
 use strict;
 
 # Two hashes one will all keys 8-bit possible (initially), other
