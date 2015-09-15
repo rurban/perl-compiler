@@ -2,8 +2,8 @@
 
 BEGIN {
     require 't/CORE/test.pl';
-    plan(24);
 }
+plan(24);
 
 sub End::DESTROY { $_[0]->() }
 
