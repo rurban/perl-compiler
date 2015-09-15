@@ -865,7 +865,7 @@ sub collect_deps {
 
 sub mark_package {
     my $package = shift;
-    my $force   = shift;
+    my $force   = shift || 0;
 
     return if skip_pkg($package);    # or $package =~ /^B::C(C?)::/;
     if ( !is_package_used($package) or $force ) {
