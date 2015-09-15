@@ -14,7 +14,7 @@ fi
 
 if [ "$PERL" != "$BINPERL/perl" ]; then
     echo "Adding $BINPERL to your path"
-    export PATH=$BINPERL:$PATH
+    export PATH=$BINPERL:$PATH:.
 fi
 
 DEBUG=0
