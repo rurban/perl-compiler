@@ -27,7 +27,7 @@ sub descend_marked_unused {
 
     foreach my $pack ( sort keys %INC ) {
         my $p = packname_inc($pack);
-        mark_package($p) if !skip_pkg($p) and !$B::C::all_bc_deps{$p};
+        mark_package($p) if !skip_pkg($p) and !$B::C::all_bc_deps{$p} and $pack !~ /(autosplit\.ix|\.al)$/;
     }
 
     if ( verbose() ) {

@@ -17,6 +17,8 @@
 # Version 2.16, Reini Urban, 2013-11-27 11:36:13
 # Version 2.17, Reini Urban, Thu Feb 6 14:04:29 2014 -0600
 # Version 2.18, Reini Urban, 2014-05-28
+# Version 2.19, Reini Urban, 2014-07-09
+# Version 2.20, Reini Urban, 2014-07-23
 
 use strict;
 use warnings;
@@ -33,7 +35,7 @@ use Pod::Usage;
 
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
-our $VERSION = 2.18;
+our $VERSION = 2.20;
 $| = 1;
 eval { require B::C::Flags; };
 
@@ -110,7 +112,7 @@ sub generate_code {
 
 sub run_code {
     if ( $Backend eq 'Bytecode' ) {
-        if ( $] < 5.007 or $] >= 5.018 ) {
+        if ( $] < 5.007 ) {
             $Output = "$BinPerl -MByteLoader $Output";
         }
         else {
@@ -315,7 +317,14 @@ sub parse_argv {
     else {
         $Output = opt('e') ? 'a.out' : $Input;
         $Output =~ s/\.(p[lm]|t)$//;
-        $Output .= 'exe' if is_win32() or $^O eq 'cygwin';
+        if ( is_win32() or $^O eq 'cygwin' ) {
+            if ( $Output eq 'a.out' ) {
+                $Output = 'a.exe';
+            }
+            else {
+                $Output .= 'exe';
+            }
+        }
     }
     $Output = relativize($Output) unless is_win32();
     sanity_check();
@@ -339,8 +348,7 @@ sub compile_byte {
 
     vprint 3, "Writing B on $Output";
     my $opts = $] < 5.007 ? "" : "-H,-s,";
-    $opts = "-s," if $] >= 5.018;
-    if ( $] >= 5.007 and $] < 5.018 and $Input =~ /^-e/ ) {
+    if ( $] >= 5.007 and $Input =~ /^-e/ ) {
         $opts = "-H,";
     }
     if ( @_ == 1 ) {
@@ -418,7 +426,7 @@ sub compile_cstyle {
     }
 
     my $staticxs = opt('staticxs') ? "-staticxs," : '';
-    warn "--staticxs on darwin does not work yet\n"
+    warn "Warning: --staticxs on darwin is very experimental\n"
       if $staticxs and $^O eq 'darwin';
     if ( opt('testsuite') ) {
         my $bo = join '', @begin_output;
@@ -735,6 +743,7 @@ sub yclept {
     if ( my $incver = $Config{inc_version_list} ) {
         my $incpre = dirname( $Config{sitelib} );
         $OINC{$_}++ for map { File::Spec->catdir( $incpre, $_ ) } split( ' ', $incver );
+        $OINC{$incpre}++;
     }
     for my $i (@INC) {
         my $inc = $i =~ m/\s/ ? qq{"$i"} : $i;

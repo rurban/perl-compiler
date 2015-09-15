@@ -26,7 +26,7 @@ sub save {
                                                            # svsect()->debug( "ix added to sv_debug_file" );
         init()->add(
             sprintf(
-                qq(sv_list[%d].sv_debug_file = savepv("NULL sv_list[%d] 0x%x");),
+                qq(sv_list[%d].sv_debug_file = savesharedpv("NULL sv_list[%d] 0x%x");),
                 svsect()->index, svsect()->index, $sv->FLAGS
             )
         );

@@ -27,14 +27,14 @@ sub save_data {
     init()->pre_destruct( sprintf 'eval_pv("close %s;", 1);', $globname );
     $B::C::use_xsloader = 1;    # layers are not detected as XSUB CV, so force it
     require PerlIO         unless $B::C::savINC{'PerlIO.pm'};
-    require PerlIO::scalar unless $B::C::savINC{'PerlIO/Scalar.pm'};
+    require PerlIO::scalar unless $B::C::savINC{'PerlIO/scalar.pm'};
     mark_package( "PerlIO", 1 );
 
-    # $savINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};  # as it was loaded from BEGIN
+    $B::C::curINC{'PerlIO.pm'} = $INC{'PerlIO.pm'};    # as it was loaded from BEGIN
     mark_package( "PerlIO::scalar", 1 );
 
-    # $savINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
-    $B::C::xsub{'PerlIO::scalar'} = 'Dynamic-' . $INC{'PerlIO/scalar.pm'};    # force dl_init boot
+    $B::C::curINC{'PerlIO/scalar.pm'} = $INC{'PerlIO/scalar.pm'};
+    $B::C::xsub{'PerlIO::scalar'}     = 'Dynamic-' . $INC{'PerlIO/scalar.pm'};    # force dl_init boot
 }
 
 sub save {

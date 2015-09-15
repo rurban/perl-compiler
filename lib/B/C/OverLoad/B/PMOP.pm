@@ -72,6 +72,19 @@ sub save {
         )
     );
 
+    my $code_list = $op->code_list;
+    if ( $code_list and $$code_list ) {
+        debug( gv => "saving pmop_list[%d] code_list $code_list (?{})", pmopsect()->index );
+        my $code_op = $code_list->save;
+        init()->add(
+            sprintf(
+                "pmop_list[%d].op_code_list = %s;",    # (?{}) code blocks
+                pmopsect()->index, $code_op
+            )
+        ) if $code_op;
+        debug( gv => "done saving pmop_list[%d] code_list $code_list (?{})", pmopsect()->index );
+    }
+
     pmopsect()->debug( $op->name, $op );
     my $pm = sprintf( "pmop_list[%d]", pmopsect()->index );
     init()->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )

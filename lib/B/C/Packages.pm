@@ -7,7 +7,7 @@ package B::C::Packages;
 
 use Exporter;
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/mark_package_unused mark_package_used mark_package_deleted is_package_used get_all_packages_used include_package_list/;
+our @EXPORT_OK = qw/mark_package_removed mark_package_unused mark_package_used mark_package_deleted is_package_used get_all_packages_used include_package_list/;
 
 our %include_package;
 
@@ -23,9 +23,16 @@ sub mark_package_used {
     return _mark_package( $_[0], 1 );
 }
 
+# TODO: check if we can merge delete and remove
 sub mark_package_deleted {
     return _mark_package( $_[0], undef );
 }
+
+sub mark_package_removed {
+    delete $include_package{ $_[0] };
+    return;
+}
+
 
 # todo: should rename it to avoid confusion
 #	need to check if this cannot be merged

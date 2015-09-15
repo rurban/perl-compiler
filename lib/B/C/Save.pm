@@ -41,7 +41,7 @@ sub savepv {
     return $strtable{$cstring} if defined $strtable{$cstring};
     $pv = pack "a*", $pv;
     my $pvsym = sprintf( "pv%d", inc_pv_index() );
-    $const = " const" if $const;
+    $const = $const ? " const" : "";
     if ( defined $max_string_len && length($pv) > $max_string_len ) {
         my $chars = join ', ', map { cchar $_ } split //, $pv;
         decl()->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );

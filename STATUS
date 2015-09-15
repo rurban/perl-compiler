@@ -4,7 +4,7 @@ Still missing in general are:
 
   - attribute handlers (i.e. run-time attributes)
   - compile-time perlio layers
-  - re-eval groups (?{})
+  - compile-time re-eval groups (?{})
   - smartmatch subrefs
   - compile-time stash-magic delete renames to ANON
 
@@ -15,20 +15,21 @@ you'd need to add them manually via -u<packagename>.
 B::CC is very unstable, work is in progress. Certain alioth benchmarks are 6x faster.
 Recursive function calls and certain dynamic ops are not yet supported.
 
-The Bytecode compiler is only stable for >=5.8 except 5.18 threaded.
+The Bytecode compiler is only stable for >=5.8.
 The CPAN Bytecode compiler is disabled for 5.6, we keep the old.
 The old core compiler fails for 50% of the testcases.
 
 Windows and other OS with strict linking <5.16 will fail to install due to some
 not exported libperl symbols. Looks at the patches in ramblings.
 
-Security: The latest released compiler version 1.45 is only supported up to 5.14.4,
-Newer perl versions should work, but 5.16.x and 5.18.x upstream are too insecure
-to be recommended for production.
-5.20 will finally properly handle unicode names, but identifiers and package
+Security: The latest released compiler version is only recommended up to 5.14.4.
+Newer perl versions do work, but 5.16.x-5.20.0 upstream are too insecure
+to be recommended for production yet.
+5.20 finally properly handles unicode names, but identifiers and package
 names are still handled as binary blobs, which could lead to TR39 issues.
 Check your code for syntax spoofs, confusables, strip \\0 from package names
-and enable use warnings 'syscalls'. There is no strict 'names' pragma yet.
+and enable use warnings 'syscalls'.
+There is no strict 'names' pragma and no confusables pragma yet.
 See http://websec.github.io/unicode-security-guide/
 
 C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
@@ -100,33 +101,35 @@ We only try B::C with -O3 so far.
 The full module testsuite is run with t/testm.sh -t [OPTS] Module
 
 Compile-time status from top100:
-5.6.2      fail 12.5% Test::* Moose* DateTime*
-5.8.5      fail 2%  FCGI Test::Harness
-5.8.8      fail 3%  FCGI Test::Harness Test::Tester
-5.8.9      fail 2%  ExtUtils::CBuilder DateTime
+5.6.2      fail 12.5% Test::* Moose* DateTime* FCGI
+5.8.5      pass 100%
+5.8.8      fail 1%  Test::Tester
+5.8.9      pass 100%
 5.10.1     pass 100%
+                    Attribute::Handlers #TODO 5.10.1d with threads
 5.12.5     pass 100%
 5.14.4     pass 100%
 5.16.3     fail 1%  Module::Build (out of memory/use-after-free)
-5.18.2     fail 2%  ExtUtils::ParseXS Module::Build (re-eval, out of memory/use-after-free)
-5.20.0     fail 5%  ExtUtils::ParseXS    (re-eval)
-                    Module::Build        (out of memory/use-after-free)
-                    B::Hooks::EndOfScope namespace::clean MooseX::Types (Modification of a read-only value)
+5.18.2     fail 2%  ExtUtils::ParseXS (re-eval)
+                    Module::Build (out of memory/use-after-free)
+5.20.0     fail 1%  ExtUtils::ParseXS (re-eval)
 
 Run-time tests not yet fully done
 
+5.21.2 status
+-----------
+Bytecode: sibling/lastsib with PERL_OP_PARENT broken for sort (18,19,25)
+
 5.20 status
 -----------
-Bytecode is better than 5.18 but still unstable, B::CC also
-Some new compile-time Readonly states are not properly reset
+fully supported since 1.48
 
 5.18 status
 -----------
-Bytecode is broken for threaded perls
-new re-eval feature not yet supported
+fully supported since 1.48
 
-5.10, 5.12, 5.14, 5.16 status
------------------------
+5.10, 5.12, 5.14, 5.16, 5.18, 5.20 status
+----------------------------------------
 TODO for B::C
   see google issues https://code.google.com/p/perl-compiler/issues/
   Most of them have either easy workarounds or are not fixable.
@@ -146,6 +149,23 @@ Fix CC
 
 DONE
 ----
+fixed with 1.48:
+  bytecode compiler for >=5.18
+  C/CC walker, dumping all external, non compiler added packages properly
+    and detecting required compiler added packages also.
+  RTLD_NOLOAD on BSD for run-time remapping of .so syms
+  Moose XS init
+
+fixed with 1.47:
+  run-time remapping of .so syms with special support by Encode-2.58
+  fix %INC cleanup
+  non-const %warnings::Bits with -O3
+  lexical subs threaded
+  Coro
+  some readonly related problems: re-eval, hashes
+  byteloader binmode for 5.18
+  mro and maybe::next
+
 fixed with 1.46:
   global destruction of our and global objects
   utf8 qr and utf8 /i initialization with -fppaddr

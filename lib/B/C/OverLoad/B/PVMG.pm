@@ -44,14 +44,14 @@ sub save {
         if (
             # fixme simply the or logic
             ( ( !USE_ITHREADS() and $fullname and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/ ) or USE_ITHREADS() )
-            and $sv->IVX > 5000000    # some crazy heuristic for a so ptr (> image_base)
+            and $sv->IVX > 0x400000    # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
             and ref( $sv->SvSTASH ) ne 'B::SPECIAL'
           ) {
             $ivx = _patch_dlsym( $sv, $fullname, $ivx );
         }
     }
 
-    if ( $sv->FLAGS & SVf_ROK ) {     # sv => sv->RV cannot be initialized static.
+    if ( $sv->FLAGS & SVf_ROK ) {      # sv => sv->RV cannot be initialized static.
         init()->add( sprintf( "SvRV_set(&sv_list[%d], (SV*)%s);", svsect()->index + 1, $savesym ) )
           if $savesym ne '';
         $savesym = 'NULL';
@@ -113,17 +113,21 @@ sub save_magic {
         if ($$pkg) {
             debug( mg => "stash isa class(\"%s\") 0x%x\n", eval { $pkg->NAME }, $$pkg );
 
-            $pkg->save($fullname);
+            # 361 do not force dynaloading IO via IO::Handle upon us
+            # core already initialized this stash for us
+            if ( $fullname ne 'main::STDOUT' ) {
+                $pkg->save($fullname) unless $fullname eq 'main::STDOUT';
 
-            no strict 'refs';
-            debug( mg => "xmg_stash = \"%s\" (0x%x)\n", eval { $pkg->NAME }, $$pkg );
+                no strict 'refs';
+                debug( mg => "xmg_stash = \"%s\" (0x%x)\n", eval { $pkg->NAME }, $$pkg );
 
-            # Q: Who is initializing our stash from XS? ->save is missing that.
-            # A: We only need to init it when we need a CV
-            # defer for XS loaded stashes with AMT magic
-            init()->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-            init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-            init()->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+                # Q: Who is initializing our stash from XS? ->save is missing that.
+                # A: We only need to init it when we need a CV
+                # defer for XS loaded stashes with AMT magic
+                init()->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+                init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+                init()->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+            }
 
             # XXX
             #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
@@ -173,8 +177,11 @@ sub save_magic {
             if ( ref($ptr) eq 'SCALAR' ) {
                 $ptrsv = svref_2object($ptr)->save($fullname);
             }
-            else {
+            elsif ( $ptr and ref $ptr ) {
                 $ptrsv = $ptr->save($fullname);
+            }
+            else {
+                $ptrsv = 'NULL';
             }
             debug( mg => "MG->PTR is an SV*" );
             init()->add(
@@ -276,9 +283,10 @@ sub _patch_dlsym {
         $pkg = $stash->can('NAME') ? $stash->NAME : '';
     }
     my $name = $sv->FLAGS & SVp_POK() ? $sv->PVX : "";
+    my $ivxhex = sprintf( "0x%x", $ivx );
 
     # Encode RT #94221
-    if ( $name =~ /encoding$/ and $Encode::VERSION eq '2.58' ) {
+    if ( $name =~ /encoding$/ and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION eq '2.58' ) {
         $name =~ s/-/_/g;
         $pkg = 'Encode' if $pkg eq 'Encode::XS';    # TODO foreign classes
         mark_package($pkg) if $fullname eq '(unknown)' and USE_ITHREADS();
@@ -299,19 +307,15 @@ sub _patch_dlsym {
             $name = "ascii_encoding";
         }
 
-        if ( $name and $name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name) ) {
+        if ( $name and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION gt '2.58' ) {
             my $enc = Encode::find_encoding($name);
-            $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
-            $pkg =~ s/^(Encode::\w+)(::.*)/$1/;
-            $name .= "_encoding";
+            $name .= "_encoding" unless $name =~ /_encoding$/;
             $name =~ s/-/_/g;
-            verbose("$pkg $Encode::VERSION with remap support for $name");
-            if ( $fullname eq '(unknown)' and USE_ITHREADS() ) {
-                mark_package( $pkg, 1 );
-                if ( $pkg ne 'Encode' ) {
-                    svref_2object( \&{"$pkg\::bootstrap"} )->save;
-                    mark_package( 'Encode', 1 );
-                }
+            verbose("$pkg $Encode::VERSION with remap support for $name (find 1)");
+            mark_package($pkg);
+            if ( $pkg ne 'Encode' ) {
+                svref_2object( \&{"$pkg\::bootstrap"} )->save;
+                mark_package('Encode');
             }
         }
         else {
@@ -326,12 +330,10 @@ sub _patch_dlsym {
                     $name = $n;
                     $name =~ s/-/_/g;
                     $name .= "_encoding" if $name !~ /_encoding$/;
-                    if ( $fullname eq '(unknown)' and USE_ITHREADS() ) {
-                        mark_package( $pkg, 1 );
-                        if ( $pkg ne 'Encode' ) {
-                            svref_2object( \&{"$pkg\::bootstrap"} )->save;
-                            mark_package( 'Encode', 1 );
-                        }
+                    mark_package($pkg);
+                    if ( $pkg ne 'Encode' ) {
+                        svref_2object( \&{"$pkg\::bootstrap"} )->save;
+                        mark_package('Encode');
                     }
                     last;
                 }
@@ -340,17 +342,20 @@ sub _patch_dlsym {
                 verbose("$pkg $Encode::VERSION remap found for constant $name");
             }
             else {
-                verbose("Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivx [#305]");
+                verbose("Warning: Possible missing remap for compile-time XS symbol in $pkg $fullname $ivxhex [#305]");
             }
         }
     }
 
     # Encode-2.59 uses a different name without _encoding
-    elsif ( $name !~ /encoding$/ and $Encode::VERSION gt '2.58' and Encode::find_encoding($name) ) {
+    elsif ( $Encode::VERSION ge '2.58' and Encode::find_encoding($name) ) {
+        my $enc = Encode::find_encoding($name);
+        $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
+
         $name .= "_encoding";
         $name =~ s/-/_/g;
         $pkg = 'Encode' unless $pkg;
-        verbose("$pkg $Encode::VERSION with remap support for $name");
+        verbose("$pkg $Encode::VERSION with remap support for $name (find 2)");
     }
 
     # now that is a weak heuristic, which misses #305
@@ -359,7 +364,7 @@ sub _patch_dlsym {
         if ( $fullname eq 'svop const' ) {
             $name = "ascii_encoding";
             $pkg = 'Encode' unless $pkg;
-            WARN("Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivx [RT #94069]");
+            WARN("Warning: Patch Net::DNS external XS symbol $pkg\::$name $ivxhex [RT #94069]");
         }
     }
     elsif ( $pkg eq 'Net::LibIDN' ) {
@@ -370,7 +375,7 @@ sub _patch_dlsym {
     if ( $pkg and $name and $name =~ /^[a-zA-Z_0-9-]+$/ ) {    # valid symbol name
         verbose("Remap IOK|POK $pkg with $name");
         _save_remap( $pkg, $pkg, $name, $ivx, 0 );
-        $ivx = "0UL /* $ivx => $name */";
+        $ivx = "0UL /* $ivxhex => $name */";
         mark_package( $pkg, 1 ) if $fullname =~ /^(svop const|padop)/;
     }
     else {

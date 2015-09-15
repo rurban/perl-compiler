@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.47_03';
+our $VERSION = '1.52';
 
 our $check;
 use Config;
@@ -78,7 +78,7 @@ use B::STASHGV ();
 use B::C::Optimizer::DynaLoader     ();
 use B::C::Optimizer::UnusedPackages ();
 use B::C::OverLoad                  ();
-use B::C::Packages qw/is_package_used mark_package_unused mark_package_used get_all_packages_used/;
+use B::C::Packages qw/is_package_used mark_package_unused mark_package_used mark_package_removed get_all_packages_used/;
 use B::C::Save qw(constpv savepv set_max_string_len);
 use B::C::Save::Signals ();
 
@@ -307,7 +307,7 @@ sub svop_or_padop_pv {
 }
 
 sub IsCOW {
-    return $_[0]->FLAGS & 0x00010000;    # since 5.17.8
+    return ( $_[0]->FLAGS & 0x00010000 );    # since 5.17.8
 }
 
 sub IsCOW_hek {
@@ -361,7 +361,10 @@ sub save_pv_or_rv {
         $static = 0
           if $shared_hek
           or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
-        $static = 0 if $B::C::const_strings and $fullname and $fullname =~ /^warnings::(Dead)?Bits/;
+        $static = 0
+          if $B::C::const_strings
+          and $fullname
+          and ( $fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/ );
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
             debug( hv => "use emptystring for empty shared key $fullname" );
             $savesym = "emptystring";
@@ -386,7 +389,11 @@ sub save_pv_or_rv {
                     $pv      = $savesym;
                     $savesym = 'NULL';
                 }
-                $len = $cur + 2 if $iscow and $cur;
+
+                # align to next wordsize
+                if ( $iscow and $cur ) {
+                    $len = $cur + 2;
+                }
 
                 #push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
             }
@@ -402,12 +409,21 @@ sub save_pv_or_rv {
                     free()->add("    SvFAKE_off(&$s);");
                 }
                 else {
-                    $len++ if $iscow and $cur;
+                    if ( $iscow and $cur ) {
+                        $len++;
+                    }
                 }
             }
         }
         else {
             $len = 0;
+        }
+    }
+
+    if ($len) {
+        my $ptrsize = $Config{ptrsize};
+        while ( $len % $ptrsize ) {
+            $len++;
         }
     }
 
@@ -446,10 +462,12 @@ sub save_pv_or_rv {
 # 5.10: unsigned op_opt:1; unsigned op_latefree:1; unsigned op_latefreed:1; unsigned op_attached:1; unsigned op_spare:3;
 # 5.18: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_spare:3;
 # 5.19: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_folded:1; unsigned op_spare:2;
+# 5.21.2: unsigned op_opt:1; unsigned op_slabbed:1; unsigned op_savefree:1; unsigned op_static:1; unsigned op_folded:1; unsigned op_lastsib:1; unsigned op_spare:1;
 
 # fixme only use opsect common
 {
     # should use a static variable
+    # only for $] < 5.021002
     my $opsect_common = "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, slabbed, savefree, static, folded, spare" . ", flags, private";
 
     sub opsect_common {
@@ -852,6 +870,7 @@ sub mark_package {
     return if skip_pkg($package);    # or $package =~ /^B::C(C?)::/;
     if ( !is_package_used($package) or $force ) {
         no strict 'refs';
+        debug( pkg => "mark_package($package, $force)" );
         my @IO = qw(IO::File IO::Handle IO::Socket IO::Seekable IO::Poll);
         mark_package('IO') if grep { $package eq $_ } @IO;
         mark_package("DynaLoader") if $package eq 'XSLoader';
@@ -1021,7 +1040,8 @@ sub delete_unsaved_hashINC {
     return if $^O eq 'MSWin32' and $package =~ /^Carp|File::Basename$/;
     mark_package_unused($package);
     if ( $curINC{$incpack} ) {
-        debug( pkg => "Deleting $package from \%INC" );
+
+        #debug( pkg => "Deleting $package from \%INC" );
         $savINC{$incpack} = $curINC{$incpack} if !$savINC{$incpack};
         $curINC{$incpack} = undef;
         delete $curINC{$incpack};
@@ -1082,6 +1102,7 @@ sub inc_cleanup {
     # %INC sanity check issue 89:
     # omit unused, unsaved packages, so that at least run-time require will pull them in.
 
+    my @deleted_inc;
     for my $package ( sort keys %INC ) {
         my $pkg = packname_inc($package);
         if ( $package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'} ) {
@@ -1091,8 +1112,9 @@ sub inc_cleanup {
             delete $curINC{$package};
             delete_unsaved_hashINC('utf8');
         }
-        elsif ( !$B::C::walkall ) {
-            delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
+        elsif ( !$B::C::walkall and !exists $dumped_package{$pkg} ) {
+            delete_unsaved_hashINC($pkg);
+            push @deleted_inc, $pkg;
         }
     }
 
@@ -1100,14 +1122,12 @@ sub inc_cleanup {
     for my $p ( sort keys %INC ) {
         if ( !exists $curINC{$p} ) {
             delete $INC{$p};
-            debug( pkg => "Deleting $p from %INC" );
+            push @deleted_inc, $p;
         }
     }
     if ( debug('pkg') and verbose() ) {
         debug( pkg => "\%include_package: " . join( " ", get_all_packages_used() ) );
         debug( pkg => "\%dumped_package:  " . join( " ", grep { $dumped_package{$_} } sort keys %dumped_package ) );
-        my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
-        debug( pkg => "\%INC: " . join( " ", @inc ) );
     }
 
     # issue 340,350: do only on -fwalkall? do it in the main walker step
@@ -1123,7 +1143,15 @@ sub inc_cleanup {
         delete_unsaved_hashINC($pkg) unless exists $dumped_package{$pkg};
 
         # sync %curINC deletions back to %INC
-        delete $INC{$p} if !exists $curINC{$p};
+        if ( !exists $curINC{$p} and exists $INC{$p} ) {
+            delete $INC{$p};
+            push @deleted_inc, $p;
+        }
+    }
+    if ( verbose() ) {
+        debug( pkg => "Deleted from \%INC: " . join( " ", @deleted_inc ) ) if @deleted_inc;
+        my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;
+        debug( pkg => "\%INC: " . join( " ", @inc ) );
     }
 }
 
@@ -1131,8 +1159,6 @@ sub inc_cleanup {
 sub dump_rest {
     my $again;
     verbose("dump_rest");
-    for my $p ( sort keys %INC ) {
-    }
     for my $p ( get_all_packages_used() ) {
         $p =~ s/^main:://;
         if (    is_package_used($p)
@@ -1441,7 +1467,21 @@ sub save_main_rest {
         $incpack .= '.pm';
         unless ( exists $B::C::curINC{$incpack} ) {    # skip deleted packages
             debug( pkg => "skip xs_init for $stashname !\$INC{$incpack}" );
+            mark_package_removed($stashname);
             delete $xsub{$stashname} unless $static_ext{$stashname};
+        }
+
+        # actually boot all non-b-c dependent modules here. we assume XSLoader (Moose, List::MoreUtils)
+        if ( !exists( $xsub{$stashname} ) and is_package_used($stashname) ) {
+            $xsub{$stashname} = 'Dynamic-' . $INC{$incpack};
+
+            # Class::MOP without Moose: find Moose.pm
+            $xsub{$stashname} = 'Dynamic-' . $B::C::savINC{$incpack} unless $INC{$incpack};
+            if ( !$B::C::savINC{$incpack} ) {
+                eval "require $stashname;";
+                $xsub{$stashname} = 'Dynamic-' . $INC{$incpack};
+            }
+            verbose("Assuming xs loaded $stashname with $xsub{$stashname}");
         }
     }
 

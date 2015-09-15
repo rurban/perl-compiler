@@ -28,7 +28,7 @@ sub save {
         $cur = length $pv;
     }
 
-    init()->add( sprintf( "pvop_list[$ix].op_pv = savepvn(%s, %u);", cstring($pv), $cur ) );
+    init()->add( sprintf( "pvop_list[$ix].op_pv = savesharedpvn(%s, %u);", cstring($pv), $cur ) );
     savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 

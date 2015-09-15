@@ -1044,3 +1044,4 @@ __END__
 165 18	op_savefree	PL_op->op_savefree		U8
 166 18	op_static	PL_op->op_static		U8
 167 19.003 op_folded	PL_op->op_folded		U8
+168 21.002 op_lastsib	PL_op->op_lastsib		U8

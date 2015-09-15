@@ -159,7 +159,7 @@ sub save {
         return svref_2object( \&Dummy_initxs )->save;
     }
 
-    if ( $isconst and !( $CvFLAGS & CVf_ANON ) ) {
+    if ( $isconst and !( $CvFLAGS & CVf_ANON ) ) {    # XXX how is ANON with CONST handled? CONST uses XSUBANY
         my $stash = $gv->STASH;
         debug( cv => sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname ) );
 
@@ -172,7 +172,7 @@ sub save {
         # warn "$sv CONSTSUB $name";
         if ( ( ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG' ) and $sv->FLAGS & SVf_ROK ) {
             my $rv = $sv->RV;
-            if ( $rv->FLAGS & ( SVp_POK | SVf_IOK ) and $rv->IVX > 5000000 ) {
+            if ( $rv->FLAGS & ( SVp_POK | SVf_IOK ) and $rv->IVX > 0x400000 ) {
 
                 # TODO: shouldn't be calling a private.
                 B::PVMG::_patch_dlsym( $rv, $fullname, $rv->IVX );
@@ -219,8 +219,11 @@ sub save {
 
     # fixme: can probably be removed
     if ( $fullname eq 'IO::Socket::SSL::SSL_Context::new' ) {
-        if ( $IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.984' ) {
-            WARN( "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is too old to create\n" . "  a server. Need to upgrade IO::Socket::SSL to 1.984 [CPAN #95452]" );
+        if ( $IO::Socket::SSL::VERSION ge '1.956' and $IO::Socket::SSL::VERSION lt '1.995' ) {
+
+            # See https://code.google.com/p/perl-compiler/issues/detail?id=317
+            # https://rt.cpan.org/Ticket/Display.html?id=95452
+            WARN( "Warning: Your IO::Socket::SSL version $IO::Socket::SSL::VERSION is unsupported to create\n" . "  a server. You need to upgrade IO::Socket::SSL to at least 1.995 [CPAN #95452]" );
         }
     }
 
@@ -389,7 +392,7 @@ sub save {
 
         # XXX missing cv_start for AUTOLOAD on 5.8
         $startfield = objsym( $root->next ) unless $startfield;    # 5.8 autoload has only root
-        $startfield = "0" unless $startfield;
+        $startfield = "0" unless $startfield;                      # XXX either CONST ANON or empty body
         if ($$padlist) {
 
             # XXX readonly comppad names and symbols invalid

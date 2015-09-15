@@ -21,20 +21,20 @@
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
 
-/* Since 5.8.8 */
-#ifndef Newx
-#define Newx(v,n,t)    New(0,v,n,t)
-#endif
 /* No longer available when C<PERL_CORE> is defined. */
 #ifndef Nullsv
-#define Null(type) ((type)NULL)
-#define Nullsv Null(SV*)
-#define Nullhv Null(HV*)
-#define Nullgv Null(GV*)
-#define Nullop Null(OP*)
+#  define Null(type) ((type)NULL)
+#  define Nullsv Null(SV*)
+#  define Nullhv Null(HV*)
+#  define Nullgv Null(GV*)
+#  define Nullop Null(OP*)
 #endif
 #ifndef GV_NOTQUAL
-#define GV_NOTQUAL 0
+#  define GV_NOTQUAL 0
+#endif
+/* Since 5.8.8 */
+#ifndef Newx
+#  define Newx(v,n,t)    New(0,v,n,t)
 #endif
 
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
@@ -145,7 +145,9 @@ XS(XS_DynaLoader_dl_find_symbol);
 [%- IF verbose AND section.decl.comment() %]
     /* [% section.decl.comment() %] */
 [% END -%]
+/* <decl.output> */
 [% section.decl.output( "%s\n" ) %]
+/* </decl.output> */
 
 [% FOREACH sect IN section_list -%]
 [%- lines = section.$sect.index + 1 -%]
@@ -550,6 +552,15 @@ dl_init(pTHX)
         if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));
     }
   [% END %]
+  [%- IF optimizer.dynaloader.fixups.EV %]
+  /* EV readonly symbols in BOOT (#368) */
+    {
+        GV *sym;
+        
+        sym = gv_fetchpv("EV::API",0,SVt_PV);
+        if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));
+    }
+  [% END %]  
   [%- FOREACH stashname IN optimizer.dynaloader.dl_modules %]
     [%- NEXT IF ! xsub.$stashname.match('^Dynamic')  %]
     PUSHMARK(sp);
@@ -568,6 +579,7 @@ dl_init(pTHX)
     mXPUSHp("[% stashfile %]", [% stashfile.length %]);
         [%- END %]
     PUTBACK;
+/* TODO #364: if a VERSION was provided need to add it here */    
     call_pv("XSLoader::load_file", G_VOID|G_DISCARD);
       [% END %]
 #else
@@ -664,8 +676,9 @@ main(int argc, char **argv, char **env)
 #endif
   [% END %]
     PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
-
-
+#ifndef PERL_USE_SAFE_PUTENV
+    PL_use_safe_putenv = 0;
+#endif
 
 /* perlmain.c sets PL_use_safe_putenv so we must do this
    here as well.

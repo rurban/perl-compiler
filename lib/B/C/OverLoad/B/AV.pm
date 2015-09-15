@@ -52,7 +52,7 @@ sub save {
         );
     }
 
-    my ( $av_index, $magic );
+    my ( $magic, $av_index ) = ('');
     if ( !$ispadlist ) {
         svsect()->debug( $fullname, $av );
         my $sv_ix = svsect()->index;

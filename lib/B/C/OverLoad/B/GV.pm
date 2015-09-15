@@ -514,6 +514,59 @@ sub save {
                     else {
                         init2()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
                     }
+
+                    if ( $gvcv->XSUBANY ) {
+
+                        # some XSUB's set this field. but which part?
+                        my $xsubany = $gvcv->XSUBANY;
+                        if ( $package =~ /^DBI::(common|db|dr|st)/ ) {
+
+                            # DBI uses the any_ptr for dbi_ima_t *ima, and all dr,st,db,fd,xx handles
+                            # for which several ptrs need to be patched. #359
+                            # the ima is internal only
+                            my $dr = $1;
+                            debug( cv => "eval_pv: DBI->_install_method(%s-) (XSUBANY=0x%x)", $fullname, $xsubany );
+                            init2()->add_eval(
+                                sprintf(
+                                    "DBI->_install_method('%s', 'DBI.pm', \$DBI::DBI_methods{%s}{%s})",
+                                    $fullname, $dr, $fullname
+                                )
+                            );
+                        }
+                        elsif ( $package eq 'Tie::Hash::NamedCapture' ) {
+
+                            # pretty high _ALIAS CvXSUBANY.any_i32 values
+                        }
+                        else {
+                            # try if it points to an already registered symbol
+                            my $anyptr = objsym( \$xsubany );    # ...refactored...
+                            if ( $anyptr and $xsubany > 1000 ) { # not a XsubAliases
+                                init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &%s;", $anyptr ) );
+                            }    # some heuristics TODO. long or ptr? TODO 32bit
+                            elsif ( $xsubany > 0x100000 and ( $xsubany < 0xffffff00 or $xsubany > 0x100000000 ) ) {
+                                if ( $package eq 'POSIX' and $gvname =~ /^is/ ) {
+
+                                    # need valid XSANY.any_dptr
+                                    init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_dptr = (void*)&%s;", $gvname ) );
+                                }
+                                elsif ( $package eq 'List::MoreUtils' and $gvname =~ /_iterator$/ ) {    # should be only the 2 iterators
+                                    init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = (void*)&%s;", "XS_List__MoreUtils__" . $gvname ) );
+                                }
+                                else {
+                                    verbose( sprintf( "TODO: Skipping %s->XSUBANY = 0x%x", $fullname, $xsubany ) );
+                                    init2()->add( sprintf( "/* TODO CvXSUBANY(GvCV($sym)).any_ptr = 0x%lx; */", $xsubany ) );
+                                }
+                            }
+                            elsif ( $package eq 'Fcntl' ) {
+
+                                # S_ macro values
+                            }
+                            else {
+                                # most likely any_i32 values for the XsubAliases provided by xsubpp
+                                init2()->add( sprintf( "/* CvXSUBANY(GvCV($sym)).any_i32 = 0x%x; XSUB Alias */", $xsubany ) );
+                            }
+                        }
+                    }
                 }
                 elsif ( $cvsym =~ /^(cv|&sv_list)/ ) {
                     init()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
@@ -547,8 +600,9 @@ sub save {
                 # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
             }
             else {
-                init()->add( sprintf( "GvFILE_HEK($sym) = %s;", save_hek( $gv->FILE ) ) )
-                  if !$B::C::optimize_cop;
+                my $file = save_hek( $gv->FILE );
+                init()->add( sprintf( "GvFILE_HEK(%s) = %s;", $sym, $file ) )
+                  if $file ne 'NULL' and !$B::C::optimize_cop;
             }
 
             # init()->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;

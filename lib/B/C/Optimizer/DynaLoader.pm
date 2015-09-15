@@ -74,9 +74,6 @@ sub optimize {
             $self->{'xsub'}->{$stashname} = 'Dynamic-' . $INC{'attributes.pm'};
         }
 
-        if ( $stashname eq 'Moose' and is_package_used('Moose') and $Moose::VERSION gt '2.0' ) {
-            $self->{'xsub'}->{$stashname} = 'Dynamic-' . $INC{'Moose.pm'};
-        }
         if ( exists( $self->{'xsub'}->{$stashname} ) && $self->{'xsub'}->{$stashname} =~ m/^Dynamic/ ) {
 
             # XSLoader.pm: $modlibname = (caller())[1]; needs a path at caller[1] to find auto,
@@ -102,11 +99,13 @@ sub optimize {
 
     my $xsfh;    # Will close automatically when it goes out of scope.
 
-    if ( grep { $_ eq 'attributes' } @dl_modules ) {
-
-        # enforce attributes at the front of dl_init, #259
-        @dl_modules = grep { $_ ne 'attributes' } @dl_modules;
-        unshift @dl_modules, 'attributes';
+    # enforce attributes at the front of dl_init, #259
+    # also Encode should be booted before PerlIO::encoding
+    for my $front (qw(Encode attributes)) {
+        if ( grep { $_ eq $front } @dl_modules ) {
+            @dl_modules = grep { $_ ne $front } @dl_modules;
+            unshift @dl_modules, $front;
+        }
     }
 
     if ( $self->{'staticxs'} ) {
@@ -160,7 +159,7 @@ sub optimize {
             }
         }
         else {
-            verbose( "no dl_init for $stashname, " . ( !$self->{'xsub'}->{$stashname} ? "not marked\n" : "marked as $self->{'xsub'}->{$stashname}" ) );
+            verbose( "no dl_init for $stashname, " . ( !$self->{'xsub'}->{$stashname} ? "not bootstrapped\n" : "bootstrapped as $self->{'xsub'}->{$stashname}" ) );
 
             # XXX Too late. This might fool run-time DynaLoading.
             # We really should remove this via init from @DynaLoader::dl_modules
@@ -173,9 +172,13 @@ sub optimize {
         'xs'         => $xs,
         'dl_modules' => \@dl_modules,
         'fixups'     => {
+
+            # Coro readonly symbols in BOOT (#293)
             'coro' => ( exists $self->{'xsub'}->{"Coro::State"} and grep { $_ eq "Coro::State" } @dl_modules ) ? 1 : 0,
+            'EV'   => ( exists $self->{'xsub'}->{"EV"}          and grep { $_ eq "EV" } @dl_modules )          ? 1 : 0,
         },
     };
+
     return 1;
 }
 

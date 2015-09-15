@@ -57,7 +57,7 @@ sub save {
     if ( !$type and $OP_COP{ $op->targ } ) {
         debug( cops => "Null COP: %d\n", $op->targ );
 
-        if (USE_ITHREADS()) {
+        if ( USE_ITHREADS() ) {
             copsect()->comment_common("line, stashoff, file, hints, seq, warnings, hints_hash");
             copsect()->add(
                 sprintf(
@@ -153,7 +153,7 @@ sub _save_common {
         }
         else {
             # mostly optimized-away padsv NULL pads with 5.8
-            WARN("package_pv for method_name not found") if debug('cv') or debug('pkg');
+            WARN("package_pv for method_name not found") if debug('cv');
         }
     }
 

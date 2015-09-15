@@ -65,7 +65,7 @@ sub save {
 
     # $file =~ s/\.pl$/.c/;
 
-    if (USE_ITHREADS()) {
+    if ( USE_ITHREADS() ) {
         copsect()->comment_common("line, stashoff, file, hints, seq, warnings, hints_hash");
         copsect()->add(
             sprintf(
@@ -84,7 +84,7 @@ sub save {
             sprintf(
                 "%s, %u, " . "%s, %s, %u, " . "%s, %s, NULL",
                 $op->_save_common, $op->line,
-    
+
                 # we cannot store this static (attribute exit)
                 "Nullhv", "Nullgv",
                 $op->hints, get_integer_value( $op->cop_seq ), !$dynamic_copwarn ? $warn_sv : 'NULL'
@@ -95,13 +95,13 @@ sub save {
     if ( $op->label ) {
 
         # test 29 and 15,16,21. 44,45
-            init()->add(
-                sprintf(
-                    "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
-                    copsect()->index,   cstring( $op->label ),
-                    length $op->label, 0
-                )
-            );
+        init()->add(
+            sprintf(
+                "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
+                copsect()->index,  cstring( $op->label ),
+                length $op->label, 0
+            )
+        );
 
     }
 
@@ -116,8 +116,13 @@ sub save {
         # on cv_undef (scope exit, die, ...) CvROOT and all its kids are freed.
         # lexical cop_warnings need to be dynamic, but just the ptr to the static string.
         if ($copw) {
-            my $cop = "cop_list[$ix]";
-            init()->add( "$cop.cop_warnings = (STRLEN*)savepvn((char*)&" . $copw . ", sizeof($copw));" );
+            my $dest = "cop_list[$ix].cop_warnings";
+
+            # with DEBUGGING savepvn returns ptr + PERL_MEMORY_DEBUG_HEADER_SIZE
+            # which is not the address which will be freed in S_cop_free.
+            # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
+            # lexwarn<n> might be also be STRLEN* 0
+            init()->add("if ($copw) $dest = (STRLEN*)savesharedpvn((const char*)$copw, sizeof($copw));");
         }
     }
     else {
@@ -128,12 +133,28 @@ sub save {
     if ( !$B::C::optimize_cop ) {
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
-                init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv( $op->stashpv ) ) );
-                init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",    constpv($file) ) );
+                init()->add(
+                    sprintf(
+                        "CopSTASHPV_set(&cop_list[%d], %s);",
+                        $ix, constpv( $op->stashpv )
+                    ),
+                    sprintf(
+                        "CopFILE_set(&cop_list[%d], %s);",
+                        $ix, constpv($file)
+                    )
+                );
             }
             else {
-                init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring( $op->stashpv ) ) );
-                init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",    cstring($file) ) );
+                init()->add(
+                    sprintf(
+                        "CopSTASHPV_set(&cop_list[%d], %s);",
+                        $ix, cstring( $op->stashpv )
+                    ),
+                    sprintf(
+                        "CopFILE_set(&cop_list[%d], %s);",
+                        $ix, cstring($file)
+                    )
+                );
             }
         }
         else {    # cv_undef e.g. in bproto.t and many more core tests with threads
