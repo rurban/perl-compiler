@@ -3,11 +3,13 @@
 BEGIN {
     push @INC, "t/CORE/lib";
     require 't/CORE/test.pl';
-    plan( tests => 8 );
 }
+
+plan( tests => 8 );
 
 use strict;
 
+eval q|
 # first, with delete
 # simple removal
 sub removed { 23 }
@@ -39,3 +41,5 @@ is( replaced2(), 'meth', 'original function not bound, was replaced' );
 ok( main->replaced2 eq 'meth', 'method is replaced function' );
 BEGIN { undef $main::{replaced2} }
 sub replaced2 { 'meth' }
+
+|;
