@@ -1,0 +1,30 @@
+#!/bin/env perl
+
+use v5.14;    # or later
+
+run(@ARGV) unless caller;
+
+sub run {
+    my (@args) = @_;
+
+    my $t = pop @args;
+    die "Need a CORE/*.t file as last argument" unless $t && $t =~ qr{t/CORE/.*\.t$};
+
+    my ( $before, $after ) = split( '/CORE/', $t );
+    $after =~ s{/}{--}g;
+    $t = $before . '/C-COMPILED/CORE--' . $after;
+
+    if ( !-e $t ) {
+        $t =~ s{\.t$}{==*.t};
+        $t = ( glob $t )[0];
+    }
+
+    die "Cannot find a test file" unless -e $t;
+
+    my @cmd = ( 'prove', @args, $t );
+    say "Running: ", join( ' ', @cmd );
+
+    exec(@cmd);
+
+    return 0;
+}
