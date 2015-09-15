@@ -1269,7 +1269,7 @@ sub save_main {
 
     if ( debug('walk') ) {
         verbose("Enabling B::debug / B::walkoptree_debug");
-        B::debug(1);
+        B->debug(1);
 
         # this is enabling walkoptree_debug
         # which is useful when using walkoptree (not the slow version)
