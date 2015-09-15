@@ -15,9 +15,10 @@ use strict;
 
 BEGIN {
     require 't/CORE/test.pl';
-    skip_all_without_config(qw(d_pipe d_fork d_waitpid d_getppid));
-    plan (8);
 }
+
+skip_all_without_config(qw(d_pipe d_fork d_waitpid d_getppid));
+plan (8);
 
 # No, we don't want any zombies. kill 0, $ppid spots zombies :-(
 $SIG{CHLD} = 'IGNORE';
