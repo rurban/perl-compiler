@@ -134,12 +134,12 @@ sub output {
             $dbg = " /* " . $self->{'dbg'}->[$i] . " " . $ref . " */";
         }
 
-        if ( $format eq "\t{ %s }, /* %s_list[%d] %s */%s\n" ) {
+        #if ( $format eq "\t{ %s }, /* %s_list[%d] %s */%s\n" ) {
             $return_string .= sprintf $format, $val, $self->name, $i, $ref, $dbg;
-        }
-        else {
-            $return_string .= sprintf $format, $val;
-        }
+            #}
+            #else {
+            #$return_string .= sprintf($format, $val);
+            #}
         ++$i;
     }
 
