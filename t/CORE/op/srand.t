@@ -1,7 +1,6 @@
 #!./perl -w
 
 BEGIN {
-    chdir "t" if -d "t";
     push @INC, qw{t/CORE/lib};
 }
 

@@ -50,7 +50,6 @@ for(
 my $prog =    q~
      BEGIN {
          unless (-d 'blib') {
-             chdir 't' if -d 't';
              push @INC, "t/CORE/lib";
          }
      }
@@ -112,7 +111,6 @@ for(
  my $prog = q~
      BEGIN {
          unless (-d 'blib') {
-             chdir 't' if -d 't';
              push @INC, "t/CORE/lib";
          }
      }
@@ -177,7 +175,6 @@ for(
   my $prog =     q~
      BEGIN {
          unless (-d 'blib') {
-             chdir 't' if -d 't';
              push @INC, "t/CORE/lib";
          }
      }
@@ -213,7 +210,6 @@ for(
   $prog =     q~
       BEGIN {
          unless (-d 'blib') {
-             chdir 't' if -d 't';
              push @INC, "t/CORE/lib";
          }
       }
@@ -297,7 +293,6 @@ no warnings; # temporary; there seems to be a scoping bug, as this does not
 my $prog =    q~#!perl -w
      BEGIN {
          unless (-d 'blib') {
-             chdir 't' if -d 't';
              push @INC, "t/CORE/lib";
          }
      }

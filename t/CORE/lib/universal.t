@@ -3,7 +3,6 @@
 # Test the Internal::* functions and other tibits in universal.c
 
 BEGIN {
-    chdir 't' if -d 't';
     @INC = '../lib';
     require 'test.pl';
     plan( tests => 13 );
