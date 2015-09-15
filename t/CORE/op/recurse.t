@@ -7,9 +7,9 @@
 BEGIN {
     push @INC, qw{t/CORE/lib};
     require "test.pl";
-    plan(tests => 28);
 }
 
+plan(tests => 28);
 use strict;
 
 sub gcd {
