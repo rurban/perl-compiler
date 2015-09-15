@@ -5,12 +5,13 @@
 BEGIN {
     push @INC, qw{t/CORE/lib};
     require 't/CORE/test.pl';
-    skip_all_if_miniperl('no dynamic loading on miniperl, no Filter::Util::Call');
-    skip_all_without_perlio();
 }
 use strict;
 use Config;
 use Filter::Util::Call;
+
+skip_all_if_miniperl('no dynamic loading on miniperl, no Filter::Util::Call');
+skip_all_without_perlio();
 
 plan(tests => 153);
 
