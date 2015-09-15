@@ -23,7 +23,13 @@ sub save {
     my ( $fill, $avreal, $max );
 
     # cornercase: tied array without FETCHSIZE
-    eval { $fill = $av->FILL; };
+    # However B::PADLIST objects don't have a FILL routine? Not clear if this is a B bug or a B::C bug.
+    if(ref($av) ne 'B::PADLIST') {
+        eval { $fill = $av->FILL; } ;
+    }
+    else {
+        $fill = -1;
+    }
     $fill = -1 if $@;    # catch error in tie magic
     my $ispadlist = ref($av) eq 'B::PADLIST';
     $max = $fill;
