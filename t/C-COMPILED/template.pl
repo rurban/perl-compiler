@@ -5,6 +5,8 @@ use warnings;
 
 use TAP::Harness ();
 use IO::Scalar;
+use Cwd;
+use File::Basename;
 
 use Test::More;
 
@@ -17,23 +19,59 @@ my @optimizations = $ENV{'BC_TEST_OPTIMIZATIONS'} || '-O3,-fno-fold';
 $optimizations[0] .= ',-v'     if ( $ENV{VERBOSE} );
 $optimizations[0] .= ',-Dwalk' if ( $ENV{BC_WALK} );
 
-my $todo = '';
-
 # Setup file_to_test to be the file we actually want to test.
-my $file_to_test = $0;
-if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
-    my $options = $1;
-    $todo = "B::C Fails to generate c code. Issues: $1"         if ( $options =~ /BC-([\d-]+)/ );
-    $todo = "gcc cannot compile generated c code. Issues: $1"   if ( $options =~ /GCC-([\d-]+)/ );
-    $todo = "Compiled binary exits with signal. Issues: $1"     if ( $options =~ /SIG-([\d-]+)/ );
-    $todo = "Test crashes before completion. Issues: $1"        if ( $options =~ /BADPLAN-([\d-]+)/ );
-    $todo = "Fails tests when compiled with perlcc. Issues: $1" if ( $options =~ /BADTEST-([\d-]+)/ );
-    $todo = "Tests out of sequence. Issues: $1"                 if ( $options =~ /SEQ-([\d-]+)/ );
-    $todo = "TODO test unexpectedly failing. Issues: $1"        if ( $options =~ /TODO-([\d-]+)/ );
+my ( $file_to_test, $path ) = fileparse($0);
+
+# The file that tracks acceptable failures in the compiled unit tests.
+my $known_errors_file = "$path/known_errors.txt";
+
+# The relative path our symlinks will point to.
+my $base_dir = dirname($path);
+
+# convert double dashes into a directory slash.
+$file_to_test =~ s{--}{/}g;
+
+my ( $file_in_error, $type, $description ) = ('');
+open( my $errors_fh, '<', $known_errors_file ) or die;
+while ( my $line = <$errors_fh> ) {
+    chomp $line;
+    ( $file_in_error, $type, $description ) = split( ' ', $line, 3 );
+    last if ( $file_in_error && $file_in_error eq $file_to_test );
 }
 
-$file_to_test =~ s{--}{/}g;
-$file_to_test =~ s{C-COMPILED/}{};    # Strip the BINARY dir off to look for this test elsewhere.
+my $failure_profiles = {
+    'BC'     => "B::C Fails to generate c code - ",
+    'GCC'    => "gcc cannot compile generated c code - ",
+    'SIG'    => "Tests don't pass at the moment - Compiled binary exits with signal - ",
+    'PLAN'   => "Tests don't pass at the moment - Crashes before completion - ",
+    'TESTS'  => "Tests don't pass at the moment - ",
+    'SEQ'    => "Tests out of sequence - ",
+    'TODO'   => "TODO test unexpectedly passing - ",
+    'COMPAT' => "Test isn't useful for B::C - ",
+};
+
+my $todo_description;
+if ( $file_in_error eq $file_to_test ) {
+
+    # The line must have had a valid description and type.
+    $type        or die("$file_to_test found in $known_errors_file but no 'type' was found on the line.");
+    $description or die("$file_to_test found in $known_errors_file but no 'description' was found on the line.");
+
+    # Must be a known failure profile
+    $failure_profiles->{$type} or die("Failure profile '$type' is unknown for test $file_to_test");
+
+    $todo_description = $failure_profiles->{$type} . $description;
+}
+else {
+    $todo_description = $description = $type = '';
+}
+
+# Skip this test all together if $type is SKIPALL
+if ( $type eq 'COMPAT' ) {
+    plan skip_all => $todo_description;
+}
+
+$file_to_test = "t/$file_to_test";    # Append t/ to make the relative path correct relative to pwd.
 
 plan tests => 3 + 10 * scalar @optimizations;
 
@@ -61,7 +99,7 @@ $SIGNALS{0} = '';
 
 foreach my $optimization (@optimizations) {
   TODO: SKIP: {
-        local $TODO = $todo if ( $todo =~ /B::C Fails to generate c code/ );
+        local $TODO = $todo_description if ( $type eq 'BC' );
 
         # Generate the C code at $optimization level
         my $cmd = "$PERL $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
@@ -77,7 +115,7 @@ foreach my $optimization (@optimizations) {
         }
 
         # gcc the c code.
-        local $TODO = $todo if ( $todo =~ /gcc cannot compile generated c code/ );
+        local $TODO = $todo_description if ( $type eq 'GCC' );
 
         $cmd = "$PERL script/cc_harness -q $c_file -o $bin_file 2>&1";
         diag $cmd if $ENV{VERBOSE};
@@ -110,8 +148,8 @@ foreach my $optimization (@optimizations) {
         ok( $parser, "Output parsed by TAP::Harness" );
 
         my $signal = $res->{wait} % 256;
-        if ( $todo =~ /Compiled binary exits with signal/ ) {
-            local $TODO = "Tests don't pass at the moment - $todo";
+        if ( $type eq 'SIG' ) {
+            local $TODO = $todo_description;
             my $sig_name = $SIGNALS{$signal};
             ok( $signal == 0, "Exit signal is $signal ($sig_name)" );
             note $out if ($out);
@@ -121,8 +159,8 @@ foreach my $optimization (@optimizations) {
             ok( $signal == 0, "Exit signal is $signal" );
         }
 
-        if ( $todo =~ m/Test crashes before completion/ ) {
-            local $TODO = $todo;
+        if ( $type eq 'PLAN' ) {
+            local $TODO = $todo_description;
             ok( $parser->{is_good_plan}, "Plan was valid" );
             note $out;
             skip( "TAP parse is unpredictable when plan is invalid", 5 );
@@ -133,20 +171,20 @@ foreach my $optimization (@optimizations) {
 
         ok( $parser->{exit} == 0, "Exit code is $parser->{exit}" );
 
-        local $TODO = "Tests don't pass at the moment - $todo" if ( $todo =~ /Fails tests when compiled with perlcc/ );
+        local $TODO = $todo_description if ( $type eq 'TESTS' );
         ok( !scalar @{ $parser->{failed} }, "Test results:" );
         print "    $_\n" foreach ( split( "\n", $out ) );
 
         ok( !scalar @{ $parser->{failed} }, "No test failures" )
           or note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
 
-        skip( "Don't care about test sequence if tests are failing", 2 ) if ( $todo =~ /Fails tests when compiled with perlcc/ );
+        skip( "Don't care about test sequence if tests are failing", 2 ) if ( $type =~ m/^(PLAN|TESTS)$/ );
 
-        local $TODO = $todo if ( $todo =~ m/Tests out of sequence/ );
+        local $TODO = $todo_description if ( $type eq 'SEQ' );
         ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )
           or note explain $parser->{parse_errors};
 
-        local $TODO = $todo if ( $todo =~ m/TODO test unexpectedly failing/ );
+        local $TODO = $todo_description if ( $type eq 'TODO' );
         ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed" )
           or note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
     }

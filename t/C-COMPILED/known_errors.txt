@@ -1,0 +1,58 @@
+#
+# This file tracks known errors in the compiled unit test suite.
+#
+# FILE FORMAT: $test\s+$type\s+$description
+#    $test = Name of unit test file. A Symlink file should exist in this directory pointing to this file.
+#            The file will have -- corresponding to slashses so unit tests can live in subdirectories under t/
+#    $type = Type of test failure. See below for possible values.
+#    $description = Information that will display on the TODOs so the test will pass.
+#
+# Failure profiles $type may be set to:
+#    BC      => B::C Fails to generate c code - 
+#    GCC     => gcc cannot compile generated c code - 
+#    SIG     => Compiled binary exits with signal - 
+#    PLAN    => Crashes before completion - 
+#    TESTS   => Some tests are failing - 
+#    SEQ     => The tests run out of sequence - 
+#    TODO    => TODO test unexpectedly failing - 
+#    COMPAT  => Test isn't useful for B::C. This test will be a skip_all. 
+#
+# NOTES:
+# - Any line in this file not corresponding to a symlink in this folder will be ignored.
+# - Fields are white space delimited. It's assumed $test and $type will have no spaces in them.
+#
+
+CORE/io/layers.t          TESTS     Issue 203
+CORE/io/utf8.t            TESTS     Issue 319 & 320
+CORE/mro/isarev.t         TESTS     Issue 353
+CORE/mro/next_edgecases.t SIG       Issue 355
+CORE/op/array_base.t      TESTS     Unreported?
+CORE/op/attrhand.t        TESTS     Issue 169
+CORE/op/attrs.t           TESTS     Issue 278
+CORE/op/closure.t         TESTS     Issue 254
+CORE/op/dbm.t             TESTS     Issue 226
+CORE/op/exists_sub.t      TESTS     Issue 290
+CORE/op/index.t           TESTS     Issue 247
+CORE/op/magic-27839.t     BC        Unreported?
+CORE/op/method.t          TESTS     Issue 276
+CORE/op/packagev.t        TESTS     Issue 249
+CORE/op/ref.t             TESTS     Issue 285 & 286
+CORE/op/reset.t           TESTS     Issue 274
+CORE/op/smartmatch.t      TESTS     Issue 179
+CORE/op/split_unicode.t   SIG       Unreported?
+CORE/op/universal.t       TESTS     Issue 299
+CORE/op/write.t           TESTS     Issue 291
+CORE/re/overload.t        TESTS     Issue 335
+CORE/re/pat_advanced.t    SIG       Unreported?
+CORE/re/pat_re_eval.t     SIG       Issue 332
+CORE/re/pat_rt_report.t   TESTS     Issue 349
+CORE/re/pat.t             TESTS     Issue 328
+CORE/re/qr_gc.t           TESTS     Issue 352
+CORE/re/reg_eval_scope.t  TESTS     Issue 328
+CORE/re/rxcode.t          TESTS     Issue 328
+CORE/re/subst_amp.t       TESTS     Issue 329
+CORE/uni/greek.t          TESTS     Unreported?
+CORE/uni/latin2.t         TESTS     Unreported?
+CORE/uni/tr_7jis.t        TESTS     Issue 354
+CORE/uni/tr_sjis.t        TESTS     Unreported?
+CORE/uni/write.t          TESTS     Unreported?
