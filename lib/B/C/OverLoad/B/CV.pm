@@ -153,13 +153,13 @@ sub save {
             return qq/get_cv("$fullname", 0)/;
         }
     }
-    if ( $cvxsub && $cvname eq "INIT" ) {
+    if ( $cvxsub && $cvname && $cvname eq "INIT" ) {
         no strict 'refs';
         debug( sub => $fullname );
         return svref_2object( \&Dummy_initxs )->save;
     }
 
-    if ( $isconst and !( $CvFLAGS & CVf_ANON ) ) {    # XXX how is ANON with CONST handled? CONST uses XSUBANY
+    if ( $isconst and !( $CvFLAGS & CVf_ANON ) and ref($gv) ne 'B::SPECIAL' ) {    # XXX how is ANON with CONST handled? CONST uses XSUBANY
         my $stash = $gv->STASH;
         debug( cv => sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname ) );
 
