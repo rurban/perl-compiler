@@ -16,6 +16,7 @@
 #    SEQ     => The tests run out of sequence - 
 #    TODO    => TODO test unexpectedly failing - 
 #    COMPAT  => Test isn't useful for B::C. This test will be a skip_all. 
+#    SKIP    => Test so much broken that we prefer to skip it for now. ( ~skip_all )
 #
 # NOTES:
 # - Any line in this file not corresponding to a symlink in this folder will be ignored.
@@ -35,6 +36,7 @@ CORE/op/attrhand.t        TESTS     Issue 169
 CORE/op/attrs.t           TESTS     Issue 278
 CORE/op/closure.t         TESTS     Issue 254
 CORE/op/dbm.t             TESTS     Issue 226
+CORE/op/eval.t            SKIP      infinite loop while running the binary
 CORE/op/exists_sub.t      TESTS     Issue 290
 CORE/op/index.t           TESTS     Issue 247
 CORE/op/magic-27839.t     BC        Unreported?

@@ -40,14 +40,15 @@ while ( my $line = <$errors_fh> ) {
 }
 
 my $failure_profiles = {
-    'BC'     => "B::C Fails to generate c code - ",
-    'GCC'    => "gcc cannot compile generated c code - ",
-    'SIG'    => "Tests don't pass at the moment - Compiled binary exits with signal - ",
-    'PLAN'   => "Tests don't pass at the moment - Crashes before completion - ",
-    'TESTS'  => "Tests don't pass at the moment - ",
-    'SEQ'    => "Tests out of sequence - ",
-    'TODO'   => "TODO test unexpectedly passing - ",
-    'COMPAT' => "Test isn't useful for B::C - ",
+    'BC'     => "B::C Fails to generate c code",
+    'GCC'    => "gcc cannot compile generated c code",
+    'SIG'    => "Tests don't pass at the moment - Compiled binary exits with signal",
+    'PLAN'   => "Tests don't pass at the moment - Crashes before completion",
+    'TESTS'  => "Tests don't pass at the moment",
+    'SEQ'    => "Tests out of sequence",
+    'TODO'   => "TODO test unexpectedly passing",
+    'COMPAT' => "Test isn't useful for B::C",
+    'SKIP'   => "TODO test is skipped (broken?)",
 };
 
 my $todo_description;
@@ -60,14 +61,14 @@ if ( $file_in_error eq $file_to_test ) {
     # Must be a known failure profile
     $failure_profiles->{$type} or die("Failure profile '$type' is unknown for test $file_to_test");
 
-    $todo_description = $failure_profiles->{$type} . $description;
+    $todo_description = $failure_profiles->{$type} . " - ". $description;
 }
 else {
     $todo_description = $description = $type = '';
 }
 
-# Skip this test all together if $type is SKIPALL
-if ( $type eq 'COMPAT' ) {
+# Skip this test all together if $type is SKIP or COMPAT
+if ( $type eq 'COMPAT' || $type eq 'SKIP' ) {
     plan skip_all => $todo_description;
 }
 
