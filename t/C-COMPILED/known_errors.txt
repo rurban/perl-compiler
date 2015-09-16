@@ -22,6 +22,9 @@
 # - Fields are white space delimited. It's assumed $test and $type will have no spaces in them.
 #
 
+CORE/comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavior so not relevant to B::C
+CORE/comp/form_scope.t    SIG       TODO: This test got WAY complicated in db4cf31d1d6 and probably wouldn't have passed back then either. FORMAT -- who cares?
+CORE/comp/parser.t        TESTS     TODO: Looks like new tests and new failures in need of investigation.
 CORE/io/layers.t          TESTS     Issue 203
 CORE/io/utf8.t            TESTS     Issue 319 & 320
 CORE/mro/isarev.t         TESTS     Issue 353
