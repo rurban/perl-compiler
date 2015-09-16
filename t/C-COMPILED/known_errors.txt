@@ -115,8 +115,26 @@ CORE/re/qr_gc.t           TESTS     Issue 352
 CORE/re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/CORE/re/reg_eval_scope.t line 90
 CORE/re/reg_eval_scope.t  TESTS     Issue 328
 CORE/re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
-CORE/uni/greek.t          TESTS     Unreported?
-CORE/uni/latin2.t         TESTS     Unreported?
-CORE/uni/tr_7jis.t        TESTS     Issue 354
-CORE/uni/tr_sjis.t        TESTS     Unreported?
-CORE/uni/write.t          TESTS     Unreported?
+CORE/uni/attrs.t          PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
+CORE/uni/bless.t          PLAN      TODO: Wide character in print
+CORE/uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
+CORE/uni/chr.t            SKIP      TODO: sometimes fails with Undefined subroutine &B::PVMG::svref_2object called at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/PVMG.pm line 336.
+CORE/uni/fold.t           TESTS     TODO: Unicode tests n stuff
+CORE/uni/goto.t           PLAN      TODO: Goto undefined subroutine &main::????? at t/CORE/uni/goto.t line 17.
+CORE/uni/greek.t          SKIP      TODO: sometimes fails with Undefined subroutine &B::PVMG::svref_2object called at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/PVMG.pm line 336.
+CORE/uni/gv.t             SIG       TODO: Argument "*main::PW<C3>M-^RMPF" isn't numeric in sprintf at t/CORE/uni/gv.t line 128.
+CORE/uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
+CORE/uni/latin2.t         SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
+CORE/uni/method.t         PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
+CORE/uni/overload.t       TESTS     TODO: Failed test 1 - length of 'ASCII' at t/CORE/uni/overload.t line 44
+CORE/uni/package.t        PLAN      TODO: broke
+CORE/uni/parser.t         PLAN      TODO: broke
+CORE/uni/select.t         TESTS     TODO: got "main::D\x{c3}\x{99}P" .. expected "main::D\x{d9}P"
+CORE/uni/stash.t          TESTS     TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/uni/tie.t            PLAN      TODO: Can't locate object method "TIESCALAR" via package "T<EC><E8>::UTF8" at t/CORE/uni/tie.t line 53.
+CORE/uni/tr_7jis.t        SKIP      TODO: sometimes fails with Undefined subroutine &B::PVMG::svref_2object called at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/PVMG.pm line 336. also: also: https://code.google.com/p/perl-compiler/issues/detail?id=353
+CORE/uni/tr_eucjp.t       SKIP      TODO: sometimes fails with Undefined subroutine &B::PVMG::svref_2object called at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/PVMG.pm line 336.
+CORE/uni/tr_sjis.t        SKIP      TODO: sometimes fails with Undefined subroutine &B::PVMG::svref_2object called at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/PVMG.pm line 336.
+CORE/uni/universal.t      PLAN      TODO: Malformed UTF-8 character (unexpected non-continuation byte 0x5c, immediately after start byte 0xc3).
+CORE/uni/variables.t      PLAN      TODO: Failed 48383/65880 subtests 
+CORE/uni/write.t          TESTS     TODO: Failed tests:  1-6
