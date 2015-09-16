@@ -105,14 +105,12 @@ CORE/op/utf8cache.t       SIG       Segmentation Fault - utf8 issue
 CORE/op/write.t           SIG       Segmentation Fault + Issue 291
 CORE/op/yadayada.t        COMPAT    Unimplemented does not display the correct line number 
 CORE/re/overload.t        TESTS     Issue 335
-CORE/re/pat_advanced.t    SIG       Unreported?
-CORE/re/pat_re_eval.t     SIG       Issue 332
-CORE/re/pat_rt_report.t   TESTS     Issue 349
-CORE/re/pat.t             TESTS     Issue 328
+CORE/re/pat_rt_report.t   PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
+CORE/re/pat.t             PLAN      TODO: Undefined subroutine &S::diag called at t/CORE/re/pat.t line 1047. and Issue 328
 CORE/re/qr_gc.t           TESTS     Issue 352
+CORE/re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/CORE/re/reg_eval_scope.t line 90
 CORE/re/reg_eval_scope.t  TESTS     Issue 328
-CORE/re/rxcode.t          TESTS     Issue 328
-CORE/re/subst_amp.t       TESTS     Issue 329
+CORE/re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
 CORE/uni/greek.t          TESTS     Unreported?
 CORE/uni/latin2.t         TESTS     Unreported?
 CORE/uni/tr_7jis.t        TESTS     Issue 354
