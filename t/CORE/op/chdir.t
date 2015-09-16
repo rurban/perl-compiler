@@ -1,5 +1,7 @@
 #!./perl -w
 
+my $zero;
+
 BEGIN {
     # We're not going to chdir() into 't' because we don't know if
     # chdir() works!  Instead, we'll hedge our bets and put both
@@ -10,6 +12,8 @@ BEGIN {
     if (is_miniperl() && !eval {require File::Spec::Functions; 1}) {
 	push @INC, qw(dist/Cwd/lib dist/Cwd ../dist/Cwd/lib ../dist/Cwd);
     }
+    # freeze $0 for compilation
+    $zero = $0;
 }
 
 chdir 't/CORE';
@@ -160,8 +164,8 @@ sub check_env {
         ok( chdir(undef),           "chdir(undef) w/ only \$ENV{$key} set" );
         is( abs_path, $ENV{$key},   '  abs_path() agrees' );
         is( $warning,  <<WARNING,   '  got uninit & deprecation warning' );
-Use of uninitialized value in chdir at $0 line 64.
-Use of chdir('') or chdir(undef) as chdir() is deprecated at $0 line 64.
+Use of uninitialized value in chdir at $zero line 64.
+Use of chdir('') or chdir(undef) as chdir() is deprecated at $zero line 64.
 WARNING
 
         chdir($Cwd);
@@ -172,7 +176,7 @@ WARNING
         ok( chdir(''),              "chdir('') w/ only \$ENV{$key} set" );
         is( abs_path, $ENV{$key},   '  abs_path() agrees' );
         is( $warning,  <<WARNING,   '  got deprecation warning' );
-Use of chdir('') or chdir(undef) as chdir() is deprecated at $0 line 76.
+Use of chdir('') or chdir(undef) as chdir() is deprecated at $zero line 76.
 WARNING
 
         chdir($Cwd);
