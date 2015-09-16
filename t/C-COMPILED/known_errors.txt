@@ -43,7 +43,7 @@ CORE/op/exists_sub.t      TESTS     Issue 290
 CORE/op/gv.t              SIG       TODO: Segmentation Fault
 CORE/op/index.t           TESTS     Issue 247
 CORE/op/magic-27839.t     BC        Unreported?
-CORE/op/method.t          TESTS     Issue 276
+CORE/op/method.t          SIG       Deep recursion on subroutine "B::walkoptree_slow" +Issue 276
 CORE/op/mydef.t           TODO      the todo test is passing in the compiled binary
 CORE/op/packagev.t        TESTS     Issue 249
 CORE/op/ref.t             TESTS     Issue 285 & 286
