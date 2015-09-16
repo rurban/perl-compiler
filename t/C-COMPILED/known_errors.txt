@@ -110,7 +110,6 @@ CORE/op/lexsub.t          BC        TODO: Can't locate object method "EGV" via p
 CORE/op/magic.t           TESTS     TODO: broke
 CORE/op/method.t          SIG       Deep recursion on subroutine "B::walkoptree_slow" +Issue 276
 CORE/op/mydef.t           TODO      the todo test is passing in the compiled binary
-CORE/op/override.t        BC        TODO: panic: Can't use %- because Tie::Hash::NamedCapture is not available at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C.pm line 826.
 CORE/op/postfixderef.t    SIG       TODO: no output.
 CORE/op/protowarn.t       PLAN      TODO: no output.
 CORE/op/pwent.t           TESTS     TODO: got "25" expected > "0" -- test.pl issue?
