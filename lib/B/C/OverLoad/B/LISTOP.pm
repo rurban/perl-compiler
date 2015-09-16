@@ -2,7 +2,7 @@ package B::LISTOP;
 
 use strict;
 
-use B qw/cstring/;
+use B qw/cstring svref_2object/;
 
 use B::C::Config;
 use B::C::File qw/init listopsect/;

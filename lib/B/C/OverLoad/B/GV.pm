@@ -447,9 +447,11 @@ sub save {
               if $package and exists ${"$package\::"}{CLONE};
             $gvcv = $gv->CV;    # try again
         }
+        # Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
         if (    $$gvcv
             and $savefields & Save_CV
             and ref($gvcv) eq 'B::CV'
+            and ref( $gvcv->GV ) ne 'B::SPECIAL'
             and ref( $gvcv->GV->EGV ) ne 'B::SPECIAL'
             and !B::C::skip_pkg($package) ) {
             my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
