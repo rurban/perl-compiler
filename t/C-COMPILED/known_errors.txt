@@ -80,9 +80,12 @@ CORE/mro/recursion_dfs_utf8.t TESTS TODO: Infinite loop apparently succeeded??? 
 CORE/mro/vulcan_c3_utf8.t TESTS TODO: Malformed UTF-8.
 CORE/mro/vulcan_dfs_utf8.t TESTS TODO: Malformed UTF-8.
 CORE/op/64bitint.t        TESTS     all bits of a UV are not preserved
+CORE/op/attrhand.t        PLAN      exit ?
+CORE/op/attrproto.t       TESTS     sub prototype attribute
 CORE/op/array_base.t      TESTS     Unreported?
 CORE/op/attrhand.t        TESTS     Issue 169
 CORE/op/attrs.t           TESTS     Issue 278
+CORE/op/caller.t          TESTS     UV issue
 CORE/op/closure.t         TESTS     Issue 254
 CORE/op/dbm.t             TESTS     Issue 226
 CORE/op/eval.t            SKIP      TODO: infinite loop while running the binary

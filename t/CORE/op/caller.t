@@ -3,9 +3,9 @@
 
 BEGIN {
     require 't/CORE/test.pl';
-    chdir 't/CORE';
 }
 
+chdir 't/CORE';
 my @tests;
 plan( tests => 95 );
 
