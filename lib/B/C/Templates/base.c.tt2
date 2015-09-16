@@ -1,14 +1,14 @@
 /* [% creator %] */
 
-[%- IF debug.flags AND DEBUG_LEAKING_SCALARS %]
+[% IF debug.flags AND DEBUG_LEAKING_SCALARS %]
 #define DEBUG_LEAKING_SCALARS 1
-[% END -%]
+[% END %]
 
-[%- IF have_independent_comalloc %]
+[% IF have_independent_comalloc %]
 #ifdef NEED_MALLOC_283
 # include "malloc-2.8.3.h"
 #endif
-[% END -%]
+[% END %]
 
 #define PERL_CORE
 #include "EXTERN.h"
@@ -43,11 +43,11 @@ EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);
 static void xs_init (pTHX);
 static void dl_init (pTHX);
 
-[%- IF av_init2 AND use_declare_independent_comalloc %]
+[% IF av_init2 AND use_declare_independent_comalloc %]
 void** dlindependent_comalloc(size_t, size_t*, void**);
-[% END -%]
+[% END %]
 
-[%- IF ! destruct %]
+[% IF ! destruct %]
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
@@ -60,12 +60,12 @@ static void my_curse( pTHX_ SV* const sv );
 #endif
 [% ELSE %]
 int my_perl_destruct( PerlInterpreter *my_perl );
-[% END -%]
+[% END %]
 
-[%# Add static modules like " Win32CORE". This data comes from $Config{static_ext} -%]
-[%- FOREACH xsub IN stashxsubs %]
+[%# Add static modules like " Win32CORE". This data comes from $Config{static_ext} %]
+[% FOREACH xsub IN stashxsubs %]
 EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
-[% END -%]
+[% END %]
 
 /************************************************************************************************************
 *
@@ -73,9 +73,9 @@ EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
 *
 *************************************************************************************************************/
 
-[%- IF verbose AND section.sym.comment() %]
+[% IF verbose AND section.sym.comment() %]
     /* [% section.sym.comment() %] */
-[% END -%]
+[% END %]
 [% section.sym.output( "#define %s\n" ) %]
 
 /*  output_declarations() called by output_all() */
@@ -106,9 +106,9 @@ EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
 */
 
 typedef struct p5rx RE;
-[% IF gv_index -%]
+[% IF gv_index %]
 Static GV *gv_list[[% gv_index %]];
-[%- END %]
+[% END %]
 
 /* Need fresh re-hash of strtab. share_hek does not allow hash = 0 */
 HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
@@ -117,9 +117,9 @@ HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
 
 /* back in output_all() */
 
-[%- FOREACH sect IN section_list -%]
-[%- lines = section.$sect.index + 1 -%]
-[%- NEXT IF lines == 0 -%]
+[% FOREACH sect IN section_list %]
+[% lines = section.$sect.index + 1 %]
+[% NEXT IF lines == 0 %]
 Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %]];
 [% END %]
 
@@ -142,49 +142,49 @@ XS(XS_DynaLoader_dl_load_file);
 XS(XS_DynaLoader_dl_find_symbol);
 [% END %]
 
-[%- IF verbose AND section.decl.comment() %]
+[% IF verbose AND section.decl.comment() %]
     /* [% section.decl.comment() %] */
-[% END -%]
+[% END %]
 /* <decl.output> */
 [% section.decl.output( "%s\n" ) %]
 /* </decl.output> */
 
-[% FOREACH sect IN section_list -%]
-[%- lines = section.$sect.index + 1 -%]
-[%- NEXT IF lines == 0 -%]
+[% FOREACH sect IN section_list %]
+[% lines = section.$sect.index + 1 %]
+[% NEXT IF lines == 0 %]
 Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %]] = {
-[% IF verbose AND section.$sect.comment() -%]
+[% IF verbose AND section.$sect.comment() %]
     /* [% section.$sect.comment() %] */
-[%- END  -%]
+[% END  %]
 [% section.$sect.output("    { %s }, /* %s_list[%d] %s */%s\n") %]
 };
 
-[%- END %]
+[% END %]
 
 static void perl_init0(pTHX) { /* fixup_ppaddr */
 [% section.init0.output( "    %s\n" ) %]
 };
 
-[%- IF verbose AND section.init.comment() %]
+[% IF verbose AND section.init.comment() %]
     /* [% section.init.comment() %] */
-[% END -%]
+[% END %]
 [% section.init.output( "    %s\n", init_name ) %]
 
-[%- IF verbose %]
+[% IF verbose %]
 /* deferred init of XS/Dyna loaded modules */
-[% END -%]
+[% END %]
 
-[%- IF verbose AND section.init2.comment() %]
+[% IF verbose AND section.init2.comment() %]
     /* [% section.init2.comment() %] */
-[% END -%]
+[% END %]
 [% section.init2.output( "    %s\n", 'perl_init2' ) %]
 
-[%- IF verbose %]
+[% IF verbose %]
 /*
     COMPILE STATS:  [% compile_stats %]
      NULLOP count:  [% nullop_count %]
 */
-[% END -%]
+[% END %]
 
 /************************************************************************************************************
 *
@@ -199,7 +199,7 @@ HEK * my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     return Perl_share_hek(aTHX_ str, len, hash);
 }
 
-[%- IF ! destruct %]
+[% IF ! destruct %]
 #ifndef SvDESTROYABLE
 #define SvDESTROYABLE(sv) 1
 #endif
@@ -468,7 +468,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
     return 0;
 #endif
 }
-[% END -%]
+[% END %]
 
 /* yanked from perl.c */
 static void
@@ -491,9 +491,9 @@ xs_init(pTHX)
     SAVETMPS;
     targ=sv_newmortal();
 
-[%- FOREACH stashname IN static_ext.keys.sort %]
+[% FOREACH stashname IN static_ext.keys.sort %]
     newXS("[% stashname %]\::bootstrap", boot_[% stashname.replace('::', '__') %], file);
-[% END -%]
+[% END %]
 
 #ifdef USE_DYNAMIC_LOADING
     PUSHMARK(sp);
@@ -503,16 +503,16 @@ xs_init(pTHX)
     SPAGAIN;
 #endif
 
-[%- FOREACH stashname IN xsub.keys.sort %]
-[%- NEXT IF static_ext.$stashname OR xsub.$stashname.match('^Dynamic') -%]
-[%- stashxsub = stashname.replace('::', '__') -%]
+[% FOREACH stashname IN xsub.keys.sort %]
+[% NEXT IF static_ext.$stashname OR xsub.$stashname.match('^Dynamic') %]
+[% stashxsub = stashname.replace('::', '__') %]
     PUSHMARK(sp);
     XPUSHp("[% stashname %]", [% stashname.length %]); /* "::bootstrap" gets appended, TODO: "strdup($stashname)" */
     PUTBACK;
     boot_[% stashxsub %](aTHX_ NULL);
     SPAGAIN;
         }
-[% END -%]
+[% END %]
 
     FREETMPS;
 /* end XS bootstrapping code */
@@ -528,13 +528,13 @@ dl_init(pTHX)
     dSP;
 /* DynaLoader bootstrapping */
     ENTER;
-  [%- IF optimizer.dynaloader.xs %]
+  [% IF optimizer.dynaloader.xs %]
     ++cxstack_ix;
     cxstack[cxstack_ix].blk_oldcop = PL_curcop;
     /* assert(cxstack_ix == 0); */
   [% END %]
     SAVETMPS;
-  [%- IF optimizer.dynaloader.fixups.coro %]
+  [% IF optimizer.dynaloader.fixups.coro %]
  /* needed before dl_init, and after init */
     {
         GV *sym;
@@ -552,7 +552,7 @@ dl_init(pTHX)
         if (sym && GvCV(sym)) SvREADONLY_off(GvCV(sym));
     }
   [% END %]
-  [%- IF optimizer.dynaloader.fixups.EV %]
+  [% IF optimizer.dynaloader.fixups.EV %]
   /* EV readonly symbols in BOOT (#368) */
     {
         GV *sym;
@@ -561,8 +561,8 @@ dl_init(pTHX)
         if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));
     }
   [% END %]  
-  [%- FOREACH stashname IN optimizer.dynaloader.dl_modules %]
-    [%- NEXT IF ! xsub.$stashname.match('^Dynamic')  %]
+  [% FOREACH stashname IN optimizer.dynaloader.dl_modules %]
+    [% NEXT IF ! xsub.$stashname.match('^Dynamic')  %]
     PUSHMARK(sp);
 
 /* XXX -O1 or -O2 needs XPUSHs with dynamic pv */
@@ -570,21 +570,21 @@ dl_init(pTHX)
 
 /* XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object() */
 #ifndef STATICXS
-      [%- IF xsub.$stashname == 'Dynamic' %]
+      [% IF xsub.$stashname == 'Dynamic' %]
     PUTBACK;
     call_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);
       [% ELSE %]
-        [%- stashfile = xsub.$stashname.remove('^Dynamic-') -%]
-        [% IF stashfile -%]
+        [% stashfile = xsub.$stashname.remove('^Dynamic-') %]
+        [% IF stashfile %]
     mXPUSHp("[% stashfile %]", [% stashfile.length %]);
-        [%- END %]
+        [% END %]
     PUTBACK;
 /* TODO #364: if a VERSION was provided need to add it here */    
     call_pv("XSLoader::load_file", G_VOID|G_DISCARD);
       [% END %]
 #else
     PUTBACK;
-    [%- IF staticxs %]
+    [% IF staticxs %]
     /* CvSTASH(CvGV(cv)) is invalid without (issue 86) */
     boot_[% stashname.replace('::', '__') %](aTHX_ get_cv("[% stashname %]::bootstrap", GV_ADD));
     [% ELSE %]
@@ -595,9 +595,9 @@ dl_init(pTHX)
 /*    PUTBACK;*/
   [% END %]
     FREETMPS;
-      [%- IF optimizer.dynaloader.xs %]
+      [% IF optimizer.dynaloader.xs %]
     cxstack_ix--; /* i.e. POPBLOCK */
-      [% END -%]
+      [% END %]
     LEAVE;
 /* end DynaLoader bootstrapping */
 [% END %]
@@ -732,74 +732,74 @@ main(int argc, char **argv, char **env)
     CopFILE_set(&PL_compiling, argv[0]);
   [% END %]
 
-    [% IF global_vars.dollar_caret_H -%]
+    [% IF global_vars.dollar_caret_H %]
     PL_hints = [% global_vars.dollar_caret_H %];
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_caret_UNICODE -%]
+    [% IF global_vars.dollar_caret_UNICODE %]
     PL_unicode = [% global_vars.dollar_caret_UNICODE %];
-    [%- END %]
+    [% END %]
 
     /* nomg */
-    [% IF global_vars.dollar_semicolon.defined  -%]
+    [% IF global_vars.dollar_semicolon.defined  %]
     sv_setpv(get_sv(";", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_semicolon %]);
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_quote.defined  -%]
+    [% IF global_vars.dollar_quote.defined  %]
     sv_setpv(get_sv("\"", GV_NOTQUAL), [% global_vars.dollar_quote %]); /* $" */
-    [%- END %]
+    [% END %]
 
     /* global IO vars */
 
-    [% IF global_vars.dollar_comma -%]
+    [% IF global_vars.dollar_comma %]
     sv_setpv_mg(GvSVn(PL_ofsgv), [% global_vars.dollar_comma %]); /* $, */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_backslash -%]
+    [% IF global_vars.dollar_backslash %]
     sv_setpv_mg(get_sv("\\", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_backslash %]); /* $\ */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_slash.defined  -%]
+    [% IF global_vars.dollar_slash.defined  %]
     sv_setpv_mg(get_sv("/", GV_NOTQUAL), [% global_vars.dollar_slash %]); /* $/ a.k.a. RS */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_pipe -%]
+    [% IF global_vars.dollar_pipe %]
     sv_setiv_mg(get_sv("|", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_pipe %]); /* $| a.k.a. OUTPUT_AUTOFLUSH */
-    [%- END %]
+    [% END %]
 
     /* global format vars */
 
-    [% IF global_vars.dollar_caret_A -%]
+    [% IF global_vars.dollar_caret_A %]
     sv_setpv_mg(get_sv("^A", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_caret_A %]); /* $^A - #ACCUMULATOR */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_caret_L.defined  -%]
+    [% IF global_vars.dollar_caret_L.defined  %]
     sv_setpv_mg(get_sv("^L", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_caret_L %]); /* $^L - FORMFEED */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_caret_L.defined  -%]
+    [% IF global_vars.dollar_caret_L.defined  %]
     sv_setpv_mg(get_sv(":", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_colon %]); /* $: - LINE_BREAK_CHARACTERS */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_caret.defined  -%]
+    [% IF global_vars.dollar_caret.defined  %]
     sv_setpv_mg(get_sv("^", GV_ADD|GV_NOTQUAL), savepvn([% global_vars.dollar_caret.str %], [% global_vars.dollar_caret.len %])); /* $^ - FORMAT_TOP_NAME */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_tilde.defined  -%]
+    [% IF global_vars.dollar_tilde.defined  %]
     sv_setpv_mg(get_sv("~", GV_ADD|GV_NOTQUAL), savepvn([% global_vars.dollar_tilde.str %], [% global_vars.dollar_tilde.len %])); /* $~ - FORMAT_NAME */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_percent -%]
+    [% IF global_vars.dollar_percent %]
     sv_setiv_mg(get_sv("%", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_percent %]); /* $% - PAGE_NUMBER */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_minus.defined -%]
+    [% IF global_vars.dollar_minus.defined %]
     sv_setiv_mg(get_sv("-", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_minus %]);  /* $- - LINES_LEFT */
-    [%- END %]
+    [% END %]
 
-    [% IF global_vars.dollar_equal.defined -%]
+    [% IF global_vars.dollar_equal.defined %]
     sv_setiv_mg(get_sv("=", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_equal %]); /* $= - LINES_PER_PAGE */
-    [%- END %]
+    [% END %]
 
     sv_setpv_mg(get_sv("\030", GV_ADD|GV_NOTQUAL), [% global_vars.dollar_caret_X %]); /* $^X - EXECUTABLE_NAME */
 
@@ -820,24 +820,24 @@ main(int argc, char **argv, char **env)
     dl_init(aTHX);
     perl_init2(aTHX);
 
-    [% FOREACH eval_pv IN all_eval_pvs -%]
+    [% FOREACH eval_pv IN all_eval_pvs %]
     [% eval_pv %]
-    [%- END %]
+    [% END %]
 
     exitstatus = perl_run( my_perl );
 
     /* init pre_destruct */
-    [% FOREACH str IN section.init.pre_destruct() -%]
+    [% FOREACH str IN section.init.pre_destruct() %]
     [% str %]
-    [%- END %]
+    [% END %]
 
     /* destruct */
 
-    [% IF destruct -%]
+    [% IF destruct %]
     my_perl_destruct( my_perl );
-    [%- ELSE -%]
+    [% ELSE %]
     fast_perl_destruct( my_perl );
-    [%- END %]
+    [% END %]
 
     /*  XXX endav is called via call_list and so it is freed right after usage. Setting dirty here is useless */
     /* [% UNLESS pv_copy_on_grow %]PL_dirty = 1;[% END %]   protect against pad undef in END block */
