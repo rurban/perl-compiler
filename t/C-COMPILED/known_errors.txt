@@ -8,13 +8,13 @@
 #    $description = Information that will display on the TODOs so the test will pass.
 #
 # Failure profiles $type may be set to:
-#    BC      => B::C Fails to generate c code - 
-#    GCC     => gcc cannot compile generated c code - 
-#    SIG     => Compiled binary exits with signal - 
-#    PLAN    => Crashes before completion - 
-#    TESTS   => Some tests are failing - 
-#    SEQ     => The tests run out of sequence - 
-#    TODO    => TODO test unexpectedly failing - 
+#    BC      => B::C Fails to generate c code 
+#    GCC     => gcc cannot compile generated c code
+#    SIG     => Compiled binary exits with signal
+#    PLAN    => Crashes before completion
+#    TESTS   => Some tests are failing
+#    SEQ     => The tests run out of sequence
+#    TODO    => TODO test unexpectedly failing/succeeding
 #    COMPAT  => Test isn't useful for B::C. This test will be a skip_all. 
 #    SKIP    => Test so much broken that we prefer to skip it for now. ( ~skip_all )
 #
@@ -31,24 +31,27 @@ CORE/io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.1
 CORE/io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
 CORE/mro/isarev.t         TESTS     Issue 353
 CORE/mro/next_edgecases.t SIG       Issue 355
+CORE/op/64bitint.t        TESTS     all bits of a UV are not preserved
 CORE/op/array_base.t      TESTS     Unreported?
 CORE/op/attrhand.t        TESTS     Issue 169
 CORE/op/attrs.t           TESTS     Issue 278
 CORE/op/closure.t         TESTS     Issue 254
 CORE/op/dbm.t             TESTS     Issue 226
-CORE/op/eval.t            SKIP      infinite loop while running the binary
+CORE/op/eval.t            SKIP      TODO: infinite loop while running the binary
 CORE/op/each.t            TESTS     TODO: check encoding on EBCDIC
 CORE/op/exists_sub.t      TESTS     Issue 290
 CORE/op/gv.t              SIG       TODO: Segmentation Fault
 CORE/op/index.t           TESTS     Issue 247
 CORE/op/magic-27839.t     BC        Unreported?
 CORE/op/method.t          TESTS     Issue 276
+CORE/op/mydef.t           TODO      the todo test is passing in the compiled binary
 CORE/op/packagev.t        TESTS     Issue 249
 CORE/op/ref.t             TESTS     Issue 285 & 286
 CORE/op/reset.t           TESTS     Issue 274
 CORE/op/smartmatch.t      TESTS     Issue 179
 CORE/op/switch.t          SIG       Smart matching a non-overloaded object breaks encapsulation
 CORE/op/split_unicode.t   SIG       Unreported?
+CORE/op/stash.t           TESTS     __ANON__ stash issue
 CORE/op/universal.t       TESTS     Issue 299
 CORE/op/utf8cache.t       SIG       Segmentation Fault - utf8 issue
 CORE/op/write.t           SIG       Segmentation Fault + Issue 291
