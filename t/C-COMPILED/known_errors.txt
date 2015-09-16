@@ -26,6 +26,7 @@
 CORE/comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavior so not relevant to B::C
 CORE/comp/form_scope.t    SIG       TODO: This test got WAY complicated in db4cf31d1d6 and probably wouldn't have passed back then either. FORMAT -- who cares?
 CORE/comp/parser.t        TESTS     TODO: Looks like new tests and new failures in need of investigation.
+CORE/extra/reused-variable.t PLAN  TODO: when not using my and later my + eval => conflict in the variable
 CORE/io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 CORE/io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
 CORE/io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
