@@ -83,7 +83,7 @@ CORE/op/64bitint.t        TESTS     all bits of a UV are not preserved
 CORE/op/array_base.t      TESTS     Unreported?
 CORE/op/attrhand.t        PLAN      no output and Issue 169
 CORE/op/attrproto.t       TESTS     sub prototype attribute
-CORE/op/attrs.t           TESTS     Issue 278
+CORE/op/attrs.t           SKIP      Sometimes passes. Sometimes exits with Signal 11 Issue 278
 CORE/op/bless.t           TESTS     TODO: Attempt to bless into a reference at t/CORE/op/bless.t line 128
 CORE/op/bop.t             TESTS     TODO: string overload can't use |
 CORE/op/caller.t          TESTS     UV issue
