@@ -9,6 +9,7 @@ use B::C::Save qw/savepvn savepv/;
 use B::C::Decimal qw/get_integer_value get_double_value/;
 use B::C::File qw/init svsect xpvmgsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
+use B::C::Helpers qw/mark_package/;
 
 sub save {
     my ( $sv, $fullname ) = @_;
