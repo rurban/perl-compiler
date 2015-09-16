@@ -27,8 +27,8 @@ CORE/comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavi
 CORE/comp/form_scope.t    SIG       TODO: This test got WAY complicated in db4cf31d1d6 and probably wouldn't have passed back then either. FORMAT -- who cares?
 CORE/comp/parser.t        TESTS     TODO: Looks like new tests and new failures in need of investigation.
 CORE/extra/reused-variable.t PLAN  TODO: when not using my and later my + eval => conflict in the variable
-CORE/io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 CORE/io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
+CORE/io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 CORE/io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
 CORE/mro/basic_01_c3_utf8.t PLAN TODO: Malformed UTF-8.
 CORE/mro/basic_01_c3_utf8.t PLAN    TODO: Malformed UTF-8. Looks like B::C makes everything UTF8 when 1 thing is compiled that way?
@@ -80,41 +80,67 @@ CORE/mro/recursion_dfs_utf8.t TESTS TODO: Infinite loop apparently succeeded??? 
 CORE/mro/vulcan_c3_utf8.t TESTS TODO: Malformed UTF-8.
 CORE/mro/vulcan_dfs_utf8.t TESTS TODO: Malformed UTF-8.
 CORE/op/64bitint.t        TESTS     all bits of a UV are not preserved
-CORE/op/attrhand.t        PLAN      exit ?
-CORE/op/attrproto.t       TESTS     sub prototype attribute
 CORE/op/array_base.t      TESTS     Unreported?
-CORE/op/attrhand.t        TESTS     Issue 169
+CORE/op/attrhand.t        PLAN      no output and Issue 169
+CORE/op/attrproto.t       TESTS     sub prototype attribute
 CORE/op/attrs.t           TESTS     Issue 278
+CORE/op/bless.t           TESTS     TODO: Attempt to bless into a reference at t/CORE/op/bless.t line 128
+CORE/op/bop.t             TESTS     TODO: string overload can't use |
 CORE/op/caller.t          TESTS     UV issue
 CORE/op/closure.t         TESTS     Issue 254
-CORE/op/dbm.t             TESTS     Issue 226
-CORE/op/eval.t            SKIP      TODO: infinite loop while running the binary
+CORE/op/concat2.t         TESTS     TODO: got "o=ARRAY(0x96c2c38)\x{101}\x{101}" expected "\x{ff}\x{101}\x{101}"
+CORE/op/coreamp.t         TESTS     TODO: tests broke
+CORE/op/coresubs.t        PLAN      TODO: Eval-group not allowed at runtime, use re 'eval' in regex m/(?^x:
+CORE/op/dbm.t             BC        TODO: Undefined subroutine &B::LISTOP::svref_2object called at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/LISTOP.pm line 40. and Issue 226
+CORE/op/defins.t          TESTS     TODO: Constant subroutine <***> redefined at...
+CORE/op/do.t              TESTS     TODO: cmp_ok bug? Failed test 6 - do in list context at tmp29365C line 2 got "1" expected != "0"
 CORE/op/each.t            TESTS     TODO: check encoding on EBCDIC
-CORE/op/exists_sub.t      TESTS     Issue 290
+CORE/op/eval.t            SKIP      TODO: infinite loop while running the binary
+CORE/op/exists_sub.t      SIG       TODO: No output. and Issue 290
+CORE/op/filetest.t        TESTS     TODO: Tests broke.
+CORE/op/glob.t            TESTS     TODO: broke.
+CORE/op/gmagic.t          TESTS     TODO: not ok 35 - number of stores when chomping a ref
 CORE/op/gv.t              SIG       TODO: Segmentation Fault
-CORE/op/index.t           TESTS     Issue 247
-CORE/op/magic-27839.t     BC        Unreported?
+CORE/op/hash-rt85026.t    PLAN      TODO: buncha these: Constant subroutine _IOFBF redefined at t/CORE/op/hash-rt85026.bin line 4294967295.
+CORE/op/hash.t            TESTS     TODO: broke
+CORE/op/index.t           PLAN      TODO: no output and Issue 247
+CORE/op/leaky-magic.t     TESTS     TODO: not ok 1 - $swext::! does not load Errno
+CORE/op/length.t          TESTS     TODO: broke
+CORE/op/lex_assign.t      PLAN      TODO: Can't locate object method "TIESCALAR" via package "B" at t/CORE/op/lex_assign.t line 60, <DATA> line 153.
+CORE/op/lexsub.t          BC        TODO: Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
+CORE/op/magic.t           TESTS     TODO: broke
 CORE/op/method.t          SIG       Deep recursion on subroutine "B::walkoptree_slow" +Issue 276
 CORE/op/mydef.t           TODO      the todo test is passing in the compiled binary
-CORE/op/packagev.t        TESTS     Issue 249
-CORE/op/ref.t             TESTS     Issue 285 & 286
+CORE/op/override.t        BC        TODO: panic: Can't use %- because Tie::Hash::NamedCapture is not available at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C.pm line 826.
+CORE/op/postfixderef.t    SIG       TODO: no output.
+CORE/op/protowarn.t       PLAN      TODO: no output.
+CORE/op/pwent.t           TESTS     TODO: got "25" expected > "0" -- test.pl issue?
+CORE/op/ref.t             SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
 CORE/op/reset.t           TESTS     Issue 274
-CORE/op/smartmatch.t      TESTS     Issue 179
-CORE/op/substr.t          TESTS     utf8 issue in subs
-CORE/op/switch.t          SIG       Smart matching a non-overloaded object breaks encapsulation
-CORE/op/split_unicode.t   SIG       Unreported?
+CORE/op/reverse.t         TESTS     TODO: got "raboof" expected "oof"
+CORE/op/smartmatch.t      SIG       TODO: no useful output. and Issue 179
+CORE/op/sort.t            TESTS     TODO: cmp_ok issue?
+CORE/op/sprintf2.t        TESTS     TODO: Failed test 1369 - sprinf %1s overload count at t/CORE/op/sprintf2.t line 189 got undef expected "1"
 CORE/op/stash.t           TESTS     __ANON__ stash issue
+CORE/op/sub_lval.t        TESTS     TODO:  sub declaration with :lvalue applies it to XSUBs at t/CORE/op/sub_lval.t line 828 got "" expected "lvalue"
+CORE/op/substr.t          TESTS     utf8 issue in subs
+CORE/op/svleak.t          COMPAT    This test uses XS::APItest, which we don't install during perl install?
+CORE/op/switch.t          PLAN      TODO: Overloaded obj in given (true): called at t/CORE/op/switch.t line 839 got "0" expected "1"
+CORE/op/tie_fetch_count.t TESTS     TODO: broke
 CORE/op/universal.t       TESTS     Issue 299
 CORE/op/utf8cache.t       SIG       Segmentation Fault - utf8 issue
 CORE/op/write.t           SIG       Segmentation Fault + Issue 291
-CORE/op/yadayada.t        COMPAT    Unimplemented does not display the correct line number 
+CORE/op/yadayada.t        COMPAT    Unimplemented does not display the correct line number
 CORE/re/overload.t        TESTS     Issue 335
+CORE/re/pat_advanced.t    PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
+CORE/re/pat_re_eval.t     PLAN      TODO: Possible bug in use of re 'eval' at run time we need to fix in the test.
 CORE/re/pat_rt_report.t   PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
 CORE/re/pat.t             PLAN      TODO: Undefined subroutine &S::diag called at t/CORE/re/pat.t line 1047. and Issue 328
 CORE/re/qr_gc.t           TESTS     Issue 352
 CORE/re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/CORE/re/reg_eval_scope.t line 90
 CORE/re/reg_eval_scope.t  TESTS     Issue 328
 CORE/re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
+CORE/re/subst_amp.t       TESTS     TODO: broke.
 CORE/uni/attrs.t          PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
 CORE/uni/bless.t          PLAN      TODO: Wide character in print
 CORE/uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
