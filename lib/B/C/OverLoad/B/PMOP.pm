@@ -129,28 +129,20 @@ sub save {
                 $swash_init++;
             }
         }
-        if ( $op->reflags & RXf_EVAL_SEEN ) {                                 # set HINT_RE_EVAL on
+        my $eval_seen = $op->reflags & RXf_EVAL_SEEN;
+        my @init_block;
+        if ($eval_seen) {                                                     # set HINT_RE_EVAL on
             $pmflags |= PMf_EVAL;
-            init()->add(
-                "{",
-                "  U32 hints_sav = PL_hints;",
-                "  PL_hints |= HINT_RE_EVAL;"
-            );
+            push @init_block, '{', '    U32 hints_sav = PL_hints;', '    PL_hints |= HINT_RE_EVAL;';
         }
 
-        init()->add(                                                          # XXX Modification of a read-only value attempted. use DateTime - threaded
-            "PM_SETRE(&$pm,",
-            "  CALLREGCOMP(newSVpvn_flags($qre, $relen, "
-              . sprintf( "SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags ),
-            sprintf( "RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags )
-        );
+        # XXX Modification of a read-only value attempted. use DateTime - threaded
+        push @init_block, "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, " . sprintf( "SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags ) . sprintf( "RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags );
 
-        if ( $op->reflags & RXf_EVAL_SEEN ) {                                 # set HINT_RE_EVAL off
-            init()->add(
-                "  PL_hints = hints_sav;",
-                "}"
-            );
+        if ($eval_seen) {                                                     # set HINT_RE_EVAL off
+            push @init_block, '    PL_hints = hints_sav;', '}';
         }
+        init()->add(@init_block);
 
         # See toke.c:8964
         # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
