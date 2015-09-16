@@ -108,6 +108,7 @@ WriteMakefile(
 		   'IPC::Run' => '0',    # optional
 		   'B::Flags' => '0.04', # optional
 		   'Time::HiRes' => '0', # optional
+           'Encode' => 2.60, # 2.58 is broken so let's be sure we're higher than this.
 		   'ExtUtils::Embed' => '1.25' # mandatory (missing on redhat)
                    #'B'        => '1.0901' # required but in CORE
                   },

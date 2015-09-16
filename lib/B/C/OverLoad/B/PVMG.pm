@@ -4,7 +4,7 @@ use strict;
 
 use Config;
 use B::C::Config;
-use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar SVp_POK/;
+use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar SVp_POK svref_2object/;
 use B::C::Save qw/savepvn savepv/;
 use B::C::Decimal qw/get_integer_value get_double_value/;
 use B::C::File qw/init svsect xpvmgsect xpvsect/;
@@ -286,14 +286,7 @@ sub _patch_dlsym {
     my $name = $sv->FLAGS & SVp_POK() ? $sv->PVX : "";
     my $ivxhex = sprintf( "0x%x", $ivx );
 
-    # Encode RT #94221
-    if ( $name =~ /encoding$/ and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION eq '2.58' ) {
-        $name =~ s/-/_/g;
-        $pkg = 'Encode' if $pkg eq 'Encode::XS';    # TODO foreign classes
-        mark_package($pkg) if $fullname eq '(unknown)' and USE_ITHREADS();
-        verbose("$pkg $Encode::VERSION with remap support for $name");
-    }
-    elsif ( $pkg eq 'Encode::XS' ) {
+    if ( $pkg eq 'Encode::XS' ) {
         $pkg = 'Encode';
         if ( $fullname eq 'Encode::Encoding{iso-8859-1}' ) {
             $name = "iso8859_1_encoding";
@@ -308,7 +301,7 @@ sub _patch_dlsym {
             $name = "ascii_encoding";
         }
 
-        if ( $name and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION gt '2.58' ) {
+        if ( $name and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ ) {
             my $enc = Encode::find_encoding($name);
             $name .= "_encoding" unless $name =~ /_encoding$/;
             $name =~ s/-/_/g;
@@ -333,6 +326,7 @@ sub _patch_dlsym {
                     $name .= "_encoding" if $name !~ /_encoding$/;
                     mark_package($pkg);
                     if ( $pkg ne 'Encode' ) {
+                        verbose("saving $pkg" . "::bootstrap");
                         svref_2object( \&{"$pkg\::bootstrap"} )->save;
                         mark_package('Encode');
                     }
@@ -349,7 +343,7 @@ sub _patch_dlsym {
     }
 
     # Encode-2.59 uses a different name without _encoding
-    elsif ( $Encode::VERSION ge '2.58' and Encode::find_encoding($name) ) {
+    elsif ( Encode::find_encoding($name) ) {
         my $enc = Encode::find_encoding($name);
         $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
 
