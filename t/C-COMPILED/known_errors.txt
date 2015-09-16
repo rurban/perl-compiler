@@ -96,6 +96,7 @@ CORE/op/packagev.t        TESTS     Issue 249
 CORE/op/ref.t             TESTS     Issue 285 & 286
 CORE/op/reset.t           TESTS     Issue 274
 CORE/op/smartmatch.t      TESTS     Issue 179
+CORE/op/substr.t          TESTS     utf8 issue in subs
 CORE/op/switch.t          SIG       Smart matching a non-overloaded object breaks encapsulation
 CORE/op/split_unicode.t   SIG       Unreported?
 CORE/op/stash.t           TESTS     __ANON__ stash issue
