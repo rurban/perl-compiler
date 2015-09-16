@@ -16,7 +16,7 @@
 #    SEQ     => The tests run out of sequence
 #    TODO    => TODO test unexpectedly failing/succeeding
 #    COMPAT  => Test isn't useful for B::C. This test will be a skip_all. 
-#    SKIP    => Test so much broken that we prefer to skip it for now. ( ~skip_all )
+#    SKIP    => The test is so broken that we prefer to skip it for now. ( ~skip_all )
 #
 # NOTES:
 # - Any line in this file not corresponding to a symlink in this folder will be ignored.
@@ -29,8 +29,55 @@ CORE/comp/parser.t        TESTS     TODO: Looks like new tests and new failures 
 CORE/io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 CORE/io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
 CORE/io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
-CORE/mro/isarev.t         TESTS     Issue 353
-CORE/mro/next_edgecases.t SIG       Issue 355
+CORE/mro/basic_01_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_01_c3_utf8.t PLAN    TODO: Malformed UTF-8. Looks like B::C makes everything UTF8 when 1 thing is compiled that way?
+CORE/mro/basic_01_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_01_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_02_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_02_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_02_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_02_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_03_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_03_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_03_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_03_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_04_c3_utf8.t TESTS TODO: Malformed UTF-8.
+CORE/mro/basic_04_dfs_utf8.t TESTS TODO: Malformed UTF-8.
+CORE/mro/basic_04_dfs_utf8.t TESTS TODO: Malformed UTF-8.
+CORE/mro/basic_05_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_05_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_05_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_05_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/c3_with_overload.t TESTS TODO: overload not working right?
+CORE/mro/c3_with_overload_utf8.t TESTS TODO: overload not working right
+CORE/mro/complex_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/complex_dfs_utf8.t TESTS TODO: Malformed UTF-8.
+CORE/mro/dbic_c3_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/dbic_dfs_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/inconsistent_c3_utf8.t TESTS TODO: mro::get_linear_isa can't handle inheritance with utf8
+CORE/mro/isa_aliases_utf8.t TESTS TODO: @ISA can't handle UTF-8 packages
+CORE/mro/isa_c3_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/isa_dfs_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/isarev.t SKIP TODO: This test fails in an inconsistent way. There's probably something even more fundamentally broken. also: https://code.google.com/p/perl-compiler/issues/detail?id=353
+CORE/mro/isarev_utf8.t TESTS TODO: mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
+CORE/mro/method_caching_utf8.t PLAN TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/next_edgecases_utf8.t PLAN TODO: Wide character
+CORE/mro/next_goto_utf8.t PLAN TODO: Wide character
+CORE/mro/next_inanon_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/next_ineval_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/next_method_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/next_NEXT_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/next_skip_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/overload_c3.t TESTS TODO: overload not working right?
+CORE/mro/overload_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/overload_dfs.t TESTS TODO: overload not working right?
+CORE/mro/package_aliases_utf8.t PLAN TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/pkg_gen_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
+CORE/mro/recursion_c3_utf8.t TESTS TODO: Infinite loop apparently succeeded??? at t/CORE/mro/recursion_c3_utf8.t line 95
+CORE/mro/recursion_dfs_utf8.t TESTS TODO: Infinite loop apparently succeeded??? at t/CORE/mro/recursion_c3_utf8.t line 95
+CORE/mro/vulcan_c3_utf8.t TESTS TODO: Malformed UTF-8.
+CORE/mro/vulcan_dfs_utf8.t TESTS TODO: Malformed UTF-8.
 CORE/op/64bitint.t        TESTS     all bits of a UV are not preserved
 CORE/op/array_base.t      TESTS     Unreported?
 CORE/op/attrhand.t        TESTS     Issue 169
