@@ -25,8 +25,9 @@
 CORE/comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavior so not relevant to B::C
 CORE/comp/form_scope.t    SIG       TODO: This test got WAY complicated in db4cf31d1d6 and probably wouldn't have passed back then either. FORMAT -- who cares?
 CORE/comp/parser.t        TESTS     TODO: Looks like new tests and new failures in need of investigation.
-CORE/io/layers.t          TESTS     Issue 203
-CORE/io/utf8.t            TESTS     Issue 319 & 320
+CORE/io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
+CORE/io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
+CORE/io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
 CORE/mro/isarev.t         TESTS     Issue 353
 CORE/mro/next_edgecases.t SIG       Issue 355
 CORE/op/array_base.t      TESTS     Unreported?

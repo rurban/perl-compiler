@@ -1,11 +1,10 @@
 #!./perl
 
 BEGIN {
-    push @INC, "t/CORE/lib";
     require "t/CORE/test.pl";
     skip_all_without_perlio();
-    plan (15);
 }
+plan (15);
 
 use warnings 'layer';
 my $warn;
