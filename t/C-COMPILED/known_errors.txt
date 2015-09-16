@@ -146,6 +146,7 @@ CORE/uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
 CORE/uni/chr.t            SIG       TODO: no output.
 CORE/uni/fold.t           TESTS     TODO: Unicode tests n stuff
 CORE/uni/goto.t           PLAN      TODO: Goto undefined subroutine &main::????? at t/CORE/uni/goto.t line 17.
+CORE/uni/greek.t          SIG       TODO: Failed test 1 - \xC1 to /\xC1/ at t/CORE/uni/greek.t line 18
 CORE/uni/gv.t             SIG       TODO: Argument "*main::PW<C3>M-^RMPF" isn't numeric in sprintf at t/CORE/uni/gv.t line 128.
 CORE/uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 CORE/uni/latin2.t         SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
