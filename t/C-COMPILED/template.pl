@@ -81,7 +81,7 @@ ok( !-z $file_to_test, "$file_to_test exists" );
 open( my $fh, '<', $file_to_test ) or die("Can't open $file_to_test");
 my $taint = <$fh>;
 close $fh;
-$taint = ( ( $taint =~ m/\s\-T/ ) ? '-T' : '' );
+$taint = ( ( $taint =~ m/\s\-w?T/ ) ? '-T' : '' );
 pass( $taint ? "Taint mode!" : "Not in taint mode" );
 
 ( my $c_file   = $file_to_test ) =~ s/\.t$/.c/;
