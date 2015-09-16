@@ -676,9 +676,6 @@ main(int argc, char **argv, char **env)
 #endif
   [% END %]
     PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
-#ifndef PERL_USE_SAFE_PUTENV
-    PL_use_safe_putenv = 0;
-#endif
 
 /* perlmain.c sets PL_use_safe_putenv so we must do this
    here as well.
