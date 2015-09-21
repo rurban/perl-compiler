@@ -145,12 +145,12 @@ sub save {
             svref_2object( \*{"$stashname\::bootstrap"} )->save
               if $stashname;    # and defined ${"$stashname\::bootstrap"};
                                 # delsym($cv);
-            return qq/get_cv("$fullname", 0)/;
+            return get_cv_string($fullname);
         }
         else {                  # Those cvs are already booted. Reuse their GP.
                                 # Esp. on windows it is impossible to get at the XS function ptr
             debug( cv => "core XSUB $fullname CV 0x%x\n", $$cv );
-            return qq/get_cv("$fullname", 0)/;
+            return get_cv_string($fullname);
         }
     }
     if ( $cvxsub && $cvname && $cvname eq "INIT" ) {
@@ -450,7 +450,7 @@ sub save {
                 $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS
             )
         );
-        return qq/get_cv("$fullname", 0)/;
+        return get_cv_string($fullname);
     }
 
     # Now it is time to record the CV
@@ -596,9 +596,10 @@ sub save {
             init()->add( sprintf( "CvOUTSIDE($sym) = (CV*)s\\_%x;", $xcv_outside ) );
         }
     }
+
     # TODO:  ne 'B::PV' && ref($cv->OUTSIDE) ne 'B::GV' or you'll get this:
     # Can't locate object method "PADLIST" via package "B::PV" at /usr/local/cpanel/B-C/lib/B/C/OverLoad/B/CV.pm line 603.
-    elsif ($xcv_outside && ref($cv->OUTSIDE) ) {
+    elsif ( $xcv_outside && ref( $cv->OUTSIDE ) ) {
 
         # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
         my $padl = $cv->OUTSIDE->PADLIST->save;
@@ -701,6 +702,16 @@ sub save {
     }
 
     return $sym;
+}
+
+sub get_cv_string {
+    my ($name) = @_;
+    my $cname = cstring($name);
+
+    my $len = length( pack "a*", $name );
+    my $flags = utf8::is_utf8($name) ? "SVf_UTF8" : "0";
+
+    return qq/get_cvn_flags($cname, $len, $flags)/;
 }
 
 1;

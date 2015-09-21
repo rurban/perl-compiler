@@ -3,7 +3,7 @@ package B::GV;
 use strict;
 
 use Config;
-use B qw/cstring svref_2object SVt_PVGV SVf_ROK/;
+use B qw/cstring svref_2object SVt_PVGV SVf_ROK SVf_UTF8/;
 
 use B::C::Config;
 use B::C::Save::Hek qw/save_hek/;
@@ -149,7 +149,8 @@ sub save {
     if ( !defined $gvname and $is_empty ) {    # 5.8 curpad name
         return q/(SV*)&PL_sv_undef/;
     }
-    my $name    = $package eq 'main' ? cstring($gvname) : cstring($fullname);
+    my $name    = $package eq 'main' ? $gvname          : $fullname;
+    my $cname   = $package eq 'main' ? cstring($gvname) : cstring($fullname);
     my $notqual = $package eq 'main' ? 'GV_NOTQUAL'     : '0';
     debug( gv => "  GV name is $fancyname" );
     my $egvsym;
@@ -199,12 +200,12 @@ sub save {
         }
     }
     if ( $fullname =~ /^main::std(in|out|err)$/ ) {    # same as uppercase above
-        init()->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
+        init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PVGV);]);
         init()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
         return $sym;
     }
     elsif ( $fullname eq 'main::0' ) {                 # dollar_0 already handled before, so don't overwrite it
-        init()->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PV);]);
+        init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
         init()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
         return $sym;
     }
@@ -229,7 +230,7 @@ sub save {
             );
 
             # Shared glob *foo = *bar
-            init()->add(qq[$sym = gv_fetchpv($name, $gvadd|GV_ADDMULTI, SVt_PVGV);]);
+            init()->add( "$sym = " . gv_fetchpv_string( $name, "$gvadd|GV_ADDMULTI", 'SVt_PVGV' ) . ";" );
             init()->add("GvGP_set($sym, GvGP($egvsym));");
             $is_empty = 1;
         }
@@ -239,7 +240,7 @@ sub save {
                 $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
                 $gv->FILE, $gp
             );
-            init()->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
+            init()->add( "$sym = " . gv_fetchpv_string( $name, $notqual, 'SVt_PVGV' ) . ";" );
             init()->add( sprintf( "GvGP_set($sym, %s);", $gptable{ 0 + $gp } ) );
             $is_empty = 1;
         }
@@ -249,7 +250,7 @@ sub save {
                 $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
                 $gv->FILE, $gp
             );
-            init()->add(qq[$sym = gv_fetchpv($name, GV_ADD, SVt_PVHV);]);
+            init()->add( "$sym = " . gv_fetchpv_string( $name, 'GV_ADD', 'SVt_PVHV' ) . ";" );
             $gptable{ 0 + $gp } = "GvGP($sym)" if 0 + $gp;
         }
         elsif ( $gp and !$is_empty ) {
@@ -260,16 +261,16 @@ sub save {
             );
 
             # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-            init()->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
+            init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
             $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
             $gptable{ 0 + $gp } = "GvGP($sym)";
         }
         else {
-            init()->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
+            init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PVGV' ) . ";" );
         }
     }
     elsif ( !$is_coresym ) {
-        init()->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
+        init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
     }
     my $gvflags = $gv->GvFLAGS;
 
@@ -447,6 +448,7 @@ sub save {
               if $package and exists ${"$package\::"}{CLONE};
             $gvcv = $gv->CV;    # try again
         }
+
         # Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
         if (    $$gvcv
             and $savefields & Save_CV
@@ -458,7 +460,7 @@ sub save {
             my $cvsym;
             if ( $gvcv->XSUB and $fullname ne $origname ) {    #XSUB CONSTSUB alias
                 my $package = $gvcv->GV->EGV->STASH->NAME;
-                $origname = cstring($origname);
+
                 debug( pkg => "Boot $package, XS CONSTSUB alias of $fullname to $origname" );
                 mark_package( $package, 1 );
                 {
@@ -477,10 +479,11 @@ sub save {
                 }
 
                 # must save as a 'stub' so newXS() has a CV to populate
-                init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
+                my $get_cv = get_cv_string( $origname, 'GV_ADD' );
+                init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
+
             }
             elsif ($gp) {
-                $origname = cstring($origname);
                 if ( $fullname eq 'Internals::V' ) {
                     $gvcv = svref_2object( \&__ANON__::_V );
                 }
@@ -511,7 +514,8 @@ sub save {
 
                         # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
                         debug( gv => "save stub CvGV for $sym GP assignments $origname (XS CV)" );
-                        init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
+                        my $get_cv = get_cv_string( $origname, 'GV_ADD' );
+                        init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
                     }
                     else {
                         init2()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
@@ -654,4 +658,33 @@ sub save {
     return $sym;
 }
 
+sub get_cv_string {
+    my ( $name, $flags ) = @_;
+    my $cname = cstring($name);
+
+    my $foo     = $name;
+    my $utf_len = utf8::upgrade($foo);
+    my $str_len = length($name);
+
+    $flags .= "|SVf_UTF8" if ( $utf_len != $str_len );
+    $flags =~ s/^\|//;
+    $flags ||= '0';
+
+    return qq/get_cvn_flags($cname, $utf_len, $flags)/;
+}
+
+sub gv_fetchpv_string {
+    my ( $name, $flags, $type ) = @_;
+    my $cname = cstring($name);
+
+    my $foo     = $name;
+    my $utf_len = utf8::upgrade($foo);
+    my $str_len = length($name);
+
+    $flags .= "|SVf_UTF8" if ( $utf_len != $str_len );
+    $flags =~ s/^\|//;
+    $flags ||= '0';
+
+    return qq/gv_fetchpvn_flags($cname, $utf_len, $flags, $type)/;
+}
 1;
