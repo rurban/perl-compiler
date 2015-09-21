@@ -157,8 +157,10 @@ sub write {
     # create Template object
     my $template = Template->new($config);
 
+    open( my $fh, '>:utf8', $self->{'c_file_name'} ) or die;
+
     # process input template, substituting variables
-    $template->process( $template_name_short, $c_file_stash, $self->{'c_file_name'} ) or die $template->error();
+    $template->process( $template_name_short, $c_file_stash, $fh ) or die $template->error();
 
 }
 
