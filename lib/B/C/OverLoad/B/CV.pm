@@ -3,7 +3,7 @@ package B::CV;
 use strict;
 
 use Config;
-use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv SVf_ROK SVp_POK SVf_IOK/;
+use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv SVf_ROK SVp_POK SVf_IOK SVf_UTF8/;
 use B::C::Config;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Packages qw/is_package_used/;
@@ -36,11 +36,12 @@ sub save {
         return $sym;
     }
     my $gv = $cv->GV;
-    my ( $cvname, $cvstashname, $fullname );
+    my ( $cvname, $cvstashname, $fullname, $isutf8 );
     my $CvFLAGS = $cv->CvFLAGS;
     if ( $gv and $$gv ) {
         $cvstashname = $gv->STASH->NAME;
         $cvname      = $gv->NAME;
+        $isutf8      = $gv->FLAGS & SVf_UTF8 or $gv->STASH->FLAGS & SVf_UTF8;
         $fullname    = $cvstashname . '::' . $cvname;
         debug(
             cv => "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
@@ -55,6 +56,7 @@ sub save {
     }
     elsif ( $cv->is_lexsub($gv) ) {
         $fullname = $cv->NAME_HEK;
+        $isutf8   = $cv->FLAGS & SVf_UTF8;
         debug( cv => "CV NAME_HEK $fullname" );
         if ( $fullname =~ /^(.*)::(.*?)$/ ) {
             $cvstashname = $1;
@@ -63,6 +65,8 @@ sub save {
             undef($2);
         }
     }
+
+    my $flags = $isutf8 ? 'SVf_UTF8' : undef;
 
     # XXX TODO need to save the gv stash::AUTOLOAD if exists
     my $root   = $cv->ROOT;
@@ -148,12 +152,12 @@ sub save {
             svref_2object( \*{"$stashname\::bootstrap"} )->save
               if $stashname;    # and defined ${"$stashname\::bootstrap"};
                                 # delsym($cv);
-            return get_cv_string($fullname);
+            return get_cv_string($fullname, $flags);
         }
         else {                  # Those cvs are already booted. Reuse their GP.
                                 # Esp. on windows it is impossible to get at the XS function ptr
             debug( cv => "core XSUB $fullname CV 0x%x\n", $$cv );
-            return get_cv_string($fullname);
+            return get_cv_string($fullname, $flags);
         }
     }
     if ( $cvxsub && $cvname && $cvname eq "INIT" ) {
@@ -453,7 +457,7 @@ sub save {
                 $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS
             )
         );
-        return get_cv_string($fullname);
+        return get_cv_string($fullname, $flags);
     }
 
     # Now it is time to record the CV
