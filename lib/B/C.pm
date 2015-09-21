@@ -958,6 +958,43 @@ sub save_hek {
   wantarray ? ( $sym, $cur ) : $sym;
 }
 
+sub gv_fetchpvn {
+  my ($name, $flags, $isutf8, $type) = @_;
+  my $cname = cstring($name);
+  if ($] >= 5.009002) {
+    my ($len, $utf8);
+    if ($isutf8) {
+      my $uname = $name;
+      $len = utf8::upgrade($uname);
+      $flags .= length($flags) ? " | SVf_UTF8" : "SVf_UTF8";
+    } else {
+      $len = length($name);
+    }
+    return "gv_fetchpvn_flags($cname, $len, $flags, $type)";
+  } else {
+    return "gv_fetchpv($cname, $flags, $type)";
+  }
+}
+
+sub get_cv {
+  my ($name, $flags) = @_;
+  $flags = "0" unless $flags;
+  my $cname = cstring($name);
+  if ($] >= 5.009002) {
+    my $len;
+    if (!$PERL56 and utf8::is_utf8($name)) {
+      my $uname = $name;
+      $len = utf8::upgrade($uname);
+      $flags .= " | SVf_UTF8";
+    } else {
+      $len = length($name);
+    }
+    return qq[get_cvn_flags($cname, $len, $flags)];
+  } else {
+   return qq[get_cv($cname, $flags)];
+  }
+}
+
 sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
@@ -1499,8 +1536,8 @@ sub B::PVOP::save {
   my $cur = length($pv);
   if (!$PERL56) {
     if (utf8::is_utf8($pv)) {
-      utf8::encode($pv);
-      $cur = length $pv;
+      my $upv = $pv;
+      $cur = utf8::upgrade($upv);
     }
   }
   # do not use savepvn here #362
@@ -3360,23 +3397,11 @@ sub B::CV::save {
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       # delsym($cv);
-      if ($] < 5.009005) {
-        return qq/get_cv("$fullname", 0)/;
-      } else {
-        return sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($fullname),
-                       length(pack "a*", $fullname),
-                       $isutf8 ? "SVf_UTF8" : "0");
-      }
+      return get_cv($fullname, 0);
     } else {  # Those cvs are already booted. Reuse their GP.
       # Esp. on windows it is impossible to get at the XS function ptr
       warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv ) if $debug{cv};
-      if ($] < 5.009005) {
-        return qq/get_cv("$fullname", 0)/;
-      } else {
-        return sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($fullname),
-                       length(pack "a*", $fullname),
-                       $isutf8 ? "SVf_UTF8" : "0");
-      }
+      return get_cv($fullname, 0);
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3659,13 +3684,7 @@ sub B::CV::save {
     $symsect->add(sprintf(
       "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS));
-    if ($] < 5.009005) {
-      return qq/get_cv("$fullname", 0)/;
-    } else {
-      return sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($fullname),
-                     length(pack "a*", $fullname),
-                     $isutf8 ? "SVf_UTF8" : "0");
-    }
+    return get_cv($fullname, 0);
   }
 
   # Now it is time to record the CV
@@ -3972,7 +3991,7 @@ sub B::GV::save {
   return $sym if skip_pkg($package);
 
   my $fullname = $package . "::" . $gvname;
-  my $isutf8   = utf8::is_utf8($fullname);
+  my $isutf8   = !$PERL56 and utf8::is_utf8($fullname);
   my $fancyname;
   if ( $filter and $filter =~ / :pad/ ) {
     $fancyname = cstring($filter);
@@ -3989,7 +4008,8 @@ sub B::GV::save {
   if (!defined $gvname and $is_empty) { # 5.8 curpad name
     return q/(SV*)&PL_sv_undef/;
   }
-  my $name     = $package eq 'main' ? cstring($gvname) : cstring($fullname);
+  my $name     = $package eq 'main' ? $gvname : $fullname;
+  my $cname    = cstring($name);
   my $notqual  = ($] >= 5.008009 and $package eq 'main') ? 'GV_NOTQUAL' : '0';
   warn "  GV name is $fancyname\n" if $debug{gv};
   my $egvsym;
@@ -4040,12 +4060,12 @@ sub B::GV::save {
     }
   }
   if ($fullname =~ /^main::std(in|out|err)$/) { # same as uppercase above
-    $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
+    $init->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PVGV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
-    $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PV);]);
+    $init->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
     $init->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     return $sym;
   }
@@ -4074,7 +4094,8 @@ sub B::GV::save {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                   )) if $debug{gv};
       # Shared glob *foo = *bar
-      $init->add(qq[$sym = gv_fetchpv($name, $gvadd|GV_ADDMULTI, SVt_PVGV);]);
+      $init->add("$sym = ".gv_fetchpvn($package eq 'main' ? $gvname : $fullname,
+                                       "$gvadd|GV_ADDMULTI", $isutf8, "SVt_PVGV").";");
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
@@ -4083,7 +4104,7 @@ sub B::GV::save {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add(qq[$sym = gv_fetchpv($name, $notqual, SVt_PVGV);]);
+      $init->add("$sym = ".gv_fetchpvn($name, $notqual, $isutf8, "SVt_PVGV").";");
       $init->add( sprintf("GvGP_set($sym, %s);", $gptable{0+$gp}) );
       $is_empty = 1;
     }
@@ -4092,7 +4113,7 @@ sub B::GV::save {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add(qq[$sym = gv_fetchpv($name, GV_ADD, SVt_PVHV);]);
+      $init->add("$sym = ".gv_fetchpvn($name, "GV_ADD", $isutf8, "SVt_PVHV").";");
       $gptable{0+$gp} = "GvGP($sym)" if 0+$gp;
     }
     elsif ( $gp and !$is_empty ) {
@@ -4101,15 +4122,18 @@ sub B::GV::save {
                    $gv->FILE, $gp
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
+      $init->add("$sym = ".gv_fetchpvn($name, $gvadd, $isutf8, "SVt_PV").";");
+      #$init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
-      $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
+      $init->add("$sym = ".gv_fetchpvn($name, $gvadd, $isutf8, "SVt_PVGV").";");
+      # $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
     }
   } elsif (!$is_coresym) {
-    $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
+    $init->add("$sym = ".gv_fetchpvn($name, $gvadd, $isutf8, "SVt_PV").";");
+    # $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
   }
   my $gvflags = $gv->GvFLAGS;
   if ($gvflags > 256 and !$PERL510) { # $gv->GvFLAGS as U8 single byte only
@@ -4306,14 +4330,7 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-        my $get_cv;
-        if ($] < 5.009005) {
-          $get_cv = qq/get_cv("$origname", GV_ADD)/;
-        } else {
-          $get_cv = sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($origname),
-                         length(pack "a*", $origname),
-                         $isutf8 ? "GV_ADD|SVf_UTF8" : "GV_ADD");
-        }
+        my $get_cv = get_cv($fullname, "GV_ADD");
 	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
       }
       elsif (!$PERL510 or $gp) {
@@ -4334,8 +4351,10 @@ sub B::GV::save {
 		s/^.*\Q$sym\E.*=.*;//;
 		s/GvGP_set\(\Q$sym\E.*;//;
 	      }
-	      if (/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/) {
-		s/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/$sym = gv_fetchpv($name, GV_ADD, SVt_PVCV);/;
+              my $gv_get = gv_fetchpvn($name, "GV_ADD", "SVt_PV");
+              my $new_gv_get = gv_fetchpvn($name, "GV_ADD", "SVt_PVCV");
+	      if (/^\Q$sym = $gv_get;\E/) {
+		s/^\Q$sym = $gv_get;\E/$sym = $new_gv_get;/;
 		$in_gv++;
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
@@ -4345,7 +4364,8 @@ sub B::GV::save {
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
             warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
-            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
+            my $get_cv = get_cv($origname, "GV_ADD");
+            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
 	  }
 	  else {
             $init2->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ));
@@ -6126,6 +6146,7 @@ _EOT9
         $stashxsub =~ s/::/__/g;
         if ($staticxs) {
 	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
+          # TODO: utf8 stashname
 	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
