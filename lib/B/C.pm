@@ -303,7 +303,20 @@ BEGIN {
     eval q[sub RXf_EVAL_SEEN { 0x0 }
            sub PMf_EVAL      { 0x0 }
            ]; # unneeded
+  } else {
+    # 5.18
+    #if (exists ${B::}{PADNAME::}) {
+      @B::PADNAME::ISA = qw(B::AV B::PVMG);
+    #}
+    #if (exists ${B::}{PADLIST::}) {
+      @B::PADLIST::ISA = qw(B::AV B::PVMG);
+    #}
+    if ($] > 5.021005) { # 5.22
+    #if (exists ${B::}{PADNAMELIST::}) {
+      @B::PADNAMELIST::ISA = qw(B::AV B::PVMG);
+    }
   }
+
 }
 use B::Asmdata qw(@specialsv_name);
 
@@ -319,6 +332,7 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 my $padlist_index = 0;
+my $padnl_index = 0;
 
 # exclude all not B::C:: prefixed subs
 my %all_bc_subs = map {$_=>1}
@@ -329,9 +343,9 @@ my %all_bc_subs = map {$_=>1}
      B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
      B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
      B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
-     B::PADLIST::save B::PADOP::save B::PMOP::save B::PV::save B::PVIV::save
-     B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save B::PVOP::save
-     B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
+     B::PADLIST::save B::PADNAMELIST::save B::PADOP::save B::PMOP::save B::PV::save
+     B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save
+     B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
 
 # track all internally used packages. all other may not be deleted automatically
@@ -339,7 +353,7 @@ my %all_bc_subs = map {$_=>1}
 # uses now @B::C::Flags::deps
 our %all_bc_deps = map {$_=>1}
   @B::C::Flags::deps ? @B::C::Flags::deps
-  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
+  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -542,7 +556,7 @@ my (
   $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
   $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-  $padlistsect, $init0, $init2
+  $padlistsect, $padnlsect, $init0, $init2
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -561,7 +575,10 @@ sub module  { if (@_) { $module = shift; } else { $module; } }
 sub walk_and_save_optree {
   my ( $name, $root, $start ) = @_;
   if ($root) {
-    $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
+    # B.xs: walkoptree does more, reifying refs. rebless or recreating it
+    # so disable it until fixed.
+    # TODO: add walkoptree_debug support.
+    0 && $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
   }
   return objsym($start);
 }
@@ -1043,6 +1060,7 @@ $isa_cache{'B::OBJECT::can'} = 'UNIVERSAL';
 # $op->next and $op->sibling
 my $opsect_common =
   "next, sibling, ppaddr, " . ( $MAD ? "madprop, " : "" ) . "targ, type, ";
+#$opsect_common =~ s/, sibling/, _OP_SIBPARENT_FIELDNAME/ if $] > 5.021007;
 {
 
   # For 5.8:
@@ -3235,11 +3253,12 @@ sub B::CV::save {
     return $sym;
   }
   my $gv = $cv->GV;
-  my ( $cvname, $cvstashname, $fullname );
+  my ( $cvname, $cvstashname, $fullname, $isutf8 );
   my $CvFLAGS = $cv->CvFLAGS;
   if ($gv and $$gv) {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
+    $isutf8      = $gv->FLAGS & SVf_UTF8 or $gv->STASH->FLAGS & SVf_UTF8;
     $fullname    = $cvstashname.'::'.$cvname;
     warn sprintf( "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
                   $$cv, $$gv, $fullname, $CvFLAGS )
@@ -3252,6 +3271,7 @@ sub B::CV::save {
   }
   elsif ($cv->is_lexsub($gv)) {
     $fullname = $cv->NAME_HEK;
+    $isutf8   = $cv->FLAGS & SVf_UTF8;
     warn sprintf( "CV NAME_HEK $fullname\n") if $debug{cv};
     if ($fullname =~ /^(.*)::(.*?)$/) {
       $cvstashname = $1;
@@ -3340,11 +3360,23 @@ sub B::CV::save {
       svref_2object( \*{"$stashname\::bootstrap"} )->save
         if $stashname;# and defined ${"$stashname\::bootstrap"};
       # delsym($cv);
-      return qq/get_cv("$fullname", 0)/;
+      if ($] < 5.009005) {
+        return qq/get_cv("$fullname", 0)/;
+      } else {
+        return sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($fullname),
+                       length(pack "a*", $fullname),
+                       $isutf8 ? "SVf_UTF8" : "0");
+      }
     } else {  # Those cvs are already booted. Reuse their GP.
       # Esp. on windows it is impossible to get at the XS function ptr
       warn sprintf( "core XSUB $fullname CV 0x%x\n", $$cv ) if $debug{cv};
-      return qq/get_cv("$fullname", 0)/;
+      if ($] < 5.009005) {
+        return qq/get_cv("$fullname", 0)/;
+      } else {
+        return sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($fullname),
+                       length(pack "a*", $fullname),
+                       $isutf8 ? "SVf_UTF8" : "0");
+      }
     }
   }
   if ( $cvxsub && $cvname eq "INIT" ) {
@@ -3627,7 +3659,13 @@ sub B::CV::save {
     $symsect->add(sprintf(
       "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS));
-    return qq/get_cv("$fullname", 0)/;
+    if ($] < 5.009005) {
+      return qq/get_cv("$fullname", 0)/;
+    } else {
+      return sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($fullname),
+                     length(pack "a*", $fullname),
+                     $isutf8 ? "SVf_UTF8" : "0");
+    }
   }
 
   # Now it is time to record the CV
@@ -3934,6 +3972,7 @@ sub B::GV::save {
   return $sym if skip_pkg($package);
 
   my $fullname = $package . "::" . $gvname;
+  my $isutf8   = utf8::is_utf8($fullname);
   my $fancyname;
   if ( $filter and $filter =~ / :pad/ ) {
     $fancyname = cstring($filter);
@@ -4267,7 +4306,15 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN(get_cv($origname, GV_ADD)));");
+        my $get_cv;
+        if ($] < 5.009005) {
+          $get_cv = qq/get_cv("$origname", GV_ADD)/;
+        } else {
+          $get_cv = sprintf("get_cvn_flags(\"%s\", %u, %s)", cstring($origname),
+                         length(pack "a*", $origname),
+                         $isutf8 ? "GV_ADD|SVf_UTF8" : "GV_ADD");
+        }
+	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
       }
       elsif (!$PERL510 or $gp) {
         $origname = cstring( $origname );
@@ -4436,10 +4483,20 @@ sub B::AV::save {
   eval { $fill = $av->FILL; };
   $fill = -1 if $@;    # catch error in tie magic
   my $ispadlist = ref($av) eq 'B::PADLIST';
+  my $ispadnamelist = ref($av) eq 'B::PADNAMELIST';
   $max = $fill;
   my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
+  $svpcast = "(PADNAME*)" if $ispadnamelist;
 
-  if ($] >= 5.017006 and $ispadlist) {
+  if ($] >= 5.021007 and $ispadnamelist) {
+    $padnlsect->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
+    my @array = $av->ARRAY;
+    $fill = scalar @array;
+    $padnlsect->add("$fill, NULL, $fill, 0, 0");
+    $padnl_index = $padnlsect->index;
+    $sym = savesym( $av, "&padnl_list[$padnl_index]" );
+  }
+  elsif ($ispadlist and $] >= 5.017006 and $] < 5.021008) { # id added again with b4db586814
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_outid");
     my @array = $av->ARRAY;
     $fill = scalar @array;
@@ -4685,6 +4742,13 @@ sub B::AV::save {
 
 sub B::PADLIST::save {
   return B::AV::save(@_);
+}
+sub B::PADNAMELIST::save {
+  return B::AV::save(@_);
+}
+# B::Flags workaround
+sub B::PADNAMELIST::flagspv {
+  return "";
 }
 
 sub B::HV::save {
@@ -5119,7 +5183,7 @@ sub output_all {
   my @sections = (
     $copsect,    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
     $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
-    $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect,
+    $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect, $padnlsect,
     $xpvivsect,  $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
     $xrvsect,    $xpvbmsect,  $xpviosect, $svsect
   );
@@ -7280,6 +7344,7 @@ sub init_sections {
     xpvbm  => \$xpvbmsect,
     xpvio  => \$xpviosect,
     padlist => \$padlistsect,
+    padnamelist => \$padnlsect,
   );
   my ( $name, $sectref );
   while ( ( $name, $sectref ) = splice( @sections, 0, 2 ) ) {
