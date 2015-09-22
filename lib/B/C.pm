@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
-#      Copyright (c) 2011, 2012, 2013, 2014 cPanel Inc
+#      Copyright (c) 2011, 2012, 2013, 2014, 2015 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -200,7 +200,7 @@ sub output {
   foreach my $i ( @{ $section->[-1]{chunks} } ) {
     # dTARG and dSP unused -nt
     print $fh <<"EOT";
-static int ${init_name}_${name}(pTHX)
+static void ${init_name}_${name}(pTHX)
 {
 EOT
     foreach my $i ( @{ $section->[-1]{initav} } ) {
@@ -211,7 +211,7 @@ EOT
                    { exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
       print $fh "\t$j\n";
     }
-    print $fh "\treturn 0;\n}\n";
+    print $fh "\t\n}\n";
 
     $section->SUPER::add("${init_name}_${name}(aTHX);");
     ++$name;
@@ -3099,13 +3099,13 @@ sub B::RV::save {
   else {
     # GVs need to be handled at runtime
     if ( ref( $sv->RV ) eq 'B::GV' or $rv =~ /^gv_list/) {
-      $xrvsect->add("(SV*)Nullsv");
+      $xrvsect->add("Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # and stashes, too
     elsif ( $sv->RV->isa('B::HV') && $sv->RV->NAME ) {
-      $xrvsect->add("(SV*)Nullsv");
+      $xrvsect->add("Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
@@ -3313,6 +3313,8 @@ sub B::CV::save {
     if ($fullname =~ /^(.*)::(.*?)$/) {
       $cvstashname = $1;
       $cvname      = $2;
+      undef $1;
+      undef $2;
     }
   }
 
@@ -5295,8 +5297,8 @@ EOT
   }
 
   fixup_ppaddr();
-  print "static int perl_init0(pTHX) /* fixup_ppaddr */
-{";
+  print "static void perl_init0(pTHX) /* fixup_ppaddr */
+{\n\tregister int i;\n";
   $init0->output( \*STDOUT, "\t%s\n" );
   print "};\n\n";
 
@@ -5573,11 +5575,8 @@ sub init_op_addr {
   my $op_list = $op_type . "_list";
 
   $init0->add( split /\n/, <<_EOT6 );
-{
-    register int i;
-    for( i = 0; i < ${num}; ++i ) {
-        ${op_list}\[i].op_ppaddr = PL_ppaddr[PTR2IV(${op_list}\[i].op_ppaddr)];
-    }
+for (i = 0; i < ${num}; ++i) {
+	${op_list}\[i].op_ppaddr = PL_ppaddr[PTR2IV(${op_list}\[i].op_ppaddr)];
 }
 _EOT6
 
@@ -6344,9 +6343,7 @@ _EOT15
     #endif
 
     /* our special compiled init */
-    exitstatus = perl_init(aTHX);
-    if (exitstatus)
-	exit( exitstatus );
+    perl_init(aTHX);
     dl_init(aTHX);
     perl_init2(aTHX);
 EOT
