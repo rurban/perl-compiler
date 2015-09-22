@@ -7,7 +7,7 @@ use B::C::Config;
 use B::C::File qw/init copsect/;
 use B::C::Save qw(constpv);
 use B::C::Decimal qw/get_integer_value/;
-use B::C::Helpers::Symtable qw/savesym objsym/;
+use B::C::Helpers::Symtable qw/savesym objsym read_utf8_string/;
 
 sub save {
     my ( $op, $level ) = @_;
@@ -172,18 +172,6 @@ sub save {
         B::C::mark_package( $op->stashpv ) if $B::C::mainfile eq $op->file and $op->stashpv ne 'main';
     }
     savesym( $op, "(OP*)&cop_list[$ix]" );
-}
-
-sub read_utf8_string {
-    my ($name) = @_;
-
-    my $foo     = $name;
-    my $utf_len = utf8::upgrade($foo);
-    my $str_len = length($name);
-
-    my $is_utf8 = $utf_len != $str_len ? 1 : 0;
-
-    return ( $is_utf8, $utf_len );
 }
 
 1;

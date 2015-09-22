@@ -6,7 +6,7 @@ use Config;
 use B qw/cstring SVf_READONLY/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl/;
-use B::C::Helpers qw/mark_package/;
+use B::C::Helpers qw/mark_package read_utf8_string/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 my ($swash_ToCf);
@@ -233,18 +233,6 @@ sub save {
         mark_package( 'mro', 1 );
     }
     return $sym;
-}
-
-sub read_utf8_string {
-    my ($name) = @_;
-
-    my $foo     = $name;
-    my $utf_len = utf8::upgrade($foo);
-    my $str_len = length($name);
-
-    my $is_utf8 = $utf_len != $str_len ? 1 : 0;
-
-    return ( $is_utf8, $utf_len );
 }
 
 1;
