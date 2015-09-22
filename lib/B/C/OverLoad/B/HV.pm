@@ -50,7 +50,9 @@ sub save {
             init()->add(qq[hv$hv_index = gv_stashpvn($cname, $len, 0);\t/* get main:: stash */]);
         }
         else {
-            init()->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
+            my ( $name_is_utf8, $name_len ) = read_utf8_string($name);
+            my $flags = $name_is_utf8 ? '|SVf_UTF8' : '';
+            init()->add(qq[hv$hv_index = gv_stashpvn($cname, $name_len, GV_ADD$flags);\t/* stash */]);
         }
         if ($adpmroot) {
             init()->add(
@@ -221,13 +223,28 @@ sub save {
 
         # defer AMT magic of XS loaded hashes
         my $cname = cstring($name);
-        my $len = length( pack "a*", $name );    # not yet 0-byte safe. HEK len really
-        init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+        my ( $name_is_utf8, $name_len ) = read_utf8_string($name);
+        my $flags = $name_is_utf8 ? '|SVf_UTF8' : '';
+
+        #my $len = length( pack "a*", $name );    # not yet 0-byte safe. HEK len really
+        init2()->add(qq[$sym = gv_stashpvn($cname, $name_len, GV_ADDWARN|GV_ADDMULTI$flags);]);
     }
     if ( $name and mro::get_mro($name) eq 'c3' ) {
         mark_package( 'mro', 1 );
     }
     return $sym;
+}
+
+sub read_utf8_string {
+    my ($name) = @_;
+
+    my $foo     = $name;
+    my $utf_len = utf8::upgrade($foo);
+    my $str_len = length($name);
+
+    my $is_utf8 = $utf_len != $str_len ? 1 : 0;
+
+    return ( $is_utf8, $utf_len );
 }
 
 1;

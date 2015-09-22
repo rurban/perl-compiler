@@ -10,10 +10,14 @@
 #endif
 [% END %]
 
+#define CopSTASHPVN_set(c,pv, len, flags)    CopSTASH_set((c), gv_stashpvn(pv,len,flags|GV_ADD))
+
 #define PERL_CORE
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+
+
 
 /* Workaround for mapstart: the only op which needs a different ppaddr */
 #undef Perl_pp_mapstart

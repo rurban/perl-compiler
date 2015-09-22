@@ -131,13 +131,13 @@ sub save {
     }
 
     if ( !$B::C::optimize_cop ) {
+        my $name = $op->stashpv;
+        my ( $name_is_utf8, $name_len ) = read_utf8_string($name);
+        my $flags = $name_is_utf8 ? 'SVf_UTF8' : '0';
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
                 init()->add(
-                    sprintf(
-                        "CopSTASHPV_set(&cop_list[%d], %s);",
-                        $ix, constpv( $op->stashpv )
-                    ),
+                    sprintf( "CopSTASHPVN_set(&cop_list[%d], %s, $name_len, $flags);", $ix, constpv($name) ),
                     sprintf(
                         "CopFILE_set(&cop_list[%d], %s);",
                         $ix, constpv($file)
@@ -147,8 +147,8 @@ sub save {
             else {
                 init()->add(
                     sprintf(
-                        "CopSTASHPV_set(&cop_list[%d], %s);",
-                        $ix, cstring( $op->stashpv )
+                        "CopSTASHPVN_set(&cop_list[%d], %s, $name_len, $flags);",
+                        $ix, cstring($name)
                     ),
                     sprintf(
                         "CopFILE_set(&cop_list[%d], %s);",
@@ -159,8 +159,8 @@ sub save {
         }
         else {    # cv_undef e.g. in bproto.t and many more core tests with threads
             my $stlen = "";
-            init()->add( sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring( $op->stashpv ) . $stlen ) );
-            init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",    cstring($file) ) );
+            init()->add( sprintf( "CopSTASHPVN_set(&cop_list[$ix], %s, $name_len, $flags);", cstring($name) . $stlen ) );
+            init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",                        cstring($file) ) );
         }
     }
 
@@ -172,6 +172,18 @@ sub save {
         B::C::mark_package( $op->stashpv ) if $B::C::mainfile eq $op->file and $op->stashpv ne 'main';
     }
     savesym( $op, "(OP*)&cop_list[$ix]" );
+}
+
+sub read_utf8_string {
+    my ($name) = @_;
+
+    my $foo     = $name;
+    my $utf_len = utf8::upgrade($foo);
+    my $str_len = length($name);
+
+    my $is_utf8 = $utf_len != $str_len ? 1 : 0;
+
+    return ( $is_utf8, $utf_len );
 }
 
 1;
