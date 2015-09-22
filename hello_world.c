@@ -1,8 +1,8 @@
 /* created at Tue Sep 22 10:12:06 2015 with B::C 1.52-2728-g25895ba */
-#define PERL_CORE
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
+#define PERL_CORE /* Needed for some extensions perl core refeses to export (win32 only)*/
+#include "EXTERN.h" /* Embedded interface */
+#include "perl.h"   /* API interface */
+#include "XSUB.h"   /* XS interface */
 
 /* Workaround for mapstart: the only op which needs a different ppaddr */
 #undef Perl_pp_mapstart
@@ -10,6 +10,7 @@
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
 
+/* TODO: Why was this removed from perl core? */
 /* No longer available when C<PERL_CORE> is defined. */
 #ifndef Nullsv
 #  define Null(type) ((type)NULL)
@@ -33,6 +34,7 @@ static void dl_init (pTHX);
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
+/* TODO: Not provided in perl core? */
 #ifndef dVAR
 # ifdef PERL_GLOBAL_STRUCT
 #  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
@@ -64,6 +66,7 @@ HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
 #undef share_hek
 #define share_hek(str, len, hash) my_share_hek( aTHX_ str, len, hash );
 
+
 Static COP cop_list[4];
 Static OP op_list[9];
 Static UNOP unop_list[1];
@@ -91,6 +94,7 @@ Static char pv3[] = "hello_world.c";
 Static HEK *hek1;
 Static HEK *hek2;
 
+/* copsect - array of cops in the code. for debugging, line number info. State/Context op. "Every ; is a cop." */
 Static COP cop_list[4] = {
 	/* next, sibling, ppaddr, targ, type, opt, slabbed, savefree, static, folded, spare, flags, private, line, stash, file, hints, seq, warn_sv, hints_hash */
 	{ (OP*)&svop_list[0], (OP*)&binop_list[0], INT2PTR(void*,OP_NEXTSTATE), 0, 184, 0, 0, 0, 1, 0, 0, 0x1, 0x0, 3, Nullhv, Nullgv, 256, 4010, pWARN_STD, NULL }, /* cop_list[0]  */
@@ -98,6 +102,8 @@ Static COP cop_list[4] = {
 	{ &op_list[5], (OP*)&binop_list[2], INT2PTR(void*,OP_NEXTSTATE), 0, 184, 0, 0, 0, 1, 0, 0, 0x1, 0x0, 5, Nullhv, Nullgv, 256, 4012, pWARN_STD, NULL }, /* cop_list[2]  */
 	{ &op_list[1], (OP*)&listop_list[1], INT2PTR(void*,OP_NEXTSTATE), 0, 184, 0, 0, 0, 1, 0, 0, 0x1, 0x0, 6, Nullhv, Nullgv, 256, 4013, pWARN_STD, NULL }, /* cop_list[3]  */
 };
+
+/* Chain of operations.*/
 
 Static OP op_list[9] = {
 	/* next, sibling, ppaddr, targ, type, opt, slabbed, savefree, static, folded, spare, flags, private */
@@ -112,10 +118,15 @@ Static OP op_list[9] = {
 	{ (OP*)&binop_list[5], 0, INT2PTR(void*,OP_PADSV), 3, 9, 0, 0, 0, 1, 0, 0, 0x2, 0x0 }, /* op_list[8]  */
 };
 
+/* Unary operations */
+
 Static UNOP unop_list[1] = {
 	/* next, sibling, ppaddr, targ, type, opt, slabbed, savefree, static, folded, spare, flags, private, first */
 	{ (OP*)&listop_list[1], 0, INT2PTR(void*,OP_NULL), 68, 0, 0, 0, 0, 1, 0, 0, 0x6, 0x1, &op_list[2] }, /* unop_list[0]  */
 };
+
+/* Binary argument operations */
+/* first/last aren't useful to runtime but might be introspected by certain modules. */
 
 Static BINOP binop_list[6] = {
 	/* next, sibling, ppaddr, targ, type, opt, slabbed, savefree, static, folded, spare, flags, private, first, last */
@@ -127,11 +138,15 @@ Static BINOP binop_list[6] = {
 	{ (OP*)&svop_list[3], (OP*)&svop_list[3], INT2PTR(void*,OP_CONCAT), 5, 67, 0, 0, 0, 1, 0, 0, 0x6, 0x2, (OP*)&svop_list[2], &op_list[8] }, /* binop_list[5]  */
 };
 
+/* Op chains run.c */
+
 Static LISTOP listop_list[2] = {
 	/* next, sibling, ppaddr, targ, type, opt, slabbed, savefree, static, folded, spare, flags, private, first, last */
 	{ 0, 0, INT2PTR(void*,OP_LEAVE), 1, 188, 0, 0, 0, 1, 0, 0, 0xd, 0x40, &op_list[0], (OP*)&listop_list[1] }, /* listop_list[0]  */
 	{ (OP*)&listop_list[0], 0, INT2PTR(void*,OP_PRINT), 0, 226, 0, 0, 0, 1, 0, 0, 0x5, 0x0, &op_list[1], (OP*)&unop_list[0] }, /* listop_list[1]  */
 };
+
+/* ALL scalars  */
 
 Static SVOP svop_list[4] = {
 	/* next, sibling, ppaddr, targ, type, opt, slabbed, savefree, static, folded, spare, flags, private, sv */
@@ -141,7 +156,11 @@ Static SVOP svop_list[4] = {
 	{ (OP*)&binop_list[4], 0, INT2PTR(void*,OP_CONST), 0, 5, 0, 0, 0, 1, 0, 0, 0x2, 0x0, (SV*)&sv_list[4] }, /* svop_list[3]  */
 };
 
+
+/* Additional DATA for SVs */
+/* PV body */
 Static XPV xpv_list[10] = {
+	/* stash, magic, cur, len, */
 	{ Nullhv, {0}, 12, 16 }, /* xpv_list[0]  */
 	{ Nullhv, {0}, 1, 4 }, /* xpv_list[1]  */
 	{ Nullhv, {0}, 17, 20 }, /* xpv_list[2]  */
@@ -154,34 +173,45 @@ Static XPV xpv_list[10] = {
 	{ Nullhv, {0}, 1, 4 }, /* xpv_list[9]  */
 };
 
+/* Additional data for arrays */
+
 Static XPVAV xpvav_list[3] = {
 	{ Nullhv, {0}, 3, 3, 0 }, /* xpvav_list[0]  */
 	{ Nullhv, {0}, 7, 7, 0 }, /* xpvav_list[1]  */
 	{ Nullhv, {0}, 7, 7, 0 }, /* xpvav_list[2]  */
 };
 
+/* Additional data for hashes */
 Static XPVHV xpvhv_list[1] = {
 	/* stash mgu max keys */
 	{ Nullhv, {0}, 31, 0 }, /* xpvhv_list[0]  */
 };
+
+/* Additional data for PVIV */
 
 Static XPVIV xpviv_list[2] = {
 	{ Nullhv, {0}, 0, 0, {4} }, /* xpviv_list[0]  */
 	{ Nullhv, {0}, 0, 0, {7} }, /* xpviv_list[1]  */
 };
 
+/* Additional data for PVNV */
+
 Static XPVNV xpvnv_list[3] = {
-	/* STASH, MAGIC, cur, len, IVX, NVX */
+	/* STASH, MAGIC, cur, len, IVX, _xnvu */
 	{ Nullhv, {0}, 2, 4, {0}, {.xpad_cop_seq.xlow = 4010, .xpad_cop_seq.xhigh = 4013} }, /* xpvnv_list[0]  */
 	{ Nullhv, {0}, 2, 4, {0}, {.xpad_cop_seq.xlow = 4011, .xpad_cop_seq.xhigh = 4013} }, /* xpvnv_list[1]  */
 	{ Nullhv, {0}, 2, 4, {0}, {.xpad_cop_seq.xlow = 4012, .xpad_cop_seq.xhigh = 4013} }, /* xpvnv_list[2]  */
 };
+
+/* magic */
 
 Static XPVMG xpvmg_list[2] = {
 	/* STASH, MAGIC, cur, len, xiv_u, xnv_u */
 	{ Nullhv, {0}, 1, 2, {0}, {0.00} }, /* xpvmg_list[0]  */
 	{ Nullhv, {0}, 13, 16, {0}, {0.00} }, /* xpvmg_list[1]  */
 };
+
+/* iosect - initial state of all file handles*/
 
 Static XPVIO xpvio_list[1] = {
 	/* STASH, xmg_u, cur, len, xiv_u, xio_ofp, xio_dirpu, page, page_len, ..., type, flags */
@@ -205,8 +235,11 @@ Static XPVIO xpvio_list[1] = {
 	0x0 /*flags*/ }, /* xpvio_list[0]  */
 };
 
+/*  */
+
 Static SV sv_list[30] = {
-	{ 0, 30, SVTYPEMASK|0x01000000, {0} }, /* sv_list[0]  */
+	/* body, refcnt, flags with type, union (pv?) */
+	{ 0, 30, SVTYPEMASK|0x01000000, {0} }, /* sv_list[0]  */ /* fast destruction */
 	{ &xpviv_list[0], 1, 0x8001101, {.svu_pv=NULL} }, /* sv_list[1]  */
 	{ &xpviv_list[1], 1, 0x8001101, {.svu_pv=NULL} }, /* sv_list[2]  */
 	{ &xpv_list[0], 1, 0x8004403, {0} }, /* sv_list[3]  */
@@ -363,7 +396,7 @@ static int perl_init_aaaa(pTHX)
 	sv_list[9].sv_u.svu_pv = savepvn("$a", 2);
 	sv_list[10].sv_u.svu_pv = savepvn("$b", 2);
 	sv_list[11].sv_u.svu_pv = savepvn("$c", 2);
-	{
+	{ /* Slow array init mode. */
 		SV **svp;
 		AV *av = (AV*)&sv_list[8];
 		register int gcount;
@@ -403,6 +436,7 @@ static int perl_init_aaaa(pTHX)
 		HvRITER_set(&sv_list[20], -1);
 	}
 	HvTOTALKEYS((HV*)&sv_list[20]) = 0;
+
 	/* @INC */
 	sv_list[22].sv_u.svu_pv = savepvn("/usr/local/cpanel", 17);
 	sv_list[23].sv_u.svu_pv = savepvn("/usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int", 73);
@@ -778,15 +812,15 @@ main(int argc, char **argv, char **env)
     #if PERL_VERSION < 10 || ((PERL_VERSION == 10) && (PERL_SUBVERSION < 1))
       PL_compcv = 0;
     #else
+    /* PL_compcv used during compilation. */
       PL_compcv = MUTABLE_CV(newSV_type(SVt_PVCV));
       CvUNIQUE_on(PL_compcv);
       CvPADLIST(PL_compcv) = pad_new(0);
     #endif
 
     /* our special compiled init */
-    exitstatus = perl_init(aTHX);
-    if (exitstatus)
-	exit( exitstatus );
+    perl_init(aTHX);
+
     dl_init(aTHX);
     perl_init2(aTHX);
     exitstatus = perl_run( my_perl );
