@@ -51,7 +51,7 @@ CONT=
 #CCMD="$PERL script/cc_harness -g3"
 # rest. -DALLOW_PERL_OPTIONS for -Dtlv
 #CCMD="$PERL $Mblib script/cc_harness -g3 -DALLOW_PERL_OPTIONS"
-CCMD="$PERL $Mblib script/cc_harness -Wall"
+CCMD="$PERL $Mblib script/cc_harness"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
@@ -1172,14 +1172,16 @@ package main;
 my $f = foo->new( x => 5, y => 6);
 print $f->x . "\n";'
 result[371]='5'
+
+if [[ $v518 -gt 0 ]]; then
+  tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen('ᕘ'); undef %ᕘ::; mro::get_pkg_gen('ᕘ'); delete $::{"ᕘ::"}; print "ok";'
+  result[372]='ok'
+fi
+
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 result[2050]='ok'
-
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
 result[2051]='ok'
-
-tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
-result[2052]='ok'
 
 init
 

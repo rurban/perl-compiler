@@ -2,7 +2,7 @@ package B::C::Helpers;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -18,6 +18,14 @@ sub is_constant {
     my $s = shift;
     return 1 if $s =~ /^(&sv_list|\-?[0-9]+|Nullsv)/;    # not gv_list, hek
     return 0;
+}
+
+# lazy helper for backward compatibility only (we can probably avoid to use it)
+sub strlen_flags {
+    my $str = shift;
+
+    my ( $is_utf8, $len ) = read_utf8_string($str);
+    return ( cstring($str), $len, $is_utf8 ? 'SVf_UTF8' : '0' );
 }
 
 # maybe move to B::C::Helpers::Str ?

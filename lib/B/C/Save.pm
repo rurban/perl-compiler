@@ -5,12 +5,13 @@ use strict;
 use B qw(cstring);
 use B::C::Config;
 use B::C::File qw( xpvmgsect decl init );
+use B::C::Helpers qw/strlen_flags/;
 use B::C::Save::Hek qw/save_hek/;
 
 use Exporter ();
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw/savepvn constpv savepv inc_pv_index set_max_string_len/;
+our @EXPORT_OK = qw/savepvn constpv savepv inc_pv_index set_max_string_len savestash_flags savestashpv/;
 
 my %strtable;
 
@@ -102,6 +103,29 @@ sub savepvn {
         }
     }
     return @init;
+}
+
+# performance optimization:
+#    limit calls to gv_stashpvn when using CopSTASHPVN_set macro
+
+# cache to only init it once
+my %stashtable;
+
+#my $hv_index = 0; # need to use it from HV
+sub savestash_flags {
+    my ( $pv, $len, $flags ) = @_;
+    return $stashtable{$pv} if defined $stashtable{$pv};
+    my $hv_index = B::C::HV::get_index();
+    $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
+    my $sym = "hv$hv_index";
+    decl()->add("Static HV *hv$hv_index;");
+    init()->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pv, $len, $flags ) );
+    B::C::HV::inc_index();
+    return $stashtable{$pv} = $sym;
+}
+
+sub savestashpv {
+    return savestash_flags( strlen_flags(shift) );
 }
 
 1;

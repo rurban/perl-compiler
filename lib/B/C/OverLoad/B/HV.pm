@@ -1,3 +1,17 @@
+package B::C::HV;
+
+my $hv_index = 0;
+
+sub get_index {
+    return $hv_index;
+}
+
+sub inc_index {
+    return ++$hv_index;
+}
+
+1;
+
 package B::HV;
 
 use strict;
@@ -8,14 +22,13 @@ use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init2/;
 use B::C::Helpers qw/mark_package read_utf8_string/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
+use B::C::Save qw/savestashpv/;
 
 my ($swash_ToCf);
 
 sub swash_ToCf_value {
     return $swash_ToCf;
 }
-
-my $hv_index = 0;
 
 sub SVf_OOK { 0x02000000 }
 
@@ -28,6 +41,7 @@ sub save {
     my $name     = $hv->NAME;
     my $is_stash = $name;
     my $magic;
+
     if ($name) {
 
         # It's a stash. See issue 79 + test 46
@@ -40,30 +54,19 @@ sub save {
         # the only symptom is that sv_reset tries to reset the PMf_USED flag of
         # a trashed op but we look at the trashed op_type and segfault.
         #my $adpmroot = ${$hv->PMROOT}; # XXX When was this fixed?
-        my $adpmroot = 0;
-        decl()->add("Static HV *hv$hv_index;");
+        #my $adpmroot = 0;
+        $sym = savestashpv($name);    # inc hv_index
+        savesym( $hv, $sym );
 
-        my $cname = cstring($name);
-        my $len   = length( pack "a*", $name );    # not yet 0-byte safe. HEK len really
-                                                   # TODO utf8 stashes
-        if ( $name eq 'main' ) {
-            init()->add(qq[hv$hv_index = gv_stashpvn($cname, $len, 0);\t/* get main:: stash */]);
-        }
-        else {
-            my ( $name_is_utf8, $name_len ) = read_utf8_string($name);
-            my $flags = $name_is_utf8 ? '|SVf_UTF8' : '';
-            init()->add(qq[hv$hv_index = gv_stashpvn($cname, $name_len, GV_ADD$flags);\t/* stash */]);
-        }
-        if ($adpmroot) {
-            init()->add(
-                sprintf(
-                    "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
-                    $adpmroot
-                )
-            );
-        }
-        $sym = savesym( $hv, "hv$hv_index" );
-        $hv_index++;
+        #my $hv_index = B::C::HV::get_index();
+        # if ($adpmroot) {
+        #     init()->add(
+        #         sprintf(
+        #             "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
+        #             $adpmroot
+        #         )
+        #     );
+        # }
 
         # issue 79, test 46: save stashes to check for packages.
         # and via B::STASHGV we only save stashes for stashes.

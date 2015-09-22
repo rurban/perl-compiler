@@ -5,10 +5,10 @@ use strict;
 use B qw/cstring/;
 use B::C::Config;
 use B::C::File qw/init copsect/;
-use B::C::Save qw(constpv);
+use B::C::Save qw/constpv savestash_flags savestashpv/;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
-use B::C::Helpers qw/read_utf8_string/;
+use B::C::Helpers qw/read_utf8_string strlen_flags/;
 
 sub save {
     my ( $op, $level ) = @_;
@@ -133,35 +133,31 @@ sub save {
 
     if ( !$B::C::optimize_cop ) {
         my $name = $op->stashpv;
-        my ( $name_is_utf8, $name_len ) = read_utf8_string($name);
-        my $flags = $name_is_utf8 ? 'SVf_UTF8' : '0';
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
+
+                # use length on the non const and save it with const, could the len be incorrect ?
+                my ( $pv, $len, $flags ) = strlen_flags( $op->stashpv );
+                my $stash = savestash_flags( constpv( $op->stashpv ), $len, $flags );
                 init()->add(
-                    sprintf( "CopSTASHPVN_set(&cop_list[%d], %s, $name_len, $flags);", $ix, constpv($name) ),
-                    sprintf(
-                        "CopFILE_set(&cop_list[%d], %s);",
-                        $ix, constpv($file)
-                    )
+                    sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
+                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, constpv($file) )
                 );
             }
             else {
+                my $stash = savestashpv( $op->stashpv );
                 init()->add(
-                    sprintf(
-                        "CopSTASHPVN_set(&cop_list[%d], %s, $name_len, $flags);",
-                        $ix, cstring($name)
-                    ),
-                    sprintf(
-                        "CopFILE_set(&cop_list[%d], %s);",
-                        $ix, cstring($file)
-                    )
+                    sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
+                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, cstring($file) )
                 );
             }
         }
         else {    # cv_undef e.g. in bproto.t and many more core tests with threads
-            my $stlen = "";
-            init()->add( sprintf( "CopSTASHPVN_set(&cop_list[$ix], %s, $name_len, $flags);", cstring($name) . $stlen ) );
-            init()->add( sprintf( "CopFILE_set(&cop_list[$ix], %s);",                        cstring($file) ) );
+            my $stash = savestashpv( $op->stashpv );
+            init()->add(
+                sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
+                sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) )
+            );
         }
     }
 
