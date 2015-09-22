@@ -12,6 +12,9 @@ The well-known L<perlguts>.pod focuses more on the internal
 representation of the variables, but not so on the structure, the
 sequence and the optimization of the basic operations, the ops.
 
+L<illguts>.pod, the "illustrated guts", explains the main data structures
+in an easier to understand way than perlguts.
+
 And we have L<perlhack>.pod, which shows e.g. ways to hack into
 the op tree structure within the debugger. It focuses on getting
 people to start patching and hacking on the CORE, not
@@ -121,7 +124,7 @@ all the closed execution loops of its subcomponents and links
 them into a new closed loop for the higher level node.  But it's
 still not the real execution order.
 
-I<Todo: Sample where this context flag is stored>
+I<Todo: Sample>
 
 Additional context-dependent optimizations are performed at this
 time. Since at this moment the compile tree contains back-references
@@ -140,8 +143,8 @@ blocks, not on tree nodes.
 
 So finally, when the full parse tree is generated, the "peephole
 optimizer" C<peep()> is running.  This pass is neither top-down
-or bottom-up, but in the execution order (with additional
-complications for conditionals).
+or bottom-up, but in the execution order with additional
+complications for conditionals.
 
 This examines each op in the tree and attempts to determine "local"
 optimizations by "thinking ahead" one or two ops and seeing if
@@ -153,6 +156,9 @@ strict> on bareword constants.  Note that since the last walk the
 early sibling pointers for recursive (bottom-up) meta-inspection
 are useless, the final exec order is guaranteed by the next and
 flags fields.
+
+If write an rpeep extension by your own, beware that the default mode
+of peep is to nullify ops.
 
 =head1 basic vs exec order
 
@@ -299,14 +305,15 @@ The so called "opcode".
 Pointer to the MADPROP struct. Only with -DMAD, and since
 5.10. See L</MAD> (Misc Attribute Decoration) below.
 
-=item op_targ		
+=item op_targ
 
-PADOFFSET to "unnamed" op targets/GVs/constants, wasting no
-SV. Has for some op's also a different meaning.
+PADOFFSET to lexicals vars or when threaded also to GVs. Mainly used
+as index into the curpad to access lexical vars. When the op is
+nullified the targ holds the previous type.
 
 =item op_type		
 
-The type of the operation.
+The type of the op. See F<opnames.h>
 
 Since 5.10 we have the next five fields added, which replace
 C<U16 op_seq>.
@@ -315,7 +322,8 @@ C<U16 op_seq>.
 
 "optimized"
 
-Whether or not the op has been optimised by the	peephole optimiser.
+Whether or not the op has been optimised, i.e nullified, by the
+peephole optimiser.
 
 See the comments in C<S_clear_yystack()> in F<perly.c> for more
 details on the following three flags. They are just for freeing
@@ -351,6 +359,16 @@ doesn't need to be free'd.
 =item op_spare	
 
 Three spare bits in this bitfield above. At least they survived 5.10.
+
+=item op_static
+
+This op has been allocated statically, usually with the compiler or
+within embedded applications. On destruction this op will not be
+freed.
+
+This bit came and went and came again in various perl versions.  It
+was defined until 5.10, and came again with 5.18, because then
+latefree was gone.
 
 
 Those last two fields have been in all perls:
