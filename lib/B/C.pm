@@ -398,7 +398,7 @@ our %all_bc_deps = map {$_=>1}
 
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %hektable, %gptable);
+my (%strtable, %stashtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
@@ -755,6 +755,21 @@ sub strlen_flags {
   return (cstring($s), $len, $flags);
 }
 
+sub savestash_flags {
+  my ($pv, $len, $flags) = @_;
+  return $stashtable{$pv} if defined $stashtable{$pv};
+  $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
+  my $sym = "hv$hv_index";
+  $decl->add("Static HV *hv$hv_index;");
+  $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pv, $len, $flags));
+  $hv_index++;
+  return $stashtable{$pv} = $sym;
+}
+
+sub savestashpv {
+  return savestash_flags(strlen_flags(shift));
+}
+
 sub savere {
   my $re = shift;
   my $flags = shift || 0;
@@ -1001,10 +1016,6 @@ sub gv_fetchpvn {
     my ($cname, $len, $extraflags) = strlen_flags($name);
     $flags ||= '0';
     $flags .= "|".$extraflags if $extraflags;
-
-    if ( $flags =~ qr{^0?$} ) { # use c length
-        return qq/gv_fetchpv($cname, 0, $type)/;
-    }
     return "gv_fetchpvn_flags($cname, $len, $flags, $type)";
   } else {
     my $cname = cstring($name);
@@ -2083,23 +2094,19 @@ sub B::COP::save {
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
-        $init->add(sprintf( "CopSTASHPV_set(&cop_list[%d], %s);",
-                            $ix, constpv($op->stashpv) ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);",
-                            $ix, constpv($file) ));
+        my ($pv, $len, $flags) = strlen_flags($op->stashpv);
+        my $stash = savestash_flags(constpv($op->stashpv), $len, $flags);
+        $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
       } else {
-        $init->add(sprintf( "CopSTASHPV_set(&cop_list[%d], %s);",
-                            $ix, cstring($op->stashpv) ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);",
-                            $ix, cstring($file) ));
+        my $stash = savestashpv($op->stashpv);
+        $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
       }
     } else { # cv_undef e.g. in bproto.t and many more core tests with threads
-      my $stlen = "";
-      if ($] >= 5.016 and $] <= 5.017) { # 5.16 special-case API
-        $stlen = ", ".length($op->stashpv);
-      }
-      $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", cstring($op->stashpv).$stlen ));
-      $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
+      my $stash = savestashpv($op->stashpv);
+      $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
+                 sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
     }
   }
 
@@ -5033,22 +5040,12 @@ sub B::HV::save {
     # a trashed op but we look at the trashed op_type and segfault.
     #my $adpmroot = ${$hv->PMROOT}; # XXX When was this fixed?
     my $adpmroot = 0;
-    $decl->add("Static HV *hv$hv_index;");
-
-    my ( $cname, $name_len, $name_extraflags ) = strlen_flags($name);
-    if ($name eq 'main') {
-      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $name_len, 0);\t/* get main:: stash */]);
-    } else {
-      my $flags = 'GV_ADD';
-      $flags .= '|'.$name_extraflags if $name_extraflags;
-      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $name_len, $flags);\t/* stash */]);
-    }
+    $sym = savestashpv($name);
+    savesym( $hv, $sym );
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
 			  $adpmroot ) );
     }
-    $sym = savesym( $hv, "hv$hv_index" );
-    $hv_index++;
 
     # issue 79, test 46: save stashes to check for packages.
     # and via B::STASHGV we only save stashes for stashes.

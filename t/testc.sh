@@ -1180,7 +1180,8 @@ fi
 
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 result[2050]='ok'
-
+tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
+result[2051]='ok'
 
 init
 
