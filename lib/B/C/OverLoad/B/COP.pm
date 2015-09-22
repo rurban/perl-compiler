@@ -7,7 +7,8 @@ use B::C::Config;
 use B::C::File qw/init copsect/;
 use B::C::Save qw(constpv);
 use B::C::Decimal qw/get_integer_value/;
-use B::C::Helpers::Symtable qw/savesym objsym read_utf8_string/;
+use B::C::Helpers::Symtable qw/savesym objsym/;
+use B::C::Helpers qw/read_utf8_string/;
 
 sub save {
     my ( $op, $level ) = @_;

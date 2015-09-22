@@ -10,6 +10,7 @@ use B::C::Packages qw/is_package_used/;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/init init2 decl svsect xpvcvsect symsect/;
+use B::C::Helpers qw/get_cv_string/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
@@ -702,16 +703,6 @@ sub save {
     }
 
     return $sym;
-}
-
-sub get_cv_string {
-    my ($name) = @_;
-    my $cname = cstring($name);
-
-    my $len = length( pack "a*", $name );
-    my $flags = utf8::is_utf8($name) ? "SVf_UTF8" : "0";
-
-    return qq/get_cvn_flags($cname, $len, $flags)/;
 }
 
 1;

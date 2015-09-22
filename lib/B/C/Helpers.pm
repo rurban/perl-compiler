@@ -2,7 +2,7 @@ package B::C::Helpers;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -12,6 +12,9 @@ our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string
 
 # B/C/Helpers/Sym
 
+use B qw/cstring/;
+
+# maybe move to B::C::Helpers::Str ?
 sub read_utf8_string {
     my ($name) = @_;
 
@@ -23,3 +26,19 @@ sub read_utf8_string {
 
     return ( $is_utf8, $utf_len );
 }
+
+sub get_cv_string {
+    my ( $name, $flags ) = @_;
+    my $cname = cstring($name);
+
+    my ( $is_utf8, $length ) = read_utf8_string($name);
+
+    $flags = '' unless defined $flags;
+    $flags .= "|SVf_UTF8" if $is_utf8;
+    $flags =~ s/^\|//;
+    $flags ||= '0';
+
+    return qq/get_cvn_flags($cname, $length, $flags)/;
+}
+
+1;

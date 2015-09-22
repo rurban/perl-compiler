@@ -9,7 +9,7 @@ use B::C::Config;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2/;
-use B::C::Helpers qw/mark_package/;
+use B::C::Helpers qw/mark_package get_cv_string read_utf8_string/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
@@ -658,33 +658,19 @@ sub save {
     return $sym;
 }
 
-sub get_cv_string {
-    my ( $name, $flags ) = @_;
-    my $cname = cstring($name);
-
-    my $foo     = $name;
-    my $utf_len = utf8::upgrade($foo);
-    my $str_len = length($name);
-
-    $flags .= "|SVf_UTF8" if ( $utf_len != $str_len );
-    $flags =~ s/^\|//;
-    $flags ||= '0';
-
-    return qq/get_cvn_flags($cname, $utf_len, $flags)/;
-}
-
+# only used here for now
 sub gv_fetchpv_string {
     my ( $name, $flags, $type ) = @_;
     my $cname = cstring($name);
 
-    my $foo     = $name;
-    my $utf_len = utf8::upgrade($foo);
-    my $str_len = length($name);
+    my ( $is_utf8, $length ) = read_utf8_string($name);
 
-    $flags .= "|SVf_UTF8" if ( $utf_len != $str_len );
+    $flags = '' unless defined $flags;
+    $flags .= "|SVf_UTF8" if ($is_utf8);
     $flags =~ s/^\|//;
     $flags ||= '0';
 
-    return qq/gv_fetchpvn_flags($cname, $utf_len, $flags, $type)/;
+    return qq/gv_fetchpvn_flags($cname, $length, $flags, $type)/;
 }
+
 1;
