@@ -1166,6 +1166,9 @@ package main;
 my $f = foo->new( x => 5, y => 6);
 print $f->x . "\n";'
 result[371]='5'
+tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
+result[2050]='ok'
+
 
 init
 
