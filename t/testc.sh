@@ -24,6 +24,7 @@ function help {
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
+PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 
 function init {
@@ -319,7 +320,7 @@ tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
 # issue27
 tests[527]='require LWP::UserAgent;print q(ok);'
 #issue 24
-tests[124]='dbmopen(%H,q(f),0644);print q(ok);'
+tests[124]='my %H;dbmopen(%H,q(f),0644);print q(ok);'
 tests[68]='package A;
 sub test {
   use Data::Dumper ();
@@ -738,7 +739,10 @@ tests[192]='use warnings;
  }}->($h{k});
 }'
 tests[193]='unlink q{not.a.file}; $! = 0; open($FOO, q{not.a.file}); print( $! ne 0 ? "ok" : q{error: $! should not be 0}."\n"); close $FOO;'
-tests[194]='$0 = q{ccdave}; #print "pid: $$\n";
+tests[194]='$0 = q{ccdave with long name}; #print "pid: $$\n";
+$s=`ps w | grep "$$" | grep "[c]cdave"`;
+print ($s =~ /ccdave with long name/ ? q(ok) : $s);'
+tests[1941]='$0 = q{ccdave}; #print "pid: $$\n";
 $s=`ps auxw | grep "$$" | grep "ccdave"|grep -v grep`;
 print q(ok) if $s =~ /ccdave/'
 # duplicate of 152
@@ -1056,11 +1060,13 @@ result[305]='www.google.com'
 tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
 result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
-tests[3053]='use constant JP => eval { require Encode; Encode::find_encoding("euc-jp"); } || 0; print JP->encode("www.google.com")'
-result[3053]='www.google.com'
+tests[365]='use constant JP => eval { require Encode; Encode::find_encoding("euc-jp"); } || 0; print JP->encode("www.google.com")'
+result[365]='www.google.com'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
 tests[309]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
+result[309]='Net::LibIDN: ok
+Net::SSLeay: ok'
 tests[310]='package foo;
 sub dada { my $line = <DATA> }
 print dada;
@@ -1131,6 +1137,38 @@ my $foo = sub {
 $foo->method;'
 tests[350]='package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int"); 
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
+tests[368]='use EV; print q(ok)'
+tests[369]='
+use EV;
+use Coro;
+use Coro::Timer;
+my @a;
+push @a, async {
+  while() {
+    warn $c++;
+    Coro::Timer::sleep 1;
+  };
+};
+push @a, async {
+  while() {
+    warn $d++;
+    Coro::Timer::sleep 0.5;
+  };
+};
+schedule;
+print q(ok)'
+tests[371]='package foo;use Moose;
+has "x" => (isa => "Int", is => "rw", required => 1);
+has "y" => (isa => "Int", is => "rw", required => 1);
+sub clear { my $self = shift; $self->x(0); $self->y(0); }
+__PACKAGE__->meta->make_immutable;
+package main;
+my $f = foo->new( x => 5, y => 6);
+print $f->x . "\n";'
+result[371]='5'
+tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
+result[2050]='ok'
+
 
 init
 
