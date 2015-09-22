@@ -33,9 +33,12 @@ sub init {
         flags   => 0,
         runtime => 0,
     );
+
+    binmode( STDERR, ":utf8" );    # Binmode of STDOUT and STDERR are not preserved for the perl compiler
+
     return;
 }
-init();    # initialize
+init();                            # initialize
 
 my %saved;
 
