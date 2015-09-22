@@ -41,16 +41,18 @@ mro/basic_01_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_02_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_03_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_04_c3_utf8.t       TESTS     TODO: Malformed UTF-8.
-mro/basic_05_c3_utf8.t       TESTS     some tests are now failing
+mro/basic_05_c3_utf8.t       PLAN      Plan was valid
+mro/basic_05_dfs_utf8.t      PLAN      Plan was valid
 mro/basic_utf8.t             PLAN      TODO: Attempt to access disallowed key 'open<' in a restricted hash
 mro/c3_with_overload.t       TESTS     TODO: overload not working right?
 mro/c3_with_overload_utf8.t  TESTS     TODO: overload not working right
 mro/complex_c3.t             SIG       TODO: segfault
 mro/complex_c3_utf8.t        SIG       TODO: segfault
-mro/dbic_c3_utf8.t           TESTS     TODO: Wide character in print at t/test.pl line 38.
+mro/dbic_c3_utf8.t           SIG       Exit signal is 6 SIGABRT
+mro/dbic_dfs_utf8.t          SIG       Exit signal is 6 SIGABRT
 mro/isarev.t                 SIG       Exit signal is 6 SIGABRT
 mro/isarev_utf8.t            SIG       Exit signal is 6 SIGABRT
-mro/method_caching_utf8.t    PLAN      Plan was valid
+mro/method_caching_utf8.t    SIG       Exit signal is 6 SIGABRT
 mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
 mro/next_edgecases_utf8.t    PLAN      Plan was valid
 mro/next_goto.t              SIG       Exit signal is 11 SEGV
@@ -121,6 +123,7 @@ op/magic.t                   SIG       Exit signal is 11 SEGV
 op/method.t                  SIG       Exit signal is 11 SEGV
 op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fold)
 op/my.t                      SIG       Exit signal is 6 SIGABRT
+op/mydef.t                   TODO      No TODO tests passed
 op/ord.t                     BC        op/ord.c is generated (-O3,-fno-fold)
 op/overload_integer.t        PLAN      Plan was valid
 op/override.t                BC        op/override.c is generated (-O3,-fno-fold)
@@ -141,6 +144,7 @@ op/smartmatch.t              TESTS     Test results:
 op/sort.t                    TESTS     Test results:
 op/sprintf.t                 BC        op/sprintf.c is generated (-O3,-fno-fold)
 op/sprintf2.t                TESTS     Test results:
+op/stash.t                   TESTS     Test results:
 op/state.t                   PLAN      Plan was valid
 op/sub.t                     PLAN      Plan was valid
 op/sub_lval.t                TESTS     Test results:
