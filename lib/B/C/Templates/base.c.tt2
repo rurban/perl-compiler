@@ -12,12 +12,10 @@
 
 #define CopSTASHPVN_set(c,pv, len, flags)    CopSTASH_set((c), gv_stashpvn(pv,len,flags|GV_ADD))
 
-#define PERL_CORE
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-
-
+#define PERL_CORE /* Needed for some extensions perl core refeses to export (win32 only)*/
+#include "EXTERN.h" /* Embedded interface */
+#include "perl.h"   /* API interface */
+#include "XSUB.h"   /* XS interface */
 
 /* Workaround for mapstart: the only op which needs a different ppaddr */
 #undef Perl_pp_mapstart
@@ -25,6 +23,7 @@
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
 
+/* TODO: Why was this removed from perl core? */
 /* No longer available when C<PERL_CORE> is defined. */
 #ifndef Nullsv
 #  define Null(type) ((type)NULL)
@@ -55,6 +54,7 @@ void** dlindependent_comalloc(size_t, size_t*, void**);
 int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
+/* TODO: Not provided in perl core? */
 #ifndef dVAR
 # ifdef PERL_GLOBAL_STRUCT
 #  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
