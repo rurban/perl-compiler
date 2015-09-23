@@ -208,6 +208,34 @@ precomp(mg)
 
 #endif
 
+MODULE = B	PACKAGE = B::PMOP
+
+#if defined(RX_UTF8) && PERL_VERSION < 20
+
+SV*
+precomp(o)
+          B::OP o
+PPCODE:
+  {
+    if (SvROK(ST(0))) {
+      IV tmp = SvIV((SV*)SvRV(ST(0)));
+      o = INT2PTR(B__OP,tmp);
+    }
+    else
+      croak("precomp(o) argument is not a reference");
+    if (o) {
+      REGEXP *rx = PM_GETRE(cPMOPo);
+      if (!rx)
+        XSRETURN_UNDEF;
+      ST(0) = sv_2mortal(newSVpvn_flags(RX_PRECOMP(rx), RX_PRELEN(rx), RX_UTF8(rx) ? SVf_UTF8 : 0));
+      XSRETURN(1);
+    } else {
+      XSRETURN_UNDEF;
+    }
+  }
+
+#endif
+
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
 
 #if PERL_VERSION > 10
