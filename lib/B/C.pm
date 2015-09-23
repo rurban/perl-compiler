@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52';
+our $VERSION = '1.52_01';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -686,6 +686,20 @@ sub delsym {
   my ( $obj ) = @_;
   my $sym = sprintf( "s\\_%x", $$obj );
   delete $symtable{$sym};
+}
+
+# returns cstring, len, utf8 flags of a string
+sub strlen_flags {
+  my $s = shift;
+  my ($len, $flags) = (0,"0");
+  if (!$PERL56 and utf8::is_utf8($s)) {
+    my $us = $s;
+    $flags = 'SVf_UTF8';
+    $len = utf8::upgrade($us);
+  } else {
+    $len = length $s;
+  }
+  return (cstring($s), $len, $flags);
 }
 
 sub savere {
@@ -1998,34 +2012,22 @@ sub B::PMOP::save {
   my $pm = sprintf( "pmop_list[%d]", $pmopsect->index );
   $init->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  my $re;
-  if ($] >= 5.010 and $] < 5.011 and $ITHREADS) { # XXX lots of module fails with 5.10.1d
-    if (ref($op) eq 'B::PMOP') {
-      eval { $re = $op->precomp; } #out of memory: Module::Pluggable, Carp::Clan - threaded
-    }
-  } else {
-    $re = $op->precomp;
-  }
+  #my $re;
+  #if ($] >= 5.010 and $] < 5.011 and $ITHREADS) { # XXX lots of module fails with 5.10.1d
+  #  if (ref($op) eq 'B::PMOP') {
+  #    eval { $re = $op->precomp; } #out of memory: Module::Pluggable, Carp::Clan - threaded
+  #  }
+  #} else {
+  my $re = $op->precomp;
+  #}
   if ( defined($re) ) {
     $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
-      my $qre = cstring($re);
-      my $relen = length( pack "a*", $re );
-      # precomp does not set the utf8 flag (#333, #338)
-      my $isutf8 = 0; # ($] > 5.008 and utf8::is_utf8($re)) ? SVf_UTF8 : 0;
-      for my $c (split//, $re) {
-        if (ord($c) > 127) { $isutf8 = 1; next }
-      }
-      if (!$PERL56 and $isutf8) {
-        if (utf8::is_utf8($re)) {
-          my $pv = $re;
-          utf8::encode($pv);
-          $relen = length $pv;
-        }
-      }
+      # precomp did not set the utf8 flag (#333, #338), fixed with 1.52_01
+      my ($qre, $relen, $utf8) = strlen_flags($re);
       my $pmflags = $op->pmflags;
-      warn "pregcomp $pm $qre:$relen".($isutf8?" SVf_UTF8":"").sprintf(" 0x%x\n",$pmflags)
+      warn "pregcomp $pm $qre:$relen:$utf8".sprintf(" 0x%x\n",$pmflags)
         if $debug{pv} or $debug{gv};
       # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
       if ($] >= 5.013009 and $pmflags & 4) {
@@ -2045,16 +2047,15 @@ sub B::PMOP::save {
       }
       if ($] > 5.008008) { # can do utf8 qr
         $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
-          "PM_SETRE(&$pm,",
-          "  CALLREGCOMP(newSVpvn_flags($qre, $relen, "
-          .sprintf("SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags),
+          sprintf("PM_SETRE(&$pm,".
+                  "  CALLREGCOMP(newSVpvn_flags($qre, $relen, SVs_TEMP|$utf8), 0x%x));", $pmflags),
           sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
       } else {
         $init->add
           ("PM_SETRE(&$pm,",
            "  CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
            sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
-        $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $isutf8;
+        $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $utf8;
       }
       if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL off
         $init->add("  PL_hints = hints_sav;",
