@@ -98,21 +98,8 @@ sub save {
         my $qre = cstring($re);
         my $relen = length( pack "a*", $re );
 
-        # FIXME: this looks like a good helper...
-        #	we can also cache the status...
-        # precomp does not set the utf8 flag (#333, #338)
-        my $isutf8 = 0;    # ($] > 5.008 and utf8::is_utf8($re)) ? SVf_UTF8 : 0;
-        for my $c ( split //, $re ) {
-            if ( ord($c) > 127 ) { $isutf8 = 1; next }
-        }
+        my $isutf8 = utf8::is_utf8($re);
 
-        if ($isutf8) {
-            if ( utf8::is_utf8($re) ) {
-                my $pv = $re;
-                utf8::encode($pv);
-                $relen = length $pv;
-            }
-        }
         my $pmflags = $op->pmflags;
         debug( gv => "pregcomp $pm $qre:$relen" . ( $isutf8 ? " SVf_UTF8" : "" ) . sprintf( " 0x%x\n", $pmflags ) );
 
