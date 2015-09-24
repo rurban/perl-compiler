@@ -244,7 +244,7 @@ aux(o)
 CODE:
     UNOP_AUX_item *items = cUNOP_AUXo->op_aux;
     UV len = items[-1].uv;
-    RETVAL = newSVpvn_flags((char*)items, len * sizeof(UNOP_AUX_item), 0);
+    RETVAL = newSVpvn_flags((char*)&items[-1], (1+len) * sizeof(UNOP_AUX_item), 0);
 OUTPUT:
     RETVAL
           

@@ -1413,13 +1413,16 @@ sub B::UNOP_AUX::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $unopauxsect->comment("$opsect_common, first, aux");
-  $op->first->save;
+   # XXX TODO: check the svs/gvs of aux_list, save them and patch them up.
+   # const and sv at compile-time, gvs even at init-time with a little compiled-in
+   # write_aux(index, gv) helper function.
   my $aux = $op->aux;
+  warn join(",",$op->aux_list($B::C::curcv)) if $verbose or $debug{hv}; # XXX FIXME
   $unopauxsect->add(
     sprintf(
-      "%s, s\\_%x, (UNOP_AUX_item*)%s",
+      "%s, s\\_%x, ((UNOP_AUX_item*)(%s))+1",
       $op->_save_common,
-      length($aux),
+      ${ $op->first },
       constpv($aux)
     )
   );
