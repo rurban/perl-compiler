@@ -25,6 +25,7 @@ fi
 
 export VERBOSE=$DEBUG
 export BC_DEVELOPING=$DEBUG
+export WARNINGS=$DEBUG
 
 echo -n 'Using perl: '
 which perl

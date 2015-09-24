@@ -121,7 +121,10 @@ foreach my $optimization (@optimizations) {
         }
 
         # gcc the c code.
-        $cmd = "$PERL script/cc_harness -q $c_file -o $bin_file 2>&1";
+        my $harness_opts = '';
+        $harness_opts = '-Wall' if $ENV{VERBOSE} && $ENV{WARNINGS};
+        $harness_opts .= $ENV{VERBOSE} ? '' : ' -q';
+        $cmd = "$PERL script/cc_harness $harness_opts $c_file -o $bin_file 2>&1";
         diag $cmd if $ENV{VERBOSE};
         my $compile_output = `$cmd`;
         note $compile_output if ($compile_output);

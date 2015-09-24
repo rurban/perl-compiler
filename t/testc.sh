@@ -51,7 +51,7 @@ CONT=
 #CCMD="$PERL script/cc_harness -g3"
 # rest. -DALLOW_PERL_OPTIONS for -Dtlv
 #CCMD="$PERL $Mblib script/cc_harness -g3 -DALLOW_PERL_OPTIONS"
-CCMD="$PERL $Mblib script/cc_harness"
+CCMD="$PERL $Mblib script/cc_harness -Wall"
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
