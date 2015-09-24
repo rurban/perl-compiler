@@ -8,14 +8,14 @@
 #    $description = Information that will display on the TODOs so the test will pass.
 #
 # Failure profiles $type may be set to:
-#    BC      => B::C Fails to generate c code 
+#    BC      => B::C Fails to generate c code
 #    GCC     => gcc cannot compile generated c code
 #    SIG     => Compiled binary exits with signal
 #    PLAN    => Crashes before completion
 #    TESTS   => Some tests are failing
 #    SEQ     => The tests run out of sequence
 #    TODO    => TODO test unexpectedly failing/succeeding
-#    COMPAT  => Test isn't useful for B::C. This test will be a skip_all. 
+#    COMPAT  => Test isn't useful for B::C. This test will be a skip_all.
 #    SKIP    => The test is so broken that we prefer to skip it for now. ( ~skip_all )
 #
 # NOTES:
@@ -30,55 +30,23 @@ CORE/extra/reused-variable.t PLAN  TODO: when not using my and later my + eval =
 CORE/io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
 CORE/io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 CORE/io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
-CORE/mro/basic_01_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_01_c3_utf8.t PLAN    TODO: Malformed UTF-8. Looks like B::C makes everything UTF8 when 1 thing is compiled that way?
-CORE/mro/basic_01_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_01_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_02_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_02_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_02_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_02_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_03_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_03_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_03_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_03_dfs_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_01_c3_utf8.t TESTS some tests are now failing
+CORE/mro/basic_02_c3_utf8.t TESTS some tests are now failing
+CORE/mro/basic_03_c3_utf8.t TESTS some tests are now failing
 CORE/mro/basic_04_c3_utf8.t TESTS TODO: Malformed UTF-8.
-CORE/mro/basic_04_dfs_utf8.t TESTS TODO: Malformed UTF-8.
-CORE/mro/basic_04_dfs_utf8.t TESTS TODO: Malformed UTF-8.
-CORE/mro/basic_05_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_05_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_05_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_05_dfs_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/basic_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/basic_05_c3_utf8.t  TESTS some tests are now failing
 CORE/mro/c3_with_overload.t TESTS TODO: overload not working right?
 CORE/mro/c3_with_overload_utf8.t TESTS TODO: overload not working right
-CORE/mro/complex_c3_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/complex_dfs_utf8.t TESTS TODO: Malformed UTF-8.
+CORE/mro/complex_c3_utf8.t TESTS some tests are now failing
 CORE/mro/dbic_c3_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/mro/dbic_dfs_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/mro/inconsistent_c3_utf8.t TESTS TODO: mro::get_linear_isa can't handle inheritance with utf8
-CORE/mro/isa_aliases_utf8.t TESTS TODO: @ISA can't handle UTF-8 packages
-CORE/mro/isa_c3_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/mro/isa_dfs_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
 CORE/mro/isarev.t SKIP TODO: This test fails in an inconsistent way. There's probably something even more fundamentally broken. also: https://code.google.com/p/perl-compiler/issues/detail?id=353
 CORE/mro/isarev_utf8.t TESTS TODO: mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
-CORE/mro/method_caching_utf8.t PLAN TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/mro/next_edgecases_utf8.t PLAN TODO: Wide character
-CORE/mro/next_goto_utf8.t PLAN TODO: Wide character
-CORE/mro/next_inanon_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/next_ineval_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/next_method_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/next_NEXT_utf8.t PLAN TODO: Malformed UTF-8.
-CORE/mro/next_skip_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/next_skip_utf8.t TESTS some tests are now failing
+CORE/mro/next_method_utf8.t TESTS some tests are now failing
 CORE/mro/overload_c3.t TESTS TODO: overload not working right?
-CORE/mro/overload_c3_utf8.t PLAN TODO: Malformed UTF-8.
+CORE/mro/overload_c3_utf8.t TESTS some tests are now failing
 CORE/mro/overload_dfs.t TESTS TODO: overload not working right?
-CORE/mro/package_aliases_utf8.t PLAN TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/mro/pkg_gen_utf8.t TESTS TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/mro/recursion_c3_utf8.t TESTS TODO: Infinite loop apparently succeeded??? at t/CORE/mro/recursion_c3_utf8.t line 95
-CORE/mro/recursion_dfs_utf8.t TESTS TODO: Infinite loop apparently succeeded??? at t/CORE/mro/recursion_c3_utf8.t line 95
 CORE/mro/vulcan_c3_utf8.t TESTS TODO: Malformed UTF-8.
-CORE/mro/vulcan_dfs_utf8.t TESTS TODO: Malformed UTF-8.
 CORE/op/64bitint.t        TESTS     all bits of a UV are not preserved
 CORE/op/array_base.t      TESTS     Unreported?
 CORE/op/attrhand.t        PLAN      no output and Issue 169
@@ -125,8 +93,8 @@ CORE/op/substr.t          TESTS     utf8 issue in subs
 CORE/op/svleak.t          COMPAT    This test uses XS::APItest, which we don't install during perl install?
 CORE/op/switch.t          PLAN      TODO: Overloaded obj in given (true): called at t/CORE/op/switch.t line 839 got "0" expected "1"
 CORE/op/tie_fetch_count.t TESTS     TODO: broke
+CORE/op/utf8cache.t       TESTS     not a segfault anymore
 CORE/op/universal.t       TESTS     Issue 299
-CORE/op/utf8cache.t       SIG       Segmentation Fault - utf8 issue
 CORE/op/write.t           SIG       Segmentation Fault + Issue 291
 CORE/op/yadayada.t        COMPAT    Unimplemented does not display the correct line number
 CORE/re/overload.t        TESTS     Issue 335
@@ -140,22 +108,17 @@ CORE/re/reg_eval_scope.t  TESTS     Issue 328
 CORE/re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
 CORE/re/subst_amp.t       TESTS     TODO: broke.
 CORE/uni/attrs.t          PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
-CORE/uni/bless.t          PLAN      TODO: Wide character in print
 CORE/uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
 CORE/uni/chr.t            SIG       TODO: no output.
 CORE/uni/fold.t           TESTS     TODO: Unicode tests n stuff
-CORE/uni/goto.t           PLAN      TODO: Goto undefined subroutine &main::????? at t/CORE/uni/goto.t line 17.
-CORE/uni/greek.t          SIG       TODO: Failed test 1 - \xC1 to /\xC1/ at t/CORE/uni/greek.t line 18
+CORE/uni/greek.t          TESTS     not a segfault anymore
 CORE/uni/gv.t             SIG       TODO: Argument "*main::PW<C3>M-^RMPF" isn't numeric in sprintf at t/CORE/uni/gv.t line 128.
 CORE/uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 CORE/uni/latin2.t         SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
 CORE/uni/method.t         PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
 CORE/uni/overload.t       TESTS     TODO: Failed test 1 - length of 'ASCII' at t/CORE/uni/overload.t line 44
-CORE/uni/package.t        PLAN      TODO: broke
 CORE/uni/parser.t         PLAN      TODO: broke
-CORE/uni/select.t         TESTS     TODO: got "main::D\x{c3}\x{99}P" .. expected "main::D\x{d9}P"
 CORE/uni/stash.t          TESTS     TODO: Wide character in print at t/CORE/test.pl line 38.
-CORE/uni/tie.t            PLAN      TODO: Can't locate object method "TIESCALAR" via package "T<EC><E8>::UTF8" at t/CORE/uni/tie.t line 53.
-CORE/uni/universal.t      PLAN      TODO: Malformed UTF-8 character (unexpected non-continuation byte 0x5c, immediately after start byte 0xc3).
-CORE/uni/variables.t      PLAN      TODO: Failed 48383/65880 subtests 
+CORE/uni/universal.t      TESTS     some new failures
+CORE/uni/variables.t      PLAN      TODO: Failed 48383/65880 subtests
 CORE/uni/write.t          TESTS     TODO: Failed tests:  1-6
