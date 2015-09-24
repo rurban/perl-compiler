@@ -2635,7 +2635,7 @@ sub B::PADNAME::save {
                               cstring($pn->PVX),
                               $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_LOW : 0,
                               $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_HIGH : 0,
-                              $pn->REFCNT,
+                              2, #$pn->REFCNT + 1, # XXX protect from free
                               $gen, $pn->LEN,
                               $flags & 0xff));
   my $s = "padname_list[".$padnamesect->index."]";
@@ -2643,6 +2643,7 @@ sub B::PADNAME::save {
   my $tn = $type->save($fullname);
   $init->add("$s.xpadn_ourstash = $sn;") unless $sn eq 'Nullsv';
   $init->add("$s.xpadn_typestash = $tn;") unless $tn eq 'Nullsv';
+  push @B::C::static_free, $s;
   #$padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
   savesym( $pn, "&".$s );
 }
@@ -4429,7 +4430,8 @@ sub B::GV::save {
               if ($anyptr and $xsubany > 1000) { # not a XsubAliases
                 $init2->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &%s;", $anyptr ));
               } # some heuristics TODO. long or ptr? TODO 32bit
-              elsif ($xsubany > 0x100000 and ($xsubany < 0xffffff00 or $xsubany > 0x100000000))
+              elsif ($xsubany > 0x100000
+                     and ($xsubany < 0xffffff00 or $xsubany > 0xffffffff))
               {
                 if ($package eq 'POSIX' and $gvname =~ /^is/) {
                   # need valid XSANY.any_dptr
@@ -4558,6 +4560,7 @@ sub B::AV::save {
     $padnlsect->add("$fill, NULL, $fill, $fill, $refcnt");
     $padnl_index = $padnlsect->index;
     $sym = savesym( $av, "&padnamelist_list[$padnl_index]" );
+    push @B::C::static_free, $sym;
   }
   elsif ($ispadlist and $] >= 5.017006 and $] < 5.021008) { # id added again with b4db586814
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_outid");
@@ -5925,8 +5928,13 @@ _EOT7
       } elsif ($s =~ /^&sv_list/) {
        print "    SvLEN($s) = 0;\n";
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
+     } elsif ($s =~ /^&padnamelist/) {
+       print "    Safefree(PadnamelistARRAY($s));\n";
+       print "    PadnamelistREFCNT($s) = 0;\n";
+     } elsif ($s =~ /^padname/) {
+       print "    /*$s = NULL*/;\n";
       # dead code ---
-      } elsif ($s =~ /^cop_list/) {
+     } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
         }
