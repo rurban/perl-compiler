@@ -14,16 +14,6 @@ unless (-e 'lib/B/C/Flags.pm') {
     chmod 0644, "lib/B/C/Flags.pm";
 }
 
-# generate lib/B/Asmdata.pm beforehand
-my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
-unlink $asmdata if -f $asmdata;
-# my $X = $^X =~ / / ? qq("$^X") : $^X;
-if ($core) {
-    system($^X,"-I../../lib/auto","-I../../lib","bytecode.pl");
-} else {
-    system($^X, "bytecode.pl");
-}
-
 my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
 my $have_independent_comalloc = check_independent_comalloc();
 if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
@@ -143,8 +133,6 @@ WriteMakefile(
     ) : ()),
     SIGN  => 0,
     clean => { FILES =>
-               "bytecode[0-9]* ".
-               "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
                "t/CORE/*/*.bin t/CORE/*/*.c Io_argv* t/CORE/*/*.subtest.*.t t/CORE/tmp* tmp*"
@@ -279,11 +267,8 @@ package MY;
 # Ignore certain files
 sub libscan {
     # Ignore temp testing files
-    return 0 if $_[1] =~ /^(\.git|\.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl)$/;
+    return 0 if $_[1] =~ /^(\.git|\.svn|jit.*|i386|.*\.orig|c?ccode.*|regen_lib\.pl)$/;
     return 0 if $_[1] =~ /\.svn|~/; # needed for msys perl5.6
-    # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
-    # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
-    return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
     # On windows the C compiler would work if DynaLoader.lib would be provided.
     # return 0 if $^O eq 'MSWin32' and !-d ".git" and $_[1] =~ /C\.pm|C\.xs|Stackobj\.pm/;
     return $_[1];
@@ -323,26 +308,13 @@ sub ccflags {
 sub depend {
     my $headerpath = main::headerpath();
     my @headers = map { File::Spec->catfile($headerpath, $_) } qw(op.h cop.h sv.h);
-    my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
-    my $byterun_c = File::Spec->catfile('ByteLoader', 'byterun.c');
-    my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
-    my $cc_runtime_h = File::Spec->catfile($headerpath, 'cc_runtime.h');
     my $result = "
-$asmdata : Makefile bytecode.pl @headers
-	\$(PERL) bytecode.pl
-
-$byterun_c : Makefile bytecode.pl @headers
-	\$(PERL) bytecode.pl
-
-$byterun_h : Makefile bytecode.pl @headers
-	\$(PERL) bytecode.pl
-
-TAGS : $asmdata
+TAGS :
 	etags --language=perl lib/B/*.pm
 ";
-    if ($] > 5.009) {
-        $result .= "\ntest :: subdirs-test\n\n";
-    }
+
+    $result .= "\ntest :: subdirs-test\n\n";
+
     if ($Config{make} eq 'mingw32-make') { # mingw32 make different to msys make
         $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
     }
@@ -361,7 +333,6 @@ testc :: pure_all
 testcc :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/cc.t
 testbc :: pure_all
-	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/bytecode.t
 testfast :: pure_all
 	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10 -f
 testcritical :: pure_all
@@ -375,23 +346,6 @@ testcore :: pure_all
 testcore-log :: pure_all
 	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED | tee log.test-core-`git describe --tags`
 )
-}
-
-sub install {
-    my $result = shift->SUPER::install(@_);
-    if ($] > 5.013007 and !-e File::Spec->catfile($headerpath, 'cc_runtime.h')) {
-        $result =~ s/install :: pure_install doc_install/install :: pure_install doc_install ccinc_install/;
-	$result .= '
-ccinc_install :: $(PERL_INC)/cc_runtime.h
-
-$(PERL_INC)/cc_runtime.h : cc_runtime.h
-	$(NOECHO) $(MOD_INSTALL) \
-	    	read $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist \
-		write $(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist \
-		cc_runtime.h $@
-';
-    }
-    $result
 }
 
 # Local Variables:
