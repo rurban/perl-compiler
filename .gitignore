@@ -57,3 +57,5 @@ x*.p
 cover_db/*
 nytprof.out
 nytprof/
+/tmp*
+/*.tmp
