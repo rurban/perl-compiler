@@ -103,14 +103,13 @@ CORE/re/pat_re_eval.t     PLAN      TODO: Possible bug in use of re 'eval' at ru
 CORE/re/pat_rt_report.t   PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
 CORE/re/pat.t             PLAN      TODO: Undefined subroutine &S::diag called at t/CORE/re/pat.t line 1047. and Issue 328
 CORE/re/qr_gc.t           TESTS     Issue 352
-CORE/re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/CORE/re/reg_eval_scope.t line 90
-CORE/re/reg_eval_scope.t  TESTS     Issue 328
+CORE/re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/CORE/re/reg_eval_scope.t line 90 and Issue 328
 CORE/re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
 CORE/re/subst_amp.t       TESTS     TODO: broke.
 CORE/uni/attrs.t          PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
 CORE/uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
 CORE/uni/chr.t            SIG       TODO: no output.
-CORE/uni/fold.t           TESTS     TODO: Unicode tests n stuff
+CORE/uni/fold.t           SKIP      TODO: Seems to be an issue with overload on hashes. This is causing a flapping test.
 CORE/uni/greek.t          TESTS     not a segfault anymore
 CORE/uni/gv.t             SIG       TODO: Argument "*main::PW<C3>M-^RMPF" isn't numeric in sprintf at t/CORE/uni/gv.t line 128.
 CORE/uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
