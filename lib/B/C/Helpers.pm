@@ -36,9 +36,13 @@ sub get_cv_string {
     $flags = '' unless defined $flags;
     $flags .= "|SVf_UTF8" if $is_utf8;
     $flags =~ s/^\|//;
-    $flags ||= '0';
 
-    return qq/get_cvn_flags($cname, $length, $flags)/;
+    if ( defined $flags && $flags ) {
+        return qq/get_cvn_flags($cname, $length, $flags)/;
+    }
+    else {
+        return qq/get_cv($cname, 0)/;
+    }
 }
 
 1;
