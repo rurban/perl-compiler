@@ -24,7 +24,7 @@ package B::C::Section;
 use strict;
 
 use B ();
-use base 'B::Section';
+use base 'B::Section'; # !!! get away with that. base is crazy and out of our control
 
 sub new {
   my $class = shift;
@@ -256,9 +256,9 @@ our @EXPORT_OK =
 # but 5.6.2 works fine
 use B
   qw(minus_c sv_undef walkoptree walkoptree_slow main_root main_start peekop
-  class cchar svref_2object compile_stats comppadlist hash
-  threadsv_names main_cv init_av end_av opnumber cstring
-  HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
+     class cchar svref_2object compile_stats comppadlist hash
+     threadsv_names main_cv init_av end_av opnumber cstring
+     HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
 BEGIN {
   if ($] >=  5.008) {
@@ -309,7 +309,6 @@ use B::Asmdata qw(@specialsv_name);
 
 use B::C::Flags;
 use FileHandle;
-#use Carp;
 
 my $hv_index      = 0;
 my $gv_index      = 0;
@@ -2041,15 +2040,16 @@ sub B::PMOP::save {
       }
       if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL on
         $pmflags |= PMf_EVAL;
+        $init->no_split;
         $init->add("{",
                    "  U32 hints_sav = PL_hints;",
                    "  PL_hints |= HINT_RE_EVAL;");
       }
       if ($] > 5.008008) { # can do utf8 qr
         $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
-          sprintf("PM_SETRE(&$pm,".
-                  "  CALLREGCOMP(newSVpvn_flags($qre, $relen, SVs_TEMP|$utf8), 0x%x));", $pmflags),
-          sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
+                   sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, SVs_TEMP|$utf8), 0x%x));",
+                           $pmflags),
+                   sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
       } else {
         $init->add
           ("PM_SETRE(&$pm,",
@@ -2060,6 +2060,7 @@ sub B::PMOP::save {
       if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL off
         $init->add("  PL_hints = hints_sav;",
                    "}");
+        $init->split();
       }
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
