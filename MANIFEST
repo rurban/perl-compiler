@@ -111,12 +111,17 @@ ramblings/magic
 ramblings/mk-slides.sh
 ramblings/order_of_evaluation
 ramblings/reg.alloc
+ramblings/remark.js
 ramblings/revert-B-load-BEGIN-514.patch
 ramblings/revert-B-load-BEGIN-516.patch
 ramblings/revert-B-load-BEGIN-5160.patch
 ramblings/revert-B-load-BEGIN-517-B141.patch
 ramblings/runtime.porting
 ramblings/yapc_bratislava08.pod
+ramblings/yapceu2015.html
+ramblings/yapceu2015/B-C.m0.png
+ramblings/yapceu2015/B-C.p0.png
+ramblings/yapceu2015/B-C.p1.png
 ramblings/yapceu_2010.pod
 regen_lib.pl
 script/assemble
