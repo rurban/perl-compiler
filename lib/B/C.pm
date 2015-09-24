@@ -306,14 +306,16 @@ BEGIN {
   } else {
     # 5.18
     #if (exists ${B::}{PADNAME::}) {
-      @B::PADNAME::ISA = qw(B::AV B::PVMG);
+      @B::PADNAME::ISA = qw(B::PV);
     #}
     #if (exists ${B::}{PADLIST::}) {
-      @B::PADLIST::ISA = qw(B::AV B::PVMG);
+      @B::PADLIST::ISA = qw(B::AV);
     #}
-    if ($] > 5.021005) { # 5.22
     #if (exists ${B::}{PADNAMELIST::}) {
-      @B::PADNAMELIST::ISA = qw(B::AV B::PVMG);
+    if ($] > 5.021005) { # 5.22
+      B->import('SVf_FAKE');
+      @B::PADNAME::ISA = ();
+      @B::PADNAMELIST::ISA = qw(B::AV);
     }
   }
 
@@ -332,6 +334,7 @@ my $hek_index     = 0;
 my $anonsub_index = 0;
 my $initsub_index = 0;
 my $padlist_index = 0;
+my $padname_index = 0;
 my $padnl_index = 0;
 
 # exclude all not B::C:: prefixed subs
@@ -343,7 +346,7 @@ my %all_bc_subs = map {$_=>1}
      B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
      B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
      B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
-     B::PADLIST::save B::PADNAMELIST::save B::PADOP::save B::PMOP::save B::PV::save
+     B::PADLIST::save B::PADNAME::save B::PADNAMELIST::save B::PADOP::save B::PMOP::save B::PV::save
      B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save
      B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
@@ -353,7 +356,7 @@ my %all_bc_subs = map {$_=>1}
 # uses now @B::C::Flags::deps
 our %all_bc_deps = map {$_=>1}
   @B::C::Flags::deps ? @B::C::Flags::deps
-  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
+  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAME B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -442,6 +445,7 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+my $PERL522  = ( $] >= 5.021007 ); #PADNAMELIST
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
@@ -556,7 +560,7 @@ my (
   $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
   $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
   $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-  $padlistsect, $padnlsect, $init0, $init2
+  $padlistsect, $padnamesect, $padnlsect, $init0, $init2
 );
 my @op_sections = \(
   $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -1616,8 +1620,8 @@ sub padop_name {
     return () if $cv and ref($cv->PADLIST) eq 'B::SPECIAL';
     my @c = ($cv and ref($cv) eq 'B::CV' and ref($cv->PADLIST) ne 'B::NULL')
              ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
-    my @pad = $c[1]->ARRAY;
     my @types = $c[0]->ARRAY;
+    my @pad  = $c[1]->ARRAY;
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
     my $sv = $pad[$ix];
     my $t = $types[$ix];
@@ -2451,11 +2455,11 @@ sub B::PVNV::save {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
     $nvx = nvx($sv->NV);
   } else {
-    if ($PERL510 and $C99) {
+    if ($PERL510 and $C99 and !$PERL522) {
       $nvx = sprintf(".xpad_cop_seq.xlow = %s, .xpad_cop_seq.xhigh = %s",
                      ivx($sv->COP_SEQ_RANGE_LOW), ivx($sv->COP_SEQ_RANGE_HIGH),
 		    );
-    } else {
+    } elsif (!$PERL522) {
       $nvx = nvx($sv->NVX);
     }
   }
@@ -2610,6 +2614,37 @@ sub B::PV::save {
   my $s = "sv_list[".$svsect->index."]";
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   savesym( $sv, "&".$s );
+}
+
+sub B::PADNAME::save {
+  my ($pn, $fullname) = @_;
+  my $sym = objsym($pn);
+  if (defined $sym) {
+    if ($in_endav) {
+      warn "in_endav: static_free without $sym\n" if $debug{av};
+      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+    }
+    return $sym;
+  }
+  my $flags = $pn->FLAGS; # U8 + FAKE
+  my $gen = 0;
+  my $stash = $pn->OURSTASH;
+  my $type = $pn->TYPE;
+  $padnamesect->comment( " pv, ourstash, type, low, high, refcnt, gen, len, flags");
+  $padnamesect->add( sprintf( "%s, NULL, {NULL}, %uU, %uU, %uU, %uU, %uU, 0x%x",
+                              cstring($pn->PVX),
+                              $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_LOW : 0,
+                              $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_HIGH : 0,
+                              $pn->REFCNT,
+                              $gen, $pn->LEN,
+                              $flags & 0xff));
+  my $s = "padname_list[".$padnamesect->index."]";
+  my $sn = $stash->save($fullname);
+  my $tn = $type->save($fullname);
+  $init->add("$s.xpadn_ourstash = $sn;") unless $sn eq 'Nullsv';
+  $init->add("$s.xpadn_typestash = $tn;") unless $tn eq 'Nullsv';
+  #$padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
+  savesym( $pn, "&".$s );
 }
 
 sub lexwarnsym {
@@ -2932,7 +2967,7 @@ sub B::PVMG::save_magic {
       # 361 do not force dynaloading IO via IO::Handle upon us
       # core already initialized this stash for us
       unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
-        $pkg->save($fullname) ;
+        $pkg->save($fullname);
 
         no strict 'refs';
         warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
@@ -3632,7 +3667,7 @@ sub B::CV::save {
       $ppname = "pp_anonsub_$anonsub_index";
       $anonsub_index++;
     }
-    $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
+    $startfield = saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY ); # XXX padlist is ignored
     #warn sprintf( "done saving op tree for CV 0x%x, flags (%s), name %s, root=0x%x => start=%s\n",
     #  $$cv, $debug{flags}?$cv->flagspv:sprintf("0x%x",$cv->FLAGS), $ppname, $$root, $startfield )
     #  if $debug{cv};
@@ -3872,7 +3907,9 @@ sub B::CV::save {
     if ( $xcv_outside == ${ main_cv() } ) {
       $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
                   "SvREFCNT_inc(PL_main_cv);" );
-      if ($] >= 5.017005) {
+      if ($PERL522) {
+        $init->add( "CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
+      } elsif ($] >= 5.017005) {
         $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
       }
     } else {
@@ -4501,35 +4538,38 @@ sub B::AV::save {
 
   $fullname = '' unless $fullname;
   my ($fill, $avreal, $max);
-  # cornercase: tied array without FETCHSIZE
-  eval { $fill = $av->FILL; };
-  $fill = -1 if $@;    # catch error in tie magic
   my $ispadlist = ref($av) eq 'B::PADLIST';
   my $ispadnamelist = ref($av) eq 'B::PADNAMELIST';
+  if ($ispadnamelist or $ispadlist) {
+    $fill = $av->MAX;
+  } else {
+    # cornercase: tied array without FETCHSIZE
+    eval { $fill = $av->FILL; };
+    $fill = -1 if $@;    # catch error in tie magic
+  }
   $max = $fill;
   my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
   $svpcast = "(PADNAME*)" if $ispadnamelist;
 
   if ($] >= 5.021007 and $ispadnamelist) {
     $padnlsect->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
-    my @array = $av->ARRAY;
-    $fill = scalar @array;
-    $padnlsect->add("$fill, NULL, $fill, 0, 0");
+    # TODO: max_named walk all names and look for non-empty names
+    my $refcnt = $av->REFCNT;
+    $padnlsect->add("$fill, NULL, $fill, $fill, $refcnt");
     $padnl_index = $padnlsect->index;
-    $sym = savesym( $av, "&padnl_list[$padnl_index]" );
+    $sym = savesym( $av, "&padnamelist_list[$padnl_index]" );
   }
   elsif ($ispadlist and $] >= 5.017006 and $] < 5.021008) { # id added again with b4db586814
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_outid");
-    my @array = $av->ARRAY;
-    $fill = scalar @array;
-    $padlistsect->add("$fill, NULL, 0"); # Perl_pad_new(0)
+    my $outid = $av->REFCNT;
+    $padlistsect->add("$fill, NULL, $outid"); # Perl_pad_new(0)
     $padlist_index = $padlistsect->index;
     $sym = savesym( $av, "&padlist_list[$padlist_index]" );
   }
-  elsif ($] >= 5.017004 and $ispadlist) {
+  elsif ($ispadlist and $] >= 5.017004) {
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
-    my @array = $av->ARRAY;
-    $fill = scalar @array;
+    # my @array = $av->ARRAY;
+    # $fill = scalar @array;
     $padlistsect->add("$fill, NULL, 0, 0"); # Perl_pad_new(0)
     # $init->add("pad_list[$padlist_index] = Perl_pad_new(0);");
     $padlist_index = $padlistsect->index;
@@ -4568,7 +4608,7 @@ sub B::AV::save {
   }
 
   my ($magic, $av_index) = ('');
-  if (!$ispadlist) {
+  if (!$ispadlist and !$ispadnamelist) {
     $svsect->debug($fullname, $av->flagspv) if $debug{flags};
     my $sv_ix = $svsect->index;
     $av_index = $xpvavsect->index;
@@ -4625,7 +4665,7 @@ sub B::AV::save {
       @values = map { $_->save($fullname."[".$count++."]") || () } @array;
     }
     $count = 0;
-    for (my $i=0;$i<=$#array;$i++) {
+    for (my $i=0; $i <= $#array; $i++) {
       if ( $use_svpop_speedup
            && defined $values[$i]
            && defined $values[$i+1]
@@ -4662,7 +4702,19 @@ sub B::AV::save {
     }
     $init->no_split;
 
-    if (ref $av eq 'B::PADLIST') {
+    if ($ispadnamelist) {
+      my $fill1 = $fill+1;
+      $init->add("{", "\tPADNAME **svp;");
+      $init->add("\tregister int gcount;") if $count;
+      $init->add(
+                 "\tPADNAMELIST *padnl = $sym;",
+                 sprintf("\tNewxz(svp, %d, PADNAME *);", $fill+1),
+                 "\tPadnamelistARRAY(padnl) = svp;",
+                );
+      $init->add( substr( $acc, 0, -2 ) );
+      $init->add("}");
+    }
+    elsif ($ispadlist) {
       my $fill1 = $fill+1;
       $init->add("{", "\tPAD **svp;");
       $init->add("\tregister int gcount;") if $count;
@@ -4762,12 +4814,12 @@ sub B::AV::save {
   return $sym;
 }
 
-sub B::PADLIST::save {
-  return B::AV::save(@_);
-}
-sub B::PADNAMELIST::save {
-  return B::AV::save(@_);
-}
+#sub B::PADLIST::save {
+#  return B::AV::save(@_);
+#}
+#sub B::PADNAMELIST::save {
+#  return B::AV::save(@_);
+#}
 # B::Flags workaround
 sub B::PADNAMELIST::flagspv {
   return "";
@@ -5202,12 +5254,13 @@ sub output_all {
   my $section;
   return if $check;
 
-  my @sections = (
-    $copsect,    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
-    $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
-    $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect, $padnlsect,
-    $xpvivsect,  $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-    $xrvsect,    $xpvbmsect,  $xpviosect, $svsect
+  my @sections =
+    (
+     $copsect,    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
+     $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
+     $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect, $padnamesect,
+     $padnlsect,  $xpvivsect,  $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+     $xrvsect,    $xpvbmsect,  $xpviosect, $svsect
   );
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
   $symsect->output( \*STDOUT, "#define %s\n" );
@@ -5272,6 +5325,16 @@ EOT
 #endif
 #ifndef GvGP_set
 #  define GvGP_set(gv,gp)   (GvGP(gv) = (gp))
+#endif
+EOT
+  }
+  if ($] >= 5.021005 and $] < 5.023) {
+    print <<'EOT';
+/* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1,
+   fixed with 5.22.1 and 5.23.0 */
+#if (PERL_VERSION == 22) || ( PERL_VERSION == 21 && PERL_SUBVERSION > 5)
+# undef PadlistNAMES
+# define PadlistNAMES(pl)       *((PADNAMELIST **)PadlistARRAY(pl))
 #endif
 EOT
   }
@@ -5942,7 +6005,11 @@ _EOT8
   printf "\tXPUSHp(\"DynaLoader\", %d);\n", length("DynaLoader");
   print "\tPUTBACK;\n";
   warn "bootstrapping DynaLoader added to xs_init\n" if $verbose;
-  print "\tboot_DynaLoader(aTHX_ NULL);\n";
+  if ($PERL522) {
+    print "\tboot_DynaLoader(aTHX_ get_cv(\"DynaLoader::bootstrap\", GV_ADD));\n";
+  } else {
+    print "\tboot_DynaLoader(aTHX_ NULL);\n";
+  }
   print "\tSPAGAIN;\n";
   print "#endif\n";
 
@@ -6143,7 +6210,7 @@ _EOT9
         print "\tPUTBACK;\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
-        if ($staticxs) {
+        if ($] >= 5.022 or $staticxs) {
 	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
           # TODO: utf8 stashname
 	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
@@ -7110,11 +7177,15 @@ sub save_context {
     $init->add(
       "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
       "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
-  } else {
+  } elsif ($] < 5.022) {
     $init->add(
       "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
       "PadnamelistMAXNAMED(PL_comppad_name) = AvFILL($curpad_nam);",
       "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
+  } else {
+    $init->add(
+      "PadlistNAMES(CvPADLIST(PL_main_cv)) = PL_comppad_name = $curpad_nam; /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)$curpad_sym; /* curpad */");
   }
   if ($] < 5.017) {
     my $amagic_generate = B::amagic_generation();
@@ -7362,6 +7433,7 @@ sub init_sections {
     xpvbm  => \$xpvbmsect,
     xpvio  => \$xpviosect,
     padlist => \$padlistsect,
+    padname => \$padnamesect,
     padnamelist => \$padnlsect,
   );
   my ( $name, $sectref );

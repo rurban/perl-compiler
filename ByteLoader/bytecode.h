@@ -803,6 +803,7 @@ static int bget_swab = 0;
 /* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1,
    fixed with 5.22.1 and 5.23.0 */
 #if (PERL_VERSION == 22) || ( PERL_VERSION == 21 && PERL_SUBVERSION > 5)
+# undef PadlistNAMES
 # define PadlistNAMES(pl)       *((PADNAMELIST **)PadlistARRAY(pl))
 #endif
 /* extra PADNAMELIST: v5.17.3-49-g36c300b */
