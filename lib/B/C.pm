@@ -2638,14 +2638,14 @@ sub B::PADNAME::save {
                               $pn->REFCNT + 1, # XXX protect from free
                               $gen, $pn->LEN,
                               $flags & 0xff));
-  my $s = "padname_list[".$padnamesect->index."]";
+  my $s = "&padname_list[".$padnamesect->index."]";
   my $sn = $stash->save($fullname);
   my $tn = $type->save($fullname);
-  $init->add("$s.xpadn_ourstash = $sn;") unless $sn eq 'Nullsv';
-  $init->add("$s.xpadn_typestash = $tn;") unless $tn eq 'Nullsv';
+  $init->add("SvOURSTASH_set($s, $sn);") unless $sn eq 'Nullsv';
+  $init->add("PadnameTYPE($s) = $tn;") unless $tn eq 'Nullsv';
   push @B::C::static_free, $s;
   #$padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
-  savesym( $pn, "&".$s );
+  savesym( $pn, $s );
 }
 
 sub lexwarnsym {
@@ -5928,11 +5928,11 @@ _EOT7
       } elsif ($s =~ /^&sv_list/) {
        print "    SvLEN($s) = 0;\n";
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
-     } elsif ($s =~ /^&padnamelist/) {
+     } elsif ($s =~ /^&padnamelist_list/) {
        print "    Safefree(PadnamelistARRAY($s));\n";
        print "    PadnamelistREFCNT($s) = 0;\n";
-     } elsif ($s =~ /^padname/) {
-       print "    $s = &PL_sv_undef;\n";
+     } elsif ($s =~ /^&padname_list/) {
+       print "    PadnameREFCNT($s) = 0;\n";
       # dead code ---
      } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
