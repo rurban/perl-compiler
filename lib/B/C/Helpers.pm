@@ -18,13 +18,20 @@ use B qw/cstring/;
 sub read_utf8_string {
     my ($name) = @_;
 
-    my $copy    = $name;
-    my $utf_len = utf8::upgrade($copy);
-    my $str_len = length($name);
+    my $len;
 
-    my $is_utf8 = $utf_len != $str_len ? 1 : 0;
+    #my $is_utf8 = $utf_len != $str_len ? 1 : 0;
+    my $is_utf8 = utf8::is_utf8($name);
+    if ($is_utf8) {
+        my $copy = $name;
+        $len = utf8::upgrade($copy);
+    }
+    else {
+        #$len = length( pack "a*", $name );
+        $len = length($name);
+    }
 
-    return ( $is_utf8, $utf_len );
+    return ( $is_utf8, $len );
 }
 
 sub get_cv_string {

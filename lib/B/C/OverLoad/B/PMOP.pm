@@ -5,6 +5,7 @@ use strict;
 use B qw/cstring svref_2object RXf_EVAL_SEEN PMf_EVAL/;
 use B::C::Config;
 use B::C::File qw/pmopsect init/;
+use B::C::Helpers qw/read_utf8_string/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Global to this space?
@@ -96,9 +97,7 @@ sub save {
 
         # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
         my $qre = cstring($re);
-        my $relen = length( pack "a*", $re );
-
-        my $isutf8 = utf8::is_utf8($re);
+        my ( $isutf8, $relen ) = read_utf8_string($re);
 
         my $pmflags = $op->pmflags;
         debug( gv => "pregcomp $pm $qre:$relen" . ( $isutf8 ? " SVf_UTF8" : "" ) . sprintf( " 0x%x\n", $pmflags ) );
