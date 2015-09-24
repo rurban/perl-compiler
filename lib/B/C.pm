@@ -1412,12 +1412,12 @@ sub B::UNOP_AUX::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  $unopauxsect->comment("$opsect_common, first, aux");
    # XXX TODO: check the svs/gvs of aux_list, save them and patch them up.
    # const and sv at compile-time, gvs even at init-time with a little compiled-in
    # write_aux(index, gv) helper function.
   my $aux = $op->aux;
   warn join(",",$op->aux_list($B::C::curcv)) if $verbose or $debug{hv}; # XXX FIXME
+  $unopauxsect->comment("$opsect_common, first, aux");
   $unopauxsect->add(
     sprintf(
       "%s, s\\_%x, ((UNOP_AUX_item*)(%s))+1",
@@ -1554,6 +1554,30 @@ sub B::LOOP::save {
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&loop_list[$ix]" );
   do_labels($op, qw(first last redoop nextop lastop));
+  $sym;
+}
+
+sub B::METHOP::save {
+  my ( $op, $level ) = @_;
+  my $sym = objsym($op);
+  return $sym if defined $sym;
+  $methopsect->comment("$opsect_common, first, rclass");
+  my $union = $op->name eq 'method' ? "{.op_first=(OP*)s\\_%x}" : "{.op_meth_sv=(SV*)s\\_%x}";
+  $union = "s\\_%x" unless $C99;
+  my $s = "%s, $union, ". ($ITHREADS ? "(PADOFFSET)%u" : "(SV*)%u");
+  $methopsect->add(sprintf($s, $op->_save_common,
+                             $op->name eq 'method' ? ${ $op->first } : ${ $op->meth_sv },
+                             $op->rclass));
+  # $methopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+  my $ix = $methopsect->index;
+  $init->add( sprintf( "methop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    unless $B::C::optimize_ppaddr;
+  $sym = savesym( $op, "(OP*)&methop_list[$ix]" );
+  if ($op->name eq 'method') {
+    do_labels($op, 'first', 'rclass');
+  } else {
+    do_labels($op, 'meth_sv', 'rclass');
+  }
   $sym;
 }
 
