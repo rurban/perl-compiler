@@ -668,9 +668,13 @@ sub gv_fetchpv_string {
     $flags = '' unless defined $flags;
     $flags .= "|SVf_UTF8" if ($is_utf8);
     $flags =~ s/^\|//;
-    $flags ||= '0';
 
-    return qq/gv_fetchpvn_flags($cname, $length, $flags, $type)/;
+    if ( $flags =~ qr{^0?$} ) {
+        return qq/gv_fetchpv($cname, 0, $type)/;
+    }
+    else {
+        return qq/gv_fetchpvn_flags($cname, $length, $flags, $type)/;
+    }
 }
 
 1;

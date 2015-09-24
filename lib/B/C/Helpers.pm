@@ -44,11 +44,11 @@ sub get_cv_string {
     $flags .= "|SVf_UTF8" if $is_utf8;
     $flags =~ s/^\|//;
 
-    if ( defined $flags && $flags ) {
-        return qq/get_cvn_flags($cname, $length, $flags)/;
+    if ( $flags =~ qr{^0?$} ) {
+        return qq/get_cv($cname, 0)/;
     }
     else {
-        return qq/get_cv($cname, 0)/;
+        return qq/get_cvn_flags($cname, $length, $flags)/;
     }
 }
 
