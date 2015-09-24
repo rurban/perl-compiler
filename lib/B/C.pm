@@ -2635,7 +2635,7 @@ sub B::PADNAME::save {
                               cstring($pn->PVX),
                               $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_LOW : 0,
                               $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_HIGH : 0,
-                              2, #$pn->REFCNT + 1, # XXX protect from free
+                              $pn->REFCNT + 1, # XXX protect from free
                               $gen, $pn->LEN,
                               $flags & 0xff));
   my $s = "padname_list[".$padnamesect->index."]";
@@ -4556,7 +4556,7 @@ sub B::AV::save {
   if ($] >= 5.021007 and $ispadnamelist) {
     $padnlsect->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
     # TODO: max_named walk all names and look for non-empty names
-    my $refcnt = $av->REFCNT;
+    my $refcnt = $av->REFCNT + 1; # XXX defer free to global destruction: 28
     $padnlsect->add("$fill, NULL, $fill, $fill, $refcnt");
     $padnl_index = $padnlsect->index;
     $sym = savesym( $av, "&padnamelist_list[$padnl_index]" );
@@ -5932,7 +5932,7 @@ _EOT7
        print "    Safefree(PadnamelistARRAY($s));\n";
        print "    PadnamelistREFCNT($s) = 0;\n";
      } elsif ($s =~ /^padname/) {
-       print "    /*$s = NULL*/;\n";
+       print "    $s = &PL_sv_undef;\n";
       # dead code ---
      } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
