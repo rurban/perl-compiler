@@ -786,13 +786,20 @@ static int bget_swab = 0;
 
 #if PERL_VERSION >= 17
 #define BSET_newpadlx(padl, arg)  STMT_START {      \
-        padl = (SV*)pad_new(arg);                   \
-        BSET_OBJ_STOREX(padl);                      \
-    } STMT_END
-#define BSET_newpadnlx(padl, arg)  STMT_START {		\
-        padl = (SV*)Perl_newPADNAMELIST(arg);           \
-        BSET_OBJ_STOREX(padl);                          \
-    } STMT_END
+    padl = (SV*)pad_new(arg);                       \
+    BSET_OBJ_STOREX(padl);                          \
+  } STMT_END
+#if PERL_VERSION >= 22
+#define BSET_newpadnlx(padnl, arg)  STMT_START {         \
+    padnl = (SV*)Perl_newPADNAMELIST(arg);               \
+    BSET_OBJ_STOREX(padnl);                              \
+  } STMT_END
+#else
+#define BSET_newpadnlx(padnl, arg)  STMT_START {         \
+    padnl = (SV*)pad_new(arg);                           \
+    BSET_OBJ_STOREX(padnl);                              \
+  } STMT_END
+#endif
 /* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1,
    fixed with 5.22.1 and 5.23.0 */
 #if (PERL_VERSION == 22) || ( PERL_VERSION == 21 && PERL_SUBVERSION > 5)
@@ -800,8 +807,12 @@ static int bget_swab = 0;
 #endif
 /* extra PADNAMELIST: v5.17.3-49-g36c300b */
 #if (PERL_VERSION >= 18) || ( PERL_VERSION == 17 && PERL_SUBVERSION > 3)
+#if PERL_VERSION >= 22
 #define BSET_padl_name(padl, pad)  \
     Perl_padnamelist_store(aTHX_ (PADNAMELIST*)padl, PadnamelistMAX((PADNAMELIST*)padl), (PADNAME*)pad);
+#else
+#define BSET_padl_name(padl, pad) BSET_padl_sym(padl, pad)
+#endif
 #define BSET_padl_sym(padl, pad)   \
     Perl_padlist_store(aTHX_ (PADLIST*)padl, PadlistMAX((PADLIST*)padl), (PAD*)pad);
 #else
@@ -820,14 +831,14 @@ static int bget_swab = 0;
 #ifndef OpSIBLING
 #  define OpSIBLING(o)        (o)->op_sibling
 #  define OpSIBLING_set(o, v) (o)->op_sibling = (v)
-#  define OpMAYBESIB_set(o, v) OpSIBLING_set(o, v)
+#  define OpMAYBESIB_set(o, s, p) OpSIBLING_set(o, s)
 #else
 #  ifndef OpSIBLING_set
 #    define OpSIBLING_set(o, v) OpMORESIB_set((o), (v))
 #  endif
 #endif
 /* sets the sibling or the parent */
-#define BSET_op_sibling(o, v)  OpMAYBESIB_set(o, v)
+#define BSET_op_sibling(o, v)  OpMAYBESIB_set(o, v, v)
 
 /* NOTE: The bytecode header only sanity-checks the bytecode. If a script cares about
  * what version of Perl it's being called under, it should do a 'use 5.006_001' or
