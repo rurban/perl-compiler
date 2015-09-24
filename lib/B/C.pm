@@ -60,6 +60,7 @@ sub typename {
   # -fcog hack to statically initialize PVs (SVPV for 5.10-5.11 only)
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
+  $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
   return $typename;
 }
 
@@ -555,18 +556,21 @@ sub XSLoader::load_file {
 
 # Code sections
 my (
-  $init,      $decl,      $symsect,    $binopsect, $condopsect,
-  $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
-  $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
-  $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
-  $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-  $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-  $padlistsect, $padnamesect, $padnlsect, $init0, $init2
-);
-my @op_sections = \(
-  $binopsect,  $condopsect, $copsect,  $padopsect,
-  $listopsect, $logopsect,  $loopsect, $opsect,
-  $pmopsect,   $pvopsect,   $svopsect, $unopsect
+    $init,      $decl,      $symsect,    $binopsect, $condopsect,
+    $copsect,   $padopsect, $listopsect, $logopsect, $loopsect,
+    $opsect,    $pmopsect,  $pvopsect,   $svopsect,  $unopsect,
+    $methopsect, $unopauxsect,
+    $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
+    $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
+    $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
+    $padlistsect, $padnamesect, $padnlsect, $init0, $init2
+   );
+my @op_sections =
+  \(
+    $binopsect,  $condopsect, $copsect,  $padopsect,
+    $listopsect, $logopsect,  $loopsect, $opsect,
+    $pmopsect,   $pvopsect,   $svopsect, $unopsect,
+    $methopsect, $unopauxsect
 );
 # push @op_sections, ($resect) if $PERL512;
 sub walk_and_save_optree;
@@ -1400,6 +1404,30 @@ sub B::UNOP::save {
       mark_package("NEXT", 1) if $1 ne "NEXT";
     }
   }
+  do_labels ($op, 'first');
+  $sym;
+}
+
+sub B::UNOP_AUX::save {
+  my ( $op, $level ) = @_;
+  my $sym = objsym($op);
+  return $sym if defined $sym;
+  $unopauxsect->comment("$opsect_common, first, aux");
+  $op->first->save;
+  my $aux = $op->aux;
+  $unopauxsect->add(
+    sprintf(
+      "%s, s\\_%x, (UNOP_AUX_item*)%s",
+      $op->_save_common,
+      length($aux),
+      constpv($aux)
+    )
+  );
+  $unopauxsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+  my $ix = $unopauxsect->index;
+  $init->add( sprintf( "unopaux_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    unless $B::C::optimize_ppaddr;
+  $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
   do_labels ($op, 'first');
   $sym;
 }
@@ -5251,6 +5279,7 @@ sub output_all {
     (
      $copsect,    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
      $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
+     $methopsect, $unopauxsect,
      $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect, $padnamesect,
      $padnlsect,  $xpvivsect,  $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
      $xrvsect,    $xpvbmsect,  $xpviosect, $svsect
@@ -7417,6 +7446,8 @@ sub init_sections {
     pvop   => \$pvopsect,
     svop   => \$svopsect,
     unop   => \$unopsect,
+    unopaux => \$unopauxsect,
+    methop => \$methopsect,
     sv     => \$svsect,
     xpv    => \$xpvsect,
     xpvav  => \$xpvavsect,
