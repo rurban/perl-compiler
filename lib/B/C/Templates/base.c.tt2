@@ -302,7 +302,6 @@ my_curse( pTHX_ SV* const sv ) {
 int fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
-    HV *hv;
 #ifdef DEBUG_LEAKING_SCALARS_FORK_DUMP
     pid_t child;
 #endif
@@ -560,11 +559,11 @@ dl_init(pTHX)
   /* EV readonly symbols in BOOT (#368) */
     {
         GV *sym;
-        
+
         sym = gv_fetchpv("EV::API",0,SVt_PV);
         if (sym && GvSVn(sym)) SvREADONLY_off(GvSVn(sym));
     }
-  [% END %]  
+  [% END %]
   [% FOREACH stashname IN optimizer.dynaloader.dl_modules %]
     [% NEXT IF ! xsub.$stashname.match('^Dynamic')  %]
     PUSHMARK(sp);
@@ -583,7 +582,7 @@ dl_init(pTHX)
     mXPUSHp("[% stashfile %]", [% stashfile.length %]);
         [% END %]
     PUTBACK;
-/* TODO #364: if a VERSION was provided need to add it here */    
+/* TODO #364: if a VERSION was provided need to add it here */
     call_pv("XSLoader::load_file", G_VOID|G_DISCARD);
       [% END %]
 #else

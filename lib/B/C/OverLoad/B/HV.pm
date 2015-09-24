@@ -113,7 +113,7 @@ sub save {
 
         # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
         init()->add(
-            "{\tHE **a; struct xpvhv_aux *aux;",
+            "{\tHE **a;",
             "#ifdef PERL_USE_LARGE_HV_ALLOC",
             sprintf(
                 "\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
