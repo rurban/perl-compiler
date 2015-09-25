@@ -4,13 +4,9 @@ use strict;
 
 our @ISA = qw(B::AV);
 
-# fixme: not sure it still needed: not triggered by the CORE test suite
-sub save {
-    return B::AV::save(@_);
-}
-
-sub flagspv {
-    return "";
-}
+# the ISA set earlier is forcing the B::AV::save function
+# sub save {
+#     return B::AV::save(@_);
+# }
 
 1;

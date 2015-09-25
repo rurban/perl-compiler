@@ -98,7 +98,7 @@ sub debug {
     # debug
     my ( $self, $op ) = @_;
 
-    my $dbg = ref $op ? $op->flagspv : undef;
+    my $dbg = ref $op && $op->can('flagspv') ? $op->flagspv : undef;
     $self->{'dbg'}->[ $self->index ] = $dbg if $dbg;
 
     return;
