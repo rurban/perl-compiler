@@ -82,7 +82,7 @@ sub save {
             #}
             return $sym;
         }
-        return $sym if skip_pkg($name) or $name eq 'main';
+        return $sym if B::C::skip_pkg($name) or $name eq 'main';
         init()->add("SvREFCNT_inc($sym);");
         debug( hv => "Saving stash keys for HV \"$name\" from \"$fullname\"" );
     }
