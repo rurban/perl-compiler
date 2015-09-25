@@ -794,6 +794,10 @@ static int bget_swab = 0;
     pn = (SV*)newPADNAMEpvn(pv, strlen(pv));            \
     BSET_OBJ_STOREX(pn);                                \
   } STMT_END
+#define BSET_padn_pv(pn, pv) STMT_START {               \
+    PadnamePV((PADNAME*)pn) = pv;                       \
+    PadnameLEN((PADNAME*)pn) = strlen(pv);              \
+  } STMT_END
 #define BSET_newpadnlx(padnl, arg)  STMT_START {        \
     padnl = (SV*)newPADNAMELIST(arg);                   \
     BSET_OBJ_STOREX(padnl);                             \

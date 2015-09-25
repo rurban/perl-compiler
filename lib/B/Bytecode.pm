@@ -803,6 +803,8 @@ sub B::PADLIST::bsave {
     asm "ldsv", $varix = $ix unless $ix == $varix;
   asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
   asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
+  asm "padl_id",    $padl->id if $PERL522;
+  asm "padl_outid", $padl->outid if $PERL522;
 }
 
 sub B::PADNAME::bsave {
@@ -810,17 +812,18 @@ sub B::PADNAME::bsave {
   my $stashix = $pn->OURSTASH->ix;
   my $typeix = $pn->TYPE->ix;
   nice "-PADNAME-",
-    asm "ldsv", $varix = $ix unless $ix == $varix;
+  #asm "ldsv", $varix = $ix unless $ix == $varix;
+    asm "padn_pv", pvstring $pn->PV;
   my $flags = $pn->FLAGS;
-  asm "padn_flags", $flags & 0xff; # turn of SVf_FAKE, U8 only
-  asm "padn_stash", $stashix;
-  asm "padn_type", $typeix;
+  asm "padn_flags", $flags & 0xff if $flags &0xff; # turn of SVf_FAKE, U8 only
+  asm "padn_stash", $stashix if $stashix;
+  asm "padn_type", $typeix if $typeix;
   if ($flags & SVf_FAKE) {
     asm "padn_seq_low", $pn->COP_SEQ_RANGE_LOW;
     asm "padn_seq_high", $pn->COP_SEQ_RANGE_HIGH;
   }
   asm "padn_refcnt", $pn->REFCNT;
-  asm "padn_len", $pn->LEN;
+  #asm "padn_len", $pn->LEN if $pn->LEN;
 }
 
 sub B::PADNAMELIST::bsave {
@@ -832,6 +835,8 @@ sub B::PADNAMELIST::bsave {
 
   nice "-PADNAMELIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
+  # XXX how large?
+  asm "padnl_max", $padnl->MAX;
   asm "padl_name", $ix; # if ref $array eq 'B::PAD';
 }
 
@@ -939,6 +944,33 @@ sub B::UNOP::bsave {
   $firstix = $first->ix if $name eq 'require'; #issue 97
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
+}
+
+sub B::UNOP_AUX::bsave {
+  my ( $op, $ix ) = @_;
+  my $name    = $op->name;
+  my $flags   = $op->flags;
+  my $first   = $op->first;
+  my $firstix = $first->ix;
+  my $aux     = B::C::aux($op);
+  $op->B::OP::bsave($ix);
+  asm "op_first", $firstix;
+  asm "op_aux",   $aux;
+}
+
+sub B::METHOP::bsave {
+  my ( $op, $ix ) = @_;
+  my $name    = $op->name;
+  my $firstix = $name eq 'method' ? $op->first->ix : $op->meth_sv->ix;
+  my $rclass  = $op->rclass->ix;
+  $op->B::OP::bsave($ix);
+  if ($op->name eq 'method') {
+    asm "op_first", $firstix;
+  } else {
+    asm "methop_methsv", $firstix;
+  }
+  # TODO: rclass with ITHREADS (targ)
+  asm "methop_rclass", $rclass if $rclass;
 }
 
 sub B::BINOP::bsave {
