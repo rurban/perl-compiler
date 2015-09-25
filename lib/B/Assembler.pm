@@ -114,7 +114,7 @@ sub B::Asmdata::PUT_strconst {
   my $arg = shift;
   my $str = uncstring($arg);
   if ( !defined($str) ) {
-    my @callstack = caller(1);
+    my @callstack = caller(3);
     error "bad string constant: '$arg', called from ".$callstack[3]
       ." line:".$callstack[2];
     $str = '';

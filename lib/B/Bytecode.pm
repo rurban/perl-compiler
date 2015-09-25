@@ -295,7 +295,8 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadlx", 0;
+    asm "newpadlx", 0,
+     $debug{Comment} ? sprintf("pad_new(flags=0x%x)", 0) : '';
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
@@ -308,7 +309,7 @@ sub B::PADNAME::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($pn) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadnx", $pn->PVX;
+    asm "newpadnx", pvstring $pn->PVX;
     $svtab{$$pn} = $varix = $ix = $tix++;
     $pn->bsave($ix);
     $ix;
@@ -321,7 +322,8 @@ sub B::PADNAMELIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padnl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadnlx", 1;
+    asm "newpadnlx", $padnl->MAX,
+     $debug{Comment} ? sprintf("size=%d, %s", $padnl->MAX, sv_flags($padnl)) : '';
     $svtab{$$padnl} = $varix = $ix = $tix++;
     $padnl->bsave($ix);
     $ix;
@@ -794,13 +796,17 @@ sub B::AV::bsave {
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
+  my $max = scalar @array;
   bless $array[0], 'B::PAD' if ref $array[0] eq 'B::AV';
   bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
   my $ix0 = $array[0]->ix; # comppad_name
   my $ix1 = $array[1]->ix; # comppad syms
-  #$_ = $_->ix for @array;
+  if ($max > 2) {
+    $_ = $_->ix for @array;
+  }
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
+  asm "padl_max",  $max if $max != 2;
   asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
   asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
   asm "padl_id",    $padl->id if $PERL522;
@@ -811,9 +817,9 @@ sub B::PADNAME::bsave {
   my ( $pn, $ix ) = @_;
   my $stashix = $pn->OURSTASH->ix;
   my $typeix = $pn->TYPE->ix;
-  nice "-PADNAME-",
+  nice "-PADNAME-";
   #asm "ldsv", $varix = $ix unless $ix == $varix;
-    asm "padn_pv", pvstring $pn->PV;
+  asm "padn_pv", pvstring $pn->PV if $pn->LEN;
   my $flags = $pn->FLAGS;
   asm "padn_flags", $flags & 0xff if $flags &0xff; # turn of SVf_FAKE, U8 only
   asm "padn_stash", $stashix if $stashix;
@@ -828,16 +834,12 @@ sub B::PADNAME::bsave {
 
 sub B::PADNAMELIST::bsave {
   my ( $padnl, $ix ) = @_;
-  my $array = $padnl->ARRAY;
-  #warn "B::PADNAMELIST $padnl $ix ",ref $array;
-  #bless $array, 'B::PAD' if ref $array eq 'B::PADNAME';
-  my $ix = $array->ix; # comppad_name
-
+  my @array = $padnl->ARRAY;
   nice "-PADNAMELIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  # XXX how large?
-  asm "padnl_max", $padnl->MAX;
-  asm "padl_name", $ix; # if ref $array eq 'B::PAD';
+  asm "padnl_max", $padnl->MAX if $padnl->MAX;
+  $_ = $_->ix for @array;
+  asm "padnl_push", $_ for @array;
 }
 
 sub B::GV::desired {

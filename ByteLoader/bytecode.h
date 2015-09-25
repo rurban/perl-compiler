@@ -798,9 +798,14 @@ static int bget_swab = 0;
     PadnamePV((PADNAME*)pn) = pv;                       \
     PadnameLEN((PADNAME*)pn) = strlen(pv);              \
   } STMT_END
-#define BSET_newpadnlx(padnl, arg)  STMT_START {        \
-    padnl = (SV*)newPADNAMELIST(arg);                   \
+#define BSET_newpadnlx(padnl, max)  STMT_START {        \
+    padnl = (SV*)newPADNAMELIST(max);                   \
     BSET_OBJ_STOREX(padnl);                             \
+  } STMT_END
+#define BSET_padnl_push(sv, pn)  STMT_START {           \
+    PADNAMELIST* padnl = (PADNAMELIST*)sv;              \
+    SSize_t ix = ++PadnamelistMAX((PADNAMELIST*)padnl); \
+    padnamelist_store(padnl, ix, (PADNAME*)pn);         \
   } STMT_END
 #else
 #define BSET_newpadnlx(padnl, flags)  STMT_START {      \
