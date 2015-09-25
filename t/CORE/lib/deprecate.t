@@ -2,7 +2,7 @@
 use strict;
 
 BEGIN {
-    require './test.pl';
+    require 'test.pl';
 }
 use File::Copy ();
 use File::Path ();

@@ -5,7 +5,7 @@ use warnings;
 
 BEGIN {
     unshift @INC, 'lib';
-    require './test.pl';
+    require 'test.pl';
     plan(tests => 14);
 }
 

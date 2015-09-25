@@ -3,8 +3,7 @@
 use strict;
 
 BEGIN {
-    chdir 't';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 plan(tests => 32);

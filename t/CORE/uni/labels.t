@@ -3,9 +3,9 @@
 # Tests for labels in UTF-8
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 }
 
 use utf8;

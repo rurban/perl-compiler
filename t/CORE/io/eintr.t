@@ -7,15 +7,14 @@
 # principally, don't segfault).
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    push @INC, "t/CORE/lib";
 }
 
 use warnings;
 use strict;
 use Config;
 
-require './test.pl';
+require 'test.pl';
 
 my $piped;
 eval {

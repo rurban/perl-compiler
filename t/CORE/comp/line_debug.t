@@ -1,6 +1,6 @@
 #!./perl
 
-chdir 't' if -d 't';
+chdir 't/CORE';
 
 sub ok {
     my($test,$ok) = @_;

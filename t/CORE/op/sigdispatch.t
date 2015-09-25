@@ -3,7 +3,7 @@
 # We assume that TestInit has been used.
 
 BEGIN {
-      require './test.pl';
+      require 't/CORE/test.pl';
 }
 
 use strict;

@@ -7,14 +7,7 @@ use warnings;
 no warnings 'redefine'; # we do a lot of this
 no warnings 'prototype'; # we do a lot of this
 
-BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = '../lib';
-    }
-}
-
-require './test.pl';
+require 't/CORE/test.pl';
 
 {
     package MC텟ᵀ::Bࡎᶓ;

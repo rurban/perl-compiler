@@ -2,12 +2,11 @@
 
 my $hires;
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('.', '../lib');
+    unshift @INC, 't/CORE/lib';
     $hires = eval 'use Time::HiResx "time"; 1';
 }
 
-require 'test.pl';
+require 't/CORE/test.pl';
 
 plan (15);
 

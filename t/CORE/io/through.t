@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 'test.pl';
     skip_all("VMS too picky about line endings for record-oriented pipes")
 	if $^O eq 'VMS';
 }

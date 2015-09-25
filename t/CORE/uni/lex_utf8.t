@@ -5,9 +5,7 @@
 BEGIN {
     $| = 1;
 
-    chdir 't';
-    @INC = '../lib';
-    require './test.pl';
+    require 't/CORE/test.pl';
     skip_all_if_miniperl("no dynamic loading on miniperl, no re");
     skip_all('EBCDIC') if $::IS_EBCDIC;
 }

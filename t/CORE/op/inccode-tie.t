@@ -6,7 +6,7 @@ use Tie::Array;
 my @orig_INC = @INC;
 tie @INC, 'Tie::StdArray';
 @INC = @orig_INC;
-for my $file ('./op/inccode.t', './t/op/inccode.t', ':op:inccode.t') {
+for my $file ('./t/CORE/op/inccode.t', './t/op/inccode.t', ':op:inccode.t') {
     if (-r $file) {
 	do $file; die $@ if $@;
 	exit;

@@ -2,17 +2,11 @@
 
 use strict;
 use warnings;
-BEGIN {
-    unless (-d 'blib') {
-        chdir 't' if -d 't';
-        @INC = '../lib';
-    }
-}
 
 use utf8;
 use open qw( :utf8 :std );
 
-require q(./test.pl); plan(tests => 1);
+require 't/CORE/test.pl'; plan(tests => 1);
 
 require mro;
 

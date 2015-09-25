@@ -4,8 +4,8 @@ use strict;
 # Check that require doesn't leave the handle it uses open, if it happens that
 # the handle it opens gets file descriptor 0. RT #37033.
 
-require './test.pl';
-@INC = 'lib';
+require 't/CORE/test.pl';
+unshift @INC, 't/CORE/lib';
 
 sub test_require {
     my ($state, $want) = @_;

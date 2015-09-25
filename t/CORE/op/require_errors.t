@@ -3,15 +3,15 @@ use strict;
 use warnings;
 
 BEGIN {
-    chdir 't';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 plan(tests => 17);
 
 my $nonfile = tempfile();
 
-@INC = qw(Perl Rules);
+{
+	local @INC = qw(Perl Rules);
 
 # The tests for ' ' and '.h' never did fail, but previously the error reporting
 # code would read memory before the start of the SV's buffer
@@ -56,6 +56,7 @@ for my $file ("$nonfile.ph", ".ph") {
 
 eval 'require <foom>';
 like $@, qr/^<> should be quotes at /, 'require <> error';
+} # Local @INC
 
 my $module   = tempfile();
 my $mod_file = "$module.pm";

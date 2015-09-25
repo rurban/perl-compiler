@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 'test.pl';
 }
 
 # Script to test auto flush on fork/exec/system/qx.  The idea is to

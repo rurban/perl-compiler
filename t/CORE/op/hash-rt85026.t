@@ -1,9 +1,8 @@
 #!/usr/bin/perl -w
 
 BEGIN {
-  chdir 't';
-  @INC = '../lib';
-  require './test.pl';
+  push @INC, "t/CORE/lib";
+  require 't/CORE/test.pl';
   skip_all_without_dynamic_extension("Devel::Peek");
 }
 

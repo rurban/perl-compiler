@@ -1,7 +1,6 @@
 #!./perl
 
 BEGIN {
-    chdir 't';
     @INC = '../lib';
 }
 

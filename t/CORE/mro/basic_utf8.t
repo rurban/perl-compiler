@@ -5,7 +5,7 @@ use open qw( :utf8 :std );
 use strict;
 use warnings;
 
-BEGIN { require q(./test.pl); } plan(tests => 53);
+BEGIN { require 't/CORE/test.pl'; } plan(tests => 53);
 
 require mro;
 

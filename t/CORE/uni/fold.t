@@ -5,11 +5,11 @@ use warnings;
 # This file also tests the fc() keyword.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    
+    push @INC, "t/CORE/lib";
     require Config; import Config;
-    require './test.pl';
-    require './loc_tools.pl';   # Contains find_utf8_ctype_locale()
+    require 't/CORE/test.pl';
+    require 't/CORE/loc_tools.pl';   # Contains find_utf8_ctype_locale()
 }
 
 use feature 'unicode_strings';

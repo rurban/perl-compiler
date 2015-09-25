@@ -58,8 +58,8 @@ BEGIN {
 	open TESTS, $file or die "Can't open $file";
     }
 
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    
+    push @INC, "t/CORE/lib";
 
 }
 
@@ -76,7 +76,7 @@ use vars qw($qr $skip_amp $qr_embed $qr_embed_thr $regex_sets); # set by our cal
 
 
 if (!defined $file) {
-    open TESTS, 're/re_tests' or die "Can't open re/re_tests: $!";
+    open TESTS, 't/CORE/re/re_tests' or die "Can't open re/re_tests: $!";
 }
 
 my @tests = <TESTS>;

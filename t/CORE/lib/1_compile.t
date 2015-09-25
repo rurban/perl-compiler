@@ -5,9 +5,8 @@
 # of their own.
 
 BEGIN {
-    chdir 't';
     @INC = '../lib';
-    require './test.pl';
+    require 'test.pl';
 }
 
 use warnings;

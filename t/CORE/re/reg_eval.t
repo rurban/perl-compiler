@@ -5,7 +5,7 @@
 # --rafl
 
 BEGIN {
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 fresh_perl_is(<<'CODE', 'ok', {});

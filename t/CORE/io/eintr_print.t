@@ -5,9 +5,8 @@
 # also fails under 5.8.x
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 'test.pl';
     skip_all_if_miniperl("No XS under miniperl");
 }
 

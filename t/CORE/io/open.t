@@ -1,9 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 $|  = 1;
@@ -265,21 +263,21 @@ SKIP: {
 	return $line;
     }
 
-    open($fh0[0], "TEST");
+    open($fh0[0], "t/CORE/test.pl");
     gimme($fh0[0]);
     like($@, qr/<\$fh0\[...\]> line 1\./, "autoviv fh package aelem");
 
-    open($fh1{k}, "TEST");
+    open($fh1{k}, "t/CORE/test.pl");
     gimme($fh1{k});
     like($@, qr/<\$fh1\{...}> line 1\./, "autoviv fh package helem");
 
     my @fh2;
-    open($fh2[0], "TEST");
+    open($fh2[0], "t/CORE/test.pl");
     gimme($fh2[0]);
     like($@, qr/<\$fh2\[...\]> line 1\./, "autoviv fh lexical aelem");
 
     my %fh3;
-    open($fh3{k}, "TEST");
+    open($fh3{k}, "t/CORE/test.pl");
     gimme($fh3{k});
     like($@, qr/<\$fh3\{...}> line 1\./, "autoviv fh lexical helem");
 
@@ -387,7 +385,7 @@ SKIP: {
     ok( $INC{'IO/File.pm'}, "IO::File now loaded" );
 }
 
-sub _117941 { package _117941; open my $a, "TEST" }
+sub _117941 { package _117941; open my $a, "t/CORE/test.pl" }
 delete $::{"_117941::"};
 _117941();
 pass("no crash when open autovivifies glob in freed package");

@@ -16,8 +16,7 @@
 # chapter 3. ISBN 0-201-03822-6 (v. 2)
 
 BEGIN {
-    chdir "t" if -d "t";
-    @INC = qw(. ../lib);
+    push @INC, qw{t/CORE/lib};
 }
 
 use strict;

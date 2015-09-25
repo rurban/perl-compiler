@@ -1,8 +1,11 @@
 #!perl -wT
 
-for $file ('re/subst.t', 't/re/subst.t', ':re:subst.t') {
+require './t/CORE/test.pl';
+
+for $file ( 't/CORE/re/subst.t', 're/subst.t', 't/re/subst.t', ':re:subst.t') {
   if (-r $file) {
-    do "./$file";
+    my ($tf) = $file =~ qr{(.*)};
+    require "./$tf";
     exit;
   }
 }

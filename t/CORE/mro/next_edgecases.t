@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-BEGIN { chdir 't'; require q(./test.pl); @INC = qw "../lib lib" }
+require 't/CORE/test.pl';
 
 plan(tests => 12);
 

@@ -1,8 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
+    push @INC, qw{t/CORE/lib};
     $SIG{'__WARN__'} = sub { warn $_[0] if $DOWARN };
     require "test.pl";
 }

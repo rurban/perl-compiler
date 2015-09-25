@@ -1,9 +1,5 @@
 #!./perl
 
-BEGIN {
-    chdir 't' if -d 't';
-}
-
 print "1..7\n";
 
 # check "" interpretation
@@ -48,5 +44,5 @@ else {
     die "/dev/null IS NOT A CHARACTER SPECIAL FILE!!!!\n" unless -c '/dev/null';
 }
 
-open(try, "harness") || (die "Can't open harness.");
+open( try, "t/CORE/TEST" ) || ( die "Can't open t/CORE/TEST." );
 if (<try> ne '') {print "ok 7\n";} else {print "not ok 7\n";}

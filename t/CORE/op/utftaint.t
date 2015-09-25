@@ -2,8 +2,8 @@
 # tests whether tainting works with UTF-8
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(../lib);
+	unshift @INC, 't/CORE';
+	require 'test.pl';
 }
 
 use strict;
@@ -17,7 +17,6 @@ sub tainted ($) {
     any_tainted @_;
 }
 
-require './test.pl';
 plan(tests => 3*10 + 3*8 + 2*16 + 3);
 
 my $arg = $ENV{PATH}; # a tainted value

@@ -1,9 +1,8 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';
+    unshift @INC, 't/CORE', "t/CORE/lib";
+    require 'test.pl';
 }
 
 print "1..35\n";
@@ -14,7 +13,7 @@ $Is_Dosish = ($^O eq 'MSWin32' or $^O eq 'NetWare' or $^O eq 'dos' or
               $^O eq 'os2' or $^O eq 'cygwin' or
               $^O =~ /^uwin/);
 
-open($TST, 'harness') || (die "Can't open harness");
+open($TST, 't/CORE/TEST') || (die "Can't open t/CORE/TEST");
 binmode $TST if $Is_Dosish;
 if (eof(TST)) { print "not ok 1\n"; } else { print "ok 1\n"; }
 
@@ -54,7 +53,7 @@ unless (eof) { print "not ok 13\n"; } else { print "ok 13\n"; }
 if ($. == 0) { print "not ok 14\n"; } else { print "ok 14\n"; }
 
 $curline = $.;
-open(OTHER, 'harness') || (die "Can't open harness: $!");
+open(OTHER, 't/CORE/TEST') || (die "Can't open t/CORE/TEST: $!");
 binmode OTHER if (($^O eq 'MSWin32') || ($^O eq 'NetWare'));
 
 {
@@ -172,7 +171,7 @@ else {
 
 close $tst;
 
-open FH, "test.pl";
+open FH, "t/CORE/TEST";
 $fh = *FH; # coercible glob
 $not = "not " x! (tell $fh == 0);
 print "${not}ok 29 - tell on coercible glob\n";

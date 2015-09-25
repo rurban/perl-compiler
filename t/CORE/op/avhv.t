@@ -4,8 +4,7 @@
 # they were properly removed in 5.9.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    push @INC, "t/CORE/lib";
 }
 
 require Tie::Array;
@@ -20,7 +19,7 @@ sub STORESIZE { $#{$_[0]} = $_[1]+1 }
 
 package main;
 
-require './test.pl';
+require 't/CORE/test.pl';
 plan(tests => 40);
 
 # Helper function to check the typical error message.

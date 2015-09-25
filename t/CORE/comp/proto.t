@@ -10,8 +10,7 @@
 #
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    push @INC, "t/CORE/lib";
 }
 
 # We need this, as in places we're testing the interaction of prototypes with

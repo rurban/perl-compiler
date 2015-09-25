@@ -1,6 +1,6 @@
 #!./perl
 use strict;
-require './test.pl';
+require 't/CORE/test.pl';
 
 $^I = $^O eq 'VMS' ? '_bak' : '.bak';
 

@@ -3,10 +3,9 @@
 # sanity tests for socket functions
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib' if -d '../lib' && -d '../ext';
+    push @INC, 't/CORE/lib';
 
-    require "./test.pl";
+    require 'test.pl';
     require Config; import Config;
 
     skip_all_if_miniperl();

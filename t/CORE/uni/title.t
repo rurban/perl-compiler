@@ -1,7 +1,7 @@
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(../lib uni .);
-    require "case.pl";
+    
+    push @INC, qw{t/CORE/lib t/CORE/uni};
+    require 't/CORE/uni/case.pl';
 }
 
 casetest(0, # No extra tests run here,

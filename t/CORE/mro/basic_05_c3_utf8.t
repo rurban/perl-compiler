@@ -5,7 +5,7 @@ use warnings;
 use utf8;
 use open qw( :utf8 :std );
 
-require q(./test.pl); plan(tests => 2);
+require 't/CORE/test.pl'; plan(tests => 2);
 
 =pod
 

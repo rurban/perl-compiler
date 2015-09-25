@@ -5,9 +5,8 @@
 # file, too.
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
-    require "test.pl";
+    push @INC, qw{t/CORE/lib};
+    require "t/CORE/test.pl";
     skip_all_without_dynamic_extension('B');
     $^P |= 0x100;
 }
@@ -42,7 +41,8 @@ my %desc = (
 );
 
 use File::Spec::Functions;
-my $keywords_file = catfile(updir,'regen','keywords.pl');
+chdir 't/CORE/op';
+my $keywords_file = catfile(updir,'lib','keywords.pl');
 open my $kh, $keywords_file
    or die "$0 cannot open $keywords_file: $!";
 while(<$kh>) {

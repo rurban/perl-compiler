@@ -1,8 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib', 'lib');
+    unshift @INC, 't/CORE/lib';
     $INC{"feature.pm"} = 1; # so we don't attempt to load feature.pm
 }
 

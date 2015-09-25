@@ -1,8 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib); # ../lib needed for test.deparse
+    push @INC, qw{t/CORE/lib}; # ../lib needed for test.deparse
     require "test.pl";
 }
 

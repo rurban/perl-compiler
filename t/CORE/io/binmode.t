@@ -1,9 +1,8 @@
 #!./perl -w
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
-    require './test.pl';
+    push @INC, qw{t/CORE/lib};
+    require 'test.pl';
     eval 'use Errno';
     die $@ if $@ and !is_miniperl();
 }

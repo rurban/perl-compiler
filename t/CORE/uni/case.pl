@@ -1,4 +1,4 @@
-require "test.pl";
+require "t/CORE/test.pl";
 use strict;
 use warnings;
 

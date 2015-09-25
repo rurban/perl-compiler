@@ -7,7 +7,7 @@
 use strict;
 use Config;
 
-require './test.pl';
+require 't/CORE/test.pl';
 
 plan( tests => 16 );
 

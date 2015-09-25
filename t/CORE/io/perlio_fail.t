@@ -1,12 +1,10 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require "../t/test.pl";
+    require "t/CORE/test.pl";
     skip_all_without_perlio();
-    plan (15);
 }
+plan (15);
 
 use warnings 'layer';
 my $warn;

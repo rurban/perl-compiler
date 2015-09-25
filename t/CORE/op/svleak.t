@@ -5,9 +5,8 @@
 # see if the count increases.
 
 BEGIN {
-    chdir 't';
-    @INC = '../lib';
-    require './test.pl';
+    push @INC, "t/CORE/lib";
+    require 't/CORE/test.pl';
 
     eval { require XS::APItest; XS::APItest->import('sv_count'); 1 }
 	or skip_all("XS::APItest not available");

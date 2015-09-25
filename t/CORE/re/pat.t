@@ -14,10 +14,10 @@ $| = 1;
 
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib','.');
+    
+    unshift @INC, 't/CORE/lib';
     require Config; import Config;
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 
 plan tests => 726;  # Update this when adding/deleting tests.

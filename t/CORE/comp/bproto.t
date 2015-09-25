@@ -3,11 +3,6 @@
 # check if builtins behave as prototyped
 #
 
-BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-}
-
 print "1..16\n";
 
 my $i = 1;

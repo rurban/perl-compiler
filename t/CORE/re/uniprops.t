@@ -2,7 +2,8 @@ use strict;
 use warnings;
 no warnings 'once';
 
-if ($^O eq 'dec_osf') {
+# disabled by cPanel
+if (1 || $^O eq 'dec_osf') {
    print "1..0 # $^O cannot handle this test\n";
    exit(0);
 }

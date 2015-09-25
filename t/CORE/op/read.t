@@ -1,14 +1,14 @@
 #!./perl
 
 BEGIN {
-    chdir 't';
-    @INC = '../lib';
-    require './test.pl';
+    require 't/CORE/test.pl';
 }
 use strict;
+use Config ();
 
 plan tests => 2564;
 
+chdir 't/CORE';
 open(FOO,'op/read.t') || open(FOO,'t/op/read.t') || open(FOO,':op:read.t') || die "Can't open op.read";
 seek(FOO,4,0) or die "Seek failed: $!";
 my $buf;
@@ -23,13 +23,7 @@ $got = read(FOO,$buf,4);
 is ($got, 0);
 is ($buf, "");
 
-# This is true if Config is not built, or if PerlIO is enabled
-# ie assume that PerlIO is present, unless we know for sure otherwise.
-my $has_perlio = !eval {
-    no warnings;
-    require Config;
-    !$Config::Config{useperlio}
-};
+my $has_perlio = 1;
 
 my $tmpfile = tempfile();
 

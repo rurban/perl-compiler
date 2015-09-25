@@ -5,8 +5,7 @@ use warnings;
 use utf8;
 use open qw( :utf8 :std );
 
-chdir 't' if -d 't';
-require q(./test.pl); plan(tests => 7);
+require 't/CORE/test.pl'; plan(tests => 7);
 
 require mro;
 

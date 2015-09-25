@@ -1,24 +1,15 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require './test.pl';	# for which_perl() etc
+    require 't/CORE/test.pl';	# for which_perl() etc
 }
 
 use Config;
-
+use File::Spec ();
 my ($Null, $Curdir);
-if(eval {require File::Spec; 1}) {
-    $Null = File::Spec->devnull;
-    $Curdir = File::Spec->curdir;
-} else {
-    die $@ unless is_miniperl();
-    $Curdir = '.';
-    diag("miniperl failed to load File::Spec, error is:\n$@");
-    diag("\ncontinuing, assuming '.' for current directory. Some tests will be skipped.");
-}
 
+$Null = File::Spec->devnull;
+$Curdir = File::Spec->curdir;
 
 plan tests => 113;
 
@@ -382,7 +373,7 @@ SKIP: {
 
 
 # These aren't strictly "stat" calls, but so what?
-my $statfile = './op/stat.t';
+my $statfile = 't/CORE/op/stat.t';
 ok(  -T $statfile,    '-T');
 ok(! -B $statfile,    '!-B');
 ok(-B $Perl,      '-B');
@@ -557,12 +548,12 @@ SKIP: {
     # And now for the ambiguous bareword case
     {
 	no warnings 'deprecated';
-	ok(open(DIR, "TEST"), 'Can open "TEST" dir')
+	ok(open(DIR, "t/CORE/TEST"), 'Can open "TEST" dir')
 	    || diag "Can't open 'TEST':  $!";
     }
     my $size = (stat(DIR))[7];
     ok(defined $size, "stat() on bareword works");
-    is($size, -s "TEST", "size returned by stat of bareword is for the file");
+    is($size, -s "t/CORE/TEST", "size returned by stat of bareword is for the file");
     ok(-f _, "ambiguous bareword uses file handle, not dir handle");
     ok(-f DIR);
     closedir DIR or die $!;
@@ -590,12 +581,12 @@ SKIP: {
 	# And now for the ambiguous bareword case
 	{
 	    no warnings 'deprecated';
-	    ok(open(DIR, "TEST"), 'Can open "TEST" dir')
+	    ok(open(DIR, "t/CORE/TEST"), 'Can open "TEST" dir')
 		|| diag "Can't open 'TEST':  $!";
 	}
 	my $size = (stat(*DIR{IO}))[7];
 	ok(defined $size, "stat() on *THINGY{IO} works");
-	is($size, -s "TEST",
+	is($size, -s "t/CORE/TEST",
 	   "size returned by stat of *THINGY{IO} is for the file");
 	ok(-f _, "ambiguous *THINGY{IO} uses file handle, not dir handle");
 	ok(-f *DIR{IO});
