@@ -18,7 +18,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-$VERSION   = '1.12';
+$VERSION   = '1.13';
 
 use strict;
 my %opnumber;
@@ -114,7 +114,7 @@ sub B::Asmdata::PUT_strconst {
   my $arg = shift;
   my $str = uncstring($arg);
   if ( !defined($str) ) {
-    my @callstack = caller(1);
+    my @callstack = caller(3);
     error "bad string constant: '$arg', called from ".$callstack[3]
       ." line:".$callstack[2];
     $str = '';
@@ -440,7 +440,7 @@ sub asm ($;$$) {
   if ( defined $_[1] ) {
     return
       if $_[1] eq "0"
-        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|newpadlx|av_pushx?|av_extend|xav_flags)$/;
+        and $_[0] !~ /^(?:ldsv|stsv|newsvx?|newpad.*|av_pushx?|av_extend|xav_flags)$/;
     return if $_[1] eq "1" and $]>5.007 and $_[0] =~ /^(?:sv_refcnt)$/;
   }
   my ( $insn, $arg, $comment ) = @_;
