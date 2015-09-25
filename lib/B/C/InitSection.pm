@@ -93,7 +93,7 @@ sub output {
     foreach my $i ( @{ $self->{'chunks'} } ) {
 
         # dTARG and dSP unused -nt
-        $return_string .= "static int ${init_name}_${name}(pTHX)\n{\n";
+        $return_string .= "static void ${init_name}_${name}(pTHX)\n{\n";
 
         foreach my $i ( @{ $self->{'initav'} } ) {
             $return_string .= "    $i\n";
@@ -103,7 +103,7 @@ sub output {
                    { exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
             $return_string .= "    $j\n";
         }
-        $return_string .= "    return 0;\n}\n";
+        $return_string .= "\n}\n";
 
         $self->SUPER::add("${init_name}_${name}(aTHX);");
         ++$name;
