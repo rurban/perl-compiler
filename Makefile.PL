@@ -107,7 +107,7 @@ WriteMakefile(
     EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
     PREREQ_PM  => {'Opcodes'  => '0',    # optional
 		   'IPC::Run' => '0',    # optional
-		   'B::Flags' => '0.04', # optional
+		   'B::Flags' => '0.14', # optional
 		   'Time::HiRes' => '0', # optional
 		   'ExtUtils::Embed' => '1.25' # mandatory (missing on redhat)
                    #'B'        => '1.0901' # required but in CORE
@@ -116,11 +116,11 @@ WriteMakefile(
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
-    (($] < 5.010) ? # was in core until 5.10, need to update it there
+    (($] < 5.010) ? # was in core until 5.9.5, need to update it there
      ('INSTALLDIRS' => 'perl') : ()),
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
-        "    B::Flags:  0.04\n".
+        "    B::Flags:  0.14\n".
         "    B::Debug:  1.16\n".
         "    Opcodes:   0.10\n".
         "    IPC::Run:  0\n",
@@ -128,7 +128,7 @@ WriteMakefile(
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
                        {
-                        'B::Flags' => '0.04',
+                        'B::Flags' => '0.14',
                         "B::Debug" => '1.16',
                         "Opcodes"  => '0.10',
                         "IPC::Run" => 0,
