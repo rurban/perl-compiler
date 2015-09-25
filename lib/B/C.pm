@@ -263,13 +263,15 @@ use B
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
-    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST CVf_ANON)); # both unsupported for 5.6
+    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST CVf_ANON
+                 SVf_FAKE)); # both unsupported for 5.6
   } else {
     eval q[
       sub SVp_NOK() {0}; # unused
       sub SVp_IOK() {0};
       sub CVf_ANON() {4};
       sub PMf_ONCE() {0xff}; # unused
+      sub SVf_FAKE() {0x00100000}; # unused
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
@@ -313,7 +315,6 @@ BEGIN {
     #}
     #if (exists ${B::}{PADNAMELIST::}) {
     if ($] > 5.021005) { # 5.22
-      B->import('SVf_FAKE');
       @B::PADNAME::ISA = ();
       @B::PADNAMELIST::ISA = qw(B::AV);
     }
