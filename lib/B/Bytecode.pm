@@ -295,22 +295,37 @@ sub B::PADLIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadlx", 0;
+    asm "newpadlx", 0,
+     $debug{Comment} ? sprintf("pad_new(flags=0x%x)", 0) : '';
     $svtab{$$padl} = $varix = $ix = $tix++;
     $padl->bsave($ix);
     $ix;
   }
 }
 
-sub B::PADNAMELIST::ix {
-  my $padl = shift;
-  my $ix = $svtab{$$padl};
+sub B::PADNAME::ix {
+  my $pn = shift;
+  my $ix = $svtab{$$pn};
   defined($ix) ? $ix : do {
-    nice '[' . class($padl) . " $tix]";
+    nice '[' . class($pn) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadnlx", 1;
-    $svtab{$$padl} = $varix = $ix = $tix++;
-    $padl->bsave($ix);
+    asm "newpadnx", pvstring $pn->PVX;
+    $svtab{$$pn} = $varix = $ix = $tix++;
+    $pn->bsave($ix);
+    $ix;
+  }
+}
+
+sub B::PADNAMELIST::ix {
+  my $padnl = shift;
+  my $ix = $svtab{$$padnl};
+  defined($ix) ? $ix : do {
+    nice '[' . class($padnl) . " $tix]";
+    B::Assembler::maxsvix($tix) if $debug{A};
+    asm "newpadnlx", $padnl->MAX,
+     $debug{Comment} ? sprintf("size=%d, %s", $padnl->MAX, sv_flags($padnl)) : '';
+    $svtab{$$padnl} = $varix = $ix = $tix++;
+    $padnl->bsave($ix);
     $ix;
   }
 }
@@ -781,27 +796,49 @@ sub B::AV::bsave {
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
+  my $max = scalar @array;
   bless $array[0], 'B::PAD' if ref $array[0] eq 'B::AV';
   bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
   my $ix0 = $array[0]->ix; # comppad_name
   my $ix1 = $array[1]->ix; # comppad syms
-
+  if ($max > 2) {
+    $_ = $_->ix for @array;
+  }
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
+  #asm "padl_max",  $max if $max != 2; # no API for that
   asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
   asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
+  asm "padl_id",    $padl->id if $PERL522;
+  asm "padl_outid", $padl->outid if $PERL522;
+}
+
+sub B::PADNAME::bsave {
+  my ( $pn, $ix ) = @_;
+  my $stashix = $pn->OURSTASH->ix;
+  my $typeix = $pn->TYPE->ix;
+  nice "-PADNAME-",
+    asm "ldsv", $varix = $ix unless $ix == $varix;
+  asm "padn_pv", pvstring $pn->PV if $pn->LEN;
+  my $flags = $pn->FLAGS;
+  asm "padn_flags", $flags & 0xff if $flags &0xff; # turn of SVf_FAKE, U8 only
+  asm "padn_stash", $stashix if $stashix;
+  asm "padn_type", $typeix if $typeix;
+  if ($flags & SVf_FAKE) {
+    asm "padn_seq_low", $pn->COP_SEQ_RANGE_LOW;
+    asm "padn_seq_high", $pn->COP_SEQ_RANGE_HIGH;
+  }
+  asm "padn_refcnt", $pn->REFCNT;
+  #asm "padn_len", $pn->LEN if $pn->LEN;
 }
 
 sub B::PADNAMELIST::bsave {
-  my ( $padl, $ix ) = @_;
-  my $array = $padl->ARRAY;
-  #warn "B::PADNAMELIST $padl $ix ",ref $array;
-  bless $array, 'B::PAD' if ref $array eq 'B::PADNAME';
-  my $ix = $array->ix; # comppad_name
-
+  my ( $padnl, $ix ) = @_;
+  my @array = $padnl->ARRAY;
+  $_ = $_->ix for @array;
   nice "-PADNAMELIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padl_name", $ix if ref $array eq 'B::PAD';
+  asm "padnl_push", $_ for @array;
 }
 
 sub B::GV::desired {
@@ -908,6 +945,32 @@ sub B::UNOP::bsave {
   $firstix = $first->ix if $name eq 'require'; #issue 97
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
+}
+
+sub B::UNOP_AUX::bsave {
+  my ( $op, $ix ) = @_;
+  my $name    = $op->name;
+  my $flags   = $op->flags;
+  my $first   = $op->first;
+  my $firstix = $first->ix;
+  my $aux     = B::C::aux($op);
+  $op->B::OP::bsave($ix);
+  asm "op_first", $firstix;
+  asm "op_aux",   $aux;
+}
+
+sub B::METHOP::bsave {
+  my ( $op, $ix ) = @_;
+  my $name    = $op->name;
+  my $firstix = $name eq 'method' ? $op->first->ix : $op->meth_sv->ix;
+  my $rclass  = $op->rclass->ix;
+  $op->B::OP::bsave($ix);
+  if ($op->name eq 'method') {
+    asm "op_first", $firstix;
+  } else {
+    asm "methop_methsv", $firstix;
+  }
+  asm "methop_rclass", $rclass if $rclass or ITHREADS; # padoffset 0 valid threaded
 }
 
 sub B::BINOP::bsave {

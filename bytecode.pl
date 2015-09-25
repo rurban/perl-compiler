@@ -1047,7 +1047,25 @@ __END__
 165 18	op_savefree	PL_op->op_savefree		U8
 166 18	op_static	PL_op->op_static		U8
 167 19.003 op_folded	PL_op->op_folded		U8
-168 21.002-22 op_lastsib	PL_op->op_lastsib	U8
+168 21.002-22 op_lastsib PL_op->op_lastsib		U8
 168 22  op_moresib	PL_op->op_moresib		U8
-169 18	newpadnlx	bstate->bs_sv			U8		x
+169 18	newpadnlx	bstate->bs_sv					U8	x
+#0  18 	padl_max	PadlistMAX((PADLIST*)bstate->bs_sv)   		U32
+0   18 	padl_outid	((PADLIST*)bstate->bs_sv)->xpadl_outid		U32
+0   22 	padl_id		((PADLIST*)bstate->bs_sv)->xpadl_id     	U32
+0   22 	padnl_push	bstate->bs_sv					svindex		x
+0   22 	padnl_maxnamed	PadnamelistMAXNAMED((PADNAMELIST*)bstate->bs_sv) U32
+0   22 	padnl_refcnt	PadnamelistREFCNT((PADNAMELIST*)bstate->bs_sv)	U32
+0   22	newpadnx	bstate->bs_sv					strconst	x
+0   22	padn_stash	*(SV**)PadnameOURSTASH((PADNAME*)bstate->bs_sv) svindex
+0   22	padn_type	*(SV**)PadnameTYPE((PADNAME*)bstate->bs_sv)     svindex
+0   22 	padn_seq_low	COP_SEQ_RANGE_LOW((PADNAME*)bstate->bs_sv)	U32
+0   22 	padn_seq_high	COP_SEQ_RANGE_HIGH((PADNAME*)bstate->bs_sv)	U32
+0   22 	padn_refcnt	PadnameREFCNT((PADNAME*)bstate->bs_sv)		U32
+0   22 	padn_pv		PadnamePV((PADNAME*)bstate->bs_sv)		strconst	x
+0   22 	padn_flags	PadnameFLAGS((PADNAME*)bstate->bs_sv)		U8
+0   22 	unop_aux	cUNOP_AUX->op_aux				strconst	x
+0   22 	methop_methsv	cMETHOPx(PL_op)->op_u.op_meth_sv		svindex
+0   !i22 methop_rclass	cMETHOPx(PL_op)->op_rclass_sv			svindex
+0   i22 methop_rclass	cMETHOPx(PL_op)->op_rclass_targ			PADOFFSET
 
