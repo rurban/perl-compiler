@@ -773,16 +773,15 @@ static int bget_swab = 0;
 #define BSET_op_pmflags(r, arg)		r = arg
 
 /* restore dups for stdin, stdout and stderr */
-#define BSET_xio_ifp(sv,fd)						\
-    STMT_START {							\
-      if (fd == 0) {							\
-	IoIFP(sv) = IoOFP(sv) = PerlIO_stdin();				\
-      } else if (fd == 1) {						\
-	IoIFP(sv) = IoOFP(sv) = PerlIO_stdout();			\
-      } else if (fd == 2) {						\
-	IoIFP(sv) = IoOFP(sv) = PerlIO_stderr();			\
-      }									\
-    } STMT_END
+#define BSET_xio_ifp(sv,fd) STMT_START {            \
+    if (fd == 0) {				    \
+      IoIFP(sv) = IoOFP(sv) = PerlIO_stdin();	    \
+    } else if (fd == 1) {                           \
+      IoIFP(sv) = IoOFP(sv) = PerlIO_stdout();      \
+    } else if (fd == 2) {                           \
+      IoIFP(sv) = IoOFP(sv) = PerlIO_stderr();      \
+    }                                               \
+  } STMT_END
 
 #if PERL_VERSION >= 17
 #define BSET_newpadlx(padl, arg)  STMT_START {      \
@@ -790,14 +789,19 @@ static int bget_swab = 0;
     BSET_OBJ_STOREX(padl);                          \
   } STMT_END
 #if PERL_VERSION >= 22
-#define BSET_newpadnlx(padnl, arg)  STMT_START {         \
-    padnl = (SV*)Perl_newPADNAMELIST(arg);               \
-    BSET_OBJ_STOREX(padnl);                              \
+/* no binary names of lexvars */
+#define BSET_newpadnx(pn, pv) STMT_START {              \
+    pn = (SV*)newPADNAMEpvn(pv, strlen(pv));            \
+    BSET_OBJ_STOREX(pn);                                \
+  } STMT_END
+#define BSET_newpadnlx(padnl, arg)  STMT_START {        \
+    padnl = (SV*)newPADNAMELIST(arg);                   \
+    BSET_OBJ_STOREX(padnl);                             \
   } STMT_END
 #else
-#define BSET_newpadnlx(padnl, arg)  STMT_START {         \
-    padnl = (SV*)pad_new(arg);                           \
-    BSET_OBJ_STOREX(padnl);                              \
+#define BSET_newpadnlx(padnl, flags)  STMT_START {      \
+    padnl = (SV*)pad_new(flags);                        \
+    BSET_OBJ_STOREX(padnl);                             \
   } STMT_END
 #endif
 /* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1,

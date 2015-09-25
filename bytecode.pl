@@ -1047,7 +1047,16 @@ __END__
 165 18	op_savefree	PL_op->op_savefree		U8
 166 18	op_static	PL_op->op_static		U8
 167 19.003 op_folded	PL_op->op_folded		U8
-168 21.002-22 op_lastsib	PL_op->op_lastsib	U8
+168 21.002-22 op_lastsib PL_op->op_lastsib		U8
 168 22  op_moresib	PL_op->op_moresib		U8
 169 18	newpadnlx	bstate->bs_sv			U8		x
+0   22	newpadnx	bstate->bs_sv			pvcontents	x
+0   22	padn_stash	*(SV**)PadnameOURSTASH((PADNAME*)bstate->bs_sv) svindex
+0   22	padn_type	*(SV**)PadnameTYPE((PADNAME*)bstate->bs_sv)     svindex
+0   22 	padn_seq_low	COP_SEQ_RANGE_LOW((PADNAME*)bstate->bs_sv)  U32
+0   22 	padn_seq_high	COP_SEQ_RANGE_HIGH((PADNAME*)bstate->bs_sv) U32
+0   22 	padn_refcnt	PadnameREFCNT((PADNAME*)bstate->bs_sv)	    U32
+0   22 	padn_pv		PadnamePV((PADNAME*)bstate->bs_sv)	    pvcontents
+0   22 	padn_len	PadnameLEN((PADNAME*)bstate->bs_sv)	    U8
+0   22 	padn_flags	PadnameFLAGS((PADNAME*)bstate->bs_sv)  	    U8
 

@@ -302,15 +302,28 @@ sub B::PADLIST::ix {
   }
 }
 
-sub B::PADNAMELIST::ix {
-  my $padl = shift;
-  my $ix = $svtab{$$padl};
+sub B::PADNAME::ix {
+  my $pn = shift;
+  my $ix = $svtab{$$pn};
   defined($ix) ? $ix : do {
-    nice '[' . class($padl) . " $tix]";
+    nice '[' . class($pn) . " $tix]";
+    B::Assembler::maxsvix($tix) if $debug{A};
+    asm "newpadnx", $pn->PVX;
+    $svtab{$$pn} = $varix = $ix = $tix++;
+    $pn->bsave($ix);
+    $ix;
+  }
+}
+
+sub B::PADNAMELIST::ix {
+  my $padnl = shift;
+  my $ix = $svtab{$$padnl};
+  defined($ix) ? $ix : do {
+    nice '[' . class($padnl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
     asm "newpadnlx", 1;
-    $svtab{$$padl} = $varix = $ix = $tix++;
-    $padl->bsave($ix);
+    $svtab{$$padnl} = $varix = $ix = $tix++;
+    $padnl->bsave($ix);
     $ix;
   }
 }
@@ -785,23 +798,41 @@ sub B::PADLIST::bsave {
   bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
   my $ix0 = $array[0]->ix; # comppad_name
   my $ix1 = $array[1]->ix; # comppad syms
-
+  #$_ = $_->ix for @array;
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
   asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
   asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
 }
 
+sub B::PADNAME::bsave {
+  my ( $pn, $ix ) = @_;
+  my $stashix = $pn->OURSTASH->ix;
+  my $typeix = $pn->TYPE->ix;
+  nice "-PADNAME-",
+    asm "ldsv", $varix = $ix unless $ix == $varix;
+  my $flags = $pn->FLAGS;
+  asm "padn_flags", $flags & 0xff; # turn of SVf_FAKE, U8 only
+  asm "padn_stash", $stashix;
+  asm "padn_type", $typeix;
+  if ($flags & SVf_FAKE) {
+    asm "padn_seq_low", $pn->COP_SEQ_RANGE_LOW;
+    asm "padn_seq_high", $pn->COP_SEQ_RANGE_HIGH;
+  }
+  asm "padn_refcnt", $pn->REFCNT;
+  asm "padn_len", $pn->LEN;
+}
+
 sub B::PADNAMELIST::bsave {
-  my ( $padl, $ix ) = @_;
-  my $array = $padl->ARRAY;
-  #warn "B::PADNAMELIST $padl $ix ",ref $array;
-  bless $array, 'B::PAD' if ref $array eq 'B::PADNAME';
+  my ( $padnl, $ix ) = @_;
+  my $array = $padnl->ARRAY;
+  #warn "B::PADNAMELIST $padnl $ix ",ref $array;
+  #bless $array, 'B::PAD' if ref $array eq 'B::PADNAME';
   my $ix = $array->ix; # comppad_name
 
   nice "-PADNAMELIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padl_name", $ix if ref $array eq 'B::PAD';
+  asm "padl_name", $ix; # if ref $array eq 'B::PAD';
 }
 
 sub B::GV::desired {
