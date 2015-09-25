@@ -2352,7 +2352,7 @@ sub B::PVLV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2404,7 +2404,7 @@ sub B::PVIV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2445,7 +2445,7 @@ sub B::PVNV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+     @B::C::static_free = grep {$_ ne $sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2567,7 +2567,7 @@ sub B::PV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2623,7 +2623,7 @@ sub B::PADNAME::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -2837,7 +2837,7 @@ sub B::PVMG::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym/} @B::C::static_free;
     }
     return $sym;
   }
@@ -5906,7 +5906,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
 _EOT7
 
     for (0 .. $#B::C::static_free) {
-      # set the sv/xpv to &PL_sv_undef, not the pv itself. 
+      # set the sv/xpv to &PL_sv_undef, not the pv itself.
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
       # XXX Another idea >5.10 is SvFLAGS(pv) = SVTYPEMASK
       my $s = $B::C::static_free[$_];
@@ -7522,7 +7522,7 @@ OPTION:
         elsif ( $arg eq "r" ) {
           $debug{runtime}++;
 	  $SIG{__WARN__} = sub {
-	    warn @_; 
+	    warn @_;
 	    my $s = join(" ", @_);
 	    chomp $s;
 	    $init->add("/* ".$s." */") if $init;
@@ -7823,7 +7823,7 @@ of C<-fcog>, see C<-fconst-strings> instead.
 
 =item B<-fav-init>
 
-Faster pre-initialization of AVs (arrays and pads). 
+Faster pre-initialization of AVs (arrays and pads).
 Also used if -fav-init2 is used and independent_comalloc() is not detected.
 
 Enabled with C<-O1>.
