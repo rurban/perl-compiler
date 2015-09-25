@@ -346,7 +346,7 @@ my %all_bc_subs = map {$_=>1}
      B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
      B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
      B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
-     B::PADLIST::save B::PADNAME::save B::PADNAMELIST::save B::PADOP::save B::PMOP::save B::PV::save
+     B::PADLIST::save B::PADOP::save B::PMOP::save B::PV::save
      B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save
      B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);
@@ -4611,8 +4611,8 @@ sub B::AV::save {
   }
 
   my ($magic, $av_index) = ('');
+  $svsect->debug($fullname, $av->flagspv) if $debug{flags};
   if (!$ispadlist and !$ispadnamelist) {
-    $svsect->debug($fullname, $av->flagspv) if $debug{flags};
     my $sv_ix = $svsect->index;
     $av_index = $xpvavsect->index;
     # protect against recursive self-references (Getopt::Long)
@@ -4815,17 +4815,6 @@ sub B::AV::save {
                          cstring($stashname.'::')));
   }
   return $sym;
-}
-
-#sub B::PADLIST::save {
-#  return B::AV::save(@_);
-#}
-#sub B::PADNAMELIST::save {
-#  return B::AV::save(@_);
-#}
-# B::Flags workaround
-sub B::PADNAMELIST::flagspv {
-  return "";
 }
 
 sub B::HV::save {
