@@ -2476,7 +2476,7 @@ sub B::PVLV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym} @B::C::static_free;
     }
     return $sym;
   }
@@ -2528,7 +2528,7 @@ sub B::PVIV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym} @B::C::static_free;
     }
     return $sym;
   }
@@ -2569,7 +2569,7 @@ sub B::PVNV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+     @B::C::static_free = grep {$_ ne $sym} @B::C::static_free;
     }
     return $sym;
   }
@@ -2691,7 +2691,7 @@ sub B::PV::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym} @B::C::static_free;
     }
     return $sym;
   }
@@ -2751,7 +2751,7 @@ sub B::PADNAME::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym} @B::C::static_free;
     }
     return $sym;
   }
@@ -2965,7 +2965,7 @@ sub B::PVMG::save {
   if (defined $sym) {
     if ($in_endav) {
       warn "in_endav: static_free without $sym\n" if $debug{av};
-      @B::C::static_free = grep {!/$sym/} @B::C::static_free;
+      @B::C::static_free = grep {$_ ne $sym} @B::C::static_free;
     }
     return $sym;
   }
