@@ -42,14 +42,14 @@ sub code_section_names {
       decl init0 free sym hek binop condop cop padop listop logop
       op pmop pvop svop unop sv xpv xpvav xpvhv xpvcv xpviv xpvuv
       xpvnv xpvmg xpvlv xrv xpvbm xpvio padlist padname padnamelist
-      loop
+      loop methop
     };
 }
 
 sub init_section_names { return qw /init init2/ }
 
 sub op_sections {
-    return qw { binop condop cop padop loop listop logop op pmop pvop svop unop };
+    return qw { binop condop cop padop loop listop logop op pmop pvop svop unop methop};
 }
 
 BEGIN {
@@ -111,7 +111,7 @@ sub write {
     my $c_file_stash = shift or die;
     my $template_name_short = shift || 'base.c.tt2';
 
-    $c_file_stash->{section_list} = [qw( cop op unop binop logop condop listop pmop svop padop pvop loop xpv xpvav xpvhv xpvcv padlist padname padnamelist xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv )];
+    $c_file_stash->{section_list} = [qw( cop op unop binop logop condop listop pmop svop padop pvop loop xpv xpvav xpvhv xpvcv padlist padname padnamelist xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv methop )];
 
     foreach my $section ( code_section_names(), init_section_names() ) {
         $c_file_stash->{'section'}->{$section} = $self->{$section};

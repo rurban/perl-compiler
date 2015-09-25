@@ -13,6 +13,7 @@ use B::C::OverLoad::B::LEXWARN     ();
 use B::C::OverLoad::B::LISTOP      ();
 use B::C::OverLoad::B::LOGOP       ();
 use B::C::OverLoad::B::LOOP        ();
+use B::C::OverLoad::B::METHOP      ();
 use B::C::OverLoad::B::NULL        ();
 use B::C::OverLoad::B::NV          ();
 use B::C::OverLoad::B::OBJECT      ();
