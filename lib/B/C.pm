@@ -833,7 +833,7 @@ sub save_pv_or_rv {
       $pv = pack "a*", $sv->PV;
       $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length($pv);
       # comppadname bug with overlong strings
-      if ($] < 5.008008 and $cur > 100 and $fullname =~ / :pad\[0\]/ and $pv =~ /\0\0/) {
+      if ($] < 5.008008 and $cur > 100 and $fullname =~ m/ :pad\[0\]/ and $pv =~ m/\0\0/) {
         my $i = index($pv,"\0");
         if ($i > -1) {
           $pv = substr($pv,0,$i);
@@ -856,7 +856,7 @@ sub save_pv_or_rv {
     $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
     $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
     $static = 0 if $shared_hek
-      or ($fullname and ($fullname =~ / :pad/ or ($fullname =~ /^DynaLoader/ and $pv =~ /^boot_/)));
+      or ($fullname and ($fullname =~ m/ :pad/ or ($fullname =~ m/^DynaLoader/ and $pv =~ m/^boot_/)));
     $static = 0 if $B::C::const_strings and $fullname and
       ($fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/);
     if ($shared_hek and $pok and !$cur) { #272 empty key
@@ -1004,7 +1004,8 @@ sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/"//g; #" poor editor
-  my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
+  my $POW    = ( $Config{ivsize} * 4 - 1 );    # poor editor
+  my $intmax = (1 << $POW) - 1;
   my $L = 'L';
   # LL for 32bit -2147483648L or 64bit -9223372036854775808L
   $L = 'LL' if $Config{ivsize} == 2*$Config{ptrsize};
@@ -4034,7 +4035,7 @@ sub B::GV::save {
   my $fullname = $package . "::" . $gvname;
   my $isutf8   = !$PERL56 and utf8::is_utf8($fullname);
   my $fancyname;
-  if ( $filter and $filter =~ / :pad/ ) {
+  if ( $filter and $filter =~ m/ :pad/ ) {
     $fancyname = cstring($filter);
     $filter = 0;
   } else {
@@ -4226,8 +4227,8 @@ sub B::GV::save {
   elsif ( $fullname =~ /^main::STD(IN|OUT|ERR)$/ ) {
     $savefields = Save_FORM | Save_IO;
   }
-  $savefields &= ~$filter if ($filter and $filter !~ / :pad/
-                              and $filter =~ /^\d+$/ and $filter > 0 and $filter < 64);
+  $savefields &= ~$filter if ($filter and $filter !~ m/ :pad/
+                              and $filter =~ m/^\d+$/ and $filter > 0 and $filter < 64);
   # issue 79: Only save stashes for stashes.
   # But not other values to avoid recursion into unneeded territory.
   # We walk via savecv, not via stashes.
@@ -5906,7 +5907,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
 _EOT7
 
     for (0 .. $#B::C::static_free) {
-      # set the sv/xpv to &PL_sv_undef, not the pv itself. 
+      # set the sv/xpv to &PL_sv_undef, not the pv itself.
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
       # XXX Another idea >5.10 is SvFLAGS(pv) = SVTYPEMASK
       my $s = $B::C::static_free[$_];
@@ -7522,7 +7523,7 @@ OPTION:
         elsif ( $arg eq "r" ) {
           $debug{runtime}++;
 	  $SIG{__WARN__} = sub {
-	    warn @_; 
+	    warn @_;
 	    my $s = join(" ", @_);
 	    chomp $s;
 	    $init->add("/* ".$s." */") if $init;
@@ -7823,7 +7824,7 @@ of C<-fcog>, see C<-fconst-strings> instead.
 
 =item B<-fav-init>
 
-Faster pre-initialization of AVs (arrays and pads). 
+Faster pre-initialization of AVs (arrays and pads).
 Also used if -fav-init2 is used and independent_comalloc() is not detected.
 
 Enabled with C<-O1>.
