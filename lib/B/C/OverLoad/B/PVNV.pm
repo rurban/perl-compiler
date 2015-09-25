@@ -28,17 +28,6 @@ sub save {
         # it could be a double, or it could be 2 ints - union xpad_cop_seq
         $nvx = get_double_value( $sv->NV );
     }
-    else {
-        if ( C99() ) {
-            $nvx = sprintf(
-                ".xpad_cop_seq.xlow = %s, .xpad_cop_seq.xhigh = %s",
-                get_integer_value( $sv->COP_SEQ_RANGE_LOW ), get_integer_value( $sv->COP_SEQ_RANGE_HIGH ),
-            );
-        }
-        else {
-            $nvx = get_double_value( $sv->NVX );
-        }
-    }
 
     # For some time the stringification works of NVX double to two ints worked ok.
     xpvnvsect()->comment('STASH, MAGIC, cur, len, IVX, NVX');

@@ -468,7 +468,7 @@ sub save_pv_or_rv {
 {
     # should use a static variable
     # only for $] < 5.021002
-    my $opsect_common = "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, slabbed, savefree, static, folded, spare" . ", flags, private";
+    my $opsect_common = "next, sibling, ppaddr, " . ( MAD() ? "madprop, " : "" ) . "targ, type, " . "opt, slabbed, savefree, static, folded, moresib, spare" . ", flags, private";
 
     sub opsect_common {
         return $opsect_common;
@@ -565,8 +565,8 @@ sub padop_name {
     {
         return () if $cv and ref( $cv->PADLIST ) eq 'B::SPECIAL';
         my @c     = ( $cv and ref($cv) eq 'B::CV' and ref( $cv->PADLIST ) ne 'B::NULL' ) ? $cv->PADLIST->ARRAY : comppadlist->ARRAY;
-        my @pad   = $c[1]->ARRAY;
         my @types = $c[0]->ARRAY;
+        my @pad   = $c[1]->ARRAY;
         my $ix    = $op->can('padix') ? $op->padix : $op->targ;
         my $sv    = $pad[$ix];
         my $t     = $types[$ix];
@@ -865,7 +865,7 @@ sub collect_deps {
 
 sub mark_package {
     my $package = shift;
-    my $force   = shift || 0;
+    my $force = shift || 0;
 
     return if skip_pkg($package);    # or $package =~ /^B::C(C?)::/;
     if ( !is_package_used($package) or $force ) {
@@ -1256,9 +1256,8 @@ sub save_context {
     );
 
     init()->add(
-        "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
-        "PadnamelistMAXNAMED(PL_comppad_name) = AvFILL($curpad_nam);",
-        "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */"
+        "PadlistNAMES(CvPADLIST(PL_main_cv)) = PL_comppad_name = $curpad_nam; /* namepad */",
+        "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)$curpad_sym; /* curpad */"
     );
 }
 

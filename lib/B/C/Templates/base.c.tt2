@@ -110,6 +110,7 @@ EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
 */
 
 typedef struct p5rx RE;
+Static IV PL_sv_objcount;
 [% IF gv_index %]
 Static GV *gv_list[[% gv_index %]];
 [% END %]
@@ -140,6 +141,11 @@ Static const char xsfile[] = "universal.c";
 #undef CopFILE_set
 #define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))
 [% END %]
+
+/* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1, fixed with 5.22.1 and 5.23.0 */
+/* TODO: REMOVE ME after 5.22.1 is released. */
+#undef PadlistNAMES
+#define PadlistNAMES(pl)       *((PADNAMELIST **)PadlistARRAY(pl))
 
 [% IF init2_remap.size and !HAVE_DLFCN_DLOPEN %]
 XS(XS_DynaLoader_dl_load_file);
@@ -442,7 +448,12 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
   [% ELSIF to_free.match('^&sv_list') %]
     SvLEN([% to_free %]) = 0;
     SvPV_set([% to_free %], (char*)&PL_sv_undef);
-  /* was marked: dead code --- */
+  [% ELSIF to_free.match('^&padnamelist_list') %]
+    Safefree(PadnamelistARRAY([% to_free %]));
+    PadnamelistREFCNT([% to_free %]) = 0;
+  [% ELSIF to_free.match('^&padname_list') %]
+    PadnameREFCNT([% to_free %]) = 0;
+/* was marked: dead code below --- */
   [% ELSIF to_free.match('^cop_list') %]
     [% IF ITHREADS OR ! MULTI %]
     CopFILE_set(&[% to_free %], NULL);
@@ -502,7 +513,7 @@ xs_init(pTHX)
     PUSHMARK(sp);
     XPUSHp("DynaLoader", 10);
     PUTBACK;
-    boot_DynaLoader(aTHX_ NULL);
+    boot_DynaLoader(aTHX_ get_cv("DynaLoader::bootstrap", GV_ADD));
     SPAGAIN;
 #endif
 
@@ -587,12 +598,9 @@ dl_init(pTHX)
       [% END %]
 #else
     PUTBACK;
-    [% IF staticxs %]
     /* CvSTASH(CvGV(cv)) is invalid without (issue 86) */
+    /* TODO: utf8 stashname */
     boot_[% stashname.replace('::', '__') %](aTHX_ get_cv("[% stashname %]::bootstrap", GV_ADD));
-    [% ELSE %]
-    boot_[% stashname.replace('::', '__') %](aTHX_ NULL);
-    [% END %]
 #endif
     SPAGAIN;
 /*    PUTBACK;*/
@@ -814,9 +822,7 @@ main(int argc, char **argv, char **env)
     #endif
 
     /* our special compiled init */
-    exitstatus = perl_init(aTHX);
-    if (exitstatus)
-	exit( exitstatus );
+    perl_init(aTHX);
     dl_init(aTHX);
     perl_init2(aTHX);
 

@@ -389,11 +389,11 @@ sub save {
             $ppname = "pp_anonsub_$anonsub_index";
             $anonsub_index++;
         }
-        $startfield = B::C::saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );
+        $startfield = B::C::saveoptree( $ppname, $root, $cv->START, $padlist->ARRAY );    # XXX padlist is ignored
 
         # XXX missing cv_start for AUTOLOAD on 5.8
-        $startfield = objsym( $root->next ) unless $startfield;    # 5.8 autoload has only root
-        $startfield = "0" unless $startfield;                      # XXX either CONST ANON or empty body
+        $startfield = objsym( $root->next ) unless $startfield;                           # 5.8 autoload has only root
+        $startfield = "0" unless $startfield;                                             # XXX either CONST ANON or empty body
         if ($$padlist) {
 
             # XXX readonly comppad names and symbols invalid
@@ -591,7 +591,7 @@ sub save {
                 "CvOUTSIDE($sym) = PL_main_cv;",
                 "SvREFCNT_inc(PL_main_cv);"
             );
-            init()->add("CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+            init()->add("CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
         }
         else {
             init()->add( sprintf( "CvOUTSIDE($sym) = (CV*)s\\_%x;", $xcv_outside ) );

@@ -549,7 +549,7 @@ sub save {
                             if ( $anyptr and $xsubany > 1000 ) { # not a XsubAliases
                                 init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &%s;", $anyptr ) );
                             }    # some heuristics TODO. long or ptr? TODO 32bit
-                            elsif ( $xsubany > 0x100000 and ( $xsubany < 0xffffff00 or $xsubany > 0x100000000 ) ) {
+                            elsif ( $xsubany > 0x100000 and ( $xsubany < 0xffffff00 or $xsubany > 0xffffffff ) ) {
                                 if ( $package eq 'POSIX' and $gvname =~ /^is/ ) {
 
                                     # need valid XSANY.any_dptr

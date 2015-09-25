@@ -41,7 +41,8 @@ sub code_section_names {
     return qw{
       decl init0 free sym hek binop condop cop padop listop logop
       op pmop pvop svop unop sv xpv xpvav xpvhv xpvcv xpviv xpvuv
-      xpvnv xpvmg xpvlv xrv xpvbm xpvio padlist loop
+      xpvnv xpvmg xpvlv xrv xpvbm xpvio padlist padname padnamelist
+      loop
     };
 }
 
@@ -110,7 +111,7 @@ sub write {
     my $c_file_stash = shift or die;
     my $template_name_short = shift || 'base.c.tt2';
 
-    $c_file_stash->{section_list} = [qw( cop op unop binop logop condop listop pmop svop padop pvop loop xpv xpvav xpvhv xpvcv padlist xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv )];
+    $c_file_stash->{section_list} = [qw( cop op unop binop logop condop listop pmop svop padop pvop loop xpv xpvav xpvhv xpvcv padlist padname padnamelist xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv )];
 
     foreach my $section ( code_section_names(), init_section_names() ) {
         $c_file_stash->{'section'}->{$section} = $self->{$section};
@@ -142,7 +143,7 @@ sub write {
     }
 
     # Used to be buried in output_main_rest();
-    my @possible_static_free_errors = grep { $_ !~ m/^(cop_list|&sv_list|sv_list)|^ptr_undef$/ } @{ $c_file_stash->{'static_free'} };
+    my @possible_static_free_errors = grep { $_ !~ m/^(cop_list|&sv_list|sv_list|&padname_list|&padnamelist_list)|^ptr_undef$/ } @{ $c_file_stash->{'static_free'} };
     if (@possible_static_free_errors) {
         WARN("unknown $_ found in \@static_free") foreach @possible_static_free_errors;
     }

@@ -5,14 +5,12 @@ use strict;
 use Config;
 use B qw/cstring SVf_IOK SVf_POK/;
 use B::C::Config;
-use B::C::File qw/init xpvavsect svsect padlistsect/;
+use B::C::File qw/init xpvavsect svsect padlistsect padnamelistsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # maybe need to move to setup/config
 my ( $use_av_undef_speedup, $use_svpop_speedup ) = ( 1, 1 );
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
-
-my $padlist_index = 0;
 
 sub save {
     my ( $av, $fullname ) = @_;
@@ -22,25 +20,35 @@ sub save {
     $fullname = '' unless $fullname;
     my ( $fill, $avreal, $max );
 
-    # cornercase: tied array without FETCHSIZE
-    # However B::PADLIST objects don't have a FILL routine? Not clear if this is a B bug or a B::C bug.
-    if(ref($av) ne 'B::PADLIST') {
-        eval { $fill = $av->FILL; } ;
+    my $ispadlist     = ref($av) eq 'B::PADLIST';
+    my $ispadnamelist = ref($av) eq 'B::PADNAMELIST';
+
+    if ( $ispadnamelist or $ispadlist ) {
+        $fill = $av->MAX;
     }
     else {
-        $fill = -1;
+        eval { $fill = $av->FILL; };    # cornercase: tied array without FETCHSIZE
+        $fill = -1 if $@;               # catch error in tie magic
     }
-    $fill = -1 if $@;    # catch error in tie magic
-    my $ispadlist = ref($av) eq 'B::PADLIST';
+
     $max = $fill;
     my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
+    $svpcast = "(PADNAME*)" if $ispadnamelist;
 
-    if ($ispadlist) {
+    if ($ispadnamelist) {
+        padnamelistsect()->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
+
+        # TODO: max_named walk all names and look for non-empty names
+        my $refcnt = $av->REFCNT + 1;    # XXX defer free to global destruction: 28
+        padnamelistsect()->add("$fill, NULL, $fill, $fill, $refcnt");
+        my $padnamelist_index = padnamelistsect()->index;
+        $sym = savesym( $av, "&padnamelist_list[$padnamelist_index]" );
+        push @B::C::static_free, $sym;
+    }
+    elsif ($ispadlist) {
         padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_outid");
-        my @array = $av->ARRAY;
-        $fill = scalar @array;
         padlistsect()->add("$fill, NULL, 0");    # Perl_pad_new(0)
-        $padlist_index = padlistsect()->index;
+        my $padlist_index = padlistsect()->index;
         $sym = savesym( $av, "&padlist_list[$padlist_index]" );
     }
     else {
@@ -59,7 +67,7 @@ sub save {
     }
 
     my ( $magic, $av_index ) = ('');
-    if ( !$ispadlist ) {
+    if ( !$ispadlist and !$ispadnamelist ) {
         svsect()->debug( $fullname, $av );
         my $sv_ix = svsect()->index;
         $av_index = xpvavsect()->index;
@@ -148,7 +156,19 @@ sub save {
         }
         init()->no_split;
 
-        if ( ref $av eq 'B::PADLIST' ) {
+        if ($ispadnamelist) {
+            my $fill1 = $fill + 1;
+            init()->add( "{", "\tPADNAME **svp;" );
+            init()->add("\tregister int gcount;") if $count;
+            init()->add(
+                "\tPADNAMELIST *padnl = $sym;",
+                sprintf( "\tNewxz(svp, %d, PADNAME *);", $fill + 1 ),
+                "\tPadnamelistARRAY(padnl) = svp;",
+            );
+            init()->add( substr( $acc, 0, -2 ) );
+            init()->add("}");
+        }
+        elsif ($ispadlist) {
             my $fill1 = $fill + 1;
             init()->add( "{", "\tPAD **svp;" );
             init()->add("\tregister int gcount;") if $count;
