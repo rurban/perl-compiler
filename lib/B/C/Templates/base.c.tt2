@@ -142,8 +142,9 @@ Static const char xsfile[] = "universal.c";
 #define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))
 [% END %]
 
-/* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1, fixed with 5.22.1 and 5.23.0 */
-/* TODO: REMOVE ME after 5.22.1 is released. */
+/* PadlistNAMES broken as lvalue with v5.21.6-197-g0f94cb1,
+    fixed with 5.22.1 and 5.23.0 by commit 73949fca08
+TODO: REMOVE ME after 5.22.1 or 5.23.0 is released. */
 #undef PadlistNAMES
 #define PadlistNAMES(pl)       *((PADNAMELIST **)PadlistARRAY(pl))
 
