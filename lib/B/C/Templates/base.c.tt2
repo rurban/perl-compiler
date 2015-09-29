@@ -403,8 +403,8 @@ int fast_perl_destruct( PerlInterpreter *my_perl ) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "\n");
         for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
-            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
-              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
+              sva, sva+SvREFCNT(sva), 0+SvREFCNT(sva));
         }
     }
 #endif
@@ -461,8 +461,8 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "\n");
         for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
-            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%u)\n",
-              sva, sva+SvREFCNT(sva), SvREFCNT(sva));
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
+              sva, sva+SvREFCNT(sva), 0+SvREFCNT(sva));
         }
     }
     return perl_destruct( my_perl );
@@ -525,7 +525,7 @@ xs_init(pTHX)
 static void
 dl_init(pTHX)
 {
-	char *file = __FILE__;
+	/* char *file = __FILE__; */
 [% IF optimizer.dynaloader.dl %]
     dTARG;
     dSP;
