@@ -1,0 +1,25 @@
+From 2200cfd5cb4763bf07afbb304e8b0853faf3f2f1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 202/211] B::C patch for re/regexp.t
+
+---
+ t/re/regexp.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/regexp.t b/t/re/regexp.t
+index f27a027..3973327 100644
+--- a/t/re/regexp.t
++++ b/t/re/regexp.t
+@@ -65,7 +65,7 @@ BEGIN {
+     }
+ 
+     chdir 't' if -d 't';
+-    @INC = qw '../lib ../ext/re';
++    unshift @INC, qw '../lib ../ext/re';
+     if (!defined &DynaLoader::boot_DynaLoader) { # miniperl
+ 	print("1..0 # Skip Unicode tables not built yet\n"), exit
+ 	    unless eval 'require "unicore/Heavy.pl"';
+-- 
+2.5.0
+

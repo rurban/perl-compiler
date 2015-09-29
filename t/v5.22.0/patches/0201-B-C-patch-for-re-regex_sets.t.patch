@@ -1,0 +1,30 @@
+From afbaf8de6a05fca6fcb615cb7e08fb77daec4f80 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 201/211] B::C patch for re/regex_sets.t
+
+---
+ t/re/regex_sets.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/re/regex_sets.t b/t/re/regex_sets.t
+index 48a4f00..0f58f44 100644
+--- a/t/re/regex_sets.t
++++ b/t/re/regex_sets.t
+@@ -7,11 +7,11 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.','../ext/re');
+     require './test.pl';
+     require './test.pl'; require './charset_tools.pl';
+-    skip_all_without_unicode_tables();
++    set_up_inc( '../lib','.','../ext/re' );
+ }
++    skip_all_without_unicode_tables();
+ 
+ use strict;
+ use warnings;
+-- 
+2.5.0
+

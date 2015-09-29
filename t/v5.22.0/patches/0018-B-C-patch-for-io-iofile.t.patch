@@ -1,0 +1,26 @@
+From 79a4a03b4923813644be103aa0df739c9881b2d3 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 018/211] B::C patch for io/iofile.t
+
+---
+ t/io/iofile.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/iofile.t b/t/io/iofile.t
+index f2ac66f..d45bf09 100644
+--- a/t/io/iofile.t
++++ b/t/io/iofile.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("miniperl can't load IO::File");
+ }
+ 
+-- 
+2.5.0
+

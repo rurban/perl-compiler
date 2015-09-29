@@ -1,0 +1,25 @@
+From 28223415853d4e86296cf9aa5a490996377715d5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 007/211] B::C patch for io/binmode.t
+
+---
+ t/io/binmode.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/binmode.t b/t/io/binmode.t
+index 473261e..7bb12ba 100644
+--- a/t/io/binmode.t
++++ b/t/io/binmode.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require './test.pl';
+     eval 'use Errno';
+     die $@ if $@ and !is_miniperl();
+-- 
+2.5.0
+

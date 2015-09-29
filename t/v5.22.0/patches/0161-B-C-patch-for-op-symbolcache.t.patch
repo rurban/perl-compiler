@@ -1,0 +1,41 @@
+From ae2fbb901ff6919bdf9abbeb8a9d1977f7aaac5c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 161/211] B::C patch for op/symbolcache.t
+
+---
+ t/op/symbolcache.t | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/symbolcache.t b/t/op/symbolcache.t
+index 2596ae6..75e1064 100644
+--- a/t/op/symbolcache.t
++++ b/t/op/symbolcache.t
+@@ -2,13 +2,15 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
+-    plan( tests => 8 );
++    set_up_inc('../lib');    
+ }
+ 
++plan( tests => 8 );
++
+ use strict;
+ 
++eval q|
+ # first, with delete
+ # simple removal
+ sub removed { 23 }
+@@ -40,3 +42,5 @@ is( replaced2(), 'meth', 'original function not bound, was replaced' );
+ ok( main->replaced2 eq 'meth', 'method is replaced function' );
+ BEGIN { undef $main::{replaced2} }
+ sub replaced2 { 'meth' }
++
++|;
+\ No newline at end of file
+-- 
+2.5.0
+

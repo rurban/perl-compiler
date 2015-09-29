@@ -1,0 +1,26 @@
+From bc8e1a407cacb4f549963761266a4ae4002a0d83 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 207/211] B::C patch for uni/bless.t
+
+---
+ t/uni/bless.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/bless.t b/t/uni/bless.t
+index 5475f3e..fe81485 100644
+--- a/t/uni/bless.t
++++ b/t/uni/bless.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use utf8;
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From f127fd71d757816e37cc67e2e71267400020efe2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 147/211] B::C patch for op/setpgrpstack.t
+
+---
+ t/op/setpgrpstack.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/setpgrpstack.t b/t/op/setpgrpstack.t
+index b384138..588c8b9 100644
+--- a/t/op/setpgrpstack.t
++++ b/t/op/setpgrpstack.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_without_config('d_setpgrp');
+ }
+ 
+-- 
+2.5.0
+

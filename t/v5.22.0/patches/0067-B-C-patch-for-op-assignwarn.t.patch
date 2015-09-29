@@ -1,0 +1,26 @@
+From 3588e7349fe54d6a70f3f740308ed1965bf209eb Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 067/211] B::C patch for op/assignwarn.t
+
+---
+ t/op/assignwarn.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/assignwarn.t b/t/op/assignwarn.t
+index ac1ad77..8101943 100644
+--- a/t/op/assignwarn.t
++++ b/t/op/assignwarn.t
+@@ -9,8 +9,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

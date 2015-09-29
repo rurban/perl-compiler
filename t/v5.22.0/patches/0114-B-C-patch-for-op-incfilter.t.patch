@@ -1,0 +1,33 @@
+From bbe095fd3d2fcd479c843468fd72182091da434c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 114/211] B::C patch for op/incfilter.t
+
+---
+ t/op/incfilter.t | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/incfilter.t b/t/op/incfilter.t
+index 9019ba5..a1f15cc 100644
+--- a/t/op/incfilter.t
++++ b/t/op/incfilter.t
+@@ -3,12 +3,13 @@
+ # Tests for the source filters in coderef-in-@INC
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    chdir 't' if -d 't';    
+     require './test.pl';
++    set_up_inc( qw(. ../lib) );
++}
+     skip_all_if_miniperl('no dynamic loading on miniperl, no Filter::Util::Call');
+     skip_all_without_perlio();
+-}
++
+ use strict;
+ use Config;
+ use Filter::Util::Call;
+-- 
+2.5.0
+

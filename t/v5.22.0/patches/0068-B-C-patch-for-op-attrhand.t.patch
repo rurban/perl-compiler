@@ -1,0 +1,26 @@
+From 86f8f5b356a2432c58c9ebc80dd5fc5c62b94428 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 068/211] B::C patch for op/attrhand.t
+
+---
+ t/op/attrhand.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/attrhand.t b/t/op/attrhand.t
+index 996d572..13a2381 100644
+--- a/t/op/attrhand.t
++++ b/t/op/attrhand.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("miniperl can't load attributes");
+ }
+ 
+-- 
+2.5.0
+

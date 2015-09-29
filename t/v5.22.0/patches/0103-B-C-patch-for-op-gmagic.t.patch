@@ -1,0 +1,26 @@
+From 002b63942d42211fece3aa5257392a846dc6222c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 103/211] B::C patch for op/gmagic.t
+
+---
+ t/op/gmagic.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/gmagic.t b/t/op/gmagic.t
+index bcf1322..a1e25c1 100644
+--- a/t/op/gmagic.t
++++ b/t/op/gmagic.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

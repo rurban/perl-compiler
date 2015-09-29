@@ -1,0 +1,26 @@
+From 31d55d47ee7181f02c7b93d7ee7ae3e5ab3aa2a7 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 019/211] B::C patch for io/layers.t
+
+---
+ t/io/layers.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/layers.t b/t/io/layers.t
+index 86d171c..eb1909b 100644
+--- a/t/io/layers.t
++++ b/t/io/layers.t
+@@ -4,8 +4,8 @@ my $PERLIO;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_without_perlio();
+     # FIXME - more of these could be tested without Encode or full perl
+     skip_all_without_dynamic_extension('Encode');
+-- 
+2.5.0
+

@@ -1,0 +1,30 @@
+From 875c9f259ee7144b0b4332983d48ef249fb5758b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 150/211] B::C patch for op/split_unicode.t
+
+---
+ t/op/split_unicode.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/split_unicode.t b/t/op/split_unicode.t
+index 8bfa935..1d02cb2 100644
+--- a/t/op/split_unicode.t
++++ b/t/op/split_unicode.t
+@@ -3,10 +3,11 @@
+ BEGIN {
+     chdir 't' if -d 't';
+     require './test.pl';
+-    skip_all_if_miniperl("no dynamic loading on miniperl, no File::Spec (used by charnames)");
+-    plan(tests => 145);
+ }
+ 
++skip_all_if_miniperl("no dynamic loading on miniperl, no File::Spec (used by charnames)");
++plan(tests => 145);
++
+ {
+     # check the special casing of split /\s/ and unicode
+     use charnames qw(:full);
+-- 
+2.5.0
+

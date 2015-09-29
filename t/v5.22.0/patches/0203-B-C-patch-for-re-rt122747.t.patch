@@ -1,0 +1,25 @@
+From cb2e0c3fab4cb706cd0e6126666f600ee8f27eab Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 203/211] B::C patch for re/rt122747.t
+
+---
+ t/re/rt122747.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/rt122747.t b/t/re/rt122747.t
+index 27cfe1a..91b746e 100644
+--- a/t/re/rt122747.t
++++ b/t/re/rt122747.t
+@@ -7,7 +7,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.','../ext/re');
++    unshift @INC,  ('../lib','.','../ext/re');
+     require './test.pl';
+     if (is_miniperl()) {
+         skip_all_if_miniperl("Unicode tables not built yet", 2)
+-- 
+2.5.0
+

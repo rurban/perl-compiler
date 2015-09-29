@@ -1,0 +1,26 @@
+From 9b369404b852592aaf51af45a26029360696c8f7 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 009/211] B::C patch for io/crlf.t
+
+---
+ t/io/crlf.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/crlf.t b/t/io/crlf.t
+index 9331068..b19c060 100644
+--- a/t/io/crlf.t
++++ b/t/io/crlf.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
+     require "./test.pl"; require "charset_tools.pl";
++    set_up_inc('../lib');
+     skip_all_without_perlio();
+ }
+ 
+-- 
+2.5.0
+

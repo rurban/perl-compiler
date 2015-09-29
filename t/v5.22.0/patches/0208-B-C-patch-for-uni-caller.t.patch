@@ -1,0 +1,26 @@
+From 2c029d3d74f324864ac735ea29ca9d108a8d9b42 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 208/211] B::C patch for uni/caller.t
+
+---
+ t/uni/caller.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/caller.t b/t/uni/caller.t
+index b98ae07..a8155b0 100644
+--- a/t/uni/caller.t
++++ b/t/uni/caller.t
+@@ -3,8 +3,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     plan( tests => 18 );
+ }
+ 
+-- 
+2.5.0
+

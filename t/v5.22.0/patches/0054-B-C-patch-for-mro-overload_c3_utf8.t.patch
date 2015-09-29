@@ -1,0 +1,34 @@
+From 55330038c1cb65436acf2786696c982da87703af Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 054/211] B::C patch for mro/overload_c3_utf8.t
+
+---
+ t/mro/overload_c3_utf8.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/mro/overload_c3_utf8.t b/t/mro/overload_c3_utf8.t
+index bcb9f70..3981cbe 100644
+--- a/t/mro/overload_c3_utf8.t
++++ b/t/mro/overload_c3_utf8.t
+@@ -5,14 +5,15 @@ use warnings;
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+ use utf8;
+ use open qw( :utf8 :std );
+ 
+-require q(./test.pl); plan(tests => 7);
++plan(tests => 7);
+ 
+ {
+     package 밧e텟ʇ;
+-- 
+2.5.0
+

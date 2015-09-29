@@ -1,0 +1,25 @@
+From 63a5430c666ea8de92707bf9362007c3a19abfd9 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 121/211] B::C patch for op/local.t
+
+---
+ t/op/local.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/local.t b/t/op/local.t
+index 7ff21ab..15f6bc0 100644
+--- a/t/op/local.t
++++ b/t/op/local.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require './test.pl';
+ }
+ plan tests => 310;
+-- 
+2.5.0
+

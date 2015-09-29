@@ -1,0 +1,26 @@
+From 7518c837367a25f71eb8b507871e9cbe4c14b805 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 141/211] B::C patch for op/readdir.t
+
+---
+ t/op/readdir.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/readdir.t b/t/op/readdir.t
+index 8515d1d..3c68214 100644
+--- a/t/op/readdir.t
++++ b/t/op/readdir.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

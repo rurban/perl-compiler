@@ -1,0 +1,26 @@
+From 534b9826c0c6b995f639c1bc7a825aa081ec9112 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 116/211] B::C patch for op/join.t
+
+---
+ t/op/join.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/join.t b/t/op/join.t
+index 17b618e..7f9a196 100644
+--- a/t/op/join.t
++++ b/t/op/join.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 29;
+-- 
+2.5.0
+

@@ -1,0 +1,28 @@
+From 71d32f94c2aff688e7a573dc784d551809b52d44 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 142/211] B::C patch for op/ref.t
+
+---
+ t/op/ref.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/ref.t b/t/op/ref.t
+index 19a44bb..9ae6562 100644
+--- a/t/op/ref.t
++++ b/t/op/ref.t
+@@ -1,9 +1,9 @@
+ #!./perl
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    chdir 't' if -d 't';    
+     require './test.pl';
++    set_up_inc( qw(. ../lib) );
+ }
+ 
+ use strict qw(refs subs);
+-- 
+2.5.0
+

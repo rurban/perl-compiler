@@ -1,0 +1,25 @@
+From 1072c74f7a7eb18fc77f197f3630de3898e2ad8a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 140/211] B::C patch for op/range.t
+
+---
+ t/op/range.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/range.t b/t/op/range.t
+index 7809882..bec02ef 100644
+--- a/t/op/range.t
++++ b/t/op/range.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib', '.');
++    unshift @INC,  ('../lib', '.');
+ }   
+ # Avoid using eq_array below as it uses .. internally.
+ require './test.pl';
+-- 
+2.5.0
+

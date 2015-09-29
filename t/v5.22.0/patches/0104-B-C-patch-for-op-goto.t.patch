@@ -1,0 +1,26 @@
+From e2e771aeea6911a7ae596e190bf1095d1ae2daa4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 104/211] B::C patch for op/goto.t
+
+---
+ t/op/goto.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/goto.t b/t/op/goto.t
+index ca48ac0..52a726b 100644
+--- a/t/op/goto.t
++++ b/t/op/goto.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
+     require "./test.pl"; require './charset_tools.pl';
++    set_up_inc( qw(. ../lib) );
+ }
+ 
+ use warnings;
+-- 
+2.5.0
+

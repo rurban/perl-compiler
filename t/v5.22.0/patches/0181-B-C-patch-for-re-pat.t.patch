@@ -1,0 +1,41 @@
+From d751ca84470c283733229b1a65953066002ad6db Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 181/211] B::C patch for re/pat.t
+
+---
+ t/re/pat.t | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/t/re/pat.t b/t/re/pat.t
+index 64f6487..9aa1672 100644
+--- a/t/re/pat.t
++++ b/t/re/pat.t
+@@ -15,13 +15,13 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.','../ext/re');
+     require Config; import Config;
+     require './test.pl'; require './charset_tools.pl';
+     require './loc_tools.pl';
++    set_up_inc('../lib', '.', '../ext/re');
++}
+     skip_all('no re module') unless defined &DynaLoader::boot_DynaLoader;
+     skip_all_without_unicode_tables();
+-}
+ 
+ plan tests => 774;  # Update this when adding/deleting tests.
+ 
+@@ -1597,7 +1597,7 @@ EOP
+     {   # make sure we get an error when \p{} cannot load Unicode tables
+         fresh_perl_like(<<'        prog that cannot load uni tables',
+             BEGIN {
+-                @INC = '../lib';
++                unshift @INC, '../lib';
+                 require utf8; require 'utf8_heavy.pl';
+                 @INC = ();
+             }
+-- 
+2.5.0
+

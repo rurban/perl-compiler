@@ -1,0 +1,28 @@
+From e03aa33dba79e0e71a5ea32cee316a871e09fe03 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 079/211] B::C patch for op/coresubs.t
+
+---
+ t/op/coresubs.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/coresubs.t b/t/op/coresubs.t
+index 6fec5f4..efa177a 100644
+--- a/t/op/coresubs.t
++++ b/t/op/coresubs.t
+@@ -5,9 +5,9 @@
+ # file, too.
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    chdir 't' if -d 't';    
+     require "./test.pl";
++    set_up_inc(qw(. ../lib));
+     skip_all_without_dynamic_extension('B');
+     $^P |= 0x100;
+ }
+-- 
+2.5.0
+

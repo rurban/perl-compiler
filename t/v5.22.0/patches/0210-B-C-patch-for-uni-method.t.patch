@@ -1,0 +1,26 @@
+From a867af56e2f9643cf10afcb4d34ed7d866d915f8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 210/211] B::C patch for uni/method.t
+
+---
+ t/uni/method.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/method.t b/t/uni/method.t
+index 4a12e3d..cc710ef 100644
+--- a/t/uni/method.t
++++ b/t/uni/method.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib ../cpan/parent/lib);
+     require "./test.pl"; require './charset_tools.pl';
++    set_up_inc( qw(. ../lib ../cpan/parent/lib) );
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

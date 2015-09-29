@@ -1,0 +1,25 @@
+From c89319dd16aa80a89fe92c65acb71946d7e1d0c5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 012/211] B::C patch for io/dup.t
+
+---
+ t/io/dup.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/dup.t b/t/io/dup.t
+index 1328aeb..bf55dbd 100644
+--- a/t/io/dup.t
++++ b/t/io/dup.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require "./test.pl";
+ }
+ 
+-- 
+2.5.0
+

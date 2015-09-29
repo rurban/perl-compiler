@@ -1,0 +1,25 @@
+From ae6c514f6c0bdabe1de71e57f2fd3a5a52a994b5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 185/211] B::C patch for re/pat_special_cc.t
+
+---
+ t/re/pat_special_cc.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pat_special_cc.t b/t/re/pat_special_cc.t
+index d116eb9..5d51e2d 100644
+--- a/t/re/pat_special_cc.t
++++ b/t/re/pat_special_cc.t
+@@ -7,7 +7,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.');
++    unshift @INC,  ('../lib','.');
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

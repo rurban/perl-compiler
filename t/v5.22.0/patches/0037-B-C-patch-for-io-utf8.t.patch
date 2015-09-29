@@ -1,0 +1,29 @@
+From 6a9cba5c77df10f35711b8274740bf79b065ba9c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 037/211] B::C patch for io/utf8.t
+
+---
+ t/io/utf8.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/io/utf8.t b/t/io/utf8.t
+index 756f307..52ae948 100644
+--- a/t/io/utf8.t
++++ b/t/io/utf8.t
+@@ -2,10 +2,10 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl'; require './charset_tools.pl';
+-    skip_all_without_perlio();
++    set_up_inc('../lib');
+ }
++skip_all_without_perlio();
+ 
+ no utf8; # needed for use utf8 not griping about the raw octets
+ 
+-- 
+2.5.0
+

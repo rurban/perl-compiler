@@ -1,0 +1,26 @@
+From 1864e78e301d2dd65650d79488f4bf1eb33f4951 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 197/211] B::C patch for re/reg_nc_tie.t
+
+---
+ t/re/reg_nc_tie.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/reg_nc_tie.t b/t/re/reg_nc_tie.t
+index 3380b25..b23dc8f 100644
+--- a/t/re/reg_nc_tie.t
++++ b/t/re/reg_nc_tie.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no Tie::Hash::NamedCapture");
+ }
+ 
+-- 
+2.5.0
+

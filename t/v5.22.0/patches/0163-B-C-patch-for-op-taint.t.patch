@@ -1,0 +1,26 @@
+From deae6447329be96675924a5186a2594aeca62065 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 163/211] B::C patch for op/taint.t
+
+---
+ t/op/taint.t | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/t/op/taint.t b/t/op/taint.t
+index 08afc78..8245485 100644
+--- a/t/op/taint.t
++++ b/t/op/taint.t
+@@ -53,6 +53,9 @@ my $Invoke_Perl = $Is_VMS      ? 'MCR Sys$Disk:[]Perl.exe' :
+                   $Is_MSWin32  ? '.\perl'               :
+                   $Is_NetWare  ? 'perl'                 :
+                                  './perl'               ;
++ 
++( $Invoke_Perl)  = $^X =~ m/(.+)/; # untaint
++
+ my @MoreEnv = qw/IFS CDPATH ENV BASH_ENV/;
+ 
+ if ($Is_VMS) {
+-- 
+2.5.0
+

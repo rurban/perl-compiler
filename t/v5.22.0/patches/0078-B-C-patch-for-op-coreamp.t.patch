@@ -1,0 +1,35 @@
+From 08cecd6d2ef35e43a54fa0d052a479a068418d1c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 078/211] B::C patch for op/coreamp.t
+
+---
+ t/op/coreamp.t | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/t/op/coreamp.t b/t/op/coreamp.t
+index bcc2f1f..067c43f 100644
+--- a/t/op/coreamp.t
++++ b/t/op/coreamp.t
+@@ -9,9 +9,9 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib ../dist/if);
+     require "./test.pl"; require './charset_tools.pl';
+     $^P |= 0x100;
++    set_up_inc( qw(. ../lib ../dist/if) );
+ }
+ 
+ no warnings 'experimental::smartmatch';
+@@ -1021,6 +1021,7 @@ like $@, qr'^Undefined format "STDOUT" called',
+    File::Spec::Functions::catfile(
+       File::Spec::Functions::updir,'regen','keywords.pl'
+    );
++  note `pwd`;
+   open my $kh, $keywords_file
+     or die "$0 cannot open $keywords_file: $!";
+   while(<$kh>) {
+-- 
+2.5.0
+

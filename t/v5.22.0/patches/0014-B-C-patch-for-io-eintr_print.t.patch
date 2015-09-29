@@ -1,0 +1,27 @@
+From 8ee66597cf98e0fd93b4f4385a3d58be8c3b9b0e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 014/211] B::C patch for io/eintr_print.t
+
+---
+ t/io/eintr_print.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/io/eintr_print.t b/t/io/eintr_print.t
+index 1a0d84d..1a3fd2b 100644
+--- a/t/io/eintr_print.t
++++ b/t/io/eintr_print.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+-    require './test.pl';
++    require "./test.pl";
++    set_up_inc('../lib');
+     skip_all_if_miniperl("No XS under miniperl");
+ }
+ 
+-- 
+2.5.0
+

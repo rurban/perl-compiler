@@ -1,0 +1,28 @@
+From ff9be9f0a5f248118b63c77e519be4e3f571c532 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 126/211] B::C patch for op/method.t
+
+---
+ t/op/method.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/method.t b/t/op/method.t
+index 1171f4a..39b977d 100644
+--- a/t/op/method.t
++++ b/t/op/method.t
+@@ -5,9 +5,9 @@
+ #
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = qw(. ../lib lib ../dist/base/lib);
++    chdir 't' if -d 't';    
+     require "./test.pl";
++    set_up_inc( qw(. ../lib lib ../dist/base/lib) );
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

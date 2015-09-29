@@ -1,0 +1,26 @@
+From 9fd4c3fe9285bd0d52dd428389378531837ac14d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 075/211] B::C patch for op/concat2.t
+
+---
+ t/op/concat2.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/concat2.t b/t/op/concat2.t
+index b1f707d..42bea0b 100644
+--- a/t/op/concat2.t
++++ b/t/op/concat2.t
+@@ -8,8 +8,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan 3;
+-- 
+2.5.0
+

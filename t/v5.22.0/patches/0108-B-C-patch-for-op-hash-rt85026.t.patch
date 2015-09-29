@@ -1,0 +1,34 @@
+From c316e2dd465299f63448c83d009aa733ccff2450 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 108/211] B::C patch for op/hash-rt85026.t
+
+---
+ t/op/hash-rt85026.t | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/hash-rt85026.t b/t/op/hash-rt85026.t
+index 8dbf004..131ba86 100644
+--- a/t/op/hash-rt85026.t
++++ b/t/op/hash-rt85026.t
+@@ -1,12 +1,14 @@
+ #!/usr/bin/perl -w
+ 
+ BEGIN {
+-  chdir 't' if -d 't';
+-  @INC = '../lib';
++  chdir 't' if -d 't';  
+   require './test.pl';
+-  skip_all_without_dynamic_extension("Devel::Peek");
++  set_up_inc( '../lib' );
+ }
+ 
++skip_all_without_dynamic_extension("Devel::Peek");
++
++
+ use strict;
+ use Devel::Peek;
+ use File::Temp qw(tempdir);
+-- 
+2.5.0
+

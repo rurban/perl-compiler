@@ -1,0 +1,33 @@
+From 49d622af47a3ac9db7ab350c2cc6e7485fe92ff8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 058/211] B::C patch for mro/recursion_c3.t
+
+---
+ t/mro/recursion_c3.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/mro/recursion_c3.t b/t/mro/recursion_c3.t
+index 6ebd7fb..d5bcbaf 100644
+--- a/t/mro/recursion_c3.t
++++ b/t/mro/recursion_c3.t
+@@ -1,14 +1,13 @@
+ #!./perl
+ 
+ BEGIN {
++    require './test.pl';
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    set_up_inc('../lib');
+ }
+ 
+-require './test.pl';
+-
+ use strict;
+ use warnings;
+ 
+-- 
+2.5.0
+

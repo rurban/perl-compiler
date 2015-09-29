@@ -1,0 +1,26 @@
+From 6fc56bccd942b92b4f5eeab13a71f91b038edab1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 073/211] B::C patch for op/chars.t
+
+---
+ t/op/chars.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/chars.t b/t/op/chars.t
+index 5eef677..2c31259 100644
+--- a/t/op/chars.t
++++ b/t/op/chars.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 34;
+-- 
+2.5.0
+

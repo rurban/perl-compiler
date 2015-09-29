@@ -1,0 +1,28 @@
+From 1f3a5c80c7ddefd109508bab4137e516ed67d87f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 087/211] B::C patch for op/do.t
+
+---
+ t/op/do.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/do.t b/t/op/do.t
+index 49c0de3..87f3a02 100644
+--- a/t/op/do.t
++++ b/t/op/do.t
+@@ -1,9 +1,9 @@
+ #!./perl -w
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = '../lib';
++    chdir 't' if -d 't';    
+     require './test.pl';
++    set_up_inc( '../lib' );
+ }
+ use strict;
+ no warnings 'void';
+-- 
+2.5.0
+

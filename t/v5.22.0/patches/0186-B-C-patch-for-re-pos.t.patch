@@ -1,0 +1,26 @@
+From 824e6e64f8f78bca1c0c6d5ea725e2b929810a3b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 186/211] B::C patch for re/pos.t
+
+---
+ t/re/pos.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pos.t b/t/re/pos.t
+index 593b44d..dc24c87 100644
+--- a/t/re/pos.t
++++ b/t/re/pos.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 8;
+-- 
+2.5.0
+

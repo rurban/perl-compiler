@@ -1,0 +1,26 @@
+From 2d07bb70470c7ce3c320909849916e180c08890f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 169/211] B::C patch for op/utf8cache.t
+
+---
+ t/op/utf8cache.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/utf8cache.t b/t/op/utf8cache.t
+index e897587..68b6cc9 100644
+--- a/t/op/utf8cache.t
++++ b/t/op/utf8cache.t
+@@ -3,8 +3,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From 77336202e7a9a040e64e97227ea6ee2399c35092 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 172/211] B::C patch for op/ver.t
+
+---
+ t/op/ver.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/ver.t b/t/op/ver.t
+index e896e9e..d375418 100644
+--- a/t/op/ver.t
++++ b/t/op/ver.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     $SIG{'__WARN__'} = sub { warn $_[0] if $DOWARN };
+     require "./test.pl"; require "./charset_tools.pl";
+ }
+-- 
+2.5.0
+

@@ -1,0 +1,27 @@
+From ff006d23fe58f7e0daa4630ec1e855835a19581c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 056/211] B::C patch for mro/package_aliases.t
+
+---
+ t/mro/package_aliases.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/package_aliases.t b/t/mro/package_aliases.t
+index 6998a89..dd811a6 100644
+--- a/t/mro/package_aliases.t
++++ b/t/mro/package_aliases.t
+@@ -3,9 +3,9 @@
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
+     require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

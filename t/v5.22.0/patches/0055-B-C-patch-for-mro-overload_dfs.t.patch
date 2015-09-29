@@ -1,0 +1,31 @@
+From f029e054500c9715291d5b6a946913e0d81032e1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 055/211] B::C patch for mro/overload_dfs.t
+
+---
+ t/mro/overload_dfs.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/mro/overload_dfs.t b/t/mro/overload_dfs.t
+index 5943c85..00d2753 100644
+--- a/t/mro/overload_dfs.t
++++ b/t/mro/overload_dfs.t
+@@ -5,11 +5,12 @@ use warnings;
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+-require q(./test.pl); plan(tests => 7);
++plan(tests => 7);
+ 
+ {
+     package BaseTest;
+-- 
+2.5.0
+

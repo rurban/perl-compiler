@@ -1,0 +1,25 @@
+From f80cc688270994a61d95336faf598534ae6bb58a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 152/211] B::C patch for op/srand.t
+
+---
+ t/op/srand.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/srand.t b/t/op/srand.t
+index 61c64d2..35ad5ff 100644
+--- a/t/op/srand.t
++++ b/t/op/srand.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir "t" if -d "t";
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ # Test srand.
+-- 
+2.5.0
+

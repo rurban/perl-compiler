@@ -1,0 +1,26 @@
+From 59b2b4481cc7e8eede54bf7cd011384eb0585f9b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 094/211] B::C patch for op/exp.t
+
+---
+ t/op/exp.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/exp.t b/t/op/exp.t
+index eb53f1b..5878f44 100644
+--- a/t/op/exp.t
++++ b/t/op/exp.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use Config;
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 2e9483daaad6ecedc2c22548b2c62913a59ae3ce Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 090/211] B::C patch for op/each.t
+
+---
+ t/op/each.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/each.t b/t/op/each.t
+index b33fbac..70d3c24 100644
+--- a/t/op/each.t
++++ b/t/op/each.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 59;
+-- 
+2.5.0
+

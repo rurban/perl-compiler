@@ -1,0 +1,32 @@
+From 0c2b993b81d575735a2452c0ba29ea1318e8d1c6 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 171/211] B::C patch for op/utfhash.t
+
+---
+ t/op/utfhash.t | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/utfhash.t b/t/op/utfhash.t
+index 5200c5b..e0df72e 100644
+--- a/t/op/utfhash.t
++++ b/t/op/utfhash.t
+@@ -2,12 +2,12 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
+-
+-    plan(tests => 99);
++    set_up_inc('../lib');    
+ }
+ 
++plan(tests => 99);
++
+ use strict;
+ 
+ # Two hashes one with all 8-bit possible keys (initially), other
+-- 
+2.5.0
+

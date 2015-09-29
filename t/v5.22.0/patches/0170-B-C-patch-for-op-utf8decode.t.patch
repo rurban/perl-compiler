@@ -1,0 +1,26 @@
+From 5b660b1a2cb6a11e234e76eb1a338c50b376d3d1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 170/211] B::C patch for op/utf8decode.t
+
+---
+ t/op/utf8decode.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/utf8decode.t b/t/op/utf8decode.t
+index 92de821..89d2c8c 100644
+--- a/t/op/utf8decode.t
++++ b/t/op/utf8decode.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ {
+-- 
+2.5.0
+

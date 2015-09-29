@@ -1,0 +1,25 @@
+From 7a63cda918d8065678264359a4b6dd2441479522 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 153/211] B::C patch for op/sselect.t
+
+---
+ t/op/sselect.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/sselect.t b/t/op/sselect.t
+index 212c69a..f6d9ad6 100644
+--- a/t/op/sselect.t
++++ b/t/op/sselect.t
+@@ -3,7 +3,7 @@
+ my $hires;
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('.', '../lib');
++    unshift @INC,  ('.', '../lib');
+     $hires = eval 'use Time::HiResx "time"; 1';
+ }
+ 
+-- 
+2.5.0
+

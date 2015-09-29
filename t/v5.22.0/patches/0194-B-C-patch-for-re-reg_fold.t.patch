@@ -1,0 +1,26 @@
+From aa9471a1df1f22d43349559a91f2f228088f9915 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 194/211] B::C patch for re/reg_fold.t
+
+---
+ t/re/reg_fold.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/reg_fold.t b/t/re/reg_fold.t
+index a23a799..10529c2 100644
+--- a/t/re/reg_fold.t
++++ b/t/re/reg_fold.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no File::Spec");
+ }
+ 
+-- 
+2.5.0
+

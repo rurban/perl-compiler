@@ -1,0 +1,27 @@
+From 72e11517ded460f6c52bad0ac3c8488b084e687e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 050/211] B::C patch for mro/method_caching_utf8.t
+
+---
+ t/mro/method_caching_utf8.t | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/t/mro/method_caching_utf8.t b/t/mro/method_caching_utf8.t
+index ee31869..75e7561 100644
+--- a/t/mro/method_caching_utf8.t
++++ b/t/mro/method_caching_utf8.t
+@@ -3,8 +3,9 @@
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use utf8;
+-- 
+2.5.0
+

@@ -1,0 +1,36 @@
+From 325e0dbc15bf8a4a908fd515e4ca7252963f293d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 013/211] B::C patch for io/eintr.t
+
+---
+ t/io/eintr.t | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/t/io/eintr.t b/t/io/eintr.t
+index ca15232..b175781 100644
+--- a/t/io/eintr.t
++++ b/t/io/eintr.t
+@@ -8,17 +8,15 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
+-    skip_all_without_dynamic_extension('Fcntl');
++    set_up_inc('../lib'); 
+ }
++skip_all_without_dynamic_extension('Fcntl');
+ 
+ use warnings;
+ use strict;
+ use Config;
+ 
+-require './test.pl';
+-
+ my $piped;
+ eval {
+ 	pipe my $in, my $out;
+-- 
+2.5.0
+

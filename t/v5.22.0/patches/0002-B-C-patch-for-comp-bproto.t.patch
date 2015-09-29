@@ -1,0 +1,25 @@
+From 0e4e9edfdad01d750309423783baffad3befabcb Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 002/211] B::C patch for comp/bproto.t
+
+---
+ t/comp/bproto.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/comp/bproto.t b/t/comp/bproto.t
+index 8d11b91..0c18957 100644
+--- a/t/comp/bproto.t
++++ b/t/comp/bproto.t
+@@ -5,7 +5,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ print "1..16\n";
+-- 
+2.5.0
+

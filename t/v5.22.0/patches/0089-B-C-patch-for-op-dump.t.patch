@@ -1,0 +1,34 @@
+From a957b73e65928909de91a54f0bd80c26e5e4a338 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 089/211] B::C patch for op/dump.t
+
+---
+ t/op/dump.t | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/t/op/dump.t b/t/op/dump.t
+index 7c5c3af..4d61e2d 100644
+--- a/t/op/dump.t
++++ b/t/op/dump.t
+@@ -3,13 +3,13 @@
+ # Minimally test if dump() behaves as expected
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    chdir 't' if -d 't';    
+     require './test.pl';
+-
+-    skip_all_if_miniperl();
++    set_up_inc( qw(. ../lib) );
+ }
+ 
++skip_all_if_miniperl();
++
+ use Config;
+ use File::Temp qw(tempdir);
+ use Cwd qw(getcwd);
+-- 
+2.5.0
+

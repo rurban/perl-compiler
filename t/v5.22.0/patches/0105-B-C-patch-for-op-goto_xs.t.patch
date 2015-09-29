@@ -1,0 +1,46 @@
+From b51310fe41fb70b03f2528d584b8e57d679bb100 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 105/211] B::C patch for op/goto_xs.t
+
+---
+ t/op/goto_xs.t | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/goto_xs.t b/t/op/goto_xs.t
+index fbdd2dd..1471990 100644
+--- a/t/op/goto_xs.t
++++ b/t/op/goto_xs.t
+@@ -9,13 +9,18 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
++    eval q/use TestInit; 1/;
++
+     require './test.pl';
+ # turn warnings into fatal errors
+     $SIG{__WARN__} = sub { die "WARNING: @_" } ;
+-
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no Fcntl");
+     require Fcntl;
+ }
++
++skip_all("need XS::APItest");
++eval q/use TestInit; 1/;
+ use strict;
+ use warnings;
+ use vars '$VALID';
+@@ -91,8 +96,7 @@ is($ret, $value, 'goto &$function_ref; from a sub called without arglist');
+ BEGIN {
+     use Config;
+     if ($Config{extensions} =~ m{XS/APItest}) {
+-	eval q[use XS::APItest qw(mycroak); 1]
+-	    or die "use XS::APItest: $@\n";
++	eval q[use XS::APItest qw(mycroak); 1];
+     }
+     else {
+ 	*mycroak = sub { die @_ };
+-- 
+2.5.0
+

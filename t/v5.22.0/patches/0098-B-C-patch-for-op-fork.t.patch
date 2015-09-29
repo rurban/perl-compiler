@@ -1,0 +1,26 @@
+From 730794dfae6c5fcca924103a2219542cadb7f499 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:46 -0500
+Subject: [PATCH 098/211] B::C patch for op/fork.t
+
+---
+ t/op/fork.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/fork.t b/t/op/fork.t
+index 77cc7b7..b69a929 100644
+--- a/t/op/fork.t
++++ b/t/op/fork.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     require Config;
+     skip_all('no fork')
+ 	unless ($Config::Config{d_fork} or $Config::Config{d_pseudofork});
+-- 
+2.5.0
+

@@ -1,0 +1,37 @@
+From 91277c76b90a408a482de0e95850184a2b8f144b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 102/211] B::C patch for op/glob.t
+
+---
+ t/op/glob.t | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/glob.t b/t/op/glob.t
+index 7eec330..bd3827a 100644
+--- a/t/op/glob.t
++++ b/t/op/glob.t
+@@ -1,9 +1,9 @@
+ #!./perl
+ 
+ BEGIN {
+-    chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    chdir 't' if -d 't';    
+     require './test.pl';
++    set_up_inc( qw(. ../lib) );
+ }
+ 
+ plan( tests => 18 );
+@@ -116,7 +116,7 @@ SKIP: {
+ SKIP: {
+     use Config;
+     skip("glob() works when cross-compiling, but this test doesn't", 1)
+-        if $Config{usecrosscompile};
++        if 1 || $Config{usecrosscompile};
+ 
+     my $switches = [qw(-lw)];
+     my $expected = "ok1\nok2\n";
+-- 
+2.5.0
+

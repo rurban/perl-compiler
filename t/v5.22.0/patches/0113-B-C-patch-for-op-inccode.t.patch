@@ -1,0 +1,34 @@
+From 7acbc9f9f9f94db083ded6b3af3bbdc074797eed Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 113/211] B::C patch for op/inccode.t
+
+---
+ t/op/inccode.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/inccode.t b/t/op/inccode.t
+index 016b425..4e81a8a 100644
+--- a/t/op/inccode.t
++++ b/t/op/inccode.t
+@@ -197,7 +197,7 @@ is( $ret, 'abc', 'do "abc.pl" sees return value' );
+     my $got;
+     #local @INC; # local fails on tied @INC
+     my @old_INC = @INC; # because local doesn't work on tied arrays
+-    @INC = ('lib', 'lib/Devel', sub { $got = $_[1]; return undef; });
++    @INC =  ('lib', 'lib/Devel', sub { $got = $_[1]; return undef; });
+     foreach my $filename ('/test_require.pm', './test_require.pm',
+ 			  '../test_require.pm') {
+ 	local %INC;
+@@ -274,7 +274,7 @@ sub fake_module {
+ }
+ {
+     local @INC = @INC;
+-    unshift @INC, (\&fake_module)x2;
++    @INC = (\&fake_module)x2;
+     eval { require "${\'bralbalhablah'}" };
+     like $@, qr/^Can't locate/,
+         'require PADTMP passing freed var when @INC has multiple subs';
+-- 
+2.5.0
+

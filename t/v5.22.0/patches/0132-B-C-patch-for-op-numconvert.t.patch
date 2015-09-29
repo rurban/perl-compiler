@@ -1,0 +1,26 @@
+From 84cea2e41271d83d798424c589f2091c080709b1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 132/211] B::C patch for op/numconvert.t
+
+---
+ t/op/numconvert.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/numconvert.t b/t/op/numconvert.t
+index bfdb488..c8e8118 100644
+--- a/t/op/numconvert.t
++++ b/t/op/numconvert.t
+@@ -37,8 +37,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

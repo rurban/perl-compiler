@@ -1,0 +1,27 @@
+From cc8bfd66349697a984058c6b4cf7f8e6c0cc70d5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 052/211] B::C patch for mro/next_edgecases_utf8.t
+
+---
+ t/mro/next_edgecases_utf8.t | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/t/mro/next_edgecases_utf8.t b/t/mro/next_edgecases_utf8.t
+index 3546a70..e84fb35 100644
+--- a/t/mro/next_edgecases_utf8.t
++++ b/t/mro/next_edgecases_utf8.t
+@@ -3,7 +3,9 @@
+ use strict;
+ use warnings;
+ 
+-BEGIN { chdir 't' if -d 't'; require q(./test.pl); @INC = qw "../lib lib" }
++BEGIN { chdir 't' if -d 't'; require q(./test.pl); 
++    set_up_inc('../lib', 'lib');
++}
+ 
+ use utf8;
+ use open qw( :utf8 :std );
+-- 
+2.5.0
+

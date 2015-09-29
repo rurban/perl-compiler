@@ -1,0 +1,26 @@
+From c53a8164fdb266a24697e7f739ee4d7362c6419c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 020/211] B::C patch for io/nargv.t
+
+---
+ t/io/nargv.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/nargv.t b/t/io/nargv.t
+index 41417cd..f0eee30 100644
+--- a/t/io/nargv.t
++++ b/t/io/nargv.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ print "1..5\n";
+-- 
+2.5.0
+

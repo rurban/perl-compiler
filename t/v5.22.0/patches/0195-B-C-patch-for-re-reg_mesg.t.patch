@@ -1,0 +1,26 @@
+From cef9dacc715afedcb0f7227e269e5580bef27b94 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 195/211] B::C patch for re/reg_mesg.t
+
+---
+ t/re/reg_mesg.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/reg_mesg.t b/t/re/reg_mesg.t
+index 452d982..59be563 100644
+--- a/t/re/reg_mesg.t
++++ b/t/re/reg_mesg.t
+@@ -4,8 +4,8 @@ $|=1;   # outherwise things get mixed up in output
+ 
+ BEGIN {
+ 	chdir 't' if -d 't';
+-	@INC = qw '../lib ../ext/re';
+ 	require './test.pl';
++    set_up_inc( qw '../lib ../ext/re' );
+ 	skip_all_without_unicode_tables();
+ 	eval 'require Config'; # assume defaults if this fails
+ }
+-- 
+2.5.0
+

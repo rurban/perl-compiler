@@ -1,0 +1,26 @@
+From f47ff2569717b78762ce5ef6012355b4553de2d9 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 030/211] B::C patch for io/read.t
+
+---
+ t/io/read.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/read.t b/t/io/read.t
+index 8cc1640..601b9c1 100644
+--- a/t/io/read.t
++++ b/t/io/read.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     eval 'use Errno';
+     die $@ if $@ and !is_miniperl();
+ }
+-- 
+2.5.0
+

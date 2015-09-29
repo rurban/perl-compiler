@@ -1,0 +1,26 @@
+From 7c68cdf60c1caecbfbfc1b3ed2abb67f4eebf474 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 146/211] B::C patch for op/runlevel.t
+
+---
+ t/op/runlevel.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/runlevel.t b/t/op/runlevel.t
+index 5b6b39f..c42ce2d 100644
+--- a/t/op/runlevel.t
++++ b/t/op/runlevel.t
+@@ -7,8 +7,8 @@
+ ##
+ 
+ chdir 't' if -d 't';
+-@INC = '../lib';
+ require './test.pl';
++set_up_inc('../lib');
+ 
+ $|=1;
+ 
+-- 
+2.5.0
+

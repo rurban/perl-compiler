@@ -1,0 +1,26 @@
+From a33d5c3fff05af60935c09c89085cddd0d53db9c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 069/211] B::C patch for op/attrproto.t
+
+---
+ t/op/attrproto.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/attrproto.t b/t/op/attrproto.t
+index 464081f..e30e40a 100644
+--- a/t/op/attrproto.t
++++ b/t/op/attrproto.t
+@@ -5,8 +5,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("miniperl can't load attributes");
+ }
+ use warnings;
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From e3bbdf02bda8e6ad6c67620913f2bbcc878a7cec Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 112/211] B::C patch for op/inccode-tie.t
+
+---
+ t/op/inccode-tie.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/inccode-tie.t b/t/op/inccode-tie.t
+index 5bbcc10..089354e 100644
+--- a/t/op/inccode-tie.t
++++ b/t/op/inccode-tie.t
+@@ -5,7 +5,7 @@
+ use Tie::Array;
+ my @orig_INC = @INC;
+ tie @INC, 'Tie::StdArray';
+-@INC = @orig_INC;
++unshift @INC,  @orig_INC;
+ for my $file ('./op/inccode.t', './t/op/inccode.t', ':op:inccode.t') {
+     if (-r $file) {
+ 	do $file; die $@ if $@;
+-- 
+2.5.0
+

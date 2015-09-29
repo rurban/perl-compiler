@@ -1,0 +1,27 @@
+From e3c2faa6cc8dcd9c472020bc5d82c3d405f8720b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 049/211] B::C patch for mro/method_caching.t
+
+---
+ t/mro/method_caching.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/method_caching.t b/t/mro/method_caching.t
+index ab312a8..a6b2906 100644
+--- a/t/mro/method_caching.t
++++ b/t/mro/method_caching.t
+@@ -3,9 +3,9 @@
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

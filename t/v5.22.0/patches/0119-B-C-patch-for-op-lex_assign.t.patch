@@ -1,0 +1,26 @@
+From b8b884de1ae1286583d9c92754255861611878c5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 119/211] B::C patch for op/lex_assign.t
+
+---
+ t/op/lex_assign.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/lex_assign.t b/t/op/lex_assign.t
+index 4ea3f24..970da04 100644
+--- a/t/op/lex_assign.t
++++ b/t/op/lex_assign.t
+@@ -5,8 +5,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ $| = 1;
+-- 
+2.5.0
+

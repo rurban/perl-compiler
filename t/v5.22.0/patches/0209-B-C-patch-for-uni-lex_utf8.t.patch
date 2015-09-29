@@ -1,0 +1,31 @@
+From 31eae9ddf8fda887423238a63bd1f709fb8726ec Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 209/211] B::C patch for uni/lex_utf8.t
+
+---
+ t/uni/lex_utf8.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/uni/lex_utf8.t b/t/uni/lex_utf8.t
+index 6b155bb..b706cb4 100644
+--- a/t/uni/lex_utf8.t
++++ b/t/uni/lex_utf8.t
+@@ -6,12 +6,12 @@ BEGIN {
+     $| = 1;
+ 
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
++}
+     skip_all('no re module') unless defined &DynaLoader::boot_DynaLoader;
+     skip_all_without_unicode_tables();
+     skip_all('EBCDIC') if $::IS_EBCDIC;
+-}
+ 
+ use strict;
+ 
+-- 
+2.5.0
+

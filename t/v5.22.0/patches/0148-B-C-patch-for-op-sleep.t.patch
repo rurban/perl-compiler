@@ -1,0 +1,25 @@
+From 0251bf2f19bfbbe1097be3a99988792d5bac33c7 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 148/211] B::C patch for op/sleep.t
+
+---
+ t/op/sleep.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/sleep.t b/t/op/sleep.t
+index 441f76a..95c380f 100644
+--- a/t/op/sleep.t
++++ b/t/op/sleep.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ require "./test.pl";
+-- 
+2.5.0
+

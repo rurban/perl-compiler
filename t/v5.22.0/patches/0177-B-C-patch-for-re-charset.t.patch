@@ -1,0 +1,37 @@
+From 5fe5195636e84691884efcdae7f144abe160984f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 177/211] B::C patch for re/charset.t
+
+---
+ t/re/charset.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/re/charset.t b/t/re/charset.t
+index 7a5852a..515abc3 100644
+--- a/t/re/charset.t
++++ b/t/re/charset.t
+@@ -2,9 +2,9 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw '../lib ../dist/if';
+     require './test.pl';
+     require './loc_tools.pl';
++    set_up_inc('../lib', '../dist/if');
+ }
+ 
+ use strict;
+@@ -41,7 +41,8 @@ $testcases{'[:word:]'} = $testcases{'\w'};
+ my $utf8_locale;
+ 
+ my @charsets = qw(a d u aa);
+-if (! is_miniperl() && locales_enabled('LC_CTYPE')) {
++my $locales_ok = eval { locales_enabled('LC_CTYPE'); 1 }; 
++if (! is_miniperl() && $locales_ok) {
+     require POSIX;
+     my $current_locale = POSIX::setlocale( &POSIX::LC_ALL, "C") // "";
+     if ($current_locale eq 'C') {
+-- 
+2.5.0
+

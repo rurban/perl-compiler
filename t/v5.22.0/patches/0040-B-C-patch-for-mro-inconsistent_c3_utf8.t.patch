@@ -1,0 +1,36 @@
+From c7705b89fd128c04e576fc6720f4501618554f74 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 040/211] B::C patch for mro/inconsistent_c3_utf8.t
+
+---
+ t/mro/inconsistent_c3_utf8.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/mro/inconsistent_c3_utf8.t b/t/mro/inconsistent_c3_utf8.t
+index b7baa3e..4d2b5be 100644
+--- a/t/mro/inconsistent_c3_utf8.t
++++ b/t/mro/inconsistent_c3_utf8.t
+@@ -3,8 +3,9 @@
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+@@ -13,7 +14,7 @@ use warnings;
+ use utf8;
+ use open qw( :utf8 :std );
+ 
+-require q(./test.pl); plan(tests => 1);
++plan(tests => 1);
+ 
+ require mro;
+ 
+-- 
+2.5.0
+

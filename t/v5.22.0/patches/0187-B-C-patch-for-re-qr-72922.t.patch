@@ -1,0 +1,28 @@
+From c7a9dda922c21027aa5298a326e13416caf66745 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 187/211] B::C patch for re/qr-72922.t
+
+---
+ t/re/qr-72922.t | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/t/re/qr-72922.t b/t/re/qr-72922.t
+index 1b27683..5f41ae3 100644
+--- a/t/re/qr-72922.t
++++ b/t/re/qr-72922.t
+@@ -5,9 +5,10 @@ BEGIN {
+     chdir 't' if -d 't';
+     require './test.pl';
+     skip_all_if_miniperl("no dynamic loading on miniperl, no Scalar::Util");
+-    plan(tests => 14);
+ }
+ 
++plan(tests => 14);
++
+ # [perl 72922]: A 'copy' of a Regex object which has magic should not crash
+ # When a Regex object was copied and the copy weaken then the original regex object
+ # could no longer be 'copied' with qr//
+-- 
+2.5.0
+

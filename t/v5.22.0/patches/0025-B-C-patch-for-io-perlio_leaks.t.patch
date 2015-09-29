@@ -1,0 +1,26 @@
+From 2bd0e9267d87777df71319ebcf5f655eba24c60e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 025/211] B::C patch for io/perlio_leaks.t
+
+---
+ t/io/perlio_leaks.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/perlio_leaks.t b/t/io/perlio_leaks.t
+index a7cdf28..f725eef 100644
+--- a/t/io/perlio_leaks.t
++++ b/t/io/perlio_leaks.t
+@@ -3,8 +3,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

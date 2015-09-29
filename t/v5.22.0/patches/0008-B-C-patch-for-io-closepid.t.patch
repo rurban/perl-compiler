@@ -1,0 +1,27 @@
+From 295c530b5d99cd230f8b8a1f49f3ba8589e465af Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:43 -0500
+Subject: [PATCH 008/211] B::C patch for io/closepid.t
+
+---
+ t/io/closepid.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/io/closepid.t b/t/io/closepid.t
+index a90db68..6ba80f8 100644
+--- a/t/io/closepid.t
++++ b/t/io/closepid.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+-    require './test.pl';
++    require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ if ($^O eq 'dos') {
+-- 
+2.5.0
+

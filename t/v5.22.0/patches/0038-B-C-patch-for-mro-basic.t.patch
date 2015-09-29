@@ -1,0 +1,26 @@
+From 2f4913735aeb21e5522946c8244ba28990d64ad0 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 038/211] B::C patch for mro/basic.t
+
+---
+ t/mro/basic.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/basic.t b/t/mro/basic.t
+index 3b7f9e8..1e5a5d5 100644
+--- a/t/mro/basic.t
++++ b/t/mro/basic.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

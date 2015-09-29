@@ -1,0 +1,25 @@
+From 6d2ec50f72c75ffa945799c8869c699f57db9735 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:48 -0500
+Subject: [PATCH 138/211] B::C patch for op/quotemeta.t
+
+---
+ t/op/quotemeta.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/quotemeta.t b/t/op/quotemeta.t
+index 35ed2c6..68f6b92 100644
+--- a/t/op/quotemeta.t
++++ b/t/op/quotemeta.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(../lib .);
++    unshift @INC,  qw(../lib .);
+     require Config; import Config;
+     require "./test.pl";
+     require "./loc_tools.pl";
+-- 
+2.5.0
+

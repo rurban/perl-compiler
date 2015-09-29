@@ -1,0 +1,27 @@
+From a8664e5685de3bb63d68f427c7dd5931625b6fc2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:44 -0500
+Subject: [PATCH 041/211] B::C patch for mro/isa_aliases.t
+
+---
+ t/mro/isa_aliases.t | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/t/mro/isa_aliases.t b/t/mro/isa_aliases.t
+index 6ce81d1..73d137e 100644
+--- a/t/mro/isa_aliases.t
++++ b/t/mro/isa_aliases.t
+@@ -1,6 +1,9 @@
+ #!./perl
+ 
+-BEGIN { chdir 't' if -d 't'; @INC = '../lib'; require './test.pl' }
++BEGIN { chdir 't' if -d 't'; 
++    require './test.pl'; 
++    set_up_inc('../lib');
++}
+ 
+ plan 13;
+ 
+-- 
+2.5.0
+

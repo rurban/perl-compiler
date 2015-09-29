@@ -1,0 +1,25 @@
+From 84583328499fa0831d8363e35b6df1da97c340d2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:49 -0500
+Subject: [PATCH 176/211] B::C patch for porting/cmp_version.t
+
+---
+ t/porting/cmp_version.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/cmp_version.t b/t/porting/cmp_version.t
+index 55b4003..447044f 100644
+--- a/t/porting/cmp_version.t
++++ b/t/porting/cmp_version.t
+@@ -11,7 +11,7 @@
+ # the core change.
+ 
+ BEGIN {
+-    @INC = '..' if -f '../TestInit.pm';
++    unshift @INC,  '..' if -f '../TestInit.pm';
+ }
+ use TestInit qw(T A); # T is chdir to the top level, A makes paths absolute
+ use strict;
+-- 
+2.5.0
+

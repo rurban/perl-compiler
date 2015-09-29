@@ -1,0 +1,26 @@
+From 6866ad2b7e3e77a1a5117a99b1cd28832e230e41 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:50 -0500
+Subject: [PATCH 188/211] B::C patch for re/qr.t
+
+---
+ t/re/qr.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/qr.t b/t/re/qr.t
+index 811f5c5..3d252fc 100644
+--- a/t/re/qr.t
++++ b/t/re/qr.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 5;
+-- 
+2.5.0
+

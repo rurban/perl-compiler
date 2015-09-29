@@ -1,0 +1,27 @@
+From e956b811a3ed20deb7ac80922f2ab64cb5cdeae0 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:45 -0500
+Subject: [PATCH 047/211] B::C patch for mro/isarev.t
+
+---
+ t/mro/isarev.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/isarev.t b/t/mro/isarev.t
+index 3bd543d..2681e7f 100644
+--- a/t/mro/isarev.t
++++ b/t/mro/isarev.t
+@@ -3,9 +3,9 @@
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
+     require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

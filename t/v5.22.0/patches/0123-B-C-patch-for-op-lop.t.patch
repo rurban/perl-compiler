@@ -1,0 +1,26 @@
+From 246144d1f384f686c9d0aa1a501bd048c0be4e7e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Tue, 29 Sep 2015 14:35:47 -0500
+Subject: [PATCH 123/211] B::C patch for op/lop.t
+
+---
+ t/op/lop.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/lop.t b/t/op/lop.t
+index bc4eb85..09f40ed 100644
+--- a/t/op/lop.t
++++ b/t/op/lop.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 17;
+-- 
+2.5.0
+
