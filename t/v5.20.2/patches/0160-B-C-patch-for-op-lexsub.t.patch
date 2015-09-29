@@ -1,0 +1,26 @@
+From d63a5e9149a508389cf2a34f9d364d40f6a7af37 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 160/352] B::C patch for op/lexsub.t
+
+---
+ t/op/lexsub.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/lexsub.t b/t/op/lexsub.t
+index 8cfbab1..c88a8c9 100644
+--- a/t/op/lexsub.t
++++ b/t/op/lexsub.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     *bar::is = *is;
+     *bar::like = *like;
+ }
+-- 
+2.5.0
+

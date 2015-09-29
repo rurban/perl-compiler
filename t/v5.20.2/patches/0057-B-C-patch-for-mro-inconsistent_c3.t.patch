@@ -1,0 +1,31 @@
+From e649fec18ce5dcbec4ee0da9797cb8f3228076b1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 057/352] B::C patch for mro/inconsistent_c3.t
+
+---
+ t/mro/inconsistent_c3.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/mro/inconsistent_c3.t b/t/mro/inconsistent_c3.t
+index ae01e9f..6ce932a 100644
+--- a/t/mro/inconsistent_c3.t
++++ b/t/mro/inconsistent_c3.t
+@@ -5,11 +5,12 @@ use warnings;
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+-require q(./test.pl); plan(tests => 1);
++plan(tests => 1);
+ 
+ require mro;
+ 
+-- 
+2.5.0
+

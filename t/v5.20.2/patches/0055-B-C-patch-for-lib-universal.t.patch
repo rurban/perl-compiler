@@ -1,0 +1,26 @@
+From 14728bcdadc2b6f2b1806348a5936ff0c8b548c4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 055/352] B::C patch for lib/universal.t
+
+---
+ t/lib/universal.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/universal.t b/t/lib/universal.t
+index 19f8f28..fab5e1e 100644
+--- a/t/lib/universal.t
++++ b/t/lib/universal.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     plan( tests => 13 );
+ }
+ 
+-- 
+2.5.0
+

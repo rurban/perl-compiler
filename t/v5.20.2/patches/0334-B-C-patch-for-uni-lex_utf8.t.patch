@@ -1,0 +1,26 @@
+From 27ef105dfb284288ebc00fc6116d1bdbd08d0f20 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 334/352] B::C patch for uni/lex_utf8.t
+
+---
+ t/uni/lex_utf8.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/lex_utf8.t b/t/uni/lex_utf8.t
+index d6c6261..6e73282 100644
+--- a/t/uni/lex_utf8.t
++++ b/t/uni/lex_utf8.t
+@@ -6,8 +6,8 @@ BEGIN {
+     $| = 1;
+ 
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no re");
+     skip_all('EBCDIC') if $::IS_EBCDIC;
+ }
+-- 
+2.5.0
+

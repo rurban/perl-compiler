@@ -1,0 +1,31 @@
+From 875dd9a62a390b84268e8568e7e7a267d1b4ad1f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 322/352] B::C patch for run/switches.t
+
+---
+ t/run/switches.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/run/switches.t b/t/run/switches.t
+index a2e4bad..f31f643 100644
+--- a/t/run/switches.t
++++ b/t/run/switches.t
+@@ -6,12 +6,11 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require "./test.pl";
++    set_up_inc('../lib');
+     require Config; import Config;
+ }
+ 
+-BEGIN { require "./test.pl"; }
+-
+ plan(tests => 115);
+ 
+ use Config;
+-- 
+2.5.0
+

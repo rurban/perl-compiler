@@ -1,0 +1,31 @@
+From 06b40fc178b1b2d06a28cb480bbbc5bd3c84b552 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 232/352] B::C patch for op/tie_fetch_count.t
+
+---
+ t/op/tie_fetch_count.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/tie_fetch_count.t b/t/op/tie_fetch_count.t
+index 9f60bb4..0132e98 100644
+--- a/t/op/tie_fetch_count.t
++++ b/t/op/tie_fetch_count.t
+@@ -5,11 +5,12 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
+-    plan (tests => 312);
++    set_up_inc('../lib');    
+ }
+ 
++plan (tests => 312);
++
+ use strict;
+ use warnings;
+ 
+-- 
+2.5.0
+

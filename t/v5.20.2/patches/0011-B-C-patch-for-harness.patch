@@ -1,0 +1,25 @@
+From a340c0eca460d62e684f3f73dfd452feb582b97e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 011/352] B::C patch for harness
+
+---
+ t/harness | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/harness b/t/harness
+index 1ed70cb..18146b8 100644
+--- a/t/harness
++++ b/t/harness
+@@ -5,7 +5,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';              # pick up only this build's lib
++    unshift @INC, '../lib';              # pick up only this build's lib
+ }
+ 
+ my $torture; # torture testing?
+-- 
+2.5.0
+

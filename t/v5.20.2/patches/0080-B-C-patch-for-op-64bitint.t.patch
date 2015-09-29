@@ -1,0 +1,26 @@
+From e20cab139487fc899779f767c5e4774b1f05fa3e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 080/352] B::C patch for op/64bitint.t
+
+---
+ t/op/64bitint.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/64bitint.t b/t/op/64bitint.t
+index 168d597..b8bf15b 100644
+--- a/t/op/64bitint.t
++++ b/t/op/64bitint.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     eval { my $q = pack "q", 0 };
+     skip_all('no 64-bit types') if $@;
+ }
+-- 
+2.5.0
+

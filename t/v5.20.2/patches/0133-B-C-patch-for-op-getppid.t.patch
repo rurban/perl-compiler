@@ -1,0 +1,36 @@
+From 97712f8e905a78425e3af6d1cd38fe85b8d2b001 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 133/352] B::C patch for op/getppid.t
+
+---
+ t/op/getppid.t | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/getppid.t b/t/op/getppid.t
+index a8d0f2c..58f0d72 100644
+--- a/t/op/getppid.t
++++ b/t/op/getppid.t
+@@ -9,16 +9,16 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(../lib);
++    unshift @INC,  qw(../lib);
+ }
+ 
+ use strict;
+ 
+ BEGIN {
+     require './test.pl';
+-    skip_all_without_config(qw(d_pipe d_fork d_waitpid d_getppid));
+-    plan (8);
+ }
++skip_all_without_config(qw(d_pipe d_fork d_waitpid d_getppid));
++plan (8);
+ 
+ # No, we don't want any zombies. kill 0, $ppid spots zombies :-(
+ $SIG{CHLD} = 'IGNORE';
+-- 
+2.5.0
+

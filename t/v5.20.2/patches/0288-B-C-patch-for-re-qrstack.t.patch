@@ -1,0 +1,26 @@
+From 3e4cb44d430a6aae9cb797840d6e9f14771369de Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 288/352] B::C patch for re/qrstack.t
+
+---
+ t/re/qrstack.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/qrstack.t b/t/re/qrstack.t
+index 47d190d..db5871c 100644
+--- a/t/re/qrstack.t
++++ b/t/re/qrstack.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 1;
+-- 
+2.5.0
+

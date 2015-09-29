@@ -1,0 +1,25 @@
+From ff0c43ca44462fc7f9341d487db2c15e870365dd Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 048/352] B::C patch for lib/common.pl
+
+---
+ t/lib/common.pl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/common.pl b/t/lib/common.pl
+index 4ab00b1..b357022 100644
+--- a/t/lib/common.pl
++++ b/t/lib/common.pl
+@@ -33,7 +33,7 @@ if (@ARGV) {
+ my ($tests, @prgs) = setup_multiple_progs(@w_files);
+ 
+ $^X = rel2abs($^X);
+-@INC = map { rel2abs($_) } @INC;
++unshift @INC,  map { rel2abs($_) } @INC;
+ my $tempdir = tempfile;
+ 
+ mkdir $tempdir, 0700 or die "Can't mkdir '$tempdir': $!";
+-- 
+2.5.0
+

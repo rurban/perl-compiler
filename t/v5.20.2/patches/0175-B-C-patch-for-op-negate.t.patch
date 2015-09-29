@@ -1,0 +1,26 @@
+From b43ba9e3b7af2d0d110eafbdbfc14948cf583af2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 175/352] B::C patch for op/negate.t
+
+---
+ t/op/negate.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/negate.t b/t/op/negate.t
+index 3b02e35..3147c21 100644
+--- a/t/op/negate.t
++++ b/t/op/negate.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 46;
+-- 
+2.5.0
+

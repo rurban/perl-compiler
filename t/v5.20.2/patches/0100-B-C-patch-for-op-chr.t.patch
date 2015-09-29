@@ -1,0 +1,25 @@
+From 8205f705bd7c6ad128609ecfeb03f31715525971 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 100/352] B::C patch for op/chr.t
+
+---
+ t/op/chr.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/chr.t b/t/op/chr.t
+index 57b4ade..1500a97 100644
+--- a/t/op/chr.t
++++ b/t/op/chr.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib); # ../lib needed for test.deparse
++    unshift @INC,  qw(. ../lib); # ../lib needed for test.deparse
+     require "test.pl";
+ }
+ 
+-- 
+2.5.0
+

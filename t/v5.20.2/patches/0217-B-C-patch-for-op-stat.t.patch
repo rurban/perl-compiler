@@ -1,0 +1,26 @@
+From 2e537db196e4714112e04a6a302c73c8b0886ebf Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 217/352] B::C patch for op/stat.t
+
+---
+ t/op/stat.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/stat.t b/t/op/stat.t
+index 2f34f6e..5d2adfc 100644
+--- a/t/op/stat.t
++++ b/t/op/stat.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';	# for which_perl() etc
++    set_up_inc('../lib');
+ }
+ 
+ use Config;
+-- 
+2.5.0
+

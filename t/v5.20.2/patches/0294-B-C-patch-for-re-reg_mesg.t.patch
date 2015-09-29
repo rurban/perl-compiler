@@ -1,0 +1,28 @@
+From 20cb50d63d0e799129129d9e2c61980d4f9c8054 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 294/352] B::C patch for re/reg_mesg.t
+
+---
+ t/re/reg_mesg.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/re/reg_mesg.t b/t/re/reg_mesg.t
+index 55eda18..a5133cc 100644
+--- a/t/re/reg_mesg.t
++++ b/t/re/reg_mesg.t
+@@ -2,9 +2,9 @@
+ 
+ BEGIN {
+ 	chdir 't' if -d 't';
+-	@INC = '../lib';
+ 	require './test.pl';
+-	eval 'require Config'; # assume defaults if this fails
++	set_up_inc('../lib');
++    eval 'require Config'; # assume defaults if this fails
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

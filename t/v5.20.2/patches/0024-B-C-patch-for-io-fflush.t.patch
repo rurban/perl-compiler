@@ -1,0 +1,26 @@
+From 3d1b2aaa4449a16ce96a3ae0c8feec678aeb84ab Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 024/352] B::C patch for io/fflush.t
+
+---
+ t/io/fflush.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/fflush.t b/t/io/fflush.t
+index 0bbfa54..8e89ebb 100644
+--- a/t/io/fflush.t
++++ b/t/io/fflush.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ # Script to test auto flush on fork/exec/system/qx.  The idea is to
+-- 
+2.5.0
+

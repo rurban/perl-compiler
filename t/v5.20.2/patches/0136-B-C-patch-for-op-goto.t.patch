@@ -1,0 +1,25 @@
+From 6f8a67690fe2d9dce10b57b8d03ec33bbb2d9ac3 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 136/352] B::C patch for op/goto.t
+
+---
+ t/op/goto.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/goto.t b/t/op/goto.t
+index 13e6b04..7be7c75 100644
+--- a/t/op/goto.t
++++ b/t/op/goto.t
+@@ -4,7 +4,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require "test.pl";
+ }
+ 
+-- 
+2.5.0
+

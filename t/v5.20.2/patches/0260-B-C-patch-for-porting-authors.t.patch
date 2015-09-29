@@ -1,0 +1,25 @@
+From 83b86f020700cfc2959d71998e6bfca71ebada50 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 260/352] B::C patch for porting/authors.t
+
+---
+ t/porting/authors.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/authors.t b/t/porting/authors.t
+index bc69e3a..78aaba7 100644
+--- a/t/porting/authors.t
++++ b/t/porting/authors.t
+@@ -2,7 +2,7 @@
+ # Test that there are no missing authors in AUTHORS
+ 
+ BEGIN {
+-    @INC = '..' if -f '../TestInit.pm';
++    unshift @INC,  '..' if -f '../TestInit.pm';
+ }
+ use TestInit qw(T); # T is chdir to the top level
+ use strict;
+-- 
+2.5.0
+

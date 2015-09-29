@@ -1,0 +1,25 @@
+From 7bf17132d675abfbc9478dc571fd8f928e1c5767 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 006/352] B::C patch for comp/hints.t
+
+---
+ t/comp/hints.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/comp/hints.t b/t/comp/hints.t
+index 9a08854..f4c10b2 100644
+--- a/t/comp/hints.t
++++ b/t/comp/hints.t
+@@ -3,7 +3,7 @@
+ # Tests the scoping of $^H and %^H
+ 
+ BEGIN {
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     chdir 't';
+ }
+ 
+-- 
+2.5.0
+

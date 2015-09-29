@@ -1,0 +1,72 @@
+From a97c6a0ccc9d986674a79eab00962cbcc6a4537e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 075/352] B::C patch for mro/package_aliases_utf8.t
+
+---
+ t/mro/package_aliases_utf8.t | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/t/mro/package_aliases_utf8.t b/t/mro/package_aliases_utf8.t
+index 09db6b7..d9c27f4 100644
+--- a/t/mro/package_aliases_utf8.t
++++ b/t/mro/package_aliases_utf8.t
+@@ -4,9 +4,9 @@ BEGIN {
+     $ENV{PERL_UNICODE} = 0;
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
+     require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+@@ -58,7 +58,7 @@ my $prog =    q~
+      BEGIN {
+          unless (-d 'blib') {
+              chdir 't' if -d 't';
+-             @INC = '../lib';
++             unshift @INC,  '../lib';
+          }
+      }
+      use utf8;
+@@ -120,7 +120,7 @@ for(
+      BEGIN {
+          unless (-d 'blib') {
+              chdir 't' if -d 't';
+-             @INC = '../lib';
++             unshift @INC,  '../lib';
+          }
+      }
+      use utf8;
+@@ -185,7 +185,7 @@ for(
+      BEGIN {
+          unless (-d 'blib') {
+              chdir 't' if -d 't';
+-             @INC = '../lib';
++             unshift @INC,  '../lib';
+          }
+      }
+       use utf8;
+@@ -221,7 +221,7 @@ for(
+       BEGIN {
+          unless (-d 'blib') {
+              chdir 't' if -d 't';
+-             @INC = '../lib';
++             unshift @INC,  '../lib';
+          }
+       }
+       use utf8;
+@@ -305,7 +305,7 @@ my $prog =    q~#!perl -w
+      BEGIN {
+          unless (-d 'blib') {
+              chdir 't' if -d 't';
+-             @INC = '../lib';
++             unshift @INC,  '../lib';
+          }
+      }
+      use utf8;
+-- 
+2.5.0
+

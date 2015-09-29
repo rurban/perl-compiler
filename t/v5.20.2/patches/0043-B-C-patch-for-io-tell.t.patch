@@ -1,0 +1,26 @@
+From a4877c65e988c9cefcf8a7ebecc4f80aca82c6ab Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 043/352] B::C patch for io/tell.t
+
+---
+ t/io/tell.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/tell.t b/t/io/tell.t
+index f9226b0..5474499 100644
+--- a/t/io/tell.t
++++ b/t/io/tell.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ print "1..35\n";
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From e46ae623edb1fed68b145e75b0c311e93fefd29a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 114/352] B::C patch for op/die_exit.t
+
+---
+ t/op/die_exit.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/die_exit.t b/t/op/die_exit.t
+index bd9ac28..e074913 100644
+--- a/t/op/die_exit.t
++++ b/t/op/die_exit.t
+@@ -7,8 +7,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

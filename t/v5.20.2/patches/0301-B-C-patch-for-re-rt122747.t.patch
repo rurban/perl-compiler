@@ -1,0 +1,25 @@
+From ba4b606edfb344e953e6353853045df7c6340363 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 301/352] B::C patch for re/rt122747.t
+
+---
+ t/re/rt122747.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/rt122747.t b/t/re/rt122747.t
+index b839edd..0a1da50 100644
+--- a/t/re/rt122747.t
++++ b/t/re/rt122747.t
+@@ -7,7 +7,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.','../ext/re');
++    unshift @INC,  ('../lib','.','../ext/re');
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

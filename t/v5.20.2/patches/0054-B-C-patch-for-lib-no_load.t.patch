@@ -1,0 +1,25 @@
+From 27833aaccd65739bbb32d1c425bb185744909704 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 054/352] B::C patch for lib/no_load.t
+
+---
+ t/lib/no_load.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/no_load.t b/t/lib/no_load.t
+index 39f0dc6..38561a2 100644
+--- a/t/lib/no_load.t
++++ b/t/lib/no_load.t
+@@ -5,7 +5,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

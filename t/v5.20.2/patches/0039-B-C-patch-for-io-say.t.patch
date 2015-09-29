@@ -1,0 +1,26 @@
+From a20c16ad761c6ed019943c214fe5053f2a02ac88 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 039/352] B::C patch for io/say.t
+
+---
+ t/io/say.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/say.t b/t/io/say.t
+index 70f83a7..83e6394 100644
+--- a/t/io/say.t
++++ b/t/io/say.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     eval 'use Errno';
+     die $@ if $@ and !is_miniperl();
+ }
+-- 
+2.5.0
+

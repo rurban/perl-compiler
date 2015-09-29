@@ -1,0 +1,26 @@
+From 516036a3ac7f2290709ce4cec7a75ad73dd22ecd Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 326/352] B::C patch for uni/attrs.t
+
+---
+ t/uni/attrs.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/attrs.t b/t/uni/attrs.t
+index 3ea2f68..11a94b4 100644
+--- a/t/uni/attrs.t
++++ b/t/uni/attrs.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("miniperl can't load attributes");
+ }
+ 
+-- 
+2.5.0
+

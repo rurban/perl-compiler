@@ -1,0 +1,25 @@
+From de1839ebd9a30715d3793aa5f1f9051014b81206 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 262/352] B::C patch for porting/checkcfgvar.t
+
+---
+ t/porting/checkcfgvar.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/checkcfgvar.t b/t/porting/checkcfgvar.t
+index 8a02b01..dd13f39 100644
+--- a/t/porting/checkcfgvar.t
++++ b/t/porting/checkcfgvar.t
+@@ -24,7 +24,7 @@
+ use Config;
+ BEGIN {
+     require "./test.pl";
+-    @INC = '..' if -f '../TestInit.pm';
++    unshift @INC,  '..' if -f '../TestInit.pm';
+ }
+ use TestInit qw(T A); # T is chdir to the top level, A makes paths absolute
+ 
+-- 
+2.5.0
+

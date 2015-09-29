@@ -1,0 +1,26 @@
+From 005cd3af3d6419d8a3eea08063d2b50ff8ebb5be Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 181/352] B::C patch for op/pack.t
+
+---
+ t/op/pack.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/pack.t b/t/op/pack.t
+index 99cb533..3a26212 100644
+--- a/t/op/pack.t
++++ b/t/op/pack.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ # This is truth in an if statement, and could be a skip message
+-- 
+2.5.0
+

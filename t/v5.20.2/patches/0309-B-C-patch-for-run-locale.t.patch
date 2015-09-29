@@ -1,0 +1,27 @@
+From 2ddd47b669420ed22cd76d7029aaaf684e4b17b3 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 309/352] B::C patch for run/locale.t
+
+---
+ t/run/locale.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/locale.t b/t/run/locale.t
+index 3483f02..cbd83d3 100644
+--- a/t/run/locale.t
++++ b/t/run/locale.t
+@@ -1,9 +1,9 @@
+ #!./perl
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';    # for fresh_perl_is() etc
+     require './loc_tools.pl'; # to find locales
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

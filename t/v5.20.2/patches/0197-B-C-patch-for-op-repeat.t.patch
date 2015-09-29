@@ -1,0 +1,29 @@
+From c6a555ad61e27296062cce2ed5bbb194d09d1224 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 197/352] B::C patch for op/repeat.t
+
+---
+ t/op/repeat.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/repeat.t b/t/op/repeat.t
+index bfd142f..443d7ed 100644
+--- a/t/op/repeat.t
++++ b/t/op/repeat.t
+@@ -2,10 +2,10 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+-require './test.pl';
+ plan(tests => 43);
+ 
+ # compile time
+-- 
+2.5.0
+

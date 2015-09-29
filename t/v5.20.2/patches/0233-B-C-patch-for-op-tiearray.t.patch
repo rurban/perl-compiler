@@ -1,0 +1,26 @@
+From 2655fb6947c9cde0f38c8735be845aa105ffe95e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 233/352] B::C patch for op/tiearray.t
+
+---
+ t/op/tiearray.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/tiearray.t b/t/op/tiearray.t
+index 99b7938..1b9149c 100644
+--- a/t/op/tiearray.t
++++ b/t/op/tiearray.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ my %seen;
+-- 
+2.5.0
+

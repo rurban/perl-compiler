@@ -1,0 +1,32 @@
+From 95f7916a85905c1a83a2f0cc1cc836d4c0adf431 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 032/352] B::C patch for io/perlio_fail.t
+
+---
+ t/io/perlio_fail.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/io/perlio_fail.t b/t/io/perlio_fail.t
+index 6bc9b17..f7aa709 100644
+--- a/t/io/perlio_fail.t
++++ b/t/io/perlio_fail.t
+@@ -2,12 +2,13 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "../t/test.pl";
++    set_up_inc('../lib');
+     skip_all_without_perlio();
+-    plan (15);
+ }
+ 
++plan (15);
++
+ use warnings 'layer';
+ my $warn;
+ my $file = "fail$$";
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 82ff9a8cdd28e5639a6c749c4d686900e1df97ef Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 220/352] B::C patch for op/studytied.t
+
+---
+ t/op/studytied.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/studytied.t b/t/op/studytied.t
+index 62f1ac9..00cf8b0 100644
+--- a/t/op/studytied.t
++++ b/t/op/studytied.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

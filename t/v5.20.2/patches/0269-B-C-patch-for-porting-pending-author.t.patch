@@ -1,0 +1,25 @@
+From 6ba2fef7ac13f9c6e5d6555804695cbaef075760 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 269/352] B::C patch for porting/pending-author.t
+
+---
+ t/porting/pending-author.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/pending-author.t b/t/porting/pending-author.t
+index 4dceaf6..2496a3b 100644
+--- a/t/porting/pending-author.t
++++ b/t/porting/pending-author.t
+@@ -21,7 +21,7 @@
+ # d) add an alias to Porting/checkAUTHORS.pl
+ 
+ BEGIN {
+-    @INC = '..' if -f '../TestInit.pm';
++    unshift @INC,  '..' if -f '../TestInit.pm';
+ }
+ use TestInit qw(T); # T is chdir to the top level
+ use strict;
+-- 
+2.5.0
+

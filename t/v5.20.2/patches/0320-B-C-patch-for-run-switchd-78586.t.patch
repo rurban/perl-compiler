@@ -1,0 +1,25 @@
+From 3971ebb62623dae3251e37ac7311c179fa1ce2fc Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 320/352] B::C patch for run/switchd-78586.t
+
+---
+ t/run/switchd-78586.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/switchd-78586.t b/t/run/switchd-78586.t
+index 02e0b25..de366ce 100644
+--- a/t/run/switchd-78586.t
++++ b/t/run/switchd-78586.t
+@@ -3,7 +3,7 @@
+ BEGIN {
+     $^P = 0x122;
+     chdir 't';
+-    @INC = ('../lib', 'lib');
++    unshift @INC,  ('../lib', 'lib');
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

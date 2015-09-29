@@ -1,0 +1,26 @@
+From 10214eda542763bdff2af8e7b30753601e61d4f8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 083/352] B::C patch for op/append.t
+
+---
+ t/op/append.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/append.t b/t/op/append.t
+index 44847b5..5001dc6 100644
+--- a/t/op/append.t
++++ b/t/op/append.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ ##Literal test count since evals below can fail
+-- 
+2.5.0
+

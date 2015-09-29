@@ -1,0 +1,25 @@
+From 83a093d1007abad0b258db422ebe64202e06d01b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 222/352] B::C patch for op/sub_lval.t
+
+---
+ t/op/sub_lval.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/sub_lval.t b/t/op/sub_lval.t
+index 4bd96ee..16f4c8c 100644
+--- a/t/op/sub_lval.t
++++ b/t/op/sub_lval.t
+@@ -1,7 +1,7 @@
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ plan tests=>205;
+ 
+-- 
+2.5.0
+

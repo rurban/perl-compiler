@@ -1,0 +1,53 @@
+From 27689a0bca3496069da892e3451b05323e236eab Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 174/352] B::C patch for op/mydef.t
+
+---
+ t/op/mydef.t | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/t/op/mydef.t b/t/op/mydef.t
+index b993f1b..67eac9d 100644
+--- a/t/op/mydef.t
++++ b/t/op/mydef.t
+@@ -2,10 +2,12 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
++plan tests => 73;
++
+ use strict;
+ no warnings 'misc', 'experimental::lexical_topic';
+ 
+@@ -153,7 +155,7 @@ $_ = "global";
+     my $_ = "titi";
+     my $r;
+     {
+-	local $::TODO = 'Marked as todo since test was added in 59f00321bbc2d046';
++    local $::TODO = 'Marked as todo since test was added in 59f00321bbc2d046';
+ 	$r = $s =~ /to(?{ is($_, 'toto', 'my $_ in code-match' ) })to/;
+     }
+     ok($r, "\$s=$s should match!");
+@@ -179,7 +181,7 @@ my $file = tempfile();
+     open my $_, '>', $file or die "Can't open $file: $!";
+     print $_ "hello\n";
+     close $_;
+-    cmp_ok(-s $file, '>', 5, 'writing to filehandle $_ works');
++    ok( -s $file >  5, 'writing to filehandle $_ works');
+ }
+ {
+     open my $_, $file or die "Can't open $file: $!";
+@@ -215,4 +217,3 @@ my $file = tempfile();
+     ::is($_, 4, '$_ is "special", and always forced to main');
+ }
+ 
+-done_testing();
+-- 
+2.5.0
+

@@ -1,0 +1,42 @@
+From d7d4e133583ac6637d9a86a0bceb3d360bb07a70 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 230/352] B::C patch for op/threads.t
+
+---
+ t/op/threads.t | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/t/op/threads.t b/t/op/threads.t
+index 6fb2410..1c6ef85 100644
+--- a/t/op/threads.t
++++ b/t/op/threads.t
+@@ -2,19 +2,19 @@
+ 
+ BEGIN {
+      chdir 't' if -d 't';
+-     @INC = '../lib';
+      require './test.pl';
++     set_up_inc('../lib');
+      $| = 1;
++}
+ 
+-     skip_all_without_config('useithreads');
+-     skip_all_if_miniperl("no dynamic loading on miniperl, no threads");
++skip_all_without_config('useithreads');
++skip_all_if_miniperl("no dynamic loading on miniperl, no threads");
+ 
+-     plan(27);
+-}
++plan(27);
+ 
+ use strict;
+ use warnings;
+-use threads;
++eval q/use threads/;
+ 
+ # test that we don't get:
+ # Attempt to free unreferenced scalar: SV 0x40173f3c
+-- 
+2.5.0
+

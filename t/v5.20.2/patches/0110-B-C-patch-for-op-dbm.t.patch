@@ -1,0 +1,27 @@
+From 07e2f7141d9d82d04baea2b88d713c3ae8ae40b2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 110/352] B::C patch for op/dbm.t
+
+---
+ t/op/dbm.t | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/t/op/dbm.t b/t/op/dbm.t
+index 9e81f59..12683ad 100644
+--- a/t/op/dbm.t
++++ b/t/op/dbm.t
+@@ -2,9 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
+-
++    set_up_inc('../lib');
+     eval { require AnyDBM_File }; # not all places have dbm* functions
+     skip_all("No dbm functions") if $@;
+ }
+-- 
+2.5.0
+

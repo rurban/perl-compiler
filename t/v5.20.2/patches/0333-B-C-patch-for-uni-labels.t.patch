@@ -1,0 +1,26 @@
+From 9c3c296152fd2d3c21a258856a5b0db38f9b2fda Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 333/352] B::C patch for uni/labels.t
+
+---
+ t/uni/labels.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/labels.t b/t/uni/labels.t
+index 3fa9d38..2a7edfb 100644
+--- a/t/uni/labels.t
++++ b/t/uni/labels.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use utf8;
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From dd24af24b9bf0889af989c6d9d2cc3206a9989b4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 265/352] B::C patch for porting/diag.t
+
+---
+ t/porting/diag.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/diag.t b/t/porting/diag.t
+index e7df6ec..1f02019 100644
+--- a/t/porting/diag.t
++++ b/t/porting/diag.t
+@@ -1,7 +1,7 @@
+ #!/usr/bin/perl
+ 
+ BEGIN {
+-  @INC = '..' if -f '../TestInit.pm';
++  unshift @INC,  '..' if -f '../TestInit.pm';
+ }
+ use TestInit qw(T); # T is chdir to the top level
+ 
+-- 
+2.5.0
+

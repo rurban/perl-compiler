@@ -1,0 +1,25 @@
+From 9385fca17347c0ea8bd0b7bdbf22c5b2e9bc97f5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 267/352] B::C patch for porting/maintainers.t
+
+---
+ t/porting/maintainers.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/maintainers.t b/t/porting/maintainers.t
+index cd4519d..6fdd923 100644
+--- a/t/porting/maintainers.t
++++ b/t/porting/maintainers.t
+@@ -10,7 +10,7 @@ BEGIN {
+ 	# XXX that should be fixed
+ 
+     chdir '..' unless -d 't';
+-    @INC = qw(lib Porting);
++    unshift @INC,  qw(lib Porting);
+     require './t/test.pl';
+ }
+ 
+-- 
+2.5.0
+

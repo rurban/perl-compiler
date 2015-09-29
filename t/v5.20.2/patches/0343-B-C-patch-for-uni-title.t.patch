@@ -1,0 +1,24 @@
+From 53e3be680739dff158220392ddc5999f43891e95 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 343/352] B::C patch for uni/title.t
+
+---
+ t/uni/title.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/title.t b/t/uni/title.t
+index 2d6dcb7..afce7e7 100644
+--- a/t/uni/title.t
++++ b/t/uni/title.t
+@@ -1,6 +1,6 @@
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(../lib uni .);
++    unshift @INC,  qw(../lib uni .);
+     require "case.pl";
+ }
+ 
+-- 
+2.5.0
+

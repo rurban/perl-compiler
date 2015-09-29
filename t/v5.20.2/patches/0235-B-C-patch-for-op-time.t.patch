@@ -1,0 +1,26 @@
+From 4e8714a9325ed3652ae72eaa73aa36a418a40240 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 235/352] B::C patch for op/time.t
+
+---
+ t/op/time.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/time.t b/t/op/time.t
+index 5cb9191..38a5b0b 100644
+--- a/t/op/time.t
++++ b/t/op/time.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 72;
+-- 
+2.5.0
+

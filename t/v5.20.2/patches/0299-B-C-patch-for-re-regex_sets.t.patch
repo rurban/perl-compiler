@@ -1,0 +1,25 @@
+From eae30926eec662e51d32f31867453e1f6499e5ea Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 299/352] B::C patch for re/regex_sets.t
+
+---
+ t/re/regex_sets.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/regex_sets.t b/t/re/regex_sets.t
+index 9ddceae..1a7080c 100644
+--- a/t/re/regex_sets.t
++++ b/t/re/regex_sets.t
+@@ -12,7 +12,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.');
++    unshift @INC,  ('../lib','.');
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From 3cb7de345d41beb5e15fba841856a2715176c994 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 257/352] B::C patch for opbasic/qq.t
+
+---
+ t/opbasic/qq.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/opbasic/qq.t b/t/opbasic/qq.t
+index 8dac6ec..9e1d2aa 100644
+--- a/t/opbasic/qq.t
++++ b/t/opbasic/qq.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ # This file uses a specially crafted is() function rather than that found in
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From 39a3767426a11c5444bcb073037d0734d934fad4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 037/352] B::C patch for io/pvbm.t
+
+---
+ t/io/pvbm.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/pvbm.t b/t/io/pvbm.t
+index 19f9733..13001f9 100644
+--- a/t/io/pvbm.t
++++ b/t/io/pvbm.t
+@@ -5,7 +5,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require "./test.pl";
+ }
+ 
+-- 
+2.5.0
+

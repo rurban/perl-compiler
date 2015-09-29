@@ -1,0 +1,25 @@
+From 033ae15664cae9644ac33e065c61cdfc7d1945aa Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 261/352] B::C patch for porting/checkcase.t
+
+---
+ t/porting/checkcase.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/checkcase.t b/t/porting/checkcase.t
+index 3c05e22..aa5b8f2 100644
+--- a/t/porting/checkcase.t
++++ b/t/porting/checkcase.t
+@@ -2,7 +2,7 @@
+ # Finds the files that have the same name, case insensitively in the build tree
+ 
+ BEGIN {
+-    @INC = '..' if -f '../TestInit.pm';
++    unshift @INC,  '..' if -f '../TestInit.pm';
+     require './test.pl';
+ }
+ use TestInit qw(T); # T is chdir to the top level
+-- 
+2.5.0
+

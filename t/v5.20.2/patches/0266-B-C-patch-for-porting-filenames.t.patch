@@ -1,0 +1,32 @@
+From 3a9053a92a16588e1904491318891b9c8f06ee54 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 266/352] B::C patch for porting/filenames.t
+
+---
+ t/porting/filenames.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/porting/filenames.t b/t/porting/filenames.t
+index b65ab8e..4cd0763 100644
+--- a/t/porting/filenames.t
++++ b/t/porting/filenames.t
+@@ -23,13 +23,12 @@ LPT2, LPT3, LPT4, LPT5, LPT6, LPT7, LPT8, and LPT9
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+ use File::Basename;
+-require './test.pl';
+-
+ 
+ my $manifest = '../MANIFEST';
+ 
+-- 
+2.5.0
+

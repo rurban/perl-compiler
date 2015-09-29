@@ -1,0 +1,26 @@
+From d187e7f585b1f22d10b9d90556d6f69e630afc79 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 171/352] B::C patch for op/mkdir.t
+
+---
+ t/op/mkdir.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/mkdir.t b/t/op/mkdir.t
+index d5c04b3..2f53332 100644
+--- a/t/op/mkdir.t
++++ b/t/op/mkdir.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 22;
+-- 
+2.5.0
+

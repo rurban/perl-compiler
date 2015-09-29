@@ -1,0 +1,43 @@
+From 6798461a2c6e865bedc9fb03116874732cfc8904 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 148/352] B::C patch for op/inccode.t
+
+---
+ t/op/inccode.t | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/inccode.t b/t/op/inccode.t
+index 1a0b919..b06c9a1 100644
+--- a/t/op/inccode.t
++++ b/t/op/inccode.t
+@@ -4,7 +4,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require './test.pl';
+ }
+ 
+@@ -197,7 +197,7 @@ is( $ret, 'abc', 'do "abc.pl" sees return value' );
+     my $got;
+     #local @INC; # local fails on tied @INC
+     my @old_INC = @INC; # because local doesn't work on tied arrays
+-    @INC = ('lib', 'lib/Devel', sub { $got = $_[1]; return undef; });
++    @INC =  ('lib', 'lib/Devel', sub { $got = $_[1]; return undef; });
+     foreach my $filename ('/test_require.pm', './test_require.pm',
+ 			  '../test_require.pm') {
+ 	local %INC;
+@@ -274,7 +274,7 @@ sub fake_module {
+ }
+ {
+     local @INC = @INC;
+-    unshift @INC, (\&fake_module)x2;
++    @INC = (\&fake_module)x2;
+     eval { require "${\'bralbalhablah'}" };
+     like $@, qr/^Can't locate/,
+         'require PADTMP passing freed var when @INC has multiple subs';
+-- 
+2.5.0
+

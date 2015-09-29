@@ -1,0 +1,25 @@
+From f448842fb2af59eed41253b6d2e9aeb4c20587b8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 007/352] B::C patch for comp/parser.t
+
+---
+ t/comp/parser.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/comp/parser.t b/t/comp/parser.t
+index 584a473..8f0e477 100644
+--- a/t/comp/parser.t
++++ b/t/comp/parser.t
+@@ -4,7 +4,7 @@
+ # (including weird syntax errors)
+ 
+ BEGIN {
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     chdir 't';
+ }
+ 
+-- 
+2.5.0
+

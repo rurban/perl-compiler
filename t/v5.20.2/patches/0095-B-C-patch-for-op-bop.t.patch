@@ -1,0 +1,26 @@
+From 391e5fa217ef2bef106118449475cfdda9235189 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 095/352] B::C patch for op/bop.t
+
+---
+ t/op/bop.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/bop.t b/t/op/bop.t
+index fa08e98..1cd574b 100644
+--- a/t/op/bop.t
++++ b/t/op/bop.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+     require Config;
+ }
+ 
+-- 
+2.5.0
+

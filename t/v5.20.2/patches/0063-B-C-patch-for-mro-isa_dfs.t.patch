@@ -1,0 +1,26 @@
+From 991dedcfd178c6795c0a1de538796d606d6d8f3b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 063/352] B::C patch for mro/isa_dfs.t
+
+---
+ t/mro/isa_dfs.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/isa_dfs.t b/t/mro/isa_dfs.t
+index 77c122e..e32ed75 100644
+--- a/t/mro/isa_dfs.t
++++ b/t/mro/isa_dfs.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

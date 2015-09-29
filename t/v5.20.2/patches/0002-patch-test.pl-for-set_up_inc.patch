@@ -1,0 +1,38 @@
+From ca081c00f610c0dcd819f8f68d03755009dfef07 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:39:15 -0500
+Subject: [PATCH 002/352] patch test.pl for set_up_inc
+
+---
+ t/test.pl | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/t/test.pl b/t/test.pl
+index 30db88c..a0d4cc6 100644
+--- a/t/test.pl
++++ b/t/test.pl
+@@ -18,6 +18,10 @@
+ # In this file, we use the latter "Baby Perl" approach, and increment
+ # will be worked over by t/op/inc.t
+ 
++BEGIN { 
++    unshift @INC, '..', './lib';
++}
++
+ $Level = 1;
+ my $test = 1;
+ my $planned;
+@@ -100,6 +104,10 @@ sub note {
+     _print( _comment(@_) );
+ }
+ 
++sub set_up_inc {
++    unshift @INC, @_;
++}
++
+ sub is_miniperl {
+     return !defined &DynaLoader::boot_DynaLoader;
+ }
+-- 
+2.5.0
+

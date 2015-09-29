@@ -1,0 +1,26 @@
+From 6cb829b1e63337eea05f3b9fc3c46251482fd67e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 029/352] B::C patch for io/open.t
+
+---
+ t/io/open.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/open.t b/t/io/open.t
+index 3e6efb4..50d608f 100644
+--- a/t/io/open.t
++++ b/t/io/open.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ $|  = 1;
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From 4fb5f5f13ffec2ff6c951fe54a417aebe88743f5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 134/352] B::C patch for op/glob.t
+
+---
+ t/op/glob.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/glob.t b/t/op/glob.t
+index e6f3680..674cd8d 100644
+--- a/t/op/glob.t
++++ b/t/op/glob.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require 'test.pl';
+ }
+ 
+-- 
+2.5.0
+

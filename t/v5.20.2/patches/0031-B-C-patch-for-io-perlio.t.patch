@@ -1,0 +1,27 @@
+From 5191d9adedc2b4fac53d35f63d6f6252ee044387 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 031/352] B::C patch for io/perlio.t
+
+---
+ t/io/perlio.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/io/perlio.t b/t/io/perlio.t
+index 3987a79..fa9adbf 100644
+--- a/t/io/perlio.t
++++ b/t/io/perlio.t
+@@ -1,8 +1,8 @@
+ BEGIN {
+ 	chdir 't' if -d 't';
+-	@INC = '../lib';
+ 	require Config; import Config;
+-	require './test.pl';
++    require './test.pl';
++    set_up_inc('../lib');
+ 	skip_all_without_perlio();
+ }
+ 
+-- 
+2.5.0
+

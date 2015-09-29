@@ -1,0 +1,26 @@
+From f8c7372fd9e229575000f5447873e181d85f71b7 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 047/352] B::C patch for lib/1_compile.t
+
+---
+ t/lib/1_compile.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/1_compile.t b/t/lib/1_compile.t
+index 2802ae2..df5966e 100644
+--- a/t/lib/1_compile.t
++++ b/t/lib/1_compile.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use warnings;
+-- 
+2.5.0
+

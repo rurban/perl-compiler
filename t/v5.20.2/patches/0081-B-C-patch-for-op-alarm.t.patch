@@ -1,0 +1,26 @@
+From 97fcf2760451629b59e0aa7b10506dbacf045125 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 081/352] B::C patch for op/alarm.t
+
+---
+ t/op/alarm.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/alarm.t b/t/op/alarm.t
+index 82691c5..0d2aaf6 100644
+--- a/t/op/alarm.t
++++ b/t/op/alarm.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ BEGIN {
+-- 
+2.5.0
+

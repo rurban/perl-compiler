@@ -1,0 +1,29 @@
+From 552a73aebcfff2002b6f261d7b9f6cdabef8b882 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 107/352] B::C patch for op/cproto.t
+
+---
+ t/op/cproto.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/cproto.t b/t/op/cproto.t
+index 85b86db..e6c27e8 100644
+--- a/t/op/cproto.t
++++ b/t/op/cproto.t
+@@ -3,10 +3,10 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+-BEGIN { require './test.pl'; }
+ plan tests => 254;
+ 
+ while (<DATA>) {
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 9d37b54cf295efe19bd7004ea5b4c3aec8e4cf8a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 103/352] B::C patch for op/cond.t
+
+---
+ t/op/cond.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/cond.t b/t/op/cond.t
+index acf0704..25d5060 100644
+--- a/t/op/cond.t
++++ b/t/op/cond.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ is( 1 ? 1 : 0, 1, 'compile time, true' );
+-- 
+2.5.0
+

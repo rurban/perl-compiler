@@ -1,0 +1,32 @@
+From d8a893ac9707daabe7bbdb3a900cf7e4bca6d0fb Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 212/352] B::C patch for op/sprintf.t
+
+---
+ t/op/sprintf.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/sprintf.t b/t/op/sprintf.t
+index 17e269a..1134c19 100644
+--- a/t/op/sprintf.t
++++ b/t/op/sprintf.t
+@@ -10,13 +10,13 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ use warnings;
+ use version;
+ use Config;
+ use strict;
+-require './test.pl';
+ 
+ my @tests = ();
+ my ($template, $data, $result, $comment, $w, $x, $evalData, $n, $p);
+-- 
+2.5.0
+

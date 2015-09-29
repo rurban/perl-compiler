@@ -1,0 +1,30 @@
+From eedacb5914e2b9c920c17840c68c8b0d45d48fc3 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 012/352] B::C patch for io/argv.t
+
+---
+ t/io/argv.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/io/argv.t b/t/io/argv.t
+index a1febaf..ec1358d 100644
+--- a/t/io/argv.t
++++ b/t/io/argv.t
+@@ -2,11 +2,10 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+-BEGIN { require "./test.pl"; }
+-
+ plan(tests => 24);
+ 
+ my ($devnull, $no_devnull);
+-- 
+2.5.0
+

@@ -1,0 +1,29 @@
+From 1c2a4fef8737d84eefba6f4370259b3326af3812 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 084/352] B::C patch for op/args.t
+
+---
+ t/op/args.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/args.t b/t/op/args.t
+index bfa015e..93b266e 100644
+--- a/t/op/args.t
++++ b/t/op/args.t
+@@ -2,10 +2,10 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+-require './test.pl';
+ plan( tests => 23 );
+ 
+ # test various operations on @_
+-- 
+2.5.0
+

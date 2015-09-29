@@ -1,0 +1,26 @@
+From b1d1aa0027da30ebd3742e3a2abd3968fa99edf8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 305/352] B::C patch for run/cloexec.t
+
+---
+ t/run/cloexec.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/cloexec.t b/t/run/cloexec.t
+index 5200377..bf8c65c 100644
+--- a/t/run/cloexec.t
++++ b/t/run/cloexec.t
+@@ -34,8 +34,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_without_config('d_fcntl');
+ }
+ 
+-- 
+2.5.0
+

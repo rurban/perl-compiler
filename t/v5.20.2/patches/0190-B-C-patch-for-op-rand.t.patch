@@ -1,0 +1,25 @@
+From 9c2cd0e4f076ede72f0f463324fdb83df5427546 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 190/352] B::C patch for op/rand.t
+
+---
+ t/op/rand.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/rand.t b/t/op/rand.t
+index 90d1c37..2bd55ae 100644
+--- a/t/op/rand.t
++++ b/t/op/rand.t
+@@ -17,7 +17,7 @@
+ 
+ BEGIN {
+     chdir "t" if -d "t";
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

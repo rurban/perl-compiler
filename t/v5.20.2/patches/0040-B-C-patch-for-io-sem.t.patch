@@ -1,0 +1,25 @@
+From 3a67ff3e8c4a902dd6a8aca293404b5f79a7d3a1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 040/352] B::C patch for io/sem.t
+
+---
+ t/io/sem.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/sem.t b/t/io/sem.t
+index 0e309eb..16e0f75 100644
+--- a/t/io/sem.t
++++ b/t/io/sem.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+   chdir 't' if -d 't';
+-  @INC = '../lib' if -d '../lib' && -d '../ext';
++  unshift @INC,  '../lib' if -d '../lib' && -d '../ext';
+ 
+   require "./test.pl";
+   require Config; import Config;
+-- 
+2.5.0
+

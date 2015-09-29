@@ -1,0 +1,25 @@
+From 1b52f6737d56baef82cfa1b59e0ace52bd826c89 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 157/352] B::C patch for op/leaky-magic.t
+
+---
+ t/op/leaky-magic.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/leaky-magic.t b/t/op/leaky-magic.t
+index 371f3ac..0c422f5 100644
+--- a/t/op/leaky-magic.t
++++ b/t/op/leaky-magic.t
+@@ -7,7 +7,7 @@
+ BEGIN {
+     chdir 't' if -d 't';
+     require './test.pl';
+-    @INC = '../lib';
++    set_up_inc('../lib');
+ }
+ 
+ # Hack to allow test counts to be specified piecemeal
+-- 
+2.5.0
+

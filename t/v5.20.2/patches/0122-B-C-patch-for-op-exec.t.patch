@@ -1,0 +1,25 @@
+From e43612fde3fd7b996002a36cd2ef13c2a85b950e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 122/352] B::C patch for op/exec.t
+
+---
+ t/op/exec.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/exec.t b/t/op/exec.t
+index 6ec3646..2dc3a07 100644
+--- a/t/op/exec.t
++++ b/t/op/exec.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib');
++    unshift @INC,  ('../lib');
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

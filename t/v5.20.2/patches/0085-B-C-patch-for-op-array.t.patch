@@ -1,0 +1,25 @@
+From 44b0535df87ee641ac9398564705e801da906f0d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 085/352] B::C patch for op/array.t
+
+---
+ t/op/array.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/array.t b/t/op/array.t
+index 7486808..bc3d031 100644
+--- a/t/op/array.t
++++ b/t/op/array.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('.', '../lib');
++    unshift @INC,  ('.', '../lib');
+     require 'test.pl';
+ }
+ 
+-- 
+2.5.0
+

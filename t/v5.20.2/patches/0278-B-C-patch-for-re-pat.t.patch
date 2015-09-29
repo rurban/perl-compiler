@@ -1,0 +1,25 @@
+From 222b283840bd74a5dfb284380e263dfd47dd2116 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 278/352] B::C patch for re/pat.t
+
+---
+ t/re/pat.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pat.t b/t/re/pat.t
+index 7965f4e..9b9f4c8 100644
+--- a/t/re/pat.t
++++ b/t/re/pat.t
+@@ -15,7 +15,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.');
++    unshift @INC,  ('../lib','.');
+     require Config; import Config;
+     require './test.pl';
+ }
+-- 
+2.5.0
+

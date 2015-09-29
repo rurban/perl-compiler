@@ -1,0 +1,26 @@
+From a465adf945a7333ea4212ddbea6e43468dc6802f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 287/352] B::C patch for re/qr_gc.t
+
+---
+ t/re/qr_gc.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/qr_gc.t b/t/re/qr_gc.t
+index ca82f42..ea2c303 100644
+--- a/t/re/qr_gc.t
++++ b/t/re/qr_gc.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     undef &Regexp::DESTROY;
+ }
+ 
+-- 
+2.5.0
+

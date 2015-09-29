@@ -1,0 +1,46 @@
+From 87f75013e92fa05600330b516cf9aa950b99ac08 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 229/352] B::C patch for op/threads-dirh.t
+
+---
+ t/op/threads-dirh.t | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/t/op/threads-dirh.t b/t/op/threads-dirh.t
+index 9bd02d1..4c50744 100644
+--- a/t/op/threads-dirh.t
++++ b/t/op/threads-dirh.t
+@@ -4,21 +4,21 @@
+ 
+ BEGIN {
+      chdir 't' if -d 't';
+-     @INC = '../lib';
+      require './test.pl';
++     set_up_inc('../lib');
+      $| = 1;
+-
+      require Config;
+-     skip_all_without_config('useithreads');
+-     skip_all_if_miniperl("no dynamic loading on miniperl, no threads");
+-
+-     plan(6);
+ }
+ 
++skip_all_without_config('useithreads');
++skip_all_if_miniperl("no dynamic loading on miniperl, no threads");
++
++plan(6);
++
+ use strict;
+ use warnings;
+-use threads;
+-use threads::shared;
++eval q/use threads/;
++eval q/use threads::shared/;
+ use File::Path;
+ use File::Spec::Functions qw 'updir catdir';
+ use Cwd 'getcwd';
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From d3d576442e7ef781584ec780d5992ad00c3d5db0 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 044/352] B::C patch for io/through.t
+
+---
+ t/io/through.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/through.t b/t/io/through.t
+index 315de90..a596a2d 100644
+--- a/t/io/through.t
++++ b/t/io/through.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all("VMS too picky about line endings for record-oriented pipes")
+ 	if $^O eq 'VMS';
+ }
+-- 
+2.5.0
+

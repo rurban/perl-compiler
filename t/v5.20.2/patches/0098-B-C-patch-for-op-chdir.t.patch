@@ -1,0 +1,63 @@
+From e8c5285f30b61149a015d85c58b26666ea48058d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 098/352] B::C patch for op/chdir.t
+
+---
+ t/op/chdir.t | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/t/op/chdir.t b/t/op/chdir.t
+index 2c6535b..31fdef6 100644
+--- a/t/op/chdir.t
++++ b/t/op/chdir.t
+@@ -1,19 +1,24 @@
+ #!./perl -w
+ 
++my $zero;
++
+ BEGIN {
+     # We're not going to chdir() into 't' because we don't know if
+     # chdir() works!  Instead, we'll hedge our bets and put both
+     # possibilities into @INC.
+-    @INC = qw(t . lib ../lib);
++    unshift @INC,  qw(t . lib ../lib);
+     require "test.pl";
+     # Really want to know if chdir is working, as the build process will all go
+     # wrong if it is not.
+     if (is_miniperl() && !eval {require File::Spec::Functions; 1}) {
+ 	push @INC, qw(dist/Cwd/lib dist/Cwd ../dist/Cwd/lib ../dist/Cwd);
+     }
+-    plan(tests => 48);
++    # freeze $0 for compilation
++    $zero = $0;
+ }
+ 
++plan(tests => 48);
++
+ use Config;
+ 
+ my $IsVMS   = $^O eq 'VMS';
+@@ -158,8 +163,8 @@ sub check_env {
+         ok( chdir(undef),           "chdir(undef) w/ only \$ENV{$key} set" );
+         is( abs_path, $ENV{$key},   '  abs_path() agrees' );
+         is( $warning,  <<WARNING,   '  got uninit & deprecation warning' );
+-Use of uninitialized value in chdir at $0 line 64.
+-Use of chdir('') or chdir(undef) as chdir() is deprecated at $0 line 64.
++Use of uninitialized value in chdir at $zero line 64.
++Use of chdir('') or chdir(undef) as chdir() is deprecated at $zero line 64.
+ WARNING
+ 
+         chdir($Cwd);
+@@ -170,7 +175,7 @@ WARNING
+         ok( chdir(''),              "chdir('') w/ only \$ENV{$key} set" );
+         is( abs_path, $ENV{$key},   '  abs_path() agrees' );
+         is( $warning,  <<WARNING,   '  got deprecation warning' );
+-Use of chdir('') or chdir(undef) as chdir() is deprecated at $0 line 76.
++Use of chdir('') or chdir(undef) as chdir() is deprecated at $zero line 76.
+ WARNING
+ 
+         chdir($Cwd);
+-- 
+2.5.0
+

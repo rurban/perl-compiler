@@ -1,0 +1,25 @@
+From e1c803f0a274d7048a0e11c9ff4cd033dcb7b6b5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 280/352] B::C patch for re/pat_psycho.t
+
+---
+ t/re/pat_psycho.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pat_psycho.t b/t/re/pat_psycho.t
+index fada302..fa1d7e5 100644
+--- a/t/re/pat_psycho.t
++++ b/t/re/pat_psycho.t
+@@ -19,7 +19,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.');
++    unshift @INC,  ('../lib','.');
+     require './test.pl';
+     if ($^O eq 'dec_osf') {
+         skip_all("$^O cannot handle this test");
+-- 
+2.5.0
+

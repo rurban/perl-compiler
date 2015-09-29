@@ -1,0 +1,26 @@
+From c54321d7f32536a326496513adcd1a6129978f94 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 062/352] B::C patch for mro/isa_c3_utf8.t
+
+---
+ t/mro/isa_c3_utf8.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/isa_c3_utf8.t b/t/mro/isa_c3_utf8.t
+index 3e2e7a9..431e739 100644
+--- a/t/mro/isa_c3_utf8.t
++++ b/t/mro/isa_c3_utf8.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

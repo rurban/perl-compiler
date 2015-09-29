@@ -1,0 +1,26 @@
+From 436af4e58a2a79ae849b913a1b0cd617a5d6afad Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 340/352] B::C patch for uni/select.t
+
+---
+ t/uni/select.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/select.t b/t/uni/select.t
+index 0e00105..de0cb5e 100644
+--- a/t/uni/select.t
++++ b/t/uni/select.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use utf8;
+-- 
+2.5.0
+

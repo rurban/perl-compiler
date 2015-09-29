@@ -1,0 +1,26 @@
+From e75713ebd1545650f431549126e20f99e3911c72 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 141/352] B::C patch for op/gv.t
+
+---
+ t/op/gv.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/gv.t b/t/op/gv.t
+index 6b90864..d0b53aa 100644
+--- a/t/op/gv.t
++++ b/t/op/gv.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use warnings;
+-- 
+2.5.0
+

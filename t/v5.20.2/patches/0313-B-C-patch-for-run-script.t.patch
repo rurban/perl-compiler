@@ -1,0 +1,26 @@
+From 84779db68caa4f80746c19e5eb39a8704c31c7a9 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 313/352] B::C patch for run/script.t
+
+---
+ t/run/script.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/script.t b/t/run/script.t
+index 2553e00..5e07f23 100644
+--- a/t/run/script.t
++++ b/t/run/script.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';	# for which_perl() etc
++    set_up_inc('../lib');
+     plan(3);
+ }
+ 
+-- 
+2.5.0
+

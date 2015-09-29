@@ -1,0 +1,27 @@
+From 33088c5eb53503d8212540b014f53cb665a5c0dd Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 303/352] B::C patch for re/subst.t
+
+---
+ t/re/subst.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/subst.t b/t/re/subst.t
+index 244bcad..bef2819 100644
+--- a/t/re/subst.t
++++ b/t/re/subst.t
+@@ -2,9 +2,9 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require Config; import Config;
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan( tests => 236 );
+-- 
+2.5.0
+

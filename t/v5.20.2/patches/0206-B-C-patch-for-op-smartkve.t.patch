@@ -1,0 +1,26 @@
+From 6619b1668de8cebe26f6172eb069a8b76b7cb895 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 206/352] B::C patch for op/smartkve.t
+
+---
+ t/op/smartkve.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/smartkve.t b/t/op/smartkve.t
+index 85eb9e8..bab5d61 100644
+--- a/t/op/smartkve.t
++++ b/t/op/smartkve.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ use strict;
+ use warnings;
+-- 
+2.5.0
+

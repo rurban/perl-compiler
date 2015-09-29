@@ -1,0 +1,33 @@
+From 9be30e56bcd737cb85dc4cdbf1b2a1aa9c296232 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 234/352] B::C patch for op/tiehandle.t
+
+---
+ t/op/tiehandle.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/tiehandle.t b/t/op/tiehandle.t
+index 08a20eb..db6c2cb 100644
+--- a/t/op/tiehandle.t
++++ b/t/op/tiehandle.t
+@@ -2,14 +2,14 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ my @expect;
+ my $data = "";
+ my @data = ();
+ 
+-require './test.pl';
+ plan(tests => 67);
+ 
+ sub compare {
+-- 
+2.5.0
+

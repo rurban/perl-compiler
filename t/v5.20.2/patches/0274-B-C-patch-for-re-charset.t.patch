@@ -1,0 +1,26 @@
+From ded87fad819817ff47c6eb3fb51d913129d1573b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 274/352] B::C patch for re/charset.t
+
+---
+ t/re/charset.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/charset.t b/t/re/charset.t
+index ad2e952..790c782 100644
+--- a/t/re/charset.t
++++ b/t/re/charset.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib'); 
+     require './loc_tools.pl';
+ }
+ 
+-- 
+2.5.0
+

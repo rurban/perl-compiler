@@ -1,0 +1,26 @@
+From 5cc3899111425da5ecc0af9ce62986cc130b9313 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 113/352] B::C patch for op/die.t
+
+---
+ t/op/die.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/die.t b/t/op/die.t
+index 8faef6a..408c691 100644
+--- a/t/op/die.t
++++ b/t/op/die.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 19;
+-- 
+2.5.0
+

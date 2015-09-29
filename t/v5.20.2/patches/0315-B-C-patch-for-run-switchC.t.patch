@@ -1,0 +1,26 @@
+From 7779fe19094d5a025622a4c4d13214e226ae2421 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 315/352] B::C patch for run/switchC.t
+
+---
+ t/run/switchC.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/switchC.t b/t/run/switchC.t
+index b1a243c..6d59a76 100644
+--- a/t/run/switchC.t
++++ b/t/run/switchC.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+ 
+     skip_all_without_perlio();
+     skip_all_if_miniperl('-C and $ENV{PERL_UNICODE} are disabled on miniperl');
+-- 
+2.5.0
+

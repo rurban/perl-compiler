@@ -1,0 +1,25 @@
+From ae85cd6f508f519ba1f22f23be789e196f391ed1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 281/352] B::C patch for re/pat_re_eval.t
+
+---
+ t/re/pat_re_eval.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pat_re_eval.t b/t/re/pat_re_eval.t
+index d64cb28..c5057a2 100644
+--- a/t/re/pat_re_eval.t
++++ b/t/re/pat_re_eval.t
+@@ -17,7 +17,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.');
++    unshift @INC,  ('../lib','.');
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

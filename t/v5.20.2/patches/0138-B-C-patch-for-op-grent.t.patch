@@ -1,0 +1,26 @@
+From aba05faad0b945d682d29990f793b1755671ab05 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 138/352] B::C patch for op/grent.t
+
+---
+ t/op/grent.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/grent.t b/t/op/grent.t
+index 3b28619..8fc8c7c 100644
+--- a/t/op/grent.t
++++ b/t/op/grent.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ eval {my @n = getgrgid 0};
+-- 
+2.5.0
+

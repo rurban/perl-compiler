@@ -1,0 +1,25 @@
+From 5b124c54aa510b75ecaa33b2f8f6dd318fffb4eb Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 149/352] B::C patch for op/incfilter.t
+
+---
+ t/op/incfilter.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/incfilter.t b/t/op/incfilter.t
+index c344558..083cac3 100644
+--- a/t/op/incfilter.t
++++ b/t/op/incfilter.t
+@@ -4,7 +4,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require 'test.pl';
+     skip_all_if_miniperl('no dynamic loading on miniperl, no Filter::Util::Call');
+     skip_all_without_perlio();
+-- 
+2.5.0
+

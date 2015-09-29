@@ -1,0 +1,26 @@
+From 00a73d5f9299a3182e27a3364d1d82ad39115d75 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 228/352] B::C patch for op/taint.t
+
+---
+ t/op/taint.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/taint.t b/t/op/taint.t
+index c3c03ba..6c79ea6 100644
+--- a/t/op/taint.t
++++ b/t/op/taint.t
+@@ -9,8 +9,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no re");
+ }
+ 
+-- 
+2.5.0
+

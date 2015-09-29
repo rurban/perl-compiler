@@ -1,0 +1,26 @@
+From 3d51e0ea98a7c3ce7234900252a6a24c2dee364f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 126/352] B::C patch for op/filehandle.t
+
+---
+ t/op/filehandle.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/filehandle.t b/t/op/filehandle.t
+index a7621db..5ccdf5e 100644
+--- a/t/op/filehandle.t
++++ b/t/op/filehandle.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no IO, hence no FileHandle");
+ }
+ 
+-- 
+2.5.0
+

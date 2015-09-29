@@ -1,0 +1,25 @@
+From 66dc24c27809ac1064085ac9b9e84a7cb5cdf1c6 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 165/352] B::C patch for op/lock.t
+
+---
+ t/op/lock.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/lock.t b/t/op/lock.t
+index c40ec4c..947e27f 100644
+--- a/t/op/lock.t
++++ b/t/op/lock.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require './test.pl';
+ }
+ plan tests => 5;
+-- 
+2.5.0
+

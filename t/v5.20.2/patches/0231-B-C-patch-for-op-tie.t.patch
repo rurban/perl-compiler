@@ -1,0 +1,26 @@
+From ef41218575a7f21e456661be5e1d03e147afab96 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 231/352] B::C patch for op/tie.t
+
+---
+ t/op/tie.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/tie.t b/t/op/tie.t
+index e0b2499..e9f2210 100644
+--- a/t/op/tie.t
++++ b/t/op/tie.t
+@@ -10,8 +10,8 @@
+ #
+ 
+ chdir 't' if -d 't';
+-@INC = '../lib';
+ require './test.pl';
++set_up_inc('../lib');
+ 
+ $|=1;
+ 
+-- 
+2.5.0
+
