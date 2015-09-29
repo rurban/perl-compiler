@@ -1,0 +1,129 @@
+#
+# This file tracks known errors in the compiled unit test suite.
+#
+# FILE FORMAT: $test\s+$type\s+$description
+#    $test = Name of unit test file. A Symlink file should exist in this directory pointing to this file.
+#            The file will have -- corresponding to slashses so unit tests can live in subdirectories under t/
+#    $type = Type of test failure. See below for possible values.
+#    $description = Information that will display on the TODOs so the test will pass.
+#
+# Failure profiles $type may be set to:
+#    BC      => B::C Fails to generate c code
+#    GCC     => gcc cannot compile generated c code
+#    SIG     => Compiled binary exits with signal
+#    PLAN    => Crashes before completion
+#    TESTS   => Some tests are failing
+#    SEQ     => The tests run out of sequence
+#    TODO    => TODO test unexpectedly failing/succeeding
+#    COMPAT  => Test isn't useful for B::C. This test will be a skip_all.
+#    SKIP    => The test is so broken that we prefer to skip it for now. ( ~skip_all )
+#
+# NOTES:
+# - Any line in this file not corresponding to a symlink in this folder will be ignored.
+# - Fields are white space delimited. It's assumed $test and $type will have no spaces in them.
+#
+
+base/lex.t              PLAN  invalid plan, was not tested previously
+comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavior so not relevant to B::C
+comp/form_scope.t    SIG       TODO: This test got WAY complicated in db4cf31d1d6 and probably wouldn't have passed back then either. FORMAT -- who cares?
+comp/hints.t         SKIP     tests are using BEGIN block, do not ready for B::C
+comp/parser.t        TESTS     TODO: Looks like new tests and new failures in need of investigation.
+extra/reused-variable.t PLAN  TODO: when not using my and later my + eval => conflict in the variable
+io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
+io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
+io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
+mro/basic_01_c3_utf8.t TESTS some tests are now failing
+mro/basic_02_c3_utf8.t TESTS some tests are now failing
+mro/basic_03_c3_utf8.t TESTS some tests are now failing
+mro/basic_04_c3_utf8.t TESTS TODO: Malformed UTF-8.
+mro/basic_05_c3_utf8.t  TESTS some tests are now failing
+mro/c3_with_overload.t TESTS TODO: overload not working right?
+mro/c3_with_overload_utf8.t TESTS TODO: overload not working right
+mro/complex_c3_utf8.t TESTS some tests are now failing
+mro/dbic_c3_utf8.t TESTS TODO: Wide character in print at t/test.pl line 38.
+mro/isarev.t SKIP TODO: This test fails in an inconsistent way. There's probably something even more fundamentally broken. also: https://code.google.com/p/perl-compiler/issues/detail?id=353
+mro/isarev_utf8.t SKIP TODO: This test fails in an inconsistent way (pass when run alone not while running other tests) mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
+mro/next_skip_utf8.t TESTS some tests are now failing
+mro/next_method_utf8.t TESTS some tests are now failing
+mro/overload_c3.t TESTS TODO: overload not working right?
+mro/overload_c3_utf8.t TESTS some tests are now failing
+mro/overload_dfs.t TESTS TODO: overload not working right?
+mro/vulcan_c3_utf8.t TESTS TODO: Malformed UTF-8.
+op/64bitint.t        TESTS     all bits of a UV are not preserved
+op/array_base.t      TESTS     Unreported?
+op/attrhand.t        PLAN      no output and Issue 169
+op/attrproto.t       TESTS     sub prototype attribute
+op/attrs.t           SKIP      Sometimes passes. Sometimes exits with Signal 11 Issue 278
+op/bless.t           TESTS     TODO: Attempt to bless into a reference at t/op/bless.t line 128
+op/bop.t             TESTS     TODO: string overload can't use |
+op/caller.t          TESTS     UV issue
+op/closure.t         TESTS     Issue 254
+op/concat2.t         TESTS     TODO: got "o=ARRAY(0x96c2c38)\x{101}\x{101}" expected "\x{ff}\x{101}\x{101}"
+op/coreamp.t         TESTS     TODO: tests broke
+op/coresubs.t        PLAN      TODO: Eval-group not allowed at runtime, use re 'eval' in regex m/(?^x:
+op/defins.t          TESTS     TODO: Constant subroutine <***> redefined at...
+op/do.t              TESTS     TODO: cmp_ok bug? Failed test 6 - do in list context at tmp29365C line 2 got "1" expected != "0"
+op/each.t            TESTS     TODO: check encoding on EBCDIC
+op/eval.t            SKIP      TODO: infinite loop while running the binary
+op/exists_sub.t      SIG       TODO: No output. and Issue 290
+op/filetest.t        TESTS     TODO: Tests broke.
+op/glob.t            TESTS     TODO: broke.
+op/gmagic.t          TESTS     TODO: not ok 35 - number of stores when chomping a ref
+op/goto_xs.t         SKIP      needs XS::APItest
+op/gv.t              SIG       TODO: Segmentation Fault
+op/hash-rt85026.t    PLAN      TODO: buncha these: Constant subroutine _IOFBF redefined at t/op/hash-rt85026.bin line 4294967295.
+op/hash.t            TESTS     TODO: broke
+op/index.t           PLAN      TODO: no output and Issue 247
+op/leaky-magic.t     TESTS     TODO: not ok 1 - $swext::! does not load Errno
+op/length.t          TESTS     TODO: broke
+op/lex_assign.t      PLAN      TODO: Can't locate object method "TIESCALAR" via package "B" at t/op/lex_assign.t line 60, <DATA> line 153.
+op/lexsub.t          BC        TODO: Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
+op/magic.t           TESTS     TODO: broke
+op/method.t          SIG       Deep recursion on subroutine "B::walkoptree_slow" +Issue 276
+op/mydef.t           TODO      the todo test is passing in the compiled binary
+op/postfixderef.t    SIG       TODO: no output.
+op/protowarn.t       PLAN      TODO: no output.
+op/pwent.t           TESTS     TODO: got "25" expected > "0" -- test.pl issue?
+op/ref.t             SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
+op/reset.t           TESTS     Issue 274
+op/reverse.t         TESTS     TODO: got "raboof" expected "oof"
+op/smartmatch.t      SIG       TODO: no useful output. and Issue 179
+op/sort.t            TESTS     TODO: cmp_ok issue?
+op/sprintf2.t        TESTS     TODO: Failed test 1369 - sprinf %1s overload count at t/op/sprintf2.t line 189 got undef expected "1"
+op/stash.t           TESTS     __ANON__ stash issue
+op/sub_lval.t        TESTS     TODO:  sub declaration with :lvalue applies it to XSUBs at t/op/sub_lval.t line 828 got "" expected "lvalue"
+op/substr.t          TESTS     utf8 issue in subs
+op/svleak.t          COMPAT    This test uses XS::APItest, which we don't install during perl install?
+op/switch.t          PLAN      TODO: Overloaded obj in given (true): called at t/op/switch.t line 839 got "0" expected "1"
+op/taint.t          TESTS   infinite m//g on arrays
+op/threads.t    SKIP      threaded test
+op/threads-dirh.t    SKIP      threaded test
+op/tie_fetch_count.t TESTS     TODO: broke
+op/utf8cache.t       TESTS     not a segfault anymore
+op/universal.t       TESTS     Issue 299
+op/write.t           SIG       Segmentation Fault + Issue 291
+op/yadayada.t        COMPAT    Unimplemented does not display the correct line number
+re/overload.t        TESTS     Issue 335
+re/pat_advanced.t    PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
+re/pat_re_eval.t     PLAN      TODO: Possible bug in use of re 'eval' at run time we need to fix in the test.
+re/pat_rt_report.t   PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
+re/pat.t             PLAN      TODO: Undefined subroutine &S::diag called at t/re/pat.t line 1047. and Issue 328
+re/qr_gc.t           TESTS     Issue 352
+re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/re/reg_eval_scope.t line 90 and Issue 328
+re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
+re/subst_amp.t       TESTS     TODO: broke.
+uni/attrs.t          PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
+uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
+uni/chr.t            SIG       TODO: no output.
+uni/fold.t           SKIP      TODO: Seems to be an issue with overload on hashes. This is causing a flapping test.
+uni/greek.t          TESTS     not a segfault anymore
+uni/gv.t             SIG       TODO: Argument "*main::PW<C3>M-^RMPF" isn't numeric in sprintf at t/uni/gv.t line 128.
+uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
+uni/latin2.t         SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
+uni/method.t         PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
+uni/overload.t       TESTS     TODO: Failed test 1 - length of 'ASCII' at t/uni/overload.t line 44
+uni/parser.t         PLAN      TODO: broke
+uni/stash.t          TESTS     TODO: Wide character in print at t/test.pl line 38.
+uni/universal.t      TESTS     some new failures
+uni/variables.t      PLAN      TODO: Failed 48383/65880 subtests
+uni/write.t          TESTS     TODO: Failed tests:  1-6
