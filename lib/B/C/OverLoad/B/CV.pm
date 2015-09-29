@@ -503,7 +503,7 @@ sub save {
 
       # stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
       (
-        "Nullhv, {0}, %u, %u, %s, {%s}, {s\\_%x}, %s, %s, %s, (CV*)%s, %s, 0x%x, %d",
+        "Nullhv, {0}, %u, {%u}, %s, {%s}, {s\\_%x}, {%s}, %s, {%s}, (CV*)%s, %s, 0x%x, %d",
         $cur,        $len, "Nullhv",    #CvSTASH later
         $startfield, $$root,
         "0",                            #GV later

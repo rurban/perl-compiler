@@ -33,7 +33,7 @@ sub save {
         $flags &= ~0x01000000;
         debug( pv => "constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname );
     }
-    xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
+    xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, $len ) );
     svsect()->add(
         sprintf(
             "&xpv_list[%d], %lu, 0x%x, {%s}",
