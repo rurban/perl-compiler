@@ -81,6 +81,8 @@ if ( $type eq 'COMPAT' || $type eq 'SKIP' ) {
     plan skip_all => $todo_description;
 }
 
+my $first_error = 1;
+
 # need to run CORE test suite in t
 chdir "$FindBin::Bin/../../t" or die "Cannot chdir to t directory: $!"; 
 
@@ -196,48 +198,87 @@ my $previous_todo;
 
 sub check_todo {
     my ( $v, $msg, $want_type ) = @_;
+    # is it the expected error
     my $todo = $type eq $want_type ? $todo_description : undef;
-
     my $known_error = $previous_todo;
     $previous_todo ||= $todo;
     $todo          ||= $previous_todo;
 
     if ( !$todo ) {
+        if ( !$v ) {
+            if ( $first_error ) {
+                $first_error = 0;
+                note "Adding $current_t_file $want_type error to known_errors.txt file";    
+                update_known_errors( test => $current_t_file, add => [
+                        qq{$current_t_file\t$want_type\t$msg}
+                    ]
+                );
+            }            
+        }
 
         # we want the test to succeed
         return ok( $v, $msg );
     }
-    else {
+    else {        
         #return subtest "TODO - $msg" => sub {
-        if ( $v && !$known_error ) {
+        if ( $v && !$known_error ) {            
             fail "TODO test is now passing, auto adjust known_errors.txt file";
             $TODO = $todo;
 
             # removing test from file
             diag "Removing test $current_t_file from known_errors.txt";
-
-            # tests can be run in parallel
-            open( my $fh, '+<', $known_errors_file ) or die("Can't open $file_to_test");
-            lock($fh);
-            my @all_known_errors = <$fh>;
-            my @new_errors = grep { $_ !~ qr{^$current_t_file\s} } @all_known_errors;
-
-            if ( scalar @new_errors < scalar @all_known_errors ) {
-                seek( $fh, 0, 0 );
-                map { chomp($_); print {$fh} $_ . "\n" } @new_errors;
-                truncate( $fh, tell($fh) );
-            }
-            unlock($fh);
-            close($fh);
-
+            update_known_errors( test => $current_t_file ) if $first_error;
         }
         else {
             $TODO = $todo;
             ok($v);
         }
-
-        #}
     }
+}
+
+sub update_known_errors {
+    my %opts = @_;
+
+    $opts{test} or die;
+
+    # tests can be run in parallel
+    open( my $fh, '+<', qq{$FindBin::Bin/../$known_errors_file} ) or die("Can't open $known_errors_file");
+    lock($fh);
+    my @all_known_errors = <$fh>;
+    my @new_errors = grep { $_ !~ qr{^$current_t_file\s} } @all_known_errors;
+    my $need_update;
+    $need_update = 1 if scalar @new_errors < scalar @all_known_errors;
+
+    if ( $opts{add} && ref $opts{add} eq 'ARRAY' ){
+        push @new_errors, @{$opts{add}};
+        $need_update = 1;
+    }
+
+    if ( $need_update ) {
+        # do the sort
+        my @header;
+        my @body;
+        my $in_header = 1;
+        foreach my $line ( @new_errors ) {
+            if ( $in_header = 1 && ( $line =~ qr{^\s*#} || $line =~ qr{^\s*$} ) ) {
+                push @header, $line;
+            } else {                
+                $in_header = 0;
+                push @body, $line;
+            }
+        }
+
+        @body = sort { lc($a) cmp lc($b) } @body;
+
+        seek( $fh, 0, 0 );
+        map { chomp($_); print {$fh} $_ . "\n" } @header, @body;
+        truncate( $fh, tell($fh) );
+    }
+
+    unlock($fh);
+    close($fh);    
+
+    return;
 }
 
 sub lock {
