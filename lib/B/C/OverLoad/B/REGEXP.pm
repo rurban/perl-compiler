@@ -23,7 +23,7 @@ sub save {
     my $cstr = cstring($pv);
 
     # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
-    xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, 0 ) );
+    xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, 0 ) );
     svsect()->add(
         sprintf(
             "&xpv_list[%d], %lu, 0x%x, {NULL}",

@@ -62,7 +62,7 @@ sub save {
     xpvmgsect()->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
     xpvmgsect()->add(
         sprintf(
-            "Nullhv, {0}, %u, %u, {%s}, {%s}",
+            "Nullhv, {0}, %u, {%u}, {%s}, {%s}",
             $cur, $len, $ivx, $nvx
         )
     );
@@ -403,7 +403,7 @@ sub _savere {
     # QUESTION: this code looks dead
     #   at least not triggered by the core unit tests
 
-    xpvsect()->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
+    xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, $len ) );
     svsect()->add(
         sprintf(
             "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,

@@ -33,7 +33,7 @@ sub save {
         }
     }
 
-    xpvivsect()->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", $ivx ) );
+    xpvivsect()->add( sprintf( "Nullhv, {0}, 0, {0}, {%s}", $ivx ) );
 
     svsect()->add(
         sprintf(
