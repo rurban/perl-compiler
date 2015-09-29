@@ -1,0 +1,425 @@
+#
+# This file tracks known errors in the compiled unit test suite.
+#
+# FILE FORMAT: $test\s+$type\s+$description
+#    $test = Name of unit test file. A Symlink file should exist in this directory pointing to this file.
+#            The file will have -- corresponding to slashses so unit tests can live in subdirectories under t/
+#    $type = Type of test failure. See below for possible values.
+#    $description = Information that will display on the TODOs so the test will pass.
+#
+# Failure profiles $type may be set to:
+#    BC      => B::C Fails to generate c code
+#    GCC     => gcc cannot compile generated c code
+#    SIG     => Compiled binary exits with signal
+#    PLAN    => Crashes before completion
+#    TESTS   => Some tests are failing
+#    SEQ     => The tests run out of sequence
+#    TODO    => TODO test unexpectedly failing/succeeding
+#    COMPAT  => Test isn't useful for B::C. This test will be a skip_all.
+#    SKIP    => The test is so broken that we prefer to skip it for now. ( ~skip_all )
+#
+# NOTES:
+# - Any line in this file not corresponding to a symlink in this folder will be ignored.
+# - Fields are white space delimited. It's assumed $test and $type will have no spaces in them.
+#
+
+base/lex.t              PLAN  invalid plan, was not tested previously
+base/num.t              SIG TODO: tests fails with segfault
+base/rs.t               PLAN  TODO: investigate
+cmd/elsif.t SIG TODO: segfault
+cmd/for.t   SIG TODO: segfault
+cmd/subval.t SIG TODO: segfault
+cmd/switch.t SIG TODO: segfault
+comp/bproto.t	SIG	Exit signal is 11 SEGV
+comp/colon.t         PLAN TODO
+comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavior so not relevant to B::C
+comp/fold.t          SIG TODO: segfault
+comp/form_scope.t    SIG TODO
+comp/hints.t         SKIP     tests are using BEGIN block, do not ready for B::C
+comp/line_debug.t    SIG TODO: segfault
+comp/multiline.t     SIG TODO: segfault
+comp/opsubs.t        SIG TODO: segfault
+comp/our.t           SIG TODO: segfault
+comp/package.t       SIG TODO: segfault
+comp/package_block.t SIG TODO: segfault
+comp/parser.t        BC TODO fail to generate c file
+comp/proto.t	SIG	Exit signal is 11 SEGV
+comp/redef.t         SIG TODO: segfault
+comp/require.t       BC TODO fail to generate c file
+comp/retainedlines.t SIG TODO: segfault
+comp/uproto.t        SIG TODO: segfault
+comp/use.t           SIG todo 
+comp/utf.t           SIG TODO: segfault
+extra/pvlv.t PLAN  TODO: Can't use an undefined value as a HASH reference
+extra/reused-variable.t PLAN  TODO: when not using my and later my + eval => conflict in the variable
+io/argv.t	BC	io/argv.c is generated (-O3,-fno-fold)
+io/binmode.t	SIG	Exit signal is 11 SEGV
+io/bom.t	BC	io/bom.c is generated (-O3,-fno-fold)
+io/closepid.t	SIG	Exit signal is 11 SEGV
+io/crlf.t	SIG	Exit signal is 11 SEGV
+io/data.t	SIG	Exit signal is 11 SEGV
+io/defout.t	BC	io/defout.c is generated (-O3,-fno-fold)
+io/dup.t	SIG	Exit signal is 11 SEGV
+io/eintr.t	SIG	Exit signal is 11 SEGV
+io/eintr_print.t	SIG	Exit signal is 11 SEGV
+io/errno.t	SIG	Exit signal is 11 SEGV
+io/errnosig.t	SIG	Exit signal is 11 SEGV
+io/fflush.t	SIG	Exit signal is 11 SEGV
+io/fs.t	SIG	Exit signal is 11 SEGV
+io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
+io/layers.t	SIG	Exit signal is 11 SEGV
+io/nargv.t	SIG	Exit signal is 11 SEGV
+io/open.t	SIG	Exit signal is 11 SEGV
+io/openpid.t	SIG	Exit signal is 11 SEGV
+io/perlio.t	SIG	Exit signal is 11 SEGV
+io/perlio_fail.t	SIG	Exit signal is 11 SEGV
+io/perlio_leaks.t	SIG	Exit signal is 11 SEGV
+io/perlio_open.t	SIG	Exit signal is 11 SEGV
+io/pipe.t	SIG	Exit signal is 11 SEGV
+io/print.t	SIG	Exit signal is 11 SEGV
+io/pvbm.t	SIG	Exit signal is 11 SEGV
+io/read.t	SIG	Exit signal is 11 SEGV
+io/say.t	SIG	Exit signal is 11 SEGV
+io/sem.t	SIG	Exit signal is 11 SEGV
+io/semctl.t	SIG	Exit signal is 11 SEGV
+io/shm.t	SIG	Exit signal is 11 SEGV
+io/socket.t	SIG	Exit signal is 11 SEGV
+io/tell.t	SIG	Exit signal is 11 SEGV
+io/through.t	SIG	Exit signal is 11 SEGV
+io/utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic.t   SIG TODO: segfault
+mro/basic_01_c3.t	SIG	Exit signal is 11 SEGV
+mro/basic_01_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_01_dfs.t	SIG	Exit signal is 11 SEGV
+mro/basic_01_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_02_c3.t	SIG	Exit signal is 11 SEGV
+mro/basic_02_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_02_dfs.t	SIG	Exit signal is 11 SEGV
+mro/basic_02_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_03_c3.t	SIG	Exit signal is 11 SEGV
+mro/basic_03_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_03_dfs.t	SIG	Exit signal is 11 SEGV
+mro/basic_03_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_04_c3.t	SIG	Exit signal is 11 SEGV
+mro/basic_04_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_04_dfs.t	SIG	Exit signal is 11 SEGV
+mro/basic_04_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_05_c3.t	SIG	Exit signal is 11 SEGV
+mro/basic_05_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_05_dfs.t	SIG	Exit signal is 11 SEGV
+mro/basic_05_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/basic_utf8.t	SIG	Exit signal is 11 SEGV
+mro/c3_with_overload.t	SIG	Exit signal is 11 SEGV
+mro/c3_with_overload_utf8.t	SIG	Exit signal is 11 SEGV
+mro/complex_c3.t SIG TODO: segfault
+mro/complex_c3_utf8.t SIG TODO: segfault
+mro/complex_dfs.t	SIG	Exit signal is 11 SEGV
+mro/complex_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/dbic_c3.t	SIG	Exit signal is 11 SEGV
+mro/dbic_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/dbic_dfs.t	SIG	Exit signal is 11 SEGV
+mro/dbic_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/inconsistent_c3.t SIG TODO: segfault
+mro/inconsistent_c3_utf8.t SIG TODO: segfault
+mro/isa_aliases.t SIG TODO: segfault
+mro/isa_aliases_utf8.t	SIG	Exit signal is 11 SEGV
+mro/isa_c3.t	SIG	Exit signal is 11 SEGV - Redundant argument in sprintf
+mro/isa_c3_utf8.t	SIG	Exit signal is 11 SEGV - Redundant argument in sprintf
+mro/isa_dfs.t	SIG	Exit signal is 11 SEGV
+mro/isa_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/isarev.t SKIP TODO: This test fails in an inconsistent way. There's probably something even more fundamentally broken. also: https://code.google.com/p/perl-compiler/issues/detail?id=353
+mro/isarev_utf8.t SKIP TODO: This test fails in an inconsistent way (pass when run alone not while running other tests) mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
+mro/method_caching.t	SIG	Exit signal is 11 SEGV
+mro/method_caching_utf8.t	SIG	Exit signal is 11 SEGV
+mro/next_edgecases.t	SIG	Exit signal is 11 SEGV
+mro/next_edgecases_utf8.t	PLAN	Plan was valid
+mro/next_goto.t	SIG	Exit signal is 11 SEGV
+mro/next_goto_utf8.t	SIG	Exit signal is 11 SEGV
+mro/next_inanon.t	SIG	Exit signal is 11 SEGV
+mro/next_inanon_utf8.t	SIG	Exit signal is 11 SEGV
+mro/next_ineval.t	SIG	Exit signal is 11 SEGV
+mro/next_ineval_utf8.t	SIG	Exit signal is 11 SEGV
+mro/next_method.t	SIG	Exit signal is 11 SEGV
+mro/next_method_utf8.t	SIG	Exit signal is 11 SEGV
+mro/next_NEXT.t	SIG	Exit signal is 11 SEGV
+mro/next_NEXT_utf8.t	SIG	Exit signal is 11 SEGV
+mro/next_skip.t	SIG	Exit signal is 11 SEGV
+mro/next_skip_utf8.t	SIG	Exit signal is 11 SEGV
+mro/overload_c3.t	SIG	Exit signal is 11 SEGV
+mro/overload_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/overload_dfs.t	SIG	Exit signal is 11 SEGV
+mro/package_aliases.t	SIG	Exit signal is 11 SEGV
+mro/package_aliases_utf8.t	PLAN	Plan was valid
+mro/pkg_gen.t	SIG	Exit signal is 11 SEGV
+mro/pkg_gen_utf8.t	SIG	Exit signal is 11 SEGV
+mro/recursion_c3.t	SIG	Exit signal is 11 SEGV
+mro/recursion_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/recursion_dfs.t	BC	mro/recursion_dfs.c is generated (-O3,-fno-fold)
+mro/recursion_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+mro/vulcan_c3.t	SIG	Exit signal is 11 SEGV
+mro/vulcan_c3_utf8.t	SIG	Exit signal is 11 SEGV
+mro/vulcan_dfs.t	SIG	Exit signal is 11 SEGV
+mro/vulcan_dfs_utf8.t	SIG	Exit signal is 11 SEGV
+op/64bitint.t	SIG	Exit signal is 11 SEGV
+op/alarm.t	BC	op/alarm.c is generated (-O3,-fno-fold)
+op/anonconst.t	BC	op/anonconst.c is generated (-O3,-fno-fold)
+op/anonsub.t	SIG	Exit signal is 11 SEGV
+op/append.t	SIG	Exit signal is 11 SEGV
+op/args.t	SIG	Exit signal is 11 SEGV
+op/array.t	SIG	Exit signal is 11 SEGV
+op/array_base.t	PLAN	Plan was valid
+op/assignwarn.t	SIG	Exit signal is 11 SEGV
+op/attrhand.t	SIG	Exit signal is 11 SEGV
+op/attrproto.t	PLAN	Plan was valid
+op/attrs.t           SKIP      Sometimes passes. Sometimes exits with Signal 11 Issue 278
+op/auto.t	BC	op/auto.c is generated (-O3,-fno-fold)
+op/avhv.t	SIG	Exit signal is 11 SEGV
+op/bless.t	SIG	Exit signal is 11 SEGV
+op/blocks.t	SIG	Exit signal is 11 SEGV
+op/bop.t	BC	op/bop.c is generated (-O3,-fno-fold)
+op/caller.t	SIG	Exit signal is 11 SEGV
+op/chars.t	SIG	Exit signal is 11 SEGV
+op/chdir.t	SIG	Exit signal is 11 SEGV
+op/chop.t	BC	op/chop.c is generated (-O3,-fno-fold)
+op/chr.t	BC	op/chr.c is generated (-O3,-fno-fold)
+op/closure.t	SIG	Exit signal is 11 SEGV
+op/concat2.t	SIG	Exit signal is 11 SEGV
+op/cond.t	SIG	Exit signal is 11 SEGV
+op/const-optree.t	BC	op/const-optree.c is generated (-O3,-fno-fold)
+op/context.t	SIG	Exit signal is 11 SEGV
+op/coreamp.t	SIG	Exit signal is 11 SEGV
+op/coresubs.t	SIG	Exit signal is 11 SEGV
+op/cproto.t	SIG	Exit signal is 11 SEGV
+op/crypt.t	SIG	Exit signal is 11 SEGV
+op/current_sub.t	SIG	Exit signal is 11 SEGV
+op/dbm.t	BC	op/dbm.c is generated (-O3,-fno-fold)
+op/defined.t	SIG	Exit signal is 11 SEGV
+op/defins.t	SIG	Exit signal is 11 SEGV
+op/delete.t	SIG	Exit signal is 11 SEGV
+op/die.t	SIG	Exit signal is 11 SEGV
+op/die_exit.t	SIG	Exit signal is 11 SEGV
+op/die_keeperr.t	SIG	Exit signal is 11 SEGV
+op/do.t	SIG	Exit signal is 11 SEGV
+op/dor.t	SIG	Exit signal is 11 SEGV
+op/dump.t	SIG	Exit signal is 11 SEGV
+op/each.t	SIG	Exit signal is 11 SEGV
+op/each_array.t	SIG	Exit signal is 11 SEGV
+op/eval.t            SKIP      TODO: infinite loop while running the binary
+op/evalbytes.t	BC	op/evalbytes.c is generated (-O3,-fno-fold)
+op/exec.t	SIG	Exit signal is 11 SEGV
+op/exists_sub.t      SIG       TODO: No output. and Issue 290
+op/exp.t	SIG	Exit signal is 11 SEGV
+op/fh.t	BC	op/fh.c is generated (-O3,-fno-fold)
+op/filehandle.t	SIG	Exit signal is 11 SEGV
+op/filetest.t	SIG	Exit signal is 11 SEGV
+op/filetest_stack_ok.t	SIG	Exit signal is 11 SEGV
+op/filetest_t.t	SIG	Exit signal is 11 SEGV
+op/flip.t	SIG	Exit signal is 11 SEGV
+op/for.t	SIG	Exit signal is 11 SEGV
+op/fork.t	SIG	Exit signal is 11 SEGV
+op/fresh_perl_utf8.t	PLAN	Plan was valid
+op/getpid.t	SIG	Exit signal is 11 SEGV
+op/getppid.t	SIG	Exit signal is 11 SEGV
+op/glob.t	SIG	Exit signal is 11 SEGV
+op/gmagic.t	SIG	Exit signal is 11 SEGV
+op/goto.t	SIG	Exit signal is 11 SEGV
+op/goto_xs.t         SKIP      needs XS::APItest
+op/grent.t	SIG	Exit signal is 11 SEGV
+op/grep.t	BC	op/grep.c is generated (-O3,-fno-fold)
+op/groups.t	SIG	Exit signal is 11 SEGV
+op/gv.t              SIG       TODO: Segmentation Fault
+op/hash-rt85026.t	GCC	op/hash-rt85026.bin is compiled and ready to run.
+op/hash.t	SIG	Exit signal is 11 SEGV
+op/hashassign.t	SIG	Exit signal is 11 SEGV
+op/heredoc.t	SIG	Exit signal is 11 SEGV
+op/hexfp.t	BC	op/hexfp.c is generated (-O3,-fno-fold)
+op/inc.t	BC	op/inc.c is generated (-O3,-fno-fold)
+op/inccode-tie.t	SIG	Exit signal is 11 SEGV
+op/inccode.t	SIG	Exit signal is 11 SEGV
+op/incfilter.t	SIG	Exit signal is 11 SEGV
+op/index.t	SIG	Exit signal is 11 SEGV
+op/infnan.t	BC	op/infnan.c is generated (-O3,-fno-fold)
+op/int.t	SIG	Exit signal is 11 SEGV
+op/join.t	SIG	Exit signal is 11 SEGV
+op/kill0.t	SIG	Exit signal is 11 SEGV
+op/kvhslice.t	SIG	Exit signal is 11 SEGV
+op/lc.t	SIG	Exit signal is 11 SEGV
+op/leaky-magic.t	SIG	Exit signal is 11 SEGV
+op/length.t	SIG	Exit signal is 11 SEGV
+op/lex.t	SIG	Exit signal is 11 SEGV
+op/lex_assign.t	SIG	Exit signal is 11 SEGV
+op/lexsub.t          BC        TODO: Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
+op/lfs.t	SIG	Exit signal is 11 SEGV
+op/list.t	BC	op/list.c is generated (-O3,-fno-fold)
+op/local.t	SIG	Exit signal is 11 SEGV
+op/localref.t	SIG	Exit signal is 11 SEGV
+op/lock.t	SIG	Exit signal is 11 SEGV
+op/loopctl.t	BC	op/loopctl.c is generated (-O3,-fno-fold)
+op/lop.t	SIG	Exit signal is 11 SEGV
+op/lvref.t	PLAN	Plan was valid
+op/magic-27839.t	BC	op/magic-27839.c is generated (-O3,-fno-fold)
+op/magic.t	SIG	Exit signal is 11 SEGV
+op/method.t          SIG       Deep recursion on subroutine "B::walkoptree_slow" +Issue 276
+op/mkdir.t	SIG	Exit signal is 11 SEGV
+op/multideref.t	SIG	Exit signal is 11 SEGV
+op/my.t	SIG	Exit signal is 11 SEGV
+op/my_stash.t	SIG	Exit signal is 11 SEGV
+op/mydef.t	SIG	Exit signal is 11 SEGV
+op/negate.t	SIG	Exit signal is 11 SEGV
+op/not.t	SIG	Exit signal is 11 SEGV
+op/numconvert.t	SIG	Exit signal is 11 SEGV
+op/or.t	SIG	Exit signal is 11 SEGV
+op/ord.t	BC	op/ord.c is generated (-O3,-fno-fold)
+op/overload_integer.t	PLAN	Plan was valid
+op/override.t	BC	op/override.c is generated (-O3,-fno-fold)
+op/pack.t	SIG	Exit signal is 11 SEGV
+op/packagev.t	BC	op/packagev.c is generated (-O3,-fno-fold)
+op/pos.t	SIG	Exit signal is 11 SEGV
+op/postfixderef.t	BC	op/postfixderef.c is generated (-O3,-fno-fold)
+op/pow.t	SIG	Exit signal is 11 SEGV
+op/print.t	SIG	Exit signal is 11 SEGV
+op/protowarn.t	SIG	Exit signal is 11 SEGV
+op/push.t	SIG	Exit signal is 11 SEGV
+op/pwent.t	SIG	Exit signal is 11 SEGV
+op/qr.t	SIG	Exit signal is 11 SEGV
+op/quotemeta.t	SIG	Exit signal is 11 SEGV
+op/rand.t	SIG	Exit signal is 11 SEGV
+op/range.t	SIG	Exit signal is 11 SEGV
+op/read.t	BC	op/read.c is generated (-O3,-fno-fold)
+op/readdir.t	SIG	Exit signal is 11 SEGV
+op/readline.t	SIG	Exit signal is 11 SEGV
+op/recurse.t	BC	op/recurse.c is generated (-O3,-fno-fold)
+op/ref.t             SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
+op/repeat.t	BC	op/repeat.c is generated (-O3,-fno-fold)
+op/require_37033.t	SIG	Exit signal is 11 SEGV
+op/require_errors.t	SIG	Exit signal is 11 SEGV
+op/require_override.t	SIG	Exit signal is 11 SEGV
+op/reset.t	SIG	Exit signal is 11 SEGV
+op/reverse.t	SIG	Exit signal is 11 SEGV
+op/rt119311.t	SIG	Exit signal is 11 SEGV
+op/runlevel.t	SIG	Exit signal is 11 SEGV
+op/select.t	SIG	Exit signal is 11 SEGV
+op/setpgrpstack.t	SIG	Exit signal is 11 SEGV
+op/sigdispatch.t	SIG	Exit signal is 11 SEGV
+op/signatures.t	PLAN	Plan was valid
+op/sigsystem.t	SIG	Exit signal is 11 SEGV
+op/smartkve.t	SIG	Exit signal is 11 SEGV
+op/smartmatch.t      SIG       TODO: no useful output. and Issue 179
+op/sort.t	SIG	Exit signal is 11 SEGV
+op/splice.t	SIG	Exit signal is 11 SEGV
+op/split.t	SIG	Exit signal is 11 SEGV
+op/split_unicode.t	SIG	Exit signal is 11 SEGV
+op/sprintf.t	BC	op/sprintf.c is generated (-O3,-fno-fold)
+op/sprintf2.t	SIG	Exit signal is 11 SEGV
+op/srand.t	SIG	Exit signal is 11 SEGV
+op/stash.t	SIG	Exit signal is 11 SEGV
+op/stat.t	SIG	Exit signal is 11 SEGV
+op/state.t	PLAN	Plan was valid
+op/study.t	SIG	Exit signal is 11 SEGV
+op/studytied.t	SIG	Exit signal is 11 SEGV
+op/sub.t	PLAN	Plan was valid
+op/sub_lval.t	SIG	Exit signal is 11 SEGV
+op/substr.t	SIG	Exit signal is 11 SEGV
+op/svleak.t          COMPAT    This test uses XS::APItest, which we don't install during perl install?
+op/switch.t	SIG	Exit signal is 11 SEGV
+op/symbolcache.t	SIG	Exit signal is 11 SEGV
+op/sysio.t	SIG	Exit signal is 11 SEGV
+op/taint.t	BC	op/taint.c is generated (-O3,-fno-fold)
+op/threads-dirh.t    SKIP      threaded test
+op/threads.t    SKIP      threaded test
+op/tie.t	SIG	Exit signal is 11 SEGV
+op/tie_fetch_count.t	SIG	Exit signal is 11 SEGV
+op/tiearray.t	SIG	Exit signal is 11 SEGV
+op/tiehandle.t	SIG	Exit signal is 11 SEGV
+op/time.t	SIG	Exit signal is 11 SEGV
+op/time_loop.t	SIG	Exit signal is 11 SEGV
+op/tr.t	SIG	Exit signal is 11 SEGV
+op/undef.t	SIG	Exit signal is 11 SEGV
+op/universal.t	SIG	Exit signal is 11 SEGV
+op/unlink.t	BC	op/unlink.c is generated (-O3,-fno-fold)
+op/unshift.t	SIG	Exit signal is 11 SEGV
+op/upgrade.t	BC	op/upgrade.c is generated (-O3,-fno-fold)
+op/utf8cache.t	SIG	Exit signal is 11 SEGV
+op/utf8decode.t	SIG	Exit signal is 11 SEGV
+op/utf8magic.t	BC	op/utf8magic.c is generated (-O3,-fno-fold)
+op/utfhash.t	SIG	Exit signal is 11 SEGV
+op/utftaint.t	SIG	Exit signal is 11 SEGV
+op/vec.t	SIG	Exit signal is 11 SEGV
+op/ver.t	SIG	Exit signal is 11 SEGV
+op/waitpid.t	SIG	Exit signal is 11 SEGV
+op/wantarray.t	SIG	Exit signal is 11 SEGV
+op/warn.t	SIG	Exit signal is 11 SEGV
+op/while.t	BC	op/while.c is generated (-O3,-fno-fold)
+op/write.t           SIG       Segmentation Fault + Issue 291
+op/yadayada.t        COMPAT    Unimplemented does not display the correct line number
+re/charset.t	SIG	Exit signal is 11 SEGV
+re/fold_grind.t	SIG	Exit signal is 11 SEGV
+re/no_utf8_pm.t	SIG	Exit signal is 11 SEGV
+re/overload.t	PLAN	Plan was valid
+re/pat.t	SIG	Exit signal is 11 SEGV
+re/pat_advanced.t    PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
+re/pat_psycho.t	SIG	Exit signal is 11 SEGV
+re/pat_re_eval.t	SIG	Exit signal is 11 SEGV
+re/pat_rt_report.t   PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
+re/pat_special_cc.t	SIG	Exit signal is 11 SEGV
+re/pos.t	SIG	Exit signal is 11 SEGV
+re/qr-72922.t	SIG	Exit signal is 11 SEGV
+re/qr.t	SIG	Exit signal is 11 SEGV
+re/qr_gc.t	SIG	Exit signal is 11 SEGV
+re/qrstack.t	SIG	Exit signal is 11 SEGV
+re/recompile.t	SIG	Exit signal is 11 SEGV
+re/reg_60508.t	SIG	Exit signal is 11 SEGV
+re/reg_email.t	SIG	Exit signal is 11 SEGV
+re/reg_eval.t	SIG	Exit signal is 11 SEGV
+re/reg_eval_scope.t	SIG	Exit signal is 11 SEGV
+re/reg_fold.t	PLAN	Plan was valid
+re/reg_mesg.t	PLAN	Plan was valid
+re/reg_namedcapture.t	SIG	Exit signal is 11 SEGV
+re/reg_nc_tie.t	SIG	Exit signal is 11 SEGV
+re/reg_nocapture.t	SIG	Exit signal is 11 SEGV
+re/reg_pmod.t	SIG	Exit signal is 11 SEGV
+re/reg_posixcc.t	SIG	Exit signal is 11 SEGV
+re/regex_sets.t	PLAN	Plan was valid
+re/regexp.t	SIG	Exit signal is 11 SEGV
+re/regexp_unicode_prop.t	PLAN	Plan was valid
+re/rt122747.t	SIG	Exit signal is 11 SEGV
+re/rxcode.t	SIG	Exit signal is 11 SEGV
+re/speed.t	BC	re/speed.c is generated (-O3,-fno-fold)
+re/subst.t	SIG	Exit signal is 11 SEGV
+re/subst_amp.t	SIG	Exit signal is 11 SEGV
+re/uniprops.t	PLAN	Plan was valid
+uni/attrs.t          PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
+uni/bless.t	SIG	Exit signal is 11 SEGV
+uni/cache.t	SIG	Exit signal is 11 SEGV
+uni/caller.t         PLAN      TODO: Undefined subroutine &????::ok called
+uni/chomp.t	SIG	Exit signal is 11 SEGV
+uni/chr.t            SIG       TODO: no output.
+uni/class.t	SIG	Exit signal is 11 SEGV
+uni/eval.t	PLAN	Plan was valid
+uni/fold.t           SKIP      TODO: Seems to be an issue with overload on hashes. This is causing a flapping test.
+uni/goto.t	SIG	Exit signal is 11 SEGV
+uni/greek.t	SIG	Exit signal is 11 SEGV
+uni/gv.t	PLAN	Plan was valid
+uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
+uni/latin2.t         SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
+uni/lex_utf8.t	PLAN	Plan was valid
+uni/lower.t	SIG	Exit signal is 11 SEGV
+uni/method.t         PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
+uni/opcroak.t	BC	uni/opcroak.c is generated (-O3,-fno-fold)
+uni/overload.t	BC	uni/overload.c is generated (-O3,-fno-fold)
+uni/package.t	PLAN	Plan was valid
+uni/parser.t         PLAN      TODO: broke
+uni/readline.t	SIG	Exit signal is 11 SEGV
+uni/select.t	SIG	Exit signal is 11 SEGV
+uni/sprintf.t	BC	uni/sprintf.c is generated (-O3,-fno-fold)
+uni/stash.t	PLAN	Plan was valid
+uni/tie.t	SIG	Exit signal is 11 SEGV
+uni/title.t	SIG	Exit signal is 11 SEGV
+uni/tr_7jis.t	PLAN	Plan was valid
+uni/tr_eucjp.t	PLAN	Plan was valid
+uni/tr_sjis.t	PLAN	Plan was valid
+uni/tr_utf8.t	PLAN	Plan was valid
+uni/universal.t	BC	uni/universal.c is generated (-O3,-fno-fold)
+uni/upper.t	SIG	Exit signal is 11 SEGV
+uni/variables.t      PLAN      TODO: Failed 48383/65880 subtests
+uni/write.t	SIG	Exit signal is 11 SEGV
