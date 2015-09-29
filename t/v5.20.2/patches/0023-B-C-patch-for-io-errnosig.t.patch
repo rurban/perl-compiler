@@ -1,0 +1,25 @@
+From 261bc5fcf2c670e8386b7d5732a7ec25d79ff38b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 023/352] B::C patch for io/errnosig.t
+
+---
+ t/io/errnosig.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/errnosig.t b/t/io/errnosig.t
+index 8effcf1..6efde7b 100644
+--- a/t/io/errnosig.t
++++ b/t/io/errnosig.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ require Config; import Config;
+-- 
+2.5.0
+

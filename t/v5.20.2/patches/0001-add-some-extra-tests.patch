@@ -1,0 +1,91 @@
+From cb64ac549d3c42bdd85780253fe49c68e2d7efc8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:38:09 -0500
+Subject: [PATCH 001/352] add some extra tests
+
+---
+ t/extra/file-close.t      | 13 +++++++++++++
+ t/extra/pvlv.t            | 28 ++++++++++++++++++++++++++++
+ t/extra/reused-variable.t | 15 +++++++++++++++
+ 3 files changed, 56 insertions(+)
+ create mode 100644 t/v5.20.2/t/extra/file-close.t
+ create mode 100644 t/v5.20.2/t/extra/pvlv.t
+ create mode 100644 t/v5.20.2/t/extra/reused-variable.t
+
+diff --git a/t/extra/file-close.t b/t/extra/file-close.t
+new file mode 100644
+index 0000000..1c03e16
+--- /dev/null
++++ b/t/extra/file-close.t
+@@ -0,0 +1,13 @@
++#!./perl
++
++require './test.pl';
++
++plan(2);
++ok(1);
++
++my $tmpfile = 'tmpfile';
++open (tmp,'>', $tmpfile) || die "Can't create Cmd_while.tmp.";
++print tmp "something\n";
++close(tmp) or die "Could not close: $!";
++
++ok(1);
+diff --git a/t/extra/pvlv.t b/t/extra/pvlv.t
+new file mode 100644
+index 0000000..fb2fb2c
+--- /dev/null
++++ b/t/extra/pvlv.t
+@@ -0,0 +1,28 @@
++#!./perl
++
++print "1..3\n";
++
++# from https://rt.perl.org/Public/Bug/Display.html?id=77500
++# put a glob in a PVLV by passing a nonexistent hash element to a subroutine and then assigning a glob to it
++
++my %hash;
++sub {
++    for (shift) { $_ = *foo; }
++  }
++  ->( $hash{any_key} );
++
++print qq/ok 1\n/;
++
++$hash{test} = 'bar';
++sub {
++    for (shift) { $_ = *foo; }
++  }
++  ->( $hash{'test'} );
++
++print ref \&bar == 'CODE' ? qq/ok 2\n/ : qq/not ok 2\n/;
++
++my $s = q/abcd/;
++my $x = \substr( $s, 1, 2 );
++
++#use Devel::Peek; Dump $x;
++print ref $x == 'LVALUE' ? qq/ok 3\n/ : qq/not ok 3\n/;
+diff --git a/t/extra/reused-variable.t b/t/extra/reused-variable.t
+new file mode 100644
+index 0000000..b38dd53
+--- /dev/null
++++ b/t/extra/reused-variable.t
+@@ -0,0 +1,15 @@
++#!./perl
++
++print "1..2\n";
++
++$x = 'AbelCaincatdogx';
++$reused = 'AbelCaincatdogx';
++
++print "ok - 1\n" if $x eq $reused;
++print "ok - 2\n" if f($x, $reused );
++
++sub f {
++  my ($a, $reused ) = @_; # renaming the variable here solves the issue...
++  return eval "\$a eq \$reused";
++}
++
+-- 
+2.5.0
+

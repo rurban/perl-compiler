@@ -1,0 +1,27 @@
+From 3f518189e3ee28b2dbf6e00fc713b736c393de9b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 060/352] B::C patch for mro/isa_aliases_utf8.t
+
+---
+ t/mro/isa_aliases_utf8.t | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/t/mro/isa_aliases_utf8.t b/t/mro/isa_aliases_utf8.t
+index ef715a2..799ff09 100644
+--- a/t/mro/isa_aliases_utf8.t
++++ b/t/mro/isa_aliases_utf8.t
+@@ -1,6 +1,9 @@
+ #!./perl
+ 
+-BEGIN { chdir 't'; @INC = '../lib'; require './test.pl' }
++BEGIN { chdir 't'; 
++    require './test.pl';
++    set_up_inc('../lib');
++}
+ 
+ use utf8;
+ use open qw( :utf8 :std );
+-- 
+2.5.0
+

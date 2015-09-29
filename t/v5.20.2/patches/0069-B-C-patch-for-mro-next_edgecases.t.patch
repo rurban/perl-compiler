@@ -1,0 +1,25 @@
+From 0b975ac3d9adc35a8879a4291e7a45b743d07c13 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 069/352] B::C patch for mro/next_edgecases.t
+
+---
+ t/mro/next_edgecases.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/mro/next_edgecases.t b/t/mro/next_edgecases.t
+index e177d70..f4bc382 100644
+--- a/t/mro/next_edgecases.t
++++ b/t/mro/next_edgecases.t
+@@ -3,7 +3,7 @@
+ use strict;
+ use warnings;
+ 
+-BEGIN { chdir 't'; require q(./test.pl); @INC = qw "../lib lib" }
++BEGIN { chdir 't'; require q(./test.pl); unshift @INC,  qw "../lib lib" }
+ 
+ plan(tests => 12);
+ 
+-- 
+2.5.0
+

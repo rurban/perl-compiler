@@ -1,0 +1,25 @@
+From 5d82d1e58e1d0bb01008be30c936ebbb7ac5884c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 245/352] B::C patch for op/utftaint.t
+
+---
+ t/op/utftaint.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/utftaint.t b/t/op/utftaint.t
+index d734927..4a2179a 100644
+--- a/t/op/utftaint.t
++++ b/t/op/utftaint.t
+@@ -3,7 +3,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(../lib);
++    unshift @INC,  qw(../lib);
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

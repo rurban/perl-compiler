@@ -1,0 +1,25 @@
+From 86d002772c3d371ccef475a3d58c5da90319d4f3 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 111/352] B::C patch for op/defins.t
+
+---
+ t/op/defins.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/defins.t b/t/op/defins.t
+index 54d3150..0654072 100644
+--- a/t/op/defins.t
++++ b/t/op/defins.t
+@@ -6,7 +6,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     $SIG{__WARN__} = sub { $warns++; warn $_[0] };
+ }
+ require 'test.pl';
+-- 
+2.5.0
+

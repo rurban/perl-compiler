@@ -1,0 +1,25 @@
+From 635ff0f5bf38906cec2a088b78d3f5758e3cff2d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 255/352] B::C patch for opbasic/cmp.t
+
+---
+ t/opbasic/cmp.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/opbasic/cmp.t b/t/opbasic/cmp.t
+index 43e4345..5d4678b 100644
+--- a/t/opbasic/cmp.t
++++ b/t/opbasic/cmp.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+        chdir 't' if -d 't';
+-       @INC = '../lib';
++       unshift @INC, '../lib';
+ }
+ 
+ # This file has been placed in t/opbasic to indicate that it should not use
+-- 
+2.5.0
+

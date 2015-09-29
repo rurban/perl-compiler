@@ -1,0 +1,26 @@
+From 359b6927ba136b07ec6b011332c9795ac0772400 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 123/352] B::C patch for op/exists_sub.t
+
+---
+ t/op/exists_sub.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/exists_sub.t b/t/op/exists_sub.t
+index a08e0f5..9785fa3 100644
+--- a/t/op/exists_sub.t
++++ b/t/op/exists_sub.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ sub t1;
+-- 
+2.5.0
+

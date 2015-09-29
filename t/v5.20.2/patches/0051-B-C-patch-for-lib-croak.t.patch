@@ -1,0 +1,25 @@
+From 5e9a25cf73106efdf59ddc5be93ea04152eddef0 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 051/352] B::C patch for lib/croak.t
+
+---
+ t/lib/croak.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/croak.t b/t/lib/croak.t
+index 7066b0f..e39b51c 100644
+--- a/t/lib/croak.t
++++ b/t/lib/croak.t
+@@ -1,7 +1,7 @@
+ #!./perl
+ 
+ chdir 't' if -d 't';
+-@INC = '../lib';
++unshift @INC, '../lib';
+ 
+ $FATAL = 1; # we expect all the tests to croak
+ require "../t/lib/common.pl";
+-- 
+2.5.0
+

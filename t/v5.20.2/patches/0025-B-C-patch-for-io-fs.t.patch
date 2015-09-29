@@ -1,0 +1,26 @@
+From 9ec75194ef821fcdcd229c03bc56a97210c9c080 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 025/352] B::C patch for io/fs.t
+
+---
+ t/io/fs.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/fs.t b/t/io/fs.t
+index 0d3f435..cb3a182 100644
+--- a/t/io/fs.t
++++ b/t/io/fs.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ use Config;
+-- 
+2.5.0
+

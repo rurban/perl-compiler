@@ -1,0 +1,26 @@
+From 5773c9d4ff3ea475358396b80c66600c4bc9e0f7 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 213/352] B::C patch for op/sprintf2.t
+
+---
+ t/op/sprintf2.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/sprintf2.t b/t/op/sprintf2.t
+index d914de0..74a8384 100644
+--- a/t/op/sprintf2.t
++++ b/t/op/sprintf2.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }   
+ 
+ plan tests => 1370;
+-- 
+2.5.0
+

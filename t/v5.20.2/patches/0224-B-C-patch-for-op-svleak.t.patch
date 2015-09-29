@@ -1,0 +1,26 @@
+From bab62e0993f776f28af7ffc8491d097f3e44cb8c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 224/352] B::C patch for op/svleak.t
+
+---
+ t/op/svleak.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/svleak.t b/t/op/svleak.t
+index 74a8338..f7789ab 100644
+--- a/t/op/svleak.t
++++ b/t/op/svleak.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ 
+     eval { require XS::APItest; XS::APItest->import('sv_count'); 1 }
+ 	or skip_all("XS::APItest not available");
+-- 
+2.5.0
+

@@ -1,0 +1,41 @@
+From f494f20d5f60e68415d9d8e559c8ad42c1d98c80 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 108/352] B::C patch for op/crypt.t
+
+---
+ t/op/crypt.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/crypt.t b/t/op/crypt.t
+index 27c878f..6eb4af4 100644
+--- a/t/op/crypt.t
++++ b/t/op/crypt.t
+@@ -2,13 +2,14 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ BEGIN {
+     use Config;
+ 
+     require "test.pl";
++}
+ 
+     if( !$Config{d_crypt} ) {
+         skip_all("crypt unimplemented");
+@@ -16,7 +17,7 @@ BEGIN {
+     else {
+         plan(tests => 4);
+     }
+-}
++
+ 
+ # Can't assume too much about the string returned by crypt(),
+ # and about how many bytes of the encrypted (really, hashed)
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From dcc371c73db3405618a7eade13cefa552633b042 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 227/352] B::C patch for op/sysio.t
+
+---
+ t/op/sysio.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/sysio.t b/t/op/sysio.t
+index 25d7197..b95def0 100644
+--- a/t/op/sysio.t
++++ b/t/op/sysio.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+   chdir 't' if -d 't';
+-  @INC = '../lib';
+   require './test.pl';
++  set_up_inc('../lib');
+ }
+ 
+ plan tests => 48;
+-- 
+2.5.0
+

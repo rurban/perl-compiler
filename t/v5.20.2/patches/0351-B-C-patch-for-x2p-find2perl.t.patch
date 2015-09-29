@@ -1,0 +1,25 @@
+From 531b78ecfb2484dbca8f59e712234bf300a65ad4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 351/352] B::C patch for x2p/find2perl.t
+
+---
+ t/x2p/find2perl.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/x2p/find2perl.t b/t/x2p/find2perl.t
+index f0dfa03..b991c87 100644
+--- a/t/x2p/find2perl.t
++++ b/t/x2p/find2perl.t
+@@ -7,7 +7,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ( '../lib' );
++    unshift @INC,  ( '../lib' );
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

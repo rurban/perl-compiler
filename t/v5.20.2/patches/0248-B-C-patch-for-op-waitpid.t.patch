@@ -1,0 +1,26 @@
+From d09f202d4140819d922da781070518520d9fca6a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 248/352] B::C patch for op/waitpid.t
+
+---
+ t/op/waitpid.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/waitpid.t b/t/op/waitpid.t
+index aff2b99..497fc26 100644
+--- a/t/op/waitpid.t
++++ b/t/op/waitpid.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     require Config;
+     skip_all('no Errno')
+ 	unless eval 'use Errno qw(EINVAL); 1';
+-- 
+2.5.0
+

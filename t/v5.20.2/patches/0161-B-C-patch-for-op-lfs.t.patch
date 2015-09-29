@@ -1,0 +1,28 @@
+From 0e508778b1ff7cee38c31f0a3c5130929118d5e5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 161/352] B::C patch for op/lfs.t
+
+---
+ t/op/lfs.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/lfs.t b/t/op/lfs.t
+index acf9fe8..1ddfd13 100644
+--- a/t/op/lfs.t
++++ b/t/op/lfs.t
+@@ -4,9 +4,9 @@
+ 
+ BEGIN {
+ 	chdir 't' if -d 't';
+-	@INC = '../lib';
+ 	require './test.pl';
+-	require Config;
++	set_up_inc('../lib');
++    require Config;
+ 	# Don't bother if there are no quad offsets.
+ 	skip_all('no 64-bit file offsets')
+ 		if $Config::Config{lseeksize} < 8;
+-- 
+2.5.0
+

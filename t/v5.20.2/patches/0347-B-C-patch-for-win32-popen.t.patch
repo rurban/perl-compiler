@@ -1,0 +1,26 @@
+From 366acfe064780f1fbfe804fd102dd01ab60b49be Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 347/352] B::C patch for win32/popen.t
+
+---
+ t/win32/popen.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/win32/popen.t b/t/win32/popen.t
+index eca0a1d..e596017 100644
+--- a/t/win32/popen.t
++++ b/t/win32/popen.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require "./test.pl";
++    set_up_inc('../lib');
+     require Config;
+     $Config::Config{d_pseudofork}
+         or skip_all("no psuedo-fork");
+-- 
+2.5.0
+

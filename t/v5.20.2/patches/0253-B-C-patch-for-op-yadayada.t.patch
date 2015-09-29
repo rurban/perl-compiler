@@ -1,0 +1,26 @@
+From 47cd22e69e72a15890457f5128754d3206343891 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 253/352] B::C patch for op/yadayada.t
+
+---
+ t/op/yadayada.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/yadayada.t b/t/op/yadayada.t
+index a213bec..861389f 100644
+--- a/t/op/yadayada.t
++++ b/t/op/yadayada.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

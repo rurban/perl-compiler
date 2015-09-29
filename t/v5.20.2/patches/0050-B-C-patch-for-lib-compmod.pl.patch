@@ -1,0 +1,25 @@
+From ada1288a4ee205df366ab762da8232f3078bd8ed Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 050/352] B::C patch for lib/compmod.pl
+
+---
+ t/lib/compmod.pl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/compmod.pl b/t/lib/compmod.pl
+index fa032f1..05cfb9e 100644
+--- a/t/lib/compmod.pl
++++ b/t/lib/compmod.pl
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ my $module = shift;
+-- 
+2.5.0
+

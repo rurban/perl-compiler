@@ -1,0 +1,25 @@
+From 3f9e53b62e7ada79f91b19c55cd11cbca02d87e5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 295/352] B::C patch for re/reg_namedcapture.t
+
+---
+ t/re/reg_namedcapture.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/reg_namedcapture.t b/t/re/reg_namedcapture.t
+index 03034b0..501232c 100644
+--- a/t/re/reg_namedcapture.t
++++ b/t/re/reg_namedcapture.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+     unless (defined &DynaLoader::boot_DynaLoader) {
+       print "1..0 # Skip: no dynamic loading on miniperl, no Tie::Hash::NamedCapture\n";
+       exit 0;
+-- 
+2.5.0
+

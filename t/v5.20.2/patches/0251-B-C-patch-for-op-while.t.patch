@@ -1,0 +1,26 @@
+From 71542834c58c91e46af39816d96e8e985fc166cd Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 251/352] B::C patch for op/while.t
+
+---
+ t/op/while.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/while.t b/t/op/while.t
+index 1e8eb44..a8ca363 100644
+--- a/t/op/while.t
++++ b/t/op/while.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = "../lib";
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ plan(26);
+-- 
+2.5.0
+

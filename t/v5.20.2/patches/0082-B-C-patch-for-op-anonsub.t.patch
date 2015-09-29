@@ -1,0 +1,27 @@
+From 76056d5307c11a48b2944cd69962864d3f47abd5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 082/352] B::C patch for op/anonsub.t
+
+---
+ t/op/anonsub.t | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/t/op/anonsub.t b/t/op/anonsub.t
+index 6b8745f..e6e8740 100644
+--- a/t/op/anonsub.t
++++ b/t/op/anonsub.t
+@@ -1,8 +1,9 @@
+ #!./perl -w
+ 
+ chdir 't' if -d 't';
+-@INC = '../lib';
+ require './test.pl';
++set_up_inc('../lib');
++
+ use strict;
+ 
+ $|=1;
+-- 
+2.5.0
+

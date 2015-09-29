@@ -1,0 +1,5 @@
+* Help
+- use 'git format-patch --relative' to generate the patch from t/v5.20.2 directory 
+
+* Known limitations:
+- Tests in t directory should be run from t, as it's designed in the core testsuite.

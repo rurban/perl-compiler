@@ -1,0 +1,25 @@
+From d829aa9176b685b71443cce0e5bacbb3dedf2e47 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 041/352] B::C patch for io/shm.t
+
+---
+ t/io/shm.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/shm.t b/t/io/shm.t
+index 01e2172..73c6030 100644
+--- a/t/io/shm.t
++++ b/t/io/shm.t
+@@ -17,7 +17,7 @@
+ BEGIN {
+   if ($ENV{'PERL_CORE'}) {
+     chdir 't' if -d 't';
+-    @INC = '../lib' if -d '../lib' && -d '../ext';
++    unshift @INC,  '../lib' if -d '../lib' && -d '../ext';
+   }
+ 
+   require "./test.pl";
+-- 
+2.5.0
+

@@ -1,0 +1,40 @@
+From 711e335d3e8ccd627f21e4df0e742302b60faa1d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 035/352] B::C patch for io/pipe.t
+
+---
+ t/io/pipe.t | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/t/io/pipe.t b/t/io/pipe.t
+index fdd8b99..bec1a66 100644
+--- a/t/io/pipe.t
++++ b/t/io/pipe.t
+@@ -2,16 +2,15 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require Config; import Config;
+     require './test.pl';
+-
+-    if (!$Config{'d_fork'}) {
+-        skip_all("fork required to pipe");
+-    }
+-    else {
+-        plan(tests => 24);
+-    }
++    set_up_inc('../lib');
++}
++if (!$Config{'d_fork'}) {
++    skip_all("fork required to pipe");
++}
++else {
++    plan(tests => 24);
+ }
+ 
+ my $Perl = which_perl();
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From b0f52ba0448cbbbc1c8b33ff912b016d5ef682c4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 030/352] B::C patch for io/openpid.t
+
+---
+ t/io/openpid.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/openpid.t b/t/io/openpid.t
+index 946fa5e..d3fcf78 100644
+--- a/t/io/openpid.t
++++ b/t/io/openpid.t
+@@ -9,8 +9,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ if ($^O eq 'dos') {
+-- 
+2.5.0
+

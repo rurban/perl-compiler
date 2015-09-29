@@ -1,0 +1,25 @@
+From a8c3476ef9af622ce59796a8e72bde5b473a8496 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 010/352] B::C patch for comp/use.t
+
+---
+ t/comp/use.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/comp/use.t b/t/comp/use.t
+index 12409cf..ac5918c 100644
+--- a/t/comp/use.t
++++ b/t/comp/use.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib', 'lib');
++    unshift @INC,  ('../lib', 'lib');
+     $INC{"feature.pm"} = 1; # so we don't attempt to load feature.pm
+ }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,27 @@
+From 9e1d4760220f73d9b24c9b65aeecf33c6e6652e3 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 156/352] B::C patch for op/lc.t
+
+---
+ t/op/lc.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/lc.t b/t/op/lc.t
+index 38d2b6b..7b4b10e 100644
+--- a/t/op/lc.t
++++ b/t/op/lc.t
+@@ -4,9 +4,9 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require Config; import Config;
+     require './test.pl';
++    set_up_inc('../lib');
+     require './loc_tools.pl';   # Contains find_utf8_ctype_locale()
+ }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From bc60231b4326116f41f807f752c43822531be71c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 094/352] B::C patch for op/blocks.t
+
+---
+ t/op/blocks.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/blocks.t b/t/op/blocks.t
+index fb15eee..bfab9e0 100644
+--- a/t/op/blocks.t
++++ b/t/op/blocks.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 7;
+-- 
+2.5.0
+

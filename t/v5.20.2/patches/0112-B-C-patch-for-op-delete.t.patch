@@ -1,0 +1,25 @@
+From 37cd43b3441757851ddce5b15703cfabc7ec84f1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 112/352] B::C patch for op/delete.t
+
+---
+ t/op/delete.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/delete.t b/t/op/delete.t
+index 493717e..326aeff 100644
+--- a/t/op/delete.t
++++ b/t/op/delete.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ require "test.pl";
+-- 
+2.5.0
+

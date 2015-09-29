@@ -1,0 +1,26 @@
+From 3875b6734fc7205707441b5b296285aa956f7bc8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 151/352] B::C patch for op/int.t
+
+---
+ t/op/int.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/int.t b/t/op/int.t
+index 9aad020..5434ab4 100644
+--- a/t/op/int.t
++++ b/t/op/int.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan 15;
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From b71c0548d15fd3b6e80481af25b263747f96e098 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 307/352] B::C patch for run/exit.t
+
+---
+ t/run/exit.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/exit.t b/t/run/exit.t
+index 02e57c6..1179475 100644
+--- a/t/run/exit.t
++++ b/t/run/exit.t
+@@ -5,7 +5,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ # Run some code, return its wait status.
+-- 
+2.5.0
+

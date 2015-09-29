@@ -1,0 +1,26 @@
+From dd6eccd7633b0ae9537cec0b6d048a0a15add392 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 125/352] B::C patch for op/fh.t
+
+---
+ t/op/fh.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/fh.t b/t/op/fh.t
+index afca57b..9685a7c 100644
+--- a/t/op/fh.t
++++ b/t/op/fh.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 8;
+-- 
+2.5.0
+

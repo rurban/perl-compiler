@@ -1,0 +1,25 @@
+From 331ece570ec241ac7a8abc67a6232e9f61c854fc Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 009/352] B::C patch for comp/require.t
+
+---
+ t/comp/require.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/comp/require.t b/t/comp/require.t
+index 4eafce4..8fb8e33 100644
+--- a/t/comp/require.t
++++ b/t/comp/require.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '.';
++    unshift @INC,  '.';
+     push @INC, '../lib';
+ }
+ 
+-- 
+2.5.0
+

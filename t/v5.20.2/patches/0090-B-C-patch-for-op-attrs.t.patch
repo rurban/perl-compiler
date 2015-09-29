@@ -1,0 +1,26 @@
+From d47a55e69ace864740f07e1bf6d993a76e241565 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 090/352] B::C patch for op/attrs.t
+
+---
+ t/op/attrs.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/attrs.t b/t/op/attrs.t
+index ec6768e..0784307 100644
+--- a/t/op/attrs.t
++++ b/t/op/attrs.t
+@@ -4,8 +4,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+     skip_all_if_miniperl("miniperl can't load attributes");
+ }
+ 
+-- 
+2.5.0
+

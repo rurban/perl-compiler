@@ -1,0 +1,26 @@
+From 83c37db894832b22fe0326f04edda64332daa3a2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 099/352] B::C patch for op/chop.t
+
+---
+ t/op/chop.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/chop.t b/t/op/chop.t
+index 3f2247f..3d1922f 100644
+--- a/t/op/chop.t
++++ b/t/op/chop.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 143;
+-- 
+2.5.0
+

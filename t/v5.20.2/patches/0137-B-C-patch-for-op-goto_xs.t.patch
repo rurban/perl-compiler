@@ -1,0 +1,34 @@
+From 288621ebaddc34babb49ce674aab04a3031b64e1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 137/352] B::C patch for op/goto_xs.t
+
+---
+ t/op/goto_xs.t | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/t/op/goto_xs.t b/t/op/goto_xs.t
+index fbdd2dd..ef32d98 100644
+--- a/t/op/goto_xs.t
++++ b/t/op/goto_xs.t
+@@ -9,13 +9,16 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
++    eval q/use TestInit; 1/;
++
+     require './test.pl';
+ # turn warnings into fatal errors
+     $SIG{__WARN__} = sub { die "WARNING: @_" } ;
+-
++    set_up_inc('../lib');
+     skip_all_if_miniperl("no dynamic loading on miniperl, no Fcntl");
+     require Fcntl;
+ }
++eval q/use TestInit; 1/;
+ use strict;
+ use warnings;
+ use vars '$VALID';
+-- 
+2.5.0
+

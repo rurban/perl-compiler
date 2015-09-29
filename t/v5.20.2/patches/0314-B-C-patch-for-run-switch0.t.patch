@@ -1,0 +1,26 @@
+From 3867c84b90ac2d3ec540eb1f740d5c8eec4a1180 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 314/352] B::C patch for run/switch0.t
+
+---
+ t/run/switch0.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/switch0.t b/t/run/switch0.t
+index 94d5bd2..8ec99c2 100644
+--- a/t/run/switch0.t
++++ b/t/run/switch0.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 1;
+-- 
+2.5.0
+

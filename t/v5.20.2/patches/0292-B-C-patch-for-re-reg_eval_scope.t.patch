@@ -1,0 +1,25 @@
+From c87d7a40b21fda31274b4640170912baa854209b Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 292/352] B::C patch for re/reg_eval_scope.t
+
+---
+ t/re/reg_eval_scope.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/reg_eval_scope.t b/t/re/reg_eval_scope.t
+index 0e35e29..7dce511 100644
+--- a/t/re/reg_eval_scope.t
++++ b/t/re/reg_eval_scope.t
+@@ -4,7 +4,7 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = qw(lib ../lib);
++    unshift @INC,  qw(lib ../lib);
+     require './test.pl';
+ }
+ 
+-- 
+2.5.0
+

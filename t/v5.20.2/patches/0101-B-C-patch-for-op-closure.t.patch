@@ -1,0 +1,26 @@
+From 25efb1a962f227e3153e9f8567653bd458aadfb6 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 101/352] B::C patch for op/closure.t
+
+---
+ t/op/closure.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/closure.t b/t/op/closure.t
+index 82e65c5..569724f 100644
+--- a/t/op/closure.t
++++ b/t/op/closure.t
+@@ -8,8 +8,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use Config;
+-- 
+2.5.0
+

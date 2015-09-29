@@ -1,0 +1,26 @@
+From 3a7655eda4190b635a451fd2fe83482eec73d04f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 192/352] B::C patch for op/read.t
+
+---
+ t/op/read.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/read.t b/t/op/read.t
+index 23f1b51..9fb8e01 100644
+--- a/t/op/read.t
++++ b/t/op/read.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ use strict;
+ 
+-- 
+2.5.0
+

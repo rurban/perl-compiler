@@ -1,0 +1,28 @@
+From 649a3be8bd6a27f83cfe15aba82e9ddf732a1814 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 349/352] B::C patch for win32/signal.t
+
+---
+ t/win32/signal.t | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/t/win32/signal.t b/t/win32/signal.t
+index 143327a..a9f9709 100644
+--- a/t/win32/signal.t
++++ b/t/win32/signal.t
+@@ -3,10 +3,9 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+-
+     # only used for skip_all, the forking confuses test.pl
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ BEGIN {
+-- 
+2.5.0
+

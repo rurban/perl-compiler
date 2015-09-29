@@ -1,0 +1,31 @@
+From 0be501b78285ef7114162d484a8362c9be691e50 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 068/352] B::C patch for mro/method_caching_utf8.t
+
+---
+ t/mro/method_caching_utf8.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/mro/method_caching_utf8.t b/t/mro/method_caching_utf8.t
+index b0a451d..8fa35da 100644
+--- a/t/mro/method_caching_utf8.t
++++ b/t/mro/method_caching_utf8.t
+@@ -10,12 +10,11 @@ no warnings 'prototype'; # we do a lot of this
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+-require './test.pl';
+-
+ {
+     package MC텟ᵀ::Bࡎᶓ;
+     sub ᕘ { return $_[1]+1 };
+-- 
+2.5.0
+

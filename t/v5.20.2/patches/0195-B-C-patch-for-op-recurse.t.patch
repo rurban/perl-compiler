@@ -1,0 +1,32 @@
+From 80aeae9bc0613d597b8035fd73ebe5dfb336f7a0 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 195/352] B::C patch for op/recurse.t
+
+---
+ t/op/recurse.t | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/t/op/recurse.t b/t/op/recurse.t
+index 2a0201a..312f4a3 100644
+--- a/t/op/recurse.t
++++ b/t/op/recurse.t
+@@ -6,11 +6,12 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
+-    require "test.pl";
+-    plan(tests => 28);
++    unshift @INC,  qw(. ../lib);
++    require "test.pl";    
+ }
+ 
++plan(tests => 28);
++
+ use strict;
+ 
+ sub gcd {
+-- 
+2.5.0
+

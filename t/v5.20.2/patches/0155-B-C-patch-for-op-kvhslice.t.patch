@@ -1,0 +1,26 @@
+From 5c6b755112800acba290f14812b773c137515e22 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 155/352] B::C patch for op/kvhslice.t
+
+---
+ t/op/kvhslice.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/kvhslice.t b/t/op/kvhslice.t
+index 321d1c4..5255ba5 100644
+--- a/t/op/kvhslice.t
++++ b/t/op/kvhslice.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ # use strict;
+-- 
+2.5.0
+

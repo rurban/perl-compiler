@@ -1,0 +1,30 @@
+From 510274fdd416cb7aad0110f362a41385412295df Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 117/352] B::C patch for op/dor.t
+
+---
+ t/op/dor.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/dor.t b/t/op/dor.t
+index a0b98f1..15c5895 100644
+--- a/t/op/dor.t
++++ b/t/op/dor.t
+@@ -4,11 +4,11 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ package main;
+-require './test.pl';
+ 
+ plan( tests => 34 );
+ 
+-- 
+2.5.0
+

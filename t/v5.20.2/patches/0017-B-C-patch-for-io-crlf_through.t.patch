@@ -1,0 +1,25 @@
+From 32a76af5e8b3d0f9822b8e57c8bfa7fc51e10f1e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 017/352] B::C patch for io/crlf_through.t
+
+---
+ t/io/crlf_through.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/crlf_through.t b/t/io/crlf_through.t
+index c080995..21f54ad 100644
+--- a/t/io/crlf_through.t
++++ b/t/io/crlf_through.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ no warnings 'once';
+-- 
+2.5.0
+

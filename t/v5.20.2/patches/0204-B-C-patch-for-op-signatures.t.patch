@@ -1,0 +1,26 @@
+From 32c21c874c0688da0711338e26d90459c6a7b309 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 204/352] B::C patch for op/signatures.t
+
+---
+ t/op/signatures.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/signatures.t b/t/op/signatures.t
+index 99f075f..08942e8 100644
+--- a/t/op/signatures.t
++++ b/t/op/signatures.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ plan 912;
+ 
+-- 
+2.5.0
+

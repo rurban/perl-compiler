@@ -1,0 +1,27 @@
+From 07fce560d7c276d97ee771d9260ad011a71d6663 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 238/352] B::C patch for op/universal.t
+
+---
+ t/op/universal.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/universal.t b/t/op/universal.t
+index 50d1782..7815112 100644
+--- a/t/op/universal.t
++++ b/t/op/universal.t
+@@ -5,9 +5,9 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     $| = 1;
+     require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 144;
+-- 
+2.5.0
+

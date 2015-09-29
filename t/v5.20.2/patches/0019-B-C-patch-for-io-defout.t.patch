@@ -1,0 +1,27 @@
+From 30b347453e7a4b25cd45c0f5322e8061a8b2a748 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 019/352] B::C patch for io/defout.t
+
+---
+ t/io/defout.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/io/defout.t b/t/io/defout.t
+index 2cb7b9f..13fa140 100644
+--- a/t/io/defout.t
++++ b/t/io/defout.t
+@@ -8,8 +8,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+-    require './test.pl';
++    require "./test.pl";
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 16;
+-- 
+2.5.0
+

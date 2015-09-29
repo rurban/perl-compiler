@@ -1,0 +1,25 @@
+From 13e3e113015f0cbc7fcaf7ff21aacfa89bc07210 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 282/352] B::C patch for re/pat_rt_report.t
+
+---
+ t/re/pat_rt_report.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pat_rt_report.t b/t/re/pat_rt_report.t
+index 94100d1..6719ba5 100644
+--- a/t/re/pat_rt_report.t
++++ b/t/re/pat_rt_report.t
+@@ -16,7 +16,7 @@ $| = 1;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = ('../lib','.');
++    unshift @INC,  ('../lib','.');
+     require './test.pl';
+     skip_all_if_miniperl("miniperl can't load Tie::Hash::NamedCapture, need for %+ and %-");
+ }
+-- 
+2.5.0
+

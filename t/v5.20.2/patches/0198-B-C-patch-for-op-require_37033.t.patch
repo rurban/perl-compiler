@@ -1,0 +1,25 @@
+From 1f540bf1ab9c7c4171e23675acf482a448945ef6 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 198/352] B::C patch for op/require_37033.t
+
+---
+ t/op/require_37033.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/require_37033.t b/t/op/require_37033.t
+index dac8568..c8fc550 100644
+--- a/t/op/require_37033.t
++++ b/t/op/require_37033.t
+@@ -5,7 +5,7 @@ use strict;
+ # the handle it opens gets file descriptor 0. RT #37033.
+ 
+ require './test.pl';
+-@INC = 'lib';
++unshift @INC,  'lib';
+ 
+ sub test_require {
+     my ($state, $want) = @_;
+-- 
+2.5.0
+

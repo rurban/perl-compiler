@@ -1,0 +1,25 @@
+From f46c896dd0ff6f27b5cf291e2d74504de095eba9 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 196/352] B::C patch for op/ref.t
+
+---
+ t/op/ref.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/ref.t b/t/op/ref.t
+index a6564ce..47bf82c 100644
+--- a/t/op/ref.t
++++ b/t/op/ref.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require 'test.pl';
+ }
+ 
+-- 
+2.5.0
+

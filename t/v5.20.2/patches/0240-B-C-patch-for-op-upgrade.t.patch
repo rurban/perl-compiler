@@ -1,0 +1,26 @@
+From de59252f058f3582fa0dfa26dcaf7d48a788af4a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 240/352] B::C patch for op/upgrade.t
+
+---
+ t/op/upgrade.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/upgrade.t b/t/op/upgrade.t
+index 5f2ffa6..0d15e55 100644
+--- a/t/op/upgrade.t
++++ b/t/op/upgrade.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

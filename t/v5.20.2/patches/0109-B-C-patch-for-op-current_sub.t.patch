@@ -1,0 +1,47 @@
+From caa7bf97c997976a8beaec102f24648cf41eb775 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 109/352] B::C patch for op/current_sub.t
+
+---
+ t/op/current_sub.t | 15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
+
+diff --git a/t/op/current_sub.t b/t/op/current_sub.t
+index 8c82d11..dcf1e4b 100644
+--- a/t/op/current_sub.t
++++ b/t/op/current_sub.t
+@@ -1,11 +1,11 @@
+ #!./perl
+ 
+ BEGIN {
+-    chdir 't';
+-    @INC = qw(../lib);
++    chdir 't' if -d 't';
+     require './test.pl';
+-    plan (tests => 17);
++    set_up_inc('../lib');
+ }
++plan (tests => 15);
+ 
+ is __SUB__, "__SUB__", '__SUB__ is a bareword outside of use feature';
+ 
+@@ -37,15 +37,6 @@ is $subsubs[0]()(0), 1, '__SUB__ inside closure (1)';
+ is $subsubs[1]()(0), 2, '__SUB__ inside closure (2)';
+ is $subsubs[2]()(0), 3, '__SUB__ inside closure (3)';
+ 
+-BEGIN {
+-    return "begin 1" if @_;
+-    is CORE::__SUB__->(0), "begin 1", 'in BEGIN block'
+-}
+-BEGIN {
+-    return "begin 2" if @_;
+-    is &CORE::__SUB__->(0), "begin 2", 'in BEGIN block via & (unoptimised)'
+-}
+-
+ sub bar;
+ sub bar {
+     () = sort {
+-- 
+2.5.0
+

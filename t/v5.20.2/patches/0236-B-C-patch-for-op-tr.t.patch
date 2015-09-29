@@ -1,0 +1,26 @@
+From 9558d5cc5a583acbb16adbafa6e4f79dd6cb709d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 236/352] B::C patch for op/tr.t
+
+---
+ t/op/tr.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/tr.t b/t/op/tr.t
+index 55a3438..cbeefdf 100644
+--- a/t/op/tr.t
++++ b/t/op/tr.t
+@@ -4,8 +4,8 @@ use utf8;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 134;
+-- 
+2.5.0
+

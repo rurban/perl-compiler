@@ -1,0 +1,2 @@
+- can probably clean lib, as we are now using @INC from the current perl in most tests
+this might lead to some arch issues

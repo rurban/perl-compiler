@@ -1,0 +1,35 @@
+From f506ea88c921132865e64fdf65474784c31447b7 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 306/352] B::C patch for run/dtrace.t
+
+---
+ t/run/dtrace.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/run/dtrace.t b/t/run/dtrace.t
+index 0992cd5..fc4d663 100644
+--- a/t/run/dtrace.t
++++ b/t/run/dtrace.t
+@@ -5,8 +5,8 @@ my $dtrace;
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ 
+     skip_all_without_config("usedtrace");
+ 
+@@ -133,7 +133,7 @@ D_SCRIPT
+ );
+ 
+ dtrace_like(<< 'PERL_SCRIPT',
+-    BEGIN {@INC = '../lib'}
++    BEGIN {unshift @INC,  '../lib'}
+     use strict;
+     require HTTP::Tiny;
+     do "run/dtrace.pl";
+-- 
+2.5.0
+

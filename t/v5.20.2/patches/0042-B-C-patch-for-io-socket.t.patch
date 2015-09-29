@@ -1,0 +1,25 @@
+From 3a9be566c658cc9a664bc9f73fd804eee7ab50d2 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:24 -0500
+Subject: [PATCH 042/352] B::C patch for io/socket.t
+
+---
+ t/io/socket.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/io/socket.t b/t/io/socket.t
+index b723e3c..804eee7 100644
+--- a/t/io/socket.t
++++ b/t/io/socket.t
+@@ -4,7 +4,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib' if -d '../lib' && -d '../ext';
++    unshift @INC,  '../lib' if -d '../lib' && -d '../ext';
+ 
+     require "./test.pl";
+     require Config; import Config;
+-- 
+2.5.0
+

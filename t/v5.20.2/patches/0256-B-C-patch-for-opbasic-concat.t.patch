@@ -1,0 +1,25 @@
+From f39e845f8534e2a6341741acef131da616cc2a69 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 256/352] B::C patch for opbasic/concat.t
+
+---
+ t/opbasic/concat.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/opbasic/concat.t b/t/opbasic/concat.t
+index f020992..5880c03 100644
+--- a/t/opbasic/concat.t
++++ b/t/opbasic/concat.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ # ok() functions from other sources (e.g., t/test.pl) may use concatenation,
+-- 
+2.5.0
+

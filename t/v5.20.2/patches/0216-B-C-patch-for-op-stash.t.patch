@@ -1,0 +1,25 @@
+From 7683b6119a58010172c8354726b566e39c16f8fd Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:32 -0500
+Subject: [PATCH 216/352] B::C patch for op/stash.t
+
+---
+ t/op/stash.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/stash.t b/t/op/stash.t
+index f2e5523..c37531e 100644
+--- a/t/op/stash.t
++++ b/t/op/stash.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(../lib);
++    unshift @INC,  qw(../lib);
+ }
+ 
+ BEGIN { require "./test.pl"; }
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From 143c24fc39fbb6061c156fb69a8e9d0ad803a01f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:36 -0500
+Subject: [PATCH 336/352] B::C patch for uni/method.t
+
+---
+ t/uni/method.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/method.t b/t/uni/method.t
+index 4f9d72d..eb4f612 100644
+--- a/t/uni/method.t
++++ b/t/uni/method.t
+@@ -6,7 +6,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+     require "test.pl";
+ }
+ 
+-- 
+2.5.0
+

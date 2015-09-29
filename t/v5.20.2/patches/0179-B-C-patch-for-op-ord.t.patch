@@ -1,0 +1,25 @@
+From 84ea2edc0e4ec27b9088bbb355685d01418867b8 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 179/352] B::C patch for op/ord.t
+
+---
+ t/op/ord.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/ord.t b/t/op/ord.t
+index 1c82262..eb55f22 100644
+--- a/t/op/ord.t
++++ b/t/op/ord.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib); # ../lib needed for test.deparse
++    unshift @INC,  qw(. ../lib); # ../lib needed for test.deparse
+     require "test.pl";
+ }
+ 
+-- 
+2.5.0
+

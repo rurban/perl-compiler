@@ -1,0 +1,31 @@
+From 676c4b6ee9fbbc205acc6794b49ca06461f73152 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 071/352] B::C patch for mro/overload_c3.t
+
+---
+ t/mro/overload_c3.t | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/t/mro/overload_c3.t b/t/mro/overload_c3.t
+index db2b1ec..0ba1509 100644
+--- a/t/mro/overload_c3.t
++++ b/t/mro/overload_c3.t
+@@ -5,11 +5,12 @@ use warnings;
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require q(./test.pl);
++    set_up_inc('../lib');
+ }
+ 
+-require q(./test.pl); plan(tests => 7);
++plan(tests => 7);
+ 
+ {
+     package BaseTest;
+-- 
+2.5.0
+

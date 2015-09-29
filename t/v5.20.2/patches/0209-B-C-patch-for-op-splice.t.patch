@@ -1,0 +1,26 @@
+From a679502b9a38f46b08aa2523405f842dc88135a4 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 209/352] B::C patch for op/splice.t
+
+---
+ t/op/splice.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/splice.t b/t/op/splice.t
+index dde11f5..b61e4a0 100644
+--- a/t/op/splice.t
++++ b/t/op/splice.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ $|  = 1;
+-- 
+2.5.0
+

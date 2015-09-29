@@ -1,0 +1,24 @@
+From e99f73fa6ced9aafbee48904bdf9819131a4e8ff Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 345/352] B::C patch for uni/upper.t
+
+---
+ t/uni/upper.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/uni/upper.t b/t/uni/upper.t
+index 315680c..80fe27e 100644
+--- a/t/uni/upper.t
++++ b/t/uni/upper.t
+@@ -1,6 +1,6 @@
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(../lib uni .);
++    unshift @INC,  qw(../lib uni .);
+     require "case.pl";
+ }
+ 
+-- 
+2.5.0
+

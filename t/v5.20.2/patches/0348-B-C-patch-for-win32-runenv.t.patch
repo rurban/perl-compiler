@@ -1,0 +1,32 @@
+From a55e5d80ffe42caada3e2a97d9b3efb41a5d6f63 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:37 -0500
+Subject: [PATCH 348/352] B::C patch for win32/runenv.t
+
+---
+ t/win32/runenv.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/win32/runenv.t b/t/win32/runenv.t
+index d487ea7..33c29d6 100644
+--- a/t/win32/runenv.t
++++ b/t/win32/runenv.t
+@@ -7,7 +7,6 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require Config; import Config;
+     require File::Temp; import File::Temp qw/:POSIX/;
+ 
+@@ -21,6 +20,7 @@ BEGIN {
+     }
+ 
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ skip_all "requires compilation with PERL_IMPLICIT_SYS"
+-- 
+2.5.0
+

@@ -1,0 +1,31 @@
+From 3e87101df2682e101ee3a605937260246f93c008 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 076/352] B::C patch for mro/recursion_c3.t
+
+---
+ t/mro/recursion_c3.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/mro/recursion_c3.t b/t/mro/recursion_c3.t
+index cd1db33..93dc495 100644
+--- a/t/mro/recursion_c3.t
++++ b/t/mro/recursion_c3.t
+@@ -5,12 +5,11 @@ use warnings;
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+-require './test.pl';
+-
+ plan(skip_all => "Your system has no SIGALRM") if !exists $SIG{ALRM};
+ plan(tests => 8);
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,25 @@
+From 0c1d8dd15541513dd3f7431e002a157a0d530df5 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 264/352] B::C patch for porting/customized.t
+
+---
+ t/porting/customized.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/customized.t b/t/porting/customized.t
+index a769c58..1f48c54 100644
+--- a/t/porting/customized.t
++++ b/t/porting/customized.t
+@@ -10,7 +10,7 @@ BEGIN {
+         # XXX that should be fixed
+ 
+     chdir '..' unless -d 't';
+-    @INC = qw(lib Porting t);
++    unshift @INC,  qw(lib Porting t);
+     require 'test.pl';
+ }
+ 
+-- 
+2.5.0
+

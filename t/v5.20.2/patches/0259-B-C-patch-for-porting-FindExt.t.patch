@@ -1,0 +1,25 @@
+From 3eaf1bcc94a02318c13eb3b09b3a2a07f81b1780 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 259/352] B::C patch for porting/FindExt.t
+
+---
+ t/porting/FindExt.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/FindExt.t b/t/porting/FindExt.t
+index b3f9c31..2fe5dd2 100644
+--- a/t/porting/FindExt.t
++++ b/t/porting/FindExt.t
+@@ -1,7 +1,7 @@
+ #!../miniperl -w
+ 
+ BEGIN {
+-    @INC = qw(../win32 ../lib);
++    unshift @INC,  qw(../win32 ../lib);
+     require './test.pl';
+     skip_all('FindExt not portable')
+ 	if $^O eq 'VMS';
+-- 
+2.5.0
+

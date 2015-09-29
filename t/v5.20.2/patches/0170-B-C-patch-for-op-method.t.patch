@@ -1,0 +1,25 @@
+From 12a0af6f890ce8fa763a127cbc21dc37e5b425cd Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 170/352] B::C patch for op/method.t
+
+---
+ t/op/method.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/method.t b/t/op/method.t
+index 059b44f..b993690 100644
+--- a/t/op/method.t
++++ b/t/op/method.t
+@@ -6,7 +6,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib lib);
++    unshift @INC,  qw(. ../lib lib);
+     require "test.pl";
+ }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 408c5d662e45bc637f7c4bfd484e550a9a3708e6 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 252/352] B::C patch for op/write.t
+
+---
+ t/op/write.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/write.t b/t/op/write.t
+index 7f0e881..590d658 100644
+--- a/t/op/write.t
++++ b/t/op/write.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;	# Amazed that this hackery can be made strict ...
+-- 
+2.5.0
+

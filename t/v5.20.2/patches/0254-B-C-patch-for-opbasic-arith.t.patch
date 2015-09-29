@@ -1,0 +1,25 @@
+From 022918b3e516c2af8bde242ee6b2bbb682b4b51c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 254/352] B::C patch for opbasic/arith.t
+
+---
+ t/opbasic/arith.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/opbasic/arith.t b/t/opbasic/arith.t
+index a90e84c..f673e4c 100644
+--- a/t/opbasic/arith.t
++++ b/t/opbasic/arith.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ # This file has been placed in t/opbasic to indicate that it should not use
+-- 
+2.5.0
+

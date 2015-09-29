@@ -1,0 +1,25 @@
+From a155828979a5238087023ed380143a4c0810e734 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:25 -0500
+Subject: [PATCH 053/352] B::C patch for lib/deprecate.t
+
+---
+ t/lib/deprecate.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/lib/deprecate.t b/t/lib/deprecate.t
+index 9e59469..d31f0e9 100644
+--- a/t/lib/deprecate.t
++++ b/t/lib/deprecate.t
+@@ -11,7 +11,7 @@ plan(tests => 10);
+ 
+ my $test_dir = File::Spec->catdir(qw(lib deprecate));
+ chdir $test_dir or die "Can't chdir $test_dir";
+-@INC = ( File::Spec->catdir( (File::Spec->updir)x3, qw(lib)) );
++unshift @INC,  ( File::Spec->catdir( (File::Spec->updir)x3, qw(lib)) );
+ 
+ my %libdir = (
+ 	privlibexp	=> File::Spec->catdir(qw(lib perl)),
+-- 
+2.5.0
+

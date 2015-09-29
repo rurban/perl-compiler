@@ -1,0 +1,25 @@
+From 665343ab3ebf99e351069987773ab7f196900dea Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 004/352] B::C patch for base/rs.t
+
+---
+ t/base/rs.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/base/rs.t b/t/base/rs.t
+index 416696e..dd59e2d 100644
+--- a/t/base/rs.t
++++ b/t/base/rs.t
+@@ -120,7 +120,7 @@ $/ = "\n";
+  # If we do not include the lib directories, we may end up picking up a
+  # binary-incompatible previously-installed version. The eval won’t help in
+  # intercepting a SIGTRAP.
+- local @INC = ("../lib", "lib", @INC);
++ unshift @INC,  ("../lib", "lib", @INC);
+  if (not eval q/use PerlIO::scalar; use PerlIO::via::scalar; 1/) {
+   # In-memory files necessitate PerlIO::via::scalar, thus a perl with
+   # perlio and dynaloading enabled. miniperl won't be able to run this
+-- 
+2.5.0
+

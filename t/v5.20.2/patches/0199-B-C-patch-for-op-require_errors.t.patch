@@ -1,0 +1,34 @@
+From 6ac616bd8c4fc463178b42de9758d21f50aa374a Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:31 -0500
+Subject: [PATCH 199/352] B::C patch for op/require_errors.t
+
+---
+ t/op/require_errors.t | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/op/require_errors.t b/t/op/require_errors.t
+index ec7a122..7c144d9 100644
+--- a/t/op/require_errors.t
++++ b/t/op/require_errors.t
+@@ -11,7 +11,7 @@ plan(tests => 17);
+ 
+ my $nonfile = tempfile();
+ 
+-@INC = qw(Perl Rules);
++unshift @INC,  qw(Perl Rules);
+ 
+ # The tests for ' ' and '.h' never did fail, but previously the error reporting
+ # code would read memory before the start of the SV's buffer
+@@ -126,7 +126,7 @@ like $@, qr/^Can't locate strict\.pm\\0invalid: /, 'do nul check';
+ 
+   $WARN = '';
+   local @INC = @INC;
+-  unshift @INC, "lib\0invalid";
++  @INC = "lib\0invalid";
+   eval { require "unknown.pm" };
+   like $WARN, qr{^Invalid \\0 character in \@INC entry for require: lib\\0invalid at }, 'nul warning';
+ }
+-- 
+2.5.0
+

@@ -1,0 +1,33 @@
+From dbaafe95ce8a33b8d929364541ee0c04b71f3943 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:26 -0500
+Subject: [PATCH 079/352] B::C patch for mro/recursion_dfs_utf8.t
+
+---
+ t/mro/recursion_dfs_utf8.t | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/t/mro/recursion_dfs_utf8.t b/t/mro/recursion_dfs_utf8.t
+index 6b428e1..4ad427e 100644
+--- a/t/mro/recursion_dfs_utf8.t
++++ b/t/mro/recursion_dfs_utf8.t
+@@ -5,14 +5,13 @@ use warnings;
+ BEGIN {
+     unless (-d 'blib') {
+         chdir 't' if -d 't';
+-        @INC = '../lib';
+     }
++    require './test.pl';
++    set_up_inc('../lib');
+ }
+ use utf8;
+ use open qw( :utf8 :std );
+ 
+-require './test.pl';
+-
+ plan(skip_all => "Your system has no SIGALRM") if !exists $SIG{ALRM};
+ plan(tests => 8);
+ 
+-- 
+2.5.0
+

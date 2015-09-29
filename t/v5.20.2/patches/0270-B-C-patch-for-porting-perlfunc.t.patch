@@ -1,0 +1,25 @@
+From 75bced4f9892aa5e5294b0dbac7394777a101649 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 270/352] B::C patch for porting/perlfunc.t
+
+---
+ t/porting/perlfunc.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/porting/perlfunc.t b/t/porting/perlfunc.t
+index e278e4e..e8219a5 100644
+--- a/t/porting/perlfunc.t
++++ b/t/porting/perlfunc.t
+@@ -22,7 +22,7 @@
+ # Pod::Functions provided by a =for directive.
+ 
+ BEGIN {
+-    @INC = ('..', '../lib') if -f '../TestInit.pm';
++    unshift @INC,  ('..', '../lib') if -f '../TestInit.pm';
+ }
+ 
+ use Config;
+-- 
+2.5.0
+

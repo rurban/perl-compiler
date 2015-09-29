@@ -1,0 +1,26 @@
+From 1a47da00d34ddca79f0addfefa531b8421cd2675 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:28 -0500
+Subject: [PATCH 128/352] B::C patch for op/filetest_stack_ok.t
+
+---
+ t/op/filetest_stack_ok.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/filetest_stack_ok.t b/t/op/filetest_stack_ok.t
+index 4128612..ceff452 100644
+--- a/t/op/filetest_stack_ok.t
++++ b/t/op/filetest_stack_ok.t
+@@ -6,8 +6,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ my @ops = split //, 'rwxoRWXOezsfdlpSbctugkTMBAC';
+-- 
+2.5.0
+

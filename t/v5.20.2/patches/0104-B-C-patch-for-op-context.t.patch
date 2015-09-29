@@ -1,0 +1,25 @@
+From c2a5256a990c83576a7842be9e772fb6522f9a3c Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:27 -0500
+Subject: [PATCH 104/352] B::C patch for op/context.t
+
+---
+ t/op/context.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/context.t b/t/op/context.t
+index 8753d1e..0debce5 100644
+--- a/t/op/context.t
++++ b/t/op/context.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ require "test.pl";
+-- 
+2.5.0
+

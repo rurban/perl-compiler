@@ -1,0 +1,26 @@
+From f3b173412ea21fe3ee2d862b87a6259de94b5449 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 182/352] B::C patch for op/packagev.t
+
+---
+ t/op/packagev.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/packagev.t b/t/op/packagev.t
+index f4e094c..f36a73c 100644
+--- a/t/op/packagev.t
++++ b/t/op/packagev.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ # XXX remove this later -- dagolden, 2010-01-13
+-- 
+2.5.0
+

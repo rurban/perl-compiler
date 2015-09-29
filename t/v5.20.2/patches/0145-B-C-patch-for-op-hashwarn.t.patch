@@ -1,0 +1,25 @@
+From aa987e1a3addc8e49c3d45754eb93d70f662cdb1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:29 -0500
+Subject: [PATCH 145/352] B::C patch for op/hashwarn.t
+
+---
+ t/op/hashwarn.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/hashwarn.t b/t/op/hashwarn.t
+index b14e9c2..dab4260 100644
+--- a/t/op/hashwarn.t
++++ b/t/op/hashwarn.t
+@@ -2,7 +2,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = qw(. ../lib);
++    unshift @INC,  qw(. ../lib);
+ }
+ 
+ require 'test.pl';
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 4be5644adf2aa0f15cf06b769a79187e37834804 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:33 -0500
+Subject: [PATCH 250/352] B::C patch for op/warn.t
+
+---
+ t/op/warn.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/warn.t b/t/op/warn.t
+index 741c2c7..4d679c2 100644
+--- a/t/op/warn.t
++++ b/t/op/warn.t
+@@ -3,8 +3,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan 32;
+-- 
+2.5.0
+

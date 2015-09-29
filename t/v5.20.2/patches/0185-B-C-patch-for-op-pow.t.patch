@@ -1,0 +1,26 @@
+From 5da38f7e26b7238dfd1790e4a0592b9f948e4ec1 Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:30 -0500
+Subject: [PATCH 185/352] B::C patch for op/pow.t
+
+---
+ t/op/pow.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/op/pow.t b/t/op/pow.t
+index 4cfeed1..e9608ff 100644
+--- a/t/op/pow.t
++++ b/t/op/pow.t
+@@ -3,8 +3,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ # This calculation ought to be within 0.001 of the right answer.
+-- 
+2.5.0
+

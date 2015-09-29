@@ -1,0 +1,25 @@
+From 6a92a7c470486f195edba83879037fd9a3850c3f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 008/352] B::C patch for comp/proto.t
+
+---
+ t/comp/proto.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/comp/proto.t b/t/comp/proto.t
+index 47ebf74..59eca57 100644
+--- a/t/comp/proto.t
++++ b/t/comp/proto.t
+@@ -11,7 +11,7 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ # We need this, as in places we're testing the interaction of prototypes with
+-- 
+2.5.0
+

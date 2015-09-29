@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/local/cpanel/3rdparty/perl/520/bin/perl "$@"

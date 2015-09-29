@@ -1,0 +1,26 @@
+From c24289ae5f1502d2c2075ab8ad386e450a33fc6f Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:34 -0500
+Subject: [PATCH 284/352] B::C patch for re/pos.t
+
+---
+ t/re/pos.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/pos.t b/t/re/pos.t
+index 14cc1fa..568f9ac 100644
+--- a/t/re/pos.t
++++ b/t/re/pos.t
+@@ -7,8 +7,8 @@ use warnings;
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ plan tests => 8;
+-- 
+2.5.0
+

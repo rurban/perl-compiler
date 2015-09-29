@@ -1,0 +1,26 @@
+From 8fb82baa40b9fd447cfc4a75ea0c49d995e5052e Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 308/352] B::C patch for run/fresh_perl.t
+
+---
+ t/run/fresh_perl.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/run/fresh_perl.t b/t/run/fresh_perl.t
+index 885c8cc..d717dab 100644
+--- a/t/run/fresh_perl.t
++++ b/t/run/fresh_perl.t
+@@ -10,8 +10,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';	# for which_perl() etc
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+

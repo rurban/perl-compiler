@@ -1,0 +1,25 @@
+From f2601e97106201bc4cac3a9cf03827e02e231e4d Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:23 -0500
+Subject: [PATCH 003/352] B::C patch for TEST
+
+---
+ t/TEST | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/TEST b/t/TEST
+index 96eb6a4..3d12f96 100755
+--- a/t/TEST
++++ b/t/TEST
+@@ -133,7 +133,7 @@ our $show_elapsed_time = $ENV{HARNESS_TIMER} || 0;
+ 
+ chdir 't' if -f 't/TEST';
+ if (-f 'TEST' && -f 'harness' && -d '../lib') {
+-    @INC = '../lib';
++    unshift @INC, '../lib';
+ }
+ 
+ die "You need to run \"make test\" first to set things up.\n"
+-- 
+2.5.0
+

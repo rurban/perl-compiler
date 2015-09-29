@@ -1,0 +1,26 @@
+From 5e64e3ba58f47a830e257ee829fab533d31a64fb Mon Sep 17 00:00:00 2001
+From: Nicolas Rochelemagne <rochelemagne@cpanel.net>
+Date: Mon, 28 Sep 2015 17:45:35 -0500
+Subject: [PATCH 298/352] B::C patch for re/reg_posixcc.t
+
+---
+ t/re/reg_posixcc.t | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/t/re/reg_posixcc.t b/t/re/reg_posixcc.t
+index 7473eea..05dd7eb 100644
+--- a/t/re/reg_posixcc.t
++++ b/t/re/reg_posixcc.t
+@@ -2,8 +2,8 @@
+ 
+ BEGIN {
+     chdir 't' if -d 't';
+-    @INC = '../lib';
+     require './test.pl';
++    set_up_inc('../lib');
+ }
+ 
+ use strict;
+-- 
+2.5.0
+
