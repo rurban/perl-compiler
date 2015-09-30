@@ -62,8 +62,8 @@ op/closure.t                 TESTS     BC issues (code.google.com) 163 & 254 - w
 op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/coreamp.t                 TESTS     BC issue #219 - overload issue
 op/coresubs.t                PLAN      TODO: Eval-group not allowed at runtime, use re 'eval' in regex m/(?^x:
-op/defins.t                  TESTS     TODO: Constant subroutine <***> redefined at...
-op/do.t                      TESTS     TODO: cmp_ok bug? Failed test 6 - do in list context at tmp29365C line 2 got "1" expected != "0"
+op/defins.t                  TESTS     BC issue #223 - glob (constant redefinition) bc522 != cm520
+op/do.t                      TESTS     BC issue #207 - cmp_ok (re used variable)
 op/each.t                    TESTS     TODO: check encoding on EBCDIC
 op/eval.t                    SKIP      TODO: infinite loop while running the binary
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
