@@ -9,7 +9,7 @@ use Cwd;
 use File::Basename;
 use Fcntl qw(:flock SEEK_END);
 use Test::More;
-use FindBin;
+use FindBin; 
 
 if ( $0 =~ m{/template\.pl$} ) {
     plan q{skip_all} => "This program is not designed to be called directly";
@@ -194,6 +194,14 @@ foreach my $optimization (@optimizations) {
 }
 unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
 
+if ( $ENV{UPDATE_ERRORS} ) {
+    note "Force updating known_errors.txt";
+    update_known_errors( force => 1 );    
+}
+
+
+exit;
+
 my $previous_todo;
 
 sub check_todo {
@@ -239,13 +247,12 @@ sub check_todo {
 sub update_known_errors {
     my %opts = @_;
 
-    $opts{test} or die;
-
     # tests can be run in parallel
     open( my $fh, '+<', qq{$FindBin::Bin/../$known_errors_file} ) or die("Can't open $known_errors_file");
     lock($fh);
     my @all_known_errors = <$fh>;
-    my @new_errors = grep { $_ !~ qr{^$current_t_file\s} } @all_known_errors;
+    my @new_errors = @all_known_errors;
+    @new_errors =  grep { $_ !~ qr{^$opts{test}\s} } @all_known_errors if $opts{test};
     my $need_update;
     $need_update = 1 if scalar @new_errors < scalar @all_known_errors;
 
@@ -254,7 +261,7 @@ sub update_known_errors {
         $need_update = 1;
     }
 
-    if ( $need_update ) {
+    if ( $need_update || $opts{force} ) {
         # do the sort
         my @header;
         my @body;
@@ -270,8 +277,23 @@ sub update_known_errors {
 
         @body = sort { lc($a) cmp lc($b) } @body;
 
+        my @body_format;
+        my $max_tfile_len = 0;
+        my $previous_tfile;
+        foreach my $line ( @body ) {
+            my ( $tfile, $type, $txt ) = split( /\s+/, $line, 3 );
+            # remove duplicates (only the first one matters)
+            next if $previous_tfile && $previous_tfile eq $tfile;
+            $previous_tfile = $tfile;
+            push @body_format, [ $tfile, $type, $txt ];
+            my $len = length $tfile;
+            $max_tfile_len = $len if $len > $max_tfile_len;
+        }
+        $max_tfile_len += 2;
+
         seek( $fh, 0, 0 );
-        map { chomp($_); print {$fh} $_ . "\n" } @header, @body;
+        map { chomp($_); print {$fh} $_ . "\n" } @header, 
+            map { sprintf("%-".$max_tfile_len."s%-10s%s", @$_) } @body_format;
         truncate( $fh, tell($fh) );
     }
 
