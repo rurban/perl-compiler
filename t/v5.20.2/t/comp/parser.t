@@ -354,6 +354,7 @@ like($@, qr/BEGIN failed--compilation aborted/, 'BEGIN 7' );
 }
 
 # [perl #113016] CORE::print::foo
+# B::C issue #217
 sub CORE'print'foo { 43 } # apostrophes intentional; do not tempt fate
 sub CORE'foo'bar { 43 }
 is CORE::print::foo, 43, 'CORE::print::foo is not CORE::print ::foo';
@@ -435,6 +436,7 @@ eval 's/${<<END}//';
 eval 's//${<<END}/';
 print "ok ", ++$test, " - unterminated here-docs in s/// in string eval\n";
 
+# B::C issue #217 - https://github.com/rurban/perl-compiler/issues/217
 sub 'Hello'_he_said (_);
 is prototype "Hello::_he_said", '_', 'initial tick in sub declaration';
 

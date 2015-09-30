@@ -23,16 +23,16 @@
 # - Fields are white space delimited. It's assumed $test and $type will have no spaces in them.
 #
 
-base/lex.t              PLAN  invalid plan, was not tested previously
+base/lex.t              PLAN  BC issue #222 - Cannot use '<<' in regexp
 comp/final_line_num.t COMPAT   This test is about BEGIN / file parse behavior so not relevant to B::C
 comp/form_scope.t    SIG      BC issue #216 FORMAT -- who cares?
 comp/hints.t         SKIP     tests are using BEGIN block, do not ready for B::C
-comp/parser.t        TESTS     TODO: Looks like new tests and new failures in need of investigation.
+comp/parser.t        TESTS    BC issue #217 -> will not fix
 extra/format.t	PLAN	      BC issue #216
-extra/reused-variable.t PLAN  TODO: when not using my and later my + eval => conflict in the variable
-io/iofile.t          SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
-io/layers.t          TESTS     https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
-io/open.t            TESTS     TODO: New tests in upstream since 5.14.4
+extra/reused-variable.t PLAN  BC issue #207 - reused variable conflict
+io/iofile.t          SIG      BC issue #218 - no changes to  t/io/iofile.t since 5.14.4
+io/layers.t          TESTS    BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
+io/open.t            TESTS    BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/basic_01_c3_utf8.t TESTS some tests are now failing
 mro/basic_02_c3_utf8.t TESTS some tests are now failing
 mro/basic_03_c3_utf8.t TESTS some tests are now failing
@@ -46,21 +46,21 @@ mro/isarev.t SKIP TODO: This test fails in an inconsistent way. There's probably
 mro/isarev_utf8.t SKIP TODO: This test fails in an inconsistent way (pass when run alone not while running other tests) mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
 mro/next_method_utf8.t TESTS some tests are now failing
 mro/next_skip_utf8.t TESTS some tests are now failing
-mro/overload_c3.t TESTS TODO: overload not working right?
-mro/overload_c3_utf8.t TESTS some tests are now failing
-mro/overload_dfs.t TESTS TODO: overload not working right?
+mro/overload_c3.t 	 TESTS BC issue #219 - overload issue
+mro/overload_c3_utf8.t TESTS BC issue #219 - overload issue
+mro/overload_dfs.t   TESTS BC issue #219 - overload issue
 mro/vulcan_c3_utf8.t TESTS TODO: Malformed UTF-8.
-op/64bitint.t        TESTS     all bits of a UV are not preserved
-op/array_base.t      TESTS     Unreported?
-op/attrhand.t        PLAN      no output and Issue 169
+op/64bitint.t        TESTS     BC issue #207 - cmp_ok (re used variable)
+op/array_base.t      TESTS     BC issue #195 - deprecated $[ arybase - won't fix
+op/attrhand.t        PLAN      BC issue #171 - Attribute::Handlers
 op/attrproto.t       TESTS     sub prototype attribute
 op/attrs.t           SKIP      Sometimes passes. Sometimes exits with Signal 11 Issue 278
-op/bless.t           TESTS     TODO: Attempt to bless into a reference at t/op/bless.t line 128
-op/bop.t             TESTS     TODO: string overload can't use |
-op/caller.t          TESTS     UV issue
-op/closure.t         TESTS     Issue 254
-op/concat2.t         TESTS     TODO: got "o=ARRAY(0x96c2c38)\x{101}\x{101}" expected "\x{ff}\x{101}\x{101}"
-op/coreamp.t         TESTS     TODO: tests broke
+op/bless.t           TESTS     BC issue #219 - overload issue
+op/bop.t             TESTS     BC issue #219 - overload issue
+op/caller.t          TESTS     BC issue #220 (hinthash) - BC issue #221 (delete anon) [also in 5.14]
+op/closure.t         TESTS     BC issues (code.google.com) 163 & 254 - won't fix
+op/concat2.t         TESTS     BC issue #219 - overload issue
+op/coreamp.t         TESTS     BC issue #219 - overload issue
 op/coresubs.t        PLAN      TODO: Eval-group not allowed at runtime, use re 'eval' in regex m/(?^x:
 op/defins.t          TESTS     TODO: Constant subroutine <***> redefined at...
 op/do.t              TESTS     TODO: cmp_ok bug? Failed test 6 - do in list context at tmp29365C line 2 got "1" expected != "0"
@@ -122,7 +122,7 @@ uni/gv.t             SIG       TODO: Argument "*main::PW<C3>M-^RMPF" isn't numer
 uni/labels.t         PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 uni/latin2.t         SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
 uni/method.t         PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
-uni/overload.t       TESTS     TODO: Failed test 1 - length of 'ASCII' at t/uni/overload.t line 44
+uni/overload.t       TESTS     BC issue #219 - overload issue
 uni/parser.t         PLAN      TODO: broke
 uni/stash.t          TESTS     TODO: Wide character in print at t/test.pl line 38.
 uni/universal.t      TESTS     some new failures
