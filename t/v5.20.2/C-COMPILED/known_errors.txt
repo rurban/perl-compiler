@@ -43,8 +43,8 @@ mro/complex_c3_utf8.t TESTS some tests are now failing
 mro/dbic_c3_utf8.t TESTS TODO: Wide character in print at t/test.pl line 38.
 mro/isarev.t SKIP TODO: This test fails in an inconsistent way. There's probably something even more fundamentally broken. also: https://code.google.com/p/perl-compiler/issues/detail?id=353
 mro/isarev_utf8.t SKIP TODO: This test fails in an inconsistent way (pass when run alone not while running other tests) mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
-mro/next_skip_utf8.t TESTS some tests are now failing
 mro/next_method_utf8.t TESTS some tests are now failing
+mro/next_skip_utf8.t TESTS some tests are now failing
 mro/overload_c3.t TESTS TODO: overload not working right?
 mro/overload_c3_utf8.t TESTS some tests are now failing
 mro/overload_dfs.t TESTS TODO: overload not working right?
@@ -96,18 +96,18 @@ op/substr.t          TESTS     utf8 issue in subs
 op/svleak.t          COMPAT    This test uses XS::APItest, which we don't install during perl install?
 op/switch.t          PLAN      TODO: Overloaded obj in given (true): called at t/op/switch.t line 839 got "0" expected "1"
 op/taint.t          TESTS   infinite m//g on arrays
-op/threads.t    SKIP      threaded test
 op/threads-dirh.t    SKIP      threaded test
+op/threads.t    SKIP      threaded test
 op/tie_fetch_count.t TESTS     TODO: broke
-op/utf8cache.t       TESTS     not a segfault anymore
 op/universal.t       TESTS     Issue 299
+op/utf8cache.t       TESTS     not a segfault anymore
 op/write.t           SIG       Segmentation Fault + Issue 291
 op/yadayada.t        COMPAT    Unimplemented does not display the correct line number
 re/overload.t        TESTS     Issue 335
+re/pat.t             PLAN      TODO: Undefined subroutine &S::diag called at t/re/pat.t line 1047. and Issue 328
 re/pat_advanced.t    PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
 re/pat_re_eval.t     PLAN      TODO: Possible bug in use of re 'eval' at run time we need to fix in the test.
 re/pat_rt_report.t   PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
-re/pat.t             PLAN      TODO: Undefined subroutine &S::diag called at t/re/pat.t line 1047. and Issue 328
 re/qr_gc.t           TESTS     Issue 352
 re/reg_eval_scope.t  PLAN      TODO: qr// inherits package at t/re/reg_eval_scope.t line 90 and Issue 328
 re/reg_pmod.t        TESTS     TODO: not ok 88 - (?{}) ^MATCH
