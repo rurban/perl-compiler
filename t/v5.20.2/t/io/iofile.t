@@ -21,6 +21,7 @@ plan tests => 3;
 # and have IO::File loaded for us
 {
     is( $INC{'IO/File.pm'}, undef, "IO::File not loaded" );
+    # B::C issue 218
     ok( eval { STDOUT->autoflush(1); 1 }, 'STDOUT->autoflush(1) lives' );
     ok( $INC{'IO/File.pm'}, "IO::File now loaded" );
 }

@@ -406,6 +406,7 @@ pass("no crash when open autovivifies glob in freed package");
     ok(chmod(0666, $temp), "set mode to a known value");
     my ($final_mode, $final_mtime) = (stat $temp)[2, 9];
 
+    # B::C issue #219 - overload issue
     my $fn = "$temp\0.invalid";
     my $fno = bless \(my $fn2 = "$temp\0.overload"), "OverloadTest";
     is(open(I, $fn), undef, "open with nul in pathnames since 5.18 [perl #117265]");

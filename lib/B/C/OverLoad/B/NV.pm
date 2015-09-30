@@ -21,7 +21,7 @@ sub save {
     my $iv = $sv->FLAGS & SVf_IOK ? $sv->IVX : 0;
 
     xpvnvsect()->comment('STASH, MAGIC, cur, len, IVX, NVX');
-    xpvnvsect()->add( sprintf( "Nullhv, {0}, 0, 0, {%ld}, {%s}", $iv, $nv ) );
+    xpvnvsect()->add( sprintf( "Nullhv, {0}, 0, {0}, {%ld}, {%s}", $iv, $nv ) );
 
     svsect()->add(
         sprintf(

@@ -9,7 +9,7 @@ use Cwd;
 use File::Basename;
 use Fcntl qw(:flock SEEK_END);
 use Test::More;
-use FindBin;
+use FindBin; 
 
 if ( $0 =~ m{/template\.pl$} ) {
     plan q{skip_all} => "This program is not designed to be called directly";
@@ -80,6 +80,8 @@ else {
 if ( $type eq 'COMPAT' || $type eq 'SKIP' ) {
     plan skip_all => $todo_description;
 }
+
+my $first_error = 1;
 
 # need to run CORE test suite in t
 chdir "$FindBin::Bin/../../t" or die "Cannot chdir to t directory: $!"; 
@@ -192,52 +194,113 @@ foreach my $optimization (@optimizations) {
 }
 unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
 
+if ( $ENV{UPDATE_ERRORS} ) {
+    note "Force updating known_errors.txt";
+    update_known_errors( force => 1 );    
+}
+
+
+exit;
+
 my $previous_todo;
 
 sub check_todo {
     my ( $v, $msg, $want_type ) = @_;
+    # is it the expected error
     my $todo = $type eq $want_type ? $todo_description : undef;
-
     my $known_error = $previous_todo;
     $previous_todo ||= $todo;
     $todo          ||= $previous_todo;
 
     if ( !$todo ) {
+        if ( !$v ) {
+            if ( $first_error ) {
+                $first_error = 0;
+                note "Adding $current_t_file $want_type error to known_errors.txt file";    
+                update_known_errors( test => $current_t_file, add => [
+                        qq{$current_t_file\t$want_type\t$msg}
+                    ]
+                );
+            }            
+        }
 
         # we want the test to succeed
         return ok( $v, $msg );
     }
-    else {
+    else {        
         #return subtest "TODO - $msg" => sub {
-        if ( $v && !$known_error ) {
+        if ( $v && !$known_error ) {            
             fail "TODO test is now passing, auto adjust known_errors.txt file";
             $TODO = $todo;
 
             # removing test from file
             diag "Removing test $current_t_file from known_errors.txt";
-
-            # tests can be run in parallel
-            open( my $fh, '+<', $known_errors_file ) or die("Can't open $file_to_test");
-            lock($fh);
-            my @all_known_errors = <$fh>;
-            my @new_errors = grep { $_ !~ qr{^$current_t_file\s} } @all_known_errors;
-
-            if ( scalar @new_errors < scalar @all_known_errors ) {
-                seek( $fh, 0, 0 );
-                map { chomp($_); print {$fh} $_ . "\n" } @new_errors;
-                truncate( $fh, tell($fh) );
-            }
-            unlock($fh);
-            close($fh);
-
+            update_known_errors( test => $current_t_file ) if $first_error;
         }
         else {
             $TODO = $todo;
             ok($v);
         }
-
-        #}
     }
+}
+
+sub update_known_errors {
+    my %opts = @_;
+
+    # tests can be run in parallel
+    open( my $fh, '+<', qq{$FindBin::Bin/../$known_errors_file} ) or die("Can't open $known_errors_file");
+    lock($fh);
+    my @all_known_errors = <$fh>;
+    my @new_errors = @all_known_errors;
+    @new_errors =  grep { $_ !~ qr{^$opts{test}\s} } @all_known_errors if $opts{test};
+    my $need_update;
+    $need_update = 1 if scalar @new_errors < scalar @all_known_errors;
+
+    if ( $opts{add} && ref $opts{add} eq 'ARRAY' ){
+        push @new_errors, @{$opts{add}};
+        $need_update = 1;
+    }
+
+    if ( $need_update || $opts{force} ) {
+        # do the sort
+        my @header;
+        my @body;
+        my $in_header = 1;
+        foreach my $line ( @new_errors ) {
+            if ( $in_header = 1 && ( $line =~ qr{^\s*#} || $line =~ qr{^\s*$} ) ) {
+                push @header, $line;
+            } else {                
+                $in_header = 0;
+                push @body, $line;
+            }
+        }
+
+        @body = sort { lc($a) cmp lc($b) } @body;
+
+        my @body_format;
+        my $max_tfile_len = 0;
+        my $previous_tfile;
+        foreach my $line ( @body ) {
+            my ( $tfile, $type, $txt ) = split( /\s+/, $line, 3 );
+            # remove duplicates (only the first one matters)
+            next if $previous_tfile && $previous_tfile eq $tfile;
+            $previous_tfile = $tfile;
+            push @body_format, [ $tfile, $type, $txt ];
+            my $len = length $tfile;
+            $max_tfile_len = $len if $len > $max_tfile_len;
+        }
+        $max_tfile_len += 2;
+
+        seek( $fh, 0, 0 );
+        map { chomp($_); print {$fh} $_ . "\n" } @header, 
+            map { sprintf("%-".$max_tfile_len."s%-10s%s", @$_) } @body_format;
+        truncate( $fh, tell($fh) );
+    }
+
+    unlock($fh);
+    close($fh);    
+
+    return;
 }
 
 sub lock {
