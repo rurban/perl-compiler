@@ -42,7 +42,7 @@ sub save {
 
     # For some time the stringification works of NVX double to two ints worked ok.
     xpvnvsect()->comment('STASH, MAGIC, cur, len, IVX, NVX');
-    xpvnvsect()->add( sprintf( "Nullhv, {0}, %u, %u, {%s}, {%s}", $cur, $len, $ivx, $nvx ) );
+    xpvnvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}, {%s}, {%s}", $cur, $len, $ivx, $nvx ) );
 
     unless ( C99() or $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
         debug( sv => "NV => run-time union xpad_cop_seq init" );
