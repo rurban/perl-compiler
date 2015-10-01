@@ -3472,7 +3472,7 @@ OPTION:
   #}
 
   mark_skip(qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP
-               B::Section B::Pseudoreg B::Shadow B::C::InitSection
+               B::Pseudoreg B::Shadow B::C::InitSection
                O B::Stackobj B::Stackobj::Bool B::Stackobj::Padsv
                B::Stackobj::Const B::Stackobj::Aelem B::Bblock));
   $B::C::all_bc_deps{$_}++ for qw(Opcodes Opcode B::Concise attributes double int num str string subs);
@@ -3503,8 +3503,8 @@ sub compile {
   @options = import(@options);
 
   init_sections();
-  $init = B::Section->get("init");
-  $decl = B::Section->get("decl");
+  $init = B::C::Section->get("init");
+  $decl = B::C::Section->get("decl");
 
   # just some subs or main?
   if (@options) {
