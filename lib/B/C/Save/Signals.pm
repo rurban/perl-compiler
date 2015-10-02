@@ -2,6 +2,7 @@ package B::C::Save::Signals;
 
 use strict;
 use B qw(svref_2object cstring);
+use B::C::Helpers qw/strlen_flags/;
 use B::C::File qw( init );
 use B::C::Config;    # import everything
 
@@ -47,14 +48,11 @@ sub save {
     foreach my $x (@save_sig) {
         my ( $k, $cvref ) = @$x;
         my $sv = $cvref->save;
+        my ( $cstring, $cur, $utf8 ) = strlen_flags($k);
         init()->add( '{', sprintf "\t" . 'SV* sv = (SV*)%s;', $sv );
-        init()->add(
-            sprintf(
-                "\thv_store(hv, %s, %u, %s, %s);",
-                cstring($k), length( pack "a*", $k ),
-                'sv',        0
-            )
-        );    # XXX randomized hash keys!
+        init()->add( sprintf( "\thv_store(hv, %s, %u, %s, %s);", $cstring, $cur, 'sv', 0 ) );
+
+        # XXX randomized hash keys!
         init()->add( "\t" . 'mg_set(sv);', '}' );
     }
     init()->add('}');

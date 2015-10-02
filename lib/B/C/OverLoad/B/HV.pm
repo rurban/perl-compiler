@@ -20,7 +20,7 @@ use Config;
 use B qw/cstring SVf_READONLY/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init2/;
-use B::C::Helpers qw/mark_package read_utf8_string/;
+use B::C::Helpers qw/mark_package read_utf8_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw/savestashpv/;
 
@@ -185,26 +185,22 @@ sub save {
                 my ( $key, $value ) = splice( @contents, 0, 2 );
                 if ($value) {
                     $value = "(SV*)$value" if $value !~ /^&sv_list/;
-                    my $cur = length( pack "a*", $key );
 
-                    if ( utf8::is_utf8($key) ) {
-                        my $pv = $key;
-                        utf8::encode($pv);
-                        $cur = 0 - length($pv);
-                    }
+                    my ( $cstring, $cur, $utf8 ) = strlen_flags($key);
+                    $cur *= -1 if $utf8;
 
                     # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
                     # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
                     init()->add(
                         sprintf(
                             "\thv_store(hv, %s, %d, %s, %s);",
-                            cstring($key), $cur, $value, 0
+                            $cstring, $cur, $value, 0
                         )
                     );    # !! randomized hash keys
                     debug( hv => "  HV key \"%s\" = %s\n", $key, $value );
                     if (   !$swash_ToCf
                         and $fullname =~ /^utf8::SWASHNEW/
-                        and cstring($key) eq '"utf8\034unicore/To/Cf.pl\0340"'
+                        and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
                         and $cur == 23 ) {
                         $swash_ToCf = $value;
                         verbose("Found PL_utf8_tofold ToCf swash $value");
@@ -225,12 +221,10 @@ sub save {
     if ( $magic =~ /c/ ) {
 
         # defer AMT magic of XS loaded hashes
-        my $cname = cstring($name);
-        my ( $name_is_utf8, $name_len ) = read_utf8_string($name);
-        my $flags = $name_is_utf8 ? '|SVf_UTF8' : '';
+        my ( $cname, $len, $utf8 ) = strlen_flags($name);
 
         #my $len = length( pack "a*", $name );    # not yet 0-byte safe. HEK len really
-        init2()->add(qq[$sym = gv_stashpvn($cname, $name_len, GV_ADDWARN|GV_ADDMULTI$flags);]);
+        init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
     }
     if ( $name and mro::get_mro($name) eq 'c3' ) {
         mark_package( 'mro', 1 );

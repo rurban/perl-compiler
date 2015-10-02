@@ -35,15 +35,15 @@ sub set_max_string_len {
 }
 
 sub savepv {
-    my $pv      = shift;
-    my $const   = shift;
-    my $cstring = cstring($pv);
+    my $pv    = shift;
+    my $const = shift;
+    my ( $cstring, $len, $utf8 ) = strlen_flags($pv);
 
     return $strtable{$cstring} if defined $strtable{$cstring};
     $pv = pack "a*", $pv;
     my $pvsym = sprintf( "pv%d", inc_pv_index() );
     $const = $const ? " const" : "";
-    if ( defined $max_string_len && length($pv) > $max_string_len ) {
+    if ( defined $max_string_len && $len > $max_string_len ) {
         my $chars = join ', ', map { cchar $_ } split //, $pv;
         decl()->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
         $strtable{$cstring} = "$pvsym";
@@ -54,7 +54,7 @@ sub savepv {
             $strtable{$cstring} = "$pvsym";
         }
     }
-    return wantarray ? ( $pvsym, length($pv) ) : $pvsym;
+    return wantarray ? ( $pvsym, $len ) : $pvsym;
 }
 
 sub savepvn {

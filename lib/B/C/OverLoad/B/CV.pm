@@ -10,7 +10,7 @@ use B::C::Packages qw/is_package_used/;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/init init2 decl svsect xpvcvsect symsect/;
-use B::C::Helpers qw/get_cv_string/;
+use B::C::Helpers qw/get_cv_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
@@ -548,19 +548,15 @@ sub save {
         if ( !$gv or ref($gv) eq 'B::SPECIAL' ) {
             my $lexsub = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
             debug( gv => "lexsub name $lexsub" );
-            my $cur = length( pack "a*", $lexsub );
 
-            if ( utf8::is_utf8($lexsub) ) {
-                my $pv = $lexsub;
-                utf8::encode($pv);
-                $cur = -length $pv;
-            }
+            my ( $cstring, $cur, $utf8 ) = strlen_flags($lexsub);
+            $cur *= -1 if $utf8;
 
             init()->add(
                 "{ /* need a dynamic name hek */",
                 sprintf(
                     "  HEK *lexhek = share_hek(savepvn(%s, %d), %d, 0);",
-                    cstring($lexsub), abs($cur), $cur
+                    $cstring, abs($cur), $cur
                 ),
                 sprintf( "  CvNAME_HEK_set(s\\_%x, lexhek);", $$cv ),
                 "}"

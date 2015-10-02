@@ -96,11 +96,11 @@ sub save {
     if ( $op->label ) {
 
         # test 29 and 15,16,21. 44,45
+        my ( $cstring, $cur, $utf8 ) = strlen_flags( $op->label );
         init()->add(
             sprintf(
-                "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
-                copsect()->index,  cstring( $op->label ),
-                length $op->label, 0
+                "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
+                copsect()->index, $cstring, $cur, $utf8
             )
         );
 

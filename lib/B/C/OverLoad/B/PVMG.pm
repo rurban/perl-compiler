@@ -9,7 +9,7 @@ use B::C::Save qw/savepvn savepv/;
 use B::C::Decimal qw/get_integer_value get_double_value/;
 use B::C::File qw/init svsect xpvmgsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
-use B::C::Helpers qw/mark_package/;
+use B::C::Helpers qw/mark_package read_utf8_string/;
 
 sub save {
     my ( $sv, $fullname ) = @_;
@@ -398,7 +398,8 @@ sub _savere {
     my $sym;
     my $pv  = $re;
     my $cur = length $pv;
-    my $len = 0;            # length( pack "a*", $pv ) + 2;
+    my ( $is_utf8, $len ) = read_utf8_string($pv);
+    my $len = 0;    # length( pack "a*", $pv ) + 2;
 
     # QUESTION: this code looks dead
     #   at least not triggered by the core unit tests
