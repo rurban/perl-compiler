@@ -238,6 +238,8 @@ PPCODE:
 
 MODULE = B	PACKAGE = B::UNOP_AUX
 
+#if PERL_VERSION > 21
+
 SV*
 aux(o)
           B::OP o
@@ -248,6 +250,8 @@ CODE:
 OUTPUT:
     RETVAL
           
+#endif
+
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
 
 #if PERL_VERSION > 10
