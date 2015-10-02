@@ -48,11 +48,8 @@ mro/c3_with_overload.t       TESTS     TODO: overload not working right?
 mro/c3_with_overload_utf8.t  TESTS     TODO: overload not working right
 mro/complex_c3.t             SIG       TODO: segfault
 mro/complex_c3_utf8.t        SIG       TODO: segfault
-mro/dbic_c3_utf8.t           SIG       Exit signal is 6 SIGABRT
-mro/dbic_dfs_utf8.t          SIG       Exit signal is 6 SIGABRT
 mro/isarev.t                 SIG       Exit signal is 6 SIGABRT
 mro/isarev_utf8.t            SIG       Exit signal is 6 SIGABRT
-mro/method_caching_utf8.t    SIG       Exit signal is 6 SIGABRT
 mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
 mro/next_edgecases_utf8.t    PLAN      Plan was valid
 mro/next_goto.t              SIG       Exit signal is 11 SEGV
