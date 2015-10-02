@@ -385,7 +385,7 @@ for (@data) {
 	}
     }
     # warn "unsupported $idx\t$ver\t$insn\n" if $unsupp;
-    if (!$unsupp or ($] >= 5.007 and $insn !~ /padl|xcv_name_hek/)) {
+    if (!$unsupp or ($] >= 5.007 and $insn !~ /pad|xcv_name_hek|unop_aux/)) {
 	$insn_name[$insn_num] = $insn;
 	push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
 	# Find the next unused instruction number
