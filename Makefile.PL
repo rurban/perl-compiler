@@ -388,7 +388,7 @@ sub install {
 ccinc_install :: $(PERL_INC)/cc_runtime.h
 
 $(PERL_INC)/cc_runtime.h : cc_runtime.h
-	$(NOECHO) $(CP) cc_runtime.h $@
+	$(NOECHO) $(CP) cc_runtime.h $@ || true
 ';
     }
     $result
