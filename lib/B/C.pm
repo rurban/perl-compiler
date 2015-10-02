@@ -775,7 +775,7 @@ sub savere {
   my $flags = shift || 0;
   my $sym;
   my $pv    = $re;
-  my $cur   = length $pv;
+  my ($cstring, $cur, $utf8) = strlen_flags($pv);
   my $len = 0; # length( pack "a*", $pv ) + 2;
   if ($PERL514) {
     $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
@@ -786,7 +786,7 @@ sub savere {
   elsif ($PERL510) {
     # BUG! Should be the same as newSVpvn($resym, $relen) but is not
     #$sym = sprintf("re_list[%d]", $re_index++);
-    #$resect->add(sprintf("0,0,0,%s", cstring($re)));
+    #$resect->add(sprintf("0,0,0,%s", $cstring));
     my $s1 = ($PERL514 ? "NULL," : "") . "{0}, %u, %u";
     $xpvsect->add( sprintf( $s1, $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
@@ -798,7 +798,7 @@ sub savere {
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
-    $decl->add( sprintf( "Static const char *$sym = %s;", cstring($re) ) );
+    $decl->add( sprintf( "Static const char *$sym = %s;", $cstring ) );
   }
   return ( $sym, length( pack "a*", $re ) );
 }
@@ -810,10 +810,10 @@ sub constpv {
 sub savepv {
   my $pv    = shift;
   my $const = shift;
-  my $cstring = cstring($pv);
+  my ($cstring, $cur, $utf8) = strlen_flags($pv);
   # $decl->add( sprintf( "/* %s */", $cstring) ) if $debug{pv};
   return $strtable{$cstring} if defined $strtable{$cstring};
-  $pv    = pack "a*", $pv;
+  $pv = pack "a*", $pv;
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $const = $const ? " const" : "";
   if ( defined $max_string_len && length($pv) > $max_string_len ) {
@@ -826,7 +826,7 @@ sub savepv {
       $strtable{$cstring} = "$pvsym";
     }
   }
-  return wantarray ? ( $pvsym, length($pv) ) : $pvsym;
+  return wantarray ? ( $pvsym, $cur ) : $pvsym;
 }
 
 sub save_rv {
@@ -1012,13 +1012,11 @@ sub save_hek {
 
 sub gv_fetchpvn {
   my ($name, $flags, $type) = @_;
+  my ($cname, $cur, $utf8) = strlen_flags($name);
   if ($] >= 5.009002) {
-    my ($cname, $len, $extraflags) = strlen_flags($name);
-    $flags ||= '0';
-    $flags .= "|".$extraflags if $extraflags;
-    return "gv_fetchpvn_flags($cname, $len, $flags, $type)";
+    $flags .= length($flags) ? "|$utf8" : $utf8 if $utf8;
+    return "gv_fetchpvn_flags($cname, $cur, $flags, $type)";
   } else {
-    my $cname = cstring($name);
     return "gv_fetchpv($cname, $flags, $type)";
   }
 }
@@ -1026,14 +1024,12 @@ sub gv_fetchpvn {
 # get_cv() returns a CV*
 sub get_cv {
   my ($name, $flags) = @_;
-  $flags = "0" unless $flags;
+  my ($cname, $cur, $utf8) = strlen_flags($name);
   if ($] >= 5.009002) {
-    my ($cname, $len, $extraflags) = strlen_flags($name);
-    $flags .= "|".$extraflags if $extraflags;
-    return qq[get_cvn_flags($cname, $len, $flags)];
+    $flags .= length($flags) ? "|$utf8" : $utf8 if $utf8;
+    return qq[get_cvn_flags($cname, $cur, $flags)];
   } else {
-    my $cname = cstring($name);
-   return qq[get_cv($cname, $flags)];
+    return qq[get_cv($cname, $flags)];
   }
 }
 
@@ -1674,16 +1670,9 @@ sub B::PVOP::save {
   my $ix = $pvopsect->index;
   $init->add( sprintf( "pvop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  my $pv = pack "a*", $op->pv;
-  my $cur = length($pv);
-  if (!$PERL56) {
-    if (utf8::is_utf8($pv)) {
-      my $upv = $pv;
-      $cur = utf8::upgrade($upv);
-    }
-  }
+  my ($cstring,$cur,$utf8) = strlen_flags($op->pv); # utf8 ignored in a shared str?
   # do not use savepvn here #362
-  $init->add( sprintf( "pvop_list[$ix].op_pv = savesharedpvn(%s, %u);", cstring($pv), $cur ));
+  $init->add( sprintf( "pvop_list[$ix].op_pv = savesharedpvn(%s, %u);", $cstring, $cur ));
   savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 
@@ -2026,20 +2015,19 @@ sub B::COP::save {
     }
     if ( $op->label ) {
       # test 29 and 15,16,21. 44,45
+      my ($cstring, $cur, $utf8) = strlen_flags($op->label);
       if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee
 	$init->add(
-	  sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %d, %d);",
-		  $copsect->index, cstring( $op->label ),
-		  length $op->label, 0));
+	  sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
+		  $copsect->index, $cstring, $cur, $utf8));
       } elsif ($] > 5.013004) {
 	$init->add(
-	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %d, %d);",
-		  $copsect->index, cstring( $op->label ),
-		  length $op->label, 0));
+	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %u, %s);",
+		  $copsect->index, $cstring, $cur, $utf8));
       } elsif (!($^O =~ /^(MSWin32|AIX)$/ or $ENV{PERL_DL_NONLAZY})) {
         $init->add(
 	  sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
-		  $copsect->index, cstring( $op->label )));
+		  $copsect->index, $cstring));
       }
     }
   }
@@ -2833,9 +2821,10 @@ sub lexwarnsym {
     return $lexwarnsym{$pv};
   } else {
     my $sym = sprintf( "lexwarn%d", $pv_index++ );
+    my ($cstring, $cur, $utf8) = strlen_flags($pv);
     if ($] < 5.009) { # need a SV->PV
       $decl->add( sprintf( "Static SV* %s;", $sym ));
-      $init->add( sprintf( "$sym = newSVpvn(%s, %d);", cstring($pv), length $pv));
+      $init->add( sprintf( "$sym = newSVpvn(%s, %u);", $cstring, $cur));
     } else {
       # if 8 use UVSIZE, if 4 use LONGSIZE
       my $t = ($Config{longsize} == 8) ? "J" : "L";
@@ -4022,17 +4011,13 @@ sub B::CV::save {
       if ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL')) {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
         warn "lexsub name $lexsub" if $debug{gv};
-        my $cur = length( pack "a*", $lexsub );
-        if (!$PERL56) {
-          if (utf8::is_utf8($lexsub)) {
-            my $pv = $lexsub;
-            utf8::encode($pv);
-            $cur = - length $pv;
-          }
+        my ($cstring, $cur, $utf8) = strlen_flags($lexsub);
+        if (!$PERL56 and utf8::is_utf8($lexsub)) {
+          $cur = -$cur;
         }
         $init->add( "{ /* need a dynamic name hek */",
                     sprintf("  HEK *lexhek = share_hek(savepvn(%s, %d), %d, 0);",
-                            cstring($lexsub), abs($cur), $cur),
+                            $cstring, abs($cur), $cur),
                     sprintf("  CvNAME_HEK_set(s\\_%x, lexhek);", $$cv),
                     "}");
       } else {
@@ -5156,21 +5141,14 @@ sub B::HV::save {
 	my ( $key, $value ) = splice( @contents, 0, 2 );
 	if ($value) {
           $value = "(SV*)$value" if $value !~ /^&sv_list/ or ($PERL510 and $] < 5.012);
-          my $cur = length( pack "a*", $key );
-          if (!$PERL56) {
-            if (utf8::is_utf8($key)) {
-              my $pv = $key;
-              utf8::encode($pv);
-              $cur = 0 - length($pv);
-            }
-          }
+          my ($cstring, $cur, $utf8) = strlen_flags($key);
 	  # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
 	  # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
-	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, %s);",
-			      cstring($key), $cur, $value, 0 )); # !! randomized hash keys
+	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, 0);",
+			      $cstring, $cur, $value )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
           if (!$swash_ToCf and $fullname =~ /^utf8::SWASHNEW/
-              and cstring($key) eq '"utf8\034unicore/To/Cf.pl\0340"' and $cur == 23)
+              and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"' and $cur == 23)
           {
             $swash_ToCf = $value;
             warn sprintf( "Found PL_utf8_tofold ToCf swash $value\n") if $verbose;
@@ -5189,9 +5167,8 @@ sub B::HV::save {
   $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   if ($magic =~ /c/) {
     # defer AMT magic of XS loaded hashes
-    my $cname = cstring($name);
-    my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
-    $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+    my ($cname, $len, $utf8) = strlen_flags($name);
+    $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
   }
   if ($PERL510 and $name and mro::get_mro($name) eq 'c3') {
     mark_package('mro', 1);
@@ -7491,10 +7468,10 @@ sub save_sig {
   foreach my $x ( @save_sig ) {
     my ($k, $cvref) = @$x;
     my $sv = $cvref->save;
+    my ($cstring, $cur, $utf8) = strlen_flags($k);
     $init->add( '{', sprintf "\t".'SV* sv = (SV*)%s;', $sv );
-    $init->add( sprintf("\thv_store(hv, %s, %u, %s, %s);",
-                        cstring($k), length( pack "a*", $k ),
-                        'sv', 0 ) ); # XXX randomized hash keys!
+    $init->add( sprintf("\thv_store(hv, %s, %u, %s, %d);",
+                        $cstring, $cur, 'sv', 0 ) );
     $init->add( "\t".'mg_set(sv);', '}' );
   }
   $init->add('}');
