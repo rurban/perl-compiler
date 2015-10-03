@@ -378,8 +378,7 @@ my (%strtable, %hektable, %gptable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
-my (%include_package, %dumped_package, %skip_package, %isa_cache);
-my %static_ext;
+my (%include_package, %dumped_package, %skip_package, %isa_cache, %static_ext);
 my ($use_xsloader);
 my $nullop_count         = 0;
 my $unresolved_count     = 0;
@@ -1409,24 +1408,52 @@ sub B::UNOP::save {
   $sym;
 }
 
+sub is_constant {
+  my $s = shift;
+  return 1 if $s =~ /^(&sv_list|\d+)/;
+  return 0;
+}
+
 sub B::UNOP_AUX::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  # XXX TODO: check the svs/gvs of aux_list, save them and patch them up.
-  # const and sv at compile-time, gvs even at init-time with a little compiled-in
-  # write_aux(index, gv) helper function.
-  # The aux buffer in core has internally a length prefix. our ->aux adds that also.
+  # const and sv already at compile-time, gv deferred to init-time.
+  # The aux buffer in core has internally a length prefix. our C.xs aux method adds that also.
   my $aux = $op->aux;
-  warn "unop_aux: ",join(",",$op->aux_list($B::C::curcv)) if $verbose or $debug{hv}; # XXX FIXME
+  my @aux_list = $op->aux_list($B::C::curcv);
+  my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
   my $ix = $unopauxsect->index + 1;
-  $decl->add("/* unopaux_list[$ix] ".join(",",$op->aux_list($B::C::curcv))."*/")
-    if $verbose;
   $unopauxsect->add(
-    sprintf("%s, s\\_%x, ((UNOP_AUX_item*)(%s))+1",
-            $op->_save_common, ${ $op->first }, constpv($aux)));
+    sprintf("%s, s\\_%x, %s+1",
+            $op->_save_common, ${ $op->first }, "unopaux_item${ix}"));
   $unopauxsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+  # this cannot be a section, as the number of elements is variable
+  my $i = 1;
+  my $s = "Static UNOP_AUX_item unopaux_item${ix}[] = {\n\t"
+    .($C99?"{.uv=$auxlen}":$auxlen). " \t/* length prefix */\n";
+  for my $item (@aux_list) {
+    unless (ref $item) {
+      # symbolize MDEREF action?
+      $s .= ($C99 ? sprintf("\t,{.uv=0x%x} \t/* action: %u */\n", $item, $item)
+                  : sprintf("\t,0x%x \t/* action: %u */\n", $item, $item));
+    } else {
+      my $itemsym = $item->save("unopaux_item${ix}[$i]");
+      if (is_constant($itemsym)) {
+        # TODO pad_offset
+        $s .= ($C99 ? "\t,{.sv=$itemsym}\n"
+                    : "\t,PTR2UV($itemsym)\n");
+      } else {
+        # gv or other late inits
+        $s .= ($C99 ? "\t,{.sv=Nullsv} \t/* $itemsym */\n"
+                    : "\t,0 \t/* $itemsym */\n");
+        $init2->add(" unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
+      }
+      $i++;
+    }
+  }
+  $decl->add($s."};");
   $init->add( sprintf( "unopaux_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
@@ -5618,6 +5645,9 @@ _EOT2
     print "#define GvSVn(s) GvSV(s)\n";
   }
 
+  # XXX boot_DynaLoader is exported only >=5.8.9
+  # does not compile on darwin with EXTERN_C declaration
+  # See branch `boot_DynaLoader`
   print <<'_EOT4';
 #define XS_DynaLoader_boot_DynaLoader boot_DynaLoader
 EXTERN_C void boot_DynaLoader (pTHX_ CV* cv);

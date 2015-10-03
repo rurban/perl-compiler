@@ -3,13 +3,15 @@
 #add-auto-load-safe-path /lib/x86_64-linux-gnu/libthread_db-1.0.so
 
 set breakpoint pending on
-source /usr/src/perl/blead/cperl/.gdb/perl
+#source /usr/src/perl/blead/cperl/.gdb/perl
 
 #break __asan_report_error
 
+b Perl_pp_multideref
+
 #b bset_obj_store
 #command 
-b Perl_padnamelist_store
+#b Perl_padnamelist_store
 #c
 #end
 
