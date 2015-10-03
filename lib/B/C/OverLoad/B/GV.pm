@@ -494,7 +494,7 @@ sub save {
                 $cvsym = $gvcv->save($fullname);
 
                 # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
-                if ( $cvsym =~ /(\(char\*\))?get_cv\("/ ) {
+                if ( $cvsym =~ /(\(char\*\))?get_cv/ ) {
                     if ( !$B::C::xsub{$package} and B::C::in_static_core( $package, $gvname ) ) {
                         my $in_gv;
                         for ( @{ init()->{current} } ) {
@@ -583,7 +583,7 @@ sub save {
             }
 
             # special handling for backref magic
-            if ( $cvsym and $cvsym !~ /(get_cv\("|NULL|lexwarn)/ and $gv->MAGICAL ) {
+            if ( $cvsym and $cvsym !~ /(get_cv|NULL|lexwarn)/ and $gv->MAGICAL ) {
                 my @magic = $gv->MAGIC;
                 foreach my $mg (@magic) {
                     init()->add(

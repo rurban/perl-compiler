@@ -307,7 +307,7 @@ sub svop_or_padop_pv {
 }
 
 sub IsCOW {
-    return ( $_[0]->FLAGS & 0x10000000 ); # since 5.22
+    return ( $_[0]->FLAGS & 0x10000000 );    # since 5.22
 }
 
 sub IsCOW_hek {
@@ -333,7 +333,7 @@ sub save_pv_or_rv {
         debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
         $savesym = B::RV::save_op( $sv, $fullname );
         $static = 1;    # avoid run-time overwrite of the PV/RV slot (#273)
-        if ( $savesym =~ /(\(char\*\))?get_cv\("/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+        if ( $savesym =~ /(\(char\*\))?get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
             $static  = 0;
             $pv      = $savesym;
             $savesym = 'NULL';
@@ -383,7 +383,7 @@ sub save_pv_or_rv {
             if ($static) {
                 $len = 0;
                 $savesym = $iscow ? savepv($pv) : constpv($pv);
-                if ( $savesym =~ /^(\(char\*\))?get_cv\("/ ) {       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+                if ( $savesym =~ /^(\(char\*\))?get_cv/ ) {          # Moose::Util::TypeConstraints::Builtins::_RegexpRef
                     $static  = 0;
                     $len     = $cur + 1;
                     $pv      = $savesym;
