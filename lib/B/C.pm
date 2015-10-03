@@ -1413,22 +1413,20 @@ sub B::UNOP_AUX::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-   # XXX TODO: check the svs/gvs of aux_list, save them and patch them up.
-   # const and sv at compile-time, gvs even at init-time with a little compiled-in
-   # write_aux(index, gv) helper function.
+  # XXX TODO: check the svs/gvs of aux_list, save them and patch them up.
+  # const and sv at compile-time, gvs even at init-time with a little compiled-in
+  # write_aux(index, gv) helper function.
+  # The aux buffer in core has internally a length prefix. our ->aux adds that also.
   my $aux = $op->aux;
-  warn join(",",$op->aux_list($B::C::curcv)) if $verbose or $debug{hv}; # XXX FIXME
+  warn "unop_aux: ",join(",",$op->aux_list($B::C::curcv)) if $verbose or $debug{hv}; # XXX FIXME
   $unopauxsect->comment("$opsect_common, first, aux");
+  my $ix = $unopauxsect->index + 1;
+  $decl->add("/* unopaux_list[$ix] ".join(",",$op->aux_list($B::C::curcv))."*/")
+    if $verbose;
   $unopauxsect->add(
-    sprintf(
-      "%s, s\\_%x, ((UNOP_AUX_item*)(%s))+1",
-      $op->_save_common,
-      ${ $op->first },
-      constpv($aux)
-    )
-  );
+    sprintf("%s, s\\_%x, ((UNOP_AUX_item*)(%s))+1",
+            $op->_save_common, ${ $op->first }, constpv($aux)));
   $unopauxsect->debug( $op->name, $op->flagspv ) if $debug{flags};
-  my $ix = $unopauxsect->index;
   $init->add( sprintf( "unopaux_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
