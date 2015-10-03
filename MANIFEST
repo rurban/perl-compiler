@@ -1,3 +1,5 @@
+.gdb/dashboard
+.gdb/perl
 .gdbinit
 .gitignore
 .perldb

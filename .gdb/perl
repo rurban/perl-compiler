@@ -1,0 +1,134 @@
+# -*- GDB-Script -*-
+
+macro define cUNOPo ((UNOP*)o)
+macro define cBINOPo ((BINOP*)o)
+macro define cSVOPo ((SVOP*)o)
+macro define cUNOPx(o) ((UNOP*)o)
+macro define cBINOPx(o) ((BINOP*)o)
+macro define cSVOPx(o) ((SVOP*)o)
+macro define cLOGOPx(o) ((LOGOP*)o)
+macro define cSVOPo_sv cSVOPo->op_sv
+macro define PAD_SVl(po) (PL_curpad[po])
+macro define OCSHIFT 12
+macro define OA_CLASS_MASK (0xf<<OCSHIFT)
+macro define OpCLASS(o) (PL_opargs[(o)->op_type] & OA_CLASS_MASK)
+macro define OA_BASEOP 	(0 << OCSHIFT)
+macro define OA_UNOP	(1 << OCSHIFT)
+macro define OA_BINOP	(2 << OCSHIFT)
+macro define OA_LOGOP	(3 << OCSHIFT)
+macro define OA_LISTOP	(4 << OCSHIFT)
+macro define OA_PMOP	(5 << OCSHIFT)
+macro define OA_SVOP	(6 << OCSHIFT)
+macro define OA_PADOP	(7 << OCSHIFT)
+macro define OA_PVOP_OR_SVOP (8 << OCSHIFT)
+macro define OA_LOOP	(9 << OCSHIFT)
+macro define OA_COP	(10 << OCSHIFT)
+macro define OA_BASEOP_OR_UNOP (11 << OCSHIFT)
+macro define OA_FILESTATOP	(12 << OCSHIFT)
+macro define OA_LOOPEXOP	(13 << OCSHIFT)
+macro define OA_METHOP	(14 << OCSHIFT)
+macro define OA_UNOP_AUX	(15 << OCSHIFT)
+macro define PadnamelistARRAY(pnl)		(pnl)->xpadnl_alloc
+macro define PAD_COMPNAME(po)	PAD_COMPNAME_SV(po)
+macro define PAD_COMPNAME_SV(po)	(PadnamelistARRAY(PL_comppad_name)[(po)])
+macro define PadnamePV(pn)		(pn)->xpadn_pv
+macro define PAD_COMPNAME_PV(po)	PadnamePV(PAD_COMPNAME(po))
+macro define PAD_COMPNAME_TYPE(po)	PadnameTYPE(PAD_COMPNAME(po))
+
+define odump
+  p *$arg0
+  #if my_perl
+  #  call Perl_op_dump(my_perl, $arg0)
+  #else
+    call Perl_op_dump($arg0)
+  #end
+end
+document odump
+odump op => p/x *op; Perl_op_dump(op)
+see `help op_dump` for PL_op
+end
+
+define sdump
+  p *$arg0
+#  if my_perl
+#    call Perl_sv_dump(my_perl, $arg0)
+#  else
+    call Perl_sv_dump($arg0)
+#  end
+end
+document sdump
+sdump sv => p *sv; Perl_sv_dump(sv)
+see `help sv_dump`
+end
+
+#parse sigs
+define parse_opval
+  echo \ ps[$arg0]\n
+  p ps[$arg0]
+  if ps[$arg0].val.opval
+    p *ps[$arg0].val.opval
+    if ps[$arg0].val.opval.op_type == OP_CONST
+      p *((SVOP*)(ps[$arg0].val.opval))->op_sv
+    end
+    if ps[$arg0].val.opval.op_type == OP_PADANY
+      echo MYSUB!\n
+      #p *[ps[$arg0].val.opval.op_targ]
+    end
+  end
+end
+document parse_opval
+parse_opval -1 => 
+end
+
+# stack dump, sp or PL_sp or my_perl->Istack_sp?
+define sp_dump
+  if my_perl
+    p/x **my_perl->Istack_sp
+    call Perl_sv_dump(my_perl, *my_perl->Istack_sp)
+  else
+    p/x **PL_sp
+    Perl_sv_dump(*PL_sp)
+  end
+end
+document sp_dump
+ => Perl_sv_dump(PL_sp)
+end
+
+define op_dump
+  if my_perl
+    p/x *my_perl->Iop
+    call Perl_op_dump(my_perl, my_perl->Iop)
+  else
+    p/x *PL_op
+    call Perl_op_dump(PL_op)
+  end
+end
+document op_dump
+ => Perl_op_dump(PL_op)
+see `odump op`
+end
+
+define sv_dump
+  p/x *sv
+  if my_perl
+    call Perl_sv_dump(my_perl, sv)
+  else
+    call Perl_sv_dump(sv)
+  end
+end
+document sv_dump
+ => Perl_sv_dump(sv)
+see `sdump sv`
+end
+
+define addr2sym
+    if $argc == 1
+        printf "[%u]: ", $arg0
+        #whatis/ptype EXPR
+        #info frame ADDR
+        info symbol $arg0
+    end
+end
+document addr2sym
+Resolve the address (e.g. of one stack frame). Usage: addr2sym addr0
+end
