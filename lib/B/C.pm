@@ -826,7 +826,7 @@ sub save_pv_or_rv {
     warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
     $static = 1; # avoid run-time overwrite of the PV/RV slot (#273)
-    if ($savesym =~ /(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+    if ($savesym =~ /(\(char\*\))?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
       $savesym = 'NULL';
@@ -889,7 +889,7 @@ sub save_pv_or_rv {
       if ($static) {
 	$len = 0;
 	$savesym = $iscow ? savepv($pv) : constpv($pv);
-        if ($savesym =~ /^(\(char\*\))?get_cv\("/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+        if ($savesym =~ /^(\(char\*\))?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
 	  $len = $cur +1;
           $pv = $savesym;
@@ -985,6 +985,7 @@ sub gv_fetchpvn {
   }
 }
 
+# get_cv() returns a CV*
 sub get_cv {
   my ($name, $flags) = @_;
   $flags = "0" unless $flags;
@@ -3202,7 +3203,7 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # one more: bootstrapped XS CVs (test Class::MOP, no simple testcase yet)
-    elsif ( $rv =~ /(\(char\*\))?get_cv\(/ ) {
+    elsif ( $rv =~ /(\(char\*\))?get_cv/ ) {
       $xrvsect->add("(SV*)Nullsv");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
@@ -4439,7 +4440,7 @@ sub B::GV::save {
 	warn "GV::save &$fullname...\n" if $debug{gv};
         $cvsym = $gvcv->save($fullname);
         # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
-        if ($cvsym =~ /(\(char\*\))?get_cv\("/) {
+        if ($cvsym =~ /(\(char\*\))?get_cv/) {
 	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
 	    my $in_gv;
 	    for (@{ $init->[-1]{current} }) {
@@ -4515,7 +4516,7 @@ sub B::GV::save {
         }
       }
       # special handling for backref magic
-      if ($PERL514 and $cvsym and $cvsym !~ /(get_cv\("|NULL|lexwarn)/ and $gv->MAGICAL) {
+      if ($PERL514 and $cvsym and $cvsym !~ /(get_cv|NULL|lexwarn)/ and $gv->MAGICAL) {
         my @magic = $gv->MAGIC;
         foreach my $mg (@magic) {
           $init->add( "sv_magic((SV*)$sym, (SV*)$cvsym, '<', 0, 0);",
@@ -6266,7 +6267,7 @@ _EOT9
         $stashxsub =~ s/::/__/g;
         if ($] >= 5.022 or $staticxs) {
 	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
-          # TODO: utf8 stashname
+          # TODO: utf8 stashname (does make sense when loading from the fs?)
 	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
