@@ -38,7 +38,17 @@ sub save {
     }
     else {
         my $sv = $op->sv;
-        $svsym = '(SV*)' . $sv->save( "svop " . $op->name );
+        $svsym = $sv->save( "svop " . $op->name );
+        if ( $svsym =~ /^(gv_|PL_.*gv)/ ) {
+            $svsym = '(SV*)' . $svsym;
+        }
+        elsif ( $svsym =~ /^\([SAHC]V\*\)\&sv_list/ ) {
+            $svsym =~ s/^\([SAHC]V\*\)//;
+        }
+        else {
+            $svsym =~ s/^\([GAPH]V\*\)/(SV*)/;
+        }
+
         WARN( "Error: SVOP: " . $op->name . " $sv $svsym" ) if $svsym =~ /^\(SV\*\)lexwarn/;    #322
     }
     if ( $op->name eq 'method_named' ) {
@@ -46,16 +56,12 @@ sub save {
         $cv->save if $cv;
     }
     my $is_const_addr = $svsym =~ m/Null|\&/;
-    if ( USE_MULTIPLICITY() and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/ ) {                        # t/testm.sh Test::Pod
+    if ( USE_MULTIPLICITY() and svimmortal($svsym) ) {                                          # t/testm.sh Test::Pod
         $is_const_addr = 0;
     }
+
     svopsect()->comment_common("sv");
-    svopsect()->add(
-        sprintf(
-            "%s, %s",
-            $op->_save_common, ( $is_const_addr ? $svsym : 'Nullsv' )
-        )
-    );
+    svopsect()->add( sprintf( "%s, %s", $op->_save_common, ( $is_const_addr ? $svsym : "Nullsv /* $svsym */" ) ) );
     svopsect()->debug( $op->name, $op );
     my $ix = svopsect()->index;
     init()->add( sprintf( "svop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
@@ -63,6 +69,14 @@ sub save {
     init()->add("svop_list[$ix].op_sv = $svsym;")
       unless $is_const_addr;
     savesym( $op, "(OP*)&svop_list[$ix]" );
+}
+
+sub svimmortal {
+    my $sym = shift;
+    if ( $sym =~ /\(SV\*\)?\&PL_sv_(yes|no|undef|placeholder)/ ) {
+        return 1;
+    }
+    return undef;
 }
 
 1;

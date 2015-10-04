@@ -451,6 +451,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
     SvPV_set([% to_free %], (char*)&PL_sv_undef);
   [% ELSIF to_free.match('^&padnamelist_list') %]
     Safefree(PadnamelistARRAY([% to_free %]));
+    PadnamelistMAX([% to_free %]) = 0;
     PadnamelistREFCNT([% to_free %]) = 0;
   [% ELSIF to_free.match('^&padname_list') %]
     PadnameREFCNT([% to_free %]) = 0;
