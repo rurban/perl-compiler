@@ -1013,6 +1013,7 @@ sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/["\0]//g; #" poor editor
+  $ivdformat =~ s/".$/"/;  # cperl bug 5.22.2 #61 (never released)
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
   my $L = 'L';
   # LL for 32bit -2147483648L or 64bit -9223372036854775808L
@@ -1044,6 +1045,7 @@ sub nvx ($) {
   my $nvx = shift;
   my $nvgformat = $Config{nvgformat};
   $nvgformat =~ s/["\0]//g; #" poor editor
+  $nvgformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
   my $dblmax = "1.79769313486232e+308";
   # my $ldblmax = "1.18973149535723176502e+4932L"
   my $ll = $Config{d_longdbl} ? "LL" : "L";
@@ -2306,6 +2308,7 @@ sub B::UV::save {
   return $sym if defined $sym;
   my $uvuformat = $Config{uvuformat};
   $uvuformat =~ s/["\0]//g; #" poor editor
+  $uvuformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
   if ($PERL514) {
     # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
     $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
@@ -3065,6 +3068,10 @@ sub B::PVMG::save_magic {
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
   if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
     warn sprintf("skip SvSTASH for overloaded HV $fullname flags=0x%x\n", $sv->FLAGS)
+      if $verbose;
+  # [cperl #60] not only overloaded, version also
+  } elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
+    warn sprintf("skip SvSTASH for $fullname flags=0x%x\n", $sv->FLAGS)
       if $verbose;
   } else {
     my $pkg = $sv->SvSTASH;
