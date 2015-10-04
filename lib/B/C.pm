@@ -1771,6 +1771,14 @@ sub nextcop {
   return ($op and ref($op) eq 'B::COP') ? $op : undef;
 }
 
+sub svimmortal {
+  my $sym = shift;
+  if ($sym =~ /\(SV\*\)?\&PL_sv_(yes|no|undef|placeholder)/) {
+    return 1;
+  }
+  return undef;
+}
+
 sub B::SVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
@@ -1792,8 +1800,15 @@ sub B::SVOP::save {
       $svsym  = '(SV*)' . $gv->save();
     }
   } else {
-    my $sv    = $op->sv;
-    $svsym  = '(SV*)' . $sv->save("svop ".$op->name);
+    my $sv  = $op->sv;
+    $svsym  = $sv->save("svop ".$op->name);
+    if ($svsym =~ /^(gv_|PL_.*gv)/) {
+      $svsym = '(SV*)' . $svsym;
+    } elsif ($svsym =~ /^\([SAHC]V\*\)\&sv_list/) {
+      $svsym =~ s/^\([SAHC]V\*\)//;
+    } else {
+      $svsym =~ s/^\([GAPH]V\*\)/(SV*)/;
+    }
     warn "Error: SVOP: ".$op->name." $sv $svsym" if $svsym =~ /^\(SV\*\)lexwarn/; #322
   }
   if ($op->name eq 'method_named') {
@@ -1801,13 +1816,12 @@ sub B::SVOP::save {
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
-  if ($MULTI and $svsym =~ /\(SV\*\)\&PL_sv_(yes|no)/) { # t/testm.sh Test::Pod
+  if ($MULTI and svimmortal($svsym)) { # t/testm.sh Test::Pod
     $is_const_addr = 0;
   }
   $svopsect->comment("$opsect_common, sv");
-  $svopsect->add(
-    sprintf( "%s, %s",
-      $op->_save_common, ( $is_const_addr ? $svsym : 'Nullsv' ) )
+  $svopsect->add(sprintf( "%s, %s",
+      $op->_save_common, ( $is_const_addr ? $svsym : "Nullsv /* $svsym */" ) )
   );
   $svopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $svopsect->index;
@@ -2660,6 +2674,10 @@ sub B::PV::save {
   my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
   $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
+  # sv_free2 problem with !SvIMMORTAL and del_SV
+  if ($PERL518 and $fullname eq 'svop const') {
+    $refcnt = $DEBUGGING ? 1000 : (~0)/2;
+  }
   # static pv, do not destruct. test 13 with pv0 "3".
   if ($PERL510) {
     if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
@@ -3210,7 +3228,7 @@ sub B::RV::save {
   if ($PERL510) {
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is computable at load time
-    $svsect->add( sprintf( "ptr_undef, %lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
+    $svsect->add( sprintf( "ptr_undef, %lu, 0x%x, {0 /* $rv */}", $sv->REFCNT, $sv->FLAGS ) );
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     my $s = "sv_list[".$svsect->index."]";
     $init->add( "$s.sv_u.svu_rv = (SV*)$rv;" );
@@ -3219,25 +3237,25 @@ sub B::RV::save {
   else {
     # GVs need to be handled at runtime
     if ( ref( $sv->RV ) eq 'B::GV' or $rv =~ /^gv_list/) {
-      $xrvsect->add("Nullsv");
+      $xrvsect->add("Nullsv /* $rv */");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # and stashes, too
     elsif ( $sv->RV->isa('B::HV') && $sv->RV->NAME ) {
-      $xrvsect->add("Nullsv");
+      $xrvsect->add("Nullsv /* $rv */");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # one more: bootstrapped XS CVs (test Class::MOP, no simple testcase yet)
     elsif ( $rv =~ /(\(char\*\))?get_cv/ ) {
-      $xrvsect->add("(SV*)Nullsv");
+      $xrvsect->add("Nullsv /* $rv */");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     else {
       #$xrvsect->add($rv); # not static initializable (e.g. cv160 for ExtUtils::Install)
-      $xrvsect->add("(SV*)Nullsv");
+      $xrvsect->add("Nullsv /* $rv */");
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
@@ -6007,6 +6025,7 @@ _EOT7
        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
      } elsif ($s =~ /^&padnamelist_list/) {
        print "    Safefree(PadnamelistARRAY($s));\n";
+       print "    PadnamelistMAX($s) = 0;\n";
        print "    PadnamelistREFCNT($s) = 0;\n";
      } elsif ($s =~ /^&padname_list/) {
        print "    PadnameREFCNT($s) = 0;\n";
