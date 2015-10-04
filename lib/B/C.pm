@@ -2747,7 +2747,7 @@ sub B::PADNAME::save {
   my $sn = $stash->save($fullname);
   my $tn = $type->save($fullname);
   $init->add("SvOURSTASH_set($s, $sn);") unless $sn eq 'Nullsv';
-  $init->add("PadnameTYPE($s) = $tn;") unless $tn eq 'Nullsv';
+  $init->add("PadnameTYPE($s) = (HV*)$tn;") unless $tn eq 'Nullsv';
   push @B::C::static_free, $s;
   #$padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
   savesym( $pn, $s );
