@@ -448,7 +448,7 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount
 my $CPERL51  = ( $Config{usecperl} );
-my $PERL522  = ( $] >= 5.021007 ); #PADNAMELIST
+my $PERL522  = ( $] >= 5.021007 ); #PADNAMELIST, IsCOW
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
@@ -673,6 +673,9 @@ sub svop_or_padop_pv {
 }
 
 sub IsCOW {
+  if ($PERL522) {
+    return $_[0]->FLAGS & 0x10000000;
+  }
   return ($] >= 5.017008 and $_[0]->FLAGS & 0x00010000); # since 5.17.8
 }
 sub IsCOW_hek {
