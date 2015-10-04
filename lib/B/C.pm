@@ -446,6 +446,8 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount
+my $CPERL51  = ( $Config{usecperl} );
 my $PERL522  = ( $] >= 5.021007 ); #PADNAMELIST
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
@@ -1007,7 +1009,7 @@ sub get_cv {
 sub ivx ($) {
   my $ivx = shift;
   my $ivdformat = $Config{ivdformat};
-  $ivdformat =~ s/"//g; #" poor editor
+  $ivdformat =~ s/["\0]//g; #" poor editor
   my $intmax = (1 << ($Config{ivsize}*4-1)) - 1;
   my $L = 'L';
   # LL for 32bit -2147483648L or 64bit -9223372036854775808L
@@ -1038,7 +1040,7 @@ sub ivx ($) {
 sub nvx ($) {
   my $nvx = shift;
   my $nvgformat = $Config{nvgformat};
-  $nvgformat =~ s/"//g; #" poor editor
+  $nvgformat =~ s/["\0]//g; #" poor editor
   my $dblmax = "1.79769313486232e+308";
   # my $ldblmax = "1.18973149535723176502e+4932L"
   my $ll = $Config{d_longdbl} ? "LL" : "L";
@@ -2285,7 +2287,7 @@ sub B::UV::save {
   my $sym = objsym($sv);
   return $sym if defined $sym;
   my $uvuformat = $Config{uvuformat};
-  $uvuformat =~ s/"//g; #" poor editor
+  $uvuformat =~ s/["\0]//g; #" poor editor
   if ($PERL514) {
     # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
     $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
@@ -5581,7 +5583,7 @@ EOT0
     print "# define RX_EXTFLAGS(rx) ((rx)->extflags)\n";
     print "#endif\n";
   }
-  if ($] >= 5.021001) {
+  if ($] >= 5.021001 and !$CPERL52) {
     print "Static IV PL_sv_objcount; /* deprecated with 5.21.1 but still needed and used */\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
