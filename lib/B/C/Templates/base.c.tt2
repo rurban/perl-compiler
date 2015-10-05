@@ -160,6 +160,22 @@ XS(XS_DynaLoader_dl_find_symbol);
 [% section.decl.output( "%s\n" ) %]
 /* </decl.output> */
 
+/*
+    cop_list - array of cops in the code. for debugging, line number info. State/Context op. "Every ; is a cop."
+    op_list  - Chain of operations
+    unop_list - Unary operations
+    binop_list - Binary argument operation: first/last aren't useful to runtime but might be introspected by certain modules.
+    listop_list - Op chains run.c
+    svop_list - all scalars
+    xpv_list - Additional DATA for SVs ( PV body )
+    xpvav_list - Additional data for arrays
+    xpvhv_list - Additional data for hashes
+    xpviv_list - Additional data for PVIV
+    xpvnv_list - Additional data for PVNV
+    xpvmg_list - magic
+    xpvio_list - iosect - initial state of all file handles
+*/
+
 [% FOREACH sect IN section_list %]
 [% lines = section.$sect.index + 1 %]
 [% NEXT IF lines == 0 %]
@@ -818,6 +834,7 @@ main(int argc, char **argv, char **env)
     #if PERL_VERSION < 10 || ((PERL_VERSION == 10) && (PERL_SUBVERSION < 1))
       PL_compcv = 0;
     #else
+      /* PL_compcv used during compilation. */
       PL_compcv = MUTABLE_CV(newSV_type(SVt_PVCV));
       CvUNIQUE_on(PL_compcv);
       CvPADLIST(PL_compcv) = pad_new(0);

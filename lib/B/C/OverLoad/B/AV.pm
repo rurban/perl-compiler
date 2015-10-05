@@ -203,7 +203,8 @@ sub save {
         # might be faster also.
         elsif ($B::C::av_init) {
             init()->add(
-                "{", "\tSV **svp;",
+                "{ /* Slow array init mode. */",
+                "\tSV **svp;",
                 "\tAV *av = $sym;"
             );
             init()->add("\tregister int gcount;") if $count;
