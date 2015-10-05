@@ -59,3 +59,7 @@ nytprof.out
 nytprof/
 /tmp*
 /*.tmp
+/t/v5.22.0/t/0
+/t/v5.22.0/t/bin*
+/t/v5.22.0/t/txt*
+/t/v5.22.0/t/utf*
