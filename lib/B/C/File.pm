@@ -124,7 +124,11 @@ sub write {
 
     $self->{'verbose'} = $c_file_stash->{'verbose'};    # So verbose() will work. TODO: Remove me when all verbose() are gone.
 
-    my $template_dir = $B::C::savINC{'B/C.pm'};
+    my $template_dir;
+    {
+        no warnings 'once';
+        $template_dir = $B::C::savINC{'B/C.pm'};
+    }
     $template_dir =~ s{\.pm$}{};
     $template_dir .= "/Templates";
     my $template_file = "$template_dir/$template_name_short";

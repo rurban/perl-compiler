@@ -115,7 +115,10 @@ sub optimize {
 
     foreach my $stashname (@dl_modules) {
         if ( exists( $self->{'xsub'}->{$stashname} ) && $self->{'xsub'}->{$stashname} =~ m/^Dynamic/ ) {
-            $B::C::use_xsloader = 1;    # TODO: This setting is totally worthless since the code that uses this variable has already been run??
+            {
+                no warnings 'once';
+                $B::C::use_xsloader = 1;    # TODO: This setting is totally worthless since the code that uses this variable has already been run??
+            }
             if ( $self->{'xsub'}->{$stashname} eq 'Dynamic' ) {
                 no strict 'refs';
                 verbose("dl_init $stashname");
@@ -123,7 +126,7 @@ sub optimize {
                 # just in case we missed it. DynaLoader really needs the @ISA (#308)
                 svref_2object( \@{ $stashname . "::ISA" } )->save;
             }
-            else {                      # XS: need to fix cx for caller[1] to find auto/...
+            else {                          # XS: need to fix cx for caller[1] to find auto/...
                 verbose("bootstrapping $stashname added to XSLoader dl_init");
             }
 
