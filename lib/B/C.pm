@@ -1417,7 +1417,7 @@ sub B::UNOP::save {
 
 sub is_constant {
   my $s = shift;
-  return 1 if $s =~ /^(&sv_list|\d+)/;
+  return 1 if $s =~ /^(&sv_list|\-?\d+)/; # not gv_list, hek
   return 0;
 }
 
@@ -1446,11 +1446,29 @@ sub B::UNOP_AUX::save {
       $s .= ($C99 ? sprintf("\t,{.uv=0x%x} \t/* action: %u */\n", $item, $item)
                   : sprintf("\t,0x%x \t/* action: %u */\n", $item, $item));
     } else {
+      # XXX check how literal int is returned by B
+      # (const B::IV or B::UV or B::PAD), maybe even broken now.
+      # testcase: $a[-1] -1 as B::IV not as -1, what for PAD_OFFSET
       my $itemsym = $item->save("unopaux_item${ix}[$i]");
       if (is_constant($itemsym)) {
-        # TODO pad_offset
-        $s .= ($C99 ? "\t,{.sv=$itemsym}\n"
-                    : "\t,PTR2UV($itemsym)\n");
+        if (ref $item eq 'B::IV') {
+          my $iv = $item->IVX;
+          $s .= ($C99 ? "\t,{.iv=$iv}\n"
+                 : "\t,PTR2IV($iv)\n");
+        } elsif (ref $item eq 'B::UV') { # also for PAD_OFFSET
+          my $uv = $item->UVX;
+          $s .= ($C99 ? "\t,{.uv=$uv}\n"
+                 : "\t,PTR2IV($uv)\n");
+        #} elsif ($itemsym =~ /^-/) { # if save will return us a literal
+        #  $s .= ($C99 ? "\t,{.iv=$itemsym}\n"
+        #         : "\t,PTR2IV($itemsym)\n");
+        #} elsif ($itemsym =~ /^\d/) {
+        #  $s .= ($C99 ? "\t,{.uv=$itemsym}\n"
+        #         : "\t,PTR2UV($itemsym)\n");
+        } else { # SV
+          $s .= ($C99 ? "\t,{.sv=$itemsym}\n"
+                 : "\t,PTR2UV($itemsym)\n");
+        }
       } else {
         # gv or other late inits
         $s .= ($C99 ? "\t,{.sv=Nullsv} \t/* $itemsym */\n"
