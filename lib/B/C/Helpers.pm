@@ -2,7 +2,7 @@ package B::C::Helpers;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -13,6 +13,12 @@ our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string
 # B/C/Helpers/Sym
 
 use B qw/cstring/;
+
+sub is_constant {
+    my $s = shift;
+    return 1 if $s =~ /^(&sv_list|\-?[0-9]+)/;    # not gv_list, hek
+    return 0;
+}
 
 # maybe move to B::C::Helpers::Str ?
 sub read_utf8_string {

@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B::C::Config;
 use B::C::File qw/unopauxsect init2 init decl free/;
-use B::C::Helpers qw/do_labels/;
+use B::C::Helpers qw/do_labels is_constant/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw(constpv);
 
@@ -67,12 +67,6 @@ sub save {
     do_labels( $op, 'first' );
 
     return $sym;
-}
-
-sub is_constant {
-    my $s = shift;
-    return 1 if $s =~ /^(&sv_list|\-?[0-9]+)/;    # not gv_list, hek
-    return 0;
 }
 
 1;
