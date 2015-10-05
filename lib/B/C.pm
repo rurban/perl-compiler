@@ -1455,13 +1455,14 @@ sub B::UNOP_AUX::save {
                     : "\t,0 \t/* $itemsym */\n");
         $init2->add(" unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
       }
-      $i++;
     }
+    $i++;
   }
   $decl->add($s."};");
   $init->add( sprintf( "unopaux_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
+  $free->add("    ($sym)->op_type = OP_NULL;") ;
   do_labels ($op, 'first');
   $sym;
 }
