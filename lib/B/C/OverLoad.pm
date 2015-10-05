@@ -35,6 +35,7 @@ use B::C::OverLoad::B::SPECIAL     ();
 use B::C::OverLoad::B::SV          ();
 use B::C::OverLoad::B::SVOP        ();
 use B::C::OverLoad::B::UNOP        ();
+use B::C::OverLoad::B::UNOP_AUX    ();
 use B::C::OverLoad::B::UV          ();
 
 1;

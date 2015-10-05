@@ -14,10 +14,10 @@ sub new {
     my ( $class, $section, $symtable, $default ) = @_;
 
     my $self = bless {
-        'name'     => $section,
-        'symtable' => $symtable,
-        'default'  => $default,
-        'values'   => []
+        'name'      => $section,
+        'symtable'  => $symtable,
+        'default'   => $default,
+        'values'    => [],
     }, $class;
     $sections{$section} = $self;
 
@@ -62,6 +62,7 @@ sub typename {
     my $self     = shift;
     my $name     = $self->name;
     my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
+    $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
 
     return $typename;
 }
@@ -135,11 +136,12 @@ sub output {
         }
 
         #if ( $format eq "\t{ %s }, /* %s_list[%d] %s */%s\n" ) {
-            $return_string .= sprintf $format, $val, $self->name, $i, $ref, $dbg;
-            #}
-            #else {
-            #$return_string .= sprintf($format, $val);
-            #}
+        $return_string .= sprintf $format, $val, $self->name, $i, $ref, $dbg;
+
+        #}
+        #else {
+        #$return_string .= sprintf($format, $val);
+        #}
         ++$i;
     }
 
