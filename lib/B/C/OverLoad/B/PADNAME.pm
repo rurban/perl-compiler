@@ -7,7 +7,7 @@ use B::C::File qw( padnamesect init );
 use B::C::Config;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
-sub B::PADNAME::save {
+sub save {
     my ( $pn, $fullname ) = @_;
     my $sym = objsym($pn);
 
@@ -38,8 +38,8 @@ sub B::PADNAME::save {
     my $s  = "&padname_list[" . padnamesect()->index . "]";
     my $sn = $stash->save($fullname);
     my $tn = $type->save($fullname);
-    init()->add("SvOURSTASH_set($s, $sn);") unless $sn eq 'Nullsv';
-    init()->add("PadnameTYPE($s) = (HV*) $tn;")   unless $tn eq 'Nullsv';
+    init()->add("SvOURSTASH_set($s, $sn);")     unless $sn eq 'Nullsv';
+    init()->add("PadnameTYPE($s) = (HV*) $tn;") unless $tn eq 'Nullsv';
     push @B::C::static_free, $s;
 
     savesym( $pn, $s );

@@ -8,7 +8,7 @@ use B::C::Config;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Helpers qw/do_labels/;
 
-sub B::METHOP::save {
+sub save {
     my ( $op, $level ) = @_;
     my $sym = objsym($op);
     return $sym if defined $sym;
