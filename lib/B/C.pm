@@ -3237,12 +3237,16 @@ sub B::RV::save {
   my $rv = save_rv($sv, $fullname);
   return '0' unless $rv;
   if ($PERL510) {
+    # 5.22 has a wrong RV->FLAGS
+    my $flags = $sv->FLAGS;
+    $flags = 0x801 if $flags & 9 and $PERL522; # not a GV but a ROK IV (21)
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is computable at load time
-    $svsect->add( sprintf( "ptr_undef, %lu, 0x%x, {0 /* $rv */}", $sv->REFCNT, $sv->FLAGS ) );
+    $svsect->add( sprintf( "ptr_undef, %lu, 0x%x, {%s}", $sv->REFCNT, $flags,
+                           ($C99 and is_constant($rv) ? ".svu_rv=$rv" : "0 /* $rv */")));
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     my $s = "sv_list[".$svsect->index."]";
-    $init->add( "$s.sv_u.svu_rv = (SV*)$rv;" );
+    $init->add( "$s.sv_u.svu_rv = (SV*)$rv;" ) unless $C99 and is_constant($rv);
     return savesym( $sv, "&".$s );
   }
   else {
