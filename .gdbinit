@@ -7,8 +7,19 @@ set breakpoint pending on
 source .gdb/perl
 
 #break __asan_report_error
+#b Perl_pp_multideref
 
-b Perl_pp_multideref
+b dump.c:2384
+command
+echo actions\n
+p/x actions
+echo action&mask MDEREF_HV_gvhv_helem=13\n
+p actions&MDEREF_ACTION_MASK
+echo items\n
+p *items
+echo sv\n
+p sv
+end
 
 #b bset_obj_store
 #command 
