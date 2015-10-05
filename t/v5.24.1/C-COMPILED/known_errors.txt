@@ -51,8 +51,8 @@ mro/c3_with_overload_utf8.t  TESTS     TODO: overload not working right
 mro/complex_c3.t             SIG       TODO: segfault
 mro/complex_c3_utf8.t        SIG       TODO: segfault
 mro/dbic_c3_utf8.t           TESTS     TODO: Wide character in print at t/test.pl line 38.
-mro/isarev.t                 SKIP      TODO: This test fails in an inconsistent way. There's probably something even more fundamentally broken. also: https://code.google.com/p/perl-compiler/issues/detail?id=353
-mro/isarev_utf8.t            SKIP      TODO: This test fails in an inconsistent way (pass when run alone not while running other tests) mro::isarev can't handle inheritance with utf8 see also https://code.google.com/p/perl-compiler/issues/detail?id=353
+mro/isarev.t                 TESTS     Test results:
+mro/isarev_utf8.t            TESTS     Test results:
 mro/method_caching_utf8.t    PLAN      Plan was valid
 mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
 mro/next_edgecases_utf8.t    PLAN      Plan was valid
@@ -80,7 +80,7 @@ op/anonconst.t               BC        op/anonconst.c is generated (-O3,-fno-fol
 op/array_base.t              PLAN      Plan was valid
 op/attrhand.t                PLAN      Plan was valid
 op/attrproto.t               PLAN      Plan was valid
-op/attrs.t                   SKIP      Sometimes passes. Sometimes exits with Signal 11 Issue 278
+op/attrs.t                   PLAN      Plan was valid
 op/auto.t                    BC        op/auto.c is generated (-O3,-fno-fold)
 op/bless.t                   TESTS     Test results:
 op/bop.t                     BC        op/bop.c is generated (-O3,-fno-fold)
@@ -203,7 +203,7 @@ uni/fold.t                   SKIP      TODO: Seems to be an issue with overload 
 uni/greek.t                  SIG       Exit signal is 11 SEGV
 uni/gv.t                     PLAN      Plan was valid
 uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
-uni/latin2.t                 SKIP      TODO: sometimes terminates by SIG failure. Sometimes fails.
+uni/latin2.t                 SIG       Exit signal is 11 SEGV
 uni/lex_utf8.t               PLAN      Plan was valid
 uni/lower.t                  SIG       Exit signal is 11 SEGV
 uni/method.t                 PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
