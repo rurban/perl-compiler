@@ -5,12 +5,25 @@ use strict;
 use Config;
 use B qw/cstring SVf_IOK SVf_POK/;
 use B::C::Config;
-use B::C::File qw/init xpvavsect svsect padlistsect padnamelistsect/;
+use B::C::File qw/init xpvavsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # maybe need to move to setup/config
 my ( $use_av_undef_speedup, $use_svpop_speedup ) = ( 1, 1 );
 my $MYMALLOC = $Config{usemymalloc} eq 'define';
+
+sub fill {
+    my $av = shift;
+
+    my $fill = eval { $av->FILL };    # cornercase: tied array without FETCHSIZE
+    $fill = -1 if $@;                 # catch error in tie magic
+
+    return $fill;
+}
+
+sub cast_sv {
+    return "(SV*)";
+}
 
 sub save {
     my ( $av, $fullname ) = @_;
@@ -18,44 +31,20 @@ sub save {
     return $sym if defined $sym;
 
     $fullname = '' unless $fullname;
-    my ( $fill, $avreal, $max );
 
-    my $ispadlist     = ref($av) eq 'B::PADLIST';
-    my $ispadnamelist = ref($av) eq 'B::PADNAMELIST';
+    my $fill    = $av->fill();
+    my $svpcast = $av->cast_sv();
 
-    if ( $ispadnamelist or $ispadlist ) {
-        $fill = $av->MAX;
-    }
-    else {
-        eval { $fill = $av->FILL; };    # cornercase: tied array without FETCHSIZE
-        $fill = -1 if $@;               # catch error in tie magic
-    }
+    my ( $magic, $av_index ) = ('');
 
-    $max = $fill;
-    my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
-    $svpcast = "(PADNAME*)" if $ispadnamelist;
-
-    if ($ispadnamelist) {
-        padnamelistsect()->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
-
-        # TODO: max_named walk all names and look for non-empty names
-        my $refcnt = $av->REFCNT + 1;    # XXX defer free to global destruction: 28
-        padnamelistsect()->add("$fill, NULL, $fill, $fill, $refcnt");
-        my $padnamelist_index = padnamelistsect()->index;
-        $sym = savesym( $av, "&padnamelist_list[$padnamelist_index]" );
-        push @B::C::static_free, $sym;
-    }
-    elsif ($ispadlist) {
-        padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_outid");
-        padlistsect()->add("$fill, NULL, 0");    # Perl_pad_new(0)
-        my $padlist_index = padlistsect()->index;
-        $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+    if ( $av->can('add_to_section') ) {    # PADLIST or PADNAMELIST
+        $sym = $av->add_to_section();
     }
     else {
         # 5.14
         # 5.13.3: STASH, MAGIC, fill max ALLOC
         my $line = "Nullhv, {0}, -1, -1, 0";
-        $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
+        $line = "Nullhv, {0}, $fill, $fill, 0" if $B::C::av_init or $B::C::av_init2;
         xpvavsect()->add($line);
         svsect()->add(
             sprintf(
@@ -64,10 +53,7 @@ sub save {
                 '0'
             )
         );
-    }
 
-    my ( $magic, $av_index ) = ('');
-    if ( !$ispadlist and !$ispadnamelist ) {
         svsect()->debug( $fullname, $av );
         my $sv_ix = svsect()->index;
         $av_index = xpvavsect()->index;
@@ -156,29 +142,8 @@ sub save {
         }
         init()->no_split;
 
-        if ($ispadnamelist) {
-            my $fill1 = $fill + 1;
-            init()->add( "{", "\tPADNAME **svp;" );
-            init()->add("\tregister int gcount;") if $count;
-            init()->add(
-                "\tPADNAMELIST *padnl = $sym;",
-                sprintf( "\tNewxz(svp, %d, PADNAME *);", $fill + 1 ),
-                "\tPadnamelistARRAY(padnl) = svp;",
-            );
-            init()->add( substr( $acc, 0, -2 ) );
-            init()->add("}");
-        }
-        elsif ($ispadlist) {
-            my $fill1 = $fill + 1;
-            init()->add( "{", "\tPAD **svp;" );
-            init()->add("\tregister int gcount;") if $count;
-            init()->add(
-                "\tPADLIST *padl = $sym;",
-                sprintf( "\tNewxz(svp, %d, PAD *);", $fill + 1 ),
-                "\tPadlistARRAY(padl) = svp;",
-            );
-            init()->add( substr( $acc, 0, -2 ) );
-            init()->add("}");
+        if ( $av->can('add_to_init') ) {    # PADLIST or PADNAMELIST
+            $av->add_to_init( $sym, $acc );
         }
 
         # With -fav-init2 use independent_comalloc()
@@ -257,8 +222,7 @@ sub save {
     }
     else {
         my $max = $av->MAX;
-        init()->add("av_extend($sym, $max);")
-          if $max > -1;
+        init()->add("av_extend($sym, $max);") if $max > -1;
     }
 
     return $sym;
