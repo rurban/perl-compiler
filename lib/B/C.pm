@@ -1428,7 +1428,6 @@ sub B::UNOP_AUX::save {
   return $sym if defined $sym;
   # const and sv already at compile-time, gv deferred to init-time.
   # The aux buffer in core has internally a length prefix. our C.xs aux method adds that also.
-  my $aux = $op->aux;
   my @aux_list = $op->aux_list($B::C::curcv);
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");

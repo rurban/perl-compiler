@@ -236,22 +236,6 @@ PPCODE:
 
 #endif
 
-MODULE = B	PACKAGE = B::UNOP_AUX
-
-#if PERL_VERSION > 21
-
-SV*
-aux(o)
-          B::OP o
-CODE:
-    UNOP_AUX_item *items = cUNOP_AUXo->op_aux;
-    UV len = items[-1].uv;
-    RETVAL = newSVpvn_flags((char*)&items[-1], (1+len) * sizeof(UNOP_AUX_item), 0);
-OUTPUT:
-    RETVAL
-          
-#endif
-
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
 
 #if PERL_VERSION > 10
