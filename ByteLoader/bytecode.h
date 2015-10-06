@@ -808,7 +808,7 @@ static int bget_swab = 0;
     padnamelist_store(padnl, ix, (PADNAME*)pn);         \
   } STMT_END
 #define BSET_unop_aux(op, pv)  STMT_START {           \
-    cUNOP_AUXx(op)->op_aux = (UNOP_AUX_item *)pv;     \
+    cUNOP_AUXx(op)->op_aux = ((UNOP_AUX_item *)pv)+1; \
   } STMT_END
 #else
 #define BSET_newpadnlx(padnl, flags)  STMT_START {      \
