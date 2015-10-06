@@ -23,22 +23,22 @@
 # - Fields are white space delimited. It's assumed $test and $type will have no spaces in them.
 #
 
-base/lex.t                   PLAN      invalid plan, was not tested previously
+base/lex.t                   PLAN      BC issue #222 - Cannot use '<<' in regexp
 comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse behavior so not relevant to B::C
 comp/fold.t                  TESTS     Test results:
-comp/form_scope.t            PLAN      Plan was valid
+comp/form_scope.t            PLAN      BC issue #216 FORMAT -- who cares?
 comp/hints.t                 SKIP      tests are using BEGIN block, do not ready for B::C
-comp/parser.t                BC        TODO fail to generate c file
+comp/parser.t                BC        BC issue #217 -> will not fix
 comp/proto.t                 TESTS     Test results:
 comp/require.t               BC        TODO fail to generate c file
-extra/reused-variable.t      PLAN      TODO: when not using my and later my + eval => conflict in the variable
+extra/reused-variable.t      PLAN      BC issue #207 - reused variable conflict - when not using my and later my + eval => conflict in the variable
 io/argv.t                    BC        io/argv.c is generated (-O3,-fno-fold)
 io/bom.t                     BC        io/bom.c is generated (-O3,-fno-fold)
 io/defout.t                  BC        io/defout.c is generated (-O3,-fno-fold)
 io/errno.t                   SIG       Exit signal is 11 SEGV
-io/iofile.t                  SIG       TODO: No changes to  t/io/iofile.t since 5.14.4
-io/layers.t                  SIG       Exit signal is 11 SEGV
-io/open.t                    SIG       Exit signal is 11 SEGV
+io/iofile.t                  SIG       BC issue #207 - reused variable conflict - No changes to  t/io/iofile.t since 5.14.4
+io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
+io/open.t                    SIG       BC issue #219 (overload) - new tests in upstream since 5.14.4
 io/perlio.t                  SIG       Exit signal is 11 SEGV
 mro/basic_01_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_02_c3_utf8.t       TESTS     some tests are now failing
@@ -68,9 +68,9 @@ mro/next_NEXT.t              SIG       Exit signal is 11 SEGV
 mro/next_NEXT_utf8.t         SIG       Exit signal is 11 SEGV
 mro/next_skip.t              SIG       Exit signal is 11 SEGV
 mro/next_skip_utf8.t         SIG       Exit signal is 11 SEGV
-mro/overload_c3.t            TESTS     Test results:
-mro/overload_c3_utf8.t       TESTS     Test results:
-mro/overload_dfs.t           TESTS     Test results:
+mro/overload_c3.t            TESTS     BC issue #219 - overload issue
+mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
+mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   PLAN      Plan was valid
 mro/recursion_dfs.t          BC        mro/recursion_dfs.c is generated (-O3,-fno-fold)
 mro/vulcan_c3_utf8.t         TESTS     TODO: Malformed UTF-8.
