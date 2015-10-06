@@ -2725,9 +2725,9 @@ sub B::PV::save {
   $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
   # sv_free2 problem with !SvIMMORTAL and del_SV
-  #if ($PERL518 and $fullname eq 'svop const') { # which testcase?
-  #  $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
-  #}
+  if ($PERL518 and $fullname eq 'svop const') { # repro with -O0 for all testcases
+    $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
+  }
   # static pv, do not destruct. test 13 with pv0 "3".
   if ($PERL510) {
     if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
