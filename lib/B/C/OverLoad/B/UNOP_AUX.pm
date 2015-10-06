@@ -30,7 +30,7 @@ sub save {
         unless ( ref $item ) {
 
             # symbolize MDEREF action?
-            $s .= sprintf( "\t,{.uv=0x%x} \t/* action: %u */\n", $item, $item );
+            $s .= sprintf( "\t,{.uv=0x%x} \t/* action|index: %u */\n", $item, $item );
         }
         else {
             # XXX check how literal int is returned by B
