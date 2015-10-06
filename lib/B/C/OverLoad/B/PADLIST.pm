@@ -7,15 +7,25 @@ use B::C::File qw/init padlistsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub add_to_section {
-    my $self = shift;
+    my ( $self, $cv ) = @_;
 
     padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_outid");
-    padlistsect()->add( $self->fill() . ", NULL, 0" );    # Perl_pad_new(0)
+    padlistsect()->add( $self->fill() . ", NULL, 0, 0" );    # Perl_pad_new(0)
 
     my $padlist_index = padlistsect()->index;
 
     # could save sym to the object to reuse it in add_to_init
-    return savesym( $self, "&padlist_list[$padlist_index]" );
+    my $sym = savesym( $self, "&padlist_list[$padlist_index]" );
+
+    if (    $cv
+        and $cv->OUTSIDE
+        and ref( $cv->OUTSIDE ) ne 'B::SPECIAL'
+        and $cv->OUTSIDE->PADLIST ) {
+        my $outid = $cv->OUTSIDE->PADLIST->save();
+        init()->add("($sym)->xpadl_outid = (PADNAMELIST*)$outid;") if $outid;
+    }
+
+    return $sym;
 }
 
 sub add_to_init {

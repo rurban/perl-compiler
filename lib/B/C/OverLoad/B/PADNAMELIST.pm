@@ -7,7 +7,7 @@ use B::C::File qw/init padnamelistsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub add_to_section {
-    my $self = shift;
+    my ( $self, $cv ) = @_;
 
     padnamelistsect()->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
 

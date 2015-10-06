@@ -26,7 +26,7 @@ sub cast_sv {
 }
 
 sub save {
-    my ( $av, $fullname ) = @_;
+    my ( $av, $fullname, $cv ) = @_;
     my $sym = objsym($av);
     return $sym if defined $sym;
 
@@ -38,7 +38,7 @@ sub save {
     my ( $magic, $av_index ) = ('');
 
     if ( $av->can('add_to_section') ) {    # PADLIST or PADNAMELIST
-        $sym = $av->add_to_section();
+        $sym = $av->add_to_section($cv);
     }
     else {
         # 5.14

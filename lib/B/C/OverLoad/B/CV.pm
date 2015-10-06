@@ -152,12 +152,12 @@ sub save {
             svref_2object( \*{"$stashname\::bootstrap"} )->save
               if $stashname;    # and defined ${"$stashname\::bootstrap"};
                                 # delsym($cv);
-            return get_cv_string($fullname, $flags);
+            return get_cv_string( $fullname, $flags );
         }
         else {                  # Those cvs are already booted. Reuse their GP.
                                 # Esp. on windows it is impossible to get at the XS function ptr
             debug( cv => "core XSUB $fullname CV 0x%x\n", $$cv );
-            return get_cv_string($fullname, $flags);
+            return get_cv_string( $fullname, $flags );
         }
     }
     if ( $cvxsub && $cvname && $cvname eq "INIT" ) {
@@ -408,7 +408,7 @@ sub save {
               if debug('cv');
 
             # XXX avlen 2
-            $padlistsym = $padlist->save( $fullname . ' :pad' );
+            $padlistsym = $padlist->save( $fullname . ' :pad', $cv );
             debug(
                 gv => "done saving %s 0x%x for CV 0x%x\n",
                 $padlistsym, $$padlist, $$cv
@@ -457,7 +457,7 @@ sub save {
                 $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS
             )
         );
-        return get_cv_string($fullname, $flags);
+        return get_cv_string( $fullname, $flags );
     }
 
     # Now it is time to record the CV
