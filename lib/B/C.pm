@@ -1443,8 +1443,8 @@ sub B::UNOP_AUX::save {
   for my $item (@aux_list) {
     unless (ref $item) {
       # symbolize MDEREF action?
-      $s .= ($C99 ? sprintf("\t,{.uv=0x%x} \t/* action: %u */\n", $item, $item)
-                  : sprintf("\t,0x%x \t/* action: %u */\n", $item, $item));
+      $s .= ($C99 ? sprintf("\t,{.uv=0x%x} \t/* action|index: %u */\n", $item, $item)
+                  : sprintf("\t,0x%x \t/* action|index: %u */\n", $item, $item));
     } else {
       # XXX check how literal int is returned by B
       # (const B::IV or B::UV or B::PAD), maybe even broken now.
