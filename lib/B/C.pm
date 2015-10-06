@@ -1459,6 +1459,7 @@ sub B::UNOP_AUX::save {
           my $uv = $item->UVX;
           $s .= ($C99 ? "\t,{.uv=$uv}\n"
                  : "\t,PTR2IV($uv)\n");
+        # XXX looks like B already returns us literal ints, not B objects
         #} elsif ($itemsym =~ /^-/) { # if save will return us a literal
         #  $s .= ($C99 ? "\t,{.iv=$itemsym}\n"
         #         : "\t,PTR2IV($itemsym)\n");
@@ -2700,9 +2701,9 @@ sub B::PV::save {
   $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
   # sv_free2 problem with !SvIMMORTAL and del_SV
-  if ($PERL518 and $fullname eq 'svop const') {
-    $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
-  }
+  #if ($PERL518 and $fullname eq 'svop const') { # which testcase?
+  #  $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
+  #}
   # static pv, do not destruct. test 13 with pv0 "3".
   if ($PERL510) {
     if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
@@ -3255,7 +3256,7 @@ sub B::RV::save {
   my $rv = save_rv($sv, $fullname);
   return '0' unless $rv;
   if ($PERL510) {
-    # 5.22 has a wrong RV->FLAGS
+    # 5.22 has a wrong RV->FLAGS (https://github.com/perl11/cperl/issues/63)
     my $flags = $sv->FLAGS;
     $flags = 0x801 if $flags & 9 and $PERL522; # not a GV but a ROK IV (21)
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
