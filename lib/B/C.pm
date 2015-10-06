@@ -4531,7 +4531,7 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-        my $get_cv = get_cv($fullname, "GV_ADD");
+        my $get_cv = get_cv($origname, "GV_ADD");
 	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
       }
       elsif (!$PERL510 or $gp) {

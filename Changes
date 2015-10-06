@@ -11,6 +11,7 @@
         new PADNAME and PADNAMELIST objects and changed COP_SEQ_RANGE fields.
         Removed B::Section which used base. (toddr)
         Re-add PL_sv_objcount on cperl
+        Fixed XSUB CONSTSUB alias (44,45,... PR #228) (atoomic)
 
 1.52 2014-09-09 rurban
         * C: Protect against empty SV ptr in SV magic (\0) with $` with 5.20 (#370)
