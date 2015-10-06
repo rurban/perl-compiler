@@ -131,7 +131,6 @@ sub save {
     return $sym if B::C::skip_pkg($package);
 
     my $fullname = $package . "::" . $gvname;
-    my $flags = utf8::is_utf8($fullname) ? '|SVf_UTF8' : '';
     my $fancyname;
     if ( $filter and $filter =~ m/ :pad/ ) {
         $fancyname = cstring($filter);
@@ -480,7 +479,7 @@ sub save {
                 }
 
                 # must save as a 'stub' so newXS() has a CV to populate
-                my $get_cv = get_cv_string( $origname, 'GV_ADD' . $flags ); # utf8....
+                my $get_cv = get_cv_string( $origname, 'GV_ADD' );
                 init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
 
             }
