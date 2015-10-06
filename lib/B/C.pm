@@ -2701,7 +2701,7 @@ sub B::PV::save {
   my $refcnt = $sv->REFCNT;
   # sv_free2 problem with !SvIMMORTAL and del_SV
   if ($PERL518 and $fullname eq 'svop const') {
-    $refcnt = $DEBUGGING ? 1000 : (~0)/2;
+    $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
   }
   # static pv, do not destruct. test 13 with pv0 "3".
   if ($PERL510) {
