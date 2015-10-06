@@ -58,7 +58,6 @@ mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
 mro/next_edgecases_utf8.t    PLAN      Plan was valid
 mro/next_goto.t              SIG       Exit signal is 11 SEGV
 mro/next_goto_utf8.t         SIG       Exit signal is 11 SEGV
-mro/next_inanon.t            SIG       Exit signal is 11 SEGV
 mro/next_inanon_utf8.t       SIG       Exit signal is 11 SEGV
 mro/next_ineval.t            SIG       Exit signal is 11 SEGV
 mro/next_ineval_utf8.t       SIG       Exit signal is 11 SEGV
