@@ -250,8 +250,11 @@ result[26]="26"
 tests[27]='use Fcntl ();my $a=Fcntl::O_CREAT(); print "ok" if ( $a >= 64 && &Fcntl::O_CREAT >= 64 );'
 # require $fname
 tests[28]='my($fname,$tmp_fh);while(!open($tmp_fh,">",($fname=q{ccode28_} . rand(999999999999)))){$bail++;die "Failed to create a tmp file after 500 tries" if $bail>500;}print {$tmp_fh} q{$x="ok";1;};close($tmp_fh);sleep 1;require $fname;END{unlink($fname);};print $x;'
+# multideref with static index and sv and dynamic gv ptrs
+tests[29]='my (%b,%h); BEGIN { %b=(1..8);@a=(1,2,3,4); %h=(1=>2,3=>4) } $i=0; my $l=-1; print $h->{$b->{3}},$h->{$a[-1]},$a[$i],$a[$l],$h{3}'
+result[29]='144'
 # special old IO handling
-tests[29]='use IO;print "ok"'
+tests[291]='use IO;print "ok"'
 # run-time context of .., fails in CC
 tests[30]='@a=(4,6,1,0,0,1);sub range{(shift @a)..(shift @a)}print range();while(@a){print scalar(range())}'
 result[30]='456123E0'
@@ -855,7 +858,7 @@ tests[215]='eval { $@ = "t1\n"; do { die "t3\n" }; 1; }; print ":$@:\n";'
 result[215]=':t3
 :'
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
-# multideref
+# multideref, also now a 29
 tests[219]='my (%b,%h); BEGIN { %b=(1..8);@a=(1,2,3,4); %h=(1=>2,3=>4) } $i=0; my $l=-1; print $h->{$b->{3}},$h->{$a[-1]},$a[$i],$a[$l],$h{3}'
 result[219]='144'
 # also at 904
