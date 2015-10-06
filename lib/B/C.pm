@@ -778,7 +778,7 @@ sub savere {
     my $s = "sv_list[".$svsect->index."]";
     $sym = "&$s";
     push @B::C::static_free, $s if $len; # and $B::C::pv_copy_on_grow;
-    # $resect->add(sprintf("&xpv_list[%d], %lu, 0x%x", $xpvsect->index, 1, 0x4405));
+    # $resect->add(sprintf("&xpv_list[%d], %Lu, 0x%x", $xpvsect->index, 1, 0x4405));
   }
   else {
     $sym = sprintf( "re%d", $re_index++ );
@@ -2333,7 +2333,7 @@ sub B::NULL::save {
 
   my $i = $svsect->index + 1;
   warn "Saving SVt_NULL sv_list[$i]\n" if $debug{sv};
-  $svsect->add( sprintf( "0, %lu, 0x%x".
+  $svsect->add( sprintf( "0, %Lu, 0x%x".
                          ($PERL510?", {0}":''),
                          $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $fullname, $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
@@ -2362,7 +2362,7 @@ sub B::UV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpvuv_list[%d], %lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
+      "&xpvuv_list[%d], %Lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
       $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
@@ -2403,7 +2403,7 @@ sub B::IV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpviv_list[%d], %lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
+      "&xpviv_list[%d], %Lu, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
       $xpvivsect->index, $sv->REFCNT, $svflags
     )
   );
@@ -2435,7 +2435,7 @@ sub B::NV::save {
   }
   $svsect->add(
     sprintf(
-      "&xpvnv_list[%d], %lu, 0x%x %s",
+      "&xpvnv_list[%d], %Lu, 0x%x %s",
       $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS, $PERL510 ? ', {0}' : ''
     )
   );
@@ -2511,7 +2511,7 @@ sub B::PVLV::save {
        sprintf("Nullhv, {0}, %u, %d, 0/*GvNAME later*/, %s, %u, %u, Nullsv, %s",
 	       $cur, $len, nvx($sv->NVX),
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
-    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {(char*)%s}",
+    $svsect->add(sprintf("&xpvlv_list[%d], %Lu, 0x%x, {(char*)%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS, $pvsym));
   } elsif ($PERL510) {
     $xpvlvsect->comment('xnv_u, CUR, LEN, GvNAME, MAGIC, STASH, TARGOFF, TARGLEN, TARG, TYPE');
@@ -2519,7 +2519,7 @@ sub B::PVLV::save {
        sprintf("%s, %u, %d, 0/*GvNAME later*/, 0, Nullhv, %u, %u, Nullsv, %s",
 	       nvx($sv->NVX), $cur, $len,
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
-    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvlv_list[%d], %Lu, 0x%x, {%s}",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS,
                          ($C99?".svu_pv = (char*)":"(char*)").$pvsym));
   } else {
@@ -2528,7 +2528,7 @@ sub B::PVLV::save {
        sprintf("(char*)%s, %u, %u, %s, %s, 0, 0, %u, %u, Nullsv, %s",
 	       $pvsym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
-    $svsect->add(sprintf("&xpvlv_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xpvlv_list[%d], %Lu, 0x%x",
                          $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
@@ -2635,7 +2635,7 @@ sub B::PVNV::save {
     $xpvnvsect->add(sprintf( "(char*)%s, %u, %u, %s, %s", $savesym, $cur, $len, $ivx, $nvx ) );
   }
   $svsect->add(
-    sprintf("&xpvnv_list[%d], %lu, 0x%x %s",
+    sprintf("&xpvnv_list[%d], %Lu, 0x%x %s",
             $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS,
             $PERL510 ? ", {".($C99?".svu_pv=":"")."(char*)$savesym}" : '' ) );
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
@@ -2683,7 +2683,7 @@ sub B::BM::save {
 	       $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->USEFUL, $sv->PREVIOUS, $sv->RARE
 	      ));
-    $svsect->add(sprintf("&xpvbm_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xpvbm_list[%d], %Lu, 0x%x",
                          $xpvbmsect->index, $sv->REFCNT, $sv->FLAGS));
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     $s = "sv_list[".$svsect->index."]";
@@ -2725,7 +2725,8 @@ sub B::PV::save {
   $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
   # sv_free2 problem with !SvIMMORTAL and del_SV
-  if ($PERL518 and $fullname eq 'svop const') { # repro with -O0 for all testcases
+  # repro with -O0 .. -O2 for all testcases
+  if ($PERL518 and $fullname eq 'svop const') {
     $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
   }
   # static pv, do not destruct. test 13 with pv0 "3".
@@ -2736,7 +2737,7 @@ sub B::PV::save {
         if $debug{pv};
     }
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
-    $svsect->add( sprintf( "&xpv_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add( sprintf( "&xpv_list[%d], %Lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
 			   $savesym eq 'NULL' ? '0' :
                              ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
@@ -2757,7 +2758,7 @@ sub B::PV::save {
   }
   else {
     $xpvsect->add( sprintf( "%s, %u, %u", "(char*)$savesym", $cur, $len ) );
-    $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xpv_list[%d], %Lu, 0x%x",
 			 $xpvsect->index, $refcnt, $flags));
     if ( defined($pv) and !$static ) {
       $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv, 0, $cur ) );
@@ -2846,7 +2847,7 @@ sub B::REGEXP::save {
   my $cstr = cstring($pv);
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
   $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
-  $svsect->add(sprintf("&xpv_list[%d], %lu, 0x%x, {%s}",
+  $svsect->add(sprintf("&xpv_list[%d], %Lu, 0x%x, {%s}",
 		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, $] > 5.017006 ? "NULL" : $cstr));
   my $ix = $svsect->index;
   warn "Saving RX $cstr to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
@@ -3041,7 +3042,7 @@ sub B::PVMG::save {
       $xpvmgsect->add(sprintf("{%s}, %u, %u, {%s}, {0}, Nullhv",
 			    $nvx, $cur, $len, $ivx));
     }
-    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvmg_list[%d], %Lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS,
 			 $savesym eq 'NULL' ? '0' :
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym));
@@ -3052,7 +3053,7 @@ sub B::PVMG::save {
     }
     $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
                             $savesym, $cur, $len, $ivx, $nvx));
-    $svsect->add(sprintf("&xpvmg_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xpvmg_list[%d], %Lu, 0x%x",
 			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
@@ -3285,7 +3286,7 @@ sub B::RV::save {
     $flags = 0x801 if $flags & 9 and $PERL522; # not a GV but a ROK IV (21)
     # 5.10 has no struct xrv anymore, just sv_u.svu_rv. static or dynamic?
     # initializer element is computable at load time
-    $svsect->add( sprintf( "ptr_undef, %lu, 0x%x, {%s}", $sv->REFCNT, $flags,
+    $svsect->add( sprintf( "ptr_undef, %Lu, 0x%x, {%s}", $sv->REFCNT, $flags,
                            ($C99 and is_constant($rv) ? ".svu_rv=$rv" : "0 /* $rv */")));
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     my $s = "sv_list[".$svsect->index."]";
@@ -3317,7 +3318,7 @@ sub B::RV::save {
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
-    $svsect->add(sprintf("&xrv_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xrv_list[%d], %Lu, 0x%x",
 			 $xrvsect->index, $sv->REFCNT, $sv->FLAGS));
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     my $s = "sv_list[".$svsect->index."]";
@@ -3880,7 +3881,7 @@ sub B::CV::save {
     $CvFLAGS &= ~0x1000 if $PERL514; # CVf_DYNFILE
     $CvFLAGS &= ~0x400 if $gv and $$gv and $PERL514; #CVf_CVGV_RC
     $symsect->add(sprintf(
-      "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
+      "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS));
     return get_cv($fullname, 0);
   }
@@ -3945,13 +3946,13 @@ sub B::CV::save {
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
-	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}"),
+	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x, {0}"),
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
 	#	  ));
       } else {
 	$xpvcvsect->comment('STASH mg_u cur len CV_STASH START_U ROOT_U GV file PADLIST OUTSIDE outside_seq flags depth');
 	$xpvcvsect->add($xpvc);
-	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
+	$svsect->add(sprintf("&xpvcv_list[%d], %Lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
 	$svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
       }
@@ -3980,13 +3981,13 @@ sub B::CV::save {
       if (!$new_cv_fw) {
 	$symsect->add("XPVCVIX$xpvcv_ix\t$xpvc");
 	#$symsect->add
-	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}",
+	#  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x, {0}",
 	#	   $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
 	#	  ));
       } else {
 	$xpvcvsect->comment('GvSTASH cur len  depth mg_u MG_STASH CV_STASH START_U ROOT_U CV_GV cv_file PADLIST OUTSIDE outside_seq cv_flags');
 	$xpvcvsect->add($xpvc);
-	$svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x, {0}",
+	$svsect->add(sprintf("&xpvcv_list[%d], %Lu, 0x%x, {0}",
 			     $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS));
         $svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
       }
@@ -4035,7 +4036,7 @@ sub B::CV::save {
       $xpvcvsect->comment('pv cur len off nv magic mg_stash cv_stash start root xsub '
                           .'xsubany cv_gv cv_file cv_depth cv_padlist cv_outside cv_flags');
       $xpvcvsect->add($xpvc);
-      $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
+      $svsect->add(sprintf("&xpvcv_list[%d], %Lu, 0x%x"),
 		   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
       $svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
     } else {
@@ -4054,7 +4055,7 @@ sub B::CV::save {
                          .'start root xsub xsubany cv_gv cv_file cv_depth cv_padlist '
                          .'cv_outside cv_flags outside_seq');
       $xpvcvsect->add($xpvc);
-      $svsect->add(sprintf("&xpvcv_list[%d], %lu, 0x%x"),
+      $svsect->add(sprintf("&xpvcv_list[%d], %Lu, 0x%x"),
 		   $xpvcvsect->index, $cv->REFCNT, $cv->FLAGS);
       $svsect->debug( $fullname, $cv->flagspv ) if $debug{flags};
     } else {
@@ -4133,7 +4134,7 @@ sub B::CV::save {
   }
   if (!$new_cv_fw) {
     $symsect->add(sprintf(
-      "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x".($PERL510?", {0}":''),
+      "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x".($PERL510?", {0}":''),
       $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
       )
     );
@@ -4743,7 +4744,7 @@ sub B::AV::save {
     my $line = "Nullhv, {0}, -1, -1, 0";
     $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
     $xpvavsect->add($line);
-    $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
                          '0'));
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
@@ -4754,7 +4755,7 @@ sub B::AV::save {
     $line = "{0}, $fill, $max, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
     $line = "Nullhv, {0}, $fill, $max, NULL" if $PERL514;
     $xpvavsect->add($line);
-    $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x, {%s}",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS,
                          '0'));
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
@@ -4766,7 +4767,7 @@ sub B::AV::save {
     $line .= sprintf( ", 0x%x", $av->AvFLAGS ) if $] < 5.009;
     #$avreal = $av->AvFLAGS & 1; # AVf_REAL
     $xpvavsect->add($line);
-    $svsect->add(sprintf("&xpvav_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x",
                          $xpvavsect->index, $av->REFCNT, $av->FLAGS));
   }
 
@@ -5045,7 +5046,7 @@ sub B::HV::save {
       $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
 			       0, $hv->MAX, 0 ));
     }
-    $svsect->add(sprintf("&xpvhv_list[%d], %lu, 0x%x, {0}",
+    $svsect->add(sprintf("&xpvhv_list[%d], %Lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT,
 			 $hv->FLAGS & ~SVf_READONLY));
     # XXX failed at 16 (tied magic) for %main::
@@ -5068,7 +5069,7 @@ sub B::HV::save {
     $xpvhvsect->comment( "array fill max keys nv mg stash riter eiter pmroot name" );
     $xpvhvsect->add(sprintf( "0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
 			     $hv->MAX, $hv->RITER));
-    $svsect->add(sprintf( "&xpvhv_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf( "&xpvhv_list[%d], %Lu, 0x%x",
 			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
   }
   $svsect->debug($fullname, $hv->flagspv) if $debug{flags};
@@ -5228,7 +5229,7 @@ sub B::IO::save {
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
-    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvio_list[%d], %Lu, 0x%x, {%s}",
                          $xpviosect->index, $io->REFCNT, $io->FLAGS,
 			 $B::C::pv_copy_on_grow ? $pvsym : 0));
   }
@@ -5247,7 +5248,7 @@ sub B::IO::save {
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
-    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvio_list[%d], %Lu, 0x%x, {%s}",
                          $xpviosect->index, $io->REFCNT, $io->FLAGS,
 			 $B::C::pv_copy_on_grow ? $pvsym : 0));
   }
@@ -5267,7 +5268,7 @@ sub B::IO::save {
         cchar( $io->IoTYPE ),     $io->IoFLAGS
       )
     );
-    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x, {%s}",
+    $svsect->add(sprintf("&xpvio_list[%d], %Lu, 0x%x, {%s}",
                          $xpviosect->index, $io->REFCNT, $io->FLAGS,
 			 $B::C::pv_copy_on_grow ? $pvsym : 0));
   }
@@ -5284,7 +5285,7 @@ sub B::IO::save {
               cchar( $io->IoTYPE ),        $io->IoFLAGS
       )
     );
-    $svsect->add(sprintf("&xpvio_list[%d], %lu, 0x%x",
+    $svsect->add(sprintf("&xpvio_list[%d], %Lu, 0x%x",
                          $xpviosect->index, $io->REFCNT, $io->FLAGS));
   }
   $svsect->debug($fullname, $io->flagspv) if $debug{flags};
