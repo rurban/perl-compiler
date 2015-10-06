@@ -4514,7 +4514,6 @@ sub B::GV::save {
       my $cvsym;
       if ( $gvcv->XSUB and $fullname ne $origname ) {    #XSUB CONSTSUB alias
 	my $package = $gvcv->GV->EGV->STASH->NAME;
-        $origname = cstring( $origname );
         warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n" if $debug{pkg};
         mark_package($package, 1);
         {
