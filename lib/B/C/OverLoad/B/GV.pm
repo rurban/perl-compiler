@@ -12,6 +12,7 @@ use B::C::File qw/init init2/;
 use B::C::Helpers qw/mark_package get_cv_string read_utf8_string/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
+use B::C::Packages qw/mark_package_used/;
 
 my %gptable;
 
@@ -106,9 +107,11 @@ sub save {
         debug( gv => "Saving GV 0x%x as $sym", ref $gv ? $$gv : 0 );
     }
 
+    my $gvname = $gv->NAME();
+
     debug(
         gv => "  GV %s $sym type=%d, flags=0x%x",
-        $gv->name(),
+        $gvname,
 
         # B::SV::SvTYPE not with 5.6
         B::SV::SvTYPE($gv), $gv->FLAGS
@@ -119,7 +122,6 @@ sub save {
         return B::BM::save($gv);
     }
 
-    my $gvname = $gv->NAME;
     my $package;
     if ( ref( $gv->STASH ) eq 'B::SPECIAL' ) {
         $package = '__ANON__';
@@ -129,6 +131,13 @@ sub save {
         $package = $gv->STASH->NAME;
     }
     return $sym if B::C::skip_pkg($package);
+
+    # If we come across a stash hash, we therefore have code using it so we need to mark it was used so it won't be deleted.
+    if ( $gvname =~ m/::$/ ) {
+        my $package = $gvname;
+        $package =~ s/::$//;
+        mark_package_used($package);
+    }
 
     my $fullname = $package . "::" . $gvname;
     my $fancyname;
