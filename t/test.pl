@@ -659,7 +659,9 @@ sub run_cc_test {
         my $linkargs = ExtUtils::Embed::ldopts('-std');
         # At least cygwin gcc-4.3 crashes with 2x -fstack-protector
         $linkargs =~ s/-fstack-protector\b//
-          if $command =~ /-fstack-protector\b/ and $linkargs =~ /-fstack-protector\b/;
+          if $linkargs !~ /-fstack-protector-strong\b/
+          and $command =~ /-fstack-protector\b/
+          and $linkargs =~ /-fstack-protector\b/;
 	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.$so$/) {
 	    $command .= $linkargs;
 	} elsif ( $useshrplib and (-e "$libdir/$Config{libperl}" or -e "/usr/lib/$Config{libperl}")) {
