@@ -52,7 +52,7 @@ sub save {
 
     svsect()->add(
         sprintf(
-            "&xpvnv_list[%d], %lu, 0x%x %s",
+            "&xpvnv_list[%d], %Lu, 0x%x %s",
             xpvnvsect()->index, $sv->REFCNT, $sv->FLAGS,
             ", {" . ( C99() ? ".svu_pv=" : "" ) . "(char*)$savesym}"
         )

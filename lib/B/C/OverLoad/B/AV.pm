@@ -48,7 +48,7 @@ sub save {
         xpvavsect()->add($line);
         svsect()->add(
             sprintf(
-                "&xpvav_list[%d], %lu, 0x%x, {%s}",
+                "&xpvav_list[%d], %Lu, 0x%x, {%s}",
                 xpvavsect()->index, $av->REFCNT, $av->FLAGS,
                 '0'
             )

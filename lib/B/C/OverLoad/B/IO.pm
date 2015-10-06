@@ -83,7 +83,7 @@ sub save {
     );
     svsect()->add(
         sprintf(
-            "&xpvio_list[%d], %lu, 0x%x, {%s}",
+            "&xpvio_list[%d], %Lu, 0x%x, {%s}",
             xpviosect()->index, $io->REFCNT, $io->FLAGS,
             $B::C::pv_copy_on_grow ? $pvsym : 0
         )

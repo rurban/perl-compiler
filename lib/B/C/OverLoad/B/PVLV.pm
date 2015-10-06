@@ -37,7 +37,7 @@ sub save {
     );
     svsect()->add(
         sprintf(
-            "&xpvlv_list[%d], %lu, 0x%x, {(char*)%s}",
+            "&xpvlv_list[%d], %Lu, 0x%x, {(char*)%s}",
             xpvlvsect()->index, $sv->REFCNT, $sv->FLAGS, $pvsym
         )
     );

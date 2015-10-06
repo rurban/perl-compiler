@@ -453,7 +453,7 @@ sub save {
         $CvFLAGS &= ~0x400 if $gv and $$gv;    #CVf_CVGV_RC
         symsect()->add(
             sprintf(
-                "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}",
+                "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x, {0}",
                 $sv_ix, $xpvcv_ix, $cv->REFCNT, $CvFLAGS
             )
         );
@@ -527,7 +527,7 @@ sub save {
         symsect()->add("XPVCVIX$xpvcv_ix\t$xpvc");
 
         #symsect()->add
-        #  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}"),
+        #  (sprintf("CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x, {0}"),
         #	   $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
         #	  ));
     }
@@ -536,7 +536,7 @@ sub save {
         xpvcvsect()->add($xpvc);
         svsect()->add(
             sprintf(
-                "&xpvcv_list[%d], %lu, 0x%x, {0}",
+                "&xpvcv_list[%d], %Lu, 0x%x, {0}",
                 xpvcvsect()->index, $cv->REFCNT, $cv->FLAGS
             )
         );
@@ -676,7 +676,7 @@ sub save {
     if ( !$new_cv_fw ) {
         symsect()->add(
             sprintf(
-                "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %lu, 0x%x, {0}",
+                "CVIX%d\t(XPVCV*)&xpvcv_list[%u], %Lu, 0x%x, {0}",
                 $sv_ix, $xpvcv_ix, $cv->REFCNT, $cv->FLAGS
             )
         );

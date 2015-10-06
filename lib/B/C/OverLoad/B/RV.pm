@@ -29,7 +29,7 @@ sub save {
     # initializer element is computable at load time
     svsect()->add(
         sprintf(
-            "ptr_undef, %lu, 0x%x, {%s}", $sv->REFCNT, $flags,
+            "ptr_undef, %Lu, 0x%x, {%s}", $sv->REFCNT, $flags,
             ( is_constant($rv) ? ".svu_rv=$rv" : "0 /* $rv */" )
         )
     );

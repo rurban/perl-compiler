@@ -100,7 +100,7 @@ sub save {
 
     svsect()->add(
         sprintf(
-            "&xpvhv_list[%d], %lu, 0x%x, {0}",
+            "&xpvhv_list[%d], %Lu, 0x%x, {0}",
             xpvhvsect()->index, $hv->REFCNT,
             $hv->FLAGS & ~SVf_READONLY
         )

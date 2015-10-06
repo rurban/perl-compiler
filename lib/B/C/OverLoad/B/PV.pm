@@ -41,7 +41,7 @@ sub save {
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, $len ) );
     svsect()->add(
         sprintf(
-            "&xpv_list[%d], %lu, 0x%x, {%s}",
+            "&xpv_list[%d], %Lu, 0x%x, {%s}",
             xpvsect()->index, $refcnt, $flags,
             $savesym eq 'NULL'
             ? '0'

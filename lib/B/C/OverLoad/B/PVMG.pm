@@ -69,7 +69,7 @@ sub save {
 
     svsect()->add(
         sprintf(
-            "&xpvmg_list[%d], %lu, 0x%x, {%s}",
+            "&xpvmg_list[%d], %Lu, 0x%x, {%s}",
             xpvmgsect()->index, $sv->REFCNT, $sv->FLAGS,
             $savesym eq 'NULL'
             ? '0'
@@ -326,7 +326,7 @@ sub _patch_dlsym {
                     $name .= "_encoding" if $name !~ /_encoding$/;
                     mark_package($pkg);
                     if ( $pkg ne 'Encode' ) {
-                        verbose("saving $pkg" . "::bootstrap");
+                        verbose( "saving $pkg" . "::bootstrap" );
                         svref_2object( \&{"$pkg\::bootstrap"} )->save;
                         mark_package('Encode');
                     }
