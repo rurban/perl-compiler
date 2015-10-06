@@ -3842,7 +3842,7 @@ sub B::CV::save {
       warn sprintf( "saving PADLIST 0x%x for CV 0x%x\n", $$padlist, $$cv )
         if $debug{cv} and $debug{gv};
       # XXX avlen 2
-      $padlistsym = $padlist->save($fullname.' :pad');
+      $padlistsym = $padlist->save($fullname.' :pad', $cv);
       warn sprintf( "done saving %s 0x%x for CV 0x%x\n",
 		    $padlistsym, $$padlist, $$cv )
         if $debug{cv} and $debug{gv};
@@ -4694,7 +4694,7 @@ sub B::GV::save {
 }
 
 sub B::AV::save {
-  my ($av, $fullname) = @_;
+  my ($av, $fullname, $cv) = @_;
   my $sym = objsym($av);
   return $sym if defined $sym;
 
@@ -4724,19 +4724,23 @@ sub B::AV::save {
   }
   elsif ($ispadlist and $] >= 5.017006 and $] < 5.021008) { # id added again with b4db586814
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_outid");
-    my $outid = $av->REFCNT;
-    $padlistsect->add("$fill, NULL, $outid"); # Perl_pad_new(0)
+    $padlistsect->add("$fill, NULL, NULL"); # Perl_pad_new(0)
     $padlist_index = $padlistsect->index;
     $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+    if ($cv and $cv->OUTSIDE and ref($cv->OUTSIDE) ne 'B::SPECIAL' and $cv->OUTSIDE->PADLIST) {
+      my $outid = $cv->OUTSIDE->PADLIST->save();
+      $init->add("($sym)->xpadl_outid = (PADNAMELIST*)$outid;") if $outid;
+    }
   }
   elsif ($ispadlist and $] >= 5.017004) {
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
-    # my @array = $av->ARRAY;
-    # $fill = scalar @array;
     $padlistsect->add("$fill, NULL, 0, 0"); # Perl_pad_new(0)
-    # $init->add("pad_list[$padlist_index] = Perl_pad_new(0);");
     $padlist_index = $padlistsect->index;
     $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+    if ($cv and $cv->OUTSIDE and ref($cv->OUTSIDE) ne 'B::SPECIAL' and $cv->OUTSIDE->PADLIST) {
+      my $outid = $cv->OUTSIDE->PADLIST->save();
+      $init->add("($sym)->xpadl_outid = (PADNAMELIST*)$outid;") if $outid;
+    }
   }
   elsif ($PERL514) {
     # 5.13.3: STASH, MAGIC, fill max ALLOC
