@@ -25,9 +25,11 @@ sub save {
     $shared_hek = $shared_hek ? 1 : B::C::IsCOW_hek($sv);
     my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
     $static = 0 if !( $flags & SVf_ROK ) and $sv->PV and $sv->PV =~ /::bootstrap$/;
+
+    # sv_free2 problem with !SvIMMORTAL and del_SV
     my $refcnt = $sv->REFCNT;
     if ( $fullname eq 'svop const' ) {
-        $refcnt += 1000;
+        $refcnt = DEBUGGING() ? 1000 : 0x7fffffff;
     }
 
     # static pv, do not destruct. test 13 with pv0 "3".
