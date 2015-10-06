@@ -75,6 +75,7 @@ my %spectab = $PERL56 ? () : ( 0, 0 ); # we need the special Nullsv on 5.6 (?)
 my $tix     = $PERL56 ? 0 : 1;
 my %ops     = ( 0, 0 );
 my @packages;    # list of packages to compile. 5.6 only
+our $curcv;
 
 # sub asm ($;$$) { }
 sub nice ($) { }
@@ -99,6 +100,10 @@ if ($PERL56) {
   if ( $] > 5.017 and $] < 5.019004 and ($caller eq 'O' or $caller eq 'Od' )) {
     require XSLoader;
     XSLoader::load('B::C'); # for op->slabbed... workarounds
+  }
+  if ( $] > 5.021) { # for op_aux
+    require XSLoader;
+    XSLoader::load('B::C');
   }
 }
 
@@ -309,7 +314,7 @@ sub B::PADNAME::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($pn) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadnx", pvstring $pn->PVX;
+    asm "newpadnx", cstring $pn->PVX;
     $svtab{$$pn} = $varix = $ix = $tix++;
     $pn->bsave($ix);
     $ix;
@@ -702,6 +707,7 @@ sub B::IO::bsave {
 
 sub B::CV::bsave {
   my ( $cv, $ix ) = @_;
+  $B::Bytecode::curcv = $cv;
   my $stashix   = $cv->STASH->ix;
   my $gvix      = ($cv->GV and ref($cv->GV) ne 'B::SPECIAL') ? $cv->GV->ix : 0;
   my $padlistix = $cv->PADLIST->ix;
@@ -819,7 +825,7 @@ sub B::PADNAME::bsave {
   my $typeix = $pn->TYPE->ix;
   nice "-PADNAME-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padn_pv", pvstring $pn->PV if $pn->LEN;
+  asm "padn_pv", cstring $pn->PV if $pn->LEN;
   my $flags = $pn->FLAGS;
   asm "padn_flags", $flags & 0xff if $flags &0xff; # turn of SVf_FAKE, U8 only
   asm "padn_stash", $stashix if $stashix;
@@ -953,10 +959,14 @@ sub B::UNOP_AUX::bsave {
   my $flags   = $op->flags;
   my $first   = $op->first;
   my $firstix = $first->ix;
-  my $aux     = B::C::aux($op);
+  my $aux     = $op->aux;
+  my @aux_list = $op->aux_list($B::Bytecode::curcv);
+  for my $item (@aux_list) {
+    $item->ix if ref $item;
+  }
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
-  asm "op_aux",   $aux;
+  asm "unop_aux",   cstring($op->aux);
 }
 
 sub B::METHOP::bsave {
@@ -1516,6 +1526,7 @@ use ByteLoader '$ByteLoader::VERSION';
     save_init_end;
 
     unless ($module) {
+      $B::Bytecode::curcv = main_cv;
       nice '<main_start>';
       asm "main_start", $PERL56 ? main_start->ix : main_start->opwalk;
       #asm "main_start", main_start->opwalk;
