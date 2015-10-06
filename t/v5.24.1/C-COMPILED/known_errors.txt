@@ -90,7 +90,7 @@ op/chr.t                     BC        op/chr.c is generated (-O3,-fno-fold)
 op/closure.t                 SIG       Exit signal is 11 SEGV
 op/concat2.t                 TESTS     Test results:
 op/const-optree.t            BC        op/const-optree.c is generated (-O3,-fno-fold)
-op/coreamp.t                 SIG       Exit signal is 11 SEGV
+op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic
 op/coresubs.t                PLAN      Plan was valid
 op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     BC        op/dbm.c is generated (-O3,-fno-fold)
