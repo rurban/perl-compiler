@@ -5,7 +5,7 @@ use strict;
 use Config;
 use B qw/cstring SVf_READONLY/;
 use B::C::Config;
-use B::C::File qw/init xpvhvsect svsect decl/;
+use B::C::File qw/init xpvhvsect svsect decl init2/;
 use B::C::Helpers qw/mark_package read_utf8_string/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
