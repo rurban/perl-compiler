@@ -183,7 +183,7 @@ re/overload.t                PLAN      Plan was valid
 re/pat.t                     SIG       Exit signal is 11 SEGV
 re/pat_advanced.t            PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
 re/pat_re_eval.t             PLAN      Plan was valid
-re/pat_rt_report.t           PLAN      TODO: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
+re/pat_rt_report.t           SIG       Was: String found where operator expected at (eval 7) line 1, near "func "in multiline regexp"" also Issue 349
 re/qr_gc.t                   TESTS     Test results:
 re/reg_eval_scope.t          SIG       Exit signal is 11 SEGV
 re/reg_fold.t                PLAN      Plan was valid
