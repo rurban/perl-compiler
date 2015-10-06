@@ -1427,7 +1427,6 @@ sub B::UNOP_AUX::save {
   return $sym if defined $sym;
   # const and sv already at compile-time, gv deferred to init-time.
   # The aux buffer in core has internally a length prefix. our C.xs aux method adds that also.
-  my $aux = $op->aux;
   my @aux_list = $op->aux_list($B::C::curcv);
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
@@ -6044,7 +6043,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
 _EOT7
 
     for (0 .. $#B::C::static_free) {
-      # set the sv/xpv to &PL_sv_undef, not the pv itself. 
+      # set the sv/xpv to &PL_sv_undef, not the pv itself.
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
       # XXX Another idea >5.10 is SvFLAGS(pv) = SVTYPEMASK
       my $s = $B::C::static_free[$_];
@@ -7663,7 +7662,7 @@ OPTION:
         elsif ( $arg eq "r" ) {
           $debug{runtime}++;
 	  $SIG{__WARN__} = sub {
-	    warn @_; 
+	    warn @_;
 	    my $s = join(" ", @_);
 	    chomp $s;
 	    $init->add("/* ".$s." */") if $init;
@@ -7964,7 +7963,7 @@ of C<-fcog>, see C<-fconst-strings> instead.
 
 =item B<-fav-init>
 
-Faster pre-initialization of AVs (arrays and pads). 
+Faster pre-initialization of AVs (arrays and pads).
 Also used if -fav-init2 is used and independent_comalloc() is not detected.
 
 Enabled with C<-O1>.
