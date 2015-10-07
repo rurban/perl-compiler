@@ -4722,6 +4722,12 @@ sub B::AV::save {
     $sym = savesym( $av, "&padnamelist_list[$padnl_index]" );
     push @B::C::static_free, $sym;
   }
+  elsif ($ispadlist and $] >= 5.021008) { # id+outid as U32 (PL_padlist_generation++)
+    $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
+    $padlistsect->add("$fill, NULL, 0, 0");
+    $padlist_index = $padlistsect->index;
+    $sym = savesym( $av, "&padlist_list[$padlist_index]" );
+  }
   elsif ($ispadlist and $] >= 5.017006 and $] < 5.021008) { # id added again with b4db586814
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_outid");
     $padlistsect->add("$fill, NULL, NULL"); # Perl_pad_new(0)
