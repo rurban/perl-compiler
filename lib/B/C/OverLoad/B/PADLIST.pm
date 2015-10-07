@@ -12,7 +12,8 @@ sub add_to_section {    # id+outid as U32 (PL_padlist_generation++)
     my $fill = $self->fill;
 
     padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
-    padlistsect()->add("$fill, NULL, 0, 0");
+    my ( $id, $outid ) = ( $self->ID, $self->OUTID );
+    padlistsect()->add("$fill, NULL, $id, $outid");
     my $padlist_index = padlistsect()->index;
 
     return savesym( $self, "&padlist_list[$padlist_index]" );

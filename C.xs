@@ -19,6 +19,7 @@
 #endif
 
 typedef struct magic  *B__MAGIC;
+typedef PADLIST  *B__PADLIST;
 typedef struct p5rx  *B__REGEXP;
 typedef COP  *B__COP;
 typedef OP   *B__OP;
@@ -150,6 +151,17 @@ my_runops(pTHX)
 }
 
 MODULE = B__MAGIC	PACKAGE = B::MAGIC
+
+MODULE = B     PACKAGE = B::PADLIST    PREFIX = Padlist
+
+U32
+PadlistID(padlist)
+       B::PADLIST      padlist
+    ALIAS: B::PADLIST::OUTID = 1
+    CODE:
+        RETVAL = ix ? padlist->xpadl_outid : padlist->xpadl_id;
+    OUTPUT:
+       RETVAL
 
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
 
