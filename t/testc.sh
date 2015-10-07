@@ -934,7 +934,7 @@ result[245]='a: 223 ; b: 223
 a: 223 ; b: 223 [ from foo ]'
 # see t/issue235.t test 2
 tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
-result[246]='Not enough arguments for main::foo at (eval 1) line 2, at EOF'
+result[246]='Not enough arguments for main::foo at (eval 1) line 1, at EOF'
 tests[247]='# WontFix
 no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
 tests[248]='#WONTFIX lexical $_ in re-eval
