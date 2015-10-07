@@ -194,17 +194,17 @@ sub should_save {
     }
 
     # If this package is in the same file as main:: or our source, save it. (72, 73)
-    if ($mainfile) {
+    if ($B::C::mainfile) {
 
         # Find the first cv in this package for CV->FILE
         no strict 'refs';
         for my $sym ( sort keys %{ $package . '::' } ) {
             if ( defined &{ $package . '::' . $sym } ) {
 
-                # compare cv->FILE to $mainfile
+                # compare cv->FILE to $B::C::mainfile
                 my $cv = svref_2object( \&{ $package . '::' . $sym } );
                 if ( $cv and $cv->can('FILE') and $cv->FILE ) {
-                    mark_package_used($package) if $mainfile eq $cv->FILE;
+                    mark_package_used($package) if $B::C::mainfile eq $cv->FILE;
                     last;
                 }
             }
