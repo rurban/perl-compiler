@@ -996,19 +996,18 @@ sub save_hek {
 }
 
 sub gv_fetchpvn {
-  my ($name, $flags, $isutf8, $type) = @_;
-  my $cname = cstring($name);
+  my ($name, $flags, $type) = @_;
   if ($] >= 5.009002) {
-    my ($len, $utf8);
-    if ($isutf8) {
-      my $uname = $name;
-      $len = utf8::upgrade($uname);
-      $flags .= length($flags) ? " | SVf_UTF8" : "SVf_UTF8";
-    } else {
-      $len = length($name);
+    my ($cname, $len, $extraflags) = strlen_flags($name);
+    $flags ||= '0';
+    $flags .= "|".$extraflags if $extraflags;
+
+    if ( $flags =~ qr{^0?$} ) { # use c length
+        return qq/gv_fetchpv($cname, 0, $type)/;
     }
     return "gv_fetchpvn_flags($cname, $len, $flags, $type)";
   } else {
+    my $cname = cstring($name);
     return "gv_fetchpv($cname, $flags, $type)";
   }
 }
@@ -1017,18 +1016,12 @@ sub gv_fetchpvn {
 sub get_cv {
   my ($name, $flags) = @_;
   $flags = "0" unless $flags;
-  my $cname = cstring($name);
   if ($] >= 5.009002) {
-    my $len;
-    if (!$PERL56 and utf8::is_utf8($name)) {
-      my $uname = $name;
-      $len = utf8::upgrade($uname);
-      $flags .= " | SVf_UTF8";
-    } else {
-      $len = length($name);
-    }
+    my ($cname, $len, $extraflags) = strlen_flags($name);
+    $flags .= "|".$extraflags if $extraflags;
     return qq[get_cvn_flags($cname, $len, $flags)];
   } else {
+    my $cname = cstring($name);
    return qq[get_cv($cname, $flags)];
   }
 }
@@ -4216,7 +4209,6 @@ sub B::GV::save {
   return $sym if skip_pkg($package);
 
   my $fullname = $package . "::" . $gvname;
-  my $isutf8   = !$PERL56 and utf8::is_utf8($fullname);
   my $fancyname;
   if ( $filter and $filter =~ m/ :pad/ ) {
     $fancyname = cstring($filter);
@@ -4328,7 +4320,7 @@ sub B::GV::save {
                   )) if $debug{gv};
       # Shared glob *foo = *bar
       $init->add("$sym = ".gv_fetchpvn($package eq 'main' ? $gvname : $fullname,
-                                       "$gvadd|GV_ADDMULTI", $isutf8, "SVt_PVGV").";");
+                                       "$gvadd|GV_ADDMULTI", "SVt_PVGV").";");
       $init->add( "GvGP_set($sym, GvGP($egvsym));" );
       $is_empty = 1;
     }
@@ -4337,7 +4329,7 @@ sub B::GV::save {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add("$sym = ".gv_fetchpvn($name, $notqual, $isutf8, "SVt_PVGV").";");
+      $init->add("$sym = ".gv_fetchpvn($name, $notqual, "SVt_PVGV").";");
       $init->add( sprintf("GvGP_set($sym, %s);", $gptable{0+$gp}) );
       $is_empty = 1;
     }
@@ -4346,7 +4338,7 @@ sub B::GV::save {
                    $svflags, $debug{flags} ? "(".$gv->flagspv.")" : "",
                    $gv->FILE, $gp
                   )) if $debug{gv};
-      $init->add("$sym = ".gv_fetchpvn($name, "GV_ADD", $isutf8, "SVt_PVHV").";");
+      $init->add("$sym = ".gv_fetchpvn($name, "GV_ADD", "SVt_PVHV").";");
       $gptable{0+$gp} = "GvGP($sym)" if 0+$gp;
     }
     elsif ( $gp and !$is_empty ) {
@@ -4355,17 +4347,17 @@ sub B::GV::save {
                    $gv->FILE, $gp
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-      $init->add("$sym = ".gv_fetchpvn($name, $gvadd, $isutf8, "SVt_PV").";");
+      $init->add("$sym = ".gv_fetchpvn($name, $gvadd, "SVt_PV").";");
       #$init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
       $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
       $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
-      $init->add("$sym = ".gv_fetchpvn($name, $gvadd, $isutf8, "SVt_PVGV").";");
+      $init->add("$sym = ".gv_fetchpvn($name, $gvadd, "SVt_PVGV").";");
       # $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
     }
   } elsif (!$is_coresym) {
-    $init->add("$sym = ".gv_fetchpvn($name, $gvadd, $isutf8, "SVt_PV").";");
+    $init->add("$sym = ".gv_fetchpvn($name, $gvadd, "SVt_PV").";");
     # $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
   }
   my $gvflags = $gv->GvFLAGS;
@@ -5041,13 +5033,13 @@ sub B::HV::save {
     my $adpmroot = 0;
     $decl->add("Static HV *hv$hv_index;");
 
-    my $cname = cstring($name);
-    my $len = length(pack "a*", $name); # not yet 0-byte safe. HEK len really
-    # TODO utf8 stashes
+    my ( $cname, $name_len, $name_extraflags ) = strlen_flags($name);
     if ($name eq 'main') {
-      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, 0);\t/* get main:: stash */]);
+      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $name_len, 0);\t/* get main:: stash */]);
     } else {
-      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $len, GV_ADD);\t/* stash */]);
+      my $flags = 'GV_ADD';
+      $flags .= '|'.$name_extraflags if $name_extraflags;
+      $init->add(qq[hv$hv_index = gv_stashpvn($cname, $name_len, $flags);\t/* stash */]);
     }
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
