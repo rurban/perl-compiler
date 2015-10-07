@@ -155,7 +155,7 @@ function ctest {
 	      runopt $o 1 && \
 	        runopt $o 2 && \
 	        runopt $o 3 && \
-	        runopt $o 4
+	        true #runopt $o 4
             fi
 	    true
 	else
