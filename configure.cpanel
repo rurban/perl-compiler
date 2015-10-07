@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export PATH=/usr/local/cpanel/3rdparty/perl/522/bin:$PATH
+export PATH=/usr/local/cpanel/3rdparty/perl/522-debug/bin/:$PATH
 
 set -e
 
