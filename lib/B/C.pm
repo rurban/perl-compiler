@@ -84,6 +84,7 @@ sub typename {
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
   $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
+  $typename = 'MyPADNAME' if $typename eq 'PADNAME' and $] > 5.021007;
   return $typename;
 }
 
@@ -2791,8 +2792,12 @@ sub B::PADNAME::save {
   my $tn = $type->save($fullname);
   my $refcnt = $pn->REFCNT;
   $refcnt++ if $refcnt < 1000; # XXX protect from free, but allow SvREFCOUNT_IMMORTAL
-  $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
-  $padnamesect->add( sprintf( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x",
+  if ($PERL522) {
+    $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str[1]");
+  } else {
+    $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
+  }
+  $padnamesect->add( sprintf( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x" . ($PERL522 ? ', "$"' : ""),
                               cstring($pn->PVX),
                               is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
                               is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
@@ -5629,6 +5634,11 @@ sub output_declarations {
 #define sym_0 0
 EOT
 
+  if ($] > 5.021007) {
+    print "typedef struct padname_with_str MyPADNAME;\n";
+  } else {
+    print "typedef PADNAME MyPADNAME;\n";
+  }
   # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.
   # gcc error: initializer element is not computable at load time
