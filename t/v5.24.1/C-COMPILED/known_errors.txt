@@ -39,6 +39,7 @@ io/iofile.t                  SIG       BC issue #207 - reused variable conflict 
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 io/open.t                    SIG       BC issue #219 (overload) - new tests in upstream since 5.14.4
 io/perlio.t                  SIG       Exit signal is 11 SEGV
+mro/basic.t                  SIG       Exit signal is 6 SIGABRT
 mro/basic_01_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_02_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_03_c3_utf8.t       TESTS     some tests are now failing
@@ -50,8 +51,8 @@ mro/c3_with_overload_utf8.t  TESTS     TODO: overload not working right
 mro/complex_c3.t             SIG       TODO: segfault
 mro/complex_c3_utf8.t        SIG       TODO: segfault
 mro/dbic_c3_utf8.t           TESTS     TODO: Wide character in print at t/test.pl line 38.
-mro/isarev.t                 TESTS     Test results:
-mro/isarev_utf8.t            TESTS     Test results:
+mro/isarev.t                 SIG       Exit signal is 6 SIGABRT
+mro/isarev_utf8.t            SIG       Exit signal is 6 SIGABRT
 mro/method_caching_utf8.t    PLAN      Plan was valid
 mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
 mro/next_edgecases_utf8.t    PLAN      Plan was valid
@@ -132,6 +133,7 @@ op/magic-27839.t             BC        op/magic-27839.c is generated (-O3,-fno-f
 op/magic.t                   SIG       Exit signal is 11 SEGV
 op/method.t                  PLAN      Plan was valid
 op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fold)
+op/my.t                      SIG       Exit signal is 6 SIGABRT
 op/mydef.t                   TESTS     Test results:
 op/ord.t                     BC        op/ord.c is generated (-O3,-fno-fold)
 op/overload_integer.t        PLAN      Plan was valid
@@ -150,6 +152,7 @@ op/repeat.t                  BC        op/repeat.c is generated (-O3,-fno-fold)
 op/require_override.t        TESTS     Test results:
 op/reset.t                   TESTS     Test results:
 op/reverse.t                 TESTS     Test results:
+op/select.t                  SIG       Exit signal is 6 SIGABRT
 op/signatures.t              PLAN      Plan was valid
 op/smartkve.t                TESTS     Test results:
 op/smartmatch.t              TESTS     Test results:
