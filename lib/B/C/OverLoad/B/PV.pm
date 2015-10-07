@@ -48,27 +48,28 @@ sub save {
             : ( C99() ? ".svu_pv=(char*)" : "(char*)" ) . $savesym
         )
     );
+    my $svix = svsect()->index;
     if ( defined($pv) and !$static ) {
         if ($shared_hek) {
             my $hek = save_hek($pv);
-            init()->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", svsect()->index, $hek ) )
+            init()->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ) )
               unless $hek eq 'NULL';
         }
         else {
-            init()->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", svsect()->index ), $pv, $sv, $cur ) );
+            init()->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
         }
     }
     if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
         init()->add(
             sprintf(
                 qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
-                svsect()->index, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
-                svsect()->index, $sv->FLAGS
+                $svix, cstring($pv) eq '0' ? q{"NULL"} : cstring($pv),
+                $svix, $sv->FLAGS
             )
         );
     }
 
-    my $s = "sv_list[" . svsect()->index . "]";
+    my $s = "sv_list[$svix]";
     svsect()->debug( $fullname, $sv );
 
     return savesym( $sv, "&" . $s );
