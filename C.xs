@@ -26,6 +26,9 @@
 #endif
 
 typedef struct magic  *B__MAGIC;
+#if PERL_VERSION > 21
+typedef PADLIST  *B__PADLIST;
+#endif
 #if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
 #endif
@@ -250,6 +253,21 @@ CODE:
 OUTPUT:
     RETVAL
           
+#endif
+
+#if PERL_VERSION > 21
+
+MODULE = B	PACKAGE = B::PADLIST	PREFIX = Padlist
+
+U32
+PadlistID(padlist)
+	B::PADLIST	padlist
+    ALIAS: B::PADLIST::OUTID = 1
+    CODE:
+        RETVAL = ix ? padlist->xpadl_outid : padlist->xpadl_id;
+    OUTPUT:
+	RETVAL
+
 #endif
 
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
