@@ -2798,21 +2798,18 @@ sub B::PADNAME::save {
     $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
   }
   my $str = $pn->PVX;
-  my $cstr = cstring($str); # GH #230
-  if ($cstr eq '"\0all_info"') {
-    $cstr = '"%call_info"';
-  }
+  my $cstr = cstring($str);
   $padnamesect->add( sprintf
       ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x"
         # ignore warning: initializer-string for array of chars is too long
-        . ($PERL522 ? ", ".$cstr : ""),
+        . ($PERL522 ? ", %s" : ""),
         $PERL522 ? 'NULL' : $cstr,
         is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
         is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
         $pn->COP_SEQ_RANGE_LOW,
         $pn->COP_SEQ_RANGE_HIGH,
         $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
-        $gen, $pn->LEN, $flags));
+        $gen, $pn->LEN, $flags, $PERL522 ? $cstr : ()));
   if ( $PERL522 and $pn->LEN > 60 ) {
     # Houston we have a problem, need to allocate this padname dynamically. Not done yet
     die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
