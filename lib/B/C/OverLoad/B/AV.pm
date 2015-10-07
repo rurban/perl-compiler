@@ -38,7 +38,7 @@ sub save {
     my ( $magic, $av_index ) = ('');
 
     if ( $av->can('add_to_section') ) {    # PADLIST or PADNAMELIST
-        $sym = $av->add_to_section($cv);
+        $sym = $av->add_to_section($cv);    # $cv is currently unused
     }
     else {
         # 5.14

@@ -6,26 +6,16 @@ our @ISA = qw(B::AV);
 use B::C::File qw/init padlistsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
-sub add_to_section {
+sub add_to_section {    # id+outid as U32 (PL_padlist_generation++)
     my ( $self, $cv ) = @_;
 
-    padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_outid");
-    padlistsect()->add( $self->fill() . ", NULL, 0, 0" );    # Perl_pad_new(0)
+    my $fill = $self->fill;
 
+    padlistsect()->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
+    padlistsect()->add("$fill, NULL, 0, 0");
     my $padlist_index = padlistsect()->index;
 
-    # could save sym to the object to reuse it in add_to_init
-    my $sym = savesym( $self, "&padlist_list[$padlist_index]" );
-
-    if (    $cv
-        and $cv->OUTSIDE
-        and ref( $cv->OUTSIDE ) ne 'B::SPECIAL'
-        and $cv->OUTSIDE->PADLIST ) {
-        my $outid = $cv->OUTSIDE->PADLIST->save();
-        init()->add("($sym)->xpadl_outid = (PADNAMELIST*)$outid;") if $outid;
-    }
-
-    return $sym;
+    return savesym( $self, "&padlist_list[$padlist_index]" );
 }
 
 sub add_to_init {
