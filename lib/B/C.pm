@@ -84,6 +84,7 @@ sub typename {
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
   $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
+  $typename = 'MyPADNAME' if $typename eq 'PADNAME' and $] > 5.021006;
   return $typename;
 }
 
@@ -471,7 +472,7 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount
 my $CPERL51  = ( $Config{usecperl} );
-my $PERL522  = ( $] >= 5.021007 ); #PADNAMELIST, IsCOW
+my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
@@ -2791,21 +2792,39 @@ sub B::PADNAME::save {
   my $tn = $type->save($fullname);
   my $refcnt = $pn->REFCNT;
   $refcnt++ if $refcnt < 1000; # XXX protect from free, but allow SvREFCOUNT_IMMORTAL
-  $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
-  $padnamesect->add( sprintf( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x",
-                              cstring($pn->PVX),
-                              is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
-                              is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
-                              $pn->COP_SEQ_RANGE_LOW,
-                              $pn->COP_SEQ_RANGE_HIGH,
-                              $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
-                              $gen, $pn->LEN, $flags));
+  if ($PERL522) {
+    $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
+  } else {
+    $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
+  }
+  my $str = $pn->PVX;
+  my $cstr = cstring($str); # GH #230
+  if ($cstr eq '"\0all_info"') {
+    $cstr = '"%call_info"';
+  }
+  $padnamesect->add( sprintf
+      ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x"
+        # ignore warning: initializer-string for array of chars is too long
+        . ($PERL522 ? ", ".$cstr : ""),
+        $PERL522 ? 'NULL' : $cstr,
+        is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
+        is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
+        $pn->COP_SEQ_RANGE_LOW,
+        $pn->COP_SEQ_RANGE_HIGH,
+        $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
+        $gen, $pn->LEN, $flags));
+  if ( $PERL522 and $pn->LEN > 60 ) {
+    # Houston we have a problem, need to allocate this padname dynamically. Not done yet
+    die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
+  }
   my $s = "&padname_list[".$padnamesect->index."]";
-  $padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
+  $padnamesect->debug( $fullname." ".$str, $pn->flagspv ) if $debug{flags};
   $init->add("SvOURSTASH_set($s, $sn);") unless is_constant($sn);
   $init->add("PadnameTYPE($s) = (HV*)$tn;") unless is_constant($tn);
+  # 5.22 needs the buffer to be at the end, and the pointer pointing to it.
+  # We allocate a static buffer and adjust pv at init.
+  $init->add("PadnamePV($s) = ((MyPADNAME *)$s)->xpadn_str;") if $PERL522;
   push @B::C::static_free, $s;
-  #$padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
   savesym( $pn, $s );
 }
 
@@ -4224,6 +4243,14 @@ sub B::GV::save {
   my $egvsym;
   my $is_special = ref($gv) eq 'B::SPECIAL';
 
+  # If we come across a stash, we therefore have code using this symbol.
+  # But this does not mean that we need to save the package then.
+  # if (defined %Exporter::) should not import Exporter, it should return undef.
+  #if ( $gvname =~ m/::$/ ) {
+  #  my $package = $gvname;
+  #  $package =~ s/::$//;
+  #  mark_package($package); #wrong
+  #}
   if ($fullname =~ /^(bytes|utf8)::AUTOLOAD$/) {
     $gv = force_heavy($package); # defer to run-time autoload, or compile it in?
     $sym = savesym( $gv, $sym ); # override new gv ptr to sym
@@ -4721,7 +4748,7 @@ sub B::AV::save {
   my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
   $svpcast = "(PADNAME*)" if $ispadnamelist;
 
-  if ($] >= 5.021007 and $ispadnamelist) {
+  if ($] >= 5.021006 and $ispadnamelist) {
     $padnlsect->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
     # TODO: max_named walk all names and look for non-empty names
     my $refcnt = $av->REFCNT + 1; # XXX defer free to global destruction: 28
@@ -5629,6 +5656,39 @@ sub output_declarations {
 #define sym_0 0
 EOT
 
+  if ($] > 5.021006) {
+    print <<'EOF';
+/* unfortunately we have to override this perl5.22 struct.
+   The Padname string buffer in xpadn_str is pointed by xpadn_pv.
+    */
+#define _PADNAME_BASE \
+    char *	xpadn_pv;		\
+    HV *	xpadn_ourstash;		\
+    union {				\
+	HV *	xpadn_typestash;	\
+	CV *	xpadn_protocv;		\
+    } xpadn_type_u;			\
+    U32		xpadn_low;		\
+    U32		xpadn_high;		\
+    U32		xpadn_refcnt;		\
+    int		xpadn_gen;		\
+    U8		xpadn_len;		\
+    U8		xpadn_flags
+
+struct my_padname_with_str {
+#ifdef PERL_PADNAME_MINIMAL
+    _PADNAME_BASE;
+#else
+    struct padname	xpadn_padname;
+#endif
+    char		xpadn_str[60]; /* longer lexical upval names are forbidden for now */
+};
+typedef struct my_padname_with_str MyPADNAME;
+EOF
+
+  } else {
+    print "typedef PADNAME MyPADNAME;\n";
+  }
   # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.
   # gcc error: initializer element is not computable at load time
