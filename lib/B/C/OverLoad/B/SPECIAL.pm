@@ -1,7 +1,7 @@
 package B::SPECIAL;
 
 use strict;
-use B::Asmdata qw(@specialsv_name);
+use B qw( @specialsv_name);
 
 sub save {
     my ( $sv, $fullname ) = @_;

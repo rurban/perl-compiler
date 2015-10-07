@@ -1712,7 +1712,7 @@ sub compile {
     $B::C::dyn_padlist      = 1;                                                 # default is dynamic and safe, disable with -O4
     $B::C::walkall          = 1;
 
-    mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
+    mark_skip qw(B::C B::C::Flags B::CC B::FAKEOP O
       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
 
     #mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
