@@ -9,6 +9,12 @@ source .gdb/perl
 #break __asan_report_error
 #b Perl_pp_multideref
 
+b Perl_pp_entereval
+command
+p/x *PL_comppad_name
+p *(PL_comppad_name->xpadnl_alloc)[1]
+end
+
 b dump.c:2384
 command
 echo actions\n

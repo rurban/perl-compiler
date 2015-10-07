@@ -1441,7 +1441,7 @@ sub B::UNOP::save {
 
 sub is_constant {
   my $s = shift;
-  return 1 if $s =~ /^(&sv_list|\-?\d+)/; # not gv_list, hek
+  return 1 if $s =~ /^(&sv_list|\-?\d+|Nullsv)/; # not gv_list, hek
   return 0;
 }
 
@@ -2782,23 +2782,28 @@ sub B::PADNAME::save {
     }
     return $sym;
   }
-  my $flags = $pn->FLAGS; # U8 + FAKE
-  my $gen = 0;
-  my $stash = $pn->OURSTASH;
-  my $type = $pn->TYPE;
-  $padnamesect->comment( " pv, ourstash, type, low, high, refcnt, gen, len, flags");
-  $padnamesect->add( sprintf( "%s, NULL, {NULL}, %uU, %uU, %uU, %uU, %uU, 0x%x",
-                              cstring($pn->PVX),
-                              $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_LOW : 0,
-                              $flags & SVf_FAKE ? $pn->COP_SEQ_RANGE_HIGH : 0,
-                              $pn->REFCNT + 1, # XXX protect from free
-                              $gen, $pn->LEN,
-                              $flags & 0xff));
-  my $s = "&padname_list[".$padnamesect->index."]";
+  my $flags = $pn->FLAGS; # U8 + FAKE if OUTER
+  $flags = $flags & 0xff;
+  my $gen    = $pn->GEN;
+  my $stash  = $pn->OURSTASH;
+  my $type   = $pn->TYPE;
   my $sn = $stash->save($fullname);
   my $tn = $type->save($fullname);
-  $init->add("SvOURSTASH_set($s, $sn);") unless $sn eq 'Nullsv';
-  $init->add("PadnameTYPE($s) = (HV*)$tn;") unless $tn eq 'Nullsv';
+  my $refcnt = $pn->REFCNT;
+  $refcnt++ if $refcnt < 1000; # XXX protect from free, but allow SvREFCOUNT_IMMORTAL
+  $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
+  $padnamesect->add( sprintf( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x",
+                              cstring($pn->PVX),
+                              is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
+                              is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
+                              $pn->COP_SEQ_RANGE_LOW,
+                              $pn->COP_SEQ_RANGE_HIGH,
+                              $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
+                              $gen, $pn->LEN, $flags));
+  my $s = "&padname_list[".$padnamesect->index."]";
+  $padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
+  $init->add("SvOURSTASH_set($s, $sn);") unless is_constant($sn);
+  $init->add("PadnameTYPE($s) = (HV*)$tn;") unless is_constant($tn);
   push @B::C::static_free, $s;
   #$padnamesect->debug( $fullname, $pn->flagspv ) if $debug{flags};
   savesym( $pn, $s );
@@ -4720,7 +4725,8 @@ sub B::AV::save {
     $padnlsect->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
     # TODO: max_named walk all names and look for non-empty names
     my $refcnt = $av->REFCNT + 1; # XXX defer free to global destruction: 28
-    $padnlsect->add("$fill, NULL, $fill, $fill, $refcnt");
+    my $maxnamed = $av->MAXNAMED;
+    $padnlsect->add("$fill, NULL, $fill, $maxnamed, $refcnt /* +1 */");
     $padnl_index = $padnlsect->index;
     $sym = savesym( $av, "&padnamelist_list[$padnl_index]" );
     push @B::C::static_free, $sym;
