@@ -26,14 +26,6 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
     $extra_cflags .= " $e_c" if $e_c;
     $extra_libs .= " $e_l" if $e_l;
 }
-# cygwin still has the old gdb-6 debugger which does not understand dwarf4 features from gcc-4.5
-#if ($Config{gccversion} =~ /^4\.[56]\./) {
-#    my $gdb_ver = `gdb --version`;
-#    if ($gdb_ver =~ /gdb 6\./) {
-#        print "Adding extra_cflags=-gstrict-dwarf for gcc-4.5 for a gdb-6 debugger which does not understand dwarf4 features\n";
-#        $extra_cflags .= " -gstrict-dwarf";
-#    }
-#}
 
 sub b_c_deps {
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
@@ -93,7 +85,7 @@ WriteMakefile(
     NAME	 => "B::C",
     VERSION_FROM => "lib/B/C.pm",
     PL_FILES   => { 'script/perlcc.PL'    => 'script/perlcc' },
-    EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
+    EXE_FILES  => [qw(script/perlcc script/cc_harness)],
     PREREQ_PM  => {'Opcodes'  => '0',    # optional
 		   'IPC::Run' => '0',    # optional
 		   'B::Flags' => '0.04', # optional
@@ -322,29 +314,27 @@ TAGS :
 }
 
 sub test {
-    shift->SUPER::test(@_) . q(
+    shift->SUPER::test(@_) . qq(
 testmod :: pure_all
-	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t
+	PERL_DL_NONLAZY=1 \$(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t
 testmodall :: pure_all
-	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100
+	PERL_DL_NONLAZY=1 \$(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t -no-subset -no-date t/top100
 testc :: pure_all
-	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c.t
-	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c_o3.t
+	PERL_DL_NONLAZY=1 \$(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c.t
+	PERL_DL_NONLAZY=1 \$(FULLPERLRUN) -Iblib/arch -Iblib/lib t/c_o3.t
 testcc :: pure_all
-	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/cc.t
+	PERL_DL_NONLAZY=1 \$(FULLPERLRUN) -Iblib/arch -Iblib/lib t/cc.t
 testbc :: pure_all
 testfast :: pure_all
-	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10 -f
+	NO_AUTHOR=1 \$(FULLPERLRUN) -S prove -b -j10 -f
 testcritical :: pure_all
 	t/critical.sh
 teststatus :: pure_all
 	./status_upd -fqd
 testrelease :: pure_all
-	$(ECHO) run t/release-testing.sh and perlall testvm --all
+	\$(ECHO) run t/release-testing.sh and perlall testvm --all
 testcore :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED
-testcore-log :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED | tee log.test-core-`git describe --tags`
+	\$(FULLPERLRUN) -S prove -b -j4 -f t/$^V/C-COMPILED/*/*.t
 )
 }
 
