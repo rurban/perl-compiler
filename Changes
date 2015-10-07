@@ -6,6 +6,7 @@
 
 1.53
        * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
+       Add ops for padl, padn, padnl, unop_aux and methop needed for 5.22
        * C: fix B::PMOP::precomp for UTF8 (#333, #338, GH#50)
         Add 5.22 support with a new unop_aux (multideref) section, methop support,
         new PADNAME and PADNAMELIST objects and changed COP_SEQ_RANGE fields.
