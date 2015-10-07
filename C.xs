@@ -26,8 +26,12 @@
 #endif
 
 typedef struct magic  *B__MAGIC;
+#if PERL_VERSION > 17
+typedef PADNAME       *B__PADNAME;
+#endif
 #if PERL_VERSION > 21
-typedef PADLIST  *B__PADLIST;
+typedef PADLIST       *B__PADLIST;
+typedef PADNAMELIST   *B__PADNAMELIST;
 #endif
 #if PERL_VERSION >= 11
 typedef struct p5rx  *B__REGEXP;
@@ -255,6 +259,20 @@ OUTPUT:
           
 #endif
 
+#if PERL_VERSION > 17
+
+MODULE = B	PACKAGE = B::PADNAME	PREFIX = Padname
+
+int
+PadnameGEN(padn)
+	B::PADNAME	padn
+    CODE:
+        RETVAL = padn->xpadn_gen;
+    OUTPUT:
+	RETVAL
+
+#endif
+
 #if PERL_VERSION > 21
 
 MODULE = B	PACKAGE = B::PADLIST	PREFIX = Padlist
@@ -267,6 +285,12 @@ PadlistID(padlist)
         RETVAL = ix ? padlist->xpadl_outid : padlist->xpadl_id;
     OUTPUT:
 	RETVAL
+
+MODULE = B	PACKAGE = B::PADNAMELIST	PREFIX = Padnamelist
+
+size_t
+PadnamelistMAXNAMED(padnl)
+	B::PADNAMELIST	padnl
 
 #endif
 
