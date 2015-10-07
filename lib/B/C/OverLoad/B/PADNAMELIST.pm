@@ -14,7 +14,9 @@ sub add_to_section {
     # TODO: max_named walk all names and look for non-empty names
     my $refcnt = $self->REFCNT + 1;    # XXX defer free to global destruction: 28
     my $fill   = $self->fill;
-    padnamelistsect()->add("$fill, NULL, $fill, $fill, $refcnt");
+    my $maxnamed = $self->MAXNAMED;
+
+    padnamelistsect->add("$fill, NULL, $fill, $maxnamed, $refcnt /* +1 */");
 
     my $padnamelist_index = padnamelistsect()->index;
     my $sym = savesym( $self, "&padnamelist_list[$padnamelist_index]" );
