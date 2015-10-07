@@ -24,14 +24,16 @@
 #
 
 base/lex.t                   PLAN      BC issue #222 - Cannot use '<<' in regexp
+comp/bproto.t                SIG       Exit signal is 11 SEGV
 comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse behavior so not relevant to B::C
-comp/fold.t                  TESTS     Test results:
+comp/fold.t                  SIG       Exit signal is 11 SEGV
 comp/hints.t                 SKIP      tests are using BEGIN block, do not ready for B::C
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
-comp/proto.t                 TESTS     Test results:
+comp/proto.t                 SIG       Exit signal is 11 SEGV
 comp/require.t               BC        TODO fail to generate c file
-extra/reused-variable.t      PLAN      BC issue #207 - reused variable conflict - when not using my and later my + eval => conflict in the variable
+extra/reused-variable.t      SIG       Exit signal is 11 SEGV
 io/argv.t                    BC        io/argv.c is generated (-O3,-fno-fold)
+io/binmode.t                 SIG       Exit signal is 11 SEGV
 io/bom.t                     BC        io/bom.c is generated (-O3,-fno-fold)
 io/defout.t                  BC        io/defout.c is generated (-O3,-fno-fold)
 io/errno.t                   SIG       Exit signal is 11 SEGV
@@ -39,6 +41,8 @@ io/iofile.t                  SIG       BC issue #207 - reused variable conflict 
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 io/open.t                    SIG       BC issue #219 (overload) - new tests in upstream since 5.14.4
 io/perlio.t                  SIG       Exit signal is 11 SEGV
+io/shm.t                     TESTS     Test results:
+io/utf8.t                    SIG       Exit signal is 11 SEGV
 mro/basic.t                  SIG       Exit signal is 6 SIGABRT
 mro/basic_01_c3_utf8.t       TESTS     some tests are now failing
 mro/basic_02_c3_utf8.t       TESTS     some tests are now failing
@@ -74,17 +78,19 @@ mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   PLAN      Plan was valid
 mro/recursion_dfs.t          BC        mro/recursion_dfs.c is generated (-O3,-fno-fold)
 mro/vulcan_c3_utf8.t         TESTS     TODO: Malformed UTF-8.
-op/64bitint.t                TESTS     Test results:
+op/64bitint.t                SIG       Exit signal is 11 SEGV
 op/alarm.t                   BC        op/alarm.c is generated (-O3,-fno-fold)
 op/anonconst.t               BC        op/anonconst.c is generated (-O3,-fno-fold)
+op/append.t                  SIG       Exit signal is 11 SEGV
+op/array.t                   SIG       Exit signal is 11 SEGV
 op/array_base.t              PLAN      Plan was valid
 op/attrhand.t                PLAN      Plan was valid
 op/attrproto.t               PLAN      Plan was valid
 op/attrs.t                   PLAN      Plan was valid
 op/auto.t                    BC        op/auto.c is generated (-O3,-fno-fold)
-op/bless.t                   TESTS     Test results:
+op/bless.t                   SIG       Exit signal is 11 SEGV
 op/bop.t                     BC        op/bop.c is generated (-O3,-fno-fold)
-op/caller.t                  TESTS     Test results:
+op/caller.t                  SIG       Exit signal is 11 SEGV
 op/chop.t                    BC        op/chop.c is generated (-O3,-fno-fold)
 op/chr.t                     BC        op/chr.c is generated (-O3,-fno-fold)
 op/closure.t                 SIG       Exit signal is 11 SEGV
@@ -96,34 +102,39 @@ op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     BC        op/dbm.c is generated (-O3,-fno-fold)
 op/defins.t                  SIG       Exit signal is 11 SEGV
 op/die_keeperr.t             PLAN      Plan was valid
-op/do.t                      TESTS     Test results:
-op/each.t                    TESTS     Test results:
+op/do.t                      SIG       Exit signal is 11 SEGV
+op/dor.t                     SIG       Exit signal is 11 SEGV
+op/each.t                    SIG       Exit signal is 11 SEGV
 op/eval.t                    SKIP      TODO: infinite loop while running the binary
 op/evalbytes.t               BC        op/evalbytes.c is generated (-O3,-fno-fold)
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
-op/exp.t                     TESTS     Test results:
+op/exp.t                     SIG       Exit signal is 11 SEGV
 op/fh.t                      BC        op/fh.c is generated (-O3,-fno-fold)
-op/filetest.t                TESTS     Test results:
+op/filetest.t                SIG       Exit signal is 11 SEGV
+op/filetest_stack_ok.t       SIG       Exit signal is 11 SEGV
 op/fresh_perl_utf8.t         PLAN      Plan was valid
+op/getppid.t                 SIG       Exit signal is 11 SEGV
 op/glob.t                    SIG       Exit signal is 11 SEGV
-op/gmagic.t                  TESTS     Test results:
-op/goto.t                    TESTS     Test results:
+op/gmagic.t                  SIG       Exit signal is 11 SEGV
+op/goto.t                    SIG       Exit signal is 11 SEGV
 op/goto_xs.t                 SKIP      needs XS::APItest
 op/grep.t                    BC        op/grep.c is generated (-O3,-fno-fold)
 op/gv.t                      SIG       TODO: Segmentation Fault
 op/hash-rt85026.t            GCC       op/hash-rt85026.bin is compiled and ready to run.
-op/hash.t                    TESTS     Test results:
-op/hashassign.t              TESTS     Test results:
+op/hash.t                    SIG       Exit signal is 11 SEGV
+op/hashassign.t              SIG       Exit signal is 11 SEGV
 op/hexfp.t                   BC        op/hexfp.c is generated (-O3,-fno-fold)
 op/inc.t                     BC        op/inc.c is generated (-O3,-fno-fold)
+op/incfilter.t               SIG       Exit signal is 11 SEGV
 op/index.t                   PLAN      TODO: no output and Issue 247
 op/infnan.t                  BC        op/infnan.c is generated (-O3,-fno-fold)
+op/int.t                     SIG       Exit signal is 11 SEGV
 op/join.t                    TESTS     Test results:
-op/kvaslice.t                TESTS     Test results:
-op/kvhslice.t                TESTS     Test results:
+op/kvaslice.t                SIG       Exit signal is 11 SEGV
+op/kvhslice.t                SIG       Exit signal is 11 SEGV
 op/leaky-magic.t             TESTS     Test results:
 op/length.t                  TESTS     Test results:
-op/lex_assign.t              PLAN      Plan was valid
+op/lex_assign.t              SIG       Exit signal is 11 SEGV
 op/lexsub.t                  BC        TODO: Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
 op/list.t                    BC        op/list.c is generated (-O3,-fno-fold)
 op/local.t                   SIG       Exit signal is 11 SEGV
@@ -131,54 +142,60 @@ op/loopctl.t                 BC        op/loopctl.c is generated (-O3,-fno-fold)
 op/lvref.t                   PLAN      Plan was valid
 op/magic-27839.t             BC        op/magic-27839.c is generated (-O3,-fno-fold)
 op/magic.t                   SIG       Exit signal is 11 SEGV
-op/method.t                  PLAN      Plan was valid
+op/method.t                  SIG       Exit signal is 11 SEGV
 op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fold)
 op/my.t                      SIG       Exit signal is 6 SIGABRT
-op/mydef.t                   TESTS     Test results:
+op/mydef.t                   SIG       Exit signal is 11 SEGV
+op/not.t                     SIG       Exit signal is 11 SEGV
 op/ord.t                     BC        op/ord.c is generated (-O3,-fno-fold)
 op/overload_integer.t        PLAN      Plan was valid
 op/override.t                BC        op/override.c is generated (-O3,-fno-fold)
-op/pack.t                    PLAN      Plan was valid
+op/pack.t                    SIG       Exit signal is 11 SEGV
 op/packagev.t                BC        op/packagev.c is generated (-O3,-fno-fold)
 op/postfixderef.t            BC        op/postfixderef.c is generated (-O3,-fno-fold)
+op/pow.t                     SIG       Exit signal is 11 SEGV
 op/protowarn.t               PLAN      TODO: no output.
-op/pwent.t                   TESTS     Test results:
+op/pwent.t                   SIG       Exit signal is 11 SEGV
 op/read.t                    BC        op/read.c is generated (-O3,-fno-fold)
 op/readdir.t                 SIG       Exit signal is 11 SEGV
 op/readline.t                TESTS     Test results:
 op/recurse.t                 BC        op/recurse.c is generated (-O3,-fno-fold)
 op/ref.t                     SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
 op/repeat.t                  BC        op/repeat.c is generated (-O3,-fno-fold)
-op/require_override.t        TESTS     Test results:
+op/require_override.t        SIG       Exit signal is 11 SEGV
 op/reset.t                   TESTS     Test results:
-op/reverse.t                 TESTS     Test results:
 op/select.t                  SIG       Exit signal is 6 SIGABRT
 op/signatures.t              PLAN      Plan was valid
-op/smartkve.t                TESTS     Test results:
-op/smartmatch.t              TESTS     Test results:
-op/sort.t                    TESTS     Test results:
+op/smartkve.t                SIG       Exit signal is 11 SEGV
+op/smartmatch.t              SIG       Exit signal is 11 SEGV
+op/sort.t                    SIG       Exit signal is 11 SEGV
 op/sprintf.t                 BC        op/sprintf.c is generated (-O3,-fno-fold)
 op/sprintf2.t                TESTS     Test results:
-op/stash.t                   PLAN      Plan was valid
+op/stash.t                   SIG       Exit signal is 11 SEGV
+op/stat.t                    SIG       Exit signal is 11 SEGV
 op/state.t                   PLAN      Plan was valid
 op/sub.t                     PLAN      Plan was valid
-op/sub_lval.t                TESTS     Test results:
-op/substr.t                  TESTS     Test results:
+op/sub_lval.t                SIG       Exit signal is 11 SEGV
+op/substr.t                  SIG       Exit signal is 11 SEGV
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
 op/switch.t                  PLAN      Plan was valid
-op/taint.t                   TESTS     Test results:
+op/taint.t                   SIG       Exit signal is 11 SEGV
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
 op/tie_fetch_count.t         SIG       Exit signal is 11 SEGV
-op/universal.t               TESTS     Test results:
+op/tiearray.t                SIG       Exit signal is 11 SEGV
+op/tr.t                      SIG       Exit signal is 11 SEGV
+op/universal.t               SIG       Exit signal is 11 SEGV
 op/unlink.t                  BC        op/unlink.c is generated (-O3,-fno-fold)
+op/unshift.t                 SIG       Exit signal is 11 SEGV
 op/upgrade.t                 BC        op/upgrade.c is generated (-O3,-fno-fold)
 op/utf8cache.t               TESTS     Test results:
+op/utf8decode.t              SIG       Exit signal is 11 SEGV
 op/utf8magic.t               BC        op/utf8magic.c is generated (-O3,-fno-fold)
 op/vec.t                     SIG       Exit signal is 11 SEGV
-op/wantarray.t               TESTS     Test results:
+op/wantarray.t               SIG       Exit signal is 11 SEGV
 op/while.t                   BC        op/while.c is generated (-O3,-fno-fold)
-op/write.t                   PLAN      Plan was valid
+op/write.t                   SIG       Exit signal is 11 SEGV
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
 re/fold_grind.t              PLAN      Plan was valid
 re/overload.t                PLAN      Plan was valid
@@ -192,11 +209,13 @@ re/reg_fold.t                PLAN      Plan was valid
 re/reg_mesg.t                PLAN      Plan was valid
 re/reg_pmod.t                TESTS     Test results:
 re/regex_sets.t              SIG       Exit signal is 11 SEGV
-re/regexp.t                  TESTS     Test results:
+re/regexp.t                  SIG       Exit signal is 11 SEGV
 re/regexp_unicode_prop.t     PLAN      Plan was valid
+re/rxcode.t                  SIG       Exit signal is 11 SEGV
 re/speed.t                   BC        re/speed.c is generated (-O3,-fno-fold)
 re/subst_amp.t               TESTS     Test results:
 uni/attrs.t                  PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
+uni/bless.t                  SIG       Exit signal is 11 SEGV
 uni/caller.t                 PLAN      TODO: Undefined subroutine &????::ok called
 uni/chomp.t                  SIG       Exit signal is 11 SEGV
 uni/chr.t                    SIG       TODO: no output.
@@ -224,4 +243,4 @@ uni/tr_utf8.t                PLAN      Plan was valid
 uni/universal.t              BC        uni/universal.c is generated (-O3,-fno-fold)
 uni/upper.t                  SIG       Exit signal is 11 SEGV
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
-uni/write.t                  PLAN      Plan was valid
+uni/write.t                  SIG       Exit signal is 11 SEGV
