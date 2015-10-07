@@ -33,7 +33,7 @@ sub new {
   push @$o, { values => [] };
 
   # if sv add a dummy sv_arenaroot to support global destruction
-  if ($_[0] eq 'sv') {
+  if ($section eq 'sv') {
     $o->add( "0, 0, SVTYPEMASK|0x01000000".($] >= 5.009005?", {0}":'')); # SVf_FAKE
     $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
   }
@@ -2724,6 +2724,7 @@ sub B::PV::save {
   my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
   $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
+  my $svix;
   # sv_free2 problem with !SvIMMORTAL and del_SV
   # repro with -O0 .. -O2 for all testcases
   if ($PERL518 and $fullname eq 'svop const') {
@@ -2740,31 +2741,33 @@ sub B::PV::save {
     $svsect->add( sprintf( "&xpv_list[%d], %Lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
 			   $savesym eq 'NULL' ? '0' :
-                             ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
+                           ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
+    $svix = $svsect->index;
     if ( defined($pv) and !$static ) {
       if ($shared_hek) {
         my $hek = save_hek($pv);
-        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svsect->index, $hek ))
+        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ))
                     unless $hek eq 'NULL';
       } else {
-        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svsect->index ), $pv, $sv, $cur ) );
+        $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
       }
     }
     if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
-			 $svsect->index, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
-			 $svsect->index, $sv->FLAGS));
+			 $svix, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
+			 $svix, $sv->FLAGS));
     }
   }
   else {
     $xpvsect->add( sprintf( "%s, %u, %u", "(char*)$savesym", $cur, $len ) );
     $svsect->add(sprintf("&xpv_list[%d], %Lu, 0x%x",
 			 $xpvsect->index, $refcnt, $flags));
+    $svix = $svsect->index;
     if ( defined($pv) and !$static ) {
       $init->add( savepvn( sprintf( "xpv_list[%d].xpv_pv", $xpvsect->index ), $pv, 0, $cur ) );
     }
   }
-  my $s = "sv_list[".$svsect->index."]";
+  my $s = "sv_list[$svix]";
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   savesym( $sv, "&".$s );
 }
