@@ -180,6 +180,10 @@ MODULE = B     PACKAGE = B::PADNAMELIST        PREFIX = Padnamelist
 size_t
 PadnamelistMAXNAMED(padnl)
        B::PADNAMELIST  padnl
+    CODE:
+        RETVAL = padnl->xpadnl_max_named;
+    OUTPUT:
+       RETVAL
 
 MODULE = B	PACKAGE = B::REGEXP	PREFIX = RX_
 
