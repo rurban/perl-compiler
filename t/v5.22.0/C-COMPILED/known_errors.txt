@@ -28,7 +28,7 @@ comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse beh
 comp/fold.t                  TESTS     Test results:
 comp/form_scope.t            PLAN      BC issue #216 FORMAT -- who cares?
 comp/hints.t                 SKIP      tests are using BEGIN block, do not ready for B::C
-comp/parser.t                BC        BC issue #217 -> will not fix
+comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
 comp/proto.t                 TESTS     Test results:
 comp/require.t               BC        TODO fail to generate c file
 extra/reused-variable.t      PLAN      BC issue #207 - reused variable conflict - when not using my and later my + eval => conflict in the variable
