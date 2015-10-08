@@ -2798,7 +2798,8 @@ sub B::PADNAME::save {
     $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
   }
   my $str = $pn->PVX;
-  my $cstr = cstring($str);
+  my $ix = $padnamesect->index + 1;
+  my $cstr = $ix > 0 ? cstring($str) : 'NULL';
   $padnamesect->add( sprintf
       ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x"
         # ignore warning: initializer-string for array of chars is too long
@@ -2814,13 +2815,13 @@ sub B::PADNAME::save {
     # Houston we have a problem, need to allocate this padname dynamically. Not done yet
     die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
   }
-  my $s = "&padname_list[".$padnamesect->index."]";
+  my $s = "&padname_list[$ix]";
   $padnamesect->debug( $fullname." ".$str, $pn->flagspv ) if $debug{flags};
   $init->add("SvOURSTASH_set($s, $sn);") unless is_constant($sn);
   $init->add("PadnameTYPE($s) = (HV*)$tn;") unless is_constant($tn);
   # 5.22 needs the buffer to be at the end, and the pointer pointing to it.
   # We allocate a static buffer and adjust pv at init.
-  $init->add("PadnamePV($s) = ((MyPADNAME *)$s)->xpadn_str;") if $PERL522;
+  $init->add("PadnamePV($s) = ((MyPADNAME *)$s)->xpadn_str;") if $PERL522 && $ix > 0;
   push @B::C::static_free, $s;
   savesym( $pn, $s );
 }
