@@ -35,7 +35,7 @@ sub save {
 
     my $str  = $pn->PVX;
     my $ix   = padnamesect()->index + 1;
-    my $cstr = $ix > 0 ? cstring($str) : 'NULL';
+    my $cstr = cstring($str);
     padnamesect()->add(
         sprintf(
             # ignore warning: initializer-string for array of chars is too long
