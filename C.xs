@@ -259,7 +259,7 @@ OUTPUT:
           
 #endif
 
-#if PERL_VERSION > 17
+#if PERL_VERSION > 21
 
 MODULE = B	PACKAGE = B::PADNAME	PREFIX = Padname
 
@@ -270,10 +270,6 @@ PadnameGEN(padn)
         RETVAL = padn->xpadn_gen;
     OUTPUT:
 	RETVAL
-
-#endif
-
-#if PERL_VERSION > 21
 
 MODULE = B	PACKAGE = B::PADLIST	PREFIX = Padlist
 

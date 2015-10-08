@@ -2774,7 +2774,7 @@ sub B::PADNAME::save {
   }
   my $flags = $pn->FLAGS; # U8 + FAKE if OUTER
   $flags = $flags & 0xff;
-  my $gen    = $pn->GEN;
+  my $gen    = $pn->GEN if $PERL522;
   my $stash  = $pn->OURSTASH;
   my $type   = $pn->TYPE;
   my $sn = $stash->save($fullname);
