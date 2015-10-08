@@ -29,7 +29,7 @@ function help {
 
 # use the actual perl from the Makefile (perl5.8.8, 
 # perl5.10.0d-nt, perl5.11.0, ...)
-PERL=`grep "^PERL =" Makefile|cut -c8-`
+PERL=`perl -ane'if(/^FULLPERL =/){$F[2]=~s/"//g;print $F[2];}' Makefile`
 PERL=${PERL:-perl}
 Mblib="-Iblib/arch -Iblib/lib"
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings))'`"
