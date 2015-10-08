@@ -256,7 +256,7 @@ CODE:
     RETVAL = newSVpvn_flags((char*)&items[-1], (1+len) * sizeof(UNOP_AUX_item), 0);
 OUTPUT:
     RETVAL
-          
+
 #endif
 
 #if PERL_VERSION > 17
@@ -291,6 +291,10 @@ MODULE = B	PACKAGE = B::PADNAMELIST	PREFIX = Padnamelist
 size_t
 PadnamelistMAXNAMED(padnl)
 	B::PADNAMELIST	padnl
+    CODE:
+        RETVAL = padnl->xpadnl_max_named;
+    OUTPUT:
+       RETVAL
 
 #endif
 

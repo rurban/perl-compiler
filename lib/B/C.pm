@@ -2785,6 +2785,7 @@ sub B::PADNAME::save {
   }
   my $flags = $pn->FLAGS; # U8 + FAKE if OUTER
   $flags = $flags & 0xff;
+  my $is_fake = $pn->FLAGS & SVf_FAKE;
   my $gen    = $pn->GEN;
   my $stash  = $pn->OURSTASH;
   my $type   = $pn->TYPE;
@@ -2806,8 +2807,8 @@ sub B::PADNAME::save {
         $PERL522 ? 'NULL' : $cstr,
         is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
         is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
-        $pn->COP_SEQ_RANGE_LOW,
-        $pn->COP_SEQ_RANGE_HIGH,
+        $is_fake         ? $pn->COP_SEQ_RANGE_LOW  : 0,
+        $is_fake         ? $pn->COP_SEQ_RANGE_HIGH : 0,
         $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
         $gen, $pn->LEN, $flags, $PERL522 ? $cstr : ()));
   if ( $PERL522 and $pn->LEN > 60 ) {
