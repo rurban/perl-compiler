@@ -122,19 +122,21 @@ function emit_test {
   fi
 }
 
+XTESTC="t/v5.22.0/C-COMPILED/xtestc"
+
 function make_t_symlink {
   n=$1
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     FILE_NUM=$(printf "%04d" $n)
-    FILE="t/v5.22.0/C-COMPILED/xtestc/${FILE_NUM}.t"  
+    FILE="$XTESTC/${FILE_NUM}.t"  
     ln -s  ../testc.pl $FILE
   fi
 }
 
 function make_symlinks {
   MAX=9999
-  rm t/v5.22.0/C-COMPILED/xtestc/*.t
+  rm -f $XTESTC/*.t ||:
   for b in $(seq $MAX); do
     make_t_symlink $b
   done  
