@@ -100,6 +100,7 @@ pass( $taint ? "Taint mode!" : "Not in taint mode" );
 unlink $bin_file, $c_file;
 
 my $PERL = $^X;
+my $blib = ( grep { $_ =~ m{/blib/} } @INC ) ? '-Mblib' : '';
 
 my $check = `$PERL -c $taint '$file_to_test' 2>&1`;
 like( $check, qr/syntax OK/, "$PERL -c $taint $file_to_test" );
@@ -114,7 +115,7 @@ foreach my $optimization (@optimizations) {
         local $TODO;
 
         # Generate the C code at $optimization level
-        my $cmd = "$PERL $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+        my $cmd = "$PERL $blib $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
 
         diag $cmd if $ENV{VERBOSE};
         my $BC_output = `$cmd`;
