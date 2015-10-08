@@ -52,7 +52,7 @@ BEGIN {
     eval q[sub SVf_PROTECT() {};]; # unused
   }
   if ( $] >= 5.017005 ) {
-    @B::PAD::ISA = ('B::AV');
+    @B::PADLIST_old::ISA = ('B::AV');
   }
 }
 use strict;
@@ -297,8 +297,8 @@ sub B::SV::ix($) {
   }
 }
 
-#sub B::PAD::ix($) {
-#  my $sv = shift;
+sub B::PAD::ix($) {
+  my $sv = shift;
 #  #if ($PERL522) {
 #  #  my $ix = $svtab{$$sv};
 #  #  defined($ix) ? $ix : do {
@@ -311,13 +311,13 @@ sub B::SV::ix($) {
 #  #    $ix;
 #  #  }
 #  #} else {
-#  if ($$sv) {
-#    bless $sv, 'B::AV';
-#    return $sv->B::SV::ix;
-#  } else {
-#    0
-#  }
-#}
+  if ($$sv) {
+    bless $sv, 'B::AV';
+    return $sv->B::SV::ix;
+  } else {
+    0
+  }
+}
 
 # since 5.18
 sub B::PADLIST::ix($) {
@@ -334,7 +334,7 @@ sub B::PADLIST::ix($) {
   }
 }
 
-sub B::PADNAME::ix {
+sub B::PADNAME::ix($) {
   my $pn = shift;
   my $ix = $svtab{$$pn};
   defined($ix) ? $ix : do {
@@ -348,7 +348,7 @@ sub B::PADNAME::ix {
   }
 }
 
-sub B::PADNAMELIST::ix {
+sub B::PADNAMELIST::ix($) {
   my $padnl = shift;
   if (!$PERL522) {
     return B::SV::ix(bless $padnl, 'B::AV');
@@ -356,10 +356,11 @@ sub B::PADNAMELIST::ix {
     my $ix = $svtab{$$padnl};
     defined($ix) ? $ix : do {
       nice '[' . class($padnl) . " $tix]";
+      $padnl = bless $padnl, 'B::AV' unless $PERL522;
       B::Assembler::maxsvix($tix) if $debug{A};
-      my $max = $padnl->MAX;
-      asm "newpadnlx", $max,
-        $debug{Comment} ? sprintf("size=%d, %s", $max+1, sv_flags($padnl)) : '';
+     my $max = $PERL522 ? $padnl->MAX : $padnl->FILL;
+     asm "newpadnlx", $max,
+       $debug{Comment} ? sprintf("size=%d, %s", $max, sv_flags($padnl)) : '';
       $svtab{$$padnl} = $varix = $ix = $tix++;
       $padnl->bsave($ix);
       $ix;
@@ -367,7 +368,7 @@ sub B::PADNAMELIST::ix {
   }
 }
 
-sub B::GV::ix {
+sub B::GV::ix($;$) {
   my ( $gv, $desired ) = @_;
   my $ix = $svtab{$$gv};
   defined($ix) ? $ix : do {
@@ -457,7 +458,7 @@ sub B::GV::ix {
   }
 }
 
-sub B::HV::ix {
+sub B::HV::ix($) {
   my $hv = shift;
   my $ix = $svtab{$$hv};
   defined($ix) ? $ix : do {
@@ -505,7 +506,7 @@ sub B::HV::ix {
   }
 }
 
-sub B::NULL::ix {
+sub B::NULL::ix($) {
   my $sv = shift;
   $$sv ? $sv->B::SV::ix : 0;
 }
@@ -514,7 +515,7 @@ sub B::NULL::opwalk { 0 }
 
 #################################################
 
-sub B::NULL::bsave {
+sub B::NULL::bsave($$) {
   my ( $sv, $ix ) = @_;
 
   nice '-' . class($sv) . '-', asm "ldsv", $varix = $ix, sv_flags($sv)
@@ -526,7 +527,7 @@ sub B::NULL::bsave {
   }
 }
 
-sub B::SV::bsave;
+sub B::SV::bsave($$);
 *B::SV::bsave = *B::NULL::bsave;
 
 sub B::RV::bsave($$) {
@@ -791,15 +792,19 @@ sub B::PAD::bsave($$) {
   my ( $av, $ix ) = @_;
   my @array = $av->ARRAY;
   $_ = $_->ix for @array; # save the elements
-  $av->B::NULL::bsave($ix);
-  my $fill = scalar @array;
-  asm "av_extend", $fill if @array;
-  if ($fill > 1 or $array[0]) {
-    asm "av_pushx", $_ for @array;
+  if ($PERL522) {
+    warn "Wrong PAD->bsave in 5.22: should be an AV or PADLIST";
+  } else {
+    $av->B::NULL::bsave($ix);
+    my $fill = scalar @array;
+    asm "av_extend", $fill if @array;
+    if ($fill > 1 or $array[0]) {
+      asm "av_pushx", $_ for @array;
+    }
   }
 }
 
-sub B::AV::bsave {
+sub B::AV::bsave($$) {
   my ( $av, $ix ) = @_;
   if (!$PERL56 and $av->MAGICAL) {
     $av->B::PVMG::bsave($ix);
@@ -841,27 +846,33 @@ sub B::AV::bsave {
 }
 
 # since 5.18
-sub B::PADLIST::bsave {
+sub B::PADLIST::bsave($$) {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
   my $max = scalar @array;
-  bless $array[0], 'B::PADNAMELIST' if ref $array[0] eq 'B::AV';
-  bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
+  #bless $array[0], 'B::PADNAMELIST' if ref $array[0] eq 'B::AV';
+  #bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
   my $pnl = $array[0]->ix; # padnamelist
   my $pad = $array[1]->ix; # pad syms
+  if ($max > 2) {
+    warn "Too many PADLIST elements";
+    #$_ = $_->ix for @array;
+  }
+  $array[0]->bsave;
+  $array[1]->bsave;
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
   asm "padl_name", $pnl;
   asm "padl_sym",  $pad;
   if ($PERL522) {
-    asm "padl_id",    $padl->id if $padl->id;
+    asm "padl_id",    $padl->ID if $padl->ID;
     # 5.18-20 has no PADLIST->outid API, uses xcv_outside instead
-    asm "padl_outid", $padl->outid if $padl->outid;
+    asm "padl_outid", $padl->OUTID if $padl->OUTID;
   }
 }
 
 # since 5.22
-sub B::PADNAME::bsave {
+sub B::PADNAME::bsave($$) {
   my ( $pn, $ix ) = @_;
   my $stashix = $pn->OURSTASH->ix;
   my $typeix = $pn->TYPE->ix;
@@ -879,7 +890,7 @@ sub B::PADNAME::bsave {
 }
 
 # since 5.22
-sub B::PADNAMELIST::bsave {
+sub B::PADNAMELIST::bsave($$) {
   my ( $padnl, $ix ) = @_;
   my @array = $padnl->ARRAY;
   $_ = $_->ix for @array;
@@ -888,7 +899,7 @@ sub B::PADNAMELIST::bsave {
   asm "padnl_push", $_ for @array;
 }
 
-sub B::GV::desired {
+sub B::GV::desired($) {
   my $gv = shift;
   my ( $cv, $form );
   if ( $debug{Gall} and !$PERL510 ) {
@@ -902,7 +913,7 @@ sub B::GV::desired {
     || ${ $form = $gv->FORM } && $files{ $form->FILE };
 }
 
-sub B::HV::bwalk {
+sub B::HV::bwalk($) {
   my $hv = shift;
   return if $walked{$$hv}++;
   my %stash = $hv->ARRAY;
@@ -937,7 +948,7 @@ sub B::HV::bwalk {
 
 ######################################################
 
-sub B::OP::bsave_thin {
+sub B::OP::bsave_thin($$) {
   my ( $op, $ix ) = @_;
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
   my $next   = $op->next;
@@ -966,10 +977,10 @@ sub B::OP::bsave_thin {
   }
 }
 
-sub B::OP::bsave;
+sub B::OP::bsave($$);
 *B::OP::bsave = *B::OP::bsave_thin;
 
-sub B::UNOP::bsave {
+sub B::UNOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my $name    = $op->name;
   my $flags   = $op->flags;
@@ -994,7 +1005,7 @@ sub B::UNOP::bsave {
   asm "op_first", $firstix;
 }
 
-sub B::UNOP_AUX::bsave {
+sub B::UNOP_AUX::bsave($$) {
   my ( $op, $ix ) = @_;
   my $name    = $op->name;
   my $flags   = $op->flags;
@@ -1010,7 +1021,7 @@ sub B::UNOP_AUX::bsave {
   asm "unop_aux", cstring $op->aux;
 }
 
-sub B::METHOP::bsave {
+sub B::METHOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my $name    = $op->name;
   my $firstix = $name eq 'method' ? $op->first->ix : $op->meth_sv->ix;
@@ -1024,7 +1035,7 @@ sub B::METHOP::bsave {
   asm "methop_rclass", $rclass if $rclass or ITHREADS; # padoffset 0 valid threaded
 }
 
-sub B::BINOP::bsave {
+sub B::BINOP::bsave($$) {
   my ( $op, $ix ) = @_;
   if ( $op->name eq 'aassign' && $op->private & B::OPpASSIGN_HASH() ) {
     my $last   = $op->last;
@@ -1049,7 +1060,7 @@ sub B::BINOP::bsave {
 
 # deal with sort / formline
 
-sub B::LISTOP::bsave {
+sub B::LISTOP::bsave($$) {
   my ( $op, $ix ) = @_;
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
   my $name = $op->name;
@@ -1097,14 +1108,14 @@ sub B::LISTOP::bsave {
 # fat versions
 
 # or parent since 5.22
-sub B::OP::has_sibling {
+sub B::OP::has_sibling($) {
   my $op = shift;
   return $op->moresib if $op->can('moresib'); #5.22
   return $op->lastsib if $op->can('lastsib'); #5.21
   return 1;
 }
 
-sub B::OP::bsave_fat {
+sub B::OP::bsave_fat($$) {
   my ( $op, $ix ) = @_;
 
   if ($op->has_sibling) {
@@ -1126,7 +1137,7 @@ sub B::OP::bsave_fat {
   # asm "op_seq", -1;			XXX don't allocate OPs piece by piece
 }
 
-sub B::UNOP::bsave_fat {
+sub B::UNOP::bsave_fat($$) {
   my ( $op, $ix ) = @_;
   my $firstix = $op->first->ix;
 
@@ -1134,7 +1145,7 @@ sub B::UNOP::bsave_fat {
   asm "op_first", $firstix;
 }
 
-sub B::BINOP::bsave_fat {
+sub B::BINOP::bsave_fat($$) {
   my ( $op, $ix ) = @_;
   my $last   = $op->last;
   my $lastix = $op->last->ix;
@@ -1149,7 +1160,7 @@ sub B::BINOP::bsave_fat {
   asm "op_last", $lastix;
 }
 
-sub B::LOGOP::bsave {
+sub B::LOGOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my $otherix = $op->other->ix;
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
@@ -1158,7 +1169,7 @@ sub B::LOGOP::bsave {
   asm "op_other", $otherix;
 }
 
-sub B::PMOP::bsave {
+sub B::PMOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my ( $rrop, $rrarg, $rstart );
 
@@ -1234,7 +1245,7 @@ sub B::PMOP::bsave {
   }
 }
 
-sub B::SVOP::bsave {
+sub B::SVOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my $svix = $op->sv->ix;
 
@@ -1242,7 +1253,7 @@ sub B::SVOP::bsave {
   asm "op_sv", $svix;
 }
 
-sub B::PADOP::bsave {
+sub B::PADOP::bsave($$) {
   my ( $op, $ix ) = @_;
 
   $op->B::OP::bsave($ix);
@@ -1253,7 +1264,7 @@ sub B::PADOP::bsave {
   #}
 }
 
-sub B::PVOP::bsave {
+sub B::PVOP::bsave($$) {
   my ( $op, $ix ) = @_;
   $op->B::OP::bsave($ix);
   return unless my $pv = $op->pv;
@@ -1267,7 +1278,7 @@ sub B::PVOP::bsave {
   }
 }
 
-sub B::LOOP::bsave {
+sub B::LOOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my $nextix = $op->nextop->ix;
   my $lastix = $op->lastop->ix;
@@ -1279,7 +1290,7 @@ sub B::LOOP::bsave {
   asm "op_lastop", $lastix;
 }
 
-sub B::COP::bsave {
+sub B::COP::bsave($$) {
   my ( $cop, $ix ) = @_;
   my $warnix = $cop->warnings->ix;
   if (ITHREADS) {
@@ -1304,7 +1315,7 @@ sub B::COP::bsave {
   }
 }
 
-sub B::OP::opwalk {
+sub B::OP::opwalk($) {
   my $op = shift;
   my $ix = $optab{$$op};
   defined($ix) ? $ix : do {
@@ -1331,7 +1342,7 @@ sub B::OP::opwalk {
 # is packed into one file.
 # Redo only certain ops, such as push @INC ""; unshift @INC "" (TODO *INC)
 # use/require defs and boot sections are already included.
-sub save_begin {
+sub save_begin() {
   my $av;
   if ( ( $av = begin_av )->isa("B::AV") and $av->ARRAY) {
     nice '<push_begin>';
@@ -1375,7 +1386,7 @@ sub save_begin {
   }
 }
 
-sub save_init_end {
+sub save_init_end() {
   my $av;
   if ( ( $av = init_av )->isa("B::AV") and $av->ARRAY ) {
     nice '<push_init>';
@@ -1395,7 +1406,7 @@ sub save_init_end {
 
 ################### perl 5.6 backport only ###################################
 
-sub B::GV::bytecodecv {
+sub B::GV::bytecodecv($) {
   my $gv = shift;
   my $cv = $gv->CV;
   if ( $$cv && !( $gv->FLAGS & 0x80 ) ) { # GVf_IMPORTED_CV / && !saved($cv)
@@ -1407,7 +1418,7 @@ sub B::GV::bytecodecv {
   }
 }
 
-sub symwalk {
+sub symwalk() {
   no strict 'refs';
   my $ok = 1
     if grep { ( my $name = $_[0] ) =~ s/::$//; $_ eq $name; } @packages;
@@ -1421,7 +1432,7 @@ sub symwalk {
 
 ################### end perl 5.6 backport ###################################
 
-sub compile {
+sub compile(@) {
   my ( $head, $scan, $keep_syn, $module );
   my $cwd = '';
   $files{$0} = 1;
@@ -1432,14 +1443,14 @@ sub compile {
     $files{$_} = 1 for values %INC;
   }
 
-  sub keep_syn {
+  sub keep_syn() {
     $keep_syn         = 1;
     *B::OP::bsave     = *B::OP::bsave_fat;
     *B::UNOP::bsave   = *B::UNOP::bsave_fat;
     *B::BINOP::bsave  = *B::BINOP::bsave_fat;
     *B::LISTOP::bsave = *B::LISTOP::bsave_fat;
   }
-  sub bwarn { print STDERR "Bytecode.pm: @_\n" unless $quiet; }
+  sub bwarn(@) { print STDERR "Bytecode.pm: @_\n" unless $quiet; }
 
   for (@_) {
     if (/^-q(q?)/) {
