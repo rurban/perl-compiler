@@ -12,7 +12,8 @@ perl:
 install: "echo"
 before_script:
     - perl -S cpanm -n IPC::Run B::Flags Opcodes IO::Socket::SSL JSON::XS
-    - perl -S cpanm -n LWP::UserAgent Net::SSLeay Net::LibIDN Net::IDN::Encode Net::DNS
+    - perl -S cpanm -n LWP::UserAgent Net::SSLeay Net::LibIDN Net::IDN::Encode Net::DNS EV
+    - perl -S cpanm -n Coro || true
 
 script: "perl Makefile.PL && make && make testfast"
 
@@ -29,12 +30,9 @@ matrix:
   fast_finish: true
   allow_failures:
     - perl: "5.8"
-    - perl: "5.10"
-    - perl: "5.12"
+    - perl: "5.18"
     - perl: "5.20"
     - perl: "5.22"
-
-# perlbrew use 5.20 ERROR: The installation "5.20" is unknown.
 
 # See https://blog.afoolishmanifesto.com/posts/use-travis-et-al/
 #before_install:
