@@ -113,10 +113,10 @@ my %stashtable;
 
 #my $hv_index = 0; # need to use it from HV
 sub savestash_flags {
-    my ( $pv, $len, $flags ) = @_;
+    my ( $pv, $len, $flags, $disable_gvadd ) = @_;
     return $stashtable{$pv} if defined $stashtable{$pv};
     my $hv_index = B::C::HV::get_index();
-    $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
+    $flags = $flags ? "$flags|GV_ADD" : "GV_ADD" if !$disable_gvadd;    # enabled by default
     my $sym = "hv$hv_index";
     decl()->add("Static HV *hv$hv_index;");
     init()->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pv, $len, $flags ) );
@@ -125,7 +125,7 @@ sub savestash_flags {
 }
 
 sub savestashpv {
-    return savestash_flags( strlen_flags(shift) );
+    return savestash_flags( strlen_flags(shift), shift );
 }
 
 1;

@@ -53,20 +53,10 @@ sub save {
         # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
         # the only symptom is that sv_reset tries to reset the PMf_USED flag of
         # a trashed op but we look at the trashed op_type and segfault.
-        #my $adpmroot = ${$hv->PMROOT}; # XXX When was this fixed?
-        #my $adpmroot = 0;
-        $sym = savestashpv($name);    # inc hv_index
-        savesym( $hv, $sym );
+        my $no_gvadd = $name eq 'main' ? 1 : 0;
 
-        #my $hv_index = B::C::HV::get_index();
-        # if ($adpmroot) {
-        #     init()->add(
-        #         sprintf(
-        #             "HvPMROOT(hv$hv_index) = (PMOP*)s\\_%x;",
-        #             $adpmroot
-        #         )
-        #     );
-        # }
+        $sym = savestashpv( $name, $no_gvadd );    # inc hv_index
+        savesym( $hv, $sym );
 
         # issue 79, test 46: save stashes to check for packages.
         # and via B::STASHGV we only save stashes for stashes.

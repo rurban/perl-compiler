@@ -420,6 +420,7 @@ sub save_pv_or_rv {
         }
     }
 
+    # QUESTION: should not it be done for any xpvsect ?
     if ($len) {
         my $ptrsize = $Config{ptrsize};
         while ( $len % $ptrsize ) {

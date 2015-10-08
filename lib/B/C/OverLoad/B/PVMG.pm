@@ -396,15 +396,14 @@ sub _savere {
     my $re = shift;
     my $flags = shift || 0;
     my $sym;
-    my $pv  = $re;
-    my $cur = length $pv;
-    my ( $is_utf8, $len ) = read_utf8_string($pv);
-    my $len = 0;    # length( pack "a*", $pv ) + 2;
+    my $pv = $re;
+    my ( $is_utf8, $cur ) = read_utf8_string($pv);
+    my $len = 0;
 
     # QUESTION: this code looks dead
     #   at least not triggered by the core unit tests
 
-    xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, $len ) );
+    xpvsect()->add( sprintf( "Nullhv, {0}, %u, {.xpvlenu_len=%u}", $cur, $len ) );    # 0 or $len ?
     svsect()->add(
         sprintf(
             "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,

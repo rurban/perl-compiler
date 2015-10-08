@@ -136,7 +136,7 @@ sub save {
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
 
-                # use length on the non const and save it with const, could the len be incorrect ?
+                # QUESTION: use length on the non const and save it with const, could the len be incorrect ?
                 my ( $pv, $len, $flags ) = strlen_flags( $op->stashpv );
                 my $stash = savestash_flags( constpv( $op->stashpv ), $len, $flags );
                 init()->add(
