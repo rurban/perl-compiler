@@ -116,7 +116,7 @@ sub B::Asmdata::PUT_strconst {
   if ( !defined($str) ) {
     my @callstack = caller(3);
     error "bad string constant: '$arg', called from ".$callstack[3]
-      ." line:".$callstack[2];
+      ." line:".$callstack[2] unless $callstack[3] eq 'B::PADNAME::ix'; # empty newpadnx
     $str = '';
   }
   if ( $str =~ s/\0//g ) {

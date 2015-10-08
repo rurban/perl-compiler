@@ -314,7 +314,8 @@ sub B::PADNAME::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($pn) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadnx", cstring $pn->PVX;
+    my $pv = $pn->PVX;
+    asm "newpadnx", $pv ? cstring $pv : "";
     $svtab{$$pn} = $varix = $ix = $tix++;
     $pn->bsave($ix);
     $ix;
@@ -868,15 +869,15 @@ sub B::HV::bwalk {
   #while ( my ( $k, $v ) = each %stash )
   foreach my $k (keys %stash) {
     my $v = $stash{$k};
-    if ( !$PERL56 and $v->SvTYPE == $SVt_PVGV ) {
-      my $hash = $v->HV;
-      if ( $$hash && $hash->NAME ) {
+    if ( !$PERL56 and $v->SvTYPE == $SVt_PVGV ) { # XXX ref $v eq 'B::GV'
+      my $hash = $v->HV if $v->can("HV");
+      if ( $hash and $$hash && $hash->NAME ) {
         $hash->bwalk;
       }
       # B since 5.13.6 (744aaba0598) pollutes our namespace. Keep it clean
       # XXX This fails if our source really needs any B constant
       unless ($] > 5.013005 and $hv->NAME eq 'B') {
-	$v->ix(1) if desired $v;
+	$v->ix(1) if $v->can("desired") and desired $v;
       }
     }
     else {
@@ -966,7 +967,7 @@ sub B::UNOP_AUX::bsave {
   }
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
-  asm "unop_aux",   cstring($op->aux);
+  asm "unop_aux", cstring $op->aux;
 }
 
 sub B::METHOP::bsave {
