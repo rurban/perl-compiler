@@ -14,10 +14,10 @@ sub new {
     my ( $class, $section, $symtable, $default ) = @_;
 
     my $self = bless {
-        'name'      => $section,
-        'symtable'  => $symtable,
-        'default'   => $default,
-        'values'    => [],
+        'name'     => $section,
+        'symtable' => $symtable,
+        'default'  => $default,
+        'values'   => [],
     }, $class;
     $sections{$section} = $self;
 
@@ -62,7 +62,8 @@ sub typename {
     my $self     = shift;
     my $name     = $self->name;
     my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
-    $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
+    $typename = 'UNOP_AUX'  if $typename eq 'UNOPAUX';
+    $typename = 'MyPADNAME' if $typename eq 'PADNAME';
 
     return $typename;
 }

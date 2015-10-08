@@ -101,6 +101,33 @@ EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
 #define UNUSED 0
 #define sym_0 0
 
+/* unfortunately we have to override this perl5.22 struct.
+   The Padname string buffer in xpadn_str is pointed by xpadn_pv.
+*/
+#define _PADNAME_BASE \
+    char *     xpadn_pv;               \
+    HV *       xpadn_ourstash;         \
+    union {                            \
+       HV *    xpadn_typestash;        \
+       CV *    xpadn_protocv;          \
+    } xpadn_type_u;                    \
+    U32                xpadn_low;              \
+    U32                xpadn_high;             \
+    U32                xpadn_refcnt;           \
+    int                xpadn_gen;              \
+    U8         xpadn_len;              \
+    U8         xpadn_flags
+
+struct my_padname_with_str {
+#ifdef PERL_PADNAME_MINIMAL
+    _PADNAME_BASE;
+#else
+    struct padname     xpadn_padname;
+#endif
+    char               xpadn_str[60]; /* longer lexical upval names are forbidden for now */
+};
+typedef struct my_padname_with_str MyPADNAME;
+
 /*
     Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
     *first* sv_u element to be able to statically initialize it. A int does not allow it.

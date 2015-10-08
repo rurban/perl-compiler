@@ -16,6 +16,13 @@ p/x *PL_comppad_name
 p *(PL_comppad_name->xpadnl_alloc)[1]
 end
 
+b Perl_newPADNAMEouter
+command
+macro expand (PADNAME_FROM_PV(PadnamePV(outer))
+p (long)(&(((struct padname_with_str *)0)->xpadn_str))
+p *outer
+end
+
 b dump.c:2384
 command
 echo actions\n
