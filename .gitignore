@@ -63,3 +63,8 @@ nytprof/
 /t/v5.22.0/t/bin*
 /t/v5.22.0/t/txt*
 /t/v5.22.0/t/utf*
+/t/v5.22.0/C-COMPILED/*.dir
+/t/v5.22.0/C-COMPILED/*.pag
+/t/v5.22.0/C-COMPILED/*.bak
+/t/v5.22.0/C-COMPILED/xtestc/*.pl
+/t/v5.22.0/C-COMPILED/xtestc/*.c
