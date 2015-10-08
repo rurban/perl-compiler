@@ -7,7 +7,7 @@ before_script:
 script: "perl Makefile.PL && make && make testcore"
 notifications:
   recipients:
-    hipchat: asplaPtBOlltlYvLaTOiApwh78TdFtkRuKWlab1S@163339_perlcc
+    hipchat: uP9VHegFfhIDUiUdyIWDJInRFSnjIxqgqW4GFmOI@2022203
   email:
     on_success: change
     on_failure: always
