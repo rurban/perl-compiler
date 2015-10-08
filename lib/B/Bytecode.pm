@@ -49,7 +49,7 @@ BEGIN {
      ];
   }
   if ( $] >= 5.017005 ) {
-    @B::PAD::ISA = ('B::AV');
+    @B::PADLIST_old::ISA = ('B::AV');
   }
 }
 use strict;
@@ -120,7 +120,7 @@ BEGIN {
   die $@ if $@;
 }
 
-sub as_hex {$quiet ? undef : sprintf("0x%x",shift)}
+sub as_hex($) {$quiet ? undef : sprintf("0x%x",shift)}
 
 # Fixes bug #307: use foreach, not each
 # each is not safe to use (at all). walksymtable is called recursively which might add
@@ -149,11 +149,11 @@ sub walksymtable {
 #################################################
 
 # This is for -S commented assembler output
-sub op_flags {
+sub op_flags($) {
   return '' if $quiet;
   # B::Concise::op_flags($_[0]); # too terse
   # common flags (see BASOP.op_flags in op.h)
-  my ($x) = @_;
+  my $x = shift;
   my (@v);
   push @v, "WANT_VOID"   if ( $x & 3 ) == 1;
   push @v, "WANT_SCALAR" if ( $x & 3 ) == 2;
@@ -168,7 +168,7 @@ sub op_flags {
 }
 
 # This is also for -S commented assembler output
-sub sv_flags {
+sub sv_flags($;$) {
   return '' if $quiet or $B::Concise::VERSION < 0.74;    # or ($] == 5.010);
   return '' unless $debug{Comment};
   return 'B::SPECIAL' if $_[0]->isa('B::SPECIAL');
@@ -188,12 +188,12 @@ sub sv_flags {
   B::Concise::concise_sv( $_[0], \%h, 0 );
 }
 
-sub pvstring {
+sub pvstring($) {
   my $pv = shift;
   defined($pv) ? cstring( $pv . "\0" ) : "\"\"";
 }
 
-sub pvix {
+sub pvix($) {
   my $str = pvstring shift;
   my $ix  = $strtab{$str};
   defined($ix) ? $ix : do {
@@ -205,7 +205,7 @@ sub pvix {
   }
 }
 
-sub B::OP::ix {
+sub B::OP::ix($) {
   my $op = shift;
   my $ix = $optab{$$op};
   defined($ix) ? $ix : do {
@@ -259,7 +259,7 @@ sub B::OP::ix {
   }
 }
 
-sub B::SPECIAL::ix {
+sub B::SPECIAL::ix($) {
   my $spec = shift;
   my $ix   = $spectab{$$spec};
   defined($ix) ? $ix : do {
@@ -271,7 +271,7 @@ sub B::SPECIAL::ix {
   }
 }
 
-sub B::SV::ix {
+sub B::SV::ix($) {
   my $sv = shift;
   my $ix = $svtab{$$sv};
   defined($ix) ? $ix : do {
@@ -294,7 +294,29 @@ sub B::SV::ix {
   }
 }
 
-sub B::PADLIST::ix {
+sub B::PAD::ix($) {
+  my $sv = shift;
+  #if ($PERL522) {
+  #  my $ix = $svtab{$$sv};
+  #  defined($ix) ? $ix : do {
+  #    nice '[' . class($sv) . " $tix]";
+  #    B::Assembler::maxsvix($tix) if $debug{A};
+  #    asm "newpadx", 0,
+  #      $debug{Comment} ? sprintf("pad_new(flags=0x%x)", 0) : '';
+  #    $svtab{$$sv} = $varix = $ix = $tix++;
+  #    $sv->bsave($ix);
+  #    $ix;
+  #  }
+  #} else {
+  if ($$sv) {
+    bless $sv, 'B::AV';
+    return $sv->B::SV::ix;
+  } else {
+    0
+  }
+}
+
+sub B::PADLIST::ix($) {
   my $padl = shift;
   my $ix = $svtab{$$padl};
   defined($ix) ? $ix : do {
@@ -328,8 +350,9 @@ sub B::PADNAMELIST::ix {
   defined($ix) ? $ix : do {
     nice '[' . class($padnl) . " $tix]";
     B::Assembler::maxsvix($tix) if $debug{A};
-    asm "newpadnlx", $padnl->MAX,
-     $debug{Comment} ? sprintf("size=%d, %s", $padnl->MAX, sv_flags($padnl)) : '';
+    my $max = $PERL522 ? $padnl->MAX : $padnl->FILL;
+    asm "newpadnlx", $max,
+     $debug{Comment} ? sprintf("size=%d, %s", $max, sv_flags($padnl)) : '';
     $svtab{$$padnl} = $varix = $ix = $tix++;
     $padnl->bsave($ix);
     $ix;
@@ -494,7 +517,7 @@ sub B::NULL::bsave {
 sub B::SV::bsave;
 *B::SV::bsave = *B::NULL::bsave;
 
-sub B::RV::bsave {
+sub B::RV::bsave($$) {
   my ( $sv, $ix ) = @_;
   my $rvix = $sv->RV->ix;
   $sv->B::NULL::bsave($ix);
@@ -503,7 +526,7 @@ sub B::RV::bsave {
   asm "xrv", $rvix;
 }
 
-sub B::PV::bsave {
+sub B::PV::bsave($$) {
   my ( $sv, $ix ) = @_;
   $sv->B::NULL::bsave($ix);
   return unless $sv;
@@ -532,7 +555,7 @@ sub B::PV::bsave {
   }
 }
 
-sub B::IV::bsave {
+sub B::IV::bsave($$) {
   my ( $sv, $ix ) = @_;
   return $sv->B::RV::bsave($ix)
     if $PERL512 and $sv->FLAGS & B::SVf_ROK;
@@ -544,13 +567,13 @@ sub B::IV::bsave {
   }
 }
 
-sub B::NV::bsave {
+sub B::NV::bsave($$) {
   my ( $sv, $ix ) = @_;
   $sv->B::NULL::bsave($ix);
   asm "xnv", sprintf "%.40g", $sv->NVX;
 }
 
-sub B::PVIV::bsave {
+sub B::PVIV::bsave($$) {
   my ( $sv, $ix ) = @_;
   if ($PERL56) {
     $sv->B::PV::bsave($ix);
@@ -581,7 +604,7 @@ sub B::PVIV::bsave {
   }
 }
 
-sub B::PVNV::bsave {
+sub B::PVNV::bsave($$) {
   my ( $sv, $ix ) = @_;
   $sv->B::PVIV::bsave($ix);
   if ($PERL510) {
@@ -603,7 +626,7 @@ sub B::PVNV::bsave {
   asm "xnv", sprintf "%.40g", $sv->NVX;
 }
 
-sub B::PVMG::domagic {
+sub B::PVMG::domagic($$) {
   my ( $sv, $ix ) = @_;
   nice1 '-MAGICAL-'; # no empty line before
   my @mglist = $sv->MAGIC;
@@ -633,7 +656,7 @@ sub B::PVMG::domagic {
   }
 }
 
-sub B::PVMG::bsave {
+sub B::PVMG::bsave($$) {
   my ( $sv, $ix ) = @_;
   my $stashix = $sv->SvSTASH->ix;
   $sv->B::PVNV::bsave($ix);
@@ -642,7 +665,7 @@ sub B::PVMG::bsave {
   $sv->domagic($ix) if $PERL56 ? MAGICAL56($sv) : $sv->MAGICAL;
 }
 
-sub B::PVLV::bsave {
+sub B::PVLV::bsave($$) {
   my ( $sv, $ix ) = @_;
   my $targix = $sv->TARG->ix;
   $sv->B::PVMG::bsave($ix);
@@ -652,7 +675,7 @@ sub B::PVLV::bsave {
   asm "xlv_type",    $sv->TYPE;
 }
 
-sub B::BM::bsave {
+sub B::BM::bsave($$) {
   my ( $sv, $ix ) = @_;
   $sv->B::PVMG::bsave($ix);
   asm "xpv_cur",      $sv->CUR if $] > 5.008;
@@ -661,7 +684,7 @@ sub B::BM::bsave {
   asm "xbm_rare",     $sv->RARE;
 }
 
-sub B::IO::bsave {
+sub B::IO::bsave($$) {
   my ( $io, $ix ) = @_;
   my $topix    = $io->TOP_GV->ix;
   my $fmtix    = $io->FMT_GV->ix;
@@ -706,7 +729,7 @@ sub B::IO::bsave {
   }
 }
 
-sub B::CV::bsave {
+sub B::CV::bsave($$) {
   my ( $cv, $ix ) = @_;
   $B::Bytecode::curcv = $cv;
   my $stashix   = $cv->STASH->ix;
@@ -742,21 +765,25 @@ sub B::CV::bsave {
   asm "xcv_file",        pvix $cv->FILE if $cv->FILE;    # XXX AD
 }
 
-sub B::FM::bsave {
+sub B::FM::bsave($$) {
   my ( $form, $ix ) = @_;
 
   $form->B::CV::bsave($ix);
   asm "xfm_lines", $form->LINES;
 }
 
-sub B::PAD::bsave {
+# an AV
+sub B::PAD::bsave($$) {
   my ( $av, $ix ) = @_;
   my @array = $av->ARRAY;
   $_ = $_->ix for @array; # save the elements
-  $av->B::NULL::bsave($ix);
-  # av_extend always allocs 3
-  asm "av_extend", scalar @array if @array;
-  asm "av_pushx", $_ for @array;
+  if ($PERL522) {
+  } else {
+    $av->B::NULL::bsave($ix);
+    # av_extend always allocs 3
+    asm "av_extend", scalar @array if @array;
+    asm "av_pushx", $_ for @array;
+  }
 }
 
 sub B::AV::bsave {
@@ -804,20 +831,21 @@ sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
   my $max = scalar @array;
-  bless $array[0], 'B::PAD' if ref $array[0] eq 'B::AV';
+  bless $array[0], 'B::PADNAMELIST' if ref $array[0] eq 'B::AV';
   bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
-  my $ix0 = $array[0]->ix; # comppad_name
-  my $ix1 = $array[1]->ix; # comppad syms
+  my $pnl = $array[0]->ix;
+  my $pad = $array[1]->ix; # pad syms
   if ($max > 2) {
     $_ = $_->ix for @array;
   }
+  $array[0]->bsave;
+  $array[1]->bsave;
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  #asm "padl_max",  $max if $max != 2; # no API for that
-  asm "padl_name", $ix0 if ref $array[0] eq 'B::PAD';
-  asm "padl_sym",  $ix1 if ref $array[1] eq 'B::PAD';
-  asm "padl_id",    $padl->id if $PERL522;
-  asm "padl_outid", $padl->outid if $PERL522;
+  asm "padl_name", $pnl; #if ref $array[0] eq 'B::PADNAMELIST';
+  asm "padl_sym",  $pad; #if ref $array[1] eq 'B::PAD';
+  asm "padl_id",    $padl->ID if $PERL522 and $padl->ID;
+  asm "padl_outid", $padl->OUTID if $PERL522 and $padl->OUTID;
 }
 
 sub B::PADNAME::bsave {

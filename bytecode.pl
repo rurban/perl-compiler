@@ -1042,8 +1042,8 @@ __END__
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
 159 10	xpvshared	bstate->bs_sv			none		x
 160 18	newpadlx	bstate->bs_sv			U8		x
-161 18	padl_name	bstate->bs_sv			svindex		x
-162 18	padl_sym	bstate->bs_sv			svindex		x
+161 18  padl_name	bstate->bs_sv			svindex		x
+162 18  padl_sym	bstate->bs_sv			svindex		x
 163 18	xcv_name_hek	bstate->bs_sv			pvindex		x
 164 18	op_slabbed	PL_op->op_slabbed		U8
 165 18	op_savefree	PL_op->op_savefree		U8
@@ -1052,7 +1052,6 @@ __END__
 168 21.002-22 op_lastsib PL_op->op_lastsib		U8
 168 22  op_moresib	PL_op->op_moresib		U8
 169 18	newpadnlx	bstate->bs_sv					U8	x
-#0  18 	padl_max	PadlistMAX((PADLIST*)bstate->bs_sv)   		U32
 0   18 	padl_outid	((PADLIST*)bstate->bs_sv)->xpadl_outid		U32
 0   22 	padl_id		((PADLIST*)bstate->bs_sv)->xpadl_id     	U32
 0   22 	padnl_push	bstate->bs_sv					svindex		x
