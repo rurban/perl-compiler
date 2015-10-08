@@ -111,6 +111,27 @@ function runopt {
     fi
 }
 
+function write_test {
+  n=$1
+  CONTENT="${tests[${n}]}"
+  if [ "x$CONTENT" != "x" ]; then
+    FILE_NUM=$(printf "%04d" $n)
+    FILE="t/v5.22.0/t/testc/${FILE_NUM}.pl"
+    echo $CONTENT > $FILE
+    if [ "x${result[$n]}" = "x" ]; then result[$n]='ok'; fi
+    echo "### RESULT:${result[$n]}" >> $FILE
+  fi
+
+}
+
+# write_all
+function write_all_tests {
+  MAX=9999
+  for b in $(seq $MAX); do
+    write_test $b
+  done
+}
+
 function ctest {
     n=$1
     str=$2
@@ -1187,7 +1208,7 @@ init
 
 #
 # getopts for -q -k -E -Du,-q -v -O2, -a -c -fro-inc
-while getopts "haAckoED:B:O:f:q" opt
+while getopts "XhaAckoED:B:O:f:q" opt
 do
   if [ "$opt" = "q" ]; then
     QUIET=1
@@ -1221,6 +1242,10 @@ do
   fi
   if [ "$opt" = "A" ]; then
       CCMD="$CCMD -DALLOW_PERL_OPTIONS"
+  fi
+  if [ "$opt" = "X" ]; then
+    write_all_tests
+    exit
   fi
 done
 
