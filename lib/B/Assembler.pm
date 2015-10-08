@@ -126,10 +126,10 @@ sub B::Asmdata::PUT_strconst {
   return $str . "\0";
 }
 
+# expects the string argument already on the "stack" (with depth 1, one sv)
 sub B::Asmdata::PUT_pvcontents {
-  error "Missing argument to PUT_pvcontents" if @_ < 1;
   my $arg = shift;
-  error "extraneous argument: $arg" if defined $arg;
+  error "extraneous argument to pvcontents: $arg" if defined $arg;
   return "";
 }
 
