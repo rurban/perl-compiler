@@ -398,7 +398,7 @@ sub B::GV::ix {
       asm "gp_cvgen", $gv->CVGEN if $gv->CVGEN;
       asm "gp_form",  $formix if $formix;
       asm "gp_file",  pvix $gv->FILE;
-      asm "gp_line",  $gv->LINE;
+      asm "gp_line",  $gv->LINE if $gv->LINE;
       asm "formfeed", $svix if $name eq "main::\cL";
     }
     else {
@@ -461,7 +461,7 @@ sub B::HV::ix {
       if ( VERSION < 5.009 ) {
         asm "xnv", $hv->NVX;
       }
-      asm "xmg_stash", $stashix;
+      asm "xmg_stash", $stashix if $stashix;
       asm( "xhv_riter", $hv->RITER ) if VERSION < 5.009;
     }
     asm "sv_refcnt", $hv->REFCNT if $hv->REFCNT != 1;
@@ -636,7 +636,7 @@ sub B::PVMG::bsave {
   my ( $sv, $ix ) = @_;
   my $stashix = $sv->SvSTASH->ix;
   $sv->B::PVNV::bsave($ix);
-  asm "xmg_stash", $stashix;
+  asm "xmg_stash", $stashix if $stashix;
   # XXX added SV->MAGICAL to 5.6 for compat
   $sv->domagic($ix) if $PERL56 ? MAGICAL56($sv) : $sv->MAGICAL;
 }
@@ -719,14 +719,14 @@ sub B::CV::bsave {
   my $xsubanyix  = ($cv->CONST and !$PERL56) ? $cv->XSUBANY->ix : 0;
 
   $cv->B::PVMG::bsave($ix);
-  asm "xcv_stash",       $stashix;
+  asm "xcv_stash",       $stashix if $stashix;
   asm "xcv_start",       $startix if $startix; # e.g. main_cv 5.18
-  asm "xcv_root",        $rootix;
-  asm "xcv_xsubany",     $xsubanyix unless $PERL56;
+  asm "xcv_root",        $rootix if $rootix;
+  asm "xcv_xsubany",     $xsubanyix if !$PERL56 and $xsubanyix;
   asm "xcv_padlist",     $padlistix;
-  asm "xcv_outside",     $outsideix;
-  asm "xcv_outside_seq", $cv->OUTSIDE_SEQ unless $PERL56;
-  asm "xcv_depth",       $cv->DEPTH;
+  asm "xcv_outside",     $outsideix if $outsideix;
+  asm "xcv_outside_seq", $cv->OUTSIDE_SEQ if !$PERL56 and $cv->OUTSIDE_SEQ;
+  asm "xcv_depth",       $cv->DEPTH if $cv->DEPTH;
   # add the RC flag if there's no backref magic. eg END (48)
   my $cvflags = $cv->CvFLAGS;
   $cvflags |= 0x400 if $] >= 5.013 and !$cv->MAGIC;
@@ -796,7 +796,7 @@ sub B::AV::bsave {
     # asm "xav_alloc", $av->AvALLOC if $] > 5.013002; # XXX new but not needed
   }
   asm "sv_refcnt", $av->REFCNT if $av->REFCNT != 1;
-  asm "xmg_stash", $stashix;
+  asm "xmg_stash", $stashix if $stashix;
 }
 
 sub B::PADLIST::bsave {
