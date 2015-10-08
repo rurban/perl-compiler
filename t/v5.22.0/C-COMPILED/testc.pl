@@ -111,8 +111,8 @@ close $fh;
 my $PERL = $^X;
 my $blib = ( grep { $_ =~ m{/blib/} } @INC ) ? '-Mblib' : '';
 
-my $check = `$PERL -c '$perl_file' 2>&1`;
-like( $check, qr/syntax OK/, "$PERL -c $perl_file" );
+my $check = qx{$PERL -I$FindBin::Bin/../../.. -c '$perl_file' 2>&1};
+check_todo( $check =~ qr/syntax OK/, "$PERL -c $perl_file", "CHECK" );
 
 $ENV{HARNESS_NOTTY} = 1;
 
@@ -124,7 +124,7 @@ foreach my $optimization (@optimizations) {
         local $TODO;
 
         # Generate the C code at $optimization level
-        my $cmd = "$PERL $blib -MO=-qq,C,$optimization,-o$c_file $perl_file 2>&1";
+        my $cmd = "$PERL $blib -I$FindBin::Bin/../../.. -MO=-qq,C,$optimization,-o$c_file $perl_file 2>&1";
 
         diag $cmd if $ENV{VERBOSE};
         my $BC_output = `$cmd`;
