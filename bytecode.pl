@@ -644,13 +644,14 @@ enum {
 EOT
 
 my $add_enum_value = 0;
-my $max_insn;
+my ($old, $max_insn) = (-1);
 enum:
 for (sort {$a->[0] <=> $b->[0] } @insndata) {
   ($i, $unsupp, $insn) = @$_;
   #
   # Add ENUMS to the header
   #
+  $add_enum_value = 1 if $i != $old + 1;
   if (!$unsupp) {
     $insn = uc($insn);
     $max_insn = $i;
@@ -665,6 +666,7 @@ for (sort {$a->[0] <=> $b->[0] } @insndata) {
   } else {
     $add_enum_value = 1;
   }
+  $old = $i;
 }
 
 print BYTERUN_H "    MAX_INSN = $max_insn\n};\n";
