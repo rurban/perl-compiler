@@ -2250,7 +2250,7 @@ sub B::PMOP::save {
           $swash_init++;
         }
       }
-      if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL on
+      if ($PERL518 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL on
         $pmflags |= PMf_EVAL;
         $init->no_split;
         $init->add("{",
@@ -2338,7 +2338,7 @@ sub B::NULL::save {
                          ($PERL510?", {0}":''),
                          $sv->REFCNT, $sv->FLAGS ) );
   #$svsect->debug( $fullname, $sv->flagspv ) if $debug{flags}; # XXX where is this possible?
-  if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
+  if ($debug{flags} and (!$ITHREADS or $PERL514) and $DEBUG_LEAKING_SCALARS) { # add index to sv_debug_file to easily find the Nullsv
     # $svsect->debug( "ix added to sv_debug_file" );
     $init->add(sprintf(qq(sv_list[%d].sv_debug_file = savesharedpv("NULL sv_list[%d] 0x%x");),
 		       $svsect->index, $svsect->index, $sv->FLAGS));
@@ -2753,7 +2753,7 @@ sub B::PV::save {
         $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
       }
     }
-    if ($debug{flags} and (!$ITHREADS or $]>=5.014) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
+    if ($debug{flags} and (!$ITHREADS or $PERL514) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
 			 $svix, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
 			 $svix, $sv->FLAGS));
@@ -2773,6 +2773,7 @@ sub B::PV::save {
   savesym( $sv, "&".$s );
 }
 
+# 5.18-5.20 => PV::save, since 5.22 native
 sub B::PADNAME::save {
   my ($pn, $fullname) = @_;
   my $sym = objsym($pn);
@@ -4511,7 +4512,7 @@ sub B::GV::save {
 	  mark_package('Errno', 1);   # B::C needs Errno but does not import $!
 	} elsif ($fullname eq 'main::+' or $fullname eq 'main::-') {
 	  $init->add("/* \%$gvname force saving of Tie::Hash::NamedCapture */");
-          if ($] >= 5.014) {
+          if ($PERL514) {
             mark_package('Config', 1);  # DynaLoader needs Config to set the EGV
             walk_syms('Config');
             svref_2object(\&{'Tie::Hash::NamedCapture::bootstrap'})->save;
@@ -4746,7 +4747,7 @@ sub B::AV::save {
   my $svpcast = $ispadlist ? "(PAD*)" : "(SV*)";
   $svpcast = "(PADNAME*)" if $ispadnamelist;
 
-  if ($] >= 5.021006 and $ispadnamelist) {
+  if ($PERL522 and $ispadnamelist) {
     $padnlsect->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
     # TODO: max_named walk all names and look for non-empty names
     my $refcnt = $av->REFCNT + 1; # XXX defer free to global destruction: 28
@@ -5191,7 +5192,7 @@ sub B::HV::save {
       $init->split;
       $init->add( sprintf("HvTOTALKEYS($sym) = %d;", $length / 2)) if !$PERL56;
     }
-  } elsif ($] >= 5.014) { # empty contents still needs to set keys=0
+  } elsif ($PERL514) { # empty contents still needs to set keys=0
     # test 36, 140
     $init->add( "HvTOTALKEYS($sym) = 0;");
   }
@@ -5654,7 +5655,7 @@ sub output_declarations {
 #define sym_0 0
 EOT
 
-  if ($] > 5.021006) {
+  if ($PERL522) {
     print <<'EOF';
 /* unfortunately we have to override this perl5.22 struct.
    The Padname string buffer in xpadn_str is pointed by xpadn_pv.
@@ -5684,7 +5685,7 @@ struct my_padname_with_str {
 typedef struct my_padname_with_str MyPADNAME;
 EOF
 
-  } else {
+  } elsif ($PERL518) {
     print "typedef PADNAME MyPADNAME;\n";
   }
   # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
@@ -6915,7 +6916,7 @@ sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
   push @pkg, 'attributes'             if $] <  5.011; # partially static and dynamic
   push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
-  push @pkg, 'Tie::Hash::NamedCapture' if $] < 5.014; # dynamic since 5.14
+  push @pkg, 'Tie::Hash::NamedCapture' if !$PERL514; # dynamic since 5.14
   #push @pkg, 'DynaLoader'	      if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
   # handled by static_ext.
