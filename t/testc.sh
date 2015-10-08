@@ -858,9 +858,9 @@ tests[215]='eval { $@ = "t1\n"; do { die "t3\n" }; 1; }; print ":$@:\n";'
 result[215]=':t3
 :'
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
-# multideref, also now a 29
-tests[219]='my (%b,%h); BEGIN { %b=(1..8);@a=(1,2,3,4); %h=(1=>2,3=>4) } $i=0; my $l=-1; print $h->{$b->{3}},$h->{$a[-1]},$a[$i],$a[$l],$h{3}'
-result[219]='144'
+# priority
+tests[219]='package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
+my $foo = bless \(my $bar = "ok"), "OverloadTest"; print $foo."\n";'
 # also at 904
 tests[220]='
 my $content = "ok\n";
@@ -1174,12 +1174,10 @@ print $f->x . "\n";'
 result[371]='5'
 if [[ $v518 -gt 0 ]]; then
   tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen("ᕘ"); undef %ᕘ::; mro::get_pkg_gen("ᕘ"); delete $::{"ᕘ::"}; print "ok";'
-  result[372]='ok'
 fi
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
-result[2050]='ok'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
-result[2051]='ok'
+tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
 
 init
 
