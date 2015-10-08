@@ -5144,6 +5144,7 @@ sub B::HV::save {
           my ($cstring, $cur, $utf8) = strlen_flags($key);
 	  # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
 	  # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
+          $cur = -$cur if $utf8;
 	  $init->add(sprintf( "\thv_store(hv, %s, %d, %s, 0);",
 			      $cstring, $cur, $value )); # !! randomized hash keys
 	  warn sprintf( "  HV key \"%s\" = %s\n", $key, $value) if $debug{hv};
