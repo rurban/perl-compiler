@@ -318,7 +318,7 @@ tests[50]='package Top;sub top{q(ok)};package Next;our @ISA=qw(Top);package main
 # XXX TODO sigwarn $w = B::NULL without -v
 tests[51]='$SIG{__WARN__}=sub{print "ok"};warn 1;'
 # check if general signals work
-tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w';
+tests[511]='BEGIN{$SIG{USR1}=sub{$w++;};} kill USR1 => $$; print q(ok) if $w'
 #-------------
 # issue27
 tests[527]='require LWP::UserAgent;print q(ok);'
@@ -366,7 +366,7 @@ tests[76]='use warnings;
   length "ok";
   print "ok"
 };'
-tests[81]='sub int::check {1}  #create int package for types
+tests[81]='%int::;  #create int package for types
 sub x(int,int) { @_ } #cvproto
 my $o = prototype \&x;
 if ($o eq "int,int") {print "o"}else{print $o};
