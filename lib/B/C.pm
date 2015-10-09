@@ -2761,7 +2761,7 @@ sub B::PV::save {
   savesym( $sv, "&".$s );
 }
 
-# 5.18-5.20 => PV::save, since 5.22 native
+# 5.18-5.20 => PV::save, since 5.22 native using this method
 sub B::PADNAME::save {
   my ($pn, $fullname) = @_;
   my $sym = objsym($pn);
@@ -2772,45 +2772,39 @@ sub B::PADNAME::save {
     }
     return $sym;
   }
-  my $flags = $pn->FLAGS; # U8 + FAKE if OUTER
+  my $flags = $pn->FLAGS; # U8 + FAKE if OUTER. OUTER,STATE,LVALUE,TYPED,OUR
   $flags = $flags & 0xff;
-  my $gen    = $pn->GEN if $PERL522;
+  my $gen    = $pn->GEN;
   my $stash  = $pn->OURSTASH;
   my $type   = $pn->TYPE;
   my $sn = $stash->save($fullname);
   my $tn = $type->save($fullname);
   my $refcnt = $pn->REFCNT;
   $refcnt++ if $refcnt < 1000; # XXX protect from free, but allow SvREFCOUNT_IMMORTAL
-  if ($PERL522) {
-    $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
-  } else {
-    $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags");
-  }
   my $str = $pn->PVX;
+  my $cstr = cstring($str); # a 5.22 padname is always utf8
   my $ix = $padnamesect->index + 1;
-  my $cstr = cstring($str);
+  my $s = "&padname_list[$ix]";
+  # 5.22 needs the buffer to be at the end, and the pv pointing to it.
+  # We allocate a static buffer, and for uniformity of the list pre-alloc size 60 (WIP, improve later)
+  $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
   $padnamesect->add( sprintf
-      ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x"
-        # ignore warning: initializer-string for array of chars is too long
-        . ($PERL522 ? ", %s" : ""),
-        $PERL522 ? 'NULL' : $cstr,
+      ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x, %s",
+        $ix ? "((char*)$s)+STRUCT_OFFSET(struct padname_with_str, xpadn_str[0])" : 'NULL',
         is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
         is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
         $pn->COP_SEQ_RANGE_LOW,
         $pn->COP_SEQ_RANGE_HIGH,
         $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
-        $gen, $pn->LEN, $flags, $PERL522 ? $cstr : ()));
-  if ( $PERL522 and $pn->LEN > 60 ) {
+        $gen, $pn->LEN, $flags, $cstr));
+  if ( $pn->LEN > 60 ) {
     # Houston we have a problem, need to allocate this padname dynamically. Not done yet
+    # either dynamic or seperate structs per size MyPADNAME(5)
     die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
   }
-  my $s = "&padname_list[$ix]";
   $padnamesect->debug( $fullname." ".$str, $pn->flagspv ) if $debug{flags};
   $init->add("SvOURSTASH_set($s, $sn);") unless is_constant($sn);
   $init->add("PadnameTYPE($s) = (HV*)$tn;") unless is_constant($tn);
-  # 5.22 needs the buffer to be at the end, and the pointer pointing to it.
-  # We allocate a static buffer and adjust pv at init.
-  $init->add("PadnamePV($s) = ((MyPADNAME *)$s)->xpadn_str;") if $PERL522 && $ix > 0;
   push @B::C::static_free, $s;
   savesym( $pn, $s );
 }
@@ -5723,8 +5717,9 @@ _EOT0
 }
 
 sub output_boilerplate {
-  my $creator = "created at ".scalar localtime()." with B::C $B::C::VERSION";
+  my $creator = "created at ".scalar localtime()." with B::C $B::C::VERSION ";
   $creator .= $B::C::REVISION if $B::C::REVISION;
+  $creator .= " for $^X";
   print "/* $creator */\n";
   # Store the sv_list index in sv_debug_file when debugging
   print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUG_LEAKING_SCALARS;
