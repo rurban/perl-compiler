@@ -11,7 +11,7 @@ use Test::More;
 
 BEGIN {
     use FindBin;
-    unshift @INC, $FindBin::Bin."/../../../lib";
+    unshift @INC, $FindBin::Bin . "/../../../lib";
 }
 use KnownErrors qw/check_todo/;
 
@@ -41,7 +41,7 @@ my $base_dir = dirname($path);
 
 chdir "$FindBin::Bin/.." or die $!;
 
-my $current_t_file = $file_to_test;
+my $current_t_file   = $file_to_test;
 my $todo_description = '';
 
 my $type = $errors->get_current_error_type();
@@ -123,10 +123,18 @@ foreach my $optimization (@optimizations) {
         }
 
         # Parse through TAP::Harness
-        my $out = qx{$bin_file 2>&1};
-        my $str_want = $want;
-        $str_want =~ s{\n}{\\n};
-        $errors->check_todo( $out eq $want, qq{Output is: "$str_want"}, 'TESTS' );
+        my $out     = qx{$bin_file 2>&1};
+        my $str_out = $out;
+        $str_out =~ s{\n}{\\n}g;
+
+        # limitation... for now
+        chomp $want;
+        chomp $out;
+
+        #chomp $out if $want eq 'ok';
+        note "OUT :$out:";
+        note "want :$want:";
+        $errors->check_todo( $out eq $want, qq{Output is: "$str_out"}, 'TESTS' );
 
         my $signal    = $? % 256;
         my $exit_code = $? >> 8;

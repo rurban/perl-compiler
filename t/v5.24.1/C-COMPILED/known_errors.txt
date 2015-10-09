@@ -206,135 +206,64 @@ uni/tr_utf8.t                PLAN      Plan was valid
 uni/universal.t              BC        uni/universal.c is generated (-O3,-fno-fold)
 uni/upper.t                  SIG       Exit signal is 11 SEGV
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
-xtestc/0015.t                TESTS     Output is: "a\nb"
-xtestc/0075.t                TESTS     Output is: ok
-xtestc/0095.t                TESTS     Output is: ok
-xtestc/0115.t                TESTS     Output is: 2
-xtestc/0116.t                TESTS     Output is: 1
-xtestc/0119.t                TESTS     Output is: 1
-xtestc/0120.t                TESTS     Output is: 2
-xtestc/0122.t                TESTS     Output is: http
-xtestc/0123.t                TESTS     Output is: ok
-xtestc/0125.t                TESTS     Output is: ok
-xtestc/0131.t                TESTS     Output is: ok
-xtestc/0143.t                TESTS     Output is: ok
-xtestc/0149.t                TESTS     Output is: ok
-xtestc/0156.t                TESTS     Output is: ok
-xtestc/0157.t                TESTS     Output is: 18446744073709551615
-xtestc/0158.t                TESTS     Output is: 0
-xtestc/0159.t                TESTS     Output is: ok
-xtestc/0160.t                TESTS     Output is: ok
-xtestc/0162.t                TESTS     Output is: ok
-xtestc/0163.t                TESTS     Output is: ok
-xtestc/0164.t                TESTS     Output is: ok
-xtestc/0165.t                TESTS     Output is: ok
-xtestc/0167.t                TESTS     Output is: Wide character in crypt at ccode167.pl line 2.
-xtestc/0168.t                TESTS     Output is: ALARM !
-xtestc/0169.t                TESTS     Output is: called
-xtestc/0170.t                TESTS     Output is: ~~~~
-xtestc/0172.t                TESTS     Output is: ok Foo
-xtestc/0173.t                TESTS     Output is: Prototype mismatch: sub main::BEGIN () vs none at ./ccode173.pl line 2.
-xtestc/0174.t                TESTS     Output is: ok 1
-xtestc/0175.t                TESTS     Output is: ok - expected warning
-xtestc/0176.t                TESTS     Output is: 5000000000
-xtestc/0177.t                TESTS     Output is: ok
-xtestc/0179.t                TESTS     Output is: match ? 0
-xtestc/0180.t                TESTS     Output is: ok
-xtestc/0182.t                TESTS     Output is: main::__ANON__
-xtestc/0184.t                TESTS     Output is: ok
-xtestc/0185.t                TESTS     Output is: ok
-xtestc/0186.t                TESTS     Output is: ok
-xtestc/0187.t                TESTS     Output is: ok
-xtestc/0191.t                TESTS     Output is: ok
-xtestc/0196.t                TESTS     Output is: m: Modification of a read-only value attempted at ccode196.pl line 3.
-xtestc/0198.t                TESTS     Output is: 23
-xtestc/0199.t                TESTS     Output is: 21end
-xtestc/0201.t                TESTS     Output is: ok
-xtestc/0203.t                TESTS     Output is: ok
-xtestc/0207.t                TESTS     Output is: ok 1
-xtestc/0212.t                TESTS     Output is: variable: 5
-xtestc/0214.t                TESTS     Output is: ok
-xtestc/0215.t                TESTS     Output is: :t3
-xtestc/0216.t                TESTS     Output is: ok
-xtestc/0223.t                TESTS     Output is: Illegal declaration of anonymous subroutine at (eval 1) line 1.
-xtestc/0224.t                TESTS     Output is: ok
-xtestc/0225.t                TESTS     Output is: end
-xtestc/0226.t                TESTS     Output is: No dbm on this machine at -e line 1.
-xtestc/0227.t                TESTS     Output is: ok
-xtestc/0229.t                TESTS     Output is: ok
-xtestc/0230.t                TESTS     Output is:  
-xtestc/0232.t                TESTS     Output is: ok
-xtestc/0236.t                TESTS     Output is: ok
-xtestc/0237.t                TESTS     Output is: _
-xtestc/0238.t                TESTS     Output is: ok
-xtestc/0239.t                TESTS     Output is: ok 1
-xtestc/0240.t                TESTS     Output is: ok
-xtestc/0241.t                TESTS     Output is: ok
-xtestc/0242.t                TESTS     Output is: ok
-xtestc/0244.t                TESTS     Output is: (-2)
-xtestc/0245.t                TESTS     Output is: a: 223 ; b: 223
-xtestc/0246.t                TESTS     Output is: Not enough arguments for main::foo at (eval 1) line 1, at EOF
-xtestc/0247.t                TESTS     Output is: ok
-xtestc/0248.t                TESTS     Output is: -titi-toto-
-xtestc/0250.t                TESTS     Output is: Misplaced _ in number at (eval 1) line 1.
-xtestc/0253.t                TESTS     Output is: 1..2
-xtestc/0254.t                TESTS     Output is: ok
-xtestc/0255.t                TESTS     Output is: ok
-xtestc/0256.t                TESTS     Output is: ok
-xtestc/0259.t                TESTS     Output is: [false]
-xtestc/0262.t                TESTS     Output is:  
-xtestc/0263.t                TESTS     Output is: []
-xtestc/0264.t                TESTS     Output is: .
-xtestc/0272.t                TESTS     Output is: ok
-xtestc/0273.t                TESTS     Output is: 11
-xtestc/0274.t                TESTS     Output is: 1..5
-xtestc/0282.t                TESTS     Output is: ok
-xtestc/0283.t                TESTS     Output is: ok
-xtestc/0284.t                TESTS     Output is: 123
-xtestc/0289.t                TESTS     Output is: ok
-xtestc/0290.t                TESTS     Output is: ok
-xtestc/0293.t                TESTS     Output is: ok
-xtestc/0295.t                TESTS     Output is: 2 2 5 : 8 5 8
-xtestc/0299.t                TESTS     Output is: ok
-xtestc/0301.t                TESTS     Output is: ok
-xtestc/0305.t                TESTS     Output is: www.google.com
-xtestc/0306.t                TESTS     Output is: ok
-xtestc/0308.t                TESTS     Output is: ok
-xtestc/0309.t                TESTS     Output is: Net::LibIDN: ok
-xtestc/0310.t                TESTS     Output is: ok
-xtestc/0314.t                TESTS     Output is: ok
-xtestc/0316.t                TESTS     Output is: ok
-xtestc/0317.t                TESTS     Output is: ok
-xtestc/0319.t                TESTS     Output is: ok
-xtestc/0320.t                TESTS     Output is: ok
-xtestc/0324.t                TESTS     Output is: Master
-xtestc/0326.t                TESTS     Output is: ok
-xtestc/0328.t                TESTS     Output is: 45
-xtestc/0329.t                TESTS     Output is: ok
-xtestc/0330.t                TESTS     Output is: ok
-xtestc/0331.t                TESTS     Output is: ok
-xtestc/0332.t                TESTS     Output is: ok
-xtestc/0333.t                TESTS     Output is: ok
-xtestc/0338.t                TESTS     Output is: ok
-xtestc/0340.t                TESTS     Output is: ok
-xtestc/0345.t                TESTS     Output is: ok
-xtestc/0348.t                TESTS     Output is: ok
-xtestc/0350.t                TESTS     Output is: ok
-xtestc/0365.t                TESTS     Output is: www.google.com
-xtestc/0368.t                TESTS     Output is: ok
-xtestc/0369.t                TESTS     Output is: ok
-xtestc/0371.t                TESTS     Output is: 5
-xtestc/0527.t                TESTS     Output is: ok
-xtestc/1431.t                TESTS     Output is: ok
-xtestc/1432.t                TESTS     Output is: ok
-xtestc/1571.t                TESTS     Output is: ok
-xtestc/2011.t                TESTS     Output is: ok
-xtestc/2511.t                TESTS     Output is: ok
-xtestc/2561.t                TESTS     Output is: ok
-xtestc/2721.t                TESTS     Output is: ok
-xtestc/2900.t                TESTS     Output is: 24610 ö
-xtestc/3052.t                TESTS     Output is: ok
-xtestc/3141.t                TESTS     Output is: ok
-xtestc/3401.t                TESTS     Output is: ok
-xtestc/3451.t                TESTS     Output is: ok
-xtestc/3452.t                TESTS     Output is: ok
+xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
+xtestc/0075.t                TESTS     Output is: ""
+xtestc/0095.t                TESTS     Output is: "Constant subroutine M_SQRT2 redefined at xtestc/0095.bin line 4294967295.\nConstant subroutine HUGE_VAL redefined at xtestc/0095.bin line 4294967295.\nConstant subroutine INFINITY redefined at xtestc/0095.bin line 4294967295.\nConstant subroutine NAN redefined at xtestc/0095.bin line 4294967295.\nConstant subroutine Inf redefined at xtestc/0095.bin line 4294967295.\nConstant subroutine NaN redefined at xtestc/0095.bin line 4294967295.\n0095.bin: pp_hot.c:2192: Perl_pp_multideref: Assertion `((actions & 0x30) != 0x10) || ((svtype)((keysv)->sv_flags & 0xff)) >= SVt_PVMG || !((keysv)->sv_flags & (0x00000100|0x00000200|0x00000400|0x00000800| 0x00001000|0x00002000|0x00004000|0x00008000) || (((svtype)((keysv)->sv_flags & 0xff)) == SVt_REGEXP || ((keysv)->sv_flags & (0xff|0x00004000|0x00008000|0x01000000)) == (SVt_PVLV|0x01000000))) || ((keysv)->sv_flags & 0x00000800) || (((keysv)->sv_flags & 0x10000000) && ((XPV*) (keysv)->sv_any)->xpv_len_u.xpvlenu_len == 0)' failed.\n"
+xtestc/0125.t                TESTS     Output is: ""
+xtestc/0163.t                TESTS     Output is: ""
+xtestc/0167.t                TESTS     Output is: "Wide character in crypt at xtestc/0167.pl line 2.\n"
+xtestc/0169.t                TESTS     Output is: "42\n"
+xtestc/0172.t                TESTS     Output is: "Foo=HASH(0x8be6694)\n"
+xtestc/0173.t                TESTS     Output is: "ok 1\nok 2\nok 3\n"
+xtestc/0174.t                TESTS     Output is: "\C is deprecated in regex; marked by <-- HERE in m/\C <-- HERE \C\z/.\n\C is deprecated in regex; marked by <-- HERE in m/\C\C <-- HERE \z/.\n\C is deprecated in regex; marked by <-- HERE in m/\C <-- HERE \C\z/.\n\C is deprecated in regex; marked by <-- HERE in m/\C\C <-- HERE \z/.\nok 1\nok 2\n"
+xtestc/0175.t                TESTS     Output is: "ok\n"
+xtestc/0176.t                TESTS     Output is: "Math::BigInt=HASH(0xa010f74)"
+xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at (eval 1) line 1.\nmatch ? 0\n"
+xtestc/0182.t                TESTS     Output is: "main::foo"
+xtestc/0191.t                TESTS     Output is: "bad\n"
+xtestc/0196.t                TESTS     Output is: "m: Modification of a read-only value attempted at xtestc/0196.pl line 3.\n\n"
+xtestc/0203.t                TESTS     Output is: ""
+xtestc/0207.t                TESTS     Output is: ""
+xtestc/0226.t                TESTS     Output is: ""
+xtestc/0230.t                TESTS     Output is: "\n"
+xtestc/0237.t                TESTS     Output is: "    _"
+xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
+xtestc/0241.t                TESTS     Output is: ""
+xtestc/0247.t                TESTS     Output is: ""
+xtestc/0248.t                TESTS     Output is: "-toto--\n"
+xtestc/0253.t                TESTS     Output is: "Can't locate t/test.pl in @INC (@INC contains: /root/workspace/bc/t/v5.24.1/C-COMPILED/xtestc/../../.. /root/.dotfiles/perl-must-have/lib /root/perl5/lib/perl5/ /usr/local/cpanel /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/cpanel_lib/i386-linux-debug-64int /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/cpanel_lib /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/5.22.0/i386-linux-debug-64int /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/5.22.0 /opt/cpanel/perl5/522-debug/site_lib/i386-linux-debug-64int /opt/cpanel/perl5/522-debug/site_lib .) at xtestc/0253.pl line 1.\nINIT failed--call queue aborted.\n"
+xtestc/0254.t                TESTS     Output is: ""
+xtestc/0259.t                TESTS     Output is: ""
+xtestc/0262.t                TESTS     Output is: "Constant subroutine M_SQRT2 redefined at xtestc/0262.bin line 4294967295.\nConstant subroutine HUGE_VAL redefined at xtestc/0262.bin line 4294967295.\nConstant subroutine INFINITY redefined at xtestc/0262.bin line 4294967295.\nConstant subroutine NAN redefined at xtestc/0262.bin line 4294967295.\nConstant subroutine Inf redefined at xtestc/0262.bin line 4294967295.\nConstant subroutine NaN redefined at xtestc/0262.bin line 4294967295.\n"
+xtestc/0263.t                TESTS     Output is: ""
+xtestc/0272.t                TESTS     Output is: "0272.bin: pp_hot.c:2192: Perl_pp_multideref: Assertion `((actions & 0x30) != 0x10) || ((svtype)((keysv)->sv_flags & 0xff)) >= SVt_PVMG || !((keysv)->sv_flags & (0x00000100|0x00000200|0x00000400|0x00000800| 0x00001000|0x00002000|0x00004000|0x00008000) || (((svtype)((keysv)->sv_flags & 0xff)) == SVt_REGEXP || ((keysv)->sv_flags & (0xff|0x00004000|0x00008000|0x01000000)) == (SVt_PVLV|0x01000000))) || ((keysv)->sv_flags & 0x00000800) || (((keysv)->sv_flags & 0x10000000) && ((XPV*) (keysv)->sv_any)->xpv_len_u.xpvlenu_len == 0)' failed.\n"
+xtestc/0273.t                TESTS     Output is: "Attempt to access disallowed key 'integer' in a restricted hash.\n"
+xtestc/0274.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
+xtestc/0282.t                TESTS     Output is: "0282.bin: hv.c:2784: S_unshare_hek_or_pvn: Assertion `he->shared_he_he.hent_hek == hek' failed.\n"
+xtestc/0290.t                TESTS     Output is: ""
+xtestc/0293.t                TESTS     Output is: ""
+xtestc/0299.t                TESTS     Output is: ""
+xtestc/0301.t                TESTS     Output is: ""
+xtestc/0305.t                TESTS     Output is: ""
+xtestc/0317.t                TESTS     Output is: "Constant subroutine M_SQRT2 redefined at xtestc/0317.bin line 4294967295.\nConstant subroutine HUGE_VAL redefined at xtestc/0317.bin line 4294967295.\nConstant subroutine INFINITY redefined at xtestc/0317.bin line 4294967295.\nConstant subroutine NAN redefined at xtestc/0317.bin line 4294967295.\nConstant subroutine Inf redefined at xtestc/0317.bin line 4294967295.\nConstant subroutine NaN redefined at xtestc/0317.bin line 4294967295.\n0317.bin: pp_hot.c:2192: Perl_pp_multideref: Assertion `((actions & 0x30) != 0x10) || ((svtype)((keysv)->sv_flags & 0xff)) >= SVt_PVMG || !((keysv)->sv_flags & (0x00000100|0x00000200|0x00000400|0x00000800| 0x00001000|0x00002000|0x00004000|0x00008000) || (((svtype)((keysv)->sv_flags & 0xff)) == SVt_REGEXP || ((keysv)->sv_flags & (0xff|0x00004000|0x00008000|0x01000000)) == (SVt_PVLV|0x01000000))) || ((keysv)->sv_flags & 0x00000800) || (((keysv)->sv_flags & 0x10000000) && ((XPV*) (keysv)->sv_any)->xpv_len_u.xpvlenu_len == 0)' failed.\n"
+xtestc/0319.t                TESTS     Output is: "Wide character in print at xtestc/0319.pl line 2.\n"
+xtestc/0320.t                TESTS     Output is: ""
+xtestc/0324.t                TESTS     Output is: ""
+xtestc/0326.t                TESTS     Output is: ""
+xtestc/0329.t                TESTS     Output is: "axxxx \n"
+xtestc/0331.t                TESTS     Output is: "Attempt to access disallowed key 'charnames_name_aliases' in a restricted hash.\n"
+xtestc/0333.t                TESTS     Output is: ""
+xtestc/0340.t                TESTS     Output is: "die at new at xtestc/0340.pl line 1.\n"
+xtestc/0345.t                TESTS     Output is: "no Sub::Name at xtestc/0345.pl line 1.\n"
+xtestc/0350.t                TESTS     Output is: ""
+xtestc/0365.t                TESTS     Output is: ""
+xtestc/0368.t                TESTS     Output is: ""
+xtestc/0369.t                TESTS     Output is: ""
+xtestc/0371.t                TESTS     Output is: ""
+xtestc/0527.t                TESTS     Output is: "Can't locate LWP/UserAgent.pm in @INC (you may need to install the LWP::UserAgent module) (@INC contains: /root/workspace/bc/t/v5.24.1/C-COMPILED/xtestc/../../.. /root/.dotfiles/perl-must-have/lib /root/perl5/lib/perl5/ /usr/local/cpanel /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/cpanel_lib/i386-linux-debug-64int /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/cpanel_lib /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/5.22.0/i386-linux-debug-64int /usr/local/cpanel/3rdparty/perl/522-debug/lib/perl5/5.22.0 /opt/cpanel/perl5/522-debug/site_lib/i386-linux-debug-64int /opt/cpanel/perl5/522-debug/site_lib .) at xtestc/0527.pl line 1.\n"
+xtestc/2511.t                TESTS     Output is: ""
+xtestc/2721.t                TESTS     Output is: "2721.bin: pp_hot.c:2192: Perl_pp_multideref: Assertion `((actions & 0x30) != 0x10) || ((svtype)((keysv)->sv_flags & 0xff)) >= SVt_PVMG || !((keysv)->sv_flags & (0x00000100|0x00000200|0x00000400|0x00000800| 0x00001000|0x00002000|0x00004000|0x00008000) || (((svtype)((keysv)->sv_flags & 0xff)) == SVt_REGEXP || ((keysv)->sv_flags & (0xff|0x00004000|0x00008000|0x01000000)) == (SVt_PVLV|0x01000000))) || ((keysv)->sv_flags & 0x00000800) || (((keysv)->sv_flags & 0x10000000) && ((XPV*) (keysv)->sv_any)->xpv_len_u.xpvlenu_len == 0)' failed.\n"
+xtestc/2900.t                TESTS     Output is: "19518210 "
+xtestc/3052.t                TESTS     Output is: ""
+xtestc/3451.t                TESTS     Output is: "no Sub::Name at xtestc/3451.pl line 1.\n"
+xtestc/3452.t                TESTS     Output is: "no Sub::Name at xtestc/3452.pl line 1.\n"
