@@ -206,7 +206,7 @@ uni/tr_utf8.t                PLAN      Plan was valid
 uni/universal.t              BC        uni/universal.c is generated (-O3,-fno-fold)
 uni/upper.t                  SIG       Exit signal is 11 SEGV
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
-xtestc/0015.t                TESTS     Output is: a
+xtestc/0015.t                TESTS     Output is: "a\nb"
 xtestc/0075.t                TESTS     Output is: ok
 xtestc/0095.t                TESTS     Output is: ok
 xtestc/0115.t                TESTS     Output is: 2
