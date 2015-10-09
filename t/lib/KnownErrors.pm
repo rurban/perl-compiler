@@ -40,7 +40,7 @@ sub new {
 sub get_current_error_type {
     my ($self) = @_;
 
-    return $self->{type} if exists $self->{type};
+    return $self->{type} || '' if exists $self->{type};
 
     my ( $file_in_error, $type, $description ) = ('');
     my $file_to_test = $self->{file_to_test} or die;
@@ -82,7 +82,7 @@ sub check_todo {
         if ( !$v ) {
             if ( $self->{first_error} ) {
                 $self->{first_error} = 0;
-                diag "Adding $current_t_file $want_type error to known_errors.txt file";
+                note "Adding $current_t_file $want_type error to known_errors.txt file";
                 $self->update_known_errors( test => $current_t_file, add => [qq{$current_t_file\t$want_type\t$msg}] );
             }
         }
@@ -151,7 +151,7 @@ sub update_known_errors {
             # remove duplicates (only the first one matters)
             next if $previous_tfile && $previous_tfile eq $tfile;
             $previous_tfile = $tfile;
-            push @body_format, [ $tfile, $type, $txt ];
+            push @body_format, [ $tfile || '', $type || '', $txt || '' ];
             my $len = length $tfile;
             $max_tfile_len = $len if $len > $max_tfile_len;
         }
