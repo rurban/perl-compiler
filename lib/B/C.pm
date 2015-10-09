@@ -3256,9 +3256,9 @@ CODE2
       $init->add(sprintf("sv_magic((SV*)s\\_%x, Nullsv, %s, %s, %d);",
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
-    elsif ( $type eq 'c' ) {
+    elsif ( $type eq 'c' ) { # and !$PERL518
       $init->add(sprintf(
-          "/* AMT overload table for the stash s\\_%x is generated dynamically */",
+          "/* AMT overload table for the stash $fullname s\\_%x is generated dynamically */",
           $$sv ));
     }
     elsif ( $type eq ':' ) { # symtab magic
