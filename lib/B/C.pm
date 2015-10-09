@@ -1513,7 +1513,7 @@ sub build_template_stash {
     my $c_file_stash = {
         'verbose'                          => verbose(),
         'debug'                            => B::C::Config::Debug::save(),
-        'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION",
+        'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION for $^X",
         'DEBUG_LEAKING_SCALARS'            => DEBUG_LEAKING_SCALARS(),
         'have_independent_comalloc'        => $B::C::Flags::have_independent_comalloc,
         'use_declare_independent_comalloc' => $B::C::Flags::use_declare_independent_comalloc,
