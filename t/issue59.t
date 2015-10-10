@@ -40,7 +40,7 @@ SKIP: {
   #skip "fails 5.14 threaded", 2
   #  if $] > 5.014 and $] < 5.015 and $Config{'useithreads'} and (!-d ".git" or $ENV{NO_AUTHOR});
 
-  plctestok(1, $name, $script, "BC $name ".$cmt);
+  plctestok(1, $name, $script, ($] >= 5.018 ? "TODO ":"")."BC $name ".$cmt);
 
   #$cmt = "TODO 5.14thr" if $] > 5.014 and $] < 5.015 and $Config{'useithreads'};
   #$cmt = "TODO >=5.16" if $] >= 5.016; # fixed with 1.45_04

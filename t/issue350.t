@@ -13,6 +13,7 @@ BEGIN {
   require "test.pl";
 }
 use Test::More;
+use Config;
 eval "use Moose;";
 
 if ($@) {
@@ -21,8 +22,8 @@ if ($@) {
   plan tests => 1;
 }
 
-
-my $todo = ""; # ($] > 5.009 and $] < 5.011) ? "TODO " : "";
+my $DEBUGGING = ($Config::Config{ccflags} =~ m/-DDEBUGGING/);
+my $todo = ($] > 5.017 and $DEBUGGING) ? "TODO " : "";
 ctestok(1, 'C,-O3', 'ccode350i', <<'EOF', $todo.'C #350 Moose deps');
 package Foo::Moose;
 use Moose;

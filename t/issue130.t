@@ -49,4 +49,4 @@ sub compile_check {
 compile_check(1,'C,-O3,-UB','ccode130i',$issue,"lexsubs compile ok");
 ctestok(2,'C,-O3,-UB,-Uwarnings,-UCarp,-UExporter,-UConfig','ccode130i',$issue,"lexsubs run C ok");
 ctestok(3,'CC,-UB,-Uwarnings,-UCarp,-UExporter,-UConfig','cccode130i',$issue,"lexsubs run CC ok");
-plctestok(4,'ccode130i',$issue,"lexsubs run BC ok"); # needs xcv_name_hek
+plctestok(4,'ccode130i',$issue,"TODO lexsubs run BC ok"); # needs xcv_name_hek
