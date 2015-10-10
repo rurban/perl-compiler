@@ -1173,7 +1173,8 @@ my $foo = sub {
   Foo->new
 }->();
 $foo->method;'
-tests[350]='package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int");
+tests[350]='#TODO 5.18-5.22 dbg
+package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int");
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
 tests[368]='use EV; print q(ok)'
 tests[369]='

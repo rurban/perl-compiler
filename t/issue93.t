@@ -3,16 +3,15 @@
 # recover state of IO objects. Or not
 # Another testcase is t/testm.sh Test::NoWarnings
 use strict;
-
 BEGIN {
-    unshift @INC, 't';
-    require "test.pl";
+  unshift @INC, 't';
+  require "test.pl";
 }
 use Test::More tests => 9;
 use Config;
-my $i = 0;
+my $i=0;
 
-my $todo = <<'EOF';
+my $todo = <<'EOS';
 # === compiled ===
 my ($pid, $out, $in);
 BEGIN {
@@ -30,7 +29,7 @@ kill 0, $pid; 			     # BAD! warn? die? how?
 read $in, my $x, 4;
 print 'k' if 'test' eq $x;
 unlink 'pcc.tmp';
-EOF
+EOS
 
 my $ok = <<'EOF';
 my $out;open($out,'>&STDOUT');print $out qq(ok\n);
@@ -41,25 +40,24 @@ my $out;BEGIN{open($out,'>&STDOUT');}print $out qq(ok\n);
 EOF
 
 sub test3 {
-    my $name   = shift;
-    my $script = shift;
-    my $cmt    = shift;
-    my $todobc = ( ( $name eq 'ccode93iw' and $] < 5.014 ) ? "TODO needs 5.14 " : "" );
-    $todobc = 'TODO 5.18 ' if $] >= 5.018;
-    plctestok( $i * 3 + 1, $name, $script, $todobc . "BC $cmt" );
-    ctestok( $i * 3 + 2, "C",  $name, $script, "C $cmt" );
-    ctestok( $i * 3 + 3, "CC", $name, $script, "CC $cmt" );
-    $i++;
+  my $name = shift;
+  my $script = shift;
+  my $cmt = shift;
+  my $todobc = (($name eq 'ccode93iw' and $] < 5.014)?"TODO needs 5.14 ":"");
+  plctestok($i*3+1, $name, $script,$todobc."BC $cmt");
+  ctestok($i*3+2, "C", $name, $script, "C $cmt");
+  ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
+  $i++;
 }
 
 TODO: {
-    local $TODO = "recover IO state generally";
-    test3( 'ccode93ib', $todo, 'various hard IO BEGIN problems' );
+  local $TODO = "recover IO state generally";
+  test3('ccode93ib', $todo, 'various hard IO BEGIN problems');
 }
-test3( 'ccode93ig', $ok, '&STDOUT at run-time' );
+test3('ccode93ig', $ok,   '&STDOUT at run-time');
 TODO: {
-    local $TODO = "recover STDIO state";
-    test3( 'ccode93iw', $work, '&STDOUT restore' );
+  local $TODO = "recover STDIO state";
+  test3('ccode93iw', $work, '&STDOUT restore');
 }
 
-END { unlink "pcc.tmp" if -f "pcc.tmp"; }
+END {unlink "pcc.tmp" if -f "pcc.tmp";}

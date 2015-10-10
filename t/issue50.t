@@ -3,10 +3,9 @@
 # B::CC UV for <<
 use Test::More tests => 1;
 use strict;
-
 BEGIN {
-    unshift @INC, 't';
-    require "test.pl";
+  unshift @INC, 't';
+  require "test.pl";
 }
 
 use Config;
@@ -43,7 +42,6 @@ EOF
 $script =~ s/\$ivsize/$ivsize/eg;
 
 use B::CC;
-ctestok(
-    1, "CC", "ccode50i", $script,    # fixed with r633
-    ( $B::CC::VERSION < 1.08 ? "TODO " : "" ) . "perlcc UV << issue50 - fixed with B-C-1.28"
-);
+ctestok(1, "CC", "ccode50i", $script, # fixed with r633
+	($B::CC::VERSION < 1.08 ? "TODO ":"")
+	. "perlcc UV << issue50 - fixed with B-C-1.28");

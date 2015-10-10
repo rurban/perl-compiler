@@ -3,10 +3,9 @@
 # B:CC Regex in pkg var fails on 5.6 and 5.10
 use Test::More tests => 2;
 use strict;
-
 BEGIN {
-    unshift @INC, 't';
-    require "test.pl";
+  unshift @INC, 't';
+  require "test.pl";
 }
 
 my $pm = "Ccode31i.pm";
@@ -29,15 +28,12 @@ use Ccode31i;
 EOF
 
 use B::C ();
-
 # $]<5.007: same as test 33
-my $todo = ( $] >= 5.010 and $] < 5.011 ) ? "TODO #31 5.10 " : "";
-ctestok(
-    1, "CC", "ccode31i", $script,
-    ( $B::C::VERSION lt '1.42_55' )
-    ? "TODO B:CC Regex in pkg var fails with 5.6 and >5.10 since 1.35 until 1.42_54"
-    : $todo . "B:CC Regex in pkg var"
-);
-ctestok( 2, "C,-O3", "ccode31i", $script, $todo . "B:C Regex in pkg var" );
+my $todo = ($] >= 5.010 and $] < 5.011) ? "TODO #31 5.10 " : "";
+ctestok(1, "CC", "ccode31i", $script,
+      ($B::C::VERSION lt '1.42_55')
+      ? "TODO B:CC Regex in pkg var fails with 5.6 and >5.10 since 1.35 until 1.42_54"
+      : $todo."B:CC Regex in pkg var");
+ctestok(2, "C,-O3", "ccode31i", $script, $todo."B:C Regex in pkg var");
 
 END { unlink $pm; }

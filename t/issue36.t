@@ -6,7 +6,6 @@
 use B::CC;
 use Test::More tests => $B::CC::VERSION < 1.08 ? 5 : 1;
 use strict;
-
 BEGIN {
     unshift @INC, 't';
     require "test.pl";
@@ -26,19 +25,14 @@ sub test {
 EOF
 
 use B::CC;
-
 # The problem seems to be non deterministic.
 # Some runs of B::CC succeed, some fail and others give a warning.
-if ( $B::CC::VERSION < 1.08 ) {
-    ccompileok(
-        $_, "CC", "ccode36i", $script,
-        "TODO B::CC issue 36 fixed with B-C-1.28 r556 (B::CC 1.08) by Heinz Knutzen"
-    ) for 1 .. 5;
-}
-else {
-    ccompileok(
-        $_, "CC", "ccode36i", $script,
-        "CC fails sometimes on some loops (fixed with B-C-1.28 r556)"
-    );
+if ($B::CC::VERSION < 1.08) {
+  ccompileok($_, "CC", "ccode36i", $script,
+	     "TODO B::CC issue 36 fixed with B-C-1.28 r556 (B::CC 1.08) by Heinz Knutzen")
+    for 1..5;
+} else {
+  ccompileok($_, "CC", "ccode36i", $script,
+	     "CC fails sometimes on some loops (fixed with B-C-1.28 r556)");
 }
 

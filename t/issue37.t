@@ -3,10 +3,9 @@
 # orassign ||= with old B::CC
 use Test::More tests => 1;
 use strict;
-
 BEGIN {
-    unshift @INC, 't';
-    require "test.pl";
+  unshift @INC, 't';
+  require "test.pl";
 }
 
 my $script = <<'EOF';
@@ -16,6 +15,5 @@ print "ok" if $x;
 EOF
 
 use B::CC;
-ctestok(
-    1, "CC", "ccode37i", $script,
-    $B::CC::VERSION < 1.08 ? "TODO B::CC issue 37" : "orassign ||=" );
+ctestok(1, "CC", "ccode37i", $script,
+        $B::CC::VERSION < 1.08 ? "TODO B::CC issue 37" : "orassign ||=");

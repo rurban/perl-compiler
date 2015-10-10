@@ -3,19 +3,18 @@
 # set qr UTF8 flags, t/testc.sh -q -O3 -A -c 20 39 44 71 131 143 1431 1432 330 333 338
 
 use strict;
-
 BEGIN {
-    unshift @INC, 't';
-    require "test.pl";
+  unshift @INC, 't';
+  require "test.pl";
 }
 use Test::More tests => 2;
 
-my $todo = ( $] > 5.009 and $] < 5.011 ) ? "TODO " : "";
-ctestok( 1, 'C,-O3', 'ccode338i', <<'EOF', $todo . 'C #338 qr utf8' );
+my $todo = ($] > 5.009 and $] < 5.011) ? "TODO " : "";
+ctestok(1, 'C,-O3', 'ccode338i', <<'EOF', $todo.'C #338 qr utf8');
 use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";
 EOF
 
-ctestok( 2, 'C,-O3', 'ccode333i', <<'EOF', $todo . 'C #333 qr utf8' );
+ctestok(2, 'C,-O3', 'ccode333i', <<'EOF', $todo.'C #333 qr utf8');
 use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん");
 my @katakana =  map {chr} ord("ァ")..ord("ン");
