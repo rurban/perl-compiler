@@ -130,6 +130,7 @@ sub output {
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." ".$ref." */";
     }
+    no warnings "redundant";
     if ($format eq "\t{ %s }, /* %s_list[%d] %s */%s\n") {
       printf $fh $format, $_, $section->name, $i, $ref, $dbg;
     } else {
@@ -2088,8 +2089,9 @@ sub B::COP::save {
       if ($B::C::const_strings) {
         my ($pv, $len, $flags) = strlen_flags($op->stashpv);
         my $stash = savestash_flags(constpv($op->stashpv), $len, $flags);
+        my $constpv = constpv($file);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, $constpv ));
       } else {
         my $stash = savestashpv($op->stashpv);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
@@ -2098,7 +2100,7 @@ sub B::COP::save {
     } else { # cv_undef e.g. in bproto.t and many more core tests with threads
       my $stash = savestashpv($op->stashpv);
       $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                 sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) ));
+                 sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
     }
   }
 
@@ -2251,8 +2253,8 @@ sub B::PMOP::save {
       }
       if ($] > 5.008008) { # can do utf8 qr
         $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
-                   sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, SVs_TEMP|$utf8), 0x%x));",
-                           $pmflags),
+                   sprintf("PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags(%s, %s, SVs_TEMP|$utf8), 0x%x));",
+                           $qre, $relen, $pmflags),
                    sprintf("RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags ));
       } else {
         $init->add
@@ -2590,7 +2592,7 @@ sub B::PVNV::save {
     return $sym;
   }
   my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
-  my $nvx;
+  my $nvx = '';
   my $ivx = ivx($sv->IVX); # here must be IVX!
   if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
@@ -2721,7 +2723,7 @@ sub B::PV::save {
   my $svix;
   # sv_free2 problem with !SvIMMORTAL and del_SV
   # repro with -O0 .. -O2 for all testcases
-  if ($PERL518 and $fullname eq 'svop const') {
+  if ($PERL518 and $fullname && $fullname eq 'svop const') {
     $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
   }
   # static pv, do not destruct. test 13 with pv0 "3".
