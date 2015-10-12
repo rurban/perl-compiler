@@ -56,7 +56,7 @@ if ( $type eq 'COMPAT' || $type eq 'SKIP' ) {
 # need to run CORE test suite in t
 chdir "$FindBin::Bin/../../t" or die "Cannot chdir to t directory: $!"; 
 
-plan tests => 3 + 10 * scalar @optimizations;
+plan tests => 3 + 9 * scalar @optimizations;
 
 ok( !-z $file_to_test, "$file_to_test exists" );
 open( my $fh, '<', $file_to_test ) or die("Can't open $file_to_test");
@@ -146,13 +146,12 @@ foreach my $optimization (@optimizations) {
             skip( "TAP parse is unpredictable when plan is invalid", 5 );
         }
 
-        ok( $parser->{exit} == 0, "Exit code is $parser->{exit}" );
+        $errors->check_todo( $parser->{exit} == 0, "Exit code is $parser->{exit}", "EXIT" );
 
-        $errors->check_todo( !scalar @{ $parser->{failed} }, "Test results:", 'TESTS' );
+        my $tests_ok = $errors->check_todo( !scalar @{ $parser->{failed} }, "Test results:", 'TESTS' );
         print "    $_\n" foreach ( split( "\n", $out ) );
 
-        ok( !scalar @{ $parser->{failed} }, "No test failures" )
-          or note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
+        note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) ) unless $tests_ok;
 
         skip( "Don't care about test sequence if tests are failing", 2 ) if ( $type =~ m/^(PLAN|TESTS)$/ );
 
