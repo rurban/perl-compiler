@@ -2,7 +2,7 @@ package B::PV;
 
 use strict;
 
-use B qw/SVf_ROK SVf_READONLY cstring/;
+use B qw/SVf_ROK SVf_READONLY cstring SVs_OBJECT/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
@@ -72,6 +72,7 @@ sub save {
     my $s = "sv_list[$svix]";
     svsect()->debug( $fullname, $sv );
 
+    push @B::C::static_free, "&" . $s if $flags & SVs_OBJECT;
     return savesym( $sv, "&" . $s );
 }
 

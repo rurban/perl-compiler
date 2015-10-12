@@ -2,7 +2,7 @@ package B::PVNV;
 
 use strict;
 
-use B qw/SVf_NOK SVp_NOK/;
+use B qw/SVf_NOK SVp_NOK SVs_OBJECT/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::Decimal qw/get_integer_value get_double_value/;
@@ -64,6 +64,8 @@ sub save {
             init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
         }
     }
+
+    push @B::C::static_free, "&" . $s if $sv->FLAGS & SVs_OBJECT;
     return savesym( $sv, "&" . $s );
 }
 

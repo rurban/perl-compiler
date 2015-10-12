@@ -12,8 +12,8 @@ sub add_to_section {
     padnamelistsect()->comment("xpadnl_fill, xpadnl_alloc, xpadnl_max, xpadnl_max_named, xpadnl_refcnt");
 
     # TODO: max_named walk all names and look for non-empty names
-    my $refcnt = $self->REFCNT + 1;    # XXX defer free to global destruction: 28
-    my $fill   = $self->fill;
+    my $refcnt   = $self->REFCNT + 1;    # XXX defer free to global destruction: 28
+    my $fill     = $self->fill;
     my $maxnamed = $self->MAXNAMED;
 
     padnamelistsect->add("$fill, NULL, $fill, $maxnamed, $refcnt /* +1 */");

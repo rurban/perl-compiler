@@ -157,7 +157,7 @@ sub save {
             my $stash = savestashpv( $op->stashpv );
             init()->add(
                 sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) )
+                sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, cstring($file) )
             );
         }
     }

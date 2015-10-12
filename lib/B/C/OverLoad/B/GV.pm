@@ -154,6 +154,11 @@ sub save {
         $filter = 8;
     }
 
+    # # no need to assign any SV/AV/HV to them (172)
+    if ( $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/ ) {
+        $filter = 7;
+    }
+
     my $is_empty = $gv->is_empty;
     if ( !defined $gvname and $is_empty ) {    # 5.8 curpad name
         return q/(SV*)&PL_sv_undef/;

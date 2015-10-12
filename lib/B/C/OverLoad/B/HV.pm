@@ -17,7 +17,7 @@ package B::HV;
 use strict;
 
 use Config;
-use B qw/cstring SVf_READONLY/;
+use B qw/cstring SVf_READONLY SVs_OBJECT/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags/;
@@ -134,6 +134,8 @@ sub save {
                                                                                  # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
                                                                                  # value => rv => cv => ... => rv => same hash
     $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
+    push @B::C::static_free, $sym if $hv->FLAGS & SVs_OBJECT;
+
     if (@contents) {
         local $B::C::const_strings = $B::C::const_strings;
         my ( $i, $length );

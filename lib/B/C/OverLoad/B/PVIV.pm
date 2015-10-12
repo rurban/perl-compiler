@@ -21,8 +21,12 @@ sub save {
     my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
 
     xpvivsect()->comment('STASH, MAGIC, cur, len, IVX');
-    xpvivsect()->add( sprintf( "Nullhv, {0}, %u, {%u}, {%s}", 
-        $cur, $len, get_integer_value( $sv->IVX ) ) );    # IVTYPE long
+    xpvivsect()->add(
+        sprintf(
+            "Nullhv, {0}, %u, {%u}, {%s}",
+            $cur, $len, get_integer_value( $sv->IVX )
+        )
+    );    # IVTYPE long
 
     svsect()->add(
         sprintf(

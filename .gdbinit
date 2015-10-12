@@ -10,30 +10,34 @@ source .gdb/perl
 #break __asan_report_error
 #b Perl_pp_multideref
 
-b Perl_pp_entereval
-command
-p/x *PL_comppad_name
-p *(PL_comppad_name->xpadnl_alloc)[1]
-end
+# note: StashHANDLER() is unused in 5.20
+b Perl_Gv_AMupdate
+b Perl_amagic_call
 
-b Perl_newPADNAMEouter
-command
-macro expand (PADNAME_FROM_PV(PadnamePV(outer))
-p (long)(&(((struct padname_with_str *)0)->xpadn_str))
-p *outer
-end
+#b Perl_pp_entereval
+#command
+#p/x *PL_comppad_name
+#p *(PL_comppad_name->xpadnl_alloc)[1]
+#end
 
-b dump.c:2384
-command
-echo actions\n
-p/x actions
-echo action&mask MDEREF_HV_gvhv_helem=13\n
-p actions&MDEREF_ACTION_MASK
-echo items\n
-p *items
-echo sv\n
-p sv
-end
+#b Perl_newPADNAMEouter
+#command
+#macro expand (PADNAME_FROM_PV(PadnamePV(outer))
+#p (long)(&(((struct padname_with_str *)0)->xpadn_str))
+#p *outer
+#end
+
+#b dump.c:2384
+#command
+#echo actions\n
+#p/x actions
+#echo action&mask MDEREF_HV_gvhv_helem=13\n
+#p actions&MDEREF_ACTION_MASK
+#echo items\n
+#p *items
+#echo sv\n
+#p sv
+#end
 
 #b bset_obj_store
 #command

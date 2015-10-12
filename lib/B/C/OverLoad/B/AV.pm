@@ -3,7 +3,7 @@ package B::AV;
 use strict;
 
 use Config;
-use B qw/cstring SVf_IOK SVf_POK/;
+use B qw/cstring SVf_IOK SVf_POK SVs_OBJECT/;
 use B::C::Config;
 use B::C::File qw/init xpvavsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -61,6 +61,7 @@ sub save {
         # protect against recursive self-references (Getopt::Long)
         $sym = savesym( $av, "(AV*)&sv_list[$sv_ix]" );
         $magic = $av->save_magic($fullname);
+        push @B::C::static_free, $sym if $av->FLAGS & SVs_OBJECT;
     }
 
     debug( av => "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, ref($av) );
