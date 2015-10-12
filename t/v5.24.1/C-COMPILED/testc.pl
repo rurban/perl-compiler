@@ -126,14 +126,19 @@ foreach my $optimization (@optimizations) {
         my $out     = qx{$bin_file 2>&1};
         my $str_out = $out;
         $str_out =~ s{\n}{\\n}g;
+        $str_out =~ s{[^A-Za-z0-9\s\\:=,;\.\(\)]}{ }g;
+        $str_out =~ s{\s+}{ }g;
+        if ( length($str_out) > 30 ) {
+            $str_out = substr( $str_out, 0, 30 );
+            $str_out =~ s{[^\s]+$}{};
+            $str_out .= '...';
+        }
 
         # limitation... for now
         chomp $want;
         chomp $out;
 
         #chomp $out if $want eq 'ok';
-        note "OUT :$out:";
-        note "want :$want:";
         $errors->check_todo( $out eq $want, qq{Output is: "$str_out"}, 'TESTS' );
 
         my $signal    = $? % 256;
@@ -146,7 +151,7 @@ foreach my $optimization (@optimizations) {
             skip( "Test failures irrelevant if exits premature with $sig_name", 6 );
         }
 
-        is( $exit_code, 0, "Exit code is 0" );
+        $errors->check_todo( $exit_code == 0, "Exit code is 0", 'EXIT' );
     }
 }
 
