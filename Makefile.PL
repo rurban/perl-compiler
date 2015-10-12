@@ -1,5 +1,6 @@
 use ExtUtils::MakeMaker;
 use Config;
+use Data::Dumper;
 use File::Spec;
 use 5.006;
 use Carp;
@@ -77,6 +78,14 @@ sub write_b_c_flags {
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
     print PH "\@deps = qw( ", $b_c_deps, " );\n\n";
+
+    $Data::Dumper::Terse=1;
+    $Data::Dumper::Sortkeys=1;
+    my $conf = Dumper \%Config;
+    $conf =~ s/^\s*{/(/;
+    $conf =~ s/}\s*$/);/;
+    print PH "our \%Config = $conf\n\n";
+
     print PH "1;\n";
     close PH;
     chmod 0644, "lib/B/C/Flags.pm";

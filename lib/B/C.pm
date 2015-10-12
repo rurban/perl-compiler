@@ -16,7 +16,13 @@ our $VERSION = '1.52_03';
 our %debug;
 our $check;
 my $eval_pvs = '';
-use Config;
+
+our %Config;
+BEGIN {
+  use B::C::Flags;
+  *Config = \%B::C::Flags::Config;
+}
+
 # Thanks to Mattia Barbon for the C99 tip to init any union members
 my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
@@ -353,7 +359,6 @@ BEGIN {
 }
 use B::Asmdata qw(@specialsv_name);
 
-use B::C::Flags;
 use FileHandle;
 
 my $hv_index      = 0;
