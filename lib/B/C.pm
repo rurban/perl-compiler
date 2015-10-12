@@ -1266,6 +1266,7 @@ sub save_context {
 sub save_main {
     verbose("Starting compile");
     verbose("Walking tree");
+    %Exporter::Cache = (); # avoid B::C and B symbols being stored
     $B::C::curcv = B::main_cv;
 
     if ( debug('walk') ) {
@@ -1610,7 +1611,7 @@ sub dl_module_to_sofile {
 
 # 5.15.3 workaround [perl #101336], without .bs support
 # XSLoader::load_file($module, $modlibname, ...)
-my $dlext = $Config::Config{dlext};
+my $dlext = $Config{dlext};;
 eval q|
 sub XSLoader::load_file {
   #package DynaLoader;

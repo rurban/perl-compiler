@@ -59,6 +59,7 @@ sub write_b_c_flags {
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
     print PH "\@deps = qw( ", $b_c_deps, " );\n\n";
+    #print PH %Config{qw()} = ();
     print PH "1;\n";
     close PH;
     chmod 0644, "lib/B/C/Flags.pm";
