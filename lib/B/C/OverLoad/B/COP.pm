@@ -139,9 +139,10 @@ sub save {
                 # QUESTION: use length on the non const and save it with const, could the len be incorrect ?
                 my ( $pv, $len, $flags ) = strlen_flags( $op->stashpv );
                 my $stash = savestash_flags( constpv( $op->stashpv ), $len, $flags );
+                my $constpv = constpv($file);
                 init()->add(
                     sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, constpv($file) )
+                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, $constpv )
                 );
             }
             else {
@@ -156,7 +157,7 @@ sub save {
             my $stash = savestashpv( $op->stashpv );
             init()->add(
                 sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                sprintf( "CopFILE_set(&cop_list[$ix], %s);", cstring($file) )
+                sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) )
             );
         }
     }

@@ -428,6 +428,7 @@ sub save_pv_or_rv {
         }
     }
 
+    $fullname = '' if !defined $fullname;
     debug(
         pv => "Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s",
         $savesym, cstring($pv), $cur, $len,

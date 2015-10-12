@@ -137,7 +137,8 @@ sub output {
         }
 
         #if ( $format eq "\t{ %s }, /* %s_list[%d] %s */%s\n" ) {
-        $return_string .= sprintf $format, $val, $self->name, $i, $ref, $dbg;
+        no warnings "redundant";
+        $return_string .= sprintf($format, $val, $self->name, $i, $ref, $dbg);
 
         #}
         #else {

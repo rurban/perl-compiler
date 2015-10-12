@@ -28,7 +28,7 @@ sub save {
 
     # sv_free2 problem with !SvIMMORTAL and del_SV
     my $refcnt = $sv->REFCNT;
-    if ( $fullname eq 'svop const' ) {
+    if ( $fullname && $fullname eq 'svop const' ) {
         $refcnt = DEBUGGING() ? 1000 : 0x7fffffff;
     }
 
