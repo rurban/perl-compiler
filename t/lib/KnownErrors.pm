@@ -24,6 +24,8 @@ my $failure_profiles = {
     'TODO'   => "TODO test unexpectedly passing",
     'COMPAT' => "Test isn't useful for B::C",
     'SKIP'   => "TODO test is skipped (broken?)",
+    'CHECK'  => "Uncompile version passses perl -c",
+    'EXIT'   => "Exit != 0",
 };
 
 sub new {
@@ -68,6 +70,7 @@ sub get_current_error_type {
 sub check_todo {
     my ( $self, $v, $msg, $want_type ) = @_;
 
+    --$self->{to_skip} if exists $self->{to_skip};
     $want_type ||= '';
 
     my $current_t_file = $self->{file_to_test} or die;
@@ -99,10 +102,11 @@ sub check_todo {
             # removing test from file
             diag "Removing test $current_t_file from known_errors.txt";
             $self->update_known_errors( test => $current_t_file ) if $self->{first_error};
+            return 0;
         }
         else {
             $TODO = $todo;
-            ok($v);
+            return ok($v, $msg);
         }
     }
 }
