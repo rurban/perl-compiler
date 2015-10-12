@@ -64,6 +64,7 @@ push @todo, (21) if $^O =~ /MSWin32|cygwin|AIX/ and $] > 5.011003 and $] < 5.013
 push @todo, (46) if $] >= 5.012 and $] < 5.018;
 #push @todo, (41..43) if $] >= 5.010; #freebsd
 #push @todo, (7, 17..18, 21, 30, 35) if $] >= 5.018 and $ITHREADS;
+push @todo, (9,10,12,42,43) if $] >= 5.018;
 
 my @skip = ();
 #push @skip, (27,32,42..43) if !$ITHREADS;
