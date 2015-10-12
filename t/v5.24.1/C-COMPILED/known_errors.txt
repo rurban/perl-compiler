@@ -117,11 +117,11 @@ op/list.t                    BC        op/list.c is generated (-O3,-fno-fold)
 op/local.t                   SIG       Exit signal is 11 SEGV
 op/loopctl.t                 BC        op/loopctl.c is generated (-O3,-fno-fold)
 op/lvref.t                   PLAN      Plan was valid
-op/magic-27839.t             BC        op/magic-27839.c is generated (-O3,-fno-fold)
 op/magic.t                   SIG       Exit signal is 11 SEGV
 op/method.t                  SIG       Exit signal is 11 SEGV
 op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fold)
 op/my.t                      SIG       Exit signal is 6 SIGABRT
+op/mydef.t                   TODO      No TODO tests passed
 op/ord.t                     BC        op/ord.c is generated (-O3,-fno-fold)
 op/overload_integer.t        PLAN      Plan was valid
 op/override.t                BC        op/override.c is generated (-O3,-fno-fold)
