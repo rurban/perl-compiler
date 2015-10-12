@@ -6,3 +6,5 @@ require IO::Scalar;
 # for testing
 require IO::Socket::SSL;
 require Net::LibIDN;
+Net::SSLeay
+Net::LibIDN
