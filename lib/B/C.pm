@@ -290,6 +290,9 @@ BEGIN {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
     B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST CVf_ANON
                  SVf_FAKE)); # both unsupported for 5.6
+    eval q[
+      sub SVs_OBJECT() {0x00100000}
+     ];
   } else {
     eval q[
       sub SVp_NOK() {0}; # unused
@@ -297,6 +300,7 @@ BEGIN {
       sub CVf_ANON() {4};
       sub PMf_ONCE() {0xff}; # unused
       sub SVf_FAKE() {0x00100000}; # unused
+      sub SVs_OBJECT() {0x00001000}
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
@@ -2639,6 +2643,7 @@ sub B::PVNV::save {
       }
     }
   }
+  push @B::C::static_free, "&".$s if $PERL518 and $sv->FLAGS & SVs_OBJECT;
   savesym( $sv, "&".$s );
 }
 
@@ -2758,6 +2763,7 @@ sub B::PV::save {
   }
   my $s = "sv_list[$svix]";
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
+  push @B::C::static_free, "&".$s if $PERL518 and $flags & SVs_OBJECT;
   savesym( $sv, "&".$s );
 }
 
@@ -4208,6 +4214,10 @@ sub B::GV::save {
   if ($fullname =~ /^threads::(tid|AUTOLOAD)$/ and !$ITHREADS) {
     $filter = 8;
   }
+  # # no need to assign any SV/AV/HV to them (172)
+  if ($PERL518 and $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/) {
+    $filter = 7;
+  }
 
   my $is_empty = $gv->is_empty;
   if (!defined $gvname and $is_empty) { # 5.8 curpad name
@@ -4802,6 +4812,7 @@ sub B::AV::save {
     # protect against recursive self-references (Getopt::Long)
     $sym = savesym( $av, "(AV*)&sv_list[$sv_ix]" );
     $magic = $av->save_magic($fullname);
+    push @B::C::static_free, $sym if $PERL518 and $av->FLAGS & SVs_OBJECT;
   }
 
   if ( $debug{av} ) {
@@ -5095,6 +5106,8 @@ sub B::HV::save {
   # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
   # value => rv => cv => ... => rv => same hash
   $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
+  push @B::C::static_free, $sym if $PERL518 and $hv->FLAGS & SVs_OBJECT;
+
   if (@contents) {
     local $B::C::const_strings = $B::C::const_strings;
     my ($i, $length);
@@ -6117,19 +6130,22 @@ _EOT7
       if ($s =~ /^sv_list\[\d+\]\./) { # pv directly (unused)
 	print "    $s = NULL;\n";
       } elsif ($s =~ /^sv_list/) {
-       print "    SvLEN(&$s) = 0;\n";
-       print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
+        print "    SvLEN(&$s) = 0;\n";
+        print "    SvPV_set(&$s, (char*)&PL_sv_undef);\n";
       } elsif ($s =~ /^&sv_list/) {
-       print "    SvLEN($s) = 0;\n";
-       print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
-     } elsif ($s =~ /^&padnamelist_list/) {
-       print "    Safefree(PadnamelistARRAY($s));\n";
-       print "    PadnamelistMAX($s) = 0;\n";
-       print "    PadnamelistREFCNT($s) = 0;\n";
-     } elsif ($s =~ /^&padname_list/) {
-       print "    PadnameREFCNT($s) = 0;\n";
-      # dead code ---
-     } elsif ($s =~ /^cop_list/) {
+        print "    SvLEN($s) = 0;\n";
+        print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
+      } elsif ($s =~ /^\Q(HV*)&sv_list\E/) {
+	print "    SvREADONLY_on((SV*)$s);\n";
+        print "    SvREFCNT($s) = SvREFCNT_IMMORTAL;\n";
+      } elsif ($s =~ /^&padnamelist_list/) {
+        print "    Safefree(PadnamelistARRAY($s));\n";
+        print "    PadnamelistMAX($s) = 0;\n";
+        print "    PadnamelistREFCNT($s) = 0;\n";
+      } elsif ($s =~ /^&padname_list/) {
+        print "    PadnameREFCNT($s) = 0;\n";
+        # dead code ---
+      } elsif ($s =~ /^cop_list/) {
 	if ($ITHREADS or !$MULTI) {
 	  print "    CopFILE_set(&$s, NULL);";
         }
