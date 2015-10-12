@@ -11,7 +11,7 @@ use Test::More;
 
 BEGIN {
     use FindBin;
-    unshift @INC, $FindBin::Bin."/../../../lib";
+    unshift @INC, $FindBin::Bin . "/../../../lib";
 }
 
 use KnownErrors qw/check_todo/;
@@ -27,7 +27,7 @@ $optimizations[0] .= ',-Dwalk' if ( $ENV{BC_WALK} );
 
 # Setup file_to_test to be the file we actually want to test.
 my ( $file_to_test, $path ) = fileparse($0);
-my ($before, $after) = split('C-COMPILED/', $path );
+my ( $before, $after ) = split( 'C-COMPILED/', $path );
 my $short_path = $path;
 $short_path =~ s{^.*C-COMPILED/+}{};
 $file_to_test = $short_path . $file_to_test;
@@ -42,7 +42,7 @@ my $base_dir = dirname($path);
 
 chdir "$FindBin::Bin/../" or die $!;
 
-my $current_t_file = $file_to_test;
+my $current_t_file   = $file_to_test;
 my $todo_description = '';
 
 my $type = $errors->get_current_error_type();
@@ -54,7 +54,7 @@ if ( $type eq 'COMPAT' || $type eq 'SKIP' ) {
 }
 
 # need to run CORE test suite in t
-chdir "$FindBin::Bin/../../t" or die "Cannot chdir to t directory: $!"; 
+chdir "$FindBin::Bin/../../t" or die "Cannot chdir to t directory: $!";
 
 plan tests => 3 + 9 * scalar @optimizations;
 
@@ -84,17 +84,18 @@ foreach my $optimization (@optimizations) {
   TODO: SKIP: {
         local $TODO;
 
+        $errors->{to_skip} = 9;
+
         # Generate the C code at $optimization level
         my $cmd = "$PERL $blib $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
 
         diag $cmd if $ENV{VERBOSE};
         my $BC_output = `$cmd`;
         note $BC_output if ($BC_output);
-        $errors->check_todo( -e $c_file && !-z _, "$c_file is generated ($optimization)", 'BC' );
 
-        if ( -z $c_file ) {
+        unless ( $errors->check_todo( -e $c_file && !-z _, "$c_file is generated ($optimization)", 'BC' ) ) {
             unlink $c_file unless $ENV{BC_DEVELOPING};
-            skip( "Can't test further due to failure to create a c file.", 9 );
+            skip( "Can't test further due to failure to create a c file.", $errors->{to_skip} );
         }
 
         # gcc the c code.
@@ -107,11 +108,9 @@ foreach my $optimization (@optimizations) {
         note $compile_output if ($compile_output);
 
         # Validate compiles
-        $errors->check_todo( -x $bin_file, "$bin_file is compiled and ready to run.", 'GCC' );
-
-        if ( !-x $bin_file ) {
+        unless ( $errors->check_todo( -x $bin_file, "$bin_file is compiled and ready to run.", 'GCC' ) ) {
             unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
-            skip( "Can't test further due to failure to create a binary file.", 8 );
+            skip( "Can't test further due to failure to create a binary file.", $errors->{to_skip} );
         }
 
         # Parse through TAP::Harness
@@ -129,34 +128,37 @@ foreach my $optimization (@optimizations) {
         close $out_fh;
 
         my $parser = $res->{parser_for}->{$bin_file};
-        ok( $parser, "Output parsed by TAP::Harness" );
+        $errors->check_todo( $parser, "Output parsed by TAP::Harness" ) or do {
+            skip "Cannot parse TAP output", $errors->{to_skip};
+        };
 
         my $signal = $res->{wait} % 256;
         my $sig_name = $SIGNALS{$signal} || '';
 
-        $errors->check_todo( $signal == 0, "Exit signal is $signal $sig_name", 'SIG' );
-        if ( $type eq 'SIG' ) {
-            note $out if ($out);
-            skip( "Test failures irrelevant if exits premature with $sig_name", 6 );
+        unless ( $errors->check_todo( $signal == 0, "Exit signal is $signal $sig_name", 'SIG' ) ) {
+            note $out if $out;
+            skip( "Test failures irrelevant if exits premature with $sig_name", $errors->{to_skip} );
         }
 
-        $errors->check_todo( $parser->{is_good_plan}, "Plan was valid", 'PLAN' );
-        if ( $type eq 'PLAN' ) {
-            note $out;
-            skip( "TAP parse is unpredictable when plan is invalid", 5 );
+        unless ( $errors->check_todo( $parser->{is_good_plan}, "Plan was valid", 'PLAN' ) ) {
+            note $out if $out;
+            skip( "TAP parse is unpredictable when plan is invalid", $errors->{to_skip} );
         }
 
-        $errors->check_todo( $parser->{exit} == 0, "Exit code is $parser->{exit}", "EXIT" );
-
-        my $tests_ok = $errors->check_todo( !scalar @{ $parser->{failed} }, "Test results:", 'TESTS' );
+        my $tests_ok = $errors->check_todo( $parser->{exit} == 0, "Exit code is $parser->{exit}", "EXIT" );
+        $tests_ok = $errors->check_todo( !scalar @{ $parser->{failed} }, "Test results:", 'TESTS' ) && $tests_ok;
         print "    $_\n" foreach ( split( "\n", $out ) );
 
-        note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) ) unless $tests_ok;
-
-        skip( "Don't care about test sequence if tests are failing", 2 ) if ( $type =~ m/^(PLAN|TESTS)$/ );
+        unless ($tests_ok) {
+            note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
+            skip "tests are failing", $errors->{to_skip};
+        }
 
         $errors->check_todo( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence", 'SEQ' )
-          or note explain $parser->{parse_errors};
+          or do {
+            note explain $parser->{parse_errors};
+            skip "tests are not in sequence", $errors->{to_skip};
+          };
 
         $errors->check_todo( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed", 'TODO' )
           or note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
