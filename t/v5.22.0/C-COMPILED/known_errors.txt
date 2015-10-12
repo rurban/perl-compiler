@@ -142,7 +142,7 @@ op/smartmatch.t              TESTS     Test results:
 op/sort.t                    TESTS     Test results:
 op/sprintf.t                 BC        op/sprintf.c is generated (-O3,-fno-fold)
 op/sprintf2.t                TESTS     Test results:
-op/stash.t                   TESTS     Test results:
+op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      Plan was valid
 op/sub.t                     PLAN      Plan was valid
 op/sub_lval.t                TESTS     Test results:
