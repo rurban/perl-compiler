@@ -15,7 +15,13 @@ use strict;
 our $VERSION = '1.52_04';
 
 our $check;
-use Config;
+
+our %Config;
+
+BEGIN {
+    use B::C::Flags;
+    *Config = \%B::C::Flags::Config;
+}
 
 use B::Flags;
 use B::C::Config;    # import everything
@@ -69,7 +75,6 @@ BEGIN {
            sub SVs_SMG { 0x00400000 }];
 }
 
-use B::C::Flags;
 use FileHandle;
 
 use B::FAKEOP  ();

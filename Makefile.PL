@@ -1,12 +1,13 @@
 use ExtUtils::MakeMaker;
 use Config;
+use Data::Dumper;
 use File::Spec;
 use 5.006;
 use Carp;
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 mkdir "lib/B/C" unless -d "lib/B/C";
-unless (-e 'lib/B/C/Flags.pm') {
+unless ( -e 'lib/B/C/Flags.pm' ) {
     open PH, ">", "lib/B/C/Flags.pm";
     print PH "package B::C::Flags;\n\n";
     print PH "\n1;\n";
@@ -14,17 +15,17 @@ unless (-e 'lib/B/C/Flags.pm') {
     chmod 0644, "lib/B/C/Flags.pm";
 }
 
-my ($use_declare_independent_comalloc, $extra_cflags, $extra_libs) = (0, "", "");
+my ( $use_declare_independent_comalloc, $extra_cflags, $extra_libs ) = ( 0, "", "" );
 my $have_independent_comalloc = check_independent_comalloc();
-if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
-    install_independent_comalloc() ;
+if ( grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV ) {
+    install_independent_comalloc();
     $have_independent_comalloc = check_independent_comalloc();
 }
 {
     my ($e_c) = grep { /-extra-cflags[= ](.+)/ } @ARGV;
     my ($e_l) = grep { /-extra-libs[= ](.+)/ } @ARGV;
     $extra_cflags .= " $e_c" if $e_c;
-    $extra_libs .= " $e_l" if $e_l;
+    $extra_libs   .= " $e_l" if $e_l;
 }
 
 sub b_c_deps {
@@ -42,14 +43,16 @@ sub write_b_c_flags {
     my $devnull = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
     print PH "\$VERSION = '$version';\n";
     my $REV = '';
-    if (my $sha1 = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit 2>$devnull`) {
+
+    if ( my $sha1 = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit 2>$devnull` ) {
         chomp $sha1;
+
         # POSIX systems only with wc
-        if (my $num = `git rev-list --abbrev-commit HEAD | wc -l 2>$devnull`) {
+        if ( my $num = `git rev-list --abbrev-commit HEAD | wc -l 2>$devnull` ) {
             chomp $num;
             $REV .= "-$num";
         }
-        $REV .= '-g'.$sha1;
+        $REV .= '-g' . $sha1;
         print PH "\$B::C::REVISION = '$REV';\n\n";
     }
     print PH "# -fav-init optimization\n";
@@ -59,85 +62,89 @@ sub write_b_c_flags {
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
     print PH "\@deps = qw( ", $b_c_deps, " );\n\n";
-    #print PH %Config{qw()} = ();
+
+    $Data::Dumper::Terse    = 1;
+    $Data::Dumper::Sortkeys = 1;
+    my $conf = Dumper \%Config;
+    $conf =~ s/^\s*{/(/;
+    $conf =~ s/}\s*$/);/;
+    print PH "our \%Config = $conf\n";
+
+    print PH "\n";
     print PH "1;\n";
     close PH;
     chmod 0644, "lib/B/C/Flags.pm";
 }
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
-my $unicode_warning =
-         "  Perl handling of new unicode identifiers - package and symbol names - \n".
-	 "  without proper TR39 handling is considered a security risc and is not fully supported.\n".
-	 "  See http://websec.github.io/unicode-security-guide/\n\n";
-if ($] > 5.015005 and $] < 5.019004) {
+my $unicode_warning = "  Perl handling of new unicode identifiers - package and symbol names - \n" . "  without proper TR39 handling is considered a security risc and is not fully supported.\n" . "  See http://websec.github.io/unicode-security-guide/\n\n";
+if ( $] > 5.015005 and $] < 5.019004 ) {
+
     # We do not want to support binary identifiers. safesyscalls with 5.019004 should be enabled
-    warn "Warning: Bad perl version $]\n".
-	 $unicode_warning.
-	 "  Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.\n";
-} elsif ($] >= 5.019004) {
-    warn "Warning:\n".
-	 $unicode_warning.
-	 "  Check your code for syntax spoofs, confusables, strip \\0 from package names\n".
-	 "  and enable use warnings 'syscalls'.\n";
+    warn "Warning: Bad perl version $]\n" . $unicode_warning . "  Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.\n";
+}
+elsif ( $] >= 5.019004 ) {
+    warn "Warning:\n" . $unicode_warning . "  Check your code for syntax spoofs, confusables, strip \\0 from package names\n" . "  and enable use warnings 'syscalls'.\n";
 }
 
 WriteMakefile(
-    NAME	 => "B::C",
+    NAME         => "B::C",
     VERSION_FROM => "lib/B/C.pm",
-    PL_FILES   => { 'script/perlcc.PL'    => 'script/perlcc' },
-    EXE_FILES  => [qw(script/perlcc script/cc_harness)],
-    PREREQ_PM  => {'Opcodes'  => '0',    # optional
-		   'IPC::Run' => '0',    # optional
-		   'B::Flags' => '0.04', # optional
-		   'Time::HiRes' => '0', # optional
-           'Encode' => 2.60, # 2.58 is broken so let's be sure we're higher than this.
-		   'ExtUtils::Embed' => '1.25' # mandatory (missing on redhat)
-                   #'B'        => '1.0901' # required but in CORE
-                  },
-    'AUTHOR'   => 'Malcolm Beattie (retired), '
-	      .   'Reini Urban <perl-compiler@googlegroups.com>',
+    PL_FILES     => { 'script/perlcc.PL' => 'script/perlcc' },
+    EXE_FILES    => [qw(script/perlcc script/cc_harness)],
+    PREREQ_PM    => {
+        'Opcodes'         => '0',       # optional
+        'IPC::Run'        => '0',       # optional
+        'B::Flags'        => '0.04',    # optional
+        'Time::HiRes'     => '0',       # optional
+        'Encode'          => 2.60,      # 2.58 is broken so let's be sure we're higher than this.
+        'ExtUtils::Embed' => '1.25'     # mandatory (missing on redhat)
+                                        #'B'        => '1.0901' # required but in CORE
+    },
+    'AUTHOR'   => 'Malcolm Beattie (retired), ' . 'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
-    (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
-       ('EXTRA_META'  => "recommends:\n" .
-        "    B::Flags:  0.04\n".
-        "    B::Debug:  1.16\n".
-        "    Opcodes:   0.10\n".
-        "    IPC::Run:  0\n",
-       ) : ()),
-    ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
-    ('META_MERGE'  => {"recommends" =>
-                       {
-                        'B::Flags' => '0.04',
-                        "B::Debug" => '1.16',
-                        "Opcodes"  => '0.10',
-                        "IPC::Run" => 0,
-                       },
-                       resources =>
-                       {
-                        license     => 'http://dev.perl.org/licenses/',
-                        homepage    => 'http://www.perl-compiler.org',
-                        bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
-                        repository  => 'http://perl-compiler.googlecode.com/',
-                        MailingList => 'http://groups.google.com/group/perl-compiler',
-                       },
-                      }
-    ) : ()),
+    (
+        ( $ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46' )
+        ? (
+            'EXTRA_META' => "recommends:\n" . "    B::Flags:  0.04\n" . "    B::Debug:  1.16\n" . "    Opcodes:   0.10\n" . "    IPC::Run:  0\n",
+          )
+        : ()
+    ),
+    (
+        $ExtUtils::MakeMaker::VERSION gt '6.46'
+        ? (
+            'META_MERGE' => {
+                "recommends" => {
+                    'B::Flags' => '0.04',
+                    "B::Debug" => '1.16',
+                    "Opcodes"  => '0.10',
+                    "IPC::Run" => 0,
+                },
+                resources => {
+                    license     => 'http://dev.perl.org/licenses/',
+                    homepage    => 'http://www.perl-compiler.org',
+                    bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
+                    repository  => 'http://perl-compiler.googlecode.com/',
+                    MailingList => 'http://groups.google.com/group/perl-compiler',
+                },
+            }
+          )
+        : ()
+    ),
     SIGN  => 0,
-    clean => { FILES =>
- 	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
-               "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
-               "t/CORE/*/*.bin t/CORE/*/*.c Io_argv* t/CORE/*/*.subtest.*.t t/CORE/tmp* tmp*"
-             },
+    clean => { FILES => "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj " . "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a " . "t/CORE/*/*.bin t/CORE/*/*.c Io_argv* t/CORE/*/*.subtest.*.t t/CORE/tmp* tmp*" },
 );
 
 sub headerpath {
     if ($core) {
-	return File::Spec->catdir(File::Spec->updir,
-				  File::Spec->updir);
-    } else {
-	return File::Spec->catdir($Config::Config{archlibexp}, "CORE");
+        return File::Spec->catdir(
+            File::Spec->updir,
+            File::Spec->updir
+        );
+    }
+    else {
+        return File::Spec->catdir( $Config::Config{archlibexp}, "CORE" );
     }
 }
 
@@ -149,12 +156,13 @@ sub headerpath {
 # with an existing malloc.h from perl.h, so we declare it by ourselves.
 sub try_compile {
     my $testc = shift;
-    my $libs = shift;
+    my $libs  = shift;
+
     # For consistency (without considering LD_PRELOAD) require perl to
     # be compiled with the same malloc library.
     return 0 unless $Config{libs} =~ /\b\Q$libs\E\b/;
-    unless (open PROG, ">", "test.c") {
-        print ("Can't write test.c\n");
+    unless ( open PROG, ">", "test.c" ) {
+        print("Can't write test.c\n");
         return 0;
     }
     print PROG $testc;
@@ -164,10 +172,11 @@ sub try_compile {
     my $cmd = "$Config{cc} $Config{ccflags} test.c";
     push @candidate, "$cmd -o test$Config{EXE_EXT} $libs $devnull";
     push @candidate, "$cmd -otest$Config{EXE_EXT} $libs $devnull";
-    while (my $cmd1 = shift (@candidate)) {
-	system ($cmd1);
-	unlink "test.c", "test$Config{EXE_EXT}";
-	$? == 0 && return 1;
+
+    while ( my $cmd1 = shift(@candidate) ) {
+        system($cmd1);
+        unlink "test.c", "test$Config{EXE_EXT}";
+        $? == 0 && return 1;
     }
     return 0;
 }
@@ -184,52 +193,55 @@ int main() {
 }
 ";
     my $testc = $testori;
-    if (try_compile($testc)) {
-	warn "-fav-init2 available: independent_comalloc() as-is activated\n";
-	return 1;
+    if ( try_compile($testc) ) {
+        warn "-fav-init2 available: independent_comalloc() as-is activated\n";
+        return 1;
     }
 
-    my @extra_libs = ("-lptmalloc3", "-lptmalloc", "-ldlmalloc", "-lnedmalloc");
+    my @extra_libs = ( "-lptmalloc3", "-lptmalloc", "-ldlmalloc", "-lnedmalloc" );
     for my $lib (@extra_libs) {
         $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
-        if (try_compile($testc, $lib)) {
+        if ( try_compile( $testc, $lib ) ) {
             $extra_libs = " $lib";
-	    warn "-fav-init2 available: independent_comalloc() with $lib activated\n";
+            warn "-fav-init2 available: independent_comalloc() with $lib activated\n";
             return 1;
         }
     }
+
     # try without the ptmalloc3 header, just the library
     $testc =~ s/#include <malloc>/void** dlindependent_comalloc(size_t, size_t*, void**);/;
     for (@extra_libs) {
-	my $lib = $_;
+        my $lib = $_;
         $lib = 'libptmalloc3.lib' if $^O eq 'MSWin32';
         $lib =~ s/^-l(.+)$/lib$1.lib/ if $^O eq 'MSWin32';
-        if (try_compile($testc, $lib)) {
-            $extra_libs = " $lib";
+        if ( try_compile( $testc, $lib ) ) {
+            $extra_libs                       = " $lib";
             $use_declare_independent_comalloc = 1;
-	    warn "-fav-init2 available: dlindependent_comalloc() with $lib activated\n";
+            warn "-fav-init2 available: dlindependent_comalloc() with $lib activated\n";
             return 1;
         }
     }
+
     # Desperate. External ptmalloc3 header to overcome -I path shadowing
     $testc = $testori;
     $testc =~ s/#include <malloc.h>/#include "malloc-2.8.3.h"/;
     my $lib = "-lptmalloc3";
     $lib = 'libptmalloc3.lib' if $^O eq 'MSWin32';
-    if (try_compile($testc, $lib)) {
-	$extra_cflags = " -DNEED_MALLOC_283";
-	$extra_libs = " $lib";
-	warn "-fav-init2 available: independent_comalloc() with -DNEED_MALLOC_283 $lib activated\n";
-	return 1;
+    if ( try_compile( $testc, $lib ) ) {
+        $extra_cflags = " -DNEED_MALLOC_283";
+        $extra_libs   = " $lib";
+        warn "-fav-init2 available: independent_comalloc() with -DNEED_MALLOC_283 $lib activated\n";
+        return 1;
     }
+
     #warn "-fav-init2 not available, independent_comalloc() not detected.\n";
     #warn "  Install on POSIX systems with:\n";
     #warn "  $^X Makefile.PL INSTALL_PTMALLOC3\n\n";
     return 0;
 }
 
-sub _system{
-    print join(" ",@_),"\n";
+sub _system {
+    print join( " ", @_ ), "\n";
     local $!;
     system @_;
     croak $! if $!;
@@ -242,12 +254,14 @@ sub install_independent_comalloc {
     -d 'ptmalloc3'
       or _system('tar xfz ptmalloc3-current.tar.gz');
     chdir "ptmalloc3" or die;
-    if ($Config{useithreads}) { 
-	# linux-pthread is basically the same. linux-shared is also an option.
-	# just Solaris, SGI and HPUX need different options.
-	_system(qw(make posix));
-    } else {
-	_system(qw(make nothreads));
+    if ( $Config{useithreads} ) {
+
+        # linux-pthread is basically the same. linux-shared is also an option.
+        # just Solaris, SGI and HPUX need different options.
+        _system(qw(make posix));
+    }
+    else {
+        _system(qw(make nothreads));
     }
     _system('make check');
     _system('sudo cp libptmalloc3.a /usr/lib/');
@@ -259,30 +273,31 @@ package MY;
 
 # Ignore certain files
 sub libscan {
+
     # Ignore temp testing files
     return 0 if $_[1] =~ /^(\.git|\.svn|jit.*|i386|.*\.orig|c?ccode.*|regen_lib\.pl)$/;
-    return 0 if $_[1] =~ /\.svn|~/; # needed for msys perl5.6
-    # On windows the C compiler would work if DynaLoader.lib would be provided.
-    # return 0 if $^O eq 'MSWin32' and !-d ".git" and $_[1] =~ /C\.pm|C\.xs|Stackobj\.pm/;
+    return 0 if $_[1] =~ /\.svn|~/;                                                       # needed for msys perl5.6
+                                                                                          # On windows the C compiler would work if DynaLoader.lib would be provided.
+                                                                                          # return 0 if $^O eq 'MSWin32' and !-d ".git" and $_[1] =~ /C\.pm|C\.xs|Stackobj\.pm/;
     return $_[1];
 }
-
 
 # Fix ActivePerl for MSVC6
 # The linker for cl 12.0.8804 has no -opt:ref,icf, which is MSVC8 linker syntax.
 sub const_config {
     my $s = shift->SUPER::const_config(@_);
-    if ($Config::Config{ccversion} eq '12.0.8804' and $Config::Config{cc} eq 'cl') {
-	$s =~ s/ -opt:ref,icf//gm;
+    if ( $Config::Config{ccversion} eq '12.0.8804' and $Config::Config{cc} eq 'cl' ) {
+        $s =~ s/ -opt:ref,icf//gm;
     }
-    $s
+    $s;
 }
 
 sub post_constants {
     my $mm = shift;
-    main::write_b_c_flags($mm->{VERSION});
+    main::write_b_c_flags( $mm->{VERSION} );
     my $libs = "\nLIBS = $Config::Config{libs}";
     $libs .= $extra_libs if $extra_libs;
+
     #XXX PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
     return "$libs\n";
 }
@@ -292,6 +307,7 @@ sub ccflags {
     $ccflags .= " -DHAVE_INDEPENDENT_COMALLOC" if $have_independent_comalloc;
     $ccflags .= $extra_cflags if $extra_cflags;
     return $ccflags if !-d ".git" or $ENV{NO_AUTHOR};
+
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
     $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
@@ -300,15 +316,15 @@ sub ccflags {
 
 sub depend {
     my $headerpath = main::headerpath();
-    my @headers = map { File::Spec->catfile($headerpath, $_) } qw(op.h cop.h sv.h);
-    my $result = "
+    my @headers    = map { File::Spec->catfile( $headerpath, $_ ) } qw(op.h cop.h sv.h);
+    my $result     = "
 TAGS :
 	etags --language=perl lib/B/*.pm
 ";
 
     $result .= "\ntest :: subdirs-test\n\n";
 
-    if ($Config{make} eq 'mingw32-make') { # mingw32 make different to msys make
+    if ( $Config{make} eq 'mingw32-make' ) {    # mingw32 make different to msys make
         $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
     }
     $result;
