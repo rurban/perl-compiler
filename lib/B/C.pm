@@ -7444,6 +7444,7 @@ sub descend_marked_unused {
 sub save_main {
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
+  %Exporter::Cache = (); # This cache is re-built on need.
   _delete_macros_vendor_undefined();
   $B::C::curcv = B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
