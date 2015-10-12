@@ -511,7 +511,7 @@ sub dl_module_to_sofile {
 
 # 5.15.3 workaround [perl #101336], without .bs support
 # XSLoader::load_file($module, $modlibname, ...)
-my $dlext = $Config::Config{dlext};
+my $dlext = $Config{dlext};
 eval q|
 sub XSLoader::load_file {
   #package DynaLoader;
@@ -7438,6 +7438,7 @@ sub descend_marked_unused {
 sub save_main {
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
+  %Exporter::Cache = (); # avoid B::C and B symbols being stored
   $B::C::curcv = B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   $verbose
