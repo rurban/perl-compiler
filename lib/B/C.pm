@@ -1269,7 +1269,8 @@ sub save_main {
     verbose("Starting compile");
     verbose("Walking tree");
     %Exporter::Cache = ();                # avoid B::C and B symbols being stored
-    $B::C::curcv     = B::main_cv;
+    _delete_macros_vendor_undefined();
+    $B::C::curcv = B::main_cv;
 
     if ( debug('walk') ) {
         verbose("Enabling B::debug / B::walkoptree_debug");
@@ -1283,6 +1284,27 @@ sub save_main {
       ? walkoptree_slow( main_root, "save" )
       : walkoptree( main_root, "save" );
     save_main_rest();
+}
+
+sub _delete_macros_vendor_undefined {
+    foreach my $class (qw(POSIX IO Fcntl Socket Exporter Errno)) {
+        no strict 'refs';
+        no strict 'subs';
+        no warnings 'uninitialized';
+        my $symtab = $class . '::';
+        for my $symbol ( sort keys %$symtab ) {
+            next if $symbol !~ m{^[0-9A-Z_]+$} || $symbol =~ m{(?:^ISA$|^EXPORT|^DESTROY|^TIE|^VERSION|^AUTOLOAD|^BEGIN|^INIT|^__|^DELETE|^CLEAR|^STORE|^NEXTKEY|^FIRSTKEY|^FETCH|^EXISTS)};
+            next if ref $symtab->{$symbol};
+            local $@;
+            my $code = "$class\:\:$symbol();";
+            eval $code;
+            if ( $@ =~ m{vendor has not defined} ) {
+                delete $symtab->{$symbol};
+                next;
+            }
+        }
+    }
+    return 1;
 }
 
 sub force_saving_xsloader {
