@@ -80,7 +80,9 @@ op/attrproto.t               PLAN      Plan was valid
 op/attrs.t                   PLAN      Plan was valid
 op/auto.t                    BC        op/auto.c is generated (-O3,-fno-fold)
 op/bless.t                   TESTS     Test results:
+op/blocks.t                  TESTS     Test results:
 op/bop.t                     BC        op/bop.c is generated (-O3,-fno-fold)
+op/caller.t                  TESTS     Test results:
 op/chop.t                    BC        op/chop.c is generated (-O3,-fno-fold)
 op/chr.t                     BC        op/chr.c is generated (-O3,-fno-fold)
 op/closure.t                 TESTS     Test results:
@@ -92,6 +94,7 @@ op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     BC        op/dbm.c is generated (-O3,-fno-fold)
 op/defins.t                  SIG       Exit signal is 11 SEGV
 op/die_keeperr.t             PLAN      Plan was valid
+op/dump.t                    PLAN      Plan was valid
 op/eval.t                    SKIP      TODO: infinite loop while running the binary
 op/evalbytes.t               BC        op/evalbytes.c is generated (-O3,-fno-fold)
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
@@ -104,13 +107,16 @@ op/goto_xs.t                 SKIP      needs XS::APItest
 op/grep.t                    BC        op/grep.c is generated (-O3,-fno-fold)
 op/gv.t                      SIG       TODO: Segmentation Fault
 op/hash-rt85026.t            GCC       op/hash-rt85026.bin is compiled and ready to run.
+op/heredoc.t                 TESTS     Test results:
 op/hexfp.t                   BC        op/hexfp.c is generated (-O3,-fno-fold)
 op/inc.t                     BC        op/inc.c is generated (-O3,-fno-fold)
 op/index.t                   PLAN      TODO: no output and Issue 247
 op/infnan.t                  BC        op/infnan.c is generated (-O3,-fno-fold)
 op/join.t                    TESTS     Test results:
+op/lc.t                      TESTS     Test results:
 op/leaky-magic.t             TESTS     Test results:
 op/length.t                  TESTS     Test results:
+op/lex.t                     TESTS     Test results:
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        TODO: Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
 op/list.t                    BC        op/list.c is generated (-O3,-fno-fold)
@@ -131,7 +137,7 @@ op/postfixderef.t            BC        op/postfixderef.c is generated (-O3,-fno-
 op/protowarn.t               PLAN      TODO: no output.
 op/read.t                    BC        op/read.c is generated (-O3,-fno-fold)
 op/readdir.t                 SIG       Exit signal is 11 SEGV
-op/readline.t                TESTS     Test results:
+op/readline.t                SKIP      This test started hanging when fresh_perl_is started making binaries. it's probably an io problem. 
 op/recurse.t                 BC        op/recurse.c is generated (-O3,-fno-fold)
 op/ref.t                     SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
 op/repeat.t                  BC        op/repeat.c is generated (-O3,-fno-fold)
@@ -141,7 +147,7 @@ op/signatures.t              PLAN      Plan was valid
 op/smartmatch.t              TESTS     Test results:
 op/sort.t                    TESTS     Test results:
 op/sprintf.t                 BC        op/sprintf.c is generated (-O3,-fno-fold)
-op/sprintf2.t                TESTS     Test results:
+op/sprintf2.t                PLAN      Plan was valid
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      Plan was valid
 op/sub.t                     PLAN      Plan was valid
@@ -149,6 +155,7 @@ op/sub_lval.t                TESTS     Test results:
 op/substr.t                  TESTS     Test results:
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
 op/switch.t                  PLAN      Plan was valid
+op/taint.t                   TESTS     Test results:
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
 op/tie_fetch_count.t         SIG       Exit signal is 11 SEGV
@@ -158,6 +165,7 @@ op/upgrade.t                 BC        op/upgrade.c is generated (-O3,-fno-fold)
 op/utf8cache.t               TESTS     Test results:
 op/utf8magic.t               BC        op/utf8magic.c is generated (-O3,-fno-fold)
 op/vec.t                     SIG       Exit signal is 11 SEGV
+op/warn.t                    TESTS     Test results:
 op/while.t                   BC        op/while.c is generated (-O3,-fno-fold)
 op/write.t                   SIG       Exit signal is 11 SEGV
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
