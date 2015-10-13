@@ -23,6 +23,11 @@ sub run {
         @args = grep { $_ !~ qr{^-+errors?$} } @args;
     }
 
+    if ( grep { $_ =~ qr{^-+(git|new)$} } @args ) {
+        push @args, load_new_error_tests();
+        @args = grep { $_ !~ qr{^-+(git|new)$} } @args;
+    }
+
     my @tests;
     while ( $args[-1] && $args[-1] =~ m/\.t$/ ) {
         my $t = pop @args;
@@ -45,6 +50,11 @@ sub run {
     }
 
     my @cmd = ( 'prove', @args, @tests );
+    if ( @cmd <= 1 ) {
+        say "# Nothing to run";
+        return 0;
+    }
+
     say "# Running: ", join( ' ', @cmd );
 
     if ( !$run_compile_version ) {
@@ -52,9 +62,26 @@ sub run {
     }
 
     # allow glob...
-    exec( join ' ', @cmd ) if @cmd > 1;
+    exec( join ' ', @cmd );
 
     return 1;
+}
+
+# cprove --new only run new errors detected on the file
+sub load_new_error_tests {
+    my $db = KNOWN_ERRORS;
+    my @result = split /\n/, qx{git diff --unified=0 $db};
+
+    my %tests;
+    foreach my $line (@result) {
+        next if $line =~ qr{^(\-\-\-|\+\+\+)\s};
+        next unless $line =~ s{^(\-|\+)}{};
+        if ( $line =~ qr{([^\s]+\.t)\s} ) {
+            $tests{$1} = 1;
+        }
+    }
+
+    return sort keys %tests;
 }
 
 sub load_error_tests {
@@ -91,6 +118,11 @@ cprove -u -v op/test.t
 
 # run only tests known as broken
 > cprove --errors
+
+# run new errors detected by a git diff
+> cprove --new
+or
+> cprove --git
 
 EOS
 
