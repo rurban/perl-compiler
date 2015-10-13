@@ -4,31 +4,95 @@ use v5.14;    # or later
 
 run(@ARGV) unless caller;
 
+use constant TEST_SUITE_VERSION => 'v5.22.0';
+use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
+
 sub run {
     my (@args) = @_;
+
+    my $v = TEST_SUITE_VERSION;
+
+    return usage() if !scalar @args || grep { $_ =~ qr{^-+h(elp)?$} } @args;
+
+    #$run_compile_version = grep { qr{^-+c(ompiled)?$} } @args;
+    my $run_compile_version = !grep { $_ =~ qr{^-+u(ncompiled)?$} } @args;
+    my @args                = grep  { $_ !~ qr{^-+u(ncompiled)?$} } @args;
+
+    if ( grep { $_ =~ qr{^-+errors?$} } @args ) {
+        push @args, load_error_tests();
+        @args = grep { $_ !~ qr{^-+errors?$} } @args;
+    }
 
     my @tests;
     while ( $args[-1] && $args[-1] =~ m/\.t$/ ) {
         my $t = pop @args;
-        die "Need a CORE/*.t file as last argument" unless $t && $t =~ qr{t/CORE/.*\.t$};
 
-        my ( $before, $after ) = split( '/CORE/', $t );
-        $after =~ s{/}{--}g;
-        $t = $before . '/C-COMPILED/CORE--' . $after;
-
-        if ( !-e $t ) {
-            $t =~ s{\.t$}{==*.t};
-            $t = ( glob $t )[0];
+        # can simply run 'prove op/kvaslice.t'
+        if ( $t !~ qr{\Q/$v/\E} ) {
+            $t = 't/' . $v . '/t/' . $t;
         }
 
-        die "Cannot find a test file" unless -e $t;
+        my ( $before, $after ) = split( $v . '/t/', $t );
+        if ($run_compile_version) {
+            $t = $before . $v . '/C-COMPILED/' . $after;
+        }
+        else {
+            $t = $after;    # need to chdir for the uncompiled version
+        }
+
+        #die "Cannot find a test file" unless -e $t;
         unshift @tests, $t;
     }
 
     my @cmd = ( 'prove', @args, @tests );
-    say "Running: ", join( ' ', @cmd );
+    say "# Running: ", join( ' ', @cmd );
 
-    exec(@cmd);
+    if ( !$run_compile_version ) {
+        chdir("t/$v/t");    # core tests need to be run from t directory
+    }
+
+    # allow glob...
+    exec( join ' ', @cmd ) if @cmd > 1;
+
+    return 1;
+}
+
+sub load_error_tests {
+    my @tests;
+
+    open( my $fh, '<', KNOWN_ERRORS ) or die;
+    while ( my $line = <$fh> ) {
+        next if $line =~ qr{^\s*#};
+        if ( $line =~ qr{^([^\s]+\.t)\s} ) {
+            push @tests, $1;
+        }
+    }
+
+    return @tests;
+}
+
+sub usage {
+
+    print <<'EOS';
+# run the compiled version
+cprove -j4 t/v5.22.0/t/*.t
+
+# run the uncompiled version
+cprove -u -j4 t/v5.22.0/t/*.t
+
+# run the compiled version
+cprove op/test.t 
+
+# run the uncompiled version
+cprove -u -v op/test.t 
+
+# run multiple compiled tests
+> cprove op/*.t
+
+# run only tests known as broken
+> cprove --errors
+
+EOS
 
     return 0;
 }
