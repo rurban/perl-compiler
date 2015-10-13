@@ -428,6 +428,7 @@ our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
     'cog'             => \$B::C::pv_copy_on_grow,
     'const-strings'   => \$B::C::const_strings,
+    'const-sharedhek-strings'   => \$B::C::const_sharedhek_strings,
     'save-data'       => \$B::C::save_data_fh,
     'ppaddr'          => \$B::C::optimize_ppaddr,
     'walkall'         => \$B::C::walkall,
@@ -451,7 +452,7 @@ our %optimization_map = (
     0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-sharedhek-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
   );
 our %debug_map = (
@@ -1005,7 +1006,7 @@ sub save_hek {
   }
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = $sym;
-  my $cstr = cstring($str);
+  my $cstr = $B::C::const_sharedhek_strings ? constpv($str) : cstring($str);
   $decl->add(sprintf("Static HEK *%s;", $sym));
   warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
     if $debug{pv};
