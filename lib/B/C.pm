@@ -971,10 +971,8 @@ sub save_pv_or_rv {
     }
   }
   if ($len and $PERL518) { # COW logic
-    my $ptrsize = $Config{ptrsize};
-    while ($len % $ptrsize) { # XXX $len += $len % $ptrsize;
-      $len++;
-    }
+    my $offset = $len % $Config{ptrsize};
+    $len += $Config{ptrsize} - $offset if $offset;
   }
   warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s\n", $savesym, cstring($pv), $cur, $len,
                $static, $iscow, $shared_hek ? "shared, $fullname" : $fullname) if $debug{pv};
