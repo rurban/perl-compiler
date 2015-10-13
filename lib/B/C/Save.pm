@@ -40,18 +40,17 @@ sub savepv {
     my ( $cstring, $len, $utf8 ) = strlen_flags($pv);
 
     return $strtable{$cstring} if defined $strtable{$cstring};
-    $pv = pack "a*", $pv;
     my $pvsym = sprintf( "pv%d", inc_pv_index() );
     $const = $const ? " const" : "";
     if ( defined $max_string_len && $len > $max_string_len ) {
-        my $chars = join ', ', map { cchar $_ } split //, $pv;
+        my $chars = join ', ', map { cchar $_ } split //, pack("a*", $pv);
         decl()->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
-        $strtable{$cstring} = "$pvsym";
+        $strtable{$cstring} = $pvsym;
     }
     else {
         if ( $cstring ne "0" ) {    # sic
             decl()->add( sprintf( "Static%s char %s[] = %s;", $const || '', $pvsym, $cstring ) );
-            $strtable{$cstring} = "$pvsym";
+            $strtable{$cstring} = $pvsym;
         }
     }
     return wantarray ? ( $pvsym, $len ) : $pvsym;

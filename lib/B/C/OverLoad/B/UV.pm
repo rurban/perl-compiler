@@ -16,6 +16,7 @@ sub save {
     my $uvuformat = $Config{uvuformat};
     $uvuformat =~ s/"//g;    #" poor editor
 
+    xpvuvsect()->comment( "stash, magic, cur, len, xiv_u" );
     # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
     xpvuvsect()->add( sprintf( "Nullhv, {0}, 0, 0, {%" . $uvuformat . "U}", $sv->UVX ) );
 

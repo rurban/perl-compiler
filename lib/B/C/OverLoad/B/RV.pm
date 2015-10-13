@@ -21,7 +21,8 @@ sub save {
     my $rv = save_op( $sv, $fullname );
     return '0' unless $rv;
 
-    # 5.22 has a wrong RV->FLAGS
+    svsect()->comment( "any, refcnt, flags, sv_u" );
+    # 5.22 has a wrong RV->FLAGS (https://github.com/perl11/cperl/issues/63)
     my $flags = $sv->FLAGS;
     $flags = 0x801 if $flags & 9;    # not a GV but a ROK IV (21)
 

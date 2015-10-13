@@ -33,6 +33,7 @@ sub save {
         }
     }
 
+    xpvivsect()->comment( "stash, magic, cur, len, xiv_u" );
     xpvivsect()->add( sprintf( "Nullhv, {0}, 0, {0}, {%s}", $ivx ) );
 
     svsect()->add(

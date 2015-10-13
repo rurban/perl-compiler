@@ -398,7 +398,7 @@ sub _savere {
     my $sym;
     my $pv = $re;
     my ( $is_utf8, $cur ) = read_utf8_string($pv);
-    my $len = 0;
+    my $len = 0; # static buffer
 
     # QUESTION: this code looks dead
     #   at least not triggered by the core unit tests
@@ -412,7 +412,7 @@ sub _savere {
     );
     $sym = sprintf( "&sv_list[%d]", svsect()->index );
 
-    return ( $sym, length( pack "a*", $re ) );
+    return ( $sym, $cur );
 }
 
 1;

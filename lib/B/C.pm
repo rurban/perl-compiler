@@ -341,7 +341,7 @@ sub save_pv_or_rv {
     }
     else {
         if ($pok) {
-            $pv = pack "a*", $sv->PV;
+            $pv = pack "a*", $sv->PV; # XXX!
             $cur = ( $sv and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length($pv);
         }
         else {
@@ -422,10 +422,8 @@ sub save_pv_or_rv {
 
     # QUESTION: should not it be done for any xpvsect ?
     if ($len) {
-        my $ptrsize = $Config{ptrsize};
-        while ( $len % $ptrsize ) {
-            $len++;
-        }
+        my $offset = $len % $Config{ptrsize};
+        $len += $Config{ptrsize} - $offset if $offset;
     }
 
     $fullname = '' if !defined $fullname;
