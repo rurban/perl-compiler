@@ -428,6 +428,7 @@ our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
     'cog'             => \$B::C::pv_copy_on_grow,
     'const-strings'   => \$B::C::const_strings,
+    'const-cop-strings'   => \$B::C::const_cop_strings,
     'const-sharedhek-strings'   => \$B::C::const_sharedhek_strings,
     'save-data'       => \$B::C::save_data_fh,
     'ppaddr'          => \$B::C::optimize_ppaddr,
@@ -452,7 +453,7 @@ our %optimization_map = (
     0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-sharedhek-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-strings -fconst-cop-strings -fconst-sharedhek-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
   );
 our %debug_map = (
@@ -815,7 +816,7 @@ sub savere {
 }
 
 sub constpv {
-  return savepv(shift, 1);
+  return scalar savepv(shift, 1);
 }
 
 sub savepv {
@@ -2092,12 +2093,9 @@ sub B::COP::save {
   #push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
-      if ($B::C::const_strings) {
-        my ($pv, $len, $flags) = strlen_flags($op->stashpv);
-        my $stash = savestash_flags(constpv($op->stashpv), $len, $flags);
-        my $constpv = constpv($file);
-        $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, $constpv ));
+      if ($B::C::const_cop_strings) {
+        $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv($op->stashpv) ));
+        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
       } else {
         my $stash = savestashpv($op->stashpv);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
