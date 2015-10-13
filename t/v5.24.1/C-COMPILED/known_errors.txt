@@ -72,7 +72,6 @@ mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   PLAN      Plan was valid
 mro/recursion_dfs.t          BC        mro/recursion_dfs.c is generated (-O3,-fno-fold)
 mro/vulcan_c3_utf8.t         TESTS     TODO: Malformed UTF-8.
-op/alarm.t                   BC        op/alarm.c is generated (-O3,-fno-fold)
 op/anonconst.t               BC        op/anonconst.c is generated (-O3,-fno-fold)
 op/array_base.t              PLAN      Plan was valid
 op/attrhand.t                PLAN      Plan was valid
