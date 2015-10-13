@@ -130,7 +130,6 @@ sub output {
     if ($dodbg and $section->[-1]{dbg}->[$i]) {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." ".$ref." */";
     }
-    no warnings "redundant";
     if ($format eq "\t{ %s }, /* %s_list[%d] %s */%s\n") {
       printf $fh $format, $_, $section->name, $i, $ref, $dbg;
     } else {
