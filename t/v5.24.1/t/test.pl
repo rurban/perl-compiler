@@ -996,6 +996,18 @@ my $tmpfile = tempfile();
 sub _fresh_perl {
     my ( $prog, $action, $expect, $runperl_args, $name ) = @_;
 
+    my $is_binary;
+    if ( $0 =~ m/\.bin$/ ) {
+        $is_binary = 1;
+
+        # let makefile do the job
+        $tmpfile = $0;
+        ($tmpfile) = $tmpfile =~ m/(.*)/;
+        $tmpfile =~ s/\.bin$/.subtest.$test.t/;
+        $tmpfiles{$tmpfile} = 1;
+        unlink $tmpfile if -e $tmpfile;
+    }
+
     # Given the choice of the mis-parsable {}
     # (we want an anon hash, but a borked lexer might think that it's a block)
     # or relying on taking a reference to a lexical
@@ -1011,8 +1023,15 @@ sub _fresh_perl {
     print TEST $prog;
     close TEST or die "Cannot close $tmpfile: $!";
 
-    my $results = runperl(%$runperl_args);
-    my $status  = $?;
+    my $results;
+    if ($is_binary) {
+        $results = runperl_binary( $tmpfile, $runperl_args );
+    }
+    else {
+        $results = runperl(%$runperl_args);
+    }
+
+    my $status = $?;
 
     # Clean up the results into something a bit more predictable.
     $results =~ s/\n+$//;
@@ -1059,6 +1078,35 @@ sub _fresh_perl {
     }
 
     return $pass;
+}
+
+sub runperl_binary {
+    my ( $test, $opts ) = @_;
+
+    $opts ||= {};
+    my $error = $opts->{'stderr'} ? '2>&1' : '';
+    my $bin = $test;
+    $bin =~ s/\.t$/\.bin/;
+    unlink $bin if -e $bin;
+    print STDERR "# running: make $bin ===\n";
+
+    ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
+    my $make = `perlcc -O3 -o $bin $test $error`;
+    map { print STDERR "# $_\n" } split /\n/, $make;
+    return $make if $? || $opts->{perlcc_only};
+
+    # now execute the binary
+    my $foo = $opts->{'stdin'} || '';
+    print STDERR "# running: ./$bin $foo\n";
+    my $output;
+    if ($foo) {
+        $output = `echo "$foo" | ./$bin $error`;
+    }
+    else {
+        $output = `./$bin $error`;
+    }
+    unlink $bin;
+    return $output;
 }
 
 #
