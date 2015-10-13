@@ -160,7 +160,7 @@ sub save {
             return get_cv_string( $fullname, $flags );
         }
     }
-    if ( $cvxsub && $cvname && $cvname eq "INIT" ) {
+    if ( !$isconst && $cvxsub && $cvname && $cvname eq "INIT" ) {
         no strict 'refs';
         debug( sub => $fullname );
         return svref_2object( \&Dummy_initxs )->save;
