@@ -16,7 +16,13 @@ our $VERSION = '1.52_03';
 our %debug;
 our $check;
 my $eval_pvs = '';
-use Config;
+
+our %Config;
+BEGIN {
+  use B::C::Flags;
+  *Config = \%B::C::Flags::Config;
+}
+
 # Thanks to Mattia Barbon for the C99 tip to init any union members
 my $C99 = $Config{d_c99_variadic_macros}; # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
@@ -353,7 +359,6 @@ BEGIN {
 }
 use B::Asmdata qw(@specialsv_name);
 
-use B::C::Flags;
 use FileHandle;
 
 my $hv_index      = 0;
@@ -423,6 +428,8 @@ our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
     'cog'             => \$B::C::pv_copy_on_grow,
     'const-strings'   => \$B::C::const_strings,
+    'const-cop-strings'   => \$B::C::const_cop_strings,
+    'const-sharedhek-strings'   => \$B::C::const_sharedhek_strings,
     'save-data'       => \$B::C::save_data_fh,
     'ppaddr'          => \$B::C::optimize_ppaddr,
     'walkall'         => \$B::C::walkall,
@@ -446,7 +453,7 @@ our %optimization_map = (
     0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
     2 => [qw(-fro-inc -fsave-data)],
-    3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
+    3 => [qw(-fno-destruct -fconst-strings -fconst-cop-strings -fconst-sharedhek-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
   );
 our %debug_map = (
@@ -809,7 +816,7 @@ sub savere {
 }
 
 sub constpv {
-  return savepv(shift, 1);
+  return scalar savepv(shift, 1);
 }
 
 sub savepv {
@@ -1000,7 +1007,7 @@ sub save_hek {
   }
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = $sym;
-  my $cstr = cstring($str);
+  my $cstr = $B::C::const_sharedhek_strings ? constpv($str) : cstring($str);
   $decl->add(sprintf("Static HEK *%s;", $sym));
   warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
     if $debug{pv};
@@ -2086,12 +2093,9 @@ sub B::COP::save {
   #push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
     if (!$ITHREADS) {
-      if ($B::C::const_strings) {
-        my ($pv, $len, $flags) = strlen_flags($op->stashpv);
-        my $stash = savestash_flags(constpv($op->stashpv), $len, $flags);
-        my $constpv = constpv($file);
-        $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, $constpv ));
+      if ($B::C::const_cop_strings) {
+        $init->add(sprintf( "CopSTASHPV_set(&cop_list[$ix], %s);", constpv($op->stashpv) ));
+        $init->add(sprintf( "CopFILE_set(&cop_list[$ix], %s);", constpv( $file ) ));
       } else {
         my $stash = savestashpv($op->stashpv);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
@@ -7439,12 +7443,35 @@ sub descend_marked_unused {
 sub save_main {
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
+  %Exporter::Cache = (); # This cache is re-built on need.
+  _delete_macros_vendor_undefined();
   $B::C::curcv = B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   $verbose
     ? walkoptree_slow( main_root, "save" )
     : walkoptree( main_root, "save" );
   save_main_rest();
+}
+
+sub _delete_macros_vendor_undefined {
+  foreach my $class (qw(POSIX IO Fcntl Socket Exporter Errno)) {
+    no strict 'refs';
+    no strict 'subs';
+    no warnings 'uninitialized';
+    my $symtab = $class . '::';
+    for my $symbol ( sort keys %$symtab ) {
+      next if $symbol !~ m{^[0-9A-Z_]+$} || $symbol =~ m{(?:^ISA$|^EXPORT|^DESTROY|^TIE|^VERSION|^AUTOLOAD|^BEGIN|^INIT|^__|^DELETE|^CLEAR|^STORE|^NEXTKEY|^FIRSTKEY|^FETCH|^EXISTS)};
+      next if ref $symtab->{$symbol};
+      local $@;
+      my $code = "$class\:\:$symbol();";
+      eval $code;
+      if ( $@ =~ m{vendor has not defined} ) {
+        delete $symtab->{$symbol};
+        next;
+      }
+    }
+  }
+  return 1;
 }
 
 sub fixup_ppaddr {
