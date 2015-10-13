@@ -821,7 +821,7 @@ sub savepv {
   $pv = pack "a*", $pv;
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $const = $const ? " const" : "";
-  if ( defined $max_string_len && length($pv) > $max_string_len ) {
+  if ( defined $max_string_len && $cur > $max_string_len ) {
     my $chars = join ', ', map { cchar $_ } split //, $pv;
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
     $strtable{$cstring} = "$pvsym";
@@ -1018,6 +1018,7 @@ sub save_hek {
 sub gv_fetchpvn {
   my ($name, $flags, $type) = @_;
   my ($cname, $cur, $utf8) = strlen_flags($name);
+  $flags ||= '0';
   if ($] >= 5.009002) {
     $flags .= length($flags) ? "|$utf8" : $utf8 if $utf8;
     return "gv_fetchpvn_flags($cname, $cur, $flags, $type)";
@@ -4014,7 +4015,7 @@ sub B::CV::save {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
         warn "lexsub name $lexsub" if $debug{gv};
         my ($cstring, $cur, $utf8) = strlen_flags($lexsub);
-        if (!$PERL56 and utf8::is_utf8($lexsub)) {
+        if (!$PERL56 and $utf8) {
           $cur = -$cur;
         }
         $init->add( "{ /* need a dynamic name hek */",
