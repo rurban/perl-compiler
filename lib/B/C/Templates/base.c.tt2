@@ -492,7 +492,7 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
   [% ELSIF to_free.match('^&sv_list') %]
     SvLEN([% to_free %]) = 0;
     SvPV_set([% to_free %], (char*)&PL_sv_undef);
-  [% ELSIF to_free.match('^\Q(HV*)&sv_list\E') %]
+  [% ELSIF to_free.match('^\(HV\*\)&sv_list') %]
     SvREADONLY_on((SV*)[% to_free %]);
     SvREFCNT([% to_free %]) = SvREFCNT_IMMORTAL;
   [% ELSIF to_free.match('^&padnamelist_list') %]
