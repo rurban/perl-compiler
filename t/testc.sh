@@ -901,6 +901,8 @@ $test
 }
 f("");
 '
+tests[2381]='sub is { $_[0] eq $_[1] and print "ok\n"}
+use constant INIT => 5; is(INIT, 5)'
 tests[239]='my $x="1";
 format STDOUT =
 ok @<<<<<<<

@@ -778,9 +778,9 @@ sub savere {
   my $re = shift;
   my $flags = shift || 0;
   my $sym;
-  my $pv    = $re;
+  my $pv  = $re;
   my ($cstring, $cur, $utf8) = strlen_flags($pv);
-  my $len = 0; # length( pack "a*", $pv ) + 2;
+  my $len = 0; # static buffer
   if ($PERL514) {
     $xpvsect->add( sprintf( "Nullhv, {0}, %u, %u", $cur, $len ) );
     $svsect->add( sprintf( "&xpv_list[%d], 1, %x, {%s}", $xpvsect->index,
@@ -804,7 +804,7 @@ sub savere {
     $sym = sprintf( "re%d", $re_index++ );
     $decl->add( sprintf( "Static const char *$sym = %s;", $cstring ) );
   }
-  return ( $sym, length( pack "a*", $re ) );
+  return ( $sym, $cur );
 }
 
 sub constpv {
@@ -817,17 +817,16 @@ sub savepv {
   my ($cstring, $cur, $utf8) = strlen_flags($pv);
   # $decl->add( sprintf( "/* %s */", $cstring) ) if $debug{pv};
   return $strtable{$cstring} if defined $strtable{$cstring};
-  $pv = pack "a*", $pv;
   my $pvsym = sprintf( "pv%d", $pv_index++ );
   $const = $const ? " const" : "";
-  if ( defined $max_string_len && length($pv) > $max_string_len ) {
-    my $chars = join ', ', map { cchar $_ } split //, $pv;
+  if ( defined $max_string_len && $cur > $max_string_len ) {
+    my $chars = join ', ', map { cchar $_ } split //, pack("a*", $pv);
     $decl->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
-    $strtable{$cstring} = "$pvsym";
+    $strtable{$cstring} = $pvsym;
   } else {
     if ( $cstring ne "0" ) {    # sic
       $decl->add( sprintf( "Static$const char %s[] = %s;", $pvsym, $cstring ) );
-      $strtable{$cstring} = "$pvsym";
+      $strtable{$cstring} = $pvsym;
     }
   }
   return wantarray ? ( $pvsym, $cur ) : $pvsym;
@@ -881,7 +880,7 @@ sub save_pv_or_rv {
   }
   else {
     if ($pok) {
-      $pv = pack "a*", $sv->PV;
+      $pv = pack "a*", $sv->PV; # XXX!
       $cur = ($sv and $sv->can('CUR') and ref($sv) ne 'B::GV') ? $sv->CUR : length($pv);
       # comppadname bug with overlong strings
       if ($] < 5.008008 and $cur > 100 and $fullname =~ m/ :pad\[0\]/ and $pv =~ m/\0\0/) {
@@ -966,9 +965,9 @@ sub save_pv_or_rv {
       $len = 0;
     }
   }
-  if ($len and $PERL518) {
+  if ($len and $PERL518) { # COW logic
     my $ptrsize = $Config{ptrsize};
-    while ($len % $ptrsize) {
+    while ($len % $ptrsize) { # XXX $len += $len % $ptrsize;
       $len++;
     }
   }
@@ -2088,9 +2087,9 @@ sub B::COP::save {
       if ($B::C::const_strings) {
         my ($pv, $len, $flags) = strlen_flags($op->stashpv);
         my $stash = savestash_flags(constpv($op->stashpv), $len, $flags);
-        my $constpv = constpv($file);
+        my $file = constpv($file);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, $constpv ));
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, $file ));
       } else {
         my $stash = savestashpv($op->stashpv);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
@@ -2348,10 +2347,13 @@ sub B::UV::save {
   $uvuformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
   if ($PERL514) {
     # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
+    $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
     $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
   } elsif ($PERL510) {
+    $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
     $xpvuvsect->add( sprintf( "{0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
   } else {
+    $xpvivsect->comment( "pv, cur, len, uv" );
     $xpvuvsect->add( sprintf( "0, 0, 0, %".$uvuformat."U", $sv->UVX ) );
   }
   $svsect->add(
@@ -2389,10 +2391,13 @@ sub B::IV::save {
     }
   }
   if ($PERL514) {
+    $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
     $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", $ivx ) );
   } elsif ($PERL510) {
+    $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
     $xpvivsect->add( sprintf( "{0}, 0, 0, {%s}", $ivx ) );
   } else {
+    $xpvivsect->comment( "pv, cur, len, iv" );
     $xpvivsect->add( sprintf( "0, 0, 0, %s", $ivx ) );
   }
   $svsect->add(
@@ -2732,7 +2737,9 @@ sub B::PV::save {
       warn sprintf("constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname)
         if $debug{pv};
     }
+    $xpvsect->comment( $PERL514 ? "stash, magic, cur, len" :  "xnv_u, cur, len");
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
+    $svsect->comment( "any, refcnt, flags, sv_u" );
     $svsect->add( sprintf( "&xpv_list[%d], %Lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
 			   $savesym eq 'NULL' ? '0' :
@@ -2754,7 +2761,9 @@ sub B::PV::save {
     }
   }
   else {
+    $xpvsect->comment( "pv, cur, len");
     $xpvsect->add( sprintf( "%s, %u, %u", "(char*)$savesym", $cur, $len ) );
+    $svsect->comment( "any, refcnt, flags" );
     $svsect->add(sprintf("&xpv_list[%d], %Lu, 0x%x",
 			 $xpvsect->index, $refcnt, $flags));
     $svix = $svsect->index;
@@ -3297,6 +3306,7 @@ sub B::RV::save {
   my $rv = save_rv($sv, $fullname);
   return '0' unless $rv;
   if ($PERL510) {
+    $svsect->comment( "any, refcnt, flags, sv_u" );
     # 5.22 has a wrong RV->FLAGS (https://github.com/perl11/cperl/issues/63)
     my $flags = $sv->FLAGS;
     $flags = 0x801 if $flags & 9 and $PERL522; # not a GV but a ROK IV (21)
@@ -3334,6 +3344,7 @@ sub B::RV::save {
       $init->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
+    $svsect->comment( "any, refcnt, flags" );
     $svsect->add(sprintf("&xrv_list[%d], %Lu, 0x%x",
 			 $xrvsect->index, $sv->REFCNT, $sv->FLAGS));
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
@@ -4013,7 +4024,7 @@ sub B::CV::save {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
         warn "lexsub name $lexsub" if $debug{gv};
         my ($cstring, $cur, $utf8) = strlen_flags($lexsub);
-        if (!$PERL56 and utf8::is_utf8($lexsub)) {
+        if (!$PERL56 and $utf8) {
           $cur = -$cur;
         }
         $init->add( "{ /* need a dynamic name hek */",
@@ -4774,6 +4785,7 @@ sub B::AV::save {
     }
   }
   elsif ($PERL514) {
+    $xpvavsect->comment( "stash, magic, fill, max, alloc" );
     # 5.13.3: STASH, MAGIC, fill max ALLOC
     my $line = "Nullhv, {0}, -1, -1, 0";
     $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
@@ -4784,6 +4796,7 @@ sub B::AV::save {
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
   }
   elsif ($PERL510) {
+    $xpvavsect->comment( "xnv_u, fill, max, xiv_u, magic, stash" );
     # 5.9.4+: nvu fill max iv MG STASH
     my $line = "{0}, -1, -1, {0}, {0}, Nullhv";
     $line = "{0}, $fill, $max, {0}, {0}, Nullhv" if $B::C::av_init or $B::C::av_init2;
@@ -4795,6 +4808,7 @@ sub B::AV::save {
     #$avreal = $av->FLAGS & 0x40000000; # SVpav_REAL (unused)
   }
   else {
+    $xpvavsect->comment( "array, fill, max, off, nv, magic, stash, alloc, arylen, flags" );
     # 5.8: ARRAY fill max off nv MG STASH ALLOC arylen flags
     my $line = "0, -1, -1, 0, 0.0, 0, Nullhv, 0, 0";
     $line = "0, $fill, $max, 0, 0.0, 0, Nullhv, 0, 0" if $B::C::av_init or $B::C::av_init2;
