@@ -423,7 +423,7 @@ sub save_pv_or_rv {
     }
 
     # QUESTION: should not it be done for any xpvsect ?
-    if ($len) {
+    if ($len) {    # COW logic
         my $offset = $len % $Config{ptrsize};
         $len += $Config{ptrsize} - $offset if $offset;
     }
