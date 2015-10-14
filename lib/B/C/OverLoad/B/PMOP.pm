@@ -66,7 +66,7 @@ sub save {
             $op->pmflags, $replrootfield, 'NULL'
         )
     );
-    init()->add( sprintf( "pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)$replstartfield;", pmopsect()->index ) );
+    init()->add( sprintf( "pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)%s;", pmopsect()->index, $replstartfield ) );
 
     my $code_list = $op->code_list;
     if ( $code_list and $$code_list ) {
