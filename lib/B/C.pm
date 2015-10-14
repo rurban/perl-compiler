@@ -368,9 +368,9 @@ sub save_pv_or_rv {
           and $fullname
           and ( $fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/ );
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
-            debug( hv => "use emptystring for empty shared key $fullname" );
-            $savesym = "emptystring";
-            $static  = 0;
+            WARN("use emptystring for empty shared key $fullname") if debug('pv') or debug('hv');
+            $savesym = "emptystring" unless $fullname =~ /unopaux_item.* const/;
+            $static = 0;
         }
 
         $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID

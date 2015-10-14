@@ -23,9 +23,10 @@ sub save {
     unopauxsect()->add( sprintf( "%s, s\\_%x, unopaux_item$ix + 1", $op->_save_common, ${ $op->first } ) );
     unopauxsect()->debug( $op->name, $op->flagspv ) if debug('flags');
 
-    # this cannot be a section, as the number of elements is variable
-    my $i = 1;
-    my $s = "Static UNOP_AUX_item unopaux_item${ix}[] = {\n\t{.uv=$auxlen}\t/* length prefix */\n";
+    # This cannot be a section, as the number of elements is variable
+    my $i      = 1;
+    my $s      = "Static UNOP_AUX_item unopaux_item${ix}[] = {\n\t{.uv=$auxlen}\t/* length prefix */\n";
+    my $action = 0;
     for my $item (@aux_list) {
         unless ( ref $item ) {
 
@@ -51,12 +52,20 @@ sub save {
                 $cmt .= ' INDEX_padsv' if $idx == 0x20;
                 $cmt .= ' INDEX_gvsv'  if $idx == 0x30;
             }
+            $action = $item;
+            debug( hv => "mderef action $action $cmt" );
             $s .= sprintf( "\t,{.uv=0x%x} \t/* %s: %u */\n", $item, $cmt, $item );
 
         }
         else {
             # testcase: $a[-1] -1 as B::IV not as -1
-            my $itemsym = $item->save("unopaux_item${ix}[$i]");
+            # hmm, if const ensure that candidate CONSTs have been HEKified. (pp_multideref assertion)
+            # || SvTYPE(keysv) >= SVt_PVMG
+            # || !SvOK(keysv)
+            # || SvROK(keysv)
+            # || SvIsCOW_shared_hash(keysv));
+            my $constkey = ( $action & 0x30 ) == 0x10 ? 1 : 0;
+            my $itemsym = $item->save( "unopaux_item${ix}[$i]" . ( $constkey ? " const" : "" ) );
             if ( is_constant($itemsym) ) {
                 if ( ref $item eq 'B::IV' ) {
                     my $iv = $item->IVX;
