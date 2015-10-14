@@ -814,7 +814,9 @@ sub walksymtable {
     my ( $symref, $method, $recurse, $prefix ) = @_;
     my ( $sym, $ref, $fullname );
     $prefix = '' unless defined $prefix;
-    foreach my $sym ( sort keys %$symref ) {
+
+    # reverse is to defer + - to fix Tie::Hash::NamedCapturespecial cases. GH #247
+    foreach my $sym ( reverse sort keys %$symref ) {
         no strict 'refs';
         $ref      = $symref->{$sym};
         $fullname = "*main::" . $prefix . $sym;
