@@ -87,7 +87,7 @@ op/const-optree.t            PLAN      Plan was valid
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic
 op/coresubs.t                COMPAT    uses B::walkoptree 
 op/current_sub.t             PLAN      Plan was valid
-op/dbm.t                     SIG       Exit signal is 11 SEGV
+op/dbm.t                     SIG       BC issue #223 - glob issue
 op/defins.t                  SIG       Exit signal is 11 SEGV
 op/die_keeperr.t             PLAN      Plan was valid
 op/dump.t                    PLAN      Plan was valid
