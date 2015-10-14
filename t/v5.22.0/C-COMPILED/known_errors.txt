@@ -117,7 +117,7 @@ op/my.t                      SIG       Exit signal is 6 SIGABRT
 op/mydef.t                   TODO      No TODO tests passed
 op/overload_integer.t        PLAN      Plan was valid
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
-op/pack.t                    PLAN      Plan was valid
+op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      Plan was valid
 op/protowarn.t               PLAN      TODO: no output.
 op/readdir.t                 SIG       Exit signal is 11 SEGV
