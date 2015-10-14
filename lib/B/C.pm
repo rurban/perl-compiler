@@ -985,10 +985,10 @@ sub save_pv_or_rv {
 # Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
 # Note: currently not used in list context
 sub save_hek {
-  my $str = shift; # not cstring'ed
-  my $dynamic = shift; # not yet implemented. see lexsub CvNAME in CV::save
+  my ($str, $fullname, $dynamic) = @_; # not cstring'ed
+  # $dynamic not yet implemented. see lexsub CvNAME in CV::save
   # force empty string for CV prototypes
-  return "NULL" if !length $str and !@_ and !$PERL522;
+  return "NULL" if !length $str and !@_ and $fullname !~ /unopaux_item.* const/;
   return $hektable{$str} if defined $hektable{$str};
   my ($cstr, $cur, $utf8) = strlen_flags($str);
   $cur = - $cur if $utf8;
@@ -2737,7 +2737,7 @@ sub B::PV::save {
     $svix = $svsect->index;
     if ( defined($pv) and !$static ) {
       if ($shared_hek) {
-        my $hek = save_hek($pv);
+        my $hek = save_hek($pv, $fullname);
         $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ))
           unless $hek eq 'NULL';
       } else {
