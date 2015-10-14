@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+T=$1
+test -n "$T"
+
+# run the uncompiled version
+cprove -u -v $T
+# then run the compiled version
+cprove -v $T
