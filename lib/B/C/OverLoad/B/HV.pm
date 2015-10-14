@@ -116,7 +116,7 @@ sub save {
             sprintf( "\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max ),
             "#endif",
             "\tHvARRAY($sym) = a;",
-            sprintf( "\tHvRITER_set($sym, %d);", $hv->RITER ),
+            sprintf( "\tHvRITER_set(%s, %d);", $sym, $hv->RITER ),
             "}"
         );
     }
@@ -171,7 +171,7 @@ sub save {
             init()->no_split;
             init()->add(
                 "{",
-                sprintf( "\tHV *hv = %s$sym;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)' )
+                sprintf( "\tHV *hv = %s%s;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)', $sym )
             );
             while (@contents) {
                 my ( $key, $value ) = splice( @contents, 0, 2 );
@@ -201,7 +201,7 @@ sub save {
             }
             init()->add("}");
             init()->split;
-            init()->add( sprintf( "HvTOTALKEYS($sym) = %d;", $length / 2 ) );
+            init()->add( sprintf( "HvTOTALKEYS(%s) = %d;", $sym, $length / 2 ) );
         }
     }
     else {    # empty contents still needs to set keys=0

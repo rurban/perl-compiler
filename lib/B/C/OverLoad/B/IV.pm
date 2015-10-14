@@ -33,15 +33,11 @@ sub save {
         }
     }
 
-    xpvivsect()->comment( "stash, magic, cur, len, xiv_u" );
+    xpvivsect()->comment("stash, magic, cur, len, xiv_u");
     xpvivsect()->add( sprintf( "Nullhv, {0}, 0, {0}, {%s}", $ivx ) );
 
-    svsect()->add(
-        sprintf(
-            "&xpviv_list[%d], %lu, 0x%x" . ', {' . ( C99() ? ".svu_pv=" : "" ) . 'NULL}',
-            xpvivsect()->index, $sv->REFCNT, $svflags
-        )
-    );
+    svsect()->add( sprintf( '&xpviv_list[%d], %lu, 0x%x, {.svu_pv=NULL}', xpvivsect()->index, $sv->REFCNT, $svflags ) );
+
     svsect()->debug( $fullname, $sv );
     debug(
         sv => "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",

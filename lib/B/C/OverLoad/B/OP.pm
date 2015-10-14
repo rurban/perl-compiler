@@ -77,7 +77,7 @@ sub save {
         }
 
         my $ix = copsect()->index;
-        init()->add( sprintf( "cop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+        init()->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
           unless $B::C::optimize_ppaddr;
         savesym( $op, "(OP*)&cop_list[$ix]" );
     }
@@ -87,7 +87,7 @@ sub save {
 
         opsect()->debug( $op->name, $op );
         my $ix = opsect()->index;
-        init()->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+        init()->add( sprintf( "op_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
           unless $B::C::optimize_ppaddr;
         debug(
             op => "  OP=%s targ=%d flags=0x%x private=0x%x\n",

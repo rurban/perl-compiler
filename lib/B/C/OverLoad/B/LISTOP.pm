@@ -15,17 +15,10 @@ sub save {
     my $sym = objsym($op);
     return $sym if defined $sym;
     listopsect()->comment_common("first, last");
-    listopsect()->add(
-        sprintf(
-            "%s, s\\_%x, s\\_%x",
-            $op->_save_common,
-            ${ $op->first },
-            ${ $op->last }
-        )
-    );
+    listopsect()->add( sprintf( "%s, s\\_%x, s\\_%x", $op->_save_common, ${ $op->first }, ${ $op->last } ) );
     listopsect()->debug( $op->name, $op );
     my $ix = listopsect()->index;
-    init()->add( sprintf( "listop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init()->add( sprintf( "listop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&listop_list[$ix]" );
 

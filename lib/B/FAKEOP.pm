@@ -13,7 +13,7 @@ sub save {
     my ( $op, $level ) = @_;
     opsect()->add( sprintf( "%s, %s, %s", $op->next, $op->sibling, $op->_save_common_middle ) );
     my $ix = opsect()->index;
-    init()->add( sprintf( "op_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init()->add( sprintf( "op_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     return "&op_list[$ix]";
 }

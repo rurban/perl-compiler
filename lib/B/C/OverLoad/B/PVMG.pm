@@ -210,9 +210,9 @@ sub save_magic {
                 push @B::C::static_free, $resym;
                 init()->add(
                     split /\n/,
-                    sprintf <<CODE1, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
+                    sprintf <<CODE1, $resym, $pmop->pmflags, $$sv, cchar($type), cstring($ptr), $len );
 {
-    REGEXP* rx = CALLREGCOMP((SV* const)$resym, %d);
+    REGEXP* rx = CALLREGCOMP((SV* const)%s, %d);
     sv_magic((SV*)s\\_%x, (SV*)rx, %s, %s, %d);
 }
 CODE1
@@ -398,7 +398,7 @@ sub _savere {
     my $sym;
     my $pv = $re;
     my ( $is_utf8, $cur ) = read_utf8_string($pv);
-    my $len = 0; # static buffer
+    my $len = 0;    # static buffer
 
     # QUESTION: this code looks dead
     #   at least not triggered by the core unit tests

@@ -33,13 +33,8 @@ sub save {
     my $ix = svsect()->index;
     debug( rx => "Saving RX $cstr to sv_list[$ix]" );
 
-    init()->add(    # replace sv_any->XPV with struct regexp. need pv and extflags
-        sprintf(
-            "SvANY(&sv_list[$ix]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
-            $cstr, $cur, $sv->EXTFLAGS
-        )
-    );
-
+    # replace sv_any->XPV with struct regexp. need pv and extflags
+    init()->add( sprintf( 'SvANY(&sv_list[%d]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));', $ix, $cstr, $cur, $sv->EXTFLAGS ) );
     init()->add("sv_list[$ix].sv_u.svu_rx = (struct regexp*)sv_list[$ix].sv_any;");
 
     svsect()->debug( $fullname, $sv );

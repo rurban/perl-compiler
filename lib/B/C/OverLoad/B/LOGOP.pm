@@ -14,17 +14,10 @@ sub save {
     return $sym if defined $sym;
 
     logopsect()->comment_common("first, other");
-    logopsect()->add(
-        sprintf(
-            "%s, s\\_%x, s\\_%x",
-            $op->_save_common,
-            ${ $op->first },
-            ${ $op->other }
-        )
-    );
+    logopsect()->add( sprintf( "%s, s\\_%x, s\\_%x", $op->_save_common, ${ $op->first }, ${ $op->other } ) );
     logopsect()->debug( $op->name, $op );
     my $ix = logopsect()->index;
-    init()->add( sprintf( "logop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init()->add( sprintf( "logop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&logop_list[$ix]" );
     do_labels( $op, 'first', 'other' );

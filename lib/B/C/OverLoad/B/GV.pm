@@ -216,12 +216,12 @@ sub save {
     }
     if ( $fullname =~ /^main::std(in|out|err)$/ ) {    # same as uppercase above
         init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PVGV);]);
-        init()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
         return $sym;
     }
     elsif ( $fullname eq 'main::0' ) {                 # dollar_0 already handled before, so don't overwrite it
         init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
-        init()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
         return $sym;
     }
 
@@ -256,7 +256,7 @@ sub save {
                 $gv->FILE, $gp
             );
             init()->add( "$sym = " . gv_fetchpv_string( $name, $notqual, 'SVt_PVGV' ) . ";" );
-            init()->add( sprintf( "GvGP_set($sym, %s);", $gptable{ 0 + $gp } ) );
+            init()->add( sprintf( "GvGP_set(%s, %s);", $sym, $gptable{ 0 + $gp } ) );
             $is_empty = 1;
         }
         elsif ( $gp and !$is_empty and $gvname =~ /::$/ ) {
@@ -291,17 +291,18 @@ sub save {
 
     init()->add(
         sprintf(
-            "SvFLAGS($sym) = 0x%x;%s", $svflags,
+            "SvFLAGS(%s) = 0x%x;%s", $sym, $svflags,
             debug('flags') ? " /* " . $gv->flagspv . " */" : ""
         ),
         sprintf(
-            "GvFLAGS($sym) = 0x%x; %s", $gvflags,
+            "GvFLAGS(%s) = 0x%x; %s", $sym, $gvflags,
             debug('flags') ? "/* " . $gv->flagspv(SVt_PVGV) . " */" : ""
         )
     );
     init()->add(
         sprintf(
-            "GvLINE($sym) = %d;",
+            'GvLINE(%s) = %d;',
+            $sym,
             (
                 $gv->LINE > 2147483647    # S32 INT_MAX
                 ? 4294967294 - $gv->LINE
@@ -312,13 +313,13 @@ sub save {
 
     # walksymtable creates an extra reference to the GV (#197)
     if ( $gv->REFCNT > 1 ) {
-        init()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
     }
     return $sym if $is_empty;
 
     my $gvrefcnt = $gv->GvREFCNT;
     if ( $gvrefcnt > 1 ) {
-        init()->add( sprintf( "GvREFCNT($sym) += %u;", $gvrefcnt - 1 ) );
+        init()->add( sprintf( "GvREFCNT(%s) += %u;", $sym, $gvrefcnt - 1 ) );
     }
 
     debug( gv => "check which savefields for \"$gvname\"" );
@@ -392,7 +393,7 @@ sub save {
                 no strict 'refs';
                 ${$fullname} = "$origsv";
                 svref_2object( \${$fullname} )->save($fullname);
-                init()->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
+                init()->add( sprintf( "GvSVn(%s) = (SV*)s\\_%x;", $sym, $$gvsv ) );
             }
             else {
                 $gvsv->save($fullname);    #even NULL save it, because of gp_free nonsense
@@ -406,7 +407,7 @@ sub save {
                         init()->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
                     }
                 }
-                init()->add( sprintf( "GvSVn($sym) = (SV*)s\\_%x;", $$gvsv ) );
+                init()->add( sprintf( "GvSVn(%s) = (SV*)s\\_%x;", $sym, $$gvsv ) );
             }
             if ( $fullname eq 'main::$' ) {     # $$ = PerlProc_getpid() issue #108
                 debug( gv => "  GV $sym \$\$ perlpid" );
@@ -418,7 +419,7 @@ sub save {
         if ( $$gvav && $savefields & Save_AV ) {
             debug( gv => "GV::save \@$fullname" );
             $gvav->save($fullname);
-            init()->add( sprintf( "GvAV($sym) = s\\_%x;", $$gvav ) );
+            init()->add( sprintf( "GvAV(%s) = s\\_%x;", $sym, $$gvav ) );
             if ( $fullname eq 'main::-' ) {
                 init()->add(
                     sprintf( "AvFILLp(s\\_%x) = -1;", $$gvav ),
@@ -445,7 +446,7 @@ sub save {
                 # XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
                 if ( $fullname ne 'main::INC' ) {
                     $gvhv->save($fullname);
-                    init()->add( sprintf( "GvHV($sym) = s\\_%x;", $$gvhv ) );
+                    init()->add( sprintf( "GvHV(%s) = s\\_%x;", $sym, $$gvhv ) );
                 }
             }
         }
@@ -523,7 +524,7 @@ sub save {
                                 debug( gv => "removed $sym GP assignments $origname (core CV)" );
                             }
                         }
-                        init()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+                        init()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );
                     }
                     elsif ( $B::C::xsub{$package} ) {
 
@@ -533,7 +534,7 @@ sub save {
                         init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
                     }
                     else {
-                        init2()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+                        init2()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );
                     }
 
                     if ( $gvcv->XSUBANY ) {
@@ -562,20 +563,20 @@ sub save {
                             # try if it points to an already registered symbol
                             my $anyptr = objsym( \$xsubany );    # ...refactored...
                             if ( $anyptr and $xsubany > 1000 ) { # not a XsubAliases
-                                init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = &%s;", $anyptr ) );
+                                init2()->add( sprintf( "CvXSUBANY(GvCV(%s)).any_ptr = &%s;", $sym, $anyptr ) );
                             }    # some heuristics TODO. long or ptr? TODO 32bit
                             elsif ( $xsubany > 0x100000 and ( $xsubany < 0xffffff00 or $xsubany > 0xffffffff ) ) {
                                 if ( $package eq 'POSIX' and $gvname =~ /^is/ ) {
 
                                     # need valid XSANY.any_dptr
-                                    init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_dptr = (void*)&%s;", $gvname ) );
+                                    init2()->add( sprintf( "CvXSUBANY(GvCV(%s)).any_dptr = (void*)&%s;", $sym, $gvname ) );
                                 }
                                 elsif ( $package eq 'List::MoreUtils' and $gvname =~ /_iterator$/ ) {    # should be only the 2 iterators
-                                    init2()->add( sprintf( "CvXSUBANY(GvCV($sym)).any_ptr = (void*)&%s;", "XS_List__MoreUtils__" . $gvname ) );
+                                    init2()->add("CvXSUBANY(GvCV($sym)).any_ptr = (void*)&XS_List__MoreUtils__${gvname};");
                                 }
                                 else {
                                     verbose( sprintf( "TODO: Skipping %s->XSUBANY = 0x%x", $fullname, $xsubany ) );
-                                    init2()->add( sprintf( "/* TODO CvXSUBANY(GvCV($sym)).any_ptr = 0x%lx; */", $xsubany ) );
+                                    init2()->add( sprintf( "/* TODO CvXSUBANY(GvCV(%s)).any_ptr = 0x%lx; */", $sym, $xsubany ) );
                                 }
                             }
                             elsif ( $package eq 'Fcntl' ) {
@@ -584,13 +585,13 @@ sub save {
                             }
                             else {
                                 # most likely any_i32 values for the XsubAliases provided by xsubpp
-                                init2()->add( sprintf( "/* CvXSUBANY(GvCV($sym)).any_i32 = 0x%x; XSUB Alias */", $xsubany ) );
+                                init2()->add( sprintf( "/* CvXSUBANY(GvCV(%s)).any_i32 = 0x%x; XSUB Alias */", $sym, $xsubany ) );
                             }
                         }
                     }
                 }
                 elsif ( $cvsym =~ /^(cv|&sv_list)/ ) {
-                    init()->add( sprintf( "GvCV_set($sym, (CV*)(%s));", $cvsym ) );
+                    init()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );
                 }
                 else {
                     WARN("wrong CvGV for $sym $origname: $cvsym") if debug('gv') or verbose();
@@ -632,7 +633,7 @@ sub save {
             if ( $$gvform && $savefields & Save_FORM ) {
                 debug( gv => "GV::save GvFORM(*$fullname) ..." );
                 $gvform->save($fullname);
-                init()->add( sprintf( "GvFORM($sym) = (CV*)s\\_%x;", $$gvform ) );
+                init()->add( sprintf( "GvFORM(%s) = (CV*)s\\_%x;", $sym, $$gvform ) );
 
                 # glob_assign_glob analog to CV
                 init()->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform ) );
@@ -649,17 +650,17 @@ sub save {
                     use strict 'refs';
                     debug( gv => "GV::save_data $sym, $fullname ..." );
                     $gvio->save( $fullname, 'is_DATA' );
-                    init()->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
+                    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
                     $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
                 }
                 elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
                     $gvio->save( $fullname, 'is_DATA' );
-                    init()->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
+                    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
                     WARN("Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.");
                 }
                 else {
                     $gvio->save($fullname);
-                    init()->add( sprintf( "GvIOp($sym) = s\\_%x;", $$gvio ) );
+                    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
                 }
                 debug( gv => "GV::save GvIO(*$fullname) done" );
             }

@@ -19,15 +19,15 @@ sub save {
 
     debug( gv => "Saving FBM for GV $sym" );
     init()->add(
-        sprintf("$sym = (GV*)newSV_type(SVt_PVGV);"),
-        sprintf( "SvFLAGS($sym) = 0x%x;",  $sv->FLAGS ),
-        sprintf( "SvREFCNT($sym) = %u;",   $sv->REFCNT + 1 ),
-        sprintf( "SvPVX($sym) = %s;",      cstring($pv) ),
-        sprintf( "SvCUR_set($sym, %d);",   $cur ),
-        sprintf( "SvLEN_set($sym, %d);",   $len ),
-        sprintf( "BmRARE($sym) = %d;",     $sv->RARE ),
-        sprintf( "BmPREVIOUS($sym) = %d;", $sv->PREVIOUS ),
-        sprintf( "BmUSEFUL($sym) = %d;",   $sv->USEFUL )
+        sprintf( "%s = (GV*)newSV_type(SVt_PVGV);", $sym ),
+        sprintf( "SvFLAGS(%s) = 0x%x;",  $sym, $sv->FLAGS ),
+        sprintf( "SvREFCNT(%s) = %u;",   $sym, $sv->REFCNT + 1 ),
+        sprintf( "SvPVX(%s) = %s;",      $sym, cstring($pv) ),
+        sprintf( "SvCUR_set(%s, %d);",   $sym, $cur ),
+        sprintf( "SvLEN_set(%s, %d);",   $sym, $len ),
+        sprintf( "BmRARE(%s) = %d;",     $sym, $sv->RARE ),
+        sprintf( "BmPREVIOUS(%s) = %d;", $sym, $sv->PREVIOUS ),
+        sprintf( "BmUSEFUL(%s) = %d;",   $sym, $sv->USEFUL )
     );
 
     # Restore possible additional magic. fbm_compile adds just 'B'.

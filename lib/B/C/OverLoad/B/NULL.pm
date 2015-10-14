@@ -24,12 +24,7 @@ sub save {
     #svsect()->debug( $fullname, $sv ); # XXX where is this possible?
     if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add index to sv_debug_file to easily find the Nullsv
                                                            # svsect()->debug( "ix added to sv_debug_file" );
-        init()->add(
-            sprintf(
-                qq(sv_list[%d].sv_debug_file = savesharedpv("NULL sv_list[%d] 0x%x");),
-                svsect()->index, svsect()->index, $sv->FLAGS
-            )
-        );
+        init()->add( sprintf( 'sv_list[%d].sv_debug_file = savesharedpv("NULL sv_list[%d] 0x%x");', svsect()->index, svsect()->index, $sv->FLAGS ) );
     }
     savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
 }

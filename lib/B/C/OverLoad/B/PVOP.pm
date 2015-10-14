@@ -19,12 +19,12 @@ sub save {
     pvopsect()->add( sprintf( "%s, NULL", $op->_save_common ) );
     pvopsect()->debug( $op->name, $op );
     my $ix = pvopsect()->index;
-    init()->add( sprintf( "pvop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init()->add( sprintf( "pvop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
 
     my ( $cstring, $cur, $utf8 ) = strlen_flags( $op->pv );    # utf8 ignored in a shared str?
 
-    init()->add( sprintf( "pvop_list[$ix].op_pv = savesharedpvn(%s, %u);", $cstring, $cur ) );
+    init()->add( sprintf( "pvop_list[%d].op_pv = savesharedpvn(%s, %u);", $ix, $cstring, $cur ) );
     savesym( $op, "(OP*)&pvop_list[$ix]" );
 }
 

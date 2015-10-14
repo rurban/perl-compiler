@@ -44,12 +44,12 @@ sub savepv {
     $const = $const ? " const" : "";
     if ( defined $max_string_len && $len > $max_string_len ) {
         my $chars = join ', ', map { cchar $_ } split //, pack("a*", $pv);
-        decl()->add( sprintf( "Static$const char %s[] = { %s };", $pvsym, $chars ) );
+        decl()->add( sprintf( "Static%s char %s[] = { %s };", $const, $pvsym, $chars ) );
         $strtable{$cstring} = $pvsym;
     }
     else {
         if ( $cstring ne "0" ) {    # sic
-            decl()->add( sprintf( "Static%s char %s[] = %s;", $const || '', $pvsym, $cstring ) );
+            decl()->add( sprintf( "Static%s char %s[] = %s;", $const, $pvsym, $cstring ) );
             $strtable{$cstring} = $pvsym;
         }
     }
@@ -68,11 +68,7 @@ sub savepvn {
         my $offset = 0;
         while ( length $pv ) {
             my $str = substr $pv, 0, $max_string_len, '';
-            push @init,
-              sprintf(
-                "Copy(%s,$dest+$offset,%u,char);",
-                cstring($str), length($str)
-              );
+            push @init, sprintf( 'Copy(%s, %s+%d, %u, char);', cstring($str), $dest, $offset, length($str) );
             $offset += length $str;
         }
         push @init, sprintf( "%s[%u] = '\\0';", $dest, $offset );
@@ -83,7 +79,7 @@ sub savepvn {
         if ( $sv and ( ( $sv->FLAGS & 0x09000000 ) == 0x09000000 ) ) {
             debug( sv => "Saving shared HEK %s to %s\n", cstring($pv), $dest );
             my $hek = save_hek($pv);
-            push @init, sprintf( "%s = HEK_KEY($hek);", $dest ) unless $hek eq 'NULL';
+            push @init, sprintf( "%s = HEK_KEY(%s);", $dest, $hek) unless $hek eq 'NULL';
             if ( DEBUGGING() ) {    # we have to bypass a wrong HE->HEK assert in hv.c
                 push @B::C::static_free, $dest;
             }

@@ -27,7 +27,7 @@ sub save {
 
     # $methopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
     my $ix = methopsect()->index;
-    init()->add( sprintf( "methop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init()->add( sprintf( "methop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&methop_list[$ix]" );
     if ( $op->name eq 'method' ) {

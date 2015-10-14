@@ -66,29 +66,23 @@ sub save {
             $op->pmflags, $replrootfield, 'NULL'
         )
     );
-    init()->add(
-        sprintf(
-            "pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)$replstartfield;",
-            pmopsect()->index
-        )
-    );
+    init()->add( sprintf( "pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)$replstartfield;", pmopsect()->index ) );
 
     my $code_list = $op->code_list;
     if ( $code_list and $$code_list ) {
         debug( gv => "saving pmop_list[%d] code_list $code_list (?{})", pmopsect()->index );
         my $code_op = $code_list->save;
-        init()->add(
-            sprintf(
-                "pmop_list[%d].op_code_list = %s;",    # (?{}) code blocks
-                pmopsect()->index, $code_op
-            )
-        ) if $code_op;
+        if ($code_op) {
+
+            # (?{}) code blocks
+            init()->add( sprintf( 'pmop_list[%d].op_code_list = %s;', pmopsect()->index, $code_op ) );
+        }
         debug( gv => "done saving pmop_list[%d] code_list $code_list (?{})", pmopsect()->index );
     }
 
     pmopsect()->debug( $op->name, $op );
     my $pm = sprintf( "pmop_list[%d]", pmopsect()->index );
-    init()->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )
+    init()->add( sprintf( "%s.op_ppaddr = %s;", $pm, $ppaddr ) )
       unless $B::C::optimize_ppaddr;
     my $re = $op->precomp;
 
@@ -123,7 +117,7 @@ sub save {
         }
 
         # XXX Modification of a read-only value attempted. use DateTime - threaded
-        push @init_block, "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, " . sprintf( "SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags ) . sprintf( "RX_EXTFLAGS(PM_GETRE(&$pm)) = 0x%x;", $op->reflags );
+        push @init_block, "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, " . sprintf( "SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags ) . sprintf( "RX_EXTFLAGS(PM_GETRE(&%s)) = 0x%x;", $pm, $op->reflags );
 
         if ($eval_seen) {                                                     # set HINT_RE_EVAL off
             push @init_block, '    PL_hints = hints_sav;', '}';

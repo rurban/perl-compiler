@@ -21,14 +21,10 @@ sub save {
     my $iv = $sv->FLAGS & SVf_IOK ? $sv->IVX : 0;
 
     xpvnvsect()->comment('STASH, MAGIC, cur, len, IVX, NVX');
-    xpvnvsect()->add( sprintf( "Nullhv, {0}, 0, {0}, {%ld}, {%s}", $iv, $nv ) );
+    xpvnvsect()->add( sprintf( 'Nullhv, {0}, 0, {0}, {%ld}, {%s}', $iv, $nv ) );
 
-    svsect()->add(
-        sprintf(
-            "&xpvnv_list[%d], %Lu, 0x%x , {0}",
-            xpvnvsect()->index, $sv->REFCNT, $sv->FLAGS
-        )
-    );
+    svsect()->add( sprintf( '&xpvnv_list[%d], %Lu, 0x%x , {0}', xpvnvsect()->index, $sv->REFCNT, $sv->FLAGS ) );
+
     svsect()->debug( $fullname, $sv );
     debug(
         sv => "Saving NV %s to xpvnv_list[%d], sv_list[%d]\n",

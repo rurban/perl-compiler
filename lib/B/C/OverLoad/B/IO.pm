@@ -93,24 +93,21 @@ sub save {
     $sym = savesym( $io, sprintf( "(IO*)&sv_list[%d]", svsect()->index ) );
 
     if ( !$B::C::pv_copy_on_grow and $cur ) {
-        init()->add( sprintf( "SvPVX(sv_list[%d]) = $pvsym;", svsect()->index ) );
+        init()->add( sprintf( "SvPVX(sv_list[%d]) = %s;", svsect()->index, $pvsym ) );
     }
     my ($field);
     foreach $field (qw(TOP_GV FMT_GV BOTTOM_GV)) {
         my $fsym = $io->$field();
         if ($$fsym) {
-            init()->add( sprintf( "Io$field($sym) = (GV*)s\\_%x;", $$fsym ) );
+            init()->add( sprintf( "Io%s(%s) = (GV*)s\\_%x;", $field, $sym, $$fsym ) );
             $fsym->save;
         }
     }
     foreach $field (qw(TOP_NAME FMT_NAME BOTTOM_NAME)) {
         my $fsym = $io->$field;
-        init()->add(
-            sprintf(
-                "Io$field($sym) = savepvn(%s, %u);",
-                cstring($fsym), length $fsym
-            )
-        ) if $fsym;
+        if ($fsym) {
+            init()->add( sprintf( "Io%s(%s) = savepvn(%s, %u);", $field, $sym, cstring($fsym), length $fsym ) );
+        }
     }
     $io->save_magic($fullname);    # This handle the stash also (we need to inc the refcnt)
     if ( !$is_DATA ) {             # PerlIO
@@ -167,12 +164,10 @@ sub save {
                   if $fd >= 3 or verbose();
                 my $mode = $iotype eq '>' ? 'w' : 'a';
 
-                #init()->add( sprintf("IoIFP($sym) = IoOFP($sym) = PerlIO_openn(aTHX_ NULL,%s,%d,0,0,NULL,0,NULL);",
-                #		    cstring($mode), $fd));
                 init()->add(
                     sprintf(
-                        "%sIoIFP($sym) = IoOFP($sym) = PerlIO_fdopen(%d, %s);%s",
-                        $fd < 3 ? '' : '/*', $fd, cstring($mode), $fd < 3 ? '' : '*/'
+                        "%sIoIFP(%s) = IoOFP(%s) = PerlIO_fdopen(%d, %s);%s",
+                        $fd < 3 ? '' : '/*', $sym, $sym, $fd, cstring($mode), $fd < 3 ? '' : '*/'
                     )
                 );
             }

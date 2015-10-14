@@ -108,7 +108,7 @@ sub save {
 
     copsect()->debug( $op->name, $op );
     my $ix = copsect()->index;
-    init()->add( sprintf( "cop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init()->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     if ( !$is_special ) {
         my $copw = $warn_sv;
@@ -127,7 +127,7 @@ sub save {
         }
     }
     else {
-        init()->add( sprintf( "cop_list[$ix].cop_warnings = %s;", $warn_sv ) )
+        init()->add( sprintf( "cop_list[%d].cop_warnings = %s;", $ix, $warn_sv ) )
           unless $B::C::optimize_warn_sv;
     }
 

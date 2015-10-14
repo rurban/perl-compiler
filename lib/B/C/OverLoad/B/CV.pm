@@ -464,7 +464,7 @@ sub save {
     if ($new_cv_fw) {
         $sv_ix = svsect()->index + 1;
         if ( !$cvforward{$sym} ) {    # avoid duplicates
-            symsect()->add( sprintf( "$sym\t&sv_list[%d]", $sv_ix ) );    # forward the old CVIX to the new CV
+            symsect()->add( sprintf( "%s\t&sv_list[%d]", $sym, $sv_ix ) );    # forward the old CVIX to the new CV
             $cvforward{$sym}++;
         }
         $sym = savesym( $cv, "&sv_list[$sv_ix]" );
@@ -596,7 +596,7 @@ sub save {
             init()->add("CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
         }
         else {
-            init()->add( sprintf( "CvOUTSIDE($sym) = (CV*)s\\_%x;", $xcv_outside ) );
+            init()->add( sprintf( "CvOUTSIDE(%s) = (CV*)s\\_%x;", $sym, $xcv_outside ) );
         }
     }
 
@@ -608,7 +608,7 @@ sub save {
         my $padl = $cv->OUTSIDE->PADLIST->save;
 
         # This needs to be postponed (test 227)
-        init2()->add( sprintf("CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);") );
+        init2()->add("CvPADLIST($sym)->xpadl_outid = PadlistNAMES($padl);");
     }
 
     if ( $gv and $$gv ) {
@@ -656,7 +656,7 @@ sub save {
         $stash->save($fullname);
 
         # $sym fixed test 27
-        init()->add( sprintf( "CvSTASH_set((CV*)$sym, s\\_%x);", $$stash ) );
+        init()->add( sprintf( "CvSTASH_set((CV*)%s, s\\_%x);", $sym, $$stash ) );
 
         # 5.18 bless does not inc sv_objcount anymore. broken by ddf23d4a1ae (#208)
         # We workaround this 5.18 de-optimization by adding it if at least a DESTROY

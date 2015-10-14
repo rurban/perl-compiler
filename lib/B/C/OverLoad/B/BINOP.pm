@@ -13,17 +13,10 @@ sub save {
     return $sym if defined $sym;
 
     binopsect->comment_common("first, last");
-    binopsect->add(
-        sprintf(
-            "%s, s\\_%x, s\\_%x",
-            $op->_save_common,
-            ${ $op->first },
-            ${ $op->last }
-        )
-    );
+    binopsect->add( sprintf( "%s, s\\_%x, s\\_%x", $op->_save_common, ${ $op->first }, ${ $op->last } ) );
     binopsect->debug( $op->name, $op->flagspv );
     my $ix = binopsect->index;
-    init->add( sprintf( "binop_list[$ix].op_ppaddr = %s;", $op->ppaddr ) )
+    init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
     do_labels( $op, 'first', 'last' );
