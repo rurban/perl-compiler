@@ -174,7 +174,7 @@ uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}
 uni/latin2.t                 SIG       Exit signal is 11 SEGV
 uni/lex_utf8.t               PLAN      Plan was valid
 uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
-uni/method.t                 PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
+uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/opcroak.t                PLAN      Plan was valid
 uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/package.t                PLAN      Plan was valid
