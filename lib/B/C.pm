@@ -978,27 +978,17 @@ sub save_pv_or_rv {
 
 # Shared global string in PL_strtab.
 # Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
+# Note: currently not used in list context
 sub save_hek {
   my $str = shift; # not cstring'ed
   my $dynamic = shift; # not yet implemented. see lexsub CvNAME in CV::save
-  my $len = length $str;
   # force empty string for CV prototypes
-  if (!$len and !@_) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
-  if (defined $hektable{$str}) {
-    return wantarray ? ($hektable{$str}, length( pack "a*", $hektable{$str} ))
-      : $hektable{$str};
-  }
-  my $cur = length( pack "a*", $str );
-  if (!$PERL56) {
-    if (utf8::is_utf8($str)) {
-      my $pv = $str;
-      utf8::encode($pv);
-      $cur = - length $pv;
-    }
-  }
+  return "NULL" if !length $str and !@_;
+  return $hektable{$str} if defined $hektable{$str};
+  my ($cstr, $cur, $utf8) = strlen_flags($str);
+  $cur = - $cur if $utf8;
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = $sym;
-  my $cstr = cstring($str);
   $decl->add(sprintf("Static HEK *%s;", $sym));
   warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
     if $debug{pv};
@@ -1010,11 +1000,13 @@ sub save_hek {
   #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
   $init->add(sprintf("%s = share_hek(%s, %d, %s);",
 		     $sym, $cstr, $cur, '0'));
-  wantarray ? ( $sym, $cur ) : $sym;
+  $sym;
 }
 
 sub gv_fetchpvn {
   my ($name, $flags, $type) = @_;
+  warn 'undefined flags' unless defined $flags;
+  warn 'undefined type' unless defined $type;
   my ($cname, $cur, $utf8) = strlen_flags($name);
   if ($] >= 5.009002) {
     $flags .= length($flags) ? "|$utf8" : $utf8 if $utf8;
@@ -1028,6 +1020,7 @@ sub gv_fetchpvn {
 sub get_cv {
   my ($name, $flags) = @_;
   my ($cname, $cur, $utf8) = strlen_flags($name);
+  warn 'undefined flags' unless defined $flags;
   if ($] >= 5.009002) {
     $flags .= length($flags) ? "|$utf8" : $utf8 if $utf8;
     return qq[get_cvn_flags($cname, $cur, $flags)];
