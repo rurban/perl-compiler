@@ -66,7 +66,7 @@ sub save {
         }
     }
 
-    my $flags = $isutf8 ? 'SVf_UTF8' : undef;
+    my $flags = $isutf8 ? 'SVf_UTF8' : '';
 
     # XXX TODO need to save the gv stash::AUTOLOAD if exists
     my $root   = $cv->ROOT;

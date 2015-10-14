@@ -5,6 +5,7 @@ use strict;
 use B qw(cstring);
 use B::C::Config;
 use B::C::File qw( decl init );
+use B::C::Helpers qw/strlen_flags/;
 
 use Exporter ();
 our @ISA = qw(Exporter);
@@ -16,29 +17,19 @@ my $hek_index = 0;
 
 # Shared global string in PL_strtab.
 # Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
+# Note: currently not used in list context
 sub save_hek {
-    my $str     = shift;         # not cstring'ed
-    my $dynamic = shift;         # not yet implemented. see lexsub CvNAME in CV::save
-    my $len     = length $str;
+    my $str     = shift;    # not cstring'ed
+    my $dynamic = shift;    # not yet implemented. see lexsub CvNAME in CV::save
 
     # force empty string for CV prototypes
-    if ( !$len and !@_ ) { wantarray ? return ( "NULL", 0 ) : return "NULL"; }
-    if ( defined $hektable{$str} ) {
-        return wantarray
-          ? ( $hektable{$str}, length( pack "a*", $hektable{$str} ) )
-          : $hektable{$str};
-    }
-    my $cur = length( pack "a*", $str );
-
-    if ( utf8::is_utf8($str) ) {
-        my $pv = $str;
-        utf8::encode($pv);
-        $cur = -length $pv;
-    }
+    return "NULL" if !length $str and !@_;
+    return $hektable{$str} if defined $hektable{$str};
+    my ( $cstr, $cur, $utf8 ) = strlen_flags($str);
+    $cur = -$cur if $utf8;
 
     my $sym = sprintf( "hek%d", $hek_index++ );
     $hektable{$str} = $sym;
-    my $cstr = cstring($str);
     decl()->add( sprintf( "Static HEK *%s;", $sym ) );
 
     debug( pv => "Saving hek %s %s cur=%d", $sym, $cstr, $cur );
@@ -55,7 +46,8 @@ sub save_hek {
             $sym, $cstr, $cur, '0'
         )
     );
-    return wantarray ? ( $sym, $cur ) : $sym;
+
+    return $sym;
 }
 
 1;

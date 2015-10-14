@@ -70,4 +70,5 @@ nytprof/
 /t/v5.22.0/C-COMPILED/xtestc/*.c
 /t/v5.22.0/t/*/*.subtest.*
 /t/v5.22.0/t/pcc*
-
+/t/v5.22.0/t/.dir
+/t/v5.22.0/t/.pag

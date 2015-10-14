@@ -50,6 +50,8 @@ sub read_utf8_string {
 
 sub get_cv_string {
     my ( $name, $flags ) = @_;
+    warn 'undefined flags' unless defined $flags;
+
     my $cname = cstring($name);
 
     my ( $is_utf8, $length ) = read_utf8_string($name);
