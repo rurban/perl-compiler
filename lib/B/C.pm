@@ -2163,8 +2163,8 @@ sub B::PMOP::save {
                ${ $op->last }, ( $ITHREADS ? $op->pmoffset : 0 ),
                $op->pmflags, $replrootfield, 'NULL'
              ));
-    $init->add(sprintf("pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)$replstartfield;",
-                       $pmopsect->index));
+    $init->add(sprintf("pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)%s;",
+                       $pmopsect->index, $replstartfield));
     if ($] >= 5.017) {
       my $code_list = $op->code_list;
       if ($code_list and $$code_list) {
@@ -2210,7 +2210,7 @@ sub B::PMOP::save {
   }
   $pmopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $pm = sprintf( "pmop_list[%d]", $pmopsect->index );
-  $init->add( sprintf( "$pm.op_ppaddr = %s;", $ppaddr ) )
+  $init->add( sprintf( "%s.op_ppaddr = %s;", $pm, $ppaddr ) )
     unless $B::C::optimize_ppaddr;
   #my $re;
   #if ($] >= 5.010 and $] < 5.011 and $ITHREADS) { # XXX lots of module fails with 5.10.1d
