@@ -128,7 +128,7 @@ op/select.t                  SIG       Exit signal is 6 SIGABRT
 op/signatures.t              PLAN      Plan was valid
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
-op/sprintf2.t                PLAN      Plan was valid
+op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      Plan was valid
 op/sub.t                     PLAN      Plan was valid
