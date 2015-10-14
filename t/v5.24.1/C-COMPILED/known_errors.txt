@@ -173,7 +173,7 @@ uni/gv.t                     PLAN      Plan was valid
 uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 uni/latin2.t                 SIG       Exit signal is 11 SEGV
 uni/lex_utf8.t               PLAN      Plan was valid
-uni/lower.t                  SIG       Exit signal is 11 SEGV
+uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
 uni/method.t                 PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
 uni/opcroak.t                PLAN      Plan was valid
 uni/overload.t               TESTS     BC issue #219 - overload issue
@@ -181,13 +181,13 @@ uni/package.t                PLAN      Plan was valid
 uni/parser.t                 PLAN      TODO: broke
 uni/readline.t               TESTS     Test results:
 uni/stash.t                  PLAN      Plan was valid
-uni/title.t                  SIG       Exit signal is 11 SEGV
+uni/title.t                  SIG       BC issue #253 - Unicode::UCD
 uni/tr_7jis.t                PLAN      Plan was valid
 uni/tr_eucjp.t               PLAN      Plan was valid
 uni/tr_sjis.t                PLAN      Plan was valid
 uni/tr_utf8.t                PLAN      Plan was valid
 uni/universal.t              PLAN      Plan was valid
-uni/upper.t                  SIG       Exit signal is 11 SEGV
+uni/upper.t                  SIG       BC issue #253 - Unicode::UCD
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
 xtestc/0075.t                TESTS     Output is: ""
