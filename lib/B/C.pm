@@ -992,6 +992,7 @@ sub save_hek {
   return $hektable{$str} if defined $hektable{$str};
   my ($cstr, $cur, $utf8) = strlen_flags($str);
   $cur = - $cur if $utf8;
+  $cstr = '""' if $cstr == "0";
   my $sym = sprintf( "hek%d", $hek_index++ );
   $hektable{$str} = $sym;
   $decl->add(sprintf("Static HEK *%s;", $sym));
