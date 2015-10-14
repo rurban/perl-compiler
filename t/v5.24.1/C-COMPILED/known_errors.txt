@@ -163,7 +163,6 @@ op/unlink.t                  BC        op/unlink.c is generated (-O3,-fno-fold)
 op/upgrade.t                 BC        op/upgrade.c is generated (-O3,-fno-fold)
 op/utf8cache.t               TESTS     Test results:
 op/utf8magic.t               BC        op/utf8magic.c is generated (-O3,-fno-fold)
-op/utftaint.t                PLAN      Plan was valid
 op/vec.t                     SIG       Exit signal is 11 SEGV
 op/warn.t                    TESTS     Test results:
 op/while.t                   BC        op/while.c is generated (-O3,-fno-fold)
@@ -185,7 +184,6 @@ re/regexp_unicode_prop.t     PLAN      Plan was valid
 re/rxcode.t                  TESTS     Test results:
 re/speed.t                   BC        re/speed.c is generated (-O3,-fno-fold)
 re/subst_amp.t               TESTS     Test results:
-re/substT.t                  PLAN      Plan was valid
 uni/attrs.t                  PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
 uni/caller.t                 PLAN      TODO: Undefined subroutine &????::ok called
 uni/chomp.t                  SIG       Exit signal is 11 SEGV
