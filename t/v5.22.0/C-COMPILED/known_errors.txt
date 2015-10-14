@@ -111,7 +111,7 @@ op/lexsub.t                  BC        BC issue #219 - overload issue
 op/local.t                   SIG       BC issue #249 - multideref
 op/lvref.t                   PLAN      Plan was valid
 op/magic.t                   SIG       Exit signal is 6 SIGABRT
-op/method.t                  SIG       Exit signal is 11 SEGV
+op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fold)
 op/my.t                      SIG       BC issue #249 - multideref
 op/mydef.t                   TODO      No TODO tests passed
