@@ -112,6 +112,9 @@ sub output {
     my $len = scalar @{ $section->[-1]{values} };
     $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
   }
+  if ($] > 5.021005 and $INC{'warnings.pm'}) {
+    warnings->unimport('redundant');
+  }
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
     my $ref = "";
@@ -924,7 +927,9 @@ sub save_pv_or_rv {
       # i.e. since v5.17.6. because conversion to IV would fail.
       # But a "" or "0" or "[a-z]+" string can have SvLEN=0
       # since its is converted to 0
-      no warnings 'numeric';
+      if ($INC{'warnings.pm'}) {
+        warnings->unimport('numeric'); # we don't want to load warnings
+      }
       if ($static and $] < 5.017006 and abs($pv) > 0) {
         $static = 0;
       }
