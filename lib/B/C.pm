@@ -6150,7 +6150,7 @@ _EOT7
       } elsif ($s =~ /^&sv_list/) {
         print "    SvLEN($s) = 0;\n";
         print "    SvPV_set($s, (char*)&PL_sv_undef);\n";
-      } elsif ($s =~ /^\Q(HV*)&sv_list\E/) {
+      } elsif ($s =~ /^\(HV\*\)&sv_list/) {
 	print "    SvREADONLY_on((SV*)$s);\n";
         print "    SvREFCNT($s) = SvREFCNT_IMMORTAL;\n";
       } elsif ($s =~ /^&padnamelist_list/) {
