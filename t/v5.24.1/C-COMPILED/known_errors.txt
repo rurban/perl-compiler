@@ -71,8 +71,8 @@ mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   PLAN      Plan was valid
 mro/vulcan_c3_utf8.t         TESTS     TODO: Malformed UTF-8.
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
-op/array_base.t              PLAN      Plan was valid
-op/attrhand.t                PLAN      Plan was valid
+op/array_base.t              PLAN      BC issue #248 - deprecated array base feature
+op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/attrproto.t               PLAN      Plan was valid
 op/attrs.t                   PLAN      Plan was valid
 op/auto.t                    BC        op/auto.c is generated (-O3,-fno-fold)
@@ -80,12 +80,12 @@ op/bless.t                   TESTS     Test results:
 op/blocks.t                  TESTS     Test results:
 op/bop.t                     TESTS     Test results:
 op/caller.t                  TESTS     Test results:
-op/chr.t                     TESTS     Test results:
+op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     Test results:
-op/concat2.t                 TESTS     Test results:
+op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/const-optree.t            PLAN      Plan was valid
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic
-op/coresubs.t                PLAN      Plan was valid
+op/coresubs.t                COMPAT    uses B::walkoptree 
 op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     BC        op/dbm.c is generated (-O3,-fno-fold)
 op/defins.t                  SIG       Exit signal is 11 SEGV
