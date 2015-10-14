@@ -19,10 +19,12 @@ my $hek_index = 0;
 # Mostly GvNAME and GvFILE, but also CV prototypes or bareword hash keys.
 # Note: currently not used in list context
 sub save_hek {
-    my $str     = shift;    # not cstring'ed
-    my $dynamic = shift;    # not yet implemented. see lexsub CvNAME in CV::save
+    my ( $str, $fullname, $dynamic ) = @_;    # not cstring'ed
+                                              # $dynamic not yet implemented. see lexsub CvNAME in CV::save
 
     # force empty string for CV prototypes
+    return "NULL" if !length $str and !@_ and $fullname !~ /unopaux_item.* const/;
+    return "NULL" unless defined $str;
     return $hektable{$str} if defined $hektable{$str};
     my ( $cstr, $cur, $utf8 ) = strlen_flags($str);
     $cur = -$cur if $utf8;

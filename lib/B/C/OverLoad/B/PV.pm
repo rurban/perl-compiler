@@ -47,7 +47,7 @@ sub save {
     my $svix = svsect()->index;
     if ( defined($pv) and !$static ) {
         if ($shared_hek) {
-            my $hek = save_hek($pv);
+            my $hek = save_hek( $pv, $fullname );
             init()->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ) )
               unless $hek eq 'NULL';
         }
