@@ -74,37 +74,37 @@ op/array_base.t              PLAN      BC issue #248 - deprecated array base fea
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/attrproto.t               PLAN      Plan was valid
 op/attrs.t                   PLAN      Plan was valid
-op/bless.t                   TESTS     Test results:
+op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  TESTS     Test results:
-op/bop.t                     TESTS     Test results:
+op/bop.t                     TESTS     BC issue #219 - overload issue
 op/caller.t                  TESTS     Test results:
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     Test results:
 op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/const-optree.t            PLAN      Plan was valid
-op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic
+op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree 
 op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     SIG       BC issue #223 - glob issue
 op/defins.t                  SIG       BC issue #223 - glob issue
 op/dump.t                    PLAN      Plan was valid
-op/eval.t                    SKIP      TODO: infinite loop while running the binary
+op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/evalbytes.t               PLAN      Plan was valid
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
-op/filetest.t                TESTS     Test results:
+op/filetest.t                TESTS     BC issue #219 - overload issue
 op/fresh_perl_utf8.t         PLAN      Plan was valid
 op/glob.t                    SIG       Exit signal is 11 SEGV
-op/gmagic.t                  TESTS     Test results:
+op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 SKIP      needs XS::APItest
-op/gv.t                      SIG       TODO: Segmentation Fault
+op/gv.t                      SIG       TODO: Segmentation Fault + BC issue #219 - overload issue
 op/hash-rt85026.t            GCC       op/hash-rt85026.bin is compiled and ready to run.
 op/heredoc.t                 TESTS     Test results:
-op/index.t                   PLAN      TODO: no output and Issue 247
+op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/infnan.t                  PLAN      Plan was valid
-op/join.t                    TESTS     Test results:
+op/join.t                    TESTS     BC issue #219 - overload issue
 op/lc.t                      TESTS     Test results:
 op/leaky-magic.t             TESTS     Test results:
-op/length.t                  TESTS     Test results:
+op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     TESTS     Test results:
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        BC issue #219 - overload issue 
@@ -126,31 +126,31 @@ op/ref.t                     SIG       TODO: no output but a buncha these: Subro
 op/reset.t                   TESTS     Test results:
 op/select.t                  SIG       Exit signal is 6 SIGABRT
 op/signatures.t              PLAN      Plan was valid
-op/smartmatch.t              TESTS     Test results:
-op/sort.t                    TESTS     Test results:
+op/smartmatch.t              TESTS     BC issue #219 - overload issue
+op/sort.t                    TESTS     BC issue #219 - overload issue
 op/sprintf2.t                PLAN      Plan was valid
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      Plan was valid
 op/sub.t                     PLAN      Plan was valid
 op/sub_lval.t                TESTS     Test results:
-op/substr.t                  TESTS     Test results:
+op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
-op/switch.t                  PLAN      Plan was valid
+op/switch.t                  PLAN      BC issue #219 - overload issue
 op/taint.t                   TESTS     Test results:
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
 op/tie_fetch_count.t         SIG       Exit signal is 11 SEGV
 op/universal.t               TESTS     Test results:
-op/utf8cache.t               TESTS     Test results:
+op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/vec.t                     SIG       Exit signal is 11 SEGV
-op/warn.t                    TESTS     Test results:
+op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       Exit signal is 11 SEGV
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
 re/fold_grind.t              PLAN      Plan was valid
-re/overload.t                PLAN      Plan was valid
+re/overload.t                PLAN      BC issue #219 - overload issue
 re/pat.t                     SIG       Exit signal is 11 SEGV
 re/pat_advanced.t            PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
-re/pat_re_eval.t             PLAN      Plan was valid
+re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
 re/pat_rt_report.t           PLAN      Plan was valid
 re/qr_gc.t                   TESTS     Test results:
 re/reg_eval_scope.t          SIG       Exit signal is 11 SEGV
@@ -175,7 +175,7 @@ uni/lex_utf8.t               PLAN      Plan was valid
 uni/lower.t                  SIG       Exit signal is 11 SEGV
 uni/method.t                 PLAN      TODO: Unrecognized character \xCA; marked by <-- HERE after open(<-- HERE near column 6 at (eval 1) line 1.
 uni/opcroak.t                PLAN      Plan was valid
-uni/overload.t               TESTS     Test results:
+uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/package.t                PLAN      Plan was valid
 uni/parser.t                 PLAN      TODO: broke
 uni/readline.t               TESTS     Test results:
