@@ -29,13 +29,33 @@ sub save {
     for my $item (@aux_list) {
         unless ( ref $item ) {
 
-            # symbolize MDEREF action?
-            $s .= sprintf( "\t,{.uv=0x%x} \t/* action|index: %u */\n", $item, $item );
+            # symbolize MDEREF action
+            my $cmt = 'action';
+            if ( verbose() ) {
+                my $act = $item & 0xf;    # MDEREF_ACTION_MASK
+                $cmt = 'AV_pop_rv2av_aelem'          if $act == 1;
+                $cmt = 'AV_gvsv_vivify_rv2av_aelem'  if $act == 2;
+                $cmt = 'AV_padsv_vivify_rv2av_aelem' if $act == 3;
+                $cmt = 'AV_vivify_rv2av_aelem'       if $act == 4;
+                $cmt = 'AV_padav_aelem'              if $act == 5;
+                $cmt = 'AV_gvav_aelem'               if $act == 6;
+                $cmt = 'HV_pop_rv2hv_helem'          if $act == 8;
+                $cmt = 'HV_gvsv_vivify_rv2hv_helem'  if $act == 9;
+                $cmt = 'HV_padsv_vivify_rv2hv_helem' if $act == 10;
+                $cmt = 'HV_vivify_rv2hv_helem'       if $act == 11;
+                $cmt = 'HV_padhv_helem'              if $act == 12;
+                $cmt = 'HV_gvhv_helem'               if $act == 13;
+                my $idx = $item & 0x30;    # MDEREF_INDEX_MASK
+                $cmt .= ''             if $idx == 0x0;
+                $cmt .= ' INDEX_const' if $idx == 0x10;
+                $cmt .= ' INDEX_padsv' if $idx == 0x20;
+                $cmt .= ' INDEX_gvsv'  if $idx == 0x30;
+            }
+            $s .= sprintf( "\t,{.uv=0x%x} \t/* %s: %u */\n", $item, $cmt, $item );
+
         }
         else {
-            # XXX check how literal int is returned by B
-            # (const B::IV or B::UV or B::PAD), maybe even broken now.
-            # testcase: $a[-1] -1 as B::IV not as -1, what for PAD_OFFSET
+            # testcase: $a[-1] -1 as B::IV not as -1
             my $itemsym = $item->save("unopaux_item${ix}[$i]");
             if ( is_constant($itemsym) ) {
                 if ( ref $item eq 'B::IV' ) {
