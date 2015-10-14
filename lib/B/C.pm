@@ -3630,7 +3630,7 @@ sub B::CV::save {
       return get_cv($fullname, 0);
     }
   }
-  if ( $cvxsub && $cvname eq "INIT" ) {
+  if ( $cvxsub && !$isconst && $cvname eq "INIT" ) {
     no strict 'refs';
     warn $fullname."\n" if $debug{sub};
     return svref_2object( \&Dummy_initxs )->save;
