@@ -112,7 +112,6 @@ op/length.t                  TESTS     Test results:
 op/lex.t                     TESTS     Test results:
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        TODO: Can't locate object method "EGV" via package "B::SPECIAL" at /usr/local/cpanel/3rdparty/perl/520/lib/perl5/cpanel_lib/i386-linux-64int/B/C/OverLoad/B/GV.pm line 450.
-op/list.t                    BC        op/list.c is generated (-O3,-fno-fold)
 op/local.t                   SIG       BC issue #249 - multideref
 op/loopctl.t                 BC        op/loopctl.c is generated (-O3,-fno-fold)
 op/lvref.t                   PLAN      Plan was valid
