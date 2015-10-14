@@ -37,6 +37,8 @@ sub run {
             $t = 't/' . $v . '/t/' . $t;
         }
 
+        $t =~ s{C-COMPILED}{t}; # normalize
+
         my ( $before, $after ) = split( $v . '/t/', $t );
         if ($run_compile_version) {
             $t = $before . $v . '/C-COMPILED/' . $after;
@@ -102,16 +104,18 @@ sub usage {
 
     print <<'EOS';
 # run the compiled version
-cprove -j4 t/v5.22.0/t/*.t
+> cprove -j4 t/v5.22.0/t/*.t
+> cprove t/v5.22.0/C-COMPILED/op/my.t
 
 # run the uncompiled version
-cprove -u -j4 t/v5.22.0/t/*.t
+> cprove -u -j4 t/v5.22.0/t/*.t
+> cprove -u t/v5.22.0/C-COMPILED/op/my.t
 
 # run the compiled version
-cprove op/test.t 
+> cprove op/my.t
 
 # run the uncompiled version
-cprove -u -v op/test.t 
+> cprove -u -v op/my.t
 
 # run multiple compiled tests
 > cprove op/*.t
