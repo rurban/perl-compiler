@@ -1095,7 +1095,12 @@ sub runperl_binary {
     unlink $bin if -e $bin;
     print STDERR "# running: make $bin ===\n";
 
-    ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
+    if ( ${^TAINT} ) {
+        ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
+        my @safe = grep { $_ !~ qr{^\.+$}} split(':', $ENV{PATH});
+        $ENV{PATH} = join ':', @safe;
+    }
+
     my $make = `perlcc -O3 -o $bin $test $error`;
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
