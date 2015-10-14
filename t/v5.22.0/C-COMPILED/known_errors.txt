@@ -93,7 +93,7 @@ op/evalbytes.t               PLAN      Plan was valid
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
 op/filetest.t                TESTS     BC issue #219 - overload issue
 op/fresh_perl_utf8.t         PLAN      Plan was valid
-op/glob.t                    SIG       Exit signal is 11 SEGV
+op/glob.t                    SIG       BC issue #223 - glob issue
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 SKIP      needs XS::APItest
 op/gv.t                      SIG       TODO: Segmentation Fault + BC issue #219 - overload issue
