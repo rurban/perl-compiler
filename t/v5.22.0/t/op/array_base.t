@@ -1,22 +1,25 @@
 #!perl -w
 use strict;
 
+my %begin_tests;
 BEGIN {
  chdir 't' if -d 't';
  require './test.pl';
-
- plan (tests => my $tests = 11);
-
- # Run these at BEGIN time, before arybase loads
  use v5.15;
- is(eval('$[ = 1; 123'), undef);
- like($@, qr/\AAssigning non-zero to \$\[ is no longer possible/);
+ # Run these at BEGIN time, before arybase loads
+ $begin_tests{123} = eval('$[ = 1; 123');
+ $begin_tests{error} = $@;
+}
 
- if (is_miniperl()) {
+plan (tests => my $tests = 11);
+ 
+is($begin_tests{123}, undef); 
+like($begin_tests{error}, qr/\AAssigning non-zero to \$\[ is no longer possible/);
+
+if (is_miniperl()) {
    # skip the rest
    SKIP: { skip ("no arybase.xs on miniperl", $tests-2) }
    exit;
- }
 }
 
 no warnings 'deprecated';
