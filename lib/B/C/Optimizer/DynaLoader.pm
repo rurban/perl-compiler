@@ -116,7 +116,9 @@ sub optimize {
     foreach my $stashname (@dl_modules) {
         if ( exists( $self->{'xsub'}->{$stashname} ) && $self->{'xsub'}->{$stashname} =~ m/^Dynamic/ ) {
             {
-                no warnings 'once';
+                # Scoped no warnings without loading the module.
+                local $^W;
+                BEGIN { ${^WARNING_BITS} = 0; }
                 $B::C::use_xsloader = 1;    # TODO: This setting is totally worthless since the code that uses this variable has already been run??
             }
             if ( $self->{'xsub'}->{$stashname} eq 'Dynamic' ) {

@@ -125,7 +125,9 @@ sub write {
 
     my $template_dir;
     {
-        no warnings 'once';
+        # Scoped no warnings without loading the module.
+        local $^W;
+        BEGIN { ${^WARNING_BITS} = 0; }
         $template_dir = $B::C::savINC{'B/C.pm'};
     }
     $template_dir =~ s{\.pm$}{};

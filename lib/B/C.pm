@@ -193,8 +193,10 @@ sub add_to_currINC {
 
 # This the Carp free workaround for DynaLoader::bootstrap
 {
-    no warnings 'redefine';
-    sub DynaLoader::croak { die @_ }
+    # Scoped no warnings without loading the module.
+    local $^W;
+    BEGIN { ${^WARNING_BITS} = 0; }
+    *DynaLoader::croak = sub { die @_ }
 }
 
 sub walk_and_save_optree {
@@ -341,7 +343,7 @@ sub save_pv_or_rv {
     }
     else {
         if ($pok) {
-            $pv = pack "a*", $sv->PV; # XXX!
+            $pv = pack "a*", $sv->PV;                 # XXX!
             $cur = ( $sv and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length($pv);
         }
         else {
@@ -1264,8 +1266,8 @@ sub save_context {
 sub save_main {
     verbose("Starting compile");
     verbose("Walking tree");
-    %Exporter::Cache = (); # avoid B::C and B symbols being stored
-    $B::C::curcv = B::main_cv;
+    %Exporter::Cache = ();                # avoid B::C and B symbols being stored
+    $B::C::curcv     = B::main_cv;
 
     if ( debug('walk') ) {
         verbose("Enabling B::debug / B::walkoptree_debug");
@@ -1609,7 +1611,7 @@ sub dl_module_to_sofile {
 
 # 5.15.3 workaround [perl #101336], without .bs support
 # XSLoader::load_file($module, $modlibname, ...)
-my $dlext = $Config{dlext};;
+my $dlext = $Config{dlext};
 eval q|
 sub XSLoader::load_file {
   #package DynaLoader;

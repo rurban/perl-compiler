@@ -1,6 +1,8 @@
 package B::C::Section;
 use strict;
 
+# use warnings
+
 use B::C::Config::Debug ();
 my %sections;
 
@@ -91,8 +93,12 @@ sub debug {
     if ( !defined $debug_flags ) {
         $debug_flags = B::C::Config::Debug::debug('flags') ? 1 : 0;
         if ( !$debug_flags ) {
-            no warnings 'redefine';
+
+            # Scoped no warnings without loading the module.
+            local $^W;
+            BEGIN { ${^WARNING_BITS} = 0; }
             *debug = sub { };
+
             return;
         }
     }
@@ -136,14 +142,13 @@ sub output {
             $dbg = " /* " . $self->{'dbg'}->[$i] . " " . $ref . " */";
         }
 
-        #if ( $format eq "\t{ %s }, /* %s_list[%d] %s */%s\n" ) {
-        no warnings "redundant";
-        $return_string .= sprintf($format, $val, $self->name, $i, $ref, $dbg);
+        {
+            # Scoped no warnings without loading the module.
+            local $^W;
+            BEGIN { ${^WARNING_BITS} = 0; }
+            $return_string .= sprintf( $format, $val, $self->name, $i, $ref, $dbg );
+        }
 
-        #}
-        #else {
-        #$return_string .= sprintf($format, $val);
-        #}
         ++$i;
     }
 
