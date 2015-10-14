@@ -130,7 +130,7 @@ op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
-op/state.t                   PLAN      Plan was valid
+op/state.t                   PLAN      BC issue #250 - access disallowed key
 op/sub.t                     PLAN      Plan was valid
 op/sub_lval.t                TESTS     Test results:
 op/substr.t                  TESTS     BC issue #219 - overload issue
