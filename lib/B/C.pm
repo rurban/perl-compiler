@@ -913,8 +913,8 @@ sub save_pv_or_rv {
     $static = 0 if $B::C::const_strings and $fullname and
       ($fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/);
     if ($shared_hek and $pok and !$cur) { #272 empty key
-      warn "use emptystring for empty shared key $fullname\n" if $debug{hv};
-      $savesym = "emptystring";
+      warn "use emptystring for empty shared key $fullname\n" if $debug{pv} or $debug{hv};
+      $savesym = "emptystring" unless $fullname =~ /unopaux_item.* const/;
       $static = 0;
     }
     if ($PERL510) { # force dynamic PADNAME strings
@@ -988,7 +988,7 @@ sub save_hek {
   my $str = shift; # not cstring'ed
   my $dynamic = shift; # not yet implemented. see lexsub CvNAME in CV::save
   # force empty string for CV prototypes
-  return "NULL" if !length $str and !@_;
+  return "NULL" if !length $str and !@_ and !$PERL522;
   return $hektable{$str} if defined $hektable{$str};
   my ($cstr, $cur, $utf8) = strlen_flags($str);
   $cur = - $cur if $utf8;
@@ -1461,10 +1461,11 @@ sub B::UNOP_AUX::save {
     sprintf("%s, s\\_%x, %s+1",
             $op->_save_common, ${ $op->first }, "unopaux_item${ix}"));
   $unopauxsect->debug( $op->name, $op->flagspv ) if $debug{flags};
-  # this cannot be a section, as the number of elements is variable
+  # This cannot be a section, as the number of elements is variable
   my $i = 1;
   my $s = "Static UNOP_AUX_item unopaux_item${ix}[] = {\n\t"
     .($C99?"{.uv=$auxlen}":$auxlen). " \t/* length prefix */\n";
+  my $action = 0;
   for my $item (@aux_list) {
     unless (ref $item) {
       # symbolize MDEREF action
@@ -1489,11 +1490,19 @@ sub B::UNOP_AUX::save {
         $cmt .= ' INDEX_padsv'  if $idx == 0x20;
         $cmt .= ' INDEX_gvsv'   if $idx == 0x30;
       }
+      $action = $item;
+      warn "mderef action $action $cmt\n" if $debug{hv};
       $s .= ($C99 ? sprintf("\t,{.uv=0x%x} \t/* %s: %u */\n", $item, $cmt, $item)
                   : sprintf("\t,0x%x \t/* %s: %u */\n", $item, $cmt, $item));
     } else {
       # testcase: $a[-1] -1 as B::IV not as -1
-      my $itemsym = $item->save("unopaux_item${ix}[$i]");
+      # hmm, if const ensure that candidate CONSTs have been HEKified. (pp_multideref assertion)
+      # || SvTYPE(keysv) >= SVt_PVMG
+      # || !SvOK(keysv)
+      # || SvROK(keysv)
+      # || SvIsCOW_shared_hash(keysv));
+      my $constkey = ($action & 0x30) == 0x10 ? 1 : 0;
+      my $itemsym = $item->save("unopaux_item${ix}[$i]" . ($constkey ? " const" : ""));
       if (is_constant($itemsym)) {
         if (ref $item eq 'B::IV') {
           my $iv = $item->IVX;
@@ -2730,7 +2739,7 @@ sub B::PV::save {
       if ($shared_hek) {
         my $hek = save_hek($pv);
         $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ))
-                    unless $hek eq 'NULL';
+          unless $hek eq 'NULL';
       } else {
         $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
       }
