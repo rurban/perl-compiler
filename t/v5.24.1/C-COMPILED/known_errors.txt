@@ -121,7 +121,7 @@ op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fo
 op/my.t                      SIG       Exit signal is 6 SIGABRT
 op/mydef.t                   TODO      No TODO tests passed
 op/overload_integer.t        PLAN      Plan was valid
-op/override.t                BC        op/override.c is generated (-O3,-fno-fold)
+op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    PLAN      Plan was valid
 op/postfixderef.t            PLAN      Plan was valid
 op/protowarn.t               PLAN      TODO: no output.
