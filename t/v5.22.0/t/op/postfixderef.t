@@ -9,9 +9,9 @@ this file contains all dereferencing tests from ref.t but using postfix instead 
 
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
+    chdir 't' if -d 't';    
     require './test.pl';
+    set_up_inc(qw(. ../lib));
 }
 
 use strict qw(refs subs);

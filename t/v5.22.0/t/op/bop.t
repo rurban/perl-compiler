@@ -5,9 +5,10 @@
 #
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = '../lib';
-    require "./test.pl"; require "./charset_tools.pl";
+    chdir 't' if -d 't';    
+    require "./test.pl";
+    set_up_inc('../lib');
+    require "./charset_tools.pl";
     require Config;
 }
 

@@ -15,13 +15,14 @@
 #
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = ('../lib','.','../ext/re');
+    chdir 't' if -d 't';    
     require Config; import Config;
     require './test.pl';
-    skip_all('no re module') unless defined &DynaLoader::boot_DynaLoader;
-    skip_all_without_unicode_tables();
+    set_up_inc('../lib','.','../ext/re');
 }
+
+skip_all('no re module') unless defined &DynaLoader::boot_DynaLoader;
+skip_all_without_unicode_tables();
 
 plan tests => 25;  # Update this when adding/deleting tests.
 
