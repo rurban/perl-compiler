@@ -986,6 +986,7 @@ sub save_hek {
   my ($str, $fullname, $dynamic) = @_; # not cstring'ed
   # $dynamic not yet implemented. see lexsub CvNAME in CV::save
   # force empty string for CV prototypes
+  return "NULL" unless defined $str;
   return "NULL" if !length $str and !@_ and $fullname !~ /unopaux_item.* const/;
   return $hektable{$str} if defined $hektable{$str};
   my ($cstr, $cur, $utf8) = strlen_flags($str);
