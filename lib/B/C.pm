@@ -19,7 +19,7 @@ our $check;
 our %Config;
 
 BEGIN {
-    use B::C::Flags;
+    require B::C::Flags;
     *Config = \%B::C::Flags::Config;
 }
 
