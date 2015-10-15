@@ -3,6 +3,19 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.53
+       * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
+       Add ops for padl, padn, padnl, unop_aux and methop needed for 5.22
+       * C: fix B::PMOP::precomp for UTF8 (#333, #338, GH#50)
+        Add 5.22 support with a new unop_aux (multideref) section, methop support,
+          new support for PADNAME and PADNAMELIST objects.
+        Removed B::Section which used base. (toddr)
+        Re-add PL_sv_objcount on cperl
+        Fixed XSUB CONSTSUB alias (44,45,... PR #228) (atoomic)
+        Proper utf8 support for gv_fetchpv, gv_stashpv and cv_get,
+          cache gv_stashpv calls.
+        Fix 5.22 for empty hash keys, share_hek("") (272, GH#249)
+
 1.52 2014-09-09 rurban
         * C: Protect against empty SV ptr in SV magic (\0) with $` with 5.20 (#370)
         Save new pmop (?{}) code_list with 5.18 (#372)
