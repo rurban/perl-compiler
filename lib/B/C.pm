@@ -112,9 +112,6 @@ sub output {
     my $len = scalar @{ $section->[-1]{values} };
     $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
   }
-  if ($] > 5.021005 and $INC{'warnings.pm'}) {
-    warnings->unimport('redundant');
-  }
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
     my $ref = "";
@@ -134,6 +131,9 @@ sub output {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." ".$ref." */";
     }
     if ($format eq "\t{ %s }, /* %s_list[%d] %s */%s\n") {
+      # Scoped no warnings without loading the module.
+      local $^W;
+      BEGIN { ${^WARNING_BITS} = 0; }
       printf $fh $format, $_, $section->name, $i, $ref, $dbg;
     } else {
       printf $fh $format, $_;
