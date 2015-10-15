@@ -112,9 +112,6 @@ sub output {
     my $len = scalar @{ $section->[-1]{values} };
     $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
   }
-  if ($] > 5.021005 and $INC{'warnings.pm'}) {
-    warnings->unimport('redundant');
-  }
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
     my $ref = "";
@@ -134,6 +131,9 @@ sub output {
       $dbg = " /* ".$section->[-1]{dbg}->[$i]." ".$ref." */";
     }
     if ($format eq "\t{ %s }, /* %s_list[%d] %s */%s\n") {
+      # Scoped no warnings without loading the module.
+      local $^W;
+      BEGIN { ${^WARNING_BITS} = 0; }
       printf $fh $format, $_, $section->name, $i, $ref, $dbg;
     } else {
       printf $fh $format, $_;
@@ -927,10 +927,7 @@ sub save_pv_or_rv {
       # i.e. since v5.17.6. because conversion to IV would fail.
       # But a "" or "0" or "[a-z]+" string can have SvLEN=0
       # since its is converted to 0
-      if ($INC{'warnings.pm'}) {
-        warnings->unimport('numeric'); # we don't want to load warnings
-      }
-      if ($static and $] < 5.017006 and abs($pv) > 0) {
+      if ($static and $] < 5.017006 and abs($pv || 0) > 0) {
         $static = 0;
       }
       # but we can optimize static set-magic ISA entries. #263, #91
