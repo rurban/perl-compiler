@@ -27,8 +27,8 @@ sub save_hek {
     return "NULL" unless defined $str;
     return $hektable{$str} if defined $hektable{$str};
     my ( $cstr, $cur, $utf8 ) = strlen_flags($str);
-    $cur = -$cur if $utf8;
-    $cstr = '""' if $cstr == "0";
+    $cur  = -$cur if $utf8;
+    $cstr = '""'  if $cstr eq "0";
 
     my $sym = sprintf( "hek%d", $hek_index++ );
     $hektable{$str} = $sym;
