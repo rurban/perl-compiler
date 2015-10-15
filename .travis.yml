@@ -3,7 +3,8 @@ perl:
     - "5.22.0"
 install: "echo"
 before_script:
-    - perl -S cpanm -n Template B::Flags Test::LeakTrace AppConfig IO::Scalar Net::SSLeay Net::LibIDN URI HTTP::Daemon HTTP::Request LWP::UserAgent Sub::Name
+    - perl -S cpanm Module::CPANfile
+    - perl -S cpanm -n --installdeps .
 script: "perl Makefile.PL && make && make testcore"
 notifications:
   recipients:

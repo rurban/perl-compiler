@@ -1,15 +1,19 @@
-require Template;
-require B::Flags;
-require Test::LeakTrace;
-require AppConfig;
-require IO::Scalar;
+requires 'Template';
+requires 'B::Flags';
+requires 'Test::LeakTrace';
+requires 'AppConfig';
+requires 'IO::Scalar';
 # for testing
-require IO::Socket::SSL;
-require Net::LibIDN;
-Net::SSLeay
-Net::LibIDN
-URI
-HTTP::Daemon
-HTTP::Request
-LWP::UserAgent
-Sub::Name
+requires 'IO::Socket::SSL';
+requires 'Net::LibIDN';
+requires 'Net::SSLeay';
+requires 'Net::LibIDN';
+requires 'URI';
+requires 'HTTP::Daemon';
+requires 'HTTP::Request';
+requires 'LWP::UserAgent';
+requires 'Sub::Name';
+requires 'JSON::XS';
+requires 'Net::SSLeay';
+requires 'Opcodes';
+requires 'IPC::Run';
