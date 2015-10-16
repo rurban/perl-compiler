@@ -247,7 +247,7 @@ t/C-COMPILED/CORE--op--array.t
 t/C-COMPILED/CORE--op--array_base.t
 t/C-COMPILED/CORE--op--assignwarn.t
 t/C-COMPILED/CORE--op--attrhand==BADPLAN-169.t
-t/C-COMPILED/CORE--op--attrs==BADTEST-278.t
+t/C-COMPILED/CORE--op--attrs.t
 t/C-COMPILED/CORE--op--auto.t
 t/C-COMPILED/CORE--op--avhv.t
 t/C-COMPILED/CORE--op--bless.t
