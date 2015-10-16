@@ -1,8 +1,8 @@
 package B::C::Config;
 
 use strict;
-use Config;
 
+use B::C::Flags         ();
 use B::C::Config::Debug ();
 
 use Exporter ();
@@ -18,19 +18,19 @@ our @ISA = qw(Exporter);
 
 sub _autoload_map {
     my $map = {
-        USE_ITHREADS     => $Config{useithreads},
-        USE_MULTIPLICITY => $Config{usemultiplicity},
+        USE_ITHREADS     => $B::C::Flags::Config{useithreads},
+        USE_MULTIPLICITY => $B::C::Flags::Config{usemultiplicity},
 
         # Thanks to Mattia Barbon for the C99 tip to init any union members
-        C99 => $Config{d_c99_variadic_macros},    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
+        C99 => $B::C::Flags::Config{d_c99_variadic_macros},    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
-        MAD => $Config{mad},
+        MAD => $B::C::Flags::Config{mad},
     };
-    $map->{HAVE_DLFCN_DLOPEN} = $Config{i_dlfcn} && $Config{d_dlopen};
+    $map->{HAVE_DLFCN_DLOPEN} = $B::C::Flags::Config{i_dlfcn} && $B::C::Flags::Config{d_dlopen};
 
     # debugging variables
-    $map->{'DEBUGGING'}             = ( $Config{ccflags} =~ m/-DDEBUGGING/ );
-    $map->{'DEBUG_LEAKING_SCALARS'} = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+    $map->{'DEBUGGING'}             = ( $B::C::Flags::Config{ccflags} =~ m/-DDEBUGGING/ );
+    $map->{'DEBUG_LEAKING_SCALARS'} = $B::C::Flags::Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 
     return $map;
 }

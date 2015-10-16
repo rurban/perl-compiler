@@ -2,7 +2,8 @@ package B::AV;
 
 use strict;
 
-use Config;
+use B::C::Flags ();
+
 use B qw/cstring SVf_IOK SVf_POK SVs_OBJECT/;
 use B::C::Config;
 use B::C::File qw/init xpvavsect svsect/;
@@ -10,7 +11,7 @@ use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # maybe need to move to setup/config
 my ( $use_av_undef_speedup, $use_svpop_speedup ) = ( 1, 1 );
-my $MYMALLOC = $Config{usemymalloc} eq 'define';
+my $MYMALLOC = $B::C::Flags::Config{usemymalloc} eq 'define';
 
 sub fill {
     my $av = shift;

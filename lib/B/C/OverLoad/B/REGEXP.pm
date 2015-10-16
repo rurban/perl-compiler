@@ -2,7 +2,6 @@ package B::REGEXP;
 
 use strict;
 
-use Config;
 use B qw/cstring/;
 use B::C::Config;
 use B::C::File qw/init svsect xpvsect/;

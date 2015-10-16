@@ -2,7 +2,8 @@ package B::CV;
 
 use strict;
 
-use Config;
+use B::C::Flags ();
+
 use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv SVf_ROK SVp_POK SVf_IOK SVf_UTF8/;
 use B::C::Config;
 use B::C::Decimal qw/get_integer_value/;
@@ -88,7 +89,7 @@ sub save {
             B::C::mark_package($stashname);
 
             # Without DynaLoader we must boot and link static
-            if ( !$Config{usedl} ) {
+            if ( !$B::C::Flags::Config{usedl} ) {
                 $B::C::xsub{$stashname} = 'Static';
             }
 
@@ -103,7 +104,7 @@ sub save {
                 unless ($file) {                     # do the reverse as DynaLoader: soname => pm
                     my ($laststash) = $stashname =~ /::([^:]+)$/;
                     $laststash = $stashname unless $laststash;
-                    my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $Config{dlext};
+                    my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $B::C::Flags::Config{dlext};
                     for (@DynaLoader::dl_shared_objects) {
                         if (m{^(.+/)$sofile$}) {
                             $file = $1 . $stashfile . ".pm";

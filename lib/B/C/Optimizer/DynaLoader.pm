@@ -4,7 +4,9 @@ use strict;
 use warnings;
 
 use B qw(svref_2object);
-use Config;
+
+use B::C::Flags ();
+
 use B::C::Config qw/verbose debug/;
 use B::C::Packages qw/is_package_used mark_package_deleted/;
 
@@ -147,7 +149,7 @@ sub optimize {
                 $path =~ s/::/\//g;
                 $path .= "/" if $path;    # can be empty
                 $laststash = $stashname unless $laststash;    # without ::
-                my $sofile = "auto/" . $path . $laststash . '\.' . $Config{'dlext'};
+                my $sofile = "auto/" . $path . $laststash . '\.' . $B::C::Flags::Config{'dlext'};
 
                 #warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
                 #  if verbose() and $self->{'debug'}->{pkg};

@@ -21,9 +21,6 @@ our %Config;
 BEGIN {
     require B::C::Flags;
     *Config = \%B::C::Flags::Config;
-
-    # make it a restricted hash
-    Internals::SvREADONLY( %Config, 1 );
 }
 
 use B::Flags;
@@ -769,9 +766,6 @@ sub try_autoload {
     );
 
     # First some exceptions, fooled by goto
-    if ( $cvstashname eq 'Config' ) {
-        return svref_2object( \&{'Config::launcher'} );
-    }
     if ( $fullname eq 'utf8::SWASHNEW' ) {
 
         # utf8_heavy was loaded so far, so defer to a demand-loading stub

@@ -2,7 +2,8 @@ package B::LEXWARN;
 
 use strict;
 
-use Config;
+use B::C::Flags ();
+
 use B qw/cstring/;
 use B::C::File qw/init decl/;
 use B::C::Save qw/inc_pv_index/;
@@ -23,7 +24,7 @@ sub save {
     my $sym = sprintf( "lexwarn%d", inc_pv_index() );
 
     # if 8 use UVSIZE, if 4 use LONGSIZE
-    my $t = ( $Config{longsize} == 8 ) ? "J" : "L";
+    my $t = ( $B::C::Flags::Config{longsize} == 8 ) ? "J" : "L";
     my ($iv) = unpack( $t, $pv );    # unsigned longsize
     if ( $iv >= 0 and $iv <= 2 ) {   # specialWARN: single STRLEN
         decl()->add( sprintf( "Static const STRLEN* %s = %d;", $sym, $iv ) );

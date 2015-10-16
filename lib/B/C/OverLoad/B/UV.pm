@@ -2,7 +2,8 @@ package B::UV;
 
 use strict;
 
-use Config;
+use B::C::Flags ();
+
 use B::C::Config;
 use B::C::File qw/xpvuvsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -13,7 +14,7 @@ sub save {
     my $sym = objsym($sv);
     return $sym if defined $sym;
 
-    my $uvuformat = $Config{uvuformat};
+    my $uvuformat = $B::C::Flags::Config{uvuformat};
     $uvuformat =~ s/"//g;    #" poor editor
 
     xpvuvsect()->comment("stash, magic, cur, len, xiv_u");

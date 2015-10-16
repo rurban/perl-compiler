@@ -2,7 +2,6 @@ package B::IO;
 
 use strict;
 
-use Config;
 use B qw/cstring cchar svref_2object/;
 use B::C::Config;
 use B::C::Save qw(savepv);

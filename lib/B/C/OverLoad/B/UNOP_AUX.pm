@@ -2,7 +2,6 @@ package B::UNOP_AUX;
 
 use strict;
 
-use Config;
 use B::C::Config;
 use B::C::File qw/unopauxsect init2 init decl free/;
 use B::C::Helpers qw/do_labels is_constant/;

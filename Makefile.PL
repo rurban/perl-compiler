@@ -81,6 +81,10 @@ sub write_b_c_flags {
     $conf =~ s/}\s*$/);/;
     print PH "our \%Config = $conf\n";
     print PH "\n";
+
+    print PH "# make it a restricted hash\n";
+    #print PH "Internals::SvREADONLY( \%Config, 1 );\n\n";
+
     print PH "1;\n";
     close PH;
     chmod 0644, "lib/B/C/Flags.pm";

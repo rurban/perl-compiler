@@ -16,7 +16,6 @@ package B::HV;
 
 use strict;
 
-use Config;
 use B qw/cstring SVf_READONLY SVs_OBJECT/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init2/;
