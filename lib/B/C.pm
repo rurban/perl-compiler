@@ -2318,7 +2318,7 @@ sub B::NULL::save {
   # debug
   if ( $$sv == 0 ) {
     warn "NULL::save for sv = 0 called from @{[(caller(1))[3]]}\n" if $verbose;
-    return savesym( $sv, "(void*)Nullsv /* XXX */" );
+    return savesym( $sv, "(void*)Nullsv" );
   }
 
   my $i = $svsect->index + 1;
@@ -3257,7 +3257,7 @@ CODE2
     }
     elsif ( $type eq 'c' ) { # and !$PERL518
       $init->add(sprintf(
-          "/* AMT overload table for the stash $fullname s\\_%x is generated dynamically */",
+          "/* AMT overload table for the stash $fullname 0x%x is generated dynamically */",
           $$sv ));
     }
     elsif ( $type eq ':' ) { # symtab magic
