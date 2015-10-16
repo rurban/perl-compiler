@@ -14,7 +14,7 @@ sub save {
     # debug
     if ( $$sv == 0 ) {
         verbose("NULL::save for sv = 0 called from @{[(caller(1))[3]]}");
-        return savesym( $sv, "(void*)Nullsv /* XXX */" );
+        return savesym( $sv, "(void*)Nullsv" );
     }
 
     my $i = svsect()->index + 1;
@@ -26,7 +26,8 @@ sub save {
                                                            # svsect()->debug( "ix added to sv_debug_file" );
         init()->add( sprintf( 'sv_list[%d].sv_debug_file = savesharedpv("NULL sv_list[%d] 0x%x");', svsect()->index, svsect()->index, $sv->FLAGS ) );
     }
-    savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
+
+    return savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
 }
 
 1;
