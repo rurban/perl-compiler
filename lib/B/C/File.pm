@@ -30,7 +30,6 @@ use B::C::Section     ();
 use B::C::InitSection ();
 
 use B qw(cstring comppadlist);
-use Config;
 
 our @ISA = qw(Exporter);
 

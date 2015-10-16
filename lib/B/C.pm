@@ -21,6 +21,9 @@ our %Config;
 BEGIN {
     require B::C::Flags;
     *Config = \%B::C::Flags::Config;
+
+    # make it a restricted hash
+    Internals::SvREADONLY( %Config, 1 );
 }
 
 use B::Flags;
