@@ -1,4 +1,4 @@
-# Maintained now in B::C by Reini Urban <rurban@x-ray.at>
+# Maintained now in B::C by Reini Urban <rurban@cpan.org>
 package B::Bblock;
 
 our $VERSION = '1.04';

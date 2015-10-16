@@ -297,8 +297,14 @@ our $VERSION = '1.16';
 # Start registering the L<types> namespaces.
 $main::int::B_CC = $main::num::B_CC = $main::str::B_CC = $main::double::B_CC = $main::string::B_CC = $VERSION;
 
-use Config;
 use strict;
+our %Config;
+BEGIN {
+  require B::C::Flags;
+  *Config = \%B::C::Flags::Config;
+  # make it a restricted hash
+  Internals::SvREADONLY(%Config, 1) if $] >= 5.008004;
+}
 #use 5.008;
 use B qw(main_start main_root class comppadlist peekop svref_2object
   timing_info init_av end_av sv_undef

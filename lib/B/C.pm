@@ -20,6 +20,8 @@ our %Config;
 BEGIN {
   require B::C::Flags;
   *Config = \%B::C::Flags::Config;
+  # make it a restricted hash
+  Internals::SvREADONLY(%Config, 1) if $] >= 5.008004;
 }
 
 # Thanks to Mattia Barbon for the C99 tip to init any union members
