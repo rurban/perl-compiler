@@ -6,7 +6,7 @@
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 
-$B::Disassembler::VERSION = '1.12';
+$B::Disassembler::VERSION = '1.13';
 
 package B::Disassembler::BytecodeStream;
 
@@ -343,6 +343,14 @@ sub print_insn {
     elsif ( $insn eq 'newpadlx' ) {
       $arg .= "\t# " . $comment if $comment ne '1';
       printf "\n# [%s %d]\n", "PADLIST", $ix++;
+    }
+    elsif ( $insn eq 'newpadnlx' ) {
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s %d]\n", "PADNAMELIST", $ix++;
+    }
+    elsif ( $insn eq 'newpadnx' ) {
+      $arg .= "\t# " . $comment if $comment ne '1';
+      printf "\n# [%s %d]\n", "PADNAME", $ix++;
     }
     elsif ( $insn eq 'gv_stashpvx' ) {
       $arg .= "\t# " . $comment if $comment ne '1';

@@ -49,7 +49,7 @@ BEGIN {
      ];
   }
   if ( $] >= 5.017005 ) {
-    @B::PADLIST_old::ISA = ('B::AV');
+    @B::PAD::ISA = ('B::AV');
   }
 }
 use strict;
@@ -294,28 +294,29 @@ sub B::SV::ix($) {
   }
 }
 
-sub B::PAD::ix($) {
-  my $sv = shift;
-  #if ($PERL522) {
-  #  my $ix = $svtab{$$sv};
-  #  defined($ix) ? $ix : do {
-  #    nice '[' . class($sv) . " $tix]";
-  #    B::Assembler::maxsvix($tix) if $debug{A};
-  #    asm "newpadx", 0,
-  #      $debug{Comment} ? sprintf("pad_new(flags=0x%x)", 0) : '';
-  #    $svtab{$$sv} = $varix = $ix = $tix++;
-  #    $sv->bsave($ix);
-  #    $ix;
-  #  }
-  #} else {
-  if ($$sv) {
-    bless $sv, 'B::AV';
-    return $sv->B::SV::ix;
-  } else {
-    0
-  }
-}
+#sub B::PAD::ix($) {
+#  my $sv = shift;
+#  #if ($PERL522) {
+#  #  my $ix = $svtab{$$sv};
+#  #  defined($ix) ? $ix : do {
+#  #    nice '[' . class($sv) . " $tix]";
+#  #    B::Assembler::maxsvix($tix) if $debug{A};
+#  #    asm "newpadx", 0,
+#  #      $debug{Comment} ? sprintf("pad_new(flags=0x%x)", 0) : '';
+#  #    $svtab{$$sv} = $varix = $ix = $tix++;
+#  #    $sv->bsave($ix);
+#  #    $ix;
+#  #  }
+#  #} else {
+#  if ($$sv) {
+#    bless $sv, 'B::AV';
+#    return $sv->B::SV::ix;
+#  } else {
+#    0
+#  }
+#}
 
+# since 5.18
 sub B::PADLIST::ix($) {
   my $padl = shift;
   my $ix = $svtab{$$padl};
@@ -346,16 +347,20 @@ sub B::PADNAME::ix {
 
 sub B::PADNAMELIST::ix {
   my $padnl = shift;
-  my $ix = $svtab{$$padnl};
-  defined($ix) ? $ix : do {
-    nice '[' . class($padnl) . " $tix]";
-    B::Assembler::maxsvix($tix) if $debug{A};
-    my $max = $PERL522 ? $padnl->MAX : $padnl->FILL;
-    asm "newpadnlx", $max,
-     $debug{Comment} ? sprintf("size=%d, %s", $max, sv_flags($padnl)) : '';
-    $svtab{$$padnl} = $varix = $ix = $tix++;
-    $padnl->bsave($ix);
-    $ix;
+  if (!$PERL522) {
+    return B::SV::ix(bless $padnl, 'B::AV');
+  } else {
+    my $ix = $svtab{$$padnl};
+    defined($ix) ? $ix : do {
+      nice '[' . class($padnl) . " $tix]";
+      B::Assembler::maxsvix($tix) if $debug{A};
+      my $max = $padnl->MAX;
+      asm "newpadnlx", $max,
+        $debug{Comment} ? sprintf("size=%d, %s", $max+1, sv_flags($padnl)) : '';
+      $svtab{$$padnl} = $varix = $ix = $tix++;
+      $padnl->bsave($ix);
+      $ix;
+    }
   }
 }
 
@@ -617,7 +622,7 @@ sub B::PVNV::bsave($$) {
     return if $sv->isa('B::IO');
 
     # cop_seq range instead of a double. (IV, NV)
-    unless ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+    unless ($PERL522 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
       asm "cop_seq_low", $sv->COP_SEQ_RANGE_LOW;
       asm "cop_seq_high", $sv->COP_SEQ_RANGE_HIGH;
       return;
@@ -772,12 +777,15 @@ sub B::FM::bsave($$) {
   asm "xfm_lines", $form->LINES;
 }
 
-# an AV
+# an AV or padl_sym
 sub B::PAD::bsave($$) {
   my ( $av, $ix ) = @_;
   my @array = $av->ARRAY;
   $_ = $_->ix for @array; # save the elements
   if ($PERL522) {
+    $av->B::NULL::bsave($ix);
+    asm "av_extend", scalar @array if @array;
+    asm "av_pushx", $_ for @array;
   } else {
     $av->B::NULL::bsave($ix);
     # av_extend always allocs 3
@@ -827,27 +835,27 @@ sub B::AV::bsave {
   asm "xmg_stash", $stashix if $stashix;
 }
 
+# since 5.18
 sub B::PADLIST::bsave {
   my ( $padl, $ix ) = @_;
   my @array = $padl->ARRAY;
   my $max = scalar @array;
   bless $array[0], 'B::PADNAMELIST' if ref $array[0] eq 'B::AV';
   bless $array[1], 'B::PAD' if ref $array[1] eq 'B::AV';
-  my $pnl = $array[0]->ix;
+  my $pnl = $array[0]->ix; # padnamelist
   my $pad = $array[1]->ix; # pad syms
-  if ($max > 2) {
-    $_ = $_->ix for @array;
-  }
-  $array[0]->bsave;
-  $array[1]->bsave;
   nice "-PADLIST-",
     asm "ldsv", $varix = $ix unless $ix == $varix;
-  asm "padl_name", $pnl; #if ref $array[0] eq 'B::PADNAMELIST';
-  asm "padl_sym",  $pad; #if ref $array[1] eq 'B::PAD';
-  asm "padl_id",    $padl->ID if $PERL522 and $padl->ID;
-  asm "padl_outid", $padl->OUTID if $PERL522 and $padl->OUTID;
+  asm "padl_name", $pnl;
+  asm "padl_sym",  $pad;
+  if ($PERL522) {
+    asm "padl_id",    $padl->id if $padl->id;
+    # 5.18-20 has no PADLIST->outid API, uses xcv_outside instead
+    asm "padl_outid", $padl->outid if $padl->outid;
+  }
 }
 
+# since 5.22
 sub B::PADNAME::bsave {
   my ( $pn, $ix ) = @_;
   my $stashix = $pn->OURSTASH->ix;
@@ -856,17 +864,16 @@ sub B::PADNAME::bsave {
     asm "ldsv", $varix = $ix unless $ix == $varix;
   asm "padn_pv", cstring $pn->PV if $pn->LEN;
   my $flags = $pn->FLAGS;
-  asm "padn_flags", $flags & 0xff if $flags &0xff; # turn of SVf_FAKE, U8 only
   asm "padn_stash", $stashix if $stashix;
   asm "padn_type", $typeix if $typeix;
-  if ($flags & SVf_FAKE) {
-    asm "padn_seq_low", $pn->COP_SEQ_RANGE_LOW;
-    asm "padn_seq_high", $pn->COP_SEQ_RANGE_HIGH;
-  }
-  asm "padn_refcnt", $pn->REFCNT;
+  asm "padn_flags", $flags & 0xff if $flags & 0xff; # turn of SVf_FAKE, U8 only
+  asm "padn_seq_low", $pn->COP_SEQ_RANGE_LOW;
+  asm "padn_seq_high", $pn->COP_SEQ_RANGE_HIGH;
+  asm "padn_refcnt", $pn->REFCNT if $pn->REFCNT != 1;
   #asm "padn_len", $pn->LEN if $pn->LEN;
 }
 
+# since 5.22
 sub B::PADNAMELIST::bsave {
   my ( $padnl, $ix ) = @_;
   my @array = $padnl->ARRAY;
