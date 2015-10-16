@@ -289,7 +289,6 @@ t/v5.20.2/C-COMPILED/io/tell.t
 t/v5.20.2/C-COMPILED/io/through.t
 t/v5.20.2/C-COMPILED/io/utf8.t
 t/v5.20.2/C-COMPILED/known_errors.txt
-t/v5.20.2/C-COMPILED/known_errors.txt@bc522-23016e1
 t/v5.20.2/C-COMPILED/mro/basic.t
 t/v5.20.2/C-COMPILED/mro/basic_01_c3.t
 t/v5.20.2/C-COMPILED/mro/basic_01_c3_utf8.t
@@ -3038,8 +3037,6 @@ t/v5.22.0/C-COMPILED/io/tell.t
 t/v5.22.0/C-COMPILED/io/through.t
 t/v5.22.0/C-COMPILED/io/utf8.t
 t/v5.22.0/C-COMPILED/known_errors.txt
-t/v5.22.0/C-COMPILED/known_errors.txt@bc522-23016e1
-t/v5.22.0/C-COMPILED/known_errors.txt@bc522-734e77
 t/v5.22.0/C-COMPILED/mro/basic.t
 t/v5.22.0/C-COMPILED/mro/basic_01_c3.t
 t/v5.22.0/C-COMPILED/mro/basic_01_c3_utf8.t
