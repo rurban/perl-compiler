@@ -3263,8 +3263,8 @@ CODE2
     }
     elsif ( $type eq 'c' ) { # and !$PERL518
       $init->add(sprintf(
-          "/* AMT overload table for the stash $fullname 0x%x is generated dynamically */",
-          $$sv ));
+          "/* AMT overload table for the stash %s 0x%x is generated dynamically */",
+          $fullname, $$sv ));
     }
     elsif ( $type eq ':' ) { # symtab magic
       # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
