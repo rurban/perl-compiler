@@ -29,10 +29,10 @@ BEGIN {
    $old_env_path = $ENV{'PATH'};
    $old_env_dcl_path = $ENV{'DCL$PATH'};
    $old_env_term = $ENV{'TERM'};
-  if ($^O eq 'VMS' && !defined($Config{d_setenv})) {
-      $ENV{PATH} = $ENV{PATH};
-      $ENV{TERM} = $ENV{TERM} ne ''? $ENV{TERM} : 'dummy';
-  }
+  # if ($^O eq 'VMS' && !defined($Config{d_setenv})) {
+  #     $ENV{PATH} = $ENV{PATH};
+  #     $ENV{TERM} = $ENV{TERM} ne ''? $ENV{TERM} : 'dummy';
+  # }
   if ($Config{'extensions'} =~ /\bIPC\/SysV\b/
       && ($Config{d_shm} || $Config{d_msg})) {
       eval { require IPC::SysV };
@@ -2141,8 +2141,8 @@ foreach my $ord (78, 163, 256) {
     # is still on the PATH.  There is however no way to determine the
     # actual path on the current system without loading the Win32
     # module, so we just restore the original $ENV{PATH} here.
-    local $ENV{PATH} = $ENV{PATH};
-    $ENV{PATH} = $old_env_path if $Is_MSWin32;
+
+    local $ENV{PATH} = $old_env_path;
 
     chdir $start if defined $start;
 
@@ -2355,8 +2355,7 @@ is eval { eval $::x.1 }, 1, 'reset does not taint undef';
 # [perl #122669]
 {
     # See the comment above the first formline test.
-    local $ENV{PATH} = $ENV{PATH};
-    $ENV{PATH} = $old_env_path if $Is_MSWin32;
+    local $ENV{PATH} = $old_env_path;
     is runperl(
        switches => [ '-T' ],
        prog => 'use constant K=>$^X; 0 if K; BEGIN{} use strict; '

@@ -1090,11 +1090,15 @@ sub runperl_binary {
     unlink $bin if -e $bin;
     print STDERR "# running: make $bin ===\n";
 
+    die "No test available: $test" unless -e $test;
+
     if ( ${^TAINT} ) {
         ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
         my @safe = grep { $_ !~ qr{^\.+$}} split(':', $ENV{PATH});
         $ENV{PATH} = join ':', @safe;
     }
+
+    die "PATH is not defined" unless length $ENV{PATH};
 
     my $stdin_prefix = '';
     if ( exists $opts->{'stdin'} ) {
@@ -1108,6 +1112,8 @@ sub runperl_binary {
     my $make = qx{$perlcc};
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
+
+    die "No binary available $bin" unless -e $bin;
 
     # now execute the binary
     my $run = qq{${stdin_prefix}./$bin $error};
