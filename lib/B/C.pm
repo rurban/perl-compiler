@@ -962,6 +962,7 @@ sub save_pv_or_rv {
         if ($shared_hek) {
           if ($savesym eq "emptystring") {
             $free->add("    SvLEN(&$s) = 0;") ;
+            $len = 0 if $PERL518;
           } else {
             $len = 0;
           }
