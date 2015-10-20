@@ -108,7 +108,7 @@ op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     TESTS     Test results:
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        BC issue #219 - overload issue
-op/local.t                   SIG       BC issue #249 - multideref
+op/local.t                   SIG       BC issue #265 - rmagic cause delete local to crash
 op/lvref.t                   PLAN      Plan was valid
 op/magic.t                   SIG       Exit signal is 6 SIGABRT
 op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
