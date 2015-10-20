@@ -1096,20 +1096,20 @@ sub runperl_binary {
         $ENV{PATH} = join ':', @safe;
     }
 
-    my $make = `perlcc -O3 -o $bin $test $error`;
+    my $stdin_prefix = '';
+    if ( exists $opts->{'stdin'} ) {
+        my $stdin = $opts->{'stdin'} || '';
+        $stdin_prefix = qq{echo "$stdin" | };
+    }
+
+    my $make = qx{${stdin_prefix}perlcc -O3 -o $bin $test $error};
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
 
     # now execute the binary
-    my $foo = $opts->{'stdin'} || '';
     print STDERR "# running: ./$bin $foo\n";
-    my $output;
-    if ($foo) {
-        $output = `echo "$foo" | ./$bin $error`;
-    }
-    else {
-        $output = `./$bin $error`;
-    }
+    my $output = qx{${stdin_prefix}./$bin $error};
+
     unlink $bin;
     return $output;
 }

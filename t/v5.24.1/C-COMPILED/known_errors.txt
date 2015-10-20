@@ -119,7 +119,7 @@ op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      Plan was valid
 op/protowarn.t               PLAN      TODO: no output.
 op/readdir.t                 SIG       Exit signal is 11 SEGV
-op/readline.t                SKIP      This test started hanging when fresh_perl_is started making binaries. it's probably an io problem.
+op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
 op/reset.t                   TESTS     BC issue #252: reset
 op/select.t                  SIG       BC issue #251: hek assertion
