@@ -1102,15 +1102,19 @@ sub runperl_binary {
         $stdin_prefix = qq{echo "$stdin" | };
     }
 
-    my $make = qx{${stdin_prefix}perlcc -O3 -o $bin $test $error};
+    my $switches = join( ' ', @{ $opts->{switches} || [] });
+    my $perlcc = "${stdin_prefix}perlcc $switches -O3 -o $bin $test $error";
+    print STDERR "# Compiling: > $perlcc\n";
+    my $make = qx{$perlcc};
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
 
     # now execute the binary
-    print STDERR "# running: ./$bin $foo\n";
-    my $output = qx{${stdin_prefix}./$bin $error};
+    my $run = qq{${stdin_prefix}./$bin $error};
+    print STDERR "# Running: > $run\n";
+    my $output = qx{$run};
 
-    unlink $bin;
+    unlink $bin unless $ENV{BC_DEVELOPING};
     return $output;
 }
 
