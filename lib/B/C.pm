@@ -3430,10 +3430,6 @@ sub try_autoload {
   my $fullname = $cvstashname . '::' . $cvname;
   warn sprintf( "No definition for sub %s. Try %s::AUTOLOAD\n",
 		$fullname, $cvstashname ) if $debug{cv};
-  # First some exceptions, fooled by goto
-  if ($cvstashname eq 'Config') {
-    return svref_2object( \&{'Config::launcher'} );
-  }
   if ($fullname eq 'utf8::SWASHNEW') {
     # utf8_heavy was loaded so far, so defer to a demand-loading stub
     my $stub = sub { require 'utf8_heavy.pl' unless $savINC{"utf8_heavy.pl"}; goto &utf8::SWASHNEW; };
