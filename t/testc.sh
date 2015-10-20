@@ -1176,6 +1176,7 @@ print $f->x . "\n";'
 result[371]='5'
 if [[ $v518 -gt 0 ]]; then
   tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen("ᕘ"); undef %ᕘ::; mro::get_pkg_gen("ᕘ"); delete $::{"ᕘ::"}; print "ok";'
+  tests[373]='package foo; BEGIN {undef %foo::} sub doof { caller(0) } print qq/ok\n/ if +(doof())[3] =~ qr/::doof/'
 fi
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
