@@ -135,7 +135,6 @@ op/sub_lval.t                TESTS     Test results:
 op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
 op/switch.t                  PLAN      BC issue #219 - overload issue
-op/taint.t                   TESTS     Test results:
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
 op/tie_fetch_count.t         SIG       Exit signal is 11 SEGV
