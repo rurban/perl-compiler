@@ -105,7 +105,7 @@ op/join.t                    TESTS     BC issue #219 - overload issue
 op/lc.t                      TESTS     BC issue #250 - Attempt to access disallowed key feature_*
 op/leaky-magic.t             TESTS     Test results:
 op/length.t                  TESTS     BC issue #219 - overload issue
-op/lex.t                     TESTS     Test results:
+op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/local.t                   SIG       BC issue #265 - rmagic cause delete local to crash
