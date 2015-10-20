@@ -83,7 +83,7 @@ op/closure.t                 TESTS     Test results:
 op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/const-optree.t            PLAN      Plan was valid
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
-op/coresubs.t                COMPAT    uses B::walkoptree 
+op/coresubs.t                COMPAT    uses B::walkoptree
 op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     SIG       BC issue #223 - glob issue
 op/defins.t                  SIG       BC issue #223 - glob issue
@@ -107,7 +107,7 @@ op/leaky-magic.t             TESTS     Test results:
 op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     TESTS     Test results:
 op/lex_assign.t              PLAN      Plan was valid
-op/lexsub.t                  BC        BC issue #219 - overload issue 
+op/lexsub.t                  BC        BC issue #219 - overload issue
 op/local.t                   SIG       BC issue #249 - multideref
 op/lvref.t                   PLAN      Plan was valid
 op/magic.t                   SIG       Exit signal is 6 SIGABRT
@@ -120,10 +120,8 @@ op/override.t                COMPAT    crazy test which override CORE::GLOBAL::r
 op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      Plan was valid
 op/protowarn.t               PLAN      TODO: no output.
-op/rand.t                    PLAN      Plan was valid
-op/range.t                   PLAN      Plan was valid
 op/readdir.t                 SIG       Exit signal is 11 SEGV
-op/readline.t                SKIP      This test started hanging when fresh_perl_is started making binaries. it's probably an io problem. 
+op/readline.t                SKIP      This test started hanging when fresh_perl_is started making binaries. it's probably an io problem.
 op/ref.t                     SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
 op/reset.t                   TESTS     BC issue #252: reset
 op/select.t                  SIG       BC issue #251: hek assertion
