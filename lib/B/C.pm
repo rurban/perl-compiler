@@ -774,7 +774,8 @@ sub savestash_flags {
   $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
   my $sym = "hv$hv_index";
   $decl->add("Static HV *hv$hv_index;");
-  $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pv, $len, $flags));
+  my $pvok = $pv eq '0' || !$len ? q{""} : $pv;
+  $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pvok, $len, $flags));
   $hv_index++;
   return $stashtable{$pv} = $sym;
 }
