@@ -87,7 +87,6 @@ op/coresubs.t                COMPAT    uses B::walkoptree
 op/current_sub.t             PLAN      Plan was valid
 op/dbm.t                     SIG       BC issue #223 - glob issue
 op/defins.t                  SIG       BC issue #223 - glob issue
-op/dump.t                    PLAN      Plan was valid
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/evalbytes.t               PLAN      Plan was valid
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
