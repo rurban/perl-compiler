@@ -114,7 +114,8 @@ sub savestash_flags {
     $flags = $flags ? "$flags|GV_ADD" : "GV_ADD" if !$disable_gvadd;    # enabled by default
     my $sym = "hv$hv_index";
     decl()->add("Static HV *hv$hv_index;");
-    init()->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pv, $len, $flags ) );
+    my $pvok = $pv eq '0' || !$len ? q{""} : $pv;
+    init()->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pvok, $len, $flags ) );
     B::C::HV::inc_index();
     return $stashtable{$pv} = $sym;
 }

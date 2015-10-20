@@ -46,7 +46,7 @@ sub _mark_package {
 # better name ? include_package
 sub is_package_used {
     my $pkg = shift;
-    die unless defined $pkg;
+    return unless defined $pkg;
     return $include_package{$pkg};
 }
 
