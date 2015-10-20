@@ -407,11 +407,9 @@ sub save_pv_or_rv {
             else {
                 $len = $cur + 1;
                 if ($shared_hek) {
+                    $len = 0;
                     if ( $savesym eq "emptystring" ) {
                         free()->add("    SvLEN(&$s) = 0;");
-                    }
-                    else {
-                        $len = 0;
                     }
                     free()->add("    SvFAKE_off(&$s);");
                 }
