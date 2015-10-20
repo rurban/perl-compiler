@@ -77,7 +77,7 @@ op/attrs.t                   PLAN      Plan was valid
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/bop.t                     TESTS     BC issue #219 - overload issue
-op/caller.t                  TESTS     Test results:
+op/caller.t                  TESTS     BC issue #267
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     Test results:
 op/concat2.t                 TESTS     BC issue #219 - overload issue
