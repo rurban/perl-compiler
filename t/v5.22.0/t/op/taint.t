@@ -16,6 +16,7 @@ BEGIN {
 
 use strict;
 use Config;
+use Cwd qw(getcwd);
 
 plan tests => 801;
 
@@ -41,6 +42,9 @@ BEGIN {
       }
   }
 }
+
+my $start = getcwd;
+$start =~ /(.*)/; $start = $1;
 
 my $Is_VMS      = $^O eq 'VMS';
 my $Is_MSWin32  = $^O eq 'MSWin32';
@@ -2133,7 +2137,10 @@ foreach my $ord (78, 163, 256) {
     local $ENV{PATH} = $ENV{PATH};
     $ENV{PATH} = $old_env_path if $Is_MSWin32;
 
+    chdir $start if defined $start;
+
     fresh_perl_is(<<'end', "ok", { switches => [ '-T' ] },
+    #!perl -T
     $TAINT = substr($^X, 0, 0);
     formline('@'.('<'x("2000".$TAINT)).' | @*', 'hallo', 'welt');
     print "ok";
