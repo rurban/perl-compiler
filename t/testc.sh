@@ -166,7 +166,7 @@ function ctest {
     fi
 }
 
-ntests=350
+ntests=3000
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=23
@@ -1181,9 +1181,12 @@ fi
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
 tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
-tests[2053]='#!./perl -w
-use strict; BEGIN { $SIG{__WARN__} = sub { die "Dying on warning: ", @_ } } print q{ok}'
-
+# silly compiler warnings test, only usable with -q
+tests[2053]='use strict; BEGIN { $SIG{__WARN__} = sub { die "Dying on warning: ", @_ } } print q{ok}'
+# empty keys multideref
+tests[2054]='my %h; $h{""} = q/boom/; print qq{ok\n}'
+tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
+ 
 init
 
 # 
