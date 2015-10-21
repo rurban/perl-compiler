@@ -1028,9 +1028,11 @@ sub _fresh_perl {
     print TEST $prog;
     close TEST or die "Cannot close $tmpfile: $!";
 
-    my $results;
+    my ( $results, $compiler_output );
     if ($is_binary) {
-        $results = runperl_binary( $tmpfile, $runperl_args );
+        ( $results, $compiler_output ) = runperl_binary( $tmpfile, $runperl_args );
+        # some tests are checking compile time warnings, check the compile warnings on demand
+        $results = $compiler_output . "\n". $results if $runperl_args->{check_perlcc_output};
     }
     else {
         $results = runperl(%$runperl_args);
@@ -1123,6 +1125,11 @@ sub runperl_binary {
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
 
+    my $compiler_output;
+    if ( $make =~ qr{Unexpected compiler output}m ) {
+        $compiler_output = join("\n", grep { $_ !~ qr{(?:Unexpected compiler output|\[WARNING\])} } split(/\n/, $make));
+    }
+
     die "No binary available $bin" unless -e $bin;
 
     # now execute the binary
@@ -1132,7 +1139,7 @@ sub runperl_binary {
     my $output = qx{$run};
 
     unlink $bin if !${^TAINT} && !$ENV{BC_DEVELOPING};
-    return $output;
+    return ( $output, $compiler_output );
 }
 
 #
