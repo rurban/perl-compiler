@@ -666,7 +666,7 @@ result[170]='~~~~
 Invalid CODE attribute: bad at (eval 1) line 1.
 BEGIN failed--compilation aborted at (eval 1) line 1.
 ~~~~'
-tests[172]='#TODO 5.18-5.22
+tests[172]='#TODO 5.18-5.22, see also 219
 package Foo;
 use overload q("") => sub { "Foo" };
 package main;
@@ -890,8 +890,9 @@ tests[215]='eval { $@ = "t1\n"; do { die "t3\n" }; 1; }; print ":$@:\n";'
 result[215]=':t3
 :'
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
-# priority
-tests[219]='package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
+# priority, fails since 5.18
+tests[219]='#TODO 5.18-5.22, see also 172
+package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
 my $foo = bless \(my $bar = "ok"), "OverloadTest"; print $foo."\n";'
 # also at 904
 tests[220]='
