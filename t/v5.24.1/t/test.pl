@@ -1083,20 +1083,23 @@ sub _fresh_perl {
 sub runperl_binary {
     my ( $test, $opts ) = @_;
 
-    $opts ||= {};
-    my $error = $opts->{'stderr'} ? '2>&1' : '';
-    my $bin = $test;
-    $bin =~ s/\.t$/\.bin/;
-    unlink $bin if -e $bin;
-    print STDERR "# running: make $bin ===\n";
-
-    die "No test available: $test" unless -e $test;
-
     if ( ${^TAINT} ) {
         ( $ENV{PATH} ) = $ENV{PATH} =~ m/(.*)/;
         my @safe = grep { $_ !~ qr{^\.+$}} split(':', $ENV{PATH});
         $ENV{PATH} = join ':', @safe;
     }
+
+    $opts ||= {};
+    my $error = $opts->{'stderr'} ? '2>&1' : '';
+    my $bin = $test;
+    $bin =~ s/\.t$/\.bin/;
+
+
+    ( $bin ) = $bin =~ m/(.*)/; # untaint
+    unlink $bin if !${^TAINT} && -e $bin;
+    print STDERR "# running: make $bin ===\n";
+
+    die "No test available: $test" unless -e $test;
 
     die "PATH is not defined" unless length $ENV{PATH};
 
@@ -1106,9 +1109,11 @@ sub runperl_binary {
         $stdin_prefix = qq{echo "$stdin" | };
     }
 
-    my $switches = join( ' ', @{ $opts->{switches} || [] });
+    my %filter = map { $_ => 1 } qw/-T -w/; # filter perl switches
+    my $switches = join( ' ', grep { $filter{$_} } @{ $opts->{switches} || [] });
     my $perlcc = "${stdin_prefix}perlcc $switches -O3 -o $bin $test $error";
     print STDERR "# Compiling: > $perlcc\n";
+    ( $perlcc ) = $perlcc =~ m/(.*)/; # untaint
     my $make = qx{$perlcc};
     map { print STDERR "# $_\n" } split /\n/, $make;
     return $make if $? || $opts->{perlcc_only};
@@ -1117,10 +1122,11 @@ sub runperl_binary {
 
     # now execute the binary
     my $run = qq{${stdin_prefix}./$bin $error};
+    ( $run ) = $run =~ m/(.*)/; # untaint
     print STDERR "# Running: > $run\n";
     my $output = qx{$run};
 
-    unlink $bin unless $ENV{BC_DEVELOPING};
+    unlink $bin if !${^TAINT} && !$ENV{BC_DEVELOPING};
     return $output;
 }
 

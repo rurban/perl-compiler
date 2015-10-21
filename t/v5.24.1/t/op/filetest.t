@@ -9,6 +9,8 @@ BEGIN {
     set_up_inc(qw '../lib ../cpan/Perl-OSType/lib');
 }
 
+$ENV{SKIP_CHECK_PERL} = 1;
+
 plan(tests => 53 + 27*14);
 
 if ($^O =~ /MSWin32|cygwin|msys/ && !is_miniperl) {
