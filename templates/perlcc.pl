@@ -864,7 +864,7 @@ sub check_write {
 
 sub check_perl {
     my $file = shift;
-    unless ( -T $file ) {
+    if ( ! -T $file && !$ENV{SKIP_CHECK_PERL} ) {
         warn "$0: Binary `$file' sure doesn't smell like perl source!\n";
         print "Checking file type... ";
         vsystem( "file", $file );
