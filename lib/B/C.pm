@@ -997,7 +997,9 @@ sub save_hek {
   # force empty string for CV prototypes
   return "NULL" unless defined $str;
   return "NULL" if !length $str and !@_ and $fullname !~ /unopaux_item.* const/;
-  return $hektable{$str} if defined $hektable{$str};
+  # The first assigment is already refcount bumped, we have to manually
+  # do it for all others
+  return sprintf("share_hek_hek(%s)", $hektable{$str}) if defined $hektable{$str};
   my ($cstr, $cur, $utf8) = strlen_flags($str);
   $cur = - $cur if $utf8;
   $cstr = '""' if $cstr eq "0";
@@ -5870,6 +5872,7 @@ sub output_main_rest {
 
   if ( $PERL510 ) {
     print <<'_EOT7';
+/* The first assignment got already refcount bumped */
 HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
