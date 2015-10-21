@@ -123,7 +123,7 @@ op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              PLAN      Plan was valid
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
-op/split_unicode.t           SIG       Exit signal is 11 SEGV -- broken by the reverse sort fix for Tie::Hash::NamedCapture
+op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #250 - access disallowed key
