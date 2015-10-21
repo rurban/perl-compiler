@@ -1529,7 +1529,7 @@ sub B::UNOP_AUX::save {
         # gv or other late inits
         $s .= ($C99 ? "\t,{.sv=Nullsv} \t/* $itemsym */\n"
                     : "\t,0 \t/* $itemsym */\n");
-        $init2->add(" unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
+        $init2->add("unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
       }
     }
     $i++;
@@ -5875,7 +5875,7 @@ my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
       PERL_HASH(hash, str, abs(len));
     }
-    return Perl_share_hek(aTHX_ str, len, hash);
+    return share_hek_hek(Perl_share_hek(aTHX_ str, len, hash));
 }
 
 _EOT7
