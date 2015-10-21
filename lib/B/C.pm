@@ -7450,12 +7450,34 @@ sub save_main {
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
   %Exporter::Cache = (); # avoid B::C and B symbols being stored
+  _delete_macros_vendor_undefined() if $PERL512;
   $B::C::curcv = B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   $verbose
     ? walkoptree_slow( main_root, "save" )
     : walkoptree( main_root, "save" );
   save_main_rest();
+}
+
+sub _delete_macros_vendor_undefined {
+  foreach my $class (qw(POSIX IO Fcntl Socket Exporter Errno)) {
+    no strict 'refs';
+    no strict 'subs';
+    no warnings 'uninitialized';
+    my $symtab = $class . '::';
+    for my $symbol ( sort keys %$symtab ) {
+      next if $symbol !~ m{^[0-9A-Z_]+$} || $symbol =~ m{(?:^ISA$|^EXPORT|^DESTROY|^TIE|^VERSION|^AUTOLOAD|^BEGIN|^INIT|^__|^DELETE|^CLEAR|^STORE|^NEXTKEY|^FIRSTKEY|^FETCH|^EXISTS)};
+      next if ref $symtab->{$symbol};
+      local $@;
+      my $code = "$class\:\:$symbol();";
+      eval $code;
+      if ( $@ =~ m{vendor has not defined} ) {
+        delete $symtab->{$symbol};
+        next;
+      }
+    }
+  }
+  return 1;
 }
 
 sub fixup_ppaddr {
