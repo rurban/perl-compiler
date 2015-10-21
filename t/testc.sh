@@ -198,7 +198,7 @@ function ctest {
     fi
 }
 
-ntests=350
+ntests=3000
 declare -a tests[$ntests]
 declare -a result[$ntests]
 ncctests=23
@@ -1209,14 +1209,18 @@ result[371]='5'
 
 if [[ $v518 -gt 0 ]]; then
   tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen('ᕘ'); undef %ᕘ::; mro::get_pkg_gen('ᕘ'); delete $::{"ᕘ::"}; print "ok";'
-  result[372]='ok'
+  tests[373]='package foo; BEGIN {undef %foo::} sub doof { caller(0) } print qq/ok\n/ if +(doof())[3] =~ qr/::doof/'
 fi
 
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
-result[2050]='ok'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
-result[2051]='ok'
-
+tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
+# silly compiler warnings test, only usable with -q
+tests[2053]='use strict; BEGIN { $SIG{__WARN__} = sub { die "Dying on warning: ", @_ } } print q{ok}'
+# empty keys multideref
+tests[2054]='my %h; $h{""} = q/boom/; print qq{ok\n}'
+tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
+ 
 init
 
 #
