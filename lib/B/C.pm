@@ -3264,15 +3264,16 @@ sub B::PVMG::save_magic {
   }
 
   # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
+  # needs core patch 
   # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
-  if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
+  if (0 and ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
     warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
       if $verbose;
   # [cperl #60] not only overloaded, version also
-  } elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
-    warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
-      if $verbose;
+  #} elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
+  #  warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
+  #    if $verbose;
   } else {
     $pkg = $sv->SvSTASH;
     if ($pkg and $$pkg) {
@@ -3292,8 +3293,11 @@ sub B::PVMG::save_magic {
         $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
         $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
         $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-        # XXX
-        #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+        # XXX 219?
+        if ($sv->MAGICAL and $PERL518) {
+          warn sprintf( "mark magical %s\n", $pkg->NAME ) if $verbose and $PERL518;
+          push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+        }
       }
     }
   }
@@ -3301,7 +3305,7 @@ sub B::PVMG::save_magic {
     if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
 
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-  if ($PERL510 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
+  if ($PERL510 and and !$PERL518 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
     warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
                  $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
       if $debug{mg};
@@ -5209,8 +5213,8 @@ sub B::HV::save {
   my $magic;
   if ($name) {
     # It's a stash. See issue 79 + test 46
-    warn sprintf( "Saving stash HV \"%s\" from \"$fullname\" 0x%x MAX=%d\n",
-                  $name, $$hv, $hv->MAX ) if $debug{hv};
+    warn sprintf( "Saving stash HV \"%s\" from \"%s\" 0x%x MAX=%d\n",
+                  $name, $fullname, $$hv, $hv->MAX ) if $debug{hv};
 
     # A perl bug means HvPMROOT isn't altered when a PMOP is freed. Usually
     # the only symptom is that sv_reset tries to reset the PMf_USED flag of
@@ -5234,10 +5238,13 @@ sub B::HV::save {
       if ($PERL510 and mro::get_mro($name) eq 'c3') {
         B::C::make_c3($name);
       }
-      if ($magic =~ /c/) {
-        warn "defer AMT magic of $name\n" if $debug{mg};
+      if ($PERL518 and $magic =~ /c/) {
+        my ($cname, $len, $utf8) = strlen_flags($name);
         # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-        #  $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+        warn "defer AMT magic of $name with magic '$magic'\n" if $verbose; # of XS loaded hashes
+        $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+      } else {
+        warn "Warning: skip stash $name with magic '$magic'\n" if $verbose and $magic;
       }
       return $sym;
     }
@@ -5363,9 +5370,9 @@ sub B::HV::save {
   $magic = $hv->save_magic($fullname);
   $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   if ($magic =~ /c/) {
-    # defer AMT magic of XS loaded hashes
     my ($cname, $len, $utf8) = strlen_flags($name);
-    $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+    warn "defer AMT magic of $name with magic '$magic'\n" if $verbose; # of XS loaded hashes
+    $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
   }
   if ($PERL510 and $name and mro::get_mro($name) eq 'c3') {
     B::C::make_c3($name);
