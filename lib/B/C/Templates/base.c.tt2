@@ -250,7 +250,7 @@ HEK * my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
       PERL_HASH(hash, str, abs(len));
     }
-    return Perl_share_hek(aTHX_ str, len, hash);
+    return share_hek_hek(Perl_share_hek(aTHX_ str, len, hash));
 }
 
 [% IF ! destruct %]

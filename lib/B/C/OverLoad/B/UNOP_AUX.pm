@@ -81,7 +81,7 @@ sub save {
             else {
                 # gv or other late inits
                 $s .= "\t,{.sv=Nullsv} \t/* $itemsym */\n";
-                init2()->add(" unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
+                init2()->add("unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
             }
         }
         $i++;
