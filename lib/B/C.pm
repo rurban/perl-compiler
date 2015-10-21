@@ -503,7 +503,7 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
-my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount
+my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount, SvSTASH crash
 my $CPERL51  = ( $Config{usecperl} );
 my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str
 my $PERL518  = ( $] >= 5.017010 );
@@ -3286,25 +3286,33 @@ sub B::PVMG::save_magic {
     my $flagspv = "";
     $fullname = '' unless $fullname;
     $flagspv = $sv->flagspv if $debug{flags} and $PERL510 and !$sv->MAGICAL;
-    warn sprintf( "saving magic for %s %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
-		class($sv), $fullname, $$sv, $sv_flags, $debug{flags} ? "(".$flagspv.")" : "",
-		@{[(caller(1))[3]]}, @{[(caller(1))[2]]});
+    warn sprintf( "saving magic for %s %s (0x%x) flags=0x%x%s\n",
+                  class($sv), $fullname, $$sv, $sv_flags,
+                  $debug{flags} ? " (".$flagspv.")" : "");
   }
 
   # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
-  # needs core patch 
-  # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
+  # also issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
-  if (0 and ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
-    warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
-      if $verbose;
-  # [cperl #60] not only overloaded, version also
-  #} elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
-  #  warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
+  # fixed with [perl #126410] patch in my_curse
+  # HV->SvSTASH crashed on %version and %File, so we had to patch it in C.xs
+  #if ($PERL518 and ref($sv) eq 'B::HV' and $sv_flags & SVf_AMAGIC and $fullname =~ /::$/) {
+  #  warn sprintf("skip SvSTASH for HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
   #    if $verbose;
-  } else {
+  #  if ($PERL518 and ref($sv) eq 'B::HV' and $sv_flags & SVf_AMAGIC
+  #      and $fullname =~ /::$/)
+  #  {
+  #    my $name = $fullname;
+  #    $name =~ s/^%(.*)::$/$1/;
+  #    warn sprintf("initialize overload cache for %s (no SvSTASH)\n", $fullname )
+  #      if $debug{mg} or $debug{gv};
+  #    $init2->add(sprintf("Gv_AMG(%s); /* init AMG overload for %s */", savestashpv($name),
+  #                        $fullname));
+  #  }
+  #} else
+  {
     my $pkgsym;
-    $pkg = $sv->SvSTASH;
+    my $pkg = $sv->SvSTASH;
     if ($pkg and $$pkg) {
       my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
       warn sprintf("stash isa class \"%s\" (%s)\n", $pkgname, ref $pkg)
@@ -3333,11 +3341,25 @@ sub B::PVMG::save_magic {
           $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
           # XXX 219?
           if ($sv->MAGICAL and $PERL518) {
+            #warn sprintf("initialize AMG for %s\n", $name )
+            #  if $debug{mg} or $debug{gv};
+            #$init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */",
+            #                    $$pkg, $name));
             warn sprintf( "mark magical %s\n", $pkgname ) if $verbose and $PERL518;
             push_package($pkgname);  # correct code, but adds lots of new stashes
           }
+        if ($PERL518 and $sv->MAGICAL) {
+          warn sprintf( "mark magical %s\n", $name ) if $verbose and $PERL518;
+          push_package($name);  # correct code, but adds lots of new stashes
         }
       }
+    } else {
+      my $name = $fullname;
+      $name =~ s/^%(.*)::$/$1/;
+      warn sprintf("initialize overload cache for %s (no SvSTASH)\n", $fullname )
+        if $debug{mg} or $debug{gv};
+      $init2->add(sprintf("Gv_AMG(%s); /* init AMG overload for %s */", savestashpv($name),
+                          $fullname));
     }
   }
   $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))

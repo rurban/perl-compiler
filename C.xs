@@ -248,7 +248,7 @@ MODULE = B      PACKAGE = B::HV
 #if PERL_VERSION > 17
 
 SV*
-SvSTASH_not(hv)
+SvSTASH(hv)
           B::HV hv
 PPCODE:
     HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
