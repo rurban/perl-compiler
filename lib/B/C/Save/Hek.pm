@@ -26,7 +26,10 @@ sub save_hek {
     # force empty string for CV prototypes
     return "NULL" unless defined $str;
     return "NULL" if !length $str and !@_ and $fullname !~ /unopaux_item.* const/;
-    return $hektable{$str} if defined $hektable{$str};
+
+    # The first assigment is already refcount bumped, we have to manually
+    # do it for all others
+    return sprintf("share_hek_hek(%s)", $hektable{$str}) if defined $hektable{$str};
 
     my ( $cstr, $cur, $utf8 ) = strlen_flags($str);
     $cur  = -$cur if $utf8;

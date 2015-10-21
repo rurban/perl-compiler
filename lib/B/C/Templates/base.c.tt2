@@ -246,6 +246,7 @@ static void perl_init0(pTHX) { /* fixup_ppaddr */
 *
 *************************************************************************************************************/
 
+/* The first assignment got already refcount bumped */
 HEK * my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
       PERL_HASH(hash, str, abs(len));
