@@ -1386,7 +1386,8 @@ do
 done
 
 if [ "$(perl -V:gccversion)" != "gccversion='';" ]; then
-    if [ "$(uname)" = "Darwin" ]; then
+    if [ "$(uname)" = "xxDarwin" ]; then
+        # I guess gcc-mp-4.8 or applce clang was broken. gcc-mp-5.2.0 works ok now
 	CCMD="$CCMD -g -fno-var-tracking"
     else
 	CCMD="$CCMD -g3"
