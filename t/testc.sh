@@ -26,6 +26,8 @@ PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
+PERLV=$(perl -e 'print $^V')
+XTESTC="t/$PERLV/C-COMPILED/xtestc"
 
 function init {
 BASE=`basename $0`
@@ -122,14 +124,13 @@ function emit_test {
   fi
 }
 
-XTESTC="t/v5.22.0/C-COMPILED/xtestc"
-
 function make_t_symlink {
+  [ -d "$XTESTC" ] || mkdir -p $XTESTC
   n=$1
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     FILE_NUM=$(printf "%04d" $n)
-    FILE="$XTESTC/${FILE_NUM}.t"  
+    FILE="$XTESTC/${FILE_NUM}.t"
     ln -s  ../testc.pl $FILE
   fi
 }
@@ -139,7 +140,7 @@ function make_symlinks {
   rm -f $XTESTC/*.t ||:
   for b in $(seq $MAX); do
     make_t_symlink $b
-  done  
+  done
 }
 
 function ctest {
@@ -889,9 +890,9 @@ tests[215]='eval { $@ = "t1\n"; do { die "t3\n" }; 1; }; print ":$@:\n";'
 result[215]=':t3
 :'
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
-# multideref, also now a 29
-tests[219]='my (%b,%h); BEGIN { %b=(1..8);@a=(1,2,3,4); %h=(1=>2,3=>4) } $i=0; my $l=-1; print $h->{$b->{3}},$h->{$a[-1]},$a[$i],$a[$l],$h{3}'
-result[219]='144'
+# priority
+tests[219]='package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
+my $foo = bless \(my $bar = "ok"), "OverloadTest"; print $foo."\n";'
 # also at 904
 tests[220]='
 my $content = "ok\n";

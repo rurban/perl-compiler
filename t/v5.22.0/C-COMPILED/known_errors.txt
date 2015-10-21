@@ -200,6 +200,7 @@ xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
 xtestc/0203.t                TESTS     Output is: ""
 xtestc/0207.t                TESTS     Output is: ""
+xtestc/0219.t                TESTS     BC issue #219 - overload issue
 xtestc/0226.t                TESTS     Output is: ""
 xtestc/0230.t                TESTS     Output is: "\n"
 xtestc/0237.t                TESTS     Output is: " "
