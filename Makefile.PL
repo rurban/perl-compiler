@@ -366,6 +366,8 @@ testrelease :: pure_all
 	\$(ECHO) run t/release-testing.sh and perlall testvm --all
 testcore :: pure_all
 	\$(FULLPERLRUN) -S prove -b -j4 -f t/$^V/C-COMPILED/*/*.t
+\%.t :: pure_all
+	\$(FULLPERLRUN) -S prove -b -v t/$^V/C-COMPILED/\$@
 )
 }
 

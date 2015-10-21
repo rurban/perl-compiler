@@ -7,7 +7,7 @@ before_script:
     - perl -S cpanm -n --installdeps .
     - cat t/v5.22.0/C-COMPILED/known_errors.ztravis.txt t/v5.22.0/C-COMPILED/known_errors.txt > known_tmp
     - mv known_tmp t/v5.22.0/C-COMPILED/known_errors.txt
-script: "perl Makefile.PL && make && make testcore"
+script: "perl Makefile.PL && make testcore"
 notifications:
   recipients:
     hipchat: uP9VHegFfhIDUiUdyIWDJInRFSnjIxqgqW4GFmOI@2022203
