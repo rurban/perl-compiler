@@ -3135,11 +3135,11 @@ sub B::PVMG::save_magic {
   # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
   if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
-    warn sprintf("skip SvSTASH for overloaded HV $fullname flags=0x%x\n", $sv->FLAGS)
+    warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
       if $verbose;
   # [cperl #60] not only overloaded, version also
   } elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
-    warn sprintf("skip SvSTASH for $fullname flags=0x%x\n", $sv->FLAGS)
+    warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
       if $verbose;
   } else {
     my $pkg = $sv->SvSTASH;
