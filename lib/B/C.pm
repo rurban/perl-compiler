@@ -205,6 +205,8 @@ sub add_to_currINC {
 sub walk_and_save_optree {
     my ( $name, $root, $start ) = @_;
     if ($root) {
+
+        # B.xs: walkoptree does more, reifying refs. rebless or recreating it.
         verbose() ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
     }
     return objsym($start);
