@@ -8,8 +8,8 @@ plan tests => 1;
 system("git ls-tree -r --name-only HEAD >MANIFEST.git");
 if (-e "MANIFEST.git") {
   diag "MANIFEST.git created with git ls-tree";
-  is(`diff -bu MANIFEST.git MANIFEST`, "", "MANIFEST.git compared to MANIFEST");
-  unlink "MANIFEST.git";
+  is(`diff -bu MANIFEST.git MANIFEST`, "", "MANIFEST.git compared to MANIFEST")
+    and unlink "MANIFEST.git";
 } else {
   ok(1, "skip no git");
 }
