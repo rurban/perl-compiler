@@ -95,7 +95,7 @@ foreach my $optimization (@optimizations) {
         note $BC_output if $BC_output;
 
         unless ( $errors->check_todo( -e $c_file && !-z _, "$c_file is generated ($optimization)", 'BC' ) ) {
-            unlink $c_file unless $ENV{BC_DEVELOPING};
+            unlink $c_file unless $ENV{BC_DEVEL};
             skip( "Can't test further due to failure to create a c file.", $errors->{to_skip} );
         }
 
@@ -110,7 +110,7 @@ foreach my $optimization (@optimizations) {
 
         # Validate compiles
         unless ( $errors->check_todo( -x $bin_file, "$bin_file is compiled and ready to run.", 'GCC' ) ) {
-            unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
+            unlink $c_file, $bin_file unless $ENV{BC_DEVEL};
             skip( "Can't test further due to failure to create a binary file.", $errors->{to_skip} );
         }
 
@@ -165,6 +165,6 @@ foreach my $optimization (@optimizations) {
           or note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
     }
 }
-unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
+unlink $bin_file, $c_file unless $ENV{BC_DEVEL};
 
 exit;

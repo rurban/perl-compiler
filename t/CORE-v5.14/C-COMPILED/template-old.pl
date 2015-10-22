@@ -100,7 +100,7 @@ TODO: {
         ok( -x $bin_file, "$bin_file is compiled and ready to run." );
 
         if ( !-x $bin_file ) {
-            unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
+            unlink $c_file, $bin_file unless $ENV{BC_DEVEL};
             skip( "Can't test further due to failure to create a binary file.", 8 );
         }
 
@@ -152,7 +152,7 @@ TODO: {
 
         if (!ok( !scalar @{ $parser->{failed} }, "No test failures $optimization" )) {
           note( "Failed $optimization tests: " . join( ", ", @{ $parser->{failed} } ) );
-          $ENV{BC_DEVELOPING} = 1; # keep temp files
+          $ENV{BC_DEVEL} = 1; # keep temp files
         }
 
         skip( "Don't care about test sequence if tests are failing", 2 )
@@ -161,16 +161,16 @@ TODO: {
         local $TODO = $todo if ( $todo =~ m/Tests out of sequence/ );
         if (!ok( !scalar @{ $parser->{parse_errors} }, "Tests are in sequence" )) {
           note explain $parser->{parse_errors};
-          $ENV{BC_DEVELOPING} = 1; # keep temp files
+          $ENV{BC_DEVEL} = 1; # keep temp files
         }
 
         local $TODO = "tests unexpectedly passing" if scalar @{ $parser->{todo_passed} };
         if (!ok( !scalar @{ $parser->{todo_passed} }, "No TODO tests passed $optimization" )) {
           note( "TODO Passed: " . join( ", ", @{ $parser->{todo_passed} } ) );
-          $ENV{BC_DEVELOPING} = 1; # keep temp files
+          $ENV{BC_DEVEL} = 1; # keep temp files
         }
         $TODO = '';
     }
   }
-  unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
+  unlink $bin_file, $c_file unless $ENV{BC_DEVEL};
 }

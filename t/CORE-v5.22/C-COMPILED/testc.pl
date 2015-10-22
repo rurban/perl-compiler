@@ -71,8 +71,7 @@ my $want = $1;
 ( my $c_file    = $file_to_test ) =~ s/\.t$/.c/;
 ( my $bin_file  = $file_to_test ) =~ s/\.t$/.bin/;
 
-eval q{ END { unlink $bin_file, $c_file, $perl_file unless $ENV{BC_DEVELOPING} }};
-unlink $bin_file, $c_file, $perl_file;
+END { unlink $bin_file, $c_file, $perl_file unless $ENV{BC_DEVEL}; }
 
 open( my $fh, '>', $perl_file ) or die "Can't write $perl_file";
 print {$fh} $test_code;
@@ -109,7 +108,7 @@ SKIP: {
     note $BC_output if ($BC_output);
     unless ( $errors->check_todo( -e $c_file && !-z _, 
                                   "$c_file is generated ($optimization)", 'BC' ) ) {
-      unlink $c_file unless $ENV{BC_DEVELOPING};
+      unlink $c_file unless $ENV{BC_DEVEL};
       skip( "Can't test further due to failure to create a c file.", $errors->{to_skip} );
     }
 
@@ -125,7 +124,7 @@ SKIP: {
     # Validate compiles
     unless ( $errors->check_todo( -x $bin_file, 
                                   "$bin_file is compiled and ready to run.", 'GCC' ) ) {
-      unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
+      unlink $c_file, $bin_file unless $ENV{BC_DEVEL};
       skip( "Can't test further due to failure to create a binary file.", 
             $errors->{to_skip} );
     }
