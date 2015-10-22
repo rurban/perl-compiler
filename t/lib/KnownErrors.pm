@@ -34,7 +34,10 @@ sub new {
     my $known_errors_file = "known_errors.txt";
 
     $opts{error_file} ||= qq{$FindBin::Bin/../$known_errors_file};
-    die "file_to_test is required" unless $opts{file_to_test};
+    unless (-e $opts{error_file}) {
+      $opts{error_file} = qq{$FindBin::Bin/$known_errors_file};
+    }
+    die "No file_to_test" unless $opts{file_to_test};
 
     return bless { %opts, first_error => 1 };
 }
@@ -45,9 +48,9 @@ sub get_current_error_type {
     return $self->{type} || '' if exists $self->{type};
 
     my ( $file_in_error, $type, $description ) = ('');
-    my $file_to_test = $self->{file_to_test} or die;
+    my $file_to_test = $self->{file_to_test} or die "$! $self->{error_file_to_test}";
 
-    open( my $errors_fh, '<', $self->{error_file} ) or die;
+    open( my $errors_fh, '<', $self->{error_file} ) or die "$! $self->{error_file}";
     lock($errors_fh);
     while ( my $line = <$errors_fh> ) {
         chomp $line;
@@ -73,7 +76,7 @@ sub check_todo {
     --$self->{to_skip} if exists $self->{to_skip};
     $want_type ||= '';
 
-    my $current_t_file = $self->{file_to_test} or die;
+    my $current_t_file = $self->{file_to_test} or die "No file_to_test";
 
     # is it the expected error
     my $todo = $self->get_current_error_type() eq $want_type ? $self->{todo_description} : undef;
