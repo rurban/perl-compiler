@@ -81,6 +81,7 @@ sub check_todo {
     $previous_todo ||= $todo;
     $todo          ||= $previous_todo;
 
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     if ( !$todo ) {
         if ( !$v ) {
             if ( $self->{first_error} ) {
@@ -106,7 +107,7 @@ sub check_todo {
         }
         else {
             $TODO = $todo;
-            return ok($v, $msg);
+            return ok( $v, $msg );
         }
     }
 }
