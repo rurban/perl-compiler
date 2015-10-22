@@ -95,7 +95,7 @@ op/glob.t                    SIG       BC issue #223 - glob issue
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/gv.t                      SIG       BC issue #270 + BC issue #219 - overload issue
-op/hash-rt85026.t            GCC       op/hash-rt85026.bin is compiled and ready to run.
+op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/infnan.t                  PLAN      Plan was valid
 op/join.t                    TESTS     BC issue #219 - overload issue
