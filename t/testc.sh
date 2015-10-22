@@ -977,11 +977,14 @@ result[248]='-titi-toto-'
 tests[249]='#TODO version
 use version; print version::is_strict(q{01}) ? 1 : 0'
 result[249]='0'
-tests[250]='#TODO version
+tests[2501]='#TODO version
 use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
-result[250]='Misplaced _ in number at (eval 1) line 1.
+result[2501]='Misplaced _ in number at (eval 1) line 1.
 Invalid version format (no underscores) at (eval 1) line 1, near "package withversion "
 syntax error at (eval 1) line 1, near "package withversion 1.1_"'
+if [[ $v518 -gt 0 ]]; then
+  tests[250]='use feature q/evalbytes/; print "ok\n" if evalbytes("1+7") == 8'
+fi
 tests[251]='sub f;print "ok" if exists &f'
 tests[2511]='#TODO 5.18
 sub f :lvalue;print "ok" if exists &f'
