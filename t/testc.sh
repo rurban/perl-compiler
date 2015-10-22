@@ -29,8 +29,8 @@ PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v510=`$PERL -e'print (($] < 5.010)?0:1)'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
-PERLV=v5.`$PERL -e'print substr($],3,2)'`
-XTESTC="t/C-COMPILED/xtestc"
+PERLV=$(perl -e 'print $^V')
+XTESTC="t/$PERLV/C-COMPILED/xtestc"
 
 function init {
 BASE=`basename $0`
@@ -132,14 +132,15 @@ function make_t_symlink {
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     FILE_NUM=$(printf "%04d" $n)
-    FILE="$XTESTC--${FILE_NUM}.t"
-    unlink $FILE
-    ln -s testc.pl $FILE
+    FILE="$XTESTC/${FILE_NUM}.t"
+    test -e $FILE && unlink $FILE
+    ln -s ../testc.pl $FILE
   fi
 }
 
 function make_symlinks {
   MAX=9999
+  test -d $XTESTC || mkdir $XTESTC
   rm -f $XTESTC/*.t ||:
   for b in $(seq $MAX); do
     make_t_symlink $b
