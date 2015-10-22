@@ -1025,6 +1025,7 @@ tests[263]='use JSON::XS; print encode_json []'
 result[263]='[]'
 tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
+tests[269]='use constant roref => \2; eval { for (roref) { $_ = 42 } }; print $@'
 tests[270]='*x = *STDOUT; print {*x{IO}} "ok\n";'
 tests[271]='my $FALSE = 0;
 END { delete $ENV{"Boom"} if $FALSE }
