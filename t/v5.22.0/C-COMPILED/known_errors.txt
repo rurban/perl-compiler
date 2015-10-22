@@ -157,7 +157,7 @@ re/rxcode.t                  TESTS     Test results:
 re/subst_amp.t               TESTS     Test results:
 uni/attrs.t                  PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
 uni/caller.t                 PLAN      TODO: Undefined subroutine &????::ok called
-uni/chomp.t                  SIG       Exit signal is 11 SEGV
+uni/chomp.t                  SIG       BC issue #284 - Encode::find_encoding
 uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pragma
 uni/eval.t                   PLAN      Plan was valid
 uni/fold.t                   SKIP      BC issue #219 - overload issue
