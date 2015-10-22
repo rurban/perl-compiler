@@ -1250,6 +1250,9 @@ if [[ $v518 -gt 0 ]]; then
   tests[373]='package foo; BEGIN {undef %foo::} sub doof { caller(0) } print qq/ok\n/ if +(doof())[3] =~ qr/::doof/'
 fi
 
+# gh issue 280
+tests[374]='my $z = 0; my $li2 = "c"; my $rh = { foo => [ "ok\n" ]}; print $rh->{"foo"}->[$li2+$z];';
+
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
 tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
