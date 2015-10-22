@@ -1025,6 +1025,19 @@ tests[263]='use JSON::XS; print encode_json []'
 result[263]='[]'
 tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
+tests[271]='my $FALSE = 0;
+END { delete $ENV{"Boom"} if $FALSE }
+
+my $kid = open my $fh, "-|";
+if ($kid) { # parent
+    my $read = <$fh>;
+    close($fh) or die "cannot close pipe from kid proc: $!";
+    print "ok\n";
+}
+else { # child
+    print "$$\n";
+    exit;
+}'
 tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
 tests[2731]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
