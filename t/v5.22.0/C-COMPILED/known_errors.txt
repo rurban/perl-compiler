@@ -80,7 +80,7 @@ op/caller.t                  TESTS     BC issue #267
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/concat2.t                 TESTS     BC issue #219 - overload issue
-op/const-optree.t            PLAN      Plan was valid
+op/const-optree.t            PLAN      BC issue #250 - access disallowed key in restricted hash
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/current_sub.t             PLAN      Plan was valid
