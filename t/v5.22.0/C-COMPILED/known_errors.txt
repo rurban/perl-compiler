@@ -161,7 +161,7 @@ uni/chomp.t                  SIG       BC issue #284 - Encode::find_encoding
 uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pragma
 uni/eval.t                   PLAN      Plan was valid
 uni/fold.t                   SKIP      BC issue #219 - overload issue
-uni/greek.t                  SIG       Exit signal is 11 SEGV
+uni/greek.t                  SIG       BC issue #283 - deprecated "encoding" pragma
 uni/gv.t                     PLAN      Plan was valid
 uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 uni/latin2.t                 SIG       BC issue #283 - deprecated "encoding" pragma
