@@ -1,0 +1,3 @@
+[submodule "t/CORE"]
+	path = t/CORE
+	url = git://github.com/perl11/p5-coretests.git

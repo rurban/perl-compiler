@@ -167,7 +167,9 @@ WriteMakefile(
                "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
-               "t/CORE/*/*.bin t/CORE/*/*.c Io_argv* t/CORE/*/*.subtest.*.t t/CORE/tmp* tmp*"
+               "t/CORE/v5.*/*/*.bin t/CORE/v5.*/*/*.c Io_argv* t/CORE/v5.*/*/*.subtest.*.t".
+               "t/CORE/v5.*/xtestc* t/CORE/v5.*/C-COMPILED/xtestc/*.t".
+               "t/CORE/v5.*/tmp* tmp*"
              },
 );
 
@@ -369,7 +371,10 @@ TAGS : $asmdata
 }
 
 sub test {
-    shift->SUPER::test(@_) . q(
+    shift->SUPER::test(@_) .
+"
+PERL_VER = v5.".substr($],3,2) .
+      q(
 testmod :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t
 testmodall :: pure_all
@@ -391,10 +396,13 @@ teststatus :: pure_all
 	./status_upd -fqd
 testrelease :: pure_all
 	$(ECHO) run t/release-testing.sh and perlall testvm --all
-testcore :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED
-testcore-log :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED | tee log.test-core-).$].q(-`git describe --tags`
+testcore_init :: t/CORE
+	t/core-init.sh
+testcore :: pure_all testcore_init
+	$(FULLPERLRUN) -S prove -b -j10 -f t/CORE/$(PERL_VER)/C-COMPILED/*/
+testcore-log :: pure_all testcore_init
+	$(FULLPERLRUN) -S prove -b -j10 -f t/CORE/$(PERL_VER)/C-COMPILED/*/ | \
+	  tee log.test-core-$(PERL_VER)-`git describe --tags`
 )
 }
 
