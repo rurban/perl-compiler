@@ -1027,8 +1027,15 @@ tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
 tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
-tests[273]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
-result[273]='11'
+tests[2731]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
+result[2731]='11'
+tests[273]='package _charnames;
+
+sub foo {
+    ($name =~ /^(\p{_Perl_Charname_Begin})/) and return;
+}
+
+print "ok\n";'
 tests[2741]='package Foo;
 
 sub match { shift =~ m?xyz? ? 1 : 0; }
