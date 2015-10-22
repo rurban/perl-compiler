@@ -1,0 +1,1 @@
+$count=0; ++$count while(<foo::ARGV>); print $count

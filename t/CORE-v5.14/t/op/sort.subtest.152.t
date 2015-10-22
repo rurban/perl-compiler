@@ -1,0 +1,1 @@
+sub w ($$) {my ($l, my $r) = @_; my $v = \@_; undef @_; $l <=> $r}; print join q{ }, sort w 3, 1, 2, 0

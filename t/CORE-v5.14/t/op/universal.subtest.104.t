@@ -1,0 +1,1 @@
+package Foo; Foo->VERSION;  print "ok"
