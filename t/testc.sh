@@ -1126,7 +1126,7 @@ format =
 ok
 .
 write'
-tests[284]='#-O3 only
+tests[2841]='#-O3 only
 my $x="123456789";
 format OUT =
 ^<<~~
@@ -1136,14 +1136,16 @@ open OUT, ">ccode.tmp";
 write(OUT);
 close(OUT);
 print `cat "ccode.tmp"`'
-result[284]='123
+result[2841]='123
 456
 789'
+
 # issue 287 with Inf and NaN
 tests[2870]='my $i = "Inf" + 0; print $i <= 0 ? "not $i " : "", "ok\n";'
 tests[2871]='my $i = "-Inf" + 0; print $i >= 0 ? "not $i " : "", "ok\n";'
 tests[2872]='my $i = "NaN" + 0; print $i <= 0 ? "not $i " : "", "ok\n"'
 
+tests[284]='use Encode; find_encoding("euc-jp") and print qq/ok\n/'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 tests[2900]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
