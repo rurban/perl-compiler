@@ -137,7 +137,7 @@ op/threads.t                 SKIP      threaded test
 op/tie_fetch_count.t         SIG       BC issue #279
 op/universal.t               TESTS     Test results:
 op/utf8cache.t               TESTS     BC issue #219 - overload issue
-op/vec.t                     SIG       Exit signal is 11 SEGV
+op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   PLAN      BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
