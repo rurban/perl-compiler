@@ -900,8 +900,9 @@ while ( $content =~ m{\w}g ) {
     $_ .= "$-[0]$+[0]";
 }
 print "ok" if $_ eq "0112";'
-tests[223]='use strict; eval q({ $x = sub }); print $@'
-result[223]='Illegal declaration of anonymous subroutine at (eval 1) line 1.'
+tests[2231]='use strict; eval q({ $x = sub }); print $@'
+result[2231]='Illegal declaration of anonymous subroutine at (eval 1) line 1.'
+tests[223]='<*> and print qq{ok\n}'
 tests[224]='use bytes; my $p = "\xB6"; my $u = "\x{100}"; my $pu = "\xB6\x{100}"; print ( $p.$u eq $pu ? "ko\n" : "ok\n" );'
 tests[225]='$_ = $dx = "\x{10f2}"; s/($dx)/$dx$1/; $ok = 1 if $_ eq "$dx$dx"; $_ = $dx = "\x{10f2}"; print qq{end\n};'
 result[225]='end'
