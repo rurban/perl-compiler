@@ -1078,6 +1078,9 @@ ok 3
 ok 4
 ok 5'
 tests[274]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; print "ok\n"'
+if [[ $v518 -gt 0 ]]; then
+  tests[276]='sub t2 : lvalue; print qq/ok\n/'
+fi
 tests[277]='format OUT =
 bar ~~
 .
