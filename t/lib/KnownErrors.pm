@@ -6,6 +6,7 @@ use warnings;
 use open ':std', ':encoding(utf8)';
 use Exporter ();
 use Test::More;
+use Test::Builder ();
 use FindBin;
 use Fcntl qw(:flock SEEK_END);
 
@@ -36,7 +37,11 @@ sub new {
     $opts{error_file} ||= qq{$FindBin::Bin/../$known_errors_file};
     die "file_to_test is required" unless $opts{file_to_test};
 
-    return bless { %opts, first_error => 1 };
+    return bless { %opts, first_error => 1, test => Test::Builder->new };
+}
+
+sub test {
+    return $_[0]->{test};
 }
 
 sub get_current_error_type {
@@ -81,6 +86,7 @@ sub check_todo {
     $previous_todo ||= $todo;
     $todo          ||= $previous_todo;
 
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     if ( !$todo ) {
         if ( !$v ) {
             if ( $self->{first_error} ) {
@@ -97,7 +103,7 @@ sub check_todo {
         #return subtest "TODO - $msg" => sub {
         if ( $v && !$known_error ) {
             fail "TODO test is now passing, auto adjust known_errors.txt file";
-            $TODO = $todo;
+            $self->test->todo_start($todo);
 
             # removing test from file
             diag "Removing test $current_t_file from known_errors.txt";
@@ -105,7 +111,7 @@ sub check_todo {
             return 0;
         }
         else {
-            $TODO = $todo;
+            $self->test->todo_start($todo);
             return ok( $v, $msg );
         }
     }
