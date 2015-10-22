@@ -134,7 +134,7 @@ op/svleak.t                  COMPAT    This test uses XS::APItest, which we don'
 op/switch.t                  PLAN      BC issue #219 - overload issue
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
-op/tie_fetch_count.t         SIG       Exit signal is 11 SEGV
+op/tie_fetch_count.t         SIG       BC issue #279
 op/universal.t               TESTS     Test results:
 op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/vec.t                     SIG       Exit signal is 11 SEGV
