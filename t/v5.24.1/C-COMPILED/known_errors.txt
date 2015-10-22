@@ -175,10 +175,10 @@ uni/parser.t                 PLAN      TODO: broke
 uni/readline.t               TESTS     Test results:
 uni/stash.t                  PLAN      Plan was valid
 uni/title.t                  SIG       BC issue #253 - Unicode::UCD
-uni/tr_7jis.t                PLAN      Plan was valid
-uni/tr_eucjp.t               PLAN      Plan was valid
-uni/tr_sjis.t                PLAN      Plan was valid
-uni/tr_utf8.t                PLAN      Plan was valid
+uni/tr_7jis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
+uni/tr_eucjp.t               PLAN      BC issue #283 - deprecated "encoding" pragma
+uni/tr_sjis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
+uni/tr_utf8.t                PLAN      BC issue #283 - deprecated "encoding" pragma
 uni/universal.t              PLAN      Plan was valid
 uni/upper.t                  SIG       BC issue #253 - Unicode::UCD
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
