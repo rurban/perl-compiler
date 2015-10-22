@@ -33,7 +33,6 @@ sub mark_package_removed {
     return;
 }
 
-
 # todo: should rename it to avoid confusion
 #	need to check if this cannot be merged
 sub _mark_package {

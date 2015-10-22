@@ -43,7 +43,7 @@ sub savepv {
     my $pvsym = sprintf( "pv%d", inc_pv_index() );
     $const = $const ? " const" : "";
     if ( defined $max_string_len && $len > $max_string_len ) {
-        my $chars = join ', ', map { cchar $_ } split //, pack("a*", $pv);
+        my $chars = join ', ', map { cchar $_ } split //, pack( "a*", $pv );
         decl()->add( sprintf( "Static%s char %s[] = { %s };", $const, $pvsym, $chars ) );
         $strtable{$cstring} = $pvsym;
     }
@@ -79,7 +79,7 @@ sub savepvn {
         if ( $sv and ( ( $sv->FLAGS & 0x09000000 ) == 0x09000000 ) ) {
             debug( sv => "Saving shared HEK %s to %s\n", cstring($pv), $dest );
             my $hek = save_hek($pv);
-            push @init, sprintf( "%s = HEK_KEY(%s);", $dest, $hek) unless $hek eq 'NULL';
+            push @init, sprintf( "%s = HEK_KEY(%s);", $dest, $hek ) unless $hek eq 'NULL';
             if ( DEBUGGING() ) {    # we have to bypass a wrong HE->HEK assert in hv.c
                 push @B::C::static_free, $dest;
             }

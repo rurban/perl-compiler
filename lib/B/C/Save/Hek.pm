@@ -29,7 +29,7 @@ sub save_hek {
 
     # The first assigment is already refcount bumped, we have to manually
     # do it for all others
-    return sprintf("share_hek_hek(%s)", $hektable{$str}) if defined $hektable{$str};
+    return sprintf( "share_hek_hek(%s)", $hektable{$str} ) if defined $hektable{$str};
 
     my ( $cstr, $cur, $utf8 ) = strlen_flags($str);
     $cur  = -$cur if $utf8;

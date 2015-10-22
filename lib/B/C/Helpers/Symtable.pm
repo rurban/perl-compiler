@@ -64,7 +64,7 @@ sub delsym {
     delete $SYMTABLE{$sym};
 }
 
-sub clearsym { #unit test helper
+sub clearsym {    #unit test helper
     %SYMTABLE = ();
 }
 
