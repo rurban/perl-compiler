@@ -2,7 +2,7 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    unshift @INC,  qw(. ../lib);
+    unshift @INC, qw(. ../lib);
 }
 
 use strict;
@@ -10,8 +10,9 @@ use warnings;
 
 BEGIN {
     require './test.pl';
-    plan( tests => 12 );
 }
+
+plan( tests => 12 );
 
 use vars qw{ @warnings $sub $warn };
 
@@ -19,14 +20,24 @@ BEGIN {
     $warn = 'Illegal character in prototype';
 }
 
+my @tests;
+
 sub one_warning_ok {
-    cmp_ok(scalar(@warnings), '==', 1, 'One warning');
-    cmp_ok(substr($warnings[0],0,length($warn)),'eq',$warn,'warning message');
+    my $s    = scalar(@warnings);
+    my $subs = substr( $warnings[0], 0, length($warn) );
+    my $w    = $warn;
+    push @tests, sub {
+        cmp_ok( $s,    '==', 1,  'One warning' );
+        cmp_ok( $subs, 'eq', $w, 'warning message' );
+    };
     @warnings = ();
 }
 
 sub no_warnings_ok {
-    cmp_ok(scalar(@warnings), '==', 0, 'No warnings');
+    my $s = scalar(@warnings);
+    push @tests, sub {
+        cmp_ok( $s, '==', 0, 'No warnings' );
+    };
     @warnings = ();
 }
 
@@ -108,3 +119,5 @@ BEGIN {
 BEGIN {
     one_warning_ok;
 }
+
+map { $_->() } @tests;
