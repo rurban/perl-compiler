@@ -1611,7 +1611,7 @@ SKIP: {
 		    "assign to ^A sets FmLINES";
 }
 
-fresh_perl_like(<<'EOP', qr/^Format STDOUT redefined at/, {stderr => 1}, '#64562 - Segmentation fault with redefined formats and warnings');
+fresh_perl_like(<<'EOP', qr/^Format STDOUT redefined at/, {stderr => 1, check_perlcc_output => 1}, '#64562 - Segmentation fault with redefined formats and warnings');
 #!./perl
 
 use strict;
