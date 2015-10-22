@@ -1089,6 +1089,7 @@ bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT; print q(ok)'
 tests[278]='my $ok; sub X::DESTROY { $ok = 1 } { my $x; BEGIN { $x = 42 } $x = bless {}, "X"; } print qq/ok\n/ if $ok;'
+tests[279]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
 tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
 tests[281]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
