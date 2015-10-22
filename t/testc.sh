@@ -1092,11 +1092,33 @@ tests[278]='my $ok; sub X::DESTROY { $ok = 1 } { my $x; BEGIN { $x = 42 } $x = b
 tests[279]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
 tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
-tests[281]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
-result[281]='ok
+tests[2811]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
+result[2811]='ok
 @- = 0 0 2 7
 @+ = 10 1 6 10
 len @- = 4'
+tests[281]='#!perl
+
+open(NEST, '>Op_write.tmp');
+format NEST =
+@<<<
+{
+    my $birds = "birds";
+    local *NEST = *BIRDS{FORMAT};
+    write NEST;
+    format BIRDS =
+@<<<<<
+$birds;
+.
+    "nest"
+}
+.
+write NEST;
+close NEST;
+
+print qx/cat Op_write.tmp/;'
+result[281]='birds
+nest'
 tests[282]='use vars qw($glook $smek $foof); $glook = 3; $smek = 4; $foof = "halt and cool down"; my $rv = \*smek; *glook = $rv; my $pv = ""; $pv = \*smek; *foof = $pv; print "ok\n";'
 tests[283]='#238 Undefined format "STDOUT"
 format =
