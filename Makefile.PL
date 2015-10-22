@@ -369,7 +369,10 @@ TAGS : $asmdata
 }
 
 sub test {
-    shift->SUPER::test(@_) . q(
+    shift->SUPER::test(@_) .
+"
+PERL_VER = v5.".substr($],3,2) .
+      q(
 testmod :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/modules.t
 testmodall :: pure_all
@@ -390,9 +393,10 @@ teststatus :: pure_all
 testrelease :: pure_all
 	$(ECHO) run t/release-testing.sh and perlall testvm --all
 testcore :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED
+	$(FULLPERLRUN) -S prove -b -j10 -f t/CORE-$(PERL_VER)/C-COMPILED/*/
 testcore-log :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED | tee log.test-core-`git describe --tags`
+	$(FULLPERLRUN) -S prove -b -j10 -f t/CORE-$(PERL_VER)/C-COMPILED/*/ | \
+	  tee log.test-core-$(PERL_VER)-`git describe --tags`
 )
 }
 
