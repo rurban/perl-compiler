@@ -82,7 +82,6 @@ $SIGNALS{0} = '';
 
 foreach my $optimization (@optimizations) {
   TODO: SKIP: {
-        local $TODO;
 
         $errors->{to_skip} = 9;
 
