@@ -106,7 +106,7 @@ op/lex.t                     COMPAT    Tests trigger errors at compilation time 
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/local.t                   SIG       BC issue #265 - rmagic cause delete local to crash
-op/lvref.t                   PLAN      Plan was valid
+op/lvref.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
 op/magic.t                   SIG       BC issue #271 - fork + END
 op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
