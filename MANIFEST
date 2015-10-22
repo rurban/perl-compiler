@@ -539,6 +539,7 @@ t/CORE-v5.14/C-COMPILED/re/substT.t
 t/CORE-v5.14/C-COMPILED/re/subst_amp.t
 t/CORE-v5.14/C-COMPILED/re/subst_wamp.t
 t/CORE-v5.14/C-COMPILED/re/uniprops.t
+t/CORE-v5.14/C-COMPILED/template-old.pl
 t/CORE-v5.14/C-COMPILED/template.pl
 t/CORE-v5.14/C-COMPILED/testc.pl
 t/CORE-v5.14/C-COMPILED/uni/attrs.t
@@ -1346,6 +1347,9 @@ t/CORE-v5.14/t/re/substr.bin
 t/CORE-v5.14/t/re/substr.c
 t/CORE-v5.14/t/re/substr.t
 t/CORE-v5.14/t/test.pl
+t/CORE-v5.20/C-COMPILED/template.pl
+t/CORE-v5.20/C-COMPILED/testc.pl
+t/CORE-v5.20/C-COMPILED/update-links.sh
 t/CORE-v5.20/lib/1_compile.t
 t/CORE-v5.20/lib/Cname.pm
 t/CORE-v5.20/lib/Count.pm
@@ -1911,6 +1915,7 @@ t/CORE-v5.22/C-COMPILED/io/socket.t
 t/CORE-v5.22/C-COMPILED/io/tell.t
 t/CORE-v5.22/C-COMPILED/io/through.t
 t/CORE-v5.22/C-COMPILED/io/utf8.t
+t/CORE-v5.22/C-COMPILED/known_errors-cm.txt
 t/CORE-v5.22/C-COMPILED/known_errors.txt
 t/CORE-v5.22/C-COMPILED/known_errors.ztravis.txt
 t/CORE-v5.22/C-COMPILED/mro/basic.t
