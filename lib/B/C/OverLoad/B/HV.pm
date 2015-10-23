@@ -16,7 +16,7 @@ package B::HV;
 
 use strict;
 
-use B qw/cstring SVf_READONLY SVs_OBJECT/;
+use B qw/cstring SVf_READONLY SVs_OBJECT SVf_OOK/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags/;
@@ -28,8 +28,6 @@ my ($swash_ToCf);
 sub swash_ToCf_value {
     return $swash_ToCf;
 }
-
-sub SVf_OOK { 0x02000000 }
 
 sub save {
     my ( $hv, $fullname ) = @_;
