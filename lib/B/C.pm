@@ -1187,6 +1187,38 @@ sub dump_rest {
     $again;
 }
 
+my @made_c3;
+
+sub make_c3 {
+    my $package = shift or die;
+
+    return if ( grep { $_ eq $package } @made_c3 );
+    push @made_c3, $package;
+
+    mark_package( 'mro', 1 );
+    mark_package($package);
+    my $isa_packages = mro::get_linear_isa($package) || [];
+    foreach my $isa (@$isa_packages) {
+        mark_package($isa);
+    }
+    debug( pkg => "set c3 for $package" );
+
+    ## from setmro.xs:
+    # classname = ST(0);
+    # class_stash = gv_stashsv(classname, GV_ADD);
+    # meta = HvMROMETA(class_stash);
+    # Perl_mro_set_mro(aTHX_ meta, ST(1));
+
+    no strict 'refs';
+    my $stash = $package . '::';
+    my $hv    = svref_2object( \%{$stash} );
+    $hv->save;
+    my $symdir = sprintf( "s\\_%x", $$hv );
+    my $sym = objsym($hv);
+    $sym or die("No objsym for $stash? ($sym)");
+    init2()->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));', $sym ) );
+}
+
 sub save_context {
 
     # forbid run-time extends of curpad syms, names and INC
@@ -1194,9 +1226,7 @@ sub save_context {
 
     # need to mark assign c3 to %main::. no need to assign the default dfs
     if ( mro::get_mro("main") eq 'c3' ) {
-        mark_package( 'mro', 1 );
-        debug( pkg => "set c3 for main" );
-        init()->add_eval('mro::set_mro("main", "c3");');
+        make_c3('main');
     }
 
     no strict 'refs';
@@ -1244,10 +1274,7 @@ sub save_context {
             push @saved_isa, $p;
             svref_2object( \@{ $p . '::ISA' } )->save( $p . '::ISA' );
             if ( mro::get_mro($p) eq 'c3' ) {
-
-                # for mro c3 set the algo. there's no C api, only XS
-                debug( pkg => "set c3 for $p" );
-                init()->add_eval( sprintf( 'mro::set_mro(%s, "c3");', cstring($p) ) );
+                make_c3($p);
             }
         }
     }

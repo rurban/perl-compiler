@@ -63,7 +63,7 @@ sub save {
         if ( !$B::C::stash ) {    # -fno-stash: do not save stashes
             $magic = $hv->save_magic( '%' . $name . '::' );    #symtab magic set in PMOP #188 (#267)
             if ( mro::get_mro($name) eq 'c3' ) {
-                mark_package( 'mro', 1 );
+                B::C::make_c3($name);
             }
 
             #if ($magic =~ /c/) {
@@ -215,8 +215,9 @@ sub save {
         #my $len = length( pack "a*", $name );    # not yet 0-byte safe. HEK len really
         init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
     }
+
     if ( $name and mro::get_mro($name) eq 'c3' ) {
-        mark_package( 'mro', 1 );
+        B::C::make_c3($name);
     }
     return $sym;
 }

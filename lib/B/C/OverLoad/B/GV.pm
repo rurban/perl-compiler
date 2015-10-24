@@ -66,7 +66,8 @@ sub savecv {
 
         # but prevent it from being deleted
         unless ( $B::C::dumped_package{$package} ) {
-            $B::C::dumped_package{$package} = 1;
+
+            #$B::C::dumped_package{$package} = 1;
             mark_package( $package, 1 );
         }
         return;
