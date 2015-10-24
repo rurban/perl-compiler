@@ -31,11 +31,7 @@ comp/require.t               PLAN      BC issue #245 - Cannot reload XSLoader
 extra/reset.t                TESTS     BC issue 252: Reset is not localized to the current namespace
 io/errno.t                   SIG       BC issue #271: END block issue
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
-io/open.t                    TESTS     Test results:
-mro/basic_01_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
-mro/basic_02_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
-mro/basic_03_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
-mro/basic_04_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
+io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/basic_05_c3_utf8.t       PLAN      Plan was valid
 mro/basic_05_dfs_utf8.t      PLAN      Plan was valid
 mro/basic_utf8.t             PLAN      Plan was valid
@@ -43,7 +39,6 @@ mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
 mro/complex_c3.t             SIG       BC issue #298 - next::method broken.
 mro/complex_c3_utf8.t        SIG       BC issue #298 - next::method broken.
-mro/dbic_c3_utf8.t           TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
 mro/isarev.t                 TESTS     Test results:
 mro/isarev_utf8.t            TESTS     Test results:
 mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
@@ -64,7 +59,6 @@ mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   SKIP      Code compiles but never terminates when run.
-mro/vulcan_c3_utf8.t         TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
@@ -195,17 +189,18 @@ xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
+xtestc/0250.t                TESTS     Output is: "Attempt to access disallowed ..."
 xtestc/0254.t                TESTS     Output is: ""
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
 xtestc/0263.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0269.t                TESTS     Output is: ""
 xtestc/0271.t                TESTS     Output is: "cannot close pipe from kid ..."
-xtestc/0273.t                TESTS     Output is: "Attempt to access disallowed ..."
-xtestc/0274.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
+xtestc/0274.t                GCC       xtestc/0274.bin is compiled and ready to run.
 xtestc/0276.t                TESTS     Output is: ""
 xtestc/0278.t                TESTS     Output is: ""
-xtestc/0290.t                TESTS     Output is: ""
+xtestc/0281.t                TESTS     Output is: ""
+xtestc/0284.t                TESTS     Output is: ""
 xtestc/0293.t                TESTS     Output is: ""
 xtestc/0299.t                TESTS     Output is: ""
 xtestc/0301.t                TESTS     Output is: ""
