@@ -5070,7 +5070,7 @@ sub B::HV::save {
     if (!$B::C::stash) { # -fno-stash: do not save stashes
       $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
       if ($PERL510 and mro::get_mro($name) eq 'c3') {
-        mark_package('mro', 1);
+        B::C::make_c3($name);
       }
       #if ($magic =~ /c/) {
          # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
@@ -5204,7 +5204,7 @@ sub B::HV::save {
     $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
   }
   if ($PERL510 and $name and mro::get_mro($name) eq 'c3') {
-    mark_package('mro', 1);
+    B::C::make_c3($name);
   }
   return $sym;
 }
@@ -6752,7 +6752,7 @@ sub B::GV::savecv {
     warn("Skip internal XS $fullname\n") if $debug{gv};
     # but prevent it from being deleted
     unless ($dumped_package{$package}) {
-      $dumped_package{$package} = 1;
+      #$dumped_package{$package} = 1;
       mark_package($package, 1);
     }
     return;
@@ -7331,6 +7331,38 @@ sub dump_rest {
   $again;
 }
 
+my @made_c3;
+
+sub make_c3 {
+    my $package = shift or die;
+
+    return if ( grep { $_ eq $package } @made_c3 );
+    push @made_c3, $package;
+
+    mark_package( 'mro', 1 );
+    mark_package($package);
+    my $isa_packages = mro::get_linear_isa($package) || [];
+    foreach my $isa (@$isa_packages) {
+        mark_package($isa);
+    }
+    warn "set c3 for $package\n" if $verbose or $debug{pkg};
+
+    ## from setmro.xs:
+    # classname = ST(0);
+    # class_stash = gv_stashsv(classname, GV_ADD);
+    # meta = HvMROMETA(class_stash);
+    # Perl_mro_set_mro(aTHX_ meta, ST(1));
+
+    no strict 'refs';
+    my $stash = $package . '::';
+    my $hv    = svref_2object( \%{$stash} );
+    $hv->save;
+    my $symdir = sprintf( "s\\_%x", $$hv );
+    my $sym = objsym($hv);
+    $sym or die("No objsym for $stash? ($sym)");
+    $init2->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));', $sym ) );
+}
+
 sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   warn "save context:\n" if $verbose;
@@ -7338,9 +7370,7 @@ sub save_context {
   if ($PERL510) {
     # need to mark assign c3 to %main::. no need to assign the default dfs
     if (mro::get_mro("main") eq 'c3') {
-      mark_package('mro', 1);
-      warn "set c3 for main\n" if $debug{pkg};
-      $init->add_eval( 'mro::set_mro("main", "c3");' );
+        make_c3('main');
     }
     # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!
     #no strict 'refs';
@@ -7405,9 +7435,7 @@ sub save_context {
       push @saved_isa, $p;
       svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
       if ($PERL510 and mro::get_mro($p) eq 'c3') {
-        # for mro c3 set the algo. there's no C api, only XS
-        warn "set c3 for $p\n" if $debug{pkg};
-        $init->add_eval( sprintf('mro::set_mro(%s, "c3");', cstring($p)) );
+        make_c3($p);
       }
     }
   }
