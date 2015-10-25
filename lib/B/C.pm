@@ -3353,7 +3353,7 @@ sub B::PVMG::save_magic {
           push_package($name);  # correct code, but adds lots of new stashes
         }
       }
-    } else {
+    } elsif ($fullname =~ /^%.*::/) {
       my $name = $fullname;
       $name =~ s/^%(.*)::$/$1/;
       warn sprintf("initialize overload cache for %s (no SvSTASH)\n", $fullname )
