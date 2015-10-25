@@ -3286,40 +3286,50 @@ sub B::PVMG::save_magic {
   #} else
   {
     my $pkg = $sv->SvSTASH;
-    if ($pkg and $$pkg) {
-      my $name = $pkg->NAME;
-      warn sprintf("stash isa class(\"%s\") 0x%x\n", $name, $$pkg)
-        if $debug{mg} or $debug{gv};
-      # 361 do not force dynaloading IO via IO::Handle upon us
-      # core already initialized this stash for us
-      unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
-        $pkg->save($fullname);
-
-        no strict 'refs';
-        warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $name, $$pkg )
-          if $debug{mg} or $debug{gv};
-        # Q: Who is initializing our stash from XS? ->save is missing that.
-        # A: We only need to init it when we need a CV
-        # defer for XS loaded stashes with AMT magic
-        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-        $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-        $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-        if ($PERL518 and $sv->MAGICAL) {
-          warn sprintf("initialize AMG for %s\n", $name )
-            if $debug{mg} or $debug{gv};
-          $init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */",
-                              $$pkg, $name));
-          warn sprintf( "mark magical %s\n", $name ) if $verbose and $PERL518;
-          push_package($name);  # correct code, but adds lots of new stashes
-        }
-      }
-    } elsif ($fullname =~ /^%.*::/) {
+    my ($name, $pkgptr, $pkgname);
+    if (!($pkg and $$pkg) and $PERL518 and $fullname =~ /^%.*::/) {
       my $name = $fullname;
       $name =~ s/^%(.*)::$/$1/;
-      warn sprintf("initialize overload cache for %s (no SvSTASH)\n", $fullname )
+      $pkgname = savestashpv($name);
+      warn sprintf("stash isa class(\"%s\") %s\n", $name, $pkgname)
+        if $name and ($debug{mg} or $debug{gv});
+    }
+    if ($pkg and $$pkg) {
+      $name = $pkg->NAME;
+      $pkgptr = $$pkg;
+      warn sprintf("stash isa class(\"%s\") 0x%x\n", $name, $pkgptr)
+        if $name and ($debug{mg} or $debug{gv});
+    }
+    # 361 do not force dynaloading IO via IO::Handle upon us
+    # core already initialized this stash for us
+    if (($pkgptr or $pkgname) and !($fullname eq 'main::STDOUT' and $PERL518)) {
+      $pkg->save($fullname) if $pkg;
+
+      no strict 'refs';
+      warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $name, $pkgptr )
         if $debug{mg} or $debug{gv};
-      $init2->add(sprintf("Gv_AMG(%s); /* init AMG overload for %s */", savestashpv($name),
-                          $fullname));
+      # Q: Who is initializing our stash from XS? ->save is missing that.
+      # A: We only need to init it when we need a CV
+      # defer for XS loaded stashes with AMT magic
+      if ($pkgptr) {
+        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $pkgptr ) );
+        $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $pkgptr ) );
+      } elsif ($pkgname) {
+        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)%s);", $$sv, $pkgname ) );
+        $init->add( sprintf( "SvREFCNT((SV*)%s) += 1;", $pkgname ) );
+      }
+      $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+      if ($PERL518 and $sv->MAGICAL and length($name)) {
+        warn sprintf("initialize AMG for %s\n", $name )
+          if $debug{mg} or $debug{gv};
+        if ($pkgptr) {
+          $init2->add(sprintf("Gv_AMG(s\\%x); /* init AMG for %s */", $pkgptr, $name));
+        } elsif ($pkgname) {
+          $init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */", $pkgname, $name));
+        }
+        warn sprintf( "mark magical %s\n", $name ) if $verbose and $PERL518;
+        push_package($name);  # correct code, but adds lots of new stashes
+      }
     }
   }
   $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))
