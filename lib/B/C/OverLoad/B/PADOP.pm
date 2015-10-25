@@ -6,6 +6,7 @@ use B qw/comppadlist/;
 
 use B::C::Config;
 use B::C::File qw/padopsect init/;
+use B::C::Helpers qw/curcv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
@@ -39,7 +40,7 @@ sub save {
         my $ix  = $op->can('padix') ? $op->padix : $op->targ;
         my $sv  = $pad[$ix];
         if ( $sv and $$sv ) {
-            my $name = B::C::padop_name( $op, $B::C::curcv );
+            my $name = B::C::padop_name( $op, curcv() );
             if ( $skip_defined and $name !~ /^DynaLoader::/ ) {
                 debug( gv => "skip saving defined(&$name)" );    # defer to run-time
             }

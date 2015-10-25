@@ -32,6 +32,7 @@ use B::C::File qw( init2 init0 init decl free
   opsect pmopsect pvopsect svopsect unopsect svsect xpvsect xpvavsect xpvhvsect xpvcvsect xpvivsect xpvuvsect
   xpvnvsect xpvmgsect xpvlvsect xrvsect xpvbmsect xpviosect padlistsect loopsect
 );
+use B::C::Helpers qw/set_curcv/;
 use B::C::Helpers::Symtable qw(objsym savesym);
 
 use strict;
@@ -1270,7 +1271,7 @@ sub save_main {
     verbose("Walking tree");
     %Exporter::Cache = ();                # avoid B::C and B symbols being stored
     _delete_macros_vendor_undefined();
-    $B::C::curcv = B::main_cv;
+    set_curcv(B::main_cv);
 
     if ( debug('walk') ) {
         verbose("Enabling B::debug / B::walkoptree_debug");

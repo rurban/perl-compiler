@@ -4,7 +4,7 @@ use strict;
 
 use B::C::Config;
 use B::C::File qw/unopauxsect init2 init decl free/;
-use B::C::Helpers qw/do_labels is_constant/;
+use B::C::Helpers qw/do_labels is_constant curcv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw(constpv);
 
@@ -13,7 +13,7 @@ sub save {
     my $sym = objsym($op);
     return $sym if defined $sym;
 
-    my @aux_list = $op->aux_list($B::C::curcv);
+    my @aux_list = $op->aux_list( curcv() );
     my $auxlen   = scalar @aux_list;
 
     unopauxsect()->comment_common("first, aux");

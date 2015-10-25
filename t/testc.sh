@@ -1221,7 +1221,9 @@ tests[2053]='use strict; BEGIN { $SIG{__WARN__} = sub { die "Dying on warning: "
 # empty keys multideref
 tests[2054]='my %h; $h{""} = q/boom/; print qq{ok\n}'
 tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
- 
+tests[2790]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
+tests[2800]='my $z=0; my $li2="c"; my $rh={foo=>["ok\n"]}; print $rh->{"foo"}->[$li2+$z];'
+
 init
 
 #

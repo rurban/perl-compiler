@@ -4,7 +4,7 @@ use strict;
 
 use B::C::Config;
 use B::C::File qw/unopsect init/;
-use B::C::Helpers qw/do_labels mark_package padop_name svop_name/;
+use B::C::Helpers qw/do_labels mark_package padop_name svop_name curcv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 sub save {
@@ -24,7 +24,7 @@ sub save {
     if ( $op->name eq 'method' and $op->first and $op->first->name eq 'const' ) {
         my $method = svop_name( $op->first );
         if ( !$method and USE_ITHREADS() ) {
-            $method = padop_name( $op->first, $B::C::curcv );    # XXX (curpad[targ])
+            $method = padop_name( $op->first, curcv() );    # XXX (curpad[targ])
         }
         debug( pkg => "method -> const $method" ) if USE_ITHREADS();
 

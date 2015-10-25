@@ -11,7 +11,7 @@ use B::C::Packages qw/is_package_used/;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/init init2 decl svsect xpvcvsect symsect/;
-use B::C::Helpers qw/get_cv_string strlen_flags/;
+use B::C::Helpers qw/get_cv_string strlen_flags set_curcv/;
 use B::C::Helpers::Symtable qw/objsym savesym delsym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
 
@@ -360,7 +360,7 @@ sub save {
 
     my $startfield = 0;
     my $padlist    = $cv->PADLIST;
-    $B::C::curcv = $cv;
+    set_curcv($cv);
     my $padlistsym = 'NULL';
     my $pv         = $cv->PV;
     my $xsub       = 0;

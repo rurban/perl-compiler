@@ -2,7 +2,7 @@ package B::C::Helpers;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -66,6 +66,13 @@ sub get_cv_string {
     else {
         return qq/get_cvn_flags($cname, $length, $flags)/;
     }
+}
+
+{
+    my $curcv;
+
+    sub curcv { return $curcv }
+    sub set_curcv($) { $curcv = shift }
 }
 
 1;
