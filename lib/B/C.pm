@@ -3280,7 +3280,6 @@ sub mark_threads {
 sub B::PVMG::save_magic {
   my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
-  my $pkg;
   return if $fullname eq '%B::C::';
   if ($debug{mg}) {
     my $flagspv = "";
@@ -3291,98 +3290,61 @@ sub B::PVMG::save_magic {
                   $debug{flags} ? " (".$flagspv.")" : "");
   }
 
-  # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
-  # also issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
-  # crashes with %Class::MOP::Instance:: flags=0x2280000c also
-  # fixed with [perl #126410] patch in my_curse
-  # HV->SvSTASH crashed on %version and %File, so we had to patch it in C.xs
-  #if ($PERL518 and ref($sv) eq 'B::HV' and $sv_flags & SVf_AMAGIC and $fullname =~ /::$/) {
-  #  warn sprintf("skip SvSTASH for HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
-  #    if $verbose;
-  #  if ($PERL518 and ref($sv) eq 'B::HV' and $sv_flags & SVf_AMAGIC
-  #      and $fullname =~ /::$/)
-  #  {
-  #    my $name = $fullname;
-  #    $name =~ s/^%(.*)::$/$1/;
-  #    warn sprintf("initialize overload cache for %s (no SvSTASH)\n", $fullname )
-  #      if $debug{mg} or $debug{gv};
-  #    $init2->add(sprintf("Gv_AMG(%s); /* init AMG overload for %s */", savestashpv($name),
-  #                        $fullname));
-  #  }
-  #} else
-  {
-    my $pkgsym;
-    my $pkg = $sv->SvSTASH;
-    if ($pkg and $$pkg) {
-      my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
-      warn sprintf("stash isa class \"%s\" (%s)\n", $pkgname, ref $pkg)
-        if $debug{mg} or $debug{gv};
-      # 361 do not force dynaloading IO via IO::Handle upon us
-      # core already initialized this stash for us
-      unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
-        if (ref $pkg eq 'B::HV') {
-          if ($fullname !~ /::$/ or $B::C::stash) {
-            $pkgsym = $pkg->save($fullname);
-          } else {
-            $pkgsym = savestashpv($pkgname);
-          }
+  my $pkgsym;
+  my $pkg = $sv->SvSTASH;
+  my ($name, $pkgptr, $pkgname);
+  if ($pkg and $$pkg) {
+    my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
+    warn sprintf("stash isa class \"%s\" (%s)\n", $pkgname, ref $pkg)
+      if $debug{mg} or $debug{gv};
+    # 361 do not force dynaloading IO via IO::Handle upon us
+    # core already initialized this stash for us
+    unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
+      if (ref $pkg eq 'B::HV') {
+        if ($fullname !~ /::$/ or $B::C::stash) {
+          $pkgsym = $pkg->save($fullname);
         } else {
-          $pkgsym = 'NULL';
+          $pkgsym = savestashpv($pkgname);
         }
-
-        warn sprintf( "xmg_stash = \"%s\" as %s\n", $pkgname, $pkgsym )
-          if $debug{mg} or $debug{gv};
-        # Q: Who is initializing our stash from XS? ->save is missing that.
-        # A: We only need to init it when we need a CV
-        # defer for XS loaded stashes with AMT magic
-        if (ref $pkg eq 'B::HV') {
-          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-          $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-          $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-          # XXX 219?
-          if ($sv->MAGICAL and $PERL518) {
-            #warn sprintf("initialize AMG for %s\n", $name )
-            #  if $debug{mg} or $debug{gv};
-            #$init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */",
-            #                    $$pkg, $name));
-            warn sprintf( "mark magical %s\n", $pkgname ) if $verbose and $PERL518;
-            push_package($pkgname);  # correct code, but adds lots of new stashes
-          }
-        if ($PERL518 and $sv->MAGICAL) {
-          warn sprintf( "mark magical %s\n", $name ) if $verbose and $PERL518;
-          push_package($name);  # correct code, but adds lots of new stashes
+      } else {
+        $pkgsym = 'NULL';
+        $pkgptr = $$pkg;
+      }
+      warn sprintf( "xmg_stash = \"%s\" as %s\n", $pkgname, $pkgsym )
+        if $debug{mg} or $debug{gv};
+      # Q: Who is initializing our stash from XS? ->save is missing that.
+      # A: We only need to init it when we need a CV
+      # defer for XS loaded stashes with AMT magic
+      if (ref $pkg eq 'B::HV') {
+        if ($pkgptr) {
+          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $pkgptr ) );
+          $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $pkgptr ) );
+        } elsif ($pkgname) {
+          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)%s);", $$sv, $pkgname ) );
+          $init->add( sprintf( "SvREFCNT((SV*)%s) += 1;", $pkgname ) );
+        }
+        $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+        # XXX 219?
+        if ($sv->MAGICAL and $PERL518) {
+          #warn sprintf("initialize AMG for %s\n", $name )
+          #  if $debug{mg} or $debug{gv};
+          #$init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */",
+          #                    $$pkg, $name));
+          warn sprintf( "mark magical %s\n", $pkgname ) if $verbose and $PERL518;
+          push_package($pkgname);  # correct code, but adds lots of new stashes
         }
       }
-    } elsif ($fullname =~ /^%.*::/) {
-      my $name = $fullname;
-      $name =~ s/^%(.*)::$/$1/;
-      warn sprintf("initialize overload cache for %s (no SvSTASH)\n", $fullname )
-        if $debug{mg} or $debug{gv};
-      $init2->add(sprintf("Gv_AMG(%s); /* init AMG overload for %s */", savestashpv($name),
-                          $fullname));
     }
   }
   $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))
     if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
 
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-  if ($PERL510 and and !$PERL518 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
+  if ($PERL510 and !$PERL518 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
     warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
                  $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
       if $debug{mg};
     return '';
-  }
-
-  # disabled. testcase: t/testm.sh Path::Class
-  if (0 and $PERL518 and $sv_flags & SVf_AMAGIC) {
-    my $name = $fullname;
-    $name =~ s/^%(.*)::$/$1/;
-    $name = $pkg->NAME if $pkg and $$pkg;
-    warn sprintf("initialize overload cache for %s\n", $fullname )
-      if $debug{mg} or $debug{gv};
-    # This is destructive, it removes the magic instead of adding it.
-    #$init1->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
-    #                    $fullname));
   }
 
   my @mgchain = $sv->MAGIC;
@@ -3733,7 +3695,7 @@ sub B::CV::save {
   if ($gv and $$gv) {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
-    $isutf8      = $gv->FLAGS & SVf_UTF8 or $gv->STASH->FLAGS & SVf_UTF8;
+    $isutf8      = ($gv->FLAGS & SVf_UTF8) or ($gv->STASH->FLAGS & SVf_UTF8) ? SVf_UTF8 : 0;
     $fullname    = $cvstashname.'::'.$cvname;
     warn sprintf( "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
                   $$cv, $$gv, $fullname, $CvFLAGS )
