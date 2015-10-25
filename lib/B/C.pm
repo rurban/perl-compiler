@@ -285,7 +285,7 @@ our @ISA        = qw(Exporter);
 our @EXPORT_OK =
   qw(output_all output_boilerplate output_main output_main_rest mark_unused mark_skip
      init_sections set_callback save_unused_subs objsym save_context fixup_ppaddr
-     save_sig svop_or_padop_pv inc_cleanup ivx nvx);
+     save_sig svop_or_padop_pv inc_cleanup ivx nvx curcv set_curcv);
 
 # for 5.6.[01] better use the native B::C
 # but 5.6.2 works fine
@@ -753,6 +753,9 @@ sub delsym {
   my $sym = sprintf( "s\\_%x", $$obj );
   delete $symtable{$sym};
 }
+
+sub curcv { $B::C::curcv }
+sub set_curcv($) { $B::C::curcv = shift; }
 
 # returns cstring, len, utf8 flags of a string
 sub strlen_flags {
@@ -1432,7 +1435,7 @@ sub B::UNOP::save {
   if ($op->name eq 'method' and $op->first and $op->first->name eq 'const') {
     my $method = svop_name($op->first);
     if (!$method and $ITHREADS) {
-      $method = padop_name($op->first, $B::C::curcv); # XXX (curpad[targ])
+      $method = padop_name($op->first, curcv); # XXX (curpad[targ])
     }
     warn "method -> const $method\n" if $debug{pkg} and $ITHREADS;
     #324,#326 need to detect ->(maybe::next|maybe|next)::(method|can)
@@ -1464,7 +1467,7 @@ sub B::UNOP_AUX::save {
   # const and sv already at compile-time, gv deferred to init-time.
   # The aux buffer in core has internally a length prefix. our C.xs aux method adds that also.
   my $aux = $op->aux;
-  my @aux_list = $op->aux_list($B::C::curcv);
+  my @aux_list = $op->aux_list(curcv);
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
   my $ix = $unopauxsect->index + 1;
@@ -1918,7 +1921,7 @@ sub B::PADOP::save {
     my $ix = $op->can('padix') ? $op->padix : $op->targ;
     my $sv = $pad[$ix];
     if ($sv and $$sv) {
-      my $name = padop_name($op, $B::C::curcv);
+      my $name = padop_name($op, curcv);
       if ($skip_defined and $name !~ /^DynaLoader::/) {
 	warn "skip saving defined(&$name)\n" if $debug{gv}; # defer to run-time
       } else {
@@ -3818,7 +3821,7 @@ sub B::CV::save {
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
-  $B::C::curcv   = $cv;
+  set_curcv $cv;
   my $padlistsym = 'NULL';
   my $pv         = $cv->PV;
   my $xsub       = 0;
@@ -7454,7 +7457,7 @@ sub save_main {
   warn "Walking tree\n"     if $verbose;
   %Exporter::Cache = (); # avoid B::C and B symbols being stored
   _delete_macros_vendor_undefined() if $PERL512;
-  $B::C::curcv = B::main_cv;
+  set_curcv B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   $verbose
     ? walkoptree_slow( main_root, "save" )

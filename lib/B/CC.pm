@@ -315,7 +315,7 @@ use B qw(main_start main_root class comppadlist peekop svref_2object
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr save_sig
-  svop_or_padop_pv inc_cleanup);
+  svop_or_padop_pv inc_cleanup curcv set_curcv);
 use B::Bblock qw(find_leaders);
 use B::Stackobj qw(:types :flags);
 use B::C::Flags;
@@ -3193,7 +3193,7 @@ sub cc_obj {
   my $cv         = svref_2object($cvref);
   my @padlist    = $cv->PADLIST->ARRAY;
   my $curpad_sym = $padlist[1]->save;
-  $B::C::curcv   = $cv;
+  set_curcv $cv;
   cc_recurse( $name, $cv->ROOT, $cv->START, @padlist );
 }
 
@@ -3202,7 +3202,7 @@ sub cc_main {
   my $curpad_nam  = $comppadlist[0]->save('curpad_name');
   my $curpad_sym  = $comppadlist[1]->save('curpad_syms');;
   my $init_av     = init_av->save('INIT');
-  $B::C::curcv    = B::main_cv;
+  set_curcv B::main_cv;
   my $start = cc_recurse( "pp_main", main_root, main_start, @comppadlist );
 
   # Do save_unused_subs before saving inc_hv
