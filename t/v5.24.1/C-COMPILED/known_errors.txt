@@ -97,7 +97,7 @@ op/goto_xs.t                 COMPAT    needs XS::APItest
 op/gv.t                      SIG       BC issue #270 + BC issue #219 - overload issue
 op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
-op/infnan.t                  PLAN      Plan was valid
+op/infnan.t                  PLAN      BC issue #287 - +Inf and -Inf saved as 0
 op/join.t                    TESTS     BC issue #219 - overload issue
 op/lc.t                      TESTS     BC issue #250 - access disallowed key in restricted hash
 op/leaky-magic.t             TESTS     Test results:
