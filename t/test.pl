@@ -850,7 +850,7 @@ sub plctestok {
 sub plctest {
     my ($num, $expected, $base, $script, $todo) =  @_;
 
-    if ($] > 5.021006) { ok(1, "skip BC for 5.22 WIP"); return 1; } # temp 5.22
+    if ($] > 5.021006) { print "$num #skip BC for 5.22 WIP\n"; return 1; } # temp 5.22
     my $name = $base."_$num";
     unlink($name, "$name.plc", "$name.pl", "$name.exe");
     open F, ">", "$base.pl";
@@ -900,7 +900,7 @@ sub ctest {
     my ($num, $expected, $backend, $base, $script, $todo) =  @_;
     my $name = $base."_$num";
     my $b = $backend; # protect against parallel test name clashes
-    if ($] > 5.021006 and $backend =~ /^CC/i) { ok(1, "skip CC for 5.22 WIP"); return 1; } # temp 5.22
+    #if ($] > 5.021006 and $backend =~ /^CC/i) { ok(1, "skip CC for 5.22 WIP"); return 1; } # temp 5.22
     $b =~ s/-(D.*|f.*|v),//g;
     $b =~ s/-/_/g;
     $b =~ s/[, ]//g;

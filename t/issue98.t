@@ -3,7 +3,8 @@
 # v5.15 Bytecode Attempt to access disallowed key 'strict/subs' in a restricted hash
 use strict;
 my $name = "ccode98i";
-use Test::More tests => 1;
+use Test::More;
+Test::More->import($] <= 5.021006 ? (tests => 1) : (skip_all => 'bytecode for 5.22 WIP'));
 use Config;
 
 # New bug reported by Zloysystem
