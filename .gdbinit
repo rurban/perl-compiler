@@ -13,8 +13,6 @@ source .gdb/perl
 #b hv.c:764
 #b Perl_Gv_AMupdate
 #b Perl_amagic_call
-#b Perl_pp_method_redir
-b XS_B__COP_label
 
 #b Perl_pp_entereval
 #command

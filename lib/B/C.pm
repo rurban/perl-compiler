@@ -3280,7 +3280,7 @@ sub mark_threads {
 sub B::PVMG::save_magic {
   my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
-  return if $fullname eq '%B::C::';
+  return '' if $fullname =~ /^\%B\::CC?::$/;
   if ($debug{mg}) {
     my $flagspv = "";
     $fullname = '' unless $fullname;
@@ -3438,9 +3438,18 @@ CODE2
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
     elsif ( $type eq 'c' ) { # and !$PERL518
-      $init->add(sprintf(
-          "/* AMT overload table for the stash %s 0x%x is generated dynamically */",
-          $fullname, $$sv ));
+      if ($PERL518) {
+        warn sprintf("initialize AMG for %s\n", $name )
+          if $debug{mg} or $debug{gv};
+        if ($pkgptr) {
+          $init2->add(sprintf("Gv_AMG(s\\%x); /* init AMG for %s */", $pkgptr, $name));
+        } elsif ($pkgname) {
+          $init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */", $pkgname, $name));
+        }
+      } else {
+        $init->add(sprintf("/* AMT overload table for the stash %s 0x%x is generated dynamically */",
+                           $fullname, $$sv ));
+      }
     }
     elsif ( $type eq ':' ) { # symtab magic
       # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
