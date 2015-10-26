@@ -3818,7 +3818,7 @@ sub B::CV::save {
 
   my $startfield = 0;
   my $padlist    = $cv->PADLIST;
-  $B::C::curcv = $cv;
+  $B::C::curcv   = $cv;
   my $padlistsym = 'NULL';
   my $pv         = $cv->PV;
   my $xsub       = 0;
@@ -7574,7 +7574,7 @@ sub save_main_rest {
 
   # startpoints: XXX TODO push BEGIN/END blocks to modules code.
   warn "Writing initav\n" if $debug{av};
-  my $init_av = init_av->save;
+  my $init_av = init_av->save('INIT');
   my $end_av;
   {
     # >=5.10 need to defer nullifying of all vars in END, not only new ones.
@@ -7582,7 +7582,7 @@ sub save_main_rest {
     $in_endav = 1;
     warn "Writing endav\n" if $debug{av};
     $init->add("/* END block */");
-    $end_av  = end_av->save;
+    $end_av  = end_av->save('END');
     $in_endav = 0;
   }
   if ( !defined($module) ) {

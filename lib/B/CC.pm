@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Heinz Knutzen
-#      Copyright (c) 2012-2014 cPanel Inc
+#      Copyright (c) 2012-2015 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -3087,7 +3087,7 @@ sub cc {
     $decl->add( sprintf( "#define $name  %s", $done{$$start} ) );
     return;
   }
-  return if ref($padlist[0]) ne 'B::AV' or ref($padlist[1]) ne 'B::AV';
+  return if ref($padlist[0]) !~ /^B::(AV|PADNAMELIST)$/ or ref($padlist[1]) ne 'B::AV';
   warn "cc $name\n" if $verbose;
   init_pp($name);
   load_pad(@padlist);
@@ -3193,14 +3193,16 @@ sub cc_obj {
   my $cv         = svref_2object($cvref);
   my @padlist    = $cv->PADLIST->ARRAY;
   my $curpad_sym = $padlist[1]->save;
+  $B::C::curcv   = $cv;
   cc_recurse( $name, $cv->ROOT, $cv->START, @padlist );
 }
 
 sub cc_main {
   my @comppadlist = comppadlist->ARRAY;
-  my $curpad_nam  = $comppadlist[0]->save;
-  my $curpad_sym  = $comppadlist[1]->save;
-  my $init_av     = init_av->save;
+  my $curpad_nam  = $comppadlist[0]->save('curpad_name');
+  my $curpad_sym  = $comppadlist[1]->save('curpad_syms');;
+  my $init_av     = init_av->save('INIT');
+  $B::C::curcv    = B::main_cv;
   my $start = cc_recurse( "pp_main", main_root, main_start, @comppadlist );
 
   # Do save_unused_subs before saving inc_hv
@@ -3230,7 +3232,7 @@ sub cc_main {
     # >=5.10 needs to defer nullifying of all vars in END, not only new ones.
     local ($B::C::const_strings);
     $B::C::in_endav = 1;
-    $end_av  = end_av->save;
+    $end_av  = end_av->save('END');
   }
   cc_recurse();
   return if $errors or $check;

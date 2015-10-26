@@ -602,7 +602,7 @@ sub run_cc_test {
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
-    if ($] > 5.021006 and $fnbackend eq 'cc') { print "ok $cnt # skip CC for 5.22 WIP\n"; return 1; }
+    #if ($] > 5.021006 and $fnbackend eq 'cc') { print "ok $cnt # skip CC for 5.22 WIP\n"; return 1; }
     use Config;
     require B::C::Flags;
     # note that the smokers run the c.t and c_o3.t tests in parallel, with possible
@@ -1055,7 +1055,7 @@ sub todo_tests_default {
 	push @todo, (12)    if $^O eq 'MSWin32' and $Config{cc} =~ /^cl/i;
 	push @todo, (26)    if $what =~ /^cc_o[12]/;
         push @todo, (27)    if $] > 5.008008 and $] < 5.009;
-	push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
+	#push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
         push @todo, (12,19,25) if $] >= 5.019;
     }
