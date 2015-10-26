@@ -3255,7 +3255,7 @@ sub mark_threads {
 sub B::PVMG::save_magic {
   my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
-  my $pkg;
+  return '' if $fullname =~ /^\%B\::CC?::$/;
   if ($debug{mg}) {
     my $flagspv = "";
     $fullname = '' unless $fullname;
@@ -3284,17 +3284,17 @@ sub B::PVMG::save_magic {
   #                        $fullname));
   #  }
   #} else
+  my ($name, $pkg, $pkgptr, $pkgname);
   {
-    my $pkg = $sv->SvSTASH;
-    my ($name, $pkgptr, $pkgname);
+    $pkg = $sv->SvSTASH;
     if (!($pkg and $$pkg) and $PERL518 and $fullname =~ /^%.*::/) {
-      my $name = $fullname;
+      $name = $fullname;
       $name =~ s/^%(.*)::$/$1/;
       $pkgname = savestashpv($name);
       warn sprintf("stash isa class(\"%s\") %s\n", $name, $pkgname)
         if $name and ($debug{mg} or $debug{gv});
     }
-    if ($pkg and $$pkg) {
+    elsif ($pkg and $$pkg) {
       $name = $pkg->NAME;
       $pkgptr = $$pkg;
       warn sprintf("stash isa class(\"%s\") 0x%x\n", $name, $pkgptr)
@@ -3305,28 +3305,34 @@ sub B::PVMG::save_magic {
     if (($pkgptr or $pkgname) and !($fullname eq 'main::STDOUT' and $PERL518)) {
       $pkg->save($fullname) if $pkg;
 
-      no strict 'refs';
       warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $name, $pkgptr )
         if $debug{mg} or $debug{gv};
       # Q: Who is initializing our stash from XS? ->save is missing that.
       # A: We only need to init it when we need a CV
       # defer for XS loaded stashes with AMT magic
       if ($pkgptr) {
-        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $pkgptr ) );
+        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x); /* \$\$pkg=%s */ ", $$sv, $pkgptr, $name ) );
         $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $pkgptr ) );
-      } elsif ($pkgname) {
-        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)%s);", $$sv, $pkgname ) );
-        $init->add( sprintf( "SvREFCNT((SV*)%s) += 1;", $pkgname ) );
-      }
-      $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-      if ($PERL518 and $sv->MAGICAL and length($name)) {
-        warn sprintf("initialize AMG for %s\n", $name )
-          if $debug{mg} or $debug{gv};
-        if ($pkgptr) {
-          $init2->add(sprintf("Gv_AMG(s\\%x); /* init AMG for %s */", $pkgptr, $name));
-        } elsif ($pkgname) {
-          $init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */", $pkgname, $name));
+      } elsif ($PERL518 and $name and !($sv_flags & SVs_OBJECT)) {
+        no strict 'refs';
+        # Since 5.18 a stash of a stash may be the CV destructor, NULL+1 for an empty one
+        if (0) { # wrong stash type
+          my $cv = '((CV *)0)+1';
+          if (defined &{"$name\::DESTROY"}) {
+            $cv = svref_2object( \&{$name . '::DESTROY'} )->save("$name\::DESTROY");
+            warn sprintf( "stash destructor %s::DESTROY $cv\n", $name, $cv ) if $verbose;
+          } else {
+            warn sprintf( "empty stash destructor %s::DESTROY $cv\n", $name ) if $debug{mg};
+          }
+          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)%s);", $$sv, $cv));
+        } else { # or wrong destructor
+          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)%s);", $$sv, $pkgname));
         }
+      } elsif ($name and $sv_flags & SVs_OBJECT) {
+        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)%s);", $$sv, $pkgname));
+      }
+      $init->add("++PL_sv_objcount;") if ($sv_flags & SVs_OBJECT) and ref($sv) ne "B::IO";
+      if ($PERL518 and $sv->MAGICAL and length($name)) {
         warn sprintf( "mark magical %s\n", $name ) if $verbose and $PERL518;
         push_package($name);  # correct code, but adds lots of new stashes
       }
@@ -3336,7 +3342,7 @@ sub B::PVMG::save_magic {
     if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
 
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-  if ($PERL510 and and !$PERL518 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
+  if ($PERL510 and !$PERL518 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
     warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
                  $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
       if $debug{mg};
@@ -3445,9 +3451,18 @@ CODE2
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
     elsif ( $type eq 'c' ) { # and !$PERL518
-      $init->add(sprintf(
-          "/* AMT overload table for the stash %s 0x%x is generated dynamically */",
-          $fullname, $$sv ));
+      if ($PERL518) {
+        warn sprintf("initialize AMG for %s\n", $name )
+          if $debug{mg} or $debug{gv};
+        if ($pkgptr) {
+          $init2->add(sprintf("Gv_AMG(s\\%x); /* init AMG for %s */", $pkgptr, $name));
+        } elsif ($pkgname) {
+          $init2->add(sprintf("Gv_AMG(%s); /* init AMG for %s */", $pkgname, $name));
+        }
+      } else {
+        $init->add(sprintf("/* AMT overload table for the stash %s 0x%x is generated dynamically */",
+                           $fullname, $$sv ));
+      }
     }
     elsif ( $type eq ':' ) { # symtab magic
       # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
