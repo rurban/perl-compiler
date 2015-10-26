@@ -6176,6 +6176,7 @@ my_curse( pTHX_ SV* const sv ) {
         assert(SvTYPE(stash) == SVt_PVHV);
 	if (HvNAME(stash)) {
 	    CV* destructor = NULL;
+	    assert (SvOOK(stash));
 	    if (!SvOBJECT(stash)) destructor = (CV *)SvSTASH(stash);
 	    if (!destructor
 #if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
@@ -6185,9 +6186,9 @@ my_curse( pTHX_ SV* const sv ) {
 		GV * const gv = gv_fetchmeth_autoload(stash, "DESTROY", 7, 0);
 		if (gv) {
                     destructor = GvCV(gv);
-		    if (!SvOBJECT(stash)) {
-		        SvSTASH(stash) =
-			    destructor ? (HV *)destructor : ((HV *)0)+1;
+                    if (!SvOBJECT(stash)) {
+                        SvSTASH(stash) =
+                            destructor ? (HV *)destructor : ((HV *)0)+1;
 #if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
 		        HvAUX(stash)->xhv_mro_meta->destroy_gen = PL_sub_generation;
 #endif
