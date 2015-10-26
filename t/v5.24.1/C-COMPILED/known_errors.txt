@@ -138,7 +138,7 @@ op/universal.t               TESTS     Test results:
 op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
-op/write.t                   PLAN      BC issue #219 - overload issue + BC issue #281 (nested format)
+op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
 re/fold_grind.t              PLAN      Plan was valid
 re/overload.t                PLAN      BC issue #219 - overload issue
