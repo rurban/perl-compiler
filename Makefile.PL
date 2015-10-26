@@ -69,11 +69,10 @@ sub write_b_c_flags {
 
     # Ensure to add all used Config keys in B::C here, otherwise they will be silently empty!
     # easier hash key/value slices only came with 5.22
-    for my $s (
-        qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_longdbl dlext i_dlfcn
-        ivdformat ivsize longsize mad nvgformat ptrsize static_ext usecperl
-        usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat)
-      ) {
+    for my $s (qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl dlext i_dlfcn
+                  ivdformat ivsize longsize mad nvgformat ptrsize static_ext usecperl
+                  usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat))
+    {
         $cfg{$s} = $Config::Config{$s};
     }
     my $conf = Dumper \%cfg;

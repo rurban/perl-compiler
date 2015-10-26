@@ -54,6 +54,15 @@ my $LL = $B::C::Flags::Config{d_longdbl} ? "LL" : "L";
 sub get_double_value ($) {
     my $nvx = shift;
 
+    # Handle infinite and NaN values
+    if ( defined $nvx ) {
+        if ( $B::C::Flags::Config{d_isinf} ) {
+            return 'INFINITY'  if $nvx eq 'Inf';
+            return '-INFINITY' if $nvx eq '-Inf';
+        }
+        return 'NAN' if $B::C::Flags::Config{d_isnan} && $nvx eq 'NaN';
+    }
+
     # my $DBLMAX = "1.18973149535723176502e+4932L"
     my $sval = sprintf( "%${NVGFORMAT}%s", $nvx, $nvx > $DBLMAX ? $LL : "" );
     if ( $nvx < -$DBLMAX ) {
