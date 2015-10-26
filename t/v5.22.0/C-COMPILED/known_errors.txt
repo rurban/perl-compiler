@@ -71,8 +71,8 @@ mro/vulcan_c3_utf8.t         TESTS     BC issue #285 - B::C can't handle utf8 pa
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
-op/attrproto.t               PLAN      Plan was valid
-op/attrs.t                   PLAN      Plan was valid
+op/attrproto.t               PLAN      BC issue #250 - access disallowed key in restricted has
+op/attrs.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/bop.t                     TESTS     BC issue #219 - overload issue
@@ -126,7 +126,7 @@ op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire i
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
-op/sub.t                     PLAN      Plan was valid
+op/sub.t                     PLAN      BC issue #250 - access disallowed key in restricted hash
 op/sub_lval.t                TESTS     Test results:
 op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
