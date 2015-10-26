@@ -83,7 +83,7 @@ op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/const-optree.t            PLAN      BC issue #250 - access disallowed key in restricted hash
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
-op/current_sub.t             PLAN      Plan was valid
+op/current_sub.t             PLAN      BC issue #250 - access disallowed key in restricted hash
 op/dbm.t                     SIG       BC issue #223 - glob issue
 op/defins.t                  SIG       BC issue #223 - glob issue
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
