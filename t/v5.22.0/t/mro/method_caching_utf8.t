@@ -9,7 +9,7 @@ BEGIN {
 }
 
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 use strict;
 use warnings;
 no warnings 'redefine'; # we do a lot of this

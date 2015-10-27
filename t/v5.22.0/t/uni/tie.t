@@ -43,7 +43,7 @@ foreach my $t ("ASCII", "B\366se") {
 
 {
     use utf8;
-    use open qw( :utf8 :std );
+    binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
     package Tìè::UTF8 {
         sub TIESCALAR {
             return bless {}, shift;

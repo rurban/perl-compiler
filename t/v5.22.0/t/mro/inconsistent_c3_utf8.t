@@ -12,7 +12,7 @@ use strict;
 use warnings;
 
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 
 plan(tests => 1);
 
