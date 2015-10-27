@@ -850,7 +850,10 @@ sub plctestok {
 sub plctest {
     my ($num, $expected, $base, $script, $todo) =  @_;
 
-    if ($] > 5.021006) { print "$num #skip BC for 5.22 WIP\n"; return 1; } # temp 5.22
+    if ($] > 5.021006) { # temp 5.22
+        ok(1, "SKIP BC for 5.22 WIP");
+        return 1;
+    }
     my $name = $base."_$num";
     unlink($name, "$name.plc", "$name.pl", "$name.exe");
     open F, ">", "$base.pl";
@@ -868,8 +871,8 @@ sub plctest {
     system $cmd;
     # $out =~ s/^$base.pl syntax OK\n//m;
     unless (-e "$name.plc") {
-        print "not ok $num #B::Bytecode failed\n";
-        exit;
+        ok(0, '#B::Bytecode failed');
+        return 1;
     }
     $cmd = "$runperl $Mblib -MByteLoader $name.plc";
     diag($cmd) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
@@ -923,8 +926,8 @@ sub ctest {
       if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
     system "$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl";
     unless (-e "$name.c") {
-        print "not ok $num #B::$backend failed\n";
-        exit;
+        ok (undef, "#B::$backend failed");
+        return 1;
     }
     diag("$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c")
       if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
@@ -1003,8 +1006,8 @@ sub ccompileok {
     my $Mblib = Mblib;
     system "$runperl $Mblib -MO=$b,-o$name.c $name.pl";
     unless (-e "$name.c") {
-        print "not ok 1 #B::$backend failed\n";
-        exit;
+        ok (undef, "#B::$backend failed");
+        return 1;
     }
     system "$runperl $Mblib blib/script/cc_harness -q -o $name $name.c";
     my $ok = -e $name or -e "$name.exe";
@@ -1033,6 +1036,7 @@ sub todo_tests_default {
     push @todo, (15)  if $] < 5.007;
     # broken by fbb32b8bebe8ad C: revert *-,*+,*! fetch magic, assign all core GVs to their global symbols
     push @todo, (42..43) if $] < 5.012;
+    push @todo, (15,16,26,35) if $] >= 5.021006; # with overload-219 only
     if ($what =~ /^c(|_o[1-4])$/) {
         # a regression
 	push @todo, (41)  if $] < 5.007; #regressions
@@ -1040,6 +1044,11 @@ sub todo_tests_default {
 
         push @todo, (48)  if $what eq 'c_o4' and $ITHREADS;
         push @todo, (8,18,19,25,26,28)  if $what eq 'c_o4' and !$ITHREADS;
+        push @todo, (22,27,41,42,43,45) if $] >= 5.021006 and $what =~ /^c|c_o1/;
+        push @todo, (44,49)             if $] >= 5.021006 and $what eq 'c_o1';
+        push @todo, (27,41,42,43,44,49) if $] >= 5.021006 and $what eq 'c_o2';
+        push @todo, ()                  if $] >= 5.021006 and $what eq 'c_o3';
+        push @todo, (12,14,38)          if $] >= 5.021006 and $what eq 'c_o4';
     } elsif ($what =~ /^cc/) {
 	push @todo, (21,30,105,106);
 	push @todo, (22,41,45,103) if $] < 5.007; #regressions
@@ -1058,6 +1067,8 @@ sub todo_tests_default {
 	#push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
         push @todo, (12,19,25) if $] >= 5.019;
+        push @todo, (24,103)   if $] >= 5.021006; # with overload-219
+        #push @todo, (10)    if $] >= 5.021006; # with master, without overload-219
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
