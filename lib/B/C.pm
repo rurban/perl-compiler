@@ -842,7 +842,7 @@ sub savepv {
       $strtable{$cstring} = $pvsym;
     }
   }
-  return wantarray ? ( $pvsym, $cur ) : $pvsym;
+  return $pvsym;
 }
 
 sub save_rv {

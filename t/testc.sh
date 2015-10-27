@@ -1146,6 +1146,8 @@ tests[2871]='my $i = "-Inf" + 0; print $i >= 0 ? "not $i " : "", "ok\n";'
 tests[2872]='my $i = "NaN" + 0; print $i <= 0 ? "not $i " : "", "ok\n"'
 
 tests[284]='use Encode; find_encoding("euc-jp") and print qq/ok\n/'
+
+tests[288]='use utf8; package Ｄiᚪၚd_A; sub ᕘ { "A" } package Ｄiᚪၚd_B; our @ISA = ("Ｄiᚪၚd_A"); sub ᕘ { "B => " . (shift)->SUPER::ᕘ } package Ｄiᚪၚd_C; our @ISA = ("Ｄiᚪၚd_B"); sub ᕘ { "C => " . (shift)->SUPER::ᕘ } Ｄiᚪၚd_C->ᕘ eq "C => B => A" and print "ok";'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 tests[2900]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
