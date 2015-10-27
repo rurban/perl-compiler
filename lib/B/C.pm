@@ -4220,9 +4220,7 @@ sub B::GV::save {
   } else {
     $package = $gv->STASH->NAME;
   }
-  if (skip_pkg($package)) {
-    return q/(SV*)&PL_sv_undef/;
-  }
+  return q/(SV*)&PL_sv_undef/ if skip_pkg($package);
 
   my $fullname = $package . "::" . $gvname;
   my $fancyname;
