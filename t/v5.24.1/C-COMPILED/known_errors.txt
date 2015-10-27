@@ -136,7 +136,7 @@ op/write.t                   SIG       BC issue #219 - overload issue + BC issue
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
 re/fold_grind.t              PLAN      Plan was valid
 re/overload.t                PLAN      BC issue #219 - overload issue
-re/pat.t                     SIG       Exit signal is 11 SEGV
+re/pat.t                     SIG       BC issue #219 - overload issue + BC issue #295
 re/pat_advanced.t            PLAN      TODO: Global symbol \"$message\" requires explicit package name at (eval 193)
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
 re/pat_rt_report.t           PLAN      Plan was valid
