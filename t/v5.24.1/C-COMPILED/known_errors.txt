@@ -40,8 +40,8 @@ mro/basic_05_c3_utf8.t       PLAN      Plan was valid
 mro/basic_05_dfs_utf8.t      PLAN      Plan was valid
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
-mro/complex_c3.t             SIG       TODO: segfault
-mro/complex_c3_utf8.t        SIG       TODO: segfault
+mro/complex_c3.t             SIG       BC issue #298 - next::method broken.
+mro/complex_c3_utf8.t        SIG       BC issue #298 - next::method broken.
 mro/dbic_c3_utf8.t           TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
 mro/isarev.t                 TESTS     Test results:
 mro/isarev_utf8.t            TESTS     Test results:
