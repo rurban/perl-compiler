@@ -1083,6 +1083,16 @@ sub ivx ($) {
 # protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]
 sub nvx ($) {
   my $nvx = shift;
+
+  # Handle infinite and NaN values
+  if ( defined $nvx ) {
+      if ( $Config{d_isinf} ) {
+        return 'INFINITY' if $nvx eq 'Inf';
+        return '-INFINITY' if $nvx eq '-Inf';
+      }
+      return 'NAN' if $Config{d_isnan} && $nvx eq 'NaN';
+  }
+
   my $nvgformat = $Config{nvgformat};
   $nvgformat =~ s/["\0]//g; #" poor editor
   $nvgformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
