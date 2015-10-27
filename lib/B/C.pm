@@ -1086,11 +1086,12 @@ sub nvx ($) {
 
   # Handle infinite and NaN values
   if ( defined $nvx ) {
-      if ( $Config{d_isinf} ) {
-        return 'INFINITY' if $nvx eq 'Inf';
-        return '-INFINITY' if $nvx eq '-Inf';
+      if ( $Config{d_isinf} or $] < 5.012 ) {
+        return 'INFINITY' if $nvx =~ /^Inf/i;
+        return '-INFINITY' if $nvx eq /^-Inf/i;
       }
-      return 'NAN' if $Config{d_isnan} && $nvx eq 'NaN';
+      return 'NAN' if $nvx =~ /^NaN/i and ($Config{d_isnan} or $] < 5.012);
+      # TODO NANL for long double
   }
 
   my $nvgformat = $Config{nvgformat};
