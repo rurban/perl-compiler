@@ -126,7 +126,7 @@ op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
 op/sub.t                     PLAN      BC issue #250 - access disallowed key in restricted hash
-op/sub_lval.t                TESTS     Test results:
+op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
 op/switch.t                  PLAN      BC issue #219 - overload issue
