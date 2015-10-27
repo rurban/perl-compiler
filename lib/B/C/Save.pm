@@ -53,7 +53,7 @@ sub savepv {
             $strtable{$cstring} = $pvsym;
         }
     }
-    return wantarray ? ( $pvsym, $len ) : $pvsym;
+    return $pvsym;
 }
 
 sub savepvn {
