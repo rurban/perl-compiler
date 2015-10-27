@@ -151,7 +151,7 @@ uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pra
 uni/eval.t                   PLAN      Plan was valid
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  SIG       BC issue #283 - deprecated "encoding" pragma
-uni/gv.t                     TESTS     Test results:
+uni/gv.t                     SIG       BC issue #290
 uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 uni/latin2.t                 SIG       BC issue #283 - deprecated "encoding" pragma
 uni/lex_utf8.t               PLAN      Plan was valid
