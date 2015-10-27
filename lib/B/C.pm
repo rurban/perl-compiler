@@ -5428,14 +5428,17 @@ sub B::IO::save {
     }
   }
 
-  #my $stash = $io->SvSTASH;
-  #if ($$stash) {
-  #  $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
-    #  $stash->save;
-    #  $init->add( sprintf( "IoSTASH(s\\_%x) = s\\_%x;", $$io, $$stash ) );
-    #  warn sprintf( "done saving STASH 0x%x for IO 0x%x\n", $$stash, $$io )
-    #    if $debug{gv};
-  #}
+  if ( $PERL518 ) {
+    my $stash = $io->SvSTASH;
+    if ($$stash) {
+        $stash->save;
+        $init->add(
+              sprintf( "SvREFCNT(%s) += 1;", objsym($stash) ),
+              sprintf( "SvSTASH_set(%s, %s);", $sym, objsym($stash) )
+        );
+        warn sprintf( "done saving STASH %s for IO %s\n", objsym($stash), $sym ) if $debug{gv};
+    }
+  }
 
   return $sym;
 }
