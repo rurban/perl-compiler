@@ -1,2 +1,0 @@
-#SKIP my ($pid, $out, $in); BEGIN { local(*FPID); $pid = open(FPID, "echo <<EOF |"); # DIE open($out, ">&STDOUT"); # EASY open(my $tmp, ">", "pcc.tmp"); # HARD to get filename, WARN print $tmp "test\n"; close $tmp; # OK closed open($in, "<", "pcc.tmp"); # HARD to get filename, WARN } # === run-time === print $out "o"; kill 0, $pid; # BAD! warn? die? print "k" if "test" eq read $in, my $x, 4; unlink "pcc.tmp";
-### RESULT:o
