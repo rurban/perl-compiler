@@ -41,11 +41,11 @@ my $d3 = $d;
 $d3 =~ s/ ok 1/ ok 3/;
 print F $d3;
 close F;
-if ($] < 5.022) {
+
+TODO: {
+  local $TODO = 'WIP 5.22 bytecode' if $] > 5.021;
   is(`$runperl $Mblib $perlcc -B -r $pl ok 3`, "ok 3\n", #3
      "perlcc -B -r file args");
-} else {
-  ok(1, "SKIP BC 5.22");
 }
 
 # issue 30
