@@ -2,14 +2,14 @@
 #
 #      Copyright (c) 1996 Malcolm Beattie
 #      Copyright (c) 2010 Reini Urban
-#      Copyright (c) 2012, 2013, 2014 cPanel Inc
+#      Copyright (c) 2012, 2013, 2014, 2015 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
 #
 package B::Stackobj;
 
-our $VERSION = '1.12';
+our $VERSION = '1.12_01';
 
 use Exporter ();
 @ISA       = qw(Exporter);
@@ -220,8 +220,11 @@ sub set_int {
 sub set_double {
   my ( $obj, $expr ) = @_;
   my $sval;
+  if ($expr =~ /^-?(Inf|NaN)$/i) {
+    $sval = B::C::nvx($expr);
+    $sval = $expr if $sval eq '0' and $expr;
   # bullshit detector for non numeric expr, expr 'lnv0 + rnv0'
-  if ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
+  } elsif ($expr =~ /[ a-dfzA-DF-Z]/) { # looks not like number
     $sval = $expr;
   } else {
     $sval = B::C::nvx($expr);

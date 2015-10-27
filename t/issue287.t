@@ -12,11 +12,11 @@ use B::C ();
 my $when = "1.52_06";
 my $todo = $B::C::VERSION lt $when ? "TODO " : "";
 
-ctestok(1,'C,-O3','ccode287i',<<'EOF',$todo.'#287 inf/nan');
+ctestok(1,'C,-O3','ccode287i',<<'EOF',$todo.'C #287 inf/nan');
 my $i = "Inf" + 0; print $i <= 0 ? "not " : "", "ok 1 #".int($i)."\n";
 EOF
 
-ctestok(2,'CC','ccode287i',<<'EOF','TODO CC #287 inf/nan');
+ctestok(2,'CC','ccode287i',<<'EOF',$todo.'CC #287 inf/nan');
 my $i = "Inf" + 0; print qq/ok\n/ if $i > 0;
 EOF
 
