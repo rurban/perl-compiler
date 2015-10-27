@@ -37,6 +37,7 @@ $result =~ s/\n$//;
 
 SKIP: {
   skip "no pmc on 5.6 (yet)", 1 if $] < 5.008;
+  skip "no pmc on 5.22 (yet)", 1 if $] > 5.021;
   ok($result eq $expected, "issue54 - pad_swipe error with package pmcs");
 }
 

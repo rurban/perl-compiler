@@ -1053,9 +1053,9 @@ result[284]='123
 456
 789'
 # issue 287 with Inf and NaN
-tests[2870]='my $i = "-Inf" + 0; use B; my $sv = B::svref_2object(\$i); print qq/ok\n/ if $sv->NV eq "-Inf"'
-tests[2871]='my $i = "Inf" + 0; use B; my $sv = B::svref_2object(\$i); print qq/ok\n/ if $sv->NV eq "Inf"'
-tests[2872]='my $i = "NaN" + 0; use B; my $sv = B::svref_2object(\$i); print qq/ok\n/ if $sv->NV eq "NaN"'
+tests[2870]='my $i = "Inf" + 0; print $i <= 0 ? "not $i " : "", "ok\n";'
+tests[2871]='my $i = "-Inf" + 0; print $i >= 0 ? "not $i " : "", "ok\n";'
+tests[2872]='my $i = "NaN" + 0; print $i <= 0 ? "not $i " : "", "ok\n"'
 
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 tests[290]='sub f;print "ok" if exists &f && not defined &f;'

@@ -154,6 +154,7 @@ isnt(`$perlcc --Wb=-fno-fold,-v -o pcc $f $redir`, '/Writing output/m',
 TODO: {
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   local $TODO = "5.6 BC does not understand -DG yet" if $] < 5.007;
+  local $TODO = "5.22 BC WIP" if $] > 5.021;
   like(`$perlcc -B --Wb=-DG,-v -o pcc $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
 }
@@ -201,16 +202,26 @@ like(`$perlcc -BSr -opcc.plc -e $e $redir`, '/-S ignored/', "-BSr -o -e");
 ok(-e 'pcc.plc', "pcc.plc file");
 cleanup;
 
-is(`$perlcc -Br -opcc.plc $f $devnull`, "ok", "-Br -o file");
+TODO: {
+  local $TODO = '5.22 BC WIP' if $] > 5.021;
+  is(`$perlcc -Br -opcc.plc $f $devnull`, "ok", "-Br -o file");
+}
 ok(-e 'pcc.plc', "pcc.plc file");
 cleanup;
 
 is(`$perlcc -B -opcc.plc -e$e $devnull`, "", "-B -o -e");
 ok(-e 'pcc.plc', "pcc.plc");
+
 if ($] < 5.007) {
  TODO: {
     local $TODO = 'yet unsupported';
     is(`$X -MByteLoader pcc.plc`, "ok", "executable 5.6 plc"); #76
+  }
+}
+elsif ($] > 5.021) {
+ TODO: {
+    local $TODO = 'yet unsupported';
+    is(`$X -Iblib/arch -Iblib/lib -MByteLoader pcc.plc`, "ok", "executable 5.22 plc"); #76
   }
 } else {
   is(`$X -Iblib/arch -Iblib/lib pcc.plc`, "ok", "executable plc"); #76

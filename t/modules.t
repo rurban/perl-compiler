@@ -309,6 +309,9 @@ sub is_todo {
   if ($] >= 5.018) { foreach(qw(
       ExtUtils::ParseXS
   )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
+  if ($] >= 5.022) { foreach(qw(
+      DateTime
+  )) { return '>= 5.22 #280 aux_list' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {

@@ -28,6 +28,7 @@ sub a_sub :Check(qw/a b c/) {
 print a_sub()."\n";
 EOF
 
+$todo = "" if $] > 5.021006;
 ctestok(2,'C,-O3','ccode169i',<<'EOF',$todo.'run-time attributes::get #278');
 our $anon1;
 eval q/$anon1 = sub : method { $_[0]++ }/;

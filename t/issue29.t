@@ -55,7 +55,8 @@ $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 TODO: {
   local $TODO = "B::Bytecode issue 29 utf8 perlio: 5.12-5.16"
-    if $] >= 5.011004 and $] < 5.018 and $ITHREADS;
+    if ($] >= 5.011004 and $] < 5.018 and $ITHREADS)
+    or $] > 5.021;
   ok($result eq $expected, "BC '$result' eq '$expected'");
 }
 

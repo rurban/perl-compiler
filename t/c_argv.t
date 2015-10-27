@@ -41,8 +41,12 @@ my $d3 = $d;
 $d3 =~ s/ ok 1/ ok 3/;
 print F $d3;
 close F;
-is(`$runperl $Mblib $perlcc -B -r $pl ok 3`, "ok 3\n", #3
-   "perlcc -B -r file args");
+if ($] < 5.022) {
+  is(`$runperl $Mblib $perlcc -B -r $pl ok 3`, "ok 3\n", #3
+     "perlcc -B -r file args");
+} else {
+  ok(1, "SKIP BC 5.22");
+}
 
 # issue 30
 $d = '

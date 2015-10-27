@@ -13,6 +13,7 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 # passes on linux non-DEBUGGING, but fails on other system with better malloc libraries
 # use after free
 my $todo = ((!$DEBUGGING or $] < 5.012) and $^O eq 'linux') ? "" : "TODO ";
+$todo = "" if $] > 5.021;
 
 ctestok(1,'C,-O3','ccode282i',<<'EOF',$todo.'#282 ref assign hek assert/use-after-free');
 use vars qw($glook $smek $foof);

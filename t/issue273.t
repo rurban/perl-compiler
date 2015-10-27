@@ -11,6 +11,7 @@ use Test::More tests => 1;
 use B::C ();
 
 my $todo = ($B::C::VERSION ge '1.43_07') ? "" : "TODO ";
+$todo = "TODO 5.22 " if $] > 5.021;
 
 ctest(1,'11','C,-O3','ccode273i',<<'EOF',$todo.'#273 PVMG RV vs PV');
 package Foo;

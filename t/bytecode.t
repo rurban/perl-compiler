@@ -23,7 +23,7 @@ BEGIN {
     print "1..0 # Skip -- Perl configured without B module\n";
     exit 0;
   }
-  if ($] > 5.012006) {
+  if ($] > 5.021006) {
     print "1..0 # Skip -- bytecode for 5.22 WIP\n";
     exit 0;
   }
