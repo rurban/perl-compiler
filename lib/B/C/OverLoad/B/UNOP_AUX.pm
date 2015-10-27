@@ -13,8 +13,8 @@ sub save {
     my $sym = objsym($op);
     return $sym if defined $sym;
 
-    my @aux_list = $op->aux_list( curcv() );
-    my $auxlen   = scalar @aux_list;
+    my @aux_list = $op->aux_list( USE_ITHREADS() ? curcv() : \2 );    # GH#283
+    my $auxlen = scalar @aux_list;
 
     unopauxsect()->comment_common("first, aux");
 
@@ -57,6 +57,7 @@ sub save {
 
         }
         else {
+            # const and sv already at compile-time, gv deferred to init-time.
             # testcase: $a[-1] -1 as B::IV not as -1
             # hmm, if const ensure that candidate CONSTs have been HEKified. (pp_multideref assertion)
             # || SvTYPE(keysv) >= SVt_PVMG
