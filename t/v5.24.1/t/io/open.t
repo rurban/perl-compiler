@@ -110,7 +110,7 @@ like( $@, qr/Bad filehandle:\s+some_glob/,          '       right error' );
 
 {
     use utf8;
-    use open qw( :utf8 :std );
+    binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
     ok( !eval { use utf8; *ǡﬁlḛ = 1; open my $f, '<&', *ǡﬁlḛ; 1; },    '<& on a non-filehandle glob' );
     like( $@, qr/Bad filehandle:\s+ǡﬁlḛ/u,          '       right error' );
 }

@@ -12,7 +12,7 @@ BEGIN {
 use strict;
 use warnings;
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 
 plan(tests => 52);
 
@@ -62,7 +62,7 @@ my $prog =    q~
          }
      }
      use utf8;
-     use open qw( :utf8 :std );
+     binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 
      @숩cਲꩋ::ISA = "ｌㅔf";
      @ｌㅔf::ISA = "톺ĺФț";
@@ -124,7 +124,7 @@ for(
          }
      }
      use utf8;
-     use open qw( :utf8 :std );
+     binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
      @숩cਲꩋ::ISA = "ｌㅔf::Side";
      @ｌㅔf::Side::ISA = "톺ĺФț";
 
@@ -189,7 +189,7 @@ for(
          }
      }
       use utf8;
-      use open qw( :utf8 :std );
+      binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
       use Encode ();
 
       if (grep /\P{ASCII}/, @ARGV) {
@@ -225,7 +225,7 @@ for(
          }
       }
       use utf8;
-      use open qw( :utf8 :std );
+      binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
       use Encode ();
 
       if (grep /\P{ASCII}/, @ARGV) {
@@ -309,7 +309,7 @@ my $prog =    q~#!perl -w
          }
      }
      use utf8;
-     use open qw( :utf8 :std );
+     binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
      @펱ᑦ::ISA = "T잌ዕ";
      @T잌ዕ::ISA = "Bᛆヶṝ";
      

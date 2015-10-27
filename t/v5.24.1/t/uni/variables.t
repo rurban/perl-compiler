@@ -12,7 +12,7 @@ BEGIN {
 
 use 5.016;
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 no warnings qw(misc reserved);
 
 plan (tests => 66894);

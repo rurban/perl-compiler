@@ -8,7 +8,7 @@ BEGIN { chdir 't' if -d 't'; require q(./test.pl);
 }
 
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 
 plan(tests => 12);
 

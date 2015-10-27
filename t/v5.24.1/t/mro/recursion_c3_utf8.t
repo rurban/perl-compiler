@@ -10,7 +10,7 @@ BEGIN {
     set_up_inc('../lib');
 }
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 
 plan(skip_all => "Your system has no SIGALRM") if !exists $SIG{ALRM};
 plan(tests => 8);

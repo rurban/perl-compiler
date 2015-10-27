@@ -6,7 +6,7 @@ use warnings;
 require q(./test.pl); plan(tests => 10);
 
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 
 =pod
 

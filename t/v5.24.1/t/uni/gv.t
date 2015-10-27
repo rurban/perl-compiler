@@ -12,7 +12,7 @@ BEGIN {
 }
 
 use utf8;
-use open qw( :utf8 :std );
+binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
 use warnings;
 
 plan( tests => 206 );
@@ -301,7 +301,7 @@ is($Ｊ[0], 1);
         # bug is still present
         my $prog = <<'EOPROG';
             use utf8;
-            use open qw( :utf8 :std );
+            binmode STDOUT, ":utf8"; binmode STDERR, ":utf8";
             package ᴹ;
             $| = 1;
             sub DESTROY {eval {die qq{Farewell $_[0]}}; print $@}
