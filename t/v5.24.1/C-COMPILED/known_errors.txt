@@ -33,7 +33,6 @@ io/errno.t                   SIG       BC issue #271: END block issue
 io/iofile.t                  SIG       BC issue #207 - reused variable conflict - No changes to  t/io/iofile.t since 5.14.4
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 io/open.t                    SIG       BC issue #219 (overload) - new tests in upstream since 5.14.4
-io/perlio.t                  SIG       BC issue #223 (glob) + BC issue #271: END block issue
 mro/basic_01_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
 mro/basic_02_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
 mro/basic_03_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
@@ -84,14 +83,13 @@ op/const-optree.t            PLAN      BC issue #250 - access disallowed key in 
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/current_sub.t             PLAN      BC issue #250 - access disallowed key in restricted hash
-op/dbm.t                     SIG       BC issue #223 - glob issue
-op/defins.t                  SIG       BC issue #223 - glob issue
+op/dbm.t                     TESTS     Test results:
+op/defins.t                  TESTS     Test results:
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/evalbytes.t               PLAN      BC issue #250 - access disallowed key in restricted hash
 op/exists_sub.t              SIG       BC issue #276
 op/filetest.t                TESTS     BC issue #219 - overload issue
 op/fresh_perl_utf8.t         PLAN      Plan was valid
-op/glob.t                    SIG       BC issue #223 - glob issue
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/gv.t                      SIG       BC issue #270 + BC issue #219 - overload issue
@@ -114,7 +112,7 @@ op/overload_integer.t        PLAN      BC issue #219 - overload issue
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      BC issue #250 - access disallowed key in restricted hash
-op/readdir.t                 SIG       BC issue #223 - glob
+op/readdir.t                 TESTS     Test results:
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     SIG       BC issue #290 XPVMG - Subroutine setcolor redefined and Issue 285 & 286
 op/reset.t                   TESTS     BC issue #252: reset
@@ -132,7 +130,6 @@ op/svleak.t                  COMPAT    This test uses XS::APItest, which we don'
 op/switch.t                  PLAN      BC issue #219 - overload issue
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
-op/tie_fetch_count.t         SIG       BC issue #279
 op/universal.t               TESTS     Test results:
 op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/vec.t                     SIG       BC issue #269
