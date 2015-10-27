@@ -144,6 +144,7 @@ t/issue273.t
 t/issue274.t
 t/issue281.t
 t/issue282.t
+t/issue287.t
 t/issue29.t
 t/issue293.t
 t/issue301.t
