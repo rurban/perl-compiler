@@ -130,7 +130,7 @@ sub save {
     else {
         $package = $gv->STASH->NAME;
     }
-    return $sym if B::C::skip_pkg($package);
+    return q/(SV*)&PL_sv_undef/ if B::C::skip_pkg($package);
 
     # If we come across a stash hash, we therefore have code using it so we need to mark it was used so it won't be deleted.
     if ( $gvname =~ m/::$/ ) {
