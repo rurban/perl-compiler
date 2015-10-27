@@ -775,6 +775,9 @@ sub delsym {
 }
 
 sub curcv { $B::C::curcv }
+# GH #279 Bizarre copy of CODE. corrupt stack in aux_list
+#sub curcv { $PERL522 and $B::C::curcv == B::main_cv
+#              ? bless $B::C::curcv, 'B::IV' : $B::C::curcv }
 sub set_curcv($) { $B::C::curcv = shift; }
 
 # returns cstring, len, utf8 flags of a string
@@ -5259,6 +5262,19 @@ sub B::HV::save {
     # For efficiency we skip most stash symbols unless -fstash.
     # However it should be now safe to save all stash symbols.
     # $fullname !~ /::$/ or
+    $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
+    if ($PERL510 and mro::get_mro($name) eq 'c3') {
+      mark_package('mro', 1);
+    }
+    if ($PERL518 and $magic =~ /c/) {
+      my ($cname, $len, $utf8) = strlen_flags($name);
+      # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
+      warn "defer AMT magic of $name with magic '$magic'\n" if $verbose; # of XS loaded hashes
+      $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+    } else {
+      warn "Warning: skip stash $name with magic '$magic'\n" if $verbose and $magic;
+    }
+    return $sym if skip_pkg($name) or $name eq 'main';
     if (!$B::C::stash) { # -fno-stash: do not save stashes
       $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
       if ($PERL510 and is_using_mro() && mro::get_mro($name) eq 'c3') {
@@ -5273,10 +5289,10 @@ sub B::HV::save {
         warn "Warning: skip stash $name with magic '$magic'\n" if $verbose and $magic;
       }
       return $sym;
+    } else {
+      $init->add( "SvREFCNT_inc($sym);" );
+      warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
     }
-    return $sym if skip_pkg($name) or $name eq 'main';
-    $init->add( "SvREFCNT_inc($sym);" );
-    warn "Saving stash keys for HV \"$name\" from \"$fullname\"\n" if $debug{hv};
   }
 
   # Ordinary HV or Stash
@@ -6928,6 +6944,7 @@ sub Dummy_BootStrap { }
 #ignore nullified cv
 sub B::SPECIAL::savecv {}
 
+# we need to check not only CVs, also ISA.
 sub B::GV::savecv {
   my $gv      = shift;
   my $package = $gv->STASH->NAME;
@@ -6960,8 +6977,8 @@ sub B::GV::savecv {
     warn("Skip internal XS $fullname\n") if $debug{gv};
     # but prevent it from being deleted
     unless ($dumped_package{$package}) {
-      #$dumped_package{$package} = 1;
       mark_package($package, 1);
+      $dumped_package{$package} = 1; # beware of empty packages with only an ISA attached
     }
     return;
   }
