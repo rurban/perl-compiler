@@ -71,6 +71,12 @@ SKIP:
 { # [perl #118651]
   # test that readdir doesn't modify errno on successfully reaching the end of the list
   # in scalar context, POSIX requires that readdir() not modify errno on end-of-directory
+
+  # B::C needs to reread the dir... some extra files (.c, .bin) are created by fresh_perl
+  is(opendir(OP, "op"), 1);
+  my @D = grep(/^[^\.].*\.t$/i, readdir(OP));
+  closedir(OP);
+
   my @s;
   ok(opendir(OP, "op"), "opendir op");
   $! = 0;
