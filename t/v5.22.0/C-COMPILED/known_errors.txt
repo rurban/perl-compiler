@@ -140,7 +140,7 @@ re/reg_eval_scope.t          SIG       Exit signal is 11 SEGV
 re/reg_fold.t                PLAN      Plan was valid
 re/reg_mesg.t                PLAN      Plan was valid
 re/reg_pmod.t                TESTS     Test results:
-re/regex_sets.t              SIG       Exit signal is 11 SEGV
+re/regex_sets.t              SIG       BC issue #296
 re/regexp_unicode_prop.t     PLAN      Plan was valid
 re/rxcode.t                  TESTS     Test results:
 re/subst_amp.t               TESTS     Test results:
