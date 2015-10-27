@@ -116,7 +116,7 @@ op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      BC issue #250 - access disallowed key in restricted hash
 op/readdir.t                 SIG       BC issue #223 - glob
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
-op/ref.t                     SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
+op/ref.t                     SIG       BC issue #290 XPVMG - Subroutine setcolor redefined and Issue 285 & 286
 op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              PLAN      Plan was valid
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
