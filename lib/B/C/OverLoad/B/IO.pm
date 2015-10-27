@@ -199,13 +199,15 @@ sub save {
         }
     }
 
-    #my $stash = $io->SvSTASH;
-    #if ($$stash) {
-    #  init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$stash ) );
-    #  $stash->save;
-    #  init()->add( sprintf( "IoSTASH(s\\_%x) = s\\_%x;", $$io, $$stash ) );
-    #  debug( gv => "done saving STASH 0x%x for IO 0x%x\n", $$stash, $$io );
-    #}
+    my $stash = $io->SvSTASH;
+    if ($$stash) {
+        $stash->save;
+        init()->add(
+            sprintf( "SvREFCNT(%s) += 1;", objsym($stash) ),
+            sprintf( "SvSTASH_set(%s, %s);", $sym, objsym($stash) )
+        );
+        debug( gv => "done saving STASH %s for IO %s\n", objsym($stash), $sym );
+    }
 
     return $sym;
 }
