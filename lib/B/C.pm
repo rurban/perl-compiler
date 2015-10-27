@@ -1475,10 +1475,7 @@ sub B::UNOP_AUX::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
-  # const and sv already at compile-time, gv deferred to init-time.
-  # The aux buffer in core has internally a length prefix. our C.xs aux method adds that also.
-  my $aux = $op->aux;
-  my @aux_list = $op->aux_list(curcv);
+  my @aux_list = $op->aux_list($ITHREADS ? curcv : \2); # GH#283
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
   my $ix = $unopauxsect->index + 1;
@@ -1520,6 +1517,7 @@ sub B::UNOP_AUX::save {
       $s .= ($C99 ? sprintf("\t,{.uv=0x%x} \t/* %s: %u */\n", $item, $cmt, $item)
                   : sprintf("\t,0x%x \t/* %s: %u */\n", $item, $cmt, $item));
     } else {
+      # const and sv already at compile-time, gv deferred to init-time.
       # testcase: $a[-1] -1 as B::IV not as -1
       # hmm, if const ensure that candidate CONSTs have been HEKified. (pp_multideref assertion)
       # || SvTYPE(keysv) >= SVt_PVMG
