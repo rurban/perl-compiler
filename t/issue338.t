@@ -14,6 +14,7 @@ ctestok(1, 'C,-O3', 'ccode338i', <<'EOF', $todo.'C #338 qr utf8');
 use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";
 EOF
 
+$todo = ($] > 5.021) ? "TODO " : "";
 ctestok(2, 'C,-O3', 'ccode333i', <<'EOF', $todo.'C #333 qr utf8');
 use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん");
