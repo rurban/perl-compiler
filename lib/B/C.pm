@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_05';
+our $VERSION = '1.52_06';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -4221,7 +4221,9 @@ sub B::GV::save {
   } else {
     $package = $gv->STASH->NAME;
   }
-  return $sym if skip_pkg($package);
+  if (skip_pkg($package)) {
+    return q/(SV*)&PL_sv_undef/;
+  }
 
   my $fullname = $package . "::" . $gvname;
   my $fancyname;
