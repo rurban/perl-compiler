@@ -32,9 +32,6 @@ extra/reset.t                TESTS     BC issue 252: Reset is not localized to t
 io/errno.t                   SIG       BC issue #271: END block issue
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
-mro/basic_05_c3_utf8.t       PLAN      Plan was valid
-mro/basic_05_dfs_utf8.t      PLAN      Plan was valid
-mro/basic_utf8.t             PLAN      Plan was valid
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
 mro/complex_c3.t             SIG       BC issue #298 - next::method broken.
@@ -145,14 +142,13 @@ uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pra
 uni/eval.t                   PLAN      Plan was valid
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  SIG       BC issue #283 - deprecated "encoding" pragma
-uni/gv.t                     PLAN      Plan was valid
+uni/gv.t                     TESTS     Test results:
 uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 uni/latin2.t                 SIG       BC issue #283 - deprecated "encoding" pragma
 uni/lex_utf8.t               PLAN      Plan was valid
 uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/package.t                TESTS     Test results:
 uni/parser.t                 PLAN      TODO: broke
 uni/readline.t               TESTS     Test results:
 uni/stash.t                  TESTS     BC issue #250 - access disallowed key in restricted hash
@@ -161,7 +157,6 @@ uni/tr_7jis.t                PLAN      BC issue #283 - deprecated "encoding" pra
 uni/tr_eucjp.t               PLAN      BC issue #283 - deprecated "encoding" pragma
 uni/tr_sjis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
 uni/tr_utf8.t                PLAN      BC issue #283 - deprecated "encoding" pragma
-uni/universal.t              PLAN      Plan was valid
 uni/upper.t                  SIG       BC issue #253 - Unicode::UCD
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
