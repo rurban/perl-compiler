@@ -9,4 +9,5 @@ foreach my $f ( $f1, $f2 ) {
     die "Cannot tidy file $f" unless $? == 0;
 }
 
-exec qw{colordiff -y -Bbw}, "$f1.tdy", "$f2.tdy";
+my $width = $ENV{'COLORDIFF_WIDTH'} || 130;
+exec qw{colordiff -y -Bbw}, "--width=$width", "$f1.tdy", "$f2.tdy";
