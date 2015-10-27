@@ -83,7 +83,6 @@ op/const-optree.t            PLAN      BC issue #250 - access disallowed key in 
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/current_sub.t             PLAN      BC issue #250 - access disallowed key in restricted hash
-op/dbm.t                     TESTS     Test results:
 op/defins.t                  TESTS     Test results:
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/evalbytes.t               PLAN      BC issue #250 - access disallowed key in restricted hash

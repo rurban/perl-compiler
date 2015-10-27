@@ -45,16 +45,22 @@ $prog =~ s/\@\@\@\@/$filename/;
 fresh_perl_is("require AnyDBM_File;\n$prog", 'ok', {}, 'explicit require');
 fresh_perl_is($prog, 'ok', {}, 'implicit require');
 
-$prog = <<'EOC';
+SKIP: {
+
+    skip "B::C COMPAT", 1 if $0 !~ qr{\.t};
+
+    $prog = <<'EOC';
 @INC = ();
 dbmopen(%LT, $filename, 0666);
 1 while unlink $filename;
 1 while unlink glob "$filename.*";
 die "Failed to fail!";
 EOC
+    fresh_perl_like($prog, qr/No dbm on this machine/, {},
+            'implicit require fails');
 
-fresh_perl_like($prog, qr/No dbm on this machine/, {},
-		'implicit require fails');
+}
+
 fresh_perl_like('delete $::{"AnyDBM_File::"}; ' . $prog,
 		qr/No dbm on this machine/, {},
 		'implicit require and no stash fails');
