@@ -57,10 +57,11 @@ sub get_double_value ($) {
     # Handle infinite and NaN values
     if ( defined $nvx ) {
         if ( $B::C::Flags::Config{d_isinf} ) {
-            return 'INFINITY'  if $nvx eq 'Inf';
-            return '-INFINITY' if $nvx eq '-Inf';
+            return 'INFINITY'  if $nvx =~ /^Inf/i;
+            return '-INFINITY' if $nvx =~ /^-Inf/i;
         }
-        return 'NAN' if $B::C::Flags::Config{d_isnan} && $nvx eq 'NaN';
+        return 'NAN' if $nvx =~ /^NaN/i and $B::C::Flags::Config{d_isnan};
+        # TODO NANL for long double
     }
 
     # my $DBLMAX = "1.18973149535723176502e+4932L"
