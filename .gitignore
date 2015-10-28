@@ -72,3 +72,4 @@ nytprof/
 /t/v5.22.0/t/pcc*
 /t/v5.22.0/t/.dir
 /t/v5.22.0/t/.pag
+.prove

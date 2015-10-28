@@ -2,6 +2,8 @@
 
 use v5.14;    # or later
 
+use Cwd;
+
 run(@ARGV) unless caller;
 
 use constant TEST_SUITE_VERSION => 'v5.22.0';
@@ -9,6 +11,8 @@ use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/know
 
 sub run {
     my (@args) = @_;
+
+    my @copy_args = @args;
 
     my $v = TEST_SUITE_VERSION;
 
@@ -18,6 +22,12 @@ sub run {
     my $run_compile_version = !grep { $_ =~ qr{^-+u(ncompiled)?$} } @args;
     my @args                = grep  { $_ !~ qr{^-+u(ncompiled)?$} } @args;
 
+    my $saving_state;
+    if ( !grep { $_ =~ qr{^--state} } @args ) {
+        unshift @args, '--state=save';
+        unlink '.prove';
+        $saving_state = 1;
+    }
     if ( grep { $_ =~ qr{^-+errors?$} } @args ) {
         push @args, load_error_tests();
         @args = grep { $_ !~ qr{^-+errors?$} } @args;
@@ -27,6 +37,22 @@ sub run {
         push @args, load_new_error_tests();
         @args = grep { $_ !~ qr{^-+(git|new)$} } @args;
     }
+    my $restart = sub {
+        my $cwd = cwd();
+        unshift @copy_args, '-v' if !grep { $_ eq '-v' } @copy_args;
+        my @cmd = ( $0, '--state=failed', @copy_args );
+        return sub {
+
+            # cannot rerun if we do not save the state
+            return unless $saving_state;
+            $ENV{VERBOSE} = 1;
+            print "# Rerunning failures with verbose on\n";
+            print join( ' ', '#', '>', @cmd, "\n" );
+            chdir($cwd);
+            exec @cmd;
+        };
+      }
+      ->();
 
     my @tests;
     while ( $args[-1] && $args[-1] =~ m/\.t$/ ) {
@@ -37,14 +63,14 @@ sub run {
             $t = 't/' . $v . '/t/' . $t;
         }
 
-        $t =~ s{C-COMPILED}{t}; # normalize
+        $t =~ s{C-COMPILED}{t};    # normalize
 
         my ( $before, $after ) = split( $v . '/t/', $t );
         if ($run_compile_version) {
             $t = $before . $v . '/C-COMPILED/' . $after;
         }
         else {
-            $t = $after;    # need to chdir for the uncompiled version
+            $t = $after;           # need to chdir for the uncompiled version
         }
 
         #die "Cannot find a test file" unless -e $t;
@@ -64,7 +90,8 @@ sub run {
     }
 
     # allow glob...
-    exec( join ' ', @cmd );
+    system( join ' ', @cmd );
+    $restart->() if $?;
 
     return 1;
 }
