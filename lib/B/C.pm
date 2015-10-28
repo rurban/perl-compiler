@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_06';
+our $VERSION = '1.52_07';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -5427,13 +5427,14 @@ sub B::IO::save {
 
   if ( $PERL518 ) {
     my $stash = $io->SvSTASH;
-    if ($$stash) {
-        $stash->save;
+    if ($stash and $$stash) {
+        my $stsym = $stash->save("%".$stash->NAME);
         $init->add(
-              sprintf( "SvREFCNT(%s) += 1;", objsym($stash) ),
-              sprintf( "SvSTASH_set(%s, %s);", $sym, objsym($stash) )
+              sprintf( "SvREFCNT(%s) += 1;", $stsym ),
+              sprintf( "SvSTASH_set(%s, %s);", $sym, $stsym )
         );
-        warn sprintf( "done saving STASH %s for IO %s\n", objsym($stash), $sym ) if $debug{gv};
+        warn sprintf( "done saving STASH %s %s for IO %s\n", $stash->NAME, $stsym, $sym )
+          if $debug{gv};
     }
   }
 
