@@ -94,7 +94,7 @@ op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
 op/reset.t                   TESTS     BC issue #252: reset
-op/signatures.t              TESTS     Test results:
+op/signatures.t              TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
 op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
