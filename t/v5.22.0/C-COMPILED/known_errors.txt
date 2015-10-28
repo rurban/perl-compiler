@@ -107,7 +107,7 @@ op/override.t                COMPAT    crazy test which override CORE::GLOBAL::r
 op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      BC issue #250 - access disallowed key in restricted hash
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
-op/ref.t                     SIG       BC issue #290 XPVMG - Subroutine setcolor redefined and Issue 285 & 286
+op/ref.t                     TESTS     Test results:
 op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              PLAN      Plan was valid
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
@@ -151,7 +151,7 @@ uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pra
 uni/eval.t                   PLAN      Plan was valid
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  SIG       BC issue #283 - deprecated "encoding" pragma
-uni/gv.t                     SIG       BC issue #290
+uni/gv.t                     PLAN      Plan was valid
 uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
 uni/latin2.t                 SIG       BC issue #283 - deprecated "encoding" pragma
 uni/lex_utf8.t               PLAN      Plan was valid
