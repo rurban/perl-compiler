@@ -1099,9 +1099,8 @@ result[2811]='ok
 @- = 0 0 2 7
 @+ = 10 1 6 10
 len @- = 4'
-tests[281]='#!perl
-
-open(NEST, '>Op_write.tmp');
+tests[281]='
+open(NEST, ">Op_write.tmp");
 format NEST =
 @<<<
 {
