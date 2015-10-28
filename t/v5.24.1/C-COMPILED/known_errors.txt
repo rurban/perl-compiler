@@ -68,7 +68,7 @@ op/caller.t                  TESTS     BC issue #267
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/concat2.t                 TESTS     BC issue #219 - overload issue
-op/const-optree.t            PLAN      ?? 
+op/const-optree.t            PLAN      BC issue #305 - feature refaliasing 
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
