@@ -102,7 +102,7 @@ op/sort.t                    TESTS     BC issue #219 - overload issue
 op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
-op/state.t                   PLAN      BC issue #303 - features state + eval
+op/state.t                   PLAN      BC issue #302 - features state + eval
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
