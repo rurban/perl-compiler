@@ -14,10 +14,23 @@ perl:
   - "5.22-thr-dbg"
   - "dev"
   - "blead"
+
+# fast_finish: http://blog.travis-ci.com/2013-11-27-fast-finishing-builds/
+matrix:
+  fast_finish: true
+  allow_failures:
+    - perl: "5.8"
+    - perl: "5.18"
+    - perl: "5.20"
+    - perl: "5.22-thr-dbg"
+    - perl: "dev"
+    - perl: "blead"
+
 before_install:
   - mkdir /home/travis/bin || true
   - ln -s `which true` /home/travis/bin/cpansign
   - eval $(curl https://travis-perl.github.io/init) --auto
+
 install:
   - export COVERAGE=0 AUTOMATED_TESTING=1
   - cpan-install --deps
@@ -35,15 +48,3 @@ notifications:
     on_success: change
     on_failure: always
 
-# fast_finish: http://blog.travis-ci.com/2013-11-27-fast-finishing-builds/
-matrix:
-  fast_finish: true
-  allow_failures:
-    - perl: "5.8"
-    - perl: "5.18"
-    - perl: "5.20"
-    - perl: "5.22"
-    - perl: "5.22-thr"
-    - perl: "5.22-dbg"
-    - perl: "dev"
-    - perl: "blead"
