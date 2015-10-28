@@ -802,10 +802,12 @@ static int bget_swab = 0;
     padnl = (SV*)newPADNAMELIST(max);                   \
     BSET_OBJ_STOREX(padnl);                             \
   } STMT_END
+/* Beware: PadnamelistMAX == xpadnl_fill (-1) */
 #define BSET_padnl_push(sv, pn)  STMT_START {           \
     PADNAMELIST* padnl = (PADNAMELIST*)sv;              \
-    SSize_t ix = ++PadnamelistMAX((PADNAMELIST*)padnl); \
+    SSize_t ix = 1+PadnamelistMAX((PADNAMELIST*)padnl); \
     padnamelist_store(padnl, ix, (PADNAME*)pn);         \
+    padnl->xpadnl_max = ix;                             \
   } STMT_END
 #define BSET_unop_aux(op, pv)  STMT_START {           \
     cUNOP_AUXx(op)->op_aux = ((UNOP_AUX_item *)pv)+1; \
@@ -822,20 +824,8 @@ static int bget_swab = 0;
 # undef PadlistNAMES
 # define PadlistNAMES(pl)       *((PADNAMELIST **)PadlistARRAY(pl))
 #endif
-/* extra PADNAMELIST: v5.17.3-49-g36c300b */
-#if (PERL_VERSION >= 18) || ( PERL_VERSION == 17 && PERL_SUBVERSION > 3)
-#if PERL_VERSION >= 22
-#define BSET_padl_name(padl, pad)  \
-    Perl_padnamelist_store(aTHX_ (PADNAMELIST*)padl, PadnamelistMAX((PADNAMELIST*)padl), (PADNAME*)pad);
-#else
-#define BSET_padl_name(padl, pad) BSET_padl_sym(padl, pad)
-#endif
-#define BSET_padl_sym(padl, pad)   \
-    Perl_padlist_store(aTHX_ (PADLIST*)padl, PadlistMAX((PADLIST*)padl), (PAD*)pad);
-#else
 #define BSET_padl_name(padl, pad)  PadlistARRAY((PADLIST*)padl)[0] = (PAD*)pad
 #define BSET_padl_sym(padl, pad)   PadlistARRAY((PADLIST*)padl)[1] = (PAD*)pad
-#endif
 #define BSET_xcv_name_hek(cv, arg)                                      \
   STMT_START {                                                          \
     U32 hash; I32 len = strlen(arg);                                    \

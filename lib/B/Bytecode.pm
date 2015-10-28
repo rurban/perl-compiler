@@ -782,14 +782,10 @@ sub B::PAD::bsave($$) {
   my ( $av, $ix ) = @_;
   my @array = $av->ARRAY;
   $_ = $_->ix for @array; # save the elements
-  if ($PERL522) {
-    $av->B::NULL::bsave($ix);
-    asm "av_extend", scalar @array if @array;
-    asm "av_pushx", $_ for @array;
-  } else {
-    $av->B::NULL::bsave($ix);
-    # av_extend always allocs 3
-    asm "av_extend", scalar @array if @array;
+  $av->B::NULL::bsave($ix);
+  my $fill = scalar @array;
+  asm "av_extend", $fill if @array;
+  if ($fill > 1 or $array[0]) {
     asm "av_pushx", $_ for @array;
   }
 }

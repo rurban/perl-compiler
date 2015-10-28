@@ -446,7 +446,7 @@ EOT
 	$rvaldcast = "($argtype)";
         $printarg = "PTR2UV(arg)";
     } else {
-	$argfmt = '%d';
+	$argfmt = $fundtype =~ /^U/ ? '%u' : '%d';
 	$rvaldcast = '(int)';
         $printarg = "${rvaldcast}arg";
     }
