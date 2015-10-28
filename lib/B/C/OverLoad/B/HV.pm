@@ -16,7 +16,7 @@ package B::HV;
 
 use strict;
 
-use B qw/cstring SVf_READONLY SVs_OBJECT SVf_OOK/;
+use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags/;
@@ -88,11 +88,12 @@ sub save {
         )
     );
 
+    my $flags = $hv->FLAGS & ~SVf_READONLY & ~SVf_PROTECT;
+
     svsect()->add(
         sprintf(
             "&xpvhv_list[%d], %Lu, 0x%x, {0}",
-            xpvhvsect()->index, $hv->REFCNT,
-            $hv->FLAGS & ~SVf_READONLY
+            xpvhvsect()->index, $hv->REFCNT, $flags
         )
     );
 

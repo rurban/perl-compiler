@@ -143,7 +143,8 @@ sub save_magic {
         );
         return '';
     }
-    init()->add( sprintf( "SvREADONLY_off((SV*)s\\_%x);", $$sv ) ) if $sv_flags & SVf_READONLY;
+    init()->add( sprintf( "SvREADONLY_off((SV*)s\\_%x);", $$sv ) )
+      if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
 
     my @mgchain = $sv->MAGIC;
     my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
@@ -270,7 +271,8 @@ CODE1
             );
         }
     }
-    init()->add( sprintf( "SvREADONLY_on((SV*)s\\_%x);", $$sv ) ) if $sv_flags & SVf_READONLY;
+    init()->add( sprintf( "SvREADONLY_on((SV*)s\\_%x);", $$sv ) )
+      if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
     $magic;
 }
 
