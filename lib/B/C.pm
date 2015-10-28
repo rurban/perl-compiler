@@ -140,7 +140,7 @@ sub output {
     if ($format eq "\t{ %s }, /* %s_list[%d] %s */%s\n") {
       # Scoped no warnings without loading the module.
       local $^W;
-      local ${^WARNING_BITS};
+      BEGIN{ ${^WARNING_BITS} = 0 }
       printf $fh $format, $_, $section->name, $i, $ref, $dbg;
     } else {
       printf $fh $format, $_;
@@ -946,7 +946,7 @@ sub save_pv_or_rv {
       # since its is converted to 0
       {
         local $^W;
-        local ${^WARNING_BITS};
+        BEGIN { ${^WARNING_BITS} = 0 }
         if ($static and $] < 5.017006 and abs($pv || 0) > 0) {
           $static = 0;
         }
