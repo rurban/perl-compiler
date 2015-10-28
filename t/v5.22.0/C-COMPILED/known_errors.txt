@@ -59,7 +59,7 @@ mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
-op/attrproto.t               TESTS     Test results:
+op/attrproto.t               TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/attrs.t                   TESTS     Test results:
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
