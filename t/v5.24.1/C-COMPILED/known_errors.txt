@@ -55,7 +55,7 @@ mro/next_skip_utf8.t         SIG       BC issue #298 - next::method broken (ASSU
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
-mro/package_aliases_utf8.t   SKIP      Code compiles but never terminates when run.
+mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures are already reported. Waiting for other BC issues to clear before researching this one.
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
