@@ -1155,10 +1155,15 @@ sub force_heavy {
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
 # in perl_init ( ~10 bytes/op with GCC/i386 )
 sub B::OP::fake_ppaddr {
-  return "NULL" unless $_[0]->can('name');
+  return "NULL" unless $_[0]->can('name') ;
+
+  my $ucname = uc( $_[0]->name );
+  # no optimizations for Devel::Peek
+  return "NULL" if $ucname =~ qr{DEVEL_PEEK};
+
   return $B::C::optimize_ppaddr
-    ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
-    : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
+    ? sprintf( "INT2PTR(void*,OP_%s)", $ucname )
+    : ( $verbose ? sprintf( "/*OP_%s*/NULL", $ucname ) : "NULL" );
 }
 sub B::FAKEOP::fake_ppaddr { "NULL" }
 # XXX HACK! duct-taping around compiler problems
