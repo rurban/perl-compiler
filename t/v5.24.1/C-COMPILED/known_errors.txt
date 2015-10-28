@@ -80,7 +80,6 @@ op/goto_xs.t                 COMPAT    needs XS::APItest
 op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/join.t                    TESTS     BC issue #219 - overload issue
-op/leaky-magic.t             TESTS     Test results:
 op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
 op/lex_assign.t              PLAN      Plan was valid

@@ -18,7 +18,12 @@ plan (tests => $tests);
 
 use tests 2; # First make sure that %! %- %+ do not load extra modules.
 map %{"foo::$_"}, qw< ! - + >;
-ok !exists $INC{'Errno.pm'}, '$swext::! does not load Errno';
+SKIP: {
+    # Because B::C sees test.pl use $!, it rightfully will see Errno as having been loaded.
+    skip "B::C COMPAT", 1 if $0 !~ qr{\.t};
+    ok !exists $INC{'Errno.pm'}, '$swext::! does not load Errno';
+}
+
 ok !exists $INC{'Tie/Hash/NamedCapture.pm'},
   '$foo::+ and $foo::- do not load Tie::Hash::NamedCapture';
 
