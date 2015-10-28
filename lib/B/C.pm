@@ -642,6 +642,7 @@ my $OP_THREADSV = opnumber('threadsv');
 my $OP_DBMOPEN = opnumber('dbmopen');
 my $OP_FORMLINE = opnumber('formline');
 my $OP_UCFIRST = opnumber('ucfirst');
+my $OP_CUSTOM = opnumber('custom');
 
 # special handling for nullified COP's.
 my %OP_COP = ( opnumber('nextstate') => 1 );
@@ -1281,6 +1282,9 @@ sub B::OP::_save_common {
       warn "package_pv for method_name not found\n" if $debug{cv};
     }
   }
+  if ($op->type == $OP_CUSTOM) {
+    warn sprintf("CUSTOM OP %s\n", $op->name) if $verbose;
+  }
   # $prev_op = $op;
   return sprintf( "s\\_%x, s\\_%x, %s",
                   ${ $op->next },
@@ -1565,10 +1569,12 @@ sub B::UNOP_AUX::save {
   $sym;
 }
 
-sub B::BINOP::save {
+# cannot save it statically in a sect. need the class (ref) and the ppaddr
+sub B::XOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  # which class
   $binopsect->comment("$opsect_common, first, last");
   $binopsect->add(
     sprintf( "%s, s\\_%x, s\\_%x",
@@ -1578,6 +1584,30 @@ sub B::BINOP::save {
   $binopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $binopsect->index;
   $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
+    unless $B::C::optimize_ppaddr;
+  $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
+  do_labels ($op, 'first', 'last');
+  $sym;
+}
+
+sub B::BINOP::save {
+  my ( $op, $level ) = @_;
+  my $sym = objsym($op);
+  return $sym if defined $sym;
+  #return B::XOP::save(@_) if $op->type == $OP_CUSTOM;
+
+  $binopsect->comment("$opsect_common, first, last");
+  $binopsect->add(
+    sprintf( "%s, s\\_%x, s\\_%x",
+             $op->_save_common,
+             ${ $op->first },
+             ${ $op->last } ));
+  $binopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+  my $ix = $binopsect->index;
+  my $ppaddr = $op->type == $OP_CUSTOM
+    ? sprintf('Perl_custom_op_xop(aTHX_ INT2PTR(OP*,0x%x))', $$op)
+    : $op->ppaddr;
+  $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
   do_labels ($op, 'first', 'last');
