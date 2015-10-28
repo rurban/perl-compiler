@@ -47,7 +47,8 @@ sub compile_check {
 }
 
 compile_check(1,'C,-O3,-UB','ccode130i',$issue,"lexsubs compile ok");
-ctestok(2,'C,-O3,-UB,-Uwarnings,-UCarp,-UExporter,-UConfig','ccode130i',$issue,"lexsubs run C ok");
+ctestok(2,'C,-O3,-UB,-Uwarnings,-UCarp,-UExporter,-UConfig','ccode130i',$issue,
+        "lexsubs run C ok");
 ctestok(3,'CC,-UB,-Uwarnings,-UCarp,-UExporter,-UConfig','cccode130i',$issue,
         ($]>5.021?"TODO 5.22 ":"")."lexsubs run CC ok");
 
