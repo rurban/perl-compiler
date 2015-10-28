@@ -42,11 +42,14 @@ BEGIN {
     B->import(qw(walkoptree));
   }
   if ($] > 5.017) {
-    B->import('SVf_IsCOW') ;
+    B->import('SVf_IsCOW');
   } else {
-    eval q[
-      sub SVf_IsCOW() {}; # unused
-     ];
+    eval q[sub SVf_IsCOW() {};]; # unused
+  }
+  if ($] > 5.021006) {
+    B->import('SVf_PROTECT');
+  } else {
+    eval q[sub SVf_PROTECT() {};]; # unused
   }
   if ( $] >= 5.017005 ) {
     @B::PAD::ISA = ('B::AV');
@@ -460,12 +463,14 @@ sub B::HV::ix {
   defined($ix) ? $ix : do {
     my ( $ix, $i, @array );
     my $name = $hv->NAME;
+    my $flags = $hv->FLAGS & ~SVf_READONLY;
+    $flags &= ~SVf_PROTECT if $PERL522;
     if ($name) {
       nice "[STASH $tix]";
       B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_stashpvx", cstring $name;
       asm "ldsv", $tix if $PERL56;
-      asm "sv_flags", $hv->FLAGS, as_hex($hv->FLAGS);
+      asm "sv_flags", $flags, as_hex($flags);
       $svtab{$$hv} = $varix = $ix = $tix++;
       asm "xhv_name", pvix $name;
 
@@ -476,10 +481,11 @@ sub B::HV::ix {
     else {
       nice "[HV $tix]";
       B::Assembler::maxsvix($tix) if $debug{A};
-      asm "newsvx", $hv->FLAGS, $debug{Comment} ? sv_flags($hv) : '';
+      asm "newsvx", $flags, $debug{Comment} ? sv_flags($hv) : '';
       asm "stsv", $tix if $PERL56;
       $svtab{$$hv} = $varix = $ix = $tix++;
-      my $stashix = $hv->SvSTASH->ix;
+      my $stash = $hv->SvSTASH;
+      my $stashix = $stash ? $hv->SvSTASH->ix : 0;
       for ( @array = $hv->ARRAY ) {
         next if $i = not $i;
         $_ = $_->ix;
@@ -494,6 +500,7 @@ sub B::HV::ix {
       asm( "xhv_riter", $hv->RITER ) if VERSION < 5.009;
     }
     asm "sv_refcnt", $hv->REFCNT if $hv->REFCNT != 1;
+    asm "sv_flags", $hv->FLAGS, as_hex($hv->FLAGS) if $hv->FLAGS & SVf_READONLY;
     $ix;
   }
 }
