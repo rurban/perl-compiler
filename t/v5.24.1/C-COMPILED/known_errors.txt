@@ -27,7 +27,7 @@ base/lex.t                   PLAN      BC issue #222 - Cannot use '<<' in regexp
 comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse behavior so not relevant to B::C
 comp/hints.t                 COMPAT    tests are using BEGIN block, do not ready for B::C
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
-comp/require.t               PLAN      BC issue #245 - Cannot reload XSLoader
+comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
 extra/reset.t                TESTS     BC issue 252: Reset is not localized to the current namespace
 io/errno.t                   SIG       BC issue #271: END block issue
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
@@ -59,8 +59,8 @@ mro/package_aliases_utf8.t   SKIP      Code compiles but never terminates when r
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
-op/attrproto.t               PLAN      BC issue #250 - access disallowed key in restricted has
-op/attrs.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
+op/attrproto.t               TESTS     Test results:
+op/attrs.t                   TESTS     Test results:
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/bop.t                     TESTS     BC issue #219 - overload issue
@@ -71,10 +71,8 @@ op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/const-optree.t            PLAN      BC issue #250 - access disallowed key in restricted hash
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
-op/current_sub.t             PLAN      BC issue #250 - access disallowed key in restricted hash
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
-op/evalbytes.t               PLAN      BC issue #250 - access disallowed key in restricted hash
 op/exists_sub.t              SIG       BC issue #276
 op/filetest.t                TESTS     BC issue #219 - overload issue
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
@@ -82,32 +80,29 @@ op/goto_xs.t                 COMPAT    needs XS::APItest
 op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/join.t                    TESTS     BC issue #219 - overload issue
-op/lc.t                      TESTS     BC issue #250 - access disallowed key in restricted hash
 op/leaky-magic.t             TESTS     Test results:
 op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        BC issue #219 - overload issue
-op/lvref.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
+op/lvref.t                   SIG       Exit signal is 6 SIGABRT
 op/magic.t                   SIG       BC issue #271 - fork + END
 op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
-op/overload_integer.t        PLAN      BC issue #219 - overload issue
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    PLAN      BC issue #219 - overload issue
-op/postfixderef.t            PLAN      BC issue #250 - access disallowed key in restricted hash
+op/postfixderef.t            TESTS     Test results:
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
 op/reset.t                   TESTS     BC issue #252: reset
-op/signatures.t              PLAN      BC issue #250 - access disallowed key in restricted hash
+op/signatures.t              TESTS     Test results:
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
 op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
-op/sub.t                     PLAN      BC issue #250 - access disallowed key in restricted hash
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
@@ -120,45 +115,43 @@ op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
-re/fold_grind.t              PLAN      BC issue #250 - access disallowed key in restricted hash
-re/overload.t                PLAN      BC issue #219 - overload issue
+re/fold_grind.t              SIG       Exit signal is 11 SEGV
+re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     SIG       BC issue #219 - overload issue + BC issue #295
-re/pat_advanced.t            PLAN      BC issue #250 - access disallowed key in restricted hash
+re/pat_advanced.t            SIG       Exit signal is 11 SEGV
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
 re/pat_rt_report.t           PLAN      Plan was valid
 re/qr_gc.t                   TESTS     Test results:
 re/reg_eval_scope.t          SIG       Exit signal is 11 SEGV
-re/reg_fold.t                PLAN      BC issue #250 - access disallowed key in restricted hash
-re/reg_mesg.t                PLAN      BC issue #250 - access disallowed key in restricted hash
+re/reg_fold.t                SIG       Exit signal is 11 SEGV
+re/reg_mesg.t                TESTS     Test results:
 re/reg_pmod.t                TESTS     Test results:
 re/regex_sets.t              SIG       BC issue #296
-re/regexp_unicode_prop.t     PLAN      BC issue #250 - access disallowed key in restricted hash
+re/regexp_unicode_prop.t     SIG       Exit signal is 11 SEGV
 re/rxcode.t                  TESTS     Test results:
 re/subst_amp.t               TESTS     Test results:
-uni/attrs.t                  PLAN      TODO: The signatures feature is experimental at (eval 1) line 1.
 uni/caller.t                 PLAN      TODO: Undefined subroutine &????::ok called
 uni/chomp.t                  SIG       BC issue #284 - Encode::find_encoding
 uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pragma
-uni/eval.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  SIG       BC issue #283 - deprecated "encoding" pragma
 uni/gv.t                     TESTS     BC issue #301 - no warnings when redefining unicode function
-uni/labels.t                 PLAN      TODO: Label not found for \"last \x{ff2c}\x{ff2f}\x{ff2f}\x{ff30}\" at (eval 1) line 1.\n"
+uni/labels.t                 SIG       Exit signal is 11 SEGV
 uni/latin2.t                 SIG       BC issue #283 - deprecated "encoding" pragma
-uni/lex_utf8.t               PLAN      Plan was valid
+uni/lex_utf8.t               SIG       Exit signal is 11 SEGV
 uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/parser.t                 PLAN      TODO: broke
+uni/parser.t                 SIG       Exit signal is 11 SEGV
 uni/readline.t               TESTS     Test results:
 uni/stash.t                  TESTS     BC issue #250 - access disallowed key in restricted hash
 uni/title.t                  SIG       BC issue #253 - Unicode::UCD
 uni/tr_7jis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
-uni/tr_eucjp.t               PLAN      BC issue #283 - deprecated "encoding" pragma
-uni/tr_sjis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
-uni/tr_utf8.t                PLAN      BC issue #283 - deprecated "encoding" pragma
+uni/tr_eucjp.t               SIG       ?? + BC issue #283
+uni/tr_sjis.t                SIG       ?? + BC issue #283
+uni/tr_utf8.t                SIG       ?? + BC issue #283
 uni/upper.t                  SIG       BC issue #253 - Unicode::UCD
-uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
+uni/variables.t              SIG       Exit signal is 11 SEGV
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
 xtestc/0075.t                TESTS     Output is: ""
 xtestc/0095.t                TESTS     Output is: ""
@@ -184,7 +177,6 @@ xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
-xtestc/0250.t                TESTS     Output is: "Attempt to access disallowed ..."
 xtestc/0254.t                TESTS     Output is: ""
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
@@ -217,7 +209,6 @@ xtestc/0371.t                TESTS     Output is: ""
 xtestc/0374.t                BC        xtestc/0374.c is generated (-O3,-fno-fold)
 xtestc/2052.t                TESTS     Output is: ""
 xtestc/2511.t                TESTS     Output is: ""
-xtestc/2731.t                TESTS     Output is: "Attempt to access disallowed ..."
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/2800.t                BC        xtestc/2800.c is generated (-O3,-fno-fold)
 xtestc/2900.t                TESTS     Output is: "19518210 "
