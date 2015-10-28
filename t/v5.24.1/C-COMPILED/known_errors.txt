@@ -90,7 +90,7 @@ op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    PLAN      BC issue #219 - overload issue
-op/postfixderef.t            TESTS     Test results:
+op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
 op/reset.t                   TESTS     BC issue #252: reset
