@@ -1,19 +1,29 @@
 language: "perl"
 sudo: false
 perl:
-    - "5.8"
-    - "5.10"
-    - "5.12"
-    - "5.14"
-    - "5.16"
-    - "5.18"
-    - "5.20"
-    - "5.22"
-install: "echo"
-before_script:
-    - perl -S cpanm -n IPC::Run B::Flags Opcodes IO::Socket::SSL JSON::XS
-    - perl -S cpanm -n LWP::UserAgent Net::SSLeay Net::LibIDN Net::IDN::Encode Net::DNS EV
-    - perl -S cpanm -n Coro || true
+  - "5.8"
+  - "5.10"
+  - "5.12"
+  - "5.14"
+  - "5.14-thr"
+  - "5.16"
+  - "5.18"
+  - "5.20"
+  - "5.22"
+  - "5.22-dbg"
+  - "5.22-thr-dbg"
+  - "dev"
+  - "blead"
+before_install:
+  - mkdir /home/travis/bin || true
+  - ln -s `which true` /home/travis/bin/cpansign
+  - eval $(curl https://travis-perl.github.io/init) --auto
+install:
+  - export COVERAGE=0 AUTOMATED_TESTING=1
+  - cpan-install --deps
+  - cpan-install IPC::Run B::Flags Opcodes IO::Socket::SSL JSON::XS LWP::UserAgent
+  - cpan-install Net::SSLeay Net::LibIDN Net::IDN::Encode Net::DNS EV
+  - cpan-install Coro || cpan-install RURBAN/Coro-6.4801.tar.gz
 
 script: "perl Makefile.PL && make && make testfast"
 
@@ -33,12 +43,7 @@ matrix:
     - perl: "5.18"
     - perl: "5.20"
     - perl: "5.22"
-
-# See https://blog.afoolishmanifesto.com/posts/use-travis-et-al/
-#before_install:
-#     - git clone git://github.com/haarg/perl-travis-helper
-#     - source perl-travis-helper/init
-#     - build-perl
-#     - perl -V
-#     - build-dist
-#     - cd $BUILD_DIR
+    - perl: "5.22-thr"
+    - perl: "5.22-dbg"
+    - perl: "dev"
+    - perl: "blead"
