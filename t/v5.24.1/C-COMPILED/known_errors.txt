@@ -98,7 +98,7 @@ op/override.t                COMPAT    crazy test which override CORE::GLOBAL::r
 op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            PLAN      BC issue #250 - access disallowed key in restricted hash
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
-op/ref.t                     TESTS     Test results:
+op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
 op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              PLAN      Plan was valid
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
