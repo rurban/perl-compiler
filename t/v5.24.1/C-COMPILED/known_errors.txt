@@ -68,7 +68,7 @@ op/caller.t                  TESTS     BC issue #267
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/concat2.t                 TESTS     BC issue #219 - overload issue
-op/const-optree.t            PLAN      BC issue #250 - access disallowed key in restricted hash
+op/const-optree.t            PLAN      ?? 
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
@@ -102,7 +102,7 @@ op/sort.t                    TESTS     BC issue #219 - overload issue
 op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
-op/state.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
+op/state.t                   PLAN      ??
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
@@ -144,7 +144,7 @@ uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/parser.t                 SIG       Exit signal is 11 SEGV
 uni/readline.t               TESTS     Test results:
-uni/stash.t                  TESTS     BC issue #250 - access disallowed key in restricted hash
+uni/stash.t                  TESTS     ??
 uni/title.t                  SIG       BC issue #253 - Unicode::UCD
 uni/tr_7jis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
 uni/tr_eucjp.t               SIG       ?? + BC issue #283
