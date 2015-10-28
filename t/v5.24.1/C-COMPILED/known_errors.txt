@@ -144,7 +144,7 @@ uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/parser.t                 SIG       Exit signal is 11 SEGV
 uni/readline.t               TESTS     Test results:
-uni/stash.t                  TESTS     ??
+uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
 uni/title.t                  SIG       BC issue #253 - Unicode::UCD
 uni/tr_7jis.t                PLAN      BC issue #283 - deprecated "encoding" pragma
 uni/tr_eucjp.t               SIG       ?? + BC issue #283
