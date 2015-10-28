@@ -38,15 +38,21 @@ sub run {
         @args = grep { $_ !~ qr{^-+(git|new)$} } @args;
     }
     my $restart = sub {
-        my $cwd = cwd();
+        my $cwd        = cwd();
+        my $no_restart = !$saving_state;
+
+        # do not restart the test if -v was already used
+        $no_restart ||= grep { $_ =~ qr{^\-+v} } @copy_args;
+
         # only preserve options except -j and verbose
         my @args = grep { $_ =~ qr{^\-} && $_ !~ qr{^\-\-?[jv]} } @copy_args;
         unshift @args, '-v';
         my @cmd = ( $0, '--state=failed', @args );
+
         return sub {
 
             # cannot rerun if we do not save the state
-            return unless $saving_state;
+            return if $no_restart;
             $ENV{VERBOSE} = 1;
             print "# Rerunning failures with verbose on\n";
             print join( ' ', '#', '>', @cmd, "\n" );
