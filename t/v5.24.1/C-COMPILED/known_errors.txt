@@ -101,7 +101,7 @@ op/lvref.t                   PLAN      BC issue #250 - access disallowed key in 
 op/magic.t                   SIG       BC issue #271 - fork + END
 op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
-op/mydef.t                   TODO      No TODO tests passed
+op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/overload_integer.t        PLAN      BC issue #219 - overload issue
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    PLAN      BC issue #219 - overload issue
