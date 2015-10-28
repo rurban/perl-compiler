@@ -38,20 +38,20 @@ mro/complex_c3.t             SIG       BC issue #298 - next::method broken.
 mro/complex_c3_utf8.t        SIG       BC issue #298 - next::method broken.
 mro/isarev.t                 TESTS     Test results:
 mro/isarev_utf8.t            TESTS     Test results:
-mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
-mro/next_edgecases_utf8.t    SIG       Exit signal is 11 SEGV
-mro/next_goto.t              SIG       Exit signal is 11 SEGV
-mro/next_goto_utf8.t         SIG       Exit signal is 11 SEGV
-mro/next_inanon.t            SIG       Exit signal is 11 SEGV
-mro/next_inanon_utf8.t       SIG       Exit signal is 11 SEGV
-mro/next_ineval.t            SIG       Exit signal is 11 SEGV
-mro/next_ineval_utf8.t       SIG       Exit signal is 11 SEGV
-mro/next_method.t            SIG       Exit signal is 11 SEGV
-mro/next_method_utf8.t       SIG       Exit signal is 11 SEGV
-mro/next_NEXT.t              SIG       Exit signal is 11 SEGV
-mro/next_NEXT_utf8.t         SIG       Exit signal is 11 SEGV
-mro/next_skip.t              SIG       Exit signal is 11 SEGV
-mro/next_skip_utf8.t         SIG       Exit signal is 11 SEGV
+mro/next_edgecases.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_edgecases_utf8.t    SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_goto.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_goto_utf8.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_inanon.t            SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_inanon_utf8.t       SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_ineval.t            SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_ineval_utf8.t       SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_method.t            SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_method_utf8.t       SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_NEXT.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_NEXT_utf8.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_skip.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/next_skip_utf8.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
