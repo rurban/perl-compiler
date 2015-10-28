@@ -114,7 +114,7 @@ op/svleak.t                  COMPAT    This test uses XS::APItest, which we don'
 op/switch.t                  PLAN      BC issue #219 - overload issue
 op/threads-dirh.t            COMPAT    We don't support threaded perl in this branch.
 op/threads.t                 COMPAT    We don't support threaded perl in this branch.
-op/universal.t               TESTS     Test results:
+op/universal.t               TESTS     BC issue #300 - PVFM not compiled
 op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
