@@ -30,7 +30,6 @@ comp/parser.t                COMPAT    We're not going to support ' as a package
 comp/require.t               PLAN      BC issue #245 - Cannot reload XSLoader
 extra/reset.t                TESTS     BC issue 252: Reset is not localized to the current namespace
 io/errno.t                   SIG       BC issue #271: END block issue
-io/iofile.t                  SIG       Exit signal is 11 SEGV
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 io/open.t                    TESTS     Test results:
 mro/basic_01_c3_utf8.t       TESTS     BC issue #285 - B::C can't handle utf8 packages with 'c3' inheritance.
@@ -89,7 +88,6 @@ op/exists_sub.t              SIG       BC issue #276
 op/filetest.t                TESTS     BC issue #219 - overload issue
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
-op/gv.t                      SIG       Exit signal is 11 SEGV
 op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/join.t                    TESTS     BC issue #219 - overload issue
