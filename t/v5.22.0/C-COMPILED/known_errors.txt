@@ -139,7 +139,7 @@ uni/attrs.t                  PLAN      TODO: The signatures feature is experimen
 uni/caller.t                 PLAN      TODO: Undefined subroutine &????::ok called
 uni/chomp.t                  SIG       BC issue #284 - Encode::find_encoding
 uni/chr.t                    SIG       BC issue #283 - deprecated "encoding" pragma
-uni/eval.t                   PLAN      Plan was valid
+uni/eval.t                   PLAN      BC issue #250 - access disallowed key in restricted hash
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  SIG       BC issue #283 - deprecated "encoding" pragma
 uni/gv.t                     TESTS     BC issue #301 - no warnings when redefining unicode function
