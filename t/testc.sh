@@ -1335,6 +1335,7 @@ tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
 tests[2790]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
 tests[2230]='# 5.22 SEGV with missing gv_list[0] svop_list[0]
 <*.*> and print qq{ok\n}'
+tests[2740]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash); print "ok\n";'
 
 init
 
