@@ -39,8 +39,10 @@ sub run {
     }
     my $restart = sub {
         my $cwd = cwd();
-        unshift @copy_args, '-v' if !grep { $_ eq '-v' } @copy_args;
-        my @cmd = ( $0, '--state=failed', @copy_args );
+        # only preserve options except -j and verbose
+        my @args = grep { $_ =~ qr{^\-} && $_ !~ qr{^\-\-?[jv]} } @copy_args;
+        unshift @args, '-v';
+        my @cmd = ( $0, '--state=failed', @args );
         return sub {
 
             # cannot rerun if we do not save the state
