@@ -200,13 +200,13 @@ sub save {
     }
 
     my $stash = $io->SvSTASH;
-    if ($$stash) {
-        $stash->save;
+    if ( $stash and $$stash ) {
+        my $stsym = $stash->save( "%" . $stash->NAME );
         init()->add(
-            sprintf( "SvREFCNT(%s) += 1;", objsym($stash) ),
-            sprintf( "SvSTASH_set(%s, %s);", $sym, objsym($stash) )
+            sprintf( "SvREFCNT(%s) += 1;", $stsym ),
+            sprintf( "SvSTASH_set(%s, %s);", $sym, $stsym )
         );
-        debug( gv => "done saving STASH %s for IO %s\n", objsym($stash), $sym );
+        debug( gv => "done saving STASH %s %s for IO %s", $stash->NAME, $stsym, $sym );
     }
 
     return $sym;
