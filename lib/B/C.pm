@@ -1088,7 +1088,7 @@ sub nvx ($) {
   if ( defined $nvx ) {
       if ( $Config{d_isinf} or $] < 5.012 ) {
         return 'INFINITY' if $nvx =~ /^Inf/i;
-        return '-INFINITY' if $nvx eq /^-Inf/i;
+        return '-INFINITY' if $nvx =~ /^-Inf/i;
       }
       return 'NAN' if $nvx =~ /^NaN/i and ($Config{d_isnan} or $] < 5.012);
       # TODO NANL for long double
