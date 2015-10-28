@@ -534,7 +534,9 @@ sub B::RV::bsave($$) {
   my $rvix = $sv->RV->ix;
   $sv->B::NULL::bsave($ix);
   # RV with DEBUGGING already requires sv_flags before SvRV_set
-  asm "sv_flags", $sv->FLAGS, as_hex($sv->FLAGS);
+  my $flags = $sv->FLAGS;
+  $flags &= ~0x8000 if $flags & $SVt_PVGV and $PERL522; # no SVpgv_GP
+  asm "sv_flags", $flags, as_hex($flags);
   asm "xrv", $rvix;
 }
 
