@@ -22,6 +22,7 @@
           on 5.10 and higher until I find out how to fool S_unshare_hek_or_pvn. This fixes
           all C -O1 and -O2 tests. Warn about this."
         Fix Inf/NaN support for C (GH#287)
+        Fix handling of READONLY hashes in 5.22, i.e. use feature (GH#250)
     * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
 
 1.52 2014-09-09 rurban

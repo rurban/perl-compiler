@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_07';
+our $VERSION = '1.52_08';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -324,8 +324,8 @@ BEGIN {
     require mro; # mro->import();
     # not exported:
     sub SVf_OOK { 0x02000000 }
-    eval q[sub SVs_GMG { 0x00200000 }
-           sub SVs_SMG { 0x00400000 }];
+    eval q[sub SVs_GMG() { 0x00200000 }
+           sub SVs_SMG() { 0x00400000 }];
     if ($] >= 5.018) {
       B->import(qw(PMf_EVAL RXf_EVAL_SEEN));
       eval q[sub PMf_ONCE(){ 0x10000 }]; # PMf_ONCE also not exported
@@ -336,14 +336,21 @@ BEGIN {
     } else { # 5.10. not used with <= 5.8
       eval q[sub PMf_ONCE(){ 0x0002 }];
     }
+    if ($] > 5.021006) {
+      B->import(qw(SVf_PROTECT));
+    } else {
+      eval q[sub SVf_PROTECT(){ 0x0 }]; # unused
+    }
   } else {
-    eval q[sub SVs_GMG { 0x00002000 }
-           sub SVs_SMG { 0x00004000 }];
+    eval q[sub SVs_GMG()    { 0x00002000 }
+           sub SVs_SMG()    { 0x00004000 }
+           sub SVf_PROTECT(){ 0x0 }
+          ]; # unused
   }
   if ($] < 5.018) {
-    eval q[sub RXf_EVAL_SEEN { 0x0 }
-           sub PMf_EVAL      { 0x0 }
-           ]; # unneeded
+    eval q[sub RXf_EVAL_SEEN() { 0x0 }
+           sub PMf_EVAL()      { 0x0 }
+           ]; # unused
   } else {
     # 5.18
     #if (exists ${B::}{PADNAME::}) {
@@ -3186,7 +3193,8 @@ sub B::PVMG::save_magic {
       if $debug{mg};
     return '';
   }
-  $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv)) if $sv_flags & SVf_READONLY;
+  $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))
+    if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
 
   my @mgchain = $sv->MAGIC;
   my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
@@ -3303,7 +3311,8 @@ CODE2
           $$sv, $$obj, cchar($type), cstring($ptr), $len))
     }
   }
-  $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv)) if $sv_flags & SVf_READONLY;
+  $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv))
+    if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
   $magic;
 }
 
@@ -5086,6 +5095,8 @@ sub B::HV::save {
   # Ordinary HV or Stash
   # KEYS = 0, inc. dynamically below with hv_store
   if ($PERL510) {
+    my $flags = $hv->FLAGS & ~SVf_READONLY;
+    $flags &= ~SVf_PROTECT if $PERL522;
     if ($PERL514) { # fill removed with 5.13.1
       $xpvhvsect->comment( "stash mgu max keys" );
       $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
@@ -5096,8 +5107,7 @@ sub B::HV::save {
 			       0, $hv->MAX, 0 ));
     }
     $svsect->add(sprintf("&xpvhv_list[%d], %Lu, 0x%x, {0}",
-			 $xpvhvsect->index, $hv->REFCNT,
-			 $hv->FLAGS & ~SVf_READONLY));
+			 $xpvhvsect->index, $hv->REFCNT, $flags));
     # XXX failed at 16 (tied magic) for %main::
     if (!$is_stash and ($] >= 5.010 and $hv->FLAGS & SVf_OOK)) {
       $sym = sprintf("&sv_list[%d]", $svsect->index);
