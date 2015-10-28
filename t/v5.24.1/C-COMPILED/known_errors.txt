@@ -60,7 +60,7 @@ op/anonconst.t               SIG       BC issue #246 - experimental const_attr f
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/attrproto.t               TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
-op/attrs.t                   TESTS     Test results:
+op/attrs.t                   TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/bop.t                     TESTS     BC issue #219 - overload issue
