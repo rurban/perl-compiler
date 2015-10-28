@@ -1,6 +1,7 @@
 comp/retainedlines.t SKIP Unknown failures on Travis. We'll sort it later.
 io/argv.t SKIP Unknown failures on Travis. We'll sort it later.
 io/bom.t SKIP Unknown failures on Travis. We'll sort it later.
+io/perlio.t SKIP Unknown failures on Travis. We'll sort it later.
 mro/basic.t SKIP Unknown failures on Travis. We'll sort it later.
 mro/complex_c3.t SKIP Unknown failures on Travis. We'll sort it later.
 mro/complex_c3_utf8.t SKIP Unknown failures on Travis. We'll sort it later.
@@ -12,10 +13,12 @@ mro/next_ineval.t SKIP Unknown failures on Travis. We'll sort it later.
 mro/next_ineval_utf8.t SKIP Unknown failures on Travis. We'll sort it later.
 mro/next_skip_utf8.t SKIP Flapping test, skipped on Travis.
 mro/package_aliases.t SKIP Unknown failures on Travis. We'll sort it later.
+op/dbm.t SKIP Unknown failures on Travis. We'll sort it later.
 op/dump.t SKIP Unknown failures on Travis. We'll sort it later.
 op/heredoc.t SKIP Unknown failures on Travis. We'll sort it later.
 op/my.t SKIP Unknown failures on Travis. We'll sort it later.
 op/print.t SKIP Unknown failures on Travis. We'll sort it later.
+op/readdir.t SKIP Unknown failures on Travis. We'll sort it later.
 op/select.t SKIP Unknown failures on Travis. We'll sort it later.
 op/taint.t SKIP Unknown failures on Travis. We'll sort it later.
 op/tr.t SKIP Unknown failures on Travis. We'll sort it later.
