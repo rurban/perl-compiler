@@ -20,12 +20,14 @@ function help {
   echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O3 optimizations."
 }
 
-# use the actual perl from the Makefile (perl5.8.8, 
+# use the actual perl from the Makefile (perl5.8.8,
 # perl5.10.0d-nt, perl5.11.0, ...)
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
+PERLV=$(perl -e 'print $^V')
+XTESTC="t/$PERLV/C-COMPILED/xtestc"
 
 function init {
 BASE=`basename $0`
@@ -35,9 +37,9 @@ Mblib=${Mblib:--Iblib/arch -Iblib/lib} # B::C is now fully 5.6+5.8 backwards com
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
 if [ -z "$Mblib" ]; then
-    VERS="${VERS}_global"; 
+    VERS="${VERS}_global";
     OCMD="$PERL $Mblib -MO=C,${v513}-Dcsp,"
-    if [ $BASE = "testcc.sh" ]; then # DrOsplt 
+    if [ $BASE = "testcc.sh" ]; then # DrOsplt
         OCMD="$PERL $Mblib -MO=CC,${v513}-DOsplt,"
     fi
 else
@@ -111,16 +113,47 @@ function runopt {
     fi
 }
 
+function emit_test {
+  n=$1
+  CONTENT="${tests[${n}]}"
+  if [ "x$CONTENT" != "x" ]; then
+    echo -E "$CONTENT"
+    echo
+    if [ "x${result[$n]}" = "x" ]; then result[$n]='ok'; fi
+    echo -E -n "### RESULT:${result[$n]}"
+  fi
+}
+
+function make_t_symlink {
+  [ -d "$XTESTC" ] || mkdir -p $XTESTC
+  n=$1
+  CONTENT="${tests[${n}]}"
+  if [ "x$CONTENT" != "x" ]; then
+    FILE_NUM=$(printf "%04d" $n)
+    FILE="$XTESTC/${FILE_NUM}.t"
+    ln -s  ../testc.pl $FILE
+  fi
+}
+
+function make_symlinks {
+  MAX=9999
+  rm -f $XTESTC/*.t ||:
+  for b in $(seq $MAX); do
+    make_t_symlink $b
+  done
+}
+
 function ctest {
     n=$1
     str=$2
-    if [ $BASE = "testcc.sh" ]; then 
+
+    if [ $BASE = "testcc.sh" ]; then
       o="cccode$n"
     else
       o="ccode$n"
     fi
     if [ -z "$str" ]; then
-        if [ "$n" = "08" ]; then n=8; fi 
+        if [ "$n" = "08" ]; then n=8; fi
         if [ "$n" = "09" ]; then n=9; fi
 	echo "${tests[${n}]}" > ${o}.pl
         str="${tests[${n}]}"
@@ -194,10 +227,10 @@ tests[8]='sub AUTOLOAD { print 1 } &{"a"}()'
 result[8]='1'
 tests[9]='my $l_i = 3; $x = sub { print $l_i }; &$x'
 result[9]='3'
-tests[10]='my $i_i = 1; 
+tests[10]='my $i_i = 1;
 my $foo = sub {
   $i_i = shift if @_
-}; print $i_i; 
+}; print $i_i;
 print &$foo(3),$i_i;'
 result[10]='133'
 # index: do fbm_compile or not
@@ -335,10 +368,10 @@ print "ok"'
 tests[71]='
 package my;
 our @a;
-sub f { 
+sub f {
   my($alias,$name)=@_;
   unshift(@a, $alias => $name);
-  my $find = "ok"; 
+  my $find = "ok";
   my $val = $a[1];
   if ( ref($alias) eq "Regexp" && $find =~ $alias ) {
     eval $val;
@@ -867,8 +900,9 @@ while ( $content =~ m{\w}g ) {
     $_ .= "$-[0]$+[0]";
 }
 print "ok" if $_ eq "0112";'
-tests[223]='use strict; eval q({ $x = sub }); print $@'
-result[223]='Illegal declaration of anonymous subroutine at (eval 1) line 1.'
+tests[2231]='use strict; eval q({ $x = sub }); print $@'
+result[2231]='Illegal declaration of anonymous subroutine at (eval 1) line 1.'
+tests[223]='<*> and print qq{ok\n}'
 tests[224]='use bytes; my $p = "\xB6"; my $u = "\x{100}"; my $pu = "\xB6\x{100}"; print ( $p.$u eq $pu ? "ko\n" : "ok\n" );'
 tests[225]='$_ = $dx = "\x{10f2}"; s/($dx)/$dx$1/; $ok = 1 if $_ eq "$dx$dx"; $_ = $dx = "\x{10f2}"; print qq{end\n};'
 result[225]='end'
@@ -944,11 +978,14 @@ result[248]='-titi-toto-'
 tests[249]='#TODO version
 use version; print version::is_strict(q{01}) ? 1 : 0'
 result[249]='0'
-tests[250]='#TODO version
+tests[2501]='#TODO version
 use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
-result[250]='Misplaced _ in number at (eval 1) line 1.
+result[2501]='Misplaced _ in number at (eval 1) line 1.
 Invalid version format (no underscores) at (eval 1) line 1, near "package withversion "
 syntax error at (eval 1) line 1, near "package withversion 1.1_"'
+if [[ $v518 -gt 0 ]]; then
+  tests[250]='use feature q/evalbytes/; print "ok\n" if evalbytes("1+7") == 8'
+fi
 tests[251]='sub f;print "ok" if exists &f'
 tests[2511]='#TODO 5.18
 sub f :lvalue;print "ok" if exists &f'
@@ -992,11 +1029,33 @@ tests[263]='use JSON::XS; print encode_json []'
 result[263]='[]'
 tests[264]='no warnings; warn "$a.\n"'
 result[264]='.'
+tests[269]='use constant roref => \2; eval { for (roref) { $_ = 42 } }; print $@'
+tests[270]='*x = *STDOUT; print {*x{IO}} "ok\n";'
+tests[271]='my $FALSE = 0;
+END { delete $ENV{"Boom"} if $FALSE }
+
+my $kid = open my $fh, "-|";
+if ($kid) { # parent
+    my $read = <$fh>;
+    close($fh) or die "cannot close pipe from kid proc: $!";
+    print "ok\n";
+}
+else { # child
+    print "$$\n";
+    exit;
+}'
 tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
-tests[273]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
-result[273]='11'
-tests[274]='package Foo;
+tests[2731]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
+result[2731]='11'
+tests[273]='package _charnames;
+
+sub foo {
+    ($name =~ /^(\p{_Perl_Charname_Begin})/) and return;
+}
+
+print "ok\n";'
+tests[2741]='package Foo;
 
 sub match { shift =~ m?xyz? ? 1 : 0; }
 sub match_reset { reset; }
@@ -1016,30 +1075,58 @@ print "ok 4\n" unless Foo::match("xyz");
 
 Foo::match_reset();
 print "ok 5\n" if Foo::match("xyz");'
-result[274]='1..5
+result[2741]='1..5
 ok 1
 ok 2
 ok 3
 ok 4
 ok 5'
+tests[274]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; print "ok\n"'
+if [[ $v518 -gt 0 ]]; then
+  tests[276]='sub t2 : lvalue; print qq/ok\n/'
+fi
 tests[277]='format OUT =
 bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT; print q(ok)'
+tests[278]='my $ok; sub X::DESTROY { $ok = 1 } { my $x; BEGIN { $x = 42 } $x = bless {}, "X"; } print qq/ok\n/ if $ok;'
+tests[279]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
 tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
 result[280]='Farewell M'
-tests[281]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
-result[281]='ok
+tests[2811]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
+result[2811]='ok
 @- = 0 0 2 7
 @+ = 10 1 6 10
 len @- = 4'
+tests[281]='#!perl
+
+open(NEST, '>Op_write.tmp');
+format NEST =
+@<<<
+{
+    my $birds = "birds";
+    local *NEST = *BIRDS{FORMAT};
+    write NEST;
+    format BIRDS =
+@<<<<<
+$birds;
+.
+    "nest"
+}
+.
+write NEST;
+close NEST;
+
+print qx/cat Op_write.tmp/;'
+result[281]='birds
+nest'
 tests[282]='use vars qw($glook $smek $foof); $glook = 3; $smek = 4; $foof = "halt and cool down"; my $rv = \*smek; *glook = $rv; my $pv = ""; $pv = \*smek; *foof = $pv; print "ok\n";'
 tests[283]='#238 Undefined format "STDOUT"
 format =
 ok
 .
 write'
-tests[284]='#-O3 only
+tests[2841]='#-O3 only
 my $x="123456789";
 format OUT =
 ^<<~~
@@ -1049,14 +1136,16 @@ open OUT, ">ccode.tmp";
 write(OUT);
 close(OUT);
 print `cat "ccode.tmp"`'
-result[284]='123
+result[2841]='123
 456
 789'
+
 # issue 287 with Inf and NaN
 tests[2870]='my $i = "Inf" + 0; print $i <= 0 ? "not $i " : "", "ok\n";'
 tests[2871]='my $i = "-Inf" + 0; print $i >= 0 ? "not $i " : "", "ok\n";'
 tests[2872]='my $i = "NaN" + 0; print $i <= 0 ? "not $i " : "", "ok\n"'
 
+tests[284]='use Encode; find_encoding("euc-jp") and print qq/ok\n/'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
 tests[2900]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
@@ -1149,7 +1238,7 @@ my $foo = sub {
 }->();
 $foo->method;'
 tests[350]='#TODO 5.18-5.22 dbg
-package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int"); 
+package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int");
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
 tests[368]='use EV; print q(ok)'
 tests[369]='
@@ -1180,10 +1269,15 @@ package main;
 my $f = foo->new( x => 5, y => 6);
 print $f->x . "\n";'
 result[371]='5'
+
 if [[ $v518 -gt 0 ]]; then
-  tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen("ᕘ"); undef %ᕘ::; mro::get_pkg_gen("ᕘ"); delete $::{"ᕘ::"}; print "ok";'
+  tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen('ᕘ'); undef %ᕘ::; mro::get_pkg_gen('ᕘ'); delete $::{"ᕘ::"}; print "ok";'
   tests[373]='package foo; BEGIN {undef %foo::} sub doof { caller(0) } print qq/ok\n/ if +(doof())[3] =~ qr/::doof/'
 fi
+
+# gh issue 280
+tests[374]='my $z = 0; my $li2 = "c"; my $rh = { foo => [ "ok\n" ]}; print $rh->{"foo"}->[$li2+$z];';
+
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
 tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
@@ -1200,11 +1294,11 @@ tests[2230]='# 5.22 SEGV with missing gv_list[0] svop_list[0]
 
 init
 
-# 
+#
 # getopts for -q -k -E -Du,-q -v -O2, -a -c -fro-inc
-while getopts "haAckoED:B:O:f:q" opt
+while getopts "XLhaAckoED:B:O:f:q" opt
 do
-  if [ "$opt" = "q" ]; then 
+  if [ "$opt" = "q" ]; then
     QUIET=1
     CCMD="$CCMD -q"
   fi
@@ -1216,7 +1310,7 @@ do
   # -D options: u,-q for quiet, no -D for verbose, -D- for no gcc warnings
   if [ "$opt" = "D" ]; then
     OCMD="$PERL $Mblib -MO=C,-D${OPTARG},"
-    if [ $BASE = "testcc.sh" ]; then 
+    if [ $BASE = "testcc.sh" ]; then
         OCMD="$PERL $Mblib -MO=CC,-D${OPTARG},"
     fi
     if [ -z "${OPTARG/-/}" ]; then
@@ -1224,7 +1318,7 @@ do
     fi
   fi
   # -B dynamic or -B static
-  if [ "$opt" = "B" ]; then 
+  if [ "$opt" = "B" ]; then
     CCMD="$CCMD -B${OPTARG}"
   fi
   if [ "$opt" = "O" ]; then OPTIM="$OPTARG"; fi
@@ -1232,10 +1326,19 @@ do
     OCMD="$(echo $OCMD|sed -e "s/C,/C,-f$OPTARG,/")"
   fi
   if [ "$opt" = "a" ]; then # replace -Du, by -Do
-    OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')" 
+    OCMD="$(echo $OCMD|sed -r -e 's/(-D.*)u,/\1o,/')"
   fi
   if [ "$opt" = "A" ]; then
       CCMD="$CCMD -DALLOW_PERL_OPTIONS"
+  fi
+  if [ "$opt" = "L" ]; then
+    make_symlinks
+    exit
+  fi
+  if [ "$opt" = "X" ]; then
+    shift
+    emit_test $1
+    exit
   fi
 done
 
@@ -1246,15 +1349,16 @@ if [ "$(perl -V:gccversion)" != "gccversion='';" ]; then
 	CCMD="$CCMD -g3"
     fi
 fi
+
 if [ -z $OPTIM ]; then OPTIM=-1; fi # all
 
 if [ -z "$QUIET" ]; then
-    make 
+    make
 else
     # O from 5.6 does not support -qq
     qq="`$PERL -e'print (($] < 5.007) ? q() : q(-qq,))'`"
-    # replace -D*,-v by -q 
-    OCMD="$(echo $OCMD    |sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)" 
+    # replace -D*,-v by -q
+    OCMD="$(echo $OCMD    |sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO1="$(echo $OCMDO1|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO2="$(echo $OCMDO2|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
     OCMDO3="$(echo $OCMDO3|sed -e 's/-D.*,//' -e 's/,-v,/,/' -e s/-MO=/-MO=$qq/)"
