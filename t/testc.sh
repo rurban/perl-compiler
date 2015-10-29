@@ -1166,8 +1166,11 @@ package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSA
 tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'
 tests[301]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
-tests[305]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
-result[305]='www.google.com'
+if [[ $v518 -gt 0 ]]; then
+  tests[305]='use feature "refaliasing"; no warnings; my $gen = sub { sub () { 8 } }; my $sub = &$gen; print qq/ok\n/'
+fi
+tests[3050]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
+result[3050]='www.google.com'
 tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
 result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
