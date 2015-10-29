@@ -3405,7 +3405,7 @@ sub get_isa ($) {
 # XXX issue 64, empty @ISA if a package has no subs. in Bytecode ok
 sub try_isa {
   my ( $cvstashname, $cvname ) = @_;
-  return 0 unless defined $cvstashname;
+  return 0 unless defined $cvstashname && defined $cvname;
   if (my $found = $isa_cache{"$cvstashname\::$cvname"}) {
     return $found;
   }
@@ -3457,6 +3457,7 @@ sub try_isa {
 sub try_autoload {
   my ( $cvstashname, $cvname ) = @_;
   no strict 'refs';
+  return unless defined $cvstashname && defined $cvname;
   return 1 if try_isa($cvstashname, $cvname);
 
   no strict 'refs';
@@ -3544,6 +3545,7 @@ sub B::CV::save {
   }
   my $gv = $cv->GV;
   my ( $cvname, $cvstashname, $fullname, $isutf8 );
+  $fullname = '';
   my $CvFLAGS = $cv->CvFLAGS;
   if ($gv and $$gv) {
     $cvstashname = $gv->STASH->NAME;
@@ -3561,6 +3563,7 @@ sub B::CV::save {
   }
   elsif ($cv->is_lexsub($gv)) {
     $fullname = $cv->NAME_HEK;
+    $fullname = '' unless defined $fullname;
     $isutf8   = $cv->FLAGS & SVf_UTF8;
     warn sprintf( "CV NAME_HEK $fullname\n") if $debug{cv};
     if ($fullname =~ /^(.*)::(.*?)$/) {
@@ -3570,6 +3573,7 @@ sub B::CV::save {
       undef $2;
     }
   }
+  $cvstashname = '' unless defined $cvstashname;
 
   # XXX TODO need to save the gv stash::AUTOLOAD if exists
   my $root    = $cv->ROOT;
@@ -4050,6 +4054,7 @@ sub B::CV::save {
     if ($$cv) {
       if ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL')) {
         my $lexsub  = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
+        $lexsub = '' unless defined $lexsub;
         warn "lexsub name $lexsub" if $debug{gv};
         my ($cstring, $cur, $utf8) = strlen_flags($lexsub);
         if (!$PERL56 and $utf8) {
