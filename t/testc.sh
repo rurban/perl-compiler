@@ -1102,8 +1102,9 @@ bar ~~
 open(OUT, ">/dev/null"); write(OUT); close OUT; print q(ok)'
 tests[278]='my $ok; sub X::DESTROY { $ok = 1 } { my $x; BEGIN { $x = 42 } $x = bless {}, "X"; } print qq/ok\n/ if $ok;'
 tests[279]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
-tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
-result[280]='Farewell M'
+tests[280]='my $z=0; my $li2="c"; my $rh={foo=>["ok"]}; print $rh->{"foo"}->[$li2+$z];'
+tests[2800]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
+result[2800]='Farewell M'
 tests[2811]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
 result[2811]='ok
 @- = 0 0 2 7
@@ -1323,10 +1324,6 @@ if [[ $v518 -gt 0 ]]; then
   tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen('ᕘ'); undef %ᕘ::; mro::get_pkg_gen('ᕘ'); delete $::{"ᕘ::"}; print "ok";'
   tests[373]='package foo; BEGIN {undef %foo::} sub doof { caller(0) } print qq/ok\n/ if +(doof())[3] =~ qr/::doof/'
 fi
-
-# gh issue 280
-tests[374]='my $z = 0; my $li2 = "c"; my $rh = { foo => [ "ok\n" ]}; print $rh->{"foo"}->[$li2+$z];';
-
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
 tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
@@ -1337,7 +1334,6 @@ tests[2054]='my %h; $h{""} = q/boom/; print qq{ok\n}'
 tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
 # GH issues:
 tests[2790]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
-tests[2800]='my $z=0; my $li2="c"; my $rh={foo=>["ok\n"]}; print $rh->{"foo"}->[$li2+$z];'
 tests[2230]='# 5.22 SEGV with missing gv_list[0] svop_list[0]
 <*.*> and print qq{ok\n}'
 
