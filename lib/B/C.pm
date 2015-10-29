@@ -1327,6 +1327,16 @@ sub B::OP::save {
       return $op->save($level);
     }
   }
+  if ($op->name eq 'clonecv') {
+    my $curcv = curcv;
+    my @c  = $curcv->PADLIST->ARRAY;
+    my @names = $c[0]->ARRAY;
+    my @pad  = $c[1]->ARRAY;
+    my $cv = $pad[$op->targ];
+    my $n = $names[$op->targ];
+    warn "save lexsub $n\n" if $debug{cv};
+    $cv->save if $cv and ref $cv eq 'B::CV';
+  }
 
   # since 5.10 nullified cops free their additional fields
   if ( $PERL510 and !$type and $OP_COP{ $op->targ } ) {
@@ -3606,7 +3616,8 @@ sub B::CV::is_lexsub {
   my ($cv, $gv) = @_;
   # logical shortcut perl5 bug since ~ 5.19: testcc.sh 42
   # return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK'));
-  return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK')) ? 1 : 0;
+  return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL')
+          and $cv->can('NAME_HEK')) ? 1 : 0;
 }
 
 sub B::CV::save {
@@ -3617,15 +3628,14 @@ sub B::CV::save {
     return $sym;
   }
   my $gv = $cv->GV;
-  my ( $cvname, $cvstashname, $fullname, $isutf8 );
-  $fullname = '';
+  my ( $fullname, $cvname, $cvstashname, $isutf8 ) = ('', '', '');
   my $CvFLAGS = $cv->CvFLAGS;
   if ($gv and $$gv) {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
     $isutf8      = $gv->FLAGS & SVf_UTF8 or $gv->STASH->FLAGS & SVf_UTF8;
     $fullname    = $cvstashname.'::'.$cvname;
-    warn sprintf( "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
+    warn sprintf( "CV 0x%x as PVGV 0x%x \"&%s\" CvFLAGS=0x%x\n",
                   $$cv, $$gv, $fullname, $CvFLAGS )
       if $debug{cv};
     # XXX not needed, we already loaded utf8_heavy
@@ -3638,7 +3648,7 @@ sub B::CV::save {
     $fullname = $cv->NAME_HEK;
     $fullname = '' unless defined $fullname;
     $isutf8   = $cv->FLAGS & SVf_UTF8;
-    warn sprintf( "CV NAME_HEK $fullname\n") if $debug{cv};
+    warn sprintf( "CV NAME_HEK \"$fullname\" (lexsub)\n") if $debug{cv};
     if ($fullname =~ /^(.*)::(.*?)$/) {
       $cvstashname = $1;
       $cvname      = $2;
