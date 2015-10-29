@@ -1168,6 +1168,7 @@ tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'
 tests[301]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
 if [[ $v518 -gt 0 ]]; then
+  tests[302]='use feature "say"; eval q{say "ok"}; print $@ if($@);'
   tests[304]='no warnings; use feature "lexical_subs"; my sub a; print qq/ok\n/'
   tests[305]='use feature "refaliasing"; no warnings; my $gen = sub { sub () { 8 } }; my $sub = &$gen; print qq/ok\n/'
 fi
