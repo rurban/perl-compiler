@@ -1161,8 +1161,11 @@ tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
 tests[293]='use Coro; print q(ok)'
 tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
-tests[299]='#TODO version
+tests[2990]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
+if [[ $v518 -gt 0 ]]; then
+  tests[299]='no warnings qw{experimental::lexical_topic}; my $s = "ok\n"; my $_ = "not ok\n"; my $r = $s =~ /ok(?{ print qq[$_] })/;'
+fi
 tests[300]='format STDERR = 
 .
 my $stdout = *STDOUT{IO};
