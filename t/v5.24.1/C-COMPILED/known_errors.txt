@@ -114,7 +114,7 @@ op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
-re/fold_grind.t              SIG       Exit signal is 11 SEGV
+re/fold_grind.t              SIG       BC issue #273 - \p charnames
 re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     SIG       BC issue #219 - overload issue + BC issue #295
 re/pat_advanced.t            SIG       BC issue #273 - \p \N
