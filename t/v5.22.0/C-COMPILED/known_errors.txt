@@ -75,7 +75,7 @@ op/defins.t                  TESTS     BC issue #294 - File::Glob constant subro
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/exists_sub.t              SIG       BC issue #276
 op/filetest.t                TESTS     BC issue #219 - overload issue
-op/glob.t                    TESTS     Test results:
+op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
