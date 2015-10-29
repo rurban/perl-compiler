@@ -61,7 +61,7 @@ op/attrs.t                   TESTS     BC issue #302 - quoted eval scope doesn't
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/bop.t                     TESTS     BC issue #219 - overload issue
-op/caller.t                  TESTS     BC issue #267
+op/caller.t                  TESTS     BC issue #221 - delete __ANON__
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/concat2.t                 TESTS     BC issue #219 - overload issue
