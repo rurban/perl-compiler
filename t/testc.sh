@@ -1006,7 +1006,8 @@ tests[2530]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9
 result[2530]='1..2
 ok 1
 ok 2'
-tests[254]='#TODO destroy upgraded lexvar
+tests[254]='Foo->UNIVERSAL::can("boogie"); print "ok" unless eval q/Foo->boogie(); 1/;'
+tests[2540]='#TODO destroy upgraded lexvar
 my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
 {
