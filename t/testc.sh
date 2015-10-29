@@ -1095,7 +1095,8 @@ tests[274]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; 
 if [[ $v518 -gt 0 ]]; then
   tests[276]='sub t2 : lvalue; print qq/ok\n/'
 fi
-tests[277]='format OUT =
+tests[277]='sub t2 : lvalue; print "ok"'
+tests[2770]='format OUT =
 bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT; print q(ok)'
