@@ -123,8 +123,8 @@ re/pat_rt_report.t           PLAN      BC issue #295 - (?{}) should have its own
 re/qr_gc.t                   TESTS     Test results:
 re/reg_eval_scope.t          SIG       BC issue #273 - \p
 re/reg_fold.t                SIG       BC issue #273 - \p
-re/reg_mesg.t                TESTS     Test results:
-re/reg_pmod.t                TESTS     Test results:
+re/reg_mesg.t                TESTS     BC issue #273 - use of \N or charnames segfaults the program. 
+re/reg_pmod.t                TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/regex_sets.t              SIG       BC issue #296
 re/regexp_unicode_prop.t     SIG       BC issue #273 - use of \N or charnames segfaults the program. 
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
