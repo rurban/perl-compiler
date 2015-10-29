@@ -99,7 +99,7 @@ op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
-op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
+op/split_unicode.t           SIG       BC issue #273 - charnames \p autorequire issue because of reverse sort.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #302 - features state + eval
@@ -142,7 +142,7 @@ uni/lex_utf8.t               SIG       Exit signal is 11 SEGV
 uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/parser.t                 SIG       Exit signal is 11 SEGV
+uni/parser.t                 SIG       BC issue #273 - use of \N or charnames segfaults the program.
 uni/readline.t               TESTS     BC Issue #307 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
 uni/title.t                  SIG       BC issue #253 - Unicode::UCD
