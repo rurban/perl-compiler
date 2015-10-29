@@ -964,18 +964,20 @@ tests[244]='print "($_)\n" for q{-2}..undef;'
 result[244]='(-2)
 (-1)
 (0)'
-tests[245]='sub foo {
+tests[245]='%INC = (); require XSLoader; XSLoader::load("Cwd"); print qq{ok}'
+tests[2450]='sub foo {
     my ( $a, $b ) = @_;
     print "a: ".ord($a)." ; b: ".ord($b)." [ from foo ]\n";
 }
 print "a: ". ord(lc("\x{1E9E}"))." ; ";
 print "b: ". ord("\x{df}")."\n";
 foo(lc("\x{1E9E}"), "\x{df}");'
-result[245]='a: 223 ; b: 223
+result[2450]='a: 223 ; b: 223
 a: 223 ; b: 223 [ from foo ]'
+tests[246]='no warnings "experimental::const_attr"; print qq{ok} if &{sub () : const { 42 }} == 42;'
 # see t/issue235.t test 2
-tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
-result[246]='Not enough arguments for main::foo at (eval 1) line 1, at EOF'
+tests[2460]='sub foo($\@); eval q/foo "s"/; print $@'
+result[2460]='Not enough arguments for main::foo at (eval 1) line 1, at EOF'
 tests[247]='# WontFix
 no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3) == 3'
 tests[248]='#WONTFIX lexical $_ in re-eval
@@ -998,14 +1000,14 @@ sub f :lvalue;print "ok" if exists &f'
 tests[2512]='sub f ();print "ok" if exists &f'
 tests[2513]='sub f ($);print "ok" if exists &f'
 tests[2514]='sub f;print "ok" if exists &f'
-# duplicate of 234
-tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
-result[252]='4'
-tests[253]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
-result[253]='1..2
+tests[252]='package bar; sub search { shift =~ m?bar? ? 1 : 0 } sub reset_zlopp { reset } package foo; sub ZZIP { shift =~ m?ZZIP? ? 1 : 0 } package main; foo::ZZIP("ZZIP"); bar::reset_zlopp(); !foo::ZZIP("ZZIP") and print "ok"'
+tests[253]='use Unicode::UCD q/prop_invmap/; my @list = prop_invmap("Uppercase_Mapping"); print "ok"'
+tests[2530]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+result[2530]='1..2
 ok 1
 ok 2'
-tests[254]='#TODO destroy upgraded lexvar
+tests[254]='Foo->UNIVERSAL::can("boogie"); print "ok" unless eval q/Foo->boogie(); 1/;'
+tests[2540]='#TODO destroy upgraded lexvar
 my $flag = 0;
 sub  X::DESTROY { $flag = 1 }
 {
@@ -1080,7 +1082,9 @@ print "ok 3\n" if Foo::match("xyz");
 print "ok 4\n" unless Foo::match("xyz");
 
 Foo::match_reset();
-print "ok 5\n" if Foo::match("xyz");'
+print "ok 5\n" if Foo::match("xyz");
+print "ok 6\n" if !Bar::match("xyz");
+'
 result[2741]='1..5
 ok 1
 ok 2
@@ -1091,14 +1095,16 @@ tests[274]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; 
 if [[ $v518 -gt 0 ]]; then
   tests[276]='sub t2 : lvalue; print qq/ok\n/'
 fi
-tests[277]='format OUT =
+tests[277]='sub t2 : lvalue; print "ok"'
+tests[2770]='format OUT =
 bar ~~
 .
 open(OUT, ">/dev/null"); write(OUT); close OUT; print q(ok)'
 tests[278]='my $ok; sub X::DESTROY { $ok = 1 } { my $x; BEGIN { $x = 42 } $x = bless {}, "X"; } print qq/ok\n/ if $ok;'
 tests[279]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
-tests[280]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
-result[280]='Farewell M'
+tests[280]='my $z=0; my $li2="c"; my $rh={foo=>["ok"]}; print $rh->{"foo"}->[$li2+$z];'
+tests[2800]='package M; $| = 1; sub DESTROY {eval {print "Farewell ",ref($_[0])};} package main; bless \$A::B, q{M}; *A:: = \*B::;'
+result[2800]='Farewell M'
 tests[2811]='"I like pie" =~ /(I) (like) (pie)/; "@-" eq  "0 0 2 7" and print "ok\n"; print "\@- = @-\n\@+ = @+\nlen \@- = ",scalar @-'
 result[2811]='ok
 @- = 0 0 2 7
@@ -1157,15 +1163,54 @@ tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {re
 tests[2901]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
 tests[293]='use Coro; print q(ok)'
-tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
-result[295]='2 2 5 : 8 5 8'
-tests[299]='#TODO version
+tests[294]='#!perl -w
+BEGIN { $SIG{__WARN__} = sub { my $s = shift; do { warn $s; die $s } if $s =~ qr{Constant subroutine.*redefined}i }; }
+use File::Glob;
+File::Glob->can("XXX")->() if $ENV{ABCD};
+print qq/ok\n/'
+if [[ $v518 -gt 0 ]]; then
+  tests[295]='my @a = qw/ok/; my @to = (); s/(\w)(?{push @to, $1})/,$1,/g for @a; print "ok\n" if "@to" eq "o k";'
+fi
+tests[2950]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
+result[2950]='2 2 5 : 8 5 8'
+if [[ $v518 -gt 0 ]]; then
+  tests[298]='package D;
+sub testmeth { "wrong" }
+
+package C;
+our @ISA = qw/D/;
+sub testmeth { "right" }
+
+package B;
+our @ISA = qw/D/;
+
+package A; use mro "c3";
+our @ISA = qw/B C/;
+sub testmeth { shift->next::method }
+
+A->testmeth() eq "right" and print "ok\n"'
+  tests[299]='no warnings qw{experimental::lexical_topic}; my $s = "ok\n"; my $_ = "not ok\n"; my $r = $s =~ /ok(?{ print qq[$_] })/;'
+fi
+tests[2990]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
-tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
-result[300]='mro'
-tests[301]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
-tests[305]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
-result[305]='www.google.com'
+tests[300]='format STDERR = 
+.
+my $stdout = *STDOUT{IO};
+my $stderr = *STDERR{FORMAT};
+print ref($stdout).q/ || /.ref($stderr)'
+result[300]='IO::File || FORMAT'
+tests[3000]='use mro;print @{mro::get_linear_isa("mro")};'
+result[3000]='mro'
+tests[3010]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
+tests[301]='use utf8; use warnings; sub Ṩp맅싵Ş { "foo" } sub abcd { "bar" } my $w; $SIG{__WARN__} = sub { $w = $_[0] }; *{"Ṩp맅싵Ş"} = \&{"xyz"}; print "W1" if $w; $w = ""; *{"abcd"} = \&{"xyz"}; print "W2" if $w;'
+result[301]="W1W2"
+if [[ $v518 -gt 0 ]]; then
+  tests[302]='use feature "say"; eval q{say "ok"}; print $@ if($@);'
+  tests[304]='no warnings; use feature "lexical_subs"; my sub a; print qq/ok\n/'
+  tests[305]='use feature "refaliasing"; no warnings; my $gen = sub { sub () { 8 } }; my $sub = &$gen; print qq/ok\n/'
+fi
+tests[3050]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
+result[3050]='www.google.com'
 tests[3051]='INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII"); } || 0; }} print ASCII->encode("www.google.com")'
 result[3051]='www.google.com'
 tests[3052]='use Net::DNS::Resolver; my $res = Net::DNS::Resolver->new; $res->send("www.google.com"), print q(ok)'
@@ -1173,8 +1218,10 @@ tests[365]='use constant JP => eval { require Encode; Encode::find_encoding("euc
 result[365]='www.google.com'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
-tests[309]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
-result[309]='Net::LibIDN: ok
+tests[309]='#-O0 only
+sub Regexp::DESTROY() { print qq/ok\n/ } my $rx = qr//; undef($rx)'
+tests[3090]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
+result[3090]='Net::LibIDN: ok
 Net::SSLeay: ok'
 tests[310]='package foo;
 sub dada { my $line = <DATA> }
@@ -1218,6 +1265,7 @@ package Diamond_C; sub maybe { "Diamond_C::maybe" } package Diamond_D; use base 
 tests[328]='#WONTFIX re-eval lex/global mixup
 my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'
 result[328]=45
+# probably a duplicate of 295
 tests[329]='#WONTFIX re-eval lex/global mixup
 $_ = q{aaa}; my @res; pos = 1; s/\Ga(?{push @res, $_, $`})/xx/g; print "ok\n" if "$_ @res" eq "axxxx aaa a aaa aa"; print "$_ @res\n"'
 result[329]='ok
@@ -1281,10 +1329,6 @@ if [[ $v518 -gt 0 ]]; then
   tests[372]='use utf8; require mro; my $f_gen = mro::get_pkg_gen('ᕘ'); undef %ᕘ::; mro::get_pkg_gen('ᕘ'); delete $::{"ᕘ::"}; print "ok";'
   tests[373]='package foo; BEGIN {undef %foo::} sub doof { caller(0) } print qq/ok\n/ if +(doof())[3] =~ qr/::doof/'
 fi
-
-# gh issue 280
-tests[374]='my $z = 0; my $li2 = "c"; my $rh = { foo => [ "ok\n" ]}; print $rh->{"foo"}->[$li2+$z];';
-
 tests[2050]='use utf8;package 텟ţ::ᴼ; sub ᴼ_or_Ḋ { "ok" } print ᴼ_or_Ḋ;'
 tests[2051]='use utf8;package ƂƂƂƂ; sub ƟK { "ok" } package ƦƦƦƦ; use base "ƂƂƂƂ"; my $x = bless {}, "ƦƦƦƦ"; print $x->ƟK();'
 tests[2052]='{ package Diӑmond_A; sub fಓ { "ok" } } { package Diӑmond_B; use base q{Diӑmond_A}; use mro "c3"; sub fಓ { (shift)->next::method() } } print Diӑmond_B->fಓ();'
@@ -1295,7 +1339,6 @@ tests[2054]='my %h; $h{""} = q/boom/; print qq{ok\n}'
 tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
 # GH issues:
 tests[2790]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
-tests[2800]='my $z=0; my $li2="c"; my $rh={foo=>["ok\n"]}; print $rh->{"foo"}->[$li2+$z];'
 tests[2230]='# 5.22 SEGV with missing gv_list[0] svop_list[0]
 <*.*> and print qq{ok\n}'
 
