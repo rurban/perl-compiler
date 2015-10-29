@@ -79,7 +79,7 @@ op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER e
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/join.t                    TESTS     BC issue #219 - overload issue
 op/length.t                  TESTS     BC issue #219 - overload issue
-op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
+op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
 op/magic.t                   SIG       BC issue #271 - fork + END
