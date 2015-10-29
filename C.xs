@@ -243,6 +243,20 @@ PPCODE:
 
 #endif
 
+MODULE = B      PACKAGE = B::HV
+
+#if PERL_VERSION > 17
+
+SV*
+SvSTASH_not(hv)
+          B::HV hv
+PPCODE:
+    HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
+    ST(0) = (char*)stash < (char*)PL_sv_arenaroot
+             ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
+
+#endif
+
 MODULE = B	PACKAGE = B::UNOP_AUX
 
 #if PERL_VERSION > 21

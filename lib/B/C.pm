@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_09';
+our $VERSION = '1.52_10';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -299,6 +299,7 @@ BEGIN {
                  SVf_FAKE)); # both unsupported for 5.6
     eval q[
       sub SVs_OBJECT() {0x00100000}
+      sub SVf_AMAGIC() {0x10000000}
      ];
   } else {
     eval q[
@@ -308,6 +309,7 @@ BEGIN {
       sub PMf_ONCE() {0xff}; # unused
       sub SVf_FAKE() {0x00100000}; # unused
       sub SVs_OBJECT() {0x00001000}
+      sub SVf_AMAGIC() {0x10000000}
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
@@ -3140,12 +3142,13 @@ sub mark_threads {
 sub B::PVMG::save_magic {
   my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
+  my $pkg;
   if ($debug{mg}) {
     my $flagspv = "";
     $fullname = '' unless $fullname;
     $flagspv = $sv->flagspv if $debug{flags} and $PERL510 and !$sv->MAGICAL;
-    warn sprintf( "saving magic for %s $fullname (0x%x) flags=0x%x%s  - called from %s:%s\n",
-		class($sv), $$sv, $sv_flags, $debug{flags} ? "(".$flagspv.")" : "",
+    warn sprintf( "saving magic for %s %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
+		class($sv), $fullname, $$sv, $sv_flags, $debug{flags} ? "(".$flagspv.")" : "",
 		@{[(caller(1))[3]]}, @{[(caller(1))[2]]});
   }
 
@@ -3160,8 +3163,8 @@ sub B::PVMG::save_magic {
     warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
       if $verbose;
   } else {
-    my $pkg = $sv->SvSTASH;
-    if ($$pkg) {
+    $pkg = $sv->SvSTASH;
+    if ($pkg and $$pkg) {
       warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
         if $debug{mg} or $debug{gv};
       # 361 do not force dynaloading IO via IO::Handle upon us
@@ -3183,15 +3186,26 @@ sub B::PVMG::save_magic {
       }
     }
   }
+  $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))
+    if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
+
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-  if ($PERL510 and !$sv->MAGICAL) {
+  if ($PERL510 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
     warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
                  $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
       if $debug{mg};
     return '';
   }
-  $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))
-    if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
+
+  if ($PERL518 and $sv_flags & SVf_AMAGIC) {
+    my $name = $fullname;
+    $name =~ s/^%(.*)::$/$1/;
+    $name = $pkg->NAME if $pkg and $$pkg;
+    warn sprintf("initialize overload cache for %s\n", $fullname )
+      if $debug{mg} or $debug{gv};
+    $init2->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
+                        $fullname));
+  }
 
   my @mgchain = $sv->MAGIC;
   my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
@@ -3693,7 +3707,7 @@ sub B::CV::save {
     $sym = savesym( $cv, "&sv_list[$sv_ix]" );
   }
 
-  warn sprintf( "saving $fullname CV 0x%x as $sym\n", $$cv )
+  warn sprintf( "saving %s CV 0x%x as %s\n", $fullname, $$cv, $sym )
     if $debug{cv};
   if (!$$root and $] < 5.010) {
     $package_pv = $cvstashname;
@@ -4857,7 +4871,7 @@ sub B::AV::save {
   }
 
   if ( $debug{av} ) {
-    my $line = sprintf( "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, class($av));
+    my $line = sprintf( "saving AV %s 0x%x [%s] FILL=%d", $fullname, $$av, class($av), $fill);
     $line .= sprintf( " AvFLAGS=0x%x", $av->AvFLAGS ) if $] < 5.009;
     warn "$line\n";
   }
@@ -5088,10 +5102,11 @@ sub B::HV::save {
       if ($PERL510 and mro::get_mro($name) eq 'c3') {
         B::C::make_c3($name);
       }
-      #if ($magic =~ /c/) {
-         # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-      #  $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
-      #}
+      if ($magic =~ /c/) {
+        warn "defer AMT magic of $name\n" if $debug{mg};
+        # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
+        #  $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+      }
       return $sym;
     }
     return $sym if skip_pkg($name) or $name eq 'main';
@@ -5140,8 +5155,8 @@ sub B::HV::save {
   }
   $svsect->debug($fullname, $hv->flagspv) if $debug{flags};
   my $sv_list_index = $svsect->index;
-  warn sprintf( "saving HV %".$fullname." &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
-                $$hv, $hv->MAX, $hv->KEYS ) if $debug{hv};
+  warn sprintf( "saving HV %s &sv_list[%d] 0x%x MAX=%d KEYS=%d\n",
+                "%".$fullname, $sv_list_index, $$hv, $hv->MAX, $hv->KEYS ) if $debug{hv};
   # XXX B does not keep the UTF8 flag [RT 120535] #200
   # shared heks only since 5.10, our fixed C.xs variant
   my @contents = ($PERL510 && $hv->can('ARRAY_utf8')) ? $hv->ARRAY_utf8 : $hv->ARRAY;    # protect against recursive self-reference
@@ -5969,14 +5984,15 @@ my_curse( pTHX_ SV* const sv ) {
 #endif
 	    ) {
 		GV * const gv = gv_fetchmeth_autoload(stash, "DESTROY", 7, 0);
-		if (gv) destructor = GvCV(gv);
-		if (!SvOBJECT(stash))
-		{
-		    SvSTASH(stash) =
-			destructor ? (HV *)destructor : ((HV *)0)+1;
+		if (gv) {
+                    destructor = GvCV(gv);
+		    if (!SvOBJECT(stash)) {
+		        SvSTASH(stash) =
+			    destructor ? (HV *)destructor : ((HV *)0)+1;
 #if (PERL_VERSION > 18) || (PERL_VERSION == 18 && PERL_SUBVERSION > 1)
-		    HvAUX(stash)->xhv_mro_meta->destroy_gen = PL_sub_generation;
+		        HvAUX(stash)->xhv_mro_meta->destroy_gen = PL_sub_generation;
 #endif
+                    }
 		}
 	    }
 	    assert(!destructor || destructor == ((CV *)0)+1
