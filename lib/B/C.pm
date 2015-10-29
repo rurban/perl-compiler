@@ -942,13 +942,15 @@ sub save_pv_or_rv {
       # static pv (!SvLEN) only valid since cd84013aab030da47b76a44fb3 (sv.c: !SvLEN does not mean undefined)
       # i.e. since v5.17.6. because conversion to IV would fail.
       # But a "" or "0" or "[a-z]+" string can have SvLEN=0
-      # since its is converted to 0
-      {
-        #local $^W;
-        #BEGIN { ${^WARNING_BITS} = 0; }
-        if ($static and $] < 5.017006 and abs(0+$pv) > 0) {
-          $static = 0;
-        }
+      # since its is converted to 0.
+      # Only a readonly "" or "0" string can have SvLEN=0 since it's
+      # converted to 0, which leads to the same result.
+      # perlcc -O3 -r -e'print "ok" if 1 == "1"'
+      # vs
+      # perlcc -O2 -r -e'print "ok" if 1 == "1"'
+      # ok
+      if ($static and $] < 5.017006 and $pv !~ /^0?$/) {
+        $static = 0;
       }
       # but we can optimize static set-magic ISA entries. #263, #91
       if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG) {
