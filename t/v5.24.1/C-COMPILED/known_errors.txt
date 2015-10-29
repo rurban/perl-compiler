@@ -85,7 +85,6 @@ op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/magic-27839.t             BC        op/magic-27839.c is generated (-O3,-fno-fold)
 op/magic.t                   SIG       BC issue #271 - fork + END
 op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
