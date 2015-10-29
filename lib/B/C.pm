@@ -374,7 +374,7 @@ sub save_pv_or_rv {
           and $fullname
           and ( $fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/ );
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
-            WARN("use emptystring for empty shared key $fullname") if debug('pv') or debug('hv');
+            debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
             $savesym = "emptystring" unless $fullname =~ /unopaux_item.* const/;
             $static = 0;
         }
@@ -1170,7 +1170,7 @@ sub dump_rest {
                 next;
             }
             $again++;
-            WARN("$p marked but not saved, save now") if verbose() or debug('pkg');
+            debug( [qw/verbose pkg/], "$p marked but not saved, save now" );
 
             # mark_package( $p, 1);
             #eval {
@@ -1273,7 +1273,7 @@ sub save_context {
             }
         }
     }
-    WARN( "Saved \@ISA for: " . join( " ", @saved_isa ) ) if @saved_isa and ( verbose() or debug('pkg') );
+    debug( [qw/verbose pkg/], "Saved \@ISA for: " . join( " ", @saved_isa ) ) if @saved_isa;
     init()->add(
         "GvHV(PL_incgv) = $inc_hv;",
         "GvAV(PL_incgv) = $inc_av;",
@@ -1347,9 +1347,7 @@ sub force_saving_xsloader {
 }
 
 sub save_main_rest {
-    WARN "done main optree, walking symtable for extras"
-      if verbose()
-      or debug('cv');
+    debug( [qw/verbose cv/], "done main optree, walking symtable for extras" );
     init()->add("");
     init()->add("/* done main optree, extra subs which might be unused */");
     B::C::Optimizer::UnusedPackages::optimize();
@@ -1797,11 +1795,11 @@ sub compile {
                 $arg = 'uOcAHCMGSPpsWF';
                 $all_bc_deps{'B::Flags'}++;
             }
-            elsif ( B::C::Config::Debug::enable_debug_with_map($arg) ) {
+            elsif ( B::C::Config::Debug::enable_debug_level($arg) ) {
                 next;
             }
             foreach my $arg ( split( //, $arg ) ) {
-                next if B::C::Config::Debug::enable_debug_with_map($arg);
+                next if B::C::Config::Debug::enable_debug_level($arg);
                 if ( $arg eq "o" ) {
                     B::C::Config::Debug::enabe_verbose();
                     B->debug(1);

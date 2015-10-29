@@ -153,7 +153,7 @@ sub save_magic {
         my $name = $fullname;
         $name =~ s/^%(.*)::$/$1/;
         $name = $pkg->NAME if $pkg and $$pkg;
-        WARN( sprintf( "initialize overload cache for %s", $fullname ) ) if debug('mg') or debug('gv');
+        debug( [qw/mg gv/], "initialize overload cache for %s", $fullname );
 
         init2()->add( sprintf( "Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name), $fullname ) );
     }

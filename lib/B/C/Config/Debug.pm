@@ -18,6 +18,7 @@ my %debug_map = (
     's' => 'sub',
     'S' => 'sv',
     'u' => 'unused',
+    'v' => 'verbose',    # special case to consider verbose as a debug level
     'W' => 'walk',
 );
 
@@ -27,7 +28,7 @@ my %reverse_map = reverse %debug_map;
 my %debug;
 
 sub init {
-    %debug = map { $_ => 0 } values %debug_map;
+    %debug = map { $_ => 0 } values %debug_map, keys %debug_map;
     %debug = (
         %debug,
         flags   => 0,
@@ -57,27 +58,28 @@ sub restore {
 # you can then enable them
 # $debug{sv} = 1;
 
-sub enable_debug_with_map {
-    my $cmdline_flag = shift or die;
+sub enable_debug_level {
+    my $l = shift or die;
 
-    if ( defined $debug_map{$cmdline_flag} ) {
-        enable_debug_level( $debug_map{$cmdline_flag} );
+    if ( defined $debug_map{$l} ) {
+        INFO("Enabling debug level: '$debug_map{$l}'");
+        _enable_debug_level( $debug_map{$l} );
+        _enable_debug_level($l);
         return 1;
     }
-    if ( defined $reverse_map{$cmdline_flag} ) {
-        enable_debug_level($cmdline_flag);
+    if ( defined $reverse_map{$l} ) {
+        INFO("Enabling debug level: '$l'");
+        _enable_debug_level($l);
+        _enable_debug_level( $reverse_map{$l} );
         return 1;
     }
 
     return;
 }
 
-sub enable_debug_level {
+sub _enable_debug_level {
     my $level = shift or die;
-
-    INFO("Enabling debug level: '$level'");
     $debug{$level}++;
-
     return;
 }
 
@@ -90,18 +92,19 @@ sub enable_all {
     return;
 }
 
-my $verbose = 0;
-sub enable_verbose { $verbose++ }
+sub enable_verbose {
+    enable_debug_level('verbose');
+}
 
 sub verbose {
-    return $verbose unless $verbose;
-    return $verbose unless scalar @_;
+    return $debug{'v'} unless $debug{'v'};
+    return $debug{'v'} unless scalar @_;
     display_message( '[verbose]', @_ );
-    return $verbose;
+    return $debug{'v'};
 }
 
 # can be improved
-sub WARN { return display_message( "[WARNING]", @_ ) }
+sub WARN { return verbose() && display_message( "[WARNING]", @_ ) }
 sub INFO { return verbose() && display_message( "[INFO]", @_ ) }
 sub FATAL { die display_message( "[FATAL]", @_ ) }
 
@@ -126,13 +129,19 @@ sub display_message {
 sub debug {
     my ( $level, @msg ) = @_;
 
-    if ( !$level || !defined $debug{$level} ) {
-        eval q/require Carp; 1/ or die "Unknown debug level $level";
-        Carp::croak("Unknown debug level $level");
+    my @levels = ref $level eq 'ARRAY' ? @$level : $level;
+
+    if ( !scalar @levels || grep { !defined $debug{$_} } @levels ) {
+        my $error_msg = "One or more unknown debug level in " . ( join( ', ', sort @levels ) );
+        eval q/require Carp; 1/ or die $error_msg;
+        Carp::croak($error_msg);
     }
 
-    if ( $debug{$level} && scalar @msg ) {
+    my $debug_on = grep { $debug{$_} } @levels;
+
+    if ( $debug_on && scalar @msg ) {
         @msg = map { defined $_ ? $_ : 'undef' } @msg;
+        my $header = '[level=' . join( ',', sort @levels ) . '] ';
         my $cnt = @msg;
         my $warn;
         if ( $cnt == 1 ) {
@@ -148,15 +157,15 @@ sub debug {
 
                 # track the error source when possible
                 eval q/require Carp; 1/ or die $error;
-                Carp::croak( "Error: $error", "[level=$level] ", "STR:'$str' ; ", join( ', ', @msg ) );
+                Carp::croak( "Error: $error", $header, "STR:'$str' ; ", join( ', ', @msg ) );
             };
 
         }
         $warn = '' unless defined $warn;
-        display_message("[$level] $warn");
+        display_message("$header$warn");
     }
 
-    return $debug{$level};
+    return $debug_on;
 }
 
 1;
