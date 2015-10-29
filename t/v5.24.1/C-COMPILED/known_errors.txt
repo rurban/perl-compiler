@@ -119,7 +119,7 @@ re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     SIG       BC issue #219 - overload issue + BC issue #295
 re/pat_advanced.t            SIG       BC issue #273 - \p \N
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
-re/pat_rt_report.t           PLAN      Plan was valid
+re/pat_rt_report.t           PLAN      BC issue #295 - (?{}) should have its own lexical scope
 re/qr_gc.t                   TESTS     Test results:
 re/reg_eval_scope.t          SIG       BC issue #273 - \p
 re/reg_fold.t                SIG       BC issue #273 - \p
