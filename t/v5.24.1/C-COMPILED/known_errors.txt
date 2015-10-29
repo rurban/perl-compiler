@@ -212,4 +212,5 @@ xtestc/2511.t                TESTS     Output is: ""
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/2800.t                BC        xtestc/2800.c is generated (-O3,-fno-fold)
 xtestc/2900.t                TESTS     Output is: "19518210 "
+xtestc/2901.t                TESTS     Output is: ""
 xtestc/3052.t                TESTS     Output is: ""
