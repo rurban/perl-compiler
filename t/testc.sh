@@ -1163,6 +1163,11 @@ tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {re
 tests[2901]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
 tests[293]='use Coro; print q(ok)'
+tests[294]='#!perl -w
+BEGIN { $SIG{__WARN__} = sub { my $s = shift; do { warn $s; die $s } if $s =~ qr{Constant subroutine.*redefined}i }; }
+use File::Glob;
+File::Glob->can("XXX")->() if $ENV{ABCD};
+print qq/ok\n/'
 if [[ $v518 -gt 0 ]]; then
   tests[295]='my @a = qw/ok/; my @to = (); s/(\w)(?{push @to, $1})/,$1,/g for @a; print "ok\n" if "@to" eq "o k";'
 fi
