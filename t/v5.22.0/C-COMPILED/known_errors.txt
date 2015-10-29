@@ -117,7 +117,7 @@ op/yadayada.t                COMPAT    Unimplemented does not display the correc
 re/fold_grind.t              SIG       Exit signal is 11 SEGV
 re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     SIG       BC issue #219 - overload issue + BC issue #295
-re/pat_advanced.t            SIG       Exit signal is 11 SEGV
+re/pat_advanced.t            SIG       BC issue #273 - \p \N
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
 re/pat_rt_report.t           PLAN      Plan was valid
 re/qr_gc.t                   TESTS     Test results:
