@@ -127,7 +127,7 @@ re/reg_mesg.t                TESTS     Test results:
 re/reg_pmod.t                TESTS     Test results:
 re/regex_sets.t              SIG       BC issue #296
 re/regexp_unicode_prop.t     SIG       Exit signal is 11 SEGV
-re/rxcode.t                  TESTS     Test results:
+re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/subst_amp.t               TESTS     BC issue #295 - (?{}) should have its own lexical scope
 uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing the returned sub
 uni/chomp.t                  SIG       BC issue #284 - Encode::find_encoding
