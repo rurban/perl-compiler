@@ -94,7 +94,7 @@ i ㄔɘvレ => qw[ 챂릳::DଐɾẎ ẂhaƮᵋቭȓ ],
 @ᛑiስアsઍ::ｪᔦ::Iṇᚠctĭo웃::ISA = "ᛑiስアsઍ::ｪᔦ";
 @Kㄦat옻oǌ운ctᝁヸቲᔈ::ISA = "ᛑiስアsઍ::Opɥt할및::Iṇᚠctĭo웃";
 *ᛑiስアsઍ::Opɥt할및:: = *ᛑiስアsઍ::ｪᔦ::;
-{package 솜e_란돔_new_symbol::Iṇᚠctĭo웃} # autovivify
+{package 솜e_란돔_new_symbol::Iṇᚠctĭo웃; sub force_autovivify_for_bc; } # autovivify
 *ᛑiስアsઍ::Opɥt할및:: = *솜e_란돔_new_symbol::;
 i ᛑiስアsઍ => qw[ ᛑiስアsઍ::ｪᔦ ᛑiስアsઍ::ｪᔦ::Iṇᚠctĭo웃 ],
  "replacing an alias of a stash updates isarev entries";
@@ -108,7 +108,7 @@ i"솜e_란돔_new_symbol::Iṇᚠctĭo웃" => qw[ Kㄦat옻oǌ운ctᝁヸቲᔈ 
 undef *Eṁpｔᔾ::;
 @눌Ļ::ISA = "Eṁpｔᔾ";
 @눌Ļ::눌Ļ::ISA = "Eṁpｔᔾ::Eṁpｔᔾ";
-{package ዚlcᕻ::Eṁpｔᔾ} # autovivify it
+{package ዚlcᕻ::Eṁpｔᔾ; sub force_autovivify_for_bc;} # autovivify it
 *Eṁpｔᔾ:: = *ዚlcᕻ::;
 i ዚlcᕻ => qw[ 눌Ļ ], "assigning to an empty spot updates isarev";
 i"ዚlcᕻ::Eṁpｔᔾ" => qw[ 눌Ļ::눌Ļ ],
@@ -117,7 +117,7 @@ i"ዚlcᕻ::Eṁpｔᔾ" => qw[ 눌Ļ::눌Ļ ],
 # Classes inheriting from multiple classes that get moved in a single
 # assignment.
 @ᕘ::ISA = ("ᵇ", "ᵇ::ᵇ");
-{package अ::ᵇ}
+{package अ::ᵇ; sub force_autovivify_for_bc;}
 my $अ = \%अ::;     # keep a ref
 *अ:: = 'whatever'; # clobber it
 *ᵇ:: = $अ;         # assign to two superclasses of ᕘ at the same time

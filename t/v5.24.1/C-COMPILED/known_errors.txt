@@ -36,7 +36,6 @@ mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
 mro/complex_c3.t             SIG       BC issue #298 - next::method broken.
 mro/complex_c3_utf8.t        SIG       BC issue #298 - next::method broken.
-mro/isarev_utf8.t            TESTS     Test results:
 mro/next_edgecases.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
 mro/next_edgecases_utf8.t    SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
 mro/next_goto.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
