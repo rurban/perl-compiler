@@ -1080,7 +1080,9 @@ print "ok 3\n" if Foo::match("xyz");
 print "ok 4\n" unless Foo::match("xyz");
 
 Foo::match_reset();
-print "ok 5\n" if Foo::match("xyz");'
+print "ok 5\n" if Foo::match("xyz");
+print "ok 6\n" if !Bar::match("xyz");
+'
 result[2741]='1..5
 ok 1
 ok 2
@@ -1173,8 +1175,10 @@ tests[365]='use constant JP => eval { require Encode; Encode::find_encoding("euc
 result[365]='www.google.com'
 tests[306]='package foo; sub check_dol_slash { print ($/ eq "\n" ? "ok" : "not ok") ; print  "\n"} sub begin_local { local $/;} ; package main; BEGIN { foo::begin_local() }  foo::check_dol_slash();'
 tests[308]='print (eval q{require Net::SSLeay;} ? qq{ok\n} : $@);'
-tests[309]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
-result[309]='Net::LibIDN: ok
+tests[309]='#-O0 only
+sub Regexp::DESTROY() { print qq/ok\n/ } my $rx = qr//; undef($rx)'
+tests[3090]='print $_,": ",(eval q{require }.$_.q{;} ? qq{ok\n} : $@) for qw(Net::LibIDN Net::SSLeay);'
+result[3090]='Net::LibIDN: ok
 Net::SSLeay: ok'
 tests[310]='package foo;
 sub dada { my $line = <DATA> }
