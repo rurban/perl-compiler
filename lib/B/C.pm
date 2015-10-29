@@ -942,9 +942,9 @@ sub save_pv_or_rv {
       # But a "" or "0" or "[a-z]+" string can have SvLEN=0
       # since its is converted to 0
       {
-        local $^W;
-        BEGIN { ${^WARNING_BITS} = 0; }
-        if ($static and $] < 5.017006 and abs($pv || 0) > 0) {
+        #local $^W;
+        #BEGIN { ${^WARNING_BITS} = 0; }
+        if ($static and $] < 5.017006 and abs(0+$pv) > 0) {
           $static = 0;
         }
       }
@@ -7507,7 +7507,7 @@ sub save_main {
   _delete_macros_vendor_undefined() if $PERL512;
   set_curcv B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
-  binmode( STDOUT, ':utf8') unless $PERL56;
+  binmode( STDOUT, ':utf8' ) unless $PERL56;
   $verbose
     ? walkoptree_slow( main_root, "save" )
     : walkoptree( main_root, "save" );
