@@ -964,14 +964,15 @@ tests[244]='print "($_)\n" for q{-2}..undef;'
 result[244]='(-2)
 (-1)
 (0)'
-tests[245]='sub foo {
+tests[245]='%INC = (); require XSLoader; XSLoader::load("Cwd"); print qq{ok}'
+tests[2450]='sub foo {
     my ( $a, $b ) = @_;
     print "a: ".ord($a)." ; b: ".ord($b)." [ from foo ]\n";
 }
 print "a: ". ord(lc("\x{1E9E}"))." ; ";
 print "b: ". ord("\x{df}")."\n";
 foo(lc("\x{1E9E}"), "\x{df}");'
-result[245]='a: 223 ; b: 223
+result[2450]='a: 223 ; b: 223
 a: 223 ; b: 223 [ from foo ]'
 # see t/issue235.t test 2
 tests[246]='sub foo($\@); eval q/foo "s"/; print $@'
