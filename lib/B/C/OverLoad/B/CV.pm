@@ -38,6 +38,7 @@ sub save {
     }
     my $gv = $cv->GV;
     my ( $cvname, $cvstashname, $fullname, $isutf8 );
+    $fullname = '';
     my $CvFLAGS = $cv->CvFLAGS;
     if ( $gv and $$gv ) {
         $cvstashname = $gv->STASH->NAME;
@@ -57,6 +58,7 @@ sub save {
     }
     elsif ( $cv->is_lexsub($gv) ) {
         $fullname = $cv->NAME_HEK;
+        $fullname = '' unless defined $fullname;
         $isutf8   = $cv->FLAGS & SVf_UTF8;
         debug( cv => "CV NAME_HEK $fullname" );
         if ( $fullname =~ /^(.*)::(.*?)$/ ) {
@@ -66,7 +68,7 @@ sub save {
             undef($2);
         }
     }
-
+    $cvstashname = '' unless defined $cvstashname;
     my $flags = $isutf8 ? 'SVf_UTF8' : '';
 
     # XXX TODO need to save the gv stash::AUTOLOAD if exists
@@ -548,6 +550,7 @@ sub save {
 
         if ( !$gv or ref($gv) eq 'B::SPECIAL' ) {
             my $lexsub = $cv->can('NAME_HEK') ? $cv->NAME_HEK : "_anonlex_";
+            $lexsub = '' unless defined $lexsub;
             debug( gv => "lexsub name $lexsub" );
 
             my ( $cstring, $cur, $utf8 ) = strlen_flags($lexsub);

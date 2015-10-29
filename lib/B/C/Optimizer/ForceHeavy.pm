@@ -22,7 +22,7 @@ sub force_heavy {
 
     # only for bytes and utf8
     # QUESTION: what about Config_heavy.pl ?
-    return unless $pkg =~ m/^$RULE$/;
+    return unless $pkg && $pkg =~ m/^$RULE$/;
 
     # optional
     return if $fullname && $fullname !~ /^${RULE}::AUTOLOAD$/;

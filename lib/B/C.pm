@@ -746,8 +746,9 @@ sub try_isa {
 sub try_autoload {
     my ( $cvstashname, $cvname ) = @_;
     no strict 'refs';
+    return unless defined $cvstashname && defined $cvname;
     return 1 if try_isa( $cvstashname, $cvname );
-
+    $cvname = '' unless defined $cvname;
     no strict 'refs';
     if ( defined( *{ 'UNIVERSAL::' . $cvname }{CODE} ) ) {
         debug( cv => "Found UNIVERSAL::$cvname" );
