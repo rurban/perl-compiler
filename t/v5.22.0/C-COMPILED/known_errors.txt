@@ -138,7 +138,7 @@ uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pra
 uni/gv.t                     TESTS     BC issue #301 - no warnings when redefining unicode function
 uni/labels.t                 SIG       BC issue #273 - use of \N or charnames segfaults the program. 
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/lex_utf8.t               SIG       Exit signal is 11 SEGV
+uni/lex_utf8.t               SIG       BC issue #273 - use of \N or charnames segfaults the program. 
 uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
