@@ -1165,7 +1165,9 @@ tests[299]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
 tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
 result[300]='mro'
-tests[301]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
+tests[3010]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
+tests[301]='use utf8; use warnings; sub Ṩp맅싵Ş { "foo" } sub abcd { "bar" } my $w; $SIG{__WARN__} = sub { $w = $_[0] }; *{"Ṩp맅싵Ş"} = \&{"xyz"}; print "W1" if $w; $w = ""; *{"abcd"} = \&{"xyz"}; print "W2" if $w;'
+result[301]="W1W2"
 if [[ $v518 -gt 0 ]]; then
   tests[302]='use feature "say"; eval q{say "ok"}; print $@ if($@);'
   tests[304]='no warnings; use feature "lexical_subs"; my sub a; print qq/ok\n/'
