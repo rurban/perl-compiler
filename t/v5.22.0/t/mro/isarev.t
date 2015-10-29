@@ -91,7 +91,7 @@ i Chevre => qw[ Caprid::Dairy Whatever ],
 @Disease::Eye::Infectious::ISA = "Disease::Eye";
 @Keratoconjunctivitis::ISA = "Disease::Ophthalmic::Infectious";
 *Disease::Ophthalmic:: = *Disease::Eye::;
-{package some_random_new_symbol::Infectious} # autovivify
+{package some_random_new_symbol::Infectious; sub a} # autovivify. Need a sub here or B::C won't see this stash
 *Disease::Ophthalmic:: = *some_random_new_symbol::;
 i Disease => qw[ Disease::Eye Disease::Eye::Infectious ],
  "replacing an alias of a stash updates isarev entries";
@@ -105,7 +105,7 @@ i"some_random_new_symbol::Infectious" => qw[ Keratoconjunctivitis ],
 undef *Empty::;
 @Null::ISA = "Empty";
 @Null::Null::ISA = "Empty::Empty";
-{package Zilch::Empty} # autovivify it
+{package Zilch::Empty; sub a } # autovivify it. Need a sub here or B::C won't see this stash
 *Empty:: = *Zilch::;
 i Zilch => qw[ Null ], "assigning to an empty spot updates isarev";
 i"Zilch::Empty" => qw[ Null::Null ],
@@ -114,7 +114,7 @@ i"Zilch::Empty" => qw[ Null::Null ],
 # Classes inheriting from multiple classes that get moved in a single
 # assignment.
 @foo::ISA = ("B", "B::B");
-{package A::B}
+
 my $A = \%A::;     # keep a ref
 *A:: = 'whatever'; # clobber it
 *B:: = $A;         # assign to two superclasses of foo at the same time
