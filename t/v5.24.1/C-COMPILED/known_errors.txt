@@ -126,7 +126,7 @@ re/reg_fold.t                SIG       BC issue #273 - \p
 re/reg_mesg.t                TESTS     Test results:
 re/reg_pmod.t                TESTS     Test results:
 re/regex_sets.t              SIG       BC issue #296
-re/regexp_unicode_prop.t     SIG       Exit signal is 11 SEGV
+re/regexp_unicode_prop.t     SIG       BC issue #273 - use of \N or charnames segfaults the program. 
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/subst_amp.t               TESTS     BC issue #295 - (?{}) should have its own lexical scope
 uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing the returned sub
