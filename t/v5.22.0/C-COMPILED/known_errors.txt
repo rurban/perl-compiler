@@ -70,7 +70,7 @@ op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic +
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
-op/exists_sub.t              SIG       BC issue #276
+op/exists_sub.t              SIG       BC issue #277 - empty sub with attributes
 op/filetest.t                TESTS     BC issue #219 - overload issue
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
