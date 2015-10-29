@@ -1001,8 +1001,9 @@ tests[2512]='sub f ();print "ok" if exists &f'
 tests[2513]='sub f ($);print "ok" if exists &f'
 tests[2514]='sub f;print "ok" if exists &f'
 tests[252]='package bar; sub search { shift =~ m?bar? ? 1 : 0 } sub reset_zlopp { reset } package foo; sub ZZIP { shift =~ m?ZZIP? ? 1 : 0 } package main; foo::ZZIP("ZZIP"); bar::reset_zlopp(); !foo::ZZIP("ZZIP") and print "ok"'
-tests[253]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
-result[253]='1..2
+tests[253]='use Unicode::UCD q/prop_invmap/; my @list = prop_invmap("Uppercase_Mapping"); print "ok"'
+tests[2530]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+result[2530]='1..2
 ok 1
 ok 2'
 tests[254]='#TODO destroy upgraded lexvar
