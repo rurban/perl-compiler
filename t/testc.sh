@@ -1161,8 +1161,11 @@ tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {re
 tests[2901]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
 tests[293]='use Coro; print q(ok)'
-tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
-result[295]='2 2 5 : 8 5 8'
+if [[ $v518 -gt 0 ]]; then
+  tests[295]='my @a = qw/ok/; my @to = (); s/(\w)(?{push @to, $1})/,$1,/g for @a; print "ok\n" if "@to" eq "o k";'
+fi
+tests[2950]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
+result[2950]='2 2 5 : 8 5 8'
 if [[ $v518 -gt 0 ]]; then
   tests[298]='package D;
 sub testmeth { "wrong" }
@@ -1255,6 +1258,7 @@ package Diamond_C; sub maybe { "Diamond_C::maybe" } package Diamond_D; use base 
 tests[328]='#WONTFIX re-eval lex/global mixup
 my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'
 result[328]=45
+# probably a duplicate of 295
 tests[329]='#WONTFIX re-eval lex/global mixup
 $_ = q{aaa}; my @res; pos = 1; s/\Ga(?{push @res, $_, $`})/xx/g; print "ok\n" if "$_ @res" eq "axxxx aaa a aaa aa"; print "$_ @res\n"'
 result[329]='ok
