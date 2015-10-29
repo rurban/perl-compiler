@@ -1163,8 +1163,14 @@ tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[295]='2 2 5 : 8 5 8'
 tests[299]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
-tests[300]='use mro;print @{mro::get_linear_isa("mro")};'
-result[300]='mro'
+tests[300]='format STDERR = 
+.
+my $stdout = *STDOUT{IO};
+my $stderr = *STDERR{FORMAT};
+print ref($stdout).q/ || /.ref($stderr)'
+result[300]='IO::File || FORMAT'
+tests[3000]='use mro;print @{mro::get_linear_isa("mro")};'
+result[3000]='mro'
 tests[3010]='{ package A; use mro "c3";  sub foo { "A::foo" } } { package B; use base "A"; use mro "c3"; sub foo { (shift)->next::method() } } print qq{ok\n} if B->foo eq "A::foo";'
 tests[301]='use utf8; use warnings; sub Ṩp맅싵Ş { "foo" } sub abcd { "bar" } my $w; $SIG{__WARN__} = sub { $w = $_[0] }; *{"Ṩp맅싵Ş"} = \&{"xyz"}; print "W1" if $w; $w = ""; *{"abcd"} = \&{"xyz"}; print "W2" if $w;'
 result[301]="W1W2"
