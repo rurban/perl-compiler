@@ -28,7 +28,11 @@ is(eval('$['), 0);
 is(eval('$[ = 0; 123'), 123);
 is(eval('$[ = 1; 123'), 123);
 $[ = 1;
-ok($INC{'arybase.pm'}, "arybase is in INC");
+SKIP: {
+	skip "B::C COMPAT - issue #248", 1 if $0 !~ qr{\.t};
+	ok($INC{'arybase.pm'}, "arybase is in INC");
+}
+
 
 use v5.15;
 is(eval('$[ = 1; 123'), undef);
