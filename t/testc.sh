@@ -1000,9 +1000,7 @@ sub f :lvalue;print "ok" if exists &f'
 tests[2512]='sub f ();print "ok" if exists &f'
 tests[2513]='sub f ($);print "ok" if exists &f'
 tests[2514]='sub f;print "ok" if exists &f'
-# duplicate of 234
-tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
-result[252]='4'
+tests[252]='package bar; sub search { shift =~ m?bar? ? 1 : 0 } sub reset_zlopp { reset } package foo; sub ZZIP { shift =~ m?ZZIP? ? 1 : 0 } package main; foo::ZZIP("ZZIP"); bar::reset_zlopp(); !foo::ZZIP("ZZIP") and print "ok"'
 tests[253]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[253]='1..2
 ok 1
