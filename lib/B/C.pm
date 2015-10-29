@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_08';
+our $VERSION = '1.52_09';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -4113,13 +4113,22 @@ sub B::CV::save {
       }
     } else {
       $init->add( sprintf("CvOUTSIDE(%s) = (CV*)s\\_%x;", $sym, $xcv_outside) );
+      #if ($PERL522) {
+      #  $init->add( sprintf("CvPADLIST(%s)->xpadl_outid = CvPADLIST(s\\_%x)->xpadl_id;",
+      #                      $sym, $xcv_outside));
+      #}
     }
   }
   elsif ($] >= 5.017005 and $xcv_outside) {
-    # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
     my $padl = $cv->OUTSIDE->PADLIST->save;
-    # This needs to be postponed (test 227)
-    $init2->add( sprintf( "CvPADLIST(%s)->xpadl_outid = PadlistNAMES(%s);", $sym, $padl) );
+    if ($PERL522) {
+      $init->add( sprintf("CvPADLIST(%s)->xpadl_outid = CvPADLIST(s\\_%x)->xpadl_id;",
+                          $sym, $xcv_outside));
+    } else {
+      # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
+      # This needs to be postponed (test 227)
+      $init2->add( sprintf( "CvPADLIST(%s)->xpadl_outid = PadlistNAMES(%s);", $sym, $padl) );
+    }
   }
   if ($gv and $$gv) {
     #test 16: Can't call method "FETCH" on unblessed reference. gdb > b S_method_common
@@ -4191,6 +4200,7 @@ sub B::CV::save {
                           $sv_ix, $proto));
     }
   }
+  $cv->OUTSIDE->save if $xcv_outside;
   return $sym;
 }
 
