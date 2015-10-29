@@ -65,7 +65,7 @@ sub save {
         push @B::C::static_free, $sym if $av->FLAGS & SVs_OBJECT;
     }
 
-    debug( av => "saving AV $fullname 0x%x [%s] FILL=$fill", $$av, ref($av) );
+    debug( av => "saving AV %s 0x%x [%s] FILL=%d", $fullname, $$av, ref($av), $fill );
 
     # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
     if ( $fill > -1 and defined $magic and $magic !~ /D/ ) {

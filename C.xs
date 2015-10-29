@@ -154,7 +154,17 @@ my_runops(pTHX)
 
 MODULE = B__MAGIC	PACKAGE = B::MAGIC
 
-MODULE = B     PACKAGE = B::PADNAME    PREFIX = Padname
+MODULE = B      PACKAGE = B::HV
+
+SV*
+SvSTASH_not(hv)
+          B::HV hv
+PPCODE:
+    HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
+    ST(0) = (char*)stash < (char*)PL_sv_arenaroot
+             ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
+
+MODULE = B	PACKAGE = B::PADNAME	PREFIX = Padname
 
 int
 PadnameGEN(padn)

@@ -75,6 +75,7 @@ op/defins.t                  TESTS     BC issue #294 - File::Glob constant subro
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/exists_sub.t              SIG       BC issue #276
 op/filetest.t                TESTS     BC issue #219 - overload issue
+op/glob.t                    TESTS     Test results:
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
@@ -84,6 +85,7 @@ op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
+op/magic-27839.t             BC        op/magic-27839.c is generated (-O3,-fno-fold)
 op/magic.t                   SIG       BC issue #271 - fork + END
 op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)

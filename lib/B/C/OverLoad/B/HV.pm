@@ -66,10 +66,12 @@ sub save {
                 B::C::make_c3($name);
             }
 
-            #if ($magic =~ /c/) {
-            # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-            #  init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
-            #}
+            if ( $magic =~ /c/ ) {
+                debug( mg => "defer AMT magic of $name" );
+
+                # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
+                #  init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+            }
             return $sym;
         }
         return $sym if B::C::skip_pkg($name) or $name eq 'main';
@@ -122,8 +124,8 @@ sub save {
     svsect()->debug( $fullname, $hv );
     my $sv_list_index = svsect()->index;
     debug(
-        hv => "saving HV %%%s &sv_list[$sv_list_index] 0x%x MAX=%d KEYS=%d\n",
-        $fullname, $$hv, $hv->MAX, $hv->KEYS
+        hv => "saving HV %%%s &sv_list[%d] 0x%x MAX=%d KEYS=%d",
+        $fullname, $sv_list_index, $$hv, $hv->MAX, $hv->KEYS
     );
 
     # XXX B does not keep the UTF8 flag [RT 120535] #200

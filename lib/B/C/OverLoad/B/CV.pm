@@ -214,7 +214,7 @@ sub save {
         $sym = savesym( $cv, "&sv_list[$sv_ix]" );
     }
 
-    debug( cv => "saving $fullname CV 0x%x as $sym\n", $$cv );
+    debug( cv => "saving %s CV 0x%x as %s", $fullname, $$cv, $sym );
 
     # fixme: interesting have a look at it
     if ( $fullname eq 'utf8::SWASHNEW' ) {    # bypass utf8::AUTOLOAD, a new 5.13.9 mess

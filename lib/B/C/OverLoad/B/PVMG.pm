@@ -4,10 +4,10 @@ use strict;
 
 use Config ();    # TODO: Removing this causes unit tests to fail in B::C ???
 use B::C::Config;
-use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY cstring cchar SVp_POK svref_2object/;
-use B::C::Save qw/savepvn savepv/;
+use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY SVf_AMAGIC cstring cchar SVp_POK svref_2object/;
+use B::C::Save qw/savepvn savepv savestashpv/;
 use B::C::Decimal qw/get_integer_value get_double_value/;
-use B::C::File qw/init svsect xpvmgsect xpvsect/;
+use B::C::File qw/init init2 svsect xpvmgsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Helpers qw/mark_package read_utf8_string/;
 
@@ -91,13 +91,15 @@ sub save {
 sub save_magic {
     my ( $sv, $fullname ) = @_;
     my $sv_flags = $sv->FLAGS;
+    my $pkg;
     if ( debug('mg') ) {
         my $flagspv = "";
         $fullname = '' unless $fullname;
         $flagspv = $sv->flagspv if debug('flags') and !$sv->MAGICAL;
+
         debug(
-            mg => "saving magic for %s %s (0x%x) flags=0x%x%s  - called from %s:%s\n",
-            ref($sv), $fullname, $$sv, $sv_flags,
+            mg => "saving magic for %s %s (0x%x) flags=0x%x%s  - called from %s:%s",
+            class($sv), $fullname, $$sv, $sv_flags,
             debug('flags') ? "(" . $flagspv . ")" : "",
             @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(1) )[2] ] }
         );
@@ -110,8 +112,8 @@ sub save_magic {
         WARN sprintf( "skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS || 0 );
     }
     else {
-        my $pkg = $sv->SvSTASH;
-        if ($$pkg) {
+        $pkg = $sv->SvSTASH;
+        if ( $pkg and $$pkg ) {
             debug( mg => "stash isa class(\"%s\") 0x%x\n", eval { $pkg->NAME }, $$pkg );
 
             # 361 do not force dynaloading IO via IO::Handle upon us
@@ -135,16 +137,26 @@ sub save_magic {
         }
     }
 
+    init()->add( sprintf( "SvREADONLY_off((SV*)s\\_%x);", $$sv ) )
+      if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
+
     # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-    if ( !$sv->MAGICAL ) {
+    if ( !( $sv->MAGICAL or $sv_flags & SVf_AMAGIC ) ) {
         debug(
             mg => "Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
             $sv_flags && 0xff, $sv_flags, debug('flags') ? "(" . $sv->flagspv . ")" : ""
         );
         return '';
     }
-    init()->add( sprintf( "SvREADONLY_off((SV*)s\\_%x);", $$sv ) )
-      if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
+
+    if ( $sv_flags & SVf_AMAGIC ) {
+        my $name = $fullname;
+        $name =~ s/^%(.*)::$/$1/;
+        $name = $pkg->NAME if $pkg and $$pkg;
+        WARN( sprintf( "initialize overload cache for %s", $fullname ) ) if debug('mg') or debug('gv');
+
+        init2()->add( sprintf( "Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name), $fullname ) );
+    }
 
     my @mgchain = $sv->MAGIC;
     my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
