@@ -1099,7 +1099,8 @@ result[2811]='ok
 @- = 0 0 2 7
 @+ = 10 1 6 10
 len @- = 4'
-tests[281]='
+if [[ $v518 -gt 0 ]]; then
+    tests[281]='# nested formats >5.18
 open(NEST, ">Op_write.tmp");
 format NEST =
 @<<<
@@ -1114,12 +1115,11 @@ $birds;
     "nest"
 }
 .
-write NEST;
-close NEST;
-
-print qx/cat Op_write.tmp/;'
-result[281]='birds
+write NEST; close NEST;
+print `cat Op_write.tmp`;'
+    result[281]='birds
 nest'
+fi
 tests[282]='use vars qw($glook $smek $foof); $glook = 3; $smek = 4; $foof = "halt and cool down"; my $rv = \*smek; *glook = $rv; my $pv = ""; $pv = \*smek; *foof = $pv; print "ok\n";'
 tests[283]='#238 Undefined format "STDOUT"
 format =
@@ -1146,10 +1146,10 @@ tests[2871]='my $i = "-Inf" + 0; print $i >= 0 ? "not $i " : "", "ok\n";'
 tests[2872]='my $i = "NaN" + 0; print $i <= 0 ? "not $i " : "", "ok\n"'
 
 tests[284]='use Encode; find_encoding("euc-jp") and print qq/ok\n/'
-
+# mojibake
 tests[288]='use utf8; package Ｄiᚪၚd_A; sub ᕘ { "A" } package Ｄiᚪၚd_B; our @ISA = ("Ｄiᚪၚd_A"); sub ᕘ { "B => " . (shift)->SUPER::ᕘ } package Ｄiᚪၚd_C; our @ISA = ("Ｄiᚪၚd_B"); sub ᕘ { "C => " . (shift)->SUPER::ᕘ } Ｄiᚪၚd_C->ᕘ eq "C => B => A" and print "ok";'
 tests[289]='no warnings; sub z_zwap (&); print qq{ok\n} if eval q{sub z_zwap {return @_}; 1;}'
-tests[2900]='sub f;print "ok" if exists &f && not defined &f;'
+tests[2901]='sub f;print "ok" if exists &f && not defined &f;'
 tests[290]='print "ok\n"if "IO::File" eq ref *STDOUT{IO}'
 tests[293]='use Coro; print q(ok)'
 tests[295]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
