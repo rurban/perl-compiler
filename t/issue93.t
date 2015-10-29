@@ -31,33 +31,38 @@ print 'k' if 'test' eq $x;
 unlink 'pcc.tmp';
 EOS
 
+my ($cmt, $name);
+
+TODO: {
+  local $TODO = "recover IO state generally";
+  $cmt = 'various hard IO BEGIN problems';
+  $name = 'ccode93ib';
+  plctestok($i++, $name, $todo, "BC cmt");
+  ctestok($i++, "C", $name, $todo, "C $cmt");
+  ctestok($i++, "CC", $name, $todo, "CC $cmt");
+}
+
 my $ok = <<'EOF';
 my $out;open($out,'>&STDOUT');print $out qq(ok\n);
 EOF
+
+$cmt = '&STDOUT at run-time';
+$name = 'ccode93ig';
+plctestok($i++, $name, $ok, "BC cmt");
+ctestok($i++, "C", $name, $ok, "C $cmt");
+ctestok($i++, "CC", $name, $ok, "CC $cmt");
 
 my $work = <<'EOF';
 my $out;BEGIN{open($out,'>&STDOUT');}print $out qq(ok\n);
 EOF
 
-sub test3 {
-  my $name = shift;
-  my $script = shift;
-  my $cmt = shift;
-  my $todobc = (($name eq 'ccode93iw' and $] < 5.014)?"TODO needs 5.14 ":"");
-  plctestok($i*3+1, $name, $script,$todobc."BC $cmt");
-  ctestok($i*3+2, "C", $name, $script, "C $cmt");
-  ctestok($i*3+3, "CC", $name, $script, "CC $cmt");
-  $i++;
-}
-
-TODO: {
-  local $TODO = "recover IO state generally";
-  test3('ccode93ib', $todo, 'various hard IO BEGIN problems');
-}
-test3('ccode93ig', $ok,   '&STDOUT at run-time');
 TODO: {
   local $TODO = "recover STDIO state";
-  test3('ccode93iw', $work, '&STDOUT restore');
+  $cmt = '&STDOUT restore';
+  $name = 'ccode93iw';
+  plctestok($i++, $name, $work, ($] < 5.014?"TODO needs 5.14 ":"")."BC cmt");
+  ctestok($i++, "C", $name, $work, "C $cmt");
+  ctestok($i++, "CC", $name, $work, "CC $cmt");
 }
 
 END {unlink "pcc.tmp" if -f "pcc.tmp";}
