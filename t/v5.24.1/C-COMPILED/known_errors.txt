@@ -28,7 +28,8 @@ comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse beh
 comp/hints.t                 COMPAT    tests are using BEGIN block, do not ready for B::C
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
 comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
-extra/reset.t                TESTS     BC issue 252: Reset is not localized to the current namespace
+extra/reset.t                TESTS     BC issue #252 - Reset is not localized to the current namespace
+io/bom.t                     COMPAT    BC issue 312 - BOM seems to be rejected by perlcc but really, who needs this?
 io/errno.t                   SIG       BC issue #271: END block issue
 io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
