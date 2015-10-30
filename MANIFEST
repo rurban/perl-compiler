@@ -790,6 +790,7 @@ t/issue197.t
 t/issue200.t
 t/issue201.t
 t/issue203.t
+t/issue206.t
 t/issue208.t
 t/issue211.t
 t/issue212.t
