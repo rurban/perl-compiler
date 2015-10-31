@@ -1082,6 +1082,12 @@ sub _fresh_perl {
     return $pass;
 }
 
+sub whichperlcc {
+    my $perlcc_bin = $ENV{'PROVE_BASEDIR'} . '/blib/script/perlcc';
+    -x $perlcc_bin or die("No perlcc found at $perlcc_bin!");
+    return $perlcc_bin;
+}
+
 sub runperl_binary {
     my ( $test, $opts ) = @_;
 
@@ -1113,7 +1119,8 @@ sub runperl_binary {
 
     my %filter = map { $_ => 1 } qw/-T -w/; # filter perl switches
     my $switches = join( ' ', grep { $filter{$_} } @{ $opts->{switches} || [] });
-    my $perlcc = "${stdin_prefix}perlcc $switches -O3 -o $bin $test $error";
+    my $perlcc_bin = whichperlcc();
+    my $perlcc = "${stdin_prefix} $^X -Mblib $perlcc_bin $switches -O3 -o $bin $test $error";
     print STDERR "# Compiling: > $perlcc\n";
     ( $perlcc ) = $perlcc =~ m/(.*)/; # untaint
     my $make = qx{$perlcc};

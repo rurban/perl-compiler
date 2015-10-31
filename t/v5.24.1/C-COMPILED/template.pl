@@ -14,6 +14,9 @@ BEGIN {
     unshift @INC, $FindBin::Bin . "/../../../lib";
 }
 
+# Used by runperl to find perlcc
+$ENV{'PROVE_BASEDIR'} = getcwd;
+
 use KnownErrors qw/check_todo/;
 
 if ( $0 =~ m{/template\.pl$} ) {
