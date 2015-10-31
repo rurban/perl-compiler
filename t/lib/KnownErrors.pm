@@ -49,7 +49,7 @@ sub get_current_error_type {
 
     return $self->{type} || '' if exists $self->{type};
 
-    my ( $file_in_error, $type, $description ) = ('');
+    my ( $file_in_error, $type, $description ) = ('', '');
     my $file_to_test = $self->{file_to_test} or die;
 
     open( my $errors_fh, '<', $self->{error_file} ) or die;
