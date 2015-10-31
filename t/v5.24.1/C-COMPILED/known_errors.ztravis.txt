@@ -1,6 +1,7 @@
-comp/retainedlines.t SKIP Unknown failures on Travis. We'll sort it later.
-op/taint.t SKIP Unknown failures on Travis. We'll sort it later.
-op/utftaint.t SKIP Unknown failures on Travis. We'll sort it later.
-re/substT.t SKIP Unknown failures on Travis. We'll sort it later.
-xtestc/0273.t SKIP Unknown failures on Travis. We'll sort it later.
-xtestc/0274.t SKIP Unknown failures on Travis. We'll sort it later.
+comp/retainedlines.t TESTS  Unknown why this fails here.
+op/taint.t           PLAN   Insecure directory in $ENV{PATH} when running perl subcompile
+op/utftaint.t        PLAN   Insecure directory in $ENV{PATH} when running perl subcompile
+re/substT.t          PLAN   Fails on running its first subcompile.
+xtestc/0273.t        TESTS  package _charnames bug probably affected by blib. Need a better \p test for 273
+xtestc/0274.t        GCC    error: ‘OP_DEVEL_PEEK_DUMP’ undeclared here (not in a function)
+
