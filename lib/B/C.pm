@@ -1439,6 +1439,7 @@ sub label {}
 sub do_labels ($@) {
   my $op = shift;
   for my $m (@_) {
+    no strict 'refs';
     my $mo = $op->$m if $m;
     if ( $mo and $$mo ) {
       label($mo);
