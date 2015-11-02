@@ -3642,8 +3642,6 @@ sub B::CV::save {
     if ($fullname =~ /^(.*)::(.*?)$/) {
       $cvstashname = $1;
       $cvname      = $2;
-      undef $1;
-      undef $2;
     }
   }
   $cvstashname = '' unless defined $cvstashname;
@@ -4334,6 +4332,12 @@ sub B::GV::save {
 
   my $fullname = $package . "::" . $gvname;
   my $fancyname;
+  sub Save_HV()   { 1 }
+  sub Save_AV()   { 2 }
+  sub Save_SV()   { 4 }
+  sub Save_CV()   { 8 }
+  sub Save_FORM() { 16 }
+  sub Save_IO()   { 32 }
   if ( $filter and $filter =~ m/ :pad/ ) {
     $fancyname = cstring($filter);
     $filter = 0;
@@ -4342,11 +4346,11 @@ sub B::GV::save {
   }
   # checked for defined'ness in Carp. So the GV must exist, the CV not
   if ($fullname =~ /^threads::(tid|AUTOLOAD)$/ and !$ITHREADS) {
-    $filter = 8;
+    $filter = Save_CV;
   }
   # # no need to assign any SV/AV/HV to them (172)
   if ($PERL518 and $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/) {
-    $filter = 7;
+    $filter = Save_SV + Save_AV + Save_HV;
   }
 
   my $is_empty = $gv->is_empty;
@@ -4422,6 +4426,9 @@ sub B::GV::save {
     $init->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
     return $sym;
   }
+  elsif ($B::C::ro_inc and $fullname =~ /^main::([0-9])$/) { # ignore PV regexp captures with -O2
+    $filter = Save_SV;
+  }
   # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
   #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
   #  $init2->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
@@ -4430,12 +4437,6 @@ sub B::GV::save {
   #}
   my $svflags    = $gv->FLAGS;
   my $savefields = 0;
-  sub Save_HV()   { 1 }
-  sub Save_AV()   { 2 }
-  sub Save_SV()   { 4 }
-  sub Save_CV()   { 8 }
-  sub Save_FORM() { 16 }
-  sub Save_IO()   { 32 }
 
   my $gp;
   my $gvadd = $notqual ? "$notqual|GV_ADD" : "GV_ADD";
@@ -8282,6 +8283,10 @@ to store them const and statically, not via malloc at run-time.
 
 This forbids run-time extends of INC path strings,
 the run-time will crash then.
+
+It will also skip storing string values of internal regexp capture groups
+C<$1> - C<$9>, which were used internally by the compiler or some module. They
+are considered volatile.
 
 Enabled with C<-O2>.
 
