@@ -1439,11 +1439,12 @@ sub label {}
 sub do_labels ($@) {
   my $op = shift;
   for my $m (@_) {
-    if ( ${ $op->$m } ) {
-      label($op->$m);
-      $op->$m->save if $m ne 'first'
-       or ($op->flags & 4
-           and !($op->name eq 'const' and $op->flags & 64)); #OPpCONST_BARE has no first
+    my $mo = $op->$m if $m;
+    if ( $mo and $$mo ) {
+      label($mo);
+      $mo->save if $m ne 'first'
+        or ($op->flags & 4
+            and !($op->name eq 'const' and $op->flags & 64)); #OPpCONST_BARE has no first
     }
   }
 }
