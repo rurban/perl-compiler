@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_10';
+our $VERSION = '1.52_11';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -422,7 +422,7 @@ my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
 my (%include_package, %dumped_package, %skip_package, %isa_cache, %static_ext);
-my ($use_xsloader);
+my ($use_xsloader, $Devel_Peek_Dump_added);
 my $nullop_count         = 0;
 my $unresolved_count     = 0;
 # options and optimizations shared with B::CC
@@ -1157,10 +1157,14 @@ sub force_heavy {
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
 # in perl_init ( ~10 bytes/op with GCC/i386 )
 sub B::OP::fake_ppaddr {
-  return "NULL" unless $_[0]->can('name');
+  my $op = shift;
+  return "NULL" unless $op->can('name');
+  if ($op->type == $OP_CUSTOM) {
+    return ( $verbose ? sprintf( "/*XOP %s*/NULL", $op->name) : "NULL" );
+  }
   return $B::C::optimize_ppaddr
-    ? sprintf( "INT2PTR(void*,OP_%s)", uc( $_[0]->name ) )
-    : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $_[0]->name ) ) : "NULL" );
+    ? sprintf( "INT2PTR(void*,OP_%s)", uc( $op->name ) )
+    : ( $verbose ? sprintf( "/*OP_%s*/NULL", uc( $op->name ) ) : "NULL" );
 }
 sub B::FAKEOP::fake_ppaddr { "NULL" }
 # XXX HACK! duct-taping around compiler problems
@@ -1282,9 +1286,9 @@ sub B::OP::_save_common {
       warn "package_pv for method_name not found\n" if $debug{cv};
     }
   }
-  if ($op->type == $OP_CUSTOM) {
-    warn sprintf("CUSTOM OP %s\n", $op->name) if $verbose;
-  }
+  #if ($op->type == $OP_CUSTOM) {
+  #  warn sprintf("CUSTOM OP %s\n", $op->name) if $verbose;
+  #}
   # $prev_op = $op;
   return sprintf( "s\\_%x, s\\_%x, %s",
                   ${ $op->next },
@@ -1570,25 +1574,25 @@ sub B::UNOP_AUX::save {
 }
 
 # cannot save it statically in a sect. need the class (ref) and the ppaddr
-sub B::XOP::save {
-  my ( $op, $level ) = @_;
-  my $sym = objsym($op);
-  return $sym if defined $sym;
-  # which class
-  $binopsect->comment("$opsect_common, first, last");
-  $binopsect->add(
-    sprintf( "%s, s\\_%x, s\\_%x",
-             $op->_save_common,
-             ${ $op->first },
-             ${ $op->last } ));
-  $binopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
-  my $ix = $binopsect->index;
-  $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
-    unless $B::C::optimize_ppaddr;
-  $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
-  do_labels ($op, 'first', 'last');
-  $sym;
-}
+#sub B::XOP::save {
+#  my ( $op, $level ) = @_;
+#  my $sym = objsym($op);
+#  return $sym if defined $sym;
+#  # which class
+#  $binopsect->comment("$opsect_common, first, last");
+#  $binopsect->add(
+#    sprintf( "%s, s\\_%x, s\\_%x",
+#             $op->_save_common,
+#             ${ $op->first },
+#             ${ $op->last } ));
+#  $binopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+#  my $ix = $binopsect->index;
+#  $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
+#    unless $B::C::optimize_ppaddr;
+#  $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
+#  do_labels ($op, 'first', 'last');
+#  $sym;
+#}
 
 sub B::BINOP::save {
   my ( $op, $level ) = @_;
@@ -1604,11 +1608,46 @@ sub B::BINOP::save {
              ${ $op->last } ));
   $binopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $binopsect->index;
-  my $ppaddr = $op->type == $OP_CUSTOM
-    ? sprintf('Perl_custom_op_xop(aTHX_ INT2PTR(OP*,0x%x))', $$op)
-    : $op->ppaddr;
-  $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $ppaddr ) )
-    unless $B::C::optimize_ppaddr;
+  my $ppaddr = $op->ppaddr;
+  if ($op->type == $OP_CUSTOM) {
+    my $ptr = $$op;
+    if ($] >= 5.019003 and ($op->name eq 'Devel_Peek_Dump' or $op->name eq 'Dump')){
+      warn "custom op Devel_Peek_Dump\n" if $verbose;
+      $decl->add('
+static void
+S_do_dump(pTHX_ SV *const sv, I32 lim)
+{
+    dVAR;
+    SV *pv_lim_sv = get_sv("Devel::Peek::pv_limit", 0);
+    const STRLEN pv_lim = pv_lim_sv ? SvIV(pv_lim_sv) : 0;
+    SV *dumpop = get_sv("Devel::Peek::dump_ops", 0);
+    const U16 save_dumpindent = PL_dumpindent;
+    PL_dumpindent = 2;
+    do_sv_dump(0, Perl_debug_log, sv, 0, lim,
+	       (bool)(dumpop && SvTRUE(dumpop)), pv_lim);
+    PL_dumpindent = save_dumpindent;
+}
+static OP *
+S_pp_dump(pTHX)
+{
+    dSP;
+    const I32 lim = PL_op->op_private == 2 ? (I32)POPi : 4;
+    dPOPss;
+    S_do_dump(aTHX_ sv, lim);
+    RETPUSHUNDEF;
+  }') unless $B::C::Devel_Peek_Dump_added;
+      $ppaddr = 'S_pp_dump';
+      $B::C::Devel_Peek_Dump_added++;
+      $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $ppaddr ));
+    } else {
+      warn "Warning: Unknown custom op ".$op->name."\n" if $verbose;
+      $ppaddr = sprintf('Perl_custom_op_xop(aTHX_ INT2PTR(OP*, 0x%x))', $$op);
+      $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $ppaddr ));
+    }
+  } else {
+    $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $ppaddr ) )
+      unless $B::C::optimize_ppaddr;
+  }
   $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
   do_labels ($op, 'first', 'last');
   $sym;
@@ -7605,8 +7644,9 @@ sub fixup_ppaddr {
   if ($B::C::optimize_ppaddr) {
     foreach my $i (@op_sections) {
       my $section = $$i;
-      next unless $section->index >= 0;
-      init_op_addr( $section->name, $section->index + 1 );
+      my $num = $section->index;
+      next unless $num >= 0;
+      init_op_addr( $section->name, $num + 1 );
     }
   }
 }

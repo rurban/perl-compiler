@@ -25,6 +25,7 @@
           all C -O1 and -O2 tests. Warn about this."
         Fix Inf/NaN support for C (GH#287)
         Fix handling of READONLY hashes in 5.22, i.e. use feature (GH#250)
+        Support custom op Devel_Peek_Dump, added with 5.20 (GH#274)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
 
 1.52 2014-09-09 rurban

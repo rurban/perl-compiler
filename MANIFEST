@@ -812,6 +812,7 @@ t/issue27.t
 t/issue272.t
 t/issue273.t
 t/issue274.t
+t/issue2741.t
 t/issue281.t
 t/issue282.t
 t/issue287.t
