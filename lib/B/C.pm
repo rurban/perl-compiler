@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_11';
+our $VERSION = '1.52_12';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -3983,7 +3983,9 @@ sub B::CV::save {
 
       # issue 298: dynamic CvPADLIST(&END) since 5.18 - END{} blocks
       # and #169 and #304 Attribute::Handlers
-      if ($] > 5.017 and ($B::C::dyn_padlist or $fullname =~ /^(main::END|Attribute::Handlers)/)) {
+      if ($] > 5.017 and
+          ($B::C::dyn_padlist or $fullname =~ /^(main::END|main::INIT|Attribute::Handlers)/))
+      {
         $init->add("{ /* &$fullname needs a dynamic padlist */",
                    "  PADLIST *pad;",
                    "  Newxz(pad, sizeof(PADLIST), PADLIST);",
@@ -4997,6 +4999,9 @@ sub B::AV::save {
     }
     $count = 0;
     for (my $i=0; $i <= $#array; $i++) {
+      if ($fullname =~ m/^(INIT|END)$/ and $values[$i] and ref $array[$i] eq 'B::CV') {
+        $init->add(sprintf("SvREFCNT_inc(%s); /* bump %s */", $values[$i], $fullname));
+      }
       if ( $use_svpop_speedup
            && defined $values[$i]
            && defined $values[$i+1]
@@ -7730,16 +7735,16 @@ sub save_main_rest {
   }
 
   # startpoints: XXX TODO push BEGIN/END blocks to modules code.
-  warn "Writing initav\n" if $debug{av};
+  warn "Writing init_av\n" if $debug{av};
   my $init_av = init_av->save('INIT');
   my $end_av;
   {
     # >=5.10 need to defer nullifying of all vars in END, not only new ones.
     local ($B::C::pv_copy_on_grow, $B::C::const_strings);
     $in_endav = 1;
-    warn "Writing endav\n" if $debug{av};
+    warn "Writing end_av\n" if $debug{av};
     $init->add("/* END block */");
-    $end_av  = end_av->save('END');
+    $end_av = end_av->save('END');
     $in_endav = 0;
   }
   if ( !defined($module) ) {
