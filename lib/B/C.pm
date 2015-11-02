@@ -1372,14 +1372,14 @@ sub save_main_rest {
     }
 
     # startpoints: XXX TODO push BEGIN/END blocks to modules code.
-    debug( av => "Writing initav" );
+    debug( av => "Writing init_av" );
     my $init_av = init_av->save('INIT');
     my $end_av;
     {
         # >=5.10 need to defer nullifying of all vars in END, not only new ones.
         local ( $B::C::pv_copy_on_grow, $B::C::const_strings );
         $in_endav = 1;
-        debug( 'av' => "Writing endav" );
+        debug( 'av' => "Writing end_av" );
         init()->add("/* END block */");
         $end_av   = end_av->save('END');
         $in_endav = 0;

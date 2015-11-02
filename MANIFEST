@@ -151,6 +151,7 @@ t/issue29.t
 t/issue293.t
 t/issue301.t
 t/issue305.t
+t/issue306.t
 t/issue308.t
 t/issue31.t
 t/issue312.t

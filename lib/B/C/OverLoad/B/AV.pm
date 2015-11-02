@@ -110,6 +110,9 @@ sub save {
         }
         $count = 0;
         for ( my $i = 0; $i <= $#array; $i++ ) {
+            if ( $fullname =~ m/^(INIT|END)$/ and $values[$i] and ref $array[$i] eq 'B::CV' ) {
+                init()->add( sprintf( 'SvREFCNT_inc(%s); /* bump $fullname */', $values[$i] ) );
+            }
             if (   $use_svpop_speedup
                 && defined $values[$i]
                 && defined $values[ $i + 1 ]

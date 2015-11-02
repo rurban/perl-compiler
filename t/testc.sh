@@ -1334,6 +1334,8 @@ tests[2055]='our %h; $h{""} = q/boom/; print qq{ok\n}'
 tests[2790]='*TIESCALAR = sub {}; tie my $var => "main", 42; <${var}>; print qq/ok\n/'
 tests[2230]='# 5.22 SEGV with missing gv_list[0] svop_list[0]
 <*.*> and print qq{ok\n}'
+tests[3060]='INIT { $SIG{__WARN__} = sub { die } } print "ok\n";'
+tests[3061]='END { $SIG{__WARN__} = sub { die } } print "ok\n";'
 
 init
 

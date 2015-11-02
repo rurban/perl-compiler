@@ -453,6 +453,7 @@ SKIP: {
 
 # Make sure Errno hasn't been prematurely autoloaded
 
+    skip('Errno is loaded with a B::C program cause something used %!', 2);
    ok !keys %Errno::;
 
 # Test auto-loading of Errno when %! is used
