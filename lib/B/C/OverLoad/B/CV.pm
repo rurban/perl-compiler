@@ -64,8 +64,6 @@ sub save {
         if ( $fullname =~ /^(.*)::(.*?)$/ ) {
             $cvstashname = $1;
             $cvname      = $2;
-            undef($1);
-            undef($2);
         }
     }
     $cvstashname = '' unless defined $cvstashname;

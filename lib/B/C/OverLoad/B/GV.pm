@@ -152,12 +152,12 @@ sub save {
 
     # checked for defined'ness in Carp. So the GV must exist, the CV not
     if ( $fullname =~ /^threads::(tid|AUTOLOAD)$/ and USE_ITHREADS() ) {
-        $filter = 8;
+        $filter = Save_CV;
     }
 
     # # no need to assign any SV/AV/HV to them (172)
     if ( $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/ ) {
-        $filter = 7;
+        $filter = Save_SV + Save_AV + Save_HV;
     }
 
     my $is_empty = $gv->is_empty;
@@ -224,6 +224,9 @@ sub save {
         init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
         init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
         return $sym;
+    }
+    elsif ( $B::C::ro_inc and $fullname =~ /^main::([0-9])$/ ) {    # ignore PV regexp captures with -O2
+        $filter = Save_SV;
     }
 
     # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90

@@ -2162,6 +2162,10 @@ to store them const and statically, not via malloc at run-time.
 This forbids run-time extends of INC path strings,
 the run-time will crash then.
 
+It will also skip storing string values of internal regexp capture groups
+C<$1> - C<$9>, which were used internally by the compiler or some module. They
+are considered volatile.
+
 Enabled with C<-O2>.
 
 =item B<-fsave-data>
