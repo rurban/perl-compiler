@@ -10,6 +10,8 @@ use B::C::File qw/svsect init copsect opsect/;
 use B::C::Helpers qw/do_labels mark_package/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 
+my $OP_CUSTOM = opnumber('custom');
+
 my @threadsv_names;
 
 BEGIN {
@@ -97,22 +99,19 @@ sub save {
     }
 }
 
-my %fake_cache;
-
 # See also init_op_ppaddr below; initializes the ppaddr to the
 # OpTYPE; init_op_ppaddr iterates over the ops and sets
 # op_ppaddr to PL_ppaddr[op_ppaddr]; this avoids an explicit assignment
 # in perl_init ( ~10 bytes/op with GCC/i386 )
-sub fake_ppaddr {
-    my $type = ref $_[0] || '';
-    if ( !exists $fake_cache{$type} ) {
-        $fake_cache{$type} = $_[0]->can('name');
+sub B::OP::fake_ppaddr {
+    my $op = shift;
+    return "NULL" unless $op->can('name');
+    if ( $op->type == $OP_CUSTOM ) {
+        return ( verbose() ? sprintf( "/*XOP %s*/NULL", $op->name ) : "NULL" );
     }
-    return "NULL" unless $fake_cache{$type};
-    my $name = uc( $_[0]->name );
     return $B::C::optimize_ppaddr
-      ? "INT2PTR(void*,OP_$name)"
-      : ( verbose() ? "/*OP_$name*/NULL" : "NULL" );
+      ? sprintf( "INT2PTR(void*,OP_%s)", uc( $op->name ) )
+      : sprintf( "/*OP_%s*/NULL",        uc( $op->name ) );
 }
 
 sub _save_common {

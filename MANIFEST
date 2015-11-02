@@ -143,6 +143,7 @@ t/issue27.t
 t/issue272.t
 t/issue273.t
 t/issue274.t
+t/issue2741.t
 t/issue281.t
 t/issue282.t
 t/issue287.t
@@ -195,6 +196,7 @@ t/modules.pm
 t/modules.t
 t/moose-test.pl
 t/mymodules
+t/nowarn.pl
 t/o.t
 t/perlall-modules.sh
 t/perldoc.t

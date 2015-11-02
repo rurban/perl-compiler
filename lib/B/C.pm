@@ -129,7 +129,7 @@ our ( %dumped_package, %skip_package, %isa_cache );
 my $output_file;
 
 # fixme move to config
-our ($use_xsloader);
+our ( $use_xsloader, $devel_peek_needed );
 
 # can be improved
 our $nullop_count     = 0;
@@ -1585,7 +1585,8 @@ sub build_template_stash {
         'all_eval_pvs'                     => \@B::C::InitSection::all_eval_pvs,
         'TAINT'                            => ( ${^TAINT} ? 1 : 0 ),
         USE_ITHREADS() ? ( regex_padav_pad_len => regex_padav->FILL ) : (),    # Only needed for ITHREADS.
-        'optimizer' => {
+        'devel_peek_needed' => $devel_peek_needed,
+        'optimizer'         => {
             'dynaloader' => $dynaloader_optimizer->stash(),
         }
     };
@@ -1634,10 +1635,13 @@ sub build_template_stash {
 # some ops might not be initialized
 # but it needs to happen before CALLREGCOMP, as a /i calls a compiled utf8::SWASHNEW
 sub fixup_ppaddr {
+    return unless $B::C::optimize_ppaddr;
+
     foreach my $op_section_name ( B::C::File::op_sections() ) {
         my $section = B::C::File::get_sect($op_section_name);
-        next unless $section->index >= 0;
-        init_op_addr( $section->name, $section->index + 1 );
+        my $num     = $section->index;
+        next unless $num >= 0;
+        init_op_addr( $section->name, $num + 1 );
     }
 }
 

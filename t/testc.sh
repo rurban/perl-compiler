@@ -1059,7 +1059,7 @@ tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
 tests[273]='package _charnames; sub foo { ($name =~ /^(\p{_Perl_Charname_Begin})/) and return; } print "ok\n";'
 tests[2731]='#5.22 SEGV
 print "ok" if "\N{KELVIN SIGN}" eq "\N{KELVIN SIGN}"'
-tests[2741]='package Foo;
+tests[274]='package Foo;
 sub match { shift =~ m?xyz? ? 1 : 0; }
 sub match_reset { reset; }
 package Bar;
@@ -1075,17 +1075,16 @@ Foo::match_reset();
 print "ok 5\n" if Foo::match("xyz");
 print "ok 6\n" if !Bar::match("xyz");
 '
-result[2741]='1..5
+result[274]='1..5
 ok 1
 ok 2
 ok 3
 ok 4
 ok 5'
 # ignored xop
-tests[274]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; print "ok\n"'
-# uncallable xop
-tests[2742]='#5.22 TODO
-use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash); print "ok\n"'
+tests[2740]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; print "ok\n"'
+# call xop (failed with -O1)
+tests[2741]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash); print "ok\n"'
 if [[ $v518 -gt 0 ]]; then
   tests[276]='sub t2 : lvalue; print qq/ok\n/'
 fi

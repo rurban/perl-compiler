@@ -76,7 +76,6 @@ op/filetest.t                TESTS     BC issue #219 - overload issue
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
-op/hash-rt85026.t            GCC       BC issue #274 + more to come with RITER error
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/join.t                    TESTS     BC issue #219 - overload issue
 op/length.t                  TESTS     BC issue #219 - overload issue
@@ -185,7 +184,7 @@ xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 .
 xtestc/0263.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0269.t                TESTS     Output is: ""
 xtestc/0271.t                TESTS     Output is: "cannot close pipe from kid ..."
-xtestc/0274.t                GCC       xtestc/0274.bin is compiled and ready to run.
+xtestc/0274.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/0276.t                TESTS     Output is: ""
 xtestc/0277.t                TESTS     Output is: ""
 xtestc/0278.t                TESTS     Output is: ""
@@ -222,7 +221,6 @@ xtestc/2511.t                TESTS     Output is: ""
 xtestc/2540.t                TESTS     Output is: ""
 xtestc/2731.t                TESTS     Output is: ""
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
-xtestc/2742.t                GCC       xtestc/2742.bin is compiled and ready to run.
 xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
