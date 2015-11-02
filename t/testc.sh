@@ -894,6 +894,8 @@ tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
 tests[219]='#TODO 5.18-5.22, see also 172
 package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
 my $foo = bless \(my $bar = "ok"), "OverloadTest"; print $foo."\n";'
+tests[2190]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
+result[2190]='11'
 # also at 904
 tests[220]='
 my $content = "ok\n";
@@ -1054,33 +1056,21 @@ else { # child
 }'
 tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
-tests[2731]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
-result[2731]='11'
-tests[273]='package _charnames;
-
-sub foo {
-    ($name =~ /^(\p{_Perl_Charname_Begin})/) and return;
-}
-
-print "ok\n";'
+tests[273]='package _charnames; sub foo { ($name =~ /^(\p{_Perl_Charname_Begin})/) and return; } print "ok\n";'
+tests[2731]='#5.22 SEGV
+print "ok" if "\N{KELVIN SIGN}" eq "\N{KELVIN SIGN}"'
 tests[2741]='package Foo;
-
 sub match { shift =~ m?xyz? ? 1 : 0; }
 sub match_reset { reset; }
-
 package Bar;
-
 sub match { shift =~ m?xyz? ? 1 : 0; }
 sub match_reset { reset; }
-
 package main;
 print "1..5\n";
-
 print "ok 1\n" if Bar::match("xyz");
 print "ok 2\n" unless Bar::match("xyz");
 print "ok 3\n" if Foo::match("xyz");
 print "ok 4\n" unless Foo::match("xyz");
-
 Foo::match_reset();
 print "ok 5\n" if Foo::match("xyz");
 print "ok 6\n" if !Bar::match("xyz");
@@ -1091,7 +1081,11 @@ ok 2
 ok 3
 ok 4
 ok 5'
+# ignored xop
 tests[274]='use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash) if $ENV{FALSE}; print "ok\n"'
+# uncallable xop
+tests[2742]='#5.22 TODO
+use Devel::Peek; my %hash = ( a => 1 ); Dump(%hash); print "ok\n"'
 if [[ $v518 -gt 0 ]]; then
   tests[276]='sub t2 : lvalue; print qq/ok\n/'
 fi
