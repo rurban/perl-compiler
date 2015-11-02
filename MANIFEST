@@ -865,6 +865,7 @@ t/modules.pm
 t/modules.t
 t/moose-test.pl
 t/mymodules
+t/nowarn.pl
 t/o.t
 t/perlall-modules.sh
 t/perldoc.t
