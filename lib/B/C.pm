@@ -3616,8 +3616,12 @@ sub B::CV::is_lexsub {
   my ($cv, $gv) = @_;
   # logical shortcut perl5 bug since ~ 5.19: testcc.sh 42
   # return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL') and $cv->can('NAME_HEK'));
-  return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL')
-          and $cv->can('NAME_HEK')) ? 1 : 0;
+  return 0 if !$PERL518;
+  return 0 unless $cv->can('NAME_HEK');
+  #return 0 if $PERL522 and !$cv->NAME_HEK;
+  return 1 if (!$gv or ref($gv) eq 'B::SPECIAL');
+  #return ($PERL518 and (!$gv or ref($gv) eq 'B::SPECIAL')
+  #        and $cv->can('NAME_HEK')) ? 1 : 0;
 }
 
 sub B::CV::save {
