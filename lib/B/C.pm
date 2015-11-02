@@ -1493,7 +1493,7 @@ sub B::UNOP_AUX::save {
   $unopauxsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   # This cannot be a section, as the number of elements is variable
   my $i = 1;
-  my $s = "Static UNOP_AUX_item unopaux_item${ix}[] = {\n\t"
+  my $s = "Static UNOP_AUX_item unopaux_item".$ix."[] = {\n\t"
     .($C99?"{.uv=$auxlen}":$auxlen). " \t/* length prefix */\n";
   my $action = 0;
   for my $item (@aux_list) {
@@ -1533,7 +1533,7 @@ sub B::UNOP_AUX::save {
       # || SvROK(keysv)
       # || SvIsCOW_shared_hash(keysv));
       my $constkey = ($action & 0x30) == 0x10 ? 1 : 0;
-      my $itemsym = $item->save("unopaux_item${ix}[$i]" . ($constkey ? " const" : ""));
+      my $itemsym = $item->save("unopaux_item".$ix."[".$i."]" . ($constkey ? " const" : ""));
       if (is_constant($itemsym)) {
         if (ref $item eq 'B::IV') {
           my $iv = $item->IVX;
@@ -1551,7 +1551,7 @@ sub B::UNOP_AUX::save {
         # gv or other late inits
         $s .= ($C99 ? "\t,{.sv=Nullsv} \t/* $itemsym */\n"
                     : "\t,0 \t/* $itemsym */\n");
-        $init2->add("unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
+        $init2->add("unopaux_item".$ix."[".$i."].sv = (SV*)$itemsym;");
       }
     }
     $i++;
