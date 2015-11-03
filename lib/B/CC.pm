@@ -1355,7 +1355,7 @@ sub pp_and {
   else {
     save_or_restore_lexical_state($$next);
     runtime( sprintf( "if (!%s) goto %s;", top_bool(), label($next) ),
-      "*sp--;" );
+      "sp--;" );
   }
   return $op->other;
 }
@@ -1410,7 +1410,7 @@ sub pp_or {
   else {
     save_or_restore_lexical_state($$next);
     runtime( sprintf( "if (%s) goto %s;", top_bool(), label($next) ),
-      "*sp--;" );
+      "sp--;" );
   }
   return $op->other;
 }
