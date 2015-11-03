@@ -486,14 +486,16 @@ sub save_pv_or_rv {
 sub label { }
 
 # save alternate ops if defined, and also add labels (needed for B::CC)
-sub do_labels ($@) {
-    my $op = shift;
+sub do_labels ($$@) {
+    my $op    = shift;
+    my $level = shift;
+
     for my $m (@_) {
         no strict 'refs';
         my $mo = $op->$m if $m;
         if ( $mo and $$mo ) {
             label($mo);
-            $mo->save
+            $mo->save($level)
               if $m ne 'first'
               or ( $op->flags & 4
                 and !( $op->name eq 'const' and $op->flags & 64 ) );    #OPpCONST_BARE has no first
@@ -1452,6 +1454,7 @@ sub save_main_rest {
     if ($remap) {
 
         # XXX now emit arch-specific dlsym code
+        init2()->no_split;
         init2()->add( "{", "  void *handle, *ptr;" );
         if ( HAVE_DLFCN_DLOPEN() ) {
             init2()->add("  #include <dlfcn.h>");
@@ -1505,6 +1508,7 @@ sub save_main_rest {
             }
         }
         init2()->add("}");
+        init2()->split;
     }
 
     my %static_ext = map { ( $_ => 1 ) } grep { m/\S/ } split( /\s+/, $Config{static_ext} );

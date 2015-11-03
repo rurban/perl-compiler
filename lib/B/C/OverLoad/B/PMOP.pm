@@ -4,8 +4,8 @@ use strict;
 
 use B qw/cstring svref_2object RXf_EVAL_SEEN PMf_EVAL/;
 use B::C::Config;
-use B::C::File qw/pmopsect init/;
-use B::C::Helpers qw/read_utf8_string/;
+use B::C::File qw/pmopsect init init1/;
+use B::C::Helpers qw/read_utf8_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
 # Global to this space?
@@ -15,10 +15,13 @@ my ($swash_init);
 sub PMf_ONCE() { 0x10000 };    # PMf_ONCE also not exported
 
 sub save {
-    my ( $op, $level ) = @_;
-
+    my ( $op, $level, $fullname ) = @_;
+    my ( $replrootfield, $replstartfield, $gvsym ) = ( 'NULL', 'NULL' );
     my $sym = objsym($op);
     return $sym if defined $sym;
+
+    $level    ||= 0;
+    $fullname ||= '????';
 
     # 5.8.5-thr crashes here (7) at pushre
     if ( USE_ITHREADS() and $$op < 256 ) {    # B bug. split->first->pmreplroot = 0x1
@@ -27,10 +30,7 @@ sub save {
     }
     my $replroot  = $op->pmreplroot;
     my $replstart = $op->pmreplstart;
-    my $replrootfield;
-    my $replstartfield = sprintf( "s\\_%x", $$replstart );
-    my $gvsym;
-    my $ppaddr = $op->ppaddr;
+    my $ppaddr    = $op->ppaddr;
 
     # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
     $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
@@ -45,11 +45,14 @@ sub save {
         # of a substitution syntax tree. We don't want to walk that...
         if ( $op->name eq "pushre" ) {
             debug( gv => "PMOP::save saving a pp_pushre with GV $gvsym" );
-            $gvsym         = $replroot->save;
-            $replrootfield = 0;
+            $gvsym          = $replroot->save;
+            $replrootfield  = "NULL";
+            $replstartfield = $replstart->save if $replstart;
         }
         else {
+            $replstart->save if $replstart;
             $replstartfield = B::C::saveoptree( "*ignore*", $replroot, $replstart );
+            $replstartfield =~ s/^hv/(OP*)hv/;
         }
     }
 
@@ -63,10 +66,9 @@ sub save {
             "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",
             $op->_save_common, ${ $op->first },
             ${ $op->last }, ( USE_ITHREADS() ? $op->pmoffset : 0 ),
-            $op->pmflags, $replrootfield, 'NULL'
+            $op->pmflags, $replrootfield, $replstartfield
         )
     );
-    init()->add( sprintf( "pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)%s;", pmopsect()->index, $replstartfield ) );
 
     my $code_list = $op->code_list;
     if ( $code_list and $$code_list ) {
@@ -90,11 +92,10 @@ sub save {
         $B::C::Regexp{$$op} = $op;
 
         # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
-        my $qre = cstring($re);
-        my ( $isutf8, $relen ) = read_utf8_string($re);
+        my ( $qre, $relen, $utf8 ) = strlen_flags($re);
 
         my $pmflags = $op->pmflags;
-        debug( gv => "pregcomp $pm $qre:$relen" . ( $isutf8 ? " SVf_UTF8" : "" ) . sprintf( " 0x%x\n", $pmflags ) );
+        debug( gv => "pregcomp $pm $qre:$relen" . ( $utf8 ? " SVf_UTF8" : "" ) . sprintf( " 0x%x\n", $pmflags ) );
 
         # Since 5.13.10 with PMf_FOLD (i) we need to swash_init("utf8::Cased").
         if ( $pmflags & 4 ) {
@@ -109,20 +110,38 @@ sub save {
                 $swash_init++;
             }
         }
+
+        # some pm need early init (242), SWASHNEW needs some late GVs (GH#273)
+        # esp with 5.22 multideref init. i.e. all \p{} \N{}, \U, /i, ...
+        # But XSLoader and utf8::SWASHNEW itself needs to be early.
+        my $initpm = init();
+
+        # needs SWASHNEW (case fold)
+        # also SWASHNEW, now needing a multideref GV. 0x5000000 is just a hack. can be more
+        if ( ( $utf8 and $pmflags & 4 ) or ( $pmflags & 0x5000000 == 0x5000000 ) ) {
+            $initpm = init1();
+            debug( sv => sprintf( "deferred PMOP %s %s 0x%x\n", $qre, $fullname, $pmflags ) );
+        }
+        else {
+            debug( sv => sprintf( "normal PMOP %s %s 0x%x\n", $qre, $fullname, $pmflags ) );
+        }
+
         my $eval_seen = $op->reflags & RXf_EVAL_SEEN;
         my @init_block;
-        if ($eval_seen) {                                                     # set HINT_RE_EVAL on
+        if ($eval_seen) {    # set HINT_RE_EVAL on
             $pmflags |= PMf_EVAL;
             push @init_block, '{', '    U32 hints_sav = PL_hints;', '    PL_hints |= HINT_RE_EVAL;';
         }
 
         # XXX Modification of a read-only value attempted. use DateTime - threaded
-        push @init_block, "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, " . sprintf( "SVs_TEMP|%s), 0x%x));", $isutf8 ? 'SVf_UTF8' : '0', $pmflags ) . sprintf( "RX_EXTFLAGS(PM_GETRE(&%s)) = 0x%x;", $pm, $op->reflags );
+        push @init_block, "PM_SETRE(&$pm, CALLREGCOMP(newSVpvn_flags($qre, $relen, " . sprintf( "SVs_TEMP|%s), 0x%x));", $utf8 ? 'SVf_UTF8' : '0', $pmflags ) . sprintf( "RX_EXTFLAGS(PM_GETRE(&%s)) = 0x%x;", $pm, $op->reflags );
 
-        if ($eval_seen) {                                                     # set HINT_RE_EVAL off
+        if ($eval_seen) {    # set HINT_RE_EVAL off
             push @init_block, '    PL_hints = hints_sav;', '}';
         }
-        init()->add(@init_block);
+        $initpm->no_split();
+        $initpm->add(@init_block);
+        $initpm->split();
 
         # See toke.c:8964
         # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;

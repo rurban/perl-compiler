@@ -30,7 +30,7 @@ comp/parser.t                COMPAT    We're not going to support ' as a package
 comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
 extra/reset.t                TESTS     BC issue #252 - Reset is not localized to the current namespace
 io/bom.t                     COMPAT    BC issue 312 - BOM seems to be rejected by perlcc but really, who needs this?
-io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
+io/layers.t                  TESTS     Retest
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
@@ -93,7 +93,6 @@ op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/smartmatch.t              TESTS     BC issue #219 - overload issue
 op/sort.t                    TESTS     BC issue #219 - overload issue
-op/split_unicode.t           SIG       BC issue #273 - charnames \p autorequire issue because of reverse sort.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #302 - features state + eval
@@ -109,45 +108,35 @@ op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
-re/fold_grind.t              SIG       BC issue #273 - \p charnames
 re/overload.t                TESTS     ?? + BC issue #219 - overload issue
-re/pat.t                     SIG       BC issue #219 - overload issue + BC issue #295
-re/pat_advanced.t            SIG       BC issue #273 - \p \N
+re/pat.t                     PLAN      Recheck BC issue #219 - overload issue + BC issue #295
+re/pat_advanced.t            PLAN      Recheck BC issue #317 - nested regexp
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
-re/pat_rt_report.t           PLAN      BC issue #295 - (?{}) should have its own lexical scope
+re/pat_rt_report.t           TESTS     Recheck 
 re/qr_gc.t                   TESTS     BC issue #309 - regexp destruction
-re/reg_eval_scope.t          SIG       BC issue #273 - \p
-re/reg_fold.t                SIG       BC issue #273 - \p
-re/reg_mesg.t                TESTS     BC issue #273 - use of \N or charnames segfaults the program. 
+re/reg_eval_scope.t          PLAN      Plan was valid
+re/reg_mesg.t                TESTS     CM issue #26 - warnings from re.pm - Subroutine redefined
 re/reg_pmod.t                TESTS     BC issue #295 - (?{}) should have its own lexical scope
-re/regex_sets.t              SIG       BC issue #273 - 
-re/regexp_unicode_prop.t     SIG       BC issue #273 - use of \N or charnames segfaults the program. 
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/subst_amp.t               TESTS     BC issue #295 - (?{}) should have its own lexical scope
 uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing the returned sub
-uni/chomp.t                  SIG       BC issue #284 - Encode::find_encoding
 uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/gv.t                     TESTS     BC issue #301 - no warnings when redefining unicode function
-uni/labels.t                 SIG       BC issue #273 - use of \N or charnames segfaults the program. 
+uni/labels.t                 PLAN      Plan was valid
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/lex_utf8.t               SIG       BC issue #273 - use of \N or charnames segfaults the program. 
-uni/lower.t                  SIG       BC issue #253 - Unicode::UCD
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/parser.t                 SIG       BC issue #273 - use of \N or charnames segfaults the program.
+uni/parser.t                 PLAN      Plan was valid
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
-uni/title.t                  SIG       BC issue #253 - Unicode::UCD
 uni/tr_7jis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_eucjp.t               COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
-uni/upper.t                  SIG       BC issue #253 - Unicode::UCD
-uni/variables.t              SIG       BC issue #273 - use of \N or charnames segfaults the program.
+uni/variables.t              PLAN      Plan was valid
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
-xtestc/0075.t                TESTS     Output is: ""
 xtestc/0095.t                TESTS     Output is: ""
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
@@ -175,7 +164,6 @@ xtestc/0246.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0252.t                TESTS     Output is: ""
-xtestc/0253.t                TESTS     Output is: ""
 xtestc/0254.t                TESTS     Output is: ""
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
@@ -185,9 +173,7 @@ xtestc/0274.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\
 xtestc/0276.t                TESTS     Output is: ""
 xtestc/0277.t                TESTS     Output is: ""
 xtestc/0278.t                TESTS     Output is: ""
-xtestc/0280.t                BC        xtestc/0280.c is generated (-O3,-fno-fold)
 xtestc/0281.t                TESTS     Output is: ""
-xtestc/0284.t                TESTS     Output is: ""
 xtestc/0293.t                TESTS     Output is: ""
 xtestc/0294.t                TESTS     Output is: "Constant subroutine GLOB ..."
 xtestc/0295.t                TESTS     Output is: ""
@@ -204,11 +190,8 @@ xtestc/0320.t                TESTS     Output is: ""
 xtestc/0324.t                TESTS     Output is: ""
 xtestc/0326.t                TESTS     Output is: ""
 xtestc/0329.t                TESTS     Output is: "axxxx \n"
-xtestc/0331.t                TESTS     Output is: "Attempt to access disallowed ..."
-xtestc/0333.t                TESTS     Output is: ""
 xtestc/0340.t                TESTS     Output is: "die at new at xtestc 0340.pl ..."
 xtestc/0350.t                TESTS     Output is: ""
-xtestc/0365.t                TESTS     Output is: ""
 xtestc/0368.t                TESTS     Output is: ""
 xtestc/0369.t                TESTS     Output is: ""
 xtestc/0371.t                TESTS     Output is: ""
@@ -216,11 +199,8 @@ xtestc/0374.t                BC        xtestc/0374.c is generated (-O3,-fno-fold
 xtestc/2052.t                TESTS     Output is: ""
 xtestc/2511.t                TESTS     Output is: ""
 xtestc/2540.t                TESTS     Output is: ""
-xtestc/2731.t                TESTS     Output is: ""
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
 xtestc/3010.t                TESTS     Output is: ""
-xtestc/3050.t                TESTS     Output is: ""
-xtestc/3052.t                TESTS     Output is: ""

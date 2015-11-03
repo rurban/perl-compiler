@@ -18,7 +18,7 @@ use strict;
 
 use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK/;
 use B::C::Config;
-use B::C::File qw/init xpvhvsect svsect decl init2/;
+use B::C::File qw/init xpvhvsect svsect decl init1 init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw/savestashpv/;
@@ -69,8 +69,8 @@ sub save {
             if ( $magic =~ /c/ ) {
                 debug( mg => "defer AMT magic of $name" );
 
-                # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-                #  init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+                # defer AMT magic of XS loaded hashes.
+                #init1()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
             }
             return $sym;
         }
@@ -214,9 +214,7 @@ sub save {
 
         # defer AMT magic of XS loaded hashes
         my ( $cname, $len, $utf8 ) = strlen_flags($name);
-
-        #my $len = length( pack "a*", $name );    # not yet 0-byte safe. HEK len really
-        init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+        init1()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
     }
 
     if ( $name and mro::get_mro($name) eq 'c3' ) {

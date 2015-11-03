@@ -16,6 +16,8 @@ sub save {
     my $sym = B::objsym($op);
     return $sym if defined $sym;
 
+    $level ||= 0;
+
     binopsect->comment_common("first, last");
     binopsect->add( sprintf( "%s, s\\_%x, s\\_%x", $op->_save_common, ${ $op->first }, ${ $op->last } ) );
     binopsect->debug( $op->name, $op->flagspv );
@@ -42,8 +44,9 @@ sub save {
     }
 
     $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
-    do_labels( $op, 'first', 'last' );
-    $sym;
+    do_labels( $op, $level + 1, 'first', 'last' );
+
+    return $sym;
 }
 
 1;

@@ -13,6 +13,8 @@ sub save {
     my $sym = objsym($op);
     return $sym if defined $sym;
 
+    $level ||= 0;
+
     #debug( op =? "LOOP: redoop %s, nextop %s, lastop %s\n",
     #		 peekop($op->redoop), peekop($op->nextop),
     #		 peekop($op->lastop));
@@ -33,7 +35,8 @@ sub save {
     init()->add( sprintf( "loop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&loop_list[$ix]" );
-    do_labels( $op, qw(first last redoop nextop lastop) );
+    do_labels( $op, $level + 1, qw(first last redoop nextop lastop) );
+
     $sym;
 }
 

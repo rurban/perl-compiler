@@ -6,7 +6,7 @@ BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
-use Test::More ($] > 5.19 ? (tests => 2) : (skip_all => 'custom op Dump since 5.19.3'));
+use Test::More ($] >= 5.019003 ? (tests => 2) : (skip_all => 'custom op Dump since 5.19.3'));
 use B::C ();
 my $todo = ($B::C::VERSION ge '1.52_11') ? "" : "TODO ";
 $todo = "" if $] < 5.019003;

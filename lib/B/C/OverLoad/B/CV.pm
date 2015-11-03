@@ -601,9 +601,6 @@ sub save {
             init()->add( sprintf( "CvOUTSIDE(%s) = (CV*)s\\_%x;", $sym, $xcv_outside ) );
         }
     }
-
-    # TODO:  ne 'B::PV' && ref($cv->OUTSIDE) ne 'B::GV' or you'll get this:
-    # Can't locate object method "PADLIST" via package "B::PV" at /usr/local/cpanel/B-C/lib/B/C/OverLoad/B/CV.pm line 603.
     elsif ( $xcv_outside && ref( $cv->OUTSIDE ) ) {
         my $padl = $cv->OUTSIDE->PADLIST->save;
         init()->add( sprintf( "CvPADLIST(%s)->xpadl_outid = CvPADLIST(s\\_%x)->xpadl_id;", $sym, $xcv_outside ) );

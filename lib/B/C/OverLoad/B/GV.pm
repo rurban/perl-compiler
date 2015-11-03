@@ -231,8 +231,8 @@ sub save {
 
     # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
     #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
-    #  init2()->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
-    #  init2()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
+    #  init1()->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
+    #  init1()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     #  return $sym;
     #}
     my $svflags    = $gv->FLAGS;
@@ -538,7 +538,7 @@ sub save {
                         init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
                     }
                     else {
-                        init2()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );
+                        init()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );
                     }
 
                     if ( $gvcv->XSUBANY ) {

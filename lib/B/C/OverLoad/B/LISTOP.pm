@@ -14,6 +14,9 @@ sub save {
 
     my $sym = objsym($op);
     return $sym if defined $sym;
+
+    $level ||= 0;
+
     listopsect()->comment_common("first, last");
     listopsect()->add( sprintf( "%s, s\\_%x, s\\_%x", $op->_save_common, ${ $op->first }, ${ $op->last } ) );
     listopsect()->debug( $op->name, $op );
@@ -46,12 +49,13 @@ sub save {
             if ( $sv and $sv->can("PV") and $sv->PV =~ /~/m ) {
                 local $B::C::const_strings;
                 debug( pv => "force non-static formline arg " . cstring( $sv->PV ) );
-                $svop->save("svop const");
+                $svop->save( $level, "svop const" );
             }
             $svop = $svop->next;
         }
     }
-    do_labels( $op, 'first', 'last' );
+    do_labels( $op, $level + 1, 'first', 'last' );
+
     $sym;
 }
 

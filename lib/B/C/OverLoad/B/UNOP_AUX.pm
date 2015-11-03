@@ -3,7 +3,7 @@ package B::UNOP_AUX;
 use strict;
 
 use B::C::Config;
-use B::C::File qw/unopauxsect init2 init decl free/;
+use B::C::File qw/unopauxsect init decl free/;
 use B::C::Helpers qw/do_labels is_constant curcv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw(constpv);
@@ -12,6 +12,8 @@ sub save {
     my ( $op, $level ) = @_;
     my $sym = objsym($op);
     return $sym if defined $sym;
+
+    $level ||= 0;
 
     my @aux_list = $op->aux_list( USE_ITHREADS() ? curcv() : \2 );    # GH#283
     my $auxlen = scalar @aux_list;
@@ -82,7 +84,7 @@ sub save {
             else {
                 # gv or other late inits
                 $s .= "\t,{.sv=Nullsv} \t/* $itemsym */\n";
-                init2()->add("unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
+                init()->add("unopaux_item${ix}[$i].sv = (SV*)$itemsym;");
             }
         }
         $i++;
@@ -93,7 +95,7 @@ sub save {
     init()->add( sprintf( "unopaux_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) ) unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
     free()->add("    ($sym)->op_type = OP_NULL;");
-    do_labels( $op, 'first' );
+    do_labels( $op, $level + 1, 'first' );
 
     return $sym;
 }

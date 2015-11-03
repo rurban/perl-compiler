@@ -249,6 +249,12 @@ static void perl_init0(pTHX) { /* fixup_ppaddr */
 [% END %]
 [% section.init.output( "    %s\n", init_name ) %]
 
+/* deferred init1 of regexp */
+[% IF verbose AND section.init1.comment() %]
+    /* [% section.init1.comment() %] */
+[% END %]
+[% section.init1.output( "    %s\n", "perl_init1" ) %]
+
 [% IF verbose %]
 /* deferred init of XS/Dyna loaded modules */
 [% END %]
@@ -897,6 +903,7 @@ main(int argc, char **argv, char **env)
 
     /* our special compiled init */
     perl_init(aTHX);
+    perl_init1(aTHX);
     dl_init(aTHX);
     perl_init2(aTHX);
 

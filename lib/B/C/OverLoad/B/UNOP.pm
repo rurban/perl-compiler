@@ -13,6 +13,8 @@ sub save {
     my $sym = objsym($op);
     return $sym if defined $sym;
 
+    $level ||= 0;
+
     unopsect()->comment_common("first");
     unopsect()->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
     unopsect()->debug( $op->name, $op );
@@ -40,7 +42,7 @@ sub save {
             mark_package( "NEXT", 1 ) if $1 ne "NEXT";
         }
     }
-    do_labels( $op, 'first' );
+    do_labels( $op, $level + 1, 'first' );
     $sym;
 }
 

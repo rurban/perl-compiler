@@ -13,6 +13,8 @@ sub save {
     my $sym = objsym($op);
     return $sym if defined $sym;
 
+    $level ||= 0;
+
     methopsect()->comment_common("first, rclass");
     my $union = $op->name eq 'method' ? "{.op_first=(OP*)s\\_%x}" : "{.op_meth_sv=(SV*)s\\_%x}";
     $union = "s\\_%x" unless C99();
@@ -31,10 +33,10 @@ sub save {
       unless $B::C::optimize_ppaddr;
     $sym = savesym( $op, "(OP*)&methop_list[$ix]" );
     if ( $op->name eq 'method' ) {
-        do_labels( $op, 'first', 'rclass' );
+        do_labels( $op, $level + 1, 'first', 'rclass' );
     }
     else {
-        do_labels( $op, 'meth_sv', 'rclass' );
+        do_labels( $op, $level + 1, 'meth_sv', 'rclass' );
     }
 
     return $sym;

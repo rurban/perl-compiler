@@ -45,7 +45,7 @@ sub struct_names {
       xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv);
 }
 
-sub init_section_names { return qw /init init2/ }
+sub init_section_names { return qw /init init1 init2/ }
 
 sub op_sections {
     return qw { binop condop cop padop loop listop logop op pmop pvop svop unop unopaux methop};
