@@ -17,3 +17,4 @@ requires 'JSON::XS';
 requires 'Net::SSLeay';
 requires 'Opcodes';
 requires 'IPC::Run';
+requires 'Net::DNS::Resolver';
