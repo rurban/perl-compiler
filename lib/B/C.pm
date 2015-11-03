@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_12';
+our $VERSION = '1.52_13';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -607,7 +607,7 @@ my (
     $svsect,    $xpvsect,    $xpvavsect, $xpvhvsect, $xpvcvsect,
     $xpvivsect, $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
     $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
-    $padlistsect, $padnamesect, $padnlsect, $init0, $init2
+    $padlistsect, $padnamesect, $padnlsect, $init0, $init1, $init2
    );
 my @op_sections =
   \(
@@ -1436,14 +1436,15 @@ package B::C;
 sub label {}
 
 # save alternate ops if defined, and also add labels (needed for B::CC)
-sub do_labels ($@) {
+sub do_labels ($$@) {
   my $op = shift;
+  my $level = shift;
   for my $m (@_) {
     no strict 'refs';
     my $mo = $op->$m if $m;
     if ( $mo and $$mo ) {
       label($mo);
-      $mo->save if $m ne 'first'
+      $mo->save($level) if $m ne 'first'
         or ($op->flags & 4
             and !($op->name eq 'const' and $op->flags & 64)); #OPpCONST_BARE has no first
     }
@@ -1479,7 +1480,7 @@ sub B::UNOP::save {
       mark_package("NEXT", 1) if $1 ne "NEXT";
     }
   }
-  do_labels ($op, 'first');
+  do_labels ($op, $level+1, 'first');
   $sym;
 }
 
@@ -1561,7 +1562,7 @@ sub B::UNOP_AUX::save {
         # gv or other late inits
         $s .= ($C99 ? "\t,{.sv=Nullsv} \t/* $itemsym */\n"
                     : "\t,0 \t/* $itemsym */\n");
-        $init2->add("unopaux_item".$ix."[".$i."].sv = (SV*)$itemsym;");
+        $init->add("unopaux_item".$ix."[".$i."].sv = (SV*)$itemsym;");
       }
     }
     $i++;
@@ -1571,7 +1572,7 @@ sub B::UNOP_AUX::save {
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
   $free->add("    ($sym)->op_type = OP_NULL;") ;
-  do_labels ($op, 'first');
+  do_labels ($op, $level+1, 'first');
   $sym;
 }
 
@@ -1592,7 +1593,7 @@ sub B::UNOP_AUX::save {
 #  $init->add( sprintf( "binop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
 #    unless $B::C::optimize_ppaddr;
 #  $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
-#  do_labels ($op, 'first', 'last');
+#  do_labels ($op, $level+1, 'first', 'last');
 #  $sym;
 #}
 
@@ -1651,7 +1652,7 @@ S_pp_dump(pTHX)
       unless $B::C::optimize_ppaddr;
   }
   $sym = savesym( $op, "(OP*)&binop_list[$ix]" );
-  do_labels ($op, 'first', 'last');
+  do_labels ($op, $level+1, 'first', 'last');
   $sym;
 }
 
@@ -1692,12 +1693,12 @@ sub B::LISTOP::save {
       if ($sv and $sv->can("PV") and $sv->PV =~ /~/m) {
         local $B::C::const_strings;
         warn "force non-static formline arg ",cstring($sv->PV),"\n" if $debug{pv};
-        $svop->save("svop const");
+        $svop->save($level, "svop const");
       }
       $svop = $svop->next;
     }
   }
-  do_labels ($op, 'first', 'last');
+  do_labels ($op, $level+1, 'first', 'last');
   $sym;
 }
 
@@ -1716,7 +1717,7 @@ sub B::LOGOP::save {
   $init->add( sprintf( "logop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&logop_list[$ix]" );
-  do_labels ($op, 'first', 'other');
+  do_labels ($op, $level+1, 'first', 'other');
   $sym;
 }
 
@@ -1745,7 +1746,7 @@ sub B::LOOP::save {
   $init->add( sprintf( "loop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&loop_list[$ix]" );
-  do_labels($op, qw(first last redoop nextop lastop));
+  do_labels($op, $level+1, qw(first last redoop nextop lastop));
   $sym;
 }
 
@@ -1766,9 +1767,9 @@ sub B::METHOP::save {
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&methop_list[$ix]" );
   if ($op->name eq 'method') {
-    do_labels($op, 'first', 'rclass');
+    do_labels($op, $level+1, 'first', 'rclass');
   } else {
-    do_labels($op, 'meth_sv', 'rclass');
+    do_labels($op, $level+1, 'meth_sv', 'rclass');
   }
   $sym;
 }
@@ -1937,7 +1938,7 @@ sub svimmortal {
 }
 
 sub B::SVOP::save {
-  my ( $op, $level ) = @_;
+  my ( $op, $level, $fullname ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
   my $svsym = 'Nullsv';
@@ -2217,7 +2218,8 @@ sub B::COP::save {
 }
 
 sub B::PMOP::save {
-  my ( $op, $level ) = @_;
+  my ( $op, $level, $fullname ) = @_;
+  my ($replrootfield, $replstartfield, $gvsym) = ('NULL', 'NULL');
   my $sym = objsym($op);
   return $sym if defined $sym;
   # 5.8.5-thr crashes here (7) at pushre
@@ -2227,9 +2229,6 @@ sub B::PMOP::save {
   }
   my $replroot  = $op->pmreplroot;
   my $replstart = $op->pmreplstart;
-  my $replrootfield;
-  my $replstartfield = sprintf( "s\\_%x", $$replstart );
-  my $gvsym;
   my $ppaddr = $op->ppaddr;
 
   # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
@@ -2245,10 +2244,13 @@ sub B::PMOP::save {
     if ( $op->name eq "pushre" ) {
       warn "PMOP::save saving a pp_pushre with GV $gvsym\n" if $debug{gv};
       $gvsym = $replroot->save;
-      $replrootfield = 0;
+      $replrootfield = "NULL";
+      $replstartfield = $replstart->save if $replstart;
     }
     else {
+      $replstart->save if $replstart;
       $replstartfield = saveoptree( "*ignore*", $replroot, $replstart );
+      $replstartfield =~ s/^hv/(OP*)hv/;
     }
   }
 
@@ -2263,10 +2265,8 @@ sub B::PMOP::save {
       sprintf( "%s, s\\_%x, s\\_%x, %u, 0x%x, {%s}, {%s}",
                $op->_save_common, ${ $op->first },
                ${ $op->last }, ( $ITHREADS ? $op->pmoffset : 0 ),
-               $op->pmflags, $replrootfield, 'NULL'
+               $op->pmflags, $replrootfield, $replstartfield
              ));
-    $init->add(sprintf("pmop_list[%d].op_pmstashstartu.op_pmreplstart = (OP*)%s;",
-                       $pmopsect->index, $replstartfield));
     if ($] >= 5.017) {
       my $code_list = $op->code_list;
       if ($code_list and $$code_list) {
@@ -2314,14 +2314,7 @@ sub B::PMOP::save {
   my $pm = sprintf( "pmop_list[%d]", $pmopsect->index );
   $init->add( sprintf( "%s.op_ppaddr = %s;", $pm, $ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  #my $re;
-  #if ($] >= 5.010 and $] < 5.011 and $ITHREADS) { # XXX lots of module fails with 5.10.1d
-  #  if (ref($op) eq 'B::PMOP') {
-  #    eval { $re = $op->precomp; } #out of memory: Module::Pluggable, Carp::Clan - threaded
-  #  }
-  #} else {
   my $re = $op->precomp;
-  #}
   if ( defined($re) ) {
     $Regexp{$$op} = $op;
     if ($PERL510) {
@@ -2341,29 +2334,41 @@ sub B::PMOP::save {
           $swash_init++;
         }
       }
+      # some pm need early init (242), SWASHNEW needs some late GVs (GH#273)
+      # esp with 5.22 multideref init. i.e. all \p{} \N{}, \U, /i, ...
+      # But XSLoader and utf8::SWASHNEW itself needs to be early.
+      my $initpm = $init;
+      if (($utf8 and $] >= 5.013009 and $pmflags & 4) # needs SWASHNEW (case fold)
+          # also SWASHNEW, now needing a multideref GV. 0x5000000 is just a hack. can be more
+          or ($] >= 5.021006 and ($pmflags & 0x5000000 == 0x5000000))) {
+        $initpm = $init1;
+        warn sprintf("deferred PMOP %s %s 0x%x\n", $qre, $fullname, $pmflags) if $debug{sv};
+      } else {
+        warn sprintf("normal PMOP %s %s 0x%x\n", $qre, $fullname, $pmflags) if $debug{sv};
+      }
       if ($PERL518 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL on
         $pmflags |= PMf_EVAL;
-        $init->no_split;
-        $init->add("{",
+        $initpm->no_split;
+        $initpm->add("{",
                    "  U32 hints_sav = PL_hints;",
                    "  PL_hints |= HINT_RE_EVAL;");
       }
       if ($] > 5.008008) { # can do utf8 qr
-        $init->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
+        $initpm->add( # XXX Modification of a read-only value attempted. use DateTime - threaded
           sprintf("PM_SETRE(&%s, CALLREGCOMP(newSVpvn_flags(%s, %s, SVs_TEMP|$utf8), 0x%x));",
                   $pm, $qre, $relen, $pmflags),
           sprintf("RX_EXTFLAGS(PM_GETRE(&%s)) = 0x%x;", $pm, $op->reflags ));
       } else {
-        $init->add
+        $initpm->add
           ("PM_SETRE(&$pm,",
            "  CALLREGCOMP(newSVpvn($qre, $relen), ".sprintf("0x%x));", $pmflags),
            sprintf("RX_EXTFLAGS(PM_GETRE(&%s)) = 0x%x;", $pm, $op->reflags ));
-        $init->add("SvUTF8_on(PM_GETRE(&$pm));") if $utf8;
+        $initpm->add("SvUTF8_on(PM_GETRE(&$pm));") if $utf8;
       }
       if ($] >= 5.018 and $op->reflags & RXf_EVAL_SEEN) { # set HINT_RE_EVAL off
-        $init->add("  PL_hints = hints_sav;",
+        $initpm->add("  PL_hints = hints_sav;",
                    "}");
-        $init->split();
+        $initpm->split();
       }
       # See toke.c:8964
       # set in the stash the PERL_MAGIC_symtab PTR to the PMOP: ((PMOP**)mg->mg_ptr) [elements++] = pm;
@@ -3276,7 +3281,7 @@ sub B::PVMG::save_magic {
     $name = $pkg->NAME if $pkg and $$pkg;
     warn sprintf("initialize overload cache for %s\n", $fullname )
       if $debug{mg} or $debug{gv};
-    $init2->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
+    $init1->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
                         $fullname));
   }
 
@@ -3336,7 +3341,7 @@ sub B::PVMG::save_magic {
 	} else {
 	  ($resym, $relen) = savere( $mg->precomp );
 	}
-	my $pmsym = $pmop->save($fullname);
+	my $pmsym = $pmop->save(0, $fullname);
 	if ($PERL510) {
           push @B::C::static_free, $resym;
 	  $init->add( split /\n/,
@@ -3381,7 +3386,7 @@ CODE2
       my $pmop = $Regexp{$pmop_ptr};
       warn sprintf("pmop 0x%x not found in our B::C Regexp hash", $pmop_ptr)
         unless $pmop;
-      my $pmsym = $pmop ? $pmop->save($fullname) : '&pmop_list[0]';
+      my $pmsym = $pmop ? $pmop->save(0, $fullname) : '&pmop_list[0]';
       $init->add("{\tU32 elements;", # toke.c: PL_multi_open == '?'
                  sprintf("\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv),
                  "\telements = mg->mg_len / sizeof(PMOP**);",
@@ -4219,7 +4224,7 @@ sub B::CV::save {
     } else {
       # Make sure that the outer padlist is allocated before PadlistNAMES is accessed.
       # This needs to be postponed (test 227)
-      $init2->add( sprintf( "CvPADLIST(%s)->xpadl_outid = PadlistNAMES(%s);", $sym, $padl) );
+      $init1->add( sprintf( "CvPADLIST(%s)->xpadl_outid = PadlistNAMES(%s);", $sym, $padl) );
     }
   }
   if ($gv and $$gv) {
@@ -4431,8 +4436,8 @@ sub B::GV::save {
   }
   # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
   #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
-  #  $init2->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
-  #  $init2->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+  #  $init1->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
+  #  $init1->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
   #  return $sym;
   #}
   my $svflags    = $gv->FLAGS;
@@ -4721,7 +4726,7 @@ sub B::GV::save {
             $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
 	  }
 	  else {
-            $init2->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ));
+            $init->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ));
 	  }
           if ($gvcv->XSUBANY) {
             # some XSUB's set this field. but which part?
@@ -5145,7 +5150,7 @@ sub B::AV::save {
   #XXX Not sure if this is really needed. gv_fetch should be smart enough
   if (0 and $PERL510 and $fullname =~ /^(.*)::ISA$/) {
     my $stashname = $1;
-    $init2->add( sprintf("mro_method_changed_in(GvHV(gv_fetchpv(%s, GV_NOTQUAL, SVt_PVHV)));",
+    $init1->add( sprintf("mro_method_changed_in(GvHV(gv_fetchpv(%s, GV_NOTQUAL, SVt_PVHV)));",
                          cstring($stashname.'::')));
   }
   return $sym;
@@ -5189,7 +5194,7 @@ sub B::HV::save {
       if ($magic =~ /c/) {
         warn "defer AMT magic of $name\n" if $debug{mg};
         # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
-        #  $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
+        #  $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
       }
       return $sym;
     }
@@ -5317,7 +5322,7 @@ sub B::HV::save {
   if ($magic =~ /c/) {
     # defer AMT magic of XS loaded hashes
     my ($cname, $len, $utf8) = strlen_flags($name);
-    $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+    $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
   }
   if ($PERL510 and $name and mro::get_mro($name) eq 'c3') {
     B::C::make_c3($name);
@@ -5685,6 +5690,9 @@ EOT
 
   printf "\t/* %s */\n", $init->comment if $init->comment and $verbose;
   $init->output( \*STDOUT, "\t%s\n", $init_name );
+  printf "/* deferred init1 of regexp */\n" if $verbose;
+  printf "/* %s */\n", $init1->comment if $init1->comment and $verbose;
+  $init1->output( \*STDOUT, "\t%s\n", 'perl_init1' );
   my $init2_name = 'perl_init2';
   printf "/* deferred init of XS/Dyna loaded modules */\n" if $verbose;
   printf "/* %s */\n", $init2->comment if $init2->comment and $verbose;
@@ -5699,6 +5707,7 @@ EOT
   }
   if ($remap) {
     # XXX now emit arch-specific dlsym code
+    $init2->no_split;
     $init2->add("{","  void *handle, *ptr;");
     if ($HAVE_DLFCN_DLOPEN) {
       $init2->add("  #include <dlfcn.h>");
@@ -5745,6 +5754,7 @@ EOT
       }
     }
     $init2->add("}");
+    $init2->split;
   }
   $init2->output( \*STDOUT, "\t%s\n", $init2_name );
   if ($verbose) {
@@ -6777,6 +6787,7 @@ _EOT15
 
     /* our special compiled init */
     perl_init(aTHX);
+    perl_init1(aTHX);
     dl_init(aTHX);
     perl_init2(aTHX);
 EOT
@@ -7862,7 +7873,8 @@ sub init_sections {
   while ( ( $name, $sectref ) = splice( @sections, 0, 2 ) ) {
     $$sectref = new B::C::Section $name, \%symtable, 0;
   }
-  $init = new B::C::InitSection 'init', \%symtable, 0;
+  $init  = new B::C::InitSection 'init', \%symtable, 0;
+  $init1 = new B::C::InitSection 'init1', \%symtable, 0;
   $init2 = new B::C::InitSection 'init2', \%symtable, 0;
   %savINC = %curINC = %INC;
 }

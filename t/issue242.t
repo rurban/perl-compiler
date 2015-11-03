@@ -7,6 +7,7 @@ BEGIN {
   require "test.pl";
 }
 use Test::More tests => 2;
+# in branch swashnew-273 ($init1) fails since 5.16
 
 # need -uDynaLoader or -ffold
 my $script = <<'EOF';
