@@ -1301,6 +1301,7 @@ sub B::OP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   my $type = $op->type;
   $nullop_count++ unless $type;
   if ( $type == $OP_THREADSV ) {
@@ -1455,6 +1456,7 @@ sub B::UNOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   $unopsect->comment("$opsect_common, first");
   $unopsect->add( sprintf( "%s, s\\_%x", $op->_save_common, ${ $op->first } ) );
   $unopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
@@ -1494,6 +1496,7 @@ sub B::UNOP_AUX::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   my @aux_list = $op->aux_list($ITHREADS ? curcv : \2); # GH#283
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
@@ -1603,6 +1606,7 @@ sub B::BINOP::save {
   return $sym if defined $sym;
   #return B::XOP::save(@_) if $op->type == $OP_CUSTOM;
 
+  $level = 0 unless $level;
   $binopsect->comment("$opsect_common, first, last");
   $binopsect->add(
     sprintf( "%s, s\\_%x, s\\_%x",
@@ -1660,6 +1664,7 @@ sub B::LISTOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   $listopsect->comment("$opsect_common, first, last");
   $listopsect->add(
     sprintf( "%s, s\\_%x, s\\_%x",
@@ -1706,6 +1711,7 @@ sub B::LOGOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   $logopsect->comment("$opsect_common, first, other");
   $logopsect->add(
     sprintf( "%s, s\\_%x, s\\_%x",
@@ -1726,6 +1732,7 @@ sub B::LOOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
 
+  $level = 0 unless $level;
   #warn sprintf("LOOP: redoop %s, nextop %s, lastop %s\n",
   #		 peekop($op->redoop), peekop($op->nextop),
   #		 peekop($op->lastop)) if $debug{op};
@@ -1754,6 +1761,7 @@ sub B::METHOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   $methopsect->comment("$opsect_common, first, rclass");
   my $union = $op->name eq 'method' ? "{.op_first=(OP*)s\\_%x}" : "{.op_meth_sv=(SV*)s\\_%x}";
   $union = "s\\_%x" unless $C99;
@@ -1778,6 +1786,7 @@ sub B::PVOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   $loopsect->comment("$opsect_common, pv");
   # op_pv must be dynamic
   $pvopsect->add( sprintf( "%s, NULL", $op->_save_common ) );
@@ -1941,6 +1950,7 @@ sub B::SVOP::save {
   my ( $op, $level, $fullname ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   my $svsym = 'Nullsv';
   # XXX moose1 crash with 5.8.5-nt, Cwd::_perl_abs_path also
   if ($op->name eq 'aelemfast' and $op->flags & 128) { #OPf_SPECIAL
@@ -1994,6 +2004,7 @@ sub B::PADOP::save {
   my ( $op, $level ) = @_;
   my $sym = objsym($op);
   return $sym if defined $sym;
+  $level = 0 unless $level;
   my $skip_defined;
   if ($op->name eq 'method_named') {
     my $cv = method_named(svop_or_padop_pv($op), nextcop($op));
@@ -2032,6 +2043,7 @@ sub B::COP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
 
+  $level = 0 unless $level;
   # we need to keep CvSTART cops, so check $level == 0
   if ($optimize_cop and $level and !$op->label) { # XXX very unsafe!
     my $sym = savesym( $op, $op->next->save );
@@ -2227,6 +2239,7 @@ sub B::PMOP::save {
     die "Internal B::walkoptree error: invalid PMOP for pushre\n";
     return;
   }
+  $level = 0 unless $level;
   my $replroot  = $op->pmreplroot;
   my $replstart = $op->pmreplstart;
   my $ppaddr = $op->ppaddr;
