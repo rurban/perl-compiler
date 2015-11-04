@@ -128,7 +128,7 @@ uni/labels.t                 PLAN      BC issue #318 - unicode labels not found
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/parser.t                 PLAN      Plan was valid
+uni/parser.t                 PLAN      BC issue #320 - unicode function call from %::
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
 uni/tr_7jis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
