@@ -34,22 +34,19 @@ io/layers.t                  TESTS     Retest
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
-mro/complex_c3.t             SIG       BC issue #298 - next::method broken.
-mro/complex_c3_utf8.t        SIG       BC issue #298 - next::method broken.
-mro/next_edgecases.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_edgecases_utf8.t    SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_goto.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_goto_utf8.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_inanon.t            SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_inanon_utf8.t       SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_ineval.t            SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_ineval_utf8.t       SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_method.t            SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_method_utf8.t       SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_NEXT.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_NEXT_utf8.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_skip.t              SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
-mro/next_skip_utf8.t         SIG       BC issue #298 - next::method broken (ASSUMED we've not narrowed it down.)
+mro/complex_c3.t             PLAN      Plan was valid
+mro/next_edgecases.t         TESTS     Test results:
+mro/next_edgecases_utf8.t    TESTS     Test results:
+mro/next_inanon.t            PLAN      Plan was valid
+mro/next_inanon_utf8.t       PLAN      Plan was valid
+mro/next_ineval.t            TESTS     Test results:
+mro/next_ineval_utf8.t       TESTS     Test results:
+mro/next_method.t            PLAN      Plan was valid
+mro/next_method_utf8.t       PLAN      Plan was valid
+mro/next_NEXT.t              PLAN      Plan was valid
+mro/next_NEXT_utf8.t         PLAN      Plan was valid
+mro/next_skip.t              PLAN      Plan was valid
+mro/next_skip_utf8.t         PLAN      Plan was valid
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
@@ -81,7 +78,7 @@ op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
+op/method.t                  PLAN      Plan was valid
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
@@ -145,7 +142,6 @@ xtestc/0172.t                TESTS     Output is: "Foo=HASH(0x92d2564)\n"
 xtestc/0173.t                TESTS     Output is: "ok 1\nok 2\nok 3\n"
 xtestc/0174.t                TESTS     Output is: "\C is deprecated in regex; ..."
 xtestc/0175.t                TESTS     Output is: "ok\n"
-xtestc/0176.t                TESTS     Output is: "Math::BigInt=HASH(0xa21ae34)"
 xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at ..."
 xtestc/0182.t                TESTS     Output is: "main::foo"
 xtestc/0191.t                TESTS     Output is: "bad\n"
@@ -164,7 +160,6 @@ xtestc/0246.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0252.t                TESTS     Output is: ""
-xtestc/0254.t                TESTS     Output is: ""
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
 xtestc/0263.t                SKIP      need investigation: different result on Todd or Nico sandbox
