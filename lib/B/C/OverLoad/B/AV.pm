@@ -9,7 +9,7 @@ use B::C::Config;
 use B::C::File qw/init init2 xpvavsect svsect/;
 use B::C::Helpers qw/strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
-use B::C::Save qw/savestash_flags/;
+use B::C::Save qw/savestash_flags savestashpv/;
 
 # maybe need to move to setup/config
 my ( $use_av_undef_speedup, $use_svpop_speedup ) = ( 1, 1 );
@@ -236,10 +236,10 @@ sub save {
     # But 5.22 broke it, probably where super moved from hv_aux to mro_meta
     if ( $fullname =~ /^(.*)::ISA$/ ) {
         my $name = $1;
-        my ( $cname, $len, $utf8 ) = strlen_flags($name);
+        init2()->add( sprintf( "mro_isa_changed_in(%s);", savestashpv($name) ) );
 
-        my $gv = B::GV::gv_fetchpv_string( $name . "::", "GV_ADD|GV_NOTQUAL", "SVt_PVHV" );
-        init2()->add( sprintf( "mro_package_moved(%s, NULL, %s, 1);", savestash_flags( $cname, $len, $utf8 ), $gv ) );
+        # There was uncertainty if the below method was necessary??
+        # init2()->add( sprintf("mro_method_changed_in(%s);", savestashpv($name)));
     }
     return $sym;
 }

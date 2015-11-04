@@ -16,18 +16,21 @@ sub save {
     $level ||= 0;
 
     methopsect()->comment_common("first, rclass");
-    my $union = $op->name eq 'method' ? "{.op_first=(OP*)s\\_%x}" : "{.op_meth_sv=(SV*)s\\_%x}";
-    $union = "s\\_%x" unless C99();
-    my $s = "%s, $union, " . ( USE_ITHREADS() ? "(PADOFFSET)%u" : "(SV*)%u" );
-    methopsect()->add(
-        sprintf(
-            $s, $op->_save_common,
-            $op->name eq 'method' ? ${ $op->first } : ${ $op->meth_sv },
-            $op->rclass
-        )
-    );
 
-    # $methopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+    my $union = $op->name eq 'method' ? "{.op_first=(OP*)%s}" : "{.op_meth_sv=(SV*)%s}";
+    my $s = "%s, $union, " . ( USE_ITHREADS() ? "(PADOFFSET)%s" : "(SV*)%s" );    # rclass
+    my $rclass = USE_ITHREADS()        ? $op->rclass      : $op->rclass->save;
+    my $first  = $op->name eq 'method' ? $op->first->save : $op->meth_sv->save;
+    methopsect()->add( sprintf( $s, $op->_save_common, $first, $rclass ) );
+    methopsect()->debug( $op->name, $op->flagspv ) if debug('flags');
+    my $ix = methopsect()->index;
+    if ( $first =~ /^&sv_list/ ) {
+        init()->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_meth_sv */", $first, $ix ) );
+    }
+    if ( $rclass =~ /^&sv_list/ ) {
+        init()->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_rclass_sv */", $rclass, $ix ) );
+    }
+
     my $ix = methopsect()->index;
     init()->add( sprintf( "methop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
