@@ -9,7 +9,7 @@ BEGIN {
 }
 use Test::More tests => 9;
 use Config;
-my $i=0;
+my $i=1;
 
 my $todo = <<'EOS';
 # === compiled ===

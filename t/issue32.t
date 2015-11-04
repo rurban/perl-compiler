@@ -18,8 +18,6 @@ print $fh 'use open ":encoding(utf8)";my $x;print @ARGV';
 close $fh;
 
 my $X = $^X =~ m/\s/ ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
-TODO: {
-  local $TODO = 'C 5.22' if $] > 5.012;
-  is(`$X blib/script/perlcc -O3 -occode32i -r $name 1 2 3`,
-      '123', "use open and \@ARGV");
-}
+is(`$X blib/script/perlcc -O3 -occode32i -r $name 1 2 3`,
+   '123', "use open and \@ARGV");
+

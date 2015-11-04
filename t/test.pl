@@ -1041,9 +1041,15 @@ sub todo_tests_default {
 	push @todo, (41)  if $] < 5.007; #regressions
         push @todo, (12)  if $what eq 'c_o3' and !$ITHREADS and $] >= 5.008009 and $] < 5.010;
 
-        push @todo, (48)  if $what eq 'c_o4' and $ITHREADS;
+        push @todo, (48)  if $what eq 'c_o4' and $] < 5.021 and $ITHREADS;
         push @todo, (8,18,19,25,26,28)  if $what eq 'c_o4' and !$ITHREADS;
-        push @todo, (12,14,38)          if $] >= 5.021006 and $what eq 'c_o4';
+        push @todo, (13,18,29,34) if $] >= 5.021006 and $ITHREADS;
+        push @todo, (10,15,27,41,42,43,44,45,49,50)
+          if $] >= 5.021006 and $what eq 'c_o4';
+        push @todo, (13,18,29,34)
+          if $] >= 5.021006 and $what eq 'c_o4' and $ITHREADS;
+        push @todo, (12,14,38)
+          if $] >= 5.021006 and $what eq 'c_o4' and !$ITHREADS;
     } elsif ($what =~ /^cc/) {
 	push @todo, (21,30,105,106);
 	push @todo, (22,41,45,103) if $] < 5.007; #regressions
@@ -1062,7 +1068,7 @@ sub todo_tests_default {
 	#push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
         push @todo, (12,19,25) if $] >= 5.019;
-        push @todo, (103)   if $] >= 5.021006;
+        push @todo, (25)    if $] >= 5.021006;
 	push @todo, (29)    if $] >= 5.021006 and $what eq 'cc_o1';
 	push @todo, (24,29) if $] >= 5.021006 and $what eq 'cc_o2';
     }

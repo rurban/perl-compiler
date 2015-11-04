@@ -28,7 +28,7 @@ my $todo = $Encode::VERSION lt '2.58' ? "Old Encode-$Encode::VERSION < 2.58 " : 
 #if ($ITHREADS and ($] > 5.015 or $] < 5.01)) {
 #  $todo = "TODO $] thr ".$todo if $] < 5.020;
 #}
-$todo = 'TODO 5.22 ' if $] > 5.021;
+#$todo = 'TODO 5.22 ' if $] > 5.021; # fixed with 1.52_13
 
 my $cmt = '#305 compile-time Encode::XS encodings';
 my $script = 'use constant ASCII => eval { require Encode; Encode::find_encoding("ASCII"); } || 0;
@@ -40,8 +40,8 @@ $script = 'INIT{ sub ASCII { eval { require Encode; Encode::find_encoding("ASCII
 print ASCII->encode("www.google.com")';
 ctest(2, $exp, 'C,-O3', 'ccode305i', $script, 'C run-time init');
 
-# fixed with 1.49_07
-$todo = $] > 5.021 ? 'TODO 5.22 ' : '';
+# fixed with 1.49_07, and for 5.22 with 1.52_13
+#$todo = $] > 5.021 ? 'TODO 5.22 ' : '';
 ctest(3, $exp, 'C,-O3', 'ccode305i', <<'EOF', $todo.'C #365 compile-time Encode subtypes');
 use constant JP => eval { require Encode; Encode::find_encoding("euc-jp"); } || 0;
 print JP->encode("www.google.com")
