@@ -10,9 +10,9 @@ source .gdb/perl
 #b Perl_pp_multideref
 
 # note: StashHANDLER() is unused in 5.20
-b hv.c:764
-b Perl_Gv_AMupdate
-b Perl_amagic_call
+#b hv.c:764
+#b Perl_Gv_AMupdate
+#b Perl_amagic_call
 
 #b Perl_pp_entereval
 #command

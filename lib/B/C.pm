@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_14';
+our $VERSION = '1.52_15';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -1769,14 +1769,20 @@ sub B::METHOP::save {
   return $sym if defined $sym;
   $level = 0 unless $level;
   $methopsect->comment("$opsect_common, first, rclass");
-  my $union = $op->name eq 'method' ? "{.op_first=(OP*)s\\_%x}" : "{.op_meth_sv=(SV*)s\\_%x}";
-  $union = "s\\_%x" unless $C99;
-  my $s = "%s, $union, ". ($ITHREADS ? "(PADOFFSET)%u" : "(SV*)%u");
-  $methopsect->add(sprintf($s, $op->_save_common,
-                             $op->name eq 'method' ? ${ $op->first } : ${ $op->meth_sv },
-                             $op->rclass));
-  # $methopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
+  my $union = $op->name eq 'method' ? "{.op_first=(OP*)%s}" : "{.op_meth_sv=(SV*)%s}";
+  $union = "%s" unless $C99;
+  my $s = "%s, $union, ". ($ITHREADS ? "(PADOFFSET)%s" : "(SV*)%s"); # rclass
+  my $rclass = $ITHREADS ? $op->rclass : $op->rclass->save;
+  my $first = $op->name eq 'method' ? $op->first->save : $op->meth_sv->save;
+  $methopsect->add(sprintf($s, $op->_save_common, $first, $rclass));
+  $methopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $methopsect->index;
+  if ($first =~ /^&sv_list/) {
+    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_meth_sv */", $first, $ix ));
+  }
+  if ($rclass =~ /^&sv_list/) {
+    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_rclass_sv */", $rclass, $ix ));
+  }
   $init->add( sprintf( "methop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&methop_list[$ix]" );
@@ -5170,12 +5176,17 @@ sub B::AV::save {
   #XXX Not sure if this is really needed. gv_fetch should be smart enough
   # But 5.22 broke it, probably where super moved from hv_aux to mro_meta
   if ($PERL522 and $fullname =~ /^(.*)::ISA$/) {
-    # $init1->add( sprintf("mro_method_changed_in(%s);", savestashpv($1)));
     my $name = $1;
-    my ($cname,$len,$utf8) = strlen_flags($1);
-    my $gv = gv_fetchpvn($name."::", "GV_ADD|GV_NOTQUAL", "SVt_PVHV");
-    $init2->add( sprintf("mro_package_moved(%s, NULL, %s, 1);",
-                         savestash_flags($cname,$len,$utf8), $gv));
+    if (0) {
+      my ($cname,$len,$utf8) = strlen_flags($1);
+      my $gv = gv_fetchpvn($name."::", "GV_ADD|GV_NOTQUAL", "SVt_PVHV");
+      # This is the heavy hitter, invalidating all subpackages
+      $init2->add( sprintf("mro_package_moved(%s, NULL, %s, 1);",
+                           savestash_flags($cname,$len,$utf8), $gv));
+    } else {
+      $init2->add( sprintf("mro_isa_changed_in(%s);", savestashpv($name)));
+      # $init2->add( sprintf("mro_method_changed_in(%s);", savestashpv($name)));
+    }
   }
   return $sym;
 }
