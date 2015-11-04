@@ -3149,11 +3149,10 @@ sub B::PVMG::save {
     # Detect ptr to extern symbol in shared library and remap it in init2
     # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
     # svop const or pad OBJECT,IOK
-    if (((!$ITHREADS
-          and $fullname
-          and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/)
-         or $ITHREADS)
-        and $sv->IVX > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
+    if (
+        ( $ITHREADS or ( $fullname and $fullname =~ /(^svop const|^padop|^Encode::Encoding| :pad\[1\])/ ) )
+        # source of several flapping tests... no regressions when removing it [preserving the idea]
+        #and $sv->IVX > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
       $ivx = patch_dlsym($sv, $fullname, $ivx);
