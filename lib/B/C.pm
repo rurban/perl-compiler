@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_13';
+our $VERSION = '1.52_14';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -786,6 +786,7 @@ sub strlen_flags {
 sub savestash_flags {
   my ($pv, $len, $flags) = @_;
   return $stashtable{$pv} if defined $stashtable{$pv};
+  #return '&PL_sv_undef' if $pv =~ /^B::CC?$/;
   $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
   my $sym = "hv$hv_index";
   $decl->add("Static HV *hv$hv_index;");
@@ -5167,10 +5168,14 @@ sub B::AV::save {
   }
 
   #XXX Not sure if this is really needed. gv_fetch should be smart enough
-  if (0 and $PERL510 and $fullname =~ /^(.*)::ISA$/) {
-    my $stashname = $1;
-    $init1->add( sprintf("mro_method_changed_in(GvHV(gv_fetchpv(%s, GV_NOTQUAL, SVt_PVHV)));",
-                         cstring($stashname.'::')));
+  # But 5.22 broke it, probably where super moved from hv_aux to mro_meta
+  if ($PERL522 and $fullname =~ /^(.*)::ISA$/) {
+    # $init1->add( sprintf("mro_method_changed_in(%s);", savestashpv($1)));
+    my $name = $1;
+    my ($cname,$len,$utf8) = strlen_flags($1);
+    my $gv = gv_fetchpvn($name."::", "GV_ADD|GV_NOTQUAL", "SVt_PVHV");
+    $init2->add( sprintf("mro_package_moved(%s, NULL, %s, 1);",
+                         savestash_flags($cname,$len,$utf8), $gv));
   }
   return $sym;
 }
@@ -7481,33 +7486,27 @@ sub dump_rest {
 my @made_c3;
 
 sub make_c3 {
-    my $package = shift or die;
+  my $package = shift or die;
 
-    return if ( grep { $_ eq $package } @made_c3 );
-    push @made_c3, $package;
+  return if ( grep { $_ eq $package } @made_c3 );
+  push @made_c3, $package;
 
-    mark_package( 'mro', 1 );
-    mark_package($package);
-    my $isa_packages = mro::get_linear_isa($package) || [];
-    foreach my $isa (@$isa_packages) {
-        mark_package($isa);
-    }
-    warn "set c3 for $package\n" if $verbose or $debug{pkg};
+  mark_package( 'mro', 1 );
+  mark_package($package);
+  my $isa_packages = mro::get_linear_isa($package) || [];
+  foreach my $isa (@$isa_packages) {
+    mark_package($isa);
+  }
+  warn "set c3 for $package\n" if $verbose or $debug{pkg};
 
-    ## from setmro.xs:
-    # classname = ST(0);
-    # class_stash = gv_stashsv(classname, GV_ADD);
-    # meta = HvMROMETA(class_stash);
-    # Perl_mro_set_mro(aTHX_ meta, ST(1));
+  ## from setmro.xs:
+  # classname = ST(0);
+  # class_stash = gv_stashsv(classname, GV_ADD);
+  # meta = HvMROMETA(class_stash);
+  # Perl_mro_set_mro(aTHX_ meta, ST(1));
 
-    no strict 'refs';
-    my $stash = $package . '::';
-    my $hv    = svref_2object( \%{$stash} );
-    $hv->save;
-    my $symdir = sprintf( "s\\_%x", $$hv );
-    my $sym = objsym($hv);
-    $sym or die("No objsym for $stash? ($sym)");
-    $init2->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));', $sym ) );
+  $init2->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));',
+                        savestashpv($package) ) );
 }
 
 sub save_context {

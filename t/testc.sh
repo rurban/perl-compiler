@@ -1167,21 +1167,22 @@ fi
 tests[2950]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[2950]='2 2 5 : 8 5 8'
 if [[ $v518 -gt 0 ]]; then
-  tests[298]='package D;
+  tests[298]='#TODO 5.22
+package D1;
 sub testmeth { "wrong" }
 
-package C;
-our @ISA = qw/D/;
+package C1;
+our @ISA = qw/D1/;
 sub testmeth { "right" }
 
-package B;
-our @ISA = qw/D/;
+package B1;
+our @ISA = qw/D1/;
 
-package A; use mro "c3";
-our @ISA = qw/B C/;
+package A1; use mro "c3";
+our @ISA = qw/B1 C1/;
 sub testmeth { shift->next::method }
 
-A->testmeth() eq "right" and print "ok\n"'
+A1->testmeth() eq "right" and print "ok\n"'
   tests[299]='no warnings qw{experimental::lexical_topic}; my $s = "ok\n"; my $_ = "not ok\n"; my $r = $s =~ /ok(?{ print qq[$_] })/;'
 fi
 tests[2990]='#TODO version
@@ -1388,7 +1389,7 @@ do
 done
 
 if [ "$(perl -V:gccversion)" != "gccversion='';" ]; then
-    if [ "$(uname)" = "Darwin" ]; then
+    if [ "$(uname)" = "xxDarwin" ]; then
 	CCMD="$CCMD -g -fno-var-tracking"
     else
 	CCMD="$CCMD -g3"
