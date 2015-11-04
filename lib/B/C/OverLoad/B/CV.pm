@@ -43,7 +43,7 @@ sub save {
     if ( $gv and $$gv ) {
         $cvstashname = $gv->STASH->NAME;
         $cvname      = $gv->NAME;
-        $isutf8      = $gv->FLAGS & SVf_UTF8 or $gv->STASH->FLAGS & SVf_UTF8;
+        $isutf8      = ( $gv->FLAGS & SVf_UTF8 ) || ( $gv->STASH->FLAGS & SVf_UTF8 );
         $fullname    = $cvstashname . '::' . $cvname;
         debug(
             cv => "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
