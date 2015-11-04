@@ -85,7 +85,7 @@ use B::C::Optimizer::DynaLoader     ();
 use B::C::Optimizer::UnusedPackages ();
 use B::C::OverLoad                  ();
 use B::C::Packages qw/is_package_used mark_package_unused mark_package_used mark_package_removed get_all_packages_used/;
-use B::C::Save qw(constpv savepv set_max_string_len);
+use B::C::Save qw(constpv savepv set_max_string_len savestashpv);
 use B::C::Save::Signals ();
 
 our $gv_index = 0;
@@ -1209,14 +1209,7 @@ sub make_c3 {
     # meta = HvMROMETA(class_stash);
     # Perl_mro_set_mro(aTHX_ meta, ST(1));
 
-    no strict 'refs';
-    my $stash = $package . '::';
-    my $hv    = svref_2object( \%{$stash} );
-    $hv->save;
-    my $symdir = sprintf( "s\\_%x", $$hv );
-    my $sym = objsym($hv);
-    $sym or die("No objsym for $stash? ($sym)");
-    init2()->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));', $sym ) );
+    init2()->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));', savestashpv($package) ) );
 }
 
 sub save_context {
