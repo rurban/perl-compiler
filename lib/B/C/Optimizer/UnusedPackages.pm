@@ -71,7 +71,7 @@ sub optimize {
     verbose( "Saving unused subs in $main" . ( $sav_debug->{unused} ? " (silent)\n" : "\n" ) );
     walksymtable( \%{$main}, "savecv", \&should_save );
     @unused = get_all_packages_used();
-    @dumped = grep { $B::C::dumped_package{$_} and $_ ne 'main' } keys %B::C::dumped_package;
+    @dumped = grep { $B::C::dumped_package{$_} and $_ ne 'main' } sort keys %B::C::dumped_package;
     verbose( "old unused: %d, new: %d, dumped: %d", scalar @init_unused, scalar @unused, scalar @dumped );
 
     if ( !$B::C::walkall ) {
@@ -83,7 +83,7 @@ sub optimize {
         do {
             $done   = dump_rest();
             @unused = get_all_packages_used();
-            @dumped = grep { $B::C::dumped_package{$_} and $_ ne 'main' } keys %B::C::dumped_package;
+            @dumped = grep { $B::C::dumped_package{$_} and $_ ne 'main' } sort keys %B::C::dumped_package;
         } while @unused > @dumped and $done;
         last if $walkall_cnt++ > 3;
     }

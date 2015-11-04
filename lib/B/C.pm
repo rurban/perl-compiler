@@ -1512,7 +1512,7 @@ sub save_main_rest {
     }
 
     my %static_ext = map { ( $_ => 1 ) } grep { m/\S/ } split( /\s+/, $Config{static_ext} );
-    my @stashxsubs = map { s/::/__/g; $_ } keys %static_ext;
+    my @stashxsubs = map { s/::/__/g; $_ } sort keys %static_ext;
 
     # Used to be in output_main_rest(). Seems to be trying to clean up xsub
     foreach my $stashname ( sort keys %xsub ) {

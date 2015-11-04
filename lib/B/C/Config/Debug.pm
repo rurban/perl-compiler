@@ -28,7 +28,7 @@ my %reverse_map = reverse %debug_map;
 my %debug;
 
 sub init {
-    %debug = map { $_ => 0 } values %debug_map, keys %debug_map;
+    %debug = map { $_ => 0 } sort values %debug_map, sort keys %debug_map;
     %debug = (
         %debug,
         flags   => 0,
@@ -85,7 +85,7 @@ sub _enable_debug_level {
 
 sub enable_all {
     enable_verbose() unless verbose();
-    foreach my $level ( keys %debug ) {
+    foreach my $level ( sort keys %debug ) {
         next if $debug{$level};
         enable_debug_level($level);
     }

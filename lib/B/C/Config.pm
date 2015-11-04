@@ -39,7 +39,7 @@ my $_autoload;
 
 BEGIN {
     $_autoload = _autoload_map();
-    our @EXPORT_OK = keys %$_autoload;
+    our @EXPORT_OK = sort keys %$_autoload;
     push @EXPORT_OK, qw/debug debug_all display_message verbose WARN INFO FATAL/;
     our @EXPORT = @EXPORT_OK;
 }
