@@ -114,7 +114,7 @@ re/pat_advanced.t            PLAN      Recheck BC issue #317 - nested regexp
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
 re/pat_rt_report.t           TESTS     Recheck 
 re/qr_gc.t                   TESTS     BC issue #309 - regexp destruction
-re/reg_eval_scope.t          PLAN      Plan was valid
+re/reg_eval_scope.t          PLAN      BC issue #295 - (?{}) should have its own lexical scope
 re/reg_mesg.t                TESTS     CM issue #26 - warnings from re.pm - Subroutine redefined
 re/reg_pmod.t                TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
