@@ -124,7 +124,6 @@ uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pra
 uni/gv.t                     TESTS     BC issue #301 - no warnings when redefining unicode function
 uni/labels.t                 PLAN      BC issue #318 - unicode labels not found
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/method.t                 PLAN      BC issue #324 - DATA is not the correct package
 uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/parser.t                 PLAN      BC issue #320 - unicode function call from %::
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
