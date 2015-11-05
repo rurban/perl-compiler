@@ -13,6 +13,7 @@ source .gdb/perl
 #b hv.c:764
 #b Perl_Gv_AMupdate
 #b Perl_amagic_call
+b Perl_pp_method_redir
 
 #b Perl_pp_entereval
 #command

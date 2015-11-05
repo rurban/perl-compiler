@@ -1772,17 +1772,24 @@ sub B::METHOP::save {
   my $union = $op->name eq 'method' ? "{.op_first=(OP*)%s}" : "{.op_meth_sv=(SV*)%s}";
   $union = "%s" unless $C99;
   my $s = "%s, $union, ". ($ITHREADS ? "(PADOFFSET)%s" : "(SV*)%s"); # rclass
-  my $rclass = $ITHREADS ? $op->rclass : $op->rclass->save;
+  my $ix = $methopsect->index + 1;
+  my $rclass = $ITHREADS ? $op->rclass : $op->rclass->save("op_rclass_sv");
+  if ($rclass =~ /^&sv_list/) {
+    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_rclass_sv */",
+                         $rclass, $ix ));
+    # Put this simple PV into the PL_stashcache, it has no STASH,
+    # and initialize the method cache.
+    # TODO: backref magic for next, init the next::method cache
+    $init->add( sprintf( "Perl_mro_method_changed_in(aTHX_ gv_stashsv(%s, GV_ADD));",
+                         $rclass ));
+  }
   my $first = $op->name eq 'method' ? $op->first->save : $op->meth_sv->save;
+  if ($first =~ /^&sv_list/) {
+    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_meth_sv */",
+                         $first, $ix ));
+  }
   $methopsect->add(sprintf($s, $op->_save_common, $first, $rclass));
   $methopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
-  my $ix = $methopsect->index;
-  if ($first =~ /^&sv_list/) {
-    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_meth_sv */", $first, $ix ));
-  }
-  if ($rclass =~ /^&sv_list/) {
-    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_rclass_sv */", $rclass, $ix ));
-  }
   $init->add( sprintf( "methop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&methop_list[$ix]" );
