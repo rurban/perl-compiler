@@ -526,6 +526,8 @@ int my_perl_destruct( PerlInterpreter *my_perl ) {
   [% ELSIF to_free.match('^\(HV\*\)&sv_list') %]
     SvREADONLY_on((SV*)[% to_free %]);
     SvREFCNT([% to_free %]) = SvREFCNT_IMMORTAL;
+  [% ELSIF to_free.match('\(AV\*\)&sv_list') %]
+  /* Nothing is done for AV* sv_list - SVs_OBJECT flag, as the HV */
   [% ELSIF to_free.match('^&padnamelist_list') %]
     Safefree(PadnamelistARRAY([% to_free %]));
     PadnamelistMAX([% to_free %]) = 0;

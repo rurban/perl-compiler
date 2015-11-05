@@ -309,9 +309,10 @@ sub is_todo {
   if ($] >= 5.018) { foreach(qw(
       ExtUtils::ParseXS
   )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
-  if ($] >= 5.022) { foreach(qw(
-      DateTime
-  )) { return '>= 5.22 #280 aux_list' if $_ eq $module; }}
+  # DateTime fixed with 1.52_13
+  if ($] >= 5.018) { foreach(qw(
+      Path::Class
+  )) { return '>= 5.18 #219 overload stringify regression' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
@@ -327,6 +328,25 @@ sub is_todo {
     if ($] >= 5.016 and $] < 5.020) { foreach(qw(
       Module::Build
     )) { return '5.16-5.20 (out of memory)' if $_ eq $module; }}
+    if ($] >= 5.022) { foreach(qw(
+      Pod::Parser
+      Digest
+      LWP
+      Test::NoWarnings
+      DBI
+      CGI
+      AppConfig
+      Template::Stash
+    )) { return '>= 5.22 with threads SEGV' if $_ eq $module; }}
+    if ($] >= 5.022) { foreach(qw(
+      Test::Harness
+      ExtUtils::MakeMaker
+      Pod::Text
+      File::Temp
+      ExtUtils::CBuilder
+      Module::Build
+      Encode
+    )) { return '>= 5.22 with threads, no ok' if $_ eq $module; }}
   } else { #no threads --------------------------------
     #if ($] > 5.008008 and $] <= 5.009) { foreach(qw(
     #  ExtUtils::CBuilder

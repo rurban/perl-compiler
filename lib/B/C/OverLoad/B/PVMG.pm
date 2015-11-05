@@ -150,14 +150,14 @@ sub save_magic {
         return '';
     }
 
-    if ( $sv_flags & SVf_AMAGIC ) {
-        my $name = $fullname;
-        $name =~ s/^%(.*)::$/$1/;
-        $name = $pkg->NAME if $pkg and $$pkg;
-        debug( [qw/mg gv/], "initialize overload cache for %s", $fullname );
-
-        init1()->add( sprintf( "Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name), $fullname ) );
-    }
+    #if ( $sv_flags & SVf_AMAGIC ) {
+    #    my $name = $fullname;
+    #    $name =~ s/^%(.*)::$/$1/;
+    #    $name = $pkg->NAME if $pkg and $$pkg;
+    #    debug( [qw/mg gv/], "initialize overload cache for %s", $fullname );
+    #
+    #    init1()->add( sprintf( "Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name), $fullname ) );
+    #}
 
     my @mgchain = $sv->MAGIC;
     my ( $mg, $type, $obj, $ptr, $len, $ptrsv );
