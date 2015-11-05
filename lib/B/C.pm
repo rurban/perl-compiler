@@ -292,6 +292,11 @@ use B
      threadsv_names main_cv init_av end_av opnumber cstring
      HEf_SVKEY SVf_POK SVp_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
+# usually 0x400000, but can be as low as 0x10000
+# http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsimagebaseaddress_xml.html
+# called mapped_base on linux (usually 0xa38000)
+sub LOWEST_IMAGEBASE() {0x10000}
+
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
@@ -3154,7 +3159,7 @@ sub B::PVMG::save {
           and $fullname
           and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/)
          or $ITHREADS)
-        and $ivx > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
+        and $ivx > LOWEST_IMAGEBASE # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
       $ivx = patch_dlsym($sv, $fullname, $ivx);
@@ -3771,7 +3776,7 @@ sub B::CV::save {
       # warn "$sv CONSTSUB $name";
       if ((ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG') and $sv->FLAGS & SVf_ROK) {
         my $rv = $sv->RV;
-        if ($rv->FLAGS & (SVp_POK|SVf_IOK) and $rv->IVX > 0x400000) {
+        if ($rv->FLAGS & (SVp_POK|SVf_IOK) and $rv->IVX > LOWEST_IMAGEBASE) {
           patch_dlsym($rv, $fullname, $rv->IVX);
         }
       }
