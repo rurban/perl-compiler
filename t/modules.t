@@ -310,9 +310,9 @@ sub is_todo {
       ExtUtils::ParseXS
   )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
   # DateTime fixed with 1.52_13
-  if ($] >= 5.022) { foreach(qw(
+  if ($] >= 5.018) { foreach(qw(
       Path::Class
-  )) { return '>= 5.22 #219 overload stringify' if $_ eq $module; }}
+  )) { return '>= 5.18 #219 overload stringify regression' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {

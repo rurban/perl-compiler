@@ -3308,7 +3308,8 @@ sub B::PVMG::save_magic {
     return '';
   }
 
-  if ($PERL518 and $sv_flags & SVf_AMAGIC) {
+  # disabled. testcase: t/testm.sh Path::Class
+  if (0 and $PERL518 and $sv_flags & SVf_AMAGIC) {
     my $name = $fullname;
     $name =~ s/^%(.*)::$/$1/;
     $name = $pkg->NAME if $pkg and $$pkg;
@@ -6337,6 +6338,9 @@ _EOT7
       } elsif ($s =~ /^\(HV\*\)&sv_list/) {
 	print "    SvREADONLY_on((SV*)$s);\n";
         print "    SvREFCNT($s) = SvREFCNT_IMMORTAL;\n";
+      } elsif ($s =~ /^\(AV\*\)&sv_list/) { # SVs_OBJECT flag, as the HV
+	#print "    SvREADONLY_on((SV*)$s);\n";
+        #print "    SvREFCNT($s) = SvREFCNT_IMMORTAL;\n";
       } elsif ($s =~ /^&padnamelist_list/) {
         print "    Safefree(PadnamelistARRAY($s));\n";
         print "    PadnamelistMAX($s) = 0;\n";
