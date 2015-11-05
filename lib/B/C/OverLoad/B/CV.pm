@@ -180,7 +180,7 @@ sub save {
         # warn "$sv CONSTSUB $name";
         if ( ( ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG' ) and $sv->FLAGS & SVf_ROK ) {
             my $rv = $sv->RV;
-            if ( $rv->FLAGS & ( SVp_POK | SVf_IOK ) and $rv->IVX > 0x400000 ) {
+            if ( $rv->FLAGS & ( SVp_POK | SVf_IOK ) and $rv->IVX > LOWEST_IMAGEBASE ) {
 
                 # TODO: shouldn't be calling a private.
                 B::PVMG::_patch_dlsym( $rv, $fullname, $rv->IVX );

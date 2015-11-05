@@ -16,6 +16,11 @@ our @ISA = qw(Exporter);
 
 *WARN = \&B::C::Config::Debug::WARN;
 
+# usually 0x400000, but can be as low as 0x10000
+# http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsimagebaseaddress_xml.html
+# called mapped_base on linux (usually 0xa38000)
+sub LOWEST_IMAGEBASE() { 0x10000 }
+
 sub _autoload_map {
     my $map = {
         USE_ITHREADS     => $B::C::Flags::Config{useithreads},
@@ -40,7 +45,7 @@ my $_autoload;
 BEGIN {
     $_autoload = _autoload_map();
     our @EXPORT_OK = sort keys %$_autoload;
-    push @EXPORT_OK, qw/debug debug_all display_message verbose WARN INFO FATAL/;
+    push @EXPORT_OK, qw/debug debug_all display_message verbose WARN INFO FATAL LOWEST_IMAGEBASE/;
     our @EXPORT = @EXPORT_OK;
 }
 

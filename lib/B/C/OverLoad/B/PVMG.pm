@@ -46,14 +46,14 @@ sub save {
         if (
             # fixme simply the or logic
             ( ( !USE_ITHREADS() and $fullname and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/ ) or USE_ITHREADS() )
-            and $ivx > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
+            and $ivx > LOWEST_IMAGEBASE    # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
             and ref( $sv->SvSTASH ) ne 'B::SPECIAL'
           ) {
             $ivx = _patch_dlsym( $sv, $fullname, $ivx );
         }
     }
 
-    if ( $sv->FLAGS & SVf_ROK ) {      # sv => sv->RV cannot be initialized static.
+    if ( $sv->FLAGS & SVf_ROK ) {          # sv => sv->RV cannot be initialized static.
         init()->add( sprintf( "SvRV_set(&sv_list[%d], (SV*)%s);", svsect()->index + 1, $savesym ) )
           if $savesym ne '';
         $savesym = 'NULL';
