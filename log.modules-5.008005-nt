@@ -70,3 +70,40 @@ pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
+pass if(1) => "Sys::Hostname"
+pass Text::Balanced
+pass DBI
+pass Time::Local
+pass IO::Scalar
+pass Sub::Identify
+pass Class::ISA
+pass FCGI
+pass Tree::DAG_Node
+pass Path::Class
+pass Test::Warn
+pass Encode
+pass Variable::Magic
+pass CGI
+pass B::Hooks::EndOfScope
+pass Test::Pod
+pass Digest::SHA1
+pass namespace::clean
+pass Class::Inspector
+pass Clone
+pass XML::NamespaceSupport
+pass XML::SAX
+pass YAML
+pass MooseX::Types
+pass Class::Singleton
+pass DateTime::TimeZone
+pass DateTime::Locale
+pass DateTime
+pass IO::String
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 100 / 100 modules tested with B-C-1.52_13 - perl-5.008005-nt
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
+# skip   0 / 100 (0.0% not installed)

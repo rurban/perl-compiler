@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.52_13 9970b03 2015-11-03 | C: fix uninitialized value $level warnings
+# B::C::VERSION = 1.52_15 55528dd 2015-11-04 | C 1.52_15: fix methop->meth_sv and rclass
 # perlversion = 5.022000-nt
 # path = /usr/local/bin/perl5.22.0-nt
 # platform = linux 64bit non-threaded
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-fail Path::Class
+fail Path::Class #TODO >= 5.22 #219 overload stringify
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -97,12 +97,12 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime #TODO >= 5.22 #280 aux_list
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52_13 - perl-5.022000-nt
+# 100 / 100 modules tested with B-C-1.52_15 - perl-5.022000-nt
 # pass  98 / 100 (98.0%)
 # fail   2 / 100 (2.0%)
 # todo   2 /   2 (100.0%)

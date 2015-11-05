@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.52_13 1c72ad5 2015-11-04 | untodo fixed GH #273 tests
+# B::C::VERSION = 1.52_15 55528dd 2015-11-04 | C 1.52_15: fix methop->meth_sv and rclass
 # perlversion = 5.022000
 # path = /usr/local/bin/perl5.22.0
 # platform = linux 64bit threaded
@@ -102,7 +102,7 @@ pass IO::String
 fail AppConfig #TODO >= 5.22 with threads SEGV
 pass UNIVERSAL::require
 fail Template::Stash #TODO >= 5.22 with threads SEGV
-# 100 / 100 modules tested with B-C-1.52_13 - perl-5.022000
+# 100 / 100 modules tested with B-C-1.52_15 - perl-5.022000
 # pass  83 / 100 (83.0%)
 # fail  17 / 100 (17.0%)
 # todo  17 /  17 (100.0%)
