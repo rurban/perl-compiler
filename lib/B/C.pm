@@ -3008,7 +3008,7 @@ sub save_remap {
   my ($key, $pkg, $name, $ivx, $mandatory) = @_;
   my $id = $xpvmgsect->index + 1;
   #my $svid = $svsect->index + 1;
-  warn "init remap for $key\: $name in xpvmg_list[$id]\n" if $verbose;
+  warn "init remap for $key\: $name $ivx in xpvmg_list[$id]\n" if $verbose;
   my $props = { NAME => $name, ID   => $id, MANDATORY => $mandatory };
   $init2_remap{$key}{MG} = [] unless $init2_remap{$key}{'MG'};
   push @{$init2_remap{$key}{MG}}, $props;
@@ -3108,7 +3108,7 @@ sub patch_dlsym {
   # new API (only Encode so far)
   if ($pkg and $name and $name =~ /^[a-zA-Z_0-9-]+$/) { # valid symbol name
     warn "Remap IOK|POK $pkg with $name\n" if $verbose;
-    save_remap($pkg, $pkg, $name, $ivx, 0);
+    save_remap($pkg, $pkg, $name, $ivxhex, 0);
     $ivx = "0UL /* $ivxhex => $name */";
     mark_package($pkg, 1) if $fullname =~ /^(svop const|padop)/;
   }
@@ -3145,7 +3145,8 @@ sub B::PVMG::save {
     $nvx = nvx($sv->NVX); # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
 
     # See #305 Encode::XS: XS objects are often stored as SvIV(SvRV(obj)). The real
-    # address needs to be patched after the XS object is initialized. But how detect them properly?
+    # address needs to be patched after the XS object is initialized.
+    # But how detect them properly?
     # Detect ptr to extern symbol in shared library and remap it in init2
     # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
     # svop const or pad OBJECT,IOK
@@ -3153,7 +3154,7 @@ sub B::PVMG::save {
           and $fullname
           and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/)
          or $ITHREADS)
-        and $sv->IVX > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
+        and $ivx > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
       $ivx = patch_dlsym($sv, $fullname, $ivx);
