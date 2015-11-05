@@ -38,14 +38,15 @@ sub save {
         $nvx = get_double_value( $sv->NVX );     # it cannot be xnv_u.xgv_stash ptr (BTW set by GvSTASH later)
 
         # See #305 Encode::XS: XS objects are often stored as SvIV(SvRV(obj)). The real
-        # address needs to be patched after the XS object is initialized. But how detect them properly?
+        # address needs to be patched after the XS object is initialized.
+        # But how detect them properly?
         # Detect ptr to extern symbol in shared library and remap it in init2
         # Safe and mandatory currently only Net-DNS-0.67 - 0.74.
         # svop const or pad OBJECT,IOK
         if (
             # fixme simply the or logic
             ( ( !USE_ITHREADS() and $fullname and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/ ) or USE_ITHREADS() )
-            and $sv->IVX > 0x400000    # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
+            and $ivx > 0x400000 # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
             and ref( $sv->SvSTASH ) ne 'B::SPECIAL'
           ) {
             $ivx = _patch_dlsym( $sv, $fullname, $ivx );
@@ -383,7 +384,7 @@ sub _patch_dlsym {
     # new API (only Encode so far)
     if ( $pkg and $name and $name =~ /^[a-zA-Z_0-9-]+$/ ) {    # valid symbol name
         verbose("Remap IOK|POK $pkg with $name");
-        _save_remap( $pkg, $pkg, $name, $ivx, 0 );
+        _save_remap( $pkg, $pkg, $name, $ivxhex, 0 );
         $ivx = "0UL /* $ivxhex => $name */";
         mark_package( $pkg, 1 ) if $fullname =~ /^(svop const|padop)/;
     }
@@ -398,7 +399,7 @@ sub _save_remap {
     my $id = xpvmgsect()->index + 1;
 
     #my $svid = svsect()->index + 1;
-    verbose("init remap for $key\: $name in xpvmg_list[$id]");
+    verbose("init remap for ${key}: $name $ivx in xpvmg_list[$id]");
     my $props = { NAME => $name, ID => $id, MANDATORY => $mandatory };
     $B::C::init2_remap{$key}{MG} = [] unless $B::C::init2_remap{$key}{'MG'};
     push @{ $B::C::init2_remap{$key}{MG} }, $props;
