@@ -87,10 +87,12 @@ log.modules-5.014004
 log.modules-5.014004-nt
 log.modules-5.016003
 log.modules-5.016003-nt
-log.modules-5.018002
-log.modules-5.018002-nt
-log.modules-5.020000
-log.modules-5.020000-nt
+log.modules-5.018004
+log.modules-5.018004-nt
+log.modules-5.020003
+log.modules-5.020003-nt
+log.modules-5.022000
+log.modules-5.022000-nt
 perlcompile.pod
 perloptree.pod
 ramblings/B-CC-yapceu2013.pdf

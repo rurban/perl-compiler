@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.52_13 1c72ad5 2015-11-04 | untodo fixed GH #273 tests
-# perlversion = 5.008005-nt
-# path = /usr/local/bin/perl5.8.5-nt
+# B::C::VERSION = 1.52_13 9970b03 2015-11-03 | C: fix uninitialized value $level warnings
+# perlversion = 5.018004-nt
+# path = /usr/local/bin/perl5.18.4-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -24,8 +24,8 @@ pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
-pass ExtUtils::ParseXS
-pass Module::Build
+pass ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
+pass Module::Build #TODO >= 5.16 without threads (invalid free)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -47,7 +47,7 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
+skip Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
@@ -70,3 +70,40 @@ pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
+pass if(1) => "Sys::Hostname"
+pass Text::Balanced
+pass DBI
+pass Time::Local
+pass IO::Scalar
+pass Sub::Identify
+pass Class::ISA
+pass FCGI
+pass Tree::DAG_Node
+fail Path::Class
+pass Test::Warn
+pass Encode
+pass Variable::Magic
+pass CGI
+pass B::Hooks::EndOfScope
+pass Test::Pod
+pass Digest::SHA1
+pass namespace::clean
+pass Class::Inspector
+pass Clone
+pass XML::NamespaceSupport
+pass XML::SAX
+pass YAML
+pass MooseX::Types
+pass Class::Singleton
+pass DateTime::TimeZone
+pass DateTime::Locale
+pass DateTime
+pass IO::String
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
+# 99 / 100 modules tested with B-C-1.52_13 - perl-5.018004-nt
+# pass  98 /  99 (99.0%)
+# fail   1 /  99 (1.0%)
+# todo   2 /   1 (200.0%)
+# skip   1 / 100 (1.0% not installed)

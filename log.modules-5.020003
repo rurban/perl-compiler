@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.52 c9b5ca6 2014-09-08 | t/test.pl: print @cmd with TEST_VERBOSE
-# perlversion = 5.020000
-# path = /usr/local/bin/perl5.20.0
+# B::C::VERSION = 1.52_13 1c72ad5 2015-11-04 | untodo fixed GH #273 tests
+# perlversion = 5.020003
+# path = /usr/local/bin/perl5.20.3
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52 - perl-5.020000
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
+# 100 / 100 modules tested with B-C-1.52_13 - perl-5.020003
+# pass  98 / 100 (98.0%)
+# fail   2 / 100 (2.0%)
+# todo   1 /   2 (50.0%)
 # skip   0 / 100 (0.0% not installed)

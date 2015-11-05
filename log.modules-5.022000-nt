@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.52 c9b5ca6 2014-09-08 | t/test.pl: print @cmd with TEST_VERBOSE
-# perlversion = 5.018002-nt
-# path = /usr/local/bin/perl5.18.2-nt
+# B::C::VERSION = 1.52_13 9970b03 2015-11-03 | C: fix uninitialized value $level warnings
+# perlversion = 5.022000-nt
+# path = /usr/local/bin/perl5.22.0-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
-fail Module::Build #TODO >= 5.16 without threads (invalid free)
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -97,12 +97,12 @@ pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-pass DateTime
+pass DateTime #TODO >= 5.22 #280 aux_list
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52 - perl-5.018002-nt
+# 100 / 100 modules tested with B-C-1.52_13 - perl-5.022000-nt
 # pass  98 / 100 (98.0%)
 # fail   2 / 100 (2.0%)
 # todo   2 /   2 (100.0%)
