@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_16';
+our $VERSION = '1.52_17';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -297,6 +297,15 @@ use B
 # called mapped_base on linux (usually 0xa38000)
 sub LOWEST_IMAGEBASE() {0x10000}
 
+sub _load_mro {
+    eval q/require mro; 1/ or die if $] >= 5.010;
+    *_load_mro = sub {};
+}
+
+sub is_using_mro {
+  return keys %{mro::} > 10 ? 1 : 0;
+}
+
 BEGIN {
   if ($] >=  5.008) {
     @B::NV::ISA = 'B::IV';		  # add IVX to nv. This fixes test 23 for Perl 5.8
@@ -325,7 +334,7 @@ BEGIN {
     eval q[sub SVt_PVGV() {13}];
   }
   if ($] >= 5.010) {
-    require mro; # mro->import();
+    #require mro; # mro->import();
     # not exported:
     sub SVf_OOK { 0x02000000 }
     eval q[sub SVs_GMG() { 0x00200000 }
@@ -3503,13 +3512,14 @@ sub B::RV::save {
 
 sub get_isa ($) {
   no strict 'refs';
-  if ($PERL510) {
+
+  if ($PERL510 && is_using_mro()) {
     return @{mro::get_linear_isa($_[0])};
   } else {
     my $s = $_[0].'::';
     if (exists(${$s}{ISA})) {
       if (exists(${$s}{ISA}{ARRAY})) {
-	return @{ $s . '::ISA' };
+        return @{ $s . '::ISA' };
       }
     }
   }
@@ -5234,7 +5244,7 @@ sub B::HV::save {
     # $fullname !~ /::$/ or
     if (!$B::C::stash) { # -fno-stash: do not save stashes
       $magic = $hv->save_magic('%'.$name.'::'); #symtab magic set in PMOP #188 (#267)
-      if ($PERL510 and mro::get_mro($name) eq 'c3') {
+      if ($PERL510 and is_using_mro() && mro::get_mro($name) eq 'c3') {
         B::C::make_c3($name);
       }
       if ($magic =~ /c/) {
@@ -5370,7 +5380,7 @@ sub B::HV::save {
     my ($cname, $len, $utf8) = strlen_flags($name);
     $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
   }
-  if ($PERL510 and $name and mro::get_mro($name) eq 'c3') {
+  if ($PERL510 and $name and is_using_mro() and mro::get_mro($name) eq 'c3') {
     B::C::make_c3($name);
   }
   return $sym;
@@ -7155,7 +7165,8 @@ sub should_save {
   return if index($package, ")") != -1; # XXX this causes the compiler to abort
   # core static mro has exactly one member, ext/mro has more
   if ($package eq 'mro') {
-    if (keys %{mro::} == 1) { # core or ext?
+    # B::C is setting %mro:: to 3, make sure we have at least 10
+    if (!is_using_mro()) { # core or ext?
       warn "ext/mro not loaded - skip\n" if $debug{pkg};
       return;
     } else {
@@ -7540,7 +7551,7 @@ sub save_context {
 
   if ($PERL510) {
     # need to mark assign c3 to %main::. no need to assign the default dfs
-    if (mro::get_mro("main") eq 'c3') {
+    if (is_using_mro() && mro::get_mro("main") eq 'c3') {
         make_c3('main');
     }
     # Tie::Hash::NamedCapture is added for *+ *-, Errno for *!
@@ -7605,7 +7616,7 @@ sub save_context {
     if ($include_package{$p} and exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
       push @saved_isa, $p;
       svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
-      if ($PERL510 and mro::get_mro($p) eq 'c3') {
+      if ($PERL510 and is_using_mro() && mro::get_mro($p) eq 'c3') {
         make_c3($p);
       }
     }
@@ -7665,6 +7676,7 @@ sub descend_marked_unused {
 }
 
 sub save_main {
+
   warn "Starting compile\n" if $verbose;
   warn "Walking tree\n"     if $verbose;
   %Exporter::Cache = (); # avoid B::C and B symbols being stored
@@ -7672,6 +7684,7 @@ sub save_main {
   set_curcv B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   binmode( STDOUT, ':utf8' ) unless $PERL56;
+  
   $verbose
     ? walkoptree_slow( main_root, "save" )
     : walkoptree( main_root, "save" );
