@@ -97,6 +97,7 @@ sub save {
 
         # test 29 and 15,16,21. 44,45
         my ( $cstring, $cur, $utf8 ) = strlen_flags( $op->label );
+        WARN("utf8 label $cstring");
         init()->add(
             sprintf(
                 "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",

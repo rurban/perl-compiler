@@ -121,7 +121,6 @@ uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing
 uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/labels.t                 PLAN      BC issue #318 - unicode labels not found
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/parser.t                 TESTS     Recheck
@@ -184,7 +183,6 @@ xtestc/0326.t                TESTS     Output is: ""
 xtestc/0329.t                TESTS     Output is: "axxxx \n"
 xtestc/0340.t                TESTS     Output is: "die at new at xtestc 0340.pl ..."
 xtestc/0350.t                TESTS     Output is: ""
-xtestc/0368.t                TESTS     Output is: ""
 xtestc/0369.t                TESTS     Output is: ""
 xtestc/0371.t                TESTS     Output is: ""
 xtestc/0374.t                BC        xtestc/0374.c is generated (-O3,-fno-fold)
@@ -196,3 +194,4 @@ xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
 xtestc/3010.t                TESTS     Output is: ""
+xtestc/3200.t                TESTS     Output is: ""

@@ -163,6 +163,7 @@ PPCODE:
     HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
     ST(0) = (char*)stash < (char*)PL_sv_arenaroot
              ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
+    XSRETURN(1);
 
 MODULE = B	PACKAGE = B::PADNAME	PREFIX = Padname
 
@@ -206,6 +207,23 @@ MODULE = B	PACKAGE = B::COP	PREFIX = COP_
 U32
 COP_stashflags(o)
 	B::COP	o
+
+#endif
+
+#ifdef CopLABEL_len_flags
+
+SV*
+COP_label(o)
+    B::OP  o
+PPCODE:
+    {
+      STRLEN len;
+      U32 flags;
+      const char *pv = CopLABEL_len_flags(cCOPo, &len, &flags);
+      ST(0) = pv ? sv_2mortal(newSVpvn_flags(pv, len, flags))
+                 : &PL_sv_undef;
+    }
+    XSRETURN(1);
 
 #endif
 

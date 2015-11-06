@@ -1229,10 +1229,11 @@ package Diamond_D; use base ("Diamond_B", "Diamond_C"); use mro "c3";
 package main; my $order = mro::get_linear_isa("Diamond_D");
               print $order->[3] eq "Diamond_A" ? "ok" : "not ok"; print "\n"'
 tests[317]='use Net::SSLeay();use IO::Socket::SSL();Net::SSLeay::OpenSSL_add_ssl_algorithms(); my $ssl_ctx = IO::Socket::SSL::SSL_Context->new(SSL_server => 1); print q(ok)'
-tests[318]='{ local $\ = "ok" ; print "" }'
+tests[3180]='{ local $\ = "ok" ; print "" }'
 tests[319]='#TODO Wide character warnings missing (bytes layer ignored)
 use warnings q{utf8}; my $w; local $SIG{__WARN__} = sub { $w = $_[0] }; my $c = chr(300); open F, ">", "a"; binmode(F, ":bytes:"); print F $c,"\n"; close F; print $w'
 if [[ $v518 -gt 0 ]]; then
+    tests[318]='use utf8; ＬＯＯＰ: { last ＬＯＯＰ } print qq(ok\n)'
     tests[320]='use utf8; sub участники { print qq{ok\n} } $::{"участники"}->()'
 fi
 tests[3200]='#TODO No warnings reading in invalid utf8 stream (utf8 layer ignored)
