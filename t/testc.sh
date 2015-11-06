@@ -1180,7 +1180,7 @@ if [[ $v518 -gt 0 ]]; then
 fi
 tests[2990]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
-tests[300]='format STDERR = 
+tests[300]='format STDERR =
 .
 my $stdout = *STDOUT{IO};
 my $stderr = *STDERR{FORMAT};
@@ -1232,7 +1232,10 @@ tests[317]='use Net::SSLeay();use IO::Socket::SSL();Net::SSLeay::OpenSSL_add_ssl
 tests[318]='{ local $\ = "ok" ; print "" }'
 tests[319]='#TODO Wide character warnings missing (bytes layer ignored)
 use warnings q{utf8}; my $w; local $SIG{__WARN__} = sub { $w = $_[0] }; my $c = chr(300); open F, ">", "a"; binmode(F, ":bytes:"); print F $c,"\n"; close F; print $w'
-tests[320]='#TODO No warnings reading in invalid utf8 stream (utf8 layer ignored)
+if [[ $v518 -gt 0 ]]; then
+    tests[320]='use utf8; sub участники { print qq{ok\n} } $::{"участники"}->()'
+fi
+tests[3200]='#TODO No warnings reading in invalid utf8 stream (utf8 layer ignored)
 use warnings "utf8"; local $SIG{__WARN__} = sub { $@ = shift }; open F, ">", "a"; binmode F; my ($chrE4, $chrF6) = (chr(0xE4), chr(0xF6)); print F "foo", $chrE4, "\n"; print F "foo", $chrF6, "\n"; close F; open F, "<:utf8", "a";  undef $@; my $line = <F>; print q(ok) if $@ =~ /utf8 "\xE4" does not map to Unicode/;'
 tests[324]='package Master;
 use mro "c3";

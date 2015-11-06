@@ -48,7 +48,7 @@ sub savecv {
     #
     return if ( $package ne 'main' and !is_package_used($package) );
     return if ( $package eq 'main'
-        and $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
+        and $name =~ /^([^\w].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
     debug( gv => "Used GV \*$fullname 0x%x", ref $gv ? $$gv : 0 );
     return unless ( $$cv || $$av || $$sv || $$hv || $gv->IO || $gv->FORM );
