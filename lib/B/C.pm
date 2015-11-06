@@ -6912,7 +6912,7 @@ sub B::GV::savecv {
   #
   return if ( $package ne 'main' and !$include_package{$package} );
   return if ( $package eq 'main' and
-	      $name =~ /^([^_A-Za-z0-9].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
+	      $name =~ /^([^\w].*|_\<.*|INC|ARGV|SIG|ENV|BEGIN|main::|!)$/ );
 
   warn sprintf( "Used GV \*$fullname 0x%x\n", $$gv ) if $debug{gv};
   return unless ( $$cv || $$av || $$sv || $$hv || $gv->IO || $gv->FORM );
