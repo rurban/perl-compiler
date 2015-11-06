@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_15';
+our $VERSION = '1.52_16';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -1806,14 +1806,14 @@ sub B::PVOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $level = 0 unless $level;
-  $loopsect->comment("$opsect_common, pv");
   # op_pv must be dynamic
+  $pvopsect->comment("$opsect_common, pv");
   $pvopsect->add( sprintf( "%s, NULL", $op->_save_common ) );
   $pvopsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   my $ix = $pvopsect->index;
   $init->add( sprintf( "pvop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  my ($cstring,$cur,$utf8) = strlen_flags($op->pv); # utf8 ignored in a shared str?
+  my ($cstring,$cur,$utf8) = strlen_flags($op->pv); # utf8 in op_private as OPpPV_IS_UTF8 (0x80)
   # do not use savepvn here #362
   $init->add( sprintf( "pvop_list[%d].op_pv = savesharedpvn(%s, %u);", $ix, $cstring, $cur ));
   savesym( $op, "(OP*)&pvop_list[$ix]" );
@@ -2159,6 +2159,7 @@ sub B::COP::save {
       # test 29 and 15,16,21. 44,45
       my ($cstring, $cur, $utf8) = strlen_flags($op->label);
       if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee
+        warn "utf8 label $cstring" if $utf8 and $verbose;
 	$init->add(
 	  sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
 		  $copsect->index, $cstring, $cur, $utf8));
