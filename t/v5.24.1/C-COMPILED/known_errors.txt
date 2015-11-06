@@ -30,7 +30,7 @@ comp/parser.t                COMPAT    We're not going to support ' as a package
 comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
 extra/reset.t                TESTS     BC issue #252 - Reset is not localized to the current namespace
 io/bom.t                     COMPAT    BC issue 312 - BOM seems to be rejected by perlcc but really, who needs this?
-io/layers.t                  SKIP      This is a known BC issue we've never cared about. use open doesn't work. See https://code.google.com/p/perl-compiler/issues/detail?id=203 
+io/layers.t                  SKIP      This is a known BC issue we've never cared about. use open doesn't work. See https://code.google.com/p/perl-compiler/issues/detail?id=203
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
@@ -63,7 +63,7 @@ op/caller.t                  TESTS     BC issue #221 - delete __ANON__
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/concat2.t                 TESTS     BC issue #219 - overload issue
-op/const-optree.t            PLAN      BC issue #305 - feature refaliasing 
+op/const-optree.t            PLAN      BC issue #305 - feature refaliasing
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
@@ -121,11 +121,10 @@ uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing
 uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/gv.t                     TESTS     BC issue #301 - no warnings when redefining unicode function
 uni/labels.t                 PLAN      BC issue #318 - unicode labels not found
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/parser.t                 PLAN      BC issue #320 - unicode function call from %::
+uni/parser.t                 TESTS     Recheck
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
 uni/tr_7jis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
@@ -174,14 +173,12 @@ xtestc/0294.t                TESTS     Output is: "Constant subroutine GLOB ..."
 xtestc/0295.t                TESTS     Output is: ""
 xtestc/0298.t                TESTS     Output is: ""
 xtestc/0300.t                TESTS     Output is: "IO::File "
-xtestc/0301.t                TESTS     Output is: ""
 xtestc/0302.t                TESTS     Output is: "String found where operator ..."
 xtestc/0304.t                TESTS     Output is: "0304.bin: pp.c:177: Perl pp ..."
 xtestc/0305.t                TESTS     Output is: ""
 xtestc/0309.t                TESTS     Output is: ""
 xtestc/0317.t                TESTS     Output is: ""
 xtestc/0319.t                TESTS     Output is: "Wide character in print at ..."
-xtestc/0320.t                TESTS     Output is: ""
 xtestc/0324.t                TESTS     Output is: ""
 xtestc/0326.t                TESTS     Output is: ""
 xtestc/0329.t                TESTS     Output is: "axxxx \n"
