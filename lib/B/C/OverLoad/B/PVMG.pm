@@ -112,10 +112,14 @@ sub save_magic {
     if ( ref($sv) eq 'B::HV' and $sv->MAGICAL and $fullname =~ /::$/ ) {
         WARN sprintf( "skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS || 0 );
     }
+    elsif ( ref($sv) eq 'B::HV' and $fullname =~ /(version|File)::$/ ) {
+        debug( mg => "skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS );
+    }
     else {
         $pkg = $sv->SvSTASH;
         if ( $pkg and $$pkg ) {
-            debug( mg => "stash isa class(\"%s\") 0x%x\n", eval { $pkg->NAME }, $$pkg );
+            my $pkgname = $pkg->can('NAME') ? $pkg->NAME : ( $pkg->can('NAME_HEK') ? $pkg->NAME_HEK : '' );
+            debug( mg => "stash isa class(\"%s\") 0x%x\n", $pkgname, $$pkg );
 
             # 361 do not force dynaloading IO via IO::Handle upon us
             # core already initialized this stash for us
@@ -123,7 +127,7 @@ sub save_magic {
                 $pkg->save($fullname) unless $fullname eq 'main::STDOUT';
 
                 no strict 'refs';
-                debug( mg => "xmg_stash = \"%s\" (0x%x)\n", eval { $pkg->NAME }, $$pkg );
+                debug( mg => "xmg_stash = \"%s\" (0x%x)\n", $pkgname, $$pkg );
 
                 # Q: Who is initializing our stash from XS? ->save is missing that.
                 # A: We only need to init it when we need a CV
