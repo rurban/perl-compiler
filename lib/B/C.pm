@@ -1275,11 +1275,11 @@ sub B::OP::_save_common {
       # Foo->bar()  compile-time lookup, 34 = BARE in all versions
       (($op->first->next->name eq 'const' and $op->first->next->flags == 34)
        or $op->first->next->name eq 'padsv'      # or $foo->bar() run-time lookup
-       or ($] < 5.010 and $op->first->next->name eq 'gvsv' and !$op->first->next->type  # 5.8 ex-gvsv
+       or (!$PERL510 and $op->first->next->name eq 'gvsv' and !$op->first->next->type  # 5.8 ex-gvsv
 	   and $op->first->next->next->name eq 'const' and $op->first->next->next->flags == 34))
      ) {
     my $pkgop = $op->first->next;
-    if ($] < 5.010 and !$op->first->next->type) { # 5.8 ex-gvsv
+    if (!$PERL510 and !$op->first->next->type) { # 5.8 ex-gvsv
       $pkgop = $op->first->next->next;
     }
     warn "check package_pv ".$pkgop->name." for method_name\n" if $debug{cv};
@@ -3267,14 +3267,15 @@ sub B::PVMG::save_magic {
   # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
   # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
-  if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
-    warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
-      if $verbose;
+  #if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
+  #  warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
+  #    if $verbose;
   # [cperl #60] not only overloaded, version also
-  } elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
-    warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
-      if $verbose;
-  } else {
+  #} elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
+  #  warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
+  #    if $verbose;
+  #} else
+  {
     $pkg = $sv->SvSTASH;
     if ($pkg and $$pkg) {
       warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
@@ -3302,22 +3303,26 @@ sub B::PVMG::save_magic {
     if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
 
   # Protect our SVs against non-magic or SvPAD_OUR. Fixes tests 16 and 14 + 23
-  if ($PERL510 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
-    warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
-                 $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
-      if $debug{mg};
-    return '';
-  }
+  #if ($PERL510 and !($sv->MAGICAL or $sv_flags & SVf_AMAGIC)) {
+  #  warn sprintf("Skipping non-magical PVMG type=%d, flags=0x%x%s\n",
+  #               $sv_flags && 0xff, $sv_flags, $debug{flags} ? "(".$sv->flagspv.")" : "")
+  #    if $debug{mg};
+  #  return '';
+  #}
 
-  # disabled. testcase: t/testm.sh Path::Class
+  my $stashname = $fullname;
+  $stashname =~ s/^%(.*)::$/$1/;
+  $stashname = $pkg->NAME if $pkg and $$pkg;
   if (0 and $PERL518 and $sv_flags & SVf_AMAGIC) {
-    my $name = $fullname;
-    $name =~ s/^%(.*)::$/$1/;
-    $name = $pkg->NAME if $pkg and $$pkg;
     warn sprintf("initialize overload cache for %s\n", $fullname )
       if $debug{mg} or $debug{gv};
-    $init1->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
-                        $fullname));
+    $init1->add(sprintf("Gv_AMupdate(%s, 0); /* init overload cache for %s */",
+                        savestashpv($stashname), $fullname));
+    # disabled. testcase: t/testm.sh Path::Class
+    #$init1->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($stashname),
+    #                    $fullname));
+    #$init1->add(sprintf("StashHANDLER(%s, string); /* init overload for %s */", savestashpv($name),
+    #                    $fullname));
   }
 
   my @mgchain = $sv->MAGIC;
@@ -3411,9 +3416,18 @@ CODE2
 			   $$sv, "'n'", cstring($ptr), $len ));
     }
     elsif ( $type eq 'c' ) { # and !$PERL518
-      $init->add(sprintf(
-          "/* AMT overload table for the stash %s 0x%x is generated dynamically */",
-          $fullname, $$sv ));
+      #$init1->add(sprintf("StashHANDLER(%s, string); /* init string overload for %s */", savestashpv($name),
+      #                    $fullname));
+      #if ($PERL522) {
+      #  $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
+      #                     $$sv, 0, "'c'", cstring($ptr), $len ));
+      #  $init->add(sprintf("Gv_AMupdate(%s, 0); /* init overload cache for %s */", savestashpv($stashname),
+      #                     $fullname));
+      #} else {
+      savestashpv($stashname) if $PERL522;
+      $init->add(sprintf("/* AMT overload table for the stash %s s\\_%x is generated dynamically */",
+                         $fullname, $$sv ));
+      #}
     }
     elsif ( $type eq ':' ) { # symtab magic
       # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
@@ -3824,7 +3838,7 @@ sub B::CV::save {
 
   warn sprintf( "saving %s CV 0x%x as %s\n", $fullname, $$cv, $sym )
     if $debug{cv};
-  if (!$$root and $] < 5.010) {
+  if (!$$root and !$PERL510) {
     $package_pv = $cvstashname;
     push_package($package_pv);
   }
@@ -5264,19 +5278,41 @@ sub B::HV::save {
     $svsect->add(sprintf("&xpvhv_list[%d], %Lu, 0x%x, {0}",
 			 $xpvhvsect->index, $hv->REFCNT, $flags));
     # XXX failed at 16 (tied magic) for %main::
-    if (!$is_stash and ($] >= 5.010 and $hv->FLAGS & SVf_OOK)) {
+    if (!$is_stash and $PERL510 and $hv->FLAGS & SVf_OOK) {
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
-      # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
-      $init->add("{\tHE **a; struct xpvhv_aux *aux;",
-                 "#ifdef PERL_USE_LARGE_HV_ALLOC",
-                 sprintf("\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
-                         $hv_max),
-                 "#else",
-                 sprintf("\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max),
-                 "#endif",
-		 "\tHvARRAY($sym) = a;",
-		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),"}");
+      # riter required, alloc new _aux struct at the end of the HvARRAY and ARRAY.
+      $init->no_split;
+      $init->add
+        (
+         "{",
+         "\tHE **a; struct xpvhv_aux *aux;",
+         "#ifdef PERL_USE_LARGE_HV_ALLOC",
+         sprintf("\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
+                 $hv_max),
+         "#else",
+         sprintf("\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max),
+         "#endif",
+         "\tHvARRAY($sym) = a;",
+         sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),
+         #($PERL522 ? "\tHvMROMETA(MUTABLE_HV($sym));" : ()),
+         "}");
+      $init->split;
+      if ($PERL522 and ($hv->cache_gen != 1 or $hv->pkg_gen != 1 or $hv->destroy_gen)) {
+        $init->no_split;
+        $init->add
+        ("{",
+         "#if PERL_VERSION > 21",
+         "\tstruct mro_meta *meta;",
+         "#endif",
+         "\tmeta = HvMROMETA(MUTABLE_HV($sym));",
+         sprintf("\tmeta->cache_gen = %d; " .
+                 "meta->pkg_gen = %d; " .
+                 "meta->destroy_gen = %d;",
+                 $hv->cache_gen, $hv->pkg_gen, $hv->destroy_gen),
+         "}");
+        $init->split;
+      }
     }
   } # !5.10
   else {
@@ -5324,7 +5360,7 @@ sub B::HV::save {
       } else {
 	warn "saving HV \$".$fullname.'{'.$key."}\n" if $debug{hv};
 	$contents[$i] = $sv->save($fullname.'{'.$key.'}');
-	#if ($key eq "" and $] >= 5.010) {
+	#if ($key eq "" and $PERL510) {
 	#  warn "  turn off HvSHAREKEYS with empty keysv\n" if $debug{hv};
 	#  $init->add("HvSHAREKEYS_off(&sv_list[$sv_list_index]);");
 	#}
@@ -5660,7 +5696,7 @@ sub output_all {
       print "#define CopFILE_set(c,pv)  CopFILEGV_set((c), gv_fetchfile(pv))\n";
     }
   }
-  # print "#define MyPVX(sv) ".($] < 5.010 ? "SvPVX(sv)" : "((sv)->sv_u.svu_pv)")."\n";
+  # print "#define MyPVX(sv) ".(!$PERL510 ? "SvPVX(sv)" : "((sv)->sv_u.svu_pv)")."\n";
   if ($] < 5.008008 ) {
     print <<'EOT';
 #ifndef SvSTASH_set
@@ -6812,7 +6848,7 @@ _EOT15
 
     # deprecated global vars
     print qq{    {SV* s = get_sv("[",GV_NOTQUAL); sv_setiv(s, $[); mg_set(s);}\n} if $[; #ARRAY_BASE
-    if ($] < 5.010) { # OFMT and multiline matching
+    if (!$PERL510) { # OFMT and multiline matching
       eval q[
             print sprintf(qq{    sv_setpv(GvSVn(gv_fetchpv("\$#", GV_ADD|GV_NOTQUAL, SVt_PV)), %s);\n},
                           cstring($#)) if $#;
@@ -7011,7 +7047,7 @@ sub collect_deps {
 sub mark_package {
   my $package = shift;
   my $force = shift;
-  $force = 0 if $] < 5.010;
+  $force = 0 unless $PERL510;
   return if skip_pkg($package); # or $package =~ /^B::C(C?)::/;
   if ( !$include_package{$package} or $force ) {
     no strict 'refs';
@@ -7034,7 +7070,7 @@ sub mark_package {
       warn sprintf("mark $package%s\n", $force?" (forced)":"")
 	if !$include_package{$package} and $verbose and $debug{pkg};
       $include_package{$package} = 1;
-      push_package($package) if $] < 5.010;
+      push_package($package) unless $PERL510;
       walk_syms( $package ) if !$B::C::walkall; # fixes i27-1
     }
     my @isa = get_isa($package);
@@ -7099,7 +7135,7 @@ sub in_static_core {
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
   push @pkg, 'attributes'             if $] <  5.011; # partially static and dynamic
-  push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
+  push @pkg, 'version'                if $PERL510; # partially static and dynamic
   push @pkg, 'Tie::Hash::NamedCapture' if !$PERL514; # dynamic since 5.14
   #push @pkg, 'DynaLoader'	      if $Config{usedl};
   # Win32CORE only in official cygwin pkg. And it needs to be bootstrapped,
@@ -7603,9 +7639,7 @@ sub save_context {
     if ($include_package{$p} and exists(${$p.'::'}{ISA}) and ${$p.'::'}{ISA}) {
       push @saved_isa, $p;
       svref_2object( \@{$p.'::ISA'} )->save($p.'::ISA');
-      if ($PERL510 and mro::get_mro($p) eq 'c3') {
-        make_c3($p);
-      }
+      make_c3($p) if $PERL510 and mro::get_mro($p) eq 'c3';
     }
   }
   warn "Saved \@ISA for: ".join(" ",@saved_isa)."\n" if @saved_isa and ($verbose or $debug{pkg});

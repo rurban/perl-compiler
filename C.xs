@@ -248,13 +248,40 @@ MODULE = B      PACKAGE = B::HV
 #if PERL_VERSION > 17
 
 SV*
-SvSTASH_not(hv)
-          B::HV hv
+SvSTASH(hv)
+    B::HV hv
 PPCODE:
     HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
     ST(0) = (char*)stash < (char*)PL_sv_arenaroot
              ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
     XSRETURN(1);
+
+UV
+cache_gen(hv)
+    B::HV hv
+CODE:
+    struct mro_meta *meta = HvMROMETA(hv);
+    RETVAL = meta->cache_gen;
+OUTPUT:
+    RETVAL
+
+UV
+pkg_gen(hv)
+    B::HV hv
+CODE:
+    struct mro_meta *meta = HvMROMETA(hv);
+    RETVAL = meta->pkg_gen;
+OUTPUT:
+    RETVAL
+
+UV
+destroy_gen(hv)
+    B::HV hv
+CODE:
+    struct mro_meta *meta = HvMROMETA(hv);
+    RETVAL = meta->destroy_gen;
+OUTPUT:
+    RETVAL
 
 #endif
 
