@@ -32,7 +32,7 @@ use B::C::File qw( init2 init0 init decl free
   opsect pmopsect pvopsect svopsect unopsect svsect xpvsect xpvavsect xpvhvsect xpvcvsect xpvivsect xpvuvsect
   xpvnvsect xpvmgsect xpvlvsect xrvsect xpvbmsect xpviosect padlistsect loopsect
 );
-use B::C::Helpers qw/set_curcv/;
+use B::C::Helpers qw/set_curcv is_using_mro/;
 use B::C::Helpers::Symtable qw(objsym savesym);
 
 use strict;
@@ -66,9 +66,6 @@ BEGIN {
     sub SVf_UTF8 { 0x20000000 }
 
     B->import(qw(SVt_PVGV));                                          # added with 5.8.1
-
-    require mro;                                                      # mro->import();
-                                                                      # not exported:
 
     # QUESTION: not sure it s still required  ( at least the two last )
     #           check if used & clean
@@ -687,7 +684,18 @@ sub mark_threads {
 sub get_isa ($) {
     no strict 'refs';
 
-    return @{ mro::get_linear_isa( $_[0] ) };
+    if ( is_using_mro() ) {
+        return @{ mro::get_linear_isa( $_[0] ) };
+    }
+
+    my $s = $_[0] . '::';
+    if ( exists( ${$s}{ISA} ) ) {
+        if ( exists( ${$s}{ISA}{ARRAY} ) ) {
+            return @{ $s . '::ISA' };
+        }
+    }
+
+    return;
 }
 
 # try_isa($pkg,$name) returns the found $pkg for the method $pkg::$name
@@ -1218,7 +1226,7 @@ sub save_context {
     verbose("save context:");
 
     # need to mark assign c3 to %main::. no need to assign the default dfs
-    if ( mro::get_mro("main") eq 'c3' ) {
+    if ( is_using_mro() && mro::get_mro("main") eq 'c3' ) {
         make_c3('main');
     }
 
@@ -1266,7 +1274,7 @@ sub save_context {
         if ( exists( ${ $p . '::' }{ISA} ) and ${ $p . '::' }{ISA} ) {
             push @saved_isa, $p;
             svref_2object( \@{ $p . '::ISA' } )->save( $p . '::ISA' );
-            if ( mro::get_mro($p) eq 'c3' ) {
+            if ( is_using_mro() && mro::get_mro($p) eq 'c3' ) {
                 make_c3($p);
             }
         }

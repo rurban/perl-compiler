@@ -34,20 +34,7 @@ io/layers.t                  SKIP      This is a known BC issue we've never care
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
-mro/complex_c3.t             PLAN      BC issue #298 - next::method broken.
-mro/complex_c3_utf8.t        PLAN      BC issue #298 - next::method broken.
-mro/next_edgecases.t         TESTS     BC issue #298 - next::method broken.
 mro/next_edgecases_utf8.t    TESTS     BC issue #298 - next::method broken.
-mro/next_inanon.t            PLAN      BC issue #298 - next::method broken.
-mro/next_inanon_utf8.t       PLAN      BC issue #298 - next::method broken.
-mro/next_ineval.t            TESTS     BC issue #298 - next::method broken.
-mro/next_ineval_utf8.t       TESTS     BC issue #298 - next::method broken.
-mro/next_method.t            PLAN      BC issue #298 - next::method broken.
-mro/next_method_utf8.t       PLAN      BC issue #298 - next::method broken.
-mro/next_NEXT.t              PLAN      BC issue #298 - next::method broken.
-mro/next_NEXT_utf8.t         PLAN      BC issue #298 - next::method broken.
-mro/next_skip.t              PLAN      BC issue #298 - next::method broken.
-mro/next_skip_utf8.t         PLAN      BC issue #298 - next::method broken.
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
@@ -170,7 +157,6 @@ xtestc/0281.t                TESTS     Output is: ""
 xtestc/0293.t                TESTS     Output is: ""
 xtestc/0294.t                TESTS     Output is: "Constant subroutine GLOB ..."
 xtestc/0295.t                TESTS     Output is: ""
-xtestc/0298.t                TESTS     Output is: ""
 xtestc/0300.t                TESTS     Output is: "IO::File "
 xtestc/0302.t                TESTS     Output is: "String found where operator ..."
 xtestc/0304.t                TESTS     Output is: "0304.bin: pp.c:177: Perl pp ..."
@@ -178,8 +164,6 @@ xtestc/0305.t                TESTS     Output is: ""
 xtestc/0309.t                TESTS     Output is: ""
 xtestc/0317.t                TESTS     Output is: ""
 xtestc/0319.t                TESTS     Output is: "Wide character in print at ..."
-xtestc/0324.t                TESTS     Output is: ""
-xtestc/0326.t                TESTS     Output is: ""
 xtestc/0329.t                TESTS     Output is: "axxxx \n"
 xtestc/0340.t                TESTS     Output is: "die at new at xtestc 0340.pl ..."
 xtestc/0350.t                TESTS     Output is: ""
@@ -193,5 +177,4 @@ xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\
 xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
-xtestc/3010.t                TESTS     Output is: ""
 xtestc/3200.t                TESTS     Output is: ""

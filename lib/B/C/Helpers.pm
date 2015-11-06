@@ -2,7 +2,7 @@ package B::C::Helpers;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -73,6 +73,16 @@ sub get_cv_string {
 
     sub curcv { return $curcv }
     sub set_curcv($) { $curcv = shift }
+}
+
+sub _load_mro {
+    eval q/require mro; 1/ or die;
+    no warnings 'redefine';
+    *_load_mro = sub { };
+}
+
+sub is_using_mro {
+    return keys %{mro::} > 10 ? 1 : 0;
 }
 
 1;

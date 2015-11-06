@@ -6,6 +6,7 @@ use Exporter ();
 use B qw/svref_2object/;
 use B::C::Config;    # import everything
 use B::C::Packages qw/mark_package_unused mark_package_used mark_package_deleted is_package_used get_all_packages_used include_package_list is_package_used/;
+use B::C::Helpers qw/is_using_mro/;
 
 # imports from B::C
 # todo: check & move these to a better place
@@ -150,7 +151,8 @@ sub should_save {
                                                # core static mro has exactly one member, ext/mro has more
     if ( $package eq 'mro' ) {
 
-        if ( keys %{mro::} == 1 ) {            # core or ext?
+        # B::C is setting %mro:: to 3, make sure we have at least 10
+        if ( !is_using_mro() ) {               # core or ext?
             debug( pkg => "ext/mro not loaded - skip" );
             return;
         }

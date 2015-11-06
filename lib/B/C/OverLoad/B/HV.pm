@@ -19,7 +19,7 @@ use strict;
 use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init1 init2/;
-use B::C::Helpers qw/mark_package read_utf8_string strlen_flags/;
+use B::C::Helpers qw/mark_package read_utf8_string strlen_flags is_using_mro/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw/savestashpv/;
 
@@ -62,7 +62,7 @@ sub save {
         # $fullname !~ /::$/ or
         if ( !$B::C::stash ) {    # -fno-stash: do not save stashes
             $magic = $hv->save_magic( '%' . $name . '::' );    #symtab magic set in PMOP #188 (#267)
-            if ( mro::get_mro($name) eq 'c3' ) {
+            if ( is_using_mro() && mro::get_mro($name) eq 'c3' ) {
                 B::C::make_c3($name);
             }
 
@@ -217,7 +217,7 @@ sub save {
         init1()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
     }
 
-    if ( $name and mro::get_mro($name) eq 'c3' ) {
+    if ( $name and is_using_mro() and mro::get_mro($name) eq 'c3' ) {
         B::C::make_c3($name);
     }
     return $sym;
