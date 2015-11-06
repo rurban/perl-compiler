@@ -14,7 +14,9 @@ our @ISA = qw(Exporter);
 *verbose         = \&B::C::Config::Debug::verbose;
 *display_message = \&B::C::Config::Debug::display_message;
 
-*WARN = \&B::C::Config::Debug::WARN;
+*WARN  = \&B::C::Config::Debug::WARN;
+*INFO  = \&B::C::Config::Debug::INFO;
+*FATAL = \&B::C::Config::Debug::FATAL;
 
 # usually 0x400000, but can be as low as 0x10000
 # http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsimagebaseaddress_xml.html
