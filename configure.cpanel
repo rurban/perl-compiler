@@ -2,10 +2,21 @@
 
 export PATH=/usr/local/cpanel/3rdparty/perl/522-debug/bin/:$PATH
 
-set -e
+#set -e
+LOG=/tmp/log.bc.configure
 
-find lib/B/C/ -name "*.pm" | xargs -n1 perl -Ilib -c
+find lib/B/C/ -name "*.pm" | xargs -n1 perl -Ilib -c >$LOG 2>&1
+ERRORS=$(grep -c -v 'syntax OK' $LOG)
+if [ "x$ERRORS" != "x0" ]; then
+    cat $LOG
+    exit 1
+fi
+echo "Check: ok"
 
+LOG=/tmp/log.bc.configure
 #git clean -dxf
-perl Makefile.PL installdirs=vendor
-make -j4 install
+perl Makefile.PL installdirs=vendor >$LOG 2>&1 || ( cat $LOG; exit $? )
+echo "Makefile.PL: ok"
+make -j4 install >>$LOG 2>&1 || ( cat $LOG; exit $? )
+
+echo "Make: ok"
