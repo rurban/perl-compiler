@@ -25,6 +25,7 @@ function help {
 PERL=`grep "^PERL =" Makefile|cut -c8-`
 PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
+v510=`$PERL -e'print (($] < 5.010)?0:1)'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
 PERLV=$(perl -e 'print $^V')
 XTESTC="t/$PERLV/C-COMPILED/xtestc"
@@ -1166,23 +1167,15 @@ if [[ $v518 -gt 0 ]]; then
 fi
 tests[2950]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[2950]='2 2 5 : 8 5 8'
-if [[ $v518 -gt 0 ]]; then
+if [[ $v510 -gt 0 ]]; then
   tests[298]='#TODO 5.22
-package D1;
-sub testmeth { "wrong" }
-
-package C1;
-our @ISA = qw/D1/;
-sub testmeth { "right" }
-
-package B1;
-our @ISA = qw/D1/;
-
-package A1; use mro "c3";
-our @ISA = qw/B1 C1/;
-sub testmeth { shift->next::method }
-
+package D1; sub testmeth { "wrong" }
+package C1; our @ISA = qw/D1/; sub testmeth { "right" }
+package B1; our @ISA = qw/D1/;
+package A1; use mro "c3"; our @ISA = qw/B1 C1/; sub testmeth { shift->next::method }
 A1->testmeth() eq "right" and print "ok\n"'
+fi
+if [[ $v518 -gt 0 ]]; then
   tests[299]='no warnings qw{experimental::lexical_topic}; my $s = "ok\n"; my $_ = "not ok\n"; my $r = $s =~ /ok(?{ print qq[$_] })/;'
 fi
 tests[2990]='#TODO version
