@@ -1,0 +1,319 @@
+I measured the size of some big modules, with B::Stats and B::C, statically compiled.
+This amounts to about to the same size as dynamic usage via perl, with all options and modules used at once. I.e. the worst-case scenario.
+
+Interestingly Module::Build is much harder to compile - you'd need 6GB RAM at least - 
+and much bigger in the end-result than Moose, which compiles/compresses really fine.
+
+h1. Modules
+
+h2. Module::Build
+
+@perl -e'use Module::Build: print q(k)'@
+
+| ops |                                      68K |
+| files |                                             48 |
+| src lines |                                 18K |
+| compiled c lines |                  1.5M |
+| perl compiler memory |     360M |
+| gcc compiler memory |   **3.4G** |
+| executable size |                 37M |
+
+h2. Moose
+
+| ops |                                        91K |
+| files |                                              109 |
+| src lines |                                 28K | 
+| compiled c lines |                   889K |
+| perl compiler memory |      218M |
+| gcc compiler memory |    1.6G |
+| executable size |                  23M |
+
+
+h2. DateTime::TimeZone
+
+| ops |                                        2.3K |
+| files |                                              6 |
+| src lines |                                 2.2K | 
+| compiled c lines |                 130K |
+| perl compiler memory |       19M |
+| gcc compiler memory |      415M |
+| executable size |                  32M |
+
+h1. Typical Apps
+
+h2. Biggest cPanel app
+
+_The recipe for less than 2MB RAM and gcc < 4.5 is:_
+    cc_harness -E -o$@-cpp.c $@.c
+    cc_harness -O0 -fno-var-tracking -fno-stack-protector \
+                        -fno-tree-loop-optimize \
+                       -fpreprocessed -fno-exceptions $@-cpp.c
+
+| ops |                                        **467K** |
+| files |                                         539 |
+| src lines |                                 95K | 
+| compiled c lines |                   1.5M |
+| perl compiler memory |       352M |
+| gcc compiler memory (32bit -O0) |  2.0G |
+| executable size |                  **61M** |
+
+h2. Typical cPanel app
+
+| ops |                                        120K |
+| files |                                         156 |
+| src lines |                                 28K | 
+| compiled c lines |                    1M |
+| perl compiler memory |       120M |
+| gcc compiler memory (32bit -O0) |  734M |
+| executable size |                  42M |
+
+
+h2. dzil --help
+
+| ops |                                        167K |
+| files |                                        214 |
+| src lines |                                48K | 
+| compiled c lines |                   18M  |
+| perl compiler memory |       485M |
+| gcc compiler memory |    **4.5G** |
+| executable size |                   48M |
+| B::C time |            182s |
+| cc time |               s |
+
+h1. Minimal Web apps
+
+_A simple two-state form "like this":https://gist.github.com/387207 without Android._
+
+h2. Plack
+
+| ops |                                        78K |
+| files |                                         98 |
+| src lines |                                 29K | 
+| compiled c lines |                   388K |
+| perl compiler memory |       95M |
+| gcc compiler memory  |  1.0G |
+| executable size |            11M |
+| B::C time |            11s |
+| cc time |               72s |
+
+h2. Dancer
+
+| ops |                                        123K |
+| files |                                         143 |
+| src lines |                                 40K | 
+| compiled c lines |                   517K |
+| perl compiler memory |       159M |
+| gcc compiler memory  |  1.1G |
+| executable size |            14M |
+| B::C time |            20s |
+| cc time |               97s |
+
+
+h2. Mojo (daemon)
+
+| ops |                                        151K |
+| files |                                         150 |
+| src lines |                                 46K | 
+| compiled c lines |                   622K |
+| perl compiler memory |       153M |
+| gcc compiler memory  |  1.4G |
+| executable size |            17M |
+| B::C time |            29s |
+| cc time |            114s |
+
+h2. Catalyst
+
+_catalyst.pl Catalyst::Test; script/catalyst_test_create.pl. Same numbers with the server_
+
+| ops |                                        199K |
+| files |                                         214 |
+| src lines |                                 57K | 
+| compiled c lines |                   941K |
+| perl compiler memory |       267M |
+| gcc compiler memory  |  1.7G |
+| executable size |            26M |
+| B::C time |            44s |
+| cc time |            169s |
+
+
+
+h1. Minimal OO frameworks
+
+h2. Moose
+
+| ops |                                        91K |
+| files |                                              109 |
+| src lines |                                 28K | 
+| compiled c lines |                   889K |
+| perl compiler memory |      218M |
+| gcc compiler memory |    1.6G |
+| executable size |                  23M |
+
+h2. Mouse
+
+| ops |                                        20K |
+| files |                                              23 |
+| src lines |                                 6.5K | 
+| compiled c lines |                   120K |
+| perl compiler memory |      19M |
+| gcc compiler memory |    427M |
+| executable size |                  3.3M |
+
+h2. Moo
+
+| ops |                                        6.4K |
+| files |                                              16 |
+| src lines |                                 3.7K | 
+| compiled c lines |                   96K |
+| perl compiler memory |      17M |
+| gcc compiler memory |    _error_ (326M) |
+| executable size |                  _error_ (2.7M) |
+
+h2. Mo
+
+| ops |                                        3.7K |
+| files |                                              8 |
+| src lines |                                 2.6K | 
+| compiled c lines |                   67K |
+| perl compiler memory |      - _(too tiny, not measurable)_ |
+| gcc compiler memory |    346M |
+| executable size |                  1.8M |
+
+
+h1. Summary
+
+If you compile an app like Module::Build, i.e dzil (which means in the convoluted java-like style like Module::Build) you need a really big build machine, and developers will not be able to compile it by themselves, because they have not enough RAM. Errors will only appear daily (from the build machine), not immediately.
+
+Moose alone is okay to use, dzil for sure not. 
+A minimal web app with Plack, Dancer, Mojo and even Catalyst look all okay.
+SW metrics to explain the style, why the numbers are so different in the next blog post.
+
+So if you plan to do "modern perl" you'll either take care, like using Mouse or Moo, or do something like prefork or FCGI and do not care.
+
+Measured numbers are for x86_64 perl5.14.2-nt, gcc -Os -msse4.2 -march=corei7
+
+
+|                       |      |  gcc   |   c     | exe  |
+|			| subs | mem[M] | lines   | size |
+| Dist::Zilla		| 4309 |  4500  |  1320K  | 46M |
+| Module::Build       	| 4017 |  3400  |  1500K  | 37M |	 
+| CPAN			| 4142 |  3300  |  1319K  | 33M |
+| Catalyst		| 4508 |  1700  |   941K  | 26M |
+| ExtUtils::CBuilder  	| 1633 |  1552  |   595K  | 15M |
+| Moose			| 2523 |  1600  |   889K  | 23M |
+| Mojo			| 2559 |  1400  |   622K  | 17M |
+| Dancer		| 2368 |  1100  |   517K  | 14M |
+| Plack			| 1945 |  1000  |   388K  | 11M |
+| ExtUtils::MakeMaker   | 1233 |   957  |   335K  |  8.4M |
+| DateTime	    	| 1277 |   840  |   293K  |  6.8M |
+| DateTime::TimeZone    |  542 |   415  |   130K  |  3.1M |
+| DateTime::Locale      |  471 |   464  |   138K  |  3.4M |
+| Mouse  		|  743 |   427  |   120K  |  3.3M |
+| Moo   		|  572 |   326  |    96K  |  2.7M |
+| Mo    		|  388 |   346  |    67K  |  1.8M |
+
+
+h1. Makefile tricks
+
+If you want to check in your Makefile how much memory is available and 
+disable some gcc optimizations accordingly you can something like this:
+
+Makefile snippet
+
+bc. AVAILMEM=$(shell availmem.sh)
+bigapp: $@.pl
+        if [ ${AVAILMEM} -lt 2000000 ]; then \
+                echo "less than 2GB free RAM, disable some gcc optimizations"; \
+                /bin/rm -f $@ $@-cpp.c $@.c; \
+                perl -c $@.pl; \
+                perl -MO=C,-O3,-o$@.c $@.pl; \
+                cc_harness -E -o$@-cpp.c $@.c; \
+                cc_harness -O0 -fno-var-tracking -fno-stack-protector \
+                         -fno-tree-loop-optimize -fpreprocessed \
+                         -fno-exceptions $@-cpp.c -o$@; \
+                /bin/rm -f $@-cpp.c $@.c; \
+        else \
+                perlcc $(PERLCC_OPTS) $@.pl -o $@; \
+        fi
+
+My availmem.sh on linux:
+
+bc. #!/bin/sh
+memtotal=$(perl -ane'print $F[1] if /^MemTotal:/' /proc/meminfo)
+memused=$(perl -ane'print $F[1] if /^Active:/' /proc/meminfo)
+echo $(($memtotal - $memused))
+
+
+
+Plack
+  p -MB::Stats t/plack.pl
+  pb script/perlcc -v2 --time -O3 t/plack.pl -S -ot/plack
+files=98	lines=28891	ops=78214
+perl res 95m
+cc1  res 1.0g
+c time: 11.407679
+cc time: 71.652737
+
+Dancer
+  p -MB::Stats t/dancer.pl
+  pb script/perlcc -v2 --time -O3 -S t/dancer.pl
+files=143	lines=40177	ops=123197
+
+perl res 159m
+cc1  res 1.1g
+c time: 20.45
+cc time: 96.88
+
+Mojo
+(daemon)
+files=150	lines=46779	ops=151577
+perl res 153m 
+cc1 res 1.4g
+c  29s
+cc 114s
+
+Catalyst
+script/catalyst_test_create.pl (no server)
+files=214	lines=57770	ops=199103
+perl res 267m
+cc1  res 1.7g
+c time: 44s
+cc time: 169s
+
+CPAN
+c time: 78.491689
+cc time: 255.88538
+
+mouse
+  pb script/perlcc -v2 --time -O3 -S -ot/mouse -e'use Mouse; print q(ok)'
+19m
+427m
+c time: 2.758865
+cc time: 23.37078
+
+
+number of subs:
+for m in Module::Build Moose Mouse Moo Mo DateTime::TimeZone Dist::Zilla Plack::Runner;use Plack::Request Dancer Mojo Catalyst
+do
+  echo -n "$m  ";
+  perlcc -v4 --Wb=-Ds,-c -e'use Moose' 2>&1 |egrep -iv "^ (New |Warning)"|sort -u|wc -l
+  echo "";
+done
+                                gcc       c     exe
+			subs   mem[M]   lines  size
+Dist::Zilla		4309	4500   18000K   48M
+Module::Build       	4017 	3400	1500K   37M	 
+CPAN			4142    3300	1319K 	33M
+Catalyst		4508	1700     941K   26M
+ExtUtils::CBuilder  	1633    1552	 595K 	15M
+Moose			2523    1600     889K   23M
+Mojo			2559	1400     622K   17M
+Dancer			2368	1100     517K   14M
+Plack			1945	1000	 388K   11M
+ExtUtils::MakeMaker 	1233     957	 335K	 8.4M
+DateTime	    	1277	 840	 293K  	 6.8M
+DateTime::TimeZone   	 542	 415	 130K  	 3.1M
+DateTime::Locale      	 471	 464     138K  	 3.4M
+Mouse  		 	 743	 427     120K    3.3M
+Moo   		 	 572	 326      96K    2.7M
+Mo    		 	 388	 346      67K    1.8M

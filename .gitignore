@@ -41,6 +41,9 @@ blib
 lib/B/C/Flags.pm
 MANIFEST.files
 TAGS
+GPATH
+GRTAGS
+GTAGS
 log.test-*
 log.make-*
 log.do-*
@@ -51,3 +54,4 @@ B-C-*.tar.gz
 .commit
 *.patch
 x*.p
+.gdb_history
