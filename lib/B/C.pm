@@ -3276,16 +3276,19 @@ sub B::PVMG::save_magic {
   } else {
     $pkg = $sv->SvSTASH;
     if ($pkg and $$pkg) {
-      warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
-        if $debug{mg} or $debug{gv};
+        my $pkgname;
+        my $debugon = $debug{mg} || $debug{gv};
+        if ( $debugon ) {
+          $pkgname = $pkg->can('NAME') ? $pkg->NAME : ( $pkg->can('NAME_HEK') ? $pkg->NAME_HEK : '????' );
+          warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkgname, $$pkg);
+        }
       # 361 do not force dynaloading IO via IO::Handle upon us
       # core already initialized this stash for us
       unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
         $pkg->save($fullname);
 
         no strict 'refs';
-        warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
-          if $debug{mg} or $debug{gv};
+        warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkgname, $$pkg ) if $debugon;
         # Q: Who is initializing our stash from XS? ->save is missing that.
         # A: We only need to init it when we need a CV
         # defer for XS loaded stashes with AMT magic
