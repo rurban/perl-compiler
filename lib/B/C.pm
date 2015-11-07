@@ -2213,7 +2213,9 @@ sub B::COP::save {
       # which is not the address which will be freed in S_cop_free.
       # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
       # lexwarn<n> might be also be STRLEN* 0
-      $init->add("if ($copw) $dest = (STRLEN*)savesharedpvn((const char*)$copw, sizeof($copw));");
+      $init->add
+        (sprintf("if (*%s)\n\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
+                 $copw, $dest, $copw, $copw));
     }
   } else {
     $init->add( sprintf( "cop_list[%d].cop_warnings = %s;", $ix, $warn_sv ) )
