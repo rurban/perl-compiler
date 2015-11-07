@@ -252,8 +252,8 @@ SvSTASH(hv)
     B::HV hv
 PPCODE:
     HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
-    ST(0) = (char*)stash < (char*)PL_sv_arenaroot
-             ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
+    ST(0) = make_sv_object(aTHX_ (char*)stash < (char*)PL_sv_arenaroot
+             ? &PL_sv_undef : MUTABLE_SV(stash));
     XSRETURN(1);
 
 UV
