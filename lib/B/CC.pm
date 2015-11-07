@@ -292,7 +292,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.16';
+our $VERSION = '1.16_01';
 
 # Start registering the L<types> namespaces.
 use strict;
@@ -1197,6 +1197,19 @@ sub declare_pad {
   }
 }
 
+# for cc: unique ascii representation of an utf8 string, for labels
+sub encode_utf8($) {
+  my $l = shift;
+  if ($] > 5.006 and utf8::is_utf8($l)) {
+    #  utf8::encode($l);
+    #  $l =~ s/([\x{0100}-\x{ffff}])/sprintf("u%x", $1)/ge;
+    #$l = substr(B::cstring($l), 1, -1);
+    #$l =~ s/\\/u/g;
+    $l = join('', map { $_ < 127 ? $_ : sprintf("u_%x_", $_) } unpack("U*", $l));
+  }
+  return $l;
+}
+
 #
 # Debugging stuff
 #
@@ -1222,8 +1235,9 @@ sub label {
   my $op = shift;
   # Preserve original label name for "real" labels
   if ($op->can("label") and $op->label) {
+    my $l = encode_utf8 $op->label;
     # cc should error on duplicate named labels
-    return sprintf( "label_%s_%x", $op->label, $$op);
+    return sprintf( "label_%s_%x", $l, $$op);
   } else {
     return sprintf( "lab_%x", $$op );
   }
@@ -1237,7 +1251,7 @@ sub write_label {
     my $l = label($op);
     # named label but op not yet known?
     if ( $op->can("label") and $op->label ) {
-      $l = "label_".$op->label;
+      $l = "label_" . encode_utf8 $op->label;
       # only print first such label. test 21
       push_runtime(sprintf( "  %s:", $l))
 	unless $labels->{label}->{$l};
@@ -1257,7 +1271,7 @@ sub write_label {
 		      nextop => ((ref($op) eq 'B::LOOP') && $op->nextop) ? $op->nextop : $op,
 		      redoop => ((ref($op) eq 'B::LOOP') && $op->redoop) ? $op->redoop : $op,
 		      lastop => ((ref($op) eq 'B::LOOP') && $op->lastop) ? $op->lastop : $op,
-		      'label' => $op->can("label") && $op->label  ? $op->label : $l
+		      'label' => $op->can("label") && $op->label ? $op->label : $l
 		     });
     }
   }

@@ -21,9 +21,9 @@ my $cmt = '#318 utf8 labels';
 my $script = 'use utf8; ＬＯＯＰ: { last ＬＯＯＰ } print qq(ok\n)';
 
 ctestok(1, 'C,-O3', 'ccode318i', $script, $todo."C $cmt");
+ctestok(2, 'CC', 'ccode318i', $script, $todo."CC $cmt");
 
 TODO: {
    local $TODO = 'not yet';
-   ctestok(2, 'CC',    'ccode318i', $script, $todo."CC $cmt");
    plctestok(3, "ccode318i", $script, "BC $cmt");
 }
