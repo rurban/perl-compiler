@@ -684,18 +684,13 @@ sub mark_threads {
 sub get_isa ($) {
     no strict 'refs';
 
-    if ( is_using_mro() ) {
-        return @{ mro::get_linear_isa( $_[0] ) };
+    my $name = shift;
+    if ( is_using_mro() ) {    # mro.xs loaded. c3 or dfs
+        return @{ mro::get_linear_isa($name) };
     }
 
-    my $s = $_[0] . '::';
-    if ( exists( ${$s}{ISA} ) ) {
-        if ( exists( ${$s}{ISA}{ARRAY} ) ) {
-            return @{ $s . '::ISA' };
-        }
-    }
-
-    return;
+    # dfs only, without loading mro
+    return @{ B::C::get_linear_isa($name) };
 }
 
 # try_isa($pkg,$name) returns the found $pkg for the method $pkg::$name

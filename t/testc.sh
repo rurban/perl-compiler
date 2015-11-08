@@ -1168,7 +1168,7 @@ fi
 tests[2950]='"zzaaabbb" =~ m/(a+)(b+)/ and print "@- : @+\n"'
 result[2950]='2 2 5 : 8 5 8'
 if [[ $v510 -gt 0 ]]; then
-  tests[298]='#TODO 5.22
+  tests[298]='
 package D1; sub testmeth { "wrong" }
 package C1; our @ISA = qw/D1/; sub testmeth { "right" }
 package B1; our @ISA = qw/D1/;
@@ -1180,7 +1180,7 @@ if [[ $v518 -gt 0 ]]; then
 fi
 tests[2990]='#TODO version
 package Pickup; use UNIVERSAL qw( VERSION ); print qq{ok\n} if VERSION "UNIVERSAL";'
-tests[300]='format STDERR =
+tests[300]='format STDERR = 
 .
 my $stdout = *STDOUT{IO};
 my $stderr = *STDERR{FORMAT};
@@ -1251,7 +1251,7 @@ print Slave->me()."\n";
 '
 result[324]='Master
 Slave of Master'
-tests[326]='#TODO method const maybe::next::method
+tests[326]='
 package Diamond_C; sub maybe { "Diamond_C::maybe" } package Diamond_D; use base "Diamond_C"; use mro "c3"; sub maybe { "Diamond_D::maybe => " . ((shift)->maybe::next::method() || 0) } package main; print "ok\n" if Diamond_D->maybe;'
 tests[328]='#WONTFIX re-eval lex/global mixup
 my $code = q[{$blah = 45}]; our $blah = 12; eval "/(?$code)/"; print "$blah\n"'

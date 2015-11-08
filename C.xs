@@ -351,6 +351,26 @@ method_cv(meth, packname)
     OUTPUT:
         RETVAL
 
+MODULE = B__C          PACKAGE = B::C
+
+SV*
+get_linear_isa(classname)
+    SV* classname;
+CODE:
+    HV *class_stash = gv_stashsv(classname, 0);
+
+    if (!class_stash) {
+        /* No stash exists yet, give them just the classname */
+        AV* isalin = newAV();
+        av_push(isalin, newSVsv(classname));
+        RETVAL = newRV(MUTABLE_SV(isalin));
+    }
+    else { /* just dfs */
+      RETVAL = newRV(MUTABLE_SV(Perl_mro_get_linear_isa(aTHX_ class_stash)));
+    }
+OUTPUT:
+    RETVAL
+
 BOOT:
 {
     MY_CXT_INIT;
