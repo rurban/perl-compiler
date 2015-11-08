@@ -1,0 +1,9 @@
+* Tasks
+- can probably clean lib, as we are now using @INC from the current perl in most tests (this might lead to some arch issues)
+
+* Patches to consider from upstream
+
+23016e1  C 5.22: add METHOP support (4 days ago, Reini Urban)  (upstream/bc522)
+f091c45  C 5.22: unop_aux: store the len one word before (4 days ago, Reini Urban)
+11815f0  C 5.22: unop_aux == multideref (4 days ago, Reini Urban)
+4c2ca5e  BC: better 5.22 support (4 days ago, Reini Urban)

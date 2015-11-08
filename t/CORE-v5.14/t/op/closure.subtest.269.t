@@ -1,0 +1,1 @@
+sub d {die} my $f; $f = sub {my $x=1; $f = 0; d}; eval{$f->()}; print qq(ok\n)

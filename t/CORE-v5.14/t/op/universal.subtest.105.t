@@ -1,0 +1,1 @@
+$:; UNIVERSAL::isa(":","Unicode::String");print "ok"

@@ -642,10 +642,9 @@ sub module  { if (@_) { $module = shift; } else { $module; } }
 sub walk_and_save_optree {
   my ( $name, $root, $start ) = @_;
   if ($root) {
-    # B.xs: walkoptree does more, reifying refs. rebless or recreating it
-    # so disable it until fixed.
+    # B.xs: walkoptree does more, reifying refs. rebless or recreating it.
     # TODO: add walkoptree_debug support.
-    0 && $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
+    $verbose ? walkoptree_slow( $root, "save" ) : walkoptree( $root, "save" );
   }
   return objsym($start);
 }
