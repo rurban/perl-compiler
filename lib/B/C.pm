@@ -3511,15 +3511,19 @@ sub B::RV::save {
 }
 
 sub get_isa ($) {
-  no strict 'refs';
-
-  if ($PERL510 && is_using_mro()) {
-    return @{mro::get_linear_isa($_[0])};
+  my $name = shift;
+  if ($PERL510) {
+    if (is_using_mro()) { # mro.xs loaded. c3 or dfs
+      return @{mro::get_linear_isa($name)};
+    } else { # dfs only, without loading mro
+      return @{B::C::get_linear_isa($name)};
+    }
   } else {
-    my $s = $_[0].'::';
+    no strict 'refs';
+    my $s = "$name\::";
     if (exists(${$s}{ISA})) {
       if (exists(${$s}{ISA}{ARRAY})) {
-        return @{ $s . '::ISA' };
+        return @{ "$s\::ISA" };
       }
     }
   }

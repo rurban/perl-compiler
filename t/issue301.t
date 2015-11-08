@@ -29,7 +29,9 @@ if ($] < 5.010) {
   $script =~ s/next::/NEXT::/m;
   $script =~ s/method/foo/m;
 }
-my $todo = $] > 5.021 ? 'TODO 5.22 ' : '';
+use B::C ();
+# fixed with 1.52_17
+my $todo = ($] > 5.021 and $B::C::VERSION lt '1.52_17') ? "TODO " : "";
 
 # mro since 5.10 only
 ctestok(1, 'C,-O3', 'ccode301i', $script, $todo.'#301 next::method detection');
