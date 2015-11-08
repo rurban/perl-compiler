@@ -27,57 +27,26 @@ base/lex.t                   PLAN      BC issue #222 - Cannot use '<<' in regexp
 comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse behavior so not relevant to B::C
 comp/hints.t                 COMPAT    tests are using BEGIN block, do not ready for B::C
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
-comp/require.t               PLAN      BC issue #245 - Cannot reload XSLoader
-comp/retainedlines.t         TESTS     Test results:
-comp/use.t                   SIG       Exit signal is 11 SEGV
 extra/reset.t                TESTS     Test results:
 io/argv.t                    PLAN      Plan was valid
 io/bom.t                     PLAN      Plan was valid
-io/errno.t                   SIG       BC issue #271: END block issue
-io/iofile.t                  SIG       BC issue #207 - reused variable conflict - No changes to  t/io/iofile.t since 5.14.4
-io/layers.t                  SIG       BC issue #31 - previously known as https://code.google.com/p/perl-compiler/issues/detail?id=29 (dupe from 203)
-io/perlio.t                  SIG       BC issue #223 (glob) + BC issue #271: END block issue
-io/say.t                     BC        io/say.c is generated (-O3,-fno-fold)
-mro/basic_01_c3_utf8.t       TESTS     some tests are now failing
-mro/basic_02_c3_utf8.t       TESTS     some tests are now failing
-mro/basic_03_c3_utf8.t       TESTS     some tests are now failing
-mro/basic_04_c3_utf8.t       TESTS     TODO: Malformed UTF-8.
-mro/basic_05_c3_utf8.t       PLAN      Plan was valid
-mro/basic_05_dfs_utf8.t      PLAN      Plan was valid
-mro/basic_utf8.t             PLAN      TODO: Attempt to access disallowed key 'open<' in a restricted hash
+io/open.subtest.112.t        PLAN      Plan was valid
+io/open.subtest.113.t        PLAN      Plan was valid
+io/open.subtest.117.t        PLAN      Plan was valid
+io/open.t                    PLAN      Plan was valid
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
-mro/complex_c3.t             SIG       TODO: segfault
-mro/complex_c3_utf8.t        SIG       TODO: segfault
-mro/dbic_c3_utf8.t           TESTS     Test results:
 mro/isarev.t                 TESTS     Test results:
 mro/isarev_utf8.t            TESTS     Test results:
-mro/method_caching_utf8.t    PLAN      Plan was valid
-mro/next_edgecases.t         SIG       Exit signal is 11 SEGV
-mro/next_edgecases_utf8.t    PLAN      Plan was valid
-mro/next_goto.t              SIG       Exit signal is 11 SEGV
-mro/next_goto_utf8.t         SIG       Exit signal is 11 SEGV
-mro/next_inanon.t            SIG       Exit signal is 11 SEGV
-mro/next_inanon_utf8.t       SIG       Exit signal is 11 SEGV
-mro/next_ineval.t            SIG       Exit signal is 11 SEGV
-mro/next_ineval_utf8.t       SIG       Exit signal is 11 SEGV
-mro/next_method.t            SIG       Exit signal is 11 SEGV
-mro/next_method_utf8.t       SIG       Exit signal is 11 SEGV
-mro/next_NEXT.t              SIG       Exit signal is 11 SEGV
-mro/next_NEXT_utf8.t         SIG       Exit signal is 11 SEGV
-mro/next_skip.t              SIG       Exit signal is 11 SEGV
-mro/next_skip_utf8.t         SIG       Exit signal is 11 SEGV
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases.t        PLAN      Plan was valid
 mro/package_aliases_utf8.t   PLAN      Plan was valid
-mro/vulcan_c3_utf8.t         TESTS     TODO: Malformed UTF-8.
 op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/array_base.t              COMPAT    BC issue #248 - deprecated array base feature - wont fix
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
-op/attrproto.t               BC        op/attrproto.c is generated (-O3,-fno-fold)
-op/attrs.t                   BC        op/attrs.c is generated (-O3,-fno-fold)
+op/avhv.t                    PLAN      Plan was valid
 op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/bop.t                     TESTS     BC issue #219 - overload issue
@@ -85,127 +54,69 @@ op/caller.t                  PLAN      Plan was valid
 op/chr.t                     TESTS     BC issue #219 - overload issue
 op/closure.t                 PLAN      Plan was valid
 op/concat2.t                 PLAN      Plan was valid
-op/const-optree.t            BC        op/const-optree.c is generated (-O3,-fno-fold)
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
-op/current_sub.t             BC        op/current_sub.c is generated (-O3,-fno-fold)
-op/defins.t                  SIG       BC issue #223 - glob issue
-op/each.t                    BC        op/each.c is generated (-O3,-fno-fold)
+op/dbm.t                     PLAN      Plan was valid
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
-op/evalbytes.t               BC        op/evalbytes.c is generated (-O3,-fno-fold)
 op/exists_sub.t              SIG       TODO: No output. and Issue 290
+op/filehandle.t              PLAN      Plan was valid
 op/filetest.t                PLAN      Plan was valid
-op/fresh_perl_utf8.t         PLAN      Plan was valid
-op/glob.t                    SIG       BC issue #223 - glob issue
 op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
-op/gv.t                      SIG       BC issue #270 + BC issue #219 - overload issue
-op/hash-rt85026.t            GCC       op/hash-rt85026.bin is compiled and ready to run.
 op/heredoc.t                 PLAN      Plan was valid
-op/index.t                   BC        op/index.c is generated (-O3,-fno-fold)
-op/infnan.t                  PLAN      Plan was valid
 op/join.t                    TESTS     BC issue #219 - overload issue
-op/lc.t                      BC        op/lc.c is generated (-O3,-fno-fold)
+op/kvaslice.t                PLAN      Plan was valid
+op/kvhslice.t                PLAN      Plan was valid
 op/leaky-magic.t             PLAN      Plan was valid
-op/length.t                  TESTS     BC issue #219 - overload issue
+op/length.t                  PLAN      Plan was valid
 op/lex.t                     COMPAT    Tests trigger errors at compilation time (reported BC issue #266 which is a small subset)
 op/lex_assign.t              PLAN      Plan was valid
 op/lexsub.t                  BC        BC issue #219 - overload issue
-op/local.t                   SIG       BC issue #265 - rmagic cause delete local to crash
-op/lvref.t                   BC        op/lvref.c is generated (-O3,-fno-fold)
-op/magic.t                   SIG       BC issue #271 - fork + END
-op/method.t                  SIG       BC issue #254 - UNIVERSAL::can + eval
 op/multideref.t              BC        op/multideref.c is generated (-O3,-fno-fold)
 op/mydef.t                   TODO      No TODO tests passed
-op/overload_integer.t        PLAN      BC issue #219 - overload issue
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    PLAN      BC issue #219 - overload issue
-op/packagev.t                BC        op/packagev.c is generated (-O3,-fno-fold)
-op/postfixderef.t            BC        op/postfixderef.c is generated (-O3,-fno-fold)
 op/print.t                   PLAN      Plan was valid
 op/protowarn.t               PLAN      TODO: no output.
-op/quotemeta.t               BC        op/quotemeta.c is generated (-O3,-fno-fold)
-op/readdir.t                 SIG       Exit signal is 11 SEGV
 op/readline.t                PLAN      Plan was valid
-op/ref.t                     SIG       TODO: no output but a buncha these: Subroutine setcolor redefined and Issue 285 & 286
 op/reset.t                   PLAN      Plan was valid
-op/signatures.t              BC        op/signatures.c is generated (-O3,-fno-fold)
-op/smartkve.t                BC        op/smartkve.c is generated (-O3,-fno-fold)
 op/smartmatch.t              PLAN      Plan was valid
 op/sort.t                    PLAN      Plan was valid
-op/split_unicode.t           SIG       BC issue 273 - charnames \p autorequire issue because of reverse sort.
-op/sprintf.t                 BC        op/sprintf.c is generated (-O3,-fno-fold)
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   PLAN      Plan was valid
-op/state.t                   BC        op/state.c is generated (-O3,-fno-fold)
-op/sub.t                     BC        op/sub.c is generated (-O3,-fno-fold)
 op/sub_lval.t                PLAN      Plan was valid
-op/substr.t                  TESTS     BC issue #219 - overload issue
+op/substr.t                  PLAN      Plan was valid
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
-op/switch.t                  BC        op/switch.c is generated (-O3,-fno-fold)
-op/taint.t                   BC        op/taint.c is generated (-O3,-fno-fold)
 op/threads-dirh.t            SKIP      threaded test
 op/threads.t                 SKIP      threaded test
-op/tie_fetch_count.t         SIG       Exit signal is 11 SEGV
-op/tiehandle.t               BC        op/tiehandle.c is generated (-O3,-fno-fold)
 op/tr.t                      PLAN      Plan was valid
 op/universal.t               PLAN      Plan was valid
 op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/utftaint.t                PLAN      Plan was valid
 op/vec.t                     SIG       Exit signal is 11 SEGV
-op/ver.t                     BC        op/ver.c is generated (-O3,-fno-fold)
 op/warn.t                    PLAN      Plan was valid
 op/while.t                   PLAN      Plan was valid
+op/write.t                   PLAN      Plan was valid
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
-re/fold_grind.t              BC        re/fold_grind.c is generated (-O3,-fno-fold)
-re/overload.t                BC        re/overload.c is generated (-O3,-fno-fold)
-re/pat.t                     BC        re/pat.c is generated (-O3,-fno-fold)
-re/pat_advanced.t            BC        re/pat_advanced.c is generated (-O3,-fno-fold)
 re/pat_psycho.t              PLAN      Plan was valid
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
 re/pat_rt_report.t           PLAN      Plan was valid
 re/qr_gc.t                   TESTS     Test results:
 re/reg_60508.t               PLAN      Plan was valid
 re/reg_eval.t                PLAN      Plan was valid
-re/reg_eval_scope.t          SIG       Exit signal is 11 SEGV
-re/reg_fold.t                BC        re/reg_fold.c is generated (-O3,-fno-fold)
-re/reg_mesg.t                PLAN      Plan was valid
 re/reg_pmod.t                TESTS     Test results:
-re/reg_posixcc.t             BC        re/reg_posixcc.c is generated (-O3,-fno-fold)
-re/regex_sets.t              BC        re/regex_sets.c is generated (-O3,-fno-fold)
-re/regexp_unicode_prop.t     PLAN      Plan was valid
 re/rxcode.t                  TESTS     Test results:
 re/subst.t                   PLAN      Plan was valid
 re/subst_amp.t               TESTS     Test results:
 re/subst_wamp.t              PLAN      Plan was valid
 re/substT.t                  PLAN      Plan was valid
-uni/attrs.t                  BC        uni/attrs.c is generated (-O3,-fno-fold)
 uni/caller.t                 PLAN      TODO: Undefined subroutine &????::ok called
-uni/chomp.t                  SIG       Exit signal is 11 SEGV
 uni/chr.t                    SIG       TODO: no output.
-uni/class.t                  BC        uni/class.c is generated (-O3,-fno-fold)
-uni/eval.t                   BC        uni/eval.c is generated (-O3,-fno-fold)
 uni/fold.t                   SKIP      BC issue #219 - overload issue
-uni/greek.t                  SIG       Exit signal is 11 SEGV
-uni/gv.t                     BC        uni/gv.c is generated (-O3,-fno-fold)
-uni/labels.t                 BC        uni/labels.c is generated (-O3,-fno-fold)
-uni/latin2.t                 SIG       Exit signal is 11 SEGV
-uni/lex_utf8.t               PLAN      Plan was valid
-uni/lower.t                  BC        uni/lower.c is generated (-O3,-fno-fold)
 uni/method.t                 PLAN      BC issue #254 - UNIVERSAL::can + eval
-uni/opcroak.t                PLAN      Plan was valid
 uni/overload.t               TESTS     BC issue #219 - overload issue
-uni/package.t                PLAN      Plan was valid
-uni/parser.t                 BC        uni/parser.c is generated (-O3,-fno-fold)
 uni/readline.t               TESTS     Test results:
 uni/stash.t                  PLAN      Plan was valid
-uni/title.t                  BC        uni/title.c is generated (-O3,-fno-fold)
-uni/tr_7jis.t                BC        uni/tr_7jis.c is generated (-O3,-fno-fold)
-uni/tr_eucjp.t               PLAN      Plan was valid
-uni/tr_sjis.t                PLAN      Plan was valid
-uni/tr_utf8.t                BC        uni/tr_utf8.c is generated (-O3,-fno-fold)
-uni/universal.t              PLAN      Plan was valid
-uni/upper.t                  BC        uni/upper.c is generated (-O3,-fno-fold)
 uni/variables.t              PLAN      TODO: Failed 48383/65880 subtests
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
 xtestc/0075.t                TESTS     Output is: ""
