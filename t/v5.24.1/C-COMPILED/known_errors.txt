@@ -66,7 +66,7 @@ op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/method.t                  PLAN      Retest
+op/method.t                  PLAN      BC issue #331 - method call when stash pointers setup.
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
