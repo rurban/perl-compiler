@@ -34,7 +34,7 @@ io/layers.t                  SKIP      This is a known BC issue we've never care
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
-mro/next_edgecases_utf8.t    TESTS     BC issue #298 - next::method broken.
+mro/next_edgecases_utf8.t    TESTS     Retest
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
@@ -66,7 +66,7 @@ op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/method.t                  PLAN      BC issue #298 - next::method broken. (Can't locate object method "self" via package "IO::File" at op/method.t line 517.)
+op/method.t                  PLAN      Retest
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
