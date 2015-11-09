@@ -3344,7 +3344,7 @@ sub B::PVMG::save_magic {
   #} else
   {
     $pkg = $sv->SvSTASH;
-    if ($pkg and $$pkg) {
+    if ($pkg and $$pkg and ref $pkg ne 'B::SPECIAL') {
       my $pkgsym;
       my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
       warn sprintf("stash isa class(\"%s\") %s\n", $pkgname, ref $pkg)
@@ -5779,14 +5779,14 @@ sub B::IO::save {
 
   if ( $PERL518 ) {
     my $stash = $io->SvSTASH;
-    if ($stash and $$stash) {
-        my $stsym = $stash->save("%".$stash->NAME);
-        $init->add(
-              sprintf( "SvREFCNT(%s) += 1;", $stsym ),
-              sprintf( "SvSTASH_set(%s, %s);", $sym, $stsym )
-        );
-        warn sprintf( "done saving STASH %s %s for IO %s\n", $stash->NAME, $stsym, $sym )
-          if $debug{gv};
+    if ($stash and $$stash and ref($stash) eq 'B::HV') {
+      my $stsym = $stash->save("%".$stash->NAME);
+      $init->add(
+                 sprintf( "SvREFCNT(%s) += 1;", $stsym ),
+                 sprintf( "SvSTASH_set(%s, %s);", $sym, $stsym )
+                );
+      warn sprintf( "done saving STASH %s %s for IO %s\n", $stash->NAME, $stsym, $sym )
+        if $debug{gv};
     }
   }
 

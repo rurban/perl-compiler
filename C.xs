@@ -301,12 +301,12 @@ PPCODE:
 #if PERL_VERSION > 17
 
 SV*
-SvSTASH_not(hv)
-          B::HV hv
+SvSTASH(hv)
+    B::HV hv
 PPCODE:
-    HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
-    ST(0) = (char*)stash < (char*)PL_sv_arenaroot
-             ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
+    SV* stash = MUTABLE_SV(SvSTASH(MUTABLE_SV(hv))); /* [perl #126410] */
+    ST(0) = make_sv_object(aTHX_ (char*)stash < (char*)PL_sv_arenaroot
+             ? &PL_sv_undef : stash);
     XSRETURN(1);
 
 #endif
