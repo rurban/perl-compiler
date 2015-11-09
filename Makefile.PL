@@ -108,7 +108,7 @@ WriteMakefile(
     PREREQ_PM    => {
         'Opcodes'         => '0',       # optional
         'IPC::Run'        => '0',       # optional
-        'B::Flags'        => '0.04',    # optional
+        'B::Flags'        => '0.15',    # optional
         'Time::HiRes'     => '0',       # optional
         'Encode'          => 2.60,      # 2.58 is broken so let's be sure we're higher than this.
         'ExtUtils::Embed' => '1.25'     # mandatory (missing on redhat)
@@ -120,7 +120,7 @@ WriteMakefile(
     (
         ( $ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46' )
         ? (
-            'EXTRA_META' => "recommends:\n" . "    B::Flags:  0.04\n" . "    B::Debug:  1.16\n" . "    Opcodes:   0.10\n" . "    IPC::Run:  0\n",
+            'EXTRA_META' => "recommends:\n" . "    B::Flags:  0.15\n" . "    B::Debug:  1.16\n" . "    Opcodes:   0.10\n" . "    IPC::Run:  0\n",
           )
         : ()
     ),
@@ -129,7 +129,7 @@ WriteMakefile(
         ? (
             'META_MERGE' => {
                 "recommends" => {
-                    'B::Flags' => '0.04',
+                    'B::Flags' => '0.15',
                     "B::Debug" => '1.16',
                     "Opcodes"  => '0.10',
                     "IPC::Run" => 0,
