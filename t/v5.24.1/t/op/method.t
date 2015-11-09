@@ -543,7 +543,9 @@ like $@,
      qr/^Can't call method "squeak" on unblessed reference/,
     'method call on \*typeglob';
 *stdout2 = *STDOUT;  # stdout2 now stringifies as *main::STDOUT
-sub IO::Handle::self { $_[0] }
+use IO::Handle ();
+ sub IO::Handle::self { $_[0] }
+my $c = IO::File->new() if($ENV{'abc'});
 # This used to stringify the glob:
 is *stdout2->self, (\*stdout2)->self,
   '*glob->method is equiv to (\*glob)->method';
