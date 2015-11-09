@@ -405,7 +405,7 @@ my %all_bc_subs = map {$_=>1}
      B::IO::save B::IO::save_data B::IV::save B::LISTOP::save B::LOGOP::save
      B::LOOP::save B::NULL::save B::NV::save B::OBJECT::save
      B::OP::_save_common B::OP::fake_ppaddr B::OP::isa B::OP::save
-     B::PADLIST::save B::PADOP::save B::PMOP::save B::PV::save
+     B::PADOP::save B::PMOP::save B::PV::save
      B::PVIV::save B::PVLV::save B::PVMG::save B::PVMG::save_magic B::PVNV::save
      B::PVOP::save B::REGEXP::save B::RV::save B::SPECIAL::save B::SPECIAL::savecv
      B::SV::save B::SVOP::save B::UNOP::save B::UV::save B::REGEXP::EXTFLAGS);

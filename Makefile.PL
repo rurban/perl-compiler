@@ -138,7 +138,7 @@ WriteMakefile(
      ('INSTALLDIRS' => 'perl') : ()),
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
-        "    B::Flags:  0.14\n".
+        "    B::Flags:  0.15\n".
         "    B::Debug:  1.16\n".
         "    Opcodes:   0.10\n".
         "    IPC::Run:  0\n",
