@@ -3334,19 +3334,20 @@ sub B::PVMG::save_magic {
   # crashes on STASH=0x18 with HV PERL_MAGIC_overload_table stash %version:: flags=0x3280000c
   # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
-  if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
-    warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
-      if $verbose;
+  #if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
+  #  warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
+  #    if $verbose;
   # [cperl #60] not only overloaded, version also
-  } elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
-    warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
-      if $verbose;
-  } else {
-    my $pkgsym;
+  #} elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
+  #  warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
+  #    if $verbose;
+  #} else
+  {
     $pkg = $sv->SvSTASH;
     if ($pkg and $$pkg) {
+      my $pkgsym;
       my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
-      warn sprintf("stash isa class \"%s\" (%s)\n", $pkgname, ref $pkg)
+      warn sprintf("stash isa class(\"%s\") %s\n", $pkgname, ref $pkg)
         if $debug{mg} or $debug{gv};
       # 361 do not force dynaloading IO via IO::Handle upon us
       # core already initialized this stash for us
@@ -3355,24 +3356,25 @@ sub B::PVMG::save_magic {
           if ($fullname !~ /::$/ or $B::C::stash) {
             $pkgsym = $pkg->save($fullname);
           } else {
-            $pkgsym = savestashpv($pkgname);
+            $pkgsym = savestashpv($pkg->NAME);
           }
         } else {
           $pkgsym = 'NULL';
         }
 
-        warn sprintf( "xmg_stash = \"%s\" as %s\n", $pkgname, $pkgsym )
-          if $debug{mg} or $debug{gv};
+        warn sprintf( "xmg_stash = \"%s\" (%s)\n", $pkgname, $pkgsym )
+          if $debug{mg};
         # Q: Who is initializing our stash from XS? ->save is missing that.
         # A: We only need to init it when we need a CV
         # defer for XS loaded stashes with AMT magic
         if (ref $pkg eq 'B::HV') {
-          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-          $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+          no strict 'refs';
+          $init->add( sprintf( "SvSTASH_set(s\\_%x, %s);", $$sv, $pkgsym ) );
+          $init->add( sprintf( "SvREFCNT((SV*)%s) += 1;", $pkgsym ) );
           $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-          # XXX
-          #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
         }
+        # XXX
+        #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
       }
     }
   }
