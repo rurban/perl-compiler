@@ -21,3 +21,4 @@ requires 'IPC::Run';
 requires 'Net::DNS::Resolver';
 requires 'Test::Trap';
 requires 'Test::Deep';
+requires 'EV';
