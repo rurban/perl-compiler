@@ -2114,6 +2114,8 @@ sub B::COP::save {
   }
 
   my $dynamic_copwarn = ($PERL510 and !$is_special) ? 1 : !$B::C::optimize_warn_sv;
+  # branch feature/gh70-static-lexwarn with PERL_SUPPORT_STATIC_COP
+  $dynamic_copwarn = 0 if $Config{usecperl} and $] >= 5.022002;
 
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
@@ -2223,8 +2225,14 @@ sub B::COP::save {
       # which is not the address which will be freed in S_cop_free.
       # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
       # lexwarn<n> might be also be STRLEN* 0
-      $init->add(sprintf("%s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
-                         $dest, $copw, $copw));
+      $init->no_split;
+      $init->add("#ifdef PERL_SUPPORT_STATIC_COP  /* so far cperl only */",
+                 "$dest = $warn_sv;",
+                 "#else",
+                 sprintf("%s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
+                         $dest, $copw, $copw),
+                 "#endif");
+      $init->split;
     }
   } else {
     $init->add( sprintf( "cop_list[%d].cop_warnings = %s;", $ix, $warn_sv ) )
