@@ -986,9 +986,7 @@ no warnings; $[ = 1; $big = "N\xabN\xab"; print qq{ok\n} if rindex($big, "N", 3)
 tests[248]='#WONTFIX lexical $_ in re-eval
 {my $s="toto";my $_="titi";{$s =~ /to(?{ print "-$_-$s-\n";})to/;}}'
 result[248]='-titi-toto-'
-tests[249]='#TODO version
-use version; print version::is_strict(q{01}) ? 1 : 0'
-result[249]='0'
+tests[249]='use version; print version::is_strict(q{01}) ? 1 : q(ok)'
 tests[2501]='#TODO version
 use warnings qw/syntax/; use version; $withversion::VERSION = undef; eval q/package withversion 1.1_;/; print $@;'
 result[2501]='Misplaced _ in number at (eval 1) line 1.

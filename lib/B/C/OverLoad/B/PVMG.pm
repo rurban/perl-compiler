@@ -93,6 +93,7 @@ sub save_magic {
     my ( $sv, $fullname ) = @_;
     my $sv_flags = $sv->FLAGS;
     my $pkg;
+    return if $fullname eq '%B::C::';
     if ( debug('mg') ) {
         my $flagspv = "";
         $fullname = '' unless $fullname;
@@ -116,29 +117,42 @@ sub save_magic {
         debug( mg => "skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS );
     }
     else {
+        my $pkgsym;
         $pkg = $sv->SvSTASH;
         if ( $pkg and $$pkg ) {
-            my $pkgname = $pkg->can('NAME') ? $pkg->NAME : ( $pkg->can('NAME_HEK') ? $pkg->NAME_HEK : '' );
-            debug( mg => "stash isa class(\"%s\") 0x%x\n", $pkgname, $$pkg );
+            my $pkgname = $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK . "::DESTROY";
+            debug( [qw/mg gv/] => sprintf( "stash isa class \"%s\" (%s)\n", $pkgname, ref $pkg ) );
 
             # 361 do not force dynaloading IO via IO::Handle upon us
             # core already initialized this stash for us
             if ( $fullname ne 'main::STDOUT' ) {
-                $pkg->save($fullname) unless $fullname eq 'main::STDOUT';
+                if ( ref $pkg eq 'B::HV' ) {
+                    if ( $fullname !~ /::$/ or $B::C::stash ) {
+                        $pkgsym = $pkg->save($fullname);
+                    }
+                    else {
+                        $pkgsym = savestashpv($pkgname);
+                    }
+                }
+                else {
+                    $pkgsym = 'NULL';
+                }
 
-                no strict 'refs';
-                debug( mg => "xmg_stash = \"%s\" (0x%x)\n", $pkgname, $$pkg );
+                debug( mg => "xmg_stash = \"%s\" as %s", $pkgname, $pkgsym );
 
                 # Q: Who is initializing our stash from XS? ->save is missing that.
                 # A: We only need to init it when we need a CV
                 # defer for XS loaded stashes with AMT magic
-                init()->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-                init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-                init()->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+                if ( ref $pkg eq 'B::HV' ) {
+                    init()->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+                    init()->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+                    init()->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+
+                    # XXX
+                    #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+                }
             }
 
-            # XXX
-            #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
         }
     }
 
@@ -159,7 +173,7 @@ sub save_magic {
     #    $name =~ s/^%(.*)::$/$1/;
     #    $name = $pkg->NAME if $pkg and $$pkg;
     #    debug( [qw/mg gv/], "initialize overload cache for %s", $fullname );
-    #
+    # This is destructive, it removes the magic instead of adding it.
     #    init1()->add( sprintf( "Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name), $fullname ) );
     #}
 

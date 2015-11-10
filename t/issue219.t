@@ -1,12 +1,14 @@
 #! /usr/bin/env perl
-# GH #219 overload stringify fail 5.18-5.22
+# GH #219 overload stringify failed 5.18-5.22
+# See also t/issue172.t
 use strict;
 BEGIN {
   unshift @INC, 't';
   require "test.pl";
 }
 use Test::More tests => 3;
-my $todo = $] >= 5.018 ? "TODO 5.18-5.22 " : "";
+use B::C ();
+my $todo = ($] >= 5.018 and $B::C::VERSION lt '1.52_18') ? "TODO 5.18-5.22" : "";
 
 ctestok(1,'C,-O3','ccode219i',<<'EOF',$todo.'#219 overload stringify, testc 172');
 package Foo;

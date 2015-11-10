@@ -5,7 +5,7 @@
 
 
 1.53 2015-12-05 rurban
-        added 5.22 support
+        added 5.22 support and some cperl optimizations
 
         * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
         Add ops for padl, padn, padnl, unop_aux and methop needed for 5.22
@@ -28,6 +28,10 @@
         Support custom op Devel_Peek_Dump, added with 5.20 (GH#274)
         Defer regex compilation to new init1 for SWASHNEW (GH#273)
         Support unicode labels (upstream B bug) (GH#318)
+        Skip unneeded init-time lexwarn checks,
+          support optimized cperl PERL_SUPPORT_STATIC_COP (cperl #70)
+        Fixed overload stringify broken since 5.18 (GH #219)
+          by adding a mro_isa_changed_in() to the overloaded stash.
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
 

@@ -9,7 +9,7 @@ use B::C::Config;
 use B::C::File qw/init init2 xpvavsect svsect/;
 use B::C::Helpers qw/strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
-use B::C::Save qw/savestash_flags savestashpv/;
+use B::C::Save qw/savestashpv/;
 
 # maybe need to move to setup/config
 my ( $use_av_undef_speedup, $use_svpop_speedup ) = ( 1, 1 );
@@ -232,15 +232,6 @@ sub save {
         init()->add("av_extend($sym, $max);") if $max > -1;
     }
 
-    #XXX Not sure if this is really needed. gv_fetch should be smart enough
-    # But 5.22 broke it, probably where super moved from hv_aux to mro_meta
-    if ( $fullname =~ /^(.*)::ISA$/ ) {
-        my $name = $1;
-        init2()->add( sprintf( "mro_isa_changed_in(%s);", savestashpv($name) ) );
-
-        # There was uncertainty if the below method was necessary??
-        # init2()->add( sprintf("mro_method_changed_in(%s);", savestashpv($name)));
-    }
     return $sym;
 }
 

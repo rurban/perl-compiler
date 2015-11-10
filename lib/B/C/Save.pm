@@ -2,7 +2,7 @@ package B::C::Save;
 
 use strict;
 
-use B qw(cstring);
+use B qw(cstring svref_2object);
 use B::C::Config;
 use B::C::File qw( xpvmgsect decl init );
 use B::C::Helpers qw/strlen_flags/;
@@ -108,20 +108,36 @@ my %stashtable;
 
 #my $hv_index = 0; # need to use it from HV
 sub savestash_flags {
-    my ( $pv, $len, $flags, $disable_gvadd ) = @_;
-    return $stashtable{$pv} if defined $stashtable{$pv};
+    my ( $name, $cstring, $len, $flags, $disable_gvadd ) = @_;
+    return $stashtable{$name} if defined $stashtable{$name};
     my $hv_index = B::C::HV::get_index();
     $flags = $flags ? "$flags|GV_ADD" : "GV_ADD" if !$disable_gvadd;    # enabled by default
     my $sym = "hv$hv_index";
     decl()->add("Static HV *hv$hv_index;");
-    my $pvok = $pv eq '0' || !$len ? q{""} : $pv;
-    init()->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pvok, $len, $flags ) );
+    $stashtable{$name} = $sym;
+    if ($name) {                                                        # since 5.18 save @ISA before calling stashpv
+        my @isa = B::C::get_isa($name);
+        no strict 'refs';
+        if ( @isa and exists ${ $name . '::' }{ISA} ) {
+            svref_2object( \@{"$name\::ISA"} )->save("$name\::ISA");
+        }
+    }
+    my $pvsym = constpv($name);
+    init()->add(
+        sprintf(
+            "%s = gv_stashpvn(%s, %u, %s); /* $name */",
+            $sym, $pvsym, $len, $flags
+        )
+    );
+
     B::C::HV::inc_index();
-    return $stashtable{$pv} = $sym;
+
+    return $sym;
 }
 
 sub savestashpv {
-    return savestash_flags( strlen_flags(shift), shift );
+    my $name = shift;
+    return savestash_flags( $name, strlen_flags($name), shift );
 }
 
 1;

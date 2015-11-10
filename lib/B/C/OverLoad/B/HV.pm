@@ -55,6 +55,9 @@ sub save {
         $sym = savestashpv( $name, $no_gvadd );    # inc hv_index
         savesym( $hv, $sym );
 
+        # fix overload stringify
+        init2()->add( sprintf( "mro_isa_changed_in(%s);", $sym ) );
+
         # issue 79, test 46: save stashes to check for packages.
         # and via B::STASHGV we only save stashes for stashes.
         # For efficiency we skip most stash symbols unless -fstash.
@@ -212,9 +215,9 @@ sub save {
     init()->add("SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
     if ( $magic =~ /c/ ) {
 
-        # defer AMT magic of XS loaded hashes
+        # defer AMT magic of XS loaded stashes
         my ( $cname, $len, $utf8 ) = strlen_flags($name);
-        init1()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+        init2()->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
     }
 
     if ( $name and is_using_mro() and mro::get_mro($name) eq 'c3' ) {

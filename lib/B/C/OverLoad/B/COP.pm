@@ -5,7 +5,7 @@ use strict;
 use B qw/cstring/;
 use B::C::Config;
 use B::C::File qw/init copsect/;
-use B::C::Save qw/constpv savestash_flags savestashpv/;
+use B::C::Save qw/constpv savestashpv/;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 use B::C::Helpers qw/read_utf8_string strlen_flags/;
@@ -135,21 +135,16 @@ sub save {
     }
 
     if ( !$B::C::optimize_cop ) {
-        my $name = $op->stashpv;
+        my $stash = savestashpv( $op->stashpv );
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
 
-                # QUESTION: use length on the non const and save it with const, could the len be incorrect ?
-                my ( $pv, $len, $flags ) = strlen_flags( $op->stashpv );
-                my $stash = savestash_flags( constpv( $op->stashpv ), $len, $flags );
-                my $cfile = constpv($file);
                 init()->add(
                     sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, $cfile )
+                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, constpv($file) )
                 );
             }
             else {
-                my $stash = savestashpv( $op->stashpv );
                 init()->add(
                     sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
                     sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, cstring($file) )
@@ -157,7 +152,6 @@ sub save {
             }
         }
         else {    # cv_undef e.g. in bproto.t and many more core tests with threads
-            my $stash = savestashpv( $op->stashpv );
             init()->add(
                 sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
                 sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, cstring($file) )
