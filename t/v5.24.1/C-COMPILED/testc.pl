@@ -13,6 +13,9 @@ BEGIN {
     use FindBin;
     unshift @INC, $FindBin::Bin . "/../../../lib";
 }
+
+die "Please use perl 5.22" unless $^V =~ qr{^v5.22};
+
 use KnownErrors qw/check_todo/;
 
 if ( $0 =~ m{/template\.pl$} ) {
