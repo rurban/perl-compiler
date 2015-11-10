@@ -125,7 +125,7 @@ WriteMakefile(
     EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
     PREREQ_PM  => {'Opcodes'  => '0',    # optional
 		   'IPC::Run' => '0',    # optional
-		   'B::Flags' => '0.14', # optional
+		   'B::Flags' => '0.15', # optional
 		   'Time::HiRes' => '0', # optional
 		   'ExtUtils::Embed' => '1.25' # mandatory (missing on redhat)
                    #'B'        => '1.0901' # required but in CORE
@@ -146,7 +146,7 @@ WriteMakefile(
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
     ('META_MERGE'  => {"recommends" =>
                        {
-                        'B::Flags' => '0.14',
+                        'B::Flags' => '0.15',
                         "B::Debug" => '1.16',
                         "Opcodes"  => '0.10',
                         "IPC::Run" => 0,
