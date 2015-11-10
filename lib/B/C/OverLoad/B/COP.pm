@@ -117,7 +117,7 @@ sub save {
         my $copw = $warn_sv;
         $copw =~ s/^\(STRLEN\*\)&//;
 
-        # on cv_undef (scope exit, die, ...) CvROOT and all its kids are freed.
+        # on cv_undef (scope exit, die, Attribute::Handlers, ...) CvROOT and all its kids are freed.
         # lexical cop_warnings need to be dynamic, but just the ptr to the static string.
         if ($copw) {
             my $dest = "cop_list[$ix].cop_warnings";
@@ -126,7 +126,7 @@ sub save {
             # which is not the address which will be freed in S_cop_free.
             # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
             # lexwarn<n> might be also be STRLEN* 0
-            init()->add( sprintf( "if (%s && *%s)\n\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));", $copw, $copw, $dest, $copw, $copw ) );
+            init()->add( sprintf( "%s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));", $dest, $copw, $copw ) );
         }
     }
     else {

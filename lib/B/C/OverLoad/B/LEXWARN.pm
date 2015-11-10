@@ -19,7 +19,7 @@ sub save {
     my $pv = $sv->PV;
 
     # check cache
-    return $lexwarnsym{$pv} if $lexwarnsym{$pv};
+    return @{ $lexwarnsym{$pv} } if $lexwarnsym{$pv};
 
     my $sym = sprintf( "lexwarn%d", inc_pv_index() );
     my $isint = 0;
@@ -38,7 +38,7 @@ sub save {
     }
 
     # set cache
-    $lexwarnsym{$pv} = $sym;
+    $lexwarnsym{$pv} = [ $sym, $isint ];
 
     return ( $sym, $isint );
 }
