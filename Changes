@@ -30,6 +30,8 @@
         Support unicode labels (upstream B bug) (GH#318)
         Skip unneeded init-time lexwarn checks,
           support optimized cperl PERL_SUPPORT_STATIC_COP (cperl #70)
+        Fixed overload stringify broken since 5.18 (GH #219)
+          by adding a mro_isa_changed_in() to the overloaded stash.
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
 

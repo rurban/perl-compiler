@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_17';
+our $VERSION = '1.52_18';
 our %debug;
 our $check;
 my $eval_pvs = '';
@@ -793,20 +793,30 @@ sub strlen_flags {
 }
 
 sub savestash_flags {
-  my ($pv, $len, $flags) = @_;
-  return $stashtable{$pv} if defined $stashtable{$pv};
+  my ($name, $cstring, $len, $flags) = @_;
+  return $stashtable{$name} if exists $stashtable{$name};
   #return '&PL_sv_undef' if $pv =~ /^B::CC?$/;
   $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
   my $sym = "hv$hv_index";
   $decl->add("Static HV *hv$hv_index;");
-  my $pvok = $pv eq '0' || !$len ? q{""} : $pv;
-  $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s);", $sym, $pvok, $len, $flags));
+  $stashtable{$name} = $sym;
+  if ($PERL518 and $name) { # since 5.18 save @ISA before calling stashpv
+    my @isa = get_isa($name);
+    no strict 'refs';
+    if (@isa and exists ${$name.'::'}{ISA} ) {
+      svref_2object( \@{"$name\::ISA"} )->save("$name\::ISA");
+    }
+  }
+  my $pvsym = constpv($name);
+  $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s); /* $name */",
+                       $sym, $pvsym, $len, $flags));
   $hv_index++;
-  return $stashtable{$pv} = $sym;
+  return $sym;
 }
 
 sub savestashpv {
-  return savestash_flags(strlen_flags(shift));
+  my $name = shift;
+  return savestash_flags($name, strlen_flags($name));
 }
 
 sub savere {
@@ -2240,20 +2250,16 @@ sub B::COP::save {
   }
   #push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
+    my $stash = savestashpv($op->stashpv);
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
-        my ($pv, $cur, $flags) = strlen_flags($op->stashpv);
-        my $stash = savestash_flags(constpv($op->stashpv), $cur, $flags);
-        my $file = constpv($file);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, $file ));
+                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
       } else {
-        my $stash = savestashpv($op->stashpv);
         $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
                    sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
       }
     } else { # cv_undef e.g. in bproto.t and many more core tests with threads
-      my $stash = savestashpv($op->stashpv);
       $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
                  sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
     }
@@ -3276,6 +3282,7 @@ sub B::PVMG::save_magic {
   my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
   my $pkg;
+  return if $fullname eq '%B::C::';
   if ($debug{mg}) {
     my $flagspv = "";
     $fullname = '' unless $fullname;
@@ -3296,26 +3303,37 @@ sub B::PVMG::save_magic {
     warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
       if $verbose;
   } else {
+    my $pkgsym;
     $pkg = $sv->SvSTASH;
     if ($pkg and $$pkg) {
-      warn sprintf("stash isa class(\"%s\") 0x%x\n", $pkg->NAME, $$pkg)
+      my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
+      warn sprintf("stash isa class \"%s\" (%s)\n", $pkgname, ref $pkg)
         if $debug{mg} or $debug{gv};
       # 361 do not force dynaloading IO via IO::Handle upon us
       # core already initialized this stash for us
       unless ($fullname eq 'main::STDOUT' and $] >= 5.018) {
-        $pkg->save($fullname);
+        if (ref $pkg eq 'B::HV') {
+          if ($fullname !~ /::$/ or $B::C::stash) {
+            $pkgsym = $pkg->save($fullname);
+          } else {
+            $pkgsym = savestashpv($pkgname);
+          }
+        } else {
+          $pkgsym = 'NULL';
+        }
 
-        no strict 'refs';
-        warn sprintf( "xmg_stash = \"%s\" (0x%x)\n", $pkg->NAME, $$pkg )
+        warn sprintf( "xmg_stash = \"%s\" as %s\n", $pkgname, $pkgsym )
           if $debug{mg} or $debug{gv};
         # Q: Who is initializing our stash from XS? ->save is missing that.
         # A: We only need to init it when we need a CV
         # defer for XS loaded stashes with AMT magic
-        $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
-        $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
-        $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
-        # XXX
-        #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+        if (ref $pkg eq 'B::HV') {
+          $init->add( sprintf( "SvSTASH_set(s\\_%x, (HV*)s\\_%x);", $$sv, $$pkg ) );
+          $init->add( sprintf( "SvREFCNT((SV*)s\\_%x) += 1;", $$pkg ) );
+          $init->add("++PL_sv_objcount;") unless ref($sv) eq "B::IO";
+          # XXX
+          #push_package($pkg->NAME);  # correct code, but adds lots of new stashes
+        }
       }
     }
   }
@@ -3337,8 +3355,9 @@ sub B::PVMG::save_magic {
     $name = $pkg->NAME if $pkg and $$pkg;
     warn sprintf("initialize overload cache for %s\n", $fullname )
       if $debug{mg} or $debug{gv};
-    $init1->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
-                        $fullname));
+    # This is destructive, it removes the magic instead of adding it.
+    #$init1->add(sprintf("Gv_AMG(%s); /* init overload cache for %s */", savestashpv($name),
+    #                    $fullname));
   }
 
   my @mgchain = $sv->MAGIC;
@@ -5207,22 +5226,6 @@ sub B::AV::save {
     $init->add("av_extend($sym, $max);")
       if $max > -1;
   }
-
-  #XXX Not sure if this is really needed. gv_fetch should be smart enough
-  # But 5.22 broke it, probably where super moved from hv_aux to mro_meta
-  if ($PERL522 and $fullname =~ /^(.*)::ISA$/) {
-    my $name = $1;
-    if (0) {
-      my ($cname,$len,$utf8) = strlen_flags($1);
-      my $gv = gv_fetchpvn($name."::", "GV_ADD|GV_NOTQUAL", "SVt_PVHV");
-      # This is the heavy hitter, invalidating all subpackages
-      $init2->add( sprintf("mro_package_moved(%s, NULL, %s, 1);",
-                           savestash_flags($cname,$len,$utf8), $gv));
-    } else {
-      $init2->add( sprintf("mro_isa_changed_in(%s);", savestashpv($name)));
-      # $init2->add( sprintf("mro_method_changed_in(%s);", savestashpv($name)));
-    }
-  }
   return $sym;
 }
 
@@ -5249,6 +5252,10 @@ sub B::HV::save {
     if ($adpmroot) {
       $init->add(sprintf( "HvPMROOT(hv%d) = (PMOP*)s\\_%x;",
 			  $hv_index, $adpmroot ) );
+    }
+    if ($PERL518) {
+      # fix overload stringify
+      $init2->add( sprintf("mro_isa_changed_in(%s);", $sym));
     }
 
     # issue 79, test 46: save stashes to check for packages.
@@ -5390,9 +5397,9 @@ sub B::HV::save {
   $magic = $hv->save_magic($fullname);
   $init->add( "SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
   if ($magic =~ /c/) {
-    # defer AMT magic of XS loaded hashes
+    # defer AMT magic of XS loaded stashes
     my ($cname, $len, $utf8) = strlen_flags($name);
-    $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
+    $init2->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI|$utf8);]);
   }
   if ($PERL510 and $name and is_using_mro() and mro::get_mro($name) eq 'c3') {
     B::C::make_c3($name);
