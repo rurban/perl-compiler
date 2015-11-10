@@ -30,7 +30,7 @@ sub save {
     debug( cops => "COP: line %d file %s\n", $op->line, $op->file );
 
     # shameless cut'n'paste from B::Deparse
-    my $warn_sv;
+    my ( $warn_sv, $isint );
     my $warnings   = $op->warnings;
     my $is_special = ref($warnings) eq 'B::SPECIAL';
     my $warnsvcast = "(STRLEN*)";
@@ -47,7 +47,9 @@ sub save {
         # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong,
         # DUP_WARNINGS copied length PVX bytes.
         my $warn = bless $warnings, "B::LEXWARN";
-        $warn_sv = $warn->save;
+
+        # TODO: isint here misses already seen lexwarn symbols
+        ( $warn_sv, $isint ) = $warn->save;
         my $ix = copsect()->index + 1;
 
         # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
@@ -111,7 +113,7 @@ sub save {
     my $ix = copsect()->index;
     init()->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
-    if ( !$is_special ) {
+    if ( !$is_special and !$isint ) {
         my $copw = $warn_sv;
         $copw =~ s/^\(STRLEN\*\)&//;
 
@@ -124,7 +126,7 @@ sub save {
             # which is not the address which will be freed in S_cop_free.
             # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
             # lexwarn<n> might be also be STRLEN* 0
-            init()->add( sprintf( "if (*%s)\n\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));", $copw, $dest, $copw, $copw ) );
+            init()->add( sprintf( "if (%s && *%s)\n\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));", $copw, $copw, $dest, $copw, $copw ) );
         }
     }
     else {
