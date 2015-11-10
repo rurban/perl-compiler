@@ -4,7 +4,9 @@ BEGIN {
     $| = 1;
     unshift @INC, 't/CORE/lib';
     $ENV{PATH} = '/bin' if ${^TAINT};
-    $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
+    unless (is_perlcc_compiled) {
+      $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
+    }
     require 't/CORE/test.pl';
 }
 
@@ -229,6 +231,7 @@ EOX
         if 0;
 EOH
     }
+    $perl = $^X unless -e $perl;
     $s1 = "\$^X is $perl, \$0 is $script\n";
     ok open(SCRIPT, ">$script") or diag "Can't write to $script: $!";
     ok print(SCRIPT $headmaybe . <<EOB . $middlemaybe . <<'EOF' . $tailmaybe) or diag $!;
@@ -335,7 +338,7 @@ EOP
 
 # Make sure Errno hasn't been prematurely autoloaded
    {
-       local $TODO = "perlcc is loading a buncha modules it shouldn't but we're going to leave it alone for now.";
+       local $TODO = "perlcc has to load Errno, p5p refused to fix this" if is_perlcc_compiled;
        ok !keys %Errno::, '!keys %Errno::';
    }
 
@@ -359,8 +362,9 @@ EOP
 }
 
 # Check that we don't auto-load packages
-SKIP: {
+SKIP: TODO: {
     skip "staticly linked; may be preloaded", 4 unless $Config{usedl};
+    local $TODO = "perlcc preloads those magic modules when it sees a tied symbol" if is_perlcc_compiled;
     foreach (['powie::!', 'Errno'],
 	     ['powie::+', 'Tie::Hash::NamedCapture']) {
 	my ($symbol, $package) = @$_;
@@ -458,8 +462,11 @@ is delete $SIG{HUNGRY}, undef, "HUNGRY remains gone";
 
 # Test deleting signals that we never set
 foreach my $sig (qw(__DIE__ _BOGUS_HOOK KILL THIRSTY)) {
+  TODO:{
+    local $TODO = "under the debugger" if $^P;
     is $SIG{$sig}, undef, "$sig is not present";
     is delete $SIG{$sig}, undef, "delete of $sig returns undef";
+  } 
 }
 
 {
