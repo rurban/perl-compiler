@@ -2085,7 +2085,7 @@ sub B::COP::save {
     if $debug{cops};
 
   # shameless cut'n'paste from B::Deparse
-  my $warn_sv;
+  my ($warn_sv, $isint);
   my $warnings   = $op->warnings;
   my $is_special = ref($warnings) eq 'B::SPECIAL';
   my $warnsvcast = $PERL510 ? "(STRLEN*)" : "(SV*)";
@@ -2102,7 +2102,8 @@ sub B::COP::save {
     # LEXWARN_on: Original $warnings->save from 5.8.9 was wrong,
     # DUP_WARNINGS copied length PVX bytes.
     my $warn = bless $warnings, "B::LEXWARN";
-    $warn_sv = $warn->save;
+    # TODO: isint here misses already seen lexwarn symbols
+    ($warn_sv, $isint) = $warn->save;
     my $ix = $copsect->index + 1;
     # XXX No idea how a &sv_list[] came up here, a re-used object. Anyway.
     $warn_sv = substr($warn_sv,1) if substr($warn_sv,0,3) eq '&sv';
@@ -2211,7 +2212,7 @@ sub B::COP::save {
   my $ix = $copsect->index;
   $init->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  if ($PERL510 and !$is_special) {
+  if ($PERL510 and !$is_special and !$isint) {
     my $copw = $warn_sv;
     $copw =~ s/^\(STRLEN\*\)&//;
     # on cv_undef (scope exit, die, Attribute::Handler, ...) CvROOT and kids are freed.
@@ -2222,9 +2223,9 @@ sub B::COP::save {
       # which is not the address which will be freed in S_cop_free.
       # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
       # lexwarn<n> might be also be STRLEN* 0
-      $init->add
-        (sprintf("if (*%s)\n\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
-                 $copw, $dest, $copw, $copw));
+      $init->add(sprintf("if (%s && *%s)\n".
+                 "\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
+                 $copw, $copw, $dest, $copw, $copw));
     }
   } else {
     $init->add( sprintf( "cop_list[%d].cop_warnings = %s;", $ix, $warn_sv ) )
@@ -2973,6 +2974,7 @@ sub lexwarnsym {
   } else {
     my $sym = sprintf( "lexwarn%d", $pv_index++ );
     my ($cstring, $cur, $utf8) = strlen_flags($pv);
+    my $isint = 0;
     if ($] < 5.009) { # need a SV->PV
       $decl->add( sprintf( "Static SV* %s;", $sym ));
       $init->add( sprintf( "%s = newSVpvn(%s, %u);", $sym, $cstring, $cur));
@@ -2982,13 +2984,14 @@ sub lexwarnsym {
       my ($iv) = unpack($t, $pv); # unsigned longsize
       if ($iv >= 0 and $iv <= 2) { # specialWARN: single STRLEN
         $decl->add( sprintf( "Static const STRLEN* %s = %d;", $sym, $iv ));
+        $isint = 1;
       } else { # sizeof(STRLEN) + (WARNsize)
         my $packedpv = pack("$t a*",length($pv), $pv);
         $decl->add( sprintf( "Static const char %s[] = %s;", $sym, cstring($packedpv) ));
       }
     }
     $lexwarnsym{$pv} = $sym;
-    return $sym;
+    return ($sym, $isint);
   }
 }
 
