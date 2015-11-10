@@ -47,9 +47,10 @@ plan(tests => 12);
     
     # test it working with with Sub::Name
     SKIP: {    
+        skip q{Test doesn't pass uncompiled}, 3;
         eval 'use Sub::Name';
-        skip("Sub::Name is required for this test", 3) if $@;
-    
+        skip("Sub::Name is required for this test", 3) if $@;        
+
         my $m = sub { (shift)->next::method() };
         Sub::Name::subname('Baɾ::ƚ', $m);
         {
