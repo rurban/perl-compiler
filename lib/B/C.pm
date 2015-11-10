@@ -2215,7 +2215,7 @@ sub B::COP::save {
   if ($PERL510 and !$is_special and !$isint) {
     my $copw = $warn_sv;
     $copw =~ s/^\(STRLEN\*\)&//;
-    # on cv_undef (scope exit, die, Attribute::Handler, ...) CvROOT and kids are freed.
+    # on cv_undef (scope exit, die, Attribute::Handlers, ...) CvROOT and kids are freed.
     # so lexical cop_warnings need to be dynamic.
     if ($copw) {
       my $dest = "cop_list[$ix].cop_warnings";
@@ -2223,9 +2223,8 @@ sub B::COP::save {
       # which is not the address which will be freed in S_cop_free.
       # Need to use old-style PerlMemShared_, see S_cop_free in op.c (#362)
       # lexwarn<n> might be also be STRLEN* 0
-      $init->add(sprintf("if (%s && *%s)\n".
-                 "\t    %s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
-                 $copw, $copw, $dest, $copw, $copw));
+      $init->add(sprintf("%s = (STRLEN*)savesharedpvn((const char*)%s, sizeof(%s));",
+                         $dest, $copw, $copw));
     }
   } else {
     $init->add( sprintf( "cop_list[%d].cop_warnings = %s;", $ix, $warn_sv ) )
@@ -2970,7 +2969,7 @@ sub B::PADNAME::save {
 sub lexwarnsym {
   my $pv = shift;
   if ($lexwarnsym{$pv}) {
-    return $lexwarnsym{$pv};
+    return @{$lexwarnsym{$pv}};
   } else {
     my $sym = sprintf( "lexwarn%d", $pv_index++ );
     my ($cstring, $cur, $utf8) = strlen_flags($pv);
@@ -2990,7 +2989,7 @@ sub lexwarnsym {
         $decl->add( sprintf( "Static const char %s[] = %s;", $sym, cstring($packedpv) ));
       }
     }
-    $lexwarnsym{$pv} = $sym;
+    $lexwarnsym{$pv} = [$sym,$isint];
     return ($sym, $isint);
   }
 }
