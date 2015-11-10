@@ -392,7 +392,7 @@ testrelease :: pure_all
 testcore :: pure_all
 	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED
 testcore-log :: pure_all
-	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED | tee log.test-core-`git describe --tags`
+	$(FULLPERLRUN) -S prove -b -j10 -f t/C-COMPILED | tee log.test-core-).$].q(-`git describe --tags`
 )
 }
 
