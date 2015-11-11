@@ -16,7 +16,7 @@ package B::HV;
 
 use strict;
 
-use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK/;
+use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK SVf_AMAGIC/;
 use B::C::Config;
 use B::C::File qw/init xpvhvsect svsect decl init1 init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags is_using_mro/;
@@ -56,7 +56,9 @@ sub save {
         savesym( $hv, $sym );
 
         # fix overload stringify
-        init2()->add( sprintf( "mro_isa_changed_in(%s);", $sym ) );
+        if ( $hv->FLAGS & SVf_AMAGIC ) {
+            init2()->add( sprintf( "mro_isa_changed_in(%s);", $sym ) );
+        }
 
         # issue 79, test 46: save stashes to check for packages.
         # and via B::STASHGV we only save stashes for stashes.
