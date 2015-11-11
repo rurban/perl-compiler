@@ -15,7 +15,6 @@ use strict;
 our $VERSION = '1.52_18';
 our %debug;
 our $check;
-my $eval_pvs = '';
 our %Config;
 BEGIN {
   require B::C::Flags;
@@ -243,14 +242,20 @@ EOT
                    { exists($sym->{$1}) ? $sym->{$1} : $default; }ge;
       print $fh "\t$j\n";
     }
-    print $fh "\t\n}\n";
+    if (@{ $section->[-1]{evals} }) {
+      # We need to output evals after dl_init, in init2
+      if ($section->name ne 'init2') {
+        die "Invalid section ".$section->name."->add_eval, use init2";
+      } else {
+        foreach my $s ( @{ $section->[-1]{evals} } ) {
+          print $fh "\teval_pv(\"$s\",1);\n";
+        }
+      }
+    }
+    print $fh "}\n";
 
     $section->SUPER::add("${init_name}_${name}(aTHX);");
     ++$name;
-  }
-  # We need to output evals after dl_init.
-  foreach my $s ( @{ $section->[-1]{evals} } ) {
-    ${B::C::eval_pvs} .= "    eval_pv(\"$s\",1);\n";
   }
 
   print $fh <<"EOT";
@@ -5417,9 +5422,9 @@ sub B::IO::save_data {
 
   if ($PERL56) {
     # Pseudo FileHandle
-    $init->add_eval( sprintf 'open(%s, \'<\', $%s);', $globname, $globname );
+    $init2->add_eval( sprintf 'open(%s, \'<\', $%s);', $globname, $globname );
   } else { # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
-    $init->add_eval( sprintf 'open(%s, \'<:scalar\', $%s);', $globname, $globname );
+    $init2->add_eval( sprintf 'open(%s, \'<:scalar\', $%s);', $globname, $globname );
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA);",1); DATA being a ref to $data
     $init->pre_destruct( sprintf 'eval_pv("close %s;", 1);', $globname );
     $use_xsloader = 1; # layers are not detected as XSUB CV, so force it
@@ -6872,7 +6877,6 @@ _EOT15
     perl_init2(aTHX);
 EOT
 
-    print $B::C::eval_pvs if $B::C::eval_pvs;
     print "    exitstatus = perl_run( my_perl );\n";
     foreach my $s ( @{ $init->[-1]{pre_destruct} } ) {
       print "    ".$s."\n";
@@ -7454,6 +7458,14 @@ sub save_unused_subs {
     svref_2object( \&{"warnings\::register_categories"} )->save; # 68Kb 32bit
     add_hashINC("warnings");
     add_hashINC("warnings::register");
+  }
+  #196 missing INIT
+  if ($xsub{EV} and $dumped_package{EV} and $EV::VERSION le '4.21') {
+    $init2->add_eval
+      (
+       q(EV::default_loop() or )
+       .q(die 'EV: cannot initialise libev backend. bad $ENV{LIBEV_FLAGS}?';)
+      );
   }
   if ($use_xsloader) {
     force_saving_xsloader();
@@ -8128,7 +8140,7 @@ OPTION:
 
   init_sections();
   foreach my $i (@eval_at_startup) {
-    $init->add_eval($i);
+    $init2->add_eval($i);
   }
   if (@options) { # modules or main?
     return sub {
