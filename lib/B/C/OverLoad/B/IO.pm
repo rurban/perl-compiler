@@ -5,7 +5,7 @@ use strict;
 use B qw/cstring cchar svref_2object/;
 use B::C::Config;
 use B::C::Save qw(savepv);
-use B::C::File qw/init svsect xpviosect/;
+use B::C::File qw/init init2 svsect xpviosect/;
 
 use B::C::Helpers qw/mark_package/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -20,7 +20,7 @@ sub save_data {
     init()->add("GvSVn( $sym ) = (SV*)$ref;");
 
     # force inclusion of PerlIO::scalar as it was loaded in BEGIN.
-    init()->add_eval( sprintf 'open(%s, \'<:scalar\', $%s);', $globname, $globname );
+    init2()->add_eval( sprintf 'open(%s, \'<:scalar\', $%s);', $globname, $globname );
 
     # => eval_pv("open(main::DATA, '<:scalar', $main::DATA);",1); DATA being a ref to $data
     init()->pre_destruct( sprintf 'eval_pv("close %s;", 1);', $globname );

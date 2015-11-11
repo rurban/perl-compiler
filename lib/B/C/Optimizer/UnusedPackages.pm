@@ -7,6 +7,7 @@ use B qw/svref_2object/;
 use B::C::Config;    # import everything
 use B::C::Packages qw/mark_package_unused mark_package_used mark_package_deleted is_package_used get_all_packages_used include_package_list is_package_used/;
 use B::C::Helpers qw/is_using_mro/;
+use B::C::File qw/init2/;
 
 # imports from B::C
 # todo: check & move these to a better place
@@ -125,6 +126,12 @@ sub optimize {
         add_hashINC("warnings");
         add_hashINC("warnings::register");
     }
+
+    #196 missing INIT
+    if ( $B::C::xsub{EV} and $B::C::dumped_package{EV} and $EV::VERSION le '4.21' ) {
+        init2()->add_eval( q(EV::default_loop() or ) . q(die 'EV: cannot initialise libev backend. bad $ENV{LIBEV_FLAGS}?';) );
+    }
+
     if ($B::C::use_xsloader) {
         force_saving_xsloader();
     }

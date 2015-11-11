@@ -1330,6 +1330,7 @@ push @a, async {
 };
 schedule;
 print q(ok)'
+tests[1960]='use EV; my $w = EV::timer 1, 1,sub{print"ok\n";exit}; EV::loop'
 tests[371]='package foo;use Moose;
 has "x" => (isa => "Int", is => "rw", required => 1);
 has "y" => (isa => "Int", is => "rw", required => 1);

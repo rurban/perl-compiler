@@ -1917,7 +1917,7 @@ sub compile {
     B::C::Packages::new();                           # Singleton.
 
     foreach my $i (@eval_at_startup) {
-        init()->add_eval($i);
+        init2()->add_eval($i);
     }
     if (@options) {                                  # modules or main?
         return sub {

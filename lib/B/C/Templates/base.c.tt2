@@ -907,11 +907,14 @@ main(int argc, char **argv, char **env)
     perl_init(aTHX);
     perl_init1(aTHX);
     dl_init(aTHX);
-    perl_init2(aTHX);
 
+    /* We need to output evals after dl_init, in init2  */
     [% FOREACH eval_pv IN all_eval_pvs %]
     [% eval_pv %]
     [% END %]
+
+    perl_init2(aTHX);
+
 
     exitstatus = perl_run( my_perl );
 
