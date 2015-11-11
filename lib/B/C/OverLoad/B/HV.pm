@@ -69,7 +69,7 @@ sub save {
                 B::C::make_c3($name);
             }
 
-            if ( $magic =~ /c/ ) {
+            if ( $magic and $magic =~ m/c/ ) {
                 debug( mg => "defer AMT magic of $name" );
 
                 # defer AMT magic of XS loaded hashes.
