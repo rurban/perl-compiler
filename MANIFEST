@@ -388,7 +388,7 @@ t/C-COMPILED/CORE--op--svleak.t
 t/C-COMPILED/CORE--op--switch==BADTEST-180.t
 t/C-COMPILED/CORE--op--symbolcache.t
 t/C-COMPILED/CORE--op--sysio.t
-t/C-COMPILED/CORE--op--taint==BC-288.t
+t/C-COMPILED/CORE--op--taint==BADPLAN-288+BADTEST-288.t
 t/C-COMPILED/CORE--op--tie.t
 t/C-COMPILED/CORE--op--tie_fetch_count.t
 t/C-COMPILED/CORE--op--tiearray.t

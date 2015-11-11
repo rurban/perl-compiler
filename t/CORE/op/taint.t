@@ -12,6 +12,7 @@
 BEGIN {
     unshift @INC, 't/CORE/lib', '.';
     require 't/CORE/test.pl';
+    chdir 't/CORE';
 }
 
 use strict;
@@ -1269,7 +1270,7 @@ violates_taint(sub { link $TAINT, '' }, 'link');
         # pretty hard to imagine not
         skip "readdir() is not available", 1 unless $Config{d_readdir};
 
-	opendir my $dh, "op" or die "opendir: $!\n";
+	opendir my $dh, "op" or die "opendir op/: $!";
 	my $readdir = readdir $dh;
 	is_tainted($readdir);
 	closedir $dh;

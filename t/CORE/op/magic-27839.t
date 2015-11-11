@@ -6,6 +6,11 @@ BEGIN {
       $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
     }
 }
+INIT {
+    if (is_perlcc_compiled()) {
+      $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
+    }
+}
 
 plan(tests => 2);
 

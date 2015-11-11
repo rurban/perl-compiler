@@ -16,13 +16,13 @@ my $todo       = '';
 my $file_to_test = $0;
 if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
     my $options = $1;
-    $todo = "B::C Fails to generate c code. Issues: $1"         if ( $options =~ /BC-([\d-]+)/ );
-    $todo = "gcc cannot compile generated c code. Issues: $1"   if ( $options =~ /GCC-([\d-]+)/ );
-    $todo = "Compiled binary exits with signal. Issues: $1"     if ( $options =~ /SIG-([\d-]+)/ );
-    $todo = "Test crashes before completion. Issues: $1"        if ( $options =~ /BADPLAN-([\d-]+)/ );
-    $todo = "Fails tests when compiled with perlcc. Issues: $1" if ( $options =~ /BADTEST-([\d-]+)/ );
-    $todo = "Tests out of sequence. Issues: $1"                 if ( $options =~ /SEQ-([\d-]+)/ );
-    $todo = "TODO test unexpectedly passing. Issues: $1"        if ( $options =~ /TODO-([\d-]+)/ );
+    $todo .= "B::C Fails to generate c code. Issues: $1."         if $options =~ /BC-([\d-]+)/;
+    $todo .= "gcc cannot compile generated c code. Issues: $1."   if $options =~ /GCC-([\d-]+)/;
+    $todo .= "Compiled binary exits with signal. Issues: $1."     if $options =~ /SIG-([\d-]+)/;
+    $todo .= "Test ends before completion. Issues: $1."           if $options =~ /BADPLAN-([\d-]+)/;
+    $todo .= "Fails tests when compiled with perlcc. Issues: $1." if $options =~ /BADTEST-([\d-]+)/;
+    $todo .= "Tests out of sequence. Issues: $1."                 if $options =~ /SEQ-([\d-]+)/;
+    $todo .= "TODO test unexpectedly passing. Issues: $1."        if $options =~ /TODO-([\d-]+)/;
 }
 
 $file_to_test =~ s{--}{/}g;
@@ -123,7 +123,7 @@ TODO: {
 
         my $signal = $res->{wait} % 256;
         if ( $todo =~ /Compiled binary exits with signal/ ) {
-            local $TODO = "Tests don't pass at the moment - $todo";
+            local $TODO = "$todo";
             my $sig_name = $SIGNALS{$signal};
             ok( $signal == 0, "Exit signal is $signal ($sig_name)" );
             note $out if ($out);
@@ -133,7 +133,7 @@ TODO: {
             ok( $signal == 0, "Exit signal is $signal" );
         }
 
-        if ( $todo =~ m/Test crashes before completion/ ) {
+        if ( $todo =~ m/Test ends before completion/ ) {
             local $TODO = $todo;
             ok( $parser->{is_good_plan}, "Plan was valid" );
             note $out;
