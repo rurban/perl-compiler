@@ -5258,7 +5258,7 @@ sub B::HV::save {
       $init->add(sprintf( "HvPMROOT(hv%d) = (PMOP*)s\\_%x;",
 			  $hv_index, $adpmroot ) );
     }
-    if ($PERL518) {
+    if ($PERL518 and $hv->FLAGS & SVf_AMAGIC) {
       # fix overload stringify
       $init2->add( sprintf("mro_isa_changed_in(%s);", $sym));
     }
