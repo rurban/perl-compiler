@@ -42,26 +42,18 @@ op/anonconst.t               SIG       BC issue #246 - experimental const_attr f
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/attrproto.t               TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/attrs.t                   TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
-op/bless.t                   TESTS     BC issue #219 - overload issue
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
-op/bop.t                     TESTS     BC issue #219 - overload issue
-op/caller.t                  TESTS     BC issue #221 - delete __ANON__
-op/chr.t                     TESTS     BC issue #219 - overload issue
+op/caller.t                  PLAN      Plan was valid
 op/closure.t                 TESTS     BC issue #278 - destruction issue
-op/concat2.t                 TESTS     BC issue #219 - overload issue
 op/const-optree.t            PLAN      BC issue #305 - feature refaliasing
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/exists_sub.t              SIG       BC issue #277 - empty sub with attributes
-op/filetest.t                TESTS     BC issue #219 - overload issue
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
-op/gmagic.t                  TESTS     BC issue #219 - overload issue
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
-op/join.t                    TESTS     BC issue #219 - overload issue
-op/length.t                  TESTS     BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
@@ -69,25 +61,19 @@ op/method.t                  PLAN      BC issue #331 - method call when stash po
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
-op/pack.t                    PLAN      BC issue #219 - overload issue
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
 op/reset.t                   TESTS     BC issue #252: reset
 op/signatures.t              TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
-op/smartmatch.t              TESTS     BC issue #219 - overload issue
-op/sort.t                    TESTS     BC issue #219 - overload issue
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/state.t                   PLAN      BC issue #302 - features state + eval
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
-op/substr.t                  TESTS     BC issue #219 - overload issue
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
-op/switch.t                  PLAN      BC issue #219 - overload issue
 op/threads-dirh.t            COMPAT    We don't support threaded perl in this branch.
 op/threads.t                 COMPAT    We don't support threaded perl in this branch.
 op/universal.t               TESTS     BC issue #300 - PVFM not compiled
-op/utf8cache.t               TESTS     BC issue #219 - overload issue
 op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
@@ -108,7 +94,6 @@ uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pra
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/overload.t               TESTS     BC issue #219 - overload issue
 uni/parser.t                 TESTS     Recheck
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
@@ -122,7 +107,6 @@ xtestc/0095.t                TESTS     Output is: ""
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
 xtestc/0169.t                TESTS     Output is: "42\n"
-xtestc/0172.t                TESTS     Output is: "Foo=HASH(0x92d2564)\n"
 xtestc/0173.t                TESTS     Output is: "ok 1\nok 2\nok 3\n"
 xtestc/0174.t                TESTS     Output is: "\C is deprecated in regex; ..."
 xtestc/0175.t                TESTS     Output is: "ok\n"
@@ -132,7 +116,6 @@ xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
 xtestc/0203.t                TESTS     Output is: ""
 xtestc/0207.t                TESTS     Output is: ""
-xtestc/0219.t                TESTS     BC issue #219 - overload issue
 xtestc/0222.t                TESTS     Output is: "Can t find string terminator ..."
 xtestc/0226.t                TESTS     Output is: ""
 xtestc/0230.t                TESTS     Output is: "\n"
@@ -169,6 +152,7 @@ xtestc/0340.t                TESTS     Output is: "die at new at xtestc 0340.pl 
 xtestc/0350.t                TESTS     Output is: ""
 xtestc/0369.t                TESTS     Output is: ""
 xtestc/0371.t                TESTS     Output is: ""
+xtestc/0373.t                GCC       xtestc/0373.bin is compiled and ready to run.
 xtestc/0374.t                BC        xtestc/0374.c is generated (-O3,-fno-fold)
 xtestc/2052.t                TESTS     Output is: ""
 xtestc/2511.t                TESTS     Output is: ""
