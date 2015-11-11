@@ -4,10 +4,10 @@ BEGIN {
     $| = 1;
     unshift @INC, 't/CORE/lib';
     $ENV{PATH} = '/bin' if ${^TAINT};
-    unless (is_perlcc_compiled) {
+    require 't/CORE/test.pl';
+    unless (is_perlcc_compiled()) {
       $SIG{__WARN__} = sub { die "Dying on warning: ", @_ };
     }
-    require 't/CORE/test.pl';
 }
 
 use warnings;
