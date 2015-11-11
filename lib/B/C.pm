@@ -5268,7 +5268,7 @@ sub B::HV::save {
       if ($PERL510 and is_using_mro() && mro::get_mro($name) eq 'c3') {
         B::C::make_c3($name);
       }
-      if ($magic =~ /c/) {
+      if ($magic and $magic =~ /c/) {
         warn "defer AMT magic of $name\n" if $debug{mg};
         # defer AMT magic of XS loaded hashes. #305 Encode::XS with tiehash magic
         #  $init1->add(qq[$sym = gv_stashpvn($cname, $len, GV_ADDWARN|GV_ADDMULTI);]);
