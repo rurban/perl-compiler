@@ -20,7 +20,7 @@ sub save {
     xpvuvsect()->comment("stash, magic, cur, len, xiv_u");
 
     # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
-    xpvuvsect()->add( sprintf( "Nullhv, {0}, 0, 0, {%" . $uvuformat . "U}", $sv->UVX ) );
+    xpvuvsect()->add( sprintf( "Nullhv, {0}, 0, 0, {%" . $uvuformat . "%s}", $sv->UVX, 'LLU' ) );
 
     svsect()->add(
         sprintf(
