@@ -122,7 +122,7 @@ sub savestash_flags {
             svref_2object( \@{"$name\::ISA"} )->save("$name\::ISA");
         }
     }
-    my $pvsym = constpv($name);
+    my $pvsym = $len ? constpv($name) : '""';
     init()->add(
         sprintf(
             "%s = gv_stashpvn(%s, %u, %s); /* $name */",

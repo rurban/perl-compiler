@@ -136,26 +136,17 @@ sub save {
 
     if ( !$B::C::optimize_cop ) {
         my $stash = savestashpv( $op->stashpv );
+        init()->add( sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ) );
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
-
-                init()->add(
-                    sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, constpv($file) )
-                );
+                init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ) );
             }
             else {
-                init()->add(
-                    sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                    sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, cstring($file) )
-                );
+                init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
             }
         }
         else {    # cv_undef e.g. in bproto.t and many more core tests with threads
-            init()->add(
-                sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                sprintf( "CopFILE_set(&cop_list[%d], %s);",  $ix, cstring($file) )
-            );
+            init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
         }
     }
 

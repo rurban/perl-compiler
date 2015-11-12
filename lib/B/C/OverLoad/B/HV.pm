@@ -56,7 +56,7 @@ sub save {
         savesym( $hv, $sym );
 
         # fix overload stringify
-        if ( $hv->FLAGS & SVf_AMAGIC ) {
+        if ( $hv->FLAGS & SVf_AMAGIC and length($name) ) {
             init2()->add( sprintf( "mro_isa_changed_in(%s);", $sym ) );
         }
 
