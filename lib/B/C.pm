@@ -6496,15 +6496,7 @@ _EOT8
     }
   }
   print "\tFREETMPS;\n/* end XS bootstrapping code */\n";
-  print "}\n";
-
-  print <<'_EOT9';
-
-static void
-dl_init(pTHX)
-{
-	char *file = __FILE__;
-_EOT9
+  print "}\n\n";
 
   my ($dl, $xs);
   my @dl_modules = @DynaLoader::dl_modules;
@@ -6558,6 +6550,12 @@ _EOT9
       $xs++ if $xsub{$stashname} ne 'Dynamic';
       $dl++;
     }
+    my $stashxsub = $stashname;
+    $stashxsub =~ s/::/__/g;
+    if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic-/
+         and ($PERL522 or $staticxs)) {
+      print "EXTERN_C void boot_$stashxsub(pTHX_ CV* cv);\n";
+    }
   }
   warn "\%xsub: ",join(" ",sort keys %xsub),"\n" if $verbose and $debug{cv};
   # XXX Adding DynaLoader is too late here! The sections like $init are already dumped (#125)
@@ -6566,6 +6564,14 @@ _EOT9
   } elsif ($xs and ! $curINC{'XSLoader.pm'}) {
     die "Error: XSLoader required but not dumped. Too late to add it.\n";
   }
+  print <<'_EOT9';
+
+static void
+dl_init(pTHX)
+{
+	char *file = __FILE__;
+_EOT9
+
   if ($dl) {
     # enforce attributes at the front of dl_init, #259
     # also Encode should be booted before PerlIO::encoding
