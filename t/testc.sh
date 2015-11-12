@@ -1359,6 +1359,12 @@ tests[2230]='# 5.22 SEGV with missing gv_list[0] svop_list[0]
 <*.*> and print qq{ok\n}'
 tests[3060]='INIT { $SIG{__WARN__} = sub { die } } print "ok\n";'
 tests[3061]='END { $SIG{__WARN__} = sub { die } } print "ok\n";'
+tests[2191]='sub foo1 ($\@); eval q{ foo1 "s" }; print $@ =~ /^Not enough/ ? "ok" : "";'
+tests[2192]='sub foo1 ($\%); eval q{ foo1 "s" }; print $@ =~ /^Not enough/ ? "ok" : "";'
+tests[2193]='{local $^W = 1; my $warn = "";
+local $SIG{__WARN__} = sub { $warn .= join("",@_) };
+eval q(sub badproto4 (@ $b ar) { 1; });
+print $warn =~ /Prototype after .@. for main::badproto4/ ? "ok" : $warn;}'
 
 init
 

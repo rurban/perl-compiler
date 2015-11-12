@@ -19,7 +19,7 @@ use strict;
 
 $| = 1;
 
-print "1..172\n";
+print "1..184\n";
 
 my $i = 1;
 
@@ -343,7 +343,11 @@ sub sub_array (&@) {
 
 @array = (qw(O K)," ", $i++);
 sub_array { lc shift } @array;
-sub_array { lc shift } ('O', 'K', ' ', $i++);
+if ($] >= 5.008) {
+  eval q(sub_array { lc shift } ('O', 'K', ' ', $i++););
+} else {
+  print "ok ",$i++," # SKIP 5.6 & proto";
+}
 print "\n";
 
 ##
@@ -486,13 +490,15 @@ star(\*FOO, sub {
 	print "ok $i - star(\\*FOO)\n";
     }); $i++;
 star2 FOO, BAR, sub {
-    print "not " unless $_[0] eq 'FOO' and $_[1] eq 'BAR';
+    my $p1 = $] < 5.022 ? 'BAR' : 'quux';
+    print "not " unless $_[0] eq 'FOO' and $_[1] eq $p1;
     print "ok $i - star2 FOO, BAR\n";
-}; $i++;
+}; $i++; # 5.22 core change
 star2(Bar::BAZ, FOO, sub {
-	print "not " unless $_[0] eq 'Bar::BAZ' and $_[1] eq 'FOO';
-	print "ok $i - star2(Bar::BAZ, FOO)\n"
-    }); $i++;
+    my $p0 = $] < 5.022 ? 'Bar::BAZ' : 'quuz';
+    print "not " unless $_[0] eq $p0 and $_[1] eq 'FOO';
+    print "ok $i - star2(Bar::BAZ, FOO)\n"
+}); $i++; # 5.22 core change
 star2 BAR(), FOO, sub {
     print "not " unless $_[0] eq 'quux' and $_[1] eq 'FOO';
     print "ok $i - star2 BAR(), FOO\n"
@@ -549,11 +555,17 @@ sub sreftest (\$$) {
 }
 
 # test single term
+BEGIN {
+    my $plusproto = <<'EOF';
 sub lazy (+$$) {
     print "not " unless @_ == 3 && ref $_[0] eq $_[1];
     print "ok $_[2] - non container test\n";
 }
 sub quietlazy (+) { return shift(@_) }
+EOF
+    $plusproto =~ s/ \(\+/ \(\$/gm if $] < 5.014;
+    eval $plusproto;
+}
 sub give_aref { [] }
 sub list_or_scalar { wantarray ? (1..10) : [] }
 {
@@ -604,7 +616,13 @@ print "ok ", $i++, "\n";
     sub mysub { print "not calling mysub I hope\n" }
     local *myglob;
 
-    sub myref (\[$@%&*]) { print "# $_[0]\n"; return "$_[0]" }
+    BEGIN {
+      if ($] >= 5.008) {
+        eval q(sub myref (\[$@%&*]) { print "# $_[0]\n"; return "$_[0]" });
+      } else { 
+        eval q(sub myref ($@%&*) { print "# $_[0]\n"; return "$_[0]" });
+      }
+    }
 
     print "not " unless myref($myvar)   =~ /^SCALAR\(/;
     print "ok ", $i++, "\n";
@@ -648,30 +666,120 @@ print "ok ", $i++, "\n";
   
   eval 'sub badproto (@bar) { 1; }';
   print "not " unless $warn =~ /Illegal character in prototype for main::badproto : \@bar/;
-  print "ok ", $i++, "\n";
+  print "ok ", $i++, " checking badproto - (\@bar)\n";
 
+  $warn = '';
   eval 'sub badproto2 (bar) { 1; }';
   print "not " unless $warn =~ /Illegal character in prototype for main::badproto2 : bar/;
-  print "ok ", $i++, "\n";
+  print "ok ", $i++, " checking badproto2 - (bar)\n";
   
+  $warn = '';
   eval 'sub badproto3 (&$bar$@) { 1; }';
   print "not " unless $warn =~ /Illegal character in prototype for main::badproto3 : &\$bar\$\@/;
-  print "ok ", $i++, "\n";
-  
+  print "ok ", $i++, " checking badproto3 - (&\$bar\$\@)\n";
+
+  $warn = '';
   eval 'sub badproto4 (@ $b ar) { 1; }';
-  print "not " unless $warn =~ /Illegal character in prototype for main::badproto4 : \@\$bar/;
-  print "ok ", $i++, "\n";
+  # This one emits two warnings
+  # The formatting of the error changed in 5.20
+  my $berr = $] < 5.020 ? '\@\$bar' : '\@ \$b ar';
+  print "not " unless $warn =~ /Illegal character in prototype for main::badproto4 : $berr/;
+  print "ok ", $i++, " checking badproto4 - ($berr) - illegal character\n";
+  if ($] >= 5.012) {
+    print "not " unless $warn =~ /Prototype after '\@' for main::badproto4 : $berr/;
+    print "ok ", $i++, " checking badproto4 - ($berr) - prototype after '\@'\n";
+  } else {
+    print "ok ", $i++, " SKIP only one warning <5.12\n";
+  }
+  #print '# '.$warn if $warn;
+
+  $warn = '';
+  eval 'sub badproto5 ($_$) { 1; }';
+  print "not " unless $warn =~ /Illegal character after '_' in prototype for main::badproto5 : \$_\$/;
+  print "ok ", $i++, " checking badproto5 - (\$_\$) - illegal character after '_'\n";
+  print "not " if $warn =~ /Illegal character in prototype for main::badproto5 : \$_\$/;
+  print "ok ", $i++, " checking badproto5 - (\$_\$) - but not just illegal character\n";
+
+  $warn = '';
+  eval 'sub badproto6 (bar_) { 1; }';
+  my $newwarn = qr/Illegal character in prototype for main::badproto6 : bar_/;
+  my $oldwarn = qr/Illegal character after '_' in prototype for main::badproto6 : bar_/;
+  if ($] >= 5.020) {
+    print "not " unless $warn =~ $newwarn;
+    print "ok ", $i++, " checking badproto6 - (bar_) - new warning\n";
+    print "not " if $warn =~ $oldwarn;
+    print "ok ", $i++, " checking badproto6 - (bar_) - not old warning\n";
+  } else {
+    print "not " if $warn =~ $newwarn;
+    print "ok ", $i++, " checking badproto6 - (bar_) - not new warning\n";
+    print "not " unless $warn =~ $oldwarn;
+    print "ok ", $i++, " checking badproto6 - (bar_) - old warning\n";
+  }
+  #print '# '.$warn if $warn;
+  
+  $warn = '';
+  eval 'sub badproto7 (_;bar) { 1; }';
+  $newwarn = qr/Illegal character in prototype for main::badproto7 : _;bar/;
+  $oldwarn = qr/Illegal character after '_' in prototype for main::badproto7 : _;bar/;
+  if ($] >= 5.020) {
+    print "not " unless $warn =~ $newwarn;
+    print "ok ", $i++, " checking badproto7 - (_;bar) - new warning\n";
+    print "not " if $warn =~ $oldwarn;
+    print "ok ", $i++, " checking badproto7 - (_;bar) - not old warning\n";
+  } else {
+    print "not " if $warn =~ $newwarn;
+    print "ok ", $i++, " checking badproto7 - (_;bar) - not new warning\n";
+    print "not " unless $warn =~ $oldwarn;
+    print "ok ", $i++, " checking badproto7 - (_;bar) - old warning\n";
+  }
+  #print '# '.$warn if $warn;
+
+  $warn = '';
+  eval 'sub badproto8 (_b) { 1; }';
+  $newwarn = qr/Illegal character in prototype for main::badproto8 : _b/;
+  $oldwarn = qr/Illegal character after '_' in prototype for main::badproto8 : _b/;
+  if ($] >= 5.020) {
+    # This one emits both warnings, new and old
+    print "not " unless $warn =~ $newwarn;
+    print "ok ", $i++, " checking badproto8 - (_b) - new warning\n";
+    print "not " unless $warn =~ $oldwarn;
+    print "ok ", $i++, " checking badproto8 - (_b) - not old warning\n";
+  } else {
+    print "not " if $warn =~ $newwarn;
+    print "ok ", $i++, " checking badproto8 - (_b) - not new warning\n";
+    print "not " unless $warn =~ $oldwarn;
+    print "ok ", $i++, " checking badproto8 - (_b) - old warning\n";
+  }
+  #print '# '.$warn if $warn;
+
+  $warn = '';
+  eval 'sub badproto9 ([) { 1; }';
+  if ($] < 5.020) {
+    print "not " if $warn;
+    print "ok ", $i++, " # SKIP matching bracket warning since 5.20\n";
+  } else {
+    print "not " unless $warn =~ /Missing '\]' in prototype for main::badproto9 : \[/;
+    print "ok ", $i++, " checking for matching bracket\n";
+  }
+
+  # fails <5.12
+  $warn = '';
+  eval 'sub badproto10 ([_]) { 1; }';
+  print "not " if $warn =~ /Missing '\]' in prototype for main::badproto10 : \[/;
+  print "ok ", $i++, " checking badproto10 - ([_]) - shouldn't trigger matching bracket\n";
+  print "not " unless $warn =~ /Illegal character after '_' in prototype for main::badproto10 : \[_\]/;
+  print "ok ", $i++, " checking badproto10 - ([_]) - should trigger after '_' warnings\n";
 }
 
 # make sure whitespace in prototypes works
 eval "sub good (\$\t\$\n\$) { 1; }";
 print "not " if $@;
-print "ok ", $i++, "\n";
+print "ok ", $i++, " # (\$\t\$\n\$)\n";
 
 # Ought to fail, doesn't in 5.8.1.
 eval 'sub bug (\[%@]) {  } my $array = [0 .. 1]; bug %$array;';
 print "not " unless $@ =~ /Not a HASH reference/;
-print "ok ", $i++, "\n";
+print "ok ", $i++, ' # (\[%@]) fails <5.10',"\n";
 
 # [perl #75904]
 # Test that the following prototypes make subs parse as unary functions:
