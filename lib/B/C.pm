@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_18';
+our $VERSION = '1.52_19';
 our %debug;
 our $check;
 our %Config;
@@ -6677,10 +6677,19 @@ _EOT9
         print "\tPUTBACK;\n";
         my $stashxsub = $stashname;
         $stashxsub =~ s/::/__/g;
-        if ($] >= 5.022 or $staticxs) {
+        if ($PERL522 or $staticxs) {
 	  # CvSTASH(CvGV(cv)) is invalid without (issue 86)
           # TODO: utf8 stashname (does make sense when loading from the fs?)
-	  print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
+          if ($PERL522 and $staticxs) { # GH 333
+            print "\t{
+		CV* cv = get_cv(\"$stashname\::bootstrap\", GV_ADD);
+		CvISXSUB_on(cv); /* otherwise a perl assertion fails. */
+		cv->sv_any->xcv_padlist_u.xcv_hscxt = &PL_stack_sp; /* xs_handshake */
+		boot_$stashxsub(aTHX_ cv);
+	}\n";
+          } else {
+            print "\tboot_$stashxsub(aTHX_ get_cv(\"$stashname\::bootstrap\", GV_ADD));\n";
+          }
 	} else {
 	  print "\tboot_$stashxsub(aTHX_ NULL);\n";
 	}
