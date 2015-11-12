@@ -775,6 +775,7 @@ t/cc.t
 t/cc_last.t
 t/cc_o1.t
 t/cc_o2.t
+t/coreall.sh
 t/coverage.sh
 t/critical.sh
 t/download-reports
