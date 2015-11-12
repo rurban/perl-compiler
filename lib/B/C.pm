@@ -509,7 +509,7 @@ my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount
-my $CPERL51  = ( $Config{usecperl} );
+my $CPERL    = ( $Config{usecperl} );
 my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
@@ -2130,7 +2130,7 @@ sub B::COP::save {
 
   my $dynamic_copwarn = ($PERL510 and !$is_special) ? 1 : !$B::C::optimize_warn_sv;
   # branch feature/gh70-static-lexwarn with PERL_SUPPORT_STATIC_COP
-  $dynamic_copwarn = 0 if $Config{usecperl} and $] >= 5.022002;
+  $dynamic_copwarn = 0 if $CPERL and $] >= 5.022002;
 
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
@@ -3763,7 +3763,7 @@ sub B::CV::save {
       {
 	my $stashfile = $stashname;
         $stashfile =~ s/::/\//g;
-	if ($file =~ /XSLoader\.pm$/) { # almost always the case
+	if ($file =~ /XSLoader\.(pm|c)$/) { # almost always the case
 	  $file = $INC{$stashfile . ".pm"};
 	}
 	unless ($file) { # do the reverse as DynaLoader: soname => pm
@@ -6557,7 +6557,10 @@ _EOT8
   }
   warn "\%xsub: ",join(" ",sort keys %xsub),"\n" if $verbose and $debug{cv};
   # XXX Adding DynaLoader is too late here! The sections like $init are already dumped (#125)
-  if ($dl and ! $curINC{'DynaLoader.pm'}) {
+  if ($CPERL) {
+    ;
+  }
+  elsif ($dl and ! $curINC{'DynaLoader.pm'}) {
     die "Error: DynaLoader required but not dumped. Too late to add it.\n";
   } elsif ($xs and ! $curINC{'XSLoader.pm'}) {
     die "Error: XSLoader required but not dumped. Too late to add it.\n";
@@ -6612,10 +6615,12 @@ _EOT9
     foreach my $stashname (@dl_modules) {
       if ( exists( $xsub{$stashname} ) && $xsub{$stashname} =~ m/^Dynamic/ ) {
 	$use_xsloader = 1;
-        print "\n\tPUSHMARK(sp);\n";
-	# XXX -O1 or -O2 needs XPUSHs with dynamic pv
-	printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
-	  $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
+        unless ($CPERL) {
+          print "\n\tPUSHMARK(sp);\n";
+          # XXX -O1 or -O2 needs XPUSHs with dynamic pv
+          printf "\t%s(%s, %d);\n", # "::bootstrap" gets appended
+            $] < 5.008008 ? "XPUSHp" : "mXPUSHp", "\"$stashname\"", length($stashname);
+        }
         if ( $xsub{$stashname} eq 'Dynamic' ) {
           no strict 'refs';
           warn "dl_init $stashname\n" if $verbose;
@@ -6623,19 +6628,28 @@ _EOT9
           B::svref_2object( \@{$stashname."::ISA"} ) ->save;
 	  print "#ifndef STATICXS\n";
 	  print "\tPUTBACK;\n";
-          print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
+	  if ($CPERL) {
+	    print sprintf("\tXS_DynaLoader_bootstrap_inherit(aTHX_ PL_compcv);\n");
+          } else {
+            print qq/\tcall_method("DynaLoader::bootstrap_inherit", G_VOID|G_DISCARD);\n/;
+          }
         }
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
 	  print "#ifndef STATICXS\n";
-	  if ($] >= 5.015003) {
+	  if ($] >= 5.015003 and !$CPERL) {
 	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
 	  }
 	  print "\tPUTBACK;\n";
 	  warn "bootstrapping $stashname added to XSLoader dl_init\n" if $verbose;
-	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
+	  # XSLoader has the 2nd insanest API in whole Perl, right after
+          # make_warnings_object()
+	  if ($CPERL) {
+	    print sprintf("\tdl_load_file(aTHX_ 1, %s, %s, 0);\n",
+                          cstring($stashfile), cstring($stashname));
+          }
 	  # 5.15.3 workaround for [perl #101336]
-	  if ($] >= 5.015003) {
+	  elsif ($] >= 5.015003) {
 	    no strict 'refs';
 	    unless (grep /^DynaLoader$/, get_isa($stashname)) {
 	      push @{$stashname."::ISA"}, 'DynaLoader';
@@ -6657,11 +6671,14 @@ _EOT9
           $path =~ s/::/\//g;
           $path .= "/" if $path; # can be empty
           $laststash = $stashname unless $laststash; # without ::
-          my $sofile = "auto/" . $path . $laststash . '\.' . $Config{dlext};
+          my $sofile = "auto/" . $path . $laststash . '.' . $Config{dlext};
           #warn "staticxs search $sofile in @DynaLoader::dl_shared_objects\n"
           #  if $verbose and $debug{pkg};
-          for (@DynaLoader::dl_shared_objects) {
-            if (m{^(.+/)$sofile$}) {
+          # problem with cperl here
+          my @files = ($CPERL and !$CPERL52) ?
+            @DynaLoader::shared_objects : @DynaLoader::dl_shared_objects;
+          for (@files) {
+            if (m{^(.+/)\Q$sofile\E$}) {
               print XS $stashname,"\t",$_,"\n";
               warn "staticxs $stashname\t$_\n" if $verbose;
               $sofile = '';
@@ -6669,7 +6686,9 @@ _EOT9
             }
           }
           print XS $stashname,"\n" if $sofile; # error case
-          warn "staticxs $stashname\t - $sofile not loaded\n" if $sofile and $verbose;
+          warn "staticxs $stashname\t - $sofile not in \@dl_shared_objects"
+            ." (@files)\n"
+            if $sofile and $verbose;
         }
         print "#else\n";
         print "\tPUTBACK;\n";
