@@ -667,8 +667,7 @@ result[170]='~~~~
 Invalid CODE attribute: bad at (eval 1) line 1.
 BEGIN failed--compilation aborted at (eval 1) line 1.
 ~~~~'
-tests[172]='#TODO 5.18-5.22, see also 219
-package Foo;
+tests[172]='package Foo;
 use overload q("") => sub { "Foo" };
 package main;
 my $foo = bless {}, "Foo";
@@ -892,8 +891,7 @@ result[215]=':t3
 :'
 tests[216]='eval { $::{q{@}}=42; }; print qq{ok\n}'
 # priority, fails since 5.18
-tests[219]='#TODO 5.18-5.22, see also 172
-package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
+tests[219]='package OverloadTest; use overload qw("") => sub { ${$_[0]} }; package main;
 my $foo = bless \(my $bar = "ok"), "OverloadTest"; print $foo."\n";'
 tests[2190]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
 result[2190]='11'
@@ -1056,8 +1054,7 @@ else { # child
 tests[272]='$d{""} = qq{ok\n}; print $d{""};'
 tests[2721]='BEGIN{$d{""} = qq{ok\n};} print $d{""};'
 tests[273]='package _charnames; sub foo { ($name =~ /^(\p{_Perl_Charname_Begin})/) and return; } print "ok\n";'
-tests[2731]='#5.22 SEGV
-print "ok" if "\N{KELVIN SIGN}" eq "\N{KELVIN SIGN}"'
+tests[2731]='print "ok" if "\N{KELVIN SIGN}" eq "\N{KELVIN SIGN}"'
 tests[274]='package Foo;
 sub match { shift =~ m?xyz? ? 1 : 0; }
 sub match_reset { reset; }

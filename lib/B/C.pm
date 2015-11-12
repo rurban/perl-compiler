@@ -800,7 +800,7 @@ sub strlen_flags {
 sub savestash_flags {
   my ($name, $cstring, $len, $flags) = @_;
   return $stashtable{$name} if exists $stashtable{$name};
-  #return '&PL_sv_undef' if $pv =~ /^B::CC?$/;
+  #return '(HV*)&PL_sv_undef' if $name =~ /^(|B::CC?)$/; # protect against empty stashes
   $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
   my $sym = "hv$hv_index";
   $decl->add("Static HV *hv$hv_index;");
@@ -812,7 +812,7 @@ sub savestash_flags {
       svref_2object( \@{"$name\::ISA"} )->save("$name\::ISA");
     }
   }
-  my $pvsym = constpv($name);
+  my $pvsym = $len ? constpv($name) : '""';
   $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s); /* $name */",
                        $sym, $pvsym, $len, $flags));
   $hv_index++;
@@ -2256,17 +2256,15 @@ sub B::COP::save {
   #push @B::C::static_free, "cop_list[$ix]" if $ITHREADS;
   if (!$B::C::optimize_cop) {
     my $stash = savestashpv($op->stashpv);
+    $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ));
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
-        $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
+        $init->add(sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
       } else {
-        $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash),
-                   sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
+        $init->add(sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
       }
     } else { # cv_undef e.g. in bproto.t and many more core tests with threads
-      $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ),
-                 sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
+      $init->add(sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
     }
   }
 
@@ -5258,7 +5256,7 @@ sub B::HV::save {
       $init->add(sprintf( "HvPMROOT(hv%d) = (PMOP*)s\\_%x;",
 			  $hv_index, $adpmroot ) );
     }
-    if ($PERL518 and $hv->FLAGS & SVf_AMAGIC) {
+    if ($PERL518 and $hv->FLAGS & SVf_AMAGIC and length($name)) {
       # fix overload stringify
       $init2->add( sprintf("mro_isa_changed_in(%s);", $sym));
     }
