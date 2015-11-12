@@ -3287,7 +3287,7 @@ sub B::PVMG::save_magic {
   my ($sv, $fullname) = @_;
   my $sv_flags = $sv->FLAGS;
   my $pkg;
-  return if $fullname eq '%B::C::';
+  return if $fullname and $fullname eq '%B::C::';
   if ($debug{mg}) {
     my $flagspv = "";
     $fullname = '' unless $fullname;
