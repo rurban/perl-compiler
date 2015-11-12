@@ -682,7 +682,12 @@ dl_init(pTHX)
     PUTBACK;
     /* CvSTASH(CvGV(cv)) is invalid without (issue 86) */
     /* TODO: utf8 stashname */
-    boot_[% stashname.replace('::', '__') %](aTHX_ get_cv("[% stashname %]::bootstrap", GV_ADD));
+    { /* GH 333 */
+        CV* cv = get_cv("[% stashname %]::bootstrap", GV_ADD);
+        CvISXSUB_on(cv); /* otherwise a perl assertion fails. */
+        cv->sv_any->xcv_padlist_u.xcv_hscxt = &PL_stack_sp; /* xs_handshake */
+        boot_[% stashname.replace('::', '__') %](aTHX_ cv);
+    }
 #endif
     SPAGAIN;
 /*    PUTBACK;*/
