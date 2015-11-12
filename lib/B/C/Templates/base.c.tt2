@@ -613,6 +613,7 @@ xs_init(pTHX)
 /* end XS bootstrapping code */
 }
 
+[% optimizer.dynaloader.boot %]
 
 static void
 dl_init(pTHX)

@@ -42,7 +42,7 @@ sub optimize {
     my $self = shift or die;
     ref $self eq __PACKAGE__ or die;
 
-    my ( $dl, $xs );
+    my ( $boot, $dl, $xs ) = ('');
     my @dl_modules = @DynaLoader::dl_modules;
 
     # filter out unused dynaloaded B modules, used within the compiler only.
@@ -83,6 +83,13 @@ sub optimize {
             $xs++ if $self->{'xsub'}->{$stashname} ne 'Dynamic';
             $dl++;
         }
+
+        my $stashxsub = $stashname;
+        $stashxsub =~ s/::/__/g;
+        if ( exists( $self->{'xsub'}->{$stashname} ) && $self->{'xsub'}->{$stashname} =~ m/^Dynamic-/ ) {
+            $boot .= "EXTERN_C void boot_$stashxsub(pTHX_ CV* cv);\n";
+        }
+
     }
     debug( cv => "\%B::C::xsub: " . join( " ", sort keys %{ $self->{'xsub'} } ) ) if verbose();
 
@@ -175,6 +182,7 @@ sub optimize {
     }
 
     $self->{'stash'} = {
+        'boot'       => $boot,
         'dl'         => $dl,
         'xs'         => $xs,
         'dl_modules' => \@dl_modules,
