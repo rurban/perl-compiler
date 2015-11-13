@@ -4659,7 +4659,7 @@ sub B::GV::save {
   if ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
-    if ($fullname eq 'POSIX::M_SQRT2') { # GH #335 avoid redefinition warning
+    if ($PERL522 and $fullname eq 'POSIX::M_SQRT2') { # GH #335 avoid redefinition warning
       $savefields &= ~Save_CV;
     }
     $gvsv = $gv->SV;
@@ -5833,7 +5833,7 @@ EOT
                         "  PUTBACK;",
                         "  XS_DynaLoader_dl_find_symbol(aTHX_ NULL);",
                         "  SPAGAIN;",
-                        "  xpvmg_list[%d].xiv_iv = POPi;",
+                sprintf("  xpvmg_list[%d].xiv_iv = POPi;", $mg->{ID}),
                         "  PUTBACK;",
                        );
           }
