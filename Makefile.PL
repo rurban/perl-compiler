@@ -46,6 +46,30 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
 #    }
 #}
 
+# probe for cperl and eventual perl5 support
+# for AvSTATIC, GvSTATIC, PERL_SUPPORT_STATIC_COP, ...
+# massive performance wins
+sub probe_core_h {
+    my ($probe, $header) = @_;
+    my $fname = File::Spec->catfile(main::headerpath(), $header);
+    my $fh;
+    open $fh, "<", $fname or return 0;
+    while (<$fh>) {
+        if (/^#define \Q$probe\E\b/) {
+            print "$probe found in $header\n";
+            close $fh; return 1;
+        }
+    }
+    close $fh;
+    return 0;
+}
+my $AvSTATIC = probe_core_h('AvSTATIC', 'av.h');
+my $GvSTATIC = probe_core_h('GvSTATIC', 'gv.h');
+my $CvSTATIC = probe_core_h('CvSTATIC', 'cv.h');
+my $HvSTATIC = probe_core_h('HvSTATIC', 'hv.h');
+# cop->op_static already exists, it was just never used.
+my $PERL_SUPPORT_STATIC_COP = probe_core_h('PERL_SUPPORT_STATIC_COP', 'op.h');
+
 sub b_c_deps {
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
     return `$X -Ilib -mB::C -mO -MB -e'B::C::collect_deps()'`;
@@ -74,6 +98,11 @@ sub write_b_c_flags {
     print PH "# -fav-init optimization\n";
     print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
     print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
+    print PH "\$AvSTATIC = $AvSTATIC;\n";
+    print PH "\$GvSTATIC = $GvSTATIC;\n";
+    print PH "\$CvSTATIC = $CvSTATIC;\n";
+    print PH "\$HvSTATIC = $HvSTATIC;\n";
+    print PH "\$PERL_SUPPORT_STATIC_COP = $PERL_SUPPORT_STATIC_COP;\n";
     print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
@@ -281,7 +310,7 @@ sub install_independent_comalloc {
     -d 'ptmalloc3'
       or _system('tar xfz ptmalloc3-current.tar.gz');
     chdir "ptmalloc3" or die;
-    if ($Config{useithreads}) { 
+    if ($Config{useithreads}) {
 	# linux-pthread is basically the same. linux-shared is also an option.
 	# just Solaris, SGI and HPUX need different options.
 	_system(qw(make posix));
