@@ -1077,6 +1077,7 @@ sub gv_fetchpvn {
 # get_cv() returns a CV*
 sub get_cv {
   my ($name, $flags) = @_;
+  $name = "" if $name eq "__ANON__";
   my ($cname, $cur, $utf8) = strlen_flags($name);
   warn 'undefined flags' unless defined $flags;
   if ($] >= 5.009002) {
@@ -4751,10 +4752,11 @@ sub B::GV::save {
          and ref($gvcv->GV->EGV) ne 'B::SPECIAL'
          and !skip_pkg($package) )
     {
-      my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
+      my $package  = $gvcv->GV->EGV->STASH->NAME;
+      my $oname    = $gvcv->GV->EGV->NAME;
+      my $origname = $package . "::" . $oname;
       my $cvsym;
-      if ( $gvcv->XSUB and $fullname ne $origname ) {    #XSUB CONSTSUB alias
-	my $package = $gvcv->GV->EGV->STASH->NAME;
+      if ( $gvcv->XSUB and $oname ne '__ANON__' and $fullname ne $origname ) {    #XSUB CONSTSUB alias
         warn "Boot $package, XS CONSTSUB alias of $fullname to $origname\n"
           if $debug{pkg};
         mark_package($package, 1);
@@ -4772,8 +4774,9 @@ sub B::GV::save {
           svref_2object( \&{"$dep\::bootstrap"} )->save;
         }
         # must save as a 'stub' so newXS() has a CV to populate
-        my $get_cv = get_cv($origname, "GV_ADD");
-	$init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
+        warn "save stub CvGV for $sym GP assignments $origname\n" if $debug{gv};
+        $init2->add(sprintf("GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));",
+                            $sym, get_cv($origname, "GV_ADD")));
       }
       elsif (!$PERL510 or $gp) {
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
@@ -4805,7 +4808,7 @@ sub B::GV::save {
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
             warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
-            my $get_cv = get_cv($origname, "GV_ADD");
+            my $get_cv = get_cv($oname ne "__ANON__" ? $origname : $fullname, "GV_ADD");
             $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
 	  }
 	  else {
@@ -5258,7 +5261,7 @@ sub B::HV::save {
     }
     if ($PERL518 and $hv->FLAGS & SVf_AMAGIC and length($name)) {
       # fix overload stringify
-      $init2->add( sprintf("mro_isa_changed_in(%s);", $sym));
+      $init2->add( sprintf("mro_isa_changed_in(%s);  /* %s */", $sym, $name));
     }
 
     # issue 79, test 46: save stashes to check for packages.
