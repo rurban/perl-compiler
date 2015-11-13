@@ -818,7 +818,8 @@ result[198]='23'
 # duplicate of 90
 tests[199]='"abc" =~ /(.)./; print @+; print "end\n"'
 result[199]='21end'
-tests[200]='%u=("\x{123}"=>"fo"); print "ok" if $u{"\x{123}"} eq "fo"'
+tests[200]='use Encode::Byte; use Encode::KR; print "ok\n"'
+tests[2000]='%u=("\x{123}"=>"fo"); print "ok" if $u{"\x{123}"} eq "fo"'
 tests[2001]='BEGIN{%u=("\x{123}"=>"fo");} print "ok" if $u{"\x{123}"} eq "fo";'
 tests[201]='use Storable;*Storable::CAN_FLOCK=sub{1};print qq{ok\n}'
 tests[2011]='sub can {require Config; import Config;return $Config{d_flock}}
