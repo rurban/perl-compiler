@@ -35,6 +35,13 @@ macro define PadnamePV(pn)		(pn)->xpadn_pv
 macro define PAD_COMPNAME_PV(po)	PadnamePV(PAD_COMPNAME(po))
 macro define PAD_COMPNAME_TYPE(po)	PadnameTYPE(PAD_COMPNAME(po))
 
+define sz
+  p sizeof sv_list[0]
+end
+document sz
+sizeof sv_list[0]
+end
+
 define odump
   p *$arg0
   #if my_perl
@@ -59,6 +66,19 @@ end
 document sdump
 sdump sv => p *sv; Perl_sv_dump(sv)
 see `help sv_dump`
+end
+
+define svi
+  p *$arg0
+  echo sv_list[
+  p $arg1 / sizeof sv_list[0]
+  echo ]
+  call Perl_sv_dump(sv_list[$arg1 / sizeof sv_list[0]])
+  call Perl_sv_dump($arg0)
+end
+document svi
+svi sv 80304 => i=80304/sizeof[sv_list[0]; p *sv; Perl_sv_dump(sv)
+see `help sdump`
 end
 
 #parse sigs
