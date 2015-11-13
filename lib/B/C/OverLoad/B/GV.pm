@@ -479,10 +479,11 @@ sub save {
             and ref( $gvcv->GV ) ne 'B::SPECIAL'
             and ref( $gvcv->GV->EGV ) ne 'B::SPECIAL'
             and !B::C::skip_pkg($package) ) {
-            my $origname = $gvcv->GV->EGV->STASH->NAME . "::" . $gvcv->GV->EGV->NAME;
+            my $package  = $gvcv->GV->EGV->STASH->NAME;
+            my $oname    = $gvcv->GV->EGV->NAME;
+            my $origname = $package . "::" . $oname;
             my $cvsym;
-            if ( $gvcv->XSUB and $fullname ne $origname ) {    #XSUB CONSTSUB alias
-                my $package = $gvcv->GV->EGV->STASH->NAME;
+            if ( $gvcv->XSUB and $oname ne '__ANON__' and $fullname ne $origname ) {    #XSUB CONSTSUB alias
 
                 debug( pkg => "Boot $package, XS CONSTSUB alias of $fullname to $origname" );
                 mark_package( $package, 1 );
@@ -502,9 +503,8 @@ sub save {
                 }
 
                 # must save as a 'stub' so newXS() has a CV to populate
-                my $get_cv = get_cv_string( $origname, 'GV_ADD' );
-                init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
-
+                debug( gv => "save stub CvGV for $sym GP assignments $origname" );
+                init2()->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));", $sym, get_cv_string( $origname, "GV_ADD" ) ) );
             }
             elsif ($gp) {
                 if ( $fullname eq 'Internals::V' ) {
@@ -537,7 +537,7 @@ sub save {
 
                         # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
                         debug( gv => "save stub CvGV for $sym GP assignments $origname (XS CV)" );
-                        my $get_cv = get_cv_string( $origname, 'GV_ADD' );
+                        my $get_cv = get_cv_string( $oname ne "__ANON__" ? $origname : $fullname, "GV_ADD" );
                         init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
                     }
                     else {

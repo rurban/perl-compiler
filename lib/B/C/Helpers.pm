@@ -48,10 +48,12 @@ sub read_utf8_string {
     return ( $is_utf8, $len );
 }
 
+# previously known as:
+# get_cv() returns a CV*
 sub get_cv_string {
     my ( $name, $flags ) = @_;
     warn 'undefined flags' unless defined $flags;
-
+    $name = "" if $name eq "__ANON__";
     my $cname = cstring($name);
 
     my ( $is_utf8, $length ) = read_utf8_string($name);

@@ -57,7 +57,7 @@ sub save {
 
         # fix overload stringify
         if ( $hv->FLAGS & SVf_AMAGIC and length($name) ) {
-            init2()->add( sprintf( "mro_isa_changed_in(%s);", $sym ) );
+            init2()->add( sprintf( "mro_isa_changed_in(%s);  /* %s */", $sym, $name ) );
         }
 
         # issue 79, test 46: save stashes to check for packages.
