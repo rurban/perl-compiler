@@ -377,6 +377,9 @@ sub save {
 
         # Don't save subfields of special GVs (*_, *1, *# and so on)
         debug( gv => "GV::save saving subfields $savefields" );
+        if ( $fullname eq 'POSIX::M_SQRT2' ) {                           # GH #335 avoid redefinition warning
+            $savefields &= ~Save_CV;
+        }
         $gvsv = $gv->SV;
         if ( $$gvsv && $savefields & Save_SV ) {
             debug( gv => "GV::save \$" . $sym . " $gvsv" );
