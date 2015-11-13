@@ -1451,11 +1451,13 @@ sub save_main_rest {
 
         # XXX now emit arch-specific dlsym code
         init2()->no_split;
-        init2()->add( "{", "  void *handle, *ptr;" );
+        init2()->add("{");
         if ( HAVE_DLFCN_DLOPEN() ) {
             init2()->add("  #include <dlfcn.h>");
+            init2()->add("  void *handle;");
         }
         else {
+            init2()->add("  void *handle;");
             init2()->add(
                 "  dTARG; dSP;",
                 "  targ=sv_newmortal();"
@@ -1466,10 +1468,7 @@ sub save_main_rest {
                 if ( HAVE_DLFCN_DLOPEN() ) {
                     my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
                     $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i;    # 351 (only on solaris and linux, not any bsd)
-                    init2()->add(
-                        sprintf( "  handle = dlopen(%s,", cstring( $init2_remap{$pkg}{FILE} ) ),
-                        "                  $ldopt);",
-                    );
+                    init2()->add( "", sprintf( "  handle = dlopen(%s, %s);", cstring( $init2_remap{$pkg}{FILE} ), $ldopt ) );
                 }
                 else {
                     init2()->add(
@@ -1485,7 +1484,7 @@ sub save_main_rest {
                 for my $mg ( @{ $init2_remap{$pkg}{MG} } ) {
                     verbose("init2 remap xpvmg_list[$mg->{ID}].xiv_iv to dlsym of $pkg\: $mg->{NAME}");
                     if ( HAVE_DLFCN_DLOPEN() ) {
-                        init2()->add( sprintf( "  ptr = dlsym(handle, %s);", cstring( $mg->{NAME} ) ) );
+                        init2()->add( sprintf( "  xpvmg_list[%d].xiv_iv = PTR2IV( dlsym(handle, %s) );", $mg->{ID}, cstring( $mg->{NAME} ) ) );
                     }
                     else {
                         init2()->add(
@@ -1495,11 +1494,10 @@ sub save_main_rest {
                             "  PUTBACK;",
                             "  XS_DynaLoader_dl_load_file(aTHX_ NULL);",
                             "  SPAGAIN;",
-                            "  ptr = INT2PTR(void*,POPi);",
+                            sprintf( "  xpvmg_list[%d].xiv_iv = POPi;", $mg->{ID} ),
                             "  PUTBACK;",
                         );
                     }
-                    init2()->add( sprintf( "  xpvmg_list[%d].xiv_iv = PTR2IV(ptr);", $mg->{ID} ) );
                 }
             }
         }
