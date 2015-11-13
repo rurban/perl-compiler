@@ -1189,7 +1189,7 @@ result[301]="W1W2"
 if [[ $v518 -gt 0 ]]; then
   tests[302]='use feature "say"; eval q{say "ok"}; print $@ if($@);'
   tests[304]='no warnings; use feature "lexical_subs"; my sub a; print qq/ok\n/'
-  tests[305]='use feature "refaliasing"; no warnings; my $gen = sub { sub () { 8 } }; my $sub = &$gen; print qq/ok\n/'
+  tests[305]='my $gen = sub { sub () { 8 } }; my $sub = &$gen; print qq/ok\n/'
 fi
 tests[3050]='use constant ASCII => eval { require Encode; Encode::find_encoding("ascii"); } || 0; print ASCII->encode("www.google.com")'
 result[3050]='www.google.com'
