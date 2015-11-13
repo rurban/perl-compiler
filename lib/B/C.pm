@@ -3836,7 +3836,7 @@ sub B::CV::save {
     # warn sprintf( "%s::%s\n", $cvstashname, $cvname) if $debug{sub};
     my $stsym = $stash->save;
     my $name  = cstring($cvname);
-    my $sv  = $cv->XSUBANY;
+    my $sv    = $cv->XSUBANY;
     if ($] >= 5.016) { # need to check 'Encode::XS' constant encodings
       # warn "$sv CONSTSUB $name";
       if ((ref($sv) eq 'B::IV' or ref($sv) eq 'B::PVMG') and $sv->FLAGS & SVf_ROK) {
@@ -4659,6 +4659,9 @@ sub B::GV::save {
   if ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
+    if ($fullname eq 'POSIX::M_SQRT2') { # GH #335 avoid redefinition warning
+      $savefields &= ~Save_CV;
+    }
     $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save \$".$sym." $gvsv\n" if $debug{gv};
