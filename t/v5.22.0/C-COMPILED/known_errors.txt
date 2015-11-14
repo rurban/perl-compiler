@@ -38,12 +38,11 @@ mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures are already reported. Waiting for other BC issues to clear before researching this one.
-op/anonconst.t               SIG       BC issue #246 - experimental const_attr feature
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/attrproto.t               TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/attrs.t                   TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
-op/caller.t                  PLAN      Plan was valid
+op/caller.t                  TESTS     Test results:
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/const-optree.t            PLAN      BC issue #305 - feature refaliasing
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
@@ -103,7 +102,6 @@ uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "e
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/variables.t              PLAN      BC issue #321 - REGEXP altered by invalid eval
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
-xtestc/0095.t                TESTS     Output is: ""
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
 xtestc/0169.t                TESTS     Output is: "42\n"
@@ -123,7 +121,6 @@ xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
 xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6177: Perl sv ..."
-xtestc/0246.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0252.t                TESTS     Output is: ""
@@ -142,24 +139,21 @@ xtestc/0295.t                TESTS     Output is: ""
 xtestc/0300.t                TESTS     Output is: "IO::File "
 xtestc/0302.t                TESTS     Output is: "String found where operator ..."
 xtestc/0304.t                TESTS     Output is: "0304.bin: pp.c:177: Perl pp ..."
-xtestc/0305.t                TESTS     Output is: ""
 xtestc/0309.t                TESTS     Output is: ""
 xtestc/0317.t                TESTS     Output is: ""
 xtestc/0319.t                TESTS     Output is: "Wide character in print at ..."
 xtestc/0321.t                TESTS     Output is: ""
 xtestc/0329.t                TESTS     Output is: "axxxx \n"
-xtestc/0340.t                TESTS     Output is: "die at new at xtestc 0340.pl ..."
 xtestc/0350.t                TESTS     Output is: ""
 xtestc/0369.t                TESTS     Output is: ""
 xtestc/0371.t                TESTS     Output is: ""
-xtestc/0373.t                GCC       xtestc/0373.bin is compiled and ready to run.
 xtestc/0374.t                BC        xtestc/0374.c is generated (-O3,-fno-fold)
 xtestc/2052.t                TESTS     Output is: ""
+xtestc/2381.t                TESTS     Output is: "Undefined subroutine ..."
 xtestc/2511.t                TESTS     Output is: ""
 xtestc/2540.t                TESTS     Output is: ""
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
-xtestc/3170.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
 xtestc/3200.t                TESTS     Output is: ""

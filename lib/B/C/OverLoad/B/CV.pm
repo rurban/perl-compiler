@@ -27,10 +27,14 @@ sub is_lexsub {
     return ( ( !$gv or ref($gv) eq 'B::SPECIAL' ) and $cv->can('NAME_HEK') ) ? 1 : 0;
 }
 
+sub is_phase_name {
+    $_[0] =~ /^(BEGIN|INIT|UNITCHECK|CHECK|END)$/ ? 1 : 0;
+}
+
 sub Dummy_initxs { }
 
 sub save {
-    my ($cv) = @_;
+    my ( $cv, $origname ) = @_;
     my $sym = objsym($cv);
     if ( defined($sym) ) {
         debug( cv => "CV 0x%x already saved as $sym\n", $$cv ) if $$cv;
@@ -45,6 +49,28 @@ sub save {
         $cvname      = $gv->NAME;
         $isutf8      = ( $gv->FLAGS & SVf_UTF8 ) || ( $gv->STASH->FLAGS & SVf_UTF8 );
         $fullname    = $cvstashname . '::' . $cvname;
+
+        # XXX gv->EGV does not really help here
+        if ( $cvname eq '__ANON__' ) {
+            if ($origname) {
+                debug( cv => "CV with empty PVGV %s -> %s", $fullname, $origname );
+                $cvname = $fullname = $origname;
+                $cvname =~ s/^\Q$cvstashname\E::(.*)( :pad\[.*)?$/$1/ if $cvstashname;
+                $cvname =~ s/^.*:://;
+                if ( $cvname =~ m/ :pad\[.*$/ ) {
+                    $cvname =~ s/ :pad\[.*$//;
+                    $cvname = '__ANON__' if is_phase_name($cvname);
+                    $fullname = $cvstashname . '::' . $cvname;
+                }
+                debug( cv => "empty -> %s", $cvname );
+            }
+            else {
+                $cvname = $gv->EGV->NAME;
+                debug( cv => "CV with empty PVGV %s -> %s::%s", $fullname, $cvstashname, $cvname );
+                $fullname = $cvstashname . '::' . $cvname;
+            }
+        }
+
         debug(
             cv => "CV 0x%x as PVGV 0x%x %s CvFLAGS=0x%x\n",
             $$cv, $$gv, $fullname, $CvFLAGS
@@ -60,7 +86,7 @@ sub save {
         $fullname = $cv->NAME_HEK;
         $fullname = '' unless defined $fullname;
         $isutf8   = $cv->FLAGS & SVf_UTF8;
-        debug( cv => "CV NAME_HEK $fullname" );
+        debug( cv => "CV lexsub NAME_HEK $fullname" );
         if ( $fullname =~ /^(.*)::(.*?)$/ ) {
             $cvstashname = $1;
             $cvname      = $2;
@@ -167,14 +193,20 @@ sub save {
         return svref_2object( \&Dummy_initxs )->save;
     }
 
-    if ( $isconst and !( $CvFLAGS & CVf_ANON ) and ref($gv) ne 'B::SPECIAL' ) {    # XXX how is ANON with CONST handled? CONST uses XSUBANY
+    if (
+        $isconst
+        and !is_phase_name($cvname)
+
+        # TODO: check if patch from e11e3a2 for B::SPECIAL is still required
+        #    and ref($gv) ne 'B::SPECIAL'
+      ) {    # skip const magic blocks (Attribute::Handlers)
         my $stash = $gv->STASH;
-        debug( cv => sprintf( "CV CONST 0x%x %s::%s\n", $$gv, $cvstashname, $cvname ) );
+        my $sv    = $cv->XSUBANY;
+        debug( cv => "CV CONST 0x%x %s::%s -> 0x%x as %s\n", $$gv, $cvstashname, $cvname, $sv, ref $sv );
 
         # debug( sub => "%s::%s\n", $cvstashname, $cvname);
         my $stsym = $stash->save;
         my $name  = cstring($cvname);
-        my $sv    = $cv->XSUBANY;
 
         # need to check 'Encode::XS' constant encodings
         # warn "$sv CONSTSUB $name";
@@ -187,13 +219,26 @@ sub save {
             }
         }
 
-        my $vsym = $sv->save;
-        my $cvi  = "cv" . $cv_index;
-        decl()->add("Static CV* $cvi;");
-        init()->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
-        my $sym = savesym( $cv, $cvi );
-        $cv_index++;
-        return $sym;
+        if ( ref $sv eq 'SCALAR' ) {    # TODO Attribute::Handlers #171, test 176
+                                        # Save XSUBANY, maybe ARRAY or HASH also?
+            debug( cv => "SCALAR const sub $cvstashname::$cvname -> $sv" );
+            my $vsym = svref_2object( \$sv )->save;
+            my $cvi  = "cv" . $cv_index++;
+            decl()->add("Static CV* $cvi;");
+            init()->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+            return savesym( $cv, $cvi );
+        }
+        elsif ( $sv and ref($sv) =~ /^B::[NRPI]/ ) {
+            my $vsym = $sv->save;
+            my $cvi  = "cv" . $cv_index++;
+            decl()->add("Static CV* $cvi;");
+            init()->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
+            return savesym( $cv, $cvi );
+        }
+        else {
+            verbose("Warning: Undefined const sub $cvstashname::$cvname -> $sv");
+        }
+
     }
 
     # This define is forwarded to the real sv below

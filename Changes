@@ -16,6 +16,7 @@
         Removed B::Section which used base. (toddr)
         Re-add PL_sv_objcount on cperl
         Fixed XSUB CONSTSUB alias (44,45,... PR #228) (atoomic)
+          and anonymous CVs for 5.22 (#246, #305)
         Proper utf8 support for gv_fetchpv, gv_stashpv and cv_get,
           cache gv_stashpv calls.
         Fix 5.22 for empty hash keys, share_hek("") (272, GH#249)
