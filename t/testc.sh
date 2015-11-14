@@ -15,6 +15,8 @@ function help {
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -a                 all. undo -Du. Unsilence scanning unused sub"
   echo " -A                 -DALLOW_PERL_OPTIONS"
+  echo " -L                 make CORE test symlinks and exit"
+  echo " -X<num>            view the test"
   echo " -q                 quiet"
   echo " -h                 help"
   echo "Without arguments try all $ntests tests. Without Option -Ox try -O0 to -O3 optimizations."
@@ -27,8 +29,8 @@ PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v510=`$PERL -e'print (($] < 5.010)?0:1)'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
-PERLV=$(perl -e 'print $^V')
-XTESTC="t/$PERLV/C-COMPILED/xtestc"
+PERLV=v5.`$PERL -e'print substr($],3,2)'`
+XTESTC="t/C-COMPILED/xtestc"
 
 function init {
 BASE=`basename $0`
@@ -121,18 +123,18 @@ function emit_test {
     echo -E "$CONTENT"
     echo
     if [ "x${result[$n]}" = "x" ]; then result[$n]='ok'; fi
-    echo -E -n "### RESULT:${result[$n]}"
+    echo -E "### RESULT:${result[$n]}"
   fi
 }
 
 function make_t_symlink {
-  [ -d "$XTESTC" ] || mkdir -p $XTESTC
   n=$1
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     FILE_NUM=$(printf "%04d" $n)
-    FILE="$XTESTC/${FILE_NUM}.t"
-    ln -s  ../testc.pl $FILE
+    FILE="$XTESTC--${FILE_NUM}.t"
+    unlink $FILE
+    ln -s testc.pl $FILE
   fi
 }
 

@@ -27,6 +27,11 @@ if ( $file_to_test =~ s{==(.*)\.t$}{.t} ) {
 
 $file_to_test =~ s{--}{/}g;
 $file_to_test =~ s{C-COMPILED/}{};    # Strip the BINARY dir off to look for this test elsewhere.
+if ($file_to_test =~ m{^t/xtestc/} and !-f $file_to_test) {
+  mkdir 't/xtestc';
+  my ($num) = $file_to_test =~ m{xtestc/(\d+).t};
+  `t/testc.sh -X $num >  $file_to_test`;
+}
 
 if ( $] < 5.014 && $file_to_test =~ m{^t/CORE/} ) {
     plan skip_all => "Perl CORE tests only supported since 5.14 right now.";
