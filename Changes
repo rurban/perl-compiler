@@ -5,7 +5,7 @@
 
 
 1.53 2015-12-05 rurban
-        added 5.22 support and some cperl optimizations
+        added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues
 
         * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
         Add ops for padl, padn, padnl, unop_aux and methop needed for 5.22
@@ -33,6 +33,8 @@
           support optimized cperl PERL_SUPPORT_STATIC_COP (cperl #70)
         Fixed overload stringify broken since 5.18 (GH #219)
           by adding a mro_isa_changed_in() to the overloaded stash.
+        Support multiple stash ENAMES, needed since 5.14 (GH #331)
+          This fixed many old 5.14 limitations.
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
 

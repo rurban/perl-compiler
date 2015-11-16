@@ -5311,7 +5311,7 @@ sub B::HV::save {
     if (@enames > 1) {
       warn "Saving for $name multiple enames: ", join(" ",@enames), "\n" if $debug{hv};
       my $name_count = $hv->name_count || scalar @enames;
-      # if the stash name is empty xhv_name_count is negative
+      # if the stash name is empty xhv_name_count is negative. TODO
       $init->no_split;
       my $hv_max = $hv->MAX + 1;
       $init->add( "if (!SvOOK($sym)) {", # hv_auxinit is not exported
@@ -5325,17 +5325,16 @@ sub B::HV::save {
                   "}",
                   "{",
                   "  struct xpvhv_aux *aux = HvAUX($sym);",
-                  "  HEK **name; int i;",
          sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", abs($name_count)),
-         sprintf( "  aux->xhv_name_count = %d;", $name_count),
-                  "  name = aux->xhv_name_u.xhvnameu_names;",
-         sprintf( "  for (i=0; i<%d; i++) {",  abs($name_count)));
+         sprintf( "  aux->xhv_name_count = %d;", $name_count));
+      my $i = 0;
       while (@enames) {
         my ($cstring, $cur, $utf8) = strlen_flags(shift @enames);
-        $init->add(sprintf( "    name[i] = my_share_hek(%s, %d, 0);", $cstring, $utf8 ? -$cur : $cur));
+        $init->add(
+         sprintf( "  aux->xhv_name_u.xhvnameu_names[%u] = share_hek(%s, %d, 0);",
+                  $i++, $cstring, $utf8 ? -$cur : $cur));
       }
-      $init->add( "  }",
-                  "}" );
+      $init->add( "}" );
       $init->split;
     }
 
