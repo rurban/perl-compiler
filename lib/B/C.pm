@@ -5305,10 +5305,39 @@ sub B::HV::save {
       # fix overload stringify
       $init2->add( sprintf("mro_isa_changed_in(%s);  /* %s */", $sym, $name));
     }
-    # TODO: aliases if namecount > 1 (GH #331)
-    # There is no B API for the count or multiple enames
-    #if (HvAUX(sv)->xhv_name_count) {
-    #}
+    # Add aliases if namecount > 1 (GH #331)
+    # There was no B API for the count or multiple enames, so I added one.
+    my @enames = ($PERL514 ? $hv->ENAMES : ());
+    if (@enames > 1) {
+      warn "Saving for $name multiple enames: ", join(" ",@enames), "\n" if $debug{hv};
+      my $name_count = $hv->name_count || scalar @enames;
+      # if the stash name is empty xhv_name_count is negative
+      $init->no_split;
+      my $hv_max = $hv->MAX + 1;
+      $init->add( "if (!SvOOK($sym)) {", # hv_auxinit is not exported
+                  "  HE **a;",
+                  "#ifdef PERL_USE_LARGE_HV_ALLOC",
+         sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max),
+                  "#else",
+         sprintf( "  Newxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max),
+                  "#endif",
+                  "  SvOOK_on($sym);",
+                  "}",
+                  "{",
+                  "  struct xpvhv_aux *aux = HvAUX($sym);",
+                  "  HEK **name; int i;",
+         sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", abs($name_count)),
+         sprintf( "  aux->xhv_name_count = %d;", $name_count),
+                  "  name = aux->xhv_name_u.xhvnameu_names;",
+         sprintf( "  for (i=0; i<%d; i++) {",  abs($name_count)));
+      while (@enames) {
+        my ($cstring, $cur, $utf8) = strlen_flags(shift @enames);
+        $init->add(sprintf( "    name[i] = my_share_hek(%s, %d, 0);", $cstring, $utf8 ? -$cur : $cur));
+      }
+      $init->add( "  }",
+                  "}" );
+      $init->split;
+    }
 
     # issue 79, test 46: save stashes to check for packages.
     # and via B::STASHGV we only save stashes for stashes.

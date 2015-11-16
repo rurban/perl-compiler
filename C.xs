@@ -249,7 +249,7 @@ MODULE = B      PACKAGE = B::HV
 
 # returns a single or multiple ENAME(s), since 5.14
 void
-ENAME(hv)
+ENAMES(hv)
     B::HV hv
 PPCODE:
     if (SvOOK(hv)) {
@@ -276,6 +276,15 @@ PPCODE:
       }
     }
     XSRETURN_UNDEF;
+
+IV
+name_count(hv)
+    B::HV hv
+PPCODE:
+    if (SvOOK(hv))
+      ST(0) = sv_2mortal(newSViv(HvAUX(hv)->xhv_name_count));
+    else 
+      ST(0) = sv_2mortal(newSViv(0));
 
 #endif
 
