@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_19';
+our $VERSION = '1.52_20';
 our %debug;
 our $check;
 our %Config;
@@ -5305,6 +5305,10 @@ sub B::HV::save {
       # fix overload stringify
       $init2->add( sprintf("mro_isa_changed_in(%s);  /* %s */", $sym, $name));
     }
+    # TODO: aliases if namecount > 1 (GH #331)
+    # There is no B API for the count or multiple enames
+    #if (HvAUX(sv)->xhv_name_count) {
+    #}
 
     # issue 79, test 46: save stashes to check for packages.
     # and via B::STASHGV we only save stashes for stashes.
