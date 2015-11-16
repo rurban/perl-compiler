@@ -1285,8 +1285,7 @@ $_ = q{aaa}; my @res; pos = 1; s/\Ga(?{push @res, $_, $`})/xx/g; print "ok\n" if
 result[329]='ok
 axxxx aaa a aaa aa'
 tests[330]='"\x{101}a" =~ qr/\x{100}/i && print "ok\n"'
-tests[331]='#TODO 5.6-5.22
-package Count;sub getline { print "ok\n" };BEGIN { *The::Count:: = \*Count::; };The::Count->getline();'
+tests[331]='package Count;sub getline {print "ok\n"};BEGIN { *The::Count:: = \*Count::; };exists &The::Count::getline ? The::Count->getline() : do {eval "require Devel::Peek;"; Dump(\%The::Count::)}'
 tests[3310]='use 5.010; use charnames ":full"; my $char = q/\N{LATIN CAPITAL LETTER A WITH MACRON}/; my $a = eval qq ["$char"]; print length($a) == 1 ? "ok\n" : "$a\n".length($a)."\n"'
 tests[332]='#TODO re-eval no_modify, probably WONTFIX
 use re "eval"; our ( $x, $y, $z ) = 1..3; $x =~ qr/$x(?{ $y = $z++ })/; undef $@; print "ok\n"'

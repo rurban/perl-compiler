@@ -56,14 +56,14 @@ op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/method.t                  PLAN      BC issue #331 - method call when stash pointers setup.
+op/method.t                  BC        op/method.c is generated (-O3,-fno-fold)
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
-op/reset.t                   TESTS     BC issue #252: reset
+op/reset.t                   PLAN      Plan was valid
 op/signatures.t              TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
