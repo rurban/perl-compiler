@@ -275,7 +275,7 @@ CODE1
         elsif ( $type eq 'c' ) {
             init()->add(
                 sprintf(
-                    "/* AMT overload table for the stash %s 0x%x is generated dynamically */",
+                    "/* AMT overload table for the stash %s s\\_%x is generated dynamically */",
                     $fullname, $$sv
                 )
             );

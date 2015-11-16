@@ -65,11 +65,14 @@ sub save {
         my @enames = $hv->ENAMES;
         if ( @enames > 1 ) {
             debug( hv => "Saving for $name multiple enames: ", join( " ", @enames ) );
-            my $name_count = $hv->name_count || scalar @enames;
+            my $name_count = $hv->name_count;
 
-            # if the stash name is empty xhv_name_count is negative. TODO
+            # If the stash name is empty xhv_name_count is negative, and names[0] should
+            # be already set. but we rather write it.
             init()->no_split;
             my $hv_max = $hv->MAX + 1;
+
+            # unshift @enames, $name if $name_count < 0; # stashpv has already set names[0]
             init()->add(
                 "if (!SvOOK($sym)) {",    # hv_auxinit is not exported
                 "  HE **a;",
@@ -82,7 +85,7 @@ sub save {
                 "}",
                 "{",
                 "  struct xpvhv_aux *aux = HvAUX($sym);",
-                sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", abs($name_count) ),
+                sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", scalar $name_count ),
                 sprintf( "  aux->xhv_name_count = %d;",                       $name_count )
             );
             my $i = 0;
