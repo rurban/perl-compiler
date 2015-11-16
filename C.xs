@@ -156,6 +156,34 @@ MODULE = B__MAGIC	PACKAGE = B::MAGIC
 
 MODULE = B      PACKAGE = B::HV
 
+# returns a single or multiple ENAME(s), since 5.14
+void
+ENAME(hv)
+    B::HV hv
+PPCODE:
+    if (SvOOK(hv)) {
+      if (HvENAME_HEK(hv)) {
+        const I32 count = HvAUX(hv)->xhv_name_count;
+        if (count) {
+          HEK** names = HvAUX(hv)->xhv_name_u.xhvnameu_names;
+          HEK *const *hekp = names + (count < 0 ? 1 : 0);
+          HEK *const *const endp = names + (count < 0 ? -count : count);
+          while (hekp < endp) {
+            assert(*hekp);
+            mPUSHs(newSVpvn_flags(HEK_KEY(*hekp), HEK_LEN(*hekp), HEK_UTF8(*hekp)));
+            ++hekp;
+          }
+          XSRETURN(count < 0 ? -count : count);
+        }
+        else {
+          HEK *const hek = HvENAME_HEK_NN(hv);
+          mPUSHs(newSVpvn_flags(HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek)));
+          XSRETURN(1);
+        }
+      }
+    }
+    XSRETURN_UNDEF;
+
 SV*
 SvSTASH_not(hv)
           B::HV hv
