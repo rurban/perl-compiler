@@ -277,14 +277,14 @@ PPCODE:
     }
     XSRETURN_UNDEF;
 
-IV
+I32
 name_count(hv)
     B::HV hv
 PPCODE:
     if (SvOOK(hv))
-      ST(0) = sv_2mortal(newSViv(HvAUX(hv)->xhv_name_count));
+      PUSHi(HvAUX(hv)->xhv_name_count);
     else 
-      ST(0) = sv_2mortal(newSViv(0));
+      PUSHi(0);
 
 #endif
 

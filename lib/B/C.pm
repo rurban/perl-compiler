@@ -3456,7 +3456,7 @@ CODE2
     }
     elsif ( $type eq 'c' ) { # and !$PERL518
       $init->add(sprintf(
-          "/* AMT overload table for the stash %s 0x%x is generated dynamically */",
+          "/* AMT overload table for the stash %s s\\_%x is generated dynamically */",
           $fullname, $$sv ));
     }
     elsif ( $type eq ':' ) { # symtab magic
@@ -5310,14 +5310,17 @@ sub B::HV::save {
     my @enames = ($PERL514 ? $hv->ENAMES : ());
     if (@enames > 1) {
       warn "Saving for $name multiple enames: ", join(" ",@enames), "\n" if $debug{hv};
-      my $name_count = $hv->name_count || scalar @enames;
-      # if the stash name is empty xhv_name_count is negative. TODO
+      my $name_count = $hv->name_count;
+      # If the stash name is empty xhv_name_count is negative, and names[0] should
+      # be already set. but we rather write it.
       $init->no_split;
       my $hv_max = $hv->MAX + 1;
+      # unshift @enames, $name if $name_count < 0; # stashpv has already set names[0]
       $init->add( "if (!SvOOK($sym)) {", # hv_auxinit is not exported
                   "  HE **a;",
                   "#ifdef PERL_USE_LARGE_HV_ALLOC",
-         sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max),
+         sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
+                  $hv_max),
                   "#else",
          sprintf( "  Newxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max),
                   "#endif",
@@ -5325,7 +5328,7 @@ sub B::HV::save {
                   "}",
                   "{",
                   "  struct xpvhv_aux *aux = HvAUX($sym);",
-         sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", abs($name_count)),
+         sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", scalar @enames),
          sprintf( "  aux->xhv_name_count = %d;", $name_count));
       my $i = 0;
       while (@enames) {
