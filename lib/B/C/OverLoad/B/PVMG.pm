@@ -116,6 +116,9 @@ sub save_magic {
     elsif ( ref($sv) eq 'B::HV' and $fullname =~ /(version|File)::$/ ) {
         debug( mg => "skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS );
     }
+    elsif ( ref($sv) eq 'B::HV' and $fullname =~ m/^%Cpanel::Class::Meta::Method::$/ ) {
+        debug( mg => "skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS );
+    }
     else {
         my $pkgsym;
         $pkg = $sv->SvSTASH;
