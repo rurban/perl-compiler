@@ -261,14 +261,16 @@ PPCODE:
           HEK *const *const endp = names + (count < 0 ? -count : count);
           while (hekp < endp) {
             assert(*hekp);
-            mPUSHs(newSVpvn_flags(HEK_KEY(*hekp), HEK_LEN(*hekp), HEK_UTF8(*hekp)));
+            PUSHs(newSVpvn_flags(HEK_KEY(*hekp), HEK_LEN(*hekp),
+                                 HEK_UTF8(*hekp) ? SVf_UTF8|SVs_TEMP : SVs_TEMP));
             ++hekp;
           }
           XSRETURN(count < 0 ? -count : count);
         }
         else {
           HEK *const hek = HvENAME_HEK_NN(hv);
-          mPUSHs(newSVpvn_flags(HEK_KEY(hek), HEK_LEN(hek), HEK_UTF8(hek)));
+          ST(0) = newSVpvn_flags(HEK_KEY(hek), HEK_LEN(hek),
+                                 HEK_UTF8(hek) ? SVf_UTF8|SVs_TEMP : SVs_TEMP);
           XSRETURN(1);
         }
       }
