@@ -443,6 +443,7 @@ t/C-COMPILED/CORE--re--subst.t
 t/C-COMPILED/CORE--re--subst_amp.t
 t/C-COMPILED/CORE--re--substr.t
 t/C-COMPILED/template.pl
+t/C-COMPILED/testc.pl
 t/CORE/CaseFolding.txt
 t/CORE/Cname.pm
 t/CORE/TEST
