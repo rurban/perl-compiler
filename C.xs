@@ -221,15 +221,8 @@ MODULE = B	PACKAGE = B::PMOP
 
 SV*
 precomp(o)
-          B::OP o
-PPCODE:
-  {
-    if (SvROK(ST(0))) {
-      IV tmp = SvIV((SV*)SvRV(ST(0)));
-      o = INT2PTR(B__OP,tmp);
-    }
-    else
-      croak("precomp(o) argument is not a reference");
+      B::OP o
+  PPCODE:
     if (o) {
       REGEXP *rx = PM_GETRE(cPMOPo);
       if (!rx)
@@ -239,7 +232,6 @@ PPCODE:
     } else {
       XSRETURN_UNDEF;
     }
-  }
 
 #endif
 
@@ -291,30 +283,17 @@ PPCODE:
 #if PERL_VERSION > 17
 
 SV*
-SvSTASH_not(hv)
-          B::HV hv
-PPCODE:
+SvSTASH(hv)
+    B::HV hv
+  PPCODE:
     HV* stash = SvSTASH(MUTABLE_SV(hv)); /* [perl #126410] */
-    ST(0) = (char*)stash < (char*)PL_sv_arenaroot
-             ? &PL_sv_undef : make_sv_object(aTHX_ MUTABLE_SV(stash));
-    XSRETURN(1);
+    if ((char*)stash < (char*)PL_sv_arenaroot) {
+      XSRETURN_UNDEF;
+    } else {
+      ST(0) = make_sv_object(aTHX_ MUTABLE_SV(stash));
+      XSRETURN(1);
+    }
 
-#endif
-
-MODULE = B	PACKAGE = B::UNOP_AUX
-
-#if PERL_VERSION > 21
-
-SV*
-aux(o)
-          B::OP o
-CODE:
-    UNOP_AUX_item *items = cUNOP_AUXo->op_aux;
-    UV len = items[-1].uv;
-    RETVAL = newSVpvn_flags((char*)&items[-1], (1+len) * sizeof(UNOP_AUX_item), 0);
-OUTPUT:
-    RETVAL
-          
 #endif
 
 #if PERL_VERSION > 21
@@ -375,7 +354,7 @@ COP_stashflags(o)
 SV*
 COP_label(o)
     B::OP  o
-PPCODE:
+  PPCODE:
     {
       STRLEN len;
       U32 flags;
@@ -396,7 +375,7 @@ PROTOTYPES: DISABLE
 U32
 _autovivification(cop)
 	B::COP	cop
-CODE:
+  CODE:
     {
       SV *hint;
       IV h;
