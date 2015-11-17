@@ -383,6 +383,8 @@ testbc :: pure_all
 	PERL_DL_NONLAZY=1 $(FULLPERLRUN) -Iblib/arch -Iblib/lib t/bytecode.t
 testfast :: pure_all
 	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10 -f
+testfast-log :: pure_all
+	NO_AUTHOR=1 $(FULLPERLRUN) -S prove -b -j10 -f  | tee log.test-).$].q(-`git describe --tags`
 testcritical :: pure_all
 	t/critical.sh
 teststatus :: pure_all
