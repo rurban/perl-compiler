@@ -355,6 +355,8 @@ testcc :: pure_all
 testbc :: pure_all
 testfast :: pure_all
 	NO_AUTHOR=1 \$(FULLPERLRUN) -S prove -b -j10 -f
+testfast-log :: pure_all
+	NO_AUTHOR=1 \$(FULLPERLRUN) -S prove -b -j10 -f  | tee log.test-$]-`git describe --tags`
 testcritical :: pure_all
 	t/critical.sh
 teststatus :: pure_all
