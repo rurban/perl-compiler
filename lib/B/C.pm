@@ -3310,7 +3310,7 @@ sub B::PVMG::save_magic {
   $pkg = $sv->SvSTASH;
   if ($pkg and ref($pkg) ne 'B::SPECIAL') {
     my $pkgsym;
-    my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY";
+    my $pkgname =  $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK;
     warn sprintf("stash isa class(\"%s\") %s\n", $pkgname, ref $pkg)
       if $debug{mg} or $debug{gv};
     # 361 do not force dynaloading IO via IO::Handle upon us
@@ -3323,7 +3323,10 @@ sub B::PVMG::save_magic {
           $pkgsym = savestashpv($pkgname);
         }
       } else {
-        $pkgsym = $sv_flags & SVs_OBJECT ? savestashpv("") : 'NULL';
+        if (!$pkgname and $fullname =~ /^(.*)::/) {
+          $pkgname = $1;
+        }
+        $pkgsym = $sv_flags & SVs_OBJECT ? savestashpv($pkgname) : 'NULL';
       }
 
       warn sprintf( "xmg_stash = \"%s\" (%s)\n", $pkgname, $pkgsym )
@@ -3332,22 +3335,31 @@ sub B::PVMG::save_magic {
       # A: We only need to init it when we need a CV
       # defer for XS loaded stashes with AMT magic
       if ($pkgsym ne 'NULL') {
-        $init->add( sprintf( "SvSTASH_set(s\\_%x, %s);", $$sv, $pkgsym ) );
+        $init->add( sprintf( "SvSTASH_set(s\\_%x, %s);  /* $pkgname - SvSTASH */", $$sv, $pkgsym ) );
         $init->add( sprintf( "SvREFCNT((SV*)%s) += 1;", $pkgsym ) );
-        $init->add("++PL_sv_objcount;") if $sv_flags & SVs_OBJECT and ref($sv) ne "B::IO";
+        no strict 'refs';
+        $init->add("++PL_sv_objcount;") if $sv_flags & SVs_OBJECT
+          and ref($sv) ne "B::IO" and exists $pkgname::{DESTROY};
       }
     }
   } elsif ($sv_flags & SVs_OBJECT) {
-    warn sprintf( "force empty SvSTASH for %s %s (%s) OBJECT\n",
-                  class($sv), $fullname, objsym($sv) )
-      if $debug{mg};
-    my $pkgname = $pkg ? $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK."::DESTROY" : "";
+    my $pkgname = $pkg ? $pkg->can('NAME') ? $pkg->NAME : $pkg->NAME_HEK : "";
+    if (!$pkgname and $fullname =~ /^(.*)::/) {
+      $pkgname = $1;
+      warn sprintf( "set SvSTASH(%s) for %s %s (%s) OBJECT\n",
+                  $pkgname, class($sv), $fullname, objsym($sv) )
+        if $debug{mg};
+    } else {
+      warn sprintf( "force empty SvSTASH for %s %s (%s) OBJECT\n",
+                    class($sv), $fullname, objsym($sv) )
+        if $debug{mg};
+    }
     my $pkgsym = savestashpv($pkgname);
-    $init->add( sprintf( "SvSTASH_set(s\\_%x, %s);", $$sv, $pkgsym ) );
-  } else {
-    warn sprintf( "skip empty SvSTASH for %s %s (%s)\n",
-                  class($sv), $fullname, objsym($sv) )
-      if $debug{mg};
+    $init->add( sprintf( "SvSTASH_set(s\\_%x, %s);  /* $pkgname - OBJECT */", $$sv, $pkgsym ) );
+  #} else {
+  #  warn sprintf( "skip empty SvSTASH for %s %s (%s)\n",
+  #                class($sv), $fullname, objsym($sv) )
+  #    if $debug{mg} and !(class($sv) eq 'AV' and $fullname =~ / :pad/);
   }
   $init->add(sprintf("SvREADONLY_off((SV*)s\\_%x);", $$sv))
     if $sv_flags & SVf_READONLY and ref($sv) ne 'B::HV';
@@ -4376,7 +4388,7 @@ sub B::CV::save {
     # $init->add("/* saving STASH $fullname */\n" if $debug{cv};
     $stash->save($fullname);
     # $sym fixed test 27
-    $init->add( sprintf( "CvSTASH_set((CV*)%s, s\\_%x);", $sym, $$stash ) );
+    $init->add( sprintf( "CvSTASH_set((CV*)%s, s\\_%x); /* $fullname */", $sym, $$stash ) );
     # 5.18 bless does not inc sv_objcount anymore. broken by ddf23d4a1ae (#208)
     # We workaround this 5.18 de-optimization by adding it if at least a DESTROY
     # method exists.
@@ -5702,7 +5714,7 @@ sub B::IO::save {
         my $stsym = $stash->save("%".$stash->NAME);
         $init->add(
               sprintf( "SvREFCNT(%s) += 1;", $stsym ),
-              sprintf( "SvSTASH_set(%s, %s);", $sym, $stsym )
+              sprintf( "SvSTASH_set(%s, %s); /* %s - IO */", $sym, $stsym, $stash->NAME )
         );
         warn sprintf( "done saving STASH %s %s for IO %s\n", $stash->NAME, $stsym, $sym )
           if $debug{gv};
