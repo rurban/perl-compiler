@@ -55,9 +55,8 @@ cleanup;
 SKIP: {
   #skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
  TODO: {
-    # fails 5.8 and darwin, msvc also
+    # fails 5.8 and sometimes on darwin, msvc also
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
-    local $TODO = '--staticxs with 5.22' if $] > 5.021006;
     is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
     ok(-e $a_exe, "keep default executable"); #14
   }
@@ -67,7 +66,6 @@ SKIP: {
 
  TODO: {
     local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
-    local $TODO = '--staticxs with 5.22' if $] > 5.021006;
     is(`$perlcc --staticxs -S -o pcc -r -e $e  $devnull`, "ok",
        "-S -o -r --staticxs xs"); #17
     ok(-e $a, "keep executable"); #18
@@ -175,7 +173,7 @@ TODO: {
        "-v5 turns on -Wb=-v"); #58
   like(`$perlcc -v5 -B $f $redir`, '/-PV-/m',
        "-B -v5 turns on -Wb=-v"); #59
-  like(`$perlcc -v6 $f $redir`, '/saving magic for AV/m',
+  like(`$perlcc -v6 $f $redir`, '/saving( stash and)? magic for AV/m',
        "-v6 turns on -Dfull"); #60
   like(`$perlcc -v6 -B $f $redir`, '/nextstate/m',
        "-B -v6 turns on -DM,-DG,-DA"); #61
