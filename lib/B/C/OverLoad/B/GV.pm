@@ -155,9 +155,15 @@ sub save {
         $filter = Save_CV;
     }
 
-    # # no need to assign any SV/AV/HV to them (172)
+    # no need to assign any SV/AV/HV to them (172)
     if ( $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/ ) {
         $filter = Save_SV + Save_AV + Save_HV;
+    }
+
+    # skip static %Encode::Encoding since 5.20. GH #200.
+    # Let it be initialized by boot_Encode/Encode_XSEncoding
+    if ( $fullname eq 'Encode::Encoding' ) {
+        $filter = Save_HV;
     }
 
     my $is_empty = $gv->is_empty;
