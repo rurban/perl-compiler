@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_20';
+our $VERSION = '1.52_21';
 our %debug;
 our $check;
 our %Config;
@@ -4482,9 +4482,10 @@ sub B::GV::save {
   }
   # skip static %Encode::Encoding since 5.20. GH #200.
   # Let it be initialized by boot_Encode/Encode_XSEncoding
-  if ($] >= 5.020 and $fullname eq 'Encode::Encoding') {
-    $filter = Save_HV;
-  }
+  #if ($] >= 5.020 and $fullname eq 'Encode::Encoding') {
+  #  warn "skip %Encode::Encoding - XS initialized\n" if $debug{gv};
+  #  $filter = Save_HV;
+  #}
 
   my $is_empty = $gv->is_empty;
   if (!defined $gvname and $is_empty) { # 5.8 curpad name
@@ -4774,8 +4775,23 @@ sub B::GV::save {
           }
 	  mark_package('Tie::Hash::NamedCapture', 1);
         }
+        # skip static %Encode::Encoding since 5.20. GH #200. sv_upgrade cannot upgrade itself.
+        # Let it be initialized by boot_Encode/Encode_XSEncodingm with exceptions.
+        # GH #200 and t/testc.sh 75
+        if ($] >= 5.020 and $fullname eq 'Encode::Encoding') {
+          warn "skip some %Encode::Encoding - XS initialized\n" if $debug{gv};
+          my %tmp_Encode_Encoding = %Encode::Encoding;
+          %Encode::Encoding = (); # but we need some non-XS encoding keys
+          for my $k (qw(utf8 utf-8-strict Unicode Internal Guess)) {
+            $Encode::Encoding{$k} = $tmp_Encode_Encoding{$k} if exists $tmp_Encode_Encoding{$k};
+          }
+	  $gvhv->save($fullname);
+	  $init->add( "/* deferred some XS enc pointers for \%Encode::Encoding */",
+              sprintf("GvHV(%s) = s\\_%x;", $sym, $$gvhv ) );
+          %Encode::Encoding = %tmp_Encode_Encoding;
+        }
 	# XXX TODO 49: crash at BEGIN { %warnings::Bits = ... }
-	if ($fullname ne 'main::INC') {
+	elsif ($fullname ne 'main::INC') {
 	  $gvhv->save($fullname);
 	  $init->add( sprintf( "GvHV(%s) = s\\_%x;", $sym, $$gvhv ) );
 	}
