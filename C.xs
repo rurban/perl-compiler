@@ -360,13 +360,6 @@ MODULE = B__C	PACKAGE = B::C
 
 PROTOTYPES: DISABLE
 
-SV*
-hints_hash()
-PPCODE:
-	HV* hv = cophh_2hv(CopHINTHASH_get(&PL_compiling), 0);
-	mPUSHs(newSVrv((SV*)hv, NULL));
-	XSRETURN(1);
-
 CV*
 method_cv(meth, packname)
         SV* meth;
