@@ -906,6 +906,13 @@ sub hint_fetch {
     $results[10]->{$key};
 }
 print qq{ok\n} if hint_fetch("dooot");'
+tests[2201]='BEGIN { $^H{dчастt} = 1 }
+sub hint_fetch {
+    my $key = shift;
+    my @results = caller(0);
+    $results[10]->{$key};
+}
+print qq{ok\n} if hint_fetch("dчастt");'
 tests[2231]='use strict; eval q({ $x = sub }); print $@'
 result[2231]='Illegal declaration of anonymous subroutine at (eval 1) line 1.'
 tests[222]='my $qr = qr/(?{<<END})/;

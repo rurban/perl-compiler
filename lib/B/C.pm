@@ -2230,7 +2230,7 @@ sub B::COP::save {
   my $ix = $copsect->index;
   $init->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
-  if ($] >= 5.008009 and $op->hints_hash) {
+  if ($PERL510 and $op->hints_hash) {
     my $hints = $op->hints_hash;
     if ($$hints) {
       if (exists $cophhtable{$$hints}) {
@@ -6029,6 +6029,16 @@ EOF
 
   } elsif ($PERL518) {
     print "typedef PADNAME MyPADNAME;\n";
+  }
+  if ($PERL510 and !$PERL514) {
+    print "typedef struct refcounted_he COPHH;\n";
+    print <<'EOF';
+#define cophh_store_pvn(cophh, keypv, keylen, hash, value, flags) \
+    Perl_refcounted_he_new(aTHX_ cophh, newSVpvn_flags(keypv, keylen, flags), value)
+#define cophh_store_pvs(cophh, key, value, flags) \
+    Perl_refcounted_he_new(aTHX_ cophh, Perl_newSVpvn_flags(aTHX_ STR_WITH_LEN(key), SVs_TEMP), value)
+#define CopHINTHASH_set(c,h)	((c)->cop_hints_hash = (h))
+EOF
   }
   # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.
