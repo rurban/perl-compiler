@@ -640,7 +640,9 @@ sub save {
                 "CvOUTSIDE($sym) = PL_main_cv;",
                 "SvREFCNT_inc(PL_main_cv);"
             );
-            init()->add("CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
+            if ( $padlist && $$padlist ) {
+                init()->add("CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
+            }
         }
         else {
             init()->add( sprintf( "CvOUTSIDE(%s) = (CV*)s\\_%x;", $sym, $xcv_outside ) );
