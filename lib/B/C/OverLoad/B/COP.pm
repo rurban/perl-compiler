@@ -4,11 +4,13 @@ use strict;
 
 use B qw/cstring/;
 use B::C::Config;
-use B::C::File qw/init copsect/;
+use B::C::File qw/init copsect decl/;
 use B::C::Save qw/constpv savestashpv/;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 use B::C::Helpers qw/read_utf8_string strlen_flags/;
+
+my %cophhtable;
 
 sub save {
     my ( $op, $level ) = @_;
@@ -114,22 +116,45 @@ sub save {
     init()->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
     if ( $op->hints_hash ) {
-
-        # TODO: cache those cophh RHE pointers
         my $hints = $op->hints_hash;
-        $hints = $hints->HASH if ref $hints eq 'B::RHE';
-        for my $k ( keys %$hints ) {
-            my $v   = $hints->{$k};
-            my $sym = B::svref_2object( \$v )->save("\$^H{$k}");
 
-            # if not utf8:
-            init()->add(
-                sprintf(
-                    "CopHINTHASH_set(&cop_list[%d],\n" . "\t  cophh_store_pvs(CopHINTHASH_get(&cop_list[%d]), %s, %s, 0));",
-                    $ix, $ix, cstring($k), $sym
-                )
-            );
+        if ( $hints && $$hints ) {
+            if ( exists $cophhtable{$$hints} ) {
+                my $cophh = $cophhtable{$$hints};
+                init()->add( sprintf( "CopHINTHASH_set(&cop_list[%d], %s);", $ix, $cophh ) );
+            }
+            else {
+                my $hint_hv = $hints->HASH if ref $hints eq 'B::RHE';
+                my $cophh = sprintf( "cophh%d", scalar keys %cophhtable );
+                $cophhtable{$$hints} = $cophh;
+                decl()->add( sprintf( "Static COPHH *%s;", $cophh ) );
+                my $i = 0;
+                for my $k ( keys %$hint_hv ) {
+                    my ( $ck, $kl, $utf8 ) = strlen_flags($k);
+                    my $v   = $hint_hv->{$k};
+                    my $val = B::svref_2object( \$v )->save("\$^H{$k}");
+                    if ($utf8) {
+                        init()->add(
+                            sprintf(
+                                "%s = cophh_store_pvn(%s, %s, %d, 0, %s, COPHH_KEY_UTF8);",
+                                $cophh, $i ? $cophh : 'NULL', $ck, $kl, $val
+                            )
+                        );
+                    }
+                    else {
+                        init()->add(
+                            sprintf(
+                                "%s = cophh_store_pvs(%s, %s, %s, 0);",
+                                $cophh, $i ? $cophh : 'NULL', $ck, $val
+                            )
+                        );
+                    }
+                    $i++;
+                }
+                init()->add( sprintf( "CopHINTHASH_set(&cop_list[%d], %s);", $ix, $cophh ) );
+            }
         }
+
     }
     if ( !$is_special and !$isint ) {
         my $copw = $warn_sv;
