@@ -4326,10 +4326,12 @@ sub B::CV::save {
     if ( $xcv_outside == ${ main_cv() } ) {
       $init->add( "CvOUTSIDE($sym) = PL_main_cv;",
                   "SvREFCNT_inc(PL_main_cv);" );
-      if ($PERL522) {
-        $init->add( "CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
-      } elsif ($] >= 5.017005) {
-        $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+      if ($$padlist) {
+        if ($PERL522) {
+          $init->add( "CvPADLIST($sym)->xpadl_outid = CvPADLIST(PL_main_cv)->xpadl_id;");
+        } elsif ($] >= 5.017005) {
+          $init->add( "CvPADLIST($sym)->xpadl_outid = PadlistNAMES(CvPADLIST(PL_main_cv));");
+        }
       }
     } else {
       $init->add( sprintf("CvOUTSIDE(%s) = (CV*)s\\_%x;", $sym, $xcv_outside) );
@@ -4339,7 +4341,7 @@ sub B::CV::save {
       #}
     }
   }
-  elsif ($] >= 5.017005 and $xcv_outside) {
+  elsif ($] >= 5.017005 and $xcv_outside and $$padlist) {
     my $padl = $cv->OUTSIDE->PADLIST->save;
     if ($PERL522) {
       $init->add( sprintf("CvPADLIST(%s)->xpadl_outid = CvPADLIST(s\\_%x)->xpadl_id;",
