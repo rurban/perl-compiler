@@ -898,13 +898,14 @@ tests[219]='package OverloadTest; use overload qw("") => sub { ${$_[0]} }; packa
 my $foo = bless \(my $bar = "ok"), "OverloadTest"; print $foo."\n";'
 tests[2190]='package Foo; use overload; sub import { overload::constant "integer" => sub { return shift }}; package main; BEGIN { $INC{"Foo.pm"} = "/lib/Foo.pm" }; use Foo; my $result = eval "5+6"; print "$result\n"'
 result[2190]='11'
-# also at 904
-tests[220]='
-my $content = "ok\n";
-while ( $content =~ m{\w}g ) {
-    $_ .= "$-[0]$+[0]";
+# old issue 220 see 904
+tests[220]='BEGIN { $^H{dooot} = 1 }
+sub hint_fetch {
+    my $key = shift;
+    my @results = caller(0);
+    $results[10]->{$key};
 }
-print "ok" if $_ eq "0112";'
+print qq{ok\n} if hint_fetch("dooot");'
 tests[2231]='use strict; eval q({ $x = sub }); print $@'
 result[2231]='Illegal declaration of anonymous subroutine at (eval 1) line 1.'
 tests[222]='my $qr = qr/(?{<<END})/;

@@ -113,6 +113,24 @@ sub save {
     my $ix = copsect()->index;
     init()->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
+    if ( $op->hints_hash ) {
+
+        # TODO: cache those cophh RHE pointers
+        my $hints = $op->hints_hash;
+        $hints = $hints->HASH if ref $hints eq 'B::RHE';
+        for my $k ( keys %$hints ) {
+            my $v   = $hints->{$k};
+            my $sym = B::svref_2object( \$v )->save("\$^H{$k}");
+
+            # if not utf8:
+            init()->add(
+                sprintf(
+                    "CopHINTHASH_set(&cop_list[%d],\n" . "\t  cophh_store_pvs(CopHINTHASH_get(&cop_list[%d]), %s, %s, 0));",
+                    $ix, $ix, cstring($k), $sym
+                )
+            );
+        }
+    }
     if ( !$is_special and !$isint ) {
         my $copw = $warn_sv;
         $copw =~ s/^\(STRLEN\*\)&//;

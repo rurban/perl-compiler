@@ -34,28 +34,36 @@ io/layers.t                  SKIP      This is a known BC issue we've never care
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
+mro/method_caching.t         PLAN      Plan was valid
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures are already reported. Waiting for other BC issues to clear before researching this one.
+op/array_base.t              PLAN      Plan was valid
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
-op/attrproto.t               TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
-op/attrs.t                   TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/caller.t                  TESTS     Test results:
+op/chdir.t                   PLAN      Plan was valid
 op/closure.t                 TESTS     BC issue #278 - destruction issue
 op/const-optree.t            PLAN      BC issue #305 - feature refaliasing
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
+op/dbm.t                     PLAN      Plan was valid
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/exists_sub.t              SIG       BC issue #277 - empty sub with attributes
+op/for.t                     PLAN      Plan was valid
+op/fork.t                    PLAN      Plan was valid
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
+op/goto.t                    PLAN      Plan was valid
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
+op/lc.t                      PLAN      Plan was valid
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
+op/loopctl.t                 PLAN      Plan was valid
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
+op/magic.t                   TESTS     Test results:
 op/method.t                  BC        op/method.c is generated (-O3,-fno-fold)
 op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
@@ -64,44 +72,64 @@ op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
 op/reset.t                   PLAN      Plan was valid
-op/signatures.t              TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
+op/rt119311.t                PLAN      Plan was valid
+op/sigdispatch.t             PLAN      Plan was valid
+op/smartmatch.t              PLAN      Plan was valid
+op/split_unicode.t           PLAN      Plan was valid
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
+op/stat.t                    PLAN      Plan was valid
 op/state.t                   PLAN      BC issue #302 - features state + eval
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
+op/switch.t                  PLAN      Plan was valid
+op/taint.t                   PLAN      Plan was valid
 op/threads-dirh.t            COMPAT    We don't support threaded perl in this branch.
 op/threads.t                 COMPAT    We don't support threaded perl in this branch.
 op/universal.t               TESTS     BC issue #300 - PVFM not compiled
 op/vec.t                     SIG       BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
+op/while.t                   PLAN      Plan was valid
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
+re/fold_grind.t              PLAN      Plan was valid
 re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     PLAN      Recheck BC issue #219 - overload issue + BC issue #295
 re/pat_advanced.t            PLAN      Recheck BC issue #317 - nested regexp
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
-re/pat_rt_report.t           TESTS     BC issue #317 - nested Regex
+re/pat_rt_report.t           PLAN      Plan was valid
 re/qr_gc.t                   TESTS     BC issue #309 - regexp destruction
 re/reg_eval_scope.t          PLAN      BC issue #295 - (?{}) should have its own lexical scope
+re/reg_fold.t                PLAN      Plan was valid
 re/reg_mesg.t                TESTS     CM issue #26 - warnings from re.pm - Subroutine redefined
 re/reg_pmod.t                TESTS     BC issue #295 - (?{}) should have its own lexical scope
+re/regex_sets.t              PLAN      Plan was valid
+re/regexp.t                  PLAN      Plan was valid
+re/regexp_unicode_prop.t     PLAN      Plan was valid
+re/rt122747.t                PLAN      Plan was valid
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/subst_amp.t               TESTS     BC issue #295 - (?{}) should have its own lexical scope
 uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing the returned sub
 uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pragma
+uni/class.t                  PLAN      Plan was valid
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
+uni/labels.t                 PLAN      Plan was valid
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/parser.t                 TESTS     Recheck
+uni/lex_utf8.t               PLAN      Plan was valid
+uni/lower.t                  PLAN      Plan was valid
+uni/parser.t                 PLAN      Plan was valid
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
+uni/title.t                  PLAN      Plan was valid
 uni/tr_7jis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_eucjp.t               COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
+uni/upper.t                  PLAN      Plan was valid
 uni/variables.t              PLAN      BC issue #321 - REGEXP altered by invalid eval
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
+xtestc/0095.t                TESTS     Output is: "Label not found for last ..."
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
 xtestc/0169.t                TESTS     Output is: "42\n"
@@ -112,18 +140,20 @@ xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at
 xtestc/0182.t                TESTS     Output is: "main::foo"
 xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
-xtestc/0203.t                TESTS     Output is: ""
 xtestc/0207.t                TESTS     Output is: ""
 xtestc/0222.t                TESTS     Output is: "Can t find string terminator ..."
 xtestc/0226.t                TESTS     Output is: ""
 xtestc/0230.t                TESTS     Output is: "\n"
 xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
+xtestc/0240.t                TESTS     Output is: "Exiting subroutine via last ..."
 xtestc/0241.t                TESTS     Output is: ""
+xtestc/0242.t                TESTS     Output is: "Exiting subroutine via last ..."
 xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6177: Perl sv ..."
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0252.t                TESTS     Output is: ""
+xtestc/0253.t                TESTS     Output is: "Exiting subroutine via last ..."
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
 xtestc/0263.t                SKIP      need investigation: different result on Todd or Nico sandbox
@@ -137,7 +167,6 @@ xtestc/0293.t                TESTS     Output is: ""
 xtestc/0294.t                TESTS     Output is: "Constant subroutine GLOB ..."
 xtestc/0295.t                TESTS     Output is: ""
 xtestc/0300.t                TESTS     Output is: "IO::File "
-xtestc/0302.t                TESTS     Output is: "String found where operator ..."
 xtestc/0304.t                TESTS     Output is: "0304.bin: pp.c:177: Perl pp ..."
 xtestc/0309.t                TESTS     Output is: ""
 xtestc/0317.t                TESTS     Output is: ""
@@ -152,8 +181,10 @@ xtestc/2052.t                TESTS     Output is: ""
 xtestc/2381.t                TESTS     Output is: "Undefined subroutine ..."
 xtestc/2511.t                TESTS     Output is: ""
 xtestc/2540.t                TESTS     Output is: ""
+xtestc/2731.t                TESTS     Output is: "Exiting subroutine via last ..."
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
+xtestc/3170.t                TESTS     Output is: "Label not found for last ..."
 xtestc/3200.t                TESTS     Output is: ""

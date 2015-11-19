@@ -1215,10 +1215,48 @@ sub make_c3 {
     init2()->add( sprintf( 'Perl_mro_set_mro(aTHX_ HvMROMETA(%s), newSVpvs("c3"));', savestashpv($package) ) );
 }
 
+# global state only, unneeded for modules
 sub save_context {
 
     # forbid run-time extends of curpad syms, names and INC
     verbose("save context:");
+
+    my $warner = $SIG{__WARN__};
+    B::C::Save::Signals::save($warner);    # FIXME ? $warner seems useless arg to save_sig call
+                                           # honour -w and %^H
+    init()->add( "/* honor -w */", sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W );
+    if ( $^{TAINT} ) {
+        init()->add(
+            "/* honor -Tt */",
+            "PL_tainting = TRUE;",
+            "PL_taint_warn = " . ( $^{TAINT} < 0 ? "FALSE" : "TRUE" ) . ";"
+        );                                 # -T -1 false, -t 1 true
+    }
+    my $hints = hints_hash();
+
+    # XXX fake TESTING
+    #$^H{feature_say} = 1;
+    #$^H{dooot} = -42;
+    if ( $hints and %$hints ) {
+        init()->add("/* honor %^H */");    # hints hash in PL_hintgv, i.e CopHINTHASH(&PL_compiling)
+                                           # my $sym = B::svref_2object( \%^H )->save("main::\010");
+                                           # $init->add("GvHV(PL_hintgv) = $sym;");
+                                           # or store all keys dynamically:
+        for my $k ( keys %$hints ) {
+            my $v   = $hints->{$k};
+            my $sym = B::svref_2object( \$v )->save("\$^H{$k}");
+            init()->add(
+                sprintf(
+                    "CopHINTHASH_set(PL_curcop,\n" . "\t  cophh_store_pvs(CopHINTHASH_get(PL_curcop), %s, %s, 0));",
+                    cstring($k), $sym
+                )
+            );
+
+            #or
+            #   (void)hv_stores(GvHV(PL_hintgv), $k, $v);
+            #   mg_set($v);
+        }
+    }
 
     # need to mark assign c3 to %main::. no need to assign the default dfs
     if ( is_using_mro() && mro::get_mro("main") eq 'c3' ) {
@@ -1353,21 +1391,6 @@ sub save_main_rest {
     init()->add("/* done main optree, extra subs which might be unused */");
     B::C::Optimizer::UnusedPackages::optimize();
     init()->add("/* done extras */");
-
-    B::C::Save::Signals::save();
-
-    # honour -w
-    init()->add(
-        "/* honor -w */",
-        sprintf "PL_dowarn = %s;", $^W ? 'G_WARN_ON' : 'G_WARN_OFF'
-    );
-    if ( $^{TAINT} ) {
-        init()->add(
-            "/* honor -Tt */",
-            "PL_tainting = TRUE;",
-            "PL_taint_warn = " . ( $^{TAINT} < 0 ? "FALSE" : "TRUE" ) . ";"
-        );    # -T -1 false, -t 1 true
-    }
 
     # startpoints: XXX TODO push BEGIN/END blocks to modules code.
     debug( av => "Writing init_av" );
