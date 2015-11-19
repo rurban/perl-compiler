@@ -7724,27 +7724,8 @@ sub save_context {
   if ($^{TAINT}) {
     $init->add( "/* honor -Tt */",
                 "PL_tainting = TRUE;",
-                "PL_taint_warn = ".($^{TAINT} < 0 ? "FALSE" : "TRUE").";"); # -T -1 false, -t 1 true
-  }
-  my $hints = hints_hash();
-  # XXX fake TESTING
-  #$^H{feature_say} = 1;
-  #$^H{dooot} = -42;
-  if ($hints and %$hints) {
-    $init->add("/* honor %^H */"); # hints hash in PL_hintgv, i.e CopHINTHASH(&PL_compiling)
-    # my $sym = B::svref_2object( \%^H )->save("main::\010");
-    # $init->add("GvHV(PL_hintgv) = $sym;");
-    # or store all keys dynamically:
-    for my $k (keys %$hints) {
-      my $v = $hints->{$k};
-      my $sym = B::svref_2object( \$v )->save("\$^H{$k}");
-      $init->add(sprintf("CopHINTHASH_set(PL_curcop,\n".
-                         "\t  cophh_store_pvs(CopHINTHASH_get(PL_curcop), %s, %s, 0));",
-                         cstring($k), $sym));
-      #or
-      #   (void)hv_stores(GvHV(PL_hintgv), $k, $v);
-      #   mg_set($v);
-    }
+                # -T -1 false, -t 1 true
+                "PL_taint_warn = ".($^{TAINT} < 0 ? "FALSE" : "TRUE").";");
   }
 
   if ($PERL510) {
