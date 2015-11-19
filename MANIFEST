@@ -803,6 +803,7 @@ t/issue208.t
 t/issue211.t
 t/issue212.t
 t/issue219.t
+t/issue220.t
 t/issue229.t
 t/issue232.t
 t/issue234.t

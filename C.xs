@@ -490,6 +490,13 @@ MODULE = B__C	PACKAGE = B::C
 
 PROTOTYPES: DISABLE
 
+SV*
+hints_hash()
+PPCODE:
+	HV* hv = cophh_2hv(CopHINTHASH_get(&PL_compiling), 0);
+	mPUSHs(newSVrv((SV*)hv, NULL));
+	XSRETURN(1);
+
 #if PERL_VERSION >= 11
 
 CV*

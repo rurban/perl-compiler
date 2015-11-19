@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_21';
+our $VERSION = '1.52_22';
 our %debug;
 our $check;
 our %Config;
@@ -2230,6 +2230,19 @@ sub B::COP::save {
   my $ix = $copsect->index;
   $init->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
+  if ($] >= 5.008009 and $op->hints_hash) {
+    # TODO: cache those cophh RHE pointers
+    my $hints = $op->hints_hash;
+    $hints = $hints->HASH if ref $hints eq 'B::RHE';
+    for my $k (keys %$hints) {
+      my $v = $hints->{$k};
+      my $sym = B::svref_2object( \$v )->save("\$^H{$k}");
+      # if not utf8:
+      $init->add(sprintf("CopHINTHASH_set(&cop_list[%d],\n".
+                         "\t  cophh_store_pvs(CopHINTHASH_get(&cop_list[%d]), %s, %s, 0));",
+                         $ix, $ix, cstring($k), $sym));
+    }
+  }
   if ($PERL510 and !$is_special and !$isint) {
     my $copw = $warn_sv;
     $copw =~ s/^\(STRLEN\*\)&//;
@@ -6940,6 +6953,10 @@ _EOT15
     # more global vars
     print "    PL_hints = $^H;\n" if $^H;
     print "    PL_unicode = ${^UNICODE};\n" if ${^UNICODE};
+    # system-specific needs to be skipped: is set during init_i18nl10n if PerlIO
+    # is compiled in and on a utf8 locale.
+    #print "    PL_utf8locale = ${^UTF8LOCALE};\n" if ${^UTF8LOCALE};
+    #print "    PL_utf8cache = ${^UTF8CACHE};\n" if ${^UTF8CACHE};
     # nomg
     print sprintf(qq{    sv_setpv(get_sv(";", GV_ADD|GV_NOTQUAL), %s);\n}, cstring($;)) if $; ne "\34";
     print sprintf(qq{    sv_setpv(get_sv("\\"", GV_NOTQUAL), %s); /* \$" */\n}, cstring($")) if $" ne " ";
@@ -7695,9 +7712,40 @@ sub make_c3 {
                         savestashpv($package) ) );
 }
 
+# global state only, unneeded for modules
 sub save_context {
   # forbid run-time extends of curpad syms, names and INC
   warn "save context:\n" if $verbose;
+  my $warner = $SIG{__WARN__};
+  save_sig($warner) if $B::C::save_sig;
+  # honour -w and %^H
+  $init->add( "/* honor -w */",
+    sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W );
+  if ($^{TAINT}) {
+    $init->add( "/* honor -Tt */",
+                "PL_tainting = TRUE;",
+                "PL_taint_warn = ".($^{TAINT} < 0 ? "FALSE" : "TRUE").";"); # -T -1 false, -t 1 true
+  }
+  my $hints = hints_hash();
+  # XXX fake TESTING
+  #$^H{feature_say} = 1;
+  #$^H{dooot} = -42;
+  if ($hints and %$hints) {
+    $init->add("/* honor %^H */"); # hints hash in PL_hintgv, i.e CopHINTHASH(&PL_compiling)
+    # my $sym = B::svref_2object( \%^H )->save("main::\010");
+    # $init->add("GvHV(PL_hintgv) = $sym;");
+    # or store all keys dynamically:
+    for my $k (keys %$hints) {
+      my $v = $hints->{$k};
+      my $sym = B::svref_2object( \$v )->save("\$^H{$k}");
+      $init->add(sprintf("CopHINTHASH_set(PL_curcop,\n".
+                         "\t  cophh_store_pvs(CopHINTHASH_get(PL_curcop), %s, %s, 0));",
+                         cstring($k), $sym));
+      #or
+      #   (void)hv_stores(GvHV(PL_hintgv), $k, $v);
+      #   mg_set($v);
+    }
+  }
 
   if ($PERL510) {
     # need to mark assign c3 to %main::. no need to assign the default dfs
@@ -7931,7 +7979,6 @@ sub force_saving_xsloader {
 
 sub save_main_rest {
   # this is mainly for the test suite
-  my $warner = $SIG{__WARN__};
   # local $SIG{__WARN__} = sub { print STDERR @_ } unless $debug{runtime};
 
   warn "done main optree, walking symtable for extras\n"
@@ -7940,17 +7987,6 @@ sub save_main_rest {
   $init->add("/* done main optree, extra subs which might be unused */");
   save_unused_subs();
   $init->add("/* done extras */");
-
-  save_sig($warner) if $B::C::save_sig;
-
-  # honour -w
-  $init->add( "/* honor -w */",
-    sprintf "PL_dowarn = ( %s ) ? G_WARN_ON : G_WARN_OFF;", $^W );
-  if ($^{TAINT}) {
-    $init->add( "/* honor -Tt */",
-                "PL_tainting = TRUE;",
-                "PL_taint_warn = ".($^{TAINT} < 0 ? "FALSE" : "TRUE").";"); # -T -1 false, -t 1 true
-  }
 
   # startpoints: XXX TODO push BEGIN/END blocks to modules code.
   warn "Writing init_av\n" if $debug{av};
