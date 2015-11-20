@@ -35,6 +35,8 @@
           by adding a mro_isa_changed_in() to the overloaded stash.
         Support multiple stash ENAMES, needed since 5.14 (GH #331)
           This fixed many old 5.14 limitations.
+        Support %^H, storing the hints_hash (features, pragmas) (GH #220)
+          This fixed many old 5.14 limitations.
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
 

@@ -2136,6 +2136,7 @@ sub B::COP::save {
   # Trim the .pl extension, to print the executable name only.
   my $file = $op->file;
   # $file =~ s/\.pl$/.c/;
+  my $add_label = 0;
   if ($PERL512) {
     if ($ITHREADS and $] >= 5.017) {
       $copsect->comment(
@@ -2184,22 +2185,7 @@ sub B::COP::save {
 	       ));
     }
     if ( $op->label ) {
-      # test 29 and 15,16,21. 44,45
-      my ($cstring, $cur, $utf8) = strlen_flags($op->label);
-      if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee
-        warn "utf8 label $cstring" if $utf8 and $verbose;
-	$init->add(
-	  sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
-		  $copsect->index, $cstring, $cur, $utf8));
-      } elsif ($] > 5.013004) {
-	$init->add(
-	  sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %u, %s);",
-		  $copsect->index, $cstring, $cur, $utf8));
-      } elsif (!($^O =~ /^(MSWin32|AIX)$/ or $ENV{PERL_DL_NONLAZY})) {
-        $init->add(
-	  sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ NULL, %s);",
-		  $copsect->index, $cstring));
-      }
+      $add_label = 1;
     }
   }
   elsif ($PERL510) {
@@ -2230,6 +2216,8 @@ sub B::COP::save {
   my $ix = $copsect->index;
   $init->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
+
+  my $i = 0;
   if ($PERL510 and $op->hints_hash) {
     my $hints = $op->hints_hash;
     if ($$hints) {
@@ -2241,10 +2229,10 @@ sub B::COP::save {
         my $cophh = sprintf( "cophh%d", scalar keys %cophhtable );
         $cophhtable{$$hints} = $cophh;
         $decl->add(sprintf("Static COPHH *%s;", $cophh));
-        my $i = 0;
         for my $k (keys %$hint_hv) {
           my ($ck, $kl, $utf8) = strlen_flags($k);
           my $v = $hint_hv->{$k};
+          next if $k eq ':'; #skip label, see below
           my $val = B::svref_2object( \$v )->save("\$^H{$k}");
           if ($utf8) {
             $init->add(sprintf("%s = cophh_store_pvn(%s, %s, %d, 0, %s, COPHH_KEY_UTF8);",
@@ -2259,6 +2247,25 @@ sub B::COP::save {
       }
     }
   }
+  if ($add_label) {
+    # test 29 and 15,16,21. 44,45
+    my ($cstring, $cur, $utf8) = strlen_flags($op->label);
+    if ($] >= 5.015001) { # officially added with 5.15.1 aebc0cbee
+      warn "utf8 label $cstring" if $utf8 and $verbose;
+      $init->add(sprintf("Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
+                         $copsect->index, $cstring, $cur, $utf8));
+    } elsif ($] > 5.013004) {
+      $init->add(sprintf("Perl_store_cop_label(aTHX_ &cop_list[%d], %s, %u, %s);",
+                         $copsect->index, $cstring, $cur, $utf8));
+    } elsif (!($^O =~ /^(MSWin32|AIX)$/ or $ENV{PERL_DL_NONLAZY})) {
+      warn "Warning: Overwrote hints_hash with label\n" if $i;
+      my $ix = $copsect->index;
+      $init->add(
+        sprintf("cop_list[%d].cop_hints_hash = Perl_store_cop_label(aTHX_ cop_list[%d].cop_hints_hash, %s);",
+                $ix, $ix, $cstring));
+    }
+  }
+
   if ($PERL510 and !$is_special and !$isint) {
     my $copw = $warn_sv;
     $copw =~ s/^\(STRLEN\*\)&//;
