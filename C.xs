@@ -119,6 +119,7 @@ my_runops(pTHX)
 {
     HV* regexp_hv = get_hv( "B::C::Regexp", GV_ADD );
     SV* key = newSViv( 0 );
+    int type;
 
     DEBUG_l(Perl_deb(aTHX_ "Entering new RUNOPS level (B::C)\n"));
     do {
@@ -145,14 +146,19 @@ my_runops(pTHX)
 	}
 
         /* Need to store the rx all for QR PMOPs in a global %Regexp hash. MATCH once also */
+        type = PL_op->op_type;
 #if 1
-        if ((PL_op->op_type == OP_QR)
-        || ((PL_op->op_type == OP_MATCH) && PmopSTASHPV((PMOP*)PL_op)))
+        if ((type == OP_QR)
+        || ((type == OP_MATCH)
+#  if PERL_VERSION < 20
+            && PmopSTASHPV((PMOP*)PL_op)
+#  endif
+            ))
 #else
-        if ((PL_op->op_type == OP_QR)
-         || (PL_op->op_type == OP_MATCH)
-         || (PL_op->op_type == OP_PUSHRE)
-         || (PL_op->op_type == OP_SUBST))
+        if ((type == OP_QR)
+         || (type == OP_MATCH)
+         || (type == OP_PUSHRE)
+         || (type == OP_SUBST))
 #endif
         {
             PMOP* op;
@@ -181,7 +187,8 @@ my_runops(pTHX)
             sv_setiv( key, PTR2IV( rx ) );
             sv_setref_iv( rv, "B::PMOP", PTR2IV( op ) );
 #if defined(DEBUGGING) && (PERL_VERSION > 7)
-	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop %p => rx %p\n", op, rx);
+	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop %p => rx %s %p %s\n",
+                                       op, PL_op_name[type], rx, RX_WRAPPED(rx));
 #endif
             hv_store_ent( regexp_hv, key, rv, 0 );
         }
