@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_22';
+our $VERSION = '1.52_23';
 our %debug;
 our $check;
 our %Config;
@@ -3499,14 +3499,16 @@ CODE2
       my $pmop_ptr = unpack("J", $mg->PTR);
       my $pmop = $Regexp{$pmop_ptr};
       my $pmsym = $pmop ? $pmop->save(0, $fullname)
-                        : sprintf('&pmop_list[%u]', $pmopsect->index);
-      warn sprintf("pmop 0x%x not found in our B::C Regexp hash. use $pmsym", $pmop_ptr)
-        unless $pmop;
+                        : ''; #sprintf('&pmop_list[%u]', $pmopsect->index);
+      warn sprintf("pmop 0x%x not found in our B::C Regexp hash\n", $pmop_ptr)
+        if !$pmop and $verbose;
       $init->add("{\tU32 elements;", # toke.c: PL_multi_open == '?'
-                 sprintf("\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv),
+         sprintf("\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv),
                  "\telements = mg->mg_len / sizeof(PMOP**);",
                  "\tRenewc(mg->mg_ptr, elements + 1, PMOP*, char);",
-                 sprintf("\t((OP**)mg->mg_ptr) [elements++] = (OP*)%s;", $pmsym),
+         ($pmop
+         ? (sprintf("\t((OP**)mg->mg_ptr) [elements++] = (OP*)%s;", $pmsym))
+         : (sprintf("\t((OP**)mg->mg_ptr) [elements++] = (OP*)\s\\_%x;", $pmop_ptr))),
                  "\tmg->mg_len = elements * sizeof(PMOP**);", "}");
     }
     else {
