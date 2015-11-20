@@ -69,6 +69,7 @@ sub save {
     my $file = $op->file;
 
     # $file =~ s/\.pl$/.c/;
+    my $add_label = 0;
 
     if ( USE_ITHREADS() ) {
         copsect()->comment_common("line, stashoff, file, hints, seq, warnings, hints_hash");
@@ -98,23 +99,15 @@ sub save {
     }
 
     if ( $op->label ) {
-
-        # test 29 and 15,16,21. 44,45
-        my ( $cstring, $cur, $utf8 ) = strlen_flags( $op->label );
-        WARN("utf8 label $cstring");
-        init()->add(
-            sprintf(
-                "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
-                copsect()->index, $cstring, $cur, $utf8
-            )
-        );
-
+        $add_label = 1;
     }
 
     copsect()->debug( $op->name, $op );
     my $ix = copsect()->index;
     init()->add( sprintf( "cop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
       unless $B::C::optimize_ppaddr;
+
+    my $i = 0;
     if ( $op->hints_hash ) {
         my $hints = $op->hints_hash;
 
@@ -128,10 +121,10 @@ sub save {
                 my $cophh = sprintf( "cophh%d", scalar keys %cophhtable );
                 $cophhtable{$$hints} = $cophh;
                 decl()->add( sprintf( "Static COPHH *%s;", $cophh ) );
-                my $i = 0;
                 for my $k ( keys %$hint_hv ) {
                     my ( $ck, $kl, $utf8 ) = strlen_flags($k);
-                    my $v   = $hint_hv->{$k};
+                    my $v = $hint_hv->{$k};
+                    next if $k eq ':';    #skip label, see below
                     my $val = B::svref_2object( \$v )->save("\$^H{$k}");
                     if ($utf8) {
                         init()->add(
@@ -156,6 +149,20 @@ sub save {
         }
 
     }
+
+    if ($add_label) {
+
+        # test 29 and 15,16,21. 44,45
+        my ( $cstring, $cur, $utf8 ) = strlen_flags( $op->label );
+        WARN("utf8 label $cstring");
+        init()->add(
+            sprintf(
+                "Perl_cop_store_label(aTHX_ &cop_list[%d], %s, %u, %s);",
+                copsect()->index, $cstring, $cur, $utf8
+            )
+        );
+    }
+
     if ( !$is_special and !$isint ) {
         my $copw = $warn_sv;
         $copw =~ s/^\(STRLEN\*\)&//;
