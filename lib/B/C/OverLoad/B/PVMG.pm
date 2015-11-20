@@ -7,7 +7,7 @@ use B::C::Config;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY SVf_AMAGIC cstring cchar SVp_POK svref_2object class/;
 use B::C::Save qw/savepvn savepv savestashpv/;
 use B::C::Decimal qw/get_integer_value get_double_value/;
-use B::C::File qw/init init1 init2 svsect xpvmgsect xpvsect/;
+use B::C::File qw/init init1 init2 svsect xpvmgsect xpvsect pmopsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Helpers qw/mark_package read_utf8_string/;
 
@@ -283,16 +283,16 @@ CODE1
         elsif ( $type eq ':' ) {    # symtab magic
                                     # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
             my $pmop_ptr = unpack( "J", $mg->PTR );
-            my $pmop = $B::C::Regexp{$pmop_ptr};
-            warn sprintf( "pmop 0x%x not found in our B::C Regexp hash", $pmop_ptr )
+            my $pmop     = $B::C::Regexp{$pmop_ptr};
+            my $pmsym    = $pmop ? $pmop->save( 0, $fullname ) : sprintf( '&pmop_list[%u]', pmopsect()->index );
+            warn sprintf( "pmop 0x%x not found in our B::C Regexp hash. use $pmsym", $pmop_ptr )
               unless $pmop;
-            my $pmsym = $pmop ? $pmop->save( 0, $fullname ) : '&pmop_list[0]';
             init()->add(
                 "{\tU32 elements;",    # toke.c: PL_multi_open == '?'
                 sprintf( "\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv ),
                 "\telements = mg->mg_len / sizeof(PMOP**);",
                 "\tRenewc(mg->mg_ptr, elements + 1, PMOP*, char);",
-                sprintf( "\t((OP**)mg->mg_ptr) [elements++] = %s;", $pmsym ),
+                sprintf( "\t((OP**)mg->mg_ptr) [elements++] = (OP*)%s;", $pmsym ),
                 "\tmg->mg_len = elements * sizeof(PMOP**);", "}"
             );
         }
