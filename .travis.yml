@@ -26,6 +26,7 @@ matrix:
 before_install:
   - mkdir /home/travis/bin || true
   - ln -s `which true` /home/travis/bin/cpansign
+  - rm t/CORE/v5.14/C-COMPILED/{testc,template}.pl
   - eval $(curl https://travis-perl.github.io/init) --auto
 
 install:
