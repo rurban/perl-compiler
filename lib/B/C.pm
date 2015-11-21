@@ -8056,18 +8056,22 @@ sub save_main_rest {
     my $cmodule = $module ? $module : "main";
     $cmodule =~ s/::/__/g;
 
-    my $start = "op_list[0]";
+    my $start = "&op_list[0]";
     warn "curpad syms:\n" if $verbose;
     $init->add("/* curpad syms */");
     my $curpad_sym = ( comppadlist->ARRAY )[1]->save;
 
     print <<"EOT";
 
-#include "XSUB.h"
 XS(boot_$cmodule)
 {
     dXSARGS;
-    perl_init();
+#if PERL_VERSION >= 10
+  {
+    MY_CXT_INIT;
+    dMY_CXT;
+#endif
+#if 0
     ENTER;
     SAVETMPS;
     SAVEVPTR(PL_curpad);
@@ -8076,11 +8080,15 @@ XS(boot_$cmodule)
     PL_curpad = AvARRAY($curpad_sym);
     PL_comppad = $curpad_sym;
     PL_op = $start;
-    perl_run( aTHX ); /* Perl_runops_standard(aTHX); */
+    perl_run(my_perl); /* Perl_runops_standard(aTHX); */
     FREETMPS;
     LEAVE;
+#endif
     ST(0) = &PL_sv_yes;
     XSRETURN(1);
+#if PERL_VERSION >= 10
+  }
+#endif
 }
 EOT
 

@@ -314,12 +314,15 @@ sub parse_argv {
         $Input = shift @ARGV;  # XXX: more files?
         _usage_and_die("No input file specified\n") unless $Input;
         # DWIM modules. This is bad but necessary.
-        $Options->{m} = '' if $Input =~ /\.pm\z/ and !opt('m');
+        $Options->{m} = '' if $Input =~ /\.pm\z/ and !opt('m') and !opt('r');
         vprint 1, "$0: using $Input as input file, ignoring @ARGV\n" if @ARGV;
         check_read($Input);
         check_perl($Input);
     }
 
+    if (exists $Options->{m} and opt('r')) {
+        _die("Cannot run a module\n");
+    }
     if (opt('o')) {
         $Output = opt('o');
     } elsif (opt('B')) {
@@ -333,7 +336,9 @@ sub parse_argv {
     } else {
         $Output = opt('e') ? 'a.out' : $Input;
         $Output =~ s/\.(p[lm]|t)$//;
-        if (is_win32() or $^O eq 'cygwin') {
+        if ($Options->{m} or opt('shared')) {
+            $Output .= ".".$Config{dlext};
+        } elsif (is_win32() or $^O eq 'cygwin') {
             if ($Output eq 'a.out') {
                 $Output = 'a.exe';
             } else {
@@ -351,10 +356,31 @@ sub opt(*) {
 }
 
 sub compile_module {
+    my $name = $Options->{m};
+    unless ($name) {
+        $name = $Input;
+        $name =~ s/\.p[lm]$//;
+        if (basename($name) ne $name) {
+            my $base = basename($name);
+            # find first uppercase dirname
+            my $m = '';
+            my @list = split(/\//, $name);
+            pop @list;
+            for (@list) {
+                if (/^[A-Z]/) {
+                    $m .= $_."::";
+                } elsif (/^[a-z]/) {
+                    $m = '';
+                }
+            }
+            $name = $m ? $m.$base : $base;
+        }
+    }
+    $Options->{m} = $name;
     if ($Backend eq 'Bytecode') {
-        compile_byte('-m'.$Options->{m});
+        compile_byte("-m$name");
     } else {
-        compile_cstyle("-m".$Options->{m});
+        compile_cstyle("-m$name");
     }
 }
 
@@ -369,14 +395,11 @@ sub compile_byte {
         $opts .= $_[0].",";
     }
     my $addoptions = opt('Wb');
-    if( $addoptions ) {
-        $opts .= '-v,' if opt('v') > 4;
-        $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
-        $opts .= "$addoptions,";
-    } elsif (opt('v') > 4) {
+    if (opt('v') > 4) {
         $opts .= '-v,';
         $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
     }
+    $opts .= "$addoptions," if $addoptions;
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
     vprint 5, "Compiling...";
@@ -416,16 +439,14 @@ sub compile_cstyle {
     my $testsuite = '';
     my $addoptions = '';
     if (@_ == 1) {
-        $addoptions .= $_[0].",";
+        $addoptions = $_[0].",";
     }
-    $addoptions .= opt('Wb');
+    $addoptions .= opt('Wb') ? opt('Wb')."," : "";
     if( $addoptions ) {
-        $addoptions .= ',-Dfull' if opt('v') >= 6;
-        $addoptions .= ',-Dsp,-v' if opt('v') == 5;
-        $addoptions .= ',';
+        $addoptions .= '-Dfull,' if opt('v') >= 6;
+        $addoptions .= '-Dsp,-v,' if opt('v') == 5;
     } elsif (opt('v') > 4) {
-        $addoptions = '-Dsp,-v,';
-        $addoptions = '-Dfull,-v,' if opt('v') >= 6;
+        $addoptions = opt('v') < 6 ? '-Dsp,-v,' : '-Dfull,-v,';
     }
     if (opt('f')) {
         $addoptions .= "-f$_," for @{$Options->{f}};
@@ -585,6 +606,9 @@ sub cc_harness_msvc {
     $compile .= " ".opt('Wc') if opt('Wc');
 
     $link .= " -libpath:".$_ for split /\s+/, opt('L');
+    if (exists $Options->{m} or $Options->{shared}) {
+      $link .= " -shared";
+    }
     # TODO: -shared,-static,-sharedxs
     if ($stash) {
         my @mods = split /,?-?u/, $stash; # XXX -U stashes
@@ -661,6 +685,9 @@ sub cc_harness {
         } else {
             $ldopts = $extra_libs." ".$ldopts;
         }
+    }
+    if (exists $Options->{m} or opt('shared')) {
+      $ldopts = "-shared $ldopts";
     }
     if (opt('shared')) {
         warn "--shared with useshrplib=false might not work\n" unless $useshrplib;
@@ -804,6 +831,9 @@ sub sanity_check {
             # You fully deserve what you get now. No you *don't*. typos happen.
         } else {
             my $suffix = (is_win32() or $^O eq 'cygwin') ? '.exe' : '';
+            if (exists $Options->{m} or opt('shared')) {
+                $suffix = ".".$Config{dlext};
+            }
             (undef, $Output) = tempfile("plcXXXXX", SUFFIX => $suffix);
             warn "$0: Will not write output on top of input file, ",
                 "compiling to $Output instead\n";
