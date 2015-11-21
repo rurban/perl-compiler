@@ -13,7 +13,12 @@ CC backend: goto (needs test), some recursive calls fail
 
 * Features
 
-modularize (-m) for faster link times, buildcc, rperl intergration
+modularize (-m) for faster link times, buildcc, rperl integration
+    (branch modul)
+    * add new build tool which takes module names and paths from the
+      compiler, check timestamps and create/update compiled modules.
+    * filter out non-module related code in the compiler by looking at
+      the CopFILE.
 backport improvements from oldmaster:
   do not define symbols which are arguments of define (destructive
    check)
