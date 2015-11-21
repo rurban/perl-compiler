@@ -313,6 +313,10 @@ sub is_todo {
   if ($] >= 5.018) { foreach(qw(
       Path::Class
   )) { return '>= 5.18 #219 overload stringify regression' if $_ eq $module; }}
+  if ($] >= 5.023005) { foreach(qw(
+      Attribute::Handlers
+      MooseX::Types
+  )) { return '>= 5.23.5' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
