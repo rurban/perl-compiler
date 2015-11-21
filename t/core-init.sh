@@ -16,10 +16,12 @@ if [ ! -d t/CORE ]; then
             echo git submodule add p5-coretests.git t/CORE
             git submodule add https://github.com/perl11/p5-coretests.git t/CORE
         fi
+        git submodule init
         echo git submodule update --remote
         git submodule update --remote
     fi
 else
+    git submodule init
     echo git submodule update --remote
     git submodule update --remote
 fi
