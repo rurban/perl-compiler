@@ -137,6 +137,7 @@ ramblings/yapceu2015/B-C.p1.png
 ramblings/yapceu_2010.pod
 regen_lib.pl
 script/assemble
+script/buildcc.PL
 script/cc_harness
 script/disassemble
 script/perlcc.PL
