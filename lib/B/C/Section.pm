@@ -63,7 +63,7 @@ sub index {
 sub typename {
     my $self     = shift;
     my $name     = $self->name;
-    my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
+    my $typename = uc($name);
     $typename = 'UNOP_AUX'  if $typename eq 'UNOPAUX';
     $typename = 'MyPADNAME' if $typename eq 'PADNAME';
 

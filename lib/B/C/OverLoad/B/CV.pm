@@ -409,7 +409,7 @@ sub save {
     my $padlistsym = 'NULL';
     my $pv         = $cv->PV;
     my $xsub       = 0;
-    my $xsubany    = "Nullany";
+    my $xsubany    = "{0}";
     if ($$root) {
         debug(
             gv => "saving op tree for CV 0x%x, root=0x%x\n",

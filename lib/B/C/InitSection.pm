@@ -109,7 +109,7 @@ sub output {
         ++$name;
     }
 
-    $return_string .= "static int ${init_name}(pTHX)\n{\n";
+    $return_string .= "PERL_STATIC_INLINE int ${init_name}(pTHX)\n{\n";
 
     if ( $self->name eq 'init' ) {
         $return_string .= "    perl_init0(aTHX);\n";
