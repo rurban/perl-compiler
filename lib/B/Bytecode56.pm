@@ -1030,9 +1030,9 @@ Output (bytecode) assembler source rather than piping it
 through the assembler and outputting bytecode.
 
 =item B<-upackage>
-  
+
 Stores package in the output.
-  
+
 =back
 
 =head1 EXAMPLES
