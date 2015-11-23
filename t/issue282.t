@@ -9,11 +9,12 @@ BEGIN {
 use Test::More tests => 2;
 use Config;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
-#use B::C ();
-# passes on linux non-DEBUGGING, but fails on other system with better malloc libraries
+use B::C ();
+# passed on linux non-DEBUGGING, but fails on other system with better malloc libraries
 # use after free
-my $todo = ((!$DEBUGGING or $] < 5.012) and $^O eq 'linux') ? "" : "TODO ";
-$todo = "" if $] > 5.021;
+my $todo = $B::C::VERSION lt '1.52_07' ? "TODO " : ""; #fixed with hek refcounting
+#my $todo = ((!$DEBUGGING or $] < 5.012) and $^O eq 'linux') ? "" : "TODO ";
+# $todo = "" if $] > 5.021;
 
 ctestok(1,'C,-O3','ccode282i',<<'EOF',$todo.'#282 ref assign hek assert/use-after-free');
 use vars qw($glook $smek $foof);
