@@ -7413,13 +7413,14 @@ EOT1
 }
 
 sub output_init {
-    print <<'EOT';
+  print <<'EOT';
   /* our special compiled init */
     perl_init(aTHX);
 EOT
 
   print "    perl_init1(aTHX);\n" if $init1->index >= 0;
-  print "    dl_init(aTHX);\n" unless defined $module;
+  # XXX maybe we need dl_init for a module, esp. when it's XS loading.
+  print "    dl_init(aTHX);\n";
   print "    perl_init2(aTHX);\n" if $init2->index >= 0;
 }
 
