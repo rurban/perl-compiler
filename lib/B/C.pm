@@ -85,7 +85,7 @@ sub default {
 sub typename {
   my $section = shift;
   my $name = $section->name;
-  my $typename = ( $name eq "xpvcv" ) ? "XPVCV_or_similar" : uc($name);
+  my $typename = uc($name);
   # -fcog hack to statically initialize PVs (SVPV for 5.10-5.11 only)
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
@@ -259,7 +259,7 @@ EOT
   }
 
   print $fh <<"EOT";
-static int ${init_name}(pTHX)
+PERL_STATIC_INLINE int ${init_name}(pTHX)
 {
 EOT
   if ($section->name eq 'init') {
@@ -4095,7 +4095,7 @@ sub B::CV::save {
   my $padlistsym = 'NULL';
   my $pv         = $cv->PV;
   my $xsub       = 0;
-  my $xsubany    = "Nullany";
+  my $xsubany    = "{0}";
   if ($$root) {
     warn sprintf( "saving op tree for CV 0x%x, root=0x%x\n",
                   $$cv, $$root )
@@ -5988,24 +5988,20 @@ EOT
 
 sub output_declarations {
   print <<'EOT';
-#ifdef BROKEN_STATIC_REDECL
-#define Static extern
-#else
-#define Static static
-#endif /* BROKEN_STATIC_REDECL */
-
-#ifdef BROKEN_UNION_INIT
-#error BROKEN_UNION_INIT no longer needed, as Perl requires an ANSI compiler
-#endif
-
-#define XPVCV_or_similar XPVCV
-#define ANYINIT(i) {i}
-#define Nullany ANYINIT(0)
-
 #define UNUSED 0
 #define sym_0 0
 EOT
 
+  # Need fresh re-hash of strtab. share_hek does not allow hash = 0
+  if ( $PERL510 ) {
+    print <<'_EOT0';
+PERL_STATIC_INLINE HEK *
+my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
+#undef share_hek
+#define share_hek(str, len, hash) my_share_hek( aTHX_ str, len, hash );
+_EOT0
+
+  }
   if ($PERL522) {
     print <<'EOF';
 /* unfortunately we have to override this perl5.22 struct.
@@ -6100,20 +6096,9 @@ EOT0
     print "#endif\n";
   }
   if ($] >= 5.021001 and !$CPERL52) {
-    print "Static IV PL_sv_objcount; /* deprecated with 5.21.1 but still needed and used */\n";
+    print "Static IV PL_sv_objcount = 0; /* deprecated with 5.21.1 but still needed and used */\n";
   }
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
-
-  # Need fresh re-hash of strtab. share_hek does not allow hash = 0
-  if ( $PERL510 ) {
-    print <<'_EOT0';
-HEK *my_share_hek( pTHX_ const char *str, I32 len, register U32 hash );
-#undef share_hek
-#define share_hek(str, len, hash) my_share_hek( aTHX_ str, len, hash );
-_EOT0
-
-  }
-  print "\n";
 }
 
 sub output_boilerplate {
@@ -6143,6 +6128,16 @@ _EOT1
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
 
+#ifdef BROKEN_STATIC_REDECL
+#define Static extern
+#else
+#define Static static
+#endif /* BROKEN_STATIC_REDECL */
+
+#ifdef BROKEN_UNION_INIT
+#error BROKEN_UNION_INIT no longer needed, as Perl requires an ANSI compiler
+#endif
+
 /* No longer available when C<PERL_CORE> is defined. */
 #ifndef Nullsv
 #  define Null(type) ((type)NULL)
@@ -6157,6 +6152,14 @@ _EOT1
 /* Since 5.8.8 */
 #ifndef Newx
 #  define Newx(v,n,t)    New(0,v,n,t)
+#endif
+/* Since 5.14 */
+#if !defined(PERL_STATIC_INLINE)
+#  ifdef HAS_STATIC_INLINE
+#    define PERL_STATIC_INLINE static inline
+#  else
+#    define PERL_STATIC_INLINE static
+#  endif
 #endif
 _EOT2
 
@@ -6202,7 +6205,7 @@ _EOT4
   }
   if ( !$B::C::destruct ) {
     print <<'_EOT4';
-int fast_perl_destruct( PerlInterpreter *my_perl );
+static int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
 #ifndef dVAR
@@ -6247,7 +6250,7 @@ sub output_main_rest {
   if ( $PERL510 ) {
     print <<'_EOT7';
 /* The first assignment got already refcount bumped */
-HEK *
+PERL_STATIC_INLINE HEK *
 my_share_hek( pTHX_ const char *str, I32 len, register U32 hash ) {
     if (!hash) {
       PERL_HASH(hash, str, abs(len));
@@ -6371,7 +6374,7 @@ my_curse( pTHX_ SV* const sv ) {
 #endif
 }
 
-int fast_perl_destruct( PerlInterpreter *my_perl ) {
+static int fast_perl_destruct( PerlInterpreter *my_perl ) {
     dVAR;
     VOL signed char destruct_level;  /* see possible values in intrpvar.h */
     HV *hv;
@@ -7041,12 +7044,11 @@ _EOT15
 
     /* our special compiled init */
     perl_init(aTHX);
-    perl_init1(aTHX);
-    dl_init(aTHX);
-    perl_init2(aTHX);
 EOT
-
-    print "    exitstatus = perl_run( my_perl );\n";
+    print "    perl_init1(aTHX);\n" if $init1->index >= 0;
+    print "    dl_init(aTHX);" unless defined $module;
+    print "    perl_init2(aTHX);\n" if $init2->index >= 0;
+    print "\n    exitstatus = perl_run( my_perl );\n";
     foreach my $s ( @{ $init->[-1]{pre_destruct} } ) {
       print "    ".$s."\n";
     }
