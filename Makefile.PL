@@ -2,8 +2,10 @@ use ExtUtils::MakeMaker;
 use Config;
 use Data::Dumper;
 use File::Spec;
-use 5.006;
+use 5.022;
 use Carp;
+
+
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 mkdir "lib/B/C" unless -d "lib/B/C";
