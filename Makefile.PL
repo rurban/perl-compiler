@@ -1,11 +1,17 @@
+#!perl -w
+
+use 5.022;
+
+use strict;
+use warnings;
+
 use ExtUtils::MakeMaker;
-use Config;
+use Config ();
 use Data::Dumper;
 use File::Spec;
-use 5.022;
 use Carp;
 
-
+my $devnull = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 mkdir "lib/B/C" unless -d "lib/B/C";
@@ -42,7 +48,6 @@ sub write_b_c_flags {
     open PH, ">", "lib/B/C/Flags.pm";
     print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
     print PH "package B::C::Flags;\n\n";
-    my $devnull = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
     print PH "\$VERSION = '$version';\n";
     my $REV = '';
 
@@ -71,10 +76,11 @@ sub write_b_c_flags {
 
     # Ensure to add all used Config keys in B::C here, otherwise they will be silently empty!
     # easier hash key/value slices only came with 5.22
-    for my $s (qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl dlext i_dlfcn
-                  ivdformat ivsize longsize mad nvgformat ptrsize static_ext usecperl
-                  usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat))
-    {
+    for my $s (
+        qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl dlext i_dlfcn
+        ivdformat ivsize longsize mad nvgformat ptrsize static_ext usecperl
+        usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat)
+      ) {
         $cfg{$s} = $Config::Config{$s};
     }
     my $conf = Dumper \%cfg;
@@ -84,22 +90,12 @@ sub write_b_c_flags {
     print PH "\n";
 
     print PH "# make it a restricted hash\n";
+
     #print PH "Internals::SvREADONLY( \%Config, 1 );\n\n";
 
     print PH "1;\n";
     close PH;
     chmod 0644, "lib/B/C/Flags.pm";
-}
-
-# XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall --patches=Compiler`
-my $unicode_warning = "  Perl handling of new unicode identifiers - package and symbol names - \n" . "  without proper TR39 handling is considered a security risc and is not fully supported.\n" . "  See http://websec.github.io/unicode-security-guide/\n\n";
-if ( $] > 5.015005 and $] < 5.019004 ) {
-
-    # We do not want to support binary identifiers. safesyscalls with 5.019004 should be enabled
-    warn "Warning: Bad perl version $]\n" . $unicode_warning . "  Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.\n";
-}
-elsif ( $] >= 5.019004 ) {
-    warn "Warning:\n" . $unicode_warning . "  Check your code for syntax spoofs, confusables, strip \\0 from package names\n" . "  and enable use warnings 'syscalls'.\n";
 }
 
 WriteMakefile(
@@ -171,26 +167,26 @@ sub headerpath {
 # with an existing malloc.h from perl.h, so we declare it by ourselves.
 sub try_compile {
     my $testc = shift;
-    my $libs  = shift;
+    my $libs = shift || '';
 
     # For consistency (without considering LD_PRELOAD) require perl to
     # be compiled with the same malloc library.
-    return 0 unless $Config{libs} =~ /\b\Q$libs\E\b/;
+    return 0 if ( $libs && $Config::Config{libs} !~ /\b\Q$libs\E\b/ );
     unless ( open PROG, ">", "test.c" ) {
         print("Can't write test.c\n");
         return 0;
     }
     print PROG $testc;
     close PROG;
-    @candidate = ();
-    $devnull = $^O eq 'MSWin32' ? "> NUL" : ">/dev/null 2>&1";
-    my $cmd = "$Config{cc} $Config{ccflags} test.c";
-    push @candidate, "$cmd -o test$Config{EXE_EXT} $libs $devnull";
-    push @candidate, "$cmd -otest$Config{EXE_EXT} $libs $devnull";
+    my @candidate  = ();
+    my $executable = 'test' . ( $Config::Config{EXE_EXT} || '' );
+    my $cmd        = "$Config::Config{cc} $Config::Config{ccflags} test.c";
+    push @candidate, "$cmd -o$executable $libs 2>$devnull";
+    push @candidate, "$cmd -o$executable $libs 2>$devnull";
 
     while ( my $cmd1 = shift(@candidate) ) {
         system($cmd1);
-        unlink "test.c", "test$Config{EXE_EXT}";
+        unlink "test.c", $executable;
         $? == 0 && return 1;
     }
     return 0;
@@ -269,7 +265,7 @@ sub install_independent_comalloc {
     -d 'ptmalloc3'
       or _system('tar xfz ptmalloc3-current.tar.gz');
     chdir "ptmalloc3" or die;
-    if ( $Config{useithreads} ) {
+    if ( $Config::Config{useithreads} ) {
 
         # linux-pthread is basically the same. linux-shared is also an option.
         # just Solaris, SGI and HPUX need different options.
@@ -326,7 +322,7 @@ sub ccflags {
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
     $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
-      if $Config{cc} =~ /gcc/;
+      if $Config::Config{cc} =~ /gcc/;
 }
 
 sub depend {
@@ -339,7 +335,7 @@ TAGS :
 
     $result .= "\ntest :: subdirs-test\n\n";
 
-    if ( $Config{make} eq 'mingw32-make' ) {    # mingw32 make different to msys make
+    if ( $Config::Config{make} eq 'mingw32-make' ) {    # mingw32 make different to msys make
         $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
     }
     $result;
