@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_23';
+our $VERSION = '1.52_24';
 our %debug;
 our $check;
 our %Config;
@@ -921,7 +921,7 @@ sub save_pv_or_rv {
     warn "save_pv_or_rv: save_rv(",$sv,")\n" if $debug{sv};
     $savesym = ($PERL510 ? "" : "(char*)") . save_rv($sv, $fullname);
     $static = 1; # avoid run-time overwrite of the PV/RV slot (#273)
-    if ($savesym =~ /(\(char\*\))?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+    if ($savesym =~ /get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
       $static = 0;
       $pv = $savesym;
       $savesym = 'NULL';
@@ -989,7 +989,7 @@ sub save_pv_or_rv {
       if ($static) {
 	$len = 0;
 	$savesym = $iscow ? savepv($pv) : constpv($pv);
-        if ($savesym =~ /^(\(char\*\))?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+        if ($savesym =~ /\)?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
 	  $len = $cur +1;
           $pv = $savesym;
@@ -1799,7 +1799,7 @@ sub B::METHOP::save {
   my $ix = $methopsect->index + 1;
   my $rclass = $ITHREADS ? $op->rclass : $op->rclass->save("op_rclass_sv");
   if ($rclass =~ /^&sv_list/) {
-    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_rclass_sv */",
+    $init->add( sprintf( "SvREFCNT_inc_simple_NN(%s); /* methop_list[%d].op_rclass_sv */",
                          $rclass, $ix ));
     # Put this simple PV into the PL_stashcache, it has no STASH,
     # and initialize the method cache.
@@ -1809,7 +1809,7 @@ sub B::METHOP::save {
   }
   my $first = $op->name eq 'method' ? $op->first->save : $op->meth_sv->save;
   if ($first =~ /^&sv_list/) {
-    $init->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_meth_sv */",
+    $init->add( sprintf( "SvREFCNT_inc_simple_NN(%s); /* methop_list[%d].op_meth_sv */",
                          $first, $ix ));
   }
   $methopsect->add(sprintf($s, $op->_save_common, $first, $rclass));
@@ -3561,16 +3561,17 @@ sub B::RV::save {
         sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
     }
     # one more: bootstrapped XS CVs (test Class::MOP, no simple testcase yet)
-    elsif ( $rv =~ /(\(char\*\))?get_cv/ ) {
+    # dynamic; so we need to inc it
+    elsif ( $rv =~ /get_cv/ ) {
       $xrvsect->add("Nullsv /* $rv */");
       $init->add(
-        sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
+        sprintf( "xrv_list[%d].xrv_rv = (SV*)SvREFCNT_inc(%s);", $xrvsect->index, $rv ) );
     }
     else {
       #$xrvsect->add($rv); # not static initializable (e.g. cv160 for ExtUtils::Install)
       $xrvsect->add("Nullsv /* $rv */");
       $init->add(
-        sprintf( "xrv_list[%d].xrv_rv = (SV*)%s;", $xrvsect->index, $rv ) );
+        sprintf( "xrv_list[%d].xrv_rv = (SV*)SvREFCNT_inc(%s);", $xrvsect->index, $rv ) );
     }
     $svsect->comment( "any, refcnt, flags" );
     $svsect->add(sprintf("&xrv_list[%d], %Lu, 0x%x",
@@ -4890,7 +4891,7 @@ sub B::GV::save {
 	warn "GV::save &$fullname...\n" if $debug{gv};
         $cvsym = $gvcv->save($fullname);
         # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
-        if ($cvsym =~ /(\(char\*\))?get_cv/) {
+        if ($cvsym =~ /get_cv/) {
 	  if (!$xsub{$package} and in_static_core($package, $gvname)) {
 	    my $in_gv;
 	    for (@{ $init->[-1]{current} }) {
@@ -4906,7 +4907,7 @@ sub B::GV::save {
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
 	    }
-	    $init->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ));
+	    $init->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));", $sym, $cvsym ));
 	  }
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
@@ -6835,7 +6836,7 @@ _EOT9
           # TODO: utf8 stashname (does make sense when loading from the fs?)
           if ($PERL522 and $staticxs) { # GH 333
             print "\t{
-		CV* cv = get_cv(\"$stashname\::bootstrap\", GV_ADD);
+		CV* cv = (CV*)SvREFCNT_inc_simple_NN(get_cv(\"$stashname\::bootstrap\", GV_ADD));
 		CvISXSUB_on(cv); /* otherwise a perl assertion fails. */
 		cv->sv_any->xcv_padlist_u.xcv_hscxt = &PL_stack_sp; /* xs_handshake */
 		boot_$stashxsub(aTHX_ cv);
@@ -7847,17 +7848,17 @@ sub save_context {
   );
   if ($] < 5.017005) {
     $init->add(
-      "av_store((AV*)CvPADLIST(PL_main_cv), 0, SvREFCNT_inc($curpad_nam)); /* namepad */",
-      "av_store((AV*)CvPADLIST(PL_main_cv), 1, SvREFCNT_inc($curpad_sym)); /* curpad */");
+      "av_store((AV*)CvPADLIST(PL_main_cv), 0, SvREFCNT_inc_simple_NN($curpad_nam)); /* namepad */",
+      "av_store((AV*)CvPADLIST(PL_main_cv), 1, SvREFCNT_inc_simple_NN($curpad_sym)); /* curpad */");
   } elsif ($] < 5.019003) {
     $init->add(
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc_simple_NN($curpad_nam); /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc_simple_NN($curpad_sym); /* curpad */");
   } elsif ($] < 5.022) {
     $init->add(
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc($curpad_nam); /* namepad */",
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[0] = PL_comppad_name = (PAD*)SvREFCNT_inc_simple_NN($curpad_nam); /* namepad */",
       "PadnamelistMAXNAMED(PL_comppad_name) = AvFILL($curpad_nam);",
-      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc($curpad_sym); /* curpad */");
+      "PadlistARRAY(CvPADLIST(PL_main_cv))[1] = (PAD*)SvREFCNT_inc_simple_NN($curpad_sym); /* curpad */");
   } else {
     $init->add(
       "PadlistNAMES(CvPADLIST(PL_main_cv)) = PL_comppad_name = $curpad_nam; /* namepad */",
