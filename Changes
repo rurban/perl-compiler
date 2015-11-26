@@ -39,6 +39,7 @@
           This fixed many old 5.14 limitations.
         Improve MATCH once (m??) handling with reset, find PMOP from
           the Regexp dynamically (GH #252)
+        Bump refcounts of dynamic get_cv refs (#293). Coro in global destruction.
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
         * t/CORE: versioned the core tests and moved to a external submodule

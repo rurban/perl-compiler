@@ -23,7 +23,7 @@ sub save {
     my $ix = methopsect()->index + 1;
     my $rclass = USE_ITHREADS() ? $op->rclass : $op->rclass->save("op_rclass_sv");
     if ( $rclass =~ /^&sv_list/ ) {
-        init()->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_rclass_sv */", $rclass, $ix ) );
+        init()->add( sprintf( "SvREFCNT_inc_simple_NN(%s); /* methop_list[%d].op_rclass_sv */", $rclass, $ix ) );
 
         # Put this simple PV into the PL_stashcache, it has no STASH,
         # and initialize the method cache.
@@ -32,7 +32,7 @@ sub save {
     }
     my $first = $op->name eq 'method' ? $op->first->save : $op->meth_sv->save;
     if ( $first =~ /^&sv_list/ ) {
-        init()->add( sprintf( "SvREFCNT_inc(%s); /* methop_list[%d].op_meth_sv */", $first, $ix ) );
+        init()->add( sprintf( "SvREFCNT_inc_simple_NN(%s); /* methop_list[%d].op_meth_sv */", $first, $ix ) );
     }
 
     methopsect()->add( sprintf( $s, $op->_save_common, $first, $rclass ) );

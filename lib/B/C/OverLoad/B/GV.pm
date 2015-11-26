@@ -542,7 +542,7 @@ sub save {
                 $cvsym = $gvcv->save($fullname);
 
                 # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
-                if ( $cvsym =~ /(\(char\*\))?get_cv/ ) {
+                if ( $cvsym =~ /get_cv/ ) {
                     if ( !$B::C::xsub{$package} and B::C::in_static_core( $package, $gvname ) ) {
                         my $in_gv;
                         for ( @{ init()->{current} } ) {
@@ -556,7 +556,7 @@ sub save {
                                 debug( gv => "removed $sym GP assignments $origname (core CV)" );
                             }
                         }
-                        init()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );
+                        init()->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));", $sym, $cvsym ) );
                     }
                     elsif ( $B::C::xsub{$package} ) {
 

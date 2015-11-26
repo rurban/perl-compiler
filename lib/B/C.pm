@@ -340,7 +340,7 @@ sub save_pv_or_rv {
         debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
         $savesym = B::RV::save_op( $sv, $fullname );
         $static = 1;    # avoid run-time overwrite of the PV/RV slot (#273)
-        if ( $savesym =~ /(\(char\*\))?get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+        if ( $savesym =~ /get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
             $static  = 0;
             $pv      = $savesym;
             $savesym = 'NULL';
@@ -348,7 +348,7 @@ sub save_pv_or_rv {
     }
     else {
         if ($pok) {
-            $pv = pack "a*", $sv->PV;                 # XXX!
+            $pv = pack "a*", $sv->PV;    # XXX!
             $cur = ( $sv and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length($pv);
         }
         else {
@@ -390,7 +390,7 @@ sub save_pv_or_rv {
             if ($static) {
                 $len = 0;
                 $savesym = $iscow ? savepv($pv) : constpv($pv);
-                if ( $savesym =~ /^(\(char\*\))?get_cv/ ) {          # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+                if ( $savesym =~ /^get_cv/ ) {                       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
                     $static  = 0;
                     $len     = $cur + 1;
                     $pv      = $savesym;
