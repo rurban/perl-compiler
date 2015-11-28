@@ -1,8 +1,8 @@
 /* This loads bytecode in .plc files starting with PLBC.
-   Produce by the B::Bytecode compiler.
+   Produced by the B::Bytecode compiler.
 
-   It might also be useful to use it for JIT or Asm compiled
-   PLJC .plc files where a full PE/COFF or elf format is not
+   It might also be useful for JIT or ASM compiled
+   PLJC .plc files where a full PE/COFF or MACHO/ELF format is not
    supported nor wanted, jumps are not patched,
    or a full executable dump is not possible.
 */
@@ -134,7 +134,13 @@ byteloader_filter(pTHX_ int idx, SV *buf_sv, int maxlen)
         PL_main_root = saveroot;
         PL_main_start = savestart;
     }
-
+    /* Proof for [cperl #75] that newPROG() overwrites our main_start */
+#if PERL_VERSION > 21 && defined(DEBUGGING)
+    if (DEBUG_t_TEST_ && DEBUG_v_TEST_) {
+      op_dump(PL_main_start);
+      op_dump(PL_main_start->op_next);
+    }
+#endif
     return 0;
 }
 

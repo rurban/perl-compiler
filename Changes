@@ -6,9 +6,12 @@
 
 1.53 2015-12-05 rurban
         added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues
+        Bytecode broken upstream
 
         * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
         Add ops for padl, padn, padnl, unop_aux and methop needed for 5.22
+        ByteLoader was broken upstream with 5.22. You need to build a perl with
+        `perlall build --patches-Compiler 5.22.0`
         * Disassmbler (1.13), Assembler (1.13): support PADNAME and PADNAMELIST for 5.22
         * C: fix B::PMOP::precomp for UTF8 (#333, #338, GH#50)
         Add 5.22 support with a new unop_aux (multideref) section, methop support,

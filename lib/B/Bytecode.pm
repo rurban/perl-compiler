@@ -1010,7 +1010,7 @@ sub B::UNOP_AUX::bsave {
   asm "unop_aux", cstring $op->aux;
 }
 
-sub B::METHOP::bsave {
+sub B::METHOP::bsave($$) {
   my ( $op, $ix ) = @_;
   my $name    = $op->name;
   my $firstix = $name eq 'method' ? $op->first->ix : $op->meth_sv->ix;
@@ -1024,13 +1024,14 @@ sub B::METHOP::bsave {
   asm "methop_rclass", $rclass if $rclass or ITHREADS; # padoffset 0 valid threaded
 }
 
-sub B::BINOP::bsave {
+sub B::BINOP::bsave($$) {
   my ( $op, $ix ) = @_;
   if ( $op->name eq 'aassign' && $op->private & B::OPpASSIGN_HASH() ) {
     my $last   = $op->last;
     my $lastix = do {
       local *B::OP::bsave   = *B::OP::bsave_fat;
       local *B::UNOP::bsave = *B::UNOP::bsave_fat;
+      #local *B::BINOP::bsave = *B::BINOP::bsave_fat;
       $last->ix;
     };
     asm "ldop", $lastix unless $lastix == $opix;
@@ -1049,7 +1050,7 @@ sub B::BINOP::bsave {
 
 # deal with sort / formline
 
-sub B::LISTOP::bsave {
+sub B::LISTOP::bsave($$) {
   my ( $op, $ix ) = @_;
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
   my $name = $op->name;
@@ -1097,23 +1098,20 @@ sub B::LISTOP::bsave {
 # fat versions
 
 # or parent since 5.22
-sub B::OP::has_sibling {
+sub B::OP::has_sibling($) {
   my $op = shift;
   return $op->moresib if $op->can('moresib'); #5.22
   return $op->lastsib if $op->can('lastsib'); #5.21
   return 1;
 }
 
-sub B::OP::bsave_fat {
+sub B::OP::bsave_fat($$) {
   my ( $op, $ix ) = @_;
 
   if ($op->has_sibling) {
     my $sibling = $op->sibling; # might be B::NULL with 5.22 and PERL_OP_PARENT
     my $siblix = $sibling->ix;
     $op->B::OP::bsave_thin($ix);
-    if ($] >= 5.021002) {
-      asm "op_moresib", 1;
-    }
     asm "op_sibling", $siblix;
   } elsif ($] > 5.021011 and ref($op->parent) ne 'B::NULL') {
     my $parent = $op->parent;
@@ -1437,7 +1435,9 @@ sub compile {
     *B::OP::bsave     = *B::OP::bsave_fat;
     *B::UNOP::bsave   = *B::UNOP::bsave_fat;
     *B::BINOP::bsave  = *B::BINOP::bsave_fat;
-    *B::LISTOP::bsave = *B::LISTOP::bsave_fat;
+    #*B::LISTOP::bsave = *B::LISTOP::bsave_fat;
+    #*B::LOGOP::bsave  = *B::LOGOP::bsave_fat;
+    #*B::PMOP::bsave   = *B::PMOP::bsave_fat;
   }
   sub bwarn { print STDERR "Bytecode.pm: @_\n" unless $quiet; }
 
@@ -1473,7 +1473,7 @@ use ByteLoader '$ByteLoader::VERSION';
       # Maybe: Fix the plc reader, if 'perl -MByteLoader <.plc>' is called
     }
     elsif (/^-k/) {
-      keep_syn unless $PERL510;
+      keep_syn() if !$PERL510 or $PERL522;
     }
     elsif (/^-m/) {
       $module = 1;
