@@ -3,6 +3,7 @@
 
 use Test::More;
 use File::Spec;
+use B::C::Flags;
 
 sub curr_test {
     $test = shift if @_;
@@ -850,8 +851,8 @@ sub plctestok {
 sub plctest {
     my ($num, $expected, $base, $script, $todo) =  @_;
 
-    if ($] > 5.021006) { # temp 5.22
-        ok(1, "SKIP BC for 5.22 WIP");
+    if ($] > 5.021006 and !$B::C::Flags::have_byteloader) {
+        ok(1, "SKIP perl5.22 broke ByteLoader");
         return 1;
     }
     my $name = $base."_$num";

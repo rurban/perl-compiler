@@ -33,9 +33,9 @@ sub probe_byteloader {
   my $ret = `$^X -Mblib $out`;
   unlink $out;
   if ($ret ne "ok") {
-    warn "Broken perl5.22, unpatched for ByteLoader.\n".
-      "Try 'cpan App::perlall; perlall build 5.22.0 --patches=Compiler'\n".
-      "or try cperl5.22.2\n";
+    warn "Warning: Broken perl5.22, unpatched for ByteLoader.\n".
+      "  Try 'cpan App::perlall; perlall build 5.22.0 --patches=Compiler'\n".
+      "  or try cperl5.22.2\n";
     return "0";
   }
   return "1";

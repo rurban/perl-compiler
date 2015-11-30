@@ -8,6 +8,7 @@ BEGIN {
 }
 use Test::More tests => 2;
 use Config;
+use B::C::Flags;
 
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
@@ -53,12 +54,13 @@ unless (-e "$name.plc") {
 $runexe = "$runperl -MByteLoader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
-TODO: {
+SKIP: { TODO: {
   local $TODO = "B::Bytecode issue 29 utf8 perlio: 5.12-5.16"
-    if ($] >= 5.011004 and $] < 5.018 and $ITHREADS)
-    or $] > 5.021;
+    if ($] >= 5.011004 and $] < 5.018 and $ITHREADS);
+  skip "perl5.22 broke ByteLoader", 1
+      if $] > 5.021006 and !$B::C::Flags::have_byteloader;
   ok($result eq $expected, "BC '$result' eq '$expected'");
-}
+}}
 
 END {
   unlink($name, "$name.plc", "$name.pl", "$name.exe")

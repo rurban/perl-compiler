@@ -3,8 +3,10 @@
 # v5.15 Bytecode Attempt to access disallowed key 'strict/subs' in a restricted hash
 use strict;
 my $name = "ccode98i";
-use Test::More tests => 1;
-#Test::More->import($] <= 5.021006 ? (tests => 1) : (skip_all => 'bytecode for 5.22 WIP'));
+use Test::More;
+use B::C::Flags;
+Test::More->import($] <= 5.021006 || $B::C::Flags::have_byteloader
+                   ? (tests => 1) : (skip_all => 'perl5.22 broke ByteLoader'));
 use Config;
 
 # New bug reported by Zloysystem
@@ -43,11 +45,10 @@ my $runexe = $] < 5.008
 my $result = `$runexe`;
 $result =~ s/\n$//;
 
-SKIP: { TODO: {
+SKIP: {
   skip "no features on 5.6", 1 if $] < 5.008;
-  local $TODO = 'bytecode 5.22 WIP' if $] > 5.021006;
   ok($result eq $expected, "issue98 - set feature hash");
-}}
+}
 
 END {
   unlink($name, "$name.plc", "$name.pl")

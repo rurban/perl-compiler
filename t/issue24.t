@@ -3,6 +3,7 @@
 use strict;
 use Test::More tests => 3;
 use Config;
+use B::C::Flags;
 
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $ITHREADS  = ($Config{useithreads});
@@ -25,12 +26,14 @@ my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $expected = `$runperl $name.pl`;
 
 $result = `$runperl $Mblib blib/script/perlcc -r -B $name.pl`;
-TODO: { #1
-  local $TODO = "Bytecode issue 24 dbm (still original compiler)"
-    if $] < 5.008001 or $result =~ /No dbm on this machine/
-    or $] > 5.021;
-  is($result, $expected, "Bytecode dbm fixed with r882, 1.30");
-}
+SKIP: {
+  TODO: { #1
+    local $TODO = "Bytecode issue 24 dbm (still original compiler)"
+      if $] < 5.008001 or $result =~ /No dbm on this machine/;
+    skip "perl5.22 broke ByteLoader", 1
+      if $] > 5.021006 and !$B::C::Flags::have_byteloader;
+    is($result, $expected, "Bytecode dbm fixed with r882, 1.30");
+}}
 unlink("$name.db*");
 
 $Mblib = "-Iblib/arch -Iblib/lib" if $] < 5.007;

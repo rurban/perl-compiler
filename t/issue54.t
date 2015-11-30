@@ -4,6 +4,7 @@
 use strict;
 my $name = "ccode54p";
 use Test::More tests => 1;
+use B::C::Flags;
 
 my $pkg = <<"EOF";
 package $name;
@@ -37,7 +38,8 @@ $result =~ s/\n$//;
 
 SKIP: {
   skip "no pmc on 5.6 (yet)", 1 if $] < 5.008;
-  skip "no pmc on 5.22 (yet)", 1 if $] > 5.021;
+  skip "perl5.22 broke ByteLoader", 1
+      if $] > 5.021006 and !$B::C::Flags::have_byteloader;
   ok($result eq $expected, "issue54 - pad_swipe error with package pmcs");
 }
 

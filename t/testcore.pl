@@ -27,6 +27,7 @@ BEGIN {
   unshift @INC, ("t");
 }
 
+use B::C::Flags;
 require "test.pl";
 
 sub vcmd {
@@ -181,6 +182,8 @@ for my $t (@tests) {
   if ($runtests{BC}) {
     (print "ok $i #skip $SKIP->{BC}->{$t}\n" and next)
       if exists $SKIP->{BC}->{$t};
+    print "ok $i #skip  perl5.22 broke ByteLoader\n" if
+      $] > 5.021006 and !$B::C::Flags::have_byteloader;
 
     my $backend = 'Bytecode';
     chdir $dir;
