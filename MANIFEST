@@ -43,6 +43,7 @@ ByteLoader/ByteLoader.pm
 ByteLoader/ByteLoader.xs
 ByteLoader/Makefile.PL
 ByteLoader/bytecode.h
+ByteLoader/hints/522_patched.pl
 ByteLoader/hints/sunos.pl
 ByteLoader/ppport.h
 C.xs

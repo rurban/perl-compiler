@@ -45,6 +45,7 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
 #        $extra_cflags .= " -gstrict-dwarf";
 #    }
 #}
+my $have_byteloader = $] < 5.022 ? 1 : check_byteloader();
 
 sub b_c_deps {
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
@@ -74,6 +75,8 @@ sub write_b_c_flags {
     print PH "# -fav-init optimization\n";
     print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
     print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
+    print PH "# broken or patched upstream 5.22 ByteLoader. undef for yet undecided\n";
+    print PH "\$have_byteloader = $have_byteloader;\n";
     print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
@@ -180,6 +183,14 @@ sub headerpath {
     } else {
 	return File::Spec->catdir($Config::Config{archlibexp}, "CORE");
     }
+}
+
+
+# probe for broken or patched ByteLoader since 5.22
+# sets $B::C::Flags::have_byteloader
+sub check_byteloader {
+    return 1 if $Config{usecperl} and $] >= 5.022002;
+    'undef';
 }
 
 # Check for Doug Lea's dlmalloc version, or ptmalloc2 included in glibc
@@ -368,6 +379,22 @@ TAGS : $asmdata
         $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
     }
     $result;
+}
+
+# force reconfig of B::C::Flags with compiled ByteLoader
+sub subdirs {
+    my $s = shift->SUPER::subdirs(@_);
+    if ($] >= 5.022) {
+        my $bcflags = File::Spec->catfile('lib', 'B', 'C', 'Flags.pm');
+        my $bytehintspatched = File::Spec->catfile('ByteLoader', 'hints', '522_patched.pl');
+        return $s . "
+
+subdirs ::
+	\$(PERL) $bytehintspatched
+";
+    } else {
+        $s
+    }
 }
 
 sub test {
