@@ -17,6 +17,8 @@
         * C: fix B::PMOP::precomp for UTF8 (#333, #338, GH#50)
         Add 5.22 support with a new unop_aux (multideref) section, methop support,
           new support for PADNAME and PADNAMELIST objects.
+        Fix upstream B::UNOP_AUX::aux_list bug with threads. Use our own method which
+          returns the PADOFFSET, not the SV. (#341)
         Removed B::Section which used base. (toddr)
         Re-add PL_sv_objcount on cperl
         Fixed XSUB CONSTSUB alias (44,45,... PR #228) (atoomic)
@@ -44,8 +46,6 @@
         Improve MATCH once (m??) handling with reset, find PMOP from
           the Regexp dynamically (GH#252)
         Bump refcounts of dynamic get_cv refs (#293). Fixes Coro in global destruction.
-        Fix upstream B::UNOP_AUX::aux_list bug with threads. Use our own method which
-          returns the PADOFFSET, not the SV. (#341)
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
         * t/CORE: versioned the core tests and moved to a external submodule

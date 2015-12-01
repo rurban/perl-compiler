@@ -96,6 +96,7 @@ log.modules-5.022000
 log.modules-5.022000-nt
 perlcompile.pod
 perloptree.pod
+ramblings/5.22-problems.md
 ramblings/B-CC-yapceu2013.pdf
 ramblings/Carp-wo-B.patch
 ramblings/Export-DynaLoader-symbols-from-libperl-again.patch
