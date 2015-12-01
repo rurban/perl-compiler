@@ -5,13 +5,13 @@
 
 
 1.53 2015-12-05 rurban
-        added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues
+        added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues.
         Bytecode broken upstream with 5.22.0
 
         * Bytecode (1.17): removed lastsib bit for 5.21.2-5.21.10, support only moresib op
         Add ops for padl, padn, padnl, unop_aux and methop needed for 5.22
         ByteLoader was broken upstream with 5.22. You need to build a perl with
-        `perlall build --patches-Compiler 5.22.0`
+        `perlall build --patches-Compiler 5.22.0` or use cperl5.22.2.
         Added a probe, set $B::C::Flags::have_byteloader
         * Disassembler (1.13), Assembler (1.13): support PADNAME and PADNAMELIST for 5.22
         * C: fix B::PMOP::precomp for UTF8 (#333, #338, GH#50)
@@ -39,15 +39,17 @@
           by adding a mro_isa_changed_in() to the overloaded stash.
         Support multiple stash ENAMES, needed since 5.14 (GH #331)
           This fixed many old 5.14 limitations. (Added to our version of B)
-        Support %^H, storing the hints_hash (features, pragmas) (GH #220)
+        Support %^H, storing the hints_hash (features, pragmas) (GH#220)
           This fixed many old 5.14 limitations.
         Improve MATCH once (m??) handling with reset, find PMOP from
-          the Regexp dynamically (GH #252)
-        Bump refcounts of dynamic get_cv refs (#293). Coro in global destruction.
+          the Regexp dynamically (GH#252)
+        Bump refcounts of dynamic get_cv refs (#293). Fixes Coro in global destruction.
+        Fix upstream B::UNOP_AUX::aux_list bug with threads. Use our own method which
+          returns the PADOFFSET, not the SV. (#341)
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
         * t/CORE: versioned the core tests and moved to a external submodule
-          perl11/p5-coretests on github. (GH #332)
+          perl11/p5-coretests on github. (GH#332)
 
 1.52 2014-09-09 rurban
         * C: Protect against empty SV ptr in SV magic (\0) with $` with 5.20 (#370)

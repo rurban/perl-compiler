@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_24';
+our $VERSION = '1.52_25';
 our %debug;
 our $check;
 our %Config;
@@ -1527,7 +1527,7 @@ sub B::UNOP_AUX::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $level = 0 unless $level;
-  my @aux_list = $op->aux_list($ITHREADS ? curcv : \2); # GH#283
+  my @aux_list = $op->aux_list_thr; # GH#283, GH#341
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
   my $ix = $unopauxsect->index + 1;
