@@ -310,13 +310,14 @@ sub is_todo {
       ExtUtils::ParseXS
   )) { return '>= 5.18 #135 Eval-group not allowed at runtime' if $_ eq $module; }}
   # DateTime fixed with 1.52_13
-  if ($] >= 5.018) { foreach(qw(
-      Path::Class
-  )) { return '>= 5.18 #219 overload stringify regression' if $_ eq $module; }}
+  # stringify fixed with 1.52_18
+  #if ($] >= 5.018) { foreach(qw(
+  #    Path::Class
+  #)) { return '>= 5.18 #219 overload stringify regression' if $_ eq $module; }}
   if ($] >= 5.023005) { foreach(qw(
       Attribute::Handlers
       MooseX::Types
-  )) { return '>= 5.23.5' if $_ eq $module; }}
+  )) { return '>= 5.23.5 SEGV' if $_ eq $module; }}
 
   # ---------------------------------------
   if ($Config{useithreads}) {
@@ -329,9 +330,9 @@ sub is_todo {
     #if ($] >= 5.012 and $] < 5.014) { foreach(qw(
     #  ExtUtils::CBuilder
     #)) { return '5.12 with threads' if $_ eq $module; }}
-    if ($] >= 5.016 and $] < 5.020) { foreach(qw(
+    if ($] >= 5.016 and $] < 5.018) { foreach(qw(
       Module::Build
-    )) { return '5.16-5.20 (out of memory)' if $_ eq $module; }}
+    )) { return '5.16 threaded (out of memory)' if $_ eq $module; }}
     #if ($] >= 5.022) { foreach(qw(
     #)) { return '>= 5.22 with threads SEGV' if $_ eq $module; }}
     #if ($] >= 5.022) { foreach(qw(
@@ -341,9 +342,13 @@ sub is_todo {
     #  ExtUtils::CBuilder
     #)) { return '5.8.9 without threads' if $_ eq $module; }}
     # invalid free
-    if ($] >= 5.016 and $] < 5.020) { foreach(qw(
+    if ($] >= 5.016 and $] < 5.018) { foreach(qw(
         Module::Build
-    )) { return '>= 5.16 without threads (invalid free)' if $_ eq $module; }}
+    )) { return '5.16 without threads (invalid free)' if $_ eq $module; }}
+    # This is a flapping test
+    if ($] >= 5.017 and $] < 5.020) { foreach(qw(
+        Moose
+    )) { return '5.18 without threads' if $_ eq $module; }}
     #if ($] > 5.019) { foreach(qw(
     #  MooseX::Types
     #)) { return '5.19 without threads' if $_ eq $module; }}

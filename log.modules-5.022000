@@ -1,35 +1,35 @@
-# B::C::VERSION = 1.52_25 860e2c0 2015-12-01 | Add 5.22-problems.md blog post
+# B::C::VERSION = 1.52_25 8d47bfc 2015-12-01 | Update log.modules-5.022000, fixed all FAILs
 # perlversion = 5.022000
 # path = /usr/local/bin/perl5.22.0
 # platform = linux 64bit threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
-pass Test::Harness #TODO >= 5.22 with threads, no ok
+pass Test::Harness
 pass Pod::Escapes
 pass Pod::Simple
 pass IO
 pass Scalar::Util
 pass Getopt::Long
-pass Pod::Parser #TODO >= 5.22 with threads SEGV
-pass ExtUtils::MakeMaker #TODO >= 5.22 with threads, no ok
+pass Pod::Parser
+pass ExtUtils::MakeMaker
 pass Test::Simple
 pass ExtUtils::Manifest
-pass Pod::Text #TODO >= 5.22 with threads, no ok
+pass Pod::Text
 pass constant
 pass Test
 pass Data::Dumper
 pass File::Spec
-pass File::Temp #TODO >= 5.22 with threads, no ok
+pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder #TODO >= 5.22 with threads, no ok
+pass ExtUtils::CBuilder
 fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
-pass Module::Build #TODO >= 5.22 with threads, no ok
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
-pass Digest #TODO >= 5.22 with threads SEGV
+pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
 pass URI
@@ -40,7 +40,7 @@ pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP #TODO >= 5.22 with threads SEGV
+pass LWP
 pass Storable
 pass base
 pass List::MoreUtils
@@ -52,7 +52,7 @@ pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings #TODO >= 5.22 with threads SEGV
+pass Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -72,18 +72,18 @@ pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI #TODO >= 5.22 with threads SEGV
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class #TODO >= 5.18 #219 overload stringify regression
+pass Path::Class
 pass Test::Warn
-pass Encode #TODO >= 5.22 with threads, no ok
+pass Encode
 pass Variable::Magic
-pass CGI #TODO >= 5.22 with threads SEGV
+pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
 pass Digest::SHA1
@@ -99,11 +99,11 @@ pass DateTime::TimeZone
 pass DateTime::Locale
 pass DateTime
 pass IO::String
-pass AppConfig #TODO >= 5.22 with threads SEGV
+pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash #TODO >= 5.22 with threads SEGV
+pass Template::Stash
 # 100 / 100 modules tested with B-C-1.52_25 - perl-5.022000
 # pass  99 / 100 (99.0%)
 # fail   1 / 100 (1.0%)
-# todo  17 /   1 (1700.0%)
+# todo   1 /   1 (100.0%)
 # skip   0 / 100 (0.0% not installed)
