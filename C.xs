@@ -10,6 +10,10 @@
 #  define PM_GETRE(o)     ((o)->op_pmregexp)
 # endif
 #endif
+/* for < 5.10 */
+#if defined(DEBUGGING) && !defined(RX_WRAPPED)
+# define RX_WRAPPED(rx)	((rx)->subbeg)
+#endif
 /* hack for 5.6.2: just want to know if PMf_ONCE or 0 */
 #ifndef PmopSTASHPV
 # define PmopSTASHPV(o) ((o)->op_pmflags & PMf_ONCE)

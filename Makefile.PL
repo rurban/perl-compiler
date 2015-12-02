@@ -167,7 +167,7 @@ WriteMakefile(
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ".
-               "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* ".
+               "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* lib/B/C/Flags.pm ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
                "t/CORE/v5.*/*/*.bin t/CORE/v5.*/*/*.c Io_argv* t/CORE/v5.*/*/*.subtest.*.t".
