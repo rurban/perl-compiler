@@ -113,8 +113,8 @@ sub savestash_flags {
     my $hv_index = B::C::HV::get_index();
     $flags = $flags ? "$flags|GV_ADD" : "GV_ADD" if !$disable_gvadd;    # enabled by default
     my $sym = "hv$hv_index";
-    decl()->add("Static HV *hv$hv_index;");
-    $stashtable{$name} = $sym;
+    decl()->add("Static HV *$sym;");
+    B::C::HV::inc_index();
     if ($name) {                                                        # since 5.18 save @ISA before calling stashpv
         my @isa = B::C::get_isa($name);
         no strict 'refs';
@@ -123,14 +123,13 @@ sub savestash_flags {
         }
     }
     my $pvsym = $len ? constpv($name) : '""';
+    $stashtable{$name} = $sym;
     init()->add(
         sprintf(
             "%s = gv_stashpvn(%s, %u, %s); /* $name */",
             $sym, $pvsym, $len, $flags
         )
     );
-
-    B::C::HV::inc_index();
 
     return $sym;
 }
