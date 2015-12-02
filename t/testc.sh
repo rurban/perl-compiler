@@ -1305,6 +1305,7 @@ tests[335]='use POSIX (); print POSIX::M_SQRT2;'
 result[335]='1.41421356237309'
 tests[338]='use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";'
 tests[340]='eval q/use Net::DNS/; my $new = "IO::Socket::INET6"->can("new") or die "die at new"; my $inet = $new->("IO::Socket::INET6", LocalAddr => q/localhost/, Proto => "udp", LocalPort => undef); print q(ok) if ref($inet) eq "IO::Socket::INET6";'
+tests[342]='use IO::Socket::INET6 (); my $sock = IO::Socket::INET6->new( Blocking => 1, PeerAddr => q/127.0.0.1/, PeerPort => 22 ); print "ok\n";'
 # used to fail in the inc-i340 branches CORE/base/lex.t 54
 tests[3401]='sub foo::::::bar { print "ok\n"; } foo::::::bar;'
 # wontfix on -O3: static string *end for "main::bar"

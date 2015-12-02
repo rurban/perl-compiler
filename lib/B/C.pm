@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_25';
+our $VERSION = '1.52_26';
 our %debug;
 our $check;
 our %Config;
@@ -802,8 +802,8 @@ sub savestash_flags {
   #return '(HV*)&PL_sv_undef' if $name =~ /^(|B::CC?)$/; # protect against empty stashes
   $flags = $flags ? "$flags|GV_ADD" : "GV_ADD";
   my $sym = "hv$hv_index";
-  $decl->add("Static HV *hv$hv_index;");
-  $stashtable{$name} = $sym;
+  $decl->add("Static HV *$sym;");
+  $hv_index++;
   if ($PERL518 and $name) { # since 5.18 save @ISA before calling stashpv
     my @isa = get_isa($name);
     no strict 'refs';
@@ -812,9 +812,9 @@ sub savestash_flags {
     }
   }
   my $pvsym = $len ? constpv($name) : '""';
+  $stashtable{$name} = $sym;
   $init->add( sprintf( "%s = gv_stashpvn(%s, %u, %s); /* $name */",
                        $sym, $pvsym, $len, $flags));
-  $hv_index++;
   return $sym;
 }
 
