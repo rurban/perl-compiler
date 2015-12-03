@@ -71,14 +71,14 @@ sub save {
             if ( is_constant($itemsym) ) {
                 if ( ref $item eq 'B::IV' ) {
                     my $iv = $item->IVX;
-                    $s .= "\t,{.iv=$iv}\n";
+                    $s .= "\t,{.iv = $iv}\n";
                 }
                 elsif ( ref $item eq 'B::UV' ) {    # also for PAD_OFFSET
                     my $uv = $item->UVX;
-                    $s .= "\t,{.uv=$uv}\n";
+                    $s .= "\t,{.uv = $uv}\n";
                 }
                 else {                              # SV
-                    $s .= "\t,{.sv=$itemsym}\n";
+                    $s .= "\t,{.sv = $itemsym}\n";
                 }
             }
             else {
