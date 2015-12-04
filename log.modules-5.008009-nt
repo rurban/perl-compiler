@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.52_25 8d47bfc 2015-12-01 | Update log.modules-5.022000, fixed all FAILs M
+# B::C::VERSION = 1.52_26 6db7b9b 2015-12-02 | 5.8 fixes: RX_WRAPPED
 # perlversion = 5.008009-nt
 # path = /usr/local/bin/perl5.8.9-nt
 # platform = linux 64bit non-threaded
@@ -102,7 +102,7 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52_25 - perl-5.008009-nt
+# 100 / 100 modules tested with B-C-1.52_26 - perl-5.008009-nt
 # pass 100 / 100 (100.0%)
 # fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
