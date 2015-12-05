@@ -7053,7 +7053,7 @@ _EOT15
     perl_init(aTHX);
 EOT
     print "    perl_init1(aTHX);\n" if $init1->index >= 0;
-    print "    dl_init(aTHX);" unless defined $module;
+    print "    dl_init(aTHX);\n" unless defined $module;
     print "    perl_init2(aTHX);\n" if $init2->index >= 0;
     print "\n    exitstatus = perl_run( my_perl );\n";
     foreach my $s ( @{ $init->[-1]{pre_destruct} } ) {

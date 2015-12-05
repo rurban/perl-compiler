@@ -16,6 +16,10 @@ if (grep {$_ eq '-d' or $_ eq '--debug'} @ARGV) {
   $debug++;
   @ARGV = grep {$_ ne '-d' and $_ ne '--debug'} @ARGV;
 }
+if (grep {$_ eq '-A'} @ARGV) {
+  @ARGV = grep {$_ ne '-A'} @ARGV;
+  push @ARGV, '-DALLOW_PERL_OPTIONS';
+}
 eval { require B::C::Flags; };
 
 if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
