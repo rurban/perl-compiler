@@ -372,25 +372,26 @@ sub save {
         $B::C::use_xsloader = 1;
     }
 
+    # avoid overly dynamic POSIX redefinition warnings: GH #335, #345
+    if ( $fullname =~ m/^POSIX::M/ ) {
+        $savefields &= ~Save_CV;
+    }
     my $gvsv;
     if ($savefields) {
 
         # Don't save subfields of special GVs (*_, *1, *# and so on)
         debug( gv => "GV::save saving subfields $savefields" );
-        if ( $fullname eq 'POSIX::M_SQRT2' ) {                           # GH #335 avoid redefinition warning
-            $savefields &= ~Save_CV;
-        }
         $gvsv = $gv->SV;
         if ( $$gvsv && $savefields & Save_SV ) {
             debug( gv => "GV::save \$" . $sym . " $gvsv" );
-            my $core_svs = {                                             # special SV syms to assign to the right GvSV
+            my $core_svs = {    # special SV syms to assign to the right GvSV
                 "\\" => 'PL_ors_sv',
                 "/"  => 'PL_rs',
                 "@"  => 'PL_errors',
             };
             for my $s ( sort keys %$core_svs ) {
                 if ( $fullname eq 'main::' . $s ) {
-                    savesym( $gvsv, $core_svs->{$s} );                   # TODO: This could bypass BEGIN settings (->save is ignored)
+                    savesym( $gvsv, $core_svs->{$s} );    # TODO: This could bypass BEGIN settings (->save is ignored)
                 }
             }
             if ( $gvname eq 'VERSION' and $B::C::xsub{$package} and $gvsv->FLAGS & SVf_ROK ) {
