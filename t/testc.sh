@@ -537,7 +537,7 @@ tests[99]='package my;sub recurse{my $i=shift;recurse(++$i)unless $i>5000;print"
 if [[ $v518 -gt 0 ]]; then
   tests[130]='no warnings "experimental::lexical_subs";use feature "lexical_subs";my sub p{q(ok)}; my $a=\&p;print p;'
 fi
-tests[135]='"to" =~ /t(?{ print "ok"})o/;'
+tests[137]='"to" =~ /t(?{ print "ok"})o/;'
 tests[138]='print map { chr $_ } qw/97 98 99/;'
 result[138]='abc'
 tests[140]='my %a;print "ok" if !%a;'

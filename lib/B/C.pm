@@ -3073,9 +3073,15 @@ sub B::REGEXP::save {
   my $ix = $svsect->index;
   warn "Saving RX $cstr to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
   if ($] > 5.011) {
+    if ($PERL518 and $sv->EXTFLAGS & RXf_EVAL_SEEN) {
+      $init->add("PL_hints |= HINT_RE_EVAL;");
+    }
     $init->add(# replace sv_any->XPV with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[%d]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
                        $ix, $cstr, $cur, $sv->EXTFLAGS));
+    if ($PERL518 and $sv->EXTFLAGS & RXf_EVAL_SEEN) {
+      $init->add("PL_hints &= ~HINT_RE_EVAL;");
+    }
   }
   if ($] < 5.017006) {
     # since 5.17.6 the SvLEN stores RX_WRAPPED(rx)
