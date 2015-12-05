@@ -306,9 +306,9 @@ sub is_todo {
   #if ($] > 5.015 and $] < 5.015006) { foreach(qw(
   # B::Hooks::EndOfScope
   #)) { return '> 5.15' if $_ eq $module; }}
-  if ($] >= 5.018) { foreach(qw(
-      ExtUtils::ParseXS
-  )) { return '>= 5.18 #137 Eval-group not allowed at runtime' if $_ eq $module; }}
+  #if ($] >= 5.018) { foreach(qw(
+  #    ExtUtils::ParseXS
+  #)) { return '>= 5.18 #137 Eval-group not allowed at runtime' if $_ eq $module; }}
   # DateTime fixed with 1.52_13
   # stringify fixed with 1.52_18
   #if ($] >= 5.018) { foreach(qw(
