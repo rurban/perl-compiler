@@ -4747,13 +4747,14 @@ sub B::GV::save {
     }
   }
 
+  # avoid overly dynamic POSIX redefinition warnings: GH #335, #345
+  if ($PERL522 and $fullname =~ /^POSIX::M/) {
+    $savefields &= ~Save_CV;
+  }
   my $gvsv;
   if ($savefields) {
     # Don't save subfields of special GVs (*_, *1, *# and so on)
     warn "GV::save saving subfields $savefields\n" if $debug{gv};
-    if ($PERL522 and $fullname eq 'POSIX::M_SQRT2') { # GH #335 avoid redefinition warning
-      $savefields &= ~Save_CV;
-    }
     $gvsv = $gv->SV;
     if ( $$gvsv && $savefields & Save_SV ) {
       warn "GV::save \$".$sym." $gvsv\n" if $debug{gv};
