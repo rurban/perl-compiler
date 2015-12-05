@@ -2,7 +2,7 @@ package B::REGEXP;
 
 use strict;
 
-use B qw/cstring/;
+use B qw/cstring RXf_EVAL_SEEN/;
 use B::C::Config;
 use B::C::File qw/init svsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
@@ -32,8 +32,16 @@ sub save {
     my $ix = svsect()->index;
     debug( rx => "Saving RX $cstr to sv_list[$ix]" );
 
+    if ( $sv->EXTFLAGS & RXf_EVAL_SEEN ) {
+        init()->add("PL_hints |= HINT_RE_EVAL;");
+    }
+
     # replace sv_any->XPV with struct regexp. need pv and extflags
     init()->add( sprintf( 'SvANY(&sv_list[%d]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));', $ix, $cstr, $cur, $sv->EXTFLAGS ) );
+    if ( $sv->EXTFLAGS & RXf_EVAL_SEEN ) {
+        init()->add("PL_hints &= ~HINT_RE_EVAL;");
+    }
+
     init()->add("sv_list[$ix].sv_u.svu_rx = (struct regexp*)sv_list[$ix].sv_any;");
 
     svsect()->debug( $fullname, $sv );
