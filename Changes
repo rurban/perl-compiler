@@ -4,7 +4,7 @@
 	and worked quite fine with Perl 5.6 and 5.8.
 
 
-1.53 2015-12-05 rurban
+1.53 2015-12-06 rurban
         added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues.
         Bytecode broken upstream with 5.22.0
 
@@ -46,6 +46,8 @@
         Improve MATCH once (m??) handling with reset, find PMOP from
           the Regexp dynamically (GH#252)
         Bump refcounts of dynamic get_cv refs (#293). Fixes Coro in global destruction.
+        Skip more XS defined POSIX constants: all that start with 'M' (GH#335, #345)
+        One more "Eval-group not allowed at runtime" fix (GH#137, GH#346)
         * CC (1.16_01): Encode unicode labels (GH#318)
         * Stackobj (1.12_01): fix Inf/NaN support for CC (GH#287)
         * t/CORE: versioned the core tests and moved to a external submodule
@@ -137,7 +139,7 @@
         Add time and version on top of C source code. Also for CC.
         Fix lexical subs for threaded perls (#130, #341)
         Add special fixes for Coro: reload Coro jit and SvREADONLY_off some of its XS symbols (#293)
-        Fix "Eval-group not allowed at runtime" errors since 5.18 (#135),
+        Fix "Eval-group not allowed at runtime" errors since 5.18 (#137),
           by settting HINT_RE_EVAL for re-eval groups when compiling the QR
         Fix for readonly magic hashes, usually found since 5.20 (#273)
         Fix Can't locate object method "bootstrap_inherit" via package "DynaLoader" (#125)

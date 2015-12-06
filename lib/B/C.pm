@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.52_26';
+our $VERSION = '1.53';
 our %debug;
 our $check;
 our %Config;
