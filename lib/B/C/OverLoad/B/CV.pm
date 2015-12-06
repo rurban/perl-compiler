@@ -219,8 +219,10 @@ sub save {
             }
         }
 
-        if ( ref $sv eq 'SCALAR' ) {    # TODO Attribute::Handlers #171, test 176
-                                        # Save XSUBANY, maybe ARRAY or HASH also?
+        # TODO Attribute::Handlers #171, test 176
+        if ( ref($sv) =~ m/^(SCALAR|ARRAY|HASH|CODE|REF)$/ ) {
+
+            # Save XSUBANY, maybe ARRAY or HASH also?
             debug( cv => "SCALAR const sub $cvstashname::$cvname -> $sv" );
             my $vsym = svref_2object( \$sv )->save;
             my $cvi  = "cv" . $cv_index++;
