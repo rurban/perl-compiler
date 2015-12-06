@@ -311,9 +311,8 @@ package MY;
 
 # Ignore certain files
 sub libscan {
-    # Ignore temp testing files
-    return 0 if $_[1] =~ /^(\.git|\.svn|jit.*|i386|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl)$/;
-    return 0 if $_[1] =~ /\.svn|~/; # needed for msys perl5.6
+    # Ignore temp files
+    return 0 if $_[1] =~ /^(\.git|.*\.orig|bytecode.*\.pl|c?ccode.*|regen_lib\.pl|GTAGS|GPATH|GRTAGS)$/;
     # Ignore Bytecode on 5.6 for now. The 5.6 CORE module produces better code (until fixed :)
     # Not even the Byteloader works for 5.6 assembled code. The Disassembler does not stop at ret.
     return 0 if $] < 5.007 and $_[1] =~ /ByteLoader|Asmdata\.pm|Bytecode\.pm|Assembler\.pm/;
@@ -430,6 +429,8 @@ testcore :: pure_all testcore_init
 testcore-log :: pure_all testcore_init
 	$(FULLPERLRUN) -S prove -b -j10 -f t/CORE/$(PERL_VER)/C-COMPILED/*/ | \
 	  tee log.test-core-$(PERL_VER)-`git describe --tags`
+testcore-fail :: pure_all testcore_init
+	$(FULLPERLRUN) -ane'print "t/CORE/$(PERL_VER)/C-COMPILED/$$F[0]\n" unless /^#/' t/CORE/$(PERL_VER)/C-COMPILED/known_errors.txt | xargs $(FULLPERLRUN) -S prove -b -j10 -f
 )
 }
 

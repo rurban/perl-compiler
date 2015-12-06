@@ -3919,7 +3919,10 @@ sub B::CV::save {
         }
       }
     }
-    if (ref $sv eq 'SCALAR') { # TODO Attribute::Handlers #171, test 176
+    # scalarref: t/CORE/v5.22/t/op/const-optree.t at curpad_syms[6]
+    # main::__ANON__ -> CxPOPSUB_DONE=SCALAR
+    # TODO Attribute::Handlers #171, test 176
+    if ($sv and ref($sv) and ref($sv) =~ /^(SCALAR|ARRAY|HASH|CODE|REF)$/) {
       # Save XSUBANY, maybe ARRAY or HASH also?
       warn "SCALAR const sub $cvstashname::$cvname -> $sv\n" if $debug{cv};
       my $vsym = svref_2object( \$sv )->save;
