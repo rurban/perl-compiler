@@ -15,8 +15,8 @@ sub save {
 
     $level ||= 0;
 
-    my @aux_list = $op->aux_list_thr;
-    my $auxlen   = scalar @aux_list;
+    my @aux_list = $op->aux_list( USE_ITHREADS() ? curcv() : \2 );    # GH#283
+    my $auxlen = scalar @aux_list;
 
     unopauxsect()->comment_common("first, aux");
 
