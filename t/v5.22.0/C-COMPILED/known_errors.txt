@@ -28,7 +28,6 @@ comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse beh
 comp/hints.t                 COMPAT    tests are using BEGIN block, do not ready for B::C
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
 comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
-extra/reset.t                TESTS     BC issue #252 - Reset is not localized to the current namespace
 io/bom.t                     COMPAT    BC issue 312 - BOM seems to be rejected by perlcc but really, who needs this?
 io/layers.t                  SKIP      This is a known BC issue we've never cared about. use open doesn't work. See https://code.google.com/p/perl-compiler/issues/detail?id=203
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
@@ -107,6 +106,7 @@ xtestc/0174.t                TESTS     Output is: "\C is deprecated in regex; ..
 xtestc/0175.t                TESTS     Output is: "ok\n"
 xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at ..."
 xtestc/0182.t                TESTS     Output is: "main::foo"
+xtestc/0188.t                TESTS     Output is: "01000"
 xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
 xtestc/0207.t                TESTS     Output is: ""
@@ -119,7 +119,6 @@ xtestc/0241.t                TESTS     Output is: ""
 xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6177: Perl sv ..."
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
-xtestc/0252.t                TESTS     Output is: ""
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
 xtestc/0263.t                SKIP      need investigation: different result on Todd or Nico sandbox
