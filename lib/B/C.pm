@@ -3503,10 +3503,11 @@ CODE2
     elsif ( $type eq ':' ) { # symtab magic
       # search $ptr in list of pmops and replace it. e.g. (char*)&pmop_list[0]
       my $pmop_ptr = unpack("J", $mg->PTR);
-      my $pmop = $Regexp{$pmop_ptr};
+      my $pmop;
+      $pmop = $B::C::Regexp{$pmop_ptr} if defined $pmop_ptr;
       my $pmsym = $pmop ? $pmop->save(0, $fullname)
                         : ''; #sprintf('&pmop_list[%u]', $pmopsect->index);
-      warn sprintf("pmop 0x%x not found in our B::C Regexp hash\n", $pmop_ptr)
+      warn sprintf("pmop 0x%x not found in our B::C Regexp hash\n", $pmop_ptr || 'undef')
         if !$pmop and $verbose;
       $init->add("{\tU32 elements;", # toke.c: PL_multi_open == '?'
          sprintf("\tMAGIC *mg = sv_magicext((SV*)s\\_%x, 0, ':', 0, 0, 0);", $$sv),
@@ -3514,7 +3515,7 @@ CODE2
                  "\tRenewc(mg->mg_ptr, elements + 1, PMOP*, char);",
          ($pmop
          ? (sprintf("\t((OP**)mg->mg_ptr) [elements++] = (OP*)%s;", $pmsym))
-         : (sprintf("\t((OP**)mg->mg_ptr) [elements++] = (OP*)\s\\_%x;", $pmop_ptr))),
+         : ( defined $pmop_ptr ? sprintf( "\t((OP**)mg->mg_ptr) [elements++] = (OP*)\s\\_%x;", $pmop_ptr ) : '' )),
                  "\tmg->mg_len = elements * sizeof(PMOP**);", "}");
     }
     else {
