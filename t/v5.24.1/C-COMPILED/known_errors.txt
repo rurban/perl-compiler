@@ -49,7 +49,6 @@ op/eval.t                    SKIP      TODO: infinite loop while running the bin
 op/exists_sub.t              SIG       BC issue #277 - empty sub with attributes
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
 op/goto_xs.t                 COMPAT    needs XS::APItest
-op/index.t                   PLAN      TODO: no output and Issue #247 + BC issue #219 - overload issue
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
@@ -98,6 +97,7 @@ uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "e
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/variables.t              PLAN      BC issue #321 - REGEXP altered by invalid eval
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
+xtestc/0135.t                TESTS     Output is: ""
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
 xtestc/0169.t                TESTS     Output is: "42\n"
