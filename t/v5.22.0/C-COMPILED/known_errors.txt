@@ -54,7 +54,6 @@ op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
 op/magic.t                   TESTS     Test results:
 op/method.t                  BC        op/method.c is generated (-O3,-fno-fold)
-op/multideref.t              BC        BC issue #280 - Bizarre copy of CODE in B::UNOP_AUX::save (Fails to generate .c file)
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
