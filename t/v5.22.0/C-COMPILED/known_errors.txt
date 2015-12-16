@@ -37,6 +37,7 @@ mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures are already reported. Waiting for other BC issues to clear before researching this one.
+op/anonconst.t               SIG       Exit signal is 11 SEGV - BC issue #246, #355
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/caller.t                  TESTS     Test results:
