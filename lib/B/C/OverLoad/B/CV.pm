@@ -194,8 +194,9 @@ sub save {
     }
 
     if (
-        $isconst
+            $isconst
         and !is_phase_name($cvname)
+        and !( $CvFLAGS & CVf_ANON )
 
         # TODO: check if patch from e11e3a2 for B::SPECIAL is still required
         #    and ref($gv) ne 'B::SPECIAL'
