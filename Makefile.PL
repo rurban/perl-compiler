@@ -5,7 +5,8 @@ use File::Spec;
 use 5.006;
 use Carp;
 
-my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
+#my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
+my $core = $ENV{PERL_CORE};
 mkdir "lib/B/C" unless -d "lib/B/C";
 unless (-e 'lib/B/C/Flags.pm') {
     open PH, ">", "lib/B/C/Flags.pm";
@@ -47,11 +48,15 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
 #}
 my $have_byteloader = $] < 5.022 ? 1 : check_byteloader();
 
+# does not work with miniperl
 sub b_c_deps {
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    return `$X -Ilib -mB::C -mO -MB -e'B::C::collect_deps()'`;
+    my $runperl = $X . ($core ? " -I../../lib/auto -I../../lib" : "");
+    return "" if $core;
+    return `$runperl -Ilib -mB::C -mO -MB -e'B::C::collect_deps()'`;
 }
 
+# does not work with miniperl
 sub write_b_c_flags {
     my $version = shift;
     mkdir "lib/B/C" unless -d "lib/B/C";
@@ -82,6 +87,13 @@ sub write_b_c_flags {
     print PH "\$extra_libs = \"$extra_libs\";\n";
     print PH "\@deps = qw( ", $b_c_deps, " );\n\n";
 
+    if ($ENV{PERL_CORE}) {
+        print PH "\n";
+        print PH "1;\n";
+        close PH;
+        chmod 0644, "lib/B/C/Flags.pm";
+        return;
+    }
     $Data::Dumper::Terse=1;
     $Data::Dumper::Sortkeys=1;
     my %cfg;
@@ -108,7 +120,10 @@ my $unicode_warning =
          "  Perl handling of new unicode identifiers - package and symbol names - \n".
 	 "  without proper TR39 handling is considered a security risc and is not fully supported.\n".
 	 "  See http://websec.github.io/unicode-security-guide/\n\n";
-if ($] > 5.015005 and $] < 5.019004) {
+if ($ENV{PERL_CORE}) {
+    # supress the TR39 warnings in core
+}
+elsif ($] > 5.015005 and $] < 5.019004) {
     # We do not want to support binary identifiers. syscalls with 5.019004 should be enabled
     warn "Warning: Bad perl version $]\n".
 	 $unicode_warning.
