@@ -3901,7 +3901,7 @@ sub B::CV::save {
 
   # XXX how is ANON with CONST handled? CONST uses XSUBANY [GH #246]
   if ($isconst
-      and ($PERL522 or !($CvFLAGS & CVf_ANON))
+      and !($CvFLAGS & CVf_ANON)
       and !is_phase_name($cvname)) # skip const magic blocks (Attribute::Handlers)
   {
     my $stash = $gv->STASH;
