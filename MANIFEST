@@ -2,18 +2,11 @@
 .gdb/perl
 .gdbinit
 .perldb
-.travis.yml
 Artistic
-bcdiff
 C.xs
 Changes
-configure.cpanel
-configure.macosx
 Copying
 cpanfile
-cprove
-ctidy
-dprove
 hints/darwin.pl
 hints/openbsd.pl
 lib/B/Bblock.pm
@@ -23,7 +16,6 @@ lib/B/C/Config/Debug.pm
 lib/B/C/Debug/Walker.pm
 lib/B/C/Decimal.pm
 lib/B/C/File.pm
-lib/B/C/Flags.pm
 lib/B/C/Helpers.pm
 lib/B/C/Helpers/Symtable.pm
 lib/B/C/InitSection.pm
@@ -78,21 +70,21 @@ lib/B/FAKEOP.pm
 lib/B/STASHGV.pm
 Makefile.PL
 MANIFEST			This list of files
+MANIFEST.SKIP
 NOTES
 perlcompile.pod
 perloptree.pod
 README
-README.alpha
 regen_lib.pl
 script/cc_harness
 script/perlcc.PL
 script/pl2exe.pl
-setup.cpanel
 STATUS
 status_upd
 store_rpt
 t/B-C-Overload-B-IV.t
 t/B-C-Section.t
+t/C-COMPILED/testc.pl
 t/c.t
 t/c_allow_opts.t
 t/c_argv.t
@@ -100,6 +92,7 @@ t/c_o1.t
 t/c_o2.t
 t/c_o3.t
 t/c_o4.t
+t/core-init.sh
 t/coreall.sh
 t/coverage.sh
 t/critical.sh
@@ -907,8 +900,10 @@ t/v5.22.0/C-COMPILED/xtestc/0330.t
 t/v5.22.0/C-COMPILED/xtestc/0331.t
 t/v5.22.0/C-COMPILED/xtestc/0332.t
 t/v5.22.0/C-COMPILED/xtestc/0333.t
+t/v5.22.0/C-COMPILED/xtestc/0335.t
 t/v5.22.0/C-COMPILED/xtestc/0338.t
 t/v5.22.0/C-COMPILED/xtestc/0340.t
+t/v5.22.0/C-COMPILED/xtestc/0342.t
 t/v5.22.0/C-COMPILED/xtestc/0345.t
 t/v5.22.0/C-COMPILED/xtestc/0348.t
 t/v5.22.0/C-COMPILED/xtestc/0350.t
@@ -931,6 +926,8 @@ t/v5.22.0/C-COMPILED/xtestc/1432.t
 t/v5.22.0/C-COMPILED/xtestc/1501.t
 t/v5.22.0/C-COMPILED/xtestc/1571.t
 t/v5.22.0/C-COMPILED/xtestc/1941.t
+t/v5.22.0/C-COMPILED/xtestc/1960.t
+t/v5.22.0/C-COMPILED/xtestc/2000.t
 t/v5.22.0/C-COMPILED/xtestc/2001.t
 t/v5.22.0/C-COMPILED/xtestc/2011.t
 t/v5.22.0/C-COMPILED/xtestc/2050.t
@@ -940,6 +937,10 @@ t/v5.22.0/C-COMPILED/xtestc/2053.t
 t/v5.22.0/C-COMPILED/xtestc/2054.t
 t/v5.22.0/C-COMPILED/xtestc/2055.t
 t/v5.22.0/C-COMPILED/xtestc/2190.t
+t/v5.22.0/C-COMPILED/xtestc/2191.t
+t/v5.22.0/C-COMPILED/xtestc/2192.t
+t/v5.22.0/C-COMPILED/xtestc/2193.t
+t/v5.22.0/C-COMPILED/xtestc/2201.t
 t/v5.22.0/C-COMPILED/xtestc/2230.t
 t/v5.22.0/C-COMPILED/xtestc/2231.t
 t/v5.22.0/C-COMPILED/xtestc/2381.t
@@ -981,6 +982,7 @@ t/v5.22.0/C-COMPILED/xtestc/3141.t
 t/v5.22.0/C-COMPILED/xtestc/3170.t
 t/v5.22.0/C-COMPILED/xtestc/3180.t
 t/v5.22.0/C-COMPILED/xtestc/3200.t
+t/v5.22.0/C-COMPILED/xtestc/3310.t
 t/v5.22.0/C-COMPILED/xtestc/3401.t
 t/v5.22.0/C-COMPILED/xtestc/3451.t
 t/v5.22.0/C-COMPILED/xtestc/3452.t
