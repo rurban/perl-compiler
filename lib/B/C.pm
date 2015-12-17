@@ -334,10 +334,16 @@ BEGIN {
   }
   sub SVf_UTF8 { 0x20000000 }
   if ($] >=  5.008001) {
-    B->import(qw(SVt_PVGV)); # added with 5.8.1
+    B->import(qw(SVt_PVGV CVf_WEAKOUTSIDE)); # added with 5.8.1
   } else {
     eval q[sub SVt_PVGV() {13}];
+    eval q[sub CVf_WEAKOUTSIDE() { 0x0 }]; # unused
   }
+  if ($] >= 5.009) {
+    B->import(qw(SVs_PADSTALE)); # added with 5.9.0
+   } else {
+    eval q[sub SVs_PADSTALE() { 0x0 }]; # unused
+   }
   if ($] >= 5.010) {
     #require mro; # mro->import();
     # not exported:
@@ -355,14 +361,16 @@ BEGIN {
       eval q[sub PMf_ONCE(){ 0x0002 }];
     }
     if ($] > 5.021006) {
-      B->import(qw(SVf_PROTECT));
+      B->import(qw(SVf_PROTECT CVf_ANONCONST));
     } else {
-      eval q[sub SVf_PROTECT(){ 0x0 }]; # unused
+      eval q[sub SVf_PROTECT(){ 0x0 }
+             sub CVf_ANONCONST(){ 0x0 }]; # unused
     }
   } else {
     eval q[sub SVs_GMG()    { 0x00002000 }
            sub SVs_SMG()    { 0x00004000 }
            sub SVf_PROTECT(){ 0x0 }
+           sub CVf_ANONCONST(){ 0x0 }
           ]; # unused
   }
   if ($] < 5.018) {
@@ -3515,7 +3523,8 @@ CODE2
                  "\tRenewc(mg->mg_ptr, elements + 1, PMOP*, char);",
          ($pmop
          ? (sprintf("\t((OP**)mg->mg_ptr) [elements++] = (OP*)%s;", $pmsym))
-         : ( defined $pmop_ptr ? sprintf( "\t((OP**)mg->mg_ptr) [elements++] = (OP*)\s\\_%x;", $pmop_ptr ) : '' )),
+          : ( defined $pmop_ptr
+              ? sprintf( "\t((OP**)mg->mg_ptr) [elements++] = (OP*)s\\_%x;", $pmop_ptr ) : '' )),
                  "\tmg->mg_len = elements * sizeof(PMOP**);", "}");
     }
     else {
@@ -3764,7 +3773,7 @@ sub B::CV::save {
   if ($gv and $$gv) {
     $cvstashname = $gv->STASH->NAME;
     $cvname      = $gv->NAME;
-    $isutf8      = $gv->FLAGS & SVf_UTF8 or $gv->STASH->FLAGS & SVf_UTF8;
+    $isutf8      = ($gv->FLAGS & SVf_UTF8) || ($gv->STASH->FLAGS & SVf_UTF8);
     $fullname    = $cvstashname.'::'.$cvname;
     # XXX gv->EGV does not really help here
     if ($PERL522 and $cvname eq '__ANON__') {
@@ -3774,7 +3783,7 @@ sub B::CV::save {
         $cvname = $fullname = $origname;
         $cvname =~ s/^\Q$cvstashname\E::(.*)( :pad\[.*)?$/$1/ if $cvstashname;
         $cvname =~ s/^.*:://;
-        if ($cvname =~ / :pad\[.*$/) {
+        if ($cvname =~ m/ :pad\[.*$/) {
           $cvname =~ s/ :pad\[.*$//;
           $cvname = '__ANON__' if is_phase_name($cvname);
           $fullname  = $cvstashname.'::'.$cvname;
@@ -3902,9 +3911,10 @@ sub B::CV::save {
   }
 
   # XXX how is ANON with CONST handled? CONST uses XSUBANY [GH #246]
-  if ($isconst
-      and !($CvFLAGS & CVf_ANON)
-      and !is_phase_name($cvname)) # skip const magic blocks (Attribute::Handlers)
+  if ($isconst and !is_phase_name($cvname) and
+      ( ($PERL522 and !($CvFLAGS & CVf_ANONCONST))
+     or (!$PERL522 and !($CvFLAGS & CVf_ANON)) )
+     ) # skip const magic blocks (Attribute::Handlers)
   {
     my $stash = $gv->STASH;
     my $sv    = $cv->XSUBANY;

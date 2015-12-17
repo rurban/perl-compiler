@@ -29,6 +29,7 @@ PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v510=`$PERL -e'print (($] < 5.010)?0:1)'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
+#v522=`$PERL -e'print (($] < 5.022)?0:1)'`
 PERLV=v5.`$PERL -e'print substr($],3,2)'`
 XTESTC="t/CORE/$PERLV/C-COMPILED/xtestc"
 
@@ -1323,8 +1324,9 @@ $foo->method;'
 tests[350]='#TODO 5.18-5.22 dbg
 package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int");
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
-tests[354]='#TODO >=5.20 if pkg is in a seperate file
-BEGIN { push @INC, "t"; }
+tests[352]='package Foo;my $rand = 0;INIT { *reader = sub () { $rand };}
+print qq/ok\n/;'
+tests[354]='BEGIN { push @INC, "t"; }
 use Ccode354i ();
 my $token = { expansion => "abcd", };
 print Ccode354i::check($token);'
