@@ -68,7 +68,7 @@ op/svleak.t                  COMPAT    This test uses XS::APItest, which we don'
 op/threads-dirh.t            COMPAT    We don't support threaded perl in this branch.
 op/threads.t                 COMPAT    We don't support threaded perl in this branch.
 op/universal.t               TESTS     BC issue #300 - PVFM not compiled
-op/vec.t                     SIG       BC issue #269
+op/vec.t                     TESTS     BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
@@ -117,6 +117,7 @@ xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
 xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6177: Perl sv ..."
+xtestc/0246.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
@@ -133,6 +134,7 @@ xtestc/0294.t                TESTS     Output is: "Constant subroutine GLOB ..."
 xtestc/0295.t                TESTS     Output is: ""
 xtestc/0300.t                TESTS     Output is: "IO::File "
 xtestc/0304.t                TESTS     Output is: "0304.bin: pp.c:177: Perl pp ..."
+xtestc/0305.t                TESTS     Output is: ""
 xtestc/0309.t                TESTS     Output is: ""
 xtestc/0317.t                TESTS     Output is: ""
 xtestc/0319.t                TESTS     Output is: "Wide character in print at ..."
