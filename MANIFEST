@@ -159,6 +159,7 @@ t/issue340.t
 t/issue348.t
 t/issue35.t
 t/issue350.t
+t/issue354.t
 t/issue36.t
 t/issue37.t
 t/issue38.t
