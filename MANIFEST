@@ -92,6 +92,7 @@ t/c_o1.t
 t/c_o2.t
 t/c_o3.t
 t/c_o4.t
+t/Ccode354i.pm
 t/core-init.sh
 t/coreall.sh
 t/coverage.sh
