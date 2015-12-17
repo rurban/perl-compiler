@@ -38,7 +38,9 @@ sub save {
 
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
-    init()->add("$s.sv_u.svu_rv = (SV*)$rv;") unless is_constant($rv);
+
+    init()->add( sprintf( "%s.sv_any = (void*)&%s - sizeof(void*);", $s, $s ) );              # 354 defined needs SvANY
+    init()->add( sprintf( "%s.sv_u.svu_rv = (SV*)%s;", $s, $rv ) ) unless is_constant($rv);
 
     return savesym( $sv, "&" . $s );
 }
