@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '5.022002';
+our $VERSION = '5.022003';
 
 our $check;
 
