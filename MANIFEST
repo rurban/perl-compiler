@@ -141,6 +141,7 @@ script/perlcc.PL
 script/pl2exe.pl
 status_upd
 store_rpt
+t/Ccode354i.pm
 t/Mock.pm
 t/TESTS
 t/asmdata.t
