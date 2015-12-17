@@ -4,7 +4,7 @@ use strict;
 
 use B::C::Flags ();
 
-use B qw/cstring svref_2object CVf_ANON CVf_CONST main_cv SVf_ROK SVp_POK SVf_IOK SVf_UTF8/;
+use B qw/cstring svref_2object CVf_ANON CVf_ANONCONST CVf_CONST main_cv SVf_ROK SVp_POK SVf_IOK SVf_UTF8/;
 use B::C::Config;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Packages qw/is_package_used/;
@@ -196,7 +196,7 @@ sub save {
     if (
             $isconst
         and !is_phase_name($cvname)
-        and !( $CvFLAGS & CVf_ANON )
+        and ( !( $CvFLAGS & CVf_ANONCONST ) or !( $CvFLAGS & CVf_ANON ) )
 
         # TODO: check if patch from e11e3a2 for B::SPECIAL is still required
         #    and ref($gv) ne 'B::SPECIAL'
