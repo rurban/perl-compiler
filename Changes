@@ -4,7 +4,7 @@
 	and worked quite fine with Perl 5.6 and 5.8.
 
 1.54 2015-12-?? rurban
-        * C: Fix defined for RV since 5.20 (#354)
+        * C: Fix defined for RV since 5.20 and ithreads (#354)
         Fix anon functions in INIT block (#352) (atoomic)
         Fix C.xs for old non-c99 compilers. i.e. msvc6
         Fix segfault from PVMG (#348) (atoomic), regression added
