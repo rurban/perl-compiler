@@ -334,10 +334,16 @@ BEGIN {
   }
   sub SVf_UTF8 { 0x20000000 }
   if ($] >=  5.008001) {
-    B->import(qw(SVt_PVGV)); # added with 5.8.1
+    B->import(qw(SVt_PVGV CVf_WEAKOUTSIDE)); # added with 5.8.1
   } else {
     eval q[sub SVt_PVGV() {13}];
+    eval q[sub CVf_WEAKOUTSIDE() { 0x0 }]; # unused
   }
+  if ($] >= 5.009) {
+    B->import(qw(SVs_PADSTALE)); # added with 5.9.0
+   } else {
+    eval q[sub SVs_PADSTALE() { 0x0 }]; # unused
+   }
   if ($] >= 5.010) {
     #require mro; # mro->import();
     # not exported:
@@ -3774,7 +3780,7 @@ sub B::CV::save {
         $cvname = $fullname = $origname;
         $cvname =~ s/^\Q$cvstashname\E::(.*)( :pad\[.*)?$/$1/ if $cvstashname;
         $cvname =~ s/^.*:://;
-        if ($cvname =~ / :pad\[.*$/) {
+        if ($cvname =~ m/ :pad\[.*$/) {
           $cvname =~ s/ :pad\[.*$//;
           $cvname = '__ANON__' if is_phase_name($cvname);
           $fullname  = $cvstashname.'::'.$cvname;
@@ -3903,7 +3909,12 @@ sub B::CV::save {
 
   # XXX how is ANON with CONST handled? CONST uses XSUBANY [GH #246]
   if ($isconst
-      and !($CvFLAGS & CVf_ANON)
+    ( ( $PERL522
+      and !( $CvFLAGS & SVs_PADSTALE )
+      and !( $CvFLAGS & CVf_WEAKOUTSIDE )
+      )
+    # non perl522 logic
+    or ( !$PERL522 and !($CvFLAGS & CVf_ANON) ) )
       and !is_phase_name($cvname)) # skip const magic blocks (Attribute::Handlers)
   {
     my $stash = $gv->STASH;
