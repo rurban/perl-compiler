@@ -1323,8 +1323,9 @@ $foo->method;'
 tests[350]='#TODO 5.18-5.22 dbg
 package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int");
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
-tests[354]='#TODO >=5.20 if pkg is in a seperate file
-BEGIN { push @INC, "t"; }
+tests[352]='package Foo;my $rand = 0;INIT { *reader = sub () { $rand };}
+print qq/ok\n/;'
+tests[354]='BEGIN { push @INC, "t"; }
 use Ccode354i ();
 my $token = { expansion => "abcd", };
 print Ccode354i::check($token);'
