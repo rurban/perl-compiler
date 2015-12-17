@@ -37,7 +37,6 @@ mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
 mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures are already reported. Waiting for other BC issues to clear before researching this one.
-op/anonconst.t               SIG       Exit signal is 11 SEGV - BC issue #246, #355
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
 op/caller.t                  TESTS     Test results:
@@ -117,7 +116,6 @@ xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
 xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6177: Perl sv ..."
-xtestc/0246.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
@@ -134,7 +132,6 @@ xtestc/0294.t                TESTS     Output is: "Constant subroutine GLOB ..."
 xtestc/0295.t                TESTS     Output is: ""
 xtestc/0300.t                TESTS     Output is: "IO::File "
 xtestc/0304.t                TESTS     Output is: "0304.bin: pp.c:177: Perl pp ..."
-xtestc/0305.t                TESTS     Output is: ""
 xtestc/0309.t                TESTS     Output is: ""
 xtestc/0317.t                TESTS     Output is: ""
 xtestc/0319.t                TESTS     Output is: "Wide character in print at ..."
