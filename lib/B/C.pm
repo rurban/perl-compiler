@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_01';
+our $VERSION = '1.53_02';
 our %debug;
 our $check;
 our %Config;
@@ -3551,6 +3551,7 @@ sub B::RV::save {
                            ($C99 and is_constant($rv) ? ".svu_rv=$rv" : "0 /* $rv */")));
     $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
     my $s = "sv_list[".$svsect->index."]";
+    $init->add( "$s.sv_any = (void*)&$s - sizeof(void*);") if $] > 5.019; # 354 defined needs SvANY
     $init->add( "$s.sv_u.svu_rv = (SV*)$rv;" ) unless $C99 and is_constant($rv);
     return savesym( $sv, "&".$s );
   }
