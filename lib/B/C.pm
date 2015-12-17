@@ -359,6 +359,11 @@ BEGIN {
     } else {
       eval q[sub SVf_PROTECT(){ 0x0 }]; # unused
     }
+    if ($] > 5.021008) {
+      B->import(qw(CVf_ANONCONST));
+    } else {
+      eval q[sub CVf_ANONCONST(){ 0x0 }]; # unused
+    }
   } else {
     eval q[sub SVs_GMG()    { 0x00002000 }
            sub SVs_SMG()    { 0x00004000 }
@@ -3774,7 +3779,7 @@ sub B::CV::save {
         $cvname = $fullname = $origname;
         $cvname =~ s/^\Q$cvstashname\E::(.*)( :pad\[.*)?$/$1/ if $cvstashname;
         $cvname =~ s/^.*:://;
-        if ($cvname =~ / :pad\[.*$/) {
+        if ($cvname =~ m/ :pad\[.*$/) {
           $cvname =~ s/ :pad\[.*$//;
           $cvname = '__ANON__' if is_phase_name($cvname);
           $fullname  = $cvstashname.'::'.$cvname;
@@ -3903,7 +3908,7 @@ sub B::CV::save {
 
   # XXX how is ANON with CONST handled? CONST uses XSUBANY [GH #246]
   if ($isconst
-      and !($CvFLAGS & CVf_ANON)
+      and ( !($CvFLAGS & CVf_ANONCONST) or  !($CvFLAGS & CVf_ANON) )
       and !is_phase_name($cvname)) # skip const magic blocks (Attribute::Handlers)
   {
     my $stash = $gv->STASH;
