@@ -6,9 +6,11 @@
 1.54 2015-12-?? rurban
         * C: Fix defined for RV since 5.20 and ithreads (#354)
         Fix anon functions in INIT block (#352) (atoomic)
+          and more const CV fixes.
         Fix C.xs for old non-c99 compilers. i.e. msvc6
         Fix segfault from PVMG (#348) (atoomic), regression added
           for match once
+        Fix stack corruption in HV::ENAMES (#351)
 
 1.53 2015-12-05 rurban
         added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues.
