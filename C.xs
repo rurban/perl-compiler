@@ -112,21 +112,10 @@ my_runops(pTHX)
 
         /* Need to store the rx all for QR PMOPs in a global %Regexp hash. MATCH once also */
         type = PL_op->op_type;
-#if 1
         if (type == OP_QR
         || (type == OP_MATCH
-# if PERL_VERSION < 20
-            && (((PMOP*)PL_op)->op_pmflags & PMf_ONCE)
-# else
             && PmopSTASH((PMOP*)PL_op)
-# endif
             ))
-#else
-        if ((type == OP_QR)
-         || (type == OP_MATCH)
-         || (type == OP_PUSHRE)
-         || (type == OP_SUBST))
-#endif
         {
             PMOP* op;
             REGEXP* rx = PM_GETRE( (PMOP*)PL_op );
@@ -148,7 +137,7 @@ my_runops(pTHX)
 
             sv_setiv( key, PTR2IV( rx ) );
             sv_setref_iv( rv, "B::PMOP", PTR2IV( op ) );
-#if defined(DEBUGGING) && (PERL_VERSION > 7)
+#if defined(DEBUGGING)
 	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop %p => rx %s %p 0x%x %s\n",
                                        op, PL_op_name[type], rx, op->op_pmflags,
                                        RX_WRAPPED(rx));
