@@ -529,7 +529,10 @@ sub save {
 
                 # must save as a 'stub' so newXS() has a CV to populate
                 debug( gv => "save stub CvGV for $sym GP assignments $origname" );
-                init2()->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));", $sym, get_cv_string( $origname, "GV_ADD" ) ) );
+                init2()->add(
+                    sprintf( "if ((sv = (SV*)%s))",                                get_cv_string( $origname, "GV_ADD" ) ),
+                    sprintf( "    GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(sv));", $sym )
+                );
             }
             elsif ($gp) {
                 if ( $fullname eq 'Internals::V' ) {
@@ -556,7 +559,7 @@ sub save {
                                 debug( gv => "removed $sym GP assignments $origname (core CV)" );
                             }
                         }
-                        init()->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));", $sym, $cvsym ) );
+                        init()->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc(%s));", $sym, $cvsym ) );
                     }
                     elsif ( $B::C::xsub{$package} ) {
 
@@ -564,6 +567,10 @@ sub save {
                         debug( gv => "save stub CvGV for $sym GP assignments $origname (XS CV)" );
                         my $get_cv = get_cv_string( $oname ne "__ANON__" ? $origname : $fullname, "GV_ADD" );
                         init2()->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
+                        init2()->add(
+                            sprintf( "if ((sv = (SV*)%s))",                                $get_cv ),
+                            sprintf( "    GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(sv));", $sym )
+                        );
                     }
                     else {
                         init()->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ) );

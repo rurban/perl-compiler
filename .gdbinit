@@ -15,9 +15,9 @@ source .gdb/perl
 #b Perl_Gv_AMupdate
 #b Perl_amagic_call
 #b Perl_pp_method_redir
-b XS_B__HV_name_count
+#b XS_B__HV_name_count
 
-b Perl_pp_defined
+#b Perl_pp_defined
 
 #b Perl_pp_entereval
 #command

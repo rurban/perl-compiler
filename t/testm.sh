@@ -18,6 +18,7 @@ function help {
   echo " -D<arg>            add debugging flags"
   echo " -f<arg>            add optimisation flags"
   echo " -O<arg>            add optimisation flags"
+  echo " -A                 -DALLOW_PERL_OPTIONS"
   echo " -l                 log"
   echo " -o                 orig. no -Mblib, use installed modules (5.6, 5.8)"
   echo " -t                 run the module tests also, not only use Module (experimental)"
@@ -53,7 +54,7 @@ function fail {
 }
 [ -n "$v513" ] && PERLCC_OPTS="$PERLCC_OPTS -Wb=$v513"
 #PERLCC_OPTS=v513
-while getopts "hokltTsFD:O:f:qv" opt
+while getopts "hokltTsFD:O:f:qvA" opt
 do
   if [ "$opt" = "o" ]; then Mblib=" "; init; fi
   if [ "$opt" = "q" ]; then QUIET=1; fi
@@ -62,6 +63,7 @@ do
   if [ "$opt" = "D" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-D${OPTARG}"; COPTS="$COPTS,-D${OPTARG}"; fi
   if [ "$opt" = "O" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-O${OPTARG}"; COPTS="$COPTS,-O${OPTARG}"; fi
   if [ "$opt" = "f" ]; then PERLCC_OPTS="$PERLCC_OPTS -Wb=-f${OPTARG}"; COPTS="$COPTS,-f${OPTARG}"; fi
+  if [ "$opt" = "A" ]; then PERLCC_OPTS="$PERLCC_OPTS --Wc=-DALLOW_PERL_OPTIONS"; fi
   if [ "$opt" = "l" ]; then TEST="-log"; fi
   if [ "$opt" = "t" ]; then TEST="-t"; fi
   if [ "$opt" = "T" ]; then PERLCC_OPTS="$PERLCC_OPTS --time"; PERLCC_TIMEOUT=120; fi
