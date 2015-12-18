@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_03';
+our $VERSION = '1.53_04';
 our %debug;
 our $check;
 our %Config;
@@ -4897,8 +4897,9 @@ sub B::GV::save {
         }
         # must save as a 'stub' so newXS() has a CV to populate
         warn "save stub CvGV for $sym GP assignments $origname\n" if $debug{gv};
-        $init2->add(sprintf("GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));",
-                            $sym, get_cv($origname, "GV_ADD")));
+        $init2->add(
+          sprintf("if ((sv = (SV*)%s))", get_cv($origname, "GV_ADD")),
+          sprintf("    GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(sv));", $sym));
       }
       elsif (!$PERL510 or $gp) {
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
@@ -4925,13 +4926,14 @@ sub B::GV::save {
 		warn "removed $sym GP assignments $origname (core CV)\n" if $debug{gv};
 	      }
 	    }
-	    $init->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(%s));", $sym, $cvsym ));
+	    $init->add( sprintf( "GvCV_set(%s, (CV*)SvREFCNT_inc(%s));", $sym, $cvsym ));
 	  }
 	  elsif ($xsub{$package}) {
             # must save as a 'stub' so newXS() has a CV to populate later in dl_init()
             warn "save stub CvGV for $sym GP assignments $origname (XS CV)\n" if $debug{gv};
             my $get_cv = get_cv($oname ne "__ANON__" ? $origname : $fullname, "GV_ADD");
-            $init2->add("GvCV_set($sym, (CV*)SvREFCNT_inc_simple_NN($get_cv));");
+            $init2->add(sprintf("if ((sv = (SV*)%s))", $get_cv),
+                        sprintf("    GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(sv));", $sym));
 	  }
 	  else {
             $init->add( sprintf( "GvCV_set(%s, (CV*)(%s));", $sym, $cvsym ));
@@ -6117,6 +6119,7 @@ EOT0
   if ($] >= 5.021001 and !$CPERL52) {
     print "Static IV PL_sv_objcount = 0; /* deprecated with 5.21.1 but still needed and used */\n";
   }
+  print "SV* sv;\n";
   print "Static GV *gv_list[$gv_index];\n" if $gv_index;
 }
 
