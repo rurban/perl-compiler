@@ -1324,6 +1324,9 @@ $foo->method;'
 tests[350]='#TODO 5.18-5.22 dbg
 package Foo::Moose; use Moose; has bar => (is => "rw", isa => "Int");
 package main; my $moose = Foo::Moose->new; print "ok" if 32 == $moose->bar(32);'
+tests[351]='{ BEGIN { *Mover:: = *Mover2::; *Mover2:: = *foo;} 
+package Mover;
+@ISA = "door"; sub door::dohtem { "dohtem" } print "ok\n";}'
 tests[352]='package Foo;my $rand = 0;INIT { *reader = sub () { $rand };}
 print qq/ok\n/;'
 tests[354]='BEGIN { push @INC, "t"; }
