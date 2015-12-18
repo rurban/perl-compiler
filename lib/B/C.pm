@@ -339,11 +339,6 @@ BEGIN {
     eval q[sub SVt_PVGV() {13}];
     eval q[sub CVf_WEAKOUTSIDE() { 0x0 }]; # unused
   }
-  if ($] >= 5.009) {
-    B->import(qw(SVs_PADSTALE)); # added with 5.9.0
-   } else {
-    eval q[sub SVs_PADSTALE() { 0x0 }]; # unused
-   }
   if ($] >= 5.010) {
     #require mro; # mro->import();
     # not exported:
