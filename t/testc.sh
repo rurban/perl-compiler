@@ -754,6 +754,7 @@ tests[185]='my $a=pack("U",0xFF);use bytes;print "not " unless $a eq "\xc3\xbf" 
 tests[186]='eval q/require B/; my $sub = do { package one; \&{"one"}; }; delete $one::{one}; my $x = "boom"; print "ok\n";'
 # duplicate of 182
 tests[187]='my $glob = \*Phoo::glob; undef %Phoo::; print ( ( "$$glob" eq "*__ANON__::glob" ) ? "ok\n" : "fail with $$glob\n" );'
+# See also GH 252 + 360
 tests[188]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zlopp {reset;}
 package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
 aiieee::reset_zlopp(); print aiieee::zlopp("zlopp")'
@@ -1011,7 +1012,18 @@ sub f :lvalue;print "ok" if exists &f'
 tests[2512]='sub f ();print "ok" if exists &f'
 tests[2513]='sub f ($);print "ok" if exists &f'
 tests[2514]='sub f;print "ok" if exists &f'
+# see also 188
 tests[252]='package bar; sub search { shift =~ m?bar? ? 1 : 0 } sub reset_zlopp { reset } package foo; sub ZZIP { shift =~ m?ZZIP? ? 1 : 0 } package main; foo::ZZIP("ZZIP"); bar::reset_zlopp(); !foo::ZZIP("ZZIP") and print "ok"'
+# same as 188
+tests[2520]='package aiieee;sub zlopp {(shift =~ m?zlopp?) ? 1 : 0;} sub reset_zlopp {reset;}
+package main; print aiieee::zlopp(""), aiieee::zlopp("zlopp"), aiieee::zlopp(""), aiieee::zlopp("zlopp");
+aiieee::reset_zlopp(); print "ok" if aiieee::zlopp("zlopp") eq "01001"'
+tests[2521]='package aiieee;sub zlopp { (shift =~ m?zlopp?) ? 1 : 0 } sub reset_zlopp { reset }
+package main;
+aiieee::zlopp("");
+aiieee::zlopp("zlopp");
+aiieee::reset_zlopp();
+print "ok\n" if aiieee::zlopp("zlopp");'
 tests[253]='use Unicode::UCD q/prop_invmap/; my @list = prop_invmap("Uppercase_Mapping"); print "ok"'
 tests[2530]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[2530]='1..2
@@ -1387,6 +1399,13 @@ tests[2193]='{local $^W = 1; my $warn = "";
 local $SIG{__WARN__} = sub { $warn .= join("",@_) };
 eval q(sub badproto4 (@ $b ar) { 1; });
 print $warn =~ /Prototype after .@. for main::badproto4/ ? "ok" : $warn;}'
+# GH 330
+tests[3300]='#WONTFIX
+*STDOUT; sub IO::Handle::self { $_[0] };
+(*STDOUT->self . "") =~ m/^GLOB/ and print "ok\n"'
+tests[3301]='#WORKAROUND 3300
+IO::Handle->new if $ENV{none}; *STDOUT; sub IO::Handle::self { $_[0] };
+(*STDOUT->self . "") =~ m/^GLOB/ and print "ok\n"'
 
 init
 
