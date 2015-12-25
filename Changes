@@ -12,6 +12,7 @@
           for match once
         Fix stack corruption in HV::ENAMES (#351)
         Fix SEGV with empty get_cv(), esp. from non-XS functions (#358)
+        * B::C::Flags: renamed to B::C::Config
 
 1.53 2015-12-05 rurban
         added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues.

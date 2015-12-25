@@ -604,7 +604,7 @@ sub run_cc_test {
     $opt = '' unless $opt;
     #if ($] > 5.021006 and $fnbackend eq 'cc') { print "ok $cnt # skip CC for 5.22 WIP\n"; return 1; }
     use Config;
-    require B::C::Flags;
+    require B::C::Config;
     # note that the smokers run the c.t and c_o3.t tests in parallel, with possible
     # interleaving file writes even for the .pl.
     my $test = $fnbackend."code".$cnt.$opt.".pl";
@@ -641,8 +641,8 @@ sub run_cc_test {
 	use ExtUtils::Embed ();
 	my $command = ExtUtils::Embed::ccopts;
 	$command .= " -DHAVE_INDEPENDENT_COMALLOC "
-	  if $B::C::Flags::have_independent_comalloc;
-	$command .= " -o $exe $cfile ".$B::C::Flags::extra_cflags . " ";
+	  if $B::C::Config::have_independent_comalloc;
+	$command .= " -o $exe $cfile ".$B::C::Config::extra_cflags . " ";
         if ($Config{cc} eq 'cl') {
             if ($^O eq 'MSWin32' and $Config{ccversion} eq '12.0.8804' and $Config{cc} eq 'cl') {
                 $command =~ s/ -opt:ref,icf//;
@@ -676,7 +676,7 @@ sub run_cc_test {
 	    $command .= $linkargs;
 	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
 	}
-	$command .= $B::C::Flags::extra_libs;
+	$command .= $B::C::Config::extra_libs;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
         my $cmdline = "$Config{cc} $command $NULL";
         if ($Config{cc} eq 'cl') {

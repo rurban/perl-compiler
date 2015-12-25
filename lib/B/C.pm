@@ -19,8 +19,8 @@ our $check;
 our %Config;
 
 BEGIN {
-    require B::C::Flags;
-    *Config = \%B::C::Flags::Config;
+    require B::C::Config;
+    *Config = \%B::C::Config::Config;
 }
 
 use B::Flags;
@@ -104,8 +104,8 @@ our %all_bc_subs = map { $_ => 1 } qw(B::AV::save B::BINOP::save B::BM::save B::
 
 # track all internally used packages. all other may not be deleted automatically
 # - hidden methods
-# uses now @B::C::Flags::deps
-our %all_bc_deps = map { $_ => 1 } @B::C::Flags::deps;
+# uses now @B::C::Config::deps
+our %all_bc_deps = map { $_ => 1 } @B::C::Config::deps;
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -862,7 +862,7 @@ sub walk_syms {
 }
 
 # simplified walk_syms
-# needed to populate @B::C::Flags::deps from Makefile.PL from within this %INC context
+# needed to populate @B::C::Config::deps from Makefile.PL from within this %INC context
 sub walk_stashes {
     my ( $symref, $prefix, $dependencies ) = @_;
     no strict 'refs';
@@ -1578,8 +1578,8 @@ sub build_template_stash {
         'debug'                            => B::C::Setup::Debug::save(),
         'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION for $^X",
         'DEBUG_LEAKING_SCALARS'            => DEBUG_LEAKING_SCALARS(),
-        'have_independent_comalloc'        => $B::C::Flags::have_independent_comalloc,
-        'use_declare_independent_comalloc' => $B::C::Flags::use_declare_independent_comalloc,
+        'have_independent_comalloc'        => $B::C::Config::have_independent_comalloc,
+        'use_declare_independent_comalloc' => $B::C::Config::use_declare_independent_comalloc,
         'av_init2'                         => $av_init2,
         'destruct'                         => $destruct,
         'static_ext'                       => $static_ext,
@@ -1781,7 +1781,7 @@ sub compile {
     $B::C::dyn_padlist      = 1;                                                 # default is dynamic and safe, disable with -O4
     $B::C::walkall          = 1;
 
-    mark_skip qw(B::C B::C::Flags B::CC B::FAKEOP O
+    mark_skip qw(B::C B::C::Config B::CC B::FAKEOP O
       B::Section B::Pseudoreg B::Shadow B::C::InitSection);
 
     #mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
@@ -1912,7 +1912,7 @@ sub compile {
             set_max_string_len($arg);
         }
     }
-    if ( !$B::C::Flags::have_independent_comalloc ) {
+    if ( !$B::C::Config::have_independent_comalloc ) {
         if ($B::C::av_init2) {
             $B::C::av_init  = 1;
             $B::C::av_init2 = 0;
@@ -2260,7 +2260,7 @@ C<-fno-stash> is the default.
 
 Do not delete compiler-internal and dependent packages which appear to be
 nowhere used automatically. This might miss run-time called stringified methods.
-See L<B::C::Flags> for C<@deps> which packages are affected.
+See L<B::C::Config> for C<@deps> which packages are affected.
 
 C<-fdelete-pkg> is the default.
 

@@ -2,7 +2,7 @@ package B::LEXWARN;
 
 use strict;
 
-use B::C::Flags ();
+use B::C::Config ();
 
 use B qw/cstring/;
 use B::C::File qw/init decl/;
@@ -25,7 +25,7 @@ sub save {
     my $isint = 0;
 
     # if 8 use UVSIZE, if 4 use LONGSIZE
-    my $t = ( $B::C::Flags::Config{longsize} == 8 ) ? "J" : "L";
+    my $t = ( $B::C::Config::Config{longsize} == 8 ) ? "J" : "L";
     my ($iv) = unpack( $t, $pv );    # unsigned longsize
     if ( $iv >= 0 and $iv <= 2 ) {   # specialWARN: single STRLEN
         decl()->add( sprintf( "Static const STRLEN* %s = %d;", $sym, $iv ) );

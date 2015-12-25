@@ -39,7 +39,7 @@ ramblings/cpmeet1/
 ramblings/frozenperl2010/
 ramblings/yapceu2010/
 blib
-lib/B/C/Flags.pm
+lib/B/C/Config.pm
 MANIFEST.files
 TAGS
 log.test-*

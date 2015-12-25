@@ -2,14 +2,14 @@ package B::C::Decimal;
 
 use strict;
 
-use B::C::Flags ();
+use B::C::Config ();
 use B::C::Setup;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw/get_integer_value get_double_value/;
 
-my $POW    = ( $B::C::Flags::Config{ivsize} * 4 - 1 );    # poor editor
+my $POW    = ( $B::C::Config::Config{ivsize} * 4 - 1 );    # poor editor
 my $INTMAX = ( 1 << $POW ) - 1;
 
 # LL for 32bit -2147483648L or 64bit -9223372036854775808L
@@ -49,18 +49,18 @@ sub get_integer_value ($) {
 my $DBLMAX    = "1.79769313486232e+308";
 my $NVGFORMAT = _nvgformat();
 
-my $LL = $B::C::Flags::Config{d_longdbl} ? "LL" : "L";
+my $LL = $B::C::Config::Config{d_longdbl} ? "LL" : "L";
 
 sub get_double_value ($) {
     my $nvx = shift;
 
     # Handle infinite and NaN values
     if ( defined $nvx ) {
-        if ( $B::C::Flags::Config{d_isinf} ) {
+        if ( $B::C::Config::Config{d_isinf} ) {
             return 'INFINITY'  if $nvx =~ /^Inf/i;
             return '-INFINITY' if $nvx =~ /^-Inf/i;
         }
-        return 'NAN' if $nvx =~ /^NaN/i and $B::C::Flags::Config{d_isnan};
+        return 'NAN' if $nvx =~ /^NaN/i and $B::C::Config::Config{d_isnan};
         # TODO NANL for long double
     }
 
@@ -83,7 +83,7 @@ sub get_double_value ($) {
 }
 
 sub _ivdformat {
-    my $format = $B::C::Flags::Config{ivdformat};
+    my $format = $B::C::Config::Config{ivdformat};
 
     # QUESTION : is it still really required ?
     $format =~ s/"//g;    #" poor editor
@@ -91,20 +91,20 @@ sub _ivdformat {
 }
 
 sub _nvgformat {
-    my $format = $B::C::Flags::Config{nvgformat};
+    my $format = $B::C::Config::Config{nvgformat};
 
     # QUESTION : is it still really required ?
     $format =~ s/"//g;    #" poor editor
     if ( $format eq 'g' ) {    # a very poor choice to keep precision
                                # on intel 17-18, on ppc 31, on sparc64/s390 34
-        $format = $B::C::Flags::Config{uselongdouble} ? '.17Lg' : '.16g';
+        $format = $B::C::Config::Config{uselongdouble} ? '.17Lg' : '.16g';
     }
     return $format;
 
 }
 
 sub _ull {
-    return $B::C::Flags::Config{ivsize} == 2 * $B::C::Flags::Config{ptrsize} ? 'ULL' : 'UL';
+    return $B::C::Config::Config{ivsize} == 2 * $B::C::Config::Config{ptrsize} ? 'ULL' : 'UL';
 }
 
 1;

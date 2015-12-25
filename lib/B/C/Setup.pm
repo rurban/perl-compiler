@@ -2,7 +2,7 @@ package B::C::Setup;
 
 use strict;
 
-use B::C::Flags         ();
+use B::C::Config         ();
 use B::C::Setup::Debug ();
 
 use Exporter ();
@@ -25,19 +25,19 @@ sub LOWEST_IMAGEBASE() { 0x10000 }
 
 sub _autoload_map {
     my $map = {
-        USE_ITHREADS     => $B::C::Flags::Config{useithreads},
-        USE_MULTIPLICITY => $B::C::Flags::Config{usemultiplicity},
+        USE_ITHREADS     => $B::C::Config::Config{useithreads},
+        USE_MULTIPLICITY => $B::C::Config::Config{usemultiplicity},
 
         # Thanks to Mattia Barbon for the C99 tip to init any union members
-        C99 => $B::C::Flags::Config{d_c99_variadic_macros},    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
+        C99 => $B::C::Config::Config{d_c99_variadic_macros},    # http://docs.sun.com/source/819-3688/c99.app.html#pgfId-1003962
 
-        MAD => $B::C::Flags::Config{mad},
+        MAD => $B::C::Config::Config{mad},
     };
-    $map->{HAVE_DLFCN_DLOPEN} = $B::C::Flags::Config{i_dlfcn} && $B::C::Flags::Config{d_dlopen};
+    $map->{HAVE_DLFCN_DLOPEN} = $B::C::Config::Config{i_dlfcn} && $B::C::Config::Config{d_dlopen};
 
     # debugging variables
-    $map->{'DEBUGGING'}             = ( $B::C::Flags::Config{ccflags} =~ m/-DDEBUGGING/ );
-    $map->{'DEBUG_LEAKING_SCALARS'} = $B::C::Flags::Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+    $map->{'DEBUGGING'}             = ( $B::C::Config::Config{ccflags} =~ m/-DDEBUGGING/ );
+    $map->{'DEBUG_LEAKING_SCALARS'} = $B::C::Config::Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 
     return $map;
 }

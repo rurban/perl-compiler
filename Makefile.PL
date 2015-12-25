@@ -15,12 +15,12 @@ my $devnull = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
 
 my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 mkdir "lib/B/C" unless -d "lib/B/C";
-unless ( -e 'lib/B/C/Flags.pm' ) {
-    open PH, ">", "lib/B/C/Flags.pm";
-    print PH "package B::C::Flags;\n\n";
+unless ( -e 'lib/B/C/Config.pm' ) {
+    open PH, ">", "lib/B/C/Config.pm";
+    print PH "package B::C::Config;\n\n";
     print PH "\n1;\n";
     close PH;
-    chmod 0644, "lib/B/C/Flags.pm";
+    chmod 0644, "lib/B/C/Config.pm";
 }
 
 my ( $use_declare_independent_comalloc, $extra_cflags, $extra_libs ) = ( 0, "", "" );
@@ -45,9 +45,9 @@ sub write_b_c_flags {
     my $version = shift;
     mkdir "lib/B/C" unless -d "lib/B/C";
     my $b_c_deps = b_c_deps();
-    open PH, ">", "lib/B/C/Flags.pm";
+    open PH, ">", "lib/B/C/Config.pm";
     print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
-    print PH "package B::C::Flags;\n\n";
+    print PH "package B::C::Config;\n\n";
     print PH "\$VERSION = '$version';\n";
     my $REV = '';
 
@@ -95,7 +95,7 @@ sub write_b_c_flags {
 
     print PH "1;\n";
     close PH;
-    chmod 0644, "lib/B/C/Flags.pm";
+    chmod 0644, "lib/B/C/Config.pm";
 }
 
 WriteMakefile(
