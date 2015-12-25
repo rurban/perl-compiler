@@ -17,8 +17,8 @@ our %debug;
 our $check;
 our %Config;
 BEGIN {
-  require B::C::Flags;
-  *Config = \%B::C::Flags::Config;
+  require B::C::Config;
+  *Config = \%B::C::Config::Config;
   # make it a restricted hash
   Internals::SvREADONLY(%Config, 1) if $] >= 5.008004;
 }
@@ -420,10 +420,10 @@ my %all_bc_subs = map {$_=>1}
 
 # track all internally used packages. all other may not be deleted automatically
 # - hidden methods
-# uses now @B::C::Flags::deps
+# uses now @B::C::Config::deps
 our %all_bc_deps = map {$_=>1}
-  @B::C::Flags::deps ? @B::C::Flags::deps
-  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Flags B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAME B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::UNOP B::UV CORE CORE::GLOBAL Carp DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
+  @B::C::Config::deps ? @B::C::Config::deps
+  : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Config B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAME B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::UNOP B::UV CORE CORE::GLOBAL Carp DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -6130,7 +6130,7 @@ sub output_boilerplate {
   print "/* $creator */\n";
   # Store the sv_list index in sv_debug_file when debugging
   print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUG_LEAKING_SCALARS;
-  if ($B::C::Flags::have_independent_comalloc) {
+  if ($B::C::Config::have_independent_comalloc) {
     print <<'_EOT1';
 #ifdef NEED_MALLOC_283
 # include "malloc-2.8.3.h"
@@ -6200,7 +6200,7 @@ static void xs_init (pTHX);
 static void dl_init (pTHX);
 _EOT4
 
-  if ($B::C::av_init2 and $B::C::Flags::use_declare_independent_comalloc) {
+  if ($B::C::av_init2 and $B::C::Config::use_declare_independent_comalloc) {
     print "void** dlindependent_comalloc(size_t, size_t*, void**);\n";
   }
   if ($B::C::av_init2) {
@@ -7216,7 +7216,7 @@ sub walk_syms {
 }
 
 # simplified walk_syms
-# needed to populate @B::C::Flags::deps from Makefile.PL from within this %INC context
+# needed to populate @B::C::Config::deps from Makefile.PL from within this %INC context
 sub walk_stashes {
   my ($symref, $prefix) = @_;
   no strict 'refs';
@@ -8190,7 +8190,7 @@ sub compile {
   $B::C::dyn_padlist = 1 if $] >= 5.017; # default is dynamic and safe, disable with -O4
   $B::C::walkall  = 1;
 
-  mark_skip qw(B::C B::C::Flags B::CC B::Asmdata B::FAKEOP O
+  mark_skip qw(B::C B::C::Config B::CC B::Asmdata B::FAKEOP O
 	       B::Pseudoreg B::Shadow B::C::InitSection);
   #mark_skip('DB', 'Term::ReadLine') if defined &DB::DB;
 
@@ -8318,7 +8318,7 @@ OPTION:
       $max_string_len = $arg;
     }
   }
-  if (!$B::C::Flags::have_independent_comalloc) {
+  if (!$B::C::Config::have_independent_comalloc) {
     if ($B::C::av_init2) {
       $B::C::av_init = 1;
       $B::C::av_init2 = 0;
@@ -8662,7 +8662,7 @@ C<-fno-stash> is the default.
 
 Do not delete compiler-internal and dependent packages which appear to be
 nowhere used automatically. This might miss run-time called stringified methods.
-See L<B::C::Flags> for C<@deps> which packages are affected.
+See L<B::C::Config> for C<@deps> which packages are affected.
 
 C<-fdelete-pkg> is the default.
 

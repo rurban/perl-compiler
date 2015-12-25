@@ -152,11 +152,11 @@ cleanup;
 isnt(`$perlcc --Wb=-fno-fold,-v -o pcc $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
 TODO: {
-  require B::C::Flags if $] > 5.021006;
+  require B::C::Config if $] > 5.021006;
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   local $TODO = "5.6 BC does not understand -DG yet" if $] < 5.007;
   local $TODO = "perl5.22 broke ByteLoader"
-    if $] > 5.021006 and !$B::C::Flags::have_byteloader;
+    if $] > 5.021006 and !$B::C::Config::have_byteloader;
   like(`$perlcc -B --Wb=-DG,-v -o pcc $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
 }
@@ -206,7 +206,7 @@ cleanup;
 
 TODO: {
   local $TODO = "perl5.22 broke ByteLoader"
-    if $] > 5.021006 and !$B::C::Flags::have_byteloader;
+    if $] > 5.021006 and !$B::C::Config::have_byteloader;
   is(`$perlcc -Br -opcc.plc $f $devnull`, "ok", "-Br -o file");
 }
 ok(-e 'pcc.plc', "pcc.plc file");

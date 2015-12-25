@@ -8,12 +8,12 @@ use Carp;
 #my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 my $core = $ENV{PERL_CORE};
 mkdir "lib/B/C" unless -d "lib/B/C";
-unless (-e 'lib/B/C/Flags.pm') {
-    open PH, ">", "lib/B/C/Flags.pm";
-    print PH "package B::C::Flags;\n\n";
+unless (-e 'lib/B/C/Config.pm') {
+    open PH, ">", "lib/B/C/Config.pm";
+    print PH "package B::C::Config;\n\n";
     print PH "\n1;\n";
     close PH;
-    chmod 0644, "lib/B/C/Flags.pm";
+    chmod 0644, "lib/B/C/Config.pm";
 }
 
 # generate lib/B/Asmdata.pm beforehand
@@ -61,9 +61,9 @@ sub write_b_c_flags {
     my $version = shift;
     mkdir "lib/B/C" unless -d "lib/B/C";
     my $b_c_deps = b_c_deps();
-    open PH, ">", "lib/B/C/Flags.pm";
+    open PH, ">", "lib/B/C/Config.pm";
     print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
-    print PH "package B::C::Flags;\n\n";
+    print PH "package B::C::Config;\n\n";
     my $devnull = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
     print PH "\$VERSION = '$version';\n";
     my $REV = '';
@@ -91,7 +91,7 @@ sub write_b_c_flags {
         print PH "\n";
         print PH "1;\n";
         close PH;
-        chmod 0644, "lib/B/C/Flags.pm";
+        chmod 0644, "lib/B/C/Config.pm";
         return;
     }
     $Data::Dumper::Terse=1;
@@ -112,7 +112,7 @@ sub write_b_c_flags {
     print PH "\n";
     print PH "1;\n";
     close PH;
-    chmod 0644, "lib/B/C/Flags.pm";
+    chmod 0644, "lib/B/C/Config.pm";
 }
 
 # XXX Check for 5.16.0 B-1.34 and offer to patch it? rather use `perlall build --patches=Compiler`
@@ -182,7 +182,7 @@ WriteMakefile(
     SIGN  => 1,
     clean => { FILES =>
                "bytecode[0-9]* ".
-               "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* lib/B/C/Flags.pm ".
+               "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* lib/B/C/Config.pm ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
                "t/CORE/v5.*/*/*.bin t/CORE/v5.*/*/*.c Io_argv* t/CORE/v5.*/*/*.subtest.*.t".
@@ -202,7 +202,7 @@ sub headerpath {
 
 
 # probe for broken or patched ByteLoader since 5.22
-# sets $B::C::Flags::have_byteloader
+# sets $B::C::Config::have_byteloader
 sub check_byteloader {
     return 1 if $Config{usecperl} and $] >= 5.022002;
     'undef';
@@ -395,11 +395,11 @@ TAGS : $asmdata
     $result;
 }
 
-# force reconfig of B::C::Flags with compiled ByteLoader
+# force reconfig of B::C::Config with compiled ByteLoader
 sub subdirs {
     my $s = shift->SUPER::subdirs(@_);
     if ($] >= 5.022) {
-        my $bcflags = File::Spec->catfile('lib', 'B', 'C', 'Flags.pm');
+        my $bcflags = File::Spec->catfile('lib', 'B', 'C', 'Config.pm');
         my $bytehintspatched = File::Spec->catfile('ByteLoader', 'hints', '522_patched.pl');
         return $s . "
 
