@@ -1,6 +1,6 @@
 BEGIN {
     chdir 't' if -d 't';
-    require "uni/case.pl";
+    require "./uni/case.pl";
 }
 
 use feature 'unicode_strings';
