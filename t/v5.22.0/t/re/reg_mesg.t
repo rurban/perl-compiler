@@ -4,7 +4,7 @@ $|=1;   # outherwise things get mixed up in output
 
 BEGIN {
 	chdir 't' if -d 't';
-	require './test.pl';
+    require './test.pl';
     set_up_inc( qw '../lib ../ext/re' );
 	skip_all_without_unicode_tables();
 	eval 'require Config'; # assume defaults if this fails
@@ -219,6 +219,8 @@ my @death =
  '/(?[ \x{} ])/' => 'Number with no digits {#} m/(?[ \x{}{#} ])/',
  '/(?[ \cK + ) ])/' => 'Unexpected \')\' {#} m/(?[ \cK + ){#} ])/',
  '/(?[ \cK + ])/' => 'Incomplete expression within \'(?[ ])\' {#} m/(?[ \cK + {#}])/',
+ '/(?[ ( ) ])/' => 'Incomplete expression within \'(?[ ])\' {#} m/(?[ ( ) {#}])/',
+ '/(?[[0]+()+])/' => 'Incomplete expression within \'(?[ ])\' {#} m/(?[[0]+()+{#}])/',
  '/(?[ \p{foo} ])/' => 'Property \'foo\' is unknown {#} m/(?[ \p{foo}{#} ])/',
  '/(?[ \p{ foo = bar } ])/' => 'Property \'foo = bar\' is unknown {#} m/(?[ \p{ foo = bar }{#} ])/',
  '/(?[ \8 ])/' => 'Unrecognized escape \8 in character class {#} m/(?[ \8{#} ])/',
@@ -258,6 +260,8 @@ my @death =
  'm/\cß/' => "Character following \"\\c\" must be printable ASCII",
  '/((?# This is a comment in the middle of a token)?:foo)/' => 'In \'(?...)\', the \'(\' and \'?\' must be adjacent {#} m/((?# This is a comment in the middle of a token)?{#}:foo)/',
  '/((?# This is a comment in the middle of a token)*FAIL)/' => 'In \'(*VERB...)\', the \'(\' and \'*\' must be adjacent {#} m/((?# This is a comment in the middle of a token)*{#}FAIL)/',
+ '/(?[\ &!])/' => 'Incomplete expression within \'(?[ ])\' {#} m/(?[\ &!{#}])/',    # [perl #126180]
+ '/(?[!()])/' => 'Incomplete expression within \'(?[ ])\' {#} m/(?[!(){#}])/',      # [perl #126404]
 );
 
 # These are messages that are warnings when not strict; death under 'use re
@@ -505,7 +509,6 @@ my @warning = (
                     'Useless (?c) - use /gc modifier {#} m/(?ogc{#})\x{100}/',
                   ],
     '/a{1,1}?\x{100}/' => 'Useless use of greediness modifier \'?\' {#} m/a{1,1}?{#}\x{100}/',
-    '/b{3}  +\x{100}/x' => 'Useless use of greediness modifier \'+\' {#} m/b{3}  +{#}\x{100}/',
     "/(?[ [ % - % ] ])/" => "",
     "/(?[ [ : - \\x$colon_hex ] ])\\x{100}/" => "\": - \\x$colon_hex \" is more clearly written simply as \":\" {#} m/(?[ [ : - \\x$colon_hex {#}] ])\\x{100}/",
     "/(?[ [ \\x$colon_hex - : ] ])\\x{100}/" => "\"\\x$colon_hex\ - : \" is more clearly written simply as \":\" {#} m/(?[ [ \\x$colon_hex - : {#}] ])\\x{100}/",

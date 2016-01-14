@@ -1,7 +1,7 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';    
+    chdir 't' if -d 't';
     require './test.pl';
     set_up_inc('../lib');
 }
@@ -10,7 +10,7 @@ use strict;
 
 use Config;
 
-plan(tests => 79);
+plan(tests => 97);
 
 # Test hexfloat literals.
 
@@ -169,9 +169,57 @@ SKIP:
 
         eval '0x1.fffffffffffffp+1024';
         like(get_warn(), qr/^Hexadecimal float: exponent overflow/);
+
+        undef $a;
+        eval '$a = 0x111.0000000000000p+0'; # 12 zeros.
+        like(get_warn(), qr/^Hexadecimal float: mantissa overflow/);
+        is($a, 273);
+
+        # The 13 zeros would be enough to push the hi-order digits
+        # off the high-end.
+
+        undef $a;
+        eval '$a = 0x111.0000000000000p+0'; # 13 zeros.
+        like(get_warn(), qr/^Hexadecimal float: mantissa overflow/);
+        is($a, 273);
+
+        undef $a;
+        eval '$a = 0x111.00000000000000p+0';  # 14 zeros.
+        like(get_warn(), qr/^Hexadecimal float: mantissa overflow/);
+        is($a, 273);
+
+        undef $a;
+        eval '$a = 0xfffffffffffffp0';  # 52 bits.
+        is(get_warn(), undef);
+        is($a, 4.5035996273705e+15);
+
+        undef $a;
+        eval '$a = 0xfffffffffffff.8p0';  # 53 bits.
+        is(get_warn(), undef);
+        is($a, 4.5035996273705e+15);
+
+        undef $a;
+        eval '$a = 0xfffffffffffff.cp0';  # 54 bits.
+        like(get_warn(), qr/^Hexadecimal float: mantissa overflow/);
+        is($a, 4.5035996273705e+15);
+
+        undef $a;
+        eval '$a = 0xf.ffffffffffffp0';  # 52 bits.
+        is(get_warn(), undef);
+        is($a, 16);
+
+        undef $a;
+        eval '$a = 0xf.ffffffffffff8p0';  # 53 bits.
+        is(get_warn(), undef);
+        is($a, 16);
+
+        undef $a;
+        eval '$a = 0xf.ffffffffffffcp0';  # 54 bits.
+        like(get_warn(), qr/^Hexadecimal float: mantissa overflow/);
+        is($a, 16);
     } else {
         print "# skipping warning tests\n";
-        skip "nv_preserves_uv_bits is $Config{nv_preserves_uv_bits} not 53", 8;
+        skip "nv_preserves_uv_bits is $Config{nv_preserves_uv_bits} not 53", 26;
     }
 }
 

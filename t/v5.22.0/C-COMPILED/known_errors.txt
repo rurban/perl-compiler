@@ -26,9 +26,11 @@
 base/lex.t                   PLAN      BC issue #222 - Cannot use '<<' in regexp
 comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse behavior so not relevant to B::C
 comp/hints.t                 COMPAT    tests are using BEGIN block, do not ready for B::C
+comp/line_debug.t            TESTS     Test results:
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
 comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
 io/bom.t                     COMPAT    BC issue 312 - BOM seems to be rejected by perlcc but really, who needs this?
+io/crlf.t                    PLAN      Plan was valid
 io/layers.t                  SKIP      This is a known BC issue we've never cared about. use open doesn't work. See https://code.google.com/p/perl-compiler/issues/detail?id=203
 io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
@@ -48,6 +50,7 @@ op/defins.t                  TESTS     BC issue #294 - File::Glob constant subro
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/exists_sub.t              SIG       BC issue #277 - empty sub with attributes
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
+op/goto.t                    TESTS     Test results:
 op/goto_xs.t                 COMPAT    needs XS::APItest
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
@@ -88,15 +91,19 @@ uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pra
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
+uni/lower.t                  PLAN      Plan was valid
 uni/parser.t                 TESTS     Test results:
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
+uni/title.t                  PLAN      Plan was valid
 uni/tr_7jis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_eucjp.t               COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
+uni/upper.t                  PLAN      Plan was valid
 uni/variables.t              PLAN      BC issue #321 - REGEXP altered by invalid eval
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
+xtestc/0028.t                TESTS     Output is: "Can t locate ccode28 ..."
 xtestc/0135.t                TESTS     Output is: ""
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
@@ -148,6 +155,7 @@ xtestc/2052.t                TESTS     Output is: ""
 xtestc/2201.t                TESTS     Output is: ""
 xtestc/2381.t                TESTS     Output is: "Undefined subroutine ..."
 xtestc/2511.t                TESTS     Output is: ""
+xtestc/2530.t                TESTS     Output is: "Can t locate t test.pl in INC ..."
 xtestc/2540.t                TESTS     Output is: ""
 xtestc/2741.t                TESTS     Output is: "1..5\nok 1\nok 2\nok 3\nok 4\n"
 xtestc/2900.t                TESTS     Output is: "19518210 "
