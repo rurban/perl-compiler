@@ -1,12 +1,12 @@
 language: "perl"
 perl:
-    - "5.22.0"
+    - "5.22.1"
 install: "echo"
 before_script:
     - perl -S cpanm Module::CPANfile
     - perl -S cpanm -n --installdeps .
-    - cat t/v5.22.0/C-COMPILED/known_errors.ztravis.txt t/v5.22.0/C-COMPILED/known_errors.txt > known_tmp
-    - mv known_tmp t/v5.22.0/C-COMPILED/known_errors.txt
+    - cat t/v5.22.1/C-COMPILED/known_errors.ztravis.txt t/v5.22.1/C-COMPILED/known_errors.txt > known_tmp
+    - mv known_tmp t/v5.22.1/C-COMPILED/known_errors.txt
 script: "perl Makefile.PL && make testcore"
 notifications:
   recipients:

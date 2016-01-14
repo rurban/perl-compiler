@@ -8,9 +8,9 @@ Subject: [PATCH 001/211] add extra tests
  t/extra/pvlv.t            | 28 ++++++++++++++++++++++++++++
  t/extra/reused-variable.t | 15 +++++++++++++++
  3 files changed, 56 insertions(+)
- create mode 100644 t/v5.22.0/t/extra/file-close.t
- create mode 100644 t/v5.22.0/t/extra/pvlv.t
- create mode 100644 t/v5.22.0/t/extra/reused-variable.t
+ create mode 100644 t/v5.22.1/t/extra/file-close.t
+ create mode 100644 t/v5.22.1/t/extra/pvlv.t
+ create mode 100644 t/v5.22.1/t/extra/reused-variable.t
 
 diff --git a/t/extra/file-close.t b/t/extra/file-close.t
 new file mode 100644

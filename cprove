@@ -6,7 +6,7 @@ use Cwd;
 
 run(@ARGV) unless caller;
 
-use constant TEST_SUITE_VERSION => 'v5.22.0';
+use constant TEST_SUITE_VERSION => 'v5.22.1';
 use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
 
 sub run {
@@ -139,12 +139,12 @@ sub usage {
 
     print <<'EOS';
 # run the compiled version
-> cprove -j4 t/v5.22.0/t/*.t
-> cprove t/v5.22.0/C-COMPILED/op/my.t
+> cprove -j4 t/v5.22.1/t/*.t
+> cprove t/v5.22.1/C-COMPILED/op/my.t
 
 # run the uncompiled version
-> cprove -u -j4 t/v5.22.0/t/*.t
-> cprove -u t/v5.22.0/C-COMPILED/op/my.t
+> cprove -u -j4 t/v5.22.1/t/*.t
+> cprove -u t/v5.22.1/C-COMPILED/op/my.t
 
 # run the compiled version
 > cprove op/my.t
