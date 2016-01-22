@@ -61,6 +61,7 @@ sub write_b_c_flags {
     my $version = shift;
     mkdir "lib/B/C" unless -d "lib/B/C";
     my $b_c_deps = b_c_deps();
+    $b_c_deps .= " Socket" if $] > 5.021;
     open PH, ">", "lib/B/C/Config.pm";
     print PH "# written by B::C Makefile.PL. \$extra_{cflags,libs} need a leading space if used.\n";
     print PH "package B::C::Config;\n\n";

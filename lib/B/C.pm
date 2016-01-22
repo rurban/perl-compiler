@@ -426,6 +426,7 @@ my %all_bc_subs = map {$_=>1}
 our %all_bc_deps = map {$_=>1}
   @B::C::Config::deps ? @B::C::Config::deps
   : qw(AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Config B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAME B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::UNOP B::UV CORE CORE::GLOBAL Carp DB DynaLoader Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket Internals O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Symbol UNIVERSAL XSLoader __ANON__ arybase arybase::mg base fields main maybe maybe::next mro next overload re strict threads utf8 vars version warnings warnings::register);
+$all_bc_deps{Socket} = 1 if !@B::C::Config::deps and $] > 5.021;
 
 # B::C stash footprint: mainly caused by blib, warnings, and Carp loaded with DynaLoader
 # perl5.15.7d-nt -MO=C,-o/dev/null -MO=Stash -e0
@@ -3005,6 +3006,7 @@ sub B::PADNAME::save {
   $refcnt++ if $refcnt < 1000; # XXX protect from free, but allow SvREFCOUNT_IMMORTAL
   my $str = $pn->PVX;
   my $cstr = cstring($str); # a 5.22 padname is always utf8
+  my $len = $pn->LEN;
   my $ix = $padnamesect->index + 1;
   my $s = "&padname_list[$ix]";
   # 5.22 needs the buffer to be at the end, and the pv pointing to it.
@@ -3012,14 +3014,14 @@ sub B::PADNAME::save {
   $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
   $padnamesect->add( sprintf
       ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x, %s",
-        $ix ? "((char*)$s)+STRUCT_OFFSET(struct padname_with_str, xpadn_str[0])" : 'NULL',
+        $ix ? "((char*)$s)+STRUCT_OFFSET(struct my_padname_with_str_64, xpadn_str[0])" : 'NULL',
         is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
         is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
         $pn->COP_SEQ_RANGE_LOW,
         $pn->COP_SEQ_RANGE_HIGH,
         $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
-        $gen, $pn->LEN, $flags, $cstr));
-  if ( $pn->LEN > 60 ) {
+        $gen, $len, $flags, $cstr));
+  if ( $len > 64 ) {
     # Houston we have a problem, need to allocate this padname dynamically. Not done yet
     # either dynamic or seperate structs per size MyPADNAME(5)
     die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
@@ -6051,17 +6053,22 @@ _EOT0
     U8		xpadn_len;		\
     U8		xpadn_flags
 
-struct my_padname_with_str {
+EOF
+
+    for my $s (8, 16, 24, 32, 40, 48, 56, 64) {
+      print <<"EOF";
+struct my_padname_with_str_$s {
 #ifdef PERL_PADNAME_MINIMAL
     _PADNAME_BASE;
 #else
     struct padname	xpadn_padname;
 #endif
-    char		xpadn_str[60]; /* longer lexical upval names are forbidden for now */
+    char		xpadn_str[$s];
 };
-typedef struct my_padname_with_str MyPADNAME;
+typedef struct my_padname_with_str_$s MyPADNAME_$s;
 EOF
-
+    }
+    print "typedef MyPADNAME_60 MyPADNAME;\n"
   } elsif ($PERL518) {
     print "typedef PADNAME MyPADNAME;\n";
   }
