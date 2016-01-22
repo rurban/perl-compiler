@@ -87,7 +87,7 @@ sub savepvn {
         else {
             my $cstr = cstring($pv);
             my $cur ||= ( $sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length( pack "a*", $pv );
-            if ( $sv and B::C::IsCOW($sv) ) {
+            if ( ( $sv and B::C::IsCOW($sv) ) and ( $B::C::cow or B::C::IsCOW_hek($sv) ) ) {
                 $pv .= "\0\001";
                 $cstr = cstring($pv);
                 $cur += 2;

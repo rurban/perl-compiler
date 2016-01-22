@@ -2,7 +2,7 @@ package B::PV;
 
 use strict;
 
-use B qw/SVf_ROK SVf_READONLY cstring SVs_OBJECT/;
+use B qw/SVf_ROK SVf_READONLY SVf_IsCOW cstring SVs_OBJECT/;
 use B::C::Setup;
 use B::C::Save qw/savepvn/;
 use B::C::Save::Hek qw/save_hek/;
@@ -32,8 +32,13 @@ sub save {
         $refcnt = DEBUGGING() ? 1000 : 0x7fffffff;
     }
 
-    # static pv, do not destruct. test 13 with pv0 "3".
+    # Remove COW flag
+    if ( !$shared_hek and !$B::C::cow and B::C::IsCOW($sv) ) {
+        $flags &= ~SVf_IsCOW;
+        debug( pv => "turn off SVf_IsCOW %s %s %s", $sym, cstring($pv), $fullname );
+    }
 
+    # static pv, do not destruct. test 13 with pv0 "3".
     if ( $B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len ) {
         $flags &= ~0x01000000;
         debug( pv => "constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname );
