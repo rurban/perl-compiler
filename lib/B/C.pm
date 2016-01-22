@@ -4229,7 +4229,7 @@ sub B::CV::save {
   my $pvsym = 'NULL';
   my $cur = defined $pv ? $cv->CUR : 0;
   my $len = $cur + 1;
-  $len++ if IsCOW($cv);
+  $len++ if IsCOW($cv) and !$B::C::cow;
   $len = 0 if $B::C::const_strings;
   # need to survive cv_undef as there is no protection against static CVs
   my $refcnt = $cv->REFCNT + ($PERL510 ? 1 : 0);
@@ -5623,7 +5623,7 @@ sub B::IO::save {
   }
   if ($cur) {
     $len = $cur + 1;
-    $len++ if IsCOW($io);
+    $len++ if IsCOW($io) and !$B::C::cow;
   } else {
     $len = 0;
   }
