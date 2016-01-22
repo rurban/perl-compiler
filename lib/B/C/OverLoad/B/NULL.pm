@@ -1,7 +1,7 @@
 package B::NULL;
 
 use strict;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/svsect init/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 

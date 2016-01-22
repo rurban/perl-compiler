@@ -11,8 +11,8 @@ hints/darwin.pl
 hints/openbsd.pl
 lib/B/Bblock.pm
 lib/B/C.pm
-lib/B/C/Config.pm
-lib/B/C/Config/Debug.pm
+lib/B/C/Setup.pm
+lib/B/C/Setup/Debug.pm
 lib/B/C/Debug/Walker.pm
 lib/B/C/Decimal.pm
 lib/B/C/File.pm

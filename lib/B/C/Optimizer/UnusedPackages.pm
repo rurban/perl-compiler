@@ -4,7 +4,7 @@ use strict;
 use Exporter ();
 
 use B qw/svref_2object/;
-use B::C::Config;    # import everything
+use B::C::Setup;    # import everything
 use B::C::Packages qw/mark_package_unused mark_package_used mark_package_deleted is_package_used get_all_packages_used include_package_list is_package_used/;
 use B::C::Helpers qw/is_using_mro/;
 use B::C::File qw/init2/;
@@ -49,8 +49,8 @@ sub optimize {
 
     my $sav_debug;
     if ( debug('unused') ) {
-        $sav_debug = B::C::Config::Debug::save();
-        B::C::Config::Debug::init();
+        $sav_debug = B::C::Setup::Debug::save();
+        B::C::Setup::Debug::init();
     }
     my $module = B::C::module();
     my $main = $module ? $module . "::" : "main::";
@@ -93,7 +93,7 @@ sub optimize {
     #} while @unused > @init_unused;
 
     if ( $sav_debug->{unused} ) {
-        B::C::Config::Debug::restore($sav_debug);
+        B::C::Setup::Debug::restore($sav_debug);
     }
 
     # todo: move B::C:savINC

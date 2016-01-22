@@ -3,7 +3,7 @@ package B::PVMG;
 use strict;
 
 use Config ();    # TODO: Removing this causes unit tests to fail in B::C ???
-use B::C::Config;
+use B::C::Setup;
 use B qw/SVf_ROK SVf_READONLY HEf_SVKEY SVf_READONLY SVf_AMAGIC cstring cchar SVp_POK svref_2object class/;
 use B::C::Save qw/savepvn savepv savestashpv/;
 use B::C::Decimal qw/get_integer_value get_double_value/;

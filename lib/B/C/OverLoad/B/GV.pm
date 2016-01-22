@@ -4,7 +4,7 @@ use strict;
 
 use B qw/cstring svref_2object SVt_PVGV SVf_ROK SVf_UTF8/;
 
-use B::C::Config;
+use B::C::Setup;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2/;

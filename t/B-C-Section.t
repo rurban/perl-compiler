@@ -50,28 +50,28 @@ package fakeop {
     sub flagspv { return shift->{'flag'} }
 };
 
-B::C::Config::Debug::enable_debug_level('flags');
+B::C::Setup::Debug::enable_debug_level('flags');
 my $op = fakeop->new;
 note "TODO: This is WAY overly specific behavior...";
 $bbbsect->add('abcd');
 is( $bbbsect->debug($op), 'fff', "bbbsect->debug(op) returns flagspv()'s value from the op" );
 
-B::C::Config::Debug::init();
+B::C::Setup::Debug::init();
 is( $bbbsect->debug($op),                   undef, "bbbsect->debug(op) returns nothing if the op has nothing." );
 is( $bbbsect->{'dbg'}->[ $bbbsect->index ], 'fff', "  ... but the old value is still stored." );
 
-B::C::Config::Debug::enable_debug_level('flags');
+B::C::Setup::Debug::enable_debug_level('flags');
 $bbbsect->add('defg');
 $op->{'flag'} = 'ggg';
 is( $bbbsect->debug($op), 'ggg', "bbbsect->debug(op) adds a debug to the second add." );
 cmp_deeply( $bbbsect->{'dbg'}, [qw/fff ggg/], "  ... And stores it in slot 1 in the array not altering the first." );
 
-B::C::Config::Debug::init();
+B::C::Setup::Debug::init();
 is( $bbbsect->debug, undef, "bbbsect->debug does nothing when B::C::debug{flags} is off." );
 
 # Start over. Let's test output now.
-B::C::Config::Debug::enable_verbose();
-B::C::Config::Debug::enable_debug_level('flags');
+B::C::Setup::Debug::enable_verbose();
+B::C::Setup::Debug::enable_debug_level('flags');
 $bbbsect = B::C::Section->new( 'bbb', \%symtable, 'default_value_here' );
 $bbbsect->add("abc");
 $bbbsect->add("xyzs\\_134bcef33");

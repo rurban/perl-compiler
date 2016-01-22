@@ -1,7 +1,7 @@
 package B::PVIV;
 
 use strict;
-use B::C::Config;
+use B::C::Setup;
 use B::C::Save qw/savepvn/;
 use B::C::File qw/xpvivsect svsect init/;
 use B::C::Decimal qw/get_integer_value/;

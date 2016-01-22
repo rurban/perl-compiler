@@ -17,7 +17,7 @@ package B::HV;
 use strict;
 
 use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK SVf_AMAGIC/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/init xpvhvsect svsect decl init1 init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags is_using_mro/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

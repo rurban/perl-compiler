@@ -4,7 +4,7 @@ use strict;
 
 use B q/SVf_IOK/;
 
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/xpvnvsect svsect/;
 use B::C::Decimal qw/get_double_value/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

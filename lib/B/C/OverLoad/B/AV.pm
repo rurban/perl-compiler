@@ -5,7 +5,7 @@ use strict;
 use B::C::Flags ();
 
 use B qw/cstring SVf_IOK SVf_POK SVs_OBJECT/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/init init2 xpvavsect svsect/;
 use B::C::Helpers qw/strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

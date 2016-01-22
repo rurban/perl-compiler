@@ -3,7 +3,7 @@ package B::REGEXP;
 use strict;
 
 use B qw/cstring RXf_EVAL_SEEN/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/init svsect xpvsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 

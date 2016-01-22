@@ -3,7 +3,7 @@ package B::BINOP;
 use strict;
 
 use B qw/opnumber/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/binopsect init/;
 use B::C::Helpers qw/do_labels/;
 use B::C::Helpers::Symtable qw/savesym/;

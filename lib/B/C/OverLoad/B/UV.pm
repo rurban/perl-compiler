@@ -4,7 +4,7 @@ use strict;
 
 use B::C::Flags ();
 
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/xpvuvsect svsect/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 

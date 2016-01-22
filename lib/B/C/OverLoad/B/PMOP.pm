@@ -3,7 +3,7 @@ package B::PMOP;
 use strict;
 
 use B qw/cstring svref_2object RXf_EVAL_SEEN PMf_EVAL/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/pmopsect init init1/;
 use B::C::Helpers qw/read_utf8_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

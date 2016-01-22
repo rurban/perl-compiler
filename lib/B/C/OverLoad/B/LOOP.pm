@@ -2,7 +2,7 @@ package B::LOOP;
 
 use strict;
 
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/loopsect init/;
 use B::C::Helpers qw/do_labels/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

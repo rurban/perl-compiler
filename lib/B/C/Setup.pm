@@ -1,22 +1,22 @@
-package B::C::Config;
+package B::C::Setup;
 
 use strict;
 
 use B::C::Flags         ();
-use B::C::Config::Debug ();
+use B::C::Setup::Debug ();
 
 use Exporter ();
 our @ISA = qw(Exporter);
 
 # alias
-*debug           = \&B::C::Config::Debug::debug;
-*debug_all       = \&B::C::Config::Debug::enable_all;
-*verbose         = \&B::C::Config::Debug::verbose;
-*display_message = \&B::C::Config::Debug::display_message;
+*debug           = \&B::C::Setup::Debug::debug;
+*debug_all       = \&B::C::Setup::Debug::enable_all;
+*verbose         = \&B::C::Setup::Debug::verbose;
+*display_message = \&B::C::Setup::Debug::display_message;
 
-*WARN  = \&B::C::Config::Debug::WARN;
-*INFO  = \&B::C::Config::Debug::INFO;
-*FATAL = \&B::C::Config::Debug::FATAL;
+*WARN  = \&B::C::Setup::Debug::WARN;
+*INFO  = \&B::C::Setup::Debug::INFO;
+*FATAL = \&B::C::Setup::Debug::FATAL;
 
 # usually 0x400000, but can be as low as 0x10000
 # http://docs.embarcadero.com/products/rad_studio/delphiAndcpp2009/HelpUpdate2/EN/html/devcommon/compdirsimagebaseaddress_xml.html

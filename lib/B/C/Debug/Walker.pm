@@ -1,7 +1,7 @@
 package B::C::Debug::Walker;
 
 use strict;
-use B::C::Config;
+use B::C::Setup;
 use B::C::Helpers::Symtable qw/objsym/;
 
 use Exporter ();

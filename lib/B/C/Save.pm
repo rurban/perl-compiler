@@ -3,7 +3,7 @@ package B::C::Save;
 use strict;
 
 use B qw(cstring svref_2object);
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw( xpvmgsect decl init );
 use B::C::Helpers qw/strlen_flags/;
 use B::C::Save::Hek qw/save_hek/;

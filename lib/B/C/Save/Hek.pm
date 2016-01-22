@@ -3,7 +3,7 @@ package B::C::Save::Hek;
 use strict;
 
 use B qw(cstring);
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw( decl init );
 use B::C::Helpers qw/strlen_flags/;
 

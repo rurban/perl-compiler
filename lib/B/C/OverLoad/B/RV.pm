@@ -2,7 +2,7 @@ package B::RV;
 
 use strict;
 
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/svsect init/;
 use B::C::Helpers qw/is_constant/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

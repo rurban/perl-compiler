@@ -4,7 +4,7 @@ use strict;
 
 use B qw/cstring SVf_FAKE/;
 use B::C::File qw( padnamesect init );
-use B::C::Config;
+use B::C::Setup;
 use B::C::Helpers qw/is_constant/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 

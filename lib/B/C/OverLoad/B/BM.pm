@@ -3,7 +3,7 @@ package B::BM;
 use strict;
 
 use B qw/cstring/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/init/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 

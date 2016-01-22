@@ -24,8 +24,8 @@ BEGIN {
 }
 
 use B::Flags;
-use B::C::Config;    # import everything
-use B::C::Config::Debug ();    # used for setting debug levels from cmdline
+use B::C::Setup;    # import everything
+use B::C::Setup::Debug ();    # used for setting debug levels from cmdline
 
 use B::C::File qw( init2 init0 init decl free
   heksect binopsect condopsect copsect padopsect listopsect logopsect
@@ -1575,7 +1575,7 @@ sub build_template_stash {
 
     my $c_file_stash = {
         'verbose'                          => verbose(),
-        'debug'                            => B::C::Config::Debug::save(),
+        'debug'                            => B::C::Setup::Debug::save(),
         'creator'                          => "created at " . scalar localtime() . " with B::C $VERSION for $^X",
         'DEBUG_LEAKING_SCALARS'            => DEBUG_LEAKING_SCALARS(),
         'have_independent_comalloc'        => $B::C::Flags::have_independent_comalloc,
@@ -1816,21 +1816,21 @@ sub compile {
                 $arg = 'uOcAHCMGSPpsWF';
                 $all_bc_deps{'B::Flags'}++;
             }
-            elsif ( B::C::Config::Debug::enable_debug_level($arg) ) {
+            elsif ( B::C::Setup::Debug::enable_debug_level($arg) ) {
                 next;
             }
             foreach my $arg ( split( //, $arg ) ) {
-                next if B::C::Config::Debug::enable_debug_level($arg);
+                next if B::C::Setup::Debug::enable_debug_level($arg);
                 if ( $arg eq "o" ) {
-                    B::C::Config::Debug::enabe_verbose();
+                    B::C::Setup::Debug::enabe_verbose();
                     B->debug(1);
                 }
                 elsif ( $arg eq "F" ) {
-                    B::C::Config::Debug::enable_debug_level('flags');
+                    B::C::Setup::Debug::enable_debug_level('flags');
                     $all_bc_deps{'B::Flags'}++;
                 }
                 elsif ( $arg eq "r" ) {
-                    B::C::Config::Debug::enable_debug_level('runtime');
+                    B::C::Setup::Debug::enable_debug_level('runtime');
                     $SIG{__WARN__} = sub {
                         WARN(@_);
                         my $s = join( " ", @_ );
@@ -1862,7 +1862,7 @@ sub compile {
             mark_package_used($arg);
         }
         elsif ( $opt eq "v" ) {
-            B::C::Config::Debug::enable_verbose();
+            B::C::Setup::Debug::enable_verbose();
         }
         elsif ( $opt eq "u" ) {
             $arg ||= shift @options;

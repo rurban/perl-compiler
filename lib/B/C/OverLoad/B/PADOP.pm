@@ -4,7 +4,7 @@ use strict;
 
 use B qw/comppadlist/;
 
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/padopsect init/;
 use B::C::Helpers qw/curcv/;
 use B::C::Helpers::Symtable qw/objsym savesym/;

@@ -1,4 +1,4 @@
-package B::C::Config::Debug;
+package B::C::Setup::Debug;
 
 use strict;
 

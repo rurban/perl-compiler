@@ -7,7 +7,7 @@ use B qw(svref_2object);
 
 use B::C::Flags ();
 
-use B::C::Config qw/verbose debug/;
+use B::C::Setup qw/verbose debug/;
 use B::C::Packages qw/is_package_used mark_package_deleted/;
 
 sub new {

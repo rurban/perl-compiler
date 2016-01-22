@@ -3,7 +3,7 @@ package B::C::Decimal;
 use strict;
 
 use B::C::Flags ();
-use B::C::Config;
+use B::C::Setup;
 
 use Exporter ();
 our @ISA       = qw(Exporter);

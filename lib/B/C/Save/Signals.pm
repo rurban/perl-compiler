@@ -4,7 +4,7 @@ use strict;
 use B qw(svref_2object cstring);
 use B::C::Helpers qw/strlen_flags/;
 use B::C::File qw( init );
-use B::C::Config;    # import everything
+use B::C::Setup;    # import everything
 
 my $status = 0;
 

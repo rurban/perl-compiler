@@ -2,7 +2,7 @@ package B::C::Optimizer::ForceHeavy;
 
 use strict;
 use B qw/svref_2object/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::Packages qw/is_package_used/;
 
 use Exporter ();

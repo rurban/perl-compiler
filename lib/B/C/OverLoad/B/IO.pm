@@ -3,7 +3,7 @@ package B::IO;
 use strict;
 
 use B qw/cstring cchar svref_2object/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::Save qw(savepv);
 use B::C::File qw/init init2 svsect xpviosect/;
 

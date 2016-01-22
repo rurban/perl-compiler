@@ -3,7 +3,7 @@ package B::COP;
 use strict;
 
 use B qw/cstring/;
-use B::C::Config;
+use B::C::Setup;
 use B::C::File qw/init copsect decl/;
 use B::C::Save qw/constpv savestashpv/;
 use B::C::Decimal qw/get_integer_value/;
