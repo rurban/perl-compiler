@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_04';
+our $VERSION = '1.53_05';
 our %debug;
 our $check;
 our %Config;
@@ -371,9 +371,11 @@ BEGIN {
   if ($] < 5.018) {
     eval q[sub RXf_EVAL_SEEN() { 0x0 }
            sub PMf_EVAL()      { 0x0 }
+           sub SVf_IsCOW()     { 0x0 }
            ]; # unused
   } else {
     # 5.18
+    B->import(qw(SVf_IsCOW));
     #if (exists ${B::}{PADNAME::}) {
       @B::PADNAME::ISA = qw(B::PV);
     #}
@@ -453,7 +455,7 @@ our ($use_av_undef_speedup, $use_svpop_speedup) = (1, 1);
 our ($optimize_ppaddr, $optimize_warn_sv, $use_perl_script_name,
     $save_data_fh, $save_sig, $optimize_cop, $av_init, $av_init2, $ro_inc, $destruct,
     $fold, $warnings, $const_strings, $stash, $can_delete_pkg, $pv_copy_on_grow, $dyn_padlist,
-    $walkall);
+    $walkall, $cow);
 our $verbose = 0;
 our %option_map = (
     #ignored until IsCOW has a seperate COWREFCNT field (5.22 maybe)
@@ -467,6 +469,8 @@ our %option_map = (
     'av-init2'        => \$B::C::av_init2,
     'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
+    # if to disable the COW flag since 5.18
+    'cow'             => \$B::C::cow,      # disable with -O2
     'stash'           => \$B::C::stash,    # enable with -fstash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
@@ -481,7 +485,7 @@ our %option_map = (
 our %optimization_map = (
     0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data)],
+    2 => [qw(-fro-inc -fsave-data -fno-cow)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
   );
@@ -739,9 +743,9 @@ sub svop_or_padop_pv {
 
 sub IsCOW {
   if ($PERL522) {
-    return $_[0]->FLAGS & 0x10000000;
+    return $_[0]->FLAGS & SVf_IsCOW;
   }
-  return ($] >= 5.017008 and $_[0]->FLAGS & 0x00010000); # since 5.17.8
+  return ($] >= 5.017008 and $_[0]->FLAGS & SVf_IsCOW); # since 5.17.8
 }
 sub IsCOW_hek {
   return IsCOW($_[0]) && !$_[0]->LEN;
@@ -914,7 +918,7 @@ sub save_pv_or_rv {
   my $rok = $sv->FLAGS & SVf_ROK;
   my $pok = $sv->FLAGS & SVf_POK;
   my $gmg = $sv->FLAGS & SVs_GMG;
-  my $iscow = IsCOW($sv);
+  my $iscow = IsCOW($sv) and $B::C::cow ? 1 : 0;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
   my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
@@ -2676,7 +2680,7 @@ sub savepvn {
       my $cur = $cur ? $cur
         : ($sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV')
           ? $sv->CUR : length(pack "a*", $pv);
-      if ($sv and IsCOW($sv)) {
+      if ($sv and IsCOW($sv) and ($B::C::cow or IsCOW_hek($sv))) {
         $pv .= "\0\001";
         $cstr = cstring($pv);
         $cur += 2;
@@ -2927,8 +2931,13 @@ sub B::PV::save {
   if ($PERL518 and $fullname && $fullname eq 'svop const') {
     $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
   }
-  # static pv, do not destruct. test 13 with pv0 "3".
+  if (!$shared_hek and !$B::C::cow and IsCOW($sv)) {
+    $flags &= ~SVf_IsCOW;
+    warn sprintf("turn off SVf_IsCOW %s %s %s\n", $sym, cstring($pv), $fullname)
+      if $debug{pv};
+  }
   if ($PERL510) {
+    # static pv, do not destruct. test 13 with pv0 "3".
     if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
       $flags &= ~0x01000000;
       warn sprintf("constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname)
@@ -8184,6 +8193,7 @@ sub compile {
   $B::C::save_sig = 1;
   $B::C::destruct = 1;
   $B::C::stash    = 0;
+  $B::C::cow      = 1;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
@@ -8592,6 +8602,15 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O2>.
 
+=item B<-fno-cow>
+
+Strip the COW flag since 5.18 from all strings. COW strings make not much sense
+as compiled perl strings, as the requirement for a writable COWREFCNT flag disallows
+making the whole buffer static. And if a buffer needs to be COW at run-time, the runtime
+adds the COW flag by itself. COW strings typically cost about 20% more memory since 5.18.
+
+Enabled with C<-O2>.
+
 =item B<-fconst-strings>
 
 Declares static readonly strings as const.
@@ -8716,7 +8735,7 @@ Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fro-inc> and B<-fsave-data>.
+Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<fno-cow>.
 
 =item B<-O3>
 
