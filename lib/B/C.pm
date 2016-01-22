@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_05';
+our $VERSION = '1.53_06';
 our %debug;
 our $check;
 our %Config;
@@ -50,7 +50,6 @@ sub get {
   my ($class, $section) = @_;
   return $sections{$section};
 }
-
 
 sub add {
   my $section = shift;
@@ -90,7 +89,7 @@ sub typename {
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
   $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
-  $typename = 'MyPADNAME' if $typename eq 'PADNAME' and $] > 5.021006;
+  #$typename = 'MyPADNAME' if $typename eq 'PADNAME' and $] >= 5.018;
   return $typename;
 }
 
@@ -162,6 +161,7 @@ sub new {
   $section->[-1]{nosplit}   = 0;
   $section->[-1]{current}   = [];
   $section->[-1]{count}     = 0;
+  $section->[-1]{size}      = 0;
   $section->[-1]{max_lines} = $max_lines;
 
   return $section;
@@ -636,6 +636,9 @@ my (
     $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
     $padlistsect, $padnamesect, $padnlsect, $init0, $init1, $init2
    );
+my %padnamesect;
+my @padnamesect_sizes = (8, 16, 24, 32, 40, 48, 56, 64);
+
 my @op_sections =
   \(
     $binopsect,  $condopsect, $copsect,  $padopsect,
@@ -3007,14 +3010,18 @@ sub B::PADNAME::save {
   my $str = $pn->PVX;
   my $cstr = cstring($str); # a 5.22 padname is always utf8
   my $len = $pn->LEN;
-  my $ix = $padnamesect->index + 1;
-  my $s = "&padname_list[$ix]";
+  my $alignedlen = 8*(int($len / 8)+1); # 5 -> 8, 9 -> 16
+  my $struct_name = "my_padname_with_str_".$alignedlen;
+  my $pnsect = $padnamesect{$alignedlen};
+  my $ix = $pnsect->index + 1;
+  my $name = $pnsect->name;
+  my $s = "&".$name."_list[$ix]";
   # 5.22 needs the buffer to be at the end, and the pv pointing to it.
-  # We allocate a static buffer, and for uniformity of the list pre-alloc size 60 (WIP, improve later)
-  $padnamesect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
-  $padnamesect->add( sprintf
+  # We allocate a static buffer of different sizes.
+  $pnsect->comment( "pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
+  $pnsect->add( sprintf
       ( "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x, %s",
-        $ix ? "((char*)$s)+STRUCT_OFFSET(struct my_padname_with_str_64, xpadn_str[0])" : 'NULL',
+        ($ix or $len) ? "((char*)$s)+STRUCT_OFFSET(struct $struct_name, xpadn_str[0])" : 'NULL',
         is_constant($sn) ? "(HV*)$sn" : 'Nullhv',
         is_constant($tn) ? "(HV*)$tn" : 'Nullhv',
         $pn->COP_SEQ_RANGE_LOW,
@@ -3026,7 +3033,7 @@ sub B::PADNAME::save {
     # either dynamic or seperate structs per size MyPADNAME(5)
     die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
   }
-  $padnamesect->debug( $fullname." ".$str, $pn->flagspv ) if $debug{flags};
+  $pnsect->debug( $fullname." ".$str, $pn->flagspv ) if $debug{flags};
   $init->add("SvOURSTASH_set($s, $sn);") unless is_constant($sn);
   $init->add("PadnameTYPE($s) = (HV*)$tn;") unless is_constant($tn);
   push @B::C::static_free, $s;
@@ -5834,10 +5841,16 @@ sub output_all {
      $copsect,    $opsect,     $unopsect,  $binopsect, $logopsect, $condopsect,
      $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
      $methopsect, $unopauxsect,
-     $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect, $padnamesect,
-     $padnlsect,  $xpvivsect,  $xpvuvsect,  $xpvnvsect, $xpvmgsect, $xpvlvsect,
-     $xrvsect,    $xpvbmsect,  $xpviosect, $svsect
-  );
+     $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect,
+     $padnlsect,  $xpvivsect,  $xpvuvsect, $xpvnvsect, $xpvmgsect, $xpvlvsect,
+     $xrvsect,    $xpvbmsect,  $xpviosect, $svsect,    $padnamesect,
+    );
+  if ($PERL522) {
+    pop @sections;
+    for my $s (@padnamesect_sizes) {
+      push @sections, $padnamesect{$s};
+    }
+  }
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
   $symsect->output( \*STDOUT, "#define %s\n" );
   print "\n";
@@ -6053,24 +6066,27 @@ _EOT0
     U8		xpadn_len;		\
     U8		xpadn_flags
 
+#ifdef PERL_PADNAME_MINIMAL
+#define MY_PADNAME_BASE _PADNAME_BASE
+#else
+#define MY_PADNAME_BASE struct padname	xpadn_padname
+#endif
+
 EOF
 
-    for my $s (8, 16, 24, 32, 40, 48, 56, 64) {
-      print <<"EOF";
+    for my $s (sort keys %padnamesect) {
+      if ($padnamesect{$s}->index >= 0) {
+        print <<"EOF";
 struct my_padname_with_str_$s {
-#ifdef PERL_PADNAME_MINIMAL
-    _PADNAME_BASE;
-#else
-    struct padname	xpadn_padname;
-#endif
-    char		xpadn_str[$s];
+    MY_PADNAME_BASE;
+    char	xpadn_str[$s];
 };
-typedef struct my_padname_with_str_$s MyPADNAME_$s;
+typedef struct my_padname_with_str_$s PADNAME_$s;
 EOF
+      }
     }
-    print "typedef MyPADNAME_60 MyPADNAME;\n"
-  } elsif ($PERL518) {
-    print "typedef PADNAME MyPADNAME;\n";
+  #} elsif ($PERL518) {
+  #  print "typedef PADNAME MyPADNAME;\n";
   }
   if ($PERL510 and !$PERL514) {
     print "typedef struct refcounted_he COPHH;\n";
@@ -6575,7 +6591,7 @@ _EOT7
         print "    Safefree(PadnamelistARRAY($s));\n";
         print "    PadnamelistMAX($s) = 0;\n";
         print "    PadnamelistREFCNT($s) = 0;\n";
-      } elsif ($s =~ /^&padname_list/) {
+      } elsif ($s =~ /^&padname(_\d+)?_list/) {
         print "    PadnameREFCNT($s) = 0;\n";
         # dead code ---
       } elsif ($s =~ /^cop_list/) {
@@ -8164,12 +8180,21 @@ sub init_sections {
     xpvbm  => \$xpvbmsect,
     xpvio  => \$xpviosect,
     padlist => \$padlistsect,
-    padname => \$padnamesect,
     padnamelist => \$padnlsect,
+    padname => \$padnamesect,
   );
+  if ($PERL522) {
+    pop @sections;
+  }
   my ( $name, $sectref );
   while ( ( $name, $sectref ) = splice( @sections, 0, 2 ) ) {
     $$sectref = new B::C::Section $name, \%symtable, 0;
+  }
+  if ($PERL522) {
+    for my $size (@padnamesect_sizes) {
+      my $name = "padname_$size";
+      $padnamesect{$size} = new B::C::Section $name, \%symtable, 0;
+    }
   }
   $init  = new B::C::InitSection 'init', \%symtable, 0;
   $init1 = new B::C::InitSection 'init1', \%symtable, 0;
