@@ -3013,6 +3013,11 @@ sub B::PADNAME::save {
   my $alignedlen = 8*(int($len / 8)+1); # 5 -> 8, 9 -> 16
   my $struct_name = "my_padname_with_str_".$alignedlen;
   my $pnsect = $padnamesect{$alignedlen};
+  if (!$pnsect) {
+    my $name = "padname_$alignedlen";
+    warn "dynamically created oversized $name section\n" if $verbose;
+    $padnamesect{$alignedlen} = new B::C::Section $name, \%symtable, 0;
+  }
   my $ix = $pnsect->index + 1;
   my $name = $pnsect->name;
   my $s = "&".$name."_list[$ix]";
@@ -3028,11 +3033,11 @@ sub B::PADNAME::save {
         $pn->COP_SEQ_RANGE_HIGH,
         $refcnt >= 1000 ? sprintf("0x%x", $refcnt) : "$refcnt /* +1 */",
         $gen, $len, $flags, $cstr));
-  if ( $len > 64 ) {
+  #if ( $len > 64 ) {
     # Houston we have a problem, need to allocate this padname dynamically. Not done yet
     # either dynamic or seperate structs per size MyPADNAME(5)
-    die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
-  }
+  #  die "Internal Error: Overlong name of lexical variable $cstr for $fullname [#229]";
+  #}
   $pnsect->debug( $fullname." ".$str, $pn->flagspv ) if $debug{flags};
   $init->add("SvOURSTASH_set($s, $sn);") unless is_constant($sn);
   $init->add("PadnameTYPE($s) = (HV*)$tn;") unless is_constant($tn);

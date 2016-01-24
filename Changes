@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.54 2015-12-?? rurban
+1.54 2016-02-?? rurban
         * C: Fix defined for RV since 5.20 and ithreads (#354)
         Fix anon functions in INIT block (#352) (atoomic)
           and more const CV fixes.
@@ -12,6 +12,8 @@
           for match once
         Fix stack corruption in HV::ENAMES (#351)
         Fix SEGV with empty get_cv(), esp. from non-XS functions (#358)
+        Fixed 5.22 padname length limitation of max 60. Also using less memory. (#361)
+        New -O2 option -fno-cow since 5.18 to uncow all strings. (#361)
         * B::C::Flags: renamed to B::C::Config
 
 1.53 2015-12-06 rurban
