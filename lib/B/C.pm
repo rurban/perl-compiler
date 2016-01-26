@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_06';
+our $VERSION = '1.53_07';
 our %debug;
 our $check;
 our %Config;
@@ -89,6 +89,7 @@ sub typename {
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
   $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
+  $typename = 'SV*' if $typename =~ /^AVSTATIC_/;
   #$typename = 'MyPADNAME' if $typename eq 'PADNAME' and $] >= 5.018;
   return $typename;
 }
@@ -387,8 +388,12 @@ BEGIN {
       @B::PADNAME::ISA = ();
       @B::PADNAMELIST::ISA = qw(B::AV);
     }
+    if ($Config{usecperl} and $] >= 5.022002) {
+      eval q[sub SVpav_REAL () { 0x40000000 }
+             sub SVpav_REIFY (){ 0x80000000 }
+            ];
+    }
   }
-
 }
 use B::Asmdata qw(@specialsv_name);
 
@@ -636,7 +641,7 @@ my (
     $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
     $padlistsect, $padnamesect, $padnlsect, $init0, $init1, $init2
    );
-my %padnamesect;
+my (%padnamesect, %avstaticsect);
 my @padnamesect_sizes = (8, 16, 24, 32, 40, 48, 56, 64);
 
 my @op_sections =
@@ -753,6 +758,21 @@ sub IsCOW {
 }
 sub IsCOW_hek {
   return IsCOW($_[0]) && !$_[0]->LEN;
+}
+
+if ($Config{usecperl} and $] >= 5.022002) {
+  eval q[sub isAvSTATIC {
+    my $flags = shift->FLAGS;
+    return !($flags & SVpav_REAL) && !($flags & SVpav_REIFY)
+  }];
+} else {
+  eval q[sub isAvSTATIC () { 0 }];
+}
+
+sub canAvSTATIC {
+  my ($av, $fullname) = @_;
+  my $flags = $av->FLAGS;
+  return 1;
 }
 
 sub savesym {
@@ -5101,7 +5121,7 @@ sub B::AV::save {
   return $sym if defined $sym;
 
   $fullname = '' unless $fullname;
-  my ($fill, $avreal, $max);
+  my ($fill, $avreal, $max, $static_av);
   my $ispadlist = ref($av) eq 'B::PADLIST';
   my $ispadnamelist = ref($av) eq 'B::PADNAMELIST';
   if ($ispadnamelist or $ispadlist) {
@@ -5150,6 +5170,44 @@ sub B::AV::save {
     if ($cv and $cv->OUTSIDE and ref($cv->OUTSIDE) ne 'B::SPECIAL' and $cv->OUTSIDE->PADLIST) {
       my $outid = $cv->OUTSIDE->PADLIST->save();
       $init->add("($sym)->xpadl_outid = (PADNAMELIST*)$outid;") if $outid;
+    }
+  }
+  # TODO: we set it static, not perl. (c)perl only observes it.
+  # decide if to store the array static (with run-time cow overhead) or dynamic
+  elsif ($CPERL52 and $B::C::av_init and (isAvSTATIC($av) or canAvSTATIC($av, $fullname))) {
+    $xpvavsect->comment( "stash, magic, fill, max, static alloc" );
+    my $alloc = "";
+    my $count = 0;
+    my $flags = $av->FLAGS;
+    my @array = $av->ARRAY;
+    my $n = scalar @array;
+    my @values = map { $_->save($fullname."[".$count++."]") || () } @array;
+    for (my $i=0; $i <= $#array; $i++) {
+      # if any value is non-static (GV), fall back to dynamic AV::save
+      if (!is_constant($values[$i])) {
+        $alloc = '';
+        last;
+      }
+      $alloc .= $values[$i].",";
+    }
+    if ($alloc and $n) {
+      $static_av = 1;
+      $flags &= ~(0x40000000+0x80000000); # turn on AvSTATIC (real and reify off)
+      my $name = "avstatic_".$n;
+      $alloc = substr($alloc,0,-1);
+      $avstaticsect{ $n } = new B::C::Section($name, \%symtable, 0) unless exists $avstaticsect{ $n };
+      $avstaticsect{ $n }->add( $alloc );
+      my $sect = "&".$name."_list[".$avstaticsect{ $n }->index."]";
+      $xpvavsect->add("Nullhv, {0}, $fill, $max, (SV**)$sect");
+      $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x, {%s}",
+                           $xpvavsect->index, $av->REFCNT, $flags, ($C99?".svu_array=(SV**)":"(char*)").$sect));
+    } else {
+      $flags |= 0x40000000; # turn off AvSTATIC (real on)
+      my $line = "Nullhv, {0}, -1, -1, 0";
+      $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
+      $xpvavsect->add($line);
+      $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x, {0}",
+                           $xpvavsect->index, $av->REFCNT, $flags));
     }
   }
   elsif ($PERL514) {
@@ -5205,7 +5263,7 @@ sub B::AV::save {
   }
 
   # XXX AVf_REAL is wrong test: need to save comppadlist but not stack
-  if ($fill > -1 and $magic !~ /D/) {
+  if ($fill > -1 and $magic !~ /D/ and !$static_av) {
     my @array = $av->ARRAY; # crashes with D magic (Getopt::Long)
     if ( $debug{av} ) {
       my $i = 0;
@@ -5386,7 +5444,7 @@ sub B::AV::save {
   else {
     my $max = $av->MAX;
     $init->add("av_extend($sym, $max);")
-      if $max > -1;
+      if $max > -1 and !$static_av;
   }
   return $sym;
 }
@@ -5856,13 +5914,18 @@ sub output_all {
      $listopsect, $pmopsect,   $svopsect,  $padopsect, $pvopsect,  $loopsect,
      $methopsect, $unopauxsect,
      $xpvsect,    $xpvavsect,  $xpvhvsect, $xpvcvsect, $padlistsect,
-     $padnlsect,  $xpvivsect,  $xpvuvsect, $xpvnvsect, $xpvmgsect, $xpvlvsect,
+     $padnlsect,  $xpvivsect,  $xpvuvsect, $xpvnvsect, $xpvmgsect,   $xpvlvsect,
      $xrvsect,    $xpvbmsect,  $xpviosect, $svsect,    $padnamesect,
     );
   if ($PERL522) {
     pop @sections;
-    for my $s (@padnamesect_sizes) {
-      push @sections, $padnamesect{$s};
+    for my $n (sort keys %padnamesect) {
+      push @sections, $padnamesect{$n};
+    }
+  }
+  if ($CPERL52) {
+    for my $n (sort keys %avstaticsect) {
+      push @sections, $avstaticsect{$n};
     }
   }
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
@@ -5875,7 +5938,12 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = $section->typename;
-      print "Static $typename ${name}_list[$lines];\n";
+      print "Static $typename ${name}_list[$lines]";
+      # static SV** arrays for AvSTATIC, HvSTATIC, ...
+      if ($typename eq 'SV*' and $name =~ /^(?:avstatic|svarr)_(\d+)$/) {
+        print "[$1]";
+      }
+      print ";\n";
     }
   }
 
@@ -5954,7 +6022,13 @@ EOT
   foreach $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
-      printf "Static %s %s_list[%u] = {\n", $section->typename, $section->name, $lines;
+      # static SV** arrays for AvSTATIC, HvSTATIC, ...
+      if ($section->typename eq 'SV*' and $section->name =~ /^(?:avstatic|svarr)_(\d+)$/) {
+        my $n = $1;
+        printf "Static SV* %s_list[%u][%u] = {\n", $section->name, $lines, $n;
+      } else {
+        printf "Static %s %s_list[%u] = {\n", $section->typename, $section->name, $lines;
+      }
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
       $section->output( \*STDOUT, "\t{ %s }, /* %s_list[%d] %s */%s\n" );
