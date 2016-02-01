@@ -516,7 +516,7 @@ my $MULTI = $Config{usemultiplicity};
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
-my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount
+my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount, AvSTATIC, sigs
 my $CPERL51  = ( $Config{usecperl} );
 my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str
 my $PERL518  = ( $] >= 5.017010 );
@@ -623,7 +623,7 @@ sub XSLoader::load_file {
   push(@DynaLoader::dl_shared_objects, $file); # record files loaded
   return &$xs(@_);
 }
-| if $] >= 5.015003;
+| if $] >= 5.015003 and !$CPERL51;
 
 # Code sections
 my (
@@ -6246,6 +6246,14 @@ static void xs_init (pTHX);
 static void dl_init (pTHX);
 _EOT4
 
+  print <<'_EOT' if $CPERL51;
+PERL_CALLCONV void XS_DynaLoader_bootstrap_inherit(pTHX_ CV *cv);
+PERL_CALLCONV void XS_DynaLoader_bootstrap(pTHX_ CV *cv);
+PERL_CALLCONV void XS_XSLoader_load(pTHX_ CV *cv);
+PERL_CALLCONV void XS_XSLoader_load_file(pTHX_ CV *cv);
+PERL_CALLCONV void XS_XSLoader_bootstrap_inherit(pTHX_ CV *cv);
+_EOT
+
   if ($B::C::av_init2 and $B::C::Config::use_declare_independent_comalloc) {
     print "void** dlindependent_comalloc(size_t, size_t*, void**);\n";
   }
@@ -6667,6 +6675,13 @@ _EOT8
   #}
   print "\n#ifdef USE_DYNAMIC_LOADING";
   print "\n\tnewXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);";
+  if ($CPERL51) {
+    print "\n\tnewXS(\"DynaLoader::bootstrap_inherit\", XS_DynaLoader_bootstrap_inherit, file);";
+    print "\n\tnewXS(\"DynaLoader::bootstrap\", XS_DynaLoader_bootstrap, file);";
+    print "\n\tnewXS(\"XSLoader::load\", XS_XSLoader_load, file);";
+    print "\n\tnewXS(\"XSLoader::load_file\", XS_XSLoader_load_file, file);";
+    print "\n\tnewXS(\"XSLoader::bootstrap_inherit\", XS_XSLoader_bootstrap_inherit, file);";
+  }
   print "\n#endif\n";
 
   delete $xsub{'DynaLoader'};
@@ -8051,6 +8066,11 @@ sub force_saving_xsloader {
     # does this really save the whole packages?
     $dumped_package{XSLoader} = 1;
     svref_2object( \&XSLoader::load )->save;
+  } elsif ($CPERL51) {
+    $init->add("/* XSLoader::load_file already builtin into cperl */");
+    $dumped_package{XSLoader} = 1;
+    $dumped_package{DynaLoader} = 1;
+    add_hashINC("XSLoader"); # builtin
   } else {
     $init->add("/* custom XSLoader::load_file */");
     # does this really save the whole packages?
