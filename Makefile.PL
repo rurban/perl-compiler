@@ -32,6 +32,7 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
     install_independent_comalloc() ;
     $have_independent_comalloc = check_independent_comalloc();
 }
+my $have_op_rettype = check_op_rettype();
 {
     my ($e_c) = grep { /-extra-cflags[= ](.+)/ } @ARGV;
     my ($e_l) = grep { /-extra-libs[= ](.+)/ } @ARGV;
@@ -83,6 +84,8 @@ sub write_b_c_flags {
     print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
     print PH "# broken or patched upstream 5.22 ByteLoader. undef for yet undecided\n";
     print PH "\$have_byteloader = $have_byteloader;\n";
+    print PH "# cperl 5.22.2:\n";
+    print PH "\$have_op_rettype = $have_op_rettype;\n";
     print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
@@ -237,6 +240,20 @@ sub try_compile {
 	unlink "test.c", "test$Config{EXE_EXT}";
 	$? == 0 && return 1;
     }
+    return 0;
+}
+
+sub check_op_rettype {
+    my $op_h = File::Spec->catfile(headerpath(), 'op.h');
+    my ($fh, $found);
+    open $fh, $op_h or die "$op_h: $!";
+    while(<$fh>) {
+        if (/^\s+U8\s+op_rettype/) {
+            close $fh;
+            return 1;
+        }
+    }
+    close $fh;
     return 0;
 }
 

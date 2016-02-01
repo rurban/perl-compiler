@@ -1288,10 +1288,19 @@ my $opsect_common =
     my $op = shift;
     my $madprop = $MAD ? "0," : "";
     # XXX maybe add a ix=opindex string for debugging if $debug{flags}
-    sprintf( "%s,%s %u, %u, $static, 0x%x, 0x%x",
-      $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private );
+    if ($B::C::Config::have_op_rettype) {
+      sprintf( "%s,%s %u, %u, $static, 0x%x, 0x%x, 0x%x",
+               $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private,
+               $op->rettype );
+    } else {
+      sprintf( "%s,%s %u, %u, $static, 0x%x, 0x%x",
+               $op->fake_ppaddr, $madprop, $op->targ, $op->type, $op->flags, $op->private );
+    }
   }
   $opsect_common .= ", flags, private";
+  if ($B::C::Config::have_op_rettype) {
+    $opsect_common .= ", rettype";
+  }
 }
 
 sub B::OP::_save_common {
