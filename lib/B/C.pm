@@ -5177,14 +5177,20 @@ sub B::AV::save {
   elsif ($CPERL52 and $B::C::av_init and $fill > -1
          and (isAvSTATIC($av) or canAvSTATIC($av, $fullname)))
   {
-    # $magic !~ /D/
     $xpvavsect->comment( "stash, magic, fill, max, static alloc" );
     my $alloc = "";
     my $count = 0;
     my $flags = $av->FLAGS;
     # decide upon cow (const array, SVf_READONLY) or just cog (forbid av_extend)
     my $av_cow = ($flags & SVf_READONLY or $fullname =~ /(::ISA|::INC|curpad_name)$/) ? 1 : 0;
-    my @array = $av->ARRAY;
+    my $magic = ''; # need to skip ->ARRAY with 'D' magic, test 90
+    foreach my $mg ($av->MAGIC) {
+      $magic = $mg->TYPE;
+      if ($magic eq 'D') {
+        last;
+      }
+    }
+    my @array = $magic eq 'D' ? () : $av->ARRAY;
     my $n = scalar @array;
     my $name = ($av_cow ? "avcow_" : "avcog_") . $n;
     my $avstaticsect;
