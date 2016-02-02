@@ -89,7 +89,7 @@ sub typename {
   $typename = 'SVPV' if $typename eq 'SV' and $] > 5.009005 and $] < 5.012 and !$C99;
   # $typename = 'const '.$typename if $name !~ /^(cop_|sv_)/;
   $typename = 'UNOP_AUX' if $typename eq 'UNOPAUX';
-  $typename = 'SV*' if $typename =~ /^AVSTATIC_/;
+  $typename = 'SV*' if $typename =~ /^AVCO[WG]_/;
   #$typename = 'MyPADNAME' if $typename eq 'PADNAME' and $] >= 5.018;
   return $typename;
 }
@@ -641,7 +641,7 @@ my (
     $xrvsect,   $xpvbmsect, $xpviosect,  $heksect,   $free,
     $padlistsect, $padnamesect, $padnlsect, $init0, $init1, $init2
    );
-my (%padnamesect, %avstaticsect);
+my (%padnamesect, %avcowsect, %avcogsect);
 my @padnamesect_sizes = (8, 16, 24, 32, 40, 48, 56, 64);
 
 my @op_sections =
@@ -5121,7 +5121,7 @@ sub B::AV::save {
   return $sym if defined $sym;
 
   $fullname = '' unless $fullname;
-  my ($fill, $avreal, $max, $static_av);
+  my ($fill, $avreal, $max, $static_av, $av_cow, $av_cog);
   my $ispadlist = ref($av) eq 'B::PADLIST';
   my $ispadnamelist = ref($av) eq 'B::PADNAMELIST';
   if ($ispadnamelist or $ispadlist) {
@@ -5172,15 +5172,34 @@ sub B::AV::save {
       $init->add("($sym)->xpadl_outid = (PADNAMELIST*)$outid;") if $outid;
     }
   }
-  # TODO: we set it static, not perl. (c)perl only observes it.
+  # we set it static, not perl. (c)perl only observes it.
   # decide if to store the array static (with run-time cow overhead) or dynamic
-  elsif ($CPERL52 and $B::C::av_init and (isAvSTATIC($av) or canAvSTATIC($av, $fullname))) {
+  elsif ($CPERL52 and $B::C::av_init and $fill > -1
+         and (isAvSTATIC($av) or canAvSTATIC($av, $fullname)))
+  {
+    # $magic !~ /D/
     $xpvavsect->comment( "stash, magic, fill, max, static alloc" );
     my $alloc = "";
     my $count = 0;
     my $flags = $av->FLAGS;
+    # decide upon cow (const array, SVf_READONLY) or just cog (forbid av_extend)
+    my $av_cow = ($flags & SVf_READONLY or $fullname =~ /(::ISA|::INC|curpad_name)$/) ? 1 : 0;
     my @array = $av->ARRAY;
     my $n = scalar @array;
+    my $name = ($av_cow ? "avcow_" : "avcog_") . $n;
+    my $avstaticsect;
+    if ($av_cow) {
+      $avcowsect{ $n } = new B::C::Section($name, \%symtable, 0) unless exists $avcowsect{ $n };
+      $avstaticsect = $avcowsect{ $n };
+    } else {
+      $avcogsect{ $n } = new B::C::Section($name, \%symtable, 0) unless exists $avcogsect{ $n };
+      $avstaticsect = $avcogsect{ $n };
+    }
+    my $sect = sprintf("&%s_list[%u]", $name, $avstaticsect->index + 1);
+    # protect against duplicates
+    $sym = savesym( $av, sprintf("(AV*)&sv_list[%u]", $svsect->index + 1));
+
+    # $B::C::const_strings = 0 if $flags & 0x40008000 == 0x40008000; # SVp_SCREAM|SVpbm_VALID
     my @values = map { $_->save($fullname."[".$count++."]") || () } @array;
     for (my $i=0; $i <= $#array; $i++) {
       # if any value is non-static (GV), fall back to dynamic AV::save
@@ -5188,16 +5207,14 @@ sub B::AV::save {
         $alloc = '';
         last;
       }
-      $alloc .= $values[$i].",";
+      $alloc .= $values[$i].", ";
     }
     if ($alloc and $n) {
       $static_av = 1;
       $flags &= ~(0x40000000+0x80000000); # turn on AvSTATIC (real and reify off)
-      my $name = "avstatic_".$n;
-      $alloc = substr($alloc,0,-1);
-      $avstaticsect{ $n } = new B::C::Section($name, \%symtable, 0) unless exists $avstaticsect{ $n };
-      $avstaticsect{ $n }->add( $alloc );
-      my $sect = "&".$name."_list[".$avstaticsect{ $n }->index."]";
+      $flags &= ~SVf_READONLY if $av_cow;
+      $alloc = substr($alloc,0,-2);
+      $avstaticsect->add( $alloc );
       $xpvavsect->add("Nullhv, {0}, $fill, $max, (SV**)$sect");
       $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x, {%s}",
                            $xpvavsect->index, $av->REFCNT, $flags, ($C99?".svu_array=(SV**)":"(char*)").$sect));
@@ -5924,8 +5941,11 @@ sub output_all {
     }
   }
   if ($CPERL52) {
-    for my $n (sort keys %avstaticsect) {
-      push @sections, $avstaticsect{$n};
+    for my $n (sort keys %avcowsect) {
+      push @sections, $avcowsect{$n};
+    }
+    for my $n (sort keys %avcogsect) {
+      push @sections, $avcogsect{$n};
     }
   }
   printf "\t/* %s */", $symsect->comment if $symsect->comment and $verbose;
@@ -5938,12 +5958,14 @@ sub output_all {
     if ($lines) {
       my $name = $section->name;
       my $typename = $section->typename;
-      print "Static $typename ${name}_list[$lines]";
       # static SV** arrays for AvSTATIC, HvSTATIC, ...
-      if ($typename eq 'SV*' and $name =~ /^(?:avstatic|svarr)_(\d+)$/) {
-        print "[$1]";
+      if ($typename eq 'SV*' and $name =~ /^(?:avco[gw])_(\d+)$/) {
+        my $n = $1;
+        $typename = 'const SV*' if $name =~ /^avcow_/; 
+        print "Static $typename ${name}_list[$lines][$n];\n";
+      } else {
+        print "Static $typename ${name}_list[$lines];\n";
       }
-      print ";\n";
     }
   }
 
@@ -6022,12 +6044,15 @@ EOT
   foreach $section (@sections) {
     my $lines = $section->index + 1;
     if ($lines) {
+      my $name = $section->name;
+      my $typename = $section->typename;
       # static SV** arrays for AvSTATIC, HvSTATIC, ...
-      if ($section->typename eq 'SV*' and $section->name =~ /^(?:avstatic|svarr)_(\d+)$/) {
+      if ($typename eq 'SV*' and $name =~ /^(?:avco[wg])_(\d+)$/) {
         my $n = $1;
-        printf "Static SV* %s_list[%u][%u] = {\n", $section->name, $lines, $n;
+        $typename = 'const SV*' if $name =~ /^avcow_/; 
+        printf "Static %s %s_list[%u][%u] = {\n", $typename, $name, $lines, $n;
       } else {
-        printf "Static %s %s_list[%u] = {\n", $section->typename, $section->name, $lines;
+        printf "Static %s %s_list[%u] = {\n", $typename, $name, $lines;
       }
       printf "\t/* %s */\n", $section->comment
         if $section->comment and $verbose;
