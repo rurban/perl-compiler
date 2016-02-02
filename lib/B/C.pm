@@ -5211,15 +5211,21 @@ sub B::AV::save {
     }
     if ($alloc and $n) {
       $static_av = 1;
-      $flags &= ~(0x40000000+0x80000000); # turn on AvSTATIC (real and reify off)
-      $flags &= ~SVf_READONLY if $av_cow;
+      warn sprintf("turn on %s %s\n", $av_cow ? "AvIsCOW" : "AvSTATIC", $sym, $fullname)
+        if $debug{av};
+      $flags |= SVf_IsCOW;               # turn on AvSTATIC
+      # $flags |= SVf_READONLY if $av_cow; # and turn on COW
       $alloc = substr($alloc,0,-2);
       $avstaticsect->add( $alloc );
       $xpvavsect->add("Nullhv, {0}, $fill, $max, (SV**)$sect");
       $svsect->add(sprintf("&xpvav_list[%d], %Lu, 0x%x, {%s}",
-                           $xpvavsect->index, $av->REFCNT, $flags, ($C99?".svu_array=(SV**)":"(char*)").$sect));
+                           $xpvavsect->index, $av->REFCNT, $flags,
+                           ($C99?".svu_array=(SV**)":"(char*)").$sect));
+      $sym = savesym( $av, sprintf("(AV*)&sv_list[%u]", $svsect->index));
     } else {
-      $flags |= 0x40000000; # turn off AvSTATIC (real on)
+      warn sprintf("turn off AvSTATIC %s %s\n", $sym, $fullname)
+        if $debug{av};
+      $flags &= ~SVf_IsCOW; # turn off AvSTATIC
       my $line = "Nullhv, {0}, -1, -1, 0";
       $line = "Nullhv, {0}, $fill, $max, 0" if $B::C::av_init or $B::C::av_init2;
       $xpvavsect->add($line);
@@ -5463,6 +5469,7 @@ sub B::AV::save {
     $init->add("av_extend($sym, $max);")
       if $max > -1 and !$static_av;
   }
+  $init->add("SvREADONLY_on($sym);") if $av_cow;
   return $sym;
 }
 
