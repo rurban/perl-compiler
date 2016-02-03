@@ -6247,11 +6247,7 @@ static void dl_init (pTHX);
 _EOT4
 
   print <<'_EOT' if $CPERL51;
-PERL_CALLCONV void XS_DynaLoader_bootstrap_inherit(pTHX_ CV *cv);
-PERL_CALLCONV void XS_DynaLoader_bootstrap(pTHX_ CV *cv);
-PERL_CALLCONV void XS_XSLoader_load(pTHX_ CV *cv);
-PERL_CALLCONV void XS_XSLoader_load_file(pTHX_ CV *cv);
-PERL_CALLCONV void XS_XSLoader_bootstrap_inherit(pTHX_ CV *cv);
+EXTERN_C void dl_boot (pTHX);
 _EOT
 
   if ($B::C::av_init2 and $B::C::Config::use_declare_independent_comalloc) {
@@ -6669,19 +6665,18 @@ xs_init(pTHX)
 	char *file = __FILE__;
 	dTARG; dSP;
 _EOT8
-
+  if ($CPERL51 and $debug{cv}) {
+    print q{
+        /* -DC set dl_debug to 3 */
+        SV* sv = get_sv("DynaLoader::dl_debug", GV_ADD);
+        sv_upgrade(sv, SVt_IV);
+        SvIV_set(sv, 3);};
+  }
   #if ($staticxs) { #FIXME!
   #  print "\n#undef USE_DYNAMIC_LOADING
   #}
   print "\n#ifdef USE_DYNAMIC_LOADING";
   print "\n\tnewXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);";
-  if ($CPERL51) {
-    print "\n\tnewXS(\"DynaLoader::bootstrap_inherit\", XS_DynaLoader_bootstrap_inherit, file);";
-    print "\n\tnewXS(\"DynaLoader::bootstrap\", XS_DynaLoader_bootstrap, file);";
-    print "\n\tnewXS(\"XSLoader::load\", XS_XSLoader_load, file);";
-    print "\n\tnewXS(\"XSLoader::load_file\", XS_XSLoader_load_file, file);";
-    print "\n\tnewXS(\"XSLoader::bootstrap_inherit\", XS_XSLoader_bootstrap_inherit, file);";
-  }
   print "\n#endif\n";
 
   delete $xsub{'DynaLoader'};
@@ -6708,6 +6703,9 @@ _EOT8
     print "\tboot_DynaLoader(aTHX_ NULL);\n";
   }
   print "\tSPAGAIN;\n";
+  if ($CPERL51) {
+    print "\tdl_boot(aTHX);\n";
+  }
   print "#endif\n";
 
   # my %core = map{$_ => 1} core_packages();
@@ -6866,8 +6864,19 @@ _EOT9
         else { # XS: need to fix cx for caller[1] to find auto/...
 	  my ($stashfile) = $xsub{$stashname} =~ /^Dynamic-(.+)$/;
 	  print "#ifndef STATICXS\n";
-	  if ($] >= 5.015003) {
-	    printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile) if $stashfile;
+	  if ($] >= 5.015003 and $stashfile) {
+            if ($CPERL51) {
+              my $modlibname = $stashfile;
+              my @modparts = split(/::/,$stashname);
+              my $modfname = $modparts[-1];
+              my $modpname = join('/',@modparts);
+              my $c = @modparts;
+              $modlibname =~ s,[\\/][^\\/]+$,, while $c--;  # Q&D basename
+              my $sofile = "$modlibname/auto/$modpname/$modfname.".$Config{dlext};
+              printf "\tmXPUSHp(\"%s\", %d);\n", $sofile, length($sofile);
+            } else {
+              printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile);
+            }
 	  }
 	  print "\tPUTBACK;\n";
 	  warn "bootstrapping $stashname added to XSLoader dl_init\n" if $verbose;
