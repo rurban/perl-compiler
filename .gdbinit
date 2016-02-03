@@ -6,8 +6,9 @@ set breakpoint pending on
 #source .gdb/dashboard
 source .gdb/perl
 
-b dl_boot
-b dl_generic_private_init
+#b dl_boot
+#b dl_generic_private_init
+#b av.c
 
 #break __asan_report_error
 #b Perl_pp_multideref

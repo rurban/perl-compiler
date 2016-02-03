@@ -785,6 +785,10 @@ print ($s =~ /ccdave with long name/ ? q(ok) : $s);'
 tests[1941]='$0 = q{ccdave}; #print "pid: $$\n";
 $s=`ps auxw | grep "$$" | grep "ccdave"|grep -v grep`;
 print q(ok) if $s =~ /ccdave/'
+# VmRSS memory usage
+tests[1942]='$s=<DATA>;print `ps -p $$ -O rss,vsz,pmem`;
+__DATA__
+a'
 # duplicate of 152
 tests[195]='use PerlIO;  eval { require PerlIO::scalar }; find PerlIO::Layer "scalar"; print q(ok)'
 tests[196]='package Foo;
