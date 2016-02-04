@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_07';
+our $VERSION = '1.53_08';
 our %debug;
 our $check;
 our %Config;
@@ -476,7 +476,7 @@ our %option_map = (
     'delete-pkg'      => \$B::C::can_delete_pkg,
     'ro-inc'          => \$B::C::ro_inc,
     # if to disable the COW flag since 5.18
-    'cow'             => \$B::C::cow,      # disable with -O2
+    'cow'             => \$B::C::cow,      # enable with -O2
     'stash'           => \$B::C::stash,    # enable with -fstash
     'destruct'        => \$B::C::destruct, # disable with -fno-destruct
     'fold'            => \$B::C::fold,     # disable with -fno-fold
@@ -491,7 +491,7 @@ our %option_map = (
 our %optimization_map = (
     0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data -fno-cow)],
+    2 => [qw(-fro-inc -fsave-data -fcow)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
   );
@@ -936,14 +936,16 @@ sub save_rv {
   return $rv;
 }
 
-# => savesym, cur, len, pv, static
+# => savesym, cur, len, pv, static, flags
 sub save_pv_or_rv {
   my ($sv, $fullname) = @_;
 
-  my $rok = $sv->FLAGS & SVf_ROK;
-  my $pok = $sv->FLAGS & SVf_POK;
-  my $gmg = $sv->FLAGS & SVs_GMG;
-  my $iscow = IsCOW($sv) and $B::C::cow ? 1 : 0;
+  my $flags = $sv->FLAGS;
+  my $rok = $flags & SVf_ROK;
+  my $pok = $flags & SVf_POK;
+  my $gmg = $flags & SVs_GMG;
+  my $iscow = (IsCOW($sv) or ($B::C::cow and $PERL518)) ? 1 : 0;
+  #my $wascow = IsCOW($sv) ? 1 : 0;
   my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
   my ($static, $shared_hek);
   # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
@@ -983,12 +985,15 @@ sub save_pv_or_rv {
 	($pv,$cur) = ("",0);
       }
     }
-    $shared_hek = $PERL510 ? (($sv->FLAGS & 0x09000000) == 0x09000000) : undef;
+    $shared_hek = $PERL510 ? (($flags & 0x09000000) == 0x09000000) : undef;
     $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
-    $static = $B::C::const_strings and ($sv->FLAGS & SVf_READONLY) ? 1 : 0;
+    $static = ($B::C::const_strings or $iscow or ($flags & SVf_READONLY))
+              ? 1 : 0;
     $static = 0 if $shared_hek
-      or ($fullname and ($fullname =~ m/ :pad/ or ($fullname =~ m/^DynaLoader/ and $pv =~ m/^boot_/)));
-    $static = 0 if $B::C::const_strings and $fullname and
+      or ($fullname and ($fullname =~ m/ :pad/
+                         or ($fullname =~ m/^DynaLoader/ and $pv =~ m/^boot_/)));
+    $static = 0 if $static and $pv =~ /::bootstrap$/;
+    $static = 0 if $static and $B::C::const_strings and $fullname and
       ($fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/);
     if ($shared_hek and $pok and !$cur) { #272 empty key
       warn "use emptystring for empty shared key $fullname\n" if $debug{pv} or $debug{hv};
@@ -996,8 +1001,11 @@ sub save_pv_or_rv {
       $static = 0;
     }
     if ($PERL510) { # force dynamic PADNAME strings
-      if ($] < 5.016) { $static = 0 if $sv->FLAGS & 0x40000000; }      # SVpad_NAME
-      else { $static = 0 if ($sv->FLAGS & 0x40008000 == 0x40008000); } # SVp_SCREAM|SVpbm_VALID
+      if ($] < 5.016) { $static = 0 if $flags & 0x40000000; }    # SVpad_NAME
+      elsif ($] < 5.022 and $flags & 0x40008000 == 0x40008000) { # SVpad_NAME
+        warn "static=0 for SVpad_NAME $fullname\n" if $debug{pv};
+        $static = 0;
+      }
     }
     if ($pok) {
       my $s = "sv_list[" . ($svsect->index + 1) . "]";
@@ -1015,11 +1023,16 @@ sub save_pv_or_rv {
         $static = 0;
       }
       # but we can optimize static set-magic ISA entries. #263, #91
-      if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG) {
+      if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $flags & SVs_SMG) {
         $static = 1; # warn "static $fullname";
       }
       if ($static) {
 	$len = 0;
+        #warn cstring($sv->PV)." $iscow $wascow";
+        if ($iscow and $PERL518) { # 5.18 COW logic
+          $len = $cur+2;
+          $pv .= "\000\001";
+        }
 	$savesym = $iscow ? savepv($pv) : constpv($pv);
         if ($savesym =~ /\)?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
@@ -1027,9 +1040,10 @@ sub save_pv_or_rv {
           $pv = $savesym;
           $savesym = 'NULL';
         }
-        # align to next wordsize
-        if ($iscow and $cur) {
-          $len = $cur+2;
+        if ($iscow) {
+          $flags |= SVf_IsCOW;
+        } else {
+          $flags &= ~SVf_IsCOW;
         }
         #push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
       } else {
@@ -1052,13 +1066,15 @@ sub save_pv_or_rv {
       $len = 0;
     }
   }
-  if ($len and $PERL518) { # COW logic
-    my $offset = $len % $Config{ptrsize};
-    $len += $Config{ptrsize} - $offset if $offset;
-  }
-  warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s\n", $savesym, cstring($pv), $cur, $len,
-               $static, $iscow, $shared_hek ? "shared, $fullname" : $fullname) if $debug{pv};
-  return ( $savesym, $cur, $len, $pv, $static );
+  #if ($iscow and $len and $PERL518) { # 5.18 COW logic
+  #  my $offset = $len % $Config{ptrsize};
+  #  $len += $Config{ptrsize} - $offset if $offset;
+  #}
+  warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s flags=0x%x\n",
+               $savesym, cstring($pv), $cur, $len,
+               $static, $iscow, $shared_hek ? "shared, $fullname" : $fullname, $flags)
+    if $debug{pv};
+  return ( $savesym, $cur, $len, $pv, $static, $flags );
 }
 
 # Shared global string in PL_strtab.
@@ -2738,7 +2754,7 @@ sub B::PVLV::save {
     }
     return $sym;
   }
-  my ($pvsym, $cur, $len, $pv, $static) = save_pv_or_rv ($sv, $fullname);
+  my ($pvsym, $cur, $len, $pv, $static, $flags) = save_pv_or_rv ($sv, $fullname);
   my ( $lvtarg, $lvtarg_sym ); # XXX missing
   if ($PERL514) {
     $xpvlvsect->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
@@ -2755,7 +2771,7 @@ sub B::PVLV::save {
 	       nvx($sv->NVX), $cur, $len,
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %Lu, 0x%x, {%s}",
-                         $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS,
+                         $xpvlvsect->index, $sv->REFCNT, $flags,
                          ($C99?".svu_pv = (char*)":"(char*)").$pvsym));
   } else {
     $xpvlvsect->comment('PVX, CUR, LEN, IVX, NVX, TARGOFF, TARGLEN, TARG, TYPE');
@@ -2764,7 +2780,7 @@ sub B::PVLV::save {
 	       $pvsym, $cur, $len, ivx($sv->IVX), nvx($sv->NVX),
 	       $sv->TARGOFF, $sv->TARGLEN, cchar( $sv->TYPE ) ));
     $svsect->add(sprintf("&xpvlv_list[%d], %Lu, 0x%x",
-                         $xpvlvsect->index, $sv->REFCNT, $sv->FLAGS));
+                         $xpvlvsect->index, $sv->REFCNT, $flags));
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
@@ -2790,7 +2806,7 @@ sub B::PVIV::save {
     }
     return $sym;
   }
-  my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
+  my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv($sv, $fullname);
   if ($PERL514) {
     $xpvivsect->comment('STASH, MAGIC, cur, len, IVX');
     $xpvivsect->add( sprintf( "Nullhv, {0}, %u, %u, {%s}", $cur, $len, ivx($sv->IVX) ) ); # IVTYPE long
@@ -2805,7 +2821,7 @@ sub B::PVIV::save {
   }
   $svsect->add(
     sprintf("&xpviv_list[%d], %u, 0x%x %s",
-            $xpvivsect->index, $sv->REFCNT, $sv->FLAGS,
+            $xpvivsect->index, $sv->REFCNT, $flags,
 	    $PERL510 ? ", {".($C99?".svu_pv=":"")."(char*)$savesym}" : '' ) );
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
@@ -2831,10 +2847,10 @@ sub B::PVNV::save {
     }
     return $sym;
   }
-  my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
+  my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv($sv, $fullname);
   my $nvx = '';
   my $ivx = ivx($sv->IVX); # here must be IVX!
-  if ($sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+  if ($flags & (SVf_NOK|SVp_NOK)) {
     # it could be a double, or it could be 2 ints - union xpad_cop_seq
     $nvx = nvx($sv->NV);
   } else {
@@ -2954,11 +2970,11 @@ sub B::PV::save {
     }
     return $sym;
   }
-  my $flags = $sv->FLAGS;
+  #my $flags = $sv->FLAGS;
+  my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv($sv, $fullname);
   my $shared_hek = $PERL510 ? (($flags & 0x09000000) == 0x09000000) : undef;
   $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
-  my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
-  $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
+  # $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
   my $svix;
   # sv_free2 problem with !SvIMMORTAL and del_SV
@@ -2966,11 +2982,11 @@ sub B::PV::save {
   if ($PERL518 and $fullname && $fullname eq 'svop const') {
     $refcnt = $DEBUGGING ? 1000 : 0x7fffffff;
   }
-  if (!$shared_hek and !$B::C::cow and IsCOW($sv)) {
-    $flags &= ~SVf_IsCOW;
-    warn sprintf("turn off SVf_IsCOW %s %s %s\n", $sym, cstring($pv), $fullname)
-      if $debug{pv};
-  }
+  #if (!$shared_hek and !$B::C::cow and IsCOW($sv)) {
+  #  $flags &= ~SVf_IsCOW;
+  #  warn sprintf("turn off SVf_IsCOW %s %s %s\n", $sym, cstring($pv), $fullname)
+  #    if $debug{pv};
+  #}
   if ($PERL510) {
     # static pv, do not destruct. test 13 with pv0 "3".
     if ($B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len) {
@@ -2998,7 +3014,7 @@ sub B::PV::save {
     if ($debug{flags} and (!$ITHREADS or $PERL514) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
 			 $svix, cstring($pv) eq '0' ? '"NULL"' : cstring($pv),
-			 $svix, $sv->FLAGS));
+			 $svix, $flags));
     }
   }
   else {
@@ -3277,11 +3293,11 @@ sub B::PVMG::save {
     }
     return $sym;
   }
-  my ( $savesym, $cur, $len, $pv, $static ) = save_pv_or_rv($sv, $fullname);
-  if ($] > 5.017 and $static) { # 242: e.g. $1
-    $static = 0;
-    $len = $cur+1 unless $len;
-  }
+  my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv($sv, $fullname);
+  #if ($] > 5.017 and $static) { # 242: e.g. $1
+  #  $static = 0;
+  #  $len = $cur+1 unless $len;
+  #}
   #warn sprintf( "PVMG %s (0x%x) $savesym, $len, $cur, $pv\n", $sym, $$sv ) if $debug{mg};
 
   my ($ivx,$nvx);
@@ -3328,7 +3344,7 @@ sub B::PVMG::save {
 			    $nvx, $cur, $len, $ivx));
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %Lu, 0x%x, {%s}",
-                         $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS,
+                         $xpvmgsect->index, $sv->REFCNT, $flags,
 			 $savesym eq 'NULL' ? '0' :
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym));
   }
@@ -3339,7 +3355,7 @@ sub B::PVMG::save {
     $xpvmgsect->add(sprintf("(char*)%s, %u, %u, %s, %s, 0, 0",
                             $savesym, $cur, $len, $ivx, $nvx));
     $svsect->add(sprintf("&xpvmg_list[%d], %Lu, 0x%x",
-			 $xpvmgsect->index, $sv->REFCNT, $sv->FLAGS));
+			 $xpvmgsect->index, $sv->REFCNT, $flags));
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
@@ -8421,7 +8437,7 @@ sub compile {
   $B::C::save_sig = 1;
   $B::C::destruct = 1;
   $B::C::stash    = 0;
-  $B::C::cow      = 1;
+  $B::C::cow      = 0;
   $B::C::fold     = 1 if $] >= 5.013009; # always include utf8::Cased tables
   $B::C::warnings = 1 if $] >= 5.013005; # always include Carp warnings categories and B
   $B::C::optimize_warn_sv = 1 if $^O ne 'MSWin32' or $Config{cc} !~ m/^cl/i;
@@ -8830,12 +8846,9 @@ enabled automatically where it is known to work.
 
 Enabled with C<-O2>.
 
-=item B<-fno-cow>
+=item B<-fcow>
 
-Strip the COW flag since 5.18 from all strings. COW strings make not much sense
-as compiled perl strings, as the requirement for a writable COWREFCNT flag disallows
-making the whole buffer static. And if a buffer needs to be COW at run-time, the runtime
-adds the COW flag by itself. COW strings typically cost about 20% more memory since 5.18.
+Enforce static COW strings since 5.18 for most strings.
 
 Enabled with C<-O2>.
 
@@ -8963,7 +8976,7 @@ Note that C<-fcog> without C<-fno-destruct> will be disabled >= 5.10.
 
 =item B<-O2>
 
-Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<fno-cow>.
+Enable B<-O1> plus B<-fro-inc>, B<-fsave-data> and B<fcow>.
 
 =item B<-O3>
 
