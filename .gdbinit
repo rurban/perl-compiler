@@ -6,6 +6,8 @@ set breakpoint pending on
 #source .gdb/dashboard
 source .gdb/perl
 
+b malloc_error_break
+
 #b dl_boot
 #b dl_generic_private_init
 #b av.c
