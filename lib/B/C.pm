@@ -6993,13 +6993,31 @@ _EOT9
 	  print "#ifndef STATICXS\n";
 	  if ($] >= 5.015003 and $stashfile) {
             if ($CPERL51) {
-              my $modlibname = $stashfile;
+              my $sofile;
+              # search stashname in loaded sofiles
               my @modparts = split(/::/,$stashname);
               my $modfname = $modparts[-1];
               my $modpname = join('/',@modparts);
-              my $c = @modparts;
-              $modlibname =~ s,[\\/][^\\/]+$,, while $c--;  # Q&D basename
-              my $sofile = "$modlibname/auto/$modpname/$modfname.".$Config{dlext};
+              my $needle = "auto/$modpname/$modfname\.".$Config{dlext};
+              #warn "  load_file: @DynaLoader::dl_shared_objects";
+              #warn " sofile?: $needle";
+              for (@DynaLoader::dl_shared_objects) {
+                if (m{$needle}) {
+                  #warn " load_file: found $_";
+                  $sofile = $_; last;
+                }
+              }
+              unless ($sofile) {
+                my $modlibname = $stashfile;
+                my $c = scalar @modparts;
+                if ($stashname eq 'Cwd' and $stashfile !~ /Cwd/) {
+                  warn "load_file: fixup Cwd vs $stashfile";
+                  $c = 3;
+                }
+                $modlibname =~ s,[\\/][^\\/]+$,, while $c--;  # Q&D basename
+                $sofile = "$modlibname/auto/$modpname/$modfname.".$Config{dlext};
+              }
+              #warn "load_file: $stashname, $stashfile, $sofile";
               printf "\tmXPUSHp(\"%s\", %d);\n", $sofile, length($sofile);
             } else {
               printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile);
