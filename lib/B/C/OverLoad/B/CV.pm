@@ -130,7 +130,7 @@ sub save {
                 unless ($file) {                     # do the reverse as DynaLoader: soname => pm
                     my ($laststash) = $stashname =~ /::([^:]+)$/;
                     $laststash = $stashname unless $laststash;
-                    my $sofile = "auto/" . $stashfile . '/' . $laststash . '\.' . $B::C::Flags::Config{dlext};
+                    my $sofile = "auto/" . $stashfile . '/' . $laststash . '\\.' . $B::C::Flags::Config{dlext};
                     for (@DynaLoader::dl_shared_objects) {
                         if (m{^(.+/)$sofile$}) {
                             $file = $1 . $stashfile . ".pm";
