@@ -629,6 +629,7 @@ sub XSLoader::load_file {
   return &$xs(@_);
 }
 | if $] >= 5.015003 and !$CPERL51;
+# Note: cperl uses a different API: the 2nd arg is the sofile directly
 
 # Code sections
 my (
@@ -7510,6 +7511,7 @@ sub in_static_core {
 # version has an external ::vxs
 sub static_core_packages {
   my @pkg  = qw(Internals utf8 UNIVERSAL);
+  push @pkg, qw(strict coretypes DynaLoader XSLoader) if $CPERL51;
   push @pkg, 'attributes'             if $] <  5.011; # partially static and dynamic
   push @pkg, 'version'                if $] >= 5.010; # partially static and dynamic
   push @pkg, 'Tie::Hash::NamedCapture' if !$PERL514; # dynamic since 5.14
@@ -7853,6 +7855,13 @@ sub inc_cleanup {
   # %INC sanity check issue 89:
   # omit unused, unsaved packages, so that at least run-time require will pull them in.
   my @deleted_inc;
+  if ($CPERL51) {
+    for (qw(strict coretypes DynaLoader XSLoader)) {
+      $dumped_package{$_}++;
+      $curINC{$_.".pm"}++;
+      $INC{$_.".pm"}++;
+    }
+  }
   for my $package (sort keys %INC) {
     my $pkg = packname_inc($package);
     if ($package =~ /^(Config_git\.pl|Config_heavy.pl)$/ and !$dumped_package{'Config'}) {
