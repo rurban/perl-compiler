@@ -1645,7 +1645,8 @@ sub B::UNOP_AUX::save {
   $init->add( sprintf( "unopaux_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )
     unless $B::C::optimize_ppaddr;
   $sym = savesym( $op, "(OP*)&unopaux_list[$ix]" );
-  $free->add("    ($sym)->op_type = OP_NULL;") ;
+  push @B::C::static_free, $sym;
+  # $free->add("    ($sym)->op_type = OP_NULL;");
   do_labels ($op, $level+1, 'first');
   $sym;
 }
@@ -6609,6 +6610,17 @@ static int fast_perl_destruct( PerlInterpreter *my_perl ) {
         }
         JMPENV_POP;
     }
+_EOT8
+
+    for (0 .. $#B::C::static_free) {
+      # set static op members to NULL
+      my $s = $B::C::static_free[$_];
+      if ($s =~ /\(OP\*\)&unopaux_list/) {
+	print "  ($s)->op_type = OP_NULL;";
+      }
+    }
+
+    print <<'_EOT9';
     LEAVE;
     FREETMPS;
     assert(PL_scopestack_ix == 0);
@@ -6687,7 +6699,7 @@ static int fast_perl_destruct( PerlInterpreter *my_perl ) {
 #endif
     return 0;
 }
-_EOT8
+_EOT9
 
   }
   # special COW handling for 5.10 because of S_unshare_hek_or_pvn limitations
@@ -6738,6 +6750,8 @@ _EOT7
         } else { # 5.16 experiment
           print " CopSTASHPV_set(&$s, NULL, 0);\n";
         }
+      } elsif ($s =~ /\(OP\*\)&unopaux_list/) {
+	print "  ($s)->op_type = OP_NULL;";
       # end dead code ---
       #} elsif ($s =~ /^pv\d/) {
       #	print "    $s = \"\";\n";

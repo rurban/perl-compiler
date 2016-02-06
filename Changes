@@ -18,7 +18,7 @@
         Fixed 5.22 padname length limitation of max 60. Also using less memory. (#361)
         New -O2 option -fno-cow since 5.18 to uncow all strings. (#361)
         Support cperl5.22.2 with AvSTATIC and AvIsCOW. ~20% less memory
-        cperl fixes for DynaLoader, XSLoader improvements. (#363)
+        cperl fixes for DynaLoader, XSLoader improvements (#363), -O3 destruction.
         * B::C::Flags: renamed to B::C::Config
 
 1.53 2015-12-06 rurban
