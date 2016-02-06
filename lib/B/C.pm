@@ -6998,8 +6998,8 @@ _EOT9
               my @modparts = split(/::/,$stashname);
               my $modfname = $modparts[-1];
               my $modpname = join('/',@modparts);
-              my $needle = "auto/$modpname/$modfname\.".$Config{dlext};
-              #warn "  load_file: @DynaLoader::dl_shared_objects";
+              my $needle = "auto/$modpname/$modfname\\.".$Config{dlext};
+              #warn " load_file: @DynaLoader::dl_shared_objects";
               #warn " sofile?: $needle";
               for (@DynaLoader::dl_shared_objects) {
                 if (m{$needle}) {
