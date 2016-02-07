@@ -491,10 +491,11 @@ our %option_map = (
 our %optimization_map = (
     0 => [qw()],                    # special case
     1 => [qw(-fppaddr -fav-init2)], # falls back to -fav-init
-    2 => [qw(-fro-inc -fsave-data -fcow)],
+    2 => [qw(-fro-inc -fsave-data)],
     3 => [qw(-fno-destruct -fconst-strings -fno-fold -fno-warnings)],
     4 => [qw(-fcop -fno-dyn-padlist)],
-  );
+);
+push @{$optimization_map{2}}, '-fcow' if $] >= 5.020;
 our %debug_map = (
     'O' => 'op',
     'A' => 'av',
@@ -8855,7 +8856,7 @@ Enabled with C<-O2>.
 
 Enforce static COW strings since 5.18 for most strings.
 
-Enabled with C<-O2>.
+Enabled with C<-O2> since 5.20.
 
 =item B<-fconst-strings>
 
