@@ -16,9 +16,9 @@
         Fix stack corruption in HV::ENAMES (#351)
         Fix SEGV with empty get_cv(), esp. from non-XS functions (#358)
         Fixed 5.22 padname length limitation of max 60. Also using less memory. (#361)
-        New -O2 option -fcow since 5.18 to cow most static strings with big
+        New -O2 option -fcow since 5.20 to cow most static strings with ~6%
           memory savings (#361)
-        Support cperl5.22.2 with AvSTATIC and AvIsCOW. ~20% less memory
+        Support cperl5.22.2 with AvSTATIC and AvIsCOW. ~6% less memory
         cperl fixes for DynaLoader, XSLoader improvements (#363), -O3 destruction.
         * B::C::Flags: renamed to B::C::Config
 
