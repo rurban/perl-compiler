@@ -1000,9 +1000,14 @@ sub save_pv_or_rv {
       $savesym = "emptystring" unless $fullname =~ /unopaux_item.* const/;
       $static = 0;
     }
-    if ($PERL510) { # force dynamic PADNAME strings
-      if ($] < 5.016) { $static = 0 if $flags & 0x40000000; }    # SVpad_NAME
-      elsif ($] < 5.022 and $flags & 0x40008000 == 0x40008000) { # SVpad_NAME
+    if ($static and $PERL510) { # force dynamic PADNAME strings
+      if ($] < 5.016) { $static = 0 if $flags & 0x40000000; } # SVpad_NAME
+      # w. 5.18 even const and VERSION
+      elsif ($] < 5.020 and $fullname =~ /(^svop const|::VERSION)$/) {
+        warn "static=0 for $fullname\n" if $debug{pv};
+        $static = 0;
+      }
+      elsif ($] < 5.022 and ($flags & 0x40008000 == 0x40008000)) { # SVpad_NAME
         warn "static=0 for SVpad_NAME $fullname\n" if $debug{pv};
         $static = 0;
       }
