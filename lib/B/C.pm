@@ -994,6 +994,7 @@ sub save_pv_or_rv {
       or ($fullname and ($fullname =~ m/ :pad/
                          or ($fullname =~ m/^DynaLoader/ and $pv =~ m/^boot_/)));
     $static = 0 if $static and $pv =~ /::bootstrap$/;
+    $static = 0 if $static and $] > 5.017 and ref($sv) eq 'B::PVMG'; # 242: e.g. $1
     $static = 0 if $static and $B::C::const_strings and $fullname and
       ($fullname =~ /^warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/);
     if ($shared_hek and $pok and !$cur) { #272 empty key
@@ -1029,15 +1030,21 @@ sub save_pv_or_rv {
         $static = 0;
       }
       # but we can optimize static set-magic ISA entries. #263, #91
-      if ($B::C::const_strings and ref($sv) eq 'B::PVMG' and $flags & SVs_SMG) {
+      if ($B::C::const_strings and ref($sv) eq 'B::PVMG'
+          and $flags & SVs_SMG and $fullname =~ /ISA/) {
         $static = 1; # warn "static $fullname";
       }
       if ($static) {
 	$len = 0;
         #warn cstring($sv->PV)." $iscow $wascow";
         if ($iscow and $PERL518) { # 5.18 COW logic
-          $len = $cur+2;
-          $pv .= "\000\001";
+          # wrong in many cases but saves a lot of memory, only do this with -O2
+          if ($B::C::cow) {
+            $len = $cur+2;
+            $pv .= "\000\001";
+          } else {
+            $iscow = 0;
+          }
         }
 	$savesym = $iscow ? savepv($pv) : constpv($pv);
         if ($savesym =~ /\)?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
@@ -2893,7 +2900,7 @@ sub B::PVNV::save {
   }
   $svsect->add(
     sprintf("&xpvnv_list[%d], %Lu, 0x%x %s",
-            $xpvnvsect->index, $sv->REFCNT, $sv->FLAGS,
+            $xpvnvsect->index, $sv->REFCNT, $flags,
             $PERL510 ? ", {".($C99?".svu_pv=":"")."(char*)$savesym}" : '' ) );
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   my $s = "sv_list[".$svsect->index."]";
@@ -3300,10 +3307,6 @@ sub B::PVMG::save {
     return $sym;
   }
   my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv($sv, $fullname);
-  #if ($] > 5.017 and $static) { # 242: e.g. $1
-  #  $static = 0;
-  #  $len = $cur+1 unless $len;
-  #}
   #warn sprintf( "PVMG %s (0x%x) $savesym, $len, $cur, $pv\n", $sym, $$sv ) if $debug{mg};
 
   my ($ivx,$nvx);
@@ -3420,11 +3423,11 @@ sub B::PVMG::save_magic {
   # issue267 GetOpt::Long SVf_AMAGIC|SVs_RMG|SVf_OOK
   # crashes with %Class::MOP::Instance:: flags=0x2280000c also
   if (ref($sv) eq 'B::HV' and $] > 5.018 and $sv->MAGICAL and $fullname =~ /::$/) {
-    warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv->FLAGS)
+    warn sprintf("skip SvSTASH for overloaded HV %s flags=0x%x\n", $fullname, $sv_flags)
       if $verbose;
   # [cperl #60] not only overloaded, version also
   } elsif (ref($sv) eq 'B::HV' and $] > 5.018 and $fullname =~ /(version|File)::$/) {
-    warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv->FLAGS)
+    warn sprintf("skip SvSTASH for %s flags=0x%x\n", $fullname, $sv_flags)
       if $verbose;
   } else {
     my $pkgsym;
