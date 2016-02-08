@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_08';
+our $VERSION = '1.53_09';
 our %debug;
 our $check;
 our %Config;
@@ -447,7 +447,7 @@ $all_bc_deps{Socket} = 1 if !@B::C::Config::deps and $] > 5.021;
 
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %stashtable, %hektable, %gptable, %cophhtable);
+my (%strtable, %stashtable, %hektable, %statichektable, %gptable, %cophhtable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
@@ -1038,15 +1038,25 @@ sub save_pv_or_rv {
 	$len = 0;
         #warn cstring($sv->PV)." $iscow $wascow";
         if ($iscow and $PERL518) { # 5.18 COW logic
-          # wrong in many cases but saves a lot of memory, only do this with -O2
-          if ($B::C::cow) {
+          if ($B::C::Config::have_HEK_STATIC) {
+            $iscow = 1;
+            $shared_hek = 1;
+            # $pv .= "\000\001";
+            $savesym = save_hek($pv,$fullname,0);
+            # warn "static shared hek: $savesym";
+            # $savesym =~ s/&\(HEK\)(hek\d+)/&($1.hek_key)/;
+          } elsif ($B::C::cow) {
+            # wrong in many cases but saves a lot of memory, only do this with -O2
             $len = $cur+2;
             $pv .= "\000\001";
+            $savesym = savepv($pv);
           } else {
             $iscow = 0;
+            $savesym = constpv($pv);
           }
+        } else {
+          $savesym = constpv($pv);
         }
-	$savesym = $iscow ? savepv($pv) : constpv($pv);
         if ($savesym =~ /\)?get_cv/) { # Moose::Util::TypeConstraints::Builtins::_RegexpRef
           $static = 0;
 	  $len = $cur +1;
@@ -1095,30 +1105,62 @@ sub save_pv_or_rv {
 # Note: currently not used in list context
 sub save_hek {
   my ($str, $fullname, $dynamic) = @_; # not cstring'ed
-  # $dynamic not yet implemented. see lexsub CvNAME in CV::save
+  # $dynamic: see lexsub CvNAME in CV::save
   # force empty string for CV prototypes
   return "NULL" unless defined $str;
-  return "NULL" if !length $str and !@_ and $fullname !~ /unopaux_item.* const/;
+  return "NULL" if $dynamic and !length $str and !@_
+    and $fullname !~ /unopaux_item.* const/;
   # The first assigment is already refcount bumped, we have to manually
   # do it for all others
-  return sprintf("share_hek_hek(%s)", $hektable{$str}) if defined $hektable{$str};
+  if ($dynamic and defined $hektable{$str}) {
+    return sprintf("share_hek_hek(%s)", $hektable{$str});
+  }
+  if (!$dynamic and defined $statichektable{$str}) {
+    return $statichektable{$str};
+  }
   my ($cstr, $cur, $utf8) = strlen_flags($str);
   $cur = - $cur if $utf8;
   $cstr = '""' if $cstr eq "0";
-  my $sym = sprintf( "hek%d", $hek_index++ );
-  $hektable{$str} = $sym;
-  $decl->add(sprintf("Static HEK *%s;", $sym));
-  warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
-    if $debug{pv};
-  # randomized global shared hash keys:
-  #   share_hek needs a non-zero hash parameter, unlike hv_store.
-  #   Vulnerable to oCERT-2011-003 style DOS attacks?
-  #   user-input (object fields) does not affect strtab, it is pretty safe.
-  # But we need to randomize them to avoid run-time conflicts
-  #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
-  $init->add(sprintf("%s = share_hek(%s, %d, %s);",
-		     $sym, $cstr, $cur, '0'));
-  $sym;
+  if (!$dynamic) {
+    my $sym = sprintf( "hek%d", $hek_index++ );
+    $statichektable{$str} = $sym;
+    my $key = $cstr;
+    my $len = abs($cur);
+    # strip CowREFCNT
+    if ($key =~ /\\000\\001"$/) {
+      $key =~ s/\\000\\001"$/"/;
+      $len -= 2;
+    }
+    # add the flags
+    if ($utf8) { # 0x81
+      $key =~ s/"$/\\000\\201"/;
+    } else {     # 0x80 HVhek_STATIC
+      $key =~ s/"$/\\000\\200"/;
+    }
+    # not const because we need to set the HASH at init
+    $decl->add(sprintf("Static struct hek_ptr %s = { %u, %d, %s };",
+                       $sym, 0, $len, $key));
+    warn sprintf("Saving static hek %s %s cur=%d\n", $sym, $cstr, $cur)
+      if $debug{pv};
+    $init->add(sprintf("PERL_HASH(%s.hek_hash, %s, %u);",
+                       $sym, $cstr, $len));
+    return $sym;
+  } else {
+    my $sym = sprintf( "hek%d", $hek_index++ );
+    $hektable{$str} = $sym;
+    $decl->add(sprintf("Static HEK *%s;", $sym));
+    warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
+      if $debug{pv};
+    # randomized global shared hash keys:
+    #   share_hek needs a non-zero hash parameter, unlike hv_store.
+    #   Vulnerable to oCERT-2011-003 style DOS attacks?
+    #   user-input (object fields) does not affect strtab, it is pretty safe.
+    # But we need to randomize them to avoid run-time conflicts
+    #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
+    $init->add(sprintf("%s = share_hek(%s, %d, %s);",
+                       $sym, $cstr, $cur, '0'));
+    return $sym;
+  }
 }
 
 sub gv_fetchpvn {
@@ -2734,7 +2776,7 @@ sub savepvn {
     # If READONLY and FAKE use newSVpvn_share instead. (test 75)
     if ($PERL510 and $sv and (($sv->FLAGS & 0x09000000) == 0x09000000)) {
       warn sprintf( "Saving shared HEK %s to %s\n", cstring($pv), $dest ) if $debug{sv};
-      my $hek = save_hek($pv);
+      my $hek = save_hek($pv,'',1);
       push @init, sprintf( "%s = HEK_KEY(%s);", $dest, $hek ) unless $hek eq 'NULL';
       if ($DEBUGGING) { # we have to bypass a wrong HE->HEK assert in hv.c
 	push @B::C::static_free, $dest;
@@ -2986,7 +3028,9 @@ sub B::PV::save {
   #my $flags = $sv->FLAGS;
   my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv($sv, $fullname);
   my $shared_hek = $PERL510 ? (($flags & 0x09000000) == 0x09000000) : undef;
-  $shared_hek = $shared_hek ? 1 : IsCOW_hek($sv);
+  if (!$shared_hek and (IsCOW_hek($sv) or ($len==0 and $flags & SVf_IsCOW))) {
+    $shared_hek = 1;
+  }
   # $static = 0 if !($flags & SVf_ROK) and $sv->PV and $sv->PV =~ /::bootstrap$/;
   my $refcnt = $sv->REFCNT;
   my $svix;
@@ -3007,22 +3051,26 @@ sub B::PV::save {
       warn sprintf("constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname)
         if $debug{pv};
     }
+    my $sym = $savesym;
+    $sym = 'NULL' if $shared_hek and $static; # cannot init static
     $xpvsect->comment( $PERL514 ? "stash, magic, cur, len" :  "xnv_u, cur, len");
     $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, $len ) );
     $svsect->comment( "any, refcnt, flags, sv_u" );
     $svsect->add( sprintf( "&xpv_list[%d], %Lu, 0x%x, {%s}",
                            $xpvsect->index, $refcnt, $flags,
-			   $savesym eq 'NULL' ? '0' :
+			   $sym eq 'NULL' ? '0' :
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym ));
     $svix = $svsect->index;
     if ( defined($pv) and !$static ) {
       if ($shared_hek) {
-        my $hek = save_hek($pv, $fullname);
+        my $hek = save_hek($pv, $fullname, 1);
         $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ))
           unless $hek eq 'NULL';
       } else {
         $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
       }
+    } elsif ($shared_hek and $static) {
+        $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = %s.hek_key;", $svix, $savesym ));
     }
     if ($debug{flags} and (!$ITHREADS or $PERL514) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
@@ -3335,6 +3383,7 @@ sub B::PVMG::save {
     }
   }
 
+  my $sym = $savesym;
   if ($PERL510) {
     if ($sv->FLAGS & SVf_ROK) {  # sv => sv->RV cannot be initialized static.
       $init->add(sprintf("SvRV_set(&sv_list[%d], (SV*)%s);", $svsect->index+1, $savesym))
@@ -3342,7 +3391,7 @@ sub B::PVMG::save {
       $savesym = 'NULL';
       $static = 1;
     }
-
+    $sym = 'NULL' if $sym =~ /^hek/ and $static; # cannot init static
     if ($PERL514) {
       $xpvmgsect->comment("STASH, MAGIC, cur, len, xiv_u, xnv_u");
       $xpvmgsect->add(sprintf("Nullhv, {0}, %u, %u, {%s}, {%s}",
@@ -3354,7 +3403,7 @@ sub B::PVMG::save {
     }
     $svsect->add(sprintf("&xpvmg_list[%d], %Lu, 0x%x, {%s}",
                          $xpvmgsect->index, $sv->REFCNT, $flags,
-			 $savesym eq 'NULL' ? '0' :
+			 $sym eq 'NULL' ? '0' :
                            ($C99?".svu_pv=(char*)":"(char*)").$savesym));
   }
   else {
@@ -3376,6 +3425,8 @@ sub B::PVMG::save {
       $init->add( savepvn( sprintf( "xpvmg_list[%d].xpv_pv", $xpvmgsect->index ),
                           $pv, $sv, $cur ) );
     }
+  } elsif ($sym eq 'NULL') {
+      $init->add( sprintf("%s.sv_u.svu_pv = %s.hek_key;", $s, $savesym ));
   }
   $sym = savesym( $sv, "&".$s );
   $sv->save_magic($fullname);
@@ -4314,7 +4365,7 @@ sub B::CV::save {
     $xcv_outside = 0; # just a placeholder for a run-time GV
   }
   if ($PERL510) {
-    $pvsym = save_hek($pv);
+    $pvsym = save_hek($pv,$fullname,1);
     # XXX issue 84: we need to check the cv->PV ptr not the value.
     # "" is different to NULL for prototypes
     $len = $cur ? $cur+1 : 0;
@@ -5088,7 +5139,7 @@ sub B::GV::save {
           # ignore stash hek asserts when adding the stash
           # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
         } else {
-          my $file = save_hek($gv->FILE);
+          my $file = save_hek($gv->FILE,$fullname,1);
           $init->add(sprintf("GvFILE_HEK(%s) = %s;", $sym, $file))
             if $file ne 'NULL' and !$optimize_cop;
         }
@@ -6250,6 +6301,11 @@ EOF
     Perl_refcounted_he_new(aTHX_ cophh, Perl_newSVpvn_flags(aTHX_ STR_WITH_LEN(key), SVs_TEMP), value)
 #define CopHINTHASH_set(c,h)	((c)->cop_hints_hash = (h))
 EOF
+  }
+  if ($B::C::Config::have_HEK_STATIC) {
+    print "/* store full char* to avoid excess elements in array\n";
+    print "   (HEK only declared as char[1]) */\n";
+    print "struct hek_ptr { U32 hek_hash; I32 hek_len; char *hek_key; };\n";
   }
   # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.

@@ -33,6 +33,7 @@ if (grep { $_ eq 'INSTALL_PTMALLOC3' } @ARGV) {
     $have_independent_comalloc = check_independent_comalloc();
 }
 my $have_op_rettype = check_op_rettype();
+my $have_HEK_STATIC = check_hek_static();
 {
     my ($e_c) = grep { /-extra-cflags[= ](.+)/ } @ARGV;
     my ($e_l) = grep { /-extra-libs[= ](.+)/ } @ARGV;
@@ -86,6 +87,7 @@ sub write_b_c_flags {
     print PH "\$have_byteloader = $have_byteloader;\n";
     print PH "# cperl 5.22.2:\n";
     print PH "\$have_op_rettype = $have_op_rettype;\n";
+    print PH "\$have_HEK_STATIC = $have_HEK_STATIC;\n";
     print PH "# use extra compiler flags, after ccopts, resp. ldopts\n";
     print PH "\$extra_cflags = \"$extra_cflags\";\n";
     print PH "\$extra_libs = \"$extra_libs\";\n";
@@ -244,11 +246,26 @@ sub try_compile {
 }
 
 sub check_op_rettype {
+    return 0 if !$Config{usecperl};
     my $op_h = File::Spec->catfile(headerpath(), 'op.h');
     my ($fh, $found);
     open $fh, $op_h or die "$op_h: $!";
     while(<$fh>) {
         if (/^\s+U8\s+op_rettype/) {
+            close $fh;
+            return 1;
+        }
+    }
+    close $fh;
+    return 0;
+}
+sub check_hek_static {
+    return 0 if !$Config{usecperl};
+    my $hv_h = File::Spec->catfile(headerpath(), 'hv.h');
+    my ($fh, $found);
+    open $fh, $hv_h or die "$hv_h: $!";
+    while(<$fh>) {
+        if (/^#define HEK_STATIC/) {
             close $fh;
             return 1;
         }
