@@ -8,6 +8,11 @@ source .gdb/perl
 
 b malloc_error_break
 
+#b Perl_pp_const
+#command
+#p sv_list[1]
+#end
+
 #b dl_boot
 #b dl_generic_private_init
 #b av.c

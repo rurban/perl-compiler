@@ -544,7 +544,7 @@ result[138]='abc'
 tests[140]='my %a;print "ok" if !%a;'
 #tests[141]='print "ok" if "1" > 0'
 tests[141]='@x=(0..1);print "ok" if $#x == "1"'
-tests[142]='$_ = "abc\x{1234}";chop;print "ok" if $_ eq "abc"'
+tests[142]='$_ = "abc\x{1234}";chop;print $_ eq "abc" ? "ok" : $_;'
 tests[143]='BEGIN {
   package Net::IDN::Encode;
   our $DOT = qr/[\.]/; #works with my!

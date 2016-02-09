@@ -1093,7 +1093,7 @@ sub save_pv_or_rv {
   #  my $offset = $len % $Config{ptrsize};
   #  $len += $Config{ptrsize} - $offset if $offset;
   #}
-  warn sprintf("Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s flags=0x%x\n",
+  warn sprintf("Saving pv as %s %s cur=%d, len=%d, static=%d cow=%d %s flags=0x%x\n",
                $savesym, cstring($pv), $cur, $len,
                $static, $iscow, $shared_hek ? "shared, $fullname" : $fullname, $flags)
     if $debug{pv};
@@ -1132,21 +1132,17 @@ sub save_hek {
       $len -= 2;
     }
     # add the flags
-    if ($utf8) { # 0x81
-      $key =~ s/"$/\\000\\201"/;
-    } else {     # 0x80 HVhek_STATIC
-      $key =~ s/"$/\\000\\200"/;
+    if (!$utf8) { # 0x88: HVhek_STATIC + HVhek_UNSHARED
+      $key =~ s/"$/\\000\\210"/;
+    } else {      # 0x89: + HVhek_UTF8
+      $key =~ s/"$/\\000\\211"/;
     }
-    warn sprintf("Saving static hek %s %s cur=%d\n", $sym, $cstr, $cur)
-      if $debug{pv};
+    #warn sprintf("Saving static hek %s %s cur=%d\n", $sym, $cstr, $cur)
+    #  if $debug{pv};
     # not const because we need to set the HASH at init
-    $decl->add(sprintf("Static HEK *%s;", $sym));
-    $decl->add(sprintf("Static struct my_shared_he he_%s = "
-                       . "{{NULL,NULL,{.hent_refcount=1}},{ %u,%d,%s}};",
+    $decl->add(sprintf("Static struct hek_ptr %s = { %u, %d, %s};",
                        $sym, 0, $len, $key));
-    $init->add(sprintf("%s = (HEK*)&he_%s.shared_he_hek;", $sym, $sym));
-    $init->add(sprintf("he_%s.shared_he_he.hent_hek = (HEK*)%s;", $sym, $sym));
-    $init->add(sprintf("PERL_HASH(%s->hek_hash, %s->hek_key, %u);", $sym, $sym, $len));
+    $init->add(sprintf("PERL_HASH(%s.hek_hash, %s.hek_key, %u);", $sym, $sym, $len));
     return $sym;
   } else {
     my $sym = sprintf( "hek%d", $hek_index++ );
@@ -2852,7 +2848,7 @@ sub B::PVLV::save {
       $init->add( savepvn( sprintf( "xpvlv_list[%d].xpv_pv", $xpvlvsect->index ), $pv, $cur ) );
     }
   } elsif ($tmp_pvsym eq 'NULL' and $pvsym =~ /^hek/) {
-    $init->add( sprintf("%s.sv_u.svu_pv = %s->hek_key;", $s, $pvsym ));
+    $init->add( sprintf("%s.sv_u.svu_pv = %s.hek_key;", $s, $pvsym ));
   }
   $sv->save_magic($fullname);
   savesym( $sv, "&".$s );
@@ -2897,7 +2893,7 @@ sub B::PVIV::save {
 	$init->add( savepvn( sprintf( "xpviv_list[%d].xpv_pv", $xpvivsect->index ), $pv, $cur ) );
       }
     } elsif ($tmp_pvsym eq 'NULL' and $pvsym =~ /^hek/) {
-      $init->add( sprintf("%s.sv_u.svu_pv = %s->hek_key;", $s, $pvsym ));
+      $init->add( sprintf("%s.sv_u.svu_pv = %s.hek_key;", $s, $pvsym ));
     }
   }
   savesym( $sv, "&".$s );
@@ -2968,7 +2964,7 @@ sub B::PVNV::save {
         $init->add( savepvn( sprintf( "xpvnv_list[%d].xpv_pv", $xpvnvsect->index ), $pv, $cur ) );
       }
     } elsif ($tmp_pvsym eq 'NULL' and $pvsym =~ /^hek/) {
-      $init->add( sprintf("%s.sv_u.svu_pv = %s->hek_key;", $s, $pvsym ));
+      $init->add( sprintf("%s.sv_u.svu_pv = %s.hek_key;", $s, $pvsym ));
     }
   }
   push @B::C::static_free, "&".$s if $PERL518 and $sv->FLAGS & SVs_OBJECT;
@@ -3085,7 +3081,7 @@ sub B::PV::save {
         $init->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
       }
     } elsif ($shared_hek and $static and $pvsym =~ /^hek/) {
-      $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = %s->hek_key;", $svix, $pvsym ));
+      $init->add( sprintf( "sv_list[%d].sv_u.svu_pv = %s.hek_key;", $svix, $pvsym ));
     }
     if ($debug{flags} and (!$ITHREADS or $PERL514) and $DEBUG_LEAKING_SCALARS) { # add sv_debug_file
       $init->add(sprintf(qq(sv_list[%d].sv_debug_file = %s" sv_list[%d] 0x%x";),
@@ -3441,7 +3437,7 @@ sub B::PVMG::save {
                           $pv, $sv, $cur ) );
     }
   } elsif ($tmp_pvsym eq 'NULL' and $pvsym =~ /^hek/) {
-    $init->add( sprintf("%s.sv_u.svu_pv = %s->hek_key;", $s, $pvsym ));
+    $init->add( sprintf("%s.sv_u.svu_pv = %s.hek_key;", $s, $pvsym ));
   }
   $sym = savesym( $sv, "&".$s );
   $sv->save_magic($fullname);
@@ -6321,7 +6317,6 @@ EOF
     print "/* store full char[] to avoid excess elements in array\n";
     print "   (HEK only declared as char[1]) */\n";
     print "struct hek_ptr { U32 hek_hash; I32 hek_len; char hek_key[]; };\n";
-    print "struct my_shared_he { struct he shared_he_he; struct hek_ptr shared_he_hek; };\n";
   }
   # Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
   # *first* sv_u element to be able to statically initialize it. A int does not allow it.
