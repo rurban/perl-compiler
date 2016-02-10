@@ -833,7 +833,7 @@ tests[2011]='sub can {require Config; import Config;return $Config{d_flock}}
 use IO::File;
 can();
 print "ok\n";'
-tests[203]='#TODO perlio layers
+tests[203]='#TODO <5.22 perlio layers
 use open(IN => ":crlf", OUT => ":encoding(cp1252)");
 open F, "<", "/dev/null";
 my %l = map {$_=>1} PerlIO::get_layers(F, input  => 1);

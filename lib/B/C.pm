@@ -1112,18 +1112,18 @@ sub save_hek {
     and $fullname !~ /unopaux_item.* const/;
   # The first assigment is already refcount bumped, we have to manually
   # do it for all others
-  if ($dynamic and defined $hektable{$str}) {
-    return sprintf("share_hek_hek(%s)", $hektable{$str});
-  }
-  if (!$dynamic and defined $statichektable{$str}) {
-    return $statichektable{$str};
-  }
   my ($cstr, $cur, $utf8) = strlen_flags($str);
+  if ($dynamic and defined $hektable{$str.":".$utf8}) {
+    return sprintf("share_hek_hek(%s)", $hektable{$str.":".$utf8});
+  }
+  if (!$dynamic and defined $statichektable{$str.":".$utf8}) {
+    return $statichektable{$str.":".$utf8};
+  }
   $cur = - $cur if $utf8;
   $cstr = '""' if $cstr eq "0";
   if (!$dynamic) {
     my $sym = sprintf( "hek%d", $hek_index++ );
-    $statichektable{$str} = $sym;
+    $statichektable{$str.":".$utf8} = $sym;
     my $key = $cstr;
     my $len = abs($cur);
     # strip CowREFCNT
@@ -1131,7 +1131,7 @@ sub save_hek {
       $key =~ s/\\000\\001"$/"/;
       $len -= 2;
     }
-    # add the flags
+    # add the flags. a static hek is unshared
     if (!$utf8) { # 0x88: HVhek_STATIC + HVhek_UNSHARED
       $key =~ s/"$/\\000\\210"/;
     } else {      # 0x89: + HVhek_UTF8
@@ -1146,7 +1146,7 @@ sub save_hek {
     return $sym;
   } else {
     my $sym = sprintf( "hek%d", $hek_index++ );
-    $hektable{$str} = $sym;
+    $hektable{$str.":".$utf8} = $sym;
     $decl->add(sprintf("Static HEK *%s;", $sym));
     warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
       if $debug{pv};
