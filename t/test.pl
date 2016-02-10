@@ -927,7 +927,7 @@ sub ctest {
       if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} > 1;
     system "$runperl ".Mblib." -MO=$b,-o$name.c $post $name.pl";
     unless (-e "$name.c") {
-        ok (undef, "#B::$backend failed to compile $todo");
+        ok (undef, "$todo B::$backend failed to compile");
         return 1;
     }
     diag("$runperl ".Mblib." blib/script/cc_harness -q -o $name $name.c")
