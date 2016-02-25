@@ -5,6 +5,8 @@ BEGIN {
   if ($] < 5.008) {
     print "1..1\nok 1 #skip 5.6 has no IO discipline\n"; exit;
   }
+  unshift @INC, 't';
+  require "test.pl";
 }
 use Test::More tests => 2;
 use Config;
@@ -27,8 +29,11 @@ close F;
 
 #$ENV{LC_ALL} = 'C.UTF-8'; $ENV{LANGUAGE} = $ENV{LANG} = 'en';
 my $expected = "24610 ö";
-my $runperl = $^X =~ m/\s/ ? qq{"$^X" -Iblib/arch -Iblib/lib} : "$^X -Iblib/arch -Iblib/lib";
-system "$runperl blib/script/perlcc -o $name $name.pl";
+my $Mblib = Mblib;
+my $X = $^X =~ m/\s/ ? qq{"$^X" $Mblib} : "$^X $Mblib";
+my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
+$perlcc = "$X script/perlcc -I../.. -L../.." if $ENV{PERL_CORE};
+system "$perlcc -o $name $name.pl";
 unless (-e $name or -e "$name.exe") {
   print "ok 1 #skip perlcc failed. Try -Bdynamic or -Bstatic or fix your ldopts.\n";
   print "ok 2 #skip\n";
@@ -43,15 +48,15 @@ TODO: {
 }
 
 if ($] < 5.008) {
-  system "$runperl -MO=Bytecode56,-o$name.plc $name.pl";
+  system "$X -MO=Bytecode56,-o$name.plc $name.pl";
 } else {
-  system "$runperl -MO=-qq,Bytecode,-o$name.plc $name.pl";
+  system "$X -MO=-qq,Bytecode,-o$name.plc $name.pl";
 }
 unless (-e "$name.plc") {
   print "ok 2 #skip perlcc -B failed.\n";
   exit;
 }
-$runexe = "$runperl -MByteLoader $name.plc";
+$runexe = "$X -MByteLoader $name.plc";
 $result = `echo "ö" | $runexe`;
 $result =~ s/\n$//;
 SKIP: { TODO: {

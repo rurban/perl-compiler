@@ -1,12 +1,10 @@
 use ExtUtils::MakeMaker;
 use Config;
-use Data::Dumper;
 use File::Spec;
 use 5.006;
 use Carp;
 
-#my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
-my $core = $ENV{PERL_CORE};
+my $CORE = $ENV{PERL_CORE} || grep { $_ eq 'PERL_CORE=1' } @ARGV;
 mkdir "lib/B/C" unless -d "lib/B/C";
 unless (-e 'lib/B/C/Config.pm') {
     open PH, ">", "lib/B/C/Config.pm";
@@ -16,13 +14,14 @@ unless (-e 'lib/B/C/Config.pm') {
     chmod 0644, "lib/B/C/Config.pm";
 }
 
-# generate lib/B/Asmdata.pm beforehand
-my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
-unlink $asmdata if -f $asmdata;
 # my $X = $^X =~ / / ? qq("$^X") : $^X;
-if ($core) {
-    system($^X,"-I../../lib/auto","-I../../lib","bytecode.pl");
+if ($CORE) {
+    $ENV{PERL_CORE} = 1;
+    system($^X,"-I../../regen","-I../../lib","bytecode.pl");
 } else {
+    my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
+    # generate lib/B/Asmdata.pm
+    unlink $asmdata if -f $asmdata;
     system($^X, "bytecode.pl");
 }
 
@@ -53,8 +52,8 @@ my $have_byteloader = $] < 5.022 ? 1 : check_byteloader();
 # does not work with miniperl
 sub b_c_deps {
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    my $runperl = $X . ($core ? " -I../../lib/auto -I../../lib" : "");
-    return "" if $core;
+    my $runperl = $X . ($CORE ? " -I../../lib/auto -I../../lib" : "");
+    return "AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Config B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::INVLIST B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::METHOP B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAME B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UNOP_AUX B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader EV Encode Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket IO::Socket::SSL Int Internals Net Net::DNS Num O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Str Symbol UInt UNIVERSAL XSConfig XSLoader __ANON__ arybase arybase::mg attributes constant coretypes int main mro num re str strict threads uint utf8 vars version warnings warnings::register Socket" if $CORE and $] > 5.020;
     return `$runperl -Ilib -mB::C -mO -MB -e'B::C::collect_deps()'`;
 }
 
@@ -84,6 +83,7 @@ sub write_b_c_flags {
     print PH "\$have_independent_comalloc = $have_independent_comalloc;\n";
     print PH "\$use_declare_independent_comalloc = $use_declare_independent_comalloc;\n\n";
     print PH "# broken or patched upstream 5.22 ByteLoader. undef for yet undecided\n";
+    $have_byteloader = 0 if $Config{usecperl}; # have it, but still broken
     print PH "\$have_byteloader = $have_byteloader;\n";
     print PH "# cperl 5.22.2:\n";
     print PH "\$have_op_rettype = $have_op_rettype;\n";
@@ -99,8 +99,8 @@ sub write_b_c_flags {
         $Data::Dumper::Sortkeys=1;
     }
     my %cfg;
-    my $conf = "{\n";
-    # Ensure to add all used Config keys in B::C here, otherwise they will be silently empty!
+    my $conf = "(\n";
+    # Ensure to add all used Config keys in B::C here, otherwise they will be silently empty.
     # easier hash key/value slices only came with 5.22
     for my $s (qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl
                   dlext i_dlfcn
@@ -123,7 +123,7 @@ sub write_b_c_flags {
         }
     }
     if ($CORE) {
-        $conf .= "};";
+        $conf .= ");";
     } else {
         $conf = Data::Dumper::Dumper(\%cfg);
         $conf =~ s/^\s*{/(/;
@@ -173,7 +173,8 @@ WriteMakefile(
 	      .   'Reini Urban <perl-compiler@googlegroups.com>',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
-    (($] < 5.010) ? # was in core until 5.9.5, need to update it there
+    # was in core until 5.9.5, need to update it there
+    (($] < 5.010 || $Config{usecperl}) ?
      ('INSTALLDIRS' => 'perl') : ()),
     (($ExtUtils::MakeMaker::VERSION gt '6.31' and $ExtUtils::MakeMaker::VERSION lt '6.46') ?
        ('EXTRA_META'  => "recommends:\n" .
@@ -213,7 +214,7 @@ WriteMakefile(
 );
 
 sub headerpath {
-    if ($core) {
+    if ($CORE) {
 	return File::Spec->catdir(File::Spec->updir,
 				  File::Spec->updir);
     } else {

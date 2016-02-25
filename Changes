@@ -3,9 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.54 2016-02-?? rurban
+1.54 2016-02-26 rurban
         cperl fixes and 5.22 memory improvements. cperl now also supported,
-        but ByteLoader still broken.
+        even included CORE, but ByteLoader still broken.
 
         * C: Fix defined for RV since 5.20 and ithreads (#354)
         Fix anon functions in INIT block (#352) (atoomic)
@@ -22,6 +22,9 @@
         Support cperl5.22.2 with HEK_STATIC. ~6% less memory. (#361)
         cperl fixes for DynaLoader, XSLoader improvements (#363), -O3 destruction.
         * B::C::Flags: renamed to B::C::Config
+        * bytecode.pl: support cperl bootstrapping with miniperl in CORE
+        * Asmdata (1.04): with cperl in CORE @optype @specialsv_name are defined here
+          also. Cannot load B with miniperl.
 
 1.53 2015-12-06 rurban
         added 5.22 support, some cperl optimizations and fixed most remaining 5.14 issues.

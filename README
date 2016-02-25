@@ -2,16 +2,16 @@
 
 	Copyright (c) 1996, 1997, Malcolm Beattie
 	Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
-	Copyright (c) 2012, 2013, 2014, 2015 cPanel Inc
+	Copyright (c) 2012, 2013, 2014, 2015, 2016 cPanel Inc
 
 Homepage: http://www.perl-compiler.org/
 Releases: http://search.cpan.org/dist/B-C/
 Code:     http://github.com/rurban/perl-compiler/
-  and mirrored until 2016 at http://code.google.com/p/perl-compiler/
+  (was until 2016 at http://code.google.com/p/perl-compiler/)
 
 OVERVIEW
 
-Malcom Beattie's perl compiler ("perlcc") updated to 5.10 - 5.21.3,
+Malcom Beattie's perl compiler ("perlcc") updated to 5.10 - 5.22 and cperl,
 with most bugs fixed (also for 5.6. and 5.8) and new features
 added. It compiles to C or platform-compatible Bytecode.
 
@@ -68,6 +68,7 @@ names. See the warning at perl Makefile.PL.
 5.20 improved support for binary names for most syscalls, dumpers and
 APIs, but TR39 and strict names are still not handled, the problems
 are not understood and reactions are generally hostile.
+The best perl versions for the compiler are 5.14.4, 5.22.1 and cperl-5.22.2
 
 Summarized:
 Perl handling of new unicode identifiers - package and symbol names since 5.16 -
@@ -347,7 +348,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2015-03-17
+2016-02-25
 
 Malcolm Beattie
 2 September 1996

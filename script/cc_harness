@@ -2,7 +2,7 @@
 use Config;
 use ExtUtils::Embed;
 
-my $coredir = $ENV{PERL_SRC} || "$Config{archlib}/CORE"; # XXX was installarchlib
+my $coredir = $ENV{PERL_CORE} ? '../..' : "$Config{archlib}/CORE";
 my $libdir  = "$Config{prefix}/lib";
 my $useshrplib = $Config{useshrplib} eq 'true';
 my $libs = $Config{libs};
@@ -53,6 +53,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
     $linkargs = ldopts('-std');
 }
 # Note (probably harmless): No library found for -lnsl
+$linkargs .= " -L".$coredir if $ENV{PERL_CORE};
 $linkargs = $B::C::Config::extra_libs . " " . $linkargs;
 $linkargs .= " $libs" if index($linkargs,$libs) == -1;
 
@@ -71,6 +72,8 @@ sub cc_harness_msvc {
     $compile .= "-DHAVE_INDEPENDENT_COMALLOC " if $B::C::Config::have_independent_comalloc;
     $compile .= $B::C::Config::extra_cflags;
     $compile .= " -I".$_ for split /\s+/, opt(I);
+    $compile .= " -I".$coredir if $ENV{PERL_CORE};
+    $link .= " -libpath:".$coredir if $ENV{PERL_CORE};
     $link .= " -libpath:".$_ for split /\s+/, opt(L);
     # TODO: -shared,-static,-sharedxs,-staticxs
     $link .= (" ".$B::C::Config::extra_libs);

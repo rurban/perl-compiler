@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
-#      Copyright (c) 2011, 2012, 2013, 2014, 2015 cPanel Inc
+#      Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -12,13 +12,16 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.53_09';
-our %debug;
-our $check;
-our %Config;
+our $VERSION = '1.54';
+our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
   *Config = \%B::C::Config::Config;
+  if (!keys %Config or !exists $Config{usecperl}) {
+    warn "Empty \%B::C::Config::Config";
+    require Config;
+    Config->import;
+  }
   # make it a restricted hash
   Internals::SvREADONLY(%Config, 1) if $] >= 5.008004;
 }
@@ -1194,6 +1197,9 @@ sub ivx ($) {
   my $ivdformat = $Config{ivdformat};
   $ivdformat =~ s/["\0]//g; #" poor editor
   $ivdformat =~ s/".$/"/;  # cperl bug 5.22.2 #61 (never released)
+  unless ($ivdformat) {
+    $ivdformat = $Config{ivsize} == 4 ? 'd' : 'ld';
+  }
   my $POW    = ( $Config{ivsize} * 4 - 1 );    # poor editor
   my $intmax = (1 << $POW) - 1;
   my $L = 'L';
@@ -1238,6 +1244,9 @@ sub nvx ($) {
   my $nvgformat = $Config{nvgformat};
   $nvgformat =~ s/["\0]//g; #" poor editor
   $nvgformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
+  unless ($nvgformat) {
+    $nvgformat = 'g';
+  }
   my $dblmax = "1.79769313486232e+308";
   # my $ldblmax = "1.18973149535723176502e+4932L"
   my $ll = $Config{d_longdbl} ? "LL" : "L";
@@ -2935,7 +2944,7 @@ sub B::PVNV::save {
       $xpvnvsect->comment('NVX, cur, len, IVX');
       $xpvnvsect->add(sprintf( "{%s}, %u, %u, {%s}", $nvx, $cur, $len, $ivx ) );
     }
-    unless ($C99 or $sv->FLAGS & (SVf_NOK|SVp_NOK)) {
+    if (!($sv->FLAGS & (SVf_NOK|SVp_NOK)) and !$PERL522) {
       warn "NV => run-time union xpad_cop_seq init\n" if $debug{sv};
       $init->add(sprintf("xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %s;",
                          $xpvnvsect->index, ivx($sv->COP_SEQ_RANGE_LOW)),
