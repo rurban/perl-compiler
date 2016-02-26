@@ -93,27 +93,42 @@ sub write_b_c_flags {
     print PH "\$extra_libs = \"$extra_libs\";\n";
     print PH "\@deps = qw( ", $b_c_deps, " );\n\n";
 
-    if ($ENV{PERL_CORE}) {
-        print PH "\n";
-        print PH "1;\n";
-        close PH;
-        chmod 0644, "lib/B/C/Config.pm";
-        return;
+    if (!$CORE) { # miniperl cannot load Scalar::Util
+        require Data::Dumper;
+        $Data::Dumper::Terse=1;
+        $Data::Dumper::Sortkeys=1;
     }
-    $Data::Dumper::Terse=1;
-    $Data::Dumper::Sortkeys=1;
     my %cfg;
+    my $conf = "{\n";
     # Ensure to add all used Config keys in B::C here, otherwise they will be silently empty!
     # easier hash key/value slices only came with 5.22
-    for my $s (qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl dlext i_dlfcn
+    for my $s (qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl
+                  dlext i_dlfcn
                   ivdformat ivsize longsize mad nvgformat ptrsize static_ext usecperl
                   usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat))
     {
-        $cfg{$s} = $Config::Config{$s};
+        if ($CORE) {
+            my $v = $Config::Config{$s};
+            if (!defined $v) {
+                $v = 'undef';
+            } else {
+                $v =~ s/'/\\'/g;
+                if ($v !~ /^\d+$/) {
+                    $v = "'".$v."'";
+                }
+            }
+            $conf .= "\t$s => $v,\n";
+        } else {
+            $cfg{$s} = $Config::Config{$s};
+        }
     }
-    my $conf = Dumper \%cfg;
-    $conf =~ s/^\s*{/(/;
-    $conf =~ s/}\s*$/);/;
+    if ($CORE) {
+        $conf .= "};";
+    } else {
+        $conf = Data::Dumper::Dumper(\%cfg);
+        $conf =~ s/^\s*{/(/;
+        $conf =~ s/}\s*$/);/;
+    }
     print PH "our \%Config = $conf\n";
     print PH "\n";
     print PH "1;\n";
