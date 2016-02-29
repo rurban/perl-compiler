@@ -28,7 +28,7 @@ BEGIN {
 }
 
 use B::C::Config;
-require "test.pl";
+require TestBC;
 
 sub vcmd {
   my $cmd = join "", @_;

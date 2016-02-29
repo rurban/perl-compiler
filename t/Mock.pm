@@ -41,7 +41,7 @@ several seconds.
 
 =cut
 
-require "test.pl";
+require TestBC;
 use Test::More;
 use TAP::Parser;
 use Test::Harness::Straps;

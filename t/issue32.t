@@ -10,7 +10,7 @@ BEGIN {
 use Test::More tests => 1;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 my $name = 'ccode32i.pl';
 open my $fh, '>', $name or die;

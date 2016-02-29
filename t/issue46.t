@@ -4,7 +4,7 @@ use Test::More tests => 1;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 
 # crashes non-threaded pp_ctl.c:248 cLOGOP->op_first being 0

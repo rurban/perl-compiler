@@ -7,7 +7,7 @@
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More;
 unless (eval{require Net::DNS;} and eval{require IO::Socket::INET6;}) {

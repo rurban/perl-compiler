@@ -6,7 +6,7 @@ BEGIN {
     print "1..1\nok 1 #skip 5.6 has no IO discipline\n"; exit;
   }
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More tests => 2;
 use Config;

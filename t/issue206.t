@@ -4,7 +4,7 @@
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More;
 plan skip_all => 'unicode symbols with 5.16' if $] < 5.016;

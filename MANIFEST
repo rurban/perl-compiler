@@ -271,7 +271,7 @@ t/regex-dna.pl
 t/release-testing.sh
 t/stash.t
 t/stashes.t
-t/test.pl
+t/TestBC.pm
 t/test10
 t/testc.sh
 t/testcc.sh

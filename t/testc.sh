@@ -1030,7 +1030,7 @@ aiieee::zlopp("zlopp");
 aiieee::reset_zlopp();
 print "ok\n" if aiieee::zlopp("zlopp");'
 tests[253]='use Unicode::UCD q/prop_invmap/; my @list = prop_invmap("Uppercase_Mapping"); print "ok"'
-tests[2530]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+tests[2530]='INIT{require "t/TestBC.pm"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[2530]='1..2
 ok 1
 ok 2'

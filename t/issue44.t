@@ -5,7 +5,7 @@ use Test::More tests => 1;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 
 # fails to compile non-threaded, wrong result threaded

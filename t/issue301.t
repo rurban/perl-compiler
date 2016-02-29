@@ -5,7 +5,7 @@
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More;
 plan ($] > 5.007003 ? (tests => 2) : (skip_all => "no NEXT on $]"));

@@ -5,7 +5,7 @@ use Test::More tests => 2;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 # failed 5.10 only (B::FM object for GvFORM)
 #my $todo = ($] =~ /^5\.010/) ? "TODO " : "";

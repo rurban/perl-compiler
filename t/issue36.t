@@ -8,7 +8,7 @@ use Test::More tests => $B::CC::VERSION < 1.08 ? 5 : 1;
 use strict;
 BEGIN {
     unshift @INC, 't';
-    require "test.pl";
+    require TestBC;
 }
 
 # panic: leaveloop, no cxstack at /usr/local/lib/perl/5.10.1/B/CC.pm line 1977

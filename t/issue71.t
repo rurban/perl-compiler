@@ -5,7 +5,7 @@ use Test::More tests => 3;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Config ();
 my $DEBUGGING = ($Config::Config{ccflags} =~ m/-DDEBUGGING/);

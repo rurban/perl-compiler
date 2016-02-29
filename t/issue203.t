@@ -7,7 +7,7 @@ BEGIN {
     exit;
   }
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use strict;
 use Test::More tests => 1;

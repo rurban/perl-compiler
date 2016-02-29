@@ -4,7 +4,7 @@
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More;
 if ($] < 5.018) {

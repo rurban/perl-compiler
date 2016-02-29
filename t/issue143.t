@@ -5,7 +5,7 @@ use Test::More tests => 3;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Config ();
 # broken on 5.10.1 with 1.48

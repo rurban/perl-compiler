@@ -5,7 +5,7 @@ use Test::More tests => 1;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 
 # The op "leaveloop" is not handled by B::CC because it is dead code.

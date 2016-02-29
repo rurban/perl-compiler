@@ -5,7 +5,7 @@ use Test::More tests => 1;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 
 ctestok(1, "C", 'ccode144i', 'print "ok" if 12 == index("long message\0xx","\0")', "BM search for \\0");

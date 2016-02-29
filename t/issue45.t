@@ -10,7 +10,7 @@ use Test::More tests => 4;
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 
 use B::CC;

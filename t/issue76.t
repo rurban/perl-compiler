@@ -6,7 +6,7 @@ use strict;
 use Config;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 my $script = <<'EOF';
 use warnings;

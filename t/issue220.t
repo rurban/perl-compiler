@@ -3,7 +3,7 @@
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More ($] >= 5.010 ? (tests => 1) : (skip_all => '%^H requires v5.10'));
 my $script = <<'EOF';

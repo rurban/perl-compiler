@@ -12,7 +12,7 @@ BEGIN {
     unshift @INC, 't';
     #push @INC, "blib/arch", "blib/lib";
   }
-  require 'test.pl'; # for run_perl()
+  require 'TestBC'; # for run_perl()
 }
 use strict;
 #my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);

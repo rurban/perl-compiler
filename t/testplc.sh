@@ -856,7 +856,7 @@ tests[2514]='sub f;print "ok" if exists &f'
 # duplicate of 234
 tests[252]='my $i = 0; for ("-3".."0") { ++$i } print $i'
 result[252]='4'
-tests[253]='INIT{require "t/test.pl"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
+tests[253]='INIT{require "t/TestBC.pm"}plan(tests=>2);is("\x{2665}", v9829);is(v9829,"\x{2665}");'
 result[253]='1..2
 ok 1
 ok 2'

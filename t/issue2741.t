@@ -4,7 +4,7 @@
 use strict;
 BEGIN {
   unshift @INC, 't';
-  require "test.pl";
+  require TestBC;
 }
 use Test::More ($] >= 5.019003 ? (tests => 2) : (skip_all => 'custom op Dump since 5.19.3'));
 use B::C ();
