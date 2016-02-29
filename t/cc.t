@@ -2,11 +2,11 @@
 # better use testcc.sh for debugging
 BEGIN {
   if ($ENV{PERL_CORE}) {
-    unshift @INC, ('t', '../../lib');
+    @INC = ('t', '../../lib');
   } else {
-    unshift @INC, 't', "blib/arch", "blib/lib";
+    unshift @INC, 't';
   }
-  require TestBC; # for run_perl()
+  require TestBC;
 }
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);

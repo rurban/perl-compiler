@@ -6,18 +6,12 @@ BEGIN {
     print "1..0 #SKIP Only if -d .git\n";
     exit;
   }
-  #if ($Config{useithreads}) {
-  #  print "1..0 #SKIP -faelem broken for threaded perl\n";
-  #  exit;
-  #}
-  if ($ENV{PERL_CORE}){
-    chdir('t') if -d 't';
-    @INC = ('.', '../lib');
+  if ($ENV{PERL_CORE}) {
+    @INC = ('t', '../../lib');
   } else {
     unshift @INC, 't';
-    #push @INC, "blib/arch", "blib/lib";
   }
-  require 'TestBC'; # for run_perl()
+  require TestBC;
 }
 use strict;
 #my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
