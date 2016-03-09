@@ -1161,15 +1161,13 @@ sub save_hek {
     #   user-input (object fields) does not affect strtab, it is pretty safe.
     # But we need to randomize them to avoid run-time conflicts
     #   e.g. "Prototype mismatch: sub bytes::length (_) vs (_)"
-    if ($PERL510 and 0) {
+    if ($PERL510 and 0) { # no refcount
       $init->add(sprintf("%s = my_share_hek_0(%s, %d);",
                          $sym, $cstr, $cur));
-    } else {
+    } else { # vs. bump the refcount
       $init->add(sprintf("%s = share_hek(%s, %d);",
                          $sym, $cstr, $cur));
     }
-    # protect against Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2
-    # $free->add("    $sym = NULL;");
     return $sym;
   }
 }
@@ -6867,12 +6865,16 @@ _EOT9
   else {
     print <<'_EOT7';
 int my_perl_destruct( PerlInterpreter *my_perl ) {
+    VOL signed char destruct_level = PL_perl_destruct_level;
+    const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
+
     /* set all our static pv and hek to &PL_sv_undef for perl_destruct() */
 _EOT7
 
-    for (0 .. $hek_index-1) {
-	printf "    memset(HEK_HE(hek%d), 0, sizeof(struct shared_he));\n", $_;
-    }
+    #for (0 .. $hek_index-1) {
+    #  # TODO: non-static only, seperate data structures please
+    #  printf "    memset(HEK_HE(hek%d), 0, sizeof(struct shared_he));\n", $_;
+    #}
     for (0 .. $#B::C::static_free) {
       # set the sv/xpv to &PL_sv_undef, not the pv itself.
       # If set to NULL pad_undef will fail in SvPVX_const(namesv) == '&'
@@ -6924,25 +6926,25 @@ _EOT7
     $free->output( \*STDOUT, "%s\n" );
     print <<'_EOT7a';
 
-    /* No Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2 */
-    VOL signed char destruct_level = PL_perl_destruct_level;
-    {
-	const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
-	if (s) {
-            const int i = atoi(s);
-	    if (destruct_level < i) destruct_level = i;
-	}
+    /* Avoid Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2 */
+    if (s) {
+        const int i = atoi(s);
+        if (destruct_level < i) destruct_level = i;
     }
     if (destruct_level >= 1) {
-	I32 riter = 0;
         const I32 max = HvMAX(PL_strtab);
+#if 0
+        Zero(HvARRAY(PL_strtab), max, HE*);
+        /*memset(HvARRAY(PL_strtab), 0, max * sizeof(HE*));*/
+#else
 	HE * const * const array = HvARRAY(PL_strtab);
+	I32 riter = 0;
 	HE *hent = array[0];
 	for (;;) {
 	    if (hent) {
 		HE * const next = HeNEXT(hent);
 #ifdef USE_CPERL
-                if (!HEK_STATIC(((struct shared_he*)hent)->shared_he_hek))
+                if (!HEK_STATIC(&((struct shared_he*)hent)->shared_he_hek))
 #endif
                 Safefree(hent);
 		hent = next;
@@ -6953,6 +6955,12 @@ _EOT7
 		hent = array[riter];
 	    }
         }
+#endif
+        Zero(HvARRAY(PL_strtab), max, HE*);
+        /* NULL the HEK "dfs" */
+        PL_registered_mros = (HV*)&PL_sv_undef;
+        PL_stashcache = (HV*)&PL_sv_undef;
+        CopHINTHASH_set(&PL_compiling, NULL);
     }
 
     /* B::C specific: prepend static svs to arena for sv_clean_objs */

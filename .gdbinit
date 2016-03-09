@@ -7,14 +7,14 @@ set breakpoint pending on
 source .gdb/perl
 
 b malloc_error_break
-b perl_destruct
-command
-p PL_compiling
-end
-b perl.c:1175
-command
-p PL_compiling
-end
+#b perl_destruct
+#command
+#p PL_compiling
+#end
+#b perl.c:1175
+#command
+#p PL_compiling
+#end
 b Perl_ckwarn_d
 
 #b Perl_pp_const
