@@ -1168,6 +1168,8 @@ sub save_hek {
       $init->add(sprintf("%s = share_hek(%s, %d);",
                          $sym, $cstr, $cur));
     }
+    # protect against Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2
+    $free->add("    $sym = NULL;");
     return $sym;
   }
 }
