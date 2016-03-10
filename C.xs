@@ -451,28 +451,6 @@ op_folded(op)
 
 #endif
 
-MODULE = B	PACKAGE = B::HV		PREFIX = Hv
-
-void
-HvARRAY_utf8(hv)
-	B::HV	hv
-    PPCODE:
-	if (HvKEYS(hv) > 0) {
-	    HE *he;
-	    (void)hv_iterinit(hv);
-	    EXTEND(sp, HvKEYS(hv) * 2);
-	    while ((he = hv_iternext(hv))) {
-                if (HeSVKEY(he)) {
-                    mPUSHs(HeSVKEY(he));
-                } else if (HeKUTF8(he)) {
-                    PUSHs(newSVpvn_flags(HeKEY(he), HeKLEN(he), SVf_UTF8|SVs_TEMP));
-                } else {
-                    PUSHs(newSVpvn_flags(HeKEY(he), HeKLEN(he), SVs_TEMP));
-                }
-		PUSHs(make_sv_object(aTHX_ HeVAL(he)));
-	    }
-	}
-
 MODULE = B__C          PACKAGE = B::C
 
 SV*
