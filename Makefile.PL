@@ -58,7 +58,7 @@ sub b_c_deps {
 }
 
 # does not work with miniperl
-sub write_b_c_flags {
+sub write_b_c_config {
     my $version = shift;
     mkdir "lib/B/C" unless -d "lib/B/C";
     my $b_c_deps = b_c_deps();
@@ -102,10 +102,10 @@ sub write_b_c_flags {
     my $conf = "(\n";
     # Ensure to add all used Config keys in B::C here, otherwise they will be silently empty.
     # easier hash key/value slices only came with 5.22
-    for my $s (qw(archname cc ccflags d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl
-                  dlext i_dlfcn
-                  ivdformat ivsize longsize mad nvgformat ptrsize static_ext usecperl
-                  usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat))
+    for my $s (qw(archname cc ccflags
+                  d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl dlext
+                  i_dlfcn ivdformat ivsize longsize mad nvgformat ptrsize static_ext
+                  usecperl usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat))
     {
         if ($CORE) {
             my $v = $Config::Config{$s};
@@ -400,7 +400,7 @@ sub const_config {
 
 sub post_constants {
     my $mm = shift;
-    main::write_b_c_flags($mm->{VERSION});
+    main::write_b_c_config($mm->{VERSION});
     my $libs = "\nLIBS = $Config::Config{libs}";
     $libs .= $extra_libs if $extra_libs;
     #XXX PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
