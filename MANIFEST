@@ -144,6 +144,7 @@ store_rpt
 t/Ccode354i.pm
 t/Mock.pm
 t/TESTS
+t/TestBC.pm
 t/asmdata.t
 t/assembler.t
 t/bblock.t
@@ -271,7 +272,6 @@ t/regex-dna.pl
 t/release-testing.sh
 t/stash.t
 t/stashes.t
-t/TestBC.pm
 t/test10
 t/testc.sh
 t/testcc.sh
