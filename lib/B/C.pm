@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54';
+our $VERSION = '1.54_01';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -1845,10 +1845,10 @@ sub B::LISTOP::save {
     my $fop = $op;
     my $svop = $op->first;
     while ($svop != $op and ref($svop) ne 'B::NULL') {
-      if ($svop->name == 'const' and $svop->can('sv')) {
+      if ($svop->name eq 'const' and $svop->can('sv')) {
         $sv = $svop->sv;
       }
-      if ($sv and $sv->can("PV") and $sv->PV =~ /~/m) {
+      if ($sv and $sv->can("PV") and $sv->PV and $sv->PV =~ /~/m) {
         local $B::C::const_strings;
         warn "force non-static formline arg ",cstring($sv->PV),"\n" if $debug{pv};
         $svop->save($level, "svop const");
@@ -3269,7 +3269,9 @@ sub patch_dlsym {
     $pkg = $stash->can('NAME') ? $stash->NAME : '';
   }
   my $name = $sv->FLAGS & SVp_POK ? $sv->PVX : "";
-  my $ivxhex = sprintf("0x%x", $ivx);
+  my $ivx_s = $ivx;
+  $ivx_s =~ s/U?L?$//g;
+  my $ivxhex = sprintf("0x%x", $ivx_s);
   # Encode RT #94221
   if ($name =~ /encoding$/ and $name =~ /^(ascii|ascii_ctrl|iso8859_1|null)/ and $Encode::VERSION eq '2.58') {
     $name =~ s/-/_/g;
@@ -3397,7 +3399,7 @@ sub B::PVMG::save {
           and $fullname
           and $fullname =~ /^svop const|^padop|^Encode::Encoding| :pad\[1\]/)
          or $ITHREADS)
-        and $ivx > LOWEST_IMAGEBASE # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
+        and $sv->IVX > LOWEST_IMAGEBASE # some crazy heuristic for a sharedlibrary ptr in .data (> image_base)
         and ref($sv->SvSTASH) ne 'B::SPECIAL')
     {
       $ivx = patch_dlsym($sv, $fullname, $ivx);
