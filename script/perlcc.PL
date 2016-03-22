@@ -15,12 +15,16 @@ use Cwd;
 
 # This forces PL files to create target in same directory as PL file.
 # This is so that make depend always knows where to find PL derivatives.
-$origdir = cwd;
-chdir dirname($0);
-$file = basename($0, '.PL');
+my $origdir = cwd;
+my $dir = dirname($0);
+# This is expanded below for PERL_CORE tests
+my $srcdir = Cwd::abs_path(File::Spec->catdir(
+                  Cwd::abs_path($dir), "..", "..", ".."));
+chdir $dir;
+my $file = basename($0, '.PL');
 $file .= '.com' if $^O eq 'VMS';
 
-open OUT,">$file" or die "Can't create $file: $!";
+open OUT,">", $file or die "Can't create $file: $!";
 
 print "Extracting $file (with variable substitutions)\n";
 
@@ -69,7 +73,7 @@ use Config;
 use Fcntl qw(:DEFAULT :flock);
 use File::Temp qw(tempfile);
 use File::Basename qw(basename dirname);
-# use Cwd;
+use Cwd ();
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 # use Time::HiRes qw(gettimeofday tv_interval);
@@ -616,7 +620,22 @@ sub cc_harness_msvc {
     } else {
         $link .= $extra_libs;
     }
-    $link .= " perl5$Config{PERL_VERSION}.lib kernel32.lib msvcrt.lib";
+
+    # another ldopts bug: ensure Win32CORE gets added.
+    if (index($link, "Win32CORE") < 0) {
+        my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+        my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
+        if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
+            $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";
+        }
+        $link .= " $win32core";
+    }
+    if ($Config{usecperl}) {
+        $link .= " cperl5$Config{PERL_VERSION}.lib";
+    } else {
+        $link .= " perl5$Config{PERL_VERSION}.lib";
+    }
+    $link .= " kernel32.lib msvcrt.lib";
     $link .= $B::C::Config::extra_libs;
     vprint 3, "Calling $Config{cc} $compile";
     vsystem("$Config{cc} $compile");
@@ -629,7 +648,11 @@ sub cc_harness {
     use ExtUtils::Embed ();
     my $command = ExtUtils::Embed::ccopts." -o $Output $cfile ";
     if ($ENV{PERL_CORE}) {
-      $command = "$Config{ccflags} -I../.. -L../.. -o $Output $cfile ";
+!NO!SUBS!
+print OUT <<"!EXPANDED!";
+      \$command = "\$Config{ccflags} -I$srcdir -L$srcdir -o \$Output \$cfile ";
+!EXPANDED!
+print OUT <<'!NO!SUBS!';
     }
     $command .= " -DHAVE_INDEPENDENT_COMALLOC" if $B::C::Config::have_independent_comalloc;
     $command .= $B::C::Config::extra_cflags if $B::C::Config::extra_cflags;
@@ -657,6 +680,21 @@ sub cc_harness {
     {
         $ldopts =~ s/-fstack-protector\b//;
         $ldflags =~ s/-fstack-protector\b// if $extra_libs;
+    }
+    # another ldopts bug: ensure Win32CORE gets added, before -lperl
+    if (is_win32() or $^O eq 'cygwin') {
+        if (index($ldopts, "Win32CORE") < 0) {
+           my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+           my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
+           if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
+               $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";
+           }
+           if ($ldopts =~ m{ (-lc?perl)}) {
+               $ldopts =~ s{ (-lc?perl)}{ $win32core $1};
+           } else {
+               $ldopts .= " $win32core";
+           }
+        }
     }
     my ($libperl, $libdir, $coredir) = ($Config{libperl});
     if ($ENV{PERL_CORE}) {
@@ -689,17 +727,17 @@ sub cc_harness {
         }
         for my $lib (@plibs) {
             if (-e $lib) {
-	        $ldopts =~ s|-lperl |$lib |;
-	        $ldopts =~ s|\s+\S+libperl\w+\.a | $lib |;
+	        $ldopts =~ s|-lc?perl |$lib |;
+	        $ldopts =~ s|\s+\S+libc?perl\w+\.a | $lib |;
 	        $ldopts = "$coredir/DynaLoader.o $ldopts" if -e "$coredir/DynaLoader.o";
 	        last;
             }
         }
     } elsif (opt('static')) {
         for my $lib ($libperl, "$coredir/$libperl", "$coredir/$libperl",
-                   "$coredir/libperl.a", "$libdir/libperl.a") {
+                   "$coredir/libperl.a", "$libdir/libperl.a", "$coredir/libcperl.a", "$libdir/libcperl.a") {
             if (-e $lib) {
-	        $ldopts =~ s|-lperl |$lib |;
+	        $ldopts =~ s|-lc?perl |$lib |;
 	        $ldopts = "$coredir/DynaLoader.o $ldopts" if -e "$coredir/DynaLoader.o";
 	        last;
             }
@@ -714,8 +752,12 @@ sub cc_harness {
 	    $ldopts =~ s|-lperl |$coredir/$Config{libperl} |;
         }
     }
-    unless ( $command =~ m{( -lperl|/CORE\/libperl)} ) {
-        $ldopts .= " -lperl";
+    unless ( $command =~ m{( -lc?perl|/CORE\/libperl)} ) {
+        if ($Config{usecperl} and $libperl =~ /libcperl/) {
+            $ldopts .= " -lcperl";
+        } else {
+            $ldopts .= " -lperl";
+        }
         $ldopts .= " $Config{libs}" if $ENV{PERL_CORE}; # no -L found at all
     }
     $command .= " ".$ldopts;

@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_01';
+our $VERSION = '1.54_02';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -6875,6 +6875,7 @@ _EOT8
     }
 #endif
 
+    PL_stashcache = (HV*)&PL_sv_undef; /* sometimes corrupted */
     if (PL_sv_objcount) {
         PL_stashcache = newHV(); /* Hack: sometimes corrupted, holding a GV */
 	PL_in_clean_all = 1;

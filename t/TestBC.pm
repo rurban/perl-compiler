@@ -686,15 +686,31 @@ sub run_cc_test {
         }
 	my $libdir  = File::Spec->catdir($Config{prefix}, "lib");
         my $so = $Config{so};
+        my $pkg = ($Config{usecperl} and $libperl =~ /libcperl/) ? "cperl" : "perl";
         my $linkargs = $ENV{PERL_CORE}
           ? ExtUtils::Embed::_ccdlflags." ".ExtUtils::Embed::_ldflags()
-           ." -L../.. -lperl ".$Config{libs}
+           ." -L../.. -l$pkg ".$Config{libs}
           : ExtUtils::Embed::ldopts('-std');
         # At least cygwin gcc-4.3 crashes with 2x -fstack-protector
         $linkargs =~ s/-fstack-protector\b//
           if $linkargs !~ /-fstack-protector-strong\b/
           and $command =~ /-fstack-protector\b/
           and $linkargs =~ /-fstack-protector\b/;
+
+        if ($^O =~ /^(cygwin|MSWin32|msys)/) {
+            if (index($command, "Win32CORE") < 0) {
+                my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+                my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
+                if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
+                    $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";
+                }
+                if ($linkargs =~ / (-lc?perl)/) {
+                    $linkargs =~ s{ (-lc?perl)}{ $win32core $1};
+                } else {
+                    $linkargs .= " $win32core";
+                }
+            }
+        }
 	if ( -e "$coredir/$Config{libperl}" and $Config{libperl} !~ /\.$so$/) {
 	    $command .= $linkargs;
 	} elsif ( $useshrplib and (-e "$libdir/$Config{libperl}" or -e "/usr/lib/$Config{libperl}")) {
@@ -706,7 +722,7 @@ sub run_cc_test {
 	    $command .= $linkargs;
 	} else {
 	    $command .= $linkargs;
-	    $command .= " -lperl" if $command !~ m{( -lperl|/CORE/libperl5)} and $^O ne 'MSWin32';
+	    $command .= " -lperl" if $command !~ /(-lperl|CORE\/libperl5)/ and $^O ne 'MSWin32';
 	}
 	$command .= $B::C::Config::extra_libs;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
@@ -1082,7 +1098,7 @@ sub todo_tests_default {
         #push @todo, (48) if $] >= 5.018; # opfree
         push @todo, (48) if $what eq 'c_o4' and $] < 5.021 and $ITHREADS;
         push @todo, (8,18,19,25,26,28)  if $what eq 'c_o4' and !$ITHREADS;
-        push @todo, (13,18,29,34) if $] >= 5.021006 and $ITHREADS;
+        push @todo, (29) if $] >= 5.021006 and $ITHREADS;
         push @todo, (10,15,27,41,42,43,44,45,49,50)
           if $] >= 5.021006 and $what eq 'c_o4';
         push @todo, (13,18,29,34)
@@ -1106,10 +1122,11 @@ sub todo_tests_default {
         push @todo, (27)    if $] > 5.008008 and $] < 5.009;
 	#push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
-        push @todo, (12,19) if $] >= 5.019;
+        push @todo, (12,19) if $] >= 5.019; # XXX had 25 also
         push @todo, (25)    if $] >= 5.021006 and !$Config{usecperl};
 	push @todo, (29)    if $] >= 5.021006 and $what eq 'cc_o1';
 	push @todo, (24,29) if $] >= 5.021006 and $what eq 'cc_o2';
+        push @todo, (103)   if ($Config{usecperl} and $ITHREADS);
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;
