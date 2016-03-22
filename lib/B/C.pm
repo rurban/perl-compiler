@@ -6788,10 +6788,12 @@ _EOT8
 #endif
 
     if (PL_sv_objcount) {
+        PL_stashcache = newHV(); /* Hack: sometimes corrupted, holding a GV */
 	PL_in_clean_all = 1;
-	sv_clean_objs(); /* and now curse the rest */
+	sv_clean_objs();         /* and now curse the rest */
 	PL_sv_objcount = 0;
     }
+
     PL_warnhook = NULL;
     PL_diehook = NULL;
     /* call exit list functions */
@@ -6802,6 +6804,14 @@ _EOT8
 #if defined(PERLIO_LAYERS)
     PerlIO_cleanup(aTHX);
 #endif
+
+    PL_stashcache = (HV*)&PL_sv_undef;
+    /* Silence strtab refcnt warnings during global destruction */
+    Zero(HvARRAY(PL_strtab), HvMAX(PL_strtab), HE*);
+    /* NULL the HEK "dfs" */
+    PL_registered_mros = (HV*)&PL_sv_undef;
+    CopHINTHASH_set(&PL_compiling, NULL);
+
     return 0;
 }
 _EOT9
@@ -6879,6 +6889,14 @@ _EOT7
               sva, sva+SvREFCNT(sva), (long)SvREFCNT(sva));
         }
     }
+
+    PL_stashcache = (HV*)&PL_sv_undef;
+    /* Silence strtab refcnt warnings during global destruction */
+    Zero(HvARRAY(PL_strtab), HvMAX(PL_strtab), HE*);
+    /* NULL the HEK "dfs" */
+    PL_registered_mros = (HV*)&PL_sv_undef;
+    CopHINTHASH_set(&PL_compiling, NULL);
+
     return perl_destruct( my_perl );
 #else
     perl_destruct( my_perl );
