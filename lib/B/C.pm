@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '5.022006';
+our $VERSION = '5.022007';
 
 our $check;
 
@@ -826,7 +826,8 @@ sub walksymtable {
         # we want these symbols to be saved last to avoid incomplete saves
         # +/- reverse is to defer + - to fix Tie::Hash::NamedCapturespecial cases. GH #247
         # _loose_name redefined from utf8_heavy.pl
-        foreach my $v (qw{- + utf8:: bytes::}) {
+        # re can be loaded by utf8_heavy
+        foreach my $v (qw{- + re:: utf8:: bytes::}) {
             $a eq $v and return 1;
             $b eq $v and return -1;
         }
@@ -834,7 +835,6 @@ sub walksymtable {
         # reverse order for now to preserve original behavior before improved patch
         $b cmp $a
     } keys %$symref;
-
     # reverse is to defer + - to fix Tie::Hash::NamedCapturespecial cases. GH #247
     foreach my $sym (@list) {
         no strict 'refs';
