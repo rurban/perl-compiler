@@ -8,6 +8,7 @@
 ^dprove
 ^lib/B/C/Flags\.pm
 ^lib/B/Asmdata\.pm
+^pm_to_blib
 ^README.alpha
 ^setup.cpanel
 \.tmp~$

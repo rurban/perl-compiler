@@ -749,6 +749,7 @@ t/v5.22.0/C-COMPILED/xtestc/0125.t
 t/v5.22.0/C-COMPILED/xtestc/0130.t
 t/v5.22.0/C-COMPILED/xtestc/0131.t
 t/v5.22.0/C-COMPILED/xtestc/0135.t
+t/v5.22.0/C-COMPILED/xtestc/0137.t
 t/v5.22.0/C-COMPILED/xtestc/0138.t
 t/v5.22.0/C-COMPILED/xtestc/0140.t
 t/v5.22.0/C-COMPILED/xtestc/0141.t
@@ -909,6 +910,9 @@ t/v5.22.0/C-COMPILED/xtestc/0342.t
 t/v5.22.0/C-COMPILED/xtestc/0345.t
 t/v5.22.0/C-COMPILED/xtestc/0348.t
 t/v5.22.0/C-COMPILED/xtestc/0350.t
+t/v5.22.0/C-COMPILED/xtestc/0351.t
+t/v5.22.0/C-COMPILED/xtestc/0352.t
+t/v5.22.0/C-COMPILED/xtestc/0354.t
 t/v5.22.0/C-COMPILED/xtestc/0365.t
 t/v5.22.0/C-COMPILED/xtestc/0368.t
 t/v5.22.0/C-COMPILED/xtestc/0369.t
