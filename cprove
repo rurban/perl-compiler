@@ -18,6 +18,9 @@ sub run {
 
     return usage() if !scalar @args || grep { $_ =~ qr{^-+h(elp)?$} } @args;
 
+    # need to run with . in INC
+    $ENV{PERL_USE_UNSAFE_INC} = 1;
+
     #$run_compile_version = grep { qr{^-+c(ompiled)?$} } @args;
     my $run_compile_version = !grep { $_ =~ qr{^-+u(ncompiled)?$} } @args;
     my @args                = grep  { $_ !~ qr{^-+u(ncompiled)?$} } @args;
@@ -37,6 +40,12 @@ sub run {
         push @args, load_new_error_tests();
         @args = grep { $_ !~ qr{^-+(git|new)$} } @args;
     }
+
+    if ( grep { $_ eq '--all' } @args ) {
+        exec($^X, $0, '-j10', glob q{t/v5.22.*/C-COMPILED/*/*.t});
+        die "Exec error: $!"; # should never be reached
+    }
+
     my $restart = sub {
         my $cwd        = cwd();
         my $no_restart = !$saving_state;
@@ -141,6 +150,10 @@ sub usage {
 # run the compiled version
 > cprove -j4 t/v5.22.0/t/*.t
 > cprove t/v5.22.0/C-COMPILED/op/my.t
+
+# run everything in parallel
+> cprove --all
+> cprove -j10 t/v5.22.*/C-COMPILED/*/*.t
 
 # run the uncompiled version
 > cprove -u -j4 t/v5.22.0/t/*.t
