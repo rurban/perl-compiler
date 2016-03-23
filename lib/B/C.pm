@@ -7510,8 +7510,20 @@ sub walksymtable {
   my ($symref, $method, $recurse, $prefix) = @_;
   my ($sym, $ref, $fullname);
   $prefix = '' unless defined $prefix;
-  # reverse is to defer + - to fix Tie::Hash::NamedCapturespecial cases. GH #247
-  foreach my $sym ( reverse sort keys %$symref ) {
+
+  my @list = sort {
+    # we want these symbols to be saved last to avoid incomplete saves
+    # +/- reverse is to defer + - to fix Tie::Hash::NamedCapturespecial cases. GH #247
+    # _loose_name redefined from utf8_heavy.pl GH #364
+    foreach my $v (qw{- + utf8:: bytes::}) {
+        $a eq $v and return 1;
+        $b eq $v and return -1;
+    }
+    # reverse order for now to preserve original behavior before improved patch
+    $b cmp $a
+  } keys %$symref;
+
+  foreach my $sym ( @list ) {
     no strict 'refs';
     $ref = $symref->{$sym};
     $fullname = "*main::".$prefix.$sym;
