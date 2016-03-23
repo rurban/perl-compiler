@@ -59,6 +59,8 @@ op/override.t                COMPAT    crazy test which override CORE::GLOBAL::r
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
+op/reset.t                   TESTS     Test results:
+op/sprintf.t                 TESTS     Test results:
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
@@ -114,7 +116,6 @@ xtestc/0230.t                TESTS     Output is: "\n"
 xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
-xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6177: Perl sv ..."
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
@@ -137,9 +138,11 @@ xtestc/0319.t                TESTS     Output is: "Wide character in print at ..
 xtestc/0321.t                TESTS     Output is: ""
 xtestc/0329.t                TESTS     Output is: "axxxx \n"
 xtestc/0350.t                TESTS     Output is: ""
+xtestc/0368.t                TESTS     Output is: ""
 xtestc/0369.t                TESTS     Output is: ""
 xtestc/0371.t                TESTS     Output is: ""
 xtestc/0374.t                BC        xtestc/0374.c is generated (-O3,-fno-fold)
+xtestc/1960.t                TESTS     Output is: ""
 xtestc/2052.t                TESTS     Output is: ""
 xtestc/2201.t                TESTS     Output is: ""
 xtestc/2381.t                TESTS     Output is: "Undefined subroutine ..."
