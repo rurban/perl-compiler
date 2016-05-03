@@ -4,7 +4,7 @@ use strict;
 
 use B qw/SVf_ROK SVf_IOK SVp_IOK SVf_IVisUV/;
 use B::C::Config;
-use B::C::File qw/svsect xpvivsect/;
+use B::C::File qw/init svsect xpvivsect/;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -33,17 +33,15 @@ sub save {
         }
     }
 
-    xpvivsect()->comment("stash, magic, cur, len, xiv_u");
-    xpvivsect()->add( sprintf( "Nullhv, {0}, 0, {0}, {%s}", $ivx ) );
-
-    svsect()->add( sprintf( '&xpviv_list[%d], %lu, 0x%x, {.svu_pv=NULL}', xpvivsect()->index, $sv->REFCNT, $svflags ) );
+   svsect()->add(sprintf( "NULL, %lu, 0x%x, {.svu_iv=%s}", $sv->REFCNT, $svflags, $ivx ));
+   init()->add(sprintf( "sv_list[%d].sv_any = (char*)&sv_list[%d] - %d;", $i, $i, 2 * $B::C::Flags::Config{ptrsize} ));
 
     svsect()->debug( $fullname, $sv );
     debug(
         sv => "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
-        $sv->IVX, xpvivsect()->index, svsect()->index, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(0) )[2] ] }
+        $sv->IVX, xpvivsect()->index, $i, @{ [ ( caller(1) )[3] ] }, @{ [ ( caller(0) )[2] ] }
     );
-    savesym( $sv, sprintf( "&sv_list[%d]", svsect()->index ) );
+    savesym( $sv, sprintf( "&sv_list[%d]", $i ) );
 }
 
 1;
