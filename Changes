@@ -3,11 +3,13 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.55 2016-03-?? rurban
+1.55 2016-05-?? rurban
+        Support 5.24 and 5.24c
         * C: Remove hash argument from share_hek, always rehash.
         Work on PERL_DESTRUCT_LEVEL=2 Unbalanced string table refcount issues.
         Fix for CVf_CONST CVs with cperl (constant::import)
         Replace %Lu with %lu/%u
+        Fix for shared xpviv with 5.24. This asserts now if unshared.
         * perlcc/cc_harness/TestBC: many more PERL_CORE fixes, to workaround
           broken ExtUtils::Embed::ldopts
         * tests: skip perlcc with -m32 cross and PERL_CORE. Can only work reliable

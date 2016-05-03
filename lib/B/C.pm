@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_02';
+our $VERSION = '1.54_03';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -527,6 +527,7 @@ my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount, AvSTATIC, sigs
 my $CPERL51  = ( $Config{usecperl} );
+my $PERL524  = ( $] >= 5.023005 ); #xpviv sharing assertion
 my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
@@ -2682,19 +2683,20 @@ sub B::UV::save {
   my $uvuformat = $Config{uvuformat};
   $uvuformat =~ s/["\0]//g; #" poor editor
   $uvuformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
+  my $uvx = $sv->UVX;
   if ($PERL514) {
     # issue 145 warn $sv->UVX, " ", sprintf($u32fmt, $sv->UVX);
     $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
-    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $uvx ) );
   } elsif ($PERL510) {
     $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
-    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%".$uvuformat."U}", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%".$uvuformat."U}", $uvx ) );
   } else {
     $xpvivsect->comment( "pv, cur, len, uv" );
-    $xpvuvsect->add( sprintf( "0, 0, 0, %".$uvuformat."U", $sv->UVX ) );
+    $xpvuvsect->add( sprintf( "0, 0, 0, %".$uvuformat."U", $uvx ) );
   }
   $svsect->add(
-    sprintf( "&xpvuv_list[%d], $u32fmt, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
+    sprintf( "&xpvuv_list[%d], $u32fmt, 0x%x".($PERL510?', {'.($C99?".svu_uv=":"").$uvx.'}':''),
              $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS
     )
   );
@@ -2726,7 +2728,9 @@ sub B::IV::save {
       warn sprintf("Internal warning: IV !IOK $fullname sv_list[$i] 0x%x\n",$svflags);
     }
   }
-  if ($PERL514) {
+  if ($PERL524) {
+    # since 5.24 we need to point the xpviv to the head
+  } elsif ($PERL514) {
     $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
     $xpvivsect->add( sprintf( "Nullhv, {0}, 0, 0, {%s}", $ivx ) );
   } elsif ($PERL510) {
@@ -2736,14 +2740,20 @@ sub B::IV::save {
     $xpvivsect->comment( "pv, cur, len, iv" );
     $xpvivsect->add( sprintf( "0, 0, 0, %s", $ivx ) );
   }
-  $svsect->add(
-    sprintf( "&xpviv_list[%d], $u32fmt, 0x%x".($PERL510?', {'.($C99?".svu_pv=":"").'NULL}':''),
-             $xpvivsect->index, $sv->REFCNT, $svflags ));
+  if ($PERL524) {
+    $svsect->add(sprintf( "NULL, $u32fmt, 0x%x, {".($C99?".svu_iv=":"").$ivx.'}',
+                          $sv->REFCNT, $svflags ));
+    $init->add(sprintf( "sv_list[%d].sv_any = (char*)&sv_list[%d] - %d;", $i, $i,
+                        2*$Config{ptrsize}));
+  } else {
+    $svsect->add(sprintf( "&xpviv_list[%d], $u32fmt, 0x%x".($PERL510?', {'.($C99?".svu_iv=":"").$ivx.'}':''),
+                          $xpvivsect->index, $sv->REFCNT, $svflags ));
+  }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   warn sprintf( "Saving IV 0x%x to xpviv_list[%d], sv_list[%d], called from %s:%s\n",
-    $sv->IVX, $xpvivsect->index, $svsect->index, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
+    $sv->IVX, $xpvivsect->index, $i, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
     if $debug{sv};
-  savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  savesym( $sv, sprintf( "&sv_list[%d]", $i ) );
 }
 
 sub B::NV::save {
@@ -6980,10 +6990,6 @@ _EOT7
     }
     if (destruct_level >= 1) {
         const I32 max = HvMAX(PL_strtab);
-#if 0
-        Zero(HvARRAY(PL_strtab), max, HE*);
-        /*memset(HvARRAY(PL_strtab), 0, max * sizeof(HE*));*/
-#else
 	HE * const * const array = HvARRAY(PL_strtab);
 	I32 riter = 0;
 	HE *hent = array[0];
@@ -7002,11 +7008,10 @@ _EOT7
 		hent = array[riter];
 	    }
         }
-#endif
+        /* Silence strtab refcnt warnings during global destruction */
         Zero(HvARRAY(PL_strtab), max, HE*);
         /* NULL the HEK "dfs" */
         PL_registered_mros = (HV*)&PL_sv_undef;
-        PL_stashcache = (HV*)&PL_sv_undef;
         CopHINTHASH_set(&PL_compiling, NULL);
     }
 
@@ -7022,13 +7027,6 @@ _EOT7
               sva, sva+SvREFCNT(sva), (long)SvREFCNT(sva));
         }
     }
-
-    PL_stashcache = (HV*)&PL_sv_undef;
-    /* Silence strtab refcnt warnings during global destruction */
-    Zero(HvARRAY(PL_strtab), HvMAX(PL_strtab), HE*);
-    /* NULL the HEK "dfs" */
-    PL_registered_mros = (HV*)&PL_sv_undef;
-    CopHINTHASH_set(&PL_compiling, NULL);
 
     return perl_destruct( my_perl );
 #else
