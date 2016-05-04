@@ -39,9 +39,8 @@ sub save {
 
         verbose("enabling -ffold with ucfirst");
         require "utf8.pm" unless $B::C::savINC{"utf8.pm"};
-        require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
         B::C::mark_package("utf8");
-        B::C::mark_package("utf8_heavy.pl");
+        B::C::load_utf8_heavy();
 
     }
     if ( ref($op) eq 'B::OP' ) {    # check wrong BASEOPs

@@ -267,11 +267,7 @@ sub save {
 
     # fixme: interesting have a look at it
     if ( $fullname eq 'utf8::SWASHNEW' ) {    # bypass utf8::AUTOLOAD, a new 5.13.9 mess
-        require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};
-
-        # sub utf8::AUTOLOAD {}; # How to ignore &utf8::AUTOLOAD with Carp? The symbol table is
-        # already polluted. See issue 61 and force_heavy()
-        svref_2object( \&{"utf8\::SWASHNEW"} )->save;
+        B::C::load_utf8_heavy();
     }
 
     # fixme: can probably be removed
@@ -560,12 +556,12 @@ sub save {
       # stash magic cur len cvstash start root cvgv cvfile cvpadlist     outside outside_seq cvflags cvdepth
       (
         "Nullhv, {0}, %u, {%u}, %s, {%s}, {s\\_%x}, {%s}, %s, {%s}, (CV*)%s, %s, 0x%x, %d",
-        $cur,        $len, "Nullhv",    #CvSTASH later
+        $cur, $len, "Nullhv",    #CvSTASH later
         $startfield, $$root,
-        "0",                            #GV later
-        "NULL",                         #cvfile later (now a HEK)
+        "0",                     #GV later
+        "NULL",                  #cvfile later (now a HEK)
         $padlistsym,
-        $xcv_outside,                   #if main_cv set later
+        $xcv_outside,            #if main_cv set later
         get_integer_value( $cv->OUTSIDE_SEQ ),
         $CvFLAGS,
         $cv->DEPTH

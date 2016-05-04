@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '5.022007';
+our $VERSION = '5.022008';
 
 our $check;
 
@@ -748,6 +748,25 @@ sub try_isa {
     return 0;    # not found
 }
 
+sub load_utf8_heavy {
+    return if $savINC{"utf8_heavy.pl"};
+
+    require 'utf8_heavy.pl';
+    mark_package('utf8_heavy.pl');
+    $curINC{'utf8_heavy.pl'} = $INC{'utf8_heavy.pl'};
+    $savINC{"utf8_heavy.pl"} = 1;
+    add_hashINC("utf8");
+
+    # FIXME: we want to use add_hashINC for utf8_heavy, inc_packname should return an array
+    # add_hashINC("utf8_heavy.pl");
+
+    # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
+    # It adds about 1.6MB exe size 32-bit.
+    svref_2object( \&{"utf8\::SWASHNEW"} )->save;
+
+    return 1;
+}
+
 # If the sub or method is not found:
 # 1. try @ISA, mark_package and return.
 # 2. try UNIVERSAL::method
@@ -773,7 +792,9 @@ sub try_autoload {
     if ( $fullname eq 'utf8::SWASHNEW' ) {
 
         # utf8_heavy was loaded so far, so defer to a demand-loading stub
-        my $stub = sub { require 'utf8_heavy.pl' unless $savINC{"utf8_heavy.pl"}; goto &utf8::SWASHNEW; };
+        # always require utf8_heavy, do not care if it s already in
+        my $stub = sub { require 'utf8_heavy.pl'; goto &utf8::SWASHNEW };
+
         return svref_2object($stub);
     }
 
@@ -835,6 +856,7 @@ sub walksymtable {
         # reverse order for now to preserve original behavior before improved patch
         $b cmp $a
     } keys %$symref;
+
     # reverse is to defer + - to fix Tie::Hash::NamedCapturespecial cases. GH #247
     foreach my $sym (@list) {
         no strict 'refs';
@@ -1172,6 +1194,7 @@ sub inc_cleanup {
             push @deleted_inc, $p;
         }
     }
+
     if ( verbose() ) {
         debug( pkg => "Deleted from \%INC: " . join( " ", @deleted_inc ) ) if @deleted_inc;
         my @inc = grep !/auto\/.+\.(al|ix)$/, sort keys %INC;

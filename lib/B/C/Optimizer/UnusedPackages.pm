@@ -108,13 +108,7 @@ sub optimize {
       ) {
         require "utf8.pm" unless $B::C::savINC{"utf8.pm"};
         mark_package('utf8');
-        require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
-        mark_package('utf8_heavy.pl');
-
-        # In CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-        # It adds about 1.6MB exe size 32-bit.
-        svref_2object( \&{"utf8\::SWASHNEW"} )->save;
-        add_hashINC("utf8");
+        B::C::load_utf8_heavy();
     }
 
     # run-time Carp

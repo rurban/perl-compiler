@@ -101,8 +101,7 @@ sub save {
         if ( $pmflags & 4 ) {
 
             # Note: in CORE utf8::SWASHNEW is demand-loaded from utf8 with Perl_load_module()
-            require "utf8_heavy.pl" unless $B::C::savINC{"utf8_heavy.pl"};    # bypass AUTOLOAD
-            svref_2object( \&{"utf8\::SWASHNEW"} )->save;                     # for swash_init(), defined in lib/utf8_heavy.pl
+            B::C::load_utf8_heavy();
 
             my $swash_ToCf = B::HV::swash_ToCf_value();
             if ( !$swash_init and $swash_ToCf ) {
