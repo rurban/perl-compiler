@@ -56,10 +56,10 @@ op/magic.t                   TESTS     Test results:
 op/method.t                  PLAN      Plan was valid
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
+op/pack.t                    TESTS     Test results: error specific to 64 bits system
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
-op/reset.t                   TESTS     Test results:
 op/sprintf.t                 TESTS     Test results:
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
@@ -106,10 +106,8 @@ xtestc/0174.t                TESTS     Output is: "\C is deprecated in regex; ..
 xtestc/0175.t                TESTS     Output is: "ok\n"
 xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at ..."
 xtestc/0182.t                TESTS     Output is: "main::foo"
-xtestc/0188.t                TESTS     Output is: "01000"
 xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
-xtestc/0203.t                TESTS     Output is: ""
 xtestc/0207.t                TESTS     Output is: ""
 xtestc/0222.t                TESTS     Output is: "Can t find string terminator ..."
 xtestc/0226.t                TESTS     Output is: ""
