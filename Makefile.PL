@@ -194,9 +194,8 @@ WriteMakefile(
                        resources =>
                        {
                         license     => 'http://dev.perl.org/licenses/',
-                        homepage    => 'http://www.perl-compiler.org',
-                        bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
-                        repository  => 'http://perl-compiler.googlecode.com/',
+                        bugtracker  => 'https://github.com/rurban/perl-compiler/issues',
+                        repository  => 'https://github.com/rurban/perl-compiler',
                         MailingList => 'http://groups.google.com/group/perl-compiler',
                        },
                       }
