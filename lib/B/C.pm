@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_04';
+our $VERSION = '1.54_05';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -2377,9 +2377,9 @@ sub B::COP::save {
           #if (!$ITHREADS) {
           #  $init->add(sprintf("HEK_FLAGS(%s->refcounted_he_hek) |= HVhek_STATIC;", $cophh));
           #}
-          if ($PERL522 and !$ITHREADS) {
-            $init->add(sprintf("unshare_hek_hek(%s->refcounted_he_hek);", $cophh));
-          }
+          #if ($PERL522 and !$ITHREADS) { # breaks issue220
+          #  $init->add(sprintf("unshare_hek_hek(%s->refcounted_he_hek);", $cophh));
+          #}
           $i++;
         }
         $init->add(sprintf("CopHINTHASH_set(&cop_list[%d], %s);", $ix, $cophh));

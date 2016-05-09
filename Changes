@@ -6,6 +6,7 @@
 1.55 2016-05-?? rurban
         Support 5.24 and 5.24c
         * C: handle cperl OP_SIGNATURE, at least the simple variants.
+        Fix refcount of cop hints hashes with 5.22-nt (#220)
 
 1.54_03 2016-05-09 rurban
         Released with cperl-5.22.2
