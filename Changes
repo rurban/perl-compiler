@@ -5,6 +5,9 @@
 
 1.55 2016-05-?? rurban
         Support 5.24 and 5.24c
+
+1.54_03 2016-05-09 rurban
+        Released with cperl-5.22.2
         * C: Remove hash argument from share_hek, always rehash.
         Work on PERL_DESTRUCT_LEVEL=2 Unbalanced string table refcount issues.
         Fix for CVf_CONST CVs with cperl (constant::import)
