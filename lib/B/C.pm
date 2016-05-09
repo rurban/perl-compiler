@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_03';
+our $VERSION = '1.54_04';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -1657,7 +1657,9 @@ sub B::UNOP_AUX::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $level = 0 unless $level;
-  my @aux_list = $op->aux_list_thr; # GH#283, GH#341
+  my @aux_list = $op->name eq 'multideref'
+    ? $op->aux_list_thr # GH#283, GH#341
+    : $op->aux_list;
   my $auxlen = scalar @aux_list;
   $unopauxsect->comment("$opsect_common, first, aux");
   my $ix = $unopauxsect->index + 1;
@@ -1667,14 +1669,14 @@ sub B::UNOP_AUX::save {
   $unopauxsect->debug( $op->name, $op->flagspv ) if $debug{flags};
   # This cannot be a section, as the number of elements is variable
   my $i = 1;
-  my $s = "Static UNOP_AUX_item unopaux_item".$ix."[] = {\n\t"
+  my $s = "Static UNOP_AUX_item unopaux_item".$ix."[] = { /* ".$op->name." */\n\t"
     .($C99?"{.uv=$auxlen}":$auxlen). " \t/* length prefix */\n";
   my $action = 0;
   for my $item (@aux_list) {
     unless (ref $item) {
-      # symbolize MDEREF action
+      # symbolize MDEREF action. TODO: SIGNATURE
       my $cmt = 'action';
-      if ($verbose) {
+      if ($verbose and $op->name eq 'multideref') {
         my $act = $item & 0xf;  # MDEREF_ACTION_MASK
         $cmt = 'AV_pop_rv2av_aelem' 		if $act == 1;
         $cmt = 'AV_gvsv_vivify_rv2av_aelem' 	if $act == 2;
@@ -2684,27 +2686,38 @@ sub B::UV::save {
   $uvuformat =~ s/["\0]//g; #" poor editor
   $uvuformat =~ s/".$/"/;  # cperl bug 5.22.2 #61
   my $uvx = $sv->UVX;
-  if ($PERL514) {
+  my $suff = 'U';
+  $suff .= 'L' if $uvx > 2147483647;
+  my $i = $svsect->index + 1;
+  if ($PERL524) {
+    # since 5.24 we need to point the xpvuv to the head
+  } elsif ($PERL514) {
     # issue 145 warn $sv->UVX, " ", sprintf($u32fmt, $sv->UVX);
-    $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
-    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."U}", $uvx ) );
+    $xpvuvsect->comment( "stash, magic, cur, len, xuv_u" );
+    $xpvuvsect->add( sprintf( "Nullhv, {0}, 0, 0, {%".$uvuformat."$suff}", $uvx ) );
   } elsif ($PERL510) {
-    $xpvivsect->comment( "stash, magic, cur, len, xiv_u" );
-    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%".$uvuformat."U}", $uvx ) );
+    $xpvuvsect->comment( "stash, magic, cur, len, xuv_u" );
+    $xpvuvsect->add( sprintf( "{0}, 0, 0, {%".$uvuformat."$suff}", $uvx ) );
   } else {
-    $xpvivsect->comment( "pv, cur, len, uv" );
-    $xpvuvsect->add( sprintf( "0, 0, 0, %".$uvuformat."U", $uvx ) );
+    $xpvuvsect->comment( "pv, cur, len, uv" );
+    $xpvuvsect->add( sprintf( "0, 0, 0, %".$uvuformat.$suff, $uvx ) );
   }
-  $svsect->add(
-    sprintf( "&xpvuv_list[%d], $u32fmt, 0x%x".($PERL510?', {'.($C99?".svu_uv=":"").$uvx.'}':''),
-             $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS
-    )
-  );
+  if ($PERL524) {
+    $svsect->add(sprintf( "NULL, $u32fmt, 0x%x".
+                          ($PERL510?', {'.($C99?".svu_uv=":"").$uvx."$suff}":''),
+                          $sv->REFCNT, $sv->FLAGS));
+    $init->add(sprintf( "sv_list[%d].sv_any = (char*)&sv_list[%d] - %d;", $i, $i,
+                        2*$Config{ptrsize}));
+  } else {
+    $svsect->add(sprintf( "&xpvuv_list[%d], $u32fmt, 0x%x".
+                          ($PERL510?', {'.($C99?".svu_uv=":"").$uvx."$suff}":''),
+             $xpvuvsect->index, $sv->REFCNT, $sv->FLAGS));
+  }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   warn sprintf( "Saving IV(UV) 0x%x to xpvuv_list[%d], sv_list[%d], called from %s:%s\n",
-    $sv->UVX, $xpvuvsect->index, $svsect->index, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
+    $sv->UVX, $xpvuvsect->index, $i, @{[(caller(1))[3]]}, @{[(caller(0))[2]]} )
     if $debug{sv};
-  savesym( $sv, sprintf( "&sv_list[%d]", $svsect->index ) );
+  savesym( $sv, sprintf( "&sv_list[%d]", $i ) );
 }
 
 sub B::IV::save {
@@ -7277,17 +7290,7 @@ _EOT9
               printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile);
             }
 	  }
-          # TODO Google #364: If a VERSION was provided need to add it here.
-          # Only fails with dev versions, like Socket 2.021_01 now.
-          # The best fix is to make XS_VERSION visible, via use vars (global),
-          # or our (in stash), but not via my. Fixing it up in the compiler is too hard,
-          # We would need to search for XS_VERSION in the main_cv padnames, check
-          # for _ and push it.
-          # E.g.
-          #   our $VERSION = '2.021_01';
-          #   our $XS_VERSION = $VERSION;   # A dev xs version needs to be global, not my
-          #   $VERSION = eval $VERSION;
-          print "\tPUTBACK;\n";
+	  print "\tPUTBACK;\n";
 	  warn "bootstrapping $stashname added to XSLoader dl_init\n" if $verbose;
 	  # XSLoader has the 2nd insanest API in whole Perl, right after make_warnings_object()
 	  # 5.15.3 workaround for [perl #101336]

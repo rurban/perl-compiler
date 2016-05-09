@@ -5,6 +5,7 @@
 
 1.55 2016-05-?? rurban
         Support 5.24 and 5.24c
+        * C: handle cperl OP_SIGNATURE, at least the simple variants.
 
 1.54_03 2016-05-09 rurban
         Released with cperl-5.22.2
