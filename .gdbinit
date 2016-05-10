@@ -15,7 +15,7 @@ b malloc_error_break
 #command
 #p PL_compiling
 #end
-b Perl_ckwarn_d
+#b Perl_ckwarn_d
 
 #b Perl_pp_const
 #command
