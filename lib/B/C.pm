@@ -6950,8 +6950,8 @@ _EOT8
     /* NULL the HEK "dfs" */
 #if PERL_VERSION > 10
     PL_registered_mros = (HV*)&PL_sv_undef;
-#endif
     CopHINTHASH_set(&PL_compiling, NULL);
+#endif
 
     return 0;
 }
@@ -7053,8 +7053,10 @@ _EOT7
         /* Silence strtab refcnt warnings during global destruction */
         Zero(HvARRAY(PL_strtab), max, HE*);
         /* NULL the HEK "dfs" */
+#if PERL_VERSION > 10
         PL_registered_mros = (HV*)&PL_sv_undef;
         CopHINTHASH_set(&PL_compiling, NULL);
+#endif
     }
 
     /* B::C specific: prepend static svs to arena for sv_clean_objs */

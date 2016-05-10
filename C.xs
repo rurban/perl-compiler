@@ -434,7 +434,7 @@ aux_list_thr(o)
                 XSRETURN(len);
 
             } /* OP_MULTIDEREF */
-
+#if PERL_VERSION > 23 && defined(USE_CPERL)
         case OP_SIGNATURE:
             {
                 UNOP_AUX_item *items = cUNOP_AUXo->op_aux;
@@ -496,6 +496,7 @@ aux_list_thr(o)
                 XSRETURN(len);
 
             } /* OP_SIGNATURE */
+#endif
         } /* switch */
 
 #endif
