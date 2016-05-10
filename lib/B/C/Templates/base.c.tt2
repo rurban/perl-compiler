@@ -681,7 +681,6 @@ dl_init(pTHX)
     mXPUSHp("[% stashfile %]", [% stashfile.length %]);
         [% END %]
     PUTBACK;
-/* TODO #364: if a VERSION was provided need to add it here */
     call_pv("XSLoader::load_file", G_VOID|G_DISCARD);
       [% END %]
 #else

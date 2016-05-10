@@ -7,7 +7,7 @@ use B::C::Config;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/get_integer_value get_double_value/;
+our @EXPORT_OK = qw/get_integer_value get_double_value u32fmt/;
 
 my $POW    = ( $B::C::Flags::Config{ivsize} * 4 - 1 );    # poor editor
 my $INTMAX = ( 1 << $POW ) - 1;
@@ -41,6 +41,11 @@ sub get_integer_value ($) {
     }
     $sval = '0' if $sval =~ /(NAN|inf)$/i;
     return $sval;
+}
+
+my $u32fmt = $B::C::Flags::Config{ivsize} == 4 ? "%lu" : "%u";
+sub u32fmt {
+    return $u32fmt;
 }
 
 # protect from warning: floating constant exceeds range of ‘double’ [-Woverflow]

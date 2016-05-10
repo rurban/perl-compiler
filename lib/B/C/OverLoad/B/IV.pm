@@ -33,8 +33,20 @@ sub save {
         }
     }
 
-   svsect()->add(sprintf( "NULL, %lu, 0x%x, {.svu_iv=%s}", $sv->REFCNT, $svflags, $ivx ));
-   init()->add(sprintf( "sv_list[%d].sv_any = (char*)&sv_list[%d] - %d;", $i, $i, 2 * $B::C::Flags::Config{ptrsize} ));
+    svsect()->add( sprintf( "NULL, %lu, 0x%x, {.svu_iv=%s}", $sv->REFCNT, $svflags, $ivx ) );
+
+    #32bit  - sizeof(void*), 64bit: - 2*ptrsize
+    if ( $B::C::Flags::Config{ptrsize} == 4 ) {
+        init()->add( sprintf( "sv_list[%d].sv_any = (void*)&sv_list[%d] - sizeof(void*);", $i, $i ) );
+    }
+    else {
+        init()->add(
+            sprintf(
+                "sv_list[%d].sv_any = (char*)&sv_list[%d] - %d;", $i, $i,
+                2 * $B::C::Flags::Config{ptrsize}
+            )
+        );
+    }
 
     svsect()->debug( $fullname, $sv );
     debug(

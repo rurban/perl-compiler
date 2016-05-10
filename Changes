@@ -3,7 +3,31 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.54 2015-12-?? rurban
+1.55 2016-05-?? rurban
+        Support 5.24 and 5.24c
+        * C: handle cperl OP_SIGNATURE
+        Fix refcount of cop hints hashes with 5.22-nt (#220)
+        Add missing B::FAKEOP::rettype for cperl-5.24, causing SEGV on B::CC
+        Fix various compiler warnings in ByteLoader
+        Fix bytecode.pl call in cperl core.
+
+1.54_03 2016-05-09 rurban
+        Released with cperl-5.22.2
+        * C: Remove hash argument from share_hek, always rehash.
+        Work on PERL_DESTRUCT_LEVEL=2 Unbalanced string table refcount issues.
+        Fix for CVf_CONST CVs with cperl (constant::import)
+        Replace %Lu with %lu/%u
+        Fix for shared xpviv with 5.24. This asserts now if unshared.
+        * perlcc/cc_harness/TestBC: many more PERL_CORE fixes, to workaround
+          broken ExtUtils::Embed::ldopts
+        * tests: skip perlcc with -m32 cross and PERL_CORE. Can only work reliable
+          on individual CPAN setups, but not with CORE smoking. Blame Configure
+        Replace test.pl with TestBC.pm. Blame core harness
+
+1.54 2016-02-26 rurban
+        cperl fixes and 5.22 memory improvements. cperl now also supported,
+        even included CORE, but ByteLoader still broken.
+
         * C: Fix defined for RV since 5.20 and ithreads (#354)
         Fix anon functions in INIT block (#352) (atoomic)
           and more const CV fixes.

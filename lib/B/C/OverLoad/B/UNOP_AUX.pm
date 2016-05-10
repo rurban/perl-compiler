@@ -15,7 +15,7 @@ sub save {
 
     $level ||= 0;
 
-    my @aux_list = $op->aux_list_thr;
+    my @aux_list = $op->name eq 'multideref' ? $op->aux_list_thr : $op->aux_list; # GH#283, GH#341
     my $auxlen   = scalar @aux_list;
 
     unopauxsect()->comment_common("first, aux");
@@ -34,27 +34,54 @@ sub save {
             # symbolize MDEREF action
             my $cmt = 'action';
             if ( verbose() ) {
-                my $act = $item & 0xf;    # MDEREF_ACTION_MASK
-                $cmt = 'AV_pop_rv2av_aelem'          if $act == 1;
-                $cmt = 'AV_gvsv_vivify_rv2av_aelem'  if $act == 2;
-                $cmt = 'AV_padsv_vivify_rv2av_aelem' if $act == 3;
-                $cmt = 'AV_vivify_rv2av_aelem'       if $act == 4;
-                $cmt = 'AV_padav_aelem'              if $act == 5;
-                $cmt = 'AV_gvav_aelem'               if $act == 6;
-                $cmt = 'HV_pop_rv2hv_helem'          if $act == 8;
-                $cmt = 'HV_gvsv_vivify_rv2hv_helem'  if $act == 9;
-                $cmt = 'HV_padsv_vivify_rv2hv_helem' if $act == 10;
-                $cmt = 'HV_vivify_rv2hv_helem'       if $act == 11;
-                $cmt = 'HV_padhv_helem'              if $act == 12;
-                $cmt = 'HV_gvhv_helem'               if $act == 13;
-                my $idx = $item & 0x30;    # MDEREF_INDEX_MASK
-                $cmt .= ''             if $idx == 0x0;
-                $cmt .= ' INDEX_const' if $idx == 0x10;
-                $cmt .= ' INDEX_padsv' if $idx == 0x20;
-                $cmt .= ' INDEX_gvsv'  if $idx == 0x30;
+                if ( $op->name eq 'multideref' ) {
+                    my $act = $item & 0xf;    # MDEREF_ACTION_MASK
+                    $cmt = 'AV_pop_rv2av_aelem'          if $act == 1;
+                    $cmt = 'AV_gvsv_vivify_rv2av_aelem'  if $act == 2;
+                    $cmt = 'AV_padsv_vivify_rv2av_aelem' if $act == 3;
+                    $cmt = 'AV_vivify_rv2av_aelem'       if $act == 4;
+                    $cmt = 'AV_padav_aelem'              if $act == 5;
+                    $cmt = 'AV_gvav_aelem'               if $act == 6;
+                    $cmt = 'HV_pop_rv2hv_helem'          if $act == 8;
+                    $cmt = 'HV_gvsv_vivify_rv2hv_helem'  if $act == 9;
+                    $cmt = 'HV_padsv_vivify_rv2hv_helem' if $act == 10;
+                    $cmt = 'HV_vivify_rv2hv_helem'       if $act == 11;
+                    $cmt = 'HV_padhv_helem'              if $act == 12;
+                    $cmt = 'HV_gvhv_helem'               if $act == 13;
+                    my $idx = $item & 0x30;    # MDEREF_INDEX_MASK
+                    $cmt .= ''             if $idx == 0x0;
+                    $cmt .= ' INDEX_const' if $idx == 0x10;
+                    $cmt .= ' INDEX_padsv' if $idx == 0x20;
+                    $cmt .= ' INDEX_gvsv'  if $idx == 0x30;
+                }
+                elsif ( $op->name eq 'signature' ) { # cperl only for now
+                    my $act = $item & 0xf;     # SIGNATURE_ACTION_MASK
+                    $cmt = 'reload'            if $act == 0;
+                    $cmt = 'end'               if $act == 1;
+                    $cmt = 'padintro'          if $act == 2;
+                    $cmt = 'arg'               if $act == 3;
+                    $cmt = 'arg_default_none'  if $act == 4;
+                    $cmt = 'arg_default_undef' if $act == 5;
+                    $cmt = 'arg_default_0'     if $act == 6;
+                    $cmt = 'arg_default_1'     if $act == 7;
+                    $cmt = 'arg_default_iv'    if $act == 8;
+                    $cmt = 'arg_default_const' if $act == 9;
+                    $cmt = 'arg_default_padsv' if $act == 10;
+                    $cmt = 'arg_default_gvsv'  if $act == 11;
+                    $cmt = 'arg_default_op'    if $act == 12;
+                    $cmt = 'array'             if $act == 13;
+                    $cmt = 'hash'              if $act == 14;
+                    my $idx = $item & 0x3F;    # SIGNATURE_MASK
+                    $cmt .= ''           if $idx == 0x0;
+                    $cmt .= ' flag skip' if $idx == 0x10;
+                    $cmt .= ' flag ref'  if $idx == 0x20;
+                }
+                else {
+                    die "Unknown UNOP_AUX op {$op->name}";
+                }
             }
             $action = $item;
-            debug( hv => "mderef action $action $cmt" );
+            debug( hv => $op->name . " action $action $cmt" );
             $s .= sprintf( "\t,{.uv=0x%x} \t/* %s: %u */\n", $item, $cmt, $item );
 
         }
