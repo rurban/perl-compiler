@@ -727,10 +727,16 @@ sub run_cc_test {
 	$command .= $B::C::Config::extra_libs;
         my $NULL = $^O eq 'MSWin32' ? '' : '2>/dev/null';
         my $cmdline = "$Config{cc} $command $NULL";
-        if ($Config{cc} eq 'cl') {
+        if ($^O eq 'MSWin32' and $Config{cc} eq 'cl') {
             $cmdline = "$Config{ld} $linkargs -out:$exe $obj[0] $command";
         }
 	diag ($cmdline) if $ENV{TEST_VERBOSE} and $ENV{TEST_VERBOSE} == 2;
+        if ($^O =~ /^(MSWin32|hpux)/ and $ENV{PERL_CORE}) {
+            # mingw with gcc and cygwin should work, but not tested.
+            # TODO: msvc throws linker errors. need to use link, not cl.
+            print "ok $cnt # skip $^O not yet ready\n";
+            return 1;
+        }
         run_cmd($cmdline, 20);
         unless (-e $exe) {
             print "not ok $cnt $todo failed $cmdline\n";
@@ -786,9 +792,19 @@ sub prepare_c_tests {
             print "1..0 # Skip -- Perl configured without B module\n";
             exit 0;
         }
+        if ($^O eq 'MSWin32' and $ENV{PERL_CORE}) {
+            print "1..0 # Skip -- MSWin not yet ready\n";
+            exit 0;
+        }
         # with 5.10 and 5.8.9 PERL_COPY_ON_WRITE was renamed to PERL_OLD_COPY_ON_WRITE
         if ($Config{ccflags} =~ /-DPERL_OLD_COPY_ON_WRITE/) {
-            print "1..0 # skip - no OLD COW for now\n";
+            print "1..0 # Skip -- no OLD COW for now\n";
+            exit 0;
+        }
+        if ($ENV{PERL_CORE}
+            and -f File::Spec->catfile($Config::Config{'sitearch'}, "Opcodes.pm"))
+        {
+            print "1..0 # Skip -- <sitearch>/Opcodes.pm installed. Possible XS conflict\n";
             exit 0;
         }
     }
@@ -900,6 +916,10 @@ sub plctest {
 
     if ($] > 5.021006 and !$B::C::Config::have_byteloader) {
         ok(1, "SKIP perl5.22 broke ByteLoader");
+        return 1;
+    }
+    if ($^O eq 'MSWin32' and $ENV{PERL_CORE}) {
+        ok(1, "SKIP MSWin not yet ready");
         return 1;
     }
     my $name = $base."_$num";
@@ -1123,7 +1143,7 @@ sub todo_tests_default {
 	#push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
         push @todo, (12,19) if $] >= 5.019; # XXX had 25 also
-        push @todo, (25)    if $] >= 5.021006; # wrong sort
+        push @todo, (25)    if $] >= 5.021006;
 	push @todo, (29)    if $] >= 5.021006 and $what eq 'cc_o1';
 	push @todo, (24,29) if $] >= 5.021006 and $what eq 'cc_o2';
         push @todo, (103)   if ($Config{usecperl} and $ITHREADS);
