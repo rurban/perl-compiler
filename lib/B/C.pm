@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '5.022008';
+our $VERSION = '5.022009';
 
 our $check;
 
@@ -841,6 +841,9 @@ sub walksymtable {
     my ( $symref, $method, $recurse, $prefix ) = @_;
     my ( $sym, $ref, $fullname );
     $prefix = '' unless defined $prefix;
+
+    # If load_utf8_heavy doesn't happen before we walk utf8:: (when utf8_heavy has already been called) then the stored CV for utf8::SWASHNEW could be wrong.
+    load_utf8_heavy() if ( $prefix eq 'utf8::' && defined $symref->{'SWASHNEW'} );
 
     my @list = sort {
 
