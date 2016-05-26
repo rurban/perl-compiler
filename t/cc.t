@@ -2,11 +2,11 @@
 # better use testcc.sh for debugging
 BEGIN {
   if ($ENV{PERL_CORE}) {
-    @INC = ('t', '../../lib');
+    unshift @INC, ('t', '../../lib');
   } else {
-    unshift @INC, 't';
+    unshift @INC, 't', "blib/arch", "blib/lib";
   }
-  require TestBC;
+  require TestBC; # for run_perl()
 }
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
@@ -23,3 +23,4 @@ my @skip = (14,21,30,
            );
 
 run_c_tests("CC", \@todo, \@skip);
+#run_cc_test(105, 'CC', 'my $s=q{ok};END{print $s}END{$x = 0}', 'ok');

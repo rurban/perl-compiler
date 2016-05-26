@@ -6,7 +6,7 @@ BEGIN {
   #  exit;
   #}
   if ($ENV{PERL_CORE}) {
-    @INC = ('t', '../../lib');
+    unshift @INC, ('t', '../../lib');
   } else {
     unshift @INC, 't';
   }
