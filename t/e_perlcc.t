@@ -3,8 +3,38 @@
 # test most perlcc options
 
 use strict;
-use Test::More tests => 79;
 use Config;
+my @plan;
+use File::Spec;
+BEGIN {
+  @plan = (tests => 79);
+  if ($ENV{PERL_CORE}) {
+    #if ($Config{ccflags} =~ /-m32/ or $Config{cc} =~ / -m32/) {
+    #  @plan = (skip_all => "cc -m32 is not supported with PERL_CORE");
+    #}
+    if (-f File::Spec->catfile($Config{'sitearch'}, "Opcodes.pm")) {
+      @plan = (skip_all => '<sitearch>/Opcodes.pm installed. Possible XS conflict');
+    }
+    if (-f File::Spec->catfile($Config{'sitearch'}, "B", "Flags.pm")) {
+      @plan = (skip_all => '<sitearch>/B/Flags.pm installed. Possible XS conflict');
+    }
+    if ($^O eq 'MSWin32' and $Config{cc} eq 'cl.exe') {
+      @plan = (skip_all => 'B::C linkage not yet ready on MSWin32 MSVC');
+    }
+  }
+  if ($^O eq 'VMS') {
+    @plan = (skip_all => "B::C doesn't work on VMS");
+  }
+  if (($Config{'extensions'} !~ /\bB\b/) ) {
+    @plan = (skip_all => "Perl configured without B module");
+  }
+  # with 5.10 and 5.8.9 PERL_COPY_ON_WRITE was renamed to PERL_OLD_COPY_ON_WRITE
+  if ($Config{ccflags} =~ /-DPERL_OLD_COPY_ON_WRITE/) {
+    @plan = (skip_all => "no OLD_COPY_ON_WRITE");
+  }
+}
+
+use Test::More @plan;
 
 my $usedl = $Config{usedl} eq 'define';
 my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
@@ -18,6 +48,7 @@ my $devnull = $^O eq 'MSWin32' ? '' : '2>/dev/null';
 #$o = "-Wb=-fno-warnings" if $] >= 5.013005;
 #$o = "-Wb=-fno-fold,-fno-warnings" if $] >= 5.013009;
 my $perlcc = "$X -Iblib/arch -Iblib/lib blib/script/perlcc";
+$perlcc = "$X -I../../lib -I../../lib/auto script/perlcc -I../.. -L../.." if $ENV{PERL_CORE};
 sub cleanup { unlink ('pcc.c','pcc.c.lst','a.out.c', "a.c", $exe, $a, "a.out.c.lst", "a.c.lst"); }
 my $e = q("print q(ok)");
 
@@ -56,7 +87,7 @@ SKIP: {
   #skip "--staticxs hangs on darwin", 10 if $^O eq 'darwin';
  TODO: {
     # fails 5.8 and sometimes on darwin, msvc also
-    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
+    local $TODO = '--staticxs is experimental' if $] < 5.010 or $^O eq 'darwin';
     is(`$perlcc --staticxs -r -e $e $devnull`, "ok", "-r --staticxs xs"); #13
     ok(-e $a_exe, "keep default executable"); #14
   }
@@ -65,7 +96,7 @@ SKIP: {
   cleanup;
 
  TODO: {
-    local $TODO = '--staticxs is experimental' if $^O eq 'darwin' or $] < 5.010;
+    local $TODO = '--staticxs is experimental' if $] < 5.010 or $^O eq 'darwin';
     is(`$perlcc --staticxs -S -o pcc -r -e $e  $devnull`, "ok",
        "-S -o -r --staticxs xs"); #17
     ok(-e $a, "keep executable"); #18
@@ -76,7 +107,7 @@ SKIP: {
 
  TODO: {
     # since 5.18 IO is re-added
-    local $TODO = '5.18 added IO (darwin)' if $] >= 5.018 and $^O eq 'darwin';
+    local $TODO = '5.18 added IO (darwin only)' if $] >= 5.018 and $^O eq 'darwin';
     is(`$perlcc --staticxs -S -o pcc -O3 -r -e "print q(ok)"  $devnull`, "ok", #21
        "-S -o -r --staticxs without xs");
   }
@@ -152,11 +183,15 @@ cleanup;
 isnt(`$perlcc --Wb=-fno-fold,-v -o pcc $f $redir`, '/Writing output/m',
      "--Wb=-fno-fold,-v -o file");
 TODO: {
+ SKIP: {
+  require B::C::Config if $] > 5.021006;
   local $TODO = "catch STDERR not STDOUT" if $^O =~ /bsd$/i; # fails freebsd only
   local $TODO = "5.6 BC does not understand -DG yet" if $] < 5.007;
-  local $TODO = "5.22 BC WIP" if $] > 5.021;
+  skip "perl5.22 broke ByteLoader", 1
+    if $] > 5.021006 and !$B::C::Config::have_byteloader;
   like(`$perlcc -B --Wb=-DG,-v -o pcc $f $redir`, "/-PV-/m",
        "-B -v5 --Wb=-DG -o file"); #51
+  }
 }
 cleanup;
 is(`$perlcc -Wb=-O1 -r $f $devnull`, "ok", "old-style -Wb=-O1");
@@ -202,8 +237,9 @@ like(`$perlcc -BSr -opcc.plc -e $e $redir`, '/-S ignored/', "-BSr -o -e");
 ok(-e 'pcc.plc', "pcc.plc file");
 cleanup;
 
-TODO: {
-  local $TODO = '5.22 BC WIP' if $] > 5.021;
+SKIP: {
+  skip "perl5.22 broke ByteLoader", 1
+    if $] > 5.021006 and !$B::C::Config::have_byteloader;
   is(`$perlcc -Br -opcc.plc $f $devnull`, "ok", "-Br -o file");
 }
 ok(-e 'pcc.plc', "pcc.plc file");

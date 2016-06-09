@@ -139,7 +139,7 @@ my_runops(pTHX)
             sv_setref_iv( rv, "B::PMOP", PTR2IV( op ) );
 #if defined(DEBUGGING)
 	    if (DEBUG_D_TEST_) fprintf(stderr, "pmop %p => rx %s %p 0x%x %s\n",
-                                       op, PL_op_name[type], rx, op->op_pmflags,
+                                       op, PL_op_name[type], rx, (unsigned)op->op_pmflags,
                                        RX_WRAPPED(rx));
 #endif
             hv_store_ent( regexp_hv, key, rv, 0 );
@@ -192,6 +192,7 @@ I32
 name_count(hv)
     B::HV hv
 PPCODE:
+    PERL_UNUSED_VAR(RETVAL);
     if (SvOOK(hv))
       PUSHi(HvAUX(hv)->xhv_name_count);
     else
@@ -440,6 +441,7 @@ PPCODE:
       STRLEN len;
       U32 flags;
       const char *pv = CopLABEL_len_flags(cCOPo, &len, &flags);
+      PERL_UNUSED_VAR(RETVAL);
       ST(0) = pv ? sv_2mortal(newSVpvn_flags(pv, len, flags))
                  : &PL_sv_undef;
     }
@@ -463,7 +465,7 @@ CODE:
 
       RETVAL = 1;
       if (PL_check[OP_PADSV] != PL_check[0]) {
-	char *package = CopSTASHPV(cop);
+	/*char *package = CopSTASHPV(cop);*/
 #ifdef cop_hints_fetch_pvn
 	hint = cop_hints_fetch_pvn(cop, "autovivification", strlen("autovivification"), a_hash, 0);
 #else

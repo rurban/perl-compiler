@@ -1,6 +1,12 @@
 #! /usr/bin/env perl
 use strict;
+use Config;
+BEGIN {
+  unshift @INC, 't';
+  require TestBC;
+}
 use Test::More tests => 4;
+
 my $runperl = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
 my $Mblib = $^O eq 'MSWin32' ? '-Iblib\arch -Iblib\lib' : "-Iblib/arch -Iblib/lib";
 my $perlcc = $^O eq 'MSWin32' ? "blib\\script\\perlcc" : 'blib/script/perlcc';
