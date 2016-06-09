@@ -8,6 +8,7 @@
         * C: handle cperl OP_SIGNATURE
         Fix refcount of cop hints hashes with 5.22-nt (#220)
         Add missing B::FAKEOP::rettype for cperl-5.24, causing SEGV on B::CC
+        Fixed shared xpviv with 5.24 on 32bit.
         Fix various compiler warnings in ByteLoader
         Fix bytecode.pl call in cperl core.
 
