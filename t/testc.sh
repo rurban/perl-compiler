@@ -1411,6 +1411,10 @@ tests[3300]='#WONTFIX
 tests[3301]='#WORKAROUND 3300
 IO::Handle->new if $ENV{none}; *STDOUT; sub IO::Handle::self { $_[0] };
 (*STDOUT->self . "") =~ m/^GLOB/ and print "ok\n"'
+tests[367]='#BROKEN since 5.22 (METHOP for binc)
+use Math::BigInt;
+my $x = Math::BigInt->new('1' x 20);
+print "ok" if ++$x eq "11111111111111111112";'
 
 init
 
