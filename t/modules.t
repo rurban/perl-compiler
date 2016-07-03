@@ -37,6 +37,9 @@ BEGIN {
 use strict;
 use Test::More;
 use File::Temp;
+use Config;
+
+plan skip_all => "MSVC" if ($^O eq 'MSWin32' and $Config{cc} eq 'cl');
 
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
@@ -86,14 +89,13 @@ my $test_count = scalar @modules * $opts_to_test * ($do_test ? 5 : 4);
 # $test_count -= 4 * $opts_to_test * (scalar @modules - scalar(keys %modules));
 plan tests => $test_count;
 
-use Config;
 use B::C;
 use POSIX qw(strftime);
 
 eval { require IPC::Run; };
 my $have_IPC_Run = defined $IPC::Run::VERSION;
 log_diag("Warning: IPC::Run is not available. Error trapping will be limited, no timeouts.")
-  unless $have_IPC_Run;
+  if !$have_IPC_Run and !$ENV{PERL_CORE};
 
 my @opts = ("-O3");				  # only B::C
 @opts = ("-O3", "-O", "-B") if grep /-all/, @ARGV;  # all 3 compilers
@@ -170,7 +172,7 @@ for my $module (@modules) {
       $skip++;
       log_pass("skip", "$module", 0);
 
-      skip("$module not installed", 4 * scalar @opts);
+      skip("$module not installed", int(4 * scalar @opts));
       next MODULE;
     }
     if (is_skip($module)) { # !$have_IPC_Run is not really helpful here
@@ -178,7 +180,7 @@ for my $module (@modules) {
       $skip++;
       log_pass("skip", "$module #$why", 0);
 
-      skip("$module $why", 4 * scalar @opts);
+      skip("$module $why", int(4 * scalar @opts));
       next MODULE;
     }
     $module = 'if(1) => "Sys::Hostname"' if $module eq 'if';
@@ -380,8 +382,8 @@ sub is_skip {
       }
     }
   }
-  if ($ENV{PERL_CORE} and $] > 5.023
-      and ($Config{cc} =~ / -m32/ or $Config{ccflags} =~ / -m32/)) {
-    return 'hangs in CORE with -m32' if $module =~ /^Pod::/;
-  }
+  #if ($ENV{PERL_CORE} and $] > 5.023
+  #    and ($Config{cc} =~ / -m32/ or $Config{ccflags} =~ / -m32/)) {
+  #  return 'hangs in CORE with -m32' if $module =~ /^Pod::/;
+  #}
 }

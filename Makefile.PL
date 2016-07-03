@@ -17,7 +17,9 @@ unless (-e 'lib/B/C/Config.pm') {
 # my $X = $^X =~ / / ? qq("$^X") : $^X;
 if ($CORE) {
     $ENV{PERL_CORE} = 1;
-    system($^X,"-I../../regen","-I../../lib","bytecode.pl");
+    system($^X,"-I".File::Spec->catfile(qw(.. .. lib)),
+           "-I".File::Spec->catfile(qw(.. .. regen)),
+           "bytecode.pl");
 } else {
     my $asmdata = File::Spec->catfile('lib', 'B', 'Asmdata.pm');
     # generate lib/B/Asmdata.pm
@@ -52,7 +54,9 @@ my $have_byteloader = $] < 5.022 ? 1 : check_byteloader();
 # does not work with miniperl
 sub b_c_deps {
     my $X = $^X =~ m/\s/ ? qq{"$^X"} : $^X;
-    my $runperl = $X . ($CORE ? " -I../../lib/auto -I../../lib" : "");
+    my $blib = "-I".File::Spec->catfile(qw(.. .. lib auto))
+      ." -I".File::Spec->catfile(qw(.. .. lib));
+    my $runperl = $X . ($CORE ? ' '.$blib : "");
     return "AnyDBM_File AutoLoader B B::AV B::Asmdata B::BINOP B::BM B::C B::C::Config B::C::InitSection B::C::Section B::CC B::COP B::CV B::FAKEOP B::FM B::GV B::HE B::HV B::INVLIST B::IO B::IV B::LEXWARN B::LISTOP B::LOGOP B::LOOP B::MAGIC B::METHOP B::NULL B::NV B::OBJECT B::OP B::PADLIST B::PADNAME B::PADNAMELIST B::PADOP B::PMOP B::PV B::PVIV B::PVLV B::PVMG B::PVNV B::PVOP B::REGEXP B::RHE B::RV B::SPECIAL B::STASHGV B::SV B::SVOP B::Section B::UNOP B::UNOP_AUX B::UV CORE CORE::GLOBAL Carp Config DB DynaLoader EV Encode Errno Exporter Exporter::Heavy ExtUtils ExtUtils::Constant ExtUtils::Constant::ProxySubs Fcntl FileHandle IO IO::File IO::Handle IO::Poll IO::Seekable IO::Socket IO::Socket::SSL Int Internals Net Net::DNS Num O POSIX PerlIO PerlIO::Layer PerlIO::scalar Regexp SelectSaver Str Symbol UInt UNIVERSAL XSConfig XSLoader __ANON__ arybase arybase::mg attributes constant coretypes int main mro num re str strict threads uint utf8 vars version warnings warnings::register Socket" if $CORE and $] > 5.020;
     return `$runperl -Ilib -mB::C -mO -MB -e'B::C::collect_deps()'`;
 }
@@ -157,11 +161,13 @@ elsif ($] > 5.015005 and $] < 5.019004) {
 	 "  Enable use warnings 'syscalls'.\n");
 }
 
+my $perlcc = File::Spec->catfile("script", "perlcc");
+
 WriteMakefile(
     NAME	 => "B::C",
     VERSION_FROM => "lib/B/C.pm",
-    PL_FILES   => { 'script/perlcc.PL'    => 'script/perlcc' },
-    EXE_FILES  => [qw(script/perlcc script/cc_harness script/assemble script/disassemble)],
+    PL_FILES   => { $perlcc.'.PL'    => $perlcc },
+    EXE_FILES  => [$perlcc, qw(script/cc_harness script/assemble script/disassemble)],
     PREREQ_PM  => {'Opcodes'  => '0',    # optional
 		   'IPC::Run' => '0',    # optional
 		   'B::Flags' => '0.15', # optional
@@ -194,8 +200,9 @@ WriteMakefile(
                        resources =>
                        {
                         license     => 'http://dev.perl.org/licenses/',
-                        bugtracker  => 'https://github.com/rurban/perl-compiler/issues',
-                        repository  => 'https://github.com/rurban/perl-compiler',
+                        homepage    => 'http://www.perl-compiler.org',
+                        bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
+                        repository  => 'http://perl-compiler.googlecode.com/',
                         MailingList => 'http://groups.google.com/group/perl-compiler',
                        },
                       }
@@ -425,19 +432,25 @@ sub depend {
     my $byterun_h = File::Spec->catfile('ByteLoader', 'byterun.h');
     my $result = "
 $asmdata : Makefile bytecode.pl @headers
-	\$(PERL) bytecode.pl
+	\$(PERLRUN) bytecode.pl
 
 $byterun_c : Makefile bytecode.pl @headers
-	\$(PERL) bytecode.pl
+	\$(PERLRUN) bytecode.pl
 
 $byterun_h : Makefile bytecode.pl @headers
-	\$(PERL) bytecode.pl
+	\$(PERLRUN) bytecode.pl
 
 TAGS : $asmdata
 	etags --language=perl lib/B/*.pm
 ";
-    if ($] > 5.009) {
-        $result .= "\ntest :: subdirs-test\n\n";
+    if ($] > 5.009 and defined($ExtUtils::MM_Unix::VERSION)) {
+        my $ver = $ExtUtils::MM_Unix::VERSION;
+        # 8.0403 is the cperl 5.24.0 version based on 7.04_03
+        if ($ver eq '8.0403' or $ver lt '7.0509') {
+            $result .= "\ntest :: subdirs-test\n\n";
+        } else {
+            $result .= "\ntest :: subdirs-test_\$(LINKTYPE)\n\n";
+        }
     }
     if ($Config{make} eq 'mingw32-make') { # mingw32 make different to msys make
         $result .= "\n.PHONY : \$(CONFIGDEP)\n\n";
