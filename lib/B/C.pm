@@ -7122,7 +7122,7 @@ static void
 xs_init(pTHX)
 {
 	char *file = __FILE__;
-	dTARG; dSP;
+	dTARG; dSP; CV * cv;
 _EOT8
   if ($CPERL51 and $debug{cv}) {
     print q{
@@ -7134,9 +7134,6 @@ _EOT8
   #if ($staticxs) { #FIXME!
   #  print "\n#undef USE_DYNAMIC_LOADING
   #}
-  print "\n#ifdef USE_DYNAMIC_LOADING";
-  print "\n\tnewXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);";
-  print "\n#endif\n";
 
   delete $xsub{'DynaLoader'};
   delete $xsub{'UNIVERSAL'};
@@ -7156,11 +7153,8 @@ _EOT8
   printf "\tXPUSHp(\"DynaLoader\", %d);\n", length("DynaLoader");
   print "\tPUTBACK;\n";
   warn "bootstrapping DynaLoader added to xs_init\n" if $verbose;
-  if ($PERL522) {
-    print "\tboot_DynaLoader(aTHX_ get_cv(\"DynaLoader::bootstrap\", GV_ADD));\n";
-  } else {
-    print "\tboot_DynaLoader(aTHX_ NULL);\n";
-  }
+  print "\tcv = newXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);\n";
+  print "\tboot_DynaLoader(aTHX_ cv);\n";
   print "\tSPAGAIN;\n";
   if ($CPERL51 and $^O ne 'MSWin32') {
     print "\tdl_boot(aTHX);\n";
@@ -7350,10 +7344,11 @@ _EOT9
                 $sofile = "$modlibname/auto/$modpname/$modfname.".$Config{dlext};
               }
               #warn "load_file: $stashname, $stashfile, $sofile";
-              printf "\tmXPUSHp(\"%s\", %d);\n", $sofile, length($sofile);
-            } else {
-              printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, length($stashfile);
+              $stashfile = $sofile;
             }
+            my $stashfile_len = length($stashfile);
+            $stashfile =~ s/(\\[^nrftacx"' ])/\\$1/g; # windows paths: \\ => \\\\
+            printf "\tmXPUSHp(\"%s\", %d);\n", $stashfile, $stashfile_len;
 	  }
 	  print "\tPUTBACK;\n";
 	  warn "bootstrapping $stashname added to XSLoader dl_init\n" if $verbose;
