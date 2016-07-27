@@ -6885,7 +6885,7 @@ _EOT8
       # set static op members to NULL
       my $s = $B::C::static_free[$_];
       if ($s =~ /\(OP\*\)&unopaux_list/) {
-	print "  ($s)->op_type = OP_NULL;";
+	print "    ($s)->op_type = OP_NULL;\n";
       }
     }
 
@@ -7048,7 +7048,7 @@ _EOT7
           print " CopSTASHPV_set(&$s, NULL, 0);\n";
         }
       } elsif ($s =~ /\(OP\*\)&unopaux_list/) {
-	print "  ($s)->op_type = OP_NULL;";
+	print "    ($s)->op_type = OP_NULL;\n";
       # end dead code ---
       #} elsif ($s =~ /^pv\d/) {
       #	print "    $s = \"\";\n";
