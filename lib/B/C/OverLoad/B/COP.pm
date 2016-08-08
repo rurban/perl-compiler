@@ -11,6 +11,7 @@ use B::C::Helpers::Symtable qw/savesym objsym/;
 use B::C::Helpers qw/read_utf8_string strlen_flags/;
 
 my %cophhtable;
+my %copgvs;
 
 sub save {
     my ( $op, $level ) = @_;
@@ -189,7 +190,12 @@ sub save {
         init()->add( sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ) );
         if ( !USE_ITHREADS() ) {
             if ($B::C::const_strings) {
-                init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ) );
+                my $constpv = constpv($file);
+                if ( !$copgvs{$constpv} ) {
+                    $copgvs{$constpv} = B::GV::inc_index();
+                    init()->add( sprintf( "gv_list[%d] = gv_fetchfile(%s);", $copgvs{$constpv}, $constpv ) );
+                }
+                init()->add( sprintf( "CopFILEGV_set(&cop_list[%d], gv_list[%d]); /* %s */", $ix, $copgvs{$constpv}, cstring($file) ) );
             }
             else {
                 init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
