@@ -8,7 +8,7 @@ use B qw/cstring svref_2object CVf_ANON CVf_ANONCONST CVf_CONST main_cv SVf_ROK 
 use B::C::Config;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Packages qw/is_package_used/;
-use B::C::Save qw/savepvn/;
+use B::C::Save qw/savepvn constpv/;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/init init2 decl svsect xpvcvsect symsect/;
 use B::C::Helpers qw/get_cv_string strlen_flags set_curcv/;
@@ -684,8 +684,12 @@ sub save {
         ) if debug('cv');
     }
     unless ($B::C::optimize_cop) {
+        my $file = $cv->FILE();
         if ( USE_MULTIPLICITY() ) {
             init()->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
+        }
+        elsif ($B::C::const_strings && length $file) {
+            init()->add( sprintf( "CvFILE(%s) = (char *) %s;", $sym, constpv( $file ) ) );
         }
         else {
             init()->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
