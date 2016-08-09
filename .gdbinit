@@ -1,6 +1,6 @@
 #directory /usr/src/perl/perl-5.10.1/perl-5.10.1
 #directory /usr/src/perl/perl-5.6.2
-directory /root/workspace/src/perl522-debug-patched
+directory /root/workspace/src/perl524-debug-patched
 #add-auto-load-safe-path /lib/x86_64-linux-gnu/libthread_db-1.0.so
 
 set breakpoint pending on
