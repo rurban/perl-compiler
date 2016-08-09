@@ -39,7 +39,16 @@ use Test::More;
 use File::Temp;
 use Config;
 
-plan skip_all => "MSVC" if ($^O eq 'MSWin32' and $Config{cc} eq 'cl');
+my $ccopts;
+BEGIN {
+  #plan skip_all => "MSVC" if ($^O eq 'MSWin32' and $Config{cc} eq 'cl');
+  if ($^O eq 'MSWin32' and $Config{cc} eq 'cl') {
+    # MSVC takes an hour to compile each binary unless -Od
+    $ccopts = '"--Wc=-Od"';
+  } else {
+    $ccopts = '';
+  }
+}
 
 # Try some simple XS module which exists in 5.6.2 and blead
 # otherwise we'll get a bogus 40% failure rate
@@ -54,10 +63,10 @@ BEGIN {
   my $out = $tmp->filename;
   my $Mblib = Mblib();
   my $perlcc = perlcc();
-  my $result = `$X $Mblib $perlcc -O3 --staticxs -o$out -e"use Data::Dumper;"`;
+  my $result = `$X $Mblib $perlcc -O3 $ccopts --staticxs -o$out -e"use Data::Dumper;"`;
   my $exe = $^O eq 'MSWin32' ? "$out.exe" : $out;
   unless (-e $exe or -e 'a.out') {
-    my $cmd = qq($X $Mblib $perlcc -O3 -o$out -e"use Data::Dumper;");
+    my $cmd = qq($X $Mblib $perlcc -O3 $ccopts -o$out -e"use Data::Dumper;");
     warn $cmd."\n" if $ENV{TEST_VERBOSE};
     my $result = `$cmd`;
     unless (-e $out or -e 'a.out') {
@@ -203,7 +212,7 @@ for my $module (@modules) {
         $opt .= " -S" if $keep and $opt !~ / -S\b/;
         # TODO ./a often hangs but perlcc not
         my @cmd = grep {!/^$/}
-	  $runperl,split(/ /,$Mblib),split(/ /,$perlcc),split(/ /,$opt),$staticxs,"-o$out","-r",$out_pl;
+	  $runperl,split(/ /,$Mblib),split(/ /,$perlcc),split(/ /,$opt),$ccopts,$staticxs,"-o$out","-r",$out_pl;
         my $cmd = join(" ", @cmd);
         #warn $cmd."\n" if $ENV{TEST_VERBOSE};
 	# Esp. darwin-2level has insane link times
@@ -266,7 +275,8 @@ for my $module (@modules) {
 }
 
 my $count = scalar @modules - $skip;
-log_diag("$count / $module_count modules tested with B-C-${B::C::VERSION} - perl-$perlversion");
+log_diag("$count / $module_count modules tested with B-C-${B::C::VERSION} - "
+         .$Config{usecperl}?"c":""."perl-$perlversion");
 log_diag(sprintf("pass %3d / %3d (%s)", $pass, $count, percent($pass,$count)));
 log_diag(sprintf("fail %3d / %3d (%s)", $fail, $count, percent($fail,$count)));
 log_diag(sprintf("todo %3d / %3d (%s)", $todo, $fail, percent($todo,$fail)));
@@ -303,14 +313,14 @@ sub is_todo {
   if ($] >= 5.008004 and $] < 5.0080006) { foreach(qw(
     Module::Pluggable
   )) { return '5.8.5 CopFILE_set' if $_ eq $module; }}
+  if ($] <= 5.0080009) { foreach(qw(
+    IO::Socket
+  )) { return '5.8.9 empty Socket::AF_UNIX' if $_ eq $module; }}
   # PMOP quoting fixed with 1.45_14
   #if ($] < 5.010) { foreach(qw(
   #  DateTime
   #)) { return '<5.10' if $_ eq $module; }}
   # restricted v_string hash?
-  if ($] <= 5.0080009) { foreach(qw(
-    IO::Socket
-  )) { return '5.8.9 empty Socket::AF_UNIX' if $_ eq $module; }}
   if ($] eq '5.010000') { foreach(qw(
    IO
    Path::Class
