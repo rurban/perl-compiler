@@ -848,7 +848,7 @@ sub which_perl {
 
         my $exe;
         if ( !eval { require Config; 1 } ) {
-            warn "test.pl had problems loading Config: $@";
+            warn "test.pl '$0' had problems loading Config: $@";
             $exe = '';
         }
         else {
