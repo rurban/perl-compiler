@@ -14,7 +14,7 @@ BEGIN {
     unshift @INC, $FindBin::Bin . "/../../../lib";
 }
 
-die "Please use perl 5.22" unless $^V =~ qr{^v5.22};
+die "Please use perl 5.24" unless $^V =~ qr{^v5.24};
 
 # Used by runperl to find perlcc
 $ENV{'PROVE_BASEDIR'} = getcwd;
