@@ -2,7 +2,7 @@
 
 set -e
 
-for d in "base" "cmd" "comp" "extra" "io" "mro" "op" "re" "uni"; do
+for d in "base" "cmd" "comp" "extra" "io" "mro" "op" "opbasic" "re" "uni"; do
     pushd $d
     echo "* $d"
     # cleanup before link recreation
