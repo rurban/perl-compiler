@@ -2,12 +2,17 @@
 
 use v5.14;    # or later
 
-use Cwd;
+use warnings;
+use strict;
 
-run(@ARGV) unless caller;
+use Cwd;
 
 use constant TEST_SUITE_VERSION => 'v5.24.1';
 use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
+
+my @BLACKLIST = qw{benchmark perf porting bigmem lib win32 japh porting run test_pl};
+
+run(@ARGV) unless caller;
 
 sub run {
     my (@args) = @_;
@@ -23,7 +28,7 @@ sub run {
 
     #$run_compile_version = grep { qr{^-+c(ompiled)?$} } @args;
     my $run_compile_version = !grep { $_ =~ qr{^-+u(ncompiled)?$} } @args;
-    my @args                = grep  { $_ !~ qr{^-+u(ncompiled)?$} } @args;
+    @args                = grep  { $_ !~ qr{^-+u(ncompiled)?$} } @args;
 
     my $saving_state;
     if ( !grep { $_ =~ qr{^--state} } @args ) {
@@ -89,7 +94,8 @@ sub run {
         else {
             $t = $after;           # need to chdir for the uncompiled version
         }
-
+        # remove blacklisted tests
+        next if grep { $t =~ qr{^$_/} } @BLACKLIST;
         #die "Cannot find a test file" unless -e $t;
         unshift @tests, $t;
     }
@@ -108,7 +114,7 @@ sub run {
 
     # allow glob...
     system( join ' ', @cmd );
-    $restart->() if $?;
+    $restart->() if $run_compile_version && $?;
 
     return 1;
 }

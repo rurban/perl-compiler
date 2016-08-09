@@ -3,8 +3,8 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    set_up_inc('../lib');
     require './test.pl';
+    set_up_inc('../lib');
 }
 
 my @tests;
