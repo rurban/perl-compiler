@@ -156,7 +156,7 @@ sub usage {
 > cprove -j10 t/v5.22.*/C-COMPILED/*/*.t
 
 # run the uncompiled version
-> cprove -u -j4 t/v5.24.1/t/*.t
+> cprove -u -j4 t/v5.24.1/t/*/*.t
 > cprove -u t/v5.24.1/C-COMPILED/op/my.t
 
 # run the compiled version
