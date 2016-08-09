@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_08';
+our $VERSION = '1.54_09';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -450,7 +450,7 @@ $all_bc_deps{Socket} = 1 if !@B::C::Config::deps and $] > 5.021;
 
 my ($prev_op, $package_pv, @package_pv); # global stash for methods since 5.13
 my (%symtable, %cvforward, %lexwarnsym);
-my (%strtable, %stashtable, %hektable, %statichektable, %gptable, %cophhtable);
+my (%strtable, %stashtable, %hektable, %statichektable, %gptable, %cophhtable, %copgvtable);
 my (%xsub, %init2_remap);
 my ($warn_undefined_syms, $swash_init, $swash_ToCf);
 my ($staticxs, $outfile);
@@ -2464,7 +2464,16 @@ sub B::COP::save {
     $init->add(sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ));
     if (!$ITHREADS) {
       if ($B::C::const_strings) {
-        $init->add(sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
+        my $constpv = constpv($file);
+        # define CopFILE_set(c,pv)	CopFILEGV_set((c), gv_fetchfile(pv))
+        # cache gv_fetchfile
+        if ( !$copgvtable{$constpv} ) {
+          $copgvtable{$constpv} = $gv_index++;
+          $init->add( sprintf( "gv_list[%d] = gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
+        }
+        $init->add( sprintf( "CopFILEGV_set(&cop_list[%d], gv_list[%d]); /* %s */",
+                            $ix, $copgvtable{$constpv}, cstring($file) ) );
+        #$init->add(sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, constpv($file) ));
       } else {
         $init->add(sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ));
       }
