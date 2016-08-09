@@ -120,8 +120,11 @@ my $A = \%A::;     # keep a ref
 *B:: = $A;         # assign to two superclasses of foo at the same time
 # There should be no A::B isarev entry.
 i"A::B" => qw [], 'assigning to two superclasses at the same time';
-ok !foo->isa("A::B"),
- "A class must not inherit from its superclass's former name";
+{
+    no warnings;
+    ok !foo->isa("A::B"),
+        "A class must not inherit from its superclass's former name";
+}
 
 # undeffing globs
 @alpha::ISA = 'beta';
