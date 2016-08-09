@@ -3975,7 +3975,7 @@ sub try_autoload {
     unless ($@) {
       # we need just the empty auto GV, $cvname->ROOT and $cvname->XSUB,
       # but not the whole CV optree. XXX This still fails with 5.8
-      my $cv = svref_2object( \&{$cvstashname.'::'.$cvname} );
+      my $cv = svref_2object( \&{$fullname} );
       return $cv;
     }
   }

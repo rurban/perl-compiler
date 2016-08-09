@@ -308,6 +308,9 @@ sub is_todo {
   #  DateTime
   #)) { return '<5.10' if $_ eq $module; }}
   # restricted v_string hash?
+  if ($] <= 5.0080009) { foreach(qw(
+    IO::Socket
+  )) { return '5.8.9 empty Socket::AF_UNIX' if $_ eq $module; }}
   if ($] eq '5.010000') { foreach(qw(
    IO
    Path::Class
