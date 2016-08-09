@@ -161,7 +161,7 @@ sub usage {
 
     print <<'EOS';
 # run the compiled version
-> cprove -j4 t/v5.24.1/t/*.t
+> cprove -j4 t/v5.24.1/t/*/*.t
 > cprove t/v5.24.1/C-COMPILED/op/my.t
 
 # run everything in parallel
