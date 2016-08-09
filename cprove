@@ -10,7 +10,7 @@ use Cwd;
 use constant TEST_SUITE_VERSION => 'v5.24.1';
 use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
 
-my @BLACKLIST = qw{benchmark perf porting bigmem lib win32 japh porting run test_pl};
+my @BLACKLIST = qw{benchmark perf porting bigmem lib win32 japh porting run test_pl op/threads.t};
 
 run(@ARGV) unless caller;
 
@@ -95,7 +95,7 @@ sub run {
             $t = $after;           # need to chdir for the uncompiled version
         }
         # remove blacklisted tests
-        next if grep { $t =~ qr{^$_/} } @BLACKLIST;
+        next if grep { $t =~ qr{^$_/} or $t eq $_ } @BLACKLIST;
         #die "Cannot find a test file" unless -e $t;
         unshift @tests, $t;
     }
