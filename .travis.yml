@@ -16,6 +16,8 @@ perl:
   - "dev"
   - "blead"
 
+# "cperl-5.24.0"/"5.24c" not yet
+
 # fast_finish: http://blog.travis-ci.com/2013-11-27-fast-finishing-builds/
 matrix:
   fast_finish: true
@@ -23,6 +25,7 @@ matrix:
     - perl: "5.24"
     - perl: "5.24-dbg"
     - perl: "5.22-thr"
+    - perl: "5.8"
     - perl: "dev"
     - perl: "blead"
 
