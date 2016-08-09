@@ -6,7 +6,7 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = qw(. ../lib);
+    unshift @INC,  qw(. ../lib);
     $SIG{__WARN__} = sub { $warns++; warn $_[0] };
 }
 require './test.pl';

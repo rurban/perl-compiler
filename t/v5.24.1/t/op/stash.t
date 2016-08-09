@@ -2,7 +2,7 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = qw(../lib);
+    unshift @INC,  qw(../lib);
 }
 
 BEGIN { require "./test.pl"; }

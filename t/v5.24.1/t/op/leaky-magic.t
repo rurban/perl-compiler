@@ -7,7 +7,7 @@
 BEGIN {
     chdir 't' if -d 't';
     require './test.pl';
-    @INC = '../lib';
+    set_up_inc('../lib');
 }
 
 # Hack to allow test counts to be specified piecemeal

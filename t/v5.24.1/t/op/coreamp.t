@@ -9,9 +9,9 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = qw(. ../lib ../dist/if);
     require "./test.pl"; require './charset_tools.pl';
     $^P |= 0x100;
+    set_up_inc( qw(. ../lib ../dist/if) );
 }
 
 no warnings 'experimental::smartmatch';
@@ -993,6 +993,7 @@ like $@, qr'^Undefined format "STDOUT" called',
    File::Spec::Functions::catfile(
       File::Spec::Functions::updir,'regen','keywords.pl'
    );
+  note `pwd`;
   open my $kh, $keywords_file
     or die "$0 cannot open $keywords_file: $!";
   while(<$kh>) {

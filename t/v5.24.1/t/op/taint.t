@@ -53,6 +53,9 @@ my $Invoke_Perl = $Is_VMS      ? 'MCR Sys$Disk:[]Perl.exe' :
                   $Is_MSWin32  ? '.\perl'               :
                   $Is_NetWare  ? 'perl'                 :
                                  './perl'               ;
+ 
+( $Invoke_Perl)  = $^X =~ m/(.+)/; # untaint
+
 my @MoreEnv = qw/IFS CDPATH ENV BASH_ENV/;
 
 if ($Is_VMS) {

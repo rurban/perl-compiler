@@ -5,9 +5,9 @@
 #
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib lib ../dist/base/lib);
+    chdir 't' if -d 't';    
     require "./test.pl";
+    set_up_inc( qw(. ../lib lib ../dist/base/lib) );
 }
 
 use strict;

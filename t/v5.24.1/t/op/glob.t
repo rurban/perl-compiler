@@ -1,9 +1,9 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(. ../lib);
+    chdir 't' if -d 't';    
     require './test.pl';
+    set_up_inc( qw(. ../lib) );
 }
 
 plan( tests => 18 );
@@ -116,7 +116,7 @@ SKIP: {
 SKIP: {
     use Config;
     skip("glob() works when cross-compiling, but this test doesn't", 1)
-        if $Config{usecrosscompile};
+        if 1 || $Config{usecrosscompile};
 
     my $switches = [qw(-lw)];
     my $expected = "ok1\nok2\n";

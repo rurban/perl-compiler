@@ -4,9 +4,9 @@ BEGIN {
     $ENV{PERL_UNICODE} = 0;
     unless (-d 'blib') {
         chdir 't' if -d 't';
-        @INC = '../lib';
     }
     require q(./test.pl);
+    set_up_inc('../lib');
 }
 
 use strict;
@@ -58,7 +58,7 @@ my $prog =    q~
      BEGIN {
          unless (-d 'blib') {
              chdir 't' if -d 't';
-             @INC = '../lib';
+             unshift @INC,  '../lib';
          }
      }
      use utf8;
@@ -120,7 +120,7 @@ for(
      BEGIN {
          unless (-d 'blib') {
              chdir 't' if -d 't';
-             @INC = '../lib';
+             unshift @INC,  '../lib';
          }
      }
      use utf8;
@@ -185,7 +185,7 @@ for(
      BEGIN {
          unless (-d 'blib') {
              chdir 't' if -d 't';
-             @INC = '../lib';
+             unshift @INC,  '../lib';
          }
      }
       use utf8;
@@ -221,7 +221,7 @@ for(
       BEGIN {
          unless (-d 'blib') {
              chdir 't' if -d 't';
-             @INC = '../lib';
+             unshift @INC,  '../lib';
          }
       }
       use utf8;
@@ -305,7 +305,7 @@ my $prog =    q~#!perl -w
      BEGIN {
          unless (-d 'blib') {
              chdir 't' if -d 't';
-             @INC = '../lib';
+             unshift @INC,  '../lib';
          }
      }
      use utf8;

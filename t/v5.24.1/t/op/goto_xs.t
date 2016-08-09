@@ -9,13 +9,18 @@
 
 BEGIN {
     chdir 't' if -d 't';
+    eval q/use TestInit; 1/;
+
     require './test.pl';
 # turn warnings into fatal errors
     $SIG{__WARN__} = sub { die "WARNING: @_" } ;
-
+    set_up_inc('../lib');
     skip_all_if_miniperl("no dynamic loading on miniperl, no Fcntl");
     require Fcntl;
 }
+
+skip_all("need XS::APItest");
+eval q/use TestInit; 1/;
 use strict;
 use warnings;
 use vars '$VALID';
@@ -91,8 +96,7 @@ is($ret, $value, 'goto &$function_ref; from a sub called without arglist');
 BEGIN {
     use Config;
     if ($Config{extensions} =~ m{XS/APItest}) {
-	eval q[use XS::APItest qw(mycroak); 1]
-	    or die "use XS::APItest: $@\n";
+	eval q[use XS::APItest qw(mycroak); 1];
     }
     else {
 	*mycroak = sub { die @_ };

@@ -4,7 +4,7 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = '../lib' if -d '../lib' && -d '../ext';
+    unshift @INC,  '../lib' if -d '../lib' && -d '../ext';
 
     require "./test.pl";
     require Config; import Config;

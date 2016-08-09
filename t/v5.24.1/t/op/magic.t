@@ -62,6 +62,8 @@ $PERL =
     $Is_MSWin32 ? '.\perl' :
                   './perl');
 
+$PERL = $^X;
+
 sub env_is {
     my ($key, $val, $desc) = @_;
 

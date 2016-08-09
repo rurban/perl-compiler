@@ -3,7 +3,7 @@
 my $hires;
 BEGIN {
     chdir 't' if -d 't';
-    @INC = ('.', '../lib');
+    unshift @INC,  ('.', '../lib');
     $hires = eval 'use Time::HiResx "time"; 1';
 }
 

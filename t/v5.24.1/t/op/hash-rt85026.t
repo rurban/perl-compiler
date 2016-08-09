@@ -1,11 +1,13 @@
 #!/usr/bin/perl -w
 
 BEGIN {
-  chdir 't' if -d 't';
-  @INC = '../lib';
+  chdir 't' if -d 't';  
   require './test.pl';
-  skip_all_without_dynamic_extension("Devel::Peek");
+  set_up_inc( '../lib' );
 }
+
+skip_all_without_dynamic_extension("Devel::Peek");
+
 
 use strict;
 use Devel::Peek;

@@ -4,8 +4,8 @@ $|=1;   # outherwise things get mixed up in output
 
 BEGIN {
 	chdir 't' if -d 't';
-	@INC = qw '../lib ../ext/re';
 	require './test.pl';
+    set_up_inc( qw '../lib ../ext/re' );
 	skip_all_without_unicode_tables();
 	eval 'require Config'; # assume defaults if this fails
 }

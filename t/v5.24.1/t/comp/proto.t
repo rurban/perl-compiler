@@ -11,7 +11,7 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = '../lib';
+    unshift @INC, '../lib';
 }
 
 # We need this, as in places we're testing the interaction of prototypes with

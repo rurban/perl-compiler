@@ -10,7 +10,7 @@ $| = 1;
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = ('../lib','.');
+    unshift @INC,  ('../lib','.');
     require './test.pl';
     skip_all_if_miniperl("miniperl can't load Tie::Hash::NamedCapture, need for %+ and %-");
 }

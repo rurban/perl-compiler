@@ -10,11 +10,12 @@ BEGIN {
     $ENV{LC_ALL} = "C"; # so that external utilities speak English
     $ENV{LANGUAGE} = 'C'; # GNU locale extension
 
-    chdir 't' if -d 't';
-    @INC = '../lib';
+    chdir 't' if -d 't';    
     require './test.pl';
-    skip_all_if_miniperl("no dynamic loading on miniperl, no POSIX");
+    set_up_inc( '../lib' );    
 }
+skip_all_if_miniperl("no dynamic loading on miniperl, no POSIX");
+
 use 5.010;
 use strict;
 use Config ();

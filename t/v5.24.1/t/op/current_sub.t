@@ -1,11 +1,12 @@
 #!./perl
 
 BEGIN {
-    chdir 't' if -d 't';
-    @INC = qw(../lib);
+    chdir 't' if -d 't';    
     require './test.pl';
-    plan (tests => 22);
+    set_up_inc( qw(../lib) );    
 }
+
+plan (tests => 20);
 
 is __SUB__, "__SUB__", '__SUB__ is a bareword outside of use feature';
 
@@ -36,15 +37,6 @@ for my $x(1..3) {
 is $subsubs[0]()(0), 1, '__SUB__ inside closure (1)';
 is $subsubs[1]()(0), 2, '__SUB__ inside closure (2)';
 is $subsubs[2]()(0), 3, '__SUB__ inside closure (3)';
-
-BEGIN {
-    return "begin 1" if @_;
-    is CORE::__SUB__->(0), "begin 1", 'in BEGIN block'
-}
-BEGIN {
-    return "begin 2" if @_;
-    is &CORE::__SUB__->(0), "begin 2", 'in BEGIN block via & (unoptimised)'
-}
 
 sub bar;
 sub bar {
@@ -94,3 +86,4 @@ is &$f, $f, 'anonymous sub(){eval ""; __SUB__} returns self ref';
       'sub(){__SUB__} under -d';
 }
 
+note "done";
