@@ -330,6 +330,7 @@ BEGIN {
       sub SVp_NOK() {0}; # unused
       sub SVp_IOK() {0};
       sub CVf_ANON() {4};
+      sub CVf_CONST() {0}; # unused
       sub PMf_ONCE() {0xff}; # unused
       sub SVf_FAKE() {0x00100000}; # unused
       sub SVs_OBJECT() {0x00001000}
