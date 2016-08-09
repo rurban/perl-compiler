@@ -97,6 +97,7 @@ uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "e
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
 xtestc/0135.t                TESTS     Output is: ""
+xtestc/0146.t                SKIP      Use of strings with code points over 0xFF as arguments to bitwise xor (^) operator is deprecated in perl 5.24
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
 xtestc/0169.t                TESTS     Output is: "42\n"
