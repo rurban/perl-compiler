@@ -19,7 +19,7 @@ sub save {
 
     my $i = svsect()->index + 1;
     debug( sv => "Saving SVt_NULL sv_list[$i]" );
-    svsect()->add( sprintf( "0, %Lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
+    svsect()->add( sprintf( "NULL, %Lu, 0x%x, {0}", $sv->REFCNT, $sv->FLAGS ) );
 
     #svsect()->debug( $fullname, $sv ); # XXX where is this possible?
     if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add index to sv_debug_file to easily find the Nullsv

@@ -25,7 +25,7 @@ sub new {
 
     # if sv add a dummy sv_arenaroot to support global destruction
     if ( $section eq 'sv' ) {
-        $self->add("0, 0, SVTYPEMASK|0x01000000, {0}");    # SVf_FAKE
+        $self->add("NULL, 0, SVTYPEMASK|0x01000000, {0}");    # SVf_FAKE
         $self->{'dbg'}->[0] = "PL_sv_arenaroot";
     }
 
@@ -121,7 +121,7 @@ sub output {
     my $dodbg = 1 if B::C::Config::Debug::debug('flags') and $self->{'dbg'};
     if ( $self->name eq 'sv' ) {      #fixup arenaroot refcnt
         my $len = scalar @{ $self->{'values'} };
-        $self->{'values'}->[0] =~ s/^0, 0/0, $len/;
+        $self->{'values'}->[0] =~ s/^NULL, 0/NULL, $len/;
     }
 
     my $return_string = '';

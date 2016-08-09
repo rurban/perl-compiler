@@ -37,6 +37,8 @@ sub save {
     my $ix   = padnamesect()->index + 1;
     my $s    = "&padname_list[$ix]";
 
+    my $pnstr = "((char*)$s)+STRUCT_OFFSET(struct padname_with_str, xpadn_str[0])" ;
+
     # 5.22 needs the buffer to be at the end, and the pv pointing to it.
     # We allocate a static buffer, and for uniformity of the list pre-alloc size 60 (WIP, improve later)
     padnamesect()->comment(" pv, ourstash, type, low, high, refcnt, gen, len, flags, str");
@@ -45,7 +47,7 @@ sub save {
         sprintf(
             # ignore warning: initializer-string for array of chars is too long
             "%s, %s, {%s}, %u, %u, %s, %i, %u, 0x%x, %s",
-            $ix              ? "((char*)$s)+STRUCT_OFFSET(struct padname_with_str, xpadn_str[0])" : 'NULL',
+            $ix              ? $pnstr : 'NULL',
             is_constant($sn) ? "(HV*)$sn"                                                         : 'Nullhv',
             is_constant($tn) ? "(HV*)$tn"                                                         : 'Nullhv',
             $pn->COP_SEQ_RANGE_LOW,

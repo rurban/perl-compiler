@@ -21,7 +21,7 @@ sub save {
         return $sym;
     }
     my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
-    my $nvx = '';
+    my $nvx = '0.0';
     my $ivx = get_integer_value( $sv->IVX );    # here must be IVX!
     if ( $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
 
