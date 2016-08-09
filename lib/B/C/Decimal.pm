@@ -97,7 +97,8 @@ sub _nvgformat {
     $format =~ s/"//g;    #" poor editor
     if ( $format eq 'g' ) {    # a very poor choice to keep precision
                                # on intel 17-18, on ppc 31, on sparc64/s390 34
-        $format = $B::C::Flags::Config{uselongdouble} ? '.17Lg' : '.16g';
+        # add one extra decimal for floating point precision ( uselongdouble should be larger than 17 but cannot check )
+        $format = $B::C::Flags::Config{uselongdouble} ? '.17Lg' : '.18Lg';
     }
     return $format;
 
