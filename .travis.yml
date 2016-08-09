@@ -1,9 +1,10 @@
 language: "perl"
 sudo: false
 perl:
+  - "5.24"
   - "5.22"
   - "5.14"
-  - "5.22-dbg"
+  - "5.24-dbg"
   - "5.20"
   - "5.18"
   - "5.16"
@@ -11,7 +12,7 @@ perl:
   - "5.10"
   - "5.8"
   - "5.14-thr"
-  - "5.22-thr-dbg"
+  - "5.22-thr"
   - "dev"
   - "blead"
 
@@ -19,7 +20,9 @@ perl:
 matrix:
   fast_finish: true
   allow_failures:
-    - perl: "5.22-thr-dbg"
+    - perl: "5.24"
+    - perl: "5.24-dbg"
+    - perl: "5.22-thr"
     - perl: "dev"
     - perl: "blead"
 
