@@ -3,14 +3,22 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = '../lib';
+    set_up_inc('../lib');
     require './test.pl';
-    plan( tests => 96 );
 }
 
-my @c;
+my @tests;
+plan( tests => 96 );
 
-BEGIN { print "# Tests with caller(0)\n"; }
+print "# Tests with caller(0)\n";
+
+foreach my $t ( @tests ) {
+    my $s = \&{'main::'.$t->{type}};
+    $s->( @{$t->{args}}, $t->{txt} );    
+}
+print "# end of BEGIN tests\n";
+
+my @c;
 
 @c = caller(0);
 ok( (!@c), "caller(0) in main program" );
