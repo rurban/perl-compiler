@@ -72,4 +72,9 @@ nytprof/
 /t/v5.*/t/pcc*
 /t/v5.*/t/.dir
 /t/v5.*/t/.pag
+/t/v5.*/t/bleah.do
+/t/v5.*/t/*.flg
+/t/v5.*/t/bleah.pm
+/t/v5.*/t/*.pmc
+/t/v5.*/t/urkkk.pm
 .prove
