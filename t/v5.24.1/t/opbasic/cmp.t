@@ -2,7 +2,7 @@
 
 BEGIN {
        chdir 't' if -d 't';
-       @INC = '../lib';
+       unshift @INC, '../lib';
 }
 
 # This file has been placed in t/opbasic to indicate that it should not use

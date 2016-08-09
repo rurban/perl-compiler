@@ -6,7 +6,7 @@ BEGIN {
     set_up_inc('../lib');
 }
 
-plan tests => 73;
+plan tests => 1;
 
 use strict;
 
