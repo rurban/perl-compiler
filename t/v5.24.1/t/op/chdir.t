@@ -3,15 +3,16 @@
 BEGIN {
     # We really want to know if chdir is working, as the build process will
     # all go wrong if it is not.  So avoid clearing @INC under miniperl.
-    @INC = () if defined &DynaLoader::boot_DynaLoader;
+    #@INC = () if defined &DynaLoader::boot_DynaLoader;
 
     # We're not going to chdir() into 't' because we don't know if
     # chdir() works!  Instead, we'll hedge our bets and put both
     # possibilities into @INC.
     unshift @INC, qw(t . lib ../lib);
-    require "test.pl";
-    plan(tests => 47);
+    require "test.pl";    
 }
+
+plan(tests => 47);
 
 use Config;
 use Errno qw(ENOENT EBADF EINVAL);
