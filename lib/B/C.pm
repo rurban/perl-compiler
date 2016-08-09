@@ -43,6 +43,7 @@ sub new {
 
   # if sv add a dummy sv_arenaroot to support global destruction
   if ($section eq 'sv') {
+    # 0 refcnt placeholder for the static arenasize later adjusted
     $o->add( "NULL, 0, SVTYPEMASK|0x01000000".($] >= 5.009005?", {0}":'')); # SVf_FAKE
     $o->[-1]{dbg}->[0] = "PL_sv_arenaroot";
   }
@@ -119,7 +120,7 @@ sub output {
   my $dodbg = 1 if $debug{flags} and $section->[-1]{dbg};
   if ($section->name eq 'sv') { #fixup arenaroot refcnt
     my $len = scalar @{ $section->[-1]{values} };
-    $section->[-1]{values}->[0] =~ s/^0, 0/0, $len/;
+    $section->[-1]{values}->[0] =~ s/^NULL, 0/NULL, $len/;
   }
   foreach ( @{ $section->[-1]{values} } ) {
     my $dbg = "";
