@@ -28,67 +28,92 @@ comp/final_line_num.t        COMPAT    This test is about BEGIN / file parse beh
 comp/hints.t                 COMPAT    tests are using BEGIN block, do not ready for B::C
 comp/parser.t                COMPAT    We're not going to support ' as a package separator until we need to: https://github.com/rurban/perl-compiler/issues/217
 comp/require.t               TODO      No TODO tests passed + ?? BC issue #245 - Cannot reload XSLoader
+io/argv.t                    PLAN      Plan was valid
 io/bom.t                     COMPAT    BC issue 312 - BOM seems to be rejected by perlcc but really, who needs this?
 io/layers.t                  SKIP      This is a known BC issue we've never cared about. use open doesn't work. See https://code.google.com/p/perl-compiler/issues/detail?id=203
-io/open.t                    TESTS     BC issue #219 (overload) - new tests in upstream since 5.14.4
+io/open.t                    PLAN      Plan was valid
+io/perlio.t                  PLAN      Plan was valid
 mro/c3_with_overload.t       TESTS     BC issue #219 - overload issue
 mro/c3_with_overload_utf8.t  TESTS     BC issue #219 - overload issue
 mro/overload_c3.t            TESTS     BC issue #219 - overload issue
 mro/overload_c3_utf8.t       TESTS     BC issue #219 - overload issue
 mro/overload_dfs.t           TESTS     BC issue #219 - overload issue
+mro/package_aliases.t        PLAN      Plan was valid
 mro/package_aliases_utf8.t   SKIP      Runs REAALY slow and many of the failures are already reported. Waiting for other BC issues to clear before researching this one.
 op/attrhand.t                PLAN      BC issue #271 - Attribute::Handlers
+op/attrs.t                   PLAN      Plan was valid
 op/blocks.t                  COMPAT    check order of execution of special blocks ( BEGIN included )
-op/caller.t                  TESTS     Test results:
-op/closure.t                 TESTS     BC issue #278 - destruction issue
+op/caller.t                  PLAN      Plan was valid
+op/closure.t                 PLAN      Plan was valid
+op/concat2.t                 PLAN      Plan was valid
 op/const-optree.t            PLAN      BC issue #305 - feature refaliasing
 op/coreamp.t                 COMPAT    unsupported experimental::lexical_topic + BC issue #219 - overload issue
 op/coresubs.t                COMPAT    uses B::walkoptree
+op/dbm.t                     PLAN      Plan was valid
 op/defins.t                  TESTS     BC issue #294 - File::Glob constant subroutine redefined (glob.xs)
+op/dump.t                    PLAN      Plan was valid
 op/eval.t                    SKIP      TODO: infinite loop while running the binary + BC issue #219 - overload issue
 op/exists_sub.t              SIG       BC issue #277 - empty sub with attributes
+op/filetest.t                PLAN      Plan was valid
 op/glob.t                    SKIP      Occasional Flapper. Waiting for more BC issues to pass before we address it.
 op/goto_xs.t                 COMPAT    needs XS::APItest
+op/heredoc.t                 PLAN      Plan was valid
+op/lc.t                      PLAN      Plan was valid
+op/leaky-magic.t             PLAN      Plan was valid
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/magic.t                   TESTS     Test results:
+op/magic.t                   PLAN      Plan was valid
 op/method.t                  PLAN      Plan was valid
 op/mydef.t                   TODO      BC issue #299 - experimental::lexical_topic working once compiled lol
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/pack.t                    TESTS     Test results: error specific to 64 bits system
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
-op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
-op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
+op/print.t                   PLAN      Plan was valid
+op/readdir.t                 PLAN      Plan was valid
+op/readline.t                PLAN      Plan was valid
+op/ref.t                     PLAN      Plan was valid
+op/reset.t                   PLAN      Plan was valid
+op/smartmatch.t              PLAN      Plan was valid
+op/sort.t                    PLAN      Plan was valid
 op/sprintf.t                 TESTS     Test results:
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
-op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
+op/stash.t                   PLAN      Plan was valid
+op/sub.t                     PLAN      Plan was valid
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
 op/threads-dirh.t            COMPAT    We don't support threaded perl in this branch.
 op/threads.t                 COMPAT    We don't support threaded perl in this branch.
-op/universal.t               TESTS     BC issue #300 - PVFM not compiled
+op/tr.t                      PLAN      Plan was valid
+op/universal.t               PLAN      Plan was valid
 op/vec.t                     TESTS     BC issue #269
-op/warn.t                    TESTS     BC issue #219 - overload issue
-op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
+op/warn.t                    PLAN      Plan was valid
+op/while.t                   PLAN      Plan was valid
+op/write.t                   PLAN      Plan was valid
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
 re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     PLAN      Recheck BC issue #219 - overload issue + BC issue #295
 re/pat_advanced.t            PLAN      Recheck BC issue #317 - nested regexp
+re/pat_psycho.t              PLAN      Plan was valid
 re/pat_re_eval.t             PLAN      BC issue #219 - overload issue
-re/pat_rt_report.t           TESTS     BC issue #317 - nested Regex
+re/pat_rt_report.t           PLAN      Plan was valid
 re/qr_gc.t                   TESTS     BC issue #309 - regexp destruction
+re/reg_60508.t               PLAN      Plan was valid
+re/reg_eval.t                PLAN      Plan was valid
 re/reg_eval_scope.t          PLAN      BC issue #295 - (?{}) should have its own lexical scope
 re/reg_mesg.t                TESTS     CM issue #26 - warnings from re.pm - Subroutine redefined
 re/reg_pmod.t                TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
+re/subst.t                   PLAN      Plan was valid
 re/subst_amp.t               TESTS     BC issue #295 - (?{}) should have its own lexical scope
+re/subst_wamp.t              PLAN      Plan was valid
+uni/attrs.t                  PLAN      Plan was valid
 uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing the returned sub
 uni/chr.t                    COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/fold.t                   SKIP      BC issue #219 - overload issue
 uni/greek.t                  COMPAT    BC issue #283 - deprecated "encoding" pragma
 uni/latin2.t                 COMPAT    BC issue #283 - deprecated "encoding" pragma
-uni/parser.t                 TESTS     Test results:
+uni/parser.t                 PLAN      Plan was valid
 uni/readline.t               TESTS     BC issue #269 - constant modification causes segfault not die.
 uni/stash.t                  TESTS     BC issue #221 - delete is not anonymizing the returned sub
 uni/tr_7jis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
