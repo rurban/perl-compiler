@@ -7,12 +7,13 @@
 
 BEGIN {
     chdir 't' if -d 't';
-    @INC = ('../lib','.','../ext/re');
     require './test.pl';
     require './charset_tools.pl';
     require './loc_tools.pl';
-    skip_all_without_unicode_tables();
+    set_up_inc( '../lib','.','../ext/re' );
 }
+
+skip_all_without_unicode_tables();
 
 use strict;
 use warnings;
