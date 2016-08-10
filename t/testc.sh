@@ -1301,7 +1301,7 @@ use re "eval"; our ( $x, $y, $z ) = 1..3; $x =~ qr/$x(?{ $y = $z++ })/; undef $@
 tests[333]='use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん"); my @katakana =  map {chr} ord("ァ")..ord("ン"); my $hiragana = join(q{} => @hiragana); my $katakana = join(q{} => @katakana); my %h2k; @h2k{@hiragana} = @katakana; $str = $hiragana; $str =~ s/([ぁ-ん])/$h2k{$1}/go; print $str eq $katakana ? "ok\n" : "not ok\n$hiragana\n$katakana\n";'
 tests[335]='use POSIX (); print POSIX::M_SQRT2;'
-result[335]='1.41421356237309'
+result[335]='1.4142135623731'
 tests[338]='use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)."\n".ord($l)."\n";'
 tests[340]='eval q/use Net::DNS/; my $new = "IO::Socket::INET6"->can("new") or die "die at new"; my $inet = $new->("IO::Socket::INET6", LocalAddr => q/localhost/, Proto => "udp", LocalPort => undef); print q(ok) if ref($inet) eq "IO::Socket::INET6";'
 tests[342]='use IO::Socket::INET6 (); my $sock = IO::Socket::INET6->new( Blocking => 1, PeerAddr => q/127.0.0.1/, PeerPort => 22 ); print "ok\n";'
