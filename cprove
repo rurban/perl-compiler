@@ -163,20 +163,22 @@ sub load_error_tests {
 
 sub usage {
 
-    print <<'EOS';
+    my $V = TEST_SUITE_VERSION;
+
+    print <<"EOS";
 # run the compiled version
-> cprove -j4 t/v5.24.1/t/*/*.t
-> cprove t/v5.24.1/C-COMPILED/op/my.t
+> cprove -j4 t/$V/t/*/*.t
+> cprove t/$V/C-COMPILED/op/my.t
 # rerun new failures or passing test to flag them correctly
-> cprove -j4 --rerun t/v5.24.1/t/*/*.t
+> cprove -j4 --rerun t/$V/t/*/*.t
 
 # run everything in parallel
 > cprove --all
-> cprove -j10 t/v5.24.1/C-COMPILED/*/*.t
+> cprove -j10 t/$V/C-COMPILED/*/*.t
 
 # run the uncompiled version
-> cprove -u -j4 t/v5.24.1/t/*/*.t
-> cprove -u t/v5.24.1/C-COMPILED/op/my.t
+> cprove -u -j4 t/$V/t/*/*.t
+> cprove -u t/$V/C-COMPILED/op/my.t
 
 # run the compiled version
 > cprove op/my.t
