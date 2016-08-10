@@ -4733,10 +4733,13 @@ sub B::CV::save {
 		 $$gv, $$cv) if $debug{cv} and $debug{gv};
   }
   unless ($optimize_cop) {
+    my $file = $cv->FILE();
     if ($MULTI) {
-      $init->add( savepvn( "CvFILE($sym)", $cv->FILE ) );
+      $init->add( savepvn( "CvFILE($sym)", $file ) );
+    } elsif ($B::C::const_strings && length $file) {
+      $init->add( sprintf( "CvFILE(%s) = (char *) %s;", $sym, constpv( $file ) ) );
     } else {
-      $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $cv->FILE ) ) );
+      $init->add( sprintf( "CvFILE(%s) = %s;", $sym, cstring( $file ) ) );
     }
   }
   my $stash = $cv->STASH;
