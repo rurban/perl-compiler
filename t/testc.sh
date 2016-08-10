@@ -708,8 +708,6 @@ ok'
 tests[176]='use Math::BigInt; print Math::BigInt::->new(5000000000);'
 result[176]='5000000000'
 tests[177]='use version; print "ok\n" if version::is_strict("4.2");'
-tests[178]='BEGIN { $hash  = { pi => 3.14, e => 2.72, i => -1 } ;} print scalar keys $hash;'
-result[178]='3'
 tests[179]='#TODO smartmatch subrefs
 {
     package Foo;
