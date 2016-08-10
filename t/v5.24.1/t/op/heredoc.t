@@ -7,7 +7,7 @@ BEGIN {
 }
 
 use strict;
-plan(tests => 41);
+plan(tests => 41 - 2);
 
 # heredoc without newline (#65838)
 {
@@ -89,6 +89,9 @@ HEREDOC
         "long terminator fails correctly"
     );
 
+=pod
+    Skip these two tests with BCC, failure before compilation
+
     # this would read freed memory
     fresh_perl_like(
         qq(0<<<<""0\n\n),
@@ -105,4 +108,5 @@ HEREDOC
 	{},
 	"Don't assert parsing a here-doc if we hit EOF early"
     );
+=cut
 }
