@@ -72,6 +72,7 @@ op/vec.t                     TESTS     BC issue #269
 op/warn.t                    TESTS     BC issue #219 - overload issue
 op/write.t                   SIG       BC issue #219 - overload issue + BC issue #281 (nested format)
 op/yadayada.t                COMPAT    Unimplemented does not display the correct line number
+opbasic/magic_phase.t        COMPAT    Testing BEGIN, INIT, ... phases order, not compatible with B::C
 re/overload.t                TESTS     ?? + BC issue #219 - overload issue
 re/pat.t                     PLAN      Recheck BC issue #219 - overload issue + BC issue #295
 re/pat_advanced.t            PLAN      Recheck BC issue #317 - nested regexp
