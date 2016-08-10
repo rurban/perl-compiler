@@ -29,6 +29,7 @@ PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v510=`$PERL -e'print (($] < 5.010)?0:1)'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
+v524=`$PERL -e'print (($] < 5.024)?0:1)'`
 PERLV=$(perl -e 'print $^V')
 XTESTC="t/$PERLV/C-COMPILED/xtestc"
 
@@ -1180,7 +1181,7 @@ package B1; our @ISA = qw/D1/;
 package A1; use mro "c3"; our @ISA = qw/B1 C1/; sub testmeth { shift->next::method }
 A1->testmeth() eq "right" and print "ok\n"'
 fi
-if [[ $v518 -gt 0 ]]; then
+if [[ $v518 -gt 0 && $v524 -eq 0 ]]; then
   tests[299]='no warnings qw{experimental::lexical_topic}; my $s = "ok\n"; my $_ = "not ok\n"; my $r = $s =~ /ok(?{ print qq[$_] })/;'
 fi
 tests[2990]='#TODO version
