@@ -13,7 +13,7 @@ BEGIN {
     set_up_inc( '../lib','.','../ext/re' );
 }
 
-skip_all_without_unicode_tables();
+skip_all_without_unicode_tables(); 
 
 use strict;
 use warnings;
@@ -171,17 +171,21 @@ for my $char ("٠", "٥", "٩") {
 	like("\c]", qr/(?[\c]])/, '\c] should match itself');
 }
 
+# NOT for B::C
 # RT #126481 !! with syntax error panics
+=pod
 {
     fresh_perl_like('no warnings "experimental::regex_sets"; qr/(?[ ! ! (\w])/',
                     qr/^Unmatched \(/, {},
                     'qr/(?[ ! ! (\w])/ doesnt panic');
+
     # The following didn't panic before, but easy to add this here with a
     # paren between the !!
     fresh_perl_like('no warnings "experimental::regex_sets";qr/(?[ ! ( ! (\w)])/',
                     qr/^Unmatched \(/, {},
                     'qr/qr/(?[ ! ( ! (\w)])/');
 }
+=cut
 
 done_testing();
 
