@@ -52,8 +52,11 @@ sub run {
     }
 
     if ( grep { $_ eq '--all' } @args ) {
-        exec($^X, $0, '-j10', glob q{t/v5.22.*/C-COMPILED/*/*.t});
-        die "Exec error: $!"; # should never be reached
+        my $tv = TEST_SUITE_VERSION;
+        my @alltests =  glob qq{t/$tv/C-COMPILED/*/*.t};
+        @args = grep { $_ ne '--all' } @args;
+        push @args, '-j10' unless grep { $_ =~ qr{^-j} } @args;
+        push @args, @alltests;
     }
     my $call_restart = grep { $_ eq '--restart' || $_ eq '--rerun' } @args;
 
@@ -85,7 +88,6 @@ sub run {
     my @tests;
     while ( $args[-1] && $args[-1] =~ m/\.t$/ ) {
         my $t = pop @args;
-
         # can simply run 'prove op/kvaslice.t'
         if ( $t !~ qr{\Q/$v/\E} ) {
             $t = 't/' . $v . '/t/' . $t;
@@ -100,17 +102,18 @@ sub run {
         else {
             $t = $after;           # need to chdir for the uncompiled version
         }
+
         # remove blacklisted tests
-        next if grep {
+        do { say "Test '$t' is blacklisted."; next } if grep {
             ref $_  ? ( $t =~ $_ )
-            : ( $t =~ qr{^$_/} or $t eq $_ )
+            : ( $t =~ qr{^$_/} or $t =~ qr{$_$} )
             } @BLACKLIST;
         #die "Cannot find a test file" unless -e $t;
         unshift @tests, $t;
     }
 
     my @cmd = ( 'prove', @args, @tests );
-    if ( @cmd <= 1 ) {
+    if ( int( grep { $_ !~ qr{^-} } @cmd ) < 2 ) { # should have at least one test to run
         say "# Nothing to run";
         return 0;
     }
@@ -169,7 +172,7 @@ sub usage {
 
 # run everything in parallel
 > cprove --all
-> cprove -j10 t/v5.22.*/C-COMPILED/*/*.t
+> cprove -j10 t/v5.24.1/C-COMPILED/*/*.t
 
 # run the uncompiled version
 > cprove -u -j4 t/v5.24.1/t/*/*.t
