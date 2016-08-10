@@ -59,7 +59,6 @@ op/pack.t                    TESTS     Test results: error specific to 64 bits s
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
-op/sprintf.t                 TESTS     Test results:
 op/sprintf2.t                PLAN      BC issue #219 - overload issue
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
