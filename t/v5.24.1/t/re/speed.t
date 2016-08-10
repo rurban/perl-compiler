@@ -120,6 +120,10 @@ sub run_tests {
         ok ($s !~ /.*?:::\s*ab/ms, 'PREGf_IMPLICIT/ms');
         ok ($s !~ /.*?:::\s*ab/msi,'PREGf_IMPLICIT/msi');
 
+        SKIP: {
+
+            skip "tests using re 'debug' with B::C [output is at BEGIN time]", 2 * 2 * 4 * 2 if $0 =~ qr{\.bin};
+
         for my $star ('*', '{0,}') {
             for my $greedy ('', '?') {
                 for my $flags ('', 'i', 'm', 'mi') {
@@ -139,6 +143,8 @@ PROG
                 }
             }
         }
+    }
+
     }
 
     {
