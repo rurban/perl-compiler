@@ -117,7 +117,7 @@ function runopt {
 }
 
 function emit_test {
-  n=$1
+  n=$(expr $1 + 0)
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     echo -E "$CONTENT"
@@ -128,7 +128,7 @@ function emit_test {
 }
 
 function make_t_symlink {
-  n=$1
+  n=$(expr $1 + 0)
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     FILE_NUM=$(printf "%04d" $n)
@@ -148,7 +148,7 @@ function make_symlinks {
 }
 
 function ctest {
-    n=$1
+    n=$(expr $1 + 0)
     str=$2
 
     if [ $BASE = "testcc.sh" ]; then
