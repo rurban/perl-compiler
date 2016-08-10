@@ -1084,6 +1084,13 @@ sub _fresh_perl {
 
 sub whichperlcc {
     my $perlcc_bin = $ENV{'PROVE_BASEDIR'} . '/blib/script/perlcc';
+    if ( ! -x $perlcc_bin ) { # used when running the binary manually
+        $perlcc_bin = qx{which perlcc};        
+        die "No perlcc found." if $? != 0;
+        chomp $perlcc_bin;
+        print STDERR "# Warning: using $perlcc_bin\n";
+    }
+    
     -x $perlcc_bin or die("No perlcc found at $perlcc_bin!");
     return $perlcc_bin;
 }
