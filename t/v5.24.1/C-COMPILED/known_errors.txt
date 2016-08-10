@@ -118,6 +118,7 @@ xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
+xtestc/0253.t                TESTS     BC issue #376 - utf8 heavy redefined + segfault
 xtestc/0259.t                SKIP      need investigation: different result on Todd or Nico sandbox
 xtestc/0262.t                TESTS     Output is: "Constant subroutine M SQRT2 ..."
 xtestc/0263.t                SKIP      need investigation: different result on Todd or Nico sandbox
