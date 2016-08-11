@@ -29,6 +29,7 @@ PERL=${PERL:-perl}
 PERL=`echo $PERL|sed -e's,^",,; s,"$,,'`
 v510=`$PERL -e'print (($] < 5.010)?0:1)'`
 v518=`$PERL -e'print (($] < 5.018)?0:1)'`
+v524=`$PERL -e'print (($] < 5.024)?0:1)'`
 #v522=`$PERL -e'print (($] < 5.022)?0:1)'`
 PERLV=v5.`$PERL -e'print substr($],3,2)'`
 XTESTC="t/CORE/$PERLV/C-COMPILED/xtestc"
@@ -118,7 +119,7 @@ function runopt {
 }
 
 function emit_test {
-  n=$1
+  n=$(expr $1 + 0)
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     echo -E "$CONTENT"
@@ -129,7 +130,7 @@ function emit_test {
 }
 
 function make_t_symlink {
-  n=$1
+  n=$(expr $1 + 0)
   CONTENT="${tests[${n}]}"
   if [ "x$CONTENT" != "x" ]; then
     FILE_NUM=$(printf "%04d" $n)
@@ -149,7 +150,7 @@ function make_symlinks {
 }
 
 function ctest {
-    n=$1
+    n=$(expr $1 + 0)
     str=$2
 
     if [ $BASE = "testcc.sh" ]; then
@@ -709,8 +710,10 @@ ok'
 tests[176]='use Math::BigInt; print Math::BigInt::->new(5000000000);'
 result[176]='5000000000'
 tests[177]='use version; print "ok\n" if version::is_strict("4.2");'
-tests[178]='BEGIN { $hash  = { pi => 3.14, e => 2.72, i => -1 } ;} print scalar keys $hash;'
-result[178]='3'
+if [[ $v524 -eq 0 ]]; then
+  tests[178]='BEGIN { $hash  = { pi => 3.14, e => 2.72, i => -1 } ;} print scalar keys $hash;'
+  result[178]='3'
+fi
 tests[179]='#TODO smartmatch subrefs
 {
     package Foo;
@@ -1199,7 +1202,7 @@ package B1; our @ISA = qw/D1/;
 package A1; use mro "c3"; our @ISA = qw/B1 C1/; sub testmeth { shift->next::method }
 A1->testmeth() eq "right" and print "ok\n"'
 fi
-if [[ $v518 -gt 0 ]]; then
+if [[ $v518 -gt 0 && $v524 -eq 0 ]]; then
   tests[299]='no warnings qw{experimental::lexical_topic}; my $s = "ok\n"; my $_ = "not ok\n"; my $r = $s =~ /ok(?{ print qq[$_] })/;'
 fi
 tests[2990]='#TODO version
