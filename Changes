@@ -15,6 +15,7 @@
         Abstract utf8_heavy loader (CPANEL-5417, CPANEL-6105, #369, #364) fixing
         redefinition warnings, fixing %INC (atoomic)
         Improve NV precision, use %17g (atoomic #373)
+        Fix delayed cvref initialization of XS module functions (#376)
 
 1.54_03 2016-05-09 rurban
         Released with cperl-5.22.2

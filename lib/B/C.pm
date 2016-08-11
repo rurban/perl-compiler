@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_10';
+our $VERSION = '1.54_11';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -3822,7 +3822,7 @@ sub B::RV::save {
     # dynamic; so we need to inc it
     elsif ( $rv =~ /get_cv/ ) {
       $xrvsect->add("Nullsv /* $rv */");
-      $init->add(
+      $init2->add(
         sprintf( "xrv_list[%d].xrv_rv = (SV*)SvREFCNT_inc(%s);", $xrvsect->index, $rv ) );
     }
     else {
@@ -5209,6 +5209,7 @@ sub B::GV::save {
         $init2->add(
           sprintf("if ((sv = (SV*)%s))", get_cv($origname, "GV_ADD")),
           sprintf("    GvCV_set(%s, (CV*)SvREFCNT_inc_simple_NN(sv));", $sym));
+          # TODO: add evtl. to SvRV also.
       }
       elsif (!$PERL510 or $gp) {
 	if ($fullname eq 'Internals::V') { # local_patches if $] >= 5.011
