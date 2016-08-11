@@ -17,6 +17,7 @@ BEGIN {
 die "Please use perl 5.22" unless $^V =~ qr{^v5.22};
 
 use KnownErrors qw/check_todo/;
+use TestCompile qw/compile_script/;
 
 if ( $0 =~ m{/template\.pl$} ) {
     plan q{skip_all} => "This program is not designed to be called directly";
@@ -103,34 +104,23 @@ SKIP: {
             # lazy way to count and keep the skip counter up to date
             $errors->{to_skip} = 5;
 
-            # Generate the C code at $optimization level
-            my $cmd = "$PERL $blib -I$FindBin::Bin/../../.. -MO=-qq,C,$optimization,-o$c_file $perl_file 2>&1";
+            # shared logic with testc
+            my ( $parser, $errormsg ) = compile_script(
+                $perl_file, $errors,
+                {
+                    extra        => qq{-I$FindBin::Bin/../../..},
+                    optimization => $optimization,
+                    c_file       => $c_file,
+                    bin_file     => $bin_file,
+                    no_harness   => 1,
+                }
+            );
 
-            diag $cmd if $ENV{VERBOSE};
-            my $BC_output = `$cmd`;
-            note $BC_output if ($BC_output);
-            unless ( $errors->check_todo( -e $c_file && !-z _, "$c_file is generated ($optimization)", 'BC' ) ) {
-                unlink $c_file unless $ENV{BC_DEVELOPING};
-                skip( "Can't test further due to failure to create a c file.", $errors->{to_skip} );
-            }
-
-            # gcc the c code.
-            my $harness_opts = '';
-            $harness_opts = '-Wall' if $ENV{VERBOSE} && $ENV{WARNINGS};
-            $harness_opts .= $ENV{VERBOSE} ? '' : ' -q';
-            $cmd = "$PERL $FindBin::Bin/../../../../script/cc_harness $harness_opts $c_file -o $bin_file 2>&1";
-            diag $cmd if $ENV{VERBOSE};
-            my $compile_output = qx{$cmd};
-            note $compile_output if ($compile_output);
-
-            # Validate compiles
-            unless ( $errors->check_todo( -x $bin_file, "$bin_file is compiled and ready to run.", 'GCC' ) ) {
-                unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
-                skip( "Can't test further due to failure to create a binary file.", $errors->{to_skip} );
-            }
+            # handle error when compiling script
+            skip $errormsg, $errors->{to_skip} unless $parser;
 
             # Parse through TAP::Harness
-            my $out     = qx{$bin_file 2>&1};
+            my $out     = qx{$bin_file};
             my $str_out = $out;
             $str_out =~ s{\n}{\\n}g;
             $str_out =~ s{[^A-Za-z0-9\s\\:=,;\.\(\)]}{ }g;
@@ -146,7 +136,7 @@ SKIP: {
             chomp $out;
 
             #chomp $out if $want eq 'ok';
-            unless ( $errors->check_todo( $out eq $want, qq{Output is: "$str_out"}, 'TESTS' ) ) {
+            unless ( $errors->check_todo( $out eq $want, qq{Output is: "$str_out" expect "$want"}, 'TESTS' ) ) {
                 skip( "TESTS failure", $errors->{to_skip} );
             }
 
