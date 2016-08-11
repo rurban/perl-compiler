@@ -3,8 +3,6 @@
 use strict;
 use warnings;
 
-use TAP::Harness ();
-use IO::Scalar;
 use Cwd;
 use File::Basename;
 use Test::More;
@@ -20,6 +18,7 @@ die "Please use perl 5.24" unless $^V =~ qr{^v5.24};
 $ENV{'PROVE_BASEDIR'} = getcwd;
 
 use KnownErrors qw/check_todo/;
+use TestCompile qw/compile_script/;
 
 if ( $0 =~ m{/template\.pl$} ) {
     plan q{skip_all} => "This program is not designed to be called directly";
@@ -82,77 +81,30 @@ like( $check, qr/syntax OK/, "$PERL -c $taint $file_to_test" );
 
 $ENV{HARNESS_NOTTY} = 1;
 
-my %SIGNALS = qw( 11 SEGV 6 SIGABRT 1 SIGHUP 13 SIGPIPE);
-$SIGNALS{0} = '';
-
 foreach my $optimization (@optimizations) {
   TODO: SKIP: {
         local $TODO;
 
         $errors->{to_skip} = 9;
 
-        # Generate the C code at $optimization level
-        my $cmd = "$PERL $blib $taint -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+        # shared logic with testc
+        my ( $parser, $errormsg ) = compile_script(
+            $file_to_test, $errors,
+            {
+                extra        => $taint,
+                optimization => $optimization,
+                c_file       => $c_file,
+                bin_file     => $bin_file,
 
-        diag $cmd if $ENV{VERBOSE};
-        my $BC_output = `$cmd`;
-        note $BC_output if ($BC_output);
-
-        unless ( $errors->check_todo( -e $c_file && !-z _, "$c_file is generated ($optimization)", 'BC' ) ) {
-            unlink $c_file unless $ENV{BC_DEVELOPING};
-            skip( "Can't test further due to failure to create a c file.", $errors->{to_skip} );
-        }
-
-        # gcc the c code.
-        my $harness_opts = '';
-        $harness_opts = '-Wall' if $ENV{VERBOSE} && $ENV{WARNINGS};
-        $harness_opts .= $ENV{VERBOSE} ? '' : ' -q';
-        $cmd = "$PERL $FindBin::Bin/../../../../script/cc_harness $harness_opts $c_file -o $bin_file 2>&1";
-        diag $cmd if $ENV{VERBOSE};
-        my $compile_output = `$cmd`;
-        note $compile_output if ($compile_output);
-
-        # Validate compiles
-        unless ( $errors->check_todo( -x $bin_file, "$bin_file is compiled and ready to run.", 'GCC' ) ) {
-            unlink $c_file, $bin_file unless $ENV{BC_DEVELOPING};
-            skip( "Can't test further due to failure to create a binary file.", $errors->{to_skip} );
-        }
-
-        # Parse through TAP::Harness
-        my $out    = '';
-        my $out_fh = new IO::Scalar \$out;
-
-        my %args = (
-            verbosity => 1,
-            lib       => [],
-            merge     => 1,
-            stdout    => $out_fh,
+            }
         );
-        my $harness = TAP::Harness->new( \%args );
-        my $res     = $harness->runtests($bin_file);
-        close $out_fh;
 
-        my $parser = $res->{parser_for}->{$bin_file};
-        $errors->check_todo( $parser, "Output parsed by TAP::Harness" ) or do {
-            skip "Cannot parse TAP output", $errors->{to_skip};
-        };
-
-        my $signal = $res->{wait} % 256;
-        my $sig_name = $SIGNALS{$signal} || '';
-
-        unless ( $errors->check_todo( $signal == 0, "Exit signal is $signal $sig_name", 'SIG' ) ) {
-            note $out if $out;
-            skip( "Test failures irrelevant if exits premature with $sig_name", $errors->{to_skip} );
-        }
-
-        unless ( $errors->check_todo( $parser->{is_good_plan}, "Plan was valid", 'PLAN' ) ) {
-            note $out if $out;
-            skip( "TAP parse is unpredictable when plan is invalid", $errors->{to_skip} );
-        }
+        # handle error when compiling script
+        skip $errormsg, $errors->{to_skip} unless $parser;
 
         my $tests_ok = $errors->check_todo( $parser->{exit} == 0, "Exit code is $parser->{exit}", "EXIT" );
         $tests_ok = $errors->check_todo( !scalar @{ $parser->{failed} }, "Test results:", 'TESTS' ) && $tests_ok;
-        print "    $_\n" foreach ( split( "\n", $out ) );
+        print "    $_\n" foreach ( split( "\n", $parser->{out} ) );
 
         unless ($tests_ok) {
             note( "Failed tests: " . join( ", ", @{ $parser->{failed} } ) );
