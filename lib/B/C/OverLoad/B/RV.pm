@@ -3,7 +3,7 @@ package B::RV;
 use strict;
 
 use B::C::Config;
-use B::C::File qw/svsect init/;
+use B::C::File qw/svsect init init2/;
 use B::C::Helpers qw/is_constant/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 
@@ -39,14 +39,21 @@ sub save {
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
 
-    init()->add( sprintf( "%s.sv_any = (void*)&%s - sizeof(void*);", $s, $s ) );              # 354 defined needs SvANY
-    init()->add( sprintf( "%s.sv_u.svu_rv = (SV*)%s;", $s, $rv ) ) unless is_constant($rv);
+    init()->add( sprintf( "%s.sv_any = (void*)&%s - sizeof(void*);", $s, $s ) );    # 354 defined needs SvANY
+    if ( !is_constant($rv) ) {
+        if ( $rv =~ /get_cv/ ) {                                                    # ref($rv) ne 'B::GV' && ref($rv) ne 'B::HV'
+            init2()->add( sprintf( "%s.sv_u.svu_rv = (SV*)%s;", $s, $rv ) );
+        }
+        else {
+            init()->add( sprintf( "%s.sv_u.svu_rv = (SV*)%s;", $s, $rv ) );
+        }
+    }
 
     return savesym( $sv, "&" . $s );
 }
 
 # the save methods should probably be renamed visit
-sub save_op {
+sub save_op {                                                                       # previously known as 'sub save_rv'
     my ( $sv, $fullname ) = @_;
 
     $fullname ||= '(unknown)';
