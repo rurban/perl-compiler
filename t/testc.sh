@@ -565,8 +565,10 @@ tests[144]='print index("long message\0xx","\0")'
 result[144]='12'
 tests[145]='my $bits = 0; for (my $i = ~0; $i; $i >>= 1) { ++$bits; }; print $bits'
 result[145]=`$PERL -MConfig -e'print 8*$Config{ivsize}'`
-tests[146]='my $a = v120.300; my $b = v200.400; $a ^= $b; print sprintf("%vd", $a);'
-result[146]='176.188'
+if [[ $v524 -eq 0 ]]; then # Use of strings with code points over 0xFF as arguments to bitwise xor (^) operator is deprecated in perl 5.24
+  tests[146]='my $a = v120.300; my $b = v200.400; $a ^= $b; print sprintf("%vd", $a);'
+  result[146]='176.188'
+fi
 tests[148]='open(FH, ">", "ccode148i.tmp"); print FH "1\n"; close FH; print -s "ccode148i.tmp"'
 result[148]='2'
 tests[149]='format Comment =
