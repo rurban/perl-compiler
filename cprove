@@ -2,12 +2,20 @@
 
 use v5.14;    # or later
 
-use Cwd;
+use warnings;
+use strict;
 
-run(@ARGV) unless caller;
+use Cwd;
 
 use constant TEST_SUITE_VERSION => 'v5.22.0';
 use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
+
+my @BLACKLIST = (
+    qw{benchmark perf porting bigmem lib win32 japh porting run test_pl op/threads.t},
+    qr{_thr\.t$},    # do not care about threads
+);
+
+run(@ARGV) unless caller;
 
 sub run {
     my (@args) = @_;
@@ -23,7 +31,7 @@ sub run {
 
     #$run_compile_version = grep { qr{^-+c(ompiled)?$} } @args;
     my $run_compile_version = !grep { $_ =~ qr{^-+u(ncompiled)?$} } @args;
-    my @args                = grep  { $_ !~ qr{^-+u(ncompiled)?$} } @args;
+    @args = grep { $_ !~ qr{^-+u(ncompiled)?$} } @args;
 
     my $saving_state;
     if ( !grep { $_ =~ qr{^--state} } @args ) {
@@ -42,9 +50,13 @@ sub run {
     }
 
     if ( grep { $_ eq '--all' } @args ) {
-        exec($^X, $0, '-j10', glob q{t/v5.22.*/C-COMPILED/*/*.t});
-        die "Exec error: $!"; # should never be reached
+        my $tv       = TEST_SUITE_VERSION;
+        my @alltests = glob qq{t/$tv/C-COMPILED/*/*.t};
+        @args = grep { $_ ne '--all' } @args;
+        push @args, '-j10' unless grep { $_ =~ qr{^-j} } @args;
+        push @args, @alltests;
     }
+    my $call_restart = grep { $_ eq '--restart' || $_ eq '--rerun' } @args;
 
     my $restart = sub {
         my $cwd        = cwd();
@@ -90,25 +102,27 @@ sub run {
             $t = $after;           # need to chdir for the uncompiled version
         }
 
+        # remove blacklisted tests
+        do { say "Test '$t' is blacklisted."; next } if grep { ref $_ ? ( $t =~ $_ ) : ( $t =~ qr{^$_/} or $t =~ qr{$_$} ) } @BLACKLIST;
+
         #die "Cannot find a test file" unless -e $t;
         unshift @tests, $t;
     }
 
     my @cmd = ( 'prove', @args, @tests );
-    if ( @cmd <= 1 ) {
+    if ( int( grep { $_ !~ qr{^-} } @cmd ) < 2 ) {    # should have at least one test to run
         say "# Nothing to run";
         return 0;
     }
 
     say "# Running: ", join( ' ', @cmd );
-
     if ( !$run_compile_version ) {
-        chdir("t/$v/t");    # core tests need to be run from t directory
+        chdir("t/$v/t");                              # core tests need to be run from t directory
     }
 
     # allow glob...
     system( join ' ', @cmd );
-    $restart->() if $?;
+    $restart->() if $run_compile_version && $call_restart && $?;
 
     return 1;
 }
@@ -146,18 +160,22 @@ sub load_error_tests {
 
 sub usage {
 
-    print <<'EOS';
+    my $V = TEST_SUITE_VERSION;
+
+    print <<"EOS";
 # run the compiled version
-> cprove -j4 t/v5.22.0/t/*.t
-> cprove t/v5.22.0/C-COMPILED/op/my.t
+> cprove -j4 t/$V/t/*/*.t
+> cprove t/$V/C-COMPILED/op/my.t
+# rerun new failures or passing test to flag them correctly
+> cprove -j4 --rerun t/$V/t/*/*.t
 
 # run everything in parallel
 > cprove --all
-> cprove -j10 t/v5.22.*/C-COMPILED/*/*.t
+> cprove -j10 t/$V/C-COMPILED/*/*.t
 
 # run the uncompiled version
-> cprove -u -j4 t/v5.22.0/t/*.t
-> cprove -u t/v5.22.0/C-COMPILED/op/my.t
+> cprove -u -j4 t/$V/t/*/*.t
+> cprove -u t/$V/C-COMPILED/op/my.t
 
 # run the compiled version
 > cprove op/my.t
