@@ -23,9 +23,15 @@ if [ "$ARG" == "--debug" ]; then
     DEBUG=1
 fi
 
+if [ "$DEBUG" == "1" ]; then
+    export BC_CFLAGS='-Og' # Optimize debugging experience.
+    #else export BC_CFLAGS='' # use default compilation option
+fi
+
 export VERBOSE=$DEBUG
 export BC_DEVELOPING=$DEBUG
 export WARNINGS=$DEBUG
 
 echo -n 'Using perl: '
 which perl
+echo "BC_FLAGS: $BC_FLAGS # export BC_FLAGS='-O1'"

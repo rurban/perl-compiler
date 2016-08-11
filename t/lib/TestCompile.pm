@@ -15,6 +15,8 @@ our @EXPORT_OK = qw/compile_script/;
 
 use v5.14;
 
+use constant DEFAULT_CCFLAGS => q{-O1};
+
 my %SIGNALS = ( qw( 11 SEGV 6 SIGABRT 1 SIGHUP 13 SIGPIPE), 0 => '' );
 
 sub compile_script {
@@ -29,7 +31,9 @@ sub compile_script {
     my $c_file       = $opts->{c_file}       // die;
     my $bin_file     = $opts->{bin_file}     // die,
 
-      my $cmd = "$PERL $blib $extra -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
+    my $cflags = $ENV{'BC_CFLAGS'} // DEFAULT_CCFLAGS;
+
+    my $cmd = "$PERL $blib $extra -MO=-qq,C,$optimization,-o$c_file $file_to_test 2>&1";
 
     diag $cmd if $ENV{VERBOSE};
     my $BC_output = `$cmd`;
@@ -44,6 +48,7 @@ sub compile_script {
     my $harness_opts = '';
     $harness_opts = '-Wall' if $ENV{VERBOSE} && $ENV{WARNINGS};
     $harness_opts .= $ENV{VERBOSE} ? '' : ' -q';
+    $harness_opts .= ' '.$cflags if $cflags;
     $cmd = "$PERL $FindBin::Bin/../../../../script/cc_harness $harness_opts $c_file -o $bin_file 2>&1";
     diag $cmd if $ENV{VERBOSE};
     my $compile_output = `$cmd`;
