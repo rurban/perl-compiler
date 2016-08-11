@@ -3802,7 +3802,13 @@ sub B::RV::save {
     # 354 defined needs SvANY
     $init->add( sprintf("$s.sv_any = (char*)&$s - %d;", $Config{ptrsize}))
       if $] > 5.019 or $ITHREADS;
-    $init->add( "$s.sv_u.svu_rv = (SV*)$rv;" ) unless ($C99 and is_constant($rv));
+    unless ($C99 and is_constant($rv)) {
+      if ( $rv =~ /get_cv/ ) {
+        $init2->add( "$s.sv_u.svu_rv = (SV*)$rv;" ) ;
+      } else {
+        $init->add( "$s.sv_u.svu_rv = (SV*)$rv;" ) ;
+      }
+    }
     return savesym( $sv, "&".$s );
   }
   else {
