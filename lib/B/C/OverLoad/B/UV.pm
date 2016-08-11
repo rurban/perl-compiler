@@ -19,13 +19,16 @@ sub save {
 
     xpvuvsect()->comment("stash, magic, cur, len, xiv_u");
 
-    my $uvx = $sv->UVX;
+    my $uvx  = $sv->UVX;
+    my $suff = 'U';
+    $suff .= 'L' if $uvx > 2147483647;
+
     # issue 145 warn $sv->UVX, " ", sprintf("%Lu", $sv->UVX);
     xpvuvsect()->add( sprintf( "Nullhv, {0}, 0, 0, {%" . $uvuformat . "%s}", $uvx, 'LLU' ) );
 
     svsect()->add(
         sprintf(
-            "&xpvuv_list[%d], %Lu, 0x%x" . ', {' . ( C99() ? ".svu_pv=" : "" ) . $uvx . '}',
+            "&xpvuv_list[%d], %Lu, 0x%x" . ', {' . ( C99() ? ".svu_uv=" : "" ) . $uvx . $suff . '}',
             xpvuvsect()->index, $sv->REFCNT, $sv->FLAGS
         )
     );
