@@ -10,12 +10,12 @@ use Cwd;
 use constant TEST_SUITE_VERSION => 'v5.24.1';
 use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
 
-my @BLACKLIST = ( 
+my @BLACKLIST = (
     qw{benchmark perf porting bigmem lib win32 japh porting run test_pl op/threads.t},
     qr{_thr\.t$}, # do not care about threads
-    ); 
+    );
 
-push @BLACKLIST, qw{re/uniprops.t op/pack.t}; # FIXME broken for now
+push @BLACKLIST, qw{re/uniprops.t}; # FIXME broken for now
 
 run(@ARGV) unless caller;
 

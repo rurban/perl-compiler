@@ -55,7 +55,6 @@ op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failu
 op/magic.t                   TESTS     Test results:
 op/method.t                  PLAN      Plan was valid
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
-op/pack.t                    TESTS     Test results: error specific to 64 bits system
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
