@@ -15,8 +15,6 @@ my @BLACKLIST = (
     qr{_thr\.t$}, # do not care about threads
     );
 
-push @BLACKLIST, qw{re/uniprops.t}; # FIXME broken for now
-
 run(@ARGV) unless caller;
 
 sub run {
