@@ -29,7 +29,7 @@ BEGIN {
 }
 
 use strict;
-use feature 'fc';
+use feature 'fc', 'postderef';
 
 # =1 adds debugging output; =2 increases the verbosity somewhat
 my $debug = $ENV{PERL_DEBUG_FULL_TEST} // 0;
@@ -53,6 +53,12 @@ my %known_bad_locales = (
                           os390 => qr/ ^ italian /ix,
                         );
 
+# cygwin isn't returning proper radix length in this locale, but supposedly to
+# be fixed in later versions.
+if ($^O eq 'cygwin' && version->new(($Config{osvers} =~ /^(\d+(?:\.\d+)+)/)[0]) le v2.4.1) {
+    $known_bad_locales{'cygwin'} = qr/ ^ ps_AF /ix;
+}
+
 use Dumpvalue;
 
 my $dumper = Dumpvalue->new(
@@ -63,7 +69,7 @@ my $dumper = Dumpvalue->new(
 sub debug {
   return unless $debug;
   my($mess) = join "", '# ', @_;
-  chop $mess;
+  chomp $mess;
   print STDERR $dumper->stringify($mess,1), "\n";
 }
 
@@ -88,6 +94,7 @@ sub ok {
     print "ok " . ++$test_num;
     print " $message";
     print "\n";
+    return ($result) ? 1 : 0;
 }
 
 # First we'll do a lot of taint checking for locales.
@@ -113,6 +120,20 @@ sub check_taint_not ($;$) {
     my $message_tail = $_[1] // "";
     $message_tail = ":  $message_tail" if $message_tail;
     ok((not is_tainted($_[0])), "verify that isn't tainted$message_tail");
+}
+
+foreach my $category (qw(ALL COLLATE CTYPE MESSAGES MONETARY NUMERIC TIME)) {
+    my $short_result = locales_enabled($category);
+    ok ($short_result == 0 || $short_result == 1,
+        "Verify locales_enabled('$category') returns 0 or 1");
+    debug("locales_enabled('$category') returned '$short_result'");
+    my $long_result = locales_enabled("LC_$category");
+    if (! ok ($long_result == $short_result,
+              "   and locales_enabled('LC_$category') returns "
+            . "the same value")
+    ) {
+        debug("locales_enabled('LC_$category') returned $long_result");
+    }
 }
 
 "\tb\t" =~ /^m?(\s)(.*)\1$/;
@@ -848,7 +869,8 @@ sub disp_str ($) {
             }
             else {
                 $result .= "  " unless $prev_was_punct;
-                $result .= charnames::viacode(ord $char);
+                my $name = charnames::viacode(ord $char);
+                $result .= (defined $name) ? $name : ':unknown:';
                 $prev_was_punct = 0;
             }
         }
@@ -2009,12 +2031,14 @@ foreach my $Locale (@Locale) {
 
     report_result($Locale, ++$locales_test_number, $ok16);
     $test_names{$locales_test_number} = 'Verify that a sprintf of a number with a UTF-8 radix yields UTF-8';
+    $problematical_tests{$locales_test_number} = 1;
 
     report_result($Locale, ++$locales_test_number, $ok17);
     $test_names{$locales_test_number} = 'Verify that a sprintf of a number outside locale scope uses a dot radix';
 
     report_result($Locale, ++$locales_test_number, $ok18);
     $test_names{$locales_test_number} = 'Verify that a sprintf of a number back within locale scope uses locale radix';
+    $problematical_tests{$locales_test_number} = 1;
 
     report_result($Locale, ++$locales_test_number, $ok19);
     $test_names{$locales_test_number} = 'Verify that strftime doesn\'t return "%p" in locales where %p is empty';
@@ -2264,14 +2288,14 @@ foreach $test_num ($first_locales_test_number..$final_locales_test_number) {
         if (($Okay{$test_num} || $Known_bad_locale{$test_num})
             && grep { $_ == $test_num } keys %problematical_tests)
         {
-            no warnings 'experimental::autoderef';
+            no warnings 'experimental::postderef';
 
             # Don't count the known-bad failures when calculating the
             # percentage that fail.
             my $known_failures = (exists $Known_bad_locale{$test_num})
-                                  ? scalar(keys $Known_bad_locale{$test_num})
+                                  ? scalar(keys $Known_bad_locale{$test_num}->%*)
                                   : 0;
-            my $adjusted_failures = scalar(keys $Problem{$test_num})
+            my $adjusted_failures = scalar(keys $Problem{$test_num}->%*)
                                     - $known_failures;
 
             # Specially handle failures where only known-bad locales fail.
@@ -2279,7 +2303,7 @@ foreach $test_num ($first_locales_test_number..$final_locales_test_number) {
             if ($adjusted_failures <= 0) {
                 print "not ok $test_num $test_names{$test_num} # TODO fails only on ",
                                                                 "known bad locales: ",
-                      join " ", keys $Known_bad_locale{$test_num}, "\n";
+                      join " ", keys $Known_bad_locale{$test_num}->%*, "\n";
                 next TEST_NUM;
             }
 
@@ -2298,7 +2322,7 @@ foreach $test_num ($first_locales_test_number..$final_locales_test_number) {
             }
             if ($debug) {
                 print "# $percent_fail% of locales (",
-                      scalar(keys $Problem{$test_num}),
+                      scalar(keys $Problem{$test_num}->%*),
                       " of ",
                       scalar(@Locale),
                       ") fail the above test (TODO cut-off is ",

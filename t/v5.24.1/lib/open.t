@@ -128,10 +128,10 @@ EOE
 		   'syswrite len pad' => sub {
 		       my $temp = shift() . "\243";
 		       syswrite G, $temp, 1; },
-		   'syswrite off' => sub {
+		   'syswrite off' => sub { 
 		       my $temp = "\351" . shift();
 		       syswrite G, $temp, 1, 1; },
-		   'syswrite off pad' => sub {
+		   'syswrite off pad' => sub { 
 		       my $temp = "\351" . shift() . "\243";
 		       syswrite G, $temp, 1, 1; },
 		  );

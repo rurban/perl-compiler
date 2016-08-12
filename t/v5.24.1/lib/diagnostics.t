@@ -199,7 +199,7 @@ is runperl(@runperl_args, prog => $subs),
    << 'EOT', 'internal error with backtrace';
 panic: gremlins at -e line 1 (#1)
     (P) An internal error.
-
+    
 Uncaught exception from user code:
 	panic: gremlins at -e line 1.
 	main::baz() called at -e line 1
@@ -218,7 +218,7 @@ is runperl(@runperl_args, prog => 'die q _panic: gremlins_'),
    << 'EOV', 'no backtrace from top-level internal error';
 panic: gremlins at -e line 1 (#1)
     (P) An internal error.
-
+    
 Uncaught exception from user code:
 	panic: gremlins at -e line 1.
 EOV
@@ -245,7 +245,7 @@ is runperl(@runperl_args, prog => 'BEGIN { die q _panic: gremlins_ }'),
 panic: gremlins at -e line 1.
 BEGIN failed--compilation aborted at -e line 1 (#1)
     (P) An internal error.
-
+    
 Uncaught exception from user code:
 	panic: gremlins at -e line 1.
 	BEGIN failed--compilation aborted at -e line 1.

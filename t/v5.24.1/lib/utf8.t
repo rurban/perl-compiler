@@ -1,4 +1,4 @@
-#!./perl
+#!./perl 
 
 my $has_perlio;
 
@@ -62,7 +62,7 @@ no utf8; # Ironic, no?
 
     for my $s ("\x{263a}",
 	       $smiley,
-
+		
 	       "" . $smiley,
 	       "" . "\x{263a}",
 
@@ -85,7 +85,7 @@ no utf8; # Ironic, no?
 
 	       "\x{263a}\x{263a}",
 	       "$smiley$smiley",
-
+	       
 	       "\x{263a}" x 2,
 	       $smiley    x 2,
 	       ) {
@@ -106,7 +106,7 @@ no utf8; # Ironic, no?
     my $w = 0;
     local $SIG{__WARN__} = sub { print "#($_[0])\n"; $w++ };
     my $x = eval q/"\\/ . "\x{100}" . q/"/;;
-
+   
     ok($w == 0 && $x eq "\x{100}");
 }
 
@@ -124,10 +124,10 @@ no utf8; # Ironic, no?
     my $progfile = 'utf' . $$;
     END {unlink_all $progfile}
 
-    # If I'm right 60 is '>' in ASCII, ' ' in EBCDIC
-    # 173 is not punctuation in either ASCII or EBCDIC
+    # 64 is '@' in ASCII, ' ' in EBCDIC
+    # 193 is not punctuation in either ASCII nor EBCDIC
     my (@char);
-    foreach (60, 173, 257, 65532) {
+    foreach (64, 193, 257, 65532) {
       my $char = chr $_;
       utf8::encode($char);
       # I don't want to use map {ord} and I've no need to hardcode the UTF
@@ -143,11 +143,11 @@ no utf8; # Ironic, no?
     # Now we've done all the UTF8 munching hopefully we're safe
     my @tests = (
              ['check our detection program works',
-              'my @a = ("'.chr(60).'\x2A", ""); $b = show @a', qr/^>60,42<><$/],
+              'my @a = ("'.chr(64).'\x2A", ""); $b = show @a', qr/^>64,42<><$/],
              ['check literal 8 bit input',
-              '$a = "' . chr (173) . '"; $b = show $a', qr/^>173<$/],
+              '$a = "' . chr (193) . '"; $b = show $a', qr/^>193<$/],
              ['check no utf8; makes no change',
-              'no utf8; $a = "' . chr (173) . '"; $b = show $a', qr/^>173<$/],
+              'no utf8; $a = "' . chr (193) . '"; $b = show $a', qr/^>193<$/],
              # Now we do the real byte sequences that are valid UTF8
              (map {
                ["the utf8 sequence for chr $_->[0]",
@@ -270,21 +270,34 @@ BANG
 #   "my" variable $strict::VERSION can't be in a package
 #
 SKIP: {
-    skip("Embedded UTF-8 does not work in EBCDIC", 1) if ord("A") == 193;
-    ok('' eq runperl(prog => <<'CODE'), "change #17928");
-	my $code = qq{ my \$\xe3\x83\x95\xe3\x83\xbc = 5; };
-    {
-	use utf8;
-	eval $code;
-	print $@ if $@;
-    }
+    skip("Haven't bothered to port this to EBCDIC non-1047", 1) if $::IS_EBCDIC
+                                                                && ord '^' != 95;
+    if ($::IS_ASCII) {
+        ok('' eq runperl(prog => <<'CODE'), "change #17928");
+            my $code = qq{ my \$\xe3\x83\x95\xe3\x83\xbc = 5; };
+        {
+            use utf8;
+            eval $code;
+            print $@ if $@;
+        }
 CODE
+    }
+    else {
+        ok('' eq runperl(prog => <<'CODE'), "change #17928");
+            my $code = qq{ my \$\xCE\x47\x64\xCE\x48\x70 = 5; };
+        {
+            use utf8;
+            eval $code;
+            print $@ if $@;
+        }
+CODE
+    }
 }
 
 {
     use utf8;
     $a = <<'END';
-0 ....... 1 ....... 2 ....... 3 ....... 4 ....... 5 ....... 6 ....... 7 .......
+0 ....... 1 ....... 2 ....... 3 ....... 4 ....... 5 ....... 6 ....... 7 ....... 
 END
     my (@i, $s);
 
@@ -293,7 +306,7 @@ END
     push @i, $s = index($a, '.', $s); # next . after 60 is 62
     push @i, $s = index($a, '5');     # 50
     push @i, $s = index($a, '.', $s); # next . after 52 is 52
-    push @i, $s = index($a, '7');     # 70
+    push @i, $s = index($a, '7');     # 70 
     push @i, $s = index($a, '.', $s); # next . after 70 is 72
     push @i, $s = index($a, '4');     # 40
     push @i, $s = index($a, '.', $s); # next . after 40 is 42
@@ -304,7 +317,7 @@ END
     push @i, $s = rindex($a, '.', $s); # previous . before 60 is 58
     push @i, $s = rindex($a, '5');     # 50
     push @i, $s = rindex($a, '.', $s); # previous . before 52 is 48
-    push @i, $s = rindex($a, '7');     # 70
+    push @i, $s = rindex($a, '7');     # 70 
     push @i, $s = rindex($a, '.', $s); # previous . before 70 is 68
     push @i, $s = rindex($a, '4');     # 40
     push @i, $s = rindex($a, '.', $s); # previous . before 40 is 38
@@ -324,11 +337,19 @@ END
 }
 
 SKIP: {
-    skip("Embedded UTF-8 does not work in EBCDIC", 1) if ord("A") == 193;
+    skip("Haven't bothered to port this to EBCDIC non-1047", 1) if $::IS_EBCDIC
+                                                                && ord '^' != 95;
     use utf8;
-    is eval qq{q \xc3\xbc test \xc3\xbc . qq\xc2\xb7 test \xc2\xb7},
-      ' test  test ',
-      "utf8 quote delimiters [perl #16823]";
+    if ($::IS_ASCII) {
+        is eval qq{q \xc3\xbc test \xc3\xbc . qq\xc2\xb7 test \xc2\xb7},
+        ' test  test ',
+        "utf8 quote delimiters [perl #16823]";
+    }
+    else {
+        is eval qq{q \x8B\x70 test \x8B\x70 . qq\x80\x66 test \x80\x66},
+        ' test  test ',
+        "utf8 quote delimiters [perl #16823]";
+    }
 }
 
 # Test the "internals".
@@ -336,88 +357,110 @@ SKIP: {
 {
     my $a = "A";
     my $b = chr(0x0FF);
-    my $c = chr(0x100);
+    my $c = chr(0x0DF);  # FF is invariant in many EBCDIC pages, so is not a
+                         # fair test of 'beyond'; but DF is variant (in all
+                         # supported EBCDIC pages so far), so make 2 'beyond'
+                         # tests
+    my $d = chr(0x100);
 
     ok( utf8::valid($a), "utf8::valid basic");
     ok( utf8::valid($b), "utf8::valid beyond");
-    ok( utf8::valid($c), "utf8::valid unicode");
+    ok( utf8::valid($c), "utf8::valid beyond");
+    ok( utf8::valid($d), "utf8::valid unicode");
 
     ok(!utf8::is_utf8($a), "!utf8::is_utf8 basic");
     ok(!utf8::is_utf8($b), "!utf8::is_utf8 beyond");
-    ok( utf8::is_utf8($c), "utf8::is_utf8 unicode");
+    ok(!utf8::is_utf8($c), "!utf8::is_utf8 beyond");
+    ok( utf8::is_utf8($d), "utf8::is_utf8 unicode");
 
     is(utf8::upgrade($a), 1, "utf8::upgrade basic");
-    if (ord('A') == 193) { # EBCDIC.
+    if ($::IS_EBCDIC) { # EBCDIC.
 	is(utf8::upgrade($b), 1, "utf8::upgrade beyond");
     } else {
 	is(utf8::upgrade($b), 2, "utf8::upgrade beyond");
     }
-    is(utf8::upgrade($c), 2, "utf8::upgrade unicode");
+    is(utf8::upgrade($c), 2, "utf8::upgrade beyond");
+    is(utf8::upgrade($d), 2, "utf8::upgrade unicode");
 
     is($a, "A",       "basic");
     is($b, "\xFF",    "beyond");
-    is($c, "\x{100}", "unicode");
+    is($c, "\xDF",    "beyond");
+    is($d, "\x{100}", "unicode");
 
     ok( utf8::valid($a), "utf8::valid basic");
     ok( utf8::valid($b), "utf8::valid beyond");
-    ok( utf8::valid($c), "utf8::valid unicode");
+    ok( utf8::valid($c), "utf8::valid beyond");
+    ok( utf8::valid($d), "utf8::valid unicode");
 
     ok( utf8::is_utf8($a), "utf8::is_utf8 basic");
     ok( utf8::is_utf8($b), "utf8::is_utf8 beyond");
-    ok( utf8::is_utf8($c), "utf8::is_utf8 unicode");
+    ok( utf8::is_utf8($c), "utf8::is_utf8 beyond");
+    ok( utf8::is_utf8($d), "utf8::is_utf8 unicode");
 
     is(utf8::downgrade($a), 1, "utf8::downgrade basic");
     is(utf8::downgrade($b), 1, "utf8::downgrade beyond");
+    is(utf8::downgrade($c), 1, "utf8::downgrade beyond");
 
     is($a, "A",       "basic");
     is($b, "\xFF",    "beyond");
+    is($c, "\xDF",    "beyond");
 
     ok( utf8::valid($a), "utf8::valid basic");
     ok( utf8::valid($b), "utf8::valid beyond");
+    ok( utf8::valid($c), "utf8::valid beyond");
 
     ok(!utf8::is_utf8($a), "!utf8::is_utf8 basic");
     ok(!utf8::is_utf8($b), "!utf8::is_utf8 beyond");
+    ok(!utf8::is_utf8($c), "!utf8::is_utf8 beyond");
 
     utf8::encode($a);
     utf8::encode($b);
     utf8::encode($c);
+    utf8::encode($d);
 
     is($a, "A",       "basic");
-    if (ord('A') == 193) { # EBCDIC.
+    if ($::IS_EBCDIC) { # EBCDIC.
 	is(length($b), 1, "beyond length");
     } else {
 	is(length($b), 2, "beyond length");
     }
-    is(length($c), 2, "unicode length");
+    is(length($c), 2, "beyond length");
+    is(length($d), 2, "unicode length");
 
     ok(utf8::valid($a), "utf8::valid basic");
     ok(utf8::valid($b), "utf8::valid beyond");
-    ok(utf8::valid($c), "utf8::valid unicode");
+    ok(utf8::valid($c), "utf8::valid beyond");
+    ok(utf8::valid($d), "utf8::valid unicode");
 
     # encode() clears the UTF-8 flag (unlike upgrade()).
     ok(!utf8::is_utf8($a), "!utf8::is_utf8 basic");
     ok(!utf8::is_utf8($b), "!utf8::is_utf8 beyond");
-    ok(!utf8::is_utf8($c), "!utf8::is_utf8 unicode");
+    ok(!utf8::is_utf8($c), "!utf8::is_utf8 beyond");
+    ok(!utf8::is_utf8($d), "!utf8::is_utf8 unicode");
 
     utf8::decode($a);
     utf8::decode($b);
     utf8::decode($c);
+    utf8::decode($d);
 
     is($a, "A",       "basic");
     is($b, "\xFF",    "beyond");
-    is($c, "\x{100}", "unicode");
+    is($c, "\xDF",    "beyond");
+    is($d, "\x{100}", "unicode");
 
     ok(utf8::valid($a), "!utf8::valid basic");
     ok(utf8::valid($b), "!utf8::valid beyond");
-    ok(utf8::valid($c), " utf8::valid unicode");
+    ok(utf8::valid($c), "!utf8::valid beyond");
+    ok(utf8::valid($d), " utf8::valid unicode");
 
     ok(!utf8::is_utf8($a), "!utf8::is_utf8 basic");
-    if (ord('A') == 193) { # EBCDIC.
+    if ($::IS_EBCDIC) { # EBCDIC.
 	ok( utf8::is_utf8(pack('U',0x0ff)), " utf8::is_utf8 beyond");
     } else {
 	ok( utf8::is_utf8($b), " utf8::is_utf8 beyond"); # $b stays in UTF-8.
     }
-    ok( utf8::is_utf8($c), " utf8::is_utf8 unicode");
+    ok( utf8::is_utf8($c), " utf8::is_utf8 beyond"); # $c stays in UTF-8.
+    ok( utf8::is_utf8($d), " utf8::is_utf8 unicode");
 }
 
 {
@@ -441,7 +484,7 @@ SKIP: {
 {
     # Make sure utf8::decode does not modify read-only scalars
     # [perl #91850].
-
+    
     my $name = byte_utf8a_to_utf8n("\x{c3}\x{b3}");
     Internals::SvREADONLY($name, 1);
     eval { utf8::decode($name) };
