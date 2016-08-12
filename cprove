@@ -10,10 +10,11 @@ use Cwd;
 use constant TEST_SUITE_VERSION => 'v5.24.1';
 use constant KNOWN_ERRORS       => 't/' . TEST_SUITE_VERSION . '/C-COMPILED/known_errors.txt';
 
-my @BLACKLIST = (
+my @BLACKLIST = ( 
     qw{benchmark perf porting bigmem lib win32 japh porting run test_pl op/threads.t},
     qr{_thr\.t$}, # do not care about threads
-    );
+    qr{\Q.subtest.\E}, # blacklist any cruft remaining from a previous or current run
+    ); 
 
 run(@ARGV) unless caller;
 
