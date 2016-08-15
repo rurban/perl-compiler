@@ -717,9 +717,25 @@ sub cc_harness {
     $ldopts .= " -lperl" unless $command =~ /perl/;
     $command .= " " . $ldopts;
     $command .= $B::C::Flags::extra_libs if $B::C::Flags::extra_libs;
-    vprint 3, "Calling $Config{cc} $command";
-    vsystem("$Config{cc} $command");
+    my $gcc = get_gcc();
+    vprint 3, "Calling $gcc $command";
+    vsystem("$gcc $command");
 }
+
+{
+    my $GCC; # state variable
+    sub get_gcc {
+        if ( ! defined $GCC ) {
+            $GCC = qx{which gcc};
+            chomp $GCC;
+            $GCC = '' unless -x $GCC;
+        }
+
+        return $GCC if length $GCC;
+        return $Config{cc};
+    }
+}
+
 
 # Where Perl is, and which include path to give it.
 sub yclept {
