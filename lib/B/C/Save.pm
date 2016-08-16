@@ -94,10 +94,26 @@ sub savepvn {
             }
             debug( sv => "Saving PV %s:%d to %s", $cstr, $cur, $dest );
             $cur = 0 if $cstr eq "" and $cur == 7;    # 317
-            push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
+            push @init, sprintf( "%s = savepvn(%s, %u); " . _caller_comment(), $dest, $cstr, $cur );
         }
     }
     return @init;
+}
+
+sub _caller_comment {
+    return '' unless debug('pv');
+
+    my $s = '';
+    foreach my $level ( 0 .. 20 ) {
+        my @caller = grep { defined } caller($level);
+        @caller = map { $_ =~ s{/usr/local/cpanel/3rdparty/perl/5[0-9]+/lib64/perl5/cpanel_lib/x86_64-linux-64int/}{lib/}; $_ } @caller;
+
+        last if !scalar @caller or !defined $caller[0];
+        $s .= join ' ', @caller;
+        $s .= "\n";
+    }
+
+    return qq{/* $s */};
 }
 
 # performance optimization:
