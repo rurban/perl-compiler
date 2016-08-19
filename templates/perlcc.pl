@@ -246,7 +246,14 @@ sub parse_argv {
         'spawn!',           # --no-spawn (new since 2.12)
         'time',             # print benchmark timings (new since 2.08)
         'version',          # (new since 2.13)
+        'debug|D',          # alias for --Wb=-Dfull and -S to enable all debug and preserve source code
     );
+
+    if ( $Options->{debug} ) {
+        $Options->{Wb} = $Options->{Wb} ? $Options->{Wb} . ',' : '';
+        $Options->{Wb} .= '-Dfull';
+        $Options->{S} = 1;
+    }
 
     $Options->{v} += 0;
 
@@ -1132,6 +1139,11 @@ Do not delete generated C code after compilation.
 =item -B
 
 Use the Perl bytecode code generator.
+
+=item --debug or -D
+
+Shortcut for --Wb=-Dfull -S
+to enable all debug levels and also preserve source code
 
 =item -O
 
