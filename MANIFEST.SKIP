@@ -21,3 +21,4 @@
 ^MYMETA\.
 ^script/perlcc$
 ^MANIFEST.bak$
+\.branched_from
