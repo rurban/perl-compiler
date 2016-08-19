@@ -1122,17 +1122,18 @@ sub save_hek {
   # The first assigment is already refcount bumped, we have to manually
   # do it for all others
   my ($cstr, $cur, $utf8) = strlen_flags($str);
-  if ($dynamic and defined $hektable{$str.":".$utf8}) {
-    return sprintf("share_hek_hek(%s)", $hektable{$str.":".$utf8});
+  my $hek_key = $str.":".$utf8;
+  if ($dynamic and defined $hektable{$hek_key}) {
+    return sprintf("share_hek_hek(%s)", $hektable{$hek_key});
   }
-  if (!$dynamic and defined $statichektable{$str.":".$utf8}) {
-    return $statichektable{$str.":".$utf8};
+  if (!$dynamic and defined $statichektable{$hek_key}) {
+    return $statichektable{$hek_key};
   }
   $cur = - $cur if $utf8;
   $cstr = '""' if $cstr eq "0";
+  my $sym = sprintf( "hek%d", $hek_index++ );
   if (!$dynamic) {
-    my $sym = sprintf( "hek%d", $hek_index++ );
-    $statichektable{$str.":".$utf8} = $sym;
+    $statichektable{$hek_key} = $sym;
     my $key = $cstr;
     my $len = abs($cur);
     # strip CowREFCNT
@@ -1152,10 +1153,8 @@ sub save_hek {
     $decl->add(sprintf("Static struct hek_ptr %s = { %u, %d, %s};",
                        $sym, 0, $len, $key));
     $init->add(sprintf("PERL_HASH(%s.hek_hash, %s.hek_key, %u);", $sym, $sym, $len));
-    return $sym;
   } else {
-    my $sym = sprintf( "hek%d", $hek_index++ );
-    $hektable{$str.":".$utf8} = $sym;
+    $hektable{$hek_key} = $sym;
     $decl->add(sprintf("Static HEK *%s;", $sym));
     warn sprintf("Saving hek %s %s cur=%d\n", $sym, $cstr, $cur)
       if $debug{pv};
@@ -1173,9 +1172,9 @@ sub save_hek {
                          $sym, $cstr, $cur));
     }
     # protect against Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2
-    # $free->add("    $sym = NULL;");
-    return $sym;
+    # $free->add("    $sym = NULL;");    
   }
+  return $sym;
 }
 
 sub gv_fetchpvn {
