@@ -33,28 +33,11 @@ sub save {
     xpvnvsect()->comment('STASH, MAGIC, cur, len, IVX, NVX');
     xpvnvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}, {%s}, {%s}", $cur, $len, $ivx, $nvx ) );
 
-    unless ( C99() or $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
-        debug( sv => "NV => run-time union xpad_cop_seq init" );
-        init()->add(
-            sprintf(
-                "xpvnv_list[%d].xnv_u.xpad_cop_seq.xlow = %s;",
-                xpvnvsect()->index, get_integer_value( $sv->COP_SEQ_RANGE_LOW )
-            ),
-
-            # pad.c: PAD_MAX = I32_MAX (4294967295)
-            # U suffix <= "warning: this decimal constant is unsigned only in ISO C90"
-            sprintf(
-                "xpvnv_list[%d].xnv_u.xpad_cop_seq.xhigh = %s;",
-                xpvnvsect()->index, get_integer_value( $sv->COP_SEQ_RANGE_HIGH )
-            )
-        );
-    }
-
     svsect()->add(
         sprintf(
             "&xpvnv_list[%d], %Lu, 0x%x %s",
             xpvnvsect()->index, $sv->REFCNT, $sv->FLAGS,
-            ", {" . ( C99() ? ".svu_pv=" : "" ) . "(char*)$savesym}"
+            ", {.svu_pv=(char*)$savesym}"
         )
     );
     svsect()->debug( $fullname, $sv );

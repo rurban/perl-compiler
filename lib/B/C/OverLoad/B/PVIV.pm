@@ -32,7 +32,7 @@ sub save {
         sprintf(
             "&xpviv_list[%d], %u, 0x%x %s",
             xpvivsect()->index, $sv->REFCNT, $sv->FLAGS,
-            ", {" . ( C99() ? ".svu_pv=" : "" ) . "(char*)$savesym}"
+            ", {.svu_pv=(char*)$savesym}"
         )
     );
     svsect()->debug( $fullname, $sv );

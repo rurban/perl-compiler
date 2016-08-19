@@ -34,7 +34,7 @@ sub save {
     if ( $first =~ /^&sv_list/ ) {
         init()->add( sprintf( "SvREFCNT_inc_simple_NN(%s); /* methop_list[%d].op_meth_sv */", $first, $ix ) );
     }
-    $first = 'NULL' if !C99() and $first eq 'Nullsv';
+
     methopsect()->add( sprintf( $s, $op->_save_common, $first, $rclass ) );
     methopsect()->debug( $op->name, $op->flagspv ) if debug('flags');
     init()->add( sprintf( "methop_list[%d].op_ppaddr = %s;", $ix, $op->ppaddr ) )

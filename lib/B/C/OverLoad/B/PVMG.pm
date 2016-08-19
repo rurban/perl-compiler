@@ -74,7 +74,7 @@ sub save {
             xpvmgsect()->index, $sv->REFCNT, $sv->FLAGS,
             $savesym eq 'NULL'
             ? '0'
-            : ( C99() ? ".svu_pv=(char*)" : "(char*)" ) . $savesym
+            : ".svu_pv=(char*)" . $savesym
         )
     );
 
@@ -453,7 +453,7 @@ sub _savere {
     svsect()->add(
         sprintf(
             "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
-            0x4405, ( C99() ? ".svu_pv=" : "" ) . '(char*)' . savepv($pv)
+            0x4405, '.svu_pv=(char*)' . savepv($pv)
         )
     );
     $sym = sprintf( "&sv_list[%d]", svsect()->index );
