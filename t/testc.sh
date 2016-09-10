@@ -1420,6 +1420,12 @@ tests[367]='#BROKEN since 5.22 (METHOP for binc)
 use Math::BigInt;
 my $x = Math::BigInt->new('1' x 20);
 print "ok" if ++$x eq "11111111111111111112";'
+tests[390]='print test(); print test();
+sub test() {
+    *test = sub ()  { "k" };
+    "o";
+}'
+tests[391]='use warnings "closed"; eval "warn qq(\n); print qq(ok\n)";'
 
 init
 
