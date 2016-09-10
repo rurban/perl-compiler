@@ -108,6 +108,9 @@ sub cc_harness_msvc {
       $compile .= "-g ";
       $compile =~ s/ -O.? / -Od /;
       $compile =~ s/ -DNDEBUG / -DDEBUG /;
+    } else {
+      # avoid expensive optimisations with low memory (1-2 hours!)
+      $compile .= " -Od" if $ENV{APPVEYOR};
     }
     $compile .= "-DHAVE_INDEPENDENT_COMALLOC " if $B::C::Config::have_independent_comalloc;
     $compile .= $B::C::Config::extra_cflags;
