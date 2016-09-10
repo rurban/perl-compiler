@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_12';
+our $VERSION = '1.54_13';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -1282,6 +1282,16 @@ sub nvx ($) {
   $sval = '0' if $sval =~ /(NAN|inf)$/i;
   $sval .= '.00' if $sval =~ /^-?\d+$/;
   return $sval;
+}
+
+sub mg_RC_off {
+  my ($mg, $sym, $type) = @_;
+  warn "MG->FLAGS ",$mg->FLAGS," turn off MGf_REFCOUNTED\n" if $debug{mg};
+  if (!ref $sym) {
+    $init->add(sprintf("my_mg_RC_off(aTHX_ (SV*)$sym, %s);", cchar($type)));
+  } else {
+    $init->add(sprintf("my_mg_RC_off(aTHX_ (SV*)s\\_%x, %s);", $$sym, cchar($type)));
+  }
 }
 
 # for bytes and utf8 only
@@ -3660,7 +3670,7 @@ sub B::PVMG::save_magic {
     $len  = $mg->LENGTH;
     $magic .= $type;
     if ( $debug{mg} ) {
-      warn sprintf( "%s %s magic\n", $fullname, cchar($type) );
+      warn sprintf( "%s %s magic 0x%x\n", $fullname, cchar($type), $mg->FLAGS );
       #eval {
       #  warn sprintf( "magic %s (0x%x), obj %s (0x%x), type %s, ptr %s\n",
       #                B::class($sv), $$sv, B::class($obj), $$obj, cchar($type),
@@ -3691,6 +3701,9 @@ sub B::PVMG::save_magic {
       warn "MG->PTR is an SV*\n" if $debug{mg};
       $init->add(sprintf("sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, (char *)%s, %d);",
                          $$sv, $$obj, cchar($type), $ptrsv, $len));
+      if (!($mg->FLAGS & 2)) {
+        mg_RC_off($mg, $sv, $type);
+      }
     }
     # coverage $Template::Stash::PRIVATE
     elsif ( $type eq 'r' ) { # qr magic, for 5.6 done in C.xs. test 20
@@ -3768,7 +3781,10 @@ CODE2
     else {
       $init->add(sprintf(
           "sv_magic((SV*)s\\_%x, (SV*)s\\_%x, %s, %s, %d);",
-          $$sv, $$obj, cchar($type), cstring($ptr), $len))
+          $$sv, $$obj, cchar($type), cstring($ptr), $len));
+      if (!($mg->FLAGS & 2)) {
+        mg_RC_off($mg, $sv, $type);
+      }
     }
   }
   $init->add(sprintf("SvREADONLY_on((SV*)s\\_%x);", $$sv))
@@ -5307,9 +5323,13 @@ sub B::GV::save {
       if ($PERL514 and $cvsym and $cvsym !~ /(get_cv|NULL|lexwarn)/ and $gv->MAGICAL) {
         my @magic = $gv->MAGIC;
         foreach my $mg (@magic) {
-          $init->add( "sv_magic((SV*)$sym, (SV*)$cvsym, '<', 0, 0);",
-                      "CvCVGV_RC_off($cvsym);"
-                    ) if $mg->TYPE eq '<';
+          if ($mg->TYPE eq '<') {
+            $init->add( "sv_magic((SV*)$sym, (SV*)$cvsym, '<', 0, 0);",
+                        "CvCVGV_RC_off($cvsym);");
+            if (!($mg->FLAGS & 2)) {
+              mg_RC_off($mg, $sym, '<'); # 390
+            }
+          }
         }
       }
     }
@@ -6440,6 +6460,15 @@ sub output_declarations {
 #define UNUSED 0
 #define sym_0 0
 
+static void
+my_mg_RC_off(pTHX_ SV* sv, int type) {
+  MAGIC *mg;
+  for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
+    if (mg->mg_type == type && (mg->mg_flags | MGf_REFCOUNTED))
+      mg->mg_flags &= ~MGf_REFCOUNTED;
+  }
+}
+
 EOT
   if ($PERL510 and IS_MSVC) {
     # initializing char * differs in levels of indirection from int
@@ -6450,7 +6479,7 @@ EOT
 
   # Need fresh re-hash of strtab. share_hek does not allow hash = 0
   if ( $PERL510 ) {
-    print <<'_EOT0';
+     print <<'_EOT0';
 PERL_STATIC_INLINE HEK *
 my_share_hek( pTHX_ const char *str, I32 len );
 #undef share_hek
