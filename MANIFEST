@@ -234,6 +234,8 @@ t/issue369.t
 t/issue37.t
 t/issue38.t
 t/issue39.t
+t/issue390.t
+t/issue391.t
 t/issue42.t
 t/issue44.t
 t/issue45.t
