@@ -30,6 +30,13 @@ static int bget_swab = 0;
 #ifndef GvGP_set
 #  define GvGP_set(gv,gp)   (GvGP(gv) = (gp))
 #endif
+/* cperl optims */
+#ifndef strEQc
+/* the buffer ends with \0, includes comparison of the \0.
+   better than strEQ as it uses memcmp, word-wise comparison. */
+#  define strEQc(s, c) memEQ(s, ("" c ""), sizeof(c))
+#  define strNEc(s, c) memNE(s, ("" c ""), sizeof(c))
+#endif
 
 #define BGET_FREAD(argp, len, nelem)	\
 	 bl_read(bstate->bs_fdata,(char*)(argp),(len),(nelem))
@@ -306,10 +313,10 @@ static int bget_swab = 0;
     STMT_START {                                                        \
       if (SvREADONLY(sv)) {                                             \
         SvREADONLY_off(sv);                                             \
-	hv_store((HV*)sv, bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0); \
+	hv_store(MUTABLE_HV(sv), bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0); \
         SvREADONLY_on(sv);                                              \
       } else {                                                          \
-        hv_store((HV*)sv, bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0); \
+        hv_store(MUTABLE_HV(sv), bstate->bs_pv.pv, bstate->bs_pv.cur, arg, 0); \
       }                                                                 \
     } STMT_END
 #define BSET_pv_free(sv)	Safefree(sv.pv)
