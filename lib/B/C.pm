@@ -530,7 +530,7 @@ my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
 my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount, AvSTATIC, sigs
 my $CPERL51  = ( $Config{usecperl} );
 my $PERL524  = ( $] >= 5.023005 ); #xpviv sharing assertion
-my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str
+my $PERL522  = ( $] >= 5.021006 ); #PADNAMELIST, IsCOW, padname_with_str, compflags
 my $PERL518  = ( $] >= 5.017010 );
 my $PERL514  = ( $] >= 5.013002 );
 my $PERL512  = ( $] >= 5.011 );
@@ -2502,6 +2502,20 @@ sub B::COP::save {
   savesym( $op, "(OP*)&cop_list[$ix]" );
 }
 
+# if REGCOMP can be called in init or defererd in init1
+sub re_does_swash {
+  my ($qstr, $pmflags) = @_;
+  # SWASHNEW, now needing a multideref GV. 0x5000000 is just a hack. can be more
+  if (($] >= 5.021006 and $pmflags & 0x5000000)
+    # or any unicode property
+    or ($qstr =~ /\\[pP]{/))
+  {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 sub B::PMOP::save {
   my ( $op, $level, $fullname ) = @_;
   my ($replrootfield, $replstartfield, $gvsym) = ('NULL', 'NULL');
@@ -2602,6 +2616,7 @@ sub B::PMOP::save {
     unless $B::C::optimize_ppaddr;
   my $re = $op->precomp;
   if ( defined($re) ) {
+    my $initpm = $init;
     $Regexp{$$op} = $op;
     if ($PERL510) {
       # TODO minor optim: fix savere( $re ) to avoid newSVpvn;
@@ -2622,10 +2637,9 @@ sub B::PMOP::save {
       # some pm need early init (242), SWASHNEW needs some late GVs (GH#273)
       # esp with 5.22 multideref init. i.e. all \p{} \N{}, \U, /i, ...
       # But XSLoader and utf8::SWASHNEW itself needs to be early.
-      my $initpm = $init;
       if (($utf8 and $] >= 5.013009 and $pmflags & 4) # needs SWASHNEW (case fold)
-          # also SWASHNEW, now needing a multideref GV. 0x5000000 is just a hack. can be more
-          or ($] >= 5.021006 and ($pmflags & 0x5000000 == 0x5000000))) {
+          or re_does_swash($qre, $pmflags))
+      {
         $initpm = $init1;
         warn sprintf("deferred PMOP %s %s 0x%x\n", $qre, $fullname, $pmflags) if $debug{sv};
       } else {
@@ -3328,14 +3342,16 @@ sub B::REGEXP::save {
   my $ix = $svsect->index;
   warn "Saving RX $cstr to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
   if ($] > 5.011) {
+    my $pmflags = $PERL522 ? $sv->compflags : $sv->EXTFLAGS;
+    my $initpm = re_does_swash($cstr, $pmflags) ? $init1 : $init;
     if ($PERL518 and $sv->EXTFLAGS & RXf_EVAL_SEEN) {
-      $init->add("PL_hints |= HINT_RE_EVAL;");
+      $initpm->add("PL_hints |= HINT_RE_EVAL;");
     }
-    $init->add(# replace sv_any->XPV with struct regexp. need pv and extflags
+    $initpm->add(# replace sv_any->XPV with struct regexp. need pv and extflags
                sprintf("SvANY(&sv_list[%d]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
-                       $ix, $cstr, $cur, $sv->EXTFLAGS));
+                       $ix, $cstr, $cur, $pmflags));
     if ($PERL518 and $sv->EXTFLAGS & RXf_EVAL_SEEN) {
-      $init->add("PL_hints &= ~HINT_RE_EVAL;");
+      $initpm->add("PL_hints &= ~HINT_RE_EVAL;");
     }
   }
   if ($] < 5.017006) {
