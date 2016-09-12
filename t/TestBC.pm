@@ -906,18 +906,18 @@ sub run_cc_test {
         run_cmd($cmdline, 30);
         unless (-e $exe) {
             if ($ENV{PERL_CORE}) {
-                if ($^O =~ /^(MSWin32|hpux)/) {
+                if ($^O =~ /^(hpux)/) {
                     # mingw with gcc and cygwin should work, but not tested.
                     ok(1, "skip $^O not yet ready");
                     return 1;
                 }
             }
             if ($todo and $todo =~ /TODO/) {
-                $todo =~ s/TODO //;
+                $todo =~ s/TODO //g;
               TODO:
                 {
                     local $TODO = $todo;
-                    ok(0, "$todo failed $cmdline");
+                    ok(0, "failed $cmdline");
                 }
             } else {
                 ok(0, "failed $cmdline");
@@ -955,11 +955,11 @@ sub run_cc_test {
         }
     }
     if ($todo and $todo =~ /TODO/) {
-	$todo =~ s/TODO //;
+	$todo =~ s/TODO //g;
       TODO:
         {
 	    local $TODO = $todo;
-            ok(0, "$todo wanted: \"$expect\", \$\? = $?, got: \"$out\"");
+            ok(0, "wanted: \"$expect\", \$\? = $?, got: \"$out\"");
 	}
     } else {
         ok(0, "wanted: \"$expect\", \$\? = $?, got: \"$out\"");
@@ -1200,11 +1200,11 @@ sub ctest {
     system "$cmd";
     my $exe = $name.$Config{exe_ext};
     unless (-e $exe) {
-        if ($ENV{PERL_CORE} and $is_msvc) {
-            ok(1, "skip MSVC"); return 1;
-        }
+        #if ($ENV{PERL_CORE} and $is_msvc) {
+        #    ok(1, "skip MSVC"); return 1;
+        #}
 	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
           TODO: {
                 local $TODO = $todo;
                 ok(undef, "failed to compile");
@@ -1229,18 +1229,18 @@ sub ctest {
             }
         }
 	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
           TODO: {
                 local $TODO = $todo;
-                ok ($out =~ /$expected/);
+                ok ($ok);
 		diag($out) if $ENV{TEST_VERBOSE};
             }
         } else {
-            ok ($out =~ /$expected/, $todo);
+            ok ($ok, $todo);
         }
     } else {
 	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
           TODO: {
                 local $TODO = $todo;
                 ok (undef);
@@ -1283,7 +1283,7 @@ sub ccompileok {
     my $ok = -e $name or -e "$name.exe";
     if ($todo and $todo =~ /TODO/) {
       TODO: {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
             local $TODO = $todo;
             ok($ok);
         }
