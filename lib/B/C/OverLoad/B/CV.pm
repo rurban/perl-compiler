@@ -198,7 +198,7 @@ sub save {
         and !is_phase_name($cvname)
         and !( $CvFLAGS & SVs_PADSTALE )
         and !( $CvFLAGS & CVf_WEAKOUTSIDE )
-
+        and !( $fullname && $fullname =~ qr{^File::Glob::GLOB} and ( $CvFLAGS & (CVf_ANONCONST|CVf_CONST) )  )
         # TODO: check if patch from e11e3a2 for B::SPECIAL is still required
         #    and ref($gv) ne 'B::SPECIAL'
       ) {    # skip const magic blocks (Attribute::Handlers)
