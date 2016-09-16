@@ -12,6 +12,7 @@
 ^README.alpha
 ^setup.cpanel
 \.tmp~$
+\.bin$
 \.tar\.gz$
 ^ByteLoader
 ^C.c
@@ -22,3 +23,4 @@
 ^script/perlcc$
 ^MANIFEST.bak$
 \.branched_from
+\.subtest\.
