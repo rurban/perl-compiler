@@ -21,7 +21,7 @@ sub save {
         }
         return $sym;
     }
-    my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static ) = B::PV::save_pv_once( $sv, $fullname );
     if ($static) {    # 242: e.g. $1
         $static = 0;
         $len = $cur + 1 unless $len;
@@ -80,10 +80,10 @@ sub save {
 
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
-    if ( !$static ) {    # do not overwrite RV slot (#273)
+    #if ( !$static ) {    # do not overwrite RV slot (#273)
                          # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
-        init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-    }
+     #   init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
+    #}
     $sym = savesym( $sv, "&" . $s );
     $sv->save_magic($fullname);
     return $sym;
