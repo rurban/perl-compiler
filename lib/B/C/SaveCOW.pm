@@ -1,9 +1,7 @@
-package B::C::Save;
+package B::C::SaveCOW;
 
 use strict;
 
-use B qw(cstring svref_2object);
-use B::C::Config;
 use B::C::File qw( decl );
 use B::C::Helpers qw/cow_strlen_flags/;
 

@@ -5,7 +5,7 @@ use strict;
 use B qw/SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY cstring SVs_OBJECT/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
-use B::C::SaveCOW qw/savepvn savepv/;
+use B::C::SaveCOW qw/savepv/;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/xpvsect svsect init free/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
@@ -144,8 +144,9 @@ sub save_pv_once {
             if ( $B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG ) {
                 $static = 1;                                         # warn "static $fullname";
             }
-            if ($static) {
+            if (1) {
 
+                print STDERR "SAVESYSM == $savesym\n";
                 ($savesym, $cur, $len) = savepv($pv);
                 #if ( $savesym =~ /^get_cv/ ) {                       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
                 #    $static  = 0;
