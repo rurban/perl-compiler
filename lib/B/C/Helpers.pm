@@ -1,6 +1,7 @@
 package B::C::Helpers;
 
 use Exporter ();
+use B::C::Config;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro cow_strlen_flags/;
 
@@ -35,7 +36,16 @@ sub cow_strlen_flags {
     my $str = shift;
 
     my ( $is_utf8, $cur ) = read_utf8_string($str);
-    my $cstr = cstring( $str . "\000\377" );
+
+    # TODO: we would like to use this but in some cases, the c string is corrupted
+    # instead of
+    #   cowpv7[] = "$c\000\377";
+    # we had
+    #   cowpv7[] = "$c\000\303\277";
+
+    my $cstr = cstring($str);
+    my $end  = q{\000\377};
+    $cstr =~ s{"$}{$end"};
 
     return ( $cstr, $cur, $cur + 2, $is_utf8 ? 'SVf_UTF8' : '0' );    # NOTE: The actual Cstring length will be 2 bytes longer than $cur
 }
