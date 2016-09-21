@@ -133,7 +133,7 @@ sub save_pv_once {
             debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
             $empty_string = 1 unless $fullname =~ /unopaux_item.* const/;
             $static = 0;    # TODO WHAT WILL THIS DO???
-        }
+        }        
 
         $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID
 
@@ -177,6 +177,8 @@ sub save_pv_once {
             $len = 0;
         }
     }
+
+    $len = 0 if $shared_hek; # let's try
 
     ## QUESTION: should not it be done for any xpvsect ?
     #if ($len) {    # COW logic
