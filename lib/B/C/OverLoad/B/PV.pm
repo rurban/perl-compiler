@@ -2,7 +2,7 @@ package B::PV;
 
 use strict;
 
-use B qw/SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY cstring SVs_OBJECT/;
+use B qw/SVf_IsCOW SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY cstring SVs_OBJECT/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::SaveCOW qw/savepv/;
@@ -53,7 +53,7 @@ sub save {
     
     svsect()->comment("any, refcnt, flags, sv_u");
     $savesym = $savesym eq 'NULL' ? '0' : ".svu_pv=(char*) $savesym";
-    svsect()->add( sprintf( '&xpv_list[%d], %Lu, 0x%x, {%s}', xpvsect()->index, $refcnt, $flags, $savesym ) );
+    svsect()->add( sprintf( '&xpv_list[%d], %Lu, 0x%x, {%s}', xpvsect()->index, $refcnt, $flags | SVf_IsCOW, $savesym ) );
     my $svix = svsect()->index;
     if ( defined($pv) and !$static ) {
         if ($shared_hek) {
@@ -146,7 +146,6 @@ sub save_pv_once {
             }
             if (1) {
 
-                print STDERR "SAVESYSM == $savesym\n";
                 ($savesym, $cur, $len) = savepv($pv);
                 #if ( $savesym =~ /^get_cv/ ) {                       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
                 #    $static  = 0;
