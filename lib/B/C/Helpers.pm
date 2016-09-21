@@ -26,7 +26,7 @@ sub strlen_flags {
 
     my ( $is_utf8, $cur ) = read_utf8_string($str);
     my $cstr = cstring($str);
-    
+
     return ( $cstr, $cur, $is_utf8 ? 'SVf_UTF8' : '0' );
 }
 
@@ -35,9 +35,9 @@ sub cow_strlen_flags {
     my $str = shift;
 
     my ( $is_utf8, $cur ) = read_utf8_string($str);
-    my $cstr = cstring($str . "\000\377");
-    
-    return ( $cstr, $cur, $cur + 2, $is_utf8 ? 'SVf_UTF8' : '0' ); # NOTE: The actual Cstring length will be 2 bytes longer than $cur
+    my $cstr = cstring( $str . "\000\377" );
+
+    return ( $cstr, $cur, $cur + 2, $is_utf8 ? 'SVf_UTF8' : '0' );    # NOTE: The actual Cstring length will be 2 bytes longer than $cur
 }
 
 # maybe move to B::C::Helpers::Str ?

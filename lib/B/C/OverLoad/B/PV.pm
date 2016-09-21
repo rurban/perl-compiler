@@ -24,8 +24,7 @@ sub save {
     my $flags = $sv->FLAGS;
     my $shared_hek = ( ( $flags & 0x09000000 ) == 0x09000000 );
     $shared_hek = $shared_hek ? 1 : B::C::IsCOW_hek($sv);
-    
-    
+
     my ( $savesym, $cur, $len, $pv, $static ) = save_pv_once( $sv, $fullname );
     $static = 0 if !( $flags & SVf_ROK ) and $sv->PV and $sv->PV =~ /::bootstrap$/;
 
@@ -41,16 +40,15 @@ sub save {
         $flags &= ~0x01000000;
         debug( pv => "constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname );
     }
-    
-    
-#Static const char mypv[] = "Hello World\000\377";
-#Static SV sv_list[7138] = {
-#    { NULL, 7138, SVTYPEMASK|0x01000000, {0} }, /* sv_list[0]  */
-#    { &xpv_list[0], 2147483647, 0x18014403, {0}{.svu_pv=(char *)mypv} }, /* sv_list[1]  */    
-    
+
+    #Static const char mypv[] = "Hello World\000\377";
+    #Static SV sv_list[7138] = {
+    #    { NULL, 7138, SVTYPEMASK|0x01000000, {0} }, /* sv_list[0]  */
+    #    { &xpv_list[0], 2147483647, 0x18014403, {0}{.svu_pv=(char *)mypv} }, /* sv_list[1]  */
+
     xpvsect()->comment("stash, magic, cur, len");
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, $len ) );
-    
+
     svsect()->comment("any, refcnt, flags, sv_u");
     $savesym = $savesym eq 'NULL' ? '0' : ".svu_pv=(char*) $savesym";
     svsect()->add( sprintf( '&xpv_list[%d], %Lu, 0x%x, {%s}', xpvsect()->index, $refcnt, $flags | SVf_IsCOW, $savesym ) );
@@ -61,6 +59,7 @@ sub save {
             init()->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ) )
               unless $hek eq 'NULL';
         }
+
         #else {
         #    init()->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
         #}
@@ -82,13 +81,12 @@ sub save {
     return savesym( $sv, "&" . $s );
 }
 
-
 sub save_pv_once {
     my ( $sv, $fullname ) = @_;
 
-    my $rok   = $sv->FLAGS & SVf_ROK;
-    my $pok   = $sv->FLAGS & SVf_POK;
-    my $gmg   = $sv->FLAGS & SVs_GMG;
+    my $rok = $sv->FLAGS & SVf_ROK;
+    my $pok = $sv->FLAGS & SVf_POK;
+    my $gmg = $sv->FLAGS & SVs_GMG;
 
     my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
     my ( $static, $shared_hek );
@@ -125,35 +123,36 @@ sub save_pv_once {
             }
         }
         $shared_hek = ( $sv->FLAGS & 0x09000000 ) == 0x09000000 || B::C::IsCOW_hek($sv);
-        
+
         #$static = ( $sv->FLAGS & SVf_READONLY ) ? 1 : 0;
         #$static = 0 if $shared_hek or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
         #$static = 0 if $B::C::const_strings and $fullname and ( $fullname =~ /^ warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/ );
         $static = 1;
-        
+
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
             debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
             $empty_string = 1 unless $fullname =~ /unopaux_item.* const/;
-            $static = 0; # TODO WHAT WILL THIS DO???
+            $static = 0;    # TODO WHAT WILL THIS DO???
         }
 
         $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID
 
         if ($pok) {
+
             # but we can optimize static set-magic ISA entries. #263, #91
             if ( $B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG ) {
                 $static = 1;                                         # warn "static $fullname";
             }
             if (1) {
 
-                ($savesym, $cur, $len) = savepv($pv);
+                ( $savesym, $cur, $len ) = savepv($pv);
+
                 #if ( $savesym =~ /^get_cv/ ) {                       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
                 #    $static  = 0;
                 #    $len     = $cur + 1;
                 #    $pv      = $savesym;
                 #    $savesym = 'NULL';
                 #}
-
 
                 #push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
             }
@@ -168,7 +167,7 @@ sub save_pv_once {
                     free()->add("    SvFAKE_off(&$s);");
                 }
                 else {
-                    if ( $cur ) {
+                    if ($cur) {
                         $len++;
                     }
                 }
