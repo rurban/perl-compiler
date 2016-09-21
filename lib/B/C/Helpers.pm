@@ -2,7 +2,7 @@ package B::C::Helpers;
 
 use Exporter ();
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro cow_strlen_flags/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -24,28 +24,40 @@ sub is_constant {
 sub strlen_flags {
     my $str = shift;
 
-    my ( $is_utf8, $len ) = read_utf8_string($str);
-    return ( cstring($str), $len, $is_utf8 ? 'SVf_UTF8' : '0' );
+    my ( $is_utf8, $cur ) = read_utf8_string($str);
+    my $cstr = cstring($str);
+    
+    return ( $cstr, $cur, $is_utf8 ? 'SVf_UTF8' : '0' );
+}
+
+# lazy helper for backward compatibility only (we can probably avoid to use it)
+sub cow_strlen_flags {
+    my $str = shift;
+
+    my ( $is_utf8, $cur ) = read_utf8_string($str);
+    my $cstr = cstring($str . "\000\377");
+    
+    return ( $cstr, $cur, $cur + 2, $is_utf8 ? 'SVf_UTF8' : '0' ); # NOTE: The actual Cstring length will be 2 bytes longer than $cur
 }
 
 # maybe move to B::C::Helpers::Str ?
 sub read_utf8_string {
     my ($name) = @_;
 
-    my $len;
+    my $cur;
 
     #my $is_utf8 = $utf_len != $str_len ? 1 : 0;
     my $is_utf8 = utf8::is_utf8($name);
     if ($is_utf8) {
         my $copy = $name;
-        $len = utf8::upgrade($copy);
+        $cur = utf8::upgrade($copy);
     }
     else {
-        #$len = length( pack "a*", $name );
-        $len = length($name);
+        #$cur = length( pack "a*", $name );
+        $cur = length($name);
     }
 
-    return ( $is_utf8, $len );
+    return ( $is_utf8, $cur );
 }
 
 # previously known as:
