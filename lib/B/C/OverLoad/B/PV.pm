@@ -197,7 +197,7 @@ sub save_pv_once {
         $static, $static, $shared_hek ? "shared, $fullname" : $fullname
     );
 
-    $flags |= SVf_IsCOW;# if $static;
+    $flags |= SVf_IsCOW if !$rok;# unless it's a reference!
 
     return ( $savesym, $cur, $len, $pv, $static, $flags );
 }
