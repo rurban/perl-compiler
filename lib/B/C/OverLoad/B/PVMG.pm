@@ -81,10 +81,6 @@ sub save {
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
 
-    #if ( !$static ) {    # do not overwrite RV slot (#273)
-    # XXX comppadnames need &PL_sv_undef instead of 0 (?? which testcase?)
-    #   init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-    #}
     $sym = savesym( $sv, "&" . $s );
     $sv->save_magic($fullname);
     return $sym;
