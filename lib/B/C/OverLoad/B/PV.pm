@@ -35,16 +35,10 @@ sub save {
     }
 
     # static pv, do not destruct. test 13 with pv0 "3".
-
     if ( $B::C::const_strings and !$shared_hek and $flags & SVf_READONLY and !$len ) {
         $flags &= ~0x01000000;
         debug( pv => "constpv turn off SVf_FAKE %s %s %s\n", $sym, cstring($pv), $fullname );
     }
-
-    #Static const char mypv[] = "Hello World\000\377";
-    #Static SV sv_list[7138] = {
-    #    { NULL, 7138, SVTYPEMASK|0x01000000, {0} }, /* sv_list[0]  */
-    #    { &xpv_list[0], 2147483647, 0x18014403, {0}{.svu_pv=(char *)mypv} }, /* sv_list[1]  */
 
     xpvsect()->comment("stash, magic, cur, len");
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, {%u}", $cur, $len ) );
@@ -59,10 +53,6 @@ sub save {
             init()->add( sprintf( "sv_list[%d].sv_u.svu_pv = HEK_KEY(%s);", $svix, $hek ) )
               unless $hek eq 'NULL';
         }
-
-        #else {
-        #    init()->add( savepvn( sprintf( "sv_list[%d].sv_u.svu_pv", $svix ), $pv, $sv, $cur ) );
-        #}
     }
     if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
         init()->add(
@@ -124,10 +114,6 @@ sub save_pv_once {
             }
         }
 
-        #$static = ( $sv->FLAGS & SVf_READONLY ) ? 1 : 0;
-        #$static = 0 if $shared_hek or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
-        #$static = 0 if $B::C::const_strings and $fullname and ( $fullname =~ /^ warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/ );
-
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
             debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
             $empty_string = 1 unless $fullname =~ /unopaux_item.* const/;
@@ -142,35 +128,8 @@ sub save_pv_once {
             if ( $B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG ) {
                 $static = 1;                                         # warn "static $fullname";
             }
-            if (1) {
 
-                ( $savesym, $cur, $len ) = savepv($pv);
-
-                #if ( $savesym =~ /^get_cv/ ) {                       # Moose::Util::TypeConstraints::Builtins::_RegexpRef
-                #    $static  = 0;
-                #    $len     = $cur + 1;
-                #    $pv      = $savesym;
-                #    $savesym = 'NULL';
-                #}
-
-                #push @B::C::static_free, $savesym if $len and $savesym =~ /^pv/ and !$B::C::in_endav;
-            }
-            else {
-                my $s = "sv_list[" . ( svsect()->index + 1 ) . "]";
-                $len = $cur + 1;
-                if ($shared_hek) {
-                    $len = 0;
-                    if ( $empty_string == 1 ) {
-                        free()->add("    SvLEN(&$s) = 0;");
-                    }
-                    free()->add("    SvFAKE_off(&$s);");
-                }
-                else {
-                    if ($cur) {
-                        $len++;
-                    }
-                }
-            }
+            ( $savesym, $cur, $len ) = savepv($pv);
         }
         else {
             $len = 0;
@@ -178,17 +137,9 @@ sub save_pv_once {
     }
     if ( $savesym eq 'NULL' ) {
         ( $savesym, $cur, $len ) = savepv('');
-
-        #$len = 0;
     }
 
-    $len = 0 if $shared_hek;    # let's try
-
-    ## QUESTION: should not it be done for any xpvsect ?
-    #if ($len) {    # COW logic
-    #    my $offset = $len % $Config{ptrsize};
-    #    $len += $Config{ptrsize} - $offset if $offset;
-    #}
+    $len = 0 if $shared_hek;    # hek should have len 0
 
     $fullname = '' if !defined $fullname;
     debug(
@@ -197,7 +148,7 @@ sub save_pv_once {
         $static, $static, $shared_hek ? "shared, $fullname" : $fullname
     );
 
-    $flags |= SVf_IsCOW if !$rok;# unless it's a reference!
+    $flags |= SVf_IsCOW if !$rok;    # unless it's a reference!
 
     return ( $savesym, $cur, $len, $pv, $static, $flags );
 }
