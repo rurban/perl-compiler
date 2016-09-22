@@ -99,7 +99,7 @@ sub save_pv_once {
     if ($rok) {
 
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
-        debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
+        debug( sv => "save_pv_once: B::RV::save_op(" . ( $sv || '' ) );
         $savesym = B::RV::save_op( $sv, $fullname );
         if ( $savesym =~ /get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
             $static  = 0;
