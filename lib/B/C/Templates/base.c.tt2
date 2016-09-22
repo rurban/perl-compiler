@@ -95,7 +95,7 @@ EXTERN_C void boot_[% xsub %] (pTHX_ CV* cv);
 *
 *************************************************************************************************************/
 
-[% IF verbose AND section.sym.comment() %]
+[% IF section.sym.comment() %]
     /* [% section.sym.comment() %] */
 [% END %]
 [% section.sym.output( "#define %s\n" ) %]
@@ -185,7 +185,7 @@ XS(XS_DynaLoader_dl_load_file);
 XS(XS_DynaLoader_dl_find_symbol);
 [% END %]
 
-[% IF verbose AND section.decl.comment() %]
+[% IF section.decl.comment() %]
     /* [% section.decl.comment() %] */
 [% END %]
 /* <decl.output> */
@@ -237,7 +237,7 @@ S_pp_dump(pTHX)
 [% lines = section.$sect.index + 1 %]
 [% NEXT IF lines == 0 %]
 Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %]] = {
-[% IF verbose AND section.$sect.comment() %]
+[% IF section.$sect.comment() %]
     /* [% section.$sect.comment() %] */
 [% END  %]
 [% section.$sect.output("    { %s }, /* %s_list[%d] %s */%s\n") %]
@@ -249,13 +249,13 @@ static void perl_init0(pTHX) { /* fixup_ppaddr */
 [% section.init0.output( "    %s\n" ) %]
 };
 
-[% IF verbose AND section.init.comment() %]
+[% IF section.init.comment() %]
     /* [% section.init.comment() %] */
 [% END %]
 [% section.init.output( "    %s\n", init_name ) %]
 
 /* deferred init1 of regexp */
-[% IF verbose AND section.init1.comment() %]
+[% IF section.init1.comment() %]
     /* [% section.init1.comment() %] */
 [% END %]
 [% section.init1.output( "    %s\n", "perl_init1" ) %]
@@ -264,7 +264,7 @@ static void perl_init0(pTHX) { /* fixup_ppaddr */
 /* deferred init of XS/Dyna loaded modules */
 [% END %]
 
-[% IF verbose AND section.init2.comment() %]
+[% IF section.init2.comment() %]
     /* [% section.init2.comment() %] */
 [% END %]
 [% section.init2.output( "    %s\n", 'perl_init2' ) %]
