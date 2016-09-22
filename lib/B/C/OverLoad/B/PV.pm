@@ -89,7 +89,7 @@ sub save_pv_once {
     my $gmg = $sv->FLAGS & SVs_GMG;
 
     my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
-    my ( $static, $shared_hek );
+    my ( $static, $shared_hek ) = ( 1, is_shared_hek($sv) );
     my $empty_string;
 
     # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
@@ -99,7 +99,6 @@ sub save_pv_once {
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
         debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
         $savesym = B::RV::save_op( $sv, $fullname );
-        $static = 1;    # avoid run-time overwrite of the PV/RV slot (#273)
         if ( $savesym =~ /get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
             $static  = 0;
             $pv      = $savesym;
@@ -122,12 +121,10 @@ sub save_pv_once {
                 ( $pv, $cur ) = ( "", 0 );
             }
         }
-        $shared_hek = is_shared_hek($sv);
 
         #$static = ( $sv->FLAGS & SVf_READONLY ) ? 1 : 0;
         #$static = 0 if $shared_hek or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );
         #$static = 0 if $B::C::const_strings and $fullname and ( $fullname =~ /^ warnings::(Dead)?Bits/ or $fullname =~ /::AUTOLOAD$/ );
-        $static = 1;
 
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
             debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
