@@ -48,6 +48,11 @@ sub add {
 
     push @$current, @_;
     $self->{'count'} += scalar(@_);
+    my $add_stack = 'B::C::Save'->can('_caller_comment');
+    my @stack;
+    @stack = $add_stack->() if ref $add_stack;
+    push @$current, @stack if scalar @stack;
+
     if ( !$nosplit && $self->{'count'} >= $self->{'max_lines'} ) {
         push @{ $self->{'chunks'} }, $current;
         $self->{'current'} = [];

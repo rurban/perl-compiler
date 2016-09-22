@@ -33,8 +33,14 @@ sub new {
 }
 
 sub add {
-    my $self = shift;
-    push( @{ $self->{'values'} }, @_ );
+    my $self      = shift;
+    my @list      = @_;
+    my $add_stack = 'B::C::Save'->can('_caller_comment');
+    if ( $list[-1] && ref $add_stack ) {
+        $list[-1] .= qq{\n} . $add_stack->();
+    }
+    push( @{ $self->{'values'} }, @list );
+    return;
 }
 
 sub remove {
@@ -43,7 +49,6 @@ sub remove {
 }
 
 sub name {
-
     return shift->{'name'};
 }
 
