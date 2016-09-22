@@ -64,6 +64,7 @@ lib/B/C/Packages.pm
 lib/B/C/Save.pm
 lib/B/C/Save/Hek.pm
 lib/B/C/Save/Signals.pm
+lib/B/C/SaveCOW.pm
 lib/B/C/Section.pm
 lib/B/C/Templates/base.c.tt2
 lib/B/FAKEOP.pm
