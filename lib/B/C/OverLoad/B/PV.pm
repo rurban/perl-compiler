@@ -9,6 +9,7 @@ use B::C::SaveCOW qw/savepv/;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/xpvsect svsect init free/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
+use B::C::Helpers qw/is_shared_hek/;
 
 sub save {
     my ( $sv, $fullname ) = @_;
@@ -22,8 +23,7 @@ sub save {
         return $sym;
     }
     my $flags = $sv->FLAGS;
-    my $shared_hek = ( ( $flags & 0x09000000 ) == 0x09000000 );
-    $shared_hek = $shared_hek ? 1 : B::C::IsCOW_hek($sv);
+    my $shared_hek = is_shared_hek($sv);
 
     my ( $savesym, $cur, $len, $pv, $static ) = save_pv_once( $sv, $fullname );
     $static = 0 if !( $flags & SVf_ROK ) and $sv->PV and $sv->PV =~ /::bootstrap$/;
@@ -122,7 +122,7 @@ sub save_pv_once {
                 ( $pv, $cur ) = ( "", 0 );
             }
         }
-        $shared_hek = ( $sv->FLAGS & 0x09000000 ) == 0x09000000 || B::C::IsCOW_hek($sv);
+        $shared_hek = is_shared_hek($sv);
 
         #$static = ( $sv->FLAGS & SVf_READONLY ) ? 1 : 0;
         #$static = 0 if $shared_hek or ( $fullname and ( $fullname =~ m/ :pad/ or ( $fullname =~ /^DynaLoader/ and $pv =~ /^boot_/ ) ) );

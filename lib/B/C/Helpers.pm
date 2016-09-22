@@ -3,7 +3,7 @@ package B::C::Helpers;
 use Exporter ();
 use B::C::Config;
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro cow_strlen_flags/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro cow_strlen_flags is_shared_hek/;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -19,6 +19,14 @@ sub is_constant {
     my $s = shift;
     return 1 if $s =~ /^(&sv_list|\-?[0-9]+|Nullsv)/;    # not gv_list, hek
     return 0;
+}
+
+sub is_shared_hek {
+    my $sv = shift;
+    return 0 unless $sv && $$sv;
+
+    my $flags = $sv->FLAGS;
+    return ( ( $flags & 0x09000000 ) == 0x09000000 ) || B::C::IsCOW_hek($sv);
 }
 
 # lazy helper for backward compatibility only (we can probably avoid to use it)
