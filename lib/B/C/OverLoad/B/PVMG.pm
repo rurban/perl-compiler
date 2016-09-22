@@ -21,7 +21,7 @@ sub save {
         }
         return $sym;
     }
-    my ( $savesym, $cur, $len, $pv, $static ) = B::PV::save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
     if ($static) {    # 242: e.g. $1
         $static = 0;
         $len = $cur + 1 unless $len;
@@ -53,7 +53,7 @@ sub save {
         }
     }
 
-    if ( $sv->FLAGS & SVf_ROK ) {          # sv => sv->RV cannot be initialized static.
+    if ( $flags & SVf_ROK ) {          # sv => sv->RV cannot be initialized static.
         init()->add( sprintf( "SvRV_set(&sv_list[%d], (SV*)%s);", svsect()->index + 1, $savesym ) )
           if $savesym ne '';
         $savesym = 'NULL';
@@ -71,7 +71,7 @@ sub save {
     svsect()->add(
         sprintf(
             "&xpvmg_list[%d], %Lu, 0x%x, {%s}",
-            xpvmgsect()->index, $sv->REFCNT, $sv->FLAGS | SVf_IsCOW,
+            xpvmgsect()->index, $sv->REFCNT, $flags,
             $savesym eq 'NULL'
             ? '0'
             : ".svu_pv=(char*)" . $savesym

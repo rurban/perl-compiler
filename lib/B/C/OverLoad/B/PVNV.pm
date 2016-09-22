@@ -20,10 +20,10 @@ sub save {
         }
         return $sym;
     }
-    my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
     my $nvx = '0.0';
     my $ivx = get_integer_value( $sv->IVX );    # here must be IVX!
-    if ( $sv->FLAGS & ( SVf_NOK | SVp_NOK ) ) {
+    if ( $flags & ( SVf_NOK | SVp_NOK ) ) {
 
         # it could be a double, or it could be 2 ints - union xpad_cop_seq
         $nvx = get_double_value( $sv->NV );
@@ -36,19 +36,14 @@ sub save {
     svsect()->add(
         sprintf(
             "&xpvnv_list[%d], %Lu, 0x%x %s",
-            xpvnvsect()->index, $sv->REFCNT, $sv->FLAGS,
+            xpvnvsect()->index, $sv->REFCNT, $flags,
             ", {.svu_pv=(char*)$savesym}"
         )
     );
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
-    if ( defined($pv) ) {
-        if ( !$static ) {
-            init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-        }
-    }
 
-    push @B::C::static_free, "&" . $s if $sv->FLAGS & SVs_OBJECT;
+    push @B::C::static_free, "&" . $s if $flags & SVs_OBJECT;
     return savesym( $sv, "&" . $s );
 }
 

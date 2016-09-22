@@ -22,10 +22,10 @@ sub save {
         }
         return $sym;
     }
-    my $flags = $sv->FLAGS;
+
     my $shared_hek = is_shared_hek($sv);
 
-    my ( $savesym, $cur, $len, $pv, $static ) = save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_once( $sv, $fullname );
     $static = 0 if !( $flags & SVf_ROK ) and $sv->PV and $sv->PV =~ /::bootstrap$/;
 
     # sv_free2 problem with !SvIMMORTAL and del_SV
@@ -51,7 +51,7 @@ sub save {
 
     svsect()->comment("any, refcnt, flags, sv_u");
     $savesym = $savesym eq 'NULL' ? '0' : ".svu_pv=(char*) $savesym";
-    svsect()->add( sprintf( '&xpv_list[%d], %Lu, 0x%x, {%s}', xpvsect()->index, $refcnt, $flags | SVf_IsCOW, $savesym ) );
+    svsect()->add( sprintf( '&xpv_list[%d], %Lu, 0x%x, {%s}', xpvsect()->index, $refcnt, $flags, $savesym ) );
     my $svix = svsect()->index;
     if ( defined($pv) and !$static ) {
         if ($shared_hek) {
@@ -87,6 +87,8 @@ sub save_pv_once {
     my $rok = $sv->FLAGS & SVf_ROK;
     my $pok = $sv->FLAGS & SVf_POK;
     my $gmg = $sv->FLAGS & SVs_GMG;
+
+    my $flags = $sv->FLAGS;
 
     my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
     my ( $static, $shared_hek ) = ( 1, is_shared_hek($sv) );
@@ -195,6 +197,8 @@ sub save_pv_once {
         $static, $static, $shared_hek ? "shared, $fullname" : $fullname
     );
 
-    return ( $savesym, $cur, $len, $pv, $static );
+    $flags |= SVf_IsCOW;# if $static;
+
+    return ( $savesym, $cur, $len, $pv, $static, $flags );
 }
 1;

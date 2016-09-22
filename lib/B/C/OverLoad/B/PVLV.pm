@@ -24,7 +24,8 @@ sub save {
         }
         return $sym;
     }
-    my ( $pvsym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
+
+    my ( $pvsym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
     my ( $lvtarg, $lvtarg_sym );    # XXX missing
 
     xpvlvsect()->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');
@@ -38,16 +39,12 @@ sub save {
     svsect()->add(
         sprintf(
             "&xpvlv_list[%d], %Lu, 0x%x, {(char*)%s}",
-            xpvlvsect()->index, $sv->REFCNT, $sv->FLAGS, $pvsym
+            xpvlvsect()->index, $sv->REFCNT, $flags, $pvsym
         )
     );
 
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
-    if ( !$static ) {
-
-        init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-    }
     $sv->save_magic($fullname);
 
     return savesym( $sv, "&" . $s );

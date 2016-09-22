@@ -18,7 +18,8 @@ sub save {
         }
         return $sym;
     }
-    my ( $savesym, $cur, $len, $pv, $static ) = B::C::save_pv_or_rv( $sv, $fullname );
+
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
 
     xpvivsect()->comment('STASH, MAGIC, cur, len, IVX');
     xpvivsect()->add(
@@ -31,19 +32,13 @@ sub save {
     svsect()->add(
         sprintf(
             "&xpviv_list[%d], %u, 0x%x %s",
-            xpvivsect()->index, $sv->REFCNT, $sv->FLAGS,
+            xpvivsect()->index, $sv->REFCNT, $flags,
             ", {.svu_pv=(char*)$savesym}"
         )
     );
     svsect()->debug( $fullname, $sv );
     my $s = "sv_list[" . svsect()->index . "]";
-    if ( defined($pv) ) {
-
-        if ( !$static ) {
-            init()->add( savepvn( "$s.sv_u.svu_pv", $pv, $sv, $cur ) );
-        }
-    }
-    savesym( $sv, "&" . $s );
+    return savesym( $sv, "&" . $s );
 }
 
 1;
