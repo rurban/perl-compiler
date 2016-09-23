@@ -21,7 +21,7 @@ sub save {
         }
         return $sym;
     }
-    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_or_rv( $sv, $fullname );
     if ($static) {    # 242: e.g. $1
         $static = 0;
         $len = $cur + 1 unless $len;

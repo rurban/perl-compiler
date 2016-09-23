@@ -25,7 +25,7 @@ sub save {
 
     my $shared_hek = is_shared_hek($sv);
 
-    my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv( $sv, $fullname );
     $static = 0 if !( $flags & SVf_ROK ) and $sv->PV and $sv->PV =~ /::bootstrap$/;
 
     # sv_free2 problem with !SvIMMORTAL and del_SV
@@ -71,7 +71,7 @@ sub save {
     return savesym( $sv, "&" . $s );
 }
 
-sub save_pv_once {
+sub save_pv_or_rv {
     my ( $sv, $fullname ) = @_;
 
     my $rok = $sv->FLAGS & SVf_ROK;
@@ -89,7 +89,7 @@ sub save_pv_once {
     if ($rok) {
 
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
-        debug( sv => "save_pv_once: B::RV::save_op(" . ( $sv || '' ) );
+        debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
         $savesym = B::RV::save_op( $sv, $fullname );
         if ( $savesym =~ /get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
             $static  = 0;
