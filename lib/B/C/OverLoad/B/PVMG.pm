@@ -329,6 +329,9 @@ sub _patch_dlsym {
     my $name = $sv->FLAGS & SVp_POK() ? $sv->PVX : "";
     my $ivxhex = sprintf( "0x%x", $ivx );
 
+    # lazy load encode after walking the optree
+    require Encode unless $INC{'Encode.pm'};
+
     if ( $pkg eq 'Encode::XS' ) {
         $pkg = 'Encode';
         if ( $fullname eq 'Encode::Encoding{iso-8859-1}' ) {
