@@ -53,7 +53,7 @@ sub save {
         }
     }
 
-    if ( $flags & SVf_ROK ) {          # sv => sv->RV cannot be initialized static.
+    if ( $flags & SVf_ROK ) {              # sv => sv->RV cannot be initialized static.
         init()->add( sprintf( "SvRV_set(&sv_list[%d], (SV*)%s);", svsect()->index + 1, $savesym ) )
           if $savesym ne '';
         $savesym = 'NULL';
@@ -450,12 +450,7 @@ sub _savere {
     #   at least not triggered by the core unit tests
 
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, {.xpvlenu_len=%u}", $cur, $len ) );    # 0 or $len ?
-    svsect()->add(
-        sprintf(
-            "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
-            0x4405,                       '.svu_pv=(char*)' . savepv($pv)
-        )
-    );
+    svsect()->add( sprintf( "&xpv_list[%d], 1, %x, {.svu_pv=(char*)%s}", xpvsect()->index, 0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", svsect()->index );
 
     return ( $sym, $cur );
