@@ -37,7 +37,8 @@ sub add {
     my @list      = @_;
     my $add_stack = 'B::C::Save'->can('_caller_comment');
     if ( $list[-1] && ref $add_stack ) {
-        $list[-1] .= qq{\n} . $add_stack->();
+        my $add = $add_stack->();
+        $list[-1] .= qq{\n} . $add if length $add;
     }
     push( @{ $self->{'values'} }, @list );
     return;

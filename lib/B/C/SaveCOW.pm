@@ -2,7 +2,7 @@ package B::C::SaveCOW;
 
 use strict;
 
-use B::C::File qw( decl );
+use B::C::File qw( const );
 use B::C::Helpers qw/cow_strlen_flags/;
 use B::C::Save qw/get_max_string_len/;
 
@@ -32,11 +32,11 @@ sub savepv {
     my $max_len = get_max_string_len();
     if ( $max_len && $cur > $max_len ) {
         my $chars = join ', ', map { cchar $_ } split //, pack( "a*", $pv );
-        decl()->add( sprintf( "Static const char %s[] = { %s };", $pvsym, $chars ) );
+        const()->add( sprintf( "Static const char %s[] = { %s };", $pvsym, $chars ) );
         $strtable{$cstring} = [ $pvsym, $cur, $len ];
     }
     else {
-        decl()->add( sprintf( "Static const char %s[] = %s;", $pvsym, $cstring ) );
+        const()->add( sprintf( "Static const char %s[] = %s;", $pvsym, $cstring ) );
         $strtable{$cstring} = [ $pvsym, $cur, $len ];
     }
     return ( $pvsym, $cur, $len );    # NOTE: $cur is total size of the perl string. len would be the length of the C string.

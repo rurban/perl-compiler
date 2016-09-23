@@ -37,7 +37,7 @@ our @ISA = qw(Exporter);
 my $self;
 
 sub code_section_names {
-    return qw{decl init0 free sym hek}, struct_names(), op_sections();
+    return qw{const decl init0 free sym hek}, struct_names(), op_sections();
 }
 
 sub struct_names {
