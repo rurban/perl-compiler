@@ -2,7 +2,7 @@ package B::PV;
 
 use strict;
 
-use B qw/SVf_IsCOW SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY cstring SVs_OBJECT/;
+use B qw/cstring SVf_IsCOW SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY SVs_OBJECT/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::SaveCOW qw/savepv/;
@@ -10,6 +10,9 @@ use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/xpvsect svsect init free/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 use B::C::Helpers qw/is_shared_hek/;
+
+sub SVpbm_VALID { 0x40000000 }
+sub SVp_SCREAM  { 0x00008000 }    # method name is DOES
 
 sub save {
     my ( $sv, $fullname ) = @_;
@@ -92,7 +95,9 @@ sub save_pv_or_rv {
         debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
 
         my $newsym = B::RV::save_op( $sv, $fullname );
-        if ( $newsym =~ qr{get_cv} ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+
+        # newsym can be a get_cv call from get_cv_string
+        if ( $newsym =~ qr{(?:get_cv|get_cvn_flags)\(} ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef xtest #350
             $static = 0;
             $pv     = $newsym;
         }
@@ -101,8 +106,10 @@ sub save_pv_or_rv {
         }
     }
     else {
+        $flags |= SVf_IsCOW;                                  # only flags as COW if it's not a reference
+
         if ($pok) {
-            $pv = pack "a*", $sv->PV;     # XXX!
+            $pv = pack "a*", $sv->PV;                         # XXX!
             $cur = ( $sv and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length($pv);
         }
         else {
@@ -114,17 +121,12 @@ sub save_pv_or_rv {
             }
         }
 
-        if ( $shared_hek and $pok and !$cur ) {    #272 empty key
-            debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
-            $static = 0;                           # TODO WHAT WILL THIS DO???
-        }
-
-        $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID
+        $static = 0 if ( $sv->FLAGS & ( SVp_SCREAM | SVpbm_VALID ) == ( SVp_SCREAM | SVpbm_VALID ) );
 
         ( $savesym, $cur, $len ) = savepv($pv) if $pok;
     }
 
-    $len = 0 if $shared_hek;                                         # hek should have len 0
+    $len = 0 if $shared_hek;    # hek should have len 0
 
     $fullname = '' if !defined $fullname;
     debug(
@@ -132,8 +134,6 @@ sub save_pv_or_rv {
         $savesym, cstring($pv), $cur, $len,
         $static, $static, $shared_hek ? "shared, $fullname" : $fullname
     );
-
-    $flags |= SVf_IsCOW if !$rok;                                    # unless it's a reference!
 
     return ( $savesym, $cur, $len, $pv, $static, $flags );
 }

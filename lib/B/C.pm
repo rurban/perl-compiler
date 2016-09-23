@@ -60,17 +60,8 @@ use B qw(minus_c sv_undef walkoptree walkoptree_slow main_root main_start peekop
   HEf_SVKEY SVf_POK SVf_ROK SVf_IOK SVf_NOK SVf_IVisUV SVf_READONLY);
 
 BEGIN {
-    @B::NV::ISA = 'B::IV';                                            # add IVX to nv. This fixes test 23 for Perl 5.8
-    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST CVf_ANON));    # both unsupported for 5.6
-
-    sub SVf_UTF8 { 0x20000000 }
-
-    B->import(qw(SVt_PVGV));                                          # added with 5.8.1
-
-    # QUESTION: not sure it s still required  ( at least the two last )
-    #           check if used & clean
-    eval q[sub SVs_GMG { 0x00200000 }
-           sub SVs_SMG { 0x00400000 }];
+    @B::NV::ISA = 'B::IV';    # add IVX to nv. This fixes test 23 for Perl 5.8
+    B->import(qw(regex_padav SVp_NOK SVp_IOK CVf_CONST CVf_ANON SVt_PVGV));
 }
 
 use FileHandle;
