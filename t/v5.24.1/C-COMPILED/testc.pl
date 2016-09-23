@@ -43,6 +43,9 @@ my $errors = KnownErrors->new( file_to_test => $file_to_test );
 # The relative path our symlinks will point to.
 my $base_dir = dirname($path);
 
+my $cwd = qx{pwd};
+chomp $cwd;
+
 chdir "$FindBin::Bin/.." or die $!;
 
 my $current_t_file   = $file_to_test;
@@ -154,4 +157,20 @@ SKIP: {
     }
 
 }
+
+{
+    # add the list of files generated
+    my $root = $FindBin::Bin;
+    $root =~ s{^$cwd}{};
+    my @path = split( '/', $root );
+    pop @path;
+    $root = join '/', @path;
+    $root =~ s{^/+}{};
+
+    foreach my $f ( sort $bin_file, $c_file, $perl_file ) {
+        note "$root/$f" if -e $f;
+    }
+
+}
+
 exit;

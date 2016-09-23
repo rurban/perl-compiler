@@ -44,6 +44,9 @@ my $errors = KnownErrors->new( file_to_test => $file_to_test );
 # The relative path our symlinks will point to.
 my $base_dir = dirname($path);
 
+my $cwd = qx{pwd};
+chomp $cwd;
+
 chdir "$FindBin::Bin/../" or die $!;
 
 my $current_t_file   = $file_to_test;
@@ -122,5 +125,24 @@ foreach my $optimization (@optimizations) {
     }
 }
 unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
+
+if ( $ENV{BC_DEVELOPING} ) {
+    note "List of generated files for ", $file_to_test;
+
+    # add the list of files generated
+    my $root = $FindBin::Bin;
+    $root =~ s{^$cwd}{};
+    $root =~ s{C-COMPILED}{t};
+    my @path = split( '/', $root );
+    pop @path;
+    $root = join '/', @path;
+    $root =~ s{^/+}{};
+
+    ( my $look_for = $file_to_test ) =~ s/\.t$//;
+
+    foreach my $f ( sort glob("$look_for*") ) {
+        note "$root/$f" if -e $f;
+    }
+}
 
 exit;
