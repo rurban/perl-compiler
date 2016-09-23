@@ -5,7 +5,7 @@ use strict;
 use B qw(cstring svref_2object);
 use B::C::Config;
 use B::C::File qw( xpvmgsect decl init );
-use B::C::Helpers qw/strlen_flags is_shared_hek/;
+use B::C::Helpers qw/strlen_flags is_shared_hek cstring_cow/;
 use B::C::Save::Hek qw/save_hek/;
 
 use Exporter ();
@@ -88,8 +88,7 @@ sub savepvn {
             my $cstr = cstring($pv);
             my $cur ||= ( $sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length( pack "a*", $pv );
             if ( $sv and B::C::IsCOW($sv) ) {
-                $pv .= "\0\001";
-                $cstr = cstring($pv);
+                $cstr = cstring_cow( $pv, q{\000\001} );
                 $cur += 2;
             }
             debug( sv => "Saving PV %s:%d to %s", $cstr, $cur, $dest );
