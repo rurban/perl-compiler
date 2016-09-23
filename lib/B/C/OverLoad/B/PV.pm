@@ -80,9 +80,9 @@ sub save_pv_or_rv {
 
     my $flags = $sv->FLAGS;
 
-    my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
+    my $pv = "";
+    my ( $savesym, $cur, $len ) = savepv($pv);    # initialize with empty string
     my ( $static, $shared_hek ) = ( 1, is_shared_hek($sv) );
-    my $empty_string;
 
     # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
     # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
@@ -90,16 +90,19 @@ sub save_pv_or_rv {
 
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
         debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
-        $savesym = B::RV::save_op( $sv, $fullname );
-        if ( $savesym =~ /get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
-            $static  = 0;
-            $pv      = $savesym;
-            $savesym = 'NULL';
+
+        my $newsym = B::RV::save_op( $sv, $fullname );
+        if ( $newsym =~ qr{get_cv} ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
+            $static = 0;
+            $pv     = $newsym;
+        }
+        else {
+            $savesym = $newsym;
         }
     }
     else {
         if ($pok) {
-            $pv = pack "a*", $sv->PV;    # XXX!
+            $pv = pack "a*", $sv->PV;     # XXX!
             $cur = ( $sv and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length($pv);
         }
         else {
@@ -109,37 +112,19 @@ sub save_pv_or_rv {
                 $cur = length( pack "a*", $pv );
                 $pok = 1;
             }
-            else {
-                ( $pv, $cur ) = ( "", 0 );
-            }
         }
 
         if ( $shared_hek and $pok and !$cur ) {    #272 empty key
             debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
-            $empty_string = 1 unless $fullname =~ /unopaux_item.* const/;
-            $static = 0;    # TODO WHAT WILL THIS DO???
+            $static = 0;                           # TODO WHAT WILL THIS DO???
         }
 
         $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID
 
-        if ($pok) {
-
-            # but we can optimize static set-magic ISA entries. #263, #91
-            if ( $B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG ) {
-                $static = 1;                                         # warn "static $fullname";
-            }
-
-            ( $savesym, $cur, $len ) = savepv($pv);
-        }
-        else {
-            $len = 0;
-        }
-    }
-    if ( $savesym eq 'NULL' ) {
-        ( $savesym, $cur, $len ) = savepv('');
+        ( $savesym, $cur, $len ) = savepv($pv) if $pok;
     }
 
-    $len = 0 if $shared_hek;    # hek should have len 0
+    $len = 0 if $shared_hek;                                         # hek should have len 0
 
     $fullname = '' if !defined $fullname;
     debug(
@@ -148,7 +133,7 @@ sub save_pv_or_rv {
         $static, $static, $shared_hek ? "shared, $fullname" : $fullname
     );
 
-    $flags |= SVf_IsCOW if !$rok;    # unless it's a reference!
+    $flags |= SVf_IsCOW if !$rok;                                    # unless it's a reference!
 
     return ( $savesym, $cur, $len, $pv, $static, $flags );
 }
