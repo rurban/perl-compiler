@@ -317,28 +317,6 @@ CODE1
     $magic;
 }
 
-{
-    my $_is_loaded;    # state like variable
-
-    sub load_encode {
-        return if $_is_loaded;
-        if ( exists $INC{'Encode.pm'} ) {
-            $_is_loaded = 1;
-            return;
-        }
-
-        local %INC;    # do not corrupt INC
-        local $^W;
-        BEGIN { ${^WARNING_BITS} = 0; }
-
-        eval q{local $SIG{__WARN__} = 'IGNORE'; require Encode};
-        $INC{'Encode.pm'} or die("Can't load Encode at run time.");
-        $_is_loaded = 1;
-
-        return;
-    }
-}
-
 # TODO: This was added to PVMG because we thought it was only used in this op but
 # as of 5.18, it's used in B::CV::save
 sub _patch_dlsym {
@@ -352,7 +330,6 @@ sub _patch_dlsym {
     my $ivxhex = sprintf( "0x%x", $ivx );
 
     # lazy load encode after walking the optree
-    load_encode();
 
     if ( $pkg eq 'Encode::XS' ) {
         $pkg = 'Encode';
@@ -411,7 +388,7 @@ sub _patch_dlsym {
     }
 
     # Encode-2.59 uses a different name without _encoding
-    elsif ( Encode::find_encoding($name) ) {
+    elsif ( 'Encode'->can('find_encoding') && Encode::find_encoding($name) ) {
         my $enc = Encode::find_encoding($name);
         $pkg = ref($enc) if ref($enc) ne 'Encode::XS';
 
