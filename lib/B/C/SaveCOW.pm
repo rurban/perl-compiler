@@ -2,8 +2,9 @@ package B::C::SaveCOW;
 
 use strict;
 
-use B::C::File qw( decl );
+use B::C::File qw( const );
 use B::C::Helpers qw/cow_strlen_flags/;
+use B::C::Save qw/get_max_string_len/;
 
 use Exporter ();
 our @ISA = qw(Exporter);
@@ -21,12 +22,6 @@ sub inc_pv_index {
     return ++$pv_index;
 }
 
-my $max_string_len;
-
-sub set_max_string_len {
-    $max_string_len = shift;
-}
-
 sub savepv {
     my $pv = shift;
     my ( $cstring, $cur, $len, $utf8 ) = cow_strlen_flags($pv);
@@ -34,13 +29,14 @@ sub savepv {
     return @{ $strtable{$cstring} } if defined $strtable{$cstring};
     my $pvsym = sprintf( "cowpv%d", inc_pv_index() );
 
-    if ( defined $max_string_len && $cur > $max_string_len ) {
+    my $max_len = get_max_string_len();
+    if ( $max_len && $cur > $max_len ) {
         my $chars = join ', ', map { cchar $_ } split //, pack( "a*", $pv );
-        decl()->add( sprintf( "Static const char %s[] = { %s };", $pvsym, $chars ) );
+        const()->add( sprintf( "Static const char %s[] = { %s };", $pvsym, $chars ) );
         $strtable{$cstring} = [ $pvsym, $cur, $len ];
     }
     else {
-        decl()->add( sprintf( "Static const char %s[] = %s;", $pvsym, $cstring ) );
+        const()->add( sprintf( "Static const char %s[] = %s;", $pvsym, $cstring ) );
         $strtable{$cstring} = [ $pvsym, $cur, $len ];
     }
     return ( $pvsym, $cur, $len );    # NOTE: $cur is total size of the perl string. len would be the length of the C string.

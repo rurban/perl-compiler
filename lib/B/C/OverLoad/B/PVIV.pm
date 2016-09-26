@@ -19,7 +19,7 @@ sub save {
         return $sym;
     }
 
-    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_or_rv( $sv, $fullname );
 
     xpvivsect()->comment('STASH, MAGIC, cur, len, IVX');
     xpvivsect()->add(

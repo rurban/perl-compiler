@@ -25,7 +25,7 @@ sub save {
         return $sym;
     }
 
-    my ( $pvsym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
+    my ( $pvsym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_or_rv( $sv, $fullname );
     my ( $lvtarg, $lvtarg_sym );    # XXX missing
 
     xpvlvsect()->comment('STASH, MAGIC, CUR, LEN, GvNAME, xnv_u, TARGOFF, TARGLEN, TARG, TYPE');

@@ -185,6 +185,13 @@ XS(XS_DynaLoader_dl_load_file);
 XS(XS_DynaLoader_dl_find_symbol);
 [% END %]
 
+[% IF section.const.comment() %]
+    /* [% section.const.comment() %] */
+[% END %]
+/* <const.output> */
+[% section.const.output( "%s\n" ) %]
+/* </const.output> */
+
 [% IF section.decl.comment() %]
     /* [% section.decl.comment() %] */
 [% END %]

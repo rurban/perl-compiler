@@ -5,13 +5,13 @@ use strict;
 use B qw(cstring svref_2object);
 use B::C::Config;
 use B::C::File qw( xpvmgsect decl init );
-use B::C::Helpers qw/strlen_flags is_shared_hek/;
+use B::C::Helpers qw/strlen_flags is_shared_hek cstring_cow/;
 use B::C::Save::Hek qw/save_hek/;
 
 use Exporter ();
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw/savepvn constpv savepv inc_pv_index set_max_string_len savestash_flags savestashpv/;
+our @EXPORT_OK = qw/savepvn constpv savepv inc_pv_index set_max_string_len get_max_string_len savestash_flags savestashpv/;
 
 my %strtable;
 
@@ -28,10 +28,16 @@ sub constpv {
     return savepv( shift, 1 );
 }
 
-my $max_string_len;
+{
+    my $_MAX_STR_LEN;
 
-sub set_max_string_len {
-    $max_string_len = shift;
+    sub set_max_string_len {
+        $_MAX_STR_LEN = shift;
+    }
+
+    sub get_max_string_len {
+        return $_MAX_STR_LEN || 0;
+    }
 }
 
 sub savepv {
@@ -42,7 +48,8 @@ sub savepv {
     return $strtable{$cstring} if defined $strtable{$cstring};
     my $pvsym = sprintf( "pv%d", inc_pv_index() );
     $const = $const ? " const" : "";
-    if ( defined $max_string_len && $len > $max_string_len ) {
+    my $maxlen = get_max_string_len;
+    if ( $maxlen && $len > $maxlen ) {
         my $chars = join ', ', map { cchar $_ } split //, pack( "a*", $pv );
         decl()->add( sprintf( "Static%s char %s[] = { %s };", $const, $pvsym, $chars ) );
         $strtable{$cstring} = $pvsym;
@@ -60,14 +67,14 @@ sub savepvn {
     my ( $dest, $pv, $sv, $cur ) = @_;
     my @init;
 
-    my $max_string_len = $B::C::max_string_len;    # FIXME to move here
-                                                   # work with byte offsets/lengths
+    my $maxlen = get_max_string_len();
+
     $pv = pack "a*", $pv if defined $pv;
-    if ( defined $max_string_len && length($pv) > $max_string_len ) {
+    if ( $maxlen && length($pv) > $maxlen ) {
         push @init, sprintf( "Newx(%s,%u,char);", $dest, length($pv) + 2 );
         my $offset = 0;
         while ( length $pv ) {
-            my $str = substr $pv, 0, $max_string_len, '';
+            my $str = substr $pv, 0, $maxlen, '';
             push @init, sprintf( 'Copy(%s, %s+%d, %u, char);', cstring($str), $dest, $offset, length($str) );
             $offset += length $str;
         }
@@ -88,8 +95,7 @@ sub savepvn {
             my $cstr = cstring($pv);
             my $cur ||= ( $sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length( pack "a*", $pv );
             if ( $sv and B::C::IsCOW($sv) ) {
-                $pv .= "\0\001";
-                $cstr = cstring($pv);
+                $cstr = cstring_cow( $pv, q{\000\001} );
                 $cur += 2;
             }
             debug( sv => "Saving PV %s:%d to %s", $cstr, $cur, $dest );

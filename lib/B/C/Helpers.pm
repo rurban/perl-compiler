@@ -3,7 +3,10 @@ package B::C::Helpers;
 use Exporter ();
 use B::C::Config;
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string is_constant strlen_flags curcv set_curcv is_using_mro cow_strlen_flags is_shared_hek/;
+our @EXPORT_OK = qw/svop_name padop_name mark_package do_labels read_utf8_string get_cv_string
+  is_constant strlen_flags curcv set_curcv is_using_mro cow_strlen_flags is_shared_hek
+  cstring_cow
+  /;
 
 # wip to be moved
 *do_labels    = \&B::C::do_labels;
@@ -39,21 +42,27 @@ sub strlen_flags {
     return ( $cstr, $cur, $is_utf8 ? 'SVf_UTF8' : '0' );
 }
 
-# lazy helper for backward compatibility only (we can probably avoid to use it)
-sub cow_strlen_flags {
-    my $str = shift;
+sub cstring_cow {
+    my ( $str, $cow ) = @_;
 
-    my ( $is_utf8, $cur ) = read_utf8_string($str);
-
-    # TODO: we would like to use this but in some cases, the c string is corrupted
+    # TODO: we would like to use cstring("$str$cow") but in some cases, the c string is corrupted
     # instead of
     #   cowpv7[] = "$c\000\377";
     # we had
     #   cowpv7[] = "$c\000\303\277";
 
     my $cstr = cstring($str);
-    my $end  = q{\000\377};
-    $cstr =~ s{"$}{$end"};
+    $cstr =~ s{"$}{$cow"};
+
+    return $cstr;
+}
+
+# lazy helper for backward compatibility only (we can probably avoid to use it)
+sub cow_strlen_flags {
+    my $str = shift;
+
+    my ( $is_utf8, $cur ) = read_utf8_string($str);
+    my $cstr = cstring_cow( $str, q{\000\377} );
 
     return ( $cstr, $cur, $cur + 2, $is_utf8 ? 'SVf_UTF8' : '0' );    # NOTE: The actual Cstring length will be 2 bytes longer than $cur
 }

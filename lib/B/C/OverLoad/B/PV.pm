@@ -2,7 +2,7 @@ package B::PV;
 
 use strict;
 
-use B qw/SVf_IsCOW SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY cstring SVs_OBJECT/;
+use B qw/cstring SVf_IsCOW SVf_ROK SVf_POK SVs_GMG SVs_SMG SVf_READONLY SVs_OBJECT/;
 use B::C::Config;
 use B::C::Save qw/savepvn/;
 use B::C::SaveCOW qw/savepv/;
@@ -10,6 +10,9 @@ use B::C::Save::Hek qw/save_hek/;
 use B::C::File qw/xpvsect svsect init free/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
 use B::C::Helpers qw/is_shared_hek/;
+
+sub SVpbm_VALID { 0x40000000 }
+sub SVp_SCREAM  { 0x00008000 }    # method name is DOES
 
 sub save {
     my ( $sv, $fullname ) = @_;
@@ -25,7 +28,7 @@ sub save {
 
     my $shared_hek = is_shared_hek($sv);
 
-    my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = save_pv_or_rv( $sv, $fullname );
     $static = 0 if !( $flags & SVf_ROK ) and $sv->PV and $sv->PV =~ /::bootstrap$/;
 
     # sv_free2 problem with !SvIMMORTAL and del_SV
@@ -71,7 +74,7 @@ sub save {
     return savesym( $sv, "&" . $s );
 }
 
-sub save_pv_once {
+sub save_pv_or_rv {
     my ( $sv, $fullname ) = @_;
 
     my $rok = $sv->FLAGS & SVf_ROK;
@@ -80,26 +83,33 @@ sub save_pv_once {
 
     my $flags = $sv->FLAGS;
 
-    my ( $cur, $len, $savesym, $pv ) = ( 0, 1, 'NULL', "" );
+    my $pv = "";
+    my ( $savesym, $cur, $len ) = savepv($pv);    # initialize with empty string
     my ( $static, $shared_hek ) = ( 1, is_shared_hek($sv) );
-    my $empty_string;
 
     # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
     # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
     if ($rok) {
 
         # this returns us a SV*. 5.8 expects a char* in xpvmg.xpv_pv
-        debug( sv => "save_pv_once: B::RV::save_op(" . ( $sv || '' ) );
-        $savesym = B::RV::save_op( $sv, $fullname );
-        if ( $savesym =~ /get_cv/ ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef
-            $static  = 0;
-            $pv      = $savesym;
-            $savesym = 'NULL';
+        debug( sv => "save_pv_or_rv: B::RV::save_op(" . ( $sv || '' ) );
+
+        my $newsym = B::RV::save_op( $sv, $fullname );
+
+        # newsym can be a get_cv call from get_cv_string
+        if ( $newsym =~ qr{(?:get_cv|get_cvn_flags)\(} ) {    # Moose::Util::TypeConstraints::Builtins::_RegexpRef xtest #350
+            $static = 0;
+            $pv     = $newsym;
+        }
+        else {
+            $savesym = $newsym;
         }
     }
     else {
+        $flags |= SVf_IsCOW;                                  # only flags as COW if it's not a reference
+
         if ($pok) {
-            $pv = pack "a*", $sv->PV;    # XXX!
+            $pv = pack "a*", $sv->PV;                         # XXX!
             $cur = ( $sv and $sv->can('CUR') and ref($sv) ne 'B::GV' ) ? $sv->CUR : length($pv);
         }
         else {
@@ -109,34 +119,11 @@ sub save_pv_once {
                 $cur = length( pack "a*", $pv );
                 $pok = 1;
             }
-            else {
-                ( $pv, $cur ) = ( "", 0 );
-            }
         }
 
-        if ( $shared_hek and $pok and !$cur ) {    #272 empty key
-            debug( [qw/pv hv/], "use emptystring for empty shared key $fullname" );
-            $empty_string = 1 unless $fullname =~ /unopaux_item.* const/;
-            $static = 0;    # TODO WHAT WILL THIS DO???
-        }
+        $static = 0 if ( $sv->FLAGS & ( SVp_SCREAM | SVpbm_VALID ) == ( SVp_SCREAM | SVpbm_VALID ) );
 
-        $static = 0 if ( $sv->FLAGS & 0x40008000 == 0x40008000 );    # SVp_SCREAM|SVpbm_VALID
-
-        if ($pok) {
-
-            # but we can optimize static set-magic ISA entries. #263, #91
-            if ( $B::C::const_strings and ref($sv) eq 'B::PVMG' and $sv->FLAGS & SVs_SMG ) {
-                $static = 1;                                         # warn "static $fullname";
-            }
-
-            ( $savesym, $cur, $len ) = savepv($pv);
-        }
-        else {
-            $len = 0;
-        }
-    }
-    if ( $savesym eq 'NULL' ) {
-        ( $savesym, $cur, $len ) = savepv('');
+        ( $savesym, $cur, $len ) = savepv($pv) if $pok;
     }
 
     $len = 0 if $shared_hek;    # hek should have len 0
@@ -147,8 +134,6 @@ sub save_pv_once {
         $savesym, cstring($pv), $cur, $len,
         $static, $static, $shared_hek ? "shared, $fullname" : $fullname
     );
-
-    $flags |= SVf_IsCOW if !$rok;    # unless it's a reference!
 
     return ( $savesym, $cur, $len, $pv, $static, $flags );
 }

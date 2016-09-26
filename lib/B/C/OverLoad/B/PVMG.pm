@@ -21,7 +21,7 @@ sub save {
         }
         return $sym;
     }
-    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_once( $sv, $fullname );
+    my ( $savesym, $cur, $len, $pv, $static, $flags ) = B::PV::save_pv_or_rv( $sv, $fullname );
     if ($static) {    # 242: e.g. $1
         $static = 0;
         $len = $cur + 1 unless $len;
@@ -53,7 +53,7 @@ sub save {
         }
     }
 
-    if ( $flags & SVf_ROK ) {          # sv => sv->RV cannot be initialized static.
+    if ( $flags & SVf_ROK ) {              # sv => sv->RV cannot be initialized static.
         init()->add( sprintf( "SvRV_set(&sv_list[%d], (SV*)%s);", svsect()->index + 1, $savesym ) )
           if $savesym ne '';
         $savesym = 'NULL';
@@ -317,6 +317,28 @@ CODE1
     $magic;
 }
 
+{
+    my $_is_loaded;    # state like variable
+
+    sub load_encode {
+        return if $_is_loaded;
+        if ( exists $INC{'Encode.pm'} ) {
+            $_is_loaded = 1;
+            return;
+        }
+
+        local %INC;    # do not corrupt INC
+        local $^W;
+        BEGIN { ${^WARNING_BITS} = 0; }
+
+        eval q{local $SIG{__WARN__} = 'IGNORE'; require Encode};
+        $INC{'Encode.pm'} or die("Can't load Encode at run time.");
+        $_is_loaded = 1;
+
+        return;
+    }
+}
+
 # TODO: This was added to PVMG because we thought it was only used in this op but
 # as of 5.18, it's used in B::CV::save
 sub _patch_dlsym {
@@ -328,6 +350,9 @@ sub _patch_dlsym {
     }
     my $name = $sv->FLAGS & SVp_POK() ? $sv->PVX : "";
     my $ivxhex = sprintf( "0x%x", $ivx );
+
+    # lazy load encode after walking the optree
+    load_encode();
 
     if ( $pkg eq 'Encode::XS' ) {
         $pkg = 'Encode';
@@ -447,12 +472,7 @@ sub _savere {
     #   at least not triggered by the core unit tests
 
     xpvsect()->add( sprintf( "Nullhv, {0}, %u, {.xpvlenu_len=%u}", $cur, $len ) );    # 0 or $len ?
-    svsect()->add(
-        sprintf(
-            "&xpv_list[%d], 1, %x, {%s}", xpvsect()->index,
-            0x4405,                       '.svu_pv=(char*)' . savepv($pv)
-        )
-    );
+    svsect()->add( sprintf( "&xpv_list[%d], 1, %x, {.svu_pv=(char*)%s}", xpvsect()->index, 0x4405, savepv($pv) ) );
     $sym = sprintf( "&sv_list[%d]", svsect()->index );
 
     return ( $sym, $cur );
