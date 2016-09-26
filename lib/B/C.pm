@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '5.024004_01';
+our $VERSION = '5.024004_02';
 
 our $check;
 
@@ -305,7 +305,7 @@ sub svop_or_padop_pv {
 }
 
 sub IsCOW {
-    return ( $_[0]->FLAGS & 0x10000000 );    # since 5.22
+    return ( ref $_[0] && $_[0]->can('FLAGS') && $_[0]->FLAGS & 0x10000000 );    # since 5.22
 }
 
 sub IsCOW_hek {

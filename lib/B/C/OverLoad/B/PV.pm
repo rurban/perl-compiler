@@ -50,6 +50,7 @@ sub save {
     $savesym = $savesym eq 'NULL' ? '0' : ".svu_pv=(char*) $savesym";
     svsect()->add( sprintf( '&xpv_list[%d], %Lu, 0x%x, {%s}', xpvsect()->index, $refcnt, $flags, $savesym ) );
     my $svix = svsect()->index;
+
     if ( defined($pv) and !$static ) {
         if ($shared_hek) {
             my $hek = save_hek( $pv, $fullname );
@@ -57,6 +58,7 @@ sub save {
               unless $hek eq 'NULL';
         }
     }
+
     if ( debug('flags') and DEBUG_LEAKING_SCALARS() ) {    # add sv_debug_file
         init()->add(
             sprintf(
@@ -83,9 +85,10 @@ sub save_pv_or_rv {
 
     my $flags = $sv->FLAGS;
 
+    my ( $static, $shared_hek ) = ( 1, is_shared_hek($sv) );
+
     my $pv = "";
     my ( $savesym, $cur, $len ) = savepv($pv);    # initialize with empty string
-    my ( $static, $shared_hek ) = ( 1, is_shared_hek($sv) );
 
     # overloaded VERSION symbols fail to xs boot: ExtUtils::CBuilder with Fcntl::VERSION (i91)
     # 5.6: Can't locate object method "RV" via package "B::PV" Carp::Clan
@@ -126,7 +129,16 @@ sub save_pv_or_rv {
         ( $savesym, $cur, $len ) = savepv($pv) if $pok;
     }
 
-    $len = 0 if $shared_hek;    # hek should have len 0
+    # do not use cowpvs for shared_hek for now (not ready)
+    if ($shared_hek) {
+        $len = 0;    # hek should have len 0
+
+        if ( $cur && $fullname ne 'svop const' ) {    # need investigation
+            $savesym = 'NULL';                        # set 0 and use regular init for hek
+            $static  = 0;
+            $flags   = $sv->FLAGS;                    # restore flags to their previous value
+        }
+    }
 
     $fullname = '' if !defined $fullname;
     debug(
