@@ -51,7 +51,6 @@ op/goto_xs.t                 COMPAT    needs XS::APItest
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/magic.t                   TESTS     Test results:
 op/method.t                  PLAN      Plan was valid
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
@@ -77,6 +76,7 @@ re/qr_gc.t                   TESTS     BC issue #309 - regexp destruction
 re/reg_eval_scope.t          PLAN      BC issue #295 - (?{}) should have its own lexical scope
 re/reg_mesg.t                TESTS     CM issue #26 - warnings from re.pm - Subroutine redefined
 re/reg_pmod.t                TESTS     BC issue #295 - (?{}) should have its own lexical scope
+re/regex_sets.t              TESTS     Test results:
 re/rxcode.t                  TESTS     BC issue #295 - (?{}) should have its own lexical scope
 re/subst_amp.t               TESTS     BC issue #295 - (?{}) should have its own lexical scope
 uni/caller.t                 PLAN      BC issue #221 - delete is not anonymizing the returned sub
@@ -92,6 +92,7 @@ uni/tr_eucjp.t               COMPAT    BC issue #283 - unsupported deprecated "e
 uni/tr_sjis.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 uni/tr_utf8.t                COMPAT    BC issue #283 - unsupported deprecated "encoding" pragma
 xtestc/0015.t                TESTS     Output is: "a\nb\n\n"
+xtestc/0091.t                TESTS     Output is: "Can t use an undefined value ..." expect "ok"
 xtestc/0135.t                TESTS     Output is: ""
 xtestc/0163.t                TESTS     Output is: ""
 xtestc/0167.t                TESTS     Output is: "Wide character in crypt at ..."
@@ -110,6 +111,7 @@ xtestc/0230.t                TESTS     Output is: "\n"
 xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
+xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6100: Perl sv ..." expect "ok"
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0253.t                TESTS     Output is: "Subroutine loose name ..." expect "ok"
@@ -145,4 +147,5 @@ xtestc/2741.t                TESTS     Output is: "SV = PVHV(0x800320) at ..." e
 xtestc/2900.t                TESTS     Output is: "19518210 "
 xtestc/2901.t                TESTS     Output is: ""
 xtestc/2990.t                TESTS     Output is: ""
+xtestc/3052.t                TESTS     Output is: "unknown RRtype\nCan t locate ..." expect "ok"
 xtestc/3200.t                TESTS     Output is: ""

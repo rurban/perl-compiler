@@ -129,6 +129,8 @@ sub save_pv_or_rv {
         ( $savesym, $cur, $len ) = savepv($pv) if $pok;
     }
 
+    $fullname = '' if !defined $fullname;
+
     # do not use cowpvs for shared_hek for now (not ready)
     if ($shared_hek) {
         $len = 0;    # hek should have len 0
@@ -140,7 +142,6 @@ sub save_pv_or_rv {
         }
     }
 
-    $fullname = '' if !defined $fullname;
     debug(
         pv => "Saving pv %s %s cur=%d, len=%d, static=%d cow=%d %s",
         $savesym, cstring($pv), $cur, $len,
