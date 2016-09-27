@@ -51,7 +51,6 @@ op/goto_xs.t                 COMPAT    needs XS::APItest
 op/lex.t                     COMPAT    Tests trigger errors at compilation time
 op/lexsub.t                  BC        BC issue #219 - overload issue
 op/lvref.t                   SIG       BC issue #304 - SIGABRT - assertion failures with lexical_sub feature
-op/magic.t                   TESTS     Test results:
 op/method.t                  PLAN      Plan was valid
 op/override.t                COMPAT    crazy test which override CORE::GLOBAL::require @BEGIN
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
@@ -103,6 +102,7 @@ xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at
 xtestc/0182.t                TESTS     Output is: "main::foo"
 xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
+xtestc/0203.t                TESTS     Output is: "" expect "ok"
 xtestc/0207.t                TESTS     Output is: ""
 xtestc/0222.t                TESTS     Output is: "Can t find string terminator ..."
 xtestc/0226.t                TESTS     Output is: ""
@@ -110,6 +110,7 @@ xtestc/0230.t                TESTS     Output is: "\n"
 xtestc/0237.t                TESTS     Output is: " "
 xtestc/0239.t                TESTS     Output is: "ok 1\n\n"
 xtestc/0241.t                TESTS     Output is: ""
+xtestc/0245.t                TESTS     Output is: "0245.bin: sv.c:6100: Perl sv ..." expect "ok"
 xtestc/0247.t                TESTS     Output is: ""
 xtestc/0248.t                TESTS     Output is: " toto \n"
 xtestc/0253.t                TESTS     Output is: "Subroutine loose name ..." expect "ok"
