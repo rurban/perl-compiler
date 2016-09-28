@@ -104,6 +104,7 @@ xtestc/0179.t                TESTS     Output is: "Smartmatch is experimental at
 xtestc/0182.t                TESTS     Output is: "main::foo"
 xtestc/0191.t                TESTS     Output is: "bad\n"
 xtestc/0196.t                TESTS     Output is: "m: Modification of a read ..."
+xtestc/0203.t                TESTS     Output is: "" expect "ok"
 xtestc/0207.t                TESTS     Output is: ""
 xtestc/0222.t                TESTS     Output is: "Can t find string terminator ..."
 xtestc/0226.t                TESTS     Output is: ""
