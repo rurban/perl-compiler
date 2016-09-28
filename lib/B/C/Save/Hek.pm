@@ -71,7 +71,7 @@ sub save_shared_he {
     sharedhe()->comment("(HE*) hent_next, (HEK*), hent_hek, (Size_t) hent_refcount, (U32) hek_hash, (I32) hek_len, (char*) hek_key, (char) hek_flags");
     sharedhe()->add( sprintf( "NULL, NULL, NULL, IMMORTAL_PL_strtab, 0, %d, %s, 0x%0x", $cur, $cstring, $utf8 ? 1 : 0 ) );
 
-    return $saved_shared_hash{$key} = sprintf( "&sharedhek_list[%d]", sharedhek()->index - 1 );
+    return $saved_shared_hash{$key} = sprintf( "&sharedhek_list[%d]", sharedhe()->index - 1 );
 }
 
 1;

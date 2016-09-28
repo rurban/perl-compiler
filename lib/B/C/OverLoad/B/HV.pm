@@ -18,7 +18,7 @@ use strict;
 
 use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK SVf_AMAGIC/;
 use B::C::Config;
-use B::C::File qw/init xpvhvsect svsect sharedhek decl init1 init2/;
+use B::C::File qw/init xpvhvsect svsect sharedhe decl init1 init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags is_using_mro/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw/savestashpv/;
@@ -39,6 +39,7 @@ sub save {
     my $name     = $hv->NAME;
     my $is_stash = $name;
     my $magic;
+    my $hv_max_plus_one = 8;    # Default.
 
     if ($name) {
 
@@ -71,7 +72,7 @@ sub save {
             # If the stash name is empty xhv_name_count is negative, and names[0] should
             # be already set. but we rather write it.
             init()->no_split;
-            my $hv_max_plus_one = $hv->MAX + 1;
+            $hv_max_plus_one = $hv->MAX + 1;
 
             # unshift @enames, $name if $name_count < 0; # stashpv has already set names[0]
             init()->add(
@@ -214,6 +215,7 @@ sub save {
         }
 
         my $hv_total_keys = 0;
+
         # If we didn't just clear all the values.
         if ($length) {                                                        # there may be skipped STASH symbols
             init()->no_split;
@@ -225,8 +227,8 @@ sub save {
                 "\tchar *array;",
                 sprintf( "\tNewxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d), char);", $hv_max_plus_one ),
                 sprintf( "\tHvARRAY (%s) = (HE **) array;",                        $sym ),
-                "\tHE * entry;";
-                "\tHE **oentry;";
+                "\tHE * entry;",
+                "\tHE **oentry;",
             );
 
             while (@contents) {
@@ -253,13 +255,14 @@ sub save {
                 # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
 
                 debug( hv => "  HV key \"%s\" = %s\n", $key, $value );
-                if (   !$swash_ToCf
-                    and $fullname =~ /^utf8::SWASHNEW/
-                    and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
-                    and $cur == 23 ) {
-                    $swash_ToCf = $value;
-                    verbose("Found PL_utf8_tofold ToCf swash $value");
-                }
+
+                #if (   !$swash_ToCf
+                #    and $fullname =~ /^utf8::SWASHNEW/
+                #    and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
+                #    and $cur == 23 ) {
+                #    $swash_ToCf = $value;
+                #    verbose("Found PL_utf8_tofold ToCf swash $value");
+                #}
             }
             init()->add("}");
             init()->split;
